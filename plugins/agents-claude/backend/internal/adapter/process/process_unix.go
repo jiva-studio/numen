@@ -3,6 +3,7 @@
 package process
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"syscall"
@@ -19,8 +20,9 @@ func kill(cmd *exec.Cmd) error {
 	if cmd.Process == nil {
 		return nil
 	}
-	if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
+	err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	if errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.ESRCH) {
 		return os.ErrProcessDone
 	}
-	return nil
+	return err
 }

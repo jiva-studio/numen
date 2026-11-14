@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"testing/iotest"
 	"time"
@@ -130,18 +131,20 @@ func TestEndpointConfigurationConnectionTrackingAndTools(t *testing.T) {
 			t.Log(err)
 		}
 	}()
+	// The requests above leave their own kept-alive connection tracked, so the counts are relative to it.
+	before := countTracked(served)
 	served.trackConnection(clientConn, http.StateNew)
-	if len(served.states) != 1 {
-		t.Errorf("expected 1 tracked connection, got %d", len(served.states))
+	if got := countTracked(served); got != before+1 {
+		t.Errorf("tracked connections = %d, want %d", got, before+1)
 	}
 	served.trackConnection(clientConn, http.StateClosed)
-	if len(served.states) != 0 {
-		t.Errorf("expected 0 tracked connections after StateClosed, got %d", len(served.states))
+	if got := countTracked(served); got != before {
+		t.Errorf("tracked connections after StateClosed = %d, want %d", got, before)
 	}
 	served.trackConnection(clientConn, http.StateNew)
 	served.trackConnection(clientConn, http.StateHijacked)
-	if len(served.states) != 0 {
-		t.Errorf("expected 0 tracked connections after StateHijacked, got %d", len(served.states))
+	if got := countTracked(served); got != before {
+		t.Errorf("tracked connections after StateHijacked = %d, want %d", got, before)
 	}
 
 	// Verify Close waits for an active request that finishes within shutdownLimit.
@@ -150,9 +153,10 @@ func TestEndpointConfigurationConnectionTrackingAndTools(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitFor(t, func() bool { return served.getActiveCount() > 0 })
-	start := time.Now()
+	var isFinished atomic.Bool
 	go func() {
 		time.Sleep(25 * time.Millisecond)
+		isFinished.Store(true)
 		if _, err := conn.Write([]byte("}")); err != nil {
 			t.Log(err)
 		}
@@ -160,8 +164,8 @@ func TestEndpointConfigurationConnectionTrackingAndTools(t *testing.T) {
 	if err := served.Close(t.Context()); err != nil {
 		t.Errorf("Close with finishing request = %v, want nil", err)
 	}
-	if elapsed := time.Since(start); elapsed < 20*time.Millisecond {
-		t.Errorf("Close returned in %v without waiting for active request", elapsed)
+	if !isFinished.Load() {
+		t.Error("Close returned before the active request finished")
 	}
 }
 
@@ -211,4 +215,10 @@ func postMCP(t *testing.T, served *Endpoint, sessionID, body string) string {
 		t.Error(err)
 	}
 	return string(raw)
+}
+
+func countTracked(served *Endpoint) int {
+	served.statesMu.Lock()
+	defer served.statesMu.Unlock()
+	return len(served.states)
 }

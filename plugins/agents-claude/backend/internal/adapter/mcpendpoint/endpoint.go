@@ -53,12 +53,13 @@ type Endpoint struct {
 	url      string
 	token    string
 	server   *http.Server
+	stopped  chan struct{}
 	limit    time.Duration
 	statesMu sync.Mutex
 	states   map[net.Conn]http.ConnState
 	once     sync.Once
 	err      error
-	serveErr chan error
+	serveErr error
 }
 
 // Serve starts an endpoint that serves the listed tools and runs each call with invoke. Every input schema
@@ -104,21 +105,21 @@ func serveOn(ctx context.Context, random io.Reader, address string, listed []*to
 		url:      (&url.URL{Scheme: "http", Host: listener.Addr().String(), Path: endpointPath}).String(),
 		token:    token,
 		server:   &http.Server{Handler: requireToken(token, mux), ReadHeaderTimeout: 10 * time.Second},
+		stopped:  make(chan struct{}),
 		limit:    shutdownLimit,
 		statesMu: sync.Mutex{},
 		states:   make(map[net.Conn]http.ConnState),
 		once:     sync.Once{},
 		err:      nil,
-		serveErr: make(chan error),
+		serveErr: nil,
 	}
 	served.server.ConnState = served.trackConnection
 	go func() {
+		defer close(served.stopped)
 		// Serve returns http.ErrServerClosed once Close is called, which is how it is meant to end.
-		err := served.server.Serve(listener)
-		if errors.Is(err, http.ErrServerClosed) {
-			err = nil
+		if err := served.server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
+			served.serveErr = err
 		}
-		served.serveErr <- err
 	}()
 	return served, nil
 }
@@ -134,7 +135,9 @@ func (e *Endpoint) Close(ctx context.Context) error {
 	e.once.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, e.limit)
 		defer cancel()
-		e.err = errors.Join(e.shutdown(ctx), <-e.serveErr)
+		e.err = e.shutdown(ctx)
+		<-e.stopped
+		e.err = errors.Join(e.err, e.serveErr)
 	})
 	return e.err
 }
@@ -162,15 +165,23 @@ func (e *Endpoint) getActiveCount() int {
 }
 
 func (e *Endpoint) shutdown(ctx context.Context) error {
+	result := make(chan error, 1)
+	go func() { result <- e.server.Shutdown(ctx) }()
 	poll := time.NewTicker(shutdownPoll)
 	defer poll.Stop()
-	for e.getActiveCount() > 0 && ctx.Err() == nil {
+	for {
 		select {
-		case <-ctx.Done():
+		case err := <-result:
+			if err != nil {
+				return errors.Join(err, e.server.Close())
+			}
+			return nil
 		case <-poll.C:
+			if e.getActiveCount() == 0 {
+				return errors.Join(e.server.Close(), <-result)
+			}
 		}
 	}
-	return errors.Join(ctx.Err(), e.server.Close())
 }
 
 func declareTool(listed *tools.ToolInfo) *sdk.Tool {
@@ -299,5 +310,6 @@ func isLoopbackOrigin(origin string) bool {
 	if hostname == "localhost" {
 		return true
 	}
-	return net.ParseIP(hostname).IsLoopback()
+	ip := net.ParseIP(hostname)
+	return ip != nil && ip.IsLoopback()
 }

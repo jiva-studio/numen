@@ -133,15 +133,12 @@ func TestSuperviseAndWaitForExitKillProcessGroup(t *testing.T) {
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
-	deadline := time.Now().Add(5 * time.Second)
 	var rawPID []byte
-	for time.Now().Before(deadline) {
-		if data, err := os.ReadFile(pidFile); err == nil && strings.TrimSpace(string(data)) != "" {
-			rawPID = data
-			break
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
+	waitUntil(t, func() bool {
+		data, err := os.ReadFile(pidFile)
+		rawPID = data
+		return err == nil && strings.TrimSpace(string(data)) != ""
+	})
 	childPID, err := strconv.Atoi(strings.TrimSpace(string(rawPID)))
 	if err != nil {
 		t.Fatalf("read child pid %q: %v", rawPID, err)
@@ -155,10 +152,22 @@ func TestSuperviseAndWaitForExitKillProcessGroup(t *testing.T) {
 	if stopErr != nil {
 		t.Errorf("first Cancel = %v, want nil", stopErr)
 	}
+	// On Linux the killed child stays a zombie in the process group until its new parent reaps it, and
+	// the group answers signals until then.
+	waitUntil(t, func() bool { return errors.Is(cmd.Cancel(), os.ErrProcessDone) })
 	if err := syscall.Kill(childPID, 0); !errors.Is(err, syscall.ESRCH) {
 		t.Errorf("expected background child in process group to be killed, Kill(0) = %v", err)
 	}
-	if err := cmd.Cancel(); !errors.Is(err, os.ErrProcessDone) {
-		t.Errorf("Cancel on exited process = %v, want os.ErrProcessDone", err)
+}
+
+func waitUntil(t *testing.T, isDone func() bool) {
+	t.Helper()
+	deadline := time.After(5 * time.Second)
+	for !isDone() {
+		select {
+		case <-deadline:
+			t.Fatal("the condition did not hold within 5s")
+		case <-time.After(5 * time.Millisecond):
+		}
 	}
 }

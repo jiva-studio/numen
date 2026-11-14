@@ -119,6 +119,7 @@ func (p *streamParser) parseStreamEvent(ev streamEvent) {
 			p.isStreaming = true
 			p.callID = ev.Block.ID
 			p.tool = ev.Block.Name
+			p.arguments.Reset()
 			id, tool := p.callID, stripServerPrefix(p.tool)
 			p.emit(func() error { return p.sink.SendToolCall(id, tool, "") })
 		}
@@ -130,29 +131,24 @@ func (p *streamParser) parseStreamEvent(ev streamEvent) {
 		}
 		id, tool, arguments := p.callID, stripServerPrefix(p.tool), p.arguments.String()
 		p.emit(func() error { return p.sink.SendToolCall(id, tool, arguments) })
+		p.callID = ""
 		p.tool = ""
 		p.arguments.Reset()
 	}
 }
 
 func (p *streamParser) parseDelta(delta streamDelta) {
-	switch delta.Type {
-	case "text_delta":
-		if delta.Text != "" {
-			p.isStreaming = true
-			p.emit(func() error { return p.sink.SendText(delta.Text) })
-		}
-	case "thinking_delta":
-		if delta.Thinking != "" {
-			p.isStreaming = true
-			p.emit(func() error { return p.sink.SendThought(delta.Thinking) })
-		}
-	case "input_json_delta":
-		if p.tool != "" {
-			p.arguments.WriteString(delta.Partial)
-			id, tool, arguments := p.callID, stripServerPrefix(p.tool), p.arguments.String()
-			p.emit(func() error { return p.sink.SendToolInput(id, tool, arguments) })
-		}
+	switch {
+	case delta.Type == "text_delta" && delta.Text != "":
+		p.isStreaming = true
+		p.emit(func() error { return p.sink.SendText(delta.Text) })
+	case delta.Type == "thinking_delta" && delta.Thinking != "":
+		p.isStreaming = true
+		p.emit(func() error { return p.sink.SendThought(delta.Thinking) })
+	case delta.Type == "input_json_delta" && p.tool != "":
+		p.arguments.WriteString(delta.Partial)
+		id, tool, arguments := p.callID, stripServerPrefix(p.tool), p.arguments.String()
+		p.emit(func() error { return p.sink.SendToolInput(id, tool, arguments) })
 	}
 }
 
@@ -196,9 +192,12 @@ func (p *streamParser) setReason(why string) {
 }
 
 func stripServerPrefix(tool string) string {
-	if rest, ok := strings.CutPrefix(tool, "mcp__"); ok {
-		if _, name, hasName := strings.Cut(rest, "__"); hasName {
-			return name
+	if name, ok := strings.CutPrefix(tool, "mcp__"+serverName+"__"); ok {
+		return name
+	}
+	if strings.HasPrefix(tool, "mcp__") {
+		if parts := strings.SplitN(tool, "__", 3); len(parts) == 3 {
+			return parts[2]
 		}
 	}
 	return tool

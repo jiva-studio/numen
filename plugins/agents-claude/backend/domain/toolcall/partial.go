@@ -10,8 +10,12 @@ import (
 // has arrived: the value stops at an escape or a character cut off at the end. It is empty where the field
 // is absent or holds no text.
 func ReadPartialText(arguments, field string) string {
-	_, rest, _ := strings.Cut(arguments, `"`+field+`"`)
-	rest, isField := strings.CutPrefix(strings.TrimLeft(rest, " \t\r\n"), ":")
+	start := strings.Index(arguments, `"`+field+`"`)
+	if start < 0 {
+		return ""
+	}
+	rest := strings.TrimLeft(arguments[start+len(field)+2:], " \t\r\n")
+	rest, isField := strings.CutPrefix(rest, ":")
 	if !isField {
 		return ""
 	}
@@ -19,18 +23,25 @@ func ReadPartialText(arguments, field string) string {
 	if !isText {
 		return ""
 	}
-	return decodePartialText(rest)
+	end := 0
+	for end < len(rest) && rest[end] != '"' {
+		if rest[end] == '\\' {
+			end++
+		}
+		end++
+	}
+	return decodePartialText(rest[:min(end, len(rest))])
 }
 
 func decodePartialText(quoted string) string {
-	for quoted != "" {
-		if utf8.ValidString(quoted) {
-			var text string
-			if json.Unmarshal([]byte(`"`+quoted+`"`), &text) == nil {
-				return text
-			}
+	for end := len(quoted); end > 0; end-- {
+		if !utf8.ValidString(quoted[:end]) {
+			continue
 		}
-		quoted = quoted[:len(quoted)-1]
+		var text string
+		if json.Unmarshal([]byte(`"`+quoted[:end]+`"`), &text) == nil {
+			return text
+		}
 	}
 	return ""
 }
