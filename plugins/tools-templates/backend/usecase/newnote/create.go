@@ -3,16 +3,19 @@ package newnote
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	pathpkg "path"
 	"strings"
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/substitute"
 )
 
@@ -166,3 +169,24 @@ func (r render) getContent() ([]byte, error) {
 	}
 	return doc.Bytes(), nil
 }
+
+// NewIDs returns the generator of the ids of new notes, seeded by the system.
+func NewIDs() IDs { return ulid.NewGenerator(rand.Reader) }
+
+// Folder holds the templates folder, which the host changes while calls are being served.
+type Folder struct {
+	value atomic.Pointer[string]
+}
+
+// NewFolder returns a folder that holds initial.
+func NewFolder(initial string) *Folder {
+	folder := new(Folder)
+	folder.Set(initial)
+	return folder
+}
+
+// Set replaces the folder.
+func (f *Folder) Set(folder string) { f.value.Store(&folder) }
+
+// Get returns the folder.
+func (f *Folder) Get() string { return *f.value.Load() }

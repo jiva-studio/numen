@@ -4,15 +4,12 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"strings"
-	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/api"
@@ -23,7 +20,7 @@ const defaultFolder = "Templates"
 
 func normalizeFolder(raw string) string {
 	var kept []string
-	for _, segment := range strings.SplitSeq(strings.ReplaceAll(strings.TrimSpace(raw), `\`, "/"), "/") {
+	for segment := range strings.SplitSeq(strings.ReplaceAll(strings.TrimSpace(raw), `\`, "/"), "/") {
 		switch segment {
 		case "", ".":
 		case "..":
@@ -63,16 +60,13 @@ func makeCreateNoteHandler(useCase newnote.CreateFromTemplate) func(context.Cont
 }
 
 func mount(s *server.Server, vault newnote.Vault, source newnote.Clock, ids newnote.IDs) error {
-	var folder atomic.Pointer[string]
-	initial := defaultFolder
-	folder.Store(&initial)
+	folder := newnote.NewFolder(defaultFolder)
 	s.SetUpdateConfig(func(values map[string]string) {
 		if raw, isSet := values["folder"]; isSet {
-			normalized := normalizeFolder(raw)
-			folder.Store(&normalized)
+			folder.Set(normalizeFolder(raw))
 		}
 	})
-	useCase := newnote.NewCreateFromTemplate(vault, source, ids, func() string { return *folder.Load() })
+	useCase := newnote.NewCreateFromTemplate(vault, source, ids, folder.Get)
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodCreateNote, makeCreateNoteHandler(useCase))
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="api.Service and api.MethodCreateNote are valid compile-time constants."
@@ -85,5 +79,5 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, host.NewClient(endpoint), clock.System{}, ulid.NewGenerator(rand.Reader))
+	return mount(s, host.NewClient(endpoint), clock.System{}, newnote.NewIDs())
 }

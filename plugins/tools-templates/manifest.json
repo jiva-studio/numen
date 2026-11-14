@@ -24,7 +24,8 @@
       "key": "folder",
       "type": "string",
       "title": "Templates folder",
-      "description": "The folder that holds the templates. Each note in it is a template, and each subfolder is a group.",
+      "description": "The folder that holds the templates",
+      "details": "Each note in the folder is a template, and each subfolder is a group.",
       "default": "Templates"
     }
   ]
