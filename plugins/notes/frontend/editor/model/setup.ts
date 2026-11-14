@@ -45,7 +45,7 @@ import { renderBracketMatch } from '../lib/live/wikilinks'
 import { HEADING } from '../lib/live/styles'
 import { GFM } from '@lezer/markdown'
 import { saveHandler } from '../lib/outside'
-import { getFontFamilyValue } from '../../model/fontFamily'
+import { getFontFamilyValue } from '../lib/config/fontFamily'
 import { monospaced, theme } from '../lib/config/theme'
 
 /** What can be changed without the editor being built again. */
