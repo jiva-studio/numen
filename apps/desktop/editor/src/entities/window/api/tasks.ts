@@ -3,7 +3,7 @@
  */
 import { createTaskClient } from '@numen/core-client'
 import { windowService } from '@/shared/api/clients'
-import { WINDOW } from './window'
+import { WINDOW } from '@/shared/api/window'
 
 const tasks = createTaskClient(windowService, WINDOW)
 

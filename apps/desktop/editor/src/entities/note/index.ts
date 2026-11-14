@@ -3,6 +3,7 @@ export { getNoteIcon, registerTabKindIcon } from './model/icons'
 export type { NoteEdit, NoteResult, WriteResult } from './lib/note'
 export { convertErrorCode, ERROR_MESSAGES, useOpenNotes, flattenOpenNotes } from './model/buffer'
 export { createNoteWriter } from './model/maker'
+export { useOpeningNote } from './model/useOpeningNote'
 export type { NoteCreator } from './model/maker'
 export { WORDS } from './words'
 export {

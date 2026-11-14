@@ -1,17 +1,19 @@
 /**
- * The parts that read the vault: the note editors, the notes the commands reach, the display, the
- * vaults and the lists of the items the commands offer.
+ * The parts that read the vault: the note editors, the notes the commands reach, the window
+ * streams, the vaults and the lists of the items the commands offer.
  */
 import type { VaultChangeEvent } from '@numen/plugin-loader'
 import { getFileKinds } from '@/entities/file'
 import { listDeclaredItemLists } from '@/entities/plugin'
 import type { createTabNavigation, FileOpeners, WindowTabs } from '@/entities/tab'
-import { useVaults } from '@/entities/vault'
+import { getVaultList, useVaults } from '@/entities/vault'
 import { createCommandNotes, createNotes } from '@/features/command-palette'
 import { createNoteEditors } from '@/features/file-conflict'
 import { createNoteNavigator } from '@/features/note-commands'
 import { createCommandItemLists } from '@/features/plugin-commands'
-import { createDisplayOptions, getVaultList, useWindowDisplay } from '@/features/window-display'
+import { createFocusHandlers } from '@/features/focus-requests'
+import { createVaultChangeHandlers } from '@/features/vault-changes'
+import { useWindowStreams } from '@/features/window-streams'
 import { createEmitter } from '@/shared/lib/emitter'
 import type { PathRename } from '@/shared/lib/paths'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -34,17 +36,16 @@ export function createVaultServices(deps: VaultServicesDeps) {
   }
   const renames = createEmitter<readonly PathRename[]>()
   const vaultChanges = createEmitter<VaultChangeEvent>()
-  const window = useWindowDisplay(
-    createDisplayOptions({
+  const window = useWindowStreams({
+    ...createVaultChangeHandlers({
       editing,
       navigation,
       renames,
-      tabOpeners,
-      windowTabs,
       notifyPlugins: (event) => vaultChanges.emit(event),
       writeMessage,
     }),
-  )
+    ...createFocusHandlers({ navigation, tabOpeners, windowTabs, writeMessage }),
+  })
   return {
     editing,
     notes: createCommandNotes(editing.reached, windowTabs),

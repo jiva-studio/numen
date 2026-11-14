@@ -3,12 +3,7 @@ import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import { TASK_UNIT } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { createFollower } from '@numen/ui'
-import {
-  createEditStream,
-  createFocusStream,
-  createTaskStream,
-  createVaultStream,
-} from './useWindowStreams'
+import { createEditStream, createFocusStream, createTaskStream, createVaultStream } from './streams'
 import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/entities/window'
 import type { TextRange } from '@/shared/lib/textRange'

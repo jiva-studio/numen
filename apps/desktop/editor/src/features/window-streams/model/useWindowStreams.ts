@@ -1,7 +1,8 @@
 import { shallowRef } from 'vue'
-import type { NoteEdit } from '@/entities/note'
+import { useOpeningNote, type NoteEdit } from '@/entities/note'
 import type { Task } from '@/entities/window'
 import type { PluginHealthItem } from '@/entities/plugin'
+import { isVaultSwapped, readShownVault, useShownVault } from '@/entities/vault'
 import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
 import { formatError, type Caught } from '@/shared/api/errors'
@@ -12,24 +13,21 @@ import {
   createHealthStream,
   createTaskStream,
   createVaultStream,
+  type StreamRunners,
   type VaultScan,
-  type WindowStreams,
-} from './useWindowStreams'
-import { useDisplayHealth, type DisplayHealth } from './useDisplayHealth'
-import { useDisplayOpening } from './useDisplayOpening'
-import { askVaultState, isVaultSwapped, useDisplayVault } from './useDisplayVault'
+} from './streams'
+import { useCoreHealth, type CoreHealth } from './useCoreHealth'
 
 /**
- * The vault as the whole window reads it, and the notifications when the vault
- * changes.
+ * The streams the whole window follows, and what they report.
  *
  * One window reads the vault once: one stream of changes, one stream of edits,
  * one stream of requested notes, one stream of running tasks, and one set of
  * counts. What is rendered from any of it, and by how many tabs, is the
  * window's concern; nothing here depends on the contents of a tab.
  */
-/** What the window passes for reading a vault, alongside the vault itself. */
-interface DisplayOptions {
+/** What the window does on the events of the streams. */
+interface StreamHandlers {
   wait?(this: void, ms: number): Promise<void>
   /**
    * Receives vault change notifications, and is awaited. A change carrying no
@@ -56,17 +54,17 @@ interface DisplayOptions {
   reload?(this: void): void
 }
 
-interface StartDisplayDeps {
-  health: DisplayHealth
+interface StartDeps {
+  health: CoreHealth
   ask: () => Promise<VaultScan>
   readInitialNote: () => Promise<string>
   onVaultChanged: (paths: readonly string[], renames: readonly PathRename[]) => Promise<void> | void
-  streams: WindowStreams
+  streams: StreamRunners
   wait: (ms: number) => Promise<void>
   isOpen: () => boolean
 }
 
-function startStreams(streams: WindowStreams, health: DisplayHealth): void {
+function startStreams(streams: StreamRunners, health: CoreHealth): void {
   const onError = (error: Caught) => {
     health.failure.value = formatError(error)
   }
@@ -77,7 +75,7 @@ function startStreams(streams: WindowStreams, health: DisplayHealth): void {
   runInBackground(streams.followHealth(), onError)
 }
 
-async function startDisplay(deps: StartDisplayDeps): Promise<void> {
+async function startWhenReady(deps: StartDeps): Promise<void> {
   const { health, ask, readInitialNote, onVaultChanged, streams, wait, isOpen } = deps
   try {
     while (isOpen()) {
@@ -103,20 +101,20 @@ async function startDisplay(deps: StartDisplayDeps): Promise<void> {
   }
 }
 
-export function useWindowDisplay(how: DisplayOptions = {}) {
+export function useWindowStreams(how: StreamHandlers = {}) {
   const wait = how.wait ?? sleep
   // No listener is attached by default; each callback does nothing.
   const onVaultChanged = how.onVaultChanged ?? (() => undefined)
   const reload = how.reload ?? (() => undefined)
-  const vault = useDisplayVault()
-  const health = useDisplayHealth()
-  const opening = useDisplayOpening()
+  const vault = useShownVault()
+  const health = useCoreHealth()
+  const opening = useOpeningNote()
   const tasks = shallowRef<readonly Task[]>([])
   const pluginHealth = shallowRef<readonly PluginHealthItem[]>([])
   let open = true
   const abortController = new AbortController()
 
-  const ask = () => askVaultState(vault)
+  const ask = () => readShownVault(vault)
 
   const follows = createFollower({
     isOpen: () => open,
@@ -125,7 +123,7 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
     },
     wait,
   })
-  const streams: WindowStreams = {
+  const streams: StreamRunners = {
     follow: createVaultStream({
       follows,
       listening: abortController,
@@ -163,7 +161,7 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
     tasks,
     pluginHealth,
     start: () =>
-      startDisplay({
+      startWhenReady({
         health,
         ask,
         readInitialNote: opening.read,
@@ -179,7 +177,5 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
     },
   }
 }
-
-export type WindowDisplay = ReturnType<typeof useWindowDisplay>
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

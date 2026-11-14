@@ -4,7 +4,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
-import { getVaultList } from './getVaultList'
+import { getVaultList } from './vaultList'
 
 let restore: () => void = () => undefined
 
@@ -33,6 +33,23 @@ describe('the vault list', () => {
       ],
       showing: 'heat',
     })
+  })
+
+  it('asks the core for the vault of the editor window', async () => {
+    const asked: string[] = []
+    restore = installCoreAnswers({
+      vaultsService: { listVaults: () => ({ vaults: [] }) },
+      windowService: {
+        getCurrentVault: (request) => {
+          asked.push(request.window)
+          return { vault: 'heat' }
+        },
+      },
+    })
+
+    await getVaultList()
+
+    expect(asked).toStrictEqual(['editor'])
   })
 
   it('is not answered where the core does not list the vaults', async () => {

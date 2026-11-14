@@ -66,7 +66,7 @@ export interface HealthStreamDeps {
 }
 
 /** The streams the window follows, each read until the window closes. */
-export interface WindowStreams {
+export interface StreamRunners {
   readonly follow: () => Promise<void>
   readonly draw: () => Promise<void>
   readonly watch: () => Promise<void>

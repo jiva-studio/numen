@@ -7,7 +7,6 @@ import { createLostConnection, installCoreHandlers } from '@numen/core-client/te
 import { cancelTask, watchTasks } from './tasks'
 import { reportFlush, watchQuit } from './quit'
 import { watchFocus } from './focus'
-import { getShownVault } from './shownVault'
 
 const request = {
   reportFlush: vi.fn(),
@@ -15,7 +14,6 @@ const request = {
   watchTasks: vi.fn(),
   cancelTask: vi.fn(),
   watchQuit: vi.fn(),
-  getCurrentVault: vi.fn(),
 }
 
 let restore: () => void
@@ -56,15 +54,6 @@ const readAll = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
   for await (const one of stream) readItem.push(one)
   return readItem
 }
-
-describe('the vault the window shows', () => {
-  it('is the vault the core names for this window', async () => {
-    request.getCurrentVault.mockResolvedValue({ vault: 'physics' })
-
-    expect(await getShownVault()).toBe('physics')
-    expect(request.getCurrentVault.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
-  })
-})
 
 describe('the streams a window follows', () => {
   const signal = new AbortController().signal

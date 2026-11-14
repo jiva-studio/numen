@@ -4,7 +4,7 @@
 import { FLUSH_RESULT, getNames, type FlushResultCode } from '@numen/core-client'
 import { windowService } from '@/shared/api/clients'
 import type { FlushOutcome, QuitRequest } from '../lib/quit'
-import { WINDOW } from './window'
+import { WINDOW } from '@/shared/api/window'
 
 /** What a client has left, as the schema names it. */
 const flushResults = getNames<FlushOutcome, FlushResultCode>({

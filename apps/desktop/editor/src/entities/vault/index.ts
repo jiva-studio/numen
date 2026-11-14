@@ -2,5 +2,7 @@
 export type { Vault, VaultChange, VaultList, Vaults } from './lib/vault'
 export { VAULT_ERRORS } from './words'
 export { vaults } from './api/vaults'
+export { getVaultList } from './api/vaultList'
 export { getVaultState, watchVaultChanges } from './api/state'
 export { useVaults } from './model/useVaults'
+export { isVaultSwapped, readShownVault, useShownVault } from './model/useShownVault'

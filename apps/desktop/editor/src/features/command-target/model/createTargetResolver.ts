@@ -1,13 +1,13 @@
+import type { Ref } from 'vue'
 import type { CommandTarget } from '@/shared/model/command'
 import type { WindowTabs } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
-import type { WindowDisplay } from './useWindowDisplay'
 
 /** What a command runs over when it names no target: the tab in front, in the vault the window shows. */
 export function createTargetResolver(
   windowTabs: Pick<WindowTabs, 'groups' | 'tabs'>,
   vaults: Pick<ReturnType<typeof useVaults>, 'activeVault'>,
-  window: Pick<WindowDisplay, 'health'>,
+  health: { readonly failure: Readonly<Ref<string>> },
 ) {
   const getFront = () => {
     const front = windowTabs.groups.handle.front()
@@ -25,7 +25,7 @@ export function createTargetResolver(
       title: on?.title ?? '',
       file,
       vault: vaults.activeVault.value,
-      isReady: !window.health.failure.value,
+      isReady: !health.failure.value,
     }
   }
 }

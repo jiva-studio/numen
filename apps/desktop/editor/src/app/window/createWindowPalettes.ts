@@ -8,7 +8,7 @@ import {
   createWindowPalette,
   runSupport,
 } from '@/features/command-palette'
-import { getVaultList } from '@/features/window-display'
+import { getVaultList } from '@/entities/vault'
 import { watchCommandLists } from '@/features/plugin-commands'
 import { createCommandIconFinder, createSearchMenu } from '@/features/plugin-host'
 import type { CommandRegistry, Notes, SettingsRequest } from '@/shared/model/command'

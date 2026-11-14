@@ -1,8 +1,8 @@
 import { ref } from 'vue'
-import { getInitialOpenPath } from '@/entities/note'
+import { getInitialOpenPath } from '../api/notes'
 
 /** The note the vault opens with, for whatever has nowhere else to start. */
-export function useDisplayOpening() {
+export function useOpeningNote() {
   /** Whether the vault holds a note to show at all. */
   const hasNote = ref(false)
   const path = ref('')

@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TASK_KIND, TASK_UNIT } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
-import { useWindowDisplay } from './useWindowDisplay'
+import { useWindowStreams } from './useWindowStreams'
 import type { Task } from '@/entities/window'
 import type { TextRange } from '@/shared/lib/textRange'
 import type { NoteEdit } from '@/entities/note'
@@ -127,9 +127,9 @@ const answerFrom = (core: Fake) => {
   })
 }
 
-const useDisplay = (core: Fake, how?: Parameters<typeof useWindowDisplay>[0]) => {
+const useStreams = (core: Fake, how?: Parameters<typeof useWindowStreams>[0]) => {
   answerFrom(core)
-  return useWindowDisplay(how)
+  return useWindowStreams(how)
 }
 
 function fake(overrides: Partial<Fake> = {}): Fake {
@@ -148,13 +148,13 @@ function fake(overrides: Partial<Fake> = {}): Fake {
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-const createDisplay = (
+const createStreams = (
   core: Fake,
   openFileAt?: (path: string, spans: readonly TextRange[]) => void,
 ) => {
   const changed: string[] = []
   const travelled: string[] = []
-  const showed = useDisplay(core, {
+  const showed = useStreams(core, {
     wait: async () => showed.close(),
     onVaultChanged: async (paths, renamed) => {
       changed.push([...paths, ...(renamed ?? []).map((one) => `${one.from} → ${one.to}`)].join(' '))
@@ -177,7 +177,7 @@ describe('the stream of changes', () => {
       },
     })
     const waits: number[] = []
-    const window = useDisplay(core, {
+    const window = useStreams(core, {
       wait: async (ms) => {
         waits.push(ms)
         if (streams >= 3) window.close()
@@ -198,7 +198,7 @@ describe('the stream of changes', () => {
         throw new Error('connection lost')
       } as unknown as Streams['watchVaultChanges'],
     })
-    const window = useDisplay(core, {
+    const window = useStreams(core, {
       wait: async () => {
         if (streams >= 2) window.close()
       },
@@ -217,7 +217,7 @@ describe('the stream of changes', () => {
         yield { paths: ['Somewhere/Else.md'], shouldReload: false, renamed: [] }
       },
     })
-    const one = createDisplay(core)
+    const one = createStreams(core)
 
     await one.window.streams.follow()
 
@@ -231,7 +231,7 @@ describe('the stream of changes', () => {
         yield { paths: ['Note.md'], shouldReload: true, renamed: [] }
       },
     })
-    const one = createDisplay(core)
+    const one = createStreams(core)
 
     await one.window.streams.follow()
 
@@ -245,7 +245,7 @@ describe('the stream of changes', () => {
         yield { paths: [], shouldReload: false, renamed: [{ from: 'Note.md', to: 'Renamed.md' }] }
       },
     })
-    const one = createDisplay(core)
+    const one = createStreams(core)
 
     await one.window.streams.follow()
 
@@ -265,7 +265,7 @@ describe('the stream of changes', () => {
         }
       },
     })
-    const one = createDisplay(core)
+    const one = createStreams(core)
     await one.window.opening.read()
 
     await one.window.streams.follow()
@@ -284,7 +284,7 @@ describe('the stream of changes', () => {
         yield { paths: [], shouldReload: false, renamed: [{ from: 'Other.md', to: 'Renamed.md' }] }
       },
     })
-    const one = createDisplay(core)
+    const one = createStreams(core)
     await one.window.opening.read()
 
     await one.window.streams.follow()
@@ -302,7 +302,7 @@ describe('another vault under this window', () => {
   /** What the window did about a reload: drew the page again, or read again. */
   const createWindow = (core: Fake) => {
     const renderedElement: string[] = []
-    const window = useDisplay(core, {
+    const window = useStreams(core, {
       wait: vi.fn(() => Promise.resolve()),
       onVaultChanged: (paths) => {
         renderedElement.push(`changed ${paths.join(' ')}`)
@@ -417,7 +417,7 @@ describe('a note requested for from outside the window', () => {
         yield { path: 'Wanted.md', ranges: [], tabId: '' }
       },
     })
-    const one = createDisplay(core)
+    const one = createStreams(core)
 
     await one.window.streams.watch()
 
@@ -434,7 +434,7 @@ describe('a tab requested from outside the window', () => {
     })
     const activated: string[] = []
     const travelled: string[] = []
-    const window = useDisplay(core, {
+    const window = useStreams(core, {
       wait: async () => window.close(),
       travelTo: (path) => {
         travelled.push(path)
@@ -455,7 +455,7 @@ describe('a place inside a source requested for from outside the window', () => 
   /** A window that records the documents it opens, and where. */
   const createRecordingWindow = (core: Fake) => {
     const openedWindows: string[] = []
-    const one = createDisplay(core, (path, spans) =>
+    const one = createStreams(core, (path, spans) =>
       openedWindows.push(`${path} ${spans.map((one) => `${one.start} ${one.end}`).join(' ')}`),
     )
     return { window: one.window, opened: openedWindows, travelled: one.travelled }
@@ -535,7 +535,7 @@ describe('a vault that could not be read', () => {
         scan: { isReady: false, error: 'permission denied', unwatchedPath: '' },
       }),
     })
-    const window = useDisplay(core, {
+    const window = useStreams(core, {
       wait: async () => window.close(),
       travelTo: (path) => {
         travelled.push(path)
@@ -554,7 +554,7 @@ describe('a vault that could not be read', () => {
 
 describe('a vault with a note in it', () => {
   it('says it holds one, which is not what an unreadable vault says', async () => {
-    const window = useDisplay(fake(), { wait: async () => window.close() })
+    const window = useStreams(fake(), { wait: async () => window.close() })
 
     await window.start()
     await flushPromises()
@@ -572,7 +572,7 @@ describe('a vault that is not being followed', () => {
         scan: { ...resolved.scan, unwatchedPath: 'too many watches' },
       }),
     })
-    const window = useDisplay(core, { wait: async () => window.close() })
+    const window = useStreams(core, { wait: async () => window.close() })
 
     await window.start()
     await flushPromises()
@@ -610,7 +610,7 @@ describe('what the application is doing', () => {
         await waitForever()
       },
     })
-    const window = useDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
+    const window = useStreams(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
     await flushPromises()
@@ -643,7 +643,7 @@ describe('what the application is doing', () => {
     })
     // The clock is the test's, so the wait between one stream and the next is
     // not a second of it.
-    const window = useDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
+    const window = useStreams(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
     await flushPromises()
@@ -686,7 +686,7 @@ describe('what the application is doing', () => {
         await waitForever()
       },
     })
-    const window = useDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
+    const window = useStreams(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
     await flushPromises()
@@ -700,7 +700,7 @@ describe('what the application is doing', () => {
 
 describe('a window before it has requested the vault anything', () => {
   it('says nothing yet, and is waiting for the vault to be read', () => {
-    const window = useDisplay(fake())
+    const window = useStreams(fake())
 
     expect(window.vault.name.value).toBe('')
     expect(window.health.isIndexing.value).toBe(true)
@@ -716,7 +716,7 @@ describe('a window before it has requested the vault anything', () => {
 
 describe('the note the vault opens with', () => {
   it('is none for a vault that holds no note', async () => {
-    const window = useDisplay(fake({ getInitialOpenPath: async () => null }))
+    const window = useStreams(fake({ getInitialOpenPath: async () => null }))
 
     expect(await window.opening.read()).toBe('')
     expect(window.opening.path.value).toBe('')
@@ -726,7 +726,7 @@ describe('the note the vault opens with', () => {
 
 describe('the first note shown', () => {
   it('stops the waiting and notifies everything showing the vault to read it whole', async () => {
-    const one = createDisplay(fake())
+    const one = createStreams(fake())
 
     await one.window.start()
     await flushPromises()
@@ -749,7 +749,7 @@ describe('the first note shown', () => {
         yield edit
       },
     })
-    const window = useDisplay(core, {
+    const window = useStreams(core, {
       wait: waitForever,
       reportChange: (one) => {
         response.push(one)
@@ -771,7 +771,7 @@ describe('the first note shown', () => {
         return { path: 'Opening.md' }
       },
     })
-    const window = useDisplay(core, {
+    const window = useStreams(core, {
       onVaultChanged: (paths) => {
         changed.push(paths)
       },
@@ -791,7 +791,7 @@ describe('the first note shown', () => {
       state: async () => ({ ...resolved, scan: { ...resolved.scan, isReady: false } }),
     })
     const waits: number[] = []
-    const window = useDisplay(core, {
+    const window = useStreams(core, {
       wait: async (ms) => {
         waits.push(ms)
         window.close()
@@ -819,7 +819,7 @@ describe('a closed window', () => {
         await waitForever()
       },
     })
-    const window = useDisplay(core, { wait: waitForever })
+    const window = useStreams(core, { wait: waitForever })
 
     await window.start()
     await flushPromises()
@@ -832,7 +832,7 @@ describe('a closed window', () => {
 
 describe('a vault that cannot be reached at all', () => {
   it('says so, and stops the waiting', async () => {
-    const window = useDisplay(
+    const window = useStreams(
       fake({
         state: async () => {
           throw new Error('connection failed')
@@ -851,7 +851,7 @@ describe('a vault still being read', () => {
   it('is requested again a tenth of a second later', async () => {
     vi.useFakeTimers()
     let reads = 0
-    const window = useDisplay(
+    const window = useStreams(
       fake({
         getInitialOpenPath: async () => null,
         state: async () => {

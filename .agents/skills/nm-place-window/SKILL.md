@@ -91,19 +91,22 @@ apps/desktop/editor/src/
 │   ├── plugin-host/              the plugin host adapter: the services, slots, vaults, notes and window commands the window serves to the plugins: model/, lib/
 │   ├── tab-linking/              link tabs across windows: ui/, model/, api/ (workspace service), lib/
 │   ├── tab-move/                 send a tab to another window: model/, api/, lib/
-│   ├── window-display/           the vault as the whole window reads it: display options, target resolution, the vault list and the streams of vault changes
+│   ├── window-streams/           the streams the whole window follows (vault changes, edits, focus, tasks, plugin health) and the health of the connection to the core: model/
+│   ├── vault-changes/            apply a change of the vault to the open notes, the tabs and the plugins: model/
+│   ├── focus-requests/           show the note, file spans or tab that a request from outside the window names: model/
+│   ├── command-target/           the target of a command that names none: the tab in front, in the vault the window shows: model/
 │   └── hotkeys/                  bind keys to commands and keep the binding in sync with the settings
 ├── entities/
-│   ├── note/                     a note: api/ (note service), model/ (open notes, buffer), lib/ (types, mappers)
+│   ├── note/                     a note: api/ (note service), model/ (open notes, buffer, the note the vault opens with), lib/ (types, mappers)
 │   ├── file/                     a file of the vault: api/ (file service), lib/
-│   ├── vault/                    the vaults of the installation and the one open: api/, model/, lib/
+│   ├── vault/                    the vaults of the installation and the one the window shows: api/ (vaults, vault list, state), model/ (useVaults, useShownVault), lib/
 │   ├── settings/                 numen.json as the window reads it: api/ (settings and theme services), model/, lib/
 │   ├── tab/                      the open tabs: api/ (saved tabs), model/ (useTabs, useTabGroups, useTabPanes, useRestoredTabs), ui/ (the panes of an unavailable tab), lib/
 │   ├── plugin/                   the plugin catalog and what plugins declare: api/, model/
 │   ├── window/                   the window itself: background tasks, quit and focus requests, runtime and kind (secondary or not): api/, model/, lib/
 │   └── command/                  the Command type and the command target that features declare, plus the palette engine (registry, steps, values, keys, to move to shared): lib/, model/
 └── shared/
-    ├── api/                      clients.ts: the generated clients bound once; errors.ts: the error text helpers
+    ├── api/                      clients.ts: the generated clients bound once; errors.ts: the error text helpers; window.ts: the name of the window to the core
     ├── lib/                      Result, paths, text ranges, a DOM port: what two or more slices use
     └── ui/                       a base component that two or more slices draw
 ```

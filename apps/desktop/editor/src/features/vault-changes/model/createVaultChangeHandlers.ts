@@ -1,14 +1,12 @@
 import { formatError } from '@/shared/api/errors'
 import type { VaultChangeEvent } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
-import type { FileOpeners, WindowTabs } from '@/entities/tab'
 import type { Emitter } from '@/shared/lib/emitter'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { PathRename } from '@/shared/lib/paths'
-import type { TextRange } from '@/shared/lib/textRange'
 
 /** What a change of the vault reaches in the window. */
-export interface DisplayWiring {
+export interface VaultChangeDeps {
   editing: {
     notes: {
       applyPathChanges: (paths: readonly string[], renamed: readonly PathRename[]) => void
@@ -16,18 +14,18 @@ export interface DisplayWiring {
   }
   navigation: {
     leavePath: (from: string, to: string) => Promise<void>
-    travel: (path: string) => Promise<void> | void
   }
   renames: Emitter<readonly PathRename[]>
-  tabOpeners: Pick<FileOpeners, 'openFileAt'>
-  windowTabs: Pick<WindowTabs, 'groups'>
   notifyPlugins: (event: VaultChangeEvent) => void
   writeMessage: MessageWriter
 }
 
-export function createDisplayOptions(deps: DisplayWiring) {
-  const { editing, navigation, renames, tabOpeners, windowTabs, notifyPlugins } = deps
-  const { writeMessage } = deps
+/**
+ * Applies a change of the vault to the open notes, the tabs and the plugins, and reloads the page
+ * once another vault is under the window.
+ */
+export function createVaultChangeHandlers(deps: VaultChangeDeps) {
+  const { editing, navigation, renames, notifyPlugins, writeMessage } = deps
   return {
     onVaultChanged: (
       paths: readonly string[],
@@ -50,12 +48,6 @@ export function createDisplayOptions(deps: DisplayWiring) {
       renames.emit(renamed)
       notifyPlugins({ paths: changed, renamed })
     },
-    travelTo: navigation.travel,
-    openFileAt: (path: string, spans: readonly TextRange[]) =>
-      runInBackground(tabOpeners.openFileAt(path, spans), (error) =>
-        writeMessage(formatError(error), 'error'),
-      ),
-    activateTab: (id: string) => windowTabs.groups.handle.show(id),
     reload: () => globalThis.location.reload(),
   }
 }
