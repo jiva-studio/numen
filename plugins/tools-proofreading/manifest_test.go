@@ -66,7 +66,11 @@ func TestManifestAsksForNoNetworkAndNoCompletionPermission(t *testing.T) {
 func TestManifestStartsProofreadingOnlyThroughTheSettingThatIsOffByDefault(t *testing.T) {
 	var shape struct {
 		Contributes struct {
-			Triggers []struct{ Event, Command, When string } `json:"triggers"`
+			Triggers []struct {
+				Event   string `json:"event"`
+				Command string `json:"command"`
+				When    string `json:"when"`
+			} `json:"triggers"`
 		} `json:"contributes"`
 		Settings []struct {
 			Key     string `json:"key"`

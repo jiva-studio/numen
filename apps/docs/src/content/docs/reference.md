@@ -171,6 +171,7 @@ The settings of the plugin LLM Proofreading.
 
 | | | |
 | --- | --- | --- |
+| `proofreadAutomatically` | yes or no | proofread every transcript and recognized text that has none. |
 | `connections` | text | services and agents, tried in order until one answers. |
 | `batchSize` | a number | lines per model request. From 1 to 500. |
 | `overlap` | a number | lines shared by neighboring batches. From 0 to 100. |
