@@ -15,7 +15,7 @@
 ### In scope
 
 - Each relation is a compact group, a patch grown around its own middle, not a line. The middle of the group sits out from the note in the middle by half the depth of the patch, so a large group stands further out than a small one.
-- Where each group grows: parents above, children below, siblings to the right, jumps left (below left where references share the side). The table of directions has a place for a group above left, which references (#1839) take later without changing how groups are placed.
+- Where each group grows: parents above, children below, siblings to the right, jumps below left. The table of directions has a place for a group above left, which references (#1839) take later without changing how groups are placed.
 - The groups take turns, one note each, so every group gets a share of the space near the note in the middle.
 - Two notes never overlap. The areas of two groups may interlock: a note of one group may sit in a gap inside the area of another.
 - No note of a group sits nearer the note in the middle than the point where that group starts.
@@ -61,7 +61,7 @@
 - Clusters only; no zones, no rings.
 - Each relation is a compact patch grown around its own middle; the middle sits out from the focus by half the patch depth; members are chosen nearest that middle measured in boxes, never nearer the focus than the anchor.
 - Groups take turns, one note each. Boxes never overlap; group areas may interlock.
-- Parents above, children below, siblings right, jumps left (below left where references share the side); references (#1839) above left, with a slot left for them.
+- Parents above, children below, siblings right, jumps below left; references (#1839) above left, with a slot left for them.
 - Siblings keep their line to the shared parent.
 - Overflow stays as today: the text "N children not shown" bottom left; no "+N" pill.
 - No camera zoom-in; Focus size (#1836) stays the only thing that enlarges the focus.

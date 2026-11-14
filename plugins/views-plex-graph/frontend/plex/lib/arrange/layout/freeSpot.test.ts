@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import {
   findFreeSpot,
   listNearbyCandidates,
-  measurePull,
   measureProgress,
   measureCost,
   SpotIndex,
@@ -194,7 +193,6 @@ describe('equal costs', () => {
 function findLeastCostSpot(index: SpotIndex, request: SpotRequest): Spot | undefined {
   const costOf = (spot: Spot) => Math.round(measureCost(spot, request) * 1e6)
   const progressOf = (spot: Spot) => Math.round(measureProgress(spot, request) * 1e6)
-  const pullOf = (spot: Spot) => measurePull(spot, request)
   const candidates = [
     request.middle,
     request.start,
@@ -209,9 +207,7 @@ function findLeastCostSpot(index: SpotIndex, request: SpotRequest): Spot | undef
     if (
       !best ||
       costOf(spot) < costOf(best) ||
-      (costOf(spot) === costOf(best) &&
-        (progressOf(spot) < progressOf(best) ||
-          (progressOf(spot) === progressOf(best) && pullOf(spot) < pullOf(best))))
+      (costOf(spot) === costOf(best) && progressOf(spot) < progressOf(best))
     ) {
       best = spot
     }

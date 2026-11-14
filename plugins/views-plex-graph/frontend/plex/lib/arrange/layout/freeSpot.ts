@@ -21,8 +21,6 @@ export interface SpotRequest {
   readonly group: readonly Spot[]
   readonly gaps: Gaps
   readonly fits?: ((spot: Spot) => boolean) | undefined
-  readonly isInLane?: ((point: Vector) => boolean) | undefined
-  readonly isInTerritory?: ((spot: Spot) => boolean) | undefined
   readonly isLineClear?: ((spot: Spot) => boolean) | undefined
 }
 
@@ -47,6 +45,9 @@ const NEAR_LINE_CHECKS = 24
 
 /** How many spots of the wide search a placement tests for clear lines before it takes the best spot whose lines were not tested. */
 const WIDE_LINE_CHECKS = 160
+
+/** How much farther, in cells, a spot may lie from the middle for its lines to stay apart: a note is set aside, not sent far off. */
+const MAX_LINE_DETOUR = 2
 
 /** The wide search looks this many half-boxes along the direction and this many cells across it, on each side. */
 const WIDE_STEPS = 12
@@ -156,34 +157,14 @@ export class SpotIndex {
   }
 }
 
-interface Rank {
-  readonly cost: number
-  readonly progress: number
-  readonly pull: number
-}
-
-function isBetter(rank: Rank, best: Rank): boolean {
-  if (rank.cost !== best.cost) return rank.cost < best.cost
-  const progress = roundProgress(rank.progress)
-  const bestProgress = roundProgress(best.progress)
-  return progress < bestProgress || (progress === bestProgress && rank.pull < best.pull)
-}
-
-/** How far the center of the group would lie from its middle with a box at the point, in cells. */
-export function measurePull(point: Vector, request: SpotRequest): number {
-  const { middle, size, gaps, group } = request
-  let sumX = point.x
-  let sumY = point.y
-  for (const box of group) {
-    sumX += box.x
-    sumY += box.y
-  }
-  const count = group.length + 1
-  return Math.round(
-    Math.hypot(
-      (sumX / count - middle.x) / (size.width + gaps.gap),
-      (sumY / count - middle.y) / (size.height + gaps.lineGap),
-    ) * COST_PRECISION,
+function isBetter(
+  cost: number,
+  progress: number,
+  best: { cost: number; progress: number },
+): boolean {
+  return (
+    cost < best.cost ||
+    (cost === best.cost && roundProgress(progress) < roundProgress(best.progress))
   )
 }
 
@@ -206,40 +187,18 @@ function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
  * The free spot of least cost: the nearest to the middle, with costs rounded
  * before they are compared so floating-point error does not decide a tie. Of
  * equal costs the one nearer the start wins, which fills a group across its
- * axis before it goes deeper; of those the one that keeps the center of the
- * group nearest its middle wins, so a group grows on both sides of its axis in
- * turn; of those the earlier candidate wins.
- *
- * The lane of the group is searched first, and in it a spot whose lines are
- * clear before one whose lines are not. The rest of the window is searched
- * only when the lane has no free spot.
+ * axis before it goes deeper; of those the earlier candidate wins.
  */
 export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
-  return findSpotWithin(index, request) ?? findSpotBeyond(index, request)
-}
-
-/** The spot of `findFreeSpot`, or nothing when the window and the territory of the group hold no free spot. */
-export function findSpotWithin(index: SpotIndex, request: SpotRequest): Spot | undefined {
-  const inLane = request.isInLane ? [request] : []
-  const tiers = [...inLane, { ...request, isInLane: undefined }]
-  const plains: Spot[] = []
-  for (const tier of tiers) {
-    const plain = searchSpot(index, tier)
-    if (!plain) continue
-    if (!tier.isLineClear || tier.isLineClear(plain)) return plain
-    const clear =
-      searchSpot(index, tier, { left: NEAR_LINE_CHECKS }) ??
-      findClearSpotWide(index, tier, { left: WIDE_LINE_CHECKS })
-    if (clear) return clear
-    plains.push(plain)
+  const plain = searchSpot(index, request) ?? findSpotBeyond(index, request)
+  if (!request.isLineClear || request.isLineClear(plain)) return plain
+  const clear =
+    searchSpot(index, request, { left: NEAR_LINE_CHECKS }) ??
+    findClearSpotWide(index, request, { left: WIDE_LINE_CHECKS })
+  if (clear && measureCost(clear, request) <= measureCost(plain, request) + MAX_LINE_DETOUR) {
+    return clear
   }
-  return plains[0]
-}
-
-function isAllowed(spot: Spot, request: SpotRequest): boolean {
-  return (
-    (!request.fits || request.fits(spot)) && (!request.isInTerritory || request.isInTerritory(spot))
-  )
+  return plain
 }
 
 function searchSpot(
@@ -252,18 +211,15 @@ function searchSpot(
     !budget || !request.isLineClear || (budget.left-- > 0 && request.isLineClear(spot))
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
-  const found: { best?: Rank & { point: Vector } } = {}
+  const found: { best?: { point: Vector; cost: number; progress: number } } = {}
   const consider = (point: Vector, minProgress: number) => {
     const progress = measureProgress(point, request)
     if (progress < minProgress) return
-    if (request.isInLane && !request.isInLane(point)) return
     const cost = Math.round(measureCost(point, request) * COST_PRECISION)
-    const rank = { cost, progress, pull: measurePull(point, request) }
-    if (found.best && !isBetter(rank, found.best)) return
-    if (!isAllowed(toSpot(point), request)) return
-    if (index.isFree(toSpot(point), gaps) && isLineOk(toSpot(point))) {
-      found.best = { point, ...rank }
-    }
+    if (found.best && !isBetter(cost, progress, found.best)) return
+    if (request.fits && !request.fits(toSpot(point))) return
+    if (index.isFree(toSpot(point), gaps) && isLineOk(toSpot(point)))
+      found.best = { point, cost, progress }
   }
   const considerAll = (points: readonly Vector[], minProgress: number) =>
     points.forEach((point) => consider(point, minProgress))
@@ -297,16 +253,10 @@ function listWideSpots(request: SpotRequest): Spot[] {
         y: middle.y + direction.y * step * stride + direction.x * offset * cell.height,
         ...size,
       }
-      const isOwn = !request.isInLane || request.isInLane(spot)
-      const isAllowed = !request.isInTerritory || request.isInTerritory(spot)
-      if (isOwn && isAllowed && measureProgress(spot, request) >= -TOLERANCE) spots.push(spot)
+      if (measureProgress(spot, request) >= -TOLERANCE) spots.push(spot)
     }
   }
-  return spots.sort(
-    (first, second) =>
-      measureCost(first, request) - measureCost(second, request) ||
-      measurePull(first, request) - measurePull(second, request),
-  )
+  return spots.sort((first, second) => measureCost(first, request) - measureCost(second, request))
 }
 
 function findClearSpotWide(
@@ -408,8 +358,7 @@ function findFreeSpotOutward(index: SpotIndex, request: SpotRequest): Spot | und
         y: middle.y + direction.y * step * stride + direction.x * offset * cell.height,
         ...size,
       }
-      if (!isAllowed(spot, request)) continue
-      if (request.isInLane && !request.isInLane(spot)) continue
+      if (request.fits && !request.fits(spot)) continue
       if (!index.isFree(spot, gaps) || measureProgress(spot, request) < -TOLERANCE) continue
       return spot
     }

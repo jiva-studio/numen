@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { clusters, getClusterDirection } from './clusters'
 import { DEFAULT_OPTIONS } from '../options'
 import { NO_ROOM } from './placement'
-import { RELATION_NAMES } from '../../relation'
+import { RELATION_NAMES, RELATIONS } from '../../relation'
 import type { PlacedNode } from '../../node'
 import type { PlexNode } from '../../../../types'
 
@@ -31,7 +31,10 @@ describe('a group of notes of different widths', () => {
         relation,
       }))
       const width = (note: PlexNode) => WIDTHS[note.title]!
-      const direction = getClusterDirection(DEFAULT_OPTIONS.direction[relation], null)
+      const direction = getClusterDirection(
+        DEFAULT_OPTIONS.direction[relation],
+        RELATIONS[relation].lean,
+      )
       const along = (box: PlacedNode) => box.x * direction.x + box.y * direction.y
 
       const alone = clusters.place({ [relation]: notes.slice(0, 1) }, focus, {

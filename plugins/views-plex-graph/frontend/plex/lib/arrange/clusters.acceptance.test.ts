@@ -132,19 +132,11 @@ describe('each relation is placed on its own side of the focus', () => {
   it.each([
     ['typical', graphs.typical],
     ['eight, twenty, eight and eight', full],
-  ])('centers the jumps on the row of the focus in %s', (_name, graph) => {
+  ])('leans the jumps down in %s', (_name, graph) => {
     const frame = arrange(graph, inWindow(window))
-    const { nodeSize, lineGap } = DEFAULT_OPTIONS
-    expect(
-      Math.abs(mean(getShownNodes(frame, 'jump').map((node) => node.y)) - getFocus(frame).y),
-    ).toBeLessThan(nodeSize.height + lineGap)
-  })
-
-  it('leans the jumps down and the references up where they share the left side', () => {
-    const frame = arrange(build('A note', { jump: 6, reference: 6 }), inWindow(window))
-    const focusY = getFocus(frame).y
-    expect(mean(getShownNodes(frame, 'jump').map((node) => node.y))).toBeGreaterThan(focusY)
-    expect(mean(getShownNodes(frame, 'reference').map((node) => node.y))).toBeLessThan(focusY)
+    expect(mean(getShownNodes(frame, 'jump').map((node) => node.y))).toBeGreaterThan(
+      getFocus(frame).y,
+    )
   })
 })
 
@@ -152,8 +144,8 @@ describe('a group is never nearer the focus than its start', () => {
   const DIRECTIONS: Record<PlexRelation, readonly [number, number]> = {
     parent: [0, -1],
     child: [0, 1],
-    jump: [-1, 0],
-    reference: [-1, 0],
+    jump: [-1 / Math.hypot(1, 0.42), 0.42 / Math.hypot(1, 0.42)],
+    reference: [-1 / Math.hypot(1, 0.42), -0.42 / Math.hypot(1, 0.42)],
     sibling: [1, 0],
   }
   const along = (node: PlacedNode, [dx, dy]: readonly [number, number]) => node.x * dx + node.y * dy
@@ -209,18 +201,13 @@ describe('a larger group is placed further out', () => {
 })
 
 describe('groups take turns', () => {
-  it('places the parent as if alone and the jump and the sibling beyond the children', () => {
+  it('leaves the first note of another group where it would be alone, however many children there are', () => {
     const crowd = arrange(build('A note', { child: 20, jump: 1, sibling: 1, parent: 1 }))
     const alone = arrange(build('A note', { jump: 1, sibling: 1, parent: 1 }))
-    const parent = crowd.nodes.find((node) => node.id === 'focus/parent-0')!
-    const parentAlone = alone.nodes.find((node) => node.id === 'focus/parent-0')!
-    expect([parent.x, parent.y]).toStrictEqual([parentAlone.x, parentAlone.y])
-
-    const children = getShownNodes(crowd, 'child')
-    const reach = Math.max(...children.map((node) => Math.abs(node.x) + node.width / 2))
-    for (const id of ['focus/jump-0', 'focus/sibling-0']) {
+    for (const id of ['focus/parent-0', 'focus/jump-0', 'focus/sibling-0']) {
       const one = crowd.nodes.find((node) => node.id === id)!
-      expect(Math.abs(one.x) - one.width / 2, id).toBeGreaterThanOrEqual(reach)
+      const other = alone.nodes.find((node) => node.id === id)!
+      expect([id, one.x, one.y]).toStrictEqual([id, other.x, other.y])
     }
   })
 })
@@ -319,7 +306,7 @@ describe('what is left out is counted, and only the last notes go', () => {
 
 describe('boxes narrow and gaps close before a note is left out', () => {
   const graph = build('A note', { parent: 4, child: 12, jump: 4, sibling: 4 })
-  const windows = [940, 900, 860].map((width) => ({ width, height: 1000 }))
+  const windows = [600, 560, 540].map((width) => ({ width, height: 1000 }))
 
   const createHolder = (viewport: Window) => (packed: PlexOptions) => {
     const frame = arrangePlex(graph, { options: { ...packed, viewport: undefined } })
