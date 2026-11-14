@@ -86,8 +86,12 @@ func newCommands(launcher *launch.Launcher) (*command.Registry, error) {
 
 func newRecognizeCommand(launcher *launch.Launcher) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		if err := launcher.StartFile(ctx, req.Path); err != nil {
+		state, err := launcher.StartFile(ctx, req.Path)
+		if err != nil {
 			return command.Result{}, err
+		}
+		if state == launch.StateSkipped {
+			return command.Result{Message: "skipped " + req.Path + ": it has text of its own", OpenedPath: ""}, nil
 		}
 		return command.Result{Message: "recognizing " + req.Path, OpenedPath: ""}, nil
 	}

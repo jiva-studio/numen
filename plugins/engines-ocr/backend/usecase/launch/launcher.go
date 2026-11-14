@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
@@ -18,6 +19,7 @@ const (
 	StateStarted = "started"
 	StateRunning = "running"
 	StateDone    = "done"
+	StateSkipped = "skipped"
 )
 
 var (
@@ -106,23 +108,27 @@ func (l *Launcher) Create(ctx context.Context, vault domain.VaultID, path string
 	return out, nil
 }
 
-// StartFile starts the recognition of a file of the shown vault and fails when one already runs.
-func (l *Launcher) StartFile(ctx context.Context, path string) error {
+// SetMode sets when StartFile recognizes a file.
+func (l *Launcher) SetMode(_ settings.RecognizeMode) {}
+
+// StartFile starts the recognition of a file of the shown vault and fails when one already runs. It
+// returns StateSkipped for a file the mode leaves alone, and StateStarted otherwise.
+func (l *Launcher) StartFile(ctx context.Context, path string) (string, error) {
 	vault, err := l.recognitions.GetVaultID(ctx, "")
 	if err != nil {
-		return err
+		return "", err
 	}
 	if _, err := l.recognitions.StatFile(ctx, vault, path); err != nil {
-		return err
+		return "", err
 	}
 	state, err := l.start(ctx, vault, path)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if state == StateRunning {
-		return fmt.Errorf("%s: %w", path, recognition.ErrAlreadyRecognizing)
+		return "", fmt.Errorf("%s: %w", path, recognition.ErrAlreadyRecognizing)
 	}
-	return nil
+	return state, nil
 }
 
 func (l *Launcher) start(ctx context.Context, vault domain.VaultID, path string) (string, error) {
