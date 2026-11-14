@@ -54,10 +54,10 @@ expect() {
 
 cli vault add "$work/vault" --name talks >/dev/null
 expect "numen-cli app:file.createText <vault> <file>" help
-expect "transcribing talks/lecture.wav" app:file.createText talks talks/lecture.wav
+expect "transcribing talks/lecture.wav" app:file.createText talks talks/lecture.wav --plugin md.numen.engines.transcription
 expect "recognizing books/flywheel.pdf" app:file.createText talks books/flywheel.pdf --plugin md.numen.engines.ocr
 expect "http---numen.dev-.md" link.import talks --address http://numen.dev/
-expect "Fetching the text of http---numen.dev-.md" app:file.createText talks http---numen.dev-.md
+expect "Fetching the text of http---numen.dev-.md" app:file.createText talks http---numen.dev-.md --plugin md.numen.tools.media.importer
 expect "proofread 1 lines of talks/lecture.wav" proofreading.create talks talks/lecture.wav
 expect "3 sources: 3 read" scan talks
 expect "Mock transcribed text for automated test." search talks "transcribed text"

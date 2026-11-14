@@ -62,11 +62,12 @@ func (r *PassRunner) build(ctx context.Context, v domain.Vault, rebuild bool) *r
 	// A version being made and a vault being scanned are then never two passes
 	// over the index at once.
 	indexed := r.newSession()
-	r.reporter.listenVersions(indexed)
+	triggerPasses := newTriggerPasses()
+	r.reporter.listenVersions(indexed, triggerPasses)
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
-	started, ended := r.startIndexing(watching, v, rebuild, indexed)
+	started, ended := r.startIndexing(watching, v, rebuild, indexed, triggerPasses)
 	if started.Publish != nil {
 		started.Publish()
 	}
@@ -74,7 +75,7 @@ func (r *PassRunner) build(ctx context.Context, v domain.Vault, rebuild bool) *r
 }
 
 func (r *PassRunner) startIndexing(
-	ctx context.Context, v domain.Vault, rebuild bool, indexed IndexSession,
+	ctx context.Context, v domain.Vault, rebuild bool, indexed IndexSession, triggerPasses *triggerPasses,
 ) (Started, func()) {
 	// The task is reported before the goroutine starts, so a window opened on a new
 	// vault shows the walk from the start.
@@ -82,7 +83,6 @@ func (r *PassRunner) startIndexing(
 
 	var running sync.WaitGroup
 
-	triggerPasses := newTriggerPasses()
 	started := r.passes.Start(ctx, v, rebuild, Reporters{
 		Changed: r.reporter.newChangeReporter(triggerPasses, func(paths []string) { r.reporter.checkTexts(ctx, v, paths) }),
 		Failed:  r.reportFailure,
@@ -124,7 +124,7 @@ func (r *PassRunner) reportFailure(err error) {
 // ChangeReporting tells the window, the index and the text versions what the passes behind a vault
 // found changed. ChangeReporter is its implementation.
 type ChangeReporting interface {
-	listenVersions(indexed IndexSession)
+	listenVersions(indexed IndexSession, triggers *triggerPasses)
 	checkTexts(ctx context.Context, v domain.Vault, paths []string)
 	newChangeReporter(triggers *triggerPasses, checkTexts func(paths []string)) func(paths, assets []string, reload bool)
 }

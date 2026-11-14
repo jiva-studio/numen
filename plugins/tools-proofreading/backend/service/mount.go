@@ -1,5 +1,5 @@
 // Package service is the backend of the proofreading plugin: it builds the host clients and the
-// model adapter, and registers the proofread command and the settings with the plugin server.
+// model adapter, and registers the proofread commands and the settings with the plugin server.
 package service
 
 import (
@@ -98,6 +98,9 @@ func newProofreading(h proofread.Host, complete model.Completer, current *settin
 func newCommands(run *proofread.Proofreading) (*command.Registry, error) {
 	commands := command.New()
 	if err := commands.Add("proofreading.create", newProofreadCommand(run)); err != nil {
+		return nil, err
+	}
+	if err := commands.Add(command.CreateText, newProofreadCommand(run)); err != nil {
 		return nil, err
 	}
 	return commands, nil

@@ -219,3 +219,43 @@ func TestAMistakeInTheRequestEndsTheProofreadingWithTheConnectionThatFoundIt(t *
 		t.Fatalf("got %v, want a rejection by OpenRouter", err)
 	}
 }
+
+func TestTheCreateTextHandlerProofreadsTheLiveVersion(t *testing.T) {
+	s := newScene(t)
+	s.holdScan(t)
+	s.script = func(text string) string {
+		return getRows(text, func(line string) string { return strings.ReplaceAll(line, "vacum", "vacuum") })
+	}
+	commands, err := newCommands(s.run)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := commands.RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: scanPath}); err != nil {
+		t.Fatal(err)
+	}
+
+	parts, live := s.readLiveSegments(t)
+	if live.PluginID != PluginID || !strings.Contains(parts[1].Text, "vacuum") {
+		t.Errorf("the live version is %+v with %q", live, parts[1].Text)
+	}
+}
+
+func TestTheCreateTextHandlerWithNoConnectionFailsAsTheCommandDoes(t *testing.T) {
+	s := newScene(t)
+	s.holdScan(t)
+	s.run = newProofreading(s.host, failWith(connection.ErrNoConnection), s.settings)
+	commands, err := newCommands(s.run)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = commands.RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: scanPath})
+
+	if !errors.Is(err, model.ErrNoConnection) {
+		t.Fatalf("got %v, want %v", err, model.ErrNoConnection)
+	}
+	if _, live := s.readLiveSegments(t); live.PluginID != ocrID {
+		t.Errorf("the live version is %+v", live)
+	}
+}

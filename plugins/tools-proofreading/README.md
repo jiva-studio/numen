@@ -11,6 +11,7 @@ Cleans up spelling, punctuation, and recognition errors in audio transcripts and
 
 ## Settings
 
+- **Proofread automatically**: When on, every transcript and recognized text that has no proofread version is proofread without a request, including the ones you already have when you turn it on (off by default). It uses the connections below; with none, it fails as proofreading from the menu does.
 - **Connections**: Up to five connections that check the text, tried in order. Add a connection on the Connections page, then choose it here with a model. When one cannot answer, for example because its key was rejected or it ran out of credit, the next one is used. With no connection, proofreading is off.
 - **Batch size**: How many lines are proofread together at once (`40` by default).
 - **Overlap**: Extra surrounding lines included for context between batches (`4` by default).

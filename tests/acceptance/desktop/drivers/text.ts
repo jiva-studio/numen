@@ -57,6 +57,13 @@ export class TextDriver {
       .toBe(true)
   }
 
+  async expectNoVersion(filePath: string, kind: TextKind): Promise<void> {
+    const { request } = this.scenario.page
+    await expect
+      .poll(async () => (await listVersions(request, filePath)).some((one) => one.title.startsWith(getVersionTitle(kind))))
+      .toBe(false)
+  }
+
   async deleteVersion(filePath: string, kind: TextKind): Promise<void> {
     await this.tab.showFile(filePath)
     await this.application.runCommand(DELETE_TEXT)

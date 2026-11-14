@@ -57,3 +57,7 @@ Given('the transcribed recording {string}', async ({ person }, filePath: string)
   await person.vault.addFiles(DEFAULT_VAULT, [['path', 'sample'], [filePath, path.posix.basename(filePath)]])
   await person.text.transcribe(filePath)
 })
+
+Then('there is no {text} of the file at {string}', async ({ person }, kind: TextKind, filePath: string) => {
+  await person.text.expectNoVersion(filePath, kind)
+})
