@@ -229,7 +229,7 @@ func getClaimedPorts(file *ast.File) []string {
 func TestPortClaimRule_RejectsPortClaims(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "claim.go", `package p
 
-var _ port.Agent = (*Agent)(nil)
+var _ port.Indexer = (*Indexer)(nil)
 
 var _, _ port.Trash = (*Bin)(nil), (*Bin)(nil)
 
@@ -237,14 +237,14 @@ var clockPort port.Clock
 
 func mount() {
 	var _ port.Recording = (*sound)(nil)
-	var agentPort port.Agent
-	_, _ = clockPort, agentPort
+	var indexPort port.Indexer
+	_, _ = clockPort, indexPort
 }
 `, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"Agent", "Trash", "Recording"}
+	want := []string{"Indexer", "Trash", "Recording"}
 	if got := getClaimedPorts(file); !slices.Equal(got, want) {
 		t.Errorf("the rule rejects %v, want %v", got, want)
 	}

@@ -21,13 +21,6 @@ export interface BackgroundTaskAllowed {
   readonly retry: boolean
 }
 
-// BackgroundTaskAction is the settings link of a failed task of a plugin; both fields are empty where
-// the task has none.
-export interface BackgroundTaskAction {
-  readonly label: string
-  readonly pluginId: string
-}
-
 // BackgroundTask is one piece of work the window lists.
 export interface BackgroundTask {
   readonly id: string
@@ -37,7 +30,7 @@ export interface BackgroundTask {
   readonly progress: BackgroundTaskProgress
   readonly error: string
   readonly allowed: BackgroundTaskAllowed
-  readonly action: BackgroundTaskAction
+  readonly actionLabel: string
 }
 
 // BackgroundTaskHost is the background work of the window.
@@ -50,6 +43,6 @@ export interface BackgroundTaskHost {
   retry(id: string): void
   // Takes a task out of the list.
   dismiss(id: string): void
-  // Opens the settings of the plugin the action of a task names.
-  openSettings(pluginId: string): void
+  // Runs the action of the task.
+  runAction(id: string): void
 }

@@ -24,10 +24,6 @@ func createSharedCommandDeps() (stubSession, *pluginCommands) {
 		{PluginID: "org.example.ears", Command: manifest.Command{
 			ID: "app:file.createText", Title: "Transcribe", When: "target.contentType.startsWith('audio/')",
 		}},
-		{PluginID: "org.example.links", Command: manifest.Command{
-			ID: "app:link.import", Title: "Import link",
-			Arguments: []manifest.CommandArgument{{Name: "address", Title: "Web address", Type: "string", IsRequired: true}},
-		}},
 	}}
 	commands := newScenarios(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
@@ -94,21 +90,6 @@ func TestSharedCommand_FileWithoutHandlerRunsNothing(t *testing.T) {
 	}
 }
 
-func TestSharedCommand_DeclaredArgumentsAreFlags(t *testing.T) {
-	deps, declared := createSharedCommandDeps()
-
-	if _, err := runWithDeps(deps, "app:link.import", "notebook", "--address", "https://example.com/tides"); err != nil {
-		t.Fatal(err)
-	}
-	if len(declared.calls) != 1 || declared.calls[0].PluginID != "org.example.links" ||
-		declared.calls[0].Arguments["address"] != "https://example.com/tides" {
-		t.Errorf("the plugins were sent %+v", declared.calls)
-	}
-	if _, err := runWithDeps(deps, "app:link.import", "notebook"); err == nil {
-		t.Error("app:link.import without an address ran")
-	}
-}
-
 func TestTheHelpListsTheSharedCommandsAndTheirHandlers(t *testing.T) {
 	deps, _ := createSharedCommandDeps()
 
@@ -121,7 +102,6 @@ func TestTheHelpListsTheSharedCommandsAndTheirHandlers(t *testing.T) {
 		"numen-cli app:file.createText <vault> <file> [--plugin <id>]",
 		"Extract text layer (org.example.layers)",
 		"Transcribe (org.example.ears)",
-		"numen-cli app:link.import <vault> --address <string> [--plugin <id>]",
 	} {
 		if !strings.Contains(out, line) {
 			t.Errorf("the help does not say %q:\n%s", line, out)

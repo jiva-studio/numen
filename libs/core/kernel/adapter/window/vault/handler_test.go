@@ -1,7 +1,6 @@
 package vault
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -24,7 +23,7 @@ type showing struct {
 	changes broadcast.Broadcaster[window.Change]
 }
 
-func (s *showing) GetVaultState(context.Context) (window.VaultState, error) { return s.state, nil }
+func (s *showing) GetVaultState() window.VaultState { return s.state }
 
 func (s *showing) SubscribeChanges() (<-chan window.Change, func()) { return s.changes.Subscribe() }
 
@@ -39,13 +38,10 @@ func serve(t *testing.T, current *showing) numenv1connect.VaultServiceClient {
 
 func TestTheVaultStateAnswersWhatTheWindowKnows(t *testing.T) {
 	client := serve(t, &showing{state: window.VaultState{
-		Vault:         domain.Vault{ID: "v-heron", Name: "Herons", Path: "/vaults/herons"},
-		IsReady:       true,
-		Error:         "the index is locked",
-		WatchError:    "the watch stopped",
-		IsEmbedding:   true,
-		ChunkCount:    40,
-		EmbeddedCount: 12,
+		Vault:      domain.Vault{ID: "v-heron", Name: "Herons", Path: "/vaults/herons"},
+		IsReady:    true,
+		Error:      "the index is locked",
+		WatchError: "the watch stopped",
 	}})
 
 	out, err := client.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
@@ -59,10 +55,6 @@ func TestTheVaultStateAnswersWhatTheWindowKnows(t *testing.T) {
 	scan := got.GetScan()
 	if !scan.GetIsReady() || scan.GetError() != "the index is locked" || scan.GetWatchError() != "the watch stopped" {
 		t.Errorf("the scan is %v", scan)
-	}
-	coverage := got.GetCoverage()
-	if !coverage.GetIsEmbedding() || coverage.GetChunkCount() != 40 || coverage.GetEmbeddedCount() != 12 {
-		t.Errorf("the coverage is %v", coverage)
 	}
 }
 

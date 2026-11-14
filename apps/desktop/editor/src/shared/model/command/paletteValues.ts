@@ -2,7 +2,12 @@
  * The when values of the palette. Its target is what is in front: the note in front, or else the file
  * in front or chosen as a result; there is none while the vault does not accept operations.
  */
-import { getWhenValues, type WhenSettings, type WhenValues } from '@numen/plugin-loader'
+import {
+  getWhenValues,
+  type JsonObject,
+  type WhenSettings,
+  type WhenValues,
+} from '@numen/plugin-loader'
 
 /** What the palette knows of what is in front, as its command target holds it. */
 interface PaletteInFront {
@@ -14,11 +19,18 @@ interface PaletteInFront {
   readonly isReady: boolean
 }
 
+/** The type and properties of the note in front, where the palette has read them. */
+interface PaletteNote {
+  readonly type?: string
+  readonly properties?: JsonObject
+}
+
 /** The when values of the palette over what is in front. */
 export function getPaletteValues(
   target: PaletteInFront,
   contentTypes: Readonly<Record<string, string>>,
   config: WhenSettings = {},
+  note: PaletteNote = {},
 ): WhenValues {
   const path = target.path || target.file
   const inFront =
@@ -32,6 +44,7 @@ export function getPaletteValues(
       'window.isTabOpen': target.tab !== '',
     },
     target: inFront,
+    note,
     contentTypes,
     config,
   })

@@ -1,5 +1,5 @@
 /**
- * Plausible titles for an invented neighborhood.
+ * Plausible titles for an invented graph.
  *
  * Chosen from the identifier and not at random, so a layout is repeatable and a
  * screenshot of it is comparable. Realistic names matter here: a plex of
@@ -81,7 +81,7 @@ function hash(text: string): number {
 
 /**
  * A name for the `index`-th node invented around `stem`. Stepping the index
- * keeps a neighborhood free of repeats until it outgrows the pool.
+ * keeps a graph free of repeats until it outgrows the pool.
  */
 export const createName = (stem: string, index: number): string =>
   NAMES[(hash(stem) + index) % NAMES.length]!

@@ -11,8 +11,8 @@ import (
 
 // pluginActivator starts a plugin and counts the callers that hold it.
 type pluginActivator interface {
-	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
-	Release(pluginID string)
+	EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error)
+	Release(pluginID, token string, holder plugindomain.Holder)
 }
 
 // listenerRefresher syncs the listeners of a plugin with its settings.
@@ -54,9 +54,10 @@ func (r *Retry) RetryPlugin(ctx context.Context, pluginID string) (*plugindomain
 	r.failures.ForgetTargetReport(pluginID)
 	defer r.listeners.RefreshListeners(ctx, pluginID)
 
-	_, err := r.activator.EnsureActive(ctx, pluginID)
+	holder := plugindomain.GetHolder(ctx, "start again after a failure")
+	endpoint, err := r.activator.EnsureActive(ctx, pluginID, holder)
 	if err == nil {
-		r.activator.Release(pluginID)
+		r.activator.Release(pluginID, endpoint.Token, holder)
 		return nil, nil
 	}
 	var unavailable *plugindomain.UnavailableError

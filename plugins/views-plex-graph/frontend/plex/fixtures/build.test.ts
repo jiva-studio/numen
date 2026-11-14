@@ -1,6 +1,6 @@
 /**
  * The fixture generator, which plays the application's part in the stories.
- * A walk through it has to keep producing neighborhoods a plex will accept.
+ * A walk through it has to keep producing graphs a plex will accept.
  */
 import { describe, expect, it } from 'vitest'
 import { build, buildAround, type TitledNode } from './build'
@@ -45,6 +45,18 @@ describe('walking', () => {
     const builtNode = build('A node', COUNTS)
     for (const node of builtNode.nodes) {
       expect(node.title).not.toMatch(/^(Parent|Child|Jump|Sibling) \d+$/)
+    }
+  })
+})
+
+describe('references', () => {
+  it('builds the requested number of reference nodes, each with a line to or from the focus', () => {
+    const graph = build('A node', { child: 2, reference: 3 })
+    const references = graph.nodes.filter((node) => node.relation === 'reference')
+
+    expect(references).toHaveLength(3)
+    for (const node of references) {
+      expect(graph.edges.some((edge) => edge.from === node.id || edge.to === node.id)).toBe(true)
     }
   })
 })

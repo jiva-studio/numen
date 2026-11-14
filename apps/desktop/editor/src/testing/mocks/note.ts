@@ -12,7 +12,7 @@ export const noteAnswers = {
     getOpeningNote: () => ({
       ...(mockVaultState.opening ? { note: { path: mockVaultState.opening, title: '' } } : {}),
     }),
-    getNeighborhood: (request) => ({
+    listRelatedNotes: (request) => ({
       focus: { path: request.path, title: request.path.replace(/\.md$/, '') },
       focusType: 'note',
       related: [],

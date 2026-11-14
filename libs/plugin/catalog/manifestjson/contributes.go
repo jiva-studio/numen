@@ -16,11 +16,16 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 	for _, one := range wire.GetTabKinds() {
 		kinds = append(kinds, manifest.TabKind{
 			Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon(), When: one.GetWhen(), Rank: newTabKindRank(one.GetRank()),
+			IsNoteEditor: one.GetIsNoteEditor(),
 		})
 	}
 	var themes []manifest.Theme
 	for _, one := range wire.GetThemes() {
 		themes = append(themes, manifest.Theme{ID: one.GetId(), Name: one.GetName(), Appearance: one.GetAppearance(), File: one.GetFile()})
+	}
+	connectionTypes, err := newConnectionTypes(wire.GetConnectionTypes())
+	if err != nil {
+		return manifest.Contributes{}, err
 	}
 	noteTypes, err := newNoteTypes(wire.GetNoteTypes())
 	if err != nil {
@@ -44,6 +49,8 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 
 		ViewCapabilities: wire.GetViewCapabilities(),
 		DropHandlers:     newDropHandlers(wire.GetDropHandlers()),
+		ConnectionTypes:  connectionTypes,
+		Operations:       newOperations(wire.GetOperations()),
 	}, nil
 }
 
@@ -187,6 +194,14 @@ func newListeners(wire []*v1.ManifestListener) []manifest.Listener {
 			PortSetting: one.GetPortSetting(),
 			Protocol:    one.GetProtocol(),
 		})
+	}
+	return out
+}
+
+func newOperations(wire []*v1.ManifestOperation) []manifest.Operation {
+	var out []manifest.Operation
+	for _, one := range wire {
+		out = append(out, manifest.Operation{Name: one.GetName(), Title: one.GetTitle()})
 	}
 	return out
 }

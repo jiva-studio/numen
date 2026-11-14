@@ -1,5 +1,5 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { INTERFACE_WAIT_MS } from '@numen/plugin-loader'
+import { waitWithinInterfaceLimit } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
 import { listPlugins } from '@/entities/plugin'
 import { formatError, type Caught } from '@/shared/api/errors'
@@ -11,6 +11,7 @@ export interface PluginStarter {
   readonly close: () => Promise<void>
   readonly status: {
     readonly waitForInterface: () => Promise<void>
+    readonly startPlugin: (id: string) => Promise<void>
     readonly getFailedPlugins: () => readonly { readonly id: string; readonly error: string }[]
   }
 }
@@ -24,19 +25,24 @@ export function useAppStart(loader: PluginStarter) {
   const isLoading = ref(true)
   const isStarted = ref(false)
   const listError = ref('')
-  let startTimer: ReturnType<typeof setTimeout> | undefined
+  const unmounting = new AbortController()
 
   const onStarted = (): void => {
     isStarted.value = true
-    clearTimeout(startTimer)
   }
 
   onMounted(async () => {
-    startTimer = setTimeout(onStarted, INTERFACE_WAIT_MS)
-    runInBackground(loader.status.waitForInterface().then(onStarted), () => undefined)
+    runInBackground(
+      waitWithinInterfaceLimit(loader.status.waitForInterface(), unmounting.signal).then(onStarted),
+      () => undefined,
+    )
     try {
-      await loader.trackPlugins((await listPlugins()).map((one) => one.id))
+      const ids = (await listPlugins()).map((one) => one.id)
+      await loader.trackPlugins(ids)
       await loader.start()
+      // The window draws the tab kinds and the slot entries of the plugins it started, so it starts
+      // every plugin it lists rather than each on use.
+      await Promise.all(ids.map((id) => loader.status.startPlugin(id)))
     } catch (error) {
       listError.value = formatError(error)
     } finally {
@@ -45,7 +51,7 @@ export function useAppStart(loader: PluginStarter) {
     }
   })
   onUnmounted(() => {
-    clearTimeout(startTimer)
+    unmounting.abort()
     loader.close().catch((error: Caught) => {
       listError.value = formatError(error)
     })

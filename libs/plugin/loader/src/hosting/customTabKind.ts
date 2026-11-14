@@ -46,10 +46,11 @@ import {
   stripMarkdownExtension,
   type PluginComponentSource,
 } from './pane/pluginView'
+import { createLineReveal } from './customTabReveal'
 import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
 import { pickDeclaredParts } from './pluginTabKind'
-import { NOTE_KIND, createBufferedNoteState } from './customTabBuffer'
+import { createBufferedNoteState } from './customTabBuffer'
 
 export function createPluginPaneWrapper(
   pluginId: string,
@@ -187,7 +188,7 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
   const isLoading = ref(false)
   let currentPath = targetPath
   let hasEdited = false
-  let editor: EditorHandle | null = null
+  const lines = createLineReveal(() => !isLoading.value)
   let write = createNoteWriter(targetPath, deps.hostDeps?.writeNote, errorMessageRef)
 
   const readAt = (pathToRead: string): void => {
@@ -214,9 +215,10 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
     isLoading,
     body: computed(() => noteRef.value.body),
     attachEditor: (attached: EditorHandle | null): void => {
-      editor = attached
+      lines.attach(attached)
     },
-    measure: (): void => editor?.measure?.(),
+    revealLine: lines.reveal,
+    measure: lines.measure,
     updateBody: (body: string) => {
       hasEdited = true
       noteRef.value = { path: currentPath, body }
@@ -273,11 +275,13 @@ function notifyCustomTabShown(
   if (state.path) deps.getWorkspace()?.files.syncPath(id, state.path, state.title)
 }
 
+/** isNoteEditor marks a kind the manifest declares as the editor of the text of a note: its tabs hold the note in the store of open notes. */
 export function createCustomTabKind(
   pluginId: string,
   registration: TabKindRegistration,
   deps?: PluginHostDeps & {
     readonly getContext?: (() => PluginContext | undefined) | undefined
+    readonly isNoteEditor?: boolean
   },
 ): AnyTabKind {
   const declared = pickDeclaredParts(registration)
@@ -299,7 +303,7 @@ export function createCustomTabKind(
     kind: registration.kind,
     pluginId,
     open: (targetPath, id) => {
-      const buffer = registration.kind === NOTE_KIND ? deps?.getNoteBuffer?.() : undefined
+      const buffer = deps?.isNoteEditor ? deps.getNoteBuffer?.() : undefined
       if (!buffer)
         return createCustomTabState(targetPath, { pluginId, registration, hostDeps: deps })
       return createBufferedNoteState(

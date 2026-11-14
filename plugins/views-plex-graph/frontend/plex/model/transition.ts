@@ -1,10 +1,10 @@
-/** A frame moving towards each new neighborhood. */
+/** A frame moving towards each new graph. */
 import { onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue'
 import { arrangePlex, easeOut, interpolatePlex } from '../lib/arrange'
 import type { ArrangeInput } from '../lib/arrange'
 import type { PlexFrame } from '../lib/frame'
 import { browserClock, type Clock } from '@numen/ui'
-import type { PlexNeighborhood } from '../../types'
+import type { PlexGraph } from '../../types'
 
 export { browserClock, type Clock }
 
@@ -19,16 +19,16 @@ export interface PlexTransitionOptions {
 }
 
 /**
- * Hold a frame that moves towards each new neighborhood. One arriving
+ * Hold a frame that moves towards each new graph. One arriving
  * mid-movement re-aims from wherever the plex has got to.
  */
 export function usePlexTransition(
-  neighborhood: () => PlexNeighborhood,
+  graph: () => PlexGraph,
   input: () => ArrangeInput | undefined,
   options: PlexTransitionOptions,
 ): PlexTransition {
   const { duration, clock = browserClock } = options
-  const target = () => arrangePlex(neighborhood(), input())
+  const target = () => arrangePlex(graph(), input())
 
   const frame = shallowRef<PlexFrame>(target())
   const isMoving = ref(false)
@@ -68,11 +68,8 @@ export function usePlexTransition(
     })
   }
 
-  watch(
-    () => neighborhood(),
-    () => run(target()),
-  )
-  watchInputChanges(input, () => run(target()))
+  // One watcher for the graph and the input, so a change of both in one tick arranges once.
+  watch([() => graph(), ...getInputSources(input)], () => run(target()))
   onScopeDispose(stop)
 
   return { frame, isMoving }
@@ -113,27 +110,27 @@ function startTransition(context: StepContext): number {
   return context.clock.schedule(step)
 }
 
-function watchInputChanges(input: () => ArrangeInput | undefined, onChange: () => void): void {
-  watch(
-    [
-      () => input()?.placement,
-      () => input()?.options?.viewport?.width,
-      () => input()?.options?.viewport?.height,
-      () => input()?.options?.margin,
-      () => input()?.options?.maxPerLine,
-      () => input()?.options?.maxLines,
-      () => input()?.options?.minWidth,
-      () => input()?.options?.gap,
-      () => input()?.options?.lineGap,
-      () => input()?.options?.focusGap,
-      () => input()?.options?.nodeSize?.width,
-      () => input()?.options?.nodeSize?.height,
-      () => input()?.options?.focusSize?.width,
-      () => input()?.options?.focusSize?.height,
-      () => input()?.measure,
-      () => input()?.measureLabel,
-      () => input()?.labelType,
-    ],
-    onChange,
-  )
+function getInputSources(input: () => ArrangeInput | undefined) {
+  return [
+    () => input()?.placement,
+    () => input()?.options?.viewport?.width,
+    () => input()?.options?.viewport?.height,
+    () => input()?.options?.margin,
+    () => input()?.options?.maxPerCluster,
+    () => input()?.options?.minWidth,
+    () => input()?.options?.gap,
+    () => input()?.options?.lineGap,
+    () => input()?.options?.focusGap,
+    () => input()?.options?.room,
+    () => input()?.options?.focusScale,
+    () => input()?.options?.routing?.curvature,
+    () => input()?.options?.nodeSize?.width,
+    () => input()?.options?.nodeSize?.height,
+    () => input()?.options?.focusSize?.width,
+    () => input()?.options?.focusSize?.height,
+    () => input()?.measure,
+    () => input()?.measureLabel,
+    () => input()?.labelType,
+    () => input()?.room,
+  ]
 }

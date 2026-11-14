@@ -3,20 +3,19 @@
  */
 import { createClient, type Client, type Transport } from '@connectrpc/connect'
 import {
-  AgentService,
-  CAPABILITY_AGENT_PROVIDER,
   CommandErrorCode,
   CommandService,
   ErrorCode as ProtoErrorCode,
   FileService,
   FlushResult,
+  LinkDirection,
   Marker,
   Mode,
   NameSource,
   NoteService,
   Origin,
+  PluginHealthService,
   PluginService,
-  Presence,
   Relation,
   Role,
   SearchMode,
@@ -34,28 +33,30 @@ import {
   WindowService,
   WorkspaceService,
 } from '@numen/protocol'
-import { keepaliveTransport, transport } from './transport'
+import { createCallerTransport, keepaliveTransport, transport } from './transport'
 
-export const createVaultClient = (customTransport: Transport = transport) =>
+const editorTransport = createCallerTransport('editor')
+
+export const createVaultClient = (customTransport: Transport = editorTransport) =>
   createClient(VaultService, customTransport)
-export const getNoteClient = (customTransport: Transport = transport) =>
+export const getNoteClient = (customTransport: Transport = editorTransport) =>
   createClient(NoteService, customTransport)
 
 export const vault = createVaultClient()
-export const agentService = createClient(AgentService, transport)
 export const workspace = createClient(WorkspaceService, transport)
 /** The workspace client for a request that must complete after the page unloads. */
 export const keepaliveWorkspace = createClient(WorkspaceService, keepaliveTransport)
-export const files = createClient(FileService, transport)
+export const files = createClient(FileService, editorTransport)
 export const notes = getNoteClient()
-export const search = createClient(SearchService, transport)
+export const search = createClient(SearchService, createCallerTransport('search'))
 export const vaultsService = createClient(VaultsService, transport)
-export const settingsService = createClient(SettingsService, transport)
+export const settingsService = createClient(SettingsService, createCallerTransport('settings'))
 export const windowService = createClient(WindowService, transport)
 export const theme = createClient(ThemeService, transport)
-export const texts = createClient(TextService, transport)
-export const pluginCommands = createClient(CommandService, transport)
-export const pluginService = createClient(PluginService, transport)
+export const texts = createClient(TextService, editorTransport)
+export const pluginCommands = createClient(CommandService, createCallerTransport('commands'))
+export const pluginService = createClient(PluginService, createCallerTransport('plugins'))
+export const pluginHealth = createClient(PluginHealthService, createCallerTransport('plugins'))
 
 export const NAME_SOURCE = NameSource
 export type NameSourceCode = NameSource
@@ -69,11 +70,11 @@ export type NoteRoleCode = Role
 export const NOTE_RELATION = Relation
 export type NoteRelationCode = Relation
 
+export const NOTE_LINK_DIRECTION = LinkDirection
+export type NoteLinkDirectionCode = LinkDirection
+
 export const FLUSH_RESULT = FlushResult
 export type FlushResultCode = FlushResult
-
-export const MODEL_PRESENCE = Presence
-export type ModelPresenceCode = Presence
 
 export const SEARCH_MODE = SearchMode
 export type SearchModeCode = SearchMode
@@ -100,8 +101,6 @@ export type ThemeOriginCode = Origin
 
 export const NOTE_ERROR_CODE = ProtoErrorCode
 export type NoteErrorCodeValue = ProtoErrorCode
-
-export const AGENT_PROVIDER_CAPABILITY = CAPABILITY_AGENT_PROVIDER
 
 /** The calls of TextService the texts are read and edited through. */
 export type TextClient = Pick<Client<typeof TextService>, 'readLiveText' | 'createTextEdit'>

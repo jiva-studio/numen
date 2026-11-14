@@ -16,7 +16,7 @@ import { installCoreHandlers } from '@numen/core-client/testing'
 import {
   createNote,
   getInitialOpenPath,
-  getNeighborhood,
+  listRelatedNotes,
   listHeadings,
   readNote,
   renameNote,
@@ -29,7 +29,7 @@ const request = {
   readNote: vi.fn(),
   writeNote: vi.fn(),
   createNote: vi.fn(),
-  getNeighborhood: vi.fn(),
+  listRelatedNotes: vi.fn(),
   getOpeningNote: vi.fn(),
   renameNote: vi.fn(),
   listHeadings: vi.fn(),
@@ -247,22 +247,60 @@ describe('the edits made to notes', () => {
   })
 })
 
-describe('a neighborhood', () => {
-  it('has its neighborhood requested of its path', async () => {
-    request.getNeighborhood.mockResolvedValue({
+describe('a noteGraph', () => {
+  it('has its noteGraph requested of its path', async () => {
+    request.listRelatedNotes.mockResolvedValue({
       focus: { path: 'a.md', title: 'A' },
       related: [],
       connections: [],
     })
 
-    const neighborhood = await getNeighborhood('a.md')
+    const noteGraph = await listRelatedNotes('a.md')
 
-    expect(neighborhood.focus.path).toBe('a.md')
-    expect(request.getNeighborhood.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md' })
+    expect(noteGraph.focus.path).toBe('a.md')
+    expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md' })
+  })
+
+  it('asks for depth 1 unless a depth is given, and for depth 2 when it is given', async () => {
+    request.listRelatedNotes.mockResolvedValue({ focus: { path: 'a.md', title: 'A' } })
+
+    await listRelatedNotes('a.md')
+    expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({
+      path: 'a.md',
+      depth: 1,
+    })
+    await listRelatedNotes('a.md', 2)
+    expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({
+      path: 'a.md',
+      depth: 2,
+    })
+  })
+
+  it('names the note an item of depth 2 belongs to, and omits it for a note related to the focus', async () => {
+    request.listRelatedNotes.mockResolvedValue({
+      focus: { path: 'Rota.md', title: 'The rota' },
+      related: [
+        {
+          note: { path: 'Plots.md', title: 'Plots' },
+          relation: NOTE_RELATION.CHILD,
+          relatedTo: '',
+        },
+        {
+          note: { path: 'Beans.md', title: 'Beans' },
+          relation: NOTE_RELATION.CHILD,
+          relatedTo: 'Plots.md',
+        },
+      ],
+    })
+
+    const noteGraph = await listRelatedNotes('Rota.md', 2)
+
+    expect(noteGraph.related.map((one) => one.relatedTo)).toEqual([undefined, 'Plots.md'])
+    expect('relatedTo' in noteGraph.related[0]!).toBe(false)
   })
 
   it('is drawn around the note in focus, with each note in the relation it holds', async () => {
-    request.getNeighborhood.mockResolvedValue({
+    request.listRelatedNotes.mockResolvedValue({
       focus: { path: 'Rota.md', title: 'The rota' },
       focusType: 'sample',
       related: [
@@ -282,14 +320,14 @@ describe('a neighborhood', () => {
       ],
     })
 
-    const neighborhood = await getNeighborhood('Rota.md')
+    const noteGraph = await listRelatedNotes('Rota.md')
 
-    expect(neighborhood.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
-    expect(neighborhood.focusType).toBe('sample')
-    expect(neighborhood.related).toEqual([
+    expect(noteGraph.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
+    expect(noteGraph.focusType).toBe('sample')
+    expect(noteGraph.related).toEqual([
       { path: 'Allotments.md', title: 'Allotments', type: 'note', relation: 'parent' },
     ])
-    expect(neighborhood.connections).toEqual([
+    expect(noteGraph.connections).toEqual([
       {
         first: 'Allotments.md',
         second: 'Rota.md',
@@ -302,7 +340,7 @@ describe('a neighborhood', () => {
   })
 
   it('leaves out a note it has no relation for, and one the answer names no note at', async () => {
-    request.getNeighborhood.mockResolvedValue({
+    request.listRelatedNotes.mockResolvedValue({
       focus: { path: 'Rota.md', title: 'The rota' },
       related: [
         { note: { path: 'Odd.md', title: 'Odd' }, relation: NOTE_RELATION.UNSPECIFIED },
@@ -310,12 +348,12 @@ describe('a neighborhood', () => {
       ],
     })
 
-    expect((await getNeighborhood('Rota.md')).related).toEqual([])
+    expect((await listRelatedNotes('Rota.md')).related).toEqual([])
   })
 
   it('relies on nothing where the vault no longer holds the note', async () => {
-    request.getNeighborhood.mockResolvedValue({ related: [] })
+    request.listRelatedNotes.mockResolvedValue({ related: [] })
 
-    expect((await getNeighborhood('Gone.md')).focus.path).toBe('')
+    expect((await listRelatedNotes('Gone.md')).focus.path).toBe('')
   })
 })

@@ -4,18 +4,21 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	manifestdomain "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // LeaseHost resolves every capability to one stub plugin and counts the references taken and given back.
+// A question lease counts among them and among the question leases.
 type LeaseHost struct {
-	Endpoint  transport.Endpoint
-	EnsureErr error
-	Acquired  atomic.Int32
-	Released  atomic.Int32
+	Endpoint          transport.Endpoint
+	EnsureErr         error
+	Acquired          atomic.Int32
+	Released          atomic.Int32
+	QuestionsAcquired atomic.Int32
+	QuestionsReleased atomic.Int32
 }
 
 func (h *LeaseHost) ResolveCapability(string) (manifestdomain.Discovered, error) {
@@ -30,7 +33,7 @@ func (h *LeaseHost) GetPlugin(string) (manifestdomain.Discovered, bool) {
 	return manifestdomain.Discovered{Manifest: manifestdomain.Manifest{ID: "org.example.stub"}}, true
 }
 
-func (h *LeaseHost) EnsureActive(context.Context, string) (transport.Endpoint, error) {
+func (h *LeaseHost) EnsureActive(context.Context, string, plugin.Holder) (transport.Endpoint, error) {
 	if h.EnsureErr != nil {
 		return transport.Endpoint{}, h.EnsureErr
 	}
@@ -38,9 +41,23 @@ func (h *LeaseHost) EnsureActive(context.Context, string) (transport.Endpoint, e
 	return h.Endpoint, nil
 }
 
-func (h *LeaseHost) Acquire(string) { h.Acquired.Add(1) }
+func (h *LeaseHost) Acquire(string, plugin.Holder) { h.Acquired.Add(1) }
 
-func (h *LeaseHost) Release(string) { h.Released.Add(1) }
+func (h *LeaseHost) Release(string, string, plugin.Holder) { h.Released.Add(1) }
+
+func (h *LeaseHost) EnsureActiveForQuestion(context.Context, string, plugin.Holder) (transport.Endpoint, error) {
+	if h.EnsureErr != nil {
+		return transport.Endpoint{}, h.EnsureErr
+	}
+	h.Acquired.Add(1)
+	h.QuestionsAcquired.Add(1)
+	return h.Endpoint, nil
+}
+
+func (h *LeaseHost) ReleaseQuestion(string, string, plugin.Holder) {
+	h.Released.Add(1)
+	h.QuestionsReleased.Add(1)
+}
 
 // WatchPluginConfig registers nothing: the stub is never configured.
 func (h *LeaseHost) WatchPluginConfig(string, func()) func() { return func() {} }
@@ -51,10 +68,4 @@ func (h *LeaseHost) GetVaultPath() string { return "" }
 
 func (h *LeaseHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 	return domain.NoteProfile{}, false
-}
-
-type CompleterFunc func(ctx context.Context, question completion.Question) (string, error)
-
-func (f CompleterFunc) Complete(ctx context.Context, _ string, question completion.Question) (string, error) {
-	return f(ctx, question)
 }

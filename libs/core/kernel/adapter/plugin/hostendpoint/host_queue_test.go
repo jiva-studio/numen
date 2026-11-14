@@ -21,7 +21,7 @@ import (
 
 func newQueueClient(t *testing.T, work *run.PluginWork, token string) numenv1connect.HostQueueServiceClient {
 	t.Helper()
-	return newQueueClientOver(t, newCallers(nil), work, token)
+	return newQueueClientOver(t, newCallers(), work, token)
 }
 
 func newQueueClientOver(t *testing.T, fakeCallers *callers, work *run.PluginWork, token string) numenv1connect.HostQueueServiceClient {
@@ -132,7 +132,7 @@ func TestQueueRejectsCallerWithoutToken(t *testing.T) {
 
 func TestEnqueueWorkAcquiresPluginForStream(t *testing.T) {
 	work := run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil)
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.releases = make(chan string, 1)
 	ctx, closeStream := context.WithCancel(t.Context())
 	openWork(t, ctx, newQueueClientOver(t, fakeCallers, work, "token-a"), true, v1.WorkState_WORK_STATE_RUNNING)

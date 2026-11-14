@@ -66,7 +66,7 @@ func mount(s *server.Server, h recognition.Host, holder *engines.Holder) error {
 	if err != nil {
 		return err
 	}
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { holder.UpdateSettings(values) })
+	s.SetUpdateConfig(func(values map[string]string) { holder.UpdateSettings(values) })
 	command.Mount(s, commands)
 	registry.Mount(s)
 	s.OnClose(func() error {

@@ -1,12 +1,7 @@
 import http from 'node:http'
 
 /** The words every chat completion of the stand-in chat API answers with. */
-export const STAND_IN_REPLY = 'The stand-in chat API answered.'
-
-/** A prompt holding these words is answered after `DELAYED_REPLY_MS`, long enough to press Stop. */
-export const DELAYED_PROMPT = 'Answer after a pause'
-
-const DELAYED_REPLY_MS = 10_000
+export const STAND_IN_REPLY = 'The agent answered.'
 
 /**
  * A prompt holding these words is answered once `DELETE /stand-in/hold` opens the gate that
@@ -16,6 +11,7 @@ export const HELD_PROMPT = 'Answer when released'
 
 /** The model the stand-in chat API lists. */
 export const STAND_IN_MODEL = 'stand-in/model'
+export const STAND_IN_CONNECTION = 'c57a4d100'
 
 /** A prompt holding these words is answered with a call of the vault tool that writes a note. */
 export const TOOL_PROMPT = 'Write the tide table note'
@@ -30,39 +26,29 @@ const NOTE_WRITE_TOOL = 'note_write'
 /** The release the stand-in update manifest names first: older than any build, so no update is offered. */
 const OLD_RELEASE = { version: '0.0.0', build: '0', released: '2026-01-01T00:00:00Z', files: [] }
 
-/**
- * A release newer than any build. `PUT /stand-in/release` with it makes the manifest offer an
- * update, and `DELETE /stand-in/release` names the old release again.
- */
-export const NEW_RELEASE = {
-  version: '9999.1.0',
-  build: '999999999',
-  channel: 'stable',
-  released: '2026-10-30T00:00:00Z',
-  files: [],
-}
-
 /** The release the update manifest names now. */
 let release = OLD_RELEASE
 
 /** The held replies wait while this gate is closed; each is the function that sends one reply. */
 let isHoldClosed = false
+/** Whether the closed gate holds every reply, and not only the replies to a held prompt. */
+let isHoldAll = false
 const heldReplies = new Set()
 
-const closeHold = (_req, res) => {
-  isHoldClosed = true
-  sendJson(res, 200, { held: heldReplies.size })
-}
+const closeHold = (req, res) =>
+  readBody(req).then((raw) => {
+    isHoldClosed = true
+    isHoldAll = raw.trim() !== '' && JSON.parse(raw).all === true
+    sendJson(res, 200, { held: heldReplies.size })
+  })
 
 const openHold = (_req, res) => {
   isHoldClosed = false
+  isHoldAll = false
   for (const send of heldReplies) send()
   heldReplies.clear()
   sendJson(res, 200, { held: 0 })
 }
-
-/** How many times each path was asked for, which `GET /stand-in/requests` answers. */
-const requests = new Map()
 
 const sendJson = (res, status, body) => {
   res.writeHead(status, { 'Content-Type': 'application/json' })
@@ -135,17 +121,12 @@ const answerChat = (req, res) =>
         choices: [{ message, finish_reason: calls.length > 0 ? 'tool_calls' : 'stop' }],
       })
     }
-    if (raw.includes(HELD_PROMPT) && isHoldClosed) {
+    if ((isHoldAll || raw.includes(HELD_PROMPT)) && isHoldClosed) {
       heldReplies.add(reply)
       res.on('close', () => heldReplies.delete(reply))
       return
     }
-    if (!raw.includes(DELAYED_PROMPT)) {
-      reply()
-      return
-    }
-    const timer = setTimeout(reply, DELAYED_REPLY_MS)
-    res.on('close', () => clearTimeout(timer))
+    reply()
   })
 
 const switchRelease = (req, res) =>
@@ -167,17 +148,15 @@ const routes = new Map([
   ],
   ['PUT /stand-in/hold', closeHold],
   ['DELETE /stand-in/hold', openHold],
-  ['GET /stand-in/requests', (_req, res) => sendJson(res, 200, Object.fromEntries(requests))],
   [
     'GET /v1/models',
-    (_req, res) => sendJson(res, 200, { data: [{ id: STAND_IN_MODEL, name: 'Stand-in model' }] }),
+    (_req, res) => sendJson(res, 200, { data: [{ id: STAND_IN_MODEL, name: 'Test model' }] }),
   ],
   ['POST /v1/chat/completions', answerChat],
 ])
 
 const handle = (req, res) => {
   const { pathname } = new URL(req.url ?? '/', 'http://127.0.0.1')
-  requests.set(pathname, (requests.get(pathname) ?? 0) + 1)
   const answer = routes.get(`${req.method} ${pathname}`)
   if (!answer) {
     sendJson(res, 404, { error: `the stand-in answers no ${req.method} ${pathname}` })
@@ -191,12 +170,20 @@ const handle = (req, res) => {
 /**
  * Starts the local server that is in for what the application reaches outside the
  * machine: the release manifest of dl.numen.md and an OpenAI-compatible chat API. A test switches
- * the release through `/stand-in/release` and reads how often each path was asked for through
- * `/stand-in/requests`.
+ * the release through `/stand-in/release`.
  *
  * @returns {Promise<{ updateUrl: string, chatUrl: string, close: () => void }>}
  */
-export const startStandIns = () =>
+export const startStandIns = () => {
+  // A worker starts the stand-ins once per scenario: what an earlier scenario switched does not carry over.
+  release = OLD_RELEASE
+  isHoldClosed = false
+  isHoldAll = false
+  heldReplies.clear()
+  return startServer()
+}
+
+const startServer = () =>
   new Promise((resolve, reject) => {
     const server = http.createServer(handle)
     server.once('error', reject)

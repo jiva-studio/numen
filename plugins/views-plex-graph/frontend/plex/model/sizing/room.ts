@@ -7,8 +7,14 @@
  * already worked out.
  */
 import { computed, onMounted, onScopeDispose, ref, type Ref, type ShallowRef } from 'vue'
-import { getWideBox } from './expansion'
-import { useTitleWidths, type PlexMetrics, type PlexType, type Probe } from './measure'
+import { getExpandedBox } from './expansion'
+import {
+  useTitleWidths,
+  type PlexMetrics,
+  type PlexType,
+  type Probe,
+  type TitleRoom,
+} from './measure'
 import { getNodeHeadings } from '../../lib/inside'
 import { resolveOptions, type PlexOptionsInput, type Size } from '../../lib/arrange'
 import type { PlacedNode } from '../../lib/node'
@@ -16,7 +22,7 @@ import type { Viewport } from '@numen/ui'
 import type { PlexHeading } from '../../../types'
 
 /** The assumed size of the plex until it has been measured. */
-const FALLBACK = { width: 1200, height: 800 }
+export const DEFAULT_VIEWPORT = { width: 1200, height: 800 }
 
 /** What the measuring reads off the plex it belongs to. */
 export interface PlexSizingProps {
@@ -24,6 +30,7 @@ export interface PlexSizingProps {
   readonly viewport: Viewport
   readonly headings?: ((id: string) => readonly PlexHeading[]) | undefined
   readonly readType?: ((probe: Probe) => PlexType) | undefined
+  readonly showPills?: boolean | undefined
 }
 
 /**
@@ -35,12 +42,12 @@ export function useFreeSpace(
   props: PlexSizingProps,
   hasIcon: () => boolean,
   measureTitles: (
-    icon: () => number,
+    room: () => TitleRoom,
     readType?: (probe: Probe) => PlexType,
   ) => Ref<PlexMetrics | undefined> = useTitleWidths,
 ) {
   /** The available size of the plex, as last measured. */
-  const room = ref<Size>(FALLBACK)
+  const room = ref<Size>(DEFAULT_VIEWPORT)
 
   onMounted(() => {
     const found = element.value
@@ -62,13 +69,21 @@ export function useFreeSpace(
    */
   const iconWidthReserve = computed(() => (hasIcon() ? options.value.iconWidth : 0))
 
+  const padding = computed(() => options.value.padding.inline)
+
   /**
    * How wide each title needs its box to be, and each label its line, measured
    * against the type the theme is written in. Taken before the first arrangement,
    * so a box is drawn at the size it keeps, and taken again when a theme changes
    * that type.
    */
-  const measures = measureTitles(() => iconWidthReserve.value, props.readType)
+  const measures = measureTitles(
+    () => ({
+      padding: padding.value,
+      beside: [iconWidthReserve.value].filter((width) => width > 0),
+    }),
+    props.readType,
+  )
 
   /**
    * The width of a box drawn while it has attention: the width its whole title
@@ -83,14 +98,14 @@ export function useFreeSpace(
 
     const { margin } = options.value
     const bounds = { viewport: room.value, margin }
-    return (node: PlacedNode) => getWideBox(node, measure(node), bounds)
+    return (node: PlacedNode) => getExpandedBox(node, measure(node), bounds)
   })
 
   /**
-   * The headings each node hangs under its box. The sizes are the ones the whole
-   * picture is drawn to, so a plex set larger hangs them larger.
+   * The headings placed under the box of each node. The sizes are the ones the whole
+   * picture is drawn to, so a plex set larger places them larger.
    */
-  const suspended = computed(() => {
+  const placedHeadings = computed(() => {
     const getHeadings = props.headings
     if (!getHeadings) return undefined
 
@@ -100,5 +115,5 @@ export function useFreeSpace(
       getNodeHeadings(node, getHeadings(node.id), { options: options.value, deps })
   })
 
-  return { room, options, measures, widen: expandWidth, hung: suspended }
+  return { room, options, measures, widen: expandWidth, placedHeadings }
 }

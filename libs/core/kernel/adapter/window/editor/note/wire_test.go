@@ -13,10 +13,11 @@ import (
 
 func TestEveryRelationIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.Relation]domain.Relation{
-		v1.Relation_RELATION_PARENT:  domain.RelationParent,
-		v1.Relation_RELATION_CHILD:   domain.RelationChild,
-		v1.Relation_RELATION_JUMP:    domain.RelationJump,
-		v1.Relation_RELATION_SIBLING: domain.RelationSibling,
+		v1.Relation_RELATION_PARENT:    domain.RelationParent,
+		v1.Relation_RELATION_CHILD:     domain.RelationChild,
+		v1.Relation_RELATION_JUMP:      domain.RelationJump,
+		v1.Relation_RELATION_SIBLING:   domain.RelationSibling,
+		v1.Relation_RELATION_REFERENCE: domain.RelationReference,
 	}, convertRelationToWire)
 }
 
@@ -64,4 +65,13 @@ func TestAnEmptyFileStatIsNothingOnTheWireAndNotTheEpoch(t *testing.T) {
 	if target := stamp(time.Time{}); target != 0 {
 		t.Errorf("no stamp goes on the wire as %d", target)
 	}
+}
+
+func TestEveryLinkDirectionIsSavedFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.LinkDirection]domain.LinkDirection{
+		v1.LinkDirection_LINK_DIRECTION_OUTGOING:    domain.DirectionOutgoing,
+		v1.LinkDirection_LINK_DIRECTION_INCOMING:    domain.DirectionIncoming,
+		v1.LinkDirection_LINK_DIRECTION_BOTH:        domain.DirectionBoth,
+		v1.LinkDirection_LINK_DIRECTION_UNSPECIFIED: "",
+	}, convertDirectionToWire)
 }

@@ -15,9 +15,11 @@ import (
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -63,12 +65,13 @@ func NewRoute(path string, handler http.Handler, service any) Route {
 // pageSet is what answers the requests that reach a window: the routes of its
 // services and the services beside them.
 type pageSet struct {
-	gate      *wire.Gate
-	window    pageWindow
-	routes    []Route
-	themes    numenv1connect.ThemeServiceHandler
-	plugins   PluginServices
-	pluginDir func(id string) (string, bool)
+	gate       *wire.Gate
+	window     pageWindow
+	routes     []Route
+	themes     numenv1connect.ThemeServiceHandler
+	plugins    PluginServices
+	pluginDir  func(id string) (string, bool)
+	mediaTypes *file.GetMediaType
 }
 
 // pageWindow is what the pages and the installation need of the window besides its gate: the vault it
@@ -131,9 +134,9 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
+		r = r.WithContext(plugindomain.WithCaller(r.Context(), getWindowCaller(r.Header)))
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
-		isAgent := strings.HasPrefix(r.URL.Path, "/numen.v1.AgentService/")
-		if !isAgent && isWhole && s.plugins != nil && s.plugins.Serves(r.URL.Path) {
+		if isWhole && s.plugins != nil && s.plugins.Serves(r.URL.Path) {
 			s.setRequestVault(r)
 			s.plugins.ServeHTTP(w, r)
 			return
@@ -225,7 +228,7 @@ func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescap
 		return false
 	}
 	defer closeAndReport(s.window.AddTask, file)
-	setAssetHeaders(w.Header(), info.Name())
+	setAssetHeaders(w.Header(), s.mediaTypes.Execute(info.Name()))
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 	return true
 }
@@ -291,4 +294,42 @@ func NewFileRoute(state *State, handler *filewindow.Handler) Route {
 func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
 	path, served := numenv1connect.NewMediaServiceHandler(handler, state.Gate.CountQuestions())
 	return NewRoute(path, served, handler)
+}
+
+// CallerHeader names the part of the window that makes a request: a tag known to
+// getWindowCallerName, or "plugin:" and the id of the plugin whose view asks.
+const CallerHeader = "Numen-Caller"
+
+func getWindowCallerName(tag string) (string, bool) {
+	switch tag {
+	case "chat":
+		return "Chat", true
+	case "commands":
+		return "Commands", true
+	case "editor":
+		return "Editor", true
+	case "graph":
+		return "Graph", true
+	case "plugins":
+		return "Plugins", true
+	case "search":
+		return "Search", true
+	case "settings":
+		return "Settings", true
+	case "tasks":
+		return "Tasks", true
+	default:
+		return "", false
+	}
+}
+
+func getWindowCaller(header http.Header) plugindomain.Caller {
+	tag := header.Get(CallerHeader)
+	if pluginID, isPlugin := strings.CutPrefix(tag, "plugin:"); isPlugin && pluginID != "" {
+		return plugindomain.Caller{PluginID: pluginID}
+	}
+	if who, ok := getWindowCallerName(tag); ok {
+		return plugindomain.Caller{Who: who}
+	}
+	return plugindomain.Caller{Who: plugindomain.WhoWindow}
 }

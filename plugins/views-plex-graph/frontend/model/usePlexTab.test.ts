@@ -11,9 +11,19 @@ import { createPlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab
 import type { CommandTarget, SlotCommand, SlotItem } from '@numen/plugin-sdk'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
-import { createLine, createVault, settle, viewOn, type Types, type NeighborSpec } from '../fixtures'
+import {
+  createLine,
+  createVault,
+  settle,
+  viewOn,
+  type Types,
+  type RelatedNoteInput,
+} from '../fixtures'
 import type { NoteHeading, NoteRelation, PathRename } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
+import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { getDefaultLook, readLook } from './look'
+import { getDefaultNames } from './names'
 
 /** The icons the window draws a declared command and a note of a declared type with. */
 const SHARE_ICON: Component = { name: 'ShareIcon', render: () => null }
@@ -58,6 +68,8 @@ interface DepsOverrides {
 const createDeps = (editor: PlexTabDeps['editor'], overrides: DepsOverrides = {}): PlexTabDeps => ({
   editor,
   tabId: 'plex:1',
+  look: getDefaultLook(),
+  names: getDefaultNames(),
   creatable: ['parent', 'child', 'jump'],
   window: {
     isReady: ref(true),
@@ -85,11 +97,11 @@ const createDeps = (editor: PlexTabDeps['editor'], overrides: DepsOverrides = {}
 
 const tab = (
   targetPath: string,
-  neighbors: readonly NeighborSpec[] = [],
+  relatedNotes: readonly RelatedNoteInput[] = [],
   takes = true,
   types: Types = {},
 ) => {
-  const plex = viewOn(targetPath, neighbors, types)
+  const plex = viewOn(targetPath, relatedNotes, types)
   const vault = createVault(takes)
   const openedCalls: [string, string, string][] = []
   const request: string[] = []
@@ -111,6 +123,8 @@ const tab = (
   const deps: PlexTabDeps = {
     editor: vault.editor,
     tabId: 'plex:1',
+    look: getDefaultLook(),
+    names: getDefaultNames(),
     creatable: ['parent', 'child', 'jump'],
     window: {
       isReady: ref(true),
@@ -301,7 +315,7 @@ describe('the menu on a node', () => {
 describe('a plex drawing nothing', () => {
   const plex = (overrides: DepsOverrides) => {
     const view = {
-      neighborhood: ref(null),
+      noteGraph: ref(null),
       here: ref(''),
       error: ref(''),
       go: async () => undefined,
@@ -674,7 +688,7 @@ describe('the headings a node nests', () => {
     expect(one.requestedHeadings).toStrictEqual([])
   })
 
-  it('are hung again once the setting is turned back on', async () => {
+  it('are placed again once the setting is turned back on', async () => {
     // Turning is the only user action; nothing else requests them again.
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
@@ -731,12 +745,12 @@ describe('a heading of a node chosen', () => {
 })
 
 /** A note beside another: where it is located, and the note it comes through. */
-type NeighborRow = readonly [path: string, relation: NoteRelation, through?: string]
+type RelatedNoteRow = readonly [path: string, relation: NoteRelation, through?: string]
 
 const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
 
-const inVault = async (focus: string, initialNeighbors: readonly NeighborRow[] = []) => {
-  let relatedItems = initialNeighbors.map(([path, relation, through]) => ({
+const inVault = async (focus: string, initialRelatedNotes: readonly RelatedNoteRow[] = []) => {
+  let relatedItems = initialRelatedNotes.map(([path, relation, through]) => ({
     path,
     relation,
     through: through ?? '',
@@ -751,7 +765,7 @@ const inVault = async (focus: string, initialNeighbors: readonly NeighborRow[] =
   const ran: [string, string, string][] = []
 
   const view = viewing({
-    neighborhood: async (path) => {
+    listRelatedNotes: async (path) => {
       request.push(path)
       if (pendingGate) await pendingGate
       return {
@@ -808,7 +822,7 @@ const inVault = async (focus: string, initialNeighbors: readonly NeighborRow[] =
     await view.go(view.here.value)
   }
   /** The user navigates to another note, which is a graph of its own. */
-  const goToNote = async (path: string, ...now: readonly NeighborRow[]) => {
+  const goToNote = async (path: string, ...now: readonly RelatedNoteRow[]) => {
     relatedItems = now.map(([at, relation, through]) => ({
       path: at,
       relation,
@@ -1298,7 +1312,7 @@ describe('the notes a plex asks the vault for the headings of', () => {
   it('are none while the plex draws nothing', async () => {
     const one = tab('Root.md')
 
-    one.state.canvas.view.neighborhood.value = null
+    one.state.canvas.view.noteGraph.value = null
     await settle()
 
     expect(one.requestedHeadings).toStrictEqual([['Root.md']])
@@ -1354,7 +1368,7 @@ describe('a quick link confirmed', () => {
 describe('what a note is called where the picture names it nowhere', () => {
   it('is the file it is filed under while the plex draws nothing', () => {
     const one = tab('Root.md')
-    one.state.canvas.view.neighborhood.value = null
+    one.state.canvas.view.noteGraph.value = null
 
     expect(one.state.nodes.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
   })
@@ -1393,5 +1407,49 @@ describe('a node opened', () => {
 
     expect(one.opened).toStrictEqual([])
     expect(one.entered).toStrictEqual([])
+  })
+})
+
+describe('the References setting on an open tab', () => {
+  const open = (initial?: string) => {
+    const context = createMockPluginContext({
+      pluginId: 'md.numen.views.plex.graph',
+      initialSettings: initial ? { references: initial } : {},
+    })
+    const plex = viewOn('Root.md', [
+      'Child.md',
+      { path: 'Cites.md', relation: 'reference', direction: 'outgoing' },
+      { path: 'CitedBy.md', relation: 'reference', direction: 'incoming' },
+    ])
+    const state = createPlexTab(plex.view, {
+      ...createDeps(createVault(true).editor),
+      look: readLook(context),
+    })
+    const titles = () => state.canvas.picture.value?.nodes.map((node) => node.title)
+    return { context, plex, titles }
+  }
+
+  it('shows the references of both directions by default', () => {
+    expect(open().titles()).toEqual(['Root', 'Child', 'Cites', 'CitedBy'])
+  })
+
+  it('loses the references when the setting is turned off, without asking the vault again', () => {
+    const one = open()
+
+    one.context.setSetting('references', 'off')
+
+    expect(one.titles()).toEqual(['Root', 'Child'])
+    expect(one.plex.went).toEqual([])
+  })
+
+  it('follows the setting from one direction to the other and back', () => {
+    const one = open('outgoing')
+    expect(one.titles()).toEqual(['Root', 'Child', 'Cites'])
+
+    one.context.setSetting('references', 'incoming')
+    expect(one.titles()).toEqual(['Root', 'Child', 'CitedBy'])
+
+    one.context.setSetting('references', 'both')
+    expect(one.titles()).toEqual(['Root', 'Child', 'Cites', 'CitedBy'])
   })
 })

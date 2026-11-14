@@ -9,23 +9,6 @@ import (
 	"github.com/zalando/go-keyring"
 )
 
-func TestTheCredentialsPathIsReportedOnlyWhileTheFileIsInUse(t *testing.T) {
-	useNoKeychain(t)
-	dir := t.TempDir()
-	if got := newTestStore(dir).GetCredentialsPath(t.Context()); got != credentialsPath(dir) {
-		t.Errorf("path = %q, want %q", got, credentialsPath(dir))
-	}
-
-	keyring.MockInit()
-	if got := newTestStore(dir).GetCredentialsPath(t.Context()); got != "" {
-		t.Errorf("path = %q with a reachable keychain, want none", got)
-	}
-	store := Store{}
-	if got := store.GetCredentialsPath(t.Context()); got != "" {
-		t.Errorf("path = %q for a keychain only store, want none", got)
-	}
-}
-
 func TestADeleteOfAKeyHeldNowhereIsNoKey(t *testing.T) {
 	useNoKeychain(t)
 	store := newTestStore(t.TempDir())

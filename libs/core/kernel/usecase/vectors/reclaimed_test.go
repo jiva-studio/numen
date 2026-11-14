@@ -8,8 +8,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 )
 
 // A vector is computed once and reclaimed by every vault that holds the same
@@ -20,7 +22,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 900)), 1)
 
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf, indexfake.GetSecond().ID: shelf}, index, index)
-	embed.Embedder = &faint{dims: dimensions}
+	embed.Source = sourcefake.Wrap(&faint{dims: dimensions})
 	embed.BatchCharacters = 4000
 
 	cutBooks(t, index, shelf, indexfake.GetFirst())
@@ -29,13 +31,13 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	}
 
 	// What the index now holds, as a second vault finds it.
-	bought := map[string]embedding.Vector{}
+	bought := map[string]vector.Stored{}
 	index.Kept = map[string][]byte{}
 	for _, target := range index.Vectors {
 		for _, v := range target {
 			hash := hex.EncodeToString(v.Hash)
 			bought[hash] = v
-			index.Kept[v.Model.Recipe()+"/"+hash] = v.Value
+			index.Kept[v.Recipe+"/"+hash] = v.Value
 		}
 	}
 	if len(bought) == 0 {
@@ -76,8 +78,8 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 // leans is what the two coarse forms have to agree about.
 type faint struct{ dims int }
 
-func (f *faint) GetModel() embedding.Model {
-	return embedding.Model{Name: "faint", Dimensions: f.dims}
+func (f *faint) Describe() searchsource.Description {
+	return searchsource.Description{Name: "faint", Width: f.dims}
 }
 
 func (*faint) Close() error { return nil }

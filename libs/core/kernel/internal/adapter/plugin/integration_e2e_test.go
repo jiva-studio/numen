@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
@@ -34,7 +35,8 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	bridge, err := embedderbridge.Open(ctx, pluginhost.Join(host))
+	roles := pluginhost.Join(host)
+	bridge, err := sourcebridge.Open(ctx, roles, roles, nil)
 	if err != nil {
 		t.Fatalf("OpenEmbedderBridge with real binary failed: %v", err)
 	}
@@ -45,19 +47,19 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 		}
 	}()
 
-	model := bridge.GetModel()
-	if model.Name == "" || model.Dimensions <= 0 {
+	model := bridge.Describe()
+	if model.Name == "" || model.Width <= 0 {
 		t.Fatalf("expected valid model from real embedding plugin, got %+v", model)
 	}
 
-	vectors, err := bridge.Embed(ctx, []string{"sample search query", "another sentence"})
+	vectors, err := bridge.IndexTexts(ctx, searchsource.Place{}, []searchsource.Text{{ChunkID: "1", Text: "sample search query"}, {ChunkID: "2", Text: "another sentence"}})
 	if err != nil {
-		t.Fatalf("Embed failed: %v", err)
+		t.Fatalf("IndexTexts failed: %v", err)
 	}
 	if len(vectors) != 2 {
 		t.Fatalf("expected 2 vectors, got %d", len(vectors))
 	}
-	if len(vectors[0]) != model.Dimensions {
-		t.Fatalf("expected vector length %d, got %d", model.Dimensions, len(vectors[0]))
+	if len(vectors[0]) != model.Width {
+		t.Fatalf("expected vector length %d, got %d", model.Width, len(vectors[0]))
 	}
 }

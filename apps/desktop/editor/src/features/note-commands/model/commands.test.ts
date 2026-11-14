@@ -77,6 +77,9 @@ const createWindow = (answers: Answers = {}) => {
           }
         )
       },
+      listFileKinds: (request: { paths: string[] }) => ({
+        kinds: request.paths.map((path) => ({ path, isNote: true, type: '', tabKind: 'page' })),
+      }),
       removeFile: (request: { path: string }) => {
         actions.push(`remove ${request.path}`)
         return answers.remove ?? { trashed: '.trash/Ontology.md', dangling: [] }
@@ -169,6 +172,19 @@ describe('the commands over a note', () => {
     expect(removing).not.toHaveProperty('also')
     expect(removing).not.toHaveProperty('input')
     expect(set.commands.map((one) => one.id)).not.toContain('app:file.remove#permanent')
+  })
+
+  it('is offered over every file but not over the vault root', () => {
+    const { set } = createWindow()
+    const removing = set.commands.find((one) => one.id === 'app:file.remove')
+    const runs = { canRun: () => true, cannotRun: () => undefined }
+    const over = (path: string) => removing?.isAvailable(front({ path, file: path }), runs) ?? false
+
+    expect(over('physics/Ontology.md')).toBe(true)
+    expect(over('assets/shore.pdf')).toBe(true)
+    expect(over('assets/sample.epub')).toBe(true)
+    expect(over('assets/lecture.wav')).toBe(true)
+    expect(over('')).toBe(false)
   })
 
   it('hold no command of the old ids', () => {
@@ -275,10 +291,10 @@ describe('a note made', () => {
     expect(one.actions.at(-1)).toBe('travel Entropy.md')
   })
 
-  it('opens in a tab alongside the note the person is in', async () => {
+  it('opens the note in a split next to the current tab when that tab kind opens the note', async () => {
     const one = createWindow()
 
-    await one.carry(invoke('app:note.createChild', front({ kind: 'note' }), 'Entropy'))
+    await one.carry(invoke('app:note.createChild', front({ kind: 'page' }), 'Entropy'))
 
     expect(one.actions.at(-1)).toBe('openFile Entropy.md Entropy split')
   })

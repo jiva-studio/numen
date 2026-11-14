@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { createMockAgentHost } from '@numen/plugin-sdk/testing'
+import type { ConnectionHost } from '@numen/plugin-sdk'
 
 import { usePanels } from './usePanels'
 import type { ReviewCard } from '../lib/card/cards'
@@ -28,18 +28,24 @@ const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
   ...more,
 })
 
-const panels = (more: { card?: ReviewCard | null; unreachable?: string } = {}) => {
+/** The connections of the plugin, which the panels only pass to the conversation view. */
+const connections: ConnectionHost = {
+  call: async function* () {
+    yield* []
+    return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
+  },
+}
+
+const panels = (more: { card?: ReviewCard | null } = {}) => {
   const notices: string[] = []
-  const agent = createMockAgentHost()
   const target = usePanels({
-    agent,
+    connections,
     card: () => (more.card === undefined ? card() : more.card),
-    unreachable: () => more.unreachable ?? '',
     vault: () => 'garden',
     showNotice: (text) => notices.push(text),
     resolveLinks: async () => [],
   })
-  return { ...target, notices, agent }
+  return { ...target, notices }
 }
 
 describe('the window', () => {
@@ -145,36 +151,21 @@ describe('the window', () => {
 
     expect(showing.value).toBe('here')
   })
-
-  it('says why, and stays on the card, when no agent can be reached', () => {
-    const { showing, notices, toggleAgent } = panels({ unreachable: 'No agent is set up' })
-
-    toggleAgent()
-
-    expect(showing.value).toBe('here')
-    expect(notices).toEqual(['No agent is set up'])
-  })
 })
 
 describe('a question about the card', () => {
-  it('goes to the agent of the window with the card in its context', async () => {
-    const { agent, agentPanel, toggleAgent } = panels()
+  it('goes to the connections of the plugin with the card for the tools, in the vault of the review', () => {
+    const { agentPanel, toggleAgent } = panels()
     toggleAgent()
-    const signal = new AbortController().signal
 
-    for await (const _ of agentPanel.context.value!.agent.ask({
-      question: 'where does the word come from',
-      focus: 'decks/Words.md',
-      conversation: 'card-0',
-      signal,
-    })) {
-      // The agent is read to the end; the query it received is checked below.
-    }
-
-    expect(agent.getQueries()[0]?.context).toEqual({
-      'md.numen.views.flashcards.studio/deck': 'decks/Words.md',
-      'md.numen.views.flashcards.studio/card': '3f4g5h6j7k',
-      'md.numen.views.flashcards.studio/template': 'Say it',
+    expect(agentPanel.context.value).toMatchObject({
+      connections,
+      vault: 'garden',
+      toolContext: {
+        'md.numen.views.flashcards.studio/deck': 'decks/Words.md',
+        'md.numen.views.flashcards.studio/card': '3f4g5h6j7k',
+        'md.numen.views.flashcards.studio/template': 'Say it',
+      },
     })
   })
 })

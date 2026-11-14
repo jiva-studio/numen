@@ -1,6 +1,6 @@
 /**
- * The plugins as the manager shows them: the settings of a plugin decoded, and the state the host
- * reports for it.
+ * The plugins as the manager shows them: the settings of a plugin decoded, and the health items the
+ * host reports for it.
  */
 
 /** A value a setting holds: anything that survives JSON.stringify and JSON.parse unchanged. */
@@ -17,7 +17,8 @@ interface SettingObject {
 }
 
 /** Declarative setting value types exposed by a plugin. */
-export type PluginSettingType = 'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file'
+export type PluginSettingType =
+  'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file' | 'connections'
 
 /** One value an enum setting can hold, with its display title. */
 export interface PluginSettingOption {
@@ -39,21 +40,16 @@ export interface PluginSettingOptionsBy {
   readonly options: Readonly<Record<string, readonly PluginSettingOption[]>>
 }
 
-/** A secret, such as an API key, that a plugin requests the host to store. */
-export interface SecretDeclaration {
-  readonly name: string
-  readonly title: string
-  readonly description: string
-  readonly group: string
-  readonly when?: PluginSettingCondition | undefined
-}
-
-/** Declarative setting schema and metadata exposed by a plugin. */
+/**
+ * Declarative setting schema and metadata exposed by a plugin. description is one line; details is
+ * the full text behind it.
+ */
 export interface PluginSettingInfo {
   readonly key: string
   readonly type: PluginSettingType
   readonly title: string
   readonly description: string
+  readonly details?: string | undefined
   readonly default: SettingValue | undefined
   readonly palette?: boolean | undefined
   readonly icon?: string | undefined
@@ -67,16 +63,23 @@ export interface PluginSettingInfo {
   readonly step?: number | undefined
   readonly preview?: boolean | undefined
   readonly optionsFrom?: string | undefined
+  readonly operations?: readonly string[] | undefined
+  readonly discover?: boolean | undefined
   readonly activeOptions?: readonly PluginSettingOption[] | undefined
   readonly isShown?: boolean | undefined
   readonly value?: SettingValue | undefined
 }
 
-/** Why the host suspends a plugin after it failed to start, and when it gave the plugin up. */
-export interface PluginFailure {
-  readonly reason: string
+/**
+ * One concern of a plugin that does not work, as the manager draws it. An empty action label offers
+ * no button. The key `start` is the start of the plugin that failed, which the host holds suspended.
+ */
+export interface PluginHealth {
+  readonly key: string
+  readonly severity: 'warning' | 'error'
+  readonly text: string
   readonly detail: string
-  readonly failedAt: number
+  readonly actionLabel: string
 }
 
 /** Information about an installed and active plugin, including declarative settings. */
@@ -90,10 +93,50 @@ export interface PluginInfo {
   readonly hasBackend: boolean
   readonly settings: readonly PluginSettingInfo[]
   readonly capabilities: readonly string[]
-  readonly secrets: readonly SecretDeclaration[]
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
-  readonly failure?: PluginFailure | undefined
+  readonly contributions?: readonly PluginContribution[]
+  readonly isOffByDefault?: boolean
+}
+
+/** A section of a manifest, named after its key, whose entries the plugin page lists. */
+export type PluginContributionKind =
+  | 'commands'
+  | 'keybindings'
+  | 'tabKinds'
+  | 'readers'
+  | 'handlers'
+  | 'triggers'
+  | 'textKinds'
+  | 'noteTypes'
+  | 'themes'
+  | 'slots'
+  | 'listeners'
+  | 'viewCapabilities'
+  | 'dropHandlers'
+  | 'frameOrigins'
+  | 'connectionTypes'
+  | 'operations'
+  | 'permissions'
+  | 'dependencies'
+  | 'services'
+  | 'capabilities'
+  | 'activationEvents'
+
+/** One section of a manifest with its entries, in the order the manifest declares them. */
+export interface PluginContribution {
+  readonly kind: PluginContributionKind
+  readonly items: readonly PluginContributionItem[]
+}
+
+/**
+ * One entry of a section: its title, or its id where it has none; its id or target as the manifest
+ * writes it; and for a command or a keybinding the shortcut, such as `mod+shift+a`.
+ */
+export interface PluginContributionItem {
+  readonly text: string
+  readonly detail: string
+  readonly keys: string
 }
 
 /** A view a plugin's frontend registers under `id` and the settings form mounts. */

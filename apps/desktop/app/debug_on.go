@@ -14,12 +14,15 @@ import (
 
 // DebugOptions holds test settings for debug builds.
 type DebugOptions struct {
-	HTTPAddr string
-	IsMockML bool
+	HTTPAddr   string
+	IsMockML   bool
+	FolderFile string
 }
 
 func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
 	fs.StringVar(&opts.Debug.HTTPAddr, "debug-http-addr", "", "serve the window over HTTP without opening an OS window")
+	fs.StringVar(&opts.Debug.FolderFile, "debug-folder-file", "",
+		"answer the folder dialog with the folder written in this file")
 	fs.BoolVar(&opts.Debug.IsMockML, "debug-mock-ml", false,
 		"use fast mock ML models, and an empty placeholder file for every dependency a plugin declares")
 }
@@ -31,7 +34,7 @@ func (d *DebugOptions) apply(cfg *container.Config) error {
 	if !d.IsMockML {
 		return nil
 	}
-	if err := os.Setenv("NUMEN_MOCK_ML", "true"); err != nil {
+	if err := os.Setenv("NUMEN_TEST_MOCK_ML", "true"); err != nil {
 		return err
 	}
 	if cfg.PluginHost != nil {
@@ -54,5 +57,8 @@ func (d *DebugOptions) serveHTTP(
 	opened *container.OpenedWindow,
 	pages http.Handler,
 ) error {
+	if d.FolderFile != "" {
+		opened.SetFolderDialog(debugserve.NewFolderFileDialog(d.FolderFile))
+	}
 	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
 }

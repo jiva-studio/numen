@@ -29,7 +29,7 @@ const chooseTheme = async (page: Page, title: string): Promise<void> => {
 
 const setPresetThemesEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
   await runCommand(page, 'Open settings', /^Open settings$/)
-  const settings = page.getByRole('tabpanel', { name: /Settings/ })
+  const settings = page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
   await expect(settings).toBeVisible()
   const toggle = settings.getByRole('switch', { name: /Enabled Preset Themes/ })
   if (!(await toggle.isVisible())) {
@@ -62,26 +62,6 @@ test.describe('A theme of the preset themes plugin', () => {
       await expect.poll(() => getThemeStyle(page)).not.toContain(DRACULA_SURFACE)
     } finally {
       await setPresetThemesEnabled(page, true)
-      await chooseTheme(page, 'numen')
-    }
-  })
-})
-
-test.describe('The theme setting of the settings tab', () => {
-  test('lists the themes of the preset themes plugin and applies the one chosen', async ({
-    page,
-  }) => {
-    await openWorkspace(page)
-    try {
-      await runCommand(page, 'Open settings', /^Open settings$/)
-      const settings = page.getByRole('tabpanel', { name: /Settings/ })
-      await settings.getByRole('button', { name: /^System/ }).click()
-
-      await settings.getByRole('button', { name: 'Theme', exact: true }).click()
-      await page.getByRole('menuitemradio', { name: /^Dracula/ }).click()
-
-      await expect.poll(() => getThemeStyle(page)).toContain(DRACULA_SURFACE)
-    } finally {
       await chooseTheme(page, 'numen')
     }
   })

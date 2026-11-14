@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -74,11 +75,11 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
-	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-	embed.Embedder = pointing{}
+	embed.Source = sourcefake.Wrap(pointing{})
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
 		filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}),
@@ -164,12 +165,12 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
-	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 	stopErr := errors.New("the model has stopped")
 	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-	embed.Embedder = failing{err: stopErr}
+	embed.Source = sourcefake.Wrap(failing{err: stopErr})
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
 		filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}),
@@ -196,7 +197,7 @@ func TestReadWholeVault_ReportsCompletedTextsOnBookError(t *testing.T) {
 	uncutter := uncuttable{SourceBacklog: db.Sources(), err: stopErr, onUnchunked: cancel}
 	counted := &counting{VaultReaders: readers}
 	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources())
-	embed.Embedder = pointing{}
+	embed.Source = sourcefake.Wrap(pointing{})
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
 		filetext.NewIndex(readers, db.Sources(), db.Sources(), uncutter, db.Sources(), testsupport.Texts{Readers: readers}),
@@ -227,7 +228,7 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	books := filetext.NewIndex(readers, db.Sources(), db.Sources(), uncutter, db.Sources(), testsupport.Texts{Readers: readers})
 	counted := &counting{VaultReaders: readers}
 	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources())
-	embed.Embedder = pointing{}
+	embed.Source = sourcefake.Wrap(pointing{})
 	making := indexing.NewReadWholeVault(scanner(readers, db), books, embed)
 
 	_, executeErr := making.Execute(ctx, v, indexing.Reporting{})

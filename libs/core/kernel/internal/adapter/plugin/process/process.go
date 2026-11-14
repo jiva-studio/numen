@@ -94,9 +94,8 @@ func isRelativeInside(base, child string) bool {
 
 // IsWhitelistedEnv reports whether a variable of the host environment is
 // passed to a plugin process: the system's own variables, the proxy the machine
-// uses for network access, and NUMEN_MOCK_ML, which runs a plugin on its mock
-// models, NUMEN_MOCK_OPEN_HOLD_MS, which makes the mock model slow to open, and NUMEN_MOCK_EMBED_LOG,
-// the file the mock embedding model writes the texts it is given to.
+// uses for network access, and every variable that starts with testEnvPrefix,
+// which tests set to run a plugin on its mock models.
 func IsWhitelistedEnv(key string) bool {
 	upper := strings.ToUpper(strings.TrimSpace(key))
 	if upper == "" || isSecretEnv(upper) {
@@ -105,12 +104,14 @@ func IsWhitelistedEnv(key string) bool {
 	switch upper {
 	case "PATH", "TMPDIR", "TMP", "TEMP", "HOME", "USER",
 		"SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA",
-		"LANG", "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "NUMEN_MOCK_ML",
-		"NUMEN_MOCK_OPEN_HOLD_MS", "NUMEN_MOCK_EMBED_LOG":
+		"LANG", "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY":
 		return true
 	}
-	return strings.HasPrefix(upper, "LC_")
+	return strings.HasPrefix(upper, "LC_") || strings.HasPrefix(upper, testEnvPrefix)
 }
+
+// testEnvPrefix starts the variables tests set for a plugin process.
+const testEnvPrefix = "NUMEN_TEST_"
 
 func isSecretEnv(upper string) bool {
 	for _, word := range []string{"KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL", "AUTH"} {

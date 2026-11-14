@@ -3,6 +3,7 @@
  */
 import type {
   BufferHost,
+  ConnectionHost,
   Disposable,
   FileBuffers,
   FileSelectEvent,
@@ -20,7 +21,6 @@ import { isUnsavedBuffersError, UnsavedBuffersError } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
 import { limitCommands } from './guards/commandRun'
-import { limitAgentSettings } from './guards/agentSettings'
 import { checkPermission, type PermissionTarget, type RequirePermission } from './guards/permission'
 import {
   createMountView,
@@ -157,13 +157,22 @@ function createUiService(
   }
 }
 
-function createWork(pluginId: string, host: PluginContextHost): PluginWork {
+function trackConnections(
+  connections: ConnectionHost | undefined,
+  add: Track,
+): ConnectionHost | undefined {
+  const onChange = connections?.onChange?.bind(connections)
+  if (!connections || !onChange) return connections
+  return { ...connections, onChange: (handler) => add(onChange(handler)) }
+}
+
+function createWork(pluginId: string, host: PluginContextHost, add: Track): PluginWork {
   const { window: work } = host
-  const agent = work.getAgent()
   return pickDefinedParts<PluginWork>({
-    agent: agent && limitAgentSettings(agent),
     tasks: work.getTasks(pluginId),
     backgroundTasks: work.getBackgroundTasks(),
+    processes: work.getProcesses(),
+    connections: trackConnections(work.getConnections(pluginId), add),
   })
 }
 
@@ -188,6 +197,7 @@ export function createPluginContext(
     add,
   )
   const rules = SERVICE_RULES
+  const health = host.window.getHealth(pluginId)
 
   return {
     plugin: {
@@ -212,6 +222,7 @@ export function createPluginContext(
     tabs: guardService(createTabs(host), rules.tabs, { check }),
     vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
     ui: createUiService(pluginId, host, { guard: registration, check }),
-    work: guardService(createWork(pluginId, host), rules.work, { check }),
+    work: guardService(createWork(pluginId, host, add), rules.work, { check }),
+    ...(health && { health: guardService(health, rules.health, { check }) }),
   }
 }

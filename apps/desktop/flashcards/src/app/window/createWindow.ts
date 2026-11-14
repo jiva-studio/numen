@@ -4,21 +4,18 @@
  * order they depend on each other: the notices and the tabs first, then the services made from
  * them, then the host the services are given to.
  */
-import { onUnmounted } from 'vue'
 import {
   createPluginLoader,
   createWindowHost,
   usePluginStyles,
   type PluginLoaderDeps,
 } from '@numen/plugin-loader'
-import { createNoticeQueue, useWindowFrame } from '@numen/workbench'
-import { createWindowAgent } from '@/entities/agent'
+import { createNoticeQueue, loadFrameRuntime, useWindowFrame } from '@numen/workbench'
 import { createWindowCommands } from '@/entities/plugin'
 import { createWindowTabs } from '@/entities/tab'
 import { createVaultsHost, useVaults } from '@/entities/vault'
 import { useAppearance } from '@/features/appearance'
 import { useAppStart } from '@/features/app-start'
-import { loadWailsRuntime, useExternalLinks } from '@/features/external-links'
 import { useWindowKeys } from '@/features/window-keys'
 import { useWindowTasks } from '@/features/window-tasks'
 import { formatError } from '@/shared/api/errors'
@@ -31,13 +28,12 @@ export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'dynamicImport'>
 export function createWindow(deps: WindowDeps = {}) {
   const notices = createNoticeQueue()
   const tabs = createWindowTabs()
-  const frame = useWindowFrame(loadWailsRuntime)
-  const windowAgent = createWindowAgent()
+  const frame = useWindowFrame(loadFrameRuntime)
   const { vaults, isListing } = useVaults((text) => notices.show(WINDOW_SOURCE, text, 'error'))
+  const backgroundTasks = useWindowTasks(notices)
   const { host, mountView, titleBarView } = createShellHost({
     tabs,
     notices,
-    agent: windowAgent.agent,
     getPlatform: () => frame.platform.value,
     services: {
       commands: createWindowCommands(),
@@ -49,6 +45,7 @@ export function createWindow(deps: WindowDeps = {}) {
       window: createWindowHost(frame, (error) =>
         notices.show(WINDOW_SOURCE, formatError(error), 'error'),
       ),
+      backgroundTasks,
     },
   })
   const loader = createPluginLoader({
@@ -57,13 +54,9 @@ export function createWindow(deps: WindowDeps = {}) {
   })
   const start = useAppStart(loader)
   useWindowKeys({ tabs, vaults })
-  useWindowTasks(notices)
-  useExternalLinks(notices)
   const appearance = useAppearance(notices)
 
-  onUnmounted(() => windowAgent.dispose())
-
-  usePluginStyles(() => tabs.frontViews.value)
+  usePluginStyles(() => tabs.frontPlugins.value)
 
   return {
     tabs,
@@ -71,6 +64,7 @@ export function createWindow(deps: WindowDeps = {}) {
     plugins: start,
     titleBarView,
     notices,
+    backgroundTasks,
     mountView,
     appearance,
   }

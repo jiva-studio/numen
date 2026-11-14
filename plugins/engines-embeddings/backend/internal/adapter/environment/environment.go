@@ -29,11 +29,6 @@ func (Variables) GetOverrides() model.Overrides {
 	}
 }
 
-// GetServiceURL is the address of the embedding service that variable names.
-func (Variables) GetServiceURL() string {
-	return os.Getenv("NUMEN_EMBEDDING_URL")
-}
-
 func parsePositiveInt(val string) int {
 	// gomutants:disable-next-line BRANCH_IF reason="empty string is rejected by strconv.Atoi"
 	if val == "" {
@@ -56,9 +51,9 @@ func parseThreads(val string) int {
 
 // The variables of the mock model, which automated tests select.
 const (
-	envMockModel    = "NUMEN_MOCK_ML"
-	envMockLog      = "NUMEN_MOCK_EMBED_LOG"
-	envMockOpenHold = "NUMEN_MOCK_OPEN_HOLD_MS"
+	envMockModel    = "NUMEN_TEST_MOCK_ML"
+	envMockLog      = "NUMEN_TEST_MOCK_EMBED_LOG"
+	envMockOpenHold = "NUMEN_TEST_MOCK_OPEN_HOLD_MS"
 )
 
 // IsMockModel returns whether the variables ask for the mock model.

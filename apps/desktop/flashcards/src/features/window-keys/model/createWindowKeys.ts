@@ -15,7 +15,7 @@ export interface WindowKeysDeps {
 export const createWindowKeys = (deps: WindowKeysDeps) => (press: KeyboardEvent) => {
   const tab = deps.getTab()
   if (tab) {
-    if (tab.state && tab.view.registration.onKeyPress?.(tab.state, press)) press.preventDefault()
+    if (tab.state && tab.kind.events?.onKeyPress?.(tab.state, press)) press.preventDefault()
     return
   }
   const vaults = deps.getVaults()

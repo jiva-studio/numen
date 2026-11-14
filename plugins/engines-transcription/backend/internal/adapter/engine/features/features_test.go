@@ -2,14 +2,13 @@ package features
 
 import (
 	"bufio"
+	"io"
 	"math"
 	"os"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 )
 
 func tone() []float32 {
@@ -113,7 +112,7 @@ func reference(t *testing.T, path string) ([]float32, int, int) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	defer cleanup.Close(t, file)
+	defer closeAndCheck(t, file)
 
 	lines := bufio.NewScanner(file)
 	lines.Buffer(make([]byte, 1<<20), 1<<20)
@@ -214,5 +213,12 @@ func TestFeaturesEdgeCases(t *testing.T) {
 	}
 	if got := len(getTwiddles()); got != fftSize/2 {
 		t.Errorf("len(getTwiddles()) = %d, want %d", got, fftSize/2)
+	}
+}
+
+func closeAndCheck(tb testing.TB, c io.Closer) {
+	tb.Helper()
+	if err := c.Close(); err != nil {
+		tb.Errorf("close: %v", err)
 	}
 }

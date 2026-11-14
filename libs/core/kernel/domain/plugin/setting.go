@@ -16,6 +16,7 @@ type Setting struct {
 	Type          string
 	Title         string
 	Description   string
+	Details       string
 	DefaultJSON   string
 	Palette       bool
 	Icon          string
@@ -28,6 +29,9 @@ type Setting struct {
 	Accept        []string
 	Multiple      bool
 	Preview       bool
+	Operations    []string
+	Discover      bool
+	IsDiscovering bool
 	OptionsFrom   string
 	ActiveOptions manifest.SettingOptions
 	IsShown       bool
@@ -42,6 +46,7 @@ func NewSetting(declared manifest.Setting, defaultJSON string, options manifest.
 		Type:        declared.Type,
 		Title:       declared.Title,
 		Description: declared.Description,
+		Details:     declared.Details,
 		DefaultJSON: defaultJSON,
 		Palette:     declared.Palette,
 		Icon:        declared.Icon,
@@ -55,6 +60,8 @@ func NewSetting(declared manifest.Setting, defaultJSON string, options manifest.
 		Multiple:    declared.Multiple,
 		Preview:     declared.Preview,
 		OptionsFrom: declared.OptionsFrom,
+		Operations:  declared.Operations,
+		Discover:    declared.Discover,
 	}
 }
 
@@ -76,6 +83,7 @@ func ListSettings(declared manifest.Manifest, values map[string]any) []Setting {
 			setting.ActiveOptions = setting.Options
 		}
 		setting.IsShown = declared.IsSettingShown(one, values)
+		setting.IsDiscovering = isDiscovering(one, values)
 		if value, ok := values[one.Key]; ok {
 			if encoded, err := json.Marshal(value); err == nil {
 				setting.ValueJSON = string(encoded)
@@ -102,4 +110,18 @@ func FormatSettingValues(values map[string]any) map[string]string {
 		}
 	}
 	return formatted
+}
+
+func isDiscovering(declared manifest.Setting, values map[string]any) bool {
+	if !declared.Discover {
+		return false
+	}
+	choices, isObject := values[manifest.SettingDiscover].(map[string]any)
+	if !isObject {
+		return true
+	}
+	if choice, isSet := choices[declared.Key].(bool); isSet {
+		return choice
+	}
+	return true
 }

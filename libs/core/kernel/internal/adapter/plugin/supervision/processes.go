@@ -32,12 +32,13 @@ type BuiltIn struct {
 	Serve func(vars map[string]string) (http.Handler, error)
 }
 
-// Launch is what a start of a plugin needs to know of it.
+// Launch is what a start of a plugin needs to know of it, and the first lease on it.
 type Launch struct {
 	Plugin       manifest.Discovered
 	BuiltIn      *BuiltIn
 	Requirements []manifest.DependencyRequirement
 	VaultPath    string
+	Lease        lifecycle.Lease
 }
 
 type stdinKey struct {
@@ -49,7 +50,7 @@ type stdinKey struct {
 type processTable interface {
 	Clients() *transport.Clients
 	AttachProcess(ctx context.Context, attach ProcessAttachment) error
-	AttachInProcess(pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, now time.Time) error
+	AttachInProcess(pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, lease lifecycle.Lease, now time.Time) error
 }
 
 // launchServices is what a start of a process reads of the services the host gives the plugins.
@@ -258,6 +259,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 		PluginID: plug.Manifest.ID, Supervisor: sup, Process: proc, Endpoint: endpoint,
 		Listeners: handshake.Listeners, Now: p.clock.Now(),
 		OnExit: func() { p.CloseStdin(plug.Manifest.ID, proc.Pid) },
+		Lease:  launch.Lease,
 	})
 	if err != nil {
 		p.cleanupAbortedProcess(proc, stdout, plug.Manifest.ID)

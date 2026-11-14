@@ -57,6 +57,7 @@ jobs:
           npm run lint --prefix libs/plugin/loader
           npm run lint --prefix libs/plugin/manager
           npm run lint --prefix tests/e2e/desktop
+          make app_desktop_acceptance_lint
           (cd libs/plugin/sdk-ts && ../../../node_modules/.bin/eslint .)
 
       - name: Typecheck screens and SDK

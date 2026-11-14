@@ -3,52 +3,118 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	hostdomain "github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchsource"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/querycache"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/sourcehealth"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
-// handler answers the calls of the embedding service with the model server.
+// openPlace returns the search of the core index in the vault of the given identity.
+type openPlace func(vaultID string) (host.PlaceSearch, error)
+
+// handler answers the calls of the search source service with the model server: it turns texts into the
+// vectors the core keeps, and a query into the chunks of the place nearest it. After each call of the
+// model it sets the health item source: a precondition the settings do not meet (no connection, a
+// connection that fails, a local model that is missing) reports the item with the message, its first
+// letter upper case and cut at maxHealthText; a call that succeeded clears it; any other failure leaves it.
 type handler struct {
-	model *serving.Server
+	model   *serving.Server
+	places  openPlace
+	queries *querycache.Cache
+	health  *sourcehealth.Reporter
 }
 
-// GetModelInfo describes the model the plugin serves.
-func (h handler) GetModelInfo(_ context.Context) (embedding.ModelInfo, error) {
-	info, err := h.model.GetModelInfo()
+func newHandler(model *serving.Server, places openPlace, health *sourcehealth.Reporter) handler {
+	return handler{model: model, places: places, queries: querycache.New(querycache.DefaultCapacity), health: health}
+}
+
+// Describe describes the vectors the plugin makes with the model it serves.
+func (h handler) Describe(ctx context.Context) (searchsource.Description, error) {
+	info, err := h.model.GetModelInfo(ctx)
+	observeSource(ctx, h.health, err)
 	if err != nil {
-		return embedding.ModelInfo{}, getRPCError(err)
+		return searchsource.Description{}, getRPCError(err)
 	}
-	return embedding.ModelInfo{
-		Name:           info.Name,
-		Dimensions:     int32(info.Dimensions),
-		MaxTokens:      int32(info.MaxTokens),
-		Pooling:        info.Pooling,
-		From:           info.From,
-		Concurrency:    int32(info.Concurrency),
-		FloorHint:      info.FloorHint,
-		MinChunkLength: int32(info.MinChunkLength),
-		ChunkTokens:    int32(info.ChunkTokens),
-		Handling:       info.Handling,
+	return searchsource.Description{
+		Name:          info.Name,
+		Recipe:        info.GetRecipe(),
+		Width:         int32(info.Dimensions),
+		ChunkTokens:   int32(info.ChunkTokens),
+		MinTextLength: int32(info.MinChunkLength),
+		Concurrency:   int32(info.Concurrency),
+		FloorHint:     info.FloorHint,
 	}, nil
 }
 
-// EmbedTexts returns one vector per text.
-func (h handler) EmbedTexts(ctx context.Context, role embedding.Role, texts []string) ([][]float32, error) {
-	vectors, err := h.model.EmbedTexts(ctx, getEngineRole(role), texts)
+// IndexTexts returns one vector per text, made for the text as a passage that is searched.
+func (h handler) IndexTexts(ctx context.Context, _ searchsource.Place, texts []searchsource.Text) ([][]float32, error) {
+	plain := make([]string, len(texts))
+	for i, one := range texts {
+		plain[i] = one.Text
+	}
+	return h.embed(ctx, model.RoleDocument, plain)
+}
+
+// EmbedQueries returns one vector per query, made for the query as the question.
+func (h handler) EmbedQueries(ctx context.Context, queries []string) ([][]float32, error) {
+	return h.embed(ctx, model.RoleQuery, queries)
+}
+
+// SearchPassages embeds the query and asks the core for the chunks of the place nearest it.
+func (h handler) SearchPassages(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error) {
+	vector, err := h.getQueryVector(ctx, place.Recipe, q.Text)
+	if err != nil {
+		return nil, err
+	}
+	places, err := h.places(place.VaultID)
+	if err != nil {
+		return nil, rpcerror.New(rpcerror.Unavailable, err)
+	}
+	kinds := make([]hostdomain.SourceKind, len(q.Kinds))
+	for i, kind := range q.Kinds {
+		kinds[i] = hostdomain.SourceKind(kind)
+	}
+	found, err := places.FindNearestPassages(ctx, host.NearestQuery{
+		Recipe: place.Recipe, Vector: vector, Limit: q.Limit, Kinds: kinds, PathPrefix: q.PathPrefix, Floor: q.Floor,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("find the nearest passages: %w", err)
+	}
+	matches := make([]searchsource.Match, len(found))
+	for i, one := range found {
+		matches[i] = searchsource.Match{ChunkID: one.ChunkID, Score: one.Similarity}
+	}
+	return matches, nil
+}
+
+func (h handler) getQueryVector(ctx context.Context, recipe, query string) ([]float32, error) {
+	if cached, ok := h.queries.Get(recipe, query); ok {
+		return cached, nil
+	}
+	vectors, err := h.embed(ctx, model.RoleQuery, []string{query})
+	if err != nil {
+		return nil, err
+	}
+	if len(vectors) != 1 {
+		return nil, fmt.Errorf("the model answered with %d vectors for one query", len(vectors))
+	}
+	h.queries.Put(recipe, query, vectors[0])
+	return vectors[0], nil
+}
+
+func (h handler) embed(ctx context.Context, role model.Role, texts []string) ([][]float32, error) {
+	vectors, err := h.model.EmbedTexts(ctx, role, texts)
+	observeSource(ctx, h.health, err)
 	if err != nil {
 		return nil, getRPCError(err)
 	}
 	return vectors, nil
-}
-
-func getEngineRole(role embedding.Role) model.Role {
-	if role == embedding.RoleQuery {
-		return model.RoleQuery
-	}
-	return model.RoleDocument
 }
 
 func getRPCError(err error) error {

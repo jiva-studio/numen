@@ -32,8 +32,8 @@ func TestShippedProfilesPinTheFilesOfEveryLocalModel(t *testing.T) {
 		t.Fatalf("GetCurated() returned %d profiles, want at least 2", len(curated))
 	}
 	for _, p := range curated {
-		if p.Remote || p.Tier == "" {
-			t.Errorf("%s: unexpected curated profile Remote=%v Tier=%q", p.ID, p.Remote, p.Tier)
+		if p.Tier == "" {
+			t.Errorf("%s: unexpected curated profile Tier=%q", p.ID, p.Tier)
 		}
 		if len(p.Revision) != 40 {
 			t.Errorf("%s: revision %q is no commit", p.ID, p.Revision)
@@ -88,21 +88,22 @@ func TestGetLocalOfAnUnknownModelNamesWhereToAddAProfile(t *testing.T) {
 	}
 }
 
-func TestGetRemoteOfAnUnlistedModelUsesTheFallbackWithItsOwnID(t *testing.T) {
+func TestTheShippedTableListsLocalModelsOnly(t *testing.T) {
 	table := getShippedProfiles(t)
-	shipped := table.GetRemote("text-embedding-3-large")
-	if shipped.Dimensions != 3072 {
-		t.Errorf("dims = %d, want 3072", shipped.Dimensions)
+	for _, id := range []string{"text-embedding-3-large", "openai/text-embedding-3-small", "baai/bge-m3", "*"} {
+		if _, err := table.GetLocal(id); !errors.Is(err, ErrNoProfile) {
+			t.Errorf("GetLocal(%q) = %v, want ErrNoProfile", id, err)
+		}
 	}
-	if fromLocal := table.GetRemote(DefaultModel); !fromLocal.Remote || fromLocal.Dimensions != 1024 {
-		t.Errorf("GetRemote(DefaultModel) = %+v, want fallback remote profile", fromLocal)
-	}
-	other := table.GetRemote("vendor/some-embedder")
-	if other.ID != "vendor/some-embedder" || other.Dimensions != 1024 || !other.Remote {
-		t.Errorf("fallback = %+v", other)
-	}
-	if !other.GetHandling().IsZero() {
-		t.Errorf("a remote model has handling %+v, want none", other.GetHandling())
+}
+
+func TestAProfileFileCannotMarkAModelAsRemote(t *testing.T) {
+	var reported []string
+	files := []UserFile{{Path: "service.json", Data: []byte(`{"id":"owner/service","title":"Service","remote":true,"dims":256,"maxTokens":2048,"pooling":"cls"}`)}}
+	table := getShippedProfiles(t).WithUserProfiles("/data/profiles", files, func(file string, _ error) { reported = append(reported, file) })
+
+	if _, err := table.GetLocal("owner/service"); err == nil || len(reported) != 1 {
+		t.Errorf("GetLocal = %v, reported %v, want the file skipped", err, reported)
 	}
 }
 
@@ -254,9 +255,6 @@ func TestGetTokensCapsALocalModelAtTheChunkLimit(t *testing.T) {
 	}
 	if m3.MaxTokens != 8192 || m3.GetTokens() != MaxChunkTokens {
 		t.Errorf("bge-m3 tokens = %d of %d", m3.GetTokens(), m3.MaxTokens)
-	}
-	if got := table.GetRemote("text-embedding-3-large").GetTokens(); got != 8191 {
-		t.Errorf("a remote model is capped at %d", got)
 	}
 }
 

@@ -7,6 +7,8 @@ import { createVault } from '../fixtures'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import type { PlexTabDeps, NoteHeading, NoteType } from '../types'
 import { usePlexHeadings } from './usePlexHeadings'
+import { getDefaultLook } from './look'
+import { getDefaultNames } from './names'
 
 const createDeps = (
   headings: ReadonlyMap<string, readonly NoteHeading[]>,
@@ -18,6 +20,8 @@ const createDeps = (
 ): PlexTabDeps => ({
   editor: createVault(false).editor,
   tabId: 'plex:1',
+  look: getDefaultLook(),
+  names: getDefaultNames(),
   creatable: [],
   window: {
     isReady: ref(true),

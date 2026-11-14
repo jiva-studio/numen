@@ -1,9 +1,12 @@
 import { CONVERSATION, definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { runInBackground } from '@numen/ui'
 import { useConversation } from './thread'
 import AgentTab from './ui/AgentTab.vue'
 import ConversationView from './ui/ConversationView.vue'
 import { AGENT, createAgentKind } from './model/kind'
 import { useAgentConversation } from './model/useAgentConversation'
+import { createSettingsOpener } from './model/settings'
+import { createAgentList, useAgentChoice } from './model/agents'
 import { WORDS } from './words'
 
 export { AgentTab }
@@ -13,36 +16,47 @@ export { useAgentConversation } from './model/useAgentConversation'
 export * from './types'
 export { WORDS } from './words'
 
+/** The key of the setting of the rows the turns of the chat go through. */
+const AGENTS_SETTING = 'connections'
+
 export function activate(context: PluginContext): void {
   context.register.view({ capability: CONVERSATION, component: ConversationView })
   const { workspace } = context.ui
-  const { agent } = context.work
   if (!workspace) return
-  if (!agent) {
-    throw new Error('an agent chat requires a window and an agent')
+  const { connections } = context.work
+  const { relations } = context.vault
+  if (!connections || !relations) {
+    throw new Error('an agent chat requires a window, its connections and the links of the vault')
   }
+  const agents = createAgentList(connections, WORDS)
+  const reloadAgents = () =>
+    runInBackground(agents.reload(), (error) => context.ui.notices.show(String(error), 'error'))
+  context.settings.onChange(AGENTS_SETTING, reloadAgents)
+  // A host that tells of changes of the connections lists the agents now and again on each change; one
+  // that does not lists them for each tab it opens.
+  const hasChangeSignal = connections.onChange !== undefined
+  connections.onChange?.(reloadAgents)
+  if (hasChangeSignal) reloadAgents()
   const chats = createAgentKind(
     {
       workspace,
-      agent,
-      ...(context.ui.commands ? { commands: context.ui.commands } : {}),
-      getReasoning: () => context.settings.get<string>('reasoning') ?? '',
+      relations,
+      openSettings: createSettingsOpener(context),
     },
-    (deps) =>
-      useAgentConversation(
-        useConversation({
-          agent,
-          words: WORDS,
-          conversation: `conversation:${crypto.randomUUID()}`,
-        }),
-        deps,
-      ),
+    (deps) => {
+      if (!hasChangeSignal) reloadAgents()
+      const choice = useAgentChoice(connections, agents)
+      const conversation = useConversation({
+        connections,
+        words: WORDS,
+        conversation: `conversation:${crypto.randomUUID()}`,
+        getPreferredRow: choice.getPreferredRow,
+      })
+      return useAgentConversation(conversation, deps, choice)
+    },
     AgentTab,
   )
   context.register.tabKind(chats.kind)
-
-  /** A question about a note, posted to the conversation the user was last in. */
-  const askAbout = (path: string): void => workspace.ask(`${path} — `)
 
   context.register.command({
     id: 'chat.open',
@@ -50,9 +64,13 @@ export function activate(context: PluginContext): void {
       await context.tabs.navigate?.(AGENT, note.path)
     },
   })
+  /** A question about a note, written into the conversation the user was last in. */
   context.register.command({
     id: 'note.ask',
-    handler: (note) => askAbout(note.path),
+    handler: async (note) => {
+      const id = await context.tabs.navigate?.(AGENT, note.path)
+      if (id) chats.setDraft(id, `${note.path} — `)
+    },
   })
 }
 

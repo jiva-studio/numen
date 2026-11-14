@@ -1,8 +1,6 @@
 package settings_test
 
 import (
-	"context"
-	"errors"
 	"slices"
 	"sync"
 	"testing"
@@ -15,9 +13,9 @@ func setting(json string, path ...string) settingsdomain.Setting {
 	return settingsdomain.Setting{Path: path, JSON: json}
 }
 
-func newNotifier(host *pluginHost, refreshSecrets func(context.Context) error, signal func(), report func(error)) *settings.NotifyPlugins {
+func newNotifier(host *pluginHost, signal func(), report func(error)) *settings.NotifyPlugins {
 	return settings.NewNotifyPlugins(settings.NotifyPluginsDeps{
-		Codec: jsonCodec{}, Apply: host.UpdatePluginSetting, Config: host, RefreshSecrets: refreshSecrets,
+		Codec: jsonCodec{}, Apply: host.UpdatePluginSetting, Config: host,
 		ResolveProfile: func(profile string) string { return "resolved-" + profile }, Signal: signal, Report: report,
 	})
 }
@@ -28,7 +26,7 @@ func TestNotifyPluginsUpdatesTheEnabledFlagLast(t *testing.T) {
 	host := &pluginHost{}
 	signals := 0
 
-	newNotifier(host, nil, func() { signals++ }, nil).Execute([]settingsdomain.Setting{
+	newNotifier(host, func() { signals++ }, nil).Execute([]settingsdomain.Setting{
 		setting(`true`, "org.example.scans", "enabled"),
 		setting(`3`, "org.example.scans", "depth"),
 		setting(`"dark"`, "app", "appearance", "mode"),
@@ -43,24 +41,21 @@ func TestNotifyPluginsUpdatesTheEnabledFlagLast(t *testing.T) {
 }
 
 // A change of the performance profile reaches the host as the profile the machine resolves it to,
-// and a change of the secrets configures the plugins again.
-func TestNotifyPluginsFollowsTheProfileAndTheSecrets(t *testing.T) {
-	host := &pluginHost{}
-	refreshed := 0
-	var reported []error
-	refuse := errors.New("gate closed")
 
-	notify := newNotifier(host, func(context.Context) error { refreshed++; return refuse }, nil, func(err error) { reported = append(reported, err) })
+func TestNotifyPluginsFollowsTheProfile(t *testing.T) {
+	host := &pluginHost{}
+	var reported []error
+
+	notify := newNotifier(host, nil, func(err error) { reported = append(reported, err) })
 	notify.Execute([]settingsdomain.Setting{
 		setting(`"fast"`, "app", "performance", "profile"),
-		setting(`[]`, "secrets"),
 	})
 
 	if !slices.Equal(host.profiles, []string{"resolved-fast"}) {
 		t.Errorf("profiles = %v", host.profiles)
 	}
-	if refreshed != 1 || len(reported) != 1 || !errors.Is(reported[0], refuse) {
-		t.Errorf("refreshed = %d, reported = %v", refreshed, reported)
+	if len(reported) != 0 {
+		t.Errorf("reported = %v", reported)
 	}
 }
 
@@ -81,10 +76,8 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 	}
 	file := &memoryFile{}
 	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
-	setups := 0
 	apply := settings.NewApplyToPlugins(settings.ApplyToPluginsDeps{
-		Codec: jsonCodec{}, Config: host, Write: write, Notify: newNotifier(host, nil, nil, nil), Subscribe: subscribe, Hosts: hosts,
-		Setup: func() { setups++ },
+		Codec: jsonCodec{}, Config: host, Write: write, Notify: newNotifier(host, nil, nil), Subscribe: subscribe, Hosts: hosts,
 	})
 
 	apply.Execute(map[string]map[string]any{"org.example.scans": {"depth": 2.0}}, "fast")
@@ -93,8 +86,8 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 	hosts.Unsubscribe(host)
 
 	<-stopCalls
-	if subscriptions != 1 || setups != 2 {
-		t.Errorf("subscriptions = %d, setups = %d", subscriptions, setups)
+	if subscriptions != 1 {
+		t.Errorf("subscriptions = %d, want 1", subscriptions)
 	}
 	if !slices.Equal(host.updates, []string{"org.example.scans.depth"}) {
 		t.Errorf("updates = %v: the batch is delivered before Unsubscribe returns", host.updates)
@@ -110,7 +103,7 @@ func TestApplyToPluginsSavesWhatAPluginChanges(t *testing.T) {
 	file := &memoryFile{}
 	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
 	apply := settings.NewApplyToPlugins(settings.ApplyToPluginsDeps{
-		Codec: jsonCodec{}, Config: host, Write: write, Notify: newNotifier(host, nil, nil, nil), Hosts: &settings.HostSubscriptions{}, Setup: func() {},
+		Codec: jsonCodec{}, Config: host, Write: write, Notify: newNotifier(host, nil, nil), Hosts: &settings.HostSubscriptions{},
 	})
 	apply.Execute(nil, "fast")
 

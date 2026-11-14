@@ -18,7 +18,6 @@ async function* waits(): AsyncGenerator<never> {
 /** What the core is asked, and what it answers, during a test. */
 const wire = {
   waits,
-  agentSignals: [] as AbortSignal[],
   resolveAddresses: vi.fn(),
   getPlugins: vi.fn(),
   listVaults: vi.fn(),
@@ -39,12 +38,6 @@ let restoreCore: () => void
 
 const answerCore = (): (() => void) =>
   installCoreHandlers({
-    getAgentState: async (_request: unknown, context: { signal: AbortSignal }) => {
-      wire.agentSignals.push(context.signal)
-      return { unreachable: '' }
-    },
-    askAgent: wire.waits,
-    finishConversation: async () => ({}),
     resolveAddresses: (request: unknown) => wire.resolveAddresses(request),
     getPlugins: (request: unknown) => wire.getPlugins(request),
     listVaults: (request: unknown) => wire.listVaults(request),
@@ -156,7 +149,6 @@ afterEach(() => {
   wire.requestedTasks.length = 0
   wire.taskSignals.length = 0
   wire.themeSignals.length = 0
-  wire.agentSignals.length = 0
   vi.useRealTimers()
 })
 
@@ -211,7 +203,7 @@ describe('App', () => {
   })
 
   it('records failed plugins, resolves links through the note service, and cleans up on unmount', async () => {
-    let agentHost: { resolveLinks: (text: string, vault: string) => Promise<unknown> } | undefined
+    let relations: { resolveLinks: (text: string, vault: string) => Promise<unknown> } | undefined
     serveCore(['md.numen.broken', 'md.numen.closing'])
     let shellDefault: ReturnType<typeof createWindow> | undefined
     const defaultWrapper = mount(
@@ -224,13 +216,13 @@ describe('App', () => {
             }) as unknown as typeof fetch,
             dynamicImport: async () => ({
               activate: (ctx: {
-                work: {
-                  agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
+                vault: {
+                  relations?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
                 }
                 plugin: { subscriptions: { dispose: () => void }[] }
                 register: { tabKind: (one: unknown) => void }
               }) => {
-                agentHost = ctx.work.agent
+                relations = ctx.vault.relations
                 ctx.plugin.subscriptions.push({
                   dispose: () => {
                     throw new Error('close failure')
@@ -255,12 +247,11 @@ describe('App', () => {
     expect(
       document.head.querySelector('link[data-plugin-id="md.numen.closing"]')?.getAttribute('href'),
     ).toBe('/plugin/md.numen.closing/dist/styles.css')
-    await agentHost?.resolveLinks('[[Note]]', 'physics')
+    await relations?.resolveLinks('[[Note]]', 'physics')
     expect(wire.resolveAddresses).toHaveBeenCalled()
 
     defaultWrapper.unmount()
     await flushPromises()
-    expect(wire.agentSignals.at(-1)?.aborted).toBe(true)
     expect(shellDefault?.plugins.failures.value).toContain(
       formatErrorMessage(new Error('close failure')),
     )
@@ -357,7 +348,7 @@ describe('the window over a plugin that draws the review', () => {
 })
 
 describe('the work behind the window', () => {
-  it("is followed for the window's own target and held as notices, and aborts on unmount", async () => {
+  it("is followed for the window's own target and listed as background tasks, and aborts on unmount", async () => {
     let attempts = 0
     let finishSecond: (() => void) | undefined
     wire.tasks = async function* () {
@@ -403,7 +394,12 @@ describe('the work behind the window', () => {
 
     await vi.advanceTimersByTimeAsync(1_000)
     await flushPromises()
-    expect(shell?.notices.notices.value.map((one) => one.text)).toContain('Indexing the vault')
+    let listed: readonly { label: string; state: string }[] = []
+    shell?.backgroundTasks.watch((tasks) => (listed = tasks)).dispose()
+    expect(listed.map((one) => [one.label, one.state])).toStrictEqual([
+      ['Indexing the vault', 'running'],
+      ['lost touch with numen — the window keeps trying', 'failed'],
+    ])
 
     const signal = wire.taskSignals.at(-1)
     expect(signal?.aborted).toBe(false)
@@ -413,48 +409,6 @@ describe('the work behind the window', () => {
     await vi.advanceTimersByTimeAsync(1_000)
     await flushPromises()
     expect(attempts).toBe(2)
-  })
-})
-
-describe('external links in the window', () => {
-  it('intercepts external anchor clicks, reports errors to notices, and stops on unmount', async () => {
-    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {
-      throw new Error('blocked popup')
-    })
-    let shell: ReturnType<typeof createWindow> | undefined
-    const wrapper = mount(
-      defineComponent({
-        setup: () => {
-          shell = createWindow(createDeps())
-          return () => h('a', { href: 'https://example.test/docs' }, 'Docs')
-        },
-      }),
-      { attachTo: document.body },
-    )
-    mounted.push(wrapper)
-    await flushPromises()
-
-    wrapper.find('a').element.click()
-    await vi.waitFor(() => {
-      expect(openSpy).toHaveBeenCalledWith('https://example.test/docs', '_blank')
-      expect(shell?.notices.notices.value).toMatchObject([
-        {
-          text: formatErrorMessage(new Error('blocked popup')),
-          severity: 'error',
-        },
-      ])
-    })
-
-    openSpy.mockClear()
-    const anchor = document.createElement('a')
-    anchor.href = 'https://example.test/after'
-    document.body.appendChild(anchor)
-    wrapper.unmount()
-    anchor.click()
-    await flushPromises()
-    anchor.remove()
-    expect(openSpy).not.toHaveBeenCalled()
-    openSpy.mockRestore()
   })
 })
 

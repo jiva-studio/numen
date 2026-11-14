@@ -46,8 +46,6 @@ var (
 	_ FileWriter    = (*Client)(nil)
 	_ NoteLookup    = (*Client)(nil)
 	_ LinkLookup    = (*Client)(nil)
-	_ NoteArranger  = (*Client)(nil)
-	_ LinkEditor    = (*Client)(nil)
 	_ CacheStore    = (*Client)(nil)
 )
 
@@ -90,19 +88,16 @@ func readError(err error) error {
 
 func getHostVaultErrors() map[v1.HostVaultErrorCode]error {
 	return map[v1.HostVaultErrorCode]error{
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:           ErrNoVault,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:          ErrNotExist,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT:      ErrOutside,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:           ErrStale,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS:     ErrAlreadyExists,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED:             ErrLockedByAnother,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:         ErrNotANote,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION: ErrInvalidConnection,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE:    ErrHierarchyCycle,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED:     ErrNoFreeName,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:       domain.ErrInvalidName,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT:           ErrNotText,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED:      ErrNotAttempted,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:       ErrNoVault,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:      ErrNotExist,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT:  ErrOutside,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:       ErrStale,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS: ErrAlreadyExists,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED:         ErrLockedByAnother,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:     ErrNotANote,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:   domain.ErrInvalidName,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT:       ErrNotText,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED:  ErrNotAttempted,
 	}
 }
 
@@ -380,25 +375,6 @@ func (c *Client) WriteCache(ctx context.Context, name string, content []byte) er
 		return readError(err)
 	}
 	return fail(res.Msg.GetError())
-}
-
-func (c *Client) Watch(ctx context.Context) (<-chan Change, error) {
-	stream, err := c.rpc.WatchVault(ctx, request(c, &v1.WatchVaultRequest{}))
-	if err != nil {
-		return nil, readError(err)
-	}
-	if !stream.Receive() {
-		closeErr := stream.Close()
-		if err := stream.Err(); err != nil {
-			return nil, errors.Join(readError(err), closeErr)
-		}
-		return nil, errors.Join(fmt.Errorf("host: the watch ended before it began"), closeErr)
-	}
-	changes := make(chan Change)
-	go followStream(ctx, stream, changes, func(msg *v1.WatchVaultResponse) Change {
-		return Change{Paths: msg.GetPaths(), IsVaultChanged: msg.GetIsVaultChanged(), Err: nil}
-	}, func(err error) Change { return Change{Paths: nil, IsVaultChanged: false, Err: err} })
-	return changes, nil
 }
 
 // With returns the client for the vault with the given identity, used as the shown vault is. A call on

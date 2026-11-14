@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -26,11 +27,14 @@ type Handler struct {
 	vaults       VaultProvider
 	findNames    *search.FindNames
 	findPassages *search.FindPassages
+	searches     *searchcancel.Searches
 }
 
 // NewHandler is the handler of SearchService over the names and the text of the shown vault.
-func NewHandler(vaults VaultProvider, names *search.FindNames, passages *search.FindPassages) *Handler {
-	return &Handler{vaults: vaults, findNames: names, findPassages: passages}
+func NewHandler(
+	vaults VaultProvider, names *search.FindNames, passages *search.FindPassages, searches *searchcancel.Searches,
+) *Handler {
+	return &Handler{vaults: vaults, findNames: names, findPassages: passages, searches: searches}
 }
 
 // errNoMode is a search that named no mode to ask it in.
@@ -46,7 +50,15 @@ func (h *Handler) SearchNames(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
+	ctx, done := h.searches.Start(ctx, r.Msg.GetSearchId())
+	defer done()
+	if err := ctx.Err(); err != nil {
+		return nil, connect.NewError(connect.CodeCanceled, err)
+	}
 	found, err := h.findNames.Execute(ctx, showing, r.Msg.GetQuery(), int(r.Msg.GetLimit()))
+	if errors.Is(err, context.Canceled) {
+		return nil, connect.NewError(connect.CodeCanceled, err)
+	}
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -85,7 +97,15 @@ func (h *Handler) SearchPassages(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoMode)
 	}
 
+	ctx, done := h.searches.Start(ctx, r.Msg.GetSearchId())
+	defer done()
+	if err := ctx.Err(); err != nil {
+		return nil, connect.NewError(connect.CodeCanceled, err)
+	}
 	found, err := h.findPassages.Execute(ctx, showing, query, mode, int(r.Msg.GetLimit()))
+	if errors.Is(err, context.Canceled) {
+		return nil, connect.NewError(connect.CodeCanceled, err)
+	}
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -113,6 +133,16 @@ func (h *Handler) SearchPassages(
 	return connect.NewResponse(out), nil
 }
 
+// CancelSearch cancels the context of the SearchNames or SearchPassages call that carries the search id.
+// The window sends it when it aborts the call, because an aborted request does not end the context of
+// the call.
+func (h *Handler) CancelSearch(
+	_ context.Context, r *connect.Request[v1.CancelSearchRequest],
+) (*connect.Response[v1.CancelSearchResponse], error) {
+	h.searches.Cancel(r.Msg.GetSearchId())
+	return connect.NewResponse(&v1.CancelSearchResponse{}), nil
+}
+
 func convertNoteTypeToWire(noteType domain.NoteType) string {
 	if noteType == domain.TypeNote {
 		return ""
@@ -131,7 +161,7 @@ func ConvertSearchModeFromWire(mode v1.SearchMode) (search.Mode, bool) {
 	case v1.SearchMode_SEARCH_MODE_WORDS:
 		return search.Lexical, true
 	case v1.SearchMode_SEARCH_MODE_MEANING:
-		return search.Dense, true
+		return search.Sources, true
 	case v1.SearchMode_SEARCH_MODE_NAMES:
 		return search.ByName, true
 	case v1.SearchMode_SEARCH_MODE_HYBRID:

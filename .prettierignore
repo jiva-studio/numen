@@ -1,5 +1,6 @@
 libs/core/protocol/src/
 libs/core/protocol/gen/
+libs/plugin/sdk-ts/src/contracts/*/*_pb.ts
 **/dist/**
 **/coverage/**
 **/storybook-static/**

@@ -13,17 +13,21 @@ import (
 	"time"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // bridgeHost is what every bridge is opened on.
 type bridgeHost interface {
-	embedderbridge.Host
-	agentbridge.Host
+	bridge.Activator
+	sourcebridge.Plugins
 }
+
+// contractPluginID is the plugin the bridges are opened on.
+const contractPluginID = "md.numen.stub"
 
 // bridgeCall makes one call through an open bridge and reports whether the
 // returned value is the zero value.
@@ -48,23 +52,14 @@ func createContract[B io.Closer](bridge B, err error, call func(B, context.Conte
 
 func getBridgeContracts() []bridgeContract {
 	return []bridgeContract{
-		{"embedder", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-			b, err := embedderbridge.Open(ctx, h)
-			return createContract(b, err, func(b *embedderbridge.Embedder, ctx context.Context) (bool, error) {
-				return isZeroResult(b.Embed(ctx, []string{"a"}))
-			})
-		}},
-		{"agent", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-			b, err := agentbridge.OpenForPlugin(ctx, h, contractPluginID)
-			return createContract(b, err, func(b *agentbridge.Agent, ctx context.Context) (bool, error) {
-				return isZeroResult(b.GetPrograms(ctx, nil))
+		{"search source", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
+			b, err := sourcebridge.Open(ctx, h, h, nil)
+			return createContract(b, err, func(b *sourcebridge.Source, ctx context.Context) (bool, error) {
+				return isZeroResult(b.IndexTexts(ctx, searchsource.Place{}, []searchsource.Text{{ChunkID: "1", Text: "a"}}))
 			})
 		}},
 	}
 }
-
-// contractPluginID is the plugin the bridges that are opened by id are opened on.
-const contractPluginID = "md.numen.stub"
 
 func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error), isRefusal func(error) bool) (problems []string) {
 	bridge, call, err := open(ctx, host)
@@ -184,28 +179,33 @@ func TestErrorCheck_RejectsBridgeWithWrongResponse(t *testing.T) {
 	}
 }
 
-func TestADoubleCloseProducesTheReferenceBackOnce(t *testing.T) {
+// A bridge takes its plugin only for the length of a call, so an open bridge lets the plugin go idle, and closing it
+// twice gives back nothing more.
+func TestABridgeReleasesThePluginAfterEachCall(t *testing.T) {
 	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newLeaseHost(t)
-			bridge, _, err := tc.open(t.Context(), host)
+			bridge, call, err := tc.open(t.Context(), host)
 			if err != nil {
 				t.Fatal(err)
 			}
-			target := host.Acquired.Load()
-			if target == 0 {
-				t.Fatal("opening the bridge acquired no reference")
+			// The stub serves no texts, so the call fails; it holds the plugin all the same.
+			if _, err := call(t.Context()); err == nil {
+				t.Fatal("the stub answered texts it does not serve")
 			}
-			if got := host.Released.Load(); got != 0 {
-				t.Fatalf("%d references were given back before Close", got)
+			if host.Acquired.Load() == 0 {
+				t.Fatal("the call acquired no reference")
+			}
+			if acquired, released := host.Acquired.Load(), host.Released.Load(); acquired != released {
+				t.Errorf("after the call %d references are held", acquired-released)
 			}
 			for range 2 {
 				if err := bridge.Close(); err != nil {
 					t.Fatal(err)
 				}
 			}
-			if got := host.Released.Load(); got != target {
-				t.Errorf("held %d references, gave back %d", target, got)
+			if acquired, released := host.Acquired.Load(), host.Released.Load(); acquired != released {
+				t.Errorf("acquired %d references, gave back %d", acquired, released)
 			}
 		})
 	}

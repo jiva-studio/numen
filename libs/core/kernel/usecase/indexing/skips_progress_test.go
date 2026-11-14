@@ -48,7 +48,7 @@ func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}
 	made, db := openReading(t)
 	fit(t, db, model)
-	recipe := model.GetModel().Recipe()
+	recipe := model.Describe().Recipe()
 
 	v := made.newVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
 	cut(t, made, db, v)
@@ -58,7 +58,7 @@ func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *
 	}
 
 	p := newPass(made, db, events, model, recipe, v)
-	p.worker.vectorsReady = log.report
+	p.worker.searchSourceReady = log.report
 	ended := make(chan struct{})
 	go func() {
 		defer close(ended)
@@ -113,7 +113,7 @@ func testProgressOfAPassAfterACancelReachesItsTotal(t *testing.T, openReading op
 	}
 }
 
-func testVectorsReadyExcludesTheCanceledNote(t *testing.T, openReading openFunc) {
+func testSearchSourceReadyExcludesTheCanceledNote(t *testing.T, openReading openFunc) {
 	t.Helper()
 	events := &progressLog{recorder: newRecorder()}
 	log := &readyLog{}
@@ -125,8 +125,8 @@ func testVectorsReadyExcludesTheCanceledNote(t *testing.T, openReading openFunc)
 	p.embed(t.Context())
 	p.embed(t.Context())
 
-	if len(log.vaults) != 2 {
-		t.Errorf("told %d times, want once for each pass after the cancel", len(log.vaults))
+	if len(log.vaults) != 1 {
+		t.Errorf("told %d times, want once, for the pass after the cancel that made vectors", len(log.vaults))
 	}
 	if calls := model.getHeldCalls(); calls != 0 {
 		t.Errorf("the canceled note was sent to the model %d times", calls)

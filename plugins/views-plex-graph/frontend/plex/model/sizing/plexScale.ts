@@ -31,6 +31,8 @@ export const scaleOptions = (options: PlexOptions, delta: number): PlexOptions =
   ...options,
   focusSize: larger(options.focusSize, delta),
   nodeSize: larger(options.nodeSize, delta),
+  padding: { inline: options.padding.inline * delta, block: options.padding.block * delta },
+  room: options.room * delta,
   minWidth: options.minWidth * delta,
   iconWidth: options.iconWidth * delta,
   headingHeight: options.headingHeight * delta,

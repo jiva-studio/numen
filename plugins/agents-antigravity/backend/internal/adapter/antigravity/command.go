@@ -1,86 +1,83 @@
 package antigravity
 
 import (
-	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/model"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/runs"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/task"
 )
 
-func resolveCommand(command []string, customPath ...string) (string, []string) {
-	if len(command) > 0 {
-		return command[0], command[1:]
-	}
-	return findProgram(customPath...), nil
+const (
+	// flagPrint runs one turn without a prompt on the command line: the prompt is the message on the
+	// standard input.
+	flagPrint        = "--print="
+	flagInputFormat  = "--input-format"
+	flagOutputFormat = "--output-format"
+	streamJSON       = "stream-json"
+)
+
+// inputMessage is a message of the stream-json input of the program.
+type inputMessage struct {
+	Event   string           `json:"event"`
+	Message inputUserMessage `json:"message"`
 }
 
-func makeAntigravityCommand(
-	runCtx context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
-) (runs.Command, error) {
-	if !agentrun.HasTools(req) {
-		return makeAnswerCommand(runCtx, req, reg, customPath...)
-	}
-	binName, baseArgs := resolveCommand(req.Command, customPath...)
-	args := append([]string{}, baseArgs...)
-	args = append(args,
-		"-p", req.Prompt,
-		"--output-format", "stream-json",
-		"--dangerously-skip-permissions",
-	)
-	if modelName := req.Model; modelName != "" && modelName != model.DefaultName {
-		args = append(args, "--model", modelName)
-	}
-	if sessID := reg.GetSession(req.Conversation); sessID != "" {
-		args = append(args, "--conversation", sessID)
-	}
+type inputUserMessage struct {
+	Content string `json:"content"`
+}
 
-	if req.ToolsURL == "" {
-		return runs.Command{Path: binName, Args: args, Dir: "", Env: nil, Token: "", Release: nil}, nil
-	}
-	tempHome, clean, err := setupAntigravityHome(&endpoint{URL: req.ToolsURL, Token: req.ToolsToken})
+func getPrintArgs() []string {
+	return []string{flagPrint, flagInputFormat, streamJSON, flagOutputFormat, streamJSON}
+}
+
+func writeInput(prompt string) (string, error) {
+	line, err := json.Marshal(inputMessage{Event: "user", Message: inputUserMessage{Content: prompt}})
 	if err != nil {
-		return runs.Command{}, fmt.Errorf("set up the Antigravity home: %w", err)
+		return "", fmt.Errorf("encode the prompt: %w", err)
 	}
-	return runs.Command{
-		Path: binName, Args: args, Dir: "", Env: append(os.Environ(), "HOME="+tempHome), Token: "", Release: clean,
+	return string(line) + "\n", nil
+}
+
+func makeTaskCommand(path string, run task.Run) (task.Command, error) {
+	if run.ToolsURL == "" {
+		return makeAnswerCommand(path, run)
+	}
+	args := appendRunFlags(append(getPrintArgs(), "--dangerously-skip-permissions"), run)
+	return makeCommand(path, args, run.Prompt, &endpoint{URL: run.ToolsURL, Token: run.ToolsToken})
+}
+
+func makeAnswerCommand(path string, run task.Run) (task.Command, error) {
+	return makeCommand(path, appendRunFlags(getPrintArgs(), run), run.Prompt, nil)
+}
+
+func makeCommand(path string, args []string, prompt string, tools *endpoint) (task.Command, error) {
+	input, err := writeInput(prompt)
+	if err != nil {
+		return task.Command{}, err
+	}
+	tempHome, cleanHome, err := setupAntigravityHome(tools)
+	if err != nil {
+		return task.Command{}, fmt.Errorf("set up the Antigravity home: %w", err)
+	}
+	dir, cleanDir, err := createTempDir("numen-antigravity-run-*")
+	if err != nil {
+		return task.Command{}, errors.Join(fmt.Errorf("create the folder to run in: %w", err), cleanHome())
+	}
+	return task.Command{
+		Path: path, Args: args, Dir: dir, Env: append(hostcall.GetChildEnvironment(), "HOME="+tempHome), Stdin: input,
+		Release: func() error { return errors.Join(cleanHome(), cleanDir()) },
 	}, nil
 }
 
-func makeAnswerCommand(
-	_ context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
-) (runs.Command, error) {
-	tempHome, cleanHome, err := setupAntigravityHome(nil)
-	if err != nil {
-		return runs.Command{}, fmt.Errorf("set up the Antigravity home: %w", err)
+func appendRunFlags(args []string, run task.Run) []string {
+	if run.Model != "" && run.Model != model.DefaultName {
+		args = append(args, "--model", run.Model)
 	}
-	dir, cleanDir, err := agentrun.CreateTempDir("numen-antigravity-run-*")
-	if err != nil {
-		return runs.Command{}, errors.Join(fmt.Errorf("create the folder to run in: %w", err), cleanHome())
+	if run.Session != "" {
+		args = append(args, "--conversation", run.Session)
 	}
-	binName, baseArgs := resolveCommand(req.Command, customPath...)
-	args := append([]string{}, baseArgs...)
-	args = append(args,
-		"-p", agentrun.WritePrompt(req.Instructions, req.Prompt),
-		"--output-format", "stream-json",
-	)
-	if modelName := req.Model; modelName != "" && modelName != model.DefaultName {
-		args = append(args, "--model", modelName)
-	}
-	if sessID := reg.GetSession(req.Conversation); sessID != "" {
-		args = append(args, "--conversation", sessID)
-	}
-	return runs.Command{
-		Path:  binName,
-		Args:  args,
-		Dir:   dir,
-		Env:   append(os.Environ(), "HOME="+tempHome),
-		Token: "",
-		Release: func() error {
-			return errors.Join(cleanHome(), cleanDir())
-		},
-	}, nil
+	return args
 }

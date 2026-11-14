@@ -126,3 +126,33 @@ func TestAValueThatCannotBeEncodedIsFormattedWithItsPrintedForm(t *testing.T) {
 		t.Error("a value JSON cannot encode was left out")
 	}
 }
+
+func newChat() manifest.Manifest {
+	return manifest.Manifest{
+		ID: "org.example.chat",
+		Settings: []manifest.Setting{
+			{Key: "agents", Type: "connections", Title: "Agents", Operations: []string{"acp.task"}, Max: new(5.0), Discover: true},
+			{Key: "models", Type: "connections", Title: "Models", Operations: []string{"llm.chat"}, Max: new(1.0)},
+		},
+	}
+}
+
+func getDiscoveryByKey(values map[string]any) map[string]bool {
+	discovering := map[string]bool{}
+	for _, one := range plugin.ListSettings(newChat(), values) {
+		discovering[one.Key] = one.IsDiscovering
+	}
+	return discovering
+}
+
+func TestASettingThatDeclaresDiscoverDiscoversUntilThePersonTurnsItOff(t *testing.T) {
+	if got := getDiscoveryByKey(map[string]any{}); !got["agents"] || got["models"] {
+		t.Errorf("with no choice: %v, want agents only", got)
+	}
+	if got := getDiscoveryByKey(map[string]any{"discover": map[string]any{"agents": false}}); got["agents"] {
+		t.Errorf("turned off: %v, want no discovery", got)
+	}
+	if got := getDiscoveryByKey(map[string]any{"discover": map[string]any{"models": true}}); got["models"] {
+		t.Errorf("a setting that does not declare discover discovers: %v", got)
+	}
+}

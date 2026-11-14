@@ -1,8 +1,7 @@
 /**
  * Conversation state for agent tabs.
  */
-import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
-import type { AgentModelOption } from '../message-composer'
+import { computed, ref, shallowRef, watch } from 'vue'
 import type { Conversation } from '../thread'
 import type { Turn } from '../types'
 import {
@@ -13,7 +12,8 @@ import {
 } from '../lib/links'
 import type { TextLink } from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
-import type { SavedConversation } from '../lib/saved'
+import type { SavedConversation, SavedModel } from '../lib/saved'
+import type { AgentChoice } from './agents'
 
 export type { AgentTabDeps } from '../types'
 
@@ -21,132 +21,6 @@ export type { AgentTabDeps } from '../types'
 export type AgentTabState = ReturnType<typeof useAgentConversation>
 
 type ResolvedAddressMap = ReadonlyMap<string, string>
-
-const AGENT_USE_AT = ['app', 'agent', 'use'] as const
-
-const getModelAt = (agent: string): readonly string[] => ['app', 'agent', agent, 'model']
-
-const getKeptValue = (deps: AgentTabDeps, path: readonly string[]): string =>
-  String(deps.settings?.getSetting?.(path) ?? '')
-
-function pickOption(
-  options: readonly AgentModelOption[],
-  selectedAgentId: string,
-  ...[selectedModelId, deps]: [selectedModelId: string, deps: AgentTabDeps]
-): AgentModelOption {
-  const agent = selectedAgentId || getKeptValue(deps, AGENT_USE_AT)
-  const model = selectedModelId || getKeptValue(deps, getModelAt(agent))
-  const ofAgent = options.filter((o) => o.agentId === agent)
-  return (
-    ofAgent.find((o) => o.modelId === model) ??
-    ofAgent.find((o) => o.isDefault) ??
-    ofAgent[0] ??
-    options[0]!
-  )
-}
-
-function useAgentSelection(deps: AgentTabDeps) {
-  const getModelsAt = (path: readonly string[]) => deps.settings?.getModelsAt?.(path) ?? []
-  const getInstalledAgents = () =>
-    getModelsAt(AGENT_USE_AT).filter((one) => one.name !== '' && one.presence === 'present')
-
-  const modelOptions = computed<readonly AgentModelOption[]>(() =>
-    getInstalledAgents().flatMap((agent) =>
-      getModelsAt(getModelAt(agent.name))
-        .filter((one) => one.name !== '' || one.isDefault)
-        .map((one) => ({
-          agentId: agent.name,
-          agentTitle: agent.title,
-          modelId: one.name,
-          modelTitle: one.title,
-          isAvailable: true,
-          isDefault: one.isDefault,
-          reasoningLevels: (one.reasoningLevels ?? []).map((level) => ({
-            id: level.name,
-            title: level.title,
-          })),
-          defaultReasoning: one.defaultReasoning ?? '',
-        })),
-    ),
-  )
-
-  const selectedAgentId = ref('')
-  const selectedModelId = ref('')
-
-  watch(
-    modelOptions,
-    (options) => {
-      if (options[0] === undefined) {
-        selectedAgentId.value = ''
-        selectedModelId.value = ''
-        return
-      }
-      const current = options.find(
-        (o) => o.agentId === selectedAgentId.value && o.modelId === selectedModelId.value,
-      )
-      if (current) return
-      const pick = pickOption(options, selectedAgentId.value, selectedModelId.value, deps)
-      selectedAgentId.value = pick.agentId
-      selectedModelId.value = pick.modelId
-    },
-    { immediate: true },
-  )
-
-  const selectModel = (option: AgentModelOption) => {
-    selectedAgentId.value = option.agentId
-    selectedModelId.value = option.modelId
-  }
-
-  const isAgentMissing = computed(() => modelOptions.value.length === 0)
-  const openSettings = () => deps.settings?.openSettings?.()
-
-  const models = { selectedAgentId, selectedModelId, modelOptions, selectModel }
-  return {
-    models,
-    reasoning: useReasoningSelection(deps, models),
-    agent: { isAgentMissing, openSettings, unreachable: deps.unreachable },
-  }
-}
-
-function useReasoningSelection(
-  deps: AgentTabDeps,
-  selection: {
-    readonly selectedAgentId: Ref<string>
-    readonly selectedModelId: Ref<string>
-    readonly modelOptions: ComputedRef<readonly AgentModelOption[]>
-  },
-) {
-  const selected = ref({ agentId: '', id: '' })
-
-  const selectedOption = computed(() =>
-    selection.modelOptions.value.find(
-      (one) =>
-        one.agentId === selection.selectedAgentId.value &&
-        one.modelId === selection.selectedModelId.value,
-    ),
-  )
-
-  const reasoningLevels = computed(() => selectedOption.value?.reasoningLevels ?? [])
-
-  /** The level chosen or kept, else the default of the model; empty where the model hasLevel none. */
-  const selectedReasoningId = computed(() => {
-    const agentId = selection.selectedAgentId.value
-    const configuredReasoning =
-      (selected.value.agentId === agentId ? selected.value.id : '') ||
-      (deps.settings?.getReasoning?.() ?? '')
-    const hasLevel = (id: string) => reasoningLevels.value.some((level) => level.id === id)
-    if (hasLevel(configuredReasoning)) return configuredReasoning
-    const byDefault = selectedOption.value?.defaultReasoning ?? ''
-    return hasLevel(byDefault) ? byDefault : ''
-  })
-
-  const selectReasoningLevel = (id: string) => {
-    const agentId = selection.selectedAgentId.value
-    selected.value = { agentId, id }
-  }
-
-  return { reasoningLevels, selectedReasoningId, selectReasoningLevel }
-}
 
 const isSameList = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && a.every((one, index) => one === b[index])
@@ -287,9 +161,13 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
   return { turns, followLink }
 }
 
-export function useAgentConversation(conversation: Conversation, deps: AgentTabDeps) {
+/** agents is the choice of agent of the conversation, null for a conversation that offers none. */
+export function useAgentConversation(
+  conversation: Conversation,
+  deps: AgentTabDeps,
+  agents: AgentChoice | null = null,
+) {
   const userQuestion = ref('')
-  const selection = useAgentSelection(deps)
   const addresses = useConversationAddresses(conversation, deps)
 
   const setQuestion = (text: string) => {
@@ -298,34 +176,35 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
 
   const send = (text: string) => {
     userQuestion.value = ''
-    conversation
-      .ask(text, '', {
-        agentId: selection.models.selectedAgentId.value,
-        modelId: selection.models.selectedModelId.value,
-        reasoning: selection.reasoning.selectedReasoningId.value,
-      })
-      .catch(() => {
-        userQuestion.value = text
-      })
+    conversation.ask(text).catch(() => {
+      userQuestion.value = text
+    })
   }
 
-  /** Shows the question and the turns a tab saved before a restart. */
+  /** Shows the question and the turns a tab saved before a restart, and takes the model it chose. */
   const restore = (saved: SavedConversation) => {
     userQuestion.value = saved.question
     if (saved.turns.length > 0) conversation.turns.value = saved.turns.map((turn) => ({ ...turn }))
+    if (saved.model) {
+      agents?.restoreChoice({ agentId: saved.model.connectionId, modelId: saved.model.modelId })
+    }
+  }
+
+  const getSavedModel = (): SavedModel | null => {
+    const chosen = agents?.getChosen()
+    return chosen ? { connectionId: chosen.agentId, modelId: chosen.modelId } : null
   }
 
   const openTurnSource = (turn: Turn) => {
-    const location = conversation.getSourceLocation(turn.id)
-    if (location) deps.openFileAt(location.path, location.range)
+    const path = conversation.getSourcePath(turn.id)
+    if (path) deps.openFile(path)
   }
 
   return {
     conversation,
-    models: selection.models,
-    reasoning: selection.reasoning,
-    agent: selection.agent,
     addresses,
-    draft: { userQuestion, setQuestion, send, restore, openTurnSource },
+    agents,
+    openSettings: deps.openSettings,
+    draft: { userQuestion, setQuestion, send, restore, getSavedModel, openTurnSource },
   }
 }

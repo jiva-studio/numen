@@ -11,7 +11,6 @@ import type { HandlerDeclaration, PluginHostDeps } from './types'
 const SCANS = 'org.example.scans'
 const TIDES = 'org.example.tides'
 const CREATE = 'app:file.createText'
-const DOWNLOAD = 'app:link.downloadMedia'
 const SCAN: CommandTarget = {
   path: 'scans/mill.png',
   title: 'mill',
@@ -42,17 +41,21 @@ const HANDLERS: readonly HandlerDeclaration[] = [
     when: "target.contentType == 'image/png'",
     hasItems: false,
   },
+]
+
+/** Handlers over the versions of a file, whose items the core lists. */
+const ITEM_HANDLERS: readonly HandlerDeclaration[] = [
   {
     pluginId: SCANS,
-    command: DOWNLOAD,
-    title: 'Delete the reading',
+    command: CREATE,
+    title: 'Read the reading',
     when: "version.kind == 'reading'",
     hasItems: true,
   },
   {
     pluginId: TIDES,
-    command: DOWNLOAD,
-    title: 'Delete the table',
+    command: CREATE,
+    title: 'Read the table',
     when: "version.kind == 'table'",
     hasItems: true,
   },
@@ -69,6 +72,7 @@ function createHost(handlers: readonly HandlerDeclaration[] = HANDLERS) {
     hasPluginFrontend: () => false,
     listBackendHandlerItems,
     runBackendHandler,
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),
@@ -104,23 +108,23 @@ describe('a shared command', () => {
   })
 
   it('passes the values of the arguments of the command to the backend of its handler', async () => {
-    const importer: HandlerDeclaration = {
+    const reader: HandlerDeclaration = {
       pluginId: TIDES,
-      command: 'app:link.import',
-      title: 'Import link',
+      command: CREATE,
+      title: 'Read the tide table',
       hasItems: false,
     }
-    const { host, runBackendHandler } = createHost([importer])
+    const { host, runBackendHandler } = createHost([reader])
     const window = { ...SCAN, path: '', title: '', type: '' }
 
     expect(
-      await host.commands.executeCommand('app:link.import', window, {
+      await host.commands.executeCommand(CREATE, window, {
         values: { address: 'https://example.com/tides' },
       }),
     ).toBe(true)
     expect(runBackendHandler).toHaveBeenCalledWith({
       pluginId: TIDES,
-      command: 'app:link.import',
+      command: CREATE,
       target: window,
       itemId: undefined,
       values: { address: 'https://example.com/tides' },
@@ -143,13 +147,13 @@ describe('a shared command', () => {
   })
 
   it('offers the items of its handlers in one list, grouped by plugin, and runs the one picked', async () => {
-    const { host, runBackendHandler } = createHost()
+    const { host, runBackendHandler } = createHost(ITEM_HANDLERS)
 
-    expect(await host.commands.listCommandItems(DOWNLOAD, SCAN)).toStrictEqual([
+    expect(await host.commands.listCommandItems(CREATE, SCAN)).toStrictEqual([
       { id: `${SCANS}:org.example.scans/reading`, title: 'reading', group: SCANS },
     ])
     await host.commands.executeCommand(
-      DOWNLOAD,
+      CREATE,
       { ...SCAN, type: '' },
       {
         itemId: `${SCANS}:org.example.scans/reading`,
@@ -157,7 +161,7 @@ describe('a shared command', () => {
     )
     expect(runBackendHandler).toHaveBeenCalledWith({
       pluginId: SCANS,
-      command: DOWNLOAD,
+      command: CREATE,
       target: { ...SCAN, type: '' },
       itemId: 'org.example.scans/reading',
     })

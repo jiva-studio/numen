@@ -48,7 +48,7 @@ watch(
   () => {
     const turns = props.turns
     const last = turns[turns.length - 1]
-    return [turns.length, last?.id, last?.text, last?.state, last?.aside]
+    return [turns.length, last?.id, last?.text, last?.state, last?.plan, last?.aside]
   },
   () => toFoot(),
   { flush: 'post' },

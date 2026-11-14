@@ -1,6 +1,6 @@
 /**
- * The plugins of the window slots: started before the other plugins, and the wait the window draws
- * after. Every plugin here is invented.
+ * The plugins of the window slots: the only plugins the window starts with, and the wait the window
+ * draws after. Every plugin here is invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
@@ -73,7 +73,7 @@ afterEach(() => {
 })
 
 describe('the start of the plugins of the window slots', () => {
-  it('reads and activates the plugins of the window slots before the others', async () => {
+  it('reads and activates the plugins of the window slots, and leaves the others idle', async () => {
     vi.useFakeTimers()
     const { loader, log } = createLoader()
 
@@ -81,11 +81,27 @@ describe('the start of the plugins of the window slots', () => {
     await vi.runAllTimersAsync()
     await started
 
-    expect(log.indexOf(`activate ${TABS}`)).toBeLessThan(log.indexOf(`read ${WORKER}`))
-    expect(log.indexOf(`activate ${BAR}`)).toBeLessThan(log.indexOf(`read ${WORKER}`))
+    expect(log).toContain(`activate ${TABS}`)
+    expect(log).toContain(`activate ${BAR}`)
+    expect(log).not.toContain(`read ${WORKER}`)
+    expect(loader.status.getActivePluginIds().sort()).toStrictEqual([TABS, BAR].sort())
   })
 
-  it('settles the wait as soon as the plugins of the window slots started, before the others', async () => {
+  it('starts a plugin listed while the window runs only where it fills a window slot', async () => {
+    vi.useFakeTimers()
+    const { loader } = createLoader()
+    const started = loader.start()
+    await vi.runAllTimersAsync()
+    await started
+
+    const tracked = loader.trackPlugins([WORKER, BAR])
+    await vi.runAllTimersAsync()
+    await tracked
+
+    expect(loader.status.getActivePluginIds()).toStrictEqual([BAR])
+  })
+
+  it('settles the wait as soon as the plugins of the window slots started', async () => {
     vi.useFakeTimers()
     const { loader, log } = createLoader({ [WORKER]: 10_000 })
     let isSettled = false
@@ -121,7 +137,7 @@ describe('the start of the plugins of the window slots', () => {
     await Promise.all([interfaceWait, started])
   })
 
-  it('starts the plugins after a late one at 3 s without waiting for it', async () => {
+  it('starts the plugins of the window slots after a late one at 3 s without waiting for it', async () => {
     vi.useFakeTimers()
     const { loader } = createLoader({}, { [TABS]: 10_000 })
 
@@ -130,7 +146,7 @@ describe('the start of the plugins of the window slots', () => {
 
     expect(loader.status.isPluginActive(TABS)).toBe(false)
     expect(loader.status.isPluginActive(BAR)).toBe(true)
-    expect(loader.status.isPluginActive(WORKER)).toBe(true)
+    expect(loader.status.isPluginActive(WORKER)).toBe(false)
     await vi.advanceTimersByTimeAsync(10_000)
     expect(loader.status.isPluginActive(TABS)).toBe(true)
     await started

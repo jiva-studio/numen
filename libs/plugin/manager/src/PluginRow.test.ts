@@ -1,123 +1,92 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { Menu } from '@numen/ui'
+import type { PluginHealth } from './pluginInfo'
 import PluginRow from './PluginRow.vue'
-import { createManagedPlugin as createPluginInfo, createAvailablePlugin } from './testing/managed'
+import { createAvailablePlugin, createManagedPlugin } from './testing/managed'
+
+const ENGINE = createManagedPlugin('test.engine', 'Speech Engine', {
+  version: '2.1.0',
+  description: 'Converts speech to text accurately.',
+})
+
+const health = (key: string, severity: PluginHealth['severity']): PluginHealth => ({
+  key,
+  severity,
+  text: `The ${key} does not work`,
+  detail: '',
+  actionLabel: '',
+})
+
+const mountRow = (props: { isEnabled?: boolean; health?: readonly PluginHealth[] } = {}) =>
+  mount(PluginRow, { props: { plugin: ENGINE, isEnabled: true, ...props } })
 
 describe('PluginRow', () => {
-  it('renders plugin name, version, and description', () => {
-    const plugin = createPluginInfo('test.engine', 'Speech Engine', {
-      version: '2.1.0',
-      description: 'Converts speech to text accurately.',
-    })
-    const wrapper = mount(PluginRow, {
-      props: { plugin, isEnabled: true },
-    })
+  it('draws the name and the description, and no version', () => {
+    const row = mountRow().get('button')
 
-    expect(wrapper.text()).toContain('Speech Engine v2.1.0')
-    expect(wrapper.text()).toContain('Converts speech to text accurately.')
+    expect(row.text()).toContain('Speech Engine')
+    expect(row.text()).toContain('Converts speech to text accurately.')
+    expect(row.text()).not.toContain('2.1.0')
   })
 
-  it('renders plugin name without version suffix when version is empty', () => {
-    const plugin = createPluginInfo('test.engine', 'Speech Engine', {
-      version: '',
-      description: 'Basic engine.',
-    })
-    const wrapper = mount(PluginRow, {
-      props: { plugin, isEnabled: true },
-    })
+  it('emits select-plugin when the row is clicked', async () => {
+    const wrapper = mountRow()
 
-    expect(wrapper.text()).toContain('Speech Engine')
-    expect(wrapper.text()).not.toContain('Speech Engine v')
-  })
+    await wrapper.get('button').trigger('click')
 
-  it('emits selectPlugin when row is clicked', async () => {
-    const plugin = createPluginInfo('test.engine', 'Speech Engine')
-    const wrapper = mount(PluginRow, {
-      props: { plugin, isEnabled: true },
-    })
-
-    await wrapper.find('.plugin-row').trigger('click')
     expect(wrapper.emitted('select-plugin')).toHaveLength(1)
   })
 
-  it('emits selectPlugin on Enter keydown', async () => {
-    const plugin = createPluginInfo('test.engine', 'Speech Engine')
-    const wrapper = mount(PluginRow, {
-      props: { plugin, isEnabled: true },
-    })
-
-    await wrapper.find('.plugin-row').trigger('keydown', { key: 'Enter' })
-    expect(wrapper.emitted('select-plugin')).toHaveLength(1)
+  it('is named by the plugin alone while it runs', () => {
+    expect(mountRow().get('button').attributes('aria-label')).toBe('Speech Engine')
   })
 
-  it('renders failure badge when plugin failure is present', () => {
-    const plugin = createPluginInfo('test.engine', 'Speech Engine', {
-      failure: {
-        reason: 'Failed to start',
-        detail: 'process exited with status 1',
-        failedAt: 1_700_000_000_000,
-      },
-    })
-    const wrapper = mount(PluginRow, {
-      props: { plugin, isEnabled: false },
-    })
+  it('carries Off in its name when the plugin is switched off, and draws no label', () => {
+    const row = mountRow({ isEnabled: false }).get('button')
 
-    const badge = wrapper.find('.plugin-row__badge--stopped')
-    expect(badge.exists()).toBe(true)
-    expect(badge.text()).toBe('Stopped')
+    expect(row.attributes('aria-label')).toBe('Speech Engine, Off')
+    expect(row.text()).not.toContain('Off')
   })
 
-  it('applies disabled class and has no disabled badge when plugin is disabled', () => {
-    const plugin = createPluginInfo('test.engine', 'Speech Engine')
-    const wrapper = mount(PluginRow, {
-      props: { plugin, isEnabled: false },
-    })
+  it('carries Stopped in its name for a plugin whose start failed, and draws no label', () => {
+    const row = mountRow({ health: [health('start', 'error')] }).get('button')
 
-    expect(wrapper.find('.plugin-row--disabled').exists()).toBe(true)
-    expect(wrapper.find('.plugin-row__badge--disabled').exists()).toBe(false)
+    expect(row.attributes('aria-label')).toBe('Speech Engine, Stopped')
+    expect(row.text()).not.toContain('Stopped')
   })
 
-  it('does not apply disabled class when plugin is enabled', () => {
-    const plugin = createPluginInfo('test.engine', 'Speech Engine')
-    const wrapper = mount(PluginRow, {
-      props: { plugin, isEnabled: true },
-    })
-
-    expect(wrapper.find('.plugin-row--disabled').exists()).toBe(false)
+  it('labels the worst health item of a plugin that runs', () => {
+    expect(mountRow({ health: [health('quota', 'warning')] }).text()).toContain('Warning')
+    expect(
+      mountRow({ health: [health('quota', 'warning'), health('connection', 'error')] }).text(),
+    ).toContain('Error')
+    expect(mountRow({ health: [] }).text()).not.toMatch(/Warning|Error/)
   })
 
-  it('renders category prefix when provided', () => {
-    const plugin = createPluginInfo('test.engine', 'Speech Engine')
-    const wrapper = mount(PluginRow, {
-      props: { plugin, isEnabled: true, categoryPrefix: 'Engines' },
-    })
+  it('opens a menu on right click and emits toggle-enabled when Disable is chosen', async () => {
+    const wrapper = mountRow()
 
-    expect(wrapper.find('.plugin-row__category').text()).toBe('Engines /')
-  })
-
-  it('opens context menu on right click and emits toggle-enabled when chosen', async () => {
-    const plugin = createPluginInfo('test.engine', 'Speech Engine')
-    const wrapper = mount(PluginRow, {
-      props: { plugin, isEnabled: true },
-    })
-
-    await wrapper.find('.plugin-row').trigger('contextmenu', { clientX: 100, clientY: 200 })
-    const menu = wrapper.findComponent({ name: 'Menu' })
-    expect(menu.exists()).toBe(true)
-
+    await wrapper.get('button').trigger('contextmenu', { clientX: 100, clientY: 200 })
+    const menu = wrapper.findComponent(Menu)
+    expect(menu.props('name')).toBe('Plugin actions')
     menu.vm.$emit('choose', 'toggle')
+    await wrapper.vm.$nextTick()
+
     expect(wrapper.emitted('toggle-enabled')).toStrictEqual([[false]])
+    expect(wrapper.findComponent(Menu).exists()).toBe(false)
   })
 
-  it('badges a plugin that is not installed and offers no switch', async () => {
+  it('labels a plugin that is not installed and offers only Settings in its menu', async () => {
     const wrapper = mount(PluginRow, {
       props: { plugin: createAvailablePlugin('test.offer', 'Offered Reader'), isEnabled: false },
     })
 
-    expect(wrapper.find('.plugin-row__badge--available').text()).toBe('Not installed')
+    expect(wrapper.text()).toContain('Not installed')
+    await wrapper.get('button').trigger('contextmenu', { clientX: 1, clientY: 2 })
 
-    await wrapper.find('.plugin-row').trigger('contextmenu', { clientX: 1, clientY: 2 })
-    const menu = wrapper.findComponent({ name: 'Menu' })
-    expect(menu.props('items')).toStrictEqual([{ id: 'configure', text: 'Settings' }])
+    expect(wrapper.findComponent(Menu).props('items')).toStrictEqual([
+      { id: 'configure', text: 'Settings' },
+    ])
   })
 })

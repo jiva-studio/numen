@@ -10,4 +10,10 @@ export default tseslint.config(
       'stories/.storybook/**',
     ],
   }),
+
+  // The generated messages open with the generator's own disable comment, which they do not need.
+  {
+    files: ['src/**/*_pb.ts'],
+    linterOptions: { reportUnusedDisableDirectives: 'off' },
+  },
 )

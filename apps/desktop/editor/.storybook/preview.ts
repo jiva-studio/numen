@@ -2,6 +2,7 @@ import type { Preview } from '@storybook/vue3-vite'
 import { configure } from 'storybook/test'
 import '@numen/ui/styles.css'
 import '@numen/workbench/styles.css'
+import '@numen/plugin-manager'
 import './preview.css'
 
 // A story waits on a real browser drawing a frame, and two engines draw at

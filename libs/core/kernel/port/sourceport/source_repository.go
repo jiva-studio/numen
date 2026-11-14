@@ -35,3 +35,11 @@ type SourceRepository interface {
 	// with an explicit name that differs from the filename keeps that name.
 	MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error
 }
+
+// VersionMover re-files the text versions of what moved.
+type VersionMover interface {
+	// MoveVersions files the versions of what was at one path, and of everything
+	// under it, at the path it now has. The versions of whatever was at the
+	// destination are removed.
+	MoveVersions(ctx context.Context, vaultID domain.VaultID, from, to string) error
+}

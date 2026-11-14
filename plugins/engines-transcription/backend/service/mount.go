@@ -18,7 +18,7 @@ import (
 )
 
 // Mount registers the handlers and the agent tool transcript_create on s over the host the process
-// was started for. The model is the mock one where NUMEN_MOCK_ML is "true". The transcriptions and
+// was started for. The model is the mock one where NUMEN_TEST_MOCK_ML is "true". The transcriptions and
 // the model end with s.
 func Mount(s *server.Server) error {
 	endpoint, err := hostcall.FromEnv()
@@ -46,7 +46,7 @@ func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock
 	holder := model.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock))
 	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, holder.GetRecognizer, process.Process{}.ReportError)
 	requests := transcribe.NewRequests(transcriber, func(id domain.VaultID) transcribe.Vault { return hosted.Vaults(id) })
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { holder.UpdateSettings(values) })
+	s.SetUpdateConfig(func(values map[string]string) { holder.UpdateSettings(values) })
 	commands, err := newCommands(transcriber)
 	if err != nil {
 		return err

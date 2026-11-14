@@ -357,102 +357,6 @@ func (x *PutTextVersionResponse) GetError() TextErrorCode {
 	return TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED
 }
 
-type RemoveTextVersionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RemoveTextVersionRequest) Reset() {
-	*x = RemoveTextVersionRequest{}
-	mi := &file_numen_v1_hosttext_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RemoveTextVersionRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveTextVersionRequest) ProtoMessage() {}
-
-func (x *RemoveTextVersionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hosttext_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveTextVersionRequest.ProtoReflect.Descriptor instead.
-func (*RemoveTextVersionRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *RemoveTextVersionRequest) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
-
-func (x *RemoveTextVersionRequest) GetKey() string {
-	if x != nil {
-		return x.Key
-	}
-	return ""
-}
-
-type RemoveTextVersionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         TextErrorCode          `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RemoveTextVersionResponse) Reset() {
-	*x = RemoveTextVersionResponse{}
-	mi := &file_numen_v1_hosttext_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RemoveTextVersionResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveTextVersionResponse) ProtoMessage() {}
-
-func (x *RemoveTextVersionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hosttext_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveTextVersionResponse.ProtoReflect.Descriptor instead.
-func (*RemoveTextVersionResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *RemoveTextVersionResponse) GetError() TextErrorCode {
-	if x != nil {
-		return x.Error
-	}
-	return TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED
-}
-
 type ListTextVersionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -462,7 +366,7 @@ type ListTextVersionsRequest struct {
 
 func (x *ListTextVersionsRequest) Reset() {
 	*x = ListTextVersionsRequest{}
-	mi := &file_numen_v1_hosttext_proto_msgTypes[6]
+	mi := &file_numen_v1_hosttext_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -474,7 +378,7 @@ func (x *ListTextVersionsRequest) String() string {
 func (*ListTextVersionsRequest) ProtoMessage() {}
 
 func (x *ListTextVersionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hosttext_proto_msgTypes[6]
+	mi := &file_numen_v1_hosttext_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -487,7 +391,7 @@ func (x *ListTextVersionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTextVersionsRequest.ProtoReflect.Descriptor instead.
 func (*ListTextVersionsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ListTextVersionsRequest) GetPath() string {
@@ -509,7 +413,7 @@ type ListTextVersionsResponse struct {
 
 func (x *ListTextVersionsResponse) Reset() {
 	*x = ListTextVersionsResponse{}
-	mi := &file_numen_v1_hosttext_proto_msgTypes[7]
+	mi := &file_numen_v1_hosttext_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -521,7 +425,7 @@ func (x *ListTextVersionsResponse) String() string {
 func (*ListTextVersionsResponse) ProtoMessage() {}
 
 func (x *ListTextVersionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hosttext_proto_msgTypes[7]
+	mi := &file_numen_v1_hosttext_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -534,7 +438,7 @@ func (x *ListTextVersionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTextVersionsResponse.ProtoReflect.Descriptor instead.
 func (*ListTextVersionsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ListTextVersionsResponse) GetVersions() []*TextVersion {
@@ -578,7 +482,7 @@ type ReadTextRequest struct {
 
 func (x *ReadTextRequest) Reset() {
 	*x = ReadTextRequest{}
-	mi := &file_numen_v1_hosttext_proto_msgTypes[8]
+	mi := &file_numen_v1_hosttext_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -590,7 +494,7 @@ func (x *ReadTextRequest) String() string {
 func (*ReadTextRequest) ProtoMessage() {}
 
 func (x *ReadTextRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hosttext_proto_msgTypes[8]
+	mi := &file_numen_v1_hosttext_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -603,7 +507,7 @@ func (x *ReadTextRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadTextRequest.ProtoReflect.Descriptor instead.
 func (*ReadTextRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ReadTextRequest) GetPath() string {
@@ -657,7 +561,7 @@ type ReadTextResponse struct {
 
 func (x *ReadTextResponse) Reset() {
 	*x = ReadTextResponse{}
-	mi := &file_numen_v1_hosttext_proto_msgTypes[9]
+	mi := &file_numen_v1_hosttext_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -669,7 +573,7 @@ func (x *ReadTextResponse) String() string {
 func (*ReadTextResponse) ProtoMessage() {}
 
 func (x *ReadTextResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hosttext_proto_msgTypes[9]
+	mi := &file_numen_v1_hosttext_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -682,7 +586,7 @@ func (x *ReadTextResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadTextResponse.ProtoReflect.Descriptor instead.
 func (*ReadTextResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ReadTextResponse) GetSegments() []*TextSegment {
@@ -753,12 +657,7 @@ const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\x0fsource_property\x18\a \x01(\v2\x1c.numen.v1.TextSourcePropertyR\x0esourceProperty\"x\n" +
 	"\x16PutTextVersionResponse\x12/\n" +
 	"\aversion\x18\x01 \x01(\v2\x15.numen.v1.TextVersionR\aversion\x12-\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"@\n" +
-	"\x18RemoveTextVersionRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x10\n" +
-	"\x03key\x18\x02 \x01(\tR\x03key\"J\n" +
-	"\x19RemoveTextVersionResponse\x12-\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"-\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"-\n" +
 	"\x17ListTextVersionsRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\xa4\x01\n" +
 	"\x18ListTextVersionsResponse\x121\n" +
@@ -779,10 +678,9 @@ const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"nextCursor\x12-\n" +
 	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\x12\x14\n" +
 	"\x05start\x18\x04 \x01(\x03R\x05start\x12\x12\n" +
-	"\x04size\x18\x05 \x01(\x03R\x04size2\xe2\x02\n" +
+	"\x04size\x18\x05 \x01(\x03R\x04size2\x84\x02\n" +
 	"\x0fHostTextService\x12S\n" +
-	"\x0ePutTextVersion\x12\x1f.numen.v1.PutTextVersionRequest\x1a .numen.v1.PutTextVersionResponse\x12\\\n" +
-	"\x11RemoveTextVersion\x12\".numen.v1.RemoveTextVersionRequest\x1a#.numen.v1.RemoveTextVersionResponse\x12Y\n" +
+	"\x0ePutTextVersion\x12\x1f.numen.v1.PutTextVersionRequest\x1a .numen.v1.PutTextVersionResponse\x12Y\n" +
 	"\x10ListTextVersions\x12!.numen.v1.ListTextVersionsRequest\x1a\".numen.v1.ListTextVersionsResponse\x12A\n" +
 	"\bReadText\x12\x19.numen.v1.ReadTextRequest\x1a\x1a.numen.v1.ReadTextResponseBFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -798,44 +696,39 @@ func file_numen_v1_hosttext_proto_rawDescGZIP() []byte {
 	return file_numen_v1_hosttext_proto_rawDescData
 }
 
-var file_numen_v1_hosttext_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_numen_v1_hosttext_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_v1_hosttext_proto_goTypes = []any{
-	(*TextSourceProperty)(nil),        // 0: numen.v1.TextSourceProperty
-	(*TextVersion)(nil),               // 1: numen.v1.TextVersion
-	(*PutTextVersionRequest)(nil),     // 2: numen.v1.PutTextVersionRequest
-	(*PutTextVersionResponse)(nil),    // 3: numen.v1.PutTextVersionResponse
-	(*RemoveTextVersionRequest)(nil),  // 4: numen.v1.RemoveTextVersionRequest
-	(*RemoveTextVersionResponse)(nil), // 5: numen.v1.RemoveTextVersionResponse
-	(*ListTextVersionsRequest)(nil),   // 6: numen.v1.ListTextVersionsRequest
-	(*ListTextVersionsResponse)(nil),  // 7: numen.v1.ListTextVersionsResponse
-	(*ReadTextRequest)(nil),           // 8: numen.v1.ReadTextRequest
-	(*ReadTextResponse)(nil),          // 9: numen.v1.ReadTextResponse
-	(TextErrorCode)(0),                // 10: numen.v1.TextErrorCode
-	(*TextSegment)(nil),               // 11: numen.v1.TextSegment
+	(*TextSourceProperty)(nil),       // 0: numen.v1.TextSourceProperty
+	(*TextVersion)(nil),              // 1: numen.v1.TextVersion
+	(*PutTextVersionRequest)(nil),    // 2: numen.v1.PutTextVersionRequest
+	(*PutTextVersionResponse)(nil),   // 3: numen.v1.PutTextVersionResponse
+	(*ListTextVersionsRequest)(nil),  // 4: numen.v1.ListTextVersionsRequest
+	(*ListTextVersionsResponse)(nil), // 5: numen.v1.ListTextVersionsResponse
+	(*ReadTextRequest)(nil),          // 6: numen.v1.ReadTextRequest
+	(*ReadTextResponse)(nil),         // 7: numen.v1.ReadTextResponse
+	(TextErrorCode)(0),               // 8: numen.v1.TextErrorCode
+	(*TextSegment)(nil),              // 9: numen.v1.TextSegment
 }
 var file_numen_v1_hosttext_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.TextVersion.source_property:type_name -> numen.v1.TextSourceProperty
 	0,  // 1: numen.v1.PutTextVersionRequest.source_property:type_name -> numen.v1.TextSourceProperty
 	1,  // 2: numen.v1.PutTextVersionResponse.version:type_name -> numen.v1.TextVersion
-	10, // 3: numen.v1.PutTextVersionResponse.error:type_name -> numen.v1.TextErrorCode
-	10, // 4: numen.v1.RemoveTextVersionResponse.error:type_name -> numen.v1.TextErrorCode
-	1,  // 5: numen.v1.ListTextVersionsResponse.versions:type_name -> numen.v1.TextVersion
-	10, // 6: numen.v1.ListTextVersionsResponse.error:type_name -> numen.v1.TextErrorCode
-	11, // 7: numen.v1.ReadTextResponse.segments:type_name -> numen.v1.TextSegment
-	10, // 8: numen.v1.ReadTextResponse.error:type_name -> numen.v1.TextErrorCode
-	2,  // 9: numen.v1.HostTextService.PutTextVersion:input_type -> numen.v1.PutTextVersionRequest
-	4,  // 10: numen.v1.HostTextService.RemoveTextVersion:input_type -> numen.v1.RemoveTextVersionRequest
-	6,  // 11: numen.v1.HostTextService.ListTextVersions:input_type -> numen.v1.ListTextVersionsRequest
-	8,  // 12: numen.v1.HostTextService.ReadText:input_type -> numen.v1.ReadTextRequest
-	3,  // 13: numen.v1.HostTextService.PutTextVersion:output_type -> numen.v1.PutTextVersionResponse
-	5,  // 14: numen.v1.HostTextService.RemoveTextVersion:output_type -> numen.v1.RemoveTextVersionResponse
-	7,  // 15: numen.v1.HostTextService.ListTextVersions:output_type -> numen.v1.ListTextVersionsResponse
-	9,  // 16: numen.v1.HostTextService.ReadText:output_type -> numen.v1.ReadTextResponse
-	13, // [13:17] is the sub-list for method output_type
-	9,  // [9:13] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	8,  // 3: numen.v1.PutTextVersionResponse.error:type_name -> numen.v1.TextErrorCode
+	1,  // 4: numen.v1.ListTextVersionsResponse.versions:type_name -> numen.v1.TextVersion
+	8,  // 5: numen.v1.ListTextVersionsResponse.error:type_name -> numen.v1.TextErrorCode
+	9,  // 6: numen.v1.ReadTextResponse.segments:type_name -> numen.v1.TextSegment
+	8,  // 7: numen.v1.ReadTextResponse.error:type_name -> numen.v1.TextErrorCode
+	2,  // 8: numen.v1.HostTextService.PutTextVersion:input_type -> numen.v1.PutTextVersionRequest
+	4,  // 9: numen.v1.HostTextService.ListTextVersions:input_type -> numen.v1.ListTextVersionsRequest
+	6,  // 10: numen.v1.HostTextService.ReadText:input_type -> numen.v1.ReadTextRequest
+	3,  // 11: numen.v1.HostTextService.PutTextVersion:output_type -> numen.v1.PutTextVersionResponse
+	5,  // 12: numen.v1.HostTextService.ListTextVersions:output_type -> numen.v1.ListTextVersionsResponse
+	7,  // 13: numen.v1.HostTextService.ReadText:output_type -> numen.v1.ReadTextResponse
+	11, // [11:14] is the sub-list for method output_type
+	8,  // [8:11] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hosttext_proto_init() }
@@ -844,14 +737,14 @@ func file_numen_v1_hosttext_proto_init() {
 		return
 	}
 	file_numen_v1_textsegment_proto_init()
-	file_numen_v1_hosttext_proto_msgTypes[8].OneofWrappers = []any{}
+	file_numen_v1_hosttext_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hosttext_proto_rawDesc), len(file_numen_v1_hosttext_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

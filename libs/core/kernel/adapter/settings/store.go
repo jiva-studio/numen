@@ -5,17 +5,10 @@ import (
 	"errors"
 	"io/fs"
 	"os"
-	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
-
-// SecretDeclarations lists the secret permissions the installed plugins declare.
-type SecretDeclarations interface {
-	ListDeclarations() []plugin.DeclarationKey
-}
 
 // Store reads and writes the settings file at the path GetPath gives. What it reads as checked
 // leaves out the values that the declarations of the app and the plugins refuse.
@@ -24,16 +17,14 @@ type Store struct {
 	getPath    func() (string, error)
 	declared   Declarations
 	registries Registries
-	secrets    SecretDeclarations
 }
 
-// NewStore makes a store over the files. secrets is nil where no plugin host runs: every secret
-// permission then stands.
+// NewStore makes a store over the files. declared is nil where no plugin host runs: every plugin value
+// then stands.
 func NewStore(
 	files *Files, getPath func() (string, error), declared Declarations, registries Registries,
-	secrets SecretDeclarations,
 ) *Store {
-	return &Store{files: files, getPath: getPath, declared: declared, registries: registries, secrets: secrets}
+	return &Store{files: files, getPath: getPath, declared: declared, registries: registries}
 }
 
 // ReadChecked returns the settings in force, or the defaults where the file is not there.
@@ -54,6 +45,19 @@ func (s *Store) ReadCheckedFile() (File, error) {
 		return DefaultFile(), nil
 	}
 	return s.ReadCheckedAt(path)
+}
+
+// ReadUncheckedFile returns the settings as the file holds them, or the defaults where the file is not
+// there.
+func (s *Store) ReadUncheckedFile() (File, error) {
+	path, err := s.getPath()
+	if err != nil {
+		return File{}, err
+	}
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return DefaultFile(), nil
+	}
+	return s.ReadUncheckedAt(path)
 }
 
 // ReadUnchecked returns the settings as the file holds them.
@@ -84,14 +88,10 @@ func (s *Store) ReadCheckedAt(path string) (File, error) {
 	if err != nil {
 		return File{}, err
 	}
-	if s.secrets == nil {
-		target.DropInvalidSecrets(func(plugin.DeclarationKey) bool { return true })
-		return target, nil
+	target.DropInvalidConnections()
+	if s.declared != nil {
+		target.DropInvalid(s.declared, s.registries)
 	}
-	target.DropInvalid(s.declared, s.registries)
-	target.DropInvalidSecrets(func(permission plugin.DeclarationKey) bool {
-		return slices.Contains(s.secrets.ListDeclarations(), permission)
-	})
 	return target, nil
 }
 
@@ -132,16 +132,13 @@ func (Defaults) GetDefaults() settingsdomain.Stored {
 	return &file
 }
 
-// GetSecretsJSON is the secrets section as JSON, and empty where the file holds no secret.
-func (f *File) GetSecretsJSON() (string, error) {
-	if len(f.Secrets) == 0 {
+// GetConnectionsJSON is the connections section as JSON, and empty where the file holds no connection.
+func (f *File) GetConnectionsJSON() (string, error) {
+	if len(f.Connections) == 0 {
 		return "", nil
 	}
-	return f.WriteSecretsJSON()
+	return f.WriteConnectionsJSON()
 }
-
-// GetAgentUse is the program the agent section names, and empty where it names none.
-func (f *File) GetAgentUse() string { return f.Agent.GetUse() }
 
 // Validator checks a value against the declaration of the setting it is written to.
 type Validator struct {
@@ -182,4 +179,18 @@ func (JSONCodec) Encode(value any) (string, error) {
 		return "", err
 	}
 	return string(encoded), nil
+}
+
+// ListConnectionIDs returns the ids of the valid connections of the file, in list order.
+func (s *Store) ListConnectionIDs() ([]string, error) {
+	stored, err := s.ReadUncheckedFile()
+	if err != nil {
+		return nil, err
+	}
+	stored.DropInvalidConnections()
+	ids := make([]string, 0, len(stored.Connections))
+	for _, one := range stored.Connections {
+		ids = append(ids, one.ID)
+	}
+	return ids, nil
 }

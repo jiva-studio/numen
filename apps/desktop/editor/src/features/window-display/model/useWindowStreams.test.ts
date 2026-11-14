@@ -148,23 +148,37 @@ const setup = (streams: Streams = {}, overrides: Partial<WindowStreamsDeps> = {}
   return deps
 }
 
+const opened: Change = { paths: [], shouldReload: false, renamed: [] }
+
 describe('following the vault', () => {
   it('passes on a change that names only files whose text versions changed', async () => {
     const deps = setup({
-      changes: [{ paths: [], shouldReload: false, renamed: [], versionPaths: ['talks/a.mp3'] }],
+      changes: [
+        opened,
+        { paths: [], shouldReload: false, renamed: [], versionPaths: ['talks/a.mp3'] },
+      ],
     })
 
     await createWindowStreams(deps).follow()
 
-    expect(deps.onVaultChanged).toHaveBeenCalledExactlyOnceWith([], [], ['talks/a.mp3'])
+    expect(deps.onVaultChanged).toHaveBeenLastCalledWith([], [], ['talks/a.mp3'])
   })
 
-  it('ignores a change that names no path, no reload and no rename', async () => {
-    const deps = setup({ changes: [{ paths: [], shouldReload: false, renamed: [] }] })
+  it('lists the files again when the stream opens, and asks nothing more', async () => {
+    const deps = setup({ changes: [opened] })
 
     await createWindowStreams(deps).follow()
 
-    expect(deps.onVaultChanged).not.toHaveBeenCalled()
+    expect(deps.onVaultChanged).toHaveBeenCalledExactlyOnceWith([], [], [])
+    expect(deps.ask).not.toHaveBeenCalled()
+  })
+
+  it('ignores a change that names no path, no reload and no rename after the stream opened', async () => {
+    const deps = setup({ changes: [opened, opened] })
+
+    await createWindowStreams(deps).follow()
+
+    expect(deps.onVaultChanged).toHaveBeenCalledTimes(1)
     expect(deps.ask).not.toHaveBeenCalled()
   })
 
@@ -173,11 +187,11 @@ describe('following the vault', () => {
     ['a reload', { paths: [], shouldReload: true, renamed: [] }],
     ['a rename', { paths: [], shouldReload: false, renamed: [{ from: 'a.md', to: 'b.md' }] }],
   ])('tells a change that names %s', async (_name, change) => {
-    const deps = setup({ changes: [change] })
+    const deps = setup({ changes: [opened, change] })
 
     await createWindowStreams(deps).follow()
 
-    expect(deps.onVaultChanged).toHaveBeenCalledTimes(1)
+    expect(deps.onVaultChanged).toHaveBeenCalledTimes(2)
     expect(deps.ask).toHaveBeenCalledTimes(1)
   })
 
@@ -258,16 +272,16 @@ describe('following the vault', () => {
     expect(deps.ask).toHaveBeenCalledTimes(1)
   })
 
-  it('draws the page again on a reload that swaps the vault, and notifies nothing', async () => {
+  it('draws the page again on a reload that swaps the vault, and notifies no change', async () => {
     const deps = setup(
-      { changes: [{ paths: [], shouldReload: true, renamed: [] }] },
+      { changes: [opened, { paths: [], shouldReload: true, renamed: [] }] },
       { isVaultSwapped: vi.fn(async () => true) },
     )
 
     await createWindowStreams(deps).follow()
 
     expect(deps.reload).toHaveBeenCalledTimes(1)
-    expect(deps.onVaultChanged).not.toHaveBeenCalled()
+    expect(deps.onVaultChanged).toHaveBeenCalledExactlyOnceWith([], [], [])
   })
 })
 

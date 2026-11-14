@@ -9,12 +9,11 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -38,32 +37,24 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 
 // The methods below are the wiring the tests of this package reach from outside it.
 
-func (c Config) AgentProvider() agentport.AgentProvider { return pluginsAgentProvider(plugins(c)) }
-
 func (c Config) CutNotes() chunking.CutNotes { return cutNotes(searchOf(c)) }
 
-func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() error, error) {
-	return searchEmbedder(searchOf(c), ctx)
+func (c Config) Embedder(ctx context.Context) (searchsourceport.WatchedSource, func() error, error) {
+	return searchSource(searchOf(c), ctx)
 }
 
 func (c Config) EmbedderReady() bool { return embedderReady(searchOf(c)) }
 
-func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.WatchedEmbedder, closer func() error, why error) {
-	return searchEmbedders(searchOf(c), ctx, tasks)
+func (c Config) Embedders(ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
+	return searchSources(searchOf(c), ctx)
 }
 
-func (c Config) GetEditorAgent() agentport.Agent { return getToolProvider(plugins(c)) }
-
-func (c Config) GetSettingsAgent() agentport.Agent { return getSettingsAgent(plugins(c)) }
-
-func (c Config) Models() func() []settingsdomain.Model { return models(c) }
-
-func (c Config) NewSearchOver(index searchusecase.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(searchOf(c), index, asking, errorHandler)
+func (c Config) NewSearchOver(passages sourceport.PassageQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
+	return newSearchOver(searchOf(c), passages, sources, errorHandler, nil)
 }
 
-func (c Config) OpenGetSettings(provider agentport.AgentProvider) *settings.Get {
-	return openGetSettings(c, provider)
+func (c Config) OpenGetSettings() *settings.Get {
+	return openGetSettings(c)
 }
 
 func (c Config) OpenWatchSettings() *settings.WatchSettingChanges {
@@ -92,7 +83,7 @@ func NotesShowingMoves(
 }
 
 func embedderReady(c searchWiring) bool {
-	_, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding)
+	_, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
 	return err == nil
 }
 

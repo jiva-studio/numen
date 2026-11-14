@@ -9,6 +9,7 @@
  * endpoints, `fetch` and `import` without this table.
  */
 import type {
+  HealthHost,
   PluginEvents,
   PluginIdentity,
   PluginRegistrations,
@@ -28,6 +29,10 @@ const WRITE = 'vault:write'
 const MANAGE = 'vault:manage'
 /** Consent to open external links; it does not restrict the requests a plugin makes itself, as plugins are trusted code. */
 const LINK_OPEN = 'link:open'
+/** Reading which plugins run; nothing of a vault. */
+const PLUGINS_READ = 'plugins:read'
+/** A model call uses the connections the plugin names in its own settings; the person granted them there. */
+const CONNECTION_GRANT = `the rows of the plugin's own settings are the grant`
 
 /**
  * How a refusal of a rule reaches the caller: a sync member throws, an async member rejects, and a
@@ -99,6 +104,7 @@ export interface GuardedParts {
   readonly vault: PluginVault
   readonly ui: Omit<PluginUi, 'mountView'>
   readonly work: PluginWork
+  readonly health: HealthHost
 }
 
 export const SERVICE_RULES: RulesOf<GuardedParts> = {
@@ -148,7 +154,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
   },
   vault: {
     notes: {
-      getNeighborhood: requirePermissionsAsync(READ),
+      listRelatedNotes: requirePermissionsAsync(READ),
       getHeadings: requirePermissionsAsync(READ),
       findNotes: requirePermissionsAsync(READ),
       createUntitledNote: requirePermissionsAsync(WRITE),
@@ -165,6 +171,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       join: requirePermissionsAsync(WRITE),
       createRelated: requirePermissionsAsync(WRITE),
       listBacklinks: requirePermissionsAsync(READ),
+      resolveLinks: requirePermissionsAsync(READ),
     },
     files: {
       list: requirePermissionsAsync(READ),
@@ -212,7 +219,6 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
         getEntry: requireNothing('an icon is drawn from the entry the plugin passes'),
       },
       getNoteInFocus: requirePermissions(READ),
-      ask: requirePermissions(WRITE),
     },
     window: {
       getState: requireNothing('the maximized and fullscreen flags of the window'),
@@ -244,17 +250,11 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     },
   },
   work: {
-    agent: {
-      ask: requirePermissions(WRITE),
-      finish: explain(
-        requirePermissionsAsync(WRITE),
-        'it ends a conversation the agent holds, as ask starts one',
-      ),
-      resolveLinks: requirePermissionsAsync(READ),
-      getUnreachable: requireNothing('why no agent can be reached, which holds no vault data'),
-      getSetting: requirePermissions(READ),
-      writeSetting: requirePermissionsAsync(WRITE),
-      getModelsAt: requirePermissions(READ),
+    connections: {
+      call: requireNothing(CONNECTION_GRANT),
+      listRows: requireNothing(CONNECTION_GRANT),
+      listRowOptions: requireNothing(CONNECTION_GRANT),
+      onChange: requireNothing('it says only that the rows may have changed'),
     },
     tasks: {
       watch: requireNothing('the tasks the plugin itself reported'),
@@ -265,8 +265,15 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       cancel: requirePermissionsAsync(WRITE),
       retry: requirePermissions(WRITE),
       dismiss: requireNothing('it takes a task out of the list the user sees'),
-      openSettings: requireNothing('it opens the settings of a plugin, which holds no vault data'),
+      runAction: requireNothing('it runs the fix the core checked when the item was reported'),
     },
+    processes: {
+      watch: requirePermissions(PLUGINS_READ),
+    },
+  },
+  health: {
+    report: requireNothing('the item is filed under the id of the plugin'),
+    clear: requireNothing('it clears an item of the plugin itself'),
   },
 }
 

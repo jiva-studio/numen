@@ -32,30 +32,6 @@ const (
 	ReadWrite
 )
 
-// Step is how a call of a tool is displayed to the user.
-type Step int
-
-const (
-	// ByEffect shows a tool that reads as a look and one that writes as an edit.
-	ByEffect Step = iota
-	// Search shows a call as a search for notes.
-	Search
-	// Remove shows a call as taking something out of the vault.
-	Remove
-	// Move shows a call as filing something elsewhere or under another name.
-	Move
-)
-
-// Server is one of the servers the host builds for an agent.
-type Server int
-
-const (
-	// Full is the server an agent works the whole vault through.
-	Full Server = iota + 1
-	// Reading is the server an agent answers from, whose every tool reads.
-	Reading
-)
-
 // Spec describes a tool: its name, its purpose and where it is offered.
 //
 //numen:api
@@ -67,10 +43,6 @@ type Spec struct {
 	// Description is what the tool is for and when an agent uses it.
 	Description string
 	Effect      Effect
-	// Step is how a call is displayed to the user.
-	Step Step
-	// Servers are the servers the tool is offered on. None is the full server alone.
-	Servers []Server
 	// Instructions are the sentences an agent reads about the tool before it calls it, each one
 	// sentence. A sentence about several tools is attached to each of them with identical text; the
 	// host lists it once.
@@ -126,11 +98,8 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 			InputSchema:  input,
 			OutputSchema: output,
 			Effect:       writeEffect(spec.Effect),
-			Servers:      writeServers(spec.Servers),
-			Step:         writeStep(spec.Step),
 			Instructions: slices.Clone(spec.Instructions),
 			Requires:     slices.Clone(spec.Requires),
-			Hints:        writeHints(createHints(spec)),
 		},
 		run: func(ctx context.Context, arguments []byte) *v1.ToolResult {
 			in, err := readArguments[In](inputSchema, arguments)

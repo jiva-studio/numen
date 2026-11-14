@@ -1,0 +1,37 @@
+package connection
+
+import (
+	"maps"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+)
+
+// Resolved is a connection as one call to its provider reads it: the fields as text, with the fixed
+// values of the type, and no value of a secret. ParallelRequests is the number of calls the connection
+// runs at once: the stored field, else the default of the type, else 0 for no limit. Fingerprint
+// identifies the type and the address the connection had when it was read. PluginVersion is the version
+// of the plugin that provides the type.
+type Resolved struct {
+	ID               string
+	Name             string
+	Revision         int
+	PluginID         string
+	PluginVersion    string
+	Declaration      manifest.ConnectionType
+	Fields           map[string]string
+	ParallelRequests int
+	Fingerprint      string
+}
+
+// NewCall copies the fields, the secrets and the options into the call, so a change to the call leaves the
+// connection as it is.
+func (r Resolved) NewCall(secrets, options map[string]string) modelcall.ProviderCall {
+	return modelcall.ProviderCall{
+		ConnectionID: r.ID,
+		Type:         r.Declaration.ID,
+		Fields:       maps.Clone(r.Fields),
+		Secrets:      maps.Clone(secrets),
+		Options:      maps.Clone(options),
+	}
+}

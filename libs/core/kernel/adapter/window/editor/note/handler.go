@@ -68,27 +68,26 @@ func NewProse(
 	return &Prose{vault: window, read: read, save: save, create: create, rename: rename, writes: writes}
 }
 
-// Outline answers what a note stands among: the note a vault opens on, its neighborhood and the
+// Outline answers what a note stands among: the note a vault opens on, its related notes and the
 // headings of notes.
 type Outline struct {
 	vault           Vault
 	getOpeningNote  *query.GetOpeningNote
-	getNeighborhood *query.GetNeighborhoodView
+	getRelatedNotes *query.GetRelatedNotesView
 	listHeadings    *query.ListHeadings
 }
 
 // NewOutline is the part of NoteService that answers what a note stands among.
 func NewOutline(
-	window Vault, opening *query.GetOpeningNote, neighborhood *query.GetNeighborhoodView, headings *query.ListHeadings,
+	window Vault, opening *query.GetOpeningNote, relatedNotes *query.GetRelatedNotesView, headings *query.ListHeadings,
 ) *Outline {
-	return &Outline{vault: window, getOpeningNote: opening, getNeighborhood: neighborhood, listHeadings: headings}
+	return &Outline{vault: window, getOpeningNote: opening, getRelatedNotes: relatedNotes, listHeadings: headings}
 }
 
 // Links writes the links of notes and answers where links land and which notes link to a note.
 type Links struct {
 	vault         Vault
 	resolveLinks  *query.ResolveLinks
-	writeLink     *note.WriteLink
 	createRelated *note.CreateInRelation
 	getBacklinks  *query.GetBacklinks
 	writes        Writes
@@ -97,11 +96,11 @@ type Links struct {
 // NewLinks is the part of NoteService that works the links of notes.
 func NewLinks(
 	window Vault,
-	resolve *query.ResolveLinks, write *note.WriteLink, create *note.CreateInRelation, backlinks *query.GetBacklinks,
+	resolve *query.ResolveLinks, create *note.CreateInRelation, backlinks *query.GetBacklinks,
 	writes Writes,
 ) *Links {
 	return &Links{
-		vault: window, resolveLinks: resolve, writeLink: write, createRelated: create, getBacklinks: backlinks, writes: writes,
+		vault: window, resolveLinks: resolve, createRelated: create, getBacklinks: backlinks, writes: writes,
 	}
 }
 

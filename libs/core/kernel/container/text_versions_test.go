@@ -92,7 +92,7 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 
 	readIntoIndex(t, a, db, v)
-	found, err := newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(a.search, db, nil, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +228,7 @@ func TestRenamingAFileOnDiskMovesItsTextVersions(t *testing.T) {
 	if len(listing.Versions) != 1 || listing.Live != version.GetID() || listing.Versions[0].Path != renamed {
 		t.Fatalf("after the rename on disk the talk has %+v, want its transcript live at the new path", listing)
 	}
-	found, err := newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(a.search, db, nil, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,7 +256,7 @@ func TestDeletingAFileOnDiskKeepsItsTextVersions(t *testing.T) {
 	if len(listing.Versions) != 1 || listing.Versions[0].GetID() != version.GetID() {
 		t.Fatalf("after the delete the talk's path has %+v, want its transcript to stay", listing)
 	}
-	found, err := newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(a.search, db, nil, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -327,14 +327,14 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if err != nil || len(listing.Versions) != 1 || listing.Live != subtitles.GetID() {
 		t.Fatalf("after the delete the talk has %+v (%v), want the other plugin's version alone and live", listing, err)
 	}
-	found, err := newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(a.search, db, nil, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(found) != 0 {
 		t.Fatalf("found %+v, want the deleted transcript out of the index", found)
 	}
-	found, err = newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "kingfisher", search.Parameters{})
+	found, err = newSearch(a.search, db, nil, nil, nil).Execute(t.Context(), v, "kingfisher", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -385,7 +385,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	if len(listing.Versions) != 1 || listing.Live != version.GetID() {
 		t.Fatalf("after the rescan the talk has %+v, want its transcript live at the new path", listing)
 	}
-	found, err := newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(a.search, db, nil, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}

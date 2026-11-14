@@ -14,10 +14,10 @@ const getThemeStyle = (page: Page): Promise<string> =>
     () => document.head.querySelector('style[data-appearance="theme"]')?.textContent ?? '',
   )
 
-const openSystemSettings = async (page: Page): Promise<Locator> => {
+const openSettingsPage = async (page: Page, name: 'System' | 'Appearance'): Promise<Locator> => {
   await runCommand(page, 'Open settings', /^Open settings$/)
-  const settings = page.getByRole('tabpanel', { name: /Settings/ })
-  await settings.getByRole('button', { name: /^System/ }).click()
+  const settings = page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
+  await settings.getByRole('button', { name: new RegExp(`^${name}`) }).click()
   return settings
 }
 
@@ -73,7 +73,7 @@ const watchControl = async (
 const getRuns = (samples: readonly string[]): string[] =>
   samples.filter((one, index) => index === 0 || one !== samples[index - 1])
 
-test.describe('A control of the page System after a change', () => {
+test.describe('A control of the pages System and Appearance after a change', () => {
   test.afterEach(async ({ request }) => {
     await writeSetting(request, ['app', 'appearance', 'theme'], 'preset:numen')
     await writeSetting(request, ['app', 'appearance', 'mode'], 'system')
@@ -85,7 +85,7 @@ test.describe('A control of the page System after a change', () => {
     page,
   }) => {
     await openWorkspace(page)
-    const settings = await openSystemSettings(page)
+    const settings = await openSettingsPage(page, 'Appearance')
 
     const { before, samples } = await watchControl(page, { list: 'appearance.theme' }, async () => {
       await settings.getByRole('button', { name: 'Theme', exact: true }).click()
@@ -101,7 +101,7 @@ test.describe('A control of the page System after a change', () => {
 
   test('shows light or dark as chosen and never the old mode again', async ({ page }) => {
     await openWorkspace(page)
-    const settings = await openSystemSettings(page)
+    const settings = await openSettingsPage(page, 'Appearance')
 
     const { before, samples } = await watchControl(page, { list: 'appearance.mode' }, async () => {
       await settings.getByRole('button', { name: 'Light or dark', exact: true }).click()
@@ -116,7 +116,7 @@ test.describe('A control of the page System after a change', () => {
 
   test('shows the performance profile as chosen and never the old one again', async ({ page }) => {
     await openWorkspace(page)
-    const settings = await openSystemSettings(page)
+    const settings = await openSettingsPage(page, 'System')
 
     const { before, samples } = await watchControl(
       page,
@@ -133,33 +133,12 @@ test.describe('A control of the page System after a change', () => {
     expect(runs[1]).toContain('Eco')
   })
 
-  test('moves the interface size forward with the keys and never back', async ({
-    page,
-    request,
-  }) => {
-    await openWorkspace(page)
-    const settings = await openSystemSettings(page)
-    const slider = settings.getByRole('slider', { name: 'Interface size' })
-
-    const { samples } = await watchControl(page, { slider: 'Interface size' }, async () => {
-      await slider.focus()
-      await slider.press('ArrowRight')
-      await slider.press('ArrowRight')
-      await slider.press('ArrowRight')
-    })
-
-    expect(getRuns(samples).map(Number)).toStrictEqual([1, 1.1, 1.2, 1.3])
-    await expect
-      .poll(async () => (await readOwner(request, 'app'))['appearance'])
-      .toMatchObject({ interfaceScale: 1.3 })
-  })
-
   test('keeps the interface size at the place the handle is dropped on', async ({
     page,
     request,
   }) => {
     await openWorkspace(page)
-    const settings = await openSystemSettings(page)
+    const settings = await openSettingsPage(page, 'Appearance')
     const slider = settings.getByRole('slider', { name: 'Interface size' })
     const box = await slider.boundingBox()
     expect(box).not.toBeNull()

@@ -116,17 +116,29 @@ describe('the group names over the rows', () => {
 })
 
 describe('the row a step lands on', () => {
+  const THREE = buildRows(MODELS, '', false)
+
   it('wraps at both ends', () => {
-    expect(stepRow(3, 2, 1)).toBe(0)
-    expect(stepRow(3, 0, -1)).toBe(2)
+    expect(stepRow(THREE, 2, 1)).toBe(0)
+    expect(stepRow(THREE, 0, -1)).toBe(2)
   })
 
   it('goes down and up by one', () => {
-    expect(stepRow(3, 0, 1)).toBe(1)
-    expect(stepRow(3, 2, -1)).toBe(1)
+    expect(stepRow(THREE, 0, 1)).toBe(1)
+    expect(stepRow(THREE, 2, -1)).toBe(1)
+  })
+
+  it('passes over a disabled item', () => {
+    const rows = buildRows(
+      [MODELS[0]!, { ...MODELS[1]!, isDisabled: true }, MODELS[2]!],
+      '',
+      false,
+    )
+    expect(stepRow(rows, 0, 1)).toBe(2)
+    expect(stepRow(rows, 2, -1)).toBe(0)
   })
 
   it('is none where there is no row', () => {
-    expect(stepRow(0, 0, 1)).toBe(-1)
+    expect(stepRow([], 0, 1)).toBe(-1)
   })
 })

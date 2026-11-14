@@ -850,10 +850,6 @@ func TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	if reason := state.Msg.GetScan().GetError(); reason != "" {
 		t.Errorf("the window says it could not be read: %s", reason)
 	}
-	if state.Msg.GetCoverage().GetChunkCount() != 0 || state.Msg.GetCoverage().GetEmbeddedCount() != 0 {
-		t.Errorf("the window counted %d chunks and %d of them embedded",
-			state.Msg.GetCoverage().GetChunkCount(), state.Msg.GetCoverage().GetEmbeddedCount())
-	}
 
 	opening, err := f.vault.GetOpeningNote(t.Context(), connect.NewRequest(&v1.GetOpeningNoteRequest{}))
 	if err != nil {
@@ -980,13 +976,6 @@ func TestVaultService_RejectsCallsWithoutActiveVault(t *testing.T) {
 			_, err := f.vault.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{Title: "One"}))
 			return err
 		},
-		"join a note to another": func() error {
-			_, err := f.vault.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
-				Path: "One.md",
-				Link: &v1.Link{To: "Two.md", Role: v1.Role_ROLE_JUMP},
-			}))
-			return err
-		},
 		"rename a note": func() error {
 			_, err := f.vault.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 				Path: "One.md", Title: "Two",
@@ -1010,7 +999,7 @@ func TestVaultService_RejectsCallsWithoutActiveVault(t *testing.T) {
 			return err
 		},
 		"show what a note is joined to": func() error {
-			_, err := f.vault.GetNeighborhood(t.Context(), connect.NewRequest(&v1.GetNeighborhoodRequest{
+			_, err := f.vault.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{
 				Path: "One.md",
 			}))
 			return err

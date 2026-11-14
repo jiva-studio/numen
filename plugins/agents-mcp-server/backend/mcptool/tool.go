@@ -4,16 +4,22 @@ package mcptool
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
+// permissionLinkOpen is the permission of a tool that opens links outside the machine.
+const permissionLinkOpen = "link:open"
+
 // NewTool declares a host tool to MCP clients. The input schema is always an object schema; the
 // output schema is declared only when the host lists an object schema.
 func NewTool(wireTool *tools.ToolInfo) *sdk.Tool {
-	hints := wireTool.GetHints()
+	isReadOnly := wireTool.GetEffect() == tools.ReadOnly
+	isDestructive := wireTool.GetEffect() == tools.ReadWrite
+	isOpenWorld := slices.Contains(wireTool.GetRequires(), permissionLinkOpen)
 	tool := &sdk.Tool{
 		Meta:         nil,
 		Name:         wireTool.GetName(),
@@ -23,10 +29,10 @@ func NewTool(wireTool *tools.ToolInfo) *sdk.Tool {
 		OutputSchema: nil,
 		Icons:        nil,
 		Annotations: &sdk.ToolAnnotations{
-			DestructiveHint: &hints.Destructive,
-			IdempotentHint:  hints.Idempotent,
-			OpenWorldHint:   &hints.OpenWorld,
-			ReadOnlyHint:    hints.ReadOnly,
+			DestructiveHint: &isDestructive,
+			IdempotentHint:  isReadOnly,
+			OpenWorldHint:   &isOpenWorld,
+			ReadOnlyHint:    isReadOnly,
 			Title:           "",
 		},
 	}

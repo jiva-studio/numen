@@ -1,36 +1,28 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import type { AgentPort } from '@numen/plugin-sdk'
 import ConversationView from './ConversationView.vue'
+import { createAgentConnections } from '../fixtures'
+import { WORDS } from '../words'
 
-const agent: AgentPort = {
-  async *ask() {
-    yield* []
-  },
-  finish: async () => undefined,
-}
+const { host: connections } = createAgentConnections({})
 
 describe('ConversationView', () => {
   it('names the field by the placeholder the caller passes', () => {
     const view = mount(ConversationView, {
-      props: { context: { agent, focus: 'decks/Words.md', placeholder: 'Ask about this card' } },
+      props: { context: { connections, placeholder: 'Ask about this card' } },
     })
     expect(view.find('textarea').attributes('aria-label')).toBe('Ask about this card')
   })
 
-  it('shows why the agent cannot be reached where the answers would be', () => {
-    const view = mount(ConversationView, {
-      props: {
-        context: { agent, focus: '', getUnreachable: () => 'Agent unreachable.' },
-      },
-    })
-    expect(view.text()).toContain('Agent unreachable.')
+  it('says there are no messages yet where the answers would be', () => {
+    const view = mount(ConversationView, { props: { context: { connections } } })
+    expect(view.text()).toContain(WORDS.noTranscript)
   })
 
   it('takes the keyboard into the field when the host focuses it', () => {
     const view = mount(ConversationView, {
-      props: { context: { agent, focus: '' } },
+      props: { context: { connections } },
       attachTo: document.body,
     })
 

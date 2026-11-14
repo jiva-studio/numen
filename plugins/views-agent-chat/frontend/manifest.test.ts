@@ -21,12 +21,19 @@ describe('the manifest', () => {
 })
 
 describe('the settings', () => {
-  it('declare the depth of reasoning the plugin preselects', () => {
+  it('declare the agents of the chat as up to five connection rows that run agent tasks, every agent until the person chooses', () => {
     const { settings } = JSON.parse(
       readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
-    ) as { settings?: readonly { key: string; type: string; default: unknown }[] }
+    ) as { settings?: readonly Record<string, unknown>[] }
     expect(settings).toStrictEqual([
-      expect.objectContaining({ key: 'reasoning', type: 'string', default: '' }),
+      {
+        key: 'connections',
+        type: 'connections',
+        title: 'Agents',
+        operations: ['acp.task'],
+        max: 5,
+        discover: true,
+      },
     ])
   })
 })

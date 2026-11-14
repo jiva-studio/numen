@@ -43,6 +43,9 @@ const (
 	// SearchServiceSearchPassagesProcedure is the fully-qualified name of the SearchService's
 	// SearchPassages RPC.
 	SearchServiceSearchPassagesProcedure = "/numen.v1.SearchService/SearchPassages"
+	// SearchServiceCancelSearchProcedure is the fully-qualified name of the SearchService's
+	// CancelSearch RPC.
+	SearchServiceCancelSearchProcedure = "/numen.v1.SearchService/CancelSearch"
 )
 
 // SearchServiceClient is a client for the numen.v1.SearchService service.
@@ -59,6 +62,12 @@ type SearchServiceClient interface {
 	// caller says which way it is asked, so a client drawing them apart asks once
 	// for each.
 	SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error)
+	// CancelSearch stops the SearchNames or SearchPassages call that carries the
+	// search id. A client that aborts its request does not stop the call in the
+	// core, so it sends this to free the work the call still does. A cancel that
+	// arrives before its call is kept for a few seconds and cancels the call if
+	// the call arrives in that time.
+	CancelSearch(context.Context, *connect.Request[v1.CancelSearchRequest]) (*connect.Response[v1.CancelSearchResponse], error)
 }
 
 // NewSearchServiceClient constructs a client for the numen.v1.SearchService service. By default, it
@@ -84,6 +93,12 @@ func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(searchServiceMethods.ByName("SearchPassages")),
 			connect.WithClientOptions(opts...),
 		),
+		cancelSearch: connect.NewClient[v1.CancelSearchRequest, v1.CancelSearchResponse](
+			httpClient,
+			baseURL+SearchServiceCancelSearchProcedure,
+			connect.WithSchema(searchServiceMethods.ByName("CancelSearch")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -91,6 +106,7 @@ func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 type searchServiceClient struct {
 	searchNames    *connect.Client[v1.SearchNamesRequest, v1.SearchNamesResponse]
 	searchPassages *connect.Client[v1.SearchPassagesRequest, v1.SearchPassagesResponse]
+	cancelSearch   *connect.Client[v1.CancelSearchRequest, v1.CancelSearchResponse]
 }
 
 // SearchNames calls numen.v1.SearchService.SearchNames.
@@ -101,6 +117,11 @@ func (c *searchServiceClient) SearchNames(ctx context.Context, req *connect.Requ
 // SearchPassages calls numen.v1.SearchService.SearchPassages.
 func (c *searchServiceClient) SearchPassages(ctx context.Context, req *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error) {
 	return c.searchPassages.CallUnary(ctx, req)
+}
+
+// CancelSearch calls numen.v1.SearchService.CancelSearch.
+func (c *searchServiceClient) CancelSearch(ctx context.Context, req *connect.Request[v1.CancelSearchRequest]) (*connect.Response[v1.CancelSearchResponse], error) {
+	return c.cancelSearch.CallUnary(ctx, req)
 }
 
 // SearchServiceHandler is an implementation of the numen.v1.SearchService service.
@@ -117,6 +138,12 @@ type SearchServiceHandler interface {
 	// caller says which way it is asked, so a client drawing them apart asks once
 	// for each.
 	SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error)
+	// CancelSearch stops the SearchNames or SearchPassages call that carries the
+	// search id. A client that aborts its request does not stop the call in the
+	// core, so it sends this to free the work the call still does. A cancel that
+	// arrives before its call is kept for a few seconds and cancels the call if
+	// the call arrives in that time.
+	CancelSearch(context.Context, *connect.Request[v1.CancelSearchRequest]) (*connect.Response[v1.CancelSearchResponse], error)
 }
 
 // NewSearchServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -138,12 +165,20 @@ func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(searchServiceMethods.ByName("SearchPassages")),
 		connect.WithHandlerOptions(opts...),
 	)
+	searchServiceCancelSearchHandler := connect.NewUnaryHandler(
+		SearchServiceCancelSearchProcedure,
+		svc.CancelSearch,
+		connect.WithSchema(searchServiceMethods.ByName("CancelSearch")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.SearchService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SearchServiceSearchNamesProcedure:
 			searchServiceSearchNamesHandler.ServeHTTP(w, r)
 		case SearchServiceSearchPassagesProcedure:
 			searchServiceSearchPassagesHandler.ServeHTTP(w, r)
+		case SearchServiceCancelSearchProcedure:
+			searchServiceCancelSearchHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -159,4 +194,8 @@ func (UnimplementedSearchServiceHandler) SearchNames(context.Context, *connect.R
 
 func (UnimplementedSearchServiceHandler) SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.SearchPassages is not implemented"))
+}
+
+func (UnimplementedSearchServiceHandler) CancelSearch(context.Context, *connect.Request[v1.CancelSearchRequest]) (*connect.Response[v1.CancelSearchResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.CancelSearch is not implemented"))
 }

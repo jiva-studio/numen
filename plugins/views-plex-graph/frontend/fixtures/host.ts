@@ -15,6 +15,8 @@ import {
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { PlexHost } from '../model/tabDeps'
+import { getDefaultLook } from '../model/look'
+import { getDefaultNames } from '../model/names'
 
 export interface HostOptions {
   readonly opening?: string
@@ -31,7 +33,6 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     opened: [] as [string, OpenFileOptions | undefined][],
     commands: [] as [string, CommandTarget | undefined][],
     entries: [] as [string, CommandTarget | undefined][],
-    questions: [] as string[],
     errors: [] as string[],
     made: [] as [string, string][],
     joined: [] as [string, string, string][],
@@ -66,13 +67,10 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     },
     icons: { getCommand: () => null, getEntry: () => ({}) },
     getNoteInFocus: () => ({ path: '', title: '' }),
-    ask: (text) => {
-      recorded.questions.push(text)
-    },
   }
 
   const notes: VaultNotes = {
-    getNeighborhood: async (path) => ({
+    listRelatedNotes: async (path) => ({
       focus: { path, title: path.replace(/\.md$/, '') },
       focusType: NOTE_TYPE,
       related: [],
@@ -105,6 +103,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     removeSide: async () => asValue(undefined),
     removeConnection: async () => asValue(undefined),
     listBacklinks: async () => [],
+    resolveLinks: async () => [],
   }
 
   const commands: CommandsHost = {
@@ -132,6 +131,8 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     notes,
     relations,
     nesting: { isNesting, headings: ref(6) },
+    names: getDefaultNames(),
+    look: getDefaultLook(),
   }
   return { host, openingPath, isNesting, requested: request, requestLog: request, recorded }
 }

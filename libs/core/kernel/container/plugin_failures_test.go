@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -40,33 +39,29 @@ func newFailingConfig(t *testing.T) Config {
 	return NewConfig(Config{PluginHost: AdaptPluginHost(host)})
 }
 
-func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
+func TestAFailedPluginIsItsStartItemUntilItIsEnabledAgain(t *testing.T) {
 	cfg := newFailingConfig(t)
-	tasks := run.NewTasks()
-	reportPluginFailures(plugins(cfg), tasks)
 
 	failure, err := getPluginRetrier(plugins(cfg))(t.Context(), "md.numen.sample")
 	if err != nil || failure == nil {
 		t.Fatalf("retry = %+v, %v, want the plugin to fail again", failure, err)
 	}
 
-	list := tasks.List()
-	if len(list) != 1 || list[0].About != "Sample" || list[0].Error != failure.Reason ||
-		list[0].PluginID != "md.numen.sample" || list[0].PluginName != "Sample" {
-		t.Fatalf("tasks = %+v, want one error naming Sample with %q", list, failure.Reason)
+	list := cfg.PluginHost.Health.List()
+	if len(list) != 1 || list[0].PluginID != "md.numen.sample" || list[0].Key != plugin.HealthKeyStart || list[0].Text != failure.Reason {
+		t.Fatalf("items = %+v, want the start item of md.numen.sample with %q", list, failure.Reason)
 	}
 
 	if err := cfg.PluginHost.ApplySetting(t.Context(), "md.numen.sample", "enabled", true); err != nil {
 		t.Fatal(err)
 	}
-	if list := tasks.List(); len(list) != 0 {
-		t.Fatalf("tasks after recovery = %+v, want none", list)
+	if list := cfg.PluginHost.Health.List(); len(list) != 0 {
+		t.Fatalf("items after recovery = %+v, want none", list)
 	}
 }
 
 func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
 	cfg := NewConfig(Config{})
-	reportPluginFailures(plugins(cfg), run.NewTasks())
 
 	_, err := getPluginRetrier(plugins(cfg))(t.Context(), "md.numen.sample")
 

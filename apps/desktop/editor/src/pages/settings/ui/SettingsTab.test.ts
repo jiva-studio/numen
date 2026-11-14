@@ -13,70 +13,12 @@ import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { Select, Switch } from '@numen/ui'
 
-import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
+import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
 import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from '../types'
 import { WORDS as words } from '../words'
-
-/**
- * A model entered in the file by the user, identified by address and not by
- * name.
- */
-const OWN = 'https://models.example/held/v3/rec/eslav_rec_mobile.onnx'
-
-/** The models the vault offers, which is what the settings are grounded in. */
-const MODELS: readonly Model[] = [
-  {
-    namedAt: ['agent', 'use'],
-    name: 'claude',
-    title: 'Claude Code',
-    group: '',
-    isDefault: true,
-    writes: [{ at: ['agent', 'use'], value: '"claude"' }],
-    presence: 'present',
-  },
-  {
-    namedAt: ['agent', 'claude', 'model'],
-    name: '',
-    title: 'Default model',
-    group: '',
-    isDefault: true,
-    writes: [{ at: ['agent', 'claude', 'model'], value: '""' }],
-    presence: 'nothing to fetch',
-  },
-  {
-    namedAt: ['agent', 'claude', 'model'],
-    name: 'opus',
-    title: 'opus',
-    group: 'By how large it is',
-    isDefault: false,
-    writes: [{ at: ['agent', 'claude', 'model'], value: '"opus"' }],
-    presence: 'nothing to fetch',
-  },
-  {
-    namedAt: ['indexing', 'recognition', 'recognise', 'name'],
-    name: 'https://models.example/held/Tiny_rec.onnx',
-    title: 'Tiny, small',
-    group: '',
-    isDefault: true,
-    writes: [
-      { at: ['indexing', 'recognition', 'recognise', 'name'], value: '"held/Tiny_rec.onnx"' },
-    ],
-    presence: 'present',
-  },
-  // address in the place a name would be, which is all it has for one.
-  {
-    namedAt: ['indexing', 'recognition', 'recognise', 'name'],
-    name: OWN,
-    title: OWN,
-    group: 'Named in the settings',
-    isDefault: false,
-    writes: [{ at: ['indexing', 'recognition', 'recognise', 'name'], value: `"${OWN}"` }],
-    presence: 'not fetched',
-  },
-]
 
 /** The settings of the shell as the core declares them and resolves them. */
 const SHELL: readonly PluginSettingInfo[] = [
@@ -115,7 +57,6 @@ const createTab = (
   const content: SettingEdit[] = []
   const installation: Installation = createInstallation({
     getSetting: (path) => at(file, path),
-    getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
     write: (response) => {
       content.push(...response)
     },
@@ -168,20 +109,41 @@ const chooseItem = async (words: string) => {
 }
 
 const openSystemSettings = async (tab: Tab) => {
-  await tab.find('.system-row').trigger('click')
+  await tab.get('button[aria-label="System"]').trigger('click')
   await nextTick()
 }
 
+const openAppearanceSettings = async (tab: Tab) => {
+  await tab.get('button[aria-label="Appearance"]').trigger('click')
+  await nextTick()
+}
+
+const getTileNames = (tab: Tab) =>
+  tab.get('.plugins-page').findAll('button').map((one) => one.attributes('aria-label'))
+
+const openPlugin = async (tab: Tab, name: string) => {
+  await tab.get(`button[aria-label="${name}"]`).trigger('click')
+  await nextTick()
+}
+
+const goBack = async (tab: Tab) => {
+  await tab.get('button[aria-label="Back"]').trigger('click')
+  await nextTick()
+}
+
+const isPluginPage = (tab: Tab) => tab.find('[role="tablist"]').exists()
+
+const isList = (tab: Tab) => tab.find('button[aria-label="System"]').exists()
+
 describe('the settings tab', () => {
-  it('draws the system settings row at the top of the list', () => {
+  it('draws the System tile at the top of the list', () => {
     const { tab } = createTab()
-    const rows = tab.findAll('.plugin-row')
-    expect(rows.length).toBeGreaterThan(0)
-    expect(rows[0]!.text()).toContain(words.systemSettings)
-    expect(rows[0]!.text()).toContain(words.systemSettingsDetail)
+    const system = tab.get('button[aria-label="System"]')
+    expect(getTileNames(tab)[0]).toBe(words.systemSettings)
+    expect(system.text()).toContain(words.systemSettingsDetail)
   })
 
-  it('draws the Secrets row after system settings and plugin rows below them', () => {
+  it('draws the Appearance and Connections tiles after System and the plugin rows below them', () => {
     const samplePlugin: PluginInfo = {
       id: 'test.transcription',
       name: 'Transcription Plugin',
@@ -189,22 +151,22 @@ describe('the settings tab', () => {
       description: 'Speech recognition engine',
       isActive: true,
       capabilities: [],
-      secrets: [],
       hasFrontend: false,
       hasBackend: false,
       settings: [],
     }
     const { tab } = createTab({}, [samplePlugin])
-    const rows = tab.findAll('.plugin-row')
-    expect(rows.length).toBe(3)
-    expect(rows[0]!.text()).toContain(words.systemSettings)
-    expect(rows[1]!.text()).toContain('Secrets')
-    expect(rows[2]!.text()).toContain('Transcription Plugin')
+    expect(getTileNames(tab)).toStrictEqual([
+      'System',
+      'Appearance',
+      'Connections',
+      'Transcription Plugin',
+    ])
   })
 
   it('opens on the theme the core resolved, in one list with the themes of plugins', async () => {
     const { tab } = createTab()
-    await openSystemSettings(tab)
+    await openAppearanceSettings(tab)
     const theme = findSelect(tab, 'Theme')
     expect(theme.text()).toContain('numen')
 
@@ -217,7 +179,7 @@ describe('the settings tab', () => {
 
   it('writes a theme chosen under the owner app', async () => {
     const { tab, writes } = createTab()
-    await openSystemSettings(tab)
+    await openAppearanceSettings(tab)
     await findSelect(tab, 'Theme').get('[data-slot="select"]').trigger('click')
     await nextTick()
     await nextTick()
@@ -240,7 +202,7 @@ describe('the settings tab', () => {
     const { tab } = createTab()
     await openSystemSettings(tab)
     expect(tab.get('.system-detail__file').text()).toBe('/numen.json')
-    expect(tab.find('.system-detail__where button').exists()).toBe(false)
+    expect(tab.findAll('button').map((one) => one.text())).not.toContain('Edit')
   })
 
   it('carries no pencil, and no editor spliced under a row', async () => {
@@ -255,12 +217,11 @@ describe('the settings tab', () => {
     expect(tab.find('.system-detail').exists()).toBe(false)
     await openSystemSettings(tab)
     expect(tab.find('.system-detail').exists()).toBe(true)
-    expect(tab.find('.system-detail__where').exists()).toBe(true)
+    expect(tab.get('[aria-current="page"]').text()).toBe(words.systemSettings)
 
-    await tab.find('.system-detail__back').trigger('click')
-    await nextTick()
+    await goBack(tab)
     expect(tab.find('.system-detail').exists()).toBe(false)
-    expect(tab.find('.system-row').exists()).toBe(true)
+    expect(isList(tab)).toBe(true)
   })
 
   it('switches to full-page plugin detail when a plugin is selected, and returns on back', async () => {
@@ -271,31 +232,57 @@ describe('the settings tab', () => {
       description: 'Optical character recognition',
       isActive: true,
       capabilities: [],
-      secrets: [],
       hasFrontend: false,
       hasBackend: false,
       settings: [],
     }
     const { tab } = createTab({}, [samplePlugin])
 
-    // Click on the plugin row to select it
-    const rows = tab.findAll('.plugin-row')
-    expect(rows.length).toBe(3)
-    await rows[2]!.trigger('click')
+    await openPlugin(tab, 'Document OCR')
+
+    expect(isList(tab)).toBe(false)
+    expect(isPluginPage(tab)).toBe(true)
+    expect(tab.get('h2').text()).toBe('Document OCR')
+
+    await goBack(tab)
+
+    expect(isPluginPage(tab)).toBe(false)
+    expect(isList(tab)).toBe(true)
+  })
+
+  it('opens the Connections page from the rows of a plugin that has none', async () => {
+    const proofreading: PluginInfo = {
+      id: 'md.test.proofreading',
+      name: 'Test Proofreading',
+      version: '1.0.0',
+      description: '',
+      isActive: true,
+      capabilities: [],
+      hasFrontend: false,
+      hasBackend: true,
+      settings: [
+        {
+          key: 'connections',
+          type: 'connections',
+          title: 'Connections',
+          description: '',
+          default: undefined,
+          operations: ['llm.complete'],
+          max: 5,
+          isShown: true,
+        },
+      ],
+    }
+    const { tab } = createTab({}, [proofreading])
+    await openPlugin(tab, 'Test Proofreading')
+    expect(tab.find('.connections-page').exists()).toBe(false)
+
+    const open = tab.findAll('button').find((one) => one.text() === 'Open Connections')
+    await open!.trigger('click')
     await nextTick()
 
-    // Full page plugin detail: system detail and list are gone
-    expect(tab.find('.system-row').exists()).toBe(false)
-    expect(tab.find('.plugin-detail').exists()).toBe(true)
-    expect(tab.find('.plugin-detail__title').text()).toContain('Document OCR')
-
-    // Click back button
-    await tab.find('.plugin-detail__back').trigger('click')
-    await nextTick()
-
-    // Back to main settings page
-    expect(tab.find('.plugin-detail').exists()).toBe(false)
-    expect(tab.find('.system-row').exists()).toBe(true)
+    expect(tab.find('.connections-page').exists()).toBe(true)
+    expect(isPluginPage(tab)).toBe(false)
   })
 
   it('keeps the cleared search query when navigating into a plugin detail and back', async () => {
@@ -306,7 +293,6 @@ describe('the settings tab', () => {
       description: 'Interactive chat tab',
       isActive: true,
       capabilities: ['agent'],
-      secrets: [],
       hasFrontend: true,
       hasBackend: false,
       settings: [],
@@ -315,22 +301,109 @@ describe('the settings tab', () => {
     initialSearchQuery.value = 'feature:agent'
     await nextTick()
 
-    const searchInput = tab.get('.plugins-list__search-input')
+    const searchInput = tab.get('input[type="search"]')
     expect((searchInput.element as HTMLInputElement).value).toBe('feature:agent')
 
     await searchInput.setValue('')
     await nextTick()
     expect(initialSearchQuery.value).toBe('')
 
-    const rows = tab.findAll('.plugin-row')
-    await rows[2]!.trigger('click')
-    await nextTick()
-    expect(tab.find('.plugin-detail').exists()).toBe(true)
+    await openPlugin(tab, 'Agent Chat')
+    expect(isPluginPage(tab)).toBe(true)
 
-    await tab.find('.plugin-detail__back').trigger('click')
-    await nextTick()
+    await goBack(tab)
 
-    const restoredInput = tab.get('.plugins-list__search-input')
+    const restoredInput = tab.get('input[type="search"]')
     expect((restoredInput.element as HTMLInputElement).value).toBe('')
+  })
+  describe('the toolbar', () => {
+    const OCR: PluginInfo = {
+      id: 'md.example.ocr',
+      name: 'Page Reader',
+      version: '1.0.0',
+      description: 'Reads the text of scanned pages',
+      isActive: true,
+      capabilities: [],
+      hasFrontend: false,
+      hasBackend: false,
+      settings: [],
+    }
+
+    const getToolbar = (tab: Tab) => tab.get('.settings-toolbar')
+    const getPath = (tab: Tab) => getToolbar(tab).get('nav[aria-label="Path"]')
+    const getSegments = (tab: Tab) =>
+      getPath(tab)
+        .findAll('button')
+        .map((one) => one.text())
+    const getCurrent = (tab: Tab) => getPath(tab).get('[aria-current="page"]').text()
+
+    it('shows only Settings on the list, with a disabled back button and no action', () => {
+      const { tab } = createTab({}, [OCR])
+
+      expect(getSegments(tab)).toStrictEqual([])
+      expect(getCurrent(tab)).toBe('Settings')
+      expect(getToolbar(tab).get('button[aria-label="Back"]').attributes('disabled')).toBeDefined()
+      expect(getToolbar(tab).find('.settings-toolbar__actions').exists()).toBe(false)
+    })
+
+    it('shows the path of the System and the Appearance page and no action', async () => {
+      const { tab } = createTab()
+
+      await openSystemSettings(tab)
+      expect(getSegments(tab)).toStrictEqual(['Settings'])
+      expect(getCurrent(tab)).toBe(words.systemSettings)
+      expect(getToolbar(tab).find('.settings-toolbar__actions').exists()).toBe(false)
+
+      await goBack(tab)
+      await openAppearanceSettings(tab)
+      expect(getCurrent(tab)).toBe(words.appearanceSettings)
+    })
+
+    it('shows the path of the Connections page with no action', async () => {
+      const { tab } = createTab()
+
+      await openPlugin(tab, 'Connections')
+
+      expect(getSegments(tab)).toStrictEqual(['Settings'])
+      expect(getCurrent(tab)).toBe(words.connections)
+      expect(getToolbar(tab).find('.settings-toolbar__actions').exists()).toBe(false)
+    })
+
+    it('holds the state and the enabled switch of a plugin on its page', async () => {
+      const { tab } = createTab({}, [OCR])
+
+      await openPlugin(tab, 'Page Reader')
+
+      expect(getSegments(tab)).toStrictEqual(['Settings', 'Other'])
+      expect(getCurrent(tab)).toBe('Page Reader')
+      const actions = getToolbar(tab).get('.settings-toolbar__actions')
+      expect(actions.text()).toContain('Running')
+      expect(actions.get('[role="switch"]').attributes('aria-label')).toBe('Enabled Page Reader')
+    })
+
+    it('goes back to the list from the Settings segment', async () => {
+      const { tab } = createTab({}, [OCR])
+      await openPlugin(tab, 'Page Reader')
+
+      await getPath(tab).findAll('button')[0]?.trigger('click')
+      await nextTick()
+
+      expect(isList(tab)).toBe(true)
+    })
+
+    it('opens the list searched for the category of a plugin from its segment', async () => {
+      const { tab, initialSearchQuery } = createTab({}, [OCR])
+      await openPlugin(tab, 'Page Reader')
+
+      await getPath(tab).findAll('button')[1]?.trigger('click')
+      await nextTick()
+
+      expect(isList(tab)).toBe(true)
+      expect(initialSearchQuery.value).toBe('category:other')
+      expect((tab.get('input[type="search"]').element as HTMLInputElement).value).toBe(
+        'category:other',
+      )
+      expect(tab.find('button[aria-label="Page Reader"]').exists()).toBe(true)
+    })
   })
 })

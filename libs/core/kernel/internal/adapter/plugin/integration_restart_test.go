@@ -29,41 +29,28 @@ import (
 // restartedPlugin responds to every service a bridge calls, and counts the
 // calls it receives.
 type restartedPlugin struct {
-	numenv1connect.UnimplementedEmbeddingServiceHandler
+	numenv1connect.UnimplementedSearchSourceServiceHandler
 	requested atomic.Int32
 }
 
-func (p *restartedPlugin) GetEmbeddingModel(
-	context.Context, *connect.Request[v1.GetEmbeddingModelRequest],
-) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
-	return connect.NewResponse(&v1.GetEmbeddingModelResponse{}), nil
+func (p *restartedPlugin) DescribeSearchSource(
+	context.Context, *connect.Request[v1.DescribeSearchSourceRequest],
+) (*connect.Response[v1.DescribeSearchSourceResponse], error) {
+	return connect.NewResponse(&v1.DescribeSearchSourceResponse{}), nil
 }
 
-func (p *restartedPlugin) EmbedBatch(
-	context.Context, *connect.Request[v1.EmbedBatchRequest],
-) (*connect.Response[v1.EmbedBatchResponse], error) {
+func (p *restartedPlugin) IndexTexts(
+	context.Context, *connect.Request[v1.IndexTextsRequest],
+) (*connect.Response[v1.IndexTextsResponse], error) {
 	p.requested.Add(1)
-	return connect.NewResponse(&v1.EmbedBatchResponse{}), nil
-}
-
-type restartedAgent struct {
-	numenv1connect.UnimplementedAgentServiceHandler
-	plugin *restartedPlugin
-}
-
-func (r restartedAgent) GetAgentPrograms(
-	context.Context, *connect.Request[v1.GetAgentProgramsRequest],
-) (*connect.Response[v1.GetAgentProgramsResponse], error) {
-	r.plugin.requested.Add(1)
-	return connect.NewResponse(&v1.GetAgentProgramsResponse{}), nil
+	return connect.NewResponse(&v1.IndexTextsResponse{}), nil
 }
 
 func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	t.Helper()
 	plugin := &restartedPlugin{}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(plugin))
-	mux.Handle(numenv1connect.NewAgentServiceHandler(restartedAgent{plugin: plugin}))
+	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(plugin))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(restartedTools{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(wiretest.PluginLifecycle{}))
 	server := httptest.NewServer(mux)
@@ -120,7 +107,7 @@ func writeRestartedPlugin(t *testing.T) string {
 		"id": "md.numen.stub",
 		"name": "All",
 		"version": "1.0.0",
-		"capabilities": ["embedding", "tools"],
+		"capabilities": ["search.source", "tools"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read", "link:open"],
 		"backend": {"entrypoint": "bin/stub"}
@@ -152,20 +139,23 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 				t.Fatalf("the first call failed: %v", err)
 			}
 
-			first, _, firstServer := launcher.get(0)
-			wiretest.KillProcess(t, first)
+			// A start for the description alone stops once it is answered, so the call may have started the
+			// plugin a second time; the process that runs is the last one started.
+			started := launcher.count()
+			running, _, runningServer := launcher.get(started - 1)
+			wiretest.KillProcess(t, running)
 			wiretest.WaitUntil(t, "the stopped plugin to lose its endpoint", func() bool {
 				return !host.Activation.HasEndpoint(contractPluginID)
 			})
-			firstServer.Close()
+			runningServer.Close()
 
 			if _, err := call(t.Context()); err != nil {
 				t.Fatalf("the call after the restart failed: %v", err)
 			}
-			if got := launcher.count(); got != 2 {
-				t.Fatalf("the plugin was started %d times, want 2", got)
+			if got := launcher.count(); got != started+1 {
+				t.Fatalf("the plugin was started %d times, want %d", got, started+1)
 			}
-			if _, again, _ := launcher.get(1); again.requested.Load() != 1 {
+			if _, again, _ := launcher.get(started); again.requested.Load() != 1 {
 				t.Errorf("the plugin started again was asked %d times, want 1", again.requested.Load())
 			}
 			if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {

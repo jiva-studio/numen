@@ -173,10 +173,28 @@
         "**/*.{ts,mjs,js}"
       ],
       "ignoreBinaries": [
+        "go",
         "nix",
         "ffmpeg",
         "ffprobe",
         "unshare"
+      ]
+    },
+    "tests/acceptance/desktop": {
+      "ignoreDependencies": [
+        "gplint"
+      ],
+      "entry": [
+        "playwright.config.ts",
+        "eslint.config.js",
+        "scripts/*.mjs",
+        "steps/**/*.ts",
+        "drivers/**/*.test.ts",
+        "vitest.config.mjs",
+        "support/*.ts"
+      ],
+      "project": [
+        "**/*.{ts,mjs,js}"
       ]
     },
     "plugins/*": {

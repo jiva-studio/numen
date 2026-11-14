@@ -20,9 +20,8 @@ message Manifest {
   repeated string capabilities = 6;
   // targets are the application windows the plugin runs in. Empty means every target.
   repeated string targets = 7;
-  // activation_events are the events that start the plugin's backend and deliver the event to it. The
-  // value `*` matches every event the host emits. A plugin with a backend also receives, without
-  // declaring it, the event `onFile:<extension>` for a file it opens by a reader or a handle.
+  // activation_events are the events that start the plugin's backend and deliver the event to it, such
+  // as `onSearchSourceReady` when the search source has indexed a vault.
   repeated string activation_events = 8;
   repeated string permissions = 9;
   // dependencies are what the host provisions for the plugin: runtimes, models, binaries and datasets.
@@ -30,12 +29,13 @@ message Manifest {
   ManifestBackend backend = 13;
   ManifestFrontend frontend = 14;
   repeated ManifestSetting settings = 15;
-  repeated SecretDeclaration secrets = 16;
   repeated string services = 17;
   repeated ManifestSettingsView settings_views = 24;
   // contributes is what the plugin adds to the application, known before its
   // frontend is loaded.
   ManifestContributes contributes = 26;
+  // is_off_by_default keeps the plugin off until the person enables it.
+  bool is_off_by_default = 27;
 }
 
 // ManifestContributes lists the contributions a plugin makes to the application.
@@ -72,6 +72,11 @@ message ManifestContributes {
   repeated ManifestTextKind text_kinds = 18;
   // listeners are the ports the host binds for the plugin.
   repeated ManifestListener listeners = 14;
+  // connection_types are the kinds of connection the plugin provides.
+  repeated ManifestConnectionType connection_types = 22;
+  // operations title the operations of connection types, of this plugin or of another, in words a
+  // person reads. Each name is declared once in a manifest.
+  repeated ManifestOperation operations = 23;
   // keybindings bind keys to commands, see the keybindings list of commands.json for the keys of the
   // application.
   repeated ManifestKeybinding keybindings = 19;
@@ -105,6 +110,58 @@ message ManifestKeybinding {
   map<string, string> values = 3;
   // when is a CEL condition over the variables of libs/core/protocol/when.json. Empty is always true.
   string when = 4;
+}
+
+// ManifestConnectionType is a kind of connection a plugin provides: a service or a program the core
+// sends requests to for the plugin. The id of the type everywhere else is the plugin id, a slash and
+// this id.
+message ManifestConnectionType {
+  // id is the local part of the type id; lowercase words joined by hyphens.
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  // operations are the names of the operations the type serves, such as "llm.chat": lowercase words
+  // joined by dots. The core knows them as names only.
+  repeated string operations = 4;
+  // fields are the values a connection of the type holds, in the order the form shows them.
+  repeated ManifestConnectionField fields = 5;
+  // row_fields are the values a row that names a connection of the type holds besides the connection,
+  // such as a model. The core hands them to the provider as the options of the call.
+  repeated ManifestConnectionField row_fields = 6;
+}
+
+// ManifestOperation titles an operation a connection type serves.
+message ManifestOperation {
+  // name is the operation, such as "acp.task": lowercase words joined by dots.
+  string name = 1;
+  // title is a lowercase verb phrase that completes "This type cannot ...", such as "run agent tasks".
+  string title = 2;
+}
+
+// ManifestConnectionField is one value a connection of a type holds.
+message ManifestConnectionField {
+  // key is the name the value is stored and sent under; letters and digits, starting with a letter.
+  // The key parallelRequests is read by the core as the limit of calls running at once.
+  string key = 1;
+  // type is string, number, boolean, enum, file or secret. A secret is kept in the key store.
+  string type = 2;
+  string title = 3;
+  string description = 4;
+  google.protobuf.Value default = 5;
+  // fixed_value is a value every connection of the type has. It is not stored and not edited.
+  optional string fixed_value = 6;
+  bool is_required = 7 [json_name = "required"];
+  // is_address marks the one string field that holds the address of the service. A change of it
+  // clears the secret fields of the connection.
+  bool is_address = 8;
+  // options are the values of an enum field.
+  google.protobuf.ListValue options = 9;
+  optional double min = 10;
+  optional double max = 11;
+  optional double step = 12;
+  // options_from names an operation of the type whose done frame is a numen.v1.Options message: the
+  // values a row field can take. It is called with the options the row holds so far.
+  string options_from = 13;
 }
 
 // ManifestTextKind is the readable name of one kind of text version a plugin makes. The application
@@ -215,6 +272,9 @@ message ManifestTabKind {
   // rank is default or alternate, as a reader's: among the kinds whose condition holds over a note,
   // a default kind is chosen before an alternate one. Empty is default.
   string rank = 5;
+  // is_note_editor says the kind edits the text of the note its tab opens on: the window gives its
+  // tabs the store of open notes, which saves what is typed.
+  bool is_note_editor = 6;
 }
 
 message ManifestDependency {
@@ -231,6 +291,9 @@ message ManifestDependency {
 message ManifestBackend {
   // entrypoint is the path of the executable relative to the plugin folder.
   string entrypoint = 2;
+  // idle_stop_seconds is how long the process may run without a lease before the host stops it,
+  // from 30 to 3600 seconds. Absent is 180.
+  int32 idle_stop_seconds = 3;
 }
 
 // ManifestFrontend declares that the plugin has a frontend. The bundle is dist/index.js and the
@@ -266,7 +329,10 @@ message ManifestSetting {
   string key = 1;
   string type = 2;
   string title = 3;
+  // description is the one line the settings row shows under the title, at most 64 characters.
   string description = 4;
+  // details is the full text the info button beside the title opens. Empty shows no button.
+  string details = 24;
   google.protobuf.Value default = 5;
   bool palette = 6;
   string icon = 7;
@@ -287,17 +353,14 @@ message ManifestSetting {
   string options_from = 19;
   // generate makes the host fill an empty value; "token" is 32 random bytes in hex.
   string generate = 20;
-}
-
-// SecretDeclaration is a secret, such as an API key, that a plugin asks the host to store.
-message SecretDeclaration {
-  string name = 1;
-  string title = 2;
-  string description = 3;
-  ManifestCondition when = 4;
-  // group is where the person finds the secrets for this declaration. It is a hint and not a limit.
-  // Optional; when set it is non-empty, trimmed and at most 64 characters.
-  string group = 5;
+  // operations are the operations a setting of type connections is used for, such as "llm.chat". A
+  // call of the plugin for one of them goes through the rows of the setting, and a plugin calls no
+  // operation no setting names. max is the number of rows.
+  repeated string operations = 22;
+  // discover makes a setting of type connections that holds no row use every connection whose type
+  // serves the operation, in the order of the connections, while the person leaves it on.
+  bool discover = 23;
+  reserved 21;
 }
 
 message ManifestNoteType {

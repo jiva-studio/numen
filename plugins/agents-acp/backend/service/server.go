@@ -1,42 +1,49 @@
 package service
 
 import (
-	"context"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/acp"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/agents"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/ask"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/programs"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/mcpendpoint"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/completion"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/detection"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/listing"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/task"
 )
 
+// machine is what the plugin reaches on the machine and on the host. Tools is nil where the plugin has
+// no host to list the tools on.
+type machine struct {
+	lookPath func(string) (string, error)
+	launcher acp.Launcher
+	tools    task.Tools
+	clock    cache.Clock
+	isAsync  bool
+}
+
 type agentServer struct {
-	agentrun.Unimplemented
-	registry *agents.Registry
-	asker    *ask.Asker
-	lister   *programs.Lister
+	settings   *settings.Settings
+	completion *completion.Completion
+	tasks      *task.Runner
+	detection  *detection.Detection
 }
 
-func newAgentServer(lookPath func(string) (string, error), launcher acp.Launcher, source cache.Clock, isAsync bool) (*agentServer, error) {
-	registry := agents.NewRegistry(lookPath)
-	asker, err := ask.New(registry, launcher)
+func newAgentServer(on machine) (*agentServer, error) {
+	values := new(settings.Settings)
+	lister, err := listing.New(on.launcher, on.clock, on.isAsync)
 	if err != nil {
 		return nil, err
 	}
-	lister, err := programs.New(registry, launcher, source, isAsync)
+	answers, err := completion.New(completion.Dependencies{Settings: values, Launcher: on.launcher, Listings: lister, LookPath: on.lookPath})
 	if err != nil {
 		return nil, err
 	}
-	return &agentServer{Unimplemented: agentrun.Unimplemented{}, registry: registry, asker: asker, lister: lister}, nil
-}
-
-// Ask runs the task on the ACP agent the task names.
-func (s *agentServer) Ask(ctx context.Context, task *agentrun.Request, send func(*agentrun.Response) error) error {
-	return s.asker.Execute(ctx, task, send)
-}
-
-// GetPrograms lists the ACP agents as programs with the models each reports.
-func (s *agentServer) GetPrograms(ctx context.Context, requested []agentrun.ProgramCommand) ([]*agentrun.Program, error) {
-	return s.lister.Execute(ctx, requested)
+	tasks, err := task.New(task.Dependencies{
+		Launcher: on.launcher, LookPath: on.lookPath, Tools: on.tools, ToolServer: mcpendpoint.Server{},
+		Clock: on.clock, Settings: values,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &agentServer{settings: values, completion: answers, tasks: tasks, detection: detection.New(on.lookPath)}, nil
 }

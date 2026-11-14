@@ -1,11 +1,13 @@
 import { createRouterTransport, type ServiceImpl } from '@connectrpc/connect'
 import {
-  AgentService,
   CatalogService,
   CommandService,
+  ConnectionCallService,
   FileService,
   NoteService,
+  PluginHealthService,
   PluginService,
+  ProviderConnectionService,
   SearchService,
   SettingsService,
   TextService,
@@ -23,7 +25,6 @@ import { replaceTransport } from '../transport'
  */
 const SERVICES = {
   vault: VaultService,
-  agentService: AgentService,
   workspace: WorkspaceService,
   files: FileService,
   notes: NoteService,
@@ -35,7 +36,10 @@ const SERVICES = {
   texts: TextService,
   pluginCommands: CommandService,
   pluginService: PluginService,
+  pluginHealth: PluginHealthService,
   pluginCatalog: CatalogService,
+  connections: ProviderConnectionService,
+  connectionCalls: ConnectionCallService,
 } as const
 
 type ClientName = keyof typeof SERVICES

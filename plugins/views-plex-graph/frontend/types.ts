@@ -9,7 +9,7 @@ import type {
   SlotItem,
   Connection,
   ConnectionRole,
-  NoteNeighbor,
+  RelatedNote,
   PathRename,
   PluginContext,
   VaultRelations,
@@ -26,24 +26,24 @@ export interface NoteHeading {
   readonly line: number
 }
 
-/** Focus of a neighborhood. */
+/** Focus of a note graph. */
 export interface Focus {
   readonly path: string
   readonly title: string
 }
 
 /** One note joined to the focus. */
-export type Neighbor = NoteNeighbor
+export type { RelatedNote }
 
 /**
- * A neighborhood of a note: the note in focus, the notes joined to it, and the connection of
+ * A note and the notes related to it: the note in focus, the notes joined to it, and the connection of
  * every line drawn between them.
  */
-export interface Neighborhood {
+export interface NoteGraph {
   readonly focus: Focus
   readonly focusType: NoteType
   readonly focusTabKind?: string
-  readonly related: readonly Neighbor[]
+  readonly related: readonly RelatedNote[]
   readonly connections: readonly Connection[]
 }
 
@@ -53,9 +53,9 @@ export type NoteRelation = PlexRelation
 /** A path rename. */
 export type { PathRename }
 
-/** The one query a plex makes of the vault: the neighbors of a note. */
-export interface Neighbors {
-  neighborhood(path: string): Promise<Neighborhood>
+/** The one query a plex makes of the vault: the related notes of a note. */
+export interface RelatedNoteQueries {
+  listRelatedNotes(path: string, depth?: 1 | 2): Promise<NoteGraph>
 }
 
 /** Position of the menu and the node it was requested on. */
@@ -103,7 +103,7 @@ export interface OpenNoteOptions {
 }
 
 export interface PlexView {
-  readonly neighborhood: Ref<Neighborhood | null>
+  readonly noteGraph: Ref<NoteGraph | null>
   readonly here: Ref<string>
   readonly error: Ref<string>
   readonly nextPath: Ref<string>
@@ -152,6 +152,29 @@ export interface PlexNotesDeps {
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
 }
 
+/** Whether names are shown and how many a note shows, as the plugin settings hold them. */
+export interface PlexNamesSettings {
+  readonly showNames: Readonly<Ref<boolean>>
+  readonly namesPerNote: Readonly<Ref<number>>
+}
+
+/** How the plex is drawn, as the plugin settings hold it, followed as they change. */
+export interface PlexLook {
+  readonly references: Readonly<Ref<ReferenceMode>>
+  readonly showPills: Readonly<Ref<boolean>>
+  readonly highlightLinks: Readonly<Ref<boolean>>
+  readonly pillPaddingSides: Readonly<Ref<number>>
+  readonly pillPaddingEnds: Readonly<Ref<number>>
+  readonly focusSize: Readonly<Ref<number>>
+  readonly animationLength: Readonly<Ref<number>>
+  readonly lineThickness: Readonly<Ref<number>>
+  readonly outlineThickness: Readonly<Ref<number>>
+  readonly lineCurvature: Readonly<Ref<number>>
+  readonly noteRoom: Readonly<Ref<number>>
+  readonly namesOpacity: Readonly<Ref<number>>
+  readonly focusedNamesOpacity: Readonly<Ref<number>>
+}
+
 /** Dependencies for plex tab state. */
 export interface PlexTabDeps {
   readonly tabId: string
@@ -161,14 +184,17 @@ export interface PlexTabDeps {
   readonly window: PlexWindowDeps
   readonly menu: PlexMenuDeps
   readonly notes: PlexNotesDeps
+  readonly names: PlexNamesSettings
+  readonly look: PlexLook
 }
 
 export interface PlexViewState {
   readonly view: PlexView
-  readonly picture: ComputedRef<PlexNeighborhood | null>
+  readonly picture: ComputedRef<PlexGraph | null>
   readonly empty: ComputedRef<boolean>
   readonly dragged: ComputedRef<readonly string[]>
   readonly creatable: readonly PlexRelation[]
+  readonly names: PlexNamesState
 }
 
 export interface PlexMenuState {
@@ -180,6 +206,16 @@ export interface PlexMenuState {
   openMenu(request: MenuRequest): void
   dismiss(): void
   chooseMenuItem(id: string): void
+}
+
+/**
+ * The names of the notes related to the drawn notes. A node with none, and every node while names are off, has none;
+ * choosing a name moves the focus to the note it stands for.
+ */
+export interface PlexNamesState {
+  readonly showNames: Readonly<Ref<boolean>>
+  getNames(node: string): PlexNames
+  choose(name: string): void
 }
 
 export interface PlexHeadingsState {
@@ -225,6 +261,7 @@ export interface PlexLinkInspectorState {
 /** What one plex tab holds. */
 export interface PlexTabState {
   readonly canvas: PlexViewState
+  readonly look: PlexLook
   readonly menu: PlexMenuState
   readonly headings: PlexHeadingsState
   readonly nodes: PlexNodeActions
@@ -239,8 +276,11 @@ export interface PlexGraphViewProps {
   readonly context?: PluginContext
 }
 
+/** Which references to show: the links the note writes, the links to it, both, or none. */
+export type ReferenceMode = 'off' | 'outgoing' | 'incoming' | 'both'
+
 /** Every relation a node can take to the one in focus. */
-export type PlexRelation = 'parent' | 'child' | 'jump' | 'sibling'
+export type PlexRelation = 'parent' | 'child' | 'jump' | 'reference' | 'sibling'
 
 /** Where a node is positioned relative to the one in focus. */
 export type PlexNodeRelation = 'focus' | PlexRelation
@@ -281,8 +321,8 @@ export interface PlexEdge {
   readonly arrows?: readonly EdgeArrow[]
 }
 
-/** One neighborhood: the node in focus and everything shown around it. */
-export interface PlexNeighborhood {
+/** One graph: the node in focus and everything shown around it. */
+export interface PlexGraph {
   readonly nodes: readonly PlexNode[]
   readonly edges: readonly PlexEdge[]
 }
@@ -295,4 +335,16 @@ export interface PlexHeading {
   readonly id: string
   readonly text: string
   readonly level: number
+}
+
+/** The name of a note shown beside a related note. The id is the caller's, returned unchanged when the name is chosen. */
+export interface PlexName {
+  readonly id: string
+  readonly title: string
+}
+
+/** The names set over a related note, and those set under it. */
+export interface PlexNames {
+  readonly above: PlexName[]
+  readonly below: PlexName[]
 }

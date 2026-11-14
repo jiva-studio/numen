@@ -2,19 +2,19 @@ package delivery
 
 import "sync"
 
-// ledger remembers, for each plugin, which list of secrets it was given, which list it refused, and
+// ledger remembers, for each plugin, whether it was given its configuration, whether it refused it, and
 // which plugin has not been configured since it started.
 type ledger struct {
 	mu                     sync.RWMutex
-	delivered              map[string]string
-	rejected               map[string]string
+	delivered              map[string]bool
+	rejected               map[string]bool
 	awaitingFirstConfigure map[string]bool
 }
 
 func newLedger() *ledger {
 	return &ledger{
-		delivered:              make(map[string]string),
-		rejected:               make(map[string]string),
+		delivered:              make(map[string]bool),
+		rejected:               make(map[string]bool),
 		awaitingFirstConfigure: make(map[string]bool),
 	}
 }
@@ -48,33 +48,21 @@ func (l *ledger) forget(pluginIDs []string) {
 	}
 }
 
-func (l *ledger) isDue(pluginID, signature string) bool {
+func (l *ledger) isDue(pluginID string) bool {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	if l.awaitingFirstConfigure[pluginID] {
-		return false
-	}
-	if last, isDelivered := l.delivered[pluginID]; isDelivered && last == signature {
-		return false
-	}
-	last, isRejected := l.rejected[pluginID]
-	return !isRejected || last != signature
+	return !l.awaitingFirstConfigure[pluginID] && !l.delivered[pluginID] && !l.rejected[pluginID]
 }
 
-func (l *ledger) recordOutcome(pluginID, signature string, sendErr, readErr error, isCallerFailure bool) {
+func (l *ledger) recordOutcome(pluginID string, sendErr error, isCallerFailure bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	delete(l.delivered, pluginID)
 	switch {
-	case sendErr == nil && readErr == nil:
-		l.delivered[pluginID] = signature
-		delete(l.rejected, pluginID)
 	case sendErr == nil:
-		delete(l.delivered, pluginID)
+		l.delivered[pluginID] = true
 		delete(l.rejected, pluginID)
-	case isCallerFailure:
-		delete(l.delivered, pluginID)
-	default:
-		delete(l.delivered, pluginID)
-		l.rejected[pluginID] = signature
+	case !isCallerFailure:
+		l.rejected[pluginID] = true
 	}
 }

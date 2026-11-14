@@ -25,6 +25,7 @@ const props = withDefaults(defineProps<SelectProps>(), {
   isSearchable: false,
   canEnterCustom: false,
   searchName: 'Search',
+  problem: '',
 })
 
 /** Which choice is in force, by the identifier the caller gave it. */
@@ -108,6 +109,7 @@ const onKey = (event: KeyboardEvent) => {
     :is-disabled="isDisabled"
     :is-expanded="menuAnchor !== null"
     :has-popup="isSearchable ? 'listbox' : 'menu'"
+    :problem="problem"
     :class="props.class"
     @click="onOpenChoices"
     @keydown="onKey"
@@ -120,7 +122,7 @@ const onKey = (event: KeyboardEvent) => {
     :items="choices"
     :label="name"
     :placeholder="searchName"
-    empty-text="Nothing to choose"
+    :empty-text="problem || 'Nothing to choose'"
     :has-action="isCustomAvailable"
     :at="menuAnchor.at"
     :asking="menuAnchor.wide"
@@ -149,7 +151,7 @@ const onKey = (event: KeyboardEvent) => {
     @choose="onChoose"
     @dismiss="menuAnchor = null"
   >
-    <template #silence>Nothing to choose</template>
+    <template #silence>{{ problem || 'Nothing to choose' }}</template>
   </Menu>
 </template>
 

@@ -4,8 +4,11 @@
 //   node scripts/select-tests.mjs plan <scope>
 //
 // A scope is `all`, `none`, or tokens separated by spaces. A token without `/` is a folder under
-// tests/plugins/ (`readers.epub`); a token with `/` is a folder (ending in `/`) or a spec file
-// under tests/ (`scenarios/link.spec.ts`). A scope of tokens runs them and tests/shell/.
+// tests/plugins/ (`readers.pdf`); a token with `/` is a folder (ending in `/`) or a spec file
+// under tests/ (`shell/lifecycle/chaos.spec.ts`). The token `flashcards` runs the flashcards window's
+// tests in tests/e2e/desktop/flashcards/ and no spec file of tests/. A scope of tokens runs them and tests/shell/.
+// A change to features/ or tests/acceptance/ adds the token `acceptance`, which runs the acceptance
+// scenarios and no spec file; `all` runs them too.
 //
 // `scope` reads changed paths, relative to the repository root, and prints `scope=<scope>`. A
 // change to plugins/<dir>/ selects the tests of that plugin: tests/plugins/<id without md.numen.>/,
@@ -19,6 +22,7 @@
 //   desktop=true|false     whether any test of the desktop window runs
 //   paths=<paths>          the folders and spec files to run, separated by spaces; empty for all
 //   flashcards=true|false  whether the flashcards window's tests run
+//   acceptance=true|false  whether the acceptance scenarios run
 //   matrix=<json>          {"include":[{"engine","shard","shards"}]}: one job per engine and shard
 import fs from 'node:fs'
 import path from 'node:path'
@@ -33,25 +37,33 @@ const ENGINES = ['chromium', 'webkit']
 const SHARD_SECONDS = 300
 const MAX_SHARDS = 4
 const ID_PREFIX = 'md.numen.'
-const FLASHCARDS = 'views.flashcards.studio'
+const FLASHCARDS = 'flashcards'
+const ACCEPTANCE = 'acceptance'
 
 /** Tests of a plugin beyond its own folder and the spec files that name its id, as scope tokens. */
 export const PLUGIN_TESTS = {
-  'agents-numen': ['agents.chat'],
-  'agents-tools-vault': ['agents.chat'],
-  'agents-tools-window': ['agents.chat'],
-  'views-agent-chat': ['agents.chat'],
-  'engines-ocr': [
-    'scenarios/ocr-disabled.spec.ts',
-    'scenarios/proofreading.spec.ts',
-    'scenarios/recognition.spec.ts',
-  ],
-  'engines-transcription': ['scenarios/proofreading.spec.ts', 'scenarios/recording.spec.ts'],
-  'readers-pdf': ['scenarios/ocr-disabled.spec.ts', 'scenarios/recognition.spec.ts'],
-  'tools-media-importer': ['scenarios/link.spec.ts'],
-  'tools-proofreading': ['scenarios/proofreading.spec.ts'],
-  'views-media-viewer': ['scenarios/recording.spec.ts'],
+  'agents-numen': ['agents.chat', ACCEPTANCE],
+  'connections-llm': [ACCEPTANCE],
+  'agents-tools-vault': ['agents.chat', ACCEPTANCE],
+  'agents-tools-window': ['agents.chat', ACCEPTANCE],
+  'engines-embeddings': [ACCEPTANCE],
+  'engines-ocr': [ACCEPTANCE],
+  'engines-transcription': [ACCEPTANCE],
+  notes: [ACCEPTANCE],
+  'readers-epub': [ACCEPTANCE],
+  'readers-pdf': [ACCEPTANCE],
+  'tools-media-importer': [ACCEPTANCE],
+  'tools-proofreading': [ACCEPTANCE],
+  'tools-updater': [ACCEPTANCE],
+  'views-agent-chat': ['agents.chat', ACCEPTANCE],
+  'views-flashcards-studio': [FLASHCARDS, ACCEPTANCE],
+  'views-media-viewer': [ACCEPTANCE],
+  'views-plex-graph': [ACCEPTANCE],
+  'views-status-bar': [ACCEPTANCE],
 }
+
+/** The scenarios and the code that runs them. */
+const isAcceptanceInput = (file) => /^(features|tests\/acceptance)\//.test(file) && !isDocumentation(file)
 
 /** Paths the desktop window and its tests are built from; a change elsewhere runs no test. */
 const DESKTOP =
@@ -126,19 +138,39 @@ const joinTokens = (tokens) => {
     .join(' ')
 }
 
-/** The scope of the changed files. */
-export const getScope = (files) => {
+/** The tokens of the changed files, whether a file of the desktop window changed, and whether a scenario did; null where a file needs every test. */
+const readChanges = (files) => {
   const tokens = new Set()
   let isTested = false
+  let isAcceptance = false
   for (const file of files) {
+    if (isAcceptanceInput(file)) {
+      isAcceptance = true
+      continue
+    }
     if (!isDesktopInput(file)) continue
     isTested = true
     const added = getFileTokens(file)
-    if (added === null) return 'all'
-    for (const one of added) tokens.add(one)
+    if (added === null) return null
+    for (const one of added) {
+      if (one === ACCEPTANCE) isAcceptance = true
+      else tokens.add(one)
+    }
   }
-  if (tokens.size === 0) return isTested ? 'shell/' : 'none'
-  return joinTokens(tokens)
+  return { tokens, isTested, isAcceptance }
+}
+
+/** The scope of the changed files. */
+export const getScope = (files) => {
+  const changes = readChanges(files)
+  if (changes === null) return 'all'
+  const { tokens, isTested, isAcceptance } = changes
+  if (tokens.size === 0) {
+    if (isTested) return isAcceptance ? `shell/ ${ACCEPTANCE}` : 'shell/'
+    return isAcceptance ? ACCEPTANCE : 'none'
+  }
+  const named = joinTokens(tokens)
+  return isAcceptance ? `${named} ${ACCEPTANCE}` : named
 }
 
 /**
@@ -148,9 +180,9 @@ export const getScope = (files) => {
 export const getScopePaths = (scope) => {
   const tokens = scope.split(' ').filter(Boolean)
   if (tokens.includes('all')) return undefined
-  const named = tokens.filter((one) => one !== 'none')
+  const named = tokens.filter((one) => one !== 'none' && one !== ACCEPTANCE)
   if (named.length === 0) return []
-  return [...new Set(['tests/shell/', ...named.map(getTokenPath)])].sort((a, b) =>
+  return [...new Set(['tests/shell/', ...named.filter((one) => one !== FLASHCARDS).map(getTokenPath)])].sort((a, b) =>
     a.localeCompare(b),
   )
 }
@@ -169,11 +201,12 @@ export const planJobs = (paths) => {
 export const getPlan = (scope) => {
   const paths = getScopePaths(scope)
   const jobs = paths?.length === 0 ? [] : planJobs(paths)
-  const flashcards = !paths || paths.includes(getTokenPath(FLASHCARDS))
+  const flashcards = !paths || scope.split(' ').includes(FLASHCARDS)
   return [
     `desktop=${jobs.length > 0}`,
     `paths=${(paths ?? []).join(' ')}`,
     `flashcards=${flashcards}`,
+    `acceptance=${!paths || scope.split(' ').includes(ACCEPTANCE)}`,
     `matrix=${JSON.stringify({ include: jobs })}`,
   ]
 }

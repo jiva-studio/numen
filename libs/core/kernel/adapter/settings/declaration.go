@@ -2,9 +2,11 @@ package settings
 
 import (
 	_ "embed"
+	"encoding/json"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
@@ -27,6 +29,70 @@ const (
 
 // RegistryThemes names the registry that lists the installed themes.
 const RegistryThemes = "themes"
+
+// RegistryConnections names the registry that lists the ids of the stored connections. A setting of
+// rows takes a list of at most max objects, each with a connection from this registry, from
+// RegistryDetectedConnections or detected for a type RegistryPendingDetections lists, and the row options of
+// its type as text, and no connection with the same options twice. A registry that lists no connections leaves
+// the connection unchecked.
+const RegistryConnections = "connections"
+
+// RegistryDetectedConnections names the registry that lists the ids of the connections the providers detected.
+const RegistryDetectedConnections = "detectedConnections"
+
+// RegistryPendingDetections names the registry that lists the ids of the types whose providers have not reported
+// what they detect yet. A row that names a connection detected for such a type is kept until they do.
+const RegistryPendingDetections = "pendingDetections"
+
+func listDetectedConnectionIDs(detected connectionport.Detected) []string {
+	if detected == nil {
+		return nil
+	}
+	var ids []string
+	for _, one := range detected.ListDetected() {
+		ids = append(ids, one.ID)
+	}
+	return ids
+}
+
+func listPendingDetections(types connectionport.Types, detected connectionport.Detected) []string {
+	if types == nil || detected == nil {
+		return nil
+	}
+	var ids []string
+	for _, one := range types.ListTypes() {
+		if detected.IsPending(one.GetID()) {
+			ids = append(ids, one.GetID())
+		}
+	}
+	return ids
+}
+
+// AddDetectedRegistries answers RegistryDetectedConnections and RegistryPendingDetections from the detection, and
+// every other name from registries. A nil detection lists none.
+func AddDetectedRegistries(registries Registries, types connectionport.Types, detected connectionport.Detected) Registries {
+	return func(name string) ([]string, bool) {
+		switch name {
+		case RegistryDetectedConnections:
+			return listDetectedConnectionIDs(detected), true
+		case RegistryPendingDetections:
+			return listPendingDetections(types, detected), true
+		}
+		return registries(name)
+	}
+}
+
+// AddDetectedConnectionIDs adds to the values a window follows the ids of the connections the providers detected,
+// under settingsdomain.DetectedConnectionsKey, so that the window reads the connections again when they change.
+func AddDetectedConnectionIDs(values settingsdomain.Values, detected connectionport.Detected) {
+	ids := listDetectedConnectionIDs(detected)
+	if values == nil || len(ids) == 0 {
+		return
+	}
+	if encoded, err := json.Marshal(ids); err == nil {
+		values[settingsdomain.JoinPath([]string{settingsdomain.DetectedConnectionsKey})] = string(encoded)
+	}
+}
 
 func readAppDeclaration() []manifest.Setting {
 	decoded, err := manifestjson.Decode(appDeclaration)

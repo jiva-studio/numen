@@ -16,8 +16,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
@@ -27,8 +27,8 @@ type Store struct {
 	mu          sync.RWMutex
 	Sources     map[domain.VaultID]map[string]domain.Source
 	Chunks      []Chunk
-	Vectors     map[domain.ChunkID][]embedding.Vector
-	Groups      [][]embedding.Vector
+	Vectors     map[domain.ChunkID][]vector.Stored
+	Groups      [][]vector.Stored
 	Extractions map[string]int
 	next        int64
 	Kept        map[string][]byte
@@ -50,7 +50,7 @@ type Chunk struct {
 func NewStore() *Store {
 	return &Store{
 		Sources:     map[domain.VaultID]map[string]domain.Source{},
-		Vectors:     map[domain.ChunkID][]embedding.Vector{},
+		Vectors:     map[domain.ChunkID][]vector.Stored{},
 		Extractions: map[string]int{},
 	}
 }
@@ -74,7 +74,7 @@ func (s *Store) SaveExtraction(_ context.Context, vaultID domain.VaultID, e doma
 	return nil
 }
 
-func (s *Store) SaveVectors(_ context.Context, vectors []embedding.Vector) error {
+func (s *Store) SaveVectors(_ context.Context, vectors []vector.Stored) error {
 	if len(vectors) == 0 {
 		return nil
 	}
@@ -127,7 +127,7 @@ func (s *Store) GetSourcesWithOtherRecipe(_ context.Context, vaultID domain.Vaul
 	})
 }
 
-func (s *Store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, model embedding.Model, after embedding.ChunkCursor, limit int) ([]domain.Passage, embedding.ChunkCursor, error) {
+func (s *Store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, recipe string, after vector.ChunkCursor, limit int) ([]domain.Passage, vector.ChunkCursor, error) {
 	if limit <= 0 {
 		return nil, "", fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -140,7 +140,7 @@ func (s *Store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 	var out []domain.Passage
 	var lastChunk Chunk
 	for _, c := range s.getOrderedChunks() {
-		if c.Vault != vaultID || c.Parent == 0 || s.hasVector(c.ID, model) {
+		if c.Vault != vaultID || c.Parent == 0 || s.hasVector(c.ID, recipe) {
 			continue
 		}
 		src := s.Sources[c.Vault][c.Path]
@@ -163,7 +163,7 @@ func (s *Store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 	next := after
 	if len(out) > 0 {
 		src := s.Sources[lastChunk.Vault][lastChunk.Path]
-		next = embedding.ChunkCursor(strconv.FormatInt(src.FileStat.ModTime.UnixNano(), 10) + ":" + strconv.FormatInt(lastChunk.ID, 10))
+		next = vector.ChunkCursor(strconv.FormatInt(src.FileStat.ModTime.UnixNano(), 10) + ":" + strconv.FormatInt(lastChunk.ID, 10))
 	}
 	return out, next, nil
 }
@@ -172,7 +172,7 @@ func GetChunkID(row int64) domain.ChunkID {
 	return domain.ChunkID(strconv.FormatInt(row, 10))
 }
 
-func parseCursor(after embedding.ChunkCursor) (int64, int64, error) {
+func parseCursor(after vector.ChunkCursor) (int64, int64, error) {
 	if after == "" {
 		return math.MaxInt64, 0, nil
 	}
@@ -345,15 +345,15 @@ func (s *Store) HasChunk(chunk domain.ChunkID) bool {
 	return false
 }
 
-func (s *Store) GetVectors(c Chunk) []embedding.Vector {
+func (s *Store) GetVectors(c Chunk) []vector.Stored {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return slices.Clone(s.Vectors[GetChunkID(c.ID)])
 }
 
-func (s *Store) hasVector(chunk int64, model embedding.Model) bool {
+func (s *Store) hasVector(chunk int64, recipe string) bool {
 	for _, v := range s.Vectors[GetChunkID(chunk)] {
-		if v.Model == model {
+		if v.Recipe == recipe {
 			return true
 		}
 	}

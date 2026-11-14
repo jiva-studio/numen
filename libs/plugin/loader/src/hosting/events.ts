@@ -55,3 +55,16 @@ export async function runCommand(
     reportError(deps, entry.pluginId, error)
   }
 }
+
+/**
+ * Starts the plugin in the background, for a use that does not wait for it, such as the draw of a
+ * slot. A plugin whose start failed is left until a use that waits for it.
+ */
+export function requestPluginStart(deps: PluginHostDeps, pluginId: string): void {
+  const { startPlugin } = deps
+  if (!startPlugin || deps.isPluginFailed?.(pluginId)) return
+  // The draw that asks may be inside a computed value, which must not change state as it is read.
+  queueMicrotask(() => {
+    startPlugin(pluginId).catch((error: Caught) => reportError(deps, pluginId, error))
+  })
+}

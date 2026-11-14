@@ -13,12 +13,10 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 const (
@@ -63,18 +61,23 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	endpoint := &Endpoint{callers: callers, port: linked.Port, serveResult: make(chan error, 1)}
 
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
+	mux.Handle(numenv1connect.NewHostConnectionServiceHandler(&connectionEndpoint{endpoint: endpoint}))
 	mux.Handle(vault.NewHandler(endpoint, callers.Lent))
 	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
-	mux.Handle(numenv1connect.NewDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostSearchServiceHandler(&searchEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostWindowServiceHandler(&windowEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewPluginHealthServiceHandler(&healthEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewPluginServiceHandler(&processEndpoint{endpoint: endpoint}))
 	countingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		endpoint.callCount.Add(1)
 		defer endpoint.callCount.Add(-1)
+		if pluginID, err := endpoint.authenticate(r.Header.Get("Authorization")); err == nil {
+			caller := plugin.Caller{PluginID: pluginID}
+			r = r.WithContext(plugin.WithCaller(r.Context(), caller))
+		}
 		mux.ServeHTTP(w, r)
 	})
 	endpoint.server = &http.Server{Handler: countingHandler, ReadHeaderTimeout: hostEndpointHeaderTimeout}
@@ -112,30 +115,6 @@ func (e *Endpoint) Close(ctx context.Context) error {
 	return nil
 }
 
-// Complete serves a plugin's completion request with text from the configured
-// agent. A request without a valid token is unauthenticated, one without the
-// ai:complete permission is denied.
-func (e *Endpoint) Complete(
-	ctx context.Context,
-	req *connect.Request[v1.HostServiceCompleteRequest],
-) (*connect.Response[v1.HostServiceCompleteResponse], error) {
-	pluginID, err := e.Authorize(req.Header().Get("Authorization"), manifest.PermissionAIComplete)
-	if err != nil {
-		return nil, err
-	}
-	completer := e.callers.Lent.GetCompleter()
-	if completer == nil {
-		return refuseCompletion(v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, ""), nil
-	}
-	text, err := completer.Complete(ctx, pluginID, readWireQuestion(req.Msg.GetQuestion()))
-	if err != nil {
-		return answerFailure(ctx, err)
-	}
-	return connect.NewResponse(&v1.HostServiceCompleteResponse{
-		Answer: &v1.CompletionAnswer{Text: text},
-	}), nil
-}
-
 func (e *Endpoint) getVault(header http.Header) (*vault.Access, error) {
 	return vault.Select(e.callers.Lent.GetPluginVault(), header)
 }
@@ -158,23 +137,6 @@ func (e *Endpoint) Authorize(header, permission string) (string, error) {
 		return "", connect.NewError(connect.CodePermissionDenied, fmt.Errorf("plugin %s: %w", pluginID, err))
 	}
 	return pluginID, nil
-}
-
-func answerFailure(ctx context.Context, err error) (*connect.Response[v1.HostServiceCompleteResponse], error) {
-	if ctxErr := ctx.Err(); ctxErr != nil {
-		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
-	}
-	if errors.Is(err, completion.ErrInvalidQuestion) {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-	if code, isRefusal := writeRefusal(err); isRefusal {
-		return refuseCompletion(code, readRefusalDetail(err)), nil
-	}
-	return nil, connect.NewError(connect.CodeInternal, err)
-}
-
-func refuseCompletion(code v1.CompletionErrorCode, detail string) *connect.Response[v1.HostServiceCompleteResponse] {
-	return connect.NewResponse(&v1.HostServiceCompleteResponse{Error: code, Detail: detail})
 }
 
 func checkLoopback(address string) error {

@@ -5,29 +5,6 @@
       "id": "app:file.createText",
       "title": "Create text",
       "about": "creates a text version of a file"
-    },
-    {
-      "id": "app:link.import",
-      "title": "Import link",
-      "about": "creates a link note from a web address",
-      "arguments": [
-        {
-          "name": "address",
-          "title": "Web address",
-          "type": "string",
-          "required": true
-        }
-      ]
-    },
-    {
-      "id": "app:link.downloadMedia",
-      "title": "Download media",
-      "about": "downloads the media of a link note"
-    },
-    {
-      "id": "app:link.deleteMedia",
-      "title": "Delete media",
-      "about": "deletes the downloaded media of a link note"
     }
   ],
   "appCommands": [
@@ -44,14 +21,30 @@
       ]
     },
     {
+      "id": "app:settings.open",
+      "arguments": [
+        {
+          "name": "plugin",
+          "title": "Plugin",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "setting",
+          "title": "Setting",
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
       "id": "app:file.reveal",
       "arguments": [
         {
           "name": "kind",
           "title": "Place",
-          "type": "enum",
-          "required": false,
-          "options": ["plex", "files"]
+          "type": "string",
+          "required": false
         }
       ]
     }

@@ -10,7 +10,6 @@ const AT = ['p', 'enabled'] as const
 const answerWith = (written: string) => ({
   written,
   path: '/f',
-  models: [],
   plugins: [],
   app: [],
   secretSections: [],

@@ -2,14 +2,11 @@ package tools
 
 import (
 	"context"
-	"net/http"
-	"slices"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
@@ -22,12 +19,14 @@ const (
 	ErrorCodeBadArguments ErrorCode = 2
 )
 
-// Call describes an invocation of a tool.
+// Call describes an invocation of a tool. ConnectionID is the connection whose agent asks for the call; the
+// list of running plugins names that connection as the holder of the tool call.
 type Call struct {
-	Name      string
-	Arguments []byte
-	Context   map[string]string
-	VaultID   string
+	Name         string
+	Arguments    []byte
+	Context      map[string]string
+	VaultID      string
+	ConnectionID string
 }
 
 func (c *Call) GetName() string {
@@ -106,34 +105,8 @@ type ToolInfo struct {
 	InputSchema  []byte
 	OutputSchema []byte
 	Effect       Effect
-	Step         Step
-	Servers      []Server
 	Instructions []string
 	Requires     []string
-	Hints        Hints
-}
-
-// Hints are the MCP annotations of a tool.
-//
-//numen:api
-type Hints struct {
-	// ReadOnly is a tool that changes nothing.
-	ReadOnly bool
-	// Destructive is a tool that removes something.
-	Destructive bool
-	// Idempotent is a tool whose repeated call with the same arguments has no further effect.
-	Idempotent bool
-	// OpenWorld is a tool that reaches outside the machine.
-	OpenWorld bool
-}
-
-func createHints(spec Spec) Hints {
-	return Hints{
-		ReadOnly:    spec.Effect == ReadOnly,
-		Destructive: spec.Effect == ReadWrite && spec.Step == Remove,
-		Idempotent:  spec.Effect == ReadOnly,
-		OpenWorld:   slices.Contains(spec.Requires, host.PermissionLinkOpen),
-	}
 }
 
 func (t *ToolInfo) GetName() string {
@@ -178,20 +151,6 @@ func (t *ToolInfo) GetEffect() Effect {
 	return t.Effect
 }
 
-func (t *ToolInfo) GetStep() Step {
-	if t == nil {
-		return ByEffect
-	}
-	return t.Step
-}
-
-func (t *ToolInfo) GetServers() []Server {
-	if t == nil {
-		return nil
-	}
-	return t.Servers
-}
-
 func (t *ToolInfo) GetInstructions() []string {
 	if t == nil {
 		return nil
@@ -204,13 +163,6 @@ func (t *ToolInfo) GetRequires() []string {
 		return nil
 	}
 	return t.Requires
-}
-
-func (t *ToolInfo) GetHints() Hints {
-	if t == nil {
-		return Hints{}
-	}
-	return t.Hints
 }
 
 // Listing is the list of tools a PluginToolService returns.
@@ -253,59 +205,14 @@ func (c *rpcClient) ListTools(ctx context.Context) (Listing, error) {
 
 func (c *rpcClient) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
 	res, err := c.rpc.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{
-		Name:      call.Name,
-		Arguments: call.Arguments,
-		Context:   call.Context,
-		VaultId:   call.VaultID,
+		Name:         call.Name,
+		Arguments:    call.Arguments,
+		Context:      call.Context,
+		VaultId:      call.VaultID,
+		ConnectionId: call.ConnectionID,
 	}))
 	if err != nil {
 		return nil, err
 	}
 	return readCallResponse(res.Msg), nil
-}
-
-// ServiceHandler handles tool listing and invocation with request headers.
-type ServiceHandler interface {
-	ListTools(ctx context.Context, header http.Header) (Listing, error)
-	InvokeTool(ctx context.Context, header http.Header, call Call) (*CallResponse, error)
-}
-
-type serviceAdapter struct {
-	numenv1connect.UnimplementedPluginToolServiceHandler
-	h ServiceHandler
-}
-
-func (a *serviceAdapter) ListTools(
-	ctx context.Context,
-	req *connect.Request[v1.ListToolsRequest],
-) (*connect.Response[v1.ListToolsResponse], error) {
-	listing, err := a.h.ListTools(ctx, req.Header())
-	if err != nil {
-		return nil, err
-	}
-	wire := make([]*v1.PluginTool, len(listing.Tools))
-	for i, t := range listing.Tools {
-		wire[i] = writeToolInfo(t)
-	}
-	return connect.NewResponse(&v1.ListToolsResponse{Tools: wire}), nil
-}
-
-func (a *serviceAdapter) CallTool(
-	ctx context.Context,
-	req *connect.Request[v1.CallToolRequest],
-) (*connect.Response[v1.CallToolResponse], error) {
-	res, err := a.h.InvokeTool(ctx, req.Header(), Call{
-		Name:      req.Msg.GetName(),
-		Arguments: req.Msg.GetArguments(),
-		Context:   req.Msg.GetContext(),
-		VaultID:   req.Msg.GetVaultId(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return connect.NewResponse(writeCallResponse(res)), nil
-}
-
-func NewServiceHandler(h ServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewPluginToolServiceHandler(&serviceAdapter{h: h}, opts...)
 }

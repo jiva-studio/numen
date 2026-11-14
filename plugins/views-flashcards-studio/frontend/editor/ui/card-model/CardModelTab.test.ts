@@ -147,6 +147,17 @@ describe('a card model drawn', () => {
     expect(window.findAll('[data-field]')).toHaveLength(2)
     expect(window.findAll('[data-template]')).toHaveLength(2)
   })
+
+  it('names each field in its own box, in the order the card model declares them', async () => {
+    const { window } = await mountCardModel()
+
+    const boxes = window.findAll('[data-field] input')
+
+    expect(boxes.map((box) => (box.element as HTMLInputElement).value)).toStrictEqual([
+      'Height',
+      'Life span',
+    ])
+  })
 })
 
 describe('a mark on a template', () => {

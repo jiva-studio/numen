@@ -4,7 +4,7 @@ syntax = "proto3";
 //
 // A note is addressed by the path it is filed under, which is what the vault
 // calls it. What is here is what a note holds and what it is joined to: its
-// prose, its headings, its neighborhood, the addresses written in it, and
+// prose, its headings, its related notes, the addresses written in it, and
 // every way of writing one. Where a note sits among the vault's other files is
 // file.proto.
 package numen.v1;
@@ -20,8 +20,8 @@ service NoteService {
   // answers with nothing until a scan has stored something.
   rpc GetOpeningNote(GetOpeningNoteRequest) returns (GetOpeningNoteResponse);
 
-  // GetNeighborhood is one note and everything joined to it.
-  rpc GetNeighborhood(GetNeighborhoodRequest) returns (GetNeighborhoodResponse);
+  // ListRelatedNotes lists the notes related to one note, and the note itself.
+  rpc ListRelatedNotes(ListRelatedNotesRequest) returns (ListRelatedNotesResponse);
 
   // ResolveAddresses answers where addresses written in one note land.
   rpc ResolveAddresses(ResolveAddressesRequest) returns (ResolveAddressesResponse);
@@ -47,10 +47,6 @@ service NoteService {
   // the note carries are written into it as it is made, so it arrives joined.
   // An empty title takes the lowest free "Untitled note N".
   rpc CreateNote(CreateNoteRequest) returns (CreateNoteResponse);
-
-  // WriteLink writes a relationship into one note. The note at the other end is
-  // left alone: a link is one end's account of a relationship.
-  rpc WriteLink(WriteLinkRequest) returns (WriteLinkResponse);
 
   // GetConnection is the relationship between two notes as a whole: the record
   // each note writes about the other.
@@ -110,20 +106,28 @@ message GetOpeningNoteResponse {
   optional Note note = 1;
 }
 
-message GetNeighborhoodRequest {
+message ListRelatedNotesRequest {
   string path = 1;
+  // 1: the notes related to the note in focus. 2: also the notes related to each of those.
+  // 0 reads as 1. Any other value is invalid.
+  uint32 depth = 2;
 }
 
-message GetNeighborhoodResponse {
+message ListRelatedNotesResponse {
   Note focus = 1;
-  repeated Neighbor related = 2;
+  // The notes related to the focus, then at depth 2 the notes related to each of those.
+  // A note related to the focus can also be an item of another note: the common parent of
+  // the focus and a reference is an item of that reference. The focus is never an item, and
+  // a note is not an item of itself. One note can be an item of several notes, so `note.path`
+  // is not unique here, `(related_to, note.path)` is.
+  repeated RelatedNote related = 2;
 
   // The `type` key of the frontmatter of the note in focus, so a client draws a note as
   // what it is. Empty for an ordinary note.
   string focus_type = 3;
 
   // One connection for every line the client draws: a pair of the drawn notes
-  // (the focus and its neighbors) that a record joins, whether the focus is one
+  // (the focus and its related notes) that a record joins, whether the focus is one
   // of them or not. A hierarchical connection has the parent as first and the
   // child as second, and each side holds the label and the marker of the record
   // written in that note.
@@ -135,18 +139,29 @@ message GetNeighborhoodResponse {
 }
 
 // Relation is where a note sits relative to the one in focus. A sibling is written
-// nowhere: it is another child of a shared parent.
+// nowhere: it is another child of a shared parent. A reference is a link in the
+// text of one of the two notes.
 enum Relation {
   RELATION_UNSPECIFIED = 0;
   RELATION_PARENT = 1;
   RELATION_CHILD = 2;
   RELATION_JUMP = 3;
   RELATION_SIBLING = 4;
+  RELATION_REFERENCE = 5;
 }
 
-// Neighbor is one note joined to the one in focus. The records that join notes
-// are in GetNeighborhoodResponse.connections.
-message Neighbor {
+// LinkDirection tells which note wrote a text link. "The note in focus" is the note a
+// related note belongs to: the focus, or `related_to` for a note found by depth 2.
+enum LinkDirection {
+  LINK_DIRECTION_UNSPECIFIED = 0;
+  LINK_DIRECTION_OUTGOING = 1; // the note in focus links to this note
+  LINK_DIRECTION_INCOMING = 2; // this note links to the note in focus
+  LINK_DIRECTION_BOTH = 3; // each of the two notes links to the other
+}
+
+// RelatedNote is one note joined to the one in focus. The records that join notes
+// are in ListRelatedNotesResponse.connections.
+message RelatedNote {
   Note note = 1;
   Relation relation = 2;
 
@@ -157,6 +172,16 @@ message Neighbor {
   // The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
   // where none holds.
   string tab_kind = 7;
+
+  // Set for RELATION_REFERENCE only. At depth 2 it is relative to `related_to`, not to
+  // the focus.
+  LinkDirection direction = 8;
+
+  // The path of the related note this item belongs to, set for a note found by depth 2.
+  // `relation` and `direction` are then relative to that note, not to the focus, and
+  // no connection record joins the item: connections are of depth 1 only. The same path
+  // can be an item of several related notes. Empty for a note related to the focus.
+  string related_to = 9;
 }
 
 message ResolveAddressesRequest {
@@ -365,19 +390,6 @@ message CreateNoteResponse {
 
   // Set when no title was given and every numbered untitled name is taken.
   bool is_name_exhausted = 4;
-}
-
-message WriteLinkRequest {
-  // The note the link is written in.
-  string path = 1;
-  Link link = 2;
-}
-
-message WriteLinkResponse {
-  // Set when nothing was written, with the reason. A note that changed between
-  // being read and being written returns ERROR_CODE_CONFLICT, and the caller
-  // reads it again before retrying.
-  optional ErrorCode error = 1;
 }
 
 // ConnectionSide is the record one note writes about the other in a connection.

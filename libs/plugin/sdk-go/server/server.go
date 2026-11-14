@@ -20,10 +20,11 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
 // tokenVar names the variable holding the token the host authenticates with.
-const tokenVar = "NUMEN_PLUGIN_TOKEN"
+const tokenVar = hostcall.PluginTokenEnv
 
 func parseDefaultFlags() int {
 	port := readFlagPort()
@@ -53,7 +54,7 @@ func readFlagPort() int {
 }
 
 func readEnvPort() int {
-	port, err := strconv.Atoi(os.Getenv("NUMEN_PLUGIN_PORT"))
+	port, err := strconv.Atoi(os.Getenv(hostcall.PluginPortEnv))
 	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return 0
@@ -64,76 +65,6 @@ func readEnvPort() int {
 // Option configures Server instances.
 type Option func(*Server)
 
-// WithPort sets the TCP listen port.
-func WithPort(port int) Option {
-	return func(s *Server) {
-		s.port = port
-	}
-}
-
-// WithToken sets the expected authentication token.
-func WithToken(token string) Option {
-	return func(s *Server) {
-		s.token = token
-	}
-}
-
-// WithConfigure registers a callback for Configure RPC calls.
-func WithConfigure(fn func(ctx context.Context, values map[string]string, secrets Secrets) error) Option {
-	return func(s *Server) {
-		s.onConfigure = fn
-	}
-}
-
-// WithUpdateConfig registers a simplified callback for Configure RPC calls.
-func WithUpdateConfig(fn func(values map[string]string, secrets Secrets)) Option {
-	return func(s *Server) {
-		if fn == nil {
-			s.onConfigure = nil
-			return
-		}
-		s.onConfigure = func(_ context.Context, values map[string]string, secrets Secrets) error {
-			fn(values, secrets)
-			return nil
-		}
-	}
-}
-
-// WithStdout sets the handshake output destination.
-func WithStdout(w io.Writer) Option {
-	return func(s *Server) {
-		s.stdout = w
-	}
-}
-
-// WithStdin sets the input reader monitored for process termination.
-func WithStdin(r io.Reader) Option {
-	return func(s *Server) {
-		s.stdin = r
-	}
-}
-
-// WithSignals sets the operating system signals that trigger graceful shutdown.
-func WithSignals(signals ...os.Signal) Option {
-	return func(s *Server) {
-		s.signals = signals
-	}
-}
-
-// WithShutdownTimeout sets the maximum duration permitted for active connections to drain.
-func WithShutdownTimeout(d time.Duration) Option {
-	return func(s *Server) {
-		s.shutdownTimeout = d
-	}
-}
-
-// WithReadHeaderTimeout sets the HTTP header read timeout.
-func WithReadHeaderTimeout(d time.Duration) Option {
-	return func(s *Server) {
-		s.readHeaderTimeout = d
-	}
-}
-
 // Server coordinates the lifecycle, authentication, and HTTP/2 transport of a plugin.
 type Server struct {
 	port              int
@@ -143,7 +74,6 @@ type Server struct {
 	signals           []os.Signal
 	shutdownTimeout   time.Duration
 	readHeaderTimeout time.Duration
-	onConfigure       func(ctx context.Context, values map[string]string, secrets Secrets) error
 	onEvent           EventHandler
 
 	closeOnce sync.Once
@@ -218,7 +148,7 @@ func newServer(port int, token string, opts []Option, linked bool) *Server {
 	}
 
 	s.interceptor = NewAuthInterceptor(s.token)
-	lifecycleOpts := []LifecycleOption{WithLifecycleConfigure(s.onConfigure)}
+	var lifecycleOpts []LifecycleOption
 	if linked {
 		lifecycleOpts = append(lifecycleOpts, WithLifecycleShutdown(s.Close))
 	}
@@ -279,15 +209,14 @@ func (s *Server) Lifecycle() *LifecycleServer {
 }
 
 // SetConfigure registers the callback invoked during Configure RPC calls.
-func (s *Server) SetConfigure(fn func(ctx context.Context, values map[string]string, secrets Secrets) error) {
-	s.onConfigure = fn
+func (s *Server) SetConfigure(fn func(ctx context.Context, values map[string]string) error) {
 	s.lifecycle.SetConfigure(fn)
 }
 
 // SetUpdateConfig registers a simplified configuration updater callback.
-func (s *Server) SetUpdateConfig(fn func(values map[string]string, secrets Secrets)) {
-	s.SetConfigure(func(_ context.Context, values map[string]string, secrets Secrets) error {
-		fn(values, secrets)
+func (s *Server) SetUpdateConfig(fn func(values map[string]string)) {
+	s.SetConfigure(func(_ context.Context, values map[string]string) error {
+		fn(values)
 		return nil
 	})
 }

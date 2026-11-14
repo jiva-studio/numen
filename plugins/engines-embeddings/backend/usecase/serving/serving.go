@@ -16,22 +16,22 @@ import (
 
 // Ports is what a server asks of the machine. Report writes a fault nothing else handles.
 type Ports struct {
-	Machine      ports.Machine
-	Profiles     ports.ProfileSource
-	Environment  ports.Environment
-	OpenLocal    ports.OpenEmbedder
-	NewMock      ports.NewMockEmbedder
-	FetchVectors ports.FetchVectors
-	Report       func(what string, err error)
+	Machine     ports.Machine
+	Profiles    ports.ProfileSource
+	Environment ports.Environment
+	OpenLocal   ports.OpenEmbedder
+	NewMock     ports.NewMockEmbedder
+	OpenModels  ports.OpenModels
+	Report      func(what string, err error)
 }
 
-// Server serves one embedding model, local or remote, and follows the settings it is given.
+// Server serves one embedding model, a local one or the one a connection answers with, and follows the
+// settings it is given.
 type Server struct {
-	machine      ports.Machine
-	profileSrc   ports.ProfileSource
-	env          ports.Environment
-	fetchVectors ports.FetchVectors
-	report       func(what string, err error)
+	machine    ports.Machine
+	profileSrc ports.ProfileSource
+	env        ports.Environment
+	report     func(what string, err error)
 
 	modelInfo   model.ModelInfo
 	localModel  model.LocalModel
@@ -49,13 +49,11 @@ type Server struct {
 
 	chunkTokens int
 
-	mu          sync.Mutex
-	loader      *loading.Loader[modelSpec]
-	apiKey      string
-	baseURL     string
-	provider    string
-	localName   string
-	remoteModel string
+	mu         sync.Mutex
+	loader     *loading.Loader[modelSpec]
+	localName  string
+	source     string
+	connection *connectionSource
 
 	profile      performance.Profile
 	isProfileSet bool
@@ -74,7 +72,7 @@ func New(ports Ports) *Server {
 	var noLocal model.LocalModel
 	s := &Server{
 		machine: ports.Machine, profileSrc: ports.Profiles, env: ports.Environment,
-		fetchVectors: ports.FetchVectors, report: ports.Report,
+		report:    ports.Report,
 		modelInfo: none, localModel: noLocal, localInfo: none, localErr: nil,
 		profilesErr: nil, localKey: "", profiles: nil, mockLog: "", localName: "",
 		open:        ports.OpenLocal,
@@ -83,10 +81,8 @@ func New(ports Ports) *Server {
 		chunkTokens: chunking.DefaultTokens,
 		mu:          sync.Mutex{},
 		loader:      nil,
-		apiKey:      "",
-		baseURL:     "",
-		provider:    "",
-		remoteModel: "",
+		source:      SourceLocal,
+		connection:  newConnectionSource(ports.OpenModels),
 		profile:     performance.Balanced, isProfileSet: false,
 	}
 	s.loader = s.newLoader()
@@ -125,6 +121,18 @@ func (s *Server) newLoader() *loading.Loader[modelSpec] {
 
 func (s *Server) getEmbedder(ctx context.Context) (ports.Embedder, error) {
 	return s.loader.Get(ctx, s.getStartLocked)
+}
+
+// StartLoading starts loading the local model in the background, so that the first batch finds it
+// loaded or waits for the load already running. It does nothing while a connection serves the model or
+// the local model cannot be resolved.
+func (s *Server) StartLoading() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.isConnectionLocked() || s.getLocalErrLocked() != nil {
+		return
+	}
+	s.loader.StartLocked(s.getStartLocked)
 }
 
 func (s *Server) getStartLocked() loading.Start[modelSpec] {

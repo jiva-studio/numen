@@ -18,6 +18,7 @@ export const VOICES = {
   prompt: { isBubble: true, against: 'end' },
   response: { isBubble: false, against: 'start' },
   doing: { isBubble: false, against: 'start' },
+  plan: { isBubble: false, against: 'start' },
 } as const satisfies Record<Voice, VoiceDescriptor>
 
 /** A turn with everything about how to draw it worked out. */
@@ -51,11 +52,7 @@ const placeTurn = (turn: Turn): PlacedTurn => {
 export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] => turns.map(placeTurn)
 
 /**
- * How much of a call has been written, in words.
- *
- * A call carrying the text of a note is written for minutes, and this is the
- * only thing about it that moves. Grouped in thousands, because the numbers
- * reach five figures on one note.
+ * How much of a call has been written, in words. Grouped in thousands, because the numbers reach five
+ * figures on one note.
  */
-export const writeCharCount = (count: number): string =>
-  count <= 0 ? '' : `${groupDigits(count)} characters`
+export const writeCharCount = (count: number): string => `${groupDigits(count)} characters`

@@ -47,9 +47,9 @@ func TestManifestDeclaresTheIndexAndTheFloorPermissionsAndNoCapability(t *testin
 }
 
 // The plugin starts when the vectors of a vault are ready and measures the search floor.
-func TestManifestSubscribesToVectorsReadyOnly(t *testing.T) {
-	if manifest := readManifest(t); !slices.Equal(manifest.ActivationEvents, []string{"onVectorsReady"}) {
-		t.Errorf("activationEvents = %v, want [onVectorsReady]", manifest.ActivationEvents)
+func TestManifestSubscribesToSearchSourceReadyOnly(t *testing.T) {
+	if manifest := readManifest(t); !slices.Equal(manifest.ActivationEvents, []string{"onSearchSourceReady"}) {
+		t.Errorf("activationEvents = %v, want [onSearchSourceReady]", manifest.ActivationEvents)
 	}
 }
 

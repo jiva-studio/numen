@@ -7,7 +7,6 @@ import {
   asValue,
   isUnsavedBuffersError,
   UnsavedBuffersError,
-  type AgentHost,
   type BufferHost,
   type PluginContext,
   type VaultFiles,
@@ -40,7 +39,7 @@ const createServices = () => {
     messages: { showError: vi.fn() },
   } as unknown as WorkspaceHost
   const notes = {
-    getNeighborhood: vi.fn(() => Promise.resolve({ path: 'Notes/Example.md' })),
+    listRelatedNotes: vi.fn(() => Promise.resolve({ path: 'Notes/Example.md' })),
     getHeadings: vi.fn(() => Promise.resolve(new Map())),
     findNotes: vi.fn(() => Promise.resolve([])),
     read: vi.fn(() => Promise.resolve({ body: 'Example prose.' })),
@@ -57,6 +56,7 @@ const createServices = () => {
     join: vi.fn(() => Promise.resolve(asValue(undefined))),
     createRelated: vi.fn(() => Promise.resolve(asValue('a.md'))),
     listBacklinks: vi.fn(() => Promise.resolve([])),
+    resolveLinks: vi.fn(() => Promise.resolve([])),
   } as unknown as VaultRelations
   const files = {
     list: vi.fn(() => Promise.resolve([])),
@@ -64,15 +64,6 @@ const createServices = () => {
     createFolder: vi.fn(() => Promise.resolve()),
     createNote: vi.fn(() => Promise.resolve('a.md')),
   } as unknown as VaultFiles
-  const agent = {
-    ask: vi.fn(),
-    finish: vi.fn(() => Promise.resolve()),
-    resolveLinks: vi.fn(() => Promise.resolve([])),
-    getUnreachable: vi.fn(() => ''),
-    getSetting: vi.fn(),
-    writeSetting: vi.fn(() => Promise.resolve()),
-    getModelsAt: vi.fn(() => []),
-  } as unknown as AgentHost
   const buffers = {
     track: vi.fn(() => ({ dispose: vi.fn() })),
     addFlushHandler: vi.fn(() => ({ dispose: vi.fn() })),
@@ -86,7 +77,6 @@ const createServices = () => {
       getFiles: () => files,
     },
     window: {
-      getAgent: () => agent,
       getWorkspace: () => workspace,
       getCommands: () => commands,
       isCommandListed: (command) =>
@@ -94,7 +84,7 @@ const createServices = () => {
       getCommandPermission: (command) => COMMAND_PERMISSIONS[command],
     },
   })
-  return { host, workspace, notes, relations, files, agent, buffers, commands }
+  return { host, workspace, notes, relations, files, buffers, commands }
 }
 
 const createContext = (permissions: readonly string[]) => {
@@ -116,7 +106,7 @@ const NOTE_WRITES: Record<string, Call> = {
 }
 
 const NOTE_READS: Record<string, Call> = {
-  getNeighborhood: (c) => c.vault.notes!.getNeighborhood('Notes/Example.md'),
+  listRelatedNotes: (c) => c.vault.notes!.listRelatedNotes('Notes/Example.md'),
   getHeadings: (c) => c.vault.notes!.getHeadings(['Notes/Example.md']),
   findNotes: (c) => c.vault.notes!.findNotes('Example', 5),
   read: (c) => c.vault.notes!.read('Notes/Example.md'),
@@ -142,6 +132,7 @@ const RELATION_WRITES: Record<string, Call> = {
 const RELATION_READS: Record<string, Call> = {
   getConnection: (c) => c.vault.relations!.getConnection('a.md', 'b.md'),
   listBacklinks: (c) => c.vault.relations!.listBacklinks('a.md'),
+  resolveLinks: (c) => c.vault.relations!.resolveLinks('See [[Example]].'),
 }
 
 describe('the relationships a plugin writes', () => {
@@ -242,6 +233,16 @@ describe('a note a plugin reads and writes', () => {
     await call(context)
 
     expect(notes[name as keyof VaultNotes]).toHaveBeenCalledOnce()
+  })
+
+  it('a related-notes read sends its depth to the editor service unchanged', async () => {
+    const { context, notes } = createContext(['vault:read'])
+
+    await context.vault.notes!.listRelatedNotes('Notes/Example.md', 2)
+    await context.vault.notes!.listRelatedNotes('Notes/Example.md')
+
+    expect(notes.listRelatedNotes).toHaveBeenNthCalledWith(1, 'Notes/Example.md', 2)
+    expect(notes.listRelatedNotes).toHaveBeenNthCalledWith(2, 'Notes/Example.md')
   })
 
   it('is read with vault:read and without vault:write', async () => {
@@ -484,74 +485,3 @@ describe('a command a plugin runs over the vault', () => {
   })
 })
 
-const getAgent = (context: PluginContext): AgentHost => {
-  if (!context.work.agent) throw new Error('the context was handed no agent')
-  return context.work.agent
-}
-
-const ASKING: Record<string, [string, Call]> = {
-  ask: [
-    'vault:write',
-    (c) =>
-      getAgent(c).ask({
-        question: 'q',
-        focus: '',
-        conversation: 'c',
-        signal: new AbortController().signal,
-      }),
-  ],
-  finish: ['vault:write', (c) => getAgent(c).finish('c')],
-  resolveLinks: ['vault:read', (c) => getAgent(c).resolveLinks('[[A]]')],
-}
-
-describe('the agent a plugin asks', () => {
-  it.each(Object.entries(ASKING))(
-    'fails through %s without its permission',
-    async (name, [permission, call]) => {
-      const { context } = createContext([])
-
-      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
-        `Plugin "md.numen.sample" lacks required permission "${permission}" for agent.${name}`,
-      )
-    },
-  )
-
-  it.each(Object.entries(ASKING))(
-    'is reached through %s with its permission',
-    async (name, [permission, call]) => {
-      const { context, agent } = createContext([permission])
-
-      await call(context)
-
-      expect(agent[name as 'ask' | 'finish' | 'resolveLinks']).toHaveBeenCalled()
-    },
-  )
-
-  it('reads why it cannot be reached without a permission', () => {
-    const { context } = createContext([])
-
-    expect(getAgent(context).getUnreachable()).toBe('')
-  })
-
-  it('reads, writes and lists the settings under agent, and no others', async () => {
-    const { context, agent } = createContext(['vault:read', 'vault:write'])
-    const request = getAgent(context)
-
-    await request.writeSetting(['app', 'agent', 'use'], 'zeta')
-    request.getSetting(['app', 'agent', 'use'])
-    request.getModelsAt(['app', 'agent', 'zeta', 'model'])
-
-    expect(agent.writeSetting).toHaveBeenCalledWith(['app', 'agent', 'use'], 'zeta')
-    expect(agent.getSetting).toHaveBeenCalledWith(['app', 'agent', 'use'])
-    expect(agent.getModelsAt).toHaveBeenCalledWith(['app', 'agent', 'zeta', 'model'])
-
-    const elsewhere = ['md.numen.other', 'enabled']
-    expect(request.getSetting(elsewhere)).toBeUndefined()
-    expect(request.getModelsAt(elsewhere)).toStrictEqual([])
-    await expect(request.writeSetting(elsewhere, false)).rejects.toThrowError(
-      'agent.writeSetting is limited to the agent settings, not "md.numen.other.enabled"',
-    )
-    expect(agent.getSetting).toHaveBeenCalledTimes(1)
-    expect(agent.writeSetting).toHaveBeenCalledTimes(1)
-  })
-})

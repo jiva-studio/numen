@@ -1,7 +1,6 @@
 package settingsport
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -20,9 +19,4 @@ type PluginInfos interface {
 type RegistryOptions interface {
 	// ListRegistryOptions returns the options, and false for a registry that is not known.
 	ListRegistryOptions(name string) (manifest.SettingOptions, bool)
-}
-
-// LatePrograms lists the agent programs that were found after the listing was first asked for.
-type LatePrograms interface {
-	GetLate() []agent.Program
 }

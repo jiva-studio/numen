@@ -5,7 +5,7 @@
  * opens from it.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { useMenuDismissal } from '@numen/ui'
+import { isPageMove, useMenuDismissal } from '@numen/ui'
 import type { BackgroundTask } from '@numen/plugin-sdk'
 import { summarizeBatch, summarizeTasks } from '../lib/summary'
 import { type ChipState } from '../model/chipDisplay'
@@ -24,13 +24,13 @@ const emit = defineEmits<{
   (event: 'cancel', id: string): void
   (event: 'retry', id: string): void
   (event: 'dismiss', id: string): void
-  (event: 'open-settings', pluginId: string): void
+  (event: 'run-action', id: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
-const dismissal = useMenuDismissal(root, onClose)
+const dismissal = useMenuDismissal(root, onClose, isPageMove)
 
 const summary = computed(() => summarizeTasks(props.tasks))
 // The tasks of one busy period: the ids are forgotten when the window is idle again.
@@ -138,7 +138,7 @@ function onClose() {
         @cancel="(id) => emit('cancel', id)"
         @retry="(id) => emit('retry', id)"
         @dismiss="(id) => emit('dismiss', id)"
-        @open-settings="(pluginId) => emit('open-settings', pluginId)"
+        @run-action="(id) => emit('run-action', id)"
       />
     </div>
   </div>

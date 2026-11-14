@@ -21,9 +21,17 @@ func queriesOf(db *index.DB) chunkQueries {
 	return chunkQueries{db.ChunkFiles(), db.ChunkSearch(), db.ChunkVectors()}
 }
 
-// FindNearest runs the search by meaning over the index.
+// FindNearest runs the search by meaning over the index and returns the passages enclosing the chunks it finds.
 func (c chunkQueries) FindNearest(ctx context.Context, vaultID domain.VaultID, q sourcedomain.NearestQuery) ([]domain.Passage, error) {
-	return search.NewFindNearest(c.Search).Execute(ctx, vaultID, q)
+	matches, err := search.NewFindNearest(c.Search).Execute(ctx, vaultID, q)
+	if err != nil {
+		return nil, err
+	}
+	chunks := make([]domain.ChunkID, len(matches))
+	for i, one := range matches {
+		chunks[i] = one.ChunkID
+	}
+	return c.Search.GetEnclosingPassages(ctx, vaultID, chunks)
 }
 
 // GetBestSimilarity reads the similarity of the passage nearest the query.

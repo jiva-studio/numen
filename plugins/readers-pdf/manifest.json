@@ -1,7 +1,7 @@
 {
   "id": "md.numen.readers.pdf",
   "name": "PDF Reader",
-  "version": "2026.11.12",
+  "version": "2026.11.14",
   "protocol": 1,
   "description": "PDF document reader with highlights and passage links",
   "capabilities": [],
@@ -58,7 +58,7 @@
       "key": "defaultZoom",
       "type": "enum",
       "title": "Default Zoom",
-      "description": "Initial zoom level when opening a PDF document",
+      "description": "Zoom a PDF opens at",
       "options": ["page", "width", "100%"],
       "default": "page"
     }

@@ -6,8 +6,6 @@ import {
   getFilteredPluginItems,
   getPluginCategory,
   matchesPluginQuery,
-  matchesSecretsRow,
-  matchesSystemRow,
   parsePluginQuery,
   type PluginFilterContext,
 } from './filter'
@@ -234,14 +232,13 @@ describe('the category: filter', () => {
   })
 })
 
-describe('matchesPluginQuery and matchesSystemRow', () => {
+describe('matchesPluginQuery', () => {
   it('combines multiple qualifiers and text terms', () => {
     const ctx = createContext(['sample.alpha'])
     const query = parsePluginQuery('@disabled reader:markdown note')
 
     expect(matchesPluginQuery(notes, query, ctx)).toBe(true)
     expect(matchesPluginQuery(tree, query, ctx)).toBe(false)
-    expect(matchesSystemRow(query)).toBe(false)
   })
 
   it('matches capability and id qualifiers including plural stems and empty value', () => {
@@ -292,16 +289,6 @@ describe('matchesPluginQuery and matchesSystemRow', () => {
     expect(matchesPluginQuery(notes, parsePluginQuery('txt'), ctx)).toBe(true)
     expect(matchesPluginQuery(bare, parsePluginQuery('nonexistent'), ctx)).toBe(false)
   })
-
-  it('matches the system row only without plugin qualifiers and when every term matches a keyword', () => {
-    expect(matchesSystemRow(parsePluginQuery(''))).toBe(true)
-    expect(matchesSystemRow(parsePluginQuery('theme'))).toBe(true)
-    expect(matchesSystemRow(parsePluginQuery('win'))).toBe(true)
-    expect(matchesSystemRow(parsePluginQuery('themes'))).toBe(true)
-    expect(matchesSystemRow(parsePluginQuery('theme whisper'))).toBe(false)
-    expect(matchesSystemRow(parsePluginQuery('@disabled'))).toBe(false)
-    expect(matchesSystemRow(parsePluginQuery('whisper'))).toBe(false)
-  })
 })
 
 describe('getFilteredPluginItems', () => {
@@ -339,15 +326,5 @@ describe('getFilteredPluginItems', () => {
 
   it('formats the label of a category', () => {
     expect(formatCategoryLabel('views')).toBe('Views')
-  })
-})
-
-describe('matchesSecretsRow', () => {
-  it('shows for an empty query and for words about secrets, not for qualifiers or other words', () => {
-    expect(matchesSecretsRow(parsePluginQuery(''))).toBe(true)
-    expect(matchesSecretsRow(parsePluginQuery('secret'))).toBe(true)
-    expect(matchesSecretsRow(parsePluginQuery('api key'))).toBe(true)
-    expect(matchesSecretsRow(parsePluginQuery('tree'))).toBe(false)
-    expect(matchesSecretsRow(parsePluginQuery('@disabled'))).toBe(false)
   })
 })

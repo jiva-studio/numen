@@ -24,7 +24,6 @@ function createPlugin(id: string, isActive: boolean): PluginInfo {
     description: '',
     isActive,
     capabilities: [],
-    secrets: [],
     hasFrontend: false,
     hasBackend: false,
     settings: [],

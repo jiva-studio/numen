@@ -8,6 +8,7 @@ import (
 	"math"
 	"slices"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -57,7 +58,7 @@ func rankCandidates(ctx context.Context, queries sourceport.NearestQueries, q so
 	return passing, nil
 }
 
-// FindNearest finds the passages of a vault nearest a query vector.
+// FindNearest finds the small chunks of a vault nearest a query vector.
 type FindNearest struct {
 	queries sourceport.NearestQueries
 }
@@ -67,11 +68,11 @@ func NewFindNearest(queries sourceport.NearestQueries) FindNearest {
 	return FindNearest{queries: queries}
 }
 
-// Execute returns the passages enclosing the chunks of one vault nearest the query vector, nearest
-// first, at most `q.Limit` of them. The coarse pass keeps several times `q.Limit` candidates and
+// Execute returns the small chunks of one vault nearest the query vector with their cosine similarity,
+// nearest first, at most `q.Limit` of them. The coarse pass keeps several times `q.Limit` candidates and
 // the full-precision vectors order them. A chunk below the similarity floor is not a result.
 // Chunks of equal similarity keep the order of the coarse pass.
-func (f FindNearest) Execute(ctx context.Context, vaultID domain.VaultID, q source.NearestQuery) ([]domain.Passage, error) {
+func (f FindNearest) Execute(ctx context.Context, vaultID domain.VaultID, q source.NearestQuery) ([]searchsource.Match, error) {
 	if q.Limit <= 0 {
 		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", q.Limit)
 	}
@@ -94,11 +95,11 @@ func (f FindNearest) Execute(ctx context.Context, vaultID domain.VaultID, q sour
 	if len(best) > q.Limit {
 		best = best[:q.Limit]
 	}
-	chunks := make([]domain.ChunkID, len(best))
+	matches := make([]searchsource.Match, len(best))
 	for i, b := range best {
-		chunks[i] = b.chunk
+		matches[i] = searchsource.Match{ChunkID: b.chunk, Score: b.similarity}
 	}
-	return f.queries.GetEnclosingPassages(ctx, vaultID, chunks)
+	return matches, nil
 }
 
 // GetBestSimilarity reads how near the nearest chunk of a vault is to a query vector.

@@ -82,7 +82,7 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 	mover := note.NewMove(moveDeps)
 
 	linking := note.NewEditLinks(readers, writers, index, now)
-	remove := note.NewRemove(writers, links, indexed, index, views.Writes)
+	remove := note.NewRemove(writers, links, indexed, indexed, index, views.Writes)
 	create := note.NewCreate(writers, names, index, now, views.Writes)
 	connecting := note.ConnectionDeps{
 		Readers: readers, Writers: writers, Index: index, Now: now, Links: links, Names: names,
@@ -102,7 +102,7 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 			Rename:     note.NewRename(moveDeps, mover, views.Writes),
 			Remove:     remove,
 			RemoveNote: note.NewRemoveNote(remove, readers),
-			EmptyTrash: note.NewEmptyTrash(writers, views.Writes),
+			EmptyTrash: note.NewEmptyTrash(writers, textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: vaultOptions(c)}), views.Writes),
 		},
 		Connect: NoteConnecting{
 			SaveConnection:   note.NewSaveConnection(connecting),
@@ -168,7 +168,8 @@ func vaultMakeRefresh(c vaultWiring, db *Index, notes noteport.NoteRepository) v
 }
 
 func newTextVersions(c vaultWiring, db *Index) *TextVersions {
-	stores, files, readers := db.Versions, derivedfile.TextStores{Options: vaultOptions(c)}, vaultReaders(c)
+	files := derivedfile.TextStores{Options: vaultOptions(c), Decoded: derivedfile.NewDecodedTexts(derivedfile.DefaultDecodedBudget)}
+	stores, readers := db.Versions, vaultReaders(c)
 	texts := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), c.Clock)
 	changes := textversion.NewChanges(texts)
 	versions := textversion.NewVersions(stores, files, c.RunningHost.Runtime, c.Clock, changes)

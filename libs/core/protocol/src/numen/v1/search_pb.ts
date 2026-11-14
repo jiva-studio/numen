@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIp8BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIfCgZyYW5nZXMYAyADKAsyDy5udW1lbi52MS5SYW5nZRIMCgR0eXBlGAQgASgJEhAKCHRhYl9raW5kGAUgASgJQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSLkAQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIfCgZyYW5nZXMYBCADKAsyDy5udW1lbi52MS5SYW5nZRIQCghsb2NhdGlvbhgFIAEoCRIeCgVyYW5nZRgGIAEoCzIPLm51bWVuLnYxLlJhbmdlEgwKBGxpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCRIQCgh0YWJfa2luZBgLIAEoCUIHCgVfbm90ZSqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIkUKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIRCglzZWFyY2hfaWQYAyABKAkiOQoTU2VhcmNoTmFtZXNSZXNwb25zZRIiCgVmb3VuZBgBIAMoCzITLm51bWVuLnYxLk5hbWVNYXRjaCKfAQoJTmFtZU1hdGNoEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESHwoGcmFuZ2VzGAMgAygLMg8ubnVtZW4udjEuUmFuZ2USDAoEdHlwZRgEIAEoCRIQCgh0YWJfa2luZBgFIAEoCUIKCghfaGVhZGluZyJsChVTZWFyY2hQYXNzYWdlc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUSIgoEbW9kZRgDIAEoDjIULm51bWVuLnYxLlNlYXJjaE1vZGUSEQoJc2VhcmNoX2lkGAQgASgJIigKE0NhbmNlbFNlYXJjaFJlcXVlc3QSEQoJc2VhcmNoX2lkGAEgASgJIhYKFENhbmNlbFNlYXJjaFJlc3BvbnNlIjoKFlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2USIAoFZm91bmQYASADKAsyES5udW1lbi52MS5QYXNzYWdlIuQBCgdQYXNzYWdlEgwKBHBhdGgYASABKAkSIQoEbm90ZRgCIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBARIMCgR0ZXh0GAMgASgJEh8KBnJhbmdlcxgEIAMoCzIPLm51bWVuLnYxLlJhbmdlEhAKCGxvY2F0aW9uGAUgASgJEh4KBXJhbmdlGAYgASgLMg8ubnVtZW4udjEuUmFuZ2USDAoEbGluZRgHIAEoBRIMCgR0eXBlGAggASgJEhAKCHNlbGVjdG9yGAogASgJEhAKCHRhYl9raW5kGAsgASgJQgcKBV9ub3RlKogBCgpTZWFyY2hNb2RlEhsKF1NFQVJDSF9NT0RFX1VOU1BFQ0lGSUVEEAASFQoRU0VBUkNIX01PREVfV09SRFMQARIXChNTRUFSQ0hfTU9ERV9NRUFOSU5HEAISFQoRU0VBUkNIX01PREVfTkFNRVMQAxIWChJTRUFSQ0hfTU9ERV9IWUJSSUQQBDL/AQoNU2VhcmNoU2VydmljZRJKCgtTZWFyY2hOYW1lcxIcLm51bWVuLnYxLlNlYXJjaE5hbWVzUmVxdWVzdBodLm51bWVuLnYxLlNlYXJjaE5hbWVzUmVzcG9uc2USUwoOU2VhcmNoUGFzc2FnZXMSHy5udW1lbi52MS5TZWFyY2hQYXNzYWdlc1JlcXVlc3QaIC5udW1lbi52MS5TZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEk0KDENhbmNlbFNlYXJjaBIdLm51bWVuLnYxLkNhbmNlbFNlYXJjaFJlcXVlc3QaHi5udW1lbi52MS5DYW5jZWxTZWFyY2hSZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -39,6 +39,14 @@ export type SearchNamesRequest = Message<"numen.v1.SearchNamesRequest"> & {
    * @generated from field: int32 limit = 2;
    */
   limit: number;
+
+  /**
+   * The id CancelSearch names this call by, chosen by the client and unique
+   * among its calls. Empty when the call cannot be cancelled.
+   *
+   * @generated from field: string search_id = 3;
+   */
+  searchId: string;
 };
 
 /**
@@ -139,6 +147,14 @@ export type SearchPassagesRequest = Message<"numen.v1.SearchPassagesRequest"> & 
    * @generated from field: numen.v1.SearchMode mode = 3;
    */
   mode: SearchMode;
+
+  /**
+   * The id CancelSearch names this call by, chosen by the client and unique
+   * among its calls. Empty when the call cannot be cancelled.
+   *
+   * @generated from field: string search_id = 4;
+   */
+  searchId: string;
 };
 
 /**
@@ -147,6 +163,36 @@ export type SearchPassagesRequest = Message<"numen.v1.SearchPassagesRequest"> & 
  */
 export const SearchPassagesRequestSchema: GenMessage<SearchPassagesRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 3);
+
+/**
+ * @generated from message numen.v1.CancelSearchRequest
+ */
+export type CancelSearchRequest = Message<"numen.v1.CancelSearchRequest"> & {
+  /**
+   * @generated from field: string search_id = 1;
+   */
+  searchId: string;
+};
+
+/**
+ * Describes the message numen.v1.CancelSearchRequest.
+ * Use `create(CancelSearchRequestSchema)` to create a new message.
+ */
+export const CancelSearchRequestSchema: GenMessage<CancelSearchRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 4);
+
+/**
+ * @generated from message numen.v1.CancelSearchResponse
+ */
+export type CancelSearchResponse = Message<"numen.v1.CancelSearchResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.CancelSearchResponse.
+ * Use `create(CancelSearchResponseSchema)` to create a new message.
+ */
+export const CancelSearchResponseSchema: GenMessage<CancelSearchResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_search, 5);
 
 /**
  * @generated from message numen.v1.SearchPassagesResponse
@@ -165,7 +211,7 @@ export type SearchPassagesResponse = Message<"numen.v1.SearchPassagesResponse"> 
  * Use `create(SearchPassagesResponseSchema)` to create a new message.
  */
 export const SearchPassagesResponseSchema: GenMessage<SearchPassagesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search, 4);
+  messageDesc(file_numen_v1_search, 6);
 
 /**
  * Passage is what a search returns: the text around a hit, and where it came
@@ -259,7 +305,7 @@ export type Passage = Message<"numen.v1.Passage"> & {
  * Use `create(PassageSchema)` to create a new message.
  */
 export const PassageSchema: GenMessage<Passage> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search, 5);
+  messageDesc(file_numen_v1_search, 7);
 
 /**
  * SearchMode is how a search is asked. Each mode is an order of its own, and a
@@ -346,6 +392,20 @@ export const SearchService: GenService<{
     methodKind: "unary";
     input: typeof SearchPassagesRequestSchema;
     output: typeof SearchPassagesResponseSchema;
+  },
+  /**
+   * CancelSearch stops the SearchNames or SearchPassages call that carries the
+   * search id. A client that aborts its request does not stop the call in the
+   * core, so it sends this to free the work the call still does. A cancel that
+   * arrives before its call is kept for a few seconds and cancels the call if
+   * the call arrives in that time.
+   *
+   * @generated from rpc numen.v1.SearchService.CancelSearch
+   */
+  cancelSearch: {
+    methodKind: "unary";
+    input: typeof CancelSearchRequestSchema;
+    output: typeof CancelSearchResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_search, 0);

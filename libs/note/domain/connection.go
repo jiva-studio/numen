@@ -194,8 +194,8 @@ func (c Connection) isPair(x, y string) bool {
 	return (x == c.A && y == c.B) || (x == c.B && y == c.A)
 }
 
-// RelatedNote is a note to create next to an existing one.
-type RelatedNote struct {
+// NewRelatedNote is a note to create next to an existing one.
+type NewRelatedNote struct {
 	From   string
 	Role   LinkRole
 	Title  string

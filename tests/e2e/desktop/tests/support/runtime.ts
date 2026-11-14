@@ -4,7 +4,7 @@
  */
 import type { Page } from 'playwright/test'
 
-export type Platform = 'windows' | 'mac'
+type Platform = 'windows' | 'mac'
 
 const createRuntime = (platform: Platform): string => `
 const calls = (globalThis.__frameCalls ??= [])

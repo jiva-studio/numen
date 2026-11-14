@@ -13,6 +13,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
+// ErrOffline is a runtime that is not on this machine while fetching is forbidden.
+var ErrOffline = errors.New("fetching is forbidden")
+
 // Config is what the runtime is provisioned from.
 type Config struct {
 	Dir      string
@@ -175,7 +178,7 @@ func (p *Provisioner) fetchArchive(ctx context.Context, release Release, dir, ar
 		}
 	}
 	if p.cfg.Offline {
-		return fmt.Errorf("%s is not on this machine, and %s forbids fetching it", release.Address, EnvOffline)
+		return fmt.Errorf("%s is not on this machine: %w", release.Address, ErrOffline)
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err

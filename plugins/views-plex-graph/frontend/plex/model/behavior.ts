@@ -22,3 +22,10 @@ export const DEFAULT_BEHAVIOR: PlexBehavior = {
   showing: byDoubleClick,
   clock: browserClock,
 }
+
+export const getBehavior = (given: PlexBehavior): PlexBehavior => ({
+  expansionDelay: given.expansionDelay,
+  reaching: given.reaching,
+  showing: given.showing,
+  clock: given.clock,
+})

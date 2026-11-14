@@ -3,6 +3,7 @@ package plugin_test
 import (
 	"context"
 	"errors"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -12,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 )
@@ -39,13 +40,20 @@ func (h *stubModelHost) GetPlugin(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.stub"}}, true
 }
 
-func (h *stubModelHost) EnsureActive(context.Context, string) (transport.Endpoint, error) {
+func (h *stubModelHost) EnsureActive(context.Context, string, plugindomain.Holder) (transport.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil
 }
 
-func (h *stubModelHost) Acquire(string)                          { h.acquired.Add(1) }
-func (h *stubModelHost) Release(string)                          { h.released.Add(1) }
+func (h *stubModelHost) EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, pluginID, holder)
+}
+
+func (h *stubModelHost) Acquire(string, plugindomain.Holder)         { h.acquired.Add(1) }
+func (h *stubModelHost) Release(string, string, plugindomain.Holder) { h.released.Add(1) }
+func (h *stubModelHost) ReleaseQuestion(pluginID, token string, holder plugindomain.Holder) {
+	h.Release(pluginID, token, holder)
+}
 func (h *stubModelHost) CheckPluginPermission(_, _ string) error { return nil }
 func (h *stubModelHost) GetVaultPath() string                    { return "" }
 
@@ -73,8 +81,8 @@ type modelOpener struct {
 
 func modelOpeners() []modelOpener {
 	return []modelOpener{
-		{"embedder", func(ctx context.Context, h *stubModelHost) error {
-			b, err := embedderbridge.Open(ctx, h)
+		{"search source", func(ctx context.Context, h *stubModelHost) error {
+			b, err := sourcebridge.Open(ctx, h, h, nil)
 			if b != nil {
 				return errors.New("a bridge was returned with the error")
 			}

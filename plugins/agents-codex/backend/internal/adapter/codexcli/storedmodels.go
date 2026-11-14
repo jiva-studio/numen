@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/agentmodel"
 )
 
@@ -26,7 +25,7 @@ func readCodexCache() []agentmodel.Model {
 	if err != nil {
 		return nil
 	}
-	data, err := agentrun.ReadFile(filepath.Join(home, ".codex", "models_cache.json"))
+	data, err := os.ReadFile(filepath.Join(home, ".codex", "models_cache.json"))
 	if err != nil {
 		return nil
 	}

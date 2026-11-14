@@ -1,0 +1,92 @@
+// Package modelcall holds the vocabulary of the calls plugins ask the core to carry out through their
+// connections. The core knows an operation by its name; the payload and the frames are bytes of the
+// contract the operation belongs to.
+package modelcall
+
+// Priority says whose action a call serves. The zero value is background, so a call that sets none
+// waits behind the calls of a person's actions.
+type Priority int
+
+const (
+	// PriorityBackground is work that serves no person's action, such as indexing.
+	PriorityBackground Priority = iota
+	// PriorityInteractive is a person's action, such as a search or a check of a line.
+	PriorityInteractive
+)
+
+// Request is one call a plugin asks for: the name of the operation, the payload of its contract and whose
+// action it serves. Preferred is the row the call asks first, nil for the rows in their order.
+type Request struct {
+	Operation string
+	Payload   []byte
+	Priority  Priority
+	Preferred *PreferredRow
+}
+
+// PreferredRow is a connection among the rows of the plugin for the operation, asked before the other
+// rows with Options in place of the values of its row fields. A connection that is not among the rows is
+// ignored. IsExclusive asks that row alone, and no row where the connection is not among the rows.
+type PreferredRow struct {
+	ConnectionID string
+	Options      map[string]string
+	IsExclusive  bool
+}
+
+// Row is one row of a plugin as the plugin lists them: its connection, the values of its row fields, and
+// the row fields the type of the connection declares.
+type Row struct {
+	ConnectionID   string
+	ConnectionName string
+	Options        map[string]string
+	Fields         []RowField
+}
+
+// RowField is a row field a type declares. OptionsFrom is the operation that lists its values, empty for
+// none. IsRequired is a field a row must hold a value for.
+type RowField struct {
+	Key, Title, OptionsFrom string
+	IsRequired              bool
+}
+
+// Send receives the data frames of a call in order. An error of send ends the call.
+type Send func(data []byte) error
+
+// ProviderCall is the connection one call to a provider is made for: a snapshot read at the start of
+// the call. Type is the id the manifest of the plugin gives the type, without the plugin id. Fields are the
+// fields that are not secret, with the fixed values of the type, Secrets are the values of the secret
+// fields by key, and Options are the values of the row fields the row of the call holds. The provider
+// holds it for the length of the call.
+type ProviderCall struct {
+	ConnectionID string
+	Type         string
+	Fields       map[string]string
+	Secrets      map[string]string
+	Options      map[string]string
+}
+
+// Option is one value a row field can take. An empty title shows the value, and an empty group shows no
+// heading.
+type Option struct{ Value, Title, Group string }
+
+// OptionsQuery is what an operation that lists options is asked with: the operations the setting of rows is
+// used for, and whether the provider reads the options anew, past any list it keeps.
+type OptionsQuery struct {
+	Operations []string
+	IsFresh    bool
+}
+
+// ListedOptions is what a provider listed for a row field. IsPartial marks a list that misses values the
+// provider could not read now.
+type ListedOptions struct {
+	Options   []Option
+	IsPartial bool
+}
+
+// DetectedConnection is a connection a provider found ready on this machine: its name, unique within the type,
+// the values of fields of the type that are not secret, by key, and where the provider found it, such as the
+// program it runs, with the home folder written as ~.
+type DetectedConnection struct {
+	Name   string
+	Path   string
+	Fields map[string]string
+}

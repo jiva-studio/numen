@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -63,8 +63,8 @@ func (w wiring) startSession(
 	t.Helper()
 	embedding := opts.embedding
 	worker := indexing.NewWorker(indexing.Config{
-		Reading:  w.readVault(db),
-		Embedder: embedding.GetEmbedder(),
+		Reading: w.readVault(db),
+		Source:  embedding.GetSource(),
 		VectorCounts: func(ctx context.Context, v domain.Vault) (held, embedded int64, err error) {
 			if !embedding.HasProgress() {
 				return 0, 0, indexing.ErrNoProgress
@@ -73,10 +73,10 @@ func (w wiring) startSession(
 			state.Runtime.RecordModel(name, recipe)
 			return embedding.CountProgress(ctx, v.ID, recipe)
 		},
-		VectorsReady: state.Events.EmitVectorsReady,
-		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
-		Quiet:        opts.idle,
-		After:        time.After,
+		SearchSourceReady: state.Events.EmitSearchSourceReady,
+		Events:            windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
+		Quiet:             opts.idle,
+		After:             time.After,
 	})
 	state.Writes.NotifyNoteWritten = worker.WakeNotes
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
@@ -116,7 +116,7 @@ type testPasses struct {
 }
 
 func (p testPasses) ReadWholeVault(
-	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+	ctx context.Context, embedder searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
 	return p.reading.ReadWholeVault(ctx, p.db, embedder, v, rebuild)
 }

@@ -21,11 +21,14 @@ func TestManifestDeclaresNoProgramTheHostMustFind(t *testing.T) {
 	}
 }
 
-// The plugin handles the shared commands of links, and creates the text of a link, as handlers.
-func TestManifestHandlesTheSharedCommandsOfLinks(t *testing.T) {
+// The plugin declares the commands of links as its own and creates the text of a link as the handler
+// of the shared command.
+func TestManifestDeclaresTheCommandsOfLinks(t *testing.T) {
 	var manifest struct {
 		Contributes struct {
-			Commands []json.RawMessage `json:"commands"`
+			Commands []struct {
+				ID string `json:"id"`
+			} `json:"commands"`
 			Handlers []struct {
 				Command string `json:"command"`
 			} `json:"handlers"`
@@ -34,13 +37,16 @@ func TestManifestHandlesTheSharedCommandsOfLinks(t *testing.T) {
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	var got []string
-	for _, one := range manifest.Contributes.Handlers {
-		got = append(got, one.Command)
+	var commands, handlers []string
+	for _, one := range manifest.Contributes.Commands {
+		commands = append(commands, one.ID)
 	}
-	want := []string{"app:link.import", "app:file.createText", "app:link.downloadMedia", "app:link.deleteMedia"}
-	if !slices.Equal(got, want) || len(manifest.Contributes.Commands) != 0 {
-		t.Errorf("handlers %v and %d commands, want %v and none", got, len(manifest.Contributes.Commands), want)
+	for _, one := range manifest.Contributes.Handlers {
+		handlers = append(handlers, one.Command)
+	}
+	wantCommands := []string{"link.import", "link.downloadMedia", "link.deleteMedia"}
+	if !slices.Equal(commands, wantCommands) || !slices.Equal(handlers, []string{"app:file.createText"}) {
+		t.Errorf("commands %v and handlers %v, want %v and app:file.createText", commands, handlers, wantCommands)
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 	"testing/iotest"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/domain/reasoning"
 )
 
 // initializeFixture is the answer of Claude Code 2.1.303 to the initialize request, cut to its models.
@@ -38,20 +38,20 @@ func TestTheModelsAreReadFromTheAnswerOfTheProgram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	byName := map[string]*reasoning.Model{}
+	byName := map[string]Model{}
 	for _, one := range list {
-		byName[one.Value] = one.GetReasoningModel()
+		byName[one.Value] = one
 	}
-	if got := getLevelNames(byName["opus"].ReasoningLevels); !slices.Equal(got, []string{"low", "medium", "high", "xhigh", "max"}) {
+	if got := getLevelNames(byName["opus"].GetLevels()); !slices.Equal(got, []string{"low", "medium", "high", "xhigh", "max"}) {
 		t.Errorf("opus offers %v", got)
 	}
-	if got := getLevelNames(byName["claude-sonnet-4-6"].ReasoningLevels); !slices.Equal(got, []string{"low", "medium", "high", "max"}) {
+	if got := getLevelNames(byName["claude-sonnet-4-6"].GetLevels()); !slices.Equal(got, []string{"low", "medium", "high", "max"}) {
 		t.Errorf("sonnet 4.6 offers %v", got)
 	}
-	if got := byName["claude-haiku-4-5-20251001"]; len(got.ReasoningLevels) != 0 || got.Title != "Haiku 4.5" {
+	if got := byName["claude-haiku-4-5-20251001"]; len(got.GetLevels()) != 0 || got.DisplayName != "Haiku 4.5" {
 		t.Errorf("a model of no effort offers a level: %v", got)
 	}
-	if byName[DefaultName] == nil {
+	if _, isListed := byName[DefaultName]; !isListed {
 		t.Error("the default model is not listed")
 	}
 }

@@ -1118,9 +1118,11 @@ const createSlowPalette = (commandLists: Record<string, readonly StepGroup[]> = 
   const lists: Deferred<VaultList>[] = []
   const holds: Deferred<void>[] = []
   const request: string[] = []
+  const signals: (AbortSignal | undefined)[] = []
   const core = {
-    names: (query: string) => {
+    names: (query: string, _limit: number, signal?: AbortSignal) => {
       request.push(query)
+      signals.push(signal)
       const one = createDeferred<readonly NameMatch[]>()
       names.push(one)
       return one.promise
@@ -1148,7 +1150,7 @@ const createSlowPalette = (commandLists: Record<string, readonly StepGroup[]> = 
     wait,
     getCommands: createAppCommands,
   })
-  return { commands, names, lists, holds, hold, requests: request }
+  return { commands, names, lists, holds, hold, requests: request, signals }
 }
 
 const describeGroup = (groups: ReturnType<typeof createPalette>['commands']['view']['groups']) => {
@@ -1268,6 +1270,29 @@ describe('a step that asks for a note, as the vault answers', () => {
     await settle()
 
     expect(requests).toStrictEqual(['en'])
+  })
+
+  it('stops the name question a newer query overtakes', async () => {
+    const { commands, signals } = createSlowPalette()
+    commands.palette.startCommand('app:file.open#note', front())
+    commands.palette.setTyped('e').catch(rethrow)
+    await settle()
+
+    commands.palette.setTyped('en').catch(rethrow)
+    await settle()
+
+    expect(signals.map((one) => one?.aborted)).toStrictEqual([true, false])
+  })
+
+  it('stops the name question when the palette closes', async () => {
+    const { commands, signals } = createSlowPalette()
+    commands.palette.startCommand('app:file.open#note', front())
+    commands.palette.setTyped('en').catch(rethrow)
+    await settle()
+
+    commands.palette.setOpen(false)
+
+    expect(signals.map((one) => one?.aborted)).toStrictEqual([true])
   })
 
   it('draws the answer to the question requested last, whatever lands after it', async () => {

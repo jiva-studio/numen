@@ -8,7 +8,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { COMMAND, ROW } from '@/shared/model/command'
-import { useSearch, type SearchDeps, type NameMatch, type Passage, type Words } from './search'
+import { useSearch, type SearchDeps, type NameMatch, type Words } from './search'
+import type { Passage } from './lookup'
 import type { SearchMode } from '../../lib/search/types'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 
@@ -25,8 +26,6 @@ const WORDS: Words = {
   readDocument: 'Open the document',
   noneFound: 'Nothing',
   noQuery: 'Search failed',
-  wordsOnly: 'Text search only: no embedding model set',
-  notEmbedded: 'Semantic index not built yet',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',
@@ -38,7 +37,11 @@ const OPEN_NOTE = COMMAND.openFile
 
 function createVault() {
   const names: Deferred<readonly NameMatch[]>[] = []
-  const searched: { mode: SearchMode; answer: Deferred<readonly Passage[]> }[] = []
+  const searched: {
+    mode: SearchMode
+    answer: Deferred<readonly Passage[]>
+    signal: AbortSignal | undefined
+  }[] = []
   const queries: string[] = []
 
   const core: SearchDeps = {
@@ -48,10 +51,10 @@ function createVault() {
       names.push(one)
       return one.promise
     },
-    search: (query, mode) => {
+    search: (query, mode, _limit, signal) => {
       queries.push(query)
       const one = createDeferred<readonly Passage[]>()
-      searched.push({ mode, answer: one })
+      searched.push({ mode, answer: one, signal })
       return one.promise
     },
   }
@@ -172,6 +175,40 @@ describe('answers arriving', () => {
     expect(palette.groups.value.map((one) => one.id)).toEqual(['names'])
   })
 
+  it('shows what the words found while the meaning question is out, and adds meaning when it answers', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    vault.names[0]?.answer([])
+    vault.mode('words')?.answer([passage()])
+    await flushPromises()
+
+    expect(palette.groups.value.map((one) => one.id)).toEqual(['text'])
+    expect(palette.status.isBusy.value).toBe(true)
+
+    vault.mode('meaning')?.answer([passage({ path: 'notes/carnot.md', title: 'Carnot' })])
+    await flushPromises()
+
+    expect(palette.groups.value.map((one) => one.id)).toEqual(['text', 'meaning'])
+    expect(palette.status.isBusy.value).toBe(false)
+  })
+
+  it('aborts the questions of a query once a newer query is typed', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    const older = vault.searched.find((one) => one.mode === 'meaning')?.signal
+    palette.setTyped('entr').catch(rethrow)
+    await flushPromises()
+
+    expect(older?.aborted).toBe(true)
+    expect(vault.searched.at(-1)?.signal?.aborted).toBe(false)
+  })
+
   it('drops a result of a superseded query', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
@@ -225,34 +262,18 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
   })
 
-  it('says the vault holds no vectors, where meaning returned nothing', async () => {
+  it('draws no meaning group when the meaning search returned nothing', async () => {
     const vault = createVault()
-    const readItem = { chunks: 4, embedded: 0, isEmbedding: true }
-    const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
     vault.mode('meaning')?.answer([])
-    vault.names[0]?.answer([])
+    vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
-    // The other groups query the words, which a vault with no vectors still
-    // answers, and a group that returned nothing contributes no rows.
-    expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
-  })
-
-  it('says nothing reads the vault for meaning, where nothing is set to', async () => {
-    const vault = createVault()
-    const readItem = { chunks: 4, embedded: 0, isEmbedding: false }
-    const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
-
-    palette.setTyped('ent').catch(rethrow)
-    await flushPromises()
-    vault.mode('meaning')?.answer([])
-    await flushPromises()
-
-    expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe(WORDS.wordsOnly)
+    expect(getGroup(palette.groups.value, 'meaning')).toBeUndefined()
+    expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
   })
 
   it('shows meaning search results with meaning item ids', async () => {
@@ -314,6 +335,7 @@ describe('answers arriving', () => {
     vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
+    expect(vault.searched.find((one) => one.mode === 'meaning')?.signal?.aborted).toBe(true)
     expect(palette.open.value).toBe(false)
     expect(palette.typed.value).toBe('')
     expect(palette.groups.value).toHaveLength(0)
@@ -828,5 +850,116 @@ describe('the palette opened and put away', () => {
     await flushPromises()
 
     expect(palette.groups.value).toStrictEqual([])
+  })
+})
+
+describe('the spinner of the field', () => {
+  const answerAll = (vault: ReturnType<typeof createVault>, query: number) => {
+    vault.names[query]?.answer([])
+    for (const which of ['words', 'meaning'] as const)
+      vault.searched.filter((one) => one.mode === which)[query]?.answer.answer([])
+  }
+
+  it('keeps turning through the pause of a keystroke typed while a question is out', async () => {
+    const vault = createVault()
+    const pause = createDeferred<void>()
+    let isFirst = true
+    const wait = () => {
+      if (isFirst) {
+        isFirst = false
+        return Promise.resolve()
+      }
+      return pause.promise
+    }
+    const palette = useSearch(vault.core, WORDS, { wait })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    expect(palette.status.isBusy.value).toBe(true)
+
+    palette.setTyped('entr').catch(rethrow)
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(true)
+  })
+
+  it('stays while one question of the query is out and goes once the last one fails', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+
+    vault.names[0]?.answer([createNameMatch()])
+    vault.mode('words')?.fail('the index is closed')
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(true)
+
+    vault.mode('meaning')?.fail('no model is set')
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(false)
+  })
+
+  it('goes when the query is cleared, and the late answers of that query do not bring it back', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+
+    palette.setTyped('').catch(rethrow)
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(false)
+
+    answerAll(vault, 0)
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(false)
+  })
+
+  it('goes when the palette is put away with questions out', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setOpen(true)
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+
+    palette.setOpen(false)
+
+    expect(palette.status.isBusy.value).toBe(false)
+  })
+
+  it('stays gone when the overtaken query answers after the newer query has answered', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    palette.setTyped('entr').catch(rethrow)
+    await flushPromises()
+
+    answerAll(vault, 1)
+    await flushPromises()
+    expect(palette.status.isBusy.value).toBe(false)
+
+    answerAll(vault, 0)
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(false)
+  })
+
+  it('stays while the newer query waits for its meaning, though the overtaken query has answered', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    palette.setTyped('entr').catch(rethrow)
+    await flushPromises()
+
+    vault.names[1]?.answer([])
+    vault.searched.filter((one) => one.mode === 'words')[1]?.answer.answer([])
+    answerAll(vault, 0)
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(true)
   })
 })

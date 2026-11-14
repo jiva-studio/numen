@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
@@ -42,7 +41,7 @@ func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 
 	session := flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		s.presets, getToday(), clock.NewFake(pos),
+		s.presets, getToday(), newFakeClock(pos),
 	)
 	target, err := session.Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
@@ -221,7 +220,7 @@ func (s vaulted) openSession(
 	t.Helper()
 	return flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		s.presets, day, clock.NewFake(now),
+		s.presets, day, newFakeClock(now),
 	).Execute(t.Context(), s.vault, pos)
 }
 
@@ -444,7 +443,7 @@ func (s vaulted) sessionAt(t *testing.T, day review.Day, now time.Time) flashcar
 	t.Helper()
 	sat, err := flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		s.presets, day, clock.NewFake(now),
+		s.presets, day, newFakeClock(now),
 	).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
@@ -868,7 +867,7 @@ func TestWhatIsDueIsWhatTheSessionAsks(t *testing.T) {
 		"decks/Few.md":   deckOf("Few", 10, 0),
 		"decks/Loose.md": deckOf("", 10, 100),
 	})
-	now := clock.NewFake(getSaturday())
+	now := newFakeClock(getSaturday())
 
 	sat := byDeck(s.sessionAt(t, getToday(), getSaturday()))
 	counts, err := s.newCountCardsDueAt(getToday(), now).Execute(t.Context(), s.vault)
@@ -1715,7 +1714,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 	for range 200 {
 		sat, err := flashcards.NewSession(
 			s.assigning, s.standings, s.schedules,
-			s.presets, day, clock.NewFake(now),
+			s.presets, day, newFakeClock(now),
 		).Execute(t.Context(), s.vault, flashcards.Scope{})
 		if err != nil || len(sat.Queue) == 0 {
 			return out
@@ -1760,7 +1759,7 @@ func TestSessionDeckByDeckStaysBelowTheOneCeiling(t *testing.T) {
 		for range 200 {
 			sat, err := flashcards.NewSession(
 				s.assigning, s.standings, s.schedules,
-				s.presets, getToday(), clock.NewFake(now),
+				s.presets, getToday(), newFakeClock(now),
 			).Execute(t.Context(), s.vault, cardScope)
 			if err != nil || len(sat.Queue) == 0 {
 				break
@@ -1811,7 +1810,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	runSession := func(scope flashcards.Scope) flashcards.SessionResult {
 		sat, err := flashcards.NewSession(
 			s.assigning, s.standings, s.schedules,
-			s.presets, getToday(), clock.NewFake(now),
+			s.presets, getToday(), newFakeClock(now),
 		).Execute(t.Context(), s.vault, scope)
 		if err != nil {
 			t.Fatal(err)
@@ -1854,7 +1853,7 @@ func newDeckVault(tb testing.TB, front string, decks ...int) vaulted {
 
 func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 	t.Helper()
-	out, err := s.newCountCardsDueAt(getToday(), clock.NewFake(now)).Execute(t.Context(), s.vault)
+	out, err := s.newCountCardsDueAt(getToday(), newFakeClock(now)).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

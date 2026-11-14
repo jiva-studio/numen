@@ -54,7 +54,7 @@ A theme that sets `color-scheme` provides one variant, and `mode` has no effect 
 
 Choosing a theme, light or dark, or either size writes the matching field to this file — each is a separate command in the command palette. The file is read as an object, the named fields are set, and it is written back, so a key this build does not know is preserved. A file that does not parse is not written.
 
-Whether a node in the plex nests the headings of its note, and how many, are settings of the Plex Graph plugin: `md.numen.views.plex.graph.nestHeadings` and `headingLimit`, stored in the object of that plugin.
+Whether a node in the plex nests the headings of its note, and how many, are settings of the Plex Graph plugin: `md.numen.views.plex.graph.nestHeadings` and `headingLimit`, stored in the object of that plugin. Whether a node shows the names of the notes related to it, and how many, are `showNames` and `namesPerNote` of the same plugin; how visible those names are is `namesOpacity` while the pointer is elsewhere (0 to 1, default 0.7) and `focusedNamesOpacity` while it is over the note or its names (0.05 to 1, default 1). Which notes linked in the text the plex shows is `references` of the same plugin: `off`, `outgoing`, `incoming` or `both`, `both` unless it names another. Whether every line that joins a note is highlighted while the pointer is over the note is `highlightLinks` of the same plugin, on unless it is set to false.
 
 ## A day of review
 
@@ -160,13 +160,13 @@ A model open when the profile changes closes when its running batches end, and t
 
 ## How the index keeps vectors
 
-The Vector Embeddings plugin creates the vectors: which model, where it runs, the key of a service and the longest chunk of a note are its own settings. The index stores the vectors the plugin creates and searches them, and this section is about the index alone.
+The Vector Embeddings plugin creates the vectors: its setting Source chooses the local model or a connection, and the longest chunk of a note is its own setting. Source "Local model" keeps the settings of the local model, including the model and the performance profile that sizes its threads. Source "Connection" shows one row, a connection and an embedding model, and the plugin holds no key and no address. The index stores the vectors the plugin creates and searches them, and this section is about the index alone.
 
 The core settings file holds no setting of the chunk size. The plugin setting `chunkTokens` (default 256, from 16 to 8192, held to the input limit of the model) is reported to the core with the model, and the core cuts notes at it. With no embedding plugin, or one that names no size, notes are cut at the chunking default of 1000 characters. The index records the cut of each note, and a note recorded with another cut is read and cut again on the next scan; a change of the setting in an open window builds the session of the vault again. A scan that does not know the size cuts new and changed notes at the default and does not cut the others again.
 
 The floor, how similar a passage has to be to a question to count as an answer, is not a setting in the file. The index stores one floor for each vault under each model and applies it to every search by meaning. A floor given in a query takes precedence over the one the index stores, which takes precedence over the initial floor the model's plugin reports, which takes precedence over 0.30. The Search Relevance plugin, `md.numen.tools.search.relevance`, measures the floor on the vault, lets a person set one, and stores the result in the index; with the plugin disabled the index keeps applying the last floor it stored. How similar a model scores two texts about different things is a property of that model, so a changed model has a floor of its own.
 
-A vector is stored under the model the plugin reports: its name, width, input limit and pooling, a short hash of how the plugin handles the text (the prefixes it puts in front of a document and of a query, the model file, the token limit and the normalization), and where it was made. Changing the model in the plugin, or its profile, recreates every stored vector, and changing back finds the old vectors still stored. A model that tells a question from the passage that answers it is asked for a document vector when the index is filled and for a query vector when a question is typed.
+A vector is stored under the model the plugin reports: its name, width, input limit and pooling, a short hash of how the plugin handles the text (the prefixes it puts in front of a document and of a query, the model file, the token limit and the normalization), and where it was made. For a connection, where it was made is the type of the connection with its address, and the name, width, input limit, pooling and prefixes are the profile that the provider of the connection gives before any text is embedded, so the index is fitted before the first batch. Changing the connection, its address or the model, or changing the model or its profile in the plugin, recreates every stored vector, and the editor asks first when a person chooses another connection or model because a service may charge for it. Changing back finds the old vectors still stored. A model that tells a question from the passage that answers it is asked for a document vector when the index is filled and for a query vector when a question is typed.
 
 A local model the Vector Embeddings plugin does not list is added with a profile file: a JSON file in the `profiles` folder of the plugin data directory that gives the model's id, width, pooling, prefixes and files, merged over the profiles that ship with the plugin by `id`. The shape is described in the README of the plugin, and a model with no profile is refused with an error that names the folder. A vault with the plugin disabled is searched by its words alone.
 
@@ -174,17 +174,15 @@ A local model the Vector Embeddings plugin does not list is added with a profile
 
 The proofreading plugin, `md.numen.tools.proofreading`, corrects a transcript or a recognition when a person requests it from the file's menu, and its settings belong to the plugin. What a correction may change, and what rejects one, is in [Proofreading](proofreading.md).
 
-The plugin has two ways to reach a model, chosen by its setting `provider`. With `agent`, the default, it requests a completion from the host through the host service `ai:complete`, and the host uses [`app.ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which sets the agent program, the model and the number of questions answered at once. With `openrouter`, `openai` or `custom`, it calls an OpenAI-compatible chat service directly, with the `model` and, for `custom`, the `baseUrl` of its own settings and the `apiKey` secret, read from the [secrets](#secrets) allowed to the plugin. With no agent available, a proofreading through the agent fails with "unavailable", and no version is made.
+The plugin reaches a model through the rows of its setting `connections`: up to 5 connections from the Connections page, each with a model and a reasoning level, tried in order (see [Rows of connections](plugins/connection-rows.md)). With no row it is off, and its page links to Connections. The plugin keeps no address and no key.
 
 ```json
 {
-  "app": {
-    "ai": {
-      "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
-    }
-  },
   "md.numen.tools.proofreading": {
-    "provider": "agent",
+    "connections": [
+      { "connection": "c1f0a9e20", "model": "google/gemini-2.5-flash", "reasoning": "low" },
+      { "connection": "c77b01d40", "model": "qwen2.5:14b" }
+    ],
     "batchSize": 40,
     "overlap": 4,
     "inFlight": 4,
@@ -195,6 +193,7 @@ The plugin has two ways to reach a model, chosen by its setting `provider`. With
 
 |                   |                                                                                                                                                                                                                                                                                                                                                           |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connections`     | the connections that proofread, in the order they are tried: at most 5 rows of a connection, a model and optionally a reasoning level. Empty turns the plugin off.                                                                                                                                                                                        |
 | `batchSize`       | how many lines of a transcript one request contains. 40. A recognition is sent one page per request.                                                                                                                                                                                                                                                      |
 | `overlap`         | how many lines neighbouring batches of a transcript share, so a phrase split at a batch boundary still appears whole in one of them. 4.                                                                                                                                                                                                                   |
 | `inFlight`        | how many batches of a transcript one window contains; the task shows the lines done after each window. 4.                                                                                                                                                                                                                                                 |
@@ -208,92 +207,34 @@ How a link's address is fetched is set by the Media Importer plugin's settings, 
 
 ## Which agent answers
 
-`app.agent` sets which agent answers in the panel and how each program is run. What an agent may request from a vault is in [Agents](agents.md).
+The agent chat answers through connections, as every other plugin that needs a service. The page of the plugin `md.numen.views.agent.chat` has the setting `connections` with the operation `acp.task`: one row for each agent to try, in order. A row names a connection of an agent type: `md.numen.agents.claude/claude-code`, `md.numen.agents.codex/codex`, `md.numen.agents.antigravity/antigravity`, `md.numen.agents.acp/acp` (any program that implements the Agent Client Protocol, by its `program` field) or `md.numen.agents.numen/numen`, and the model and the reasoning level the program offers. With no row the chat says that no agent is set up and offers the page. The flashcard review has a setting of its own, `agentConnections`, for the agent it asks about a card. What an agent may request from a vault is in [Agents](agents.md).
 
 ```json
 {
-  "app": {
-    "agent": {
-      "use": "claude",
-      "claude": {
-        "command": [],
-        "model": ""
-      }
-    }
-  },
-  "md.numen.agents.claude": {
-    "readsHooksAndSkills": false
+  "md.numen.views.agent.chat": {
+    "connections": [{ "connection": "c1f0a9e20", "model": "sonnet", "reasoning": "high" }]
   }
 }
 ```
 
-|                                                 |                                                                                                                                                                                                                                                                                                                                                                            |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `use`                                           | which agent answers. `claude` is Claude Code, used by starting it and reading its output. `numen` is Numen Agent, numen's own: the `md.numen.agents.numen` plugin sends requests to an OpenAI-compatible chat API and calls this vault's tools on behalf of the model. Empty means no agent, and the panel says so.                                                        |
-| `claude.command`                                | the command that starts it: the path of the command line program, and any wrapper it is started through. Empty searches the path, then the folders its installers write to. Worth setting for an installation those folders do not cover, and for a machine with several.                                                                                                  |
-| `claude.model`                                  | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty uses that installation's default model. Worth setting because the panel is read while somebody waits.                                                                                                                                                                                       |
-| `md.numen.agents.claude`, `readsHooksAndSkills` | whether it reads the configuration of this machine: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not a request to run one. On, what is configured for this person is read; what a vault contains is rejected either way, since a vault comes from elsewhere. |
-| `numen.model`                                   | which model of the chat API answers. Empty takes the plugin's own `model` setting.                                                                                                                                                                                                                                                                                         |
+The Numen Agent chats with the model its row names. The models of a row of `md.numen.agents.numen/numen` are the models of every connection that supports chat, titled "<connection> / <model>", and the stored value names the connection and the model, such as `"model": "c77b01d40|qwen2.5:14b"` (a `|` or `%` in the id of the connection is written `%7C` or `%25`). A row with no model, or with a model of a connection that no longer supports chat, answers "Choose a model." and the turn fails. How many requests it may make to the model for one task before it is stopped is the plugin's own setting, `maxSteps` in the object `md.numen.agents.numen`, 25 unless it names another. The temperature and the maximum of tokens are its settings too. If the stream breaks in the middle of an answer, the text that arrived stays and the turn ends with an error; it does not repeat a tool call by itself.
 
-How many requests Numen Agent may make to the model for one task before it is stopped is the plugin's own setting, `maxSteps` in the object `md.numen.agents.numen`, 25 unless it names another. Which chat API it uses is the plugin's own setting, `baseUrl` in the same object: OpenRouter, `https://openrouter.ai/api/v1`, unless it names another, such as `http://localhost:11434/v1` for Ollama. Its key is the first secret allowed to the plugin's `apiKey` declaration (see [Secrets](#secrets)); an endpoint on this machine may take none. A key is sent only over https, or over http to this machine. The agent counts as installed while the chat API lists its models, and the models it lists are the ones offered.
+## Connections
 
-A section is kept whether or not it is in use, so trying another agent temporarily loses no settings.
+A connection is a place the core sends requests to for plugins, and the way in: a service you pay for, a server you run, or an agent program on this computer. You enter it once, on the Connections page, the row Connections beside System in the list of settings. A connection has an id, a type, a name, and the fields its type declares, such as an address and a key. The model and the reasoning level are not part of it. The Secrets page stays beside it and is unchanged.
 
-## Where a plugin's questions to a model are answered
+The types come from the plugins. A plugin lists them under `contributes.connectionTypes` in its manifest (see [Plugins](plugins/README.md#manifest-fields)). A type is named `<plugin id>/<type id>`, for example `md.numen.connections.llm/openrouter`. The Add dialog lists the types of the enabled plugins and builds its form from the fields of the chosen type. A type that fixes its address shows none, and a type of an agent program shows the program to start, which may stay empty where the type finds its program on the path. A connection whose type no enabled plugin provides stays in the list as "Type unavailable"; it is not deleted and the plugins skip it.
 
-A plugin that holds the `ai:complete` permission requests a completion from the host and specifies no model, agent or key. The host identifies the plugin by the token it gave that plugin at launch, and uses `app.ai.default`. Nothing in a question selects where it is sent. The question is sent to the agent as a task that names no tool and no conversation, so the agent has none of the vault's tools, and the answer is the agent's output.
+The name is the text you type, trimmed, at most 64 characters, and unique ignoring case. An empty name is replaced by the title of the type for the first connection of it, and by the title and the lowest free number from 2 for the next ones, such as "OpenRouter 2".
 
-```json
-{
-  "app": {
-    "ai": {
-      "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
-    }
-  },
-  "md.numen.tools.proofreading": {
-    "provider": "agent"
-  }
-}
-```
+The connections are the section `connections` of `numen.json`, a list in the order they were made, whose entries are `{ "id", "type", "name", "revision", "fields" }`. The id is `c` and 8 lowercase hexadecimal digits. `fields` holds the fields you set that are neither secret nor fixed by the type. A field the type no longer declares is kept in the file and ignored; a required field that has no value marks the connection as incomplete. Neither makes the connection invalid. A connection with a bad or repeated id, a bad or repeated name, a type without a plugin id, or a revision below 1 is ignored with a notice and the file is not changed. Only Numen writes this section: a write of the settings from a window or a plugin under `connections` is refused, and an entry edited by hand takes effect.
 
-|                              |                                                                                                                                                                                                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app.ai.default.agent`       | the name of the agent program that answers the questions plugins ask (`claude`, `codex`, `antigravity`, `acp:<name>`, the names of the programs the plugins list). Empty uses the program `app.agent.use` names, else the default of the plugins. |
-| `app.ai.default.model`       | the model that program answers with. Empty uses the model `app.agent.<program>.model` names, else the program's own. It applies to the default agent alone.                                                                                       |
-| `app.ai.default.concurrency` | how many questions one agent answers at once; the others wait in a queue, and a question whose plugin gave up is removed from the queue. Below one is one.                                                                                        |
+A secret field is kept in the key store under the entry `connection/<connection id>/<field key>`, never in `numen.json`. The entry holds a fingerprint of the type and the address together with the key, and a key whose fingerprint does not match the connection as it is now is not used and not counted as set. An edit of the address or the type in the file by hand, or a restored file, therefore cannot send a key elsewhere. Changing the address in the dialog removes the stored keys of the connection before it stores the ones you typed. An empty key has no entry. On a machine that has no keychain, such as a Linux session without a secret service, the entries are kept in `credentials/credentials.json`, in a folder next to `numen.json`; the file is readable by its owner alone (mode 0600, in a folder of mode 0700). A keychain that is there but refuses, because it is locked or the access was denied, is an error and nothing is written to the file. While the keychain is reachable a value is read from it alone, and a value stored in the keychain is removed from the file. A value is at most 2560 bytes in either place, and a longer one is refused with an error that names the limit.
 
-A program that is not installed or that no plugin lists returns `NO_ROUTE`, and so does a question when `app.agent.use` is empty or no program is installed; no other program is used instead. A program whose plugin cannot be reached, that stops without an answer or that produces no output returns `UNAVAILABLE`, with the reason it stopped in the log. The command line and the model of the program's section under `app.agent` apply to the task as they do to the panel's. A model the program does not offer is reported as the program's own error.
+Every change of a connection, including a change of a key, adds 1 to its `revision`. An update carries the revision it read and is refused with "Another window changed this connection" if the connection has another revision, so two windows cannot overwrite each other.
 
-Every agent that runs a task answers a question, and a task that names no tool is given none. `md.numen.agents.claude` starts `claude` with no tool, no MCP server and one turn. `md.numen.agents.codex` starts `codex exec` read-only and ephemeral, without the user's configuration, the MCP servers in it and the tools of its own that can be turned off, in an empty folder. `md.numen.agents.antigravity` starts `agy` without the permission skip, with a home that holds no MCP server, in an empty folder. `md.numen.agents.numen` asks the chat API with no tool and connects to no tool server. `md.numen.agents.acp` is the generic ACP client: it lists a program `acp:<name>` for each section of that name under `app.agent` with a `command`, with the models the agent reports for a session, and answers a task that names no tool in one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission denied. It rejects a task that names a tool. It finds the known ACP agents on the PATH itself, when it starts and when its settings change, and adds the executables of its setting `executablePath`, which holds only the paths the person set.
+An address must be an http or https address with a host and no user name or password. A key is sent over http only to this computer (`localhost` or a loopback address). Link-local addresses, which include the metadata address of the clouds, the unspecified address and the metadata host names are refused. An address on a private network is accepted. A host name other than `localhost` is not resolved by the core, so a provider has to check the address it resolves to.
 
-The file is read at every question, so a choice written while the application runs applies to the next one.
+A plugin that needs a model asks the core for an operation, and the core takes the connections from the rows in the settings of that plugin, in the order you set them. The first row is tried first. When a connection cannot serve, because its key is rejected, a payment is required, the rate limit is reached, or the service is unreachable or too slow, the core goes to the next row. A timeout or an unreachable service is tried once more before the connection is set aside. A connection that was set aside is skipped for 60 seconds, or for the wait the service asked for, at most 10 minutes. After a rejected key or a payment required it is skipped until you edit the connection. The skip is kept in memory and is forgotten when Numen restarts. When a connection was set aside and a row after it answered, the list of tasks shows one notice for each connection and reason. When every row fails, the plugin gets an error that names each connection and its reason, and a request the service finds wrong ends the call at once without trying another row. A plugin never receives a key and cannot use a connection that is not in its own rows.
 
-The settings page writes `app.agent.use` through the agent chat plugin, which chooses the agent of a conversation in a dropdown with its model and reasoning. The reasoning a new question starts with is the setting `reasoning` of the agent chat plugin, `reasoning` in the object `md.numen.views.agent.chat`: the name of one of the levels a model lists, empty for the default of the model. The agents in its lists are the programs the plugins list, and the models are the ones each program lists for `GetAgentPrograms`.
-
-No key is written in this file. An agent plugin that needs one declares it under `secrets` in its manifest, and the person enters the key on the Secrets page and allows it to the plugin (see [Secrets](#secrets)).
-
-A setting of type `string` that declares `options` in its manifest is chosen from them in a list that can be searched, and its value can also be typed.
-
-## Secrets
-
-A secret is a value such as an API key. You enter it once, on the Secrets page, and choose which plugins may read it. The page is the row Secrets beside System in the list of settings, described as "API keys and tokens for plugins". Nothing is allowed by default: a new secret can be read by no plugin until you allow it.
-
-The page has a card for each group, and a group collects the keys for one service. A group a plugin asks for is titled with the name of the service, such as OpenRouter or OpenAI, with a one-line description; a group you made has the name you gave it. The groups plugins ask for come first, ordered by name, then your own.
-
-- **Add a key.** Choose Add key at the top right of the group card. A new row appears with an empty value. The first key of a group is named after the service, and further ones "OpenAI V1", "OpenAI V2" and on; in a group no service is known by the first key is named Default. A group a plugin asks for, and a group you make, shows one empty row at once, so you only paste the key.
-- **Name it.** A card with one key shows no name, and its key is named after the service. Once a card has several keys, each row shows its name in the Key column; type in it to change it. A name is at most 64 characters and unique inside its group.
-- **Enter the value.** Paste it in the masked field and press Enter or leave the field. A stored value shows as dots, and typing a new value replaces it. A value is never shown again.
-- **Choose who may use it.** The Used by field of the row lists the plugin declarations that may read the key; choose them in it, with a search by name. A key that no plugin may read shows "No plugins".
-- **Change the order.** In a group with several keys, the menu (⋯) of a row has Move up and Move down. The order is the priority: a plugin uses the first key it is allowed, and gets the new order at once. A key does not move to another group.
-- **Delete a key.** The menu of the row has Delete. It asks for confirmation, names the plugins that can read the key, and removes the value and the permissions.
-- **Make your own group.** Choose Add group under the cards, type the name, and paste the first key into the empty row it shows. Next to Add key, the card of a group you made has a menu (⋯) with Rename group and Delete group, which removes its keys after a confirmation. A group a plugin asks for cannot be renamed or deleted. A group exists while it has a key or a plugin asks for it.
-
-A key whose value is not on this machine, for example in a settings file copied from another one, shows as empty, and plugins read nothing from it.
-
-A plugin's own page shows each key it asks for as a field with the keys it may use, chosen the same way as Used by, and an icon button beside it that opens the Secrets page. A key is not typed there.
-
-The values are kept in the system keychain, in the service `md.numen` under the entry `secret/<id>`. On a machine that has no keychain, such as a Linux session without a secret service, they are kept in `credentials/credentials.json`, in a folder next to `numen.json`; the file is readable by its owner alone (mode 0600, in a folder of mode 0700). A keychain that is there but refuses, because it is locked or the access was denied, is an error and nothing is written to the file. While the keychain is reachable a value is read from it alone and the file is not read, and a value stored in the keychain is removed from the file. The Secrets page shows the path of the file only where the keychain is not available. A value is at most 2560 bytes in either place, and a longer one is refused with an error that names the limit. A value is never written to `numen.json`, to the plugin's environment or to its command line, and the application never shows it in the window or in an error.
-
-A change to the secrets is sent to the plugins it concerns before the operation ends; A failed delivery makes the operation return an error that names the plugin and its status without the text of the plugin, the change stays saved, and where the plugin answered with an error the list is sent again at the next change of it, at an operation that names the plugin, at a restart or at the next activation, not at a plain refresh. Where the context of the operation ended or the call timed out, or a value could not be read, the next refresh sends the list. A value the keychain fails to read is an error, and the plugin is still sent the other values of its list and none after the failed one, so it drops the secrets it may no longer hold.
-
-The names, groups and permissions are in the section `secrets` of `numen.json`, a list in priority order whose entries are `{ "id", "name", "group", "allowed" }`; `allowed` lists the declarations that may read the secret as `{ "plugin", "name", "group" }`. Only Numen writes this section: a write of the settings from a window or a plugin under `secrets` is refused. An entry edited by hand takes effect, and the plugins whose list changed are configured again; an entry that names a plugin or a declaration that does not exist, repeats an id or a name of its group, or has a bad name is ignored with a notice. The plugin manifest side, with the `group` of a declaration and the well-known groups, is in [Plugins](plugins/README.md#secrets).
+The page of a plugin that needs a model shows its rows, and the Connections page names the plugins whose rows use each connection. Deleting a connection asks first and says "Used by <plugins>. Their rows for it are removed." (see [Rows of connections](plugins/connection-rows.md)).

@@ -104,6 +104,10 @@ core:
   - tools/build-plugin-index/**
   - tools/checks/structure/go/**
   - '!**/*.md'
+atomicfile:
+  - *atomicfile_lib
+  - .github/workflows/go.yml
+  - '!**/*.md'
 protocol:
   - *ci_router
   - *go_workspace
@@ -170,6 +174,8 @@ desktop_fe:
   - apps/desktop/editor/**
   - apps/desktop/flashcards/**
   - tests/e2e/desktop/**
+  - tests/acceptance/**
+  - features/**
   - tools/ci-stories/**
   - '!**/*.md'
 mobile_fe:
@@ -228,7 +234,6 @@ docs_sources: &docs_sources
   - libs/core/kernel/adapter/cli/**
   - libs/core/kernel/adapter/settings/**
   - libs/core/kernel/container/**
-  - libs/core/kernel/usecase/completion/**
   - plugins/*/manifest.json
   - plugins/*/frontend/**
   - tools/ci-commands/**

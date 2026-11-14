@@ -1,0 +1,15 @@
+{
+  "id": "md.numen.tools.plugin.stats",
+  "name": "Running plugins",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Shows in the title bar which plugins run, for how long, and when each stops for idleness",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "tools",
+    "slots": [{ "slot": "titleBar.status", "view": "plugins", "order": 30 }]
+  },
+  "permissions": ["plugins:read"],
+  "frontend": {},
+  "isOffByDefault": true
+}

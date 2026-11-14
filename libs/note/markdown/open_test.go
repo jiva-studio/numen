@@ -58,3 +58,37 @@ func TestANoteMadeHereEndsWithALineEnding(t *testing.T) {
 		}
 	}
 }
+
+// TestOpenSplitsTheProseFromTheFrontmatterAndSaveRestoresTheFrontmatter. The
+// prose of each shape is what the editor shows, and a save changes the prose
+// alone.
+func TestOpenSplitsTheProseFromTheFrontmatterAndSaveRestoresTheFrontmatter(t *testing.T) {
+	for name, tc := range map[string]struct {
+		frontmatter string
+		prose       string
+		saved       string
+	}{
+		"an empty body":                      {"---\nid: 01J8\n---\n", "", "tail\n"},
+		"an unfinished wikilink":             {"---\nid: 01J8\n---\n", "[[B\n", "[[B tail\n"},
+		"several keys":                       {"---\nid: 01J8\ntags: [alpha, beta]\nsource: Test\n---\n", "Body line\n", "Body line tail\n"},
+		"CRLF line ends":                     {"---\r\nid: 01J8\r\n---\r\n", "Body line\r\n", "Body line tail\r\n"},
+		"an id only and prose":               {"---\nid: 01J8\n---\n", "Prose under the id.\n", "Prose under the id. tail\n"},
+		"a new note typed into before prose": {"---\nid: 01J8\n---\n", "", "[[B\n"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			d, err := markdown.Open([]byte(tc.frontmatter + tc.prose))
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			if d.Body() != tc.prose {
+				t.Fatalf("the prose opened as %q, want %q", d.Body(), tc.prose)
+			}
+			if err := d.SetBody(strings.TrimRight(tc.saved, "\r\n")); err != nil {
+				t.Fatalf("set body: %v", err)
+			}
+			if got, want := string(d.Bytes()), tc.frontmatter+tc.saved; got != want {
+				t.Errorf("saved %q, want %q", got, want)
+			}
+		})
+	}
+}

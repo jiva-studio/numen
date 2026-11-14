@@ -6,8 +6,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 )
 
 func BenchmarkEmbedDuplicates(b *testing.B) {
@@ -50,7 +51,7 @@ func BenchmarkEmbedDuplicates(b *testing.B) {
 				cutBooks(b, index, shelf, indexfake.GetFirst())
 				model := &embedder{dims: dimensions}
 				embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
-				embed.Embedder = model
+				embed.Source = sourcefake.Wrap(model)
 				embed.BatchCharacters = 4000
 				b.StartTimer()
 
@@ -98,19 +99,19 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 				}
 			}
 
-			model := embedding.Model{Name: "fake", Dimensions: dimensions}
+			model := searchsource.Description{Name: "fake", Width: dimensions}
 			index := indexfake.NewStore()
 			embed := newEmbed(indexfake.Vaults{}, index, index)
-			embed.Embedder = &embedder{dims: dimensions}
+			embed.Source = sourcefake.Wrap(&embedder{dims: dimensions})
 
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				prep, err := newProducer(embed, nil).prepareBatch(b.Context(), model, passages, texts)
+				prep, err := newProducer(embed, nil).prepareBatch(b.Context(), model, searchsource.Place{}, passages, texts)
 				if err != nil {
 					b.Fatal(err)
 				}
-				if _, err := (inferrer{embedder: embed.Embedder}).inferBatch(b.Context(), prep); err != nil {
+				if _, err := (inferrer{source: embed.Source}).inferBatch(b.Context(), prep); err != nil {
 					b.Fatal(err)
 				}
 			}

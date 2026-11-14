@@ -22,36 +22,41 @@ export interface NoteHeading {
   readonly line: number
 }
 
-// NoteRelation is how a neighboring note is linked to the focused note.
-export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
+// NoteRelation is how a related note is linked to the focused note.
+export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling' | 'reference'
+
+// LinkDirection tells which note wrote a text link: the note in focus ('outgoing'), the related note ('incoming'), or each of them ('both'). For a note found by depth 2 the note in focus is the one in its relatedTo.
+export type LinkDirection = 'outgoing' | 'incoming' | 'both'
 
 // LinkMarker is what a link record draws at the end that points at its target. A link without one draws nothing there.
 export type LinkMarker = 'arrow'
 
-// NoteNeighbor is one note joined to the note in focus. The records that join notes are in NoteNeighborhood.connections.
-export interface NoteNeighbor {
+// RelatedNote is one note joined to the note in focus. Its direction is present for a 'reference' only. Its relatedTo is the path of the related note it belongs to, set for a note found by depth 2 (its relation and direction are then relative to that note, not to the focus) and absent for a note related to the focus. A note found by depth 2 has no connection record, it may also be related to the focus, and its path can repeat in NoteGraph.related, once under each related note it belongs to. The records that join notes are in NoteGraph.connections.
+export interface RelatedNote {
   readonly path: string
   readonly title: string
   readonly relation: NoteRelation
   readonly type: NoteType
   readonly tabKind?: string
+  readonly direction?: LinkDirection
+  readonly relatedTo?: string
 }
 
-// NoteNeighborhood is a note in focus, the notes joined to it, and one connection for every line drawn between
-// them. A line joins the note in focus to a neighbor, or two neighbors to each other. A connection of the
+// NoteGraph is a note in focus, the notes joined to it, and one connection for every line drawn between
+// them. A line joins the note in focus to a related note, or two related notes to each other. A connection of the
 // hierarchy has the parent as its first note and the child as its second; a connection of jumps has the note drawn
 // later as its first note.
-export interface NoteNeighborhood {
+export interface NoteGraph {
   readonly focus: NoteRef
   readonly focusType: NoteType
   readonly focusTabKind?: string
-  readonly related: readonly NoteNeighbor[]
+  readonly related: readonly RelatedNote[]
   readonly connections: readonly Connection[]
 }
 
 // VaultNotes is what a plugin reads of the notes of the vault, and writes to them.
 export interface VaultNotes {
-  getNeighborhood(path: string): Promise<NoteNeighborhood>
+  listRelatedNotes(path: string, depth?: 1 | 2): Promise<NoteGraph>
   getHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   findNotes(query: string, limit?: number): Promise<readonly NoteRef[]>
   // A note made untitled at the root of the vault: its path, and empty where none was made.
@@ -147,6 +152,17 @@ export interface VaultRelations {
   createRelated(request: RelatedNoteRequest): Promise<Result<string, RelationError>>
   // The links written in other notes that point at a note.
   listBacklinks(path: string): Promise<readonly Backlink[]>
+  // The wikilinks of a text, each raw form once. vault is the id of the vault the text belongs to;
+  // a window that shows one vault may omit it.
+  resolveLinks(text: string, vault?: string): Promise<readonly TextLink[]>
+}
+
+// TextLink is one wikilink of a text.
+export interface TextLink {
+  readonly raw: string
+  readonly address: string
+  readonly text: string
+  readonly path: string
 }
 
 // FilePlacement is where a file opened from a tab is drawn: in the current pane, or in a split beside it.
@@ -211,8 +227,6 @@ export interface WorkspaceHost {
   readonly icons: WorkspaceIcons
   // The note the most recently active tool tab depends on; empty strings when none.
   getNoteInFocus(): NoteRef
-  // Sends a question to the agent and shows it to the user.
-  ask(text: string): void
 }
 
 export interface VaultEntry {

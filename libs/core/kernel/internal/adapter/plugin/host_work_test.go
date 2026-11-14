@@ -34,10 +34,10 @@ func newWorkingHost(t *testing.T) workingHost {
 	work := run.NewPluginWork(&run.Lock{}, tasks, nil)
 	services, _ := lendEndpoint(host, hostendpoint.Address)
 	services.SetPluginWork(work)
-	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
 		t.Fatal(err)
 	}
-	host.Activation.Release(workingPlugin)
+	host.Activation.Release(workingPlugin, endpointOf(host, workingPlugin).Token, getTestHolder())
 
 	work.ReportTask(workingPlugin, plugindomain.Task{ID: "scan.sample", Title: "Scanning"})
 	turn, err := work.EnqueueWork(t.Context(), workingPlugin, true, nil)

@@ -85,8 +85,6 @@ export const PALETTE_WORDS = {
   noneFound: 'No results found',
   noQuery: 'Search failed',
   nothingFound: (query: string) => `No results for “${query}”`,
-  notEmbedded: 'Semantic index not built yet',
-  wordsOnly: 'Text search only: no embedding model set',
   noteGroupTitle: 'Note',
   overFile: 'File',
   overWindow: 'General',

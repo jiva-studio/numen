@@ -1,13 +1,12 @@
 /**
  * The services a plugin is given by the window: the workspace, the notes and files of the vault,
- * the agent, and what the window owns: the buffers, the tasks, the commands, the vaults and the
+ * and what the window owns: the buffers, the tasks, the commands, the vaults and the
  * window itself.
  */
 import type { Ref } from 'vue'
-import type { BackgroundTaskHost, WindowControls } from '@numen/plugin-loader'
+import type { BackgroundTaskHost, CommandsHost, WindowControls } from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
 import type { FileOpeners, WindowTabs } from '@/entities/tab'
-import type { SettingsStore } from '@/entities/settings'
 import { createWindowBackgroundTasks } from '@/features/background-tasks'
 import { searchCore } from '@/features/command-palette'
 import { createBufferHost } from '@/features/file-conflict'
@@ -47,24 +46,20 @@ export function createPluginWorkspace(deps: PluginWorkspaceDeps) {
   })
 }
 
-/** What the notes, the links, the files and the agent a plugin is given are made from. */
+/** What the notes, the links and the files a plugin is given are made from. */
 export interface PluginAccessDeps {
   readonly making: VaultServices['editing']['making']
   readonly pluginNotes: PluginNotes
-  readonly window: VaultServices['window']
-  readonly rest: Pick<SettingsStore, 'read' | 'write'>
   readonly getTarget: () => CommandTarget
   readonly hostPort: Pick<HostPort, 'runInvocation'>
 }
 
-/** The notes, the links, the files and the agent a plugin is given. */
+/** The notes, the links and the files a plugin is given. */
 export function createPluginAccess(deps: PluginAccessDeps) {
   return createVaultAccess({
     search: searchCore,
     making: deps.making,
     pluginNotes: deps.pluginNotes,
-    window: deps.window,
-    settings: { rest: deps.rest },
     getTarget: deps.getTarget,
     runInvocation: deps.hostPort.runInvocation,
   })
@@ -74,12 +69,14 @@ export function createPluginAccess(deps: PluginAccessDeps) {
 export interface PluginBackgroundTasksDeps {
   readonly log: MessageLog
   readonly notices: NoticeQueue
-  readonly window: Pick<VaultServices['window'], 'health' | 'vault' | 'tasks'>
+  readonly window: Pick<VaultServices['window'], 'health' | 'vault' | 'tasks' | 'pluginHealth'>
   readonly appearance: { readonly state: { readonly lost: Readonly<Ref<string>> } }
-  readonly openSettings: (pluginId?: string) => void
+  readonly commands: Pick<CommandsHost, 'getIds' | 'run'>
+  readonly getCommandTitle: (command: string) => string
+  readonly getPluginName: (pluginId: string) => string
 }
 
-/** The tasks of the window and the failures of the plugins, as the background tasks a plugin lists. */
+/** The tasks of the window and the health of the plugins, as the background tasks a plugin lists. */
 export function createPluginBackgroundTasks(deps: PluginBackgroundTasksDeps): BackgroundTaskHost {
   const { window } = deps
   return createWindowBackgroundTasks({
@@ -92,8 +89,13 @@ export function createPluginBackgroundTasks(deps: PluginBackgroundTasksDeps): Ba
       tasks: window.tasks,
     },
     settings: { appearance: deps.appearance },
+    health: {
+      items: window.pluginHealth,
+      commands: deps.commands,
+      getCommandTitle: deps.getCommandTitle,
+      getPluginName: deps.getPluginName,
+    },
     writeMessage: deps.log.getWriter('command'),
-    openSettings: deps.openSettings,
   })
 }
 

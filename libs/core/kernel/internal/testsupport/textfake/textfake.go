@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/edit"
 	"io"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -45,6 +46,18 @@ func (r repo) GetVersions(_ context.Context, path string) ([]domain.TextVersion,
 	var out []domain.TextVersion
 	for _, one := range r.store.versions {
 		if one.Path == path {
+			out = append(out, one)
+		}
+	}
+	return out, nil
+}
+
+func (r repo) GetVersionsUnder(_ context.Context, path string) ([]domain.TextVersion, error) {
+	r.store.mu.Lock()
+	defer r.store.mu.Unlock()
+	var out []domain.TextVersion
+	for _, one := range r.store.versions {
+		if one.Path == path || strings.HasPrefix(one.Path, path+"/") {
 			out = append(out, one)
 		}
 	}

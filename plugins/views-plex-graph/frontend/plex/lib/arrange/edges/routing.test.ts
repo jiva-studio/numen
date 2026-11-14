@@ -1,9 +1,8 @@
 /** How a line is drawn between two boxes. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
-import { DEFAULT_OPTIONS } from '../options'
+import { DEFAULT_OPTIONS, resolveOptions } from '../options'
 import {
-  cutToFit,
   getLabelPositions,
   getLabelPlaces,
   getRise,
@@ -14,10 +13,10 @@ import {
   routeEdges,
   createRouting,
 } from './routing'
-import { neighborhoods } from '../../../fixtures/neighborhoods'
+import { graphs } from '../../../fixtures/graphs'
 import { ARROW_LENGTH, getArrow, getHeading, getLength, createPointOnCurve } from '../../edge'
 import type { PlacedNode } from '../../node'
-import type { EdgeArrow, PlexEdge, PlexNeighborhood, PlexNodeRelation } from '../../../../types'
+import type { EdgeArrow, PlexEdge, PlexGraph, PlexNodeRelation } from '../../../../types'
 
 /** The ink of the label font, as the window measures it. */
 const TYPE = { ascent: 9, descent: 3, xHeight: 6 }
@@ -32,7 +31,7 @@ const getFocus = (frame: { nodes: readonly PlacedNode[] }) => {
 }
 describe('edges', () => {
   it('leaves the focus by one gate and arrives at the top of each child', () => {
-    const layout = arrangePlex(neighborhoods.typical)
+    const layout = arrangePlex(graphs.typical)
     const focus = getFocus(layout)
     const children = getNodesByRelation(layout, 'child')
 
@@ -48,7 +47,7 @@ describe('edges', () => {
   })
 
   it('sets off and arrives along the axis, never across it', () => {
-    const layout = arrangePlex(neighborhoods.typical)
+    const layout = arrangePlex(graphs.typical)
     const outermost = getNodesByRelation(layout, 'child').reduce((a, b) =>
       Math.abs(a.x) > Math.abs(b.x) ? a : b,
     )
@@ -64,7 +63,7 @@ describe('edges', () => {
   })
 
   it('runs sideways for a relation that runs sideways', () => {
-    const layout = arrangePlex(neighborhoods.typical)
+    const layout = arrangePlex(graphs.typical)
     const focus = getFocus(layout)
     const jump = getNodesByRelation(layout, 'jump')[0]!
     const edge = layout.edges.find((e) => e.from === jump.id)!
@@ -76,7 +75,7 @@ describe('edges', () => {
   })
 
   it('starts and ends on a border, not in a center', () => {
-    const layout = arrangePlex(neighborhoods.typical)
+    const layout = arrangePlex(graphs.typical)
     const byId = new Map(layout.nodes.map((node) => [node.id, node]))
 
     for (const edge of layout.edges) {
@@ -100,7 +99,7 @@ describe('edges', () => {
   it('joins two nodes on the same line with no room between them by a bow, not through the boxes', () => {
     // The relation is vertical, there is no vertical space between them, and the
     // gap beside them is too small for a line to carry its words and heads.
-    const layout = arrangePlex(neighborhoods.diamond)
+    const layout = arrangePlex(graphs.diamond)
     const edge = layout.edges.find((e) => e.from === 'parent-0' && e.to === 'parent-1')
     expect(edge).toBeDefined()
     expect(edge!.labels?.[0]?.text).toBe('contains')
@@ -115,7 +114,7 @@ describe('edges', () => {
   })
 
   it('takes the heading from the curve, and not from the relation', () => {
-    const layout = arrangePlex(neighborhoods.typical)
+    const layout = arrangePlex(graphs.typical)
 
     // A sibling is below a parent, and its line runs left to right.
     for (const sibling of getNodesByRelation(layout, 'sibling')) {
@@ -132,7 +131,7 @@ describe('edges', () => {
 
   it('takes a curve running up the page the other way round', () => {
     // A parent is above the focus, and the line is written from it downwards.
-    const layout = arrangePlex(neighborhoods.typical)
+    const layout = arrangePlex(graphs.typical)
     const down = layout.edges.find((e) => e.to === 'focus' && e.from === 'parent-0')!
     expect(down.fromPoint.y).toBeLessThan(down.toPoint.y)
     expect(getHeading(down, MIDDLE)).toBe('along')
@@ -177,7 +176,7 @@ describe('edges', () => {
  * to it. The stored text is unchanged; the rendered text is the truncation.
  */
 describe('a title cut to the line it is set on', () => {
-  const sideways: PlexNeighborhood = {
+  const sideways: PlexGraph = {
     nodes: [
       { id: 'focus', title: 'Here', relation: 'focus' },
       { id: 'aside', title: 'Aside', relation: 'jump' },
@@ -319,11 +318,11 @@ describe('the arrowhead a line carries', () => {
         { id: 'third', title: 'Third', relation: 'child' },
       ],
       edges: [
-        { from: 'focus', to: 'wide', arrows: ['to'] },
+        { from: 'focus', to: 'wide' },
         { from: 'focus', to: 'other' },
-        { from: 'focus', to: 'third' },
+        { from: 'focus', to: 'third', arrows: ['to'] },
       ],
-    }).edges.find((edge) => edge.to === 'wide')!
+    }).edges.find((edge) => edge.to === 'third')!
 
     const covered = ARROW_LENGTH / getLength(aside)
     const precedingPoint = createPointOnCurve(aside)(1 - covered)
@@ -404,18 +403,6 @@ describe('the axis a relation is routed along', () => {
     })
     expect(turned.getAxis({ relation: 'child' })).toBe('horizontal')
     expect(turned.getAxis({ relation: 'jump' })).toBe('vertical')
-  })
-})
-
-describe('cutting a title to a room', () => {
-  const perLetter = (label: string) => [...label].length
-
-  it('keeps a label that fills the room exactly', () => {
-    expect(cutToFit('abc', 3, perLetter)).toBe('abc')
-  })
-
-  it('trims the end of the cut and leaves its start as written', () => {
-    expect(cutToFit('  ab cd', 4, perLetter)).toBe('  a…')
   })
 })
 
@@ -660,11 +647,11 @@ describe('the position of a label', () => {
     const measureLabel = (words: string) => 6 * [...words].length
     let measured = 0
 
-    for (const [name, neighborhood] of Object.entries(neighborhoods)) {
+    for (const [name, graph] of Object.entries(graphs)) {
       const frame = arrangePlex(
         {
-          ...neighborhood,
-          edges: neighborhood.edges.map((edge) => ({
+          ...graph,
+          edges: graph.edges.map((edge) => ({
             ...edge,
             labels: [{ text: 'guides' }, { text: 'shelters' }],
           })),
@@ -885,5 +872,120 @@ describe('a line between two boxes with no room between them', () => {
 
     expect(edge.fromPoint).toStrictEqual({ x: 0, y: 20 })
     expect(edge.toPoint).toStrictEqual({ x: 0, y: 30 })
+  })
+})
+
+describe('the curvature of a line', () => {
+  const offset: PlexGraph = {
+    nodes: [
+      { id: 'focus', title: 'Ports', relation: 'focus' },
+      { id: 'child-0', title: 'Domain', relation: 'child' },
+      { id: 'child-1', title: 'Adapter', relation: 'child' },
+      { id: 'child-2', title: 'Use case', relation: 'child' },
+    ],
+    edges: [
+      { from: 'focus', to: 'child-0' },
+      { from: 'focus', to: 'child-1' },
+      { from: 'focus', to: 'child-2' },
+    ],
+  }
+
+  const getSidewaysEdge = (curvature: number) => {
+    const frame = arrangePlex(offset, { options: { routing: { curvature } } })
+    const child = getNodesByRelation(frame, 'child').reduce((a, b) =>
+      Math.abs(a.x) > Math.abs(b.x) ? a : b,
+    )
+    expect(Math.abs(child.x)).toBeGreaterThan(0)
+    return frame.edges.find((edge) => edge.to === child.id)!
+  }
+
+  /** Whether a point lies on the segment between two others. */
+  const isOnSegment = (
+    point: { x: number; y: number },
+    start: { x: number; y: number },
+    end: { x: number; y: number },
+  ): boolean => {
+    const cross = (end.x - start.x) * (point.y - start.y) - (end.y - start.y) * (point.x - start.x)
+    const dot = (point.x - start.x) * (end.x - start.x) + (point.y - start.y) * (end.y - start.y)
+    const length = (end.x - start.x) ** 2 + (end.y - start.y) ** 2
+    return Math.abs(cross) < 1e-6 && dot >= -1e-6 && dot <= length + 1e-6
+  }
+
+  it('draws a straight line between two notes at curvature 0', () => {
+    const edge = getSidewaysEdge(0)
+
+    expect(isOnSegment(edge.control1, edge.fromPoint, edge.toPoint)).toBe(true)
+    expect(isOnSegment(edge.control2, edge.fromPoint, edge.toPoint)).toBe(true)
+  })
+
+  it('bends the same line at the default curvature', () => {
+    const edge = getSidewaysEdge(DEFAULT_OPTIONS.routing.curvature)
+
+    expect(isOnSegment(edge.control1, edge.fromPoint, edge.toPoint)).toBe(false)
+    expect(isOnSegment(edge.control2, edge.fromPoint, edge.toPoint)).toBe(false)
+  })
+
+  it('draws every line straight at curvature 0, whatever relation it runs along', () => {
+    const frame = arrangePlex(graphs.typical, { options: { routing: { curvature: 0 } } })
+    const bent = frame.edges
+      .filter(
+        (edge) =>
+          !isOnSegment(edge.control1, edge.fromPoint, edge.toPoint) ||
+          !isOnSegment(edge.control2, edge.fromPoint, edge.toPoint),
+      )
+      .map((edge) => `${edge.from} ${edge.to}`)
+
+    expect(bent).toStrictEqual([])
+  })
+
+  it('draws a line between two neighbors side by side straight at curvature 0', () => {
+    const box = (id: string, x: number): PlacedNode => ({
+      id,
+      title: id,
+      relation: 'child',
+      x,
+      y: 200,
+      width: 100,
+      height: 40,
+      order: 0,
+      opacity: 1,
+    })
+    const routing = createRouting(
+      resolveOptions({ routing: { curvature: 0 } }),
+      (words) => 6 * words.length,
+    )
+    const nodes = [box('a', 0), box('b', 116)]
+    const edge = routeEdge(
+      { from: 'a', to: 'b' },
+      new Map(nodes.map((node) => [node.id, node])),
+      routing,
+    )!
+
+    expect(isOnSegment(edge.control1, edge.fromPoint, edge.toPoint)).toBe(true)
+    expect(isOnSegment(edge.control2, edge.fromPoint, edge.toPoint)).toBe(true)
+  })
+
+  it('draws the line between two linked children straight at curvature 0', () => {
+    const linked: PlexGraph = {
+      nodes: [
+        { id: 'focus', title: 'Ports', relation: 'focus' },
+        { id: 'child-0', title: 'Domain', relation: 'child' },
+        { id: 'child-1', title: 'Adapter', relation: 'child' },
+      ],
+      edges: [
+        { from: 'focus', to: 'child-0' },
+        { from: 'focus', to: 'child-1' },
+        { from: 'child-0', to: 'child-1' },
+      ],
+    }
+    const frame = arrangePlex(linked, {
+      options: { routing: { curvature: 0 }, viewport: { width: 1200, height: 800 } },
+      measure: (node) => 40 + node.title.length * 7,
+    })
+    const edge = frame.edges.find((one) => one.from === 'child-0' && one.to === 'child-1')!
+
+    expect(edge).toBeDefined()
+    expect(isOnSegment(edge.control1, edge.fromPoint, edge.toPoint)).toBe(true)
+    expect(isOnSegment(edge.control2, edge.fromPoint, edge.toPoint)).toBe(true)
   })
 })

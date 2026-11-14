@@ -10,14 +10,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	_ "modernc.org/sqlite"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
 
 func makeIndex(t *testing.T) *container.Index {
@@ -34,10 +33,11 @@ func makeIndex(t *testing.T) *container.Index {
 
 // unit is a model of the name given that makes a vector of eight dimensions
 // for each text.
+// unit is a model whose name is its recipe: two units of different names make vectors that cannot be compared.
 type unit struct{ name string }
 
-func (u unit) GetModel() embedding.Model {
-	return embedding.Model{Name: u.name, Dimensions: 8, MaxTokens: 256, Pooling: "mean"}
+func (u unit) Describe() searchsource.Description {
+	return searchsource.Description{Name: u.name, Width: 8, SourceRecipe: u.name}
 }
 
 func (unit) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -93,7 +93,7 @@ func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	db := makeIndex(t)
 	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n"})
-	model := unit{"first"}
+	model := sourcefake.Wrap(unit{"first"})
 
 	made, err := container.Embed(container.NewConfig(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
@@ -107,8 +107,8 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	if made.Texts != nil {
 		t.Error("a configuration with no text versions reads text through some")
 	}
-	if made.Embedder != model {
-		t.Errorf("the vectors are made by %v, and the model given is %v", made.Embedder, model)
+	if made.Source != model {
+		t.Errorf("the vectors are made by %v, and the source given is %v", made.Source, model)
 	}
 }
 
@@ -130,9 +130,9 @@ func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 	}
 }
 
-func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model embeddingport.Embedder) int {
+func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model sourcefake.Embedder) int {
 	t.Helper()
-	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
+	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), v.ID, model.Describe().Recipe(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +148,7 @@ func unembeddedAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	})
 	first, second := unit{"first"}, unit{"second"}
 
-	whole, err := container.ReadWholeVault(target, t.Context(), db, first, v)
+	whole, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(first), v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,11 +163,11 @@ func unembeddedAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	}
 
 	target.ShouldRebuildIndex = shouldRebuild
-	if _, err := container.ReadWholeVault(target, t.Context(), db, second, v); err != nil {
+	if _, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(second), v); err != nil {
 		t.Fatal(err)
 	}
 	target.ShouldRebuildIndex = false
-	if _, err := container.ReadWholeVault(target, t.Context(), db, first, v); err != nil {
+	if _, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(first), v); err != nil {
 		t.Fatal(err)
 	}
 	return unembeddedTo(t, db, v, first)
@@ -191,7 +191,7 @@ func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
 	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
 	whole, err := container.ReadWholeVault(container.NewConfig(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
-	}), t.Context(), db, unit{"first"}, v)
+	}), t.Context(), db, sourcefake.Wrap(unit{"first"}), v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,7 +219,7 @@ func TestARebuildThatCannotForgetTheOtherVectorsIsRefused(t *testing.T) {
 		ShouldRebuildIndex: true,
 		Paths:              container.Paths{ServiceDir: ".numen"},
 	})
-	if _, err := container.ReadWholeVault(target, t.Context(), db, unit{"second"}, v); err == nil || !strings.Contains(err.Error(), "kept") {
+	if _, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(unit{"second"}), v); err == nil || !strings.Contains(err.Error(), "kept") {
 		t.Errorf("got %v", err)
 	}
 }

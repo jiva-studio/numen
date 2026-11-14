@@ -12,7 +12,7 @@ func TestLifecycleConfigure(t *testing.T) {
 
 	success, err := life.ApplyConfig(t.Context(), map[string]string{
 		"theme": "sepia",
-	}, nil)
+	})
 	if err != nil {
 		t.Fatalf("Configure failed: %v", err)
 	}

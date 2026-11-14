@@ -12,8 +12,8 @@ import Plex from './Plex.vue'
 import { build } from '../fixtures/build'
 import type { PlexRelation } from '../../types'
 
-const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
-const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.relation === 'child')!.title
+const GRAPH = build('A node', { parent: 1, child: 2, jump: 1 })
+const A_CHILD = GRAPH.nodes.find((n) => n.relation === 'child')!.title
 
 function stubMatrix(element: SVGSVGElement) {
   const screen = {
@@ -37,7 +37,7 @@ type PlexProps = InstanceType<typeof Plex>['$props']
 
 const mountPlex = (props: Partial<PlexProps> = {}) => {
   const plex = mount(Plex, {
-    props: { neighborhood: NEIGHBOURHOOD, duration: 0, ...props },
+    props: { graph: GRAPH, duration: 0, ...props },
     attachTo: document.body,
   })
   const svg = plex.find('svg').element as SVGSVGElement
@@ -241,5 +241,20 @@ describe('while a gesture is under way', () => {
 
     expect(plex.find('.plex__node--ghost').exists()).toBe(false)
     expect(plex.findAll('.plex__node--target')).toHaveLength(1)
+  })
+})
+
+describe('releasing towards the left when the focus has references', () => {
+  it('asks for a jump, never a reference', async () => {
+    const { plex, svg } = mountPlex({
+      graph: build('A node', { parent: 1, child: 2, jump: 1, reference: 2 }),
+    })
+    await takeHold(plex, 'A node')
+
+    svg.dispatchEvent(pointer('pointermove', 600 - 500, 400))
+    svg.dispatchEvent(pointer('pointerup', 600 - 500, 400))
+    await plex.vm.$nextTick()
+
+    expect(plex.emitted('create')).toStrictEqual([['focus', 'jump']])
   })
 })

@@ -3,8 +3,6 @@ package pdf
 import (
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 )
 
 func TestOutlineWithInvalidStarts(t *testing.T) {
@@ -12,7 +10,7 @@ func TestOutlineWithInvalidStarts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, doc)
+	defer closeAndCheck(t, doc)
 
 	parts := doc.outline([]int{0})
 	if len(parts) >= 3 {

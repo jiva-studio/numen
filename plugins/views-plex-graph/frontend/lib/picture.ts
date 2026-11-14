@@ -1,40 +1,42 @@
 /**
- * A neighborhood of a vault, as something the plex can draw.
+ * The notes related to a note, as something the plex can draw.
  *
  * This is the only file that depends on both sides. The plex receives nodes with
  * a relation and edges between them and has no concept of a note; the schema
  * has no concept of drawing.
  */
-import type { Connection, ConnectionSide } from '@numen/plugin-sdk'
+import type { Connection, ConnectionSide, LinkDirection } from '@numen/plugin-sdk'
 import type {
-  Neighborhood,
+  NoteGraph,
   NoteHeading,
   NoteType,
+  RelatedNote,
   EdgeArrow,
   EdgeLabel,
   PlexEdge,
-  PlexNeighborhood,
+  PlexGraph,
   PlexNode,
   PlexHeading,
+  ReferenceMode,
 } from '../types'
 
 /**
  * plex draws a note of a plugin-declared type with that type's icon.
  */
-export function getNoteTypes(neighborhood: Neighborhood): ReadonlyMap<string, NoteType> {
+export function getNoteTypes(noteGraph: NoteGraph): ReadonlyMap<string, NoteType> {
   const found = new Map<string, NoteType>()
-  const focus = neighborhood.focus.path
-  if (focus) found.set(focus, neighborhood.focusType)
-  for (const related of neighborhood.related) found.set(related.path, related.type)
+  const focus = noteGraph.focus.path
+  if (focus) found.set(focus, noteGraph.focusType)
+  for (const related of noteGraph.related) found.set(related.path, related.type)
   return found
 }
 
-/** The tab kind the core chose for each note of the neighborhood, where it reports one. */
-export function getTabKinds(neighborhood: Neighborhood): ReadonlyMap<string, string> {
+/** The tab kind the core chose for each note of the note graph, where it reports one. */
+export function getTabKinds(noteGraph: NoteGraph): ReadonlyMap<string, string> {
   const found = new Map<string, string>()
-  const { focus, focusTabKind } = neighborhood
+  const { focus, focusTabKind } = noteGraph
   if (focus.path && focusTabKind) found.set(focus.path, focusTabKind)
-  for (const related of neighborhood.related) {
+  for (const related of noteGraph.related) {
     if (related.tabKind) found.set(related.path, related.tabKind)
   }
   return found
@@ -78,33 +80,65 @@ function createEdge(connection: Connection, token: (path: string) => string): Pl
   return arrows.length > 0 ? { ...withLabels, arrows } : withLabels
 }
 
+export function isReferenceAdmitted(reference: RelatedNote, mode: ReferenceMode): boolean {
+  if (mode === 'off') return false
+  if (mode === 'both') return true
+  return reference.direction === mode || reference.direction === 'both'
+}
+
+function createReferenceEdge(
+  from: string,
+  to: string,
+  direction: LinkDirection | undefined,
+): PlexEdge {
+  const arrows: Record<LinkDirection, readonly EdgeArrow[]> = {
+    outgoing: ['to'],
+    incoming: ['from'],
+    both: ['from', 'to'],
+  }
+  return direction ? { from, to, arrows: arrows[direction] } : { from, to }
+}
+
 /**
  * A node is drawn under the token its note holds, as is each end of an edge; the caller supplies a note's token.
- * Every line is drawn from one connection of the neighborhood, whichever notes it joins.
+ * Every line is drawn from one connection of the note graph, whichever notes it joins.
  * An arrowhead is drawn at each end whose record carries a marker, and nowhere else.
  * Labels are set by how many records there are, not by the arrowheads.
+ * A reference is drawn when the mode shows its direction (a mutual one in each mode that shows a direction, one with no direction in "both" only),
+ * as a line from the focus with its head at the end the link points to, and no label.
  */
-export function convertNeighborhood(
-  neighborhood: Neighborhood,
+export function convertNoteGraph(
+  noteGraph: NoteGraph,
   token: (path: string) => string,
-): PlexNeighborhood {
+  references: ReferenceMode = 'both',
+): PlexGraph {
   const focus: PlexNode = {
-    id: token(neighborhood.focus.path),
-    title: neighborhood.focus.title,
+    id: token(noteGraph.focus.path),
+    title: noteGraph.focus.title,
     relation: 'focus',
   }
 
   const nodes: PlexNode[] = [focus]
   /** The path of every note this picture draws, the note in focus included. */
-  const visiblePaths = new Set<string>([neighborhood.focus.path])
-  for (const related of neighborhood.related) {
+  const visiblePaths = new Set<string>([noteGraph.focus.path])
+  const shownReferences: RelatedNote[] = []
+  for (const related of noteGraph.related) {
+    if (related.relatedTo) continue
+    if (related.relation === 'reference') {
+      if (!isReferenceAdmitted(related, references)) continue
+      shownReferences.push(related)
+    }
     visiblePaths.add(related.path)
     nodes.push({ id: token(related.path), title: related.title, relation: related.relation })
   }
 
-  const edges = neighborhood.connections
+  const edges: PlexEdge[] = noteGraph.connections
     .filter(({ first, second }) => visiblePaths.has(first) && visiblePaths.has(second))
     .map((connection) => createEdge(connection, token))
+
+  for (const reference of shownReferences) {
+    edges.push(createReferenceEdge(focus.id, token(reference.path), reference.direction))
+  }
 
   return { nodes, edges }
 }
@@ -135,14 +169,11 @@ const areConnectionsEqual = (one: Connection, other: Connection): boolean =>
   areSidesEqual(one.secondSide, other.secondSide)
 
 /**
- * Whether two neighborhoods draw one graph: the same note in focus, the same joined notes in arrival order,
+ * Whether two note graphs draw one graph: the same note in focus, the same joined notes in arrival order,
  * and the same lines with the label and arrowhead of each record.
- * A vault that changed elsewhere returns a neighborhood equal to the one on screen, and an equal graph is left unchanged.
+ * A vault that changed elsewhere returns a note graph equal to the one on screen, and an equal graph is left unchanged.
  */
-export function areNeighborhoodsEqual(
-  one: Neighborhood | null,
-  other: Neighborhood | null,
-): boolean {
+export function areNoteGraphsEqual(one: NoteGraph | null, other: NoteGraph | null): boolean {
   if (one === null || other === null) return one === other
   if (one.focus.path !== other.focus.path) return false
   if (one.focus.title !== other.focus.title) return false
@@ -157,7 +188,9 @@ export function areNeighborhoodsEqual(
         related.path === comparison.path &&
         related.title === comparison.title &&
         related.type === comparison.type &&
-        related.relation === comparison.relation
+        related.relation === comparison.relation &&
+        related.direction === comparison.direction &&
+        related.relatedTo === comparison.relatedTo
       )
     }) &&
     one.connections.every((connection, index) =>

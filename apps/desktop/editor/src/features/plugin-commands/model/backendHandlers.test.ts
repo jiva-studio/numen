@@ -4,6 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createBackendHandlers } from './backendHandlers'
+import { formatError } from '@/shared/api/errors'
 
 const TARGET = { path: 'talks/a.mp3', title: 'a', isFolder: false, others: [], tab: '' }
 
@@ -25,10 +26,10 @@ describe('createBackendHandlers', () => {
     const { deps, handlers } = createWith({ ok: true, value: { message: '', openedPath: '' } })
 
     expect(
-      await handlers.listBackendHandlerItems('md.ears', 'app:link.downloadMedia', TARGET),
+      await handlers.listBackendHandlerItems('md.ears', 'app:file.createText', TARGET),
     ).toStrictEqual([{ id: 'v1', title: 'Transcript' }])
     expect(deps.list).toHaveBeenCalledWith(
-      { pluginId: 'md.ears', id: 'app:link.downloadMedia' },
+      { pluginId: 'md.ears', id: 'app:file.createText' },
       'talks/a.mp3',
     )
   })
@@ -64,7 +65,7 @@ describe('createBackendHandlers', () => {
         command: 'app:file.createText',
         target: TARGET,
       }),
-    ).rejects.toThrow('no audio')
+    ).rejects.toSatisfy((error) => formatError(error) === 'no audio')
 
     expect(deps.writeMessage).not.toHaveBeenCalled()
     expect(deps.openFile).not.toHaveBeenCalled()

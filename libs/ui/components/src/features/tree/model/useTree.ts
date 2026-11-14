@@ -10,7 +10,7 @@ import { useDrawnRows } from './rows'
 import { useRowSelection } from './selection'
 
 /** What a tree reads from its props, read again on every use. */
-export interface TreeInput {
+interface TreeInput {
   readonly rows: readonly Row[]
   readonly open: readonly RowId[]
   readonly selected: readonly RowId[]

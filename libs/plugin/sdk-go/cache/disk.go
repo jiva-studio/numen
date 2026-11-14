@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/atomicfile"
 )
@@ -86,42 +87,47 @@ func getGrantedDir(name string) (string, error) {
 	return dir, nil
 }
 
-func (c *Cache[V]) readDiskEntry(key string) (V, bool) {
-	var zero V
+// diskEntry is the stored form of an entry; its time keeps the TTL running across restarts.
+type diskEntry[V any] struct {
+	Value     V         `json:"value"`
+	FetchedAt time.Time `json:"fetchedAt"`
+}
+
+func (c *Cache[V]) readDiskEntry(key string) (entry[V], bool) {
 	path, err := c.cachePath()
 	// gomutants:disable-next-line reason="without the return the empty path makes ReadFile fail and take the same return a few lines below"
 	if err != nil {
-		return zero, false
+		return entry[V]{}, false
 	}
 	c.diskMu.Lock()
 	data, err := os.ReadFile(path)
 	c.diskMu.Unlock()
 	// gomutants:disable-next-line reason="without the return the empty data makes the decode below fail and take the same return"
 	if err != nil {
-		return zero, false
+		return entry[V]{}, false
 	}
-	var all map[string]V
+	var all map[string]diskEntry[V]
 	// gomutants:disable-next-line reason="without the return the lookup below reads a map that is empty when the input is not valid JSON and gives the same zero and false"
 	if json.Unmarshal(data, &all) != nil {
-		return zero, false
+		return entry[V]{}, false
 	}
-	val, found := all[key]
-	if !found || !isPersistable(val) {
-		return zero, false
+	stored, found := all[key]
+	if !found || !isPersistable(stored.Value) {
+		return entry[V]{}, false
 	}
-	return val, true
+	return entry[V]{value: stored.Value, fetchedAt: stored.FetchedAt}, true
 }
 
-func (c *Cache[V]) writeDiskEntry(key string, val V) {
-	if !isPersistable(val) {
+func (c *Cache[V]) writeDiskEntry(key string, one entry[V]) {
+	if !isPersistable(one.value) {
 		return
 	}
-	if err := c.storeDiskEntry(key, val); err != nil {
+	if err := c.storeDiskEntry(key, one); err != nil {
 		c.reportError(fmt.Errorf("write cache entry %q: %w", key, err))
 	}
 }
 
-func (c *Cache[V]) storeDiskEntry(key string, val V) error {
+func (c *Cache[V]) storeDiskEntry(key string, one entry[V]) error {
 	path, err := c.cachePath()
 	if err != nil {
 		return err
@@ -129,14 +135,14 @@ func (c *Cache[V]) storeDiskEntry(key string, val V) error {
 	c.diskMu.Lock()
 	defer c.diskMu.Unlock()
 
-	all := make(map[string]V)
+	all := make(map[string]diskEntry[V])
 	if existing, readErr := os.ReadFile(path); readErr == nil {
 		if unmarshalErr := json.Unmarshal(existing, &all); unmarshalErr != nil {
 			c.reportError(fmt.Errorf("read cache file %s: %w", path, unmarshalErr))
-			all = make(map[string]V)
+			all = make(map[string]diskEntry[V])
 		}
 	}
-	all[key] = val
+	all[key] = diskEntry[V]{Value: one.value, FetchedAt: one.fetchedAt}
 	data, err := json.Marshal(all)
 	// gomutants:disable-next-line reason="json.Marshal of a map keyed by strings fails only for a value type that JSON cannot encode, which no test stores"
 	if err != nil {

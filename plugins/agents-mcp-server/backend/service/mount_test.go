@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -34,12 +34,12 @@ func TestMountAndConfigure(t *testing.T) {
 
 	host := &standInHost{}
 	mux := http.NewServeMux()
-	mux.Handle(tools.NewServiceHandler(host))
+	mux.Handle(toolstest.NewServiceHandler(host))
 	served := httptest.NewServer(mux)
 	t.Cleanup(served.Close)
 	hostPort := getServerPort(t, served.URL)
 
-	s := server.New(server.WithPort(0))
+	s := server.New()
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount failed: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestMountAndConfigure(t *testing.T) {
 		"token":              "configured-token",
 		"NUMEN_HOST_PORT":    hostPort,
 		"NUMEN_PLUGIN_TOKEN": "plugin-token",
-	}, nil)
+	})
 	if err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestMountAndConfigure(t *testing.T) {
 func TestMountFromEnv(t *testing.T) {
 	host := &standInHost{}
 	mux := http.NewServeMux()
-	mux.Handle(tools.NewServiceHandler(host))
+	mux.Handle(toolstest.NewServiceHandler(host))
 	served := httptest.NewServer(mux)
 	t.Cleanup(served.Close)
 	hostPort := getServerPort(t, served.URL)
@@ -76,7 +76,7 @@ func TestMountFromEnv(t *testing.T) {
 	t.Setenv("NUMEN_HOST_PORT", hostPort)
 	t.Setenv("NUMEN_PLUGIN_TOKEN", "plugin-token")
 
-	s := server.New(server.WithPort(0))
+	s := server.New()
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount with env host failed: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestMountFromEnv(t *testing.T) {
 	// ApplyConfig with an unreachable host port keeps the initial client created from env.
 	_, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{
 		"NUMEN_HOST_PORT": "1",
-	}, nil)
+	})
 	if err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
@@ -187,7 +187,7 @@ func TestStreamableHTTPEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("mcpClient.Connect over Streamable HTTP failed: %v", err)
 	}
-	defer cleanup.Close(t, session)
+	defer closeAndCheck(t, session)
 
 	verifyStreamableToolCall(ctx, t, session)
 }

@@ -24,7 +24,11 @@ interface HandlerParts {
   readonly registry: HostRegistry
 }
 
-function listMatchingHandlers({ deps, registry }: HandlerParts, command: string, note: CommandNote) {
+function listMatchingHandlers(
+  { deps, registry }: HandlerParts,
+  command: string,
+  note: CommandNote,
+) {
   return (deps.getHandlerDeclarations?.() ?? [])
     .filter((one) => one.command === command && !registry.disposed.has(one.pluginId))
     .filter((one) => (one.hasItems ? note.path !== '' : isCommandAvailable(one, note, deps)))
@@ -34,12 +38,19 @@ function listMatchingHandlers({ deps, registry }: HandlerParts, command: string,
 const findEntry = ({ registry }: HandlerParts, handler: HandlerDeclaration) =>
   registry.handlers.value.get(formatCommandId(handler.pluginId, handler.command))
 
+async function findStartedEntry(parts: HandlerParts, handler: HandlerDeclaration) {
+  const entry = findEntry(parts, handler)
+  if (entry || parts.deps.hasPluginFrontend?.(handler.pluginId) === false) return entry
+  await parts.deps.startPlugin?.(handler.pluginId)
+  return findEntry(parts, handler)
+}
+
 async function listOwnItems(
   parts: HandlerParts,
   handler: HandlerDeclaration,
   note: CommandNote,
 ): Promise<HandlerItems> {
-  const entry = findEntry(parts, handler)
+  const entry = await findStartedEntry(parts, handler)
   try {
     if (entry?.reg.listItems) return await entry.reg.listItems(note)
     if (!entry && handler.hasItems) {
@@ -65,11 +76,7 @@ async function runHandler(
   run: SharedRun,
 ): Promise<void> {
   const { deps } = parts
-  let entry = findEntry(parts, handler)
-  if (!entry && deps.hasPluginFrontend?.(handler.pluginId) !== false) {
-    await deps.waitForPlugin?.(handler.pluginId)
-    entry = findEntry(parts, handler)
-  }
+  const entry = await findStartedEntry(parts, handler)
   if (entry) {
     await runCommand(deps, entry, run)
     return

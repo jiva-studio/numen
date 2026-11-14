@@ -78,7 +78,7 @@ describe('the manifest settings', () => {
       palette: true,
     })
     expect(settings.find((one) => one.key === HEADING_LIMIT)).toMatchObject({
-      type: 'number',
+      type: 'range',
       default: DEFAULT_HEADING_LIMIT,
       min: HEADING_LIMIT_MIN,
       max: HEADING_LIMIT_MAX,

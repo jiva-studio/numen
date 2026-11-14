@@ -174,13 +174,38 @@ type SearchIndex interface {
 	GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error)
 }
 
-// PassageSearch searches the text of a vault. It needs the index:read permission.
-type PassageSearch interface {
-	// SearchPassages returns the passages of the vault matching the query, best first, from the index of
-	// every source and every text version: by keywords, and by embedding when the installation has
-	// an embedding model. An installation with no model searches by keywords only, so the call
-	// does not return ErrNoModel. It returns at most MaxSearchedPassagesPerSource passages of one source.
-	SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error)
+// PlaceSearch finds the chunks of the place of a search source nearest a vector. It needs the index:read
+// permission. A search source answers a query of the core with it, on the client With the vault of the
+// place; a recipe other than the one of the source in use returns ErrRecipeMismatch.
+type PlaceSearch interface {
+	// FindNearestPassages returns the small chunks nearest the vector under the recipe, nearest first,
+	// at or above the floor of the query, else the effective floor of the vault.
+	FindNearestPassages(ctx context.Context, query NearestQuery) ([]NearestMatch, error)
+}
+
+// NearestQuery is a search of the place of a search source by a vector.
+//
+//numen:api
+type NearestQuery struct {
+	// Recipe is the recipe of the place.
+	Recipe string
+	Vector []float32
+	// Limit is the most chunks to return.
+	Limit int
+	// Kinds are the kinds of source to search, KindNote or KindFile. Empty means every kind.
+	Kinds []domain.SourceKind
+	// PathPrefix limits the search to the sources whose path starts with it, relative to the vault.
+	PathPrefix string
+	// Floor is the cosine similarity a chunk reaches at least; zero applies the floor of the vault.
+	Floor float64
+}
+
+// NearestMatch is a chunk of the place and its cosine similarity with the vector.
+//
+//numen:api
+type NearestMatch struct {
+	ChunkID    string
+	Similarity float64
 }
 
 const (
@@ -243,18 +268,11 @@ type SearchPolicy interface {
 	SetSearchFloor(ctx context.Context, recipe string, floor float64) error
 }
 
-// GetVectorsReadyEvent is the event the host emits to plugins when every chunk of the vault of the
-// identity carries a vector under the model in use, but the chunks of a source whose indexing a person
-// canceled, which stay without one until the source changes.
-func GetVectorsReadyEvent(id domain.VaultID) string {
-	return protocol.GetVectorsReadyEvent(string(id))
-}
-
-// ReadVectorsReadyEvent returns the identity of the vault that an event of the host names as having
-// every chunk embedded, and false for any other event. The host emits the event after each indexing
-// pass that leaves no vector pending, so it repeats: a handler reads the state again and acts only on
+// ReadSearchSourceReadyEvent returns the identity of the vault that an event of the host names as indexed by
+// the search source, and false for any other event. The host emits the event after each indexing
+// pass that leaves no chunk pending, so it repeats: a handler reads the state again and acts only on
 // what is not done.
-func ReadVectorsReadyEvent(event string) (domain.VaultID, bool) {
-	vaultID, found := protocol.ReadVectorsReadyEvent(event)
+func ReadSearchSourceReadyEvent(event string) (domain.VaultID, bool) {
+	vaultID, found := protocol.ReadSearchSourceReadyEvent(event)
 	return domain.VaultID(vaultID), found
 }

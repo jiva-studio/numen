@@ -1,0 +1,55 @@
+/** The page "Connections" of the Settings tab: the list of connections, the dialog that adds or edits one, the question before a delete. */
+import { expect, type Locator, type Page } from 'playwright/test'
+import { escapeRegExp } from '../rules.js'
+import { SettingsPage } from './SettingsPage.js'
+
+export class ConnectionsPage {
+  constructor(private readonly page: Page) {}
+
+  /** The entry of the list of pages that opens the page. */
+  getEntry(panel: Locator): Locator {
+    return new SettingsPage(this.page).getPageButton(panel, /^Connections$/)
+  }
+
+  getAddButton(panel: Locator): Locator {
+    return panel.getByRole('button', { name: 'Add connection' })
+  }
+
+  getDialog(): Locator {
+    return this.page.getByRole('dialog')
+  }
+
+  /** A connection of the list: a button that opens it for editing, or an entry that opens nothing when it is detected. */
+  getRow(panel: Locator, name: string): Locator {
+    const named = { name: new RegExp(`^${escapeRegExp(name)}$`) }
+    const list = panel.getByRole('list')
+    return list.getByRole('button', named).or(list.getByRole('listitem', named))
+  }
+
+  /** Chooses a type in the open dialog; the list of the types is a searchable list. */
+  async chooseType(type: string): Promise<void> {
+    await this.getDialog().locator('.connection-dialog__field button').first().click()
+    await this.page.getByRole('option', { name: new RegExp(`^${escapeRegExp(type)}`) }).click()
+  }
+
+  async fill(label: string, value: string): Promise<void> {
+    await this.getDialog().getByLabel(label, { exact: true }).fill(value)
+  }
+
+  async save(): Promise<void> {
+    await this.getDialog().getByRole('button', { name: 'Save' }).click()
+    await expect(this.getDialog()).toHaveCount(0)
+  }
+
+  /** Opens the dialog that edits the connection. */
+  async openEdit(panel: Locator, name: string): Promise<void> {
+    await this.getRow(panel, name).click()
+    await expect(this.getDialog()).toBeVisible()
+  }
+
+  /** Opens the dialog of the connection and chooses its Delete, which asks before it deletes. */
+  async chooseDelete(panel: Locator, name: string): Promise<void> {
+    await this.openEdit(panel, name)
+    await this.getDialog().getByRole('button', { name: 'Delete', exact: true }).click()
+  }
+}

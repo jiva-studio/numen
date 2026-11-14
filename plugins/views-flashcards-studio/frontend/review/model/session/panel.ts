@@ -1,17 +1,17 @@
 import { computed, shallowRef } from 'vue'
-import type { AgentPort, ConversationContext } from '@numen/plugin-sdk'
+import type { ConnectionHost, ConversationContext } from '@numen/plugin-sdk'
 
 import { WORDS as words } from '../../lib/session/agentWords'
+import { getCardToolContext } from '../../api/session/agent'
 import type { ReviewCard } from '../../lib/card/cards'
 
 /** What the panel requires from the host window. */
 export interface AgentPanelDeps {
-  readonly agent: (card: ReviewCard) => AgentPort
+  readonly connections: ConnectionHost
   readonly card: () => ReviewCard | null
-  readonly unreachable: () => string
+  readonly vault: () => string
   readonly open: () => boolean
   readonly showPanel: (open: boolean) => void
-  readonly showNotice: (message: string) => void
 }
 
 /**
@@ -34,10 +34,8 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   /**
    * The conversation about one card, created once and ended with the card.
    *
-   * Only the user's text is sent. The agent requests the card details itself:
-   * the deck, the card id and the template name come from a vault that may have
-   * been synced from anywhere, and a name written into the question is read as
-   * an instruction.
+   * Only the user's text is sent. The card goes to the tools as their context, and the vault the
+   * tools work on is named, since the window has no vault of its own.
    */
   const startConversation = (targetCard: ReviewCard) => {
     const currentCard = current.value?.card
@@ -50,23 +48,18 @@ export function useAgentPanel(deps: AgentPanelDeps) {
     current.value = {
       card: targetCard,
       context: {
-        agent: deps.agent(targetCard),
-        focus: targetCard.address.deck,
+        connections: deps.connections,
+        toolContext: getCardToolContext(targetCard),
+        vault: deps.vault(),
         placeholder: words.ask,
-        getUnreachable: deps.unreachable,
       },
     }
   }
 
-  /**
-   * Opens the panel on the current card. When no agent is reachable the panel
-   * shows a notice, because a control that does nothing is pressed repeatedly.
-   */
+  /** Opens the panel on the current card. */
   const openPanel = () => {
     const card = deps.card()
     if (!card) return
-    const why = deps.unreachable()
-    if (why) return deps.showNotice(why)
     startConversation(card)
     deps.showPanel(true)
   }

@@ -9,10 +9,10 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
-import { EXPANSION_DURATION, type WideBox } from '../../model/sizing/expansion'
+import { EXPANSION_DURATION, type ExpandedBox } from '../../model/sizing/expansion'
 import { getNodeHeadings } from '../../lib/inside'
 import { stubClock } from '../../../fixtures/clock'
-import type { GestureRole, PlacedNode } from '../../lib/node'
+import { HANDLE_RADIUS, type GestureRole, type PlacedNode } from '../../lib/node'
 import type { PlexHeading, PlexNodeRelation } from '../../../types'
 
 const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
@@ -73,6 +73,27 @@ describe('the node in focus', () => {
     expect(node.attributes('tabindex')).toBe('0')
     expect(node.attributes('aria-hidden')).toBeUndefined()
     expect(node.attributes('role')).toBe('img')
+  })
+})
+
+describe('the title of the node in focus', () => {
+  const mountTitle = (props: Record<string, unknown>, overrides: Partial<PlacedNode> = {}) => {
+    const node = mount(PlexNodeView, {
+      props: { node: createNode({ width: 200, height: 40, ...overrides }), ...props },
+    })
+    return { title: node.get('foreignObject') }
+  }
+
+  it('keeps the box its text is laid out in the same size through the move to focus, so a title that fits is never cut', () => {
+    // The node grows from a note at rest to the focus; its width grows with its height.
+    const laidOut = [0, 0.25, 0.5, 0.75, 1].map((t) => {
+      const { title } = mountTitle(
+        { restHeight: 40 },
+        { relation: 'focus', width: 160 * (1 + 0.5 * t), height: 40 * (1 + 0.5 * t) },
+      )
+      return Number(title.attributes('width'))
+    })
+    for (const width of laidOut) expect(width).toBeCloseTo(160)
   })
 })
 
@@ -218,11 +239,45 @@ describe('the handle', () => {
     await node.get('.plex__handle').trigger('dblclick')
     expect(node.emitted('show')).toBeUndefined()
   })
+})
 
-  it('positions at trailing edge vertical center', async () => {
-    const handle = (await hover(mountNode({ width: 144 }))).get('.plex__handle-at')
-    expect(handle.attributes('transform')).toBe('translate(72 0)')
+describe('the handle against the box it is drawn at', () => {
+  const getRightEdge = (node: ReturnType<typeof mount>, selector: string) => {
+    const box = node.get(selector)
+    return Number(box.attributes('x')) + Number(box.attributes('width'))
+  }
+  const getCentre = (node: ReturnType<typeof mount>) =>
+    Number(
+      /translate\((\S+) /.exec(node.get('.plex__handle-at').attributes('transform') ?? '')?.[1],
+    )
+
+  it.each([100, 144, 230])('sits on the right edge of a pill %i wide', async (width) => {
+    const node = await hover(mount(PlexNodeView, { props: { node: createNode({ width }) } }))
+
+    expect(getCentre(node)).toBe(getRightEdge(node, '.plex__box'))
   })
+
+  it.each([100, 144, 230])('sits at the vertical middle of a pill %i wide', async (width) => {
+    const node = await hover(mount(PlexNodeView, { props: { node: createNode({ width }) } }))
+    const box = node.get('.plex__box')
+    const middle = Number(box.attributes('y')) + Number(box.attributes('height')) / 2
+    const [, y] =
+      /translate\(\S+ (\S+)\)/.exec(node.get('.plex__handle-at').attributes('transform') ?? '') ??
+      []
+
+    expect(Number(y)).toBe(middle)
+  })
+
+  it.each([100, 144, 230])(
+    'starts at the right edge of a box %i wide with no pill',
+    async (width) => {
+      const node = await hover(
+        mount(PlexNodeView, { props: { node: createNode({ width }), showPills: false } }),
+      )
+
+      expect(getCentre(node) - HANDLE_RADIUS).toBe(getRightEdge(node, '.plex__area'))
+    },
+  )
 })
 
 describe('the icon', () => {
@@ -281,52 +336,34 @@ describe('a node that is not there yet', () => {
 })
 
 describe('what a node is drawn as', () => {
-  it('carries its own relation, as a class and as a hue', () => {
-    for (const relation of ['focus', 'parent', 'child', 'jump', 'sibling'] as PlexNodeRelation[]) {
-      const node = mountNode({ relation })
-      expect(node.classes()).toContain(`plex__node--${relation}`)
-      expect(node.attributes('style')).toContain(`var(--numen-relation-${relation})`)
-    }
-  })
-
-  it('carries what it is to the gesture as a class of its own', () => {
-    expect(mountNode().classes()).toContain('plex__node--open')
-    const target = mount(PlexNodeView, { props: { node: createNode(), gestureRole: 'target' } })
-    expect(target.classes()).toContain('plex__node--target')
-  })
-
-  it('is a box the size the arrangement requested for, in pixels', () => {
-    const rect = mountNode({ width: 200, height: 50 }).get('rect')
-    expect(Number(rect.attributes('width'))).toBe(200)
-    expect(Number(rect.attributes('height'))).toBe(50)
-  })
-
   it('has a name for a screen reader even with no title at all', () => {
     expect(mountNode({ title: '' }).attributes('aria-label')).toBe('Untitled, child')
   })
 })
 
 describe('a box with more of its title to show', () => {
-  const WIDE = { width: 400, offset: 0 }
+  const EXPANDED_BOX = { width: 400, offset: 0 }
   const WAIT = 500
 
   afterEach(() => {
     vi.useRealTimers()
   })
 
-  const mountWideNode = (
-    wide: WideBox | null = WIDE,
+  const mountExpandedNode = (
+    expanded: ExpandedBox | null = EXPANDED_BOX,
     overrides: Partial<PlacedNode> = {},
     gestureRole: GestureRole = 'open',
+    showPills = true,
   ) => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
         node: createNode(overrides),
-        wide,
+        expanded,
         behavior: { ...DEFAULT_BEHAVIOR, expansionDelay: WAIT, clock: world.clock },
         gestureRole,
+        showPills,
       },
     })
     return { node, world }
@@ -342,7 +379,7 @@ describe('a box with more of its title to show', () => {
   }
 
   /** The pointer enters, rests, and the opening is drawn to its end. */
-  const rest = async (view: ReturnType<typeof mountWideNode>) => {
+  const rest = async (view: ReturnType<typeof mountExpandedNode>) => {
     await view.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
     view.world.run()
@@ -351,14 +388,14 @@ describe('a box with more of its title to show', () => {
   }
 
   it('is drawn as it was placed until the hand has been on it a while', async () => {
-    const mounted = mountWideNode()
+    const mounted = mountExpandedNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT - 1)
     expect(getBox(mounted.node)).toStrictEqual({ width: 144, x: -72 })
   })
 
   it('opens across several frames and not in one', async () => {
-    const mounted = mountWideNode()
+    const mounted = mountExpandedNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
 
@@ -371,26 +408,33 @@ describe('a box with more of its title to show', () => {
   })
 
   it('widens at its current position once the hand has rested there', async () => {
-    const node = await rest(mountWideNode())
+    const node = await rest(mountExpandedNode())
     expect(getBox(node)).toStrictEqual({ width: 400, x: -200 })
   })
 
   it('carries its title and its handle out to the widened edge', async () => {
-    const node = await rest(mountWideNode())
+    const node = await rest(mountExpandedNode())
     const title = node.get('foreignObject')
     expect(Number(title.attributes('width'))).toBe(400)
     expect(Number(title.attributes('x'))).toBe(-200)
     expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(200 0)')
   })
 
+  it('carries the handle of a node without a pill out beyond the widened edge', async () => {
+    const node = await rest(mountExpandedNode(EXPANDED_BOX, {}, 'open', false))
+    expect(node.get('.plex__handle-at').attributes('transform')).toBe(
+      `translate(${200 + HANDLE_RADIUS} 0)`,
+    )
+  })
+
   it('is drawn where the widening places it', async () => {
-    const node = await rest(mountWideNode({ width: 400, offset: -60 }))
+    const node = await rest(mountExpandedNode({ width: 400, offset: -60 }))
     expect(getBox(node)).toStrictEqual({ width: 400, x: -260 })
     expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(140 0)')
   })
 
   it('says so as it begins to open, since only the whole picture can lift it', async () => {
-    const mounted = mountWideNode()
+    const mounted = mountExpandedNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
 
@@ -401,7 +445,7 @@ describe('a box with more of its title to show', () => {
   })
 
   it('is put back once the hand has left it', async () => {
-    const mounted = mountWideNode()
+    const mounted = mountExpandedNode()
     await rest(mounted)
 
     await mounted.node.trigger('pointerleave')
@@ -413,7 +457,7 @@ describe('a box with more of its title to show', () => {
   })
 
   it('begins the wait again where the picture moved it under the hand', async () => {
-    const mounted = mountWideNode()
+    const mounted = mountExpandedNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT - 1)
 
@@ -453,20 +497,20 @@ describe('a box with nothing more to show', () => {
   }
 
   it('stays as it was placed however long the hand is on it', async () => {
-    const node = await rest({ wide: null })
+    const node = await rest({ expanded: null })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
     expect(node.emitted('settle')).toBeUndefined()
   })
 
   it('stays as it was placed while a gesture is under way', async () => {
-    const node = await rest({ wide: { width: 400, offset: 0 }, gestureRole: 'source' })
+    const node = await rest({ expanded: { width: 400, offset: 0 }, gestureRole: 'source' })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
   })
 
   it('stays as it was placed while it is on its way in or out', async () => {
     const node = await rest({
       node: createNode({ opacity: 0.4 }),
-      wide: { width: 400, offset: 0 },
+      expanded: { width: 400, offset: 0 },
     })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
   })
@@ -490,14 +534,14 @@ describe('the headings a node hangs', () => {
       level: 1,
     }))
 
-  const mountInside = (items: readonly PlexHeading[], expanded: WideBox | null = null) => {
+  const mountInside = (items: readonly PlexHeading[], expanded: ExpandedBox | null = null) => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
         node: createNode(),
-        wide: expanded,
-        hung: getNodeHeadings(createNode(), items, {
+        expanded,
+        placedHeadings: getNodeHeadings(createNode(), items, {
           options: SIZES,
           deps: {
             viewport: { width: 1000, height: 600 },
@@ -620,5 +664,81 @@ describe('the headings a node hangs', () => {
     mounted.world.run()
     await rest(mounted)
     expect(first()).toBe('Heading 0')
+  })
+})
+
+describe('a node with Pill background off', () => {
+  const RELATIONS: readonly PlexNodeRelation[] = [
+    'focus',
+    'parent',
+    'child',
+    'jump',
+    'reference',
+    'sibling',
+  ]
+
+  const mountBare = (overrides: Partial<PlacedNode> = {}, props: Record<string, unknown> = {}) =>
+    mount(PlexNodeView, { props: { node: createNode(overrides), showPills: false, ...props } })
+
+  it('draws no pill, the focus included', () => {
+    for (const relation of RELATIONS) {
+      expect(mountBare({ relation }).find('.plex__box').exists(), relation).toBe(false)
+    }
+  })
+
+  it('draws its title alone, with no dot before it', () => {
+    for (const relation of RELATIONS) {
+      const node = mountBare({ relation, title: 'Hydrology' })
+      expect(node.find('.plex__dot').exists(), relation).toBe(false)
+      expect(node.get('.plex__title-text').text()).toBe('Hydrology')
+    }
+  })
+
+  it('keeps an area the size of its box that answers the pointer', () => {
+    const node = mountBare({ width: 200, height: 50 })
+    const areas = node
+      .findAll('rect:not(.plex__box)')
+      .filter(
+        (rect) =>
+          Number(rect.attributes('width')) === 200 && Number(rect.attributes('height')) === 50,
+      )
+
+    expect(areas.length).toBeGreaterThan(0)
+  })
+
+  it('is chosen by a press on its title', async () => {
+    const node = mountBare()
+    await node.get('.plex__title-text').trigger('click')
+    expect(node.emitted('activate')).toHaveLength(1)
+  })
+
+  it('asks for its menu on a right-click on its title', () => {
+    const node = mountBare()
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 })
+    node.get('.plex__title-text').element.dispatchEvent(event)
+    expect(node.emitted('menu')).toHaveLength(1)
+  })
+
+  it('still marks the note a link would be made to, and draws its ring', () => {
+    const target = mountBare({}, { gestureRole: 'target' })
+    const open = mountBare({}, { gestureRole: 'open' })
+
+    expect(target.classes()).toContain('plex__node--target')
+    expect(target.findAll('rect').length).toBeGreaterThan(open.findAll('rect').length)
+  })
+
+  it('draws the dashed outline of a note about to be made', () => {
+    const ghost = mountBare({ title: 'child' }, { gestureRole: 'ghost' })
+    expect(ghost.find('.plex__box').exists()).toBe(true)
+  })
+})
+
+describe('a node with Pill background on', () => {
+  it('draws its pill and no dot, as it does when nothing is set', () => {
+    for (const props of [{ showPills: true }, {}]) {
+      const node = mount(PlexNodeView, { props: { node: createNode(), ...props } })
+      expect(node.find('.plex__box').exists()).toBe(true)
+      expect(node.find('.plex__dot').exists()).toBe(false)
+    }
   })
 })

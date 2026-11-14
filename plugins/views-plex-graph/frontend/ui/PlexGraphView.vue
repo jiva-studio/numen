@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * Displays the graph neighborhood of notes and handles graph interaction gestures.
+ * Displays the graph of notes and handles graph interaction gestures.
  */
 import { computed } from 'vue'
 import { Menu, LoadingIndicator } from '@numen/ui'
-import { optionsForType, Plex, useTypeSize } from '../plex'
+import { Plex, useTypeSize } from '../plex'
 import type { MenuTrigger } from '@numen/ui'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
@@ -12,23 +12,22 @@ import type { Connection } from '@numen/plugin-sdk'
 import type { PlexTabState, PlexRelation, PlexDestination } from '../types'
 import { WORDS as words } from '../words'
 import { usePlexCanvas } from '../model/usePlexCanvas'
+import { getPlexOptions } from '../model/plexOptions'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 defineOptions({ name: 'PlexTab' })
 const props = defineProps<{ state: PlexTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { dragged, picture: neighborhood } = props.state.canvas
+const { dragged, picture: graph } = props.state.canvas
 const { request: menu, menuItems: items, getMenuIcon, getNodeIcon } = props.state.menu
 const { quickLink } = props.state.quickLink
 const { linkInspector } = props.state.inspector
 const { maxHeadings } = props.state.headings
+const { look } = props.state
 
 const type = useTypeSize()
-const options = computed(() => ({
-  ...optionsForType(type.value),
-  maxHeadings: maxHeadings.value,
-}))
+const options = computed(() => getPlexOptions(look, type.value, maxHeadings.value))
 
 const { rootElement, picture, lastPointer, onPointerUp, onContextMenu, onEdgeMenu, closeMenu } =
   usePlexCanvas({ state: props.state })
@@ -111,21 +110,30 @@ function onDismissLinkInspector() {
       {{ props.state.canvas.view.error.value }}
     </p>
 
-    <!-- Until the first neighborhood lands, an empty plex and one no one has
+    <!-- Until the first graph lands, an empty plex and one no one has
          answered for yet are drawn the same way. -->
     <LoadingIndicator v-if="props.state.canvas.view.isLoading.value" :label="words.loading" />
 
     <Plex
-      v-else-if="neighborhood"
+      v-else-if="graph"
       ref="picture"
       class="plex__image"
-      :neighborhood="neighborhood!"
+      :graph="graph!"
       :options="options"
+      :show-pills="look.showPills.value"
+      :highlight-links="look.highlightLinks.value"
+      :duration="look.animationLength.value"
+      :line-width="look.lineThickness.value"
+      :outline-width="look.outlineThickness.value"
       :creatable="props.state.canvas.creatable"
       :pending="pending"
       :dragged="dragged"
       :drop-name="words.dropName"
       :headings="props.state.headings.getHeadings"
+      :names="props.state.canvas.names.getNames"
+      :show-names="props.state.canvas.names.showNames.value"
+      :names-opacity="look.namesOpacity.value"
+      :focused-names-opacity="look.focusedNamesOpacity.value"
       @activate="onActivateNode"
       @create="onCreateNode"
       @link="onLinkNodes"
@@ -133,6 +141,7 @@ function onDismissLinkInspector() {
       @menu="onOpenMenu"
       @show="onShowNode"
       @enter="onEnterHeading"
+      @choose-name="props.state.canvas.names.choose"
       @edge-menu="onEdgeMenu"
       @dismiss="onDismissImage"
     >

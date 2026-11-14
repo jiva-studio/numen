@@ -1,40 +1,36 @@
 <script setup lang="ts">
 /**
- * One installed plugin row in the plugins registry: its name, version,
- * single-line description, failure/disabled badge, and navigation chevron.
+ * One plugin of the plugin list: a navigation row with the category icon, the name and the
+ * description, a state label when the plugin is not installed or has an error or a warning, and a
+ * context menu to enable, disable or open the plugin.
  */
 import { computed, ref } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
+import { getPluginCategory } from './filter'
+import NavigationRow from './NavigationRow.vue'
+import type { PluginHealth } from './pluginInfo'
 import { isInstalled, type ManagedPlugin } from './plugins'
-import { getPluginState, type PluginState } from './state'
+import { getPluginState, hasStateLabel } from './state'
 import { PLUGIN_WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   plugin: ManagedPlugin
   isEnabled: boolean
-  categoryPrefix?: string
+  health?: readonly PluginHealth[]
 }>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (e: 'select-plugin'): void
-  (e: 'toggle-enabled', val: boolean): void
+  (e: 'toggle-enabled', isEnabled: boolean): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const menuPosition = ref<{ x: number; y: number } | null>(null)
-const versionSuffix = computed(() => (props.plugin.version ? ` v${props.plugin.version}` : ''))
-const categoryPrefixText = computed(() =>
-  props.categoryPrefix ? `${props.categoryPrefix} / ` : '',
+const pluginState = computed(() =>
+  props.plugin.info ? getPluginState(props.isEnabled, props.health) : 'available',
 )
-const rowTitle = computed(
-  () => `${categoryPrefixText.value}${props.plugin.name}${versionSuffix.value}`,
-)
-const pluginState = computed<PluginState>(() =>
-  props.plugin.info ? getPluginState(props.plugin.info, props.isEnabled) : 'available',
-)
-
 const menuItems = computed<readonly MenuItem[]>(() => [
   ...(isInstalled(props.plugin)
     ? [{ id: 'toggle', text: props.isEnabled ? words.pluginDisable : words.pluginEnable }]
@@ -43,15 +39,8 @@ const menuItems = computed<readonly MenuItem[]>(() => [
 ])
 
 /* -------------------------------- Handlers -------------------------------- */
-function onClick(): void {
+function onSelect(): void {
   emit('select-plugin')
-}
-
-function onKeydown(e: KeyboardEvent): void {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault()
-    emit('select-plugin')
-  }
 }
 
 function onContextMenu(e: MouseEvent): void {
@@ -64,190 +53,48 @@ function onDismissMenu(): void {
 
 function onChooseMenuItem(id: string): void {
   menuPosition.value = null
-  if (id === 'toggle') {
-    emit('toggle-enabled', !props.isEnabled)
-  } else if (id === 'configure') {
-    emit('select-plugin')
-  }
+  if (id === 'toggle') emit('toggle-enabled', !props.isEnabled)
+  if (id === 'configure') emit('select-plugin')
 }
 </script>
 
 <template>
-  <div
-    class="plugin-row"
-    :class="{ 'plugin-row--disabled': !props.isEnabled }"
-    role="button"
-    tabindex="0"
-    :aria-label="rowTitle"
-    @click="onClick"
-    @keydown="onKeydown"
+  <NavigationRow
+    :name="props.plugin.name"
+    :detail="props.plugin.description"
+    :category="getPluginCategory(props.plugin)"
+    :label="words.pluginRow(props.plugin.name, pluginState)"
+    :is-dimmed="pluginState === 'disabled'"
+    @select="onSelect"
     @contextmenu.prevent="onContextMenu"
   >
-    <div class="plugin-row__main">
-      <div class="plugin-row__header">
-        <span v-if="props.categoryPrefix" class="plugin-row__category">
-          {{ props.categoryPrefix }} /
-        </span>
-        <span class="plugin-row__name">{{ props.plugin.name }}</span>
-        <span v-if="props.plugin.version" class="plugin-version-badge">
-          v{{ props.plugin.version }}
-        </span>
-      </div>
-      <p v-if="props.plugin.description" class="plugin-row__description">
-        {{ props.plugin.description }}
-      </p>
-    </div>
-
-    <div class="plugin-row__trail">
-      <span
-        v-if="pluginState === 'stopped' || pluginState === 'available'"
-        class="plugin-row__badge"
-        :class="`plugin-row__badge--${pluginState}`"
-      >
+    <template v-if="hasStateLabel(pluginState)" #trail>
+      <span class="plugin-row__state" :class="`plugin-row__state--${pluginState}`">
         {{ words.pluginState[pluginState] }}
       </span>
-      <span class="plugin-row__chevron" aria-hidden="true">&rsaquo;</span>
-    </div>
-
-    <Menu
-      v-if="menuPosition"
-      :items="menuItems"
-      :at="menuPosition"
-      is-open
-      name="Plugin Actions"
-      @choose="onChooseMenuItem"
-      @dismiss="onDismissMenu"
-    />
-  </div>
+    </template>
+  </NavigationRow>
+  <Menu
+    v-if="menuPosition"
+    :items="menuItems"
+    :at="menuPosition"
+    is-open
+    :name="words.pluginActions"
+    @choose="onChooseMenuItem"
+    @dismiss="onDismissMenu"
+  />
 </template>
 
 <style scoped>
-.plugin-row {
-  --row-min-size: 3.5rem;
-  --row-pad-block: 0.625rem;
-  --row-pad-inline: 0.75rem;
-  --row-text-gap: 0.125rem;
-  --row-header-gap: 0.25rem;
-  --focus-width: 0.125rem;
-  --focus-inset: -0.125rem;
-  --chevron-size: 1.25rem;
-  --badge-pad-block: 0.125rem;
-  --badge-pad-inline: 0.4375rem;
-  --badge-offset: 0.25rem;
-  --state-pad-block: 0.125rem;
-  --state-pad-inline: 0.375rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--numen-panel-gap);
-  min-block-size: var(--row-min-size);
-  padding: var(--row-pad-block) var(--row-pad-inline);
-  cursor: pointer;
-  user-select: none;
-  transition:
-    background-color 0.15s ease,
-    opacity 0.15s ease;
-  border-radius: var(--numen-radius-tight);
-}
-
-.plugin-row:hover {
-  background-color: var(--numen-bubble-bg);
-}
-
-.plugin-row:focus-visible {
-  outline: var(--focus-width) solid var(--numen-accent);
-  outline-offset: var(--focus-inset);
-}
-
-.plugin-row--disabled {
-  opacity: 0.5;
-}
-
-.plugin-row--disabled .plugin-row__name,
-.plugin-row--disabled .plugin-row__category,
-.plugin-row--disabled .plugin-row__description,
-.plugin-row--disabled .plugin-row__chevron {
+.plugin-row__state {
   color: var(--numen-hushed);
 }
 
-.plugin-row__main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--row-text-gap);
-  flex: 1 1 auto;
-  min-inline-size: 0;
-}
-
-.plugin-row__header {
-  display: flex;
-  align-items: baseline;
-  gap: var(--row-header-gap);
-}
-
-.plugin-row__category {
-  color: var(--numen-hushed);
-  font-weight: 400;
-  font-size: var(--numen-text-2);
-}
-
-.plugin-row__name {
-  color: var(--numen-ink);
-  font-weight: 500;
-  font-size: var(--numen-text-2);
-}
-
-.plugin-version-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--badge-pad-block) var(--badge-pad-inline);
-  border-radius: var(--numen-radius-pill);
-  background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
-  color: var(--numen-ink);
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  vertical-align: middle;
-  margin-inline-start: var(--badge-offset);
-}
-
-.plugin-row__description {
-  margin: 0;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-inline-size: 100%;
-}
-
-.plugin-row__trail {
-  display: flex;
-  align-items: center;
-  gap: var(--numen-panel-gap);
-  flex-shrink: 0;
-}
-
-.plugin-row__badge {
-  font-size: var(--numen-text-1);
-  padding: var(--state-pad-block) var(--state-pad-inline);
-  border-radius: var(--numen-radius-tight);
-}
-
-.plugin-row__badge--available {
-  color: var(--numen-hushed);
-  background-color: var(--numen-bubble-bg);
-}
-
-.plugin-row__badge--stopped {
+.plugin-row__state--error {
   color: var(--numen-alarm);
-  background-color: var(--numen-alarm-bg);
 }
 
-.plugin-row__chevron {
-  font-size: var(--chevron-size);
-  line-height: 1;
-  color: var(--numen-hushed);
+.plugin-row__state--warning {
+  color: var(--numen-ink);
 }
 </style>

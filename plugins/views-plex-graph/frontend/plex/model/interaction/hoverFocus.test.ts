@@ -1,5 +1,8 @@
 /** When a node counts as hovered or keyboard-focused, which the plex draws the same way. */
-import { describe, expect, it, vi } from 'vitest'
+import { effectScope, nextTick } from 'vue'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { EXPANSION_DELAY, useExpansion } from '../sizing/expansion'
+import { stubClock } from '../../../fixtures/clock'
 import { useHoverFocus } from './hoverFocus'
 
 function createFocusTarget(matches: (selector: string) => boolean) {
@@ -68,5 +71,72 @@ describe('keyboard focus', () => {
 
     element.dispatchEvent(new FocusEvent('focusout', { relatedTarget: outside }))
     expect(hoverFocus.isOn.value).toBe(false)
+  })
+})
+
+describe('release', () => {
+  it('takes hover off without a pointer exit', () => {
+    const hoverFocus = useHoverFocus()
+    hoverFocus.onPointerEnter()
+
+    hoverFocus.release()
+
+    expect(hoverFocus.isOn.value).toBe(false)
+  })
+})
+
+describe('release during the wait before a box opens', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('leaves the box closed when the wait ends', async () => {
+    vi.useFakeTimers()
+    const scope = effectScope()
+    const { hoverFocus, open, frames } = scope.run(() => {
+      const hoverFocus = useHoverFocus()
+      const frames = stubClock()
+      const open = useExpansion(
+        () => (hoverFocus.isOn.value ? 'node' : null),
+        () => EXPANSION_DELAY,
+        frames.clock,
+      )
+      return { hoverFocus, open, frames }
+    })!
+
+    hoverFocus.onPointerEnter()
+    await nextTick()
+    vi.advanceTimersByTime(EXPANSION_DELAY / 5)
+    hoverFocus.release()
+    await nextTick()
+    vi.advanceTimersByTime(EXPANSION_DELAY * 2)
+    frames.run()
+
+    expect(hoverFocus.isOn.value).toBe(false)
+    expect(open.value).toBe(0)
+    scope.stop()
+  })
+
+  it('opens the box when the pointer stays through the whole wait', async () => {
+    vi.useFakeTimers()
+    const scope = effectScope()
+    const { hoverFocus, open, frames } = scope.run(() => {
+      const hoverFocus = useHoverFocus()
+      const frames = stubClock()
+      const open = useExpansion(
+        () => (hoverFocus.isOn.value ? 'node' : null),
+        () => EXPANSION_DELAY,
+        frames.clock,
+      )
+      return { hoverFocus, open, frames }
+    })!
+
+    hoverFocus.onPointerEnter()
+    await nextTick()
+    vi.advanceTimersByTime(EXPANSION_DELAY)
+    frames.run()
+
+    expect(open.value).toBe(1)
+    scope.stop()
   })
 })

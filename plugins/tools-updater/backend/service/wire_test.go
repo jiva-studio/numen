@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process/processtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/domain/release"
@@ -66,7 +67,7 @@ func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
 func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	fetcher := &fakeFetcher{manifest: newManifest()}
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
-		return mount(s, fetcher)
+		return mount(s, fetcher, nil)
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -104,7 +105,7 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 
 func TestACheckOfAnUnknownBuildIsAnInvalidArgument(t *testing.T) {
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
-		return mount(s, &fakeFetcher{manifest: newManifest()})
+		return mount(s, &fakeFetcher{manifest: newManifest()}, nil)
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -124,5 +125,31 @@ func TestACheckOfAnUnknownBuildIsAnInvalidArgument(t *testing.T) {
 		if status, body := post(t, web, checkPath, `{"app":`+app+`}`); status != http.StatusBadRequest {
 			t.Errorf("%s: Check = %d %s, want 400", name, status, body)
 		}
+	}
+}
+
+func TestACheckReleasesTheProcessOnceItIsAnswered(t *testing.T) {
+	host := processtest.NewHost(t)
+	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
+		return mount(s, &fakeFetcher{manifest: newManifest()}, host.NewClient(t))
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	web := httptest.NewServer(handler)
+	defer web.Close()
+	if status, body := post(t, web, configurePath, `{"values":{"channel":"custom","endpoint":"http://127.0.0.1:9/latest.json"}}`); status != http.StatusOK {
+		t.Fatalf("Configure = %d %s", status, body)
+	}
+	if releases := host.CountReleases(); releases != 0 {
+		t.Fatalf("releases before the check = %d, want none", releases)
+	}
+
+	if status, body := post(t, web, "/"+api.Service+"/"+api.MethodCheck, `{"app":{"version":"2026.9.0","build":900,"platform":"linux"}}`); status != http.StatusOK {
+		t.Fatalf("Check = %d %s", status, body)
+	}
+
+	if releases := host.CountReleases(); releases != 1 {
+		t.Errorf("releases after the check = %d, want 1", releases)
 	}
 }

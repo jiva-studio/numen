@@ -6,11 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"io"
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 
 	"github.com/tetratelabs/wazero"
 
@@ -294,7 +293,7 @@ func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, target)
+	defer closeAndCheck(t, target)
 
 	if _, err := target.RenderPage(0, 300); err == nil {
 		t.Error("a page of 3.6 billion pixels was drawn")
@@ -318,7 +317,7 @@ func TestAPageReturnsHowBigItIs(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer cleanup.Close(t, target)
+			defer closeAndCheck(t, target)
 
 			for page := range target.GetPageCount() {
 				width, height, err := target.GetPageSize(page)
@@ -431,4 +430,11 @@ func runTests(m *testing.M) int {
 		code = 1
 	}
 	return code
+}
+
+func closeAndCheck(tb testing.TB, c io.Closer) {
+	tb.Helper()
+	if err := c.Close(); err != nil {
+		tb.Errorf("close: %v", err)
+	}
 }

@@ -5,13 +5,10 @@
  */
 export { create } from '@bufbuild/protobuf'
 export {
-  AskAgentResponseSchema,
   FindCatalogEntryByTabKindResponseSchema,
   GetCatalogEntryResponseSchema,
-  GetNeighborhoodResponseSchema,
+  ListRelatedNotesResponseSchema,
   ListCatalogResponseSchema,
-  ToolCallSchema,
-  type AskAgentResponse,
   type Entry,
   type MoveResult,
   type PluginCommand,

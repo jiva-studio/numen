@@ -70,7 +70,7 @@ export const AwkwardText: Story = {
  */
 export const BeingWritten: Story = {
   args: {
-    tool: 'Create a note',
+    tool: 'Write note',
     subject: "Bram Doyle's warning",
     aside: '12 015 characters',
     isWorking: true,

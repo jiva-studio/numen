@@ -1,16 +1,10 @@
+/** The tasks of this window as the core reports them, and the cancel of one. */
+import { createTaskClient } from '@numen/core-client'
 import { windowService } from '@/shared/api/clients'
 import { TARGET } from '@/shared/lib/window'
-import type { WindowTask } from '../lib/task'
 
-/** The tasks of this window as the core reports them, a whole list at each change, until the signal aborts. */
-export async function* watchTasks(signal: AbortSignal): AsyncGenerator<readonly WindowTask[]> {
-  for await (const response of windowService.watchTasks({ window: TARGET }, { signal })) {
-    yield response.tasks.map((task) => ({
-      id: task.id,
-      label: task.title,
-      about: task.about,
-      error: task.error,
-      isUserStarted: task.isUserStarted,
-    }))
-  }
-}
+const tasks = createTaskClient(windowService, TARGET)
+
+export const watchTasks = (signal: AbortSignal) => tasks.watchTasks(signal)
+
+export const cancelTask = (id: string): Promise<void> => tasks.cancelTask(id)

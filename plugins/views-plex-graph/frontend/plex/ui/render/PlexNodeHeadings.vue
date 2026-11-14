@@ -12,7 +12,7 @@ import { getOpenHeadings, scrollBy, type Arrow } from '../../lib/open'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  hung: NodeHeadings
+  placedHeadings: NodeHeadings
   open: number
 }>()
 
@@ -27,10 +27,12 @@ const emit = defineEmits<{
 const scrollOffset = ref(0)
 
 /** The headings, as far out from under the box as they have come. */
-const openHeadings = computed(() => getOpenHeadings(props.hung, props.open, scrollOffset.value))
+const openHeadings = computed(() =>
+  getOpenHeadings(props.placedHeadings, props.open, scrollOffset.value),
+)
 
 /** The x position where the backdrop behind the headings begins. */
-const backdropX = computed(() => props.hung.offset - props.hung.width / 2)
+const backdropX = computed(() => props.placedHeadings.offset - props.placedHeadings.width / 2)
 
 /** What a wheel moved that came to no whole heading, held for the next one. */
 let carried = 0
@@ -53,12 +55,10 @@ const onWheel = (event: WheelEvent) => {
   if (!visibleHeadings) return
 
   const wheel = { delta: event.deltaY, mode: event.deltaMode }
-  const { by, left: remainingDelta } = scrollBy(props.hung, wheel, carried)
-  if (by === 0) {
-    carried = remainingDelta
-    return
-  }
-  if (by < 0 ? !visibleHeadings.isAbove : !visibleHeadings.isBelow) {
+  const { by, left: remainingDelta } = scrollBy(props.placedHeadings, wheel, carried)
+  const direction = by !== 0 ? by : remainingDelta
+  if (direction === 0) return
+  if (direction < 0 ? !visibleHeadings.isAbove : !visibleHeadings.isBelow) {
     carried = 0
     return
   }
@@ -66,6 +66,7 @@ const onWheel = (event: WheelEvent) => {
   carried = remainingDelta
   event.preventDefault()
   event.stopPropagation()
+  if (by === 0) return
   // The offset steps from the first visible heading, which is the plex's own
   // calculation of the window position.
   scrollOffset.value = visibleHeadings.first + by
@@ -84,8 +85,8 @@ const arrowLine = (arrow: Arrow) =>
     <rect
       class="plex__backdrop"
       :x="backdropX"
-      :y="hung.top"
-      :width="hung.width"
+      :y="placedHeadings.top"
+      :width="placedHeadings.width"
       :height="openHeadings.height"
       :opacity="openHeadings.opacity"
     />
@@ -93,7 +94,7 @@ const arrowLine = (arrow: Arrow) =>
       v-for="heading in openHeadings.headings"
       :key="heading.id"
       :heading="heading"
-      :hung="hung"
+      :placed-headings="placedHeadings"
       @enter="emit('enter', heading.id)"
     />
 
@@ -109,12 +110,12 @@ const arrowLine = (arrow: Arrow) =>
 </template>
 
 <style scoped>
-/* The backdrop behind the headings: dense enough to group them, and thin
-   enough to read the picture through. */
+/* The backdrop behind the headings is nearly opaque, so the lines and names under
+   it do not show through the text. */
 .plex__backdrop {
   --backdrop-rx: 0.25rem;
   rx: var(--backdrop-rx);
-  fill: color-mix(in oklab, var(--numen-raised), transparent 25%);
+  fill: color-mix(in oklab, var(--numen-raised), transparent 6%);
   stroke: color-mix(in oklab, var(--numen-rule), transparent 55%);
   stroke-width: var(--numen-stroke);
 }

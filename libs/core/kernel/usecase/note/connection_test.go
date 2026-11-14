@@ -402,7 +402,7 @@ func TestCreatingInARelationWritesTheInverseRoleAndFilesInTheFolderOfTheSource(t
 	c := openChangeFixture(t, map[string]string{"area/Heat.md": heatNote})
 	u := note.NewCreateInRelation(c.create(), c.addresses())
 
-	made, err := u.Execute(t.Context(), c.vault, domain.RelatedNote{
+	made, err := u.Execute(t.Context(), c.vault, domain.NewRelatedNote{
 		From: "area/Heat.md", Role: domain.RoleParent, Type: "series",
 	})
 	if err != nil {
@@ -430,7 +430,7 @@ func TestCreatingInARelationNumbersUntitledNotesAndRetriesOnConflict(t *testing.
 	})
 	u := note.NewCreateInRelation(c.create(), c.addresses())
 
-	made, err := u.Execute(t.Context(), c.vault, domain.RelatedNote{From: "Heat.md", Role: domain.RoleChild})
+	made, err := u.Execute(t.Context(), c.vault, domain.NewRelatedNote{From: "Heat.md", Role: domain.RoleChild})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -452,7 +452,7 @@ func TestCreatingInARelationFailsAfterTheAttemptsAreSpent(t *testing.T) {
 	c := openChangeFixture(t, notes)
 	u := note.NewCreateInRelation(c.create(), c.addresses())
 
-	_, err := u.Execute(t.Context(), c.vault, domain.RelatedNote{From: "Heat.md", Role: domain.RoleJump})
+	_, err := u.Execute(t.Context(), c.vault, domain.NewRelatedNote{From: "Heat.md", Role: domain.RoleJump})
 
 	if !errors.Is(err, domain.ErrNoFreeName) {
 		t.Errorf("err = %v, want ErrNoFreeName", err)
@@ -472,7 +472,7 @@ func TestCreatingInARelationWithATitleDoesNotRetry(t *testing.T) {
 	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Work.md": "# Work\n"})
 	u := note.NewCreateInRelation(c.create(), c.addresses())
 
-	_, err := u.Execute(t.Context(), c.vault, domain.RelatedNote{
+	_, err := u.Execute(t.Context(), c.vault, domain.NewRelatedNote{
 		From: "Heat.md", Role: domain.RoleJump, Title: "Work",
 	})
 
@@ -487,7 +487,7 @@ func TestCreatingInARelationRefusesARoleANoteCannotBeCreatedIn(t *testing.T) {
 	u := note.NewCreateInRelation(c.create(), c.addresses())
 
 	for _, role := range []domain.LinkRole{domain.RoleRef, domain.RoleAttachment, "sibling"} {
-		_, err := u.Execute(t.Context(), c.vault, domain.RelatedNote{From: "Heat.md", Role: role})
+		_, err := u.Execute(t.Context(), c.vault, domain.NewRelatedNote{From: "Heat.md", Role: role})
 		if !errors.Is(err, domain.ErrNotCreatable) {
 			t.Errorf("%s: err = %v, want ErrNotCreatable", role, err)
 		}
@@ -515,14 +515,14 @@ func TestBacklinksCarryTheirRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 	}
 }
 
-func TestTheNeighborhoodCarriesTheMarkerOfEachRecord(t *testing.T) {
+func TestRelatedNotesCarryTheMarkerOfEachRecord(t *testing.T) {
 	t.Parallel()
 	db, v := newIndexedVault(t, map[string]string{
 		"Heat.md":    "---\ntitle: Heat\nlinks:\n  - to: Entropy\n    role: jump\n    marker: arrow\n---\n# Heat\n",
 		"Entropy.md": "---\ntitle: Entropy\nlinks:\n  - to: Heat\n    role: jump\n---\n# Entropy\n",
 	})
 
-	got, err := query.NewShowNeighborhood(db.NoteQueries(), db.NoteQueries()).Execute(t.Context(), v, "Heat.md")
+	got, err := query.NewListRelatedNotes(db.NoteQueries(), db.NoteQueries()).Execute(t.Context(), v, "Heat.md", 1)
 	if err != nil {
 		t.Fatal(err)
 	}

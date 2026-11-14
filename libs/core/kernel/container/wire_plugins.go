@@ -4,23 +4,24 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
-	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -91,10 +92,10 @@ type PluginRuntime struct {
 	pluginport.ConfigWatcher
 }
 
-// PluginConfiguration is what carries the settings and the secrets to the plugins.
+// PluginConfiguration is what carries the settings to the plugins.
 type PluginConfiguration struct {
 	pluginport.PluginSettingDeclarer
-	pluginport.SecretConfigurator
+	pluginport.ConfigRefresher
 	pluginport.SettingsPush
 	pluginport.SettingChecker
 	pluginport.PersistHook
@@ -108,20 +109,24 @@ type PluginWatch struct {
 }
 
 // PluginViews are the parts of the host that the settings take as they are, and that stay unset where the host runs
-// nothing: the settings then accept every secret, every plugin value and list no plugin. Follow returns the
+// nothing: the settings then accept every plugin value and list no plugin, and no connection type exists. Follow returns the
 // subscription to the setting changes that the host follows, or none.
 type PluginViews struct {
-	Secrets settingsadapter.SecretDeclarations
-	Infos   settingsport.PluginInfos
-	Checks  settingsport.PluginSettings
-	Follow  func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber
+	Types      connectionport.Types
+	Operations connectionport.OperationTitles
+	Infos      settingsport.PluginInfos
+	Checks     settingsport.PluginSettings
+	Follow     func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber
 }
 
 // PluginHost is the plugin host as the capabilities the wiring and the use cases consume, each taken from the
 // role of the host that does it. The settings subscription is keyed by the one *PluginHost the container
 // made. ApplySetting makes a plugin follow one setting that changed. SetStorage sets the folders the plugins
 // store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
-// provisions them as the environment names them now.
+// provisions them as the environment names them now. Detection and RowOptions keep what the providers
+// reported, for every window of the host, in the cache files of the plugins; RunningProviders opens the
+// provider of a plugin only while it runs.
+// SourceDescriptions keeps the description of the search source between its openings and processes.
 type PluginHost struct {
 	Runtime             PluginRuntime
 	Configuration       PluginConfiguration
@@ -131,6 +136,12 @@ type PluginHost struct {
 	Views               PluginViews
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
+	Health              *pluginhealth.Items
+	Processes           pluginprocess.Processes
+	Detection           *providerbridge.Detection
+	RowOptions          *rowoptions.Lists
+	RunningProviders    *providerbridge.RunningSource
+	SourceDescriptions  *sourcebridge.Descriptions
 }
 
 // AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made with NewPluginRoles, to the container. The
@@ -140,6 +151,9 @@ func AdaptPluginHost(host *PluginRoles) *PluginHost {
 }
 
 func adaptPluginHost(host *PluginRoles) *PluginHost {
+	types := plugin.NewConnectionTypes(host.Registry)
+	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(host.Activation), clock.System{})
+	host.Activation.SetOnStart(detection.DetectInBackground)
 	return &PluginHost{
 		Runtime: PluginRuntime{
 			Activator:          host.Activation,
@@ -156,7 +170,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		},
 		Configuration: PluginConfiguration{
 			PluginSettingDeclarer: host.Registry,
-			SecretConfigurator:    host.Config,
+			ConfigRefresher:       host.Config,
 			SettingsPush:          host.Settings,
 			SettingChecker:        host.Settings,
 			PersistHook:           host.Settings,
@@ -169,43 +183,41 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		Endpoint: lendHostEndpoint(host),
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
+			Health: host.Health,
 		}).Execute,
 		Views: PluginViews{
-			Secrets: host.Config, Infos: host.Registry, Checks: host.Settings,
+			Types: types, Operations: types,
+			Infos: host.Registry, Checks: host.Settings,
 			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
 		},
-		SetStorage:          func(cacheRoot, dataRoot string) { setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry) },
+		SetStorage: func(cacheRoot, dataRoot string) {
+			setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry)
+			detection.SetFiles(host.Storage)
+		},
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
+		Health:              host.Health,
+		Processes:           host.RunningProcesses,
+		Detection:           detection,
+		RowOptions:          rowoptions.NewLists(host.Storage, host.Config),
+		RunningProviders:    providerbridge.NewRunningSource(host.Activation, host.Activation.ClientLookup()),
+		SourceDescriptions:  sourcebridge.NewDescriptions(host.Storage, host.Config),
 	}
 }
 
 func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 	services := hostendpoint.NewServices()
+	toolHost := plugin.NewToolHost(host.Activation, host.Registry)
+	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, clock.System{}, toolbridge.GetErrorOutput())
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
-		Identity: host.Activation, Leases: host.Activation,
+		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown,
 		Lent: services,
-		Dependencies: func() hostendpoint.Dependencies {
-			if registry := host.Services.GetDependencies(); registry != nil {
-				return registry
-			}
-			return nil
-		},
 		Tools: func() hostendpoint.PluginTools {
-			return agenttoolsbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), agenttoolsbridge.Full)
+			return tools
+		},
+		Health: hostendpoint.HealthCalls{
+			Report: pluginhealth.NewReport(host.Health, host.Registry),
+			Clear:  pluginhealth.NewClear(host.Health),
 		},
 	}))
 	return services
-}
-
-func pluginsAgentProvider(c pluginsWiring) agentport.AgentProvider {
-	return agentbridge.NewRouter(c.RunningHost.Runtime)
-}
-
-func getAgentPrograms(c pluginsWiring, provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
-	list := agentcase.NewListPrograms(provider, c.settings.Programs, func() { refreshSettingEvents(c.settings) }, c.settings.ErrorHandler)
-	return list.Execute(target.GetCommands())
-}
-
-func completionAgentSettings(c pluginsWiring) completion.AgentSettings {
-	return completion.NewAgentSettings(settingsGetSettingsOrDefaults(c.settings).Agent)
 }

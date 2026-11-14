@@ -25,7 +25,7 @@ import (
 
 func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, numenv1connect.HostVaultServiceClient) {
 	t.Helper()
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	hostCallers.vault = vaultOf(newFakeNoteVault())
 	endpoint, err := Open(t.Context(), Address, hostCallers.over(list, manifest.PermissionVaultManage))
 	if err != nil {

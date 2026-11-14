@@ -10,7 +10,6 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -18,60 +17,32 @@ import (
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
-// Handler answers every setting read and written, and the secrets shared between plugins. Each
+// Handler answers every setting read and written. Each
 // part holds the use cases of one kind of call, so no value holds more than five.
 type Handler struct {
 	Values
 	PluginFolders
-	secretItemCalls
-	secretGroupCalls
-}
-
-type secretItemCalls interface {
-	CreateSecret(context.Context, *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error)
-	RenameSecret(context.Context, *connect.Request[v1.RenameSecretRequest]) (*connect.Response[v1.RenameSecretResponse], error)
-	WriteSecret(context.Context, *connect.Request[v1.WriteSecretRequest]) (*connect.Response[v1.WriteSecretResponse], error)
-	DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error)
-	MoveSecret(context.Context, *connect.Request[v1.MoveSecretRequest]) (*connect.Response[v1.MoveSecretResponse], error)
-}
-
-type secretGroupCalls interface {
-	RenameSecretGroup(
-		context.Context, *connect.Request[v1.RenameSecretGroupRequest],
-	) (*connect.Response[v1.RenameSecretGroupResponse], error)
-	AllowPluginSecret(
-		context.Context, *connect.Request[v1.AllowPluginSecretRequest],
-	) (*connect.Response[v1.AllowPluginSecretResponse], error)
-	DenyPluginSecret(
-		context.Context, *connect.Request[v1.DenyPluginSecretRequest],
-	) (*connect.Response[v1.DenyPluginSecretResponse], error)
-	DeleteSecretGroup(
-		context.Context, *connect.Request[v1.DeleteSecretGroupRequest],
-	) (*connect.Response[v1.DeleteSecretGroupResponse], error)
-	ListSecretStates(
-		context.Context, *connect.Request[v1.ListSecretStatesRequest],
-	) (*connect.Response[v1.ListSecretStatesResponse], error)
 }
 
 // Values answers the reads and writes of the settings and the choice of a path. A value with no
 // use case set answers that the build serves no settings.
 type Values struct {
-	get        *setting.GetWithSecrets
+	get        *setting.Get
 	write      *setting.WriteSettings
 	watch      *setting.WatchSettingChanges
 	choosePath *setting.ChoosePluginPath
 }
 
 func NewValues(
-	get *setting.GetWithSecrets, write *setting.WriteSettings, watch *setting.WatchSettingChanges,
+	get *setting.Get, write *setting.WriteSettings, watch *setting.WatchSettingChanges,
 	choosePath *setting.ChoosePluginPath,
 ) Values {
 	return Values{get: get, write: write, watch: watch, choosePath: choosePath}
 }
 
 // NewHandler is the handler of SettingsService made of its parts.
-func NewHandler(values Values, folders PluginFolders, items *SecretItems, groups *SecretGroups) *Handler {
-	return &Handler{Values: values, PluginFolders: folders, secretItemCalls: items, secretGroupCalls: groups}
+func NewHandler(values Values, folders PluginFolders) *Handler {
+	return &Handler{Values: values, PluginFolders: folders}
 }
 
 // PluginFolders answers the calls about the folders plugins keep in the shown vault and the start of
@@ -90,28 +61,23 @@ func NewPluginFolders(retry *setting.RetryPlugin, data PluginData, vaults VaultP
 // errNoSettings is what a build that serves no settings answers.
 var errNoSettings = errors.New("this build serves no settings")
 
-// GetSettings returns every setting of the file this installation is configured in,
-// and the models that settings naming a model can be set to.
+// GetSettings returns every setting of the file this installation is configured in.
 func (h *Values) GetSettings(
-	ctx context.Context, _ *connect.Request[v1.GetSettingsRequest],
+	_ context.Context, _ *connect.Request[v1.GetSettingsRequest],
 ) (*connect.Response[v1.GetSettingsResponse], error) {
 	if h.get == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	got, err := h.get.Execute(ctx)
+	got, err := h.get.Execute()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	reply := &v1.GetSettingsResponse{
 		Written: got.Written,
 		Path:    got.Path,
-		Models:  NewWireModels(got.Models),
 		Plugins: NewWirePluginInfos(got.Plugins),
 		App:     newWirePluginSettings(got.App),
 	}
-	reply.SecretSections = newWireSecretSections(got.Secrets.Sections)
-	reply.SecretMenus = newWireSecretMenus(got.Secrets.Menus)
-	reply.CredentialsPath = got.Secrets.CredentialsPath
 	return connect.NewResponse(reply), nil
 }
 
@@ -137,35 +103,6 @@ func (h *Values) WriteSettings(
 	return connect.NewResponse(&v1.WriteSettingsResponse{}), nil
 }
 
-// NewWireModels is the models as the wire carries them.
-func NewWireModels(target []settingsdomain.Model) []*v1.Model {
-	models := make([]*v1.Model, 0, len(target))
-	for _, one := range target {
-		models = append(models, &v1.Model{
-			NamedAt:          one.Path,
-			Name:             one.Name,
-			Title:            one.Title,
-			Group:            one.Group,
-			IsDefault:        one.IsDefault,
-			Writes:           newWireSettings(one.Writes),
-			Presence:         GetPresences()[one.Presence],
-			ReasoningLevels:  newWireReasoningLevels(one.ReasoningLevels),
-			DefaultReasoning: one.DefaultReasoning,
-		})
-	}
-	return models
-}
-
-// Presences is what a model's files are on this machine, as the wire carries
-// it.
-func GetPresences() map[settingsdomain.Presence]v1.Presence {
-	return map[settingsdomain.Presence]v1.Presence{
-		settingsdomain.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
-		settingsdomain.Present:        v1.Presence_PRESENCE_PRESENT,
-		settingsdomain.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
-	}
-}
-
 func newWireSettings(target []settingsdomain.Setting) []*v1.Setting {
 	content := make([]*v1.Setting, 0, len(target))
 	for _, one := range target {
@@ -179,20 +116,20 @@ func NewWirePluginInfos(target []plugin.Info) []*v1.PluginInfo {
 	infos := make([]*v1.PluginInfo, 0, len(target))
 	for _, one := range target {
 		infos = append(infos, &v1.PluginInfo{
-			Id:            one.ID,
-			Name:          one.Name,
-			Version:       one.Version,
-			Description:   one.Description,
-			Capabilities:  one.Capabilities,
-			Settings:      newWirePluginSettings(one.Settings),
-			IsActive:      one.IsActive,
-			Permissions:   one.Permissions,
-			Secrets:       newWireSecrets(one.Secrets),
-			Failure:       newWirePluginFailure(one.Failure),
-			HasFrontend:   one.HasFrontend,
-			HasBackend:    one.HasBackend,
-			Readers:       newWireReaders(one.Readers),
-			SettingsViews: newWireSettingsViews(one.SettingsViews),
+			Id:             one.ID,
+			Name:           one.Name,
+			Version:        one.Version,
+			Description:    one.Description,
+			Capabilities:   one.Capabilities,
+			Settings:       newWirePluginSettings(one.Settings),
+			IsActive:       one.IsActive,
+			Permissions:    one.Permissions,
+			HasFrontend:    one.HasFrontend,
+			HasBackend:     one.HasBackend,
+			Readers:        newWireReaders(one.Readers),
+			SettingsViews:  newWireSettingsViews(one.SettingsViews),
+			Contributions:  newWireContributions(one.Contributions),
+			IsOffByDefault: one.IsOffByDefault,
 		})
 	}
 	return infos
@@ -206,6 +143,7 @@ func newWirePluginSettings(target []plugin.Setting) []*v1.PluginSetting {
 			Type:          s.Type,
 			Title:         s.Title,
 			Description:   s.Description,
+			Details:       s.Details,
 			DefaultJson:   s.DefaultJSON,
 			Palette:       s.Palette,
 			Icon:          s.Icon,
@@ -219,19 +157,14 @@ func newWirePluginSettings(target []plugin.Setting) []*v1.PluginSetting {
 			Multiple:      s.Multiple,
 			Preview:       s.Preview,
 			OptionsFrom:   s.OptionsFrom,
+			Operations:    s.Operations,
+			Discover:      s.Discover,
 			ActiveOptions: newWireOptions(s.ActiveOptions),
 			IsShown:       s.IsShown,
 			ValueJson:     s.ValueJSON,
 		})
 	}
 	return settings
-}
-
-func newWirePluginFailure(failure *plugin.Failure) *v1.PluginFailure {
-	if failure == nil {
-		return nil
-	}
-	return &v1.PluginFailure{Reason: failure.Reason, Detail: failure.Detail, FailedAtUnixMs: failure.At.UnixMilli()}
 }
 
 // RetryPlugin starts a plugin whose last start failed once more. A plugin that fails
@@ -255,17 +188,6 @@ func (h *PluginFolders) RetryPlugin(
 		reply.Failure = failure.Reason
 	}
 	return connect.NewResponse(reply), nil
-}
-
-func newWireReasoningLevels(target []domain.ReasoningLevel) []*v1.ReasoningLevel {
-	if len(target) == 0 {
-		return nil
-	}
-	levels := make([]*v1.ReasoningLevel, 0, len(target))
-	for _, one := range target {
-		levels = append(levels, &v1.ReasoningLevel{Name: one.Name, Title: one.Title})
-	}
-	return levels
 }
 
 func newWireOptions(target manifest.SettingOptions) []*v1.PluginSettingOption {
@@ -299,23 +221,6 @@ func newWireCondition(target *manifest.Condition) *v1.PluginSettingCondition {
 		return nil
 	}
 	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
-}
-
-func newWireManifestCondition(target *manifest.Condition) *v1.ManifestCondition {
-	if target == nil {
-		return nil
-	}
-	return &v1.ManifestCondition{Setting: target.Setting, Is: target.Is}
-}
-
-func newWireSecrets(target []manifest.SecretDeclaration) []*v1.SecretDeclaration {
-	secrets := make([]*v1.SecretDeclaration, 0, len(target))
-	for _, one := range target {
-		secrets = append(secrets, &v1.SecretDeclaration{
-			Name: one.Name, Title: one.Title, Description: one.Description, When: newWireManifestCondition(one.When), Group: one.Group,
-		})
-	}
-	return secrets
 }
 
 // SetPathChooser sets the native dialog a path setting is chosen with, once the application has one.

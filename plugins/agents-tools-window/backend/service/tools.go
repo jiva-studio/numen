@@ -44,8 +44,6 @@ func addWindowTabList(registry *tools.Registry, control window.Control) error {
 			"and the identifier of the active tab. The place is the one the reader of the tab reported, " +
 			"omitted for a tab with none. Call it before describing the active tab.",
 		Effect:       tools.ReadOnly,
-		Step:         tools.ByEffect,
-		Servers:      []tools.Server{tools.Full, tools.Reading},
 		Instructions: []string{tabListSentence},
 		Requires:     []string{host.PermissionWindowFocus},
 	}, func(ctx context.Context, _ api.WindowTabListInput) (api.WindowTabListOutput, error) {
@@ -63,9 +61,7 @@ func addNoteEditPreview(registry *tools.Registry, creator editpreview.Creator) e
 		Title: "Preview note edit",
 		Description: "Propose changes to a note with an interactive diff preview in the editor " +
 			"without directly modifying the vault file.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.ByEffect,
-		Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect: tools.ReadOnly,
 	}, func(ctx context.Context, in api.NoteEditPreviewInput) (api.NoteEditPreviewOutput, error) {
 		created, err := creator.Create(ctx, editpreview.Request{
 			Path:         in.Path,

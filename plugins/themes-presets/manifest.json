@@ -1,7 +1,7 @@
 {
   "id": "md.numen.themes.presets",
   "name": "Preset Themes",
-  "version": "2026.11.2",
+  "version": "2026.11.3",
   "protocol": 1,
   "description": "Twelve color themes for the editor and the flashcards window",
   "capabilities": [],

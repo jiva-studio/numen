@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 )
 
-// Services holds what the host lends to the plugins that call it: the completer, the vault, the
+// Services holds what the host lends to the plugins that call it: the calls on models, the rows, the vault, the
 // texts, the window, the list of vaults, the search and the queue of work. What is not set is
 // reported as nil, and a call that needs it is refused. The set is replaced whole at each change, so a
 // call reads one consistent set without a lock.
@@ -15,13 +15,14 @@ type Services struct {
 }
 
 type lentSet struct {
-	completer Completer
-	access    *vault.Access
-	texts     TextVersions
-	window    WindowControl
-	vaultList vault.List
-	search    *SearchAccess
-	work      WorkQueue
+	modelCalls ModelCalls
+	rowLists   RowLists
+	access     *vault.Access
+	texts      TextVersions
+	window     WindowControl
+	vaultList  vault.List
+	search     *SearchAccess
+	work       WorkQueue
 }
 
 // NewServices creates an empty set of services.
@@ -48,13 +49,21 @@ func (s *Services) change(apply func(*lentSet)) {
 	}
 }
 
-// SetCompleter sets what answers the completions plugins ask for.
-func (s *Services) SetCompleter(completer Completer) {
-	s.change(func(set *lentSet) { set.completer = completer })
+// SetModelCalls sets what carries out the calls on models plugins ask for.
+func (s *Services) SetModelCalls(calls ModelCalls) {
+	s.change(func(set *lentSet) { set.modelCalls = calls })
 }
 
-// GetCompleter returns what answers the completions plugins ask for, or nil.
-func (s *Services) GetCompleter() Completer { return s.get().completer }
+// GetModelCalls returns what carries out the calls on models plugins ask for, or nil.
+func (s *Services) GetModelCalls() ModelCalls { return s.get().modelCalls }
+
+// SetRowLists sets what lists the rows of the plugins and the values of their row fields.
+func (s *Services) SetRowLists(lists RowLists) {
+	s.change(func(set *lentSet) { set.rowLists = lists })
+}
+
+// GetRowLists returns what lists the rows of the plugins and the values of their row fields, or nil.
+func (s *Services) GetRowLists() RowLists { return s.get().rowLists }
 
 // SetPluginVault sets the vault exposed to plugins. Nil means none.
 func (s *Services) SetPluginVault(access *vault.Access) {

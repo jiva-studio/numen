@@ -6,7 +6,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
@@ -15,15 +14,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -68,11 +67,9 @@ type NoteUseCases struct {
 	Write        *note.Write
 	Create       *note.Create
 	Rename       *note.Rename
-	EditLinks    *note.EditLinks
-	Names        edit.NameQueries
 	OpeningNote  *query.GetOpeningNote
 	Headings     *query.ListHeadings
-	Neighborhood *query.GetNeighborhoodView
+	RelatedNotes *query.GetRelatedNotesView
 	ResolveLinks *query.ResolveLinks
 }
 
@@ -83,8 +80,8 @@ func (s *Services) UseNotes() {
 	s.Note = notewindow.NewHandler(
 		s.state.Notices,
 		notewindow.NewProse(s.state, use.Read, use.Write, use.Create, use.Rename, writes),
-		notewindow.NewOutline(s.state, use.OpeningNote, use.Neighborhood, use.Headings),
-		notewindow.NewLinks(s.state, use.ResolveLinks, writeLink(use.EditLinks, use.Names, writes), nil, nil, writes),
+		notewindow.NewOutline(s.state, use.OpeningNote, use.RelatedNotes, use.Headings),
+		notewindow.NewLinks(s.state, use.ResolveLinks, nil, nil, writes),
 		notewindow.NewConnections(s.state, nil, nil, nil, nil, nil),
 	)
 }
@@ -93,7 +90,7 @@ func createServices(state *State) *Services {
 	services := &Services{
 		state: state,
 		File: filewindow.NewHandler(
-			filewindow.NewFolders(state, state.Events, nil, nil, nil),
+			filewindow.NewFolders(state, nil, nil, nil),
 			filewindow.NewChanges(state, state.Notices, nil, nil, nil, nil),
 		),
 		Command: newEmptyCommandHandler(state),
@@ -102,9 +99,8 @@ func createServices(state *State) *Services {
 		server:  NewFileServer(state, nil),
 	}
 	services.Extra = []Route{
-		RouteOf(state, search.NewHandler(state, nil, nil), search.NewRoute),
-		RouteOf(state, settings.NewHandler(settings.Values{}, settings.PluginFolders{}, &settings.SecretItems{}, &settings.SecretGroups{}), settings.NewRoute),
-		RouteOf(state, &windowagent.Handler{}, windowagent.NewRoute),
+		RouteOf(state, search.NewHandler(state, nil, nil, searchcancel.NewSearches(testsupport.NewClock())), search.NewRoute),
+		RouteOf(state, settings.NewHandler(settings.Values{}, settings.PluginFolders{}), settings.NewRoute),
 		RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
 	}
 	services.UseNotes()
@@ -132,7 +128,7 @@ func (s *Services) pages() pageSet {
 	path, served = numenv1connect.NewPluginServiceHandler(s.Plugin, counted)
 	routes = append(routes, NewRoute(path, served, s.Plugin))
 	routes = append(routes, s.Extra...)
-	return pageSet{gate: s.state.Gate, window: statePages{state: s.state}, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
+	return pageSet{gate: s.state.Gate, window: statePages{state: s.state}, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir, mediaTypes: s.mediaTypes}
 }
 
 // RouteOf is the route of a handler built by its own package: the path it serves and the handler
@@ -197,14 +193,6 @@ func ServicesOf(o *Installation, state *State) *Services {
 func ViewOf(state *State) windowsession.View {
 	notices := state.Notices
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
-}
-
-func writeLink(links *note.EditLinks, names edit.NameQueries, writes *wire.Writes) *note.WriteLink {
-	if links == nil {
-		return nil
-	}
-	linking := note.NewWriteLink(*links, names, writes)
-	return &linking
 }
 
 func newEmptyCommandHandler(state *State) *command.Handler {

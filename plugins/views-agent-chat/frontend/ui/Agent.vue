@@ -23,6 +23,10 @@ withDefaults(defineProps<AgentProps>(), {
   noAgentLabel: 'No agent',
   noAgentMessage: 'No agent is set up.',
   openSettingsLabel: 'Open settings',
+  pendingAgentIds: () => [],
+  loadingLabel: 'Loading…',
+  failedAgentIds: () => [],
+  failedLabel: 'Could not list models',
 })
 
 const text = defineModel<string>({ default: '' })
@@ -39,6 +43,8 @@ const emit = defineEmits<{
   (event: 'select-model', option: AgentModelOption): void
   /** A depth of reasoning was chosen from the dropdown, by the name of the level. */
   (event: 'select-reasoning', id: string): void
+  /** The list of models or of reasoning levels opened. */
+  (event: 'open-choices'): void
   (event: 'open-settings'): void
 }>()
 
@@ -111,15 +117,17 @@ function onSelectReasoning(id: string) {
       :no-agent-label="noAgentLabel"
       :no-agent-message="noAgentMessage"
       :open-settings-label="openSettingsLabel"
+      :pending-agent-ids="pendingAgentIds"
+      :loading-label="loadingLabel"
+      :failed-agent-ids="failedAgentIds"
+      :failed-label="failedLabel"
       @submit="onSubmit"
       @stop="emit('stop')"
       @select-model="onSelectModel"
       @select-reasoning="onSelectReasoning"
+      @open-choices="emit('open-choices')"
       @open-settings="emit('open-settings')"
-    >
-      <template v-if="$slots.selector" #selector><slot name="selector" /></template>
-      <template v-if="$slots.glyph" #glyph><slot name="glyph" /></template>
-    </MessageComposer>
+    />
   </div>
 </template>
 

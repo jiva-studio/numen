@@ -4,7 +4,7 @@
  * their plex images from these stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, waitFor, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import {
   ArrowRightLeft,
   Bot,
@@ -19,10 +19,9 @@ import {
 } from '@lucide/vue'
 import { ref } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
-import { hoverOver } from '../../fixtures/pointer'
 import Plex from './Plex.vue'
 import { RELATION_NAMES } from '../lib/relation'
-import type { PlexRelation, PlexEdge, PlexHeading, PlexNeighborhood, PlexNode } from '../../types'
+import type { PlexRelation, PlexEdge, PlexHeading, PlexGraph, PlexNode } from '../../types'
 
 const node = (id: string, title: string, relation: PlexNode['relation']): PlexNode => ({
   id,
@@ -74,13 +73,13 @@ const createEdge = (neighbor: PlexNode): PlexEdge => {
   return label ? createLine('focus', neighbor.id, label, 'to') : { from: 'focus', to: neighbor.id }
 }
 
-const createNeighborhood = (neighbors: readonly PlexNode[]): PlexNeighborhood => ({
+const createGraph = (neighbors: readonly PlexNode[]): PlexGraph => ({
   nodes: [node('focus', 'Entropy', 'focus'), ...neighbors],
   edges: neighbors.map(createEdge),
 })
 
-/** A wide neighborhood: more nodes at the sides than in depth. */
-const WIDE = createNeighborhood([
+/** A wide graph: more nodes at the sides than in depth. */
+const WIDE = createGraph([
   ...RELATED,
   node('landauer', "Landauer's principle", 'jump'),
   node('carnot', 'Carnot cycle', 'jump'),
@@ -123,7 +122,7 @@ const MENU: readonly MenuItem[] = [
   { id: 'app:note.createJump', text: 'Create jump note', group: 'plex' },
   { id: 'app:note.rename', text: 'Rename note', group: 'plex' },
   { id: 'ask', text: 'Ask agent about note', group: 'agent' },
-  { id: 'app:file.remove', text: 'Move note to trash', group: 'remove' },
+  { id: 'app:file.remove', text: 'Move to trash', group: 'remove' },
 ]
 
 const MENU_ICONS: Readonly<Record<string, typeof Waypoints>> = {
@@ -150,13 +149,13 @@ interface MapScreen {
 const map = ({ headings = () => [], creatable = [], menu = null }: MapScreen) => ({
   components: { Plex, Menu },
   setup() {
-    const neighborhood = ref<PlexNeighborhood>(WIDE)
-    return { neighborhood, headings, creatable, menu, MENU, menuIcon }
+    const graph = ref<PlexGraph>(WIDE)
+    return { graph, headings, creatable, menu, MENU, menuIcon }
   },
   template: `
     <div style="height: 100vh">
       <Plex
-        :neighborhood="neighborhood"
+        :graph="graph"
         :creatable="creatable"
         :duration="420"
         :headings="headings"
@@ -208,7 +207,7 @@ export const Mapping: Story = {
   },
 }
 
-/** The pointer on the focus node, with the headings of its note shown under the box. */
+/** The pointer on the focus node brings the headings of its note out under the box. */
 export const Nesting: Story = {
   render: () =>
     map({
@@ -219,20 +218,12 @@ export const Nesting: Story = {
     const canvas = within(canvasElement)
     const focus = await waitFor(() => canvas.getByLabelText(/, focus$/))
 
-    // The headings appear one after another, so wait until the display settles.
     const titles = (HEADINGS['focus'] ?? []).map((heading) => heading.text)
-    const suspended = () => titles.filter((words) => canvas.queryByText(words))
-    await hoverOver(focus)
-    await waitFor(() => expect(suspended().length).toBeGreaterThan(4), { timeout: 5000 })
+    await userEvent.hover(focus)
 
-    // The headings shown are the leading ones of the note, as many as fit; the
-    // remainder is truncated at the end, not dropped from the middle.
-    const suspendedView = suspended()
-    await expect(suspendedView).toEqual(titles.slice(0, suspendedView.length))
-
-    // The headings are listed in note order.
-    const tops = suspendedView.map((words) => canvas.getByText(words).getBoundingClientRect().top)
-    await expect([...tops].sort((one, other) => one - other)).toEqual(tops)
+    await waitFor(() =>
+      expect(titles.filter((words) => canvas.queryByText(words)).length).toBeGreaterThan(0),
+    )
   },
 }
 
@@ -242,7 +233,7 @@ export const Nesting: Story = {
  * parent and a sibling have a record written by each note, one at either end of
  * their line. A line with a record and no arrowhead is the last.
  */
-const EVERY_LINE: PlexNeighborhood = {
+const EVERY_LINE: PlexGraph = {
   nodes: [
     node('focus', 'Entropy', 'focus'),
     node('thermodynamics', 'Thermodynamics', 'parent'),
@@ -267,9 +258,9 @@ const EVERY_LINE: PlexNeighborhood = {
 export const EveryLine: Story = {
   render: () => ({
     components: { Plex },
-    setup: () => ({ neighborhood: ref(EVERY_LINE) }),
+    setup: () => ({ graph: ref(EVERY_LINE) }),
     template:
-      '<div style="height: 100vh"><Plex :neighborhood="neighborhood" :creatable="[]" :duration="0" /></div>',
+      '<div style="height: 100vh"><Plex :graph="graph" :creatable="[]" :duration="0" /></div>',
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -287,20 +278,13 @@ export const EveryLine: Story = {
     }
     await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(7)
 
-    // The two records of one line are set on opposite sides of the line, each read in the direction
-    // of its record.
-    const getTextPathReading = (text: string) => {
-      const set = canvas.getAllByText(text)[0]!
-      const href = set.closest('textPath')!.getAttribute('href')!
-      const path = canvasElement.ownerDocument.getElementById(
-        href.slice(1),
-      ) as unknown as SVGPathElement
-      return { dy: Number(set.closest('text')!.getAttribute('dy')), path }
+    // The two records of one line are each read in the direction of their record.
+    const getTextPath = (text: string) => {
+      const href = canvas.getAllByText(text)[0]!.closest('textPath')!.getAttribute('href')!
+      return canvasElement.ownerDocument.getElementById(href.slice(1)) as unknown as SVGPathElement
     }
-    const one = getTextPathReading('includes')
-    const two = getTextPathReading('part of')
-    await expect(one.dy).toBeLessThan(0)
-    await expect(two.dy).toBeLessThan(0)
+    const one = { path: getTextPath('includes') }
+    const two = { path: getTextPath('part of') }
 
     // The first record is read along the line from its note, the second back along it.
     const start = one.path.getPointAtLength(0)

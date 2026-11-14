@@ -3,22 +3,12 @@
 package access
 
 import (
-	"crypto/subtle"
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
-)
 
-// HasValidToken reports whether the request carries the token as a bearer credential. An empty
-// token matches no request.
-func HasValidToken(token string, r *http.Request) bool {
-	if token == "" {
-		return false
-	}
-	bearer, isBearer := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-	return isBearer && subtle.ConstantTimeCompare([]byte(bearer), []byte(token)) == 1
-}
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+)
 
 // IsLoopbackOrigin reports whether the origin is an http or https URL whose host is localhost or a
 // loopback address.
@@ -43,7 +33,7 @@ func RequireToken(token string, next http.Handler) http.Handler {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
-		if !HasValidToken(token, r) {
+		if !server.HasBearerToken(r.Header, token) {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="numen"`)
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return

@@ -181,6 +181,7 @@ describe('createCustomTabKind', () => {
         title: 'Markdown Note',
       },
       {
+        target: 'desktop.editor',
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
@@ -212,6 +213,7 @@ describe('createCustomTabKind', () => {
 describe('createCustomTabKind (loading)', () => {
   const registration = { kind: 'note', component: STUB_COMPONENT, title: 'Markdown Note' }
   const createHost = (readNote?: (path: string) => Promise<string | undefined>) => ({
+    target: 'desktop.editor',
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
     openTab: () => Promise.resolve(''),
@@ -248,6 +250,7 @@ describe('createCustomTabKind (loading)', () => {
 
 describe('createCustomTabKind (failed writes)', () => {
   const host = (writeNote: (path: string, body: string) => Promise<void>) => ({
+    target: 'desktop.editor',
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
     openTab: () => Promise.resolve(''),
@@ -418,6 +421,7 @@ describe('createCustomTabKind (notes)', () => {
         title: 'Note',
       },
       {
+        target: 'desktop.editor',
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
@@ -511,6 +515,7 @@ describe('createCustomTabKind (notes)', () => {
         component: STUB_COMPONENT,
       },
       {
+        target: 'desktop.editor',
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
@@ -531,6 +536,7 @@ describe('createCustomTabKind (notes)', () => {
       'p',
       { kind: 'note', component: STUB_COMPONENT },
       {
+        target: 'desktop.editor',
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
@@ -594,6 +600,7 @@ describe('createCustomTabKind (notes)', () => {
       'p',
       { kind: 'custom', component: STUB_COMPONENT },
       {
+        target: 'desktop.editor',
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
@@ -675,6 +682,28 @@ describe('createBufferedNoteState', () => {
     return { buffer, noteRef, errRef }
   }
 
+  it('reveals the requested line once the note is read and the editor is attached', async () => {
+    const { buffer, noteRef } = createMockBuffer()
+    const scope = effectScope()
+    const state = scope.run(() =>
+      createBufferedNoteState(
+        { targetPath: 'notes/buf.md', id: 'tab-buf', buffer },
+        { pluginId: 'md.numen.notes' },
+      ),
+    )!
+    const reveal = vi.fn(() => true)
+
+    state.revealLine(9)
+    state.attachEditor({ reveal })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(reveal).not.toHaveBeenCalled()
+
+    noteRef.value = { path: 'notes/buf.md', body: 'text', state: 'ready' }
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(reveal).toHaveBeenCalledExactlyOnceWith(9)
+  })
+
   it('binds note tab state, wikilinks, link following, navigation, and scope disposal', async () => {
     const { buffer, noteRef, errRef } = createMockBuffer()
     const findNotes = vi.fn(async (q: string) =>
@@ -697,10 +726,12 @@ describe('createBufferedNoteState', () => {
       'md.numen.notes',
       { kind: 'note', component: STUB_COMPONENT, title: 'Note' },
       {
+        target: 'desktop.editor',
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
         getNoteBuffer: () => buffer,
+        isNoteEditor: true,
         getNotes: () => ({ findNotes, getHeadings }) as never,
         getWorkspace: () => ({ files: { open: openFile } }) as never,
         resolveLink,
@@ -802,12 +833,13 @@ describe('createBufferedNoteState', () => {
     scope.stop()
     expect(buffer.close).toHaveBeenCalledWith('tab-buf')
 
-    // Non-note custom tab kind does not open note buffer even when getNoteBuffer is provided
+    // A kind the manifest does not declare as the note editor opens no note buffer, whatever its name
     vi.mocked(buffer.open).mockClear()
     const nonNoteWithBuffer = createCustomTabKind(
       'p',
-      { kind: 'custom-other', component: STUB_COMPONENT },
+      { kind: 'note', component: STUB_COMPONENT },
       {
+        target: 'desktop.editor',
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
@@ -832,6 +864,7 @@ describe('createBufferedNoteState', () => {
       {
         pluginId: 'p',
         deps: {
+          target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
           openTab: async () => '',
@@ -849,6 +882,7 @@ describe('createBufferedNoteState', () => {
       {
         pluginId: 'p',
         deps: {
+          target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
           openTab: async () => '',
@@ -868,6 +902,7 @@ describe('createBufferedNoteState', () => {
       {
         pluginId: 'p',
         deps: {
+          target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
           openTab: async () => '',
@@ -887,6 +922,7 @@ describe('createBufferedNoteState', () => {
       {
         pluginId: 'p',
         deps: {
+          target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
           openTab: async () => '',

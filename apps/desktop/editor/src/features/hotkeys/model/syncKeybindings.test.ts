@@ -31,6 +31,7 @@ const TARGET = { path: 'Tides.md', title: 'Tides', isFolder: false, others: [], 
 const create = (list?: readonly DeclaredKeybinding[]) => {
   const window = { 'window.isFieldFocused': false }
   const host = createPluginHost({
+    target: 'desktop.editor',
     registerKind: () => () => undefined,
     registerExtensionReader: () => () => undefined,
     openTab: async () => 'tab-1',

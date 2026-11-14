@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchpolicyport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -100,7 +100,7 @@ func (p FloorPolicy) GetFloor(ctx context.Context, v domain.Vault, recipe string
 
 // GetEmbeddingState reads the model in use and the progress of the vault under it from the index.
 func (p FloorPolicy) GetEmbeddingState(
-	ctx context.Context, v domain.Vault, progress Progress, model embedding.Model,
+	ctx context.Context, v domain.Vault, progress Progress, model searchsource.Description,
 ) (plugin.EmbeddingState, error) {
 	recipe := model.Recipe()
 	held, embedded, err := progress.GetProgress(ctx, v.ID, recipe)

@@ -13,7 +13,6 @@ type event struct {
 	Event   streamEvent     `json:"event"`
 	Result  string          `json:"result"`
 	IsError bool            `json:"-"`
-	Status  string          `json:"status"`
 
 	Servers      *[]serverStatus `json:"-"`
 	ServerErrors []serverError   `json:"-"`
@@ -69,21 +68,32 @@ func readField(raw map[string]json.RawMessage, key string, target any) error {
 	return json.Unmarshal(value, target)
 }
 
-func (e event) hasToolAnswer() bool {
+// toolAnswer is the end of a call the program reports in a user message.
+type toolAnswer struct {
+	ID      string
+	IsError bool
+}
+
+func (e event) getToolAnswers() []toolAnswer {
 	var msg struct {
-		Content []struct {
-			Type string `json:"type"`
-		} `json:"content"`
+		Content []map[string]json.RawMessage `json:"content"`
 	}
 	if err := json.Unmarshal(e.Message, &msg); err != nil {
-		return false
+		return nil
 	}
-	for _, c := range msg.Content {
-		if c.Type == "tool_result" {
-			return true
+	var answers []toolAnswer
+	for _, block := range msg.Content {
+		var kind, id string
+		var isError bool
+		if json.Unmarshal(block["type"], &kind) != nil || kind != "tool_result" {
+			continue
 		}
+		if readField(block, "tool_use_id", &id) != nil || readField(block, "is_error", &isError) != nil {
+			continue
+		}
+		answers = append(answers, toolAnswer{ID: id, IsError: isError})
 	}
-	return false
+	return answers
 }
 
 type streamEvent struct {
@@ -93,9 +103,10 @@ type streamEvent struct {
 }
 
 type streamDelta struct {
-	Type    string `json:"type"`
-	Text    string `json:"text"`
-	Partial string `json:"-"`
+	Type     string `json:"type"`
+	Text     string `json:"text"`
+	Thinking string `json:"thinking"`
+	Partial  string `json:"-"`
 }
 
 type contentBlock struct {

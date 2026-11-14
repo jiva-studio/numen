@@ -1,0 +1,533 @@
+package connection
+
+import (
+	"context"
+	"slices"
+	"sync"
+	"testing"
+
+	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/structpb"
+
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+)
+
+type memoryRepository struct {
+	mu          sync.Mutex
+	connections []connection.Connection
+}
+
+func (r *memoryRepository) ListConnections() ([]connection.Connection, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return slices.Clone(r.connections), nil
+}
+
+func (r *memoryRepository) ChangeConnections(change func([]connection.Connection) ([]connection.Connection, error)) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	updated, err := change(slices.Clone(r.connections))
+	if err != nil {
+		return err
+	}
+	r.connections = updated
+	return nil
+}
+
+type fixedTypes []connection.Type
+
+func (t fixedTypes) ListTypes() []connection.Type { return t }
+
+func (t fixedTypes) GetType(typeID string) (connection.Type, bool) {
+	for _, one := range t {
+		if one.GetID() == typeID {
+			return one, true
+		}
+	}
+	return connection.Type{}, false
+}
+
+type memoryKeys struct {
+	values map[string]string
+	err    error
+}
+
+func (k *memoryKeys) GetKey(_ context.Context, name string) (string, error) {
+	value, found := k.values[name]
+	if !found {
+		return "", plugin.ErrNoKey
+	}
+	return value, nil
+}
+
+func (k *memoryKeys) SetKey(_ context.Context, name, key string) error {
+	if k.err != nil {
+		return k.err
+	}
+	k.values[name] = key
+	return nil
+}
+
+func (k *memoryKeys) DeleteKey(_ context.Context, name string) error {
+	delete(k.values, name)
+	return nil
+}
+
+type fixedUses map[string][]connection.Use
+
+func (u fixedUses) ListUses(connectionID string) ([]connection.Use, error) {
+	return u[connectionID], nil
+}
+
+func (u fixedUses) RemoveRows(string) error { return nil }
+
+func (u fixedUses) Refresh(context.Context, string) error { return nil }
+
+func (u fixedUses) ListGrants() []connection.Grant { return nil }
+
+func newHandler(keys *memoryKeys) *Handler { return newHandlerWithUses(keys, fixedUses{}) }
+
+func getTypes() fixedTypes {
+	fixed := "https://openrouter.ai/api/v1"
+	return fixedTypes{{PluginID: "md.numen.connections.llm", PluginName: "LLM connections", IsAvailable: true, Declaration: manifest.ConnectionType{
+		ID: "openrouter", Title: "OpenRouter", Description: "One key for many models.", Operations: []string{"llm.complete", "llm.embed", "llm.models"},
+		RowFields: []manifest.ConnectionField{{Key: "model", Type: "string", Title: "Model", IsRequired: true, OptionsFrom: "llm.models"}},
+		Fields: []manifest.ConnectionField{
+			{Key: "baseUrl", Type: "string", Title: "Address", IsAddress: true, FixedValue: &fixed},
+			{Key: "apiKey", Type: "secret", Title: "API key", IsRequired: true},
+			{Key: "mode", Type: "enum", Title: "Mode", Default: "fast", Options: manifest.SettingOptions{{Value: "fast"}, {Value: "slow", Title: "Slow"}}},
+			{Key: "parallelRequests", Type: "number", Title: "Parallel requests", Default: float64(4), Min: new(1.0), Max: new(32.0), Step: new(1.0)},
+		},
+	}}}
+}
+
+func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
+	return newHandlerOver(keys, uses, &modelList{})
+}
+
+func newHandlerOver(keys *memoryKeys, uses connectionport.Uses, provider *modelList) *Handler {
+	next := 0
+	return NewHandler(useCasesOf(connectiontest.New(&memoryRepository{}, getTypes(), keys, uses, func() (string, error) {
+		next++
+		return "c0000000" + string(rune('0'+next)), nil
+	}), provider))
+}
+
+func useCasesOf(all *connectiontest.Connections, source connectionport.ProviderSource) UseCases {
+	return UseCases{
+		Edits: Edits{Create: all.Create, Update: all.Update, Delete: all.Delete},
+		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(rowoptions.Deps{
+			Resolve: all.Resolve.Execute, ReadSecrets: all.ReadSecrets.Execute, Source: source, Running: notRunning{},
+			Lists:  rowoptions.NewLists(&memoryLists{byPlugin: map[string][]connection.OptionList{}}, sameConfig{}),
+			Grants: func(string) (string, bool, error) { return "", false, nil },
+		})},
+	}
+}
+
+// sameConfig gives every plugin one configuration that never changes.
+type sameConfig struct{}
+
+func (sameConfig) GetPluginConfigRevision(string) string { return "" }
+
+// memoryLists keeps the option lists in memory.
+type memoryLists struct {
+	mu       sync.Mutex
+	byPlugin map[string][]connection.OptionList
+}
+
+func (m *memoryLists) ReadOptionLists(pluginID string) ([]connection.OptionList, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	lists, isKept := m.byPlugin[pluginID]
+	return slices.Clone(lists), isKept
+}
+
+func (m *memoryLists) WriteOptionLists(pluginID string, lists []connection.OptionList) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.byPlugin[pluginID] = slices.Clone(lists)
+}
+
+// notRunning finds no plugin running.
+type notRunning struct{}
+
+func (notRunning) OpenRunningProvider(context.Context, string) (connectionport.Provider, func(), bool) {
+	return nil, nil, false
+}
+
+// modelList is a provider that lists two models and counts the listings.
+type modelList struct {
+	mu     sync.Mutex
+	listed int
+}
+
+func (m *modelList) countListings() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.listed
+}
+
+func (m *modelList) OpenProvider(context.Context, string) (connectionport.Provider, func(), error) {
+	return m, func() {}, nil
+}
+
+func (m *modelList) Call(context.Context, string, modelcall.ProviderCall, []byte, modelcall.Send) ([]byte, error) {
+	return nil, nil
+}
+
+func (m *modelList) ListOptions(context.Context, string, modelcall.ProviderCall, modelcall.OptionsQuery) (modelcall.ListedOptions, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.listed++
+	return modelcall.ListedOptions{Options: []modelcall.Option{
+		{Value: "google/gemini-2.5-flash", Title: "Gemini 2.5 Flash", Group: "Google"}, {Value: "qwen/qwen3-8b"},
+	}}, nil
+}
+
+func (m *modelList) ListDetected(context.Context, modelcall.ProviderCall) ([]modelcall.DetectedConnection, error) {
+	return nil, nil
+}
+
+// kiteDetected is the providers once the agents plugin answered that Kite agent is found.
+type kiteDetected struct{}
+
+func (kiteDetected) ListDetected() []connection.Connection {
+	return []connection.Connection{{
+		ID: "org.example.agents/kite/Kite agent", TypeID: "org.example.agents/kite", Name: "Kite agent", Fields: map[string]any{},
+		Path: "~/.local/bin/kite",
+	}}
+}
+
+func (kiteDetected) IsPending(string) bool { return false }
+
+func (kiteDetected) Detect(context.Context, string) {}
+
+func (kiteDetected) Refresh() {}
+
+func newKeys() *memoryKeys { return &memoryKeys{values: map[string]string{}} }
+
+func createRequest(name string) *connect.Request[v1.CreateProviderConnectionRequest] {
+	return connect.NewRequest(&v1.CreateProviderConnectionRequest{
+		TypeId: "md.numen.connections.llm/openrouter", Name: name,
+		Fields:  map[string]*structpb.Value{"parallelRequests": structpb.NewNumberValue(8)},
+		Secrets: map[string]string{"apiKey": "sk-or-1"},
+	})
+}
+
+func TestListProviderConnectionTypesReturnsTheFieldsOfEachType(t *testing.T) {
+	response, err := newHandler(newKeys()).ListProviderConnectionTypes(t.Context(), connect.NewRequest(&v1.ListProviderConnectionTypesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(response.Msg.GetTypes()) != 1 {
+		t.Fatalf("types = %v", response.Msg.GetTypes())
+	}
+	one := response.Msg.GetTypes()[0]
+	if one.GetTypeId() != "md.numen.connections.llm/openrouter" || one.GetPluginName() != "LLM connections" || !one.GetIsAvailable() {
+		t.Errorf("type = %v", one)
+	}
+	if !slices.Equal(one.GetOperations(), []string{"llm.complete", "llm.embed", "llm.models"}) || len(one.GetFields()) != 4 {
+		t.Fatalf("type = %v", one)
+	}
+	address, key, mode, parallel := one.GetFields()[0], one.GetFields()[1], one.GetFields()[2], one.GetFields()[3]
+	if !address.GetIsAddress() || address.GetFixedValue() != "https://openrouter.ai/api/v1" {
+		t.Errorf("address = %v", address)
+	}
+	if key.GetType() != "secret" || !key.GetIsRequired() {
+		t.Errorf("key = %v", key)
+	}
+	options := mode.GetOptions().GetValues()
+	if len(options) != 2 || options[0].GetStringValue() != "fast" || options[1].GetStructValue().GetFields()["title"].GetStringValue() != "Slow" {
+		t.Errorf("options = %v", options)
+	}
+	if rows := one.GetRowFields(); len(rows) != 1 || rows[0].GetKey() != "model" || rows[0].GetOptionsFrom() != "llm.models" || !rows[0].GetIsRequired() {
+		t.Errorf("row fields = %v", rows)
+	}
+	if parallel.GetDefault().GetNumberValue() != 4 || parallel.GetMin() != 1 || parallel.GetMax() != 32 || parallel.GetStep() != 1 {
+		t.Errorf("parallel = %v", parallel)
+	}
+}
+
+func TestCreateProviderConnectionReturnsTheConnectionWithoutTheSecret(t *testing.T) {
+	handler := newHandler(newKeys())
+
+	response, err := handler.CreateProviderConnection(t.Context(), createRequest(""))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	one := response.Msg.GetConnection()
+	if response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("error = %v: %s", response.Msg.GetError(), response.Msg.GetDetail())
+	}
+	if one.GetName() != "OpenRouter" || one.GetRevision() != 1 || !one.GetIsTypeAvailable() || !one.GetIsComplete() {
+		t.Errorf("connection = %v", one)
+	}
+	if !slices.Equal(one.GetSecretKeysSet(), []string{"apiKey"}) || one.GetFields()["parallelRequests"].GetNumberValue() != 8 {
+		t.Errorf("connection = %v", one)
+	}
+	if _, found := one.GetFields()["apiKey"]; found {
+		t.Errorf("the key is among the fields: %v", one.GetFields())
+	}
+}
+
+func TestListProviderConnectionsReturnsTheCreatedConnections(t *testing.T) {
+	handler := newHandler(newKeys())
+	if _, err := handler.CreateProviderConnection(t.Context(), createRequest("Work")); err != nil {
+		t.Fatal(err)
+	}
+
+	response, err := handler.ListProviderConnections(t.Context(), connect.NewRequest(&v1.ListProviderConnectionsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(response.Msg.GetConnections()) != 1 || response.Msg.GetConnections()[0].GetName() != "Work" {
+		t.Errorf("connections = %v", response.Msg.GetConnections())
+	}
+}
+
+func TestAServedFailureIsAnErrorCodeAndNotAStatus(t *testing.T) {
+	handler := newHandler(newKeys())
+	created := mustCreate(t, handler)
+	id := created.Msg.GetConnection().GetId()
+
+	taken, err := handler.CreateProviderConnection(t.Context(), createRequest("work"))
+	if err != nil || taken.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN || taken.Msg.GetConnection() != nil {
+		t.Errorf("create: response = %v, err = %v", taken.Msg, err)
+	}
+	stale, err := handler.UpdateProviderConnection(t.Context(), connect.NewRequest(&v1.UpdateProviderConnectionRequest{Id: id, Revision: 7, Name: "Home"}))
+	if err != nil || stale.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION {
+		t.Errorf("update: response = %v, err = %v", stale.Msg, err)
+	}
+	missing, err := handler.DeleteProviderConnection(t.Context(), connect.NewRequest(&v1.DeleteProviderConnectionRequest{Id: "c0000000f"}))
+	if err != nil || missing.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND {
+		t.Errorf("delete: response = %v, err = %v", missing.Msg, err)
+	}
+	invalid, err := handler.CreateProviderConnection(t.Context(), connect.NewRequest(&v1.CreateProviderConnectionRequest{
+		TypeId: "md.numen.connections.llm/openrouter", Fields: map[string]*structpb.Value{"nope": structpb.NewStringValue("x")},
+		Secrets: map[string]string{"apiKey": "k"},
+	}))
+	if err != nil || invalid.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD || invalid.Msg.GetDetail() != `the type has no field "nope"` {
+		t.Errorf("invalid: response = %v, err = %v", invalid.Msg, err)
+	}
+	unavailable, err := handler.CreateProviderConnection(t.Context(), connect.NewRequest(&v1.CreateProviderConnectionRequest{TypeId: "gone.plugin/x"}))
+	if err != nil || unavailable.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE {
+		t.Errorf("unavailable: response = %v, err = %v", unavailable.Msg, err)
+	}
+}
+
+func TestAKeyStoreFailureIsAnErrorCode(t *testing.T) {
+	keys := newKeys()
+	keys.err = context.DeadlineExceeded
+
+	response, err := newHandler(keys).CreateProviderConnection(t.Context(), createRequest(""))
+
+	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED {
+		t.Errorf("response = %v, err = %v", response.Msg, err)
+	}
+}
+
+func TestUpdateProviderConnectionChangesTheNameAndTheRevision(t *testing.T) {
+	handler := newHandler(newKeys())
+	created := mustCreate(t, handler)
+	one := created.Msg.GetConnection()
+
+	response, err := handler.UpdateProviderConnection(t.Context(), connect.NewRequest(&v1.UpdateProviderConnectionRequest{
+		Id: one.GetId(), Revision: one.GetRevision(), Name: "Home",
+		Fields: map[string]*structpb.Value{"parallelRequests": structpb.NewNumberValue(2)},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	updated := response.Msg.GetConnection()
+	if updated.GetName() != "Home" || updated.GetRevision() != 2 || updated.GetFields()["parallelRequests"].GetNumberValue() != 2 {
+		t.Errorf("connection = %v", updated)
+	}
+}
+
+func TestDeleteProviderConnectionRemovesTheConnection(t *testing.T) {
+	handler := newHandler(newKeys())
+	created := mustCreate(t, handler)
+
+	response, err := handler.DeleteProviderConnection(t.Context(), connect.NewRequest(&v1.DeleteProviderConnectionRequest{Id: created.Msg.GetConnection().GetId()}))
+	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("response = %v, err = %v", response.Msg, err)
+	}
+
+	listed, err := handler.ListProviderConnections(t.Context(), connect.NewRequest(&v1.ListProviderConnectionsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listed.Msg.GetConnections()) != 0 {
+		t.Errorf("connections = %v", listed.Msg.GetConnections())
+	}
+}
+
+func mustCreate(t *testing.T, handler *Handler) *connect.Response[v1.CreateProviderConnectionResponse] {
+	t.Helper()
+	created, err := handler.CreateProviderConnection(t.Context(), createRequest("Work"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return created
+}
+
+func TestListProviderConnectionsNamesThePluginSettingsThatUseEachConnection(t *testing.T) {
+	uses := fixedUses{"c00000001": {{PluginID: "md.numen.tools.proofreading", PluginName: "Proofreading", Operations: []string{"llm.complete"}}}}
+	handler := newHandlerWithUses(newKeys(), uses)
+	mustCreate(t, handler)
+
+	listed, err := handler.ListProviderConnections(t.Context(), connect.NewRequest(&v1.ListProviderConnectionsRequest{}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := listed.Msg.GetConnections()[0].GetUses()
+	if len(got) != 1 || got[0].GetPluginId() != "md.numen.tools.proofreading" || got[0].GetPluginName() != "Proofreading" || !slices.Equal(got[0].GetOperations(), []string{"llm.complete"}) {
+		t.Errorf("uses = %v", got)
+	}
+}
+
+func TestDeleteProviderConnectionNamesThePluginSettingsWhoseRowsWereRemoved(t *testing.T) {
+	uses := fixedUses{"c00000001": {{PluginID: "md.numen.engines.embeddings", PluginName: "Embeddings", Operations: []string{"llm.embed", "llm.profile"}}}}
+	handler := newHandlerWithUses(newKeys(), uses)
+	created := mustCreate(t, handler)
+
+	response, err := handler.DeleteProviderConnection(t.Context(), connect.NewRequest(&v1.DeleteProviderConnectionRequest{Id: created.Msg.GetConnection().GetId()}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := response.Msg.GetRemovedUses()
+	if len(got) != 1 || got[0].GetPluginId() != "md.numen.engines.embeddings" || !slices.Equal(got[0].GetOperations(), []string{"llm.embed", "llm.profile"}) {
+		t.Errorf("removed uses = %v", got)
+	}
+}
+
+func TestListRowOptionsAsksTheProviderOfTheConnectionWithTheRowSoFar(t *testing.T) {
+	handler := newHandler(newKeys())
+	created := mustCreate(t, handler)
+
+	response, err := handler.ListRowOptions(t.Context(), connect.NewRequest(&v1.ListRowOptionsRequest{
+		ConnectionId: created.Msg.GetConnection().GetId(), Field: "model",
+		Options: map[string]string{"reasoning": "low"}, Operations: []string{"llm.embed"},
+	}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := response.Msg.GetOptions()
+	if response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED || len(got) != 2 ||
+		got[0].GetValue() != "google/gemini-2.5-flash" || got[0].GetTitle() != "Gemini 2.5 Flash" || got[0].GetGroup() != "Google" {
+		t.Errorf("response = %v", response.Msg)
+	}
+}
+
+func TestListRowOptionsOfAFieldWithNoOptionsIsAnInvalidField(t *testing.T) {
+	handler := newHandler(newKeys())
+	created := mustCreate(t, handler)
+
+	response, err := handler.ListRowOptions(t.Context(), connect.NewRequest(&v1.ListRowOptionsRequest{
+		ConnectionId: created.Msg.GetConnection().GetId(), Field: "temperature",
+	}))
+
+	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD {
+		t.Errorf("response = %v, %v", response, err)
+	}
+}
+
+func TestListRowOptionsOfAConnectionThatIsNotInTheListIsNotFound(t *testing.T) {
+	response, err := newHandler(newKeys()).ListRowOptions(t.Context(), connect.NewRequest(&v1.ListRowOptionsRequest{ConnectionId: "c0000dead", Field: "model"}))
+
+	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND {
+		t.Errorf("response = %v, %v", response, err)
+	}
+}
+
+// fixedTitles is the titles a set of plugins gives operations.
+type fixedTitles []manifest.Operation
+
+func (t fixedTitles) ListOperationTitles() []manifest.Operation { return t }
+
+func TestListProviderConnectionTypesReturnsTheTitlesOfTheOperations(t *testing.T) {
+	handler := newHandler(newKeys())
+	deps := connections.NewDeps(&memoryRepository{}, getTypes(), newKeys(), fixedUses{})
+	handler.connections.ListTypes = connections.NewListTypes(deps, fixedTitles{
+		{Name: "llm.complete", Title: "complete text"}, {Name: "acp.task", Title: "run agent tasks"},
+	})
+
+	response, err := handler.ListProviderConnectionTypes(t.Context(), connect.NewRequest(&v1.ListProviderConnectionTypesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := response.Msg.GetOperations()
+	if len(got) != 2 || got[0].GetName() != "llm.complete" || got[0].GetTitle() != "complete text" ||
+		got[1].GetName() != "acp.task" || got[1].GetTitle() != "run agent tasks" {
+		t.Errorf("operations = %v", got)
+	}
+}
+
+func TestListProviderConnectionTypesReturnsNoTitleWithoutTheirUseCase(t *testing.T) {
+	response, err := newHandler(newKeys()).ListProviderConnectionTypes(t.Context(), connect.NewRequest(&v1.ListProviderConnectionTypesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := response.Msg.GetOperations(); len(got) != 0 {
+		t.Errorf("operations = %v", got)
+	}
+}
+
+func TestListProviderConnectionsMarksADetectedConnection(t *testing.T) {
+	types := append(getTypes(), connection.Type{PluginID: "org.example.agents", PluginName: "Kite agent", IsAvailable: true, Declaration: manifest.ConnectionType{
+		ID: "kite", Title: "Kite", Operations: []string{"acp.task", connection.OperationDetected},
+	}})
+	handler := NewHandler(useCasesOf(connectiontest.NewWithDetection(&memoryRepository{}, types, newKeys(), fixedUses{}, kiteDetected{}, func() (string, error) {
+		return "c00000001", nil
+	}), &modelList{}))
+	if _, err := handler.CreateProviderConnection(t.Context(), createRequest("Work")); err != nil {
+		t.Fatal(err)
+	}
+
+	listed, err := handler.ListProviderConnections(t.Context(), connect.NewRequest(&v1.ListProviderConnectionsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := listed.Msg.GetConnections()
+	if len(got) != 2 || got[0].GetIsDetected() || got[1].GetId() != "org.example.agents/kite/Kite agent" || !got[1].GetIsDetected() {
+		t.Fatalf("connections = %v, want Work and then the detected Kite agent", got)
+	}
+	if got[0].GetPath() != "" || got[1].GetPath() != "~/.local/bin/kite" {
+		t.Errorf("paths = %q, %q, want none for Work and the path of the program for Kite agent", got[0].GetPath(), got[1].GetPath())
+	}
+}
+
+func TestListRowOptionsAsksTheProviderAgainEachTime(t *testing.T) {
+	provider := &modelList{}
+	handler := newHandlerOver(newKeys(), fixedUses{}, provider)
+	created := mustCreate(t, handler)
+	request := &v1.ListRowOptionsRequest{ConnectionId: created.Msg.GetConnection().GetId(), Field: "model"}
+
+	for range 2 {
+		if _, err := handler.ListRowOptions(t.Context(), connect.NewRequest(request)); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if listed := provider.countListings(); listed != 2 {
+		t.Errorf("the provider listed %d times, want twice", listed)
+	}
+}

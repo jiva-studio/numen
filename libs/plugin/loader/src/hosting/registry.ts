@@ -50,6 +50,7 @@ export interface HostRegistry {
   readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
   readonly contexts: Map<string, PluginContext>
   readonly manifests: Map<string, Manifest>
+  readonly contextManifests?: { value: ReadonlyMap<string, Manifest> }
   readonly activated: { value: ReadonlySet<string> }
   readonly starting?: { value: ReadonlySet<string> }
   readonly disposed: Set<string>
@@ -137,6 +138,11 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   clearSubscriptions(registry.contexts.get(pluginId))
   registry.contexts.delete(pluginId)
   registry.manifests.delete(pluginId)
+  if (registry.contextManifests?.value.has(pluginId)) {
+    const next = new Map(registry.contextManifests.value)
+    next.delete(pluginId)
+    registry.contextManifests.value = next
+  }
   cleanupMapItems(registry.readers, pluginId)
   cleanupMapItems(registry.tabKinds, pluginId)
   removePluginItems(registry.commands, pluginId)

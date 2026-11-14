@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"sync"
 	"time"
 
@@ -13,10 +14,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // ConfigureTimeout bounds one Configure call to a plugin.
@@ -28,68 +26,40 @@ type Snapshot struct {
 	Endpoint   transport.Endpoint
 	ConfigJSON string
 	Values     map[string]string
-	Declared   []manifest.SecretDeclaration
-	Requested  []string
-	store      pluginport.KeyStore
-	source     plugindomain.SecretSource
 }
 
-// Host is what the delivery asks the plugin host for.
+// Host is what the delivery asks the plugin host for. RecordConfigureAnswer is given the answer of the
+// plugin to each Configure call it answered: nil where it took the configuration, a *RefusedError where
+// it did not. Equal revisions of GetPluginConfigRevision are one configuration.
 type Host interface {
+	GetPluginConfigRevision(pluginID string) string
 	GetSnapshot(pluginID string) (Snapshot, bool, error)
 	ListPluginIDs() []string
-	ReportError(err error)
 	GetClient(endpoint transport.Endpoint) *http.Client
+	RecordConfigureAnswer(pluginID string, refused *RefusedError)
 }
 
-// Delivery gives each running plugin its configuration and the secrets it declares, and sends them
-// again when the list of secrets allowed to it changes.
+// RefusedError is a Configure call the plugin answered with an error. Text is the message of the plugin,
+// or the code of the answer where it has none.
+type RefusedError struct {
+	PluginID string
+	Text     string
+}
+
+func (e *RefusedError) Error() string {
+	return fmt.Sprintf("configure plugin %s: %s", e.PluginID, e.Text)
+}
+
+// Delivery gives each running plugin its configuration, and sends it again when the plugin is forced.
 type Delivery struct {
-	host           Host
-	lock           chan struct{}
-	mu             sync.RWMutex
-	keyStore       pluginport.KeyStore
-	source         plugindomain.SecretSource
-	ledger         *ledger
-	watchers       *watchers
-	noKeyStoreOnce sync.Once
+	host     Host
+	lock     chan struct{}
+	ledger   *ledger
+	watchers *watchers
 }
 
 func New(host Host) *Delivery {
 	return &Delivery{host: host, lock: make(chan struct{}, 1), ledger: newLedger(), watchers: &watchers{}}
-}
-
-// SetKeyStore sets where the values of secrets are kept.
-func (d *Delivery) SetKeyStore(store pluginport.KeyStore) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.keyStore = store
-}
-
-// SetSource sets where the list of secrets is read from.
-func (d *Delivery) SetSource(source plugindomain.SecretSource) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.source = source
-}
-
-// GetSource returns where the list of secrets is read from.
-func (d *Delivery) GetSource() plugindomain.SecretSource {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	return d.source
-}
-
-func (d *Delivery) getSnapshot(pluginID string) (Snapshot, bool, error) {
-	snapshot, isRunning, err := d.host.GetSnapshot(pluginID)
-	if !isRunning || err != nil {
-		return snapshot, isRunning, err
-	}
-	d.mu.RLock()
-	snapshot.store = d.keyStore
-	snapshot.source = d.source
-	d.mu.RUnlock()
-	return snapshot, true, nil
 }
 
 // Lock holds the deliveries to every plugin to the caller until Unlock, or until ctx ends.
@@ -124,14 +94,17 @@ func (d *Delivery) IsAwaitingFirstConfigure(pluginID string) bool {
 	return d.ledger.isAwaitingFirstConfigure(pluginID)
 }
 
-// WatchConfig registers fn to run each time the plugin has been given its configuration. The returned
+// WatchConfig registers fn to run each time the plugin has been given its configuration, and each time
+// Configure or a forced Refresh finds it not running, which is a change of its configuration it has not
+// been given. The first configuration a started plugin is given runs fn only where it differs from the one
+// fn last ran for, so a read that fn makes and that starts the plugin does not run fn again. The returned
 // function removes the registration.
 func (d *Delivery) WatchConfig(pluginID string, fn func()) (stop func()) {
 	return d.watchers.add(pluginID, fn)
 }
 
-// Refresh sends Configure to each running plugin whose list of secrets differs from the last it was
-// given, and to each plugin in forced.
+// Refresh sends Configure to each running plugin that was not given its configuration yet, and to
+// each plugin in forced. A forced plugin that does not run is not sent anything, and its watchers run.
 func (d *Delivery) Refresh(ctx context.Context, forced []string) error {
 	d.ledger.forget(forced)
 	if err := d.Lock(ctx); err != nil {
@@ -146,47 +119,65 @@ func (d *Delivery) Refresh(ctx context.Context, forced []string) error {
 			continue
 		}
 		group.Go(func() {
-			failures[i] = d.refreshPlugin(ctx, id)
+			failures[i] = d.refreshPlugin(ctx, id, slices.Contains(forced, id))
 		})
 	}
 	group.Wait()
 	return errors.Join(failures...)
 }
 
-func (d *Delivery) refreshPlugin(ctx context.Context, pluginID string) error {
-	snapshot, isRunning, err := d.getSnapshot(pluginID)
+func (d *Delivery) refreshPlugin(ctx context.Context, pluginID string, isForced bool) error {
+	snapshot, isRunning, err := d.host.GetSnapshot(pluginID)
 	if err != nil {
 		return err
 	}
 	if !isRunning {
+		if isForced {
+			d.watchers.run(pluginID, d.host.GetPluginConfigRevision(pluginID))
+		}
 		return nil
 	}
-	lists, listErr := listAllowedLists(snapshot)
-	if listErr == nil && !d.ledger.isDue(pluginID, getSignature(lists)) {
+	if !d.ledger.isDue(pluginID) {
 		return nil
 	}
-	return d.deliver(ctx, snapshot, lists, listErr)
+	return d.deliver(ctx, snapshot)
 }
 
-// Configure sends Configure to the plugin whether or not its secrets changed. The caller holds Lock.
+// Configure sends Configure to the plugin, or runs its watchers where it does not run. The caller holds Lock.
 func (d *Delivery) Configure(ctx context.Context, pluginID string) error {
-	snapshot, isRunning, err := d.getSnapshot(pluginID)
-	if !isRunning || err != nil {
+	snapshot, isRunning, err := d.host.GetSnapshot(pluginID)
+	if err != nil {
 		return err
 	}
-	lists, listErr := listAllowedLists(snapshot)
-	return d.deliver(ctx, snapshot, lists, listErr)
+	if !isRunning {
+		d.runWatchers(pluginID, d.ledger.isAwaitingFirstConfigure(pluginID))
+		return nil
+	}
+	return d.deliver(ctx, snapshot)
 }
 
-func (d *Delivery) deliver(ctx context.Context, snapshot Snapshot, lists []allowedList, listErr error) error {
-	entries, failures := readEntries(ctx, snapshot, lists)
-	readErr := d.getReadError(listErr, failures)
-	isConfigured, sendErr := d.sendConfigure(ctx, snapshot, entries)
-	d.ledger.recordOutcome(snapshot.PluginID, getSignature(lists), sendErr, readErr, sendErr != nil && isCallerFailure(ctx, sendErr))
-	if sendErr == nil && isConfigured {
-		d.watchers.run(snapshot.PluginID)
+func (d *Delivery) deliver(ctx context.Context, snapshot Snapshot) error {
+	isFirst := d.ledger.isAwaitingFirstConfigure(snapshot.PluginID)
+	isConfigured, sendErr := d.sendConfigure(ctx, snapshot)
+	isCaller := sendErr != nil && isCallerFailure(ctx, sendErr)
+	d.ledger.recordOutcome(snapshot.PluginID, sendErr, isCaller)
+	if !isCaller {
+		refused, _ := errors.AsType[*RefusedError](sendErr)
+		d.host.RecordConfigureAnswer(snapshot.PluginID, refused)
 	}
-	return errors.Join(sendErr, readErr)
+	if sendErr == nil && isConfigured {
+		d.runWatchers(snapshot.PluginID, isFirst)
+	}
+	return sendErr
+}
+
+func (d *Delivery) runWatchers(pluginID string, isFirst bool) {
+	revision := d.host.GetPluginConfigRevision(pluginID)
+	if isFirst {
+		d.watchers.runIfChanged(pluginID, revision)
+		return
+	}
+	d.watchers.run(pluginID, revision)
 }
 
 func isCallerFailure(ctx context.Context, err error) bool {
@@ -197,7 +188,7 @@ func isCallerFailure(ctx context.Context, err error) bool {
 	return code == connect.CodeCanceled || code == connect.CodeDeadlineExceeded
 }
 
-func (d *Delivery) sendConfigure(ctx context.Context, snapshot Snapshot, entries []*v1.ConfigureSecrets) (bool, error) {
+func (d *Delivery) sendConfigure(ctx context.Context, snapshot Snapshot) (bool, error) {
 	client := numenv1connect.NewPluginLifecycleServiceClient(
 		d.host.GetClient(snapshot.Endpoint),
 		transport.GetBaseURL(snapshot.Endpoint),
@@ -207,7 +198,6 @@ func (d *Delivery) sendConfigure(ctx context.Context, snapshot Snapshot, entries
 		PluginId:          snapshot.PluginID,
 		ConfigurationJson: snapshot.ConfigJSON,
 		Values:            snapshot.Values,
-		Secrets:           entries,
 	})
 	callCtx, cancel := context.WithTimeout(ctx, ConfigureTimeout)
 	defer cancel()
@@ -216,27 +206,18 @@ func (d *Delivery) sendConfigure(ctx context.Context, snapshot Snapshot, entries
 		return true, nil
 	}
 	var connectErr *connect.Error
-	if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && len(snapshot.Declared) == 0 {
+	if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented {
 		return false, nil
 	}
-	return false, fmt.Errorf("configure plugin %s: %s", snapshot.PluginID, getConfigureFailureText(err))
-}
-
-func (d *Delivery) getReadError(listErr error, failures []error) error {
-	problems := []error{listErr}
-	for _, failure := range failures {
-		if errors.Is(failure, plugindomain.ErrNoKeyStore) {
-			d.noKeyStoreOnce.Do(func() { d.host.ReportError(failure) })
-			continue
-		}
-		problems = append(problems, failure)
-	}
-	return errors.Join(problems...)
+	return false, &RefusedError{PluginID: snapshot.PluginID, Text: getConfigureFailureText(err)}
 }
 
 func getConfigureFailureText(err error) string {
 	if connect.CodeOf(err) == connect.CodeDeadlineExceeded {
 		return "timed out"
+	}
+	if connectErr, isConnect := errors.AsType[*connect.Error](err); isConnect && connectErr.Message() != "" {
+		return connectErr.Message()
 	}
 	return connect.CodeOf(err).String()
 }

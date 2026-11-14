@@ -16,6 +16,11 @@ export interface MenuDismissalState {
   readonly release: () => void
 }
 
+/** A scroll or resize of the page, which a popover placed against its trigger by CSS follows. */
+export function isPageMove(event: Event): boolean {
+  return event.type === 'scroll' || event.type === 'resize'
+}
+
 export function useMenuDismissal(
   menu: Readonly<ShallowRef<HTMLElement | null>>,
   dismiss: () => void,

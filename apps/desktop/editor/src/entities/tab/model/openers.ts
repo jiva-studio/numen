@@ -29,10 +29,15 @@ type FileOpener = (path: string, title: string, options?: FilePlacement | OpenPl
 import type { SourceReader } from '../lib/kinds'
 export type { SourceReader }
 
-/** The vault queries the window uses to open a file. */
+/**
+ * The vault queries the window uses to open a file, and the starts of the plugins whose tab kind or
+ * reader opens it, which register them as they start.
+ */
 export interface FileOpenerDeps {
   fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
   reconcileTab?(path: string, newKind: string): void
+  startTabKind?(kind: string): Promise<void>
+  startExtensionReader?(extension: string): Promise<void>
 }
 
 /** A reader registered for an extension, with the icon its files carry. */
@@ -94,32 +99,36 @@ export function fileOpeners(vault: FileOpenerDeps) {
     extensionReaders.get(getExtension(path))?.icon
 
   /**
-   * Opens a file in its reader at a place, with text ranges highlighted; a file with no reader is not
-   * opened.
+   * Opens a file in its reader at a place, with text ranges highlighted, once the plugin of the reader
+   * has started; a file with no reader is not opened.
    */
-  const readFile = (
+  const readFile = async (
     path: string,
     selector: Selector | null,
     ranges?: readonly TextRange[],
-  ): void => {
-    const reader = extensionReaders.get(getExtension(path))
+  ): Promise<void> => {
+    const extension = getExtension(path)
+    if (!extensionReaders.has(extension)) await vault.startExtensionReader?.(extension)
+    const reader = extensionReaders.get(extension)
     if (!reader) return
     if (ranges) reader.read(path, selector, ranges)
     else reader.read(path, selector)
   }
 
   /**
-   * Opens the note in the tab kind the core chose for it; false where no tab kind takes it or no
-   * frontend has registered that kind.
+   * Opens the note in the tab kind the core chose for it, once the plugin of the kind has started;
+   * false where no tab kind takes it or no frontend has registered that kind.
    */
-  const openNote = (
+  const openNote = async (
     path: string,
     kind: FileKind,
     title: string,
     placement?: OpenPlacement,
-  ): boolean => {
-    const editor = kind.isNote && kind.tabKind ? editors.get(kind.tabKind) : undefined
-    if (!editor || !kind.tabKind) return false
+  ): Promise<boolean> => {
+    if (!kind.isNote || !kind.tabKind) return false
+    if (!editors.has(kind.tabKind)) await vault.startTabKind?.(kind.tabKind)
+    const editor = editors.get(kind.tabKind)
+    if (!editor) return false
     vault.reconcileTab?.(path, kind.tabKind)
     const { selector: _selector, ...rest } = placement ?? {}
     editor(path, title, rest)
@@ -137,15 +146,15 @@ export function fileOpeners(vault: FileOpenerDeps) {
   ): Promise<void> => {
     const placement = typeof options === 'string' ? { where: options } : options
     const kind = await fetchFileKind(vault, path)
-    if (kind && openNote(path, kind, title, placement)) return
-    readFile(path, placement?.selector ?? null)
+    if (kind && (await openNote(path, kind, title, placement))) return
+    await readFile(path, placement?.selector ?? null)
   }
 
   /** Opens a file at ranges of its text: a note in its editor, whole, any other file in its reader. */
   const openFileAt = async (path: string, spans: readonly TextRange[]): Promise<void> => {
     const kind = await fetchFileKind(vault, path)
-    if (kind && openNote(path, kind, '')) return
-    readFile(path, null, spans)
+    if (kind && (await openNote(path, kind, ''))) return
+    await readFile(path, null, spans)
   }
 
   return {

@@ -4,7 +4,7 @@ package environment
 import "os"
 
 // MockModelVariable names the variable that has the plugin reach video sites through the mock downloader.
-const MockModelVariable = "NUMEN_MOCK_ML"
+const MockModelVariable = "NUMEN_TEST_MOCK_ML"
 
 const trueValue = "true"
 

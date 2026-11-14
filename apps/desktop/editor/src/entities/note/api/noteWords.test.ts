@@ -2,14 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
   NOTE_ERROR_CODE,
+  NOTE_LINK_DIRECTION,
   NOTE_MARKER,
   NOTE_RELATION,
   NOTE_ROLE,
-  GetNeighborhoodResponseSchema,
+  ListRelatedNotesResponseSchema,
   asFailure,
   asValue,
 } from '@numen/core-client'
-import { mapNeighborhood, mapNoteResult, mapWriteResult } from './noteWords'
+import { mapNoteGraph, mapNoteResult, mapWriteResult } from './noteWords'
 
 const file = { path: 'Note.md', size: 12n, mtime: 34n }
 
@@ -42,9 +43,9 @@ describe('mapWriteResult', () => {
   })
 })
 
-describe('mapNeighborhood', () => {
+describe('mapNoteGraph', () => {
   it('names an absent focus with empty strings', () => {
-    expect(mapNeighborhood(create(GetNeighborhoodResponseSchema, {}))).toEqual({
+    expect(mapNoteGraph(create(ListRelatedNotesResponseSchema, {}))).toEqual({
       focus: { path: '', title: '' },
       focusType: 'note',
       related: [],
@@ -52,8 +53,8 @@ describe('mapNeighborhood', () => {
     })
   })
 
-  it('carries the focus, and every neighbor that has a relation and a note, with their tab kinds', () => {
-    const answer = create(GetNeighborhoodResponseSchema, {
+  it('carries the focus, and every related note that has a relation and a note, with their tab kinds', () => {
+    const answer = create(ListRelatedNotesResponseSchema, {
       focus: { path: 'Here.md', title: 'Here' },
       focusType: 'sample',
       focusTabKind: 'samples',
@@ -81,7 +82,7 @@ describe('mapNeighborhood', () => {
       ],
     })
 
-    expect(mapNeighborhood(answer)).toEqual({
+    expect(mapNoteGraph(answer)).toEqual({
       focus: { path: 'Here.md', title: 'Here' },
       focusType: 'sample',
       focusTabKind: 'samples',
@@ -105,5 +106,50 @@ describe('mapNeighborhood', () => {
         },
       ],
     })
+  })
+})
+
+describe('mapNoteGraph references', () => {
+  const map = (direction: number | undefined) =>
+    mapNoteGraph(
+      create(ListRelatedNotesResponseSchema, {
+        focus: { path: 'Here.md', title: 'Here' },
+        related: [
+          {
+            note: { path: 'Cited.md', title: 'Cited' },
+            relation: NOTE_RELATION.REFERENCE,
+            ...(direction === undefined ? {} : { direction }),
+          },
+        ],
+      }),
+    ).related
+
+  it.each(['OUTGOING', 'INCOMING', 'BOTH'] as const)(
+    'carries a reference linked %s with that direction',
+    (name) => {
+      const word = name.toLowerCase()
+      const direction = NOTE_LINK_DIRECTION[name]
+      expect(map(direction)).toEqual([
+        { path: 'Cited.md', title: 'Cited', type: 'note', relation: 'reference', direction: word },
+      ])
+    },
+  )
+
+  it('keeps a reference of no direction, with no direction', () => {
+    const [note] = map(NOTE_LINK_DIRECTION.UNSPECIFIED)
+
+    expect(note?.relation).toBe('reference')
+    expect(note?.direction).toBeUndefined()
+  })
+
+  it('carries no direction on a note that is not a reference', () => {
+    const [note] = mapNoteGraph(
+      create(ListRelatedNotesResponseSchema, {
+        focus: { path: 'Here.md', title: 'Here' },
+        related: [{ note: { path: 'Up.md', title: 'Up' }, relation: NOTE_RELATION.PARENT }],
+      }),
+    ).related
+
+    expect(note?.direction).toBeUndefined()
   })
 })

@@ -2,104 +2,110 @@ package model
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/ai"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/endpoint"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
-func TestAskSendsTheQuestionWithTheProofreadingPurpose(t *testing.T) {
-	var asked []*ai.Question
-	complete := func(_ context.Context, question *ai.Question) (string, error) {
-		asked = append(asked, question)
-		return "the answer", nil
+func TestAskSendsTheInstructionAndThePromptAtTheInteractivePriority(t *testing.T) {
+	var asked []*llm.CompleteRequest
+	var priorities []connection.Priority
+	complete := func(_ context.Context, request *llm.CompleteRequest, priority connection.Priority) (*llm.CompleteResult, error) {
+		asked = append(asked, request)
+		priorities = append(priorities, priority)
+		return &llm.CompleteResult{Text: "the answer"}, nil
 	}
 
-	answer, err := NewAsk(complete, nil)(t.Context(), "be careful", "the prompt")
+	answer, err := NewAsk(complete)(t.Context(), "be careful", "the prompt")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	q := asked[0]
-	if answer != "the answer" || q.GetPurpose() != "proofreading" || len(q.GetMessages()) != 2 ||
-		q.GetMessages()[0].GetRole() != "system" || q.GetMessages()[0].GetText() != "be careful" ||
-		q.GetMessages()[1].GetRole() != "user" || q.GetMessages()[1].GetText() != "the prompt" {
-		t.Errorf("answer %q to question %v", answer, q)
+	request := asked[0]
+	if answer != "the answer" || len(request.GetMessages()) != 2 ||
+		request.GetMessages()[0].GetRole() != "system" || request.GetMessages()[0].GetText() != "be careful" ||
+		request.GetMessages()[1].GetRole() != "user" || request.GetMessages()[1].GetText() != "the prompt" ||
+		priorities[0] != connection.PriorityInteractive {
+		t.Errorf("answer %q to request %+v", answer, request)
 	}
 }
 
-func TestAskSendsTheQuestionOverHTTPWhenTheProviderIsConfigured(t *testing.T) {
-	var gotAuth, gotModel, gotSystem, gotPrompt string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/chat/completions" {
-			http.NotFound(w, r)
-			return
-		}
-		gotAuth = r.Header.Get("Authorization")
-		var req chatCompletionRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		gotModel = req.Model
-		if len(req.Messages) == 2 {
-			gotSystem, gotPrompt = req.Messages[0].Content, req.Messages[1].Content
-		}
-		if err := json.NewEncoder(w).Encode(map[string]any{
-			"choices": []map[string]any{{"message": map[string]any{"role": "assistant", "content": "the reply"}}},
-		}); err != nil {
-			t.Errorf("encode the response: %v", err)
-		}
-	}))
-	defer srv.Close()
-	completed := 0
-	complete := func(context.Context, *ai.Question) (string, error) {
-		completed++
-		return "", nil
-	}
-	target := endpoint.Endpoint{Provider: "custom", BaseURL: srv.URL, Model: "google/gemini-2.5-flash", APIKey: "secret-key"}
-
-	answer, err := NewAsk(complete, func() endpoint.Endpoint { return target })(t.Context(), "be careful", "the prompt")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if answer != "the reply" || completed != 0 {
-		t.Errorf("answer %q, completer called %d times", answer, completed)
-	}
-	if gotAuth != "Bearer secret-key" || gotModel != "google/gemini-2.5-flash" || gotSystem != "be careful" || gotPrompt != "the prompt" {
-		t.Errorf("auth %q, model %q, system %q, prompt %q", gotAuth, gotModel, gotSystem, gotPrompt)
+func failWith(err error) Completer {
+	return func(context.Context, *llm.CompleteRequest, connection.Priority) (*llm.CompleteResult, error) {
+		return nil, err
 	}
 }
 
-func TestAskWithoutAServiceURLFails(t *testing.T) {
-	target := endpoint.Endpoint{Provider: "custom", BaseURL: "", Model: "", APIKey: ""}
+func TestAskWithNoConnectionIsOffAndPointsToTheConnectionsPage(t *testing.T) {
+	_, err := NewAsk(failWith(connection.ErrNoConnection))(t.Context(), "be careful", "the prompt")
 
-	if _, err := NewAsk(nil, func() endpoint.Endpoint { return target })(t.Context(), "be careful", "the prompt"); err == nil {
-		t.Error("a custom provider with no URL was asked")
+	if !errors.Is(err, ErrNoConnection) {
+		t.Fatalf("got %v, want %v", err, ErrNoConnection)
+	}
+}
+
+func TestEveryConnectionThatFailedIsListedInTheError(t *testing.T) {
+	failed := &connection.AllFailedError{Failures: []connection.Failure{
+		{ConnectionName: "OpenRouter", Reason: "rate limited"},
+		{ConnectionName: "Local", Reason: "unreachable"},
+	}}
+
+	_, err := NewAsk(failWith(failed))(t.Context(), "be careful", "the prompt")
+
+	all, isAllFailed := errors.AsType[*connection.AllFailedError](err)
+	if !isAllFailed || len(all.Failures) != 2 {
+		t.Fatalf("got %v, want every connection failed", err)
+	}
+}
+
+func TestARejectionKeepsTheConnectionThatFoundTheMistake(t *testing.T) {
+	_, err := NewAsk(failWith(&connection.StoppedError{ConnectionName: "OpenRouter", Reason: "bad request"}))(t.Context(), "s", "p")
+
+	var rejected *connection.StoppedError
+	if !errors.As(err, &rejected) || rejected.ConnectionName != "OpenRouter" {
+		t.Fatalf("got %v, want a rejection by OpenRouter", err)
 	}
 }
 
 func TestTheMockAnswersTheSameQuestionTheSameWay(t *testing.T) {
-	question := &ai.Question{Messages: []ai.Message{
+	request := &llm.CompleteRequest{Messages: []*llm.Message{
 		{Role: "system", Text: numbered.SpeechInstruction},
 		{Role: "user", Text: "What it holds\n\n" + numbered.BuildPrompt(numbered.Batch{Lines: []numbered.Line{{Number: 4, Text: "one"}, {Number: 5, Text: "two"}}})},
 	}}
 
-	first, err := CompleteMock(t.Context(), question)
+	first, err := CompleteMock(t.Context(), request)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := CompleteMock(t.Context(), question)
+	second, err := CompleteMock(t.Context(), request)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if want := "4|one " + MockMark + "\n5|two " + MockMark; first != want || second != want {
-		t.Errorf("the mock answered %q and %q, want %q", first, second, want)
+	if want := "4|one " + MockMark + "\n5|two " + MockMark; first.GetText() != want || second.GetText() != want {
+		t.Errorf("the mock answered %q and %q, want %q", first.GetText(), second.GetText(), want)
+	}
+}
+
+func TestTheMockAnswersOnlyWhereNoConnectionIsSet(t *testing.T) {
+	prompt := "What it holds\n\n" + numbered.BuildPrompt(numbered.Batch{Lines: []numbered.Line{{Number: 1, Text: "one"}}})
+	request := &llm.CompleteRequest{Messages: []*llm.Message{{Role: "system", Text: "s"}, {Role: "user", Text: prompt}}}
+
+	noRows, err := WithMock(failWith(connection.ErrNoConnection))(t.Context(), request, connection.PriorityInteractive)
+	if err != nil || noRows.GetText() != "1|one "+MockMark {
+		t.Errorf("with no connection the mock answered %q, %v", noRows.GetText(), err)
+	}
+	if _, err := WithMock(failWith(&connection.AllFailedError{}))(t.Context(), request, connection.PriorityInteractive); err == nil {
+		t.Error("with a connection that failed the mock answered")
+	}
+	fromConnection := func(context.Context, *llm.CompleteRequest, connection.Priority) (*llm.CompleteResult, error) {
+		return &llm.CompleteResult{Text: "from the connection"}, nil
+	}
+	got, err := WithMock(fromConnection)(t.Context(), request, connection.PriorityInteractive)
+	if err != nil || got.GetText() != "from the connection" {
+		t.Errorf("with a connection the answer was %q, %v", got.GetText(), err)
 	}
 }

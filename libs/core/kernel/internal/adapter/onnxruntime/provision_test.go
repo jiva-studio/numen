@@ -192,8 +192,8 @@ func TestProvisionOfflineFetchesNothing(t *testing.T) {
 	cfg.Offline = true
 
 	_, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
-	if err == nil || !strings.Contains(err.Error(), onnxruntime.EnvOffline) {
-		t.Fatalf("Provision() = %v, want the offline switch named", err)
+	if !errors.Is(err, onnxruntime.ErrOffline) {
+		t.Fatalf("Provision() = %v, want ErrOffline", err)
 	}
 	if hits.Load() != 0 {
 		t.Errorf("an offline host asked the server %d times", hits.Load())
@@ -432,18 +432,16 @@ func TestProvisionKeepsTheLibraryInTheModelsHome(t *testing.T) {
 	}
 }
 
-func TestFromEnvironmentReadsTheProviderAndTheOfflineSwitch(t *testing.T) {
+func TestFromEnvironmentReadsTheProvider(t *testing.T) {
 	t.Setenv(onnxruntime.EnvProvider, "coreml")
-	t.Setenv(onnxruntime.EnvOffline, "1")
 	cfg := onnxruntime.FromEnvironment(testsupport.NewClockAt(time.Unix(0, 0)))
-	if cfg.Provider != "coreml" || !cfg.Offline {
+	if cfg.Provider != "coreml" {
 		t.Errorf("FromEnvironment() = %+v", cfg)
 	}
 
 	t.Setenv(onnxruntime.EnvProvider, "")
-	t.Setenv(onnxruntime.EnvOffline, "no")
 	cfg = onnxruntime.FromEnvironment(testsupport.NewClockAt(time.Unix(0, 0)))
-	if cfg.Provider != "" || cfg.Offline {
+	if cfg.Provider != "" {
 		t.Errorf("FromEnvironment() = %+v", cfg)
 	}
 }

@@ -2,26 +2,33 @@
 /**
  * The plex: one focused node, with all other nodes placed by their relation to it.
  *
- * Takes a neighborhood and emits an identifier when one is chosen. It does not
+ * Takes a graph and emits an identifier when one is chosen. It does not
  * fetch data, does not interpret what an identifier addresses, and does not
  * compute who is related to whom. The caller answers `activate` with the next
- * neighborhood, and the plex transitions to it.
+ * graph, and the plex transitions to it.
  */
 import { computed, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
-import { DEFAULT_BEHAVIOR, type PlexBehavior } from '../model/behavior'
+import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behavior'
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
+import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../model/namesOpacity'
 import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
+import { getFrameStyle } from './frameStyle'
+import { useNamesRooms } from '../model/useNamesRooms'
 import type { PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexProps>(), {
   showEdgeLabels: true,
+  showPills: true,
+  highlightLinks: false,
+  lineWidth: 2,
+  outlineWidth: 1,
   duration: 420,
   clock: () => DEFAULT_BEHAVIOR.clock,
   viewport: () => browserViewport,
@@ -34,6 +41,9 @@ const props = withDefaults(defineProps<PlexProps>(), {
   pending: null,
   dragged: () => [],
   dropName: getRelationName,
+  showNames: false,
+  namesOpacity: DEFAULT_NAMES_OPACITY,
+  focusedNamesOpacity: DEFAULT_FOCUSED_NAMES_OPACITY,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -56,34 +66,44 @@ const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 
 const slots = useSlots()
 
-const { room, options, measures, widen, hung } = useFreeSpace(
+const { room, options, measures, widen, placedHeadings } = useFreeSpace(
   frameElement,
   props,
   () => !!slots.icon,
 )
 
 /** How the nodes behave, handed down as one. */
-const behavior = computed<PlexBehavior>(() => ({
-  expansionDelay: props.expansionDelay,
-  reaching: props.reaching,
-  showing: props.showing,
-  clock: props.clock,
-}))
+const behavior = computed<PlexBehavior>(() => getBehavior(props))
+
+const { getRoomOf, getNodeRoom } = useNamesRooms(props, measures, options)
 
 const { frame, isMoving } = usePlexTransition(
-  () => props.neighborhood,
+  () => props.graph,
   () => ({
-    options: { ...props.options, viewport: room.value },
+    options: options.value,
     placement: props.placement,
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
     labelType: measures.value?.labelType,
+    room: getNodeRoom.value,
   }),
   {
     duration: () => props.duration,
     clock: props.clock,
   },
 )
+
+/**
+ * The overflow, as `[relation, count]` pairs. The renderer of the plex supplies
+ * the labels through the `overflow` slot.
+ */
+const overflow = computed(() =>
+  (Object.entries(frame.value.overflow) as [PlexRelation, number][]).filter(
+    ([, count]) => count > 0,
+  ),
+)
+
+const frameStyle = computed(() => getFrameStyle(props, options.value))
 
 /**
  * A caller that allows no relation has disabled the gesture, so no handle is
@@ -129,26 +149,12 @@ const dragging = usePlexDrag({
 
 /* --------------------------------- Hooks ---------------------------------- */
 /**
- * The overflow, as `[relation, count]` pairs. The renderer of the plex supplies
- * the labels through the `overflow` slot.
- */
-const overflow = computed(() =>
-  (Object.entries(frame.value.overflow) as [PlexRelation, number][]).filter(
-    ([, count]) => count > 0,
-  ),
-)
-
-const frameStyle = computed(() => ({
-  '--plex-move': `${props.duration}ms`,
-}))
-
-/**
- * A neighborhood is drawn from the node it is seen from, so every node walks
+ * A graph is drawn from the node it is seen from, so every node walks
  * to a new relation when another one arrives. A menu is anchored where one of them
  * was.
  */
 watch(
-  () => props.neighborhood,
+  () => props.graph,
   () => emit('dismiss'),
 )
 </script>
@@ -165,18 +171,21 @@ watch(
       :frame="frame"
       :viewport="room"
       :node-size="options.nodeSize"
+      :curvature="options.routing.curvature"
       :show-edge-labels="showEdgeLabels"
+      :show-pills="showPills"
+      :highlight-links="highlightLinks && !isMoving"
+      :names-opacity="namesOpacity"
+      :focused-names-opacity="focusedNamesOpacity"
       :can-reach="canReach"
       :relation-name="relationName"
       :widen="widen"
-      :hung="hung"
+      :placed-headings="placedHeadings"
+      :room-of="getRoomOf"
       :behavior="behavior"
-      :gesture-from="gesture.from.value"
-      :gesture-at="gesture.at.value"
-      :gesture-outcome="gesture.outcome.value"
+      :gesture="gesture"
+      :dragging="dragging"
       :pending="pending"
-      :dragged-at="dragging.at.value"
-      :drop-relation="dragging.relation.value"
       :drop-name="dropName"
       @activate="emit('activate', $event)"
       @show="(id, showing) => emit('show', id, showing)"
@@ -184,6 +193,7 @@ watch(
       @ask="gesture.ask"
       @menu="(id, at, trigger) => emit('menu', id, at, trigger)"
       @enter="(id, heading) => emit('enter', id, heading)"
+      @choose-name="emit('chooseName', $event)"
       @edge-menu="(pair, at) => emit('edge-menu', pair, at)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>

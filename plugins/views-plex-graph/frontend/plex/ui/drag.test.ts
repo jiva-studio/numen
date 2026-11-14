@@ -12,7 +12,7 @@ import Plex from './Plex.vue'
 import { build } from '../fixtures/build'
 import type { PlexRelation } from '../../types'
 
-const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
+const GRAPH = build('A node', { parent: 1, child: 2, jump: 1 })
 
 /** What is being dragged, which the plex never looks inside. */
 const DRAGGED = ['physics/Entropy.md']
@@ -40,7 +40,7 @@ type PlexProps = InstanceType<typeof Plex>['$props']
 
 const mountPlex = (props: Partial<PlexProps> = {}) => {
   const plex = mount(Plex, {
-    props: { neighborhood: NEIGHBOURHOOD, duration: 0, dragged: DRAGGED, ...props },
+    props: { graph: GRAPH, duration: 0, dragged: DRAGGED, ...props },
     attachTo: document.body,
   })
   stubMatrix(plex.find('svg').element as SVGSVGElement)
@@ -89,7 +89,15 @@ describe('dropping something dragged in', () => {
 
   it('reads which way a relation lies off the arrangement', async () => {
     const plex = mountPlex({
-      options: { direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' } },
+      options: {
+        direction: {
+          parent: 'down',
+          child: 'up',
+          jump: 'left',
+          reference: 'left',
+          sibling: 'right',
+        },
+      },
     })
     await letGo(plex, 600, 40)
 
@@ -100,16 +108,16 @@ describe('dropping something dragged in', () => {
     // A node under the pointer is not a target: there is one rule, and it is
     // the direction from the focus.
     const plex = mountPlex()
-    const jump = getNode(plex, 'jump')
-    window.dispatchEvent(pointer('pointermove', jump.x, jump.y))
+    const parent = getNode(plex, 'parent')
+    window.dispatchEvent(pointer('pointermove', parent.x, parent.y))
     await plex.vm.$nextTick()
 
     expect(plex.find('.plex__node--target').exists()).toBe(false)
 
-    window.dispatchEvent(pointer('pointerup', jump.x, jump.y))
+    window.dispatchEvent(pointer('pointerup', parent.x, parent.y))
     await plex.vm.$nextTick()
 
-    expect(plex.emitted('bring')).toStrictEqual([[DRAGGED, 'jump']])
+    expect(plex.emitted('bring')).toStrictEqual([[DRAGGED, 'parent']])
     expect(plex.emitted('link')).toBeUndefined()
   })
 

@@ -15,7 +15,6 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -46,17 +45,17 @@ type flawed struct {
 	neither   map[string]bool
 }
 
-func (f flawed) GetImportedFile(ctx context.Context, handle string) (source.ImportedFile, error) {
+func (f flawed) GetImportedFile(ctx context.Context, handle string) (vault.ImportedFile, error) {
 	if f.neither[handle] {
-		return source.ImportedFile{Name: f.names[handle], Handle: handle}, nil
+		return vault.ImportedFile{Name: f.names[handle], Handle: handle}, nil
 	}
 	if err := f.statFails[handle]; err != nil {
-		return source.ImportedFile{}, err
+		return vault.ImportedFile{}, err
 	}
 	return f.handedOver.GetImportedFile(ctx, handle)
 }
 
-func (f flawed) List(ctx context.Context, handle string) ([]source.ImportedFile, error) {
+func (f flawed) List(ctx context.Context, handle string) ([]vault.ImportedFile, error) {
 	if f.onList != nil {
 		f.onList()
 	}

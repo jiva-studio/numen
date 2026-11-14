@@ -3,15 +3,16 @@ package service
 import (
 	"bytes"
 	"context"
+	"io"
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
@@ -41,10 +42,29 @@ func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 	t.Helper()
 	t.Setenv("NUMEN_HOST_PORT", "")
 	t.Setenv("NUMEN_PLUGIN_TOKEN", "")
+	t.Setenv("NUMEN_PLUGIN_PORT", "")
 	t.Setenv("MCP_PORT", "")
+	stdinRead, stdinWrite, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stdoutRead, stdoutWrite, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	processStdin, processStdout := os.Stdin, os.Stdout
+	os.Stdin, os.Stdout = stdinRead, stdoutWrite
+	s := server.New()
+	os.Stdin, os.Stdout = processStdin, processStdout
+	if _, err := io.WriteString(stdinWrite, "plugin-token\n"); err != nil {
+		t.Fatal(err)
+	}
 	stdout := &lockedBuffer{}
-	s := server.New(server.WithPort(0), server.WithToken("plugin-token"),
-		server.WithStdout(stdout), server.WithStdin(nil), server.WithSignals())
+	copyErrCh := make(chan error, 1)
+	go func() {
+		_, err := io.Copy(stdout, stdoutRead)
+		copyErrCh <- err
+	}()
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount failed: %v", err)
 	}
@@ -54,6 +74,17 @@ func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 		s.Lifecycle().TriggerShutdown()
 		if err := <-serveErrCh; err != nil {
 			t.Errorf("Serve: %v", err)
+		}
+		for _, file := range []*os.File{stdinWrite, stdinRead, stdoutWrite} {
+			if err := file.Close(); err != nil {
+				t.Error(err)
+			}
+		}
+		if err := <-copyErrCh; err != nil {
+			t.Errorf("copy stdout: %v", err)
+		}
+		if err := stdoutRead.Close(); err != nil {
+			t.Error(err)
 		}
 	})
 	return s, stdout
@@ -87,7 +118,7 @@ func TestMountServesMCPOnTheListenerTheReadyLineReports(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 	session := connectStreamableClient(ctx, t, "http://127.0.0.1:"+strconv.Itoa(port)+"/mcp", listenerMCPToken)
-	defer cleanup.Close(t, session)
+	defer closeAndCheck(t, session)
 	if result := session.InitializeResult(); result == nil || result.ServerInfo == nil {
 		t.Errorf("initialize result = %+v, want the server info", result)
 	}
@@ -95,7 +126,7 @@ func TestMountServesMCPOnTheListenerTheReadyLineReports(t *testing.T) {
 
 func configureToken(t *testing.T, s *server.Server, token string) {
 	t.Helper()
-	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{"token": token}, nil); err != nil {
+	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{"token": token}); err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
 }
@@ -142,14 +173,14 @@ func TestAConfiguredPortOpensNoListener(t *testing.T) {
 	}
 	s, _ := serveMounted(t)
 
-	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{"port": port}, nil); err != nil {
+	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{"port": port}); err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
 
 	dialer := net.Dialer{Timeout: time.Second}
 	conn, err := dialer.DialContext(t.Context(), "tcp", net.JoinHostPort("127.0.0.1", port))
 	if err == nil {
-		cleanup.Close(t, conn)
+		closeAndCheck(t, conn)
 		t.Errorf("a connection to the configured port %s was accepted", port)
 	}
 }

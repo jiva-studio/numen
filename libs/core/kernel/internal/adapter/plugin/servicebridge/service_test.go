@@ -43,7 +43,7 @@ func (h *servingHost) ResolveService(service string) (catalogmanifest.Discovered
 	return catalogmanifest.Discovered{Manifest: catalogmanifest.Manifest{ID: id}}, serves
 }
 
-func (h *servingHost) EnsureActive(_ context.Context, id string) (transport.Endpoint, error) {
+func (h *servingHost) EnsureActive(_ context.Context, id string, _ plugindomain.Holder) (transport.Endpoint, error) {
 	endpoint, running := h.endpoints[id]
 	if !running {
 		return transport.Endpoint{}, errors.New("the plugin is down")
@@ -51,10 +51,18 @@ func (h *servingHost) EnsureActive(_ context.Context, id string) (transport.Endp
 	return endpoint, nil
 }
 
-func (h *servingHost) Release(string) {
+func (h *servingHost) Release(string, string, plugindomain.Holder) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.released++
+}
+
+func (h *servingHost) EnsureActiveForQuestion(ctx context.Context, id string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, id, holder)
+}
+
+func (h *servingHost) ReleaseQuestion(id, token string, holder plugindomain.Holder) {
+	h.Release(id, token, holder)
 }
 
 func (h *servingHost) getReleasedCount() int {
@@ -95,7 +103,7 @@ func TestProxyReachesPluginServingService(t *testing.T) {
 		services:  map[string]string{"numen.v1.SampleService": "md.numen.a"},
 		endpoints: map[string]transport.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
 	}
-	window := httptest.NewServer(Open(host))
+	window := httptest.NewServer(Open(host, host))
 	t.Cleanup(window.Close)
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, window.URL+"/numen.v1.SampleService/ReadSample?x=1", strings.NewReader(`{"path":"a.md"}`))
 	if err != nil {
@@ -150,7 +158,7 @@ func TestProxyStreamsToWindowMessageByMessage(t *testing.T) {
 		services:  map[string]string{"numen.v1.EventsService": "md.numen.a"},
 		endpoints: map[string]transport.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
 	}
-	window := httptest.NewServer(Open(host))
+	window := httptest.NewServer(Open(host, host))
 	t.Cleanup(window.Close)
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, window.URL+"/numen.v1.EventsService/WatchReloads", nil)
@@ -182,7 +190,7 @@ func TestProxyStreamsToWindowMessageByMessage(t *testing.T) {
 
 func TestOnlyAServiceAPluginServesIsForwarded(t *testing.T) {
 	host := &servingHost{services: map[string]string{"numen.v1.SampleService": "md.numen.a"}}
-	proxy := Open(host)
+	proxy := Open(host, host)
 
 	if !proxy.Serves("/numen.v1.SampleService/ReadSample") || proxy.Serves("/numen.v1.NoteService/Read") || proxy.Serves("/") {
 		t.Error("the proxy claimed a service it does not forward, or rejected one it does")
@@ -198,7 +206,7 @@ func TestProxyUnavailableWhenPluginCannotStart(t *testing.T) {
 	host := &servingHost{services: map[string]string{"numen.v1.SampleService": "md.numen.a"}}
 	recorded := httptest.NewRecorder()
 
-	Open(host).ServeHTTP(recorded, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/numen.v1.SampleService/ReadSample", nil))
+	Open(host, host).ServeHTTP(recorded, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/numen.v1.SampleService/ReadSample", nil))
 
 	var response map[string]string
 	if err := json.Unmarshal(recorded.Body.Bytes(), &response); err != nil {

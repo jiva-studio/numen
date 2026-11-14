@@ -6,7 +6,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
-import { useTitleWidths, type PlexType } from './measure'
+import { useTitleWidths, type PlexType, type TitleRoom } from './measure'
 import type { PlexNode } from '../../../types'
 
 const node = (title: string): PlexNode => ({ id: title, title, relation: 'child' })
@@ -38,7 +38,6 @@ function setTheme(tokens: Record<string, string> = {}): void {
   theme = {
     '--numen-font-size': '13px',
     '--numen-font-sans': 'Test Sans, sans-serif',
-    '--numen-node-padding': '10px',
     '--numen-node-gap': '6px',
     '--numen-edge-label-size': '10px',
     ...tokens,
@@ -55,12 +54,17 @@ const readThemeType = (): PlexType => {
   return {
     font: `${getToken('--numen-font-size')} ${family}`,
     labelFont: `${getToken('--numen-edge-label-size')} ${family}`,
-    padding: Number.parseFloat(getToken('--numen-node-padding')) || 0,
     gap: Number.parseFloat(getToken('--numen-node-gap')) || 0,
   }
 }
 
-const widths = (icon = 0) => useTitleWidths(() => icon, readThemeType).value
+/** The padding the plex hands its measurer, and nothing drawn beside a title. */
+const PADDING = 10
+const NOTHING_BESIDE: TitleRoom = { padding: PADDING, beside: [] }
+
+const widths = (room: TitleRoom = NOTHING_BESIDE) => useTitleWidths(() => room, readThemeType).value
+
+const withIcon = (icon: number): TitleRoom => ({ padding: PADDING, beside: icon > 0 ? [icon] : [] })
 
 function stubStyles() {
   // Type values are read by readThemeType above.
@@ -115,14 +119,14 @@ describe('what a title needs', () => {
     expect(measures.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
   })
 
-  it('takes the type and the padding in pixels, however the theme wrote them', () => {
+  it('takes the type in pixels, however the theme wrote it', () => {
     // The tokens are read off a box the document has resolved, so a theme in
     // rem is measured as one in px is.
     const { context } = stubCanvas()
     stubStyles()
-    setTheme({ '--numen-font-size': '1.0625rem', '--numen-node-padding': '0.25rem' })
+    setTheme({ '--numen-font-size': '1.0625rem' })
     const measures = widths()!
-    expect(measures.node(node('ab'))).toBe(2 * PER_CHARACTER + 8)
+    expect(measures.node(node('ab'))).toBe(2 * PER_CHARACTER + 20)
     expect(context.font).toBe('17px Test Sans, sans-serif')
   })
 
@@ -164,14 +168,32 @@ describe('where a caller draws an icon', () => {
     stubCanvas()
     stubStyles()
     setTheme()
-    expect(widths(18)!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20 + 18 + 6)
+    expect(widths(withIcon(18))!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20 + 18 + 6)
   })
 
   it('keeps neither where no icon is drawn', () => {
     stubCanvas()
     stubStyles()
     setTheme()
-    expect(widths(0)!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
+    expect(widths(withIcon(0))!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
+  })
+})
+
+describe('the padding of a title and the widths drawn before it', () => {
+  it('uses the padding from the plex options, not a theme token', () => {
+    stubCanvas()
+    stubStyles()
+    setTheme()
+    expect(widths({ padding: 4, beside: [] })!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 8)
+    expect(widths({ padding: 4, beside: [] })!.heading('abc')).toBe(3 * PER_CHARACTER + 8)
+  })
+
+  it('keeps a gap after each thing drawn before the title', () => {
+    stubCanvas()
+    stubStyles()
+    setTheme()
+    const room = { padding: PADDING, beside: [6, 18] }
+    expect(widths(room)!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20 + 6 + 6 + 18 + 6)
   })
 })
 
@@ -236,14 +258,16 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
+    const { value: measures, stop } = scoped(() =>
+      useTitleWidths(() => withIcon(18), readThemeType),
+    )
 
-    expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
+    expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20 + 18 + 6)
 
-    setTheme({ '--numen-node-padding': '1rem' })
+    setTheme({ '--numen-node-gap': '0.5rem' })
     for (const ring of observers) ring()
 
-    expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 32)
+    expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20 + 18 + 8)
     stop()
   })
 
@@ -252,7 +276,9 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
+    const { value: measures, stop } = scoped(() =>
+      useTitleWidths(() => NOTHING_BESIDE, readThemeType),
+    )
 
     const first = measures.value
     for (const ring of observers) ring()
@@ -266,7 +292,7 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     stubObserver()
-    const { stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
+    const { stop } = scoped(() => useTitleWidths(() => NOTHING_BESIDE, readThemeType))
 
     expect(document.body.children).toHaveLength(1)
     stop()
@@ -277,7 +303,9 @@ describe('a theme changed under a plex already standing', () => {
     stubCanvas()
     stubStyles()
     setTheme()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
+    const { value: measures, stop } = scoped(() =>
+      useTitleWidths(() => NOTHING_BESIDE, readThemeType),
+    )
 
     expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
     expect(document.body.children).toHaveLength(0)
@@ -365,7 +393,7 @@ describe('the box a plex measures its type against', () => {
     setTheme()
     const { disconnect } = stubWatching()
     const scope = effectScope()
-    scope.run(() => useTitleWidths(() => 0, readThemeType))
+    scope.run(() => useTitleWidths(() => NOTHING_BESIDE, readThemeType))
     expect(disconnect).not.toHaveBeenCalled()
 
     scope.stop()
@@ -394,7 +422,7 @@ describe('what a heading needs', () => {
     expect(widths()!.heading('abc')).toBe(3 * PER_CHARACTER + 20)
   })
 
-  it('is measured in the size a label is set at, in whole pixels', () => {
+  it('is measured in the size a title is set at, in whole pixels', () => {
     const { context } = stubCanvas()
     stubStyles()
     setTheme()
@@ -402,7 +430,15 @@ describe('what a heading needs', () => {
     const measures = widths()!
 
     expect(measures.heading('abc')).toBe(Math.ceil(3 * 6.4 + 20))
-    expect(context.font).toBe('10px Test Sans, sans-serif')
+    expect(context.font).toBe('13px Test Sans, sans-serif')
+  })
+
+  it('follows the title size and not the size of a label', () => {
+    const { context } = stubCanvas()
+    stubStyles()
+    setTheme({ '--numen-edge-label-size': '20px', '--numen-font-size': '26px' })
+    widths()!.heading('abc')
+    expect(context.font).toBe('26px Test Sans, sans-serif')
   })
 })
 
@@ -426,14 +462,15 @@ describe('a theme changed in one token under a plex already standing', () => {
   it.each([
     ['the title size', { '--numen-font-size': '14px' }],
     ['the label size', { '--numen-edge-label-size': '11px' }],
-    ['the padding', { '--numen-node-padding': '12px' }],
     ['the gap', { '--numen-node-gap': '8px' }],
   ])('measures again when only %s has changed', (_name, tokens) => {
     stubCanvas()
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
+    const { value: measures, stop } = scoped(() =>
+      useTitleWidths(() => NOTHING_BESIDE, readThemeType),
+    )
     const first = measures.value
 
     setTheme(tokens)

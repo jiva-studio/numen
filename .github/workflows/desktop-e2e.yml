@@ -6,13 +6,13 @@ on:
   workflow_call:
     inputs:
       scope:
-        description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), separated by spaces'
+        description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), flashcards for the flashcards window, and acceptance for the scenarios of features/, separated by spaces'
         type: string
         default: all
   workflow_dispatch:
     inputs:
       scope:
-        description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), separated by spaces'
+        description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), flashcards for the flashcards window, and acceptance for the scenarios of features/, separated by spaces'
         type: string
         default: all
 
@@ -28,6 +28,7 @@ jobs:
     outputs:
       desktop: ${{ steps.plan.outputs.desktop }}
       flashcards: ${{ steps.plan.outputs.flashcards }}
+      acceptance: ${{ steps.plan.outputs.acceptance }}
       paths: ${{ steps.plan.outputs.paths }}
       matrix: ${{ steps.plan.outputs.matrix }}
     steps:
@@ -52,7 +53,7 @@ jobs:
   build:
     name: Build
     needs: [plan]
-    if: needs.plan.outputs.desktop == 'true' || needs.plan.outputs.flashcards == 'true'
+    if: needs.plan.outputs.desktop == 'true' || needs.plan.outputs.flashcards == 'true' || needs.plan.outputs.acceptance == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -113,6 +114,10 @@ jobs:
           status=0
           wait "$plugins" || status=$?
           cat "$RUNNER_TEMP/plugins.log"
+          # The fake OpenAI server of the connection specs; the test jobs have no Go toolchain.
+          if [ "$status" -eq 0 ]; then
+            (cd plugins/connections-llm && go build -o bin/fakeopenai ./backend/cmd/fakeopenai) || status=$?
+          fi
           exit "$status"
 
       # Saves the build cache when the exact key was not restored.
@@ -266,6 +271,60 @@ jobs:
             tests/e2e/desktop/test-results/
           retention-days: 7
 
+  # The scenarios of features/ in Chromium, then WebKit, against the build of the build job.
+  acceptance:
+    name: Acceptance
+    needs: [plan, build]
+    if: needs.plan.outputs.acceptance == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
+      - uses: ./.github/actions/setup-playwright
+        with:
+          packages: libgtk-4-1 libwebkitgtk-6.0-4
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: e2e-build
+          path: ${{ runner.temp }}
+
+      - name: Unpack the build
+        run: |
+          tar -xf "$RUNNER_TEMP/e2e-build.tar"
+          if ldd apps/desktop/numen-debug | grep 'not found'; then exit 1; fi
+
+      - name: Allow user namespaces, where the suite cuts the network
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns > /dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
+      - name: Run the scenarios in Chromium, then WebKit
+        working-directory: tests/acceptance/desktop
+        run: npm run acceptance:test
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-report-acceptance
+          path: |
+            tests/e2e/desktop/playwright-report/
+            tests/e2e/desktop/test-results/
+          retention-days: 7
+
   report:
     name: Report
     needs: [desktop]
@@ -311,7 +370,7 @@ jobs:
   # for all of them: it passes when every job passed or was skipped because the scope left it out.
   e2e:
     name: End-to-End
-    needs: [plan, build, desktop, flashcards, report]
+    needs: [plan, build, desktop, flashcards, acceptance, report]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

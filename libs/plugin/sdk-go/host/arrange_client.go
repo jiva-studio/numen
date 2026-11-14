@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
-var _ VaultList = (*Client)(nil)
-
 func getVaultsError(code v1.VaultsErrorCode, detail string) error {
 	return addDetail(readVaultsError(code), detail)
 }

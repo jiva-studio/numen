@@ -6,7 +6,7 @@
 //
 // A note is addressed by the path it is filed under, which is what the vault
 // calls it. What is here is what a note holds and what it is joined to: its
-// prose, its headings, its neighborhood, the addresses written in it, and
+// prose, its headings, its related notes, the addresses written in it, and
 // every way of writing one. Where a note sits among the vault's other files is
 // file.proto.
 package numenv1connect
@@ -43,9 +43,9 @@ const (
 	// NoteServiceGetOpeningNoteProcedure is the fully-qualified name of the NoteService's
 	// GetOpeningNote RPC.
 	NoteServiceGetOpeningNoteProcedure = "/numen.v1.NoteService/GetOpeningNote"
-	// NoteServiceGetNeighborhoodProcedure is the fully-qualified name of the NoteService's
-	// GetNeighborhood RPC.
-	NoteServiceGetNeighborhoodProcedure = "/numen.v1.NoteService/GetNeighborhood"
+	// NoteServiceListRelatedNotesProcedure is the fully-qualified name of the NoteService's
+	// ListRelatedNotes RPC.
+	NoteServiceListRelatedNotesProcedure = "/numen.v1.NoteService/ListRelatedNotes"
 	// NoteServiceResolveAddressesProcedure is the fully-qualified name of the NoteService's
 	// ResolveAddresses RPC.
 	NoteServiceResolveAddressesProcedure = "/numen.v1.NoteService/ResolveAddresses"
@@ -58,8 +58,6 @@ const (
 	NoteServiceWriteNoteProcedure = "/numen.v1.NoteService/WriteNote"
 	// NoteServiceCreateNoteProcedure is the fully-qualified name of the NoteService's CreateNote RPC.
 	NoteServiceCreateNoteProcedure = "/numen.v1.NoteService/CreateNote"
-	// NoteServiceWriteLinkProcedure is the fully-qualified name of the NoteService's WriteLink RPC.
-	NoteServiceWriteLinkProcedure = "/numen.v1.NoteService/WriteLink"
 	// NoteServiceGetConnectionProcedure is the fully-qualified name of the NoteService's GetConnection
 	// RPC.
 	NoteServiceGetConnectionProcedure = "/numen.v1.NoteService/GetConnection"
@@ -90,8 +88,8 @@ type NoteServiceClient interface {
 	// GetOpeningNote is the note to show when nothing else has been chosen. It
 	// answers with nothing until a scan has stored something.
 	GetOpeningNote(context.Context, *connect.Request[v1.GetOpeningNoteRequest]) (*connect.Response[v1.GetOpeningNoteResponse], error)
-	// GetNeighborhood is one note and everything joined to it.
-	GetNeighborhood(context.Context, *connect.Request[v1.GetNeighborhoodRequest]) (*connect.Response[v1.GetNeighborhoodResponse], error)
+	// ListRelatedNotes lists the notes related to one note, and the note itself.
+	ListRelatedNotes(context.Context, *connect.Request[v1.ListRelatedNotesRequest]) (*connect.Response[v1.ListRelatedNotesResponse], error)
 	// ResolveAddresses answers where addresses written in one note land.
 	ResolveAddresses(context.Context, *connect.Request[v1.ResolveAddressesRequest]) (*connect.Response[v1.ResolveAddressesResponse], error)
 	// ListHeadings is the headings of the vault's notes, grouped by the note they
@@ -112,9 +110,6 @@ type NoteServiceClient interface {
 	// the note carries are written into it as it is made, so it arrives joined.
 	// An empty title takes the lowest free "Untitled note N".
 	CreateNote(context.Context, *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error)
-	// WriteLink writes a relationship into one note. The note at the other end is
-	// left alone: a link is one end's account of a relationship.
-	WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error)
 	// GetConnection is the relationship between two notes as a whole: the record
 	// each note writes about the other.
 	GetConnection(context.Context, *connect.Request[v1.GetConnectionRequest]) (*connect.Response[v1.GetConnectionResponse], error)
@@ -164,10 +159,10 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(noteServiceMethods.ByName("GetOpeningNote")),
 			connect.WithClientOptions(opts...),
 		),
-		getNeighborhood: connect.NewClient[v1.GetNeighborhoodRequest, v1.GetNeighborhoodResponse](
+		listRelatedNotes: connect.NewClient[v1.ListRelatedNotesRequest, v1.ListRelatedNotesResponse](
 			httpClient,
-			baseURL+NoteServiceGetNeighborhoodProcedure,
-			connect.WithSchema(noteServiceMethods.ByName("GetNeighborhood")),
+			baseURL+NoteServiceListRelatedNotesProcedure,
+			connect.WithSchema(noteServiceMethods.ByName("ListRelatedNotes")),
 			connect.WithClientOptions(opts...),
 		),
 		resolveAddresses: connect.NewClient[v1.ResolveAddressesRequest, v1.ResolveAddressesResponse](
@@ -198,12 +193,6 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			httpClient,
 			baseURL+NoteServiceCreateNoteProcedure,
 			connect.WithSchema(noteServiceMethods.ByName("CreateNote")),
-			connect.WithClientOptions(opts...),
-		),
-		writeLink: connect.NewClient[v1.WriteLinkRequest, v1.WriteLinkResponse](
-			httpClient,
-			baseURL+NoteServiceWriteLinkProcedure,
-			connect.WithSchema(noteServiceMethods.ByName("WriteLink")),
 			connect.WithClientOptions(opts...),
 		),
 		getConnection: connect.NewClient[v1.GetConnectionRequest, v1.GetConnectionResponse](
@@ -266,13 +255,12 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 // noteServiceClient implements NoteServiceClient.
 type noteServiceClient struct {
 	getOpeningNote    *connect.Client[v1.GetOpeningNoteRequest, v1.GetOpeningNoteResponse]
-	getNeighborhood   *connect.Client[v1.GetNeighborhoodRequest, v1.GetNeighborhoodResponse]
+	listRelatedNotes  *connect.Client[v1.ListRelatedNotesRequest, v1.ListRelatedNotesResponse]
 	resolveAddresses  *connect.Client[v1.ResolveAddressesRequest, v1.ResolveAddressesResponse]
 	listHeadings      *connect.Client[v1.ListHeadingsRequest, v1.ListHeadingsResponse]
 	readNote          *connect.Client[v1.ReadNoteRequest, v1.ReadNoteResponse]
 	writeNote         *connect.Client[v1.WriteNoteRequest, v1.WriteNoteResponse]
 	createNote        *connect.Client[v1.CreateNoteRequest, v1.CreateNoteResponse]
-	writeLink         *connect.Client[v1.WriteLinkRequest, v1.WriteLinkResponse]
 	getConnection     *connect.Client[v1.GetConnectionRequest, v1.GetConnectionResponse]
 	saveConnection    *connect.Client[v1.SaveConnectionRequest, v1.SaveConnectionResponse]
 	removeSide        *connect.Client[v1.RemoveSideRequest, v1.RemoveSideResponse]
@@ -289,9 +277,9 @@ func (c *noteServiceClient) GetOpeningNote(ctx context.Context, req *connect.Req
 	return c.getOpeningNote.CallUnary(ctx, req)
 }
 
-// GetNeighborhood calls numen.v1.NoteService.GetNeighborhood.
-func (c *noteServiceClient) GetNeighborhood(ctx context.Context, req *connect.Request[v1.GetNeighborhoodRequest]) (*connect.Response[v1.GetNeighborhoodResponse], error) {
-	return c.getNeighborhood.CallUnary(ctx, req)
+// ListRelatedNotes calls numen.v1.NoteService.ListRelatedNotes.
+func (c *noteServiceClient) ListRelatedNotes(ctx context.Context, req *connect.Request[v1.ListRelatedNotesRequest]) (*connect.Response[v1.ListRelatedNotesResponse], error) {
+	return c.listRelatedNotes.CallUnary(ctx, req)
 }
 
 // ResolveAddresses calls numen.v1.NoteService.ResolveAddresses.
@@ -317,11 +305,6 @@ func (c *noteServiceClient) WriteNote(ctx context.Context, req *connect.Request[
 // CreateNote calls numen.v1.NoteService.CreateNote.
 func (c *noteServiceClient) CreateNote(ctx context.Context, req *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error) {
 	return c.createNote.CallUnary(ctx, req)
-}
-
-// WriteLink calls numen.v1.NoteService.WriteLink.
-func (c *noteServiceClient) WriteLink(ctx context.Context, req *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error) {
-	return c.writeLink.CallUnary(ctx, req)
 }
 
 // GetConnection calls numen.v1.NoteService.GetConnection.
@@ -374,8 +357,8 @@ type NoteServiceHandler interface {
 	// GetOpeningNote is the note to show when nothing else has been chosen. It
 	// answers with nothing until a scan has stored something.
 	GetOpeningNote(context.Context, *connect.Request[v1.GetOpeningNoteRequest]) (*connect.Response[v1.GetOpeningNoteResponse], error)
-	// GetNeighborhood is one note and everything joined to it.
-	GetNeighborhood(context.Context, *connect.Request[v1.GetNeighborhoodRequest]) (*connect.Response[v1.GetNeighborhoodResponse], error)
+	// ListRelatedNotes lists the notes related to one note, and the note itself.
+	ListRelatedNotes(context.Context, *connect.Request[v1.ListRelatedNotesRequest]) (*connect.Response[v1.ListRelatedNotesResponse], error)
 	// ResolveAddresses answers where addresses written in one note land.
 	ResolveAddresses(context.Context, *connect.Request[v1.ResolveAddressesRequest]) (*connect.Response[v1.ResolveAddressesResponse], error)
 	// ListHeadings is the headings of the vault's notes, grouped by the note they
@@ -396,9 +379,6 @@ type NoteServiceHandler interface {
 	// the note carries are written into it as it is made, so it arrives joined.
 	// An empty title takes the lowest free "Untitled note N".
 	CreateNote(context.Context, *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error)
-	// WriteLink writes a relationship into one note. The note at the other end is
-	// left alone: a link is one end's account of a relationship.
-	WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error)
 	// GetConnection is the relationship between two notes as a whole: the record
 	// each note writes about the other.
 	GetConnection(context.Context, *connect.Request[v1.GetConnectionRequest]) (*connect.Response[v1.GetConnectionResponse], error)
@@ -444,10 +424,10 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(noteServiceMethods.ByName("GetOpeningNote")),
 		connect.WithHandlerOptions(opts...),
 	)
-	noteServiceGetNeighborhoodHandler := connect.NewUnaryHandler(
-		NoteServiceGetNeighborhoodProcedure,
-		svc.GetNeighborhood,
-		connect.WithSchema(noteServiceMethods.ByName("GetNeighborhood")),
+	noteServiceListRelatedNotesHandler := connect.NewUnaryHandler(
+		NoteServiceListRelatedNotesProcedure,
+		svc.ListRelatedNotes,
+		connect.WithSchema(noteServiceMethods.ByName("ListRelatedNotes")),
 		connect.WithHandlerOptions(opts...),
 	)
 	noteServiceResolveAddressesHandler := connect.NewUnaryHandler(
@@ -478,12 +458,6 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 		NoteServiceCreateNoteProcedure,
 		svc.CreateNote,
 		connect.WithSchema(noteServiceMethods.ByName("CreateNote")),
-		connect.WithHandlerOptions(opts...),
-	)
-	noteServiceWriteLinkHandler := connect.NewUnaryHandler(
-		NoteServiceWriteLinkProcedure,
-		svc.WriteLink,
-		connect.WithSchema(noteServiceMethods.ByName("WriteLink")),
 		connect.WithHandlerOptions(opts...),
 	)
 	noteServiceGetConnectionHandler := connect.NewUnaryHandler(
@@ -544,8 +518,8 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 		switch r.URL.Path {
 		case NoteServiceGetOpeningNoteProcedure:
 			noteServiceGetOpeningNoteHandler.ServeHTTP(w, r)
-		case NoteServiceGetNeighborhoodProcedure:
-			noteServiceGetNeighborhoodHandler.ServeHTTP(w, r)
+		case NoteServiceListRelatedNotesProcedure:
+			noteServiceListRelatedNotesHandler.ServeHTTP(w, r)
 		case NoteServiceResolveAddressesProcedure:
 			noteServiceResolveAddressesHandler.ServeHTTP(w, r)
 		case NoteServiceListHeadingsProcedure:
@@ -556,8 +530,6 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 			noteServiceWriteNoteHandler.ServeHTTP(w, r)
 		case NoteServiceCreateNoteProcedure:
 			noteServiceCreateNoteHandler.ServeHTTP(w, r)
-		case NoteServiceWriteLinkProcedure:
-			noteServiceWriteLinkHandler.ServeHTTP(w, r)
 		case NoteServiceGetConnectionProcedure:
 			noteServiceGetConnectionHandler.ServeHTTP(w, r)
 		case NoteServiceSaveConnectionProcedure:
@@ -589,8 +561,8 @@ func (UnimplementedNoteServiceHandler) GetOpeningNote(context.Context, *connect.
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.GetOpeningNote is not implemented"))
 }
 
-func (UnimplementedNoteServiceHandler) GetNeighborhood(context.Context, *connect.Request[v1.GetNeighborhoodRequest]) (*connect.Response[v1.GetNeighborhoodResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.GetNeighborhood is not implemented"))
+func (UnimplementedNoteServiceHandler) ListRelatedNotes(context.Context, *connect.Request[v1.ListRelatedNotesRequest]) (*connect.Response[v1.ListRelatedNotesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.ListRelatedNotes is not implemented"))
 }
 
 func (UnimplementedNoteServiceHandler) ResolveAddresses(context.Context, *connect.Request[v1.ResolveAddressesRequest]) (*connect.Response[v1.ResolveAddressesResponse], error) {
@@ -611,10 +583,6 @@ func (UnimplementedNoteServiceHandler) WriteNote(context.Context, *connect.Reque
 
 func (UnimplementedNoteServiceHandler) CreateNote(context.Context, *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.CreateNote is not implemented"))
-}
-
-func (UnimplementedNoteServiceHandler) WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.WriteLink is not implemented"))
 }
 
 func (UnimplementedNoteServiceHandler) GetConnection(context.Context, *connect.Request[v1.GetConnectionRequest]) (*connect.Response[v1.GetConnectionResponse], error) {

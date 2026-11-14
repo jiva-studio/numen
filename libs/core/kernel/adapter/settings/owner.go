@@ -17,6 +17,10 @@ import (
 // enabled holds a boolean.
 const fieldEnabled = settingsdomain.HostFieldEnabled
 
+// fieldDiscover is the field of the object of a plugin that holds an object: for the key of each setting of
+// rows that declares discover, true or false.
+const fieldDiscover = settingsdomain.HostFieldDiscover
+
 // The reasons CheckWrite rejects a write.
 var (
 	// ErrUndeclared is a key that its owner does not declare, or an owner that has no declaration.
@@ -46,11 +50,9 @@ type Declarations func(owner string) ([]manifest.Setting, bool)
 // registry that has no provider.
 type Registries func(name string) ([]string, bool)
 
-// CheckWrite returns why a value is not one the setting at the path takes.
-// The first path element is the owner and the rest is the key path under it.
-// It checks the declared key, the type of the value, enum membership and range
-// bounds for every owner. The keys `agent` and `ai` of the owner app are
-// outside the check.
+// CheckWrite returns why a value is not one the setting at the path takes. The first path element
+// is the owner and the rest is the key path under it. It checks the declared key, the type, enum
+// membership and range bounds, and for rows of connections the rows (see RegistryConnections).
 func CheckWrite(declared Declarations, registries Registries, path []string, value any) error {
 	label := strings.Join(path, ".")
 	if len(path) < 2 {
@@ -60,6 +62,9 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 	settings, found := declared(owner)
 	if !found {
 		return noDeclaringPluginError{owner: owner}
+	}
+	if owner != settingsdomain.AppOwner && len(key) == 1 && key[0] == fieldDiscover {
+		return wrapAt(label, checkDiscover(settings, value))
 	}
 	name, err := getSettingName(owner, key, value)
 	if err != nil || name == "" {
@@ -74,9 +79,6 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 
 func getSettingName(owner string, key []string, value any) (string, error) {
 	if owner == settingsdomain.AppOwner {
-		if isOutsideDeclaration(key[0]) {
-			return "", nil
-		}
 		return strings.Join(key, "."), nil
 	}
 	if len(key) != 1 {
@@ -122,6 +124,8 @@ func checkValue(declared manifest.Setting, registries Registries, value any) err
 		return checkNumber(declared, value)
 	case "enum":
 		return checkOption(declared, registries, value)
+	case manifest.SettingTypeConnections:
+		return checkRows(declared, registries, value)
 	}
 	return nil
 }
@@ -219,20 +223,20 @@ func (f *File) GetValue(path ...string) (any, bool) {
 
 // DropInvalid leaves out of force every stored value that CheckWrite refuses for the declarations
 // given: an undeclared key, a value of the wrong type or outside its bounds, a value that is no
-// option, and an object of an owner that has no declaration. Each one adds a notice to the file
+// option, and an object of an owner that has no declaration. In a setting of type connections only
+// the rows that fail are left out, and the rows beyond max, each with a notice. Each one adds a notice to the file
 // and is applied nowhere. The bytes of the file on disk are not touched.
 func (f *File) DropInvalid(declared Declarations, registries Registries) {
+	registries = withConnectionIDs(f.Connections, registries)
 	f.dropInvalidApp(declared, registries)
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
-		if _, found := declared(id); !found {
-			isDefault := isDefaultPlugin(id, f.Plugins[id])
+		settings, found := declared(id)
+		if !found {
 			delete(f.Plugins, id)
-			if isDefault {
-				continue
-			}
 			f.AddNotice(fmt.Sprintf("numen.json: no installed plugin %s; its settings are ignored", id))
 			continue
 		}
+		dropInvalidRowsOf(f, id, settings, registries)
 		for _, key := range slices.Sorted(maps.Keys(f.Plugins[id])) {
 			if err := CheckWrite(declared, registries, []string{id, key}, f.Plugins[id][key]); err != nil {
 				delete(f.Plugins[id], key)

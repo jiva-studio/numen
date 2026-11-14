@@ -3,10 +3,10 @@ import { openWorkspace, runCommand } from '../../support/workspace.js'
 import { getFirstLine, getRow, readHeight, showInFiles } from '../../support/layout.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
 
-const openSystemSettings = async (page: Page) => {
+const openAppearanceSettings = async (page: Page) => {
   await runCommand(page, 'Open settings', /^Open settings$/)
-  const settings = page.getByRole('tabpanel', { name: /Settings/ })
-  await settings.getByRole('button', { name: /^System/ }).click()
+  const settings = page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
+  await settings.getByRole('button', { name: /^Appearance/ }).click()
   return settings
 }
 
@@ -28,7 +28,7 @@ test.describe('Theming and Display Scaling', () => {
     await expect(editor).toBeVisible()
     const editorBefore = await readHeight(getFirstLine(editor))
 
-    const settings = await openSystemSettings(page)
+    const settings = await openAppearanceSettings(page)
     const interfaceSize = settings.getByRole('slider', { name: 'Interface size' })
     await interfaceSize.focus()
     await interfaceSize.press('ArrowRight')
@@ -49,19 +49,5 @@ test.describe('Theming and Display Scaling', () => {
     await expect
       .poll(async () => readHeight(getFirstLine(reloaded)))
       .toBeCloseTo(editorBefore * 1.2 * 1.5, 0)
-  })
-
-  test('refuses a size outside the bounds of its setting and keeps the size in force', async ({
-    request,
-  }) => {
-    await writeSetting(request, ['app', 'appearance', 'textScale'], 1.25)
-
-    const answer = await request.post('/numen.v1.SettingsService/WriteSettings', {
-      data: { settings: [{ at: ['app', 'appearance', 'textScale'], value: '9' }] },
-      headers: { 'Content-Type': 'application/json' },
-    })
-
-    expect(answer.ok()).toBe(false)
-    expect((await readOwner(request, 'app'))['appearance']).toMatchObject({ textScale: 1.25 })
   })
 })

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
 // endpoint is the address at which the agent calls the tools of this vault over MCP.
@@ -19,7 +17,7 @@ type endpoint struct {
 func noRelease() error { return nil }
 
 func setupAntigravityHome(tools *endpoint) (string, func() error, error) {
-	tempHome, cleanup, err := agentrun.CreateTempDir("numen-antigravity-*")
+	tempHome, cleanup, err := createTempDir("numen-antigravity-*")
 	if err != nil {
 		return "", noRelease, err
 	}
@@ -28,7 +26,7 @@ func setupAntigravityHome(tools *endpoint) (string, func() error, error) {
 	if err != nil {
 		return "", noRelease, errors.Join(err, cleanup())
 	}
-	if err := agentrun.LinkEntries(realHome, tempHome, ".gemini"); err != nil {
+	if err := linkEntries(realHome, tempHome, ".gemini"); err != nil {
 		return "", noRelease, errors.Join(err, cleanup())
 	}
 
@@ -37,13 +35,13 @@ func setupAntigravityHome(tools *endpoint) (string, func() error, error) {
 	realConfig := filepath.Join(realGemini, "config")
 	tempConfig := filepath.Join(tempGemini, "config")
 	// gomutants:disable-next-line BRANCH_IF reason="Creating a subdirectory inside a freshly created temporary directory fails only on OS filesystem exhaustion."
-	if err := agentrun.CreateDir(tempConfig, 0o700); err != nil {
+	if err := os.MkdirAll(tempConfig, 0o700); err != nil {
 		return "", noRelease, errors.Join(fmt.Errorf("create %s: %w", tempConfig, err), cleanup())
 	}
-	if err := agentrun.LinkEntries(realGemini, tempGemini, "config"); err != nil {
+	if err := linkEntries(realGemini, tempGemini, "config"); err != nil {
 		return "", noRelease, errors.Join(err, cleanup())
 	}
-	if err := agentrun.LinkEntries(realConfig, tempConfig, "mcp_config.json"); err != nil {
+	if err := linkEntries(realConfig, tempConfig, "mcp_config.json"); err != nil {
 		return "", noRelease, errors.Join(err, cleanup())
 	}
 
@@ -58,7 +56,7 @@ func setupAntigravityHome(tools *endpoint) (string, func() error, error) {
 	}
 	configPath := filepath.Join(tempConfig, "mcp_config.json")
 	// gomutants:disable-next-line BRANCH_IF reason="Writing a small file inside a freshly created temporary directory fails only on OS filesystem exhaustion."
-	if err := agentrun.WriteFile(configPath, append(encoded, '\n'), 0o600); err != nil {
+	if err := os.WriteFile(configPath, append(encoded, '\n'), 0o600); err != nil {
 		return "", noRelease, errors.Join(fmt.Errorf("write %s: %w", configPath, err), cleanup())
 	}
 
@@ -84,7 +82,7 @@ func makeMCPConfig(tools endpoint, existingPath string) map[string]any {
 }
 
 func readMCPServers(path string) map[string]any {
-	raw, err := agentrun.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil
 	}

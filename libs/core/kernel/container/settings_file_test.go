@@ -266,33 +266,6 @@ func TestThereIsOneFileAndItIsNamedForWhatItIs(t *testing.T) {
 	}
 }
 
-// A section is kept whether it is the one in use or not, so trying another agent
-// for an afternoon does not cost the settings of the one before.
-func TestASectionSurvivesNotBeingTheOneInUse(t *testing.T) {
-	cfg, err := openSettingsAt(writeSettingsFile(t, `{"app":{"agent":{"use":"","claude":{"model":"opus"}}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Agent.IsNamed() || cfg.Agent.GetUse() != "" {
-		t.Errorf("uses %q", cfg.Agent.GetUse())
-	}
-	if got := cfg.Agent.GetProgram("claude"); got.Model != "opus" {
-		t.Errorf("got %+v", got)
-	}
-}
-
-// An installation the folders looked in do not cover names the command line
-// itself, and it is started as written.
-func TestTheCommandLineCanBeNamed(t *testing.T) {
-	cfg, err := openSettingsAt(writeSettingsFile(t, `{"app":{"agent":{"claude":{"command":["/opt/claude/bin/claude"]}}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := cfg.Agent.GetProgram("claude").Command; len(got) != 1 || got[0] != "/opt/claude/bin/claude" {
-		t.Errorf("got %q", got)
-	}
-}
-
 // A setting that defaults to on is read through a pointer: omitting the section,
 // omitting the field and writing false are three distinct inputs, and only the
 // last turns it off.

@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -220,14 +221,9 @@ func (e *searchEndpoint) SearchPassages(
 	if code := call.getRefusal(true); code != 0 {
 		return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Error: code}), nil
 	}
-	kinds := make([]domain.SourceKind, len(req.Msg.GetKinds()))
-	for i, kind := range req.Msg.GetKinds() {
-		switch one := domain.SourceKind(kind); one {
-		case domain.KindNote, domain.KindFile:
-			kinds[i] = one
-		default:
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source kind %q: use %q or %q", kind, domain.KindNote, domain.KindFile))
-		}
+	kinds, err := readKinds(req.Msg.GetKinds())
+	if err != nil {
+		return nil, err
 	}
 	found, err := call.search.SearchPassages(ctx, call.vault, plugin.PassageQuery{
 		Query: req.Msg.GetQuery(), Limit: int(req.Msg.GetLimit()), Kinds: kinds, PathPrefix: req.Msg.GetPathPrefix(),
@@ -241,6 +237,48 @@ func (e *searchEndpoint) SearchPassages(
 		return nil, err
 	}
 	return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Passages: passages}), nil
+}
+
+func readKinds(names []string) ([]domain.SourceKind, error) {
+	kinds := make([]domain.SourceKind, len(names))
+	for i, kind := range names {
+		switch one := domain.SourceKind(kind); one {
+		case domain.KindNote, domain.KindFile:
+			kinds[i] = one
+		default:
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source kind %q: use %q or %q", kind, domain.KindNote, domain.KindFile))
+		}
+	}
+	return kinds, nil
+}
+
+func (e *searchEndpoint) FindNearestPassages(
+	ctx context.Context, req *connect.Request[v1.FindNearestPassagesRequest],
+) (*connect.Response[v1.FindNearestPassagesResponse], error) {
+	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	if err != nil {
+		return nil, err
+	}
+	if code := call.getRefusal(true); code != 0 {
+		return connect.NewResponse(&v1.FindNearestPassagesResponse{Error: code}), nil
+	}
+	kinds, err := readKinds(req.Msg.GetKinds())
+	if err != nil {
+		return nil, err
+	}
+	found, err := call.search.FindNearestPassages(ctx, call.vault, sourcedomain.NearestQuery{
+		Recipe: req.Msg.GetPlace().GetRecipe(), Vector: req.Msg.GetVector(), Kinds: kinds,
+		PathPrefix: req.Msg.GetPathPrefix(), Limit: int(req.Msg.GetLimit()), Floor: req.Msg.GetFloor(),
+	})
+	code, err := answerSearch(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.FindNearestPassagesResponse{Error: code}), err
+	}
+	matches := make([]*v1.ChunkMatch, len(found))
+	for i, one := range found {
+		matches[i] = &v1.ChunkMatch{ChunkId: string(one.ChunkID), Score: one.Score}
+	}
+	return connect.NewResponse(&v1.FindNearestPassagesResponse{Matches: matches}), nil
 }
 
 func writePassages(found []domain.Passage) ([]*v1.Passage, error) {

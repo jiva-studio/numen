@@ -13,6 +13,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
@@ -38,19 +39,46 @@ type Embedder struct {
 // End-to-end tests write it into a note to hold a vector pass open.
 const MockHoldWord = "numenmockhold"
 
+// holdFileVariable names a file that holds every call of the mock while the file exists.
+// End-to-end tests create it to keep a vector pass open, and remove it to let the pass end.
+const holdFileVariable = "NUMEN_TEST_MOCK_EMBED_HOLD_FILE"
+
+// holdPollInterval is how often a held call looks for the hold file again.
+const holdPollInterval = 50 * time.Millisecond
+
 // Embed returns one unit vector per text. A batch with a text that contains
-// MockHoldWord returns only when ctx ends, with its error.
+// MockHoldWord returns only when ctx ends, with its error. While the file named by the
+// variable NUMEN_TEST_MOCK_EMBED_HOLD_FILE exists, a batch waits for the file to go or for ctx to end.
 func (m Embedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	m.record(texts)
 	if slices.ContainsFunc(texts, isHeld) {
 		<-ctx.Done()
 		return nil, ctx.Err()
 	}
+	if err := waitForHoldFile(ctx, os.Getenv(holdFileVariable)); err != nil {
+		return nil, err
+	}
 	out := make([][]float32, len(texts))
 	for i, text := range texts {
 		out[i] = embedMock(stripMockPrefix(text))
 	}
 	return out, nil
+}
+
+func waitForHoldFile(ctx context.Context, path string) error {
+	if path == "" {
+		return nil
+	}
+	for {
+		if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(holdPollInterval):
+		}
+	}
 }
 
 func stripMockPrefix(text string) string {

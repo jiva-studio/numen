@@ -73,7 +73,7 @@ Multiple parents are ordinary: the hierarchy is a directed acyclic graph, not a 
 
 A connection is the relationship between two notes as a whole: up to two records, one written in each note, each with its own `label` and `marker`. There is no field for a reverse label; it is the `label` of the record in the other note. The roles of the two records are inverse of each other (`parent` and `child`, `jump` and `jump`), and the hierarchy built from them contains no cycle: a connection that would make a note its own ancestor is refused. Saving a connection writes both notes or neither.
 
-Only `parent`, `child` and `jump` records are part of a connection. A `ref` is the body wikilink and an `attachment` points at no note.
+Only `parent`, `child` and `jump` records are part of a connection. A `ref` is the body wikilink and an `attachment` points at no note. The plex draws a `ref` as a reference note, with an arrow to the note it points at, when its References setting shows it; the line to it has no link inspector, because no record joins the two notes.
 
 A record is addressed by its target and its `type`. A note holds one record per target and type, and a record of another type to the same target belongs to a different connection.
 

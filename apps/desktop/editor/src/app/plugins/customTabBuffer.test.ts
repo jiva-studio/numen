@@ -55,7 +55,7 @@ function openNoteTab(path: string) {
   const kind = createCustomTabKind(
     'md.numen.notes',
     { kind: 'note', component: blank, title: 'Note' },
-    { getNoteBuffer: () => notes } as unknown as PluginHostDeps,
+    { getNoteBuffer: () => notes, isNoteEditor: true } as unknown as PluginHostDeps,
   )
   const scope = effectScope(true)
   const state = scope.run(() => kind.open(path, 'note:tab')) as unknown as BufferedState
@@ -164,6 +164,7 @@ describe('the links of a note tab of the note kind', () => {
       { kind: 'note', component: blank, title: 'Note' },
       {
         getNoteBuffer: () => notes,
+        isNoteEditor: true,
         getNotes: () => ({
           findNotes: async (query: string) =>
             query.toLowerCase().startsWith('en')

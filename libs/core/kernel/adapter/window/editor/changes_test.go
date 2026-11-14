@@ -140,8 +140,8 @@ func TestAnEditReachesAListener(t *testing.T) {
 	}
 
 	// And the index matches the disk by the time it is announced.
-	displayed, err := client.GetNeighborhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "Note.md"}))
+	displayed, err := client.ListRelatedNotes(t.Context(),
+		connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "Note.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -926,28 +926,15 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 	if _, exists := target["app"]; !exists {
 		t.Errorf("the settings read out as %v", target)
 	}
-
-	// Each model exposes the setting it is read from and the value that
-	// selecting it writes.
-	models := response.Msg.GetModels()
-	if len(models) == 0 {
-		t.Fatal("no setting names a model")
-	}
-	for _, one := range models {
-		if len(one.GetNamedAt()) == 0 || len(one.GetWrites()) == 0 {
-			t.Errorf("%q is read from nowhere, or writes nothing", one.GetTitle())
-		}
-	}
 }
 
-// A written setting is returned by the next read, and the model selected for
-// the agent is the one the models list reports.
+// A written setting is returned by the next read.
 func TestWriteSettings_NextGetSettingsReturnsSaved(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"app", "agent", "claude", "model"}, Value: `"opus"`},
+			{At: []string{"app", "appearance", "mode"}, Value: `"dark"`},
 		},
 	}))
 	if err != nil {
@@ -958,7 +945,7 @@ func TestWriteSettings_NextGetSettingsReturnsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(response.Msg.GetWritten(), `"model":"opus"`) {
+	if !strings.Contains(response.Msg.GetWritten(), `"mode":"dark"`) {
 		t.Errorf("the settings read out as %s", response.Msg.GetWritten())
 	}
 }
@@ -971,8 +958,8 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 		posVal []string
 		value  string
 	}{
-		{"is not JSON at all", []string{"app", "agent", "claude", "model"}, `opus`},
-		{"is of the wrong shape", []string{"app", "agent", "claude", "model"}, `7`},
+		{"is not JSON at all", []string{"app", "appearance", "mode"}, `dark`},
+		{"is of the wrong shape", []string{"app", "appearance", "mode"}, `7`},
 		{"is past what the setting goes to", []string{"app", "appearance", "textScale"}, `5`},
 	} {
 		t.Run(one.what, func(t *testing.T) {
@@ -1011,7 +998,7 @@ func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"app", "agent", "claude", "model"}, Value: `"opus"`},
+			{At: []string{"app", "appearance", "mode"}, Value: `"dark"`},
 			{At: []string{"app", "appearance", "textScale"}, Value: `5`},
 		},
 	}))
@@ -1023,7 +1010,7 @@ func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(response.Msg.GetWritten(), `"model":"opus"`) {
+	if strings.Contains(response.Msg.GetWritten(), `"mode":"dark"`) {
 		t.Errorf("the settings read out as %s", response.Msg.GetWritten())
 	}
 }
@@ -1388,9 +1375,9 @@ func TestANoteReturnsWhatItIsDividedInto(t *testing.T) {
 	}
 }
 
-// TestANeighborhoodSaysWhichOfThreeEachNoteIs covers typed notes: the graph
+// TestRelatedNotesReturnWhichOfThreeEachNoteIs covers typed notes: the graph
 // renders each typed note as its type, and the response carries the type.
-func TestANeighborhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
+func TestRelatedNotesReturnWhichOfThreeEachNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\nlinks:\n  - to: Animals\n    role: child\n" +
 			"  - to: Animal\n    role: child\n---\n\nan animal is a note\n",
@@ -1399,8 +1386,8 @@ func TestANeighborhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 			"## Layout\n\n### Header\n\nan animal\n\n### Footer\n\nheight\n",
 	})
 
-	center, err := client.GetNeighborhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "Ontology.md"}))
+	center, err := client.ListRelatedNotes(t.Context(),
+		connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "Ontology.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1424,8 +1411,8 @@ func TestANeighborhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 
 	// The focused note carries its type in the same way, when the graph is
 	// centered on a typed note.
-	item, err := client.GetNeighborhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "Animals.md"}))
+	item, err := client.ListRelatedNotes(t.Context(),
+		connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "Animals.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -7,32 +7,4 @@ package command
 const (
 	// CreateText creates a text version of a file.
 	CreateText = "app:file.createText"
-	// ImportLink creates a link note from a web address.
-	ImportLink = "app:link.import"
-	// DownloadMedia downloads the media of a link note.
-	DownloadMedia = "app:link.downloadMedia"
-	// DeleteMedia deletes the downloaded media of a link note.
-	DeleteMedia = "app:link.deleteMedia"
 )
-
-// IsSharedCommand reports whether the full id is a shared command of the application.
-func IsSharedCommand(id string) bool {
-	switch id {
-	case CreateText, ImportLink, DownloadMedia, DeleteMedia:
-		return true
-	}
-	return false
-}
-
-// ListSharedCommands lists the shared commands of the application in the order commands.json
-// declares them, each with the arguments the palette asks for and the host checks for every handler.
-func ListSharedCommands() []SharedCommand {
-	return []SharedCommand{
-		{ID: CreateText, Title: "Create text"},
-		{ID: ImportLink, Title: "Import link", Arguments: []SharedCommandArgument{
-			{Name: "address", Title: "Web address", Type: "string", IsRequired: true},
-		}},
-		{ID: DownloadMedia, Title: "Download media"},
-		{ID: DeleteMedia, Title: "Delete media"},
-	}
-}

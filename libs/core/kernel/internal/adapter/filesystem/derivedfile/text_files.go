@@ -15,18 +15,21 @@ import (
 )
 
 // TextStores opens the version files of a vault, `.numen/<plugin id>/<name>`, as JSON Lines of segments.
+// Decoded keeps the segments of the files read last; nil keeps none.
 type TextStores struct {
 	Options vaultconfig.Options
+	Decoded *DecodedTexts
 }
 
 // Open is the version files of one vault.
 func (s TextStores) Open(v domain.Vault) (textport.TextFiles, error) {
-	return textFiles{vault: v, stores: PluginStores(s)}, nil
+	return textFiles{vault: v, stores: PluginStores{Options: s.Options}, decoded: s.Decoded}, nil
 }
 
 type textFiles struct {
-	vault  domain.Vault
-	stores PluginStores
+	vault   domain.Vault
+	stores  PluginStores
+	decoded *DecodedTexts
 }
 
 func (f textFiles) ReadTextFile(ctx context.Context, pluginID, name string) (text.File, error) {
@@ -41,11 +44,16 @@ func (f textFiles) ReadTextFile(ctx context.Context, pluginID, name string) (tex
 	if err != nil {
 		return text.File{}, err
 	}
+	hash := domain.HashContent(raw)
+	if segments, ok := f.decoded.get(hash); ok {
+		return text.File{Segments: segments, TextHash: hash}, nil
+	}
 	segments, err := textfile.Decode(raw)
 	if err != nil {
 		return text.File{}, fmt.Errorf("%s/%s: %w", pluginID, name, err)
 	}
-	return text.File{Segments: segments, TextHash: domain.HashContent(raw)}, nil
+	f.decoded.put(hash, segments)
+	return text.File{Segments: segments, TextHash: hash}, nil
 }
 
 func (f textFiles) WriteTextFile(ctx context.Context, pluginID, name string, segments []domain.TextSegment) (string, error) {

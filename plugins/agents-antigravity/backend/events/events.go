@@ -1,24 +1,25 @@
-// Package events turns the JSON events the Antigravity program prints into the steps of an agent run.
+// Package events reads the JSON events the Antigravity program prints and hands what they say to a sink.
 package events
 
 import (
 	"encoding/json"
 	"strings"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
 )
 
-// Sink receives what the events of a run say.
+// Sink receives what the events of a run say. A call is reported once its arguments are whole; the
+// program reports no end of a call. Stop receives the reason the program gave for a run that did not
+// finish.
 type Sink interface {
-	Send(resp *agentrun.Response)
-	CountStep()
+	SendText(text string) error
+	SendToolCall(tool, arguments string) error
 	SetSession(session string)
+	Stop(reason string)
 	Finish()
 }
 
 type eventReader struct {
-	sink Sink
+	sink    Sink
+	sendErr error
 
 	isTextStreamed bool
 
@@ -26,10 +27,41 @@ type eventReader struct {
 	currentArgs strings.Builder
 }
 
-// NewHandler returns the function that turns one decoded event of the program's output into steps
-// for sink.
-func NewHandler(sink Sink) func(map[string]any) {
-	return (&eventReader{sink: sink, isTextStreamed: false, currentTool: "", currentArgs: strings.Builder{}}).handle
+// Handler turns the decoded events of the program's output into reports for a sink.
+type Handler struct {
+	reader *eventReader
+}
+
+// NewHandler returns the handler that hands what each event says to sink.
+func NewHandler(sink Sink) *Handler {
+	return &Handler{reader: &eventReader{sink: sink, sendErr: nil, isTextStreamed: false, currentTool: "", currentArgs: strings.Builder{}}}
+}
+
+// Handle hands what one event says to the sink. Once the sink refused a report, it is handed no other.
+func (h *Handler) Handle(event map[string]any) {
+	h.reader.handle(event)
+}
+
+// SendText hands a line of the output that is not an event to the sink as text.
+func (h *Handler) SendText(text string) {
+	h.reader.sendText(text)
+}
+
+// Err returns the error of the first report the sink refused.
+func (h *Handler) Err() error {
+	return h.reader.sendErr
+}
+
+func (r *eventReader) sendText(text string) {
+	if r.sendErr == nil {
+		r.sendErr = r.sink.SendText(text)
+	}
+}
+
+func (r *eventReader) sendToolCall(tool, arguments string) {
+	if r.sendErr == nil {
+		r.sendErr = r.sink.SendToolCall(tool, arguments)
+	}
 }
 
 func (r *eventReader) handle(rawMap map[string]any) {
@@ -47,20 +79,10 @@ func (r *eventReader) handle(rawMap map[string]any) {
 			r.sink.SetSession(session)
 		}
 	}
-
-	if thinking, ok := rawMap["thinking"].(string); ok && thinking != "" {
-		r.sink.Send(&agentrun.Response{
-			Step: &agentrun.ModelStartedStep{},
-		})
-	}
 	r.handleToolCalls(rawMap)
 
 	if content, ok := rawMap["content"].(string); ok && content != "" {
-		r.sink.Send(&agentrun.Response{
-			Step: &agentrun.TextStep{
-				Text: content,
-			},
-		})
+		r.sendText(content)
 	}
 	r.handleStepUpdate(rawMap)
 	r.handleResult(rawMap)
@@ -71,24 +93,14 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 	if !ok {
 		return
 	}
-	subType := getString(evObj, "type")
-	switch subType {
+	switch getString(evObj, "type") {
 	case "content_block_start":
 		r.startBlock(evObj)
 	case "content_block_delta":
 		r.continueBlock(evObj)
 	case "content_block_stop":
 		if r.currentTool != "" {
-			r.sink.Send(&agentrun.Response{
-				Step: &agentrun.ToolCallStep{
-					ToolCall: &toolcall.ToolCall{
-						Tool:   r.currentTool,
-						About:  r.currentArgs.String(),
-						Length: 0, Path: "", Range: nil, Call: "", Kind: "",
-					},
-				},
-			})
-			r.sink.CountStep()
+			r.sendToolCall(r.currentTool, r.currentArgs.String())
 			r.currentTool = ""
 			r.currentArgs.Reset()
 		}
@@ -120,11 +132,7 @@ func (r *eventReader) continueBlock(evObj map[string]any) {
 		return
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
-		r.sink.Send(&agentrun.Response{
-			Step: &agentrun.TextStep{
-				Text: text,
-			},
-		})
+		r.sendText(text)
 	}
 	if partial, ok := delta["partial_json"].(string); ok {
 		r.currentArgs.WriteString(partial)
@@ -141,21 +149,11 @@ func (r *eventReader) handleToolCalls(rawMap map[string]any) {
 		if !ok {
 			continue
 		}
-		name := getString(tc, "name")
 		args, err := json.Marshal(tc["arguments"])
 		if err != nil {
 			args = nil
 		}
-		r.sink.Send(&agentrun.Response{
-			Step: &agentrun.ToolCallStep{
-				ToolCall: &toolcall.ToolCall{
-					Tool:   name,
-					About:  string(args),
-					Length: 0, Path: "", Range: nil, Call: "", Kind: "",
-				},
-			},
-		})
-		r.sink.CountStep()
+		r.sendToolCall(getString(tc, "name"), string(args))
 	}
 }
 
@@ -165,39 +163,25 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 		return
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
-		r.sink.Send(&agentrun.Response{
-			Step: &agentrun.TextStep{
-				Text: text,
-			},
-		})
+		r.sendText(text)
 	}
 }
 
 func (r *eventReader) handleResult(rawMap map[string]any) {
 	if text, ok := rawMap["result"].(string); ok && text != "" {
-		r.sink.Send(&agentrun.Response{
-			Step: &agentrun.TextStep{
-				Text: text,
-			},
-		})
+		r.sendText(text)
 	}
 	if reason, ok := rawMap["stopped"].(string); ok && reason != "" {
-		r.sink.Send(&agentrun.Response{
-			Step: &agentrun.StoppedStep{
-				Stopped: reason,
-			},
-		})
+		r.sink.Stop(reason)
 	}
 }
 
 func (r *eventReader) handleCliEvent(kind string, rawMap map[string]any) {
 	switch kind {
 	case "step_update":
-		step := getMap(rawMap, "step_update")
-		r.handleCliStep(step)
+		r.handleCliStep(getMap(rawMap, "step_update"))
 	case "result":
-		result := getMap(rawMap, "result")
-		r.handleCliResult(result)
+		r.handleCliResult(getMap(rawMap, "result"))
 	default:
 		if session, ok := rawMap["conversation_id"].(string); ok {
 			r.sink.SetSession(session)
@@ -214,7 +198,7 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 		return
 	}
 	r.isTextStreamed = true
-	r.sink.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text}})
+	r.sendText(text)
 }
 
 func (r *eventReader) handleCliResult(result map[string]any) {
@@ -227,10 +211,10 @@ func (r *eventReader) handleCliResult(result map[string]any) {
 		if reason == "" {
 			reason = "the run ended with status " + status
 		}
-		r.sink.Send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
+		r.sink.Stop(reason)
 		return
 	}
 	if response := getString(result, "response"); response != "" && !r.isTextStreamed {
-		r.sink.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: response}})
+		r.sendText(response)
 	}
 }

@@ -2,5 +2,4 @@
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {
   ask: 'Ask about this card',
-  unreachable: 'Agent unreachable.',
 }

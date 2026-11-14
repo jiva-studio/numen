@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
 const stopGrace = 5 * time.Second
@@ -23,7 +25,7 @@ func (Runner) LookPath(file string) (string, error) {
 
 // Environ returns a copy of strings representing the environment, in the form "key=value".
 func (Runner) Environ() []string {
-	return os.Environ()
+	return hostcall.GetChildEnvironment()
 }
 
 // Run executes command with arguments and env, streaming stdout to into when non-nil.
@@ -33,6 +35,9 @@ func (Runner) Run(
 	running := exec.CommandContext(ctx, command[0],
 		append(append([]string(nil), command[1:]...), arguments...)...)
 	running.Env = env
+	if env == nil {
+		running.Env = hostcall.GetChildEnvironment()
+	}
 	setProcessGroup(running)
 	var out, response bytes.Buffer
 	running.Stdout, running.Stderr = &out, &response

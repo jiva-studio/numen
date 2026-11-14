@@ -20,15 +20,11 @@ func (System) Now() time.Time {
 	return time.Now()
 }
 
-// Fake is a clock that reports a configured time and moves only when told.
+// Fake is a clock that reports the time Set gave it, the zero time before, and moves only when told.
 // It is safe for concurrent use.
 type Fake struct {
 	mu  sync.Mutex
 	now time.Time
-}
-
-func NewFake(start time.Time) *Fake {
-	return &Fake{mu: sync.Mutex{}, now: start}
 }
 
 // Now gets the configured time.

@@ -33,7 +33,7 @@ const emit = defineEmits<{
   (event: 'cancel', id: string): void
   (event: 'retry', id: string): void
   (event: 'dismiss', id: string): void
-  (event: 'open-settings', pluginId: string): void
+  (event: 'run-action', id: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -43,7 +43,9 @@ const isNotice = computed(() => props.task.state === 'notice')
 const isFailed = computed(() => props.task.state === 'failed')
 const isCancelling = computed(() => props.task.state === 'cancelling')
 const progress = computed(() => getProgress(props.task))
+const isErrorInLabel = computed(() => isFailed.value && props.task.error === props.task.label)
 const subtext = computed(() => {
+  if (isErrorInLabel.value) return props.task.about
   if (isFailed.value) return props.task.error || props.task.about
   return props.task.about || lastAbout.value
 })
@@ -85,8 +87,8 @@ function onDismiss() {
   emit('dismiss', props.task.id)
 }
 
-function onOpenSettings() {
-  emit('open-settings', props.task.action.pluginId)
+function onRunAction() {
+  emit('run-action', props.task.id)
 }
 </script>
 
@@ -101,7 +103,13 @@ function onOpenSettings() {
     <Info v-if="isNotice" class="task-item__notice-icon" :size="14" aria-hidden="true" />
 
     <div class="task-item__content">
-      <span class="task-item__label" :title="task.label">{{ task.label }}</span>
+      <span
+        class="task-item__label"
+        :class="{ 'text-alarm task-item__label--wrapped': isErrorInLabel }"
+        :title="task.label"
+      >
+        {{ task.label }}
+      </span>
       <span
         v-if="subtext"
         class="task-item__detail"
@@ -113,9 +121,9 @@ function onOpenSettings() {
       >
         {{ subtext }}
       </span>
-      <div v-if="isFailed && task.action.label" class="task-item__failure-row">
-        <button type="button" class="task-item__action-link" @click.stop="onOpenSettings">
-          {{ task.action.label }} &rarr;
+      <div v-if="isFailed && task.actionLabel" class="task-item__failure-row">
+        <button type="button" class="task-item__action-link" @click.stop="onRunAction">
+          {{ task.actionLabel }} &rarr;
         </button>
       </div>
     </div>

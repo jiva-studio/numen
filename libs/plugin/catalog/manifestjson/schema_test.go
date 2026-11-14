@@ -18,23 +18,23 @@ import (
 
 // everyFieldManifest sets every field of the schema at least once, and every kind of option.
 const everyFieldManifest = `{
-	"id": "org.example.full", "name": "Full", "version": "1.2.3", "protocol": 1, "description": "d",
-	"capabilities": ["tools"], "targets": ["desktop.editor"], "activationEvents": ["onStartup"],
+	"id": "org.example.full", "name": "Full", "version": "1.2.3", "protocol": 1, "description": "d", "isOffByDefault": true,
+	"capabilities": ["tools"], "targets": ["desktop.editor"], "activationEvents": ["onSearchSourceReady"],
 	"permissions": ["vault:read"],
 	"dependencies": [{"id": "weights", "kind": "model", "version": "1", "sourceUrl": "https://example.org/w",
 		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}}],
-	"backend": {"entrypoint": "bin/full"},
+	"backend": {"entrypoint": "bin/full", "idleStopSeconds": 600},
 	"frontend": {},
 	"settings": [
-		{"key": "mode", "type": "enum", "title": "Mode", "description": "d", "default": "a", "palette": true, "icon": "gauge",
+		{"key": "mode", "type": "enum", "title": "Mode", "description": "d", "details": "dd", "default": "a", "palette": true, "icon": "gauge",
 			"options": ["a", {"value": "b", "title": "B", "detail": "d", "dependencies": ["weights"], "when": "app.platform != 'darwin'"}],
 			"min": 1, "max": 2, "step": 1, "accept": [".txt"], "multiple": true},
 		{"key": "sub", "type": "enum", "title": "Sub", "optionsBy": {"setting": "mode", "options": {"a": ["x"], "b": ["y"]}},
 			"when": {"setting": "mode", "is": ["a"]}},
 		{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes", "preview": true},
-		{"key": "token", "type": "string", "title": "Token", "generate": "token"}
+		{"key": "token", "type": "string", "title": "Token", "generate": "token"},
+		{"key": "rows", "type": "connections", "title": "Rows", "operations": ["llm.complete"], "max": 2, "discover": true}
 	],
-	"secrets": [{"name": "apiKey", "title": "Key", "description": "d", "group": "openrouter", "when": {"setting": "mode", "is": ["a"]}}],
 	"services": ["numen.v1.Full"],
 	"settingsViews": [{"id": "v", "title": "V"}],
 	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play",
@@ -42,7 +42,7 @@ const everyFieldManifest = `{
 		"permission": "vault:read",
 		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false},
 			{"name": "m", "title": "M", "type": "number", "required": true}]}],
-		"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge", "when": "target.noteType == 'full'", "rank": "alternate"}], "feature": "full tabs", "category": "views",
+		"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge", "when": "target.noteType == 'full'", "rank": "alternate", "isNoteEditor": true}], "feature": "full tabs", "category": "views",
 		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
 		"handlers": [{"command": "app:file.createText", "title": "Transcribe", "when": "target.contentType.startsWith('audio/')"}],
 		"triggers": [{"event": "file.added", "command": "app:file.createText", "when": "config.org.example.full.mode == 'a'"}],
@@ -56,7 +56,14 @@ const everyFieldManifest = `{
 		"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}, {"name": "console", "portSetting": "mode", "protocol": "tcp"}],
 		"keybindings": [{"key": "mod+shift+r", "command": "task.run", "values": {"n": "3"}, "when": "window.isVaultOpen"}],
 		"viewCapabilities": ["conversation"],
-		"dropHandlers": [{"types": ["text/uri-list"]}]}
+		"dropHandlers": [{"types": ["text/uri-list"]}],
+		"connectionTypes": [{"id": "svc", "title": "Service", "description": "d", "operations": ["llm.complete", "llm.models"], "rowFields": [
+			{"key": "model", "type": "enum", "title": "Model", "optionsFrom": "llm.models"}], "fields": [
+			{"key": "baseUrl", "type": "string", "title": "Address", "description": "d", "isAddress": true, "fixedValue": "https://svc.example/v1"},
+			{"key": "mode", "type": "enum", "title": "Mode", "options": ["a", "b"], "default": "a"},
+			{"key": "apiKey", "type": "secret", "title": "Key", "required": true},
+			{"key": "parallelRequests", "type": "number", "title": "Parallel", "default": 4, "min": 1, "max": 32, "step": 1}]}],
+		"operations": [{"name": "llm.complete", "title": "complete text"}, {"name": "llm.models", "title": "list models"}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {
@@ -144,7 +151,7 @@ func TestTheSampleManifestIsReadWithEveryFieldMapped(t *testing.T) {
 			t.Errorf("%s holds its zero value in every instance of the sample: a mapping for it is untested", name)
 		}
 	}
-	if len(m.Settings) != 4 || len(m.Settings[1].OptionsBy.Options["a"]) != 1 || m.Settings[1].OptionsBy.Options["a"][0].Value != "x" {
+	if len(m.Settings) != 5 || len(m.Settings[1].OptionsBy.Options["a"]) != 1 || m.Settings[1].OptionsBy.Options["a"][0].Value != "x" {
 		t.Errorf("optionsBy = %+v", m.Settings)
 	}
 	if len(m.Contributes.NoteTypes) != 1 || m.Contributes.NoteTypes[0].Headings == nil || !slices.Equal(*m.Contributes.NoteTypes[0].Headings, []int{1, 2}) ||

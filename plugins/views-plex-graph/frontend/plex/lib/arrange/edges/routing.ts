@@ -10,7 +10,8 @@ import {
   type PlacedEdge,
 } from '../../edge'
 import type { PlacedNode, Position } from '../../node'
-import { isVertical, type PlexOptions, type RoutingOptions } from '../options'
+import { cutToFit } from '../../cutToFit'
+import { DEFAULT_OPTIONS, isVertical, type PlexOptions, type RoutingOptions } from '../options'
 import type { EdgeLabel, PlexEdge, PlexNodeRelation } from '../../../../types'
 
 /** `auto` means take the axis from the geometry. */
@@ -49,9 +50,6 @@ export function createRouting(
     },
   }
 }
-
-/** The one character a cut title ends in. */
-const ELLIPSIS = '…'
 
 /** The middle of a line, where a title with no end is set until something is in the way. */
 export const MIDDLE = 0.5
@@ -152,27 +150,6 @@ export interface TitleSetting {
   readonly rise: number
 }
 
-/**
- * The longest prefix of the label that fits the curve, including the ellipsis.
- * The prefix is found by bisection, and a curve with no space for any text
- * returns the ellipsis alone.
- */
-export function cutToFit(label: string, room: number, width: (label: string) => number): string {
-  if (width(label) <= room) return label
-
-  const letters = [...label]
-  const truncateTo = (count: number) => `${letters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
-
-  let fits = 0
-  let overCount = letters.length
-  while (fits + 1 < overCount) {
-    const middle = Math.floor((fits + overCount) / 2)
-    if (width(truncateTo(middle)) <= room) fits = middle
-    else overCount = middle
-  }
-  return truncateTo(fits)
-}
-
 function getEdgeAnchor(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'right'): Position {
   switch (side) {
     case 'top':
@@ -232,7 +209,8 @@ function straightBetween(
   const secondGate = getEdgeAnchor(second, isVertical ? 'top' : 'left')
 
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
-  const reach = Math.max(routing.tuning.minReach, Math.abs(span) * routing.tuning.curvature)
+  const { curvature, minReach } = routing.tuning
+  const reach = curvature > 0 ? Math.max(minReach, Math.abs(span) * curvature) : 0
 
   return {
     fromPoint: firstGate,
@@ -256,7 +234,10 @@ function bowBetween(
   const side = isNegative ? negative : positive
   const firstGate = getEdgeAnchor(first, side)
   const secondGate = getEdgeAnchor(second, side)
-  const reach = isNegative ? -routing.tuning.minRun : routing.tuning.minRun
+  // The bow is minRun deep at the default curvature and flat at 0.
+  const { curvature, minRun } = routing.tuning
+  const depth = (minRun * curvature) / DEFAULT_OPTIONS.routing.curvature
+  const reach = isNegative ? -depth : depth
   const getBowControl = (gate: Position): Position =>
     isColumn ? { x: gate.x + reach, y: gate.y } : { x: gate.x, y: gate.y + reach }
   return {

@@ -48,7 +48,7 @@ Test: it is about listing, filtering or showing plugins, and it takes data by pr
 
 ## `@numen/plugin-loader` (`libs/plugin/loader`)
 
-Holds the loader of plugin frontends, the view, slot, drop and style registries, the keybinding and `when` readers, and the host side of the plugin contract (agent port, text links, texts) over the core client. Each application supplies a `LoaderHost`.
+Holds the loader of plugin frontends, the view, slot, drop and style registries, the keybinding and `when` readers, and the host side of the plugin contract (connections, text links, texts) over the core client. Each application supplies a `LoaderHost`.
 
 Imports `@numen/plugin-sdk`, `@numen/core-client`, Vue and Vite; nothing of `@numen/ui`, `@numen/workbench`, `@numen/protocol` or an application. Imported by the windows; no plugin imports it.
 

@@ -41,7 +41,7 @@ func newFolders(t *testing.T, current shownVault) (*Handler, *textfake.TextVersi
 		t.Fatal(err)
 	}
 	data := textversion.NewPluginData(versions.Versions, textfake.PluginFolders{Files: folders})
-	return NewHandler(Values{}, NewPluginFolders(nil, data, current), &SecretItems{}, &SecretGroups{}), versions
+	return NewHandler(Values{}, NewPluginFolders(nil, data, current)), versions
 }
 
 func TestDeletePluginDataEmptiesTheFolderOfTheShownVault(t *testing.T) {

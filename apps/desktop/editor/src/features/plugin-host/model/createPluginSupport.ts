@@ -1,17 +1,17 @@
-import { openExternalUrl } from '@/shared/api/wailsRuntime'
 import {
   createAppInfo,
   createPluginHost,
   createPluginLoader,
   type PluginStatus,
 } from '@numen/plugin-loader'
-import type { WindowPlatform } from '@numen/workbench'
-import { getPluginTexts } from '@/entities/plugin'
+import { openExternalUrl, type WindowPlatform } from '@numen/workbench'
+import { getPluginConnections, getPluginTexts } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { Caught } from '@/shared/api/errors'
+import { TARGET } from '../lib/window'
 import type { HostParts, TabActionParts, TabKindParts } from './createHostParts'
 import type { createPluginCatalog } from './createPluginCatalog'
-import { createPluginSettingsAccessor } from './pluginSettings'
+import { createPluginSettingsAccessor, createRowChangeSubscriber } from './pluginSettings'
 
 /** What the plugin host and the plugin loader are made from. */
 export interface PluginSupportDeps {
@@ -37,14 +37,18 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     rest,
     deps.reports.reportError,
   )
+  const subscribeRowChanges = createRowChangeSubscriber(rest)
   const pluginHost = createPluginHost({
+    target: TARGET,
     ...mergeHostParts(deps.parts),
     ...deps.kinds,
     ...deps.tabs,
     hasPluginFrontend: catalog.hasFrontend,
     hasPluginBackend: catalog.hasBackend,
     isPluginFailed: (pluginId) => status.getPluginFailure(pluginId) !== undefined,
-    waitForPlugin: (pluginId) => status.settlePlugin(pluginId),
+    startPlugin: status.startPlugin,
+    startPluginsOf: status.startPluginsOf,
+    findPluginsOf: status.findPluginsOf,
     app: createAppInfo({
       version: import.meta.env.VITE_NUMEN_VERSION,
       build: import.meta.env.VITE_NUMEN_BUILD,
@@ -56,6 +60,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getSetting,
     onSettingChange,
     getTexts: (pluginId) => getPluginTexts(pluginId),
+    getConnections: (pluginId) => getPluginConnections(pluginId, subscribeRowChanges),
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,

@@ -1,61 +1,55 @@
 import { describe, expect, it } from 'vitest'
 import { effectScope } from 'vue'
-import type { AgentPort, AgentStep, ConversationContext } from '@numen/plugin-sdk'
+import type { ConnectionHost, ConversationContext } from '@numen/plugin-sdk'
 import { WORDS } from '../words'
+import { createAgentConnections, say, type TaskScript } from '../fixtures'
 import { useConversationView } from './useConversationView'
 
-const createAgent = (says: AgentStep[] = [{ kind: 'text', text: 'Because of the leaves.' }]) => {
-  const questions: { question: string; focus: string; conversation: string }[] = []
-  const finished: string[] = []
-  const agent: AgentPort = {
-    async *ask(query) {
-      questions.push({
-        question: query.question,
-        focus: query.focus,
-        conversation: query.conversation,
-      })
-      for (const step of says) yield step
-    },
-    async finish(conversation) {
-      finished.push(conversation)
-    },
-  }
-  return { agent, questions, finished }
-}
-
-const open = (context: Partial<ConversationContext> = {}) => {
-  const port = createAgent()
+const open = (
+  context: Partial<ConversationContext> = {},
+  script: TaskScript = { frames: [say('Because of the leaves.')] },
+) => {
+  const agent = createAgentConnections(script)
   const scope = effectScope()
   const view = scope.run(() =>
-    useConversationView({ agent: port.agent, focus: 'decks/Words.md', ...context }, (draw) =>
-      draw(),
-    ),
+    useConversationView({ connections: agent.host, ...context }, (draw) => draw()),
   )!
-  return { view, scope, ...port }
+  return { view, scope, calls: agent.calls }
 }
 
 describe('the conversation view', () => {
-  // The focus and the port carry what the questions are about; a name written into the question
-  // is read as instruction.
-  it('sends only the text typed, with the focus as a separate field', async () => {
-    const { view, questions } = open()
+  it('runs the question on the connections it was given', async () => {
+    const { view, calls } = open()
 
     await view.send('why is it called that')
 
-    expect(questions).toStrictEqual([
-      {
-        question: 'why is it called that',
-        focus: 'decks/Words.md',
-        conversation: questions[0]?.conversation,
-      },
+    expect(calls.map((one) => [one.operation, one.request.prompt])).toStrictEqual([
+      ['acp.task', 'why is it called that'],
     ])
   })
 
+  // The card a question is about goes to the tools as their context, not into the question, where
+  // a name would be read as an instruction.
+  it('passes the tools the context and the vault of the view', async () => {
+    const { view, calls } = open({
+      toolContext: { 'md.numen.views.flashcards.studio/card': 'k3v9q2m8xa' },
+      vault: 'vault-orchard',
+    })
+
+    await view.send('why')
+
+    expect(calls[0]?.request.toolContext).toStrictEqual({
+      'md.numen.views.flashcards.studio/card': 'k3v9q2m8xa',
+    })
+    expect(calls[0]?.request.vaultId).toBe('vault-orchard')
+  })
+
   it('answers every question in one conversation', async () => {
-    const { view, questions } = open()
+    const { view, calls } = open()
     await view.send('one')
     await view.send('two')
-    expect(questions[0]?.conversation).toBe(questions[1]?.conversation)
+    expect(calls[0]?.request.conversation).not.toBe('')
+    expect(calls[0]?.request.conversation).toBe(calls[1]?.request.conversation)
   })
 
   it('never gives one name to two views', async () => {
@@ -63,25 +57,16 @@ describe('the conversation view', () => {
     const second = open()
     await first.view.send('why')
     await second.view.send('why')
-    expect(first.questions[0]?.conversation).not.toBe(second.questions[0]?.conversation)
-  })
-
-  it('ends the conversation when the view is taken away', async () => {
-    const { view, scope, questions, finished } = open()
-    await view.send('why')
-
-    scope.stop()
-
-    expect(finished).toStrictEqual([questions[0]?.conversation])
+    expect(first.calls[0]?.request.conversation).not.toBe(second.calls[0]?.request.conversation)
   })
 
   it('sends nothing when nothing was written', async () => {
-    const { view, questions } = open()
+    const { view, calls } = open()
     view.setQuestion('wh')
 
     await view.send('')
 
-    expect(questions).toStrictEqual([])
+    expect(calls).toStrictEqual([])
     expect(view.question.value).toBe('wh')
   })
 
@@ -95,15 +80,6 @@ describe('the conversation view', () => {
     expect(view.turns.value.map((turn) => turn.text)).toContain('Because of the leaves.')
   })
 
-  it('shows why the agent cannot be reached where the answers stand, and the silence otherwise', () => {
-    let unreachable = 'Agent unreachable.'
-    const { view } = open({ getUnreachable: () => unreachable })
-    expect(view.getSilence()).toBe('Agent unreachable.')
-
-    unreachable = ''
-    expect(view.getSilence()).toBe(WORDS.noTranscript)
-  })
-
   it('names the field as the caller says, and as the vault chat does where it says nothing', () => {
     expect(open({ placeholder: 'Ask about this card' }).view.placeholder).toBe(
       'Ask about this card',
@@ -113,27 +89,27 @@ describe('the conversation view', () => {
 })
 
 describe('a question in flight', () => {
-  /** A port whose answer does not arrive until the test lets it. */
-  const createSlowAgent = () => {
+  /** Connections whose answer does not arrive until the test lets it. */
+  const createSlowConnections = () => {
     let answer: () => void = () => undefined
-    const agent: AgentPort = {
-      async *ask(query) {
-        await new Promise<void>((then) => {
-          answer = then
-          query.signal.addEventListener('abort', () => then())
-        })
-        yield { kind: 'text', text: 'Because of the leaves.' }
-      },
-      finish: async () => undefined,
+    const hold = new Promise<void>((then) => {
+      answer = then
+    })
+    const { host } = createAgentConnections({ frames: [], hold })
+    return { host, answer: () => answer() }
+  }
+
+  const openView = (connections: ConnectionHost) => {
+    const scope = effectScope()
+    return {
+      scope,
+      view: scope.run(() => useConversationView({ connections }, (draw) => draw()))!,
     }
-    return { agent, answer: () => answer() }
   }
 
   it('is working while an answer is on its way, and not before or after', async () => {
-    const slow = createSlowAgent()
-    const view = effectScope().run(() =>
-      useConversationView({ agent: slow.agent, focus: '' }, (draw) => draw()),
-    )!
+    const slow = createSlowConnections()
+    const { view } = openView(slow.host)
     expect(view.isAnswerPending.value).toBe(false)
 
     const reply = view.send('why')
@@ -145,13 +121,22 @@ describe('a question in flight', () => {
   })
 
   it('stops working when the answer on its way is stopped', async () => {
-    const slow = createSlowAgent()
-    const view = effectScope().run(() =>
-      useConversationView({ agent: slow.agent, focus: '' }, (draw) => draw()),
-    )!
+    const slow = createSlowConnections()
+    const { view } = openView(slow.host)
     const reply = view.send('why')
 
     view.stop()
+
+    expect(view.isAnswerPending.value).toBe(false)
+    await reply
+  })
+
+  it('stops the answer on its way when the view is taken away', async () => {
+    const slow = createSlowConnections()
+    const { view, scope } = openView(slow.host)
+    const reply = view.send('why')
+
+    scope.stop()
 
     expect(view.isAnswerPending.value).toBe(false)
     await reply

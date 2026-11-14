@@ -141,7 +141,7 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 			Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts, "Chemistry": chemTexts},
 		}.vaults(),
 		Store: foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
-		Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
+		Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
 		func() link.Fetcher { return sites },
@@ -247,7 +247,7 @@ func hasVersion(t *testing.T, texts *hosttest.Texts, path string) bool {
 	return len(listing.Versions) > 0
 }
 
-func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
+func TestRegistryListsURLImportAsAWritingTool(t *testing.T) {
 	s := newUnblockedFixture(t)
 
 	listing, err := s.registry.ListTools(t.Context())
@@ -260,9 +260,6 @@ func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
 	}
 	if infos[0].GetEffect() != tools.ReadWrite {
 		t.Errorf("url_import has effect %v, want ReadWrite", infos[0].GetEffect())
-	}
-	if !slices.Equal(infos[0].GetServers(), []tools.Server{tools.Full}) {
-		t.Errorf("url_import is listed on %v, want the full server alone", infos[0].GetServers())
 	}
 }
 
@@ -484,4 +481,10 @@ func TestTheImportToolHasItsInstructions(t *testing.T) {
 			t.Errorf("an instruction of url_import is not one sentence: %q", sentence)
 		}
 	}
+}
+
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

@@ -7,18 +7,18 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, shallowRef, type ShallowRef } from 'vue'
 import { useFreeSpace, type PlexSizingProps } from './room'
-import type { PlexMetrics } from './measure'
+import type { PlexMetrics, TitleRoom } from './measure'
 import type { PlacedNode } from '../../lib/node'
-import type { Size } from '../../lib/arrange'
+import { type Size } from '../../lib/arrange'
 import type { Viewport } from '@numen/ui'
 
 const stand = vi.hoisted(() => ({
-  icon: undefined as (() => number) | undefined,
+  room: undefined as (() => TitleRoom) | undefined,
   metrics: undefined as unknown,
 }))
 
-const measureTitles = (icon: () => number) => {
-  stand.icon = icon
+const measureTitles = (room: () => TitleRoom) => {
+  stand.room = room
   return shallowRef(stand.metrics as PlexMetrics | undefined)
 }
 
@@ -26,6 +26,8 @@ const METRICS: PlexMetrics = {
   node: () => 1000,
   label: () => 0,
   heading: () => 300,
+  name: () => 0,
+  nameSize: 10,
   labelType: { ascent: 8, descent: 2, xHeight: 5 },
 }
 
@@ -74,7 +76,7 @@ function mountFreeSpace(
 }
 
 afterEach(() => {
-  stand.icon = undefined
+  stand.room = undefined
   stand.metrics = undefined
 })
 
@@ -108,12 +110,24 @@ describe('the room a plex has', () => {
 describe('the room kept for an icon', () => {
   it('is the width of the icon where a caller draws one', () => {
     mountFreeSpace({}, undefined, () => true)
-    expect(stand.icon?.()).toBe(OPTIONS.iconWidth)
+    expect(stand.room?.().beside).toStrictEqual([OPTIONS.iconWidth])
   })
 
   it('is nothing where the slot is not filled', () => {
     mountFreeSpace({}, undefined, () => false)
-    expect(stand.icon?.()).toBe(0)
+    expect(stand.room?.().beside).toStrictEqual([])
+  })
+})
+
+describe('the room reserved for a title without a pill', () => {
+  it('is the icon alone', () => {
+    mountFreeSpace({ showPills: false }, undefined, () => true)
+    expect(stand.room?.().beside).toStrictEqual([OPTIONS.iconWidth])
+  })
+
+  it('holds the side padding of the options', () => {
+    mountFreeSpace({ options: { ...OPTIONS, padding: { inline: 4 } } })
+    expect(stand.room?.().padding).toBe(4)
   })
 })
 
@@ -137,39 +151,39 @@ describe('how wide a box opens', () => {
   })
 })
 
-describe('the headings a node hangs', () => {
+describe('the headings placed under a node', () => {
   const HEADINGS = [{ id: 'a', text: 'A heading', level: 1 }]
 
   it('are none where the caller gives no headings', () => {
     const { room } = mountFreeSpace()
-    expect(room.hung.value).toBeUndefined()
+    expect(room.placedHeadings.value).toBeUndefined()
   })
 
-  it('are requested for by the node that hangs them', () => {
+  it('are requested by the node they are placed under', () => {
     const headings = vi.fn<(id: string) => typeof HEADINGS>(() => HEADINGS)
     const { room } = mountFreeSpace({ headings })
-    const suspended = room.hung.value?.(NODE)
+    const placed = room.placedHeadings.value?.(NODE)
     expect(headings).toHaveBeenCalledWith('one')
-    expect(suspended?.headings.map((heading) => heading.id)).toStrictEqual(['a'])
-    expect(suspended?.headingHeight).toBe(OPTIONS.headingHeight)
+    expect(placed?.headings.map((heading) => heading.id)).toStrictEqual(['a'])
+    expect(placed?.headingHeight).toBe(OPTIONS.headingHeight)
   })
 
   it('are as wide as the measuring says their words are', () => {
     stand.metrics = METRICS
     const { room } = mountFreeSpace({ headings: () => HEADINGS })
     // The 300 the words ask for, and a padding of a quarter of a heading's height on each side.
-    expect(room.hung.value?.(NODE)?.width).toBe(300 + 2 * 5)
+    expect(room.placedHeadings.value?.(NODE)?.width).toBe(300 + 2 * 5)
   })
 
   it('are retained inside the window the plex is in', () => {
     stand.metrics = METRICS
     const { room, tell } = mountFreeSpace({ headings: () => HEADINGS })
     tell({ width: 200, height: 400 })
-    expect(room.hung.value?.(NODE)?.width).toBe(200 - 2 * OPTIONS.margin)
+    expect(room.placedHeadings.value?.(NODE)?.width).toBe(200 - 2 * OPTIONS.margin)
   })
 
   it('take the node box where nothing measures their words', () => {
     const { room } = mountFreeSpace({ headings: () => HEADINGS })
-    expect(room.hung.value?.(NODE)?.width).toBe(NODE.width)
+    expect(room.placedHeadings.value?.(NODE)?.width).toBe(NODE.width)
   })
 })

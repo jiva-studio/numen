@@ -5,7 +5,7 @@ description: Implementation methodology for taking red tests to green and implem
 
 # Implementation Skill (`/nm-implement`)
 
-The `/nm-implement` skill guides the implementation of features from a validated specification (`spec.md`) and acceptance tests into clean, green code following all repository rules.
+The `/nm-implement` skill guides the implementation of features from a validated specification (`spec.md`), its feature file and the red tests into clean, green code following all repository rules.
 
 ```mermaid
 flowchart TD
@@ -27,7 +27,7 @@ flowchart TD
 
 ## Core Rules for Implementation
 
-1. **Never edit acceptance test files**: The acceptance tests are the independent verification contract. If a test is failing unexpectedly, find the bug in your code or ask the human.
+1. **Never edit scenarios or acceptance files**: the scenarios and the tests written for them are the independent verification contract. If a test fails unexpectedly, find the bug in your code or ask the human. If a scenario looks wrong or the feature grew, propose the change to the feature file in a commit of its own whose message says so, and list it in the final report.
 2. **Frozen contracts**: Domain models, wire protocols, ports, and migrations are frozen. Do not alter them without human consent.
 3. **Internal unit tests**: You may write narrow unit tests for your internal helper functions and unexported logic.
 4. **Targeted testing first (Inner Loop)**: While iterating on code, run only tests related to the changed files (`vitest related --run` or `go test ./pkg`). Do not run blanket heavy suites or `-race` until final verification.
@@ -84,4 +84,4 @@ Prompt the user clearly when all tests are green:
 > - All tests passing (green).  
 > - Local typecheck and lint gates passed with exit 0.  
 >  
-> *Next step:* Run `/nm-review` to execute the 3-stage code review pipeline (Gatekeeper $\rightarrow$ Bug Hunter $\rightarrow$ Adversary).
+> *Next step:* Run `/nm-review` to execute the review pipeline (Gatekeeper, Bug Hunter, Adversary, and the feature conformance check).

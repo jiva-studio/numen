@@ -1,17 +1,13 @@
 /**
- * A window host and an agent double for rendering an agent chat in tests. Every
- * call the chat makes on either is recorded in call order.
+ * A window host and the links of a vault for rendering an agent chat in tests. Every call the chat
+ * makes on them is recorded in call order.
  */
 import { ref } from 'vue'
 import type {
-  AgentHost,
-  AgentModel,
-  CommandTarget,
-  CommandsHost,
-  JsonValue,
   NoteRef,
   OpenFileOptions,
   TextRange,
+  VaultRelations,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AgentChatHost } from '../model/tabDeps'
@@ -20,32 +16,25 @@ import { createLinkResolver } from './links'
 export interface HostOptions {
   readonly focus?: NoteRef
   readonly notes?: Readonly<Record<string, string>>
-  readonly models?: Readonly<Record<string, readonly AgentModel[]>>
-  readonly settings?: Readonly<Record<string, JsonValue>>
-  readonly reasoning?: string
-  readonly unreachable?: string
 }
 
-/** A host and an agent that serve a chat, and the calls the chat made on them. */
-export function createHost({
-  focus = { path: '', title: '' },
-  notes = {},
-  models = {},
-  settings = {},
-  unreachable = '',
-  reasoning = '',
-}: HostOptions = {}) {
+/** A host that serves a chat, and the calls the chat made on it. */
+export function createHost({ focus = { path: '', title: '' }, notes = {} }: HostOptions = {}) {
   const recorded = {
     opened: [] as [string, OpenFileOptions | undefined][],
     openedAt: [] as [string, readonly TextRange[]][],
-    settings: [] as [readonly string[], JsonValue][],
-    finished: [] as string[],
     resolved: [] as string[],
-    questions: [] as string[],
-    commands: [] as [string, CommandTarget | undefined][],
+    settingsOpened: 0,
   }
 
-  const request = {
+  const workspace: WorkspaceHost = {
+    window: {
+      isReady: ref(true),
+      openingPath: ref(''),
+      readOpeningPath: async () => '',
+      getToday: () => '2026-01-01',
+    },
+    dragged: { paths: ref([]), setPaths: () => undefined },
     files: {
       open: (path: string, options?: OpenFileOptions) => {
         recorded.opened.push([path, options])
@@ -53,44 +42,27 @@ export function createHost({
       openAt: (path: string, spans: readonly TextRange[]) => {
         recorded.openedAt.push([path, spans])
       },
+      syncPath: () => false,
     },
-    ask: (text: string) => {
-      recorded.questions.push(text)
-    },
+    messages: { showError: () => undefined, getWriter: () => () => undefined },
+    icons: { getCommand: () => null, getEntry: () => ({}) },
     getNoteInFocus: () => focus,
-    window: { isReady: ref(true) },
   }
-  const workspace = request as WorkspaceHost
 
-  const agent: AgentHost = {
-    ask: async function* () {
-      yield* []
-    },
-    finish: async (conversation) => {
-      recorded.finished.push(conversation)
-    },
-    resolveLinks: async (text) => {
+  const resolve = createLinkResolver(notes)
+  const relations = {
+    resolveLinks: async (text: string) => {
       recorded.resolved.push(text)
-      return createLinkResolver(notes)(text)
+      return resolve(text)
     },
-    getUnreachable: () => unreachable,
-    getSetting: (path) => settings[path.join('.')],
-    writeSetting: async (path, value) => {
-      recorded.settings.push([path, value])
-    },
-    getModelsAt: (path) => models[path.join('.')] ?? [],
-  }
+  } satisfies Pick<VaultRelations, 'resolveLinks'>
 
-  const commands: CommandsHost = {
-    getIds: () => [],
-    watch: () => ({ dispose: () => undefined }),
-    listItems: async () => [],
-    run: async (id, target) => {
-      recorded.commands.push([id, target])
-      return ''
+  const host: AgentChatHost = {
+    workspace,
+    relations,
+    openSettings: () => {
+      recorded.settingsOpened += 1
     },
   }
-
-  const host: AgentChatHost = { workspace, agent, commands, getReasoning: () => reasoning }
-  return { host, workspace, agent, recorded }
+  return { host, workspace, relations, recorded }
 }

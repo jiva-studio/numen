@@ -2,8 +2,8 @@
 /**
  * The title bar item that counts the vectors of the search index, and the popover with its details.
  */
-import { computed, ref, useTemplateRef, watch } from 'vue'
-import { useMenuDismissal } from '@numen/ui'
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { isPageMove, useMenuDismissal } from '@numen/ui'
 import type { Stats } from '../api/stats'
 import type { Phase } from '../model/stats'
 import { formatSummary, formatVectors, MARK } from '../lib/format'
@@ -17,11 +17,16 @@ const props = defineProps<{
   locale?: string | undefined
 }>()
 
+/* --------------------------------- Events --------------------------------- */
+const emit = defineEmits<{
+  (event: 'open'): void
+  (event: 'close'): void
+}>()
+
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
-// The popover is placed against the item by CSS and follows it through a resize.
-const dismissal = useMenuDismissal(root, onClose, isResize)
+const dismissal = useMenuDismissal(root, onClose, isPageMove)
 
 const figure = computed(() => {
   return props.stats ? formatVectors(props.stats, props.locale) : words.unavailable
@@ -32,7 +37,19 @@ const summary = computed(() => {
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
-watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))
+watch(isOpen, (open) => {
+  if (open) {
+    dismissal.listen()
+    emit('open')
+  } else {
+    dismissal.release()
+    emit('close')
+  }
+})
+
+onBeforeUnmount(() => {
+  if (isOpen.value) emit('close')
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {
@@ -41,10 +58,6 @@ function onToggle() {
 
 function onClose() {
   isOpen.value = false
-}
-
-function isResize(event: Event): boolean {
-  return event.type === 'resize'
 }
 </script>
 

@@ -1,99 +1,54 @@
 package agents
 
-import (
-	"slices"
-	"strings"
-	"sync"
-)
-
-const executablePathSetting = "executablePath"
-
-// Registry holds the agents the plugin can run: the commands of the settings, the known agents
-// found on the PATH and the executables of the settings.
-type Registry struct {
-	lookPath func(string) (string, error)
-
-	mu       sync.RWMutex
-	found    []Agent
-	paths    []string
-	commands map[string][]string
+// Known is an agent program of the ACP Registry that a person installs: Name is what the registry calls it,
+// Program the command on the path, and Arguments the arguments that start its ACP server.
+type Known struct {
+	Name      string
+	Program   string
+	Arguments []string
 }
 
-// NewRegistry returns a Registry that finds the known agents with lookPath.
-func NewRegistry(lookPath func(string) (string, error)) *Registry {
-	return &Registry{
-		lookPath: lookPath,
-		mu:       sync.RWMutex{},
-		found:    FindInstalled(lookPath),
-		paths:    nil,
-		commands: nil,
-	}
-}
+// acpFlag is the flag that starts the ACP server of several agents.
+const acpFlag = "--acp"
 
-// SetConfig reads the plugin settings and finds the known agents again.
-func (r *Registry) SetConfig(values map[string]string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if value, ok := values[executablePathSetting]; ok {
-		r.paths = ParsePaths(value)
+// ListKnown returns the agents of the ACP Registry (github.com/agentclientprotocol/registry, registry.json, read
+// on 2026-11-13) that install a program of their own, in the order of their names. The registry also lists
+// adapters that run only through npx or uvx downloads, which are left out, and Claude, Codex and Antigravity,
+// which have plugins of their own.
+func ListKnown() []Known {
+	return []Known{
+		{Name: "Amp", Program: "amp-acp", Arguments: nil},
+		{Name: "Auggie CLI", Program: "auggie", Arguments: []string{acpFlag}},
+		{Name: "Autohand Code", Program: "autohand", Arguments: []string{acpFlag}},
+		{Name: "Bob", Program: "bob", Arguments: []string{acpSubcommand}},
+		{Name: "Cline", Program: "cline", Arguments: []string{acpFlag}},
+		{Name: "Codebuddy Code", Program: "codebuddy", Arguments: []string{acpFlag}},
+		{Name: "Cortex Code", Program: "cortex", Arguments: []string{acpSubcommand, "serve"}},
+		{Name: "Corust Agent", Program: "corust-agent-acp", Arguments: nil},
+		{Name: "crow-cli", Program: "crow-cli", Arguments: []string{acpSubcommand}},
+		{Name: "Cursor", Program: "cursor-agent", Arguments: []string{acpSubcommand}},
+		{Name: "Devin", Program: "devin", Arguments: []string{acpSubcommand}},
+		{Name: "DimCode", Program: "dimcode", Arguments: []string{acpSubcommand}},
+		{Name: "Dirac", Program: "dirac", Arguments: []string{acpFlag}},
+		{Name: "Factory Droid", Program: "droid", Arguments: []string{"exec", "--output-format", "acp-daemon"}},
+		{Name: "Gemini CLI", Program: "gemini", Arguments: []string{acpFlag}},
+		{Name: "GitHub Copilot", Program: "copilot", Arguments: []string{acpFlag}},
+		{Name: "goose", Program: "goose", Arguments: []string{acpSubcommand}},
+		{Name: "Grok Build", Program: "grok", Arguments: []string{"agent", "stdio"}},
+		{Name: "Harn", Program: "harn", Arguments: []string{"serve", acpSubcommand}},
+		{Name: "Junie", Program: "junie", Arguments: []string{"--acp=true"}},
+		{Name: "Kilo", Program: "kilo", Arguments: []string{acpSubcommand}},
+		{Name: "Kimchi", Program: "kimchi", Arguments: []string{"--mode", acpSubcommand}},
+		{Name: "Kimi Code", Program: "kimi", Arguments: []string{acpSubcommand}},
+		{Name: "Kiro CLI", Program: "kiro-cli", Arguments: []string{acpSubcommand, "--agent-engine=v3"}},
+		{Name: "MiniMax Code", Program: "mcode", Arguments: []string{acpSubcommand}},
+		{Name: "Mistral Vibe", Program: "vibe-acp", Arguments: nil},
+		{Name: "Nova", Program: "nova", Arguments: []string{acpSubcommand}},
+		{Name: "OpenCode", Program: "opencode", Arguments: []string{acpSubcommand}},
+		{Name: "Qoder CLI", Program: "qodercli", Arguments: []string{acpFlag}},
+		{Name: "Qwen Code", Program: "qwen", Arguments: []string{acpFlag, "--experimental-skills"}},
+		{Name: "siGit Code", Program: "sigit", Arguments: nil},
+		{Name: "Stakpak", Program: "stakpak", Arguments: []string{acpSubcommand}},
+		{Name: "VT Code", Program: "vtcode", Arguments: []string{acpSubcommand}},
 	}
-	r.found = FindInstalled(r.lookPath)
-}
-
-// SetCommands replaces the command lines of the programs the settings name.
-func (r *Registry) SetCommands(commands map[string][]string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.commands = commands
-}
-
-// List returns every agent, sorted by program name. A command of the settings wins over a known
-// agent of the same program or binary, and over an executable of the same path.
-func (r *Registry) List() []Agent {
-	r.mu.RLock()
-	commands := r.commands
-	paths := slices.Clone(r.paths)
-	found := slices.Clone(r.found)
-	r.mu.RUnlock()
-	return merge(GetFromCommands(commands), found, paths)
-}
-
-// Find returns the agent a program of the form ProgramPrefix+name runs. A non-empty command starts
-// the agent where the settings name none.
-func (r *Registry) Find(program string, command []string) (Agent, error) {
-	name, isACP := strings.CutPrefix(program, ProgramPrefix)
-	if !isACP || name == "" {
-		return Agent{}, ErrNotInstalled
-	}
-	if len(command) > 0 {
-		return Agent{Program: name, Title: name, Command: command}, nil
-	}
-	for _, agent := range r.List() {
-		if agent.Program == name {
-			return agent, nil
-		}
-	}
-	return Agent{}, ErrNotInstalled
-}
-
-func merge(named, found []Agent, paths []string) []Agent {
-	agents := named
-	for _, candidate := range found {
-		hasAgent := slices.ContainsFunc(agents, func(a Agent) bool {
-			return a.Program == candidate.Program || (len(a.Command) > 0 && a.Command[0] == candidate.Command[0])
-		})
-		if !hasAgent {
-			agents = append(agents, candidate)
-		}
-	}
-	for _, execPath := range paths {
-		hasCustom := slices.ContainsFunc(agents, func(a Agent) bool {
-			return len(a.Command) > 0 && a.Command[0] == execPath
-		})
-		if !hasCustom {
-			agents = append(agents, createCustomAgent(execPath, len(paths) > 1))
-		}
-	}
-	sortByProgram(agents)
-	return agents
 }

@@ -3,32 +3,23 @@
  * through the real client over the router transport: this file encodes the answers the way the
  * core sends them and decodes the requests the way the core reads them.
  */
-import { MODEL_PRESENCE, type ModelPresenceCode } from '@numen/core-client'
+import { PLUGIN_CONTRIBUTION_KIND } from '@numen/core-client'
 import { installCoreAnswers, type CoreAnswers } from '@numen/core-client/testing'
 import type { PluginSettingCondition } from '@numen/plugin-manager'
 import type {
-  Model,
   PluginInfo,
   PluginSettingInfo,
   PluginSettingOption,
-  SecretMenu,
-  SecretSection,
   SettingEdit,
 } from '@/entities/settings'
 
-type Presence = Model['presence']
-
-/** Every setting in effect and the models offered, as a test core answers them. */
+/** Every setting in effect, as a test core answers them. */
 interface Configuration {
   readonly jsonContent?: string | undefined
   readonly written: string
   readonly path: string
-  readonly models: readonly Model[]
   readonly plugins?: readonly PluginInfo[] | undefined
   readonly app?: readonly PluginSettingInfo[] | undefined
-  readonly secretSections?: readonly SecretSection[] | undefined
-  readonly secretMenus?: readonly SecretMenu[] | undefined
-  readonly credentialsPath?: string | undefined
 }
 
 const toWireOption = (option: PluginSettingOption) => ({
@@ -45,6 +36,8 @@ const toWireCondition = (when: PluginSettingCondition) => ({
 
 const toWireOptions = (setting: PluginSettingInfo) => ({
   optionsFrom: setting.optionsFrom ?? '',
+  operations: [...(setting.operations ?? [])],
+  discover: setting.discover ?? false,
   options: (setting.options ?? []).map(toWireOption),
   activeOptions: (setting.activeOptions ?? []).map(toWireOption),
   ...(setting.optionsBy
@@ -87,23 +80,20 @@ export const toWireSetting = (setting: PluginSettingInfo) => ({
   valueJson: JSON.stringify(setting.value),
 })
 
-const PRESENCE: Record<Presence, ModelPresenceCode> = {
-  present: MODEL_PRESENCE.PRESENT,
-  'not fetched': MODEL_PRESENCE.NOT_FETCHED,
-  'nothing to fetch': MODEL_PRESENCE.NOTHING_TO_FETCH,
-}
+const toCamelCase = (constant: string): string =>
+  constant.toLowerCase().replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase())
 
-const toWireModel = (model: Model) => ({
-  namedAt: [...model.namedAt],
-  name: model.name,
-  title: model.title,
-  group: model.group,
-  isDefault: model.isDefault,
-  writes: model.writes.map((one) => ({ at: [...one.at], value: one.value })),
-  presence: PRESENCE[model.presence],
-  reasoningLevels: model.reasoningLevels ?? [],
-  defaultReasoning: model.defaultReasoning ?? '',
-})
+const WIRE_CONTRIBUTION_KINDS = new Map(
+  Object.entries(PLUGIN_CONTRIBUTION_KIND).flatMap(([name, value]) =>
+    typeof value === 'number' ? [[toCamelCase(name), value] as const] : [],
+  ),
+)
+
+const toWireContributions = (plugin: PluginInfo) =>
+  (plugin.contributions ?? []).map((one) => ({
+    kind: WIRE_CONTRIBUTION_KINDS.get(one.kind) ?? PLUGIN_CONTRIBUTION_KIND.UNSPECIFIED,
+    items: one.items.map((item) => ({ text: item.text, detail: item.detail, keys: item.keys })),
+  }))
 
 const toWirePlugin = (plugin: PluginInfo) => ({
   id: plugin.id,
@@ -112,58 +102,19 @@ const toWirePlugin = (plugin: PluginInfo) => ({
   description: plugin.description,
   isActive: plugin.isActive,
   capabilities: [...plugin.capabilities],
-  secrets: plugin.secrets.map((one) => ({
-    name: one.name,
-    title: one.title,
-    description: one.description,
-    group: one.group,
-    ...(one.when ? { when: toWireCondition(one.when) } : {}),
-  })),
   hasFrontend: plugin.hasFrontend,
   hasBackend: plugin.hasBackend,
   readers: (plugin.readers ?? []).map((one) => ({ id: one.id, extensions: [...one.extensions] })),
   settingsViews: plugin.settingsViews ?? [],
-  ...(plugin.failure
-    ? {
-        failure: {
-          reason: plugin.failure.reason,
-          detail: plugin.failure.detail,
-          failedAtUnixMs: BigInt(plugin.failure.failedAt),
-        },
-      }
-    : {}),
+  contributions: toWireContributions(plugin),
   settings: plugin.settings.map(toWireSetting),
 })
-
-const toWireSections = (sections: readonly SecretSection[] = []) =>
-  sections.map((section) => ({
-    group: section.group,
-    isAsked: section.isAsked,
-    secrets: section.secrets.map((one) => ({
-      id: one.id,
-      name: one.name,
-      group: one.group,
-      allowed: one.allowed.map((entry) => ({ ...entry })),
-    })),
-  }))
-
-const toWireMenus = (menus: readonly SecretMenu[] = []) =>
-  menus.map((menu) => ({
-    pluginId: menu.pluginId,
-    name: menu.name,
-    group: menu.group,
-    secretIds: menu.secrets.map((one) => one.id),
-  }))
 
 const toWireConfiguration = (answer: Configuration) => ({
   written: answer.written,
   path: answer.path,
-  models: answer.models.map(toWireModel),
   plugins: (answer.plugins ?? []).map(toWirePlugin),
   app: (answer.app ?? []).map(toWireSetting),
-  secretSections: toWireSections(answer.secretSections),
-  secretMenus: toWireMenus(answer.secretMenus),
-  credentialsPath: answer.credentialsPath ?? '',
 })
 
 /** What the core does with the settings, in the window's types. A call left out is unanswered. */
@@ -171,16 +122,6 @@ export interface SettingsCore {
   getSettings(): Promise<Configuration>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
   watchSettings(signal: AbortSignal): AsyncIterable<readonly SettingEdit[]>
-  createSecret(group: string, name: string, value: string): Promise<string>
-  renameSecret(id: string, name: string): Promise<void>
-  writeSecret(id: string, value: string): Promise<void>
-  deleteSecret(id: string): Promise<void>
-  deleteSecretGroup(group: string): Promise<void>
-  listSecretStates(): Promise<ReadonlyMap<string, boolean>>
-  moveSecret(id: string, beforeId: string): Promise<void>
-  renameSecretGroup(group: string, name: string): Promise<void>
-  allowPluginSecret(secretId: string, pluginId: string, name: string, group: string): Promise<void>
-  denyPluginSecret(secretId: string, pluginId: string, name: string, group: string): Promise<void>
   retryPlugin(pluginId: string): Promise<string>
   choosePluginPath(
     pluginId: string,
@@ -191,13 +132,6 @@ export interface SettingsCore {
 }
 
 type Answers = Record<string, (request: never, context: never) => object | AsyncIterable<object>>
-
-interface Declaration {
-  readonly secretId: string
-  readonly pluginId: string
-  readonly name: string
-  readonly group: string
-}
 
 const answerSettings = (core: Partial<SettingsCore>): Answers => {
   const { getSettings, updateSettings, watchSettings } = core
@@ -217,99 +151,6 @@ const answerSettings = (core: Partial<SettingsCore>): Answers => {
       ? {
           watchSettings: async function* (_request: object, context: { signal: AbortSignal }) {
             for await (const batch of watchSettings(context.signal)) yield { changed: batch }
-          },
-        }
-      : {}),
-  }
-}
-
-const answerSecrets = (core: Partial<SettingsCore>): Answers => {
-  const { createSecret, renameSecret, writeSecret, deleteSecret, deleteSecretGroup } = core
-  const empty = {}
-  return {
-    ...(createSecret
-      ? {
-          createSecret: async (r: { group: string; name: string; value: string }) => ({
-            id: await createSecret(r.group, r.name, r.value),
-          }),
-        }
-      : {}),
-    ...(renameSecret
-      ? {
-          renameSecret: async (r: { id: string; name: string }) => {
-            await renameSecret(r.id, r.name)
-            return empty
-          },
-        }
-      : {}),
-    ...(writeSecret
-      ? {
-          writeSecret: async (r: { id: string; value: string }) => {
-            await writeSecret(r.id, r.value)
-            return empty
-          },
-        }
-      : {}),
-    ...(deleteSecret
-      ? {
-          deleteSecret: async (r: { id: string }) => {
-            await deleteSecret(r.id)
-            return empty
-          },
-        }
-      : {}),
-    ...(deleteSecretGroup
-      ? {
-          deleteSecretGroup: async (r: { group: string }) => {
-            await deleteSecretGroup(r.group)
-            return empty
-          },
-        }
-      : {}),
-  }
-}
-
-const answerSecretGroups = (core: Partial<SettingsCore>): Answers => {
-  const { listSecretStates, moveSecret, renameSecretGroup } = core
-  const { allowPluginSecret, denyPluginSecret } = core
-  const empty = {}
-  return {
-    ...(listSecretStates
-      ? {
-          listSecretStates: async () => ({
-            states: [...(await listSecretStates())].map(([id, hasValue]) => ({ id, hasValue })),
-          }),
-        }
-      : {}),
-    ...(moveSecret
-      ? {
-          moveSecret: async (r: { id: string; beforeId: string }) => {
-            await moveSecret(r.id, r.beforeId)
-            return empty
-          },
-        }
-      : {}),
-    ...(renameSecretGroup
-      ? {
-          renameSecretGroup: async (r: { group: string; name: string }) => {
-            await renameSecretGroup(r.group, r.name)
-            return empty
-          },
-        }
-      : {}),
-    ...(allowPluginSecret
-      ? {
-          allowPluginSecret: async (r: Declaration) => {
-            await allowPluginSecret(r.secretId, r.pluginId, r.name, r.group)
-            return empty
-          },
-        }
-      : {}),
-    ...(denyPluginSecret
-      ? {
-          denyPluginSecret: async (r: Declaration) => {
-            await denyPluginSecret(r.secretId, r.pluginId, r.name, r.group)
-            return empty
           },
         }
       : {}),
@@ -364,8 +205,6 @@ export const installSettingsCore = (
     ...others,
     settingsService: {
       ...answerSettings(core),
-      ...answerSecrets(core),
-      ...answerSecretGroups(core),
       ...answerPlugins(core),
     },
   })

@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+// The operation acp.task: an agent program carries out one prompt turn. The frames are the subset of the
+// session/update notifications of the Agent Client Protocol a window shows
+// (https://agentclientprotocol.com/protocol/prompt-turn), and the done frame holds the stop reason.
+package numen.acp;
+
+option go_package = "github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp;acp";
+
+// TaskRequest is the payload of acp.task.
+message TaskRequest {
+  // prompt is the text the person wrote.
+  string prompt = 1;
+  // context_notes are the notes the person attached to the prompt.
+  repeated ContextNote context_notes = 2;
+  // conversation names the conversation the turn belongs to: a provider answers the turns of one name in
+  // one session for as long as it keeps the session. Empty is a turn of its own.
+  string conversation = 3;
+  // tool_context is handed to every tool the agent calls as the context of the call, under keys that
+  // start with the id of the plugin that wrote them and a slash.
+  map<string, string> tool_context = 4;
+  // vault_id is the vault the tools the agent calls work, by identity. Empty is the vault the window shows.
+  string vault_id = 5;
+}
+
+message ContextNote {
+  string path = 1;
+  string title = 2;
+  string text = 3;
+}
+
+// TaskFrame is one data frame of acp.task: one session update.
+message TaskFrame {
+  oneof update {
+    MessageChunk agent_message_chunk = 1;
+    Plan plan = 2;
+    ToolCall tool_call = 3;
+    ToolCallUpdate tool_call_update = 4;
+    MessageChunk agent_thought_chunk = 5;
+  }
+}
+
+// MessageChunk is a piece of the answer of the agent, or of its reasoning in agent_thought_chunk. Chunks with
+// the same message_id belong to one message.
+message MessageChunk {
+  string message_id = 1;
+  string text = 2;
+}
+
+message Plan {
+  repeated PlanEntry entries = 1;
+}
+
+enum PlanEntryPriority {
+  PLAN_ENTRY_PRIORITY_UNSPECIFIED = 0;
+  PLAN_ENTRY_PRIORITY_HIGH = 1;
+  PLAN_ENTRY_PRIORITY_MEDIUM = 2;
+  PLAN_ENTRY_PRIORITY_LOW = 3;
+}
+
+enum PlanEntryStatus {
+  PLAN_ENTRY_STATUS_UNSPECIFIED = 0;
+  PLAN_ENTRY_STATUS_PENDING = 1;
+  PLAN_ENTRY_STATUS_IN_PROGRESS = 2;
+  PLAN_ENTRY_STATUS_COMPLETED = 3;
+}
+
+message PlanEntry {
+  string content = 1;
+  PlanEntryPriority priority = 2;
+  PlanEntryStatus status = 3;
+}
+
+enum ToolKind {
+  TOOL_KIND_UNSPECIFIED = 0;
+  TOOL_KIND_READ = 1;
+  TOOL_KIND_EDIT = 2;
+  TOOL_KIND_DELETE = 3;
+  TOOL_KIND_MOVE = 4;
+  TOOL_KIND_SEARCH = 5;
+  TOOL_KIND_EXECUTE = 6;
+  TOOL_KIND_THINK = 7;
+  TOOL_KIND_FETCH = 8;
+  TOOL_KIND_OTHER = 9;
+}
+
+enum ToolCallStatus {
+  TOOL_CALL_STATUS_UNSPECIFIED = 0;
+  TOOL_CALL_STATUS_PENDING = 1;
+  TOOL_CALL_STATUS_IN_PROGRESS = 2;
+  TOOL_CALL_STATUS_COMPLETED = 3;
+  TOOL_CALL_STATUS_FAILED = 4;
+}
+
+// ToolCallLocation is a file a tool call works on.
+message ToolCallLocation {
+  string path = 1;
+  // line is zero where the call names no line.
+  int32 line = 2;
+}
+
+// ToolCall is a tool call the agent started.
+message ToolCall {
+  string tool_call_id = 1;
+  string title = 2;
+  ToolKind kind = 3;
+  ToolCallStatus status = 4;
+  // content is the text the call shows.
+  repeated string content = 5;
+  repeated ToolCallLocation locations = 6;
+  // raw_input_json is the input of the tool as one JSON value.
+  string raw_input_json = 7;
+}
+
+// ToolCallUpdate changes a tool call. A field left unset keeps its value.
+message ToolCallUpdate {
+  string tool_call_id = 1;
+  optional string title = 2;
+  optional ToolKind kind = 3;
+  optional ToolCallStatus status = 4;
+  repeated string content = 5;
+  repeated ToolCallLocation locations = 6;
+  string raw_output_json = 7;
+  // diffs are the diff entries of the content of the call: the changes it makes to files, sent again as
+  // more of the new text arrives while the call is still being written.
+  repeated Diff diffs = 8;
+}
+
+// Diff is a change a tool call makes to a file. old_text is empty for a file the call writes whole.
+message Diff {
+  string path = 1;
+  string old_text = 2;
+  string new_text = 3;
+}
+
+enum StopReason {
+  STOP_REASON_UNSPECIFIED = 0;
+  STOP_REASON_END_TURN = 1;
+  STOP_REASON_MAX_TOKENS = 2;
+  STOP_REASON_MAX_TURN_REQUESTS = 3;
+  STOP_REASON_REFUSAL = 4;
+  STOP_REASON_CANCELED = 5;
+}
+
+// TaskDone is the done frame of acp.task.
+message TaskDone {
+  StopReason stop_reason = 1;
+}

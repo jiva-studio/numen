@@ -18,7 +18,7 @@ func TestReadManifest(t *testing.T) {
 		"description": "Optical character recognition",
 		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onStartup", "onVectorsReady", "onFile:pdf"],
+		"activationEvents": ["onSearchSourceReady"],
 		"permissions": ["vault:read"],
 		"backend": {
 			"entrypoint": "bin/engines.ocr"
@@ -58,7 +58,7 @@ func TestReadManifest(t *testing.T) {
 	if !m.HasCapability("tools") {
 		t.Errorf("expected capability tools")
 	}
-	if !m.IsActivatedBy("onStartup") || !m.IsActivatedBy("onVectorsReady:vault-1") || !m.IsActivatedBy("onFile:doc.pdf") || m.IsActivatedBy("onFile:doc.md") {
+	if !m.IsActivatedBy("onSearchSourceReady:vault-1") || m.IsActivatedBy("onSearchSourceReady:") || m.IsActivatedBy("onSearchSource") {
 		t.Errorf("unexpected activation matching for %v", m.ActivationEvents)
 	}
 	if !m.HasService("md.numen.engines.ocr") || !m.HasFrontend() {
@@ -195,13 +195,13 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 			manifest.ErrInvalidActivationEvent,
 		},
 		{
-			"an activation event with an empty extension",
-			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onFile:"]}`,
+			"the removed startup event",
+			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onStartup"]}`,
 			manifest.ErrInvalidActivationEvent,
 		},
 		{
-			"an activation event with a wildcard extension",
-			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onFile:*"]}`,
+			"the removed file event",
+			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onFile:pdf"]}`,
 			manifest.ErrInvalidActivationEvent,
 		},
 		{
@@ -212,11 +212,10 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"a capability no host resolves", `{"id":"a.b","name":"A","version":"1.0.0","capabilities":["agent"]}`, manifest.ErrInvalidCapability},
 		{
 			"activation events without a backend",
-			`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onStartup"],"frontend":{}}`,
+			`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onSearchSourceReady"],"frontend":{}}`,
 			manifest.ErrNoBackend,
 		},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, manifest.ErrNoBackend},
-		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"apiKey","title":"T"}]}`, manifest.ErrNoBackend},
 		{
 			"runtime dependencies without a backend",
 			`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`,
@@ -314,42 +313,10 @@ func TestManifestNetworkAlias(t *testing.T) {
 	}
 }
 
-func TestManifestAcceptsAICompletePermission(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","permissions":["ai:complete"]}`))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !m.HasPermission(manifest.PermissionAIComplete) {
-		t.Errorf("manifest must hold %s", manifest.PermissionAIComplete)
-	}
-}
-
-// A secret is a plain name, declared once, and not also a setting.
-func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
-	for _, one := range []struct {
-		name    string
-		secrets string
-		wrong   bool
-	}{
-		{"none", ``, false},
-		{"one", `"secrets":[{"name":"apiKey","title":"API key"}]`, false},
-		{"two", `"secrets":[{"name":"apiKey","title":"API key"},{"name":"org_id-2","title":"Organization"}]`, false},
-		{"empty name", `"secrets":[{"name":"","title":"T"}]`, true},
-		{"slash", `"secrets":[{"name":"a/b","title":"T"}]`, true},
-		{"space", `"secrets":[{"name":"api key","title":"T"}]`, true},
-		{"twice", `"secrets":[{"name":"apiKey","title":"T"},{"name":"apiKey","title":"T"}]`, true},
-		{"also a setting", `"secrets":[{"name":"model","title":"T"}],"settings":[{"key":"model","type":"string","title":"Model"}]`, true},
-	} {
-		t.Run(one.name, func(t *testing.T) {
-			text := `{"id":"a.b","name":"A","version":"1.0.0"`
-			if one.secrets != "" {
-				text += "," + one.secrets
-			}
-			_, err := manifestjson.Read(strings.NewReader(text + "}"))
-			if one.wrong != errors.Is(err, manifest.ErrInvalidSecret) {
-				t.Errorf("error = %v, want invalid secret: %v", err, one.wrong)
-			}
-		})
+func TestManifestRejectsAICompletePermission(t *testing.T) {
+	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","permissions":["ai:complete"]}`))
+	if !errors.Is(err, manifest.ErrInvalidPermission) {
+		t.Errorf("error = %v, want invalid permission", err)
 	}
 }
 
@@ -371,7 +338,11 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 		{"a full name", `["a.b.SampleService"]`, false},
 		{"two names", `["a.b.SampleService","a.b.PresetsService"]`, false},
 		{"the id itself", `["a.b"]`, false},
-		{"a service of the protocol", `["numen.v1.AgentService"]`, false},
+		{"the embedding service of the protocol", `["numen.v1.SearchSourceService"]`, false},
+		{"the tool service of the protocol", `["numen.v1.PluginToolService"]`, false},
+		{"the provider service of the protocol", `["numen.v1.ProviderService"]`, false},
+		{"a service the core serves", `["numen.v1.NoteService"]`, true},
+		{"a service the core serves beside an own one", `["a.b.SampleService","numen.v1.VaultService"]`, true},
 		{"a bare name", `["SampleService"]`, true},
 		{"a path", `["/a.b.SampleService"]`, true},
 		{"a name listed twice", `["a.b.SampleService","a.b.SampleService"]`, true},

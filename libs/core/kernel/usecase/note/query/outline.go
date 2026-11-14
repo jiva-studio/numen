@@ -12,31 +12,31 @@ type TabKinds interface {
 	Execute(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
 }
 
-// NeighborhoodView is a note with the notes joined to it, what each of them is and the kind of tab each
+// RelatedNotesView is a note with the notes joined to it, what each of them is and the kind of tab each
 // opens in, by path.
-type NeighborhoodView struct {
-	domain.Neighborhood
+type RelatedNotesView struct {
+	domain.NoteGraph
 	Types    map[string]domain.NoteType
 	TabKinds map[string]string
 }
 
-// GetNeighborhoodView gathers the neighborhood of a note with the type and the kind of tab of each note in it.
-type GetNeighborhoodView struct {
-	neighborhood ShowNeighborhood
+// GetRelatedNotesView gathers the related notes of a note with the type and the kind of tab of each note in it.
+type GetRelatedNotesView struct {
+	relatedNotes ListRelatedNotes
 	types        noteport.NoteTypes
 	tabKinds     TabKinds
 }
 
-// NewGetNeighborhoodView creates the gathering over the links and the notes of the index.
-func NewGetNeighborhoodView(links noteport.LinkQueries, notes RefQueries, types noteport.NoteTypes, tabKinds TabKinds) *GetNeighborhoodView {
-	return &GetNeighborhoodView{neighborhood: NewShowNeighborhood(links, notes), types: types, tabKinds: tabKinds}
+// NewGetRelatedNotesView creates the gathering over the links and the notes of the index.
+func NewGetRelatedNotesView(links noteport.LinkBatches, notes RefQueries, types noteport.NoteTypes, tabKinds TabKinds) *GetRelatedNotesView {
+	return &GetRelatedNotesView{relatedNotes: NewListRelatedNotes(links, notes), types: types, tabKinds: tabKinds}
 }
 
-// Execute gathers the neighborhood of the note at the path. The types are read once for the whole graph.
-func (u *GetNeighborhoodView) Execute(ctx context.Context, v domain.Vault, path string) (NeighborhoodView, error) {
-	found, err := u.neighborhood.Execute(ctx, v, path)
+// Execute gathers the related notes of the note at the path. DepthFar adds the notes related to each of them. The types are read once for the whole graph.
+func (u *GetRelatedNotesView) Execute(ctx context.Context, v domain.Vault, path string, depth domain.RelationDepth) (RelatedNotesView, error) {
+	found, err := u.relatedNotes.Execute(ctx, v, path, depth)
 	if err != nil {
-		return NeighborhoodView{}, err
+		return RelatedNotesView{}, err
 	}
 	paths := []string{found.Focus.Path}
 	for _, related := range found.Related {
@@ -44,13 +44,13 @@ func (u *GetNeighborhoodView) Execute(ctx context.Context, v domain.Vault, path 
 	}
 	types, err := u.types.GetTypes(ctx, v.ID, paths)
 	if err != nil {
-		return NeighborhoodView{}, err
+		return RelatedNotesView{}, err
 	}
 	tabKinds, err := u.tabKinds.Execute(ctx, v, paths)
 	if err != nil {
-		return NeighborhoodView{}, err
+		return RelatedNotesView{}, err
 	}
-	return NeighborhoodView{Neighborhood: found, Types: types, TabKinds: tabKinds}, nil
+	return RelatedNotesView{NoteGraph: found, Types: types, TabKinds: tabKinds}, nil
 }
 
 // NoteHeadings is the headings of the note at a path, in the order they stand in the note.

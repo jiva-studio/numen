@@ -2,16 +2,11 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Plex from './Plex.vue'
-import {
-  resolveOptions,
-  rowsAndColumns,
-  type Placement,
-  type PlexOptionsInput,
-} from '../lib/arrange'
+import { resolveOptions, clusters, type Placement, type PlexOptionsInput } from '../lib/arrange'
 import { optionsForType, useTypeSize } from '../model/sizing/plexScale'
 import { EXPANSION_DELAY } from '../model/sizing/expansion'
-import { neighborhoods } from '../fixtures/neighborhoods'
-import { createNeighborhood, walkStart } from '../fixtures/walk'
+import { graphs } from '../fixtures/graphs'
+import { createGraph, walkStart } from '../fixtures/walk'
 import { build, buildAround, type TitledNode } from '../fixtures/build'
 import { nameNow } from '../fixtures/names'
 import { ring } from '../fixtures/ring'
@@ -21,16 +16,17 @@ import type { MenuTrigger } from '@numen/ui'
 import type {
   PlexHeading,
   PlexEdge,
-  PlexNeighborhood,
+  PlexGraph,
   PlexNode,
   PlexRelation,
   PlexDestination,
 } from '../../types'
 
 interface Knobs {
-  neighborhood: PlexNeighborhood
+  graph: PlexGraph
   placement: Placement
   showEdgeLabels: boolean
+  highlightLinks: boolean
   duration: number
   expansionDelay: number
   onActivate: (id: string) => void
@@ -53,8 +49,7 @@ interface Knobs {
   margin: number
   spread: number
   squeeze: number
-  maxPerLine: number
-  maxLines: number
+  maxPerCluster: number
   maxHeadings: number
   orientation: 'parents above' | 'parents below'
 
@@ -90,8 +85,7 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   margin: a.margin,
   squeeze: a.squeeze,
   spread: a.spread,
-  maxPerLine: a.maxPerLine,
-  maxLines: a.maxLines,
+  maxPerCluster: a.maxPerCluster,
   maxHeadings: a.maxHeadings,
   routing: {
     curvature: a.curvature,
@@ -101,8 +95,8 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   motion: { arriveAfter: a.arriveAfter, leaveBefore: a.leaveBefore },
   direction:
     a.orientation === 'parents below'
-      ? { parent: 'down', child: 'up', jump: 'left', sibling: 'right' }
-      : { parent: 'up', child: 'down', jump: 'left', sibling: 'right' },
+      ? { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' }
+      : { parent: 'up', child: 'down', jump: 'left', reference: 'left', sibling: 'right' },
 })
 
 const createOptions = (a: Knobs, type: number): PlexOptionsInput =>
@@ -120,7 +114,7 @@ const createCounts = (a: Knobs) => ({
   sibling: a.siblings,
 })
 
-const createNavigableStory = (start: (args: Knobs) => PlexNeighborhood) => (args: Knobs) => ({
+const createNavigableStory = (start: (args: Knobs) => PlexGraph) => (args: Knobs) => ({
   components: { Plex },
   setup() {
     const type = useTypeSize()
@@ -130,7 +124,7 @@ const createNavigableStory = (start: (args: Knobs) => PlexNeighborhood) => (args
     const createdItem = ref<PlexNode[]>([])
     const links = ref<PlexEdge[]>([])
 
-    const neighborhood = computed<PlexNeighborhood>(() => {
+    const graph = computed<PlexGraph>(() => {
       const base = focus.value
         ? buildAround(focus.value, cameFrom.value, createCounts(args))
         : start(args)
@@ -149,9 +143,9 @@ const createNavigableStory = (start: (args: Knobs) => PlexNeighborhood) => (args
     })
 
     const onActivate = (id: string) => {
-      const selected = neighborhood.value.nodes.find((node) => node.id === id)
+      const selected = graph.value.nodes.find((node) => node.id === id)
       if (!selected) return
-      const was = neighborhood.value.nodes.find((node) => node.relation === 'focus')
+      const was = graph.value.nodes.find((node) => node.relation === 'focus')
       cameFrom.value = was ? { id: was.id, title: was.title } : null
       focus.value = { id: selected.id, title: selected.title }
     }
@@ -172,7 +166,7 @@ const createNavigableStory = (start: (args: Knobs) => PlexNeighborhood) => (args
     }
 
     const dropOnto = (ids: readonly string[], relation: PlexRelation) => {
-      const here = neighborhood.value.nodes.find((node) => node.relation === 'focus')
+      const here = graph.value.nodes.find((node) => node.relation === 'focus')
       if (!here) return
       for (const one of ids) createRelatedNode(here.id, one, relation)
     }
@@ -190,17 +184,18 @@ const createNavigableStory = (start: (args: Knobs) => PlexNeighborhood) => (args
       create,
       link,
       dropOnto,
-      neighborhood,
+      graph,
       options: computed(() => createOptions(args, type.value)),
     }
   },
   template: `
     <div style="height:100vh">
       <Plex
-        :neighborhood="neighborhood"
+        :graph="graph"
         :placement="args.placement"
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
+        :highlight-links="args.highlightLinks"
         :duration="args.duration"
         :expansion-delay="args.expansionDelay"
         :dragged="args.dragged"
@@ -227,14 +222,14 @@ const renderWalk = (args: Knobs) => ({
     return {
       args,
       focused,
-      neighborhood: computed(() => createNeighborhood(focused.value)),
+      graph: computed(() => createGraph(focused.value)),
       options: computed(() => createOptions(args, type.value)),
     }
   },
   template: `
     <div style="height:100vh">
       <Plex
-        :neighborhood="neighborhood"
+        :graph="graph"
         :placement="args.placement"
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
@@ -270,8 +265,7 @@ const meta = {
     margin: range(0, 160, 4),
     spread: range(1, 4, 0.1),
     squeeze: range(0.2, 1, 0.05),
-    maxPerLine: range(1, 12),
-    maxLines: range(1, 8),
+    maxPerCluster: range(1, 40),
     maxHeadings: range(1, 12),
     orientation: {
       control: 'inline-radio',
@@ -280,8 +274,8 @@ const meta = {
     },
     placement: {
       control: 'inline-radio',
-      options: ['rows and columns', 'ring'],
-      mapping: { 'rows and columns': rowsAndColumns, ring },
+      options: ['clusters', 'ring'],
+      mapping: { clusters, ring },
       table: { category: 'Layout' },
     },
 
@@ -289,6 +283,7 @@ const meta = {
     minReach: { ...range(0, 120, 2, 'Edges'), table: { category: 'Edges' } },
     arrowClearance: { ...range(0, 40, 1, 'Edges'), table: { category: 'Edges' } },
     showEdgeLabels: { control: 'boolean', table: { category: 'Edges' } },
+    highlightLinks: { control: 'boolean', table: { category: 'Edges' } },
 
     duration: {
       control: { type: 'range', min: 0, max: 3000, step: 20 },
@@ -307,7 +302,7 @@ const meta = {
     siblings: range(0, 12, 1, 'Playground'),
     title: { control: 'text', table: { category: 'Playground' } },
 
-    neighborhood: { table: { disable: true } },
+    graph: { table: { disable: true } },
     options: { table: { disable: true } },
     clock: { table: { disable: true } },
     naming: { table: { disable: true } },
@@ -325,8 +320,9 @@ const meta = {
   },
 
   args: {
-    placement: rowsAndColumns,
+    placement: clusters,
     showEdgeLabels: true,
+    highlightLinks: false,
     duration: 420,
     expansionDelay: EXPANSION_DELAY,
     onActivate: fn(),
@@ -352,8 +348,7 @@ const meta = {
     margin: 16,
     spread: 2.5,
     squeeze: 0.35,
-    maxPerLine: 5,
-    maxLines: 4,
+    maxPerCluster: 20,
     maxHeadings: 6,
     orientation: 'parents above',
 
@@ -370,14 +365,14 @@ const meta = {
     title: 'A node',
   },
 
-  render: createNavigableStory((args) => args.neighborhood),
+  render: createNavigableStory((args) => args.graph),
 } satisfies Meta<Knobs>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
 const invented = {
-  args: { neighborhood: neighborhoods.typical, maxPerLine: 9 },
+  args: { graph: graphs.typical, maxPerCluster: 9 },
   render: createNavigableStory((args: Knobs) => build(args.title, createCounts(args))),
 }
 
@@ -563,17 +558,42 @@ export const AskingForANode: Story = {
   },
 }
 
-/** Renders a neighborhood with multiple connected parents. */
+/** Renders a graph with multiple connected parents. */
 export const SeveralParents: Story = {
-  args: { neighborhood: neighborhoods.diamond },
+  args: { graph: graphs.diamond },
 }
 
-/** Renders an overcrowded neighborhood with overflow indicators. */
+/** Renders an overcrowded graph with overflow indicators. */
 export const Overcrowded: Story = {
-  args: { neighborhood: neighborhoods.overcrowded },
+  args: { graph: graphs.overcrowded },
+  play: async ({ canvasElement }) => {
+    const status = await waitFor(() => {
+      const found = canvasElement.querySelector('[role="status"]')
+      if (!found) throw new Error('nothing says what is not shown')
+      return found
+    })
+    await expect(status.textContent).toMatch(/\d+ (children|child)\b.* not shown/)
+
+    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.plex__box')].map((box) =>
+      box.getBoundingClientRect(),
+    )
+    await expect(boxes.length).toBeGreaterThan(1)
+    const overlaps = boxes.flatMap((a, index) =>
+      boxes
+        .slice(index + 1)
+        .filter(
+          (b) =>
+            a.left < b.right - 0.5 &&
+            b.left < a.right - 0.5 &&
+            a.top < b.bottom - 0.5 &&
+            b.top < a.bottom - 0.5,
+        ),
+    )
+    await expect(overlaps).toHaveLength(0)
+  },
 }
 
-const titledLines: PlexNeighborhood = {
+const titledLines: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'The meeting', relation: 'focus' },
     { id: 'parent', title: 'Minutes', relation: 'parent' },
@@ -593,7 +613,7 @@ const titledLines: PlexNeighborhood = {
 
 /** Renders edge labels along curved paths, truncated where they do not fit, and raises hovered lines. */
 export const TitledLines: Story = {
-  args: { neighborhood: titledLines, duration: 0, spread: 1 },
+  args: { graph: titledLines, duration: 0, spread: 1 },
   play: async ({ canvasElement }) => {
     const title = (words: string) =>
       [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].filter(
@@ -644,7 +664,7 @@ export const TitledLines: Story = {
   },
 }
 
-const arrowedLines: PlexNeighborhood = {
+const arrowedLines: PlexGraph = {
   nodes: [
     { id: 'alice', title: 'Alice Fenn, The Chair', relation: 'focus' },
     { id: 'allotments', title: 'Marrowfield allotments', relation: 'parent' },
@@ -662,7 +682,7 @@ const arrowedLines: PlexNeighborhood = {
 
 /** Renders directional arrowheads on edges and raises them on hover. */
 export const ArrowedLines: Story = {
-  args: { neighborhood: arrowedLines, duration: 0 },
+  args: { graph: arrowedLines, duration: 0 },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const svg = canvasElement.querySelector('svg')!
@@ -736,39 +756,46 @@ export const ArrowedLines: Story = {
 
 /** Renders nodes with long, non-Latin, and empty labels. */
 export const AwkwardLabels: Story = {
-  args: { neighborhood: neighborhoods.awkwardLabels },
+  args: { graph: graphs.awkwardLabels },
 }
 
 /** Expands a truncated node box on hover to show the full title. */
 export const RestingOnATitle: Story = {
-  args: { neighborhood: neighborhoods.awkwardLabels },
+  args: { graph: graphs.awkwardLabels },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
     const adjacentNode = canvas.getByLabelText('日本語のノート, child')
 
-    const getWidth = (box: Element) =>
-      box.querySelector('.plex__box')!.getBoundingClientRect().width
-    const nodeWidth = getWidth(node)
+    const getBox = () =>
+      canvasElement.querySelector('.plex__lifted .plex__box') ?? node.querySelector('.plex__box')!
+    const getWidth = () => getBox().getBoundingClientRect().width
+    const getWords = () =>
+      (canvasElement.querySelector('.plex__lifted') ?? node).querySelector<HTMLElement>(
+        '.plex__title-text',
+      )!
+    const nodeWidth = getWidth()
     const adjacentX = adjacentNode.getBoundingClientRect().x
 
-    const words = node.querySelector<HTMLElement>('.plex__title-text')!
+    const words = getWords()
     await expect(words.scrollWidth).toBeGreaterThan(words.clientWidth)
 
     await userEvent.hover(node)
-    await waitFor(async () => await expect(getWidth(node)).toBeGreaterThan(nodeWidth), {
+    await waitFor(async () => await expect(getWidth()).toBeGreaterThan(nodeWidth), {
       timeout: 3000,
     })
     await waitFor(
-      async () => await expect(words.scrollWidth).toBeLessThanOrEqual(words.clientWidth),
+      async () => await expect(getWords().scrollWidth).toBeLessThanOrEqual(getWords().clientWidth),
     )
 
     await expect(adjacentNode.getBoundingClientRect().x).toBe(adjacentX)
-    const boxes = canvasElement.querySelectorAll('.plex__node')
-    await expect(boxes[boxes.length - 1]).toBe(node)
+    const lifted = canvasElement.querySelector('.plex__lifted')!
+    await expect(node.compareDocumentPosition(lifted) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
 
     await userEvent.unhover(node)
-    await waitFor(async () => await expect(getWidth(node)).toBe(nodeWidth))
+    await waitFor(async () => await expect(getWidth()).toBe(nodeWidth))
   },
 }
 
@@ -776,7 +803,7 @@ export const RestingOnATitle: Story = {
 export const Walk: Story = {
   render: renderWalk,
   args: {
-    neighborhood: createNeighborhood(walkStart),
+    graph: createGraph(walkStart),
     gap: 18,
   },
   play: async ({ args, canvasElement }) => {
@@ -870,71 +897,157 @@ export const HeadingsInside: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const focus = canvas.getByLabelText(/, focus$/)
-    const getHeadings = (node: Element) => [...node.querySelectorAll('.plex__heading')]
+    const getOpenBox = (id: string) =>
+      canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
+    const getHeadings = (id: string) => [
+      ...(getOpenBox(id)?.querySelectorAll('.plex__heading') ?? []),
+    ]
 
     const most = args.maxHeadings
 
-    await expect(getHeadings(focus)).toHaveLength(0)
+    await expect(getHeadings('focus')).toHaveLength(0)
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(most), {
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(most), {
       timeout: 3000,
     })
 
     await userEvent.unhover(focus)
-    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(0))
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(0))
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(most), {
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(most), {
       timeout: 3000,
     })
-    await userEvent.click(getHeadings(focus)[1]!)
+    await userEvent.click(getHeadings('focus')[1]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus', '4')
 
     const many = canvas.getByLabelText(/, jump$/)
     await userEvent.hover(many)
-    await waitFor(async () => await expect(getHeadings(many)).toHaveLength(most), { timeout: 3000 })
+    await waitFor(async () => await expect(getHeadings('focus/jump-0')).toHaveLength(most), {
+      timeout: 3000,
+    })
 
-    const arrows = () => [...many.querySelectorAll('.plex__more')]
+    const arrows = () => [...(getOpenBox('focus/jump-0')?.querySelectorAll('.plex__more') ?? [])]
     await expect(arrows()).toHaveLength(1)
 
     const wheel = (deltaY: number) =>
-      many
+      getOpenBox('focus/jump-0')!
         .querySelector('.plex__inside')!
         .dispatchEvent(
           new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),
         )
     wheel(1)
     await waitFor(
-      async () => await expect(getHeadings(many)[0]!.textContent?.trim()).toBe('Section 2'),
+      async () =>
+        await expect(getHeadings('focus/jump-0')[0]!.textContent?.trim()).toBe('Section 2'),
     )
     await expect(arrows()).toHaveLength(2)
 
     wheel(-1)
     await waitFor(
-      async () => await expect(getHeadings(many)[0]!.textContent?.trim()).toBe('Section 1'),
+      async () =>
+        await expect(getHeadings('focus/jump-0')[0]!.textContent?.trim()).toBe('Section 1'),
     )
 
-    await userEvent.click(getHeadings(many)[0]!)
+    await userEvent.click(getHeadings('focus/jump-0')[0]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus/jump-0', '0')
     await expect(args.onActivate).not.toHaveBeenCalled()
   },
 }
 
-/** Renders the plex inside a small fixed container. */
-export const SmallWindow: Story = {
-  args: { neighborhood: neighborhoods.crowded },
-  render: (args) => ({
-    components: { Plex },
-    setup: () => {
-      const type = useTypeSize()
-      return { args, options: computed(() => createOptions(args, type.value)) }
-    },
-    template: `
+/** Draws the lines lifted by the highlight setting under the headings that open under a note. */
+export const HeadingsOverLiftedLines: Story = {
+  args: {
+    ...invented.args,
+    parents: 1,
+    children: 4,
+    jumps: 1,
+    siblings: 0,
+    highlightLinks: true,
+    headings: (id: string) => INSIDE[id] ?? [],
+  },
+  render: invented.render,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+
+    await userEvent.hover(focus)
+    const backdrop = await waitFor(async () => {
+      const found = canvasElement.querySelector('.plex__backdrop')
+      if (found === null) throw new Error('the headings are not open')
+      return found
+    })
+    const raised = await waitFor(async () => {
+      const found = canvasElement.querySelector('.plex__raised')
+      if (found === null) throw new Error('no line is lifted')
+      return found
+    })
+
+    await expect(raised.querySelectorAll('.plex__edge-line').length).toBeGreaterThan(0)
+    await expect(raised.compareDocumentPosition(backdrop) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
+  },
+}
+
+/** Closes the note that was attended to as soon as another note is, whichever pointer events came. */
+export const OneOpenNote: Story = {
+  args: {
+    ...invented.args,
+    parents: 1,
+    children: 4,
+    jumps: 1,
+    siblings: 0,
+    headings: (id: string) => INSIDE[id] ?? [],
+  },
+  render: invented.render,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+    const other = canvas.getByLabelText(/, jump$/)
+    const getOpenBox = (id: string) =>
+      canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
+    const getHeadings = (id: string) => [
+      ...(getOpenBox(id)?.querySelectorAll('.plex__heading') ?? []),
+    ]
+    const getHandles = () => canvasElement.querySelectorAll('.plex__handle')
+
+    await userEvent.hover(focus)
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(args.maxHeadings), {
+      timeout: 3000,
+    })
+    await expect(getHandles()).toHaveLength(1)
+
+    // The pointer reaches the other note without the first one hearing it leave.
+    other.dispatchEvent(new PointerEvent('pointerenter'))
+
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(0))
+    await expect(getHandles()).toHaveLength(1)
+    await expect(focus.querySelector('.plex__handle')).toBeNull()
+    await expect(other.querySelector('.plex__handle')).not.toBeNull()
+
+    await waitFor(
+      async () => await expect(getHeadings('focus/jump-0')).toHaveLength(args.maxHeadings),
+      {
+        timeout: 3000,
+      },
+    )
+    await expect(getHeadings('focus')).toHaveLength(0)
+  },
+}
+
+const renderInSmallWindow: NonNullable<Story['render']> = (args) => ({
+  components: { Plex },
+  setup: () => {
+    const type = useTypeSize()
+    return { args, options: computed(() => createOptions(args, type.value)) }
+  },
+  template: `
       <div style="height:100vh;display:grid;place-items:center;background:#8883">
         <div style="width:420px;height:320px;outline:1px solid var(--numen-rule)">
           <Plex
-            :neighborhood="args.neighborhood"
+            :graph="args.graph"
             :placement="args.placement"
             :options="options"
             :show-edge-labels="args.showEdgeLabels"
@@ -945,5 +1058,78 @@ export const SmallWindow: Story = {
         </div>
       </div>
     `,
-  }),
+})
+
+/** Renders the plex inside a small fixed container. */
+export const SmallWindow: Story = {
+  args: { graph: graphs.crowded },
+  render: renderInSmallWindow,
+}
+
+const withReferences: PlexGraph = {
+  nodes: [
+    { id: 'focus', title: 'Salt marsh', relation: 'focus' },
+    { id: 'parent', title: 'Coastal ecology', relation: 'parent' },
+    { id: 'child', title: 'Tidal creeks', relation: 'child' },
+    { id: 'jump', title: 'Dune grasses', relation: 'jump' },
+    { id: 'sibling', title: 'Mudflats', relation: 'sibling' },
+    { id: 'ref-out', title: 'Heron nesting notes', relation: 'reference' },
+    { id: 'ref-in', title: 'Survey of the estuary', relation: 'reference' },
+    { id: 'ref-both', title: 'Tide tables', relation: 'reference' },
+  ],
+  edges: [
+    { from: 'parent', to: 'focus' },
+    { from: 'focus', to: 'child' },
+    { from: 'jump', to: 'focus' },
+    { from: 'parent', to: 'sibling' },
+    { from: 'focus', to: 'ref-out', arrows: ['to'] },
+    { from: 'focus', to: 'ref-in', arrows: ['from'] },
+    { from: 'focus', to: 'ref-both', arrows: ['from', 'to'] },
+  ],
+}
+
+/** Renders the references as nodes of their own relation, pressable like any other, with an arrowhead at the end each link points to. */
+export const References: Story = {
+  args: { graph: withReferences, duration: 0 },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await waitFor(async () => {
+      await expect(canvasElement.querySelectorAll('.plex__node--reference')).toHaveLength(3)
+    })
+    await expect(canvas.getByLabelText('Heron nesting notes, reference')).toBeTruthy()
+    await expect(canvas.getByLabelText('Survey of the estuary, reference')).toBeTruthy()
+    await expect(canvas.getByLabelText('Tide tables, reference')).toBeTruthy()
+
+    // One head for the outgoing and the incoming link, two for the mutual one.
+    await waitFor(async () => {
+      await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(4)
+    })
+
+    await userEvent.click(canvas.getByLabelText('Heron nesting notes, reference'))
+    await expect(args.onActivate).toHaveBeenCalledWith('ref-out')
+  },
+}
+
+const crowdedWithReferences: PlexGraph = build('Salt marsh', {
+  parent: 1,
+  child: 3,
+  jump: 2,
+  reference: 30,
+})
+
+/** Counts the references left out of a small window like any other relation. */
+export const ManyReferencesInASmallWindow: Story = {
+  args: { graph: crowdedWithReferences, duration: 0 },
+  render: renderInSmallWindow,
+  play: async ({ canvasElement }) => {
+    const status = await waitFor(() => {
+      const found = canvasElement.querySelector('[role="status"]')
+      if (!found) throw new Error('nothing says what is not shown')
+      return found
+    })
+    await expect(status.textContent).toMatch(
+      /\d+ references?\b.* not shown|\d+ references? not shown/,
+    )
+  },
 }

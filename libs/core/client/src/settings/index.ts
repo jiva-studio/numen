@@ -1,2 +1,2 @@
 export { getNames } from './enumNames'
-export * from './agentSettings'
+export { PLUGIN_CONTRIBUTION_KIND, type PluginContributionKindValue } from './contributionKind'

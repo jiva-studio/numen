@@ -1,18 +1,26 @@
 <script setup lang="ts">
 /**
- * The page of one plugin: a header card with the README and the enabled switch (or the install
- * button for a plugin that is not installed), the failure card of a suspended plugin, the
- * settings the application draws in the `settings` slot, and the plugin's data.
+ * The page of one plugin: the toolbar with the path Settings, the category and the plugin and with
+ * the state and the enabled switch or the install button, the header, the failure of a suspended
+ * plugin or the bar of its worst health item, then the tabs Settings (the tab the page opens on), About,
+ * Contributes and Data. The application draws the settings in the `settings` and `sections` slots;
+ * Data is there only while the plugin keeps files in the vault or their deletion failed.
  */
-import { computed, ref, type VNode } from 'vue'
+import { computed, ref, watch, type VNode } from 'vue'
 import { Button, Prose, Switch } from '@numen/ui'
-import ChevronIcon from './ChevronIcon.vue'
+import { formatCategoryLabel, getPluginCategory } from './filter'
+import PluginContributions from './PluginContributions.vue'
 import PluginData from './PluginData.vue'
-import PluginSettingsCard from './PluginSettingsCard.vue'
-import PluginStopped from './PluginStopped.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
+import PluginHeader from './PluginHeader.vue'
+import PluginSettingsCard from './PluginSettingsCard.vue'
+import PluginNotice from './PluginNotice.vue'
+import PluginTabs from './PluginTabs.vue'
 import { isInstalled } from './plugins'
-import { parsePluginReadme } from './readme'
+import SettingsPage from './SettingsPage.vue'
+import { getReadmeText } from './readme'
+import { getPluginState, getStartItem, getWorstItem, hasConnectionSettings } from './state'
+import { FIRST_PLUGIN_TAB, getPanelElementId, getPluginTabs, getTabElementId } from './tabs'
 import { PLUGIN_WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -20,21 +28,51 @@ const props = defineProps<PluginDetailProps>()
 
 const emit = defineEmits<{
   (e: 'back'): void
+  /** The category of the plugin was chosen in the path, by its key. */
+  (e: 'open-category', category: string): void
   (e: 'toggle-enabled', isEnabled: boolean): void
   (e: 'retry'): void
   (e: 'install'): void
   (e: 'delete-data'): void
+  (e: 'run-action', key: string): void
 }>()
 
 defineSlots<{
   /** The settings of the plugin, drawn by the application. */
-  settings(): VNode[]
+  settings?(): VNode[]
+  /** Sections of the settings tab under the card of the settings, drawn by the application. */
+  sections?(): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const isExpanded = ref(false)
-const readmeParts = computed(() =>
-  parsePluginReadme(props.readme, props.plugin.id, props.plugin.description),
+const startItem = computed(() => getStartItem(props.health ?? []))
+const worstItem = computed(() => getWorstItem(props.health ?? []))
+const category = computed(() => getPluginCategory(props.plugin))
+const path = computed(() => [
+  words.settings,
+  formatCategoryLabel(category.value),
+  props.plugin.name,
+])
+const hasConnections = computed(() => hasConnectionSettings(props.plugin.info))
+const contributions = computed(() => props.plugin.info?.contributions ?? [])
+const readmeText = computed(() => getReadmeText(props.readme))
+const state = computed(() =>
+  props.plugin.info ? getPluginState(props.isEnabled, props.health) : 'available',
+)
+const tabs = computed(() => getPluginTabs(props.dataFileCount > 0 || props.problem !== ''))
+const activeTab = ref(FIRST_PLUGIN_TAB)
+const idBase = computed(() => `plugin-${props.plugin.id.replaceAll('.', '-')}`)
+
+/* --------------------------------- Hooks ---------------------------------- */
+watch(tabs, (now) => {
+  if (!now.some((one) => one.id === activeTab.value)) activeTab.value = FIRST_PLUGIN_TAB
+})
+
+watch(
+  () => props.plugin.id,
+  () => {
+    activeTab.value = FIRST_PLUGIN_TAB
+  },
 )
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -42,20 +80,17 @@ function onBack(): void {
   emit('back')
 }
 
+function onOpen(level: number): void {
+  if (level === 0) emit('back')
+  else emit('open-category', category.value)
+}
+
 function onToggleEnabled(isEnabled: boolean): void {
   emit('toggle-enabled', isEnabled)
 }
 
-function onToggleReadme(): void {
-  isExpanded.value = !isExpanded.value
-}
-
 function onRetry(): void {
   emit('retry')
-}
-
-function onDisable(): void {
-  emit('toggle-enabled', false)
 }
 
 function onInstall(): void {
@@ -65,207 +100,142 @@ function onInstall(): void {
 function onDeleteData(): void {
   emit('delete-data')
 }
+
+function onRunAction(key: string): void {
+  emit('run-action', key)
+}
 </script>
 
 <template>
-  <div class="plugin-detail">
-    <Button variant="ghost" size="small" class="plugin-detail__back" @click="onBack">
-      &larr; {{ words.backToPlugins }}
-    </Button>
-
-    <div class="plugin-detail__header">
-      <h2 class="plugin-detail__title">
-        <span>{{ props.plugin.name }}</span>
-        <span v-if="props.plugin.version" class="plugin-version-badge">
-          v{{ props.plugin.version }}
-        </span>
-      </h2>
-      <div class="plugin-detail__master-switch">
-        <Switch
-          v-if="isInstalled(props.plugin)"
-          :model-value="props.isEnabled"
-          :is-busy="props.isPending ?? false"
-          :aria-label="`${words.pluginEnabled} ${props.plugin.name}`"
-          @update:model-value="onToggleEnabled"
+  <SettingsPage :path="path" @back="onBack" @open="onOpen">
+    <template #actions>
+      <span class="plugin-detail__state">
+        <span
+          class="plugin-detail__dot"
+          :class="`plugin-detail__dot--${state}`"
+          aria-hidden="true"
         />
-        <Button v-else-if="props.canInstall" size="small" @click="onInstall">
-          {{ words.pluginInstall }}
-        </Button>
-        <span v-else class="plugin-detail__absent">{{ words.pluginState.available }}</span>
-      </div>
+        {{ words.pluginState[state] }}
+      </span>
+      <Switch
+        v-if="isInstalled(props.plugin)"
+        :model-value="props.isEnabled"
+        :is-busy="props.isPending ?? false"
+        :aria-label="words.pluginSwitch(props.plugin.name)"
+        @update:model-value="onToggleEnabled"
+      />
+      <Button v-else-if="props.canInstall" size="small" @click="onInstall">
+        {{ words.pluginInstall }}
+      </Button>
+    </template>
+    <PluginHeader :plugin="props.plugin" />
 
-      <div v-if="readmeParts.summary" class="plugin-detail__description">
-        <Prose :text="readmeParts.summary" />
-      </div>
+    <PluginNotice
+      v-if="startItem"
+      :item="startItem"
+      :action-label="words.pluginRetry"
+      @run-action="onRetry"
+    />
+    <PluginNotice
+      v-else-if="worstItem"
+      :item="worstItem"
+      :action-label="worstItem.actionLabel"
+      @run-action="onRunAction(worstItem.key)"
+    />
 
-      <div v-if="isExpanded && readmeParts.more" class="plugin-detail__more">
-        <Prose :text="readmeParts.more" />
-      </div>
+    <PluginTabs v-model="activeTab" :tabs="tabs" :label="words.pluginSections" :id-base="idBase" />
 
-      <button
-        v-if="readmeParts.more"
-        type="button"
-        class="plugin-detail__toggle"
-        :aria-expanded="isExpanded"
-        @click="onToggleReadme"
+    <div
+      :id="getPanelElementId(idBase, activeTab)"
+      class="plugin-detail__panel"
+      role="tabpanel"
+      :aria-labelledby="getTabElementId(idBase, activeTab)"
+    >
+      <PluginSettingsCard v-if="activeTab === 'settings' && props.hasSettings">
+        <slot name="settings" />
+      </PluginSettingsCard>
+      <slot v-if="activeTab === 'settings'" name="sections" />
+      <p
+        v-if="activeTab === 'settings' && !props.hasSettings && !hasConnections"
+        class="plugin-detail__nothing"
       >
-        <span>{{ isExpanded ? words.showLess : words.readMore }}</span>
-        <ChevronIcon
-          class="plugin-detail__toggle-icon"
-          :class="{ 'plugin-detail__toggle-icon--open': isExpanded }"
-        />
-      </button>
+        {{ words.noSettings }}
+      </p>
+
+      <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
+        <Prose :text="readmeText" />
+      </div>
+      <p v-else-if="activeTab === 'about'" class="plugin-detail__nothing">
+        {{ props.plugin.description }}
+      </p>
+
+      <PluginContributions
+        v-if="activeTab === 'contributions' && contributions.length > 0"
+        :contributions="contributions"
+        :is-apple="props.isApple ?? false"
+      />
+      <p v-else-if="activeTab === 'contributions'" class="plugin-detail__nothing">
+        {{ words.noContributions }}
+      </p>
+
+      <PluginData
+        v-if="activeTab === 'data'"
+        :plugin-id="props.plugin.id"
+        :plugin-name="props.plugin.name"
+        :file-count="props.dataFileCount"
+        :problem="props.problem"
+        @delete-data="onDeleteData"
+      />
     </div>
-
-    <PluginStopped
-      v-if="props.plugin.info?.failure"
-      :failure="props.plugin.info.failure"
-      @retry="onRetry"
-      @disable="onDisable"
-    />
-
-    <PluginSettingsCard v-if="props.hasSettings" class="plugin-detail__settings">
-      <slot name="settings" />
-    </PluginSettingsCard>
-
-    <PluginData
-      :plugin-id="props.plugin.id"
-      :plugin-name="props.plugin.name"
-      :file-count="props.dataFileCount"
-      :problem="props.problem"
-      @delete-data="onDeleteData"
-    />
-  </div>
+  </SettingsPage>
 </template>
 
 <style scoped>
-.plugin-detail {
-  --detail-max-size: 54rem;
-  --back-spacing: 0.75rem;
-  --header-row-gap: 0.625rem;
-  --header-pad-block: 0.875rem;
-  --header-pad-inline: 1rem;
-  --header-spacing: 1.25rem;
-  --more-pad: 0.625rem;
-  --toggle-gap: 0.25rem;
-  --toggle-pad-block: 0.125rem;
-  --badge-pad-block: 0.125rem;
-  --badge-pad-inline: 0.4375rem;
-  --badge-offset: 0.375rem;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  max-inline-size: var(--detail-max-size);
-  margin-inline: auto;
-}
-
-.plugin-detail__back {
-  align-self: flex-start;
-  margin-block-end: var(--back-spacing);
-}
-
-.plugin-detail__header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: var(--numen-panel-gap);
-  row-gap: var(--header-row-gap);
-  align-items: center;
-  padding: var(--header-pad-block) var(--header-pad-inline);
-  margin-block-end: var(--header-spacing);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  background-color: var(--numen-raised);
-}
-
-.plugin-detail__title {
-  margin: 0;
-  font-size: var(--numen-text-3);
-  font-weight: 600;
-  color: var(--numen-ink);
-}
-
-.plugin-version-badge {
+.plugin-detail__state {
   display: inline-flex;
   align-items: center;
-  padding: var(--badge-pad-block) var(--badge-pad-inline);
-  border-radius: var(--numen-radius-pill);
-  background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
-  color: var(--numen-ink);
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  vertical-align: middle;
-  margin-inline-start: var(--badge-offset);
+  gap: 0.375rem;
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-2);
 }
 
-.plugin-detail__master-switch {
-  justify-self: end;
+.plugin-detail__dot {
+  inline-size: 0.375rem;
+  block-size: 0.375rem;
+  border-radius: 50%;
+  background-color: var(--numen-hushed);
+}
+
+.plugin-detail__dot--stopped,
+.plugin-detail__dot--error {
+  background-color: var(--numen-alarm);
+}
+
+.plugin-detail__panel {
   display: flex;
-  align-items: center;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.plugin-detail__absent {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
-
-.plugin-detail__description {
-  grid-column: 1 / -1;
+.plugin-detail__nothing {
   margin: 0;
+  padding-inline: var(--settings-card-pad);
   color: var(--numen-hushed);
-  font-size: var(--numen-text-2);
 }
 
-.plugin-detail__description :deep(.prose) {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-2);
+.plugin-detail__readme {
+  padding: var(--settings-card-pad);
 }
 
-.plugin-detail__description :deep(p:first-child),
-.plugin-detail__more :deep(:first-child) {
+.plugin-detail__readme :deep(.prose) {
+  max-inline-size: 36rem;
+}
+
+.plugin-detail__readme :deep(.prose > :first-child) {
   margin-block-start: 0;
 }
 
-.plugin-detail__description :deep(p:last-child),
-.plugin-detail__more :deep(:last-child) {
+.plugin-detail__readme :deep(.prose > :last-child) {
   margin-block-end: 0;
-}
-
-.plugin-detail__more {
-  grid-column: 1 / -1;
-  padding-block-start: var(--more-pad);
-  border-block-start: var(--numen-stroke) solid var(--numen-rule);
-  font-size: var(--numen-text-2);
-}
-
-.plugin-detail__toggle {
-  grid-column: 1 / -1;
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--toggle-gap);
-  padding: var(--toggle-pad-block) 0;
-  border: none;
-  background: none;
-  color: var(--numen-hushed);
-  font-family: inherit;
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.plugin-detail__toggle:hover {
-  color: var(--numen-ink);
-}
-
-.plugin-detail__toggle-icon {
-  transition: transform var(--numen-motion-hover) ease;
-}
-
-.plugin-detail__toggle-icon--open {
-  transform: rotate(180deg);
 }
 </style>

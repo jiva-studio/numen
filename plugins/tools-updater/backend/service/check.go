@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/usecase/updates"
 )
 
-func newCheckHandler(checker *updates.Checker) func(context.Context, api.CheckRequest) (api.Status, error) {
+func newCheckHandler(checker *updates.Checker, releaser process.Releaser) func(context.Context, api.CheckRequest) (api.Status, error) {
 	return func(ctx context.Context, req api.CheckRequest) (api.Status, error) {
+		defer process.ReleaseAndLog(ctx, releaser)
 		app := updates.App{Version: req.App.Version, Build: req.App.Build, Platform: req.App.Platform}
 		status, err := checker.Check(ctx, app)
 		if err != nil {

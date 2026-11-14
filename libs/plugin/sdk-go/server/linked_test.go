@@ -17,7 +17,7 @@ import (
 func TestALinkedHandlerAnswersWithTheTokenOfItsVariables(t *testing.T) {
 	var configured map[string]string
 	handler, err := NewLinkedHandler(map[string]string{tokenVar: "linked-token"}, func(s *Server) error {
-		s.SetUpdateConfig(func(values map[string]string, _ Secrets) { configured = values })
+		s.SetUpdateConfig(func(values map[string]string) { configured = values })
 		return nil
 	})
 	if err != nil {
@@ -109,7 +109,7 @@ func TestALinkedHandlerWhoseMountFailsClosesWhatItAdded(t *testing.T) {
 // result on a later call.
 func TestCloseJoinsTheErrorsOfItsClosers(t *testing.T) {
 	first, second := errors.New("first failed"), errors.New("second failed")
-	s := New(WithPort(0), WithToken("close-token"))
+	s := New(withPort(0), withToken("close-token"))
 	s.OnClose(func() error { return first })
 	s.OnClose(func() error { return nil })
 	s.OnClose(func() error { return second })

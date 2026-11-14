@@ -21,7 +21,7 @@ const importerID = "md.numen.tools.media.importer"
 const importerManifest = `{
 	"id": "md.numen.tools.media.importer", "name": "Importer", "version": "1.0.0",
 	"capabilities": [], "targets": ["desktop.editor"],
-	"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/x"},
+	"services": ["numen.v1.PluginToolService"], "backend": {"entrypoint": "bin/x"},
 	"settings": [
 		{"key": "ytDlp", "type": "string", "title": "yt-dlp", "default": ""},
 		{"key": "ffmpeg", "type": "string", "title": "ffmpeg", "default": ""},

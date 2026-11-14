@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { STAND_IN_MODEL, startStandIns } from './stand-ins.mjs'
+import { STAND_IN_CONNECTION, STAND_IN_MODEL, startStandIns } from './stand-ins.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const sourceVault = path.resolve(__dirname, '../../../vault')
@@ -33,10 +33,27 @@ for (const dir of [cacheDir, dataDir, stateDir]) fs.mkdirSync(dir, { recursive: 
 // tests/support/certificate.ts names the same file.
 const certificateFile = path.join(os.tmpdir(), `numen-e2e-certificate-${port}.pem`)
 fs.rmSync(certificateFile, { force: true })
+// A run that names the port of another debug server in NUMEN_E2E_SHARED_CERTIFICATE_PORT serves the
+// certificate and key of that server, so one browser trusts both.
+const sharedPort = process.env.NUMEN_E2E_SHARED_CERTIFICATE_PORT
+const certificateEnv = sharedPort
+  ? {
+      NUMEN_DEBUG_TLS_USE_CERT: path.join(os.tmpdir(), `numen-e2e-certificate-${sharedPort}.pem`),
+      NUMEN_DEBUG_TLS_USE_KEY: path.join(os.tmpdir(), `numen-e2e-key-${sharedPort}.pem`),
+    }
+  : { NUMEN_DEBUG_TLS_CERT: certificateFile }
 
 const standIns = await startStandIns()
 
-// The review's agent panel answers from numen's own agent over the stand-in chat API. The agents
+// The connection of numen's own agent, which the agent panel runs its tasks on.
+const NUMEN_AGENT_CONNECTION = 'c57a4d200'
+// The row of that connection, which names the stand-in model of the stand-in connection.
+const NUMEN_AGENT_ROW = {
+  connection: NUMEN_AGENT_CONNECTION,
+  model: `${STAND_IN_CONNECTION}|${STAND_IN_MODEL}`,
+}
+
+// The review's agent panel answers from numen's own agent through a connection to the stand-in chat API. The agents
 // that run a program the machine has installed stay off: those programs reach their own services.
 const settingsDir =
   process.platform === 'darwin'
@@ -48,8 +65,24 @@ fs.writeFileSync(
   JSON.stringify(
     {
       v: 1,
-      app: { agent: { use: 'numen' } },
-      'md.numen.agents.numen': { baseUrl: standIns.chatUrl, model: STAND_IN_MODEL },
+      connections: [
+        {
+          id: STAND_IN_CONNECTION,
+          type: 'md.numen.connections.llm/openai-compatible',
+          name: 'Stand-in',
+          revision: 1,
+          fields: { baseUrl: standIns.chatUrl },
+        },
+        {
+          id: NUMEN_AGENT_CONNECTION,
+          type: 'md.numen.agents.numen/numen',
+          name: 'Numen agent',
+          revision: 1,
+          fields: {},
+        },
+      ],
+      'md.numen.views.agent.chat': { connections: [NUMEN_AGENT_ROW] },
+      'md.numen.views.flashcards.studio': { agentConnections: [NUMEN_AGENT_ROW] },
       'md.numen.agents.claude': { enabled: false },
       'md.numen.agents.codex': { enabled: false },
       'md.numen.agents.antigravity': { enabled: false },
@@ -70,6 +103,10 @@ function cleanup() {
       console.warn(`could not remove ${dir}: ${error.message}`)
     }
   }
+  // A vault in a folder of its own leaves that folder.
+  if (process.env.NUMEN_FLASHCARDS_VAULT_FOLDER) {
+    fs.rmSync(path.dirname(vault), { recursive: true, force: true })
+  }
 }
 
 const child = spawn(binaryPath, [`-debug-http-addr=127.0.0.1:${port}`, `-debug-vault=${vault}`], {
@@ -81,8 +118,11 @@ const child = spawn(binaryPath, [`-debug-http-addr=127.0.0.1:${port}`, `-debug-v
     XDG_CACHE_HOME: cacheDir,
     XDG_DATA_HOME: dataDir,
     XDG_STATE_HOME: stateDir,
+    // The run has no session bus and no Secret Service, so the keys of its connections are kept in a file.
+    XDG_RUNTIME_DIR: path.join(homeDir, 'run'),
+    DBUS_SESSION_BUS_ADDRESS: '',
     NUMEN_PLUGINS_PATH: pluginsPath,
-    NUMEN_DEBUG_TLS_CERT: certificateFile,
+    ...certificateEnv,
   },
 })
 

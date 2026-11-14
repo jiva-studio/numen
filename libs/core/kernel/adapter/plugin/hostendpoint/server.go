@@ -40,8 +40,8 @@ func (s *Server) Open(ctx context.Context) (int, error) {
 }
 
 func (s *Server) hasServices() bool {
-	return s.callers.Lent.GetCompleter() != nil || s.callers.Lent.GetPluginVault() != nil ||
-		s.callers.Dependencies() != nil || s.callers.Lent.GetPluginWork() != nil ||
+	return s.callers.Lent.GetModelCalls() != nil || s.callers.Lent.GetPluginVault() != nil ||
+		s.callers.Lent.GetPluginWork() != nil ||
 		s.callers.Lent.GetPluginSearch() != nil
 }
 
