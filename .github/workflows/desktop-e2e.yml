@@ -3,8 +3,6 @@ name: End-to-End
 # The caller chooses the scope from the change: `git diff --name-only base...head |
 # node tests/e2e/desktop/scripts/select-tests.mjs scope` prints `scope=<scope>`.
 on:
-  push:
-    branches: [main]
   workflow_call:
     inputs:
       scope:
