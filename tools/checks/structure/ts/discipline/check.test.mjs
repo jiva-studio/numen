@@ -119,6 +119,7 @@ describe("the suppressions", () => {
     assert.deepEqual(data('{ "exempt": { "files": ["libs/x/b.go"] } }'), ["file list exempt.files"]);
     assert.deepEqual(data('{ "go": { "libs/note": ["libs/atomicfile"] }, "words": ["get", "set"] }'), []);
     assert.deepEqual(found("tools/checks/rules.json", '[{ "paths": ["tools/lint-layers/layers.mjs"] }]'), []);
+    assert.deepEqual(found("tools/checks/structure/ts/story-geometry/allowlist.json", '[{ "file": "plugins/p/frontend/A.stories.ts", "reason": "it is drawn" }]'), []);
   });
   it("does not read a marker inside a string, or generated code", () => {
     assert.deepEqual(found("a.ts", "const a = '// eslint-disable-next-line'"), []);

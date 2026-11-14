@@ -124,6 +124,16 @@ const REPOSITORY_PATH = /^(apps|libs|plugins|tools|tests)(\/[^/*?{}\s]+)+$/;
 /** The data of a check: a JSON file in the folder of a check, below the registry at the root of `tools/checks`. */
 const CHECK_DATA = /^tools\/checks\/.+\/[^/]+\.json$/;
 
+/**
+ * The named lists the owner kept, each with its reason (#1949). The file and package list rules do not apply to these
+ * files. The Go files are named so that a later scan of the Go checks keeps them too.
+ */
+export const KEPT_LISTS = new Map([
+  ["tools/checks/structure/ts/story-geometry/allowlist.json", "the stories that read geometry stay listed until each is rewritten or replaced"],
+  ["tools/checks/structure/go/adapter-technology/rule_test.go", "the driven adapters that call no technology are a named exception list with a reason per entry (#1957)"],
+  ["tools/checks/structure/go/plugin-copies-agree/rule_test.go", "the copy sets stay explicit: plugin duplicates may drift, so a copy set cannot be derived"],
+]);
+
 /** The comments of a TypeScript or JavaScript source with their lines. */
 function getScriptComments(file, text, lineOffset = 0) {
   const ts = require("typescript");
@@ -282,6 +292,7 @@ export function findSuppressions(sources) {
       }
     }
     if (ESLINT_CONFIG.test(file)) found.push(...findFileEntriesInConfig(file, text));
+    if (KEPT_LISTS.has(file)) continue;
     if (CHECK_SCRIPT.test(file) && !file.endsWith(".test.mjs")) found.push(...findFileListsInChecks(file, text));
     if (CHECK_DATA.test(file)) found.push(...findFileListsInCheckData(file, text));
   }
