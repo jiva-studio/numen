@@ -165,6 +165,9 @@ func (noTexts) IsTextSource(context.Context, string) (bool, error) { return fals
 // Recipe returns the recipe that names the version reader and the chunk sizes.
 func (u Index) Recipe() string { return chunking.GetTextVersionRecipe(u.sizes.Resolve()) }
 
+// IsRebuildingIndex reports whether a source the index remembers is cut again.
+func (u Index) IsRebuildingIndex() bool { return u.shouldRebuildIndex }
+
 type noTextReaders struct {
 	readers vaultport.VaultReaders
 }

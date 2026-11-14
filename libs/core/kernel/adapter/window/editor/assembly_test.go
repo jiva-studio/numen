@@ -198,7 +198,11 @@ func (w readingParts) ReadWholeVault(
 		return nil
 	}
 	cutter := w.cutNotes()
-	texts := filetext.NewHandlingIndex(filetext.NewIndex(w.GetVaultReaders(), db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, w.texts, cutter.Sizes, cutter.Legibility, rebuild), nil, readNote)
+	base := filetext.NewIndex(
+		w.GetVaultReaders(), db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup,
+		w.texts, cutter.Sizes, cutter.Legibility, rebuild,
+	)
+	texts := filetext.NewHandlingIndex(base, nil, readNote)
 	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{}, derivedCoreFolder)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err

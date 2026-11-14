@@ -148,7 +148,10 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 
 	limitCtx := limit(t.Context())
 	notes := scanner(readers, db)
-	books := filetext.NewIndex(timedOut{limit: limitCtx}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: timedOut{limit: limitCtx}}, chunking.Sizes{}, chunking.Legibility{}, false)
+	books := filetext.NewIndex(
+		timedOut{limit: limitCtx}, db.Sources(), db.Sources(), db.Sources(), db.Sources(),
+		testsupport.Texts{Readers: timedOut{limit: limitCtx}}, chunking.Sizes{}, chunking.Legibility{}, false,
+	)
 	counted := &counting{VaultReaders: readers}
 	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources(), nil, nil, sourcefake.Wrap(unwilling{}))
 	making := indexing.NewReadWholeVault(notes, books, embed)

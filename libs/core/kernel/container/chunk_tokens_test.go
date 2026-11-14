@@ -202,18 +202,23 @@ func TestFileTextsAreChunkedAtTheLimitOfTheCell(t *testing.T) {
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	cfg.Resources.Chunks.Set(256)
+	smallSizes := cfg.CutNotes().Sizes
 	small, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg.Resources.Chunks.Set(512)
+	largeSizes := cfg.CutNotes().Sizes
 	large, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if small.Sizes.Limit != 512 || large.Sizes.Limit != 1024 {
-		t.Errorf("file texts are cut at %d and %d characters, want 512 and 1024", small.Sizes.Limit, large.Sizes.Limit)
+	if smallSizes.Limit != 512 || largeSizes.Limit != 1024 {
+		t.Errorf("notes are cut at %d and %d characters, want 512 and 1024", smallSizes.Limit, largeSizes.Limit)
+	}
+	if small.Recipe() != chunking.GetTextVersionRecipe(smallSizes) || large.Recipe() != chunking.GetTextVersionRecipe(largeSizes) {
+		t.Errorf("file texts are cut by %q and %q, want the sizes of the notes", small.Recipe(), large.Recipe())
 	}
 }
 
@@ -224,15 +229,16 @@ func TestEverySiteThatChunksNotesUsesTheSizeThePluginReports(t *testing.T) {
 	v := vaultfixture.NewVault(t, map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
 	const limit = 600
 
-	if got := container.Scan(cfg, db).Cut.Sizes.Limit; got != limit {
-		t.Errorf("Scan cuts at %d characters, want %d", got, limit)
+	scanSizes := container.Scan(cfg, db).Cut.Sizes
+	if scanSizes.Limit != limit {
+		t.Errorf("Scan cuts at %d characters, want %d", scanSizes.Limit, limit)
 	}
 	texts, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if texts.Sizes.Limit != limit {
-		t.Errorf("IndexTexts cuts at %d characters, want %d", texts.Sizes.Limit, limit)
+	if want := chunking.GetTextVersionRecipe(scanSizes); texts.Recipe() != want {
+		t.Errorf("IndexTexts cuts by %q, want %q", texts.Recipe(), want)
 	}
 	opener := container.VaultOpener(cfg, db)
 	if got := opener.GetScan().Cut.Sizes.Limit; got != limit {

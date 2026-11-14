@@ -143,7 +143,10 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	stopErr := errors.New("the books cannot be cut")
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Sources(), db.Sources(), uncuttable{SourceBacklog: db.Sources(), err: stopErr}, db.Sources(), testsupport.Texts{Readers: readers}, chunking.Sizes{}, chunking.Legibility{}, false),
+		filetext.NewIndex(
+			readers, db.Sources(), db.Sources(), uncuttable{SourceBacklog: db.Sources(), err: stopErr}, db.Sources(),
+			testsupport.Texts{Readers: readers}, chunking.Sizes{}, chunking.Legibility{}, false,
+		),
 		vectors.NewEmbed(readers, db.Sources(), db.Sources(), nil, nil, nil),
 	)
 
@@ -259,7 +262,10 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 	stopErr := errors.New("the vault cannot be read")
 	cutting := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(unreadable{err: stopErr}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: unreadable{err: stopErr}}, chunking.Sizes{}, chunking.Legibility{}, false),
+		filetext.NewIndex(
+			unreadable{err: stopErr}, db.Sources(), db.Sources(), db.Sources(), db.Sources(),
+			testsupport.Texts{Readers: unreadable{err: stopErr}}, chunking.Sizes{}, chunking.Legibility{}, false,
+		),
 		vectors.NewEmbed(readers, db.Sources(), db.Sources(), nil, nil, nil),
 	)
 	err := cutting.CutOne(t.Context(), v, "library/A Book.epub")
