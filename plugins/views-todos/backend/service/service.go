@@ -45,7 +45,6 @@ func listTasks(tasks *index.Index) func(context.Context, api.ListTasksRequest) (
 	}
 }
 
-// getLimit returns the number of tasks a request gets: 500 when it asks for none, 2000 at most.
 func getLimit(asked int) int {
 	switch {
 	case asked <= 0:
