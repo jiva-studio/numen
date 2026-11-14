@@ -79,7 +79,6 @@ func LoadFixture(t *testing.T, dir string) []*packages.Package {
 	return loadFixture(t, dir, nil)
 }
 
-// LoadFixtureFor loads the fixture as LoadFixture does, built for platform.
 func LoadFixtureFor(t *testing.T, dir string, platform Platform) []*packages.Package {
 	t.Helper()
 	return loadFixture(t, dir, platform.GetEnv())
