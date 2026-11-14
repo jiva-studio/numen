@@ -89,6 +89,9 @@ type Handling struct {
 	File           string   `json:"file"`
 	Normalize      bool     `json:"normalize"`
 	ExtraInputs    []string `json:"extraInputs"`
+	// Tokenizer is the version of the tokenizer the plugin reads the text with: empty for a connection,
+	// the mock model and a tokenizer whose ids did not change since versions were kept.
+	Tokenizer string `json:"tokenizer"`
 }
 
 // Role is what a text is embedded for.
@@ -116,10 +119,14 @@ func (h Handling) Apply(role Role, texts []string) []string {
 	return out
 }
 
-// Hash returns a short value that changes with the prefixes, the model file, the token limit and the
-// normalization, and with nothing else.
+// Hash returns a short value that changes with the prefixes, the model file, the token limit, the
+// normalization and the tokenizer version, and with nothing else. A handling without a tokenizer version
+// hashes as it did before the version joined the hash, so its recipe stays.
 func (h Handling) Hash(maxTokens int) string {
 	parts := []string{h.QueryPrefix, h.DocumentPrefix, h.File, strconv.Itoa(maxTokens), strconv.FormatBool(h.Normalize)}
+	if h.Tokenizer != "" {
+		parts = append(parts, h.Tokenizer)
+	}
 	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
 	return hex.EncodeToString(sum[:])[:handlingHashLength]
 }
@@ -133,6 +140,7 @@ func (p Profile) GetHandling() Handling {
 		File:           p.GetModelFile(),
 		Normalize:      p.IsNormalized(),
 		ExtraInputs:    p.ExtraInputs,
+		Tokenizer:      "",
 	}
 }
 
@@ -369,5 +377,6 @@ func (t *Profiles) GetCurated() []Profile {
 
 // IsZero reports whether the handling changes nothing.
 func (h Handling) IsZero() bool {
-	return h.QueryPrefix == "" && h.DocumentPrefix == "" && h.File == "" && !h.Normalize && len(h.ExtraInputs) == 0
+	return h.QueryPrefix == "" && h.DocumentPrefix == "" && h.File == "" && !h.Normalize && len(h.ExtraInputs) == 0 &&
+		h.Tokenizer == ""
 }
