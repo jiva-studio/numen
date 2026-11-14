@@ -84,7 +84,7 @@ $$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{fe
 - **Slice isolation**: A slice does not import from a sibling slice on the same layer. Shared code is in a lower layer. There is no `@x` cross-import; `dependency-graph` fails on one. A slice is imported from a higher layer only through its `index.ts`.
 - **Import aliasing**: Imports crossing slice boundaries use the `@/` alias (e.g. `@/entities/note`), while intra-slice imports remain relative (`./model`, `./types`).
 - **Segments**: Inside a slice the direction is `ui` → `model` → `api` → `lib`.
-- **Calls to the core**: The `model` of a slice imports its own `api` directly. A component takes props only and emits events.
+- **Calls to the core**: The `api` of a slice is a factory over the clients the window builds once from its transport; the window composition passes each api to the model that calls it, and a test passes a router transport. A component takes props only and emits events; when a component first needs an api, it reads it through one `provide`/`inject` at the window root.
 - **Commands**: A command is declared in the `model/commands.ts` of the feature that owns it; `entities/command` holds the `Command` type and `shared/model/command` the palette engine (registry, steps, values, keys, icons).
 
 Component architecture enforces separation of concerns:
