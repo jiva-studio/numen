@@ -61,16 +61,22 @@ func TestPluginIsolationRule_RejectsForeignPackagesInTheClosure(t *testing.T) {
 	own := &packages.Package{ID: "own", PkgPath: load.PluginsPrefix + "sample/backend/service"}
 	viaSDK := &packages.Package{ID: "via", PkgPath: load.SdkModule + "/via", Imports: map[string]*packages.Package{"x": core}}
 	notesViaSDK := &packages.Package{ID: "notesvia", PkgPath: load.SdkModule + "/notesvia", Imports: map[string]*packages.Package{"x": notes}}
+	sharedLib := &packages.Package{ID: "shared", PkgPath: load.NumenRoot + "libs/shared/tokenizer", Imports: map[string]*packages.Package{"x": {ID: "uniseg", PkgPath: "github.com/rivo/uniseg"}}}
+	atomicfile := &packages.Package{ID: "atomicfile", PkgPath: load.NumenRoot + "libs/atomicfile"}
+	sharedLookalike := &packages.Package{ID: "lookalike", PkgPath: load.NumenRoot + "libs/sharedx/onnx"}
 	for name, one := range map[string]struct {
 		imports map[string]*packages.Package
 		want    []string
 	}{
-		"own and sdk packages":     {map[string]*packages.Package{"a": own, "b": sdk}, nil},
-		"another plugin":           {map[string]*packages.Package{"a": other}, []string{other.PkgPath}},
-		"the core":                 {map[string]*packages.Package{"a": core}, []string{core.PkgPath}},
-		"the notes library":        {map[string]*packages.Package{"a": notes}, []string{notes.PkgPath}},
-		"the core through the sdk": {map[string]*packages.Package{"a": viaSDK}, []string{core.PkgPath}},
-		"notes through the sdk":    {map[string]*packages.Package{"a": notesViaSDK}, nil},
+		"own and sdk packages":                 {map[string]*packages.Package{"a": own, "b": sdk}, nil},
+		"another plugin":                       {map[string]*packages.Package{"a": other}, []string{other.PkgPath}},
+		"the core":                             {map[string]*packages.Package{"a": core}, []string{core.PkgPath}},
+		"the notes library":                    {map[string]*packages.Package{"a": notes}, []string{notes.PkgPath}},
+		"the core through the sdk":             {map[string]*packages.Package{"a": viaSDK}, []string{core.PkgPath}},
+		"notes through the sdk":                {map[string]*packages.Package{"a": notesViaSDK}, nil},
+		"a shared library":                     {map[string]*packages.Package{"a": sharedLib}, nil},
+		"the atomic file library":              {map[string]*packages.Package{"a": atomicfile}, []string{atomicfile.PkgPath}},
+		"a library named like the shared ones": {map[string]*packages.Package{"a": sharedLookalike}, []string{sharedLookalike.PkgPath}},
 	} {
 		root := &packages.Package{ID: "root", PkgPath: load.PluginsPrefix + "sample/backend", Imports: one.imports}
 		got := getForeignDependencies(root)

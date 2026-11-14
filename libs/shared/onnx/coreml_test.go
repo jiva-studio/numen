@@ -4,31 +4,29 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 )
 
-func grantModel(t *testing.T) (shared, model string) {
+// grantModel returns a cache root the caller hands to the module and a model file outside it.
+func grantModel(t *testing.T) (root, model string) {
 	t.Helper()
-	shared = t.TempDir()
-	t.Setenv(cache.EnvSharedDir, shared)
-	t.Setenv(cache.EnvCacheDir, t.TempDir())
+	root = t.TempDir()
 	model = filepath.Join(t.TempDir(), "model.onnx")
 	if err := os.WriteFile(model, []byte("weights"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return shared, model
+	return root, model
 }
 
 func TestGetCoreMLCacheDirIsMadeForThisUserAlone(t *testing.T) {
-	shared, model := grantModel(t)
-	dir, err := GetCoreMLCacheDir(model)
+	root, model := grantModel(t)
+	dir, err := GetCoreMLCacheDir(root, model)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if filepath.Dir(filepath.Dir(dir)) != shared || filepath.Base(filepath.Dir(dir)) != "coreml" {
-		t.Errorf("folder %s is not coreml/<key> in the shared directory %s", dir, shared)
+	if filepath.Dir(filepath.Dir(dir)) != root || filepath.Base(filepath.Dir(dir)) != "coreml" {
+		t.Errorf("folder %s is not coreml/<key> in the cache root %s", dir, root)
 	}
 	info, err := os.Stat(dir)
 	if err != nil || !info.IsDir() {
@@ -39,15 +37,33 @@ func TestGetCoreMLCacheDirIsMadeForThisUserAlone(t *testing.T) {
 	}
 }
 
-func TestACompiledModelIsStoredOncePerModelAndNotPerPlugin(t *testing.T) {
-	_, model := grantModel(t)
-	first, err := GetCoreMLCacheDir(model)
+// The plugin resolves the cache root and passes it; the module reads no variable of the host to find one.
+func TestGetCoreMLCacheDirKeepsTheCompiledModelInTheGivenRoot(t *testing.T) {
+	root, model := grantModel(t)
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CACHE_HOME", "")
+	t.Setenv("NUMEN_PLUGIN_CACHE_DIR", t.TempDir())
+	t.Setenv("NUMEN_SHARED_CACHE_DIR", t.TempDir())
+
+	dir, err := GetCoreMLCacheDir(root, model)
+
+	if err != nil || !strings.HasPrefix(dir, root+string(filepath.Separator)) {
+		t.Errorf("GetCoreMLCacheDir(%q) = %q, %v, want a folder inside the root", root, dir, err)
+	}
+	other := t.TempDir()
+	if moved, err := GetCoreMLCacheDir(other, model); err != nil || !strings.HasPrefix(moved, other+string(filepath.Separator)) {
+		t.Errorf("GetCoreMLCacheDir(%q) = %q, %v, want a folder inside that root", other, moved, err)
+	}
+}
+
+func TestACompiledModelIsStoredOncePerModel(t *testing.T) {
+	root, model := grantModel(t)
+	first, err := GetCoreMLCacheDir(root, model)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv(cache.EnvCacheDir, t.TempDir())
 
-	second, err := GetCoreMLCacheDir(model)
+	second, err := GetCoreMLCacheDir(root, model)
 
 	if err != nil || second != first {
 		t.Errorf("GetCoreMLCacheDir() = %q, %v, want %q", second, err, first)
@@ -55,29 +71,34 @@ func TestACompiledModelIsStoredOncePerModelAndNotPerPlugin(t *testing.T) {
 	if err := os.WriteFile(model, []byte("changed weights"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if changed, err := GetCoreMLCacheDir(model); err != nil || changed == first {
+	if changed, err := GetCoreMLCacheDir(root, model); err != nil || changed == first {
 		t.Errorf("a changed model got the folder %q again, %v", changed, err)
 	}
 }
 
-func TestAHostThatSharesNothingKeepsTheCompiledModelInThePluginFolder(t *testing.T) {
-	_, model := grantModel(t)
-	t.Setenv(cache.EnvSharedDir, "")
-	own := os.Getenv(cache.EnvCacheDir)
+// A provisioned model is keyed by the sha256 its .ready file records, the key the plugin SDK gives
+// the same file, so the folder stays the same when the module takes over the key from the SDK.
+func TestAProvisionedModelIsKeyedByItsPinnedSum(t *testing.T) {
+	root, model := grantModel(t)
+	sum := strings.Repeat("ab", 32)
+	ready := "model.onnx\n" + strings.ToUpper(sum) + "\n"
+	if err := os.WriteFile(filepath.Join(filepath.Dir(model), ".ready"), []byte(ready), 0o600); err != nil {
+		t.Fatal(err)
+	}
 
-	dir, err := GetCoreMLCacheDir(model)
+	dir, err := GetCoreMLCacheDir(root, model)
 
-	if err != nil || filepath.Dir(filepath.Dir(dir)) != own {
-		t.Errorf("GetCoreMLCacheDir() = %q, %v, want it inside %s", dir, err, own)
+	if want := filepath.Join(root, "coreml", sum); err != nil || dir != want {
+		t.Errorf("GetCoreMLCacheDir() = %q, %v, want %q", dir, err, want)
 	}
 }
 
 func TestDeleteCoreMLCache_EmptiesDirAndReportsContent(t *testing.T) {
-	_, model := grantModel(t)
-	if DeleteCoreMLCache(model) {
+	root, model := grantModel(t)
+	if DeleteCoreMLCache(root, model) {
 		t.Error("an empty cache held something")
 	}
-	dir, err := GetCoreMLCacheDir(model)
+	dir, err := GetCoreMLCacheDir(root, model)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +108,7 @@ func TestDeleteCoreMLCache_EmptiesDirAndReportsContent(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, lockName), nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if !DeleteCoreMLCache(model) {
+	if !DeleteCoreMLCache(root, model) {
 		t.Error("a cache with a compiled model held nothing")
 	}
 	if entries, err := os.ReadDir(dir); err != nil || len(entries) != 1 || entries[0].Name() != lockName {
@@ -117,26 +138,19 @@ func TestGetCoreMLOptionsPlacesADefaultModelOnAllUnits(t *testing.T) {
 }
 
 func TestCoreMLCacheErrors(t *testing.T) {
-	_, model := grantModel(t)
+	root, model := grantModel(t)
 	missingModel := filepath.Join(t.TempDir(), "missing.onnx")
-	if _, err := GetCoreMLCacheDir(missingModel); err == nil {
+	if _, err := GetCoreMLCacheDir(root, missingModel); err == nil {
 		t.Fatal("GetCoreMLCacheDir with missing model succeeded, want error")
 	}
-	if DeleteCoreMLCache(missingModel) {
+	if DeleteCoreMLCache(root, missingModel) {
 		t.Fatal("DeleteCoreMLCache with missing model returned true, want false")
 	}
-
-	t.Setenv(cache.EnvSharedDir, model)
-	if _, err := GetCoreMLCacheDir(model); err == nil {
-		t.Fatal("GetCoreMLCacheDir with file as shared dir succeeded, want error")
+	if _, err := GetCoreMLCacheDir(model, model); err == nil {
+		t.Fatal("GetCoreMLCacheDir with a file as the cache root succeeded, want error")
 	}
-
-	t.Setenv(cache.EnvSharedDir, "")
-	t.Setenv(cache.EnvCacheDir, "")
-	t.Setenv("HOME", "")
-	t.Setenv("XDG_CACHE_HOME", "")
-	if _, err := GetCoreMLCacheDir(model); err == nil {
-		t.Fatal("GetCoreMLCacheDir without cache env or HOME succeeded, want error")
+	if _, err := GetCoreMLCacheDir("", model); err == nil {
+		t.Fatal("GetCoreMLCacheDir with an empty cache root succeeded, want error")
 	}
 }
 
@@ -144,8 +158,8 @@ func TestDeleteCoreMLCacheReturnsFalseWhenRemoveFails(t *testing.T) {
 	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
 		t.Skip("chmod permission check requires non-root unix")
 	}
-	_, model := grantModel(t)
-	dir, err := GetCoreMLCacheDir(model)
+	root, model := grantModel(t)
+	dir, err := GetCoreMLCacheDir(root, model)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +178,7 @@ func TestDeleteCoreMLCacheReturnsFalseWhenRemoveFails(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	if DeleteCoreMLCache(model) {
+	if DeleteCoreMLCache(root, model) {
 		t.Fatal("DeleteCoreMLCache returned true when removing an entry failed")
 	}
 }
