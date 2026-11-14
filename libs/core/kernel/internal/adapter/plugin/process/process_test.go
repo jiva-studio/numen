@@ -281,29 +281,16 @@ func TestProcessLimits(t *testing.T) {
 	}
 }
 
-func getGpuEnvironment() []string {
+func getHostEnvironment() []string {
 	return []string{
 		"PATH=/usr/bin",
-		"LD_LIBRARY_PATH=/opt/cuda/lib64",
-		"CUDA_VISIBLE_DEVICES=0",
-		"CUDA_PATH=/opt/cuda",
-		"CUDA_PATH_V12_4=/opt/cuda-12.4",
-		"CUDA_HOME=/opt/cuda",
-		"NVIDIA_VISIBLE_DEVICES=all",
-		"NVIDIA_DRIVER_CAPABILITIES=compute,utility",
-		"ROCR_VISIBLE_DEVICES=1",
-		"HIP_VISIBLE_DEVICES=1",
-		"CUDA_API_KEY=1",
-		"NUMEN_ONNX_PROVIDER=cuda",
-		"NUMEN_ONNX_RUNTIME_LIB=/opt/onnx/libonnxruntime.so",
-		"OPENAI_API_KEY=1",
-	}
-}
-
-func getRuntimeVarNames() []string {
-	return []string{
-		"LD_LIBRARY_PATH", "CUDA_VISIBLE_DEVICES", "CUDA_PATH", "CUDA_PATH_V12_4", "CUDA_HOME",
-		"NVIDIA_VISIBLE_DEVICES", "NVIDIA_DRIVER_CAPABILITIES", "ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
+		"LOADER_PATH=/opt/accel/lib",
+		"ACCEL_VISIBLE_DEVICES=0",
+		"ACCEL_PATH_V12_4=/opt/accel-12.4",
+		"ACCEL_PATH_V12_TOKEN=1",
+		"ACCEL_API_KEY=1",
+		"SAMPLE_RUNTIME_LIB=/opt/sample/libsample.so",
+		"OTHER_SERVICE_KEY=1",
 	}
 }
 
@@ -317,34 +304,29 @@ func readEnvironment(env []string) map[string]string {
 	return observed
 }
 
-func TestSanitizeEnvironment_ONNXPluginKeepsLoaderVariables(t *testing.T) {
-	pluginVars := []string{"NUMEN_ONNX_RUNTIME_LIB=/models/libonnxruntime.so", "NUMEN_ONNX_PROVIDER=auto"}
-	observed := readEnvironment(SanitizeEnvironment(getGpuEnvironment(), pluginVars, []string{"onnxruntime"}))
+func TestSanitizeEnvironment_PassesTheVariablesADependencyDeclares(t *testing.T) {
+	declared := []string{"LOADER_PATH", "ACCEL_*", "accel_visible_devices"}
+	observed := readEnvironment(SanitizeEnvironment(getHostEnvironment(), nil, declared))
 
-	for _, name := range getRuntimeVarNames() {
-		if _, ok := observed[name]; !ok {
-			t.Errorf("%s is missing from the launch environment", name)
+	want := map[string]string{"LOADER_PATH": "/opt/accel/lib", "ACCEL_VISIBLE_DEVICES": "0", "ACCEL_PATH_V12_4": "/opt/accel-12.4", "PATH": "/usr/bin"}
+	for name, value := range want {
+		if observed[name] != value {
+			t.Errorf("%s = %q, want %q", name, observed[name], value)
 		}
 	}
-	if observed["CUDA_VISIBLE_DEVICES"] != "0" || observed["LD_LIBRARY_PATH"] != "/opt/cuda/lib64" {
-		t.Errorf("the variables changed on the way: %v", observed)
-	}
-	if observed["NUMEN_ONNX_RUNTIME_LIB"] != "/models/libonnxruntime.so" || observed["NUMEN_ONNX_PROVIDER"] != "auto" {
-		t.Errorf("the host's own NUMEN variables reached the plugin: %v", observed)
-	}
-	for _, secret := range []string{"CUDA_API_KEY", "OPENAI_API_KEY"} {
-		if _, ok := observed[secret]; ok {
-			t.Errorf("%s reached an ONNX Runtime plugin", secret)
+	for _, name := range []string{"ACCEL_PATH_V12_TOKEN", "ACCEL_API_KEY", "OTHER_SERVICE_KEY", "SAMPLE_RUNTIME_LIB"} {
+		if _, ok := observed[name]; ok {
+			t.Errorf("%s reached the plugin", name)
 		}
 	}
 }
 
-func TestSanitizeEnvironment_NonRuntimePluginDropsAcceleratorVars(t *testing.T) {
-	for _, runtimes := range [][]string{nil, {}} {
-		observed := readEnvironment(SanitizeEnvironment(getGpuEnvironment(), nil, runtimes))
-		for _, name := range append(getRuntimeVarNames(), "NUMEN_ONNX_PROVIDER", "NUMEN_ONNX_RUNTIME_LIB", "OPENAI_API_KEY") {
+func TestSanitizeEnvironment_DropsTheVariablesNoDependencyDeclares(t *testing.T) {
+	for _, declared := range [][]string{nil, {}, {"OTHER_*"}} {
+		observed := readEnvironment(SanitizeEnvironment(getHostEnvironment(), nil, declared))
+		for _, name := range []string{"LOADER_PATH", "ACCEL_VISIBLE_DEVICES", "ACCEL_PATH_V12_4", "SAMPLE_RUNTIME_LIB", "OTHER_SERVICE_KEY"} {
 			if _, ok := observed[name]; ok {
-				t.Errorf("%s reached a plugin that declares no runtime", name)
+				t.Errorf("%s reached a plugin that declares %v", name, declared)
 			}
 		}
 		if observed["PATH"] != "/usr/bin" {
@@ -353,22 +335,10 @@ func TestSanitizeEnvironment_NonRuntimePluginDropsAcceleratorVars(t *testing.T) 
 	}
 }
 
-func TestTheDyldVariablesPassOnlyOnDarwin(t *testing.T) {
-	for _, name := range []string{"DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH", "dyld_library_path"} {
-		if !isRuntimeEnv("darwin", name) {
-			t.Errorf("isRuntimeEnv(darwin, %s) = false", name)
-		}
-		if isRuntimeEnv("linux", name) {
-			t.Errorf("isRuntimeEnv(linux, %s) = true", name)
-		}
-	}
-}
-
-func TestNoSecretPassesAsARuntimeVariable(t *testing.T) {
-	for _, name := range []string{"", "CUDA_PATH_V12_TOKEN", "CUDA_PATH_VKEY", "NUMEN_ONNX_PROVIDER", "HOME_SECRET", "NVIDIA_API_KEY"} {
-		if isRuntimeEnv("linux", name) || isRuntimeEnv("darwin", name) {
-			t.Errorf("isRuntimeEnv(%q) = true", name)
-		}
+func TestSanitizeEnvironment_ThePluginVariablesFollowTheHostOnes(t *testing.T) {
+	env := SanitizeEnvironment(getHostEnvironment(), []string{"SAMPLE_RUNTIME_LIB=/models/libsample.so"}, []string{"SAMPLE_RUNTIME_LIB"})
+	if got := env[len(env)-1]; got != "SAMPLE_RUNTIME_LIB=/models/libsample.so" {
+		t.Errorf("the last variable is %q, want the one the host provisioned", got)
 	}
 }
 

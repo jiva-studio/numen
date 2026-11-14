@@ -15,8 +15,8 @@ PLUGIN_MANAGER := libs/plugin/manager
 PROTOCOL := libs/core/protocol
 PLUGIN_SDK := libs/plugin/sdk-ts
 PLUGIN_SDK_GO := libs/plugin/sdk-go
-# The base module of the Go plugin SDK and each feature module under it.
-PLUGIN_SDK_GO_MODULES := $(patsubst %/go.mod,%,$(wildcard $(PLUGIN_SDK_GO)/go.mod $(PLUGIN_SDK_GO)/*/go.mod))
+# The base module of the Go plugin SDK, each feature module under it, and the ONNX library the engine plugins share.
+PLUGIN_SDK_GO_MODULES := $(patsubst %/go.mod,%,$(wildcard $(PLUGIN_SDK_GO)/go.mod $(PLUGIN_SDK_GO)/*/go.mod libs/plugin/onnx/go.mod))
 
 DESKTOP  := apps/desktop
 MOBILE   := apps/mobile

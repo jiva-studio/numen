@@ -30,6 +30,8 @@ func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 		{load.SdkModule, false},
 		{load.SdkModule + "/vault", false},
 		{load.SdkModule + "/server", false},
+		{load.ONNXModule, false},
+		{load.NumenRoot + "libs/plugin/onnxextra", true},
 		{load.Wire, true},
 		{load.Wire + "/gen/numen/v1/numenv1connect", true},
 		{"connectrpc.com/connect", true},

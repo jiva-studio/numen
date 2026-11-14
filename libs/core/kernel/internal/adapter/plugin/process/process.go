@@ -4,12 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"runtime"
-	"slices"
 	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
 )
 
@@ -122,48 +119,33 @@ func isSecretEnv(upper string) bool {
 	return false
 }
 
-// onnxRuntimeEnvPrefix names the versioned toolkit folders the CUDA installer sets on windows.
-const onnxRuntimeEnvPrefix = "CUDA_PATH_V"
-
-func isRuntimeEnv(goos, key string) bool {
+func isDeclaredEnv(declared []string, key string) bool {
 	upper := strings.ToUpper(strings.TrimSpace(key))
 	if upper == "" || isSecretEnv(upper) {
 		return false
 	}
-	switch upper {
-	case "LD_LIBRARY_PATH",
-		"CUDA_VISIBLE_DEVICES", "CUDA_PATH", "CUDA_HOME",
-		"NVIDIA_VISIBLE_DEVICES", "NVIDIA_DRIVER_CAPABILITIES",
-		"ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES":
-		return true
-	case "DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH":
-		return goos == "darwin"
+	for _, entry := range declared {
+		prefix, isPrefix := strings.CutSuffix(strings.ToUpper(entry), "*")
+		if (isPrefix && strings.HasPrefix(upper, prefix)) || (!isPrefix && prefix == upper) {
+			return true
+		}
 	}
-	return strings.HasPrefix(upper, onnxRuntimeEnvPrefix)
+	return false
 }
 
 // SanitizeEnvironment returns the host variables a plugin process is launched
-// with, followed by pluginVars. A plugin that declares the ONNX Runtime among
-// runtimes also gets the variables isRuntimeEnv names.
-func SanitizeEnvironment(environ []string, pluginVars []string, runtimes []string) []string {
-	hasONNX := slices.Contains(runtimes, plugin.RuntimeONNX)
+// with, followed by pluginVars. The variables declared, which the dependencies of
+// the plugin name, are passed besides those IsWhitelistedEnv passes.
+func SanitizeEnvironment(environ []string, pluginVars []string, declared []string) []string {
 	var env []string
 	for _, entry := range environ {
 		key, _, found := strings.Cut(entry, "=")
-		if found && (IsWhitelistedEnv(key) || hasONNX && isRuntimeEnv(runtime.GOOS, key)) {
+		if found && (IsWhitelistedEnv(key) || isDeclaredEnv(declared, key)) {
 			env = append(env, entry)
 		}
 	}
 	return append(env, pluginVars...)
 }
-
-const (
-	// EnvONNXRuntimeLib is the absolute path of the ONNX Runtime library the host provisioned.
-	EnvONNXRuntimeLib = "NUMEN_ONNX_RUNTIME_LIB"
-
-	// EnvONNXProvider is the execution provider a plugin opens its sessions on.
-	EnvONNXProvider = "NUMEN_ONNX_PROVIDER"
-)
 
 // LaunchEnvironment is what the host passes to a plugin process about its
 // launch. It contains neither secrets nor settings: both arrive through

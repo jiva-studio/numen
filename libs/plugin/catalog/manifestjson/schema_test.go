@@ -22,7 +22,10 @@ const everyFieldManifest = `{
 	"capabilities": ["tools"], "targets": ["desktop.editor"], "activationEvents": ["onSearchSourceReady"],
 	"permissions": ["vault:read"],
 	"dependencies": [{"id": "weights", "kind": "model", "version": "1", "sourceUrl": "https://example.org/w",
-		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}}],
+		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}},
+		{"id": "lib", "kind": "runtime", "sources": {"linux/amd64": {"sourceUrl": "https://example.org/l.tgz",
+			"checksumSha256": "1111111111111111111111111111111111111111111111111111111111111111", "archiveMember": "l.so", "memberSha256": "2222222222222222222222222222222222222222222222222222222222222222"}},
+			"environment": ["GPU_*", "LIB_PATH"], "search": ["/opt/l/l.so*"]}],
 	"backend": {"entrypoint": "bin/full", "idleStopSeconds": 600},
 	"frontend": {},
 	"settings": [

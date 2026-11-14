@@ -157,8 +157,27 @@ func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequire
 			SourceURL:      one.GetSourceUrl(),
 			ChecksumSHA256: one.GetChecksumSha256(),
 			Metadata:       one.GetMetadata(),
+			Sources:        newDependencySources(one.GetSources()),
+			Environment:    one.GetEnvironment(),
+			Search:         one.GetSearch(),
 			PluginDir:      "",
 		})
+	}
+	return out
+}
+
+func newDependencySources(wire map[string]*v1.ManifestDependencySource) map[string]manifest.DependencySource {
+	if len(wire) == 0 {
+		return nil
+	}
+	out := make(map[string]manifest.DependencySource, len(wire))
+	for platform, one := range wire {
+		out[platform] = manifest.DependencySource{
+			SourceURL:      one.GetSourceUrl(),
+			ChecksumSHA256: one.GetChecksumSha256(),
+			ArchiveMember:  one.GetArchiveMember(),
+			MemberSHA256:   one.GetMemberSha256(),
+		}
 	}
 	return out
 }

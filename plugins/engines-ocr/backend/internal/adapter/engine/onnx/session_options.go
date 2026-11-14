@@ -7,6 +7,7 @@ import (
 
 	"github.com/ebitengine/purego"
 	ort "github.com/getcharzp/onnxruntime_purego"
+	onnxlib "github.com/jiva-studio/numen/libs/plugin/onnx"
 )
 
 type graphOptimization struct {
@@ -94,6 +95,10 @@ func (l *Library) setGraphOptimizationLevel(opts *ort.SessionOptions, level uint
 // NewSessionOptions creates and configures session options according to the
 // requested provider, applying hardware acceleration with fallback to CPU.
 func (l *Library) NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptions, Provider, error) {
+	_, libPath := l.runtime.GetLoaded()
+	if err := onnxlib.CheckProvider(libPath, string(s.Provider)); err != nil {
+		return nil, "", err
+	}
 	opts, err := engine.NewSessionOptions()
 	if err != nil {
 		return nil, "", err

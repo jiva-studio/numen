@@ -52,6 +52,7 @@ core_lib: &core_lib
   - libs/plugin/catalog/**
 sdk_go_lib: &sdk_go_lib
   - libs/plugin/sdk-go/**
+  - libs/plugin/onnx/**
 sdk_ts_lib: &sdk_ts_lib
   - libs/plugin/sdk-ts/**
 ui_lib: &ui_lib

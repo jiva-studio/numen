@@ -17,6 +17,9 @@ const NumenRoot = "github.com/jiva-studio/numen/"
 // NotesModule is the module of the note model, which plugins do not name.
 const NotesModule = NumenRoot + "libs/note"
 
+// ONNXModule is the library the engine plugins that run the ONNX Runtime share besides the SDK.
+const ONNXModule = NumenRoot + "libs/plugin/onnx"
+
 // RepoRootDir is the repository root, relative to this package.
 const RepoRootDir = "../../../.."
 
@@ -26,7 +29,7 @@ func IsWithin(path, root string) bool {
 
 func GetPluginDependencyRefusal(mod, dep string) string {
 	switch {
-	case IsWithin(dep, mod), IsSDK(dep):
+	case IsWithin(dep, mod), IsSDK(dep), IsWithin(dep, ONNXModule):
 		return ""
 	case IsWithin(dep, "connectrpc.com/connect"), IsWithin(dep, "google.golang.org/protobuf"):
 		return "a plugin calls and answers the core through the plugin SDK, not through the RPC library"
@@ -39,7 +42,7 @@ func GetPluginDependencyRefusal(mod, dep string) string {
 	case IsWithin(dep, strings.TrimSuffix(Module, "/")):
 		return "a plugin names no package of the core"
 	}
-	return "a plugin names only the plugin SDK and third-party code"
+	return "a plugin names only the plugin SDK, the ONNX library and third-party code"
 }
 
 func ListPluginModules(t *testing.T) []string {

@@ -2,6 +2,7 @@ package provision
 
 import (
 	"context"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -10,7 +11,10 @@ import (
 )
 
 func getFlightKey(req manifest.DependencyRequirement) string {
-	return strings.Join([]string{string(req.Kind), req.ID, req.Version, req.SourceURL, req.ChecksumSHA256, req.PluginDir}, "\x00")
+	source, _ := req.GetSource(runtime.GOOS, runtime.GOARCH)
+	return strings.Join([]string{
+		string(req.Kind), req.ID, req.Version, source.SourceURL, source.ChecksumSHA256, source.ArchiveMember, source.MemberSHA256, req.PluginDir,
+	}, "\x00")
 }
 
 // flightGroup runs one call per key at a time. A caller that arrives while a
