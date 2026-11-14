@@ -172,13 +172,14 @@ A local model the Vector Embeddings plugin does not list is added with a profile
 
 ## Correcting a text
 
-The proofreading plugin, `md.numen.tools.proofreading`, corrects a transcript or a recognition when a person requests it from the file's menu, and its settings belong to the plugin. What a correction may change, and what rejects one, is in [Proofreading](proofreading.md).
+The proofreading plugin, `md.numen.tools.proofreading`, corrects a transcript or a recognition when a person requests it from the file's menu, and on its own when `proofreadAutomatically` is on. Its settings belong to the plugin. What a correction may change, and what rejects one, is in [Proofreading](proofreading.md).
 
 The plugin reaches a model through the rows of its setting `connections`: up to 5 connections from the Connections page, each with a model and a reasoning level, tried in order (see [Rows of connections](plugins/connection-rows.md)). With no row it is off, and its page links to Connections. The plugin keeps no address and no key.
 
 ```json
 {
   "md.numen.tools.proofreading": {
+    "proofreadAutomatically": false,
     "connections": [
       { "connection": "c1f0a9e20", "model": "google/gemini-2.5-flash", "reasoning": "low" },
       { "connection": "c77b01d40", "model": "qwen2.5:14b" }
@@ -193,6 +194,7 @@ The plugin reaches a model through the rows of its setting `connections`: up to 
 
 |                   |                                                                                                                                                                                                                                                                                                                                                           |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `proofreadAutomatically` | whether every file whose live text is a transcript or a recognition and that has no valid proofread version is proofread without a request. false. The plugin does it through its `file.added` trigger, which runs again for a file each time a text version of it is written, and for every file when the setting is switched on. The proofreading uses the same `connections` as the file's menu does; with no row it fails as that does. |
 | `connections`     | the connections that proofread, in the order they are tried: at most 5 rows of a connection, a model and optionally a reasoning level. Empty turns the plugin off.                                                                                                                                                                                        |
 | `batchSize`       | how many lines of a transcript one request contains. 40. A recognition is sent one page per request.                                                                                                                                                                                                                                                      |
 | `overlap`         | how many lines neighbouring batches of a transcript share, so a phrase split at a batch boundary still appears whole in one of them. 4.                                                                                                                                                                                                                   |
