@@ -28,6 +28,10 @@ describe('a dismissed failed task', () => {
 
     host.dismiss(failed.id)
     await nextTick()
+    tasks.value = [{ ...failed, about: 'still listed' }]
+    await nextTick()
+    expect(list).toStrictEqual([])
+
     tasks.value = []
     await nextTick()
     tasks.value = [{ ...failed, error: '', isCancellable: true }]

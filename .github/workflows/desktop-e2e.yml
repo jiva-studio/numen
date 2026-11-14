@@ -32,11 +32,12 @@ permissions:
   contents: read
 
 jobs:
-  # The jobs the scope needs: each engine split into shards of about five minutes by shards.json.
-  plan:
-    name: Plan
+  # Plans the jobs the scope needs, each engine split into shards of about five minutes by
+  # shards.json, and builds the window, its plugins and the debug binaries once for them.
+  build:
+    name: Build
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     outputs:
       desktop: ${{ steps.plan.outputs.desktop }}
       flashcards: ${{ steps.plan.outputs.flashcards }}
@@ -51,6 +52,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Test the selection of tests
         run: node --test tests/e2e/desktop/scripts/select-tests.test.mjs
@@ -69,26 +72,19 @@ jobs:
               *) echo "$line" ;;
             esac
           done < "$RUNNER_TEMP/plan.txt" | tee -a "$GITHUB_OUTPUT"
-
-  # Builds the window, its plugins and the debug binaries once; the test jobs download them.
-  build:
-    name: Build
-    needs: [plan]
-    if: needs.plan.outputs.desktop == 'true' || needs.plan.outputs.flashcards == 'true' || needs.plan.outputs.acceptance == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+          if grep -qxE '(desktop|flashcards|acceptance)=true' "$RUNNER_TEMP/plan.txt"; then
+            echo "build=true" | tee -a "$GITHUB_OUTPUT"
+          fi
 
       - id: setup-go
+        if: steps.plan.outputs.build == 'true'
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: apps/desktop/go.mod
           cache: false
 
       - id: go-mod-cache
+        if: steps.plan.outputs.build == 'true'
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/go/pkg/mod
@@ -98,6 +94,7 @@ jobs:
       # What the newest build left behind: the binaries and plugin backends compile what changed.
       # The prefix restores the newest build when the Go version or a go.sum differs.
       - id: go-build-cache
+        if: steps.plan.outputs.build == 'true'
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/go-build
@@ -106,18 +103,15 @@ jobs:
             go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-
             go-build-e2e-
 
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: package-lock.json
-
       - name: Install dependencies
+        if: steps.plan.outputs.build == 'true'
         uses: ./.github/actions/install-node-modules
 
-      - uses: ./.github/actions/setup-webkit
+      - if: steps.plan.outputs.build == 'true'
+        uses: ./.github/actions/setup-webkit
 
       - name: Build UI library
+        if: steps.plan.outputs.build == 'true'
         uses: ./.github/actions/build-ui
         with:
           shell: 'true'
@@ -125,6 +119,7 @@ jobs:
       # The plugins build beside the windows and the binaries, which embed the windows. The log of
       # the plugins is printed once both are done.
       - name: Build the plugins, the windows and the debug binaries
+        if: steps.plan.outputs.build == 'true'
         run: |
           make plugins_build SKIP_UI_BUILD=1 > "$RUNNER_TEMP/plugins.log" 2>&1 &
           plugins=$!
@@ -146,19 +141,20 @@ jobs:
 
       # A pull request's cache is visible only to that pull request; main's to all.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: github.ref == 'refs/heads/main' && steps.go-mod-cache.outputs.cache-hit != 'true'
+        if: steps.plan.outputs.build == 'true' && github.ref == 'refs/heads/main' && steps.go-mod-cache.outputs.cache-hit != 'true'
         with:
           path: ~/go/pkg/mod
           key: go-mod-e2e-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
 
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: github.ref == 'refs/heads/main' && steps.go-build-cache.outputs.cache-hit != 'true'
+        if: steps.plan.outputs.build == 'true' && github.ref == 'refs/heads/main' && steps.go-build-cache.outputs.cache-hit != 'true'
         with:
           path: ~/.cache/go-build
           key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-${{ github.sha }}
 
       # An artifact drops the mode bits of its files, and the binaries must stay executable.
       - name: Pack what the tests run
+        if: steps.plan.outputs.build == 'true'
         run: |
           shopt -s nullglob
           tar -cf "$RUNNER_TEMP/e2e-build.tar" \
@@ -166,6 +162,7 @@ jobs:
             plugins/plugins-index.json plugins/*/bin plugins/*/dist
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.plan.outputs.build == 'true'
         with:
           name: e2e-build
           path: ${{ runner.temp }}/e2e-build.tar
@@ -175,13 +172,13 @@ jobs:
   # One Playwright process with one server on each runner: the specs of a shard, in one engine.
   desktop:
     name: ${{ matrix.engine }} ${{ matrix.shard }}/${{ matrix.shards }}
-    needs: [plan, build]
-    if: needs.plan.outputs.desktop == 'true'
+    needs: [build]
+    if: needs.build.outputs.desktop == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -224,7 +221,7 @@ jobs:
           ENGINE: ${{ matrix.engine }}
           SHARD: ${{ matrix.shard }}
           SHARDS: ${{ matrix.shards }}
-          NUMEN_E2E_PATHS: ${{ needs.plan.outputs.paths }}
+          NUMEN_E2E_PATHS: ${{ needs.build.outputs.paths }}
           NUMEN_E2E_JSON_DIR: ${{ runner.temp }}/e2e-json
           PLAYWRIGHT_BLOB_OUTPUT_DIR: ${{ runner.temp }}/e2e-blob
           PLAYWRIGHT_BLOB_OUTPUT_NAME: ${{ matrix.engine }}-${{ matrix.shard }}.zip
@@ -250,8 +247,8 @@ jobs:
 
   flashcards:
     name: Flashcards
-    needs: [plan, build]
-    if: needs.plan.outputs.flashcards == 'true'
+    needs: [build]
+    if: needs.build.outputs.flashcards == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -308,8 +305,8 @@ jobs:
 
   acceptance:
     name: Acceptance
-    needs: [plan, build]
-    if: needs.plan.outputs.acceptance == 'true'
+    needs: [build]
+    if: needs.build.outputs.acceptance == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -409,7 +406,7 @@ jobs:
   # for all of them: it passes when every job passed or was skipped because the scope left it out.
   e2e:
     name: End-to-End
-    needs: [plan, build, desktop, flashcards, acceptance, report]
+    needs: [build, desktop, flashcards, acceptance, report]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

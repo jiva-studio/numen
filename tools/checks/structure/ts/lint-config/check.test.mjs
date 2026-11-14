@@ -10,7 +10,7 @@ import {
   pickScriptProbeFiles,
 } from "./check.mjs";
 
-/** The rules of a package that enforces the whole set, in the shape `eslint --print-config` prints. */
+/** The rules of a package that enforces the whole set, in the shape ESLint resolves them. */
 const strictRules = () => ({
   "no-void": [2, { allowAsStatement: false }],
   "no-empty": [2, { allowEmptyCatch: false }],

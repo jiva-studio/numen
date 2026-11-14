@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // maxPassages is the maximum number of passages of one file a focus highlights at once.
@@ -29,15 +30,10 @@ type FocusPassagesInput struct {
 // FocusPassages opens a file of the vault in the window at its passages and highlights them.
 type FocusPassages struct {
 	readers vaultport.VaultReaders
-	view    PlaceFocus
+	view    windowport.PlaceFocus
 }
 
-// PlaceFocus asks the window to show a place.
-type PlaceFocus interface {
-	FocusPlace(ctx context.Context, pos domain.Place) error
-}
-
-func NewFocusPassages(readers vaultport.VaultReaders, view PlaceFocus) *FocusPassages {
+func NewFocusPassages(readers vaultport.VaultReaders, view windowport.PlaceFocus) *FocusPassages {
 	return &FocusPassages{readers: readers, view: view}
 }
 

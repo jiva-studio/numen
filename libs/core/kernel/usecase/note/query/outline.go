@@ -4,13 +4,9 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// TabKinds finds the kind of tab each of the notes at some paths opens in.
-type TabKinds interface {
-	Execute(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
-}
 
 // RelatedNotesView is a note with the notes joined to it, what each of them is and the kind of tab each
 // opens in, by path.
@@ -24,29 +20,34 @@ type RelatedNotesView struct {
 type GetRelatedNotesView struct {
 	relatedNotes ListRelatedNotes
 	types        noteport.NoteTypes
-	tabKinds     TabKinds
+	tabKinds     windowport.TabKinds
 }
 
 // NewGetRelatedNotesView creates the gathering over the links and the notes of the index.
-func NewGetRelatedNotesView(links noteport.LinkBatches, notes RefQueries, types noteport.NoteTypes, tabKinds TabKinds) *GetRelatedNotesView {
+func NewGetRelatedNotesView(links noteport.LinkBatches, notes RefQueries, types noteport.NoteTypes, tabKinds windowport.TabKinds) *GetRelatedNotesView {
 	return &GetRelatedNotesView{relatedNotes: NewListRelatedNotes(links, notes), types: types, tabKinds: tabKinds}
 }
 
 // Execute gathers the related notes of the note at the path. DepthFar adds the notes related to each of them. The types are read once for the whole graph.
+// A tab kind is chosen for the focus and the notes related to it, and not for a note that is only related to one of them.
 func (u *GetRelatedNotesView) Execute(ctx context.Context, v domain.Vault, path string, depth domain.RelationDepth) (RelatedNotesView, error) {
 	found, err := u.relatedNotes.Execute(ctx, v, path, depth)
 	if err != nil {
 		return RelatedNotesView{}, err
 	}
 	paths := []string{found.Focus.Path}
+	near := []string{found.Focus.Path}
 	for _, related := range found.Related {
 		paths = append(paths, related.Path)
+		if related.RelatedTo == "" {
+			near = append(near, related.Path)
+		}
 	}
 	types, err := u.types.GetTypes(ctx, v.ID, paths)
 	if err != nil {
 		return RelatedNotesView{}, err
 	}
-	tabKinds, err := u.tabKinds.Execute(ctx, v, paths)
+	tabKinds, err := u.tabKinds.Execute(ctx, v, near)
 	if err != nil {
 		return RelatedNotesView{}, err
 	}

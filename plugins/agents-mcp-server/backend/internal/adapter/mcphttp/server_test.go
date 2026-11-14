@@ -52,7 +52,7 @@ func TestServerOptionsAndRoutes(t *testing.T) {
 		t.Fatalf("ReadHeaderTimeout = %v, want 10s", srv.httpServer.ReadHeaderTimeout)
 	}
 
-	paths := []string{"/mcp", "/mcp/sub"}
+	paths := []string{"/", "/mcp", "/mcp/sub"}
 	for _, path := range paths {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodPut, path, nil)
 		req.Header.Set("Authorization", "Bearer route-token")
@@ -61,6 +61,14 @@ func TestServerOptionsAndRoutes(t *testing.T) {
 		if rec.Code != http.StatusMethodNotAllowed {
 			t.Fatalf("PUT %s returned %d, want 405 Method Not Allowed", path, rec.Code)
 		}
+	}
+
+	unknownReq := httptest.NewRequestWithContext(t.Context(), http.MethodPut, "/unknown", nil)
+	unknownReq.Header.Set("Authorization", "Bearer route-token")
+	unknownRec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(unknownRec, unknownReq)
+	if unknownRec.Code != http.StatusNotFound {
+		t.Fatalf("PUT /unknown returned %d, want 404 Not Found", unknownRec.Code)
 	}
 }
 
@@ -80,6 +88,9 @@ func TestServerSetTokenServeAndClose(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer("tok-1")
+	if got := srv.GetHTTPURL(); got != "" {
+		t.Fatalf("GetHTTPURL() before Serve = %q, want empty", got)
+	}
 	serveOnLoopback(t, srv)
 	defer func() {
 		if err := srv.Close(t.Context()); err != nil {
@@ -106,6 +117,72 @@ func TestServerSetTokenServeAndClose(t *testing.T) {
 	}
 }
 
+type closingErrorListener struct {
+	accepting chan struct{}
+	closed    chan struct{}
+	once      sync.Once
+}
+
+func (l *closingErrorListener) Accept() (net.Conn, error) {
+	l.once.Do(func() { close(l.accepting) })
+	<-l.closed
+	return nil, net.ErrClosed
+}
+
+func (l *closingErrorListener) Close() error {
+	close(l.closed)
+	return net.ErrClosed
+}
+
+func (l *closingErrorListener) Addr() net.Addr {
+	return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 54322}
+}
+
+type errCloseConn struct {
+	net.Conn
+	closeErr error
+}
+
+func (c errCloseConn) Close() error {
+	return c.closeErr
+}
+
+func captureCloseConnStderr(t *testing.T, closeErr error) string {
+	t.Helper()
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	prevStderr := os.Stderr
+	os.Stderr = writer
+	closeConn(errCloseConn{closeErr: closeErr})
+	os.Stderr = prevStderr
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	output, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := reader.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return string(output)
+}
+
+func TestCloseConnReportsUnexpectedErrorToStderr(t *testing.T) {
+	if got := captureCloseConnStderr(t, nil); got != "" {
+		t.Fatalf("closeConn with nil error wrote %q, want empty", got)
+	}
+	if got := captureCloseConnStderr(t, net.ErrClosed); got != "" {
+		t.Fatalf("closeConn with net.ErrClosed wrote %q, want empty", got)
+	}
+	want := "close a connection without a request: boom\n"
+	if got := captureCloseConnStderr(t, errors.New("boom")); got != want {
+		t.Fatalf("closeConn with boom error wrote %q, want %q", got, want)
+	}
+}
+
 func TestServerServeErrorAndIdempotentClose(t *testing.T) {
 	t.Parallel()
 
@@ -124,6 +201,25 @@ func TestServerServeErrorAndIdempotentClose(t *testing.T) {
 	}
 	if got := srv.GetToken(); got != "tok" {
 		t.Fatalf("GetToken() = %q, want tok", got)
+	}
+
+	closedServe := newTestServer("tok")
+	closedServe.serveHTTP(closedServe.httpServer, &failingListener{err: net.ErrClosed})
+	if err := closedServe.Close(t.Context()); err != nil {
+		t.Fatalf("Close after net.ErrClosed in serveHTTP returned %v, want nil", err)
+	}
+
+	ln := &closingErrorListener{
+		accepting: make(chan struct{}),
+		closed:    make(chan struct{}),
+	}
+	shutdownSrv := newTestServer("tok")
+	if err := shutdownSrv.Serve(ln); err != nil {
+		t.Fatalf("Serve failed: %v", err)
+	}
+	waitSignal(t, ln.accepting, "the server did not call Accept")
+	if err := shutdownSrv.Close(t.Context()); err != nil {
+		t.Fatalf("Close when listener Close returns net.ErrClosed: %v", err)
 	}
 }
 
