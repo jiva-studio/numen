@@ -60,9 +60,9 @@ export interface ListTasksRequest {
   readonly limit: number
 }
 
+/** The total is the count before the limit. */
 export interface ListTasksResponse {
   readonly tasks: readonly Task[]
-  /** The count before the limit. */
   readonly total: number
   readonly revision: number
 }

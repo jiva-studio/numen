@@ -49,9 +49,9 @@ export const task = (overrides: Partial<Task> & Pick<Task, 'path' | 'line' | 'te
   ...overrides,
 })
 
+/** The tasks the fake answers a ListTasks with are keyed by the due filter of the request. */
 export interface FakeInit {
   readonly summary?: Summary
-  /** The tasks the fake answers a ListTasks with, by the due filter of the request. */
   readonly tasks?: Partial<Record<Filter['due'], ListTasksResponse>>
 }
 

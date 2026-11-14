@@ -14,7 +14,7 @@ type FileReader interface {
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
 }
 
-// NoteLister lists the notes of the vault.
+// NoteLister is the one call of host.NoteLookup that the index makes.
 type NoteLister interface {
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }

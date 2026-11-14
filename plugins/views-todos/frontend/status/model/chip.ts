@@ -1,9 +1,8 @@
 import type { Summary } from '../../types'
 
-/** What the chip in the title bar shows. */
+/** What the chip in the title bar shows. The count is the overdue tasks plus the tasks due today. */
 export interface Chip {
   readonly isVisible: boolean
-  /** The overdue tasks plus the tasks due today. */
   readonly count: number
   readonly isOverdue: boolean
 }

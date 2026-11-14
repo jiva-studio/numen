@@ -34,16 +34,15 @@ const (
 	IssueInvalidPriority Issue = "invalidPriority"
 )
 
-// Task is one task line of a note.
+// Task is one task line of a note. ParseNote leaves Path empty and the index sets it. Line is the
+// 1-based number of the line in the file, frontmatter included. Raw is the whole line without its
+// line ending, which a write compares. Text is the text after the checkbox without the fields, the
+// leading priority, the projects and the contexts. Depth is the indentation width divided by 2,
+// rounded down.
 type Task struct {
-	// Path is the note the line is in. ParseNote leaves it empty; the index sets it.
-	Path string
-	// Line is the 1-based number of the line in the file, frontmatter included.
-	Line int
-	// Raw is the whole line without its line ending. A write compares it.
-	Raw string
-	// Text is what the line shows: the text after the checkbox without the fields, the leading
-	// priority, the projects and the contexts.
+	Path       string
+	Line       int
+	Raw        string
 	Text       string
 	Status     Status
 	Priority   string
@@ -53,8 +52,7 @@ type Task struct {
 	Projects   []string
 	Contexts   []string
 	Issues     []Issue
-	// Depth is the indentation width divided by 2, rounded down.
-	Depth int
+	Depth      int
 }
 
 // ParseNote returns the tasks of a note in the order of its lines.

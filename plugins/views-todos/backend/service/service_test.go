@@ -63,7 +63,6 @@ func (a *app) request(ctx context.Context, t *testing.T, path, body string) *htt
 	return res
 }
 
-// call posts a request to a method and decodes the answer into out when the status is 200.
 func (a *app) call(t *testing.T, method string, request, out any) (int, server.APIError) {
 	t.Helper()
 	body, err := json.Marshal(request)
@@ -190,7 +189,6 @@ func TestTheHostConfiguresTheIgnoredFoldersAndTheNextListOmitsThem(t *testing.T)
 	}
 }
 
-// events reads the data events of a stream until count are read.
 func (a *app) events(ctx context.Context, t *testing.T, method string, count int) <-chan api.WatchTasksMessage {
 	t.Helper()
 	res := a.request(ctx, t, "/"+api.Service+"/"+method, `{}`)

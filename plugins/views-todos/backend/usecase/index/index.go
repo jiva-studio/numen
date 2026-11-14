@@ -27,10 +27,9 @@ type Summary struct {
 	UnreadableCount int
 }
 
-// Listing is the tasks a filter accepts, cut to a limit.
+// Listing is the tasks a filter accepts, limited to a count. Total is the count before the limit.
 type Listing struct {
-	Tasks []todo.Task
-	// Total is the count before the limit.
+	Tasks    []todo.Task
 	Total    int
 	Revision uint64
 }

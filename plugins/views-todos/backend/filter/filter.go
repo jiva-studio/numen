@@ -22,19 +22,18 @@ const (
 	DueRange DueFilter = "range"
 )
 
-// Filter is a value, not a query language. Its fields combine with AND.
+// Filter is a value, not a query language. Its fields combine with AND. An empty Status list means
+// open. Path is a note path, or a folder prefix that ends in a slash. Text is a case-insensitive
+// substring of the display text.
 type Filter struct {
-	// Status lists open, done and other; an empty list means open.
 	Status     []todo.Status
 	Due        DueFilter
 	From, To   string
 	Projects   []string
 	Contexts   []string
 	Priorities []string
-	// Path is a note path, or a folder prefix that ends in a slash.
-	Path string
-	// Text is a case-insensitive substring of the display text.
-	Text string
+	Path       string
+	Text       string
 }
 
 // Apply returns the tasks the filter accepts, ordered by due date (tasks with none last), then
