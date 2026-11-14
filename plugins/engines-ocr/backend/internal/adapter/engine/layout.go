@@ -10,6 +10,7 @@ import (
 	"golang.org/x/image/draw"
 
 	"github.com/jiva-studio/numen/libs/shared/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 )
 
 const layoutSide = 800
@@ -36,7 +37,8 @@ type Layout struct {
 }
 
 // OpenLayout loads the model that divides a page.
-func OpenLayout(engine *ort.Engine, cacheRoot, path string, options *ort.SessionOptions, labels []string, minimum float32, overlap float64) (*Layout, error) {
+func OpenLayout(engine *ort.Engine, cacheRoot, path string, options *ort.SessionOptions, model settings.LayoutModel) (*Layout, error) {
+	labels := model.GetLabels()
 	if len(labels) == 0 {
 		return nil, fmt.Errorf("the layout model's regions have no names")
 	}
@@ -47,8 +49,8 @@ func OpenLayout(engine *ort.Engine, cacheRoot, path string, options *ort.Session
 	return &Layout{
 		session: session,
 		labels:  labels,
-		minimum: minimum,
-		overlap: overlap,
+		minimum: model.GetMinimum(),
+		overlap: model.GetOverlap(),
 		mu:      sync.Mutex{},
 		small:   nil,
 		flat:    nil,

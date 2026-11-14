@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"unicode/utf8"
 )
 
@@ -106,8 +107,8 @@ func (v *vocabulary) appendIDs(out []int, piece string) []int {
 		}
 		reversed = append(reversed, id)
 	}
-	for i := len(reversed) - 1; i >= 0; i-- {
-		out = append(out, reversed[i])
+	for _, id := range slices.Backward(reversed) {
+		out = append(out, id)
 	}
 	return out
 }

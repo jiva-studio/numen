@@ -18,7 +18,7 @@ func buildNormalizers(s step) ([]normalizer, error) {
 			Normalizers []step `json:"normalizers"`
 		}
 		if err := s.decode(&settings); err != nil {
-			return nil, fmt.Errorf("Sequence: %w", err)
+			return nil, fmt.Errorf("step Sequence: %w", err)
 		}
 		var out []normalizer
 		for _, one := range settings.Normalizers {
@@ -32,23 +32,23 @@ func buildNormalizers(s step) ([]normalizer, error) {
 	case "Precompiled":
 		one, err := buildPrecompiled(s)
 		if err != nil {
-			return nil, fmt.Errorf("Precompiled: %w", err)
+			return nil, fmt.Errorf("step Precompiled: %w", err)
 		}
 		return []normalizer{one}, nil
 	case "Strip":
 		one, err := buildStrip(s)
 		if err != nil {
-			return nil, fmt.Errorf("Strip: %w", err)
+			return nil, fmt.Errorf("step Strip: %w", err)
 		}
 		return []normalizer{one}, nil
 	case "Replace":
 		one, err := buildReplace(s)
 		if err != nil {
-			return nil, fmt.Errorf("Replace: %w", err)
+			return nil, fmt.Errorf("step Replace: %w", err)
 		}
 		return []normalizer{one}, nil
 	default:
-		return nil, fmt.Errorf("%q is not supported", s.Type)
+		return nil, fmt.Errorf("step %q is not supported", s.Type)
 	}
 }
 

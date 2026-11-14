@@ -18,7 +18,7 @@ func buildPreTokenizer(s step) (preTokenizer, error) {
 			PreTokenizers []step `json:"pretokenizers"`
 		}
 		if err := s.decode(&settings); err != nil {
-			return nil, fmt.Errorf("Sequence: %w", err)
+			return nil, fmt.Errorf("step Sequence: %w", err)
 		}
 		chain := make([]preTokenizer, 0, len(settings.PreTokenizers))
 		for _, one := range settings.PreTokenizers {
@@ -39,11 +39,11 @@ func buildPreTokenizer(s step) (preTokenizer, error) {
 	case "Metaspace":
 		split, err := buildMetaspace(s)
 		if err != nil {
-			return nil, fmt.Errorf("Metaspace: %w", err)
+			return nil, fmt.Errorf("step Metaspace: %w", err)
 		}
 		return split, nil
 	default:
-		return nil, fmt.Errorf("%q is not supported", s.Type)
+		return nil, fmt.Errorf("step %q is not supported", s.Type)
 	}
 }
 

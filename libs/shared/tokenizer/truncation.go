@@ -4,21 +4,16 @@ func truncateLongestFirst(first, second, budget int) (keptFirst, keptSecond int)
 	if first+second <= budget {
 		return first, second
 	}
-	isSwapped := first > second
-	shorter, longer := first, second
-	if isSwapped {
-		shorter, longer = second, first
-	}
-	if shorter > budget {
-		longer = shorter
-	} else {
+	shorter := min(first, second)
+	longer := shorter
+	if shorter <= budget {
 		longer = max(shorter, budget-shorter)
 	}
 	if shorter+longer > budget {
 		shorter = budget / 2
 		longer = shorter + budget%2
 	}
-	if isSwapped {
+	if first > second {
 		return longer, shorter
 	}
 	return shorter, longer

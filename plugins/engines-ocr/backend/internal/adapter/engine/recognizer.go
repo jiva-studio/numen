@@ -52,8 +52,7 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Rec
 	}
 	defer options.Destroy()
 
-	layout, err := OpenLayout(engine, cacheRoot, found.layout, options,
-		cfg.Layout.GetLabels(), cfg.Layout.GetMinimum(), cfg.Layout.GetOverlap())
+	layout, err := OpenLayout(engine, cacheRoot, found.layout, options, cfg.Layout)
 	if err != nil {
 		return nil, err
 	}

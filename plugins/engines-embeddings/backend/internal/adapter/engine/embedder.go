@@ -66,16 +66,14 @@ func Open(
 	if err != nil {
 		return nil, err
 	}
-
 	cacheRoot := getCacheRoot()
 	engine, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, ""))
 	if err != nil {
 		return nil, err
 	}
 	options, provider, err := library.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider: getProvider(cfg),
-		Threads:  getThreads(cfg),
-
+		Provider:     getProvider(cfg),
+		Threads:      getThreads(cfg),
 		ComputeUnits: onnx.ComputeUnitsDefault,
 		CacheRoot:    cacheRoot,
 		ModelPath:    paths.Model,
