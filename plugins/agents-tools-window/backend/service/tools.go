@@ -4,24 +4,25 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/editpreview"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/preview"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/window"
 )
 
-// Host provides the vault and its window to the window tools. A nil field means the host offers
-// none.
+// Host provides the files of the vaults and the window to the window tools. Files returns the reader of
+// the vault with the identity, and the empty identity is the vault the window shows. A nil field means
+// the host offers none.
 type Host struct {
-	Vault  host.FileReader
+	Files  func(vault domain.VaultID) host.FileReader
 	Window host.Window
 }
 
 // RegisterTools registers all window interaction and edit preview tools on the given registry.
-func RegisterTools(registry *tools.Registry, previews *preview.Store, on Host) error {
+func RegisterTools(registry *tools.Registry, on Host) error {
 	control := window.NewControl(on.Window)
-	creator := editpreview.NewCreator(previews, on.Vault)
+	creator := editpreview.NewCreator(newPreviewFiles(on.Files))
 	for _, add := range []func(*tools.Registry) error{
 		func(r *tools.Registry) error { return addWindowTabList(r, control) },
 		func(r *tools.Registry) error { return addWindowTabActivate(r, control) },
@@ -64,6 +65,7 @@ func addNoteEditPreview(registry *tools.Registry, creator editpreview.Creator) e
 		Effect: tools.ReadOnly,
 	}, func(ctx context.Context, in api.NoteEditPreviewInput) (api.NoteEditPreviewOutput, error) {
 		created, err := creator.Create(ctx, editpreview.Request{
+			Vault:        domain.VaultID(tools.GetVault(ctx)),
 			Path:         in.Path,
 			ProposedText: in.ProposedText,
 			OriginalText: in.OriginalText,
@@ -73,7 +75,6 @@ func addNoteEditPreview(registry *tools.Registry, creator editpreview.Creator) e
 			return api.NoteEditPreviewOutput{}, err
 		}
 		return api.NoteEditPreviewOutput{
-			PreviewID: created.ID,
 			Path:      created.Path,
 			Diff:      created.Diff,
 			Additions: created.Additions,
@@ -111,5 +112,18 @@ func newPlace(place *host.TabPlace) *api.Place {
 		PositionSeconds: place.PositionSeconds,
 		CFI:             place.CFI,
 		Chapter:         place.Chapter,
+	}
+}
+
+func newPreviewFiles(files func(vault domain.VaultID) host.FileReader) editpreview.Files {
+	if files == nil {
+		return nil
+	}
+	return func(vault domain.VaultID) editpreview.Vault {
+		reader := files(vault)
+		if reader == nil {
+			return nil
+		}
+		return reader
 	}
 }

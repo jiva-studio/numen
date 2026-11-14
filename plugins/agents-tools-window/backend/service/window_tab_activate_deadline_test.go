@@ -27,7 +27,7 @@ func TestWindowTabActivateReturnsAHostDeadlineAsText(t *testing.T) {
 	vault := hosttest.New(testVault)
 	window := hosttest.NewWindow(vault)
 	window.SetOpenTabs(getGuideTabs(), "tab-1")
-	w := windowTools{window: window, registry: newRegistry(t, service.Host{Vault: vault, Window: deadlineWindow{Window: window}})}
+	w := windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: deadlineWindow{Window: window}})}
 
 	failure := w.call(t, "window_tab_activate", `{"tabId":"tab-2"}`, nil, nil)
 
