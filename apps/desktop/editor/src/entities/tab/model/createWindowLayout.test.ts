@@ -26,4 +26,13 @@ describe('the layout of a window', () => {
     expect(layout.isReady.value).toBe(true)
     expect(layout.isWritingTabs.value).toBe(false)
   })
+
+  it('writes no open tabs when the saved tabs were not read', () => {
+    const layout = createWindowLayout(false)
+
+    layout.markStarted(false)
+
+    expect(layout.isReady.value).toBe(true)
+    expect(layout.isWritingTabs.value).toBe(false)
+  })
 })

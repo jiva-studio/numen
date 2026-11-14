@@ -133,6 +133,11 @@ describe("the composable return size rule with type information", () => {
     assert.deepEqual(findTypedReports(source), ["2 tooManyReturnedProperties", "2 spreadOfInput", "3 spreadInReturn"]);
   });
 
+  it("counts the explicit properties of a factory that spreads once, inside the type", () => {
+    const source = ["const createA = () => {", "  const part = { a: () => 1 }", "  return { ...part, b: () => 2, c: () => 3 }", "}"].join("\n");
+    assert.deepEqual(findTypedReports(source), []);
+  });
+
   it("counts the members of an inline, an interface and an alias input type", () => {
     assert.deepEqual(findTypedReports("const createA = (deps: { a: () => 1; b: () => 2; c: () => 3; d: () => 4 }) => ({ a: 1 })"), ["1 tooManyInputProperties"]);
     const alias = ["type Deps = { a: () => 1; b: () => 2; c: () => 3; d: () => 4 }", "const createA = (deps: Deps) => ({ a: 1 })"].join("\n");

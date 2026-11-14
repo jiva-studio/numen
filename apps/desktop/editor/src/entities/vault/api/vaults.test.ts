@@ -77,11 +77,11 @@ describe('a vault requested for', () => {
 
   it('is removed and opened by what the schema names', async () => {
     requestLog.removeVault.mockResolvedValue({})
-    expect(await vaults.remove('v1', true)).toBeNull()
+    expect(await vaults.remove('v1', true)).toStrictEqual({ ok: true, value: null })
     expect(requestLog.removeVault.mock.calls.at(-1)?.[0]).toMatchObject({ id: 'v1', trash: true })
 
     requestLog.openVault.mockResolvedValue({})
-    expect(await vaults.open('v1')).toBeNull()
+    expect(await vaults.open('v1')).toStrictEqual({ ok: true, value: null })
     expect(requestLog.openVault.mock.calls.at(-1)?.[0]).toMatchObject({ id: 'v1' })
   })
 
@@ -90,9 +90,9 @@ describe('a vault requested for', () => {
     expect(await vaults.add('/v', 'Name')).toStrictEqual({ ok: false, error: 'nameTaken' })
 
     requestLog.removeVault.mockResolvedValue({ error: VAULTS_ERROR_CODE.LAST_VAULT })
-    expect(await vaults.remove('v1', false)).toBe('lastVault')
+    expect(await vaults.remove('v1', false)).toStrictEqual({ ok: false, error: 'lastVault' })
 
     requestLog.openVault.mockResolvedValue({ error: VAULTS_ERROR_CODE.NOT_FOUND })
-    expect(await vaults.open('gone')).toBe('notFound')
+    expect(await vaults.open('gone')).toStrictEqual({ ok: false, error: 'notFound' })
   })
 })

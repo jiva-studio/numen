@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { effectScope } from 'vue'
-import { openNotes as openNotesOn } from '@/entities/note'
+import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
 import { createCustomTabKind, type PluginHostDeps } from '@numen/plugin-loader'
 import { blank } from '@/testing/stubs'
 import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 
 const statFile = (body: string): string => `1 1 at:${body}`
 
-const openNotes = (core: Notes, how: Parameters<typeof openNotesOn>[0]) => {
+const openNotes = (core: Notes, how: Parameters<typeof useOpenNotes>[0]) => {
   answerNotes(core)
-  return openNotesOn(how)
+  return flattenOpenNotes(useOpenNotes(how))
 }
 
 function createFiles() {

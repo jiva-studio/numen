@@ -6,6 +6,7 @@ import (
 	"html"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -333,5 +334,27 @@ func TestFatalReport_UnknownErrorGoesToDetails(t *testing.T) {
 	}
 	if response.Error != "open thing: broken pipe" {
 		t.Errorf("error = %q, want the raw error", response.Error)
+	}
+}
+
+// An index written by a newer Numen is reported with both versions and one instruction, and offers no rebuild.
+func TestFatalReport_NewerIndex(t *testing.T) {
+	why := fmt.Errorf("open vault: %w", &index.NewerIndexError{File: "/data/index.db", Found: 7, Supported: 3})
+	response := getFatalReport(container.NewConfig(container.Config{}), why)
+
+	if response.Heading != openingTheIndex {
+		t.Errorf("heading = %q, want %q", response.Heading, openingTheIndex)
+	}
+	if response.Remedy != "Update Numen." {
+		t.Errorf("remedy = %q, want only the instruction to update", response.Remedy)
+	}
+	var facts []string
+	for _, f := range response.Facts {
+		facts = append(facts, f.Content)
+	}
+	for _, want := range []string{"7", "3"} {
+		if !slices.Contains(facts, want) {
+			t.Errorf("facts %v do not hold %q", facts, want)
+		}
 	}
 }

@@ -39,6 +39,12 @@ The distilled rules:
 
 ---
 
+## Where the review of a pull request runs
+
+A pull request is reviewed in CI, not by a local run: marking it ready for review, and later the comment `gh pr comment <N> --body "/nm-review"` (or `/nm-review full`), starts `.github/workflows/claude-review.yml`, which runs this skill in CI and submits the verdict as an approval or a change request from github-actions[bot]. That approval is the one the branch rules count. A local run is for a working tree, a branch before its pull request exists, or a path.
+
+---
+
 ## Target & repository auto-detection protocol
 
 Resolve the repository root and determine the target:

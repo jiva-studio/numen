@@ -126,12 +126,9 @@ What is in it:
 | `vaults.json` | the vaults this installation knows and which one was open last. numen writes it; you do not. |
 | `themes/`     | [your own themes](/themes/), one `.css` file each.                                           |
 
-Deleting the whole folder removes the list of your vaults and loses nothing you wrote: the notes
-are your files, and adding the folders again brings the same vaults back.
+Deleting the whole folder removes the list of your vaults and loses nothing you wrote: the notes are your files, and adding the folders again brings the same vaults back.
 
-The search index is not in there. It is `index.db` in the folder your system keeps caches in —
-`~/.cache/numen/` on Linux — because it is a cache: everything in it was read from your
-files and can be read again.
+The search index is not in there. It is `index.db` in the folder your system keeps application data in — `~/.local/share/numen/` on Linux, `~/Library/Application Support/numen/` on macOS, `%AppData%\numen\` on Windows. Everything in it was read from your files and can be read again. An index written by a newer Numen is never deleted: this Numen refuses to open it and asks you to update.
 
 ## What numen remembers
 

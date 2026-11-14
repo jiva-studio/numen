@@ -14,6 +14,7 @@ import (
 
 func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHost {
 	runtime, settings := absent.Runtime{Reason: reason, Cause: cause}, absent.Settings{}
+	lender := hostendpoint.NewLender()
 	return &PluginHost{
 		Runtime: PluginRuntime{
 			Activator: runtime, PluginRetrier: runtime, PluginDiscoverer: runtime, PluginLister: runtime,
@@ -25,7 +26,8 @@ func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHo
 			SettingChecker: settings, PersistHook: settings,
 		},
 		Watch:               PluginWatch{PluginShutdown: settings, DependencyReporter: settings, ContentTypeTable: contenttype.Open()},
-		Endpoint:            hostendpoint.NewServices(),
+		Endpoint:            hostendpoint.NewServices(lender.Get),
+		Lender:              lender,
 		ApplySetting:        func(context.Context, string, string, any) error { return nil },
 		Views:               PluginViews{Follow: func(settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return nil }},
 		SetStorage:          func(string, string) {},

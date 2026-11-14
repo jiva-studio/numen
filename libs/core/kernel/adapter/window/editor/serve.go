@@ -102,6 +102,7 @@ func (o *Installation) GetThemes() numenv1connect.ThemeServiceHandler { return o
 // and where the files of a plugin are read from.
 func (o *Installation) SetPlugins(services PluginServices, dir func(id string) (string, bool)) {
 	o.pages.plugins, o.pages.pluginDir = services, dir
+	o.pages.window.GetPlaying().Load().setPluginServices(services)
 }
 
 // OnFolderDialog registers what a service does with the native dialog when the
@@ -132,6 +133,7 @@ func (o *Installation) Start(ctx context.Context, first domain.Vault, files *Fil
 	if playing, why := Listen(ctx, files, onStop); why != nil {
 		writeDiagnostic(o.pages.window.AddTask, o.out, "recordings will not play: %v\n", why)
 	} else {
+		playing.setPluginServices(o.pages.plugins)
 		o.pages.window.GetPlaying().Store(playing)
 	}
 	return nil
