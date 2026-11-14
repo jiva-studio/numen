@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { PluginHealth } from './pluginInfo'
-import { getPluginState, getWorstItem, hasStateLabel } from './state'
+import type { PluginHealth, PluginSettingInfo } from './pluginInfo'
+import { getPluginState, getWorstItem, hasConnectionSettings, hasStateLabel } from './state'
+import { createMockPluginInfo } from './testing/listing'
 
 const item = (key: string, severity: PluginHealth['severity']): PluginHealth => ({
   key,
@@ -8,6 +9,14 @@ const item = (key: string, severity: PluginHealth['severity']): PluginHealth => 
   text: `The ${key} does not work`,
   detail: '',
   actionLabel: '',
+})
+
+const setting = (type: PluginSettingInfo['type']): PluginSettingInfo => ({
+  key: type,
+  type,
+  title: type,
+  description: '',
+  default: undefined,
 })
 
 describe('the worst item of a plugin', () => {
@@ -55,5 +64,25 @@ describe('the state label of a plugin row', () => {
     expect(hasStateLabel('enabled')).toBe(false)
     expect(hasStateLabel('disabled')).toBe(false)
     expect(hasStateLabel('stopped')).toBe(false)
+  })
+})
+
+describe('hasConnectionSettings', () => {
+  it('is true when the plugin declares a connections setting', () => {
+    const info = createMockPluginInfo('sample.agent', 'Agent', {
+      settings: [setting('boolean'), setting('connections')],
+    })
+
+    expect(hasConnectionSettings(info)).toBe(true)
+  })
+
+  it('is false when the plugin declares only other settings, none, or is not installed', () => {
+    expect(
+      hasConnectionSettings(
+        createMockPluginInfo('sample.notes', 'Notes', { settings: [setting('boolean')] }),
+      ),
+    ).toBe(false)
+    expect(hasConnectionSettings(createMockPluginInfo('sample.empty', 'Empty'))).toBe(false)
+    expect(hasConnectionSettings(undefined)).toBe(false)
   })
 })

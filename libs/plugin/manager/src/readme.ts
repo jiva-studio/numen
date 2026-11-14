@@ -13,7 +13,7 @@ const removeComments = (raw: string): string => {
       end === -1
         ? text.slice(0, start)
         : text.slice(0, start) + text.slice(end + COMMENT_END.length)
-    start = text.indexOf(COMMENT_START, Math.max(0, start - COMMENT_START.length + 1))
+    start = text.indexOf(COMMENT_START)
   }
   return text
 }
