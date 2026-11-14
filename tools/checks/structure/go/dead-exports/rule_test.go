@@ -239,8 +239,6 @@ func (l layout) collectModuleUsage(pkgs []*packages.Package, found *usage, seenI
 	}
 }
 
-// collectTestUses keeps the uses of a declaration of test support from the test files of pkg. A use of any
-// other export from a test file counts for nothing.
 func (l layout) collectTestUses(pkg *packages.Package, found *usage, seenUses map[use]bool) {
 	if pkg.Types == nil || pkg.TypesInfo == nil || pkg.Fset == nil {
 		return
@@ -568,15 +566,15 @@ func isTestPath(rel string) bool {
 	return false
 }
 
-// A package of libs/plugin/sdk-go whose directory name ends in "test" (servertest, healthtest) is test
-// support. The plugin server runs only as a process: it takes its token and prints its ready line over
-// standard input and output and stops on signals, so a plugin test cannot start it. Test support in a
-// *test package is the one way a test gets a handler, as net/http/httptest does. A use of an SDK export
-// from test support passes on to the consumers of the declaration that holds it, as a use from any
-// other package of the SDK does, and a use from a test file counts only for a declaration of test
-// support. So an export that only a test-support declaration uses stays alive while a test uses that
-// declaration, and an unused test-support declaration is dead with what it alone keeps alive.
 func (l layout) isSupportPath(rel string) bool {
+	// A package of libs/plugin/sdk-go whose directory name ends in "test" (servertest, healthtest) is test
+	// support. The plugin server runs only as a process: it takes its token and prints its ready line over
+	// standard input and output and stops on signals, so a plugin test cannot start it. Test support in a
+	// *test package is the one way a test gets a handler, as net/http/httptest does. A use of an SDK export
+	// from test support passes on to the consumers of the declaration that holds it, as a use from any
+	// other package of the SDK does, and a use from a test file counts only for a declaration of test
+	// support. So an export that only a test-support declaration uses stays alive while a test uses that
+	// declaration, and an unused test-support declaration is dead with what it alone keeps alive.
 	if !isWithinDir(rel, l.sdkGoDir) || strings.HasSuffix(rel, "_test.go") || !strings.HasSuffix(rel, ".go") {
 		return false
 	}
