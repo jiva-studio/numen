@@ -52,6 +52,7 @@ const domainImports = createDomainImports({
 export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, {
     ...clockFunctions,
+    portIgnores: [portFile],
     defaultProject: ['eslint.config.js'],
   }),
 
