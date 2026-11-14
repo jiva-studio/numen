@@ -27,9 +27,9 @@ const packages = import.meta.glob('../package.json', { eager: true, import: 'def
 const manifest = Object.values(files)[0] as Manifest
 
 describe('the manifest of the todos plugin', () => {
-  it('declares the editor target, the read permission and the service the frontend calls', () => {
+  it('declares the editor target, the read and write permissions and the service the frontend calls', () => {
     expect(manifest.targets).toEqual(['desktop.editor'])
-    expect(manifest.permissions).toEqual(['vault:read'])
+    expect(manifest.permissions).toEqual(['vault:read', 'vault:write'])
     expect(manifest.services).toEqual([SERVICE])
     expect(manifest.id).toBe(SERVICE)
   })

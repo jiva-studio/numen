@@ -33,13 +33,13 @@ func readManifest(t *testing.T) manifestShape {
 	return shape
 }
 
-func TestTheManifestDeclaresTheEditorTargetTheReadPermissionAndTheService(t *testing.T) {
+func TestTheManifestDeclaresTheEditorTargetTheReadAndWritePermissionsAndTheService(t *testing.T) {
 	shape := readManifest(t)
 
 	if !slices.Equal(shape.Targets, []string{"desktop.editor"}) {
 		t.Errorf("targets = %v", shape.Targets)
 	}
-	if !slices.Equal(shape.Permissions, []string{"vault:read"}) {
+	if !slices.Equal(shape.Permissions, []string{"vault:read", "vault:write"}) {
 		t.Errorf("permissions = %v", shape.Permissions)
 	}
 	if !slices.Equal(shape.Services, []string{"md.numen.todos"}) {

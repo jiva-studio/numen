@@ -11,6 +11,8 @@ import type {
   Summary,
   WatchMessage,
   WatchTasksRequest,
+  SetTaskDoneRequest,
+  SetTaskDoneResponse,
 } from '../types'
 
 /** The service name the manifest declares. */
@@ -22,4 +24,5 @@ export interface Methods {
   ListTasks: { request: ListTasksRequest; response: ListTasksResponse }
   RefreshIndex: { request: RefreshIndexRequest; response: RefreshIndexResponse }
   WatchTasks: { request: WatchTasksRequest; response: WatchMessage }
+  SetTaskDone: { request: SetTaskDoneRequest; response: SetTaskDoneResponse }
 }

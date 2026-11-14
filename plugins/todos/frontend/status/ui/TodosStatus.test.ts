@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { createFakeApi, settle, SUMMARY, task } from '../../testing/fakeApi'
+import { createFakeApi, refuse, settle, SUMMARY, task } from '../../testing/fakeApi'
+import { WORDS } from '../../words'
 import type { Summary } from '../../types'
 import TodosStatus from './TodosStatus.vue'
 
@@ -122,14 +123,17 @@ describe('the todos popover', () => {
     expect(rows[3]?.text()).toContain('Ideas')
   })
 
-  it('shows each task with a checkbox that cannot be ticked', async () => {
+  it('shows each task with no recurrence with a checkbox that can be ticked', async () => {
     const { wrapper: view } = draw(SUMMARY)
 
     await openPopover(view)
 
     const boxes = view.findAll('li input[type="checkbox"]')
     expect(boxes).toHaveLength(4)
-    for (const box of boxes) expect(box.attributes('disabled')).toBeDefined()
+    for (const box of boxes) {
+      expect(box.attributes('disabled')).toBeUndefined()
+      expect((box.element as HTMLInputElement).checked).toBe(false)
+    }
   })
 
   it('asks to open the note at the line when the text of a task is clicked', async () => {
@@ -141,5 +145,144 @@ describe('the todos popover', () => {
     await text?.trigger('click')
 
     expect(view.emitted('open')).toEqual([[{ path: 'Daily/2026-11-12.md', line: 3 }]])
+  })
+})
+
+const boxOf = (view: VueWrapper, text: string) => {
+  const row = view.findAll('li').find((one) => one.text().includes(text))
+  const box = row?.find('input[type="checkbox"]')
+  if (!box) throw new Error(`no checkbox for ${text}`)
+  return box
+}
+
+describe('ticking a task in the todos popover', () => {
+  it('sends the path, the line, the text of the line and the day of the window', async () => {
+    const { wrapper: view, fake } = draw(SUMMARY)
+    await openPopover(view)
+
+    await boxOf(view, 'call the bank').trigger('click')
+    await settle()
+
+    expect(fake.calls.setTaskDone).toEqual([
+      {
+        path: 'Daily/2026-11-12.md',
+        line: 3,
+        raw: '- [ ] call the bank',
+        isDone: true,
+        today: TODAY,
+      },
+    ])
+    expect(view.emitted('open')).toBeUndefined()
+  })
+
+  it('reads the lists again after a tick, so the ticked task leaves them', async () => {
+    const { wrapper: view, fake } = draw(SUMMARY)
+    await openPopover(view)
+    const readsBefore = fake.calls.listTasks.length
+
+    await boxOf(view, 'call the bank').trigger('click')
+    await settle()
+
+    expect(fake.calls.listTasks.length).toBe(readsBefore + 3)
+    expect(view.text()).not.toContain('call the bank')
+    expect(view.text()).toContain('fix the tap')
+    expect(view.findAll('h3')[0]?.text()).toMatch(/^Overdue\b.*6/)
+  })
+
+  it('shows a recurring task with a checkbox that cannot be ticked and says why', async () => {
+    const fake = createFakeApi({
+      tasks: {
+        ...TASKS,
+        today: {
+          tasks: [
+            task({
+              path: 'Weekly.md',
+              line: 4,
+              text: 'water the plants',
+              due: TODAY,
+              recurrence: 'rec:1w',
+              raw: '- [ ] water the plants due:2026-11-14 rec:1w',
+            }),
+          ],
+          total: 1,
+          revision: 4,
+        },
+      },
+    })
+    const { wrapper: view } = draw(SUMMARY, fake)
+    await openPopover(view)
+
+    const box = boxOf(view, 'water the plants')
+    await box.trigger('click')
+    await settle()
+
+    expect(box.attributes('disabled')).toBeDefined()
+    expect(box.attributes('title')).toBe(WORDS.recurringNotTickable)
+    expect(fake.calls.setTaskDone).toEqual([])
+    expect(boxOf(view, 'fix the tap').attributes('disabled')).toBeUndefined()
+  })
+
+  it('asks to show that the note changed when the backend refuses the tick, and reads the lists again', async () => {
+    const fake = createFakeApi({
+      tasks: TASKS,
+      setTaskDone: (request) => refuse(request, 'notFound'),
+    })
+    const { wrapper: view } = draw(SUMMARY, fake)
+    await openPopover(view)
+    const readsBefore = fake.calls.listTasks.length
+
+    await boxOf(view, 'call the bank').trigger('click')
+    await settle()
+
+    expect(view.emitted('showError')).toEqual([[WORDS.changedNote]])
+    expect(fake.calls.listTasks.length).toBe(readsBefore + 3)
+    expect((boxOf(view, 'call the bank').element as HTMLInputElement).checked).toBe(false)
+  })
+
+  it('asks to show that the tick failed when the backend cannot be reached', async () => {
+    const fake = createFakeApi({
+      tasks: TASKS,
+      setTaskDone: () => ({
+        ok: false,
+        error: { code: 'unavailable', message: 'the host is gone' },
+      }),
+    })
+    const { wrapper: view } = draw(SUMMARY, fake)
+    await openPopover(view)
+
+    await boxOf(view, 'call the bank').trigger('click')
+    await settle()
+
+    expect(view.emitted('showError')).toEqual([[WORDS.tickFailed]])
+    expect((boxOf(view, 'call the bank').element as HTMLInputElement).checked).toBe(false)
+  })
+})
+
+describe('a tick in flight in the todos popover', () => {
+  it('disables the checkbox of the task until the backend answers, so a second click sends nothing', async () => {
+    const pending: { answer?: () => void } = {}
+    const fake = createFakeApi({
+      tasks: TASKS,
+      setTaskDone: (request) =>
+        new Promise((resolve) => {
+          pending.answer = () => resolve(refuse(request, 'notFound'))
+        }),
+    })
+    const { wrapper: view } = draw(SUMMARY, fake)
+    await openPopover(view)
+
+    await boxOf(view, 'call the bank').trigger('click')
+    await settle()
+    await boxOf(view, 'call the bank').trigger('click')
+    await settle()
+
+    expect(boxOf(view, 'call the bank').attributes('disabled')).toBeDefined()
+    expect(boxOf(view, 'fix the tap').attributes('disabled')).toBeUndefined()
+    expect(fake.calls.setTaskDone).toHaveLength(1)
+
+    pending.answer?.()
+    await settle()
+
+    expect(boxOf(view, 'call the bank').attributes('disabled')).toBeUndefined()
   })
 })

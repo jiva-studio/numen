@@ -84,6 +84,34 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
     response: {},
   },
   WatchTasks: { request: {}, response: { revision: 12, isReady: true } },
+  SetTaskDone: {
+    request: {
+      path: 'Projects/Home.md',
+      line: 7,
+      raw: '- [ ] fix the tap +home ^tap',
+      isDone: true,
+      today: '2026-11-14',
+    },
+    response: {
+      task: {
+        path: 'Projects/Home.md',
+        line: 7,
+        raw: '- [x] fix the tap +home done:2026-11-14 ^tap',
+        text: 'fix the tap ^tap',
+        status: 'done',
+        priority: '',
+        due: '',
+        doneOn: '2026-11-14',
+        recurrence: '',
+        projects: ['home'],
+        contexts: [],
+        issues: [],
+        depth: 0,
+      },
+      change: 'completed',
+      error: '',
+    },
+  },
 }
 
 describe('todos service contract', () => {

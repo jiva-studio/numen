@@ -8,18 +8,19 @@ import { isPageMove, useMenuDismissal } from '@numen/ui'
 import { getChip } from '../model/chip'
 import { getNoteTitle, useTaskGroups } from '../model/useTaskGroups'
 import { WORDS as words } from '../../words'
-import type { Summary, TaskReader } from '../../types'
+import type { Summary, Task, TaskReader, TaskWriter } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   summary: Summary | null
-  api: TaskReader
+  api: TaskReader & TaskWriter
   getToday: () => string
 }>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'open', target: { path: string; line: number }): void
+  (event: 'showError', message: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -29,6 +30,7 @@ const dismissal = useMenuDismissal(root, onClose, isPageMove)
 const chip = computed(() => getChip(props.summary))
 const label = computed(() => `${words.chipLabel}: ${chip.value.count}`)
 const { groups, load } = useTaskGroups(props.api, props.getToday)
+const pendingTicks = ref<ReadonlySet<string>>(new Set())
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(isOpen, (open) => {
@@ -46,6 +48,17 @@ watch(
   },
 )
 
+/* --------------------------------- Helpers -------------------------------- */
+const getKey = (task: Task): string => `${task.path}:${task.line}`
+
+function isRecurring(task: Task): boolean {
+  // Ticking a recurring task moves its due date, which the backend does not do yet.
+  return task.recurrence !== '' || task.issues.includes('invalidRecurrence')
+}
+
+const isTickable = (task: Task): boolean =>
+  !isRecurring(task) && !pendingTicks.value.has(getKey(task))
+
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {
   isOpen.value = !isOpen.value
@@ -53,6 +66,30 @@ function onToggle() {
 
 function onClose() {
   isOpen.value = false
+}
+
+function onTick(task: Task) {
+  tick(task).catch(() => undefined)
+}
+
+async function tick(task: Task) {
+  if (!isTickable(task)) return
+  const key = getKey(task)
+  pendingTicks.value = new Set([...pendingTicks.value, key])
+  try {
+    const result = await props.api.setTaskDone({
+      path: task.path,
+      line: task.line,
+      raw: task.raw,
+      isDone: true,
+      today: props.getToday(),
+    })
+    if (!result.ok) emit('showError', words.tickFailed)
+    else if (result.value.error !== '') emit('showError', words.changedNote)
+    await load()
+  } finally {
+    pendingTicks.value = new Set([...pendingTicks.value].filter((one) => one !== key))
+  }
 }
 </script>
 
@@ -84,7 +121,13 @@ function onClose() {
             :key="`${task.path}:${task.line}`"
             class="todos-status__row"
           >
-            <input type="checkbox" disabled :aria-label="words.taskDone" />
+            <input
+              type="checkbox"
+              :disabled="!isTickable(task)"
+              :title="isRecurring(task) ? words.recurringNotTickable : undefined"
+              :aria-label="words.taskDone"
+              @click.prevent="onTick(task)"
+            />
             <button
               type="button"
               class="todos-status__text"

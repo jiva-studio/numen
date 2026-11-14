@@ -5,6 +5,9 @@ import { createApi, type ApiError, type Result } from '@numen/plugin-sdk'
 import { SERVICE } from './todos'
 import type {
   TaskReader,
+  TaskWriter,
+  SetTaskDoneRequest,
+  SetTaskDoneResponse,
   ListTasksRequest,
   ListTasksResponse,
   RefreshIndexRequest,
@@ -19,7 +22,7 @@ import type {
 const api = createApi(SERVICE)
 
 /** What the models ask of the backend. */
-export interface TodosApi extends TaskReader {
+export interface TodosApi extends TaskReader, TaskWriter {
   /** Reads the counts of the open tasks at a day. */
   getSummary(today: string): Promise<Result<Summary, ApiError>>
   /** Tells the backend which notes changed; no path and no rename is a full check. */
@@ -38,4 +41,6 @@ export const todosApi: TodosApi = {
   refreshIndex: (paths, renamed) =>
     api.call<RefreshIndexRequest, RefreshIndexResponse>('RefreshIndex', { paths, renamed }),
   watchTasks: (signal) => api.stream<WatchTasksRequest, WatchMessage>('WatchTasks', {}, { signal }),
+  setTaskDone: (request) =>
+    api.call<SetTaskDoneRequest, SetTaskDoneResponse>('SetTaskDone', request),
 }

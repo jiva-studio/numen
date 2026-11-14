@@ -18,3 +18,9 @@ type FileReader interface {
 type NoteLister interface {
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
+
+// FileWriter writes a note over the file stat it had when it was read.
+type FileWriter interface {
+	// Write replaces the file if it matches the baseline, and returns host.ErrStale if it does not.
+	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
+}
