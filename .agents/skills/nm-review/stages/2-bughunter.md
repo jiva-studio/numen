@@ -77,7 +77,12 @@ A change to a wire message affects both the Go side and the generated TypeScript
 - A generated type used against a hand-written shape that has drifted.
 - A value renamed on the way across the protocol boundary.
 
-### 7. Conditions
+### 7. A failure stays a failure
+
+- Follow every error, cancellation and missing value to the place that decides what to do with it. No path on the way may turn it into something the caller takes for success: a default value, a partial result, or a fallback to other data than the caller asked for. It is worst when a write follows a failed read.
+- What the caller gave is what the work uses, and what the work opens it closes, on every path including an exception.
+
+### 8. Conditions
 
 - Compound conditions inverted: `!a && b` where `!(a && b)` was meant.
 - A `switch` with no default where a new case is plausible; a fallthrough nobody intended.
