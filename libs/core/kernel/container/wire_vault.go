@@ -111,7 +111,7 @@ type vaultWiring struct {
 	IndexPath    string
 	RegistryPath string
 	ServiceDir   string
-	Clock        machineport.Clock
+	Clock        machineport.Timer
 	PluginHost   *PluginHost
 	RunningHost  *PluginHost
 	TextVersions *TextVersions
