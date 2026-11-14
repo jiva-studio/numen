@@ -1,6 +1,7 @@
 package testsupport
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -24,11 +25,17 @@ func NewClockAt(start time.Time) *ManualClock {
 	return &ManualClock{now: start}
 }
 
-// ManualClock is a clock that reports a configured time and moves only when told.
-// It is safe for concurrent use.
+// ManualClock is a clock that reports a configured time and moves only when told. A wait on it ends when
+// the clock is moved to or past its end. It is safe for concurrent use.
 type ManualClock struct {
-	mu  sync.Mutex
-	now time.Time
+	mu      sync.Mutex
+	now     time.Time
+	waiters []manualWaiter
+}
+
+type manualWaiter struct {
+	end   time.Time
+	fired chan time.Time
 }
 
 // Now gets the configured time.
@@ -43,6 +50,7 @@ func (f *ManualClock) Set(t time.Time) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.now = t
+	f.fireDue()
 }
 
 // Advance moves the clock forward by d and gets the new time.
@@ -50,5 +58,56 @@ func (f *ManualClock) Advance(d time.Duration) time.Time {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.now = f.now.Add(d)
+	f.fireDue()
 	return f.now
+}
+
+// After returns a channel that receives the time once the clock has moved d past the time it reads now.
+func (f *ManualClock) After(d time.Duration) <-chan time.Time {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	fired := make(chan time.Time, 1)
+	f.waiters = append(f.waiters, manualWaiter{end: f.now.Add(d), fired: fired})
+	f.fireDue()
+	return fired
+}
+
+// Wait waits until the clock has moved d past the time it reads now, and returns early with the error of ctx
+// where ctx ends first. A d of zero or less returns the error of ctx, as the system clock does.
+func (f *ManualClock) Wait(ctx context.Context, d time.Duration) error {
+	if d <= 0 || ctx.Err() != nil {
+		return ctx.Err()
+	}
+	fired := f.After(d)
+	select {
+	case <-ctx.Done():
+		f.drop(fired)
+		return ctx.Err()
+	case <-fired:
+		return nil
+	}
+}
+
+func (f *ManualClock) drop(fired <-chan time.Time) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	pending := f.waiters[:0]
+	for _, one := range f.waiters {
+		if one.fired != fired {
+			pending = append(pending, one)
+		}
+	}
+	f.waiters = pending
+}
+
+func (f *ManualClock) fireDue() {
+	pending := f.waiters[:0]
+	for _, one := range f.waiters {
+		if one.end.After(f.now) {
+			pending = append(pending, one)
+			continue
+		}
+		one.fired <- f.now
+	}
+	f.waiters = pending
 }

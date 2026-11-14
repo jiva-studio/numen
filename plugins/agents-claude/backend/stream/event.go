@@ -31,33 +31,19 @@ type serverError struct {
 // UnmarshalJSON reads the keys of the program that are not camelCase beside the ones that are.
 func (e *event) UnmarshalJSON(data []byte) error {
 	type plain event
-	var read plain
-	if err := json.Unmarshal(data, &read); err != nil {
-		return err
-	}
-	raw, err := readFields(data)
-	if err != nil {
-		return err
-	}
-	err = errors.Join(
-		readField(raw, "session_id", &read.Session),
-		readField(raw, "is_error", &read.IsError),
-		readField(raw, "mcp_servers", &read.Servers),
-		readField(raw, "mcp_server_errors", &read.ServerErrors),
+	raw, err := unmarshalObject(data, (*plain)(e))
+	return errors.Join(
+		err,
+		readField(raw, "session_id", &e.Session),
+		readField(raw, "is_error", &e.IsError),
+		readField(raw, "mcp_servers", &e.Servers),
+		readField(raw, "mcp_server_errors", &e.ServerErrors),
 	)
-	if err != nil {
-		return err
-	}
-	*e = event(read)
-	return nil
 }
 
-func readFields(data []byte) (map[string]json.RawMessage, error) {
+func unmarshalObject(data []byte, target any) (map[string]json.RawMessage, error) {
 	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, err
-	}
-	return raw, nil
+	return raw, errors.Join(json.Unmarshal(data, target), json.Unmarshal(data, &raw))
 }
 
 func readField(raw map[string]json.RawMessage, key string, target any) error {
@@ -85,10 +71,11 @@ func (e event) getToolAnswers() []toolAnswer {
 	for _, block := range msg.Content {
 		var kind, id string
 		var isError bool
-		if json.Unmarshal(block["type"], &kind) != nil || kind != "tool_result" {
-			continue
-		}
-		if readField(block, "tool_use_id", &id) != nil || readField(block, "is_error", &isError) != nil {
+		if err := errors.Join(
+			readField(block, "type", &kind),
+			readField(block, "tool_use_id", &id),
+			readField(block, "is_error", &isError),
+		); err != nil || kind != "tool_result" {
 			continue
 		}
 		answers = append(answers, toolAnswer{ID: id, IsError: isError})
@@ -120,36 +107,14 @@ type contentBlock struct {
 // UnmarshalJSON reads the content block, which the program writes under a key that is not camelCase.
 func (s *streamEvent) UnmarshalJSON(data []byte) error {
 	type plain streamEvent
-	var read plain
-	if err := json.Unmarshal(data, &read); err != nil {
-		return err
-	}
-	raw, err := readFields(data)
-	if err != nil {
-		return err
-	}
-	if err := readField(raw, "content_block", &read.Block); err != nil {
-		return err
-	}
-	*s = streamEvent(read)
-	return nil
+	raw, err := unmarshalObject(data, (*plain)(s))
+	return errors.Join(err, readField(raw, "content_block", &s.Block))
 }
 
 // UnmarshalJSON reads the partial JSON of a call, which the program writes under a key that is not
 // camelCase.
 func (d *streamDelta) UnmarshalJSON(data []byte) error {
 	type plain streamDelta
-	var read plain
-	if err := json.Unmarshal(data, &read); err != nil {
-		return err
-	}
-	raw, err := readFields(data)
-	if err != nil {
-		return err
-	}
-	if err := readField(raw, "partial_json", &read.Partial); err != nil {
-		return err
-	}
-	*d = streamDelta(read)
-	return nil
+	raw, err := unmarshalObject(data, (*plain)(d))
+	return errors.Join(err, readField(raw, "partial_json", &d.Partial))
 }

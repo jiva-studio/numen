@@ -9,6 +9,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -89,7 +90,10 @@ func newDetectionFixture(t *testing.T) *detectionFixture {
 	f := &detectionFixture{fixture: newFixture(t), detection: &answeredDetection{}}
 	f.types.types = append(f.types.types, detectingType(agentsPluginID, "kite", true), detectingType("org.example.gone", "wren", false))
 	next := 0
-	f.connection = connectiontest.NewWithDetection(f.repository, f.types, f.keys, f.uses, f.detection, func() (string, error) {
+	f.connection = connectiontest.New(connectiontest.Parts{
+		Repository: f.repository, Types: f.types, Keys: f.keys, Uses: f.uses,
+		Detected: f.detection, Titles: none.OperationTitles{},
+	}, func() (string, error) {
 		next++
 		return fmt.Sprintf("c%08x", next), nil
 	})
@@ -198,7 +202,7 @@ func TestListRowsDiscoversTheDetectedConnectionsAfterTheStoredOnes(t *testing.T)
 		detectingType("org.example.gone", "wren", false),
 	}}
 	detection := &answeredDetection{}
-	deps := connection.NewDeps(repository, types, &memoryKeys{values: map[string]string{}}, &memoryUses{}).AddDetection(detection)
+	deps := connection.NewDeps(repository, types, &memoryKeys{values: map[string]string{}}, &memoryUses{}, detection)
 
 	rows, err := connection.NewListRows(deps, fixedRowSettings{setting: connectiondomain.RowSetting{IsDiscovering: true}}).Execute(chatPluginID, taskOp)
 	if err != nil {

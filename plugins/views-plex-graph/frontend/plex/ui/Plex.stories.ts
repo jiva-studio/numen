@@ -47,7 +47,6 @@ interface Knobs {
   lineGap: number
   focusGap: number
   margin: number
-  spread: number
   squeeze: number
   maxPerCluster: number
   maxHeadings: number
@@ -84,7 +83,6 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   focusGap: a.focusGap,
   margin: a.margin,
   squeeze: a.squeeze,
-  spread: a.spread,
   maxPerCluster: a.maxPerCluster,
   maxHeadings: a.maxHeadings,
   routing: {
@@ -263,7 +261,6 @@ const meta = {
     lineGap: range(0, 64, 2),
     focusGap: range(8, 200, 4),
     margin: range(0, 160, 4),
-    spread: range(1, 4, 0.1),
     squeeze: range(0.2, 1, 0.05),
     maxPerCluster: range(1, 40),
     maxHeadings: range(1, 12),
@@ -346,7 +343,6 @@ const meta = {
     lineGap: 20,
     focusGap: 56,
     margin: 16,
-    spread: 2.5,
     squeeze: 0.35,
     maxPerCluster: 20,
     maxHeadings: 6,
@@ -613,7 +609,7 @@ const titledLines: PlexGraph = {
 
 /** Renders edge labels along curved paths, truncated where they do not fit, and raises hovered lines. */
 export const TitledLines: Story = {
-  args: { graph: titledLines, duration: 0, spread: 1 },
+  args: { graph: titledLines, duration: 0 },
   play: async ({ canvasElement }) => {
     const title = (words: string) =>
       [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].filter(

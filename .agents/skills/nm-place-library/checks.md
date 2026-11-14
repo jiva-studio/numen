@@ -12,7 +12,7 @@ A red check is fixed in the code, not by changing the check or moving code out o
 - `core-client-private`: a public `@numen/core-client`, and a plugin that relies on it.
 - `sdk-ts-encapsulates-protocol`: an exported declaration of `@numen/plugin-sdk` that reaches a declaration of `libs/core/protocol`.
 - `plugins-use-main-entry`: a plugin that imports a deep path of the SDK or `@numen/ui` that is not a declared entry.
-- `plugins-frontend`, `plugins-isolation-capture`, `plugins-hold-no-schema`, `plugins-leakage`: a plugin frontend that imports through `@/**` or `@plugins/**`, one plugin that names another, a `.proto` file inside a plugin, a plugin that imports `libs/core/kernel`.
+- `make plugins_lint`, `plugins-isolation-capture`, `plugins-hold-no-schema`, `plugins-leakage`: a plugin frontend that imports through `@/**` or `@plugins/**`, one plugin that names another, a `.proto` file inside a plugin, a plugin that imports `libs/core/kernel`.
 - `every-path-has-a-layer`, `workspace-lists-every-module`, `all-ts-packages-eslint`: a module in no layer, a Go module missing from `go.work`, a TypeScript package with no ESLint configuration.
 - `npm run lint` in `apps/desktop/editor`, `apps/desktop/flashcards` and `apps/mobile` (ESLint `boundaries/dependencies`): a window module that imports a higher FSD layer, a slice that imports a sibling slice, a slice reached other than through its `index.ts`.
 

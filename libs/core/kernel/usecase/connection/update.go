@@ -63,9 +63,7 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 	if err != nil {
 		return Entry{}, errors.Join(err, u.secrets().restore(context.WithoutCancel(ctx), current.ID, backup))
 	}
-	if u.lists != nil {
-		u.lists.RefreshConnection(updated.ID)
-	}
+	u.lists.RefreshConnection(updated.ID)
 	return u.describe(ctx, updated)
 }
 

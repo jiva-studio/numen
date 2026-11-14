@@ -29,13 +29,14 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 ## Determinism and ports
 
 - ESLint `no-restricted-syntax` (`createClockSelectors`): `Date.now()`, `new Date()` with no argument and `performance.now()` outside the two declarations that read the clock.
-- `createPortConfig`: a clock, a frame request, a measurement or a source of randomness used by code that has to be held still by a test.
+- `createPortConfig`: a clock, a measurement or a source of randomness used by code that has to be held still by a test.
+- ESLint `no-restricted-globals` and `no-restricted-properties` (`createGlobalRules`): a frame request or `matchMedia` in any source file, and `window`, `document`, `navigator` or `location`, bare or through `globalThis`, in `model/` or a `.vue` file. `win` and `doc` of `@numen/ui` are the port.
 
 ## Libraries and styles
 
 - `package-matrix` and the library ESLint configs: `libs/ui/components` importing `@numen/protocol`, a wire type, a domain type or anything under `apps/**`.
 - `styles-use-tokens` (stylelint): a color literal, a `--numen-` declaration outside the token and theme files, a `var()` fallback, an undeclared token.
-- `plugins-frontend`: `@/**` or `@plugins/**` imported by a plugin frontend.
+- `make plugins_lint`: `@/**` or `@plugins/**` imported by a plugin frontend.
 - `styles-use-tokens` also holds the rule `numen/no-bare-length`: no `px` for a size except a 1px hairline border; a `rem` or `em` literal may stand on a property; a `rem` or `em` literal may also stand in any custom property.
 
 ## Whole repository
