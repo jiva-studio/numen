@@ -69,7 +69,6 @@ func (f *fakeScorer) getIsClosed() bool {
 	return f.isClosed
 }
 
-// scoreByLength scores each document by its length in bytes, so every document has its own score.
 func scoreByLength(_ string, documents []string) []float32 {
 	scores := make([]float32, len(documents))
 	for i, document := range documents {
@@ -108,7 +107,7 @@ func (o *opener) open(ctx context.Context, p profile.Profile) (ports.Scorer, err
 	return scorer, nil
 }
 
-func (o *opener) getOpened() []*fakeScorer {
+func (o *opener) getScorers() []*fakeScorer {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	return slices.Clone(o.opened)
@@ -131,7 +130,7 @@ func (r *reports) getTexts() []string {
 	return slices.Clone(r.texts)
 }
 
-func newReranking(t *testing.T, open *opener, report *reports) *reranking.Reranking {
+func newRerankingUseCase(t *testing.T, open *opener, report *reports) *reranking.Reranking {
 	t.Helper()
 	r, err := reranking.New(shippedSource{}, open.open, report.report)
 	if err != nil {
@@ -177,7 +176,7 @@ func gardenDocuments() []string {
 
 func TestRerankScoresTheDocumentsInTheirOrder(t *testing.T) {
 	open := newOpener()
-	r := newReranking(t, open, &reports{})
+	r := newRerankingUseCase(t, open, &reports{})
 
 	result, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "how often to water tomatoes", Documents: gardenDocuments()})
 
@@ -187,7 +186,7 @@ func TestRerankScoresTheDocumentsInTheirOrder(t *testing.T) {
 	if want := scoreByLength("", gardenDocuments()); !slices.Equal(result.GetScores(), want) {
 		t.Errorf("scores = %v, want %v in the order of the documents", result.GetScores(), want)
 	}
-	opened := open.getOpened()
+	opened := open.getScorers()
 	if len(opened) != 1 || len(opened[0].getCalls()) != 1 || !slices.Equal(opened[0].getCalls()[0].documents, gardenDocuments()) {
 		t.Errorf("the scorer was not given the documents in their order: %+v", opened)
 	}
@@ -195,46 +194,46 @@ func TestRerankScoresTheDocumentsInTheirOrder(t *testing.T) {
 
 func TestRerankWithNoModelRunsTheDefaultProfile(t *testing.T) {
 	open := newOpener()
-	r := newReranking(t, open, &reports{})
+	r := newRerankingUseCase(t, open, &reports{})
 
 	if _, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}); err != nil {
 		t.Fatal(err)
 	}
 
-	if opened := open.getOpened(); len(opened) != 1 || opened[0].profile.ID != profile.DefaultModel {
+	if opened := open.getScorers(); len(opened) != 1 || opened[0].profile.ID != profile.DefaultModel {
 		t.Errorf("opened %+v, want the default profile %s", opened, profile.DefaultModel)
 	}
 }
 
 func TestRerankOfAModelNamedByAliasRunsItsProfile(t *testing.T) {
 	open := newOpener()
-	r := newReranking(t, open, &reports{})
+	r := newRerankingUseCase(t, open, &reports{})
 
 	if _, err := r.Rerank(t.Context(), callFor("BGE-Reranker-v2-M3"), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}); err != nil {
 		t.Fatal(err)
 	}
 
-	if opened := open.getOpened(); len(opened) != 1 || opened[0].profile.ID != bgeID || opened[0].profile.MaxTokens != 512 {
+	if opened := open.getScorers(); len(opened) != 1 || opened[0].profile.ID != bgeID || opened[0].profile.MaxTokens != 512 {
 		t.Errorf("opened %+v, want the bge profile", opened)
 	}
 }
 
 func TestRerankWithNoDocumentsLoadsNoModel(t *testing.T) {
 	open := newOpener()
-	r := newReranking(t, open, &reports{})
+	r := newRerankingUseCase(t, open, &reports{})
 
 	result, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "tomatoes"})
 
 	if err != nil || len(result.GetScores()) != 0 {
 		t.Errorf("Rerank = %v, %v, want no scores", result.GetScores(), err)
 	}
-	if opened := open.getOpened(); len(opened) != 0 {
+	if opened := open.getScorers(); len(opened) != 0 {
 		t.Errorf("opened %d models for no document", len(opened))
 	}
 }
 
 func TestRerankOfAnEndedCallWithNoDocumentsReturnsTheContextError(t *testing.T) {
-	r := newReranking(t, newOpener(), &reports{})
+	r := newRerankingUseCase(t, newOpener(), &reports{})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
@@ -248,7 +247,7 @@ func TestRerankOfAnEndedCallWithNoDocumentsReturnsTheContextError(t *testing.T) 
 func TestRerankOfAnUnknownModelIsAStop(t *testing.T) {
 	open := newOpener()
 	report := &reports{}
-	r := newReranking(t, open, report)
+	r := newRerankingUseCase(t, open, report)
 
 	_, err := r.Rerank(t.Context(), callFor("owner/unknown-reranker"), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()})
 
@@ -259,7 +258,7 @@ func TestRerankOfAnUnknownModelIsAStop(t *testing.T) {
 	if texts := report.getTexts(); len(texts) != 1 || !strings.Contains(texts[0], "owner/unknown-reranker") {
 		t.Errorf("reported %q, want the unknown model named", texts)
 	}
-	if opened := open.getOpened(); len(opened) != 0 {
+	if opened := open.getScorers(); len(opened) != 0 {
 		t.Errorf("opened %d models for an unknown one", len(opened))
 	}
 }
@@ -268,7 +267,7 @@ func TestRerankOfAModelThatDoesNotOpenIsTryNext(t *testing.T) {
 	open := newOpener()
 	open.err = errors.New("onnxruntime: the library at /opt/ort is not loadable")
 	report := &reports{}
-	r := newReranking(t, open, report)
+	r := newRerankingUseCase(t, open, report)
 
 	_, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()})
 
@@ -280,7 +279,7 @@ func TestRerankOfAModelThatDoesNotOpenIsTryNext(t *testing.T) {
 
 func TestRerankPassesTheQueryWithoutTheInstruction(t *testing.T) {
 	open := newOpener()
-	r := newReranking(t, open, &reports{})
+	r := newRerankingUseCase(t, open, &reports{})
 
 	_, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{
 		Query: "how often to water tomatoes", Instruction: "Find the notes that answer the question", Documents: gardenDocuments(),
@@ -289,7 +288,7 @@ func TestRerankPassesTheQueryWithoutTheInstruction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	opened := open.getOpened()
+	opened := open.getScorers()
 	if len(opened) != 1 {
 		t.Fatalf("opened %d models, want 1", len(opened))
 	}
@@ -300,7 +299,7 @@ func TestRerankPassesTheQueryWithoutTheInstruction(t *testing.T) {
 
 func TestRerankOfTheSameProfileKeepsTheLoadedModel(t *testing.T) {
 	open := newOpener()
-	r := newReranking(t, open, &reports{})
+	r := newRerankingUseCase(t, open, &reports{})
 	request := &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}
 
 	for _, model := range []string{"", gteID, "gte-multilingual-reranker-base"} {
@@ -309,14 +308,14 @@ func TestRerankOfTheSameProfileKeepsTheLoadedModel(t *testing.T) {
 		}
 	}
 
-	if opened := open.getOpened(); len(opened) != 1 || opened[0].getIsClosed() {
+	if opened := open.getScorers(); len(opened) != 1 || opened[0].getIsClosed() {
 		t.Errorf("opened %d models, want one kept open", len(opened))
 	}
 }
 
 func TestRerankOfAnotherProfileClosesTheLoadedModel(t *testing.T) {
 	open := newOpener()
-	r := newReranking(t, open, &reports{})
+	r := newRerankingUseCase(t, open, &reports{})
 	request := &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}
 
 	if _, err := r.Rerank(t.Context(), callFor(gteID), request); err != nil {
@@ -326,7 +325,7 @@ func TestRerankOfAnotherProfileClosesTheLoadedModel(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opened := open.getOpened()
+	opened := open.getScorers()
 	if len(opened) != 2 || opened[0].profile.ID != gteID || opened[1].profile.ID != bgeID {
 		t.Fatalf("opened %+v, want gte then bge", opened)
 	}
@@ -349,7 +348,7 @@ func TestCloseClosesTheLoadedModel(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if opened := open.getOpened(); len(opened) != 1 || !opened[0].getIsClosed() {
+	if opened := open.getScorers(); len(opened) != 1 || !opened[0].getIsClosed() {
 		t.Errorf("the loaded model stays open after Close")
 	}
 }
@@ -358,7 +357,7 @@ func TestRerankWithTheWrongNumberOfScoresIsTryNext(t *testing.T) {
 	open := newOpener()
 	open.score = func(string, []string) []float32 { return []float32{0.9} }
 	report := &reports{}
-	r := newReranking(t, open, report)
+	r := newRerankingUseCase(t, open, report)
 
 	_, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()})
 
@@ -368,11 +367,11 @@ func TestRerankWithTheWrongNumberOfScoresIsTryNext(t *testing.T) {
 	}
 }
 
-func TestCanceledCallLeavesTheLoadRunning(t *testing.T) {
+func TestCanceledCallDoesNotCancelTheLoad(t *testing.T) {
 	open := newOpener()
 	open.release = make(chan struct{})
 	open.started = make(chan context.Context, 2)
-	r := newReranking(t, open, &reports{})
+	r := newRerankingUseCase(t, open, &reports{})
 	request := &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}
 	ctx, cancel := context.WithCancel(t.Context())
 	first := make(chan error, 1)
@@ -406,14 +405,14 @@ func TestCanceledCallLeavesTheLoadRunning(t *testing.T) {
 	if err != nil || len(result.GetScores()) != len(gardenDocuments()) {
 		t.Fatalf("Rerank after the load = %v, %v", result.GetScores(), err)
 	}
-	if opened := open.getOpened(); len(opened) != 1 {
+	if opened := open.getScorers(); len(opened) != 1 {
 		t.Errorf("opened %d models, want the one load the canceled call started", len(opened))
 	}
 }
 
 func TestListModelsListsTheProfilesWithATier(t *testing.T) {
 	open := newOpener()
-	r := newReranking(t, open, &reports{})
+	r := newRerankingUseCase(t, open, &reports{})
 
 	listed, err := r.ListModels(t.Context(), callFor(""), connection.OptionsQuery{Operations: []string{llm.OperationRerank}})
 
@@ -427,14 +426,14 @@ func TestListModelsListsTheProfilesWithATier(t *testing.T) {
 	if !slices.Equal(listed.Options, want) || listed.IsPartial {
 		t.Errorf("listed %+v, want %+v and not partial", listed, want)
 	}
-	if opened := open.getOpened(); len(opened) != 0 {
+	if opened := open.getScorers(); len(opened) != 0 {
 		t.Errorf("listing the models opened %d of them", len(opened))
 	}
 }
 
 func TestDetectConnectionsAnswersOneLocalReranker(t *testing.T) {
 	open := newOpener()
-	r := newReranking(t, open, &reports{})
+	r := newRerankingUseCase(t, open, &reports{})
 
 	found, err := r.DetectConnections(t.Context(), connection.Call{Type: "local-reranker"})
 
@@ -444,7 +443,7 @@ func TestDetectConnectionsAnswersOneLocalReranker(t *testing.T) {
 	if len(found) != 1 || found[0].Name != "Local reranker" || len(found[0].Fields) != 0 || found[0].Path != "" {
 		t.Errorf("detected %+v, want one Local reranker with no fields and no path", found)
 	}
-	if opened := open.getOpened(); len(opened) != 0 {
+	if opened := open.getScorers(); len(opened) != 0 {
 		t.Errorf("detecting the connection opened %d models", len(opened))
 	}
 }

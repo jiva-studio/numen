@@ -87,7 +87,7 @@ func TestLoadPairTokenizerRejectsAFileWithoutAPairTemplate(t *testing.T) {
 	}
 }
 
-func TestEncodeCutsAPairToTheTokensOfTheProfile(t *testing.T) {
+func TestEncodeTruncatesAPairToTheTokenLimitOfTheProfile(t *testing.T) {
 	pairs, err := loadPairTokenizer(filepath.Join("testdata", "pair-template.json"), 9)
 	if err != nil {
 		t.Fatal(err)

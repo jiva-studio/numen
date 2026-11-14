@@ -112,7 +112,7 @@ func TestLocateDiscardsAFileThatMissesItsPinnedSum(t *testing.T) {
 
 // fakeHub serves one repository as the Hugging Face API does for go-huggingface: the listing of the
 // revision and each file by commit. It sends the first half of the model file and holds the rest until
-// the test lets it go.
+// the test closes hold.
 type fakeHub struct {
 	files map[string]string
 	hold  chan struct{}
