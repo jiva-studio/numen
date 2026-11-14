@@ -30,11 +30,18 @@ const createSpeedButtons = () =>
 const createHint = () =>
   createElement('span', { class: 'hint' }, [
     createElement('kbd', {}, ['Space']),
-    ' play · ',
-    createElement('kbd', {}, ['←']),
-    ' ',
-    createElement('kbd', {}, ['→']),
-    ' steps',
+    createElement('span', {}, ['play']),
+    createElement('span', { class: 'hint-keys' }, [
+      createElement('kbd', {}, ['←']),
+      createElement('kbd', {}, ['→']),
+    ]),
+    createElement('span', {}, ['steps']),
+  ])
+
+const createPauseToggle = () =>
+  createElement('button', { class: 'toggle', type: 'button', 'aria-pressed': 'false' }, [
+    createElement('span', { class: 'switch', 'aria-hidden': 'true' }),
+    'Pause at each step',
   ])
 
 const createVideoSection = () => {
@@ -45,7 +52,7 @@ const createVideoSection = () => {
     timeline: createElement('div', { class: 'timeline', role: 'group', 'aria-label': 'Steps' }),
     tooltip: createElement('div', { class: 'timeline-tooltip', role: 'tooltip', hidden: '' }),
     speed: createSpeedButtons(),
-    pauseToggle: createElement('input', { type: 'checkbox' }),
+    pauseToggle: createPauseToggle(),
     fullscreenButton: createElement('button', { class: 'icon-button', type: 'button' }),
   }
   parts.card = createElement('div', { class: 'player-card' }, [
@@ -56,7 +63,7 @@ const createVideoSection = () => {
         parts.playButton,
         parts.time,
         parts.speed,
-        createElement('label', { class: 'check' }, [parts.pauseToggle, 'Pause at each step']),
+        parts.pauseToggle,
         createHint(),
         parts.fullscreenButton,
       ]),
@@ -245,8 +252,9 @@ const linkControls = (video) => {
     setSpeed(video, speed)
     writeSetting(SPEED_KEY, String(speed))
   })
-  video.pauseToggle.addEventListener('change', () => {
-    video.isPausingAtSteps = video.pauseToggle.checked
+  video.pauseToggle.addEventListener('click', () => {
+    video.isPausingAtSteps = !video.isPausingAtSteps
+    video.pauseToggle.setAttribute('aria-pressed', String(video.isPausingAtSteps))
     setPausePoint(video)
   })
   video.playButton.addEventListener('click', () => togglePlay(video))
@@ -298,8 +306,7 @@ const linkVideo = (video) => {
 const KEY_ACTIONS = { ' ': togglePlay, ArrowRight: goToNextStep, ArrowLeft: goToPreviousStep }
 
 const isTyping = (target) =>
-  target instanceof HTMLTextAreaElement ||
-  (target instanceof HTMLInputElement && target.type !== 'checkbox')
+  target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement
 
 const handleKey = (event) => {
   const action = KEY_ACTIONS[event.key]

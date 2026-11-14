@@ -20,6 +20,7 @@
   --fg-muted: #5c636e;
   --fg-subtle: #959ba5;
   --border: #e3e6eb;
+  --border-strong: #c3c8d0;
   --track: #dde1e7;
   --accent: #2f6fdb;
   --accent-soft: rgb(47 111 219 / 10%);
@@ -545,22 +546,29 @@ h2 .time {
 }
 
 .toolbar {
+  --control-height: 30px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 20px;
+  gap: 8px 16px;
   align-items: center;
-  margin-top: 6px;
+  margin-top: 8px;
   color: var(--fg-muted);
   font-size: 13px;
+  line-height: 1;
 }
 
 .toolbar .icon-button {
-  margin: 0 -8px;
+  width: var(--control-height);
+  height: var(--control-height);
+  margin: 0 -7px;
   color: var(--fg);
 }
 
 .clock {
+  display: inline-flex;
+  align-items: center;
   min-width: 110px;
+  height: var(--control-height);
   font-variant-numeric: tabular-nums;
 }
 
@@ -568,22 +576,26 @@ h2 .time {
   display: inline-grid;
   grid-auto-columns: 1fr;
   grid-auto-flow: column;
+  height: var(--control-height);
   padding: 2px;
   border: 1px solid var(--border);
   border-radius: 8px;
 }
 
 .speed button {
-  padding: 3px 10px;
+  padding: 0 10px;
   border: 0;
   border-radius: 6px;
   background: none;
   color: var(--fg-muted);
   cursor: pointer;
+  font-size: inherit;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
-.speed button:hover {
+.speed button:hover,
+.toggle:hover {
   color: var(--fg);
 }
 
@@ -593,17 +605,84 @@ h2 .time {
   font-weight: 600;
 }
 
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--control-height);
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-size: inherit;
+  line-height: 1;
+}
+
+.toggle[aria-pressed='true'] {
+  background: var(--bg-active);
+  color: var(--fg);
+}
+
+.switch {
+  position: relative;
+  width: 24px;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--border-strong);
+  transition: background 0.15s;
+}
+
+.switch::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  content: '';
+  transition: transform 0.15s;
+}
+
+.toggle[aria-pressed='true'] .switch {
+  background: var(--accent);
+}
+
+.toggle[aria-pressed='true'] .switch::after {
+  transform: translateX(10px);
+}
+
 .hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-height);
   margin-left: auto;
   color: var(--fg-subtle);
 }
 
+.hint-keys {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+}
+
 kbd {
-  padding: 0 5px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg-code);
+  color: var(--fg-muted);
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: inherit;
+  line-height: 1;
 }
 
 .steps {
