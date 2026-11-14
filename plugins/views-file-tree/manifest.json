@@ -100,5 +100,15 @@
     ]
   },
   "permissions": ["vault:read", "vault:write"],
-  "frontend": {}
+  "frontend": {},
+  "settings": [
+    {
+      "key": "sortBy",
+      "type": "enum",
+      "title": "Sort files by",
+      "description": "How files and folders are ordered in the tree",
+      "options": ["name", "modified"],
+      "default": "name"
+    }
+  ]
 }
