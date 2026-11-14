@@ -443,7 +443,7 @@ describe('the work behind the window', () => {
 
     wire.cancelTask.mockRejectedValueOnce(new Error('cancel failed'))
     shell?.notices.clear('window')
-    await shell?.backgroundTasks.cancel('indexing\t01A')
+    await expect(shell?.backgroundTasks.cancel('indexing\t01A')).rejects.toThrow()
     expect(shell?.notices.notices.value).toMatchObject([{ text: CORE_FAULT, severity: 'error' }])
     shell?.notices.clear('window')
 
@@ -642,7 +642,7 @@ describe('the appearance palette', () => {
     mounted.push(failedWrapper)
     await flushPromises()
     expect(failedShell?.notices.notices.value).toMatchObject([
-      { text: CORE_FAULT, severity: 'error' },
+      { text: formatErrorMessage(new Error('appearance start failed')), severity: 'error' },
     ])
   })
 })
@@ -801,10 +801,12 @@ describe('the title bar of the flashcards window', () => {
       ),
     ).toBe(true)
 
-    shell?.notices.clear('window')
+    shell?.notices.clear('org.example.ledger')
     harborHost?.ui.window?.minimize()
     await flushPromises()
-    expect(shell?.notices.notices.value).toMatchObject([{ text: CORE_FAULT, severity: 'error' }])
+    expect(shell?.notices.notices.value).toMatchObject([
+      { text: formatErrorMessage(new Error('minimize failed')), severity: 'error' },
+    ])
   })
 
   it('shows only the loading indicator while the plugins of the window slots start', async () => {
