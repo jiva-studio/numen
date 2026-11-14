@@ -38,11 +38,6 @@ func (c closingContext) Err() error {
 	return context.Canceled
 }
 
-func hasTwoWrappedErrors(err error) bool {
-	multi, ok := err.(interface{ Unwrap() []error })
-	return ok && len(multi.Unwrap()) == 2
-}
-
 func TestDrawPageDrawsNothingForARequestThatWasGivenUp(t *testing.T) {
 	if MostPixels != 16_777_216 {
 		t.Fatalf("MostPixels = %d, want 16777216", MostPixels)
@@ -64,12 +59,9 @@ func TestDrawPageDrawsNothingForARequestThatWasGivenUp(t *testing.T) {
 	}
 
 	_, closeJoinErr := reader.drawPage(closingContext{Context: t.Context(), workers: reader.workers}, testsupport.ReadFixture(t, "tiny.pdf"), 0, 400)
-	if !errors.Is(closeJoinErr, context.Canceled) || !errors.Is(closeJoinErr, ErrClose) {
-		t.Fatalf("drawPage when worker closes = %v, want Canceled and ErrClose", closeJoinErr)
-	}
 	joined, ok := closeJoinErr.(interface{ Unwrap() []error })
-	if !ok || len(joined.Unwrap()) != 2 || !hasTwoWrappedErrors(joined.Unwrap()[1]) {
-		t.Errorf("closeJoinErr = %#v, want joined error with wrapped ErrClose", closeJoinErr)
+	if !errors.Is(closeJoinErr, context.Canceled) || !ok || len(joined.Unwrap()) != 2 || joined.Unwrap()[1] == nil {
+		t.Errorf("drawPage when worker closes = %v, want Canceled joined with the close error", closeJoinErr)
 	}
 }
 

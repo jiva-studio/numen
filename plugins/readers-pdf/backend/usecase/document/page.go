@@ -3,6 +3,7 @@ package document
 import (
 	"bytes"
 	"context"
+	"errors"
 	"image/jpeg"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -54,7 +55,7 @@ func (r *Reader) drawPage(ctx context.Context, raw []byte, index, pixelWidth int
 	if err != nil {
 		return nil, err
 	}
-	defer closeScan(scan, &err)
+	defer func() { err = errors.Join(err, scan.Close()) }()
 	// The wait for a worker can outlast the window's interest in the page.
 	if err := ctx.Err(); err != nil {
 		return nil, err
