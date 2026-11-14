@@ -136,12 +136,13 @@ describe('a box is as wide as its title needs', () => {
     for (const node of getNodesByRelation(layout, 'child')) expect(node.width).toBe(minWidth)
   })
 
-  it('puts the first box of a group on the axis of its side, whatever the widths', () => {
+  it('centers the first row of a group on the axis of its side, whatever the widths', () => {
     const mixed = createGraph('child', 'A', 'Domain', 'Composition root', 'Port', 'Use case')
     const children = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'child')
+    const firstRow = children.filter((node) => node.y === children[0]!.y).map((node) => node.x)
 
     expect(new Set(children.map((node) => node.width)).size).toBeGreaterThan(1)
-    expect(children[0]!.x).toBe(0)
+    expect(Math.min(...firstRow) + Math.max(...firstRow)).toBeCloseTo(0, 9)
   })
 
   it('shows as much as it would have shown unmeasured', () => {
@@ -390,7 +391,7 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
 })
 
 describe('a window that holds the arrangement exactly', () => {
-  it('opens the gaps that have room, the height being met to the pixel', () => {
+  it('keeps the gaps as set, the height being met to the pixel', () => {
     const { nodeSize, gap, margin } = DEFAULT_OPTIONS
     const two = createGraph('child', 'One', 'Two')
     const settings = getNodesByRelation(arrangePlex(two), 'child')
@@ -403,6 +404,6 @@ describe('a window that holds the arrangement exactly', () => {
     expect(Math.max(...[first!, second!].map((node) => node.y + node.height / 2))).toBeCloseTo(
       bottom,
     )
-    expect(Math.abs(second!.x - first!.x)).toBeGreaterThan(nodeSize.width + gap)
+    expect(Math.abs(second!.x - first!.x)).toBeCloseTo(nodeSize.width + gap, 6)
   })
 })

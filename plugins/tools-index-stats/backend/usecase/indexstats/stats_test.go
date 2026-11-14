@@ -1,6 +1,7 @@
 package indexstats
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -101,6 +102,17 @@ func TestAnIndexWithMoreVectorsThanChunksWaitsForNothing(t *testing.T) {
 
 	if err != nil || got.Waiting != 0 {
 		t.Errorf("waiting %d (%v), want 0", got.Waiting, err)
+	}
+}
+
+func TestAnIndexWithoutAVaultReturnsItsError(t *testing.T) {
+	index := newIndex()
+	index.HideVault()
+
+	got, err := NewStats(index, newFakeClock(getStart()), 8).Get(t.Context())
+
+	if !errors.Is(err, host.ErrNoVault) || !reflect.DeepEqual(got, api.Stats{}) {
+		t.Errorf("got %+v, %v; want empty stats and %v", got, err, host.ErrNoVault)
 	}
 }
 

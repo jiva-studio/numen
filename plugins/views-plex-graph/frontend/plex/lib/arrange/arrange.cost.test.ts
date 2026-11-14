@@ -1,4 +1,4 @@
-/** How many layouts arranging a large graph takes: admission and spacing are probes, and each probe is one layout. */
+/** How many layouts arranging a large graph takes: admission and crowding are probes, and each probe is one layout. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { clusters } from './layout/clusters'

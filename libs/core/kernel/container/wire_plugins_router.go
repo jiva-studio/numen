@@ -9,15 +9,14 @@ import (
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -71,24 +70,25 @@ const pluginGracePeriod = 2 * time.Second
 // errSafeMode is an installation started in safe mode, which starts no plugin.
 var errSafeMode = errors.New("numen is running in safe mode")
 
-// NewPluginHost creates and initializes a plugin host for the specified target and search directories.
+// NewPluginHost creates and initializes a plugin host for the specified target and search directories, on the
+// clock of c.
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
 // provider NUMEN_ONNX_PROVIDER names (auto when unset). The host is returned also when the discovery of the
 // plugins failed, with the failure. report receives the problems the host meets outside a call, such as a failed
 // shutdown of a plugin.
-func NewPluginHost(report func(error), target string, dirs ...string) (*PluginHost, error) {
-	host, err := OpenPluginRoles(report, target, dirs...)
+func NewPluginHost(c Config, report func(error), target string, dirs ...string) (*PluginHost, error) {
+	host, err := OpenPluginRoles(c, report, target, dirs...)
 	return adaptPluginHost(host), err
 }
 
 // OpenPluginRoles creates the roles of a plugin host as NewPluginHost does and returns them, for a caller that holds
 // the roles. The roles are returned also when the discovery of the plugins failed, with the failure. report receives
 // the problems the host meets outside a call.
-func OpenPluginRoles(report func(error), target string, dirs ...string) (*PluginRoles, error) {
-	host := NewPluginRoles(clock.System{}, target, dirs...)
+func OpenPluginRoles(c Config, report func(error), target string, dirs ...string) (*PluginRoles, error) {
+	host := NewPluginRoles(c.Clock(), target, dirs...)
 	host.Failures.SetErrorHandler(report)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
-	host.Dependencies.Replace(newDependencyRegistry(""))
+	host.Dependencies.Replace(newDependencyRegistry(host.Clock, ""))
 	return host, host.Discovery.Discover()
 }
 
@@ -106,9 +106,9 @@ func getPluginCommands(c pluginsWiring) PluginCommandUseCases {
 
 func newPluginCommands(c pluginsWiring, host *PluginHost, versions plugincommand.VersionItems) PluginCommandUseCases {
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
-	commands, conditions := pluginmanifest.New(host.Runtime), when.NewConditions()
+	commands, conditions := getRuntimeManifests(host.Runtime), when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
-	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime), host.Watch, pluginsNewNoteReader(c), getWhenConfig(c), conditions)
+	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(c), getWhenConfig(c), conditions)
 	return PluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch),
@@ -119,7 +119,7 @@ func newPluginCommands(c pluginsWiring, host *PluginHost, versions plugincommand
 }
 
 func getPluginServices(c pluginsWiring) editor.PluginServices {
-	return servicebridge.Open(c.PluginHost.Runtime, c.PluginHost.Runtime)
+	return servicebridge.Open(c.PluginHost.Runtime.Activator, pluginInfos{c.PluginHost.Runtime.PluginLister, c.PluginHost.Runtime.PluginResolver})
 }
 
 func getPluginRetrier(c pluginsWiring) func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
@@ -163,18 +163,18 @@ func openPluginCache(c pluginsWiring) (pluginport.PluginCache, error) {
 	return retained, nil
 }
 
-func newDependencyRegistry(defaultDir string) pluginport.DependencyRegistry {
+func newDependencyRegistry(clock machineport.Clock, defaultDir string) pluginport.DependencyRegistry {
 	if onnxruntime.IsMockML() {
 		return provision.NewRegistry(provision.NewPlaceholderProvisioner(
 			provision.GetPlaceholderDir(),
 			map[string]func(string) map[string]string{plugindomain.RuntimeONNX: onnxruntime.GetPlaceholderEnv},
 		))
 	}
-	runtimeConfig := onnxruntime.FromEnvironment(clock.System{})
+	runtimeConfig := onnxruntime.FromEnvironment(clock)
 	runtimeConfig.Dir = onnxruntime.GetModelsDir(defaultDir)
 	runtimeConfig.Offline = provision.IsOffline()
 	return provision.NewRegistry(
 		onnxruntime.NewONNXProvisioner(runtimeConfig),
-		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: runtimeConfig.Offline, Clock: clock.System{}}),
+		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: runtimeConfig.Offline, Clock: clock}),
 	)
 }

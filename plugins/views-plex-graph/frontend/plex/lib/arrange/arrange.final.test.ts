@@ -25,13 +25,11 @@ const baseline = applyRoom(resolveOptions({ viewport: WINDOW }))
 
 function createRows(
   isMisplaced: (context: PlacementContext, node: PlacedNode) => boolean,
-  contexts: PlacementContext[] = [],
 ): Placement {
   // One note per row; `isMisplaced` sends a note far outside the window.
   return {
     name: 'rows',
     place(nodesByRelation, _focus, context) {
-      contexts.push(context)
       const placed: PlacedNode[] = []
       for (const relation of RELATION_NAMES) {
         for (const node of nodesByRelation[relation] ?? []) {
@@ -59,27 +57,8 @@ const listNotes = (frame: ReturnType<typeof arrangePlex>) =>
   frame.nodes.filter((node) => node.relation !== 'focus')
 
 describe('a final layout that leaves the window', () => {
-  it('falls back to the layout admission verified', () => {
-    const contexts: PlacementContext[] = []
-    const placement = createRows(
-      (context) => context.fits !== undefined && context.options.lineGap > baseline.lineGap,
-      contexts,
-    )
-
-    const frame = arrangePlex(graph, { options: { viewport: WINDOW }, placement })
-
-    const finals = contexts.filter((context) => context.fits && !context.shouldStop)
-    expect(finals[0]?.options.lineGap).toBeGreaterThan(baseline.lineGap)
-    expect(listNotes(frame).map((node) => node.y)).toStrictEqual(
-      [1, 2, 3].map((row) => row * (baseline.nodeSize.height + baseline.lineGap)),
-    )
-    expect(frame.overflow).toStrictEqual({})
-  })
-
-  it('counts a note that is outside in both layouts as overflow', () => {
-    const placement = createRows(
-      (context, node) => !context.shouldStop && context.fits !== undefined && node.id === 'child-1',
-    )
+  it('counts a note that is outside as overflow', () => {
+    const placement = createRows((context, node) => !context.shouldStop && node.id === 'child-1')
 
     const frame = arrangePlex(graph, { options: { viewport: WINDOW }, placement })
 

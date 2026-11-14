@@ -1,4 +1,4 @@
-/** References grow above and to the left of the focus, jumps below and to the left. */
+/** References and jumps share the block left of the focus, the references over the jumps. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { getBox, isOverlapping } from './layout/boxes'

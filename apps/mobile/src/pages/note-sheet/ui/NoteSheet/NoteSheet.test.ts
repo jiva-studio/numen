@@ -54,8 +54,14 @@ describe('a note typed in on the phone', () => {
       writeNote,
     })
     const sheet = mount(NoteSheet, { props: { core, path: 'Kept.md' }, attachTo: document.body })
+
+    expect(sheet.get('textarea').element.value).toBe('')
+    expect(sheet.get('textarea').element.readOnly).toBe(true)
+
     await flushPromises()
 
+    expect(sheet.get('textarea').element.readOnly).toBe(false)
+    expect(document.activeElement).toBe(sheet.get('textarea').element)
     expect(sheet.get('textarea').element.value).toBe('One line.\n')
     await sheet.get('textarea').setValue('Two lines.\n')
     await sheet.get('[data-testid="keep"]').trigger('click')

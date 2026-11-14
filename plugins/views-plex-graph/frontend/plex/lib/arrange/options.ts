@@ -27,7 +27,6 @@ interface BoxOptions {
   readonly lineGap: number
   readonly focusGap: number
   readonly margin: number
-  readonly spread: number
   readonly squeeze: number
 }
 
@@ -87,7 +86,6 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   lineGap: 20,
   focusGap: 56,
   margin: 16,
-  spread: 2.5,
   squeeze: 0.35,
   maxPerCluster: 20,
   maxHeadings: 6,
