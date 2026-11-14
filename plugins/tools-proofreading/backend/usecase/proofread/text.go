@@ -23,7 +23,7 @@ func getScanDistance(maxDistance float64) float64 {
 }
 
 func proofreadScan(ctx context.Context, ask AskModel, instruction string, pages []numbered.Batch, maxDistance float64) (textResult, error) {
-	answers, err := askBatches(ctx, ask, numbered.ScanInstruction, pages, getScanDistance(maxDistance))
+	answers, err := askBatches(ctx, ask, instruction, pages, getScanDistance(maxDistance))
 	if err != nil {
 		return textResult{}, err
 	}
@@ -65,13 +65,13 @@ func proofreadSpeech(
 	about := numbered.DescribeSpeech(cues)
 
 	main := setContext(numbered.SpeechBatches(window, size, overlap), about)
-	answers, err := askBatches(ctx, ask, numbered.SpeechInstruction, main, 0)
+	answers, err := askBatches(ctx, ask, instruction, main, 0)
 	if err != nil {
 		return textResult{}, err
 	}
 	_, past := numbered.GatherAnswers(answers)
 	batchedContext := setContext(numbered.CutBatches(window, size, overlap, past), about)
-	more, err := askBatches(ctx, ask, numbered.SpeechInstruction, batchedContext, 0)
+	more, err := askBatches(ctx, ask, instruction, batchedContext, 0)
 	if err != nil {
 		return textResult{}, err
 	}

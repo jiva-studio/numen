@@ -1,5 +1,7 @@
 package numbered
 
+import "strings"
+
 // ScanInstruction is the model prompt for proofreading a scan.
 const ScanInstruction = `You are proofreading text a machine read off the pages of a printed book.
 
@@ -62,5 +64,19 @@ as the first and the last of them:
 
 // BuildInstruction returns the instruction the model is sent: base, with the language of the text and the person's own rules added.
 func BuildInstruction(base, language, prompt string) string {
-	return base
+	out := base
+	if language != "" {
+		sentence := "The text is in " + language + ". Proofread it as " + language + " text; do not translate it into another language."
+		opening, rest, hasRest := strings.Cut(base, "\n\n")
+		out = opening + "\n\n" + sentence
+		if hasRest {
+			out += "\n\n" + rest
+		}
+	}
+	if prompt == "" {
+		return out
+	}
+	return out + "\n\nThe person who asked for this proofreading adds these rules for this text:\n\n" + prompt + "\n\n" + ownRulesClosing
 }
+
+const ownRulesClosing = "These rules add to the rules above. The answer format above, the numbered marks and the rule that no word leaves its line stay as stated whatever these rules say."

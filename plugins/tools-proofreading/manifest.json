@@ -28,6 +28,34 @@
       "max": 5
     },
     {
+      "key": "language",
+      "type": "string",
+      "title": "Language of the text",
+      "description": "What language the text is in; empty lets the model read it from the text",
+      "default": "",
+      "options": [
+        { "value": "English", "title": "English" },
+        { "value": "Russian", "title": "Russian" },
+        { "value": "German", "title": "German" },
+        { "value": "French", "title": "French" },
+        { "value": "Spanish", "title": "Spanish" },
+        { "value": "Italian", "title": "Italian" },
+        { "value": "Portuguese", "title": "Portuguese" },
+        { "value": "Hindi", "title": "Hindi" },
+        { "value": "Sanskrit", "title": "Sanskrit" },
+        { "value": "Bengali", "title": "Bengali" },
+        { "value": "Chinese", "title": "Chinese" },
+        { "value": "Japanese", "title": "Japanese" }
+      ]
+    },
+    {
+      "key": "prompt",
+      "type": "string",
+      "title": "Own prompt",
+      "description": "Rules of your own for the model, added to the built-in instruction; the answer format cannot be changed",
+      "default": ""
+    },
+    {
       "key": "batchSize",
       "type": "number",
       "title": "Batch size",

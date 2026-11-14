@@ -94,13 +94,14 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	if err := p.host.Queue.ReportTask(ctx, *task); err != nil {
 		return Result{}, err
 	}
-	corrections, uncorrected, err := p.correct(ctx, parts, lines, task)
+	cfg := p.getConfig()
+	corrections, uncorrected, err := p.correct(ctx, parts, lines, cfg, task)
 	if err != nil {
 		return Result{}, err
 	}
 	corrected := numbered.ApplyCorrections(parts, corrections)
 
-	key := getVersionKey(source.GetID(), "", "")
+	key := getVersionKey(source.GetID(), cfg.Language, cfg.Prompt)
 	if err := host.WriteText(ctx, store, getFileName(key), corrected); err != nil {
 		return Result{}, err
 	}
@@ -154,20 +155,20 @@ func ReadParts(ctx context.Context, texts Texts, version domain.TextVersion) ([]
 }
 
 func (p *Proofreading) correct(
-	ctx context.Context, parts []domain.TextSegment, lines []numbered.Line, task *host.Task,
+	ctx context.Context, parts []domain.TextSegment, lines []numbered.Line, cfg Config, task *host.Task,
 ) ([]numbered.Line, int, error) {
 	if numbered.IsTimed(parts) {
-		return p.correctSpeech(ctx, lines, task)
+		return p.correctSpeech(ctx, lines, cfg, task)
 	}
-	return p.correctScan(ctx, numbered.ReadPages(parts, lines), task)
+	return p.correctScan(ctx, numbered.ReadPages(parts, lines), cfg, task)
 }
 
-func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line, task *host.Task) ([]numbered.Line, int, error) {
-	cfg := p.getConfig()
+func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line, cfg Config, task *host.Task) ([]numbered.Line, int, error) {
+	instruction := numbered.BuildInstruction(numbered.SpeechInstruction, cfg.Language, cfg.Prompt)
 	var out []numbered.Line
 	uncorrected := 0
 	for from := 1; ; {
-		result, err := proofreadSpeech(ctx, p.ask, numbered.SpeechInstruction, lines, batchShape{size: cfg.BatchSize, overlap: cfg.Overlap}, from, cfg.InFlight*cfg.BatchSize)
+		result, err := proofreadSpeech(ctx, p.ask, instruction, lines, batchShape{size: cfg.BatchSize, overlap: cfg.Overlap}, from, cfg.InFlight*cfg.BatchSize)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -190,12 +191,12 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line,
 	}
 }
 
-func (p *Proofreading) correctScan(ctx context.Context, pages []numbered.Batch, task *host.Task) ([]numbered.Line, int, error) {
-	cfg := p.getConfig()
+func (p *Proofreading) correctScan(ctx context.Context, pages []numbered.Batch, cfg Config, task *host.Task) ([]numbered.Line, int, error) {
+	instruction := numbered.BuildInstruction(numbered.ScanInstruction, cfg.Language, cfg.Prompt)
 	var out []numbered.Line
 	uncorrected := 0
 	for _, page := range pages {
-		result, err := proofreadScan(ctx, p.ask, numbered.ScanInstruction, []numbered.Batch{page}, cfg.MaxEditDistance)
+		result, err := proofreadScan(ctx, p.ask, instruction, []numbered.Batch{page}, cfg.MaxEditDistance)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -213,7 +214,7 @@ func (p *Proofreading) correctScan(ctx context.Context, pages []numbered.Batch, 
 const keyPrefix = "proofread-"
 
 func getVersionKey(source domain.TextVersionID, language, prompt string) string {
-	sum := sha256.Sum256([]byte(source))
+	sum := sha256.Sum256([]byte(string(source) + "\x00" + language + "\x00" + prompt))
 	return keyPrefix + hex.EncodeToString(sum[:8])
 }
 
