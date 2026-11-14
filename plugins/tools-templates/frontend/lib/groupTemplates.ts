@@ -13,8 +13,7 @@ const compare = (left: string, right: string): number => {
 const compareText = (left: string, right: string): number =>
   compare(left.toLowerCase(), right.toLowerCase())
 
-const getTitle = (path: string): string =>
-  (path.split('/').pop() ?? path).replace(/\.md$/i, '')
+const getTitle = (path: string): string => (path.split('/').pop() ?? path).replace(/\.md$/i, '')
 
 const getGroup = (root: string, path: string): string => {
   const inside = path.slice(root.length + 1)
