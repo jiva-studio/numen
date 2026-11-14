@@ -6,14 +6,18 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// GetLinksOf runs one GetLinks query per path; the batch is a loop, not one SQL statement.
+// GetLinksOf runs the GetLinks queries of every path with one set of prepared statements.
 func (q *Queries) GetLinksOf(ctx context.Context, vaultID domain.VaultID, from []string) (map[string][]domain.ResolvedLink, error) {
-	return readEach(ctx, from, func(path string) ([]domain.ResolvedLink, error) { return q.GetLinks(ctx, vaultID, path) })
+	return readResolved(ctx, q.db, vaultID, map[string][]domain.ResolvedLink{}, func(r *resolution) (map[string][]domain.ResolvedLink, error) {
+		return readEach(ctx, from, func(path string) ([]domain.ResolvedLink, error) { return r.getLinks(ctx, path) })
+	})
 }
 
-// GetBacklinksOf runs one GetBacklinks query per path; the batch is a loop, not one SQL statement.
+// GetBacklinksOf runs the GetBacklinks queries of every path with one set of prepared statements.
 func (q *Queries) GetBacklinksOf(ctx context.Context, vaultID domain.VaultID, to []string) (map[string][]domain.ResolvedLink, error) {
-	return readEach(ctx, to, func(path string) ([]domain.ResolvedLink, error) { return q.GetBacklinks(ctx, vaultID, path) })
+	return readResolved(ctx, q.db, vaultID, map[string][]domain.ResolvedLink{}, func(r *resolution) (map[string][]domain.ResolvedLink, error) {
+		return readEach(ctx, to, func(path string) ([]domain.ResolvedLink, error) { return r.getBacklinks(ctx, path) })
+	})
 }
 
 func readEach(ctx context.Context, paths []string, read func(path string) ([]domain.ResolvedLink, error)) (map[string][]domain.ResolvedLink, error) {

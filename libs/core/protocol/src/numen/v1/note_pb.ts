@@ -198,7 +198,7 @@ export type RelatedNote = Message<"numen.v1.RelatedNote"> & {
 
   /**
    * The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
-   * where none holds.
+   * where none holds, and for a note found by depth 2.
    *
    * @generated from field: string tab_kind = 7;
    */

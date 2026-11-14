@@ -9,17 +9,15 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) (_ []domain.ResolvedLink, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
+func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+	return readResolved(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
+		return r.getLinks(ctx, from)
+	})
+}
 
+func (r *resolution) getLinks(ctx context.Context, from string) (_ []domain.ResolvedLink, err error) {
 	var row int64
-	err = q.db.QueryRowContext(ctx, identifySQL, vault, from).Scan(&row)
+	err = r.reads.QueryRowContext(ctx, identifySQL, r.vault, from).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -27,7 +25,7 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, linksOfSQL, row)
+	rows, err := r.reads.QueryContext(ctx, linksOfSQL, row)
 	if err != nil {
 		return nil, err
 	}
@@ -35,15 +33,15 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 
 	var out []domain.ResolvedLink
 	for rows.Next() {
-		var r domain.ResolvedLink
+		var l domain.ResolvedLink
 		var role, marker string
-		if err := rows.Scan(&r.Target.Scheme, &r.Target.Value, &role,
-			&r.Type, &r.Why, &r.Label, &marker); err != nil {
+		if err := rows.Scan(&l.Target.Scheme, &l.Target.Value, &role,
+			&l.Type, &l.Why, &l.Label, &marker); err != nil {
 			return nil, err
 		}
-		r.Role = domain.LinkRole(role)
-		r.Marker = domain.LinkMarker(marker)
-		out = append(out, r)
+		l.Role = domain.LinkRole(role)
+		l.Marker = domain.LinkMarker(marker)
+		out = append(out, l)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -51,7 +49,7 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 
 	for i := range out {
 		out[i].From = from
-		if err := q.resolve(ctx, vault, vaultID, from, &out[i]); err != nil {
+		if err := r.resolve(ctx, from, &out[i]); err != nil {
 			return nil, err
 		}
 	}
@@ -88,14 +86,12 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 func (q *Queries) ResolveLinks(
 	ctx context.Context, vaultID domain.VaultID, from string, content []string,
 ) (map[string]domain.ResolvedLink, error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
+	return readResolved(ctx, q.db, vaultID, nil, func(r *resolution) (map[string]domain.ResolvedLink, error) {
+		return r.resolveLinks(ctx, from, content)
+	})
+}
 
+func (r *resolution) resolveLinks(ctx context.Context, from string, content []string) (map[string]domain.ResolvedLink, error) {
 	request := make(map[string]bool, len(content))
 	out := make(map[string]domain.ResolvedLink, len(content))
 	for _, raw := range content {
@@ -104,7 +100,7 @@ func (q *Queries) ResolveLinks(
 		}
 		request[raw] = true
 		one := domain.ResolvedLink{Link: domain.Link{Target: domain.ParseAddress(raw)}, From: from}
-		if err := q.resolve(ctx, vault, vaultID, from, &one); err != nil {
+		if err := r.resolve(ctx, from, &one); err != nil {
 			return nil, err
 		}
 		if one.To != "" {
@@ -114,14 +110,14 @@ func (q *Queries) ResolveLinks(
 	return out, nil
 }
 
-func (q *Queries) resolve(ctx context.Context, vault int64, vaultID domain.VaultID, from string, r *domain.ResolvedLink) error {
-	switch r.Target.Scheme {
+func (r *resolution) resolve(ctx context.Context, from string, l *domain.ResolvedLink) error {
+	switch l.Target.Scheme {
 	case domain.SchemeNote:
 		// An identifier names one note globally, so this lookup is not scoped to a
 		// vault. It is the one deliberate exception to the rule that a query without a
 		// vault must not read another vault's notes.
-		err := q.db.QueryRowContext(ctx, noteByIdentifierSQL, r.Target.Value).
-			Scan(&r.ToVault, &r.To)
+		err := r.reads.QueryRowContext(ctx, noteByIdentifierSQL, l.Target.Value).
+			Scan(&l.ToVault, &l.To)
 		if errors.Is(err, sql.ErrNoRows) {
 			// Neither dangling nor resolved: no connected vault holds this note. The
 			// index cannot distinguish a deleted note from one in a vault that is not
@@ -131,14 +127,14 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID domain.Vault
 		}
 		return err
 	case domain.SchemeName:
-		candidates, err := q.candidates(ctx, vault, r.Target.Value)
+		candidates, err := r.getCandidates(ctx, l.Target.Value)
 		if err != nil {
 			return err
 		}
-		r.To, r.IsAmbiguous = domain.ChooseMatch(from, r.Target.Value, candidates)
-		if r.To != "" {
+		l.To, l.IsAmbiguous = domain.ChooseMatch(from, l.Target.Value, candidates)
+		if l.To != "" {
 			// A name means something only inside the vault it was written in.
-			r.ToVault = vaultID
+			l.ToVault = r.vaultID
 		}
 		return nil
 	default:
@@ -147,14 +143,26 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID domain.Vault
 	}
 }
 
-func (q *Queries) candidates(ctx context.Context, vault int64, name string) (_ []string, err error) {
+func (r *resolution) getCandidates(ctx context.Context, name string) ([]string, error) {
+	if found, ok := r.named[name]; ok {
+		return found, nil
+	}
+	found, err := r.queryCandidates(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	r.named[name] = found
+	return found, nil
+}
+
+func (r *resolution) queryCandidates(ctx context.Context, name string) (_ []string, err error) {
 	// Three shapes of the same question, so one query answers all of them: the
 	// name as a path, as a path with an extension added, and as a filename.
 	withExt := name + domain.NoteExtension
 	base := domain.FoldName(domain.LinkName(name))
 
-	rows, err := q.db.QueryContext(ctx, candidatesSQL,
-		vault, name, vault, withExt, vault, base)
+	rows, err := r.reads.QueryContext(ctx, candidatesSQL,
+		r.vault, name, r.vault, withExt, r.vault, base)
 	if err != nil {
 		return nil, err
 	}
@@ -177,17 +185,15 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) (_ [
 // name may resolve to a nearer note of the same name. Every candidate goes
 // through the forward resolution and only those that land here are kept.
 func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
+	return readResolved(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
+		return r.getBacklinks(ctx, to)
+	})
+}
 
+func (r *resolution) getBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
 	var row int64
 	var identifier, base string
-	err = q.db.QueryRowContext(ctx, addressingSQL, vault, to).
+	err := r.reads.QueryRowContext(ctx, addressingSQL, r.vault, to).
 		Scan(&row, &identifier, &base)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
@@ -196,29 +202,29 @@ func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to s
 		return nil, err
 	}
 
-	candidates, err := q.getBacklinkCandidates(ctx, vault, identifier, base)
+	candidates, err := r.getBacklinkCandidates(ctx, identifier, base)
 	if err != nil {
 		return nil, err
 	}
 
 	var out []domain.ResolvedLink
 	for _, c := range candidates {
-		if err := q.resolve(ctx, vault, vaultID, c.From, &c); err != nil {
+		if err := r.resolve(ctx, c.From, &c); err != nil {
 			return nil, err
 		}
 		// A candidate belongs here when it landed on this path in this vault.
 		// An identifier resolves without regard to vault, and two vaults may
 		// file a note at the same path.
-		if c.To == to && c.ToVault == vaultID {
+		if c.To == to && c.ToVault == r.vaultID {
 			out = append(out, c)
 		}
 	}
 	return out, nil
 }
 
-func (q *Queries) getBacklinkCandidates(ctx context.Context, vault int64, identifier, base string) (_ []domain.ResolvedLink, err error) {
-	rows, err := q.db.QueryContext(ctx, backlinkCandidatesSQL,
-		identifier, vault, base, vault)
+func (r *resolution) getBacklinkCandidates(ctx context.Context, identifier, base string) (_ []domain.ResolvedLink, err error) {
+	rows, err := r.reads.QueryContext(ctx, backlinkCandidatesSQL,
+		identifier, r.vault, base, r.vault)
 	if err != nil {
 		return nil, err
 	}
@@ -226,16 +232,16 @@ func (q *Queries) getBacklinkCandidates(ctx context.Context, vault int64, identi
 
 	var candidates []domain.ResolvedLink
 	for rows.Next() {
-		var r domain.ResolvedLink
+		var l domain.ResolvedLink
 		var role, marker string
 		var position int
-		if err := rows.Scan(&r.From, &r.Target.Scheme, &r.Target.Value, &role,
-			&r.Type, &r.Why, &r.Label, &marker, &position); err != nil {
+		if err := rows.Scan(&l.From, &l.Target.Scheme, &l.Target.Value, &role,
+			&l.Type, &l.Why, &l.Label, &marker, &position); err != nil {
 			return nil, err
 		}
-		r.Role = domain.LinkRole(role)
-		r.Marker = domain.LinkMarker(marker)
-		candidates = append(candidates, r)
+		l.Role = domain.LinkRole(role)
+		l.Marker = domain.LinkMarker(marker)
+		candidates = append(candidates, l)
 	}
 	return candidates, rows.Err()
 }
