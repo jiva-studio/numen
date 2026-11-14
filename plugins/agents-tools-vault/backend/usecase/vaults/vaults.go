@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/ports"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/vaultaddress"
 )
@@ -19,6 +18,18 @@ import (
 type Vault struct {
 	Selector ports.VaultSelector
 	Notes    ports.NoteLookup
+}
+
+// Info is a vault and the number of its notes.
+type Info struct {
+	domain.Vault
+	NoteCount int
+}
+
+// Entry is a vault of the installation, marked when it is the vault of the call.
+type Entry struct {
+	host.VaultEntry
+	IsCurrent bool
 }
 
 // UseCase works the vaults of the installation for a call made in the current vault.
@@ -35,91 +46,74 @@ func New(current domain.VaultID, list ports.VaultList, open func(domain.VaultID)
 	return &UseCase{current: current, list: list, open: open}
 }
 
-// Get returns the identifier, name, folder and note count of the vault named, or of the current vault.
-func (u *UseCase) Get(ctx context.Context, in api.VaultInfoInput) (api.VaultInfoOutput, error) {
+// Get returns the identifier, name, folder and note count of the vault named, or of the current vault
+// when address is empty.
+func (u *UseCase) Get(ctx context.Context, address string) (Info, error) {
 	vault := u.open(u.current)
-	if in.Vault != "" {
-		target, err := u.find(ctx, in.Vault)
+	if address != "" {
+		target, err := u.find(ctx, address)
 		if err != nil {
-			return api.VaultInfoOutput{}, err
+			return Info{}, err
 		}
 		vault = u.open(target.ID)
 	}
 	info, err := vault.Selector.GetVault(ctx)
 	if err != nil {
-		return api.VaultInfoOutput{}, err
+		return Info{}, err
 	}
 	noteCount := 0
 	if paths, err := vault.Notes.GetPathsOfType(ctx, domain.TypeNote); err == nil {
 		noteCount = len(paths)
 	}
-	return api.VaultInfoOutput{ID: string(info.ID), Name: info.Name, Path: info.Path, NoteCount: noteCount}, nil
+	return Info{Vault: info, NoteCount: noteCount}, nil
 }
 
 // List returns every vault of the installation and marks the current one.
-func (u *UseCase) List(ctx context.Context, _ api.VaultListInput) (api.VaultListOutput, error) {
+func (u *UseCase) List(ctx context.Context) ([]Entry, error) {
 	entries, err := u.getEntries(ctx)
 	if err != nil {
-		return api.VaultListOutput{}, err
+		return nil, err
 	}
-	out := api.VaultListOutput{Vaults: make([]api.VaultEntry, 0, len(entries))}
+	out := make([]Entry, 0, len(entries))
 	for _, entry := range entries {
-		out.Vaults = append(out.Vaults, api.VaultEntry{
-			ID:        string(entry.ID),
-			Name:      entry.Name,
-			Path:      entry.Path,
-			IsCurrent: entry.ID == u.current,
-			IsMissing: entry.IsMissing,
-		})
+		out = append(out, Entry{VaultEntry: entry, IsCurrent: entry.ID == u.current})
 	}
 	return out, nil
 }
 
 // Add adds a folder to the list of vaults.
-func (u *UseCase) Add(ctx context.Context, in api.VaultAddInput) (api.VaultAddOutput, error) {
-	vault, err := u.list.AddVault(ctx, in.Path, in.Name)
-	if err != nil {
-		return api.VaultAddOutput{}, err
-	}
-	return api.VaultAddOutput{ID: string(vault.ID), Name: vault.Name, Path: vault.Path}, nil
+func (u *UseCase) Add(ctx context.Context, folder, name string) (domain.Vault, error) {
+	return u.list.AddVault(ctx, folder, name)
 }
 
 // Rename changes the display name of a vault.
-func (u *UseCase) Rename(ctx context.Context, in api.VaultRenameInput) (api.VaultRenameOutput, error) {
-	target, err := u.find(ctx, in.Vault)
+func (u *UseCase) Rename(ctx context.Context, address, name string) (domain.Vault, error) {
+	target, err := u.find(ctx, address)
 	if err != nil {
-		return api.VaultRenameOutput{}, err
+		return domain.Vault{}, err
 	}
-	result, err := u.list.RenameVault(ctx, target.ID, in.Name)
-	if err != nil {
-		return api.VaultRenameOutput{}, err
-	}
-	return api.VaultRenameOutput{ID: string(result.ID), Name: result.Name, Path: result.Path}, nil
+	return u.list.RenameVault(ctx, target.ID, name)
 }
 
-// Remove removes a vault other than the current one from the list; its folder stays.
-func (u *UseCase) Remove(ctx context.Context, in api.VaultRemoveInput) (api.VaultRemoveOutput, error) {
-	target, err := u.findOtherVault(ctx, in.Vault)
+// Remove removes a vault other than the current one from the list and returns its folder, which stays.
+func (u *UseCase) Remove(ctx context.Context, address string) (string, error) {
+	target, err := u.findOtherVault(ctx, address)
 	if err != nil {
-		return api.VaultRemoveOutput{}, err
+		return "", err
 	}
-	folder, err := u.list.RemoveVault(ctx, target.ID)
-	if err != nil {
-		return api.VaultRemoveOutput{}, err
-	}
-	return api.VaultRemoveOutput{Path: folder}, nil
+	return u.list.RemoveVault(ctx, target.ID)
 }
 
 // Open makes the window show a vault other than the current one.
-func (u *UseCase) Open(ctx context.Context, in api.VaultOpenInput) (api.VaultOpenOutput, error) {
-	target, err := u.findOtherVault(ctx, in.Vault)
+func (u *UseCase) Open(ctx context.Context, address string) (domain.Vault, error) {
+	target, err := u.findOtherVault(ctx, address)
 	if err != nil {
-		return api.VaultOpenOutput{}, err
+		return domain.Vault{}, err
 	}
 	if err := u.list.OpenVault(ctx, target.ID); err != nil {
-		return api.VaultOpenOutput{}, err
+		return domain.Vault{}, err
 	}
-	return api.VaultOpenOutput{ID: string(target.ID), Name: target.Name, Path: target.Path}, nil
+	return target.Vault, nil
 }
 
 func (u *UseCase) getEntries(ctx context.Context) ([]host.VaultEntry, error) {

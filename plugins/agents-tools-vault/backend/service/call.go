@@ -35,7 +35,7 @@ func (t *Tools) open(ctx context.Context) (*call, error) {
 }
 
 func (c *call) createNotes() *notes.UseCase {
-	return notes.New(c.vault.Files, c.vault.Writer, c.vault.Index, c.vault.Notes)
+	return notes.New(c.vault.Files, c.vault.Writer, c.vault.Index, c.vault.Notes, notepath.NewResolver(c.vault.Notes, c.vault.Files))
 }
 
 func (c *call) createFiles() *files.UseCase {

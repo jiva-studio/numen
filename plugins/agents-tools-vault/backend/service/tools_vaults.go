@@ -2,10 +2,10 @@ package service
 
 import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/arrange"
-	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/library"
-	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/links"
-	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/vaults"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/wire/arrangewire"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/wire/librarywire"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/wire/linkswire"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/wire/vaultswire"
 )
 
 func createLibraryTools() []registration {
@@ -23,7 +23,7 @@ func createLibraryTools() []registration {
 				"kind returns mostly notes.",
 			noteLinkSentence, passageLinkSentence, noFileLinkSentence, searchScopeSentence, userWordsSentence, truncatedSentence, bookKindSentence),
 			host.PermissionIndexRead),
-			(*call).createLibrary, (*library.UseCase).Search),
+			(*call).createLibrary, librarywire.SearchLibrary),
 		bind(requirePermission(createReadSpec("library_read", "Read the text of a file",
 			"Read the text of one file of the vault from its text version: the pages of a PDF, "+
 				"the chapters of a book, the transcript of a recording, the recognized text of a scan. "+
@@ -35,7 +35,7 @@ func createLibraryTools() []registration {
 				"library_search finds the passage to read.",
 			passageLinkSentence, truncatedSentence, libraryReadSentence),
 			host.PermissionIndexRead),
-			(*call).createLibrary, (*library.UseCase).Read),
+			(*call).createLibrary, librarywire.ReadLibrary),
 	}
 }
 
@@ -43,22 +43,22 @@ func createInspectTools() []registration {
 	return []registration{
 		bind(createReadSpec("link_list", "List Links",
 			"List outgoing wikilinks and incoming backlinks connected to a note."),
-			(*call).createLinks, (*links.UseCase).List),
+			(*call).createLinks, linkswire.ListLinks),
 		bind(createReadSpec("vault_get", "Get Vault Info",
 			"Get the identifier, name, root path and note count of a vault, named by its name, path or identifier; the vault of the call when none is named."),
-			(*call).createVaults, (*vaults.UseCase).Get),
+			(*call).createVaults, vaultswire.GetVault),
 		bind(createReadSpec("vault_list", "List Vaults",
 			"List every vault of the installation with its identifier, name and folder path. The current "+
 				"vault is marked isCurrent, and a vault whose folder is missing is marked isMissing.",
 			vaultListSentence),
-			(*call).createVaults, (*vaults.UseCase).List),
+			(*call).createVaults, vaultswire.ListVaults),
 		bind(createReadSpec("vault_problem_list", "List Vault Problems",
 			"Run checks over the vault and list the problems found: parse for files that could not be "+
 				"read, frontmatter for frontmatter that is not valid, ambiguous for links that resolve to several "+
 				"notes, and dangling for links that resolve to no note. parse, frontmatter and ambiguous run by "+
 				"default; dangling runs only when named.",
 			vaultProblemListSentence),
-			(*call).createArrange, (*arrange.UseCase).ListProblems),
+			(*call).createArrange, arrangewire.ListProblems),
 	}
 }
 
@@ -69,17 +69,17 @@ func createArrangeTools() []registration {
 				"else in the file name, and the file moves to the file name of the title. The host rewrites "+
 				"the links that use the old name of the note.",
 			noteRenameSentence, linkRewriteSentence),
-			(*call).createArrange, (*arrange.UseCase).Rename),
+			(*call).createArrange, arrangewire.RenameNote),
 		bind(createWriteSpec("note_move", "Move Notes",
 			"Move up to 50 notes to a folder, keeping their file names; the folder \"/\" is the vault "+
 				"root. Each path gets its own result, and a path that fails does not stop the others.",
 			noteMoveSentence, linkRewriteSentence),
-			(*call).createArrange, (*arrange.UseCase).Move),
+			(*call).createArrange, arrangewire.MoveNotes),
 		bind(createWriteSpec("note_remove", "Remove Notes",
 			"Move up to 50 notes to the vault's trash, from which they can be restored. A folder is "+
 				"rejected. Each path gets its own result with the notes whose links are now broken.",
 			noteRemoveSentence),
-			(*call).createArrange, (*arrange.UseCase).Remove),
+			(*call).createArrange, arrangewire.RemoveNotes),
 	}
 }
 
@@ -89,23 +89,23 @@ func createVaultListTools() []registration {
 			"Add a folder of this machine to the installation's list of vaults, by its absolute path. "+
 				"A folder that is inside a vault on the list, or that contains one, is rejected.",
 			vaultAddSentence)),
-			(*call).createVaults, (*vaults.UseCase).Add),
+			(*call).createVaults, vaultswire.AddVault),
 		bind(requireManagePermission(createWriteSpec("vault_rename", "Rename Vault",
 			"Change the display name of a vault, named by its name, path or identifier. A name "+
 				"another vault has is rejected.",
 			vaultRenameSentence)),
-			(*call).createVaults, (*vaults.UseCase).Rename),
+			(*call).createVaults, vaultswire.RenameVault),
 		bind(requireManagePermission(createWriteSpec("vault_remove", "Remove Vault",
 			"Remove a vault from the installation's list; its folder is not deleted. The current "+
 				"vault and the last vault are rejected.",
 			vaultRemoveSentence)),
-			(*call).createVaults, (*vaults.UseCase).Remove),
+			(*call).createVaults, vaultswire.RemoveVault),
 		bind(requireManagePermission(createWriteSpec("vault_open", "Open Vault",
 			"Switch the window to another vault, named by its name, path or identifier, and return "+
 				"when the window shows it; this session then loses access to the current vault. If the window "+
 				"has unsaved changes, the vault is not switched, the window prompts the user, and the call returns "+
 				"an error; call it again after the user responds. Call it only when the user asks for it.",
 			vaultOpenSentence, vaultOpenPromptSentence)),
-			(*call).createVaults, (*vaults.UseCase).Open),
+			(*call).createVaults, vaultswire.OpenVault),
 	}
 }

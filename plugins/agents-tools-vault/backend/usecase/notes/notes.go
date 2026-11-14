@@ -11,11 +11,35 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/fingerprint"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/ports"
-	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/notepath"
 )
+
+// Note is a note with its title, body, frontmatter and fingerprint.
+type Note struct {
+	Path        string
+	Title       string
+	Text        string
+	Body        string
+	Fingerprint string
+	Frontmatter map[string]any
+}
+
+// Written is the note a write wrote, its fingerprint after the write and the bytes written.
+type Written struct {
+	Path        string
+	Fingerprint string
+	Bytes       int
+}
+
+// Heading is a heading of a note; Line counts from 1 at the first line of the body and Start is the
+// byte offset in the body.
+type Heading struct {
+	Level int
+	Text  string
+	Line  int
+	Start int
+}
 
 // UseCase works the notes of one vault.
 type UseCase struct {
@@ -23,26 +47,26 @@ type UseCase struct {
 	writer   ports.FileWriter
 	index    ports.Indexer
 	lookup   ports.NoteLookup
-	resolver *notepath.Resolver
+	resolver ports.NotePathResolver
 }
 
-// New creates a UseCase over the notes of one vault.
-func New(reader ports.FileReader, writer ports.FileWriter, index ports.Indexer, lookup ports.NoteLookup) *UseCase {
-	return &UseCase{reader: reader, writer: writer, index: index, lookup: lookup, resolver: notepath.NewResolver(lookup, reader)}
+// New creates a UseCase over the notes of one vault; resolver finds the note an agent names.
+func New(reader ports.FileReader, writer ports.FileWriter, index ports.Indexer, lookup ports.NoteLookup, resolver ports.NotePathResolver) *UseCase {
+	return &UseCase{reader: reader, writer: writer, index: index, lookup: lookup, resolver: resolver}
 }
 
 // Read returns a note with its title, body, frontmatter and fingerprint.
-func (u *UseCase) Read(ctx context.Context, in api.NoteReadInput) (api.NoteReadOutput, error) {
-	if strings.TrimSpace(in.Path) == "" {
-		return api.NoteReadOutput{}, errors.New("path is required")
+func (u *UseCase) Read(ctx context.Context, name string) (Note, error) {
+	if strings.TrimSpace(name) == "" {
+		return Note{}, errors.New("path is required")
 	}
-	path := u.resolver.Resolve(ctx, in.Path)
+	path := u.resolver.Resolve(ctx, name)
 	data, stat, err := u.reader.Read(ctx, path)
 	if err != nil {
-		return api.NoteReadOutput{}, fmt.Errorf("%s cannot be read: %w", path, err)
+		return Note{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
 	parsed := markdown.Parse(stat, data)
-	return api.NoteReadOutput{
+	return Note{
 		Path:        path,
 		Title:       parsed.Title,
 		Text:        string(data),
@@ -52,27 +76,27 @@ func (u *UseCase) Read(ctx context.Context, in api.NoteReadInput) (api.NoteReadO
 	}, nil
 }
 
-// Write replaces a note, or creates it when it does not exist and no fingerprint is given.
-func (u *UseCase) Write(ctx context.Context, in api.NoteWriteInput) (api.NoteWriteOutput, error) {
-	if strings.TrimSpace(in.Path) == "" {
-		return api.NoteWriteOutput{}, errors.New("path is required")
+// Write replaces a note, or creates it when it does not exist and no fingerprint is given. text is nil
+// when the caller gave none.
+func (u *UseCase) Write(ctx context.Context, path string, text *string, token string) (Written, error) {
+	if strings.TrimSpace(path) == "" {
+		return Written{}, errors.New("path is required")
 	}
-	path := in.Path
 	if !strings.HasSuffix(path, ".md") {
 		path += ".md"
 	}
-	if in.Text == nil {
-		return api.NoteWriteOutput{}, errors.New("text is required")
+	if text == nil {
+		return Written{}, errors.New("text is required")
 	}
-	content := *in.Text
-	stat, err := u.save(ctx, path, content, in.Fingerprint)
+	content := *text
+	stat, err := u.save(ctx, path, content, token)
 	if err != nil {
-		return api.NoteWriteOutput{}, err
+		return Written{}, err
 	}
 	if err := u.index.Scan(ctx, []string{path}); err != nil {
-		return api.NoteWriteOutput{}, fmt.Errorf("%s cannot be indexed: %w", path, err)
+		return Written{}, fmt.Errorf("%s cannot be indexed: %w", path, err)
 	}
-	return api.NoteWriteOutput{Path: path, Fingerprint: fingerprint.Format(stat), Bytes: len(content)}, nil
+	return Written{Path: path, Fingerprint: fingerprint.Format(stat), Bytes: len(content)}, nil
 }
 
 func (u *UseCase) save(ctx context.Context, path, content, token string) (domain.FileStat, error) {
@@ -115,19 +139,20 @@ func (u *UseCase) writeOrCreate(ctx context.Context, path, content string) (doma
 	return stat, nil
 }
 
-func (u *UseCase) ListHeadings(ctx context.Context, in api.NoteHeadingListInput) (api.NoteHeadingListOutput, error) {
-	if strings.TrimSpace(in.Path) == "" {
-		return api.NoteHeadingListOutput{}, errors.New("path is required")
+// ListHeadings returns the path of the note an agent names and its headings.
+func (u *UseCase) ListHeadings(ctx context.Context, name string) (string, []Heading, error) {
+	if strings.TrimSpace(name) == "" {
+		return "", nil, errors.New("path is required")
 	}
-	path := u.resolver.Resolve(ctx, in.Path)
+	path := u.resolver.Resolve(ctx, name)
 	data, stat, err := u.reader.Read(ctx, path)
 	if err != nil {
-		return api.NoteHeadingListOutput{}, fmt.Errorf("%s cannot be read: %w", path, err)
+		return "", nil, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
 	parsed := markdown.Parse(stat, data)
-	items := make([]api.HeadingItem, 0, len(parsed.Headings))
+	headings := make([]Heading, 0, len(parsed.Headings))
 	for _, heading := range parsed.Headings {
-		items = append(items, api.HeadingItem{Level: heading.Level, Text: heading.Text, Line: heading.Line + 1, Start: heading.Offset})
+		headings = append(headings, Heading{Level: heading.Level, Text: heading.Text, Line: heading.Line + 1, Start: heading.Offset})
 	}
-	return api.NoteHeadingListOutput{Path: path, Headings: items}, nil
+	return path, headings, nil
 }

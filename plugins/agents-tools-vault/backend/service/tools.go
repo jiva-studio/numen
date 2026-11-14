@@ -86,7 +86,7 @@ func joinRegistrations(groups ...[]registration) []registration {
 	return all
 }
 
-func bind[U, In, Out any](spec tools.Spec, use func(*call) U, run func(U, context.Context, In) (Out, error)) registration {
+func bind[U, In, Out any](spec tools.Spec, use func(*call) U, run func(context.Context, U, In) (Out, error)) registration {
 	return func(t *Tools, registry *tools.Registry) error {
 		return tools.Add(registry, spec, func(ctx context.Context, in In) (Out, error) {
 			c, err := t.open(ctx)
@@ -94,7 +94,7 @@ func bind[U, In, Out any](spec tools.Spec, use func(*call) U, run func(U, contex
 				var none Out
 				return none, err
 			}
-			return run(use(c), ctx, in)
+			return run(ctx, use(c), in)
 		})
 	}
 }
