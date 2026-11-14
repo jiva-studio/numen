@@ -146,7 +146,7 @@ func TestGetSpansRejectsASelectorThatIsNotJSON(t *testing.T) {
 	if err == nil {
 		t.Fatal("GetSpans returned no error for an invalid selector")
 	}
-	if _, ok := errors.AsType[*json.SyntaxError](err); !ok {
+	if syntaxErr, ok := errors.AsType[*json.SyntaxError](err); !ok || syntaxErr == nil {
 		t.Errorf("GetSpans error = %v, want wrapped *json.SyntaxError", err)
 	}
 }
