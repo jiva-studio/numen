@@ -39,7 +39,7 @@ const createSettings = (
     watchSettings: vi.fn(async function* () {
       yield* []
     }),
-    retryPlugin: vi.fn(async () => ''),
+    retryPlugin: vi.fn(async () => ({ ok: true, value: null })),
     choosePluginPath: vi.fn(async () => ({ path: '/picked', isChosen: true, problem: '' })),
     getPluginData: vi.fn(async () => 5),
     deletePluginData: vi.fn(async () => undefined),
@@ -381,12 +381,12 @@ describe('the settings tab', () => {
       plugins: ocrPlugins,
     }))
     settings.rest.state.plugins.value = ocrPlugins
-    vi.mocked(core.retryPlugin).mockResolvedValueOnce('Failed to start')
+    vi.mocked(core.retryPlugin).mockResolvedValueOnce({ ok: false, error: 'Failed to start' })
     await (installation.plugin.retryPlugin('plugin.ocr') as unknown as Promise<void>)
     expect(core.retryPlugin).toHaveBeenCalledWith('plugin.ocr')
     expect(writerFns.plugins).toHaveBeenCalledWith('OCR Plugin stopped: failed to start', 'warning')
 
-    vi.mocked(core.retryPlugin).mockResolvedValueOnce('Failed unknown')
+    vi.mocked(core.retryPlugin).mockResolvedValueOnce({ ok: false, error: 'Failed unknown' })
     await (installation.plugin.retryPlugin('unknown.id') as unknown as Promise<void>)
     expect(writerFns.plugins).toHaveBeenCalledWith('unknown.id stopped: failed unknown', 'warning')
 

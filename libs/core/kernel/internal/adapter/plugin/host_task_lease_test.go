@@ -35,8 +35,8 @@ func newTaskHost(t *testing.T) taskHost {
 	var started atomic.Int32
 	var procs []*os.Process
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
-	services, _ := lendEndpoint(host, hostendpoint.Address)
-	services.SetPluginWork(run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil))
+	lender, _ := lendEndpoint(host, hostendpoint.Address)
+	lender.Update(func(l *hostendpoint.Lent) { l.Work = run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil) })
 	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
 		t.Fatal(err)
 	}

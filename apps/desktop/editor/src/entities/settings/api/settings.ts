@@ -3,9 +3,15 @@
  * operations on a plugin that belong to its page. Each answer is mapped into the types of this
  * entity.
  */
-import { PLUGIN_CONTRIBUTION_KIND, type PluginContributionKindValue } from '@numen/core-client'
+import {
+  PLUGIN_CONTRIBUTION_KIND,
+  asFailure,
+  asValue,
+  type PluginContributionKindValue,
+} from '@numen/core-client'
 import { settingsService } from '@/shared/api/clients'
 import type { JsonValue } from '@/shared/api/json'
+import type { Result } from '@/shared/lib/result'
 import type {
   Configuration,
   PluginContribution,
@@ -182,11 +188,12 @@ export const choosePluginPath = async (pluginId: string, key: string): Promise<C
 }
 
 /**
- * A plugin whose last start failed, started once more. The answer is why it failed again, and
- * empty where it started.
+ * A plugin whose last start failed, started once more. A failure is why it failed again.
  */
-export const retryPlugin = async (pluginId: string): Promise<string> =>
-  (await settingsService.retryPlugin({ pluginId })).failure
+export const retryPlugin = async (pluginId: string): Promise<Result<null, string>> => {
+  const { failure } = await settingsService.retryPlugin({ pluginId })
+  return failure === '' ? asValue(null) : asFailure(failure)
+}
 
 /** How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. */
 export const getPluginData = async (pluginId: string): Promise<number> =>

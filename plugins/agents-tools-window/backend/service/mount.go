@@ -4,12 +4,11 @@ package service
 import (
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/preview"
 )
 
 // Mount registers the window tools on s, using the vault and the window of the host the
@@ -30,13 +29,13 @@ func connectHost(endpoint hostcall.Endpoint, err error) Host {
 		return Host{}
 	}
 	client := host.NewClient(endpoint)
-	return Host{Vault: client, Window: client}
+	files := func(vault domain.VaultID) host.FileReader { return client.With(vault) }
+	return Host{Files: files, Window: client}
 }
 
 func mount(s *server.Server, on Host) error {
-	previews := preview.NewStore(clock.System{})
 	registry := tools.New()
-	if err := RegisterTools(registry, previews, on); err != nil {
+	if err := RegisterTools(registry, on); err != nil {
 		return err
 	}
 	registry.Mount(s)
