@@ -179,10 +179,10 @@ func TestAFileThatCannotBeOpenedToCheckItFailsTheRunWithTheError(t *testing.T) {
 	s.documents.failure = errors.New("the file is damaged")
 	s.launcher.SetMode(settings.ModeWhenNoTextLayer)
 
-	_, err := s.launcher.StartFile(t.Context(), bookPath)
+	_, err := s.launcher.StartMissingFile(t.Context(), bookPath)
 
 	if !errors.Is(err, s.documents.failure) {
-		t.Errorf("StartFile returned %v, want the failure to open the file", err)
+		t.Errorf("StartMissingFile returned %v, want the failure to open the file", err)
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("a file that failed the check shows the tasks %+v", tasks)
