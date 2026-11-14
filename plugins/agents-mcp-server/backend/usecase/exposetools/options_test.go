@@ -1,4 +1,4 @@
-package hostserver
+package exposetools
 
 import (
 	"testing"

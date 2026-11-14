@@ -2,11 +2,10 @@ package service
 
 import (
 	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/exposetools"
-	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/hostserver"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-type Config = hostserver.Settings
+type Config = exposetools.Settings
 
 type testServer struct{ *endpoint }
 

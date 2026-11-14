@@ -1,6 +1,4 @@
-// Package hostserver builds the MCP server that exposes the host tools and keeps the tools and the
-// instructions it reports in step with the host.
-package hostserver
+package exposetools
 
 import (
 	"context"
@@ -8,18 +6,17 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/instructions"
-	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/exposetools"
 )
 
 // Server is the MCP server with the host tools registered on it.
 type Server struct {
 	MCP        *sdk.Server
-	Aggregator *exposetools.Aggregator
+	Aggregator *Aggregator
 	report     func(error)
 }
 
-// New creates an MCP server for the host tools and loads them once. A failed sync goes to report.
-func New(client exposetools.Host, report func(error)) *Server {
+// NewServer creates an MCP server for the host tools and loads them once. A failed sync goes to report.
+func NewServer(client Host, report func(error)) *Server {
 	mcpServer := sdk.NewServer(
 		&sdk.Implementation{
 			Name:        "numen",
@@ -31,7 +28,7 @@ func New(client exposetools.Host, report func(error)) *Server {
 		},
 		newServerOptions(),
 	)
-	s := &Server{MCP: mcpServer, Aggregator: exposetools.NewAggregator(client, mcpServer), report: report}
+	s := &Server{MCP: mcpServer, Aggregator: NewAggregator(client, mcpServer), report: report}
 	mcpServer.AddReceivingMiddleware(s.newSyncMiddleware())
 	s.Sync(context.Background())
 	return s
