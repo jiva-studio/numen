@@ -10,6 +10,7 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    auto_incremental_review: false
   tools:
     ast-grep:
       enabled: true
