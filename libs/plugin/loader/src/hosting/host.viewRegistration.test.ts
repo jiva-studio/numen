@@ -114,7 +114,7 @@ describe('a plugin that registers a view for other plugins', () => {
     const { host, createPlugin } = createHost()
     createPlugin('md.numen.chat', {
       viewCapabilities: [CONVERSATION],
-    }).plugin.identity.register.view({
+    }).plugin.register.view({
       capability: CONVERSATION,
       component: createView('chat', []),
     })
@@ -124,7 +124,7 @@ describe('a plugin that registers a view for other plugins', () => {
 
     createPlugin('org.example.next', {
       viewCapabilities: [CONVERSATION],
-    }).plugin.identity.register.view({
+    }).plugin.register.view({
       capability: CONVERSATION,
       component: createView('next', []),
     })
@@ -242,7 +242,7 @@ describe('a plugin that registers a view for other plugins', () => {
     ).toThrowError()
     createPlugin('md.numen.chat', {
       viewCapabilities: [CONVERSATION],
-    }).plugin.identity.register.view({
+    }).plugin.register.view({
       capability: CONVERSATION,
       component: createView('chat', received),
     })

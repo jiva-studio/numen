@@ -584,7 +584,7 @@ describe('a view mounted by a plugin', () => {
     const element = document.createElement('div')
 
     expect(() =>
-      createCaller([]).ui.mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' }),
+      createCaller([]).host.ui.mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' }),
     ).toThrow(/vault:read/)
     await settle()
 
@@ -596,7 +596,7 @@ describe('a view mounted by a plugin', () => {
     const { read, createCaller } = createHost()
     const element = document.createElement('div')
 
-    expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, { path: '' })).toThrow(
+    expect(() => createCaller([]).host.ui.mountView(NOTE_EDITOR, element, { path: '' })).toThrow(
       /vault:read/,
     )
     await settle()
@@ -615,7 +615,9 @@ describe('a view mounted by a plugin', () => {
       },
     }
 
-    expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
+    expect(() => createCaller([]).host.ui.mountView(NOTE_EDITOR, element, context)).toThrow(
+      /vault:read/,
+    )
     await settle()
 
     expect(read).not.toHaveBeenCalled()
@@ -630,7 +632,9 @@ describe('a view mounted by a plugin', () => {
       get: (_target, key) => (key === 'path' ? 'Notes/Example.md' : undefined),
     })
 
-    expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
+    expect(() => createCaller([]).host.ui.mountView(NOTE_EDITOR, element, context)).toThrow(
+      /vault:read/,
+    )
     await settle()
 
     expect(read).not.toHaveBeenCalled()
@@ -643,7 +647,7 @@ describe('a view mounted by a plugin', () => {
     const context: { path?: string } = {}
 
     expect(() =>
-      createCaller([]).ui.mountView(NOTE_EDITOR, element, context as NoteEditorContext),
+      createCaller([]).host.ui.mountView(NOTE_EDITOR, element, context as NoteEditorContext),
     ).toThrow(/vault:read/)
     context.path = 'Notes/Example.md'
     registerViews()
@@ -658,7 +662,9 @@ describe('a view mounted by a plugin', () => {
     const element = document.createElement('div')
 
     expect(() =>
-      createCaller(['vault:read']).ui.mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' }),
+      createCaller(['vault:read']).host.ui.mountView(NOTE_EDITOR, element, {
+        path: 'Notes/Example.md',
+      }),
     ).toThrow(/vault:write/)
     expect(read).not.toHaveBeenCalled()
   })
@@ -667,7 +673,7 @@ describe('a view mounted by a plugin', () => {
     const { createCaller } = createHost()
     const element = document.createElement('div')
 
-    createCaller(['vault:read', 'vault:write']).ui.mountView(NOTE_EDITOR, element, {
+    createCaller(['vault:read', 'vault:write']).host.ui.mountView(NOTE_EDITOR, element, {
       path: 'Notes/Example.md',
     })
     await vi.waitFor(() => expect(element.textContent).toBe('Body of Notes/Example.md'))
@@ -678,7 +684,7 @@ describe('a view mounted by a plugin', () => {
     const element = document.createElement('div')
 
     expect(() =>
-      createCaller([]).ui.mountView(CONVERSATION, element, { connections: STUB_CONNECTIONS }),
+      createCaller([]).host.ui.mountView(CONVERSATION, element, { connections: STUB_CONNECTIONS }),
     ).not.toThrow()
     await settle()
 
