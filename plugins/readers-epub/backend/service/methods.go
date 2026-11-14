@@ -9,15 +9,16 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/books"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/wire/bookwire"
 )
 
-func mountMethods(s *server.Server, reader *books.Reader) error {
+func mountMethods(s *server.Server, methods *bookwire.Methods) error {
 	a := s.NewAPI(api.Service)
-	server.Handle(a, "GetBook", withVault(reader.GetBook))
-	server.Handle(a, "ReadBookMarkup", withVault(reader.ReadBookMarkup))
-	server.Handle(a, "ReadBookEntry", withVault(reader.ReadBookEntry))
-	server.Handle(a, "GetCfi", withVault(reader.GetCfi))
-	server.Handle(a, "FindOffset", withVault(reader.FindOffset))
+	server.Handle(a, "GetBook", withVault(methods.GetBook))
+	server.Handle(a, "ReadBookMarkup", withVault(methods.ReadBookMarkup))
+	server.Handle(a, "ReadBookEntry", withVault(methods.ReadBookEntry))
+	server.Handle(a, "GetCfi", withVault(methods.GetCfi))
+	server.Handle(a, "FindOffset", withVault(methods.FindOffset))
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="mountMethods returns any handler registration error accumulated on a"
 	return a.Err()
 }

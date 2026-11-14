@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 type vaultKey struct{}
@@ -27,10 +26,10 @@ func getVault(ctx context.Context) domain.VaultID {
 
 func readVaultError(path string, err error) error {
 	if errors.Is(err, host.ErrOutside) {
-		return server.NewAPIError(server.CodePermissionDenied, "path traversal outside allowed scope: path outside allowed vault root")
+		return newError(KindPermissionDenied, "path traversal outside allowed scope: path outside allowed vault root")
 	}
 	if errors.Is(err, host.ErrNoVault) {
-		return server.NewAPIError(server.CodePermissionDenied, fmt.Sprintf("read book %s: %v", path, err))
+		return newError(KindPermissionDenied, fmt.Sprintf("read book %s: %v", path, err))
 	}
-	return server.NewAPIError(server.CodeNotFound, fmt.Sprintf("read book %s: %v", path, err))
+	return newError(KindNotFound, fmt.Sprintf("read book %s: %v", path, err))
 }

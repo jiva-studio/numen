@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/cfi"
 )
@@ -21,7 +19,7 @@ type placedBook struct {
 
 func (s *Reader) readPlacedBook(ctx context.Context, path string) (*epub.Book, error) {
 	if path == "" {
-		return nil, server.NewAPIError(server.CodeInvalidArgument, "path required")
+		return nil, newError(KindInvalidArgument, "path required")
 	}
 	vaultID := getVault(ctx)
 	files := s.vaults(getVault(ctx))
@@ -54,31 +52,31 @@ func (s *Reader) readPlacedBook(ctx context.Context, path string) (*epub.Book, e
 }
 
 // GetCfi returns the EPUB CFI of the character at an offset of a book's text.
-func (s *Reader) GetCfi(ctx context.Context, req api.GetCfiRequest) (api.GetCfiResponse, error) {
-	book, err := s.readPlacedBook(ctx, req.Path)
+func (s *Reader) GetCfi(ctx context.Context, path string, offset int) (string, error) {
+	book, err := s.readPlacedBook(ctx, path)
 	if err != nil {
-		return api.GetCfiResponse{}, err
+		return "", err
 	}
-	place, ok := book.GetCFI(req.Offset)
+	place, ok := book.GetCFI(offset)
 	if !ok {
-		return api.GetCfiResponse{}, server.NewAPIError(server.CodeNotFound, fmt.Sprintf("%s has no text to name a place in", req.Path))
+		return "", newError(KindNotFound, fmt.Sprintf("%s has no text to name a place in", path))
 	}
-	return api.GetCfiResponse{Cfi: place.String()}, nil
+	return place.String(), nil
 }
 
 // FindOffset returns the offset of a book's text an EPUB CFI names.
-func (s *Reader) FindOffset(ctx context.Context, req api.FindOffsetRequest) (api.FindOffsetResponse, error) {
-	place, err := cfi.Parse(req.Cfi)
+func (s *Reader) FindOffset(ctx context.Context, path, cfiText string) (int, error) {
+	place, err := cfi.Parse(cfiText)
 	if err != nil {
-		return api.FindOffsetResponse{}, server.NewAPIError(server.CodeInvalidArgument, err.Error())
+		return 0, newError(KindInvalidArgument, err.Error())
 	}
-	book, err := s.readPlacedBook(ctx, req.Path)
+	book, err := s.readPlacedBook(ctx, path)
 	if err != nil {
-		return api.FindOffsetResponse{}, err
+		return 0, err
 	}
 	offset, ok := book.FindOffset(place)
 	if !ok {
-		return api.FindOffsetResponse{}, server.NewAPIError(server.CodeNotFound, fmt.Sprintf("%s names no document of %s", req.Cfi, req.Path))
+		return 0, newError(KindNotFound, fmt.Sprintf("%s names no document of %s", cfiText, path))
 	}
-	return api.FindOffsetResponse{Offset: offset}, nil
+	return offset, nil
 }

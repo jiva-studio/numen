@@ -17,6 +17,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/books"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/wire/bookwire"
 )
 
 func TestLifecycleServerPingAndShutdown(t *testing.T) {
@@ -120,7 +121,7 @@ func TestReaderGetBookAndMarkup(t *testing.T) {
 	files := hosttest.New("vault")
 	files.File("test.epub", string(epubBytes))
 
-	reader := books.NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
+	reader := bookwire.NewMethods(books.NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) }))
 	ctx := t.Context()
 
 	// Test GetBook
@@ -173,7 +174,7 @@ func TestReaderVaultBoundary(t *testing.T) {
 
 	files := hosttest.New("vault")
 	files.File("inside.epub", string(epubBytes))
-	reader := books.NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
+	reader := bookwire.NewMethods(books.NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) }))
 	ctx := t.Context()
 
 	// 1. Path outside vault should fail with permission denied
