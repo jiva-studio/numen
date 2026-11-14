@@ -1,12 +1,37 @@
-// The page of the scenario report. data.js sets window.REPORT (the features and their scenarios)
-// and window.findStepAt (timeline.ts) before this script runs. It is a classic script, not a module,
-// so the page also opens from file://.
+// The page of the scenario report. data.js sets window.REPORT (the overview of the run and its
+// features and scenarios) and window.playback (playback.ts); video.js comes before this script.
+// They are classic scripts, not modules, so the page also opens from file://, and share their
+// top-level names.
+/* global createVideo */
 const report = window.REPORT
-const findStepAt = window.findStepAt
 const scenarios = new Map(
   report.features.flatMap((feature) => feature.scenarios.map((s) => [s.id, s])),
 )
 const state = { query: '', isFailedOnly: false, currentId: '' }
+
+const THEME_KEY = 'acceptance-report.theme'
+
+const SVG_NS = 'http://www.w3.org/2000/svg'
+const ICONS = {
+  check: 'M3.5 8.5l3 3 6-7',
+  cross: 'M4.5 4.5l7 7M11.5 4.5l-7 7',
+  dash: 'M4.5 8h7',
+  download: 'M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10',
+  link: 'M6.8 9.2l2.4-2.4M7.3 4.6l1-1a2.6 2.6 0 013.7 3.7l-1 1M8.7 11.4l-1 1a2.6 2.6 0 01-3.7-3.7l1-1',
+  sun: 'M8 5.2a2.8 2.8 0 100 5.6 2.8 2.8 0 000-5.6zM8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.4 3.4l.9.9M11.7 11.7l.9.9M3.4 12.6l.9-.9M11.7 4.3l.9-.9',
+  moon: 'M13.2 9.6A5.5 5.5 0 016.4 2.8a5.5 5.5 0 106.8 6.8z',
+}
+const STATUS_ICONS = { passed: 'check', failed: 'cross', skipped: 'dash' }
+
+/** Whether the choice was stored; without storage it lasts until the page closes. */
+const writeSetting = (key, value) => {
+  try {
+    localStorage.setItem(key, value)
+    return true
+  } catch {
+    return false
+  }
+}
 
 const createElement = (tag, attributes = {}, children = []) => {
   const element = document.createElement(tag)
@@ -17,6 +42,22 @@ const createElement = (tag, attributes = {}, children = []) => {
   return element
 }
 
+const createIcon = (name) => {
+  const svg = document.createElementNS(SVG_NS, 'svg')
+  svg.setAttribute('class', 'icon')
+  svg.setAttribute('viewBox', '0 0 16 16')
+  svg.setAttribute('aria-hidden', 'true')
+  const path = document.createElementNS(SVG_NS, 'path')
+  path.setAttribute('d', ICONS[name])
+  svg.append(path)
+  return svg
+}
+
+const createStatusIcon = (status) =>
+  createElement('span', { class: `status-icon ${status}`, role: 'img', 'aria-label': status }, [
+    createIcon(STATUS_ICONS[status]),
+  ])
+
 const formatDuration = (ms) => (ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`)
 
 const formatOffset = (seconds) => {
@@ -24,12 +65,64 @@ const formatOffset = (seconds) => {
   return `${minutes}:${(seconds - minutes * 60).toFixed(1).padStart(4, '0')}`
 }
 
-const createDot = (status) => createElement('span', { class: `dot ${status}`, title: status })
+const formatCount = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`
 
-const writeTotals = () => {
-  const { passed, failed, skipped } = report.counts
-  document.getElementById('totals').textContent =
-    `${passed} passed, ${failed} failed, ${skipped} skipped · ${new Date(report.createdAt).toLocaleString()}`
+// Theme
+
+const getTheme = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark')
+
+const writeThemeButton = () => {
+  const next = getTheme() === 'dark' ? 'light' : 'dark'
+  const button = document.getElementById('theme')
+  button.replaceChildren(createIcon(next === 'light' ? 'sun' : 'moon'))
+  button.setAttribute('aria-label', `Switch to the ${next} theme`)
+  button.title = `Switch to the ${next} theme`
+}
+
+const toggleTheme = () => {
+  const next = getTheme() === 'dark' ? 'light' : 'dark'
+  document.documentElement.dataset.theme = next
+  writeSetting(THEME_KEY, next)
+  writeThemeButton()
+}
+
+// Sidebar
+
+const createStat = (value, label, status) =>
+  createElement('div', { class: `stat ${status ?? ''} ${value === 0 ? 'is-zero' : ''}` }, [
+    createElement('span', { class: 'stat-value' }, [String(value)]),
+    createElement('span', { class: 'stat-label' }, [label]),
+  ])
+
+const createRevision = ({ commit, branch }) => {
+  if (!commit) return null
+  return createElement('p', { class: 'run-meta' }, [
+    createElement('code', { title: 'Commit' }, [commit]),
+    branch ? ` on ${branch}` : null,
+  ])
+}
+
+const writeOverview = () => {
+  const { overview } = report
+  const { passed, failed, skipped } = overview.counts
+  const startedAt = new Date(overview.startedAt).toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
+  document
+    .getElementById('overview')
+    .replaceChildren(
+      createElement('div', { class: 'stats' }, [
+        createStat(overview.scenarios, overview.scenarios === 1 ? 'scenario' : 'scenarios'),
+        createStat(passed, 'passed', 'passed'),
+        createStat(failed, 'failed', 'failed'),
+        skipped > 0 ? createStat(skipped, 'skipped', 'skipped') : null,
+      ]),
+      createElement('p', { class: 'run-meta' }, [
+        `${formatCount(overview.features, 'feature')} · ${startedAt}`,
+      ]),
+      ...[createRevision(overview)].filter(Boolean),
+    )
 }
 
 const isScenarioShown = (feature, scenario) => {
@@ -48,19 +141,19 @@ const createScenarioButton = (scenario) =>
       'aria-current': String(scenario.id === state.currentId),
     },
     [
-      createDot(scenario.status),
+      createStatusIcon(scenario.status),
       createElement('span', { class: 'name' }, [scenario.name]),
       createElement('span', { class: 'time' }, [formatDuration(scenario.duration)]),
     ],
   )
 
 const createFeatureNode = (feature, shown) => {
-  const { passed, failed } = feature.counts
+  const total = feature.scenarios.length
   const summary = createElement('summary', { title: feature.uri }, [
-    createDot(feature.status),
+    createStatusIcon(feature.status),
     createElement('span', { class: 'name' }, [feature.name]),
-    createElement('span', { class: 'time' }, [
-      `${passed}/${passed + failed} · ${formatDuration(feature.duration)}`,
+    createElement('span', { class: 'count', title: formatCount(total, 'scenario') }, [
+      String(total),
     ]),
   ])
   const list = createElement(
@@ -84,19 +177,87 @@ const writeTree = () => {
   )
 }
 
-const createDataTable = (rows) =>
-  createElement('table', { class: 'data-table' }, [
+// Scenario header
+
+const getScenarioLink = (id) => `${location.href.split('#')[0]}#${encodeURIComponent(id)}`
+
+const showCopied = (note, text) => {
+  note.textContent = text
+  note.classList.add('is-shown')
+  clearTimeout(note.timer)
+  note.timer = setTimeout(() => note.classList.remove('is-shown'), 1400)
+}
+
+const copyLink = async (id, note) => {
+  try {
+    await navigator.clipboard.writeText(getScenarioLink(id))
+    showCopied(note, 'Copied')
+  } catch {
+    showCopied(note, 'Could not copy')
+  }
+}
+
+const createActions = (scenario) => {
+  const note = createElement('span', { class: 'copied', role: 'status' })
+  const copy = createElement(
+    'button',
+    { class: 'icon-button', type: 'button', title: 'Copy link', 'aria-label': 'Copy link' },
+    [createIcon('link')],
+  )
+  copy.addEventListener('click', () => copyLink(scenario.id, note))
+  const trace = scenario.trace
+    ? createElement(
+        'a',
+        {
+          class: 'icon-button',
+          href: scenario.trace,
+          download: '',
+          title: 'Download the trace',
+          'aria-label': 'Download the trace',
+        },
+        [createIcon('download')],
+      )
+    : null
+  return createElement('div', { class: 'actions' }, [copy, trace, note])
+}
+
+const createScenarioHeader = (scenario) =>
+  createElement('header', { class: 'scenario-header' }, [
     createElement(
-      'tbody',
-      {},
-      rows.map((row) =>
-        createElement(
-          'tr',
-          {},
-          row.map((cell) => createElement('td', {}, [cell])),
+      'p',
+      { class: 'feature-name', title: `${scenario.featureUri}:${scenario.line}` },
+      [scenario.featureName],
+    ),
+    createElement('div', { class: 'title-row' }, [
+      createElement('h2', {}, [
+        createStatusIcon(scenario.status),
+        createElement('span', {}, [
+          scenario.name,
+          ' ',
+          createElement('span', { class: 'time' }, [formatDuration(scenario.duration)]),
+        ]),
+      ]),
+      createActions(scenario),
+    ]),
+  ])
+
+// Steps
+
+const createDataTable = (rows) =>
+  createElement('div', { class: 'table-scroll' }, [
+    createElement('table', { class: 'data-table' }, [
+      createElement(
+        'tbody',
+        {},
+        rows.map((row) =>
+          createElement(
+            'tr',
+            {},
+            row.map((cell) => createElement('td', {}, [cell])),
+          ),
         ),
       ),
-    ),
+    ]),
   ])
 
 const createDocString = (docString) =>
@@ -121,23 +282,19 @@ const createStepFailure = (step, scenario) => {
 }
 
 const createStep = (step, index, scenario) => {
-  const time =
-    step.start === null
-      ? 'not run'
-      : `${formatOffset(step.start)} · ${formatDuration(step.duration)}`
-  const line = createElement('div', { class: 'step-line' }, [
-    createDot(step.status),
-    createElement('span', { class: 'name' }, [
-      createElement('span', { class: 'keyword' }, [step.keyword]),
-      ` ${step.text}`,
-    ]),
-    createElement('span', { class: 'time' }, [time]),
-  ])
+  const isRun = step.start !== null
   return createElement(
     'li',
     { class: `step ${step.status}`, 'data-index': String(index), title: `line ${step.line}` },
     [
-      line,
+      createStatusIcon(step.status),
+      createElement('span', { class: 'keyword' }, [step.keyword]),
+      createElement('span', { class: 'step-text' }, [step.text]),
+      createElement(
+        'span',
+        { class: 'step-time', title: isRun ? `at ${formatOffset(step.start)}` : null },
+        [isRun ? formatDuration(step.duration) : 'not run'],
+      ),
       step.dataTable ? createDataTable(step.dataTable) : null,
       step.docString ? createDocString(step.docString) : null,
       ...createStepFailure(step, scenario),
@@ -145,72 +302,27 @@ const createStep = (step, index, scenario) => {
   )
 }
 
-const createTraceLink = (scenario) =>
-  scenario.trace
-    ? createElement(
-        'a',
-        { class: 'trace', href: scenario.trace, download: '', title: 'Download the trace' },
-        ['⤓'],
-      )
-    : null
-
 const createScenarioError = (scenario) =>
   scenario.errorMessage ? createElement('pre', { class: 'error' }, [scenario.errorMessage]) : null
 
-const createPlayer = (scenario) =>
-  scenario.video
-    ? createElement('video', {
-        class: 'player',
-        src: scenario.video,
-        controls: '',
-        preload: 'auto',
-      })
-    : createElement('p', { class: 'empty' }, ['No video.'])
-
-const highlightStep = (stepList, index) => {
-  for (const item of stepList.children) {
-    const isCurrent = Number(item.dataset.index) === index
-    item.classList.toggle('current', isCurrent)
-  }
-}
-
-const linkStepsToVideo = (player, stepList, scenario) => {
-  const starts = scenario.steps.map((step) => step.start)
-  const update = () => highlightStep(stepList, findStepAt(starts, player.currentTime))
-  player.addEventListener('timeupdate', update)
-  player.addEventListener('seeked', update)
-  stepList.addEventListener('click', (event) => {
-    const item = event.target.closest('.step')
-    const start = item ? starts[Number(item.dataset.index)] : null
-    if (start === null || start === undefined) return
-    player.currentTime = start
-    player.play().catch(() => update())
-  })
-}
+// Detail
 
 const writeDetail = (scenario) => {
-  const detail = document.getElementById('detail')
-  const player = createPlayer(scenario)
   const stepList = createElement(
     'ol',
     { class: 'steps' },
     scenario.steps.map((step, index) => createStep(step, index, scenario)),
   )
-  detail.replaceChildren(
-    createElement('p', { class: 'feature-name' }, [
-      `${scenario.featureName} · ${scenario.featureUri}:${scenario.line}`,
-    ]),
-    createElement('h2', {}, [
-      scenario.name,
-      createElement('span', { class: `badge ${scenario.status}` }, [scenario.status]),
-      createElement('span', { class: 'time' }, [formatDuration(scenario.duration)]),
-      createTraceLink(scenario),
-    ]),
-    player,
-    ...[createScenarioError(scenario)].filter(Boolean),
-    stepList,
-  )
-  if (player.tagName === 'VIDEO') linkStepsToVideo(player, stepList, scenario)
+  const video = scenario.video
+    ? createVideo(scenario, stepList)
+    : createElement('p', { class: 'empty' }, ['No video.'])
+  document
+    .getElementById('detail')
+    .replaceChildren(
+      ...[createScenarioHeader(scenario), video, createScenarioError(scenario), stepList].filter(
+        Boolean,
+      ),
+    )
 }
 
 const selectScenario = (id) => {
@@ -228,6 +340,7 @@ const getFirstScenarioId = () => {
   return (all.find((scenario) => scenario.status === 'failed') ?? all[0])?.id
 }
 
+document.getElementById('theme').addEventListener('click', toggleTheme)
 document.getElementById('search').addEventListener('input', (event) => {
   state.query = event.target.value.trim().toLowerCase()
   writeTree()
@@ -244,7 +357,8 @@ window.addEventListener('hashchange', () =>
   selectScenario(decodeURIComponent(location.hash.slice(1))),
 )
 
-writeTotals()
+writeThemeButton()
+writeOverview()
 state.currentId = decodeURIComponent(location.hash.slice(1)) || getFirstScenarioId() || ''
 writeTree()
 selectScenario(state.currentId)

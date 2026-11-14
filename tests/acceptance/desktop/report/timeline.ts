@@ -77,16 +77,3 @@ const toTiming = (step: StepNode, videoStart: number, isBlamed: boolean): StepTi
   }
   return { status: 'passed', start, duration: step.duration }
 }
-
-/**
- * The index of the step the video shows at `time` seconds: the last that started by then, or -1.
- * The page runs this function as written here (scenario-report.ts writes its source into the page),
- * so it uses nothing from outside it.
- */
-export const findStepAt = (starts: readonly (number | null)[], time: number): number => {
-  let found = -1
-  starts.forEach((start, index) => {
-    if (start !== null && start <= time) found = index
-  })
-  return found
-}

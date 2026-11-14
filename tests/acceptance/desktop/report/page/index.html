@@ -1,23 +1,36 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Acceptance scenarios</title>
+    <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="report.css" />
+    <script>
+      // Before the first paint, so a light page does not open dark.
+      try {
+        if (localStorage.getItem('acceptance-report.theme') === 'light')
+          document.documentElement.dataset.theme = 'light'
+      } catch {
+        // No storage: the page opens in the default theme.
+      }
+    </script>
   </head>
   <body>
     <aside class="sidebar">
       <header class="sidebar-header">
-        <h1>Acceptance scenarios</h1>
-        <p class="totals" id="totals"></p>
+        <div class="sidebar-title">
+          <h1>Acceptance scenarios</h1>
+          <button id="theme" class="icon-button" type="button"></button>
+        </div>
+        <section id="overview" class="overview" aria-label="Run"></section>
         <input
           id="search"
           type="search"
           placeholder="Search features and scenarios"
           aria-label="Search"
         />
-        <label class="filter">
+        <label class="check">
           <input id="failed-only" type="checkbox" />
           Failed only
         </label>
@@ -28,6 +41,7 @@
       <p class="empty">Choose a scenario.</p>
     </main>
     <script src="data.js"></script>
+    <script src="video.js"></script>
     <script src="report.js"></script>
   </body>
 </html>

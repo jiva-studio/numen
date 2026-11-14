@@ -5,13 +5,19 @@
  *
  *   reporter: [['./report/scenario-report.ts', { outputFolder: 'acceptance-report' }]]
  */
-import fs from 'node:fs'
 import path from 'node:path'
-import type { FullConfig, Reporter, TestCase, TestResult } from 'playwright/types/testReporter'
+import type {
+  FullConfig,
+  FullResult,
+  Reporter,
+  TestCase,
+  TestResult,
+} from 'playwright/types/testReporter'
 import { type BddFile, readBddFile } from './bdd-data.js'
 import { type Feature, readFeature } from './gherkin.js'
+import { readGitRevision } from './overview.js'
 import { createScenarioRecord, type ScenarioRecord } from './scenario.js'
-import { writeReport } from './write-report.js'
+import { clearFolder, writeReport } from './write-report.js'
 
 type Options = { readonly outputFolder?: string }
 
@@ -38,7 +44,7 @@ export default class ScenarioReport implements Reporter {
   onBegin(config: FullConfig): void {
     this.configDir = config.configFile ? path.dirname(config.configFile) : config.rootDir
     this.rootDir = path.resolve(this.configDir, '../../..')
-    fs.rmSync(this.outputDir, { recursive: true, force: true })
+    clearFolder(this.outputDir)
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {
@@ -54,8 +60,11 @@ export default class ScenarioReport implements Reporter {
     if (record) this.scenarios.set(record.id, record)
   }
 
-  onEnd(): void {
-    writeReport(this.outputDir, [...this.scenarios.values()])
+  onEnd(result: FullResult): void {
+    writeReport(this.outputDir, [...this.scenarios.values()], {
+      startedAt: result.startTime,
+      ...readGitRevision(this.rootDir),
+    })
     process.stdout.write(`scenario report: ${path.join(this.outputDir, 'index.html')}\n`)
   }
 

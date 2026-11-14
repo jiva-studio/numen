@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  collectBddSteps,
-  findStepAt,
-  getVideoStart,
-  mapStepTimes,
-  type StepNode,
-} from './timeline.js'
+import { collectBddSteps, getVideoStart, mapStepTimes, type StepNode } from './timeline.js'
 
 const SPEC = '/repo/.features-gen/features/garden/water-plants.feature.spec.js'
 const T0 = Date.UTC(2031, 4, 2, 9, 0, 0)
@@ -81,24 +75,5 @@ describe('mapStepTimes', () => {
 
   it('starts a step that began before the video at zero', () => {
     expect(mapStepTimes([7], [createStep({ line: 7, at: -50 })], T0, false)[0]?.start).toBe(0)
-  })
-})
-
-describe('findStepAt', () => {
-  const starts = [0.5, 2, null, 4.25]
-
-  it('finds the last step that started by the time', () => {
-    expect(findStepAt(starts, 0.5)).toBe(0)
-    expect(findStepAt(starts, 3.9)).toBe(1)
-    expect(findStepAt(starts, 60)).toBe(3)
-  })
-
-  it('finds none before the first step', () => {
-    expect(findStepAt(starts, 0.2)).toBe(-1)
-  })
-
-  it('runs from its own source, as the page runs it', () => {
-    const fromSource = new Function(`return ${findStepAt.toString()}`)() as typeof findStepAt
-    expect(fromSource(starts, 2.5)).toBe(1)
   })
 })
