@@ -4,7 +4,7 @@
 import type { VaultRelations } from '@numen/plugin-loader'
 import { findErrorCode, asFailure, asValue, type Result } from '@numen/core-client'
 import type { WindowClients } from '@/shared/api/clients'
-import type { NoteApi } from './notes'
+import type { LinkApi } from './notes'
 import {
   CONNECTION_ROLES,
   findRelationError,
@@ -24,7 +24,7 @@ const toResult = <E>(error: E | null): Result<void, E> =>
  */
 export const createRelations = (
   notes: WindowClients['notes'],
-  resolveLinks: NoteApi['resolveLinks'],
+  resolveLinks: LinkApi['resolveLinks'],
 ): VaultRelations => ({
   roles: CONNECTION_ROLES,
   getConnection: async (first, second, type = '') => {

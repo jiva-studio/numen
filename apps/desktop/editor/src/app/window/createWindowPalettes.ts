@@ -60,7 +60,8 @@ export interface WindowPalettesDeps {
 
 export function createWindowPalettes(deps: WindowPalettesDeps) {
   const { foundation, vault, windowSettings, getTarget, appCommands, plugins } = deps
-  const { rest, writeMessage } = foundation
+  const { rest, log } = foundation
+  const writeMessage = log.getWriter('command')
   const { pluginHost, declaredCommands, hostPort } = plugins
   const { windowTabs } = deps.tabs
   const { commandDeps, searchRequests } = createPaletteBase({
@@ -88,8 +89,8 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
     plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { menu: createSearchMenu(pluginHost.slots) },
-    getVaultList: vault.listVaults,
-    searchCore: foundation.api.search,
+    getVaultList: foundation.api.vault.listVaults,
+    searchCore: foundation.api.vault.search,
   })
   watchCommandLists(
     {

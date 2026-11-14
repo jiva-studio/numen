@@ -40,7 +40,6 @@ const OPTIONS: Record<Exclude<Answer, 'pending' | 'missing'>, MockCatalogEntryOp
 const enablePlugin = fn(() => createDeferred<void>().promise)
 const openPlugin = fn()
 
-/** Finds the plugin of a kind of tab in a catalog that answers as `answer` says. */
 const createCatalogFinder = (answer: Answer) =>
   createTabKindPluginFinder(
     createAnsweredClients({

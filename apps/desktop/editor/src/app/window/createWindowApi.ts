@@ -1,10 +1,11 @@
 /**
  * The calls of the window to the core, made once from the transports the window is given and handed
- * to the parts that make them.
+ * to the parts that make them, grouped by what they reach: the vault, the window, the tabs, the
+ * plugins and the configuration.
  */
 import { createConnectionApi } from '@/entities/connection'
 import { createFileApi } from '@/entities/file'
-import { createNoteApi, createRelations } from '@/entities/note'
+import { createLinkApi, createNoteApi, createRelations } from '@/entities/note'
 import {
   createCatalogReader,
   createDeclaredCommandsApi,
@@ -24,34 +25,62 @@ import {
 import { createSearchCore } from '@/features/command-palette'
 import { createTabLinksApi } from '@/features/tab-linking'
 import { createTabMoveApi } from '@/features/tab-move'
-import { createWindowClients, type WindowTransports } from '@/shared/api/clients'
+import { createVaultListReader } from '@/features/window-display'
+import {
+  createPluginHostClients,
+  createSettingsClients,
+  createVaultClients,
+  createWorkspaceClients,
+  type WindowTransports,
+} from '@/shared/api/clients'
 
 export function createWindowApi(transports: WindowTransports) {
-  const clients = createWindowClients(transports)
-  const note = createNoteApi(clients.notes)
+  const { transport } = transports
+  const vaultClients = createVaultClients(transport)
+  const workspaceClients = createWorkspaceClients(transports)
+  const settingsClients = createSettingsClients(transport)
+  const pluginClients = createPluginHostClients(transport)
+  const links = createLinkApi(vaultClients.notes)
+  const vaults = createVaults(vaultClients.vaultsService)
+  const shownVault = createShownVaultApi(workspaceClients.windowService)
   return {
-    connection: createConnectionApi(clients.connections),
-    file: createFileApi(clients.files),
-    note,
-    relations: createRelations(clients.notes, note.resolveLinks),
-    declaredCommands: createDeclaredCommandsApi(clients.pluginCommands),
-    pluginHost: createPluginHostApi(clients),
-    health: createHealthApi(clients.pluginHealth),
-    processes: createProcessHost(clients.pluginService),
-    listCatalog: createCatalogReader(clients.pluginCatalog),
-    settings: createSettingsApi(clients.settingsService),
-    themes: createThemes(clients.theme),
-    savedTabs: createSavedTabsApi(clients.workspace),
-    findTabKindPlugin: createTabKindPluginFinder(clients.pluginCatalog),
-    vaults: createVaults(clients.vaultsService),
-    vaultState: createVaultStateApi(clients.vault),
-    focus: createFocusApi(clients.workspace),
-    quit: createQuitApi(clients.windowService),
-    shownVault: createShownVaultApi(clients.windowService),
-    tasks: createTaskApi(clients.windowService),
-    search: createSearchCore(clients.search),
-    tabLinks: createTabLinksApi(clients),
-    tabMove: createTabMoveApi(clients.workspace),
+    vault: {
+      note: createNoteApi(vaultClients.notes),
+      links,
+      relations: createRelations(vaultClients.notes, links.resolveLinks),
+      file: createFileApi(vaultClients.files),
+      vaults,
+      vaultState: createVaultStateApi(vaultClients.vault),
+      search: createSearchCore(vaultClients.search),
+      listVaults: createVaultListReader({ vaults, getShownVault: shownVault.getShownVault }),
+    },
+    window: {
+      focus: createFocusApi(workspaceClients.workspace),
+      quit: createQuitApi(workspaceClients.windowService),
+      shownVault,
+      tasks: createTaskApi(workspaceClients.windowService),
+    },
+    tabs: {
+      savedTabs: createSavedTabsApi(workspaceClients.workspace),
+      tabLinks: createTabLinksApi(workspaceClients),
+      tabMove: createTabMoveApi(workspaceClients.workspace),
+    },
+    plugins: {
+      declaredCommands: createDeclaredCommandsApi(pluginClients.pluginCommands),
+      pluginHost: createPluginHostApi({
+        texts: vaultClients.texts,
+        connectionCalls: pluginClients.connectionCalls,
+      }),
+      health: createHealthApi(pluginClients.pluginHealth),
+      processes: createProcessHost(pluginClients.pluginService),
+      listCatalog: createCatalogReader(pluginClients.pluginCatalog),
+      findTabKindPlugin: createTabKindPluginFinder(pluginClients.pluginCatalog),
+    },
+    configuration: {
+      connection: createConnectionApi(settingsClients.connections),
+      settings: createSettingsApi(settingsClients.settingsService),
+      themes: createThemes(settingsClients.theme),
+    },
   }
 }
 

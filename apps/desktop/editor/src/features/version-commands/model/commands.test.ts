@@ -43,7 +43,7 @@ const createWindow = (
   const listItems = vi.fn(async () => [{ id: 'v1', title: 'transcript (live)' }])
   const messages: { text: string; kind: string | undefined }[] = []
   const set = createVersionCommands({
-    runDeclaredHandler: api.declaredCommands.runDeclaredHandler,
+    runDeclaredHandler: api.plugins.declaredCommands.runDeclaredHandler,
     listItems,
     writeMessage: (text, kind) => {
       messages.push({ text, kind })

@@ -192,10 +192,10 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     searchRequests,
     searchOptions: { menu: createSearchMenu(pluginHost.slots) },
     getVaultList: createVaultListReader({
-      vaults: api.vaults,
-      getShownVault: api.shownVault.getShownVault,
+      vaults: api.vault.vaults,
+      getShownVault: api.window.shownVault.getShownVault,
     }),
-    searchCore: api.search,
+    searchCore: api.vault.search,
   })
   watchCommandLists(
     {
@@ -240,7 +240,7 @@ export function createRealWindow(parts: RealWindowParts) {
   const declaredCommands = useDeclaredCommands({
     registry,
     list: () => Promise.resolve({ commands: [], slots: [] }),
-    run: api.declaredCommands.runDeclaredCommand,
+    run: api.plugins.declaredCommands.runDeclaredCommand,
     listItems: () => Promise.resolve([]),
   })
   const pluginHost = createHost(parts, declaredCommands)
@@ -285,10 +285,10 @@ export function createRealWindow(parts: RealWindowParts) {
   const features = collectFeatureCommands(
     {
       notes: {
-        files: api.file,
-        renameNote: api.note.renameNote,
+        files: api.vault.file,
+        renameNote: api.vault.note.renameNote,
         making: createNoteWriter(
-          { createNote: api.note.createNote, relations: api.relations },
+          { createNote: api.vault.note.createNote, relations: api.vault.relations },
           () => undefined,
         ),
         notes: options.reached,
@@ -300,10 +300,10 @@ export function createRealWindow(parts: RealWindowParts) {
         },
         writeMessage: options.writeMessage,
       },
-      files: { files: api.file, notes: options.reached, writeMessage: options.writeMessage },
+      files: { files: api.vault.file, notes: options.reached, writeMessage: options.writeMessage },
       vaults: {
-        vaults: api.vaults,
-        emptyTrash: api.file.emptyTrash,
+        vaults: api.vault.vaults,
+        emptyTrash: api.vault.file.emptyTrash,
         tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
         setVaultName: () => undefined,
         reload: () => undefined,
@@ -319,7 +319,7 @@ export function createRealWindow(parts: RealWindowParts) {
         move: () => undefined,
       },
       versions: {
-        runDeclaredHandler: api.declaredCommands.runDeclaredHandler,
+        runDeclaredHandler: api.plugins.declaredCommands.runDeclaredHandler,
         listItems: () => Promise.resolve([]),
         writeMessage: options.writeMessage,
       },

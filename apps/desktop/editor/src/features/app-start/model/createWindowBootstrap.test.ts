@@ -100,7 +100,7 @@ const setup = ({
       isSecondary: false,
       windowId: 'window-a',
       readDetachedTab: vi.fn(() => Promise.resolve(detached)),
-      readOpenTabs: api.savedTabs.readOpenTabs,
+      readOpenTabs: api.tabs.savedTabs.readOpenTabs,
       openDetachedTab,
     }),
   }
@@ -112,7 +112,7 @@ const setup = ({
           windowTabs,
           isWriting: layout.isWritingTabs,
           writeMessage,
-          writeOpenTabs: api.savedTabs.writeOpenTabs,
+          writeOpenTabs: api.tabs.savedTabs.writeOpenTabs,
         })
         return () => h('div')
       },

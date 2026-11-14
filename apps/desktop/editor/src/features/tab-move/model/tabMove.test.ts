@@ -64,7 +64,7 @@ const setup = (asking: () => boolean = () => false) => {
     },
   })
   const deps = {
-    api: api.tabMove,
+    api: api.tabs.tabMove,
     windowId: 'window-a',
     windowTabs: {
       tabs: {

@@ -49,10 +49,6 @@ const DEBOUNCE = 200
  */
 const windows: { unmount(): void }[] = []
 
-/**
- * The transport of a mounted window: the core answers as the mocks of every entity say, and as
- * `extra` says on top of them.
- */
 const createWindowTransport = (extra: CoreAnswers = {}): Transport =>
   createCoreTransport(
     mergeAnswers(

@@ -50,7 +50,6 @@ interface NoteStreams {
 
 type Fake = Streams & NoteStreams
 
-/** The calls the window reads the vault through, over a core that answers as `core` says. */
 const answerFrom = (core: Fake) => {
   const api = createAnsweredApi({
     vault: {
@@ -120,12 +119,12 @@ const answerFrom = (core: Fake) => {
     },
   })
   return {
-    ...api.vaultState,
-    ...api.focus,
-    getInitialOpenPath: api.note.getInitialOpenPath,
-    watchEdits: api.note.watchEdits,
-    watchTasks: api.tasks.watchTasks,
-    watchPluginHealth: api.health.watchPluginHealth,
+    ...api.vault.vaultState,
+    ...api.window.focus,
+    getInitialOpenPath: api.vault.note.getInitialOpenPath,
+    watchEdits: api.vault.note.watchEdits,
+    watchTasks: api.window.tasks.watchTasks,
+    watchPluginHealth: api.plugins.health.watchPluginHealth,
   }
 }
 

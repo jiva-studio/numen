@@ -80,10 +80,10 @@ const createWindow = (answers: Answers = {}) => {
     },
   })
   const deps = {
-    files: api.file,
-    renameNote: api.note.renameNote,
+    files: api.vault.file,
+    renameNote: api.vault.note.renameNote,
     making: createNoteWriter(
-      { createNote: api.note.createNote, relations: api.relations },
+      { createNote: api.vault.note.createNote, relations: api.vault.relations },
       writeMessage,
     ),
     notes: {

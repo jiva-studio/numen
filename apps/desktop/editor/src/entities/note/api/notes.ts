@@ -18,17 +18,35 @@ import type {
 } from '../lib/note'
 import { mapBaseline, mapNoteGraph, mapNoteResult, mapWriteResult, writes } from './noteWords'
 
-/** The calls of the note service over `notes`. */
-export const createNoteApi = (notes: WindowClients['notes']) => {
+/**
+ * The wikilinks of a text over `notes`, parsed by the core, and the path a `name://` address
+ * resolves to from a note.
+ */
+export const createLinkApi = (notes: WindowClients['notes']) => {
   /**
-   * The wikilinks of a text, parsed by the core, with the note each resolves to: empty when it
-   * resolves to none, or to a note in another vault. A name resolves by a path relative to the note
-   * it is written in, which is `from`. `vault` is the id of the vault the text is written in; empty
-   * means the vault the window shows.
+   * The wikilinks of a text with the note each resolves to: empty when it resolves to none, or to a
+   * note in another vault. A name resolves by a path relative to the note it is written in, which
+   * is `from`. `vault` is the id of the vault the text is written in; empty means the vault the
+   * window shows.
    */
   const resolveLinks = (from: string, text: string, vault?: string): Promise<readonly TextLink[]> =>
     resolveTextLinks(notes, { from, text, vault })
 
+  return {
+    resolveLinks,
+
+    /** Empty when the address resolves to no note. */
+    resolveNameLink: async (from: string, address: string): Promise<string> => {
+      const rawName = address.replace(/^name:\/\//, '')
+      return (await resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
+    },
+  }
+}
+
+export type LinkApi = ReturnType<typeof createLinkApi>
+
+/** The calls of the note service over `notes`. */
+export const createNoteApi = (notes: WindowClients['notes']) => {
   /** A change being made to a note's prose, reported while it is being made. */
   async function* watchEdits(signal: AbortSignal): AsyncGenerator<NoteEdit> {
     for await (const update of notes.watchEdits({}, { signal })) {
@@ -119,16 +137,6 @@ export const createNoteApi = (notes: WindowClients['notes']) => {
         ]),
       )
     },
-
-    /**
-     * The path the note a `name://` address names resolves to from a note, empty when it resolves
-     * to none.
-     */
-    resolveNameLink: async (from: string, address: string): Promise<string> => {
-      const rawName = address.replace(/^name:\/\//, '')
-      return (await resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
-    },
-    resolveLinks,
   }
 }
 

@@ -25,9 +25,12 @@ export const createEmptyWindow = (
   api = createAnsweredApi({}),
 ): Parameters<typeof collectFeatureCommands>[0] => ({
   notes: {
-    files: api.file,
-    renameNote: api.note.renameNote,
-    making: createNoteWriter({ createNote: api.note.createNote, relations: api.relations }, noop),
+    files: api.vault.file,
+    renameNote: api.vault.note.renameNote,
+    making: createNoteWriter(
+      { createNote: api.vault.note.createNote, relations: api.vault.relations },
+      noop,
+    ),
     notes: NO_NOTES,
     navigator: {
       travel: () => Promise.resolve(),
@@ -37,10 +40,10 @@ export const createEmptyWindow = (
     },
     writeMessage: noop,
   },
-  files: { files: api.file, notes: NO_NOTES, writeMessage: noop },
+  files: { files: api.vault.file, notes: NO_NOTES, writeMessage: noop },
   vaults: {
-    vaults: api.vaults,
-    emptyTrash: api.file.emptyTrash,
+    vaults: api.vault.vaults,
+    emptyTrash: api.vault.file.emptyTrash,
     setVaultName: noop,
     reload: noop,
     writeMessage: noop,
@@ -61,7 +64,7 @@ export const createEmptyWindow = (
     move: noop,
   },
   versions: {
-    runDeclaredHandler: api.declaredCommands.runDeclaredHandler,
+    runDeclaredHandler: api.plugins.declaredCommands.runDeclaredHandler,
     listItems: () => Promise.resolve([]),
     writeMessage: noop,
   },

@@ -1,7 +1,7 @@
 /**
  * Background streaming subscriptions for the window.
  */
-import type { Ref, ShallowRef } from 'vue'
+import type { ShallowRef } from 'vue'
 import type { createFollower } from '@numen/ui'
 import type { NoteApi, NoteEdit } from '@/entities/note'
 import type { FocusApi, Task, TaskApi } from '@/entities/window'
@@ -9,6 +9,7 @@ import type { HealthApi, PluginHealthItem } from '@/entities/plugin'
 import type { VaultChange, VaultStateApi } from '@/entities/vault'
 import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
+import type { useDisplayOpening } from './useDisplayOpening'
 
 /** What the window reads of the vault it asks about: whether its scan is done and what failed. */
 export interface VaultScan {
@@ -23,7 +24,7 @@ export interface VaultStreamDeps {
   readonly watchVaultChanges: VaultStateApi['watchVaultChanges']
   readonly follows: Follows
   readonly listening: AbortController
-  readonly opening: Ref<string>
+  readonly opening: Pick<ReturnType<typeof useDisplayOpening>, 'path' | 'read'>
   readonly isVaultSwapped: () => Promise<boolean>
   readonly reload: () => void
   readonly onVaultChanged: (
@@ -31,7 +32,6 @@ export interface VaultStreamDeps {
     renamed: readonly PathRename[],
     versionPaths: readonly string[],
   ) => Promise<void> | void
-  readonly readInitialNote: () => Promise<string>
   readonly ask: () => Promise<VaultScan>
 }
 
@@ -100,8 +100,8 @@ async function handleVaultChange(change: VaultChange, deps: VaultStreamDeps): Pr
     return
   }
   await reportVaultChange(change, deps)
-  if (change.renamed.some((went) => went.from === deps.opening.value)) {
-    await attempt(deps.readInitialNote)
+  if (change.renamed.some((went) => went.from === deps.opening.path.value)) {
+    await attempt(deps.opening.read)
   }
   await attempt(deps.ask)
 }

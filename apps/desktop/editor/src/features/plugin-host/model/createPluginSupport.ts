@@ -5,18 +5,16 @@ import {
   type PluginStatus,
 } from '@numen/plugin-loader'
 import { openExternalUrl, type WindowPlatform } from '@numen/workbench'
-import type { PluginHostApi } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { Caught } from '@/shared/api/errors'
 import { loadFrameRuntime } from '@/shared/api/runtime'
 import { TARGET } from '../lib/window'
 import type { HostParts, TabActionParts, TabKindParts } from './createHostParts'
 import type { createPluginCatalog } from './createPluginCatalog'
-import { createPluginSettingsAccessor, createRowChangeSubscriber } from './pluginSettings'
+import { createPluginSettingsAccessor } from './pluginSettings'
 
 /** What the plugin host and the plugin loader are made from. */
 export interface PluginSupportDeps {
-  readonly api: PluginHostApi
   readonly rest: SettingsStore
   readonly catalog: ReturnType<typeof createPluginCatalog>
   readonly status: PluginStatus
@@ -39,7 +37,6 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     rest,
     deps.reports.reportError,
   )
-  const subscribeRowChanges = createRowChangeSubscriber(rest)
   const pluginHost = createPluginHost({
     target: TARGET,
     ...mergeHostParts(deps.parts),
@@ -61,8 +58,6 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getReaderExtensions: catalog.getReaderExtensions,
     getSetting,
     onSettingChange,
-    getTexts: (pluginId) => deps.api.getPluginTexts(pluginId),
-    getConnections: (pluginId) => deps.api.getPluginConnections(pluginId, subscribeRowChanges),
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,

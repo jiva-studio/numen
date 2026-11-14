@@ -106,9 +106,9 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
   const wait = vi.fn((_ms: number) => Promise.resolve())
   const onError = vi.fn()
   const deps = {
-    api: api.tabLinks,
+    api: api.tabs.tabLinks,
     reports: createTabReports({
-      writeTabLinks: api.tabLinks.writeTabLinks,
+      writeTabLinks: api.tabs.tabLinks.writeTabLinks,
       windowId: 'window-a',
       getReport: () => ({ tabs: getOpenTabs(), window: WINDOW }),
       wait,
@@ -116,8 +116,7 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
     }),
     windowId: 'window-a',
     tabLinks: { applySnapshot: vi.fn() },
-    applySync: vi.fn(),
-    applyGroupPaths: vi.fn(),
+    tabSync: { applySync: vi.fn(), applyGroupPaths: vi.fn() },
     openMovedTab: vi.fn(),
     setHighlighted: vi.fn(),
     wait,
@@ -134,7 +133,7 @@ describe('createTabLinkSession', () => {
 
     const stream = session.start()
 
-    await vi.waitFor(() => expect(deps.applySync).toHaveBeenCalledWith(SYNC))
+    await vi.waitFor(() => expect(deps.tabSync.applySync).toHaveBeenCalledWith(SYNC))
     expect(core.watchTabLinks).toHaveBeenCalledWith('window-a', expect.any(AbortSignal))
     expect(deps.tabLinks.applySnapshot).toHaveBeenCalledExactlyOnceWith(SNAPSHOT)
     expect(core.writeTabLinks).toHaveBeenCalledExactlyOnceWith(REPORT)
@@ -181,7 +180,7 @@ describe('createTabLinkSession', () => {
   it('keeps the stream open when applySync throws', async () => {
     const { deps, core, session } = setup([{ sync: SYNC }, { links: SNAPSHOT }])
     const failure = new Error('navigate failed')
-    deps.applySync.mockImplementationOnce(() => {
+    deps.tabSync.applySync.mockImplementationOnce(() => {
       throw failure
     })
 
@@ -272,7 +271,9 @@ describe('a snapshot', () => {
 
     const stream = session.start()
 
-    await vi.waitFor(() => expect(deps.applyGroupPaths).toHaveBeenCalledWith(SNAPSHOT.groups))
+    await vi.waitFor(() =>
+      expect(deps.tabSync.applyGroupPaths).toHaveBeenCalledWith(SNAPSHOT.groups),
+    )
     session.close()
     await stream
   })

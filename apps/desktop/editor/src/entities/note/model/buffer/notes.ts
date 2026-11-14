@@ -119,9 +119,12 @@ function createNoteStoreContext(
   api: NoteBufferApi,
   tabs: Map<string, Tab>,
   bodies: Map<string, string>,
-  limits: Parameters<typeof transitionTab>[2],
-  onReplaced: (path: string) => void,
+  how: {
+    readonly limits: Parameters<typeof transitionTab>[2]
+    readonly onReplaced: (path: string) => void
+  },
 ) {
+  const { limits, onReplaced } = how
   const reportedIds = new Set<string>()
   const closeCallbacks = new Map<string, ((removed: boolean) => void)[]>()
 
@@ -239,7 +242,10 @@ export function useOpenNotes(api: NoteBufferApi, how: OpenNotesOptions = {}) {
 
   const tabs = shallowReactive(new Map<string, Tab>())
   const bodies = shallowReactive(new Map<string, string>())
-  const { context, dispatch } = createNoteStoreContext(api, tabs, bodies, limits, onReplaced)
+  const { context, dispatch } = createNoteStoreContext(api, tabs, bodies, {
+    limits,
+    onReplaced,
+  })
 
   const opening = createNoteOpening(context)
   const queries = createNoteQueries(context)

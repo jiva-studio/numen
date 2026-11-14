@@ -13,7 +13,7 @@ import {
   NAME_SOURCE,
 } from '@numen/core-client'
 import { createHandledClients } from '@/testing/coreAnswers'
-import { createNoteApi } from './notes'
+import { createLinkApi, createNoteApi } from './notes'
 
 const request = {
   readNote: vi.fn(),
@@ -27,7 +27,9 @@ const request = {
   watchEdits: vi.fn(),
 }
 
-const api = createNoteApi(createHandledClients(request).notes)
+const clients = createHandledClients(request)
+const api = createNoteApi(clients.notes)
+const links = createLinkApi(clients.notes)
 
 describe('the file a save presents', () => {
   it('arrives back as the file it was, through a path that holds spaces', async () => {
@@ -179,7 +181,7 @@ describe('the wikilinks of a text', () => {
       ],
     })
 
-    const resolved = await api.resolveLinks('a.md', '[[B]] [[C|see C]] [[D]]')
+    const resolved = await links.resolveLinks('a.md', '[[B]] [[C|see C]] [[D]]')
 
     expect(request.resolveAddresses.mock.calls.at(-1)?.[0]).toMatchObject({
       from: 'a.md',

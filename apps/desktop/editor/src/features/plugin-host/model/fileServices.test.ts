@@ -33,7 +33,7 @@ const setup = () => {
   const createUntitledNote = vi.fn()
   const runCommand = vi.fn(() => Promise.resolve())
   const files = createVaultFiles({
-    listFiles: api.file.listFiles,
+    listFiles: api.vault.file.listFiles,
     making: { createUntitledNote } as never,
     getTarget: () => target as never,
     runCommand,

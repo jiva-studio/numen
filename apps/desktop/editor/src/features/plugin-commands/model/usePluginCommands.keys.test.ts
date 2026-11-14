@@ -5,7 +5,7 @@ import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 
 /** The kinds of files, over a core that answers none. */
-const { getFileKinds } = createAnsweredApi({}).file
+const { getFileKinds } = createAnsweredApi({}).vault.file
 
 describe('the palette entry of a command a plugin declares with a Shift shortcut', () => {
   it('is drawn with the keystroke holding Shift that the manifest names', () => {

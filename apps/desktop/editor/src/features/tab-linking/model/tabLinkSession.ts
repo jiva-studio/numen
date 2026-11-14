@@ -16,12 +16,17 @@ import type { TabReports } from './tabReports'
 import type { Caught } from '@/shared/api/errors'
 import { wait } from '@/shared/model/wait'
 
+/** What the stream of the tab links applies to the tabs of this window. */
+export interface TabPathApplier {
+  readonly applySync: (sync: TabPathSync) => void
+  readonly applyGroupPaths: (groups: readonly TabLinkGroup[]) => void
+}
+
 export interface TabLinkSessionDeps {
   readonly api: Pick<TabLinksApi, 'watchTabLinks' | 'cancelTabLinksWatch'>
   readonly windowId: string
   readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
-  readonly applySync: (sync: TabPathSync) => void
-  readonly applyGroupPaths: (groups: readonly TabLinkGroup[]) => void
+  readonly tabSync: TabPathApplier
   readonly openMovedTab: (moved: MovedTab) => void
   readonly setHighlighted: (isOn: boolean) => void
   readonly reports: Pick<TabReports, 'reportTabs' | 'waitForReports' | 'stop' | 'resume'>
@@ -58,9 +63,9 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
         try {
           if (event.links) {
             deps.tabLinks.applySnapshot(event.links)
-            deps.applyGroupPaths(event.links.groups)
+            deps.tabSync.applyGroupPaths(event.links.groups)
           } else if (event.sync) {
-            deps.applySync(event.sync)
+            deps.tabSync.applySync(event.sync)
           } else if (event.movedTab) {
             deps.openMovedTab(event.movedTab)
           } else if (event.isHighlighted !== undefined) {

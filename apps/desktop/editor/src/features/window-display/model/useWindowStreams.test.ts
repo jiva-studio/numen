@@ -49,7 +49,6 @@ interface Streams {
   edits?: { change: string; path: string; range?: { start: number; end: number }; text: string }[]
 }
 
-/** The streams of a core that yields what `streams` hold. */
 const answer = (streams: Streams) => {
   const api = createAnsweredApi({
     vault: {
@@ -83,10 +82,10 @@ const answer = (streams: Streams) => {
     },
   })
   return {
-    watchVaultChanges: api.vaultState.watchVaultChanges,
-    watchFocus: api.focus.watchFocus,
-    watchEdits: api.note.watchEdits,
-    watchTasks: api.tasks.watchTasks,
+    watchVaultChanges: api.vault.vaultState.watchVaultChanges,
+    watchFocus: api.window.focus.watchFocus,
+    watchEdits: api.vault.note.watchEdits,
+    watchTasks: api.window.tasks.watchTasks,
   }
 }
 
@@ -116,7 +115,11 @@ interface WindowStreamsDeps extends ReturnType<typeof answer> {
 const createWindowStreams = (deps: WindowStreamsDeps) => {
   const follows = createFollower({ isOpen: deps.isOpen, setLost: deps.setLost, wait: deps.wait })
   return {
-    follow: createVaultStream({ ...deps, follows }),
+    follow: createVaultStream({
+      ...deps,
+      follows,
+      opening: { path: deps.opening, read: deps.readInitialNote },
+    }),
     draw: createEditStream({ ...deps, follows }),
     watch: createFocusStream({ ...deps, follows }),
     followTasks: createTaskStream({ ...deps, follows }),

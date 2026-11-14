@@ -16,9 +16,9 @@ const create = (windowTabs = createTestTabs()) => {
   )
   return createNoteEditors({
     api: {
-      notes: api.note,
-      making: { createNote: api.note.createNote, relations: api.relations },
-      quit: api.quit,
+      notes: api.vault.note,
+      making: { createNote: api.vault.note.createNote, relations: api.vault.relations },
+      quit: api.window.quit,
     },
     log: createMessageLog(),
     windowTabs,

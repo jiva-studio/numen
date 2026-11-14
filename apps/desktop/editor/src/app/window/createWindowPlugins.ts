@@ -33,32 +33,25 @@ export interface WindowPluginsDeps {
 export function createWindowPlugins(deps: WindowPluginsDeps) {
   const { foundation, tabs, vault, windowSettings, getTarget, appCommands } = deps
   const { api, log, rest, frame, status, registry } = foundation
-  const { windowTabs, tabOpeners } = tabs
+  const { note } = api.vault
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
   const notices = createNoticeQueue()
-  const pluginNotes = createPluginNotes({ read: api.note.readNote, write: api.note.writeNote })
+  const pluginNotes = createPluginNotes({ read: note.readNote, write: note.writeNote })
   const declarations = createPluginDeclarations({
-    api: api.declaredCommands,
+    api: api.plugins.declaredCommands,
     rest,
     log,
     isPaletteOpen: hostPort.isPaletteOpen,
     getTarget,
     appCommands,
     itemLists,
-    tabOpeners,
+    tabOpeners: tabs.tabOpeners,
   })
   const services = {
-    workspace: createPluginWorkspace({
-      log,
-      windowTabs,
-      tabOpeners,
-      window,
-      hostPort,
-      tabSync: tabs.tabSync,
-    }),
+    workspace: createPluginWorkspace({ log, tabs, window, hostPort }),
     ...createPluginAccess({
-      api,
+      api: api.vault,
       making: editing.making,
       pluginNotes,
       getTarget,
@@ -72,7 +65,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       frame,
       log,
       backgroundTasks: createPluginBackgroundTasks({
-        cancelTask: api.tasks.cancelTask,
+        cancelTask: api.window.tasks.cancelTask,
         log,
         notices,
         window,
@@ -84,16 +77,15 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     }),
   }
   const { pluginHost, pluginLoader } = createPluginHostSupport({
-    api: api.pluginHost,
     rest,
     catalog: declarations.catalog,
     status,
     frame,
-    windowTabs,
-    tabOpeners,
+    tabs,
     reports: declarations.reports,
     parts: createServiceParts({
       api,
+      rest,
       services,
       notices,
       pluginNotes,
@@ -102,8 +94,8 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
   })
   vault.vaultChanges.subscribe((event) => pluginHost.notifyVaultChange(event))
   const declaredCommands = useDeclaredCommands({
-    list: api.declaredCommands.listDeclaredCommands,
-    run: api.declaredCommands.runDeclaredCommand,
+    list: api.plugins.declaredCommands.listDeclaredCommands,
+    run: api.plugins.declaredCommands.runDeclaredCommand,
     state: declarations.declared,
     registry,
     isListed: (id) => isCommandListed(pluginHost, id),

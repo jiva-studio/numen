@@ -11,7 +11,7 @@ import type { WindowApi } from './createWindowApi'
 
 /** What the tabs of the window use of the tabs and the notes. */
 export interface WindowTabPartsDeps {
-  readonly api: Pick<WindowApi, 'tabMove' | 'savedTabs'>
+  readonly api: WindowApi['tabs']
   readonly windowTabs: WindowTabs
   readonly windowId: string
   readonly notes: Notes

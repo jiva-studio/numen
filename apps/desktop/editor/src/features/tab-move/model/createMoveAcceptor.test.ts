@@ -5,7 +5,7 @@ import { createMoveAcceptor } from './tabMove'
 
 const answerAccept = (accept = vi.fn(() => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }))) => {
   const api = createAnsweredApi({ workspace: { acceptTabMove: accept } })
-  return { accept, acceptTabMove: api.tabMove.acceptTabMove }
+  return { accept, acceptTabMove: api.tabs.tabMove.acceptTabMove }
 }
 
 describe('accepting a moved tab', () => {

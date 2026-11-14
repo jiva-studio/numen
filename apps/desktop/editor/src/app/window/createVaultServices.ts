@@ -9,11 +9,7 @@ import { createCommandNotes, createNotes } from '@/features/command-palette'
 import { createNoteEditors } from '@/features/file-conflict'
 import { createNoteNavigator } from '@/features/note-commands'
 import { createCommandItemLists } from '@/features/plugin-commands'
-import {
-  createDisplayOptions,
-  createVaultListReader,
-  useWindowDisplay,
-} from '@/features/window-display'
+import { createDisplayOptions, useWindowDisplay } from '@/features/window-display'
 import { createEmitter } from '@/shared/lib/emitter'
 import type { PathRename } from '@/shared/lib/paths'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -30,12 +26,13 @@ export interface VaultServicesDeps {
 
 export function createVaultServices(deps: VaultServicesDeps) {
   const { api, log, windowTabs, tabOpeners, navigation } = deps
+  const { vault } = api
   const writeMessage = log.getWriter('command')
   const noteEditors = createNoteEditors({
     api: {
-      notes: api.note,
-      making: { createNote: api.note.createNote, relations: api.relations },
-      quit: api.quit,
+      notes: vault.note,
+      making: { createNote: vault.note.createNote, relations: vault.relations },
+      quit: api.window.quit,
     },
     log,
     windowTabs,
@@ -44,20 +41,16 @@ export function createVaultServices(deps: VaultServicesDeps) {
     ...noteEditors,
     reached: createNotes([noteEditors.store], tabOpeners, writeMessage),
   }
-  const listVaults = createVaultListReader({
-    vaults: api.vaults,
-    getShownVault: api.shownVault.getShownVault,
-  })
   const renames = createEmitter<readonly PathRename[]>()
   const vaultChanges = createEmitter<VaultChangeEvent>()
   const window = useWindowDisplay(
     {
-      ...api.vaultState,
-      ...api.focus,
-      getInitialOpenPath: api.note.getInitialOpenPath,
-      watchEdits: api.note.watchEdits,
-      watchTasks: api.tasks.watchTasks,
-      watchPluginHealth: api.health.watchPluginHealth,
+      ...vault.vaultState,
+      ...api.window.focus,
+      getInitialOpenPath: vault.note.getInitialOpenPath,
+      watchEdits: vault.note.watchEdits,
+      watchTasks: api.window.tasks.watchTasks,
+      watchPluginHealth: api.plugins.health.watchPluginHealth,
     },
     createDisplayOptions({
       editing,
@@ -74,15 +67,14 @@ export function createVaultServices(deps: VaultServicesDeps) {
     notes: createCommandNotes(editing.reached, windowTabs),
     window,
     vaults: useVaults({
-      listVaults,
+      listVaults: vault.listVaults,
       log,
     }),
-    listVaults,
     renames,
     vaultChanges,
     itemLists: createCommandItemLists({
-      listLists: api.declaredCommands.listDeclaredItemLists,
-      fileKinds: api.file.getFileKinds,
+      listLists: api.plugins.declaredCommands.listDeclaredItemLists,
+      fileKinds: vault.file.getFileKinds,
     }),
     navigator: createNoteNavigator({
       navigation,

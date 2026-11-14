@@ -49,7 +49,7 @@ const setup = (
   const tasks = ref<readonly Task[]>([READING])
   const runs: { command: string; values: Readonly<Record<string, string>> | undefined }[] = []
   const host = createWindowBackgroundTasks({
-    cancelTask: createAnsweredApi({}).tasks.cancelTask,
+    cancelTask: createAnsweredApi({}).window.tasks.cancelTask,
     log,
     plugins: createNoticeQueue(),
     window: { lost: ref(''), unwatched: ref(unwatched), error: ref(''), tasks },

@@ -29,7 +29,7 @@ describe('useCatalogEntries', () => {
     const api = createAnsweredApi({ pluginCatalog: { listCatalog } })
     const plugins = ref<readonly PluginInfo[]>([])
     const errors: unknown[] = []
-    const entries = useCatalogEntries(api.listCatalog, plugins, (err) => errors.push(err))
+    const entries = useCatalogEntries(api.plugins.listCatalog, plugins, (err) => errors.push(err))
 
     expect(entries.value).toStrictEqual([])
     expect(listCatalog).not.toHaveBeenCalled()
@@ -65,7 +65,7 @@ describe('useCatalogEntries', () => {
     })
     const plugins = ref<readonly PluginInfo[]>([])
     const errors: unknown[] = []
-    useCatalogEntries(api.listCatalog, plugins, (err) => errors.push(err))
+    useCatalogEntries(api.plugins.listCatalog, plugins, (err) => errors.push(err))
 
     plugins.value = [createPlugin('a', false)]
     await nextTick()

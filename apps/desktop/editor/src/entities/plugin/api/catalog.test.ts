@@ -17,7 +17,7 @@ describe('the entries of the catalog', () => {
           ],
         }),
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 
@@ -51,7 +51,7 @@ describe('the entries of the catalog', () => {
           ],
         }),
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 
@@ -69,7 +69,7 @@ describe('the entries of the catalog', () => {
           sourceErrors: [{ source: 'sample-index', message: 'timed out' }],
         }),
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 
@@ -85,7 +85,7 @@ describe('the entries of the catalog', () => {
           throw createLostConnection('gone')
         },
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 

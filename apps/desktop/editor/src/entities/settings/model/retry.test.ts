@@ -4,7 +4,8 @@ import type { CoreAnswers } from '@numen/core-client/testing'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createPluginRetry } from './retry'
 
-const createAnsweredSettings = (answers: CoreAnswers) => createAnsweredApi(answers).settings
+const createAnsweredSettings = (answers: CoreAnswers) =>
+  createAnsweredApi(answers).configuration.settings
 
 const words = {
   stopped: (name: string, reason: string) => `${name} stopped: ${reason}`,

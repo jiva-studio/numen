@@ -21,18 +21,20 @@ export interface WindowSettingsDeps {
   readonly log: MessageLog
   readonly windowTabs: WindowTabs
   readonly onSizeChanged: () => void
-  readonly getSettingsViews: PageDeps['getSettingsViews']
+  readonly getSettingsViews: PageDeps['plugins']['getSettingsViews']
   readonly getPlatform: PageDeps['getPlatform']
-  readonly health?: PageDeps['health']
+  readonly health?: PageDeps['plugins']['health']
 }
 
 export function createWindowSettingsPart(deps: WindowSettingsDeps) {
   const { api, rest, words, log, onSizeChanged } = deps
+  const { configuration } = api
   const connections =
-    deps.connections ?? createConnectionStore(api.connection, log.getWriter('connections'))
+    deps.connections ??
+    createConnectionStore(configuration.connection, log.getWriter('connections'))
   const windowSettings = createWindowSettings({
-    themes: api.themes,
-    watchSettings: api.settings.watchSettings,
+    themes: configuration.themes,
+    watchSettings: configuration.settings.watchSettings,
     rest,
     connections,
     words,
@@ -40,17 +42,24 @@ export function createWindowSettingsPart(deps: WindowSettingsDeps) {
     onSizeChanged,
   })
   const page = createSettingsPage({
-    api: { settings: api.settings, listFiles: api.file.listFiles, listCatalog: api.listCatalog },
+    api: {
+      settings: configuration.settings,
+      listFiles: api.vault.file.listFiles,
+      listCatalog: api.plugins.listCatalog,
+      listRowOptions: configuration.connection.listRowOptions,
+    },
     rest,
     connections,
     appearance: windowSettings.appearance,
     log,
     windowTabs: deps.windowTabs,
-    getSettingsViews: deps.getSettingsViews,
     getPlatform: deps.getPlatform,
-    health: deps.health ?? {
-      items: shallowRef([]),
-      commands: { getIds: () => [], run: () => Promise.resolve('') },
+    plugins: {
+      getSettingsViews: deps.getSettingsViews,
+      health: deps.health ?? {
+        items: shallowRef([]),
+        commands: { getIds: () => [], run: () => Promise.resolve('') },
+      },
     },
   })
   return {

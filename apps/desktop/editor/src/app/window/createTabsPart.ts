@@ -31,6 +31,7 @@ export interface TabsPartDeps {
 
 export function createTabsPart(deps: TabsPartDeps) {
   const { api, writeMessage, status } = deps
+  const { tabLinks: tabLinksApi, tabMove } = api.tabs
   const pluginStarts = createTabPluginStarts({
     status,
     getPlugins: () => deps.rest.state.plugins.value,
@@ -39,7 +40,7 @@ export function createTabsPart(deps: TabsPartDeps) {
   const windowTabs = createWindowTabs(
     { unavailable: UnavailablePane, restoreFailed: RestoreFailedPane },
     {
-      findTabKindPlugin: api.findTabKindPlugin,
+      findTabKindPlugin: api.plugins.findTabKindPlugin,
       isPluginStarting: status.isPluginStarting,
       startKindPlugin: pluginStarts.startKindPlugin,
       enablePlugin: async (pluginId) => {
@@ -51,14 +52,14 @@ export function createTabsPart(deps: TabsPartDeps) {
   const windowId = crypto.randomUUID()
   const isMain = !isSecondaryWindow()
   const { tabLinks, reports } = createTabLinking({
-    writeTabLinks: api.tabLinks.writeTabLinks,
+    writeTabLinks: tabLinksApi.writeTabLinks,
     windowId,
     windowTabs,
     isMain,
     writeMessage,
   })
   const tabOpeners = fileOpeners({
-    fileKinds: api.file.getFileKinds,
+    fileKinds: api.vault.file.getFileKinds,
     reconcileTab: windowTabs.panes.reconcileTab,
     startTabKind: pluginStarts.startTabKind,
     startExtensionReader: pluginStarts.startExtensionReader,
@@ -66,24 +67,23 @@ export function createTabsPart(deps: TabsPartDeps) {
   const tabSync = createTabSync({
     windowTabs,
     tabLinks,
-    sendSync: api.tabLinks.syncTabPath,
+    sendSync: tabLinksApi.syncTabPath,
     onError: (error) => writeMessage(formatError(error), 'error'),
   })
   const openMovedTab = createMovedTabStarter({
     windowTabs,
     closeTab: windowTabs.closeTab,
-    acceptMove: createMoveAcceptor(api.tabMove.acceptTabMove, windowId, reports.waitForReports),
+    acceptMove: createMoveAcceptor(tabMove.acceptTabMove, windowId, reports.waitForReports),
     writeMessage,
   })
   const linkSession = createWindowTabLinkSession({
-    api: api.tabLinks,
+    api: tabLinksApi,
     windowId,
     windowTabs,
     isMain,
     tabLinks,
     reports,
-    applySync: tabSync.applySync,
-    applyGroupPaths: tabSync.applyGroupPaths,
+    tabSync,
     openMovedTab,
     writeMessage,
   })
