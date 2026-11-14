@@ -49,12 +49,11 @@ export function getWindowEdge(platform: WindowPlatform, isFullscreen: boolean): 
 
 const ignoreFailure = (): undefined => undefined
 
-async function readMacVersion(system: FrameRuntime['System']): Promise<number | undefined> {
-  try {
-    return readMajorVersion((await system?.Environment?.())?.OSInfo?.Version)
-  } catch {
-    return undefined
-  }
+async function readMacVersion(
+  system: NonNullable<FrameRuntime['System']>,
+): Promise<number | undefined> {
+  const environment = await system.Environment?.().catch(ignoreFailure)
+  return readMajorVersion(environment?.OSInfo?.Version)
 }
 
 /**
@@ -101,8 +100,9 @@ export function useWindowFrame(load: FrameRuntimeLoader): WindowFrame {
 
   runInBackground(
     load().then(async (loaded) => {
-      platform.value = getPlatform(loaded?.System)
-      if (platform.value === 'darwin') macVersion.value = await readMacVersion(loaded?.System)
+      const system = loaded?.System
+      platform.value = getPlatform(system)
+      if (platform.value === 'darwin' && system) macVersion.value = await readMacVersion(system)
       await readWindowState()
     }),
     ignoreFailure,

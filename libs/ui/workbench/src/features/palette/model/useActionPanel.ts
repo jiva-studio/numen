@@ -1,4 +1,4 @@
-import { computed, nextTick, ref, useId, watch, type ComponentPublicInstance, type Ref } from 'vue'
+import { computed, nextTick, ref, useId, watch, type Ref } from 'vue'
 import { reportFailure, runInBackground, type Unvalidated } from '@numen/ui'
 import { findKeptAction, placeActions } from '../lib/actions'
 import { getSteppedIndex, type PaletteAction } from '../lib/item'
@@ -20,7 +20,7 @@ function createActionRows(getActiveActionId: () => string) {
     actionRows.get(getActiveActionId())?.element?.scrollIntoView({ block: 'nearest' })
   }
 
-  function holdRow(action: string, row: Element | ComponentPublicInstance | null): void {
+  function holdRow(action: string, row: Unvalidated): void {
     if (isRowHandle(row)) actionRows.set(action, row)
     else actionRows.delete(action)
   }

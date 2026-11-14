@@ -22,6 +22,7 @@ interface SetUpOptions {
   readonly opensOn?: string
   readonly hasField?: boolean
   readonly typed?: string
+  readonly groups?: readonly PaletteGroup[]
 }
 
 const mounted: { unmount: () => void }[] = []
@@ -59,7 +60,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
   const wrapper = mount(
     defineComponent({
       setup() {
-        const places = usePalettePlaces({ groups: () => GROUPS })
+        const places = usePalettePlaces({ groups: () => setUpOptions.groups ?? GROUPS })
         active = useActiveItem({
           places: places.places,
           typed: searchQuery,
@@ -149,6 +150,23 @@ describe('usePaletteKeys', () => {
       expect(active.here.value).toBe(-1)
       press('Enter')
       expect(tellChoice).toHaveBeenCalledWith('a', 'open')
+    })
+
+    it('uses index zero directly when here is 0 even if that row is disabled', () => {
+      const { active, press, tellChoice } = setUp({
+        isOpen: true,
+        groups: [
+          {
+            id: 'g',
+            title: 'g',
+            items: [{ id: 'a', title: 'a', isDisabled: true, actions: [OPEN] }, item('b')],
+          },
+        ],
+      })
+      active.selectedId.value = 'a'
+      expect(active.here.value).toBe(0)
+      press('Enter')
+      expect(tellChoice).not.toHaveBeenCalled()
     })
 
     it('send Backspace in an empty field back a step, and leave it to the field otherwise', () => {
