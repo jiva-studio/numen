@@ -109,9 +109,9 @@ func TestUseCasesImportOnlyDomainAndPorts(t *testing.T) {
 
 // A pure helper package is a leaf: it imports no port, no use case and no technology package, and exports no type
 // whose methods change its state. A helper that does is an adapter or a use case under a helper's name.
-// A package of internal/testsupport implements ports and holds state by design: it may import ports and use
-// cases, and still reaches no technology. A package of internal/adapterlib is shared adapter code: it may reach
-// technology, import ports and hold state, and imports no use case and no adapter.
+// A package of internal/testsupport may hold state and import ports, since its fakes implement them; it imports
+// no use case and reaches no technology. A package of internal/adapterlib is the technology code several adapters
+// share: it may hold state and reach technology, and imports no port, no use case and no adapter.
 func TestHelperPackagesImportNothingAndKeepNoState(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
@@ -132,7 +132,8 @@ func TestHelperPackagesImportNothingAndKeepNoState(t *testing.T) {
 
 // The rule refuses a helper that imports a port, a use case or a technology package and one that exports a type
 // whose method assigns to a field, increments, deletes from a map or writes through its receiver; it lets
-// through a pure function, a method that only reads, and a type of another layer.
+// through a pure function, a method that only reads, a type of another layer, a technology import from
+// internal/adapterlib and a port import from internal/testsupport.
 func TestHelperRule_RejectsAHelperWithStateOrOutsideImports(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
 		"port/noteport/noteport.go": "package noteport\n\ntype Reader interface{ Read() string }\n",
@@ -197,6 +198,7 @@ func (r *Reader) Read() string { r.n++; return "" }
 var _ noteport.Reader = (*Reader)(nil)
 `,
 		"internal/testsupport/tech/tech.go": "package tech\n\nimport \"os\"\n\nvar _ = os.Args\n",
+		"internal/testsupport/flow/flow.go": "package flow\n\nimport \"fixture/usecase/find\"\n\nvar _ find.Find\n",
 		"internal/csp/csp.go":               "package csp\n\nfunc Build() {}\n\ntype Mutable struct{ n int }\n\nfunc (m *Mutable) Set() { m.n = 1 }\n",
 		"adapter/index/index.go":            "package index\n\ntype Index struct{ n int }\n\nfunc (i *Index) Set() { i.n = 1 }\n",
 		"internal/adapterlib/state/state.go": "package state\n\nimport (\n\t\"os\"\n\n\t\"fixture/port/noteport\"\n)\n\n" +
@@ -210,11 +212,13 @@ var _ noteport.Reader = (*Reader)(nil)
 	want := []string{
 		"internal/adapterlib/reach imports adapter/index: shared adapter code depends on no other adapter",
 		"internal/adapterlib/reach imports internal/adapter/clock: shared adapter code depends on no other adapter",
-		"internal/adapterlib/reach imports usecase/find: shared adapter code depends on no use case",
+		"internal/adapterlib/reach imports usecase/find: a helper depends on no use case",
+		"internal/adapterlib/state imports port/noteport: a helper depends on no port",
 		"internal/chunking imports os: a helper reaches no technology",
-		"internal/chunking imports port/noteport: a helper depends on no port and no use case",
-		"internal/chunking imports usecase/find: a helper depends on no port and no use case",
+		"internal/chunking imports port/noteport: a helper depends on no port",
+		"internal/chunking imports usecase/find: a helper depends on no use case",
 		"internal/csp exports Mutable.Set, which changes the state of its receiver: a helper holds no state",
+		"internal/testsupport/flow imports usecase/find: a helper depends on no use case",
 		"internal/testsupport/tech imports os: a helper reaches no technology",
 		"internal/text exports Bus.Count, which changes the state of its receiver: a helper holds no state",
 		"internal/text exports Bus.Forget, which changes the state of its receiver: a helper holds no state",
@@ -225,8 +229,8 @@ var _ noteport.Reader = (*Reader)(nil)
 	if !slices.Equal(found, want) {
 		t.Errorf("the rule rejects\n%s\nwant\n%s", strings.Join(found, "\n"), strings.Join(want, "\n"))
 	}
-	if read != 8 {
-		t.Errorf("%d helper packages read, want 8", read)
+	if read != 9 {
+		t.Errorf("%d helper packages read, want 9", read)
 	}
 }
 
