@@ -7,7 +7,12 @@ export interface Chip {
   readonly isOverdue: boolean
 }
 
+const HIDDEN: Chip = { isVisible: false, count: 0, isOverdue: false }
+
 /** Gives the chip for the counts, or the hidden chip before the counts are ready. */
-export function getChip(_summary: Summary | null): Chip {
-  return { isVisible: true, count: -1, isOverdue: true }
+export function getChip(summary: Summary | null): Chip {
+  if (!summary?.isReady) return HIDDEN
+  const { overdueCount, todayCount, noDateCount } = summary
+  if (overdueCount + todayCount + noDateCount === 0) return HIDDEN
+  return { isVisible: true, count: overdueCount + todayCount, isOverdue: overdueCount > 0 }
 }

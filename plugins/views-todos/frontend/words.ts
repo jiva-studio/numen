@@ -4,4 +4,5 @@ export const WORDS = {
   groupToday: 'Today',
   groupNoDate: 'No date',
   chipLabel: 'Tasks due',
+  taskDone: 'Done',
 } as const

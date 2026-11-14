@@ -14,13 +14,35 @@ export interface TaskFeed {
 }
 
 export function useTaskFeed(
-  _api: Pick<TodosApi, 'getSummary' | 'watchTasks'>,
-  _getToday: () => string,
+  api: Pick<TodosApi, 'getSummary' | 'watchTasks'>,
+  getToday: () => string,
 ): TaskFeed {
+  const summary = ref<Summary | null>(null)
+  let controller: AbortController | null = null
+
+  const refresh = async (): Promise<void> => {
+    const result = await api.getSummary(getToday())
+    if (result.ok) summary.value = result.value
+  }
+
+  const follow = async (signal: AbortSignal): Promise<void> => {
+    for await (const _message of api.watchTasks(signal)) {
+      if (signal.aborted) return
+      await refresh()
+    }
+  }
+
   return {
-    summary: ref(null),
-    start: () => undefined,
-    refresh: () => Promise.resolve(),
-    stop: () => undefined,
+    summary,
+    start: () => {
+      if (controller) return
+      controller = new AbortController()
+      void follow(controller.signal)
+    },
+    refresh,
+    stop: () => {
+      controller?.abort()
+      controller = null
+    },
   }
 }

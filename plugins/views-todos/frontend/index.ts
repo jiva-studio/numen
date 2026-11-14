@@ -2,9 +2,13 @@
  * Frontend entrypoint for the Todos plugin: a title bar chip that counts the overdue tasks and the
  * tasks due today, and a popover with the lists.
  */
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { defineComponent, h } from 'vue'
+import { definePlugin, type PluginContext, type WorkspaceHost } from '@numen/plugin-sdk'
 import { todosApi, type TodosApi } from './api/wire'
+import { createRefreshRelay } from './model/createRefreshRelay'
 import type { Timer } from './model/timer'
+import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
+import TodosStatus from './status/ui/TodosStatus.vue'
 
 /** The id the manifest declares the title bar view under. */
 export const TODOS_VIEW = 'status'
@@ -23,8 +27,45 @@ const browserParts: TodosParts = {
   },
 }
 
-export const activate = (_context: PluginContext, _parts: TodosParts = browserParts): void =>
-  undefined
+/** The view of the slot: the chip over the counts the feed keeps. */
+function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost) {
+  return defineComponent({
+    name: 'TodosView',
+    setup: () => () =>
+      h(TodosStatus, {
+        summary: feed.summary.value,
+        api,
+        getToday: () => workspace.window.getToday(),
+        onOpen: (target: { path: string; line: number }) =>
+          workspace.files.open(target.path, { line: target.line }),
+      }),
+  })
+}
+
+export const activate = (context: PluginContext, parts: TodosParts = browserParts): void => {
+  const { workspace } = context.ui
+  if (!workspace) {
+    throw new Error('the todos plugin needs the window it is drawn in')
+  }
+  const feed = useTaskFeed(parts.api, () => workspace.window.getToday())
+  const relay = createRefreshRelay(parts.api, parts.timer)
+  const onFocus = (): void => void feed.refresh()
+
+  context.register.slotView({
+    id: TODOS_VIEW,
+    component: createTodosView(feed, parts.api, workspace),
+  })
+  context.events.onVaultChange((event) => relay.push(event))
+  window.addEventListener('focus', onFocus)
+  context.plugin.subscriptions.push({
+    dispose: () => {
+      window.removeEventListener('focus', onFocus)
+      relay.dispose()
+      feed.stop()
+    },
+  })
+  feed.start()
+}
 
 export default definePlugin({
   activate,
