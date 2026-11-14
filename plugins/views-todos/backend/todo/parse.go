@@ -176,7 +176,7 @@ func readTask(afterMarker, raw string, number, indent int) (Task, bool) {
 	if strings.TrimSpace(text) == "" {
 		return Task{}, false
 	}
-	found := readFields(text)
+	found := readLineFields(text)
 	return Task{
 		Line:       number,
 		Raw:        raw,

@@ -11,8 +11,8 @@ const (
 	priorityTokenLen   = len("(A)")
 )
 
-// fields collects what the tokens of a task line say and the tokens that stay in its text.
-type fields struct {
+// lineFields collects what the tokens of a task line say and the tokens that stay in its text.
+type lineFields struct {
 	priority   string
 	due        string
 	doneOn     string
@@ -25,10 +25,10 @@ type fields struct {
 	seen map[string]bool
 }
 
-// readFields reads the text after a checkbox. A token that starts inside inline code, a wikilink or
+// readLineFields reads the text after a checkbox. A token that starts inside inline code, a wikilink or
 // a Markdown link is text.
-func readFields(text string) fields {
-	f := fields{seen: map[string]bool{}}
+func readLineFields(text string) lineFields {
+	f := lineFields{seen: map[string]bool{}}
 	masked := maskSpans(text)
 	for n, token := range splitTokens(text) {
 		if masked[token.start] || !f.read(token.text, n == 0) {
@@ -65,7 +65,7 @@ func splitTokens(text string) []token {
 
 // read takes a token as a field and reports whether it was one. An unreadable value is text, with
 // an issue.
-func (f *fields) read(word string, isFirst bool) bool {
+func (f *lineFields) read(word string, isFirst bool) bool {
 	switch {
 	case isFirst && isLeadingPriority(word):
 		f.priority = word[1:2]
@@ -104,7 +104,7 @@ func appendOnce(list []string, name string) []string {
 }
 
 // isFirstOf reports whether the key was not seen before, and marks it as seen.
-func (f *fields) isFirstOf(key string) bool {
+func (f *lineFields) isFirstOf(key string) bool {
 	if f.seen[key] {
 		return false
 	}
@@ -112,7 +112,7 @@ func (f *fields) isFirstOf(key string) bool {
 	return true
 }
 
-func (f *fields) readPriority(word string) bool {
+func (f *lineFields) readPriority(word string) bool {
 	if !f.isFirstOf("pri:") {
 		return false
 	}
@@ -127,7 +127,7 @@ func (f *fields) readPriority(word string) bool {
 	return true
 }
 
-func (f *fields) readDate(key, word string, target *string, issue Issue) bool {
+func (f *lineFields) readDate(key, word string, target *string, issue Issue) bool {
 	if !f.isFirstOf(key) {
 		return false
 	}
@@ -140,7 +140,7 @@ func (f *fields) readDate(key, word string, target *string, issue Issue) bool {
 	return true
 }
 
-func (f *fields) readRecurrence(word string) bool {
+func (f *lineFields) readRecurrence(word string) bool {
 	if !f.isFirstOf("rec:") {
 		return false
 	}
