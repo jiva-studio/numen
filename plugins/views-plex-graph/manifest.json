@@ -200,7 +200,7 @@
       "key": "focusedNamesOpacity",
       "type": "range",
       "title": "Names opacity in focus",
-      "details": "How visible the names under and over a note are while the pointer is over the note or one of them.",
+      "description": "Opacity of the names while the pointer is over the note",
       "default": 1,
       "min": 0.05,
       "max": 1,
