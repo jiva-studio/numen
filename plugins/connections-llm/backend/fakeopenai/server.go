@@ -165,17 +165,28 @@ func writeError(w http.ResponseWriter, status int, message string) {
 }
 
 func (s *Server) route(w http.ResponseWriter, r *http.Request, path string, body []byte) {
+	if r.Method == http.MethodPost {
+		s.routePost(w, r, path, body)
+		return
+	}
 	switch {
-	case r.Method == http.MethodPost && path == "/chat/completions":
-		s.serveChat(w, r, body)
-	case r.Method == http.MethodPost && path == "/embeddings":
-		s.serveEmbeddings(w, body)
-	case r.Method == http.MethodPost && path == "/rerank":
-		s.serveRerank(w, body)
 	case r.Method == http.MethodGet && path == "/models":
 		s.serveModels(w, s.config.Models, s.config.IsLabeled, false)
 	case r.Method == http.MethodGet && path == "/embeddings/models" && s.config.IsLabeled:
 		s.serveModels(w, s.config.EmbeddingModels, true, true)
+	default:
+		http.NotFound(w, r)
+	}
+}
+
+func (s *Server) routePost(w http.ResponseWriter, r *http.Request, path string, body []byte) {
+	switch path {
+	case "/chat/completions":
+		s.serveChat(w, r, body)
+	case "/embeddings":
+		s.serveEmbeddings(w, body)
+	case "/rerank":
+		s.serveRerank(w, body)
 	default:
 		http.NotFound(w, r)
 	}
