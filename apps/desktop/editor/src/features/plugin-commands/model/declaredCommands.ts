@@ -19,19 +19,12 @@ import { getNamedIcon } from '@/shared/ui/icons'
 import type { Writable } from '@/entities/tab'
 import {
   getPaletteId,
-  listDeclaredItemLists,
-  listDeclaredCommands,
-  runDeclaredCommand,
   type DeclaredCommand,
+  type DeclaredCommandsApi,
   type DeclaredKeybinding,
   type DeclaredSlot,
 } from '@/entities/plugin'
-import {
-  createEmptyWhenContext,
-  createWhenAvailability,
-  getWhenGroup,
-  type WindowWhenContext,
-} from '../lib/whenContext'
+import { createWhenAvailability, getWhenGroup, type WindowWhenContext } from '../lib/whenContext'
 import type { Caught } from '@/shared/api/errors'
 import { createPaletteNotes, type PaletteNotesDeps } from './paletteNotes'
 
@@ -41,19 +34,10 @@ type ListItems = (
   path: string,
 ) => Promise<readonly CommandItem[]>
 
-const listItemsOfOne: ListItems = async (command, path) => {
-  const [answer] = await listDeclaredItemLists(path, [
-    { pluginId: command.pluginId, command: command.id },
-  ])
-  if (!answer) throw new Error(`no list of the items of ${command.id}`)
-  if (!answer.result.ok) throw new Error(answer.result.error)
-  return answer.result.value
-}
-
 function createDeclaredPaletteCommands(
   declared: readonly DeclaredCommand[],
-  context: WindowWhenContext = createEmptyWhenContext(),
-  listItems: ListItems = listItemsOfOne,
+  context: WindowWhenContext,
+  listItems: ListItems,
 ): readonly Command[] {
   const isWhenAvailable = createWhenAvailability(context)
   return declared.map((one): Command => {
@@ -93,7 +77,7 @@ const isSameList = <T>(current: readonly T[] | undefined, received: readonly T[]
 
 /** What the lists of declarations are read through. */
 export interface DeclaredStateDeps {
-  readonly list?: typeof listDeclaredCommands
+  readonly list: DeclaredCommandsApi['listDeclaredCommands']
   readonly getConfig?: () => WhenSettings
   readonly whenReader?: WhenReader
   readonly paletteNotes?: PaletteNotesDeps
@@ -102,10 +86,10 @@ export interface DeclaredStateDeps {
 export interface DeclaredCommandsDeps extends DeclaredStateDeps {
   readonly state?: DeclaredState
   readonly registry?: Pick<CommandRegistry, 'register'>
-  readonly run?: typeof runDeclaredCommand
+  readonly run: DeclaredCommandsApi['runDeclaredCommand']
   readonly isListed?: (id: string) => boolean
   readonly hasBackend?: (pluginId: string) => boolean
-  readonly listItems?: ListItems
+  readonly listItems: ListItems
 }
 
 const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration => {
@@ -130,8 +114,8 @@ const toDeclaredRun = (one: DeclaredCommand, invocation: CommandInvocation) => (
  * The lists the enabled plugins declare, reloaded by `load`: commands, slots, shared handlers and
  * keybindings, and what the conditions of the commands read.
  */
-export function createDeclaredState(deps: DeclaredStateDeps = {}) {
-  const list = deps.list ?? listDeclaredCommands
+export function createDeclaredState(deps: DeclaredStateDeps) {
+  const { list } = deps
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
   const declaredSlots = shallowRef<readonly DeclaredSlot[] | undefined>(undefined)
   const declaredHandlers = shallowRef<readonly HandlerDeclaration[] | undefined>(undefined)
@@ -206,11 +190,10 @@ type DeclaredState = ReturnType<typeof createDeclaredState>
  * The declared commands, reloaded by `load`, each registered with a handler that runs
  * it, writes the plugin message and opens the returned path.
  */
-export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
+export function useDeclaredCommands(deps: DeclaredCommandsDeps) {
   const state = deps.state ?? createDeclaredState(deps)
-  const run = deps.run ?? runDeclaredCommand
+  const { run, listItems } = deps
   const isListed = deps.isListed ?? (() => false)
-  const listItems = deps.listItems ?? listItemsOfOne
   const hasBackend = deps.hasBackend ?? (() => true)
   let unregisterAll: readonly (() => void)[] = []
 

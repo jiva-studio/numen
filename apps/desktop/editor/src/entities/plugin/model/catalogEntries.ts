@@ -2,14 +2,15 @@ import { shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { PluginInfo } from '@numen/plugin-manager'
 import { ReportedError, type Caught } from '@/shared/api/errors'
-import { listCatalog } from '../api/catalog'
+import type { CatalogReader } from '../api/catalog'
 import type { CatalogEntry } from '../lib/catalogEntry'
 
 /**
- * The entries of the plugin catalog, read again each time the plugins the host lists change: a
- * plugin enabled, installed or removed changes both lists together.
+ * The entries of the plugin catalog, read through `listCatalog` again each time the plugins the
+ * host lists change: a plugin enabled, installed or removed changes both lists together.
  */
 export function useCatalogEntries(
+  listCatalog: CatalogReader,
   plugins: Readonly<Ref<readonly PluginInfo[]>>,
   reportError: (error: Caught) => void,
 ): Readonly<ShallowRef<readonly CatalogEntry[]>> {
