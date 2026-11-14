@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.proofreading",
   "name": "LLM Proofreading",
-  "version": "2026.11.11",
+  "version": "2026.11.12",
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
@@ -15,10 +15,31 @@
         "icon": "spell-check",
         "when": "version.isLive && version.kind != ''"
       }
+    ],
+    "handlers": [
+      {
+        "command": "app:file.createText",
+        "title": "Proofread text",
+        "when": "target.versions.exists(v, v.isLive && (v.kind == 'transcript' || v.kind == 'recognition'))"
+      }
+    ],
+    "triggers": [
+      {
+        "event": "file.added",
+        "command": "app:file.createText",
+        "when": "config.md.numen.tools.proofreading.proofreadAutomatically == true && !target.versions.exists(v, v.pluginId == 'md.numen.tools.proofreading' && v.isValid)"
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write"],
   "settings": [
+    {
+      "key": "proofreadAutomatically",
+      "type": "boolean",
+      "title": "Proofread automatically",
+      "description": "Proofread every transcript and recognized text that has none",
+      "default": false
+    },
     {
       "key": "connections",
       "type": "connections",

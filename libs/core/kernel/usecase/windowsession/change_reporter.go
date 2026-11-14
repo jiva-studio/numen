@@ -23,9 +23,9 @@ func NewChangeReporter(changes Changes, wake IndexWake, texts TextVersions, diag
 	return &ChangeReporter{changes: changes, wake: wake, texts: texts, diag: diag}
 }
 
-func (r *ChangeReporter) listenVersions(indexed IndexSession) {
+func (r *ChangeReporter) listenVersions(indexed IndexSession, triggers *triggerPasses) {
 	if r.texts != nil {
-		r.texts.SetListener(versionChangeReporter{changes: r.changes, index: indexed})
+		r.texts.SetListener(versionChangeReporter{changes: r.changes, index: indexed, triggers: triggers})
 	}
 }
 
@@ -67,14 +67,16 @@ func (r *ChangeReporter) newChangeReporter(
 	}
 }
 
-// versionChangeReporter asks the index session to cut a file whose text versions changed, and
-// reports the file to the window.
+// versionChangeReporter asks the index session to cut a file whose text versions changed, asks for
+// a pass of the triggers over the file, and reports the file to the window.
 type versionChangeReporter struct {
-	changes Changes
-	index   IndexSession
+	changes  Changes
+	index    IndexSession
+	triggers *triggerPasses
 }
 
 func (r versionChangeReporter) ReportVersionsChanged(v domain.Vault, path string) {
 	r.index.ReportVersionsChanged(v, path)
+	r.triggers.requestPaths([]string{path})
 	r.changes.Publish(window.Change{VersionPaths: []string{path}})
 }

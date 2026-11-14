@@ -3,6 +3,7 @@ package proofreading
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -60,4 +61,34 @@ func TestManifestAsksForNoNetworkAndNoCompletionPermission(t *testing.T) {
 	if got := readManifest(t).Permissions; !slices.Equal(got, want) {
 		t.Errorf("permissions = %v, want %v", got, want)
 	}
+}
+
+func TestManifestStartsProofreadingOnlyThroughTheSettingThatIsOffByDefault(t *testing.T) {
+	var shape struct {
+		Contributes struct {
+			Triggers []struct {
+				Event   string `json:"event"`
+				Command string `json:"command"`
+				When    string `json:"when"`
+			} `json:"triggers"`
+		} `json:"contributes"`
+		Settings []struct {
+			Key     string `json:"key"`
+			Type    string `json:"type"`
+			Default any    `json:"default"`
+		} `json:"settings"`
+	}
+	if err := json.Unmarshal(Manifest, &shape); err != nil {
+		t.Fatal(err)
+	}
+	if len(shape.Contributes.Triggers) != 1 || shape.Contributes.Triggers[0].Event != "file.added" ||
+		!strings.Contains(shape.Contributes.Triggers[0].When, "proofreadAutomatically == true") {
+		t.Errorf("triggers = %+v", shape.Contributes.Triggers)
+	}
+	for _, one := range shape.Settings {
+		if one.Key == "proofreadAutomatically" && one.Type == "boolean" && one.Default == false {
+			return
+		}
+	}
+	t.Error("no boolean setting proofreadAutomatically that is off by default")
 }

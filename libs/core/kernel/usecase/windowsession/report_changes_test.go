@@ -88,7 +88,7 @@ func TestAChangeOfTheVersionsOfAFileReachesTheWindow(t *testing.T) {
 	var cut []string
 	index := IndexSession{ReportVersionsChanged: func(_ domain.Vault, path string) { cut = append(cut, path) }}
 
-	versionChangeReporter{changes: w.changes, index: index}.ReportVersionsChanged(domain.Vault{ID: "v1"}, "scans/page.png")
+	versionChangeReporter{changes: w.changes, index: index, triggers: newTriggerPasses()}.ReportVersionsChanged(domain.Vault{ID: "v1"}, "scans/page.png")
 
 	got := w.changes.all()
 	if len(got) != 1 || !slices.Equal(got[0].VersionPaths, []string{"scans/page.png"}) || len(got[0].Paths) != 0 {
@@ -171,4 +171,38 @@ func TestANewVaultStartsWithAPassOverTheWholeVault(t *testing.T) {
 	if isAll, _ := newTriggerPasses().take(); !isAll {
 		t.Error("the passes of a vault opened start with none over the whole vault")
 	}
+}
+
+// recording is a trigger runner that keeps the paths of the passes over paths.
+type recording struct {
+	mu    sync.Mutex
+	paths []string
+}
+
+func (r *recording) ExecuteAll(context.Context, domain.Vault) error { return nil }
+
+func (r *recording) Execute(_ context.Context, _ domain.Vault, paths []string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.paths = append(r.paths, paths...)
+	return nil
+}
+
+func (r *recording) get() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return slices.Clone(r.paths)
+}
+
+func TestWritingAVersionRequestsAPassOverItsFile(t *testing.T) {
+	w := newTestWindow(t, nil)
+	runner := &recording{}
+	passes := newTriggerPasses()
+	go runTriggers(t.Context(), runner, domain.Vault{ID: "v1"}, passes, make(chan struct{}), func(error) {})
+	waitFor(t, func() bool { isAll, _ := passes.take(); return !isAll })
+
+	reporter := versionChangeReporter{changes: w.changes, index: IndexSession{ReportVersionsChanged: func(domain.Vault, string) {}}, triggers: passes}
+	reporter.ReportVersionsChanged(domain.Vault{ID: "v1"}, "scans/page.png")
+
+	waitFor(t, func() bool { return slices.Equal(runner.get(), []string{"scans/page.png"}) })
 }
