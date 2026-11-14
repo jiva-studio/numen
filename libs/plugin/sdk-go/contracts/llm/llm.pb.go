@@ -4,8 +4,8 @@
 // 	protoc        (unknown)
 // source: llm/llm.proto
 
-// The operations of language models: llm.complete, llm.chat, llm.embed and llm.profile carry these
-// messages as their payloads and frames; llm.models and llm.reasoning are option lists of row fields and
+// The operations of language models: llm.complete, llm.chat, llm.embed, llm.rerank and llm.profile carry
+// these messages as their payloads and frames; llm.models and llm.reasoning are option lists of row fields and
 // carry numen.v1.OptionsRequest and numen.v1.Options.
 
 package llm
@@ -898,6 +898,115 @@ func (x *Profile) GetMaxTokens() int32 {
 	return 0
 }
 
+// RerankRequest is the payload of llm.rerank.
+type RerankRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// instruction tells the model what makes a document relevant, such as "Find the notes that answer the
+	// question". Empty for none.
+	Instruction   string   `protobuf:"bytes,2,opt,name=instruction,proto3" json:"instruction,omitempty"`
+	Documents     []string `protobuf:"bytes,3,rep,name=documents,proto3" json:"documents,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RerankRequest) Reset() {
+	*x = RerankRequest{}
+	mi := &file_llm_llm_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RerankRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RerankRequest) ProtoMessage() {}
+
+func (x *RerankRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_llm_llm_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RerankRequest.ProtoReflect.Descriptor instead.
+func (*RerankRequest) Descriptor() ([]byte, []int) {
+	return file_llm_llm_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *RerankRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+func (x *RerankRequest) GetInstruction() string {
+	if x != nil {
+		return x.Instruction
+	}
+	return ""
+}
+
+func (x *RerankRequest) GetDocuments() []string {
+	if x != nil {
+		return x.Documents
+	}
+	return nil
+}
+
+// RerankResult is the done frame of llm.rerank: one score for each document, in the order of the documents.
+// A higher score is a more relevant document. The call has no data frame.
+type RerankResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Scores        []float32              `protobuf:"fixed32,1,rep,packed,name=scores,proto3" json:"scores,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RerankResult) Reset() {
+	*x = RerankResult{}
+	mi := &file_llm_llm_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RerankResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RerankResult) ProtoMessage() {}
+
+func (x *RerankResult) ProtoReflect() protoreflect.Message {
+	mi := &file_llm_llm_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RerankResult.ProtoReflect.Descriptor instead.
+func (*RerankResult) Descriptor() ([]byte, []int) {
+	return file_llm_llm_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *RerankResult) GetScores() []float32 {
+	if x != nil {
+		return x.Scores
+	}
+	return nil
+}
+
 var File_llm_llm_proto protoreflect.FileDescriptor
 
 const file_llm_llm_proto_rawDesc = "" +
@@ -959,7 +1068,13 @@ const file_llm_llm_proto_rawDesc = "" +
 	"\x0fdocument_prefix\x18\x05 \x01(\tR\x0edocumentPrefix\x12\x14\n" +
 	"\x05width\x18\x06 \x01(\x05R\x05width\x12\x1d\n" +
 	"\n" +
-	"max_tokens\x18\a \x01(\x05R\tmaxTokens*}\n" +
+	"max_tokens\x18\a \x01(\x05R\tmaxTokens\"e\n" +
+	"\rRerankRequest\x12\x14\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\x12 \n" +
+	"\vinstruction\x18\x02 \x01(\tR\vinstruction\x12\x1c\n" +
+	"\tdocuments\x18\x03 \x03(\tR\tdocuments\"&\n" +
+	"\fRerankResult\x12\x16\n" +
+	"\x06scores\x18\x01 \x03(\x02R\x06scores*}\n" +
 	"\fFinishReason\x12\x1d\n" +
 	"\x19FINISH_REASON_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12FINISH_REASON_STOP\x10\x01\x12\x1c\n" +
@@ -979,7 +1094,7 @@ func file_llm_llm_proto_rawDescGZIP() []byte {
 }
 
 var file_llm_llm_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_llm_llm_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_llm_llm_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_llm_llm_proto_goTypes = []any{
 	(FinishReason)(0),       // 0: numen.llm.FinishReason
 	(*Message)(nil),         // 1: numen.llm.Message
@@ -996,6 +1111,8 @@ var file_llm_llm_proto_goTypes = []any{
 	(*EmbedResult)(nil),     // 12: numen.llm.EmbedResult
 	(*ProfileRequest)(nil),  // 13: numen.llm.ProfileRequest
 	(*Profile)(nil),         // 14: numen.llm.Profile
+	(*RerankRequest)(nil),   // 15: numen.llm.RerankRequest
+	(*RerankResult)(nil),    // 16: numen.llm.RerankResult
 }
 var file_llm_llm_proto_depIdxs = []int32{
 	1,  // 0: numen.llm.CompleteRequest.messages:type_name -> numen.llm.Message
@@ -1029,7 +1146,7 @@ func file_llm_llm_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_llm_llm_proto_rawDesc), len(file_llm_llm_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

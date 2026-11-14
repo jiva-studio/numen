@@ -1,12 +1,14 @@
 import { definePlugin, type CommandNote, type PluginContext } from '@numen/plugin-sdk'
+import { shallowRef } from 'vue'
 import FilesTab from './ui/FilesTab.vue'
 import { createFilesKind, FILES } from './model/kind'
-import { createFileTree, ROOT } from './model/useFileTree'
+import { createFileTree, readSortBy, ROOT, type SortBy } from './model/useFileTree'
 import type { FilesTabState } from './types'
 
 export { FilesTab }
 export { createFilesKind, FILES } from './model/kind'
 export { ROOT, createFileTree } from './model/useFileTree'
+export type { SortBy } from './model/useFileTree'
 export { useFilesTab } from './model/useFilesTab'
 export type { FilesTabDeps, FilesTabState } from './types'
 export * from './words'
@@ -17,6 +19,10 @@ export function activate(context: PluginContext): void {
   if (!workspace || !files) {
     throw new Error('a files tab needs the window it is drawn in and the files of the vault')
   }
+  const sortBy = shallowRef<SortBy>(readSortBy(context.settings.get('sortBy')))
+  context.settings.onChange('sortBy', (value) => {
+    sortBy.value = readSortBy(value)
+  })
   const trees = createFilesKind(
     {
       workspace,
@@ -25,7 +31,7 @@ export function activate(context: PluginContext): void {
       ...(slots ? { slots } : {}),
       ...(commands ? { commands } : {}),
     },
-    () => createFileTree(files),
+    () => createFileTree(files, { sortBy }),
     FilesTab,
   )
   context.register.tabKind(trees.kind)

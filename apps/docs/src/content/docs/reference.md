@@ -195,6 +195,14 @@ The settings of the plugin Agent Chat.
 | --- | --- | --- |
 | `connections` | text | agents. |
 
+### `md.numen.views.file.tree`
+
+The settings of the plugin File Tree Explorer.
+
+| | | |
+| --- | --- | --- |
+| `sortBy` | text | how files and folders are ordered in the tree. One of `name`, `modified`. |
+
 ### `md.numen.views.flashcards.studio`
 
 The settings of the plugin Flashcards Studio.
