@@ -1,6 +1,7 @@
 package container
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
@@ -88,17 +89,21 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 	if !ok {
 		return
 	}
-	c.PluginHost.Endpoint.SetModelCalls(modelcall.NewCalls(
+	calls := modelcall.NewCalls(
 		modelcall.Connections{
 			Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
 			Rows:   connection.NewListRows(deps, openConnectionRows(c)).Execute,
 			Titles: c.PluginHost.Views.Operations,
 		},
 		openCallSource(c, deps), c.vault.Clock, c.vault.Clock.Wait, notices,
-	))
-	if lists := openRowLists(c); lists != nil {
-		c.PluginHost.Endpoint.SetRowLists(lists)
-	}
+	)
+	lists := openRowLists(c)
+	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
+		l.ModelCalls = calls
+		if lists != nil {
+			l.RowLists = lists
+		}
+	})
 }
 
 // GetConnectionCalls is the calls plugin views make through their connections, for a window that serves

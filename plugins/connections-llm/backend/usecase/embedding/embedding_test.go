@@ -32,6 +32,10 @@ func (g *gateway) Embed(_ context.Context, _ connection.Call, limit time.Duratio
 	return g.vectors, g.err
 }
 
+func (g *gateway) Rerank(context.Context, connection.Call, time.Duration, *llm.RerankRequest) ([]float32, error) {
+	return nil, nil
+}
+
 func (g *gateway) ListModels(context.Context, connection.Call, time.Duration, []string) ([]connection.Option, error) {
 	return nil, nil
 }

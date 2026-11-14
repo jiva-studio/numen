@@ -144,7 +144,7 @@ func getFrontendPluginIDs(c pluginsWiring) []string {
 }
 
 func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
-	c.PluginHost.Endpoint.SetPluginWindow(window)
+	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.Window = window })
 }
 
 func emitPluginEvent(c pluginsWiring, event string) {

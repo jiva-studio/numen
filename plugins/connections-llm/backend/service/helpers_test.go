@@ -118,6 +118,10 @@ func (s *testService) Embed(ctx context.Context, call connection.Call, texts []s
 	return vectors, nil
 }
 
+func (s *testService) Rerank(ctx context.Context, call connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+	return llmtest.Rerank(ctx, s.built.provider.roles(), call, request)
+}
+
 func (s *testService) GetProfile(ctx context.Context, call connection.Call) (*llm.Profile, error) {
 	return llmtest.GetProfile(ctx, s.built.provider.roles(), call)
 }

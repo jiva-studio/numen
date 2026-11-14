@@ -14,7 +14,11 @@ import {
   EmbedResultSchema,
   FinishReason,
   getProfile,
+  OPERATION_RERANK,
   ProfileSchema,
+  rerank,
+  RerankRequestSchema,
+  RerankResultSchema,
 } from './index'
 
 interface Asked {
@@ -88,6 +92,62 @@ describe('the llm contract', () => {
     const { host } = createHost([], { ok: true, value: result })
 
     await expect(embed(host, { texts: ['quay', 'jetty'] })).rejects.toThrow('1 vectors for 2 texts')
+  })
+
+  it('names the rerank operation as the Go contract does', () => {
+    expect(OPERATION_RERANK).toBe('llm.rerank')
+  })
+
+  it('reranks documents through llm.rerank and returns the scores in document order', async () => {
+    const result = toBinary(
+      RerankResultSchema,
+      create(RerankResultSchema, { scores: [0.25, 0.75, 0.5] }),
+    )
+    const { host, asked } = createHost([], { ok: true, value: result })
+
+    const answer = await rerank(
+      host,
+      {
+        query: 'when does the ferry leave?',
+        instruction: 'Find the notes that answer the question',
+        documents: ['Tide tables', 'Ferry times', 'Harbor map'],
+      },
+      { priority: 'interactive' },
+    )
+
+    expect(answer.ok && answer.value.scores).toStrictEqual([0.25, 0.75, 0.5])
+    expect(asked[0]?.operation).toBe('llm.rerank')
+    expect(asked[0]?.options).toStrictEqual({ priority: 'interactive' })
+    const sent = fromBinary(RerankRequestSchema, asked[0]!.payload)
+    expect(sent.query).toBe('when does the ferry leave?')
+    expect(sent.instruction).toBe('Find the notes that answer the question')
+    expect(sent.documents).toStrictEqual(['Tide tables', 'Ferry times', 'Harbor map'])
+  })
+
+  it('makes no call for no document to rerank', async () => {
+    const { host, asked } = createHost([], { ok: false, error: failure })
+
+    const answer = await rerank(host, { query: 'quay', documents: [] })
+
+    expect(answer.ok && answer.value.scores).toStrictEqual([])
+    expect(asked).toStrictEqual([])
+  })
+
+  it('refuses an empty query without a call', async () => {
+    const { host, asked } = createHost([], { ok: false, error: failure })
+
+    await expect(rerank(host, { query: '', documents: ['quay'] })).rejects.toThrow()
+    await expect(rerank(host, { query: '  \n\t', documents: ['quay'] })).rejects.toThrow()
+    expect(asked).toStrictEqual([])
+  })
+
+  it('throws on a result with another number of scores than documents', async () => {
+    const result = toBinary(RerankResultSchema, create(RerankResultSchema, { scores: [0.5] }))
+    const { host } = createHost([], { ok: true, value: result })
+
+    await expect(rerank(host, { query: 'quay', documents: ['quay', 'jetty'] })).rejects.toThrow(
+      'llm: llm.rerank answered 1 scores for 2 documents',
+    )
   })
 
   it('asks the profile in the background', async () => {

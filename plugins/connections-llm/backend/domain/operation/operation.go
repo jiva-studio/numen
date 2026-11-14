@@ -6,5 +6,6 @@ const (
 	Complete = "complete"
 	Chat     = "chat"
 	Embed    = "embed"
+	Rerank   = "rerank"
 	List     = "list"
 )

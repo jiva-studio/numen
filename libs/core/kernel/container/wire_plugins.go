@@ -132,6 +132,7 @@ type PluginHost struct {
 	Configuration       PluginConfiguration
 	Watch               PluginWatch
 	Endpoint            *hostendpoint.Services
+	Lender              *hostendpoint.Lender
 	ApplySetting        settingsport.PluginSettingApplier
 	Views               PluginViews
 	SetStorage          func(cacheRoot, dataRoot string)
@@ -151,6 +152,8 @@ func AdaptPluginHost(host *PluginRoles) *PluginHost {
 }
 
 func adaptPluginHost(host *PluginRoles) *PluginHost {
+	lender := hostendpoint.NewLender()
+	lent := lendHostEndpoint(host, lender)
 	types := plugin.NewConnectionTypes(host.Registry)
 	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(host.Activation), host.Clock)
 	host.Activation.SetOnStart(detection.DetectInBackground)
@@ -180,7 +183,8 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 			DependencyReporter: host.Services,
 			ContentTypeTable:   host.ContentTypes,
 		},
-		Endpoint: lendHostEndpoint(host),
+		Endpoint: lent,
+		Lender:   lender,
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
 			Health: host.Health,
@@ -196,7 +200,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 			})
 			detection.SetFiles(host.Storage)
 		},
-		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry(host.Clock, "")) },
+		RefreshDependencies: func() { host.Dependencies.Replace(newDependencyRegistry(host.Clock, "")) },
 		Health:              host.Health,
 		Processes:           host.RunningProcesses,
 		Detection:           detection,
@@ -206,11 +210,11 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 	}
 }
 
-func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
-	services := hostendpoint.NewServices()
+func lendHostEndpoint(host *PluginRoles, lender *hostendpoint.Lender) *hostendpoint.Services {
+	services := hostendpoint.NewServices(lender.Get)
 	toolHost := plugin.NewToolHost(host.Activation, host.Registry)
 	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, host.Clock, toolbridge.GetErrorOutput())
-	host.Services.SetHostEndpoint(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
+	host.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown,
 		Lent: services,
 		Tools: func() hostendpoint.PluginTools {
