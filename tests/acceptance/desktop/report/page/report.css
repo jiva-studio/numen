@@ -661,13 +661,8 @@ kbd {
   background: none;
 }
 
-.step.done {
-  opacity: 0.55;
-}
-
 .step.current {
   background: var(--accent-soft);
-  opacity: 1;
 }
 
 .step.failed {

@@ -103,12 +103,17 @@ const setSpeed = (video, speed) => {
 
 const getStarts = (video) => video.scenario.steps.map((step) => step.start)
 
+// Steps that start together share one moment of the video; the one clicked stays current there.
+const findCurrentStep = (video, time) => {
+  const starts = getStarts(video)
+  const index = playback.findStepAt(starts, time)
+  const picked = video.pickedIndex
+  return picked !== undefined && starts[picked] === starts[index] ? picked : index
+}
+
 const writePosition = (video) => {
   const time = video.player.currentTime
-  const phases = playback.getStepPhases(
-    video.stepItems.length,
-    playback.findStepAt(getStarts(video), time),
-  )
+  const phases = playback.getStepPhases(video.stepItems.length, findCurrentStep(video, time))
   video.stepItems.forEach((item, index) => {
     for (const phase of ['done', 'current', 'ahead'])
       item.classList.toggle(phase, phases[index] === phase)
@@ -166,8 +171,9 @@ const playVideo = (video) => {
 const seekToStep = (video, index) => {
   const start = getStarts(video)[index]
   if (start === null || start === undefined) return
-  video.player.currentTime = start
-  playVideo(video)
+  video.pickedIndex = index
+  video.player.pause()
+  seekTo(video, start)
 }
 
 const seekTo = (video, time) => {
