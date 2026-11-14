@@ -60,8 +60,9 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
       continue
     }
     if (token.nesting === -1) {
-      const frame = stack.pop()!
-      top().push(h(frame.tag, frame.attrs, frame.children))
+      for (const frame of stack.splice(-1)) {
+        top().push(h(frame.tag, frame.attrs, frame.children))
+      }
       continue
     }
 
@@ -103,8 +104,9 @@ const inline = (
       continue
     }
     if (token.nesting === -1) {
-      const frame = stack.pop()!
-      top().push(h(frame.tag, frame.attrs, frame.children))
+      for (const frame of stack.splice(-1)) {
+        top().push(h(frame.tag, frame.attrs, frame.children))
+      }
       continue
     }
 
