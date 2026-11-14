@@ -22,6 +22,11 @@ describe("the paths documents name exist in the tree", () => {
     ]);
   });
 
+  it("fails a planted path that does not exist in the README of the checks", () => {
+    const found = findMissingPaths([{ file: "tools/checks/README.md", text: "See `tools/checks/planted/gone.mjs`." }], TRACKED);
+    assert.deepEqual(found.findings.map((one) => one.file), ["tools/checks/README.md"]);
+  });
+
   it("passes files, folders, a trailing slash, a line suffix and an anchor", () => {
     assert.deepEqual(missing("`libs/core/kernel/` `libs/core/kernel/container` `libs/core/kernel/go.mod:3` `.agents/rules/architecture.md#a-b`"), []);
   });
@@ -53,6 +58,9 @@ describe("the document patterns", () => {
     assert.ok(covers(".agents/skills/nm-place-window/examples.md"));
     assert.ok(covers(".agents/rules/architecture.md"));
     assert.ok(covers("libs/core/kernel/AGENTS.md"));
+    assert.ok(covers("tools/checks/README.md"));
+    assert.ok(covers("libs/plugin/sdk-go/README.md"));
+    assert.ok(!covers("plugins/views-tasks/README.md"));
     assert.ok(!covers("docs/readme.md"));
   });
 });

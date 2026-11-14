@@ -26,7 +26,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | `health`, `health/healthtest`    | the health items a plugin reports                                                                     |
 | `process`, `process/processtest` | the release of the process of a plugin whose work is done                                             |
 | `command`                        | the commands the manifest declares, served as `PluginCommandService`                                  |
-| `tools`, `tools/toolstest`       | the tools a plugin offers an agent, served as `PluginToolService`                                     |
+| `tools`, `toolstest`              | the tools a plugin offers an agent, served as `PluginToolService`                                     |
 | `searchsource`                   | a search source, served as `SearchSourceService`                                                      |
 | `cache`                          | keyed values in memory and on disk, with expiration, backoff and background refresh                   |
 | `shared`                         | the lock and the model key of the directory the host shares between plugins                           |
