@@ -129,13 +129,17 @@ func (e *Endpoint) Close(ctx context.Context) error {
 	e.once.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, e.limit)
 		defer cancel()
-		e.err = keepShutdownError(e.shutdown(ctx), <-e.stopped)
+		e.err = joinServeError(e.shutdown(ctx), <-e.stopped)
 	})
 	return e.err
 }
 
-func keepShutdownError(shutdownErr, _ error) error {
-	return shutdownErr
+// joinServeError keeps the error Serve ended with, unless it is http.ErrServerClosed, which is how Close ends it.
+func joinServeError(shutdownErr, serveErr error) error {
+	if errors.Is(serveErr, http.ErrServerClosed) {
+		return shutdownErr
+	}
+	return errors.Join(shutdownErr, serveErr)
 }
 
 func (e *Endpoint) trackConnection(conn net.Conn, state http.ConnState) {

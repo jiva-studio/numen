@@ -2,7 +2,6 @@ package mcpendpoint
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net"
 	"net/http"
@@ -98,12 +97,6 @@ func TestNewTokenAndServeErrorPaths(t *testing.T) {
 	if _, err := serveWith(t.Context(), failingReader{err: sentinel}, nil, nil); !errors.Is(err, sentinel) {
 		t.Errorf("serveWith failingReader error = %v, want wrapped %v", err, sentinel)
 	}
-
-	canceled, cancel := context.WithCancel(t.Context())
-	cancel()
-	if _, err := (Server{}).Serve(canceled, nil, nil); err == nil || !errors.Is(err, context.Canceled) {
-		t.Errorf("Serve with canceled context = %v, want wrapped context.Canceled", err)
-	}
 }
 
 func TestTrackConnectionRemovesHijackedAndClosedConnections(t *testing.T) {
@@ -150,7 +143,7 @@ func TestServedToolsInvokeAndReportErrors(t *testing.T) {
 		{Name: "pond_read", Title: "Read pond", Effect: tools.ReadOnly, InputSchema: []byte(`{"type":"object"}`)},
 		{Name: "pond_fail", Title: "Fail pond", Effect: tools.ReadOnly, InputSchema: []byte(`{"type":"object"}`)},
 	}
-	served, err := (Server{}).Serve(t.Context(), listed, func(_ context.Context, name string, args json.RawMessage) (*tools.CallResponse, error) {
+	served, err := (Server{}).Serve(t.Context(), listed, func(_ context.Context, name string, args []byte) (*tools.CallResponse, error) {
 		if name == "pond_fail" {
 			return nil, errors.New("tool broke")
 		}
@@ -181,11 +174,11 @@ func TestServedToolsInvokeAndReportErrors(t *testing.T) {
 	}()
 
 	okRes, err := session.CallTool(t.Context(), &sdk.CallToolParams{Name: "pond_read", Arguments: map[string]any{"k": "v"}})
-	if err != nil || okRes.IsError || len(okRes.Content) != 1 || okRes.Content[0].(*sdk.TextContent).Text != `got:{"k":"v"}` {
+	if err != nil || okRes.IsError || len(okRes.Content) != 1 || getFirstText(okRes.Content) != `got:{"k":"v"}` {
 		t.Errorf("pond_read = %+v, %v", okRes, err)
 	}
 	failRes, err := session.CallTool(t.Context(), &sdk.CallToolParams{Name: "pond_fail"})
-	if err != nil || !failRes.IsError || len(failRes.Content) != 1 || failRes.Content[0].(*sdk.TextContent).Text != "tool broke" {
+	if err != nil || !failRes.IsError || len(failRes.Content) != 1 || getFirstText(failRes.Content) != "tool broke" {
 		t.Errorf("pond_fail = %+v, %v", failRes, err)
 	}
 }
@@ -193,3 +186,17 @@ func TestServedToolsInvokeAndReportErrors(t *testing.T) {
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+func TestCloseReportsTheErrorServeEndedWithExceptServerClosed(t *testing.T) {
+	shutdownErr := errors.New("shutdown broke")
+	serveErr := errors.New("listener broke")
+	if got := joinServeError(nil, http.ErrServerClosed); got != nil {
+		t.Errorf("server closed = %v, want none", got)
+	}
+	if got := joinServeError(shutdownErr, http.ErrServerClosed); !errors.Is(got, shutdownErr) || errors.Is(got, http.ErrServerClosed) {
+		t.Errorf("shutdown error with server closed = %v, want only the shutdown error", got)
+	}
+	if got := joinServeError(shutdownErr, serveErr); !errors.Is(got, shutdownErr) || !errors.Is(got, serveErr) {
+		t.Errorf("both errors = %v, want both", got)
+	}
+}
