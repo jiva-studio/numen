@@ -40,7 +40,7 @@ describe('following the results of a saved search', () => {
     const { service, tab, state } = setup()
 
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
     expect(state.view.value?.items.map((item) => item.title)).toStrictEqual([
@@ -55,11 +55,11 @@ describe('following the results of a saved search', () => {
   it('shows the new results after the next change', async () => {
     const { service, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
-    service.setAnswer(HARBOR_REFRESHED)
-    service.emit(LATER)
+    service.results.set(HARBOR_REFRESHED)
+    service.watch.emit(LATER)
     await settle()
 
     expect(state.view.value?.items).toHaveLength(4)
@@ -69,30 +69,30 @@ describe('following the results of a saved search', () => {
 
   it('keeps the last change when two arrive during a call', async () => {
     const { service, tab, state } = setup()
-    service.holdReads()
+    service.results.hold()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
-    service.setAnswer(HARBOR_REFRESHED)
-    service.emit(LATER)
+    service.results.set(HARBOR_REFRESHED)
+    service.watch.emit(LATER)
     await settle()
-    service.releaseReads()
+    service.results.release()
     await settle()
 
-    expect(service.readSignals[0]?.aborted).toBe(true)
-    expect(service.readSignals[1]?.aborted).toBe(false)
+    expect(service.signals.reads[0]?.aborted).toBe(true)
+    expect(service.signals.reads[1]?.aborted).toBe(false)
     expect(state.view.value?.items).toHaveLength(4)
   })
 
   it('shows the failure of getResults and keeps the last results', async () => {
     const { service, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
-    service.failReads(`there is no note at ${NOTE_PATH}`)
-    service.emit(LATER)
+    service.results.fail(`there is no note at ${NOTE_PATH}`)
+    service.watch.emit(LATER)
     await settle()
 
     expect(state.failure.value).toBe(`there is no note at ${NOTE_PATH}`)
@@ -102,12 +102,12 @@ describe('following the results of a saved search', () => {
   it('clears the failure once getResults answers again', async () => {
     const { service, tab, state } = setup()
     tab.follow()
-    service.failReads('the window shows no vault')
-    service.emit(COMPUTED)
+    service.results.fail('the window shows no vault')
+    service.watch.emit(COMPUTED)
     await settle()
 
-    service.setAnswer(HARBOR)
-    service.emit(LATER)
+    service.results.set(HARBOR)
+    service.watch.emit(LATER)
     await settle()
 
     expect(state.failure.value).toBe('')
@@ -118,7 +118,7 @@ describe('following the results of a saved search', () => {
     const { service, tab, state } = setup()
 
     tab.follow()
-    service.failWatch('the window shows no vault')
+    service.watch.fail('the window shows no vault')
     await settle()
 
     expect(state.failure.value).toBe('the window shows no vault')
@@ -133,19 +133,19 @@ describe('following the results of a saved search', () => {
     await settle()
 
     expect(service.calls.filter((call) => call === 'watchResults')).toHaveLength(1)
-    expect(service.watchSignals[0]?.aborted).toBe(false)
+    expect(service.signals.watches[0]?.aborted).toBe(false)
   })
 
   it('follows again after the watch ended', async () => {
     const { service, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
-    service.endWatch()
+    service.watch.emit(COMPUTED)
+    service.watch.end()
     await settle()
 
-    service.setAnswer(HARBOR_REFRESHED)
+    service.results.set(HARBOR_REFRESHED)
     tab.follow()
-    service.emit(LATER)
+    service.watch.emit(LATER)
     await settle()
 
     expect(service.calls.filter((call) => call === 'watchResults')).toHaveLength(2)
@@ -155,7 +155,7 @@ describe('following the results of a saved search', () => {
   it('does not restart a watch that ended on its own', async () => {
     const { service, tab } = setup()
     tab.follow()
-    service.endWatch()
+    service.watch.end()
     await settle()
     await settle()
 
@@ -164,16 +164,16 @@ describe('following the results of a saved search', () => {
 
   it('aborts the watch and the call when the tab closes', async () => {
     const { service, tab } = setup()
-    service.holdReads()
+    service.results.hold()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
     tab.dispose()
     await settle()
 
-    expect(service.watchSignals[0]?.aborted).toBe(true)
-    expect(service.readSignals[0]?.aborted).toBe(true)
+    expect(service.signals.watches[0]?.aborted).toBe(true)
+    expect(service.signals.reads[0]?.aborted).toBe(true)
   })
 })
 
@@ -181,7 +181,7 @@ describe('opening a result', () => {
   it('opens the file of a result at its range', async () => {
     const { service, openAt, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
     state.actions.openResult(0)
@@ -196,7 +196,7 @@ describe('opening a result', () => {
   it('opens nothing for an index without a result', async () => {
     const { service, openAt, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
     state.actions.openResult(7)
@@ -209,7 +209,7 @@ describe('saving the query of the note', () => {
   it('saves the query, the rerank text and the limit of the note', async () => {
     const { service, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
     await state.actions.saveSearch(CHANGE)
@@ -220,7 +220,7 @@ describe('saving the query of the note', () => {
   it('reads the note again after a save', async () => {
     const { service, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
     await state.actions.saveSearch(CHANGE)
@@ -240,7 +240,7 @@ describe('saving the query of the note', () => {
   it('shows the problems of a query that was not saved', async () => {
     const { service, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
     service.setUpdateAnswer({
       errors: [{ line: 2, column: 4, message: "undeclared reference to 'meanin'" }],
@@ -257,7 +257,7 @@ describe('saving the query of the note', () => {
   it('clears the problems of the last save after a good save', async () => {
     const { service, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
     service.setUpdateAnswer({
       errors: [{ line: 2, column: 4, message: "undeclared reference to 'meanin'" }],
@@ -273,7 +273,7 @@ describe('saving the query of the note', () => {
   it('shows the failure of a save', async () => {
     const { service, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
     service.setUpdateAnswer('the note changed while it was updated; try again')
 
@@ -286,7 +286,7 @@ describe('saving the query of the note', () => {
   it('is saving until the backend answers', async () => {
     const { service, tab, state } = setup()
     tab.follow()
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
     const saving = state.actions.saveSearch(CHANGE)

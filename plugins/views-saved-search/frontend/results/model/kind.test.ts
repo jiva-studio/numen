@@ -53,7 +53,7 @@ describe('the saved search tab kind', () => {
     const { service, kind } = setup()
 
     const state = openTab(kind)
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
     expect(state.path.value).toBe(NOTE_PATH)
@@ -72,7 +72,7 @@ describe('the saved search tab kind', () => {
     const { service, kind } = setup()
     const state = openTab(kind)
 
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
     expect(kind.getTitle?.(state)).toBe('Harbor master: winter storms')
@@ -86,7 +86,7 @@ describe('the saved search tab kind', () => {
     const isClosing = kind.onClose?.(state, TAB_ID)
 
     expect(isClosing).toBe(true)
-    expect(service.watchSignals[0]?.aborted).toBe(true)
+    expect(service.signals.watches[0]?.aborted).toBe(true)
   })
 
   it('disposes the tab when the window is destroyed', async () => {
@@ -96,18 +96,18 @@ describe('the saved search tab kind', () => {
 
     kind.onDestroy?.(state, TAB_ID)
 
-    expect(service.watchSignals[0]?.aborted).toBe(true)
+    expect(service.signals.watches[0]?.aborted).toBe(true)
   })
 
   it('follows again when the tab is shown after the watch ended', async () => {
     const { service, kind } = setup()
     const state = openTab(kind)
-    service.endWatch()
+    service.watch.end()
     await settle()
 
-    service.setAnswer(HARBOR_REFRESHED)
+    service.results.set(HARBOR_REFRESHED)
     kind.onShow?.(state, TAB_ID)
-    service.emit(COMPUTED)
+    service.watch.emit(COMPUTED)
     await settle()
 
     expect(service.calls.filter((call) => call === 'watchResults')).toHaveLength(2)

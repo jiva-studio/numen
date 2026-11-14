@@ -62,7 +62,7 @@ const meta: Meta<Knobs> = {
         locale: 'en-GB',
       })
       tab.follow()
-      service.emit(COMPUTED)
+      service.watch.emit(COMPUTED)
       onBeforeUnmount(() => tab.dispose())
       return { state: tab.state }
     },
