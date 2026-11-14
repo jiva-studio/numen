@@ -255,7 +255,9 @@ func New() *World {
 	}
 	w.Source = NewSource(w.Provider)
 	w.Detected = &Detected{}
-	w.Connections = connectiontest.NewWithDetection(w.repository, types, w.Keys, NoUses{}, w.Detected, func() (string, error) {
+	w.Connections = connectiontest.New(connectiontest.Parts{
+		Repository: w.repository, Types: types, Keys: w.Keys, Uses: NoUses{}, Detected: w.Detected, Titles: noTitles{},
+	}, func() (string, error) {
 		w.next++
 		return fmt.Sprintf("c%08x", w.next), nil
 	})
@@ -481,3 +483,8 @@ func (w *World) SetPluginVersion(pluginID, version string) {
 		}
 	}
 }
+
+// noTitles is a machine where no plugin titles an operation.
+type noTitles struct{}
+
+func (noTitles) ListOperationTitles() []manifest.Operation { return nil }

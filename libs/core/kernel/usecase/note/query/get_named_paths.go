@@ -14,9 +14,6 @@ type GetNamedPaths struct {
 }
 
 func NewGetNamedPaths(queries noteport.NamedPaths) *GetNamedPaths {
-	if queries == nil {
-		queries = noNames{}
-	}
 	return &GetNamedPaths{queries: queries}
 }
 
@@ -27,11 +24,4 @@ func (u *GetNamedPaths) Execute(ctx context.Context, v domain.Vault, name string
 		return nil, nil
 	}
 	return u.queries.GetNamedPaths(ctx, v.ID, domain.LinkName(name))
-}
-
-// noNames is the index of a build that has none: no name resolves.
-type noNames struct{}
-
-func (noNames) GetNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
-	return nil, nil
 }

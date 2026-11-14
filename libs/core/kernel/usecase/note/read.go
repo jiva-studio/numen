@@ -2,7 +2,6 @@ package note
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
@@ -16,10 +15,8 @@ type Read struct {
 	readers vaultport.VaultReaders
 }
 
-var errNotOpen = errors.New("this vault's files are not open")
-
 func NewRead(readers vaultport.VaultReaders) Read {
-	return Read{readers: getReaders(readers)}
+	return Read{readers: readers}
 }
 
 // Execute reads the note at path.

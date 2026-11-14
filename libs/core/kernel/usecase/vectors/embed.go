@@ -8,7 +8,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -53,19 +52,13 @@ func (u Embed) inferWorkers() int {
 // NewEmbed creates an Embed from the readers of vault text, the query for chunks
 // lacking a vector for the current model, the repository where vectors are
 // written, the claim on the index, the readers of file texts and the search source.
-// A nil claim holds nothing, nil texts means no file has text, and a nil source embeds nothing.
+// Nil texts means no file has text.
 func NewEmbed(
 	readers vaultport.VaultReaders, chunks searchsourceport.VectorQueries, vectors searchsourceport.VectorRepository,
 	claim vaultport.IndexClaim, texts textdomain.Readers, source searchsourceport.Source,
 ) Embed {
-	if claim == nil {
-		claim = noClaim{}
-	}
 	if texts == nil {
 		texts = noTextReaders{}
-	}
-	if source == nil {
-		source = noSource{}
 	}
 	return Embed{readers: readers, chunks: chunks, vectors: vectors, claim: claim, texts: texts, source: source}
 }
@@ -160,27 +153,7 @@ func (u Embed) claimIndex(ctx context.Context) (func() error, bool, error) {
 	return release, false, nil
 }
 
-// noClaim holds nothing and is never busy.
-type noClaim struct{}
-
-func (noClaim) ClaimIndex(context.Context) (func() error, error) {
-	return func() error { return nil }, nil
-}
-
 // noTextReaders is a vault where no file has text.
 type noTextReaders struct{}
 
 func (noTextReaders) Open(domain.Vault) (textdomain.VaultTexts, error) { return nil, nil }
-
-// noSource is the search source of an installation that has none: it describes nothing, so nothing is embedded.
-type noSource struct{}
-
-func (noSource) Describe() searchsource.Description { return searchsource.Description{} }
-
-func (noSource) IndexTexts(context.Context, searchsource.Place, []searchsource.Text) ([][]float32, error) {
-	return nil, nil
-}
-
-func (noSource) SearchPassages(context.Context, searchsource.Place, searchsource.Query) ([]searchsource.Match, error) {
-	return nil, nil
-}

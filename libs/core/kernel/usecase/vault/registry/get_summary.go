@@ -14,9 +14,6 @@ type GetSummary struct {
 }
 
 func NewGetSummary(queries noteport.VaultSummaries) *GetSummary {
-	if queries == nil {
-		queries = noSummaries{}
-	}
 	return &GetSummary{queries: queries}
 }
 
@@ -26,11 +23,4 @@ func (u *GetSummary) Execute(ctx context.Context, v domain.Vault) (domain.VaultS
 		return domain.VaultSummary{}, nil
 	}
 	return u.queries.GetSummary(ctx, v.ID)
-}
-
-// noSummaries is the index of a build that has none: it holds nothing of any vault.
-type noSummaries struct{}
-
-func (noSummaries) GetSummary(context.Context, domain.VaultID) (domain.VaultSummary, error) {
-	return domain.VaultSummary{}, nil
 }

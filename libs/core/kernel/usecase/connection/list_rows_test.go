@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
@@ -56,7 +57,7 @@ func listGrantedRows(t *testing.T, setting connectiondomain.RowSetting, grants [
 		agentType("org.example.retired", "owl", false, taskOp),
 		agentType(numenAgentID, "numen", true, taskOp, "llm.models"),
 	}}
-	deps := connection.NewDeps(repository, types, &memoryKeys{values: map[string]string{}}, &memoryUses{grants: grants})
+	deps := connection.NewDeps(repository, types, &memoryKeys{values: map[string]string{}}, &memoryUses{grants: grants}, none.Detected{})
 	rows, err := connection.NewListRows(deps, fixedRowSettings{setting: setting}).Execute(pluginID, operation)
 	if err != nil {
 		t.Fatal(err)

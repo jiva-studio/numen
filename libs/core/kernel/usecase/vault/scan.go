@@ -51,9 +51,6 @@ func NewScan(
 	maintenance indexport.IndexMaintenance,
 	backlog sourceport.SourceBacklog,
 ) Scan {
-	if backlog == nil {
-		backlog = noBacklog{}
-	}
 	return Scan{
 		readers: readers, vaults: vaults, notes: notes,
 		indexedVal: queries, maintenance: maintenance, backlog: backlog,
@@ -262,15 +259,4 @@ func (u Scan) removeGoneFiles(
 func (u Scan) Rebuilding(rebuild bool) Scan {
 	u.ShouldRebuildIndex = rebuild
 	return u
-}
-
-// noBacklog is the backlog of an index that has no source cut by another recipe.
-type noBacklog struct{}
-
-func (noBacklog) GetUnchunkedSources(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
-	return nil, nil
-}
-
-func (noBacklog) GetSourcesWithOtherRecipe(context.Context, domain.VaultID, domain.SourceKind, []string, int) ([]string, error) {
-	return nil, nil
 }

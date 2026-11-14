@@ -24,9 +24,6 @@ func NewListSettingValues(
 	codec settingsport.ValueCodec, file settingsport.SettingsFile, defaults settingsport.Defaults, app settingsport.AppDeclarations,
 	plugins settingsport.PluginInfos,
 ) *ListSettingValues {
-	if plugins == nil {
-		plugins = noPluginInfos{}
-	}
 	return &ListSettingValues{codec: codec, file: file, defaults: defaults, app: app, plugins: plugins}
 }
 
@@ -93,8 +90,3 @@ func listPluginValues(stored settingsdomain.Stored, one plugin.Info, add func([]
 		add([]string{one.ID, settingsdomain.HostFieldDiscover}, value)
 	}
 }
-
-// noPluginInfos is the plugin list of an installation with no plugin host.
-type noPluginInfos struct{}
-
-func (noPluginInfos) GetPluginInfos() []plugin.Info { return nil }

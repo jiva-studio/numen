@@ -36,29 +36,34 @@ type Index struct {
 	readNote     func(ctx context.Context, v domain.Vault, path string) error
 }
 
-// NewIndex creates an Index from the vault readers, the source repository
-// that stores sources and chunks, the queries that report which sources the
-// index records, which still need text and the text kept for the ones that left,
-// the text readers, the sizes and the legibility of a cut, and whether the index is rebuilt.
-// Nil texts means no file has text. The result ignores the errors a pass reports and reads no note again before it is cut; NewHandlingIndex adds both.
-func NewIndex(
-	readers vaultport.VaultReaders,
-	sources sourceport.SourceRepository,
-	records sourceport.SourceRecords,
-	backlog sourceport.SourceBacklog,
-	lookup sourceport.RemovalLookup,
-	texts text.Readers,
-	sizes chunking.Sizes,
-	legibility chunking.Legibility,
-	shouldRebuildIndex bool,
-) Index {
+// IndexDeps is what NewIndex takes: the vault readers, the source repository that stores sources and chunks,
+// the queries that report which sources the index records, which still need text and the text kept for the
+// ones that left, the text readers, the sizes and the legibility of a cut, and whether the index is rebuilt.
+// Nil Texts means no file has text.
+type IndexDeps struct {
+	Readers vaultport.VaultReaders
+	Sources sourceport.SourceRepository
+	Records sourceport.SourceRecords
+	Backlog sourceport.SourceBacklog
+	Lookup  sourceport.RemovalLookup
+	Texts   text.Readers
+
+	Sizes              chunking.Sizes
+	Legibility         chunking.Legibility
+	ShouldRebuildIndex bool
+}
+
+// NewIndex creates an Index. The result ignores the errors a pass reports and reads no note again before it
+// is cut; NewHandlingIndex adds both.
+func NewIndex(d IndexDeps) Index {
+	texts := d.Texts
 	if texts == nil {
-		texts = noTextReaders{readers: readers}
+		texts = noTextReaders{readers: d.Readers}
 	}
 	return Index{
-		readers: readers, sources: sources, texts: texts,
-		sizes: sizes, legibility: legibility, shouldRebuildIndex: shouldRebuildIndex,
-		queries: sourceQueries{records: records, backlog: backlog, lookup: lookup},
+		readers: d.Readers, sources: d.Sources, texts: texts,
+		sizes: d.Sizes, legibility: d.Legibility, shouldRebuildIndex: d.ShouldRebuildIndex,
+		queries: sourceQueries{records: d.Records, backlog: d.Backlog, lookup: d.Lookup},
 	}
 }
 

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -102,10 +101,10 @@ func (f filing) moveOver(w wiring) vaults.Move {
 
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
-	extract := filetext.NewIndex(
-		vaultreader.Readers{}, f.db.Sources(), f.db.Sources(), f.db.Sources(), f.db.Sources(),
-		testsupport.Texts{Readers: vaultreader.Readers{}}, chunking.Sizes{}, chunking.Legibility{}, false,
-	)
+	extract := filetext.NewIndex(filetext.IndexDeps{
+		Readers: vaultreader.Readers{}, Sources: f.db.Sources(), Records: f.db.Sources(), Backlog: f.db.Sources(), Lookup: f.db.Sources(),
+		Texts: testsupport.Texts{Readers: vaultreader.Readers{}},
+	})
 	if _, err := extract.Execute(t.Context(), f.vault); err != nil {
 		t.Fatal(err)
 	}

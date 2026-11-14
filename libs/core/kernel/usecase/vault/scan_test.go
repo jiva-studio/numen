@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
@@ -64,13 +65,7 @@ func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string
 }
 
 func scanner(readers vaultport.VaultReaders, db *container.Index) vaults.Scan {
-	scan := vaults.NewScan(
-		readers,
-		db.Vaults(),
-		db.Notes(),
-		db.NoteQueries(),
-		db.Maintenance(), nil,
-	)
+	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
 	scan.Walks = &db.Walks
 	return scan
 }
@@ -609,7 +604,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	// Checks the order in which notes reach the index: the index contents
 	// part-way through are whole groups, which does not show the order.
 	content := &groupedWrites{}
-	scan := vaults.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), nil)
+	scan := vaults.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
 	scan.Walks = &db.Walks
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)

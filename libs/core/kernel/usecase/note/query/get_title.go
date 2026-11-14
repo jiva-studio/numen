@@ -14,9 +14,6 @@ type GetTitle struct {
 }
 
 func NewGetTitle(queries noteport.NoteRefs) *GetTitle {
-	if queries == nil {
-		queries = noNotes{}
-	}
 	return &GetTitle{queries: queries}
 }
 
@@ -30,11 +27,4 @@ func (u *GetTitle) Execute(ctx context.Context, v domain.Vault, path string) str
 		return ""
 	}
 	return found[path].Title
-}
-
-// noNotes is the index of a build that has none: it holds no note.
-type noNotes struct{}
-
-func (noNotes) GetNotes(context.Context, domain.VaultID, []string) (map[string]domain.NoteRef, error) {
-	return nil, nil
 }

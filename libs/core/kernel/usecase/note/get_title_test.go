@@ -3,6 +3,7 @@ package note_test
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
@@ -26,7 +27,7 @@ func TestGetTitleAnswersNothingWhereNoIndexIsBound(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 
-	if got := query.NewGetTitle(nil).Execute(t.Context(), c.vault, "Heat.md"); got != "" {
+	if got := query.NewGetTitle(none.NoteQueries{}).Execute(t.Context(), c.vault, "Heat.md"); got != "" {
 		t.Errorf("the note is titled %q", got)
 	}
 }

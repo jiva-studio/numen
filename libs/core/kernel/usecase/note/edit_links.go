@@ -186,15 +186,3 @@ func getTellMove(tell TellMove) TellMove {
 	}
 	return tell
 }
-
-// noReaders is the vault readers of an installation whose files are not open.
-type noReaders struct{}
-
-func (noReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return nil, errNotOpen }
-
-func getReaders(readers vaultport.VaultReaders) vaultport.VaultReaders {
-	if readers == nil {
-		return noReaders{}
-	}
-	return readers
-}

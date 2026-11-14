@@ -42,8 +42,7 @@ func openConnectionDeps(c pluginsWiring) (connection.Deps, bool) {
 	if !hasPluginHost(c) {
 		return connection.Deps{}, false
 	}
-	deps := connection.NewDeps(openConnectionRepository(c.settings), c.PluginHost.Views.Types, c.KeyStore, openConnectionRows(c)).
-		AddDetection(openDetection(c))
+	deps := connection.NewDeps(openConnectionRepository(c.settings), c.PluginHost.Views.Types, c.KeyStore, openConnectionRows(c), openDetection(c))
 	if options := openRowOptions(c, deps); options != nil {
 		deps = deps.AddOptionLists(options)
 	}
@@ -71,7 +70,7 @@ func openConnectionUseCases(c pluginsWiring) *windowconnection.UseCases {
 			Delete: connection.NewDelete(deps),
 		},
 		Reads: windowconnection.Reads{
-			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, c.PluginHost.Views.Operations),
+			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, getOperationTitles(c.PluginHost.Views)),
 			RowOptions: openRowOptions(c, deps),
 		},
 	}

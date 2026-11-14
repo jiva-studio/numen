@@ -26,7 +26,7 @@ type RemoveNote struct {
 }
 
 func NewRemoveNote(remove noteRemoving, readers vaultport.VaultReaders) RemoveNote {
-	return RemoveNote{remove: remove, readers: getReaders(readers)}
+	return RemoveNote{remove: remove, readers: readers}
 }
 
 func (u RemoveNote) Execute(

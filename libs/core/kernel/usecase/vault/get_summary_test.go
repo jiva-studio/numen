@@ -3,6 +3,7 @@ package vault_test
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -22,7 +23,7 @@ func TestGetSummaryCountsWhatTheIndexContains(t *testing.T) {
 
 func TestGetSummaryAnswersNothingWhereNoIndexIsBound(t *testing.T) {
 	t.Parallel()
-	if got, err := registry.NewGetSummary(nil).Execute(t.Context(), domain.Vault{}); err != nil || got != (domain.VaultSummary{}) {
+	if got, err := registry.NewGetSummary(none.NoteQueries{}).Execute(t.Context(), domain.Vault{}); err != nil || got != (domain.VaultSummary{}) {
 		t.Errorf("an unbound index answered %+v, %v", got, err)
 	}
 	var unmade *registry.GetSummary

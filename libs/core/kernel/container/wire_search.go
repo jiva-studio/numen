@@ -140,7 +140,7 @@ func searchEmbed(c searchWiring, db *Index, source searchsourceport.Source, v do
 		return vectorscase.Embed{}, err
 	}
 	return vectorscase.NewEmbed(
-		c.VaultReaders, db.Sources(), db.Sources(), store.NewIndexClaim(coreFolder+"/indexing"), c.TextReaders, source,
+		c.VaultReaders, db.Sources(), db.Sources(), store.NewIndexClaim(coreFolder+"/indexing"), c.TextReaders, getSearchSource(source),
 	), nil
 }
 
@@ -151,10 +151,10 @@ func indexTexts(
 		return filetext.Index{}, err
 	}
 	cutter := cutNotes(c)
-	index := filetext.NewIndex(
-		c.VaultReaders, db.Sources(), db.Sources(), db.Sources(), db.Sources(), c.TextReaders,
-		cutter.Sizes, cutter.Legibility, c.ShouldRebuildIndex,
-	)
+	index := filetext.NewIndex(filetext.IndexDeps{
+		Readers: c.VaultReaders, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
+		Texts: c.TextReaders, Sizes: cutter.Sizes, Legibility: cutter.Legibility, ShouldRebuildIndex: c.ShouldRebuildIndex,
+	})
 	return filetext.NewHandlingIndex(index, c.ErrorHandler, readNote), nil
 }
 

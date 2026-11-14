@@ -6,7 +6,6 @@ import (
 	"math/rand/v2"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
@@ -83,12 +82,35 @@ func vectorOf(text string, dims int) []float32 {
 }
 
 func newEmbed(readers vaultport.VaultReaders, chunks searchsourceport.VectorQueries, vectors searchsourceport.VectorRepository) Embed {
-	return NewEmbed(readers, chunks, vectors, nil, bookTexts{readers: readers}, nil)
+	return NewEmbed(readers, chunks, vectors, openClaim{}, bookTexts{readers: readers}, noModel{})
 }
 
 func newExtract(
 	readers vaultport.VaultReaders, index *indexfake.Store,
 ) filetext.Index {
-	extract := filetext.NewIndex(readers, index, index, index, index, bookTexts{readers: readers}, chunking.Sizes{}, chunking.Legibility{}, false)
+	extract := filetext.NewIndex(filetext.IndexDeps{
+		Readers: readers, Sources: index, Records: index, Backlog: index, Lookup: index,
+		Texts: bookTexts{readers: readers},
+	})
 	return extract
+}
+
+// openClaim holds nothing and is never busy.
+type openClaim struct{}
+
+func (openClaim) ClaimIndex(context.Context) (func() error, error) {
+	return func() error { return nil }, nil
+}
+
+// noModel describes no model, so nothing is embedded until a test sets a source.
+type noModel struct{}
+
+func (noModel) Describe() searchsource.Description { return searchsource.Description{} }
+
+func (noModel) IndexTexts(context.Context, searchsource.Place, []searchsource.Text) ([][]float32, error) {
+	return nil, nil
+}
+
+func (noModel) SearchPassages(context.Context, searchsource.Place, searchsource.Query) ([]searchsource.Match, error) {
+	return nil, nil
 }
