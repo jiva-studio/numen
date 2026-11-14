@@ -25,9 +25,10 @@ import (
 
 var errEmptyTitle = errors.New("title is empty")
 
-// Runner runs a saved search at once.
+// Runner runs a saved search at once, waiting for the run or in the background.
 type Runner interface {
 	RunNow(ctx context.Context, vault domain.VaultID, notePath string, priority connection.Priority) (resultcache.Record, error)
+	StartRunNow(ctx context.Context, vault domain.VaultID, notePath string, priority connection.Priority)
 }
 
 // Settings are the numbers a query is checked with and the folder a note goes to when the call names none.

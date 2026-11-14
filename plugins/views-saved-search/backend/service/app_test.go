@@ -311,3 +311,42 @@ func (f *fixture) callTool(t *testing.T, vault, name, arguments string) (structu
 	}
 	return structured, ""
 }
+
+func (f *fixture) watchFirstRun(t *testing.T) <-chan event {
+	t.Helper()
+	events := f.openStream(t, api.MethodWatchResults, api.WatchResultsRequest{Path: stormsPath})
+	if first := receiveEvent(t, events); first.data != `{"computedAt":"","isRunning":false}` {
+		t.Fatalf("first event = %+v, want a search never computed", first)
+	}
+	if start := receiveEvent(t, events); !strings.Contains(start.data, `"isRunning":true`) {
+		t.Fatalf("event = %+v, want the start of the first run", start)
+	}
+	if write := receiveEvent(t, events); write.data != `{"computedAt":"2026-11-14T09:30:00Z","isRunning":false}` {
+		t.Fatalf("event = %+v, want the write of the first run", write)
+	}
+	return events
+}
+
+func (f *fixture) configure(t *testing.T, values map[string]string) {
+	t.Helper()
+	body, err := json.Marshal(map[string]any{"values": values})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, f.web.URL+"/numen.v1.PluginLifecycleService/Configure", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+token)
+	response, err := f.web.Client().Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := response.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("Configure = %d", response.StatusCode)
+	}
+}

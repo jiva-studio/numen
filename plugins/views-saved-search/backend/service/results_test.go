@@ -251,11 +251,10 @@ func TestWatchResultsOfAMissingNoteEndsWithNotFound(t *testing.T) {
 	}
 }
 
-func TestUpdateSearchWritesTheNoteWithoutRunningIt(t *testing.T) {
+func TestUpdateSearchWritesTheNote(t *testing.T) {
 	f := newFixture(t, 10)
 	f.addStormsNote()
 	f.handleIndexChange(t)
-	searches := f.host.getCallCount()
 
 	var res api.UpdateSearchResponse
 	failure := f.call(t, api.MethodUpdateSearch, api.UpdateSearchRequest{Path: stormsPath, Query: `words("storm")`, Rerank: "", Limit: 1}, &res)
@@ -271,23 +270,25 @@ func TestUpdateSearchWritesTheNoteWithoutRunningIt(t *testing.T) {
 		fmt.Sprint(frontmatter["limit"]) != "1" || frontmatter["id"] != stormsID {
 		t.Errorf("note = %q, want the new query, no rerank text, the limit 1 and the id kept", content)
 	}
-	if f.host.getCallCount() != searches {
-		t.Error("UpdateSearch ran the search, want the run left to the index change")
-	}
 }
 
-func TestUpdateSearchRunsAtTheNextIndexChangeWithinTheCooldown(t *testing.T) {
+func TestUpdateSearchRunsTheSearchInTheBackgroundWithinTheCooldown(t *testing.T) {
 	f := newFixture(t, 10)
 	f.addStormsNote()
-	f.handleIndexChange(t)
+	events := f.watchFirstRun(t)
+	f.clock.Advance(time.Minute)
 
-	if failure := f.call(t, api.MethodUpdateSearch, api.UpdateSearchRequest{Path: stormsPath, Query: stormsQuery, Limit: 1}, &api.UpdateSearchResponse{}); failure.Code != "" {
+	if failure := f.call(t, api.MethodUpdateSearch, api.UpdateSearchRequest{Path: stormsPath, Query: stormsQuery, Rerank: stormsRerank, Limit: 1}, &api.UpdateSearchResponse{}); failure.Code != "" {
 		t.Fatal(failure)
 	}
-	f.clock.Advance(8 * time.Second)
-	f.handleIndexChange(t)
 
-	if res := f.getResults(t, stormsPath); len(res.Results) != 1 || res.ComputedAt != "2026-11-14T09:30:08Z" || res.IsStale {
+	if start := receiveEvent(t, events); !strings.Contains(start.data, `"isRunning":true`) {
+		t.Errorf("event = %+v, want the start of the run", start)
+	}
+	if write := receiveEvent(t, events); write.data != `{"computedAt":"2026-11-14T09:31:00Z","isRunning":false}` {
+		t.Errorf("event = %+v, want the write of the run", write)
+	}
+	if res := f.getResults(t, stormsPath); len(res.Results) != 1 || res.ComputedAt != "2026-11-14T09:31:00Z" || res.IsStale {
 		t.Errorf("response = %+v, want one result computed after the edit", res)
 	}
 }

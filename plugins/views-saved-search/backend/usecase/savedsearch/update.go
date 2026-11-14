@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/api"
@@ -33,11 +34,17 @@ func (u *UseCase) Update(ctx context.Context, vault domain.VaultID, in api.Updat
 	return u.runFirst(ctx, vault, in.Path)
 }
 
-// Write writes the query, the rerank text and the limit of the request into a saved search note and scans
-// it, without a run: the index change runs it. A query that is not valid returns its problems, counted
-// from the first line of the query, and changes nothing.
+// Write writes the query, the rerank text and the limit of the request into a saved search note, scans it,
+// and starts its run in the background without waiting for it: a saved search note is not indexed, so no
+// index change runs it. A query that is not valid returns its problems, counted from the first line of
+// the query, and changes nothing.
 func (u *UseCase) Write(ctx context.Context, vault domain.VaultID, in api.UpdateSearchRequest) ([]api.Problem, error) {
-	return u.write(ctx, vault, in.Path, searchnote.Change{Query: &in.Query, Rerank: &in.Rerank, Limit: &in.Limit})
+	problems, err := u.write(ctx, vault, in.Path, searchnote.Change{Query: &in.Query, Rerank: &in.Rerank, Limit: &in.Limit})
+	if err != nil || len(problems) > 0 {
+		return problems, err
+	}
+	u.runner.StartRunNow(context.WithoutCancel(ctx), vault, in.Path, connection.PriorityInteractive)
+	return problems, nil
 }
 
 func (u *UseCase) checkSearch(ctx context.Context, vault domain.VaultID, notePath string) error {

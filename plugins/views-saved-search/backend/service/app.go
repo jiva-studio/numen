@@ -68,7 +68,10 @@ func (a *App) Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	s.SetUpdateConfig(a.settings.Update)
+	s.SetConfigure(func(ctx context.Context, values map[string]string) error {
+		a.updateSettings(ctx, built, values)
+		return nil
+	})
 	registry.Mount(s)
 	service := s.NewAPI(api.Service)
 	server.Handle(service, api.MethodGetResults, func(ctx context.Context, req api.GetResultsRequest) (api.GetResultsResponse, error) {
@@ -107,6 +110,13 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 		return err
 	}
 	return built.runner.RunDue(ctx, vault)
+}
+
+func (a *App) updateSettings(ctx context.Context, built *parts, values map[string]string) {
+	a.settings.Update(values)
+	for _, vault := range built.runner.ListVaults() {
+		built.runner.StartRunDue(context.WithoutCancel(ctx), vault)
+	}
 }
 
 func (a *App) getParts() (*parts, error) {

@@ -198,11 +198,21 @@ func deleteOtherFiles(ctx context.Context, v Vault, searches []search) error {
 	return nil
 }
 
-// StartRunDue runs RunDue in the background until ctx ends, as the opening of a tab does.
+// StartRunDue runs RunDue in the background until ctx ends, as the opening of a tab and a change of the
+// settings do.
 func (r *Runner) StartRunDue(ctx context.Context, vault domain.VaultID) {
 	go func() {
 		if err := r.RunDue(ctx, vault); err != nil {
-			slog.Debug("saved search: run the due searches of an opened tab", "vault", vault, "error", err)
+			slog.Debug("saved search: run the due searches", "vault", vault, "error", err)
+		}
+	}()
+}
+
+// StartRunNow runs RunNow in the background until ctx ends, as an edit of the search in the tab does.
+func (r *Runner) StartRunNow(ctx context.Context, vault domain.VaultID, notePath string, priority connection.Priority) {
+	go func() {
+		if _, err := r.RunNow(ctx, vault, notePath, priority); err != nil {
+			slog.Debug("saved search: run an edited search", "vault", vault, "path", notePath, "error", err)
 		}
 	}()
 }

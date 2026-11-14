@@ -5,6 +5,8 @@ package refresh
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"sync"
 	"time"
 
@@ -80,6 +82,11 @@ func (r *Runner) IsRunning(vault domain.VaultID, notePath string) bool {
 	return r.watchers.isRunning(watchKey{vault: vault, path: notePath})
 }
 
+// ListVaults returns, in order, the vaults the runner has run the searches of.
+func (r *Runner) ListVaults() []domain.VaultID {
+	return r.vaults.list()
+}
+
 func (r *Runner) now() time.Time {
 	return r.clock.Now().UTC().Truncate(time.Second)
 }
@@ -92,6 +99,12 @@ type vaultLocks struct {
 
 func newVaultLocks() *vaultLocks {
 	return &vaultLocks{mu: sync.Mutex{}, locks: map[domain.VaultID]chan struct{}{}}
+}
+
+func (l *vaultLocks) list() []domain.VaultID {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return slices.Sorted(maps.Keys(l.locks))
 }
 
 func (l *vaultLocks) lock(ctx context.Context, vault domain.VaultID) (func(), error) {
