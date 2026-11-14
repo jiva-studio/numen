@@ -43,7 +43,7 @@ interface RegisteredSettingsView {
 }
 
 /** The listeners of the plugins to a change of the vault and to the select of a file. */
-export interface PluginListeners {
+interface PluginListeners {
   readonly vault: Set<PluginListener<VaultChangeEvent>>
   readonly file: Set<PluginListener<FileSelectEvent>>
 }

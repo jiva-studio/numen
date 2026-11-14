@@ -2,18 +2,19 @@
  * The deps of a plugin host written as one flat object, for a test that names a few members, and
  * the groups the host takes made from it.
  */
-import type {
-  HostCommands,
-  HostKinds,
-  HostPlugins,
-  HostSlots,
-  HostTabs,
-  HostVault,
-  HostWindow,
-  HostWork,
-  PluginHostDeps,
-} from '../hosting/types'
-import { createPluginHost, type PluginHost } from '../hosting/host'
+import {
+  createPluginHost,
+  type HostCommands,
+  type HostKinds,
+  type HostPlugins,
+  type HostSlots,
+  type HostTabs,
+  type HostVault,
+  type HostWindow,
+  type HostWork,
+  type PluginHost,
+  type PluginHostDeps,
+} from '../hosting'
 
 /** Every member of every group of the deps of a plugin host, in one object. */
 export type TestHostDeps = HostWindow &
