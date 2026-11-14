@@ -22,6 +22,9 @@ type RunCommand struct {
 // NewRunCommand makes the scenario that runs a command of the list through run. versions are the text
 // versions that a command with items runs over; without them such a command runs nothing.
 func NewRunCommand(list List, run Run, versions VersionItems) RunCommand {
+	if versions == nil {
+		versions = noVersions{}
+	}
 	return RunCommand{list: list, run: run, versions: versions}
 }
 
@@ -37,8 +40,6 @@ func (u RunCommand) Execute(ctx context.Context, v domain.Vault, call plugin.Com
 		return u.run.Execute(ctx, v, call)
 	case call.ItemID == "":
 		return plugin.CommandResult{}, fmt.Errorf("%w: %s runs over an item it offers", ErrBadArguments, call.Command)
-	case u.versions == nil:
-		return plugin.CommandResult{}, errNoVersions
 	}
 	result, err := u.versions.RunVersionItem(ctx, v, call.Path, entry, domain.TextVersionID(call.ItemID))
 	if errors.Is(err, text.ErrInvalidVersion) {
@@ -48,11 +49,8 @@ func (u RunCommand) Execute(ctx context.Context, v domain.Vault, call plugin.Com
 }
 
 func (u RunCommand) deleteVersion(ctx context.Context, v domain.Vault, call plugin.CommandCall) error {
-	switch {
-	case call.ItemID == "":
+	if call.ItemID == "" {
 		return fmt.Errorf("%w: %s deletes the version its item names", ErrBadArguments, call.Command)
-	case u.versions == nil:
-		return errNoVersions
 	}
 	err := u.versions.DeleteVersion(ctx, v, call.Path, domain.TextVersionID(call.ItemID))
 	if errors.Is(err, text.ErrInvalidVersion) {
