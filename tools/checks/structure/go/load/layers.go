@@ -44,22 +44,31 @@ func ListDriving(root string) (map[string]bool, error) {
 			return nil
 		}
 		pkg := GetPackage(root, path)
-		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") || (!IsAdapter(pkg) && !IsShared(pkg)) || driving[pkg] {
+		if driving[pkg] {
 			return nil
 		}
-		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
-		if err != nil {
-			return err
-		}
-		if isImportingUseCase(file) || NamesHandler(file) {
+		is, err := isDrivingFile(pkg, path)
+		if is {
 			driving[pkg] = true
 		}
-		return nil
+		return err
 	})
 	if err == nil && len(driving) == 0 {
 		err = fmt.Errorf("no driving adapter under %s: the walk reads no adapter", root)
 	}
 	return driving, err
+}
+
+// isDrivingFile reports whether the Go source at path, a file of pkg, makes pkg a driving adapter.
+func isDrivingFile(pkg, path string) (bool, error) {
+	if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") || (!IsAdapter(pkg) && !IsShared(pkg)) {
+		return false, nil
+	}
+	file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+	if err != nil {
+		return false, err
+	}
+	return isImportingUseCase(file) || NamesHandler(file), nil
 }
 
 func isImportingUseCase(file *ast.File) bool {
