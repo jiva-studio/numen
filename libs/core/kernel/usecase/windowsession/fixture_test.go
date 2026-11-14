@@ -301,7 +301,8 @@ type ShutdownPorts struct {
 	Closers []Closer
 }
 
-// UseCases are the use cases of a test window.
+// UseCases holds what a test drives: vault switching under Switching, shutdown under Closing. It keeps the
+// guard and identity check so a test can build another use case over the same guard.
 type UseCases struct {
 	Switching struct {
 		Show       ShowVault
