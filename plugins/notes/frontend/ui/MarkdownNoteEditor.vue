@@ -6,8 +6,7 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import { Editor } from '../editor'
 import type { Extension } from '@codemirror/state'
 import type { EditorHandle, NoteTabState } from '@numen/plugin-sdk'
-import { getFontFamilyValue } from '../model/fontFamily'
-import { editorPreferences } from '../model/preferences'
+import { useEditorPreferences } from '../model/useEditorPreferences'
 import {
   getEditorExtensions,
   getEditorLanguage,
@@ -91,14 +90,7 @@ const editorExtensions = computed(() => getEditorExtensions(props))
 const editorLanguage = computed(() => getEditorLanguage(props))
 const fileConflict = computed(() => props.state?.fileConflict?.value ?? null)
 
-const prefer = <K extends keyof typeof editorPreferences>(key: K) =>
-  computed(() => props[key] ?? editorPreferences[key])
-const softWrap = prefer('softWrap')
-const lineNumbers = prefer('lineNumbers')
-const tabSize = prefer('tabSize')
-const lineHeight = prefer('lineHeight')
-const highlightActiveLine = prefer('highlightActiveLine')
-const fontFamily = computed(() => getFontFamilyValue(prefer('fontFamily').value) ?? '')
+const preferences = useEditorPreferences(props)
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(displayErrorMessage, () => {
@@ -147,12 +139,12 @@ function onOpen(url: string) {
       :language="editorLanguage"
       is-live
       :is-readonly="isReadOnly || isLoading"
-      :soft-wrap="softWrap"
-      :line-numbers="lineNumbers"
-      :tab-size="tabSize"
-      :font-family="fontFamily"
-      :line-height="lineHeight"
-      :highlight-active-line="highlightActiveLine"
+      :soft-wrap="preferences.softWrap"
+      :line-numbers="preferences.lineNumbers"
+      :tab-size="preferences.tabSize"
+      :font-family="preferences.fontFamily"
+      :line-height="preferences.lineHeight"
+      :highlight-active-line="preferences.highlightActiveLine"
       v-bind="editorExtensions ? { extensions: editorExtensions } : {}"
       class="markdown-note-editor__pane note__text"
       @update:model-value="onUpdateModelValue"
