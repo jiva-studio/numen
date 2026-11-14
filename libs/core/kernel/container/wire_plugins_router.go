@@ -8,15 +8,14 @@ import (
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -84,10 +83,10 @@ func NewPluginHost(report func(error), target string, dirs ...string) (*PluginHo
 // the roles. The roles are returned also when the discovery of the plugins failed, with the failure. report receives
 // the problems the host meets outside a call.
 func OpenPluginRoles(report func(error), target string, dirs ...string) (*PluginRoles, error) {
-	host := NewPluginRoles(clock.System{}, target, dirs...)
+	host := NewPluginRoles(Config{}.Clock(), target, dirs...)
 	host.Failures.SetErrorHandler(report)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
-	host.Services.SetDependencies(newDependencyRegistry(""))
+	host.Services.SetDependencies(newDependencyRegistry(host.Clock, ""))
 	return host, host.Discovery.Discover()
 }
 
@@ -105,9 +104,9 @@ func getPluginCommands(c pluginsWiring) PluginCommandUseCases {
 
 func newPluginCommands(c pluginsWiring, host *PluginHost, versions plugincommand.VersionItems) PluginCommandUseCases {
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
-	commands, conditions := pluginmanifest.New(host.Runtime), when.NewConditions()
+	commands, conditions := host.Runtime.getManifests(), when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
-	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime), host.Watch, pluginsNewNoteReader(c), getWhenConfig(c), conditions)
+	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(c), getWhenConfig(c), conditions)
 	return PluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch),
@@ -118,7 +117,7 @@ func newPluginCommands(c pluginsWiring, host *PluginHost, versions plugincommand
 }
 
 func getPluginServices(c pluginsWiring) editor.PluginServices {
-	return servicebridge.Open(c.PluginHost.Runtime, c.PluginHost.Runtime)
+	return servicebridge.Open(c.PluginHost.Runtime.Activator, pluginInfos{c.PluginHost.Runtime.PluginLister, c.PluginHost.Runtime.PluginResolver})
 }
 
 func getPluginRetrier(c pluginsWiring) func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
@@ -162,18 +161,18 @@ func openPluginCache(c pluginsWiring) (pluginport.PluginCache, error) {
 	return retained, nil
 }
 
-func newDependencyRegistry(defaultDir string) pluginport.DependencyRegistry {
+func newDependencyRegistry(clock machineport.Clock, defaultDir string) pluginport.DependencyRegistry {
 	if onnxruntime.IsMockML() {
 		return provision.NewRegistry(provision.NewPlaceholderProvisioner(
 			provision.GetPlaceholderDir(),
 			map[string]func(string) map[string]string{plugindomain.RuntimeONNX: onnxruntime.GetPlaceholderEnv},
 		))
 	}
-	runtimeConfig := onnxruntime.FromEnvironment(clock.System{})
+	runtimeConfig := onnxruntime.FromEnvironment(clock)
 	runtimeConfig.Dir = onnxruntime.GetModelsDir(defaultDir)
 	runtimeConfig.Offline = provision.IsOffline()
 	return provision.NewRegistry(
 		onnxruntime.NewONNXProvisioner(runtimeConfig),
-		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: runtimeConfig.Offline, Clock: clock.System{}}),
+		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: runtimeConfig.Offline, Clock: clock}),
 	)
 }

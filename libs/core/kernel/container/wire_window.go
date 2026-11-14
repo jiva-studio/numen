@@ -50,21 +50,26 @@ func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*Op
 	if err != nil {
 		return nil, err
 	}
-	return OpenWindowWith(c, ctx, WindowOpening{DB: db, Named: named, Out: out})
+	ports, err := c.registry()
+	if err != nil {
+		return nil, errors.Join(err, db.Close())
+	}
+	opened, err := openWindowWith(c, ctx, ports, WindowOpening{DB: db, Named: named, Out: out}, nil)
+	if err != nil {
+		return nil, err
+	}
+	return getOpenedWindow(opened), nil
 }
 
-// WindowOpening is what OpenWindowWith opens a window over: the cache already open, the vault to show and
+// WindowOpening is what a window is opened over: the cache already open, the vault to show and
 // where the window writes. Frame is the application window around the editor; none leaves the editor with no
-// window of its own to title or to open for a tab. UseCases, when given, receives the use cases the window works
-// through.
+// window of its own to title or to open for a tab.
 type WindowOpening struct {
 	DB    *Index
 	Named string
 	Out   io.Writer
 
 	Frame editor.Frame
-
-	UseCases *WindowUseCases
 }
 
 // WindowUseCases are the use cases of notes and vaults a window works through. The notes the plugins work through, PluginNotes, pass no gate
@@ -78,29 +83,17 @@ type WindowUseCases struct {
 	ShowTab     windowsession.ShowTab
 }
 
-// OpenWindowWith is OpenWindow over a cache already open, for a caller that opened it itself. The window
-// closes the cache.
-func OpenWindowWith(c Config, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
-	ports, err := c.registry()
-	if err != nil {
-		return nil, errors.Join(err, opening.DB.Close())
-	}
-	opened, err := openWindowWith(c, ctx, ports, opening, nil)
-	if err != nil {
-		return nil, err
-	}
-	return getOpenedWindow(opened), nil
-}
-
-// OpenedWindow is an editor window opened: the installation that serves it and the state its services work
-// through.
+// OpenedWindow is an editor window opened: the installation that serves it, the state its services work
+// through, the cache it reads and the use cases it works through.
 type OpenedWindow struct {
 	*editor.Installation
-	State *editor.State
+	State    *editor.State
+	Index    *Index
+	UseCases WindowUseCases
 }
 
 func getOpenedWindow(w *windowWiring) *OpenedWindow {
-	return &OpenedWindow{Installation: w.inst, State: w.state}
+	return &OpenedWindow{Installation: w.inst, State: w.state, Index: w.db, UseCases: w.cases}
 }
 
 // windowBuilt is a window put together and not started yet, with the close of the embedder it opened.
@@ -117,17 +110,10 @@ func openWindowWith(
 		return nil, errors.Join(err, opening.DB.Close())
 	}
 	window := buildWindow(ctx, c, ports, opening, texts)
-	shareUseCases(opening, window.wiring.cases)
 	if err := startWindow(ctx, window.wiring, first); err != nil {
 		return nil, errors.Join(err, window.closeEmbedder(), opening.DB.Close())
 	}
 	return window.wiring, nil
-}
-
-func shareUseCases(opening WindowOpening, cases WindowUseCases) {
-	if opening.UseCases != nil {
-		*opening.UseCases = cases
-	}
 }
 
 func buildWindow(

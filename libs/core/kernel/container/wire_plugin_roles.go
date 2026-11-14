@@ -27,6 +27,7 @@ type PluginRoles struct {
 	Events       *plugin.Events
 	Mode         *plugin.Mode
 	Health       *pluginhealth.Items
+	Clock        machineport.Clock
 }
 
 // PluginSupervision are the roles that run the processes of the plugins: their start and stop, their
@@ -87,6 +88,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *Plu
 		Events:       events,
 		Mode:         mode,
 		Health:       health,
+		Clock:        clock,
 	}
 }
 
