@@ -64,9 +64,11 @@ const createShortcut = ([key, action]) =>
 
 const createHelp = () =>
   createElement('div', { class: 'help' }, [
-    createElement('button', { class: 'control', type: 'button', 'aria-label': 'Shortcuts' }, [
-      createIcon('help'),
-    ]),
+    createElement(
+      'button',
+      { class: 'control text-control', type: 'button', 'aria-label': 'Shortcuts' },
+      ['?'],
+    ),
     createElement('div', { class: 'shortcuts', role: 'tooltip' }, [
       createElement('p', {}, ['Shortcuts']),
       createElement('ul', {}, SHORTCUTS.map(createShortcut)),

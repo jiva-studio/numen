@@ -541,8 +541,10 @@ h2 {
 }
 
 .control .icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
+  fill: currentcolor;
+  stroke: none;
 }
 
 .control:hover,
@@ -591,7 +593,8 @@ h2 {
   transform: none;
 }
 
-.speed-button {
+.speed-button,
+.text-control {
   padding: 0 var(--space-2);
   font-size: var(--text-small);
   font-weight: 500;
