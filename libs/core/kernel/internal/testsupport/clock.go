@@ -73,14 +73,31 @@ func (f *ManualClock) After(d time.Duration) <-chan time.Time {
 }
 
 // Wait waits until the clock has moved d past the time it reads now, and returns early with the error of ctx
-// where ctx ends first.
+// where ctx ends first. A d of zero or less returns the error of ctx, as the system clock does.
 func (f *ManualClock) Wait(ctx context.Context, d time.Duration) error {
+	if d <= 0 || ctx.Err() != nil {
+		return ctx.Err()
+	}
+	fired := f.After(d)
 	select {
 	case <-ctx.Done():
+		f.drop(fired)
 		return ctx.Err()
-	case <-f.After(d):
+	case <-fired:
 		return nil
 	}
+}
+
+func (f *ManualClock) drop(fired <-chan time.Time) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	pending := f.waiters[:0]
+	for _, one := range f.waiters {
+		if one.fired != fired {
+			pending = append(pending, one)
+		}
+	}
+	f.waiters = pending
 }
 
 func (f *ManualClock) fireDue() {
