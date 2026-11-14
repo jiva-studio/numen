@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import type { DeclaredCommand } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
+import { UNANSWERED_RUNS } from '@/testing/declaredCommands'
 
 const base: Omit<DeclaredCommand, 'pluginId' | 'id' | 'title'> = {
   arguments: [],
@@ -35,7 +36,7 @@ async function load(
   isListed: (id: string) => boolean,
   hasBackend: (pluginId: string) => boolean = () => true,
 ) {
-  const declared = useDeclaredCommands({
+  const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
     list: async () => ({ commands: [createDeck, openPreset, openTree], slots: [] }),
     isListed,
     hasBackend,
@@ -106,7 +107,7 @@ describe('the handlers for the plugin host', () => {
       title: 'Extract text layer',
       hasItems: false,
     }
-    const declared = useDeclaredCommands({
+    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
       list: async () => ({ commands: [], slots: [], handlers: [handler] }),
     })
     expect(declared.contributions.handlers.value).toBeUndefined()

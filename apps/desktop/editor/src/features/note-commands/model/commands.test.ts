@@ -4,7 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { NAME_SOURCE, NOTE_ERROR_CODE, NOTE_ROLE } from '@numen/core-client'
-import { installCoreHandlers } from '@numen/core-client/testing'
+import { createHandledApi } from '@/testing/coreAnswers'
 import { createNoteWriter } from '@/entities/note'
 import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
@@ -30,10 +30,7 @@ interface Answers {
   readonly opening?: string
 }
 
-const restores: (() => void)[] = []
-
 afterEach(() => {
-  for (const restore of restores.splice(0)) restore()
   vi.unstubAllGlobals()
 })
 
@@ -47,47 +44,50 @@ const createWindow = (answers: Answers = {}) => {
     notices.push(text)
     severities.push(severity ?? '')
   }
-  restores.push(
-    installCoreHandlers({
-      createNote: (request: { title: string; path: string }) => {
-        actions.push(`createNote ${request.title || '—'} ${request.path || '—'}`)
-        if (answers.isMade === false) return { isNameExhausted: true }
-        return {
-          path: request.title
-            ? `${request.title}.md`
-            : `${request.path ? `${request.path}/` : ''}Untitled note 1.md`,
+  const api = createHandledApi({
+    createNote: (request: { title: string; path: string }) => {
+      actions.push(`createNote ${request.title || '—'} ${request.path || '—'}`)
+      if (answers.isMade === false) return { isNameExhausted: true }
+      return {
+        path: request.title
+          ? `${request.title}.md`
+          : `${request.path ? `${request.path}/` : ''}Untitled note 1.md`,
+      }
+    },
+    createRelatedNote: (request: { from: string; role: number; title: string }) => {
+      const role = Object.entries(NOTE_ROLE)
+        .find(([, code]) => code === request.role)?.[0]
+        ?.toLowerCase()
+      actions.push(`createRelated ${request.title} ${request.from} ${role}`)
+      return answers.isMade === false
+        ? { isNameExhausted: true }
+        : { path: `${request.title}.md` }
+    },
+    renameNote: (request: { path: string; title: string }) => {
+      actions.push(`rename ${request.path} ${request.title}`)
+      return (
+        answers.rename ?? {
+          path: 'physics/Entropy.md',
+          title: 'Entropy',
+          nameSource: NAME_SOURCE.FILENAME,
         }
-      },
-      createRelatedNote: (request: { from: string; role: number; title: string }) => {
-        const role = Object.entries(NOTE_ROLE)
-          .find(([, code]) => code === request.role)?.[0]
-          ?.toLowerCase()
-        actions.push(`createRelated ${request.title} ${request.from} ${role}`)
-        return answers.isMade === false
-          ? { isNameExhausted: true }
-          : { path: `${request.title}.md` }
-      },
-      renameNote: (request: { path: string; title: string }) => {
-        actions.push(`rename ${request.path} ${request.title}`)
-        return (
-          answers.rename ?? {
-            path: 'physics/Entropy.md',
-            title: 'Entropy',
-            nameSource: NAME_SOURCE.FILENAME,
-          }
-        )
-      },
-      listFileKinds: (request: { paths: string[] }) => ({
-        kinds: request.paths.map((path) => ({ path, isNote: true, type: '', tabKind: 'page' })),
-      }),
-      removeFile: (request: { path: string }) => {
-        actions.push(`remove ${request.path}`)
-        return answers.remove ?? { trashed: '.trash/Ontology.md', dangling: [] }
-      },
+      )
+    },
+    listFileKinds: (request: { paths: string[] }) => ({
+      kinds: request.paths.map((path) => ({ path, isNote: true, type: '', tabKind: 'page' })),
     }),
-  )
+    removeFile: (request: { path: string }) => {
+      actions.push(`remove ${request.path}`)
+      return answers.remove ?? { trashed: '.trash/Ontology.md', dangling: [] }
+    },
+  })
   const deps = {
-    making: createNoteWriter(writeMessage),
+    files: api.file,
+    renameNote: api.note.renameNote,
+    making: createNoteWriter(
+      { createNote: api.note.createNote, relations: api.relations },
+      writeMessage,
+    ),
     notes: {
       getTabAt: (path: string) => (path === targetPath ? 'active' : null),
       getPath: (id: string) => id,

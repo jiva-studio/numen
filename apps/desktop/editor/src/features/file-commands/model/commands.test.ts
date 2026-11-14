@@ -2,9 +2,9 @@
  * The commands over files and folders, carried out over the real calls of the file entity and a
  * double of the window's tabs.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { NOTE_ERROR_CODE } from '@numen/core-client'
-import { installCoreHandlers } from '@numen/core-client/testing'
+import { createHandledApi } from '@/testing/coreAnswers'
 import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { FILE_WORDS as words } from '../words'
@@ -28,40 +28,33 @@ interface Answers {
   readonly isAsking?: boolean
 }
 
-const restores: (() => void)[] = []
-
-afterEach(() => {
-  for (const restore of restores.splice(0)) restore()
-})
-
 const createWindow = (answers: Answers = {}) => {
   const actions: string[] = []
   const notices: string[] = []
-  restores.push(
-    installCoreHandlers({
-      moveFile: (request: { from: string; to: string }) => {
-        actions.push(`move ${request.from} ${request.to}`)
-        return answers.move ?? { moved: { from: request.from, to: request.to, repaired: [] } }
-      },
-      listFiles: (request: { path: string }) => {
-        actions.push(`listNames ${request.path || '—'}`)
-        return {
-          entries: (answers.names ?? []).map((name) => ({
-            path: `${request.path}/${name}`,
-            name,
-            isFolder: true,
-            isNote: false,
-            type: '',
-          })),
-        }
-      },
-      createFolder: (request: { path: string }) => {
-        actions.push(`createFolder ${request.path}`)
-        return answers.folder ?? {}
-      },
-    }),
-  )
+  const api = createHandledApi({
+    moveFile: (request: { from: string; to: string }) => {
+      actions.push(`move ${request.from} ${request.to}`)
+      return answers.move ?? { moved: { from: request.from, to: request.to, repaired: [] } }
+    },
+    listFiles: (request: { path: string }) => {
+      actions.push(`listNames ${request.path || '—'}`)
+      return {
+        entries: (answers.names ?? []).map((name) => ({
+          path: `${request.path}/${name}`,
+          name,
+          isFolder: true,
+          isNote: false,
+          type: '',
+        })),
+      }
+    },
+    createFolder: (request: { path: string }) => {
+      actions.push(`createFolder ${request.path}`)
+      return answers.folder ?? {}
+    },
+  })
   const deps = {
+    files: api.file,
     notes: {
       getTabAt: (path: string) => (path === 'physics/Ontology.md' ? 'active' : null),
       getPath: (id: string) => id,

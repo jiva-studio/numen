@@ -2,9 +2,9 @@
  * The commands over the vaults an installation holds, carried out over the real calls of the vault
  * entity: which calls each makes, and what it reports when the list rejects the request.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { VAULTS_ERROR_CODE } from '@numen/core-client'
-import { installCoreHandlers } from '@numen/core-client/testing'
+import { createHandledApi } from '@/testing/coreAnswers'
 import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { VAULT_WORDS as words } from '../words'
@@ -19,12 +19,6 @@ interface Answers {
   readonly undeleted?: readonly string[]
 }
 
-const restores: (() => void)[] = []
-
-afterEach(() => {
-  for (const restore of restores.splice(0)) restore()
-})
-
 const wireVault = (id: string, name: string) => ({
   id,
   name,
@@ -38,36 +32,36 @@ const createWindow = (answers: Answers = {}, withHold = false) => {
   const reload = vi.fn<() => void>()
   const setVaultName = vi.fn<(vault: { id: string; name: string }) => void>()
   const hold = { pause: vi.fn(async () => undefined), resume: vi.fn() }
-  restores.push(
-    installCoreHandlers({
-      openVault: (request: { id: string }) => {
-        calls.push(`open ${request.id}`)
-        return answers.opened ?? {}
-      },
-      chooseFolder: () => ({
-        isChosen: answers.chose !== '',
-        path: answers.chose ?? '/vaults/Heat',
-      }),
-      addVault: (request: { path: string; name: string }) => {
-        calls.push(`add ${request.path}`)
-        return answers.added ?? { vault: wireVault('heat', 'Heat') }
-      },
-      renameVault: (request: { id: string; name: string }) => {
-        calls.push(`rename ${request.id} ${request.name}`)
-        return answers.renamed ?? { vault: wireVault(request.id, request.name) }
-      },
-      removeVault: (request: { id: string; trash: boolean }) => {
-        calls.push(`${request.trash ? 'erase' : 'remove'} ${request.id}`)
-        return answers.removed ?? {}
-      },
-      emptyTrash: () => {
-        calls.push('emptyTrash')
-        return { undeleted: answers.undeleted ?? [] }
-      },
+  const api = createHandledApi({
+    openVault: (request: { id: string }) => {
+      calls.push(`open ${request.id}`)
+      return answers.opened ?? {}
+    },
+    chooseFolder: () => ({
+      isChosen: answers.chose !== '',
+      path: answers.chose ?? '/vaults/Heat',
     }),
-  )
+    addVault: (request: { path: string; name: string }) => {
+      calls.push(`add ${request.path}`)
+      return answers.added ?? { vault: wireVault('heat', 'Heat') }
+    },
+    renameVault: (request: { id: string; name: string }) => {
+      calls.push(`rename ${request.id} ${request.name}`)
+      return answers.renamed ?? { vault: wireVault(request.id, request.name) }
+    },
+    removeVault: (request: { id: string; trash: boolean }) => {
+      calls.push(`${request.trash ? 'erase' : 'remove'} ${request.id}`)
+      return answers.removed ?? {}
+    },
+    emptyTrash: () => {
+      calls.push('emptyTrash')
+      return { undeleted: answers.undeleted ?? [] }
+    },
+  })
   const set = createVaultCommands(
     {
+      vaults: api.vaults,
+      emptyTrash: api.file.emptyTrash,
       ...(withHold ? { tabsHold: hold } : {}),
       setVaultName,
       reload,

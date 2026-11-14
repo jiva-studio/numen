@@ -2,9 +2,9 @@
  * Delete text, the command of the window the core serves over the text versions of a file, carried
  * out over the real call of the plugin entity. Every path is invented.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
-import { installCoreHandlers } from '@numen/core-client/testing'
+import { createHandledApi } from '@/testing/coreAnswers'
 import type { CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { createVersionCommands } from './commands'
@@ -22,12 +22,6 @@ const createTarget = (path: string, isFolder = false): CommandTarget => ({
   isReady: true,
 })
 
-const restores: (() => void)[] = []
-
-afterEach(() => {
-  for (const restore of restores.splice(0)) restore()
-})
-
 const createWindow = (
   answer: { error: number; message: string } = {
     error: COMMAND_ERROR_CODE.UNSPECIFIED,
@@ -35,22 +29,21 @@ const createWindow = (
   },
 ) => {
   const requests: { pluginId: string; command: string; path: string; itemId?: string }[] = []
-  restores.push(
-    installCoreHandlers({
-      runPluginCommand: (request: {
-        pluginId: string
-        command: string
-        path: string
-        itemId?: string
-      }) => {
-        requests.push(request)
-        return { ...answer, openedPath: '' }
-      },
-    }),
-  )
+  const api = createHandledApi({
+    runPluginCommand: (request: {
+      pluginId: string
+      command: string
+      path: string
+      itemId?: string
+    }) => {
+      requests.push(request)
+      return { ...answer, openedPath: '' }
+    },
+  })
   const listItems = vi.fn(async () => [{ id: 'v1', title: 'transcript (live)' }])
   const messages: { text: string; kind: string | undefined }[] = []
   const set = createVersionCommands({
+    runDeclaredHandler: api.declaredCommands.runDeclaredHandler,
     listItems,
     writeMessage: (text, kind) => {
       messages.push({ text, kind })

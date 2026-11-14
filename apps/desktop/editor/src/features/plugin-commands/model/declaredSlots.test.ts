@@ -1,9 +1,10 @@
 /** The slot entries the window passes on, read from the answers of the core. */
 import { describe, expect, it } from 'vitest'
-import type { DeclaredSlot, listDeclaredCommands } from '@/entities/plugin'
+import type { DeclaredSlot, DeclaredCommandsApi } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
+import { UNANSWERED_RUNS } from '@/testing/declaredCommands'
 
-type DeclaredList = Awaited<ReturnType<typeof listDeclaredCommands>>
+type DeclaredList = Awaited<ReturnType<DeclaredCommandsApi['listDeclaredCommands']>>
 
 const menu = (command: string, overrides: Partial<DeclaredSlot> = {}): DeclaredSlot => ({
   pluginId: 'org.example.atlas',
@@ -16,7 +17,7 @@ const list = (...slots: DeclaredSlot[]): DeclaredList => ({ commands: [], slots 
 
 describe('the slot entries of the plugins', () => {
   it('are unknown until the first list has answered', async () => {
-    const declared = useDeclaredCommands({ list: async () => list(menu('atlas.open')) })
+    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS, list: async () => list(menu('atlas.open')) })
 
     expect(declared.slots.value).toBeUndefined()
     await declared.load()
@@ -25,7 +26,7 @@ describe('the slot entries of the plugins', () => {
   })
 
   it('keep the group and the order of each entry', async () => {
-    const declared = useDeclaredCommands({
+    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
       list: async () =>
         list(
           menu('atlas.open', { group: 'navigate', order: 20 }),
@@ -47,7 +48,7 @@ describe('the slot entries of the plugins', () => {
       answerFirst = resolve
     })
     const answers = [first, Promise.resolve(list(menu('atlas.newest')))]
-    const declared = useDeclaredCommands({ list: () => answers.shift() as Promise<DeclaredList> })
+    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS, list: () => answers.shift() as Promise<DeclaredList> })
 
     const slow = declared.load()
     await declared.load()
@@ -59,7 +60,7 @@ describe('the slot entries of the plugins', () => {
 
   it('are none once the plugins no longer place a command', async () => {
     let answer = list(menu('atlas.open'))
-    const declared = useDeclaredCommands({ list: async () => answer })
+    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS, list: async () => answer })
     await declared.load()
 
     answer = list()
