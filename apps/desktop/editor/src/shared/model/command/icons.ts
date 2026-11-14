@@ -27,6 +27,7 @@ import {
   PenLine,
   Plus,
   Puzzle,
+  ScanText,
   Search,
   Settings,
   SlidersHorizontal,
@@ -75,6 +76,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [COMMAND.emptyTrash, Trash2],
   // shared commands: their ids are not constants
   ['app:file.createText', FileText],
+  ['app:file.createMissingText', ScanText],
 ])
 
 const isPluginCommandId = (id: string): boolean => getCommandOwner(id).includes('.')

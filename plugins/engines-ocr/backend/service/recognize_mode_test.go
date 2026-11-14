@@ -51,8 +51,6 @@ func (d *spyDocuments) Open(filePath string, raw []byte) (recognition.Document, 
 	return layerSpy{Document: doc, asked: &d.asked}, nil
 }
 
-// newModeFixture is the tool fixture with a PDF that has text and an image added to its vault, and with
-// a launcher whose documents count the questions about a text layer. The recognizer reads at once.
 func newModeFixture(t *testing.T, mode settings.RecognizeMode) (*toolFixture, *spyDocuments) {
 	t.Helper()
 	s := newToolFixture(t)

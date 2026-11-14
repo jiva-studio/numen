@@ -42,12 +42,12 @@ type onePage struct {
 	asked    *atomic.Int32
 }
 
-func (onePage) GetPageCount() int    { return 1 }
+func (onePage) GetPageCount() int { return 1 }
 func (p onePage) HasTextLayer() bool {
 	p.asked.Add(1)
 	return p.hasLayer
 }
-func (onePage) Close() error         { return nil }
+func (onePage) Close() error { return nil }
 
 func (onePage) RenderPage(_, _ int) (image.Image, error) {
 	return image.NewRGBA(image.Rect(0, 0, 10, 10)), nil

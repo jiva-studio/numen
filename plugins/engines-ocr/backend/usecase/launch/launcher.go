@@ -182,7 +182,6 @@ func (l *Launcher) startNew(ctx context.Context, vault domain.VaultID, path stri
 	return state, nil
 }
 
-// isSkipped reports whether the mode leaves the file alone, and remembers it when so.
 func (l *Launcher) isSkipped(ctx context.Context, key skipKey) (bool, error) {
 	l.mu.Lock()
 	mode := l.mode
