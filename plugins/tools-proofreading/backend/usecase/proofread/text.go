@@ -22,7 +22,7 @@ func getScanDistance(maxDistance float64) float64 {
 	return maxDistance
 }
 
-func proofreadScan(ctx context.Context, ask AskModel, pages []numbered.Batch, maxDistance float64) (textResult, error) {
+func proofreadScan(ctx context.Context, ask AskModel, instruction string, pages []numbered.Batch, maxDistance float64) (textResult, error) {
 	answers, err := askBatches(ctx, ask, numbered.ScanInstruction, pages, getScanDistance(maxDistance))
 	if err != nil {
 		return textResult{}, err
@@ -48,7 +48,7 @@ type batchShape struct {
 }
 
 func proofreadSpeech(
-	ctx context.Context, ask AskModel, lines []numbered.Line, shape batchShape, from, limit int,
+	ctx context.Context, ask AskModel, instruction string, lines []numbered.Line, shape batchShape, from, limit int,
 ) (textResult, error) {
 	size, overlap := shape.size, shape.overlap
 	cues := numbered.GetSpokenLines(lines)

@@ -100,7 +100,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	}
 	corrected := numbered.ApplyCorrections(parts, corrections)
 
-	key := getVersionKey(source.GetID())
+	key := getVersionKey(source.GetID(), "", "")
 	if err := host.WriteText(ctx, store, getFileName(key), corrected); err != nil {
 		return Result{}, err
 	}
@@ -167,7 +167,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line,
 	var out []numbered.Line
 	uncorrected := 0
 	for from := 1; ; {
-		result, err := proofreadSpeech(ctx, p.ask, lines, batchShape{size: cfg.BatchSize, overlap: cfg.Overlap}, from, cfg.InFlight*cfg.BatchSize)
+		result, err := proofreadSpeech(ctx, p.ask, numbered.SpeechInstruction, lines, batchShape{size: cfg.BatchSize, overlap: cfg.Overlap}, from, cfg.InFlight*cfg.BatchSize)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -195,7 +195,7 @@ func (p *Proofreading) correctScan(ctx context.Context, pages []numbered.Batch, 
 	var out []numbered.Line
 	uncorrected := 0
 	for _, page := range pages {
-		result, err := proofreadScan(ctx, p.ask, []numbered.Batch{page}, cfg.MaxEditDistance)
+		result, err := proofreadScan(ctx, p.ask, numbered.ScanInstruction, []numbered.Batch{page}, cfg.MaxEditDistance)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -212,7 +212,7 @@ func (p *Proofreading) correctScan(ctx context.Context, pages []numbered.Batch, 
 // keyPrefix starts the key of every version the plugin makes.
 const keyPrefix = "proofread-"
 
-func getVersionKey(source domain.TextVersionID) string {
+func getVersionKey(source domain.TextVersionID, language, prompt string) string {
 	sum := sha256.Sum256([]byte(source))
 	return keyPrefix + hex.EncodeToString(sum[:8])
 }

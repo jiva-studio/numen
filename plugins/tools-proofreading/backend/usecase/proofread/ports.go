@@ -33,6 +33,8 @@ type Config struct {
 	Overlap         int
 	InFlight        int
 	MaxEditDistance float64
+	Language        string
+	Prompt          string
 }
 
 // Default proofreading sizes.
@@ -51,3 +53,9 @@ func DefaultConfig() Config {
 		MaxEditDistance: numbered.MaxEditDistance,
 	}
 }
+
+// Limits of the language and the own prompt, in runes.
+const (
+	MaxLanguageLen = 64
+	MaxPromptLen   = 2000
+)

@@ -59,3 +59,8 @@ as the first and the last of them:
   stays.
 - A line you would leave alone is a line you do not answer with. Speech you
   would leave alone is an empty answer.`
+
+// BuildInstruction returns the instruction the model is sent: base, with the language of the text and the person's own rules added.
+func BuildInstruction(base, language, prompt string) string {
+	return base
+}

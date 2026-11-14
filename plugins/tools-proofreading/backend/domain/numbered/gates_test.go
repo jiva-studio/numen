@@ -202,3 +202,20 @@ func TestGetFixedLines_RejectsRowWhenNumberIsTextDigits(t *testing.T) {
 		t.Errorf("a row that ate the line's own digits was taken as an answer: %v", fixed)
 	}
 }
+
+func TestAReplyInProseIsNoAnswerWhateverTheRulesAskedFor(t *testing.T) {
+	replies := map[string]string{
+		"a whole corrected page": "Here is the corrected page: the Södërby garden hedge. Sodërby Trädgård's Ordbok. The hedge will very soon need cutting back. Blessings.",
+		"the lines without bars": "10 the Södërby garden hedge.\n11 Södërby Trädgård's Ordbok",
+		"json":                   `{"10": "the Södërby garden hedge."}`,
+	}
+	for name, reply := range replies {
+		t.Run(name, func(t *testing.T) {
+			fixed, _, isAnswer := GetFixedLines(batch(), reply, MaxEditDistance)
+
+			if isAnswer || len(fixed) != 0 {
+				t.Errorf("a reply of %s was taken as an answer, giving %v", name, fixed)
+			}
+		})
+	}
+}
