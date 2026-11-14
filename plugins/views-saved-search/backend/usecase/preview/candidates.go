@@ -142,7 +142,7 @@ func newCandidate(result host.SearchResult) ranking.Candidate {
 	return ranking.Candidate{
 		ChunkID: result.ChunkID, Path: result.Path, Start: result.Start, Length: result.Length,
 		Text: result.Text, Selector: result.Selector, PlaceLabel: result.PlaceLabel, MatchLine: result.MatchLine,
-		Score: nil, WordScore: result.WordScore, ChunkCount: 1,
+		Score: nil, WordScore: result.WordScore, ChunkCount: 1, ChunkIDs: []string{result.ChunkID},
 	}
 }
 

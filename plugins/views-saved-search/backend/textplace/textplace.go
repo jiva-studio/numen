@@ -38,3 +38,8 @@ func GetSelector(raw string) Selector {
 func FormatAddress(source string, start, length int) string {
 	return fmt.Sprintf("numen:%s?start=%d&length=%d", url.PathEscape(source), start, length)
 }
+
+// FormatNoteAddress writes the address of a whole note, which a markdown link targets.
+func FormatNoteAddress(notePath string) string {
+	return "numen:" + url.PathEscape(notePath)
+}

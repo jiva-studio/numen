@@ -3,11 +3,29 @@
   "name": "Saved Search",
   "version": "2026.11.1",
   "protocol": 1,
-  "description": "Runs search queries that combine searches by meaning and by words, for agents",
+  "description": "Saved searches over meaning and words: notes that keep a query and its results",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
-  "contributes": { "category": "views" },
-  "permissions": ["vault:read", "index:read"],
+  "contributes": {
+    "category": "views",
+    "noteTypes": [
+      {
+        "type": "search",
+        "chunks": false
+      }
+    ],
+    "tabKinds": [
+      {
+        "kind": "saved-search",
+        "title": "Saved Search",
+        "icon": "search",
+        "when": "target.noteType == 'search'"
+      }
+    ]
+  },
+  "permissions": ["vault:read", "vault:write", "index:read"],
+  "activationEvents": ["onIndexChanged"],
+  "services": ["md.numen.views.saved.search"],
   "settings": [
     {
       "key": "connections",
@@ -99,7 +117,28 @@
       "default": 16384,
       "min": 1,
       "step": 1
+    },
+    {
+      "key": "refreshMinutes",
+      "type": "number",
+      "title": "Refresh delay",
+      "description": "Minutes between runs of a saved search after the index changes",
+      "details": "Minutes a saved search waits after its last run before an index change runs it again; 0 runs it at once. A change of its query, rerank text or limit runs it at once.",
+      "default": 10,
+      "min": 0,
+      "step": 1
+    },
+    {
+      "key": "defaultFolder",
+      "type": "string",
+      "title": "Folder of new saved searches",
+      "description": "Folder an agent creates a saved search in when it names none",
+      "details": "Folder of the vault, relative to the vault folder, that saved_search_create puts a note in when the agent names no folder; empty is the vault folder.",
+      "default": ""
     }
   ],
-  "backend": { "entrypoint": "bin/views-saved-search" }
+  "frontend": {},
+  "backend": {
+    "entrypoint": "bin/views-saved-search"
+  }
 }
