@@ -85,6 +85,20 @@ describe('useAppStart', () => {
     expect(start.isLoading.value).toBe(true)
   })
 
+  it('aborts the wait for the interface plugins when the window unmounts early', async () => {
+    vi.useFakeTimers()
+    const { loader, settleInterface } = createLoader()
+    getPlugins.mockReturnValue(new Promise(() => undefined))
+    const { wrapper, start } = mountStart(loader)
+
+    wrapper.unmount()
+    settleInterface()
+    await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS)
+    await flushPromises()
+
+    expect(start.isStarted.value).toBe(false)
+  })
+
   it('says why there is no view: the list failed, or a plugin did not start', async () => {
     const { loader, failed } = createLoader()
     failed.push({ id: 'md.numen.cards', error: 'no entry' })
