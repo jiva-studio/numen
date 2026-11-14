@@ -34,7 +34,6 @@ func readFixture(t *testing.T) map[string]any {
 	return file
 }
 
-// writeVariant writes the fixture, changed by change, to a temporary tokenizer.json and returns its path.
 func writeVariant(t *testing.T, change func(file map[string]any)) string {
 	t.Helper()
 	file := readFixture(t)
@@ -50,8 +49,27 @@ func writeVariant(t *testing.T, change func(file map[string]any)) string {
 	return path
 }
 
-func getModel(file map[string]any) map[string]any {
-	return file["model"].(map[string]any)
+func getObject(t *testing.T, value any) map[string]any {
+	t.Helper()
+	object, ok := value.(map[string]any)
+	if !ok {
+		t.Fatalf("%v is not a JSON object", value)
+	}
+	return object
+}
+
+func getArray(t *testing.T, value any) []any {
+	t.Helper()
+	array, ok := value.([]any)
+	if !ok {
+		t.Fatalf("%v is not a JSON array", value)
+	}
+	return array
+}
+
+func getModel(t *testing.T, file map[string]any) map[string]any {
+	t.Helper()
+	return getObject(t, file["model"])
 }
 
 func loadTokenizer(t *testing.T, path string) tokenizer.Tokenizer {
@@ -68,13 +86,12 @@ func loadFixture(t *testing.T) tokenizer.Tokenizer {
 	return loadTokenizer(t, fixturePath)
 }
 
-// getPieceIDs returns the vocabulary ids of the fixture pieces; "<unk>" stands for the unknown id.
 func getPieceIDs(t *testing.T, pieces ...string) []int {
 	t.Helper()
-	vocab := getModel(readFixture(t))["vocab"].([]any)
+	vocab := getArray(t, getModel(t, readFixture(t))["vocab"])
 	ids := make([]int, 0, len(pieces))
 	for _, piece := range pieces {
-		id := slices.IndexFunc(vocab, func(entry any) bool { return entry.([]any)[0] == piece })
+		id := slices.IndexFunc(vocab, func(entry any) bool { return getArray(t, entry)[0] == piece })
 		if id < 0 {
 			t.Fatalf("the fixture has no piece %q", piece)
 		}
@@ -83,7 +100,6 @@ func getPieceIDs(t *testing.T, pieces ...string) []int {
 	return ids
 }
 
-// getSingleIDs returns the ids of pieces inside the single template of the fixture.
 func getSingleIDs(t *testing.T, pieces ...string) []int {
 	t.Helper()
 	return slices.Concat([]int{bosID}, getPieceIDs(t, pieces...), []int{eosID})

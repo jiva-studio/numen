@@ -10,7 +10,7 @@ import (
 
 // The template names <s> and </s>, and its special_tokens give them the ids 5 and 7; their
 // vocabulary positions are 1 and 2.
-func TestEncodeTakesTheSpecialTokenIDsFromTheTemplate(t *testing.T) {
+func TestEncodeUsesTheSpecialTokenIDsOfTheTemplate(t *testing.T) {
 	checkEncode(t, loadFixture(t), "", []int{5, 7})
 }
 
@@ -39,7 +39,7 @@ func TestEncodeWithoutAPostProcessorReturnsThePiecesAlone(t *testing.T) {
 
 func TestEncodePairWithoutAPairTemplateFails(t *testing.T) {
 	path := writeVariant(t, func(file map[string]any) {
-		delete(file["post_processor"].(map[string]any), "pair")
+		delete(getObject(t, file["post_processor"]), "pair")
 	})
 	tok := loadTokenizer(t, path)
 	checkEncode(t, tok, "abcd", getSingleIDs(t, "▁ab", "cd"))
