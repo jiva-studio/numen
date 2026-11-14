@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
@@ -20,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -155,7 +155,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 	lender := hostendpoint.NewLender()
 	lent := lendHostEndpoint(host, lender)
 	types := plugin.NewConnectionTypes(host.Registry)
-	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(host.Activation), clock.System{})
+	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(host.Activation), host.Clock)
 	host.Activation.SetOnStart(detection.DetectInBackground)
 	return &PluginHost{
 		Runtime: PluginRuntime{
@@ -195,10 +195,12 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
-			setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry)
+			setPluginStorage(host, cacheRoot, dataRoot, func(modelsDir string) pluginport.DependencyRegistry {
+				return newDependencyRegistry(host.Clock, modelsDir)
+			})
 			detection.SetFiles(host.Storage)
 		},
-		RefreshDependencies: func() { host.Dependencies.Replace(newDependencyRegistry("")) },
+		RefreshDependencies: func() { host.Dependencies.Replace(newDependencyRegistry(host.Clock, "")) },
 		Health:              host.Health,
 		Processes:           host.RunningProcesses,
 		Detection:           detection,
@@ -211,7 +213,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 func lendHostEndpoint(host *PluginRoles, lender *hostendpoint.Lender) *hostendpoint.Services {
 	services := hostendpoint.NewServices(lender.Get)
 	toolHost := plugin.NewToolHost(host.Activation, host.Registry)
-	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, clock.System{}, toolbridge.GetErrorOutput())
+	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, host.Clock, toolbridge.GetErrorOutput())
 	host.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown,
 		Lent: services,
@@ -224,4 +226,21 @@ func lendHostEndpoint(host *PluginRoles, lender *hostendpoint.Lender) *hostendpo
 		},
 	}))
 	return services
+}
+
+// pluginInfos is what the manifest and theme readers take of the runtime: the plugins listed and their manifests.
+type pluginInfos struct {
+	pluginport.PluginLister
+	pluginport.PluginResolver
+}
+
+// pluginManifestHost is what the manifest reader takes of the runtime: the plugins, their manifests and
+// whether one is suspended.
+type pluginManifestHost struct {
+	pluginInfos
+	pluginport.PluginFailures
+}
+
+func getRuntimeManifests(r PluginRuntime) pluginmanifest.Manifests {
+	return pluginmanifest.New(pluginManifestHost{pluginInfos{r.PluginLister, r.PluginResolver}, r.PluginFailures})
 }

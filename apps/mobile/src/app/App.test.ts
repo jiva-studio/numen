@@ -3,6 +3,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { IonToast } from '@ionic/vue'
 import { NoteSheet } from '@/pages/note-sheet'
 import App from './App.vue'
 
@@ -56,6 +57,8 @@ describe('a core that answers', () => {
 
     expect(app.findComponent(NoteSheet).exists()).toBe(false)
     expect(app.find('[data-testid="note"]').exists()).toBe(false)
+    expect(app.getComponent(IonToast).props('isOpen')).toBe(false)
+    expect(app.getComponent(IonToast).props('message')).toBe('')
 
     app.unmount()
   })

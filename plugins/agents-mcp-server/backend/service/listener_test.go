@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
@@ -182,5 +184,35 @@ func TestAConfiguredPortOpensNoListener(t *testing.T) {
 	if err == nil {
 		closeAndCheck(t, conn)
 		t.Errorf("a connection to the configured port %s was accepted", port)
+	}
+}
+
+func TestMountClosesMCPServerWhenPluginServerCloses(t *testing.T) {
+	s, stdout := serveMounted(t)
+	configureToken(t, s, listenerMCPToken)
+	port := strconv.Itoa(waitForMCPListenerPort(t, stdout))
+	addr := net.JoinHostPort("127.0.0.1", port)
+
+	silentConn, err := new(net.Dialer).DialContext(t.Context(), "tcp", addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeAndCheck(t, silentConn)
+
+	if res := sendRequest(t, http.MethodPost, "http://"+addr+"/mcp", map[string]string{
+		"Authorization": "Bearer " + listenerMCPToken,
+	}); res.StatusCode != http.StatusOK {
+		t.Fatalf("initialize status = %d, want 200", res.StatusCode)
+	}
+
+	if err := s.Close(); err != nil {
+		t.Fatalf("Close failed: %v", err)
+	}
+
+	if err := silentConn.SetReadDeadline(clock.System{}.Now().Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := silentConn.Read(make([]byte, 1)); !errors.Is(err, io.EOF) {
+		t.Fatalf("read from silent connection after Close: got %v, want EOF", err)
 	}
 }

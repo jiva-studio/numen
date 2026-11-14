@@ -893,6 +893,7 @@
       "name": "go/transports",
       "paths": [
         "libs/core/kernel/**",
+        "libs/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -909,6 +910,8 @@
       "name": "go/use-case-fields",
       "paths": [
         "libs/core/kernel/**",
+        "libs/note/**",
+        "plugins/**/*.go",
         "go.work"
       ],
       "tags": [
@@ -1222,8 +1225,6 @@
         "**/package.json",
         "**/tsconfig*.json",
         ".golangci*.yml",
-        "apps/**/*.{ts,vue}",
-        "libs/**/*.{ts,vue}",
         "libs/**/.golangci*.yml",
         "libs/plugin/**",
         "libs/ui/**",
@@ -1232,7 +1233,6 @@
         "plugins/*/.golangci*.yml",
         "plugins/*/Makefile",
         "plugins/.example/**",
-        "tests/**/*.{ts,js}",
         "tools/**/*.mjs",
         "tools/eslint.config.mjs",
         "tools/lint-layers/*.mjs"
