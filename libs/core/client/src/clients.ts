@@ -1,10 +1,13 @@
 /**
- * The service clients of the core and the protocol enum codes, for the applications.
+ * The factories of the service clients of the core and the protocol enum codes, for the
+ * applications.
  */
 import { createClient, type Client, type Transport } from '@connectrpc/connect'
 import {
+  CatalogService,
   CommandErrorCode,
   CommandService,
+  ConnectionCallService,
   ErrorCode as ProtoErrorCode,
   FileService,
   FlushResult,
@@ -16,6 +19,7 @@ import {
   Origin,
   PluginHealthService,
   PluginService,
+  ProviderConnectionService,
   Relation,
   Role,
   SearchMode,
@@ -33,30 +37,29 @@ import {
   WindowService,
   WorkspaceService,
 } from '@numen/protocol'
-import { createCallerTransport, keepaliveTransport, transport } from './transport'
-
-const editorTransport = createCallerTransport('editor')
-
-export const createVaultClient = (customTransport: Transport = editorTransport) =>
-  createClient(VaultService, customTransport)
-export const getNoteClient = (customTransport: Transport = editorTransport) =>
-  createClient(NoteService, customTransport)
-
-export const vault = createVaultClient()
-export const workspace = createClient(WorkspaceService, transport)
-/** The workspace client for a request that must complete after the page unloads. */
-export const keepaliveWorkspace = createClient(WorkspaceService, keepaliveTransport)
-export const files = createClient(FileService, editorTransport)
-export const notes = getNoteClient()
-export const search = createClient(SearchService, createCallerTransport('search'))
-export const vaultsService = createClient(VaultsService, transport)
-export const settingsService = createClient(SettingsService, createCallerTransport('settings'))
-export const windowService = createClient(WindowService, transport)
-export const theme = createClient(ThemeService, transport)
-export const texts = createClient(TextService, editorTransport)
-export const pluginCommands = createClient(CommandService, createCallerTransport('commands'))
-export const pluginService = createClient(PluginService, createCallerTransport('plugins'))
-export const pluginHealth = createClient(PluginHealthService, createCallerTransport('plugins'))
+/** The clients of the core's services, each sending its requests over the transport it is given. */
+export const createVaultClient = (transport: Transport) => createClient(VaultService, transport)
+export const createNoteClient = (transport: Transport) => createClient(NoteService, transport)
+export const createWorkspaceClient = (transport: Transport) =>
+  createClient(WorkspaceService, transport)
+export const createFileClient = (transport: Transport) => createClient(FileService, transport)
+export const createSearchClient = (transport: Transport) => createClient(SearchService, transport)
+export const createVaultsClient = (transport: Transport) => createClient(VaultsService, transport)
+export const createSettingsClient = (transport: Transport) =>
+  createClient(SettingsService, transport)
+export const createWindowClient = (transport: Transport) => createClient(WindowService, transport)
+export const createThemeServiceClient = (transport: Transport) =>
+  createClient(ThemeService, transport)
+export const createTextClient = (transport: Transport) => createClient(TextService, transport)
+export const createCommandClient = (transport: Transport) => createClient(CommandService, transport)
+export const createPluginClient = (transport: Transport) => createClient(PluginService, transport)
+export const createPluginHealthClient = (transport: Transport) =>
+  createClient(PluginHealthService, transport)
+export const createCatalogClient = (transport: Transport) => createClient(CatalogService, transport)
+export const createProviderConnectionClient = (transport: Transport) =>
+  createClient(ProviderConnectionService, transport)
+export const createConnectionCallServiceClient = (transport: Transport) =>
+  createClient(ConnectionCallService, transport)
 
 export const NAME_SOURCE = NameSource
 export type NameSourceCode = NameSource

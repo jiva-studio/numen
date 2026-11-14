@@ -49,6 +49,9 @@ func postInitialize(t *testing.T, served *Endpoint, token string, origins ...str
 	if err := res.Body.Close(); err != nil {
 		t.Error(err)
 	}
+	if res.StatusCode == http.StatusUnauthorized && res.Header.Get("WWW-Authenticate") != `Bearer realm="numen"` {
+		t.Errorf("WWW-Authenticate = %q, want Bearer realm=\"numen\"", res.Header.Get("WWW-Authenticate"))
+	}
 	return res.StatusCode
 }
 
@@ -64,6 +67,7 @@ func TestARequestFromAnOriginOutsideTheMachineGets403FromTheEndpoint(t *testing.
 		"http://192.168.1.20:3333",
 		"ftp://localhost",
 		"localhost",
+		"://bad-url",
 	} {
 		if status := postInitialize(t, served, served.token, origin); status != http.StatusForbidden {
 			t.Errorf("an initialize with the token from the origin %s returned %d, want 403", origin, status)

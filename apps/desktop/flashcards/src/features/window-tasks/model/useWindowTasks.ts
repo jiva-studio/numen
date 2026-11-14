@@ -13,9 +13,10 @@ import {
 } from '@numen/workbench'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
-import { cancelTask, watchTasks } from '../api/tasks'
+import type { TaskApi } from '../api/tasks'
 
-export function useWindowTasks(notices: NoticeQueue) {
+export function useWindowTasks(api: TaskApi, notices: NoticeQueue) {
+  const { watchTasks, cancelTask } = api
   const tasks = shallowRef<readonly WorkTask[]>([])
   let isOpen = true
   const abortController = new AbortController()

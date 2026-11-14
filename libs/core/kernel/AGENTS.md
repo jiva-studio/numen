@@ -48,7 +48,7 @@ outside `port/`.
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
 | Every port is referenced somewhere else                                                                                                                                                                    | `go/ports-referenced` |
 | Every type a port declares is named somewhere else                                                                                                                                                         | `go/ports-referenced` |
-| Every port method is called from outside `port/`                                                                                                                                                           | `go/ports-referenced` |
+| Every port method is called through the port from outside `port/`                                                                                                                                          | `go/ports-referenced` |
 | Every adapter serving the schema is a driving one                                                                                                                                                          | `go/schema-driving`   |
 | No function or method of a port calls a method of an interface value                                                                                                                                       | `go/port-calls`       |
 | An interface has at most the interfacebloat `max` of `.golangci-structure.yml` methods, embedded ones included, in the kernel, the notes library, the SDK, the applications and the plugins, not in a tool | `go/interface-size`   |
@@ -60,7 +60,7 @@ outside `port/`.
 | An identity is named with the core's own term, in fields and in signatures                                                                 | `go/identities`, `go/identities`                        |
 | An instant is a `time.Time`                                                                                                                | `go/instants`                                           |
 | A driving adapter calls no port outside its wiring files, and is covered by the depguard rule                                              | `go/driving-calls`                                      |
-| The machine clock (`time.Now`, `Since`, `Until`) is read only inside a clock port implementation; timers and randomness are not restricted | `go/machine-clock`, `go/machine-clock`, `go/clock-port` |
+| The machine clock (`time.Now`, `Since`, `Until`) is read only inside a clock port implementation; timers and randomness are not checked; a timer that changes behavior comes from the clock port (`machineport.Timer`) | `go/machine-clock`, `go/machine-clock`, `go/clock-port` |
 | The core probes no value for another interface                                                                                             | `go/port-shape`                                         |
 | A port names no type from `internal/`                                                                                                      | `go/port-shape`                                         |
 

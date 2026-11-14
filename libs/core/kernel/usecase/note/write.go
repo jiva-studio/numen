@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // Write replaces the prose of a note and leaves its frontmatter unchanged.
@@ -24,13 +25,13 @@ type Write struct {
 	now     machineport.Clock
 	Bound   int
 	Drawing TellEdit
-	gate    WriteGate
+	gate    windowport.WriteGate
 }
 
 // NewWrite returns the writer that saves a note to disk. It takes the vault
 // readers and writers, the index synchronizer, the clock, and the gate a write passes.
 func NewWrite(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock, gate WriteGate,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock, gate windowport.WriteGate,
 ) Write {
 	return Write{readers: readers, writers: writers, index: index, now: now, gate: gate}
 }

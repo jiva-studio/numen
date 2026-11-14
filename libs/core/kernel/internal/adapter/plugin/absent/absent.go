@@ -63,9 +63,6 @@ func (Runtime) Release(string, string, plugindomain.Holder) {}
 // ReleaseQuestion does nothing: EnsureActiveForQuestion takes no lease here.
 func (Runtime) ReleaseQuestion(string, string, plugindomain.Holder) {}
 
-// Discover finds no plugin.
-func (Runtime) Discover() error { return nil }
-
 // GetPluginInfos lists no plugin.
 func (Runtime) GetPluginInfos() []plugindomain.Info { return nil }
 

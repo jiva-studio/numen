@@ -2,11 +2,18 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { INTERFACE_WAIT_MS } from '@numen/plugin-loader'
-import { installCoreHandlers } from '@numen/core-client/testing'
+import { createCoreHandlerTransport } from '@numen/core-client/testing'
+import { createPluginLister } from '@/entities/plugin'
+import { createWindowClients } from '@/shared/api/clients'
 import { useAppStart, type PluginStarter } from './useAppStart'
 
-let restoreCore: () => void
 const getPlugins = vi.fn()
+
+const listPlugins = createPluginLister(
+  createWindowClients(
+    createCoreHandlerTransport({ getPlugins: (request: unknown) => getPlugins(request) }),
+  ).pluginService,
+)
 
 const createLoader = () => {
   const calls: string[] = []
@@ -38,7 +45,7 @@ const mountStart = (loader: PluginStarter) => {
   const wrapper = mount(
     defineComponent({
       setup() {
-        result = useAppStart(loader)
+        result = useAppStart(listPlugins, loader)
         return () => h('div')
       },
     }),
@@ -48,10 +55,8 @@ const mountStart = (loader: PluginStarter) => {
 
 beforeEach(() => {
   getPlugins.mockResolvedValue({ plugins: [{ id: 'md.numen.cards' }] })
-  restoreCore = installCoreHandlers({ getPlugins: (request: unknown) => getPlugins(request) })
 })
 afterEach(() => {
-  restoreCore()
   vi.useRealTimers()
 })
 

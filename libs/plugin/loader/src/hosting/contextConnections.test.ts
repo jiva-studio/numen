@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { ConnectionHost } from '@numen/plugin-sdk'
-import { createPluginContext } from './context'
+import { createPluginParts } from './context'
 import { createTestContextHost } from '../testing/contextHost'
 import { disposeSubscriptions } from './guards/subscriptions'
 
@@ -17,7 +17,7 @@ const createContext = (permissions: readonly string[]) => {
   }
   const getConnections = vi.fn(() => connections)
   const host = createTestContextHost({ window: { getConnections } })
-  const context = createPluginContext('md.numen.tools.proofreading', host, {
+  const context = createPluginParts('md.numen.tools.proofreading', host, {
     id: 'md.numen.tools.proofreading',
     name: 'Proofreading',
     version: '1.0.0',
@@ -36,7 +36,7 @@ describe('the connections of a plugin', () => {
   it('carry out an operation without any permission', async () => {
     const { context, connections } = createContext([])
 
-    await context.work.connections!.call('llm.complete', new Uint8Array()).next()
+    await context.host.work.connections!.call('llm.complete', new Uint8Array()).next()
 
     expect(connections.call).toHaveBeenCalledWith('llm.complete', new Uint8Array())
   })
@@ -51,30 +51,30 @@ describe('the connections of a plugin', () => {
       },
     }
     const host = createTestContextHost({ window: { getConnections: () => connections } })
-    const context = createPluginContext('md.numen.views.agent.chat', host, {
+    const context = createPluginParts('md.numen.views.agent.chat', host, {
       id: 'md.numen.views.agent.chat',
       name: 'Agent Chat',
       version: '1.0.0',
       permissions: [],
     })
     const changed = vi.fn()
-    context.work.connections!.onChange!(changed)
+    context.host.work.connections!.onChange!(changed)
     for (const handler of handlers) handler()
 
-    disposeSubscriptions(context.plugin.subscriptions)
+    disposeSubscriptions(context.plugin.identity.subscriptions)
 
     expect(changed).toHaveBeenCalledTimes(1)
     expect(handlers.size).toBe(0)
   })
 
   it('are absent where the host has none', () => {
-    const context = createPluginContext('md.numen.a', createTestContextHost(), {
+    const context = createPluginParts('md.numen.a', createTestContextHost(), {
       id: 'md.numen.a',
       name: 'A',
       version: '1.0.0',
       permissions: [],
     })
 
-    expect(context.work.connections).toBeUndefined()
+    expect(context.host.work.connections).toBeUndefined()
   })
 })

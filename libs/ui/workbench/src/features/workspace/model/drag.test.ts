@@ -5,6 +5,7 @@ import { getPanes } from '../lib/tree'
 import type { Tab, Workspace } from '../lib/node'
 import type { Clock } from '@numen/ui'
 import { createIdFactory, withSpare } from '../fixtures/build'
+import { getViewportSize } from '@/shared/api/dom'
 
 const TITLES: Readonly<Record<string, string>> = { plex: 'Plex', chat: 'Chat', notes: 'Notes' }
 
@@ -192,12 +193,12 @@ describe('active tab drag', () => {
   })
 
   it('returns a drop target at the frame bounds inside the viewport', () => {
-    const { drag, dragTo } = start()
+    const { drag, dragTo } = start({ viewport: { width: 1200, height: 700 } })
 
     for (const [x, y] of [
       [100, 300],
-      [1099, 300],
-      [350, 649],
+      [1100, 300],
+      [350, 650],
     ] as const) {
       dragTo('plex', [350, 300], [x, y])
       expect(drag.dropTarget.value?.kind).toBe('edge')
@@ -207,7 +208,7 @@ describe('active tab drag', () => {
   })
 
   it('returns a null drop target outside the frame bounds', () => {
-    const { drag, dragTo } = start()
+    const { drag, dragTo } = start({ viewport: { width: 1200, height: 700 } })
 
     for (const [x, y] of [
       [99, 300],
@@ -355,11 +356,22 @@ describe('dropping a tab', () => {
   })
 
   it('does not tear off the tab on pointerup inside the viewport outside the frame', () => {
+    expect(getViewportSize()).toStrictEqual({
+      width: globalThis.innerWidth,
+      height: globalThis.innerHeight,
+    })
+
     const tearOffs: string[] = []
     const { workspace, dragTo, release } = start({ onTearOff: (tab) => tearOffs.push(tab) })
     const before = workspace.value
-    dragTo('plex', [350, 300], [20, 300])
-    release(20, 300)
+    for (const [x, y] of [
+      [0, 300],
+      [350, 0],
+      [20, 300],
+    ] as const) {
+      dragTo('plex', [350, 300], [x, y])
+      release(x, y)
+    }
 
     expect(workspace.value).toBe(before)
     expect(tearOffs).toStrictEqual([])
