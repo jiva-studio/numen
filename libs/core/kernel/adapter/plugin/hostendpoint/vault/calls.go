@@ -47,12 +47,11 @@ type calls struct {
 	source Source
 }
 
-func (c *calls) begin(header http.Header, permission string) (string, *Access, error) {
-	pluginID, err := c.auth.Authorize(header.Get("Authorization"), permission)
-	if err != nil {
-		return "", nil, err
+func (c *calls) begin(header http.Header, permission string) (*Access, error) {
+	if _, err := c.auth.Authorize(header.Get("Authorization"), permission); err != nil {
+		return nil, err
 	}
-	return c.selectVault(pluginID, header)
+	return Select(c.source.GetPluginVault(), header)
 }
 
 func (c *calls) beginOwnData(header http.Header) (string, *Access, error) {
@@ -75,7 +74,7 @@ func serve[Q, R any](
 	ctx context.Context, c *calls, req *connect.Request[Q], permission string,
 	withCode func(code v1.HostVaultErrorCode) *R, work func(access *Access) (*R, error),
 ) (*connect.Response[R], error) {
-	_, access, err := c.begin(req.Header(), permission)
+	access, err := c.begin(req.Header(), permission)
 	if err != nil {
 		return nil, err
 	}

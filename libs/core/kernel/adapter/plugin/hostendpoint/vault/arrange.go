@@ -53,7 +53,7 @@ func checkBatch(paths []string) error {
 func (e *arrangeCalls) GetVaultProblems(
 	ctx context.Context, req *connect.Request[v1.GetVaultProblemsRequest],
 ) (*connect.Response[v1.GetVaultProblemsResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (e *arrangeCalls) GetVaultProblems(
 func (e *arrangeCalls) RenameNote(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRenameNoteRequest],
 ) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (e *arrangeCalls) MoveNotes(
 	if err := checkBatch(req.Msg.GetPaths()); err != nil {
 		return nil, err
 	}
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (e *arrangeCalls) RemoveNotes(
 	if err := checkBatch(req.Msg.GetPaths()); err != nil {
 		return nil, err
 	}
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func isCanceled(ctx context.Context) bool {
 func (e *arrangeCalls) GetParseProblems(
 	ctx context.Context, req *connect.Request[v1.GetParseProblemsRequest],
 ) (*connect.Response[v1.GetParseProblemsResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
