@@ -1,7 +1,7 @@
 {
   "id": "md.numen.todos",
   "name": "Todos",
-  "version": "2026.11.1",
+  "version": "2026.11.2",
   "protocol": 1,
   "description": "Lists the tasks written in notes, in the title bar and in a tab",
   "targets": ["desktop.editor"],

@@ -252,7 +252,7 @@ func TestExecuteRefusesAChangeTheNoteDoesNotAllowAndWritesNothing(t *testing.T) 
 			want: RefusalNotOpen,
 		},
 		{
-			name: "a tick of a cancelled task",
+			name: "a tick of a canceled task",
 			note: "- [-] buy milk\n",
 			req:  tick("a.md", 1, "- [-] buy milk"),
 			want: RefusalNotOpen,

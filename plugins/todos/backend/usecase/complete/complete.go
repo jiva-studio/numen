@@ -91,8 +91,11 @@ func (u *SetTaskDone) write(ctx context.Context, req Request) (Result, error) {
 		return Result{}, err
 	}
 	tasks, err := todo.ParseNote(raw)
-	if err != nil {
+	if errors.Is(err, todo.ErrUnreadable) {
 		return refuse(RefusalChanged), nil
+	}
+	if err != nil {
+		return Result{}, err
 	}
 	found, ok := findTask(tasks, req.Line, req.Raw)
 	if !ok {

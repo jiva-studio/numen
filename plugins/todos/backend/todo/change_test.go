@@ -102,8 +102,8 @@ func TestChangeLineUnticksATickedTask(t *testing.T) {
 		},
 		{
 			name: "a task of another status is unticked",
-			line: "- [-] cancelled one",
-			want: "- [ ] cancelled one",
+			line: "- [-] canceled one",
+			want: "- [ ] canceled one",
 		},
 		{
 			name: "done: before a block id is removed and the anchor stays",
@@ -153,7 +153,7 @@ func TestChangeLineRefusesAChangeThatDoesNotFitTheTask(t *testing.T) {
 	}{
 		{"a tick of a done task", "- [x] a", true, ErrNotOpen},
 		{"a tick of a task done with an upper case X", "- [X] a", true, ErrNotOpen},
-		{"a tick of a cancelled task", "- [-] a", true, ErrNotOpen},
+		{"a tick of a canceled task", "- [-] a", true, ErrNotOpen},
 		{"a tick of a task with a character that is not ASCII", "- [→] a", true, ErrNotOpen},
 		{"a tick of a task with an invalid recurrence", "- [ ] a rec:0d", true, ErrInvalidRecurrence},
 		{"an untick of an open task", "- [ ] a", false, ErrNotDone},
