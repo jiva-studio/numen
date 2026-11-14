@@ -7,6 +7,34 @@ import numen from './numen-rules.mjs'
 
 const contract = ['plugin-sdk', 'ui']
 
+// A later `no-restricted-imports` replaces this one, so each segment override spreads these patterns again.
+const isolationPatterns = [
+            {
+              group: [
+                '@/**',
+                '@/pages/**',
+                '@/shared/**',
+                '@/entities/**',
+                '@/features/**',
+                '@/app/**',
+              ],
+              message:
+                'plugins must not import host internals (@/*); use @numen/plugin-sdk or @numen/ui instead',
+            },
+            {
+              group: ['@plugins', '@plugins/**'],
+              message: 'a plugin names no other plugin; share through @numen/plugin-sdk',
+            },
+            {
+              group: [
+                '@numen/*',
+                ...contract.flatMap((name) => [`!@numen/${name}`, `!@numen/${name}/**`]),
+              ],
+              message: 'a plugin names only @numen/plugin-sdk, @numen/ui and its own directory',
+            },
+]
+
+
 // The shape of a frontend: `index.ts`, `words.ts` and `types.ts` at its root; slices, each a folder
 // `<slice>/` of `index.ts` and the segments `ui`, `model`, `api`, `lib`; and, at the root, the parts the
 // slices share and the entry composes: `api` and `lib` are reached by the slices, `ui` and `model` compose
@@ -116,36 +144,7 @@ export default [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: [
-                '@/**',
-                '@/pages/**',
-                '@/shared/**',
-                '@/entities/**',
-                '@/features/**',
-                '@/app/**',
-              ],
-              message:
-                'plugins must not import host internals (@/*); use @numen/plugin-sdk or @numen/ui instead',
-            },
-            {
-              group: ['@plugins', '@plugins/**'],
-              message: 'a plugin names no other plugin; share through @numen/plugin-sdk',
-            },
-            {
-              group: [
-                '@numen/*',
-                ...contract.flatMap((name) => [`!@numen/${name}`, `!@numen/${name}/**`]),
-              ],
-              message: 'a plugin names only @numen/plugin-sdk, @numen/ui and its own directory',
-            },
-          ],
-        },
-      ],
+      'no-restricted-imports': ['error', { patterns: isolationPatterns }],
     },
   },
   {
@@ -221,6 +220,7 @@ export default [
             { name: 'pinia', message: 'lib/ is pure TypeScript and must not depend on Pinia' },
           ],
           patterns: [
+            ...isolationPatterns,
             { group: ['@vue/*'], message: 'lib/ is pure TypeScript and must not depend on @vue/*' },
             {
               group: ['ui', 'model', 'api'].flatMap((segment) => [
@@ -249,6 +249,7 @@ export default [
         'error',
         {
           patterns: [
+            ...isolationPatterns,
             {
               group: ['../ui/*', '../ui/**', './ui/*'],
               message: 'model/ must not import upward from ui/',
@@ -281,6 +282,7 @@ export default [
         'error',
         {
           patterns: [
+            ...isolationPatterns,
             {
               group: [
                 '**/api/wire*',

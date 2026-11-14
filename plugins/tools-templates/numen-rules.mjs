@@ -236,6 +236,7 @@ const maxComposableReturnProperties = {
       if (!fnName || !isPartName(fnName) || !argument) return
       const node = getReturnedObject(argument)
       let count = 0
+      let hasSpread = false
       if (node) {
         for (const prop of node.properties) {
           if (prop.type === 'Property') {
@@ -248,10 +249,12 @@ const maxComposableReturnProperties = {
               if (isSpreadOfInput(prop.argument, fn)) {
                 context.report({ node: prop, messageId: 'spreadOfInput', data: { name: fnName } })
               }
-              count = Math.max(count, countTypeProperties(node))
+              hasSpread = true
             }
           }
         }
+        // The type of the whole object already holds the explicit properties, so it replaces their count.
+        if (hasSpread) count = Math.max(count, countTypeProperties(node))
         checkGroups(node, fnName)
       } else {
         count = countTypeProperties(argument)
