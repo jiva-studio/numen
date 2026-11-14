@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/vaults"
 )
 
-// GetVault answers vault_get.
 func GetVault(ctx context.Context, u *vaults.UseCase, in api.VaultInfoInput) (api.VaultInfoOutput, error) {
 	info, err := u.Get(ctx, in.Vault)
 	if err != nil {
@@ -17,7 +16,6 @@ func GetVault(ctx context.Context, u *vaults.UseCase, in api.VaultInfoInput) (ap
 	return api.VaultInfoOutput{ID: string(info.ID), Name: info.Name, Path: info.Path, NoteCount: info.NoteCount}, nil
 }
 
-// ListVaults answers vault_list.
 func ListVaults(ctx context.Context, u *vaults.UseCase, _ api.VaultListInput) (api.VaultListOutput, error) {
 	entries, err := u.List(ctx)
 	if err != nil {
@@ -36,7 +34,6 @@ func ListVaults(ctx context.Context, u *vaults.UseCase, _ api.VaultListInput) (a
 	return out, nil
 }
 
-// AddVault answers vault_add.
 func AddVault(ctx context.Context, u *vaults.UseCase, in api.VaultAddInput) (api.VaultAddOutput, error) {
 	vault, err := u.Add(ctx, in.Path, in.Name)
 	if err != nil {
@@ -45,7 +42,6 @@ func AddVault(ctx context.Context, u *vaults.UseCase, in api.VaultAddInput) (api
 	return api.VaultAddOutput{ID: string(vault.ID), Name: vault.Name, Path: vault.Path}, nil
 }
 
-// RenameVault answers vault_rename.
 func RenameVault(ctx context.Context, u *vaults.UseCase, in api.VaultRenameInput) (api.VaultRenameOutput, error) {
 	vault, err := u.Rename(ctx, in.Vault, in.Name)
 	if err != nil {
@@ -54,7 +50,6 @@ func RenameVault(ctx context.Context, u *vaults.UseCase, in api.VaultRenameInput
 	return api.VaultRenameOutput{ID: string(vault.ID), Name: vault.Name, Path: vault.Path}, nil
 }
 
-// RemoveVault answers vault_remove.
 func RemoveVault(ctx context.Context, u *vaults.UseCase, in api.VaultRemoveInput) (api.VaultRemoveOutput, error) {
 	folder, err := u.Remove(ctx, in.Vault)
 	if err != nil {
@@ -63,7 +58,6 @@ func RemoveVault(ctx context.Context, u *vaults.UseCase, in api.VaultRemoveInput
 	return api.VaultRemoveOutput{Path: folder}, nil
 }
 
-// OpenVault answers vault_open.
 func OpenVault(ctx context.Context, u *vaults.UseCase, in api.VaultOpenInput) (api.VaultOpenOutput, error) {
 	vault, err := u.Open(ctx, in.Vault)
 	if err != nil {

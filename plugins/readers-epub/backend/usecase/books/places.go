@@ -64,7 +64,6 @@ func (s *Reader) GetCfi(ctx context.Context, path string, offset int) (string, e
 	return place.String(), nil
 }
 
-// FindOffset returns the offset of a book's text an EPUB CFI names.
 func (s *Reader) FindOffset(ctx context.Context, path, cfiText string) (int, error) {
 	place, err := cfi.Parse(cfiText)
 	if err != nil {

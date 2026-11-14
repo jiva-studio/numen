@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/library"
 )
 
-// SearchLibrary answers library_search.
 func SearchLibrary(ctx context.Context, u *library.UseCase, in api.LibrarySearchInput) (api.LibrarySearchOutput, error) {
 	matches, err := u.Search(ctx, library.Query{Query: in.Query, Limit: in.Limit, Kinds: in.Kinds, Folder: in.Folder})
 	if err != nil {
@@ -30,7 +29,6 @@ func SearchLibrary(ctx context.Context, u *library.UseCase, in api.LibrarySearch
 	return out, nil
 }
 
-// ReadLibrary answers library_read.
 func ReadLibrary(ctx context.Context, u *library.UseCase, in api.LibraryReadInput) (api.LibraryReadOutput, error) {
 	read, err := u.Read(ctx, library.ReadRequest{Path: in.Path, Page: in.Page, Start: in.Start, Length: in.Length})
 	if err != nil {

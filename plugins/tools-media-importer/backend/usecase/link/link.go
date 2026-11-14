@@ -344,10 +344,9 @@ func newLinkIn(ctx context.Context, vault Files, path string, parsed address.URL
 	return made, nil
 }
 
-// newEntropyReader returns what fills entropy as a reader, for a ULID generator. No entropy is a
-// nil reader, which the generator refuses with ulid.ErrNoEntropy.
 func newEntropyReader(entropy ports.Entropy) io.Reader {
 	if entropy == nil {
+		// The ULID generator refuses a nil reader with ulid.ErrNoEntropy.
 		return nil
 	}
 	return entropyReader{fill: entropy.Fill}

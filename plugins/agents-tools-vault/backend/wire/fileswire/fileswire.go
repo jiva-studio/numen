@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/files"
 )
 
-// ReadFile answers file_read.
 func ReadFile(ctx context.Context, u *files.UseCase, in api.FileReadInput) (api.FileReadOutput, error) {
 	read, err := u.Read(ctx, in.Path, in.Start, in.Length)
 	if err != nil {
@@ -24,7 +23,6 @@ func ReadFile(ctx context.Context, u *files.UseCase, in api.FileReadInput) (api.
 	}, nil
 }
 
-// CreateFile answers file_create.
 func CreateFile(ctx context.Context, u *files.UseCase, in api.FileCreateInput) (api.FileCreateOutput, error) {
 	size, err := u.Create(ctx, in.Path, in.Text)
 	if err != nil {

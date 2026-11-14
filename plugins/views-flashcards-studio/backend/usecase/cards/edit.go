@@ -12,13 +12,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// newEdit is what a change to an existing note is made through: the vault it is read and written
-// through, what updates the index for it, what time it is, and the entropy of the identifier it
-// writes. The function returned with it returns the failures to release the write lock of the
-// changes made through it, which edit.Files releases without an error.
 func newEdit(
 	readers ports.VaultReaders, writers ports.VaultWriters, index edit.IndexUpdater, now ports.Clock, entropy ports.Entropy,
 ) (edit.Edit, func() error) {
+	// edit.Files releases the write lock without an error, so the failures to release it are
+	// collected here and returned by the second result.
 	failures := &releaseFailures{mu: sync.Mutex{}, err: nil}
 	return edit.Edit{
 		Open: func(v domain.Vault) (edit.Files, error) {

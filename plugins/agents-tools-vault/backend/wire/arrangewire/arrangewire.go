@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/arrange"
 )
 
-// RenameNote answers note_rename.
 func RenameNote(ctx context.Context, u *arrange.UseCase, in api.NoteRenameInput) (api.NoteRenameOutput, error) {
 	result, err := u.Rename(ctx, in.Path, in.Title)
 	if err != nil {
@@ -31,7 +30,6 @@ func RenameNote(ctx context.Context, u *arrange.UseCase, in api.NoteRenameInput)
 	return out, nil
 }
 
-// MoveNotes answers note_move.
 func MoveNotes(ctx context.Context, u *arrange.UseCase, in api.NoteMoveInput) (api.NoteMoveOutput, error) {
 	moves, err := u.Move(ctx, in.Paths, in.Folder)
 	if err != nil {
@@ -44,7 +42,6 @@ func MoveNotes(ctx context.Context, u *arrange.UseCase, in api.NoteMoveInput) (a
 	return out, nil
 }
 
-// RemoveNotes answers note_remove.
 func RemoveNotes(ctx context.Context, u *arrange.UseCase, in api.NoteRemoveInput) (api.NoteRemoveOutput, error) {
 	removals, err := u.Remove(ctx, in.Paths)
 	if err != nil {
@@ -61,7 +58,6 @@ func RemoveNotes(ctx context.Context, u *arrange.UseCase, in api.NoteRemoveInput
 	return out, nil
 }
 
-// ListProblems answers vault_problem_list.
 func ListProblems(ctx context.Context, u *arrange.UseCase, in api.VaultProblemListInput) (api.VaultProblemListOutput, error) {
 	problems, err := u.ListProblems(ctx, in.Checks)
 	if err != nil {

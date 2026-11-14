@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/links"
 )
 
-// ListLinks answers link_list.
 func ListLinks(ctx context.Context, u *links.UseCase, in api.LinkListInput) (api.LinkListOutput, error) {
 	list, err := u.List(ctx, in.Path)
 	if err != nil {
@@ -18,7 +17,6 @@ func ListLinks(ctx context.Context, u *links.UseCase, in api.LinkListInput) (api
 	return api.LinkListOutput{Path: list.Path, Links: newItems(list.Links), Backlinks: newItems(list.Backlinks)}, nil
 }
 
-// AddLinks answers link_add.
 func AddLinks(ctx context.Context, u *links.UseCase, in api.LinkAddInput) (api.LinkAddOutput, error) {
 	changes := make([]links.LinkChange, len(in.Links))
 	for i, link := range in.Links {
@@ -41,7 +39,6 @@ func AddLinks(ctx context.Context, u *links.UseCase, in api.LinkAddInput) (api.L
 	return out, nil
 }
 
-// UpdateLinks answers link_update.
 func UpdateLinks(ctx context.Context, u *links.UseCase, in api.LinkUpdateInput) (api.LinkEditOutput, error) {
 	edit, err := u.Update(ctx, links.LinkChange{
 		From: in.From, Fingerprint: in.Fingerprint, Address: in.Address,
@@ -53,7 +50,6 @@ func UpdateLinks(ctx context.Context, u *links.UseCase, in api.LinkUpdateInput) 
 	return api.LinkEditOutput{Path: edit.Path, Fingerprint: edit.Fingerprint}, nil
 }
 
-// RemoveLinks answers link_remove.
 func RemoveLinks(ctx context.Context, u *links.UseCase, in api.LinkRemoveInput) (api.LinkEditOutput, error) {
 	edit, err := u.Remove(ctx, links.LinkChange{
 		From: in.From, Fingerprint: in.Fingerprint, Address: in.Address,

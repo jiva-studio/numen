@@ -15,7 +15,6 @@ import (
 // readMost is the maximum number of bytes one read returns, the maximum the host reads at once.
 const readMost = 16000
 
-// FileText is a range of the text of a file.
 type FileText struct {
 	Path        string
 	Text        string
@@ -36,7 +35,7 @@ func New(reader ports.FileReader, writer ports.FileWriter, index ports.Indexer) 
 	return &UseCase{reader: reader, writer: writer, index: index}
 }
 
-// Read returns the text of a range of a text file.
+// Read takes a length of zero or less, or above readMost, as readMost, and a negative start as 0.
 func (u *UseCase) Read(ctx context.Context, path string, start, length int) (FileText, error) {
 	if strings.TrimSpace(path) == "" {
 		return FileText{}, errors.New("path is required")

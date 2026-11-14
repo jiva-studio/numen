@@ -158,7 +158,6 @@ type Tools struct {
 	Web    Web
 }
 
-// Open returns the downloader that fetches with programs, or the mock downloader when isMock is set.
 func Open(isMock bool, tools Tools, programs fetch.Config) *Downloader {
 	if isMock {
 		return NewMock(tools.Web)

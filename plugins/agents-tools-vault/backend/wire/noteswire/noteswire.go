@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/notes"
 )
 
-// ReadNote answers note_read.
 func ReadNote(ctx context.Context, u *notes.UseCase, in api.NoteReadInput) (api.NoteReadOutput, error) {
 	note, err := u.Read(ctx, in.Path)
 	if err != nil {
@@ -24,7 +23,6 @@ func ReadNote(ctx context.Context, u *notes.UseCase, in api.NoteReadInput) (api.
 	}, nil
 }
 
-// WriteNote answers note_write.
 func WriteNote(ctx context.Context, u *notes.UseCase, in api.NoteWriteInput) (api.NoteWriteOutput, error) {
 	written, err := u.Write(ctx, in.Path, in.Text, in.Fingerprint)
 	if err != nil {
@@ -33,7 +31,6 @@ func WriteNote(ctx context.Context, u *notes.UseCase, in api.NoteWriteInput) (ap
 	return api.NoteWriteOutput{Path: written.Path, Fingerprint: written.Fingerprint, Bytes: written.Bytes}, nil
 }
 
-// ListHeadings answers note_heading_list.
 func ListHeadings(ctx context.Context, u *notes.UseCase, in api.NoteHeadingListInput) (api.NoteHeadingListOutput, error) {
 	path, headings, err := u.ListHeadings(ctx, in.Path)
 	if err != nil {
@@ -46,7 +43,6 @@ func ListHeadings(ctx context.Context, u *notes.UseCase, in api.NoteHeadingListI
 	return api.NoteHeadingListOutput{Path: path, Headings: items}, nil
 }
 
-// SearchNotes answers note_search.
 func SearchNotes(ctx context.Context, u *notes.UseCase, in api.NoteSearchInput) (api.NoteSearchOutput, error) {
 	matches, total, err := u.Search(ctx, in.Query, in.Limit)
 	if err != nil {
@@ -62,7 +58,6 @@ func SearchNotes(ctx context.Context, u *notes.UseCase, in api.NoteSearchInput) 
 	return api.NoteSearchOutput{Query: in.Query, Matches: out, Total: total}, nil
 }
 
-// ListNotes answers note_list.
 func ListNotes(ctx context.Context, u *notes.UseCase, in api.NoteListInput) (api.NoteListOutput, error) {
 	page, err := u.List(ctx, in.Folder, in.Limit, in.Offset)
 	if err != nil {
@@ -75,7 +70,6 @@ func ListNotes(ctx context.Context, u *notes.UseCase, in api.NoteListInput) (api
 	return api.NoteListOutput{Notes: entries, Total: page.Total, NextOffset: page.NextOffset}, nil
 }
 
-// ListTitles answers note_title_list.
 func ListTitles(ctx context.Context, u *notes.UseCase, in api.NoteTitleListInput) (api.NoteTitleListOutput, error) {
 	found, missing, err := u.ListTitles(ctx, in.Paths)
 	if err != nil {
@@ -88,7 +82,6 @@ func ListTitles(ctx context.Context, u *notes.UseCase, in api.NoteTitleListInput
 	return out, nil
 }
 
-// ResolveName answers note_resolve.
 func ResolveName(ctx context.Context, u *notes.UseCase, in api.NoteResolveInput) (api.NoteResolveOutput, error) {
 	paths, err := u.ResolveName(ctx, in.Name)
 	if err != nil {

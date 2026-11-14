@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/notescore"
 )
 
-// SearchMatch is a note that matches a note search.
 type SearchMatch struct {
 	Path    string
 	Title   string

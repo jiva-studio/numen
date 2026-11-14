@@ -81,7 +81,6 @@ func (u *UseCase) List(ctx context.Context) ([]Entry, error) {
 	return out, nil
 }
 
-// Add adds a folder to the list of vaults.
 func (u *UseCase) Add(ctx context.Context, folder, name string) (domain.Vault, error) {
 	return u.list.AddVault(ctx, folder, name)
 }

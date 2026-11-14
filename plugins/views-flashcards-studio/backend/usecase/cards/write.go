@@ -75,8 +75,6 @@ func (u Write) createWholeBody(
 	return whole, provided, nil
 }
 
-// writeBody puts body in the deck at path over the file stat the caller read, under a deck's
-// bound, and leaves its frontmatter alone.
 func (u Write) writeBody(
 	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
 ) (domain.FileStat, error) {

@@ -22,9 +22,8 @@ func getDefaultValues() values {
 	}
 }
 
-// parseValues returns current with the settings present in settings applied. A setting that is
-// absent, or whose value is not a size in megabytes, keeps its current value.
 func parseValues(settings map[string]string, current values) values {
+	// A setting that is absent, or whose value is not a size in megabytes, keeps its current value.
 	if v, ok := settings["ytDlp"]; ok {
 		current.Programs.Video = getTool(v)
 	}
