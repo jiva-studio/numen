@@ -188,12 +188,12 @@ func newFloorPolicy(db *Index, source searchsourceport.Source, errorHandler func
 
 func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, errorHandler func(error)) {
 	access := hostsearch.Search{
-		Samples:  db.SearchSamples(),
-		Nearest:  searchusecase.NewGetBestSimilarity(db.ChunkSearch()),
-		Places:   searchusecase.NewFindNearest(db.ChunkSearch()),
-		Progress: db.ChunkVectors(),
-		Stats:    searchusecase.NewStats(db.ChunkVectors(), c.Clock),
-		Policy:   newFloorPolicy(db, source, errorHandler),
+		Samples:    db.SearchSamples(),
+		Nearest:    searchusecase.NewGetBestSimilarity(db.ChunkSearch()),
+		Places:     searchusecase.NewFindNearest(db.ChunkSearch()),
+		Progress:   db.ChunkVectors(),
+		Stats:      searchusecase.NewStats(db.ChunkVectors(), c.Clock),
+		Policy:     newFloorPolicy(db, source, errorHandler),
 		TextSearch: searchusecase.NewSearchText(newSearch(c, db, source, errorHandler, nil)),
 	}
 	if source != nil {

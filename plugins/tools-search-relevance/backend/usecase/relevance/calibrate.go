@@ -20,9 +20,9 @@ const (
 
 	// minQueries, minChunks and minSources are what a vault has to hold before a measurement is
 	// meaningful.
-	minQueries  = 20
-	minChunks = 50
-	minSources  = 2
+	minQueries = 20
+	minChunks  = 50
+	minSources = 2
 )
 
 // ErrRecipeChanged is a calibration whose model changed while it ran. The similarities it measured
@@ -46,7 +46,7 @@ type Calibration struct {
 	Spread         float64
 	Histogram      []int
 	QueryCount     int
-	ChunkCount   int
+	ChunkCount     int
 	CalibratedTime time.Time
 }
 
@@ -114,7 +114,7 @@ func (c Calibrator) Calibrate(ctx context.Context, index host.SearchIndex, notes
 		Spread:         stats.Spread,
 		Histogram:      stats.Histogram,
 		QueryCount:     measured,
-		ChunkCount:   sample.ChunkCount,
+		ChunkCount:     sample.ChunkCount,
 		CalibratedTime: c.clock.Now(),
 	}, nil
 }

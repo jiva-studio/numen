@@ -187,9 +187,9 @@ func (e *searchEndpoint) SampleSimilarities(
 		rows[i] = &v1.SimilarityRow{Values: one}
 	}
 	return connect.NewResponse(&v1.SampleSimilaritiesResponse{
-		ChunkCount: int32(sample.ChunkCount),
-		SourceCount:  int32(sample.SourceCount),
-		Rows:         rows,
+		ChunkCount:  int32(sample.ChunkCount),
+		SourceCount: int32(sample.SourceCount),
+		Rows:        rows,
 	}), nil
 }
 

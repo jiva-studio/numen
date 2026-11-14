@@ -55,8 +55,8 @@ func TestCalibrateMeasuresTheNoise(t *testing.T) {
 func TestCalibrateComparesATitleOnlyWithChunksOfOtherSources(t *testing.T) {
 	search, vault := newHost(0)
 	// This passage is the first note's: identical in direction to every title.
-	passages := append(sampledChunksOf(60, 2), hosttest.SampledChunk{Path: notePath(1), Vector: []float32{127, 0, 0, 0}})
-	fill(search, vault, 20, passages)
+	chunks := append(sampledChunksOf(60, 2), hosttest.SampledChunk{Path: notePath(1), Vector: []float32{127, 0, 0, 0}})
+	fill(search, vault, 20, chunks)
 
 	_, got, err := calibrate(t, search, vault)
 	if err != nil {
@@ -73,9 +73,9 @@ func TestCalibrateComparesATitleOnlyWithChunksOfOtherSources(t *testing.T) {
 
 func TestCalibrateHasTooFewToMeasure(t *testing.T) {
 	for _, tc := range []struct {
-		name     string
-		titles   int
-		passages []hosttest.SampledChunk
+		name   string
+		titles int
+		chunks []hosttest.SampledChunk
 	}{
 		{"19 titles", 19, sampledChunksOf(60, 3)},
 		{"49 passages", 25, sampledChunksOf(49, 3)},
@@ -84,7 +84,7 @@ func TestCalibrateHasTooFewToMeasure(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			search, vault := newHost(0)
-			fill(search, vault, tc.titles, tc.passages)
+			fill(search, vault, tc.titles, tc.chunks)
 			outcome, _, err := calibrate(t, search, vault)
 			if err != nil || outcome != relevance.TooFew {
 				t.Fatalf("got %v, %v, want TooFew", outcome, err)

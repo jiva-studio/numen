@@ -88,13 +88,13 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 			}
 
 			texts := make([]string, tc.chunks)
-			passages := make([]domain.SearchResult, tc.chunks)
+			results := make([]domain.SearchResult, tc.chunks)
 			for i := range tc.chunks {
 				txt := uniqueTexts[i%uniqueCount]
 				texts[i] = txt
-				passages[i] = domain.SearchResult{
+				results[i] = domain.SearchResult{
 					ChunkID:   domain.ChunkID(fmt.Sprintf("chunk-%d", i)),
-					Path:    "book.epub",
+					Path:      "book.epub",
 					ChunkHash: indexfake.GetHash(txt),
 				}
 			}
@@ -107,7 +107,7 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				prep, err := newProducer(embed, nil).prepareBatch(b.Context(), model, searchsource.Place{}, passages, texts)
+				prep, err := newProducer(embed, nil).prepareBatch(b.Context(), model, searchsource.Place{}, results, texts)
 				if err != nil {
 					b.Fatal(err)
 				}

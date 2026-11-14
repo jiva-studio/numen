@@ -30,7 +30,7 @@ import (
 type recordingWindow struct {
 	mu        sync.Mutex
 	notes     []string
-	passages  []domain.Place
+	focused   []domain.Place
 	reads     int
 	activated []string
 	err       error
@@ -47,13 +47,13 @@ func (w *recordingWindow) FocusNote(_ context.Context, path string) (domain.Note
 	return domain.NoteRef{Path: path, Title: "Gray Heron", ID: "01J8HERON0000000000000000"}, nil
 }
 
-func (w *recordingWindow) FocusFile(_ context.Context, path string, passages []domain.ByteRange) error {
+func (w *recordingWindow) FocusFile(_ context.Context, path string, ranges []domain.ByteRange) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.err != nil {
 		return w.err
 	}
-	w.passages = append(w.passages, domain.Place{Path: path, Ranges: passages})
+	w.focused = append(w.focused, domain.Place{Path: path, Ranges: ranges})
 	return nil
 }
 
@@ -103,7 +103,7 @@ func (w *recordingWindow) getActivatedIDs() []string {
 func (w *recordingWindow) getRequests() ([]string, []domain.Place, int) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return slices.Clone(w.notes), slices.Clone(w.passages), w.reads
+	return slices.Clone(w.notes), slices.Clone(w.focused), w.reads
 }
 
 func newWindowClient(t *testing.T, window WindowControl, token string) (numenv1connect.HostWindowServiceClient, *callers) {
@@ -148,7 +148,7 @@ func TestHostWindowFocusesTheSpansInTheirOrder(t *testing.T) {
 	client, fakeCallers := newWindowClient(t, window, "token-a")
 
 	got, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{
-		Path:     "library/Birds.pdf",
+		Path:  "library/Birds.pdf",
 		Spans: []*v1.ByteSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}},
 	}))
 	if err != nil {
@@ -338,7 +338,7 @@ func TestHostWindowRejectsSpanPast32BitsBeforeCallingWindow(t *testing.T) {
 	client, _ := newWindowClient(t, window, "token-a")
 
 	_, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{
-		Path:     "library/Birds.pdf",
+		Path:  "library/Birds.pdf",
 		Spans: []*v1.ByteSpan{{Start: 400, Length: 80}, {Start: math.MaxInt32 - 10, Length: 20}},
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -354,7 +354,7 @@ func TestHostWindowFocusesASpanThatEndsAtThe32BitLimit(t *testing.T) {
 	client, _ := newWindowClient(t, window, "token-a")
 
 	if _, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{
-		Path:     "library/Birds.pdf",
+		Path:  "library/Birds.pdf",
 		Spans: []*v1.ByteSpan{{Start: math.MaxInt32 - 10, Length: 10}},
 	})); err != nil {
 		t.Fatal(err)

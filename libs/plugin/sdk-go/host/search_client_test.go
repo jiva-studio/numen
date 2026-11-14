@@ -73,10 +73,10 @@ func (h *searchHost) SampleSimilarities(_ context.Context, req *connect.Request[
 	h.recipes = append(h.recipes, req.Msg.GetRecipe())
 	h.sampled = append(h.sampled, req.Msg.GetQueries()...)
 	return connect.NewResponse(&v1.SampleSimilaritiesResponse{
-		Error:        h.code,
-		ChunkCount: 3,
-		SourceCount:  2,
-		Rows:         []*v1.SimilarityRow{{Values: []float64{0.25, 0.5}}, {}},
+		Error:       h.code,
+		ChunkCount:  3,
+		SourceCount: 2,
+		Rows:        []*v1.SimilarityRow{{Values: []float64{0.25, 0.5}}, {}},
 	}), nil
 }
 

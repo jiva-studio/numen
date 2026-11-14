@@ -49,10 +49,10 @@ func TestSearchTextRunsKeywordAndEmbeddingWithThreePerSource(t *testing.T) {
 
 func TestAnEmptyQueryFindsNoResultsAndRunsNoSearch(t *testing.T) {
 	finder := &recordingFinder{found: []domain.SearchResult{{Path: "notes/Heron.md", Text: "heron"}}}
-	passages := search.NewSearchText(finder)
+	searchText := search.NewSearchText(finder)
 
 	for _, query := range []string{"", " \n\t"} {
-		got, err := passages.Execute(t.Context(), getMarshVault(), search.SearchResultQuery{Query: query, Limit: 5})
+		got, err := searchText.Execute(t.Context(), getMarshVault(), search.SearchResultQuery{Query: query, Limit: 5})
 		if err != nil || len(got) != 0 {
 			t.Errorf("the query %q found %v, %v, want nothing", query, got, err)
 		}
@@ -64,9 +64,9 @@ func TestAnEmptyQueryFindsNoResultsAndRunsNoSearch(t *testing.T) {
 
 func TestTheLimitOfASearchOfResultsIsClamped(t *testing.T) {
 	finder := &recordingFinder{}
-	passages := search.NewSearchText(finder)
+	searchText := search.NewSearchText(finder)
 	for _, limit := range []int{5000, -2} {
-		if _, err := passages.Execute(t.Context(), getMarshVault(), search.SearchResultQuery{Query: "heron", Limit: limit}); err != nil {
+		if _, err := searchText.Execute(t.Context(), getMarshVault(), search.SearchResultQuery{Query: "heron", Limit: limit}); err != nil {
 			t.Fatal(err)
 		}
 	}

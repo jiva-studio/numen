@@ -82,17 +82,17 @@ func getUnembeddedChunksPaged(t *testing.T, db *DB, vault domain.Vault, limit in
 	return nil
 }
 
-func getChunkIDs(passages []domain.SearchResult) []domain.ChunkID {
-	out := make([]domain.ChunkID, 0, len(passages))
-	for _, p := range passages {
+func getChunkIDs(results []domain.SearchResult) []domain.ChunkID {
+	out := make([]domain.ChunkID, 0, len(results))
+	for _, p := range results {
 		out = append(out, p.ChunkID)
 	}
 	return out
 }
 
-func getSourcePaths(passages []domain.SearchResult) []string {
-	out := make([]string, 0, len(passages))
-	for _, p := range passages {
+func getSourcePaths(results []domain.SearchResult) []string {
+	out := make([]string, 0, len(results))
+	for _, p := range results {
 		out = append(out, p.Path)
 	}
 	return out

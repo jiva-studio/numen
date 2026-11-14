@@ -46,7 +46,7 @@ type Calibration struct {
 	Spread       float64 `json:"spread"`
 	Histogram    []int   `json:"histogram"`
 	QueryCount   int     `json:"queryCount"`
-	ChunkCount int     `json:"passageCount"`
+	ChunkCount   int     `json:"chunkCount"`
 	CalibratedAt int64   `json:"calibratedAt"`
 }
 

@@ -44,7 +44,7 @@ type fixture struct {
 	web       *httptest.Server
 }
 
-func passages(n, sources int) []hosttest.SampledChunk {
+func sampledChunks(n, sources int) []hosttest.SampledChunk {
 	out := make([]hosttest.SampledChunk, n)
 	for i := range out {
 		out[i] = hosttest.SampledChunk{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
@@ -67,7 +67,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	search := hosttest.NewSearch("physics", "chemistry")
 	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: hint})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
-	search.SetSampledChunks(modelRecipe, passages(60, 3))
+	search.SetSampledChunks(modelRecipe, sampledChunks(60, 3))
 	search.SetProgress(60, 60)
 
 	vault := hosttest.New("physics")
@@ -344,7 +344,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	errFinish := errors.New("finish task failed")
 	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: 0.4})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
-	search.SetSampledChunks(modelRecipe, passages(60, 3))
+	search.SetSampledChunks(modelRecipe, sampledChunks(60, 3))
 	search.SetProgress(60, 60)
 	setNotes(vault, 25)
 

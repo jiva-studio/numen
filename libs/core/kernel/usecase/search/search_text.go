@@ -12,7 +12,7 @@ const (
 	// MaxSearchedResults is the maximum number of search results one SearchText call returns, and
 	// MaxExcerptBytes the maximum excerpt size of each of them, around the hit.
 	MaxSearchedResults = 100
-	MaxExcerptBytes     = 1200
+	MaxExcerptBytes    = 1200
 	// maxResultsPerSource is the maximum number of search results of one source a SearchText call returns.
 	maxResultsPerSource = 3
 )

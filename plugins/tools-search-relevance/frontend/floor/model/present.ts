@@ -34,7 +34,7 @@ function formatDate(seconds: number): string {
 
 export function formatCalibrationSummary(calibration: FloorCalibration): string {
   const when = formatDate(calibration.calibratedAt)
-  return `${calibration.queryCount} titles × ${calibration.passageCount} passages · calibrated ${when}`
+  return `${calibration.queryCount} titles × ${calibration.chunkCount} passages · calibrated ${when}`
 }
 
 /** The line under the noise histogram: what was measured, or why nothing was. */

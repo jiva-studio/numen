@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import type { SlotCommand, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import { COMMAND, ROW, type CommandTarget } from '@/shared/model/command'
 import { useSearch, type NameMatch, type SearchDeps, type Words } from './search'
-import type { Passage } from './lookup'
+import type { SearchResult } from './lookup'
 
 const WORDS: Words = {
   names: 'Names',
@@ -60,7 +60,7 @@ const nameMatch: NameMatch = {
   type: 'sample',
 }
 
-const bookPassage: Passage = {
+const bookResult: SearchResult = {
   path: 'books/Atlas.pdf',
   title: '',
   text: 'a map of the reef',
@@ -69,11 +69,14 @@ const bookPassage: Passage = {
   selector: { page: 3 },
   start: 0,
   length: 0,
-  line: 0,
-  at: [],
+  matchLine: 0,
+  matchRanges: [],
 }
 
-const createCore = (names: readonly NameMatch[], texts: readonly Passage[] = []): SearchDeps => ({
+const createCore = (
+  names: readonly NameMatch[],
+  texts: readonly SearchResult[] = [],
+): SearchDeps => ({
   names: async () => names,
   search: async (_query, mode) => (mode === 'words' ? texts : []),
 })
@@ -219,7 +222,7 @@ describe('a note found by name in the search', () => {
 
 describe('a passage of a file that is no note in the search', () => {
   it('offers opening the document and no entry of the menu', async () => {
-    const palette = useSearch(createCore([], [bookPassage]), WORDS, {
+    const palette = useSearch(createCore([], [bookResult]), WORDS, {
       wait: now,
       menu: { getEntries: () => [SHOW] },
     })
@@ -237,7 +240,7 @@ describe('a passage of a file that is no note in the search', () => {
 
 describe('choosing the action of a passage of a file that is no note', () => {
   it('runs the command that opens the document over its file and the selector of the passage', async () => {
-    const palette = useSearch(createCore([], [bookPassage]), WORDS, { wait: now })
+    const palette = useSearch(createCore([], [bookResult]), WORDS, { wait: now })
     await typeQuery(palette)
     const item = palette.groups.value.find((one) => one.id === 'text')?.items[0]?.id ?? ''
 
@@ -312,7 +315,7 @@ describe('the actions that create a note, in a search', () => {
   })
 
   it('is offered on a row that found something in the text too', async () => {
-    const palette = useSearch(createCore([], [bookPassage]), WORDS, {
+    const palette = useSearch(createCore([], [bookResult]), WORDS, {
       wait: now,
       getTarget: () => front(),
     })

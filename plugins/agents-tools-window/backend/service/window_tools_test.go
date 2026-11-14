@@ -183,7 +183,7 @@ func TestSourceFocusPassesSpansAndReturnsPathAndCount(t *testing.T) {
 		Path           string `json:"path"`
 		HighlightCount *int   `json:"highlightCount"`
 	}
-	arguments := `{"path":"library/Bird Guide.pdf","passages":[{"start":1500,"length":80},{"start":400,"length":700}]}`
+	arguments := `{"path":"library/Bird Guide.pdf","spans":[{"start":1500,"length":80},{"start":400,"length":700}]}`
 	if failure := w.call(t, "source_focus", arguments, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}

@@ -44,11 +44,11 @@ func addSourceFocus(registry *tools.Registry, control window.Control) error {
 		Instructions: []string{showSentence, spansSentence},
 		Requires:     []string{host.PermissionWindowFocus},
 	}, func(ctx context.Context, in api.SourceFocusInput) (api.SourceFocusOutput, error) {
-		passages := make([]host.ByteSpan, 0, len(in.Passages))
-		for _, passage := range in.Passages {
-			passages = append(passages, host.ByteSpan{Start: passage.Start, Length: passage.Length})
+		spans := make([]host.ByteSpan, 0, len(in.Spans))
+		for _, span := range in.Spans {
+			spans = append(spans, host.ByteSpan{Start: span.Start, Length: span.Length})
 		}
-		highlightCount, err := control.FocusFile(ctx, in.Path, passages)
+		highlightCount, err := control.FocusFile(ctx, in.Path, spans)
 		if err != nil {
 			return api.SourceFocusOutput{}, err
 		}

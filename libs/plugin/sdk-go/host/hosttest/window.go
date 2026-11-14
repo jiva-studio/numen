@@ -12,7 +12,7 @@ import (
 
 // FocusRequest is one FocusFile call a Window received.
 type FocusRequest struct {
-	Path     string
+	Path  string
 	Spans []host.ByteSpan
 }
 

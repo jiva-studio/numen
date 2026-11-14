@@ -55,10 +55,10 @@ func (r recordingSearch) SearchText(ctx context.Context, query host.SearchResult
 	return r.search.SearchText(ctx, query)
 }
 
-func newRecordedSearch(t *testing.T, vault *hosttest.Vault, passages []host.SearchResult) (*searchCalls, *tools.Registry) {
+func newRecordedSearch(t *testing.T, vault *hosttest.Vault, results []host.SearchResult) (*searchCalls, *tools.Registry) {
 	t.Helper()
 	search := hosttest.NewSearch(testVault)
-	search.SetIndexedResults(passages)
+	search.SetIndexedResults(results)
 	texts := hosttest.NewTexts(testVault, readerID)
 	calls := &searchCalls{}
 	registry, err := service.New(vaultsOf(vault)).

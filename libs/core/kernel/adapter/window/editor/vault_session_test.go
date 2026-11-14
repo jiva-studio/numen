@@ -1041,8 +1041,8 @@ func TestAWindowActiveOnNothingSearchesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the vault cannot be searched: %v", err)
 	}
-	if passages := found.Msg.GetFound(); len(passages) != 0 {
-		t.Errorf("a window standing on nothing holds the text %+v", passages)
+	if results := found.Msg.GetFound(); len(results) != 0 {
+		t.Errorf("a window standing on nothing holds the text %+v", results)
 	}
 }
 

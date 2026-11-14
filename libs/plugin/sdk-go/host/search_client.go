@@ -184,9 +184,9 @@ func (c *SearchClient) SampleSimilarities(ctx context.Context, recipe string, qu
 		rows[i] = one.GetValues()
 	}
 	return SimilaritySample{
-		ChunkCount: int(res.Msg.GetChunkCount()),
-		SourceCount:  int(res.Msg.GetSourceCount()),
-		Rows:         rows,
+		ChunkCount:  int(res.Msg.GetChunkCount()),
+		SourceCount: int(res.Msg.GetSourceCount()),
+		Rows:        rows,
 	}, nil
 }
 

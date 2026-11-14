@@ -49,7 +49,7 @@ func convertState(state relevance.State) api.GetFloorResponse {
 			Spread:       c.Spread,
 			Histogram:    c.Histogram,
 			QueryCount:   c.QueryCount,
-			ChunkCount: c.ChunkCount,
+			ChunkCount:   c.ChunkCount,
 			CalibratedAt: c.CalibratedTime.Unix(),
 		}
 	}

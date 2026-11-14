@@ -15,9 +15,9 @@ func newRanking(chunks ...domain.ChunkID) []domain.SearchResult {
 	return out
 }
 
-func chunksIn(passages []domain.SearchResult) []domain.ChunkID {
-	out := make([]domain.ChunkID, 0, len(passages))
-	for _, p := range passages {
+func chunksIn(results []domain.SearchResult) []domain.ChunkID {
+	out := make([]domain.ChunkID, 0, len(results))
+	for _, p := range results {
 		out = append(out, p.ChunkID)
 	}
 	return out

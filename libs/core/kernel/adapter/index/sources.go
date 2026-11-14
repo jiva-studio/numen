@@ -117,14 +117,14 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	out := make([]domain.SearchResult, 0, len(found))
 	for _, p := range found {
 		out = append(out, domain.SearchResult{
-			ChunkID:     chunk.ID(p.Chunk),
-			Path:      p.Path,
-			VersionID:    p.Producer,
-			FileHash: p.ContentHash,
-			Start:       p.Start,
-			Length:      p.Length,
-			PlaceLabel:    p.Location,
-			ChunkHash:   p.ChunkHash,
+			ChunkID:    chunk.ID(p.Chunk),
+			Path:       p.Path,
+			VersionID:  p.Producer,
+			FileHash:   p.ContentHash,
+			Start:      p.Start,
+			Length:     p.Length,
+			PlaceLabel: p.Location,
+			ChunkHash:  p.ChunkHash,
 		})
 	}
 	next := after

@@ -51,10 +51,10 @@ func sampledChunksOf(n, sources int) []hosttest.SampledChunk {
 	return out
 }
 
-func fill(search *hosttest.Search, vault *hosttest.Vault, notes int, passages []hosttest.SampledChunk) {
+func fill(search *hosttest.Search, vault *hosttest.Vault, notes int, chunks []hosttest.SampledChunk) {
 	setNotes(vault, notes)
-	search.SetSampledChunks(modelRecipe, passages)
-	search.SetProgress(int64(len(passages)), int64(len(passages)))
+	search.SetSampledChunks(modelRecipe, chunks)
+	search.SetProgress(int64(len(chunks)), int64(len(chunks)))
 }
 
 func sum(counts []int) int {

@@ -27,18 +27,18 @@ type goldenFixture struct {
 		Text   string    `json:"text"`
 		Vector []float32 `json:"vector"`
 	} `json:"titles"`
-	Passages []struct {
+	Chunks []struct {
 		Source int64  `json:"source"`
 		Vector []byte `json:"vector"`
-	} `json:"passages"`
+	} `json:"chunks"`
 	Expected struct {
-		Outcome      string  `json:"outcome"`
-		Floor        float64 `json:"floor"`
-		Median       float64 `json:"median"`
-		Spread       float64 `json:"spread"`
-		Histogram    []int   `json:"histogram"`
-		QueryCount   int     `json:"queryCount"`
-		ChunkCount int     `json:"passageCount"`
+		Outcome    string  `json:"outcome"`
+		Floor      float64 `json:"floor"`
+		Median     float64 `json:"median"`
+		Spread     float64 `json:"spread"`
+		Histogram  []int   `json:"histogram"`
+		QueryCount int     `json:"queryCount"`
+		ChunkCount int     `json:"chunkCount"`
 	} `json:"expected"`
 }
 
@@ -125,15 +125,15 @@ func hostOf(fixture goldenFixture) (*hosttest.Search, *hosttest.Vault) {
 		vault.File(sourcePath(one.Source), fmt.Sprintf("---\ntitle: %s\n---\n", one.Text))
 	}
 	search.SetEmbedder(func(text string) []float32 { return vectors[text] })
-	passages := make([]hosttest.SampledChunk, len(fixture.Passages))
-	for i, one := range fixture.Passages {
+	chunks := make([]hosttest.SampledChunk, len(fixture.Chunks))
+	for i, one := range fixture.Chunks {
 		values := make([]float32, len(one.Vector))
 		for j, b := range one.Vector {
 			values[j] = float32(int8(b))
 		}
-		passages[i] = hosttest.SampledChunk{Path: sourcePath(one.Source), Vector: values}
+		chunks[i] = hosttest.SampledChunk{Path: sourcePath(one.Source), Vector: values}
 	}
-	search.SetSampledChunks(modelRecipe, passages)
+	search.SetSampledChunks(modelRecipe, chunks)
 	search.SetCosine(coreCosine)
 	return search, vault
 }

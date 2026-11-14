@@ -8,9 +8,9 @@ import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from './debounced'
 import {
   createNameItem,
-  createPassageItem,
+  createResultItem,
   type NameMatch,
-  type Passage,
+  type SearchResult,
   resolveChoice,
   type ResultChoice,
   type SearchHit,
@@ -79,8 +79,8 @@ async function fillSearchGroup<T>(options: FillOptions<T>) {
 
 interface BuildGroupsDeps {
   readonly names: readonly NameMatch[]
-  readonly texts: readonly Passage[]
-  readonly meanings: readonly Passage[]
+  readonly texts: readonly SearchResult[]
+  readonly meanings: readonly SearchResult[]
   readonly words: Words
   readonly getMenu: (target: RunTarget) => readonly SlotItem[]
   readonly isWorking: Record<SearchGroup, boolean>
@@ -95,7 +95,7 @@ const getNoteTarget = (path: string, title: string): RunTarget => ({
   tab: '',
 })
 
-const getPassageMenu = (deps: BuildGroupsDeps, one: Passage): readonly SlotItem[] =>
+const getResultMenu = (deps: BuildGroupsDeps, one: SearchResult): readonly SlotItem[] =>
   one.isNote ? deps.getMenu(getNoteTarget(one.path, one.title)) : []
 
 function buildSearchGroups(deps: BuildGroupsDeps) {
@@ -122,15 +122,13 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
     group(
       'text',
       deps.words.text,
-      deps.texts.map((one) =>
-        createPassageItem('text', one, deps.words, getPassageMenu(deps, one)),
-      ),
+      deps.texts.map((one) => createResultItem('text', one, deps.words, getResultMenu(deps, one))),
     ),
     group(
       'meaning',
       deps.words.meaning,
       deps.meanings.map((one) =>
-        createPassageItem('meaning', one, deps.words, getPassageMenu(deps, one)),
+        createResultItem('meaning', one, deps.words, getResultMenu(deps, one)),
       ),
     ),
   ]
@@ -165,8 +163,8 @@ const hasContent = (group: PaletteGroup): boolean =>
 
 interface SearchRefs {
   names: ShallowRef<readonly NameMatch[]>
-  texts: ShallowRef<readonly Passage[]>
-  meanings: ShallowRef<readonly Passage[]>
+  texts: ShallowRef<readonly SearchResult[]>
+  meanings: ShallowRef<readonly SearchResult[]>
   isWorking: Ref<Record<SearchGroup, boolean>>
   failureMessages: Ref<Partial<Record<SearchGroup, string>>>
   isAnswered: Ref<boolean>
@@ -175,8 +173,8 @@ interface SearchRefs {
 function createSearchRefs(): SearchRefs {
   return {
     names: shallowRef<readonly NameMatch[]>([]),
-    texts: shallowRef<readonly Passage[]>([]),
-    meanings: shallowRef<readonly Passage[]>([]),
+    texts: shallowRef<readonly SearchResult[]>([]),
+    meanings: shallowRef<readonly SearchResult[]>([]),
     isWorking: ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false }),
     failureMessages: ref<Partial<Record<SearchGroup, string>>>({}),
     isAnswered: ref(false),

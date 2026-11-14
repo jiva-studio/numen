@@ -24,10 +24,10 @@ type VaultProvider interface {
 type Handler struct {
 	numenv1connect.UnimplementedSearchServiceHandler
 
-	vaults       VaultProvider
-	findNames    *search.FindNames
-	findText *search.FindText
-	searches     *searchcancel.Searches
+	vaults    VaultProvider
+	findNames *search.FindNames
+	findText  *search.FindText
+	searches  *searchcancel.Searches
 }
 
 // NewHandler is the handler of SearchService over the names and the text of the shown vault.

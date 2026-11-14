@@ -63,7 +63,7 @@ func (u *FindNames) Execute(ctx context.Context, v domain.Vault, query string, l
 // FindTextOutput are the search results found and, for the notes they were read from, what each note is
 // and the kind of tab it opens in, by path. A source that is not a note is absent from the maps.
 type FindTextOutput struct {
-	Results []domain.SearchResult
+	Results  []domain.SearchResult
 	Notes    map[string]domain.NoteRef
 	Types    map[string]domain.NoteType
 	TabKinds map[string]string

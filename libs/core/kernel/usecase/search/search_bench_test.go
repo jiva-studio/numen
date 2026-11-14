@@ -87,7 +87,7 @@ type benchCorpus struct {
 	db         *container.Index
 	searchMock search.Search
 	mockModel  sourcefake.Embedder
-	passages   sourceport.LexicalQueries
+	queries    sourceport.LexicalQueries
 	candidates []domain.SearchResult
 	recipe     string
 	queryVec   []float32
@@ -136,8 +136,8 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	searchMock := container.NewSearch(cfg, db, asking, nil)
 
-	passages := db.ChunkSearch()
-	candidates, err := passages.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
+	queries := db.ChunkSearch()
+	candidates, err := queries.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -152,7 +152,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 		db:         db,
 		searchMock: searchMock,
 		mockModel:  mock,
-		passages:   passages,
+		queries:    queries,
 		candidates: candidates,
 		recipe:     model.Recipe(),
 		queryVec:   queryVectors[0],
@@ -276,7 +276,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					res, err := c.passages.FindLexical(ctx, c.vault.ID, source.LexicalQuery{Text: queryLexical, Kinds: nil, Limit: 100})
+					res, err := c.queries.FindLexical(ctx, c.vault.ID, source.LexicalQuery{Text: queryLexical, Kinds: nil, Limit: 100})
 					if err != nil {
 						b.Fatal(err)
 					}
@@ -290,7 +290,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					if _, err := c.passages.GetNamedSections(ctx, c.vault.ID, source.LexicalQuery{Text: "Section", Kinds: nil, Limit: 20}); err != nil {
+					if _, err := c.queries.GetNamedSections(ctx, c.vault.ID, source.LexicalQuery{Text: "Section", Kinds: nil, Limit: 20}); err != nil {
 						b.Fatal(err)
 					}
 				}

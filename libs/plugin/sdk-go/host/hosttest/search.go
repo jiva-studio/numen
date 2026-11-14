@@ -56,7 +56,7 @@ type SampledChunk struct {
 
 // searchVault is what the index holds of one vault.
 type searchVault struct {
-	chunks      map[string][]SampledChunk
+	chunks        map[string][]SampledChunk
 	chunkCount    int64
 	embeddedCount int64
 	stats         host.IndexStats

@@ -96,13 +96,13 @@ func TestSearchSampleChunksAreSmallChunksWithAVectorOfTheRecipe(t *testing.T) {
 		t.Fatalf("got %d passages, want the 4 small chunks of the two embedded books", len(got))
 	}
 	sources := map[int64]int{}
-	for _, passage := range got {
-		sources[passage.Source]++
-		if !strings.HasPrefix(passage.Path, "library/") {
-			t.Errorf("a passage names the path %q, want one of the vault", passage.Path)
+	for _, chunk := range got {
+		sources[chunk.Source]++
+		if !strings.HasPrefix(chunk.Path, "library/") {
+			t.Errorf("a passage names the path %q, want one of the vault", chunk.Path)
 		}
-		if len(passage.Vector) != 1024 {
-			t.Errorf("a passage holds %d dimensions, want 1024", len(passage.Vector))
+		if len(chunk.Vector) != 1024 {
+			t.Errorf("a passage holds %d dimensions, want 1024", len(chunk.Vector))
 		}
 	}
 	if len(sources) != 2 {

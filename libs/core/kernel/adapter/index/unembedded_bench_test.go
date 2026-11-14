@@ -80,7 +80,7 @@ func BenchmarkUnembedded(b *testing.B) {
 	ctx := b.Context()
 	recipe := getBenchModel().Recipe()
 	rows := queriesOf(db)
-	passages := db.Sources()
+	store := db.Sources()
 
 	b.Run("Rows", func(b *testing.B) {
 		for b.Loop() {
@@ -91,7 +91,7 @@ func BenchmarkUnembedded(b *testing.B) {
 	})
 	b.Run("Chunks", func(b *testing.B) {
 		for b.Loop() {
-			if _, _, err := passages.GetUnembeddedChunks(ctx, getBenchVault().ID, getBenchModel().Recipe(), "", chunksPerPage); err != nil {
+			if _, _, err := store.GetUnembeddedChunks(ctx, getBenchVault().ID, getBenchModel().Recipe(), "", chunksPerPage); err != nil {
 				b.Fatal(err)
 			}
 		}

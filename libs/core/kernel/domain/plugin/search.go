@@ -6,8 +6,8 @@ import "github.com/jiva-studio/numen/libs/note/domain"
 const (
 	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledChunks how
 	// many small chunks it compares each of them with.
-	MaxSampledQueries  = 256
-	MaxSampledChunks = 500
+	MaxSampledQueries = 256
+	MaxSampledChunks  = 500
 )
 
 // EmbeddingState is the model in use and how far a vault is embedded under it.
@@ -39,9 +39,9 @@ type SimilarityQuery struct {
 
 // SimilaritySample is the cosine similarity of each query with the sampled chunks of the vault.
 type SimilaritySample struct {
-	ChunkCount int
-	SourceCount  int
-	Rows         [][]float64
+	ChunkCount  int
+	SourceCount int
+	Rows        [][]float64
 }
 
 // FloorSource is where the floor a search applies comes from.

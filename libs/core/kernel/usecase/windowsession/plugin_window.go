@@ -35,11 +35,11 @@ type TabShowing interface {
 // PluginWindow lets the plugins that call the host move the window: focus a note or the byte ranges of
 // a file, read the open tabs and show one. It refuses each call while the window shows no vault.
 type PluginWindow struct {
-	current  currentVault
-	reports  *TabReports
-	note     NoteFocus
-	files    FileFocus
-	tabs     TabShowing
+	current currentVault
+	reports *TabReports
+	note    NoteFocus
+	files   FileFocus
+	tabs    TabShowing
 }
 
 func NewPluginWindow(rt *Runtime, reports *TabReports, note NoteFocus, files FileFocus, tabs TabShowing) PluginWindow {

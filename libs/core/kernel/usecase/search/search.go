@@ -77,7 +77,7 @@ type Query struct {
 // Ranking is the answer of one participant: search results best first. In a leading ranking the first
 // search result of a source is shown before the other search results of that source.
 type Ranking struct {
-	Results  []domain.SearchResult
+	Results   []domain.SearchResult
 	IsLeading bool
 }
 

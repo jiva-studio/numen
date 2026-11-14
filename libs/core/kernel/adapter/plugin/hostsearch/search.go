@@ -50,14 +50,14 @@ type Progress interface {
 // the installation and the search source that fills it. It implements the capabilities of
 // hostendpoint.SearchAccess.
 type Search struct {
-	Source   Source
-	Queries  *vectorscase.EmbedQueries
-	Samples  Samples
-	Nearest  Nearest
-	Places   search.FindNearest
-	Progress Progress
-	Stats    *search.Stats
-	Policy   search.FloorPolicy
+	Source     Source
+	Queries    *vectorscase.EmbedQueries
+	Samples    Samples
+	Nearest    Nearest
+	Places     search.FindNearest
+	Progress   Progress
+	Stats      *search.Stats
+	Policy     search.FloorPolicy
 	TextSearch *search.SearchText
 }
 

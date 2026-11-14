@@ -21,10 +21,10 @@ import (
 // windowHost returns HostWindowService with fixed values and records the requests.
 type windowHost struct {
 	numenv1connect.UnimplementedHostWindowServiceHandler
-	code       v1.HostWindowErrorCode
-	status     *connect.Error
-	authHeader string
-	notes      []*v1.FocusNoteRequest
+	code          v1.HostWindowErrorCode
+	status        *connect.Error
+	authHeader    string
+	notes         []*v1.FocusNoteRequest
 	focusRequests []*v1.FocusFileRequest
 }
 

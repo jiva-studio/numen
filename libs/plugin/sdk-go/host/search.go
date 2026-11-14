@@ -44,8 +44,8 @@ const (
 	MaxEmbeddedBytes = 8192
 	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledChunks
 	// how many small chunks the host compares each of them with.
-	MaxSampledQueries  = 256
-	MaxSampledChunks = 500
+	MaxSampledQueries = 256
+	MaxSampledChunks  = 500
 )
 
 // EmbeddingState is the model in use and how far a vault is embedded under it.
@@ -118,8 +118,8 @@ type SimilarityQuery struct {
 type SimilaritySample struct {
 	// ChunkCount is how many small chunks the host sampled, and SourceCount how many sources they
 	// belong to.
-	ChunkCount int
-	SourceCount  int
+	ChunkCount  int
+	SourceCount int
 	// Rows holds, for each query in the order given, its similarity with each sampled chunk of another
 	// note, in the order of the chunks. The row of a query with no vector is empty.
 	Rows [][]float64

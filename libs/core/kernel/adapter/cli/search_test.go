@@ -21,12 +21,12 @@ import (
 // fakeSearchIndex is a test double of the search index: it returns the
 // configured passages for a query, or fails with the configured error.
 type fakeSearchIndex struct {
-	passages []domain.SearchResult
-	err      error
+	results []domain.SearchResult
+	err     error
 }
 
 func (a fakeSearchIndex) FindLexical(context.Context, domain.VaultID, source.LexicalQuery) ([]domain.SearchResult, error) {
-	return a.passages, a.err
+	return a.results, a.err
 }
 
 func (a fakeSearchIndex) GetNamedSections(context.Context, domain.VaultID, source.LexicalQuery) ([]domain.SearchResult, error) {
@@ -132,7 +132,7 @@ func TestEachResultIsNamedByItsSourceAndItsPlace(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	index := fakeSearchIndex{passages: []domain.SearchResult{
+	index := fakeSearchIndex{results: []domain.SearchResult{
 		{ChunkID: "c1", Path: "Bees.md", Kind: domain.KindNote, Length: len("Bees fly\n\n   far"), PlaceLabel: "p. 3"},
 		{ChunkID: "c2", Path: "Hives.md", Kind: domain.KindNote, Length: len("Hives  hum")},
 	}}

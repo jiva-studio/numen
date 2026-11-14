@@ -57,20 +57,20 @@ func (u *UseCase) Search(ctx context.Context, in api.LibrarySearchInput) (api.Li
 	if err != nil {
 		return out, err
 	}
-	for _, passage := range found {
-		place := newPlace(textplace.GetSelector(passage.Selector))
+	for _, result := range found {
+		place := newPlace(textplace.GetSelector(result.Selector))
 		if place != nil && place.CFI != "" {
-			place.Chapter = passage.PlaceLabel
+			place.Chapter = result.PlaceLabel
 		}
 		out.Matches = append(out.Matches, api.LibraryMatch{
-			Path:   passage.Path,
-			Title:  titles[passage.Path],
+			Path:   result.Path,
+			Title:  titles[result.Path],
 			Place:  place,
-			Text:   passage.Text,
-			Start:  passage.Start,
-			Length: passage.Length,
-			Line:   passage.MatchLine + 1,
-			URI:    textplace.FormatAddress(passage.Path, passage.Start, passage.Length),
+			Text:   result.Text,
+			Start:  result.Start,
+			Length: result.Length,
+			Line:   result.MatchLine + 1,
+			URI:    textplace.FormatAddress(result.Path, result.Start, result.Length),
 		})
 	}
 	return out, nil
@@ -79,11 +79,11 @@ func (u *UseCase) Search(ctx context.Context, in api.LibrarySearchInput) (api.Li
 func (u *UseCase) getTitles(ctx context.Context, found []host.SearchResult) (map[string]string, error) {
 	titles := make(map[string]string, len(found))
 	var notePaths []string
-	for _, passage := range found {
-		base := path.Base(passage.Path)
-		titles[passage.Path] = strings.TrimSuffix(base, path.Ext(base))
-		if strings.HasSuffix(passage.Path, domain.NoteExtension) {
-			notePaths = append(notePaths, passage.Path)
+	for _, result := range found {
+		base := path.Base(result.Path)
+		titles[result.Path] = strings.TrimSuffix(base, path.Ext(base))
+		if strings.HasSuffix(result.Path, domain.NoteExtension) {
+			notePaths = append(notePaths, result.Path)
 		}
 	}
 	refs, err := u.notes.GetNotes(ctx, notePaths)

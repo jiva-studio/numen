@@ -5,7 +5,7 @@ package service
 const (
 	noteLinkSentence = "Link each note you mention by its title where you mention it, for example [[Tidal pools]], " +
 		"not in a list at the end; when several notes share a title, link the note as [[note://<identifier>]]."
-	resultLinkSentence = "Link each passage of a book, a PDF or a recording that you cite where you cite it, as a markdown link to the `uri` that library_search returns for it, not in a list at the end, for example [the harbor chapter](numen:library%2FA%20Sea%20Atlas.pdf?start=40120&length=980)."
+	resultLinkSentence  = "Link each passage of a book, a PDF or a recording that you cite where you cite it, as a markdown link to the `uri` that library_search returns for it, not in a list at the end, for example [the harbor chapter](numen:library%2FA%20Sea%20Atlas.pdf?start=40120&length=980)."
 	noFileLinkSentence  = "Never use file:// links for notes or books."
 	searchScopeSentence = "note_search finds notes only; library_search finds passages in all indexed files: notes, books, PDFs, scans and recordings."
 	userWordsSentence   = "Search with the user's own words before your own."

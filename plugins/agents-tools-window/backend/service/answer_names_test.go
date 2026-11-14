@@ -330,7 +330,7 @@ func TestNoteFocusReturnsTheNoteKey(t *testing.T) {
 
 func TestSourceFocusReturnsThePathAndTheHighlightCount(t *testing.T) {
 	w := newWindowTools(t)
-	answer := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf","passages":[{"start":1500,"length":80},{"start":400,"length":700}]}`)
+	answer := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf","spans":[{"start":1500,"length":80},{"start":400,"length":700}]}`)
 	requireKeys(t, "the answer of source_focus", answer, []string{"path", "highlightCount"}, []string{"shown", "summary", "kind"})
 	if answer["path"] != guidePath || answer["highlightCount"] != float64(2) {
 		t.Errorf("source_focus returned %v, want path %s and highlightCount 2", answer, guidePath)
@@ -349,7 +349,7 @@ func TestSourceFocusReturnsThePathAndTheHighlightCount(t *testing.T) {
 // The window opens a note whole and highlights none of the passages given for it.
 func TestSourceFocusOfANoteReturnsAHighlightCountOfZero(t *testing.T) {
 	w := newWindowTools(t)
-	answer := w.getAnswer(t, "source_focus", `{"path":"notes/Heron.md","passages":[{"start":4,"length":10},{"start":20,"length":5}]}`)
+	answer := w.getAnswer(t, "source_focus", `{"path":"notes/Heron.md","spans":[{"start":4,"length":10},{"start":20,"length":5}]}`)
 	requireKeys(t, "the answer of source_focus for a note", answer, []string{"path", "highlightCount"}, nil)
 	if answer["path"] != notePath || answer["highlightCount"] != float64(0) {
 		t.Errorf("source_focus of a note returned %v, want path %s and highlightCount 0", answer, notePath)
