@@ -109,6 +109,10 @@ const IGNORED_DIRS = new Set([
   'testdata',
 ])
 
+// Paths the scan skips, relative to the repository root. apps/landing: the owner is rewriting the website,
+// so its text is not checked. Remove this entry when that rewrite is done.
+const SKIPPED_PATHS = ['apps/landing']
+
 const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.go', '.proto', '.md', '.mdx', '.css', '.scss', '.mjs'])
 
 // 4. Third-person singular verbs used as function names (Rule 2 AGENTS.md)
@@ -447,6 +451,7 @@ function scanFile(filePath) {
   const relBase = fs.existsSync(rootDir) && fs.statSync(rootDir).isFile() ? path.dirname(rootDir) : rootDir
   const relPath = path.relative(relBase, filePath) || path.basename(filePath)
   const ext = path.extname(filePath)
+  if (SKIPPED_PATHS.some((skipped) => relPath === skipped || relPath.startsWith(skipped + path.sep))) return
   const baseNameOfFile = path.basename(filePath)
   const isManifest = baseNameOfFile === 'manifest.json'
   if (!EXTENSIONS.has(ext) && !isManifest) return

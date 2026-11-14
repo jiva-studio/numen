@@ -19,11 +19,11 @@ import (
 const Module = "github.com/jiva-studio/numen/libs/core/kernel/"
 
 // GetDriving returns the driving adapters of the kernel by package path under the kernel, read from the tree.
-func GetDriving(t testing.TB) map[string]bool {
-	t.Helper()
+func GetDriving(tb testing.TB) map[string]bool {
+	tb.Helper()
 	driving, err := ListDriving("..")
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return driving
 }
