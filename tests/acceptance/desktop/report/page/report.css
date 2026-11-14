@@ -558,8 +558,9 @@ h2 .time {
   font-size: 13px;
 }
 
+/* The 16px icon sits 8px inside its 32px button: -8px puts its edge on the timeline's edge. */
 .toolbar .icon-button {
-  margin: 0 -10px;
+  margin: 0 -8px;
   color: var(--fg);
 }
 
@@ -569,15 +570,16 @@ h2 .time {
 }
 
 .speed {
-  display: inline-flex;
+  display: inline-grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
   padding: 2px;
   border: 1px solid var(--border);
   border-radius: 8px;
 }
 
 .speed button {
-  min-width: 46px;
-  padding: 3px 8px;
+  padding: 3px 10px;
   border: 0;
   border-radius: 6px;
   background: none;
