@@ -166,10 +166,10 @@ func TestTurnFramesTrackMessagesThoughtsAndToolCalls(t *testing.T) {
 		t.Errorf("sent =\n%v\nwant\n%v", sent, want)
 	}
 
-	refused := errors.New("sink closed")
-	sendErr = refused
-	if err := frames.SendMessage("fail"); !errors.Is(err, refused) || !errors.Is(frames.sendErr, refused) {
-		t.Errorf("SendMessage error = %v, sendErr = %v, want %v", err, frames.sendErr, refused)
+	sinkErr := errors.New("sink closed")
+	sendErr = sinkErr
+	if err := frames.SendMessage("fail"); !errors.Is(err, sinkErr) || !errors.Is(frames.sendErr, sinkErr) {
+		t.Errorf("SendMessage error = %v, sendErr = %v, want %v", err, frames.sendErr, sinkErr)
 	}
 }
 

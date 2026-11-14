@@ -279,12 +279,12 @@ func TestRunTaskThreadsRetriesAndErrorPaths(t *testing.T) {
 		t.Errorf("recorded specs = %+v", cmds.specs)
 	}
 
-	// 5. Sink refusal, caller cancellation, and Runner.Close during RunTask.
-	refused := errors.New("chat closed")
+	// 5. Sink error.
+	sinkErr := errors.New("chat closed")
 	if _, err := runner.RunTask(t.Context(), call, &contract.TaskRequest{Prompt: "p"}, func(*contract.TaskFrame) error {
-		return refused
-	}); !errors.Is(err, refused) {
-		t.Errorf("RunTask sink error = %v, want %v", err, refused)
+		return sinkErr
+	}); !errors.Is(err, sinkErr) {
+		t.Errorf("RunTask sink error = %v, want %v", err, sinkErr)
 	}
 }
 

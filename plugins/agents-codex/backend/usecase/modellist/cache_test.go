@@ -170,20 +170,28 @@ func TestAnAsynchronousCacheAnswersWithTheStoredListFirst(t *testing.T) {
 	if len(initial) != 1 || initial[0].Name != "disk-m" {
 		t.Fatalf("async initial get = %v, want disk-m", initial)
 	}
-	wall := clock.System{}
-	deadline := wall.Now().Add(25 * time.Second)
-	for wall.Now().Before(deadline) {
-		asyncCache.mu.Lock()
-		cached := asyncCache.isCached
-		asyncCache.mu.Unlock()
-		if cached {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
+	waitFor(t, 25*time.Second, asyncCache.hasCached)
 	bgGot := asyncCache.Get(t.Context(), cmd)
 	if len(bgGot) != 1 || bgGot[0].Name != "bg-m" {
 		t.Fatalf("async cached get = %v, want bg-m", bgGot)
+	}
+}
+
+func (c *Cache) hasCached() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.isCached
+}
+
+func waitFor(t *testing.T, limit time.Duration, isReady func() bool) {
+	t.Helper()
+	deadline := time.After(limit)
+	for !isReady() {
+		select {
+		case <-deadline:
+			t.Fatalf("the cache did not reach the expected state within %v", limit)
+		case <-time.After(time.Millisecond):
+		}
 	}
 }
 
@@ -197,6 +205,7 @@ type gatedSource struct {
 	mu      sync.Mutex
 	calls   int
 	release chan struct{}
+	entered chan struct{}
 	models  []agentmodel.Model
 	err     error
 }
@@ -204,9 +213,12 @@ type gatedSource struct {
 func (g *gatedSource) List(context.Context, []string) ([]agentmodel.Model, error) {
 	g.mu.Lock()
 	g.calls++
-	release := g.release
+	release, entered := g.release, g.entered
 	models, err := g.models, g.err
 	g.mu.Unlock()
+	if entered != nil {
+		entered <- struct{}{}
+	}
 	if release != nil {
 		<-release
 	}
@@ -226,7 +238,7 @@ func TestCacheEmptyKeyBackoffAndInFlightDeduplication(t *testing.T) {
 	src := &gatedSource{models: []agentmodel.Model{{Name: "m-empty"}}}
 	syncCache := NewCache(src, now, false)
 
-	// Fresh cache with empty command (key == "") still fetches because isCached is false.
+	// A fresh cache lists an empty command line.
 	if got := syncCache.Get(t.Context(), nil); len(got) != 1 || got[0].Name != "m-empty" {
 		t.Fatalf("Get(nil) on fresh cache = %v, want [m-empty]", got)
 	}
@@ -239,33 +251,28 @@ func TestCacheEmptyKeyBackoffAndInFlightDeduplication(t *testing.T) {
 
 	// Async in-flight deduplication and cleanup after completion.
 	release := make(chan struct{})
-	asyncSrc := &gatedSource{release: release, err: errors.New("boom")}
+	asyncSrc := &gatedSource{release: release, entered: make(chan struct{}, 2), err: errors.New("boom")}
 	asyncCache := NewCache(asyncSrc, now, true)
 	asyncCache.Get(t.Context(), []string{"async-cmd"})
 	asyncCache.Get(t.Context(), []string{"async-cmd"})
 
-	wall := clock.System{}
-	deadline := wall.Now().Add(5 * time.Second)
-	for wall.Now().Before(deadline) && asyncSrc.getCalls() == 0 {
-		time.Sleep(5 * time.Millisecond)
+	select {
+	case <-asyncSrc.entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the background listing did not start")
 	}
 	if got := asyncSrc.getCalls(); got != 1 {
 		t.Fatalf("concurrent async Get started %d fetches, want 1", got)
 	}
 
 	close(release)
-	for wall.Now().Before(deadline) {
+	waitFor(t, 5*time.Second, func() bool {
 		asyncCache.mu.Lock()
-		inFlight := asyncCache.inFlight["async-cmd"]
-		failed := asyncCache.failedKey == "async-cmd"
-		asyncCache.mu.Unlock()
-		if !inFlight && failed {
-			break
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
+		defer asyncCache.mu.Unlock()
+		return !asyncCache.inFlight["async-cmd"] && asyncCache.failedKey == "async-cmd"
+	})
 
-	// After failureBackoff, because delete(c.inFlight, key) ran, another background fetch starts.
+	// A failed command line is listed again after failureBackoff.
 	now.Advance(failureBackoff)
 	asyncSrc.mu.Lock()
 	asyncSrc.release = nil
@@ -274,15 +281,7 @@ func TestCacheEmptyKeyBackoffAndInFlightDeduplication(t *testing.T) {
 	asyncSrc.mu.Unlock()
 
 	asyncCache.Get(t.Context(), []string{"async-cmd"})
-	for wall.Now().Before(deadline) {
-		asyncCache.mu.Lock()
-		cached := asyncCache.isCached
-		asyncCache.mu.Unlock()
-		if cached {
-			break
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
+	waitFor(t, 5*time.Second, asyncCache.hasCached)
 	if got := asyncCache.Get(t.Context(), []string{"async-cmd"}); len(got) != 1 || got[0].Name != "recovered" || asyncSrc.getCalls() != 2 {
 		t.Fatalf("after backoff Get = %v, calls = %d, want [recovered] and 2 calls", got, asyncSrc.getCalls())
 	}

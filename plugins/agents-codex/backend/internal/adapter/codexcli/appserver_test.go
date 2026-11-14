@@ -116,15 +116,13 @@ func TestAskCodexModelsStopsCommand(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for range 200 {
-			err = proc.Signal(syscall.Signal(0))
-			if errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH) {
-				break
+		deadline := time.After(5 * time.Second)
+		for err = proc.Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) && !errors.Is(err, syscall.ESRCH); err = proc.Signal(syscall.Signal(0)) {
+			select {
+			case <-deadline:
+				t.Fatalf("expected process %d (%s) to be stopped and reaped, got %v", pid, file, err)
+			case <-time.After(time.Millisecond):
 			}
-			time.Sleep(10 * time.Millisecond)
-		}
-		if !errors.Is(err, os.ErrProcessDone) && !errors.Is(err, syscall.ESRCH) {
-			t.Fatalf("expected process %d (%s) to be stopped and reaped, got %v", pid, file, err)
 		}
 	}
 }
