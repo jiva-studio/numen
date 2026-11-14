@@ -11,6 +11,11 @@ const (
 )
 
 // ParseRecognizeMode returns the mode of the plugin settings; an absent or unknown value is ModeOff.
-func ParseRecognizeMode(_ map[string]string) RecognizeMode {
-	return ModeOff
+func ParseRecognizeMode(values map[string]string) RecognizeMode {
+	switch mode := RecognizeMode(values["recognizeMode"]); mode {
+	case ModeWhenNoTextLayer, ModeAlways:
+		return mode
+	default:
+		return ModeOff
+	}
 }

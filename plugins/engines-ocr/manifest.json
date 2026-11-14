@@ -28,7 +28,7 @@
       {
         "event": "file.added",
         "command": "app:file.createText",
-        "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeAutomatically == true && !target.versions.exists(v, v.kind == 'recognition' && v.isValid)"
+        "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeMode != 'off' && !target.versions.exists(v, v.kind == 'recognition' && v.isValid)"
       }
     ]
   },
@@ -246,11 +246,28 @@
       ]
     },
     {
-      "key": "recognizeAutomatically",
-      "type": "boolean",
-      "title": "Recognize automatically",
-      "description": "Recognize every PDF and image in the vault that has no text",
-      "default": false
+      "key": "recognizeMode",
+      "type": "enum",
+      "title": "Recognize text",
+      "description": "When the text of a PDF or image is recognized without a request",
+      "default": "off",
+      "options": [
+        {
+          "value": "off",
+          "title": "Never",
+          "detail": "Only the files you choose from the menu or the agent asks for"
+        },
+        {
+          "value": "whenNoTextLayer",
+          "title": "When there is no text",
+          "detail": "Scanned PDFs and images; PDFs that carry their own text are left alone"
+        },
+        {
+          "value": "always",
+          "title": "Always",
+          "detail": "Every PDF and image added to the vault"
+        }
+      ]
     }
   ]
 }
