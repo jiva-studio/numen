@@ -12,7 +12,6 @@ export type { Padding }
 /**
  * `focusScale` is how much larger the focus pill is than the box its title would have as a
  * neighbor. `room` is empty space kept on every side of a box, on top of the gaps.
- * `dotSize` is the dot drawn before a title that has no pill.
  */
 interface BoxOptions {
   readonly focusSize: Size
@@ -20,7 +19,6 @@ interface BoxOptions {
   readonly focusScale: number
   readonly padding: Padding
   readonly room: number
-  readonly dotSize: number
   readonly minWidth: number
   readonly iconWidth: number
   readonly headingHeight: number
@@ -81,7 +79,6 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   focusScale: DEFAULT_FOCUS_SCALE,
   padding: DEFAULT_PADDING,
   room: 0,
-  dotSize: 6,
   minWidth: 72,
   iconWidth: 16,
   headingHeight: 22,

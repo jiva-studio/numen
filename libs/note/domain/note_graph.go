@@ -1,5 +1,10 @@
 package domain
 
+import (
+	"errors"
+	"fmt"
+)
+
 // Relation is the position of a note relative to the focus note.
 //
 // It is not a link role. A role is written in a file and states what one link is
@@ -17,7 +22,8 @@ const (
 	RelationReference Relation = "reference"
 )
 
-// LinkDirection tells which note wrote a text link.
+// LinkDirection tells which note wrote a text link. "The note in focus" below is
+// the note a related note belongs to: the focus, or RelatedTo at depth two.
 type LinkDirection string
 
 const (
@@ -29,7 +35,8 @@ const (
 	DirectionBoth LinkDirection = "both"
 )
 
-// GetRelationRank orders the relations a note can have. A note can answer to
+// GetRelationRank orders the relations a note can have: parent, child, jump,
+// sibling, reference. A note can answer to
 // two of them — a pair that are each other's parent, a jump between siblings —
 // and is shown under only one, so it takes the first it qualifies for.
 func GetRelationRank(s Relation) int {
@@ -49,6 +56,31 @@ func GetRelationRank(s Relation) int {
 	}
 }
 
+// RelationDepth is how many steps from the focus the related notes are gathered.
+type RelationDepth uint8
+
+const (
+	// DepthNear gathers the notes related to the focus.
+	DepthNear RelationDepth = 1
+	// DepthFar also gathers the notes related to each of those.
+	DepthFar RelationDepth = 2
+)
+
+// ErrInvalidRelationDepth is a depth that is none of the two.
+var ErrInvalidRelationDepth = errors.New("the depth of related notes is 1 or 2")
+
+// ParseRelationDepth reads the depth a client sends: 0 means DepthNear.
+func ParseRelationDepth(wire uint32) (RelationDepth, error) {
+	switch wire {
+	case 0, 1:
+		return DepthNear, nil
+	case 2:
+		return DepthFar, nil
+	default:
+		return 0, fmt.Errorf("%w, not %d", ErrInvalidRelationDepth, wire)
+	}
+}
+
 // NoteRef is a note as something else refers to it: enough to show it and to
 // ask for it again.
 type NoteRef struct {
@@ -57,12 +89,17 @@ type NoteRef struct {
 	ID    string
 }
 
-// RelatedNote is a note and its relation to the note in focus. Direction is
-// set for RelationReference only.
+// RelatedNote is a note and its relation to the note in focus. RelatedTo is the
+// path of the related note this one belongs to, set for a note found two steps
+// from the focus; Relation and Direction are then relative to that note, not to
+// the focus. Empty otherwise. Direction is set for RelationReference only. A
+// note two steps away has no connection records, and its path can repeat in a
+// graph: once under each related note it belongs to.
 type RelatedNote struct {
 	NoteRef
 	Relation  Relation
 	Direction LinkDirection
+	RelatedTo string
 }
 
 // NoteGraph is one note and everything joined to it, seen from that note.

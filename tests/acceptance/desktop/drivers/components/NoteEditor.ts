@@ -22,6 +22,21 @@ export class NoteEditor {
     return this.panel().locator('.note__text .cm-content')
   }
 
+  /** The text of the line that holds the cursor, or null while the editor draws no cursor: the cursor is read where the editor draws it. */
+  async readCursorLine(): Promise<string | null> {
+    return this.text().evaluate((content) => {
+      const cursor = content.closest('.cm-editor')?.querySelector('.cm-cursor-primary, .cm-cursor')
+      if (!cursor) return null
+      const box = cursor.getBoundingClientRect()
+      const middle = box.top + box.height / 2
+      for (const line of content.querySelectorAll('.cm-line')) {
+        const rect = line.getBoundingClientRect()
+        if (rect.top <= middle && middle <= rect.bottom) return line.textContent
+      }
+      return null
+    })
+  }
+
   /** The alert the note shows above its text. */
   banner(): Locator {
     return this.panel().getByRole('alert')

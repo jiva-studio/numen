@@ -73,6 +73,14 @@ its box only. **Headings per note** sets how many are shown at once, from one to
 settings of the Plex Graph plugin, in its section of [the settings](/settings/), stored as
 `nestHeadings` in the object `md.numen.views.plex.graph`, and `headingLimit`.
 
+## Notes related to related notes
+
+Under each related note the plex sets, in small grey text, the names of the notes that note is related to: its parents over it, and its children, jumps and references under it. They are a little faded until the pointer is over the note or over the room of its names (how faded is **Names opacity**, `namesOpacity`, from 0 to 1 where 0 hides them until then; how visible they are then is **Names opacity in focus**, `focusedNamesOpacity`, from 0.05 to 1), and a name can be clicked only once it is there: click it and the plex moves to that note. Names are for the pointer alone; the keyboard does not reach them. A name has no pill and no headings, and the lines of the plex do not go to it.
+
+Six names are shown for a note, parents first. A note with more shows the first six. The names take room in the map, so a window shows fewer related notes with them than without.
+
+**Show notes related to related notes** turns them off, and **Names per note** sets how many a note shows, from one to twelve. Both are settings of the Plex Graph plugin, in its section of [the settings](/settings/), stored as `showNames` in the object `md.numen.views.plex.graph`, and `namesPerNote`.
+
 ## Building with it
 
 Every node has a small handle: a disc with a cross in it. Press it and drag away from the
@@ -110,7 +118,9 @@ marker is drawn without one.
 
 ## Inspecting and changing links
 
-Right-clicking any connection line between two nodes opens the link inspector:
+Clicking, or right-clicking, a line between two nodes opens the link inspector. The line to a reference, a note linked in the text, has no inspector: no record joins the two notes.
+
+While the pointer is over a note, every line that joins it is highlighted. **Highlight links of a hovered note** (`highlightLinks`, on by default) turns that off, and then only the line the pointer is over is highlighted. The inspector shows:
 
 - **Arrow**: Each end of the connection can have an arrow, independently of the other. A line with no arrow is plain, and a line with an arrow at both ends has a head at each note.
 - **Labels**: Each end has its own label, so the two notes can describe the same connection in their own words. An end with an arrow and no label is kept.

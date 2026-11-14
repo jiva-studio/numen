@@ -17,7 +17,7 @@ const graphVault domain.VaultID = "graph"
 // graph is a hand-written link set for a vault: the outgoing and incoming links
 // of each note, in return order.
 type graph struct {
-	noteport.LinkQueries
+	noteport.LinkBatches
 	out     map[string][]domain.ResolvedLink
 	in      map[string][]domain.ResolvedLink
 	failOut string
@@ -56,6 +56,7 @@ type pathLookup struct {
 	err     error
 	unknown string
 	paths   []string
+	calls   int
 }
 
 func (a *pathLookup) GetNotes(_ context.Context, _ domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
@@ -63,6 +64,7 @@ func (a *pathLookup) GetNotes(_ context.Context, _ domain.VaultID, paths []strin
 		return nil, a.err
 	}
 	a.paths = slices.Clone(paths)
+	a.calls++
 	out := map[string]domain.NoteRef{}
 	for _, p := range paths {
 		if p != a.unknown {
@@ -73,8 +75,12 @@ func (a *pathLookup) GetNotes(_ context.Context, _ domain.VaultID, paths []strin
 }
 
 func showGraph(g graph, refs *pathLookup, focus string) (domain.NoteGraph, error) {
+	return queryRelated(g, refs, focus, 1)
+}
+
+func queryRelated(g graph, refs *pathLookup, focus string, depth domain.RelationDepth) (domain.NoteGraph, error) {
 	return query.NewListRelatedNotes(g, refs).Execute(
-		context.Background(), domain.Vault{ID: graphVault}, focus)
+		context.Background(), domain.Vault{ID: graphVault}, focus, depth)
 }
 
 // Siblings are the other children of a parent, and only of a parent. A child's
@@ -211,4 +217,28 @@ func TestTheFirstOfTwoEqualLinksIsTheOneGenerated(t *testing.T) {
 	if len(got.Connections) != 1 || got.Connections[0].AB == nil || got.Connections[0].AB.Label != "first" {
 		t.Errorf("got %+v", got.Connections)
 	}
+}
+
+func (g graph) GetLinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
+	out := make(map[string][]domain.ResolvedLink, len(paths))
+	for _, p := range paths {
+		links, err := g.GetLinks(ctx, v, p)
+		if err != nil {
+			return nil, err
+		}
+		out[p] = links
+	}
+	return out, nil
+}
+
+func (g graph) GetBacklinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
+	out := make(map[string][]domain.ResolvedLink, len(paths))
+	for _, p := range paths {
+		links, err := g.GetBacklinks(ctx, v, p)
+		if err != nil {
+			return nil, err
+		}
+		out[p] = links
+	}
+	return out, nil
 }

@@ -316,13 +316,14 @@ describe('releasing', () => {
 })
 
 describe('the window it listens on', () => {
-  it('listens for the pointer moving, coming up, being taken away, and a key', () => {
+  it('listens for the pointer moving, coming up, being taken away, a key and a context menu', () => {
     const add = vi.spyOn(window, 'addEventListener')
     const { gesture, drawing } = setUp()
 
     gesture.begin('focus', createPointerDownEvent(drawing, 0, 0))
 
     expect(add.mock.calls.map(([type]) => type).sort()).toEqual([
+      'contextmenu',
       'keydown',
       'pointercancel',
       'pointermove',
@@ -338,7 +339,7 @@ describe('the window it listens on', () => {
 
     gesture.cancel()
 
-    expect(add).toHaveBeenCalledTimes(4)
+    expect(add).toHaveBeenCalledTimes(5)
     for (const [type, handler] of add.mock.calls) {
       expect(remove).toHaveBeenCalledWith(type, handler)
     }
@@ -376,7 +377,7 @@ describe('a plex that goes while a hand is on it', () => {
 
     expect(gesture.from.value).toBeNull()
     expect(drawing.releasePointerCapture).toHaveBeenCalledWith(7)
-    expect(remove).toHaveBeenCalledTimes(4)
+    expect(remove).toHaveBeenCalledTimes(5)
     expect(commits).toEqual([])
   })
 })

@@ -68,11 +68,8 @@ export function usePlexTransition(
     })
   }
 
-  watch(
-    () => graph(),
-    () => run(target()),
-  )
-  watchInputChanges(input, () => run(target()))
+  // One watcher for the graph and the input, so a change of both in one tick arranges once.
+  watch([() => graph(), ...getInputSources(input)], () => run(target()))
   onScopeDispose(stop)
 
   return { frame, isMoving }
@@ -113,29 +110,27 @@ function startTransition(context: StepContext): number {
   return context.clock.schedule(step)
 }
 
-function watchInputChanges(input: () => ArrangeInput | undefined, onChange: () => void): void {
-  watch(
-    [
-      () => input()?.placement,
-      () => input()?.options?.viewport?.width,
-      () => input()?.options?.viewport?.height,
-      () => input()?.options?.margin,
-      () => input()?.options?.maxPerCluster,
-      () => input()?.options?.minWidth,
-      () => input()?.options?.gap,
-      () => input()?.options?.lineGap,
-      () => input()?.options?.focusGap,
-      () => input()?.options?.room,
-      () => input()?.options?.focusScale,
-      () => input()?.options?.routing?.curvature,
-      () => input()?.options?.nodeSize?.width,
-      () => input()?.options?.nodeSize?.height,
-      () => input()?.options?.focusSize?.width,
-      () => input()?.options?.focusSize?.height,
-      () => input()?.measure,
-      () => input()?.measureLabel,
-      () => input()?.labelType,
-    ],
-    onChange,
-  )
+function getInputSources(input: () => ArrangeInput | undefined) {
+  return [
+    () => input()?.placement,
+    () => input()?.options?.viewport?.width,
+    () => input()?.options?.viewport?.height,
+    () => input()?.options?.margin,
+    () => input()?.options?.maxPerCluster,
+    () => input()?.options?.minWidth,
+    () => input()?.options?.gap,
+    () => input()?.options?.lineGap,
+    () => input()?.options?.focusGap,
+    () => input()?.options?.room,
+    () => input()?.options?.focusScale,
+    () => input()?.options?.routing?.curvature,
+    () => input()?.options?.nodeSize?.width,
+    () => input()?.options?.nodeSize?.height,
+    () => input()?.options?.focusSize?.width,
+    () => input()?.options?.focusSize?.height,
+    () => input()?.measure,
+    () => input()?.measureLabel,
+    () => input()?.labelType,
+    () => input()?.room,
+  ]
 }

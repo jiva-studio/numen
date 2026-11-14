@@ -4,25 +4,33 @@ import { measureRect } from '@numen/ui'
  * One node: its box, its title, and the handle to reach out from. Every number
  * it draws with is already on the node it was handed, but for what it is to a
  * gesture, which arrives as its role in one.
+ *
+ * While it is open it draws its parts in the layer over the notes, and stays
+ * where it is in the document.
  */
-import { computed, useTemplateRef, watch } from 'vue'
-import PlexNodeBox from './PlexNodeBox.vue'
-import PlexNodeHandle from './PlexNodeHandle.vue'
-import PlexNodeHeadings from './PlexNodeHeadings.vue'
+import { computed, inject, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import PlexNodeFace from './PlexNodeFace.vue'
+import { LIFT_LAYER, NODE_SIZES } from './layer'
 import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
 import { useHoverFocus } from '../../model/interaction/hoverFocus'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useOpenBox } from '../../model/sizing/expansion'
+import { useLift } from '../../model/useLift'
+import { useNodeState } from '../../model/useNodeState'
+import { getNodeEvents } from '../../model/interaction/nodeEvents'
 import { useNodePress } from '../../model/interaction/press'
+import { useExpandedSizes } from '../../model/useExpandedSizes'
 import { createAriaLabel, type Position } from '../../lib/node'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexNodeProps>(), {
   gestureRole: 'open',
-  wide: null,
-  hung: null,
+  expanded: null,
+  placedHeadings: null,
   behavior: () => DEFAULT_BEHAVIOR,
   showPills: true,
+  restHeight: 0,
+  viewportWidth: undefined,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -35,8 +43,14 @@ defineExpose({ focus: () => group.value?.focus() })
 
 /* --------------------------------- State ---------------------------------- */
 const group = useTemplateRef<SVGGElement>('group')
+const lifted = useTemplateRef<SVGGElement>('lifted')
+const layer = inject(LIFT_LAYER, null)
+const sizes = inject(NODE_SIZES, null)
 
-const hoverFocus = useHoverFocus()
+/** Whether the box has begun to open and not yet closed. */
+const hasOpened = ref(false)
+
+const hoverFocus = useHoverFocus(() => [group.value, lifted.value])
 
 const press = useNodePress(props, getMiddle, {
   activate: () => emit('activate'),
@@ -46,59 +60,72 @@ const press = useNodePress(props, getMiddle, {
 })
 
 const { isGhost, canStop, isAnnounced } = press.role
-const { listening } = press
 
-/**
- * Whether the handle is shown: while the pointer is over the node, or while
- * keyboard focus is on it and the keyboard is in use.
- */
-const hasDropTarget = computed(
-  () =>
-    props.behavior.reaching.hasHandle &&
-    props.node.opacity >= 1 &&
-    (props.gestureRole === 'source' || (props.gestureRole === 'open' && hoverFocus.isOn.value)),
-)
+// A note works out its expanded box and its headings only while it is on or open.
+const isExpanded = computed(() => hoverFocus.isOn.value || hasOpened.value)
+const { expanded, placedHeadings, state } = useExpandedSizes(props, sizes, () => isExpanded.value)
 
-/** A node that is not there yet is announced as nothing; the focus is a picture. */
-const role = computed(() => {
-  if (isGhost.value) return undefined
-  return props.node.relation === 'focus' ? 'img' : 'button'
+const { isHandleVisible, role, openPosition, hue } = useNodeState(state, {
+  isGhost,
+  isOn: hoverFocus.isOn,
 })
-
-/** Whether there is anything to open: more of the title, or headings to hang. */
-const canOpen = computed(() => !!props.wide || !!props.hung)
-
-/**
- * The position of the node while it is hovered or focused and can open; null
- * in every other state.
- */
-const openPosition = computed(() =>
-  canOpen.value && props.node.opacity >= 1 && props.gestureRole === 'open' && hoverFocus.isOn.value
-    ? `${props.node.x} ${props.node.y}`
-    : null,
-)
 
 const { open, box, handle } = useOpenBox({
   node: () => props.node,
-  wide: () => props.wide,
+  expanded: () => expanded.value,
   on: () => openPosition.value,
   delay: () => props.behavior.expansionDelay,
+  hasPill: () => props.showPills,
+  viewportWidth: () => props.viewportWidth,
   clock: props.behavior.clock,
 })
 
-/**
- * One hue per relation, from a token named after it.
- */
-const hue = computed(() => ({
-  '--relation-hue': `var(--numen-relation-${props.node.relation})`,
+const { isLifted, target: liftTarget } = useLift({
+  layer: () => layer?.value ?? null,
+  open: () => open.value,
+  group: () => group.value,
+  lifted: () => lifted.value,
+})
+
+const face = computed(() => ({
+  node: props.node,
+  box: box.value,
+  isGhost: isGhost.value,
+  isTarget: props.gestureRole === 'target',
+  showPills: props.showPills,
+  restHeight: props.restHeight,
+  placedHeadings: placedHeadings.value,
+  open: open.value,
+  isHandleVisible: isHandleVisible.value,
+  handle: handle.value,
 }))
+
+const events = getNodeEvents(press, hoverFocus)
 
 /* --------------------------------- Hooks ---------------------------------- */
 // A box that has begun to open is already over its neighbors.
 watch(
   () => open.value > 0,
-  (now) => emit('settle', now),
+  (now) => {
+    hasOpened.value = now
+    emit('settle', now)
+  },
 )
+watch(
+  () => hoverFocus.isOn.value,
+  (now) => emit('attend', now),
+)
+// At most one node is on: a leave that never came does not keep this one open.
+watch(
+  () => props.attention?.node,
+  (attended) => {
+    if (attended && attended !== props.node.id) hoverFocus.release()
+  },
+)
+onBeforeUnmount(() => {
+  emit('attend', false)
+  emit('settle', false)
+})
 
 /* -------------------------------- Helpers --------------------------------- */
 function getMiddle(): Position | null {
@@ -121,49 +148,53 @@ function getMiddle(): Position | null {
     :role="role"
     :class="[`plex__node--${node.relation}`, `plex__node--${gestureRole}`]"
     :aria-label="isGhost ? undefined : createAriaLabel(node)"
-    @click="press.handlers.onClick"
-    @dblclick="press.handlers.onDoubleClick"
-    @contextmenu="press.handlers.onContextMenu"
     @keydown="press.handlers.onKeyDown"
-    v-on="listening"
-    @pointerenter="hoverFocus.onPointerEnter"
-    @pointerleave="hoverFocus.onPointerLeave"
-    @focusin="hoverFocus.onFocusIn"
-    @focusout="hoverFocus.onFocusOut"
+    v-on="events"
   >
-    <PlexNodeBox
-      :node="node"
-      :box="box"
-      :is-ghost="isGhost"
-      :is-target="gestureRole === 'target'"
-      :show-pills="showPills"
+    <PlexNodeFace
+      v-if="!isLifted"
+      v-bind="face"
+      @enter="(heading) => emit('enter', heading)"
+      @reach="(pointer) => emit('reach', pointer)"
+      @ask="emit('ask')"
     >
       <template v-if="$slots.icon" #icon="{ node: drawn }">
         <slot name="icon" :node="drawn" />
       </template>
-    </PlexNodeBox>
+    </PlexNodeFace>
 
-    <PlexNodeHeadings
-      v-if="hung"
-      :hung="hung"
-      :open="open"
-      @enter="(heading) => emit('enter', heading)"
-    />
-
-    <!-- Reach out from here to make something. Under the hand or under the
-         keyboard, so it is there when wanted and out of the way when not. -->
-    <PlexNodeHandle
-      v-if="hasDropTarget"
-      :at="handle"
-      @reach="(pointer) => emit('reach', pointer)"
-      @ask="emit('ask')"
-    />
+    <!-- Open, the parts are drawn over the other notes from the layer the whole drawing keeps for them. -->
+    <Teleport v-if="isLifted" :to="liftTarget">
+      <g
+        ref="lifted"
+        class="plex__lifted"
+        :data-node="node.id"
+        :style="hue"
+        :transform="`translate(${node.x} ${node.y})`"
+        :opacity="node.opacity"
+        aria-hidden="true"
+        :class="[`plex__node--${node.relation}`, `plex__node--${gestureRole}`]"
+        v-on="events"
+      >
+        <PlexNodeFace
+          v-bind="face"
+          @enter="(heading) => emit('enter', heading)"
+          @reach="(pointer) => emit('reach', pointer)"
+          @ask="emit('ask')"
+        >
+          <template v-if="$slots.icon" #icon="{ node: drawn }">
+            <slot name="icon" :node="drawn" />
+          </template>
+        </PlexNodeFace>
+      </g>
+    </Teleport>
   </g>
 </template>
 
 <style scoped>
 /* The position comes from the frame, and carries no transition of its own. */
-.plex__node {
+.plex__node,
+.plex__lifted {
   /* The corner of a node's box, and the corner of the box around the one in
      front. */
   --radius: 0.375rem;
@@ -177,7 +208,8 @@ function getMiddle(): Position | null {
 /* Hover mixes a fraction of the node's text color into its fill, which darkens
    a light node and lightens a dark one. The outline keeps the relation's hue,
    and the focused node is painted from the pair it uses. */
-.plex__node:hover :deep(.plex__box) {
+.plex__node:hover :deep(.plex__box),
+.plex__lifted:hover :deep(.plex__box) {
   fill: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 8%);
 }
 
@@ -202,7 +234,8 @@ function getMiddle(): Position | null {
   cursor: default;
 }
 
-[data-moving] .plex__node :deep(.plex__box) {
+[data-moving] .plex__node :deep(.plex__box),
+[data-moving] .plex__lifted :deep(.plex__box) {
   transition:
     fill var(--plex-move) var(--numen-easing),
     stroke var(--plex-move) var(--numen-easing);
@@ -230,7 +263,9 @@ function getMiddle(): Position | null {
   transition: none;
 }
 
+/* A ghost is a field: its text keeps the side padding of one, whatever the look of the pills. */
 .plex__node--ghost :deep(.plex__title) {
+  padding-inline: 0.625rem;
   color: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
 }
@@ -260,9 +295,5 @@ function getMiddle(): Position | null {
 /* Without its pill the focus is set on the surface, in the ink every other title is in. */
 .plex__node--focus :deep(.plex__title--bare) {
   color: var(--numen-ink);
-}
-
-.plex__node--focus :deep(.plex__dot) {
-  background: var(--numen-accent);
 }
 </style>

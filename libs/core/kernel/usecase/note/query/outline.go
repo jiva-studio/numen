@@ -28,13 +28,13 @@ type GetRelatedNotesView struct {
 }
 
 // NewGetRelatedNotesView creates the gathering over the links and the notes of the index.
-func NewGetRelatedNotesView(links noteport.LinkQueries, notes RefQueries, types noteport.NoteTypes, tabKinds TabKinds) *GetRelatedNotesView {
+func NewGetRelatedNotesView(links noteport.LinkBatches, notes RefQueries, types noteport.NoteTypes, tabKinds TabKinds) *GetRelatedNotesView {
 	return &GetRelatedNotesView{relatedNotes: NewListRelatedNotes(links, notes), types: types, tabKinds: tabKinds}
 }
 
-// Execute gathers the related notes of the note at the path. The types are read once for the whole graph.
-func (u *GetRelatedNotesView) Execute(ctx context.Context, v domain.Vault, path string) (RelatedNotesView, error) {
-	found, err := u.relatedNotes.Execute(ctx, v, path)
+// Execute gathers the related notes of the note at the path. DepthFar adds the notes related to each of them. The types are read once for the whole graph.
+func (u *GetRelatedNotesView) Execute(ctx context.Context, v domain.Vault, path string, depth domain.RelationDepth) (RelatedNotesView, error) {
+	found, err := u.relatedNotes.Execute(ctx, v, path, depth)
 	if err != nil {
 		return RelatedNotesView{}, err
 	}

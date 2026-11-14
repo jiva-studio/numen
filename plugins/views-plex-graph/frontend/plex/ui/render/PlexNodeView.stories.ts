@@ -22,6 +22,7 @@ interface Knobs {
   opacity: number
   gestureRole: GestureRole
   hasIcon: boolean
+  showPills: boolean
 
   onActivate: () => void
   onShow: (showing: PlexDestination) => void
@@ -82,6 +83,7 @@ const renderScene =
             :key="node.id"
             :node="node"
             :gesture-role="args.gestureRole"
+            :show-pills="args.showPills"
             @activate="args.onActivate"
             @show="args.onShow"
             @reach="args.onReach"
@@ -131,6 +133,7 @@ const meta: Meta<Knobs> = {
     height: range(20, 96, 2),
     opacity: range(0, 1, 0.05),
     hasIcon: { control: 'boolean' },
+    showPills: { control: 'boolean' },
     gestureRole: { control: 'select', options: ROLES },
 
     onActivate: { table: { disable: true } },
@@ -146,6 +149,7 @@ const meta: Meta<Knobs> = {
     height: 36,
     opacity: 1,
     hasIcon: false,
+    showPills: true,
     gestureRole: 'open',
     onActivate: fn(),
     onShow: fn(),
@@ -202,16 +206,4 @@ export const Reaching: Story = {
     await userEvent.click(node)
     await expect(args.onActivate).toHaveBeenCalledTimes(1)
   },
-}
-
-/**
- * On its way in or out, beside one that has arrived, because faintness only means something against a node that is fully there.
- * Such a node cannot be chosen, is not a tab stop and is not announced. Those negatives fail silently and look right in every screenshot,
- * so they are asserted next door in jsdom.
- */
-export const PartWayThere: Story = {
-  render: renderScene((args) => [
-    createNode(args, { id: 'staying', title: 'Staying', x: -84 }),
-    createNode(args, { id: 'going', title: 'On its way out', x: 84, opacity: 0.35 }),
-  ]),
 }

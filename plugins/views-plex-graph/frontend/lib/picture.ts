@@ -80,7 +80,7 @@ function createEdge(connection: Connection, token: (path: string) => string): Pl
   return arrows.length > 0 ? { ...withLabels, arrows } : withLabels
 }
 
-function admitReference(reference: RelatedNote, mode: ReferenceMode): boolean {
+export function isReferenceAdmitted(reference: RelatedNote, mode: ReferenceMode): boolean {
   if (mode === 'off') return false
   if (mode === 'both') return true
   return reference.direction === mode || reference.direction === 'both'
@@ -123,8 +123,9 @@ export function convertNoteGraph(
   const visiblePaths = new Set<string>([noteGraph.focus.path])
   const shownReferences: RelatedNote[] = []
   for (const related of noteGraph.related) {
+    if (related.relatedTo) continue
     if (related.relation === 'reference') {
-      if (!admitReference(related, references)) continue
+      if (!isReferenceAdmitted(related, references)) continue
       shownReferences.push(related)
     }
     visiblePaths.add(related.path)
@@ -188,7 +189,8 @@ export function areNoteGraphsEqual(one: NoteGraph | null, other: NoteGraph | nul
         related.title === comparison.title &&
         related.type === comparison.type &&
         related.relation === comparison.relation &&
-        related.direction === comparison.direction
+        related.direction === comparison.direction &&
+        related.relatedTo === comparison.relatedTo
       )
     }) &&
     one.connections.every((connection, index) =>

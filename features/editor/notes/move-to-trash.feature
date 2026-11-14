@@ -29,9 +29,9 @@ Feature: Move to trash
     And the person opens the note titled "Harbour log"
     And the person opens the note titled "Tide table"
     And the person runs the command "Show in plex" on the tab titled "Harbour log"
-    And the plex has the child note titled "Tide table"
+    And the plex shows the child note titled "Tide table"
     When the person runs the command "Move to trash" on the file at "notes/Tide table.md"
-    Then the plex does not have the child note titled "Tide table"
+    Then the plex does not show the child note titled "Tide table"
 
   Scenario: The note leaves the search
     Given the vault has the following:

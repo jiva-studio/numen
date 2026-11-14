@@ -16,6 +16,7 @@ import {
 } from '@numen/plugin-sdk'
 import type { PlexHost } from '../model/tabDeps'
 import { getDefaultLook } from '../model/look'
+import { getDefaultNames } from '../model/names'
 
 export interface HostOptions {
   readonly opening?: string
@@ -130,6 +131,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     notes,
     relations,
     nesting: { isNesting, headings: ref(6) },
+    names: getDefaultNames(),
     look: getDefaultLook(),
   }
   return { host, openingPath, isNesting, requested: request, requestLog: request, recorded }

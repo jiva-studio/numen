@@ -96,6 +96,29 @@ describe('opening the link inspector', () => {
     expect(messages).toHaveLength(1)
   })
 
+  it('opens on nothing for the line to a reference, which no record joins', async () => {
+    const plex = viewOn('Root.md', [
+      'Child.md',
+      { path: 'Cited.md', relation: 'reference', direction: 'outgoing' },
+    ])
+    const map = createNodeIdMap()
+    const messages: string[] = []
+    const inspector = useLinkInspector(
+      plex.view,
+      { editor: createVault(true, reported).editor, showMessage: (text) => messages.push(text) },
+      map,
+      (path) => path,
+    )
+    const line = (path: string) => `${map.getNodeId('Root.md')} ${map.getNodeId(path)}`
+
+    await inspector.openLinkInspector(line('Cited.md'), { x: 1, y: 2 })
+    expect(inspector.linkInspector.value).toBeNull()
+    expect(messages).toEqual([])
+
+    await inspector.openLinkInspector(line('Child.md'), { x: 1, y: 2 })
+    expect(inspector.linkInspector.value?.nodeB.path).toBe('Child.md')
+  })
+
   it('closes on dismissal', async () => {
     const one = inspecting()
     await one.open()

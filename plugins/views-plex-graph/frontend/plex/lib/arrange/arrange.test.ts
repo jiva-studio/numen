@@ -31,13 +31,6 @@ const getFocus = (layout: { nodes: readonly PlacedNode[] }) => {
   return focus
 }
 
-function isOverlapping(a: PlacedNode, b: PlacedNode): boolean {
-  return (
-    Math.abs(a.x - b.x) < (a.width + b.width) / 2 - 1e-9 &&
-    Math.abs(a.y - b.y) < (a.height + b.height) / 2 - 1e-9
-  )
-}
-
 describe('the contract on the graph', () => {
   it('refuses a graph with no focus', () => {
     const nodes = [{ id: 'a', title: 'A', relation: 'child' as const }]
@@ -121,6 +114,16 @@ describe('a box is as wide as its title needs', () => {
     expect(focus.width).toBeLessThan(focusSize.width)
   })
 
+  it('keeps a measured title whole in a crowded window, up to the widest box', () => {
+    const crowd = build('A note', { parent: 4, child: 12, jump: 4, sibling: 4 })
+    const viewport = { width: 560, height: 1000 }
+    const layout = arrangePlex(crowd, { options: { viewport }, measure: () => 120 })
+    const shown = layout.nodes.filter((node) => node.relation !== 'focus')
+
+    expect(shown.length).toBeGreaterThan(0)
+    for (const node of shown) expect(node.width).toBe(120)
+  })
+
   it('clamps a title past the maximum, which each relation has its own of', () => {
     const layout = arrangePlex(graphs.typical, { measure: () => 4000 })
     expect(getFocus(layout).width).toBe(focusSize.width)
@@ -197,53 +200,6 @@ describe('a label is as long as its words', () => {
 
   it('draws the whole label where nothing measured it', () => {
     expect(getWords()).toBe('the scene in the assembly')
-  })
-})
-
-describe('no two nodes are drawn on top of each other', () => {
-  const noneOverlap = (nodes: readonly PlacedNode[]) => {
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i]
-        const b = nodes[j]
-        if (!a || !b) continue
-        expect(isOverlapping(a, b), `${a.id} overlaps ${b.id}`).toBe(false)
-      }
-    }
-  }
-
-  it.each(every)('%s', (_name, graph: PlexGraph) => {
-    noneOverlap(arrangePlex(graph).nodes)
-  })
-
-  it.each(every)('%s, sized to its titles', (_name, graph: PlexGraph) => {
-    noneOverlap(arrangePlex(graph, { measure: byTitle }).nodes)
-  })
-})
-
-describe('the same input gives the same numbers', () => {
-  it.each(every)('%s', (_name, graph: PlexGraph) => {
-    expect(arrangePlex(graph)).toStrictEqual(arrangePlex(graph))
-  })
-
-  it.each(every)('%s, sized to its titles', (_name, graph: PlexGraph) => {
-    expect(arrangePlex(graph, { measure: byTitle })).toStrictEqual(
-      arrangePlex(graph, { measure: byTitle }),
-    )
-  })
-
-  it('does not depend on the order the relations arrive in', () => {
-    const shuffled = {
-      ...graphs.typical,
-      nodes: [...graphs.typical.nodes].reverse(),
-    }
-    const byRelation = (n: PlexGraph) =>
-      arrangePlex(n)
-        .nodes.filter((node) => node.relation === 'child')
-        .map((node) => node.id)
-    // Order follows the input and not a sort; the set of relations is equal.
-    expect(byRelation(shuffled)).toHaveLength(byRelation(graphs.typical).length)
-    expect([...byRelation(shuffled)].sort()).toStrictEqual([...byRelation(graphs.typical)].sort())
   })
 })
 

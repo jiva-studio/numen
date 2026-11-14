@@ -38,7 +38,8 @@ graph TD
    - Cost of a candidate `c`: `Infinity` when `(c − start) · direction < −0.5` (nearer the focus than the start); else `hypot((c.x − middle.x) / cell.w, (c.y − middle.y) / cell.h)` — distance to the middle counted in boxes.
    - Sort by cost, stable, so equal costs keep candidate order (deterministic). The first candidate whose box is free wins.
    - Tie-break: costs are rounded to 1e-6 before they are compared, so floating-point error does not decide a tie; of equal costs the candidate nearer the start along the direction (smaller `(c − start) · direction`) wins, which fills a group across its axis before it goes deeper; only then does candidate order decide. The search takes the least (cost, along) candidate that is free without sorting; a grid index of the placed boxes answers `isFree`.
-   - If none is free, walk outward from `middle`: step `k = 1 … 400` along `direction` by a quarter of `nodeSize.height`, with sideways offsets `0, 1, −1, 2, −2, 3, −3` cells across the direction; the first free box wins; after that, `middle`. (A walk may land outside the window; admission removes it.)
+   - The places beside every box already placed inside the window are tried first. A box wider than the ones before it may sit behind the start of its group (the `along` test is relaxed) where the window has room and its center stays on the side of the group.
+   - If none is free, walk outward from `middle`: step `k = 1 … 400` along `direction` by a quarter of `nodeSize.height`, with sideways offsets `0, 1, −1, 2, −2, 3, −3` cells across the direction; the first free box wins; after that, `middle`. (The walk keeps to the window, so a note is dropped only when the window has no free place left for it.)
 6. **Free.** `isFree(spot, taken, gaps): boolean` — no taken box (the focus included) with `|Δx| < (w₁ + w₂)/2 + gap − TOLERANCE` and `|Δy| < (h₁ + h₂)/2 + lineGap − TOLERANCE`, `TOLERANCE = 0.5`. The tolerance is load-bearing: candidates are built exactly one gap from a neighbor, and without it floating-point error makes such a box count as overlapping, every touching spot is refused and the groups degrade into lines.
 7. **Output.** Each node keeps its relation, identity and title; `width = context.width(node)`, `height = options.nodeSize.height`, `opacity = 1`, `order` = its index within its relation. The returned array is grouped by relation in `RELATION_NAMES` order, each relation in arrival order — the order today's placement returns, so the drawing order and the tab order of nodes do not change.
 
@@ -49,7 +50,7 @@ Splitting: `clusters.ts` holds `clusters`, `placeClusters`, `takeTurns`, `getAnc
 Replaces `canPlace` in `arrange.ts` and the per-line capacity of `limits.ts`.
 
 - `requestNodes(nodes, options): NodesByRelation` — group by relation in arrival order. Without a viewport each relation is cut to `options.maxPerCluster` (default 20, today's 5 × 4 capacity without a window). With a viewport nothing is cut here: the window decides (open question 1; if the owner wants a cap in a window too, it is applied here and nowhere else).
-- `admitNodes(requested, lay, isInside): { nodesByRelation, overflow }` where `lay(nodesByRelation) → PlacedNode[]` places at the packed options and the gaps as set, and `isInside(node)` is the window test of `arrange.ts` (`isInsideViewport` per node, less `margin`). Loop: lay the current set; for each relation, keep the prefix of its nodes (arrival order) up to the first one whose box is not inside; when nothing was cut, stop. Every pass removes at least one node, so it ends. Without a viewport `isInside` is always true and one pass suffices (skip the lay).
+- `admitNodes(requested, lay, isInside): { nodesByRelation, overflow }` where `lay(nodesByRelation) → PlacedNode[]` places at the packed options and the gaps as set, and `isInside(node)` is the window test of `arrange.ts` (`isInsideViewport` per node, less `margin`). Loop: lay the current set; for each relation, keep the prefix of its nodes (arrival order) up to the first one whose box is not inside, and halve the group when its first box is outside (the middle of a smaller group lies nearer the focus); when nothing was cut, stop. Every pass removes at least one node, so it ends. Then the cut notes are taken back (refill): one note of each relation in turn, while the window still holds every box. A note is dropped only when the window has no free place for it. Without a viewport `isInside` is always true and one pass suffices (skip the lay).
 - `overflow[relation]` = number arrived − number admitted, set only when above 0 — the same shape `Plex.vue` already prints ("N children not shown").
 - This works for any `Placement` (the `ring` fixture too), so the strategy still does not decide how much is shown.
 
@@ -127,7 +128,7 @@ No proto, wire, manifest or setting change. `apps/landing` has its own plex demo
 - `model/sizing/plexScale.test.ts`: the unscaled-key list and the two `maxPerLine`/`maxLines` expectations → `maxPerCluster`.
 - `ui/Plex.stories.ts`: `rowsAndColumns` import, the placement mapping, the `maxPerLine` arg and control, and the args of the story with `maxPerLine: 9`. `MakingOne` and `DraggingThemIn` drag 220 px above the focus to make a parent; that point must still be empty (parents of `typical` stay within 220 px; the tester checks it in the play run). `SmallWindow` and `Overcrowded` are visual only.
 - `ui/PlexMap.stories.ts`: no position pinned (menus, headings, line ends); re-run only.
-- e2e `tests/e2e/desktop/tests/plugins/views.plex.graph/*`: no test reads a position; `hierarchy.spec.ts` checks relations ("joined below" is the connection role). Re-run only.
+- Acceptance `features/editor/plex/*.feature` (they replace the e2e specs of `views.plex.graph`): no scenario reads a position; they check relations. Run only.
 
 ## 5. Negative invariants
 
@@ -230,4 +231,12 @@ Every criterion runs through `arrangePlex` unless it names a unit. The counts an
 
 `admitNodes` and `measureCrowding` lay the arrangement several times. The coder measures `arrangePlex` on `crowded`, `overcrowded` and AC-11's full graph in a 1200×800 window on mridanga and reports the time per call in the PR thread; above 16 ms it is raised with the owner before merge.
 
-Measured on mridanga in a 1200×800 window, per `arrangePlex` call: `crowded` 3.8 ms, AC-11's full graph (6/21/7/7) 3.6 ms, `overcrowded` (200 children, 40 jumps) 12.2 ms, down from 1890 ms. The free-spot search keeps placed boxes in a grid; fit checks (`measureCrowding`, `findSpacing`) stop laying at the first box outside the window and admission stops a pass once every relation has met a box outside or is fully placed (`PlacementContext.shouldStop`). The results are unchanged.
+Measured on mridanga in a 1200×800 window at the time of #1837 (before the names of #1840 and the refill; not measured again since), per `arrangePlex` call: `crowded` 3.8 ms, AC-11's full graph (6/21/7/7) 3.6 ms, `overcrowded` (200 children, 40 jumps) 12.2 ms, down from 1890 ms. The free-spot search keeps placed boxes in a grid; fit checks (`measureCrowding`, `findSpacing`) stop laying at the first box outside the window and admission stops a pass once every relation has met a box outside or is fully placed (`PlacementContext.shouldStop`). The results are unchanged.
+
+## 8. Amendments after #1840 (2026-11-13)
+
+1. A note is dropped only when the window has no free place for it. The free-spot search tries the places beside every placed box inside the window first, and its walk keeps to the window.
+2. Notes cut by the loop are taken back, one of each relation in turn, while the window still holds every box (refill). The loop halves a group whose first box is outside.
+3. A measured title is never cut by packing: a box keeps the width its title needs, up to the widest box of the settings. Unmeasured boxes narrow with the packing.
+4. The `along` test is relaxed for a note wider than the ones before it: where the window has room, it may sit behind the start of its group while its center stays on the side of the group.
+5. The numbers of section 7 were measured on the code of #1837. The footprints of #1840 (names) and the refill change them; the limit of 16 ms stands.

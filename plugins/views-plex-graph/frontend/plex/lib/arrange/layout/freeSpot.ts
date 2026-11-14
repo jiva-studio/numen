@@ -12,6 +12,7 @@ export interface Gaps {
   readonly lineGap: number
 }
 
+/** `fits` reports whether a spot lies inside the window; a spot outside it is taken only when no spot inside is free. */
 export interface SpotRequest {
   readonly start: Vector
   readonly middle: Vector
@@ -19,6 +20,7 @@ export interface SpotRequest {
   readonly size: Size
   readonly group: readonly Spot[]
   readonly gaps: Gaps
+  readonly fits?: ((spot: Spot) => boolean) | undefined
 }
 
 /**
@@ -26,7 +28,7 @@ export interface SpotRequest {
  * floating-point error makes such a box count as overlapping, every touching
  * spot is refused and the groups degrade into lines.
  */
-export const TOLERANCE = 0.5
+const TOLERANCE = 0.5
 
 /** Candidates keep at least this much room from a neighbor, so with no gap they do not touch on float error. */
 const LEAST_GAP = 1e-6
@@ -55,10 +57,16 @@ interface Rect {
 /** Placed boxes, bucketed on a grid, so a spot is checked against the boxes near it and not against all of them. */
 export class SpotIndex {
   private readonly cells = new Map<number, Spot[]>()
+  private readonly spots: Spot[] = []
   private extent: Rect = { minX: 0, maxX: 0, minY: 0, maxY: 0 }
 
   constructor(spots: readonly Spot[] = []) {
     for (const spot of spots) this.add(spot)
+  }
+
+  /** Every box in the index, in the order it was added. */
+  list(): readonly Spot[] {
+    return this.spots
   }
 
   /** The bounds of every box in the index. */
@@ -67,6 +75,7 @@ export class SpotIndex {
   }
 
   add(spot: Spot): void {
+    this.spots.push(spot)
     this.extent = {
       minX: Math.min(this.extent.minX, spot.x - spot.width / 2),
       maxX: Math.max(this.extent.maxX, spot.x + spot.width / 2),
@@ -124,12 +133,19 @@ export class SpotIndex {
   }
 }
 
-function isBetter(cost: number, along: number, best: { cost: number; along: number }): boolean {
-  return cost < best.cost || (cost === best.cost && roundAlong(along) < roundAlong(best.along))
+function isBetter(
+  cost: number,
+  progress: number,
+  best: { cost: number; progress: number },
+): boolean {
+  return (
+    cost < best.cost ||
+    (cost === best.cost && roundProgress(progress) < roundProgress(best.progress))
+  )
 }
 
-function roundAlong(along: number): number {
-  return Math.round(along * COST_PRECISION)
+function roundProgress(progress: number): number {
+  return Math.round(progress * COST_PRECISION)
 }
 
 function getRequiredGap(gap: number): number {
@@ -143,30 +159,42 @@ function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
   )
 }
 
-export function isFree(spot: Spot, spots: readonly Spot[], gaps: Gaps): boolean {
-  return spots.every((other) => isClear(spot, other, gaps))
-}
-
 /**
  * The free spot of least cost: the nearest to the middle, with costs rounded
  * before they are compared so floating-point error does not decide a tie. Of
  * equal costs the one nearer the start wins, which fills a group across its
  * axis before it goes deeper; of those the earlier candidate wins.
  */
-export function findFreeSpot(spots: readonly Spot[] | SpotIndex, request: SpotRequest): Spot {
+export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
   const { size, gaps } = request
-  const index = spots instanceof SpotIndex ? spots : new SpotIndex(spots)
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
-  let best: { point: Vector; cost: number; along: number } | undefined
-  for (const point of listCandidates(request)) {
-    const along = measureAlong(point, request)
-    if (along < -TOLERANCE) continue
+  const found: { best?: { point: Vector; cost: number; progress: number } } = {}
+  const consider = (point: Vector, minProgress: number) => {
+    const progress = measureProgress(point, request)
+    if (progress < minProgress) return
     const cost = Math.round(measureCost(point, request) * COST_PRECISION)
-    if (best && !isBetter(cost, along, best)) continue
-    if (index.isFree(toSpot(point), gaps)) best = { point, cost, along }
+    if (found.best && !isBetter(cost, progress, found.best)) return
+    if (request.fits && !request.fits(toSpot(point))) return
+    if (index.isFree(toSpot(point), gaps)) found.best = { point, cost, progress }
   }
-  if (best) return toSpot(best.point)
+  const considerAll = (points: readonly Vector[], minProgress: number) =>
+    points.forEach((point) => consider(point, minProgress))
+
+  considerAll([request.middle, request.start], -TOLERANCE)
+  for (const box of request.group) {
+    // The candidates of a box that all cost more than the best so far cannot win, so they are not built.
+    if (found.best && getLeastCost(box, request) > found.best.cost + 1) continue
+    considerAll(listNearbyCandidates(box, request), -TOLERANCE)
+  }
+  if (!found.best && request.fits) {
+    // The group has no free place in the window on its side of the start. A box wider than the ones before it starts further out, so a place
+    // that is free and in the window is also taken where the box reaches back past the start, as long as its center is on the side of the group.
+    const relaxedMinProgress = -getReach(request.direction, request.size) - TOLERANCE
+    for (const box of index.list())
+      considerAll(listNearbyCandidates(box, request), relaxedMinProgress)
+  }
+  if (found.best) return toSpot(found.best.point)
   return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
 }
 
@@ -185,39 +213,56 @@ function findSpotBeyond(index: SpotIndex, request: SpotRequest): Spot {
   return { x: middle.x, y, ...size }
 }
 
-function listCandidates(request: SpotRequest): Vector[] {
-  const { start, middle, size, group } = request
-  const gaps = {
+function getCandidateGaps(request: SpotRequest): Gaps {
+  return {
     gap: Math.max(request.gaps.gap, LEAST_GAP),
     lineGap: Math.max(request.gaps.lineGap, LEAST_GAP),
   }
-  const candidates: Vector[] = [middle, start]
-
-  for (const box of group) {
-    const right = box.x + box.width / 2 + gaps.gap + size.width / 2
-    const left = box.x - box.width / 2 - gaps.gap - size.width / 2
-    const below = box.y + box.height / 2 + gaps.lineGap + size.height / 2
-    const above = box.y - box.height / 2 - gaps.lineGap - size.height / 2
-    candidates.push(
-      { x: right, y: box.y },
-      { x: left, y: box.y },
-      { x: box.x, y: below },
-      { x: box.x, y: above },
-      { x: (box.x + right) / 2, y: below },
-      { x: (box.x + left) / 2, y: below },
-      { x: (box.x + right) / 2, y: above },
-      { x: (box.x + left) / 2, y: above },
-    )
-  }
-  return candidates
 }
 
-function measureAlong(point: Vector, request: SpotRequest): number {
+function getLeastCost(box: Spot, request: SpotRequest): number {
+  const { middle, size } = request
+  const gaps = getCandidateGaps(request)
+  const reachX = box.width / 2 + gaps.gap + size.width / 2
+  const reachY = box.height / 2 + gaps.lineGap + size.height / 2
+  const farX = Math.max(0, Math.abs(middle.x - box.x) - reachX)
+  const farY = Math.max(0, Math.abs(middle.y - box.y) - reachY)
+  const least = Math.hypot(
+    farX / (size.width + request.gaps.gap),
+    farY / (size.height + request.gaps.lineGap),
+  )
+  return least * COST_PRECISION
+}
+
+function getReach(direction: Vector, box: Size): number {
+  return Math.abs(direction.x) * (box.width / 2) + Math.abs(direction.y) * (box.height / 2)
+}
+
+export function listNearbyCandidates(box: Spot, request: SpotRequest): Vector[] {
+  const { size } = request
+  const gaps = getCandidateGaps(request)
+  const right = box.x + box.width / 2 + gaps.gap + size.width / 2
+  const left = box.x - box.width / 2 - gaps.gap - size.width / 2
+  const below = box.y + box.height / 2 + gaps.lineGap + size.height / 2
+  const above = box.y - box.height / 2 - gaps.lineGap - size.height / 2
+  return [
+    { x: right, y: box.y },
+    { x: left, y: box.y },
+    { x: box.x, y: below },
+    { x: box.x, y: above },
+    { x: (box.x + right) / 2, y: below },
+    { x: (box.x + left) / 2, y: below },
+    { x: (box.x + right) / 2, y: above },
+    { x: (box.x + left) / 2, y: above },
+  ]
+}
+
+export function measureProgress(point: Vector, request: SpotRequest): number {
   const { start, direction } = request
   return (point.x - start.x) * direction.x + (point.y - start.y) * direction.y
 }
 
-function measureCost(point: Vector, request: SpotRequest): number {
+export function measureCost(point: Vector, request: SpotRequest): number {
   const { middle, size, gaps } = request
   return Math.hypot(
     (point.x - middle.x) / (size.width + gaps.gap),
@@ -237,7 +282,8 @@ function findFreeSpotOutward(index: SpotIndex, request: SpotRequest): Spot | und
         y: middle.y + direction.y * step * stride + direction.x * offset * cell.height,
         ...size,
       }
-      if (index.isFree(spot, gaps) && measureAlong(spot, request) >= -TOLERANCE) return spot
+      if (request.fits && !request.fits(spot)) continue
+      if (index.isFree(spot, gaps) && measureProgress(spot, request) >= -TOLERANCE) return spot
     }
   }
   return undefined

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.flashcards.studio",
   "name": "Flashcards Studio",
-  "version": "2026.11.18",
+  "version": "2026.11.19",
   "protocol": 1,
   "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
@@ -120,7 +120,13 @@
         "order": 30,
         "when": "target.isFolder"
       },
-      { "slot": "plexGraph.context", "command": "preset.open", "group": "1-note", "order": 40 }
+      {
+        "slot": "plexGraph.context",
+        "command": "preset.open",
+        "group": "1-note",
+        "order": 40,
+        "when": "target.noteType == 'preset'"
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

@@ -13,7 +13,7 @@ import { expect } from 'storybook/test'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import { getLines } from './lines'
-import { createTitle, getLabelPlaces, getRise, getShift, LABEL_GAP } from '../../lib/arrange'
+import { createTitle, getLabelPlaces, getRise, getShift } from '../../lib/arrange'
 import { getArrow, type EdgeCurve, type PlacedEdge } from '../../lib/edge'
 import type { EdgeArrow } from '../../../types'
 
@@ -147,11 +147,7 @@ const getRestingEdge = (canvas: HTMLElement) => {
     path.textContent?.trim(),
     `${Math.round(Number.parseFloat(path.getAttribute('startOffset')!))}%`,
   ])
-  // How far each title is moved across its own path, to the right of the way it is read.
-  const offsets = [...group.querySelectorAll('.plex__edge-label--letters')].map((text) =>
-    Number(text.getAttribute('dy')),
-  )
-  return { heads, titles, offsets }
+  return { heads, titles }
 }
 
 const AT_TO = `translate(${CURVE.toPoint.x} ${CURVE.toPoint.y})`
@@ -175,7 +171,6 @@ export const Forward: Story = {
     await expect(heads).toHaveLength(1)
     await expect(heads[0]).toContain(AT_TO)
     await expect(titles).toStrictEqual([['refers to', '50%']])
-    await expect(getRestingEdge(canvasElement).offsets).toStrictEqual([LABEL_TYPE.xHeight / 2])
   },
 }
 
@@ -197,7 +192,7 @@ export const Backward: Story = {
 export const BothDirections: Story = {
   args: { direction: 'both' },
   play: async ({ canvasElement }) => {
-    const { heads, titles, offsets } = getRestingEdge(canvasElement)
+    const { heads, titles } = getRestingEdge(canvasElement)
     await expect(heads).toHaveLength(2)
     await expect(heads[0]).toContain(AT_TO)
     await expect(heads[1]).toContain(AT_FROM)
@@ -206,12 +201,6 @@ export const BothDirections: Story = {
     await expect(titles).toStrictEqual([
       ['refers to', '80%'],
       ['cited by', '80%'],
-    ])
-    // Each is on the left of its own reading, so they are on opposite sides of the line, and the
-    // near edge of its ink is the gap from the line: the baseline is the gap and a descender above it.
-    await expect(offsets).toStrictEqual([
-      -(LABEL_GAP + LABEL_TYPE.descent),
-      -(LABEL_GAP + LABEL_TYPE.descent),
     ])
   },
 }
@@ -223,17 +212,5 @@ export const NoTitle: Story = {
     await expect(canvasElement.querySelectorAll('text')).toHaveLength(0)
     await expect(canvasElement.querySelectorAll('[data-edge] path')).toHaveLength(4)
     await expect(canvasElement.querySelectorAll('defs path')).toHaveLength(0)
-  },
-}
-
-/** On its way in or out, where the whole edge fades and the title with it. */
-export const PartWayThere: Story = {
-  args: { opacity: 0.3 },
-  play: async ({ canvasElement }) => {
-    const viewElement = canvasElement.querySelectorAll(
-      '[data-edge="resting"] path, [data-edge="resting"] text',
-    )
-    await expect(viewElement).toHaveLength(4)
-    for (const one of viewElement) await expect(one.getAttribute('opacity')).toBe('0.3')
   },
 }

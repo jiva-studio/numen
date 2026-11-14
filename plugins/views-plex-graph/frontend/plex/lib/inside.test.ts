@@ -514,7 +514,7 @@ describe('the arrows at the edges of the ground', () => {
     expect(getOpenHeadings(suspended(headings(3))!, 1)!.arrows).toStrictEqual([])
   })
 
-  it('is drawn about the middle of what is hung, not of the node', () => {
+  it('is drawn about the middle of what is placed, not of the node', () => {
     const nearDistances = { ...NODE, x: 460 }
     const heading = { id: 'h', text: 'A heading of some length', level: 1 }
     const resolved = getNodeHeadings(nearDistances, [heading, ...headings(MOST + 3)], SIZES, DEPS)!

@@ -53,12 +53,15 @@ export class SearchDriver {
   async expectNoResult(text: string, group: string): Promise<void> {
     const results = this.getResults(text, group)
     if (this.query === '') {
+      await expect(this.found.busyGroups()).toHaveCount(0)
       await expect(results).toHaveCount(0)
       return
     }
     // The index removes a file that lost its text after a delay, so the words are typed again until the index has no hit for the file.
+    // An empty list is read only when every group has answered: a group that has not answered shows nothing yet.
     await expect(async () => {
       await this.type()
+      await expect(this.found.busyGroups()).toHaveCount(0, { timeout: 3_000 })
       await expect(results).toHaveCount(0, { timeout: 3_000 })
     }).toPass({ timeout: INDEXING_LIMIT_MS })
   }

@@ -18,9 +18,9 @@ import type {
 } from '../lib/note'
 import { mapBaseline, mapNoteGraph, mapNoteResult, mapWriteResult, writes } from './noteWords'
 
-/** The notes joined to a note, and how. */
-export const listRelatedNotes = async (path: string): Promise<NoteGraph> =>
-  mapNoteGraph(await notes.listRelatedNotes({ path }))
+/** The notes joined to a note, and how. Depth 2 adds the notes joined to each of those. */
+export const listRelatedNotes = async (path: string, depth: 1 | 2 = 1): Promise<NoteGraph> =>
+  mapNoteGraph(await notes.listRelatedNotes({ path, depth }))
 
 /** The note the vault opens first, and null where it names none. */
 export const getInitialOpenPath = async (): Promise<{ path: string } | null> => {

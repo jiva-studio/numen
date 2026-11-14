@@ -8,19 +8,20 @@ All paths are under `plugins/views-plex-graph/`. Placement skill: [`nm-place-plu
 
 ## 1. Manifest entries
 
-Appended to `settings[]` after `headingLimit`. Defaults are today's values, rounded where the owner accepted it. Box lengths are in the plex's option unit: pixels at the designed text size (13, `DESIGNED_TYPE`), multiplied by the text size as every option length is today (`scaleOptions`). The two line widths are screen pixels, as the tokens they replace are today. Ranges and steps are the playground's.
+Appended to `settings[]` after `focusedNamesOpacity` (the order of the manifest: references, nestHeadings, headingLimit, showNames, namesPerNote, namesOpacity, focusedNamesOpacity, then the rows below; `highlightLinks` is before `animationLength`). The numbers are declared `range`, drawn as sliders. Defaults are today's values, rounded where the owner accepted it. Box lengths are in the plex's option unit: pixels at the designed text size (13, `DESIGNED_TYPE`), multiplied by the text size as every option length is today (`scaleOptions`). The two line widths are screen pixels, as the tokens they replace are today. Ranges and steps are the playground's.
 
 | key | type | title | description | default | min | max | step |
 |---|---|---|---|---|---|---|---|
-| `showPills` | boolean | Pill background | Draw a pill behind each title. Off: the title alone, with a dot in the color of its relation. | `true` | | | |
-| `pillPaddingSides` | number | Pill padding, sides | Space between a title and the left and right edge of its pill. | `10` | 0 | 24 | 1 |
-| `pillPaddingEnds` | number | Pill padding, top and bottom | Space between a title and the top and bottom edge of its pill. | `9.25` | 0 | 16 | 0.25 |
-| `focusSize` | number | Focus size | How much larger the pill of the note in the middle is. Its title keeps its size. | `1.22` | 1 | 2.5 | 0.01 |
-| `animationLength` | number | Animation | How long moving to another note takes, in milliseconds. 0 moves at once. | `420` | 0 | 2000 | 20 |
-| `lineThickness` | number | Line thickness | Width of the lines between notes, in pixels. | `2` | 0.5 | 4 | 0.25 |
-| `outlineThickness` | number | Outline thickness | Width of the outline of a pill, in pixels. | `1` | 0.5 | 4 | 0.25 |
-| `lineCurvature` | number | Line curvature | How far a line between two notes bends. 0 is a straight line. | `0.55` | 0 | 1 | 0.05 |
-| `noteRoom` | number | Room around a note | Extra empty space kept around every note. Larger is sparser. | `0` | 0 | 40 | 1 |
+| `showPills` | boolean | Pill background | Draw a pill behind each title. Off: the title alone. | `true` | | | |
+| `pillPaddingSides` | range | Pill padding, sides | Space between a title and the left and right edge of its pill. | `10` | 0 | 24 | 1 |
+| `pillPaddingEnds` | range | Pill padding, top and bottom | Space between a title and the top and bottom edge of its pill. | `9.25` | 0 | 16 | 0.25 |
+| `focusSize` | range | Focus size | How much larger the note in the middle is drawn: its pill, title and icon. | `1.22` | 1 | 2.5 | 0.01 |
+| `lineThickness` | range | Line thickness | Width of the lines between notes, in pixels. | `2` | 0.5 | 4 | 0.25 |
+| `outlineThickness` | range | Outline thickness | Width of the outline of a pill, in pixels. | `1` | 0.5 | 4 | 0.25 |
+| `lineCurvature` | range | Line curvature | How far a line between two notes bends. 0 is a straight line. | `0.55` | 0 | 1 | 0.05 |
+| `highlightLinks` | boolean | Highlight links of a hovered note | Highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted. | `true` | | | |
+| `animationLength` | range | Animation | How long moving to another note takes, in milliseconds. 0 moves at once. | `420` | 0 | 2000 | 20 |
+| `noteRoom` | range | Room around a note | Extra empty space kept around every note. Larger is sparser. | `0` | 0 | 40 | 1 |
 
 `showPills` also carries `"palette": true` and `"icon": "waypoints"`, as `nestHeadings` does.
 
@@ -41,7 +42,7 @@ graph TD
   P --> N["PlexView → PlexNodeView → PlexNodeBox, PlexEdgeLine"]
 ```
 
-- **`model/look.ts`** (new, beside `nesting.ts`): the nine keys, defaults and ranges; `interface PlexLook` (one `Readonly<Ref<…>>` per setting); `readLook(context: Pick<PluginContext, 'settings'>): PlexLook`, reading with `settings.get` and following with `settings.onChange` as `readNesting` does. Wrong kind gives the default; a number out of range is clamped by one `parseNumber(value, range)`.
+- **`model/look.ts`** (new, beside `nesting.ts`): the keys, defaults and ranges (nine at first, now thirteen); `interface PlexLook` (one `Readonly<Ref<…>>` per setting); `readLook(context: Pick<PluginContext, 'settings'>): PlexLook`, reading with `settings.get` and following with `settings.onChange` as `readNesting` does. Wrong kind gives the default; a number out of range is clamped by one `parseNumber(value, range)`.
 - **`index.ts`**: `look: readLook(context)` next to `nesting`.
 - **`model/tabDeps.ts`, `types.ts`, `model/usePlexTab.ts`, `fixtures/host.ts`**: `PlexHost.look` → `PlexTabDeps.look` → `PlexTabState.look`, unchanged. `usePlexTab.ts` is at 309 lines; this is one field.
 - **`model/plexOptions.ts`** (new): `getPlexOptions(look, type, maxHeadings): PlexOptionsInput`, so `PlexGraphView.vue` stays under 100 script lines.
@@ -51,12 +52,12 @@ graph TD
   - `focusSize = nodeSize × focusScale` (≈ 175.7 × 44 at the default).
   - `gap`, `lineGap`, `focusGap` each grow by `2 × room`. This happens before `measureCrowding`, so the room shrinks with the gaps in a tight window.
   - `scaleOptions` scales `padding` and `room` with the text size, as every other length.
-- **Measuring** (`plex/model/sizing/measure.ts`, `room.ts`): the side padding comes from `options.padding.inline` instead of the probe's `--numen-node-padding`; the token no longer applies to the plex. The focus title is measured like every other title (its text keeps its size); its pill is that width × `focusScale`, capped at `focusSize.width` in `createWidthLookup` (`arrange.ts`), so a short focus title grows in width too. With pills off, the dot is reserved beside the title like an icon (dot plus `--numen-node-gap`).
+- **Measuring** (`plex/model/sizing/measure.ts`, `room.ts`): the side padding comes from `options.padding.inline` instead of the probe's `--numen-node-padding`; the token no longer applies to the plex. The focus title is measured like every other title; its pill is that width × `focusScale`, and the title, icon, gap and padding are drawn `focusScale` times larger inside it (a scaled `foreignObject`), capped at `focusSize.width` in `createWidthLookup` (`arrange.ts`), so a short focus title grows in width too.
 - **Headings**: `lib/inside.ts` hangs headings from `node.height / 2`, so they move with a taller focus without change.
 - **Routing** (`plex/lib/arrange/edges/routing.ts`): reach is `|span| × curvature`; the `minReach` floor applies only when `curvature > 0`, so at 0 the control points lie on the line. Every curve that reads `curvature` follows the same rule.
 - **Rendering**:
   - `plex/ui/props.ts`, `Plex.vue`: new props `showPills?: boolean` (default `true`), `lineWidth?: number` (2), `outlineWidth?: number` (1). `Plex.vue` sets `--plex-line`, `--plex-outline` and `--plex-pad-inline` (from the scaled option) on the frame beside `--plex-move`. `duration` is the existing prop.
-  - `PlexView.vue` → `PlexNodeView.vue` → `PlexNodeBox.vue` take `showPills`. On: today's `rect.plex__box`, stroke width `var(--plex-outline)`, title padding `var(--plex-pad-inline)`. Off, for every node including the focus: no `rect.plex__box`; a `circle.plex__dot` in the node's relation hue before the icon and title; a transparent hit rect of the same box keeps pointer events.
+  - `PlexView.vue` → `PlexNodeView.vue` → `PlexNodeBox.vue` take `showPills`. On: today's `rect.plex__box`, stroke width `var(--plex-outline)`, title padding `var(--plex-pad-inline)`. Off, for every node including the focus: no `rect.plex__box`; the title alone, with no dot; a transparent hit rect of the same box keeps pointer events.
   - The link-target ring (`--numen-ring-width`) and the ghost's dashed outline are drawn as today, whatever `showPills` and `outlineWidth` are.
   - `PlexEdgeLine.vue`: stroke width `var(--plex-line)` instead of `--numen-edge-width`.
   - Animation: `duration` already feeds `usePlexTransition` and `--plex-move`; `ms <= 0` already jumps.
@@ -83,7 +84,7 @@ Contract: no proto, wire or shared payload change; `ManifestSetting` already car
 
 - No setting is read outside `model/look.ts` and `model/nesting.ts`; nothing in `plex/` reads `PluginContext`.
 - `plex/lib/` stays free of Vue and CSS tokens; `applyLook` takes numbers.
-- No camera zoom and no change of title size: Focus size changes the focus pill only.
+- No camera zoom: Focus size scales the focus note (pill, title, icon, gap, padding) and nothing else (amendment 6 of `next-level-1840`).
 - Files ≤ 350 lines, functions ≤ 80, complexity ≤ 10, max 4 params, Vue script ≤ 100 lines.
 - Names imperative (`readLook`, `applyLook`, `getPlexOptions`, `parseNumber`), booleans `is…/has…/show…`, plain English.
 
@@ -107,9 +108,9 @@ Contract: no proto, wire or shared payload change; `ManifestSetting` already car
 - **When** any setting changes through `onChange`
 - **Then** the plex redraws with the new value without reopening the tab.
 
-### AC-5: Pill background off draws every title with a dot
+### AC-5: Pill background off draws every title alone
 - **Given** a focus with a parent and a child, Pill background off
-- **Then** no node, the focus included, draws a pill; each draws a dot in its relation's color and its title; switching on draws the pills again.
+- **Then** no node, the focus included, draws a pill; each draws its title alone, with no dot; switching on draws the pills again.
 
 ### AC-6: Ring and ghost stay with pills off
 - **Given** Pill background off
@@ -166,8 +167,16 @@ Contract: no proto, wire or shared payload change; `ManifestSetting` already car
 
 ## 6. Test plan
 
-- Behavior only: pill present or absent, dot present, ring and dashed ghost present, box sizes compared, the moving state against a fake clock, control points of a path, overlap and overflow counts, values handed down. No test reads CSS text, pixels, colors, gaps as styles, contrast, or screenshots.
+- Behavior only: pill present or absent, no dot, ring and dashed ghost present, box sizes compared, the moving state against a fake clock, control points of a path, overlap and overflow counts, values handed down. No test reads CSS text, pixels, colors, gaps as styles, contrast, or screenshots.
 - Nothing mocks the part it verifies: `readLook` runs against an in-memory settings object with real `onChange` callbacks; arrangement tests call `arrangePlex` with real options; component tests mount `Plex` with the injected clock and viewport ports.
 - Fixture notes are invented (`plex/fixtures/`, `fixtures/`), never a user's vault.
 - Files: `model/look.test.ts` (AC-1, AC-2), `model/setting-keys.test.ts` (keys), `manifest.test.ts` (AC-17), `index.test.ts` (AC-4), `plex/lib/arrange/look.test.ts` and `arrange.test.ts` (AC-3, AC-8–10, AC-14, AC-16), `lib/inside.test.ts` (AC-11), `edges/routing.test.ts` (AC-13), `plex/ui/Plex.test.ts` (AC-5–7, AC-12, AC-15), `render/PlexNodeView.test.ts` (AC-5, AC-6).
 - Existing tests that pin today's exact sizes (pill height 36, focus 176 × 44, the width of a short focus title) move with the accepted defaults; that is the fixture moving with the type, not a weakened test.
+
+## 7. Amendments (2026-11-13)
+
+1. Every number setting is declared `range` (a slider with its value on the settings page), not `number`.
+2. The order of the manifest is the order of the settings page; no groups were built. `highlightLinks` ("Highlight links of a hovered note", boolean, on by default) is after `lineCurvature` and before `animationLength`.
+3. Focus size scales the title, icon, gap and padding of the focus note together with its pill, with the pill on and off (the invariant of section 4 "no change of title size" is replaced). The description reads "How much larger the note in the middle is drawn: its pill, title and icon."
+4. `showPills` reads "Draw a pill behind each title. Off: the title alone."; the dot before a title without a pill is removed.
+5. `model/look.ts` also holds `references`, `highlightLinks`, `namesOpacity` and `focusedNamesOpacity`. A test of `manifest.test.ts` reads every default and range from the code and compares it with `manifest.json`.

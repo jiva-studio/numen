@@ -4,11 +4,14 @@
  */
 import type { VNode } from 'vue'
 import type { MenuTrigger } from '@numen/ui'
-import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
+import type { NamesRoom } from '../../lib/names'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
-import type { WideBox } from '../../model/sizing/expansion'
+import type { ExpandedBox } from '../../model/sizing/expansion'
+import type { Attention } from '../../model/useAttention'
+import type { PlexDragState } from '../../model/interaction/drag'
+import type { Gesture } from '../../model/interaction/gesture'
 import type { PlexBehavior } from '../../model/behavior'
 import type { PlexRelation, PlexDestination } from '../../../types'
 
@@ -17,23 +20,26 @@ export interface PlexPending {
   at: Position
 }
 
+/** `gesture` and `dragging` are passed as the refs they are, so the pointer moving through them redraws the lines it draws and not the notes. */
 export interface PlexViewProps {
   frame: PlexFrame
   viewport: { width: number; height: number }
   nodeSize: { width: number; height: number }
+  ghostSize?: { width: number; height: number } | undefined
   showEdgeLabels?: boolean
   showPills?: boolean
+  highlightLinks?: boolean
+  namesOpacity: number
+  focusedNamesOpacity: number
   canReach?: boolean
   relationName?: (relation: PlexRelation) => string
-  widen?: ((node: PlacedNode) => WideBox | null) | undefined
-  hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
+  widen?: ((node: PlacedNode) => ExpandedBox | null) | undefined
+  placedHeadings?: ((node: PlacedNode) => NodeHeadings | null) | undefined
+  roomOf?: ((id: string) => NamesRoom | undefined) | undefined
   behavior?: PlexBehavior
-  gestureFrom?: string | null
-  gestureAt?: Position | null
-  gestureOutcome?: Drop | null
+  gesture?: Gesture | undefined
+  dragging?: PlexDragState | undefined
   pending?: PlexPending | null
-  draggedAt?: Position | null
-  dropRelation?: PlexRelation | null
   dropName?: (relation: PlexRelation) => string
   curvature?: number | undefined
 }
@@ -51,17 +57,37 @@ export interface PlexViewEvents {
   (event: 'menu', id: string, point: Position, trigger: MenuTrigger): void
   /** A heading of a node was chosen. Both identifiers are the caller's. */
   (event: 'enter', id: string, heading: string): void
+  /** A name set around a node was chosen. The identifier is the caller's, returned unchanged. */
+  (event: 'choose-name', id: string): void
   /** A menu or inspector was requested on an edge. */
   (event: 'edge-menu', pair: string, point: Position): void
 }
 
+/** `attention` is what the drawing attends to: a node stays on only while the attention is on no other node. */
 export interface PlexNodeProps {
   node: PlacedNode
   gestureRole?: GestureRole
-  wide?: WideBox | null
-  hung?: NodeHeadings | null
+  expanded?: ExpandedBox | null
+  placedHeadings?: NodeHeadings | null
   behavior?: PlexBehavior
   showPills?: boolean
+  restHeight?: number
+  viewportWidth?: number | undefined
+  attention?: Attention
+}
+
+/** What a node draws, in its place or in the layer over the others. */
+export interface PlexNodeFaceProps {
+  node: PlacedNode
+  box: ExpandedBox
+  isGhost: boolean
+  isTarget: boolean
+  showPills: boolean
+  restHeight: number
+  placedHeadings: NodeHeadings | null
+  open: number
+  isHandleVisible: boolean
+  handle: Position
 }
 
 export interface PlexNodeEvents {
@@ -82,11 +108,10 @@ export interface PlexNodeEvents {
    * press has no pointer position, so the center of the box is used.
    */
   (event: 'menu', point: Position, trigger: MenuTrigger): void
-  /**
-   * The node gained or lost focus. The expanded box is drawn last, and only
-   * only the whole drawing determines which box that is.
-   */
+  /** The box began to open, or has closed or gone from the drawing. */
   (event: 'settle', resting: boolean): void
+  /** The pointer or keyboard focus came onto the node, or left it. */
+  (event: 'attend', isAttended: boolean): void
   /** A heading of this node was chosen. The identifier is the caller's. */
   (event: 'enter', heading: string): void
 }

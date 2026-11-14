@@ -2,7 +2,7 @@
 import { effectScope, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { usePlexTransition as baseUsePlexTransition, type Clock } from './transition'
-import { clusters, type ArrangeInput } from '../lib/arrange'
+import { arrangePlex, clusters, NO_ROOM, type ArrangeInput, type Placement } from '../lib/arrange'
 import { graphs } from '../fixtures/graphs'
 import { stubClock } from '../../fixtures/clock'
 import type { PlacedNode } from '../lib/node'
@@ -106,6 +106,66 @@ describe('a movement stepped by hand', () => {
     world.tick(200)
     world.tick(600)
     expect(getNode(frame.value.nodes, 'focus')?.title).toBe('Recursive CTE')
+  })
+})
+
+describe('a graph and an input that change together', () => {
+  /** The real placement, counting how often the arrangement asks it. */
+  const createCountingPlacement = () => {
+    const counter = { placed: 0 }
+    const placement: Placement = {
+      name: clusters.name,
+      place: (...args) => {
+        counter.placed += 1
+        return clusters.place(...args)
+      },
+    }
+    return { counter, placement }
+  }
+
+  const PLACED_FOR_ONE_ARRANGEMENT = (() => {
+    const { counter, placement } = createCountingPlacement()
+    arrangePlex(graphs.leaf, { placement })
+    return counter.placed
+  })()
+
+  const setUp = () => {
+    const world = stubClock()
+    const current = ref<PlexGraph>(graphs.typical)
+    const room = ref<ArrangeInput['room']>(undefined)
+    const { counter, placement } = createCountingPlacement()
+    inScope(() =>
+      usePlexTransition(
+        () => current.value,
+        () => ({ room: room.value, placement }),
+        () => 400,
+        world.clock,
+      ),
+    )
+    counter.placed = 0
+    return { current, room, counter }
+  }
+
+  it('are arranged once', async () => {
+    const { current, room, counter } = setUp()
+
+    current.value = graphs.leaf
+    room.value = () => ({ ...NO_ROOM, bottom: 10 })
+    await Promise.resolve()
+
+    expect(counter.placed).toBeGreaterThan(0)
+    expect(counter.placed).toBe(PLACED_FOR_ONE_ARRANGEMENT)
+  })
+
+  it('are arranged once for the graph alone, and once for the input alone', async () => {
+    const { current, room, counter } = setUp()
+
+    current.value = graphs.leaf
+    await Promise.resolve()
+    room.value = () => NO_ROOM
+    await Promise.resolve()
+
+    expect(counter.placed).toBe(2 * PLACED_FOR_ONE_ARRANGEMENT)
   })
 })
 

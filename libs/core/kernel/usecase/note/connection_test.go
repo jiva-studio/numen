@@ -522,7 +522,7 @@ func TestRelatedNotesCarryTheMarkerOfEachRecord(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\nlinks:\n  - to: Heat\n    role: jump\n---\n# Entropy\n",
 	})
 
-	got, err := query.NewListRelatedNotes(db.NoteQueries(), db.NoteQueries()).Execute(t.Context(), v, "Heat.md")
+	got, err := query.NewListRelatedNotes(db.NoteQueries(), db.NoteQueries()).Execute(t.Context(), v, "Heat.md", 1)
 	if err != nil {
 		t.Fatal(err)
 	}

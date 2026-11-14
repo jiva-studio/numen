@@ -45,12 +45,25 @@ const features = walk(featuresDir, '.feature').map((file) => {
   // A Rule groups scenarios and may hold a background of its own: read them with the feature's.
   const children = (doc.feature?.children ?? []).flatMap((child) => (child.rule ? child.rule.children : [child]))
   const getSteps = (steps) => steps.map((step) => ({ text: step.text, line: step.location.line }))
+  // A scenario outline is read once for each row of its examples, with the placeholders filled in.
+  const getRows = (scenario) =>
+    scenario.examples.flatMap((table) =>
+      (table.tableBody ?? []).map((row) => Object.fromEntries(table.tableHeader.cells.map((cell, index) => [cell.value, row.cells[index].value]))),
+    )
+  const fill = (text, row) => text.replace(/<([^>]+)>/g, (hit, name) => row[name] ?? hit)
+  const getScenarioSteps = (scenario) => {
+    const steps = getSteps(scenario.steps)
+    const rows = getRows(scenario)
+    if (rows.length === 0) return steps
+    const filled = rows.flatMap((row) => steps.map((step) => ({ ...step, text: fill(step.text, row) })))
+    return filled.filter((step, index) => filled.findIndex((one) => one.line === step.line && one.text === step.text) === index)
+  }
   const scenarios = children
     .flatMap((child) => (child.scenario ? [child.scenario] : []))
     .map((scenario) => ({
       name: scenario.name,
       line: scenario.location.line,
-      steps: getSteps(scenario.steps),
+      steps: getScenarioSteps(scenario),
     }))
   const background = children.flatMap((child) => (child.background ? getSteps(child.background.steps) : []))
   return { file, name: doc.feature?.name ?? '', scenarios, background }

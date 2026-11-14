@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Connection, ConnectionSide, LinkMarker } from '@numen/plugin-sdk'
 import type { NoteGraph, NoteRelation } from '../types'
-import { areNoteGraphsEqual, convertNoteGraph, getNoteTypes } from './picture'
+import { areNoteGraphsEqual, convertNoteGraph, getNoteTypes, getTabKinds } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
 /** A related note: where it is, and how it sits relative to the focus. */
@@ -446,6 +446,112 @@ describe('two note graphs drawing one picture', () => {
     ],
   ])('are not two answers whose line differs in its %s', (_, line) => {
     expect(areNoteGraphsEqual(target(), withLine(1, line))).toBe(false)
+  })
+})
+
+/** An item of depth 2: a note a related note is related to, with its relation to that note. */
+type ItemRow = [path: string, relation: NoteRelation, relatedTo: string]
+
+const createDeepNoteGraph = (
+  focus: string,
+  rows: RelatedNoteRow[],
+  items: ItemRow[],
+  lines: Connection[] = [],
+): NoteGraph => {
+  const base = createNoteGraph(focus, rows, lines)
+  return {
+    ...base,
+    related: [
+      ...base.related,
+      ...items.map(([path, relation, relatedTo]) => ({
+        path,
+        title: path,
+        type: 'note',
+        relation,
+        relatedTo,
+      })),
+    ],
+  }
+}
+
+describe('the picture of a note graph with the notes related to related notes', () => {
+  it('draws the nodes and edges of depth 1 and no node or edge for a name', () => {
+    const lines = [createLine('Here', 'Kid')]
+    const one = createNoteGraph('Here', [['Kid', 'child']], lines)
+    const two = createDeepNoteGraph('Here', [['Kid', 'child']], [['Leaf', 'child', 'Kid']], lines)
+
+    const map = createNodeIdMap()
+    const plexTwo = convertNoteGraph(two, map.getNodeId)
+    const plexOne = convertNoteGraph(one, createNodeIdMap().getNodeId)
+
+    expect(plexTwo).toEqual(plexOne)
+    expect(plexTwo.nodes.map((node) => node.title)).not.toContain('Leaf')
+  })
+
+  it('draws a note that is a name of one note and related to the focus once', () => {
+    const noteGraph = createDeepNoteGraph(
+      'Here',
+      [
+        ['A', 'child'],
+        ['B', 'child'],
+      ],
+      [['B', 'child', 'A']],
+    )
+
+    const titles = convertNoteGraph(noteGraph, createNodeIdMap().getNodeId).nodes.map(
+      (n) => n.title,
+    )
+
+    expect(titles).toEqual(['Here', 'A', 'B'])
+  })
+
+  it('still reports the type and tab kind of an item', () => {
+    const noteGraph = createDeepNoteGraph('Here', [['Kid', 'child']], [['Leaf', 'child', 'Kid']])
+    const typed: NoteGraph = {
+      ...noteGraph,
+      related: noteGraph.related.map((one) =>
+        one.path === 'Leaf' ? { ...one, type: 'sample', tabKind: 'sample' } : one,
+      ),
+    }
+
+    expect(getNoteTypes(typed).get('Leaf')).toBe('sample')
+    expect(getTabKinds(typed).get('Leaf')).toBe('sample')
+  })
+})
+
+describe('two note graphs that differ only in the note an item belongs to', () => {
+  it('are not equal', () => {
+    const one = createDeepNoteGraph(
+      'Here',
+      [
+        ['A', 'child'],
+        ['B', 'child'],
+      ],
+      [['Leaf', 'child', 'A']],
+    )
+    const other = createDeepNoteGraph(
+      'Here',
+      [
+        ['A', 'child'],
+        ['B', 'child'],
+      ],
+      [['Leaf', 'child', 'B']],
+    )
+
+    expect(areNoteGraphsEqual(one, other)).toBe(false)
+    expect(
+      areNoteGraphsEqual(
+        one,
+        createDeepNoteGraph(
+          'Here',
+          [
+            ['A', 'child'],
+            ['B', 'child'],
+          ],
+          [['Leaf', 'child', 'A']],
+        ),
+      ),
+    ).toBe(true)
   })
 })
 

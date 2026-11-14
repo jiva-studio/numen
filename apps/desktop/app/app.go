@@ -208,6 +208,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	}
 
 	app := makeApplication(installation, pages, shutdownSeq, going, observed)
+	app.Menu.SetApplicationMenu(makeApplicationMenu())
 	window = makeWindow(app, installation)
 	tracker.addWindow()
 	connectWindow(ctx, app, window, installation, frame, windowHooks{tracker: tracker, going: going})

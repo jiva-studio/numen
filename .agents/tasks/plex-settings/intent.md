@@ -18,10 +18,10 @@ New settings of the Plex plugin, applied live. Each default is today's value, ro
 
 | Setting | Effect |
 |---|---|
-| Pill background | Off: every note, the one in the middle too, is drawn without its pill: the title alone with a dot in the color of its relation. The ring of a link target and the dashed outline of a note about to be made stay as they are. Also offered in the command palette. |
+| Pill background | Off: every note, the one in the middle too, is drawn without its pill: the title alone. The ring of a link target and the dashed outline of a note about to be made stay as they are. Also offered in the command palette. |
 | Pill padding, sides | Space between a title and the left and right edge of its pill. |
 | Pill padding, top and bottom | Space between a title and the top and bottom edge of its pill. |
-| Focus size | How much larger the pill of the note in the middle is. Its title text keeps its size; the headings drawn under it move with it. |
+| Focus size | How much larger the note in the middle is drawn: its pill, title text and icon grow together, with the pill and without it; the headings drawn under it move with it. |
 | Animation | How long moving to another note takes. |
 | Line thickness | The lines between notes. |
 | Outline thickness | The outlines of the pills. |

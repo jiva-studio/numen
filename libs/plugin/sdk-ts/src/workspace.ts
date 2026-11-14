@@ -25,13 +25,13 @@ export interface NoteHeading {
 // NoteRelation is how a related note is linked to the focused note.
 export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling' | 'reference'
 
-// LinkDirection tells which note wrote a text link: the note in focus ('outgoing'), the related note ('incoming'), or each of them ('both').
+// LinkDirection tells which note wrote a text link: the note in focus ('outgoing'), the related note ('incoming'), or each of them ('both'). For a note found by depth 2 the note in focus is the one in its relatedTo.
 export type LinkDirection = 'outgoing' | 'incoming' | 'both'
 
 // LinkMarker is what a link record draws at the end that points at its target. A link without one draws nothing there.
 export type LinkMarker = 'arrow'
 
-// RelatedNote is one note joined to the note in focus. Its direction is present for a 'reference' only. The records that join notes are in NoteGraph.connections.
+// RelatedNote is one note joined to the note in focus. Its direction is present for a 'reference' only. Its relatedTo is the path of the related note it belongs to, set for a note found by depth 2 (its relation and direction are then relative to that note, not to the focus) and absent for a note related to the focus. A note found by depth 2 has no connection record, it may also be related to the focus, and its path can repeat in NoteGraph.related, once under each related note it belongs to. The records that join notes are in NoteGraph.connections.
 export interface RelatedNote {
   readonly path: string
   readonly title: string
@@ -39,6 +39,7 @@ export interface RelatedNote {
   readonly type: NoteType
   readonly tabKind?: string
   readonly direction?: LinkDirection
+  readonly relatedTo?: string
 }
 
 // NoteGraph is a note in focus, the notes joined to it, and one connection for every line drawn between
@@ -55,7 +56,7 @@ export interface NoteGraph {
 
 // VaultNotes is what a plugin reads of the notes of the vault, and writes to them.
 export interface VaultNotes {
-  listRelatedNotes(path: string): Promise<NoteGraph>
+  listRelatedNotes(path: string, depth?: 1 | 2): Promise<NoteGraph>
   getHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   findNotes(query: string, limit?: number): Promise<readonly NoteRef[]>
   // A note made untitled at the root of the vault: its path, and empty where none was made.

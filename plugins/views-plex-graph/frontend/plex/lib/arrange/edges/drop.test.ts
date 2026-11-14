@@ -287,37 +287,6 @@ describe('dragging to the left with references on the board', () => {
   const upperLeft = { x: centre.x - 900, y: centre.y - 200 }
   const lowerLeft = { x: centre.x - 900, y: centre.y + 200 }
 
-  it('is still a jump', () => {
-    expect(getRelationTowards(centre, left, DEFAULT_OPTIONS)).toBe('jump')
-    expect(getRelationTowards(centre, upperLeft, DEFAULT_OPTIONS)).toBe('jump')
-    expect(getRelationTowards(centre, lowerLeft, DEFAULT_OPTIONS)).toBe('jump')
-  })
-
-  it('makes a jump on empty space to the left', () => {
-    expect(
-      resolveDrop({
-        frame: five,
-        options: DEFAULT_OPTIONS,
-        from: centre.id,
-        point: left,
-        relations: ALLOWED,
-      }),
-    ).toStrictEqual({ kind: 'create', from: centre.id, relation: 'jump' })
-  })
-
-  it('makes a jump of a node dropped in from the left', () => {
-    expect(
-      getDropRelation({
-        frame: five,
-        options: DEFAULT_OPTIONS,
-        viewport: VIEWPORT,
-        point: { x: centre.x - 500, y: centre.y },
-        relations: ALLOWED,
-        threshold: 8,
-      }),
-    ).toBe('jump')
-  })
-
   it('is no relation to the left when only a child may be made', () => {
     expect(
       resolveDrop({

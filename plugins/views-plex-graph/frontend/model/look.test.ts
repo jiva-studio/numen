@@ -9,6 +9,7 @@ const createContext = (initialSettings: Record<string, JsonValue> = {}) =>
 /** The look of a plex as the manifest declares its defaults. */
 const DEFAULTS = {
   showPills: true,
+  highlightLinks: true,
   pillPaddingSides: 10,
   pillPaddingEnds: 9.25,
   focusSize: 1.22,
@@ -17,12 +18,15 @@ const DEFAULTS = {
   outlineThickness: 1,
   lineCurvature: 0.55,
   noteRoom: 0,
+  namesOpacity: 0.7,
+  focusedNamesOpacity: 1,
   references: 'both',
 }
 
 /** A value for every setting that is none of the defaults, and inside every range. */
 const CHOSEN = {
   showPills: false,
+  highlightLinks: false,
   pillPaddingSides: 4,
   pillPaddingEnds: 3.5,
   focusSize: 1.6,
@@ -31,6 +35,8 @@ const CHOSEN = {
   outlineThickness: 1.5,
   lineCurvature: 0.2,
   noteRoom: 12,
+  namesOpacity: 0.2,
+  focusedNamesOpacity: 0.8,
   references: 'outgoing',
 }
 
@@ -43,6 +49,8 @@ const BELOW = {
   outlineThickness: 0.1,
   lineCurvature: -0.4,
   noteRoom: -10,
+  namesOpacity: -1,
+  focusedNamesOpacity: -0.5,
 }
 
 const ABOVE = {
@@ -54,6 +62,8 @@ const ABOVE = {
   outlineThickness: 9,
   lineCurvature: 3,
   noteRoom: 400,
+  namesOpacity: 3,
+  focusedNamesOpacity: 2,
 }
 
 const LOWEST = {
@@ -65,6 +75,8 @@ const LOWEST = {
   outlineThickness: 0.5,
   lineCurvature: 0,
   noteRoom: 0,
+  namesOpacity: 0,
+  focusedNamesOpacity: 0.05,
 }
 
 const HIGHEST = {
@@ -76,6 +88,8 @@ const HIGHEST = {
   outlineThickness: 4,
   lineCurvature: 1,
   noteRoom: 40,
+  namesOpacity: 1,
+  focusedNamesOpacity: 1,
 }
 
 type Look = ReturnType<typeof readLook>
@@ -86,6 +100,13 @@ const getValues = (look: Look, keys: readonly string[]): Record<string, unknown>
   )
 
 describe('readLook', () => {
+  it('never lets the names in focus vanish, and lets the resting names', () => {
+    const look = readLook(createContext({ namesOpacity: 0, focusedNamesOpacity: 0 }))
+
+    expect(look.namesOpacity.value).toBe(0)
+    expect(look.focusedNamesOpacity.value).toBe(0.05)
+  })
+
   it('draws the default look where nothing is set', () => {
     const look = readLook(createContext())
 
@@ -140,9 +161,11 @@ describe('readLook', () => {
     context.setSetting('focusSize', 7)
     context.setSetting('lineCurvature', 'straight')
     context.setSetting('showPills', 'no')
+    context.setSetting('highlightLinks', 'yes')
 
     expect(look.focusSize.value).toBe(2.5)
     expect(look.lineCurvature.value).toBe(0.55)
+    expect(look.highlightLinks.value).toBe(true)
     expect(look.showPills.value).toBe(true)
   })
 
