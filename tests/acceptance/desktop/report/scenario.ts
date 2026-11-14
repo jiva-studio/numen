@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { TestCase, TestResult } from 'playwright/types/testReporter'
 import { type BddFile, findBddTest } from './bdd-data.js'
-import { mapClicks, readClicks, type VideoClick } from './clicks.js'
+import { mapInputs, readInputs, type VideoInput } from './inputs.js'
 import { findScenario, type Feature, type GherkinStep } from './gherkin.js'
 import {
   collectBddSteps,
@@ -19,7 +19,7 @@ export type ScenarioRecord = ScenarioEntry & {
   readonly steps: readonly ReportStep[]
   readonly errorMessage: string | undefined
   readonly video: string | undefined
-  readonly clicks: readonly VideoClick[]
+  readonly inputs: readonly VideoInput[]
   readonly screenshot: string | undefined
 }
 
@@ -78,7 +78,7 @@ export const createScenarioRecord = (
     steps,
     errorMessage: readScenarioError(result, steps),
     video: files.video,
-    clicks: mapClicks(readClicks(result), videoStart),
+    inputs: mapInputs(readInputs(result), videoStart),
     screenshot: files.screenshot,
   }
 }

@@ -16,11 +16,17 @@ const createPointer = () => {
 const createCursor = () => {
   const pointer = createPointer()
   const ripple = createElement('span', { class: 'cursor-ripple' })
+  const press = createElement('span', { class: 'cursor-press' })
+  const highlight = createElement('span', { class: 'input-highlight' })
+  const badge = createElement('div', { class: 'key-badge' })
   const element = createElement('div', { class: 'cursor-layer', 'aria-hidden': 'true' }, [
+    highlight,
     ripple,
+    press,
     pointer,
+    badge,
   ])
-  return { element, pointer, ripple }
+  return { element, pointer, ripple, press, highlight, badge }
 }
 
 const getContentBox = (player) => {
@@ -56,15 +62,47 @@ const writeRipple = (ripple, state) => {
   ripple.style.setProperty('--progress', String(state.progress))
 }
 
+const writePointer = (cursor, state) => {
+  cursor.pointer.style.display = state ? '' : 'none'
+  cursor.press.hidden = !state?.isPressed
+  writeRipple(cursor.ripple, state?.ripple ?? null)
+  if (!state) return
+  placePoint(cursor.pointer, state.x, state.y)
+  placePoint(cursor.press, state.x, state.y)
+}
+
+const writeHighlight = (highlight, state) => {
+  highlight.hidden = state === null
+  if (state === null) return
+  placePoint(highlight, state.x, state.y)
+  highlight.style.width = `${state.w * 100}%`
+  highlight.style.height = `${state.h * 100}%`
+  highlight.style.setProperty('--progress', String(state.progress))
+}
+
+const writeBadge = (badge, state) => {
+  badge.hidden = state === null
+  if (state === null) return
+  badge.style.opacity = String(state.opacity)
+  const text = state.parts.join('\n')
+  if (badge.dataset.text === text) return
+  badge.dataset.text = text
+  badge.replaceChildren(
+    ...state.parts.map((part) => createElement('span', { class: 'key-part' }, [part])),
+  )
+}
+
 const writeCursor = (video) => {
   const { cursor, player } = video
   const box = getContentBox(player)
-  const state = box && window.playback.getCursorAt(video.scenario.clicks ?? [], player.currentTime)
-  cursor.element.hidden = !state
-  if (!state) return
+  cursor.element.hidden = !box
+  if (!box) return
+  const inputs = video.scenario.inputs ?? []
+  const time = player.currentTime
   placeLayer(cursor.element, box)
-  placePoint(cursor.pointer, state.x, state.y)
-  writeRipple(cursor.ripple, state.ripple)
+  writePointer(cursor, window.playback.getCursorAt(inputs, time))
+  writeHighlight(cursor.highlight, window.playback.getHighlightAt(inputs, time))
+  writeBadge(cursor.badge, window.playback.getBadgeAt(inputs, time))
 }
 
 const linkCursor = (video) => {

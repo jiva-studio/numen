@@ -1,6 +1,6 @@
 import type { Page, TestInfo, ViewportSize } from 'playwright/test'
 import type { Recording } from '../drivers/scenario.js'
-import { attachClicks, recordClicks, type RecordedClick } from './clicks.js'
+import { attachInputs, recordInputs, type RecordedInput } from './inputs.js'
 
 export const VIDEO_START = 'video-start'
 
@@ -18,7 +18,7 @@ export const createVideoRecorder = (
   viewport: ViewportSize | null,
 ): VideoRecorder => {
   const pages: Page[] = []
-  const clicks: RecordedClick[] = []
+  const inputs: RecordedInput[] = []
   const recording: Recording = {
     contextOptions: {
       recordVideo: {
@@ -28,14 +28,14 @@ export const createVideoRecorder = (
     },
     onPage: async (page) => {
       if (pages.length === 0) markVideoStart(testInfo)
-      await recordClicks(page, pages.length, clicks)
+      await recordInputs(page, pages.length, inputs)
       pages.push(page)
     },
   }
   return {
     recording,
     attachVideos: async () => {
-      await attachClicks(testInfo, clicks)
+      await attachInputs(testInfo, inputs)
       await attachVideos(testInfo, pages)
     },
   }

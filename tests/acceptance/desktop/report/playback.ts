@@ -67,37 +67,153 @@ export const getSetupLength = (steps: readonly { readonly keyword: string }[]): 
 export const findActionStart = (starts: StepStarts, setupLength: number): number | null =>
   starts.slice(setupLength).find((start) => start !== null) ?? null
 
-export type Click = { readonly t: number; readonly x: number; readonly y: number }
+export type Input = {
+  readonly kind: 'down' | 'move' | 'up' | 'key' | 'type'
+  readonly t: number
+  readonly x: number
+  readonly y: number
+  readonly w?: number
+  readonly h?: number
+  readonly key?: string
+  readonly mods?: readonly string[]
+  readonly isField?: boolean
+  readonly text?: string
+  readonly isAppend?: boolean
+}
 
 export type Ripple = { readonly x: number; readonly y: number; readonly progress: number }
 
-export type Cursor = { readonly x: number; readonly y: number; readonly ripple: Ripple | null }
+export type Cursor = {
+  readonly x: number
+  readonly y: number
+  readonly ripple: Ripple | null
+  readonly isPressed: boolean
+}
 
-export const getCursorAt = (clicks: readonly Click[], time: number): Cursor | null => {
+export type Badge = { readonly parts: readonly string[]; readonly opacity: number }
+
+export type Highlight = {
+  readonly x: number
+  readonly y: number
+  readonly w: number
+  readonly h: number
+  readonly progress: number
+}
+
+export const getCursorAt = (inputs: readonly Input[], time: number): Cursor | null => {
   const travelLength = 0.6
   const rippleLength = 0.4
   const ease = (share: number): number =>
     share < 0.5 ? 2 * share * share : 1 - (-2 * share + 2) ** 2 / 2
-  const getShare = (from: Click, to: Click): number => {
-    const start = Math.max(from.t, to.t - travelLength)
+  const clamp = (share: number): number => Math.min(Math.max(share, 0), 1)
+  const isPressing = (input: Input): boolean => input.kind === 'down' || input.kind === 'move'
+  const isDragging = (from: Input, to: Input): boolean =>
+    isPressing(from) && (to.kind === 'move' || to.kind === 'up')
+  const getShare = (from: Input, to: Input): number => {
+    const start = isDragging(from, to) ? from.t : Math.max(from.t, to.t - travelLength)
     if (to.t <= start) return 1
-    return ease(Math.min(Math.max((time - start) / (to.t - start), 0), 1))
+    const share = clamp((time - start) / (to.t - start))
+    return isDragging(from, to) ? share : ease(share)
   }
-  const getRipple = (click: Click | undefined): Ripple | null => {
-    if (!click || time - click.t >= rippleLength) return null
-    return { x: click.x, y: click.y, progress: (time - click.t) / rippleLength }
+  const getRipple = (points: readonly Input[]): Ripple | null => {
+    const down = points.filter((point) => point.kind === 'down' && point.t <= time).at(-1)
+    if (!down || time - down.t >= rippleLength) return null
+    return { x: down.x, y: down.y, progress: (time - down.t) / rippleLength }
   }
-  const nextIndex = clicks.findIndex((click) => click.t > time)
-  const lastIndex = (nextIndex === -1 ? clicks.length : nextIndex) - 1
-  const previous = lastIndex < 0 ? undefined : clicks.at(lastIndex)
-  const next = nextIndex === -1 ? undefined : clicks.at(nextIndex)
-  const from = previous ?? next
-  if (!from) return null
-  const share = previous && next ? getShare(previous, next) : 0
-  const to = next ?? from
+  const points = inputs.filter(
+    (input) => input.kind === 'down' || input.kind === 'move' || input.kind === 'up',
+  )
+  const first = points.at(0)
+  if (!first) return null
+  const path: Input[] = [{ kind: 'up', t: Math.min(first.t, 0), x: 0.5, y: 0.5 }, ...points]
+  const nextIndex = path.findIndex((point) => point.t > time)
+  const previous = path.at(nextIndex === -1 ? -1 : Math.max(nextIndex - 1, 0)) ?? first
+  const next = nextIndex > 0 ? path.at(nextIndex) : undefined
+  const share = next ? getShare(previous, next) : 0
+  const to = next ?? previous
   return {
-    x: from.x + (to.x - from.x) * share,
-    y: from.y + (to.y - from.y) * share,
-    ripple: getRipple(previous),
+    x: previous.x + (to.x - previous.x) * share,
+    y: previous.y + (to.y - previous.y) * share,
+    ripple: getRipple(points),
+    isPressed: isPressing(previous),
+  }
+}
+
+export const getBadgeAt = (inputs: readonly Input[], time: number): Badge | null => {
+  const groupGap = 0.6
+  const showLength = 1
+  const fadeLength = 0.3
+  const textLength = 40
+  const partCount = 5
+  const symbols: Record<string, string> = { Control: '⌃', Alt: '⌥', Shift: '⇧', Meta: '⌘' }
+  const names: Record<string, string> = {
+    Enter: 'Enter',
+    Escape: 'Esc',
+    ArrowDown: '↓',
+    ArrowUp: '↑',
+    ArrowLeft: '←',
+    ArrowRight: '→',
+    Backspace: '⌫',
+    Delete: 'Del',
+    ' ': 'Space',
+  }
+  const getMods = (input: Input): readonly string[] => input.mods ?? []
+  const isCharacter = (input: Input): boolean =>
+    (input.key ?? '').length === 1 && getMods(input).every((mod) => mod === 'Shift')
+  const isShown = (input: Input): boolean => {
+    if (input.t > time) return false
+    if (input.kind === 'type') return !(input.isAppend && !input.text)
+    return input.kind === 'key' && !(input.isField && isCharacter(input))
+  }
+  const getKeyName = (key: string): string =>
+    names[key] ?? (key.length === 1 ? key.toUpperCase() : key)
+  const getKeyLabel = (input: Input): string => {
+    const mods = Object.keys(symbols).filter(
+      (mod) => getMods(input).includes(mod) && !(mod === 'Shift' && isCharacter(input)),
+    )
+    return [...mods.map((mod) => symbols[mod]), getKeyName(input.key ?? '')].join(' ')
+  }
+  const clip = (text: string): string =>
+    text.length > textLength ? `…${text.slice(1 - textLength)}` : text
+  const findGroup = (shown: readonly Input[]): readonly Input[] => {
+    let start = shown.length - 1
+    const getGap = (index: number): number =>
+      (shown.at(index)?.t ?? 0) - (shown.at(index - 1)?.t ?? 0)
+    while (start > 0 && getGap(start) <= groupGap) start -= 1
+    return shown.slice(start)
+  }
+  const collectParts = (group: readonly Input[]): string[] => {
+    const parts: { typed: string | null; label: string }[] = []
+    for (const input of group) {
+      const last = parts.at(-1)
+      if (input.kind !== 'type') parts.push({ typed: null, label: getKeyLabel(input) })
+      else if (typeof last?.typed === 'string')
+        last.typed = (input.isAppend ? last.typed : '') + (input.text ?? '')
+      else parts.push({ typed: input.text ?? '', label: '' })
+    }
+    return parts.map((part) => (part.typed === null ? part.label : `Typing “${clip(part.typed)}”`))
+  }
+  const shown = inputs.filter(isShown)
+  const last = shown.at(-1)
+  if (!last || time - last.t >= showLength) return null
+  const age = time - last.t
+  const opacity = Math.min((showLength - age) / fadeLength, 1)
+  return { parts: collectParts(findGroup(shown)).slice(-partCount), opacity }
+}
+
+export const getHighlightAt = (inputs: readonly Input[], time: number): Highlight | null => {
+  const length = 0.5
+  const hasRect = (input: Input): boolean => (input.w ?? 0) > 0 && (input.h ?? 0) > 0
+  const target = inputs
+    .filter((input) => (input.kind === 'key' || input.kind === 'type') && input.t <= time)
+    .filter(hasRect)
+    .at(-1)
+  if (!target || time - target.t >= length) return null
+  return {
+    x: target.x,
+    y: target.y,
+    w: target.w ?? 0,
+    h: target.h ?? 0,
+    progress: (time - target.t) / length,
   }
 }
