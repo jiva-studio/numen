@@ -1,5 +1,5 @@
 name: "Build the UI libraries"
-description: "Builds libs/ui/components, and libs/ui/workbench when asked, or restores the build that an earlier job made from the same sources"
+description: "Builds libs/ui/components, and libs/ui/workbench when asked, or restores the build that an earlier job on main made from the same sources"
 inputs:
   shell:
     description: "Also build libs/ui/workbench"
@@ -12,7 +12,7 @@ runs:
     # every job of every workflow that reads the same sources takes the first one's result.
     - name: Restore the build of libs/ui/components
       id: core
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: libs/ui/components/dist
         key: ui-components-dist-${{ runner.os }}-${{ hashFiles('.node-version', 'package-lock.json', 'tsconfig.base.json', 'libs/ui/components/package.json', 'libs/ui/components/tsconfig*.json', 'libs/ui/components/vite.config.ts', 'libs/ui/components/src/**', 'libs/ui/components/.storybook/**') }}
@@ -22,10 +22,17 @@ runs:
       shell: bash
       run: npm run build --prefix libs/ui/components
 
+    # A pull request's cache is visible only to that pull request; main's to all.
+    - if: github.ref == 'refs/heads/main' && steps.core.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: libs/ui/components/dist
+        key: ${{ steps.core.outputs.cache-primary-key }}
+
     - name: Restore the build of libs/ui/workbench
       id: shell
       if: inputs.shell == 'true'
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: libs/ui/workbench/dist
         key: ui-workbench-dist-${{ runner.os }}-${{ hashFiles('.node-version', 'package-lock.json', 'tsconfig.base.json', 'libs/ui/components/package.json', 'libs/ui/components/vite.config.ts', 'libs/ui/components/src/**', 'libs/ui/components/.storybook/**', 'libs/ui/workbench/package.json', 'libs/ui/workbench/tsconfig*.json', 'libs/ui/workbench/vite.config.ts', 'libs/ui/workbench/src/**', 'libs/ui/workbench/.storybook/**') }}
@@ -34,3 +41,9 @@ runs:
       if: inputs.shell == 'true' && steps.shell.outputs.cache-hit != 'true'
       shell: bash
       run: npm run build --prefix libs/ui/workbench
+
+    - if: github.ref == 'refs/heads/main' && inputs.shell == 'true' && steps.shell.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: libs/ui/workbench/dist
+        key: ${{ steps.shell.outputs.cache-primary-key }}
