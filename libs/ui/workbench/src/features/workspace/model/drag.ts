@@ -1,6 +1,6 @@
 import { computed, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import type { Clock } from '@numen/ui'
-import { usePressDrag } from '@numen/ui'
+import { doc, usePressDrag } from '@numen/ui'
 import type { Position, Size } from '@numen/ui'
 import {
   getCaretRect,
@@ -85,7 +85,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   function press(tab: TabId, pointer: PointerEvent): void {
     if (pointer.button !== 0) return
 
-    const holder = document
+    const holder = doc
       .elementFromPoint(pointer.clientX, pointer.clientY)
       ?.closest('[data-workspace-pane]')
     const from = holder?.getAttribute('data-workspace-pane') ?? options.workspace.value.focus
@@ -180,7 +180,7 @@ function resolveDropTarget(
   if (!isInside(point, outer)) return null
 
   const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
-  const underElement = document.elementFromPoint(point.x, point.y)
+  const underElement = doc.elementFromPoint(point.x, point.y)
 
   const strip = getClosestElement(underElement, '[data-workspace-strip]')
   const pane = getClosestElement(underElement, '[data-workspace-pane]')

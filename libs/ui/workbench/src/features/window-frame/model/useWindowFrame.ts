@@ -4,7 +4,7 @@
  * tests) gets a frame that does nothing.
  */
 import { computed, getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
-import { runInBackground } from '@numen/ui'
+import { doc, hasDocument, runInBackground } from '@numen/ui'
 import {
   getWindowEdge as getTopEdge,
   getWindowRadius,
@@ -72,9 +72,9 @@ export function useWindowFrame(load: FrameRuntimeLoader): WindowFrame {
   watch(
     [windowRadius, () => getTopEdge(platform.value, isFullscreen.value)],
     ([radius, edge]) => {
-      if (typeof document === 'undefined') return
-      document.documentElement.style.setProperty(WINDOW_RADIUS_VARIABLE, `${radius}px`)
-      document.documentElement.style.setProperty(WINDOW_EDGE_VARIABLE, `${edge}px`)
+      if (!hasDocument()) return
+      doc.documentElement.style.setProperty(WINDOW_RADIUS_VARIABLE, `${radius}px`)
+      doc.documentElement.style.setProperty(WINDOW_EDGE_VARIABLE, `${edge}px`)
     },
     { immediate: true },
   )

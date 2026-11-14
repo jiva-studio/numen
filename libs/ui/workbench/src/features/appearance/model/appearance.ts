@@ -8,7 +8,7 @@
  * list offers and what choosing a row writes belong to the adapter of the settings.
  */
 import { ref, shallowRef, watch, type Ref } from 'vue'
-import { createFollower, createRequestGuard, type Caught } from '@numen/ui'
+import { createFollower, createRequestGuard, doc, type Caught } from '@numen/ui'
 import {
   DESIGNED,
   SCHEMES,
@@ -171,7 +171,7 @@ function initAppearanceState() {
 }
 
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
-  const { core, words, write, sheet = document, wait = sleep } = deps
+  const { core, words, write, sheet = doc, wait = sleep } = deps
   const styleElements = getStyleElements(sheet)
   const served = styleElements.theme.textContent
   const state = initAppearanceState()

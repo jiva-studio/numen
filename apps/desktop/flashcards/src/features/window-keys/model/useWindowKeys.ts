@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted, type Ref } from 'vue'
+import { win } from '@numen/ui'
 import type { Vault } from '@/entities/vault'
 import type { WindowTabs } from '@/entities/tab'
 import { createWindowKeys } from './createWindowKeys'
@@ -15,6 +16,6 @@ export function useWindowKeys({ tabs, vaults }: WindowKeysDeps): void {
     getVaults: () => (tabs.front.value ? vaults.value : []),
     openVault: tabs.openTab,
   })
-  onMounted(() => window.addEventListener('keydown', onKeyDown))
-  onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
+  onMounted(() => win.addEventListener('keydown', onKeyDown))
+  onUnmounted(() => win.removeEventListener('keydown', onKeyDown))
 }
