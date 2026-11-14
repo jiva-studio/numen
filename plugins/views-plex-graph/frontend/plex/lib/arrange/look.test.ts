@@ -228,7 +228,7 @@ describe('Room around a note', () => {
     const close = unlimited(0)
     const sparse = unlimited(20)
 
-    // Free spots may sit half a unit inside a gap, so the difference is the room on both sides to within a unit.
+    // The room is kept on both sides of a box, so the separation grows by twice the room.
     expect(Math.abs(sparse - close - 40)).toBeLessThanOrEqual(1)
   })
 

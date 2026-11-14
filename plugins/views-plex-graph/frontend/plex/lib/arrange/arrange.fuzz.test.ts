@@ -150,7 +150,7 @@ describe('a note that is cut', () => {
     for (const { relation, rounds } of cuts)
       expect(rounds.length, relation).toBeGreaterThanOrEqual(5)
     const whole = cases.filter((one) => Object.keys(arrangeCase(one).overflow).length === 0)
-    // One cell size for every note: the widest and tallest note sets it, so few of these crowded windows hold everything.
+    // Every cell of a block is as large as its widest and tallest note, so few of these crowded windows hold everything.
     expect(whole.length).toBeGreaterThanOrEqual(3)
   }, 120_000)
 

@@ -84,7 +84,6 @@ const getOverlaps = (frame: PlexFrame): string[] => {
 const listInside = (notes: readonly PlacedNode[], area: Box): string[] =>
   notes.filter((note) => isOverlapping(getBox(note), area)).map((note) => note.id)
 
-/** Whether a side block is a grid with no hole: every row holds the columns nearest the focus, and its rows are evenly spaced. */
 function isWholeBlock(notes: readonly PlacedNode[]): boolean {
   const columns = [...new Set(notes.map((note) => note.x))].sort(
     (a, b) => Math.abs(a) - Math.abs(b),

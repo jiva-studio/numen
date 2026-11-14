@@ -8,7 +8,7 @@
 import type { LabelType } from '../edge'
 import { getExtent, type PlexFrame } from '../frame'
 import { assertGraph } from '../graph'
-import type { PlacedNode } from '../node'
+import type { PlacedNode, Position } from '../node'
 import { admitNodes, countOverflow, refill, requestNodes } from './layout/admission'
 import { clusters } from './layout/clusters'
 import { measureCrowding, packOptions } from './layout/crowding'
@@ -111,7 +111,7 @@ export function arrangePlex(
     crowded.gap > tightest.gap &&
     countNodes(admittedCrowded) < countNodes(requested)
   // Admission is greedy, so the tightest packing is also grown from what the crowded one admitted, and the larger set is kept.
-  const holdsAtTightest = (nodesByRelation: NodesByRelation) =>
+  const canHoldAtTightest = (nodesByRelation: NodesByRelation) =>
     isInsideWindow(
       lay(tightest, nodesByRelation, rooms, {
         shouldStop: stopAtOutside(viewport, margin, rooms),
@@ -120,13 +120,13 @@ export function arrangePlex(
       { margin, rooms },
     )
   const growAtTightest = () =>
-    holdsAtTightest(admittedCrowded)
-      ? refill(admittedCrowded, requested, holdsAtTightest)
+    canHoldAtTightest(admittedCrowded)
+      ? refill(admittedCrowded, requested, canHoldAtTightest)
       : admittedCrowded
-  const getLarger = (first: NodesByRelation, second: NodesByRelation) =>
+  const getLargerSet = (first: NodesByRelation, second: NodesByRelation) =>
     countNodes(second) > countNodes(first) ? second : first
   const admittedTightest = isTightestBetter
-    ? getLarger(admitAt(tightest), growAtTightest())
+    ? getLargerSet(admitAt(tightest), growAtTightest())
     : admittedCrowded
   const isTightestChosen = countNodes(admittedTightest) > countNodes(admittedCrowded)
   const resolved = isTightestChosen ? tightest : crowded
@@ -207,16 +207,10 @@ function createRoomLookup(
   return rooms
 }
 
-/** A box by its center and its size. */
-interface Box extends Size {
-  readonly x: number
-  readonly y: number
-}
-
-function isFootprintInside(spot: Box, viewport: Size, margin: number): boolean {
+function isFootprintInside(footprint: Position & Size, viewport: Size, margin: number): boolean {
   return (
-    Math.abs(spot.x) + spot.width / 2 <= viewport.width / 2 - margin &&
-    Math.abs(spot.y) + spot.height / 2 <= viewport.height / 2 - margin
+    Math.abs(footprint.x) + footprint.width / 2 <= viewport.width / 2 - margin &&
+    Math.abs(footprint.y) + footprint.height / 2 <= viewport.height / 2 - margin
   )
 }
 

@@ -179,7 +179,7 @@ describe('a large group is a block, not a line', () => {
   )
 })
 
-describe('groups take turns', () => {
+describe('a large group leaves the first note of another group in place', () => {
   it('leaves the first note of another group where it would be alone, however many children there are', () => {
     const crowd = arrange(build('A note', { child: 20, jump: 1, sibling: 1, parent: 1 }))
     const alone = arrange(build('A note', { jump: 1, sibling: 1, parent: 1 }))
@@ -191,7 +191,7 @@ describe('groups take turns', () => {
   })
 })
 
-describe('a group fills the free space next to another group', () => {
+describe('a large group spreads over columns', () => {
   const window = { width: 1600, height: 1000 }
 
   it('shows twenty-four children and spreads them sideways instead of running down one column', () => {

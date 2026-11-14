@@ -29,9 +29,9 @@ export function getFootprint(
 export const getFootprintCenterY = (pillY: number, room: NodeRoom): number =>
   pillY + (room.bottom - room.top) / 2
 
-/** The center of the pill of a note whose footprint is centered on `spotY`. */
-export const getPillCenterY = (spotY: number, room: NodeRoom): number =>
-  spotY + (room.top - room.bottom) / 2
+/** A pill keeps `room.top` over it and `room.bottom` under it inside its footprint. */
+export const getPillCenterY = (footprintY: number, room: NodeRoom): number =>
+  footprintY + (room.top - room.bottom) / 2
 
 /** What a node keeps around its pill, as numbers the caller measured. */
 export type Rooms = (node: PlexNode) => NodeRoom
