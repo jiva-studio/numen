@@ -72,30 +72,6 @@ describe('keyboard focus', () => {
     element.dispatchEvent(new FocusEvent('focusout', { relatedTarget: outside }))
     expect(hoverFocus.isOn.value).toBe(false)
   })
-
-  it('stays while focus moves to the lifted part, which is outside the group', () => {
-    const group = document.createElement('div')
-    const lifted = document.createElement('div')
-    const handle = document.createElement('span')
-    lifted.append(handle)
-    vi.spyOn(group, 'matches').mockReturnValue(true)
-    vi.spyOn(handle, 'matches').mockReturnValue(false)
-    const hoverFocus = useHoverFocus(() => [group, lifted])
-    for (const part of [group, lifted]) {
-      part.addEventListener('focusin', hoverFocus.onFocusIn)
-      part.addEventListener('focusout', hoverFocus.onFocusOut)
-    }
-    group.dispatchEvent(new FocusEvent('focusin'))
-
-    group.dispatchEvent(new FocusEvent('focusout', { relatedTarget: handle }))
-    handle.dispatchEvent(new FocusEvent('focusin', { relatedTarget: group, bubbles: true }))
-    expect(hoverFocus.isOn.value).toBe(true)
-
-    handle.dispatchEvent(
-      new FocusEvent('focusout', { relatedTarget: document.body, bubbles: true }),
-    )
-    expect(hoverFocus.isOn.value).toBe(false)
-  })
 })
 
 describe('release', () => {

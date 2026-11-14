@@ -19,12 +19,6 @@ export function useHoverFocus(parts: () => readonly (Element | null)[] = () => [
   const isHovered = ref(false)
   const isKeyboardFocused = ref(false)
 
-  const isInside = (within: EventTarget | null, next: EventTarget | null): boolean => {
-    if (!(next instanceof Node)) return false
-    if (within instanceof Node && within.contains(next)) return true
-    return parts().some((part) => part?.contains(next))
-  }
-
   return {
     /** The pointer is over it, or keyboard focus is visibly on it. */
     isOn: computed(() => isHovered.value || isKeyboardFocused.value),
@@ -45,15 +39,15 @@ export function useHoverFocus(parts: () => readonly (Element | null)[] = () => [
       isHovered.value = false
     },
 
-    // Focus a script moves inside the node, as useLift does, need not match :focus-visible.
     onFocusIn: (event: FocusEvent) => {
-      if (isKeyboardFocused.value && isInside(event.currentTarget, event.relatedTarget)) return
       isKeyboardFocused.value = isKeyboardOn(event.target as Element)
     },
 
-    // The lifted part is teleported out of the group, so moving into it is moving inside too.
+    // The keyboard stays on the element while it moves to something inside it.
     onFocusOut: (event: FocusEvent) => {
-      isKeyboardFocused.value = isInside(event.currentTarget, event.relatedTarget)
+      const within = event.currentTarget as Element
+      const next = event.relatedTarget as Node | null
+      isKeyboardFocused.value = !!(next && within.contains(next))
     },
   }
 }
