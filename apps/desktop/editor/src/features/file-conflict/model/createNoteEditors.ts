@@ -3,15 +3,29 @@
  */
 import { formatError, type Caught } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
-import { useOpenNotes, flattenOpenNotes, createNoteWriter } from '@/entities/note'
-import { reportFlush, watchQuit } from '@/entities/window'
+import {
+  useOpenNotes,
+  flattenOpenNotes,
+  createNoteWriter,
+  type NoteBufferApi,
+  type NoteMakingApi,
+} from '@/entities/note'
+import type { QuitApi } from '@/entities/window'
 import type { WindowTabs } from '@/entities/tab'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { raiseConflicts } from './conflicts'
 import { createFileFlush } from './flush'
 import { createNoteFlushHandler } from './noteFlush'
 
+/** The calls the notes are read, written and made through, and the quit of the window. */
+export interface NoteEditorsApi {
+  readonly notes: NoteBufferApi
+  readonly making: NoteMakingApi
+  readonly quit: QuitApi
+}
+
 export interface NoteEditorsDeps {
+  readonly api: NoteEditorsApi
   readonly log: MessageLog
   readonly windowTabs: Pick<WindowTabs, 'tabs'>
 }
@@ -39,10 +53,10 @@ function createNoteStore(
   }
 }
 
-export function createNoteEditors({ log, windowTabs }: NoteEditorsDeps) {
-  const notes = flattenOpenNotes(useOpenNotes({}))
-  const making = createNoteWriter(log.getWriter('made'))
-  const fileFlush = createFileFlush({ watchQuit, reportFlush })
+export function createNoteEditors({ api, log, windowTabs }: NoteEditorsDeps) {
+  const notes = flattenOpenNotes(useOpenNotes(api.notes))
+  const making = createNoteWriter(api.making, log.getWriter('made'))
+  const fileFlush = createFileFlush(api.quit)
   fileFlush.addHandler(createNoteFlushHandler(notes))
   raiseConflicts(notes, fileFlush)
 

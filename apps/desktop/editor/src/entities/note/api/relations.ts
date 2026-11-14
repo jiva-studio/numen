@@ -3,8 +3,8 @@
  */
 import type { VaultRelations } from '@numen/plugin-loader'
 import { findErrorCode, asFailure, asValue, type Result } from '@numen/core-client'
-import { notes } from '@/shared/api/clients'
-import { resolveLinks } from './notes'
+import type { WindowClients } from '@/shared/api/clients'
+import type { NoteApi } from './notes'
 import {
   CONNECTION_ROLES,
   findRelationError,
@@ -18,8 +18,14 @@ import {
 const toResult = <E>(error: E | null): Result<void, E> =>
   error === null ? asValue(undefined) : asFailure(error)
 
-/** The relationships a note holds, read and written through the core. */
-export const relations: VaultRelations = {
+/**
+ * The relationships a note holds, read and written over `notes`; the links of a text are resolved
+ * through `resolveLinks`.
+ */
+export const createRelations = (
+  notes: WindowClients['notes'],
+  resolveLinks: NoteApi['resolveLinks'],
+): VaultRelations => ({
   roles: CONNECTION_ROLES,
   getConnection: async (first, second, type = '') => {
     const answer = await notes.getConnection({ first, second, type })
@@ -68,4 +74,4 @@ export const relations: VaultRelations = {
   },
   listBacklinks: async (path) => mapBacklinks((await notes.listBacklinks({ path })).backlinks),
   resolveLinks: (text, vault) => resolveLinks('', text, vault),
-}
+})

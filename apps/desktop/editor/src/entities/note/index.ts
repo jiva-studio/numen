@@ -2,17 +2,9 @@
 export { getNoteIcon, registerTabKindIcon } from './model/icons'
 export type { NoteEdit, NoteResult, WriteResult } from './lib/note'
 export { convertErrorCode, ERROR_MESSAGES, useOpenNotes, flattenOpenNotes } from './model/buffer'
+export type { NoteBufferApi } from './model/buffer'
 export { createNoteWriter } from './model/maker'
-export type { NoteCreator } from './model/maker'
+export type { NoteCreator, NoteMakingApi } from './model/maker'
 export { WORDS } from './words'
-export {
-  getInitialOpenPath,
-  listRelatedNotes,
-  listHeadings,
-  readNote,
-  renameNote,
-  resolveNameLink,
-  watchEdits,
-  writeNote,
-} from './api/notes'
-export { relations } from './api/relations'
+export { createNoteApi, type NoteApi } from './api/notes'
+export { createRelations } from './api/relations'

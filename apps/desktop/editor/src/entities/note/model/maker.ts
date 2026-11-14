@@ -5,9 +5,12 @@
  * writes the record of the relation. The window reports what the core answers.
  */
 import { formatError } from '@/shared/api/errors'
-import { createNote } from '../api/notes'
-import { relations } from '../api/relations'
-import { getRelationErrorWords, type ConnectionRole } from '@numen/plugin-loader'
+import type { NoteApi } from '../api/notes'
+import {
+  getRelationErrorWords,
+  type ConnectionRole,
+  type VaultRelations,
+} from '@numen/plugin-loader'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { ERRORS } from '@/shared/ui/words'
 
@@ -17,10 +20,16 @@ interface NoteRef {
   readonly title: string
 }
 
-export function createNoteWriter(writeMessage: MessageWriter) {
+/** The calls a note is made through. */
+export interface NoteMakingApi {
+  readonly createNote: NoteApi['createNote']
+  readonly relations: Pick<VaultRelations, 'createRelated'>
+}
+
+export function createNoteWriter(api: NoteMakingApi, writeMessage: MessageWriter) {
   async function createInFolder(title: string, folder: string): Promise<NoteRef | null> {
     try {
-      const made = await createNote({ title, folder })
+      const made = await api.createNote({ title, folder })
       if (!made.ok) {
         writeMessage(ERRORS[made.error], 'error')
         return null
@@ -39,7 +48,7 @@ export function createNoteWriter(writeMessage: MessageWriter) {
     role: ConnectionRole,
   ): Promise<NoteRef | null> {
     try {
-      const made = await relations.createRelated({ from, role, title })
+      const made = await api.relations.createRelated({ from, role, title })
       if (!made.ok) {
         writeMessage(getRelationErrorWords(made.error), 'error')
         return null
