@@ -48,6 +48,7 @@ jobs:
       plugin_dirs: ${{ steps.areas.outputs.plugin_dirs }}
       e2e: ${{ steps.areas.outputs.e2e }}
       platforms: ${{ steps.platforms.outputs.matrix }}
+      draft: ${{ steps.draft.outputs.draft }}
     steps:
       # The filters, the plugin manifests and the end-to-end selection; a pull request's changed
       # files come from the API, a push's from git.
@@ -77,6 +78,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           FILTERS: ${{ toJSON(steps.filter.outputs) }}
         run: .github/scripts/areas.sh | tee -a "$GITHUB_OUTPUT"
+
+      # Read live: the payload of a push made just before `gh pr ready` still says draft, and its
+      # run can be the one that cancels the run of `ready_for_review`.
+      - id: draft
+        if: github.event_name == 'pull_request'
+        env:
+          PULL: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: echo "draft=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PULL" --jq .draft)" | tee -a "$GITHUB_OUTPUT"
 
       - id: platforms
         env:
@@ -142,7 +152,7 @@ jobs:
   e2e:
     name: End-to-End
     needs: [changes]
-    if: needs.changes.outputs.e2e != 'none' && !github.event.pull_request.draft
+    if: needs.changes.outputs.e2e != 'none' && needs.changes.outputs.draft != 'true'
     uses: ./.github/workflows/desktop-e2e.yml
     with:
       scope: ${{ needs.changes.outputs.e2e }}
