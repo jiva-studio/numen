@@ -6,11 +6,11 @@ import {
   openNote,
   waitForSavedBody,
   writeNote,
-  destroyNote,
 } from '../../../e2e/desktop/tests/support/vault.js'
 import { getConnectionSides } from '../../../e2e/desktop/tests/support/layout.js'
 import { NoteEditor } from './components/NoteEditor.js'
 import { TabStrip } from './components/TabStrip.js'
+import { DEFAULT_VAULT } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 export class NoteDriver {
@@ -50,7 +50,8 @@ export class NoteDriver {
   }
 
   async removeFromDisk(reference: string, name: string): Promise<void> {
-    await destroyNote(this.scenario.page.request, await this.scenario.getPath(reference, name))
+    const notePath = await this.scenario.getPath(reference, name)
+    this.scenario.getWorld().removeFile(this.scenario.getVault(DEFAULT_VAULT), notePath)
   }
 
   async choose(label: string, reference: string, name: string): Promise<void> {
