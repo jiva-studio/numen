@@ -7,11 +7,14 @@
 #
 # EVENT is the event name and FILTERS the outputs of dorny/paths-filter as JSON, `{}` when it did
 # not run. A pull request takes the filters that matched and the changed files of the API (PULL,
-# GH_TOKEN); any other event takes every area, every plugin and every end-to-end test.
+# GH_TOKEN), a push the filters and the files git changed between BEFORE and HEAD. Any other event
+# takes every area, every plugin and every end-to-end test.
 set -euo pipefail
 
 everything=true
 if [[ $EVENT == pull_request ]]; then everything=false; fi
+# BEFORE is all zeros on the first push of a branch.
+if [[ $EVENT == push && ! $BEFORE =~ ^0+$ ]]; then everything=false; fi
 
 grep -oE '^[a-z_]+:' .github/filters.yml | tr -d : | jq -R . | jq -cs \
   --argjson filters "$FILTERS" --argjson everything "$everything" '
@@ -19,7 +22,12 @@ grep -oE '^[a-z_]+:' .github/filters.yml | tr -d : | jq -R . | jq -cs \
   | sed 's/^/areas=/'
 
 list_files() {
-  gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PULL/files" --jq '.[].filename'
+  if [[ $EVENT == push ]]; then
+    git fetch --quiet --no-tags --depth=1 origin "$BEFORE"
+    git diff --name-only --no-renames "$BEFORE" HEAD
+  else
+    gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PULL/files" --jq '.[].filename'
+  fi
 }
 
 list_plugin_files() {
