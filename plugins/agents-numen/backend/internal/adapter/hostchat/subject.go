@@ -17,7 +17,7 @@ func readSubject(arguments string) (about, path string) {
 
 func readFirstString(parsed map[string]any, keys ...string) string {
 	for _, key := range keys {
-		if value, _ := parsed[key].(string); value != "" {
+		if value, isText := parsed[key].(string); isText && value != "" {
 			return value
 		}
 	}

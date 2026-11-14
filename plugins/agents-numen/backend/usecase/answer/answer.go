@@ -9,7 +9,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
@@ -104,49 +103,56 @@ func (a *Answerer) RunTask(ctx context.Context, call connection.Call, task *acp.
 		turns:       cfg.GetMaxSteps(),
 		send:        send,
 	}
-	transcript, done, err := taskRun.answer(taskCtx, messages)
+	transcript, reason, err := taskRun.answer(taskCtx, messages)
+	if ctxErr := taskCtx.Err(); ctxErr != nil {
+		return nil, ctxErr
+	}
+	if errors.Is(err, errChat) && errors.Is(err, connection.ErrNoConnection) {
+		return nil, a.readModelError(taskCtx, errNoModel, send)
+	}
 	if errors.Is(err, errChat) {
-		if errors.Is(err, connection.ErrNoConnection) {
-			return nil, a.readModelError(taskCtx, errNoModel, send)
-		}
-		return nil, newChatStopError(err)
+		return nil, connection.NewStopError(readChatReason(err))
 	}
 	if err != nil {
 		return nil, err
 	}
 	a.history.append(id, transcript[len(messages)-1:])
-	return done, nil
+	return &acp.TaskDone{StopReason: reason}, nil
 }
 
 // errNoModel is a row that names no model of a connection that serves llm.chat.
 var errNoModel = errors.New("the row names no model")
 
-func newChatStopError(err error) error {
+// errConnections is a listing of the connections of llm.chat that failed.
+var errConnections = errors.New("the connections of llm.chat could not be listed")
+
+func readChatReason(err error) connection.Reason {
 	var failed *connection.AllFailedError
 	var stopped *connection.StoppedError
 	switch {
 	case errors.As(err, &failed) && len(failed.Failures) > 0:
-		return connection.NewStopError(failed.Failures[len(failed.Failures)-1].Code)
+		return failed.Failures[len(failed.Failures)-1].Code
 	case errors.As(err, &stopped):
-		return connection.NewStopError(stopped.Code)
+		return stopped.Code
 	}
-	return connection.NewStopError(connection.ReasonUnavailable)
+	return connection.ReasonUnavailable
 }
 
 func (a *Answerer) findModel(ctx context.Context, value string) (conversation.Model, error) {
+	none := conversation.Model{ConnectionID: "", Field: "", ID: ""}
 	choice, isChoice := conversation.ParseChoice(value)
 	if !isChoice {
-		return conversation.Model{}, errNoModel
+		return none, errNoModel
 	}
 	connections, err := a.models.ListConnections(ctx)
 	if err != nil {
-		return conversation.Model{}, err
+		return none, fmt.Errorf("%w: %w", errConnections, err)
 	}
 	index := slices.IndexFunc(connections, func(one conversation.ChatConnection) bool {
 		return one.ID == choice.ConnectionID && one.ModelField != ""
 	})
 	if index < 0 {
-		return conversation.Model{}, errNoModel
+		return none, errNoModel
 	}
 	return conversation.Model{ConnectionID: choice.ConnectionID, Field: connections[index].ModelField, ID: choice.ModelID}, nil
 }
@@ -156,8 +162,7 @@ func (a *Answerer) readModelError(ctx context.Context, err error, send func(*acp
 		return ctxErr
 	}
 	if !errors.Is(err, errNoModel) {
-		var noWait time.Duration
-		return connection.NewTryNextError(connection.ReasonUnavailable, noWait)
+		return connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	if sendErr := send(&acp.TaskFrame{Update: &acp.TaskFrame_AgentMessageChunk{
 		AgentMessageChunk: &acp.MessageChunk{MessageId: "message-1", Text: NoModelText},
@@ -169,7 +174,7 @@ func (a *Answerer) readModelError(ctx context.Context, err error, send func(*acp
 
 func (a *Answerer) getMessages(id string, task *acp.TaskRequest, offered []conversation.Tool) []conversation.Message {
 	kept := a.history.get(id)
-	var messages []conversation.Message
+	messages := make([]conversation.Message, 0, len(kept)+2)
 	if instructions := joinInstructions(offered); instructions != "" {
 		messages = append(messages, conversation.Message{Role: "system", Text: instructions, ToolCalls: nil, ToolCallID: ""})
 	}
@@ -190,9 +195,13 @@ func joinInstructions(offered []conversation.Tool) string {
 }
 
 func writePrompt(task *acp.TaskRequest) string {
+	notes := task.GetContextNotes()
+	if len(notes) == 0 {
+		return task.GetPrompt()
+	}
 	var text strings.Builder
 	text.WriteString(task.GetPrompt())
-	for _, note := range task.GetContextNotes() {
+	for _, note := range notes {
 		fmt.Fprintf(&text, "\n\nAttached note %q (%s):\n%s", note.GetTitle(), note.GetPath(), note.GetText())
 	}
 	return text.String()

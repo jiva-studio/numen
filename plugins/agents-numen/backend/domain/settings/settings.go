@@ -48,7 +48,7 @@ type Store struct {
 
 // NewStore returns a store holding no setting.
 func NewStore() *Store {
-	return &Store{}
+	return &Store{mu: sync.Mutex{}, current: Settings{Temperature: nil, MaxTokens: nil, MaxSteps: 0}}
 }
 
 // Get returns the current settings.
@@ -62,11 +62,15 @@ func (s *Store) Get() Settings {
 func (s *Store) Configure(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if val, err := strconv.ParseFloat(values[KeyTemperature], strconv.IntSize); err == nil {
-		s.current.Temperature = &val
+	if text, ok := values[KeyTemperature]; ok && text != "" {
+		if val, err := strconv.ParseFloat(text, 64); err == nil {
+			s.current.Temperature = &val
+		}
 	}
-	if val, err := strconv.Atoi(values[KeyMaxTokens]); err == nil {
-		s.current.MaxTokens = &val
+	if text, ok := values[KeyMaxTokens]; ok && text != "" {
+		if val, err := strconv.Atoi(text); err == nil {
+			s.current.MaxTokens = &val
+		}
 	}
 	if val, ok := readPositiveInt(values[KeyMaxSteps]); ok {
 		s.current.MaxSteps = val

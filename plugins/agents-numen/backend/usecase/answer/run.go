@@ -29,24 +29,25 @@ type run struct {
 	send        func(*acp.TaskFrame) error
 }
 
-func (r *run) answer(ctx context.Context, messages []conversation.Message) ([]conversation.Message, *acp.TaskDone, error) {
+func (r *run) answer(ctx context.Context, messages []conversation.Message) ([]conversation.Message, acp.StopReason, error) {
 	for index := range r.turns {
 		var (
-			done *acp.TaskDone
-			err  error
+			reason acp.StopReason
+			isDone bool
+			err    error
 		)
-		messages, done, err = r.turn(ctx, messages, "message-"+strconv.Itoa(index+1))
+		messages, reason, isDone, err = r.turn(ctx, messages, "message-"+strconv.Itoa(index+1))
 		if err != nil {
-			return nil, nil, err
+			return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, err
 		}
-		if done != nil {
-			return messages, done, nil
+		if isDone {
+			return messages, reason, nil
 		}
 	}
-	return messages, &acp.TaskDone{StopReason: acp.StopReason_STOP_REASON_MAX_TURN_REQUESTS}, nil
+	return messages, acp.StopReason_STOP_REASON_MAX_TURN_REQUESTS, nil
 }
 
-func (r *run) turn(ctx context.Context, messages []conversation.Message, messageID string) ([]conversation.Message, *acp.TaskDone, error) {
+func (r *run) turn(ctx context.Context, messages []conversation.Message, messageID string) ([]conversation.Message, acp.StopReason, bool, error) {
 	var unsent error
 	emit := func(text string) error {
 		if text == "" {
@@ -61,26 +62,26 @@ func (r *run) turn(ctx context.Context, messages []conversation.Message, message
 		Messages: messages, Tools: r.offered, Temperature: r.temperature, MaxTokens: r.maxTokens, Model: r.model,
 	}, emit)
 	if ctxErr := ctx.Err(); ctxErr != nil {
-		return nil, nil, ctxErr
+		return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, ctxErr
 	}
 	if unsent != nil {
-		return nil, nil, unsent
+		return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, unsent
 	}
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: %w", errChat, err)
+		return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, fmt.Errorf("%w: %w", errChat, err)
 	}
 	message := reply.Message
 	if reply.IsCut {
 		message.ToolCalls = nil
-		return append(messages, message), &acp.TaskDone{StopReason: acp.StopReason_STOP_REASON_MAX_TOKENS}, nil
+		return append(messages, message), acp.StopReason_STOP_REASON_MAX_TOKENS, true, nil
 	}
 	cleanToolCalls(message.ToolCalls)
 	messages = append(messages, message)
 	if len(message.ToolCalls) == 0 {
-		return messages, &acp.TaskDone{StopReason: acp.StopReason_STOP_REASON_END_TURN}, nil
+		return messages, acp.StopReason_STOP_REASON_END_TURN, true, nil
 	}
 	messages, err = r.runToolCalls(ctx, messages, message.ToolCalls)
-	return messages, nil, err
+	return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, err
 }
 
 func cleanToolCalls(calls []conversation.ToolCall) {
@@ -95,7 +96,7 @@ func (r *run) runToolCalls(ctx context.Context, messages []conversation.Message,
 	for _, call := range calls {
 		result, err := r.callTool(ctx, call)
 		if err != nil {
-			return nil, err
+			return messages, err
 		}
 		messages = append(messages, conversation.Message{Role: "tool", ToolCallID: call.ID, Text: result, ToolCalls: nil})
 	}

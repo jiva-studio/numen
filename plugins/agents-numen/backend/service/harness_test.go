@@ -433,7 +433,7 @@ func TestTheMountedServerConfiguresTheAgentAndClosesItsRunningTasks(t *testing.T
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	if err := servertest.NewLifecycleClient(web.Client(), web.URL, testToken).Configure(t.Context(), map[string]string{"maxTokens": "2048"}); err != nil {
+	if _, err := servertest.NewLifecycleClient(web.Client(), web.URL, testToken).Configure(t.Context(), map[string]string{"maxTokens": "2048"}); err != nil {
 		t.Fatal(err)
 	}
 

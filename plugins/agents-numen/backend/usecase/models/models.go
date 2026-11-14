@@ -4,6 +4,7 @@ package models
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
@@ -34,8 +35,11 @@ type Lister struct {
 }
 
 // NewLister returns a lister over the connections models lists.
-func NewLister(models ports.Models) *Lister {
-	return &Lister{models: models}
+func NewLister(models ports.Models) (*Lister, error) {
+	if models == nil {
+		return nil, errors.New("a lister needs the connections of llm.chat")
+	}
+	return &Lister{models: models}, nil
 }
 
 // ListOptions returns the models of each connection that serves llm.chat, the connections in their order

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"sync/atomic"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -43,7 +44,10 @@ func (f *fakeModels) ListModels(ctx context.Context, chat conversation.ChatConne
 
 func listOptions(t *testing.T, source *fakeModels) models.Listing {
 	t.Helper()
-	lister := models.NewLister(source)
+	lister, err := models.NewLister(source)
+	if err != nil {
+		t.Fatal(err)
+	}
 	listing, err := lister.ListOptions(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -106,7 +110,20 @@ func TestAConnectionWithNoFieldOfModelsIsLeftOutOfAWholeListing(t *testing.T) {
 
 func TestASlowConnectionIsGivenUpAfterItsLimitAndTheOthersAreListed(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		start := time.Now()
+		if models.ConnectionLimit != 3*time.Second {
+			t.Fatalf("limit = %v, want 3s", models.ConnectionLimit)
+		}
+		// In the bubble the fake clock moves only when every goroutine waits, so the two markers bracket
+		// the limit of the slow connection.
+		var isBeforeLimit, isAfterLimit atomic.Bool
+		markers := make(chan struct{})
+		go func() {
+			defer close(markers)
+			time.Sleep(models.ConnectionLimit - time.Millisecond)
+			isBeforeLimit.Store(true)
+			time.Sleep(2 * time.Millisecond)
+			isAfterLimit.Store(true)
+		}()
 		listing := listOptions(t, &fakeModels{
 			connections: []conversation.ChatConnection{
 				{ID: "c-stall", Name: "Stall", ModelField: "model"},
@@ -116,9 +133,10 @@ func TestASlowConnectionIsGivenUpAfterItsLimitAndTheOthersAreListed(t *testing.T
 			slow:   map[string]bool{"c-stall": true},
 		})
 
-		if elapsed := time.Since(start); elapsed != 3*time.Second || models.ConnectionLimit != 3*time.Second {
-			t.Errorf("elapsed = %v, limit = %v, want 3s", elapsed, models.ConnectionLimit)
+		if !isBeforeLimit.Load() || isAfterLimit.Load() {
+			t.Errorf("the listing ended with markers (limit-1ms %v, limit+1ms %v), want only the first", isBeforeLimit.Load(), isAfterLimit.Load())
 		}
+		<-markers
 		if !reflect.DeepEqual(listing.Options, []models.Option{{Value: "c-harbor|gull-7b", Title: "Harbor · Gull 7B"}}) || !listing.IsPartial {
 			t.Errorf("listing = %+v, want Harbor alone, partial", listing)
 		}
@@ -127,7 +145,7 @@ func TestASlowConnectionIsGivenUpAfterItsLimitAndTheOthersAreListed(t *testing.T
 
 func TestACanceledContextStopsTheListingWithItsError(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
-	lister := models.NewLister(&fakeModels{
+	lister, err := models.NewLister(&fakeModels{
 		connections: []conversation.ChatConnection{
 			{ID: "c-meadow", Name: "Meadow", ModelField: "model"},
 		},
@@ -135,6 +153,9 @@ func TestACanceledContextStopsTheListingWithItsError(t *testing.T) {
 			cancel()
 		},
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if _, err := lister.ListOptions(ctx); !errors.Is(err, context.Canceled) {
 		t.Errorf("err = %v, want context.Canceled", err)
@@ -155,7 +176,10 @@ func TestTheOptionsOfAChoiceNameTheConnectionAndTheModel(t *testing.T) {
 
 func TestAListingOfTheConnectionsThatFailsIsTheError(t *testing.T) {
 	failure := errors.New("the core is gone")
-	lister := models.NewLister(&fakeModels{err: failure})
+	lister, err := models.NewLister(&fakeModels{err: failure})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if _, err := lister.ListOptions(t.Context()); !errors.Is(err, failure) {
 		t.Errorf("err = %v, want the failure of the listing", err)
