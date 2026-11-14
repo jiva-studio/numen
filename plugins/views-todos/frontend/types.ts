@@ -46,7 +46,11 @@ export interface Filter {
 /** What the lists of the popover and the tab ask of the backend. */
 export interface TaskReader {
   /** Reads the tasks a filter accepts at a day, limited to a count. */
-  listTasks(today: string, filter: Filter, limit: number): Promise<Result<ListTasksResponse, ApiError>>
+  listTasks(
+    today: string,
+    filter: Filter,
+    limit: number,
+  ): Promise<Result<ListTasksResponse, ApiError>>
 }
 
 export interface GetSummaryRequest {

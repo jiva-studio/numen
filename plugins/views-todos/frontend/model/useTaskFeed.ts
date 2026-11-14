@@ -13,7 +13,10 @@ export interface TaskFeed {
   stop(): void
 }
 
-export function useTaskFeed(_api: Pick<TodosApi, 'getSummary' | 'watchTasks'>, _getToday: () => string): TaskFeed {
+export function useTaskFeed(
+  _api: Pick<TodosApi, 'getSummary' | 'watchTasks'>,
+  _getToday: () => string,
+): TaskFeed {
   return {
     summary: ref(null),
     start: () => undefined,

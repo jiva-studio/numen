@@ -206,7 +206,7 @@ func TestTheIndexIsNotReadyBeforeTheFirstScanEndsAndAnswersWithWhatItHas(t *test
 	f := newFixture(map[string]string{"a.md": "- [ ] one"})
 	f.reader.entered, f.reader.release = make(chan string, 64), make(chan struct{})
 	finished := make(chan error, 1)
-	go func() { finished <- f.index.Scan(context.Background()) }()
+	go func() { finished <- f.index.Scan(t.Context()) }()
 
 	select {
 	case <-f.reader.entered:

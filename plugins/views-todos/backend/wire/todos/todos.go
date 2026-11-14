@@ -8,11 +8,11 @@ import (
 )
 
 // EncodeTask returns the message of a task.
-func EncodeTask(task todo.Task) api.Task {
+func EncodeTask(_ todo.Task) api.Task {
 	return api.Task{}
 }
 
 // DecodeFilter returns the filter a message asks for.
-func DecodeFilter(message api.Filter) filter.Filter {
+func DecodeFilter(_ api.Filter) filter.Filter {
 	return filter.Filter{}
 }

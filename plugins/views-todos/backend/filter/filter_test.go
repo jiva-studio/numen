@@ -66,7 +66,7 @@ func TestAFinishedTaskDueInThePastIsNotOverdue(t *testing.T) {
 func TestTheStatusFilterShowsOpenTasksByDefaultAndOtherStatusesOnRequest(t *testing.T) {
 	done := open("a.md", 2, "done one", "")
 	done.Status = todo.StatusDone
-	other := open("a.md", 3, "cancelled one", "")
+	other := open("a.md", 3, "skipped one", "")
 	other.Status = todo.StatusOther
 	tasks := []todo.Task{open("a.md", 1, "open one", ""), done, other}
 
@@ -77,8 +77,8 @@ func TestTheStatusFilterShowsOpenTasksByDefaultAndOtherStatusesOnRequest(t *test
 	}{
 		{"an empty list is open", nil, []string{"open one"}},
 		{"done", []todo.Status{todo.StatusDone}, []string{"done one"}},
-		{"open and other", []todo.Status{todo.StatusOpen, todo.StatusOther}, []string{"open one", "cancelled one"}},
-		{"all three", []todo.Status{todo.StatusOpen, todo.StatusDone, todo.StatusOther}, []string{"open one", "done one", "cancelled one"}},
+		{"open and other", []todo.Status{todo.StatusOpen, todo.StatusOther}, []string{"open one", "skipped one"}},
+		{"all three", []todo.Status{todo.StatusOpen, todo.StatusDone, todo.StatusOther}, []string{"open one", "done one", "skipped one"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

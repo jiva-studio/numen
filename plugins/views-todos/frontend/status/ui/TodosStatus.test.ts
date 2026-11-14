@@ -57,10 +57,16 @@ describe('the todos chip', () => {
   it('shows nothing when the counts are not ready or no open task exists', () => {
     expect(draw(null).wrapper.find('button').exists()).toBe(false)
     wrapper?.unmount()
-    expect(draw({ ...SUMMARY, isReady: false }).wrapper.find('button').exists()).toBe(false)
+    expect(
+      draw({ ...SUMMARY, isReady: false })
+        .wrapper.find('button')
+        .exists(),
+    ).toBe(false)
     wrapper?.unmount()
     expect(
-      draw({ ...SUMMARY, overdueCount: 0, todayCount: 0, noDateCount: 0 }).wrapper.find('button').exists(),
+      draw({ ...SUMMARY, overdueCount: 0, todayCount: 0, noDateCount: 0 })
+        .wrapper.find('button')
+        .exists(),
     ).toBe(false)
   })
 
@@ -90,7 +96,11 @@ describe('the todos popover', () => {
 
     await openPopover(view)
 
-    expect(fake.calls.listTasks.map((call) => call.filter.due).sort()).toEqual(['none', 'overdue', 'today'])
+    expect(fake.calls.listTasks.map((call) => call.filter.due).sort()).toEqual([
+      'none',
+      'overdue',
+      'today',
+    ])
     for (const call of fake.calls.listTasks) {
       expect(call.today).toBe(TODAY)
       expect(call.limit).toBe(20)

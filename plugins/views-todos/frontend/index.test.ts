@@ -11,7 +11,9 @@ const setup = () => {
   const fake = createFakeApi({
     tasks: {
       overdue: {
-        tasks: [task({ path: 'Projects/Home.md', line: 7, text: 'fix the tap', due: '2026-11-10' })],
+        tasks: [
+          task({ path: 'Projects/Home.md', line: 7, text: 'fix the tap', due: '2026-11-10' }),
+        ],
         total: 1,
         revision: 1,
       },
@@ -49,7 +51,9 @@ describe('the todos frontend', () => {
   it('refuses to activate in a window that offers no workspace', () => {
     const context = createMockPluginContext({ pluginId: 'md.numen.views.todos' })
 
-    expect(() => activate(context, { api: createFakeApi().api, timer: createFakeTimer().timer })).toThrow()
+    expect(() =>
+      activate(context, { api: createFakeApi().api, timer: createFakeTimer().timer }),
+    ).toThrow()
   })
 
   it('follows the tasks of the backend and reads the counts at the day of the window', async () => {
@@ -66,7 +70,9 @@ describe('the todos frontend', () => {
     fake.push({ revision: 1, isReady: true })
     await settle()
 
-    view = mount(context.getRegisteredSlotViews()[0]?.component as never, { attachTo: document.body })
+    view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
 
     expect(view.find('button').text()).toContain(String(SUMMARY.overdueCount + SUMMARY.todayCount))
   })
@@ -75,7 +81,9 @@ describe('the todos frontend', () => {
     const { context, fake, open } = setup()
     fake.push({ revision: 1, isReady: true })
     await settle()
-    view = mount(context.getRegisteredSlotViews()[0]?.component as never, { attachTo: document.body })
+    view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
     await view.find('button').trigger('click')
     await settle()
 
@@ -94,7 +102,9 @@ describe('the todos frontend', () => {
     expect(clock.waits.map((one) => one.delayMs)).toEqual([400])
     clock.fire()
 
-    expect(fake.calls.refreshIndex).toEqual([{ paths: ['Daily.md', 'Projects/Home.md'], renamed: [] }])
+    expect(fake.calls.refreshIndex).toEqual([
+      { paths: ['Daily.md', 'Projects/Home.md'], renamed: [] },
+    ])
   })
 
   it('asks for a full check at once when the vault reports a change with no paths', () => {

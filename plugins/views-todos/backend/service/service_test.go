@@ -192,10 +192,14 @@ func TestTheHostConfiguresTheIgnoredFoldersAndTheNextListOmitsThem(t *testing.T)
 func (a *app) events(ctx context.Context, t *testing.T, method string, count int) <-chan api.WatchTasksMessage {
 	t.Helper()
 	res := a.request(ctx, t, "/"+api.Service+"/"+method, `{}`)
+	t.Cleanup(func() {
+		if err := res.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	out := make(chan api.WatchTasksMessage, count)
 	go func() {
 		defer close(out)
-		defer func() { _ = res.Body.Close() }()
 		scanner := bufio.NewScanner(res.Body)
 		for scanner.Scan() {
 			data, found := strings.CutPrefix(scanner.Text(), "data: ")

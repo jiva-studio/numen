@@ -44,33 +44,33 @@ type State struct {
 type Index struct{}
 
 // New returns an empty index over the notes the reader and the lister show.
-func New(files ports.FileReader, notes ports.NoteLister, parse ParseFunc) *Index {
+func New(_ ports.FileReader, _ ports.NoteLister, _ ParseFunc) *Index {
 	return &Index{}
 }
 
 // Scan reads every note and marks the index ready when the last is read.
-func (i *Index) Scan(ctx context.Context) error {
+func (i *Index) Scan(_ context.Context) error {
 	return nil
 }
 
 // Refresh checks the notes at the paths, after the renames moved their entries. No path and no
 // rename is a full check.
-func (i *Index) Refresh(ctx context.Context, paths []string, renames []Rename) error {
+func (i *Index) Refresh(_ context.Context, _ []string, _ []Rename) error {
 	return nil
 }
 
 // SetIgnoredFolders sets the folders, separated by commas, whose notes are not searched.
-func (i *Index) SetIgnoredFolders(ctx context.Context, folders string) error {
+func (i *Index) SetIgnoredFolders(_ context.Context, _ string) error {
 	return nil
 }
 
 // List returns the tasks that the filter accepts at today.
-func (i *Index) List(today string, f filter.Filter, limit int) Listing {
+func (i *Index) List(_ string, _ filter.Filter, _ int) Listing {
 	return Listing{}
 }
 
 // Summarize counts the open tasks at today.
-func (i *Index) Summarize(today string) Summary {
+func (i *Index) Summarize(_ string) Summary {
 	return Summary{}
 }
 
@@ -80,6 +80,6 @@ func (i *Index) GetState() State {
 }
 
 // Watch sends the state once at the start and after each change of the index, until ctx is done.
-func (i *Index) Watch(ctx context.Context, send func(State) error) error {
+func (i *Index) Watch(_ context.Context, _ func(State) error) error {
 	return nil
 }

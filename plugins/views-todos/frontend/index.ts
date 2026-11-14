@@ -23,7 +23,8 @@ const browserParts: TodosParts = {
   },
 }
 
-export const activate = (_context: PluginContext, _parts: TodosParts = browserParts): void => undefined
+export const activate = (_context: PluginContext, _parts: TodosParts = browserParts): void =>
+  undefined
 
 export default definePlugin({
   activate,

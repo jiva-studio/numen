@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/usecase/index"
 )
 
-func mount(s *server.Server, tasks *index.Index) error {
+func mount(_ *server.Server, _ *index.Index) error {
 	return nil
 }
 

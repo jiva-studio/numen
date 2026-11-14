@@ -38,6 +38,6 @@ type Filter struct {
 
 // Apply returns the tasks the filter accepts, ordered by due date (tasks with none last), then
 // priority A to Z (none last), then path, then line. Today is a YYYY-MM-DD date.
-func Apply(tasks []todo.Task, f Filter, today string) []todo.Task {
+func Apply(_ []todo.Task, _ Filter, _ string) []todo.Task {
 	return nil
 }
