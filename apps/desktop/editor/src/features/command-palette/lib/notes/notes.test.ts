@@ -3,8 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { createNotes } from './notes'
 
 const create = () => {
-  const noteOpeners = { openFile: vi.fn() }
-  return { noteOpeners, notes: createNotes([], noteOpeners) }
+  const noteOpeners = { openFile: vi.fn().mockResolvedValue(undefined) }
+  const writeMessage = vi.fn()
+  return { noteOpeners, writeMessage, notes: createNotes([], noteOpeners, writeMessage) }
 }
 
 describe('opening a file', () => {
@@ -47,5 +48,15 @@ describe('opening a file', () => {
       where: 'current',
       selector: { page: 3 },
     })
+  })
+
+  it('reports a file that could not be opened as an error message', async () => {
+    const { notes, noteOpeners, writeMessage } = create()
+    noteOpeners.openFile.mockRejectedValue(new Error('the vault is not there'))
+
+    notes.openFile('reef/Coral.md', 'Coral', 'current')
+    await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledOnce())
+
+    expect(writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
   })
 })

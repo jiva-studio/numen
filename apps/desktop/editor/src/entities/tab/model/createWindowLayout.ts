@@ -11,10 +11,13 @@ export function createWindowLayout(isSecondary: boolean) {
   return {
     isReady,
     isWritingTabs,
-    /** Marks the layout ready and starts the write of the open tabs where the window is the main one. */
-    markStarted: (): void => {
+    /**
+     * Marks the layout ready and starts the write of the open tabs where the window is the main
+     * one and the saved tabs were read.
+     */
+    markStarted: (areSavedTabsRead = true): void => {
       isReady.value = true
-      isWritingTabs.value = !isSecondary
+      isWritingTabs.value = !isSecondary && areSavedTabsRead
     },
   }
 }

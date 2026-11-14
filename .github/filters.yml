@@ -304,12 +304,6 @@ workflows:
   - *ci_router
   - *node_lock
   - .github/**
-gradle:
-  - *ci_router
-  - .github/workflows/checks.yml
-  - '**/gradle/wrapper/**'
-  - '**/gradlew'
-  - '**/gradlew.bat'
 staging:
   - *ci_router
   - .github/workflows/checks.yml

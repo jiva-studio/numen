@@ -8,6 +8,7 @@ Gemini, or any other) must follow them.
 - **Architecture guidelines**: [`.agents/rules/architecture.md`](.agents/rules/architecture.md)
 - **Backend coding style (Go)**: [`.agents/rules/coding-style-backend.md`](.agents/rules/coding-style-backend.md)
 - **Frontend coding style (Vue / TypeScript)**: [`.agents/rules/coding-style-frontend.md`](.agents/rules/coding-style-frontend.md)
+- **Pull requests, commits and issues**: [`.agents/rules/writing-changes.md`](.agents/rules/writing-changes.md)
 - **Unified review skill (`/nm-review`)**: [`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md)
 - **Per-module conventions**: `AGENTS.md` inside `libs/core/kernel`, `libs/ui/components`, `libs/core/protocol`, `apps/desktop`.
 - **Placement and story skills**: the next section.
@@ -27,6 +28,8 @@ A red check is fixed in the code. Never loosen the check, add an exclusion or mo
 ## Code review protocol
 
 A review is the 3-stage pipeline of [`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md): gatekeeper ([`stages/1-gatekeeper.md`](.agents/skills/nm-review/stages/1-gatekeeper.md)), bug hunter ([`stages/2-bughunter.md`](.agents/skills/nm-review/stages/2-bughunter.md)), adversary ([`stages/3-adversary.md`](.agents/skills/nm-review/stages/3-adversary.md)), and the report templated in the skill. A failing gate stops the pipeline. Go tests run without `-race` locally; the race detector runs in CI only (`GO_RACE=1` turns it on for a make target). One pipeline covers Go and Vue. A reviewer reports findings and does not fix them.
+
+Every pull request follows the draft-first pipeline in [`.agents/rules/process.md`](.agents/rules/process.md): open the pull request as a draft (`gh pr create --draft`), bring CI to green (`gh pr checks --watch`), mark the pull request ready for review (`gh pr ready`), which starts the Claude review workflow, fix any findings and comment `/nm-review` to review again until the workflow approves, then request a CodeRabbit review (`gh pr comment --body "@coderabbitai review"`).
 
 ---
 
@@ -403,7 +406,7 @@ The plugin model, the SDK rules and the import rules for windows, plugins and li
 11. Checks never get weaker: no exclusion and no workaround that bypasses a rule (such as obtaining the time through `time.After(0)`). Derive sets from structure.
 12. Tell the owner a design decision before writing it into a plan file or implementing it. Do not present a guess as agreed.
 13. Do the work first. Run the heavy checks (`make checks` in full, tests across modules, linters) once at the end; while working run `make checks CHANGED=1`.
-14. Commit messages carry no `Co-Authored-By` line and no session trailer.
+14. Pull requests, commits and issues are written as [`.agents/rules/writing-changes.md`](.agents/rules/writing-changes.md) says.
 15. Write comments and docs in plain technical English (§1, §13).
 16. A failing check is fixed in the code it reports. The check stays as it is, and the code changes until it passes:
     - A type is named from the package that declares it, not from an alias package that re-exports it.
