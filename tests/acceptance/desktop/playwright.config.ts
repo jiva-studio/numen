@@ -11,6 +11,10 @@ const testDir = defineBddConfig({
   outputDir: '.features-gen',
 })
 
+// A run with video (`npm run acceptance:report`) shows each step's text in the video
+// (support/step-chapters.ts), marks the actions, and writes the scenario report of report/.
+const isVideoOn = Boolean(process.env.PLAYWRIGHT_VIDEO)
+
 // Every scenario starts a world of its own (drivers/world.ts), with a server and a vault of its own,
 // so the scenarios run side by side and need none of the e2e suite's shared servers.
 export default defineConfig({
@@ -20,5 +24,19 @@ export default defineConfig({
   fullyParallel: true,
   workers: '100%',
   webServer: undefined,
-  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
+  // The text of each step stays on the page for a second before the step runs.
+  ...(isVideoOn && { timeout: 120_000 }),
+  use: {
+    ...base.use,
+    ...(isVideoOn && {
+      video: { mode: 'on', show: { actions: { duration: 400, position: 'top-right' } } },
+    }),
+  },
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    ...(isVideoOn
+      ? [['./report/scenario-report.ts', { outputFolder: 'acceptance-report' }] as const]
+      : []),
+  ],
 })

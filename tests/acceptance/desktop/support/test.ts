@@ -5,8 +5,15 @@
  */
 import { test as bdd } from 'playwright-bdd'
 import { Person } from '../drivers/person.js'
+import { isVideoOn, markVideoStart } from './video-start.js'
 
 export const test = bdd.extend<{ person: Person }>({
+  // Playwright starts the video of a page while it creates the page, so the moment the page is
+  // ready is the start of the video, within the time of one call to the browser.
+  page: async ({ page }, use, testInfo) => {
+    if (isVideoOn()) markVideoStart(testInfo)
+    await use(page)
+  },
   person: async ({ page, viewport }, use, testInfo) => {
     const person = new Person(page, viewport)
     try {

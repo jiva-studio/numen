@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Acceptance scenarios</title>
+    <link rel="stylesheet" href="report.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <header class="sidebar-header">
+        <h1>Acceptance scenarios</h1>
+        <p class="totals" id="totals"></p>
+        <input id="search" type="search" placeholder="Search features and scenarios" aria-label="Search" />
+        <label class="filter"><input id="failed-only" type="checkbox" /> Failed only</label>
+      </header>
+      <nav id="tree" class="tree" aria-label="Scenarios"></nav>
+    </aside>
+    <main id="detail" class="detail">
+      <p class="empty">Choose a scenario.</p>
+    </main>
+    <script src="data.js"></script>
+    <script src="report.js"></script>
+  </body>
+</html>
