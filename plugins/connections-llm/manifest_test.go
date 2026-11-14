@@ -79,11 +79,17 @@ func getField(t *testing.T, kind connectionType, key string) field {
 }
 
 func TestManifestProvidesTheThreeTypesOfAnOpenAICompatibleService(t *testing.T) {
+	withRerank := []string{"llm.complete", "llm.chat", "llm.embed", "llm.rerank", "llm.profile", "llm.models", "llm.reasoning"}
+	want := map[string][]string{
+		"openrouter":        withRerank,
+		"openai":            {"llm.complete", "llm.chat", "llm.embed", "llm.profile", "llm.models", "llm.reasoning"},
+		"openai-compatible": withRerank,
+	}
 	var ids []string
 	for _, one := range readManifest(t).Contributes.ConnectionTypes {
 		ids = append(ids, one.ID)
-		if !slices.Equal(one.Operations, []string{"llm.complete", "llm.chat", "llm.embed", "llm.profile", "llm.models", "llm.reasoning"}) {
-			t.Errorf("type %s operations = %v", one.ID, one.Operations)
+		if !slices.Equal(one.Operations, want[one.ID]) {
+			t.Errorf("type %s operations = %v, want %v", one.ID, one.Operations, want[one.ID])
 		}
 	}
 	if want := []string{"openrouter", "openai", "openai-compatible"}; !slices.Equal(ids, want) {
@@ -192,6 +198,7 @@ func TestEveryLLMOperationHasATitle(t *testing.T) {
 		"llm.complete":  "complete text",
 		"llm.chat":      "chat",
 		"llm.embed":     "embed text",
+		"llm.rerank":    "rerank texts",
 		"llm.profile":   "describe a model",
 		"llm.models":    "list models",
 		"llm.reasoning": "list reasoning levels",
