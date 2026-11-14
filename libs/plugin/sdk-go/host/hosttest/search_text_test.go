@@ -99,8 +99,8 @@ func TestTheSearchKeepsAtMostThreeResultsOfOneSource(t *testing.T) {
 	}
 	search.SetIndexedResults(many)
 	got, err := search.SearchText(t.Context(), host.SearchResultQuery{Query: "heron"})
-	if err != nil || len(got) != host.MaxSearchedResultsPerSource {
-		t.Errorf("found %d passages of one source, %v, want %d", len(got), err, host.MaxSearchedResultsPerSource)
+	if err != nil || len(got) != host.DefaultSearchedResultsPerSource {
+		t.Errorf("found %d passages of one source, %v, want %d", len(got), err, host.DefaultSearchedResultsPerSource)
 	}
 	if !slices.IsSortedFunc(got, func(a, b host.SearchResult) int { return a.Start - b.Start }) {
 		t.Errorf("the passages are not in the order of the index: %+v", got)
