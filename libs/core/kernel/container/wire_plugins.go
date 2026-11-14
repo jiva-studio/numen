@@ -237,7 +237,6 @@ type pluginManifestHost struct {
 	pluginport.PluginFailures
 }
 
-// getManifests reads the manifests of the plugins through the ports it takes of the runtime.
 func (r PluginRuntime) getManifests() pluginmanifest.Manifests {
 	return pluginmanifest.New(pluginManifestHost{pluginInfos{r.PluginLister, r.PluginResolver}, r.PluginFailures})
 }

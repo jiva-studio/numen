@@ -226,6 +226,4 @@ func vaultOf(c Config) vaultWiring { return plugins(c).vault }
 
 func searchOf(c Config) searchWiring { return plugins(c).search }
 
-// timers returns the waits and timeouts of the machine. The Clock port gives the time only, so the
-// code that sleeps or times out takes them from here.
 func timers() clock.System { return clock.System{} }
