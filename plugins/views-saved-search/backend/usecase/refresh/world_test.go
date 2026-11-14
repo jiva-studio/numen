@@ -82,7 +82,7 @@ func chunk(id, path string, start, length int, text string) host.SearchResult {
 }
 
 // countingSearch is the host search of the vault, counting the searches of the plugin. onSearch, when set,
-// runs at the start of each search.
+// runs at the start of each search. failure, when set, is the answer of every search.
 type countingSearch struct {
 	ports.Search
 	mu        sync.Mutex
@@ -90,6 +90,7 @@ type countingSearch struct {
 	active    int
 	maxActive int
 	onSearch  func()
+	failure   error
 }
 
 func (c *countingSearch) SearchText(ctx context.Context, query host.SearchResultQuery) ([]host.SearchResult, error) {
@@ -97,7 +98,7 @@ func (c *countingSearch) SearchText(ctx context.Context, query host.SearchResult
 	c.calls++
 	c.active++
 	c.maxActive = max(c.maxActive, c.active)
-	hook := c.onSearch
+	hook, failure := c.onSearch, c.failure
 	c.mu.Unlock()
 	if hook != nil {
 		hook()
@@ -107,6 +108,9 @@ func (c *countingSearch) SearchText(ctx context.Context, query host.SearchResult
 		c.active--
 		c.mu.Unlock()
 	}()
+	if failure != nil {
+		return nil, failure
+	}
 	return c.Search.SearchText(ctx, query)
 }
 
@@ -126,6 +130,12 @@ func (c *countingSearch) setHook(hook func()) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.onSearch = hook
+}
+
+func (c *countingSearch) setFailure(failure error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.failure = failure
 }
 
 // recordingTasks is the task list of the host, recording every report and every finish.

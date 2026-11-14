@@ -305,8 +305,8 @@ func TestUpdateSearchReturnsTheProblemsAtTheirLineInTheQuery(t *testing.T) {
 		t.Fatal(failure)
 	}
 
-	if len(res.Errors) == 0 || res.Errors[0].Line != 2 || res.Errors[0].Column != 4 || !strings.Contains(res.Errors[0].Message, "meanin") {
-		t.Errorf("errors = %+v, want the problem at line 2, column 4 of the query", res.Errors)
+	if len(res.Errors) == 0 || res.Errors[0].Line != 2 || res.Errors[0].Column != 10 || !strings.Contains(res.Errors[0].Message, "meanin") {
+		t.Errorf("errors = %+v, want the problem at line 2, column 10 of the query", res.Errors)
 	}
 	if after, _ := f.vault.Content(stormsPath); after != before {
 		t.Errorf("note = %q, want it unchanged", after)

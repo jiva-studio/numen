@@ -142,7 +142,7 @@ func TestHostFailureKeepsTheLastGoodResults(t *testing.T) {
 	w.runDueSearches(t)
 	good := w.readRecord(t, stormsID)
 
-	w.search.FailEmbedding(errors.New("the embedding model stopped"))
+	w.host.setFailure(errors.New("the search of the host stopped"))
 	failedAt := w.clock.Advance(time.Minute)
 	if err := w.runner.MarkStale(t.Context(), testVault); err != nil {
 		t.Fatal(err)
@@ -155,7 +155,7 @@ func TestHostFailureKeepsTheLastGoodResults(t *testing.T) {
 	if !slices.Equal(getResultTexts(record), getResultTexts(good)) || !record.ComputedAt.Equal(good.ComputedAt) {
 		t.Errorf("record = %+v, want the last good results and their time", record)
 	}
-	if !isAt(record.FailedAt, failedAt) || !strings.Contains(record.Failure, "the embedding model stopped") {
+	if !isAt(record.FailedAt, failedAt) || !strings.Contains(record.Failure, "the search of the host stopped") {
 		t.Errorf("failed at %s with %q, want the failure of the host now", formatMark(record.FailedAt), record.Failure)
 	}
 }
