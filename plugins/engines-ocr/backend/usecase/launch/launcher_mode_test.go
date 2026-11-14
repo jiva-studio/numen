@@ -165,7 +165,7 @@ func TestAChangeOfTheModeMakesTheLauncherForgetTheSkippedFiles(t *testing.T) {
 	}
 }
 
-func TestAFileWithNoTextLayerIsStartedUnderWhenNoTextLayer(t *testing.T) {
+func TestAFileWithNoTextLayerIsStartedWithModeWhenNoTextLayer(t *testing.T) {
 	s := newModeScene(t, false)
 	s.launcher.SetMode(settings.ModeWhenNoTextLayer)
 
@@ -205,7 +205,7 @@ func TestStartFileRecognizesAFileWithTextWithoutAskingForItsTextLayerWhateverThe
 	}
 }
 
-func TestStartMissingFileStartsAFileWithTextUnderAlwaysWithoutAskingForItsTextLayer(t *testing.T) {
+func TestStartMissingFileStartsAFileWithTextWithModeAlwaysWithoutAskingForItsTextLayer(t *testing.T) {
 	s := newModeScene(t, true)
 	s.launcher.SetMode(settings.ModeAlways)
 

@@ -142,7 +142,7 @@ func (s *toolFixture) expectSkipped(t *testing.T, filePath string, res command.R
 	}
 }
 
-func TestMissingTextUnderWhenNoTextLayerSkipsAPDFThatHasText(t *testing.T) {
+func TestMissingTextWithModeWhenNoTextLayerSkipsAPDFThatHasText(t *testing.T) {
 	s, _ := newModeFixture(t, settings.ModeWhenNoTextLayer)
 
 	res := s.createMissingText(t, textPath)
@@ -150,7 +150,7 @@ func TestMissingTextUnderWhenNoTextLayerSkipsAPDFThatHasText(t *testing.T) {
 	s.expectSkipped(t, textPath, res)
 }
 
-func TestMissingTextUnderWhenNoTextLayerRecognizesAScannedPDF(t *testing.T) {
+func TestMissingTextWithModeWhenNoTextLayerRecognizesAScannedPDF(t *testing.T) {
 	s, _ := newModeFixture(t, settings.ModeWhenNoTextLayer)
 
 	res := s.createMissingText(t, scanPath)
@@ -161,7 +161,7 @@ func TestMissingTextUnderWhenNoTextLayerRecognizesAScannedPDF(t *testing.T) {
 	s.expectRecognized(t, scanPath)
 }
 
-func TestMissingTextUnderWhenNoTextLayerRecognizesAnImage(t *testing.T) {
+func TestMissingTextWithModeWhenNoTextLayerRecognizesAnImage(t *testing.T) {
 	s, _ := newModeFixture(t, settings.ModeWhenNoTextLayer)
 
 	res := s.createMissingText(t, picturePath)
@@ -172,7 +172,7 @@ func TestMissingTextUnderWhenNoTextLayerRecognizesAnImage(t *testing.T) {
 	s.expectRecognized(t, picturePath)
 }
 
-func TestCreateTextUnderWhenNoTextLayerRecognizesAPDFThatHasTextWithoutAskingForItsTextLayer(t *testing.T) {
+func TestCreateTextWithModeWhenNoTextLayerRecognizesAPDFThatHasTextWithoutAskingForItsTextLayer(t *testing.T) {
 	s, documents := newModeFixture(t, settings.ModeWhenNoTextLayer)
 
 	res := s.createText(t, textPath)
@@ -186,7 +186,7 @@ func TestCreateTextUnderWhenNoTextLayerRecognizesAPDFThatHasTextWithoutAskingFor
 	}
 }
 
-func TestBothCommandsUnderAlwaysRecognizeAPDFThatHasTextAndAScanWithoutAskingForTheTextLayer(t *testing.T) {
+func TestBothCommandsWithModeAlwaysRecognizeAPDFThatHasTextAndAScanWithoutAskingForTheTextLayer(t *testing.T) {
 	s, documents := newModeFixture(t, settings.ModeAlways)
 
 	s.createMissingText(t, textPath)
@@ -201,7 +201,7 @@ func TestBothCommandsUnderAlwaysRecognizeAPDFThatHasTextAndAScanWithoutAskingFor
 	}
 }
 
-func TestCreateTextUnderOffRecognizesAPDFThatHasText(t *testing.T) {
+func TestCreateTextWithModeOffRecognizesAPDFThatHasText(t *testing.T) {
 	s, documents := newModeFixture(t, settings.ModeOff)
 
 	res := s.createText(t, textPath)
@@ -215,7 +215,7 @@ func TestCreateTextUnderOffRecognizesAPDFThatHasText(t *testing.T) {
 	}
 }
 
-func TestTheToolRecognitionCreateRecognizesAPDFThatHasTextUnderWhenNoTextLayer(t *testing.T) {
+func TestTheToolRecognitionCreateRecognizesAPDFThatHasTextWithModeWhenNoTextLayer(t *testing.T) {
 	s, _ := newModeFixture(t, settings.ModeWhenNoTextLayer)
 
 	out := s.recognize(t, "Physics", textPath)
