@@ -296,13 +296,13 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (p
 	case errors.Is(err, ports.ErrNotANote):
 		out.Outcome = edit.NotANote
 		return out, nil
-	case !ports.IsNotExist(err):
+	case !errors.Is(err, ports.ErrNotExist):
 		return presetnote.Contents{}, fmt.Errorf("look at %s: %w", path, err)
 	}
 
 	raw, err := reader.Read(ctx, path)
 	switch {
-	case ports.IsNotExist(err):
+	case errors.Is(err, ports.ErrNotExist):
 		out.Outcome = edit.Missing
 		return out, nil
 	case !target && err == nil:

@@ -201,13 +201,13 @@ func (u Read) readNote(
 	case errors.Is(err, ports.ErrNotANote):
 		// gomutants:disable-next-line RETURN_ZERO,INTEGER_DECREMENT,INTEGER_INCREMENT reason="emptyNote returns the zero value of domain.Note and NotANote callers ignore FileStat Size."
 		return emptyNote(), domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, edit.NotANote, nil
-	case !ports.IsNotExist(err):
+	case !errors.Is(err, ports.ErrNotExist):
 		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("look at %s: %w", path, err)
 	}
 
 	raw, err := reader.Read(ctx, path)
 	switch {
-	case ports.IsNotExist(err):
+	case errors.Is(err, ports.ErrNotExist):
 		// gomutants:disable-next-line RETURN_ZERO reason="emptyNote returns the zero value of domain.Note."
 		return emptyNote(), ref, edit.Missing, nil
 	case !target && err == nil:

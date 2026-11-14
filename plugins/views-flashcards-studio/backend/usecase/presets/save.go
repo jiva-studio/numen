@@ -284,7 +284,7 @@ func checkLoad(load map[time.Weekday]int) error {
 }
 
 func mapMissingNote(err error) error {
-	if ports.IsNotExist(err) {
+	if errors.Is(err, ports.ErrNotExist) {
 		return edit.ErrNoNote
 	}
 	return err

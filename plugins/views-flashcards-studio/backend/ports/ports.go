@@ -28,13 +28,11 @@ var (
 	ErrAlreadyExists = errors.New("a file is already there")
 	// ErrLockedByAnother is what a name gets when a program outside this one has the file.
 	ErrLockedByAnother = errors.New("the file is held by another program")
+	// ErrNotExist is what a file that is not there gets.
+	ErrNotExist = fs.ErrNotExist
+	// ErrPermission is what a file the host refuses access to gets.
+	ErrPermission = fs.ErrPermission
 )
-
-// IsNotExist reports whether err says that a file is not there.
-func IsNotExist(err error) bool { return errors.Is(err, fs.ErrNotExist) }
-
-// IsPermission reports whether err says that the host refuses access to a file.
-func IsPermission(err error) bool { return errors.Is(err, fs.ErrPermission) }
 
 // Clock gets what time it is. A use case that takes none has none.
 type Clock interface {

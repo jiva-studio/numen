@@ -101,10 +101,10 @@ func (u Log) ReadFile(
 	ctx context.Context, store ports.LogStore, file ports.Entry,
 ) (LogFile, error) {
 	raw, err := store.ReadLog(ctx, file.Run)
-	if ports.IsNotExist(err) {
+	if errors.Is(err, ports.ErrNotExist) {
 		return LogFile{Answers: nil, Size: 0, Skipped: 0, IsGone: true, IsUnreadable: false}, nil
 	}
-	if ports.IsPermission(err) || errors.Is(err, ports.ErrLockedByAnother) {
+	if errors.Is(err, ports.ErrPermission) || errors.Is(err, ports.ErrLockedByAnother) {
 		return LogFile{Answers: nil, Size: 0, IsUnreadable: true, Skipped: 1, IsGone: false}, nil
 	}
 	if err != nil {
