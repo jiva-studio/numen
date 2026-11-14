@@ -49,6 +49,9 @@ A change to a wire message affects both the Go side and the generated TypeScript
 - `defer` missing on something opened; `rows.Err()` unchecked; `defer tx.Rollback()` without the commit last; `Close` unchecked where the write matters.
 - SQL built by string formatting where a parameter would do; a stored path that is absolute or platform-shaped instead of relative and slashed; a write that must not tear going straight to the target instead of through a temporary file and a rename.
 - Time read from deep inside instead of injected where it changes behaviour.
+- A cancelled or closed operation that returns its partial result with a nil error. After the work, `ctx.Err()` is checked and returned, so a caller never takes a cut-off answer for a complete one.
+- A request-scoped argument (a vault, a caller, a session) that a handler receives and does not pass on, so the call falls back to a default such as the vault the window shows.
+- A setter, field or dependency that only a test sets, so the production path runs without it.
 
 ### 3. Vue — reactivity and lifecycle
 
@@ -63,6 +66,8 @@ A change to a wire message affects both the Go side and the generated TypeScript
 - Two actions fired in quick succession where the first resolves last and overwrites the second's result — missing cancellation or sequencing.
 - A stream or subscription whose events can arrive interleaved with a refetch.
 - Optimistic state written before the call it depends on has succeeded, leaving the interface inconsistent when the call rejects.
+- A `catch` that returns a default value (an empty list, `null`, an "unknown" kind) which the caller cannot tell from a real answer, so it goes on as if the call had succeeded. It is worst when a write follows: a failed read of saved state, then a save, replaces that state with the default.
+- A stream or an async iterator consumed without `try`/`finally` that closes it, so an exception thrown while handling one item leaves the server stream running.
 
 ### 5. Boundaries and indexes
 
