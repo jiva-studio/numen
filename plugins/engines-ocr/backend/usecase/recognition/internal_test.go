@@ -268,7 +268,8 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
 	recEngine := &stubRecognizer{blocks: []scan.Block{{Text: "line"}}}
 	r, err := New(Host{
-		Documents: pictures{}, Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(s), Texts: versionsOf(texts), Queue: q}, func(context.Context) (ports.Recognizer, error) {
+		Documents: pictures{}, Vaults: func(id domain.VaultID) Files { return v.With(id) },
+		Store: foldersOf(s), Texts: versionsOf(texts), Queue: q}, func(context.Context) (ports.Recognizer, error) {
 		return recEngine, nil
 	})
 	if err != nil {
@@ -301,7 +302,8 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 
 	qInitErr := &stubQueue{reportErr: errors.New("initial report failed"), reportErrAt: 1}
 	rInitErr, err := New(Host{
-		Documents: pictures{}, Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(s), Texts: versionsOf(texts), Queue: qInitErr}, func(context.Context) (ports.Recognizer, error) {
+		Documents: pictures{}, Vaults: func(id domain.VaultID) Files { return v.With(id) },
+		Store: foldersOf(s), Texts: versionsOf(texts), Queue: qInitErr}, func(context.Context) (ports.Recognizer, error) {
 		return recEngine, nil
 	})
 	if err != nil {
@@ -336,7 +338,8 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 
 	qStepErr := &stubQueue{reportErr: errors.New("step report failed"), reportErrAt: 2}
 	rStepErr, err := New(Host{
-		Documents: pictures{}, Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(s), Texts: versionsOf(texts), Queue: qStepErr}, func(context.Context) (ports.Recognizer, error) {
+		Documents: pictures{}, Vaults: func(id domain.VaultID) Files { return v.With(id) },
+		Store: foldersOf(s), Texts: versionsOf(texts), Queue: qStepErr}, func(context.Context) (ports.Recognizer, error) {
 		return recEngine, nil
 	})
 	if err != nil {
@@ -448,7 +451,8 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 
 	qOK := &stubQueue{}
 	rOK, err := New(Host{
-		Documents: pictures{}, Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: qOK}, func(context.Context) (ports.Recognizer, error) {
+		Documents: pictures{}, Vaults: func(id domain.VaultID) Files { return v.With(id) },
+		Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: qOK}, func(context.Context) (ports.Recognizer, error) {
 		return &stubRecognizer{blocks: []scan.Block{{Text: "hello"}}}, nil
 	})
 	if err != nil {

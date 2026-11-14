@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/codexevent"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/ports"
 )
 
 const (
@@ -44,7 +45,7 @@ type Dependencies struct {
 	Launcher   Launcher
 	Tools      Tools
 	ToolServer ToolServer
-	TempDirs   TempDirs
+	TempDirs   ports.TempDirs
 }
 
 // Runner starts the program for each task and answer, and keeps the thread of each conversation. The

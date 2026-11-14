@@ -271,7 +271,8 @@ func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (presetn
 }
 
 func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (presetnote.Contents, error) {
-	out := presetnote.Contents{Path: path, Outcome: "", Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
+	out := presetnote.Contents{Path: path, Outcome: "", Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil,
+		FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
 
 	reader, err := u.readers.Open(v)
 	if err != nil {
