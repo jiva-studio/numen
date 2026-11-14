@@ -1,4 +1,4 @@
-package ports
+package presets
 
 import (
 	"context"
@@ -9,13 +9,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// NewEdit is what a change to an existing note is made through: the vault it is read and written
+// newEdit is what a change to an existing note is made through: the vault it is read and written
 // through, what updates the index for it, and what time it is. The function returned with it
 // returns the failures to release the write lock of the changes made through it, which edit.Files
 // releases without an error.
-func NewEdit(readers VaultReaders, writers VaultWriters, index edit.IndexUpdater, now Clock) (edit.Edit, func() error) {
+func newEdit(readers ports.VaultReaders, writers ports.VaultWriters, index edit.IndexUpdater, now ports.Clock) (edit.Edit, func() error) {
 	failures := &releaseFailures{mu: sync.Mutex{}, err: nil}
 	return edit.Edit{
 		Open: func(v domain.Vault) (edit.Files, error) {
@@ -41,9 +42,9 @@ func NewEdit(readers VaultReaders, writers VaultWriters, index edit.IndexUpdater
 
 // files are the files of one vault, read and written through the ports.
 type files struct {
-	reader   VaultReader
-	writer   VaultWriter
-	writers  VaultWriters
+	reader   ports.VaultReader
+	writer   ports.VaultWriter
+	writers  ports.VaultWriters
 	vault    domain.Vault
 	failures *releaseFailures
 }

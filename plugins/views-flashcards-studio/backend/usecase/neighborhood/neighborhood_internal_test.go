@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
@@ -97,7 +97,7 @@ func TestNeighborhoodInternalsAndErrors(t *testing.T) {
 	}
 
 	// Test getNeighbors duplicate backlinks & seen link, scheme Note vs Name vs http, and getNeighborTitle missing note.
-	neighbors := getNeighbors(v, "decks/A.md", ports.NoteLinks{
+	neighbors := getNeighbors(v, "decks/A.md", format.NoteLinks{
 		Links: []domain.ResolvedLink{
 			{Link: domain.Link{Target: domain.Address{Scheme: "https", Value: "example.com"}}},
 			{Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeNote, Value: "N1.md"}}, To: "N1.md", ToVault: v.ID},

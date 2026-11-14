@@ -39,3 +39,9 @@ type DeckWriteResult struct {
 	FileStat domain.FileStat
 	Given    []CardID
 }
+
+// NoteLinks is what one note is joined to: what it points at, and what points at it.
+type NoteLinks struct {
+	Links     []domain.ResolvedLink
+	Backlinks []domain.ResolvedLink
+}

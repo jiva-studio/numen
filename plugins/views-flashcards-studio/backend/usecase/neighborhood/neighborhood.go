@@ -44,7 +44,7 @@ type neighborNotes interface {
 
 // linkReader returns what a note points at and what points at it.
 type linkReader interface {
-	Execute(ctx context.Context, v domain.Vault, path string) (ports.NoteLinks, error)
+	Execute(ctx context.Context, v domain.Vault, path string) (format.NoteLinks, error)
 }
 
 // noteReader reads the prose of one note. What is wrong with the note itself is an outcome.
@@ -117,7 +117,7 @@ func (u Show) Execute(
 	return out, nil
 }
 
-func getNeighbors(v domain.Vault, deck string, linked ports.NoteLinks) []Neighbor {
+func getNeighbors(v domain.Vault, deck string, linked format.NoteLinks) []Neighbor {
 	observed := map[string]bool{deck: true}
 	var found []Neighbor
 	for _, l := range linked.Links {

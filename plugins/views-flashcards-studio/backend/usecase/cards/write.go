@@ -83,7 +83,7 @@ func (u Write) writeBody(
 	if markdown.IsFrontmatterStart(body) {
 		return domain.FileStat{}, edit.ErrBodyUnwritable
 	}
-	e, getReleaseError := ports.NewEdit(u.readers, u.writers, u.index, u.now)
+	e, getReleaseError := newEdit(u.readers, u.writers, u.index, u.now)
 	e.FileStat, e.Bound = stat, format.MaxDeckBytes
 	written, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error { return doc.SetBody(body) })
 	return written, errors.Join(err, getReleaseError())
@@ -104,7 +104,7 @@ func (u Write) CardModel(
 		return domain.FileStat{}, edit.ErrBodyUnwritable
 	}
 
-	e, getReleaseError := ports.NewEdit(u.readers, u.writers, u.index, u.now)
+	e, getReleaseError := newEdit(u.readers, u.writers, u.index, u.now)
 	e.FileStat, e.Bound = stat, edit.MaxBytes
 	written, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		// gomutants:disable-next-line BRANCH_IF,RETURN_ERROR_NIL reason="SetBody on an already opened document with non-frontmatter body always succeeds."

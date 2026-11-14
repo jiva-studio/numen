@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
@@ -71,14 +72,14 @@ type ShowLinks struct {
 func NewShowLinks(links ports.LinkQueries) ShowLinks { return ShowLinks{links: links} }
 
 // Execute returns both halves of what the note is joined to.
-func (u ShowLinks) Execute(ctx context.Context, v domain.Vault, path string) (ports.NoteLinks, error) {
+func (u ShowLinks) Execute(ctx context.Context, v domain.Vault, path string) (format.NoteLinks, error) {
 	links, err := u.links.GetLinks(ctx, v.ID, path)
 	if err != nil {
-		return ports.NoteLinks{}, err
+		return format.NoteLinks{}, err
 	}
 	backlinks, err := u.links.GetBacklinks(ctx, v.ID, path)
 	if err != nil {
-		return ports.NoteLinks{}, err
+		return format.NoteLinks{}, err
 	}
-	return ports.NoteLinks{Links: links, Backlinks: backlinks}, nil
+	return format.NoteLinks{Links: links, Backlinks: backlinks}, nil
 }
