@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { answerCore } from '@/testing/coreAnswers'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
 import type { AnyTabKind } from '@/entities/tab'
 import { createTabLinking } from './createTabLinking'
@@ -18,7 +18,7 @@ const setup = (events: readonly object[] = []) => {
   const reports: { windowId: string; tabs: readonly { id: string; title: string }[] }[] = []
   const cancelled: string[] = []
   const watched = vi.fn()
-  answerCore({
+  const api = createAnsweredApi({
     workspace: {
       watchTabLinks: async function* (_request, context) {
         watched()
@@ -39,19 +39,20 @@ const setup = (events: readonly object[] = []) => {
   windowTabs.groups.registerKinds([linkable])
   const writeMessage = vi.fn()
   const { tabLinks, reports: tabReports } = createTabLinking({
+    writeTabLinks: api.tabs.tabLinks.writeTabLinks,
     windowId: 'window-a',
     windowTabs,
     isMain: true,
     writeMessage,
   })
   const session = createWindowTabLinkSession({
+    api: api.tabs.tabLinks,
     windowId: 'window-a',
     windowTabs,
     isMain: true,
     tabLinks,
     reports: tabReports,
-    applySync: vi.fn(),
-    applyGroupPaths: vi.fn(),
+    tabSync: { applySync: vi.fn(), applyGroupPaths: vi.fn() },
     openMovedTab: vi.fn(),
     writeMessage,
   })

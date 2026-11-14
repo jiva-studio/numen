@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
-import { installCoreHandlers } from '@numen/core-client/testing'
+import { createCoreHandlerTransport } from '@numen/core-client/testing'
 import {
   VAULT_SUMMARY,
   getPluginSheet,
@@ -40,26 +40,24 @@ const wire = {
 /** What the window shows for a call the core rejects with a plain fault. */
 const CORE_FAULT = 'internal error'
 
-let restoreCore: () => void
-
-const answerCore = (): (() => void) =>
-  installCoreHandlers({
-    resolveAddresses: (request: unknown) => wire.resolveAddresses(request),
-    getPlugins: (request: unknown) => wire.getPlugins(request),
-    listVaults: (request: unknown) => wire.listVaults(request),
-    listThemes: (request: unknown) => wire.listThemes(request),
-    readTheme: (request: unknown) => wire.readTheme(request),
-    writeAppearance: (request: unknown) => wire.writeAppearance(request),
-    watchThemes: (_request: unknown, context: { signal: AbortSignal }) => {
-      wire.themeSignals.push(context.signal)
-      return wire.themeStream()
-    },
-    watchTasks: (request: unknown, context: { signal: AbortSignal }) => {
-      wire.requestedTasks.push(request)
-      wire.taskSignals.push(context.signal)
-      return wire.tasks()
-    },
-  })
+/** The core of every window of the test, answered from `wire`. */
+const core = createCoreHandlerTransport({
+  resolveAddresses: (request: unknown) => wire.resolveAddresses(request),
+  getPlugins: (request: unknown) => wire.getPlugins(request),
+  listVaults: (request: unknown) => wire.listVaults(request),
+  listThemes: (request: unknown) => wire.listThemes(request),
+  readTheme: (request: unknown) => wire.readTheme(request),
+  writeAppearance: (request: unknown) => wire.writeAppearance(request),
+  watchThemes: (_request: unknown, context: { signal: AbortSignal }) => {
+    wire.themeSignals.push(context.signal)
+    return wire.themeStream()
+  },
+  watchTasks: (request: unknown, context: { signal: AbortSignal }) => {
+    wire.requestedTasks.push(request)
+    wire.taskSignals.push(context.signal)
+    return wire.tasks()
+  },
+})
 
 const VAULTS: readonly VaultRow[] = [
   { id: 'physics', name: 'Physics', path: '/vaults/Physics' },
@@ -135,7 +133,6 @@ beforeEach(() => {
   wire.resolveAddresses.mockResolvedValue({ found: [], resolved: [] })
   wire.getPlugins.mockResolvedValue({ plugins: [] })
   wire.listVaults.mockResolvedValue({ vaults: [] })
-  restoreCore = answerCore()
   wire.listThemes.mockResolvedValue({
     themes: [],
     applied: 'preset:numen',
@@ -149,7 +146,6 @@ beforeEach(() => {
 
 afterEach(() => {
   for (const one of mounted.splice(0)) one.unmount()
-  restoreCore()
   wire.tasks = () => wire.waits()
   wire.themeStream = () => wire.waits()
   wire.requestedTasks.length = 0
@@ -163,7 +159,7 @@ describe('App', () => {
     wire.getPlugins.mockRejectedValueOnce(new Error('the window is gone'))
     wire.listVaults.mockResolvedValueOnce({ vaults: [] })
 
-    const window = mount(createRoot())
+    const window = mount(createRoot(core))
     mounted.push(window)
     await flushPromises()
 
@@ -183,7 +179,7 @@ describe('App', () => {
     const wrapper = mount(
       defineComponent({
         setup: () => {
-          shell = createWindow({
+          shell = createWindow(core, {
             fetch: (async () =>
               new Response('not found', { status: 404 })) as unknown as typeof fetch,
           })
@@ -215,7 +211,7 @@ describe('App', () => {
     const defaultWrapper = mount(
       defineComponent({
         setup: () => {
-          shellDefault = createWindow({
+          shellDefault = createWindow(core, {
             fetch: (async (url: string) => {
               if (url.includes('broken')) return new Response('not json', { status: 200 })
               return new Response(JSON.stringify({ ...MANIFEST, id: 'md.numen.closing' }))
@@ -274,7 +270,7 @@ describe('App', () => {
 describe('the window over a plugin that draws the review', () => {
   /** The window drawn over the plugin, as the page draws it. */
   const mountWindow = async (listVaults?: () => Promise<readonly VaultRow[]>) => {
-    const window = mount(createRoot(createDeps(listVaults)), { attachTo: document.body })
+    const window = mount(createRoot(core, createDeps(listVaults)), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
     return { window }
@@ -335,6 +331,7 @@ describe('the window over a plugin that draws the review', () => {
         defineComponent({
           setup: () => {
             shell = createWindow(
+              core,
               createDeps(async () => {
                 throw new Error('the list is locked')
               }),
@@ -386,7 +383,7 @@ describe('the work behind the window', () => {
     const wrapper = mount(
       defineComponent({
         setup: () => {
-          shell = createWindow(createDeps())
+          shell = createWindow(core, createDeps())
           return () => null
         },
       }),
@@ -450,7 +447,7 @@ describe('the appearance palette', () => {
     wire.getPlugins.mockResolvedValue({
       plugins: [{ id: 'org.example.themes', name: 'Sample Themes' }],
     })
-    const window = mount(createRoot(), { attachTo: document.body })
+    const window = mount(createRoot(core), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
     globalThis.dispatchEvent(
@@ -511,7 +508,7 @@ describe('the appearance palette', () => {
     const wrapper = mount(
       defineComponent({
         setup: () => {
-          shell = createWindow()
+          shell = createWindow(core)
           return () => null
         },
       }),
@@ -647,7 +644,7 @@ const createBarDeps = (plugins: readonly ReturnType<typeof createBarPlugin>[]) =
 
 describe('the title bar of the flashcards window', () => {
   it('is not drawn while no plugin draws it, and the window draws no buttons of its own', async () => {
-    const window = mount(createRoot(createDeps()), { attachTo: document.body })
+    const window = mount(createRoot(core, createDeps()), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
 
@@ -656,7 +653,7 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('is drawn by the plugin that registers the view of the slot titleBar', async () => {
-    const window = mount(createRoot(createBarDeps([createBarPlugin('org.example.ledger')])), {
+    const window = mount(createRoot(core, createBarDeps([createBarPlugin('org.example.ledger')])), {
       attachTo: document.body,
     })
     mounted.push(window)
@@ -667,7 +664,7 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('gives the bar the vaults of the window, and the vault of the open review as the current one', async () => {
-    const window = mount(createRoot(createBarDeps([createBarPlugin('org.example.ledger')])), {
+    const window = mount(createRoot(core, createBarDeps([createBarPlugin('org.example.ledger')])), {
       attachTo: document.body,
     })
     mounted.push(window)
@@ -681,7 +678,7 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('opens the review on the vault the bar switches to', async () => {
-    const window = mount(createRoot(createBarDeps([createBarPlugin('org.example.ledger')])), {
+    const window = mount(createRoot(core, createBarDeps([createBarPlugin('org.example.ledger')])), {
       attachTo: document.body,
     })
     mounted.push(window)
@@ -695,7 +692,7 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('gives the bar the state of the window', async () => {
-    const window = mount(createRoot(createBarDeps([createBarPlugin('org.example.ledger')])), {
+    const window = mount(createRoot(core, createBarDeps([createBarPlugin('org.example.ledger')])), {
       attachTo: document.body,
     })
     mounted.push(window)
@@ -714,7 +711,7 @@ describe('the title bar of the flashcards window', () => {
       mount(
         defineComponent({
           setup: () => {
-            shell = createWindow(deps)
+            shell = createWindow(core, deps)
             return () => h('div')
           },
         }),
@@ -733,7 +730,7 @@ describe('the title bar of the flashcards window', () => {
   it('shows only the loading indicator while the plugins of the window slots start', async () => {
     const deps = createDeps()
     wire.getPlugins.mockReturnValue(new Promise(() => undefined))
-    const window = mount(createRoot(deps), { attachTo: document.body })
+    const window = mount(createRoot(core, deps), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
 
@@ -745,7 +742,7 @@ describe('the title bar of the flashcards window', () => {
     vi.useFakeTimers()
     const deps = createBarDeps([createBarPlugin('org.example.ledger')])
     const window = mount(
-      createRoot({
+      createRoot(core, {
         ...deps,
         dynamicImport: (url: string) =>
           url.includes('/md.numen.cards/')
@@ -768,7 +765,7 @@ describe('the title bar of the flashcards window', () => {
     vi.useFakeTimers()
     const deps = createBarDeps([createBarPlugin('org.example.ledger')])
     const window = mount(
-      createRoot({
+      createRoot(core, {
         ...deps,
         dynamicImport: (url: string) =>
           url.includes('/org.example.ledger/')
@@ -793,7 +790,7 @@ describe('the title bar of the flashcards window', () => {
     vi.useFakeTimers()
     const deps = createBarDeps([createBarPlugin('org.example.ledger')])
     const window = mount(
-      createRoot({
+      createRoot(core, {
         ...deps,
         dynamicImport: async (url: string) => {
           if (url.includes('/org.example.ledger/'))

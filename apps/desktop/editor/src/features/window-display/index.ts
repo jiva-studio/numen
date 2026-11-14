@@ -2,4 +2,4 @@
 export { createDisplayOptions } from './model/createDisplayOptions'
 export { createTargetResolver } from './model/createTargetResolver'
 export { useWindowDisplay } from './model/useWindowDisplay'
-export { getVaultList } from './model/getVaultList'
+export { createVaultListReader } from './model/getVaultList'
