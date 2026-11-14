@@ -4,7 +4,16 @@
  */
 import type { ApiError, Result } from '@numen/plugin-sdk'
 import type { TodosApi } from '../api/wire'
-import type { Filter, ListTasksResponse, Rename, Summary, Task, WatchMessage } from '../types'
+import type {
+  Filter,
+  ListTasksResponse,
+  Rename,
+  SetTaskDoneRequest,
+  SetTaskDoneResponse,
+  Summary,
+  Task,
+  WatchMessage,
+} from '../types'
 
 export interface ListCall {
   readonly today: string
@@ -21,6 +30,7 @@ export interface FakeCalls {
   readonly getSummary: string[]
   readonly listTasks: ListCall[]
   readonly refreshIndex: RefreshCall[]
+  readonly setTaskDone: SetTaskDoneRequest[]
   watchStarts: number
   watchEnds: number
 }
@@ -49,20 +59,34 @@ export const task = (overrides: Partial<Task> & Pick<Task, 'path' | 'line' | 'te
   ...overrides,
 })
 
-/** The tasks the fake answers a ListTasks with are keyed by the due filter of the request. */
+/**
+ * The tasks the fake answers a ListTasks with are keyed by the due filter of the request. A
+ * SetTaskDone answers with setTaskDone when it is set; else it ticks the task as the backend does:
+ * the task leaves the lists and comes back done.
+ */
 export interface FakeInit {
   readonly summary?: Summary
   readonly tasks?: Partial<Record<Filter['due'], ListTasksResponse>>
+  readonly setTaskDone?: (request: SetTaskDoneRequest) => Result<SetTaskDoneResponse, ApiError>
 }
+
+/** A SetTaskDone answer that refuses the change. */
+export const refuse = (
+  request: SetTaskDoneRequest,
+  error: SetTaskDoneResponse['error'],
+): Result<SetTaskDoneResponse, ApiError> =>
+  ok({ task: task({ path: request.path, line: request.line, text: '' }), change: '', error })
 
 export function createFakeApi(init: FakeInit = {}) {
   let summary = init.summary ?? SUMMARY
+  const lists: Partial<Record<Filter['due'], ListTasksResponse>> = { ...init.tasks }
   const queue: WatchMessage[] = []
   let wake: (() => void) | null = null
   const calls: FakeCalls = {
     getSummary: [],
     listTasks: [],
     refreshIndex: [],
+    setTaskDone: [],
     watchStarts: 0,
     watchEnds: 0,
   }
@@ -74,11 +98,28 @@ export function createFakeApi(init: FakeInit = {}) {
     },
     listTasks: async (today, filter, limit) => {
       calls.listTasks.push({ today, filter, limit })
-      return ok(init.tasks?.[filter.due] ?? { tasks: [], total: 0, revision: 1 })
+      return ok(lists[filter.due] ?? { tasks: [], total: 0, revision: 1 })
     },
     refreshIndex: async (paths, renamed) => {
       calls.refreshIndex.push({ paths, renamed })
       return ok({})
+    },
+    setTaskDone: async (request) => {
+      calls.setTaskDone.push(request)
+      if (init.setTaskDone) return init.setTaskDone(request)
+      let ticked: Task | null = null
+      for (const [due, list] of Object.entries(lists) as [Filter['due'], ListTasksResponse][]) {
+        const kept = list.tasks.filter((one) => one.path !== request.path || one.line !== request.line)
+        if (kept.length === list.tasks.length) continue
+        ticked = list.tasks.find((one) => !kept.includes(one)) ?? null
+        lists[due] = { tasks: kept, total: list.total - 1, revision: list.revision + 1 }
+      }
+      if (!ticked) return refuse(request, 'notFound')
+      return ok({
+        task: { ...ticked, status: 'done', doneOn: request.today },
+        change: 'completed',
+        error: '',
+      })
     },
     watchTasks: async function* (signal) {
       calls.watchStarts += 1

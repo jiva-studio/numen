@@ -2,13 +2,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import type { WorkspaceHost } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import { createFakeApi, createFakeTimer, settle, SUMMARY, task } from './testing/fakeApi'
+import {
+  createFakeApi,
+  createFakeTimer,
+  refuse,
+  settle,
+  SUMMARY,
+  task,
+  type FakeInit,
+} from './testing/fakeApi'
+import { WORDS } from './words'
 import { activate, TODOS_VIEW } from './index'
 
 const TODAY = '2026-11-14'
 
-const setup = () => {
+const setup = (init: Pick<FakeInit, 'setTaskDone'> = {}) => {
   const fake = createFakeApi({
+    ...init,
     tasks: {
       overdue: {
         tasks: [
@@ -21,14 +31,15 @@ const setup = () => {
   })
   const clock = createFakeTimer()
   const open = vi.fn()
+  const showError = vi.fn()
   const workspace = {
     window: { getToday: () => TODAY },
     files: { open },
-    messages: { showError: vi.fn() },
+    messages: { showError },
   } as unknown as WorkspaceHost
   const context = createMockPluginContext({ pluginId: 'md.numen.views.todos', workspace })
   activate(context, { api: fake.api, timer: clock.timer })
-  return { context, fake, clock, open }
+  return { context, fake, clock, open, showError }
 }
 
 let view: VueWrapper | null = null
@@ -91,6 +102,45 @@ describe('the todos frontend', () => {
     await text?.trigger('click')
 
     expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 7 })
+  })
+
+  it('ticks a task in the popover and reads the counts again when the backend reports the change', async () => {
+    const { context, fake } = setup()
+    fake.push({ revision: 1, isReady: true })
+    await settle()
+    view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
+    await view.find('button').trigger('click')
+    await settle()
+
+    await view.find('li input[type="checkbox"]').trigger('click')
+    await settle()
+    fake.push({ revision: 2, isReady: true })
+    await settle()
+
+    expect(fake.calls.setTaskDone.map((one) => [one.path, one.line, one.isDone])).toEqual([
+      ['Projects/Home.md', 7, true],
+    ])
+    expect(fake.calls.getSummary).toEqual([TODAY, TODAY])
+  })
+
+  it('shows the message of a refused tick in the window', async () => {
+    const { context, fake, showError } = setup({
+      setTaskDone: (request) => refuse(request, 'stale'),
+    })
+    fake.push({ revision: 1, isReady: true })
+    await settle()
+    view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
+    await view.find('button').trigger('click')
+    await settle()
+
+    await view.find('li input[type="checkbox"]').trigger('click')
+    await settle()
+
+    expect(showError).toHaveBeenCalledWith(WORDS.changedNote)
   })
 
   it('sends the changed paths of the vault once, after 400 milliseconds', () => {

@@ -58,6 +58,18 @@ func TestEveryMessageMatchesItsFixture(t *testing.T) {
 		{"RefreshIndex.response", RefreshIndexResponse{}, new(RefreshIndexResponse)},
 		{"WatchTasks.request", WatchTasksRequest{}, new(WatchTasksRequest)},
 		{"WatchTasks.response", WatchTasksMessage{Revision: 12, IsReady: true}, new(WatchTasksMessage)},
+		{"SetTaskDone.request", SetTaskDoneRequest{
+			Path: "Projects/Home.md", Line: 7, Raw: "- [ ] fix the tap +home ^tap", IsDone: true, Today: "2026-11-14",
+		}, new(SetTaskDoneRequest)},
+		{"SetTaskDone.response", SetTaskDoneResponse{
+			Task: Task{
+				Path: "Projects/Home.md", Line: 7, Raw: "- [x] fix the tap +home done:2026-11-14 ^tap", Text: "fix the tap ^tap",
+				Status: "done", Priority: "", Due: "", DoneOn: "2026-11-14", Recurrence: "",
+				Projects: []string{"home"}, Contexts: []string{}, Issues: []string{}, Depth: 0,
+			},
+			Change: "completed",
+			Error:  "",
+		}, new(SetTaskDoneResponse)},
 	}
 	for _, tc := range cases {
 		t.Run(tc.fixture, func(t *testing.T) {

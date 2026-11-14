@@ -1,5 +1,5 @@
 // Package host reaches the notes of the vault through the host the plugin process was launched
-// for. It offers the three calls of the index and no other.
+// for. It offers the calls of the index and the write of a ticked task, and no other.
 package host
 
 import (
@@ -33,4 +33,8 @@ func (v *Vault) Read(ctx context.Context, path string) ([]byte, domain.FileStat,
 
 func (v *Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	return v.client.GetPathsOfType(ctx, noteType)
+}
+
+func (v *Vault) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
+	return v.client.Write(ctx, path, content, baseline)
 }

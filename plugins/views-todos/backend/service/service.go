@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/api"
 	hostadapter "github.com/jiva-studio/numen/plugins/views-todos/backend/internal/adapter/host"
+	"github.com/jiva-studio/numen/plugins/views-todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/usecase/index"
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/wire/todos"
 )
@@ -97,7 +98,13 @@ func getClosedContext(s *server.Server) context.Context {
 
 func ignore(_ error) {}
 
-func mount(s *server.Server, tasks *index.Index) error {
+func setTaskDone(tasks *index.Index, done *complete.SetTaskDone) func(context.Context, api.SetTaskDoneRequest) (api.SetTaskDoneResponse, error) {
+	return func(_ context.Context, _ api.SetTaskDoneRequest) (api.SetTaskDoneResponse, error) {
+		return api.SetTaskDoneResponse{}, errors.New("not implemented")
+	}
+}
+
+func mount(s *server.Server, tasks *index.Index, done *complete.SetTaskDone) error {
 	ctx := getClosedContext(s)
 	s.SetUpdateConfig(func(values map[string]string) {
 		folders, isSet := values[ignoredKey]
@@ -111,6 +118,7 @@ func mount(s *server.Server, tasks *index.Index) error {
 	server.Handle(a, api.MethodGetSummary, getSummary(tasks))
 	server.Handle(a, api.MethodListTasks, listTasks(tasks))
 	server.Handle(a, api.MethodRefreshIndex, refreshIndex(tasks))
+	server.Handle(a, api.MethodSetTaskDone, setTaskDone(tasks, done))
 	server.Stream(a, api.MethodWatchTasks, watchTasks(tasks))
 	return a.Err()
 }
@@ -122,7 +130,7 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	tasks := index.NewForNotes(vault, vault)
-	if err := mount(s, tasks); err != nil {
+	if err := mount(s, tasks, complete.New(vault, vault)); err != nil {
 		return err
 	}
 	ctx := getClosedContext(s)

@@ -1,5 +1,6 @@
 // Package api declares the JSON messages of the todos service the plugin's backend serves to its
-// own frontend. Keys are lowerCamelCase; a failure is a server.APIError, not a message field.
+// own frontend. Keys are lowerCamelCase; a host failure is a server.APIError, and a change the note
+// does not allow is the error field of SetTaskDoneResponse.
 package api
 
 // Service is the service name the manifest declares.
@@ -10,6 +11,7 @@ const (
 	MethodListTasks    = "ListTasks"
 	MethodRefreshIndex = "RefreshIndex"
 	MethodWatchTasks   = "WatchTasks"
+	MethodSetTaskDone  = "SetTaskDone"
 )
 
 // Task is one task line of a note.
@@ -92,4 +94,23 @@ type WatchTasksRequest struct{}
 type WatchTasksMessage struct {
 	Revision uint64 `json:"revision"`
 	IsReady  bool   `json:"isReady"`
+}
+
+// SetTaskDoneRequest ticks (isDone) or unticks the task at a line of a note. Raw is the text the
+// line had when it was listed; today is the day of the window.
+type SetTaskDoneRequest struct {
+	Path   string `json:"path"`
+	Line   int    `json:"line"`
+	Raw    string `json:"raw"`
+	IsDone bool   `json:"isDone"`
+	Today  string `json:"today"`
+}
+
+// SetTaskDoneResponse is the task after the change and the change: completed, rescheduled or
+// reopened. Error is empty, or the reason the change was not written: notFound, changed, stale,
+// invalidRecurrence, notOpen or notDone.
+type SetTaskDoneResponse struct {
+	Task   Task   `json:"task"`
+	Change string `json:"change"`
+	Error  string `json:"error"`
 }

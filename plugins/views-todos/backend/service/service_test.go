@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,10 +13,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-todos/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/todo"
+	"github.com/jiva-studio/numen/plugins/views-todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/usecase/index"
 )
 
@@ -29,16 +34,27 @@ type app struct {
 
 func start(t *testing.T, notes map[string]string) *app {
 	t.Helper()
+	return startWriting(t, notes, nil)
+}
+
+// startWriting serves the notes with writes going to the writer getWriter returns, or to the vault
+// when getWriter is nil.
+func startWriting(t *testing.T, notes map[string]string, getWriter func(*hosttest.Vault) ports.FileWriter) *app {
+	t.Helper()
 	vault := hosttest.New("notes")
 	for path, text := range notes {
 		vault.File(path, text)
+	}
+	var writer ports.FileWriter = vault
+	if getWriter != nil {
+		writer = getWriter(vault)
 	}
 	tasks := index.New(vault, vault, todo.ParseNote)
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
-		return mount(s, tasks)
+		return mount(s, tasks, complete.New(vault, writer))
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -246,5 +262,131 @@ func TestWatchTasksSendsOnceAtTheStartAndAgainAfterAChangeOfTheIndex(t *testing.
 	}
 	if second := next(); second.Revision <= first.Revision {
 		t.Errorf("second message = %+v, want a revision after %d", second, first.Revision)
+	}
+}
+
+func (a *app) setTaskDone(t *testing.T, req api.SetTaskDoneRequest) (int, api.SetTaskDoneResponse, server.APIError) {
+	t.Helper()
+	var got api.SetTaskDoneResponse
+	status, failure := a.call(t, api.MethodSetTaskDone, req, &got)
+	return status, got, failure
+}
+
+func tickRequest(path string, line int, raw string) api.SetTaskDoneRequest {
+	return api.SetTaskDoneRequest{Path: path, Line: line, Raw: raw, IsDone: true, Today: today}
+}
+
+func TestSetTaskDoneWritesTheTickAndTheNextListShowsTheTaskDone(t *testing.T) {
+	a := start(t, map[string]string{"Home.md": "# Chores\n- [ ] fix the tap +home\n- [ ] buy milk\n"})
+	before := a.list(t, api.Filter{}, 10)
+
+	status, got, failure := a.setTaskDone(t, tickRequest("Home.md", 2, "- [ ] fix the tap +home"))
+
+	if status != http.StatusOK {
+		t.Fatalf("SetTaskDone = %d %+v", status, failure)
+	}
+	if got.Error != "" || got.Change != "completed" {
+		t.Errorf("response = %+v, want a completed change", got)
+	}
+	if task := got.Task; task.Path != "Home.md" || task.Line != 2 || task.Status != "done" || task.DoneOn != today ||
+		task.Raw != "- [x] fix the tap +home done:2026-11-14" || task.Projects[0] != "home" {
+		t.Errorf("task = %+v", task)
+	}
+	if note, _ := a.vault.Content("Home.md"); note != "# Chores\n- [x] fix the tap +home done:2026-11-14\n- [ ] buy milk\n" {
+		t.Errorf("note = %q", note)
+	}
+	open := a.list(t, api.Filter{}, 10)
+	done := a.list(t, api.Filter{Status: []string{"done"}}, 10)
+	if len(open.Tasks) != 1 || open.Tasks[0].Text != "buy milk" || open.Revision <= before.Revision {
+		t.Errorf("open tasks after the tick = %+v, before = revision %d", open, before.Revision)
+	}
+	if len(done.Tasks) != 1 || done.Tasks[0].Line != 2 {
+		t.Errorf("done tasks after the tick = %+v", done.Tasks)
+	}
+}
+
+func TestSetTaskDoneUnticksADoneTask(t *testing.T) {
+	a := start(t, map[string]string{"a.md": "- [x] buy milk done:2026-11-10\n"})
+
+	status, got, failure := a.setTaskDone(t, api.SetTaskDoneRequest{
+		Path: "a.md", Line: 1, Raw: "- [x] buy milk done:2026-11-10", IsDone: false, Today: today,
+	})
+
+	if status != http.StatusOK || got.Error != "" || got.Change != "reopened" || got.Task.Status != "open" {
+		t.Fatalf("SetTaskDone = %d %+v %+v", status, got, failure)
+	}
+	if note, _ := a.vault.Content("a.md"); note != "- [ ] buy milk\n" {
+		t.Errorf("note = %q", note)
+	}
+}
+
+// staleWriter is a vault that another window changes before each write.
+type staleWriter struct{ vault *hosttest.Vault }
+
+func (w staleWriter) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
+	now, _ := w.vault.Content(path)
+	w.vault.File(path, now+"typed\n")
+	return w.vault.Write(ctx, path, content, baseline)
+}
+
+func TestSetTaskDoneAnswersARefusedChangeWithItsErrorWordAndWritesNothing(t *testing.T) {
+	cases := []struct {
+		name      string
+		note      string
+		req       api.SetTaskDoneRequest
+		getWriter func(*hosttest.Vault) ports.FileWriter
+		want      string
+	}{
+		{"a line whose text changed", "- [ ] buy milk and bread\n", tickRequest("a.md", 1, "- [ ] buy milk"), nil, "notFound"},
+		{"a note whose frontmatter is never closed", "---\n- [ ] buy milk\n", tickRequest("a.md", 2, "- [ ] buy milk"), nil, "changed"},
+		{"a tick of a done task", "- [x] buy milk\n", tickRequest("a.md", 1, "- [x] buy milk"), nil, "notOpen"},
+		{"a tick of a task with an invalid recurrence", "- [ ] buy milk rec:0w\n", tickRequest("a.md", 1, "- [ ] buy milk rec:0w"), nil, "invalidRecurrence"},
+		{
+			"an untick of an open task", "- [ ] buy milk\n",
+			api.SetTaskDoneRequest{Path: "a.md", Line: 1, Raw: "- [ ] buy milk", IsDone: false, Today: today}, nil, "notDone",
+		},
+		{
+			"a note that changes before each write", "- [ ] buy milk\n", tickRequest("a.md", 1, "- [ ] buy milk"),
+			func(v *hosttest.Vault) ports.FileWriter { return staleWriter{vault: v} }, "stale",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := startWriting(t, map[string]string{"a.md": tc.note}, tc.getWriter)
+
+			status, got, failure := a.setTaskDone(t, tc.req)
+
+			if status != http.StatusOK || got.Error != tc.want || got.Change != "" {
+				t.Errorf("SetTaskDone = %d %+v %+v, want error %q", status, got, failure, tc.want)
+			}
+			if note, _ := a.vault.Content("a.md"); strings.Contains(note, "[x] buy milk done:") {
+				t.Errorf("note = %q, want no tick written", note)
+			}
+		})
+	}
+}
+
+func TestSetTaskDoneAnswersAHostFailureWithAnAPIError(t *testing.T) {
+	cases := []struct {
+		name    string
+		arrange func(*hosttest.Vault)
+		status  int
+		code    server.ErrorCode
+	}{
+		{"no vault", func(v *hosttest.Vault) { v.Hide() }, http.StatusPreconditionFailed, server.CodeFailedPrecondition},
+		{"a note the plugin may not write", func(v *hosttest.Vault) { v.RefuseWriting("a.md", host.ErrPermissionDenied) }, http.StatusForbidden, server.CodePermissionDenied},
+		{"a failure the host does not name", func(v *hosttest.Vault) { v.RefuseWriting("a.md", errors.New("disk full")) }, http.StatusInternalServerError, server.CodeInternal},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := start(t, map[string]string{"a.md": "- [ ] buy milk\n"})
+			tc.arrange(a.vault)
+
+			status, _, failure := a.setTaskDone(t, tickRequest("a.md", 1, "- [ ] buy milk"))
+
+			if status != tc.status || failure.Code != tc.code {
+				t.Errorf("SetTaskDone = %d %+v, want %d %s", status, failure, tc.status, tc.code)
+			}
+		})
 	}
 }

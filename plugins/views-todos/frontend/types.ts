@@ -99,3 +99,31 @@ export interface WatchMessage {
   readonly revision: number
   readonly isReady: boolean
 }
+
+/** What a tick or an untick did to the line. */
+export type Change = 'completed' | 'rescheduled' | 'reopened'
+
+/** Why a change was not written; the person can fix it by looking at the note. */
+export type Refusal = 'notFound' | 'changed' | 'stale' | 'invalidRecurrence' | 'notOpen' | 'notDone'
+
+/** Ticks (isDone) or unticks the task at a line; raw is the text the line had when it was listed. */
+export interface SetTaskDoneRequest {
+  readonly path: string
+  readonly line: number
+  readonly raw: string
+  readonly isDone: boolean
+  readonly today: string
+}
+
+/** The task after the change; error is empty when the change was written. */
+export interface SetTaskDoneResponse {
+  readonly task: Task
+  readonly change: Change | ''
+  readonly error: Refusal | ''
+}
+
+/** What the lists that tick a task ask of the backend. */
+export interface TaskWriter {
+  /** Ticks or unticks one task line of a note. */
+  setTaskDone(request: SetTaskDoneRequest): Promise<Result<SetTaskDoneResponse, ApiError>>
+}
