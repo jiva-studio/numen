@@ -16,24 +16,24 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 
 ## Packages
 
-| Package                          | Use                                                                                                   |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `server`, `server/servertest`    | the plugin process: lifecycle, authentication, events, the JSON API of the plugin's frontend          |
-| `hostcall`                       | the host endpoint and the token, from the environment or from the variables of a linked plugin        |
-| `connection`                     | providing the operations of a connection type, and asking the core to carry out an operation          |
-| `contracts/llm`, `llmtest`       | the messages, typed client and provider adapter of `llm.complete`, `llm.chat`, `llm.embed` and others |
-| `contracts/acp`, `acptest`       | the messages and provider adapter of `acp.task`                                                       |
-| `health`, `health/healthtest`    | the health items a plugin reports                                                                     |
-| `process`, `process/processtest` | the release of the process of a plugin whose work is done                                             |
-| `command`                        | the commands the manifest declares, served as `PluginCommandService`                                  |
-| `tools`, `toolstest`              | the tools a plugin offers an agent, served as `PluginToolService`                                     |
-| `searchsource`                   | a search source, served as `SearchSourceService`                                                      |
-| `cache`                          | keyed values in memory and on disk, with expiration, backoff and background refresh                   |
-| `shared`                         | the lock and the model key of the directory the host shares between plugins                           |
-| `performance`                    | the performance profile of the person and `SetNice`                                                   |
-| `clock`                          | `clock.System` for the entry point and `clock.Fake` for tests                                         |
-| `rpcerror`                       | the error codes of the calls a plugin serves                                                          |
-| `plugintest`                     | message fixtures, the manifest as the host reads it, and `GrantStorage` for tests                     |
+| Package                          | Use                                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `server`, `server/servertest`    | the plugin process: lifecycle, authentication, events, the JSON API of the plugin's frontend                        |
+| `hostcall`                       | the host endpoint and the token, from the environment or from the variables of a linked plugin                      |
+| `connection`                     | providing the operations of a connection type, and asking the core to carry out an operation                        |
+| `contracts/llm`, `llmtest`       | the messages, typed client and provider adapter of `llm.complete`, `llm.chat`, `llm.embed`, `llm.rerank` and others |
+| `contracts/acp`, `acptest`       | the messages and provider adapter of `acp.task`                                                                     |
+| `health`, `health/healthtest`    | the health items a plugin reports                                                                                   |
+| `process`, `process/processtest` | the release of the process of a plugin whose work is done                                                           |
+| `command`                        | the commands the manifest declares, served as `PluginCommandService`                                                |
+| `tools`, `toolstest`             | the tools a plugin offers an agent, served as `PluginToolService`                                                   |
+| `searchsource`                   | a search source, served as `SearchSourceService`                                                                    |
+| `cache`                          | keyed values in memory and on disk, with expiration, backoff and background refresh                                 |
+| `shared`                         | the lock and the model key of the directory the host shares between plugins                                         |
+| `performance`                    | the performance profile of the person and `SetNice`                                                                 |
+| `clock`                          | `clock.System` for the entry point and `clock.Fake` for tests                                                       |
+| `rpcerror`                       | the error codes of the calls a plugin serves                                                                        |
+| `plugintest`                     | message fixtures, the manifest as the host reads it, and `GrantStorage` for tests                                   |
 
 ## Server
 
