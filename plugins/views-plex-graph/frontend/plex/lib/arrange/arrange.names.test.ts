@@ -256,14 +256,13 @@ describe('a relation where half the notes have names', () => {
     expect(getFootprintOverlaps(getFootprints(graph, frame, half))).toEqual([])
   })
 
-  it('takes less height than the same relation with names under every note', () => {
+  it('takes less room than the same relation with names under every note', () => {
     const every: Rooms = (node) =>
       node.relation === 'child' ? { top: 0, bottom: 56, width: 90 } : NONE
-    const heightOf = (frame: PlexFrame) => frame.extent.maxY - frame.extent.minY
+    const areaOf = (frame: PlexFrame) =>
+      (frame.extent.maxY - frame.extent.minY) * (frame.extent.maxX - frame.extent.minX)
 
-    expect(heightOf(arrange(graph, window, half))).toBeLessThan(
-      heightOf(arrange(graph, window, every)),
-    )
+    expect(areaOf(arrange(graph, window, half))).toBeLessThan(areaOf(arrange(graph, window, every)))
   })
 })
 

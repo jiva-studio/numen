@@ -17,6 +17,12 @@ import type { PlexNode, PlexRelation } from '../../../../types'
 /** How far a leaning group tilts across its axis, as a fraction of the way it grows. */
 const LEAN = 0.42
 
+/** A lane opens by this much across its axis for each unit it runs along it; a row opens wider by how many times a cell is wider than tall. */
+const LANE_SLOPE = 1
+
+/** A center may lie this far short of the edge of its lane, so a box built exactly on the edge is inside. */
+const LANE_TOLERANCE = 0.5
+
 /** Notes one per relation in turn, so every relation gets a share of the near space. */
 export function takeTurns(nodesByRelation: NodesByRelation): PlexNode[] {
   const queues = RELATION_NAMES.map((relation) => nodesByRelation[relation] ?? [])
@@ -76,6 +82,7 @@ function getClusterMiddle(start: Vector, direction: Vector, request: MiddleReque
 /** What every note of one relation shares: the way the group grows, where it begins, and how far its first note reaches. */
 interface GroupPlan {
   readonly members: readonly PlexNode[]
+  readonly side: Vector
   readonly direction: Vector
   readonly anchor: Vector
   readonly firstReach: number
@@ -95,12 +102,18 @@ function createGroupPlans(
     const members = nodesByRelation[relation] ?? []
     const first = members[0]
     if (!first) continue
-    const direction = getClusterDirection(
-      context.options.direction[relation],
-      RELATIONS[relation].lean,
+    const side = context.options.direction[relation]
+    // A group leans only where another group shares its side, so the two part; alone it grows straight out.
+    const isShared = RELATION_NAMES.some(
+      (other) =>
+        other !== relation &&
+        (nodesByRelation[other]?.length ?? 0) > 0 &&
+        context.options.direction[other] === side,
     )
+    const direction = getClusterDirection(side, isShared ? RELATIONS[relation].lean : null)
     plans.set(relation, {
       members,
+      side: SIDES[side],
       direction,
       anchor: getAnchor(direction, focus, context.options),
       firstReach: getReach(direction, footprintOf(first)),
@@ -109,7 +122,19 @@ function createGroupPlans(
   return plans
 }
 
-function createRequest(plan: GroupPlan, size: Size, context: PlacementContext) {
+function createLane(plan: GroupPlan, focus: PlacedNode, cell: Size): (point: Vector) => boolean {
+  const { side, anchor } = plan
+  const isRow = side.x === 0
+  const slope = isRow ? (LANE_SLOPE * cell.width) / cell.height : LANE_SLOPE
+  const base = isRow ? focus.width / 2 + 2 * cell.width : focus.height / 2 + 2 * cell.height
+  return (point) => {
+    const along = side.x * (point.x - anchor.x) + side.y * (point.y - anchor.y)
+    const across = Math.abs(isRow ? point.x - focus.x : point.y - focus.y)
+    return along >= -LANE_TOLERANCE && across <= base + slope * along
+  }
+}
+
+function createRequest(plan: GroupPlan, focus: PlacedNode, size: Size, context: PlacementContext) {
   const { gap, lineGap } = context.options
   const { direction, anchor } = plan
   const reach = Math.max(getReach(direction, size), plan.firstReach)
@@ -117,7 +142,14 @@ function createRequest(plan: GroupPlan, size: Size, context: PlacementContext) {
   // The middle of a group is counted in footprints: the names of a note fill the gap under its pill, so a note without names packs closer than one with.
   const cell = { width: size.width + gap, height: size.height + lineGap }
   const middle = getClusterMiddle(start, direction, { size: plan.members.length, cell })
-  return { start, middle, direction, size, gaps: { gap, lineGap } }
+  return {
+    start,
+    middle,
+    direction,
+    size,
+    gaps: { gap, lineGap },
+    isInLane: createLane(plan, focus, cell),
+  }
 }
 
 function getPlacedNode(
@@ -162,7 +194,7 @@ function placeClusters(
     const group = groups.get(relation) ?? []
     groups.set(relation, group)
 
-    const request = createRequest(plan, footprintOf(node), context)
+    const request = createRequest(plan, focus, footprintOf(node), context)
     const room = context.room(node)
     const getCenter = (at: Spot): Vector => ({ x: at.x, y: getPillCenterY(at.y, room) })
     const spot = findFreeSpot(index, {

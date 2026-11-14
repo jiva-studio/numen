@@ -593,6 +593,9 @@ export const Overcrowded: Story = {
   },
 }
 
+/** Too long for the line it labels, so it is truncated. */
+const LONG_LABEL = 'the minutes of the meeting that was held in the long hall after the noon bell'
+
 const titledLines: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'The meeting', relation: 'focus' },
@@ -606,7 +609,7 @@ const titledLines: PlexGraph = {
     { from: 'parent', to: 'focus', labels: [{ text: 'is a' }] },
     { from: 'parent', to: 'sibling', labels: [{ text: 'contains' }] },
     { from: 'earlier', to: 'focus', labels: [{ text: 'see also' }] },
-    { from: 'across', to: 'focus', labels: [{ text: 'the minutes of the meeting' }] },
+    { from: 'across', to: 'focus', labels: [{ text: LONG_LABEL }] },
     { from: 'later', to: 'focus', labels: [{ text: 'and also' }] },
   ],
 }
@@ -630,12 +633,10 @@ export const TitledLines: Story = {
       await expect(text.querySelector('textPath')).not.toBeNull()
     }
 
-    await expect(title('the minutes of the meeting')).toHaveLength(0)
+    await expect(title(LONG_LABEL)).toHaveLength(0)
     const truncatedTitles = titles.filter((text) => text.textContent!.endsWith('…'))
     await expect(truncatedTitles).toHaveLength(2)
-    await expect(
-      'the minutes of the meeting'.startsWith(truncatedTitles[0]!.textContent!.slice(0, -1)),
-    ).toBe(true)
+    await expect(LONG_LABEL.startsWith(truncatedTitles[0]!.textContent!.slice(0, -1))).toBe(true)
 
     const [halo] = title('contains')
     await expect(halo!.querySelector('textPath')).not.toBeNull()

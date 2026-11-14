@@ -134,6 +134,9 @@ describe('a focus with children and children of children, in a window with room 
     const focus = byId.get('focus')!
 
     expect(frame.overflow).toStrictEqual({})
+    for (const title of [...names, 'uuu', 'ddd']) {
+      expect(byId.get(title)!.y, `${title} below the focus`).toBeGreaterThan(focus.y)
+    }
     expect(
       getSine(byId.get('dddd')!, focus, byId.get('uuu')!),
       'uuu on the line of dddd',

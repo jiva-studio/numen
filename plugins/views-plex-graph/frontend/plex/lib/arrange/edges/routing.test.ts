@@ -13,6 +13,7 @@ import {
   routeEdges,
   createRouting,
 } from './routing'
+import { build } from '../../../fixtures/build'
 import { graphs } from '../../../fixtures/graphs'
 import { ARROW_LENGTH, getArrow, getHeading, getLength, createPointOnCurve } from '../../edge'
 import type { PlacedNode } from '../../node'
@@ -47,7 +48,7 @@ describe('edges', () => {
   })
 
   it('sets off and arrives along the axis, never across it', () => {
-    const layout = arrangePlex(graphs.typical)
+    const layout = arrangePlex(build('A note', { child: 20 }))
     const outermost = getNodesByRelation(layout, 'child').reduce((a, b) =>
       Math.abs(a.x) > Math.abs(b.x) ? a : b,
     )

@@ -132,11 +132,19 @@ describe('each relation is placed on its own side of the focus', () => {
   it.each([
     ['typical', graphs.typical],
     ['eight, twenty, eight and eight', full],
-  ])('leans the jumps down in %s', (_name, graph) => {
+  ])('centers the jumps on the row of the focus in %s', (_name, graph) => {
     const frame = arrange(graph, inWindow(window))
-    expect(mean(getShownNodes(frame, 'jump').map((node) => node.y))).toBeGreaterThan(
-      getFocus(frame).y,
-    )
+    const { nodeSize, lineGap } = DEFAULT_OPTIONS
+    expect(
+      Math.abs(mean(getShownNodes(frame, 'jump').map((node) => node.y)) - getFocus(frame).y),
+    ).toBeLessThan(nodeSize.height + lineGap)
+  })
+
+  it('leans the jumps down and the references up where they share the left side', () => {
+    const frame = arrange(build('A note', { jump: 6, reference: 6 }), inWindow(window))
+    const focusY = getFocus(frame).y
+    expect(mean(getShownNodes(frame, 'jump').map((node) => node.y))).toBeGreaterThan(focusY)
+    expect(mean(getShownNodes(frame, 'reference').map((node) => node.y))).toBeLessThan(focusY)
   })
 })
 
@@ -144,8 +152,8 @@ describe('a group is never nearer the focus than its start', () => {
   const DIRECTIONS: Record<PlexRelation, readonly [number, number]> = {
     parent: [0, -1],
     child: [0, 1],
-    jump: [-1 / Math.hypot(1, 0.42), 0.42 / Math.hypot(1, 0.42)],
-    reference: [-1 / Math.hypot(1, 0.42), -0.42 / Math.hypot(1, 0.42)],
+    jump: [-1, 0],
+    reference: [-1, 0],
     sibling: [1, 0],
   }
   const along = (node: PlacedNode, [dx, dy]: readonly [number, number]) => node.x * dx + node.y * dy
