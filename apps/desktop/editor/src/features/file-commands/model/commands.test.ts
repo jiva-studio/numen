@@ -54,7 +54,7 @@ const createWindow = (answers: Answers = {}) => {
     },
   })
   const deps = {
-    files: api.file,
+    files: api.vault.file,
     notes: {
       getTabAt: (path: string) => (path === 'physics/Ontology.md' ? 'active' : null),
       getPath: (id: string) => id,

@@ -181,11 +181,16 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
   } as unknown as SettingsCore
   const api = createSettingsCoreApi(core, { theme: THEME })
   const log = { getWriter: () => say } as unknown as MessageLog
-  const rest = createSettingsStore(api.settings, SETTINGS_WORDS, log.getWriter('configured'))
-  const connections = createConnectionStore(api.connection, log.getWriter('connections'))
+  const { configuration } = api
+  const rest = createSettingsStore(
+    configuration.settings,
+    SETTINGS_WORDS,
+    log.getWriter('configured'),
+  )
+  const connections = createConnectionStore(configuration.connection, log.getWriter('connections'))
   const windowSettings = createWindowSettings({
-    themes: api.themes,
-    watchSettings: api.settings.watchSettings,
+    themes: configuration.themes,
+    watchSettings: configuration.settings.watchSettings,
     rest,
     connections,
     words: WORDS,
@@ -196,15 +201,22 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
     rest,
     ...windowSettings,
     ...createSettingsPage({
-      api: { settings: api.settings, listFiles: api.file.listFiles, listCatalog: api.listCatalog },
+      api: {
+        settings: configuration.settings,
+        listFiles: api.vault.file.listFiles,
+        listCatalog: api.plugins.listCatalog,
+        listRowOptions: configuration.connection.listRowOptions,
+      },
       rest,
       connections,
       appearance: windowSettings.appearance,
       log,
       windowTabs: createTestTabs(),
-      getSettingsViews: () => new Map(),
       getPlatform: () => 'linux',
-      health: { items: ref([]), commands: { getIds: () => [], run: () => Promise.resolve('') } },
+      plugins: {
+        getSettingsViews: () => new Map(),
+        health: { items: ref([]), commands: { getIds: () => [], run: () => Promise.resolve('') } },
+      },
     }),
   }
   const page = mount(SettingsTab, {

@@ -178,7 +178,7 @@ describe('the pane while the catalog has not answered', () => {
   })
 
   it('shows the missing-plugin text when the core cannot answer', async () => {
-    const { findTabKindPlugin } = createAnsweredApi({})
+    const { findTabKindPlugin } = createAnsweredApi({}).plugins
     const kind = createUnavailableKind(UnavailablePane, 'reader:viewer', undefined, {
       findTabKindPlugin,
     })

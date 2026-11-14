@@ -39,21 +39,20 @@ const setup = (events: readonly object[] = []) => {
   windowTabs.kinds.registerKinds([linkable])
   const writeMessage = vi.fn()
   const { tabLinks, reports: tabReports } = createTabLinking({
-    writeTabLinks: api.tabLinks.writeTabLinks,
+    writeTabLinks: api.tabs.tabLinks.writeTabLinks,
     windowId: 'window-a',
     windowTabs,
     isMain: true,
     writeMessage,
   })
   const session = createWindowTabLinkSession({
-    api: api.tabLinks,
+    api: api.tabs.tabLinks,
     windowId: 'window-a',
     windowTabs,
     isMain: true,
     tabLinks,
     reports: tabReports,
-    applySync: vi.fn(),
-    applyGroupPaths: vi.fn(),
+    tabSync: { applySync: vi.fn(), applyGroupPaths: vi.fn() },
     openMovedTab: vi.fn(),
     writeMessage,
   })

@@ -5,7 +5,8 @@ import type { CoreAnswers } from '@numen/core-client/testing'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createSettingsStore } from './store'
 
-const createAnsweredSettings = (answers: CoreAnswers) => createAnsweredApi(answers).settings
+const createAnsweredSettings = (answers: CoreAnswers) =>
+  createAnsweredApi(answers).configuration.settings
 
 /** The settings calls of the core the test answered last. */
 let settings = createAnsweredSettings({})

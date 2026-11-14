@@ -4,7 +4,8 @@
  */
 import { createAnsweredApi } from './coreAnswers'
 
-const { runDeclaredCommand, listDeclaredItemLists } = createAnsweredApi({}).declaredCommands
+const { runDeclaredCommand, listDeclaredItemLists } =
+  createAnsweredApi({}).plugins.declaredCommands
 
 export const UNANSWERED_RUNS = {
   run: runDeclaredCommand,

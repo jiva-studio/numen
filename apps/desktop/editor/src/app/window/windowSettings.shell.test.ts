@@ -66,7 +66,11 @@ const createWindow = () => {
   } as unknown as WindowTabs
   const settings = createWindowSettingsPart({
     api,
-    rest: createSettingsStore(api.settings, SETTINGS_WORDS, log.getWriter('configured')),
+    rest: createSettingsStore(
+      api.configuration.settings,
+      SETTINGS_WORDS,
+      log.getWriter('configured'),
+    ),
     words: WORDS,
     log,
     windowTabs,

@@ -11,9 +11,11 @@ import {
 } from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
 import { registerTabKindIcon } from '@/entities/note'
-import type { HealthApi } from '@/entities/plugin'
+import type { HealthApi, PluginHostApi } from '@/entities/plugin'
+import type { SettingsStore } from '@/entities/settings'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { PluginServices } from './pluginServices'
+import { createRowChangeSubscriber } from './pluginSettings'
 
 /** The host dependencies of one concern; the host reads the ones it is given. */
 export type HostParts = Pick<
@@ -107,6 +109,18 @@ export function createTaskServiceParts(deps: {
     getBackgroundTasks: () => services.backgroundTasks,
     getProcesses: () => deps.processes,
     health: deps.healthReports,
+  }
+}
+
+/** The texts a plugin reads, and its connections, told of each change of the rows. */
+export function createPluginApiParts(deps: {
+  readonly api: PluginHostApi
+  readonly rest: SettingsStore
+}): HostParts {
+  const subscribeRowChanges = createRowChangeSubscriber(deps.rest)
+  return {
+    getTexts: (pluginId) => deps.api.getPluginTexts(pluginId),
+    getConnections: (pluginId) => deps.api.getPluginConnections(pluginId, subscribeRowChanges),
   }
 }
 

@@ -9,7 +9,14 @@ import {
   type CoreAnswers,
 } from '@numen/core-client/testing'
 import { createWindowApi } from '@/app/window/createWindowApi'
-import { createWindowClients, type WindowTransports } from '@/shared/api/clients'
+import {
+  createPluginHostClients,
+  createSettingsClients,
+  createVaultClients,
+  createWorkspaceClients,
+  type WindowClients,
+  type WindowTransports,
+} from '@/shared/api/clients'
 
 /** The transports of a window that send every request, keepalive or not, over `transport`. */
 export const createTestTransports = (transport: Transport): WindowTransports => ({
@@ -20,6 +27,13 @@ export const createTestTransports = (transport: Transport): WindowTransports => 
 /** The transports of a window whose core answers as `answers` say; a call left out is refused. */
 export const createAnsweredTransports = (answers: CoreAnswers): WindowTransports =>
   createTestTransports(createCoreTransport(answers))
+
+const createWindowClients = (transports: WindowTransports): WindowClients => ({
+  ...createVaultClients(transports.transport),
+  ...createWorkspaceClients(transports),
+  ...createSettingsClients(transports.transport),
+  ...createPluginHostClients(transports.transport),
+})
 
 /** The clients of a window whose core answers as `answers` say. */
 export const createAnsweredClients = (answers: CoreAnswers) =>

@@ -18,10 +18,9 @@ import { writer } from '@/testing/writer'
 /** The calls a note is made through, over the core the test answered last. */
 let making: NoteMakingApi
 
-/** The core answers the creation of notes as `answers` say. */
 const answerMaking = (answers: CoreAnswers): void => {
   const api = createAnsweredApi(answers)
-  making = { createNote: api.note.createNote, relations: api.relations }
+  making = { createNote: api.vault.note.createNote, relations: api.vault.relations }
 }
 
 /** What the core answers to the creation of a note, and to the creation of a related one. */

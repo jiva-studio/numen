@@ -33,7 +33,7 @@ const createSettings = () => {
   const windowTabs = { handle: { openTab: vi.fn(() => Promise.resolve('')) } }
   return createWindowSettingsPart({
     api,
-    rest: createSettingsStore(api.settings, SETTINGS_WORDS, vi.fn()),
+    rest: createSettingsStore(api.configuration.settings, SETTINGS_WORDS, vi.fn()),
     words: WORDS,
     log,
     windowTabs: windowTabs as unknown as WindowTabs,
@@ -49,11 +49,13 @@ afterEach(() => {
 
 describe('the connections in the settings tab', () => {
   it('are read when the page asks, and listed in the installation', async () => {
-    vi.spyOn(api.connection, 'listConnectionTypes').mockResolvedValue({
+    vi.spyOn(api.configuration.connection, 'listConnectionTypes').mockResolvedValue({
       types: [],
       operationTitles: {},
     })
-    const list = vi.spyOn(api.connection, 'listConnections').mockResolvedValue([connection])
+    const list = vi
+      .spyOn(api.configuration.connection, 'listConnections')
+      .mockResolvedValue([connection])
     const { connections: installed } = createSettings().configured.state.installation
 
     await installed.load()
@@ -63,7 +65,7 @@ describe('the connections in the settings tab', () => {
   })
 
   it('give the reason in words when the core refuses a create', async () => {
-    vi.spyOn(api.connection, 'createConnection').mockResolvedValue({
+    vi.spyOn(api.configuration.connection, 'createConnection').mockResolvedValue({
       ok: false,
       error: { errorCode: 'name_taken', detail: 'Work' },
     })

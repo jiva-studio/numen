@@ -78,7 +78,6 @@ export function createConnectionStore(api: ConnectionApi, notify: MessageWriter)
     create: (draft: ConnectionDraft) => run(() => api.createConnection(draft)),
     update: (change: ConnectionChange) => run(() => api.updateConnection(change)),
     delete: (id: string) => run(() => api.deleteConnection(id)),
-    listRowOptions: api.listRowOptions,
   }
 }
 export type ConnectionStore = ReturnType<typeof createConnectionStore>

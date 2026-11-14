@@ -51,7 +51,7 @@ const createSettings = (
   const onSizeChanged = vi.fn()
   const settings = createWindowSettingsPart({
     api,
-    rest: createSettingsStore(api.settings, SETTINGS_WORDS, (text, level) =>
+    rest: createSettingsStore(api.configuration.settings, SETTINGS_WORDS, (text, level) =>
       writerFns.configured?.(text, level),
     ),
     words: WORDS,

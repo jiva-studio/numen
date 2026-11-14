@@ -6,7 +6,6 @@ import { answerNotes } from '@/testing/noteCore'
 import { createBufferHost } from './bufferHost'
 import { createFileFlush } from './flush'
 
-/** A core that answers no read or write of a note. */
 const openNotes = (how?: Parameters<typeof useOpenNotes>[1]) =>
   flattenOpenNotes(useOpenNotes(answerNotes({}), how))
 

@@ -13,14 +13,18 @@ import { createMessageLog } from '@/shared/model/notices/messages'
 import type { WindowApi } from './createWindowApi'
 
 export function createWindowFoundation(api: WindowApi) {
+  const { configuration } = api
   const log = createMessageLog()
-  const rest = createSettingsStore(api.settings, SETTINGS_WORDS, log.getWriter('configured'))
+  const rest = createSettingsStore(
+    configuration.settings,
+    SETTINGS_WORDS,
+    log.getWriter('configured'),
+  )
   return {
     api,
     log,
     rest,
-    connections: createConnectionStore(api.connection, log.getWriter('connections')),
-    writeMessage: log.getWriter('command'),
+    connections: createConnectionStore(configuration.connection, log.getWriter('connections')),
     frame: useWindowFrame(loadFrameRuntime),
     status: createWindowPluginStatus(rest),
     registry: createCommandRegistry(),

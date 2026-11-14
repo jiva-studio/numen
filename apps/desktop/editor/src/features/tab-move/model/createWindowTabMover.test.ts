@@ -20,7 +20,7 @@ const setup = (asking = false, highlightWindow?: (requests: string[]) => Highlig
     },
   })
   const mover = createWindowTabMover({
-    api: api.tabMove,
+    api: api.tabs.tabMove,
     windowId: 'window-a',
     windowTabs: createTestTabs(),
     notes: { asking: () => asking, flushPending: () => Promise.resolve() },

@@ -16,7 +16,8 @@ import { createWindowTabParts } from './createWindowTabParts'
 
 export function createWindowBase(api: WindowApi) {
   const foundation = createWindowFoundation(api)
-  const { log, rest, writeMessage, status, registry, settingsRequests } = foundation
+  const { log, rest, status, registry, settingsRequests } = foundation
+  const writeMessage = log.getWriter('command')
   const tabs = createTabsPart({
     api,
     writeMessage,
@@ -33,21 +34,27 @@ export function createWindowBase(api: WindowApi) {
     navigation: tabs.navigation,
   })
   const { editing, notes, window, vaults, itemLists } = vault
-  const tabParts = createWindowTabParts({ api, windowTabs, windowId, notes, writeMessage })
+  const tabParts = createWindowTabParts({
+    api: api.tabs,
+    windowTabs,
+    windowId,
+    notes,
+    writeMessage,
+  })
   const features = collectFeatureCommands(
     {
       notes: {
-        files: api.file,
-        renameNote: api.note.renameNote,
+        files: api.vault.file,
+        renameNote: api.vault.note.renameNote,
         making: editing.making,
         notes,
         navigator: vault.navigator,
         writeMessage,
       },
-      files: { files: api.file, notes, writeMessage },
+      files: { files: api.vault.file, notes, writeMessage },
       vaults: {
-        vaults: api.vaults,
-        emptyTrash: api.file.emptyTrash,
+        vaults: api.vault.vaults,
+        emptyTrash: api.vault.file.emptyTrash,
         tabsHold: tabParts.openTabs,
         setVaultName: vaults.setVaultName,
         reload: vaults.reload,
@@ -55,7 +62,7 @@ export function createWindowBase(api: WindowApi) {
       },
       tabs: createTabCommandsDeps({ tabLinks, windowTabs, moves: tabParts.moves }),
       versions: {
-        runDeclaredHandler: api.declaredCommands.runDeclaredHandler,
+        runDeclaredHandler: api.plugins.declaredCommands.runDeclaredHandler,
         listItems: itemLists.listItems,
         writeMessage,
       },
@@ -71,8 +78,8 @@ export function createWindowBase(api: WindowApi) {
     appCommands: features.commands,
     getTarget: createTargetResolver(windowTabs, vaults, window),
     windowSettings: createWindowSettings({
-      themes: api.themes,
-      watchSettings: api.settings.watchSettings,
+      themes: api.configuration.themes,
+      watchSettings: api.configuration.settings.watchSettings,
       rest,
       connections: foundation.connections,
       words,

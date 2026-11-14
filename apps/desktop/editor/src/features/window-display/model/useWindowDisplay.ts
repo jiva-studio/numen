@@ -111,6 +111,20 @@ async function startDisplay(deps: StartDisplayDeps): Promise<void> {
   }
 }
 
+function createDisplayFollower(
+  health: DisplayHealth,
+  wait: (ms: number) => Promise<void>,
+  isOpen: () => boolean,
+) {
+  return createFollower({
+    isOpen,
+    setLost: (response) => {
+      health.lost.value = response
+    },
+    wait,
+  })
+}
+
 export function useWindowDisplay(api: DisplayApi, how: DisplayOptions = {}) {
   const wait = how.wait ?? sleep
   // No listener is attached by default; each callback does nothing.
@@ -126,23 +140,16 @@ export function useWindowDisplay(api: DisplayApi, how: DisplayOptions = {}) {
 
   const ask = () => askVaultState(api.getVaultState, vault)
 
-  const follows = createFollower({
-    isOpen: () => open,
-    setLost: (response) => {
-      health.lost.value = response
-    },
-    wait,
-  })
+  const follows = createDisplayFollower(health, wait, () => open)
   const streams: WindowStreams = {
     follow: createVaultStream({
       watchVaultChanges: api.watchVaultChanges,
       follows,
       listening: abortController,
-      opening: opening.path,
+      opening,
       isVaultSwapped: () => isVaultSwapped(api.getVaultState, vault),
       reload,
       onVaultChanged,
-      readInitialNote: opening.read,
       ask,
     }),
     draw: createEditStream({

@@ -9,6 +9,7 @@ import type { WindowTabs } from '@/entities/tab'
 import type { Caught } from '@/shared/api/errors'
 import {
   createNoticeParts,
+  createPluginApiParts,
   createPluginCatalog,
   createPluginSupport,
   createTabActionParts,
@@ -24,7 +25,6 @@ import { createAnsweredApi } from './coreAnswers'
 
 /** What a test names of the plugin support; the rest is left out as a window without it leaves it out. */
 export interface TestPluginSupportDeps {
-  /** The calls to the core; a core that answers none where none is given. */
   readonly api?: WindowApi
   readonly windowTabs: WindowTabs
   readonly tabOpeners: Parameters<typeof createTabKindParts>[0]['tabOpeners']
@@ -74,7 +74,6 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
     deps.handlers,
   ]
   return createPluginSupport({
-    api: api.pluginHost,
     rest: deps.rest,
     catalog: createPluginCatalog(deps.rest),
     status: deps.status ?? createWindowPluginStatus(deps.rest),
@@ -89,9 +88,10 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
       createVaultServiceParts({ services }),
       createTaskServiceParts({
         services,
-        processes: api.processes,
-        healthReports: api.health.healthReports,
+        processes: api.plugins.processes,
+        healthReports: api.plugins.health.healthReports,
       }),
+      createPluginApiParts({ api: api.plugins.pluginHost, rest: deps.rest }),
       ...optionalParts.filter((one) => one !== undefined),
       named,
     ],

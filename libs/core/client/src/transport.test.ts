@@ -5,9 +5,16 @@
  * This suite runs in Node, where there is no window, so a transport made without a stubbed window
  * represents every caller without one.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createClient, createRouterTransport } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { createKeepaliveTransport, createOriginTransport } from './transport'
+import { PluginHealthService } from '@numen/protocol'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  CALLER_HEADER,
+  createCallerTransport,
+  createKeepaliveTransport,
+  createOriginTransport,
+} from './transport'
 
 vi.mock('@connectrpc/connect-web', { spy: true })
 
@@ -42,5 +49,33 @@ describe('the keepalive transport', () => {
       method: 'POST',
       keepalive: true,
     })
+  })
+})
+
+describe('the caller transport', () => {
+  it('routes unary and stream calls through the wire transport with the caller header', async () => {
+    expect(CALLER_HEADER).toBe('Numen-Caller')
+
+    const callers: Array<string | null> = []
+    const wire = createRouterTransport(({ service }) => {
+      service(PluginHealthService, {
+        clearHealth: (_request, context) => {
+          callers.push(context.requestHeader.get('Numen-Caller'))
+          return {}
+        },
+        watchHealth: async function* (_request, context) {
+          callers.push(context.requestHeader.get('Numen-Caller'))
+          yield {}
+        },
+      })
+    })
+
+    const client = createClient(PluginHealthService, createCallerTransport('search', wire))
+    await client.clearHealth({ pluginId: 'org.example.atlas', key: 'quota' })
+    for await (const update of client.watchHealth({})) {
+      expect(update.items).toStrictEqual([])
+    }
+
+    expect(callers).toStrictEqual(['search', 'search'])
   })
 })

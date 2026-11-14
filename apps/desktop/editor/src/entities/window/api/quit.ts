@@ -14,7 +14,7 @@ const flushResults = getNames<FlushOutcome, FlushResultCode>({
   [FLUSH_RESULT.UNSAVED]: 'unsaved',
 })
 
-/** The quit of the window over `windowService`. */
+/** The window answers the quit of the core: it writes what is pending and reports it. */
 export const createQuitApi = (windowService: WindowClients['windowService']) => {
   /**
    * The window quitting, until the client aborts the signal. The stream opens with the token this

@@ -56,7 +56,11 @@ const createWindow = () => {
       registerExtensionReader: () => () => undefined,
       registerEditor: () => () => undefined,
     } as never,
-    rest: createSettingsStore(createAnsweredApi({}).settings, SETTINGS_WORDS, vi.fn()),
+    rest: createSettingsStore(
+      createAnsweredApi({}).configuration.settings,
+      SETTINGS_WORDS,
+      vi.fn(),
+    ),
   })
   holder.activate = () => {
     support.pluginHost.lifecycle

@@ -5,7 +5,7 @@ import { createTaskClient } from '@numen/core-client'
 import type { WindowClients } from '@/shared/api/clients'
 import { WINDOW } from './window'
 
-/** The tasks of the window over `windowService`. */
+/** The tasks the core runs for this window, followed as a stream, and the cancel of one. */
 export const createTaskApi = (windowService: WindowClients['windowService']) => {
   const tasks = createTaskClient(windowService, WINDOW)
   return {

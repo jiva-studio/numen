@@ -9,7 +9,10 @@ import { createVaultListReader } from './getVaultList'
 
 const createAnsweredReader = (answers: CoreAnswers) => {
   const api = createAnsweredApi(answers)
-  return createVaultListReader({ vaults: api.vaults, getShownVault: api.shownVault.getShownVault })
+  return createVaultListReader({
+    vaults: api.vault.vaults,
+    getShownVault: api.window.shownVault.getShownVault,
+  })
 }
 
 describe('the vault list', () => {

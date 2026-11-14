@@ -226,8 +226,8 @@ describe('the notes of the vault a plugin is handed', () => {
       search,
       pluginNotes,
       notes: createVaultNotes({
-        notes: api.note,
-        getFileKinds: api.file.getFileKinds,
+        notes: api.vault.note,
+        getFileKinds: api.vault.file.getFileKinds,
         search,
         making,
         pluginNotes,

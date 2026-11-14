@@ -24,7 +24,11 @@ const createSupport = () => {
       registerExtensionReader: vi.fn(() => () => undefined),
       registerEditor: vi.fn(() => () => undefined),
     } as never,
-    rest: createSettingsStore(createAnsweredApi({}).settings, SETTINGS_WORDS, vi.fn()),
+    rest: createSettingsStore(
+      createAnsweredApi({}).configuration.settings,
+      SETTINGS_WORDS,
+      vi.fn(),
+    ),
     getServices: () => ({
       workspace: { getNoteInFocus: () => ({ path: '', title: '' }) } as unknown as WorkspaceHost,
     }),
@@ -153,7 +157,11 @@ describe('the settings and notices a plugin is given', () => {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),
       } as never,
-      rest: createSettingsStore(createAnsweredApi({}).settings, SETTINGS_WORDS, vi.fn()),
+      rest: createSettingsStore(
+        createAnsweredApi({}).configuration.settings,
+        SETTINGS_WORDS,
+        vi.fn(),
+      ),
       ...more,
     })
 

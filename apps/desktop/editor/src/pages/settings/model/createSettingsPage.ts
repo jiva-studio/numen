@@ -10,7 +10,7 @@ import {
   type SettingsApi,
   type SettingsStore,
 } from '@/entities/settings'
-import type { ConnectionStore } from '@/entities/connection'
+import type { ConnectionApi, ConnectionStore } from '@/entities/connection'
 import { countNotes, type FileApi } from '@/entities/file'
 import {
   PLUGIN_FAILURE_WORDS,
@@ -40,6 +40,13 @@ export interface SettingsPageApi {
   >
   readonly listFiles: FileApi['listFiles']
   readonly listCatalog: CatalogReader
+  readonly listRowOptions: ConnectionApi['listRowOptions']
+}
+
+/** What the settings tab reads of the plugins: the views they draw in it, and their health. */
+interface SettingsPagePlugins {
+  readonly getSettingsViews: InstallationPlugin['getSettingsViews']
+  readonly health: HealthDeps
 }
 
 export interface SettingsPageDeps {
@@ -49,9 +56,8 @@ export interface SettingsPageDeps {
   appearance: ReturnType<typeof createWindowAppearance>
   log: MessageLog
   windowTabs: WindowTabs
-  getSettingsViews: InstallationPlugin['getSettingsViews']
   getPlatform: InstallationSettings['getPlatform']
-  health: HealthDeps
+  plugins: SettingsPagePlugins
 }
 
 interface InstallationSettingsDeps {
@@ -75,7 +81,7 @@ interface SettingsTabConfigDeps {
   settings: InstallationSettingsDeps
   plugin: InstallationPluginDeps
   connections: ConnectionStore
-  listFiles: SettingsPageApi['listFiles']
+  api: Pick<SettingsPageApi, 'listFiles' | 'listRowOptions'>
 }
 
 function createInstallationSettings(deps: InstallationSettingsDeps) {
@@ -157,7 +163,7 @@ function createInstallationPlugin(deps: InstallationPluginDeps) {
 
 function createInstallationConnections(
   connections: ConnectionStore,
-  listFiles: SettingsPageApi['listFiles'],
+  api: Pick<SettingsPageApi, 'listFiles' | 'listRowOptions'>,
 ) {
   return {
     list: connections.connections,
@@ -175,10 +181,10 @@ function createInstallationConnections(
       options: Readonly<Record<string, string>>,
       operations: readonly string[],
     ) => {
-      const answer = await connections.listRowOptions(connectionId, field, options, operations)
+      const answer = await api.listRowOptions(connectionId, field, options, operations)
       return answer.ok ? answer : { ok: false as const, error: answer.error.detail }
     },
-    countNotes: () => countNotes(listFiles),
+    countNotes: () => countNotes(api.listFiles),
   }
 }
 
@@ -186,7 +192,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
   return {
     settings: createInstallationSettings(deps.settings),
     plugin: createInstallationPlugin(deps.plugin),
-    connections: createInstallationConnections(deps.connections, deps.listFiles),
+    connections: createInstallationConnections(deps.connections, deps.api),
   }
 }
 
@@ -197,9 +203,8 @@ export function createSettingsPage({
   appearance,
   log,
   windowTabs,
-  getSettingsViews,
   getPlatform,
-  health,
+  plugins,
   api,
 }: SettingsPageDeps) {
   const getPluginName = (pluginId: string): string =>
@@ -223,13 +228,13 @@ export function createSettingsPage({
         settings: api.settings,
         rest,
         retry,
-        getSettingsViews,
+        getSettingsViews: plugins.getSettingsViews,
         catalogEntries,
         reportError,
-        health,
+        health: plugins.health,
       },
       connections,
-      listFiles: api.listFiles,
+      api,
     }),
     reportError,
   )

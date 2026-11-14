@@ -20,7 +20,7 @@ describe('settings step groups', () => {
     const api = createAnsweredApi({})
     const settings = createWindowSettingsPart({
       api,
-      rest: createSettingsStore(api.settings, SETTINGS_WORDS, vi.fn()),
+      rest: createSettingsStore(api.configuration.settings, SETTINGS_WORDS, vi.fn()),
       words: WORDS,
       log,
       windowTabs,

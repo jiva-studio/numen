@@ -1,7 +1,7 @@
 import type { WindowClients } from '@/shared/api/clients'
 import { WINDOW } from './window'
 
-/** The vault this window shows, over `windowService`. */
+/** Asks the core which vault it opened this window on. */
 export const createShownVaultApi = (windowService: WindowClients['windowService']) => ({
   /** The id of the vault this window shows. */
   getShownVault: async (): Promise<string> =>
