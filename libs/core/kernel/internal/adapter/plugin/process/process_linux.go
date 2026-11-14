@@ -25,11 +25,16 @@ type startRequest struct {
 	result chan<- error
 }
 
-var getStartRequests = sync.OnceValue(func() chan<- startRequest {
-	requests := make(chan startRequest)
-	go serveStartRequests(requests)
-	return requests
-})
+// Starter starts plugin processes from one OS thread that it starts on first use and keeps for as long
+// as the host runs.
+type Starter struct {
+	once     sync.Once
+	requests chan startRequest
+}
+
+func NewStarter() *Starter {
+	return &Starter{requests: make(chan startRequest)}
+}
 
 func serveStartRequests(requests <-chan startRequest) {
 	// Linux sends the parent-death signal when the thread that started the child ends. This goroutine
@@ -40,11 +45,11 @@ func serveStartRequests(requests <-chan startRequest) {
 	}
 }
 
-// StartCommand starts cmd from the one OS thread that starts every plugin process and lives as long as
-// the host, and returns the error of cmd.Start.
-func StartCommand(cmd *exec.Cmd) error {
+// Start starts cmd from the thread of s and returns the error of cmd.Start.
+func (s *Starter) Start(cmd *exec.Cmd) error {
+	s.once.Do(func() { go serveStartRequests(s.requests) })
 	result := make(chan error, 1)
-	getStartRequests() <- startRequest{cmd: cmd, result: result}
+	s.requests <- startRequest{cmd: cmd, result: result}
 	return <-result
 }
 

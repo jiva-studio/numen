@@ -42,12 +42,13 @@ func TestLifetimeHelper(t *testing.T) {
 }
 
 func runLifetimeHost(t *testing.T, pluginRole string) {
+	t.Helper()
 	cmd := newLifetimePlugin(t.Context(), pluginRole, os.NewFile(3, "plugin exit pipe"))
 	input, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := StartCommand(cmd); err != nil {
+	if err := NewStarter().Start(cmd); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := io.WriteString(os.Stdout, startedLine+"\n"); err != nil {

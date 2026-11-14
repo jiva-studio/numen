@@ -131,11 +131,12 @@ func TestAPluginKeepsRunningAfterTheThreadThatRequestedItsStartExits(t *testing.
 		}
 	}()
 	cmd := newLifetimePlugin(t.Context(), roleIdlePlugin, exitWrite)
+	starter := NewStarter()
 	started := make(chan error, 1)
 	go func() {
 		// The goroutine returns with its thread locked, and Go ends that thread.
 		runtime.LockOSThread()
-		started <- StartCommand(cmd)
+		started <- starter.Start(cmd)
 	}()
 	if err := <-started; err != nil {
 		t.Fatal(err)
