@@ -58,6 +58,7 @@ func (f *frames) Close() error { return nil }
 // assistant is a provider of every role of the contract that answers from what it received.
 type assistant struct {
 	request *llm.ChatRequest
+	rerank  *llm.RerankRequest
 }
 
 func (a *assistant) Complete(_ context.Context, _ connection.Call, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
@@ -80,6 +81,16 @@ func (a *assistant) Embed(_ context.Context, _ connection.Call, request *llm.Emb
 	result := &llm.EmbedResult{}
 	for _, text := range request.GetTexts() {
 		result.Vectors = append(result.Vectors, &llm.Vector{Values: []float32{float32(len(text)), 1}})
+	}
+	return result, nil
+}
+
+// Rerank scores each document by the number of its bytes.
+func (a *assistant) Rerank(_ context.Context, _ connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+	a.rerank = request
+	result := &llm.RerankResult{}
+	for _, document := range request.GetDocuments() {
+		result.Scores = append(result.Scores, float32(len(document)))
 	}
 	return result, nil
 }
@@ -185,6 +196,77 @@ func TestEmbedOfNoTextCallsNoProvider(t *testing.T) {
 	}
 }
 
+func TestRerankReturnsScoresInDocumentOrder(t *testing.T) {
+	caller := newCaller(llm.Roles{Reranker: &assistant{}})
+
+	result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{
+		Query:     "harbor tides",
+		Documents: []string{"a long note about the harbor", "tides", "the quay at dawn"},
+	}, connection.PriorityInteractive)
+
+	if err != nil || !slices.Equal(result.GetScores(), []float32{28, 5, 16}) {
+		t.Fatalf("Rerank = %v, %v, want the scores in the order of the documents", result, err)
+	}
+	if !slices.Equal(caller.operations, []string{llm.OperationRerank}) || caller.priorities[0] != connection.PriorityInteractive {
+		t.Errorf("operations = %v, priorities = %v", caller.operations, caller.priorities)
+	}
+}
+
+func TestRerankPassesTheQueryAndTheInstructionUnchanged(t *testing.T) {
+	a := &assistant{}
+	caller := newCaller(llm.Roles{Reranker: a})
+
+	_, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{
+		Query:       " when does the ferry leave? ",
+		Instruction: "Find the notes that answer the question",
+		Documents:   []string{"Ferry times"},
+	}, connection.PriorityBackground)
+
+	if err != nil || a.rerank.GetQuery() != " when does the ferry leave? " || a.rerank.GetInstruction() != "Find the notes that answer the question" ||
+		!slices.Equal(a.rerank.GetDocuments(), []string{"Ferry times"}) {
+		t.Errorf("Rerank = %v, request = %v", err, a.rerank)
+	}
+}
+
+// oneScore scores every request with one score, whatever the number of its documents.
+type oneScore struct{}
+
+func (oneScore) Rerank(context.Context, connection.Call, *llm.RerankRequest) (*llm.RerankResult, error) {
+	return &llm.RerankResult{Scores: []float32{0.5}}, nil
+}
+
+func TestRerankOfAnotherNumberOfScoresThanDocumentsIsAnError(t *testing.T) {
+	caller := newCaller(llm.Roles{Reranker: oneScore{}})
+
+	result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{Query: "quay", Documents: []string{"quay", "jetty"}}, connection.PriorityBackground)
+
+	if err == nil || result != nil {
+		t.Errorf("Rerank = %v, %v, want an error", result, err)
+	}
+}
+
+func TestRerankOfNoDocumentCallsNoProvider(t *testing.T) {
+	caller := newCaller(llm.Roles{Reranker: &assistant{}})
+
+	result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{Query: "quay"}, connection.PriorityBackground)
+
+	if err != nil || len(result.GetScores()) != 0 || len(caller.operations) != 0 {
+		t.Errorf("Rerank = %v, %v, operations = %v", result, err, caller.operations)
+	}
+}
+
+func TestRerankRefusesAnEmptyQueryWithoutACall(t *testing.T) {
+	for _, query := range []string{"", "  \n\t"} {
+		caller := newCaller(llm.Roles{Reranker: &assistant{}})
+
+		result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{Query: query, Documents: []string{"quay"}}, connection.PriorityBackground)
+
+		if err == nil || result != nil || len(caller.operations) != 0 {
+			t.Errorf("Rerank of query %q = %v, %v, operations = %v, want an error and no call", query, result, err, caller.operations)
+		}
+	}
+}
+
 func TestGetProfileIsBackgroundAndNamesTheModelOfTheRow(t *testing.T) {
 	caller := newCaller(llm.Roles{Profiler: &assistant{}})
 
@@ -201,15 +283,30 @@ func TestGetProfileIsBackgroundAndNamesTheModelOfTheRow(t *testing.T) {
 func TestOnlyTheRolesGivenAreServed(t *testing.T) {
 	provider := llm.Provide(connection.Provider{"acp.task": nil}, llm.Roles{Models: &assistant{}, Reasoning: &assistant{}})
 
+	if names := getOperations(provider); !slices.Equal(names, []string{"acp.task", llm.OperationModels, llm.OperationReasoning}) {
+		t.Errorf("operations = %v", names)
+	}
+}
+
+func TestRerankIsServedOnlyWithAReranker(t *testing.T) {
+	without := llm.Provide(nil, llm.Roles{Embedder: &assistant{}})
+	with := llm.Provide(nil, llm.Roles{Embedder: &assistant{}, Reranker: &assistant{}})
+
+	if names := getOperations(without); !slices.Equal(names, []string{llm.OperationEmbed}) {
+		t.Errorf("operations without a reranker = %v", names)
+	}
+	if names := getOperations(with); !slices.Equal(names, []string{llm.OperationEmbed, "llm.rerank"}) || llm.OperationRerank != "llm.rerank" {
+		t.Errorf("operations with a reranker = %v", names)
+	}
+}
+
+func getOperations(provider connection.Provider) []string {
 	var names []string
 	for name := range provider {
 		names = append(names, name)
 	}
 	slices.Sort(names)
-
-	if !slices.Equal(names, []string{"acp.task", llm.OperationModels, llm.OperationReasoning}) {
-		t.Errorf("operations = %v", names)
-	}
+	return names
 }
 
 func TestAFailureOfTheProviderIsTheErrorOfTheCall(t *testing.T) {

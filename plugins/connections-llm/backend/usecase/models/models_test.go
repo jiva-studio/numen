@@ -40,6 +40,10 @@ func (g *gateway) Embed(context.Context, connection.Call, time.Duration, []strin
 	return nil, nil
 }
 
+func (g *gateway) Rerank(context.Context, connection.Call, time.Duration, *llm.RerankRequest) ([]float32, error) {
+	return nil, nil
+}
+
 func (g *gateway) ListModels(_ context.Context, _ connection.Call, limit time.Duration, operations []string) ([]connection.Option, error) {
 	g.operations, g.limit = operations, limit
 	g.calls++
