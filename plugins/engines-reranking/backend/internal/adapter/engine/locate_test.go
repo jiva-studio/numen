@@ -136,11 +136,15 @@ func (h *fakeHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if name != "onnx/model.onnx" {
-		_, _ = w.Write([]byte(body))
+		if _, err := w.Write([]byte(body)); err != nil {
+			return
+		}
 		return
 	}
 	half := len(body) / 2
-	_, _ = w.Write([]byte(body[:half]))
+	if _, err := w.Write([]byte(body[:half])); err != nil {
+		return
+	}
 	if flusher, ok := w.(http.Flusher); ok {
 		flusher.Flush()
 	}
@@ -149,7 +153,9 @@ func (h *fakeHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case <-r.Context().Done():
 		return
 	}
-	_, _ = w.Write([]byte(body[half:]))
+	if _, err := w.Write([]byte(body[half:])); err != nil {
+		return
+	}
 }
 
 func (h *fakeHub) serveListing(w http.ResponseWriter) {
@@ -166,7 +172,9 @@ func (h *fakeHub) serveListing(w http.ResponseWriter) {
 		listing.Siblings = append(listing.Siblings, sibling{Name: name, Size: len(body)})
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(listing)
+	if err := json.NewEncoder(w).Encode(listing); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func TestLocateReportsTheProgressOfTheFirstDownload(t *testing.T) {

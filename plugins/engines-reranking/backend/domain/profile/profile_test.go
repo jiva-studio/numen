@@ -110,12 +110,13 @@ func TestGetLocalReturnsTheDefaultForAnEmptyModel(t *testing.T) {
 
 func TestGetLocalAcceptsAnAliasAndAnyCase(t *testing.T) {
 	table := getShippedProfiles(t)
+	const paddedRepo = " ONNX-COMMUNITY/bge-reranker-v2-m3-onnx "
 
 	for name, id := range map[string]string{
-		"gte-multilingual-reranker-base":           gteID,
-		"GTE-Multilingual-Reranker-Base":           gteID,
-		"bge-reranker-v2-m3":                       bgeID,
-		" ONNX-COMMUNITY/bge-reranker-v2-m3-onnx ": bgeID,
+		"gte-multilingual-reranker-base": gteID,
+		"GTE-Multilingual-Reranker-Base": gteID,
+		"bge-reranker-v2-m3":             bgeID,
+		paddedRepo:                       bgeID,
 	} {
 		if p := getLocal(t, table, name); p.ID != id {
 			t.Errorf("GetLocal(%q) = %q, want %q", name, p.ID, id)
