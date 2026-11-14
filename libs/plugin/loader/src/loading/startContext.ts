@@ -103,7 +103,7 @@ function createPartsWrapper(
 
   const groups = new WeakMap<object, object>()
   const wrapPart = <Part extends object>(part: Part): Part =>
-    new Proxy(part, {
+    new Proxy<Part>(part, {
       get(target: object, key) {
         const value: Member = Reflect.get(target, key)
         if (typeof value !== 'object' || value === null || !isReplaceable(target, key)) return value

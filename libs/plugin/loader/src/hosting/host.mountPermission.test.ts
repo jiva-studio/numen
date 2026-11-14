@@ -114,7 +114,7 @@ describe('a view kind a plugin registers itself', () => {
     registerNoteViewer(owner)
     const element = document.createElement('div')
 
-    owner.ui.mountView(VIEW, element, { path: 'Notes/Example.md' })
+    owner.host.ui.mountView(VIEW, element, { path: 'Notes/Example.md' })
 
     await vi.waitFor(() => expect(element.textContent).toBe('Body of Notes/Example.md'))
   })
@@ -130,7 +130,9 @@ describe('a view capability named like a property of every object', () => {
       const caller = createPlugin('md.numen.caller', [])
       const element = document.createElement('div')
 
-      expect(() => caller.ui.mountView(asCapability(name), element, { path: '' })).not.toThrow()
+      expect(() =>
+        caller.host.ui.mountView(asCapability(name), element, { path: '' }),
+      ).not.toThrow()
       createPlugin('md.numen.owner', []).plugin.register.view({
         capability: asCapability(name),
         component: defineComponent({ setup: () => () => h('p', 'late') }),
