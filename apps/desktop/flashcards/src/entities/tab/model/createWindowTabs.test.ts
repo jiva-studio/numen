@@ -79,7 +79,7 @@ describe('createWindowTabs', () => {
       pluginId: 'md.numen.a',
       pane: {},
       display: { placement: { pane: 'main', order: 0 } },
-      open: () => undefined,
+      open: (() => undefined) as unknown as AnyTabKind['open'],
       events: { onDestroy },
     })
 
