@@ -31,6 +31,8 @@ var (
 	ErrNotAnOption = errors.New("not one of the options")
 	// ErrOutOfRange is a number outside the bounds of a range or a number setting.
 	ErrOutOfRange = errors.New("out of range")
+	// ErrInvalidListItem refuses a blank entry, or an entry that repeats an earlier one exactly.
+	ErrInvalidListItem = errors.New("invalid list item")
 )
 
 // noDeclaringPluginError is returned for an owner that no plugin declares settings under. It
@@ -126,6 +128,29 @@ func checkValue(declared manifest.Setting, registries Registries, value any) err
 		return checkOption(declared, registries, value)
 	case manifest.SettingTypeConnections:
 		return checkRows(declared, registries, value)
+	case manifest.SettingTypeList:
+		return checkList(value)
+	}
+	return nil
+}
+
+func checkList(value any) error {
+	items, isList := value.([]any)
+	if !isList {
+		return fmt.Errorf("%w: expected a list of strings", ErrWrongType)
+	}
+	seen := make(map[string]bool, len(items))
+	for _, item := range items {
+		text, isText := item.(string)
+		switch {
+		case !isText:
+			return fmt.Errorf("%w: expected a list of strings", ErrWrongType)
+		case strings.TrimSpace(text) == "":
+			return fmt.Errorf("%w: %q is empty", ErrInvalidListItem, text)
+		case seen[text]:
+			return fmt.Errorf("%w: %q is listed twice", ErrInvalidListItem, text)
+		}
+		seen[text] = true
 	}
 	return nil
 }

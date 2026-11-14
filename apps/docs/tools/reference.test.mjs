@@ -172,3 +172,34 @@ test('the check fails when a plugin setting is removed from its manifest', () =>
     },
   )
 })
+
+test('the reference names a list setting a list of text', () => {
+  const { file, document } = withSettings[0]
+  withChangedFile(
+    REFERENCE,
+    (text) => text,
+    () => {
+      withChangedFile(
+        file,
+        (text) => {
+          const changed = JSON.parse(text)
+          changed.settings.push({
+            key: 'referenceListProbe',
+            type: 'list',
+            title: 'Probe folders',
+            description: 'Folders a probe skips.',
+            default: [],
+          })
+          return `${JSON.stringify(changed, null, 2)}\n`
+        },
+        () => {
+          const result = spawnSync(process.execPath, [MANUAL], { cwd: ROOT, encoding: 'utf8' })
+          assert.equal(result.status, 0, result.stderr)
+          const body = getSection(readFileSync(REFERENCE, 'utf8'), document.id) ?? ''
+          const row = body.split('\n').find((line) => line.includes('`referenceListProbe`')) ?? ''
+          assert.match(row, /\| a list of text \|/)
+        },
+      )
+    },
+  )
+})

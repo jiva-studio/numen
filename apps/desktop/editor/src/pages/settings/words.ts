@@ -82,4 +82,9 @@ export const WORDS = {
   pathChoose: 'Choose…',
   pathAdd: 'Add…',
   pathClear: 'Clear',
+  /** A plugin's setting of type list. */
+  listAdd: 'Add',
+  listNew: 'Add an item',
+  listRemove: (item: string) => `Remove ${item}`,
+  listItemTwice: (item: string) => `${item} is already in the list`,
 }
