@@ -5,7 +5,24 @@ import { EditorView } from '@codemirror/view'
 import type { Tree } from '@lezer/common'
 import { LANGUAGES } from '../lib/config/languages'
 import { live } from './live/live'
-import { tabKeyBinding, escapeKeyBinding, preview, prose, setup, type Settings } from './setup'
+import {
+  activeLineCompartment,
+  escapeKeyBinding,
+  fontCompartment,
+  getActiveLineExtension,
+  getFontExtension,
+  getLineHeightExtension,
+  getSpellCheckExtension,
+  getTabSizeExtension,
+  lineHeightCompartment,
+  preview,
+  prose,
+  setup,
+  spellCheckCompartment,
+  tabKeyBinding,
+  tabSizeCompartment,
+  type Settings,
+} from './setup'
 
 // Nothing here has a size, and the editor measures anyway.
 Range.prototype.getClientRects = () =>
@@ -244,5 +261,117 @@ describe('editor preferences in setup', () => {
     expect(view.state.tabSize).toBe(4)
     expect(tabKeyBinding.run?.(view)).toBe(true)
     expect(view.state.doc.toString()).toBe('    one')
+  })
+})
+
+describe('the tab size in an open editor', () => {
+  const tab = (view: EditorView) => tabKeyBinding.run?.(view) ?? false
+
+  it('inserts four spaces on Tab at a tab size of 4', () => {
+    const view = open({ tabSize: 4 }, 'one')
+    tab(view)
+    expect(view.state.doc.toString()).toBe('    one')
+  })
+
+  it('inserts three spaces on Tab after the tab size changed from 2 to 3', () => {
+    const view = open({ tabSize: 2 }, 'one')
+    view.dispatch({ effects: tabSizeCompartment.reconfigure(getTabSizeExtension(3)) })
+    tab(view)
+    expect(view.state.doc.toString()).toBe('   one')
+  })
+
+  it('keeps the existing text when the tab size changes', () => {
+    const view = open({ tabSize: 2 }, '\tone\n  two')
+    view.dispatch({ effects: tabSizeCompartment.reconfigure(getTabSizeExtension(6)) })
+    expect(view.state.doc.toString()).toBe('\tone\n  two')
+  })
+})
+
+describe('the active line', () => {
+  const activeLines = (view: EditorView) =>
+    Array.from(view.dom.querySelectorAll<HTMLElement>('.cm-activeLine')).map((el) => el.textContent)
+
+  it('marks the line of the caret while highlightActiveLine is on', () => {
+    const view = open({ highlightActiveLine: true }, 'one\ntwo\nthree')
+    expect(activeLines(view)).toStrictEqual(['one'])
+  })
+
+  it('marks no line while it is off', () => {
+    expect(activeLines(open({ highlightActiveLine: false }, 'one\ntwo'))).toStrictEqual([])
+    expect(activeLines(open({}, 'one\ntwo'))).toStrictEqual([])
+  })
+
+  it('moves the mark to the line the caret moves to', () => {
+    const view = open({ highlightActiveLine: true }, 'one\ntwo\nthree')
+    view.dispatch({ selection: { anchor: 5 } })
+    expect(activeLines(view)).toStrictEqual(['two'])
+  })
+
+  it('starts and stops marking when the compartment is reconfigured', () => {
+    const view = open({}, 'one\ntwo')
+    view.dispatch({ effects: activeLineCompartment.reconfigure(getActiveLineExtension(true)) })
+    expect(activeLines(view)).toStrictEqual(['one'])
+    view.dispatch({ effects: activeLineCompartment.reconfigure(getActiveLineExtension(false)) })
+    expect(activeLines(view)).toStrictEqual([])
+  })
+})
+
+describe('spell check', () => {
+  it('sets spellcheck true on the content element while spellCheck is on', () => {
+    expect(open({ spellCheck: true }).contentDOM.getAttribute('spellcheck')).toBe('true')
+  })
+
+  it('sets spellcheck false on the content element while spellCheck is off', () => {
+    expect(open({ spellCheck: false }).contentDOM.getAttribute('spellcheck')).toBe('false')
+  })
+
+  it('is false where nothing is set', () => {
+    expect(open({}).contentDOM.getAttribute('spellcheck')).toBe('false')
+  })
+
+  it('turns on and off when the compartment is reconfigured', () => {
+    const view = open({})
+    view.dispatch({ effects: spellCheckCompartment.reconfigure(getSpellCheckExtension(true)) })
+    expect(view.contentDOM.getAttribute('spellcheck')).toBe('true')
+    view.dispatch({ effects: spellCheckCompartment.reconfigure(getSpellCheckExtension(false)) })
+    expect(view.contentDOM.getAttribute('spellcheck')).toBe('false')
+  })
+})
+
+describe('the font and the line height', () => {
+  const style = (view: EditorView) => view.dom.getAttribute('style') ?? ''
+
+  it('adds no font variable where no family is set', () => {
+    expect(style(open({}))).not.toContain('--editor-font')
+    expect(style(open({ fontFamily: '' }))).not.toContain('--editor-font')
+  })
+
+  it('sets the font variable to the family it is given', () => {
+    expect(style(open({ fontFamily: 'serif' }))).toMatch(/--editor-font:\s*serif/)
+  })
+
+  it('sets the line height variable to the value it is given', () => {
+    expect(style(open({ lineHeight: 1.8 }))).toMatch(/--editor-line-height:\s*1\.8\b/)
+  })
+
+  it('changes the font and clears it with an empty family', () => {
+    const view = open({ fontFamily: 'serif' })
+    view.dispatch({ effects: fontCompartment.reconfigure(getFontExtension('monospace')) })
+    expect(style(view)).toMatch(/--editor-font:\s*monospace/)
+    view.dispatch({ effects: fontCompartment.reconfigure(getFontExtension('')) })
+    expect(style(view)).not.toContain('--editor-font')
+  })
+
+  it('keeps the font variable when the line height changes', () => {
+    const view = open({ fontFamily: 'serif', lineHeight: 1.8 })
+    view.dispatch({ effects: lineHeightCompartment.reconfigure(getLineHeightExtension(2)) })
+    expect(style(view)).toMatch(/--editor-font:\s*serif/)
+    expect(style(view)).toMatch(/--editor-line-height:\s*2\b/)
+  })
+
+  it('keeps the line height variable when the font changes', () => {
+    const view = open({ fontFamily: 'serif', lineHeight: 1.8 })
+    view.dispatch({ effects: fontCompartment.reconfigure(getFontExtension('monospace')) })
+    expect(style(view)).toMatch(/--editor-line-height:\s*1\.8\b/)
   })
 })

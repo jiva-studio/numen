@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { EditorView } from '@codemirror/view'
 import { NOTE_EDITOR, type PluginContext } from '@numen/plugin-sdk'
+import { tabKeyBinding } from './editor/model/setup'
 import { activate, deactivate, MarkdownNoteEditor, readMarkdownEditorPreferences } from './index'
 
 describe('notes plugin lifecycle', () => {
@@ -55,7 +56,7 @@ describe('notes plugin lifecycle', () => {
   })
 
   it('defaults softWrap to true and lineNumbers to false when no settings are stored', () => {
-    expect(readMarkdownEditorPreferences()).toStrictEqual({
+    expect(readMarkdownEditorPreferences()).toMatchObject({
       softWrap: true,
       lineNumbers: false,
     })
@@ -79,7 +80,7 @@ describe('notes plugin lifecycle', () => {
       },
     } as unknown as PluginContext
 
-    expect(readMarkdownEditorPreferences(context.settings.get)).toStrictEqual({
+    expect(readMarkdownEditorPreferences(context.settings.get)).toMatchObject({
       softWrap: false,
       lineNumbers: true,
     })
@@ -111,15 +112,150 @@ describe('notes plugin lifecycle', () => {
     wrapper.unmount()
   })
 
-  it('does not read a tab size from the settings', () => {
-    const lookup = (key: string) => (key === 'tab_size' || key === 'tabSize' ? 8 : undefined)
-    expect(readMarkdownEditorPreferences(lookup)).toStrictEqual({
-      softWrap: true,
-      lineNumbers: false,
-    })
-  })
 
   it('runs deactivation hook cleanly', () => {
     expect(() => deactivate()).not.toThrow()
+  })
+})
+
+describe('the editor settings in an open note editor', () => {
+  const open = async (stored: Record<string, unknown> = {}, text = 'one\ntwo\nthree') => {
+    const settings: Record<string, unknown> = { ...stored }
+    const listeners = new Map<string, (value: unknown) => void>()
+    const context = {
+      register: { reader: vi.fn(), tabKind: vi.fn() },
+      vault: {},
+      settings: {
+        get: (key: string) => settings[key],
+        onChange: (key: string, handler: (value: unknown) => void) => {
+          listeners.set(key, handler)
+          return { dispose: () => listeners.delete(key) }
+        },
+      },
+    } as unknown as PluginContext
+    activate(context)
+
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: { modelValue: text, filePath: 'test.md' },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    const view = EditorView.findFromDOM(
+      wrapper.element.querySelector('.cm-editor') as HTMLElement,
+    ) as EditorView
+    const change = async (key: string, value: unknown) => {
+      settings[key] = value
+      listeners.get(key)?.(value)
+      await flushPromises()
+    }
+    return { view, wrapper, change }
+  }
+  const tab = (view: EditorView) => tabKeyBinding.run?.(view) ?? false
+  const style = (view: EditorView) => view.dom.getAttribute('style') ?? ''
+
+  it('opens with Tab of 2 spaces, no spellcheck, no active line, no font variable', async () => {
+    const { view, wrapper } = await open()
+
+    tab(view)
+    expect(view.state.doc.toString().startsWith('  one')).toBe(true)
+    expect(view.state.doc.toString().startsWith('   one')).toBe(false)
+    expect(view.contentDOM.getAttribute('spellcheck')).toBe('false')
+    expect(view.dom.querySelector('.cm-activeLine')).toBeNull()
+    expect(style(view)).not.toContain('--editor-font')
+    wrapper.unmount()
+  })
+
+  it('follows a change of the tabSize setting in an open editor', async () => {
+    const { view, wrapper, change } = await open({ tabSize: 4 })
+    expect(view.state.tabSize).toBe(4)
+
+    await change('tabSize', 3)
+    tab(view)
+
+    expect(view.state.tabSize).toBe(3)
+    expect(view.state.doc.toString().startsWith('   one')).toBe(true)
+    expect(view.state.doc.toString().startsWith('    one')).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('starts and stops marking the active line when the setting changes', async () => {
+    const { view, wrapper, change } = await open()
+    expect(view.dom.querySelector('.cm-activeLine')).toBeNull()
+
+    await change('highlightActiveLine', true)
+    expect(view.dom.querySelector('.cm-activeLine')).not.toBeNull()
+
+    await change('highlightActiveLine', false)
+    expect(view.dom.querySelector('.cm-activeLine')).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('switches the spellcheck attribute when the setting changes', async () => {
+    const { view, wrapper, change } = await open()
+
+    await change('spellCheck', true)
+    expect(view.contentDOM.getAttribute('spellcheck')).toBe('true')
+
+    await change('spellCheck', false)
+    expect(view.contentDOM.getAttribute('spellcheck')).toBe('false')
+    wrapper.unmount()
+  })
+
+  it('sets the font of an open editor when the setting changes and clears it when the setting is empty', async () => {
+    const { view, wrapper, change } = await open()
+
+    await change('fontFamily', 'Fira Code')
+    expect(style(view)).toContain('--editor-font')
+    expect(style(view)).toContain('"Fira Code"')
+
+    await change('fontFamily', '')
+    expect(style(view)).not.toContain('--editor-font')
+    wrapper.unmount()
+  })
+
+  it('never puts a font value that breaks out of the style into the editor', async () => {
+    const { view, wrapper, change } = await open()
+
+    await change('fontFamily', 'serif; position: fixed')
+
+    expect(style(view)).not.toContain('position')
+    expect(style(view)).not.toContain('--editor-font')
+    wrapper.unmount()
+  })
+
+  it('sets the line height of an open editor when the setting changes', async () => {
+    const { view, wrapper, change } = await open()
+
+    await change('lineHeight', 1.8)
+
+    expect(style(view)).toMatch(/--editor-line-height:\s*1\.8\b/)
+    wrapper.unmount()
+  })
+
+  it('keeps the font variable when the line height changes', async () => {
+    const { view, wrapper, change } = await open({ fontFamily: 'serif' })
+
+    await change('lineHeight', 2)
+
+    expect(style(view)).toMatch(/--editor-font:\s*serif/)
+    expect(style(view)).toMatch(/--editor-line-height:\s*2\b/)
+    wrapper.unmount()
+  })
+
+  it('keeps the same editor view and text when settings change', async () => {
+    const { view, wrapper, change } = await open({}, 'one\ntwo')
+    view.dispatch({ selection: { anchor: 5 } })
+
+    await change('tabSize', 4)
+    await change('spellCheck', true)
+    await change('highlightActiveLine', true)
+    await change('fontFamily', 'serif')
+    await change('lineHeight', 2)
+
+    const again = EditorView.findFromDOM(wrapper.element.querySelector('.cm-editor') as HTMLElement)
+    expect(again).toBe(view)
+    expect(view.state.doc.toString()).toBe('one\ntwo')
+    expect(view.state.selection.main.head).toBe(5)
+    wrapper.unmount()
   })
 })
