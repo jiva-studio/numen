@@ -1,4 +1,4 @@
-package proofread
+package settings
 
 import "testing"
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 // Host provides the host services a proofreading uses: the store folder for corrected texts, the
@@ -25,29 +24,3 @@ type Texts interface {
 
 // AskModel returns the model's reply to a prompt under an instruction.
 type AskModel func(ctx context.Context, instruction, prompt string) (string, error)
-
-// Config is how a proofreading cuts a text into batches and how far it lets a correction move a
-// line.
-type Config struct {
-	BatchSize       int
-	Overlap         int
-	InFlight        int
-	MaxEditDistance float64
-}
-
-// Default proofreading sizes.
-const (
-	DefaultBatchSize = 40
-	DefaultOverlap   = 4
-	DefaultInFlight  = 4
-)
-
-// DefaultConfig is the configuration before the host passes one.
-func DefaultConfig() Config {
-	return Config{
-		BatchSize:       DefaultBatchSize,
-		Overlap:         DefaultOverlap,
-		InFlight:        DefaultInFlight,
-		MaxEditDistance: numbered.MaxEditDistance,
-	}
-}

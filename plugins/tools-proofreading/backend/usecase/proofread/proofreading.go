@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/settings"
 )
 
 var (
@@ -42,12 +43,12 @@ type Proofreading struct {
 	host      Host
 	kinds     map[domain.TextKind]bool
 	ask       AskModel
-	getConfig func() Config
+	getConfig func() settings.Config
 }
 
 // New returns a proofreading of the kinds given, which asks ask and reads its sizes from getConfig on
 // every run.
-func New(h Host, kinds map[domain.TextKind]bool, ask AskModel, getConfig func() Config) *Proofreading {
+func New(h Host, kinds map[domain.TextKind]bool, ask AskModel, getConfig func() settings.Config) *Proofreading {
 	return &Proofreading{host: h, kinds: kinds, ask: ask, getConfig: getConfig}
 }
 
