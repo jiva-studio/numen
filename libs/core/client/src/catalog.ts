@@ -2,18 +2,17 @@
  * The plugin catalog: the plugins the application has, the ones it could have, and the plugin that
  * provides a kind of tab. Entries are the generated protocol types.
  */
-import { createClient, type Client } from '@connectrpc/connect'
+import type { Client } from '@connectrpc/connect'
 import {
   CatalogErrorCode,
   CatalogIncompatibility,
-  CatalogService,
+  type CatalogService,
   CatalogState,
   type CatalogEntry as CatalogEntryMessage,
   type CatalogSourceError as CatalogSourceErrorMessage,
 } from '@numen/protocol'
 import { formatErrorMessage, type Caught } from './errors'
 import { asFailure, asValue, type Result } from './result'
-import { transport } from './transport'
 
 /** One plugin as the catalog knows it. */
 export type CatalogEntry = CatalogEntryMessage
@@ -99,6 +98,3 @@ export const createPluginCatalog = (client: CatalogClient): PluginCatalog => ({
     }
   },
 })
-
-/** The catalog of the window the page is served from. */
-export const pluginCatalog = createPluginCatalog(createClient(CatalogService, transport))

@@ -1,18 +1,12 @@
 /** The plugins that run, in the windows' terms. */
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { HealthSeverity } from '@numen/protocol'
-import { pluginService } from '../clients'
-import { installCoreAnswers } from '../testing'
+import { createPluginClient } from '../clients'
+import { createCoreTransport, type CoreAnswers } from '../testing'
 import { createProcessClient } from './processes'
 
-const processes = createProcessClient(pluginService)
-
-let restore: (() => void) | undefined
-
-afterEach(() => {
-  restore?.()
-  restore = undefined
-})
+const createProcesses = (answers: CoreAnswers) =>
+  createProcessClient(createPluginClient(createCoreTransport(answers)))
 
 const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> => {
   for await (const one of stream) return one
@@ -21,7 +15,7 @@ const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> =>
 
 describe('the plugins that run', () => {
   it('arrive with their times in milliseconds, their stop for idleness, their health, who started and holds them, and the time of the list', async () => {
-    restore = installCoreAnswers({
+    const processes = createProcesses({
       pluginService: {
         watchPluginProcesses: async function* () {
           yield {

@@ -1,18 +1,12 @@
 /** The health items the core keeps, in the windows' terms, and a report made for a frontend. */
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { HealthSeverity, type ReportHealthRequest } from '@numen/protocol'
-import { pluginHealth } from '../clients'
-import { installCoreAnswers } from '../testing'
+import { createPluginHealthClient } from '../clients'
+import { createCoreTransport, type CoreAnswers } from '../testing'
 import { createHealthClient } from './health'
 
-const health = createHealthClient(pluginHealth)
-
-let restore: (() => void) | undefined
-
-afterEach(() => {
-  restore?.()
-  restore = undefined
-})
+const createHealth = (answers: CoreAnswers) =>
+  createHealthClient(createPluginHealthClient(createCoreTransport(answers)))
 
 const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> => {
   for await (const one of stream) return one
@@ -21,7 +15,7 @@ const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> =>
 
 describe('the health items', () => {
   it('arrive with their severity and their action', async () => {
-    restore = installCoreAnswers({
+    const health = createHealth({
       pluginHealth: {
         watchHealth: async function* () {
           yield {
@@ -77,7 +71,7 @@ describe('the health items', () => {
 
   it('are reported under the plugin the window names', async () => {
     const reported: ReportHealthRequest[] = []
-    restore = installCoreAnswers({
+    const health = createHealth({
       pluginHealth: {
         reportHealth: (request) => {
           reported.push(request)

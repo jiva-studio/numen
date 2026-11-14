@@ -1,22 +1,20 @@
 /**
  * The core answered from a test: the real clients send each call, and only the core is replaced.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { search, theme } from '../clients'
-import { installCoreAnswers, installCoreHandlers } from './router'
+import { createSearchClient, createThemeServiceClient } from '../clients'
+import { createCoreHandlerTransport, createCoreTransport, type CoreAnswers } from './router'
 
-let restore: (() => void) | undefined
-
-afterEach(() => {
-  restore?.()
-  restore = undefined
-})
+const createClients = (answers: CoreAnswers) => {
+  const transport = createCoreTransport(answers)
+  return { search: createSearchClient(transport), theme: createThemeServiceClient(transport) }
+}
 
 describe('a call answered by the test', () => {
   it('reaches the answer with the request the client built', async () => {
     const requests: unknown[] = []
-    restore = installCoreAnswers({
+    const { search } = createClients({
       search: {
         searchNames: (request) => {
           requests.push(request)
@@ -32,7 +30,7 @@ describe('a call answered by the test', () => {
   })
 
   it('rejects with the error the answer threw, code and message kept', async () => {
-    restore = installCoreAnswers({
+    const { search } = createClients({
       search: {
         searchNames: () => {
           throw new ConnectError('index is rebuilding', Code.Unavailable)
@@ -47,7 +45,7 @@ describe('a call answered by the test', () => {
   })
 
   it('rejects as unimplemented where the test left the call unanswered', async () => {
-    restore = installCoreAnswers({ theme: {} })
+    const { search } = createClients({ theme: {} })
 
     const failure = await search.searchNames({ query: 'lla', limit: 8 }).catch((error) => error)
 
@@ -55,7 +53,7 @@ describe('a call answered by the test', () => {
   })
 
   it('streams each item the answer yields', async () => {
-    restore = installCoreAnswers({
+    const { theme } = createClients({
       theme: {
         async *watchThemes() {
           yield { names: ['own/Dusk.css'] }
@@ -71,36 +69,16 @@ describe('a call answered by the test', () => {
   })
 })
 
-describe('the answers installed', () => {
-  it('give way to the ones installed before when restored', async () => {
-    const restoreOuter = installCoreAnswers({
-      search: { searchNames: () => ({ found: [{ note: { title: 'Outer' } }] }) },
-    })
-    const restoreInner = installCoreAnswers({
-      search: { searchNames: () => ({ found: [{ note: { title: 'Inner' } }] }) },
-    })
-    try {
-      expect((await search.searchNames({ query: 'a', limit: 1 })).found[0]?.note?.title).toBe(
-        'Inner',
-      )
-      restoreInner()
-      expect((await search.searchNames({ query: 'a', limit: 1 })).found[0]?.note?.title).toBe(
-        'Outer',
-      )
-    } finally {
-      restoreOuter()
-    }
-  })
-})
-
 describe('handlers named by their method', () => {
   it('answer the call of the service that declares the method', async () => {
-    restore = installCoreHandlers({
+    const transport = createCoreHandlerTransport({
       searchNames: () => ({ found: [{ note: { title: 'Llama' } }] }),
       async *watchThemes() {
         yield { names: ['own/Dusk.css'] }
       },
     })
+    const search = createSearchClient(transport)
+    const theme = createThemeServiceClient(transport)
 
     const answer = await search.searchNames({ query: 'lla', limit: 8 })
     const changes: string[][] = []
@@ -111,6 +89,6 @@ describe('handlers named by their method', () => {
   })
 
   it('throw where a name is declared by no service', () => {
-    expect(() => installCoreHandlers({ searchNamez: () => ({}) })).toThrow(/searchNamez/)
+    expect(() => createCoreHandlerTransport({ searchNamez: () => ({}) })).toThrow(/searchNamez/)
   })
 })

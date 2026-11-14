@@ -1,22 +1,18 @@
 /** The work the core reports to a window, in the windows' terms, and a cancel asked of it. */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { TASK_KIND, TASK_UNIT, windowService } from '../clients'
-import { createLostConnection, installCoreAnswers } from '../testing'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { TASK_KIND, TASK_UNIT, createWindowClient } from '../clients'
+import { createCoreTransport, createLostConnection } from '../testing'
 import { createTaskClient } from './tasks'
 
 const request = { watchTasks: vi.fn(), cancelTask: vi.fn() }
 
-const tasks = createTaskClient(windowService, 'desktop.example')
-
-let restore: () => void
+const tasks = createTaskClient(
+  createWindowClient(createCoreTransport({ windowService: request })),
+  'desktop.example',
+)
 
 beforeEach(() => {
   vi.resetAllMocks()
-  restore = installCoreAnswers({ windowService: request })
-})
-
-afterEach(() => {
-  restore()
 })
 
 const readAll = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {

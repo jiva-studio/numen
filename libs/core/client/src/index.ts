@@ -4,7 +4,13 @@ export * from './manifest'
 export * from './connections'
 export * from './connectioncalls'
 export * from './protocol'
-export { CALLER_HEADER, createCallerTransport, transport } from './transport'
+export {
+  CALLER_HEADER,
+  createCallerTransport,
+  createKeepaliveTransport,
+  createOriginTransport,
+  type Transport,
+} from './transport'
 export * from './settings'
 export * from './themes'
 export * from './tasks'
