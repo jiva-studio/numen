@@ -129,8 +129,7 @@ func (u *UseCase) compile(text string) (query.Query, []api.Problem, error) {
 		return query.Query{}, []api.Problem{{Line: firstLine, Column: firstColumn, Message: message}}, nil
 	}
 	compiled, err := query.Compile(text)
-	var refused *query.CompileError
-	if errors.As(err, &refused) {
+	if refused, isRefused := errors.AsType[*query.CompileError](err); isRefused {
 		problems := make([]api.Problem, len(refused.Problems))
 		for i, problem := range refused.Problems {
 			problems[i] = api.Problem{Line: problem.Line, Column: problem.Column, Message: problem.Message}

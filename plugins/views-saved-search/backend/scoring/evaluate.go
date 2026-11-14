@@ -1,5 +1,3 @@
-// children, || the highest score of its matching children. A path prefix is compared in Unicode normal form
-// C, so a path in either form matches a prefix in either form.
 // Package scoring evaluates a compiled query for one candidate from the scores the host gave its chunk.
 package scoring
 
@@ -26,7 +24,8 @@ type Outcome struct {
 // Evaluate evaluates the tree for the chunk with the scores at the file path. A meaning leaf holds at or
 // above the floor. A negated meaning leaf drops the chunk only when it reaches the floor for its text and
 // is closer to it than to every meaning leaf that is not negated. && takes the lowest score of its
-// children, || the highest score of its matching children.
+// children, || the highest score of its matching children. A path prefix is compared in Unicode normal form
+// C, so a path in either form matches a prefix in either form.
 func Evaluate(root query.Node, leaves []query.Leaf, scores Scores, floor float64, filePath string) Outcome {
 	e := evaluator{
 		leaves: leaves, scores: scores, floor: floor, path: filePath,

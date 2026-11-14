@@ -25,8 +25,8 @@ func (e *wordsError) Error() string {
 func (e *wordsError) Unwrap() error { return host.ErrInvalidWords }
 
 func getWordsProblem(err error) (api.Problem, bool) {
-	var refused *wordsError
-	if !errors.As(err, &refused) {
+	refused, isRefused := errors.AsType[*wordsError](err)
+	if !isRefused {
 		return api.Problem{Line: 0, Column: 0, Message: ""}, false
 	}
 	return api.Problem{Line: refused.term.Line, Column: refused.term.Column, Message: refused.Error()}, true
