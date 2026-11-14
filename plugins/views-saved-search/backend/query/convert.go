@@ -50,6 +50,9 @@ func (c *converter) convert(expr ast.Expr, isNegated bool) Node {
 		return c.convertCall(expr, isNegated)
 	case ast.IdentKind:
 		return c.refuse(expr, getIdentMessage(expr.AsIdent()))
+	case ast.UnspecifiedExprKind, ast.ComprehensionKind, ast.ListKind, ast.LiteralKind,
+		ast.MapKind, ast.SelectKind, ast.StructKind:
+		return c.refuse(expr, messageCondition)
 	}
 	return c.refuse(expr, messageCondition)
 }
