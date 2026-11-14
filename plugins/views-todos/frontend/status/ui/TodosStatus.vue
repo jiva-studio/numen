@@ -62,7 +62,6 @@ function onClose() {
       type="button"
       tabindex="-1"
       class="todos-status__trigger"
-      :class="{ 'todos-status__trigger--overdue': chip.isOverdue }"
       :aria-label="label"
       :title="label"
       :aria-expanded="isOpen"
@@ -141,13 +140,6 @@ function onClose() {
   background: color-mix(in oklab, var(--numen-surface), var(--numen-ink) 10%);
 }
 
-.todos-status__trigger--overdue,
-.todos-status__trigger--overdue:hover,
-.todos-status__trigger--overdue[aria-expanded='true'] {
-  background: var(--numen-alarm-bg);
-  color: var(--numen-alarm);
-}
-
 .todos-status__popover {
   --popover-width: 24rem;
   --popover-max-height: 22rem;
@@ -208,7 +200,6 @@ function onClose() {
 .todos-status__due,
 .todos-status__note {
   flex: none;
-  font-size: var(--numen-text-1);
   color: var(--numen-hushed);
 }
 </style>

@@ -15,23 +15,15 @@ describe('the chip', () => {
   it('counts the overdue tasks plus the tasks due today', () => {
     const chip = getChip(summary({ overdueCount: 2, todayCount: 3, noDateCount: 7 }))
 
-    expect(chip).toEqual({ isVisible: true, count: 5, isOverdue: true })
+    expect(chip).toEqual({ isVisible: true, count: 5 })
   })
 
-  it('is not overdue when no task is overdue', () => {
-    expect(getChip(summary({ todayCount: 1 }))).toEqual({
-      isVisible: true,
-      count: 1,
-      isOverdue: false,
-    })
+  it('counts the tasks due today when no task is overdue', () => {
+    expect(getChip(summary({ todayCount: 1 }))).toEqual({ isVisible: true, count: 1 })
   })
 
   it('is visible with a count of zero while only tasks with no date exist', () => {
-    expect(getChip(summary({ noDateCount: 4 }))).toEqual({
-      isVisible: true,
-      count: 0,
-      isOverdue: false,
-    })
+    expect(getChip(summary({ noDateCount: 4 }))).toEqual({ isVisible: true, count: 0 })
   })
 
   it('is hidden when no open task exists', () => {
