@@ -388,3 +388,22 @@ func TestTickOverHTTPAnswersAHostFailureWithAnAPIError(t *testing.T) {
 		})
 	}
 }
+
+func TestTickOverHTTPAnswersAMalformedDayWithAnInvalidArgumentError(t *testing.T) {
+	for _, day := range []string{"", "2026-13-01", "2026-02-30", "14.11.2026", "2026-11-14 x"} {
+		t.Run(day, func(t *testing.T) {
+			a := start(t, map[string]string{"a.md": "- [ ] buy milk\n"})
+			req := tickRequest("a.md", 1, "- [ ] buy milk")
+			req.Today = day
+
+			status, _, failure := a.setTaskDone(t, req)
+
+			if status != http.StatusBadRequest || failure.Code != server.CodeInvalidArgument {
+				t.Errorf("SetTaskDone = %d %+v, want %d %s", status, failure, http.StatusBadRequest, server.CodeInvalidArgument)
+			}
+			if note, _ := a.vault.Content("a.md"); note != "- [ ] buy milk\n" {
+				t.Errorf("note = %q, want it untouched", note)
+			}
+		})
+	}
+}

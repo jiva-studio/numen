@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -100,7 +101,15 @@ func getClosedContext(s *server.Server) context.Context {
 func ignore(_ error) {}
 
 func setTaskDone(tasks *index.Index, done *complete.SetTaskDone) func(context.Context, api.SetTaskDoneRequest) (api.SetTaskDoneResponse, error) {
+	// The written note is stored under the same lock as the write, so two ticks of one note reach
+	// the index in the order they reached the file.
+	var mu sync.Mutex
 	return func(ctx context.Context, req api.SetTaskDoneRequest) (api.SetTaskDoneResponse, error) {
+		if !todo.IsDate(req.Today) {
+			return api.SetTaskDoneResponse{}, server.NewAPIError(server.CodeInvalidArgument, "today is not a YYYY-MM-DD date: "+req.Today)
+		}
+		mu.Lock()
+		defer mu.Unlock()
 		result, err := done.Execute(ctx, complete.Request{
 			Path: req.Path, Line: req.Line, Raw: req.Raw, IsDone: req.IsDone, Today: req.Today,
 		})
