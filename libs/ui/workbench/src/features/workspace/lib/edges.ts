@@ -1,6 +1,6 @@
 /** The panes of a workspace that touch its top edge and its top corners. */
 import {
-  orthogonal,
+  getOrientation,
   type NodeId,
   type Orientation,
   type Workspace,
@@ -19,19 +19,26 @@ export interface TopPanes {
   readonly right: NodeId
 }
 
-function collectTop(node: WorkspaceNode, axis: Orientation, out: NodeId[]): void {
+function collectTop(node: WorkspaceNode, axis: Orientation, depth: number, out: NodeId[]): void {
   if (node.kind === 'pane') {
     out.push(node.id)
     return
   }
-  const children = axis === 'horizontal' ? node.children : node.children.slice(0, 1)
-  for (const child of children) collectTop(child, orthogonal(axis), out)
+  const children =
+    getOrientation(axis, depth) === 'horizontal' ? node.children : node.children.slice(0, 1)
+  for (const child of children) collectTop(child, axis, depth + 1, out)
 }
 
-function findCorner(node: WorkspaceNode, axis: Orientation, isRight: boolean): NodeId {
+function findCorner(
+  node: WorkspaceNode,
+  axis: Orientation,
+  depth: number,
+  side: 'left' | 'right',
+): NodeId {
   if (node.kind === 'pane') return node.id
-  const child = isRight && axis === 'horizontal' ? node.children.at(-1) : node.children[0]
-  return child ? findCorner(child, orthogonal(axis), isRight) : node.id
+  const isRow = getOrientation(axis, depth) === 'horizontal'
+  const child = side === 'right' && isRow ? node.children.at(-1) : node.children[0]
+  return child ? findCorner(child, axis, depth + 1, side) : node.id
 }
 
 /** What the strip of a pane takes from the top of the window. */
@@ -63,10 +70,10 @@ export function getStripEdge(
 
 export function findTopPanes(workspace: Workspace): TopPanes {
   const top: NodeId[] = []
-  collectTop(workspace.root, workspace.axis, top)
+  collectTop(workspace.root, workspace.axis, 0, top)
   return {
     top,
-    left: findCorner(workspace.root, workspace.axis, false),
-    right: findCorner(workspace.root, workspace.axis, true),
+    left: findCorner(workspace.root, workspace.axis, 0, 'left'),
+    right: findCorner(workspace.root, workspace.axis, 0, 'right'),
   }
 }

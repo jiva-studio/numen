@@ -35,8 +35,7 @@ export function getWindowEdge(platform: WindowPlatform, isFullscreen: boolean): 
 
 /** The major number of a version like "26.0" or "15.6.1"; undefined when it is not a number. */
 export function readMajorVersion(version: string | undefined): number | undefined {
-  if (version === undefined) return undefined
-  const major = Number.parseInt(version, 10)
+  const major = Number.parseInt(version ?? '', 10)
   return Number.isNaN(major) ? undefined : major
 }
 
@@ -50,7 +49,7 @@ export function getWindowRadius(
   isFullscreen: boolean,
 ): number {
   if (platform !== 'darwin' || isFullscreen) return 0
-  return macMajor === undefined || macMajor >= MAC_TAHOE_MAJOR
-    ? MAC_RADIUS_TAHOE
-    : MAC_RADIUS_EARLIER
+  return macMajor !== undefined && macMajor < MAC_TAHOE_MAJOR
+    ? MAC_RADIUS_EARLIER
+    : MAC_RADIUS_TAHOE
 }
