@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { LoaderHost, PluginParts } from '../host'
-import { createPluginLoader } from '../loader'
+import { createTestPluginLoader } from '../testing/pluginLoader'
 import { createPluginStatus } from './pluginStatus'
 
 const ORCHARD = 'org.example.orchard'
@@ -13,7 +13,7 @@ const createHost = (): LoaderHost => ({
 })
 
 const createLoader = (status: ReturnType<typeof createPluginStatus>, isBroken = false) =>
-  createPluginLoader({
+  createTestPluginLoader({
     host: createHost(),
     status,
     fetch: (async (url: string) =>

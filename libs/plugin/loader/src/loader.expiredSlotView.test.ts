@@ -2,8 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import { createPluginHost, type PluginHostDeps } from './hosting'
-import { createPluginLoader } from './loader'
+import { createTestPluginLoader } from './testing/pluginLoader'
+import { createTestPluginHost, type TestHostDeps } from './testing/hostDeps'
 
 const PLUGIN = 'org.example.ledger'
 const MANIFEST = {
@@ -14,7 +14,7 @@ const MANIFEST = {
 } as unknown as Manifest
 
 function createWindow(activate: (context: PluginContext) => Promise<void>) {
-  const deps: PluginHostDeps = {
+  const deps: TestHostDeps = {
     target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
@@ -23,8 +23,8 @@ function createWindow(activate: (context: PluginContext) => Promise<void>) {
     hasPluginFrontend: () => true,
     hasPluginBackend: () => false,
   }
-  const host = createPluginHost(deps)
-  const loader = createPluginLoader({ host: host.lifecycle, onError: vi.fn() })
+  const host = createTestPluginHost(deps)
+  const loader = createTestPluginLoader({ host: host.lifecycle, onError: vi.fn() })
   loader.registerPluginManifest(PLUGIN, MANIFEST)
   loader.registerPluginModule(PLUGIN, async () => ({ activate }))
   return { host, loader }
@@ -78,7 +78,7 @@ describe('a start cancelled at 30 s that ends while a newer start runs', () => {
   it('reports no command of the newer start as missing', async () => {
     vi.useFakeTimers()
     const reportCommandIssue = vi.fn()
-    const host = createPluginHost({
+    const host = createTestPluginHost({
       target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader: vi.fn(() => vi.fn()),
@@ -91,7 +91,7 @@ describe('a start cancelled at 30 s that ends while a newer start runs', () => {
       hasPluginBackend: () => false,
       reportCommandIssue,
     })
-    const loader = createPluginLoader({ host: host.lifecycle, onError: vi.fn() })
+    const loader = createTestPluginLoader({ host: host.lifecycle, onError: vi.fn() })
     let starts = 0
     loader.registerPluginModule(PLUGIN, async () => ({
       activate: async (context: PluginContext) => {

@@ -4,7 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LoaderHost, PluginParts } from './host'
-import { createPluginLoader } from './loader'
+import { createTestPluginLoader } from './testing/pluginLoader'
 
 const BAR = 'org.example.ledger'
 const TABS = 'org.example.orchard'
@@ -42,7 +42,7 @@ const createLoader = (
 ) => {
   const log: string[] = []
   const host = createHost()
-  const loader = createPluginLoader({
+  const loader = createTestPluginLoader({
     host,
     fetch: (async (url: string) => {
       const id = Object.keys(MANIFESTS).find((one) => String(url).includes(`/${one}/`))!

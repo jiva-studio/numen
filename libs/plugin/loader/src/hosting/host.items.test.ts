@@ -5,8 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { CommandNote } from '@numen/plugin-sdk'
-import { createPluginHost } from './host'
-import type { PluginHostDeps } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const TIDE = 'org.example.tide'
 const TARGET = { path: 'tide/March.md', title: 'March', isFolder: false, others: [], tab: '' }
@@ -17,7 +16,7 @@ const WINDOWS = [
 ]
 
 function createHost() {
-  const deps: PluginHostDeps = {
+  const deps: TestHostDeps = {
     getCommandDeclarations: () => [
       { pluginId: TIDE, id: 'chart.move', title: 'Move chart to window' },
       { pluginId: TIDE, id: 'chart.open', title: 'Open chart' },
@@ -28,7 +27,7 @@ function createHost() {
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),
   }
-  const host = createPluginHost(deps)
+  const host = createTestPluginHost(deps)
   const context = host.lifecycle.createContext(
     TIDE,
     createMockManifest(TIDE, {

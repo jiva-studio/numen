@@ -2,7 +2,13 @@
  * The plugin support of a window made the way the window makes it, from the few parts a test names.
  */
 import { ref } from 'vue'
-import type { PluginHostDeps, PluginStatus } from '@numen/plugin-loader'
+import type {
+  HostCommands,
+  HostKinds,
+  HostSlots,
+  HostVault,
+  PluginStatus,
+} from '@numen/plugin-loader'
 import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
@@ -26,18 +32,18 @@ export interface TestPluginSupportDeps {
   readonly tabOpeners: Parameters<typeof createTabKindParts>[0]['tabOpeners']
   readonly rest: SettingsStore
   readonly getPlatform?: () => WindowPlatform
-  readonly readNote?: PluginHostDeps['readNote']
-  readonly writeNote?: PluginHostDeps['writeNote']
-  readonly resolveLink?: PluginHostDeps['resolveLink']
+  readonly readNote?: HostKinds['readNote']
+  readonly writeNote?: HostKinds['writeNote']
+  readonly resolveLink?: HostVault['resolveLink']
   readonly reportError?: (pluginId: string, error: Caught) => void
   readonly reportLoadError?: (pluginId: string, error: Caught) => void
-  readonly reportCommandIssue?: PluginHostDeps['reportCommandIssue']
-  readonly reportViewIssue?: PluginHostDeps['reportViewIssue']
+  readonly reportCommandIssue?: HostCommands['reportCommandIssue']
+  readonly reportViewIssue?: HostSlots['reportViewIssue']
   readonly status?: PluginStatus
   readonly getServices?: () => Partial<PluginServices>
   readonly notices?: NoticeQueue
-  readonly getCommandDeclarations?: PluginHostDeps['getCommandDeclarations']
-  readonly handlers?: HostParts
+  readonly getCommandDeclarations?: HostCommands['getCommandDeclarations']
+  readonly handlers?: HostCommands
   readonly slots?: HostParts
 }
 
@@ -55,18 +61,23 @@ const ignoreError = (): void => undefined
 export function createTestPluginSupport(deps: TestPluginSupportDeps) {
   const partialServices: Partial<PluginServices> = { taskList: ref([]), ...deps.getServices?.() }
   const services = partialServices as PluginServices
-  const named: HostParts = pickDefinedEntries({
-    getCommandDeclarations: deps.getCommandDeclarations,
-    reportCommandIssue: deps.reportCommandIssue,
-    reportViewIssue: deps.reportViewIssue,
-    readNote: deps.readNote,
-    writeNote: deps.writeNote,
-    resolveLink: deps.resolveLink,
-  })
+  const named: HostParts = {
+    commands: pickDefinedEntries({
+      getCommandDeclarations: deps.getCommandDeclarations,
+      reportCommandIssue: deps.reportCommandIssue,
+    }),
+    slots: pickDefinedEntries({ reportViewIssue: deps.reportViewIssue }),
+    kinds: pickDefinedEntries({
+      readNote: deps.readNote,
+      writeNote: deps.writeNote,
+      getNoteBuffer: () => services.noteBuffer,
+    }),
+    vault: pickDefinedEntries({ resolveLink: deps.resolveLink }),
+  }
   const optionalParts: readonly (HostParts | undefined)[] = [
     deps.notices ? createNoticeParts({ queue: deps.notices }) : undefined,
     deps.slots,
-    deps.handlers,
+    deps.handlers && { commands: deps.handlers },
   ]
   return createPluginSupport({
     rest: deps.rest,

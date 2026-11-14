@@ -24,10 +24,13 @@ export type FileConflict = 'stale' | 'gone' | null
 const getFileConflict = (state: string): FileConflict =>
   state === 'stale' || state === 'gone' ? state : null
 
+/** What a note tab reads of the window: the notes, how a link resolves, and the workspace that opens it. */
+type LinkDeps = Pick<PluginHostDeps, 'vault' | 'window'>
+
 export interface BufferedNoteOptions {
   readonly pluginId: string
   readonly title?: string
-  readonly deps?: PluginHostDeps | undefined
+  readonly deps?: LinkDeps | undefined
 }
 
 /** One note a wikilink can name, as the editor offers it. */
@@ -43,15 +46,15 @@ export interface BufferedNoteTarget {
   readonly buffer: NoteBuffer
 }
 
-function createWikilinks(deps: PluginHostDeps | undefined, getPath: () => string) {
+function createWikilinks(deps: LinkDeps | undefined, getPath: () => string) {
   return {
     search: async (query: string): Promise<readonly LinkChoice[]> =>
-      ((await deps?.getNotes?.()?.findNotes(query, 20)) ?? []).map((one) => ({
+      ((await deps?.vault?.getNotes?.()?.findNotes(query, 20)) ?? []).map((one) => ({
         title: one.title,
         type: 'note' as const,
       })),
     headings: async (noteTitle: string): Promise<readonly string[]> => {
-      const notes = deps?.getNotes?.()
+      const notes = deps?.vault?.getNotes?.()
       if (!notes) return []
       const found = noteTitle
         ? (await notes.findNotes(noteTitle, 5)).find(
@@ -64,10 +67,10 @@ function createWikilinks(deps: PluginHostDeps | undefined, getPath: () => string
   }
 }
 
-function createLinkFollower(deps: PluginHostDeps | undefined, getPath: () => string) {
+function createLinkFollower(deps: LinkDeps | undefined, getPath: () => string) {
   return (address: string): void => {
-    const resolve = deps?.resolveLink
-    const workspace = deps?.getWorkspace?.()
+    const resolve = deps?.vault?.resolveLink
+    const workspace = deps?.window.getWorkspace?.()
     if (!resolve || !workspace) return
     resolve(getPath(), address)
       .then((path) => {

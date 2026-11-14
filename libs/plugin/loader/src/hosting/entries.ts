@@ -15,7 +15,12 @@ import { reportError } from './events'
 import { createReaderTabKind, createCustomTabKind } from './customTabKind'
 import { getReaderKindId } from './tabKinds'
 import { createDeclaredTabKind, isDeclaredTabKind } from './pluginTabKind'
-import type { EditorPlacement, PluginHostDeps } from './types'
+import type { EditorPlacement, HostTabs, PluginHostDeps } from './types'
+
+/** What a registration of a reader or a tab kind reads of the window. */
+type EntryDeps = Pick<PluginHostDeps, 'window' | 'kinds' | 'tabs' | 'vault'>
+
+const NO_TABS: HostTabs = {}
 import type { PluginItemRegistration, RegisteredReader, RegisteredTabKind } from './registry'
 
 /** The entries that own the ids of the tabs a window holds: the tab kinds and the readers. */
@@ -48,23 +53,25 @@ function undoSteps(steps: readonly (() => void)[]): void {
 }
 
 function registerReaderExtensions(
-  deps: PluginHostDeps,
+  deps: EntryDeps,
   item: PluginItemRegistration<ReaderRegistration>,
   cleanups: (() => void)[],
 ): void {
   const { pluginId, registration } = item
-  const { registerExtensionReader, openTab } = deps
+  const { registerExtensionReader, getReaderExtensions } = deps.kinds
+  const { tabs = NO_TABS } = deps
+  const { openTab, getTabState } = tabs
   if (!registerExtensionReader || !openTab) return
   const kindId = getReaderKindId(registration.id)
-  for (const ext of deps.getReaderExtensions?.(pluginId, registration.id) ?? []) {
+  for (const ext of getReaderExtensions?.(pluginId, registration.id) ?? []) {
     cleanups.push(
       registerExtensionReader(
         ext,
         (path, selector, ranges) => {
           openTab(kindId, path)
             .then((tabId) => {
-              if ((!selector && !ranges) || !deps.getTabState) return
-              const state = deps.getTabState(tabId) as
+              if ((!selector && !ranges) || !getTabState) return
+              const state = getTabState(tabId) as
                 { selector: Selector | null; ranges: readonly TextRange[] | null } | undefined
               if (!state) return
               // A new object each time, so a reader watching it moves to the same place again.
@@ -84,7 +91,7 @@ function registerReaderExtensions(
  * the same tab kind, a reader of it, or the tab kind of that reader.
  */
 export function registerReaderEntry(
-  deps: PluginHostDeps,
+  deps: EntryDeps,
   owners: TabKindOwners,
   item: PluginItemRegistration<ReaderRegistration>,
 ): Disposable {
@@ -93,7 +100,7 @@ export function registerReaderEntry(
   requireFreeKind(owners, { pluginId, what: 'reader', id: registration.id })
   const cleanups: (() => void)[] = []
   try {
-    cleanups.push(deps.registerKind(createReaderTabKind(pluginId, registration, getContext)))
+    cleanups.push(deps.kinds.registerKind(createReaderTabKind(pluginId, registration, getContext)))
     registerReaderExtensions(deps, item, cleanups)
   } catch (error) {
     undoSteps(cleanups)
@@ -125,7 +132,7 @@ function extractLine(options?: EditorOpenOptions): number | undefined {
 }
 
 export function registerTabKindEntry(
-  deps: PluginHostDeps,
+  deps: EntryDeps,
   owners: TabKindOwners,
   item: PluginItemRegistration<TabKindRegistration> & { readonly isNoteEditor: boolean },
 ): Disposable {
@@ -136,21 +143,23 @@ export function registerTabKindEntry(
     ? createDeclaredTabKind(pluginId, registration)
     : createCustomTabKind(pluginId, registration, { ...deps, getContext, isNoteEditor })
   const cleanups: (() => void)[] = []
-  const { registerEditor, openTab } = deps
+  const { registerEditor } = deps.kinds
+  const { tabs = NO_TABS } = deps
+  const { openTab, openTabAdjacent, getTabState } = tabs
   try {
-    cleanups.push(deps.registerKind(kind))
+    cleanups.push(deps.kinds.registerKind(kind))
     if (registerEditor && openTab) {
       const unreg = registerEditor(registration.kind, (path, _title, options) => {
         const where = extractWhere(options)
         const line = extractLine(options)
         const opening =
-          where === 'split' && deps.openTabAdjacent
-            ? deps.openTabAdjacent(registration.kind, path)
+          where === 'split' && openTabAdjacent
+            ? openTabAdjacent(registration.kind, path)
             : openTab(registration.kind, path)
         opening
           .then((tabId) => {
             if (line === undefined) return
-            const state = deps.getTabState?.(tabId) as
+            const state = getTabState?.(tabId) as
               { revealLine?: (line: number) => void } | undefined
             state?.revealLine?.(line)
           })

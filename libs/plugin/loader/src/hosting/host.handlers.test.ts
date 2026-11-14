@@ -5,8 +5,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { CommandTarget } from '@numen/plugin-sdk'
-import { createPluginHost } from './host'
-import type { HandlerDeclaration, PluginHostDeps } from './types'
+import type { HandlerDeclaration } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const SCANS = 'org.example.scans'
 const TIDES = 'org.example.tides'
@@ -66,7 +66,7 @@ function createHost(handlers: readonly HandlerDeclaration[] = HANDLERS) {
   const listBackendHandlerItems = vi.fn(async (pluginId: string) =>
     pluginId === SCANS ? [{ id: 'org.example.scans/reading', title: 'reading' }] : [],
   )
-  const deps: PluginHostDeps = {
+  const deps: TestHostDeps = {
     getContentTypes: () => ({ png: 'image/png', md: 'text/markdown' }),
     getHandlerDeclarations: () => handlers,
     hasPluginFrontend: () => false,
@@ -77,7 +77,7 @@ function createHost(handlers: readonly HandlerDeclaration[] = HANDLERS) {
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),
   }
-  const host = createPluginHost(deps)
+  const host = createTestPluginHost(deps)
   return { host, runBackendHandler, listBackendHandlerItems }
 }
 

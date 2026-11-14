@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createPluginHost } from './host'
 import { listAvailableCommands } from './available'
 import type { HostRegistry, RegisteredCommand } from './registry'
-import type { CommandDeclaration, PluginHostDeps } from './types'
+import type { CommandDeclaration } from './types'
+import { createTestHostDeps, createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const declaration: CommandDeclaration = { pluginId: 'md.tree', id: 'tree.open', title: 'Open tree' }
 
@@ -22,14 +22,14 @@ function createRegistry(
 describe('listing the listed commands', () => {
   it('returns the commands and the issues, and writes and reports nothing', () => {
     const reportCommandIssue = vi.fn()
-    const deps: PluginHostDeps = {
+    const deps: TestHostDeps = {
       getCommandDeclarations: () => [declaration],
       reportCommandIssue,
-    } as unknown as PluginHostDeps
+    } as unknown as TestHostDeps
     const registry = createRegistry(['md.tree'], [])
 
-    const first = listAvailableCommands(deps, registry)
-    const second = listAvailableCommands(deps, registry)
+    const first = listAvailableCommands(createTestHostDeps(deps), registry)
+    const second = listAvailableCommands(createTestHostDeps(deps), registry)
 
     expect(first.commands).toStrictEqual([])
     expect(first.issues).toStrictEqual([{ pluginId: 'md.tree', id: 'tree.open', kind: 'unbound' }])
@@ -42,9 +42,12 @@ describe('listing the listed commands', () => {
     const deps = {
       getCommandDeclarations: () => [declaration],
       hasPluginBackend: () => true,
-    } as unknown as PluginHostDeps
+    } as unknown as TestHostDeps
 
-    const { commands, issues } = listAvailableCommands(deps, createRegistry(['md.tree'], []))
+    const { commands, issues } = listAvailableCommands(
+      createTestHostDeps(deps),
+      createRegistry(['md.tree'], []),
+    )
 
     expect(commands).toStrictEqual([])
     expect(issues).toStrictEqual([])
@@ -54,20 +57,26 @@ describe('listing the listed commands', () => {
     const deps = {
       getCommandDeclarations: () => [declaration],
       hasPluginBackend: () => false,
-    } as unknown as PluginHostDeps
+    } as unknown as TestHostDeps
 
-    const { commands, issues } = listAvailableCommands(deps, createRegistry(['md.tree'], []))
+    const { commands, issues } = listAvailableCommands(
+      createTestHostDeps(deps),
+      createRegistry(['md.tree'], []),
+    )
 
     expect(commands).toStrictEqual([])
     expect(issues).toStrictEqual([{ pluginId: 'md.tree', id: 'tree.open', kind: 'unbound' }])
   })
 
   it('returns no issue for a plugin whose frontend has not activated yet', () => {
-    const deps: PluginHostDeps = {
+    const deps: TestHostDeps = {
       getCommandDeclarations: () => [declaration],
-    } as unknown as PluginHostDeps
+    } as unknown as TestHostDeps
 
-    const { commands, issues } = listAvailableCommands(deps, createRegistry([], []))
+    const { commands, issues } = listAvailableCommands(
+      createTestHostDeps(deps),
+      createRegistry([], []),
+    )
 
     expect(commands.map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
     expect(issues).toStrictEqual([])
@@ -77,7 +86,7 @@ describe('listing the listed commands', () => {
 describe('the host reading the listed commands', () => {
   it('reports one issue once however it is read: palette, shortcut and execute', async () => {
     const reportCommandIssue = vi.fn()
-    const host = createPluginHost({
+    const host = createTestPluginHost({
       target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader: vi.fn(() => vi.fn()),

@@ -5,12 +5,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost } from './host'
+import type { PluginHost } from './host'
 import { disposePluginEntry } from './registry'
-import type { PluginHostDeps } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
-const createDeps = (more: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
+const createDeps = (more: Partial<TestHostDeps> = {}): TestHostDeps => ({
   target: 'desktop.editor',
   registerKind: vi.fn(() => vi.fn()),
   registerExtensionReader: vi.fn(() => vi.fn()),
@@ -32,7 +32,7 @@ const COMPONENT_B = { name: 'B' }
 
 describe('a command run by its id', () => {
   it('is found under its full id, and nothing else is', async () => {
-    const host = createPluginHost(
+    const host = createTestPluginHost(
       createDeps({
         getCommandDeclarations: () => [
           {
@@ -68,7 +68,7 @@ describe('a command run by its id', () => {
 
 describe('registrations of a plugin', () => {
   it('leaves the registrations of other plugins when one plugin is disposed', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     const handler = vi.fn()
     for (const pluginId of ['first.plugin', 'second.plugin']) {
       host.lifecycle.registerManifest(pluginId, declaring(pluginId))
@@ -99,7 +99,7 @@ describe('registrations of a plugin', () => {
   })
 
   it('disposes orphan entries across all registries on disposeAll', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     host.contextHost.registration.registerReader('orphan.reader', {
       id: 'r1',
       component: STUB_COMPONENT,
@@ -149,7 +149,7 @@ describe('registrations of a plugin', () => {
 
 describe('the settings views of a plugin', () => {
   it('are the registrations of that plugin, by view id', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     host.lifecycle
       .createContext('first.plugin', declaring('first.plugin'))
       .plugin.register.settingsView({ id: 'floor', component: COMPONENT_A })
@@ -170,7 +170,7 @@ describe('the settings views of a plugin', () => {
   })
 
   it('re-evaluate a computed when a view is registered or disposed', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     const ctx = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
     const count = computed(() => host.registered.getRegisteredSettingsViews('sample.plugin').size)
 
@@ -182,7 +182,7 @@ describe('the settings views of a plugin', () => {
   })
 
   it('stay when the registration they replaced is disposed', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     const ctx = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
     const first = ctx.plugin.register.settingsView({ id: 'floor', component: COMPONENT_A })
     ctx.plugin.register.settingsView({ id: 'floor', component: COMPONENT_B })
@@ -195,7 +195,7 @@ describe('the settings views of a plugin', () => {
   })
 
   it('are removed with the plugin and with the host', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     host.lifecycle
       .createContext('first.plugin', declaring('first.plugin'))
       .plugin.register.settingsView({ id: 'floor', component: {} })
@@ -216,16 +216,14 @@ describe('the views the plugins place in a slot of a bar', () => {
   const manifest = (view: string) =>
     ({
       contributes: { slots: [{ slot: 'statusBar.right', placed: { case: 'view', value: view } }] },
-    }) as unknown as Parameters<
-      ReturnType<typeof createPluginHost>['lifecycle']['createContext']
-    >[1]
+    }) as unknown as Parameters<PluginHost['lifecycle']['createContext']>[1]
   const entries = [
     { pluginId: 'second.plugin', slot: 'statusBar.right', view: 'update' },
     { pluginId: 'first.plugin', slot: 'statusBar.right', view: 'update' },
   ]
 
   it('are the entries of the slot once registered, in the order of the plugins, reactively', () => {
-    const host = createPluginHost(createDeps({ getSlotEntries: () => entries }))
+    const host = createTestPluginHost(createDeps({ getSlotEntries: () => entries }))
     const viewKeys = computed(() =>
       host.slots.getEntries('statusBar.right').map((one) => (one.kind === 'view' ? one.key : '')),
     )
@@ -242,7 +240,7 @@ describe('the views the plugins place in a slot of a bar', () => {
   })
 
   it('are removed with the plugin and with the host', () => {
-    const host = createPluginHost(createDeps({ getSlotEntries: () => entries }))
+    const host = createTestPluginHost(createDeps({ getSlotEntries: () => entries }))
     host.lifecycle
       .createContext('first.plugin', manifest('update'))
       .plugin.register.slotView({ id: 'update', component: {} })
@@ -261,9 +259,9 @@ describe('the views the plugins place in a slot of a bar', () => {
 })
 
 describe('a tab kind opened as the editor of a path', () => {
-  const registerKind = (deps: PluginHostDeps, unregReturn: (() => void) | undefined = vi.fn()) => {
+  const registerKind = (deps: TestHostDeps, unregReturn: (() => void) | undefined = vi.fn()) => {
     let open: (path: string, title?: string, options?: unknown) => void = vi.fn()
-    const host = createPluginHost({
+    const host = createTestPluginHost({
       ...deps,
       registerEditor: vi.fn((_kind, opener) => {
         open = opener
@@ -349,7 +347,7 @@ describe('a tab kind opened as the editor of a path', () => {
 
 describe('the settings of a window that keeps none', () => {
   it('answers nothing and follows nothing', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     const ctx = host.lifecycle.createContext('sample.plugin')
 
     expect(ctx.plugin.settings.get('fontSize')).toBeUndefined()
@@ -373,7 +371,7 @@ describe('a reader opened at a selector', () => {
       readers.set(ext, reader as (path: string, selector: unknown) => void)
       return unregExt
     })
-    const host = createPluginHost(
+    const host = createTestPluginHost(
       createDeps({
         openTab,
         onError,
@@ -419,7 +417,7 @@ describe('a reader opened at a selector', () => {
 
     // Reader without getTabState or getReaderExtensions
     let noStateReader: ((path: string, selector: unknown) => void) | undefined
-    const hostNoState = createPluginHost(
+    const hostNoState = createTestPluginHost(
       createDeps({
         openTab,
         getReaderExtensions: () => ['raw'],
@@ -435,7 +433,7 @@ describe('a reader opened at a selector', () => {
     noStateReader?.('Books/Raw.raw', { page: 1 })
     await Promise.resolve()
 
-    const hostNoExts = createPluginHost(createDeps())
+    const hostNoExts = createTestPluginHost(createDeps())
     expect(() =>
       hostNoExts.lifecycle
         .createContext('p', declaring('p'))
@@ -447,7 +445,7 @@ describe('a reader opened at a selector', () => {
 describe('a registration that fails after its tab kind was registered', () => {
   it('leaves no tab kind of a tab kind whose editor registration throws', () => {
     const unregisterKind = vi.fn()
-    const host = createPluginHost(
+    const host = createTestPluginHost(
       createDeps({
         target: 'desktop.editor',
         registerKind: vi.fn(() => unregisterKind),
@@ -467,7 +465,7 @@ describe('a registration that fails after its tab kind was registered', () => {
 
   it('leaves no tab kind of a reader whose extension registration throws', () => {
     const unregisterKind = vi.fn()
-    const host = createPluginHost(
+    const host = createTestPluginHost(
       createDeps({
         target: 'desktop.editor',
         registerKind: vi.fn(() => unregisterKind),

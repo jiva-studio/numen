@@ -76,7 +76,7 @@ const createServices = () => {
       getRelations: () => relations,
       getFiles: () => files,
     },
-    window: {
+    ui: {
       getWorkspace: () => workspace,
       getCommands: () => commands,
       isCommandListed: (command) =>

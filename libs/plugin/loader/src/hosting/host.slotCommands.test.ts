@@ -2,8 +2,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { SLOT } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost } from './host'
-import type { CommandDeclaration, SlotCommandFinder } from './types'
+import type { CommandDeclaration, HostCommandReads, SlotCommandFinder } from './types'
+import { createTestPluginHost } from '../testing/hostDeps'
 
 const LEDGER: CommandDeclaration = {
   pluginId: 'org.example.ledger',
@@ -13,7 +13,7 @@ const LEDGER: CommandDeclaration = {
 
 const create = (finder: SlotCommandFinder = () => undefined) => {
   const createSlotCommandFinder = vi.fn(() => finder)
-  const host = createPluginHost({
+  const host = createTestPluginHost({
     target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
@@ -38,9 +38,7 @@ describe('the finder of the commands a slot draws', () => {
       .plugin.register.command({ id: 'ledger.open', handler: vi.fn(), listItems: async () => [] })
 
     expect(createSlotCommandFinder).toHaveBeenCalledOnce()
-    const [own] = createSlotCommandFinder.mock.calls[0] as unknown as Parameters<
-      NonNullable<Parameters<typeof createPluginHost>[0]['createSlotCommandFinder']>
-    >
+    const [own] = createSlotCommandFinder.mock.calls[0] as unknown as [HostCommandReads]
     expect(own.getPluginCommands().map((one) => one.id)).toStrictEqual([
       'org.example.ledger:ledger.open',
     ])

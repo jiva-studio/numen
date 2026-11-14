@@ -81,7 +81,7 @@ function cleanupMapItems(
 export interface DisposalParts {
   readonly registry: HostRegistry
   readonly slotViews?: Pick<SlotViewRegistry, 'disposePlugin' | 'views'> | undefined
-  readonly deps?: PluginHostDeps | undefined
+  readonly deps?: Pick<PluginHostDeps, 'window' | 'kinds'> | undefined
 }
 
 function removePluginListeners<E>(listeners: Set<PluginListener<E>>, pluginId: string): void {
@@ -134,8 +134,8 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   registry.disposed.add(pluginId)
   registry.activated.value = new Set([...registry.activated.value].filter((id) => id !== pluginId))
   setStarting(registry, pluginId, false)
-  deps?.closeTabsForPlugin?.(pluginId)
-  deps?.clearNotices?.(pluginId)
+  deps?.kinds.closeTabsForPlugin?.(pluginId)
+  deps?.window.clearNotices?.(pluginId)
   clearSubscriptions(registry.contexts.get(pluginId))
   registry.contexts.delete(pluginId)
   registry.manifests.delete(pluginId)
@@ -154,7 +154,9 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   removePluginListeners(registry.fileListeners, pluginId)
 }
 
-export function disposeAllEntries(parts: DisposalParts & { readonly deps: PluginHostDeps }) {
+export function disposeAllEntries(
+  parts: DisposalParts & { readonly deps: Pick<PluginHostDeps, 'window' | 'kinds'> },
+) {
   const { registry, slotViews } = parts
   const allPluginIds = new Set<string>([
     ...registry.contexts.keys(),

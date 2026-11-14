@@ -33,11 +33,11 @@ export interface ShortcutParts {
 
 function getContext(deps: HostDeps, target: CommandTarget | undefined): WhenValues {
   return (
-    deps.getSlotWhenValues?.(target) ??
+    deps.slots?.getSlotWhenValues?.(target) ??
     getWhenValues({
-      window: deps.getWindowValues?.(),
+      window: deps.commands.getWindowValues?.(),
       target,
-      contentTypes: deps.getContentTypes?.() ?? {},
+      contentTypes: deps.commands.getContentTypes?.() ?? {},
     })
   )
 }
@@ -62,14 +62,16 @@ export function createShortcutHandler(parts: ShortcutParts) {
     const canRun = (binding: Keybinding): boolean => {
       if (getCommandOwner(binding.command) === APP_COMMAND_OWNER) return true
       if (isSharedCommand(binding.command)) {
-        return (deps.getHandlerDeclarations?.() ?? []).some(
+        return (deps.commands.getHandlerDeclarations?.() ?? []).some(
           (one) => one.command === binding.command,
         )
       }
       const command = available.get(binding.command)
       if (!command) return false
       if (target === undefined) return true
-      return deps.whenReader.getCondition(command.declaration.when)?.evaluate(context) ?? false
+      return (
+        deps.commands.whenReader.getCondition(command.declaration.when)?.evaluate(context) ?? false
+      )
     }
     const binding = keybindings.match(event, context, canRun)
     if (!binding) return false

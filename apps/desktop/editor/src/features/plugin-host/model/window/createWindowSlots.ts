@@ -7,7 +7,8 @@ import {
   getWhenValues as buildWhenValues,
   type CommandTarget,
   type HandlerDeclaration,
-  type PluginHostDeps,
+  type HostCommands,
+  type HostSlots,
   type WhenReader,
   type WhenSettings,
   type WhenValues,
@@ -34,18 +35,18 @@ export interface WindowSlotsDeps {
   readonly writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') => void
 }
 
-type WindowHostDeps = Required<
-  Pick<
-    PluginHostDeps,
-    | 'getSlotEntries'
-    | 'createSlotCommandFinder'
-    | 'reportSlotIssue'
-    | 'getSlotWhenValues'
-    | 'getWindowValues'
-    | 'getContentTypes'
-    | 'whenReader'
+/** What the host reads of the slots of the window, and of the when values of its commands. */
+interface WindowSlotParts {
+  readonly slots: Required<
+    Pick<
+      HostSlots,
+      'getSlotEntries' | 'createSlotCommandFinder' | 'reportSlotIssue' | 'getSlotWhenValues'
+    >
   >
->
+  readonly commands: Required<
+    Pick<HostCommands, 'getWindowValues' | 'getContentTypes' | 'whenReader'>
+  >
+}
 
 export function createWindowSlots(deps: WindowSlotsDeps) {
   const { whenContext } = deps.declaredCommands
@@ -61,7 +62,7 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
       note: { type: target?.noteType, properties: target?.properties },
       contentTypes: whenContext.getContentTypes(),
     })
-  const createFinder: WindowHostDeps['createSlotCommandFinder'] = (own) =>
+  const createFinder: WindowSlotParts['slots']['createSlotCommandFinder'] = (own) =>
     createSlotCommandFinder({
       getWhenValues,
       whenReader: whenContext.whenReader,
@@ -76,14 +77,18 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
         ) ??
           false),
     })
-  const hostDeps: WindowHostDeps = {
-    getSlotEntries: () => readSlotEntries(deps.declaredCommands.slots.value),
-    createSlotCommandFinder: createFinder,
-    reportSlotIssue: deps.writeIssue,
-    getSlotWhenValues: getWhenValues,
-    getWindowValues,
-    getContentTypes: whenContext.getContentTypes,
-    whenReader: whenContext.whenReader,
+  const hostDeps: WindowSlotParts = {
+    slots: {
+      getSlotEntries: () => readSlotEntries(deps.declaredCommands.slots.value),
+      createSlotCommandFinder: createFinder,
+      reportSlotIssue: deps.writeIssue,
+      getSlotWhenValues: getWhenValues,
+    },
+    commands: {
+      getWindowValues,
+      getContentTypes: whenContext.getContentTypes,
+      whenReader: whenContext.whenReader,
+    },
   }
   return { hostDeps }
 }

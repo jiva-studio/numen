@@ -4,7 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LoaderHost, PluginParts } from './host'
-import { createPluginLoader } from './loader'
+import { createTestPluginLoader } from './testing/pluginLoader'
 
 const ORCHARD = 'org.example.orchard'
 const LEDGER = 'org.example.ledger'
@@ -43,7 +43,7 @@ const createLoader = (activations: Record<string, number> = {}, options: LoaderO
     getSetting: <T>(pluginId: string, key: string) =>
       (key === 'enabled' && options.disabled?.includes(pluginId) ? false : undefined) as T,
   } satisfies LoaderHost
-  return createPluginLoader({
+  return createTestPluginLoader({
     host,
     fetch: (async (url: string) => {
       const id = Object.keys(MANIFESTS).find((one) => String(url).includes(`/${one}/`))!

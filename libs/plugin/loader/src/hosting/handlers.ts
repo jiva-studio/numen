@@ -20,7 +20,7 @@ type HandlerItems = readonly CommandItem[] | undefined
 
 /** What the handlers of the shared commands are read from and run through. */
 interface HandlerParts {
-  readonly deps: HostDeps
+  readonly deps: Pick<HostDeps, 'commands' | 'plugins' | 'window'>
   readonly registry: HostRegistry
 }
 
@@ -29,9 +29,11 @@ function listMatchingHandlers(
   command: string,
   note: CommandNote,
 ) {
-  return (deps.getHandlerDeclarations?.() ?? [])
+  return (deps.commands.getHandlerDeclarations?.() ?? [])
     .filter((one) => one.command === command && !registry.disposed.has(one.pluginId))
-    .filter((one) => (one.hasItems ? note.path !== '' : isCommandAvailable(one, note, deps)))
+    .filter((one) =>
+      one.hasItems ? note.path !== '' : isCommandAvailable(one, note, deps.commands),
+    )
     .sort((a, b) => a.pluginId.localeCompare(b.pluginId))
 }
 
@@ -40,8 +42,9 @@ const findEntry = ({ registry }: HandlerParts, handler: HandlerDeclaration) =>
 
 async function findStartedEntry(parts: HandlerParts, handler: HandlerDeclaration) {
   const entry = findEntry(parts, handler)
-  if (entry || parts.deps.hasPluginFrontend?.(handler.pluginId) === false) return entry
-  await parts.deps.startPlugin?.(handler.pluginId)
+  const { plugins } = parts.deps
+  if (entry || plugins?.hasPluginFrontend?.(handler.pluginId) === false) return entry
+  await plugins?.startPlugin?.(handler.pluginId)
   return findEntry(parts, handler)
 }
 
@@ -55,7 +58,11 @@ async function listOwnItems(
     if (entry?.reg.listItems) return await entry.reg.listItems(note)
     if (!entry && handler.hasItems) {
       return (
-        (await parts.deps.listBackendHandlerItems?.(handler.pluginId, handler.command, note)) ?? []
+        (await parts.deps.commands.listBackendHandlerItems?.(
+          handler.pluginId,
+          handler.command,
+          note,
+        )) ?? []
       )
     }
   } catch (error) {
@@ -82,7 +89,7 @@ async function runHandler(
     return
   }
   try {
-    await deps.runBackendHandler?.({
+    await deps.commands.runBackendHandler?.({
       pluginId: handler.pluginId,
       command: handler.command,
       target: run.note,
@@ -136,7 +143,10 @@ async function runSharedCommand(
   return true
 }
 
-export function createHandlerApi(deps: HostDeps, registry: HostRegistry) {
+export function createHandlerApi(
+  deps: Pick<HostDeps, 'commands' | 'plugins' | 'window'>,
+  registry: HostRegistry,
+) {
   const parts: HandlerParts = { deps, registry }
   return {
     isSharedCommand,

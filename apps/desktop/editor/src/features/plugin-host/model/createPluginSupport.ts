@@ -29,7 +29,19 @@ export interface PluginSupportDeps {
 }
 
 const mergeHostParts = (parts: readonly HostParts[]): HostParts =>
-  parts.reduce<HostParts>((all, one) => ({ ...all, ...one }), {})
+  parts.reduce<HostParts>(
+    (all, one) => ({
+      window: { ...all.window, ...one.window },
+      plugins: { ...all.plugins, ...one.plugins },
+      commands: { ...all.commands, ...one.commands },
+      slots: { ...all.slots, ...one.slots },
+      kinds: { ...all.kinds, ...one.kinds },
+      tabs: { ...all.tabs, ...one.tabs },
+      vault: { ...all.vault, ...one.vault },
+      work: { ...all.work, ...one.work },
+    }),
+    {},
+  )
 
 export function createPluginSupport(deps: PluginSupportDeps) {
   const { rest, catalog, status } = deps
@@ -38,29 +50,39 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     deps.reports.reportError,
   )
   const subscribeRowChanges = createRowChangeSubscriber(rest)
+  const parts = mergeHostParts(deps.parts)
   const pluginHost = createPluginHost({
-    target: TARGET,
-    ...mergeHostParts(deps.parts),
-    ...deps.kinds,
-    ...deps.tabs,
-    hasPluginFrontend: catalog.hasFrontend,
-    hasPluginBackend: catalog.hasBackend,
-    isPluginFailed: (pluginId) => status.getPluginFailure(pluginId) !== undefined,
-    startPlugin: status.startPlugin,
-    startPluginsOf: status.startPluginsOf,
-    findPluginsOf: status.findPluginsOf,
-    app: createAppInfo({
-      version: import.meta.env.VITE_NUMEN_VERSION,
-      build: import.meta.env.VITE_NUMEN_BUILD,
-      getPlatform: deps.getPlatform,
-    }),
-    openExternal: (url) => openExternalUrl(url),
-    onError: deps.reports.reportError,
-    getReaderExtensions: catalog.getReaderExtensions,
-    getSetting,
-    onSettingChange,
-    getTexts: (pluginId) => getPluginTexts(pluginId),
-    getConnections: (pluginId) => getPluginConnections(pluginId, subscribeRowChanges),
+    window: {
+      ...parts.window,
+      target: TARGET,
+      app: createAppInfo({
+        version: import.meta.env.VITE_NUMEN_VERSION,
+        build: import.meta.env.VITE_NUMEN_BUILD,
+        getPlatform: deps.getPlatform,
+      }),
+      openExternal: (url) => openExternalUrl(url),
+      onError: deps.reports.reportError,
+    },
+    plugins: {
+      ...parts.plugins,
+      hasPluginFrontend: catalog.hasFrontend,
+      hasPluginBackend: catalog.hasBackend,
+      isPluginFailed: (pluginId) => status.getPluginFailure(pluginId) !== undefined,
+      startPlugin: status.startPlugin,
+      startPluginsOf: status.startPluginsOf,
+      findPluginsOf: status.findPluginsOf,
+      getSetting,
+      onSettingChange,
+    },
+    commands: { ...parts.commands },
+    slots: { ...parts.slots },
+    kinds: { ...parts.kinds, ...deps.kinds, getReaderExtensions: catalog.getReaderExtensions },
+    tabs: { ...parts.tabs, ...deps.tabs },
+    vault: { ...parts.vault, getTexts: (pluginId) => getPluginTexts(pluginId) },
+    work: {
+      ...parts.work,
+      getConnections: (pluginId) => getPluginConnections(pluginId, subscribeRowChanges),
+    },
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,

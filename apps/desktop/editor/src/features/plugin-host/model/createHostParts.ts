@@ -3,30 +3,35 @@
  * services of the window and the notices. Each part is made from what it reads of the
  * window and holds the host dependencies of one concern.
  */
-import { createPluginNotices, createPluginTasks, type PluginHostDeps } from '@numen/plugin-loader'
+import {
+  createPluginNotices,
+  createPluginTasks,
+  type HostKinds,
+  type HostTabs,
+  type PluginHostDeps,
+} from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
 import { registerTabKindIcon } from '@/entities/note'
 import { healthReports, processHost } from '@/entities/plugin'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { PluginServices } from './pluginServices'
 
-/** The host dependencies of one concern; the host reads the ones it is given. */
-export type HostParts = Pick<
-  PluginHostDeps,
-  Exclude<keyof PluginHostDeps, 'target' | 'registerKind' | 'registerExtensionReader' | 'openTab'>
->
+/** The host dependencies of one concern, by group; the host reads the ones it is given. */
+export type HostParts = {
+  readonly [G in keyof PluginHostDeps]?: Partial<NonNullable<PluginHostDeps[G]>>
+}
 
 /** How a plugin registers the tab kinds and the readers it brings. */
 export type TabKindParts = Required<
   Pick<
-    PluginHostDeps,
+    HostKinds,
     'registerKind' | 'registerExtensionReader' | 'registerEditor' | 'closeTabsForPlugin'
   >
 >
 
 /** How a plugin opens, navigates and closes the tabs of the window. */
 export type TabActionParts = Required<
-  Pick<PluginHostDeps, 'openTab' | 'openTabAdjacent' | 'navigateTab' | 'closeTab' | 'getTabState'>
+  Pick<HostTabs, 'openTab' | 'openTabAdjacent' | 'navigateTab' | 'closeTab' | 'getTabState'>
 >
 
 export function createTabKindParts(deps: {
@@ -69,37 +74,42 @@ export function createTabActionParts(deps: {
   }
 }
 
-/** The notes, links, files, commands, vaults and window the window gives a plugin. */
+/** The notes, files, buffers and vaults, and the workspace, commands and frame the window gives a plugin. */
 export function createVaultServiceParts(deps: {
   readonly services: Pick<
     PluginServices,
-    'workspace' | 'notes' | 'relations' | 'files' | 'commands' | 'vaults' | 'window'
+    'workspace' | 'notes' | 'relations' | 'files' | 'buffers' | 'commands' | 'vaults' | 'window'
   >
 }): HostParts {
   const { services } = deps
   return {
-    getWorkspace: () => services.workspace,
-    getNotes: () => services.notes,
-    getRelations: () => services.relations,
-    getFiles: () => services.files,
-    getCommands: () => services.commands,
-    getVaults: () => services.vaults,
-    getWindow: () => services.window,
+    window: {
+      getWorkspace: () => services.workspace,
+      getCommands: () => services.commands,
+      getWindow: () => services.window,
+    },
+    vault: {
+      getNotes: () => services.notes,
+      getRelations: () => services.relations,
+      getFiles: () => services.files,
+      getBuffers: () => services.buffers,
+      getVaults: () => services.vaults,
+    },
   }
 }
 
-/** The buffers, the tasks, the health items and the plugins that run the window gives a plugin. */
+/** The tasks, the health items and the plugins that run the window gives a plugin. */
 export function createTaskServiceParts(deps: {
-  readonly services: Pick<PluginServices, 'buffers' | 'noteBuffer' | 'taskList' | 'backgroundTasks'>
+  readonly services: Pick<PluginServices, 'taskList' | 'backgroundTasks'>
 }): HostParts {
   const { services } = deps
   return {
-    getBuffers: () => services.buffers,
-    getNoteBuffer: () => services.noteBuffer,
-    getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
-    getBackgroundTasks: () => services.backgroundTasks,
-    getProcesses: () => processHost,
-    health: healthReports,
+    work: {
+      getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
+      getBackgroundTasks: () => services.backgroundTasks,
+      getProcesses: () => processHost,
+      health: healthReports,
+    },
   }
 }
 
@@ -107,7 +117,9 @@ export function createTaskServiceParts(deps: {
 export function createNoticeParts(deps: { readonly queue: NoticeQueue }): HostParts {
   const { queue } = deps
   return {
-    getNotices: (pluginId) => createPluginNotices(queue, pluginId),
-    clearNotices: (pluginId) => queue.clear(pluginId),
+    window: {
+      getNotices: (pluginId) => createPluginNotices(queue, pluginId),
+      clearNotices: (pluginId) => queue.clear(pluginId),
+    },
   }
 }

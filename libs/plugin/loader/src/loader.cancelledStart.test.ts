@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Disposable, HostServices, PluginContext } from '@numen/plugin-sdk'
 import type { LoaderHost, PluginParts } from './host'
-import { createPluginLoader } from './loader'
+import { createTestPluginLoader } from './testing/pluginLoader'
 
 const HARBOR = 'org.example.harbor'
 
@@ -43,7 +43,7 @@ describe('a start cancelled at the limit', () => {
       disposeAll: vi.fn(),
       getSetting: <T>() => undefined as T,
     } satisfies LoaderHost
-    const loader = createPluginLoader({ host })
+    const loader = createTestPluginLoader({ host })
     loader.registerPluginModule(HARBOR, async () => ({
       activate: async (plugin: PluginContext, services: HostServices) => {
         services.ui.commands?.watch(() => undefined)

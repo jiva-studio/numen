@@ -125,25 +125,23 @@ function createUi(
   host: PluginContextHost,
   check: RequirePermission,
 ): Omit<PluginUi, 'mountView'> {
-  const { window: ui, views } = host
+  const { ui, views } = host
   const commands = ui.getCommands()
-  return {
-    ...pickDefinedParts<Omit<PluginUi, 'mountView' | 'slots' | 'notices'>>({
-      workspace: ui.getWorkspace(),
-      window: ui.getWindow(),
-      commands:
-        commands &&
-        limitCommands(commands, {
-          pluginId,
-          isListed: (one) => ui.isCommandListed(one),
-          getPermission: (one) => ui.getCommandPermission?.(one),
-          checkPermission: check,
-        }),
-      drops: views.drops,
-    }),
+  return pickDefinedParts<Omit<PluginUi, 'mountView'>>({
+    workspace: ui.getWorkspace(),
+    window: ui.getWindow(),
+    commands:
+      commands &&
+      limitCommands(commands, {
+        pluginId,
+        isListed: (one) => ui.isCommandListed(one),
+        getPermission: (one) => ui.getCommandPermission?.(one),
+        checkPermission: check,
+      }),
+    drops: views.drops,
     slots: ui.getSlots(),
     notices: ui.getNotices(pluginId),
-  }
+  })
 }
 
 function createUiService(
@@ -151,12 +149,18 @@ function createUiService(
   host: PluginContextHost,
   guards: { readonly guard: RegistrationGuard; readonly check: RequirePermission },
 ): PluginUi {
-  return {
-    ...guardService(createUi(pluginId, host, guards.check), SERVICE_RULES.ui, {
-      check: guards.check,
-    }),
+  const ui = guardService(createUi(pluginId, host, guards.check), SERVICE_RULES.ui, {
+    check: guards.check,
+  })
+  return pickDefinedParts<PluginUi>({
+    workspace: ui.workspace,
+    window: ui.window,
+    commands: ui.commands,
+    drops: ui.drops,
+    slots: ui.slots,
+    notices: ui.notices,
     mountView: createMountView(host, guards.guard),
-  }
+  })
 }
 
 function trackConnections(
@@ -169,7 +173,7 @@ function trackConnections(
 }
 
 function createWork(pluginId: string, host: PluginContextHost, add: Track): PluginWork {
-  const { window: work } = host
+  const { work } = host
   return pickDefinedParts<PluginWork>({
     tasks: work.getTasks(pluginId),
     backgroundTasks: work.getBackgroundTasks(),
@@ -201,14 +205,14 @@ function createPluginContext(scope: PartsScope, host: PluginContextHost): Plugin
     add,
   )
   const rules = SERVICE_RULES
-  const health = host.window.getHealth(pluginId)
-  return {
+  const health = host.work.getHealth(pluginId)
+  return pickDefinedParts<PluginContext>({
     identity: {
       id: pluginId,
-      target: host.info.target,
-      app: host.info.app,
+      target: host.ui.target,
+      app: host.ui.app,
       openExternal: guardService(
-        { openExternal: createExternalOpener(host.info.openExternal) },
+        { openExternal: createExternalOpener(host.ui.openExternal) },
         rules.identity,
         { check },
       ).openExternal,
@@ -221,8 +225,8 @@ function createPluginContext(scope: PartsScope, host: PluginContextHost): Plugin
       { check },
     ),
     settings: guardService(createSettings(pluginId, host, add), rules.settings, { check }),
-    ...(health && { health: guardService(health, rules.health, { check }) }),
-  }
+    health: health && guardService(health, rules.health, { check }),
+  })
 }
 
 /**

@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginParts } from '../context'
-import { createPluginHost } from '../host'
-import type { PluginHostDeps } from '../types'
 import { createTestContextHost } from '../../testing/contextHost'
 import type { DropRegistration } from '@numen/plugin-sdk'
+import { createTestPluginHost, type TestHostDeps } from '../../testing/hostDeps'
 
 const URI_LIST = 'text/uri-list'
 
@@ -103,12 +102,12 @@ describe('a drop handler registration', () => {
 
 describe('a drop in a host with several plugins', () => {
   const createHost = () =>
-    createPluginHost({
+    createTestPluginHost({
       target: 'desktop.editor',
       registerKind: () => vi.fn(),
       registerExtensionReader: () => vi.fn(),
       openTab: () => Promise.resolve('tab'),
-    } as unknown as PluginHostDeps)
+    } as unknown as TestHostDeps)
   const sampleManifest = (id: string, dropTypes: readonly string[]) =>
     createMockManifest(id, { permissions: ['vault:read'], dropTypes })
 

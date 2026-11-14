@@ -4,8 +4,8 @@
 import { createMockManifest } from '@numen/core-client/testing'
 import { describe, expect, it, vi } from 'vitest'
 import { formatCommandId } from '../commandId'
-import { createPluginHost } from './host'
-import type { CommandDeclaration, PluginHostDeps } from './types'
+import type { CommandDeclaration } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const declare = (pluginId: string, id: string): CommandDeclaration => ({
   pluginId,
@@ -13,7 +13,7 @@ const declare = (pluginId: string, id: string): CommandDeclaration => ({
   title: id,
 })
 
-const createDeps = (...declarations: CommandDeclaration[]): PluginHostDeps => ({
+const createDeps = (...declarations: CommandDeclaration[]): TestHostDeps => ({
   target: 'desktop.editor',
   registerKind: vi.fn(() => vi.fn()),
   registerExtensionReader: vi.fn(() => vi.fn()),
@@ -42,7 +42,7 @@ describe('the full id of a command', () => {
 
 describe('a command a plugin registers', () => {
   it('is filed under the id of the plugin and its own id', async () => {
-    const host = createPluginHost(createDeps(declare('md.example.files', 'tree.open')))
+    const host = createTestPluginHost(createDeps(declare('md.example.files', 'tree.open')))
     const handler = vi.fn()
     host.lifecycle
       .createContext('md.example.files', declaring('md.example.files'))
@@ -57,7 +57,7 @@ describe('a command a plugin registers', () => {
   })
 
   it('is not found by its short id or under the old plugin prefix', async () => {
-    const host = createPluginHost(createDeps(declare('md.example.files', 'tree.open')))
+    const host = createTestPluginHost(createDeps(declare('md.example.files', 'tree.open')))
     host.lifecycle
       .createContext('md.example.files', declaring('md.example.files'))
       .plugin.register.command({ id: 'tree.open', handler: vi.fn() })
@@ -68,7 +68,7 @@ describe('a command a plugin registers', () => {
   })
 
   it('is listed once for each of two plugins that give the same short id', async () => {
-    const host = createPluginHost(
+    const host = createTestPluginHost(
       createDeps(declare('md.example.one', 'note.open'), declare('md.example.two', 'note.open')),
     )
     const first = vi.fn()
@@ -90,7 +90,7 @@ describe('a command a plugin registers', () => {
   })
 
   it('is rejected when its full id is already registered, naming the id', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     const context = host.lifecycle.createContext('md.example.one', declaring('md.example.one'))
     const first = vi.fn()
     context.plugin.register.command({ id: 'note.open', handler: first })
@@ -102,7 +102,7 @@ describe('a command a plugin registers', () => {
   })
 
   it('is accepted again after its plugin is disposed', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     host.lifecycle
       .createContext('md.example.one', declaring('md.example.one'))
       .plugin.register.command({ id: 'note.open', handler: vi.fn() })

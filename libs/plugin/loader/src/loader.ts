@@ -221,17 +221,11 @@ interface Activation {
 }
 
 function createLoaderStatus(status: PluginStatus, waitForInterface: () => Promise<void>) {
-  const { activePlugins, failures } = status.state
+  const { failures } = status.state
   return {
-    isPluginActive: (id: string) => activePlugins.value.has(id),
-    getActivePluginIds: () => [...activePlugins.value.keys()],
-    getPluginFailure: status.getPluginFailure,
     getFailedPlugins: (): { id: string; error: string }[] =>
       [...failures.value].map(([id, error]) => ({ id, error })),
-    isPluginStarting: status.isPluginStarting,
     startPlugin: status.startPlugin,
-    startPluginsOf: status.startPluginsOf,
-    findPluginsOf: status.findPluginsOf,
     startTabPlugins: status.startTabPlugins,
     /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
     waitForInterface,

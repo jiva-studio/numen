@@ -15,9 +15,31 @@ import {
   stripMarkdownExtension,
 } from './pane/pluginView'
 import { adoptHostStyles, parseStatePath, PANE_LAYOUT_STYLE } from './pane/paneHost'
-import type { ReaderHandle } from '@numen/plugin-sdk'
+import type { PluginContext, ReaderHandle, TabKindRegistration } from '@numen/plugin-sdk'
 import type { NoteBuffer } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
+import { createTestHostDeps, type TestHostDeps } from '../testing/hostDeps'
+
+/** The deps of a custom tab kind written flat, with the context of its plugin and whether it edits notes. */
+type FlatTabKindDeps = TestHostDeps & {
+  readonly getContext?: () => PluginContext | undefined
+  readonly isNoteEditor?: boolean
+}
+
+const createFlatCustomTabKind = (
+  pluginId: string,
+  registration: TabKindRegistration,
+  deps?: FlatTabKindDeps,
+) =>
+  createCustomTabKind(
+    pluginId,
+    registration,
+    deps && {
+      ...createTestHostDeps(deps),
+      ...(deps.getContext ? { getContext: deps.getContext } : {}),
+      ...(deps.isNoteEditor ? { isNoteEditor: true } : {}),
+    },
+  )
 
 describe('createPluginPaneWrapper', () => {
   it('unwraps es module default export and forwards normalized props', async () => {
@@ -130,7 +152,7 @@ describe('createReaderTabKind', () => {
 
 describe('createCustomTabKind', () => {
   it('computes note title and note target', () => {
-    const customKind = createCustomTabKind('md.numen.notes', {
+    const customKind = createFlatCustomTabKind('md.numen.notes', {
       kind: 'note',
       component: STUB_COMPONENT,
       title: 'Markdown Note',
@@ -173,7 +195,7 @@ describe('createCustomTabKind', () => {
 
   it('populates note body from readNote dependency', async () => {
     let savedBody = ''
-    const customKind = createCustomTabKind(
+    const customKind = createFlatCustomTabKind(
       'md.numen.notes',
       {
         kind: 'note',
@@ -220,7 +242,7 @@ describe('createCustomTabKind (loading)', () => {
     ...(readNote ? { readNote } : {}),
   })
   const open = (readNote?: (path: string) => Promise<string | undefined>) =>
-    createCustomTabKind('md.numen.notes', registration, createHost(readNote)).open(
+    createFlatCustomTabKind('md.numen.notes', registration, createHost(readNote)).open(
       'notes/test.md',
       'tab',
     ) as { isLoading: { value: boolean } }
@@ -257,7 +279,7 @@ describe('createCustomTabKind (failed writes)', () => {
     writeNote,
   })
   const open = (writeNote: (path: string, body: string) => Promise<void>) =>
-    createCustomTabKind(
+    createFlatCustomTabKind(
       'md.numen.notes',
       { kind: 'note', component: STUB_COMPONENT, title: 'Markdown Note' },
       host(writeNote),
@@ -413,7 +435,7 @@ describe('createCustomTabKind (notes)', () => {
   it('navigates note tab in place and syncs path when shown', async () => {
     const syncPath = vi.fn(() => true)
     const writeCalls: Array<{ path: string; body: string }> = []
-    const kind = createCustomTabKind(
+    const kind = createFlatCustomTabKind(
       'md.numen.notes',
       {
         kind: 'note',
@@ -508,7 +530,7 @@ describe('createCustomTabKind (notes)', () => {
     const syncPath = vi.fn()
     let resolveFirstRead: ((val: string) => void) | undefined
 
-    const kindWithDispatch = createCustomTabKind(
+    const kindWithDispatch = createFlatCustomTabKind(
       'p',
       {
         kind: 'custom',
@@ -532,7 +554,7 @@ describe('createCustomTabKind (notes)', () => {
     const st = kindWithDispatch.open('notes/slow.md', 't1') as Record<string, unknown>
     // Save while loading & unedited is ignored
     const writeNote = vi.fn(async () => undefined)
-    const kindSaveGuard = createCustomTabKind(
+    const kindSaveGuard = createFlatCustomTabKind(
       'p',
       { kind: 'note', component: STUB_COMPONENT },
       {
@@ -592,11 +614,11 @@ describe('createCustomTabKind (notes)', () => {
     expect(m1).toHaveBeenCalledTimes(1)
     expect(syncPath).not.toHaveBeenCalled()
 
-    const kindNoDeps = createCustomTabKind('p', { kind: 'custom', component: STUB_COMPONENT })
+    const kindNoDeps = createFlatCustomTabKind('p', { kind: 'custom', component: STUB_COMPONENT })
     expect(() =>
       kindNoDeps.display?.onShow!({ path: 'notes/a.md', title: '', measure: vi.fn() }, 't1'),
     ).not.toThrow()
-    const kindUndefWorkspace = createCustomTabKind(
+    const kindUndefWorkspace = createFlatCustomTabKind(
       'p',
       { kind: 'custom', component: STUB_COMPONENT },
       {
@@ -654,7 +676,7 @@ describe('the pane of a custom note tab', () => {
         return h('span', 'note')
       },
     })
-    const kind = createCustomTabKind('p', { kind: 'custom', component: Probe })
+    const kind = createFlatCustomTabKind('p', { kind: 'custom', component: Probe })
     const state = kind.open('notes/a.md', 't1')
     const view = mount(kind.pane, { props: { state } })
     await view.vm.$nextTick()
@@ -722,7 +744,7 @@ describe('createBufferedNoteState', () => {
       addr === 'missing' ? '' : `notes/${addr}.md`,
     )
 
-    const customKind = createCustomTabKind(
+    const customKind = createFlatCustomTabKind(
       'md.numen.notes',
       { kind: 'note', component: STUB_COMPONENT, title: 'Note' },
       {
@@ -835,7 +857,7 @@ describe('createBufferedNoteState', () => {
 
     // A kind the manifest does not declare as the note editor opens no note buffer, whatever its name
     vi.mocked(buffer.open).mockClear()
-    const nonNoteWithBuffer = createCustomTabKind(
+    const nonNoteWithBuffer = createFlatCustomTabKind(
       'p',
       { kind: 'note', component: STUB_COMPONENT },
       {
@@ -863,13 +885,13 @@ describe('createBufferedNoteState', () => {
       { targetPath: 'notes/nonotes.md', id: 'nonotes', buffer },
       {
         pluginId: 'p',
-        deps: {
+        deps: createTestHostDeps({
           target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
           openTab: async () => '',
           resolveLink: vi.fn(async () => 'a.md'),
-        },
+        }),
       },
     )
     expect(await depsWithoutNotesOrWorkspace.wikilinks.search('q')).toEqual([])
@@ -881,7 +903,7 @@ describe('createBufferedNoteState', () => {
       { targetPath: '', id: 'empty', buffer },
       {
         pluginId: 'p',
-        deps: {
+        deps: createTestHostDeps({
           target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
@@ -889,7 +911,7 @@ describe('createBufferedNoteState', () => {
           getNotes: () => undefined,
           getWorkspace: () => undefined,
           resolveLink: resolveWhenNoWorkspace,
-        },
+        }),
       },
     )
     expect(await emptyMapState.wikilinks.search('q')).toEqual([])
@@ -901,7 +923,7 @@ describe('createBufferedNoteState', () => {
       { targetPath: '', id: 'undef-find', buffer },
       {
         pluginId: 'p',
-        deps: {
+        deps: createTestHostDeps({
           target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
@@ -911,7 +933,7 @@ describe('createBufferedNoteState', () => {
               findNotes: async () => undefined,
               getHeadings: async () => new Map(),
             }) as never,
-        },
+        }),
       },
     )
     expect(await undefFindNotesState.wikilinks.search('q')).toEqual([])
@@ -921,7 +943,7 @@ describe('createBufferedNoteState', () => {
       { targetPath: 'notes/unmapped.md', id: 'unmapped', buffer },
       {
         pluginId: 'p',
-        deps: {
+        deps: createTestHostDeps({
           target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
@@ -933,7 +955,7 @@ describe('createBufferedNoteState', () => {
             }) as never,
           getWorkspace: () => ({ files: { open: openFile } }) as never,
           resolveLink: () => Promise.reject(new Error('resolve fail')),
-        },
+        }),
       },
     )
     expect(await unmappedHeadingsState.wikilinks.headings('')).toEqual([])

@@ -38,9 +38,12 @@ export function createServiceParts(deps: ServicePartsDeps): readonly HostParts[]
     createTaskServiceParts({ services }),
     createNoticeParts({ queue: deps.notices }),
     {
-      readNote: pluginNotes.readNote,
-      writeNote: pluginNotes.writeNote,
-      resolveLink: resolveNameLink,
+      kinds: {
+        readNote: pluginNotes.readNote,
+        writeNote: pluginNotes.writeNote,
+        getNoteBuffer: () => services.noteBuffer,
+      },
+      vault: { resolveLink: resolveNameLink },
     },
     ...deps.hostParts,
   ]

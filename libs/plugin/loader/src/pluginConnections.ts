@@ -32,21 +32,22 @@ export const createPluginConnections = (
   client: ConnectionCallClient,
   pluginId: string,
   subscribeChanges?: (handler: () => void) => () => void,
-): ConnectionHost => ({
-  call: async function* (operation, payload, options) {
-    try {
-      const end: Result<Uint8Array, ConnectionCallFailure> = yield* client.call(
-        { pluginId, operation, payload },
-        options,
-      )
-      return end.ok ? end : { ok: false, error: readError(end.error) }
-    } catch (error) {
-      return { ok: false, error: readCancellation(error, options?.signal) }
-    }
-  },
-  listRows: (operation) => client.listRows(pluginId, operation),
-  listRowOptions: (request) => client.listRowOptions({ pluginId, ...request }),
-  ...(subscribeChanges && {
-    onChange: (handler: () => void) => ({ dispose: subscribeChanges(handler) }),
-  }),
-})
+): ConnectionHost => {
+  const host: ConnectionHost = {
+    call: async function* (operation, payload, options) {
+      try {
+        const end: Result<Uint8Array, ConnectionCallFailure> = yield* client.call(
+          { pluginId, operation, payload },
+          options,
+        )
+        return end.ok ? end : { ok: false, error: readError(end.error) }
+      } catch (error) {
+        return { ok: false, error: readCancellation(error, options?.signal) }
+      }
+    },
+    listRows: (operation) => client.listRows(pluginId, operation),
+    listRowOptions: (request) => client.listRowOptions({ pluginId, ...request }),
+  }
+  if (subscribeChanges) host.onChange = (handler) => ({ dispose: subscribeChanges(handler) })
+  return host
+}

@@ -35,14 +35,14 @@ async function createWindow() {
   })
   const reportCommandIssue = vi.fn()
   const host = createPluginHost({
-    target: 'desktop.editor',
-    registerKind: vi.fn(() => vi.fn()),
-    registerExtensionReader: vi.fn(() => vi.fn()),
-    openTab: vi.fn(async () => 'tab-1'),
-    getCommandDeclarations: () => declared.declarations.value,
-    hasPluginFrontend: (pluginId) => pluginId === VIEW,
-    hasPluginBackend: hasBackend,
-    reportCommandIssue,
+    window: { target: 'desktop.editor' },
+    kinds: {
+      registerKind: vi.fn(() => vi.fn()),
+      registerExtensionReader: vi.fn(() => vi.fn()),
+    },
+    tabs: { openTab: vi.fn(async () => 'tab-1') },
+    commands: { getCommandDeclarations: () => declared.declarations.value, reportCommandIssue },
+    plugins: { hasPluginFrontend: (pluginId) => pluginId === VIEW, hasPluginBackend: hasBackend },
   })
   holder.current = host
   await declared.load()

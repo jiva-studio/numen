@@ -28,7 +28,7 @@ function createItemApi({ deps, registry, handlers, findOwner }: ItemParts) {
   /** The registered command, once its plugin has started. */
   const findStartedEntry = async (id: string) => {
     const pluginId = findOwner(id)
-    if (!registry.commands.value.has(id) && pluginId) await deps.startPlugin?.(pluginId)
+    if (!registry.commands.value.has(id) && pluginId) await deps.plugins?.startPlugin?.(pluginId)
     return registry.commands.value.get(id)
   }
   return {
@@ -83,27 +83,30 @@ export function createCommandApi(
     const { itemId } = run
     if (isSharedCommand(id)) return handlers.runSharedCommand(id, { note, ...run })
     const command = findAvailableCommand(id)
-    if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
+    if (!command || !isCommandAvailable(command.declaration, note, deps.commands)) return false
     let entry = command.entry
     if (!entry) {
-      await deps.startPlugin?.(command.declaration.pluginId)
+      await deps.plugins?.startPlugin?.(command.declaration.pluginId)
       entry = registry.commands.value.get(id)
     }
     if (!entry) return false
     await runCommand(deps, entry, { note, itemId, values: run.values, isAwaited: run.isAwaited })
     return true
   }
+  const items = createItemApi({
+    deps,
+    registry,
+    handlers,
+    findOwner: (id) => findAvailableCommand(id)?.declaration.pluginId,
+  })
   return {
     handlers,
     getPaletteCommands: () => getAvailableCommands().map((one) => createPaletteCommand(one)),
     /** Whether the window lists the command, registered or of a plugin that starts when it runs. */
     hasCommand: (id: string): boolean => findAvailableCommand(id) !== undefined,
-    ...createItemApi({
-      deps,
-      registry,
-      handlers,
-      findOwner: (id) => findAvailableCommand(id)?.declaration.pluginId,
-    }),
+    hasKnownItems: items.hasKnownItems,
+    hasCommandItems: items.hasCommandItems,
+    listCommandItems: items.listCommandItems,
     /** Runs the command with the item picked; the handler gets the values of its arguments. */
     executeCommand,
     /**

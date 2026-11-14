@@ -69,11 +69,13 @@ export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
   })
   const hostParts: readonly HostParts[] = [
     slots.hostDeps,
-    handlers,
+    { commands: handlers },
     {
-      getCommandDeclarations: () => declared.declarations.value,
-      reportCommandIssue: reports.reportCommandIssue,
-      reportViewIssue: reports.reportViewIssue,
+      commands: {
+        getCommandDeclarations: () => declared.declarations.value,
+        reportCommandIssue: reports.reportCommandIssue,
+      },
+      slots: { reportViewIssue: reports.reportViewIssue },
     },
   ]
   return { catalog, reports, declared, hostParts }

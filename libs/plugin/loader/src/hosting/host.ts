@@ -9,8 +9,7 @@ import type {
   JsonValue,
   SlotHost,
 } from '@numen/plugin-sdk'
-import { ReportedError, type Manifest } from '@numen/core-client'
-import { createAppInfo } from '../appInfo'
+import type { Manifest } from '@numen/core-client'
 import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
 import { createSlotRegistry, type DeclaredSlotEntry } from '../slots'
@@ -21,7 +20,7 @@ import { createPluginParts } from './context'
 import { isNoteEditorKind } from './customTabBuffer'
 import { addListener, notifyListeners, requestPluginStart } from './events'
 import { createCommandApi } from './commandApi'
-import { createWhenReader, type WhenReader } from '../when'
+import { createWhenReader } from '../when'
 import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
 import { APP_COMMAND_OWNER } from '../commandId'
 import { createKeybindingRegistry, type KeybindingSource } from '../keybindings'
@@ -34,13 +33,20 @@ import {
   setStarting,
   type HostRegistry,
 } from './registry'
-import { createVaultServiceBridge, createWindowServiceBridge } from './bridge/services'
+import {
+  createUiServiceBridge,
+  createVaultServiceBridge,
+  createWorkServiceBridge,
+} from './bridge/services'
 import type {
   ContextEventHost,
   ContextRegistrationHost,
   ContextSettingHost,
   ContextTabHost,
   ContextViewHost,
+  HostDeps,
+  HostPlugins,
+  HostSlots,
   PluginContextHost,
   PluginHostDeps,
 } from './types'
@@ -51,7 +57,10 @@ function getEntryKey(pluginId: string, id: string): string {
   return `${pluginId}:${id}`
 }
 
-function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): ContextEventHost {
+function createEventBridge(
+  deps: Pick<PluginHostDeps, 'window'>,
+  registry: HostRegistry,
+): ContextEventHost {
   return {
     onVaultChange: (pluginId, handler) =>
       addListener(registry.vaultListeners, { pluginId, handler }),
@@ -62,7 +71,7 @@ function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): Contex
 }
 
 function createRegistrationBridge(
-  deps: PluginHostDeps,
+  deps: Pick<PluginHostDeps, 'window' | 'kinds' | 'tabs' | 'vault'>,
   registry: HostRegistry,
 ): ContextRegistrationHost {
   return {
@@ -98,19 +107,25 @@ function createRegistrationBridge(
   }
 }
 
-function createSettingBridge(deps: PluginHostDeps): ContextSettingHost {
+const NO_PLUGINS: HostPlugins = {}
+
+const NO_SLOTS: HostSlots = {}
+
+function createSettingBridge({
+  plugins = NO_PLUGINS,
+}: Pick<PluginHostDeps, 'plugins'>): ContextSettingHost {
   return {
     getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
-      deps.getSetting ? (deps.getSetting(pluginId, key) as T | undefined) : undefined,
+      plugins.getSetting ? (plugins.getSetting(pluginId, key) as T | undefined) : undefined,
     onSettingChange: <T extends JsonValue = JsonValue>(
       pluginId: string,
       key: string,
       handler: (value: T) => void | Promise<void>,
     ) => {
       // Without a host subscription there is nothing to unsubscribe.
-      if (!deps.onSettingChange) return { dispose: () => undefined }
+      if (!plugins.onSettingChange) return { dispose: () => undefined }
       return {
-        dispose: deps.onSettingChange(
+        dispose: plugins.onSettingChange(
           pluginId,
           key,
           handler as (v: JsonValue | undefined) => void | Promise<void>,
@@ -131,11 +146,11 @@ function createViewBridge(shared: SharedRegistries): ContextViewHost {
   }
 }
 
-function createTabBridge(deps: PluginHostDeps): ContextTabHost {
+function createTabBridge({ tabs }: Pick<PluginHostDeps, 'tabs'>): ContextTabHost {
   return {
-    openTab: (kind, target) => deps.openTab?.(kind, target),
-    navigateTab: (kind, target) => deps.navigateTab?.(kind, target),
-    closeTab: (id) => deps.closeTab?.(id),
+    openTab: (kind, target) => tabs?.openTab?.(kind, target),
+    navigateTab: (kind, target) => tabs?.navigateTab?.(kind, target),
+    closeTab: (id) => tabs?.closeTab?.(id),
   }
 }
 
@@ -154,25 +169,18 @@ function createHostContextBridge(
   shared: SharedRegistries,
 ): PluginContextHost {
   return {
-    info: {
-      app: deps.app ?? createAppInfo({ getPlatform: () => 'linux' }),
-      target: deps.target,
-      openExternal: (url) =>
-        deps.openExternal
-          ? deps.openExternal(url)
-          : Promise.reject(new ReportedError('This window cannot open web links')),
-    },
     registration: createRegistrationBridge(deps, registry),
     views: createViewBridge(shared),
     settings: createSettingBridge(deps),
     events: createEventBridge(deps, registry),
     tabs: createTabBridge(deps),
     vault: createVaultServiceBridge(deps),
-    window: createWindowServiceBridge(deps, {
+    ui: createUiServiceBridge(deps, {
       slots: shared.slots,
       manifests: registry.manifests,
       readSlotEntries: shared.readSlotEntries,
     }),
+    work: createWorkServiceBridge(deps),
   }
 }
 
@@ -187,11 +195,17 @@ function readSettingsViews(
   return views
 }
 
-const hasDeclaredSettingsViews = (deps: PluginHostDeps, pluginId: string): boolean =>
-  (deps.findPluginsOf?.((one) => one.id === pluginId && one.settingsViews.length > 0) ?? [])
+const hasDeclaredSettingsViews = (
+  { plugins }: Pick<PluginHostDeps, 'plugins'>,
+  pluginId: string,
+): boolean =>
+  (plugins?.findPluginsOf?.((one) => one.id === pluginId && one.settingsViews.length > 0) ?? [])
     .length > 0
 
-function createRegisteredApi(deps: PluginHostDeps, registry: HostRegistry) {
+function createRegisteredApi(
+  deps: Pick<PluginHostDeps, 'plugins' | 'window'>,
+  registry: HostRegistry,
+) {
   return {
     /** The settings views a plugin registered, by view id; reactive. */
     getRegisteredSettingsViews: (pluginId: string) => readSettingsViews(registry, pluginId),
@@ -211,11 +225,15 @@ function createRegisteredApi(deps: PluginHostDeps, registry: HostRegistry) {
   }
 }
 
-function createKeybindingApi(deps: PluginHostDeps & { readonly whenReader: WhenReader }) {
+function createKeybindingApi({
+  window,
+  commands,
+  slots,
+}: Pick<HostDeps, 'window' | 'commands' | 'slots'>) {
   const keybindings = createKeybindingRegistry({
-    isMac: () => deps.app?.platform === 'darwin',
-    whenReader: deps.whenReader,
-    report: (owner, message) => deps.reportSlotIssue?.(owner, message, 'warning'),
+    isMac: () => window.app?.platform === 'darwin',
+    whenReader: commands.whenReader,
+    report: (owner, message) => slots?.reportSlotIssue?.(owner, message, 'warning'),
   })
   keybindings.register(APP_COMMAND_OWNER, APP_KEYBINDINGS)
   const owners = new Set<string>()
@@ -292,8 +310,9 @@ function createLifecycleApi({ registry, contextHost, keybindings, entries }: Lif
 }
 
 export function createPluginHost(windowDeps: PluginHostDeps) {
-  const whenReader = windowDeps.whenReader ?? createWhenReader()
-  const deps = { ...windowDeps, whenReader }
+  const whenReader = windowDeps.commands?.whenReader ?? createWhenReader()
+  const deps: HostDeps = { ...windowDeps, commands: { ...windowDeps.commands, whenReader } }
+  const { slots: slotDeps = NO_SLOTS } = deps
   const registry: HostRegistry = {
     readers: new Map(),
     tabKinds: new Map(),
@@ -311,28 +330,29 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     fileListeners: new Set(),
   }
   const slotViews = createSlotViewRegistry(
-    deps.reportViewIssue ? { reportIssue: deps.reportViewIssue } : {},
+    slotDeps.reportViewIssue ? { reportIssue: slotDeps.reportViewIssue } : {},
   )
   const keybindings = createKeybindingApi(deps)
   const commands = createCommandApi(deps, registry, keybindings.registry)
-  const findSlotCommand = deps.createSlotCommandFinder?.({
+  const findSlotCommand = slotDeps.createSlotCommandFinder?.({
     getPluginCommands: commands.getPaletteCommands,
     hasPluginItems: commands.hasKnownItems,
   })
-  const readSlotEntries = () => deps.getSlotEntries?.(registry.contextManifests?.value ?? new Map())
+  const readSlotEntries = () =>
+    slotDeps.getSlotEntries?.(registry.contextManifests?.value ?? new Map())
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
     getEntries: readSlotEntries,
     findCommand: (command, target) => findSlotCommand?.(command, target),
     findView: slotViews.findView,
-    ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
-    ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
+    ...(slotDeps.reportSlotIssue ? { reportIssue: slotDeps.reportSlotIssue } : {}),
+    ...(slotDeps.getSlotWhenValues ? { getWhenValues: slotDeps.getSlotWhenValues } : {}),
     whenReader,
     requestPlugin: (pluginId) => requestPluginStart(deps, pluginId),
   })
   const contextHost = createHostContextBridge(deps, registry, {
-    views: createViewRegistry(deps),
-    drops: createDropRegistry(deps),
+    views: createViewRegistry(deps.plugins),
+    drops: createDropRegistry(deps.plugins),
     slotViews,
     slots,
     readSlotEntries,

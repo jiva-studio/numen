@@ -4,11 +4,10 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost } from './host'
-import type { PluginHostDeps } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
-const createDeps = (): PluginHostDeps => ({
+const createDeps = (): TestHostDeps => ({
   target: 'desktop.editor',
   registerKind: vi.fn(() => vi.fn()),
   registerExtensionReader: vi.fn(() => vi.fn()),
@@ -24,7 +23,7 @@ const declaring = (pluginId: string) =>
 
 function createTwoPlugins() {
   const deps = createDeps()
-  const host = createPluginHost(deps)
+  const host = createTestPluginHost(deps)
   const owner = host.lifecycle.createContext('md.example.owner', declaring('md.example.owner'))
   const rival = host.lifecycle.createContext('md.example.rival', declaring('md.example.rival'))
   return { deps, host, owner, rival }

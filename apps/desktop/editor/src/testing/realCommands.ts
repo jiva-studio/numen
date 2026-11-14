@@ -118,12 +118,14 @@ const createHost = (
     writeIssue: () => undefined,
   })
   const host = createPluginHost({
-    ...slots.hostDeps,
-    target: 'desktop.editor',
-    registerKind: () => () => undefined,
-    registerExtensionReader: () => () => undefined,
-    openTab: () => Promise.resolve('tab-1'),
-    getSlotEntries: () => entries,
+    window: { target: 'desktop.editor' },
+    commands: slots.hostDeps.commands,
+    slots: { ...slots.hostDeps.slots, getSlotEntries: () => entries },
+    kinds: {
+      registerKind: () => () => undefined,
+      registerExtensionReader: () => () => undefined,
+    },
+    tabs: { openTab: () => Promise.resolve('tab-1') },
   })
   for (const manifest of parts.manifests) {
     host.keybindings.registerKeybindings(manifest.id, manifest.contributes.keybindings ?? [])
