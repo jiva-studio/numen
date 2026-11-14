@@ -150,7 +150,6 @@ function createNoteStoreContext(
   return { context, dispatch }
 }
 
-/** Opening a note, opening it again from its file, and closing it. */
 function createNoteOpening(context: NoteStoreContext) {
   const { tabs, reportedIds, closeCallbacks } = context
 
@@ -183,7 +182,6 @@ function createNoteOpening(context: NoteStoreContext) {
   }
 }
 
-/** What is asked of the notes that are open. */
 function createNoteQueries(context: NoteStoreContext) {
   const { tabs, bodies } = context
 
@@ -204,7 +202,6 @@ function createNoteQueries(context: NoteStoreContext) {
   }
 }
 
-/** Changing the text of a note and writing it. */
 function createNoteEditing(
   context: NoteStoreContext,
   getOpenIds: () => readonly string[],
@@ -250,8 +247,7 @@ export function useOpenNotes(how: OpenNotesOptions = {}) {
   return { opening, editing, conflicts, queries }
 }
 
-/** The open notes as parts, one for each responsibility. */
-export type OpenNotes = ReturnType<typeof useOpenNotes>
+type OpenNotes = ReturnType<typeof useOpenNotes>
 
 /** The open notes as one object of the functions of all parts, as a plugin is handed them. */
 export function flattenOpenNotes({ opening, editing, conflicts, queries }: OpenNotes) {
