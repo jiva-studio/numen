@@ -31,7 +31,7 @@ func isLinked(deps []string, pkg string) bool {
 // directly into the desktop binaries.
 func TestNothingOfThePluginsIsLinkedIntoDesktopBinaries(t *testing.T) {
 	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./cmd/...")
-	listing.Dir = filepath.Join(appsDir, "desktop")
+	listing.Dir = filepath.Join(getAppsDir(), "desktop")
 	items, err := listing.Output()
 	if err != nil {
 		if ran, ok := errors.AsType[*exec.ExitError](err); ok {

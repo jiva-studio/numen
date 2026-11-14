@@ -24,7 +24,7 @@ const core = "github.com/jiva-studio/numen/libs/core/kernel/"
 // apps is what every application is named under.
 const apps = "github.com/jiva-studio/numen/apps/"
 
-var appsDir = filepath.Join(load.RepoRootDir, "apps")
+func getAppsDir() string { return filepath.Join(load.RepoRootDir, "apps") }
 
 func isAssembled(pkg string) bool {
 	return pkg == "container" || pkg == "domain" || strings.HasPrefix(pkg, "domain/") || pkg == "port" ||
@@ -85,7 +85,7 @@ func readSources(t *testing.T, root string) []standing {
 
 func readApplications(t *testing.T) []standing {
 	t.Helper()
-	found := readSources(t, appsDir)
+	found := readSources(t, getAppsDir())
 	for _, one := range getRequiredFiles() {
 		if !slices.ContainsFunc(found, func(target standing) bool { return target.relPath == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
