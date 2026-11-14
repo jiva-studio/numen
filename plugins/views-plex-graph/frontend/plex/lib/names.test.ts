@@ -55,9 +55,9 @@ describe('the room of the names of a note', () => {
   })
 
   it('is wider for wider names, and never wider than the node', () => {
-    const wide = getNamesRoom(createNames([], ['a']), { ...request, measure: () => 500 })
+    const longRoom = getNamesRoom(createNames([], ['a']), { ...request, measure: () => 500 })
 
-    expect(wide.width).toBeLessThanOrEqual(100)
+    expect(longRoom.width).toBeLessThanOrEqual(100)
   })
 
   it('is the same for the same names', () => {

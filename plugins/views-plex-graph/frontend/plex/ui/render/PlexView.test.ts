@@ -170,7 +170,7 @@ describe('the headings under a note', () => {
         nodeSize: DEFAULT_OPTIONS.nodeSize,
         roomOf: () => room,
         behavior: { ...DEFAULT_BEHAVIOR, clock: frames.clock },
-        hung: (node) =>
+        placedHeadings: (node) =>
           getNodeHeadings(
             node,
             [

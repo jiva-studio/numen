@@ -3,13 +3,13 @@ import { computed, type Ref } from 'vue'
 import type { NodeHeadings } from '../lib/inside'
 import type { GestureRole, PlacedNode } from '../lib/node'
 import type { PlexBehavior } from './behavior'
-import type { WideBox } from './sizing/expansion'
+import type { ExpandedBox } from './sizing/expansion'
 
 export interface NodeStateProps {
   readonly node: PlacedNode
   readonly gestureRole: GestureRole
-  readonly wide: WideBox | null
-  readonly hung: NodeHeadings | null
+  readonly expanded: ExpandedBox | null
+  readonly placedHeadings: NodeHeadings | null
   readonly behavior: Pick<PlexBehavior, 'reaching'>
 }
 
@@ -21,7 +21,7 @@ export function useNodeState(
   const { isGhost, isOn } = state
 
   /** Whether the handle is shown: while a gesture begins at the node, or while it is attended to. */
-  const isHandleShown = computed(
+  const isHandleVisible = computed(
     () =>
       props.behavior.reaching.hasHandle &&
       props.node.opacity >= 1 &&
@@ -36,7 +36,7 @@ export function useNodeState(
 
   /** The position of the node while it is attended to and can open; null in every other state. */
   const openPosition = computed(() =>
-    (props.wide || props.hung) &&
+    (props.expanded || props.placedHeadings) &&
     props.node.opacity >= 1 &&
     props.gestureRole === 'open' &&
     isOn.value
@@ -49,5 +49,5 @@ export function useNodeState(
     '--relation-hue': `var(--numen-relation-${props.node.relation})`,
   }))
 
-  return { isHandleShown, role, openPosition, hue }
+  return { isHandleVisible, role, openPosition, hue }
 }

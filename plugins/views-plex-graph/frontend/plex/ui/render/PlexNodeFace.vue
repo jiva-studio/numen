@@ -29,14 +29,14 @@ defineSlots<PlexDrawnSlots>()
     :show-pills="showPills"
     :rest-height="restHeight"
   >
-    <template v-if="$slots.icon" #icon="{ node: drawn }">
-      <slot name="icon" :node="drawn" />
+    <template v-if="$slots.icon" #icon="{ node: iconNode }">
+      <slot name="icon" :node="iconNode" />
     </template>
   </PlexNodeBox>
 
   <PlexNodeHeadings
-    v-if="hung"
-    :hung="hung"
+    v-if="placedHeadings"
+    :placed-headings="placedHeadings"
     :open="open"
     @enter="(heading) => emit('enter', heading)"
   />
@@ -44,7 +44,7 @@ defineSlots<PlexDrawnSlots>()
   <!-- Reach out from here to make something. Under the hand or under the
        keyboard, so it is there when wanted and out of the way when not. -->
   <PlexNodeHandle
-    v-if="isHandleShown"
+    v-if="isHandleVisible"
     :at="handle"
     @reach="(pointer) => emit('reach', pointer)"
     @ask="emit('ask')"

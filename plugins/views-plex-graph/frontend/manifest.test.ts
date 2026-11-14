@@ -252,9 +252,9 @@ describe('the settings the code reads', () => {
 
     for (const one of enums) {
       const values = (one.options ?? []).map((option) => option.value)
-      const taken = values.map((value) => readValues({ [one.key]: value })[one.key])
+      const readBack = values.map((value) => readValues({ [one.key]: value })[one.key])
 
-      expect(taken).toStrictEqual(values)
+      expect(readBack).toStrictEqual(values)
       expect(readValues({ [one.key]: 'no such option' })[one.key]).toBe(one.default)
     }
   })

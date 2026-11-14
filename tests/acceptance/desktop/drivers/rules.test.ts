@@ -482,7 +482,7 @@ describe('parseArrow', () => {
     expect(parseArrow('')).toBeUndefined()
   })
 
-  it('refuses words that name no arrow', () => {
+  it('reports an error for words that name no arrow', () => {
     expect(() => parseArrow(' with two arrows')).toThrow('does not name an arrow')
   })
 })

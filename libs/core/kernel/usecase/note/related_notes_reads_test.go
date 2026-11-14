@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// countingLinks counts the calls to the link batches and the paths asked in them.
+// countingLinks counts the calls to the link batches and the paths requested in them.
 type countingLinks struct {
 	graph
 	linkCalls     int
@@ -109,7 +109,7 @@ func TestANoteSharedByManyOwnersIsReadOnce(t *testing.T) {
 		}
 	}
 	if n != 1 {
-		t.Errorf("X.md was asked for %d times in %v, want once", n, refs.paths)
+		t.Errorf("X.md was requested %d times in %v, want once", n, refs.paths)
 	}
 }
 

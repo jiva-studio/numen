@@ -61,7 +61,7 @@ Feature: Plex links
   Rule: Each relation has its side of the focus note
 
     Scenario: The notes are placed by their relation
-      Then the plex puts the following notes on the side of the focus note:
+      Then the plex places the following notes on the side of the focus note:
         | title      | side       |
         | Coast      | above      |
         | Quay       | below      |

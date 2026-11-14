@@ -14,7 +14,7 @@ const graph: PlexGraph = {
   edges: [],
 }
 
-const settled = arrangePlex(graph)
+const arranged = arrangePlex(graph)
 const fade = (frame: PlexFrame, id: string, opacity: number): PlexFrame => ({
   ...frame,
   nodes: frame.nodes.map((node) => (node.id === id ? { ...node, opacity } : node)),
@@ -24,19 +24,19 @@ const opacityOf = (frame: PlexFrame, id: string) =>
 
 describe('a movement that starts from a frame in the middle of another', () => {
   it('moves a half-faded note towards full opacity from where it is', () => {
-    const middle = fade(settled, 'a', 0.4)
+    const middle = fade(arranged, 'a', 0.4)
 
-    expect(opacityOf(interpolatePlex(middle, settled, 0.5), 'a')).toBeCloseTo(0.7)
-    expect(opacityOf(interpolatePlex(middle, settled, 0.01), 'a')).toBeLessThan(0.45)
+    expect(opacityOf(interpolatePlex(middle, arranged, 0.5), 'a')).toBeCloseTo(0.7)
+    expect(opacityOf(interpolatePlex(middle, arranged, 0.01), 'a')).toBeLessThan(0.45)
   })
 
   it('does not bring an almost gone note back to full opacity at once', () => {
-    const middle = fade(settled, 'b', 0.05)
+    const middle = fade(arranged, 'b', 0.05)
 
-    expect(opacityOf(interpolatePlex(middle, settled, 0.1), 'b')).toBeLessThan(0.2)
+    expect(opacityOf(interpolatePlex(middle, arranged, 0.1), 'b')).toBeLessThan(0.2)
   })
 
-  it('keeps a settled note opaque', () => {
-    expect(opacityOf(interpolatePlex(settled, arrangePlex(graph), 0.5), 'a')).toBe(1)
+  it('keeps an arranged note opaque', () => {
+    expect(opacityOf(interpolatePlex(arranged, arrangePlex(graph), 0.5), 'a')).toBe(1)
   })
 })

@@ -41,14 +41,14 @@ const namesUnder: Rooms = (node) =>
 const namesOverParents: Rooms = (node) =>
   node.relation === 'parent' ? { top: 60, bottom: 0, width: 90 } : NONE
 
-const namesAround: Rooms = (node, index = 0) =>
+const getNamesRoomOf: Rooms = (node, index = 0) =>
   node.relation === 'focus'
     ? NONE
     : { top: index % 2 === 0 ? 0 : 28, bottom: index % 3 === 0 ? 0 : 42, width: 80 }
 
 const roomsByIndex = (graph: PlexGraph): Rooms => {
   const order = new Map(graph.nodes.map((node, index) => [node.id, index]))
-  return (node) => namesAround(node, order.get(node.id))
+  return (node) => getNamesRoomOf(node, order.get(node.id))
 }
 
 interface Footprint {
@@ -113,7 +113,7 @@ describe('names under the notes of a relation', () => {
     expect(getFootprintOverlaps(getFootprints(graph, frame, namesUnder))).toEqual([])
   })
 
-  it('put two children in one column at least a pill and its names apart', () => {
+  it('places two children in one column at least a pill and its names apart', () => {
     const graph = build('A note', { child: 9 })
     const pillHeight = arrange(graph, window).nodes[1]!.height
 
@@ -156,12 +156,12 @@ describe('names over the parents', () => {
 
   it('leave the pill of a parent the size it is without names', () => {
     const graph = build('A note', { parent: 12 })
-    const bare = arrange(graph, window)
+    const withoutNames = arrange(graph, window)
 
     const frame = arrange(graph, window, namesOverParents)
 
     for (const node of frame.nodes) {
-      const same = bare.nodes.find((one) => one.id === node.id)
+      const same = withoutNames.nodes.find((one) => one.id === node.id)
       if (same) expect([node.width, node.height]).toEqual([same.width, same.height])
     }
   })
@@ -195,17 +195,17 @@ describe('names counted against the window', () => {
   const graph = build('A note', { parent: 3, child: 8, jump: 3, sibling: 3 })
 
   it('show no more notes than the same graph without names, and account for every note', () => {
-    const bare = arrange(graph, window)
+    const withoutNames = arrange(graph, window)
     const named = arrange(graph, window, namesUnder)
 
     const overflow = (frame: PlexFrame) =>
       Object.values(frame.overflow).reduce((sum, count) => sum + (count ?? 0), 0)
-    expect(named.nodes.length).toBeLessThanOrEqual(bare.nodes.length)
+    expect(named.nodes.length).toBeLessThanOrEqual(withoutNames.nodes.length)
     expect(named.nodes.length + overflow(named)).toBe(graph.nodes.length)
-    expect(bare.nodes.length + overflow(bare)).toBe(graph.nodes.length)
+    expect(withoutNames.nodes.length + overflow(withoutNames)).toBe(graph.nodes.length)
   })
 
-  it('keep every footprint of a shown note inside the window less the margin', () => {
+  it('keeps every footprint of a visible note inside the window less the margin', () => {
     const frame = arrange(graph, window, namesUnder)
 
     for (const one of getFootprints(graph, frame, namesUnder)) {
@@ -221,12 +221,12 @@ describe('a pill with names', () => {
   it('is the pill it is without, and its lines end at it', () => {
     const graph = build('A note', { parent: 2, child: 6 })
     const window = { width: 2400, height: 1400 }
-    const bare = arrange(graph, window)
+    const withoutNames = arrange(graph, window)
 
     const frame = arrange(graph, window, namesUnder)
 
     for (const node of frame.nodes) {
-      const same = bare.nodes.find((one) => one.id === node.id)!
+      const same = withoutNames.nodes.find((one) => one.id === node.id)!
       expect([node.width, node.height]).toEqual([same.width, same.height])
     }
     const byId = new Map(frame.nodes.map((node) => [node.id, node]))
@@ -268,7 +268,7 @@ describe('a relation where half the notes have names', () => {
 })
 
 describe('a group that fits the window by area', () => {
-  it('is shown whole when its names stand under every note', () => {
+  it('is visible whole when its names are under every note', () => {
     const frame = arrange(
       build('Thermodynamics', { child: 25 }),
       { width: 2400, height: 1400 },
@@ -277,7 +277,7 @@ describe('a group that fits the window by area', () => {
     expect(frame.overflow).toStrictEqual({})
   })
 
-  it('is shown whole in a window of the size the names leave room for', () => {
+  it('is visible whole in a window of the size the names leave room for', () => {
     const frame = arrange(
       build('Thermodynamics', { child: 25 }),
       { width: 1570, height: 1440 },

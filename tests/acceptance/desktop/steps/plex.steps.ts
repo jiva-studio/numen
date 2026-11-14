@@ -10,7 +10,7 @@ Then('the plex {display} the following notes:', async ({ person }, shows: boolea
   await person.plex.expectShowsNotes(notes.raw(), shows)
 })
 
-Then('the plex puts the following notes on the side of the focus note:', async ({ person }, notes: DataTable) => {
+Then('the plex places the following notes on the side of the focus note:', async ({ person }, notes: DataTable) => {
   await person.plex.expectSides(notes.raw())
 })
 

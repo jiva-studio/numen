@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { addLinks, getLinkTitle, readLinks } from './note-links.js'
 
 describe('addLinks and readLinks', () => {
-  it('reads what was written', () => {
+  it('reads the links of a note', () => {
     const text = addLinks('# Harbour\n', [
       { to: '[[notes/Quay]]', role: 'child', label: '' },
       { to: '[[notes/Jetty]]', role: 'jump', label: 'Daily ferry' },
@@ -18,7 +18,7 @@ describe('addLinks and readLinks', () => {
     expect(readLinks('# Harbour\n')).toStrictEqual([])
   })
 
-  it('refuses a note that has a frontmatter', () => {
+  it('reports an error for a note that has a frontmatter', () => {
     expect(() => addLinks('---\ntype: x\n---\n', [])).toThrow('frontmatter')
   })
 })

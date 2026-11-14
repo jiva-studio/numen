@@ -122,7 +122,7 @@ describe('a note that has rested open', () => {
     expect(mounted.view.findAll('.plex__lifted')).toHaveLength(1)
   })
 
-  it('is put back in its place once the pointer has left it', async () => {
+  it('returns to its place once the pointer leaves it', async () => {
     const mounted = mountView()
     await rest(mounted)
 

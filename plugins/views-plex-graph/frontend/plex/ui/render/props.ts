@@ -8,7 +8,7 @@ import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
 import type { NamesRoom } from '../../lib/names'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
-import type { WideBox } from '../../model/sizing/expansion'
+import type { ExpandedBox } from '../../model/sizing/expansion'
 import type { Attention } from '../../model/useAttention'
 import type { PlexDragState } from '../../model/interaction/drag'
 import type { Gesture } from '../../model/interaction/gesture'
@@ -33,8 +33,8 @@ export interface PlexViewProps {
   focusedNamesOpacity: number
   canReach?: boolean
   relationName?: (relation: PlexRelation) => string
-  widen?: ((node: PlacedNode) => WideBox | null) | undefined
-  hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
+  widen?: ((node: PlacedNode) => ExpandedBox | null) | undefined
+  placedHeadings?: ((node: PlacedNode) => NodeHeadings | null) | undefined
   roomOf?: ((id: string) => NamesRoom | undefined) | undefined
   behavior?: PlexBehavior
   gesture?: Gesture | undefined
@@ -67,8 +67,8 @@ export interface PlexViewEvents {
 export interface PlexNodeProps {
   node: PlacedNode
   gestureRole?: GestureRole
-  wide?: WideBox | null
-  hung?: NodeHeadings | null
+  expanded?: ExpandedBox | null
+  placedHeadings?: NodeHeadings | null
   behavior?: PlexBehavior
   showPills?: boolean
   restHeight?: number
@@ -79,14 +79,14 @@ export interface PlexNodeProps {
 /** What a node draws, in its place or in the layer over the others. */
 export interface PlexNodeFaceProps {
   node: PlacedNode
-  box: WideBox
+  box: ExpandedBox
   isGhost: boolean
   isTarget: boolean
   showPills: boolean
   restHeight: number
-  hung: NodeHeadings | null
+  placedHeadings: NodeHeadings | null
   open: number
-  isHandleShown: boolean
+  isHandleVisible: boolean
   handle: Position
 }
 

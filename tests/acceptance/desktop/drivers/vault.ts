@@ -119,10 +119,10 @@ export class VaultDriver {
       const notePath = this.scenario.getNotePath(from)
       const text = world.readText(vault, notePath)
       if (text === undefined) throw new Error(`no note is titled "${from}" in the vault: write it before its links`)
-      const written: NoteLink[] = links
+      const noteLinks: NoteLink[] = links
         .filter((link) => link.from === from)
         .map((link) => ({ to: `[[${this.scenario.getNotePath(link.to).replace(/\.md$/, '')}]]`, role: link.role, label: link.description }))
-      world.writeText(vault, notePath, addLinks(text, written))
+      world.writeText(vault, notePath, addLinks(text, noteLinks))
     }
   }
 

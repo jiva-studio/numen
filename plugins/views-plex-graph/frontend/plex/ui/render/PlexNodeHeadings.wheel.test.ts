@@ -31,7 +31,7 @@ const mountHeadings = () =>
   mount(PlexNodeHeadings, {
     props: {
       open: 1,
-      hung: getNodeHeadings(node, headings, {
+      placedHeadings: getNodeHeadings(node, headings, {
         options: { headingHeight: HEIGHT, headingIndent: 10, maxHeadings: MOST },
         deps: { viewport: { width: 1000, height: 600 }, margin: 20 },
       })!,
@@ -45,7 +45,7 @@ const wheel = (view: ReturnType<typeof mountHeadings>, deltaY: number) => {
 }
 
 describe('the wheel over the headings', () => {
-  it('is kept from the pane behind when a step is smaller than a heading and there is room below', () => {
+  it('does not scroll the pane behind when a step is smaller than a heading and there is room below', () => {
     const view = mountHeadings()
 
     const event = wheel(view, 3)
@@ -63,13 +63,13 @@ describe('the wheel over the headings', () => {
     expect(first()).toBe('Heading 1')
   })
 
-  it('is left to the pane behind when there is no room above', () => {
+  it('scrolls the pane behind when there is no room above', () => {
     const view = mountHeadings()
 
     expect(wheel(view, -3).defaultPrevented).toBe(false)
   })
 
-  it('is left to the pane behind when a step of nothing is made', () => {
+  it('scrolls the pane behind when the step is zero', () => {
     const view = mountHeadings()
 
     expect(wheel(view, 0).defaultPrevented).toBe(false)

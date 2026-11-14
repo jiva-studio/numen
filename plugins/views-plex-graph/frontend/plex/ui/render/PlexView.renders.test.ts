@@ -60,26 +60,26 @@ describe('the pointer moving over a note', () => {
 
   it('settles the width and the headings of the hovered note alone, and not again when the pointer leaves', async () => {
     const widen = vi.fn((node: PlacedNode) => ({ width: node.width + 40, offset: 0 }))
-    const hung = vi.fn((_node: PlacedNode) => null)
-    const { view } = createCountedView({ widen, hung })
+    const placedHeadings = vi.fn((_node: PlacedNode) => null)
+    const { view } = createCountedView({ widen, placedHeadings })
     const target = frame.nodes[4]!
     expect(widen).not.toHaveBeenCalled()
-    expect(hung).not.toHaveBeenCalled()
+    expect(placedHeadings).not.toHaveBeenCalled()
 
     await note(view, target.title).trigger('pointerenter')
     await nextTick()
     const widened = widen.mock.calls.length
-    const hanged = hung.mock.calls.length
+    const placedCalls = placedHeadings.mock.calls.length
     expect(widened).toBeGreaterThan(0)
-    expect(hanged).toBeGreaterThan(0)
+    expect(placedCalls).toBeGreaterThan(0)
     expect(widen.mock.calls.every(([node]) => node.id === target.id)).toBe(true)
-    expect(hung.mock.calls.every(([node]) => node.id === target.id)).toBe(true)
+    expect(placedHeadings.mock.calls.every(([node]) => node.id === target.id)).toBe(true)
 
     await note(view, target.title).trigger('pointerleave')
     await nextTick()
 
     expect(widen.mock.calls.length).toBe(widened)
-    expect(hung.mock.calls.length).toBe(hanged)
+    expect(placedHeadings.mock.calls.length).toBe(placedCalls)
   })
 
   it('lifts the lines of the note without redrawing the others', async () => {

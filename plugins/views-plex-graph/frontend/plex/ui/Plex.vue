@@ -66,7 +66,7 @@ const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 
 const slots = useSlots()
 
-const { room, options, measures, widen, hung } = useFreeSpace(
+const { room, options, measures, widen, placedHeadings } = useFreeSpace(
   frameElement,
   props,
   () => !!slots.icon,
@@ -180,7 +180,7 @@ watch(
       :can-reach="canReach"
       :relation-name="relationName"
       :widen="widen"
-      :hung="hung"
+      :placed-headings="placedHeadings"
       :room-of="getRoomOf"
       :behavior="behavior"
       :gesture="gesture"

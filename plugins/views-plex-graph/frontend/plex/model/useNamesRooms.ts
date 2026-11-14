@@ -49,7 +49,7 @@ export function useNamesRooms(
   watch(rooms, (_, previous) => {
     leaving = [previous, ...leaving].slice(0, FADING_CHANGES)
   })
-  const drawn = computed(() => new Set(props.graph.nodes.map((node) => node.id)))
+  const graphIds = computed(() => new Set(props.graph.nodes.map((node) => node.id)))
 
   const getNodeRoom = computed(() => {
     const found = rooms.value
@@ -58,7 +58,7 @@ export function useNamesRooms(
 
   const getRoomOf = (id: string) =>
     rooms.value.get(id) ??
-    (drawn.value.has(id) ? undefined : leaving.find((one) => one.has(id))?.get(id))
+    (graphIds.value.has(id) ? undefined : leaving.find((one) => one.has(id))?.get(id))
 
   return { getRoomOf, getNodeRoom }
 }

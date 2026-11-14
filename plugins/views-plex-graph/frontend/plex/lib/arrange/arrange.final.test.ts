@@ -25,13 +25,13 @@ const baseline = applyRoom(resolveOptions({ viewport: WINDOW }))
 
 function createRows(
   isMisplaced: (context: PlacementContext, node: PlacedNode) => boolean,
-  seen: PlacementContext[] = [],
+  contexts: PlacementContext[] = [],
 ): Placement {
   // One note per row; `isMisplaced` sends a note far outside the window.
   return {
     name: 'rows',
     place(nodesByRelation, _focus, context) {
-      seen.push(context)
+      contexts.push(context)
       const placed: PlacedNode[] = []
       for (const relation of RELATION_NAMES) {
         for (const node of nodesByRelation[relation] ?? []) {
@@ -60,15 +60,15 @@ const listNotes = (frame: ReturnType<typeof arrangePlex>) =>
 
 describe('a final layout that leaves the window', () => {
   it('falls back to the layout admission verified', () => {
-    const seen: PlacementContext[] = []
+    const contexts: PlacementContext[] = []
     const placement = createRows(
       (context) => context.fits !== undefined && context.options.lineGap > baseline.lineGap,
-      seen,
+      contexts,
     )
 
     const frame = arrangePlex(graph, { options: { viewport: WINDOW }, placement })
 
-    const finals = seen.filter((context) => context.fits && !context.shouldStop)
+    const finals = contexts.filter((context) => context.fits && !context.shouldStop)
     expect(finals[0]?.options.lineGap).toBeGreaterThan(baseline.lineGap)
     expect(listNotes(frame).map((node) => node.y)).toStrictEqual(
       [1, 2, 3].map((row) => row * (baseline.nodeSize.height + baseline.lineGap)),

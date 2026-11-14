@@ -133,11 +133,11 @@ export class SpotIndex {
   }
 }
 
-function isBetter(cost: number, along: number, best: { cost: number; along: number }): boolean {
-  return cost < best.cost || (cost === best.cost && roundAlong(along) < roundAlong(best.along))
+function isBetter(cost: number, progress: number, best: { cost: number; progress: number }): boolean {
+  return cost < best.cost || (cost === best.cost && roundProgress(progress) < roundProgress(best.progress))
 }
 
-function roundAlong(along: number): number {
+function roundProgress(progress: number): number {
   return Math.round(along * COST_PRECISION)
 }
 
@@ -162,29 +162,29 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
   const { size, gaps } = request
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
-  const found: { best?: { point: Vector; cost: number; along: number } } = {}
-  const consider = (point: Vector, leastAlong: number) => {
-    const along = measureAlong(point, request)
-    if (along < leastAlong) return
+  const found: { best?: { point: Vector; cost: number; progress: number } } = {}
+  const consider = (point: Vector, minProgress: number) => {
+    const progress = measureProgress(point, request)
+    if (progress < minProgress) return
     const cost = Math.round(measureCost(point, request) * COST_PRECISION)
-    if (found.best && !isBetter(cost, along, found.best)) return
+    if (found.best && !isBetter(cost, progress, found.best)) return
     if (request.fits && !request.fits(toSpot(point))) return
-    if (index.isFree(toSpot(point), gaps)) found.best = { point, cost, along }
+    if (index.isFree(toSpot(point), gaps)) found.best = { point, cost, progress }
   }
-  const considerAll = (points: readonly Vector[], leastAlong: number) =>
-    points.forEach((point) => consider(point, leastAlong))
+  const considerAll = (points: readonly Vector[], minProgress: number) =>
+    points.forEach((point) => consider(point, minProgress))
 
   considerAll([request.middle, request.start], -TOLERANCE)
   for (const box of request.group) {
     // The candidates of a box that all cost more than the best so far cannot win, so they are not built.
     if (found.best && getLeastCost(box, request) > found.best.cost + 1) continue
-    considerAll(listCandidatesAround(box, request), -TOLERANCE)
+    considerAll(listNearbyCandidates(box, request), -TOLERANCE)
   }
   if (!found.best && request.fits) {
     // The group has no free place in the window on its side of the start. A box wider than the ones before it starts further out, so a place
     // that is free and in the window is also taken where the box reaches back past the start, as long as its center is on the side of the group.
-    const relaxedAlong = -getReach(request.direction, request.size) - TOLERANCE
-    for (const box of index.list()) considerAll(listCandidatesAround(box, request), relaxedAlong)
+    const relaxedMinProgress = -getReach(request.direction, request.size) - TOLERANCE
+    for (const box of index.list()) considerAll(listNearbyCandidates(box, request), relaxedMinProgress)
   }
   if (found.best) return toSpot(found.best.point)
   return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
@@ -230,7 +230,7 @@ function getReach(direction: Vector, box: Size): number {
   return Math.abs(direction.x) * (box.width / 2) + Math.abs(direction.y) * (box.height / 2)
 }
 
-export function listCandidatesAround(box: Spot, request: SpotRequest): Vector[] {
+export function listNearbyCandidates(box: Spot, request: SpotRequest): Vector[] {
   const { size } = request
   const gaps = getCandidateGaps(request)
   const right = box.x + box.width / 2 + gaps.gap + size.width / 2
@@ -249,7 +249,7 @@ export function listCandidatesAround(box: Spot, request: SpotRequest): Vector[] 
   ]
 }
 
-export function measureAlong(point: Vector, request: SpotRequest): number {
+export function measureProgress(point: Vector, request: SpotRequest): number {
   const { start, direction } = request
   return (point.x - start.x) * direction.x + (point.y - start.y) * direction.y
 }
@@ -275,7 +275,7 @@ function findFreeSpotOutward(index: SpotIndex, request: SpotRequest): Spot | und
         ...size,
       }
       if (request.fits && !request.fits(spot)) continue
-      if (index.isFree(spot, gaps) && measureAlong(spot, request) >= -TOLERANCE) return spot
+      if (index.isFree(spot, gaps) && measureProgress(spot, request) >= -TOLERANCE) return spot
     }
   }
   return undefined

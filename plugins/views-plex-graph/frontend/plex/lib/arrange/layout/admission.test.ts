@@ -77,10 +77,10 @@ describe('the boundary of what a window holds', () => {
   it('keeps the order the notes arrived in, as a prefix', () => {
     const requested = createNodes('child', 30)
 
-    const shown = admit({ child: requested }).child ?? []
+    const visible = admit({ child: requested }).child ?? []
 
-    expect(shown.length).toBeGreaterThan(0)
-    expect(shown).toStrictEqual(requested.slice(0, shown.length))
+    expect(visible.length).toBeGreaterThan(0)
+    expect(visible).toStrictEqual(requested.slice(0, visible.length))
   })
 })
 
@@ -119,9 +119,9 @@ describe('the order of the notes inside a relation', () => {
     const requested = createNodes('child', 25)
     const permuted = shuffle(requested)
 
-    const shown = admit({ child: permuted }).child ?? []
+    const visible = admit({ child: permuted }).child ?? []
 
-    expect(shown).toStrictEqual(permuted.slice(0, shown.length))
+    expect(visible).toStrictEqual(permuted.slice(0, visible.length))
   })
 })
 

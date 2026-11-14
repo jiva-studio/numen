@@ -29,9 +29,9 @@ function groupByOwner(
 }
 
 function listDistinctItems(items: readonly RelatedNote[]): RelatedNote[] {
-  const kept = NAME_ORDER.flatMap((relation) => items.filter((item) => item.relation === relation))
+  const ordered = NAME_ORDER.flatMap((relation) => items.filter((item) => item.relation === relation))
   const named = new Set<string>()
-  return kept.filter((item) => {
+  return ordered.filter((item) => {
     if (named.has(item.path)) return false
     named.add(item.path)
     return true
@@ -52,10 +52,10 @@ export function getNames(
   const toName = (item: RelatedNote): PlexName => ({ id: token(item.path), title: item.title })
   const found = new Map<string, PlexNames>()
   for (const [owner, items] of groupByOwner(noteGraph, references)) {
-    const kept = listDistinctItems(items).slice(0, limit)
+    const listed = listDistinctItems(items).slice(0, limit)
     found.set(token(owner), {
-      above: kept.filter((item) => item.relation === 'parent').map(toName),
-      below: kept.filter((item) => item.relation !== 'parent').map(toName),
+      above: listed.filter((item) => item.relation === 'parent').map(toName),
+      below: listed.filter((item) => item.relation !== 'parent').map(toName),
     })
   }
   return found

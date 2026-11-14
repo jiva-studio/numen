@@ -58,7 +58,7 @@ const meta: Meta<Knobs> = {
         component:
           'A disc with a cross on it, drawn about its own origin and put ' +
           'where it belongs by the one point it takes. Every size in it is a ' +
-          'token, and the hue is whatever it was hung on.',
+          'token, and the hue is whatever it was placed on.',
       },
     },
   },

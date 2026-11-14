@@ -228,7 +228,7 @@ func TestAnItemOfDepthTwoCarriesTheTypeAndTabKindItHasAsAFocus(t *testing.T) {
 	}
 }
 
-func TestADepthBeyondTwoIsRefused(t *testing.T) {
+func TestADepthBeyondTwoIsAnError(t *testing.T) {
 	client, _ := openVault(t, relatedVault())
 
 	_, err := askRelated(t, client, "Entropy.md", 3)

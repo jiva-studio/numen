@@ -10,7 +10,7 @@ import { measureRect } from '@numen/ui'
  */
 import { computed, inject, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import PlexNodeFace from './PlexNodeFace.vue'
-import { LIFT_LAYER, SETTLED_NODES } from './layer'
+import { LIFT_LAYER, NODE_SIZES } from './layer'
 import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
 import { useHoverFocus } from '../../model/interaction/hoverFocus'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
@@ -19,14 +19,14 @@ import { useLift } from '../../model/useLift'
 import { useNodeState } from '../../model/useNodeState'
 import { getNodeEvents } from '../../model/interaction/nodeEvents'
 import { useNodePress } from '../../model/interaction/press'
-import { useHeldSizes } from '../../model/useHeldSizes'
+import { useExpandedSizes } from '../../model/useExpandedSizes'
 import { createAriaLabel, type Position } from '../../lib/node'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexNodeProps>(), {
   gestureRole: 'open',
-  wide: null,
-  hung: null,
+  expanded: null,
+  placedHeadings: null,
   behavior: () => DEFAULT_BEHAVIOR,
   showPills: true,
   restHeight: 0,
@@ -45,7 +45,7 @@ defineExpose({ focus: () => group.value?.focus() })
 const group = useTemplateRef<SVGGElement>('group')
 const lifted = useTemplateRef<SVGGElement>('lifted')
 const layer = inject(LIFT_LAYER, null)
-const settled = inject(SETTLED_NODES, null)
+const sizes = inject(NODE_SIZES, null)
 
 /** Whether the box has begun to open and not yet closed. */
 const hasOpened = ref(false)
@@ -61,18 +61,18 @@ const press = useNodePress(props, getMiddle, {
 
 const { isGhost, canStop, isAnnounced } = press.role
 
-// A note works out its widened box and its headings only while it is on or open.
-const isHeld = computed(() => hoverFocus.isOn.value || hasOpened.value)
-const { wide, hung, state } = useHeldSizes(props, settled, () => isHeld.value)
+// A note works out its expanded box and its headings only while it is on or open.
+const isExpanded = computed(() => hoverFocus.isOn.value || hasOpened.value)
+const { expanded, placedHeadings, state } = useExpandedSizes(props, sizes, () => isExpanded.value)
 
-const { isHandleShown, role, openPosition, hue } = useNodeState(state, {
+const { isHandleVisible, role, openPosition, hue } = useNodeState(state, {
   isGhost,
   isOn: hoverFocus.isOn,
 })
 
 const { open, box, handle } = useOpenBox({
   node: () => props.node,
-  wide: () => wide.value,
+  expanded: () => expanded.value,
   on: () => openPosition.value,
   delay: () => props.behavior.expansionDelay,
   hasPill: () => props.showPills,
@@ -94,9 +94,9 @@ const face = computed(() => ({
   isTarget: props.gestureRole === 'target',
   showPills: props.showPills,
   restHeight: props.restHeight,
-  hung: hung.value,
+  placedHeadings: placedHeadings.value,
   open: open.value,
-  isHandleShown: isHandleShown.value,
+  isHandleVisible: isHandleVisible.value,
   handle: handle.value,
 }))
 

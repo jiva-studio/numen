@@ -22,7 +22,7 @@ const getHandleOf = (options: { hasPill: boolean; viewportWidth?: number }) =>
     () =>
       useOpenBox({
         node: () => node,
-        wide: () => null,
+        expanded: () => null,
         on: () => null,
         delay: () => 500,
         hasPill: () => options.hasPill,

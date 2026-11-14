@@ -81,10 +81,10 @@ func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path stri
 
 func getPaths(focus string, related, relatedToRelated []domain.RelatedNote) []string {
 	paths := []string{focus}
-	seen := map[string]bool{focus: true}
+	visited := map[string]bool{focus: true}
 	for _, n := range slices.Concat(related, relatedToRelated) {
-		if !seen[n.Path] {
-			seen[n.Path] = true
+		if !visited[n.Path] {
+			visited[n.Path] = true
 			paths = append(paths, n.Path)
 		}
 	}
@@ -108,7 +108,7 @@ func createGraph(
 	}
 	for _, item := range relatedToRelated {
 		note, known := notes[item.Path]
-		if _, ownerShown := notes[item.RelatedTo]; known && ownerShown {
+		if _, hasOwner := notes[item.RelatedTo]; known && hasOwner {
 			out.AddRelatedNote(note, item)
 		}
 	}

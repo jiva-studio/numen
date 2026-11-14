@@ -18,7 +18,7 @@ const createNodes = (relation: PlexRelation, count: number): PlexNode[] =>
 function refillEveryRound(
   admitted: NodesByRelation,
   requested: NodesByRelation,
-  isHeld: (nodesByRelation: NodesByRelation) => boolean,
+  isAccepted: (nodesByRelation: NodesByRelation) => boolean,
 ): NodesByRelation {
   let current = admitted
   for (let grew = true; grew;) {
@@ -28,7 +28,7 @@ function refillEveryRound(
       const have = current[relation]?.length ?? 0
       if (have >= all.length) continue
       const next = { ...current, [relation]: all.slice(0, have + 1) }
-      if (isHeld(next)) {
+      if (isAccepted(next)) {
         current = next
         grew = true
       }
@@ -54,12 +54,12 @@ describe('refill', () => {
         admitted[relation] = requested[relation].slice(0, Math.floor(random() * (total + 1)))
         weights[relation] = 1 + Math.floor(random() * 4)
       }
-      // A set is held while its weight is under a limit, and a relation also has a ceiling of its own.
+      // A set is accepted while its weight is under a limit, and a relation also has a ceiling of its own.
       const limit = 10 + Math.floor(random() * 50)
       const ceilings = Object.fromEntries(
         RELATION_NAMES.map((name) => [name, Math.floor(random() * 9)]),
       )
-      const createHeld = (probes: { count: number }) => (set: NodesByRelation) => {
+      const createAcceptor = (probes: { count: number }) => (set: NodesByRelation) => {
         probes.count++
         let weight = 0
         for (const relation of RELATION_NAMES) {
@@ -71,8 +71,8 @@ describe('refill', () => {
       const before = { count: 0 }
       const after = { count: 0 }
 
-      const expected = refillEveryRound(admitted, requested, createHeld(before))
-      const actual = refill(admitted, requested, createHeld(after))
+      const expected = refillEveryRound(admitted, requested, createAcceptor(before))
+      const actual = refill(admitted, requested, createAcceptor(after))
 
       expect(actual, `round ${round}`).toStrictEqual(expected)
       expect(after.count).toBeLessThanOrEqual(before.count)

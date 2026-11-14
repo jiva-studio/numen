@@ -1,4 +1,4 @@
-/** The listeners of each drawn note, made once per note, so a note keeps the same functions while it is drawn and is not redrawn for them. */
+/** The listeners of each drawn note, created once per note, so a note keeps the same functions while it is drawn and is not redrawn for them. */
 import type { MenuTrigger } from '@numen/ui'
 import { watch } from 'vue'
 import type { Position } from '../lib/node'
@@ -30,17 +30,17 @@ export function useNodeHandlers(
   reports: NodeReports,
   ids?: () => readonly string[],
 ): (id: string) => NodeListeners {
-  const made = new Map<string, NodeListeners>()
+  const listenersById = new Map<string, NodeListeners>()
 
   if (ids) {
-    watch(ids, (drawn) => {
-      const alive = new Set(drawn)
-      for (const id of made.keys()) if (!alive.has(id)) made.delete(id)
+    watch(ids, (current) => {
+      const alive = new Set(current)
+      for (const id of listenersById.keys()) if (!alive.has(id)) listenersById.delete(id)
     })
   }
 
   return (id) => {
-    let listeners = made.get(id)
+    let listeners = listenersById.get(id)
     if (!listeners) {
       listeners = {
         activate: () => reports.activate(id),
@@ -51,7 +51,7 @@ export function useNodeHandlers(
         enter: (heading) => reports.enter(id, heading),
         attend: (isAttended) => reports.attend(id, isAttended),
       }
-      made.set(id, listeners)
+      listenersById.set(id, listeners)
     }
     return listeners
   }

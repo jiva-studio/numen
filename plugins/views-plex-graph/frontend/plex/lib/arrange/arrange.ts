@@ -55,7 +55,7 @@ export function arrangePlex(
   const lay = (
     laid: PlexOptions,
     nodesByRelation: NodesByRelation,
-    kept: Fit['rooms'],
+    roomsById: Fit['rooms'],
     limits: Pick<PlacementContext, 'shouldStop' | 'fits'> = {},
   ) => {
     const width = createWidthLookup(laid, measure, request)
@@ -73,7 +73,7 @@ export function arrangePlex(
       placed: placement.place(nodesByRelation, focus, {
         options: laid,
         width,
-        room: (node) => kept.get(node.id) ?? NO_ROOM,
+        room: (node) => roomsById.get(node.id) ?? NO_ROOM,
         ...limits,
       }),
     }
@@ -85,7 +85,7 @@ export function arrangePlex(
   // they choose. The names are left out of it:
   // a pill is the same size with names as without, and the names then cost notes.
   const crowded = measureCrowding(request, (packed) =>
-    isHeld(
+    isInsideWindow(
       lay(packed, requested, NO_ROOMS, {
         shouldStop: stopAtOutside(packed.viewport, packed.margin, NO_ROOMS),
       }).placed,
@@ -115,13 +115,13 @@ export function arrangePlex(
     crowded.gap > tightest.gap &&
     countNodes(admittedCrowded) < countNodes(requested)
   const admittedTightest = isTightestBetter ? admitAt(tightest) : admittedCrowded
-  const isTightestKept = countNodes(admittedTightest) > countNodes(admittedCrowded)
-  const resolved = isTightestKept ? tightest : crowded
-  const admitted = isTightestKept ? admittedTightest : admittedCrowded
+  const isTightestChosen = countNodes(admittedTightest) > countNodes(admittedCrowded)
+  const resolved = isTightestChosen ? tightest : crowded
+  const admitted = isTightestChosen ? admittedTightest : admittedCrowded
   const admittedOverflow = countOverflow(graph.nodes, admitted)
 
   const spacing = findSpacing(resolved, (candidate, window) =>
-    isHeld(
+    isInsideWindow(
       lay({ ...resolved, ...candidate }, admitted, rooms, {
         shouldStop: stopAtOutside(window, margin, rooms),
       }).placed,
@@ -132,14 +132,14 @@ export function arrangePlex(
   const fit: Fit = { margin, rooms }
   const spaced = lay({ ...resolved, ...spacing }, admitted, rooms, { fits: getFits(resolved) })
   // The probes of the gaps lay out without `fits`, so the spaced layout can leave the window where the one admission verified does not.
-  const settled = isHeld(spaced.placed, viewport, fit)
+  const finalLayout = isInsideWindow(spaced.placed, viewport, fit)
     ? spaced
     : lay(resolved, admitted, rooms, { fits: getFits(resolved) })
-  const { focus } = settled
+  const { focus } = finalLayout
   const placed = viewport
-    ? settled.placed.filter((node) => isInside(node, viewport, fit))
-    : settled.placed
-  const overflow = addDropped(admittedOverflow, settled.placed, placed)
+    ? finalLayout.placed.filter((node) => isInside(node, viewport, fit))
+    : finalLayout.placed
+  const overflow = addDropped(admittedOverflow, finalLayout.placed, placed)
   const nodes = [focus, ...placed]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
@@ -175,12 +175,12 @@ function countNodes(nodesByRelation: NodesByRelation): number {
 function addDropped(
   overflow: Partial<Record<PlexRelation, number>>,
   laid: readonly PlacedNode[],
-  kept: readonly PlacedNode[],
+  inside: readonly PlacedNode[],
 ): Partial<Record<PlexRelation, number>> {
-  const keptIds = new Set(kept.map((node) => node.id))
+  const insideIds = new Set(inside.map((node) => node.id))
   const total = { ...overflow }
   for (const node of laid) {
-    if (keptIds.has(node.id) || node.relation === 'focus') continue
+    if (insideIds.has(node.id) || node.relation === 'focus') continue
     total[node.relation] = (total[node.relation] ?? 0) + 1
   }
   return total
@@ -236,6 +236,6 @@ function stopAtOutside(
   return viewport ? (node) => !isInside(node, viewport, { margin, rooms }) : undefined
 }
 
-function isHeld(nodes: readonly PlacedNode[], viewport: Size | undefined, fit: Fit): boolean {
+function isInsideWindow(nodes: readonly PlacedNode[], viewport: Size | undefined, fit: Fit): boolean {
   return !viewport || nodes.every((node) => isInside(node, viewport, fit))
 }

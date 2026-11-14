@@ -6,13 +6,13 @@
  * not reorder a right-to-left run.
  */
 import { Comment, computed, Fragment, Text, useSlots, type VNode } from 'vue'
-import type { WideBox } from '../../model/sizing/expansion'
+import type { ExpandedBox } from '../../model/sizing/expansion'
 import type { PlacedNode } from '../../lib/node'
 
 const props = withDefaults(
   defineProps<{
     node: PlacedNode
-    box: WideBox
+    box: ExpandedBox
     isGhost: boolean
     isTarget: boolean
     showPills: boolean

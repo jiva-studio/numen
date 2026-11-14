@@ -17,7 +17,7 @@ afterEach(() => {
 
 const mountView = () => {
   const widen = vi.fn((_node: PlacedNode) => null)
-  const hung = vi.fn((_node: PlacedNode) => null)
+  const placedHeadings = vi.fn((_node: PlacedNode) => null)
   const view = mount(PlexView, {
     attachTo: document.body,
     props: {
@@ -27,10 +27,10 @@ const mountView = () => {
       viewport: { width: 1200, height: 800 },
       nodeSize: DEFAULT_OPTIONS.nodeSize,
       widen,
-      hung,
+      placedHeadings,
     },
   })
-  return { view, widen, hung }
+  return { view, widen, placedHeadings }
 }
 
 const play = async (view: ReturnType<typeof mountView>['view']) => {
@@ -41,26 +41,26 @@ const play = async (view: ReturnType<typeof mountView>['view']) => {
 
 describe('the sizes requested during a move', () => {
   it('are requested of no note while none is hovered', async () => {
-    const { view, widen, hung } = mountView()
+    const { view, widen, placedHeadings } = mountView()
 
     await play(view)
 
     expect(widen).not.toHaveBeenCalled()
-    expect(hung).not.toHaveBeenCalled()
+    expect(placedHeadings).not.toHaveBeenCalled()
   })
 
   it('are requested of the hovered note alone, at most once for each frame', async () => {
-    const { view, widen, hung } = mountView()
+    const { view, widen, placedHeadings } = mountView()
     const attended = from.nodes.find((node) => node.relation === 'child')!
     await view.get(`[aria-label^="${attended.title}"]`).trigger('pointerenter')
     await view.vm.$nextTick()
     widen.mockClear()
-    hung.mockClear()
+    placedHeadings.mockClear()
 
     await play(view)
 
-    expect(new Set(hung.mock.calls.map(([node]) => node.id))).toStrictEqual(new Set([attended.id]))
+    expect(new Set(placedHeadings.mock.calls.map(([node]) => node.id))).toStrictEqual(new Set([attended.id]))
     expect(new Set(widen.mock.calls.map(([node]) => node.id))).toStrictEqual(new Set([attended.id]))
-    expect(hung.mock.calls.length).toBeLessThanOrEqual(FRAMES)
+    expect(placedHeadings.mock.calls.length).toBeLessThanOrEqual(FRAMES)
   })
 })

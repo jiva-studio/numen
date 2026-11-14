@@ -3,8 +3,8 @@ import { effectScope, nextTick, ref } from 'vue'
 import type { EditorHandle } from '@numen/plugin-sdk'
 import { createLineReveal } from './customTabReveal'
 
-const createEditor = (isShown = true): EditorHandle & { reveal: ReturnType<typeof vi.fn> } => ({
-  reveal: vi.fn(() => isShown),
+const createEditor = (isRevealed = true): EditorHandle & { reveal: ReturnType<typeof vi.fn> } => ({
+  reveal: vi.fn(() => isRevealed),
 })
 
 const create = (isLoaded = ref(true)) => {

@@ -21,7 +21,7 @@ export function requestNodes(nodes: readonly PlexNode[], options: PlexOptions): 
  * the first box that is not inside, and the rest is laid out again, since a
  * smaller group is placed differently. A group whose first box is outside is
  * halved instead, since its middle lies nearer the focus when it is smaller.
- * Every pass removes at least one node. What was cut is then taken back, one note of each relation in turn, while the window still holds every box.
+ * Every pass removes at least one node. The notes removed are then added back, one note of each relation in turn, while the window still holds every box.
  *
  * A pass needs the first box outside of each relation and nothing after it, so
  * it stops once every relation has one or is fully placed.
@@ -59,11 +59,11 @@ function findOutside(
   return new Set(placed.filter((node) => !isInside(node)).map((node) => node.id))
 }
 
-/** Takes cut notes back, one note of each relation in turn, while `isHeld` accepts the set. */
+/** Adds the removed notes back, one note of each relation in turn, while `isAccepted` accepts the set. */
 export function refill(
   admitted: NodesByRelation,
   requested: NodesByRelation,
-  isHeld: (nodesByRelation: NodesByRelation) => boolean,
+  isAccepted: (nodesByRelation: NodesByRelation) => boolean,
 ): NodesByRelation {
   let current = admitted
   // Each probe is a full layout. A relation that failed is tried again only after another relation has grown: until then the set is the same.
@@ -76,7 +76,7 @@ export function refill(
       const have = current[relation]?.length ?? 0
       if (have >= all.length || failedAt.get(relation) === version) continue
       const next = { ...current, [relation]: all.slice(0, have + 1) }
-      if (isHeld(next)) {
+      if (isAccepted(next)) {
         current = next
         grew = true
         version++

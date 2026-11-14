@@ -154,7 +154,7 @@ func TestItemsOfDepthTwoFollowTheNotesRelatedToTheFocusInGroups(t *testing.T) {
 	t.Parallel()
 	got := showDepth(t, depthGraph(), &pathLookup{}, "F.md", 2)
 
-	var seen []string
+	var visited []string
 	started := false
 	for _, r := range got.Related {
 		if r.RelatedTo == "" {
@@ -164,15 +164,15 @@ func TestItemsOfDepthTwoFollowTheNotesRelatedToTheFocusInGroups(t *testing.T) {
 			continue
 		}
 		started = true
-		if len(seen) == 0 || seen[len(seen)-1] != r.RelatedTo {
-			if slices.Contains(seen, r.RelatedTo) {
+		if len(visited) == 0 || visited[len(visited)-1] != r.RelatedTo {
+			if slices.Contains(visited, r.RelatedTo) {
 				t.Errorf("the items of %s are not in one group", r.RelatedTo)
 			}
-			seen = append(seen, r.RelatedTo)
+			visited = append(visited, r.RelatedTo)
 		}
 	}
-	if want := []string{"C.md", "P.md", "S.md"}; !slices.Equal(seen, want) {
-		t.Errorf("groups in the order %v, want %v", seen, want)
+	if want := []string{"C.md", "P.md", "S.md"}; !slices.Equal(visited, want) {
+		t.Errorf("groups in the order %v, want %v", visited, want)
 	}
 }
 
@@ -201,7 +201,7 @@ func TestEveryLinkIsReadOnceAndTheNotesAreQueriedOnce(t *testing.T) {
 	}
 	for _, p := range []string{"G.md", "GP.md", "J.md", "SC.md"} {
 		if !slices.Contains(refs.paths, p) {
-			t.Errorf("%s is shown by name and was not asked for: %v", p, refs.paths)
+			t.Errorf("%s is listed by name and was not requested: %v", p, refs.paths)
 		}
 	}
 }

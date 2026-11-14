@@ -7,7 +7,7 @@
  * already worked out.
  */
 import { computed, onMounted, onScopeDispose, ref, type Ref, type ShallowRef } from 'vue'
-import { getWideBox } from './expansion'
+import { getExpandedBox } from './expansion'
 import {
   useTitleWidths,
   type PlexMetrics,
@@ -98,14 +98,14 @@ export function useFreeSpace(
 
     const { margin } = options.value
     const bounds = { viewport: room.value, margin }
-    return (node: PlacedNode) => getWideBox(node, measure(node), bounds)
+    return (node: PlacedNode) => getExpandedBox(node, measure(node), bounds)
   })
 
   /**
-   * The headings each node hangs under its box. The sizes are the ones the whole
-   * picture is drawn to, so a plex set larger hangs them larger.
+   * The headings placed under the box of each node. The sizes are the ones the whole
+   * picture is drawn to, so a plex set larger places them larger.
    */
-  const suspended = computed(() => {
+  const placedHeadings = computed(() => {
     const getHeadings = props.headings
     if (!getHeadings) return undefined
 
@@ -115,5 +115,5 @@ export function useFreeSpace(
       getNodeHeadings(node, getHeadings(node.id), { options: options.value, deps })
   })
 
-  return { room, options, measures, widen: expandWidth, hung: suspended }
+  return { room, options, measures, widen: expandWidth, placedHeadings }
 }

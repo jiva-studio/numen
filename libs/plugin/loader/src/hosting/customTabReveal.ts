@@ -1,5 +1,5 @@
 /**
- * The line a note tab is asked to open on, handed to its editor when there is one to take it.
+ * The line a note tab is requested to open on, passed to its editor when there is one to take it.
  */
 import { nextTick, watch } from 'vue'
 import type { EditorHandle } from '@numen/plugin-sdk'

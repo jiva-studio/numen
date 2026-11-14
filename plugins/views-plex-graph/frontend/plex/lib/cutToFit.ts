@@ -12,14 +12,14 @@ export function cutToFit(label: string, room: number, width: (label: string) => 
   if (width(label) <= room) return label
 
   const characters = Array.from(segmenter.segment(label), (part) => part.segment)
-  const cutTo = (count: number) => `${characters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
+  const trimTo = (count: number) => `${characters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
 
   let fits = 0
   let overCount = characters.length
   while (fits + 1 < overCount) {
     const middle = Math.floor((fits + overCount) / 2)
-    if (width(cutTo(middle)) <= room) fits = middle
+    if (width(trimTo(middle)) <= room) fits = middle
     else overCount = middle
   }
-  return cutTo(fits)
+  return trimTo(fits)
 }

@@ -4,7 +4,7 @@ import PlexEdgeLayer from './PlexEdgeLayer.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexNodeNames from './PlexNodeNames.vue'
 import PlexThreads from './PlexThreads.vue'
-import { LIFT_LAYER, SETTLED_NODES } from './layer'
+import { LIFT_LAYER, NODE_SIZES } from './layer'
 import { useEdgeLines } from './lines'
 import { listNamedNodes } from './named'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
@@ -14,7 +14,7 @@ import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useAttention } from '../../model/useAttention'
 import { useNodeHandlers } from '../../model/useNodeHandlers'
 import { useNodeViews } from '../../model/useNodeViews'
-import { useSettledNodes } from '../../model/useSettledNodes'
+import { useNodeSizes } from '../../model/useNodeSizes'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
@@ -76,12 +76,12 @@ const getNodeHandlers = useNodeHandlers(
 
 const namedNodes = computed(() => listNamedNodes(props.frame.nodes, props.roomOf))
 
-const settled = useSettledNodes(() => ({
+const sizes = useNodeSizes(() => ({
   nodes: props.frame.nodes,
   widen: props.widen,
-  hung: props.hung,
+  placedHeadings: props.placedHeadings,
 }))
-provide(SETTLED_NODES, settled)
+provide(NODE_SIZES, sizes)
 
 /** Stays the same map while no role changes, so a pointer moving through a gesture does not redraw the notes. */
 const roles = computed<Map<string, GestureRole>>((previous) => {

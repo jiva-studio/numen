@@ -402,11 +402,11 @@ describe('the names of the notes related to the related notes of an open plex', 
 
   const openPlex = async (initialSettings: Record<string, JsonValue> = {}) => {
     const { host } = createHost({ opening: 'One.md' })
-    const asked: [string, number | undefined][] = []
+    const requests: [string, number | undefined][] = []
     const notes = {
       ...host.notes,
       listRelatedNotes: async (path: string, depth?: 1 | 2) => {
-        asked.push([path, depth])
+        requests.push([path, depth])
         return answerFor(path, depth)
       },
     }
@@ -425,7 +425,7 @@ describe('the names of the notes related to the related notes of an open plex', 
     await nextTick()
     const getPlex = () => tab.findComponent(Plex)
     const getNames = () => tab.findAll('.plex__name-text').map((name) => name.text())
-    return { ctx, state, tab, asked, getPlex, getNames }
+    return { ctx, state, tab, requests, getPlex, getNames }
   }
 
   beforeEach(() => {
@@ -443,44 +443,44 @@ describe('the names of the notes related to the related notes of an open plex', 
   })
 
   it('asks for the notes related to related notes where nothing is set, and draws no node for them', async () => {
-    const { asked, state, getPlex, getNames } = await openPlex()
+    const { requests, state, getPlex, getNames } = await openPlex()
 
-    expect(asked.at(-1)).toEqual(['One.md', 2])
+    expect(requests.at(-1)).toEqual(['One.md', 2])
     expect(getPlex().props('showNames')).toBe(true)
     expect(getNames()).toEqual(['Aunt', 'Leaf1', 'Leaf2', 'Leaf3'])
     expect(state.canvas.picture.value!.nodes.map((node) => node.title)).toEqual(['One', 'Kid'])
   })
 
   it('asks again for depth 1 and loses the names when the setting is turned off, and gets them back when it is turned on', async () => {
-    const { ctx, asked, getPlex, getNames } = await openPlex()
+    const { ctx, requests, getPlex, getNames } = await openPlex()
 
     ctx.setSetting('showNames', false)
     await settle()
-    expect(asked.at(-1)).toEqual(['One.md', 1])
+    expect(requests.at(-1)).toEqual(['One.md', 1])
     expect(getPlex().props('showNames')).toBe(false)
     expect(getNames()).toEqual([])
 
     ctx.setSetting('showNames', true)
     await settle()
-    expect(asked.at(-1)).toEqual(['One.md', 2])
+    expect(requests.at(-1)).toEqual(['One.md', 2])
     expect(getNames()).toEqual(['Aunt', 'Leaf1', 'Leaf2', 'Leaf3'])
   })
 
   it('asks for depth 1 from the start when the setting is off', async () => {
-    const { asked, getNames } = await openPlex({ showNames: false })
+    const { requests, getNames } = await openPlex({ showNames: false })
 
-    expect(asked.every(([, depth]) => depth === 1)).toBe(true)
+    expect(requests.every(([, depth]) => depth === 1)).toBe(true)
     expect(getNames()).toEqual([])
   })
 
   it('cuts the names to Names per note without asking again', async () => {
-    const { ctx, asked, getNames } = await openPlex()
-    const before = asked.length
+    const { ctx, requests, getNames } = await openPlex()
+    const before = requests.length
 
     ctx.setSetting('namesPerNote', 2)
     await settle()
 
-    expect(asked).toHaveLength(before)
+    expect(requests).toHaveLength(before)
     expect(getNames()).toEqual(['Aunt', 'Leaf1'])
   })
 

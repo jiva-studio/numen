@@ -14,7 +14,7 @@ const createReports = (): NodeReports => ({
 })
 
 describe('the listeners of a note that left the frame', () => {
-  it('are created again when the note returns, and kept while it is drawn', async () => {
+  it('are created again when the note returns, and reused while it is in the frame', async () => {
     const live = reactive({ ids: ['a', 'b'] })
     const getListeners = useNodeHandlers(createReports(), () => live.ids)
     const first = getListeners('a')

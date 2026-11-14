@@ -5,11 +5,11 @@ import { useEdgeLines } from './lines'
 import { arrangePlex } from '../../lib/arrange'
 import { build } from '../../fixtures/build'
 
-const wide = arrangePlex(build('Hub', { child: 3 }))
+const hubFrame = arrangePlex(build('Hub', { child: 3 }))
 const narrow = arrangePlex(build('Hub', { child: 1 }))
 
 const setUp = () => {
-  const props = reactive({ frame: wide, highlightLinks: false })
+  const props = reactive({ frame: hubFrame, highlightLinks: false })
   const lines = effectScope().run(() => useEdgeLines(props, 'u', { node: null, names: null }))!
   return { props, lines }
 }
@@ -20,7 +20,7 @@ describe('the line the pointer is on', () => {
     const first = lines.lines.value[0]!
     lines.setOver(first.pair)
 
-    props.frame = { ...wide }
+    props.frame = { ...hubFrame }
     await nextTick()
 
     expect(lines.isRaised(lines.lines.value[0]!)).toBe(true)

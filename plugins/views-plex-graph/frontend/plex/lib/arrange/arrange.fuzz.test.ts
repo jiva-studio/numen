@@ -10,8 +10,8 @@ import { createRandom } from '../../fixtures/random'
 import type { PlexEdge, PlexGraph, PlexNode, PlexRelation } from '../../../types'
 
 const ROUNDS = 120
-const RELATIONS_DRAWN: readonly PlexRelation[] = ['parent', 'child', 'jump', 'reference', 'sibling']
-const RELATIONS_CUT: readonly PlexRelation[] = ['parent', 'child', 'jump', 'reference']
+const RELATIONS_ALL: readonly PlexRelation[] = ['parent', 'child', 'jump', 'reference', 'sibling']
+const RELATIONS_WITH_OVERFLOW: readonly PlexRelation[] = ['parent', 'child', 'jump', 'reference']
 
 const random = createRandom(1837)
 const between = (low: number, high: number) => low + random() * (high - low)
@@ -30,7 +30,7 @@ const createCase = (): Case => {
   const edges: PlexEdge[] = []
   const widths = new Map<string, number>()
   const rooms = new Map<string, NodeRoom>()
-  for (const relation of RELATIONS_DRAWN) {
+  for (const relation of RELATIONS_ALL) {
     for (let index = whole(0, 22); index > 0; index--) {
       const id = `${relation}-${index}`
       nodes.push({ id, title: id, relation })
@@ -71,16 +71,16 @@ describe('what is shown of a graph', () => {
     'adds up to what arrived, fits the window and overlaps nothing, in case %i',
     (_, one) => {
       const frame = arrangeCase(one)
-      const shown = frame.nodes.filter((node) => node.relation !== 'focus')
+      const visible = frame.nodes.filter((node) => node.relation !== 'focus')
 
       for (const relation of RELATION_NAMES) {
-        expect(countByRelation(shown, relation) + (frame.overflow[relation] ?? 0), relation).toBe(
+        expect(countByRelation(visible, relation) + (frame.overflow[relation] ?? 0), relation).toBe(
           countByRelation(one.graph.nodes, relation),
         )
       }
 
       const { margin } = resolveOptions({ viewport: one.viewport })
-      const boxes = shown.map((node) => footprintOf(node, one.rooms))
+      const boxes = visible.map((node) => footprintOf(node, one.rooms))
       for (const box of boxes) {
         expect(Math.abs(box.x) + box.width / 2).toBeLessThanOrEqual(
           one.viewport.width / 2 - margin + 1,
@@ -101,11 +101,11 @@ describe('what is shown of a graph', () => {
       })
       expect(overlaps).toStrictEqual([])
 
-      // A line is drawn for each note that is shown, and for no note that is not.
-      const shownIds = new Set(shown.map((node) => node.id))
-      expect(frame.edges.length).toBe(shown.length)
+      // A line is drawn for each note that is visible, and for no note that is not.
+      const visibleIds = new Set(visible.map((node) => node.id))
+      expect(frame.edges.length).toBe(visible.length)
       for (const edge of frame.edges) {
-        expect(shownIds.has(edge.from === 'focus' ? edge.to : edge.from)).toBe(true)
+        expect(visibleIds.has(edge.from === 'focus' ? edge.to : edge.from)).toBe(true)
         for (const end of [edge.fromPoint, edge.toPoint]) {
           expect(Math.abs(end.x)).toBeLessThanOrEqual(one.viewport.width / 2)
           expect(Math.abs(end.y)).toBeLessThanOrEqual(one.viewport.height / 2)
@@ -116,33 +116,33 @@ describe('what is shown of a graph', () => {
 })
 
 describe('a note that is cut', () => {
-  // The graph with every relation at the number of notes shown, and the relation at one more.
-  const cutNodes = (
+  // The graph with every relation at the number of notes visible, and the relation at one more.
+  const removeNodes = (
     one: Case,
     frame: ReturnType<typeof arrangeCase>,
     relation: PlexRelation,
   ): Case => {
-    const left = new Set<string>()
+    const dropped = new Set<string>()
     for (const name of RELATION_NAMES) {
       const members = one.graph.nodes.filter((node) => node.relation === name)
       const keep = countByRelation(frame.nodes, name) + (name === relation ? 1 : 0)
-      for (const node of members.slice(keep)) left.add(node.id)
+      for (const node of members.slice(keep)) dropped.add(node.id)
     }
     return {
       ...one,
       graph: {
-        nodes: one.graph.nodes.filter((node) => !left.has(node.id)),
-        edges: one.graph.edges.filter((edge) => !left.has(edge.from) && !left.has(edge.to)),
+        nodes: one.graph.nodes.filter((node) => !dropped.has(node.id)),
+        edges: one.graph.edges.filter((edge) => !dropped.has(edge.from) && !dropped.has(edge.to)),
       },
     }
   }
 
-  const cuts = RELATIONS_CUT.map((relation) => ({
+  const cuts = RELATIONS_WITH_OVERFLOW.map((relation) => ({
     relation,
     rounds: cases.flatMap((one, round) => {
       const frame = arrangeCase(one)
       if (!frame.overflow[relation]) return []
-      return [{ round, one, frame, shown: countByRelation(frame.nodes, relation) }]
+      return [{ round, one, frame, visible: countByRelation(frame.nodes, relation) }]
     }),
   }))
 
@@ -154,13 +154,13 @@ describe('a note that is cut', () => {
   })
 
   it.each(cuts.map(({ relation, rounds }) => [relation, rounds] as const))(
-    'leaves no room for the next %s note: the shown notes and that note are not all shown together',
+    'leaves no room for the next %s note: the visible notes and that note are not all visible together',
     (relation, rounds) => {
       const stillFits: string[] = []
-      for (const { round, one, frame, shown } of rounds) {
-        const again = arrangeCase(cutNodes(one, frame, relation))
+      for (const { round, one, frame, visible } of rounds) {
+        const again = arrangeCase(removeNodes(one, frame, relation))
         if (Object.keys(again.overflow).length === 0)
-          stillFits.push(`case ${round} ${relation} ${shown}`)
+          stillFits.push(`case ${round} ${relation} ${visible}`)
       }
       expect(stillFits).toStrictEqual([])
     },
@@ -171,17 +171,17 @@ describe('a note that is cut', () => {
     cases.forEach((one, round) => {
       const frame = arrangeCase(one)
       if (Object.keys(frame.overflow).length === 0) return
-      const shownIds = new Set(frame.nodes.map((node) => node.id))
+      const visibleIds = new Set(frame.nodes.map((node) => node.id))
       const again = arrangeCase({
         ...one,
         graph: {
-          nodes: one.graph.nodes.filter((node) => shownIds.has(node.id)),
-          edges: one.graph.edges.filter((edge) => shownIds.has(edge.from) && shownIds.has(edge.to)),
+          nodes: one.graph.nodes.filter((node) => visibleIds.has(node.id)),
+          edges: one.graph.edges.filter((edge) => visibleIds.has(edge.from) && visibleIds.has(edge.to)),
         },
       })
       const againIds = new Set(again.nodes.map((node) => node.id))
       const isSame =
-        againIds.size === shownIds.size && [...againIds].every((id) => shownIds.has(id))
+        againIds.size === visibleIds.size && [...againIds].every((id) => visibleIds.has(id))
       if (!isSame) changed.push(`case ${round}`)
     })
     expect(changed).toStrictEqual([])
@@ -191,7 +191,7 @@ describe('a note that is cut', () => {
 describe('a window too small for the boxes', () => {
   const nodes: PlexNode[] = [
     { id: 'focus', title: 'Focus', relation: 'focus' },
-    ...RELATIONS_CUT.flatMap((relation) =>
+    ...RELATIONS_WITH_OVERFLOW.flatMap((relation) =>
       [1, 2, 3].map((index) => ({
         id: `${relation}-${index}`,
         title: `${relation} ${index}`,
@@ -203,7 +203,7 @@ describe('a window too small for the boxes', () => {
   const arrangeIn = (viewport: { width: number; height: number }) =>
     arrangePlex(graph, { options: { viewport }, measure: () => 120 })
 
-  // Rule: a note other than the focus is shown inside the window or counted in the overflow; the focus is drawn wherever the window is.
+  // Rule: a note other than the focus is visible inside the window or counted in the overflow; the focus is drawn wherever the window is.
   it.each([
     ['below 480 by 360', { width: 300, height: 240 }],
     ['very small', { width: 160, height: 120 }],
@@ -213,17 +213,17 @@ describe('a window too small for the boxes', () => {
   ])('shows no note outside a window %s, apart from the focus', (_, viewport) => {
     const frame = arrangeIn(viewport)
     const { margin } = resolveOptions({ viewport })
-    const shown = frame.nodes.filter((node) => node.relation !== 'focus')
+    const visible = frame.nodes.filter((node) => node.relation !== 'focus')
 
     expect(frame.nodes.filter((node) => node.relation === 'focus')).toHaveLength(1)
-    for (const node of shown) {
+    for (const node of visible) {
       expect(Math.abs(node.x) + node.width / 2).toBeLessThanOrEqual(viewport.width / 2 - margin + 1)
       expect(Math.abs(node.y) + node.height / 2).toBeLessThanOrEqual(
         viewport.height / 2 - margin + 1,
       )
     }
     for (const relation of RELATION_NAMES) {
-      expect(countByRelation(shown, relation) + (frame.overflow[relation] ?? 0), relation).toBe(
+      expect(countByRelation(visible, relation) + (frame.overflow[relation] ?? 0), relation).toBe(
         countByRelation(nodes, relation),
       )
     }

@@ -261,7 +261,7 @@ describe('a noteGraph', () => {
     expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md' })
   })
 
-  it('asks for depth 1 unless told, and for depth 2 when told', async () => {
+  it('asks for depth 1 unless a depth is given, and for depth 2 when it is given', async () => {
     request.listRelatedNotes.mockResolvedValue({ focus: { path: 'a.md', title: 'A' } })
 
     await listRelatedNotes('a.md')
@@ -276,7 +276,7 @@ describe('a noteGraph', () => {
     })
   })
 
-  it('names the note an item of depth 2 belongs to, and leaves it out for a note related to the focus', async () => {
+  it('names the note an item of depth 2 belongs to, and omits it for a note related to the focus', async () => {
     request.listRelatedNotes.mockResolvedValue({
       focus: { path: 'Rota.md', title: 'The rota' },
       related: [

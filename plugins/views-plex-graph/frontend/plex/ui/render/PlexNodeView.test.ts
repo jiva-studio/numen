@@ -9,7 +9,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
-import { EXPANSION_DURATION, type WideBox } from '../../model/sizing/expansion'
+import { EXPANSION_DURATION, type ExpandedBox } from '../../model/sizing/expansion'
 import { getNodeHeadings } from '../../lib/inside'
 import { stubClock } from '../../../fixtures/clock'
 import { HANDLE_RADIUS, type GestureRole, type PlacedNode } from '../../lib/node'
@@ -342,15 +342,15 @@ describe('what a node is drawn as', () => {
 })
 
 describe('a box with more of its title to show', () => {
-  const WIDE = { width: 400, offset: 0 }
+  const EXPANDED_BOX = { width: 400, offset: 0 }
   const WAIT = 500
 
   afterEach(() => {
     vi.useRealTimers()
   })
 
-  const mountWideNode = (
-    wide: WideBox | null = WIDE,
+  const mountExpandedNode = (
+    expanded: ExpandedBox | null = EXPANDED_BOX,
     overrides: Partial<PlacedNode> = {},
     gestureRole: GestureRole = 'open',
     showPills = true,
@@ -360,7 +360,7 @@ describe('a box with more of its title to show', () => {
     const node = mount(PlexNodeView, {
       props: {
         node: createNode(overrides),
-        wide,
+        expanded,
         behavior: { ...DEFAULT_BEHAVIOR, expansionDelay: WAIT, clock: world.clock },
         gestureRole,
         showPills,
@@ -379,7 +379,7 @@ describe('a box with more of its title to show', () => {
   }
 
   /** The pointer enters, rests, and the opening is drawn to its end. */
-  const rest = async (view: ReturnType<typeof mountWideNode>) => {
+  const rest = async (view: ReturnType<typeof mountExpandedNode>) => {
     await view.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
     view.world.run()
@@ -388,14 +388,14 @@ describe('a box with more of its title to show', () => {
   }
 
   it('is drawn as it was placed until the hand has been on it a while', async () => {
-    const mounted = mountWideNode()
+    const mounted = mountExpandedNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT - 1)
     expect(getBox(mounted.node)).toStrictEqual({ width: 144, x: -72 })
   })
 
   it('opens across several frames and not in one', async () => {
-    const mounted = mountWideNode()
+    const mounted = mountExpandedNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
 
@@ -408,12 +408,12 @@ describe('a box with more of its title to show', () => {
   })
 
   it('widens at its current position once the hand has rested there', async () => {
-    const node = await rest(mountWideNode())
+    const node = await rest(mountExpandedNode())
     expect(getBox(node)).toStrictEqual({ width: 400, x: -200 })
   })
 
   it('carries its title and its handle out to the widened edge', async () => {
-    const node = await rest(mountWideNode())
+    const node = await rest(mountExpandedNode())
     const title = node.get('foreignObject')
     expect(Number(title.attributes('width'))).toBe(400)
     expect(Number(title.attributes('x'))).toBe(-200)
@@ -421,20 +421,20 @@ describe('a box with more of its title to show', () => {
   })
 
   it('carries the handle of a node without a pill out beyond the widened edge', async () => {
-    const node = await rest(mountWideNode(WIDE, {}, 'open', false))
+    const node = await rest(mountExpandedNode(EXPANDED_BOX, {}, 'open', false))
     expect(node.get('.plex__handle-at').attributes('transform')).toBe(
       `translate(${200 + HANDLE_RADIUS} 0)`,
     )
   })
 
   it('is drawn where the widening places it', async () => {
-    const node = await rest(mountWideNode({ width: 400, offset: -60 }))
+    const node = await rest(mountExpandedNode({ width: 400, offset: -60 }))
     expect(getBox(node)).toStrictEqual({ width: 400, x: -260 })
     expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(140 0)')
   })
 
   it('says so as it begins to open, since only the whole picture can lift it', async () => {
-    const mounted = mountWideNode()
+    const mounted = mountExpandedNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
 
@@ -445,7 +445,7 @@ describe('a box with more of its title to show', () => {
   })
 
   it('is put back once the hand has left it', async () => {
-    const mounted = mountWideNode()
+    const mounted = mountExpandedNode()
     await rest(mounted)
 
     await mounted.node.trigger('pointerleave')
@@ -457,7 +457,7 @@ describe('a box with more of its title to show', () => {
   })
 
   it('begins the wait again where the picture moved it under the hand', async () => {
-    const mounted = mountWideNode()
+    const mounted = mountExpandedNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT - 1)
 
@@ -497,20 +497,20 @@ describe('a box with nothing more to show', () => {
   }
 
   it('stays as it was placed however long the hand is on it', async () => {
-    const node = await rest({ wide: null })
+    const node = await rest({ expanded: null })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
     expect(node.emitted('settle')).toBeUndefined()
   })
 
   it('stays as it was placed while a gesture is under way', async () => {
-    const node = await rest({ wide: { width: 400, offset: 0 }, gestureRole: 'source' })
+    const node = await rest({ expanded: { width: 400, offset: 0 }, gestureRole: 'source' })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
   })
 
   it('stays as it was placed while it is on its way in or out', async () => {
     const node = await rest({
       node: createNode({ opacity: 0.4 }),
-      wide: { width: 400, offset: 0 },
+      expanded: { width: 400, offset: 0 },
     })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
   })
@@ -534,14 +534,14 @@ describe('the headings a node hangs', () => {
       level: 1,
     }))
 
-  const mountInside = (items: readonly PlexHeading[], expanded: WideBox | null = null) => {
+  const mountInside = (items: readonly PlexHeading[], expanded: ExpandedBox | null = null) => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
         node: createNode(),
-        wide: expanded,
-        hung: getNodeHeadings(createNode(), items, {
+        expanded,
+        placedHeadings: getNodeHeadings(createNode(), items, {
           options: SIZES,
           deps: {
             viewport: { width: 1000, height: 600 },

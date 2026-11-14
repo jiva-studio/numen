@@ -2,8 +2,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   findFreeSpot,
-  listCandidatesAround,
-  measureAlong,
+  listNearbyCandidates,
+  measureProgress,
   measureCost,
   SpotIndex,
   type Spot,
@@ -192,22 +192,22 @@ describe('equal costs', () => {
 
 function findLeastCostSpot(index: SpotIndex, request: SpotRequest): Spot | undefined {
   const costOf = (spot: Spot) => Math.round(measureCost(spot, request) * 1e6)
-  const alongOf = (spot: Spot) => Math.round(measureAlong(spot, request) * 1e6)
+  const progressOf = (spot: Spot) => Math.round(measureProgress(spot, request) * 1e6)
   const candidates = [
     request.middle,
     request.start,
-    ...request.group.flatMap((box) => listCandidatesAround(box, request)),
+    ...request.group.flatMap((box) => listNearbyCandidates(box, request)),
   ]
   let best: Spot | undefined
   for (const point of candidates) {
-    if (measureAlong(point, request) < -TOLERANCE) continue
+    if (measureProgress(point, request) < -TOLERANCE) continue
     const spot = { x: point.x, y: point.y, ...request.size }
     if (request.fits && !request.fits(spot)) continue
     if (!index.isFree(spot, request.gaps)) continue
     if (
       !best ||
       costOf(spot) < costOf(best) ||
-      (costOf(spot) === costOf(best) && alongOf(spot) < alongOf(best))
+      (costOf(spot) === costOf(best) && progressOf(spot) < progressOf(best))
     ) {
       best = spot
     }
@@ -283,13 +283,13 @@ describe('a window the group has no room to grow deeper in', () => {
     const spot = findFreeSpot(index, { ...request, fits })
 
     expect(spot).toStrictEqual(at(0, 100 - SIZE.height - GAPS.lineGap))
-    expect(measureAlong(spot, request)).toBeLessThan(-TOLERANCE)
-    expect(measureAlong(spot, request)).toBeGreaterThanOrEqual(-SIZE.height / 2 - TOLERANCE)
+    expect(measureProgress(spot, request)).toBeLessThan(-TOLERANCE)
+    expect(measureProgress(spot, request)).toBeGreaterThanOrEqual(-SIZE.height / 2 - TOLERANCE)
   })
 
   it('does not go back past the start where it is given no window', () => {
     const spot = findFreeSpot(index, request)
 
-    expect(measureAlong(spot, request)).toBeGreaterThanOrEqual(-TOLERANCE)
+    expect(measureProgress(spot, request)).toBeGreaterThanOrEqual(-TOLERANCE)
   })
 })

@@ -134,7 +134,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 
 **AC-9: A note that is not found drops its items.** Given a related note the index does not return, depth 2 returns neither it nor items with `related_to` = its path; an item whose own note is not found is dropped and the others stay.
 
-**AC-10: Invalid depth is refused.** `depth: 3` returns `CodeInvalidArgument`; `depth: 0` and `1` answer.
+**AC-10: An invalid depth is an error.** `depth: 3` returns `CodeInvalidArgument`; `depth: 0` and `1` answer.
 
 **AC-11: The order of `related`.** Items without `related_to` come first in today's order; items of depth 2 follow, grouped by `related_to` in the order of the first group.
 

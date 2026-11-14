@@ -42,7 +42,7 @@ Feature: Plex
         | note | notes/Entropy.md |
       And the tab titled "Weir notes" is not open
 
-  Rule: A note without links stands alone
+  Rule: A note without links is shown alone
 
     Scenario: A note without links shows only the focus
       Given the vault has the following:

@@ -47,10 +47,10 @@ describe('the number of layouts', () => {
 
   it('stays bounded when only the shown notes of that graph are arranged again', () => {
     const graph = createGraph(200)
-    const shownIds = new Set(arrangeCounting(graph).frame.nodes.map((node) => node.id))
+    const visibleIds = new Set(arrangeCounting(graph).frame.nodes.map((node) => node.id))
     const { frame, layouts } = arrangeCounting({
-      nodes: graph.nodes.filter((node) => shownIds.has(node.id)),
-      edges: graph.edges.filter((edge) => shownIds.has(edge.from) && shownIds.has(edge.to)),
+      nodes: graph.nodes.filter((node) => visibleIds.has(node.id)),
+      edges: graph.edges.filter((edge) => visibleIds.has(edge.from) && visibleIds.has(edge.to)),
     })
     console.log('LAYOUTS shown', layouts)
     expect(Object.keys(frame.overflow)).toStrictEqual([])

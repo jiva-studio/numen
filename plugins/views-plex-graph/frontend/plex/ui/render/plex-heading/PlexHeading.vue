@@ -8,7 +8,7 @@ import type { DrawnHeading } from '../../../lib/open'
 
 const props = defineProps<{
   heading: DrawnHeading
-  hung: NodeHeadings
+  placedHeadings: NodeHeadings
 }>()
 
 const emit = defineEmits<{
@@ -18,9 +18,9 @@ const emit = defineEmits<{
 
 /** Where the heading goes, and the box it is drawn in. */
 const place = computed(() => ({
-  transform: `translate(0 ${props.hung.top + props.hung.pad + props.heading.y})`,
-  x: props.hung.offset - props.hung.width / 2 + props.hung.pad,
-  width: props.hung.width - 2 * props.hung.pad,
+  transform: `translate(0 ${props.placedHeadings.top + props.placedHeadings.pad + props.heading.y})`,
+  x: props.placedHeadings.offset - props.placedHeadings.width / 2 + props.placedHeadings.pad,
+  width: props.placedHeadings.width - 2 * props.placedHeadings.pad,
 }))
 
 const headingStyle = computed(() => ({
@@ -30,7 +30,7 @@ const headingStyle = computed(() => ({
 
 <template>
   <g :opacity="heading.opacity" :transform="place.transform">
-    <foreignObject :x="place.x" y="0" :width="place.width" :height="hung.headingHeight">
+    <foreignObject :x="place.x" y="0" :width="place.width" :height="placedHeadings.headingHeight">
       <div class="plex__heading" :style="headingStyle" @click.stop="emit('enter')" @dblclick.stop>
         <span class="plex__heading-text">{{ heading.text }}</span>
       </div>

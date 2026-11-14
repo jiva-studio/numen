@@ -31,7 +31,7 @@ describe('a note that is removed', () => {
       props: {
         onSettle,
         node,
-        wide: { width: 400, offset: 0 },
+        expanded: { width: 400, offset: 0 },
         behavior: { ...DEFAULT_BEHAVIOR, expansionDelay: 500, clock: world.clock },
       },
     })
