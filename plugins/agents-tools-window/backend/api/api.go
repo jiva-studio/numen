@@ -49,7 +49,6 @@ type NoteEditPreviewInput struct {
 
 // NoteEditPreviewOutput represents the result of generating an edit preview.
 type NoteEditPreviewOutput struct {
-	PreviewID string `json:"previewId" jsonschema:"unique identifier for the proposed edit preview"`
 	Path      string `json:"path" jsonschema:"the path of the note, relative to the vault folder"`
 	Diff      string `json:"diff" jsonschema:"unified diff representation of the proposed changes"`
 	Additions int    `json:"additions" jsonschema:"number of lines added"`
