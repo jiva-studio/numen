@@ -104,7 +104,7 @@ func getPluginCommands(c pluginsWiring) PluginCommandUseCases {
 
 func newPluginCommands(c pluginsWiring, host *PluginHost, versions plugincommand.VersionItems) PluginCommandUseCases {
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
-	commands, conditions := host.Runtime.getManifests(), when.NewConditions()
+	commands, conditions := getRuntimeManifests(host.Runtime), when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
 	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(c), getWhenConfig(c), conditions)
 	return PluginCommandUseCases{

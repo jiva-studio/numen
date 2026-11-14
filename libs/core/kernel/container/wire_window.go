@@ -50,11 +50,15 @@ func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*Op
 	if err != nil {
 		return nil, err
 	}
+	return openWindowOver(c, ctx, WindowOpening{DB: db, Named: named, Out: out})
+}
+
+func openWindowOver(c Config, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
 	ports, err := c.registry()
 	if err != nil {
-		return nil, errors.Join(err, db.Close())
+		return nil, errors.Join(err, opening.DB.Close())
 	}
-	opened, err := openWindowWith(c, ctx, ports, WindowOpening{DB: db, Named: named, Out: out}, nil)
+	opened, err := openWindowWith(c, ctx, ports, opening, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -140,7 +140,7 @@ func getPluginDir(c pluginsWiring, id string) (string, bool) {
 }
 
 func getFrontendPluginIDs(c pluginsWiring) []string {
-	return c.PluginHost.Runtime.getManifests().ListFrontendPluginIDs()
+	return getRuntimeManifests(c.PluginHost.Runtime).ListFrontendPluginIDs()
 }
 
 func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
@@ -160,7 +160,7 @@ func watchPluginChanges(c pluginsWiring) (<-chan struct{}, func()) {
 }
 
 func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
-	return tabkind.NewChoose(c.PluginHost.Runtime.getManifests(), c.PluginHost.Watch, getWhenConfig(c))
+	return tabkind.NewChoose(getRuntimeManifests(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
 }
 
 func openVersionItems(c pluginsWiring) *textversion.VersionItems {
@@ -176,7 +176,7 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: c.RunningHost.Runtime.getManifests(), Run: newPluginCommands(c, c.RunningHost, nil).Run, Readers: vaultReaders(c.vault),
+		Plugins: getRuntimeManifests(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost, nil).Run, Readers: vaultReaders(c.vault),
 		Notes: pluginsNewNoteReader(c), Types: c.RunningHost.Watch, Versions: c.vault.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }

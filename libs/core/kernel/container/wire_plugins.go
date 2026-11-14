@@ -237,6 +237,6 @@ type pluginManifestHost struct {
 	pluginport.PluginFailures
 }
 
-func (r PluginRuntime) getManifests() pluginmanifest.Manifests {
+func getRuntimeManifests(r PluginRuntime) pluginmanifest.Manifests {
 	return pluginmanifest.New(pluginManifestHost{pluginInfos{r.PluginLister, r.PluginResolver}, r.PluginFailures})
 }
