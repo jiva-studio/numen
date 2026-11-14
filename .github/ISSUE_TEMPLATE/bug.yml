@@ -1,0 +1,37 @@
+name: Bug
+description: Something does not work as it should
+labels: ["bug"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened, the steps that reproduce it, and what was expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: cause
+    attributes:
+      label: Cause
+      description: Why it happens, if that is known.
+
+  - type: textarea
+    id: change
+    attributes:
+      label: Change
+      description: What should happen instead, if it is not clear from Problem.
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: Observable results that mean the bug is fixed, as a list.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Version, platform, logs, related issues.
