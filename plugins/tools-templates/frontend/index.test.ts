@@ -135,7 +135,11 @@ describe('the templates frontend', () => {
     const { context, createNote } = setup(created('x.md'))
 
     await context.triggerCommand(COMMAND, targetOf('notes/People', true), 'Templates/Meeting.md')
-    await context.triggerCommand(COMMAND, targetOf('journal/2026-11-14.md', false), 'Templates/Meeting.md')
+    await context.triggerCommand(
+      COMMAND,
+      targetOf('journal/2026-11-14.md', false),
+      'Templates/Meeting.md',
+    )
     await context.triggerCommand(COMMAND, targetOf('', true), 'Templates/Meeting.md')
     await context.triggerCommand(COMMAND, targetOf('', false), 'Templates/Meeting.md')
 
@@ -150,6 +154,8 @@ describe('the templates frontend', () => {
   it('throws when the window gives no vault files', () => {
     const context = createMockPluginContext({ pluginId: PLUGIN_ID })
 
-    expect(() => activate(context, { createNote: () => Promise.reject(new Error('unused')) })).toThrow()
+    expect(() =>
+      activate(context, { createNote: () => Promise.reject(new Error('unused')) }),
+    ).toThrow()
   })
 })
