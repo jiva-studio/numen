@@ -6,6 +6,7 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import { Editor } from '../editor'
 import type { Extension } from '@codemirror/state'
 import type { EditorHandle, NoteTabState } from '@numen/plugin-sdk'
+import { getFontFamilyValue } from '../model/fontFamily'
 import { editorPreferences } from '../model/preferences'
 import {
   getEditorExtensions,
@@ -93,7 +94,9 @@ const fileConflict = computed(() => props.state?.fileConflict?.value ?? null)
 const softWrap = computed(() => props.softWrap ?? editorPreferences.softWrap)
 const lineNumbers = computed(() => props.lineNumbers ?? editorPreferences.lineNumbers)
 const tabSize = computed(() => props.tabSize ?? editorPreferences.tabSize)
-const fontFamily = computed(() => props.fontFamily ?? editorPreferences.fontFamily)
+const fontFamily = computed(() =>
+  getFontFamilyValue(props.fontFamily ?? editorPreferences.fontFamily) ?? '',
+)
 const lineHeight = computed(() => props.lineHeight ?? editorPreferences.lineHeight)
 const highlightActiveLine = computed(
   () => props.highlightActiveLine ?? editorPreferences.highlightActiveLine,

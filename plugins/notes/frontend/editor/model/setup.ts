@@ -45,7 +45,6 @@ import { renderBracketMatch } from '../lib/live/wikilinks'
 import { HEADING } from '../lib/live/styles'
 import { GFM } from '@lezer/markdown'
 import { saveHandler } from '../lib/outside'
-import { getFontFamilyValue } from '../lib/config/fontFamily'
 import { monospaced, theme } from '../lib/config/theme'
 
 /** What can be changed without the editor being built again. */
@@ -166,11 +165,9 @@ export const getTabSizeExtension = (tabSize: number): Extension => {
   return [EditorState.tabSize.of(size), indentUnit.of(' '.repeat(size))]
 }
 
-/** The font of the text, set as a variable the theme reads; no variable where the family is empty or invalid. */
-export const getFontExtension = (family: string): Extension => {
-  const value = getFontFamilyValue(family)
-  return value ? EditorView.editorAttributes.of({ style: `--editor-font: ${value}` }) : []
-}
+/** The font of the text, set as a variable the theme reads; no variable for an empty family. The embedder passes a family list that is safe in a style. */
+export const getFontExtension = (family: string): Extension =>
+  family ? EditorView.editorAttributes.of({ style: `--editor-font: ${family}` }) : []
 
 export const getLineHeightExtension = (height: number): Extension =>
   EditorView.editorAttributes.of({ style: `--editor-line-height: ${height}` })
