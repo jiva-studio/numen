@@ -3,9 +3,10 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, it, after } from "node:test";
-import { getPathPattern } from "./lib/changed.mjs";
+import { isDeepStrictEqual } from "node:util";
+import { getPathPattern, isMatching, listChangedFiles, readBaseFile } from "./lib/changed.mjs";
 import { listTrackedFiles, plantTree } from "./lib/plant.mjs";
-import { isTagged, readRegistry, selectChecks } from "./run.mjs";
+import { getOwnPaths, isTagged, readRegistry, selectChecks } from "./run.mjs";
 
 const CHECKS_DIR = import.meta.dirname;
 const REPO_ROOT = path.resolve(CHECKS_DIR, "../..");
@@ -107,6 +108,21 @@ describe("the selection of changed checks", () => {
     assert.match(one.reason, /^changed tools\/checks\/structure\/go\/layers\//);
   });
 
+  it("adds the selftest of a check whose own code changed, and not of one whose paths changed", () => {
+    const find = (changed, name) => selectChecks(registry, options, changed).find((s) => s.entry.name === name);
+    assert.ok(find(["tools/checks/structure/ts/plugins/check.mjs"], "ts/plugins").selftest);
+    assert.ok(find(["tools/checks/style/comments/check.mjs"], "style/comments").selftest);
+    const byPath = find(["plugins/readers-pdf/frontend/View.vue"], "ts/plugins");
+    assert.ok(byPath.run && !byPath.selftest);
+  });
+
+  it("runs no separate selftest for a check that is its own test", () => {
+    for (const name of ["registry", "eslint/layers", "go/layers"]) {
+      const one = selectChecks(registry, options, ["tools/checks/lib/changed.mjs"]).find((s) => s.entry.name === name);
+      assert.ok(one.run && !one.selftest, name);
+    }
+  });
+
   it("selects every check when the runner or the registry changed", () => {
     assert.equal(getRunningChecks(["tools/checks/rules.json"]).length, registry.checks.length);
   });
@@ -135,10 +151,23 @@ function run(name, root) {
 // A check that reads a file outside its `paths` gives another answer on a tree that holds only the
 // `paths`. The Go checks (they type-check the workspace through `go list`), the commands and the
 // rule tests are not run this way: a reduced tree has no go.work to load.
+function listComparedVerifiers() {
+  const verifiers = registry.checks.filter((e) => e.runner === "verifiers");
+  if (!process.env.NUMEN_CHECKS_CHANGED) return verifiers;
+  const changed = listChangedFiles(REPO_ROOT);
+  if (changed.some((file) => isMatching(file, ["tools/checks/run.mjs", "tools/checks/lib/**"]))) return verifiers;
+  const baseText = readBaseFile(REPO_ROOT, "tools/checks/rules.json");
+  const baseChecks = baseText ? JSON.parse(baseText).checks : [];
+  return verifiers.filter((entry) => {
+    const before = baseChecks.find((one) => one.name === entry.name);
+    return !isDeepStrictEqual(entry, before) || changed.some((file) => isMatching(file, getOwnPaths(entry)));
+  });
+}
+
 describe("the paths of the verifiers", { concurrency: 4 }, () => {
   const planted = [];
   after(() => planted.forEach((dir) => fs.rmSync(dir, { recursive: true, force: true })));
-  for (const entry of registry.checks.filter((e) => e.runner === "verifiers")) {
+  for (const entry of listComparedVerifiers()) {
     it(`${entry.name} gives the same answer on a tree reduced to its paths`, async () => {
       const reduced = plantTree(REPO_ROOT, entry.paths);
       planted.push(reduced);

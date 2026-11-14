@@ -15,13 +15,17 @@ const note = (path: string): Entry => ({
   type: 'note',
 })
 
-const createContext = () => {
-  const folders: Record<string, readonly Entry[]> = { '': [note('A.md')] }
+const createContext = (
+  initialSettings: Record<string, string> = {},
+  listing: readonly Entry[] = [note('A.md')],
+) => {
+  const folders: Record<string, readonly Entry[]> = { '': listing }
   const { host, recorded } = createHost({ folders })
   const ctx = createMockPluginContext({
     pluginId: 'md.numen.views.file.tree',
     workspace: host.workspace,
     files: host.files,
+    initialSettings,
   })
   ctx.ui.slots.setEntries(SLOT.fileTreeContext, ROW_MENU)
   return { ctx, recorded, folders }
@@ -68,11 +72,11 @@ describe('view-file-tree plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds the tab kind, the vault and its two commands, and releases them all', () => {
+  it('holds the tab kind, the vault, its two commands and the sort setting, and releases them all', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.plugin.subscriptions).toHaveLength(4)
+    expect(ctx.plugin.subscriptions).toHaveLength(5)
 
     ctx.dispose()
     expect(ctx.plugin.subscriptions).toHaveLength(0)
@@ -93,6 +97,53 @@ describe('view-file-tree plugin', () => {
     activate(ctx)
     return { ctx, strip }
   }
+
+  describe('the sort setting', () => {
+    const dated = (path: string, modifiedAt: number): Entry => ({ ...note(path), modifiedAt })
+    const listing = [dated('a.md', 1), dated('b.md', 3), dated('c.md', 2)]
+    const getPaths = (state: FilesTabState) =>
+      state.list.queries.rows.value.map((row) => row.entry.path)
+    const openFilesTab = async (setting: Record<string, string>) => {
+      const { ctx } = createContext(setting, listing)
+      activate(ctx)
+      const state = ctx.getRegisteredTabKinds()[0]!.open!('', 'files') as FilesTabState
+      await settle()
+      return { ctx, state }
+    }
+
+    it('sorts by name when the setting is not saved', async () => {
+      const { state } = await openFilesTab({})
+
+      expect(getPaths(state)).toStrictEqual(['a.md', 'b.md', 'c.md'])
+    })
+
+    it('sorts by the saved setting when it activates', async () => {
+      const { state } = await openFilesTab({ sortBy: 'modified' })
+
+      expect(getPaths(state)).toStrictEqual(['b.md', 'c.md', 'a.md'])
+    })
+
+    it('re-orders an open tree when the setting changes', async () => {
+      const { ctx, state } = await openFilesTab({ sortBy: 'name' })
+
+      ctx.setSetting('sortBy', 'modified')
+      expect(getPaths(state)).toStrictEqual(['b.md', 'c.md', 'a.md'])
+
+      ctx.setSetting('sortBy', 'name')
+      expect(getPaths(state)).toStrictEqual(['a.md', 'b.md', 'c.md'])
+    })
+
+    it('re-orders every open files tab at once', async () => {
+      const { ctx, state: first } = await openFilesTab({ sortBy: 'name' })
+      const second = ctx.getRegisteredTabKinds()[0]!.open!('', 'files-2') as FilesTabState
+      await settle()
+
+      ctx.setSetting('sortBy', 'modified')
+
+      expect(getPaths(first)).toStrictEqual(['b.md', 'c.md', 'a.md'])
+      expect(getPaths(second)).toStrictEqual(['b.md', 'c.md', 'a.md'])
+    })
+  })
 
   it('registers the commands of the files', () => {
     const { ctx } = createWindowContext()

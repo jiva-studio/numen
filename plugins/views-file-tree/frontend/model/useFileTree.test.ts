@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { createLostConnection } from '@numen/plugin-sdk/testing'
-import { watch } from 'vue'
+import { shallowRef, watch } from 'vue'
 import type { Entry } from '../types'
 import type { ListingRow } from '../types'
 import {
@@ -12,6 +12,8 @@ import {
   resolveDropFolder,
   ROOT,
   createFileTree,
+  readSortBy,
+  type SortBy,
 } from './useFileTree'
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
@@ -617,5 +619,180 @@ describe('a change the vault reports without naming anything', () => {
     await list.sync.refreshChanged()
 
     expect(requests.sort()).toStrictEqual([ROOT, 'physics'])
+  })
+})
+
+describe('the order of the rows', () => {
+  const dated = (path: string, modifiedAt?: number): Entry =>
+    file(path, modifiedAt === undefined ? {} : { modifiedAt })
+  const datedFolder = (path: string, modifiedAt?: number): Entry => ({
+    ...folder(path),
+    ...(modifiedAt === undefined ? {} : { modifiedAt }),
+  })
+
+  const createTree = (folders: Record<string, readonly Entry[]>, initial: SortBy = 'modified') => {
+    const requests: string[] = []
+    const sortBy = shallowRef<SortBy>(initial)
+    const core = {
+      list: async (folderPath: string) => {
+        requests.push(folderPath)
+        return folders[folderPath] ?? []
+      },
+    }
+    return { list: createFileTree(core, { sortBy }), sortBy, requests, folders }
+  }
+
+  const root = (...entries: Entry[]) => ({ [ROOT]: entries })
+
+  it('keeps the order of the listing when no sort is given', async () => {
+    const { core } = vault(root(dated('b.md', 1), dated('a.md', 9), dated('c.md', 5)))
+    const list = createFileTree(core)
+
+    await list.folders.openFolder(ROOT)
+
+    expect(paths(list.queries.rows.value)).toStrictEqual(['b.md', 'a.md', 'c.md'])
+  })
+
+  it('lists folders first and then files in the order of the listing when sorting by name', async () => {
+    const { list } = createTree(
+      root(
+        datedFolder('alpha', 1),
+        datedFolder('beta', 9),
+        dated('a.md', 1),
+        dated('b.md', 9),
+        dated('c.md', 5),
+      ),
+      'name',
+    )
+
+    await list.folders.openFolder(ROOT)
+
+    expect(paths(list.queries.rows.value)).toStrictEqual(['alpha', 'beta', 'a.md', 'b.md', 'c.md'])
+  })
+
+  it('lists the most recently modified file first when sorting by date', async () => {
+    const { list } = createTree(root(dated('a.md', 100), dated('b.md', 300), dated('c.md', 200)))
+
+    await list.folders.openFolder(ROOT)
+
+    expect(paths(list.queries.rows.value)).toStrictEqual(['b.md', 'c.md', 'a.md'])
+  })
+
+  it('keeps folders before files when sorting by date', async () => {
+    const { list } = createTree(
+      root(
+        datedFolder('old', 1),
+        dated('new.md', 900),
+        datedFolder('fresh', 500),
+        dated('mid.md', 50),
+      ),
+    )
+
+    await list.folders.openFolder(ROOT)
+
+    expect(paths(list.queries.rows.value)).toStrictEqual(['fresh', 'old', 'new.md', 'mid.md'])
+  })
+
+  it('puts entries with no date after the dated ones, each in name order', async () => {
+    const { list } = createTree(
+      root(
+        dated('a.md'),
+        dated('b.md', 10),
+        dated('c.md'),
+        dated('d.md', 20),
+        datedFolder('x-folder'),
+        datedFolder('y-folder', 5),
+      ),
+    )
+
+    await list.folders.openFolder(ROOT)
+
+    expect(paths(list.queries.rows.value)).toStrictEqual([
+      'y-folder',
+      'x-folder',
+      'd.md',
+      'b.md',
+      'a.md',
+      'c.md',
+    ])
+  })
+
+  it('keeps name order between entries with the same date', async () => {
+    const { list } = createTree(
+      root(dated('a.md', 7), dated('b.md', 9), dated('c.md', 7), dated('d.md', 9)),
+    )
+
+    await list.folders.openFolder(ROOT)
+
+    expect(paths(list.queries.rows.value)).toStrictEqual(['b.md', 'd.md', 'a.md', 'c.md'])
+  })
+
+  it('sorts the children of an open folder by date as well', async () => {
+    const { list } = createTree({
+      [ROOT]: [datedFolder('docs', 1)],
+      docs: [dated('docs/a.md', 1), datedFolder('docs/sub', 1), dated('docs/b.md', 2)],
+    })
+    await list.folders.openFolder(ROOT)
+
+    await list.folders.openFolder('docs')
+
+    expect(paths(list.queries.rows.value)).toStrictEqual([
+      'docs',
+      'docs/sub',
+      'docs/b.md',
+      'docs/a.md',
+    ])
+  })
+
+  it('re-orders the rows when the sort changes, with its open folders and selection kept', async () => {
+    const { list, sortBy, requests } = createTree(
+      {
+        [ROOT]: [datedFolder('docs', 1), dated('a.md', 1), dated('b.md', 2)],
+        docs: [dated('docs/a.md', 1), dated('docs/b.md', 2)],
+      },
+      'name',
+    )
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('docs')
+    list.selectPaths(['docs/a.md'])
+    const calls = requests.length
+    const byName = ['docs', 'docs/a.md', 'docs/b.md', 'a.md', 'b.md']
+    expect(paths(list.queries.rows.value)).toStrictEqual(byName)
+
+    sortBy.value = 'modified'
+
+    expect(paths(list.queries.rows.value)).toStrictEqual([
+      'docs',
+      'docs/b.md',
+      'docs/a.md',
+      'b.md',
+      'a.md',
+    ])
+    expect(list.queries.isFolderOpen('docs')).toBe(true)
+    expect(list.state.selectedPaths.value).toStrictEqual(['docs/a.md'])
+    expect(requests).toHaveLength(calls)
+
+    sortBy.value = 'name'
+
+    expect(paths(list.queries.rows.value)).toStrictEqual(byName)
+  })
+
+  it('takes the new date of a changed file into the rows on the next listing', async () => {
+    const { list, folders } = createTree(root(dated('a.md', 100), dated('b.md', 200)))
+    await list.folders.openFolder(ROOT)
+    expect(paths(list.queries.rows.value)).toStrictEqual(['b.md', 'a.md'])
+
+    folders[ROOT] = [dated('a.md', 300), dated('b.md', 200)]
+    await list.sync.refreshChanged(['a.md'])
+
+    expect(paths(list.queries.rows.value)).toStrictEqual(['a.md', 'b.md'])
+  })
+
+  it('reads an unknown or missing sort setting as name order', () => {
+    expect(readSortBy('modified')).toBe('modified')
+    expect(readSortBy('name')).toBe('name')
+    expect(readSortBy(undefined)).toBe('name')
+    expect(readSortBy('created')).toBe('name')
+    expect(readSortBy(3)).toBe('name')
   })
 })

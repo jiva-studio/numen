@@ -66,15 +66,12 @@ func (c *callers) over(list vaultapi.List, granted ...string) Callers {
 }
 
 func (c *callers) asCallers() Callers {
-	lent := NewServices()
-	lent.SetModelCalls(c.modelCalls)
-	lent.SetRowLists(c.rowLists)
-	lent.SetPluginVault(c.vault)
-	lent.SetPluginTexts(c.texts)
-	lent.SetPluginSearch(c.search)
-	lent.SetPluginWork(c.work)
-	lent.SetPluginWindow(c.window)
-	lent.SetPluginVaultList(c.list)
+	lent := NewServices(func() Lent {
+		return Lent{
+			ModelCalls: c.modelCalls, RowLists: c.rowLists, Vault: c.vault, Texts: c.texts, Search: c.search, Work: c.work,
+			Window: c.window, VaultList: c.list,
+		}
+	})
 	return Callers{
 		Identity: c, Leases: c, Lent: lent,
 		Tools: func() PluginTools { return c.tools },
