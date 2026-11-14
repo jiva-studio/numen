@@ -28,7 +28,9 @@ type rerankAnswer struct {
 
 // Rerank asks the rerank endpoint of the service, in the format of Cohere and Jina, for one score for each
 // document, in the order of the documents. The format has no field for an instruction, so the instruction
-// and a line break go before the query. OpenAI has no rerank endpoint.
+// and a line break go before the query. OpenAI has no rerank endpoint. An answer with another number of
+// results than documents, an index that is missing, out of range or repeated, or a missing score is an
+// unavailable service.
 func (g *Gateway) Rerank(ctx context.Context, call connection.Call, limit time.Duration, request *llm.RerankRequest) ([]float32, error) {
 	if call.Type == servicetype.OpenAI {
 		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
@@ -45,8 +47,6 @@ func (g *Gateway) Rerank(ctx context.Context, call connection.Call, limit time.D
 	return orderScores(answer, len(request.GetDocuments()))
 }
 
-// orderScores puts each score at the index of its document. An answer with another number of results, an
-// index that is missing, out of range or repeated, or a missing score is an unavailable service.
 func orderScores(answer rerankAnswer, count int) ([]float32, error) {
 	if len(answer.Results) != count {
 		return nil, connection.NewStopError(connection.ReasonUnavailable)

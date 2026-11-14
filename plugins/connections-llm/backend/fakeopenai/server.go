@@ -369,8 +369,6 @@ type rerankRequest struct {
 	Documents []string `json:"documents"`
 }
 
-// serveRerank answers in the format of Cohere and Jina, with the results in descending score order, as
-// those services list them.
 func (s *Server) serveRerank(w http.ResponseWriter, body []byte) {
 	var request rerankRequest
 	if err := json.Unmarshal(body, &request); err != nil || request.Model == "" || len(request.Documents) == 0 {
@@ -393,8 +391,9 @@ func (s *Server) serveRerank(w http.ResponseWriter, body []byte) {
 	writeJSON(w, http.StatusOK, map[string]any{modelKey: request.Model, "results": results})
 }
 
-// Score returns the relevance score the server answers for a query and a document: between 0 and 1 and
-// the same for the same pair.
+// Score returns the relevance score the server answers at /rerank for a query and a document: between 0 and
+// 1 and the same for the same pair. The results of /rerank come in descending score order, as Cohere and
+// Jina list them.
 func (s *Server) Score(query, document string) float32 {
 	digest := sha256.Sum256([]byte(query + "\x00" + document))
 	return float32(float64(binary.BigEndian.Uint32(digest[:4])) / float64(math.MaxUint32))
