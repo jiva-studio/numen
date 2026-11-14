@@ -31,17 +31,6 @@ func OpenFromEnvironment() (ports.Models, error) {
 	return New(client), nil
 }
 
-// OpenFromVariables returns the function that connects to the host the variables name.
-func OpenFromVariables(vars map[string]string) ports.OpenModels {
-	return func() (ports.Models, error) {
-		client, err := connection.NewClientFromVars(vars)
-		if err != nil {
-			return nil, err
-		}
-		return New(client), nil
-	}
-}
-
 // Embed returns one vector per text. A query is embedded as a person's action and a document in the
 // background.
 func (m Models) Embed(ctx context.Context, role model.Role, texts []string) ([][]float32, error) {

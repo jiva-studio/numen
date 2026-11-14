@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"net/http"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
@@ -21,20 +20,8 @@ const idleCheck = time.Minute
 
 // Mount registers the plugin's services on s, with the tools of the host the process environment names.
 func Mount(s *server.Server) error {
-	return mountWith(s, hostcall.FromEnv)
-}
-
-// NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
-// from the variables a launched process of the plugin is given.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return mountWith(s, func() (hostcall.Endpoint, error) { return hostcall.FromVars(vars) })
-	})
-}
-
-func mountWith(s *server.Server, findHost func() (hostcall.Endpoint, error)) error {
 	var host task.Tools
-	if endpoint, err := findHost(); err == nil {
+	if endpoint, err := hostcall.FromEnv(); err == nil {
 		host = tools.NewClient(endpoint)
 	}
 	agent, err := newAgentServer(machine{

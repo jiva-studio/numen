@@ -17,11 +17,6 @@ const envModelsDir = "NUMEN_MODELS_DIR"
 // envONNXRuntime names the variable that holds the path of the ONNX runtime library.
 const envONNXRuntime = "NUMEN_ONNX_RUNTIME"
 
-// IsMockML reports whether the variable EnvMockML in vars asks for the mock model.
-func IsMockML(vars map[string]string) bool {
-	return vars[EnvMockML] == "true"
-}
-
 // Process is the process the plugin runs in.
 type Process struct{}
 

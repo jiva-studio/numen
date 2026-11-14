@@ -23,7 +23,7 @@ func startPlugin(t *testing.T) string {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, "4000")
 	t.Setenv(hostcall.PluginTokenEnv, testToken)
-	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, Mount)
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, Mount)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,26 +88,5 @@ func TestThePluginServesAgentTasksAsAProvider(t *testing.T) {
 
 	if !strings.Contains(body, "FAILURE_KIND_STOP") || !strings.Contains(body, "FAILURE_REASON_INVALID_REQUEST") {
 		t.Errorf("the plugin answered %q", body)
-	}
-}
-
-func TestTheLinkedHandlerServesAgentTasksAsAProvider(t *testing.T) {
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken, "NUMEN_HOST_PORT": "4000"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	web := httptest.NewServer(handler)
-	defer web.Close()
-
-	body := callTask(t, web.Client(), web.URL)
-
-	if !strings.Contains(body, "FAILURE_KIND_STOP") {
-		t.Errorf("the plugin answered %q", body)
-	}
-}
-
-func TestNewHandlerNeedsTheHostOfTheCore(t *testing.T) {
-	if _, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken}); err == nil {
-		t.Error("NewHandler accepted variables with no host port")
 	}
 }

@@ -34,12 +34,3 @@ func DropSession(target []string) []string {
 	}
 	return out
 }
-
-// FromMap returns the variables of vars as name=value entries.
-func FromMap(vars map[string]string) []string {
-	out := make([]string, 0, len(vars))
-	for name, value := range vars {
-		out = append(out, name+"="+value)
-	}
-	return out
-}

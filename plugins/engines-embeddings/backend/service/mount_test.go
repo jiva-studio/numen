@@ -9,17 +9,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 )
 
-// The handler of a host that links the plugin in serves the local model it is configured for.
-func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
+func TestTheMountedPluginServesTheModelItsConfigureNames(t *testing.T) {
 	setEmptyModelDir(t)
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": linkedToken})
-	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
-	}
+	handler := newMountedHandler(t, map[string]string{hostcall.PluginTokenEnv: linkedToken})
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
@@ -43,6 +40,18 @@ func TestMountRegistersCloseCallback(t *testing.T) {
 	if err := s.Close(); err != nil {
 		t.Fatalf("s.Close: %v", err)
 	}
+}
+
+func newMountedHandler(t *testing.T, vars map[string]string) http.Handler {
+	t.Helper()
+	for name, value := range vars {
+		t.Setenv(name, value)
+	}
+	handler, err := servertest.NewHandler(vars, Mount)
+	if err != nil {
+		t.Fatalf("NewHandler: %v", err)
+	}
+	return handler
 }
 
 func setEmptyModelDir(t *testing.T) {
@@ -110,10 +119,7 @@ func describeStatus(t *testing.T, web *httptest.Server) int {
 func TestAMissingLocalModelIsReportedAsTheSourceItemUntilAKnownModelAnswers(t *testing.T) {
 	setEmptyModelDir(t)
 	hostHealth := healthtest.NewHost(t)
-	handler, err := NewHandler(hostHealth.Vars(linkedToken))
-	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
-	}
+	handler := newMountedHandler(t, hostHealth.Vars(linkedToken))
 	web := httptest.NewServer(handler)
 	defer web.Close()
 	lifecycle := servertest.NewLifecycleClient(web.Client(), web.URL, linkedToken)

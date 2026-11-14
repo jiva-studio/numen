@@ -1,8 +1,6 @@
 package service
 
 import (
-	"net/http"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/adapter/hostclient"
@@ -45,18 +43,4 @@ func mount(s *server.Server, connected *hostclient.Host) error {
 	}
 	command.Mount(s, commands)
 	return nil
-}
-
-// NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
-// from the variables a launched process of the plugin is given. A request naming no vault works the
-// vault those name, and text versions are reported to the host they name.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		connected, err := hostclient.OpenFromVars(vars)
-		// gomutants:disable-next-line BRANCH_IF reason="NewLinkedHandler already validates vars before invoking mount callback"
-		if err != nil {
-			return err
-		}
-		return mount(s, connected)
-	})
 }

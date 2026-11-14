@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/rpc"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
@@ -558,13 +559,13 @@ func TestMountAndAllEndpoints(t *testing.T) {
 	b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 
 	const tok = "test-mount-token"
-	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, func(s *server.Server) error {
+	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, func(s *server.Server) error {
 		return rpc.Mount(s.NewAPI(""), b.Handlers())
 	}); err == nil {
 		t.Fatal("expected rpc.Mount with invalid service name to return error")
 	}
 
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, b.Mount)
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, b.Mount)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -628,7 +629,7 @@ func TestMountAndAllEndpoints(t *testing.T) {
 
 	emptyEnv := vaulttest.New(t, map[string]string{})
 	emptyB := New(Config{Vaults: vaulttest.Vaults(emptyEnv.Host), Store: vaulttest.Folders(emptyEnv.Host), Now: vaulttest.NewClock()})
-	emptyHandler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, emptyB.Mount)
+	emptyHandler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, emptyB.Mount)
 	if err != nil {
 		t.Fatal(err)
 	}

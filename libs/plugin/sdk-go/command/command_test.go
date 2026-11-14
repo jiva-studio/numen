@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 )
 
 func newRegistry(t *testing.T) *Registry {
@@ -99,7 +100,7 @@ func TestAddRejectsDuplicateID(t *testing.T) {
 
 func TestMountAndCanceledContextAndUnlockAfterRun(t *testing.T) {
 	registry := newRegistry(t)
-	h, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"}, func(s *server.Server) error {
+	h, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"}, func(s *server.Server) error {
 		Mount(s, registry)
 		return nil
 	})

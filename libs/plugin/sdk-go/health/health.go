@@ -93,16 +93,6 @@ func NewClientFromEnv() (*Client, error) {
 	return NewClient(endpoint), nil
 }
 
-// NewClientFromVars returns the client of the host the variables a linked plugin is given name. It
-// returns hostcall.ErrNoHost where they name none.
-func NewClientFromVars(vars map[string]string) (*Client, error) {
-	endpoint, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return NewClient(endpoint), nil
-}
-
 // Report puts the item in the host's list, or replaces the one under its key. An item the host refuses
 // answers connect.CodeInvalidArgument.
 func (c *Client) Report(ctx context.Context, item Item) error {
