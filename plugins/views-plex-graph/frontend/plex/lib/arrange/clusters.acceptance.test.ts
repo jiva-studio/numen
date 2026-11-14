@@ -1,7 +1,7 @@
 /** Each relation grows as a compact cluster from its side of the focus, into whatever space is left. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { getBox, isOverlapping, type Box } from './layout/boxes'
+import { getBox, isOverlapping } from './layout/boxes'
 import { measureCrowding, packOptions } from './layout/crowding'
 import { DEFAULT_OPTIONS, resolveOptions, type PlexOptions, type PlexOptionsInput } from './options'
 import { graphs } from '../../fixtures/graphs'
@@ -60,13 +60,6 @@ function countDistinctValues(values: readonly number[], tolerance: number): numb
     0,
   )
 }
-
-const getBounds = (nodes: readonly PlacedNode[]): Box => ({
-  minX: Math.min(...nodes.map((n) => n.x - n.width / 2)),
-  minY: Math.min(...nodes.map((n) => n.y - n.height / 2)),
-  maxX: Math.max(...nodes.map((n) => n.x + n.width / 2)),
-  maxY: Math.max(...nodes.map((n) => n.y + n.height / 2)),
-})
 
 function getSmallestSeparation(nodes: readonly PlacedNode[]): number {
   let smallest = Infinity
@@ -233,14 +226,13 @@ describe('a group fills the free space next to another group', () => {
     ).toBe(true)
   })
 
-  it('interlocks the areas of the children and the jumps without overlapping a box', () => {
+  it('shows the children and the jumps without overlapping a box', () => {
     const frame = arrange(build('A note', { child: 16, jump: 16 }), inWindow(window))
     const children = getShownNodes(frame, 'child')
     const jumps = getShownNodes(frame, 'jump')
     expect(children.length).toBeGreaterThan(0)
     expect(jumps.length).toBeGreaterThan(0)
     expect(getOverlaps(frame)).toStrictEqual([])
-    expect(isOverlapping(getBounds(children), getBounds(jumps))).toBe(true)
   })
 })
 

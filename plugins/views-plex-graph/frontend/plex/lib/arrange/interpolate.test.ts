@@ -300,12 +300,18 @@ describe('the title a line carries while the picture moves', () => {
         { id: 'a4', title: 'A four', relation: 'child' },
         { id: 'a5', title: 'A five', relation: 'child' },
         { id: 'a6', title: 'A six', relation: 'child' },
+        { id: 'a7', title: 'A seven', relation: 'child' },
+        { id: 'a8', title: 'A eight', relation: 'child' },
+        { id: 'a9', title: 'A nine', relation: 'child' },
       ],
       edges: [
         ...after.edges,
         { from: 'a', to: 'a4' },
         { from: 'a', to: 'a5' },
         { from: 'a', to: 'a6' },
+        { from: 'a', to: 'a7' },
+        { from: 'a', to: 'a8' },
+        { from: 'a', to: 'a9' },
       ],
     }
 

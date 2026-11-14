@@ -66,7 +66,7 @@ describe('the lines of a note stay apart', () => {
     put('front', at(0, -100))
 
     expect(lines.isClear('far', { x: 0, y: -200 }, at(0, -200))).toBe(false)
-    expect(lines.isClear('far', { x: 200, y: -200 }, at(200, -200))).toBe(true)
+    expect(lines.isClear('far', { x: 300, y: -200 }, at(300, -200))).toBe(true)
   })
 
   it('when the note itself would lie on a line that is already drawn', () => {

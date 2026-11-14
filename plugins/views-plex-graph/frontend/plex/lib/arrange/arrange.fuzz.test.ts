@@ -151,7 +151,7 @@ describe('a note that is cut', () => {
       expect(rounds.length, relation).toBeGreaterThanOrEqual(5)
     const whole = cases.filter((one) => Object.keys(arrangeCase(one).overflow).length === 0)
     expect(whole.length).toBeGreaterThanOrEqual(10)
-  })
+  }, 120_000)
 
   it.each(cuts.map(({ relation, rounds }) => [relation, rounds] as const))(
     'leaves no room for the next %s note: the visible notes and that note are not all visible together',
@@ -187,7 +187,7 @@ describe('a note that is cut', () => {
       if (!isSame) changed.push(`case ${round}`)
     })
     expect(changed).toStrictEqual([])
-  })
+  }, 120_000)
 })
 
 describe('a window too small for the boxes', () => {

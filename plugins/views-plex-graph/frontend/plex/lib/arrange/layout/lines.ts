@@ -9,8 +9,8 @@ export interface Link {
 /** Two lines closer than this (the sine of the angle between them) to parallel count as one line. */
 const PARALLEL_SINE = 0.12
 
-/** How far a line keeps from the box of a note it does not end at. */
-const CLEARANCE = 4
+/** How far a line keeps from the box of a note it does not end at: room for a title to sit beside it. */
+const CLEARANCE = 24
 
 const CELL = 64
 const CELL_OFFSET = 1 << 20
@@ -50,7 +50,6 @@ function isParallel(first: Segment, second: Segment): boolean {
   return Math.abs(ux * vy - uy * vx) < PARALLEL_SINE * Math.hypot(ux, uy) * Math.hypot(vx, vy)
 }
 
-/** Whether the segment touches the rectangle (Liang-Barsky clipping). */
 function isCrossing(segment: Segment, rect: Rect): boolean {
   const dx = segment.to.x - segment.from.x
   const dy = segment.to.y - segment.from.y
@@ -169,7 +168,8 @@ export class LineIndex {
     own: readonly { other: string; segment: Segment }[],
     index: number,
   ): boolean {
-    for (const sibling of own.slice(index + 1)) if (isParallel(segment, sibling.segment)) return false
+    for (const sibling of own.slice(index + 1))
+      if (isParallel(segment, sibling.segment)) return false
     if (other === this.hub) return true
     const middle = this.centers.get(other)!
     for (const third of this.listPlacedNeighbors(other)) {

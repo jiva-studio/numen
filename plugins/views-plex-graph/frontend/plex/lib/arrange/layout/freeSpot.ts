@@ -21,7 +21,6 @@ export interface SpotRequest {
   readonly group: readonly Spot[]
   readonly gaps: Gaps
   readonly fits?: ((spot: Spot) => boolean) | undefined
-  /** Whether the lines of the note stay apart from the other lines and notes at the spot. A spot that fails it is taken only when no other spot is free. */
   readonly isLineClear?: ((spot: Spot) => boolean) | undefined
 }
 
@@ -40,6 +39,19 @@ const WALK_STEPS = 400
 
 /** Costs are compared to this many parts of a box. */
 const COST_PRECISION = 1e6
+
+/** How many spots near the group a placement tests for clear lines before it widens the search. */
+const NEAR_LINE_CHECKS = 24
+
+/** How many spots of the wide search a placement tests for clear lines before it takes the best spot whose lines were not tested. */
+const WIDE_LINE_CHECKS = 160
+
+/** How much farther, in cells, a spot may lie from the middle for its lines to stay apart: a note is set aside, not sent far off. */
+const MAX_LINE_DETOUR = 2
+
+/** The wide search looks this many half-boxes along the direction and this many cells across it, on each side. */
+const WIDE_STEPS = 12
+const WIDE_OFFSETS = 5
 
 /** The offsets, in cells across the direction, tried at each step of the walk. */
 const WALK_OFFSETS = [0, 1, -1, 2, -2, 3, -3] as const
@@ -178,21 +190,25 @@ function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
  * axis before it goes deeper; of those the earlier candidate wins.
  */
 export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
-  if (request.isLineClear) {
-    const clear = searchSpot(index, request, true)
-    if (clear) return clear
+  const plain = searchSpot(index, request) ?? findSpotBeyond(index, request)
+  if (!request.isLineClear || request.isLineClear(plain)) return plain
+  const clear =
+    searchSpot(index, request, { left: NEAR_LINE_CHECKS }) ??
+    findClearSpotWide(index, request, { left: WIDE_LINE_CHECKS })
+  if (clear && measureCost(clear, request) <= measureCost(plain, request) + MAX_LINE_DETOUR) {
+    return clear
   }
-  return searchSpot(index, request, false) ?? findSpotBeyond(index, request)
+  return plain
 }
 
 function searchSpot(
   index: SpotIndex,
   request: SpotRequest,
-  isLineChecked: boolean,
+  budget?: { left: number },
 ): Spot | undefined {
   const { size, gaps } = request
   const isLineOk = (spot: Spot): boolean =>
-    !isLineChecked || !request.isLineClear || request.isLineClear(spot)
+    !budget || !request.isLineClear || (budget.left-- > 0 && request.isLineClear(spot))
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
   const found: { best?: { point: Vector; cost: number; progress: number } } = {}
@@ -202,7 +218,8 @@ function searchSpot(
     const cost = Math.round(measureCost(point, request) * COST_PRECISION)
     if (found.best && !isBetter(cost, progress, found.best)) return
     if (request.fits && !request.fits(toSpot(point))) return
-    if (index.isFree(toSpot(point), gaps) && isLineOk(toSpot(point))) found.best = { point, cost, progress }
+    if (index.isFree(toSpot(point), gaps) && isLineOk(toSpot(point)))
+      found.best = { point, cost, progress }
   }
   const considerAll = (points: readonly Vector[], minProgress: number) =>
     points.forEach((point) => consider(point, minProgress))
@@ -221,7 +238,40 @@ function searchSpot(
       considerAll(listNearbyCandidates(box, request), relaxedMinProgress)
   }
   if (found.best) return toSpot(found.best.point)
-  return findFreeSpotOutward(index, request, isLineOk)
+  return budget ? undefined : findFreeSpotOutward(index, request)
+}
+
+function listWideSpots(request: SpotRequest): Spot[] {
+  const { middle, direction, size, gaps } = request
+  const cell = { width: size.width + gaps.gap, height: size.height + gaps.lineGap }
+  const stride = size.height / 2
+  const spots: Spot[] = []
+  for (let step = 0; step <= WIDE_STEPS; step++) {
+    for (let offset = -WIDE_OFFSETS; offset <= WIDE_OFFSETS; offset++) {
+      const spot: Spot = {
+        x: middle.x + direction.x * step * stride - direction.y * offset * cell.width,
+        y: middle.y + direction.y * step * stride + direction.x * offset * cell.height,
+        ...size,
+      }
+      if (measureProgress(spot, request) >= -TOLERANCE) spots.push(spot)
+    }
+  }
+  return spots.sort((first, second) => measureCost(first, request) - measureCost(second, request))
+}
+
+function findClearSpotWide(
+  index: SpotIndex,
+  request: SpotRequest,
+  budget: { left: number },
+): Spot | undefined {
+  for (const spot of listWideSpots(request)) {
+    if (budget.left <= 0) return undefined
+    if (request.fits && !request.fits(spot)) continue
+    if (!index.isFree(spot, request.gaps)) continue
+    budget.left--
+    if (request.isLineClear?.(spot)) return spot
+  }
+  return undefined
 }
 
 function findSpotBeyond(index: SpotIndex, request: SpotRequest): Spot {
@@ -296,11 +346,7 @@ export function measureCost(point: Vector, request: SpotRequest): number {
   )
 }
 
-function findFreeSpotOutward(
-  index: SpotIndex,
-  request: SpotRequest,
-  isLineOk: (spot: Spot) => boolean,
-): Spot | undefined {
+function findFreeSpotOutward(index: SpotIndex, request: SpotRequest): Spot | undefined {
   const { middle, direction, size, gaps } = request
   const cell = { width: size.width + gaps.gap, height: size.height + gaps.lineGap }
   const stride = size.height / 4
@@ -314,7 +360,7 @@ function findFreeSpotOutward(
       }
       if (request.fits && !request.fits(spot)) continue
       if (!index.isFree(spot, gaps) || measureProgress(spot, request) < -TOLERANCE) continue
-      if (isLineOk(spot)) return spot
+      return spot
     }
   }
   return undefined

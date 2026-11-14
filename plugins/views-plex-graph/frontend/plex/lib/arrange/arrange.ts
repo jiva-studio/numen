@@ -56,7 +56,12 @@ export function arrangePlex(
     laid: PlexOptions,
     nodesByRelation: NodesByRelation,
     roomsById: Fit['rooms'],
-    limits: Pick<PlacementContext, 'shouldStop' | 'fits'> = {},
+    {
+      isLineKept = false,
+      ...limits
+    }: Pick<PlacementContext, 'shouldStop' | 'fits'> & {
+      readonly isLineKept?: boolean
+    } = {},
   ) => {
     const width = createWidthLookup(laid, measure, request)
     const focus: PlacedNode = {
@@ -74,7 +79,7 @@ export function arrangePlex(
         options: laid,
         width,
         room: (node) => roomsById.get(node.id) ?? NO_ROOM,
-        edges: graph.edges,
+        ...(isLineKept ? { edges: graph.edges } : {}),
         ...limits,
       }),
     }
@@ -131,11 +136,21 @@ export function arrangePlex(
     ),
   )
   const fit: Fit = { margin, rooms }
-  const spaced = lay({ ...resolved, ...spacing }, admitted, rooms, { fits: getFits(resolved) })
+  // The lines are kept apart only here and only in a window: what the window holds is settled without them, and a layout
+  // that keeps them apart but leaves the window gives way to the one that does not.
+  const spacedOptions = { ...resolved, ...spacing }
+  const spaced = lay(spacedOptions, admitted, rooms, {
+    fits: getFits(resolved),
+    isLineKept: viewport !== undefined,
+  })
   // The probes of the gaps lay out without `fits`, so the spaced layout can leave the window where the one admission verified does not.
-  const finalLayout = isInsideWindow(spaced.placed, viewport, fit)
-    ? spaced
-    : lay(resolved, admitted, rooms, { fits: getFits(resolved) })
+  const getFinalLayout = () => {
+    if (isInsideWindow(spaced.placed, viewport, fit)) return spaced
+    const spacedPlain = lay(spacedOptions, admitted, rooms, { fits: getFits(resolved) })
+    if (isInsideWindow(spacedPlain.placed, viewport, fit)) return spacedPlain
+    return lay(resolved, admitted, rooms, { fits: getFits(resolved) })
+  }
+  const finalLayout = getFinalLayout()
   const { focus } = finalLayout
   const placed = viewport
     ? finalLayout.placed.filter((node) => isInside(node, viewport, fit))

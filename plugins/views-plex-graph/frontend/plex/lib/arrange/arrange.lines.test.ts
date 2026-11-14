@@ -34,7 +34,6 @@ const getEnds = (frame: ReturnType<typeof arrangePlex>, edge: PlexEdge) => {
   return [byId.get(edge.from), byId.get(edge.to)] as const
 }
 
-/** The notes at which a line meets a line, other than the focus: the apex and the two far ends. */
 const listCorners = (frame: ReturnType<typeof arrangePlex>, graph: PlexGraph) => {
   const byId = new Map(frame.nodes.map((node) => [node.id, node]))
   const corners: { apex: PlacedNode; first: PlacedNode; second: PlacedNode }[] = []
@@ -53,7 +52,6 @@ const listCorners = (frame: ReturnType<typeof arrangePlex>, graph: PlexGraph) =>
   return corners
 }
 
-/** A note, and a second note joined to it on the far side from the focus. */
 function createChain(relation: 'parent' | 'child', first: string, second: string): PlexGraph {
   const nodes: PlexNode[] = [
     { id: 'focus', title: 'Mechanics', relation: 'focus' },
@@ -83,7 +81,10 @@ describe.each([
   ])('is not on one line with the line to the focus, %s', (_, first, second) => {
     const graph = createChain(relation, near, far)
     const ordered = {
-      nodes: [graph.nodes[0]!, ...[first, second].map((id) => graph.nodes.find((n) => n.id === id)!)],
+      nodes: [
+        graph.nodes[0]!,
+        ...[first, second].map((id) => graph.nodes.find((n) => n.id === id)!),
+      ],
       edges: graph.edges,
     }
     const frame = arrangePlex(ordered, { options: { viewport: VIEWPORT } })
@@ -104,6 +105,58 @@ describe('a window that holds nothing but one column', () => {
 
     expect(frame.nodes.map((node) => node.id).sort()).toStrictEqual(['Chapter', 'Part', 'focus'])
     expect(frame.overflow).toStrictEqual({})
+  })
+})
+
+describe('a focus with children and children of children, in a window with room to spare', () => {
+  const names = ['dd', 'dddd', 'Test 222', 'Chapter 1: Observing the armies']
+  const graph: PlexGraph = {
+    nodes: [
+      { id: 'focus', title: 'Bhagavad-gita', relation: 'focus' },
+      ...names.map((title): PlexNode => ({ id: title, title, relation: 'child' })),
+      { id: 'uuu', title: 'uuu', relation: 'child' },
+      { id: 'ddd', title: 'ddd', relation: 'child' },
+    ],
+    edges: [
+      ...names.map((title): PlexEdge => ({ from: 'focus', to: title })),
+      { from: 'dddd', to: 'uuu' },
+      { from: 'dd', to: 'ddd' },
+    ],
+  }
+
+  it.each([
+    [{ width: 843, height: 603 }, undefined],
+    [{ width: 843, height: 603 }, (node: PlexNode) => 40 + node.title.length * 7],
+    [{ width: 1600, height: 1000 }, undefined],
+  ])('keeps the lines apart and off the other notes in %o', (viewport, measure) => {
+    const frame = arrangePlex(graph, { options: { viewport }, ...(measure ? { measure } : {}) })
+    const byId = new Map(frame.nodes.map((node) => [node.id, node]))
+    const focus = byId.get('focus')!
+
+    expect(frame.overflow).toStrictEqual({})
+    expect(
+      getSine(byId.get('dddd')!, focus, byId.get('uuu')!),
+      'uuu on the line of dddd',
+    ).toBeGreaterThanOrEqual(PARALLEL_SINE)
+    expect(
+      getSine(byId.get('dd')!, focus, byId.get('ddd')!),
+      'ddd on the line of dd',
+    ).toBeGreaterThanOrEqual(PARALLEL_SINE)
+    for (const edge of graph.edges) {
+      const [from, to] = getEnds(frame, edge)
+      for (const box of frame.nodes) {
+        if (box === from || box === to) continue
+        expect(isThrough(from!, to!, box), `${edge.from}-${edge.to} through ${box.id}`).toBe(false)
+      }
+    }
+    for (const first of names) {
+      for (const second of names.slice(names.indexOf(first) + 1)) {
+        expect(
+          getSine(focus, byId.get(first)!, byId.get(second)!),
+          `${first} and ${second}`,
+        ).toBeGreaterThanOrEqual(PARALLEL_SINE)
+      }
+    }
   })
 })
 
