@@ -36,17 +36,20 @@ func getVault() map[string]string {
 
 // vaulted is one vault on disk, and the scenarios built over it.
 type vaulted struct {
-	vault     domain.Vault
-	env       vaulttest.Env
-	standings flashcards.ListReviewCards
-	presets   presets.Presets
-	assigning flashcards.AssignCardIDs
-	schedules flashcards.Schedules
-	counted   flashcards.CountReviews
-	logs      ports.LogStores
-	notes     vaulttest.Queries
-	links     ports.LinkQueries
-	scan      func(ctx context.Context, v domain.Vault, paths []string) error
+	vault         domain.Vault
+	env           vaulttest.Env
+	standings     flashcards.ListReviewCards
+	presets       presets.OpenReads
+	readPreset    presets.Read
+	savePreset    presets.Save
+	getDeckPreset presets.GetForDeck
+	assigning     flashcards.AssignCardIDs
+	schedules     flashcards.Schedules
+	counted       flashcards.CountReviews
+	logs          ports.LogStores
+	notes         vaulttest.Queries
+	links         ports.LinkQueries
+	scan          func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
 func openVault(tb testing.TB, notes map[string]string) vaulted {
@@ -59,7 +62,7 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 
 	logs := env.Ports.Logs
 	standings := flashcards.NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
-	deckPresets := presets.New(presets.Config{
+	presetsConfig := presets.Config{
 		Readers:  env.Ports.Readers,
 		Writers:  env.Ports.Writers,
 		Links:    env.Queries,
@@ -67,7 +70,8 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 		Problems: env.Queries,
 		Index:    scanned,
 		Now:      vaulttest.NewClock(),
-	})
+	}
+	deckPresets := presets.NewOpenReads(presetsConfig)
 	// Each card is scheduled with the share of cards its own preset specifies, as
 	// the application builds it.
 	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), getToday(), standings, deckPresets)
@@ -77,10 +81,13 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 	counted.Cache = env.Ports.Schedules("days")
 
 	return vaulted{
-		vault:     env.Vault,
-		env:       env,
-		standings: standings,
-		presets:   deckPresets,
+		vault:         env.Vault,
+		env:           env,
+		standings:     standings,
+		presets:       deckPresets,
+		readPreset:    presets.NewRead(presetsConfig),
+		savePreset:    presets.NewSave(presetsConfig),
+		getDeckPreset: presets.NewGetForDeck(presetsConfig),
 		assigning: flashcards.NewAssignCardIDs(
 			env.Ports.Readers, env.Ports.Writers,
 			env.Queries, env.Queries, scanned, vaulttest.NewClock()),
@@ -174,7 +181,7 @@ func (s vaulted) newCountCardsDueAt(day review.Day, now ports.Clock) flashcards.
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		presets.New(presets.Config{Now: vaulttest.NewClock(), Day: day}), day, vaulttest.NewClock(),
+		presets.NewOpenReads(presets.Config{Now: vaulttest.NewClock(), Day: day}), day, vaulttest.NewClock(),
 	)
 }
 

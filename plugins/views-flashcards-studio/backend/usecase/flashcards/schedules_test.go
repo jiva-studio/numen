@@ -220,13 +220,13 @@ func TestMovingATargetWorksTheSchedulesOutAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	settings, err := s.presets.Read(t.Context(), s.vault, "Low.md")
+	settings, err := s.readPreset.Execute(t.Context(), s.vault, "Low.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 	moved := settings.Settings
 	moved.Retention = 0.95
-	if _, err := s.presets.Save(t.Context(), s.vault, "Low.md", moved, domain.FileStat{}); err != nil {
+	if _, err := s.savePreset.Execute(t.Context(), s.vault, "Low.md", moved, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -327,7 +327,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	direct := flashcards.NewSchedules(
 		s.logs, review.NewFSRS(), getToday(),
 		flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil),
-		presets.New(presets.Config{Now: vaulttest.NewClock(), Day: getToday()}),
+		presets.NewOpenReads(presets.Config{Now: vaulttest.NewClock(), Day: getToday()}),
 	)
 	want, err := direct.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -361,7 +361,7 @@ func TestSchedules_ReviewedAndProjectedCardShareDueDay(t *testing.T) {
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
 	on := review.CardID{Card: cardID(0), Template: "Say it"}
-	read, err := s.presets.Read(t.Context(), s.vault, "Even.md")
+	read, err := s.readPreset.Execute(t.Context(), s.vault, "Even.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -934,7 +934,7 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	)
 
 	looks := map[string]int{}
-	deckPresets := presets.New(presets.Config{
+	deckPresets := presets.NewOpenReads(presets.Config{
 		Readers: s.env.Ports.Readers,
 		Writers: s.env.Ports.Writers,
 		Links:   lookups{LinkQueries: s.links, looks: looks},
@@ -972,7 +972,7 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	})
 
 	reads := map[string]int{}
-	deckPresets := presets.New(presets.Config{
+	deckPresets := presets.NewOpenReads(presets.Config{
 		Readers: counting{VaultReaders: s.env.Ports.Readers, reads: reads},
 		Writers: s.env.Ports.Writers,
 		Links:   s.links,

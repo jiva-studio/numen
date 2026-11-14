@@ -829,7 +829,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	rows := make(map[string]*api.DeckCardsDue, len(response.Decks))
 	for _, one := range response.Decks {
 		rows[one.Deck] = one
-		p, err := handler.flash().Schedules.Presets.GetForDeck(t.Context(), v, one.Deck)
+		p, err := handler.flash().Schedules.Presets.GetForDeck.Execute(t.Context(), v, one.Deck)
 		if err != nil {
 			t.Fatal(err)
 		}

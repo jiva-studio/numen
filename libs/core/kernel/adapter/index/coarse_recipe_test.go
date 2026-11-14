@@ -61,7 +61,7 @@ func storedBits(t *testing.T, db *DB) map[int64][]byte {
 
 func fit(t *testing.T, db *DB, recipe string) {
 	t.Helper()
-	if err := db.FitVectors(t.Context(), 1024, recipe); err != nil {
+	if err := db.VectorIndex().FitVectors(t.Context(), 1024, recipe); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -179,7 +179,7 @@ func TestAFreshIndexContainsTheRecipeTableAndNoRecipe(t *testing.T) {
 func TestACoarseQueryTheVectorsOfAnotherRecipeCannotAnswerIsReportedAsThat(t *testing.T) {
 	db := openDB(t)
 	book(t, db, getFirstVault(), "library/tale.epub", 0x0f)
-	if err := db.FitVectors(t.Context(), 384, narrowRecipe(384)); err != nil {
+	if err := db.VectorIndex().FitVectors(t.Context(), 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
 

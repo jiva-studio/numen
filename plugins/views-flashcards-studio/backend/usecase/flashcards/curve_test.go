@@ -1413,7 +1413,7 @@ func countScheduledCards(t *testing.T, s vaulted, path string) (decks []string, 
 		t.Fatal(err)
 	}
 	for _, deck := range target {
-		p, err := s.presets.GetForDeck(t.Context(), s.vault, deck)
+		p, err := s.getDeckPreset.Execute(t.Context(), s.vault, deck)
 		if err != nil {
 			t.Fatal(err)
 		}

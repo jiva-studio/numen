@@ -21,7 +21,7 @@ var declaredWidth = regexp.MustCompile(`bit\[(\d+)]`)
 // The coarse index is built for one width. Two models of one width write bits
 // that mean different things, so the index records the recipe that filled it.
 // A chunk the recipe holds no vector for gets no row until it is embedded.
-func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
+func (d *VectorIndex) FitVectors(ctx context.Context, dims int, recipe string) error {
 	if dims <= 0 {
 		return fmt.Errorf("a vector of %d dimensions is not a vector", dims)
 	}
