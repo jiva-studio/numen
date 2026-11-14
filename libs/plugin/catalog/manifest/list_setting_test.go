@@ -40,7 +40,7 @@ func TestAListSettingWhoseDefaultIsAStringIsRefused(t *testing.T) {
 	}
 }
 
-func TestAListSettingWhoseDefaultHoldsANumberIsRefused(t *testing.T) {
+func TestAListSettingWithANumberInItsDefaultIsRefused(t *testing.T) {
 	_, err := readSettings(`{"key":"folders","type":"list","title":"Folders","default":["a",1]}`)
 
 	if !errors.Is(err, manifest.ErrInvalidSetting) || !strings.Contains(err.Error(), "folders holds a list and its default is no list of strings") {
@@ -48,7 +48,7 @@ func TestAListSettingWhoseDefaultHoldsANumberIsRefused(t *testing.T) {
 	}
 }
 
-func TestAListSettingWhoseDefaultHoldsAnEmptyStringIsRefused(t *testing.T) {
+func TestAListSettingWithAnEmptyStringInItsDefaultIsRefused(t *testing.T) {
 	for _, item := range []string{``, ` `} {
 		_, err := readSettings(`{"key":"folders","type":"list","title":"Folders","default":["a","` + item + `"]}`)
 
@@ -58,7 +58,7 @@ func TestAListSettingWhoseDefaultHoldsAnEmptyStringIsRefused(t *testing.T) {
 	}
 }
 
-func TestAListSettingWhoseDefaultHoldsOneValueTwiceIsRefused(t *testing.T) {
+func TestAListSettingWithOneValueTwiceInItsDefaultIsRefused(t *testing.T) {
 	_, err := readSettings(`{"key":"folders","type":"list","title":"Folders","default":["a","b","a"]}`)
 
 	if !errors.Is(err, manifest.ErrInvalidSetting) || !strings.Contains(err.Error(), `folders holds a list and its default holds "a" twice`) {
@@ -66,7 +66,7 @@ func TestAListSettingWhoseDefaultHoldsOneValueTwiceIsRefused(t *testing.T) {
 	}
 }
 
-func TestAListSettingWhoseDefaultHoldsTwoValuesThatDifferInCaseIsAccepted(t *testing.T) {
+func TestAListSettingWithTwoValuesThatDifferInCaseInItsDefaultIsAccepted(t *testing.T) {
 	_, err := readSettings(`{"key":"folders","type":"list","title":"Folders","default":["Archive","archive"]}`)
 
 	if err != nil {

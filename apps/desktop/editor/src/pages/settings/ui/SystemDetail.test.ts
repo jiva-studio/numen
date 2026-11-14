@@ -241,9 +241,9 @@ describe('a list setting of the shell', () => {
   it('draws a list setting of the app with the list control', () => {
     const { wrapper } = createPage('system', [FOLDERS])
 
-    expect(findRow(wrapper, 'Ignored folders').findComponent(ListField).props('items')).toStrictEqual([
-      'templates',
-    ])
+    expect(
+      findRow(wrapper, 'Ignored folders').findComponent(ListField).props('items'),
+    ).toStrictEqual(['templates'])
   })
 
   it('writes the item added to a list setting of the app under the owner app', () => {
@@ -251,8 +251,8 @@ describe('a list setting of the shell', () => {
 
     findRow(wrapper, 'Ignored folders').findComponent(ListField).vm.$emit('add', 'drafts')
 
-    expect(writes.map((one) => ({ at: one.at, value: JSON.parse(one.value) as unknown }))).toStrictEqual([
-      { at: ['app', 'search', 'ignoredFolders'], value: ['templates', 'drafts'] },
-    ])
+    expect(
+      writes.map((one) => ({ at: one.at, value: JSON.parse(one.value) as unknown })),
+    ).toStrictEqual([{ at: ['app', 'search', 'ignoredFolders'], value: ['templates', 'drafts'] }])
   })
 })

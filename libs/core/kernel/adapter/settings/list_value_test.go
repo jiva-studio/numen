@@ -42,7 +42,7 @@ func openList(t *testing.T, body string) settings.File {
 	return cfg
 }
 
-func TestAListOfStringsWrittenToAListSettingIsSavedAndReadBackAsTheSameList(t *testing.T) {
+func TestAListOfStringsSavedToAListSettingIsReadBackAsTheSameList(t *testing.T) {
 	written := []any{"templates", "archive/old"}
 	if err := checkList(written); err != nil {
 		t.Fatalf("the list was refused: %v", err)
@@ -67,7 +67,7 @@ func TestAListOfStringsWrittenToAListSettingIsSavedAndReadBackAsTheSameList(t *t
 	}
 }
 
-func TestAnEmptyListWrittenToAListSettingIsSaved(t *testing.T) {
+func TestAnEmptyListIsSavedToAListSetting(t *testing.T) {
 	if err := checkList([]any{}); err != nil {
 		t.Fatalf("the empty list was refused: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestAnEmptyListWrittenToAListSettingIsSaved(t *testing.T) {
 	}
 }
 
-func TestAStringWrittenToAListSettingIsRefusedAsTheWrongType(t *testing.T) {
+func TestAStringForAListSettingIsRefusedAsTheWrongType(t *testing.T) {
 	err := checkList("templates,archive")
 
 	if !errors.Is(err, settings.ErrWrongType) {
@@ -88,7 +88,7 @@ func TestAStringWrittenToAListSettingIsRefusedAsTheWrongType(t *testing.T) {
 	}
 }
 
-func TestAListHoldingANumberWrittenToAListSettingIsRefusedAsTheWrongType(t *testing.T) {
+func TestAListWithANumberForAListSettingIsRefusedAsTheWrongType(t *testing.T) {
 	err := checkList([]any{"templates", 1.0})
 
 	if !errors.Is(err, settings.ErrWrongType) {
@@ -96,7 +96,7 @@ func TestAListHoldingANumberWrittenToAListSettingIsRefusedAsTheWrongType(t *test
 	}
 }
 
-func TestAListHoldingAnEmptyStringWrittenToAListSettingIsRefused(t *testing.T) {
+func TestAListWithAnEmptyStringForAListSettingIsRefused(t *testing.T) {
 	for _, item := range []string{"", "  "} {
 		err := checkList([]any{"templates", item})
 
@@ -106,7 +106,7 @@ func TestAListHoldingAnEmptyStringWrittenToAListSettingIsRefused(t *testing.T) {
 	}
 }
 
-func TestAListHoldingOneValueTwiceWrittenToAListSettingIsRefused(t *testing.T) {
+func TestAListWithOneValueTwiceForAListSettingIsRefused(t *testing.T) {
 	err := checkList([]any{"templates", "archive", "templates"})
 
 	if !errors.Is(err, settings.ErrInvalidListItem) {

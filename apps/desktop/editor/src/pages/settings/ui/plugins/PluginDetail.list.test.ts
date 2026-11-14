@@ -44,11 +44,13 @@ const createListDetail = (file: JsonObject = {}, plugin: PluginInfo = TASKS) => 
   const writes: SettingEdit[] = []
   const requested = new Map<string, JsonValue>()
   const installation = createInstallation({
-    getSetting: (path) => (requested.has(path.join('/')) ? requested.get(path.join('/')) : at(file, path)),
+    getSetting: (path) =>
+      requested.has(path.join('/')) ? requested.get(path.join('/')) : at(file, path),
     isRequested: (path) => requested.has(path.join('/')),
     write: (edits) => {
       writes.push(...edits)
-      for (const edit of edits) requested.set(edit.at.join('/'), JSON.parse(edit.value) as JsonValue)
+      for (const edit of edits)
+        requested.set(edit.at.join('/'), JSON.parse(edit.value) as JsonValue)
     },
     plugins: ref([plugin]),
   })
@@ -61,7 +63,8 @@ const createListDetail = (file: JsonObject = {}, plugin: PluginInfo = TASKS) => 
     },
   })
   const getField = () => wrapper.getComponent(ListField)
-  const readWrites = () => writes.map((one) => ({ at: one.at, value: JSON.parse(one.value) as JsonValue }))
+  const readWrites = () =>
+    writes.map((one) => ({ at: one.at, value: JSON.parse(one.value) as JsonValue }))
   return { wrapper, getField, readWrites }
 }
 
@@ -70,20 +73,26 @@ const findResets = (wrapper: ReturnType<typeof createListDetail>['wrapper']) =>
 
 describe('a list setting on the page of a plugin', () => {
   it('draws the list control with the items stored', () => {
-    const { getField } = createListDetail({ [PLUGIN_ID]: { ignoredFolders: ['templates', 'archive/old'] } })
+    const { getField } = createListDetail({
+      [PLUGIN_ID]: { ignoredFolders: ['templates', 'archive/old'] },
+    })
 
     expect(getField().props('items')).toStrictEqual(['templates', 'archive/old'])
   })
 
   it('draws the default while no list is stored', () => {
-    const plugin = createPluginInfo(PLUGIN_ID, 'Tasks', { settings: [{ ...FOLDERS, default: ['templates'] }] })
+    const plugin = createPluginInfo(PLUGIN_ID, 'Tasks', {
+      settings: [{ ...FOLDERS, default: ['templates'] }],
+    })
     const { getField } = createListDetail({}, plugin)
 
     expect(getField().props('items')).toStrictEqual(['templates'])
   })
 
   it('draws only the strings of a stored list', () => {
-    const { getField } = createListDetail({ [PLUGIN_ID]: { ignoredFolders: ['templates', 3, null] } })
+    const { getField } = createListDetail({
+      [PLUGIN_ID]: { ignoredFolders: ['templates', 3, null] },
+    })
 
     expect(getField().props('items')).toStrictEqual(['templates'])
   })
@@ -95,7 +104,9 @@ describe('a list setting on the page of a plugin', () => {
   })
 
   it('writes an added item as the last item of the list', () => {
-    const { getField, readWrites } = createListDetail({ [PLUGIN_ID]: { ignoredFolders: ['templates', 'archive/old'] } })
+    const { getField, readWrites } = createListDetail({
+      [PLUGIN_ID]: { ignoredFolders: ['templates', 'archive/old'] },
+    })
 
     getField().vm.$emit('add', 'drafts')
 
@@ -111,11 +122,15 @@ describe('a list setting on the page of a plugin', () => {
 
     getField().vm.$emit('remove', 'archive/old')
 
-    expect(readWrites()).toStrictEqual([{ at: [PLUGIN_ID, 'ignoredFolders'], value: ['templates', 'drafts'] }])
+    expect(readWrites()).toStrictEqual([
+      { at: [PLUGIN_ID, 'ignoredFolders'], value: ['templates', 'drafts'] },
+    ])
   })
 
   it('writes both items when two items are added one after the other', () => {
-    const { getField, readWrites } = createListDetail({ [PLUGIN_ID]: { ignoredFolders: ['templates'] } })
+    const { getField, readWrites } = createListDetail({
+      [PLUGIN_ID]: { ignoredFolders: ['templates'] },
+    })
 
     getField().vm.$emit('add', 'drafts')
     getField().vm.$emit('add', 'archive/old')
@@ -127,27 +142,43 @@ describe('a list setting on the page of a plugin', () => {
   })
 
   it('writes the removal after an add on top of the added item', () => {
-    const { getField, readWrites } = createListDetail({ [PLUGIN_ID]: { ignoredFolders: ['templates'] } })
+    const { getField, readWrites } = createListDetail({
+      [PLUGIN_ID]: { ignoredFolders: ['templates'] },
+    })
 
     getField().vm.$emit('add', 'drafts')
     getField().vm.$emit('remove', 'templates')
 
-    expect(readWrites().at(-1)).toStrictEqual({ at: [PLUGIN_ID, 'ignoredFolders'], value: ['drafts'] })
+    expect(readWrites().at(-1)).toStrictEqual({
+      at: [PLUGIN_ID, 'ignoredFolders'],
+      value: ['drafts'],
+    })
   })
 
   it('offers reset for a list changed from its default, and reset writes the default', async () => {
-    const plugin = createPluginInfo(PLUGIN_ID, 'Tasks', { settings: [{ ...FOLDERS, default: ['templates'] }] })
-    const { wrapper, readWrites } = createListDetail({ [PLUGIN_ID]: { ignoredFolders: ['templates', 'drafts'] } }, plugin)
+    const plugin = createPluginInfo(PLUGIN_ID, 'Tasks', {
+      settings: [{ ...FOLDERS, default: ['templates'] }],
+    })
+    const { wrapper, readWrites } = createListDetail(
+      { [PLUGIN_ID]: { ignoredFolders: ['templates', 'drafts'] } },
+      plugin,
+    )
 
     const resets = findResets(wrapper)
-    expect(resets.map((one) => one.attributes('aria-label'))).toStrictEqual(['Reset Ignored folders to its default'])
+    expect(resets.map((one) => one.attributes('aria-label'))).toStrictEqual([
+      'Reset Ignored folders to its default',
+    ])
     await resets[0]!.trigger('click')
 
-    expect(readWrites()).toStrictEqual([{ at: [PLUGIN_ID, 'ignoredFolders'], value: ['templates'] }])
+    expect(readWrites()).toStrictEqual([
+      { at: [PLUGIN_ID, 'ignoredFolders'], value: ['templates'] },
+    ])
   })
 
   it('offers no reset while the list holds its default', () => {
-    const plugin = createPluginInfo(PLUGIN_ID, 'Tasks', { settings: [{ ...FOLDERS, default: ['templates'] }] })
+    const plugin = createPluginInfo(PLUGIN_ID, 'Tasks', {
+      settings: [{ ...FOLDERS, default: ['templates'] }],
+    })
     const { wrapper } = createListDetail({ [PLUGIN_ID]: { ignoredFolders: ['templates'] } }, plugin)
 
     expect(findResets(wrapper)).toHaveLength(0)
