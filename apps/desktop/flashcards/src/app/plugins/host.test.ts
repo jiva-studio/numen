@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, onScopeDispose } from 'vue'
-import { CONVERSATION, NOTE_EDITOR, VAULT_SUMMARY } from '@numen/plugin-loader'
+import { CONVERSATION, VAULT_SUMMARY } from '@numen/plugin-loader'
 import { createMockManifest } from '@numen/core-client/testing'
 import type {
   BackgroundTaskHost,
@@ -480,7 +480,7 @@ describe('the tab of the window', () => {
 
     view.dispose()
     expect(row.textContent).toBe('')
-    expect(() => mountView(NOTE_EDITOR, row, {})).toThrowError(TARGET)
+    expect(() => mountView('note-editor', row, {})).toThrowError(TARGET)
   })
 })
 
