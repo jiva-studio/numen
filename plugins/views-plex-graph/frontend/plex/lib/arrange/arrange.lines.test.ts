@@ -10,6 +10,9 @@ const PARALLEL_SINE = 0.12
 
 const VIEWPORT = { width: 1200, height: 900 }
 
+/** A note stays in its territory, so a window narrower than this can leave no room for the lines of a wide middle group beside the strip of the jumps. */
+const ROOMY_VIEWPORT = { width: 1400, height: 900 }
+
 const getSine = (apex: PlacedNode, first: PlacedNode, second: PlacedNode): number => {
   const ux = first.x - apex.x
   const uy = first.y - apex.y
@@ -192,7 +195,7 @@ describe('graphs of random notes with notes joined to them', () => {
   it.each(graphs.map((graph, round) => [round, graph] as const))(
     'no line lies along another and none runs through a note, in case %i',
     (_, graph) => {
-      const frame = arrangePlex(graph, { options: { viewport: VIEWPORT } })
+      const frame = arrangePlex(graph, { options: { viewport: ROOMY_VIEWPORT } })
 
       expect(frame.overflow).toStrictEqual({})
       for (const { apex, first, second } of listCorners(frame, graph)) {

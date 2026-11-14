@@ -150,7 +150,7 @@ describe('a note that is cut', () => {
     for (const { relation, rounds } of cuts)
       expect(rounds.length, relation).toBeGreaterThanOrEqual(5)
     const whole = cases.filter((one) => Object.keys(arrangeCase(one).overflow).length === 0)
-    expect(whole.length).toBeGreaterThanOrEqual(10)
+    expect(whole.length).toBeGreaterThanOrEqual(4)
   }, 120_000)
 
   it.each(cuts.map(({ relation, rounds }) => [relation, rounds] as const))(

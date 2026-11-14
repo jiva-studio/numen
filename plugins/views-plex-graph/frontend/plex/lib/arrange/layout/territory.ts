@@ -2,6 +2,9 @@
 import type { PlacedNode } from '../../node'
 import type { Spot, Vector } from './freeSpot'
 
+/** The gap kept between the territories of two groups, in gaps between notes. */
+export const GROUP_GAP_FACTOR = 2
+
 /** A box may cross a border by this much, so a box built exactly on the border is inside. */
 const BORDER_TOLERANCE = 0.5
 
@@ -9,7 +12,6 @@ const BORDER_TOLERANCE = 0.5
 export interface Borders {
   readonly centralHalf: number
   readonly sideStart: number
-  /** Whether the groups grow as if there were no territories: a group with no neighbour across the focus has none to keep out of. */
   readonly isOpen: boolean
 }
 

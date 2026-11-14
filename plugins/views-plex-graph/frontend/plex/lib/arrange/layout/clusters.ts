@@ -10,9 +10,15 @@ import {
   type SpotRequest,
   type Vector,
 } from './freeSpot'
-import { isBetter, isInWindow, findBestAttempt, measureMiddleBand, type Attempt } from './bands'
+import {
+  findBestAttempt,
+  getStartColumns,
+  isInWindow,
+  measureMiddleBand,
+  type Attempt,
+} from './bands'
 import { LineIndex } from './lines'
-import { createBorders, createTerritory, type Borders } from './territory'
+import { createBorders, createTerritory, GROUP_GAP_FACTOR, type Borders } from './territory'
 import type { Size } from '../options'
 import {
   getFootprint,
@@ -28,9 +34,6 @@ const LEAN = 0.42
 
 /** A lane opens by this much across its axis for each unit it runs along it; a row opens wider by how many times a cell is wider than tall. */
 const LANE_SLOPE = 1
-
-/** The gap kept between the territories of two groups, in gaps between notes. */
-const GROUP_GAP_FACTOR = 2
 
 /** A center may lie this far short of the edge of its lane, so a box built exactly on the edge is inside. */
 const LANE_TOLERANCE = 0.5
@@ -93,6 +96,7 @@ function getClusterMiddle(start: Vector, direction: Vector, request: MiddleReque
 
 /** What every note of one relation shares: the way the group grows, where it begins, and how far its first note reaches. */
 interface GroupPlan {
+  readonly relation: PlexRelation
   readonly members: readonly PlexNode[]
   readonly side: Vector
   readonly direction: Vector
@@ -100,6 +104,7 @@ interface GroupPlan {
   readonly firstReach: number
   readonly isSide: boolean
   readonly hasLane: boolean
+  readonly isFenced: boolean
   readonly isInTerritory: (spot: Spot) => boolean
 }
 
@@ -134,6 +139,7 @@ function createGroupPlans(
     const isSide = SIDES[side].x !== 0
     const anchor = getAnchor(direction, focus, context.options)
     plans.set(relation, {
+      relation,
       members,
       side: SIDES[side],
       direction,
@@ -141,6 +147,7 @@ function createGroupPlans(
       firstReach: getReach(direction, footprintOf(first)),
       isSide,
       hasLane: !isSide || borders.isOpen,
+      isFenced: !borders.isOpen,
       isInTerritory: createTerritory(SIDES[side], focus, borders),
     })
   }
@@ -204,16 +211,74 @@ function getPlacedNode(
   }
 }
 
-function findNoteSpot(
-  index: SpotIndex,
-  request: SpotRequest,
-): { readonly spot: Spot; readonly isOutside: boolean } {
-  // A spot outside the territory is taken when the territory has none, or none with clear lines; the borders move for the next attempt.
+function findNoteSpot(index: SpotIndex, request: SpotRequest, plan: GroupPlan): Spot | undefined {
   const within = findSpotWithin(index, request)
-  if (within && request.isLineClear?.(within) !== false) return { spot: within, isOutside: false }
+  if (plan.isFenced) return within
+  if (within && request.isLineClear?.(within) !== false) return within
   const loose = findFreeSpot(index, { ...request, isInTerritory: undefined })
-  if (!within || request.isLineClear?.(loose) !== false) return { spot: loose, isOutside: true }
-  return { spot: within, isOutside: false }
+  return !within || request.isLineClear?.(loose) !== false ? loose : within
+}
+
+function getLeftOutSpot(plan: GroupPlan, size: Size, context: PlacementContext): Spot {
+  const { viewport } = context.options
+  const reach = viewport ? Math.max(viewport.width, viewport.height) : 0
+  return {
+    x: plan.side.x * (reach + size.width),
+    y: plan.side.y * (reach + size.height),
+    ...size,
+  }
+}
+
+/** What one placement shares across its notes: the plans, the boxes and lines placed so far, and the tally of how the notes fared. */
+interface Run {
+  readonly focus: PlacedNode
+  readonly context: PlacementContext
+  readonly plans: ReadonlyMap<PlexRelation, GroupPlan>
+  readonly footprintOf: (node: PlexNode) => Size
+  readonly index: SpotIndex
+  readonly lines: LineIndex
+  readonly groups: Map<PlexRelation, Spot[]>
+  readonly failed: Set<PlexRelation>
+  readonly totals: { failures: number; crossings: number; outside: number; centralReach: number }
+}
+
+function tally(run: Run, plan: GroupPlan, spot: Spot, outcome: 'placed' | 'left-out' | 'crossing') {
+  const { totals, failed } = run
+  if (outcome !== 'placed') failed.add(plan.relation)
+  if (outcome === 'left-out') totals.failures++
+  if (outcome === 'crossing') totals.crossings++
+  if (!isInWindow(spot, run.context.options)) totals.outside++
+  if (outcome !== 'left-out' && !plan.isSide) {
+    totals.centralReach = Math.max(totals.centralReach, Math.abs(spot.x) + spot.width / 2)
+  }
+}
+
+function placeNote(run: Run, node: PlexNode): PlacedNode | undefined {
+  const { focus, context, index, lines } = run
+  const plan = run.plans.get(node.relation as PlexRelation)
+  if (!plan) return undefined
+  const group = run.groups.get(plan.relation) ?? []
+  run.groups.set(plan.relation, group)
+  const room = context.room(node)
+  const getCenter = (at: Spot): Vector => ({ x: at.x, y: getPillCenterY(at.y, room) })
+  const size = run.footprintOf(node)
+  const isLineClear = (at: Spot) => lines.isClear(node.id, getCenter(at), at)
+  // A fenced note stays in its territory: with no free spot there it is set beyond the window, and the window cuts it.
+  const within = findNoteSpot(
+    index,
+    { ...createRequest(plan, focus, size, context), group, fits: context.fits, isLineClear },
+    plan,
+  )
+  const spot = within ?? getLeftOutSpot(plan, size, context)
+  const isCrossing = within !== undefined && plan.isFenced && !isLineClear(within)
+  tally(run, plan, spot, !within ? 'left-out' : isCrossing ? 'crossing' : 'placed')
+  const box = getPlacedNode(node, spot, context, group.length)
+  if (within) {
+    index.add(spot)
+    lines.place(node.id, getCenter(spot), spot)
+    group.push(spot)
+  }
+  return box
 }
 
 function placeInTerritories(
@@ -227,51 +292,29 @@ function placeInTerritories(
       { width: context.width(node), height: context.options.nodeSize.height },
       context.room(node),
     )
-  const plans = createGroupPlans(nodesByRelation, { focus, context, footprintOf, borders })
   const focusSpot: Spot = { x: focus.x, y: focus.y, width: focus.width, height: focus.height }
   const index = new SpotIndex([focusSpot])
   const lines = new LineIndex(context.edges ?? [], focus.id, index)
   lines.place(focus.id, { x: focus.x, y: focus.y }, focusSpot)
-  const groups = new Map<PlexRelation, Spot[]>()
-  const placed = new Map<string, PlacedNode>()
-  const failed = new Set<PlexRelation>()
-  const totals = { failures: 0, outside: 0, centralReach: 0 }
-  let isStopped = false
-
-  for (const node of takeTurns(nodesByRelation)) {
-    const relation = node.relation as PlexRelation
-    const plan = plans.get(relation)
-    if (!plan) continue
-    const group = groups.get(relation) ?? []
-    groups.set(relation, group)
-
-    const room = context.room(node)
-    const getCenter = (at: Spot): Vector => ({ x: at.x, y: getPillCenterY(at.y, room) })
-    const { spot, isOutside } = findNoteSpot(index, {
-      ...createRequest(plan, focus, footprintOf(node), context),
-      group,
-      fits: context.fits,
-      isLineClear: (at: Spot) => lines.isClear(node.id, getCenter(at), at),
-    })
-    if (isOutside) {
-      failed.add(relation)
-      totals.failures++
-    }
-    if (!isInWindow(spot, context.options)) totals.outside++
-    if (!plan.isSide) {
-      totals.centralReach = Math.max(totals.centralReach, Math.abs(spot.x) + spot.width / 2)
-    }
-    index.add(spot)
-    lines.place(node.id, getCenter(spot), spot)
-    const box = getPlacedNode(node, spot, context, group.length)
-    group.push(spot)
-    placed.set(node.id, box)
-    if (context.shouldStop?.(box)) {
-      isStopped = true
-      break
-    }
+  const run: Run = {
+    focus,
+    context,
+    footprintOf,
+    index,
+    lines,
+    plans: createGroupPlans(nodesByRelation, { focus, context, footprintOf, borders }),
+    groups: new Map(),
+    failed: new Set(),
+    totals: { failures: 0, crossings: 0, outside: 0, centralReach: 0 },
   }
-  return { placed, failed, isStopped, ...totals }
+  const placed = new Map<string, PlacedNode>()
+  for (const node of takeTurns(nodesByRelation)) {
+    const box = placeNote(run, node)
+    if (!box) continue
+    placed.set(node.id, box)
+    if (context.shouldStop?.(box)) break
+  }
+  return { placed, failed: run.failed, ...run.totals }
 }
 
 function placeClusters(
@@ -291,16 +334,12 @@ function placeClusters(
   })
   const placeAt = (borders: Borders) => placeInTerritories(nodesByRelation, focus, context, borders)
 
-  let best = findBestAttempt(
+  const best = findBestAttempt(
     (columns) => placeAt(createBorders(bordersFor(columns))),
     band,
     context,
+    getStartColumns(band, context, focus),
   )
-  // The territories are given up only where they leave a note outside the window that the old placement holds inside.
-  if (best.outside > 0) {
-    const open = placeAt(createBorders({ ...bordersFor(1), hasCentral: false, hasSide: false }))
-    if (isBetter(open, best)) best = open
-  }
   return RELATION_NAMES.flatMap((relation) =>
     (nodesByRelation[relation] ?? []).flatMap((node) => best.placed.get(node.id) ?? []),
   )
