@@ -334,7 +334,7 @@ func TestParseNoteCountsOnlyTheFirstOccurrenceOfAField(t *testing.T) {
 	}
 }
 
-func TestParseNoteLeavesTheRawLineAsItIs(t *testing.T) {
+func TestParseNoteKeepsTheRawLineUnchanged(t *testing.T) {
 	line := "  >  - [ ]   (A)  keep   due:2026-11-20  spacing ^id-1"
 	tasks := parse(t, []byte("> intro\n"+line+"\r\n"))
 
@@ -386,7 +386,7 @@ func FuzzParseNoteFindsEveryPlainTaskLine(f *testing.F) {
 }
 
 // Any bytes give tasks whose line and raw text agree with the note, in the order of the lines.
-func FuzzParseNoteGivesTasksThatMatchTheirLines(f *testing.F) {
+func FuzzParseNoteReturnsTasksThatMatchTheirLines(f *testing.F) {
 	f.Add([]byte("- [ ] a due:2026-02-30 rec:!1w +p @c (A)\n```\n- [x] b\n```\n> - [-] c\r\n"))
 	f.Add([]byte("---\nk: v\n---\n<!-- - [ ] a -->\n- [ ] b"))
 	f.Add([]byte("- [ ] a\n"))

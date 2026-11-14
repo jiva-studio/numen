@@ -13,7 +13,7 @@ func open(path string, line int, text, due string) todo.Task {
 	return todo.Task{Path: path, Line: line, Raw: "- [ ] " + text, Text: text, Status: todo.StatusOpen, Due: due}
 }
 
-func names(tasks []todo.Task) []string {
+func getTexts(tasks []todo.Task) []string {
 	out := []string{}
 	for _, task := range tasks {
 		out = append(out, task.Text)
@@ -22,7 +22,7 @@ func names(tasks []todo.Task) []string {
 }
 
 func apply(tasks []todo.Task, f Filter) []string {
-	return names(Apply(tasks, f, today))
+	return getTexts(Apply(tasks, f, today))
 }
 
 func TestAnOpenTaskDueBeforeTodayIsOverdueAndOneDueTodayIsToday(t *testing.T) {
@@ -41,7 +41,7 @@ func TestAnOpenTaskDueBeforeTodayIsOverdueAndOneDueTodayIsToday(t *testing.T) {
 	}
 }
 
-func TestAnOpenTaskWithNoDateIsNoDateAndADoneTaskIsNotCounted(t *testing.T) {
+func TestAnOpenTaskWithNoDateIsNoDateAndAFinishedTaskIsNotCounted(t *testing.T) {
 	done := open("a.md", 3, "finished", "")
 	done.Status = todo.StatusDone
 	dated := open("a.md", 4, "dated", "2026-11-20")
@@ -54,7 +54,7 @@ func TestAnOpenTaskWithNoDateIsNoDateAndADoneTaskIsNotCounted(t *testing.T) {
 	}
 }
 
-func TestADoneTaskDueInThePastIsNotOverdue(t *testing.T) {
+func TestAFinishedTaskDueInThePastIsNotOverdue(t *testing.T) {
 	done := open("a.md", 1, "finished", "2026-11-01")
 	done.Status = todo.StatusDone
 
@@ -196,12 +196,12 @@ func TestTheResultIsOrderedByDueThenPriorityThenPathThenLine(t *testing.T) {
 	}
 }
 
-func TestApplyLeavesTheTasksItWasGivenInTheirOrder(t *testing.T) {
+func TestApplyKeepsTheOrderOfItsInput(t *testing.T) {
 	tasks := []todo.Task{open("b.md", 1, "second", "2026-12-01"), open("a.md", 1, "first", "2026-11-01")}
 
 	Apply(tasks, Filter{}, today)
 
-	if got := names(tasks); !reflect.DeepEqual(got, []string{"second", "first"}) {
+	if got := getTexts(tasks); !reflect.DeepEqual(got, []string{"second", "first"}) {
 		t.Errorf("the input was reordered: %v", got)
 	}
 }

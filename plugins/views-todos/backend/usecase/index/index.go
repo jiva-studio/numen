@@ -35,7 +35,7 @@ type Listing struct {
 	Revision uint64
 }
 
-// State is what a watcher is told.
+// State is the revision and readiness that a watcher receives.
 type State struct {
 	Revision uint64
 	IsReady  bool

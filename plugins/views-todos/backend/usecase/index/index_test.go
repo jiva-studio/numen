@@ -145,7 +145,7 @@ func TestScanIndexesTheTasksOfEveryPlainNoteWithItsPath(t *testing.T) {
 	}
 }
 
-func TestScanFollowedByAScanOfANewIndexGivesTheSameTasks(t *testing.T) {
+func TestAScanOfANewIndexReturnsTheSameTasks(t *testing.T) {
 	f := newFixture(map[string]string{"a.md": "- [ ] one\n- [x] two\n", "b.md": "- [ ] three +p @c (A)"})
 	f.scan(t)
 
@@ -343,7 +343,7 @@ func TestARefreshWithNoPathAndNoRenameChecksTheWholeVault(t *testing.T) {
 	}
 }
 
-func TestANoteInAnIgnoredFolderIsSkippedAndComesBackWhenTheFolderIsRemovedFromTheList(t *testing.T) {
+func TestANoteInAnIgnoredFolderIsSkippedAndIsIndexedAgainWhenTheFolderIsRemovedFromTheList(t *testing.T) {
 	f := newFixture(map[string]string{
 		"Daily.md":             "- [ ] daily",
 		"templates/Weekly.md":  "- [ ] template",
@@ -380,7 +380,7 @@ func TestAFolderIgnoredBeforeTheScanIsNotRead(t *testing.T) {
 	}
 }
 
-func TestListCutsTheResultToTheLimitAndReportsTheTotal(t *testing.T) {
+func TestListLimitsTheResultAndReportsTheTotal(t *testing.T) {
 	f := newFixture(map[string]string{"a.md": "- [ ] 1\n- [ ] 2\n- [ ] 3\n- [ ] 4\n- [ ] 5"})
 	f.scan(t)
 

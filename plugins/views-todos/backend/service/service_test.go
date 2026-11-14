@@ -176,7 +176,7 @@ func TestRefreshIndexOfAHostWithNoVaultIsAFailedPrecondition(t *testing.T) {
 	}
 }
 
-func TestTheHostConfiguresTheIgnoredFoldersAndTheNextListLeavesThemOut(t *testing.T) {
+func TestTheHostConfiguresTheIgnoredFoldersAndTheNextListOmitsThem(t *testing.T) {
 	a := start(t, map[string]string{"Daily.md": "- [ ] daily", "templates/Weekly.md": "- [ ] template"})
 
 	res := a.request(t.Context(), t, "/numen.v1.PluginLifecycleService/Configure", `{"values":{"ignoredFolders":"templates"}}`)

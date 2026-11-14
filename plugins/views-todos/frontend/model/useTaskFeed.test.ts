@@ -3,7 +3,7 @@ import { createFakeApi, settle, SUMMARY } from '../testing/fakeApi'
 import { useTaskFeed } from './useTaskFeed'
 
 describe('the task feed', () => {
-  it('follows the stream and reads the counts when the first message comes', async () => {
+  it('follows the stream and reads the counts when the first message arrives', async () => {
     const fake = createFakeApi()
     const feed = useTaskFeed(fake.api, () => '2026-11-14')
 
@@ -35,7 +35,7 @@ describe('the task feed', () => {
     feed.stop()
   })
 
-  it('reads the counts again at the day of now when asked to refresh', async () => {
+  it('reads the counts again at the current day on refresh', async () => {
     const fake = createFakeApi()
     let day = '2026-11-14'
     const feed = useTaskFeed(fake.api, () => day)

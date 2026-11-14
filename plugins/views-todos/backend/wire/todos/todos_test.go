@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/todo"
 )
 
-func TestEncodeTaskCopiesEveryFieldAndGivesEmptyListsNotNull(t *testing.T) {
+func TestEncodeTaskCopiesEveryFieldAndEncodesEmptyListsAsArrays(t *testing.T) {
 	got := EncodeTask(todo.Task{
 		Path: "Projects/Home.md", Line: 7, Raw: "- [ ] (A) buy milk due:2026-11-13 +home @phone", Text: "buy milk",
 		Status: todo.StatusOpen, Priority: "A", Due: "2026-11-13", DoneOn: "2026-11-01", Recurrence: "rec:1w",
