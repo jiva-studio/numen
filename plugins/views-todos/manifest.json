@@ -19,7 +19,7 @@
       "key": "ignoredFolders",
       "type": "string",
       "title": "Ignored folders",
-      "description": "Folders whose notes are not searched for tasks, separated by commas",
+      "description": "Folders whose notes are not searched for tasks, comma separated",
       "details": "Paths from the vault root, such as templates, archive/old. A note below one of them is skipped.",
       "default": ""
     }

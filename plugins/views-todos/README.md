@@ -15,4 +15,4 @@ A task is a `- [ ]` line of a note. Fields are written in the line in the style 
 
 ## Settings
 
-- **Ignored folders**: Folders whose notes are not searched for tasks, separated by commas.
+- **Ignored folders**: Folders whose notes are not searched for tasks, comma separated.
