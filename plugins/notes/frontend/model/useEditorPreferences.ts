@@ -5,7 +5,9 @@ import { computed } from 'vue'
 import { getFontFamilyValue } from './fontFamily'
 import { editorPreferences, type MarkdownEditorPreferences } from './preferences'
 
-export function useEditorPreferences(props: { readonly [K in keyof MarkdownEditorPreferences]?: MarkdownEditorPreferences[K] | undefined }) {
+export function useEditorPreferences(props: {
+  readonly [K in keyof MarkdownEditorPreferences]?: MarkdownEditorPreferences[K] | undefined
+}) {
   return computed(() => ({
     softWrap: props.softWrap ?? editorPreferences.softWrap,
     lineNumbers: props.lineNumbers ?? editorPreferences.lineNumbers,
