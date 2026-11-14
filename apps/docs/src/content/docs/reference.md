@@ -152,6 +152,14 @@ The settings of the plugin PDF Reader.
 | --- | --- | --- |
 | `defaultZoom` | text | zoom a PDF opens at. One of `page`, `width`, `100%`. |
 
+### `md.numen.todos`
+
+The settings of the plugin Todos.
+
+| | | |
+| --- | --- | --- |
+| `ignoredFolders` | text | paths from the vault root, such as templates, archive/old. A note below one of them is skipped. |
+
 ### `md.numen.tools.media.importer`
 
 The settings of the plugin Media Importer.

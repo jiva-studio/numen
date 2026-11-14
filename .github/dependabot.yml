@@ -38,6 +38,7 @@ updates:
       - /plugins/engines-transcription
       - /plugins/readers-epub
       - /plugins/readers-pdf
+      - /plugins/todos
       - /plugins/tools-index-stats
       - /plugins/tools-media-importer
       - /plugins/tools-proofreading

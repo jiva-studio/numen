@@ -1,0 +1,15 @@
+{
+  "today": "2026-11-14",
+  "filter": {
+    "status": ["open"],
+    "due": "overdue",
+    "from": "",
+    "to": "",
+    "projects": ["home"],
+    "contexts": ["phone"],
+    "priorities": ["A"],
+    "path": "Projects/",
+    "text": "milk"
+  },
+  "limit": 20
+}
