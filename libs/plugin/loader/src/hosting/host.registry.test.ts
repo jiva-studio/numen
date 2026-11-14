@@ -129,17 +129,17 @@ describe('registrations of a plugin', () => {
     expect(() =>
       disposePluginEntry('none', {
         registry: {
-          vaultListeners: new Set(),
-          fileListeners: new Set(),
-          readers: new Map(),
-          tabKinds: new Map(),
+          listeners: { vault: new Set(), file: new Set() },
+          kinds: { readers: new Map(), tabKinds: new Map() },
           commands: { value: new Map() },
           handlers: { value: new Map() },
           settingsViews: { value: new Map() },
-          contexts: new Map(),
-          manifests: new Map(),
-          activated: { value: new Set() },
-          disposed: new Set(),
+          plugins: {
+            contexts: new Map(),
+            manifests: new Map(),
+            activated: { value: new Set() },
+            disposed: new Set(),
+          },
           reportedIssues: new Set(),
         },
       }),

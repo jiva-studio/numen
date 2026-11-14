@@ -12,7 +12,7 @@ import type {
   Caught,
 } from '@numen/plugin-sdk'
 import { reportError } from './events'
-import { createReaderTabKind, createCustomTabKind } from './customTabKind'
+import { createReaderTabKind, createCustomTabKind, pickCustomTabParts } from './customTabKind'
 import { getReaderKindId } from './tabKinds'
 import { createDeclaredTabKind, isDeclaredTabKind } from './pluginTabKind'
 import type { EditorPlacement, HostTabs, PluginHostDeps } from './types'
@@ -21,13 +21,12 @@ import type { EditorPlacement, HostTabs, PluginHostDeps } from './types'
 type EntryDeps = Pick<PluginHostDeps, 'window' | 'kinds' | 'tabs' | 'vault'>
 
 const NO_TABS: HostTabs = {}
-import type { PluginItemRegistration, RegisteredReader, RegisteredTabKind } from './registry'
-
-/** The entries that own the ids of the tabs a window holds: the tab kinds and the readers. */
-export interface TabKindOwners {
-  readonly readers: Map<string, RegisteredReader>
-  readonly tabKinds: Map<string, RegisteredTabKind>
-}
+import type {
+  PluginItemRegistration,
+  RegisteredReader,
+  RegisteredTabKind,
+  TabKindOwners,
+} from './registry'
 
 function requireFreeKind(
   owners: TabKindOwners,
@@ -141,7 +140,11 @@ export function registerTabKindEntry(
   requireFreeKind(owners, { pluginId, what: 'tab kind', id: registration.kind })
   const kind = isDeclaredTabKind(registration)
     ? createDeclaredTabKind(pluginId, registration)
-    : createCustomTabKind(pluginId, registration, { ...deps, getContext, isNoteEditor })
+    : createCustomTabKind(pluginId, pickCustomTabParts(registration), {
+        ...deps,
+        getContext,
+        isNoteEditor,
+      })
   const cleanups: (() => void)[] = []
   const { registerEditor } = deps.kinds
   const { tabs = NO_TABS } = deps

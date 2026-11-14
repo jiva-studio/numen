@@ -3,7 +3,12 @@ import { defineComponent, effectScope, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from '../styles'
 import { createBufferedNoteState } from './customTabBuffer'
-import { createCustomTabKind, createPluginPaneWrapper, createReaderTabKind } from './customTabKind'
+import {
+  createCustomTabKind,
+  createPluginPaneWrapper,
+  createReaderTabKind,
+  pickCustomTabParts,
+} from './customTabKind'
 import { getReaderKindId } from './tabKinds'
 import {
   attachPluginRoot,
@@ -33,7 +38,7 @@ const createFlatCustomTabKind = (
 ) =>
   createCustomTabKind(
     pluginId,
-    registration,
+    pickCustomTabParts(registration),
     deps && {
       ...createTestHostDeps(deps),
       ...(deps.getContext ? { getContext: deps.getContext } : {}),

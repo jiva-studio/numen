@@ -1,6 +1,6 @@
 export { createPluginHost, createPluginPaneWrapper, type PluginHost } from './host'
 export { requireMountAccess } from './guards/viewPermissions'
-export { createCustomTabKind } from './customTabKind'
+export { createCustomTabKind, pickCustomTabParts } from './customTabKind'
 export type {
   NoteBuffer,
   PluginContextHost,

@@ -68,7 +68,7 @@ export function requestPluginStart(
   pluginId: string,
 ): void {
   const startPlugin = deps.plugins?.startPlugin
-  if (!startPlugin || deps.plugins?.isPluginFailed?.(pluginId)) return
+  if (!startPlugin || deps.plugins.isPluginFailed?.(pluginId)) return
   // The draw that asks may be inside a computed value, which must not change state as it is read.
   queueMicrotask(() => {
     startPlugin(pluginId).catch((error: Caught) => reportError(deps, pluginId, error))

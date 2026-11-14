@@ -13,8 +13,7 @@ function createRegistry(
   return {
     commands: { value: new Map(handlers) },
     handlers: { value: new Map() },
-    activated: { value: new Set(activated) },
-    disposed: new Set<string>(),
+    plugins: { activated: { value: new Set(activated) }, disposed: new Set<string>() },
     reportedIssues: new Set<string>(),
   } as unknown as HostRegistry
 }

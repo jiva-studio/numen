@@ -1,7 +1,6 @@
 /**
  * Plugin host managing dynamic registration of readers, tab kinds, and commands.
  */
-import { shallowRef } from 'vue'
 import type {
   SettingsViewRegistration,
   VaultChangeEvent,
@@ -28,6 +27,7 @@ import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
   addEntry,
+  createHostRegistry,
   disposeAllEntries,
   disposePluginEntry,
   setStarting,
@@ -63,10 +63,11 @@ function createEventBridge(
 ): ContextEventHost {
   return {
     onVaultChange: (pluginId, handler) =>
-      addListener(registry.vaultListeners, { pluginId, handler }),
-    onFileSelect: (pluginId, handler) => addListener(registry.fileListeners, { pluginId, handler }),
-    emitVaultChange: (_pluginId, event) => notifyListeners(registry.vaultListeners, event, deps),
-    emitFileSelect: (_pluginId, event) => notifyListeners(registry.fileListeners, event, deps),
+      addListener(registry.listeners.vault, { pluginId, handler }),
+    onFileSelect: (pluginId, handler) =>
+      addListener(registry.listeners.file, { pluginId, handler }),
+    emitVaultChange: (_pluginId, event) => notifyListeners(registry.listeners.vault, event, deps),
+    emitFileSelect: (_pluginId, event) => notifyListeners(registry.listeners.file, event, deps),
   }
 }
 
@@ -76,18 +77,18 @@ function createRegistrationBridge(
 ): ContextRegistrationHost {
   return {
     registerReader: (pluginId, registration) =>
-      registerReaderEntry(deps, registry, {
+      registerReaderEntry(deps, registry.kinds, {
         pluginId,
         registration,
-        getContext: () => registry.contexts.get(pluginId)?.plugin,
+        getContext: () => registry.plugins.contexts.get(pluginId)?.plugin,
       }),
     registerTabKind: (pluginId, registration) =>
-      registerTabKindEntry(deps, registry, {
+      registerTabKindEntry(deps, registry.kinds, {
         pluginId,
         registration,
-        getContext: () => registry.contexts.get(pluginId)?.plugin,
+        getContext: () => registry.plugins.contexts.get(pluginId)?.plugin,
         isNoteEditor: isNoteEditorKind(
-          registry.contextManifests?.value.get(pluginId),
+          registry.plugins.contextManifests?.value.get(pluginId),
           registration.kind,
         ),
       }),
@@ -177,7 +178,7 @@ function createHostContextBridge(
     vault: createVaultServiceBridge(deps),
     ui: createUiServiceBridge(deps, {
       slots: shared.slots,
-      manifests: registry.manifests,
+      manifests: registry.plugins.manifests,
       readSlotEntries: shared.readSlotEntries,
     }),
     work: createWorkServiceBridge(deps),
@@ -219,8 +220,8 @@ function createRegisteredApi(
         requestPluginStart(deps, pluginId)
       return views
     },
-    getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
-    getRegisteredTabKinds: () => [...registry.tabKinds.values()].map((t) => t.reg),
+    getRegisteredReaders: () => [...registry.kinds.readers.values()].map((r) => r.reg),
+    getRegisteredTabKinds: () => [...registry.kinds.tabKinds.values()].map((t) => t.reg),
     getRegisteredCommands: () => [...registry.commands.value.values()].map((c) => c.reg),
   }
 }
@@ -269,31 +270,30 @@ interface LifecycleParts {
 function createLifecycleApi({ registry, contextHost, keybindings, entries }: LifecycleParts) {
   return {
     createContext: (pluginId: string, manifest?: Manifest): PluginParts => {
-      let parts = registry.contexts.get(pluginId)
+      let parts = registry.plugins.contexts.get(pluginId)
       if (!parts) {
-        const effectiveManifest = manifest ?? registry.manifests.get(pluginId)
+        const effectiveManifest = manifest ?? registry.plugins.manifests.get(pluginId)
         parts = createPluginParts(pluginId, contextHost, effectiveManifest)
-        registry.contexts.set(pluginId, parts)
-        if (effectiveManifest && registry.contextManifests) {
-          registry.contextManifests.value = new Map(registry.contextManifests.value).set(
-            pluginId,
-            effectiveManifest,
-          )
+        registry.plugins.contexts.set(pluginId, parts)
+        if (effectiveManifest && registry.plugins.contextManifests) {
+          registry.plugins.contextManifests.value = new Map(
+            registry.plugins.contextManifests.value,
+          ).set(pluginId, effectiveManifest)
         }
-        registry.disposed.delete(pluginId)
-        registry.activated.value = new Set(registry.activated.value).add(pluginId)
+        registry.plugins.disposed.delete(pluginId)
+        registry.plugins.activated.value = new Set(registry.plugins.activated.value).add(pluginId)
       }
       return parts
     },
-    markPluginStarting: (pluginId: string): void => setStarting(registry, pluginId, true),
-    markPluginStarted: (pluginId: string): void => setStarting(registry, pluginId, false),
+    markPluginStarting: (pluginId: string): void => setStarting(registry.plugins, pluginId, true),
+    markPluginStarted: (pluginId: string): void => setStarting(registry.plugins, pluginId, false),
     registerManifest: (pluginId: string, manifest: Manifest): void => {
-      if (registry.contexts.has(pluginId)) {
+      if (registry.plugins.contexts.has(pluginId)) {
         throw new Error(
           `Cannot replace the manifest for plugin "${pluginId}" while its context is cached`,
         )
       }
-      registry.manifests.set(pluginId, manifest)
+      registry.plugins.manifests.set(pluginId, manifest)
       keybindings.registerKeybindings(pluginId, manifest.contributes?.keybindings ?? [])
     },
     disposePlugin: (pluginId: string) => {
@@ -313,22 +313,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   const whenReader = windowDeps.commands?.whenReader ?? createWhenReader()
   const deps: HostDeps = { ...windowDeps, commands: { ...windowDeps.commands, whenReader } }
   const { slots: slotDeps = NO_SLOTS } = deps
-  const registry: HostRegistry = {
-    readers: new Map(),
-    tabKinds: new Map(),
-    commands: shallowRef(new Map()),
-    handlers: shallowRef(new Map()),
-    settingsViews: shallowRef(new Map()),
-    contexts: new Map(),
-    manifests: new Map(),
-    contextManifests: shallowRef(new Map()),
-    activated: shallowRef(new Set()),
-    starting: shallowRef(new Set()),
-    disposed: new Set(),
-    reportedIssues: new Set(),
-    vaultListeners: new Set(),
-    fileListeners: new Set(),
-  }
+  const registry = createHostRegistry()
   const slotViews = createSlotViewRegistry(
     slotDeps.reportViewIssue ? { reportIssue: slotDeps.reportViewIssue } : {},
   )
@@ -339,7 +324,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     hasPluginItems: commands.hasKnownItems,
   })
   const readSlotEntries = () =>
-    slotDeps.getSlotEntries?.(registry.contextManifests?.value ?? new Map())
+    slotDeps.getSlotEntries?.(registry.plugins.contextManifests?.value ?? new Map())
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
     getEntries: readSlotEntries,
@@ -370,7 +355,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     contextHost,
     /** A change to the vault, delivered to every plugin that subscribed to vault changes. */
     notifyVaultChange: (event: VaultChangeEvent): void =>
-      notifyListeners(registry.vaultListeners, event, deps),
+      notifyListeners(registry.listeners.vault, event, deps),
   }
 }
 

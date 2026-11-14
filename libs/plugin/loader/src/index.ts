@@ -48,6 +48,7 @@ export { createPluginTasks, type WindowTask } from './pluginTasks'
 export type { HealthReports } from './pluginHealth'
 export {
   createCustomTabKind,
+  pickCustomTabParts,
   createPluginHost,
   createPluginPaneWrapper,
   createWindowHost,

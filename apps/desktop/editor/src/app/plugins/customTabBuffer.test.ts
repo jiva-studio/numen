@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { effectScope } from 'vue'
 import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
-import { createCustomTabKind } from '@numen/plugin-loader'
+import { createCustomTabKind, pickCustomTabParts } from '@numen/plugin-loader'
 import { blank } from '@/testing/stubs'
 import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 
@@ -54,7 +54,7 @@ function openNoteTab(path: string) {
   const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
   const kind = createCustomTabKind(
     'md.numen.notes',
-    { kind: 'note', component: blank, title: 'Note' },
+    pickCustomTabParts({ kind: 'note', component: blank, title: 'Note' }),
     {
       window: { target: 'desktop.editor' },
       kinds: { registerKind: () => () => undefined, getNoteBuffer: () => notes },
@@ -165,7 +165,7 @@ describe('the links of a note tab of the note kind', () => {
     const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
     const kind = createCustomTabKind(
       'md.numen.notes',
-      { kind: 'note', component: blank, title: 'Note' },
+      pickCustomTabParts({ kind: 'note', component: blank, title: 'Note' }),
       {
         kinds: { getNoteBuffer: () => notes },
         isNoteEditor: true,
@@ -255,11 +255,10 @@ describe('note tab restored from the saved path', () => {
       await first.notes.flush()
       await wait()
       const saved = (
-        createCustomTabKind('md.numen.notes', {
-          kind: 'note',
-          component: blank,
-          title: 'Note',
-        }).address?.getOpenTab?.(first.state) ?? { path: '' }
+        createCustomTabKind(
+          'md.numen.notes',
+          pickCustomTabParts({ kind: 'note', component: blank, title: 'Note' }),
+        ).address?.getOpenTab?.(first.state) ?? { path: '' }
       ).path
       expect(saved).toBe(path)
 

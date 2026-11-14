@@ -30,7 +30,7 @@ function listMatchingHandlers(
   note: CommandNote,
 ) {
   return (deps.commands.getHandlerDeclarations?.() ?? [])
-    .filter((one) => one.command === command && !registry.disposed.has(one.pluginId))
+    .filter((one) => one.command === command && !registry.plugins.disposed.has(one.pluginId))
     .filter((one) =>
       one.hasItems ? note.path !== '' : isCommandAvailable(one, note, deps.commands),
     )
