@@ -194,7 +194,7 @@ func (r *recording) get() []string {
 	return slices.Clone(r.paths)
 }
 
-func TestAWrittenVersionAsksForAPassOverItsFile(t *testing.T) {
+func TestWritingAVersionRequestsAPassOverItsFile(t *testing.T) {
 	w := newTestWindow(t, nil)
 	runner := &recording{}
 	passes := newTriggerPasses()
