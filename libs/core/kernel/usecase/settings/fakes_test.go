@@ -49,8 +49,6 @@ func (f *memoryFile) Write(entries []settingsdomain.Setting) error {
 
 func (f *memoryFile) GetDefaults() settingsdomain.Stored { return stored{values: map[string]any{}} }
 
-// declare returns declarations of a setting of no type at each path, which takes any value. Every other
-// key is undeclared.
 func declare(paths ...[]string) settingsdomain.Declarations {
 	return func(owner string) ([]manifest.Setting, bool) {
 		var declared []manifest.Setting

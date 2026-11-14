@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// dropInvalidRows leaves out of force, in each setting of rows of the owner, the rows that
-// settingsdomain.FilterRows leaves out, with a notice each.
 func (f *File) dropInvalidRows(owner string, settings []manifest.Setting, registries settingsdomain.Registries) {
 	for _, declared := range settings {
 		if declared.Type != manifest.SettingTypeConnections {

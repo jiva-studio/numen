@@ -4,6 +4,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 )
 
 // GetGrantRevision names the connections a plugin reaches through its grants as they are now. A list the
@@ -18,7 +20,7 @@ func NewGetGrantRevision(deps Deps) *GetGrantRevision { return &GetGrantRevision
 // revisions are the same connections unchanged.
 func (u *GetGrantRevision) Execute(pluginID string) (string, bool, error) {
 	var operations []string
-	for _, one := range u.listGrants() {
+	for _, one := range connection.ListGrants(u.uses.ListPlugins()) {
 		if one.PluginID == pluginID {
 			operations = append(operations, one.Operations...)
 		}

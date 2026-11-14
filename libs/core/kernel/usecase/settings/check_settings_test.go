@@ -32,8 +32,8 @@ func listThemes(name string) ([]string, bool) {
 }
 
 // A value of the wrong type, out of range or not among the options is refused with the reason of the
-// domain rule, and one the declaration takes passes.
-func TestCheckSettingsRefusesAValueTheDeclarationDoesNotTake(t *testing.T) {
+// domain rule, and one the declaration accepts passes.
+func TestCheckSettingsRejectsAValueOutsideTheDeclaration(t *testing.T) {
 	cases := map[string]struct {
 		key, json string
 		want      error
@@ -45,7 +45,7 @@ func TestCheckSettingsRefusesAValueTheDeclarationDoesNotTake(t *testing.T) {
 		"an option":              {"mode", `"deep"`, nil},
 		"no option":              {"mode", `"slow"`, settingsdomain.ErrNotAnOption},
 		"a theme not installed":  {"theme", `"preset:dawn"`, settingsdomain.ErrNotAnOption},
-		"an undeclared key":      {"colour", `"red"`, settingsdomain.ErrUndeclared},
+		"an undeclared key":      {"tint", `"red"`, settingsdomain.ErrUndeclared},
 		"a number for an option": {"mode", `3`, settingsdomain.ErrWrongType},
 	}
 	for name, one := range cases {
