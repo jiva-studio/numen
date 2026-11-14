@@ -26,6 +26,9 @@ func setupAntigravityHome(tools *endpoint) (string, func() error, error) {
 	if err != nil {
 		return "", noRelease, errors.Join(err, cleanup())
 	}
+	if err := linkEntries(realHome, tempHome, ".gemini"); err != nil {
+		return "", noRelease, errors.Join(err, cleanup())
+	}
 
 	realGemini := filepath.Join(realHome, ".gemini")
 	tempGemini := filepath.Join(tempHome, ".gemini")
@@ -35,11 +38,10 @@ func setupAntigravityHome(tools *endpoint) (string, func() error, error) {
 	if err := os.MkdirAll(tempConfig, 0o700); err != nil {
 		return "", noRelease, errors.Join(fmt.Errorf("create %s: %w", tempConfig, err), cleanup())
 	}
-	if err := errors.Join(
-		linkEntries(realHome, tempHome, ".gemini"),
-		linkEntries(realGemini, tempGemini, "config"),
-		linkEntries(realConfig, tempConfig, "mcp_config.json"),
-	); err != nil {
+	if err := linkEntries(realGemini, tempGemini, "config"); err != nil {
+		return "", noRelease, errors.Join(err, cleanup())
+	}
+	if err := linkEntries(realConfig, tempConfig, "mcp_config.json"); err != nil {
 		return "", noRelease, errors.Join(err, cleanup())
 	}
 
@@ -80,11 +82,14 @@ func makeMCPConfig(tools endpoint, existingPath string) map[string]any {
 }
 
 func readMCPServers(path string) map[string]any {
-	raw, readErr := os.ReadFile(path)
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
 	var existing struct {
 		MCPServers map[string]any `json:"mcpServers"`
 	}
-	if errors.Join(readErr, json.Unmarshal(raw, &existing)) != nil {
+	if err := json.Unmarshal(raw, &existing); err != nil {
 		return nil
 	}
 	return existing.MCPServers

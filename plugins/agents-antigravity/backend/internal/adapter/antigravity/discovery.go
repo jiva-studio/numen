@@ -32,7 +32,10 @@ func findIn(places []string, customPath ...string) string {
 			return found
 		}
 	}
-	home := getHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = ""
+	}
 	for _, p := range places {
 		resolved := p
 		if rest, ok := strings.CutPrefix(p, "~/"); ok && home != "" {
@@ -43,11 +46,4 @@ func findIn(places []string, customPath ...string) string {
 		}
 	}
 	return "agy"
-}
-
-func getHomeDir() string {
-	if home, err := os.UserHomeDir(); err == nil {
-		return home
-	}
-	return ""
 }

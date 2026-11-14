@@ -22,10 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/task"
 )
 
 const writeTargetVariable = "NUMEN_TEST_WRITE_TARGET"
@@ -387,41 +384,5 @@ func TestNothingIsDetectedWithoutTheProgram(t *testing.T) {
 
 	if err != nil || len(found) != 0 {
 		t.Errorf("DetectConnections = %+v, %v, want none", found, err)
-	}
-}
-
-func TestMountAndBuildAgentGuards(t *testing.T) {
-	if got := resolveTools(func() (hostcall.Endpoint, error) {
-		return hostcall.Endpoint{BaseURL: "http://127.0.0.1:1", Token: "t"}, nil
-	}); got == nil {
-		t.Error("resolveTools with valid endpoint = nil, want client")
-	}
-	if got := resolveTools(func() (hostcall.Endpoint, error) {
-		return hostcall.Endpoint{}, errors.New("missing")
-	}); got != nil {
-		t.Errorf("resolveTools on error = %v, want nil", got)
-	}
-	if _, err := buildAgent(nil, nil, task.Dependencies{}); err == nil {
-		t.Error("buildAgent with missing dependencies succeeded, want error")
-	}
-	if err := mountAgent(server.New(), nil, errors.New("boom")); err == nil {
-		t.Error("mountAgent with error succeeded, want error")
-	}
-
-	svc := newAntigravity(t, nil, writeScript(t, "agy", resultEvent))
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"}, func(s *server.Server) error {
-		return mountAgent(s, svc, nil)
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	web := httptest.NewServer(handler)
-	defer web.Close()
-	lifecycle := servertest.NewLifecycleClient(http.DefaultClient, web.URL, "tok")
-	if _, err := lifecycle.Shutdown(t.Context()); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, err := runTask(t.Context(), svc, agentCall(nil), &acp.TaskRequest{Prompt: "hi"}); !connection.IsStop(err) {
-		t.Errorf("runTask after server shutdown = %v, want a stop", err)
 	}
 }

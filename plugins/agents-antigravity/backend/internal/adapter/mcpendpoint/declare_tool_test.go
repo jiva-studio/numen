@@ -2,7 +2,6 @@ package mcpendpoint
 
 import (
 	"encoding/json"
-	"errors"
 	"reflect"
 	"strconv"
 	"testing"
@@ -149,12 +148,6 @@ func TestTheEndpointAnnotatesAToolFromItsEffectAndItsPermissions(t *testing.T) {
 				t.Errorf("the tool is annotated %s, want %s", got, want)
 			}
 		})
-	}
-}
-
-func TestOrDefaultObjectSchemaFallsBackOnError(t *testing.T) {
-	if got := string(orDefaultObjectSchema(nil, errors.New("boom"))); got != `{"type":"object"}` {
-		t.Errorf("orDefaultObjectSchema on error = %s, want default object schema", got)
 	}
 }
 

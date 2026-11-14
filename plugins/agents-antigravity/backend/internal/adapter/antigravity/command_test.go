@@ -32,9 +32,6 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 	if err := noRelease(); err != nil {
 		t.Errorf("noRelease() = %v, want nil", err)
 	}
-	if _, err := marshalInput(make(chan int)); err == nil {
-		t.Error("marshalInput(chan) succeeded, want error")
-	}
 
 	// readMCPServers with missing file and invalid JSON returns nil.
 	if got := readMCPServers("/nonexistent/mcp_config.json"); got != nil {

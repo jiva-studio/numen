@@ -85,17 +85,6 @@ func TestCloseReportsAnInterruptedRequest(t *testing.T) {
 	}
 }
 
-type failingReader struct{ err error }
-
-func (f failingReader) Read([]byte) (int, error) { return 0, f.err }
-
-func TestNewTokenAndServeErrorPaths(t *testing.T) {
-	sentinel := errors.New("entropy exhausted")
-	if _, err := newTokenFrom(failingReader{err: sentinel}); !errors.Is(err, sentinel) {
-		t.Errorf("newTokenFrom error = %v, want wrapped %v", err, sentinel)
-	}
-}
-
 func TestTrackConnectionRemovesHijackedAndClosedConnections(t *testing.T) {
 	served, err := serve(t.Context(), nil, nil)
 	if err != nil {

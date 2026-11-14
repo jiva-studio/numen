@@ -1,8 +1,6 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/internal/adapter/antigravity"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/internal/adapter/mcpendpoint"
@@ -30,16 +28,15 @@ func newAgent(p parts) (*agent, error) {
 	values := new(settings.Settings)
 	cli := antigravity.New(process.Supervisor{})
 	models := catalog.New(cli, p.isAsync)
-	return buildAgent(values, models, task.Dependencies{
+	tasks, err := task.New(task.Dependencies{
 		Settings: values, Program: cli, Models: models, Launcher: process.Launcher{},
 		Tools: p.tools, ToolServer: mcpendpoint.Server{},
 	})
-}
-
-func buildAgent(values *settings.Settings, models *catalog.Catalog, deps task.Dependencies) (*agent, error) {
-	tasks, taskErr := task.New(deps)
-	answers, compErr := completion.New(completion.Dependencies{Settings: values, Answerer: tasks, Models: models})
-	if err := errors.Join(taskErr, compErr); err != nil {
+	if err != nil {
+		return nil, err
+	}
+	answers, err := completion.New(completion.Dependencies{Settings: values, Answerer: tasks, Models: models})
+	if err != nil {
 		return nil, err
 	}
 	return &agent{settings: values, tasks: tasks, completion: answers}, nil

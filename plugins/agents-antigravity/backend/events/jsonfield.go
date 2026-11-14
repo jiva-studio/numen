@@ -3,24 +3,19 @@ package events
 import "encoding/json"
 
 func getString(object map[string]any, key string) string {
-	if value, ok := object[key].(string); ok {
-		return value
+	value, ok := object[key].(string)
+	if !ok {
+		return ""
 	}
-	return ""
+	return value
 }
 
 func getMap(object map[string]any, key string) map[string]any {
-	if value, ok := object[key].(map[string]any); ok {
-		return value
+	value, ok := object[key].(map[string]any)
+	if !ok {
+		return nil
 	}
-	return nil
-}
-
-func getSlice(object map[string]any, key string) []any {
-	if value, ok := object[key].([]any); ok {
-		return value
-	}
-	return nil
+	return value
 }
 
 // DecodeLine parses one output line as a JSON object and reports whether the line was one.

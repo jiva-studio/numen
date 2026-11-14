@@ -34,11 +34,7 @@ func getPrintArgs() []string {
 }
 
 func writeInput(prompt string) (string, error) {
-	return marshalInput(inputMessage{Event: "user", Message: inputUserMessage{Content: prompt}})
-}
-
-func marshalInput(msg any) (string, error) {
-	line, err := json.Marshal(msg)
+	line, err := json.Marshal(inputMessage{Event: "user", Message: inputUserMessage{Content: prompt}})
 	if err != nil {
 		return "", fmt.Errorf("encode the prompt: %w", err)
 	}
