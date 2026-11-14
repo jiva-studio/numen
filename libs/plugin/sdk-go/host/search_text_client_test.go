@@ -36,7 +36,7 @@ func (h *textSearchHost) SearchText(_ context.Context, req *connect.Request[v1.H
 		Error: h.code,
 		Results: []*v1.SearchResult{{
 			Path: "library/Birds.pdf", Text: "the heron stands in the reeds", PlaceLabel: "page 12",
-			Range: &v1.Range{Start: 400, End: 1100}, Line: 0, Selector: `{"page":12}`,
+			ByteRange: &v1.Range{Start: 400, End: 1100}, MatchLine: 0, Selector: `{"page":12}`,
 		}, {
 			Path: "notes/Heron.md", Text: "herons fish at dusk", ByteRange: &v1.Range{Start: 20, End: 60}, MatchLine: 4,
 		}},
