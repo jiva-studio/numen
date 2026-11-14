@@ -1,0 +1,30 @@
+[
+  {
+    "id": "onnx-community/gte-multilingual-reranker-base",
+    "aliases": ["gte-multilingual-reranker-base"],
+    "title": "GTE multilingual reranker",
+    "tier": "default",
+    "sizeMB": 341,
+    "maxTokens": 512,
+    "onnxFile": "onnx/model_quantized.onnx",
+    "revision": "ee64367e35a2db0da46bb6497e13a18f8bd585cb",
+    "sha256": {
+      "onnx/model_quantized.onnx": "ccf51dba7f8aa9205753761cfaa68c55f741792501463a3bf25d7e5bcdac7c35",
+      "tokenizer.json": "3ffb37461c391f096759f4a9bbbc329da0f36952f88bab061fcf84940c022e98"
+    }
+  },
+  {
+    "id": "onnx-community/bge-reranker-v2-m3-ONNX",
+    "aliases": ["bge-reranker-v2-m3"],
+    "title": "BGE reranker v2 M3",
+    "tier": "larger",
+    "sizeMB": 571,
+    "maxTokens": 512,
+    "onnxFile": "onnx/model_quantized.onnx",
+    "revision": "6f5ff65298512715a1e669753bc754d2bc8f367b",
+    "sha256": {
+      "onnx/model_quantized.onnx": "912fc1215c2dbff6499700534bd8d31253af01573861abbfc43afd1fab6cce5d",
+      "tokenizer.json": "8bf8afbfd11306bd872018c53bfdf2e160a56f8edbcf49933324404791c148d3"
+    }
+  }
+]

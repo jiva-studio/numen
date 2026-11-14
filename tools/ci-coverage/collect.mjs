@@ -29,6 +29,7 @@ const GO_MODULES = [
   'plugins/tools-index-stats',
   'plugins/tools-media-importer',
   'plugins/engines-embeddings',
+  'plugins/engines-reranking',
   'plugins/engines-ocr',
   'plugins/tools-proofreading',
   'plugins/tools-search-relevance',

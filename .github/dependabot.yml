@@ -36,6 +36,7 @@ updates:
       - /plugins/agents-tools-window
       - /plugins/connections-llm
       - /plugins/engines-embeddings
+      - /plugins/engines-reranking
       - /plugins/engines-ocr
       - /plugins/engines-transcription
       - /plugins/readers-epub
