@@ -100,3 +100,43 @@ func TestNewToolDeclaresTheSchemasOfATool(t *testing.T) {
 		})
 	}
 }
+
+func TestNewToolDeclaresAnnotations(t *testing.T) {
+	t.Parallel()
+
+	readOnly := NewTool(&tools.ToolInfo{
+		Name:     "note_read",
+		Effect:   tools.ReadOnly,
+		Requires: []string{"note:read"},
+	})
+	if readOnly.Annotations == nil {
+		t.Fatal("expected non-nil annotations for read-only tool")
+	}
+	if !readOnly.Annotations.ReadOnlyHint || !readOnly.Annotations.IdempotentHint {
+		t.Errorf("read-only tool hints: ReadOnly=%v Idempotent=%v, want true", readOnly.Annotations.ReadOnlyHint, readOnly.Annotations.IdempotentHint)
+	}
+	if readOnly.Annotations.DestructiveHint == nil || *readOnly.Annotations.DestructiveHint {
+		t.Errorf("read-only tool DestructiveHint = %v, want false", readOnly.Annotations.DestructiveHint)
+	}
+	if readOnly.Annotations.OpenWorldHint == nil || *readOnly.Annotations.OpenWorldHint {
+		t.Errorf("read-only tool OpenWorldHint = %v, want false", readOnly.Annotations.OpenWorldHint)
+	}
+
+	readWrite := NewTool(&tools.ToolInfo{
+		Name:     "link_open",
+		Effect:   tools.ReadWrite,
+		Requires: []string{permissionLinkOpen},
+	})
+	if readWrite.Annotations == nil {
+		t.Fatal("expected non-nil annotations for read-write tool")
+	}
+	if readWrite.Annotations.ReadOnlyHint || readWrite.Annotations.IdempotentHint {
+		t.Errorf("read-write tool hints: ReadOnly=%v Idempotent=%v, want false", readWrite.Annotations.ReadOnlyHint, readWrite.Annotations.IdempotentHint)
+	}
+	if readWrite.Annotations.DestructiveHint == nil || !*readWrite.Annotations.DestructiveHint {
+		t.Errorf("read-write tool DestructiveHint = %v, want true", readWrite.Annotations.DestructiveHint)
+	}
+	if readWrite.Annotations.OpenWorldHint == nil || !*readWrite.Annotations.OpenWorldHint {
+		t.Errorf("read-write tool OpenWorldHint = %v, want true", readWrite.Annotations.OpenWorldHint)
+	}
+}
