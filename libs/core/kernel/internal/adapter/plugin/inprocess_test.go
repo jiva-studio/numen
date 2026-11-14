@@ -312,7 +312,7 @@ func TestABuiltInPluginIsGivenTheRuntime(t *testing.T) {
 	t.Setenv(process.EnvONNXRuntimeLib, "")
 	t.Setenv(process.EnvONNXProvider, "")
 	host := newBuiltInHost(t)
-	host.Services.SetDependencies(newFixedCatalog("/models/libonnxruntime.so", "coreml", nil))
+	host.Dependencies.Replace(newFixedCatalog("/models/libonnxruntime.so", "coreml", nil))
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), backend.serve("first tools"))
 
@@ -335,7 +335,7 @@ func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
 	t.Setenv(process.EnvONNXRuntimeLib, "")
 	failure := errors.New("the archive is not the pinned one")
 	host := newBuiltInHost(t)
-	host.Services.SetDependencies(newFixedCatalog("", "", failure))
+	host.Dependencies.Replace(newFixedCatalog("", "", failure))
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), newBuiltInBackend().serve("first tools"))
 
 	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, getTestHolder())
