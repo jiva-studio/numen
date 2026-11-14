@@ -1199,12 +1199,12 @@ func TestHost_GetPluginIDByToken(t *testing.T) {
 // stops when the host does.
 func TestHost_OpenHostEndpointServesOnceModelCallsSet(t *testing.T) {
 	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
-	services, _ := lendEndpoint(host, hostendpoint.Address)
+	lender, _ := lendEndpoint(host, hostendpoint.Address)
 	if got, err := host.Services.OpenHostEndpoint(t.Context()); err != nil || got != 0 {
 		t.Fatalf("without model calls: port %d, %v", got, err)
 	}
 
-	services.SetModelCalls(noModelCalls{})
+	lender.Update(func(l *hostendpoint.Lent) { l.ModelCalls = noModelCalls{} })
 	first, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil || first <= 0 {
 		t.Fatalf("with model calls: port %d, %v", first, err)
@@ -1245,8 +1245,8 @@ func TestGetLaunchVars_ReportsHostPort(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	services, _ := lendEndpoint(host, hostendpoint.Address)
-	services.SetModelCalls(noModelCalls{})
+	lender, _ := lendEndpoint(host, hostendpoint.Address)
+	lender.Update(func(l *hostendpoint.Lent) { l.ModelCalls = noModelCalls{} })
 
 	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
@@ -1269,8 +1269,8 @@ func TestGetLaunchVars_HostEndpointStartFailureDoesNotStopLaunch(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	services, _ := lendEndpoint(host, "127.0.0.1:-1")
-	services.SetModelCalls(noModelCalls{})
+	lender, _ := lendEndpoint(host, "127.0.0.1:-1")
+	lender.Update(func(l *hostendpoint.Lent) { l.ModelCalls = noModelCalls{} })
 	var reported []error
 	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
