@@ -41,16 +41,18 @@ func proofreadScan(ctx context.Context, ask AskModel, instruction string, pages 
 	return out, nil
 }
 
-// batchShape is how the lines are cut into batches: the lines in a batch and those it shares with the next.
-type batchShape struct {
+// batchPlan is how the lines are cut into batches: the lines in a batch, those it shares with the next, the first line number to read and how many lines at most.
+type batchPlan struct {
 	size    int
 	overlap int
+	from    int
+	limit   int
 }
 
 func proofreadSpeech(
-	ctx context.Context, ask AskModel, instruction string, lines []numbered.Line, shape batchShape, from, limit int,
+	ctx context.Context, ask AskModel, instruction string, lines []numbered.Line, plan batchPlan,
 ) (textResult, error) {
-	size, overlap := shape.size, shape.overlap
+	size, overlap, from, limit := plan.size, plan.overlap, plan.from, plan.limit
 	cues := numbered.GetSpokenLines(lines)
 	pos := sort.Search(len(cues), func(i int) bool { return cues[i].Number >= from })
 	if pos >= len(cues) {

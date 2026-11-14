@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.proofreading",
   "name": "LLM Proofreading",
-  "version": "2026.11.11",
+  "version": "2026.11.12",
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
@@ -31,7 +31,8 @@
       "key": "language",
       "type": "string",
       "title": "Language of the text",
-      "description": "What language the text is in; empty lets the model read it from the text",
+      "description": "Language of the text; empty detects it from the text",
+      "details": "What language the text is in. When empty, the model reads the language from the text.",
       "default": "",
       "options": [
         { "value": "English", "title": "English" },
@@ -52,7 +53,8 @@
       "key": "prompt",
       "type": "string",
       "title": "Own prompt",
-      "description": "Rules of your own for the model, added to the built-in instruction; the answer format cannot be changed",
+      "description": "Own rules for the model, added to the built-in instruction",
+      "details": "Rules of your own for the model, added to the built-in instruction. The answer format cannot be changed.",
       "default": ""
     },
     {

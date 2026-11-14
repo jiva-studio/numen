@@ -51,6 +51,8 @@ func DefaultConfig() Config {
 		Overlap:         DefaultOverlap,
 		InFlight:        DefaultInFlight,
 		MaxEditDistance: numbered.MaxEditDistance,
+		Language:        "",
+		Prompt:          "",
 	}
 }
 

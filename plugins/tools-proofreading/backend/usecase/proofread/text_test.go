@@ -112,7 +112,7 @@ func speech(count int) []numbered.Line {
 
 func TestProofreadSpeech_UsesSpeechInstruction(t *testing.T) {
 	m := newReplyModel("")
-	got, err := proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(3), batchShape{size: 10, overlap: 0}, 0, 0)
+	got, err := proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(3), batchPlan{size: 10, overlap: 0, from: 0, limit: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func TestProofreadSpeech_UsesSpeechInstruction(t *testing.T) {
 
 func TestProofreadSpeech_ProcessesWindowsAndReturnsNext(t *testing.T) {
 	m := newReplyModel("")
-	got, err := proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(20), batchShape{size: 4, overlap: 1}, 0, 8)
+	got, err := proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(20), batchPlan{size: 4, overlap: 1, from: 0, limit: 8})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,18 +144,18 @@ func TestProofreadSpeech_ProcessesWindowsAndReturnsNext(t *testing.T) {
 		t.Errorf("asked %d times", len(m.prompts))
 	}
 
-	got, err = proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(20), batchShape{size: 4, overlap: 1}, got.next, 8)
+	got, err = proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(20), batchPlan{size: 4, overlap: 1, from: got.next, limit: 8})
 	if err != nil || got.next != 14 {
 		t.Errorf("second window: %+v, %v", got, err)
 	}
-	got, err = proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(20), batchShape{size: 4, overlap: 1}, 14, 8)
+	got, err = proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(20), batchPlan{size: 4, overlap: 1, from: 14, limit: 8})
 	if err != nil || !got.isDone || got.next != 20 {
 		t.Errorf("last window: %+v, %v", got, err)
 	}
 }
 
 func TestSpeechPastTheEndIsCompleted(t *testing.T) {
-	got, err := proofreadSpeech(t.Context(), newReplyModel("").ask, numbered.SpeechInstruction, speech(3), batchShape{size: 4, overlap: 1}, 9, 8)
+	got, err := proofreadSpeech(t.Context(), newReplyModel("").ask, numbered.SpeechInstruction, speech(3), batchPlan{size: 4, overlap: 1, from: 9, limit: 8})
 	if err != nil || !got.isDone || got.next != 9 {
 		t.Errorf("result %+v, %v", got, err)
 	}
@@ -170,7 +170,7 @@ func TestProofreadSpeech_RetriesSplitBatchForSpanningRun(t *testing.T) {
 		}
 		return ""
 	}}
-	got, err := proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(8), batchShape{size: 4, overlap: 1}, 0, 0)
+	got, err := proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(8), batchPlan{size: 4, overlap: 1, from: 0, limit: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +187,7 @@ func TestProofreadSpeech_RetriesWindowForSpanningRun(t *testing.T) {
 		}
 		return ""
 	}}
-	got, err := proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(20), batchShape{size: 4, overlap: 1}, 0, 8)
+	got, err := proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, speech(20), batchPlan{size: 4, overlap: 1, from: 0, limit: 8})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +199,7 @@ func TestProofreadSpeech_RetriesWindowForSpanningRun(t *testing.T) {
 func TestProofreadSpeech_ReturnsCorrectionsInLineOrder(t *testing.T) {
 	lines := []numbered.Line{{Number: 0, Text: "we should go. And then"}, {Number: 1, Text: "the next day he left."}, {Number: 2, Text: "the end"}}
 	m := newReplyModel("0-1|We should go. And then the next day he left.\n2|The end")
-	got, err := proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, lines, batchShape{size: 10, overlap: 0}, 0, 0)
+	got, err := proofreadSpeech(t.Context(), m.ask, numbered.SpeechInstruction, lines, batchPlan{size: 10, overlap: 0, from: 0, limit: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +213,7 @@ func TestProofreadSpeech_ReturnsCorrectionsInLineOrder(t *testing.T) {
 }
 
 func TestASpeechReplyTheGatesRefuseIsCountedUncorrected(t *testing.T) {
-	got, err := proofreadSpeech(t.Context(), newReplyModel("999|invented").ask, numbered.SpeechInstruction, speech(3), batchShape{size: 10, overlap: 0}, 0, 0)
+	got, err := proofreadSpeech(t.Context(), newReplyModel("999|invented").ask, numbered.SpeechInstruction, speech(3), batchPlan{size: 10, overlap: 0, from: 0, limit: 0})
 	if err != nil || got.uncorrected != 1 || len(got.corrections) != 0 {
 		t.Errorf("result %+v, %v", got, err)
 	}
@@ -241,7 +241,7 @@ func TestEveryRequestOfBothSpeechPassesCarriesTheInstructionItIsGiven(t *testing
 	m := newReplyModel("")
 	given := numbered.BuildInstruction(numbered.SpeechInstruction, "Hindi", "Keep names.") + " (given)"
 
-	if _, err := proofreadSpeech(t.Context(), m.ask, given, speech(20), batchShape{size: 4, overlap: 1}, 0, 8); err != nil {
+	if _, err := proofreadSpeech(t.Context(), m.ask, given, speech(20), batchPlan{size: 4, overlap: 1, from: 0, limit: 8}); err != nil {
 		t.Fatal(err)
 	}
 

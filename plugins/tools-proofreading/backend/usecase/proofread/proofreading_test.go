@@ -433,7 +433,7 @@ func TestTheSameSourceAndValuesProofreadTwiceMakeOneVersion(t *testing.T) {
 	}
 }
 
-func TestAnotherLanguageOrPromptMakesAnotherVersionAndLeavesTheFirstAsItWas(t *testing.T) {
+func TestAnotherLanguageOrPromptMakesAnotherVersionWithoutChangingTheFirst(t *testing.T) {
 	cases := map[string][2]string{
 		"another prompt":               {hindi, "Change nothing."},
 		"another language":             {"Russian", oldSpeller},

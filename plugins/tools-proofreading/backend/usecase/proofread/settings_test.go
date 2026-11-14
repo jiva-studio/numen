@@ -78,7 +78,7 @@ func TestTheLanguageIsOneLineWithoutSurroundingSpace(t *testing.T) {
 	}
 }
 
-func TestALongLanguageIsCutAtTheLimitByRunes(t *testing.T) {
+func TestALongLanguageIsTruncatedAtTheLimitByRunes(t *testing.T) {
 	long := strings.Repeat("я", MaxLanguageLen+30)
 
 	got := ParseConfig(map[string]string{"language": long}, DefaultConfig())
@@ -96,7 +96,7 @@ func TestThePromptIsTrimmedAndKeepsItsLineBreaks(t *testing.T) {
 	}
 }
 
-func TestALongPromptIsCutAtTheLimitByRunes(t *testing.T) {
+func TestALongPromptIsTruncatedAtTheLimitByRunes(t *testing.T) {
 	long := strings.Repeat("ś", MaxPromptLen+50)
 
 	got := ParseConfig(map[string]string{"prompt": long}, DefaultConfig())

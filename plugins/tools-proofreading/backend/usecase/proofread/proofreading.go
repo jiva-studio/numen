@@ -168,7 +168,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line,
 	var out []numbered.Line
 	uncorrected := 0
 	for from := 1; ; {
-		result, err := proofreadSpeech(ctx, p.ask, instruction, lines, batchShape{size: cfg.BatchSize, overlap: cfg.Overlap}, from, cfg.InFlight*cfg.BatchSize)
+		result, err := proofreadSpeech(ctx, p.ask, instruction, lines, batchPlan{size: cfg.BatchSize, overlap: cfg.Overlap, from: from, limit: cfg.InFlight * cfg.BatchSize})
 		if err != nil {
 			return nil, 0, err
 		}

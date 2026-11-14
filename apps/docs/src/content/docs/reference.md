@@ -172,8 +172,8 @@ The settings of the plugin LLM Proofreading.
 | | | |
 | --- | --- | --- |
 | `connections` | text | services and agents, tried in order until one answers. |
-| `language` | text | what language the text is in; empty lets the model read it from the text. |
-| `prompt` | text | rules of your own for the model, added to the built-in instruction; the answer format cannot be changed. |
+| `language` | text | what language the text is in. When empty, the model reads the language from the text. |
+| `prompt` | text | rules of your own for the model, added to the built-in instruction. The answer format cannot be changed. |
 | `batchSize` | a number | lines per model request. From 1 to 500. |
 | `overlap` | a number | lines shared by neighboring batches. From 0 to 100. |
 | `inFlight` | a number | parallel model requests per call. From 1 to 32. |

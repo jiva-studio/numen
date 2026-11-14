@@ -105,7 +105,7 @@ func TestManifestSuggestsLanguagesAndNoPromptText(t *testing.T) {
 	}
 }
 
-func TestManifestPutsLanguageAndPromptAfterConnectionsAndBeforeTheSizes(t *testing.T) {
+func TestManifestOrdersLanguageAndPromptAfterConnectionsAndBeforeTheSizes(t *testing.T) {
 	var keys []string
 	for _, one := range readManifest(t).Settings {
 		keys = append(keys, one.Key)
