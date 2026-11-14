@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, onScopeDispose } from 'vue'
 import { CONVERSATION, VAULT_SUMMARY } from '@numen/plugin-loader'
-import { createMockManifest } from '@numen/core-client/testing'
+import { createCoreTransport, createMockManifest } from '@numen/core-client/testing'
 import type { ConnectionHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
 import { TARGET } from '@/shared/lib/window'
 import { createNoticeQueue } from '@numen/workbench'
-import { createWindowCommands } from '@/entities/plugin'
+import { createPluginConnectionFinder, createWindowCommands } from '@/entities/plugin'
 import { createWindowTabs } from '@/entities/tab'
+import { createWindowRelations } from '@/entities/vault'
+import { createWindowClients } from '@/shared/api/clients'
 import { createShellHost as createHost } from './host'
 
 /** Connections that end every call at once, for a conversation view that needs them. */
@@ -17,6 +19,9 @@ const CONNECTIONS: ConnectionHost = {
   },
 }
 
+/** The clients of a window whose core answers no call. */
+const clients = createWindowClients(createCoreTransport({}))
+
 const createShellHost = (
   services: Parameters<typeof createHost>[0]['services'] = {},
   getPlatform?: () => 'windows' | 'darwin',
@@ -24,6 +29,8 @@ const createShellHost = (
   const tabs = createWindowTabs()
   const notices = createNoticeQueue()
   const host = createHost({
+    relations: createWindowRelations(clients.notes),
+    getConnections: createPluginConnectionFinder(clients.connectionCalls),
     tabs,
     notices,
     services,

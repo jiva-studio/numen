@@ -1,18 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installCoreAnswers } from '@numen/core-client/testing'
-import { listVaults } from './vaults'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createCoreTransport } from '@numen/core-client/testing'
+import { createWindowClients } from '@/shared/api/clients'
+import { createVaultLister } from './vaults'
 
 const core = { listVaults: vi.fn() }
 
-let restore: () => void
+const listVaults = createVaultLister(
+  createWindowClients(createCoreTransport({ vaultsService: core })).vaultsService,
+)
 
 beforeEach(() => {
   vi.resetAllMocks()
-  restore = installCoreAnswers({ vaultsService: core })
-})
-
-afterEach(() => {
-  restore()
 })
 
 describe('the vaults of the installation', () => {
