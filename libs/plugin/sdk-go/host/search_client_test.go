@@ -74,7 +74,7 @@ func (h *searchHost) SampleSimilarities(_ context.Context, req *connect.Request[
 	h.sampled = append(h.sampled, req.Msg.GetQueries()...)
 	return connect.NewResponse(&v1.SampleSimilaritiesResponse{
 		Error:        h.code,
-		PassageCount: 3,
+		ChunkCount: 3,
 		SourceCount:  2,
 		Rows:         []*v1.SimilarityRow{{Values: []float64{0.25, 0.5}}, {}},
 	}), nil
@@ -134,8 +134,8 @@ func TestASearchClientReadsTheStateAndSamplesSimilarities(t *testing.T) {
 		t.Errorf("state %+v (%v), want %+v", state, err, want)
 	}
 	sample, err := c.SampleSimilarities(ctx, "recipe", []host.SimilarityQuery{{Path: "a.md", Vector: []float32{1, 0}}, {}})
-	wantSample := host.SimilaritySample{PassageCount: 3, SourceCount: 2, Rows: [][]float64{{0.25, 0.5}, nil}}
-	if err != nil || sample.PassageCount != wantSample.PassageCount || sample.SourceCount != wantSample.SourceCount ||
+	wantSample := host.SimilaritySample{ChunkCount: 3, SourceCount: 2, Rows: [][]float64{{0.25, 0.5}, nil}}
+	if err != nil || sample.ChunkCount != wantSample.ChunkCount || sample.SourceCount != wantSample.SourceCount ||
 		len(sample.Rows) != 2 || !slices.Equal(sample.Rows[0], wantSample.Rows[0]) || len(sample.Rows[1]) != 0 {
 		t.Errorf("sample %+v (%v), want %+v", sample, err, wantSample)
 	}

@@ -17,7 +17,7 @@ import (
 // sources answers the source and vector ports out of the chunk tables.
 //
 // It translates between the core's types and the SQLite schema: a source
-// arrives as a file reference and is stored as columns, and a passage is read
+// arrives as a file reference and is stored as columns, and a search result is read
 // back as a row and returned as a location in a file.
 
 type sources struct {
@@ -105,7 +105,7 @@ func (s sources) SaveVectors(ctx context.Context, vectors []vector.Stored) error
 	return s.write.SaveVectors(ctx, out)
 }
 
-func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after vector.ChunkCursor, limit int) ([]domain.Passage, vector.ChunkCursor, error) {
+func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after vector.ChunkCursor, limit int) ([]domain.SearchResult, vector.ChunkCursor, error) {
 	from, err := parseCursor(after)
 	if err != nil {
 		return nil, "", err
@@ -114,16 +114,16 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	if err != nil {
 		return nil, "", err
 	}
-	out := make([]domain.Passage, 0, len(found))
+	out := make([]domain.SearchResult, 0, len(found))
 	for _, p := range found {
-		out = append(out, domain.Passage{
+		out = append(out, domain.SearchResult{
 			ChunkID:     chunk.ID(p.Chunk),
-			Source:      p.Path,
-			Producer:    p.Producer,
-			ContentHash: p.ContentHash,
+			Path:      p.Path,
+			VersionID:    p.Producer,
+			FileHash: p.ContentHash,
 			Start:       p.Start,
 			Length:      p.Length,
-			Location:    p.Location,
+			PlaceLabel:    p.Location,
 			ChunkHash:   p.ChunkHash,
 		})
 	}

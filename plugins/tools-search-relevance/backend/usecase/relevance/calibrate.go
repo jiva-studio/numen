@@ -18,10 +18,10 @@ const (
 	// titleSample is how many note titles a calibration takes from the vault at most.
 	titleSample = 200
 
-	// minQueries, minPassages and minSources are what a vault has to hold before a measurement is
+	// minQueries, minChunks and minSources are what a vault has to hold before a measurement is
 	// meaningful.
 	minQueries  = 20
-	minPassages = 50
+	minChunks = 50
 	minSources  = 2
 )
 
@@ -46,7 +46,7 @@ type Calibration struct {
 	Spread         float64
 	Histogram      []int
 	QueryCount     int
-	PassageCount   int
+	ChunkCount   int
 	CalibratedTime time.Time
 }
 
@@ -114,13 +114,13 @@ func (c Calibrator) Calibrate(ctx context.Context, index host.SearchIndex, notes
 		Spread:         stats.Spread,
 		Histogram:      stats.Histogram,
 		QueryCount:     measured,
-		PassageCount:   sample.PassageCount,
+		ChunkCount:   sample.ChunkCount,
 		CalibratedTime: c.clock.Now(),
 	}, nil
 }
 
 func isTooSmall(sample host.SimilaritySample) bool {
-	return sample.PassageCount < minPassages || sample.SourceCount < minSources
+	return sample.ChunkCount < minChunks || sample.SourceCount < minSources
 }
 
 type noteTitle struct {
@@ -185,7 +185,7 @@ func clipText(text string, limit int) string {
 
 func collectNoise(queries []host.SimilarityQuery, sample host.SimilaritySample) ([]float64, int) {
 	// gomutants:disable-next-line ARITHMETIC_BASE reason="Slice capacity hint does not affect collected values."
-	similarities := make([]float64, 0, len(queries)*sample.PassageCount)
+	similarities := make([]float64, 0, len(queries)*sample.ChunkCount)
 	measured := 0
 	for i, query := range queries {
 		if len(query.Vector) == 0 {

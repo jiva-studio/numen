@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
-// excerptRunes is how much of a passage one line of terminal output carries.
+// excerptRunes is how much of a search result one line of terminal output carries.
 const excerptRunes = 160
 
 type searchCommand struct {
@@ -49,9 +49,9 @@ func (c searchCommand) Run(ctx context.Context, term terminal, args []string) er
 		return errors.Join(r.Err(), diagnostics.Err())
 	}
 	for _, p := range found {
-		where := p.Source
-		if p.Location != "" {
-			where += " · " + p.Location
+		where := p.Path
+		if p.PlaceLabel != "" {
+			where += " · " + p.PlaceLabel
 		}
 		r.Printf("%s\n  %s\n", where, getExcerpt(p.Text))
 	}

@@ -39,7 +39,7 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 	), db, v
 }
 
-func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
+func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.SearchResult {
 	t.Helper()
 	found, err := db.ChunkSearch().FindLexical(
 		t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})

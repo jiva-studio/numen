@@ -10,14 +10,14 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 )
 
-// FocusRequest is one FocusPassages call a Window received.
+// FocusRequest is one FocusFile call a Window received.
 type FocusRequest struct {
 	Path     string
-	Passages []host.PassageSpan
+	Spans []host.ByteSpan
 }
 
 // Window is the in-memory window of a vault. FocusNote looks up the note among the notes
-// of the vault, and FocusPassages looks up the file among its files; a path with no file in the vault
+// of the vault, and FocusFile looks up the file among its files; a path with no file in the vault
 // returns ErrNotExist and is not recorded. The window returns the tabs set by SetOpenTabs.
 type Window struct {
 	vault *Vault
@@ -60,7 +60,7 @@ func (w *Window) FocusNote(ctx context.Context, path string) (host.FocusedNote, 
 	return host.FocusedNote{Path: ref.Path, Title: ref.Title, ID: ref.ID}, nil
 }
 
-func (w *Window) FocusPassages(ctx context.Context, path string, passages []host.PassageSpan) error {
+func (w *Window) FocusFile(ctx context.Context, path string, spans []host.ByteSpan) error {
 	if w.hasNoWindow() {
 		return host.ErrNoWindow
 	}
@@ -73,7 +73,7 @@ func (w *Window) FocusPassages(ctx context.Context, path string, passages []host
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	w.focusCalls = append(w.focusCalls, FocusRequest{Path: path, Passages: slices.Clone(passages)})
+	w.focusCalls = append(w.focusCalls, FocusRequest{Path: path, Spans: slices.Clone(spans)})
 	return nil
 }
 
@@ -108,7 +108,7 @@ func (w *Window) GetFocusedNotes() []string {
 	return slices.Clone(w.notes)
 }
 
-// GetFocusRequests returns the FocusPassages calls the window served, in order.
+// GetFocusRequests returns the FocusFile calls the window served, in order.
 func (w *Window) GetFocusRequests() []FocusRequest {
 	w.mu.Lock()
 	defer w.mu.Unlock()

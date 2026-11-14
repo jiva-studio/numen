@@ -54,7 +54,7 @@ func numberRowsPast2To62(t *testing.T, db *DB) {
 	}
 }
 
-func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Passage {
+func getUnembeddedChunks(t *testing.T, db *DB, vault domain.Vault) []domain.SearchResult {
 	t.Helper()
 	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel().Recipe(), "", 1000)
 	if err != nil {
@@ -63,9 +63,9 @@ func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Pa
 	return unembedded
 }
 
-func getUnembeddedPassagesPaged(t *testing.T, db *DB, vault domain.Vault, limit int) []domain.Passage {
+func getUnembeddedChunksPaged(t *testing.T, db *DB, vault domain.Vault, limit int) []domain.SearchResult {
 	t.Helper()
-	var visited []domain.Passage
+	var visited []domain.SearchResult
 	cursor := vector.ChunkCursor("")
 	for range 100 {
 		page, next, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel().Recipe(), cursor, limit)
@@ -82,7 +82,7 @@ func getUnembeddedPassagesPaged(t *testing.T, db *DB, vault domain.Vault, limit 
 	return nil
 }
 
-func getChunkIDs(passages []domain.Passage) []domain.ChunkID {
+func getChunkIDs(passages []domain.SearchResult) []domain.ChunkID {
 	out := make([]domain.ChunkID, 0, len(passages))
 	for _, p := range passages {
 		out = append(out, p.ChunkID)
@@ -90,10 +90,10 @@ func getChunkIDs(passages []domain.Passage) []domain.ChunkID {
 	return out
 }
 
-func getSourcePaths(passages []domain.Passage) []string {
+func getSourcePaths(passages []domain.SearchResult) []string {
 	out := make([]string, 0, len(passages))
 	for _, p := range passages {
-		out = append(out, p.Source)
+		out = append(out, p.Path)
 	}
 	return out
 }
@@ -111,7 +111,7 @@ func TestAWalkInPagesVisitsEveryUnembeddedChunkOfItsVaultOnce(t *testing.T) {
 	saveThroughPort(t, db, getFirstVault(), "library/old.epub", getLongAgo(), "glaciers carve", "moraines remain")
 	saveThroughPort(t, db, getSecond(), "library/second.epub", getThisYear(), "violins tune", "cellos answer")
 
-	unembedded := getUnembeddedPassages(t, db, getFirstVault())
+	unembedded := getUnembeddedChunks(t, db, getFirstVault())
 	want := []string{
 		"library/last.epub", "library/last.epub",
 		"library/far.epub", "library/far.epub",
@@ -124,13 +124,13 @@ func TestAWalkInPagesVisitsEveryUnembeddedChunkOfItsVaultOnce(t *testing.T) {
 	}
 
 	for _, limit := range []int{1, 2, 5} {
-		visited := getUnembeddedPassagesPaged(t, db, getFirstVault(), limit)
+		visited := getUnembeddedChunksPaged(t, db, getFirstVault(), limit)
 		if got := getChunkIDs(visited); !slices.Equal(got, getChunkIDs(unembedded)) {
 			t.Errorf("a walk in pages of %d visited %v, want %v", limit, got, getChunkIDs(unembedded))
 		}
 	}
 
-	if got := getSourcePaths(getUnembeddedPassagesPaged(t, db, getSecond(), 1)); !slices.Equal(got, []string{"library/second.epub", "library/second.epub"}) {
+	if got := getSourcePaths(getUnembeddedChunksPaged(t, db, getSecond(), 1)); !slices.Equal(got, []string{"library/second.epub", "library/second.epub"}) {
 		t.Errorf("a walk of the second vault visited chunks of %v", got)
 	}
 }
@@ -246,7 +246,7 @@ func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, getFirstVault(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments")
 
-	unembedded := getUnembeddedPassages(t, db, getFirstVault())
+	unembedded := getUnembeddedChunks(t, db, getFirstVault())
 	if len(unembedded) != 2 {
 		t.Fatalf("%d chunks need a vector, want 2", len(unembedded))
 	}
@@ -264,7 +264,7 @@ func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 	if err := db.Sources().SaveVectors(ctx, vectors); err != nil {
 		t.Fatal(err)
 	}
-	if remaining := getUnembeddedPassages(t, db, getFirstVault()); len(remaining) != 0 {
+	if remaining := getUnembeddedChunks(t, db, getFirstVault()); len(remaining) != 0 {
 		t.Errorf("%d chunks still need a vector", len(remaining))
 	}
 

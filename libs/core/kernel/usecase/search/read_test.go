@@ -67,10 +67,10 @@ func proseOf(source string, lines int) string {
 	return b.String()
 }
 
-func TestReadFillsEveryPassageOfASourceScatteredThroughFound(t *testing.T) {
-	// A ranking scatters one source's passages across the result list, so a
+func TestReadFillsEveryResultOfASourceScatteredThroughFound(t *testing.T) {
+	// A ranking scatters one source's search results across the result list, so a
 	// source that appeared first can appear again after several others have been
-	// read. Every passage must still return the text and line named by its
+	// read. Every search result must still return the text and line named by its
 	// own offsets, whichever sources are adjacent to it in `found`.
 	ctx := t.Context()
 	vault := &fakeVault{content: map[string]string{}, calls: map[string]int{}}
@@ -82,16 +82,16 @@ func TestReadFillsEveryPassageOfASourceScatteredThroughFound(t *testing.T) {
 	u := Search{readers: fakeVaultReaders{reader: vault}}
 
 	// "a.md" is first and last; the four other sources lie between its two
-	// passages, so it is read once and requested again only from the result of
+	// search results, so it is read once and requested again only from the result of
 	// that one read.
-	found := []domain.Passage{
-		{ChunkID: "1", Source: "a.md", Start: 0, Length: len("a.md")},
-		{ChunkID: "2", Source: "b.md", Start: 0, Length: len("b.md")},
-		{ChunkID: "3", Source: "c.md", Start: 0, Length: len("c.md")},
-		{ChunkID: "4", Source: "d.md", Start: 0, Length: len("d.md")},
-		{ChunkID: "5", Source: "e.md", Start: 0, Length: len("e.md")},
-		// The second passage of "a.md" opens on its sixth line.
-		{ChunkID: "6", Source: "a.md", Start: 5 * (len("a.md") + 1), Length: len("a.md")},
+	found := []domain.SearchResult{
+		{ChunkID: "1", Path: "a.md", Start: 0, Length: len("a.md")},
+		{ChunkID: "2", Path: "b.md", Start: 0, Length: len("b.md")},
+		{ChunkID: "3", Path: "c.md", Start: 0, Length: len("c.md")},
+		{ChunkID: "4", Path: "d.md", Start: 0, Length: len("d.md")},
+		{ChunkID: "5", Path: "e.md", Start: 0, Length: len("e.md")},
+		// The second search result of "a.md" opens on its sixth line.
+		{ChunkID: "6", Path: "a.md", Start: 5 * (len("a.md") + 1), Length: len("a.md")},
 	}
 
 	out, err := u.read(ctx, domain.Vault{ID: "v"}, found)
@@ -106,19 +106,19 @@ func TestReadFillsEveryPassageOfASourceScatteredThroughFound(t *testing.T) {
 		if p.ChunkID != found[i].ChunkID {
 			t.Fatalf("passage %d is %s, want the output in found's own order: %+v", i, p.ChunkID, out)
 		}
-		if p.Text != p.Source {
+		if p.Text != p.Path {
 			t.Errorf("%s came back with text %q, want its own name", p.ChunkID, p.Text)
 		}
 	}
-	if out[0].Line != 0 {
-		t.Errorf("the first passage of a.md is on line %d, want 0", out[0].Line)
+	if out[0].MatchLine != 0 {
+		t.Errorf("the first passage of a.md is on line %d, want 0", out[0].MatchLine)
 	}
-	if out[5].Line != 5 {
-		t.Errorf("the second passage of a.md is on line %d, want 5", out[5].Line)
+	if out[5].MatchLine != 5 {
+		t.Errorf("the second passage of a.md is on line %d, want 5", out[5].MatchLine)
 	}
 
 	// The whole point of grouping by source: a.md's prose is decoded once, not
-	// once per passage that names it, so nothing here ever holds more than one
+	// once per search result that names it, so nothing here ever holds more than one
 	// source's decoded text at a time.
 	for _, s := range sources {
 		if vault.calls[s] != 1 {
@@ -136,14 +136,14 @@ func TestReadFillsEveryPassageOfASourceScatteredThroughFound(t *testing.T) {
 	}
 }
 
-func TestReadDropsAPassageOfASourceTheVaultNoLongerContains(t *testing.T) {
+func TestReadDropsAResultOfASourceTheVaultNoLongerContains(t *testing.T) {
 	ctx := t.Context()
 	vault := &fakeVault{content: map[string]string{"here.md": "here.md"}, calls: map[string]int{}}
 	u := Search{readers: fakeVaultReaders{reader: vault}}
 
-	found := []domain.Passage{
-		{ChunkID: "1", Source: "gone.md", Start: 0, Length: 4},
-		{ChunkID: "2", Source: "here.md", Start: 0, Length: len("here.md")},
+	found := []domain.SearchResult{
+		{ChunkID: "1", Path: "gone.md", Start: 0, Length: 4},
+		{ChunkID: "2", Path: "here.md", Start: 0, Length: len("here.md")},
 	}
 
 	out, err := u.read(ctx, domain.Vault{ID: "v"}, found)
@@ -155,6 +155,6 @@ func TestReadDropsAPassageOfASourceTheVaultNoLongerContains(t *testing.T) {
 	}
 }
 
-func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
+func (u Search) read(ctx context.Context, v domain.Vault, found []domain.SearchResult) ([]domain.SearchResult, error) {
 	return u.readForQuery(ctx, v, "", found)
 }

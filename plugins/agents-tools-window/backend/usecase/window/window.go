@@ -28,7 +28,7 @@ type Port interface {
 	ReadOpenTabs(ctx context.Context) ([]host.OpenTab, string, error)
 	ActivateTab(ctx context.Context, id string) (host.OpenTab, string, error)
 	FocusNote(ctx context.Context, path string) (host.FocusedNote, error)
-	FocusPassages(ctx context.Context, path string, passages []host.PassageSpan) error
+	FocusFile(ctx context.Context, path string, passages []host.ByteSpan) error
 }
 
 // Control reads and moves the window.
@@ -106,13 +106,13 @@ func (c Control) FocusNote(ctx context.Context, notePath string) (host.FocusedNo
 	return c.port.FocusNote(ctx, notePath)
 }
 
-// FocusPassages opens the file at the first passage and highlights every passage. It returns the
+// FocusFile opens the file at the first passage and highlights every passage. It returns the
 // number of highlighted passages, which is 0 for a note, which opens whole.
-func (c Control) FocusPassages(ctx context.Context, filePath string, passages []host.PassageSpan) (int, error) {
+func (c Control) FocusFile(ctx context.Context, filePath string, passages []host.ByteSpan) (int, error) {
 	if c.port == nil {
 		return 0, host.ErrNoWindow
 	}
-	if err := c.port.FocusPassages(ctx, filePath, passages); err != nil {
+	if err := c.port.FocusFile(ctx, filePath, passages); err != nil {
 		return 0, err
 	}
 	if isNotePath(filePath) {

@@ -235,7 +235,7 @@ func TestAChunkThatMovedInTheFileKeepsItsVector(t *testing.T) {
 
 	// Every chunk is read from where its text is now.
 	for _, row := range append(was, enclosing) {
-		p, found, err := db.ChunkFiles().Passage(ctx, getFirstVault().ID, row)
+		p, found, err := db.ChunkFiles().GetRecord(ctx, getFirstVault().ID, row)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -483,8 +483,8 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 		t.Fatalf("the note is not findable by %s, which is in the chunk that was kept", opening)
 	}
 	for _, p := range found {
-		if p.Source != n.FileStat.Path {
-			t.Errorf("%s answered for a word of %s", p.Source, n.FileStat.Path)
+		if p.Path != n.FileStat.Path {
+			t.Errorf("%s answered for a word of %s", p.Path, n.FileStat.Path)
 		}
 	}
 	typed, err := db.ChunkSearch().FindLexical(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "wordzz", Kinds: nil, Limit: 10})
@@ -598,7 +598,7 @@ func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 	}
 	// The enclosing chunk is the note: it begins at the first word of the body and
 	// ends at the last.
-	p, ok, err := db.ChunkFiles().Passage(ctx, getFirstVault().ID, largeChunk(t, db, getFirstVault(), n.FileStat.Path))
+	p, ok, err := db.ChunkFiles().GetRecord(ctx, getFirstVault().ID, largeChunk(t, db, getFirstVault(), n.FileStat.Path))
 	if err != nil {
 		t.Fatal(err)
 	}

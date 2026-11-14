@@ -26,15 +26,15 @@ type Handler struct {
 
 	vaults       VaultProvider
 	findNames    *search.FindNames
-	findPassages *search.FindPassages
+	findText *search.FindText
 	searches     *searchcancel.Searches
 }
 
 // NewHandler is the handler of SearchService over the names and the text of the shown vault.
 func NewHandler(
-	vaults VaultProvider, names *search.FindNames, passages *search.FindPassages, searches *searchcancel.Searches,
+	vaults VaultProvider, names *search.FindNames, texts *search.FindText, searches *searchcancel.Searches,
 ) *Handler {
-	return &Handler{vaults: vaults, findNames: names, findPassages: passages, searches: searches}
+	return &Handler{vaults: vaults, findNames: names, findText: texts, searches: searches}
 }
 
 // errNoMode is a search that named no mode to ask it in.
@@ -79,17 +79,17 @@ func (h *Handler) SearchNames(
 	return connect.NewResponse(out), nil
 }
 
-// SearchPassages returns the text of the vault that matches the query.
+// SearchText returns the text of the vault that matches the query.
 // The client chooses the search mode, so a client that shows the written form
 // and the meaning separately issues two requests, one per list.
-// A window with no open vault has no text and returns no passages.
-func (h *Handler) SearchPassages(
-	ctx context.Context, r *connect.Request[v1.SearchPassagesRequest],
-) (*connect.Response[v1.SearchPassagesResponse], error) {
+// A window with no open vault has no text and returns no search results.
+func (h *Handler) SearchText(
+	ctx context.Context, r *connect.Request[v1.SearchTextRequest],
+) (*connect.Response[v1.SearchTextResponse], error) {
 	query := r.Msg.GetQuery()
 	showing := h.vaults.GetCurrentVault()
 	if strings.TrimSpace(query) == "" || showing.ID == "" {
-		return connect.NewResponse(&v1.SearchPassagesResponse{}), nil
+		return connect.NewResponse(&v1.SearchTextResponse{}), nil
 	}
 
 	mode, named := ConvertSearchModeFromWire(r.Msg.GetMode())
@@ -102,7 +102,7 @@ func (h *Handler) SearchPassages(
 	if err := ctx.Err(); err != nil {
 		return nil, connect.NewError(connect.CodeCanceled, err)
 	}
-	found, err := h.findPassages.Execute(ctx, showing, query, mode, int(r.Msg.GetLimit()))
+	found, err := h.findText.Execute(ctx, showing, query, mode, int(r.Msg.GetLimit()))
 	if errors.Is(err, context.Canceled) {
 		return nil, connect.NewError(connect.CodeCanceled, err)
 	}
@@ -110,30 +110,30 @@ func (h *Handler) SearchPassages(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.SearchPassagesResponse{Found: make([]*v1.Passage, 0, len(found.Passages))}
-	for _, p := range found.Passages {
-		text, pos := search.CutSnippet(p.Text, p.HitAt, query)
-		passage := &v1.Passage{
-			Path:     p.Source,
-			Text:     text,
-			Ranges:   convertUnitRangesToWire(pos),
-			Location: p.Location,
-			Range:    &v1.Range{Start: int32(p.Start), End: int32(p.Start + p.Length)},
-			Line:     int32(p.Line),
-			Selector: string(p.Selector),
+	out := &v1.SearchTextResponse{Found: make([]*v1.SearchResult, 0, len(found.Results))}
+	for _, p := range found.Results {
+		text, pos := search.CutSnippet(p.Text, p.MatchOffset, query)
+		result := &v1.SearchResult{
+			Path:        p.Path,
+			Text:        text,
+			MatchRanges: convertUnitRangesToWire(pos),
+			PlaceLabel:  p.PlaceLabel,
+			ByteRange:   &v1.Range{Start: int32(p.Start), End: int32(p.Start + p.Length)},
+			MatchLine:   int32(p.MatchLine),
+			Selector:    string(p.Selector),
 		}
 		// A source that is not a note is absent, and a window offering to open notes offers none for it.
-		if noteRef, target := found.Notes[p.Source]; target {
-			passage.Note = convertNoteToWire(noteRef)
-			passage.Type = convertNoteTypeToWire(found.Types[p.Source])
-			passage.TabKind = found.TabKinds[p.Source]
+		if noteRef, target := found.Notes[p.Path]; target {
+			result.Note = convertNoteToWire(noteRef)
+			result.Type = convertNoteTypeToWire(found.Types[p.Path])
+			result.TabKind = found.TabKinds[p.Path]
 		}
-		out.Found = append(out.Found, passage)
+		out.Found = append(out.Found, result)
 	}
 	return connect.NewResponse(out), nil
 }
 
-// CancelSearch cancels the context of the SearchNames or SearchPassages call that carries the search id.
+// CancelSearch cancels the context of the SearchNames or SearchText call that carries the search id.
 // The window sends it when it aborts the call, because an aborted request does not end the context of
 // the call.
 func (h *Handler) CancelSearch(

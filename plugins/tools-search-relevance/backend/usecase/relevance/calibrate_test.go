@@ -28,7 +28,7 @@ func TestCalibrateMeasuresTheNoise(t *testing.T) {
 		t.Fatalf("outcomes %d and %d, want 1 and 2", relevance.Calibrated, relevance.TooFew)
 	}
 	search, vault := newHost(0)
-	fill(search, vault, 25, passagesOf(60, 3))
+	fill(search, vault, 25, sampledChunksOf(60, 3))
 
 	outcome, got, err := calibrate(t, search, vault)
 	if err != nil || outcome != relevance.Calibrated {
@@ -38,8 +38,8 @@ func TestCalibrateMeasuresTheNoise(t *testing.T) {
 	if abs(got.Median-0.5) > 1e-6 || abs(got.Spread-0.01) > 1e-9 || abs(got.Floor-0.52) > 1e-6 {
 		t.Errorf("median %v spread %v floor %v, want 0.5, 0.01 and 0.52", got.Median, got.Spread, got.Floor)
 	}
-	if got.QueryCount != 25 || got.PassageCount != 60 {
-		t.Errorf("measured %d queries against %d passages, want 25 against 60", got.QueryCount, got.PassageCount)
+	if got.QueryCount != 25 || got.ChunkCount != 60 {
+		t.Errorf("measured %d queries against %d passages, want 25 against 60", got.QueryCount, got.ChunkCount)
 	}
 	if len(got.Histogram) != 20 || got.Histogram[10] != 25*60 {
 		t.Errorf("histogram %v, want %d pairs in bin 10", got.Histogram, 25*60)
@@ -52,10 +52,10 @@ func TestCalibrateMeasuresTheNoise(t *testing.T) {
 	}
 }
 
-func TestCalibrateComparesATitleOnlyWithPassagesOfOtherSources(t *testing.T) {
+func TestCalibrateComparesATitleOnlyWithChunksOfOtherSources(t *testing.T) {
 	search, vault := newHost(0)
 	// This passage is the first note's: identical in direction to every title.
-	passages := append(passagesOf(60, 2), hosttest.SearchPassage{Path: notePath(1), Vector: []float32{127, 0, 0, 0}})
+	passages := append(sampledChunksOf(60, 2), hosttest.SampledChunk{Path: notePath(1), Vector: []float32{127, 0, 0, 0}})
 	fill(search, vault, 20, passages)
 
 	_, got, err := calibrate(t, search, vault)
@@ -75,11 +75,11 @@ func TestCalibrateHasTooFewToMeasure(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		titles   int
-		passages []hosttest.SearchPassage
+		passages []hosttest.SampledChunk
 	}{
-		{"19 titles", 19, passagesOf(60, 3)},
-		{"49 passages", 25, passagesOf(49, 3)},
-		{"one source", 25, passagesOf(60, 1)},
+		{"19 titles", 19, sampledChunksOf(60, 3)},
+		{"49 passages", 25, sampledChunksOf(49, 3)},
+		{"one source", 25, sampledChunksOf(60, 1)},
 		{"nothing", 0, nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -98,7 +98,7 @@ func TestCalibrateHasTooFewToMeasure(t *testing.T) {
 
 func TestCalibrateThresholdsAreInclusive(t *testing.T) {
 	search, vault := newHost(0)
-	fill(search, vault, 20, passagesOf(50, 2))
+	fill(search, vault, 20, sampledChunksOf(50, 2))
 	outcome, _, err := calibrate(t, search, vault)
 	if err != nil || outcome != relevance.Calibrated {
 		t.Errorf("20 titles and 50 passages over 2 sources gave %v, %v, want Calibrated", outcome, err)
@@ -113,13 +113,13 @@ func TestCalibrateCountsOnlyTitlesThatGotAVector(t *testing.T) {
 		}
 		return []float32{1, 0, 0, 0}
 	})
-	fill(search, vault, 20, passagesOf(60, 3))
+	fill(search, vault, 20, sampledChunksOf(60, 3))
 	outcome, _, err := calibrate(t, search, vault)
 	if err != nil || outcome != relevance.TooFew {
 		t.Errorf("got %v, %v, want TooFew", outcome, err)
 	}
 
-	fill(search, vault, 21, passagesOf(60, 3))
+	fill(search, vault, 21, sampledChunksOf(60, 3))
 	outcome, got, err := calibrate(t, search, vault)
 	if err != nil || outcome != relevance.Calibrated || got.QueryCount != 20 {
 		t.Errorf("21 titles with one empty vector gave %v, %+v, %v, want Calibrated with 20 queries", outcome, got, err)
@@ -152,7 +152,7 @@ func (n noteLookup) GetNotes(ctx context.Context, paths []string) (map[string]do
 
 func TestCalibrateSamplesAtMostTwoHundredNonBlankTitles(t *testing.T) {
 	search, vault := newHost(0)
-	fill(search, vault, 25, passagesOf(60, 3))
+	fill(search, vault, 25, sampledChunksOf(60, 3))
 
 	paths := make([]string, 420)
 	for i := range paths {
@@ -236,7 +236,7 @@ func TestCalibrateClipsALongTitleAtTheEmbeddingLimit(t *testing.T) {
 	exact := strings.Repeat("a", host.MaxEmbeddedBytes)
 	multiByte := strings.Repeat("€", host.MaxEmbeddedBytes)
 	continuation := strings.Repeat("\x80", host.MaxEmbeddedBytes+5)
-	fill(search, vault, 25, passagesOf(60, 3))
+	fill(search, vault, 25, sampledChunksOf(60, 3))
 	lookup := noteLookup{
 		NoteLookup: vault,
 		getNotes: func(ctx context.Context, batch []string) (map[string]domain.NoteRef, error) {
@@ -324,7 +324,7 @@ func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			search, vault := newHost(0)
-			fill(search, vault, 25, passagesOf(60, 3))
+			fill(search, vault, 25, sampledChunksOf(60, 3))
 			state, err := search.GetEmbeddingState(t.Context())
 			if err != nil {
 				t.Fatal(err)
@@ -345,7 +345,7 @@ func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
 	}
 
 	search, vault := newHost(0)
-	fill(search, vault, 25, passagesOf(60, 3))
+	fill(search, vault, 25, sampledChunksOf(60, 3))
 	state, err := search.GetEmbeddingState(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -353,7 +353,7 @@ func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
 	shrinking := changingSearch{
 		SearchIndex: search,
 		sample: func(_ context.Context, _ string, queries []host.SimilarityQuery) (host.SimilaritySample, error) {
-			return host.SimilaritySample{PassageCount: 10, SourceCount: 3, Rows: make([][]float64, len(queries))}, nil
+			return host.SimilaritySample{ChunkCount: 10, SourceCount: 3, Rows: make([][]float64, len(queries))}, nil
 		},
 	}
 	if outcome, _, err := relevance.NewCalibrator(newClock()).Calibrate(t.Context(), shrinking, vault, state); err != nil || outcome != relevance.TooFew {
@@ -405,7 +405,7 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			search, vault := newHost(0)
-			fill(search, vault, 25, passagesOf(60, 3))
+			fill(search, vault, 25, sampledChunksOf(60, 3))
 			state, err := search.GetEmbeddingState(t.Context())
 			if err != nil {
 				t.Fatal(err)
@@ -419,9 +419,9 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 	}
 }
 
-func TestCalibrateRefusesAPassageOfAnotherWidth(t *testing.T) {
+func TestCalibrateRefusesAChunkOfAnotherWidth(t *testing.T) {
 	search, vault := newHost(0)
-	fill(search, vault, 25, append(passagesOf(60, 3), hosttest.SearchPassage{Path: "narrow.md", Vector: []float32{1, 2}}))
+	fill(search, vault, 25, append(sampledChunksOf(60, 3), hosttest.SampledChunk{Path: "narrow.md", Vector: []float32{1, 2}}))
 	if outcome, _, err := calibrate(t, search, vault); outcome != 0 || !errors.Is(err, host.ErrInvalidQuery) {
 		t.Errorf("got outcome %v, err %v, want 0 and ErrInvalidQuery", outcome, err)
 	}
@@ -429,7 +429,7 @@ func TestCalibrateRefusesAPassageOfAnotherWidth(t *testing.T) {
 
 func TestCalibrateStopsWhenTheContextEnds(t *testing.T) {
 	search, vault := newHost(0)
-	fill(search, vault, 25, passagesOf(60, 3))
+	fill(search, vault, 25, sampledChunksOf(60, 3))
 	state, err := search.GetEmbeddingState(t.Context())
 	if err != nil {
 		t.Fatal(err)

@@ -753,8 +753,8 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Error("the note saved through the window is not found")
 	}
 	for _, p := range found {
-		if p.Source != "Kept.md" {
-			t.Errorf("the search answered with %s, and only Kept.md holds the word", p.Source)
+		if p.Path != "Kept.md" {
+			t.Errorf("the search answered with %s, and only Kept.md holds the word", p.Path)
 		}
 	}
 }
@@ -1035,7 +1035,7 @@ func TestAWindowActiveOnNothingSearchesNothing(t *testing.T) {
 		t.Errorf("a window standing on nothing knows the names %+v", found)
 	}
 
-	found, err := f.vault.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
+	found, err := f.vault.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: "one", Mode: v1.SearchMode_SEARCH_MODE_HYBRID,
 	}))
 	if err != nil {

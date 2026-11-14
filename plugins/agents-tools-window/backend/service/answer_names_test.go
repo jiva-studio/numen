@@ -336,10 +336,10 @@ func TestSourceFocusReturnsThePathAndTheHighlightCount(t *testing.T) {
 		t.Errorf("source_focus returned %v, want path %s and highlightCount 2", answer, guidePath)
 	}
 
-	noPassages := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf"}`)
-	requireKeys(t, "the answer of source_focus with no passages", noPassages, []string{"path", "highlightCount"}, []string{"shown", "summary"})
-	if noPassages["highlightCount"] != float64(0) {
-		t.Errorf("source_focus with no passages returned highlightCount %v, want 0", noPassages["highlightCount"])
+	noSpans := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf"}`)
+	requireKeys(t, "the answer of source_focus with no passages", noSpans, []string{"path", "highlightCount"}, []string{"shown", "summary"})
+	if noSpans["highlightCount"] != float64(0) {
+		t.Errorf("source_focus with no passages returned highlightCount %v, want 0", noSpans["highlightCount"])
 	}
 
 	schema := getToolSchema(t, w.registry, "source_focus", true)

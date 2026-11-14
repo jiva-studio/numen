@@ -13,11 +13,11 @@ import (
 )
 
 func TestASearchClientSendsTheLimitUnchanged(t *testing.T) {
-	h := &passagesHost{}
-	c := dialPassages(t, h)
+	h := &textSearchHost{}
+	c := dialTextSearch(t, h)
 
 	for _, limit := range []int{500, 0, 7} {
-		if _, err := c.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Limit: limit}); err != nil {
+		if _, err := c.SearchText(t.Context(), host.SearchResultQuery{Query: "heron", Limit: limit}); err != nil {
 			t.Fatal(err)
 		}
 		if got := h.request.GetLimit(); got != int32(limit) {
@@ -28,9 +28,9 @@ func TestASearchClientSendsTheLimitUnchanged(t *testing.T) {
 
 func TestASearchClientSendsAnUnknownKindAndReturnsTheHostError(t *testing.T) {
 	const rejection = `invalid source kind "recording": use "note" or "file"`
-	h := &passagesHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New(rejection))}
+	h := &textSearchHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New(rejection))}
 
-	_, err := dialPassages(t, h).SearchPassages(t.Context(), host.PassageQuery{
+	_, err := dialTextSearch(t, h).SearchText(t.Context(), host.SearchResultQuery{
 		Query: "heron", Kinds: []domain.SourceKind{"recording", domain.KindNote},
 	})
 

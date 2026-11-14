@@ -4,32 +4,32 @@ package domain
 // here interprets its spelling.
 type ChunkID string
 
-// Passage is what a search returns: the text around a hit, and where it came from.
+// SearchResult is what a search returns: the text around a hit, and where it came from.
 // It is a read model; a chunk is not reconstructed from it.
 //
 // `Start` and `Length` address the large chunk enclosing the hit, in bytes of the file
-// `Source` names, and `Text` is the content there once the file has been read.
-type Passage struct {
+// `Path` names, and `Text` is the content there once the file has been read.
+type SearchResult struct {
 	ChunkID ChunkID
 
-	Source string
+	Path string
 
 	Kind SourceKind
 
 	Start  int
 	Length int
 
-	Location string
+	PlaceLabel string
 
-	Producer string
+	VersionID string
 
 	Selector Selector
 
-	ContentHash string
+	FileHash string
 
-	HitAt int
+	MatchOffset int
 
-	Line int
+	MatchLine int
 
 	ChunkHash string
 

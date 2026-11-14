@@ -71,20 +71,20 @@ func (c *concurrentVault) Read(ctx context.Context, path string) ([]byte, error)
 	return []byte(raw), nil
 }
 
-func manySources(count int) (map[string]string, []domain.Passage) {
+func manySources(count int) (map[string]string, []domain.SearchResult) {
 	content := make(map[string]string, count)
-	var found []domain.Passage
+	var found []domain.SearchResult
 	for i := range count {
 		name := fmt.Sprintf("book-%02d.md", i)
 		content[name] = proseOf(name, 10)
-		found = append(found, domain.Passage{
-			ChunkID: domain.ChunkID(fmt.Sprintf("a-%02d", i)), Source: name, Start: 0, Length: len(name),
+		found = append(found, domain.SearchResult{
+			ChunkID: domain.ChunkID(fmt.Sprintf("a-%02d", i)), Path: name, Start: 0, Length: len(name),
 		})
 	}
 	for i := count - 1; i >= 0; i-- {
 		name := fmt.Sprintf("book-%02d.md", i)
-		found = append(found, domain.Passage{
-			ChunkID: domain.ChunkID(fmt.Sprintf("b-%02d", i)), Source: name,
+		found = append(found, domain.SearchResult{
+			ChunkID: domain.ChunkID(fmt.Sprintf("b-%02d", i)), Path: name,
 			Start: 5 * (len(name) + 1), Length: len(name),
 		})
 	}
@@ -94,7 +94,7 @@ func manySources(count int) (map[string]string, []domain.Passage) {
 func TestRead_ReturnsSourcesInRankOrderAtAnyConcurrency(t *testing.T) {
 	content, found := manySources(40)
 
-	run := func(extractors int) []domain.Passage {
+	run := func(extractors int) []domain.SearchResult {
 		vault := newConcurrentVault(content)
 		u := Search{readers: concurrentReaders{vault}, Extractors: extractors}
 		out, err := u.read(t.Context(), domain.Vault{ID: "v"}, found)
@@ -109,7 +109,7 @@ func TestRead_ReturnsSourcesInRankOrderAtAnyConcurrency(t *testing.T) {
 		t.Fatalf("%d passages came back, want %d", len(want), len(found))
 	}
 	for i, p := range want {
-		if p.ChunkID != found[i].ChunkID || p.Text != p.Source {
+		if p.ChunkID != found[i].ChunkID || p.Text != p.Path {
 			t.Fatalf("passage %d is %+v, want %s read back with its own name", i, p, found[i].ChunkID)
 		}
 	}

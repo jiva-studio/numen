@@ -47,7 +47,7 @@ func (w *recordingWindow) FocusNote(_ context.Context, path string) (domain.Note
 	return domain.NoteRef{Path: path, Title: "Gray Heron", ID: "01J8HERON0000000000000000"}, nil
 }
 
-func (w *recordingWindow) FocusPassages(_ context.Context, path string, passages []domain.ByteRange) error {
+func (w *recordingWindow) FocusFile(_ context.Context, path string, passages []domain.ByteRange) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.err != nil {
@@ -143,13 +143,13 @@ func TestHostWindowFocusesANoteAndChecksThePermission(t *testing.T) {
 	}
 }
 
-func TestHostWindowFocusesThePassagesInTheirOrder(t *testing.T) {
+func TestHostWindowFocusesTheSpansInTheirOrder(t *testing.T) {
 	window := &recordingWindow{}
 	client, fakeCallers := newWindowClient(t, window, "token-a")
 
-	got, err := client.FocusPassages(t.Context(), connect.NewRequest(&v1.FocusPassagesRequest{
+	got, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{
 		Path:     "library/Birds.pdf",
-		Passages: []*v1.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}},
+		Spans: []*v1.ByteSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -166,11 +166,11 @@ func TestHostWindowFocusesThePassagesInTheirOrder(t *testing.T) {
 	}
 }
 
-func TestHostWindowOpensAFileWithNoPassagesAtItsBeginning(t *testing.T) {
+func TestHostWindowOpensAFileWithNoSpansAtItsBeginning(t *testing.T) {
 	window := &recordingWindow{}
 	client, _ := newWindowClient(t, window, "token-a")
 
-	if _, err := client.FocusPassages(t.Context(), connect.NewRequest(&v1.FocusPassagesRequest{Path: "library/Birds.pdf"})); err != nil {
+	if _, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{Path: "library/Birds.pdf"})); err != nil {
 		t.Fatal(err)
 	}
 	_, places, _ := window.getRequests()
@@ -216,9 +216,9 @@ func TestHostWindowRejectsEveryCallWithoutThePermission(t *testing.T) {
 	ctx := t.Context()
 
 	_, noteErr := client.FocusNote(ctx, connect.NewRequest(&v1.FocusNoteRequest{Path: "notes/Heron.md"}))
-	_, passagesErr := client.FocusPassages(ctx, connect.NewRequest(&v1.FocusPassagesRequest{Path: "library/Birds.pdf"}))
+	_, fileErr := client.FocusFile(ctx, connect.NewRequest(&v1.FocusFileRequest{Path: "library/Birds.pdf"}))
 	_, tabsErr := client.ReadOpenTabs(ctx, connect.NewRequest(&v1.HostWindowServiceReadOpenTabsRequest{}))
-	for name, err := range map[string]error{"FocusNote": noteErr, "FocusPassages": passagesErr, "ReadOpenTabs": tabsErr} {
+	for name, err := range map[string]error{"FocusNote": noteErr, "FocusFile": fileErr, "ReadOpenTabs": tabsErr} {
 		if connect.CodeOf(err) != connect.CodePermissionDenied {
 			t.Errorf("%s from a plugin without window:focus got %v, want permission denied", name, err)
 		}
@@ -241,8 +241,8 @@ func TestHostWindowWithoutAWindowReturnsNoWindow(t *testing.T) {
 			if got := readWindowCode(client.FocusNote(ctx, connect.NewRequest(&v1.FocusNoteRequest{Path: "notes/Heron.md"}))); got != noWindow.String() {
 				t.Errorf("FocusNote returned %s, want no window", got)
 			}
-			if got := readWindowCode(client.FocusPassages(ctx, connect.NewRequest(&v1.FocusPassagesRequest{Path: "library/Birds.pdf"}))); got != noWindow.String() {
-				t.Errorf("FocusPassages returned %s, want no window", got)
+			if got := readWindowCode(client.FocusFile(ctx, connect.NewRequest(&v1.FocusFileRequest{Path: "library/Birds.pdf"}))); got != noWindow.String() {
+				t.Errorf("FocusFile returned %s, want no window", got)
 			}
 			if got := readWindowCode(client.ReadOpenTabs(ctx, connect.NewRequest(&v1.HostWindowServiceReadOpenTabsRequest{}))); got != noWindow.String() {
 				t.Errorf("ReadOpenTabs returned %s, want no window", got)
@@ -260,8 +260,8 @@ func TestHostWindowReturnsNotFoundForPathNotInVault(t *testing.T) {
 	if got := readWindowCode(client.FocusNote(ctx, connect.NewRequest(&v1.FocusNoteRequest{Path: "notes/Gone.md"}))); got != notFound.String() {
 		t.Errorf("FocusNote returned %s, want not found", got)
 	}
-	if got := readWindowCode(client.FocusPassages(ctx, connect.NewRequest(&v1.FocusPassagesRequest{Path: "library/Gone.pdf"}))); got != notFound.String() {
-		t.Errorf("FocusPassages returned %s, want not found", got)
+	if got := readWindowCode(client.FocusFile(ctx, connect.NewRequest(&v1.FocusFileRequest{Path: "library/Gone.pdf"}))); got != notFound.String() {
+		t.Errorf("FocusFile returned %s, want not found", got)
 	}
 }
 
@@ -271,10 +271,10 @@ func TestHostWindowReturnsUseCaseRejectionAsInvalidArgument(t *testing.T) {
 	ctx := t.Context()
 
 	_, noteErr := client.FocusNote(ctx, connect.NewRequest(&v1.FocusNoteRequest{}))
-	_, passagesErr := client.FocusPassages(ctx, connect.NewRequest(&v1.FocusPassagesRequest{
-		Path: "library/Birds.pdf", Passages: []*v1.PassageSpan{{Start: -1, Length: 4}},
+	_, fileErr := client.FocusFile(ctx, connect.NewRequest(&v1.FocusFileRequest{
+		Path: "library/Birds.pdf", Spans: []*v1.ByteSpan{{Start: -1, Length: 4}},
 	}))
-	for name, err := range map[string]error{"FocusNote": noteErr, "FocusPassages": passagesErr} {
+	for name, err := range map[string]error{"FocusNote": noteErr, "FocusFile": fileErr} {
 		if connect.CodeOf(err) != connect.CodeInvalidArgument || !strings.Contains(err.Error(), "highlight at most 8 places") {
 			t.Errorf("%s got %v, want invalid argument with the use case's message", name, err)
 		}
@@ -285,7 +285,7 @@ func TestHostWindowReportsAnyOtherFailureAsInternal(t *testing.T) {
 	window := &recordingWindow{err: errors.New("the window stopped answering")}
 	client, _ := newWindowClient(t, window, "token-a")
 
-	_, err := client.FocusPassages(t.Context(), connect.NewRequest(&v1.FocusPassagesRequest{Path: "library/Birds.pdf"}))
+	_, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{Path: "library/Birds.pdf"}))
 	if connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("a failing window gave %v, want internal", err)
 	}
@@ -333,13 +333,13 @@ func TestHostWindowReturnsEveryPlaceFieldEachReaderReported(t *testing.T) {
 	}
 }
 
-func TestHostWindowRejectsPassagePast32BitsBeforeCallingWindow(t *testing.T) {
+func TestHostWindowRejectsSpanPast32BitsBeforeCallingWindow(t *testing.T) {
 	window := &recordingWindow{}
 	client, _ := newWindowClient(t, window, "token-a")
 
-	_, err := client.FocusPassages(t.Context(), connect.NewRequest(&v1.FocusPassagesRequest{
+	_, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{
 		Path:     "library/Birds.pdf",
-		Passages: []*v1.PassageSpan{{Start: 400, Length: 80}, {Start: math.MaxInt32 - 10, Length: 20}},
+		Spans: []*v1.ByteSpan{{Start: 400, Length: 80}, {Start: math.MaxInt32 - 10, Length: 20}},
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("a passage past the 32-bit range got %v, want invalid argument", err)
@@ -349,13 +349,13 @@ func TestHostWindowRejectsPassagePast32BitsBeforeCallingWindow(t *testing.T) {
 	}
 }
 
-func TestHostWindowFocusesAPassageThatEndsAtThe32BitLimit(t *testing.T) {
+func TestHostWindowFocusesASpanThatEndsAtThe32BitLimit(t *testing.T) {
 	window := &recordingWindow{}
 	client, _ := newWindowClient(t, window, "token-a")
 
-	if _, err := client.FocusPassages(t.Context(), connect.NewRequest(&v1.FocusPassagesRequest{
+	if _, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{
 		Path:     "library/Birds.pdf",
-		Passages: []*v1.PassageSpan{{Start: math.MaxInt32 - 10, Length: 10}},
+		Spans: []*v1.ByteSpan{{Start: math.MaxInt32 - 10, Length: 10}},
 	})); err != nil {
 		t.Fatal(err)
 	}

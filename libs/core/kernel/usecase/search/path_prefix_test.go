@@ -18,14 +18,14 @@ type prefixSpy struct {
 	lexical, named []string
 }
 
-func (s *prefixSpy) FindLexical(_ context.Context, _ domain.VaultID, q source.LexicalQuery) ([]domain.Passage, error) {
+func (s *prefixSpy) FindLexical(_ context.Context, _ domain.VaultID, q source.LexicalQuery) ([]domain.SearchResult, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.lexical = append(s.lexical, q.PathPrefix)
 	return nil, nil
 }
 
-func (s *prefixSpy) GetNamedPassages(_ context.Context, _ domain.VaultID, q source.LexicalQuery) ([]domain.Passage, error) {
+func (s *prefixSpy) GetNamedSections(_ context.Context, _ domain.VaultID, q source.LexicalQuery) ([]domain.SearchResult, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.named = append(s.named, q.PathPrefix)

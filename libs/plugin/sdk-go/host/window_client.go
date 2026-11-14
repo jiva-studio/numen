@@ -43,28 +43,28 @@ func (c *Client) FocusNote(ctx context.Context, path string) (FocusedNote, error
 	return FocusedNote{Path: res.Msg.GetPath(), Title: res.Msg.GetTitle(), ID: res.Msg.GetId()}, nil
 }
 
-// errPassageOutOfRange is returned for a passage whose start or length exceeds 32 bits.
-var errPassageOutOfRange = errors.New("host: passage start or length exceeds 32 bits")
+// errSpanOutOfRange is returned for a span whose start or length exceeds 32 bits.
+var errSpanOutOfRange = errors.New("host: passage start or length exceeds 32 bits")
 
-func writePassageSpans(passages []PassageSpan) ([]*v1.PassageSpan, error) {
-	spans := make([]*v1.PassageSpan, 0, len(passages))
-	for _, passage := range passages {
-		if !isInt32(passage.Start) || !isInt32(passage.Length) {
-			return nil, fmt.Errorf("passage at %d of length %d: %w", passage.Start, passage.Length, errPassageOutOfRange)
+func writeByteSpans(spans []ByteSpan) ([]*v1.ByteSpan, error) {
+	wire := make([]*v1.ByteSpan, 0, len(spans))
+	for _, span := range spans {
+		if !isInt32(span.Start) || !isInt32(span.Length) {
+			return nil, fmt.Errorf("passage at %d of length %d: %w", span.Start, span.Length, errSpanOutOfRange)
 		}
-		spans = append(spans, &v1.PassageSpan{Start: int32(passage.Start), Length: int32(passage.Length)})
+		wire = append(wire, &v1.ByteSpan{Start: int32(span.Start), Length: int32(span.Length)})
 	}
-	return spans, nil
+	return wire, nil
 }
 
 func isInt32(n int) bool { return n >= math.MinInt32 && n <= math.MaxInt32 }
 
-func (c *Client) FocusPassages(ctx context.Context, path string, passages []PassageSpan) error {
-	spans, err := writePassageSpans(passages)
+func (c *Client) FocusFile(ctx context.Context, path string, spans []ByteSpan) error {
+	wire, err := writeByteSpans(spans)
 	if err != nil {
 		return err
 	}
-	res, err := c.window.FocusPassages(ctx, request(c, &v1.FocusPassagesRequest{Path: path, Passages: spans}))
+	res, err := c.window.FocusFile(ctx, request(c, &v1.FocusFileRequest{Path: path, Spans: wire}))
 	if err != nil {
 		return readWindowCallError(err)
 	}

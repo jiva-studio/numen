@@ -79,28 +79,28 @@ func (q *Files) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, pat
 	return out, rows.Err()
 }
 
-// Passage is where one chunk's text is read from. False when the vault holds no
+// GetRecord is where one chunk's text is read from. False when the vault holds no
 // such chunk.
-func (q *Files) Passage(ctx context.Context, vaultID domain.VaultID, chunk int64) (Passage, bool, error) {
+func (q *Files) GetRecord(ctx context.Context, vaultID domain.VaultID, chunk int64) (Record, bool, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
-		return Passage{}, false, nil
+		return Record{}, false, nil
 	}
 	if err != nil {
-		return Passage{}, false, err
+		return Record{}, false, err
 	}
-	p, found, err := scanPassage(q.db.QueryRowContext(ctx, passageSQL, chunk, vault), chunk)
+	p, found, err := scanRecord(q.db.QueryRowContext(ctx, recordSQL, chunk, vault), chunk)
 	return p, found, err
 }
 
-func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
-	p := Passage{Chunk: chunk}
+func scanRecord(row *sql.Row, chunk int64) (Record, bool, error) {
+	p := Record{Chunk: chunk}
 	err := row.Scan(&p.Path, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.Parent)
 	if errors.Is(err, sql.ErrNoRows) {
-		return Passage{}, false, nil
+		return Record{}, false, nil
 	}
 	if err != nil {
-		return Passage{}, false, err
+		return Record{}, false, err
 	}
 	return p, true, nil
 }

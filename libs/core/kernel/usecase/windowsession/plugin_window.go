@@ -13,18 +13,18 @@ type NoteFocus interface {
 	Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteRef, error)
 }
 
-// PassagesFocus opens a file of a vault at its passages.
-type PassagesFocus interface {
-	FocusPassages(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error
+// FileFocus opens a file of a vault at its byte ranges.
+type FileFocus interface {
+	FocusFile(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error
 }
 
-type PassagesFocusFunc func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error
+type FileFocusFunc func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error
 
-// FocusPassages calls f.
-func (f PassagesFocusFunc) FocusPassages(
-	ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange,
+// FocusFile calls f.
+func (f FileFocusFunc) FocusFile(
+	ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange,
 ) error {
-	return f(ctx, v, path, passages)
+	return f(ctx, v, path, ranges)
 }
 
 // TabShowing makes an open tab the active one.
@@ -32,18 +32,18 @@ type TabShowing interface {
 	Execute(ctx context.Context, id string) (windowdomain.OpenTabs, error)
 }
 
-// PluginWindow lets the plugins that call the host move the window: focus a note or the passages of
+// PluginWindow lets the plugins that call the host move the window: focus a note or the byte ranges of
 // a file, read the open tabs and show one. It refuses each call while the window shows no vault.
 type PluginWindow struct {
 	current  currentVault
 	reports  *TabReports
 	note     NoteFocus
-	passages PassagesFocus
+	files    FileFocus
 	tabs     TabShowing
 }
 
-func NewPluginWindow(rt *Runtime, reports *TabReports, note NoteFocus, passages PassagesFocus, tabs TabShowing) PluginWindow {
-	return PluginWindow{current: rt, reports: reports, note: note, passages: passages, tabs: tabs}
+func NewPluginWindow(rt *Runtime, reports *TabReports, note NoteFocus, files FileFocus, tabs TabShowing) PluginWindow {
+	return PluginWindow{current: rt, reports: reports, note: note, files: files, tabs: tabs}
 }
 
 func (w PluginWindow) getVault() (domain.Vault, error) {
@@ -63,13 +63,13 @@ func (w PluginWindow) FocusNote(ctx context.Context, path string) (domain.NoteRe
 	return w.note.Execute(ctx, v, path)
 }
 
-// FocusPassages opens the file at the path at the first passage and highlights every passage.
-func (w PluginWindow) FocusPassages(ctx context.Context, path string, passages []domain.ByteRange) error {
+// FocusFile opens the file at the path at the first range and highlights every range.
+func (w PluginWindow) FocusFile(ctx context.Context, path string, ranges []domain.ByteRange) error {
 	v, err := w.getVault()
 	if err != nil {
 		return err
 	}
-	return w.passages.FocusPassages(ctx, v, path, passages)
+	return w.files.FocusFile(ctx, v, path, ranges)
 }
 
 // ReadOpenTabs returns the tabs the window last reported, and the active one.

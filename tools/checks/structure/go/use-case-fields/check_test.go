@@ -61,10 +61,10 @@ type Write struct {
 }
 
 type Search struct {
-	Passages port.PassageQueries
+	Passages port.LexicalQueries
 }
 
-func NewOver(passages port.PassageQueries) Search {
+func NewOver(passages port.LexicalQueries) Search {
 	return Search{Passages: passages}
 }
 

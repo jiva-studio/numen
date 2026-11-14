@@ -18,32 +18,32 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
-// passagesHost returns SearchPassages with fixed passages and records the requests.
-type passagesHost struct {
+// textSearchHost returns SearchText with fixed search results and records the requests.
+type textSearchHost struct {
 	numenv1connect.UnimplementedHostSearchServiceHandler
 	code    v1.HostSearchErrorCode
 	status  *connect.Error
 	vault   string
-	request *v1.HostSearchServiceSearchPassagesRequest
+	request *v1.HostSearchServiceSearchTextRequest
 }
 
-func (h *passagesHost) SearchPassages(_ context.Context, req *connect.Request[v1.HostSearchServiceSearchPassagesRequest]) (*connect.Response[v1.HostSearchServiceSearchPassagesResponse], error) {
+func (h *textSearchHost) SearchText(_ context.Context, req *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error) {
 	h.vault, h.request = req.Header().Get("Numen-Vault"), req.Msg
 	if h.status != nil {
 		return nil, h.status
 	}
-	return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{
+	return connect.NewResponse(&v1.HostSearchServiceSearchTextResponse{
 		Error: h.code,
-		Passages: []*v1.Passage{{
-			Path: "library/Birds.pdf", Text: "the heron stands in the reeds", Location: "page 12",
+		Results: []*v1.SearchResult{{
+			Path: "library/Birds.pdf", Text: "the heron stands in the reeds", PlaceLabel: "page 12",
 			Range: &v1.Range{Start: 400, End: 1100}, Line: 0, Selector: `{"page":12}`,
 		}, {
-			Path: "notes/Heron.md", Text: "herons fish at dusk", Range: &v1.Range{Start: 20, End: 60}, Line: 4,
+			Path: "notes/Heron.md", Text: "herons fish at dusk", ByteRange: &v1.Range{Start: 20, End: 60}, MatchLine: 4,
 		}},
 	}), nil
 }
 
-func dialPassages(t *testing.T, h *passagesHost) *host.SearchClient {
+func dialTextSearch(t *testing.T, h *textSearchHost) *host.SearchClient {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostSearchServiceHandler(h))
@@ -52,19 +52,19 @@ func dialPassages(t *testing.T, h *passagesHost) *host.SearchClient {
 	return host.NewSearchClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 }
 
-func TestASearchClientReadsThePassagesTheHostFinds(t *testing.T) {
-	h := &passagesHost{}
-	c := dialPassages(t, h)
+func TestASearchClientReadsTheResultsTheHostFinds(t *testing.T) {
+	h := &textSearchHost{}
+	c := dialTextSearch(t, h)
 
-	got, err := c.With("v2").SearchPassages(t.Context(), host.PassageQuery{
+	got, err := c.With("v2").SearchText(t.Context(), host.SearchResultQuery{
 		Query: "heron", Limit: 5, Kinds: []domain.SourceKind{domain.KindFile}, PathPrefix: "library/",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []host.Passage{
-		{Path: "library/Birds.pdf", Text: "the heron stands in the reeds", Location: "page 12", Start: 400, Length: 700, Selector: `{"page":12}`},
-		{Path: "notes/Heron.md", Text: "herons fish at dusk", Start: 20, Length: 40, Line: 4},
+	want := []host.SearchResult{
+		{Path: "library/Birds.pdf", Text: "the heron stands in the reeds", PlaceLabel: "page 12", Start: 400, Length: 700, Selector: `{"page":12}`},
+		{Path: "notes/Heron.md", Text: "herons fish at dusk", Start: 20, Length: 40, MatchLine: 4},
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("the passages are %+v, want %+v", got, want)
@@ -75,17 +75,17 @@ func TestASearchClientReadsThePassagesTheHostFinds(t *testing.T) {
 	}
 }
 
-func TestSearchClientReturnsErrorsOfPassageSearch(t *testing.T) {
+func TestSearchClientReturnsErrorsOfTextSearch(t *testing.T) {
 	for name, tc := range map[string]struct {
-		h    *passagesHost
+		h    *textSearchHost
 		want error
 	}{
-		"no vault":          {&passagesHost{code: v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_VAULT}, host.ErrNoVault},
-		"no search index":   {&passagesHost{code: v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL}, host.ErrNoModel},
-		"permission denied": {&passagesHost{status: connect.NewError(connect.CodePermissionDenied, errors.New("no"))}, host.ErrPermissionDenied},
+		"no vault":          {&textSearchHost{code: v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_VAULT}, host.ErrNoVault},
+		"no search index":   {&textSearchHost{code: v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL}, host.ErrNoModel},
+		"permission denied": {&textSearchHost{status: connect.NewError(connect.CodePermissionDenied, errors.New("no"))}, host.ErrPermissionDenied},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if _, err := dialPassages(t, tc.h).SearchPassages(t.Context(), host.PassageQuery{Query: "heron"}); !errors.Is(err, tc.want) {
+			if _, err := dialTextSearch(t, tc.h).SearchText(t.Context(), host.SearchResultQuery{Query: "heron"}); !errors.Is(err, tc.want) {
 				t.Errorf("got %v, want %v", err, tc.want)
 			}
 		})
@@ -93,10 +93,10 @@ func TestSearchClientReturnsErrorsOfPassageSearch(t *testing.T) {
 }
 
 func TestASearchClientSendsALimitBeyondInt32AsTheNearestInt32(t *testing.T) {
-	h := &passagesHost{}
-	c := dialPassages(t, h)
+	h := &textSearchHost{}
+	c := dialTextSearch(t, h)
 	for limit, want := range map[int]int32{1 << 40: math.MaxInt32, -(1 << 40): math.MinInt32, 7: 7} {
-		if _, err := c.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Limit: limit}); err != nil {
+		if _, err := c.SearchText(t.Context(), host.SearchResultQuery{Query: "heron", Limit: limit}); err != nil {
 			t.Fatal(err)
 		}
 		if got := h.request.GetLimit(); got != want {

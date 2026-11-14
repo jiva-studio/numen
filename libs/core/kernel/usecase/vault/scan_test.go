@@ -56,8 +56,8 @@ func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string
 	}
 	out := make([]string, 0, len(found))
 	for _, p := range found {
-		if !slices.Contains(out, p.Source) {
-			out = append(out, p.Source)
+		if !slices.Contains(out, p.Path) {
+			out = append(out, p.Path)
 		}
 	}
 	return out

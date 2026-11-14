@@ -49,7 +49,7 @@ func (c Config) Embedders(ctx context.Context) (indexing, asking searchsourcepor
 	return searchSources(searchOf(c), ctx)
 }
 
-func (c Config) NewSearchOver(passages sourceport.PassageQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
+func (c Config) NewSearchOver(passages sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
 	return newSearchOver(searchOf(c), passages, sources, errorHandler, nil)
 }
 

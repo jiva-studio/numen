@@ -20,7 +20,7 @@ type nearestFake struct {
 	coarse     []source.CoarseQuery
 	stored     []source.StoredVectorQuery
 	enclosed   [][]domain.ChunkID
-	enclosing  map[domain.ChunkID]domain.Passage
+	enclosing  map[domain.ChunkID]domain.SearchResult
 }
 
 func (f *nearestFake) holdsSimilarity(chunk domain.ChunkID, similarity float64) {
@@ -68,11 +68,11 @@ func (f *nearestFake) ListStoredVectors(_ context.Context, q source.StoredVector
 	return out, nil
 }
 
-func (f *nearestFake) GetEnclosingPassages(_ context.Context, _ domain.VaultID, chunks []domain.ChunkID) ([]domain.Passage, error) {
+func (f *nearestFake) GetEnclosingResults(_ context.Context, _ domain.VaultID, chunks []domain.ChunkID) ([]domain.SearchResult, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.enclosed = append(f.enclosed, chunks)
-	out := make([]domain.Passage, 0, len(chunks))
+	out := make([]domain.SearchResult, 0, len(chunks))
 	for _, id := range chunks {
 		if p, ok := f.enclosing[id]; ok {
 			out = append(out, p)

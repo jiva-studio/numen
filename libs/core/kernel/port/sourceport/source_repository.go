@@ -22,7 +22,7 @@ type SourceRepository interface {
 
 	// RemoveSources deletes the sources of one kind at the given paths, and
 	// everything derived from them. A source the vault does not hold cannot be
-	// read, so a passage naming it can never be displayed; a row left in the
+	// read, so a search result naming it can never be displayed; a row left in the
 	// index would match a search but could not be opened.
 	RemoveSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, paths []string) error
 

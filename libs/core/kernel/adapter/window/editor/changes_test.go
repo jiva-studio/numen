@@ -1162,14 +1162,14 @@ func TestANameReturnsWhichOfFourTheNoteIs(t *testing.T) {
 	}
 }
 
-// TestAPassageSaysWhichOfFourItsNoteIs. A passage is drawn with the mark of the
+// TestAResultReturnsWhichOfFourItsNoteIs. A search result is drawn with the mark of the
 // note it was read out of.
-func TestAPassageReturnsWhichOfFourItsNoteIs(t *testing.T) {
+func TestAResultReturnsWhichOfFourItsNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Daily.md": "---\ntype: preset\ntitle: Daily\n---\n\n# Daily\n\nNo engine beats a reversible engine.\n",
 	})
 
-	answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
+	answer, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 	}))
 	if err != nil {
@@ -1185,9 +1185,9 @@ func TestAPassageReturnsWhichOfFourItsNoteIs(t *testing.T) {
 	}
 }
 
-// TestAPassageSaysWhatTheVaultHoldsAtItsPath covers the list rendering: a note
+// TestAResultReturnsWhatTheVaultContainsAtItsPath covers the list rendering: a note
 // entry is reported as a note, and any other file as a file.
-func TestAPassageReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
+func TestAResultReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md":          "---\ntitle: Engines\n---\n\n# Engines\n\nA book of engines.\n",
 		"library/A Book.epub": string(testsupport.Book(t)),
@@ -1197,7 +1197,7 @@ func TestAPassageReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 	// it once extraction has finished.
 	kinds := map[string]bool{}
 	for range 500 {
-		answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
+		answer, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 			Query: "book", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 		}))
 		if err != nil {
@@ -1224,7 +1224,7 @@ func TestAPassageReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 	}
 }
 
-func TestSearchPassages_EachModeAnswersSeparately(t *testing.T) {
+func TestSearchText_EachModeAnswersSeparately(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
@@ -1232,7 +1232,7 @@ func TestSearchPassages_EachModeAnswersSeparately(t *testing.T) {
 	// No model is set here, so the meaning half has nothing to answer with and
 	// the words half answers on its own. Which is which is the handler's to get
 	// right: both halves answer with the same shape.
-	words, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
+	words, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 	}))
 	if err != nil {
@@ -1242,7 +1242,7 @@ func TestSearchPassages_EachModeAnswersSeparately(t *testing.T) {
 		t.Fatal("the words half found nothing for a word that is written")
 	}
 
-	meaning, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
+	meaning, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_MEANING,
 	}))
 	if err != nil {
@@ -1253,12 +1253,12 @@ func TestSearchPassages_EachModeAnswersSeparately(t *testing.T) {
 	}
 }
 
-func TestAPassageReturnsWhichNoteItCameOutOf(t *testing.T) {
+func TestAResultReturnsWhichNoteItCameOutOf(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
-	answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
+	answer, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 	}))
 	if err != nil {
@@ -1276,19 +1276,19 @@ func TestAPassageReturnsWhichNoteItCameOutOf(t *testing.T) {
 	if first.GetPath() == "" {
 		t.Error("the passage says nothing about where it came from")
 	}
-	if len(first.GetRanges()) == 0 {
+	if len(first.GetMatchRanges()) == 0 {
 		t.Error("the passage says nothing about where the word typed is in it")
 	}
 }
 
 // A hit is a location in a source, and the response carries that location,
 // which the client uses to open the source there.
-func TestAPassageReturnsWhereInItsSourceItExists(t *testing.T) {
+func TestAResultReturnsWhereInItsSourceItExists(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
-	answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
+	answer, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 	}))
 	if err != nil {
@@ -1300,7 +1300,7 @@ func TestAPassageReturnsWhereInItsSourceItExists(t *testing.T) {
 		t.Fatal("nothing found")
 	}
 	first := found[0]
-	pos := first.GetRange()
+	pos := first.GetByteRange()
 	if pos.GetEnd() <= pos.GetStart() {
 		t.Errorf("the passage is over no text: %d to %d", pos.GetStart(), pos.GetEnd())
 	}
@@ -1327,11 +1327,11 @@ func TestSearchNames_HonorsLimit(t *testing.T) {
 	}
 }
 
-func TestSearchPassages_BlankQueryReturnsNothing(t *testing.T) {
+func TestSearchText_BlankQueryReturnsNothing(t *testing.T) {
 	client, _ := openVault(t, map[string]string{"a.md": "# Entropy\n"})
 
 	for _, query := range []string{"", "   "} {
-		answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{Query: query}))
+		answer, err := client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{Query: query}))
 		if err != nil {
 			t.Fatalf("%q: %v", query, err)
 		}

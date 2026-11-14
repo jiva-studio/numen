@@ -174,8 +174,8 @@ func getParticipants(db *Index, source searchsourceport.Source) []searchusecase.
 	return []searchusecase.Participant{searchusecase.NewSource(source, db.ChunkSearch())}
 }
 
-func newSearchOver(c searchWiring, passages sourceport.PassageQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {
-	searching := searchusecase.New(passages, c.VaultReaders, c.TextReaders, sources, errorHandler, reportAnswered)
+func newSearchOver(c searchWiring, queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {
+	searching := searchusecase.New(queries, c.VaultReaders, c.TextReaders, sources, errorHandler, reportAnswered)
 	if workers := c.ResolvedCompute.Workers; workers > 0 {
 		searching.Extractors = workers
 	}
@@ -194,7 +194,7 @@ func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, 
 		Progress: db.ChunkVectors(),
 		Stats:    searchusecase.NewStats(db.ChunkVectors(), c.Clock),
 		Policy:   newFloorPolicy(db, source, errorHandler),
-		Passages: searchusecase.NewSearchPassages(newSearch(c, db, source, errorHandler, nil)),
+		TextSearch: searchusecase.NewSearchText(newSearch(c, db, source, errorHandler, nil)),
 	}
 	if source != nil {
 		access.Source = source

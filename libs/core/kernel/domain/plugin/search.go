@@ -4,10 +4,10 @@ import "github.com/jiva-studio/numen/libs/note/domain"
 
 // The limits of the search index calls.
 const (
-	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledPassages how
+	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledChunks how
 	// many small chunks it compares each of them with.
 	MaxSampledQueries  = 256
-	MaxSampledPassages = 500
+	MaxSampledChunks = 500
 )
 
 // EmbeddingState is the model in use and how far a vault is embedded under it.
@@ -30,16 +30,16 @@ type EmbeddedTexts struct {
 	Vectors [][]float32
 }
 
-// SimilarityQuery is a query vector, and the path of the note it was made from. The passages of
+// SimilarityQuery is a query vector, and the path of the note it was made from. The chunks of
 // that note are left out of its sample; an empty path leaves out none.
 type SimilarityQuery struct {
 	Path   string
 	Vector []float32
 }
 
-// SimilaritySample is the cosine similarity of each query with the sampled passages of the vault.
+// SimilaritySample is the cosine similarity of each query with the sampled chunks of the vault.
 type SimilaritySample struct {
-	PassageCount int
+	ChunkCount int
 	SourceCount  int
 	Rows         [][]float64
 }
@@ -65,8 +65,8 @@ type SearchFloor struct {
 	Default float64
 }
 
-// PassageQuery is a passage search request.
-type PassageQuery struct {
+// SearchResultQuery is a text search request.
+type SearchResultQuery struct {
 	Query      string
 	Limit      int
 	Kinds      []domain.SourceKind

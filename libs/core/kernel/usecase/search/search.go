@@ -18,7 +18,7 @@ import (
 const defaultLimit = 20
 
 // defaultExtractors is how many sources a search extracts at once when no limit
-// is set. Each one holds its decoded text until its passages are cut, so it is
+// is set. Each one holds its decoded text until its search results are cut, so it is
 // also the most decoded sources a search holds.
 const defaultExtractors = 4
 
@@ -26,7 +26,7 @@ const defaultExtractors = 4
 // the search returns, so the answer is among what it ranks.
 const lexicalCandidates = 5
 
-// DefaultFloor is the minimum cosine similarity at which a passage counts as an
+// DefaultFloor is the minimum cosine similarity at which a search result counts as an
 // answer where neither the query, a stored floor nor the search source names one.
 // The similarity a source assigns to texts about different subjects is specific
 // to the source, so the value is a starting point.
@@ -63,7 +63,7 @@ func (p Parameters) fill() Parameters {
 	return p
 }
 
-// Query is what a search asks one participant: the text, the filters, how many passages to rank and
+// Query is what a search asks one participant: the text, the filters, how many search results to rank and
 // the floor the query names, zero where the participant applies its own.
 type Query struct {
 	Text       string
@@ -74,14 +74,14 @@ type Query struct {
 	Floor      float64
 }
 
-// Ranking is the answer of one participant: passages best first. In a leading ranking the first
-// passage of a source is shown before the other passages of that source.
+// Ranking is the answer of one participant: search results best first. In a leading ranking the first
+// search result of a source is shown before the other search results of that source.
 type Ranking struct {
-	Passages  []domain.Passage
+	Results  []domain.SearchResult
 	IsLeading bool
 }
 
-// Participant answers a query with a ranking of passages. The words and the section names of the index
+// Participant answers a query with a ranking of search results. The words and the section names of the index
 // are participants of the core; a search source of a plugin is another, and all are merged the same way.
 type Participant interface {
 	Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error)
@@ -114,7 +114,7 @@ func NewByName(find VaultFinding, prepare VaultPreparing) Search {
 }
 
 // ExecuteByName resolves the vault and runs the search.
-func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p Parameters) ([]domain.Passage, error) {
+func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p Parameters) ([]domain.SearchResult, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -138,13 +138,13 @@ func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p P
 // A nil `texts` means only notes return their text.
 // `errorHandler` receives the error of a search source that could not answer; nil ignores such errors.
 // `reportAnswered` is called each time a search source answers; nil calls no one.
-func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textdomain.Readers, sources []Participant, errorHandler window.ErrorHandler, reportAnswered func()) Search {
+func New(queries sourceport.LexicalQueries, readers vaultport.VaultReaders, texts textdomain.Readers, sources []Participant, errorHandler window.ErrorHandler, reportAnswered func()) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
 	return Search{
-		words:          NewWords(passages),
-		names:          NewNames(passages),
+		words:          NewWords(queries),
+		names:          NewNames(queries),
 		sources:        sources,
 		readers:        readers,
 		texts:          texts,
@@ -155,11 +155,11 @@ func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, tex
 }
 
 // Execute asks the participants the parameters name, merges their rankings by rank,
-// and returns one passage per document.
+// and returns one search result per document.
 // A chunk that two of them place well outranks one that any of them placed first alone. The rankings are
 // fused by reciprocal rank fusion, which does not know which participant answered which ranking. The answer
-// keeps at most p.Each passages of one source and p.Limit in all.
-func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
+// keeps at most p.Each search results of one source and p.Limit in all.
+func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.SearchResult, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	return u.readForQuery(ctx, v, query, collapse(merge(rankings...), rankings, p.Each, p.Limit))
 }
 
-// asked is one participant a search asks, with the number of passages it ranks and whether its failure
+// asked is one participant a search asks, with the number of search results it ranks and whether its failure
 // fails the search.
 type asked struct {
 	participant Participant
@@ -243,7 +243,7 @@ func (u Search) rank(ctx context.Context, v domain.Vault, one asked, q Query) (*
 }
 
 // errUnreadable marks a source that exists but yields no usable text. It is not
-// a search failure: the passage is dropped and the others are returned.
+// a search failure: the search result is dropped and the others are returned.
 var errUnreadable = errors.New("nothing could be read from the source")
 
 // Mode selects one ranking of a search. A hybrid search fuses the rankings of

@@ -184,18 +184,18 @@ func (c *SearchClient) SampleSimilarities(ctx context.Context, recipe string, qu
 		rows[i] = one.GetValues()
 	}
 	return SimilaritySample{
-		PassageCount: int(res.Msg.GetPassageCount()),
+		ChunkCount: int(res.Msg.GetChunkCount()),
 		SourceCount:  int(res.Msg.GetSourceCount()),
 		Rows:         rows,
 	}, nil
 }
 
-func (c *SearchClient) SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error) {
+func (c *SearchClient) SearchText(ctx context.Context, query SearchResultQuery) ([]SearchResult, error) {
 	kinds := make([]string, len(query.Kinds))
 	for i, kind := range query.Kinds {
 		kinds[i] = string(kind)
 	}
-	res, err := c.rpc.SearchPassages(ctx, newSearchRequest(c, &v1.HostSearchServiceSearchPassagesRequest{
+	res, err := c.rpc.SearchText(ctx, newSearchRequest(c, &v1.HostSearchServiceSearchTextRequest{
 		Query: query.Query, Limit: int32(min(max(query.Limit, math.MinInt32), math.MaxInt32)), Kinds: kinds, PathPrefix: query.PathPrefix,
 	}))
 	if err != nil {
@@ -204,12 +204,12 @@ func (c *SearchClient) SearchPassages(ctx context.Context, query PassageQuery) (
 	if err := readSearchError(res.Msg.GetError()); err != nil {
 		return nil, err
 	}
-	found := make([]Passage, len(res.Msg.GetPassages()))
-	for i, one := range res.Msg.GetPassages() {
-		start, end := int(one.GetRange().GetStart()), int(one.GetRange().GetEnd())
-		found[i] = Passage{
-			Path: one.GetPath(), Text: one.GetText(), Location: one.GetLocation(),
-			Start: start, Length: end - start, Line: int(one.GetLine()), Selector: one.GetSelector(),
+	found := make([]SearchResult, len(res.Msg.GetResults()))
+	for i, one := range res.Msg.GetResults() {
+		start, end := int(one.GetByteRange().GetStart()), int(one.GetByteRange().GetEnd())
+		found[i] = SearchResult{
+			Path: one.GetPath(), Text: one.GetText(), PlaceLabel: one.GetPlaceLabel(),
+			Start: start, Length: end - start, MatchLine: int(one.GetMatchLine()), Selector: one.GetSelector(),
 		}
 	}
 	return found, nil
@@ -226,12 +226,12 @@ func (c *SearchClient) GetBestSimilarity(ctx context.Context, recipe string, que
 	return res.Msg.GetSimilarity(), nil
 }
 
-func (c *SearchClient) FindNearestPassages(ctx context.Context, query NearestQuery) ([]NearestMatch, error) {
+func (c *SearchClient) FindNearestChunks(ctx context.Context, query NearestQuery) ([]NearestMatch, error) {
 	kinds := make([]string, len(query.Kinds))
 	for i, kind := range query.Kinds {
 		kinds[i] = string(kind)
 	}
-	res, err := c.rpc.FindNearestPassages(ctx, newSearchRequest(c, &v1.FindNearestPassagesRequest{
+	res, err := c.rpc.FindNearestChunks(ctx, newSearchRequest(c, &v1.FindNearestChunksRequest{
 		Place: &v1.SearchPlace{VaultId: c.vault, Recipe: query.Recipe}, Vector: query.Vector,
 		Limit: int32(min(max(query.Limit, math.MinInt32), math.MaxInt32)), Kinds: kinds, PathPrefix: query.PathPrefix, Floor: query.Floor,
 	}))

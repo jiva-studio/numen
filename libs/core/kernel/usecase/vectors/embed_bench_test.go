@@ -88,13 +88,13 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 			}
 
 			texts := make([]string, tc.chunks)
-			passages := make([]domain.Passage, tc.chunks)
+			passages := make([]domain.SearchResult, tc.chunks)
 			for i := range tc.chunks {
 				txt := uniqueTexts[i%uniqueCount]
 				texts[i] = txt
-				passages[i] = domain.Passage{
+				passages[i] = domain.SearchResult{
 					ChunkID:   domain.ChunkID(fmt.Sprintf("chunk-%d", i)),
-					Source:    "book.epub",
+					Path:    "book.epub",
 					ChunkHash: indexfake.GetHash(txt),
 				}
 			}

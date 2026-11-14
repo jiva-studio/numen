@@ -44,23 +44,23 @@ type searchHost struct {
 	failure error
 	denied  map[string]bool
 	embeds  [][]string
-	cosine  func(query, passage []float32) float64
+	cosine  func(query, chunk []float32) float64
 }
 
-// SearchPassage is a small chunk of the index in the fake: the vector it carries and the path of the
+// SampledChunk is a small chunk of the index in the fake: the vector it carries and the path of the
 // note it belongs to.
-type SearchPassage struct {
+type SampledChunk struct {
 	Path   string
 	Vector []float32
 }
 
 // searchVault is what the index holds of one vault.
 type searchVault struct {
-	passages      map[string][]SearchPassage
+	chunks      map[string][]SampledChunk
 	chunkCount    int64
 	embeddedCount int64
 	stats         host.IndexStats
-	indexed       []host.Passage
+	indexed       []host.SearchResult
 	floors        map[string]float64
 	setCount      int
 }
@@ -75,7 +75,7 @@ var (
 func NewSearch(current domain.VaultID, others ...domain.VaultID) *Search {
 	all := &searchHost{current: current, hasShow: true, vaults: map[domain.VaultID]*searchVault{}, denied: map[string]bool{}}
 	for _, id := range append([]domain.VaultID{current}, others...) {
-		all.vaults[id] = &searchVault{passages: map[string][]SearchPassage{}, floors: map[string]float64{}}
+		all.vaults[id] = &searchVault{chunks: map[string][]SampledChunk{}, floors: map[string]float64{}}
 	}
 	return &Search{all: all}
 }
@@ -129,18 +129,18 @@ func (s *Search) Deny(permissions ...string) {
 	}
 }
 
-// SetPassages is the small chunks of the vault under the recipe, in the order the index lists them.
-func (s *Search) SetPassages(recipe string, passages []SearchPassage) {
+// SetSampledChunks is the small chunks of the vault under the recipe, in the order the index lists them.
+func (s *Search) SetSampledChunks(recipe string, chunks []SampledChunk) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
 	if one, ok := s.lookupVaultLocked(); ok {
-		one.passages[recipe] = slices.Clone(passages)
+		one.chunks[recipe] = slices.Clone(chunks)
 	}
 }
 
-// SetCosine is how the fake compares a query with a passage. The default is the cosine of the angle
+// SetCosine is how the fake compares a query with a chunk. The default is the cosine of the angle
 // between the two vectors.
-func (s *Search) SetCosine(cosine func(query, passage []float32) float64) {
+func (s *Search) SetCosine(cosine func(query, chunk []float32) float64) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
 	s.all.cosine = cosine
@@ -311,21 +311,21 @@ func (s *Search) SampleSimilarities(_ context.Context, recipe string, queries []
 	if len(queries) > host.MaxSampledQueries {
 		return host.SimilaritySample{}, host.ErrLimitExceeded
 	}
-	passages := one.passages[recipe]
-	passages = passages[:min(host.MaxSampledPassages, len(passages))]
+	chunks := one.chunks[recipe]
+	chunks = chunks[:min(host.MaxSampledChunks, len(chunks))]
 	paths := map[string]struct{}{}
-	for _, passage := range passages {
-		paths[passage.Path] = struct{}{}
+	for _, chunk := range chunks {
+		paths[chunk.Path] = struct{}{}
 	}
 	rows := make([][]float64, len(queries))
 	for i, query := range queries {
-		row, err := s.compareRowLocked(query, passages)
+		row, err := s.compareRowLocked(query, chunks)
 		if err != nil {
 			return host.SimilaritySample{}, err
 		}
 		rows[i] = row
 	}
-	return host.SimilaritySample{PassageCount: len(passages), SourceCount: len(paths), Rows: rows}, nil
+	return host.SimilaritySample{ChunkCount: len(chunks), SourceCount: len(paths), Rows: rows}, nil
 }
 
 func (s *Search) GetBestSimilarity(_ context.Context, recipe string, query []float32) (float64, error) {
@@ -339,8 +339,8 @@ func (s *Search) GetBestSimilarity(_ context.Context, recipe string, query []flo
 		return 0, err
 	}
 	best, found := 0.0, false
-	for _, passage := range one.passages[recipe] {
-		similarity := s.compareLocked(query, passage.Vector)
+	for _, chunk := range one.chunks[recipe] {
+		similarity := s.compareLocked(query, chunk.Vector)
 		if !found || similarity > best {
 			best, found = similarity, true
 		}
@@ -348,28 +348,28 @@ func (s *Search) GetBestSimilarity(_ context.Context, recipe string, query []flo
 	return best, nil
 }
 
-func (s *Search) compareRowLocked(query host.SimilarityQuery, passages []SearchPassage) ([]float64, error) {
+func (s *Search) compareRowLocked(query host.SimilarityQuery, chunks []SampledChunk) ([]float64, error) {
 	if len(query.Vector) == 0 {
 		return nil, nil
 	}
 	var row []float64
-	for _, passage := range passages {
-		if query.Path != "" && passage.Path == query.Path {
+	for _, chunk := range chunks {
+		if query.Path != "" && chunk.Path == query.Path {
 			continue
 		}
-		if len(passage.Vector) != len(query.Vector) {
+		if len(chunk.Vector) != len(query.Vector) {
 			return nil, host.ErrInvalidQuery
 		}
-		row = append(row, s.compareLocked(query.Vector, passage.Vector))
+		row = append(row, s.compareLocked(query.Vector, chunk.Vector))
 	}
 	return row, nil
 }
 
-func (s *Search) compareLocked(query, passage []float32) float64 {
+func (s *Search) compareLocked(query, chunk []float32) float64 {
 	if s.all.cosine != nil {
-		return s.all.cosine(query, passage)
+		return s.all.cosine(query, chunk)
 	}
-	return cosineOf(query, passage)
+	return cosineOf(query, chunk)
 }
 
 func (s *Search) GetSearchFloor(_ context.Context, recipe string) (host.SearchFloor, error) {
@@ -419,13 +419,13 @@ func (s *Search) SetSearchFloor(_ context.Context, recipe string, floor float64)
 	return nil
 }
 
-func cosineOf(query, passage []float32) float64 {
-	if len(query) != len(passage) || len(query) == 0 {
+func cosineOf(query, chunk []float32) float64 {
+	if len(query) != len(chunk) || len(query) == 0 {
 		return 0
 	}
 	var dot, left, right float64
 	for i, q := range query {
-		p := float64(passage[i])
+		p := float64(chunk[i])
 		dot += float64(q) * p
 		left += float64(q) * float64(q)
 		right += p * p

@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, found []domain.Passage) ([]domain.Passage, error) {
+func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, found []domain.SearchResult) ([]domain.SearchResult, error) {
 	if len(found) == 0 {
 		return nil, nil
 	}
@@ -33,11 +33,11 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 		}
 	}
 
-	groups, order := groupBySource(found)
+	groups, order := groupByPath(found)
 
-	fill := passageFill{
+	fill := resultFill{
 		query: query, found: found,
-		filled: make([]domain.Passage, len(found)), keep: make([]bool, len(found)),
+		filled: make([]domain.SearchResult, len(found)), keep: make([]bool, len(found)),
 	}
 	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(u.getExtractorLimit())
@@ -57,7 +57,7 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 		return nil, err
 	}
 
-	out := make([]domain.Passage, 0, len(found))
+	out := make([]domain.SearchResult, 0, len(found))
 	for i, k := range fill.keep {
 		if k {
 			out = append(out, fill.filled[i])
@@ -73,23 +73,23 @@ func (u Search) getExtractorLimit() int {
 	return defaultExtractors
 }
 
-// passageFill is what a search fills in: the passages found, the filled copies, the
+// resultFill is what a search fills in: the search results found, the filled copies, the
 // flags of those to keep, and the query that located them.
-type passageFill struct {
+type resultFill struct {
 	query         string
-	found, filled []domain.Passage
+	found, filled []domain.SearchResult
 	keep          []bool
 }
 
 func fillSource(
-	ctx context.Context, of sourceTexts, source string, indices []int, fill passageFill,
+	ctx context.Context, of sourceTexts, source string, indices []int, fill resultFill,
 ) error {
 	found, filled, keep, query := fill.found, fill.filled, fill.keep, fill.query
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 	first := found[indices[0]]
-	prose, version, err := of.getText(ctx, source, first.Producer)
+	prose, version, err := of.getText(ctx, source, first.VersionID)
 	if edit.IsNoNote(err) || errors.Is(err, errUnreadable) {
 		return nil
 	}
@@ -103,13 +103,13 @@ func fillSource(
 		}
 		p := found[i]
 		p.Text = span(prose, p.Start, p.Length)
-		p.Line = lineOf(prose, opens, p.Start+p.HitAt)
+		p.MatchLine = lineOf(prose, opens, p.Start+p.MatchOffset)
 		if version != nil {
-			hitAt := p.HitAt
-			if hitAt == 0 {
-				hitAt = findHitOffset(p.Text, query)
+			matchOffset := p.MatchOffset
+			if matchOffset == 0 {
+				matchOffset = findMatchOffset(p.Text, query)
 			}
-			p.Selector = version.GetSelector(p.Start + hitAt)
+			p.Selector = version.GetSelector(p.Start + matchOffset)
 		}
 		filled[i] = p
 		keep[i] = true
@@ -117,7 +117,7 @@ func fillSource(
 	return nil
 }
 
-func findHitOffset(text, query string) int {
+func findMatchOffset(text, query string) int {
 	lower := strings.ToLower(text)
 	best := len(text) + 1
 	for word := range strings.FieldsSeq(strings.ToLower(query)) {
@@ -131,19 +131,19 @@ func findHitOffset(text, query string) int {
 	return best
 }
 
-func groupBySource(found []domain.Passage) (map[string][]int, []string) {
+func groupByPath(found []domain.SearchResult) (map[string][]int, []string) {
 	groups := make(map[string][]int, len(found))
 	order := make([]string, 0, len(found))
 	for i, p := range found {
-		if _, target := groups[p.Source]; !target {
-			order = append(order, p.Source)
+		if _, target := groups[p.Path]; !target {
+			order = append(order, p.Path)
 		}
-		groups[p.Source] = append(groups[p.Source], i)
+		groups[p.Path] = append(groups[p.Path], i)
 	}
 	return groups, order
 }
 
-// sourceTexts is where a passage's text is read from: a note's own file, and
+// sourceTexts is where a search result's text is read from: a note's own file, and
 // the text version every other source was cut from.
 type sourceTexts struct {
 	files vaultport.VaultReader

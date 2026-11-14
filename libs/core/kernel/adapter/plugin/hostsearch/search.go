@@ -29,12 +29,12 @@ type Source interface {
 type Samples interface {
 	// ListSmallChunkVectors returns at most `limit` small chunks of the vault that carry a
 	// vector under the recipe.
-	ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]searchpolicy.Passage, error)
+	ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]searchpolicy.SampledChunk, error)
 }
 
-// Nearest reads the similarity of the best passage of a vault to a vector.
+// Nearest reads the similarity of the best chunk of a vault to a vector.
 type Nearest interface {
-	// Execute returns the cosine similarity of the passage of the vault nearest the query vector
+	// Execute returns the cosine similarity of the chunk of the vault nearest the query vector
 	// under the recipe, and zero where there is none.
 	Execute(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32) (float64, error)
 }
@@ -58,13 +58,13 @@ type Search struct {
 	Progress Progress
 	Stats    *search.Stats
 	Policy   search.FloorPolicy
-	Passages *search.SearchPassages
+	TextSearch *search.SearchText
 }
 
-// SearchPassages returns passages matching the query by keywords and, when a search source exists, by
+// SearchText returns search results matching the query by keywords and, when a search source exists, by
 // the source.
-func (s Search) SearchPassages(ctx context.Context, v domain.Vault, q plugin.PassageQuery) ([]domain.Passage, error) {
-	return s.Passages.Execute(ctx, v, search.PassageQuery{
+func (s Search) SearchText(ctx context.Context, v domain.Vault, q plugin.SearchResultQuery) ([]domain.SearchResult, error) {
+	return s.TextSearch.Execute(ctx, v, search.SearchResultQuery{
 		Query: q.Query, Limit: q.Limit, Kinds: q.Kinds, PathPrefix: q.PathPrefix,
 	})
 }
@@ -128,7 +128,7 @@ func (s Search) EmbedTexts(ctx context.Context, texts []string) (plugin.Embedded
 
 // SampleSimilarities compares each query with the sampled small chunks of the vault. At most
 // MaxSampledQueries queries are taken, else ErrLimitExceeded. A query whose dimension count differs
-// from a passage's returns ErrInvalidQuery.
+// from a chunk's returns ErrInvalidQuery.
 func (s Search) SampleSimilarities(ctx context.Context, v domain.Vault, recipe string, queries []plugin.SimilarityQuery) (plugin.SimilaritySample, error) {
 	if err := s.checkRecipe(recipe); err != nil {
 		return plugin.SimilaritySample{}, err
@@ -136,7 +136,7 @@ func (s Search) SampleSimilarities(ctx context.Context, v domain.Vault, recipe s
 	return search.SampleSimilarities(ctx, s.Samples, v, recipe, queries)
 }
 
-// GetBestSimilarity is the similarity of the passage of the vault nearest the query.
+// GetBestSimilarity is the similarity of the chunk of the vault nearest the query.
 func (s Search) GetBestSimilarity(ctx context.Context, v domain.Vault, recipe string, query []float32) (float64, error) {
 	if err := s.checkRecipe(recipe); err != nil {
 		return 0, err
@@ -144,9 +144,9 @@ func (s Search) GetBestSimilarity(ctx context.Context, v domain.Vault, recipe st
 	return s.Nearest.Execute(ctx, v.ID, recipe, query)
 }
 
-// FindNearestPassages returns the small chunks of the vault nearest the vector under the recipe of the place,
+// FindNearestChunks returns the small chunks of the vault nearest the vector under the recipe of the place,
 // nearest first, at or above the floor the query names, else the effective floor of the vault.
-func (s Search) FindNearestPassages(ctx context.Context, v domain.Vault, q sourcedomain.NearestQuery) ([]searchsource.Match, error) {
+func (s Search) FindNearestChunks(ctx context.Context, v domain.Vault, q sourcedomain.NearestQuery) ([]searchsource.Match, error) {
 	if err := s.checkRecipe(q.Recipe); err != nil {
 		return nil, err
 	}
@@ -197,5 +197,5 @@ func convertSource(source search.FloorSourceKind) plugin.FloorSource {
 
 // Access returns the capabilities of the search the way hostendpoint serves them.
 func (s Search) Access() *hostendpoint.SearchAccess {
-	return &hostendpoint.SearchAccess{SearchIndex: s, PassageSearch: s, SearchFloors: s}
+	return &hostendpoint.SearchAccess{SearchIndex: s, TextSearch: s, SearchFloors: s}
 }

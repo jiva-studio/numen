@@ -79,7 +79,7 @@ func TestSearchFloorsSurviveReopeningTheIndex(t *testing.T) {
 	}
 }
 
-func TestSearchSamplePassagesAreSmallChunksWithAVectorOfTheRecipe(t *testing.T) {
+func TestSearchSampleChunksAreSmallChunksWithAVectorOfTheRecipe(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	book(t, db, getFirstVault(), "library/one.epub", 0x0f)
@@ -129,7 +129,7 @@ func TestSearchSamplePassagesAreSmallChunksWithAVectorOfTheRecipe(t *testing.T) 
 	}
 }
 
-func TestGetBestSimilarityIsTheNearestPassageOfTheVault(t *testing.T) {
+func TestGetBestSimilarityIsTheNearestChunkOfTheVault(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	book(t, db, getFirstVault(), "library/one.epub", 0x00)

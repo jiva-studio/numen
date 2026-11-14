@@ -7,15 +7,15 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func newRanking(chunks ...domain.ChunkID) []domain.Passage {
-	out := make([]domain.Passage, 0, len(chunks))
+func newRanking(chunks ...domain.ChunkID) []domain.SearchResult {
+	out := make([]domain.SearchResult, 0, len(chunks))
 	for _, c := range chunks {
-		out = append(out, domain.Passage{ChunkID: c, Source: "s"})
+		out = append(out, domain.SearchResult{ChunkID: c, Path: "s"})
 	}
 	return out
 }
 
-func chunksIn(passages []domain.Passage) []domain.ChunkID {
+func chunksIn(passages []domain.SearchResult) []domain.ChunkID {
 	out := make([]domain.ChunkID, 0, len(passages))
 	for _, p := range passages {
 		out = append(out, p.ChunkID)
@@ -71,9 +71,9 @@ func TestTheFusedOrderIsTheSumOfReciprocalRanks(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			var rankings []Ranking
-			rankings = append(rankings, Ranking{Passages: newRanking(c.words...)})
+			rankings = append(rankings, Ranking{Results: newRanking(c.words...)})
 			if c.dense != nil {
-				rankings = append(rankings, Ranking{Passages: newRanking(c.dense...)})
+				rankings = append(rankings, Ranking{Results: newRanking(c.dense...)})
 			}
 			got := chunksIn(merge(rankings...))
 			if !slices.Equal(got, c.want) {
@@ -84,12 +84,12 @@ func TestTheFusedOrderIsTheSumOfReciprocalRanks(t *testing.T) {
 }
 
 func TestOneDocumentConsumesOneResult(t *testing.T) {
-	// One passage per source, so an answer names each document once.
-	fused := []domain.Passage{
-		{ChunkID: "1", Source: "book.epub"},
-		{ChunkID: "2", Source: "book.epub"},
-		{ChunkID: "3", Source: "note.md"},
-		{ChunkID: "4", Source: "book.epub"},
+	// One search result per source, so an answer names each document once.
+	fused := []domain.SearchResult{
+		{ChunkID: "1", Path: "book.epub"},
+		{ChunkID: "2", Path: "book.epub"},
+		{ChunkID: "3", Path: "note.md"},
+		{ChunkID: "4", Path: "book.epub"},
 	}
 	got := collapse(fused, nil, 1, 10)
 	if len(got) != 2 {
@@ -103,44 +103,44 @@ func TestOneDocumentConsumesOneResult(t *testing.T) {
 func TestCollapse_DocumentUsesNamedSection(t *testing.T) {
 	// The paragraph that mentions the words most often ranks first in the fused
 	// order, and the section carrying the name is further down.
-	fused := []domain.Passage{
-		{ChunkID: "2", Source: "book.epub"},
-		{ChunkID: "3", Source: "note.md"},
-		{ChunkID: "1", Source: "book.epub"},
+	fused := []domain.SearchResult{
+		{ChunkID: "2", Path: "book.epub"},
+		{ChunkID: "3", Path: "note.md"},
+		{ChunkID: "1", Path: "book.epub"},
 	}
-	named := []domain.Passage{{ChunkID: "1", Source: "book.epub"}}
+	named := []domain.SearchResult{{ChunkID: "1", Path: "book.epub"}}
 
-	got := collapse(fused, []Ranking{{Passages: named, IsLeading: true}}, 1, 10)
+	got := collapse(fused, []Ranking{{Results: named, IsLeading: true}}, 1, 10)
 	if len(got) != 2 {
 		t.Fatalf("%d results, want one per document: %+v", len(got), got)
 	}
 	if got[0].ChunkID != "1" {
 		t.Errorf("the book answered with chunk %s, want the section it names", got[0].ChunkID)
 	}
-	if got[0].Source != "book.epub" || got[1].Source != "note.md" {
+	if got[0].Path != "book.epub" || got[1].Path != "note.md" {
 		t.Errorf("the documents came back in another order: %+v", got)
 	}
 }
 
 func TestADocumentWithNoSectionOfThatNameIsUnchanged(t *testing.T) {
-	fused := []domain.Passage{
-		{ChunkID: "2", Source: "book.epub"},
-		{ChunkID: "1", Source: "book.epub"},
+	fused := []domain.SearchResult{
+		{ChunkID: "2", Path: "book.epub"},
+		{ChunkID: "1", Path: "book.epub"},
 	}
-	named := []domain.Passage{{ChunkID: "9", Source: "other.epub"}}
+	named := []domain.SearchResult{{ChunkID: "9", Path: "other.epub"}}
 
-	got := collapse(fused, []Ranking{{Passages: named, IsLeading: true}}, 1, 10)
+	got := collapse(fused, []Ranking{{Results: named, IsLeading: true}}, 1, 10)
 	if len(got) != 1 || got[0].ChunkID != "2" {
 		t.Errorf("got %+v, want the best-ranked chunk of the book", got)
 	}
 }
 
-func TestCollapse_LimitsPassagesPerDocument(t *testing.T) {
-	fused := []domain.Passage{
-		{ChunkID: "1", Source: "book.epub", Start: 0, Length: 10},
-		{ChunkID: "2", Source: "book.epub", Start: 90, Length: 10},
-		{ChunkID: "3", Source: "note.md", Start: 0, Length: 10},
-		{ChunkID: "4", Source: "book.epub", Start: 500, Length: 10},
+func TestCollapse_LimitsResultsPerDocument(t *testing.T) {
+	fused := []domain.SearchResult{
+		{ChunkID: "1", Path: "book.epub", Start: 0, Length: 10},
+		{ChunkID: "2", Path: "book.epub", Start: 90, Length: 10},
+		{ChunkID: "3", Path: "note.md", Start: 0, Length: 10},
+		{ChunkID: "4", Path: "book.epub", Start: 500, Length: 10},
 	}
 
 	got := collapse(fused, nil, 2, 10)
@@ -153,15 +153,15 @@ func TestCollapse_LimitsPassagesPerDocument(t *testing.T) {
 }
 
 func TestASectionIsTheFirstOfWhatADocumentAnswersWith(t *testing.T) {
-	// The section ranks lower in the fused order than the passage that mentions
+	// The section ranks lower in the fused order than the search result that mentions
 	// the words most often, and both are returned.
-	fused := []domain.Passage{
-		{ChunkID: "2", Source: "book.epub", Start: 90, Length: 10},
-		{ChunkID: "1", Source: "book.epub", Start: 0, Length: 10},
+	fused := []domain.SearchResult{
+		{ChunkID: "2", Path: "book.epub", Start: 90, Length: 10},
+		{ChunkID: "1", Path: "book.epub", Start: 0, Length: 10},
 	}
-	named := []domain.Passage{{ChunkID: "1", Source: "book.epub", Start: 0, Length: 10}}
+	named := []domain.SearchResult{{ChunkID: "1", Path: "book.epub", Start: 0, Length: 10}}
 
-	got := collapse(fused, []Ranking{{Passages: named, IsLeading: true}}, 2, 10)
+	got := collapse(fused, []Ranking{{Results: named, IsLeading: true}}, 2, 10)
 	if len(got) != 2 {
 		t.Fatalf("%d results, want the section and the passage: %+v", len(got), got)
 	}
@@ -170,12 +170,12 @@ func TestASectionIsTheFirstOfWhatADocumentAnswersWith(t *testing.T) {
 	}
 }
 
-func TestOnePlaceIsOnePassageHoweverManyRowsStandThere(t *testing.T) {
+func TestOnePlaceIsOneResultHoweverManyRowsStandThere(t *testing.T) {
 	// A hit and the chunk enclosing it are two rows saying the same place.
-	fused := []domain.Passage{
-		{ChunkID: "7", Source: "book.epub", Start: 100, Length: 20},
-		{ChunkID: "8", Source: "book.epub", Start: 100, Length: 20},
-		{ChunkID: "9", Source: "book.epub", Start: 400, Length: 20},
+	fused := []domain.SearchResult{
+		{ChunkID: "7", Path: "book.epub", Start: 100, Length: 20},
+		{ChunkID: "8", Path: "book.epub", Start: 100, Length: 20},
+		{ChunkID: "9", Path: "book.epub", Start: 400, Length: 20},
 	}
 
 	got := collapse(fused, nil, 3, 10)
@@ -188,10 +188,10 @@ func TestOnePlaceIsOnePassageHoweverManyRowsStandThere(t *testing.T) {
 }
 
 func TestTheLimitIsWhatReachesBack(t *testing.T) {
-	fused := []domain.Passage{
-		{ChunkID: "1", Source: "a"},
-		{ChunkID: "2", Source: "b"},
-		{ChunkID: "3", Source: "c"},
+	fused := []domain.SearchResult{
+		{ChunkID: "1", Path: "a"},
+		{ChunkID: "2", Path: "b"},
+		{ChunkID: "3", Path: "c"},
 	}
 	if got := collapse(fused, nil, 1, 2); len(got) != 2 {
 		t.Errorf("%d results for a limit of two: %+v", len(got), got)
