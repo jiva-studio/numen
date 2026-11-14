@@ -308,7 +308,7 @@ func CheckTextScale(name string, scale float64) error {
 }
 
 func getThemeSources(c settingsWiring, files themefiles.Files) themeusecase.Sources {
-	return themeusecase.Sources{Presets: files, Own: files, Plugins: themefiles.NewPluginThemes(c.PluginHost.Runtime)}
+	return themeusecase.Sources{Presets: files, Own: files, Plugins: themefiles.NewPluginThemes(pluginInfos{c.PluginHost.Runtime.PluginLister, c.PluginHost.Runtime.PluginResolver})}
 }
 
 func openThemeFiles(c settingsWiring) (themefiles.Files, error) {

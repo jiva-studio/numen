@@ -10,7 +10,7 @@ import {
   usePluginStyles,
   type PluginLoaderDeps,
 } from '@numen/plugin-loader'
-import { createNoticeQueue, loadFrameRuntime, useWindowFrame } from '@numen/workbench'
+import { createNoticeQueue, useWindowFrame } from '@numen/workbench'
 import { createWindowCommands } from '@/entities/plugin'
 import { createWindowTabs } from '@/entities/tab'
 import { createVaultsHost, useVaults } from '@/entities/vault'
@@ -19,6 +19,7 @@ import { useAppStart } from '@/features/app-start'
 import { useWindowKeys } from '@/features/window-keys'
 import { useWindowTasks } from '@/features/window-tasks'
 import { formatError } from '@/shared/api/errors'
+import { loadFrameRuntime } from '@/app/runtime'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { createShellHost } from '../plugins/host'
 

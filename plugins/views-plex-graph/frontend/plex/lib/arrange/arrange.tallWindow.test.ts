@@ -1,4 +1,4 @@
-/** A wide note of a column on the right may sit where a narrower one before it left room, above or below it. */
+/** A tall narrow window with a wide focus: a side block takes the height of the window above and below the focus. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
@@ -72,7 +72,7 @@ describe('a tall narrow window with a wide focus', () => {
     ).toBe(true)
   })
 
-  it('shows every sibling, since the column has free places above and below it', () => {
+  it('shows every sibling, since their block takes the height of the window above and below the focus', () => {
     expect(frame.overflow.sibling).toBeUndefined()
   })
 })

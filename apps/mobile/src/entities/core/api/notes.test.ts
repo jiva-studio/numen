@@ -26,6 +26,21 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+describe('getting the opening note', () => {
+  it('gives the path of the opening note', async () => {
+    const { api, requests } = answerWith({ note: { path: 'Physics.md' } })
+
+    expect(await api.getOpeningPath()).toBe('Physics.md')
+    expect(requests).toStrictEqual([{}])
+  })
+
+  it('gives null when the vault has no opening note', async () => {
+    const { api } = answerWith({})
+
+    expect(await api.getOpeningPath()).toBeNull()
+  })
+})
+
 describe('reading a note', () => {
   it('gives the prose and the file it came out of', async () => {
     const { api, requests } = answerWith({ body: 'One line.\n', at: FILE })

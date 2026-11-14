@@ -27,14 +27,7 @@ func windowWithCases(t *testing.T) (*container.OpenedWindow, container.Config, *
 		t.Fatal(err)
 	}
 
-	db, err := container.OpenIndex(cfg, t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	cases := &container.WindowUseCases{}
-	opened, err := container.OpenWindowWith(cfg, t.Context(), container.WindowOpening{
-		DB: db, Named: "one", Out: io.Discard, UseCases: cases,
-	})
+	opened, err := container.OpenWindow(cfg, t.Context(), "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +36,7 @@ func windowWithCases(t *testing.T) (*container.OpenedWindow, container.Config, *
 			t.Error(err)
 		}
 	})
-	return opened, cfg, cases
+	return opened, cfg, &opened.UseCases
 }
 
 // TestTheWindowIsNamedAfterTheFileInFrontOfThePerson checks that the page
