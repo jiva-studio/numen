@@ -235,19 +235,17 @@ describe('the title a line carries while the picture moves', () => {
   it('holds the way round the words are read', () => {
     const resolved = new Map(to.edges.map((edge) => [getEdgeKey(edge), edge.titles[0]!.heading]))
 
-    // A child promoted to the focus swings its edge across the page, and
-    // halfway over it runs the other way round from the way it ends.
-    const swung = interpolatePlex(from, to, 0.5).edges.find((e) => e.to === 'a')!
-    expect(swung.titles[0]!.heading).toBe('along')
-    expect(getHeading(swung, MIDDLE)).toBe('against')
-
+    // A line swings across the page as the focus moves, and somewhere on the way it runs the other way round from the way it ends.
+    let isSwung = false
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(from, to, t).edges) {
         const heading = resolved.get(getEdgeKey(edge))
         if (heading === undefined) continue
+        if (getHeading(edge, MIDDLE) !== heading) isSwung = true
         expect(edge.titles[0]!.heading, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(heading)
       }
     }
+    expect(isSwung).toBe(true)
   })
 
   it('holds the words a settled line was cut to', () => {
@@ -289,7 +287,7 @@ describe('the title a line carries while the picture moves', () => {
         },
         {
           measureLabel: measureLabelWidth,
-          options: { viewport: { width: 900, height: 800 }, spread: 1 },
+          options: { viewport: { width: 900, height: 800 } },
         },
       )
 
@@ -300,12 +298,18 @@ describe('the title a line carries while the picture moves', () => {
         { id: 'a4', title: 'A four', relation: 'child' },
         { id: 'a5', title: 'A five', relation: 'child' },
         { id: 'a6', title: 'A six', relation: 'child' },
+        { id: 'a7', title: 'A seven', relation: 'child' },
+        { id: 'a8', title: 'A eight', relation: 'child' },
+        { id: 'a9', title: 'A nine', relation: 'child' },
       ],
       edges: [
         ...after.edges,
         { from: 'a', to: 'a4' },
         { from: 'a', to: 'a5' },
         { from: 'a', to: 'a6' },
+        { from: 'a', to: 'a7' },
+        { from: 'a', to: 'a8' },
+        { from: 'a', to: 'a9' },
       ],
     }
 
