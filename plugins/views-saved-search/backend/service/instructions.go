@@ -15,8 +15,9 @@ const (
 		"rerank tells the reranking model what makes a result relevant, in the user's words. " +
 		"Neighboring passages of one file come back as one result. " +
 		"A query that is not valid returns no result and lists each problem under errors with its line and column."
-	quotesSentence     = "Write the string of a CEL condition in single quotes when the text holds double quotes, for example words('\"harbor master\" NEAR tides')."
-	exampleSentence    = "Example: kind == \"pdf\" && path.startsWith(\"Atlases/\") && (meaning(\"tides of the northern harbor\") || (words(\"tide\") && words(\"harbor\"))) && !meaning(\"lighthouse construction\")."
+	quotesSentence  = "Write the string of a CEL condition in single quotes when the text holds double quotes, for example words('\"harbor master\" NEAR tides')."
+	exampleSentence = "Example: kind == \"pdf\" && path.startsWith(\"Atlases/\") && " +
+		"(meaning(\"tides of the northern harbor\") || (words(\"tide\") && words(\"harbor\"))) && !meaning(\"lighthouse construction\")."
 	resultLinkSentence = "Link each result you cite where you cite it, as a markdown link to the uri that saved_search_preview returns for it."
 	truncatedSentence  = "A passage is truncated, often mid-sentence: read more with library_read before you conclude that a source does not cover a topic."
 )

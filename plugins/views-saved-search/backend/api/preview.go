@@ -34,7 +34,7 @@ type PreviewResult struct {
 	Length     int      `json:"length" jsonschema:"the length of the result in bytes; neighboring passages of one file are joined into one result"`
 	Line       int      `json:"line" jsonschema:"the line of the best passage, counted from 1"`
 	URI        string   `json:"uri" jsonschema:"the address of this result; use it as the target of a markdown link"`
-	Score      *float64 `json:"score,omitempty" jsonschema:"the relevance score, rounded to 3 decimals: the reranking score when order is reranked, else the similarity by meaning; absent for a result found by words, kind or path alone"`
+	Score      *float64 `json:"score,omitempty" jsonschema:"the reranking score in reranked order, else the similarity by meaning, to 3 decimals; absent when only words, kind or path matched"`
 	ChunkCount int      `json:"chunkCount" jsonschema:"how many passages were joined into this result"`
 }
 
