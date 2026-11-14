@@ -30,6 +30,7 @@ const GO_MODULES = [
   'plugins/engines-ocr',
   'plugins/tools-proofreading',
   'plugins/tools-search-relevance',
+  'plugins/tools-templates',
   'plugins/tools-updater',
   'plugins/readers-epub',
   'plugins/readers-pdf',
