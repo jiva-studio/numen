@@ -115,7 +115,7 @@ func loadUnigramTokenizer(raw []byte) (*unigramTokenizer, error) {
 func findPadID(tokens []addedToken) (int, bool) {
 	id, found := 0, false
 	for _, token := range tokens {
-		if token.Content == "<pad>" || token.Content == "[PAD]" {
+		if token.Special && (token.Content == "<pad>" || token.Content == "[PAD]") {
 			id, found = token.ID, true
 		}
 	}
