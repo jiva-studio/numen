@@ -68,3 +68,18 @@ func TestGetPadIDReturnsTheAddedPadToken(t *testing.T) {
 		t.Errorf("GetPadID() without a pad token = %d, true, want false", id)
 	}
 }
+
+// hftokenizer reads a pad token only among the special added tokens.
+func TestGetPadIDIgnoresAPadTokenThatIsNotSpecial(t *testing.T) {
+	for _, content := range []string{"<pad>", "[PAD]"} {
+		path := writeVariant(t, func(file map[string]any) {
+			file["added_tokens"] = []any{
+				map[string]any{"id": 0, "content": "<unk>", "special": true},
+				map[string]any{"id": 3, "content": content, "special": false},
+			}
+		})
+		if id, ok := loadTokenizer(t, path).GetPadID(); ok {
+			t.Errorf("GetPadID() with a %s that is not special = %d, true, want false", content, id)
+		}
+	}
+}

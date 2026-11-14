@@ -47,8 +47,8 @@ func TestWhatThePluginGoModRulesReject(t *testing.T) {
 }
 
 // The go.mod of every plugin declares the module of its folder and requires directly only the
-// plugin SDK and third-party code.
-func TestNoPluginModuleRequiresMoreThanTheSDK(t *testing.T) {
+// plugin SDK, libs/shared and third-party code.
+func TestNoPluginModuleRequiresMoreThanTheSDKAndTheSharedLibraries(t *testing.T) {
 	for _, dir := range load.ListPluginModules(t) {
 		file := load.ReadGoMod(t, filepath.Join(dir, "go.mod"))
 		for _, why := range getPluginGoModViolations(filepath.Base(dir), file) {

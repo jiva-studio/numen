@@ -57,8 +57,8 @@ func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 	}
 }
 
-// A plugin imports the plugin SDK and third-party code, in its sources and in its tests, under
-// every build constraint.
+// A plugin imports the plugin SDK, libs/shared and third-party code, in its sources and in its tests,
+// under every build constraint.
 func TestNoPluginImportsAnotherPluginOrTheCore(t *testing.T) {
 	for _, dir := range load.ListPluginModules(t) {
 		mod := load.PluginsPrefix + filepath.Base(dir)
@@ -99,7 +99,7 @@ linters:
 	if err != nil || len(gaps) != 0 {
 		t.Fatalf("a complete configuration has gaps %v (%v)", gaps, err)
 	}
-	shared := strings.Replace(complete, `allow: ["`+load.SdkModule+`"]`, `allow: ["`+load.SdkModule+`", "`+load.NumenRoot+`libs/shared"]`, 1)
+	shared := strings.Replace(complete, `allow: ["`+load.SdkModule+`"]`, `allow: ["`+load.SdkModule+`", "`+load.NumenRoot+`libs/shared/"]`, 1)
 	if gaps, err := getDepguardGaps([]byte(shared)); err != nil || len(gaps) != 0 {
 		t.Errorf("a configuration that allows the shared libraries has gaps %v (%v)", gaps, err)
 	}
@@ -107,11 +107,14 @@ linters:
 	missingDeny := strings.Replace(complete, "connectrpc.com/connect", "example.com/other", 1)
 	extraAllow := strings.Replace(complete, `allow: ["`+load.SdkModule+`"]`, `allow: ["`+load.NotesModule+`"]`, 1)
 	extraPrefix := strings.Replace(complete, `allow: ["`+load.SdkModule+`"]`, `allow: ["`+load.SdkModule+`", "`+load.NumenRoot+`libs/sharedx"]`, 1)
+	// depguard matches an allow by prefix, so libs/shared without the slash would also allow libs/sharedx.
+	slashless := strings.Replace(complete, `allow: ["`+load.SdkModule+`"]`, `allow: ["`+load.SdkModule+`", "`+load.NumenRoot+`libs/shared"]`, 1)
 	for name, config := range map[string]string{
 		"a configuration without a rule over $all":                missingRule,
 		"a rule that leaves a boundary out":                       missingDeny,
 		"a rule that allows another library":                      extraAllow,
 		"a rule that allows a library named like the shared ones": extraPrefix,
+		"a rule that allows libs/shared without the slash":        slashless,
 	} {
 		if gaps, err := getDepguardGaps([]byte(config)); err != nil || len(gaps) == 0 {
 			t.Errorf("%s is not found (%v)", name, err)

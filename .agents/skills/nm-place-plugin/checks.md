@@ -4,7 +4,7 @@ Each entry names a check or a lint rule by what it forbids. `make checks LIST=1`
 
 ## Dependencies of a plugin
 
-- `go.mod` of a plugin (`make checks ONLY=go/plugin-gomod`, tests `TestNoPluginModuleRequiresMoreThanTheSDK`, `TestWhatThePluginGoModRulesReject`): the module path is the folder's; it requires directly only the plugin SDK modules, the shared libraries `libs/shared/<name>` and third-party code; it names no `libs/note`, `libs/core/protocol`, connect or protobuf module, no other plugin and no core package; it has no `replace` to a folder.
+- `go.mod` of a plugin (`make checks ONLY=go/plugin-gomod`, tests `TestNoPluginModuleRequiresMoreThanTheSDKAndTheSharedLibraries`, `TestWhatThePluginGoModRulesReject`): the module path is the folder's; it requires directly only the plugin SDK modules, the shared libraries `libs/shared/<name>` and third-party code; it names no `libs/note`, `libs/core/protocol`, connect or protobuf module, no other plugin and no core package; it has no `replace` to a folder.
 - The import graph of the plugins on fourteen platform targets (`make checks ONLY=go/plugin-boundary,go/plugin-isolation-packages`): a plugin reaches no other plugin, no core package, no application.
 - `plugins-isolation-capture`: a file under `plugins/<name>/` references no other plugin.
 - `package.json` of a plugin (`package-matrix`, `protocol-declared-only-by-clients`, `core-client-private`): it declares no `@numen/protocol` and no `@numen/core-client`, and among the packages of this repository only `@numen/plugin-sdk` and `@numen/ui`.
