@@ -384,7 +384,6 @@ func TestEveryRequestOfASpeechRunCarriesTheLanguageAndPromptOfTheRun(t *testing.
 	}
 }
 
-
 func TestARunKeepsTheLanguageAndPromptItStartedWith(t *testing.T) {
 	started := newScene(t)
 	wantKey := started.proofreadWith(t, started.holdScan(t), hindi, oldSpeller).Version.Key
@@ -406,6 +405,9 @@ func TestARunKeepsTheLanguageAndPromptItStartedWith(t *testing.T) {
 	}
 
 	want := numbered.BuildInstruction(numbered.ScanInstruction, hindi, oldSpeller)
+	if want == numbered.ScanInstruction {
+		t.Fatal("the language and the prompt change nothing in the instruction")
+	}
 	if len(s.model.instructions) != 2 {
 		t.Fatalf("asked %d times, want once a page", len(s.model.instructions))
 	}

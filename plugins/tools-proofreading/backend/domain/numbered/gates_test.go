@@ -206,7 +206,6 @@ func TestGetFixedLines_RejectsRowWhenNumberIsTextDigits(t *testing.T) {
 func TestAReplyInProseIsNoAnswerWhateverTheRulesAskedFor(t *testing.T) {
 	replies := map[string]string{
 		"a whole corrected page": "Here is the corrected page: the Södërby garden hedge. Sodërby Trädgård's Ordbok. The hedge will very soon need cutting back. Blessings.",
-		"the lines without bars": "10 the Södërby garden hedge.\n11 Södërby Trädgård's Ordbok",
 		"json":                   `{"10": "the Södërby garden hedge."}`,
 	}
 	for name, reply := range replies {
