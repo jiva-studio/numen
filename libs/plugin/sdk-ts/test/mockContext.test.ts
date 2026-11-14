@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createMockPluginContext } from '../src/testing/mockContext'
+import { createMockHostServices, createMockPluginContext } from '../src/testing/mockContext'
 import type { PluginVault } from '../src/types'
 import type { ConnectionHost } from '../src/connections'
 import { CONVERSATION } from '../src/views'
@@ -57,21 +57,21 @@ describe('mock plugin context', () => {
     const ctx = createMockPluginContext({
       app: { name: 'numen', version: '2026.10.3', build: 42, platform: 'windows' },
     })
-    expect(ctx.plugin.app).toEqual({
+    expect(ctx.identity.app).toEqual({
       name: 'numen',
       version: '2026.10.3',
       build: 42,
       platform: 'windows',
     })
-    expect(createMockPluginContext().plugin.app.platform).toBe('linux')
+    expect(createMockPluginContext().identity.app.platform).toBe('linux')
   })
 
   it('opens web addresses only', async () => {
     const ctx = createMockPluginContext()
 
-    expect(await ctx.plugin.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
-    expect((await ctx.plugin.openExternal('file:///etc/passwd')).ok).toBe(false)
-    expect((await ctx.plugin.openExternal('not an address')).ok).toBe(false)
+    expect(await ctx.identity.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
+    expect((await ctx.identity.openExternal('file:///etc/passwd')).ok).toBe(false)
+    expect((await ctx.identity.openExternal('not an address')).ok).toBe(false)
     expect(ctx.getOpenedAddresses()).toEqual(['https://numen.md/'])
   })
 
@@ -130,10 +130,11 @@ describe('mock plugin context', () => {
 
   it('keeps the views a plugin declares and the views it mounts', () => {
     const ctx = createMockPluginContext()
+    const host = createMockHostServices()
     const declared = ctx.register.view({ capability: CONVERSATION, component: {} })
     const element = {} as HTMLElement
 
-    const view = ctx.ui.mountView(CONVERSATION, element, {
+    const view = host.ui.mountView(CONVERSATION, element, {
       connections: CONNECTIONS,
       vault: 'physics',
     })
@@ -141,7 +142,7 @@ describe('mock plugin context', () => {
     view.dispose()
 
     expect(ctx.getRegisteredViews()).toStrictEqual([{ capability: CONVERSATION, component: {} }])
-    expect(ctx.getMountedViews()).toStrictEqual([
+    expect(host.getMountedViews()).toStrictEqual([
       {
         capability: CONVERSATION,
         element,
@@ -176,28 +177,28 @@ describe('mock plugin context', () => {
   })
 
   it('manages vault change and file select events', () => {
-    const ctx = createMockPluginContext()
+    const host = createMockHostServices()
     let receivedVaultPath = ''
     let receivedSelectedPath = ''
 
-    const vaultSub = ctx.events.onVaultChange((event) => {
+    const vaultSub = host.events.onVaultChange((event) => {
       receivedVaultPath = event.vaultPath ?? ''
     })
-    const fileSub = ctx.events.onFileSelect((event) => {
+    const fileSub = host.events.onFileSelect((event) => {
       receivedSelectedPath = event.path
     })
 
-    ctx.events.emitVaultChange({ vaultPath: '/path/to/vault' })
+    host.events.emitVaultChange({ vaultPath: '/path/to/vault' })
     expect(receivedVaultPath).toBe('/path/to/vault')
 
-    ctx.events.emitFileSelect({ path: 'notes/test.md', title: 'test' })
+    host.events.emitFileSelect({ path: 'notes/test.md', title: 'test' })
     expect(receivedSelectedPath).toBe('notes/test.md')
 
     vaultSub.dispose()
     fileSub.dispose()
 
-    ctx.events.emitVaultChange({ vaultPath: '/other/vault' })
-    ctx.events.emitFileSelect({ path: 'other/note.md' })
+    host.events.emitVaultChange({ vaultPath: '/other/vault' })
+    host.events.emitFileSelect({ path: 'other/note.md' })
     expect(receivedVaultPath).toBe('/path/to/vault')
     expect(receivedSelectedPath).toBe('notes/test.md')
   })
@@ -207,14 +208,14 @@ describe('mock plugin context', () => {
     ctx.register.command({ id: 'c1', handler: vi.fn() })
     ctx.register.reader({ id: 'r1', component: {} })
 
-    expect(ctx.plugin.subscriptions.length).toBe(2)
+    expect(ctx.identity.subscriptions.length).toBe(2)
     ctx.dispose()
-    expect(ctx.plugin.subscriptions.length).toBe(0)
+    expect(ctx.identity.subscriptions.length).toBe(0)
   })
 
   it('opens tab through openTab method', async () => {
-    const ctx = createMockPluginContext()
-    const result = await ctx.tabs.open?.('url', 'https://example.com')
+    const host = createMockHostServices()
+    const result = await host.tabs.open?.('url', 'https://example.com')
     expect(result).toBe('url:https://example.com')
   })
 
@@ -224,11 +225,11 @@ describe('mock plugin context', () => {
     >
     const closeTab = vi.fn()
 
-    const ctx = createMockPluginContext({ buffers, closeTab })
+    const host = createMockHostServices({ buffers, closeTab })
 
-    expect(ctx.vault.buffers).toBe(buffers)
-    expect(ctx.tabs.close).toBe(closeTab)
-    expect(createMockPluginContext().vault).not.toHaveProperty('buffers')
-    expect(() => createMockPluginContext().tabs.close('tab-1')).not.toThrow()
+    expect(host.vault.buffers).toBe(buffers)
+    expect(host.tabs.close).toBe(closeTab)
+    expect(createMockHostServices().vault).not.toHaveProperty('buffers')
+    expect(() => createMockHostServices().tabs.close('tab-1')).not.toThrow()
   })
 })

@@ -86,9 +86,9 @@ describe('createShellHost', () => {
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
     vi.unstubAllGlobals()
 
-    expect(context.plugin.app.platform).toBe('windows')
+    expect(context.plugin.identity.app.platform).toBe('windows')
     platform = 'darwin'
-    expect(context.plugin.app.platform).toBe('darwin')
+    expect(context.plugin.identity.app.platform).toBe('darwin')
   })
 
   it('gives a plugin Windows where the window gives no platform, as the frame does without the runtime', () => {
@@ -102,7 +102,7 @@ describe('createShellHost', () => {
     const { host } = createShellHost()
 
     expect(
-      host.createContext('md.numen.example', withVault('md.numen.example')).plugin.target,
+      host.createContext('md.numen.example', withVault('md.numen.example')).plugin.identity.target,
     ).toBe(TARGET)
   })
 
@@ -110,18 +110,18 @@ describe('createShellHost', () => {
     const { host, front } = createShellHost()
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
 
-    context.register.tabKind(view('unplaced'))
+    context.plugin.register.tabKind(view('unplaced'))
     expect(front.value).toBeNull()
 
-    context.register.tabKind(view('second', 2))
-    const defaultOrder = context.register.tabKind({
+    context.plugin.register.tabKind(view('second', 2))
+    const defaultOrder = context.plugin.register.tabKind({
       kind: 'default-zero',
       component: {},
       placement: { pane: 'main' } as never,
     })
     expect(front.value?.kind).toBe('default-zero')
 
-    const sub = context.register.tabKind(view('negative', -1))
+    const sub = context.plugin.register.tabKind(view('negative', -1))
     expect(front.value?.kind).toBe('negative')
     expect(front.value?.pluginId).toBe('md.numen.example')
 
@@ -135,14 +135,16 @@ describe('createShellHost', () => {
   it('releases what a plugin registered once it is disposed, whatever it does to its subscriptions', () => {
     const { host, front } = createShellHost()
     const ctx = host.createContext('md.numen.example', withVault('md.numen.example'))
-    ctx.register.tabKind(view('review', 0))
+    ctx.plugin.register.tabKind(view('review', 0))
     host
       .createContext('md.numen.other', withVault('md.numen.other'))
-      .register.tabKind(view('fallback', 1))
+      .plugin.register.tabKind(view('fallback', 1))
     expect(() => {
-      ;(ctx.plugin.subscriptions as { length: number }).length = 0
+      ;(ctx.plugin.identity.subscriptions as { length: number }).length = 0
     }).toThrowError()
-    expect((ctx.plugin.subscriptions as unknown as { splice?: unknown }).splice).toBeUndefined()
+    expect(
+      (ctx.plugin.identity.subscriptions as unknown as { splice?: unknown }).splice,
+    ).toBeUndefined()
 
     host.disposePlugin('md.numen.example')
     host.disposePlugin('md.numen.unknown')
@@ -161,10 +163,10 @@ describe('createShellHost', () => {
     const bar = host.createContext('org.example.ledger', withVault('org.example.ledger'))
     const cards = host.createContext('md.numen.cards', withVault('md.numen.cards'))
 
-    expect(bar.vault.vaults?.getState()).toStrictEqual(services.vaults.getState())
-    expect(cards.vault.vaults?.getState()).toStrictEqual(services.vaults.getState())
-    expect(bar.ui.window?.getState()).toStrictEqual(services.window.getState())
-    expect(cards.ui.commands?.getIds()).toStrictEqual(services.commands.getIds())
+    expect(bar.host.vault.vaults?.getState()).toStrictEqual(services.vaults.getState())
+    expect(cards.host.vault.vaults?.getState()).toStrictEqual(services.vaults.getState())
+    expect(bar.host.ui.window?.getState()).toStrictEqual(services.window.getState())
+    expect(cards.host.ui.commands?.getIds()).toStrictEqual(services.commands.getIds())
   })
 
   it('refuses the vaults to a plugin without vault:read and switching to one without vault:manage', async () => {
@@ -177,8 +179,8 @@ describe('createShellHost', () => {
     )
     const reader = host.createContext('org.example.reader', withVault('org.example.reader'))
 
-    expect(() => noGrants.vault.vaults?.getState()).toThrowError('vault:read')
-    await expect(reader.vault.vaults?.switchTo('roots')).rejects.toThrowError('vault:manage')
+    expect(() => noGrants.host.vault.vaults?.getState()).toThrowError('vault:read')
+    await expect(reader.host.vault.vaults?.switchTo('roots')).rejects.toThrowError('vault:manage')
     expect(switched).toStrictEqual([])
   })
 
@@ -188,8 +190,8 @@ describe('createShellHost', () => {
       withVault('org.example.ledger'),
     )
 
-    expect(context.vault.vaults).toBeUndefined()
-    expect(context.ui.window).toBeUndefined()
+    expect(context.host.vault.vaults).toBeUndefined()
+    expect(context.host.ui.window).toBeUndefined()
   })
 
   it('takes the bar of a plugin away once it is disposed, whatever it does to its subscriptions', () => {
@@ -201,9 +203,9 @@ describe('createShellHost', () => {
       contributes: { slots: [{ slot: 'titleBar', placed: { case: 'view', value: 'bar' } }] },
     } as unknown as Parameters<typeof host.createContext>[1]
     const context = host.createContext('org.example.ledger', manifest)
-    context.register.slotView({ id: 'bar', component: {} })
+    context.plugin.register.slotView({ id: 'bar', component: {} })
     expect(() => {
-      ;(context.plugin.subscriptions as { length: number }).length = 0
+      ;(context.plugin.identity.subscriptions as { length: number }).length = 0
     }).toThrowError()
     expect(titleBarView.value?.pluginId).toBe('org.example.ledger')
 
@@ -216,15 +218,15 @@ describe('createShellHost', () => {
     const { host, front } = createShellHost()
     const calls: string[] = []
     const ctx1 = host.createContext('md.numen.one', withVault('md.numen.one'))
-    ctx1.plugin.subscriptions.push({ dispose: () => calls.push('one') })
-    ctx1.register.tabKind(view('review', 0))
+    ctx1.plugin.identity.subscriptions.push({ dispose: () => calls.push('one') })
+    ctx1.plugin.register.tabKind(view('review', 0))
 
     host.disposePlugin('md.numen.one')
     expect(calls).toStrictEqual(['one'])
 
     const ctx2 = host.createContext('md.numen.two', withVault('md.numen.two'))
-    ctx2.plugin.subscriptions.push({ dispose: () => calls.push('two') })
-    ctx2.register.tabKind(view('second', 1))
+    ctx2.plugin.identity.subscriptions.push({ dispose: () => calls.push('two') })
+    ctx2.plugin.register.tabKind(view('second', 1))
 
     host.disposeAll()
     expect(calls).toStrictEqual(['one', 'two'])
@@ -243,10 +245,10 @@ describe('createShellHost', () => {
       createMockManifest('md.numen.empty', { name: 'Empty', permissions: [] }),
     )
 
-    expect(context.plugin.hasPermission?.('vault:read')).toBe(true)
-    expect(context.plugin.hasPermission?.('vault:write')).toBe(false)
-    expect(withoutManifest.plugin.hasPermission?.('vault:read')).toBe(false)
-    expect(withoutGrants.plugin.hasPermission?.('vault:read')).toBe(false)
+    expect(context.plugin.identity.hasPermission?.('vault:read')).toBe(true)
+    expect(context.plugin.identity.hasPermission?.('vault:write')).toBe(false)
+    expect(withoutManifest.plugin.identity.hasPermission?.('vault:read')).toBe(false)
+    expect(withoutGrants.plugin.identity.hasPermission?.('vault:read')).toBe(false)
   })
 
   it('provides no-op capabilities and opens external web URLs', async () => {
@@ -254,17 +256,17 @@ describe('createShellHost', () => {
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
 
-    context.register.reader?.({ id: 'document', title: 'Document', component: {} }).dispose()
-    context.register.command?.({ id: 'open' } as never).dispose()
-    context.register.settingsView?.({ id: 'floor' } as never).dispose()
-    expect(context.settings.get?.('key')).toBeUndefined()
-    context.settings.onChange?.('key', () => undefined).dispose()
-    context.events.onVaultChange?.(() => undefined).dispose()
-    context.events.onFileSelect?.(() => undefined).dispose()
-    expect(context.events.emitVaultChange?.({} as never)).toBeUndefined()
-    expect(context.events.emitFileSelect?.({} as never)).toBeUndefined()
+    context.plugin.register.reader?.({ id: 'document', title: 'Document', component: {} }).dispose()
+    context.plugin.register.command?.({ id: 'open' } as never).dispose()
+    context.plugin.register.settingsView?.({ id: 'floor' } as never).dispose()
+    expect(context.plugin.settings.get?.('key')).toBeUndefined()
+    context.plugin.settings.onChange?.('key', () => undefined).dispose()
+    context.host.events.onVaultChange?.(() => undefined).dispose()
+    context.host.events.onFileSelect?.(() => undefined).dispose()
+    expect(context.host.events.emitVaultChange?.({} as never)).toBeUndefined()
+    expect(context.host.events.emitFileSelect?.({} as never)).toBeUndefined()
 
-    const externalResult = await context.plugin.openExternal?.('https://example.test')
+    const externalResult = await context.plugin.identity.openExternal?.('https://example.test')
     expect(externalResult?.ok).toBe(true)
     expect(openSpy).toHaveBeenCalledWith('https://example.test', '_blank')
     openSpy.mockRestore()
@@ -278,12 +280,12 @@ describe('createShellHost', () => {
     })
     host
       .createContext('md.numen.chat', withVault('md.numen.chat'))
-      .register.view({ capability: CONVERSATION, component: conversation })
+      .plugin.register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
 
     host
       .createContext('md.numen.cards', withVault('md.numen.cards'))
-      .ui.mountView(CONVERSATION, panel, { connections: CONNECTIONS, vault: 'physics' })
+      .host.ui.mountView(CONVERSATION, panel, { connections: CONNECTIONS, vault: 'physics' })
     expect(panel.textContent).toBe('physics')
 
     host.disposePlugin('md.numen.chat')
@@ -295,11 +297,11 @@ describe('createShellHost', () => {
     const conversation = defineComponent({ setup: () => () => h('p', 'conversation') })
     host
       .createContext('md.numen.chat', withVault('md.numen.chat'))
-      .register.view({ capability: CONVERSATION, component: conversation })
+      .plugin.register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
     host
       .createContext('md.numen.cards', withVault('md.numen.cards'))
-      .ui.mountView(CONVERSATION, panel, { connections: CONNECTIONS })
+      .host.ui.mountView(CONVERSATION, panel, { connections: CONNECTIONS })
 
     host.disposePlugin('md.numen.cards')
 
@@ -310,9 +312,11 @@ describe('createShellHost', () => {
     const { host, notices } = createShellHost()
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
 
-    context.ui.notices.show('Could not save the deck.', 'error')
-    context.ui.notices.show('Saved.')
-    context.ui.notices.setTasks([{ id: 'index', label: 'Reading the vault', done: 2, total: 5 }])
+    context.host.ui.notices.show('Could not save the deck.', 'error')
+    context.host.ui.notices.show('Saved.')
+    context.host.ui.notices.setTasks([
+      { id: 'index', label: 'Reading the vault', done: 2, total: 5 },
+    ])
 
     expect(notices.notices.value.map((one) => [one.text, one.severity])).toEqual([
       ['Reading the vault', undefined],
@@ -324,8 +328,10 @@ describe('createShellHost', () => {
 
   it('takes away what a plugin showed once it is disposed', () => {
     const { host, notices } = createShellHost()
-    host.createContext('md.numen.example', withVault('md.numen.example')).ui.notices.show('Saved.')
-    host.createContext('md.numen.other', withVault('md.numen.other')).ui.notices.show('Drawn.')
+    host
+      .createContext('md.numen.example', withVault('md.numen.example'))
+      .host.ui.notices.show('Saved.')
+    host.createContext('md.numen.other', withVault('md.numen.other')).host.ui.notices.show('Drawn.')
 
     host.disposePlugin('md.numen.example')
 
@@ -363,7 +369,9 @@ describe('the tab of the window', () => {
   it('opens the front kind on the vault chosen, in a detached scope of its own', () => {
     const { host, tab, openTab, closeTab } = createShellHost()
     const { registration, released } = createKind()
-    host.createContext('md.numen.cards', withVault('md.numen.cards')).register.tabKind(registration)
+    host
+      .createContext('md.numen.cards', withVault('md.numen.cards'))
+      .plugin.register.tabKind(registration)
 
     const parent = effectScope()
     parent.run(() => openTab('roots'))
@@ -382,14 +390,14 @@ describe('the tab of the window', () => {
     const { host, tab, openTab } = createShellHost()
     const { registration, released, destroyed } = createKind()
     const context = host.createContext('md.numen.cards', withVault('md.numen.cards'))
-    context.register.tabKind(registration)
+    context.plugin.register.tabKind(registration)
     openTab('roots')
     const id = tab.value!.id
 
-    context.tabs.close?.('another')
+    context.host.tabs.close?.('another')
     expect(tab.value?.id).toBe(id)
 
-    context.tabs.close?.(id)
+    context.host.tabs.close?.(id)
     expect(tab.value).toBeNull()
     expect(released).toStrictEqual([id])
     expect(destroyed).toStrictEqual([id])
@@ -398,7 +406,9 @@ describe('the tab of the window', () => {
   it('releases the open tab before it opens another', () => {
     const { host, tab, openTab } = createShellHost()
     const { registration, released } = createKind()
-    host.createContext('md.numen.cards', withVault('md.numen.cards')).register.tabKind(registration)
+    host
+      .createContext('md.numen.cards', withVault('md.numen.cards'))
+      .plugin.register.tabKind(registration)
 
     openTab('roots')
     const first = tab.value!.id
@@ -413,7 +423,7 @@ describe('the tab of the window', () => {
   it('closes the tab of a plugin that is disposed, and of no other', () => {
     const { host, tab, openTab } = createShellHost()
     const cardsContext = host.createContext('md.numen.cards', withVault('md.numen.cards'))
-    cardsContext.register.tabKind(createKind().registration)
+    cardsContext.plugin.register.tabKind(createKind().registration)
     host.createContext('md.numen.other', withVault('md.numen.other'))
     openTab('roots')
 
@@ -424,7 +434,7 @@ describe('the tab of the window', () => {
     expect(tab.value).toBeNull()
 
     const afterDispose = vi.fn()
-    cardsContext.plugin.subscriptions.push({ dispose: afterDispose })
+    cardsContext.plugin.identity.subscriptions.push({ dispose: afterDispose })
     host.disposeAll()
     expect(afterDispose).not.toHaveBeenCalled()
   })
@@ -432,7 +442,7 @@ describe('the tab of the window', () => {
   it('opens no tab when the kind fails to open, and releases what it began', () => {
     const { host, tab, openTab } = createShellHost()
     const released: string[] = []
-    host.createContext('md.numen.cards', withVault('md.numen.cards')).register.tabKind({
+    host.createContext('md.numen.cards', withVault('md.numen.cards')).plugin.register.tabKind({
       kind: 'review',
       component: {},
       placement: { pane: 'main', order: 0 },
@@ -449,7 +459,7 @@ describe('the tab of the window', () => {
 
   it("draws a view a plugin declares into the window's own element", () => {
     const { host, mountView } = createShellHost()
-    host.createContext('md.numen.cards', withVault('md.numen.cards')).register.view({
+    host.createContext('md.numen.cards', withVault('md.numen.cards')).plugin.register.view({
       capability: VAULT_SUMMARY,
       component: defineComponent({
         props: { context: { type: Object, required: true } },
@@ -473,6 +483,8 @@ describe('the relationships of the window', () => {
       createMockManifest('md.numen.example', { name: 'Example', permissions: [] }),
     )
 
-    await expect(context.vault.relations?.resolveLinks('[[Garden]]')).rejects.toThrow(/vault:read/)
+    await expect(context.host.vault.relations?.resolveLinks('[[Garden]]')).rejects.toThrow(
+      /vault:read/,
+    )
   })
 })

@@ -13,7 +13,7 @@ export {
   type ContributionMatch,
   type PluginStatus,
 } from './loading'
-export type { LoaderHost } from './host'
+export type { LoaderHost, PluginParts } from './host'
 export type { Manifest } from '@numen/core-client'
 export {
   adoptPluginStyle,

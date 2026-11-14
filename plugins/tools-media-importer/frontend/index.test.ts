@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import { activate } from './index'
 
 describe('the media importer frontend', () => {
   it('registers no tab kind and no reader', () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
-    activate(ctx)
+    const host = createMockHostServices()
+    activate(ctx, host)
 
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredReaders()).toHaveLength(0)
@@ -15,8 +16,9 @@ describe('the media importer frontend', () => {
 describe('addresses dropped from outside the window', () => {
   it('become link notes in the folder they were dropped into', async () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
+    const host = createMockHostServices()
     const made: string[] = []
-    activate(ctx, async (folder, urls) => {
+    activate(ctx, host, async (folder, urls) => {
       made.push(`${folder}: ${urls.join(' ')}`)
       return {
         ok: true,
@@ -38,11 +40,11 @@ describe('addresses dropped from outside the window', () => {
 describe('addresses a drop could not make notes for', () => {
   const drop = async (failed: readonly string[]) => {
     const errors: string[] = []
-    const ctx = createMockPluginContext({
-      pluginId: 'md.numen.tools.media.importer',
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
+    const host = createMockHostServices({
       workspace: { messages: { showError: (text: string) => errors.push(text) } } as never,
     })
-    activate(ctx, async () => ({ ok: true, value: { paths: ['links/a.md'], failed } }))
+    activate(ctx, host, async () => ({ ok: true, value: { paths: ['links/a.md'], failed } }))
     const paths = await ctx.getRegisteredDropHandlers()[0]?.drop('links', {
       'text/uri-list': 'https://a.test/',
     })

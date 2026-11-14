@@ -36,13 +36,13 @@ const createHost = () => {
 type Plugin = ReturnType<ReturnType<typeof createHost>['createPlugin']>
 
 const registerNoteViewer = (owner: Plugin, capability: ViewCapability = VIEW) =>
-  owner.register.view({
+  owner.plugin.register.view({
     capability,
     component: defineComponent({
       props: { context: { type: Object as PropType<{ path: string }>, required: true } },
       setup(props) {
         const body = ref('')
-        owner.vault.notes!.read(props.context.path).then(
+        owner.host.vault.notes!.read(props.context.path).then(
           (one) => (body.value = one.body),
           (error: unknown) => (body.value = `Failed: ${String(error)}`),
         )
@@ -58,7 +58,9 @@ describe('a view kind a plugin registers itself', () => {
     const element = document.createElement('div')
 
     expect(() =>
-      createPlugin('md.numen.caller', []).ui.mountView(VIEW, element, { path: 'Notes/Example.md' }),
+      createPlugin('md.numen.caller', []).host.ui.mountView(VIEW, element, {
+        path: 'Notes/Example.md',
+      }),
     ).toThrow(/vault:read/)
     await settle()
 
@@ -71,7 +73,7 @@ describe('a view kind a plugin registers itself', () => {
     registerNoteViewer(createPlugin('md.numen.owner', ['vault:read', 'vault:write']))
 
     expect(() =>
-      createPlugin('md.numen.caller', ['vault:read']).ui.mountView(
+      createPlugin('md.numen.caller', ['vault:read']).host.ui.mountView(
         VIEW,
         document.createElement('div'),
         { path: 'Notes/Example.md' },
@@ -84,7 +86,7 @@ describe('a view kind a plugin registers itself', () => {
     registerNoteViewer(createPlugin('md.numen.owner', ['vault:read']))
     const element = document.createElement('div')
 
-    createPlugin('md.numen.caller', ['vault:read']).ui.mountView(VIEW, element, {
+    createPlugin('md.numen.caller', ['vault:read']).host.ui.mountView(VIEW, element, {
       path: 'Notes/Example.md',
     })
 
@@ -94,14 +96,14 @@ describe('a view kind a plugin registers itself', () => {
   it('mounts it for any plugin when its plugin holds no vault permission', () => {
     const { createPlugin } = createHost()
     const owner = createPlugin('md.numen.owner', ['network'])
-    owner.register.view({
+    owner.plugin.register.view({
       capability: VIEW,
       component: defineComponent({ setup: () => () => h('p', 'plain') }),
     })
     const element = document.createElement('div')
 
     expect(() =>
-      createPlugin('md.numen.caller', []).ui.mountView(VIEW, element, { path: '' }),
+      createPlugin('md.numen.caller', []).host.ui.mountView(VIEW, element, { path: '' }),
     ).not.toThrow()
     expect(element.textContent).toBe('plain')
   })
@@ -129,7 +131,7 @@ describe('a view capability named like a property of every object', () => {
       const element = document.createElement('div')
 
       expect(() => caller.ui.mountView(asCapability(name), element, { path: '' })).not.toThrow()
-      createPlugin('md.numen.owner', []).register.view({
+      createPlugin('md.numen.owner', []).plugin.register.view({
         capability: asCapability(name),
         component: defineComponent({ setup: () => () => h('p', 'late') }),
       })
@@ -147,7 +149,7 @@ describe('a view capability named like a property of every object', () => {
       const element = document.createElement('div')
 
       expect(() =>
-        createPlugin('md.numen.caller', []).ui.mountView(asCapability(name), element, {
+        createPlugin('md.numen.caller', []).host.ui.mountView(asCapability(name), element, {
           path: 'Notes/Example.md',
         }),
       ).toThrow(/vault:read/)

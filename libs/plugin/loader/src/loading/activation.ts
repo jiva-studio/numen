@@ -65,9 +65,8 @@ async function activateModule(
   const { activate, deactivate } = parseLifecycleHooks(start.resolved)
   if (activate) {
     if (isLatest()) host.markPluginStarting?.(pluginId)
-    await activate(
-      start.scope.wrapContext(host.createContext(pluginId, ctx.manifests.get(pluginId))),
-    )
+    const parts = start.scope.wrapParts(host.createContext(pluginId, ctx.manifests.get(pluginId)))
+    await activate(parts.plugin, parts.host)
     if (isLatest()) host.markPluginStarted?.(pluginId)
   }
   if (start.scope.isCancelled() || start.limit.isPassed()) {

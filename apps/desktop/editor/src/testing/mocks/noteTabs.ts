@@ -22,7 +22,7 @@ const pane = defineComponent({
 })
 
 type TabKindRegistration = Parameters<
-  ReturnType<PluginHost['lifecycle']['createContext']>['register']['tabKind']
+  ReturnType<PluginHost['lifecycle']['createContext']>['plugin']['register']['tabKind']
 >[0]
 
 const isNoteTab = (state: object): state is NoteTabState => 'path' in state
@@ -61,7 +61,7 @@ export const registerNoteTabs = ({
         tabKinds: [NOTE_TAB],
       }),
     )
-    .register.tabKind(noteTabKind)
+    .plugin.register.tabKind(noteTabKind)
 }
 
 /** Opens a note in a tab of the sample kind and returns the id of the tab. */

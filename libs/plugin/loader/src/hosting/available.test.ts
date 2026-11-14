@@ -88,7 +88,7 @@ describe('a plugin that was disposed', () => {
     const host = createHost()
     host.lifecycle
       .createContext('md.tree', TREE_MANIFEST)
-      .register.command({ id: 'tree.open', handler: vi.fn() })
+      .plugin.register.command({ id: 'tree.open', handler: vi.fn() })
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.tree:tree.open',
     ])
@@ -99,7 +99,7 @@ describe('a plugin that was disposed', () => {
 
     host.lifecycle
       .createContext('md.tree', TREE_MANIFEST)
-      .register.command({ id: 'tree.open', handler: vi.fn() })
+      .plugin.register.command({ id: 'tree.open', handler: vi.fn() })
 
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.tree:tree.open',

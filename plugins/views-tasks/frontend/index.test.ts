@@ -4,7 +4,12 @@ import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
-import { createMockPluginContext, type MockPluginContext } from '@numen/plugin-sdk/testing'
+import {
+  createMockHostServices,
+  createMockPluginContext,
+  type MockHostServices,
+  type MockPluginContext,
+} from '@numen/plugin-sdk/testing'
 import { activate, TASKS_VIEW } from './index'
 import { APPEAR_DELAY_MS, HOLD_MS } from './model/chipDisplay'
 import { createTask } from './testing/tasks'
@@ -23,11 +28,16 @@ afterEach(() => {
   for (const one of mounted.splice(0)) one.unmount()
 })
 
-const activateTasks = (): { context: MockPluginContext; view: Component } => {
+const activateTasks = (): {
+  context: MockPluginContext
+  host: MockHostServices
+  view: Component
+} => {
   const context = createMockPluginContext({ pluginId: manifest.id })
-  activate(context)
+  const host = createMockHostServices()
+  activate(context, host)
   const [registration] = context.getRegisteredSlotViews()
-  return { context, view: registration!.component as Component }
+  return { context, host, view: registration!.component as Component }
 }
 
 const mountTasks = (view: Component): VueWrapper => {
@@ -85,15 +95,15 @@ describe('the summary', () => {
   })
 
   it('counts the tasks done of all and follows the changes of the list', async () => {
-    const { context, view } = activateTasks()
+    const { host, view } = activateTasks()
     const wrapper = mountTasks(view)
     const running = (id: string) => createTask({ id, state: 'running' })
 
-    context.work.backgroundTasks.setTasks([running('a'), running('b'), running('c')])
+    host.work.backgroundTasks.setTasks([running('a'), running('b'), running('c')])
     await settle(APPEAR_DELAY_MS)
     expect(wrapper.find('.tasks-status__summary').text()).toBe('0 of 3')
 
-    context.work.backgroundTasks.setTasks([running('b'), running('c')])
+    host.work.backgroundTasks.setTasks([running('b'), running('c')])
     await settle(HOLD_MS)
     expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3')
     expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe(
@@ -101,20 +111,20 @@ describe('the summary', () => {
     )
     expect(wrapper.find('.tasks-status__trigger').attributes('title')).toBe('1 of 3 tasks done')
 
-    context.work.backgroundTasks.setTasks([running('c'), running('d')])
+    host.work.backgroundTasks.setTasks([running('c'), running('d')])
     await settle(HOLD_MS)
     expect(wrapper.find('.tasks-status__summary').text()).toBe('2 of 4')
 
-    context.work.backgroundTasks.setTasks([])
+    host.work.backgroundTasks.setTasks([])
     await settle(HOLD_MS)
     expect(wrapper.find('.tasks-status__summary').text()).toBe('Idle')
   })
 
   it('fills the ring by the progress of the batch', async () => {
-    const { context, view } = activateTasks()
+    const { host, view } = activateTasks()
     const wrapper = mountTasks(view)
 
-    context.work.backgroundTasks.setTasks([
+    host.work.backgroundTasks.setTasks([
       createTask({ id: 'a', state: 'running', progress: { completedCount: 1, total: 2 } }),
     ])
     await settle(APPEAR_DELAY_MS)
@@ -125,10 +135,10 @@ describe('the summary', () => {
   })
 
   it('keeps the text of the chip and tints it when tasks failed and nothing else runs', async () => {
-    const { context, view } = activateTasks()
+    const { host, view } = activateTasks()
     const wrapper = mountTasks(view)
 
-    context.work.backgroundTasks.setTasks([
+    host.work.backgroundTasks.setTasks([
       createTask({ id: 'f1', state: 'failed', error: 'disk full' }),
       createTask({ id: 'f2', state: 'failed', error: 'no network' }),
     ])
@@ -142,16 +152,16 @@ describe('the summary', () => {
   })
 
   it('keeps the text of the chip and tints it when some task failed while others run', async () => {
-    const { context, view } = activateTasks()
+    const { host, view } = activateTasks()
     const wrapper = mountTasks(view)
 
-    context.work.backgroundTasks.setTasks([
+    host.work.backgroundTasks.setTasks([
       createTask({ id: 'a', state: 'running' }),
       createTask({ id: 'f', state: 'running' }),
       createTask({ id: 'b', state: 'running' }),
     ])
     await settle(APPEAR_DELAY_MS)
-    context.work.backgroundTasks.setTasks([
+    host.work.backgroundTasks.setTasks([
       createTask({ id: 'a', state: 'running' }),
       createTask({ id: 'f', state: 'failed', error: 'x' }),
     ])
@@ -164,8 +174,8 @@ describe('the summary', () => {
   })
 
   it('takes the tasks the window lists before the view is drawn', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running' })])
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running' })])
 
     const wrapper = mountTasks(view)
     await settle(APPEAR_DELAY_MS)
@@ -176,9 +186,9 @@ describe('the summary', () => {
 
 describe('the chip', () => {
   it('is flat, still and out of the tab order, and opens on a click', async () => {
-    const { context, view } = activateTasks()
+    const { host, view } = activateTasks()
     const wrapper = mountTasks(view)
-    context.work.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running' })])
+    host.work.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running' })])
     await flushPromises()
 
     const trigger = wrapper.find('.tasks-status__trigger')
@@ -193,8 +203,8 @@ describe('the chip', () => {
 
 describe('the list', () => {
   it('opens and closes from the summary, newest task first', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([
       createTask({ id: 'first', label: 'Read Gita.pdf' }),
       createTask({ id: 'second', label: 'Transcribe lecture.mp3' }),
     ])
@@ -245,8 +255,8 @@ describe('the list', () => {
   })
 
   it('shows what a task is done to and how much of it is done', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([
       createTask({
         id: 'a',
         label: 'Index books',
@@ -265,8 +275,8 @@ describe('the list', () => {
   })
 
   it('shows the error of a failed task', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([
       createTask({ id: 'a', state: 'failed', about: 'Gita.pdf', error: 'the file is damaged' }),
     ])
     const wrapper = mountTasks(view)
@@ -279,19 +289,19 @@ describe('the list', () => {
 
 describe('the actions of a task', () => {
   it('asks the window to cancel a running task that can be cancelled', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([createTask({ id: 'a', allowed: { cancel: true } })])
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([createTask({ id: 'a', allowed: { cancel: true } })])
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
     await wrapper.find('button[aria-label="Cancel task"]').trigger('click')
 
-    expect(context.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'cancel', id: 'a' }])
+    expect(host.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'cancel', id: 'a' }])
   })
 
   it('offers no cancel for a task that cannot be cancelled', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([createTask({ id: 'a', allowed: { cancel: false } })])
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([createTask({ id: 'a', allowed: { cancel: false } })])
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
@@ -299,8 +309,8 @@ describe('the actions of a task', () => {
   })
 
   it('disables the cancel of a task that is being cancelled', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([
       createTask({ id: 'a', state: 'cancelling', allowed: { cancel: true } }),
     ])
     const wrapper = mountTasks(view)
@@ -311,9 +321,9 @@ describe('the actions of a task', () => {
   })
 
   it('keeps the list usable when the window does not cancel the task', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.cancel = () => Promise.reject(new Error('the core is busy'))
-    context.work.backgroundTasks.setTasks([createTask({ id: 'a', allowed: { cancel: true } })])
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.cancel = () => Promise.reject(new Error('the core is busy'))
+    host.work.backgroundTasks.setTasks([createTask({ id: 'a', allowed: { cancel: true } })])
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
@@ -324,8 +334,8 @@ describe('the actions of a task', () => {
   })
 
   it('retries a failed task that can be retried', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([
       createTask({ id: 'a', state: 'failed', error: 'timeout', allowed: { retry: true } }),
     ])
     const wrapper = mountTasks(view)
@@ -333,28 +343,24 @@ describe('the actions of a task', () => {
 
     await wrapper.find('button[aria-label="Retry task"]').trigger('click')
 
-    expect(context.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'retry', id: 'a' }])
+    expect(host.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'retry', id: 'a' }])
   })
 
   it('dismisses a failed task that cannot be retried', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([
-      createTask({ id: 'a', state: 'failed', error: 'timeout' }),
-    ])
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([createTask({ id: 'a', state: 'failed', error: 'timeout' })])
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
     expect(wrapper.find('button[aria-label="Retry task"]').exists()).toBe(false)
     await wrapper.find('button[aria-label="Dismiss"]').trigger('click')
 
-    expect(context.work.backgroundTasks.getActions()).toStrictEqual([
-      { action: 'dismiss', id: 'a' },
-    ])
+    expect(host.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'dismiss', id: 'a' }])
   })
 
   it('dismisses a notice', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([
       createTask({ id: 'n', state: 'notice', label: 'The vault was moved' }),
     ])
     const wrapper = mountTasks(view)
@@ -363,14 +369,12 @@ describe('the actions of a task', () => {
     expect(wrapper.find('[data-task-id="n"] .task-item__notice-icon').exists()).toBe(true)
     await wrapper.find('[data-task-id="n"] button[aria-label="Dismiss"]').trigger('click')
 
-    expect(context.work.backgroundTasks.getActions()).toStrictEqual([
-      { action: 'dismiss', id: 'n' },
-    ])
+    expect(host.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'dismiss', id: 'n' }])
   })
 
   it('runs the action of a failed task', async () => {
-    const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([
+    const { host, view } = activateTasks()
+    host.work.backgroundTasks.setTasks([
       createTask({
         id: 'a',
         state: 'failed',
@@ -385,17 +389,16 @@ describe('the actions of a task', () => {
     expect(link.text()).toContain('Open settings')
     await link.trigger('click')
 
-    expect(context.work.backgroundTasks.getActions()).toStrictEqual([
-      { action: 'runAction', id: 'a' },
-    ])
+    expect(host.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'runAction', id: 'a' }])
   })
 })
 
 describe('a window without background tasks', () => {
   it('draws nothing', () => {
     const context = createMockPluginContext({ pluginId: manifest.id })
-    const { backgroundTasks: _backgroundTasks, ...work } = context.work
-    activate({ ...context, work })
+    const host = createMockHostServices()
+    const { backgroundTasks: _backgroundTasks, ...work } = host.work
+    activate(context, { ...host, work })
     const [registration] = context.getRegisteredSlotViews()
 
     const wrapper = mountTasks(registration!.component as Component)

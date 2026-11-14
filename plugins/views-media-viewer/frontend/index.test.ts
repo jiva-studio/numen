@@ -1,16 +1,17 @@
 import { describe, expect, it, vi } from 'vitest'
 import { AudioLines } from '@lucide/vue'
-import { createMockPluginContext } from '@numen/plugin-sdk'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk'
 import plugin, { activate, MEDIA, MediaRecordingTab, RecordingTab, RECORDER } from './index'
 import { recordings } from './api/wire'
 
 describe('media-viewer plugin', () => {
   it('registers audio reader and recording tab kind upon activation', () => {
     const context = createMockPluginContext({ pluginId: 'md.numen.views.media.viewer' })
+    const services = createMockHostServices()
     const registerReaderSpy = vi.spyOn(context.register, 'reader')
     const registerTabKindSpy = vi.spyOn(context.register, 'tabKind')
 
-    activate(context)
+    activate(context, services)
 
     expect(registerReaderSpy).toHaveBeenCalledWith({
       id: 'media-viewer',
@@ -29,8 +30,9 @@ describe('media-viewer plugin', () => {
 
   it('registers the tab kind a note with media opens in, titled by the note', () => {
     const context = createMockPluginContext({ pluginId: 'md.numen.views.media.viewer' })
+    const services = createMockHostServices()
 
-    activate(context)
+    activate(context, services)
 
     const kind = context.getRegisteredTabKinds().find((one) => one.kind === MEDIA)
     expect(MEDIA).toBe('media')
@@ -46,14 +48,14 @@ describe('media-viewer plugin', () => {
 
   it('opens a tab to record in from its command', async () => {
     const kinds: (string | undefined)[] = []
-    const context = createMockPluginContext({
-      pluginId: 'md.numen.views.media.viewer',
+    const context = createMockPluginContext({ pluginId: 'md.numen.views.media.viewer' })
+    const services = createMockHostServices({
       openTab: (kind) => {
         kinds.push(kind)
         return Promise.resolve('')
       },
     })
-    activate(context)
+    activate(context, services)
 
     expect(context.getRegisteredCommands().map((one) => one.id)).toStrictEqual(['recording.create'])
     await context.triggerCommand('recording.create')
@@ -68,6 +70,7 @@ describe('media-viewer plugin', () => {
 
   it('watches the work of every plugin on a recording through the task host', () => {
     const context = createMockPluginContext({ pluginId: 'md.numen.views.media.viewer' })
+    const services = createMockHostServices()
     const tasks = {
       watch: vi.fn(),
       watchAll: vi.fn((onTasks: (list: readonly { about: string }[]) => void) => {
@@ -75,8 +78,8 @@ describe('media-viewer plugin', () => {
         return { dispose: () => undefined }
       }),
     }
-    Object.assign(context.work, { tasks })
-    activate(context)
+    Object.assign(services.work, { tasks })
+    activate(context, services)
     const changes: boolean[] = []
 
     const stop = recordings.watchWork('talks/a.mp3', (isWorking) => changes.push(isWorking))

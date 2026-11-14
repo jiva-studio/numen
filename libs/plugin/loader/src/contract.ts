@@ -29,6 +29,7 @@ export type {
   CommandItem,
   HealthHost,
   HealthItem,
+  HostServices,
   SlotMenu,
   SlotMenuChoice,
   SlotMenuRequest,

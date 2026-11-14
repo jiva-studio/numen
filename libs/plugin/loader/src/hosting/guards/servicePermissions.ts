@@ -1,8 +1,9 @@
 /**
- * What each service a plugin context offers needs the plugin to hold, in one table. A guarded
- * service is built from the table, not from the service: a member the table does not list is not
- * on the guarded service, and the table's type lists every member of the SDK types, so a member
- * added to the SDK fails the typecheck until it states its permission or why it needs none.
+ * What each service of the plugin context and of the host services needs the plugin to hold, in
+ * one table. A guarded service is built from the table, not from the service: a member the table
+ * does not list is not on the guarded service, and the table's type lists every member of the SDK
+ * types, so a member added to the SDK fails the typecheck until it states its permission or why it
+ * needs none.
  *
  * The table catches mistakes and states what a plugin declares; it is not a security boundary.
  * Plugins are trusted code that runs in the window realm, and a hostile one reaches the core
@@ -94,9 +95,9 @@ export type RulesOf<S> = {
     : RulesOf<NonNullable<S[K]>>
 }
 
-/** The parts of a plugin context that offer services. */
+/** The parts of the plugin context and of the host services that offer services. */
 export interface GuardedParts {
-  readonly plugin: Pick<PluginIdentity, 'openExternal'>
+  readonly identity: Pick<PluginIdentity, 'openExternal'>
   readonly register: PluginRegistrations
   readonly settings: PluginSettings
   readonly events: PluginEvents
@@ -108,7 +109,7 @@ export interface GuardedParts {
 }
 
 export const SERVICE_RULES: RulesOf<GuardedParts> = {
-  plugin: {
+  identity: {
     openExternal: requirePermissionsAsync(LINK_OPEN),
   },
   register: {

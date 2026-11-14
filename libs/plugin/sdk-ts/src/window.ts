@@ -1,6 +1,7 @@
 /**
  * The window a plugin runs in, and the vaults it shows: what a bar plugin draws and controls. The
- * platform is `context.app.platform`, and the name of the application `context.app.name`.
+ * platform is `plugin.identity.app.platform`, and the name of the application
+ * `plugin.identity.app.name`.
  */
 import type { Disposable } from './types'
 

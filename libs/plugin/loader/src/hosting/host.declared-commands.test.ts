@@ -54,7 +54,7 @@ describe('the commands a plugin declares in its manifest', () => {
     ])
     host.lifecycle
       .createContext('md.tree', declaring('md.tree'))
-      .register.command({ id: 'tree.revealNote', handler: vi.fn() })
+      .plugin.register.command({ id: 'tree.revealNote', handler: vi.fn() })
 
     expect(host.commands.getPaletteCommands()).toStrictEqual([
       {
@@ -70,8 +70,8 @@ describe('the commands a plugin declares in its manifest', () => {
     const { host, deps } = createHost([declare()])
     const ctx = host.lifecycle.createContext('md.tree', declaring('md.tree'))
 
-    ctx.register.command({ id: 'tree.open', handler: vi.fn() })
-    expect(() => ctx.register.command({ id: 'tree.close', handler: vi.fn() })).toThrowError(
+    ctx.plugin.register.command({ id: 'tree.open', handler: vi.fn() })
+    expect(() => ctx.plugin.register.command({ id: 'tree.close', handler: vi.fn() })).toThrowError(
       'Plugin "md.tree" registers the command "tree.close", which its manifest does not declare',
     )
 
@@ -107,7 +107,7 @@ describe('the commands a plugin declares in its manifest', () => {
     const running = host.commands.executeCommand('md.tree:tree.open', note)
     host.lifecycle
       .createContext('md.tree', declaring('md.tree'))
-      .register.command({ id: 'tree.open', handler })
+      .plugin.register.command({ id: 'tree.open', handler })
     expect(handler).not.toHaveBeenCalled()
     settle()
 
@@ -138,7 +138,7 @@ describe('the commands a plugin declares in its manifest', () => {
     host.keybindings.registerKeybindings('md.tree', keys)
     host.lifecycle
       .createContext('md.tree', declaring('md.tree'))
-      .register.command({ id: 'tree.open', handler })
+      .plugin.register.command({ id: 'tree.open', handler })
     const event = new KeyboardEvent('keydown', { code: 'KeyE', shiftKey: true, ctrlKey: true })
 
     host.lifecycle.disposePlugin('md.tree')
@@ -149,7 +149,7 @@ describe('the commands a plugin declares in its manifest', () => {
     host.keybindings.registerKeybindings('md.tree', keys)
     host.lifecycle
       .createContext('md.tree', declaring('md.tree'))
-      .register.command({ id: 'tree.open', handler })
+      .plugin.register.command({ id: 'tree.open', handler })
 
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.tree:tree.open',
@@ -162,7 +162,7 @@ describe('the commands a plugin declares in its manifest', () => {
     const handler = vi.fn()
     host.lifecycle
       .createContext('md.tree', declaring('md.tree'))
-      .register.command({ id: 'tree.open', handler })
+      .plugin.register.command({ id: 'tree.open', handler })
 
     expect(await host.commands.executeCommand('md.tree:tree.open', note)).toBe(true)
 
@@ -179,10 +179,10 @@ describe('the commands a plugin declares in its manifest', () => {
 
     host.lifecycle
       .createContext('md.tree', declaring('md.tree'))
-      .register.command({ id: 'tree.open', handler: first })
+      .plugin.register.command({ id: 'tree.open', handler: first })
     host.lifecycle
       .createContext('md.other', declaring('md.other'))
-      .register.command({ id: 'tree.open', handler: second })
+      .plugin.register.command({ id: 'tree.open', handler: second })
     await host.commands.executeCommand('md.other:tree.open', note)
 
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
@@ -215,10 +215,10 @@ describe('the commands a plugin declares in its manifest', () => {
       'md.caller.writer',
       createMockManifest('md.caller.writer', { permissions: ['vault:write'] }),
     )
-    await writerOnly.ui.commands!.run('md.tree:tree.open', note)
+    await writerOnly.host.ui.commands!.run('md.tree:tree.open', note)
     expect(run).toHaveBeenCalledWith('md.tree:tree.open', note)
 
-    await expect(writerOnly.ui.commands!.run('md.tree:tree.prune', note)).rejects.toThrowError(
+    await expect(writerOnly.host.ui.commands!.run('md.tree:tree.prune', note)).rejects.toThrowError(
       'Plugin "md.caller.writer" lacks required permission "vault:manage" for commands.run',
     )
     expect(run).toHaveBeenCalledTimes(1)
@@ -227,7 +227,7 @@ describe('the commands a plugin declares in its manifest', () => {
       'md.caller.manager',
       createMockManifest('md.caller.manager', { permissions: ['vault:write', 'vault:manage'] }),
     )
-    await manager.ui.commands!.run('md.tree:tree.prune', note)
+    await manager.host.ui.commands!.run('md.tree:tree.prune', note)
     expect(run).toHaveBeenCalledWith('md.tree:tree.prune', note)
   })
 })

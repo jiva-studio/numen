@@ -1,10 +1,16 @@
-import type { Disposable, JsonValue, PluginContext } from '@numen/plugin-sdk'
+import type { Disposable, HostServices, JsonValue, PluginContext } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
+
+/** What a plugin's `activate` receives: the context it owns and the services the host lends it. */
+export interface PluginParts {
+  readonly plugin: PluginContext
+  readonly host: HostServices
+}
 
 /** What the loader requires of the window that hosts the plugins it activates. */
 export interface LoaderHost {
-  createContext(pluginId: string, manifest?: Manifest): PluginContext
-  /** Called before the context is made: the plugin counts as started only after `markPluginStarted`. */
+  createContext(pluginId: string, manifest?: Manifest): PluginParts
+  /** Called before the parts are made: the plugin counts as started only after `markPluginStarted`. */
   markPluginStarting?(pluginId: string): void
   /** Called once `activate` has returned. */
   markPluginStarted?(pluginId: string): void

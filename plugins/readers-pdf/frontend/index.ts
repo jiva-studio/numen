@@ -14,9 +14,9 @@ export { useDocumentReader } from './model/useDocumentReader'
 export { useDocumentTab } from './model/useDocumentTab'
 export { readPDFReaderPreferences, type PDFReaderPreferences } from './model/preferences'
 
-export function activate(context: PluginContext): void {
-  bindPDFReaderPreferences(context)
-  context.register.reader({
+export function activate(plugin: PluginContext): void {
+  bindPDFReaderPreferences(plugin)
+  plugin.register.reader({
     id: 'reader-pdf',
     component: DocumentTab,
     title: 'PDF Reader',

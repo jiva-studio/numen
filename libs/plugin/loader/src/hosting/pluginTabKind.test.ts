@@ -225,7 +225,7 @@ describe('a declared kind registered through a plugin context', () => {
       }),
     )
 
-    const sub = context.register.tabKind<Held>({
+    const sub = context.plugin.register.tabKind<Held>({
       kind: 'member',
       component: Pane,
       open: (folderPath, id) => ({ at: folderPath, id, title: 'T' }),
@@ -265,8 +265,8 @@ describe('the services a plugin context is given', () => {
       createMockManifest('md.numen.sample', { name: 'Sample', permissions: ['vault:read'] }),
     )
 
-    expect(context.ui.workspace?.getNoteInFocus()).toStrictEqual(focus)
-    await expect(context.vault.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
+    expect(context.host.ui.workspace?.getNoteInFocus()).toStrictEqual(focus)
+    await expect(context.host.vault.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
       body: 'Pruning notes.',
     })
     expect(read).toHaveBeenCalledWith('Orchard/Pruning.md')
@@ -287,10 +287,10 @@ describe('the services a plugin context is given', () => {
       name: 'One',
       permissions: ['vault:read'],
     })
-    host.lifecycle.createContext('md.numen.one', readText).events.onVaultChange((event) => {
+    host.lifecycle.createContext('md.numen.one', readText).host.events.onVaultChange((event) => {
       received.push(event)
     })
-    host.lifecycle.createContext('md.numen.two', readText).events.onVaultChange(() => {
+    host.lifecycle.createContext('md.numen.two', readText).host.events.onVaultChange(() => {
       throw new Error('no')
     })
 

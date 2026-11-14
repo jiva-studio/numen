@@ -3,7 +3,7 @@
  * search index, and a popover with the details.
  */
 import { defineComponent, h } from 'vue'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { statsApi, type StatsApi } from './api/wire'
 import { createIndexStats, type Activity, type IndexStats, type Timer } from './model/stats'
 import StatsIndicator from './ui/StatsIndicator.vue'
@@ -59,14 +59,18 @@ export function createStatusView(model: IndexStats) {
   })
 }
 
-export const activate = (context: PluginContext, parts: StatsParts = browserParts): void => {
+export const activate = (
+  plugin: PluginContext,
+  host: HostServices,
+  parts: StatsParts = browserParts,
+): void => {
   const model = createIndexStats({
     ...parts,
-    tasks: context.work.backgroundTasks,
-    events: context.events,
+    tasks: host.work.backgroundTasks,
+    events: host.events,
   })
-  context.register.slotView({ id: STATS_VIEW, component: createStatusView(model) })
-  context.plugin.subscriptions.push({ dispose: () => model.stop() })
+  plugin.register.slotView({ id: STATS_VIEW, component: createStatusView(model) })
+  plugin.identity.subscriptions.push({ dispose: () => model.stop() })
   model.start()
 }
 

@@ -52,7 +52,7 @@ function create(
   host.lifecycle.registerManifest('org.example.ledger', manifest ?? LEDGER_MANIFEST)
   host.lifecycle
     .createContext('org.example.ledger')
-    .register.command({ id: 'ledger.open', handler })
+    .plugin.register.command({ id: 'ledger.open', handler })
   return { host, handler, windowValues, reportSlotIssue }
 }
 
@@ -170,7 +170,7 @@ describe('the keys of the plugins', () => {
     const { host, handler, windowValues } = create([LEDGER, find])
     host.lifecycle
       .createContext('org.example.ledger')
-      .register.command({ id: 'ledger.find', handler: vi.fn() })
+      .plugin.register.command({ id: 'ledger.find', handler: vi.fn() })
     host.keybindings.registerKeybindings('org.example.ledger', [
       { key: 'mod+l', command: 'ledger.find', when: 'window.isFieldFocused' },
       { key: 'mod+l', command: 'ledger.open' },

@@ -1,4 +1,4 @@
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { cards } from './api/cards'
 import { presets } from './api/presets.wire'
 import { useDeckTabs, createCardModelTabs } from './editor'
@@ -23,27 +23,27 @@ export {
 export { PRESET, PresetTab, usePresetTab, type PresetTabState } from './preset'
 export { REVIEW } from './review'
 
-export function activate(context: PluginContext): void {
-  const { workspace } = context.ui
-  const { buffers } = context.vault
+export function activate(plugin: PluginContext, host: HostServices): void {
+  const { workspace } = host.ui
+  const { buffers } = host.vault
   if (!workspace) {
-    const { notices } = context.ui
-    const { close: closeTab } = context.tabs
-    const { connections } = context.work
-    const { relations } = context.vault
+    const { notices } = host.ui
+    const { close: closeTab } = host.tabs
+    const { connections } = host.work
+    const { relations } = host.vault
     if (!connections || !relations) {
       throw new Error('the review needs the connections and the links of the window it is drawn in')
     }
     const counts = createVaultCounts({ reportError: createNotices(notices).reportError })
-    context.plugin.subscriptions.push({ dispose: counts.dispose })
-    context.register.view(createVaultSummaryView(counts))
-    context.register.tabKind(
+    plugin.identity.subscriptions.push({ dispose: counts.dispose })
+    plugin.register.view(createVaultSummaryView(counts))
+    plugin.register.tabKind(
       createReviewKind({
         counts,
         notices,
         connections,
         relations,
-        mountView: (capability, element, view) => context.ui.mountView(capability, element, view),
+        mountView: (capability, element, view) => host.ui.mountView(capability, element, view),
         closeTab: (id) => closeTab(id),
       }),
     )
@@ -52,7 +52,7 @@ export function activate(context: PluginContext): void {
   if (!buffers) {
     throw new Error('the flashcards need the window their tabs are drawn in and its open files')
   }
-  const closeTab = (id: string): void => context.tabs.close(id)
+  const closeTab = (id: string): void => host.tabs.close(id)
   const decks = useDeckTabs(cards, presets, {
     buffers,
     closeTab,
@@ -70,13 +70,13 @@ export function activate(context: PluginContext): void {
     writeMessage: workspace.messages.getWriter('preset'),
     today: () => workspace.window.getToday(),
   })
-  context.register.tabKind(decks.kind)
-  context.register.tabKind(cardModels.kind)
-  context.register.tabKind(schedules.kind)
-  context.register.command({
+  plugin.register.tabKind(decks.kind)
+  plugin.register.tabKind(cardModels.kind)
+  plugin.register.tabKind(schedules.kind)
+  plugin.register.command({
     id: 'preset.open',
     handler: async (note) => {
-      await schedules.openPresetOf(note, (kind, path) => context.tabs.open?.(kind, path))
+      await schedules.openPresetOf(note, (kind, path) => host.tabs.open?.(kind, path))
     },
   })
 }

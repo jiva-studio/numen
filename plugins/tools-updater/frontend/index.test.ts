@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import type { Status } from './api/updater'
 import { activate, UPDATE_VIEW } from './index'
 import type { Timer } from './model/updates'
@@ -39,7 +39,8 @@ const setup = (answer: Status) => {
     app: { name: 'numen', version: '2026.9.0', build: 900, platform: 'windows' },
     initialSettings: { checkIntervalHours: 2 },
   })
-  activate(context, { api: { check }, timer })
+  const host = createMockHostServices()
+  activate(context, host, { api: { check }, timer })
   return { context, check, waits }
 }
 

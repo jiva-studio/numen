@@ -3,7 +3,7 @@
  * run, and a popover that lists them with their health, their times and their stop for idleness.
  */
 import { defineComponent, h } from 'vue'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { getMonotonicNow } from '@numen/ui'
 import {
   createRunningPlugins,
@@ -45,10 +45,14 @@ export function createStatusView(model: RunningPlugins) {
   })
 }
 
-export const activate = (context: PluginContext, parts: PluginsParts = browserParts): void => {
-  const model = createRunningPlugins({ host: context.work.processes, ...parts })
-  context.register.slotView({ id: PLUGINS_VIEW, component: createStatusView(model) })
-  context.plugin.subscriptions.push({ dispose: () => model.stop() })
+export const activate = (
+  plugin: PluginContext,
+  host: HostServices,
+  parts: PluginsParts = browserParts,
+): void => {
+  const model = createRunningPlugins({ host: host.work.processes, ...parts })
+  plugin.register.slotView({ id: PLUGINS_VIEW, component: createStatusView(model) })
+  plugin.identity.subscriptions.push({ dispose: () => model.stop() })
   model.start()
 }
 

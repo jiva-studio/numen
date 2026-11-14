@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import type { Stats } from './api/stats'
 import { activate, STATS_VIEW } from './index'
 import type { Timer } from './model/stats'
@@ -37,12 +37,13 @@ const setup = (answer: Stats) => {
   }
   const get = vi.fn(async () => ({ ok: true as const, value: answer }))
   const context = createMockPluginContext({ pluginId: 'md.numen.tools.index.stats' })
-  activate(context, {
+  const host = createMockHostServices()
+  activate(context, host, {
     api: { get },
     timer,
     activity: { isActive: () => true, onActive: () => () => undefined },
   })
-  return { context, get, waits }
+  return { context, host, get, waits }
 }
 
 describe('the index stats frontend', () => {
@@ -65,20 +66,20 @@ describe('the index stats frontend', () => {
   })
 
   it('asks the backend when a note of the vault changes', async () => {
-    const { context, get } = setup(STATS)
+    const { host, get } = setup(STATS)
     await flush()
 
-    context.events.emitVaultChange({ paths: ['Garden/Roses.md'] })
+    host.events.emitVaultChange({ paths: ['Garden/Roses.md'] })
     await flush()
 
     expect(get).toHaveBeenCalledTimes(2)
   })
 
   it('asks the backend when a background task of the window starts', async () => {
-    const { context, get } = setup(STATS)
+    const { host, get } = setup(STATS)
     await flush()
 
-    context.work.backgroundTasks.setTasks([
+    host.work.backgroundTasks.setTasks([
       {
         id: 'indexing',
         label: 'Indexing',

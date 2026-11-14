@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginContext } from '../context'
+import { createPluginParts } from '../context'
 import { createTestContextHost } from '../../testing/contextHost'
 import { STUB_COMPONENT } from '../../testing/stubComponent'
 
@@ -23,9 +23,11 @@ describe('a registration the manifest does not declare', () => {
   it('fails for a reader, naming the plugin, the kind and the id', () => {
     const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', { permissions: PERMISSIONS })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
 
-    expect(() => context.register.reader({ id: 'pdf', component: STUB_COMPONENT })).toThrowError(
+    expect(() =>
+      context.plugin.register.reader({ id: 'pdf', component: STUB_COMPONENT }),
+    ).toThrowError(
       'Plugin "md.numen.sample" registers the reader "pdf", which its manifest does not declare in contributes.readers',
     )
     expect(registered).not.toHaveBeenCalled()
@@ -37,10 +39,10 @@ describe('a registration the manifest does not declare', () => {
       permissions: PERMISSIONS,
       tabKinds: ['deck'],
     })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
 
     expect(() =>
-      context.register.tabKind({ kind: 'cards', component: STUB_COMPONENT }),
+      context.plugin.register.tabKind({ kind: 'cards', component: STUB_COMPONENT }),
     ).toThrowError('registers the tab kind "cards"')
     expect(registered).not.toHaveBeenCalled()
   })
@@ -51,13 +53,13 @@ describe('a registration the manifest does not declare', () => {
       permissions: PERMISSIONS,
       commands: ['deck.open'],
     })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
 
-    expect(() => context.register.command({ id: 'deck.close', handler: vi.fn() })).toThrowError(
-      'registers the command "deck.close"',
-    )
     expect(() =>
-      context.register.command({ id: 'app:file.createText', handler: vi.fn() }),
+      context.plugin.register.command({ id: 'deck.close', handler: vi.fn() }),
+    ).toThrowError('registers the command "deck.close"')
+    expect(() =>
+      context.plugin.register.command({ id: 'app:file.createText', handler: vi.fn() }),
     ).toThrowError('contributes.handlers')
     expect(registered).not.toHaveBeenCalled()
   })
@@ -65,21 +67,21 @@ describe('a registration the manifest does not declare', () => {
   it('fails for a settings view', () => {
     const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', { permissions: PERMISSIONS })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
 
     expect(() =>
-      context.register.settingsView({ id: 'floor', component: STUB_COMPONENT }),
+      context.plugin.register.settingsView({ id: 'floor', component: STUB_COMPONENT }),
     ).toThrowError('registers the settings view "floor"')
     expect(registered).not.toHaveBeenCalled()
   })
 
   it('fails for every registration of a plugin that has no manifest', () => {
     const { host } = createRegisteringHost()
-    const context = createPluginContext('md.numen.sample', host, { permissions: PERMISSIONS })
+    const context = createPluginParts('md.numen.sample', host, { permissions: PERMISSIONS })
 
-    expect(() => context.register.reader({ id: 'pdf', component: STUB_COMPONENT })).toThrowError(
-      'does not declare',
-    )
+    expect(() =>
+      context.plugin.register.reader({ id: 'pdf', component: STUB_COMPONENT }),
+    ).toThrowError('does not declare')
   })
 })
 
@@ -94,13 +96,13 @@ describe('a registration the manifest declares', () => {
       handlers: ['app:file.createText'],
       settingsViews: ['floor'],
     })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
 
-    context.register.reader({ id: 'pdf', component: STUB_COMPONENT })
-    context.register.tabKind({ kind: 'deck', component: STUB_COMPONENT })
-    context.register.command({ id: 'deck.open', handler: vi.fn() })
-    context.register.command({ id: 'app:file.createText', handler: vi.fn() })
-    context.register.settingsView({ id: 'floor', component: STUB_COMPONENT })
+    context.plugin.register.reader({ id: 'pdf', component: STUB_COMPONENT })
+    context.plugin.register.tabKind({ kind: 'deck', component: STUB_COMPONENT })
+    context.plugin.register.command({ id: 'deck.open', handler: vi.fn() })
+    context.plugin.register.command({ id: 'app:file.createText', handler: vi.fn() })
+    context.plugin.register.settingsView({ id: 'floor', component: STUB_COMPONENT })
 
     expect(registered).toHaveBeenCalledTimes(5)
   })
@@ -110,13 +112,13 @@ describe('openExternal', () => {
   it('rejects for a plugin without link:open and does not open the address', async () => {
     const openExternal = vi.fn(() => Promise.resolve())
     const host = createTestContextHost({ info: { openExternal } })
-    const context = createPluginContext(
+    const context = createPluginParts(
       'md.numen.sample',
       host,
       createMockManifest('md.numen.sample', { permissions: PERMISSIONS }),
     )
 
-    await expect(context.plugin.openExternal('https://numen.md/')).rejects.toThrowError(
+    await expect(context.plugin.identity.openExternal('https://numen.md/')).rejects.toThrowError(
       'lacks required permission "link:open" for openExternal',
     )
     expect(openExternal).not.toHaveBeenCalled()
@@ -125,13 +127,13 @@ describe('openExternal', () => {
   it('opens the address for a plugin that declares link:open', async () => {
     const openExternal = vi.fn(() => Promise.resolve())
     const host = createTestContextHost({ info: { openExternal } })
-    const context = createPluginContext(
+    const context = createPluginParts(
       'md.numen.sample',
       host,
       createMockManifest('md.numen.sample', { permissions: ['link:open'] }),
     )
 
-    await expect(context.plugin.openExternal('https://numen.md/')).resolves.toEqual({
+    await expect(context.plugin.identity.openExternal('https://numen.md/')).resolves.toEqual({
       ok: true,
       value: null,
     })

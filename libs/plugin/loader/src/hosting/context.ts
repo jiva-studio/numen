@@ -1,5 +1,5 @@
 /**
- * Host implementation of PluginContext conforming to @numen/plugin-sdk.
+ * Host implementation of PluginContext and HostServices conforming to @numen/plugin-sdk.
  */
 import type {
   BufferHost,
@@ -7,6 +7,7 @@ import type {
   Disposable,
   FileBuffers,
   FileSelectEvent,
+  HostServices,
   JsonValue,
   PluginContext,
   PluginEvents,
@@ -31,6 +32,7 @@ import {
 import { guardService, SERVICE_RULES } from './guards/servicePermissions'
 import { createSubscriptionList, type SubscriptionList } from './guards/subscriptions'
 import { createSlotViewRegistration } from './guards/slotContext'
+import type { PluginParts } from '../host'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: SubscriptionList, disposable: Disposable): Disposable {
@@ -176,21 +178,23 @@ function createWork(pluginId: string, host: PluginContextHost, add: Track): Plug
   })
 }
 
+/** What both factories build on: the plugin, its permission check and its subscriptions. */
+interface PartsScope {
+  readonly target: PermissionTarget
+  readonly subscriptions: SubscriptionList
+  readonly add: Track
+  readonly check: RequirePermission
+}
+
 /**
- * The context of a plugin. Every service in it is built from the table of SERVICE_RULES: a member
- * the table does not list is not reachable, and a member that lists a permission throws, or rejects,
- * where the manifest of the plugin does not declare it.
+ * The context the plugin owns: its identity, its registrations, its settings and its health. Every
+ * service in it is built from the table of SERVICE_RULES: a member the table does not list is not
+ * reachable, and a member that lists a permission throws, or rejects, where the manifest of the
+ * plugin does not declare it.
  */
-export function createPluginContext(
-  pluginId: string,
-  host: PluginContextHost,
-  manifest?: Manifest | { permissions?: readonly string[] },
-): PluginContext {
-  const subscriptions = createSubscriptionList()
-  const add = (d: Disposable) => trackSubscription(subscriptions, d)
-  const target: PermissionTarget = { pluginId, manifest }
-  const check: RequirePermission = (p, op) => checkPermission(target, p, op)
-  const registration = { target, add }
+function createPluginContext(scope: PartsScope, host: PluginContextHost): PluginContext {
+  const { target, add, check } = scope
+  const { pluginId, manifest } = target
   const slotView = createSlotViewRegistration(
     { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
     host,
@@ -198,31 +202,60 @@ export function createPluginContext(
   )
   const rules = SERVICE_RULES
   const health = host.window.getHealth(pluginId)
-
   return {
-    plugin: {
+    identity: {
       id: pluginId,
       target: host.info.target,
       app: host.info.app,
       openExternal: guardService(
         { openExternal: createExternalOpener(host.info.openExternal) },
-        rules.plugin,
+        rules.identity,
         { check },
       ).openExternal,
-      subscriptions: subscriptions.view,
+      subscriptions: scope.subscriptions.view,
       hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     },
     register: guardService(
-      createRegistrations(pluginId, host, { ...registration, slotView }),
+      createRegistrations(pluginId, host, { target, add, slotView }),
       rules.register,
       { check },
     ),
     settings: guardService(createSettings(pluginId, host, add), rules.settings, { check }),
-    events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
-    tabs: guardService(createTabs(host), rules.tabs, { check }),
-    vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
-    ui: createUiService(pluginId, host, { guard: registration, check }),
-    work: guardService(createWork(pluginId, host, add), rules.work, { check }),
     ...(health && { health: guardService(health, rules.health, { check }) }),
   }
+}
+
+/**
+ * The services the host lends the plugin: the vault, the tabs, the window, the background work and
+ * the events, guarded by SERVICE_RULES as the plugin context is. What the plugin is handed through
+ * them is tracked in the subscriptions of the plugin.
+ */
+function createHostServices(scope: PartsScope, host: PluginContextHost): HostServices {
+  const { target, add, check } = scope
+  const { pluginId } = target
+  const rules = SERVICE_RULES
+  return {
+    vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
+    tabs: guardService(createTabs(host), rules.tabs, { check }),
+    ui: createUiService(pluginId, host, { guard: scope, check }),
+    work: guardService(createWork(pluginId, host, add), rules.work, { check }),
+    events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
+  }
+}
+
+/** The arguments of `activate`: the context the plugin owns and the services the host lends it. */
+export function createPluginParts(
+  pluginId: string,
+  host: PluginContextHost,
+  manifest?: Manifest | { permissions?: readonly string[] },
+): PluginParts {
+  const subscriptions = createSubscriptionList()
+  const target: PermissionTarget = { pluginId, manifest }
+  const scope: PartsScope = {
+    target,
+    subscriptions,
+    add: (d: Disposable) => trackSubscription(subscriptions, d),
+    check: (p, op) => checkPermission(target, p, op),
+  }
+  return { plugin: createPluginContext(scope, host), host: createHostServices(scope, host) }
 }

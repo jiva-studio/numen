@@ -33,8 +33,8 @@ describe('the vaults and the window of a plugin context', () => {
 
     const context = host.lifecycle.createContext('org.example.ledger', BAR)
 
-    expect(context.vault.vaults?.getState()).toStrictEqual(vaults.getState())
-    expect(context.ui.window?.getState()).toStrictEqual(window.getState())
+    expect(context.host.vault.vaults?.getState()).toStrictEqual(vaults.getState())
+    expect(context.host.ui.window?.getState()).toStrictEqual(window.getState())
   })
 
   it('are the same for every plugin of the window, the vaults only for one that holds vault:read', () => {
@@ -45,10 +45,10 @@ describe('the vaults and the window of a plugin context', () => {
     const ledger = host.lifecycle.createContext('org.example.ledger', BAR)
     const tide = host.lifecycle.createContext('org.example.tide', TIDE)
 
-    expect(ledger.vault.vaults?.getState()).toStrictEqual(vaults.getState())
-    expect(() => tide.vault.vaults?.getState()).toThrowError('vault:read')
-    expect(tide.ui.window?.getState()).toStrictEqual(window.getState())
-    expect(ledger.ui.window?.getState()).toStrictEqual(window.getState())
+    expect(ledger.host.vault.vaults?.getState()).toStrictEqual(vaults.getState())
+    expect(() => tide.host.vault.vaults?.getState()).toThrowError('vault:read')
+    expect(tide.host.ui.window?.getState()).toStrictEqual(window.getState())
+    expect(ledger.host.ui.window?.getState()).toStrictEqual(window.getState())
   })
 
   it('are absent where the window gives none', () => {
@@ -56,7 +56,7 @@ describe('the vaults and the window of a plugin context', () => {
 
     const context = host.lifecycle.createContext('org.example.ledger', BAR)
 
-    expect(context.vault.vaults).toBeUndefined()
-    expect(context.ui.window).toBeUndefined()
+    expect(context.host.vault.vaults).toBeUndefined()
+    expect(context.host.ui.window).toBeUndefined()
   })
 })

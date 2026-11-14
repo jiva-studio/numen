@@ -6,7 +6,12 @@ import {
   type TabKindRegistration,
   type VaultRelations,
 } from '@numen/plugin-sdk'
-import { createMockPluginContext, type MockPluginContext } from '@numen/plugin-sdk/testing'
+import {
+  createMockHostServices,
+  createMockPluginContext,
+  type MockHostServices,
+  type MockPluginContext,
+} from '@numen/plugin-sdk/testing'
 import plugin, { activate, AgentTab, AGENT, ConversationView } from './index'
 import { createAgentConnections, createHost, say, type AgentListing } from './fixtures'
 import type { AgentTabState } from './model/useAgentConversation'
@@ -35,26 +40,26 @@ const createWindow = () => {
   return { tabOpens, tabs, navigateTab, bind }
 }
 
-const createContext = (
+const createParts = (
   answer: Parameters<typeof createAgentConnections>[0] = { frames: [say('Twelve.')] },
   navigateTab?: (kind: string, path: string) => Promise<string>,
   listing?: AgentListing,
-): MockPluginContext => {
+): { ctx: MockPluginContext; services: MockHostServices } => {
   const { workspace, relations } = createHost()
-  const ctx = createMockPluginContext({
-    pluginId: PLUGIN_ID,
+  const ctx = createMockPluginContext({ pluginId: PLUGIN_ID })
+  const services = createMockHostServices({
     workspace,
     relations: relations as unknown as VaultRelations,
     ...(navigateTab ? { navigateTab } : {}),
   })
   const { host } = createAgentConnections(answer, listing)
-  return { ...ctx, work: { ...ctx.work, connections: host } }
+  return { ctx, services: { ...services, work: { ...services.work, connections: host } } }
 }
 
 describe('view-agent-chat plugin', () => {
   it('registers the agent tab kind upon activation', () => {
-    const ctx = createContext()
-    activate(ctx)
+    const { ctx, services } = createParts()
+    activate(ctx, services)
 
     const tabKinds = ctx.getRegisteredTabKinds()
     expect(tabKinds).toHaveLength(1)
@@ -64,8 +69,8 @@ describe('view-agent-chat plugin', () => {
   })
 
   it('declares the conversation view other plugins mount', () => {
-    const ctx = createContext()
-    activate(ctx)
+    const { ctx, services } = createParts()
+    activate(ctx, services)
 
     expect(ctx.getRegisteredViews()).toStrictEqual([
       { capability: CONVERSATION, component: ConversationView },
@@ -74,7 +79,8 @@ describe('view-agent-chat plugin', () => {
 
   it('declares only the conversation view in the flashcards window, which offers no tabs', () => {
     const ctx = createMockPluginContext({ pluginId: PLUGIN_ID, target: 'desktop.flashcards' })
-    activate(ctx)
+    const services = createMockHostServices()
+    activate(ctx, services)
 
     expect(ctx.getRegisteredViews().map((one) => one.capability)).toStrictEqual([CONVERSATION])
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
@@ -82,19 +88,19 @@ describe('view-agent-chat plugin', () => {
   })
 
   it('removes the agent tab kind when the plugin is disabled', () => {
-    const ctx = createContext()
-    activate(ctx)
+    const { ctx, services } = createParts()
+    activate(ctx, services)
 
     ctx.dispose()
 
-    expect(ctx.plugin.subscriptions).toHaveLength(0)
+    expect(ctx.identity.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredViews()).toHaveLength(0)
   })
 
   it('opens a tab whose conversation is its own', () => {
-    const ctx = createContext()
-    activate(ctx)
+    const { ctx, services } = createParts()
+    activate(ctx, services)
     const kind = ctx.getRegisteredTabKinds()[0]!
 
     const first = kind.open!('', 'agent:1') as AgentTabState
@@ -106,8 +112,8 @@ describe('view-agent-chat plugin', () => {
   })
 
   it('answers a question of a tab through the connections of the plugin', async () => {
-    const ctx = createContext({ frames: [say('Twelve pear trees.')] })
-    activate(ctx)
+    const { ctx, services } = createParts({ frames: [say('Twelve pear trees.')] })
+    activate(ctx, services)
     const state = ctx.getRegisteredTabKinds()[0]!.open!('', 'agent:1') as AgentTabState
 
     state.draft.send('How many pear trees?')
@@ -118,12 +124,12 @@ describe('view-agent-chat plugin', () => {
 
   it('offers the agents of the plugin again once its agents setting changes', async () => {
     let rows: readonly ConnectionRow[] = []
-    const ctx = createContext(undefined, undefined, {
+    const { ctx, services } = createParts(undefined, undefined, {
       get rows() {
         return rows
       },
     })
-    activate(ctx)
+    activate(ctx, services)
     const state = ctx.getRegisteredTabKinds()[0]!.open!('', 'agent:1') as AgentTabState
     await vi.waitFor(() => expect(state.agents?.offered.isAgentMissing.value).toBe(true))
 
@@ -137,7 +143,7 @@ describe('view-agent-chat plugin', () => {
   it('lists the agents again on a change of the connections while a tab is open', async () => {
     let rows: readonly ConnectionRow[] = []
     const listed: string[] = []
-    const ctx = createContext(undefined, undefined, {
+    const { ctx, services } = createParts(undefined, undefined, {
       get rows() {
         listed.push('rows')
         return rows
@@ -145,14 +151,13 @@ describe('view-agent-chat plugin', () => {
     })
     const handlers = new Set<() => void>()
     const connections = {
-      ...ctx.work.connections!,
+      ...services.work.connections!,
       onChange: (handler: () => void) => {
         handlers.add(handler)
         return { dispose: () => handlers.delete(handler) }
       },
     }
-    const watched = { ...ctx, work: { ...ctx.work, connections } }
-    activate(watched)
+    activate(ctx, { ...services, work: { ...services.work, connections } })
     const kind = ctx.getRegisteredTabKinds()[0]!
     const state = kind.open!('', 'agent:1') as AgentTabState
     kind.open!('', 'agent:2')
@@ -167,13 +172,13 @@ describe('view-agent-chat plugin', () => {
   })
 
   it('opens the settings page of the plugin from a tab', () => {
-    const ctx = createContext()
-    activate(ctx)
+    const { ctx, services } = createParts()
+    activate(ctx, services)
     const state = ctx.getRegisteredTabKinds()[0]!.open!('', 'agent:1') as AgentTabState
 
     state.openSettings()
 
-    expect(ctx.ui.commands.getRuns()).toStrictEqual([
+    expect(services.ui.commands.getRuns()).toStrictEqual([
       {
         command: SETTINGS_OPEN_COMMAND,
         target: undefined,
@@ -185,9 +190,9 @@ describe('view-agent-chat plugin', () => {
 
   it('opens one conversation however many times the command runs', async () => {
     const strip = createWindow()
-    const ctx = createContext(undefined, strip.navigateTab)
+    const { ctx, services } = createParts(undefined, strip.navigateTab)
     strip.bind(ctx)
-    activate(ctx)
+    activate(ctx, services)
 
     await ctx.triggerCommand('chat.open')
     await ctx.triggerCommand('chat.open', {
@@ -205,9 +210,9 @@ describe('view-agent-chat plugin', () => {
 
   it('writes the path of the note into the composer of the conversation last in use', async () => {
     const strip = createWindow()
-    const ctx = createContext(undefined, strip.navigateTab)
+    const { ctx, services } = createParts(undefined, strip.navigateTab)
     strip.bind(ctx)
-    activate(ctx)
+    activate(ctx, services)
 
     expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
       'chat.open',
@@ -230,9 +235,9 @@ describe('view-agent-chat plugin', () => {
 
   it('opens a conversation for a question about a note where none is open', async () => {
     const strip = createWindow()
-    const ctx = createContext(undefined, strip.navigateTab)
+    const { ctx, services } = createParts(undefined, strip.navigateTab)
     strip.bind(ctx)
-    activate(ctx)
+    activate(ctx, services)
 
     await ctx.triggerCommand('note.ask', {
       path: 'notes/Orchard.md',
@@ -249,28 +254,25 @@ describe('view-agent-chat plugin', () => {
   })
 
   it('holds the conversation view, the tab kind, its two commands and the watch of its agents, and nothing else', () => {
-    const ctx = createContext()
-    activate(ctx)
+    const { ctx, services } = createParts()
+    activate(ctx, services)
 
-    expect(ctx.plugin.subscriptions).toHaveLength(5)
+    expect(ctx.identity.subscriptions).toHaveLength(5)
   })
 
   it('refuses to activate in a window that offers no connections', () => {
     const { workspace, relations } = createHost()
     expect(() =>
       activate(
-        createMockPluginContext({
-          pluginId: PLUGIN_ID,
-          workspace,
-          relations: relations as unknown as VaultRelations,
-        }),
+        createMockPluginContext({ pluginId: PLUGIN_ID }),
+        createMockHostServices({ workspace, relations: relations as unknown as VaultRelations }),
       ),
     ).toThrow('an agent chat requires a window, its connections and the links of the vault')
   })
 
   it('activates through the default plugin lifecycle', async () => {
-    const ctx = createContext()
-    await plugin.activate(ctx)
+    const { ctx, services } = createParts()
+    await plugin.activate(ctx, services)
 
     expect(ctx.getRegisteredTabKinds()[0]?.kind).toBe(AGENT)
   })

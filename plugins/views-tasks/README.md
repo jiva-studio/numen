@@ -16,4 +16,4 @@ The plugin is enabled by default. Disabled, no task status is shown anywhere in 
 
 ## How It Works
 
-The manifest places the view `status` in the slot `titleBar.status` of `contributes.slots`, and the frontend registers it with `register.slotView`. The view reads the tasks through `context.work.backgroundTasks`: the tasks of the core and of the plugins, the messages of the window and the notices of the plugins at warning or error level as failed tasks. Cancel, retry, dismiss and the settings link are calls of the same host.
+The manifest places the view `status` in the slot `titleBar.status` of `contributes.slots`, and the frontend registers it with `register.slotView`. The view reads the tasks through `host.work.backgroundTasks`: the tasks of the core and of the plugins, the messages of the window and the notices of the plugins at warning or error level as failed tasks. Cancel, retry, dismiss and the settings link are calls of the same host.

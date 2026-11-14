@@ -35,7 +35,7 @@ describe('the finder of the commands a slot draws', () => {
         LEDGER.pluginId,
         createMockManifest(LEDGER.pluginId, { commands: ['ledger.open'] }),
       )
-      .register.command({ id: 'ledger.open', handler: vi.fn(), listItems: async () => [] })
+      .plugin.register.command({ id: 'ledger.open', handler: vi.fn(), listItems: async () => [] })
 
     expect(createSlotCommandFinder).toHaveBeenCalledOnce()
     const [own] = createSlotCommandFinder.mock.calls[0] as unknown as Parameters<

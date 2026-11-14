@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { DocumentTab } from './index'
 
 describe('reader-pdf plugin frontend', () => {
   it('activates and updates plugin active state', async () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.readers.pdf' })
-    await plugin.activate(ctx)
+    await plugin.activate(ctx, createMockHostServices())
 
     const readers = ctx.getRegisteredReaders()
     expect(readers).toHaveLength(1)
@@ -20,7 +20,7 @@ describe('reader-pdf plugin frontend', () => {
 
   it('declares the reader it registers as the default reader of PDF files', async () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.readers.pdf' })
-    await plugin.activate(ctx)
+    await plugin.activate(ctx, createMockHostServices())
     const manifest = JSON.parse(
       readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
     ) as {

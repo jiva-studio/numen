@@ -1,12 +1,14 @@
 /**
- * The context one start of a plugin receives. The start keeps every disposable it is handed through
- * the context and its services (`ui.commands.watch`, `vault.buffers.track`, `ui.mountView`, a `register` call) and
- * every one it pushes into its subscriptions, and cancelling the start disposes them all. Once the
+ * The plugin context and the host services one start of a plugin receives. The start keeps every
+ * disposable it is handed through them (`ui.commands.watch`, `vault.buffers.track`,
+ * `ui.mountView`, a `register` call) and every one it pushes into its subscriptions, and
+ * cancelling the start disposes them all. Once the
  * start is cancelled, a register or on call answers a disposable that holds nothing, and whatever
- * else the start is handed or pushes is disposed at once. Once the start has ended, the context
- * passes everything through and keeps nothing.
+ * else the start is handed or pushes is disposed at once. Once the start has ended, both pass
+ * everything through and keep nothing.
  */
-import type { Disposable, PluginContext } from '@numen/plugin-sdk'
+import type { Disposable } from '@numen/plugin-sdk'
+import type { PluginParts } from '../host'
 
 const isRegistration = (group: string | symbol, key: string | symbol): boolean =>
   group === 'register' || (typeof key === 'string' && /^on[A-Z]/.test(key))
@@ -64,18 +66,18 @@ function wrapSubscriptions(subscriptions: Disposable[], keeper: Keeper): Disposa
   })
 }
 
-/** The context of a plugin as one start hands it over, and the end of that start either way. */
+/** The parts of a plugin as one start hands them over, and the end of that start either way. */
 export interface StartScope {
-  readonly wrapContext: (context: PluginContext) => PluginContext
+  readonly wrapParts: (parts: PluginParts) => PluginParts
   readonly isCancelled: () => boolean
   readonly cancel: () => void
   readonly end: () => void
 }
 
-function createContextWrapper(
+function createPartsWrapper(
   keeper: Keeper,
   subscriptionLists: Set<Disposable[]>,
-): (context: PluginContext) => PluginContext {
+): (parts: PluginParts) => PluginParts {
   const services = new WeakMap<object, object>()
   const getService = (value: object): object => {
     const service = services.get(value) ?? wrapService(value, keeper)
@@ -100,11 +102,8 @@ function createContextWrapper(
     })
 
   const groups = new WeakMap<object, object>()
-  const wrapContext = (context: PluginContext): PluginContext => {
-    if (Array.isArray(context.plugin.subscriptions)) {
-      subscriptionLists.add(context.plugin.subscriptions)
-    }
-    return new Proxy(context, {
+  const wrapPart = <Part extends object>(part: Part): Part =>
+    new Proxy(part, {
       get(target, key) {
         const value: Member = Reflect.get(target, key)
         if (typeof value !== 'object' || value === null || !isReplaceable(target, key)) return value
@@ -113,9 +112,13 @@ function createContextWrapper(
         return group
       },
     })
-  }
 
-  return wrapContext
+  return (parts) => {
+    if (Array.isArray(parts.plugin.identity.subscriptions)) {
+      subscriptionLists.add(parts.plugin.identity.subscriptions)
+    }
+    return { plugin: wrapPart(parts.plugin), host: wrapPart(parts.host) }
+  }
 }
 
 /** The scope of one start, which stops registering once `cancel` has run. */
@@ -132,10 +135,10 @@ export function createStartScope(): StartScope {
       else startDisposables.add(value)
     },
   }
-  const wrapContext = createContextWrapper(keeper, subscriptionLists)
+  const wrapParts = createPartsWrapper(keeper, subscriptionLists)
 
   return {
-    wrapContext,
+    wrapParts,
     isCancelled: keeper.isCancelled,
     cancel: () => {
       isCancelled = true

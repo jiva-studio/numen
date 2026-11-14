@@ -1,6 +1,6 @@
 {
   "name": "@numen/views.statusBar",
-  "version": "2026.11.5",
+  "version": "2026.11.6",
   "private": true,
   "type": "module",
   "description": "Status bar plugin for Numen",

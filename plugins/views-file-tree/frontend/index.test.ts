@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SLOT, type TabKindRegistration } from '@numen/plugin-sdk'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, FilesTab, FILES } from './index'
 import { createHost, NEW_MENU, ROW_MENU, TRASH } from './fixtures/host'
 import type { Entry, FilesTabState } from './types'
@@ -21,14 +21,10 @@ const createContext = (
 ) => {
   const folders: Record<string, readonly Entry[]> = { '': listing }
   const { host, recorded } = createHost({ folders })
-  const ctx = createMockPluginContext({
-    pluginId: 'md.numen.views.file.tree',
-    workspace: host.workspace,
-    files: host.files,
-    initialSettings,
-  })
-  ctx.ui.slots.setEntries(SLOT.fileTreeContext, ROW_MENU)
-  return { ctx, recorded, folders }
+  const ctx = createMockPluginContext({ pluginId: 'md.numen.views.file.tree', initialSettings })
+  const services = createMockHostServices({ workspace: host.workspace, files: host.files })
+  services.ui.slots.setEntries(SLOT.fileTreeContext, ROW_MENU)
+  return { ctx, services, recorded, folders }
 }
 
 const createWindow = () => {
@@ -53,17 +49,17 @@ const createWindow = () => {
 }
 
 const openTab = async () => {
-  const { ctx, recorded, folders } = createContext()
-  activate(ctx)
+  const { ctx, services, recorded, folders } = createContext()
+  activate(ctx, services)
   const state = ctx.getRegisteredTabKinds()[0]!.open!('', 'files') as FilesTabState
   await settle()
-  return { ctx, recorded, folders, state }
+  return { ctx, services, recorded, folders, state }
 }
 
 describe('view-file-tree plugin', () => {
   it('registers the files tab kind upon activation', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+    const { ctx, services } = createContext()
+    activate(ctx, services)
 
     const tabKinds = ctx.getRegisteredTabKinds()
     expect(tabKinds).toHaveLength(1)
@@ -72,14 +68,14 @@ describe('view-file-tree plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds the tab kind, the vault, its two commands and the sort setting, and releases them all', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+  it('holds the tab kind, its two commands and the sort setting, and releases them all', () => {
+    const { ctx, services } = createContext()
+    activate(ctx, services)
 
-    expect(ctx.plugin.subscriptions).toHaveLength(5)
+    expect(ctx.identity.subscriptions).toHaveLength(4)
 
     ctx.dispose()
-    expect(ctx.plugin.subscriptions).toHaveLength(0)
+    expect(ctx.identity.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
@@ -87,15 +83,15 @@ describe('view-file-tree plugin', () => {
   const createWindowContext = () => {
     const { host } = createHost({ folders: { '': [note('A.md'), note('B.md')] } })
     const strip = createWindow()
-    const ctx = createMockPluginContext({
-      pluginId: 'md.numen.views.file.tree',
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.views.file.tree' })
+    const services = createMockHostServices({
       workspace: host.workspace,
       files: host.files,
       navigateTab: strip.navigateTab,
     })
     strip.bind(ctx)
-    activate(ctx)
-    return { ctx, strip }
+    activate(ctx, services)
+    return { ctx, services, strip }
   }
 
   describe('the sort setting', () => {
@@ -104,11 +100,11 @@ describe('view-file-tree plugin', () => {
     const getPaths = (state: FilesTabState) =>
       state.list.queries.rows.value.map((row) => row.entry.path)
     const openFilesTab = async (setting: Record<string, string>) => {
-      const { ctx } = createContext(setting, listing)
-      activate(ctx)
+      const { ctx, services } = createContext(setting, listing)
+      activate(ctx, services)
       const state = ctx.getRegisteredTabKinds()[0]!.open!('', 'files') as FilesTabState
       await settle()
-      return { ctx, state }
+      return { ctx, services, state }
     }
 
     it('sorts by name when the setting is not saved', async () => {
@@ -230,27 +226,27 @@ describe('view-file-tree plugin', () => {
   })
 
   it('reads the folders of every files tab again when the vault changes', async () => {
-    const { ctx, folders } = createContext()
-    activate(ctx)
+    const { ctx, services, folders } = createContext()
+    activate(ctx, services)
     const state = ctx.getRegisteredTabKinds()[0]!.open!('', 'files') as FilesTabState
     await settle()
     expect(state.list.queries.rows.value.map((row) => row.entry.path)).toStrictEqual(['A.md'])
 
     folders[''] = [note('B.md')]
-    ctx.events.emitVaultChange({ paths: [], renamed: [{ from: 'A.md', to: 'B.md' }] })
+    services.events.emitVaultChange({ paths: [], renamed: [{ from: 'A.md', to: 'B.md' }] })
     await settle()
 
     expect(state.list.queries.rows.value.map((row) => row.entry.path)).toStrictEqual(['B.md'])
   })
 
   it('draws the menu of a row from the entries of its slot, and runs their commands', async () => {
-    const { ctx, state } = await openTab()
+    const { services, state } = await openTab()
 
     state.menu.open({ path: 'A.md', at: { x: 0, y: 0 } })
     expect(state.menu.getItems('A.md').map((one) => one.id)).toContain(TRASH.key)
     state.menu.choose(TRASH.key)
 
-    expect(ctx.ui.commands.getRuns()).toStrictEqual([
+    expect(services.ui.commands.getRuns()).toStrictEqual([
       {
         command: 'app:file.remove',
         target: {
@@ -299,34 +295,38 @@ describe('view-file-tree plugin', () => {
   })
 
   it('has no command to make a folder, which the Create folder entry runs through the window', async () => {
-    const { ctx, state } = await openTab()
-    ctx.ui.commands.setResult('app:folder.create', 'New folder')
+    const { ctx, services, state } = await openTab()
+    services.ui.commands.setResult('app:folder.create', 'New folder')
 
     state.menu.open({ path: null, at: { x: 0, y: 0 } })
     state.menu.choose(NEW_MENU.entries[1]!.key)
     await settle()
 
     expect(ctx.getRegisteredCommands().map((one) => one.id)).not.toContain('tree.createFolder')
-    expect(ctx.ui.commands.getRuns().map((one) => one.command)).toStrictEqual(['app:folder.create'])
+    expect(services.ui.commands.getRuns().map((one) => one.command)).toStrictEqual([
+      'app:folder.create',
+    ])
     expect(state.renaming.path.value).toBe('New folder')
   })
 
   it('has no command to make a note, which the New note entry runs through the window', async () => {
-    const { ctx, state } = await openTab()
-    ctx.ui.commands.setResult('app:note.create', 'Untitled note 1.md')
+    const { ctx, services, state } = await openTab()
+    services.ui.commands.setResult('app:note.create', 'Untitled note 1.md')
 
     state.menu.open({ path: null, at: { x: 0, y: 0 } })
     state.menu.choose(NEW_MENU.entries[0]!.key)
     await settle()
 
     expect(ctx.getRegisteredCommands().map((one) => one.id)).not.toContain('tree.createNote')
-    expect(ctx.ui.commands.getRuns().map((one) => one.command)).toStrictEqual(['app:note.create'])
+    expect(services.ui.commands.getRuns().map((one) => one.command)).toStrictEqual([
+      'app:note.create',
+    ])
     expect(state.renaming.path.value).toBe('Untitled note 1.md')
   })
 
   it('does nothing for a command of the tree while no files tab is open', async () => {
-    const { ctx, recorded } = createContext()
-    activate(ctx)
+    const { ctx, services, recorded } = createContext()
+    activate(ctx, services)
 
     await ctx.triggerCommand('tree.renameFile', {
       path: 'A.md',
@@ -342,13 +342,16 @@ describe('view-file-tree plugin', () => {
 
   it('refuses to activate in a window that offers no workspace or files', () => {
     expect(() =>
-      activate(createMockPluginContext({ pluginId: 'md.numen.views.file.tree' })),
+      activate(
+        createMockPluginContext({ pluginId: 'md.numen.views.file.tree' }),
+        createMockHostServices(),
+      ),
     ).toThrow('a files tab needs the window it is drawn in and the files of the vault')
   })
 
   it('activates through the default plugin lifecycle', async () => {
-    const { ctx } = createContext()
-    await plugin.activate(ctx)
+    const { ctx, services } = createContext()
+    await plugin.activate(ctx, services)
 
     expect(ctx.getRegisteredTabKinds()[0]?.kind).toBe(FILES)
   })

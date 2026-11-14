@@ -30,9 +30,9 @@ describe('the plugin context events', () => {
     const emitter = host.lifecycle.createContext('emitter', READ_WRITE)
     const listener = host.lifecycle.createContext('listener', READ_WRITE)
     const handler = vi.fn()
-    listener.events.onVaultChange(handler)
+    listener.host.events.onVaultChange(handler)
 
-    emitter.events.emitVaultChange({ vaultPath: '/vault' })
+    emitter.host.events.emitVaultChange({ vaultPath: '/vault' })
     await Promise.resolve()
 
     expect(handler).toHaveBeenCalledWith({ vaultPath: '/vault' })
@@ -42,12 +42,12 @@ describe('the plugin context events', () => {
     const host = createPluginHost(createDeps())
     const ctx = host.lifecycle.createContext('tree', READ_WRITE)
     const handler = vi.fn()
-    const sub = ctx.events.onFileSelect(handler)
+    const sub = ctx.host.events.onFileSelect(handler)
 
-    ctx.events.emitFileSelect({ path: '/a.md' })
+    ctx.host.events.emitFileSelect({ path: '/a.md' })
     await Promise.resolve()
     sub.dispose()
-    ctx.events.emitFileSelect({ path: '/b.md' })
+    ctx.host.events.emitFileSelect({ path: '/b.md' })
     await Promise.resolve()
 
     expect(handler).toHaveBeenCalledTimes(1)
@@ -58,10 +58,12 @@ describe('the plugin context events', () => {
     const host = createPluginHost(createDeps())
     const ctx = host.lifecycle.createContext('tree', READ_WRITE)
     const handler = vi.fn()
-    ctx.events.onVaultChange(handler)
+    ctx.host.events.onVaultChange(handler)
 
     host.lifecycle.disposePlugin('tree')
-    host.lifecycle.createContext('other', READ_WRITE).events.emitVaultChange({ vaultPath: '/v' })
+    host.lifecycle
+      .createContext('other', READ_WRITE)
+      .host.events.emitVaultChange({ vaultPath: '/v' })
     await Promise.resolve()
 
     expect(handler).not.toHaveBeenCalled()
@@ -74,12 +76,12 @@ describe('the plugin context events', () => {
     const good = host.lifecycle.createContext('good', READ_WRITE)
     const fault = new Error('listener failed')
     const handler = vi.fn()
-    bad.events.onVaultChange(async () => {
+    bad.host.events.onVaultChange(async () => {
       throw fault
     })
-    good.events.onVaultChange(handler)
+    good.host.events.onVaultChange(handler)
 
-    good.events.emitVaultChange({ vaultPath: '/v' })
+    good.host.events.emitVaultChange({ vaultPath: '/v' })
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(onError).toHaveBeenCalledWith('bad', fault)
@@ -104,7 +106,7 @@ describe('command handlers', () => {
     )
     host.keybindings.registerKeybindings('cmd.plugin', [{ key: 'ctrl+shift+x', command: 'run' }])
     const fault = new Error('boom')
-    host.lifecycle.createContext('cmd.plugin', READ_WRITE).register.command({
+    host.lifecycle.createContext('cmd.plugin', READ_WRITE).plugin.register.command({
       id: 'run',
       handler: async () => {
         throw fault
@@ -130,7 +132,7 @@ describe('command handlers', () => {
       }),
     )
     const fault = new Error('sync boom')
-    host.lifecycle.createContext('cmd.plugin', READ_WRITE).register.command({
+    host.lifecycle.createContext('cmd.plugin', READ_WRITE).plugin.register.command({
       id: 'run',
       handler: () => {
         throw fault
@@ -177,7 +179,7 @@ describe('a command over a note', () => {
     const handler = vi.fn()
     host.lifecycle
       .createContext('cmd.plugin', READ_WRITE)
-      .register.command({ id: 'summary', handler })
+      .plugin.register.command({ id: 'summary', handler })
 
     await host.commands.executeCommand('cmd.plugin:summary', NOTE)
 
@@ -206,7 +208,7 @@ describe('a command over a note', () => {
     const handler = vi.fn()
     host.lifecycle
       .createContext('cmd.plugin', READ_WRITE)
-      .register.command({ id: 'summary', handler })
+      .plugin.register.command({ id: 'summary', handler })
     const event = new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, shiftKey: true })
 
     const NO_NOTE = { path: '', title: '', isFolder: false, others: [], tab: '' }
@@ -239,7 +241,7 @@ describe('a tab kind component', () => {
         return () => h('div')
       },
     })
-    ctx.register.tabKind({ kind: 'tree-kind', component: View, title: 'Tree' })
+    ctx.plugin.register.tabKind({ kind: 'tree-kind', component: View, title: 'Tree' })
 
     mount(kind!.pane as never, { props: { state: {} }, attachTo: document.body } as never)
     await Promise.resolve()
@@ -289,24 +291,27 @@ describe('a tab kind component', () => {
     host.keybindings.registerKeybindings('reader.plugin', [{ key: 'ctrl+b', command: 'rich' }])
     const ctx = host.lifecycle.createContext('reader.plugin')
     expect(host.lifecycle.createContext('reader.plugin')).toBe(ctx)
-    expect(ctx.plugin.hasPermission?.('vault:read')).toBe(true)
-    expect(ctx.plugin.app).toEqual({
+    expect(ctx.plugin.identity.hasPermission?.('vault:read')).toBe(true)
+    expect(ctx.plugin.identity.app).toEqual({
       name: 'numen',
       version: '1.2.3',
       build: 9,
       platform: 'darwin',
     })
-    expect(ctx.vault.relations).toBeDefined()
-    expect(ctx.vault.files).toBeDefined()
-    expect(ctx.vault.buffers).toBeDefined()
-    expect(ctx.vault.texts).toBeDefined()
+    expect(ctx.host.vault.relations).toBeDefined()
+    expect(ctx.host.vault.files).toBeDefined()
+    expect(ctx.host.vault.buffers).toBeDefined()
+    expect(ctx.host.vault.texts).toBeDefined()
 
-    expect(await ctx.plugin.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
+    expect(await ctx.plugin.identity.openExternal('https://numen.md/')).toEqual({
+      ok: true,
+      value: null,
+    })
     expect(openExternal).toHaveBeenCalledWith('https://numen.md/')
-    await expect(ctx.tabs.open?.('note', 'a.md')).resolves.toBe('tab-1')
-    await expect(ctx.tabs.navigate?.('note', 'a.md')).resolves.toBe(true)
+    await expect(ctx.host.tabs.open?.('note', 'a.md')).resolves.toBe('tab-1')
+    await expect(ctx.host.tabs.navigate?.('note', 'a.md')).resolves.toBe(true)
     expect(navigateTab).toHaveBeenCalledWith('note', 'a.md')
-    ctx.tabs.close?.('tab-1')
+    ctx.host.tabs.close?.('tab-1')
     expect(closeTab).toHaveBeenCalledWith('tab-1')
 
     const received: unknown[] = []
@@ -317,14 +322,14 @@ describe('a tab kind component', () => {
         return () => h('div')
       },
     })
-    ctx.register.reader({ id: 'pdf', component: ReaderView })
+    ctx.plugin.register.reader({ id: 'pdf', component: ReaderView })
     mount(readerKind!.pane as never, { props: { state: {} }, attachTo: document.body } as never)
     await Promise.resolve()
     await Promise.resolve()
     expect(received[0]).toBe(ctx)
 
     // The palette lists what the manifest declares
-    ctx.register.command({ id: 'rich', handler: vi.fn() })
+    ctx.plugin.register.command({ id: 'rich', handler: vi.fn() })
     expect(host.commands.getPaletteCommands()).toStrictEqual([
       {
         id: 'reader.plugin:rich',
@@ -364,19 +369,19 @@ describe('a tab kind component', () => {
       }),
     )
     const bareCtx = bareHost.lifecycle.createContext('bare', READ_WRITE)
-    expect(bareCtx.plugin.app).toEqual({
+    expect(bareCtx.plugin.identity.app).toEqual({
       name: 'numen',
       version: '0.0.0-dev',
       build: 0,
       platform: 'linux',
     })
-    expect(await bareCtx.plugin.openExternal('https://numen.md/')).toEqual({
+    expect(await bareCtx.plugin.identity.openExternal('https://numen.md/')).toEqual({
       ok: false,
       error: 'This window cannot open web links',
     })
-    expect(bareCtx.tabs.navigate?.('note', 'a.md')).toBeUndefined()
-    expect(() => bareCtx.tabs.close?.('tab-1')).not.toThrow()
-    bareCtx.register.command({
+    expect(bareCtx.host.tabs.navigate?.('note', 'a.md')).toBeUndefined()
+    expect(() => bareCtx.host.tabs.close?.('tab-1')).not.toThrow()
+    bareCtx.plugin.register.command({
       id: 'fail-quietly',
       handler: () => {
         throw new Error('no reporter')

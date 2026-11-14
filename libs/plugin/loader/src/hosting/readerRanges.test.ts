@@ -43,7 +43,7 @@ describe('the ranges of a reader tab', () => {
         'sample.plugin',
         createMockManifest('sample.plugin', { readers: ['reader:bin'] }),
       )
-      .register.reader({ id: 'reader:bin', component: STUB_COMPONENT })
+      .plugin.register.reader({ id: 'reader:bin', component: STUB_COMPONENT })
     const ranges: readonly TextRange[] = [
       { start: 1500, end: 1580 },
       { start: 400, end: 1100 },

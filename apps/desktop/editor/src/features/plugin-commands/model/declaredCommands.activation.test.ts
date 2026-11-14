@@ -53,7 +53,7 @@ describe('the commands of a view plugin that starts in a window with a backend p
   it('are not reported as missing while the plugin registers them one after the other', async () => {
     const { loader, reportCommandIssue } = await createWindow()
     loader.registerPluginModule(VIEW, async () => ({
-      activate: (context: ReturnType<PluginHost['lifecycle']['createContext']>) => {
+      activate: (context: ReturnType<PluginHost['lifecycle']['createContext']>['plugin']) => {
         context.register.command({ id: 'tree.open', handler: () => undefined })
         context.register.command({ id: 'tree.revealNote', handler: () => undefined })
       },
