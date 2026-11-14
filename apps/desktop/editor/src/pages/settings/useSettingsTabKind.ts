@@ -11,7 +11,7 @@ import { WORDS as words } from './words'
 import type { Caught } from '@/shared/api/errors'
 import type { SettingsRequest } from '@/shared/model/command'
 
-export function useSettingsTab(
+export function useSettingsTabKind(
   handle: WindowHandle,
   installation: Installation,
   reportError: (error: Caught) => void,

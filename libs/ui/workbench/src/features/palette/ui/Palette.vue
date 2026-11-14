@@ -23,7 +23,7 @@ import { type PaletteItemId } from '../lib/item'
 import { commandKeyChord, getShortcuts } from '../lib/keys'
 import { useActiveItem } from '../model/activeItem'
 import { usePaletteKeys } from '../model/keys'
-import { useActionPanel } from '../model/panel'
+import { useActionPanelToggle } from '../model/useActionPanelToggle'
 import { usePalettePlaces } from '../model/places'
 import type { PaletteProps } from './Palette.types'
 
@@ -104,7 +104,7 @@ const {
   chooseAction,
   onPress,
   onBackdrop,
-} = useActionPanel({
+} = useActionPanelToggle({
   getActions: () => actions.value,
   getLit: () => activeItem.value?.id,
   choose: (item, action) => emit('choose', item, action),

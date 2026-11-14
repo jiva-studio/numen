@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { useActionPanel } from './panel'
+import { useActionPanelToggle } from './useActionPanelToggle'
 import type { PaletteAction } from '../lib/item'
 
 const OPEN: PaletteAction = { id: 'open', text: 'Open note' }
@@ -14,7 +14,7 @@ const setUp = (lit: string | undefined) => {
   const actions = ref<readonly PaletteAction[]>([OPEN])
   const choose = vi.fn<(item: string, action: string) => void>()
   const dismiss = vi.fn<() => void>()
-  const panel = useActionPanel({
+  const panel = useActionPanelToggle({
     getActions: () => actions.value,
     getLit: () => lit,
     choose,
@@ -23,7 +23,7 @@ const setUp = (lit: string | undefined) => {
   return { actions, choose, dismiss, panel }
 }
 
-describe('useActionPanel', () => {
+describe('useActionPanelToggle', () => {
   it('remains closed until it is opened', () => {
     expect(setUp('note').panel.open.value).toBe(false)
   })
