@@ -10,7 +10,7 @@ Each entry names a check or a lint rule by what it forbids. `make checks LIST=1`
 - `plugins-isolation-capture`: a file under `plugins/<name>/` references no other plugin.
 - `package.json` of a plugin (`package-matrix`, `protocol-declared-only-by-clients`, `core-client-private`): it declares no `@numen/protocol` and no `@numen/core-client`, and among the packages of this repository only `@numen/plugin-sdk` and `@numen/ui`.
 - `plugins-use-main-entry`: the SDK and the UI library are imported through the entries their `exports` declare.
-- `plugins-frontend` (ESLint with the golden `eslint.config.js`): no `@/**` and no `@plugins/**` import, and no `@numen/*` import other than `@numen/plugin-sdk` and `@numen/ui`.
+- `make plugins_lint` (ESLint with the golden `eslint.config.js`): no `@/**` and no `@plugins/**` import, and no `@numen/*` import other than `@numen/plugin-sdk` and `@numen/ui`.
 - `plugins-hold-no-schema`: no `.proto` file under `plugins/`.
 - `sdk-isolation` and `sdk-ts-encapsulates-protocol`: the SDKs import no core and no application, and no exported SDK declaration exposes a generated protocol type.
 - The no-reexport rule of the core: a package declares no alias of a type of another package. Types a plugin uses come from the SDK under one name each.

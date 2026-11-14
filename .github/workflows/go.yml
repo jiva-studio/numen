@@ -32,27 +32,31 @@ permissions:
 
 jobs:
 
-  # gofmt, go vet and both golangci-lint configurations of the core libraries, once, on the cheapest
-  # machine: a rule about the shape of the code answers the same on every machine.
-  core-lint:
-    name: Core Lint
-    if: inputs.core
+  # gofmt, go vet, both golangci-lint configurations and govulncheck of every Go module but the
+  # plugins, the migration rule and the protocol schema, once, on the cheapest machine: a rule about
+  # the shape of the code answers the same on every machine. A part runs when its area changed, and
+  # after a failed part.
+  lint:
+    name: Go Lint
+    if: inputs.core || inputs.desktop || inputs.mobile || inputs.sdk_go || inputs.protocol
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 2
           persist-credentials: false
 
       - id: go
         uses: ./.github/actions/setup-go
         with:
           go-version-file: libs/core/kernel/go.mod
-          cache-key: core-lint
+          cache-key: lint
 
       - uses: ./.github/actions/install-golangci-lint
 
       - name: Lint the core libraries
+        if: ${{ !cancelled() && inputs.core }}
         run: |
           set -euo pipefail
           for module in libs/core/kernel libs/atomicfile libs/note libs/plugin/catalog libs/core/protocol tools/checks/structure/go; do
@@ -70,13 +74,109 @@ jobs:
 
       # The vulnerability list is read at the time of the run, so this step can find something on a
       # branch that changed nothing.
-      - uses: ./.github/actions/govulncheck
+      - if: ${{ !cancelled() && inputs.core }}
+        uses: ./.github/actions/govulncheck
         with:
           working-directory: libs/core/kernel
 
-      - uses: ./.github/actions/govulncheck
+      - if: ${{ !cancelled() && inputs.core }}
+        uses: ./.github/actions/govulncheck
         with:
           working-directory: libs/core/protocol
+
+      # A numbered migration a released build has run cannot change or disappear: the schema goes
+      # forward by another number. The base is the first parent of the merge commit.
+      - name: Self-test migration rule
+        if: ${{ !cancelled() && inputs.core }}
+        run: libs/core/kernel/adapter/index/migration-forward-only.sh --self-test
+
+      - name: Verify migrations are forward-only
+        if: ${{ !cancelled() && inputs.core && github.event_name == 'pull_request' }}
+        run: libs/core/kernel/adapter/index/migration-forward-only.sh HEAD^1
+
+      # The base module of the Go plugin SDK and each feature module under it.
+      - name: Lint the plugin SDK
+        if: ${{ !cancelled() && inputs.sdk_go }}
+        run: |
+          unformatted=$(cd libs/plugin/sdk-go && gofmt -l .)
+          if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
+          make lib_plugin_sdk_go_lint
+
+      # The window links against the system's own browser, so vet and the linters need its headers.
+      - if: ${{ !cancelled() && inputs.desktop }}
+        uses: ./.github/actions/setup-webkit
+
+      # The tool that strips machine paths from the build profile is a module of its own.
+      - name: Lint the desktop app
+        if: ${{ !cancelled() && inputs.desktop }}
+        working-directory: apps/desktop
+        run: |
+          set -euo pipefail
+          unformatted=$(gofmt -l ./cmd ./internal ./build/pgonorm)
+          if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
+          for module in . build/pgonorm; do
+            echo "::group::apps/desktop/$module"
+            (
+              cd "$module"
+              go vet ./...
+              golangci-lint run --timeout 15m ./...
+              golangci-lint run --timeout 15m -c "$GITHUB_WORKSPACE/.golangci-structure.yml" ./...
+            )
+            echo "::endgroup::"
+          done
+
+      - if: ${{ !cancelled() && inputs.desktop }}
+        uses: ./.github/actions/govulncheck
+        with:
+          working-directory: apps/desktop
+
+      - name: Lint the mobile app
+        if: ${{ !cancelled() && inputs.mobile }}
+        working-directory: apps/mobile
+        run: |
+          set -euo pipefail
+          unformatted=$(gofmt -l ./bind tools.go)
+          if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
+          go vet ./...
+          golangci-lint run --timeout 15m ./...
+          golangci-lint run --timeout 15m -c "$GITHUB_WORKSPACE/.golangci-structure.yml" ./...
+
+      - if: ${{ !cancelled() && inputs.mobile }}
+        uses: ./.github/actions/govulncheck
+        with:
+          working-directory: apps/mobile
+
+      - if: ${{ !cancelled() && inputs.protocol }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - if: ${{ !cancelled() && inputs.protocol }}
+        uses: bufbuild/buf-action@37ac33d8960807670a6e9719080e885197b09cc6 # v1.7.0
+        with:
+          version: 1.72.0
+          setup_only: true
+
+      - if: ${{ !cancelled() && inputs.protocol }}
+        uses: ./.github/actions/install-node-modules
+
+      # The Go plugins of buf are the tools of the module, pinned by its go.sum. The generated code
+      # is committed so that an ordinary build needs none of these tools.
+      - name: Lint the protocol schema and verify the generated code
+        if: ${{ !cancelled() && inputs.protocol }}
+        working-directory: libs/core/protocol
+        run: |
+          set -euo pipefail
+          go install tool
+          buf lint
+          buf generate
+          git add -AN -- gen src
+          git diff --exit-code -- gen src || {
+            echo "::error::the schema changed and the generated code was not regenerated — run: make generate"
+            exit 1
+          }
 
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache
@@ -221,124 +321,13 @@ jobs:
         with:
           cache-key: ${{ steps.go.outputs.cache-key }}
 
-  # A numbered migration a released build has run cannot change or disappear: the schema goes
-  # forward by another number. The base is the first parent of the merge commit.
-  migrations:
-    name: Migrations
-    if: inputs.core
+  # The tests of the desktop app, its command line binary, the mobile app and the Go plugin SDK. A
+  # part runs when its area changed, and after a failed part.
+  test:
+    name: Go Tests
+    if: inputs.desktop || inputs.mobile || inputs.sdk_go
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 2
-          persist-credentials: false
-
-      - name: Self-test migration rule
-        run: libs/core/kernel/adapter/index/migration-forward-only.sh --self-test
-
-      - name: Verify migrations are forward-only
-        if: github.event_name == 'pull_request'
-        run: libs/core/kernel/adapter/index/migration-forward-only.sh HEAD^1
-
-  schema:
-    name: Protocol Schema
-    if: inputs.protocol
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: libs/core/protocol
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - id: go
-        uses: ./.github/actions/setup-go
-        with:
-          go-version-file: libs/core/protocol/go.mod
-          cache-key: schema
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - uses: bufbuild/buf-action@37ac33d8960807670a6e9719080e885197b09cc6 # v1.7.0
-        with:
-          version: 1.72.0
-          setup_only: true
-
-      # The Go plugins are the tools of this module; go.sum pins them.
-      - name: Install protobuf plugins
-        run: go install tool
-
-      - uses: ./.github/actions/install-node-modules
-
-      - name: Lint Protobuf schema
-        run: buf lint
-
-      # The generated code is committed so that an ordinary build needs none of the tools above.
-      - name: Verify generated code
-        run: |
-          buf generate
-          git add -AN -- gen src
-          git diff --exit-code -- gen src || {
-            echo "::error::the schema changed and the generated code was not regenerated — run: make generate"
-            exit 1
-          }
-
-      - if: ${{ !cancelled() }}
-        uses: ./.github/actions/save-go-cache
-        with:
-          cache-key: ${{ steps.go.outputs.cache-key }}
-
-  # The base module of the Go plugin SDK and each feature module under it.
-  sdk:
-    name: Plugin SDK
-    if: inputs.sdk_go
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - id: go
-        uses: ./.github/actions/setup-go
-        with:
-          go-version-file: libs/plugin/sdk-go/go.mod
-          cache-key: sdk
-
-      - uses: ./.github/actions/install-golangci-lint
-
-      - name: Verify Go formatting
-        working-directory: libs/plugin/sdk-go
-        run: |
-          unformatted=$(gofmt -l .)
-          if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
-
-      - name: Run linters
-        run: make lib_plugin_sdk_go_lint
-
-      - name: Run Go tests
-        run: make lib_plugin_sdk_go_test GO_RACE=1
-
-      - if: ${{ !cancelled() }}
-        uses: ./.github/actions/save-go-cache
-        with:
-          cache-key: ${{ steps.go.outputs.cache-key }}
-
-  desktop-lint:
-    name: Desktop Lint
-    if: inputs.desktop
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: apps/desktop
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -348,189 +337,45 @@ jobs:
         uses: ./.github/actions/setup-go
         with:
           go-version-file: apps/desktop/go.mod
-          cache-key: desktop-lint
+          cache-key: test
 
-      # The window links against the system's own browser, so vet and the linters need its headers.
-      - uses: ./.github/actions/setup-webkit
+      - if: ${{ !cancelled() && inputs.desktop }}
+        uses: ./.github/actions/setup-webkit
 
-      - uses: ./.github/actions/install-golangci-lint
-
-      - name: Verify Go formatting
-        run: |
-          unformatted=$(gofmt -l ./cmd ./internal ./build/pgonorm)
-          if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
-
-      - name: Run go vet
-        run: go vet ./...
-
-      - name: Run golangci-lint
-        run: |
-          golangci-lint run --timeout 15m ./...
-          golangci-lint run --timeout 15m -c "$GITHUB_WORKSPACE/.golangci-structure.yml" ./...
-
-      # The tool that strips machine paths from the build profile is a module of its own.
-      - name: Lint the profile normaliser
-        working-directory: apps/desktop/build/pgonorm
-        run: |
-          go vet ./...
-          golangci-lint run --timeout 5m ./...
-          golangci-lint run --timeout 5m -c "$GITHUB_WORKSPACE/.golangci-structure.yml" ./...
-
-      - uses: ./.github/actions/govulncheck
-        with:
-          working-directory: apps/desktop
-
-      - if: ${{ !cancelled() }}
-        uses: ./.github/actions/save-go-cache
-        with:
-          cache-key: ${{ steps.go.outputs.cache-key }}
-
-  desktop-test:
-    name: Desktop Tests
-    if: inputs.desktop
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    defaults:
-      run:
+      # The debug servers build only with numen_debug, so the first run skips their files. With
+      # -race the link reuses every package the tests compiled.
+      - name: Test the desktop app
+        if: ${{ !cancelled() && inputs.desktop }}
         working-directory: apps/desktop
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - id: go
-        uses: ./.github/actions/setup-go
-        with:
-          go-version-file: apps/desktop/go.mod
-          cache-key: desktop-test
-
-      - uses: ./.github/actions/setup-webkit
-
-      - name: Run Go tests
-        run: go test -race ./...
         env:
           TMPDIR: /dev/shm
-
-      # The debug servers build only with numen_debug, so the run above skips their files.
-      - name: Run Go tests of the debug build
-        run: go test -race -tags numen_debug ./internal/debugserve ./app ./cmd/numen-flashcards
-        env:
-          TMPDIR: /dev/shm
-
-      # With -race the link reuses every package the tests compiled.
-      - name: Link the desktop binary
-        run: go build -race -o /dev/null ./cmd/numen
-
-      - if: ${{ !cancelled() }}
-        uses: ./.github/actions/save-go-cache
-        with:
-          cache-key: ${{ steps.go.outputs.cache-key }}
-
-  # The command line binary is built for machines it is not built on.
-  cli:
-    name: CLI
-    if: inputs.desktop
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: apps/desktop
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - id: go
-        uses: ./.github/actions/setup-go
-        with:
-          go-version-file: apps/desktop/go.mod
-          cache-key: cli
-
-      - name: Cross-compile CLI binaries
         run: |
+          set -euo pipefail
+          go test -race ./...
+          go test -race -tags numen_debug ./internal/debugserve ./app ./cmd/numen-flashcards
+          go build -race -o /dev/null ./cmd/numen
+
+      # The command line binary is built for machines it is not built on.
+      - name: Build and test the command line binary
+        if: ${{ !cancelled() && inputs.desktop }}
+        run: |
+          set -euo pipefail
           for target in darwin/arm64 windows/amd64 linux/arm64; do
-            GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/numen-cli
+            (cd apps/desktop && GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/numen-cli)
           done
+          (cd apps/desktop/build/pgonorm && go build -o /dev/null .)
+          tests/e2e/cli/plugin-commands.sh
 
-      - name: Build the profile normaliser
-        working-directory: apps/desktop/build/pgonorm
-        run: go build -o /dev/null .
-
-      - name: Run CLI end-to-end tests
-        working-directory: .
-        run: tests/e2e/cli/plugin-commands.sh
-
-      - if: ${{ !cancelled() }}
-        uses: ./.github/actions/save-go-cache
-        with:
-          cache-key: ${{ steps.go.outputs.cache-key }}
-
-  mobile-lint:
-    name: Mobile Lint
-    if: inputs.mobile
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
+      - name: Test the mobile app
+        if: ${{ !cancelled() && inputs.mobile }}
         working-directory: apps/mobile
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - id: go
-        uses: ./.github/actions/setup-go
-        with:
-          go-version-file: apps/mobile/go.mod
-          cache-key: mobile-lint
-
-      - uses: ./.github/actions/install-golangci-lint
-
-      - name: Verify Go formatting
-        run: |
-          unformatted=$(gofmt -l ./bind tools.go)
-          if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
-
-      - name: Run go vet
-        run: go vet ./...
-
-      - name: Run golangci-lint
-        run: |
-          golangci-lint run --timeout 15m ./...
-          golangci-lint run --timeout 15m -c "$GITHUB_WORKSPACE/.golangci-structure.yml" ./...
-
-      - uses: ./.github/actions/govulncheck
-        with:
-          working-directory: apps/mobile
-
-      - if: ${{ !cancelled() }}
-        uses: ./.github/actions/save-go-cache
-        with:
-          cache-key: ${{ steps.go.outputs.cache-key }}
-
-  mobile-test:
-    name: Mobile Tests
-    if: inputs.mobile
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: apps/mobile
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - id: go
-        uses: ./.github/actions/setup-go
-        with:
-          go-version-file: apps/mobile/go.mod
-          cache-key: mobile-test
-
-      - name: Run Go tests
-        run: go test -race ./...
         env:
           TMPDIR: /dev/shm
+        run: go test -race ./...
+
+      - name: Test the plugin SDK
+        if: ${{ !cancelled() && inputs.sdk_go }}
+        run: make lib_plugin_sdk_go_test GO_RACE=1
 
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache

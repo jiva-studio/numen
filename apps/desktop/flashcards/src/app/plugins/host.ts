@@ -22,6 +22,7 @@ import { openExternalUrl, type NoticeQueue, type WindowPlatform } from '@numen/w
 import { createViewIssueReporter, getPluginConnections } from '@/entities/plugin'
 import type { WindowTabs } from '@/entities/tab'
 import { windowRelations } from '@/entities/vault'
+import { loadFrameRuntime } from '@/app/runtime'
 import { TARGET } from '@/shared/lib/window'
 
 /** The commands, the vaults, the window and its background tasks the plugins read. */
@@ -59,7 +60,7 @@ export function createShellHost(deps: ShellHostDeps) {
         build: import.meta.env.VITE_NUMEN_BUILD,
         getPlatform,
       }),
-      openExternal: (url) => openExternalUrl(url),
+      openExternal: (url) => openExternalUrl(url, loadFrameRuntime),
       getNotices: (pluginId) => createPluginNotices(notices, pluginId),
       clearNotices: (pluginId) => notices.clear(pluginId),
       getCommands: () => services.commands,

@@ -39,7 +39,7 @@ func queryEachPath[T any](
 		return nil, err
 	}
 
-	statement, err := db.PrepareContext(ctx, query)
+	statement, err := prepareStatement(ctx, db, query)
 	if err != nil {
 		return nil, err
 	}
