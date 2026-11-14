@@ -43,18 +43,18 @@ func TestTheErrorsOfAWriteNameTheKeyAndTheFault(t *testing.T) {
 		want   string
 		isKind error
 	}{
-		{[]string{"app"}, 1, `"app": no such setting`, settings.ErrUndeclared},
-		{[]string{"md.numen.nobody", "model"}, "small", `"md.numen.nobody": no plugin declares settings under this name`, settings.ErrUndeclared},
-		{[]string{pluginID, "mistyped"}, "small", `"md.numen.sample.speech.mistyped": no such setting`, settings.ErrUndeclared},
-		{[]string{pluginID, "model", "size"}, "small", `"md.numen.sample.speech.model.size": no such setting: a plugin setting key is a single name`, settings.ErrUndeclared},
-		{[]string{pluginID, "enabled"}, "yes", `"md.numen.sample.speech.enabled": wrong type: expected true or false`, settings.ErrWrongType},
-		{[]string{pluginID, "verbose"}, 1.0, `"md.numen.sample.speech.verbose": wrong type: expected true or false`, settings.ErrWrongType},
-		{[]string{pluginID, "label"}, 1.0, `"md.numen.sample.speech.label": wrong type: expected a string`, settings.ErrWrongType},
-		{[]string{pluginID, "maxTokens"}, "many", `"md.numen.sample.speech.maxTokens": wrong type: expected a number`, settings.ErrWrongType},
-		{[]string{pluginID, "model"}, 3.0, `"md.numen.sample.speech.model": wrong type: expected a string`, settings.ErrWrongType},
-		{[]string{pluginID, "temperature"}, 5.0, `"md.numen.sample.speech.temperature": 5 is out of range 0..2`, settings.ErrOutOfRange},
-		{[]string{pluginID, "model"}, "huge", `"md.numen.sample.speech.model": "huge" is not one of the options`, settings.ErrNotAnOption},
-		{[]string{settingsdomain.AppOwner, "appearance", "theme"}, "mine:absent", `"app.appearance.theme": "mine:absent" is not one of the options listed in themes`, settings.ErrNotAnOption},
+		{[]string{"app"}, 1, `"app": no such setting`, settingsdomain.ErrUndeclared},
+		{[]string{"md.numen.nobody", "model"}, "small", `"md.numen.nobody": no plugin declares settings under this name`, settingsdomain.ErrUndeclared},
+		{[]string{pluginID, "mistyped"}, "small", `"md.numen.sample.speech.mistyped": no such setting`, settingsdomain.ErrUndeclared},
+		{[]string{pluginID, "model", "size"}, "small", `"md.numen.sample.speech.model.size": no such setting: a plugin setting key is a single name`, settingsdomain.ErrUndeclared},
+		{[]string{pluginID, "enabled"}, "yes", `"md.numen.sample.speech.enabled": wrong type: expected true or false`, settingsdomain.ErrWrongType},
+		{[]string{pluginID, "verbose"}, 1.0, `"md.numen.sample.speech.verbose": wrong type: expected true or false`, settingsdomain.ErrWrongType},
+		{[]string{pluginID, "label"}, 1.0, `"md.numen.sample.speech.label": wrong type: expected a string`, settingsdomain.ErrWrongType},
+		{[]string{pluginID, "maxTokens"}, "many", `"md.numen.sample.speech.maxTokens": wrong type: expected a number`, settingsdomain.ErrWrongType},
+		{[]string{pluginID, "model"}, 3.0, `"md.numen.sample.speech.model": wrong type: expected a string`, settingsdomain.ErrWrongType},
+		{[]string{pluginID, "temperature"}, 5.0, `"md.numen.sample.speech.temperature": 5 is out of range 0..2`, settingsdomain.ErrOutOfRange},
+		{[]string{pluginID, "model"}, "huge", `"md.numen.sample.speech.model": "huge" is not one of the options`, settingsdomain.ErrNotAnOption},
+		{[]string{settingsdomain.AppOwner, "appearance", "theme"}, "mine:absent", `"app.appearance.theme": "mine:absent" is not one of the options listed in themes`, settingsdomain.ErrNotAnOption},
 	} {
 		err := check(one.path, one.value)
 		if err == nil || err.Error() != one.want || !errors.Is(err, one.isKind) {
@@ -67,7 +67,7 @@ func TestFormatRangeWithoutUpperLimitPrintsInf(t *testing.T) {
 	declared := func(owner string) ([]manifest.Setting, bool) {
 		return []manifest.Setting{{Key: "port", Type: "number", Title: "Port", Min: new(float64(1024))}}, owner == "org.example.relay"
 	}
-	err := settings.CheckWrite(declared, nil, []string{"org.example.relay", "port"}, 80.0)
+	err := settingsdomain.CheckValue(declared, nil, []string{"org.example.relay", "port"}, 80.0)
 	if want := `"org.example.relay.port": 80 is out of range 1024..+inf`; err == nil || err.Error() != want {
 		t.Errorf("said %v, want %q", err, want)
 	}

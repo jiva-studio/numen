@@ -10,10 +10,8 @@ import (
 	"os"
 	"reflect"
 	"slices"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // keyConnections is the key of the section of the file that lists the connections. It is no plugin
@@ -77,47 +75,14 @@ func newConnectionEntries(connections []connection.Connection) []connectionEntry
 	return entries
 }
 
-// DropInvalidConnections leaves out of force each connection with a bad or repeated id, a bad name
-// or one repeated ignoring case, a type id without a plugin id and a local id, or a revision below
-// 1, with a notice each. A type that is not installed and a field the type does not declare are not
-// invalid. The file on disk is not touched.
+// DropInvalidConnections leaves out of force each connection that connection.FilterValid rejects, with a
+// notice each. The file on disk is not touched.
 func (f *File) DropInvalidConnections() {
-	var kept []connection.Connection
-	seenIDs := map[string]bool{}
-	seenNames := map[string]bool{}
-	for _, one := range f.Connections {
-		if reason := getConnectionIssue(one, seenIDs, seenNames); reason != "" {
-			f.AddNotice(fmt.Sprintf("numen.json: connection %q: %s; the connection is ignored", one.ID, reason))
-			continue
-		}
-		seenIDs[one.ID] = true
-		seenNames[strings.ToLower(one.Name)] = true
-		kept = append(kept, one)
+	kept, rejections := connection.FilterValid(f.Connections)
+	for _, one := range rejections {
+		f.AddNotice(fmt.Sprintf("numen.json: connection %q: %s; the connection is ignored", one.ID, one.Reason))
 	}
 	f.Connections = kept
-}
-
-func getConnectionIssue(one connection.Connection, seenIDs, seenNames map[string]bool) string {
-	switch {
-	case !connection.IsValidID(one.ID):
-		return "the id has the wrong shape"
-	case seenIDs[one.ID]:
-		return "the id is used twice"
-	case !connection.IsValidName(one.Name):
-		return "the name has the wrong shape"
-	case seenNames[strings.ToLower(one.Name)]:
-		return "the name is used twice"
-	case !isValidTypeID(one.TypeID):
-		return "the type has the wrong shape"
-	case one.Revision < 1:
-		return "the revision is below 1"
-	}
-	return ""
-}
-
-func isValidTypeID(typeID string) bool {
-	_, _, isValid := manifest.SplitConnectionTypeID(typeID)
-	return isValid
 }
 
 // ChangeConnections reads the connections section of the file, applies change and writes the section

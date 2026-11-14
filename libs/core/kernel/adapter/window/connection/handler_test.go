@@ -92,7 +92,7 @@ func (u fixedUses) RemoveRows(string) error { return nil }
 
 func (u fixedUses) Refresh(context.Context, string) error { return nil }
 
-func (u fixedUses) ListGrants() []connection.Grant { return nil }
+func (u fixedUses) ListPlugins() []plugin.Info { return nil }
 
 func newHandler(keys *memoryKeys) *Handler { return newHandlerWithUses(keys, fixedUses{}) }
 

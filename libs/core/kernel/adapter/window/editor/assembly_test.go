@@ -229,7 +229,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 		return nil, false
 	}
 	registries := func(name string) ([]string, bool) {
-		if name != settingsadapter.RegistryThemes {
+		if name != settingsdomain.RegistryThemes {
 			return nil, false
 		}
 		var names []string
@@ -258,7 +258,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 	}
 	var noPlugins settingsport.PluginSettings
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(declarations, registries), noPlugins,
+		settingsadapter.JSONCodec{}, declarations, registries, noPlugins,
 	)
 	write := settingsusecase.NewWriteSettings(check, store, feed)
 

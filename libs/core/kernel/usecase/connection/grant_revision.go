@@ -18,7 +18,7 @@ func NewGetGrantRevision(deps Deps) *GetGrantRevision { return &GetGrantRevision
 // revisions are the same connections unchanged.
 func (u *GetGrantRevision) Execute(pluginID string) (string, bool, error) {
 	var operations []string
-	for _, one := range u.uses.ListGrants() {
+	for _, one := range u.listGrants() {
 		if one.PluginID == pluginID {
 			operations = append(operations, one.Operations...)
 		}

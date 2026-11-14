@@ -27,23 +27,6 @@ const (
 	keyProfile        = "performance.profile"
 )
 
-// RegistryThemes names the registry that lists the installed themes.
-const RegistryThemes = "themes"
-
-// RegistryConnections names the registry that lists the ids of the stored connections. A setting of
-// rows takes a list of at most max objects, each with a connection from this registry, from
-// RegistryDetectedConnections or detected for a type RegistryPendingDetections lists, and the row options of
-// its type as text, and no connection with the same options twice. A registry that lists no connections leaves
-// the connection unchecked.
-const RegistryConnections = "connections"
-
-// RegistryDetectedConnections names the registry that lists the ids of the connections the providers detected.
-const RegistryDetectedConnections = "detectedConnections"
-
-// RegistryPendingDetections names the registry that lists the ids of the types whose providers have not reported
-// what they detect yet. A row that names a connection detected for such a type is kept until they do.
-const RegistryPendingDetections = "pendingDetections"
-
 func listDetectedConnectionIDs(detected connectionport.Detected) []string {
 	if detected == nil {
 		return nil
@@ -68,14 +51,14 @@ func listPendingDetections(types connectionport.Types, detected connectionport.D
 	return ids
 }
 
-// AddDetectedRegistries answers RegistryDetectedConnections and RegistryPendingDetections from the detection, and
+// AddDetectedRegistries answers settingsdomain.RegistryDetectedConnections and settingsdomain.RegistryPendingDetections from the detection, and
 // every other name from registries. A nil detection lists none.
-func AddDetectedRegistries(registries Registries, types connectionport.Types, detected connectionport.Detected) Registries {
+func AddDetectedRegistries(registries settingsdomain.Registries, types connectionport.Types, detected connectionport.Detected) settingsdomain.Registries {
 	return func(name string) ([]string, bool) {
 		switch name {
-		case RegistryDetectedConnections:
+		case settingsdomain.RegistryDetectedConnections:
 			return listDetectedConnectionIDs(detected), true
-		case RegistryPendingDetections:
+		case settingsdomain.RegistryPendingDetections:
 			return listPendingDetections(types, detected), true
 		}
 		return registries(name)
@@ -158,7 +141,7 @@ func getAppBounds(key string) settingsdomain.Bounds {
 // as unknown.
 func ThemeRegistry(list func() []themedomain.Theme) RegistryOptions {
 	return func(name string) (manifest.SettingOptions, bool) {
-		if name != RegistryThemes {
+		if name != settingsdomain.RegistryThemes {
 			return nil, false
 		}
 		var options manifest.SettingOptions
@@ -170,7 +153,7 @@ func ThemeRegistry(list func() []themedomain.Theme) RegistryOptions {
 }
 
 // GetNames returns the registries by the values their options hold.
-func (r RegistryOptions) GetNames() Registries {
+func (r RegistryOptions) GetNames() settingsdomain.Registries {
 	return func(name string) ([]string, bool) {
 		options, found := r(name)
 		names := make([]string, 0, len(options))

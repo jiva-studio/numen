@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -31,7 +32,7 @@ type OperationTitles interface {
 	ListOperationTitles() []manifest.Operation
 }
 
-// Uses connects a connection to the settings of rows that name it, and lists the grants of the plugins.
+// Uses connects a connection to the settings of rows that name it, and lists the plugins whose grants reach it.
 type Uses interface {
 	// ListUses returns the settings of rows in force that name the connection, one for each plugin and
 	// operation, in the order of the plugin ids.
@@ -40,8 +41,8 @@ type Uses interface {
 	RemoveRows(connectionID string) error
 	// Refresh sends the configuration again to each running plugin whose rows name the connection.
 	Refresh(ctx context.Context, connectionID string) error
-	// ListGrants returns the grants of the plugins in force, in the order of the plugin ids.
-	ListGrants() []connection.Grant
+	// ListPlugins returns the plugins in force, in the order of the plugin ids.
+	ListPlugins() []plugin.Info
 }
 
 // ListRows returns the rows a plugin calls an operation through, in the order of use.

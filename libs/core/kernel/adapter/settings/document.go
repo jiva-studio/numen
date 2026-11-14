@@ -153,7 +153,7 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 		if !found || value == nil {
 			continue
 		}
-		if err := checkValue(declared, nil, value); err != nil {
+		if err := settings.CheckDeclared(declared, nil, value); err != nil {
 			f.AddNotice(fmt.Sprintf("numen.json: %q: %v; the value is ignored", settings.AppOwner+"."+declared.Key, err))
 			continue
 		}

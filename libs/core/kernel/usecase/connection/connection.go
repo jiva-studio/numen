@@ -166,6 +166,11 @@ func truncateName(name string, limit int) string {
 	return strings.TrimSpace(string(runes[:limit]))
 }
 
+// listGrants returns the grants of the plugins in force, in the order of the plugin ids.
+func (o operation) listGrants() []connection.Grant {
+	return connection.ListGrants(o.uses.ListPlugins())
+}
+
 func (o operation) listConnections() ([]connection.Connection, error) {
 	list, err := o.repository.ListConnections()
 	if err != nil {
@@ -309,7 +314,7 @@ func addGrantUses(o operation, uses []connection.Use, typeID string) []connectio
 	if !isFound || !found.IsAvailable {
 		return uses
 	}
-	for _, granted := range connection.ListGrantUses(o.uses.ListGrants(), found.Declaration) {
+	for _, granted := range connection.ListGrantUses(o.listGrants(), found.Declaration) {
 		at := slices.IndexFunc(uses, func(one connection.Use) bool { return one.PluginID > granted.PluginID })
 		if at < 0 {
 			at = len(uses)

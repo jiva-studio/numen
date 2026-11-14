@@ -128,7 +128,7 @@ func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
 	return c.PluginHost.Runtime.GetPluginInfos
 }
 
-func getDeclarations(c settingsWiring) settingsadapter.Declarations {
+func getDeclarations(c settingsWiring) settingsdomain.Declarations {
 	return func(owner string) ([]manifest.Setting, bool) {
 		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
@@ -137,10 +137,10 @@ func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 	}
 }
 
-func getRegistries(c settingsWiring) settingsadapter.Registries {
+func getRegistries(c settingsWiring) settingsdomain.Registries {
 	themes := themeRegistry(c).GetNames()
 	return settingsadapter.AddDetectedRegistries(func(name string) ([]string, bool) {
-		if name == settingsadapter.RegistryConnections {
+		if name == settingsdomain.RegistryConnections {
 			return listConnectionIDs(c)
 		}
 		return themes(name)
@@ -222,7 +222,7 @@ func openRetryPlugin(_ settingsWiring, retrier func(context.Context, string) (*p
 }
 
 func settingsStore(c settingsWiring) *settingsadapter.Store {
-	var declared settingsadapter.Declarations
+	var declared settingsdomain.Declarations
 	if c.PluginHost.Views.Infos != nil {
 		declared = getDeclarations(c)
 	}
@@ -259,7 +259,7 @@ func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
 
 func settingsWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(getDeclarations(c), getRegistries(c)), c.PluginHost.Views.Checks,
+		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), c.PluginHost.Views.Checks,
 	)
 	return settingsusecase.NewWriteSettings(check, settingsStore(c), feed(c))
 }

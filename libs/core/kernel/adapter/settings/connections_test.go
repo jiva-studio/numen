@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -26,7 +27,7 @@ func TestConnectionsIsNotAPluginId(t *testing.T) {
 
 func TestNoOwnerDeclaresTheConnectionsSection(t *testing.T) {
 	for _, path := range [][]string{{"connections"}, {"connections", "0", "name"}} {
-		if err := check(path, "x"); !errors.Is(err, settings.ErrUndeclared) {
+		if err := check(path, "x"); !errors.Is(err, settingsdomain.ErrUndeclared) {
 			t.Errorf("a write at %v gave %v, want ErrUndeclared", path, err)
 		}
 	}

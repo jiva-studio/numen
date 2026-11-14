@@ -23,7 +23,7 @@ type ConnectionRowsSource struct {
 	Connections connectionport.Repository
 	Detected    connectionport.Detected
 	Plugins     func() []plugin.Info
-	Declared    Declarations
+	Declared    settingsdomain.Declarations
 	ReadStored  func() (File, error)
 	Write       func(entries []settingsdomain.Setting) error
 	Refresh     func(ctx context.Context, forced ...string) error
@@ -62,22 +62,9 @@ func (r *ConnectionRows) ReadRowSetting(pluginID, operation string) (connection.
 	return connection.RowSetting{}, nil
 }
 
-// ListGrants returns the operations each plugin names in its permissions connections:use:<operation>, in
-// the order of the plugin ids. A plugin that names none is left out.
-func (r *ConnectionRows) ListGrants() []connection.Grant {
-	var grants []connection.Grant
-	for _, plugin := range r.source.Plugins() {
-		var operations []string
-		for _, permission := range plugin.Permissions {
-			if operation, isGrant := manifest.ParseConnectionsUse(permission); isGrant {
-				operations = append(operations, operation)
-			}
-		}
-		if len(operations) > 0 {
-			grants = append(grants, connection.Grant{PluginID: plugin.ID, PluginName: plugin.Name, Operations: operations})
-		}
-	}
-	return grants
+// ListPlugins returns the plugins in force, in the order of the plugin ids.
+func (r *ConnectionRows) ListPlugins() []plugin.Info {
+	return r.source.Plugins()
 }
 
 func (r *ConnectionRows) readExistingRows(valueJSON string) ([]connection.Row, error) {
@@ -113,7 +100,7 @@ func readRowsJSON(valueJSON string) []connection.Row {
 			text, isText := value.(string)
 			switch {
 			case !isText:
-			case key == rowConnection:
+			case key == settingsdomain.RowConnectionKey:
 				row.ConnectionID = text
 			default:
 				row.Options[key] = text
@@ -168,7 +155,7 @@ func removeRowsOf(stored File, owner, key, connectionID string) (settingsdomain.
 	}
 	remainder := make([]any, 0, len(list))
 	for _, row := range list {
-		if object, isObject := row.(map[string]any); isObject && object[rowConnection] == connectionID {
+		if object, isObject := row.(map[string]any); isObject && object[settingsdomain.RowConnectionKey] == connectionID {
 			continue
 		}
 		remainder = append(remainder, row)

@@ -10,16 +10,19 @@ import (
 // CheckSettings validates settings against the declarations of the settings they are written to,
 // and against the plugin that owns a plugin setting.
 type CheckSettings struct {
-	codec     settingsport.ValueCodec
-	validator settingsport.WriteValidator
-	plugins   settingsport.PluginSettings
+	codec      settingsport.ValueCodec
+	declared   settingsdomain.Declarations
+	registries settingsdomain.Registries
+	plugins    settingsport.PluginSettings
 }
 
-// NewCheckSettings makes the use case. plugins is nil where no plugin host runs.
+// NewCheckSettings makes the use case. registries lists the values of the settings that draw their
+// options from a registry. plugins is nil where no plugin host runs.
 func NewCheckSettings(
-	codec settingsport.ValueCodec, validator settingsport.WriteValidator, plugins settingsport.PluginSettings,
+	codec settingsport.ValueCodec, declared settingsdomain.Declarations, registries settingsdomain.Registries,
+	plugins settingsport.PluginSettings,
 ) *CheckSettings {
-	return &CheckSettings{codec: codec, validator: validator, plugins: plugins}
+	return &CheckSettings{codec: codec, declared: declared, registries: registries, plugins: plugins}
 }
 
 // Execute returns an error wrapping ErrNotASetting for the first entry that is refused.
@@ -37,7 +40,7 @@ func (u *CheckSettings) check(one settingsdomain.Setting) error {
 	if err != nil {
 		return err
 	}
-	if err := u.validator.CheckWrite(one.Path, value); err != nil {
+	if err := settingsdomain.CheckValue(u.declared, u.registries, one.Path, value); err != nil {
 		return err
 	}
 	if u.plugins != nil && settingsdomain.IsPluginSetting(one.Path) {

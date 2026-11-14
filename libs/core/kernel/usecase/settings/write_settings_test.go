@@ -11,8 +11,8 @@ import (
 )
 
 func newWriter(file *memoryFile, plugins settingsport.PluginSettings, events *[]string) *settings.WriteSettings {
-	validator := refusingValidator{declared: [][]string{{"app", "appearance", "theme"}, {"org.example.scans", "isAutomatic"}}}
-	return settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, validator, plugins), file, refreshRecorder{events})
+	declared := declare([]string{"app", "appearance", "theme"}, []string{"org.example.scans", "isAutomatic"})
+	return settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, declared, nil, plugins), file, refreshRecorder{events})
 }
 
 // The file is writes first, and the readers of the changes are notified after it.
@@ -62,7 +62,7 @@ func TestWriteSettingsRefusesWhatCannotBeReadBack(t *testing.T) {
 // A plugin setting is checked by the plugin that owns it, with the value decoded.
 func TestCheckSettingsAsksThePluginThatOwnsTheSetting(t *testing.T) {
 	host := &pluginHost{}
-	check := settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: [][]string{{"org.example.scans", "isAutomatic"}}}, host)
+	check := settings.NewCheckSettings(jsonCodec{}, declare([]string{"org.example.scans", "isAutomatic"}), nil, host)
 
 	err := check.Execute([]settingsdomain.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: `true`}})
 

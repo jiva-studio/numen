@@ -250,8 +250,18 @@ func (u *memoryUses) use(connectionID string, uses ...connectiondomain.Use) {
 	u.uses[connectionID] = uses
 }
 
-func (u *memoryUses) ListGrants() []connectiondomain.Grant {
+// ListPlugins returns a plugin for each grant, with a permission connections:use:<operation> for each of its
+// operations.
+func (u *memoryUses) ListPlugins() []plugindomain.Info {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	return slices.Clone(u.grants)
+	plugins := make([]plugindomain.Info, 0, len(u.grants))
+	for _, one := range u.grants {
+		info := plugindomain.Info{ID: one.PluginID, Name: one.PluginName}
+		for _, operation := range one.Operations {
+			info.Permissions = append(info.Permissions, manifest.FormatConnectionsUse(operation))
+		}
+		plugins = append(plugins, info)
+	}
+	return plugins
 }

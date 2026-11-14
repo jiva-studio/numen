@@ -21,7 +21,7 @@ func (u *ListRows) Execute(pluginID, operationName string) ([]connection.Row, er
 	if err != nil {
 		return nil, err
 	}
-	isDiscovering := setting.IsDiscovering || connection.IsGranted(u.uses.ListGrants(), pluginID, operationName)
+	isDiscovering := setting.IsDiscovering || connection.IsGranted(u.listGrants(), pluginID, operationName)
 	if len(setting.Rows) > 0 || !isDiscovering {
 		return setting.Rows, nil
 	}
