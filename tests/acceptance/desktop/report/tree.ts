@@ -32,7 +32,10 @@ export const buildTree = <T extends ScenarioEntry>(scenarios: readonly T[]): Fea
     .map(([uri, group]) => createFeatureNode(uri, group))
 }
 
-const createFeatureNode = <T extends ScenarioEntry>(uri: string, group: readonly T[]): FeatureNode<T> => {
+const createFeatureNode = <T extends ScenarioEntry>(
+  uri: string,
+  group: readonly T[],
+): FeatureNode<T> => {
   const scenarios = [...group].sort((a, b) => a.line - b.line)
   const counts = countStatuses(scenarios)
   return {

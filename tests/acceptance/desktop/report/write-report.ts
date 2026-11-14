@@ -11,7 +11,8 @@ const PAGE_FILES = ['index.html', 'report.css', 'report.js']
 
 export const writeReport = (outputDir: string, scenarios: readonly ScenarioRecord[]): void => {
   fs.mkdirSync(outputDir, { recursive: true })
-  for (const file of PAGE_FILES) fs.copyFileSync(path.join(PAGE_DIR, file), path.join(outputDir, file))
+  for (const file of PAGE_FILES)
+    fs.copyFileSync(path.join(PAGE_DIR, file), path.join(outputDir, file))
   const data = {
     createdAt: new Date().toISOString(),
     counts: countStatuses(scenarios),

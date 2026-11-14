@@ -1,5 +1,5 @@
 /** What one scenario shares between the levels of the driver: the page, the notes it made, its vault. */
-import type { Browser, Page, ViewportSize } from 'playwright/test'
+import type { Browser, BrowserContextOptions, Page, ViewportSize } from 'playwright/test'
 import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
 import { destroyNote, destroyTrashed, listFiles } from '../../../e2e/desktop/tests/support/vault.js'
 import { getGraph, openWorkspace, waitForWindow } from '../../../e2e/desktop/tests/support/workspace.js'
@@ -18,6 +18,13 @@ import type { EnvironmentSetting } from './environment.js'
 import { Palette } from './components/Palette.js'
 import { Server } from './server.js'
 import { World } from './world.js'
+
+/** How a run with video records the windows of a scenario (support/video.ts). */
+export type Recording = {
+  readonly contextOptions: Pick<BrowserContextOptions, 'recordVideo'>
+  /** Called with each window once its page is ready. */
+  readonly onPage: (page: Page) => void
+}
 
 export class Scenario {
   private readonly paths = new Map<string, string>()
@@ -39,6 +46,7 @@ export class Scenario {
   constructor(
     firstPage: Page,
     private readonly viewport: ViewportSize | null,
+    private readonly recording?: Recording,
   ) {
     this.currentPage = firstPage
   }
@@ -117,7 +125,7 @@ export class Scenario {
     } else {
       await this.server.restart()
     }
-    await this.browser?.close()
+    await this.closeBrowser()
     const browserType = this.currentPage.context().browser()?.browserType()
     if (browserType === undefined) throw new Error('the page has no browser to launch another from')
     const args = browserType.name() === 'chromium' ? [`--ignore-certificate-errors-spki-list=${this.server.getPublicKeyHash()}`] : []
@@ -126,11 +134,19 @@ export class Scenario {
       baseURL: this.server.getBaseURL(),
       ignoreHTTPSErrors: true,
       viewport: this.viewport,
+      ...this.recording?.contextOptions,
     })
     // A link without a copy embeds the player of the site, which a run offline does not reach.
     await context.route(/youtube-nocookie\.com/, (route) => route.abort())
     this.currentPage = await context.newPage()
+    this.recording?.onPage(this.currentPage)
     this.hasWorkspace = false
+  }
+
+  /** Closes the contexts before the browser: a context writes out the video of its pages as it closes. */
+  private async closeBrowser(): Promise<void> {
+    for (const context of this.browser?.contexts() ?? []) await context.close()
+    await this.browser?.close()
   }
 
   readServerLog(): string | undefined {
@@ -140,7 +156,7 @@ export class Scenario {
   /** Ends the window, the server and the world, in this order, and removes every folder they made. */
   async removeWorld(): Promise<void> {
     try {
-      await this.browser?.close()
+      await this.closeBrowser()
     } finally {
       try {
         await this.server?.stop()

@@ -46,7 +46,10 @@ body {
   height: 100vh;
   background: var(--bg);
   color: var(--fg);
-  font: 14px/1.45 system-ui, -apple-system, sans-serif;
+  font:
+    14px/1.45 system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .sidebar {

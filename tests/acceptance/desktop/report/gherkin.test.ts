@@ -47,7 +47,12 @@ describe('findScenario', () => {
             ['Fern', '2'],
           ],
         },
-        { keyword: 'Then', text: 'the log says:', line: 11, docString: { content: 'Fern: 2 l', mediaType: 'markdown' } },
+        {
+          keyword: 'Then',
+          text: 'the log says:',
+          line: 11,
+          docString: { content: 'Fern: 2 l', mediaType: 'markdown' },
+        },
       ],
     })
   })

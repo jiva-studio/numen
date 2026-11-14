@@ -5,17 +5,12 @@
  */
 import { test as bdd } from 'playwright-bdd'
 import { Person } from '../drivers/person.js'
-import { isVideoOn, markVideoStart } from './video-start.js'
+import { createVideoRecorder, isVideoOn } from './video.js'
 
 export const test = bdd.extend<{ person: Person }>({
-  // Playwright starts the video of a page while it creates the page, so the moment the page is
-  // ready is the start of the video, within the time of one call to the browser.
-  page: async ({ page }, use, testInfo) => {
-    if (isVideoOn()) markVideoStart(testInfo)
-    await use(page)
-  },
   person: async ({ page, viewport }, use, testInfo) => {
-    const person = new Person(page, viewport)
+    const recorder = isVideoOn() ? createVideoRecorder(testInfo, viewport) : undefined
+    const person = new Person(page, viewport, recorder?.recording)
     try {
       await use(person)
       const log = person.readServerLog()
@@ -23,7 +18,11 @@ export const test = bdd.extend<{ person: Person }>({
         await testInfo.attach('server.log', { body: log, contentType: 'text/plain' })
       }
     } finally {
-      await person.removeNotes()
+      try {
+        await person.removeNotes()
+      } finally {
+        await recorder?.attachVideos()
+      }
     }
   },
 })

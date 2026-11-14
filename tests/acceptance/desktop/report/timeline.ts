@@ -1,5 +1,5 @@
 /** Where each step of a scenario is in its video, and how it ended. */
-import { VIDEO_START } from '../support/video-start.js'
+import { VIDEO_START } from '../support/video.js'
 
 /** The part of Playwright's `TestStep` the report reads. */
 export type StepNode = {
@@ -35,7 +35,7 @@ export const collectBddSteps = (steps: readonly StepNode[], specFile: string): S
       : collectBddSteps(step.steps, specFile),
   )
 
-/** The video start the page fixture marked, or the start of the first step when it marked none. */
+/** The video start the person fixture marked, or the start of the first step when it marked none. */
 export const getVideoStart = (
   annotations: readonly Annotation[],
   steps: readonly StepNode[],
@@ -68,7 +68,12 @@ const toTiming = (step: StepNode, videoStart: number, isBlamed: boolean): StepTi
   const start = Math.max(0, (step.startTime.getTime() - videoStart) / 1000)
   const message = step.error?.message
   if (message !== undefined || isBlamed) {
-    return { status: 'failed', start, duration: step.duration, ...(message && { errorMessage: message }) }
+    return {
+      status: 'failed',
+      start,
+      duration: step.duration,
+      ...(message && { errorMessage: message }),
+    }
   }
   return { status: 'passed', start, duration: step.duration }
 }

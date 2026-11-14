@@ -15,7 +15,12 @@ const createScenario = (overrides: Partial<ScenarioEntry>): ScenarioEntry => ({
 describe('buildTree', () => {
   const tree = buildTree([
     createScenario({ id: 'b', line: 20, status: 'failed', duration: 2500 }),
-    createScenario({ id: 'k', featureUri: 'features/kitchen/bake-bread.feature', featureName: 'Bake bread', status: 'skipped' }),
+    createScenario({
+      id: 'k',
+      featureUri: 'features/kitchen/bake-bread.feature',
+      featureName: 'Bake bread',
+      status: 'skipped',
+    }),
     createScenario({ id: 'a', line: 8 }),
   ])
 

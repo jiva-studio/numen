@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { collectBddSteps, findStepAt, getVideoStart, mapStepTimes, type StepNode } from './timeline.js'
+import {
+  collectBddSteps,
+  findStepAt,
+  getVideoStart,
+  mapStepTimes,
+  type StepNode,
+} from './timeline.js'
 
 const SPEC = '/repo/.features-gen/features/garden/water-plants.feature.spec.js'
 const T0 = Date.UTC(2031, 4, 2, 9, 0, 0)
@@ -22,7 +28,10 @@ describe('collectBddSteps', () => {
     const tree = [
       createStep({
         category: 'hook',
-        steps: [createStep({ category: 'fixture' }), createStep({ category: 'hook', steps: [background] })],
+        steps: [
+          createStep({ category: 'fixture' }),
+          createStep({ category: 'hook', steps: [background] }),
+        ],
       }),
       createStep({
         line: 12,
