@@ -427,9 +427,6 @@ func TestAConnectionRecipeIgnoresTheTokenizerVersion(t *testing.T) {
 	prefixed := openAIProfile()
 	prefixed.QueryPrefix, prefixed.DocumentPrefix = "query: ", "passage: "
 	srv := newConnectionServer(&hostModels{profile: prefixed})
-	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
-		return tokenizingModel{version: "1"}, nil
-	}
 	t.Cleanup(func() { closeServer(t, srv) })
 	srv.updateConfig(connectionValues())
 	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a note"}); err != nil {

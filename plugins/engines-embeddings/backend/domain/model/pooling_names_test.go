@@ -10,7 +10,7 @@ func TestProfileNamingTheOldPoolingIsRejected(t *testing.T) {
 		t,
 	).WithUserProfiles(
 		"/data/profiles",
-		[]UserFile{{Path: "h.json", Data: []byte(`{"id":"owner/h","dims":8,"maxTokens":8,"pooling":"head","onnxFile":"m.onnx"}`)}},
+		[]UserFile{{Path: "h.json", Data: []byte(`{"id":"owner/h","dims":8,"maxTokens":8,"pooling":"head","onnxFile":"m.onnx","tokenizer":"bpe"}`)}},
 		func(_ string, err error) { reported = err },
 	)
 	if reported == nil {

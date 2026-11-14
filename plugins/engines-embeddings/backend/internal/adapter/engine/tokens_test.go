@@ -7,8 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/libs/shared/tokenizer"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
@@ -129,4 +131,39 @@ func shortenText(text string) string {
 		return text
 	}
 	return string(runes[:60]) + "…"
+}
+
+// TestAnOpenWhoseTokenizerIsNotTheKindOfItsProfileFails gives a profile that names the Unigram
+// tokenizer a folder whose tokenizer.json is a BPE model. The open fails before the runtime loads the
+// model file, which here is no model at all.
+func TestAnOpenWhoseTokenizerIsNotTheKindOfItsProfileFails(t *testing.T) {
+	dir := t.TempDir()
+	raw, err := os.ReadFile(filepath.Join("testdata", "bpe.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	tokenizerPath := filepath.Join(dir, model.TokenizerFile)
+	if err := os.WriteFile(tokenizerPath, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "model.onnx"), []byte("not a model"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	profiles, err := model.ReadProfiles([]byte(
+		`{"id":"owner/mismatch","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"onnx/model.onnx","tokenizer":"unigram"}`,
+	))
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, local := model.NewConfig(profiles[0])
+	local.Dir = dir
+
+	emb, err := Open(t.Context(), onnx.NewLibrary(), info, local, nil)
+	if err == nil {
+		_ = emb.Close()
+		t.Fatal("a BPE tokenizer opened for a profile that names the Unigram tokenizer")
+	}
+	if !strings.Contains(err.Error(), "owner/mismatch") || !strings.Contains(err.Error(), tokenizerPath) {
+		t.Errorf("error = %v, want one that names owner/mismatch and %s", err, tokenizerPath)
+	}
 }

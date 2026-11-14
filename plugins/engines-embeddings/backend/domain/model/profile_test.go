@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"slices"
 	"strings"
@@ -115,7 +116,7 @@ func TestUserProfileAddsAModel(t *testing.T) {
 		"/data/profiles",
 		[]UserFile{{Path: "mine.json", Data: []byte(
 			`{"id":"owner/my-model","title":"Mine","dims":256,"maxTokens":2048,` +
-				`"pooling":"last","queryPrefix":"q: ","onnxFile":"onnx/model.onnx","extraInputs":["position_ids"]}`,
+				`"pooling":"last","queryPrefix":"q: ","onnxFile":"onnx/model.onnx","tokenizer":"bpe","extraInputs":["position_ids"]}`,
 		)}},
 		func(file string, _ error) { reported = append(reported, file) },
 	)
@@ -207,21 +208,21 @@ func TestUserProfileByAnAliasOverridesTheModelOfTheAlias(t *testing.T) {
 func TestMalformedUserFilesAreReportedAndSkipped(t *testing.T) {
 	files := []UserFile{}
 	files = append(files, UserFile{Path: "a-broken.json", Data: []byte(`{"id": "owner/x", `)})
-	files = append(files, UserFile{Path: "b-nodims.json", Data: []byte(`{"id":"owner/y","maxTokens":512,"pooling":"mean","onnxFile":"onnx/m.onnx"}`)})
+	files = append(files, UserFile{Path: "b-nodims.json", Data: []byte(`{"id":"owner/y","maxTokens":512,"pooling":"mean","onnxFile":"onnx/m.onnx","tokenizer":"bpe"}`)})
 	files = append(
 		files,
-		UserFile{Path: "c-unknown-field.json", Data: []byte(`{"id":"owner/z","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","querryPrefix":"x"}`)},
+		UserFile{Path: "c-unknown-field.json", Data: []byte(`{"id":"owner/z","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","tokenizer":"bpe","querryPrefix":"x"}`)},
 	)
 	files = append(
 		files,
 		UserFile{
 			Path: "d-half.json",
 			Data: []byte(
-				`[{"id":"owner/ok","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"},{"id":"owner/bad","dims":8,"maxTokens":8,"pooling":"median","onnxFile":"m.onnx"}]`,
+				`[{"id":"owner/ok","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","tokenizer":"bpe"},{"id":"owner/bad","dims":8,"maxTokens":8,"pooling":"median","onnxFile":"m.onnx","tokenizer":"bpe"}]`,
 			),
 		},
 	)
-	files = append(files, UserFile{Path: "e-good.json", Data: []byte(`{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"}`)})
+	files = append(files, UserFile{Path: "e-good.json", Data: []byte(`{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","tokenizer":"bpe"}`)})
 	files = append(files, UserFile{Path: "f-array.json", Data: []byte(`[broken`)})
 	reported := map[string]error{}
 	table := getShippedProfiles(t).WithUserProfiles("/data/profiles", files, func(file string, err error) { reported[file] = err })
@@ -425,5 +426,93 @@ func TestProfileNormalizeCloneAndErrorPaths(t *testing.T) {
 	}
 	if m3Again.Aliases[0] == "changed" || m3Again.ExtraInputs[0] == "changed" || m3Again.SHA256[TokenizerFile] == "changed" {
 		t.Errorf("mutating returned Profile mutated table state: %+v", m3Again)
+	}
+}
+
+// getTokenizerKind returns the tokenizer field of the profile as a profile file names it.
+func getTokenizerKind(t *testing.T, p Profile) string {
+	t.Helper()
+	data, err := json.Marshal(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fields struct {
+		Tokenizer string `json:"tokenizer"`
+	}
+	if err := json.Unmarshal(data, &fields); err != nil {
+		t.Fatal(err)
+	}
+	return fields.Tokenizer
+}
+
+func TestShippedProfilesNameTheKindOfTheirTokenizer(t *testing.T) {
+	table := getShippedProfiles(t)
+	want := map[string]string{
+		"Xenova/multilingual-e5-small":            "unigram",
+		"Xenova/bge-m3":                           "unigram",
+		"onnx-community/harrier-oss-v1-270m-ONNX": "bpe",
+	}
+	for id, kind := range want {
+		p, err := table.GetLocal(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := getTokenizerKind(t, p); got != kind {
+			t.Errorf("%s: tokenizer %q, want %q", id, got, kind)
+		}
+	}
+}
+
+func TestAUserProfileThatAddsAModelWithoutATokenizerIsReportedAndSkipped(t *testing.T) {
+	var reported error
+	table := getShippedProfiles(t).WithUserProfiles(
+		"/data/profiles",
+		[]UserFile{{Path: "mine.json", Data: []byte(`{"id":"owner/mine","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"}`)}},
+		func(_ string, err error) { reported = err },
+	)
+	if reported == nil || !strings.Contains(reported.Error(), "tokenizer") {
+		t.Errorf("reported %v, want an error that names the tokenizer", reported)
+	}
+	if _, err := table.GetLocal("owner/mine"); err == nil {
+		t.Error("a model without a tokenizer is in the table")
+	}
+}
+
+func TestAUserProfileWithAnUnknownTokenizerIsReportedAndSkipped(t *testing.T) {
+	var reported error
+	table := getShippedProfiles(t).WithUserProfiles(
+		"/data/profiles",
+		[]UserFile{{Path: "mine.json", Data: []byte(`{"id":"owner/mine","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","tokenizer":"wordpiece"}`)}},
+		func(_ string, err error) { reported = err },
+	)
+	if reported == nil || !strings.Contains(reported.Error(), "wordpiece") {
+		t.Errorf("reported %v, want an error that names the tokenizer wordpiece", reported)
+	}
+	if _, err := table.GetLocal("owner/mine"); err == nil {
+		t.Error("a model with an unknown tokenizer is in the table")
+	}
+}
+
+func TestAUserProfileMergedOverAShippedOneKeepsItsTokenizer(t *testing.T) {
+	var reported []string
+	table := getShippedProfiles(t).WithUserProfiles(
+		"/data/profiles",
+		[]UserFile{
+			{Path: "e5.json", Data: []byte(`{"id":"Xenova/multilingual-e5-small","documentPrefix":"doc: "}`)},
+			{Path: "harrier.json", Data: []byte(`{"id":"onnx-community/harrier-oss-v1-270m-ONNX","queryPrefix":"Q: "}`)},
+		},
+		func(file string, _ error) { reported = append(reported, file) },
+	)
+	if len(reported) != 0 {
+		t.Fatalf("reported %v", reported)
+	}
+	for id, kind := range map[string]string{DefaultModel: "unigram", "onnx-community/harrier-oss-v1-270m-ONNX": "bpe"} {
+		p, err := table.GetLocal(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := getTokenizerKind(t, p); got != kind {
+			t.Errorf("%s: tokenizer %q after a merge, want %q", id, got, kind)
+		}
 	}
 }

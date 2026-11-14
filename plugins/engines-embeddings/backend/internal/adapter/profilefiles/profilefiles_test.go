@@ -32,7 +32,7 @@ func writeProfile(t *testing.T, dir, name, content string) {
 func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, "a-broken.json", `{"id": "owner/x", `)
-	writeProfile(t, dir, "e-good.json", `{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"}`)
+	writeProfile(t, dir, "e-good.json", `{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","tokenizer":"bpe"}`)
 	writeProfile(t, dir, "notes.txt", `not a profile`)
 	if err := os.MkdirAll(filepath.Join(dir, "sub.json"), 0o700); err != nil {
 		t.Fatal(err)

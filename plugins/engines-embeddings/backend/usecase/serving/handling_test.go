@@ -154,7 +154,7 @@ func TestAUserProfileAddsALocalModelWithoutRecompiling(t *testing.T) {
 	srv := newEmbeddingServer()
 	dir := t.TempDir()
 	srv.profileSrc = profilefiles.NewDirectory(dir)
-	writeFile(t, filepath.Join(dir, "mine.json"), `{"id":"owner/mine","dims":96,"maxTokens":300,"pooling":"last","onnxFile":"onnx/model.onnx","queryPrefix":"Q: "}`)
+	writeFile(t, filepath.Join(dir, "mine.json"), `{"id":"owner/mine","dims":96,"maxTokens":300,"pooling":"last","onnxFile":"onnx/model.onnx","tokenizer":"bpe","queryPrefix":"Q: "}`)
 	writeFile(t, filepath.Join(dir, "broken.json"), `{"id":`)
 	srv.updateConfig(map[string]string{"source": "local", "model": "owner/mine"})
 
@@ -234,49 +234,41 @@ const (
 	harrierRecipeBefore = "plugin:md.numen.engines.embeddings|onnx-community/harrier-oss-v1-270m-ONNX|640|512|output|623ccc6f"
 )
 
-type tokenizingModel struct {
-	mockembedder.Embedder
-	version string
-}
-
-func (m tokenizingModel) GetTokenizerVersion() string {
-	return m.version
-}
-
-func newTokenizingServer(t *testing.T, version string) *Server {
+// newUnopenedServer returns a server whose model fails the test when it is opened: the recipe is read
+// from the profile alone.
+func newUnopenedServer(t *testing.T, dir string) *Server {
 	t.Helper()
 	srv := newEmbeddingServer()
-	srv.profileSrc = profilefiles.NewDirectory(t.TempDir())
+	srv.profileSrc = profilefiles.NewDirectory(dir)
 	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
-		return tokenizingModel{version: version}, nil
+		t.Error("reading the recipe opened the model")
+		return mockembedder.Embedder{}, nil
 	}
 	t.Cleanup(func() { closeServer(t, srv) })
 	return srv
 }
 
-func getLoadedRecipe(t *testing.T, srv *Server, name string) string {
+func getRecipeOf(t *testing.T, srv *Server, name string) string {
 	t.Helper()
 	srv.updateConfig(map[string]string{"source": "local", "model": name})
-	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a note"}); err != nil {
-		t.Fatal(err)
-	}
 	return getModelInfoOf(t, srv).GetRecipe()
 }
 
 func TestTheRecipeOfALocalModelChangesWithTheVersionOfItsTokenizer(t *testing.T) {
-	first := getLoadedRecipe(t, newTokenizingServer(t, "1"), model.DefaultModel)
-	second := getLoadedRecipe(t, newTokenizingServer(t, "2"), model.DefaultModel)
-
-	if first == e5RecipeBefore {
-		t.Errorf("a model read by a tokenizer of version 1 kept the recipe %s it had before", first)
+	unigram := getRecipeOf(t, newUnopenedServer(t, t.TempDir()), model.DefaultModel)
+	if unigram == e5RecipeBefore {
+		t.Errorf("a model whose profile names the Unigram tokenizer kept the recipe %s it had before", unigram)
 	}
-	if first == second {
-		t.Errorf("tokenizer versions 1 and 2 give the same recipe %s", first)
+
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "e5.json"), `{"id":"Xenova/multilingual-e5-small","tokenizer":"bpe"}`)
+	if bpe := getRecipeOf(t, newUnopenedServer(t, dir), model.DefaultModel); bpe != e5RecipeBefore {
+		t.Errorf("the profile that reads E5 with BPE gives the recipe %s, want %s as before", bpe, e5RecipeBefore)
 	}
 }
 
 func TestALocalModelWhoseTokenizerHasNoVersionKeepsItsRecipe(t *testing.T) {
-	if got := getLoadedRecipe(t, newTokenizingServer(t, ""), harrierModel); got != harrierRecipeBefore {
+	if got := getRecipeOf(t, newUnopenedServer(t, t.TempDir()), harrierModel); got != harrierRecipeBefore {
 		t.Errorf("recipe = %s, want %s as before", got, harrierRecipeBefore)
 	}
 }
