@@ -4,8 +4,8 @@
 
 // What a client may ask of a vault by typing into it.
 //
-// things: SearchNames answers with names, and SearchPassages with the passages
-// of text a vault holds. A client drawing them apart asks each of them.
+// things: SearchNames answers with names, and SearchText with the search
+// results of text a vault holds. A client drawing them apart asks each of them.
 package numenv1connect
 
 import (
@@ -40,9 +40,9 @@ const (
 	// SearchServiceSearchNamesProcedure is the fully-qualified name of the SearchService's SearchNames
 	// RPC.
 	SearchServiceSearchNamesProcedure = "/numen.v1.SearchService/SearchNames"
-	// SearchServiceSearchPassagesProcedure is the fully-qualified name of the SearchService's
-	// SearchPassages RPC.
-	SearchServiceSearchPassagesProcedure = "/numen.v1.SearchService/SearchPassages"
+	// SearchServiceSearchTextProcedure is the fully-qualified name of the SearchService's SearchText
+	// RPC.
+	SearchServiceSearchTextProcedure = "/numen.v1.SearchService/SearchText"
 	// SearchServiceCancelSearchProcedure is the fully-qualified name of the SearchService's
 	// CancelSearch RPC.
 	SearchServiceCancelSearchProcedure = "/numen.v1.SearchService/CancelSearch"
@@ -55,14 +55,14 @@ type SearchServiceClient interface {
 	// the last word matches on its prefix.
 	//
 	// It reads names and nothing else. Searching the text a vault holds is
-	// SearchPassages, and that answers with passages.
+	// SearchText, and that answers with search results.
 	SearchNames(context.Context, *connect.Request[v1.SearchNamesRequest]) (*connect.Response[v1.SearchNamesResponse], error)
-	// SearchPassages is the text a vault holds that answers what was typed, by
+	// SearchText is the text a vault holds that answers what was typed, by
 	// the words in it or by what it means or by what a section is called. The
 	// caller says which way it is asked, so a client drawing them apart asks once
 	// for each.
-	SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error)
-	// CancelSearch stops the SearchNames or SearchPassages call that carries the
+	SearchText(context.Context, *connect.Request[v1.SearchTextRequest]) (*connect.Response[v1.SearchTextResponse], error)
+	// CancelSearch stops the SearchNames or SearchText call that carries the
 	// search id. A client that aborts its request does not stop the call in the
 	// core, so it sends this to free the work the call still does. A cancel that
 	// arrives before its call is kept for a few seconds and cancels the call if
@@ -87,10 +87,10 @@ func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(searchServiceMethods.ByName("SearchNames")),
 			connect.WithClientOptions(opts...),
 		),
-		searchPassages: connect.NewClient[v1.SearchPassagesRequest, v1.SearchPassagesResponse](
+		searchText: connect.NewClient[v1.SearchTextRequest, v1.SearchTextResponse](
 			httpClient,
-			baseURL+SearchServiceSearchPassagesProcedure,
-			connect.WithSchema(searchServiceMethods.ByName("SearchPassages")),
+			baseURL+SearchServiceSearchTextProcedure,
+			connect.WithSchema(searchServiceMethods.ByName("SearchText")),
 			connect.WithClientOptions(opts...),
 		),
 		cancelSearch: connect.NewClient[v1.CancelSearchRequest, v1.CancelSearchResponse](
@@ -104,9 +104,9 @@ func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // searchServiceClient implements SearchServiceClient.
 type searchServiceClient struct {
-	searchNames    *connect.Client[v1.SearchNamesRequest, v1.SearchNamesResponse]
-	searchPassages *connect.Client[v1.SearchPassagesRequest, v1.SearchPassagesResponse]
-	cancelSearch   *connect.Client[v1.CancelSearchRequest, v1.CancelSearchResponse]
+	searchNames  *connect.Client[v1.SearchNamesRequest, v1.SearchNamesResponse]
+	searchText   *connect.Client[v1.SearchTextRequest, v1.SearchTextResponse]
+	cancelSearch *connect.Client[v1.CancelSearchRequest, v1.CancelSearchResponse]
 }
 
 // SearchNames calls numen.v1.SearchService.SearchNames.
@@ -114,9 +114,9 @@ func (c *searchServiceClient) SearchNames(ctx context.Context, req *connect.Requ
 	return c.searchNames.CallUnary(ctx, req)
 }
 
-// SearchPassages calls numen.v1.SearchService.SearchPassages.
-func (c *searchServiceClient) SearchPassages(ctx context.Context, req *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error) {
-	return c.searchPassages.CallUnary(ctx, req)
+// SearchText calls numen.v1.SearchService.SearchText.
+func (c *searchServiceClient) SearchText(ctx context.Context, req *connect.Request[v1.SearchTextRequest]) (*connect.Response[v1.SearchTextResponse], error) {
+	return c.searchText.CallUnary(ctx, req)
 }
 
 // CancelSearch calls numen.v1.SearchService.CancelSearch.
@@ -131,14 +131,14 @@ type SearchServiceHandler interface {
 	// the last word matches on its prefix.
 	//
 	// It reads names and nothing else. Searching the text a vault holds is
-	// SearchPassages, and that answers with passages.
+	// SearchText, and that answers with search results.
 	SearchNames(context.Context, *connect.Request[v1.SearchNamesRequest]) (*connect.Response[v1.SearchNamesResponse], error)
-	// SearchPassages is the text a vault holds that answers what was typed, by
+	// SearchText is the text a vault holds that answers what was typed, by
 	// the words in it or by what it means or by what a section is called. The
 	// caller says which way it is asked, so a client drawing them apart asks once
 	// for each.
-	SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error)
-	// CancelSearch stops the SearchNames or SearchPassages call that carries the
+	SearchText(context.Context, *connect.Request[v1.SearchTextRequest]) (*connect.Response[v1.SearchTextResponse], error)
+	// CancelSearch stops the SearchNames or SearchText call that carries the
 	// search id. A client that aborts its request does not stop the call in the
 	// core, so it sends this to free the work the call still does. A cancel that
 	// arrives before its call is kept for a few seconds and cancels the call if
@@ -159,10 +159,10 @@ func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(searchServiceMethods.ByName("SearchNames")),
 		connect.WithHandlerOptions(opts...),
 	)
-	searchServiceSearchPassagesHandler := connect.NewUnaryHandler(
-		SearchServiceSearchPassagesProcedure,
-		svc.SearchPassages,
-		connect.WithSchema(searchServiceMethods.ByName("SearchPassages")),
+	searchServiceSearchTextHandler := connect.NewUnaryHandler(
+		SearchServiceSearchTextProcedure,
+		svc.SearchText,
+		connect.WithSchema(searchServiceMethods.ByName("SearchText")),
 		connect.WithHandlerOptions(opts...),
 	)
 	searchServiceCancelSearchHandler := connect.NewUnaryHandler(
@@ -175,8 +175,8 @@ func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect.HandlerOp
 		switch r.URL.Path {
 		case SearchServiceSearchNamesProcedure:
 			searchServiceSearchNamesHandler.ServeHTTP(w, r)
-		case SearchServiceSearchPassagesProcedure:
-			searchServiceSearchPassagesHandler.ServeHTTP(w, r)
+		case SearchServiceSearchTextProcedure:
+			searchServiceSearchTextHandler.ServeHTTP(w, r)
 		case SearchServiceCancelSearchProcedure:
 			searchServiceCancelSearchHandler.ServeHTTP(w, r)
 		default:
@@ -192,8 +192,8 @@ func (UnimplementedSearchServiceHandler) SearchNames(context.Context, *connect.R
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.SearchNames is not implemented"))
 }
 
-func (UnimplementedSearchServiceHandler) SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.SearchPassages is not implemented"))
+func (UnimplementedSearchServiceHandler) SearchText(context.Context, *connect.Request[v1.SearchTextRequest]) (*connect.Response[v1.SearchTextResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.SearchText is not implemented"))
 }
 
 func (UnimplementedSearchServiceHandler) CancelSearch(context.Context, *connect.Request[v1.CancelSearchRequest]) (*connect.Response[v1.CancelSearchResponse], error) {

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search_source.proto.
  */
 export const file_numen_v1_search_source: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9zZWFyY2hfc291cmNlLnByb3RvEghudW1lbi52MSIvCgtTZWFyY2hQbGFjZRIQCgh2YXVsdF9pZBgBIAEoCRIOCgZyZWNpcGUYAiABKAkiHQobRGVzY3JpYmVTZWFyY2hTb3VyY2VSZXF1ZXN0IqMBChxEZXNjcmliZVNlYXJjaFNvdXJjZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDgoGcmVjaXBlGAIgASgJEg0KBXdpZHRoGAMgASgFEhQKDGNodW5rX3Rva2VucxgEIAEoBRIXCg9taW5fdGV4dF9sZW5ndGgYBSABKAUSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoASJPCgtJbmRleGVkVGV4dBIQCghjaHVua19pZBgBIAEoCRIMCgRwYXRoGAIgASgJEhIKCnZlcnNpb25faWQYAyABKAkSDAoEdGV4dBgEIAEoCSJfChFJbmRleFRleHRzUmVxdWVzdBIkCgVwbGFjZRgBIAEoCzIVLm51bWVuLnYxLlNlYXJjaFBsYWNlEiQKBXRleHRzGAIgAygLMhUubnVtZW4udjEuSW5kZXhlZFRleHQiPAoSSW5kZXhUZXh0c1Jlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciKhAQooU2VhcmNoU291cmNlU2VydmljZVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBIkCgVwbGFjZRgBIAEoCzIVLm51bWVuLnYxLlNlYXJjaFBsYWNlEg0KBXF1ZXJ5GAIgASgJEg0KBWxpbWl0GAMgASgFEg0KBWtpbmRzGAQgAygJEhMKC3BhdGhfcHJlZml4GAUgASgJEg0KBWZsb29yGAYgASgBIi0KCkNodW5rTWF0Y2gSEAoIY2h1bmtfaWQYASABKAkSDQoFc2NvcmUYAiABKAEiUgopU2VhcmNoU291cmNlU2VydmljZVNlYXJjaFBhc3NhZ2VzUmVzcG9uc2USJQoHbWF0Y2hlcxgBIAMoCzIULm51bWVuLnYxLkNodW5rTWF0Y2giJgoTRW1iZWRRdWVyaWVzUmVxdWVzdBIPCgdxdWVyaWVzGAEgAygJIj4KFEVtYmVkUXVlcmllc1Jlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvcjKPAwoTU2VhcmNoU291cmNlU2VydmljZRJlChREZXNjcmliZVNlYXJjaFNvdXJjZRIlLm51bWVuLnYxLkRlc2NyaWJlU2VhcmNoU291cmNlUmVxdWVzdBomLm51bWVuLnYxLkRlc2NyaWJlU2VhcmNoU291cmNlUmVzcG9uc2USRwoKSW5kZXhUZXh0cxIbLm51bWVuLnYxLkluZGV4VGV4dHNSZXF1ZXN0GhwubnVtZW4udjEuSW5kZXhUZXh0c1Jlc3BvbnNlEnkKDlNlYXJjaFBhc3NhZ2VzEjIubnVtZW4udjEuU2VhcmNoU291cmNlU2VydmljZVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBozLm51bWVuLnYxLlNlYXJjaFNvdXJjZVNlcnZpY2VTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEk0KDEVtYmVkUXVlcmllcxIdLm51bWVuLnYxLkVtYmVkUXVlcmllc1JlcXVlc3QaHi5udW1lbi52MS5FbWJlZFF1ZXJpZXNSZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_embedding]);
+  fileDesc("ChxudW1lbi92MS9zZWFyY2hfc291cmNlLnByb3RvEghudW1lbi52MSIvCgtTZWFyY2hQbGFjZRIQCgh2YXVsdF9pZBgBIAEoCRIOCgZyZWNpcGUYAiABKAkiHQobRGVzY3JpYmVTZWFyY2hTb3VyY2VSZXF1ZXN0IqMBChxEZXNjcmliZVNlYXJjaFNvdXJjZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDgoGcmVjaXBlGAIgASgJEg0KBXdpZHRoGAMgASgFEhQKDGNodW5rX3Rva2VucxgEIAEoBRIXCg9taW5fdGV4dF9sZW5ndGgYBSABKAUSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoASJPCgtJbmRleGVkVGV4dBIQCghjaHVua19pZBgBIAEoCRIMCgRwYXRoGAIgASgJEhIKCnZlcnNpb25faWQYAyABKAkSDAoEdGV4dBgEIAEoCSJfChFJbmRleFRleHRzUmVxdWVzdBIkCgVwbGFjZRgBIAEoCzIVLm51bWVuLnYxLlNlYXJjaFBsYWNlEiQKBXRleHRzGAIgAygLMhUubnVtZW4udjEuSW5kZXhlZFRleHQiPAoSSW5kZXhUZXh0c1Jlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciKfAQomU2VhcmNoU291cmNlU2VydmljZVNlYXJjaENodW5rc1JlcXVlc3QSJAoFcGxhY2UYASABKAsyFS5udW1lbi52MS5TZWFyY2hQbGFjZRINCgVxdWVyeRgCIAEoCRINCgVsaW1pdBgDIAEoBRINCgVraW5kcxgEIAMoCRITCgtwYXRoX3ByZWZpeBgFIAEoCRINCgVmbG9vchgGIAEoASItCgpDaHVua01hdGNoEhAKCGNodW5rX2lkGAEgASgJEg0KBXNjb3JlGAIgASgBIlAKJ1NlYXJjaFNvdXJjZVNlcnZpY2VTZWFyY2hDaHVua3NSZXNwb25zZRIlCgdtYXRjaGVzGAEgAygLMhQubnVtZW4udjEuQ2h1bmtNYXRjaCImChNFbWJlZFF1ZXJpZXNSZXF1ZXN0Eg8KB3F1ZXJpZXMYASADKAkiPgoURW1iZWRRdWVyaWVzUmVzcG9uc2USJgoHdmVjdG9ycxgBIAMoCzIVLm51bWVuLnYxLkZsb2F0VmVjdG9yMokDChNTZWFyY2hTb3VyY2VTZXJ2aWNlEmUKFERlc2NyaWJlU2VhcmNoU291cmNlEiUubnVtZW4udjEuRGVzY3JpYmVTZWFyY2hTb3VyY2VSZXF1ZXN0GiYubnVtZW4udjEuRGVzY3JpYmVTZWFyY2hTb3VyY2VSZXNwb25zZRJHCgpJbmRleFRleHRzEhsubnVtZW4udjEuSW5kZXhUZXh0c1JlcXVlc3QaHC5udW1lbi52MS5JbmRleFRleHRzUmVzcG9uc2UScwoMU2VhcmNoQ2h1bmtzEjAubnVtZW4udjEuU2VhcmNoU291cmNlU2VydmljZVNlYXJjaENodW5rc1JlcXVlc3QaMS5udW1lbi52MS5TZWFyY2hTb3VyY2VTZXJ2aWNlU2VhcmNoQ2h1bmtzUmVzcG9uc2USTQoMRW1iZWRRdWVyaWVzEh0ubnVtZW4udjEuRW1iZWRRdWVyaWVzUmVxdWVzdBoeLm51bWVuLnYxLkVtYmVkUXVlcmllc1Jlc3BvbnNlQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_embedding]);
 
 /**
  * SearchPlace is where the vectors of a source are kept: the vault and the recipe they were made
@@ -102,7 +102,7 @@ export type DescribeSearchSourceResponse = Message<"numen.v1.DescribeSearchSourc
   concurrency: number;
 
   /**
-   * The similarity a passage starts out having to reach to answer a query, zero when the source
+   * The similarity a chunk starts out having to reach to answer a query, zero when the source
    * knows none.
    *
    * @generated from field: double floor_hint = 7;
@@ -192,9 +192,9 @@ export const IndexTextsResponseSchema: GenMessage<IndexTextsResponse> = /*@__PUR
   messageDesc(file_numen_v1_search_source, 5);
 
 /**
- * @generated from message numen.v1.SearchSourceServiceSearchPassagesRequest
+ * @generated from message numen.v1.SearchSourceServiceSearchChunksRequest
  */
-export type SearchSourceServiceSearchPassagesRequest = Message<"numen.v1.SearchSourceServiceSearchPassagesRequest"> & {
+export type SearchSourceServiceSearchChunksRequest = Message<"numen.v1.SearchSourceServiceSearchChunksRequest"> & {
   /**
    * @generated from field: numen.v1.SearchPlace place = 1;
    */
@@ -235,10 +235,10 @@ export type SearchSourceServiceSearchPassagesRequest = Message<"numen.v1.SearchS
 };
 
 /**
- * Describes the message numen.v1.SearchSourceServiceSearchPassagesRequest.
- * Use `create(SearchSourceServiceSearchPassagesRequestSchema)` to create a new message.
+ * Describes the message numen.v1.SearchSourceServiceSearchChunksRequest.
+ * Use `create(SearchSourceServiceSearchChunksRequestSchema)` to create a new message.
  */
-export const SearchSourceServiceSearchPassagesRequestSchema: GenMessage<SearchSourceServiceSearchPassagesRequest> = /*@__PURE__*/
+export const SearchSourceServiceSearchChunksRequestSchema: GenMessage<SearchSourceServiceSearchChunksRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_search_source, 6);
 
 /**
@@ -266,9 +266,9 @@ export const ChunkMatchSchema: GenMessage<ChunkMatch> = /*@__PURE__*/
   messageDesc(file_numen_v1_search_source, 7);
 
 /**
- * @generated from message numen.v1.SearchSourceServiceSearchPassagesResponse
+ * @generated from message numen.v1.SearchSourceServiceSearchChunksResponse
  */
-export type SearchSourceServiceSearchPassagesResponse = Message<"numen.v1.SearchSourceServiceSearchPassagesResponse"> & {
+export type SearchSourceServiceSearchChunksResponse = Message<"numen.v1.SearchSourceServiceSearchChunksResponse"> & {
   /**
    * Best first.
    *
@@ -278,10 +278,10 @@ export type SearchSourceServiceSearchPassagesResponse = Message<"numen.v1.Search
 };
 
 /**
- * Describes the message numen.v1.SearchSourceServiceSearchPassagesResponse.
- * Use `create(SearchSourceServiceSearchPassagesResponseSchema)` to create a new message.
+ * Describes the message numen.v1.SearchSourceServiceSearchChunksResponse.
+ * Use `create(SearchSourceServiceSearchChunksResponseSchema)` to create a new message.
  */
-export const SearchSourceServiceSearchPassagesResponseSchema: GenMessage<SearchSourceServiceSearchPassagesResponse> = /*@__PURE__*/
+export const SearchSourceServiceSearchChunksResponseSchema: GenMessage<SearchSourceServiceSearchChunksResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_search_source, 8);
 
 /**
@@ -322,7 +322,7 @@ export const EmbedQueriesResponseSchema: GenMessage<EmbedQueriesResponse> = /*@_
  * SearchSourceService is a participant of the search of the core that a plugin with the capability
  * search.source serves. The core decides what is indexed and when, hands the source the texts and
  * the place in the index its vectors are kept in, writes the vectors the source answers into that
- * place, and merges the passages the source answers to a query with those of the other participants.
+ * place, and merges the chunks the source answers to a query with those of the other participants.
  *
  * @generated from service numen.v1.SearchSourceService
  */
@@ -350,14 +350,14 @@ export const SearchSourceService: GenService<{
     output: typeof IndexTextsResponseSchema;
   },
   /**
-   * SearchPassages returns the chunks of the place that answer the query, best first.
+   * SearchChunks returns the chunks of the place that answer the query, best first.
    *
-   * @generated from rpc numen.v1.SearchSourceService.SearchPassages
+   * @generated from rpc numen.v1.SearchSourceService.SearchChunks
    */
-  searchPassages: {
+  searchChunks: {
     methodKind: "unary";
-    input: typeof SearchSourceServiceSearchPassagesRequestSchema;
-    output: typeof SearchSourceServiceSearchPassagesResponseSchema;
+    input: typeof SearchSourceServiceSearchChunksRequestSchema;
+    output: typeof SearchSourceServiceSearchChunksResponseSchema;
   },
   /**
    * EmbedQueries returns one vector per query, in the order of the queries, as the source compares a

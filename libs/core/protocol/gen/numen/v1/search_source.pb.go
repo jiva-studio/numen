@@ -128,7 +128,7 @@ type DescribeSearchSourceResponse struct {
 	MinTextLength int32 `protobuf:"varint,5,opt,name=min_text_length,json=minTextLength,proto3" json:"min_text_length,omitempty"`
 	// How many calls of IndexTexts the source answers at once.
 	Concurrency int32 `protobuf:"varint,6,opt,name=concurrency,proto3" json:"concurrency,omitempty"`
-	// The similarity a passage starts out having to reach to answer a query, zero when the source
+	// The similarity a chunk starts out having to reach to answer a query, zero when the source
 	// knows none.
 	FloorHint     float64 `protobuf:"fixed64,7,opt,name=floor_hint,json=floorHint,proto3" json:"floor_hint,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -380,7 +380,7 @@ func (x *IndexTextsResponse) GetVectors() []*FloatVector {
 	return nil
 }
 
-type SearchSourceServiceSearchPassagesRequest struct {
+type SearchSourceServiceSearchChunksRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Place *SearchPlace           `protobuf:"bytes,1,opt,name=place,proto3" json:"place,omitempty"`
 	Query string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
@@ -396,20 +396,20 @@ type SearchSourceServiceSearchPassagesRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SearchSourceServiceSearchPassagesRequest) Reset() {
-	*x = SearchSourceServiceSearchPassagesRequest{}
+func (x *SearchSourceServiceSearchChunksRequest) Reset() {
+	*x = SearchSourceServiceSearchChunksRequest{}
 	mi := &file_numen_v1_search_source_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SearchSourceServiceSearchPassagesRequest) String() string {
+func (x *SearchSourceServiceSearchChunksRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SearchSourceServiceSearchPassagesRequest) ProtoMessage() {}
+func (*SearchSourceServiceSearchChunksRequest) ProtoMessage() {}
 
-func (x *SearchSourceServiceSearchPassagesRequest) ProtoReflect() protoreflect.Message {
+func (x *SearchSourceServiceSearchChunksRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_search_source_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -421,47 +421,47 @@ func (x *SearchSourceServiceSearchPassagesRequest) ProtoReflect() protoreflect.M
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchSourceServiceSearchPassagesRequest.ProtoReflect.Descriptor instead.
-func (*SearchSourceServiceSearchPassagesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchSourceServiceSearchChunksRequest.ProtoReflect.Descriptor instead.
+func (*SearchSourceServiceSearchChunksRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_source_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *SearchSourceServiceSearchPassagesRequest) GetPlace() *SearchPlace {
+func (x *SearchSourceServiceSearchChunksRequest) GetPlace() *SearchPlace {
 	if x != nil {
 		return x.Place
 	}
 	return nil
 }
 
-func (x *SearchSourceServiceSearchPassagesRequest) GetQuery() string {
+func (x *SearchSourceServiceSearchChunksRequest) GetQuery() string {
 	if x != nil {
 		return x.Query
 	}
 	return ""
 }
 
-func (x *SearchSourceServiceSearchPassagesRequest) GetLimit() int32 {
+func (x *SearchSourceServiceSearchChunksRequest) GetLimit() int32 {
 	if x != nil {
 		return x.Limit
 	}
 	return 0
 }
 
-func (x *SearchSourceServiceSearchPassagesRequest) GetKinds() []string {
+func (x *SearchSourceServiceSearchChunksRequest) GetKinds() []string {
 	if x != nil {
 		return x.Kinds
 	}
 	return nil
 }
 
-func (x *SearchSourceServiceSearchPassagesRequest) GetPathPrefix() string {
+func (x *SearchSourceServiceSearchChunksRequest) GetPathPrefix() string {
 	if x != nil {
 		return x.PathPrefix
 	}
 	return ""
 }
 
-func (x *SearchSourceServiceSearchPassagesRequest) GetFloor() float64 {
+func (x *SearchSourceServiceSearchChunksRequest) GetFloor() float64 {
 	if x != nil {
 		return x.Floor
 	}
@@ -521,7 +521,7 @@ func (x *ChunkMatch) GetScore() float64 {
 	return 0
 }
 
-type SearchSourceServiceSearchPassagesResponse struct {
+type SearchSourceServiceSearchChunksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Best first.
 	Matches       []*ChunkMatch `protobuf:"bytes,1,rep,name=matches,proto3" json:"matches,omitempty"`
@@ -529,20 +529,20 @@ type SearchSourceServiceSearchPassagesResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SearchSourceServiceSearchPassagesResponse) Reset() {
-	*x = SearchSourceServiceSearchPassagesResponse{}
+func (x *SearchSourceServiceSearchChunksResponse) Reset() {
+	*x = SearchSourceServiceSearchChunksResponse{}
 	mi := &file_numen_v1_search_source_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SearchSourceServiceSearchPassagesResponse) String() string {
+func (x *SearchSourceServiceSearchChunksResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SearchSourceServiceSearchPassagesResponse) ProtoMessage() {}
+func (*SearchSourceServiceSearchChunksResponse) ProtoMessage() {}
 
-func (x *SearchSourceServiceSearchPassagesResponse) ProtoReflect() protoreflect.Message {
+func (x *SearchSourceServiceSearchChunksResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_search_source_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -554,12 +554,12 @@ func (x *SearchSourceServiceSearchPassagesResponse) ProtoReflect() protoreflect.
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchSourceServiceSearchPassagesResponse.ProtoReflect.Descriptor instead.
-func (*SearchSourceServiceSearchPassagesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchSourceServiceSearchChunksResponse.ProtoReflect.Descriptor instead.
+func (*SearchSourceServiceSearchChunksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_source_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *SearchSourceServiceSearchPassagesResponse) GetMatches() []*ChunkMatch {
+func (x *SearchSourceServiceSearchChunksResponse) GetMatches() []*ChunkMatch {
 	if x != nil {
 		return x.Matches
 	}
@@ -682,8 +682,8 @@ const file_numen_v1_search_source_proto_rawDesc = "" +
 	"\x05place\x18\x01 \x01(\v2\x15.numen.v1.SearchPlaceR\x05place\x12+\n" +
 	"\x05texts\x18\x02 \x03(\v2\x15.numen.v1.IndexedTextR\x05texts\"E\n" +
 	"\x12IndexTextsResponse\x12/\n" +
-	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors\"\xd0\x01\n" +
-	"(SearchSourceServiceSearchPassagesRequest\x12+\n" +
+	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors\"\xce\x01\n" +
+	"&SearchSourceServiceSearchChunksRequest\x12+\n" +
 	"\x05place\x18\x01 \x01(\v2\x15.numen.v1.SearchPlaceR\x05place\x12\x14\n" +
 	"\x05query\x18\x02 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x14\n" +
@@ -694,18 +694,18 @@ const file_numen_v1_search_source_proto_rawDesc = "" +
 	"\n" +
 	"ChunkMatch\x12\x19\n" +
 	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x14\n" +
-	"\x05score\x18\x02 \x01(\x01R\x05score\"[\n" +
-	")SearchSourceServiceSearchPassagesResponse\x12.\n" +
+	"\x05score\x18\x02 \x01(\x01R\x05score\"Y\n" +
+	"'SearchSourceServiceSearchChunksResponse\x12.\n" +
 	"\amatches\x18\x01 \x03(\v2\x14.numen.v1.ChunkMatchR\amatches\"/\n" +
 	"\x13EmbedQueriesRequest\x12\x18\n" +
 	"\aqueries\x18\x01 \x03(\tR\aqueries\"G\n" +
 	"\x14EmbedQueriesResponse\x12/\n" +
-	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors2\x8f\x03\n" +
+	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors2\x89\x03\n" +
 	"\x13SearchSourceService\x12e\n" +
 	"\x14DescribeSearchSource\x12%.numen.v1.DescribeSearchSourceRequest\x1a&.numen.v1.DescribeSearchSourceResponse\x12G\n" +
 	"\n" +
-	"IndexTexts\x12\x1b.numen.v1.IndexTextsRequest\x1a\x1c.numen.v1.IndexTextsResponse\x12y\n" +
-	"\x0eSearchPassages\x122.numen.v1.SearchSourceServiceSearchPassagesRequest\x1a3.numen.v1.SearchSourceServiceSearchPassagesResponse\x12M\n" +
+	"IndexTexts\x12\x1b.numen.v1.IndexTextsRequest\x1a\x1c.numen.v1.IndexTextsResponse\x12s\n" +
+	"\fSearchChunks\x120.numen.v1.SearchSourceServiceSearchChunksRequest\x1a1.numen.v1.SearchSourceServiceSearchChunksResponse\x12M\n" +
 	"\fEmbedQueries\x12\x1d.numen.v1.EmbedQueriesRequest\x1a\x1e.numen.v1.EmbedQueriesResponseBFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -722,33 +722,33 @@ func file_numen_v1_search_source_proto_rawDescGZIP() []byte {
 
 var file_numen_v1_search_source_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_search_source_proto_goTypes = []any{
-	(*SearchPlace)(nil),                               // 0: numen.v1.SearchPlace
-	(*DescribeSearchSourceRequest)(nil),               // 1: numen.v1.DescribeSearchSourceRequest
-	(*DescribeSearchSourceResponse)(nil),              // 2: numen.v1.DescribeSearchSourceResponse
-	(*IndexedText)(nil),                               // 3: numen.v1.IndexedText
-	(*IndexTextsRequest)(nil),                         // 4: numen.v1.IndexTextsRequest
-	(*IndexTextsResponse)(nil),                        // 5: numen.v1.IndexTextsResponse
-	(*SearchSourceServiceSearchPassagesRequest)(nil),  // 6: numen.v1.SearchSourceServiceSearchPassagesRequest
-	(*ChunkMatch)(nil),                                // 7: numen.v1.ChunkMatch
-	(*SearchSourceServiceSearchPassagesResponse)(nil), // 8: numen.v1.SearchSourceServiceSearchPassagesResponse
-	(*EmbedQueriesRequest)(nil),                       // 9: numen.v1.EmbedQueriesRequest
-	(*EmbedQueriesResponse)(nil),                      // 10: numen.v1.EmbedQueriesResponse
-	(*FloatVector)(nil),                               // 11: numen.v1.FloatVector
+	(*SearchPlace)(nil),                             // 0: numen.v1.SearchPlace
+	(*DescribeSearchSourceRequest)(nil),             // 1: numen.v1.DescribeSearchSourceRequest
+	(*DescribeSearchSourceResponse)(nil),            // 2: numen.v1.DescribeSearchSourceResponse
+	(*IndexedText)(nil),                             // 3: numen.v1.IndexedText
+	(*IndexTextsRequest)(nil),                       // 4: numen.v1.IndexTextsRequest
+	(*IndexTextsResponse)(nil),                      // 5: numen.v1.IndexTextsResponse
+	(*SearchSourceServiceSearchChunksRequest)(nil),  // 6: numen.v1.SearchSourceServiceSearchChunksRequest
+	(*ChunkMatch)(nil),                              // 7: numen.v1.ChunkMatch
+	(*SearchSourceServiceSearchChunksResponse)(nil), // 8: numen.v1.SearchSourceServiceSearchChunksResponse
+	(*EmbedQueriesRequest)(nil),                     // 9: numen.v1.EmbedQueriesRequest
+	(*EmbedQueriesResponse)(nil),                    // 10: numen.v1.EmbedQueriesResponse
+	(*FloatVector)(nil),                             // 11: numen.v1.FloatVector
 }
 var file_numen_v1_search_source_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.IndexTextsRequest.place:type_name -> numen.v1.SearchPlace
 	3,  // 1: numen.v1.IndexTextsRequest.texts:type_name -> numen.v1.IndexedText
 	11, // 2: numen.v1.IndexTextsResponse.vectors:type_name -> numen.v1.FloatVector
-	0,  // 3: numen.v1.SearchSourceServiceSearchPassagesRequest.place:type_name -> numen.v1.SearchPlace
-	7,  // 4: numen.v1.SearchSourceServiceSearchPassagesResponse.matches:type_name -> numen.v1.ChunkMatch
+	0,  // 3: numen.v1.SearchSourceServiceSearchChunksRequest.place:type_name -> numen.v1.SearchPlace
+	7,  // 4: numen.v1.SearchSourceServiceSearchChunksResponse.matches:type_name -> numen.v1.ChunkMatch
 	11, // 5: numen.v1.EmbedQueriesResponse.vectors:type_name -> numen.v1.FloatVector
 	1,  // 6: numen.v1.SearchSourceService.DescribeSearchSource:input_type -> numen.v1.DescribeSearchSourceRequest
 	4,  // 7: numen.v1.SearchSourceService.IndexTexts:input_type -> numen.v1.IndexTextsRequest
-	6,  // 8: numen.v1.SearchSourceService.SearchPassages:input_type -> numen.v1.SearchSourceServiceSearchPassagesRequest
+	6,  // 8: numen.v1.SearchSourceService.SearchChunks:input_type -> numen.v1.SearchSourceServiceSearchChunksRequest
 	9,  // 9: numen.v1.SearchSourceService.EmbedQueries:input_type -> numen.v1.EmbedQueriesRequest
 	2,  // 10: numen.v1.SearchSourceService.DescribeSearchSource:output_type -> numen.v1.DescribeSearchSourceResponse
 	5,  // 11: numen.v1.SearchSourceService.IndexTexts:output_type -> numen.v1.IndexTextsResponse
-	8,  // 12: numen.v1.SearchSourceService.SearchPassages:output_type -> numen.v1.SearchSourceServiceSearchPassagesResponse
+	8,  // 12: numen.v1.SearchSourceService.SearchChunks:output_type -> numen.v1.SearchSourceServiceSearchChunksResponse
 	10, // 13: numen.v1.SearchSourceService.EmbedQueries:output_type -> numen.v1.EmbedQueriesResponse
 	10, // [10:14] is the sub-list for method output_type
 	6,  // [6:10] is the sub-list for method input_type
