@@ -101,22 +101,22 @@ func TestEventBusFlush(t *testing.T) {
 	wg.Add(1)
 
 	var received string
-	unsub := bus.Subscribe("onSearchSourceReady", func(_ context.Context, event string) error {
+	unsub := bus.Subscribe("onIndexChanged", func(_ context.Context, event string) error {
 		received = event
 		wg.Done()
 		return nil
 	})
 	defer unsub()
 
-	bus.Publish("onSearchSourceReady:v-1")
+	bus.Publish("onIndexChanged:v-1")
 	if err := bus.Flush(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
 	wg.Wait()
 
-	if received != "onSearchSourceReady:v-1" {
-		t.Fatalf("got %q, want onSearchSourceReady:v-1", received)
+	if received != "onIndexChanged:v-1" {
+		t.Fatalf("got %q, want onIndexChanged:v-1", received)
 	}
 }
 

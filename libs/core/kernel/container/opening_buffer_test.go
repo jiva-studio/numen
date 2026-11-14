@@ -146,8 +146,8 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", one.what, err)
 		}
-		if got != 1 {
-			t.Errorf("%s: the walk read %d notes", one.what, got)
+		if got.Notes != 1 {
+			t.Errorf("%s: the walk read %d notes", one.what, got.Notes)
 		}
 		if len(received) != one.reports {
 			t.Errorf("%s: %d failures reported, want %d: %v", one.what, len(received), one.reports, received)

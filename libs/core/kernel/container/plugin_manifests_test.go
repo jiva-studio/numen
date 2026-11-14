@@ -255,8 +255,8 @@ func TestShippedPluginsDeclareNoWildcardActivationEvent(t *testing.T) {
 	if !ok {
 		t.Fatal("missing plugin md.numen.tools.search.relevance")
 	}
-	if !slices.Equal(relevance.ActivationEvents, []string{manifest.ActivationEventSearchSourceReady}) {
-		t.Errorf("md.numen.tools.search.relevance activationEvents = %v, want [onSearchSourceReady]", relevance.ActivationEvents)
+	if !slices.Equal(relevance.ActivationEvents, []string{manifest.ActivationEventIndexChanged}) {
+		t.Errorf("md.numen.tools.search.relevance activationEvents = %v, want [onIndexChanged]", relevance.ActivationEvents)
 	}
 }
 
@@ -279,8 +279,8 @@ func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
 	if got := readDocumentedCapabilities(guideLine); !slices.Equal(got, []string{"document", "book"}) {
 		t.Errorf("the capabilities line is read as %v", got)
 	}
-	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onSearchSourceReady` (when the search source has indexed a vault)\n- **`next`**:\n"
-	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onSearchSourceReady"}) {
+	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onIndexChanged` (when indexing changed the index of a vault)\n- **`next`**:\n"
+	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onIndexChanged"}) {
 		t.Errorf("the activation events section is read as %v", got)
 	}
 }

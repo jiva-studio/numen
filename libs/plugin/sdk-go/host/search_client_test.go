@@ -260,13 +260,13 @@ func TestAPermissionTheManifestLacksIsDeniedAndAnUnknownVaultIsUnknown(t *testin
 	}
 }
 
-func TestTheSearchSourceReadyEventNamesTheVaultAndOnlyThatEvent(t *testing.T) {
-	id, ok := host.ReadSearchSourceReadyEvent(protocol.GetSearchSourceReadyEvent("01VAULT"))
+func TestTheIndexChangedEventNamesTheVaultAndOnlyThatEvent(t *testing.T) {
+	id, ok := host.ReadIndexChangedEvent(protocol.GetIndexChangedEvent("01VAULT"))
 	if !ok || id != "01VAULT" {
 		t.Errorf("read %q, %v", id, ok)
 	}
-	for _, event := range []string{"", "onFile:md", "onSearchSourceReady:", "onSearchSourceReady", "*"} {
-		if id, ok := host.ReadSearchSourceReadyEvent(event); ok {
+	for _, event := range []string{"", "onFile:md", "onIndexChanged:", "onIndexChanged", "*"} {
+		if id, ok := host.ReadIndexChangedEvent(event); ok {
 			t.Errorf("%q was read as the event of the vault %q", event, id)
 		}
 	}

@@ -255,7 +255,7 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 	if _, err := making.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
 		t.Fatal(err)
 	}
-	if err := making.CutOne(t.Context(), v, "library/A Book.epub"); err != nil {
+	if _, err := making.CutOne(t.Context(), v, "library/A Book.epub"); err != nil {
 		t.Errorf("a source that can be cut failed: %v", err)
 	}
 
@@ -265,7 +265,7 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 		filetext.NewIndex(unreadable{err: stopErr}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: unreadable{err: stopErr}}),
 		vectors.NewEmbed(readers, db.Sources(), db.Sources()),
 	)
-	err := cutting.CutOne(t.Context(), v, "library/A Book.epub")
+	_, err := cutting.CutOne(t.Context(), v, "library/A Book.epub")
 	if !errors.Is(err, stopErr) {
 		t.Fatalf("got %v", err)
 	}
