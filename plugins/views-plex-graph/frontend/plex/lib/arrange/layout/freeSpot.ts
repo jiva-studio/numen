@@ -22,6 +22,7 @@ export interface SpotRequest {
   readonly gaps: Gaps
   readonly fits?: ((spot: Spot) => boolean) | undefined
   readonly isInLane?: ((point: Vector) => boolean) | undefined
+  readonly isInTerritory?: ((spot: Spot) => boolean) | undefined
   readonly isLineClear?: ((spot: Spot) => boolean) | undefined
 }
 
@@ -214,6 +215,11 @@ function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
  * only when the lane has no free spot.
  */
 export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
+  return findSpotWithin(index, request) ?? findSpotBeyond(index, request)
+}
+
+/** The spot of `findFreeSpot`, or nothing when the window and the territory of the group hold no free spot. */
+export function findSpotWithin(index: SpotIndex, request: SpotRequest): Spot | undefined {
   const inLane = request.isInLane ? [request] : []
   const tiers = [...inLane, { ...request, isInLane: undefined }]
   const plains: Spot[] = []
@@ -227,7 +233,13 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
     if (clear) return clear
     plains.push(plain)
   }
-  return plains[0] ?? findSpotBeyond(index, request)
+  return plains[0]
+}
+
+function isAllowed(spot: Spot, request: SpotRequest): boolean {
+  return (
+    (!request.fits || request.fits(spot)) && (!request.isInTerritory || request.isInTerritory(spot))
+  )
 }
 
 function searchSpot(
@@ -248,7 +260,7 @@ function searchSpot(
     const cost = Math.round(measureCost(point, request) * COST_PRECISION)
     const rank = { cost, progress, pull: measurePull(point, request) }
     if (found.best && !isBetter(rank, found.best)) return
-    if (request.fits && !request.fits(toSpot(point))) return
+    if (!isAllowed(toSpot(point), request)) return
     if (index.isFree(toSpot(point), gaps) && isLineOk(toSpot(point))) {
       found.best = { point, ...rank }
     }
@@ -286,7 +298,8 @@ function listWideSpots(request: SpotRequest): Spot[] {
         ...size,
       }
       const isOwn = !request.isInLane || request.isInLane(spot)
-      if (isOwn && measureProgress(spot, request) >= -TOLERANCE) spots.push(spot)
+      const isAllowed = !request.isInTerritory || request.isInTerritory(spot)
+      if (isOwn && isAllowed && measureProgress(spot, request) >= -TOLERANCE) spots.push(spot)
     }
   }
   return spots.sort(
@@ -395,7 +408,7 @@ function findFreeSpotOutward(index: SpotIndex, request: SpotRequest): Spot | und
         y: middle.y + direction.y * step * stride + direction.x * offset * cell.height,
         ...size,
       }
-      if (request.fits && !request.fits(spot)) continue
+      if (!isAllowed(spot, request)) continue
       if (request.isInLane && !request.isInLane(spot)) continue
       if (!index.isFree(spot, gaps) || measureProgress(spot, request) < -TOLERANCE) continue
       return spot

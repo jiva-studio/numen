@@ -2,8 +2,17 @@
 import { RELATION_NAMES, RELATIONS, type Lean } from '../../relation'
 import type { PlacedNode } from '../../node'
 import type { Direction, PlexOptions } from '../options'
-import { findFreeSpot, SpotIndex, type Spot, type Vector } from './freeSpot'
+import {
+  findFreeSpot,
+  findSpotWithin,
+  SpotIndex,
+  type Spot,
+  type SpotRequest,
+  type Vector,
+} from './freeSpot'
+import { isBetter, isInWindow, findBestAttempt, measureMiddleBand, type Attempt } from './bands'
 import { LineIndex } from './lines'
+import { createBorders, createTerritory, type Borders } from './territory'
 import type { Size } from '../options'
 import {
   getFootprint,
@@ -19,6 +28,9 @@ const LEAN = 0.42
 
 /** A lane opens by this much across its axis for each unit it runs along it; a row opens wider by how many times a cell is wider than tall. */
 const LANE_SLOPE = 1
+
+/** The gap kept between the territories of two groups, in gaps between notes. */
+const GROUP_GAP_FACTOR = 2
 
 /** A center may lie this far short of the edge of its lane, so a box built exactly on the edge is inside. */
 const LANE_TOLERANCE = 0.5
@@ -86,16 +98,24 @@ interface GroupPlan {
   readonly direction: Vector
   readonly anchor: Vector
   readonly firstReach: number
+  readonly isSide: boolean
+  readonly hasLane: boolean
+  readonly isInTerritory: (spot: Spot) => boolean
 }
 
 const getReach = (direction: Vector, box: { width: number; height: number }): number =>
   Math.abs(direction.x) * (box.width / 2) + Math.abs(direction.y) * (box.height / 2)
 
+interface PlanContext {
+  readonly focus: PlacedNode
+  readonly context: PlacementContext
+  readonly footprintOf: (node: PlexNode) => Size
+  readonly borders: Borders
+}
+
 function createGroupPlans(
   nodesByRelation: NodesByRelation,
-  focus: PlacedNode,
-  context: PlacementContext,
-  footprintOf: (node: PlexNode) => Size,
+  { focus, context, footprintOf, borders }: PlanContext,
 ): ReadonlyMap<PlexRelation, GroupPlan> {
   const plans = new Map<PlexRelation, GroupPlan>()
   for (const relation of RELATION_NAMES) {
@@ -111,19 +131,29 @@ function createGroupPlans(
         context.options.direction[other] === side,
     )
     const direction = getClusterDirection(side, isShared ? RELATIONS[relation].lean : null)
+    const isSide = SIDES[side].x !== 0
+    const anchor = getAnchor(direction, focus, context.options)
     plans.set(relation, {
       members,
       side: SIDES[side],
       direction,
-      anchor: getAnchor(direction, focus, context.options),
+      anchor: isSide ? { x: SIDES[side].x * borders.sideStart, y: anchor.y } : anchor,
       firstReach: getReach(direction, footprintOf(first)),
+      isSide,
+      hasLane: !isSide || borders.isOpen,
+      isInTerritory: createTerritory(SIDES[side], focus, borders),
     })
   }
   return plans
 }
 
-function createLane(plan: GroupPlan, focus: PlacedNode, cell: Size): (point: Vector) => boolean {
+function createLane(
+  plan: GroupPlan,
+  focus: PlacedNode,
+  cell: Size,
+): ((point: Vector) => boolean) | undefined {
   const { side, anchor } = plan
+  if (!plan.hasLane) return undefined
   const isRow = side.x === 0
   const slope = isRow ? (LANE_SLOPE * cell.width) / cell.height : LANE_SLOPE
   const base = isRow ? focus.width / 2 + 2 * cell.width : focus.height / 2 + 2 * cell.height
@@ -138,7 +168,11 @@ function createRequest(plan: GroupPlan, focus: PlacedNode, size: Size, context: 
   const { gap, lineGap } = context.options
   const { direction, anchor } = plan
   const reach = Math.max(getReach(direction, size), plan.firstReach)
-  const start = { x: anchor.x + direction.x * reach, y: anchor.y + direction.y * reach }
+  // A box of a strip begins with its edge on the border of the strip.
+  const start = {
+    x: plan.isSide ? anchor.x + plan.side.x * (size.width / 2) : anchor.x + direction.x * reach,
+    y: anchor.y + direction.y * reach,
+  }
   // The middle of a group is counted in footprints: the names of a note fill the gap under its pill, so a note without names packs closer than one with.
   const cell = { width: size.width + gap, height: size.height + lineGap }
   const middle = getClusterMiddle(start, direction, { size: plan.members.length, cell })
@@ -149,6 +183,7 @@ function createRequest(plan: GroupPlan, focus: PlacedNode, size: Size, context: 
     size,
     gaps: { gap, lineGap },
     isInLane: createLane(plan, focus, cell),
+    isInTerritory: plan.isInTerritory,
   }
 }
 
@@ -169,23 +204,39 @@ function getPlacedNode(
   }
 }
 
-function placeClusters(
+function findNoteSpot(
+  index: SpotIndex,
+  request: SpotRequest,
+): { readonly spot: Spot; readonly isOutside: boolean } {
+  // A spot outside the territory is taken when the territory has none, or none with clear lines; the borders move for the next attempt.
+  const within = findSpotWithin(index, request)
+  if (within && request.isLineClear?.(within) !== false) return { spot: within, isOutside: false }
+  const loose = findFreeSpot(index, { ...request, isInTerritory: undefined })
+  if (!within || request.isLineClear?.(loose) !== false) return { spot: loose, isOutside: true }
+  return { spot: within, isOutside: false }
+}
+
+function placeInTerritories(
   nodesByRelation: NodesByRelation,
   focus: PlacedNode,
   context: PlacementContext,
-): PlacedNode[] {
+  borders: Borders,
+): Attempt {
   const footprintOf = (node: PlexNode) =>
     getFootprint(
       { width: context.width(node), height: context.options.nodeSize.height },
       context.room(node),
     )
-  const plans = createGroupPlans(nodesByRelation, focus, context, footprintOf)
+  const plans = createGroupPlans(nodesByRelation, { focus, context, footprintOf, borders })
   const focusSpot: Spot = { x: focus.x, y: focus.y, width: focus.width, height: focus.height }
   const index = new SpotIndex([focusSpot])
   const lines = new LineIndex(context.edges ?? [], focus.id, index)
   lines.place(focus.id, { x: focus.x, y: focus.y }, focusSpot)
   const groups = new Map<PlexRelation, Spot[]>()
   const placed = new Map<string, PlacedNode>()
+  const failed = new Set<PlexRelation>()
+  const totals = { failures: 0, outside: 0, centralReach: 0 }
+  let isStopped = false
 
   for (const node of takeTurns(nodesByRelation)) {
     const relation = node.relation as PlexRelation
@@ -194,25 +245,64 @@ function placeClusters(
     const group = groups.get(relation) ?? []
     groups.set(relation, group)
 
-    const request = createRequest(plan, focus, footprintOf(node), context)
     const room = context.room(node)
     const getCenter = (at: Spot): Vector => ({ x: at.x, y: getPillCenterY(at.y, room) })
-    const spot = findFreeSpot(index, {
-      ...request,
+    const { spot, isOutside } = findNoteSpot(index, {
+      ...createRequest(plan, focus, footprintOf(node), context),
       group,
       fits: context.fits,
-      isLineClear: (at) => lines.isClear(node.id, getCenter(at), at),
+      isLineClear: (at: Spot) => lines.isClear(node.id, getCenter(at), at),
     })
+    if (isOutside) {
+      failed.add(relation)
+      totals.failures++
+    }
+    if (!isInWindow(spot, context.options)) totals.outside++
+    if (!plan.isSide) {
+      totals.centralReach = Math.max(totals.centralReach, Math.abs(spot.x) + spot.width / 2)
+    }
     index.add(spot)
     lines.place(node.id, getCenter(spot), spot)
     const box = getPlacedNode(node, spot, context, group.length)
     group.push(spot)
     placed.set(node.id, box)
-    if (context.shouldStop?.(box)) break
+    if (context.shouldStop?.(box)) {
+      isStopped = true
+      break
+    }
   }
+  return { placed, failed, isStopped, ...totals }
+}
 
+function placeClusters(
+  nodesByRelation: NodesByRelation,
+  focus: PlacedNode,
+  context: PlacementContext,
+): PlacedNode[] {
+  const { gap, focusGap } = context.options
+  const band = measureMiddleBand(nodesByRelation, context)
+  const bordersFor = (columns: number) => ({
+    columns,
+    cellWidth: band.cellWidth,
+    hasCentral: band.hasCentral,
+    hasSide: band.hasSide,
+    groupGap: GROUP_GAP_FACTOR * gap,
+    focusReach: focus.width / 2 + focusGap,
+  })
+  const placeAt = (borders: Borders) => placeInTerritories(nodesByRelation, focus, context, borders)
+
+  let best = findBestAttempt(
+    (columns) => placeAt(createBorders(bordersFor(columns))),
+    band,
+    context,
+  )
+  // The territories are given up only where they leave a note outside the window that the old placement holds inside.
+  if (best.outside > 0) {
+    const open = placeAt(createBorders({ ...bordersFor(1), hasCentral: false, hasSide: false }))
+    if (isBetter(open, best)) best = open
+  }
   return RELATION_NAMES.flatMap((relation) =>
-    (nodesByRelation[relation] ?? []).flatMap((node) => placed.get(node.id) ?? []),
+    (nodesByRelation[relation] ?? []).flatMap((node) => best.placed.get(node.id) ?? []),
   )
 }
 
