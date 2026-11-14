@@ -4,6 +4,8 @@ package editpreview
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/fs"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/diff"
@@ -59,33 +61,45 @@ func (c Creator) Create(ctx context.Context, req Request) (Preview, error) {
 	if req.ProposedText == "" && req.Diff == "" {
 		return Preview{}, errMissingEdit
 	}
-	diffText, additions, deletions := c.prepareDiff(ctx, req)
+	diffText, additions, deletions, err := c.prepareDiff(ctx, req)
+	if err != nil {
+		return Preview{}, err
+	}
 	return Preview{Path: req.Path, Diff: diffText, Additions: additions, Deletions: deletions}, nil
 }
 
-func (c Creator) prepareDiff(ctx context.Context, req Request) (string, int, int) {
+func (c Creator) prepareDiff(ctx context.Context, req Request) (string, int, int, error) {
 	if req.Diff != "" {
 		additions, deletions := diff.CountChanges(req.Diff)
-		return req.Diff, additions, deletions
+		return req.Diff, additions, deletions, nil
 	}
 	original := req.OriginalText
 	if original == "" {
-		original = c.readNote(ctx, req)
+		read, err := c.readNote(ctx, req)
+		if err != nil {
+			return "", 0, 0, err
+		}
+		original = read
 	}
-	return diff.CreateUnified(req.Path, original, req.ProposedText)
+	diffText, additions, deletions := diff.CreateUnified(req.Path, original, req.ProposedText)
+	return diffText, additions, deletions, nil
 }
 
-func (c Creator) readNote(ctx context.Context, req Request) string {
+// readNote returns the text of the note, empty for a note that does not exist yet.
+func (c Creator) readNote(ctx context.Context, req Request) (string, error) {
 	if c.files == nil {
-		return ""
+		return "", nil
 	}
 	vault := c.files(req.Vault)
 	if vault == nil {
-		return ""
+		return "", nil
 	}
 	data, _, err := vault.Read(ctx, req.Path)
-	if err != nil {
-		return ""
+	if errors.Is(err, fs.ErrNotExist) {
+		return "", nil
 	}
-	return string(data)
+	if err != nil {
+		return "", fmt.Errorf("read the note %s: %w", req.Path, err)
+	}
+	return string(data), nil
 }
