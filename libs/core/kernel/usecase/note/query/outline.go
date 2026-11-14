@@ -33,20 +33,25 @@ func NewGetRelatedNotesView(links noteport.LinkBatches, notes RefQueries, types 
 }
 
 // Execute gathers the related notes of the note at the path. DepthFar adds the notes related to each of them. The types are read once for the whole graph.
+// A tab kind is chosen for the focus and the notes related to it, and not for a note that is only related to one of them.
 func (u *GetRelatedNotesView) Execute(ctx context.Context, v domain.Vault, path string, depth domain.RelationDepth) (RelatedNotesView, error) {
 	found, err := u.relatedNotes.Execute(ctx, v, path, depth)
 	if err != nil {
 		return RelatedNotesView{}, err
 	}
 	paths := []string{found.Focus.Path}
+	near := []string{found.Focus.Path}
 	for _, related := range found.Related {
 		paths = append(paths, related.Path)
+		if related.RelatedTo == "" {
+			near = append(near, related.Path)
+		}
 	}
 	types, err := u.types.GetTypes(ctx, v.ID, paths)
 	if err != nil {
 		return RelatedNotesView{}, err
 	}
-	tabKinds, err := u.tabKinds.Execute(ctx, v, paths)
+	tabKinds, err := u.tabKinds.Execute(ctx, v, near)
 	if err != nil {
 		return RelatedNotesView{}, err
 	}

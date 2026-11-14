@@ -100,6 +100,67 @@ func TestMountFromEnv(t *testing.T) {
 	}
 }
 
+func TestMountConfigureFallsBackToEnv(t *testing.T) {
+	t.Setenv("NUMEN_HOST_PORT", "")
+	t.Setenv("NUMEN_PLUGIN_TOKEN", "")
+
+	host := &standInHost{}
+	mux := http.NewServeMux()
+	mux.Handle(toolstest.NewServiceHandler(host))
+	served := httptest.NewServer(mux)
+	t.Cleanup(served.Close)
+	hostPort := getServerPort(t, served.URL)
+
+	s := server.New()
+	if err := Mount(s); err != nil {
+		t.Fatalf("Mount failed: %v", err)
+	}
+	defer func() {
+		if err := s.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{
+		"token": "configured-token",
+	}); err != nil {
+		t.Fatalf("configure without host endpoint failed: %v", err)
+	}
+
+	t.Setenv("NUMEN_HOST_PORT", hostPort)
+	t.Setenv("NUMEN_PLUGIN_TOKEN", "plugin-token")
+
+	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{
+		"token": "configured-token",
+	}); err != nil {
+		t.Fatalf("configure with env host endpoint failed: %v", err)
+	}
+
+	host.mu.Lock()
+	syncCalls := len(host.headers)
+	host.mu.Unlock()
+	if syncCalls != 1 {
+		t.Fatalf("got %d host sync calls, want 1", syncCalls)
+	}
+}
+
+func TestMountReturnsErrorWhenListenerIsAlreadyOpen(t *testing.T) {
+	t.Parallel()
+
+	s := server.New()
+	defer func() {
+		if err := s.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	if _, err := s.OpenListener("mcp"); err != nil {
+		t.Fatalf("OpenListener failed: %v", err)
+	}
+	if err := Mount(s); err == nil {
+		t.Fatal("expected Mount to fail when the mcp listener is already open")
+	}
+}
+
 func TestNewHandler(t *testing.T) {
 	t.Parallel()
 
