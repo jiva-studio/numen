@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/scan"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
 type silentReporter struct{}
@@ -34,9 +34,9 @@ type fakeRecognizer struct{}
 
 func (fakeRecognizer) Close() error { return nil }
 
-func (fakeRecognizer) GetRecognitionModel() recognition.Model { return recognition.Model{} }
+func (fakeRecognizer) GetRecognitionModel() scan.Model { return scan.Model{} }
 
-func (fakeRecognizer) Recognize(context.Context, image.Image) ([]recognition.Block, error) {
+func (fakeRecognizer) Recognize(context.Context, image.Image) ([]scan.Block, error) {
 	return nil, nil
 }
 

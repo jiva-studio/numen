@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
@@ -33,7 +34,7 @@ func TestIsRunningIsFalseWhenTheTaskEnds(t *testing.T) {
 	t.Cleanup(letGo)
 	run, err := recognition.New(
 		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return s.vault.With(id) }, Store: foldersOf(s.store), Texts: s.textsOf, Queue: queue, Documents: document.NewReader()},
-		func(context.Context) (recognition.Recognizer, error) { return s.recognizer, nil },
+		func(context.Context) (ports.Recognizer, error) { return s.recognizer, nil },
 	)
 	if err != nil {
 		t.Fatal(err)

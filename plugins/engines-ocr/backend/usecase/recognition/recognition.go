@@ -1,5 +1,6 @@
 // Package recognition reads the text of a scanned file with the recognizer, keeps it in the plugin's
-// folder of the vault's store, and reports it to the host as a positioned text version.
+// folder of the vault's store, and reports it to the host as a positioned text version. A launcher starts
+// recognitions that run until they end or the launcher is closed.
 package recognition
 
 import (
@@ -14,6 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/progress"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/scan"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/ports"
 )
 
 // VersionKey is the key the plugin keeps the recognition of a file under: one recognition a file.
@@ -21,41 +24,6 @@ const VersionKey = "recognition"
 
 // batch is the number of pages read between two writes of the progress record.
 const batch = 8
-
-// Model describes active OCR models.
-type Model struct {
-	Layout     string
-	Recognizer string
-	DPI        int
-	From       string
-}
-
-// ByteRange represents a byte offset range.
-type ByteRange struct {
-	Start int
-	End   int
-}
-
-// Box is one box of a region: the rectangle it covers on the page, and the run of bytes it produced.
-type Box struct {
-	Rect  image.Rectangle
-	Range ByteRange
-}
-
-// Block is one region of a page, written out.
-type Block struct {
-	Label     string
-	Text      string
-	IsHeading bool
-	Depth     int
-	Boxes     []Box
-}
-
-// Recognizer reads the blocks of one page drawn as an image.
-type Recognizer interface {
-	GetRecognitionModel() Model
-	Recognize(ctx context.Context, page image.Image) ([]Block, error)
-}
 
 // Document is one file open for its pages to be drawn.
 type Document interface {
@@ -103,7 +71,7 @@ var ErrAlreadyRecognizing = errors.New("the file is already being recognized")
 // Recognition reads files with the recognizer it opens. One run at a time locks a file of a vault.
 type Recognition struct {
 	host Host
-	open func(ctx context.Context) (Recognizer, error)
+	open func(ctx context.Context) (ports.Recognizer, error)
 
 	mu      sync.Mutex
 	running map[string]bool
@@ -111,7 +79,7 @@ type Recognition struct {
 
 // New returns the recognition through the host, with the function that opens the recognizer when a
 // page is first read.
-func New(h Host, open func(ctx context.Context) (Recognizer, error)) (*Recognition, error) {
+func New(h Host, open func(ctx context.Context) (ports.Recognizer, error)) (*Recognition, error) {
 	if h.Vaults == nil || h.Store == nil || h.Texts == nil || h.Queue == nil || h.Documents == nil || open == nil {
 		return nil, errors.New("a recognition needs the vault, the store, the texts, the queue, the documents and a recognizer")
 	}
@@ -352,7 +320,7 @@ func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task
 	return putVersion(ctx, on, rec)
 }
 
-func keepOrRestart(rec *progress.Record, path, inputHash string, model Model, pageCount int) *progress.Record {
+func keepOrRestart(rec *progress.Record, path, inputHash string, model scan.Model, pageCount int) *progress.Record {
 	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recognizer, model.DPI)
 	if rec.IsFor(inputHash, recipe) {
 		return rec
@@ -363,7 +331,7 @@ func keepOrRestart(rec *progress.Record, path, inputHash string, model Model, pa
 // pageReading is what the pages of one file are read with.
 type pageReading struct {
 	doc        Document
-	recognizer Recognizer
+	recognizer ports.Recognizer
 	dpi        int
 	store      Folder
 	task       *host.Task

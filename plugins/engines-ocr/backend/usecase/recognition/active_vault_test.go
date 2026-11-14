@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
@@ -59,7 +60,7 @@ func TestStartKeepsTheVaultActiveOnEntry(t *testing.T) {
 			}
 			return s.vault.With(id)
 		}, Store: foldersOf(s.store), Texts: s.textsOf, Queue: s.queue, Documents: documents},
-		func(context.Context) (recognition.Recognizer, error) { return s.recognizer, nil },
+		func(context.Context) (ports.Recognizer, error) { return s.recognizer, nil },
 	)
 	if err != nil {
 		t.Fatal(err)

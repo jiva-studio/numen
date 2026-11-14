@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/launch"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
@@ -22,7 +21,7 @@ func TestRecognitionCreateDuringPaletteRecognitionReportsRunning(t *testing.T) {
 
 	out := s.recognize(t, "Physics", scanPath)
 
-	if out.State != launch.StateRunning {
+	if out.State != recognition.StateRunning {
 		t.Errorf("recognition_create while the command recognizes the scan returned %+v, want the state running", out)
 	}
 	close(s.recognizer.release)

@@ -5,7 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/launch"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
 // The instruction sentences of recognition_create: when to call it and what it returns.
@@ -27,7 +27,7 @@ type RecognitionCreateOutput struct {
 	Version string `json:"version,omitempty" jsonschema:"with state done, the id of the live text version: the recognized text, or a version made from it such as a proofread"`
 }
 
-func newToolRegistry(launcher *launch.Launcher) (*tools.Registry, error) {
+func newToolRegistry(launcher *recognition.Launcher) (*tools.Registry, error) {
 	registry := tools.New()
 	err := tools.Add(registry, tools.Spec{
 		Name:  "recognition_create",
@@ -47,7 +47,7 @@ func newToolRegistry(launcher *launch.Launcher) (*tools.Registry, error) {
 	return registry, nil
 }
 
-func newCreateRecognition(launcher *launch.Launcher) func(context.Context, RecognitionCreateInput) (RecognitionCreateOutput, error) {
+func newCreateRecognition(launcher *recognition.Launcher) func(context.Context, RecognitionCreateInput) (RecognitionCreateOutput, error) {
 	return func(ctx context.Context, in RecognitionCreateInput) (RecognitionCreateOutput, error) {
 		out, err := launcher.Create(ctx, domain.VaultID(tools.GetVault(ctx)), in.Path)
 		if err != nil {

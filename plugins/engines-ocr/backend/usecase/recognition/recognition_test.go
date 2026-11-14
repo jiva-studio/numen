@@ -18,7 +18,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/scan"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
@@ -61,11 +63,11 @@ type pages struct {
 	onRecognize func()
 }
 
-func (p *pages) GetRecognitionModel() recognition.Model {
-	return recognition.Model{Layout: "layout", Recognizer: "lines", DPI: 72, From: "a test"}
+func (p *pages) GetRecognitionModel() scan.Model {
+	return scan.Model{Layout: "layout", Recognizer: "lines", DPI: 72, From: "a test"}
 }
 
-func (p *pages) Recognize(_ context.Context, page image.Image) ([]recognition.Block, error) {
+func (p *pages) Recognize(_ context.Context, page image.Image) ([]scan.Block, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.pageCount++
@@ -81,11 +83,11 @@ func (p *pages) Recognize(_ context.Context, page image.Image) ([]recognition.Bl
 	b := page.Bounds()
 	first := p.says + " one"
 	text := first + " " + p.says + " two"
-	return []recognition.Block{
+	return []scan.Block{
 		{Label: "doc_title", Text: "Heading", IsHeading: true},
-		{Label: "text", Text: text, Boxes: []recognition.Box{
-			{Rect: image.Rect(0, 0, b.Dx(), b.Dy()/2), Range: recognition.ByteRange{End: len(first)}},
-			{Rect: image.Rect(0, b.Dy()/2, b.Dx(), b.Dy()), Range: recognition.ByteRange{Start: len(first) + 1, End: len(text)}},
+		{Label: "text", Text: text, Boxes: []scan.Box{
+			{Rect: image.Rect(0, 0, b.Dx(), b.Dy()/2), Range: scan.ByteRange{End: len(first)}},
+			{Rect: image.Rect(0, b.Dy()/2, b.Dx(), b.Dy()), Range: scan.ByteRange{Start: len(first) + 1, End: len(text)}},
 		}},
 	}, nil
 }
@@ -154,7 +156,7 @@ func newScene(t *testing.T) *scene {
 	documents := document.NewReader()
 	run, err := recognition.New(
 		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return s.vault.With(id) }, Store: foldersOf(s.store), Texts: s.textsOf, Queue: s.queue, Documents: documents},
-		func(context.Context) (recognition.Recognizer, error) { return s.recognizer, nil },
+		func(context.Context) (ports.Recognizer, error) { return s.recognizer, nil },
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -382,7 +384,7 @@ func TestRecognizeFileDeletedDuringRecognitionReportsNoTask(t *testing.T) {
 
 func TestNewRequiresHostAndRecognizer(t *testing.T) {
 	v := hosttest.New("Physics")
-	open := func(context.Context) (recognition.Recognizer, error) { return &pages{}, nil }
+	open := func(context.Context) (ports.Recognizer, error) { return &pages{}, nil }
 	texts := hosttest.NewTexts("Physics", pluginID)
 	full := recognition.Host{
 		Vaults: func(id domain.VaultID) recognition.Files { return v.With(id) },

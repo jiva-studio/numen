@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/engines"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/launch"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
@@ -57,7 +56,7 @@ func mount(s *server.Server, h recognition.Host, holder *engines.Holder) error {
 	if err != nil {
 		return err
 	}
-	launcher := launch.New(recognitions, PluginID)
+	launcher := recognition.NewLauncher(recognitions, PluginID)
 	commands, err := newCommands(launcher)
 	if err != nil {
 		return err
@@ -76,7 +75,7 @@ func mount(s *server.Server, h recognition.Host, holder *engines.Holder) error {
 	return nil
 }
 
-func newCommands(launcher *launch.Launcher) (*command.Registry, error) {
+func newCommands(launcher *recognition.Launcher) (*command.Registry, error) {
 	commands := command.New()
 	if err := commands.Add(command.CreateText, newRecognizeCommand(launcher)); err != nil {
 		return nil, err
@@ -84,7 +83,7 @@ func newCommands(launcher *launch.Launcher) (*command.Registry, error) {
 	return commands, nil
 }
 
-func newRecognizeCommand(launcher *launch.Launcher) command.Run {
+func newRecognizeCommand(launcher *recognition.Launcher) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		if err := launcher.StartFile(ctx, req.Path); err != nil {
 			return command.Result{}, err

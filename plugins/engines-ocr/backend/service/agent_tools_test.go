@@ -17,9 +17,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/scan"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/launch"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
@@ -42,7 +43,7 @@ type blockingRecognizer struct {
 	failure   error
 }
 
-func (r blockingRecognizer) Recognize(ctx context.Context, page image.Image) ([]recognition.Block, error) {
+func (r blockingRecognizer) Recognize(ctx context.Context, page image.Image) ([]scan.Block, error) {
 	r.startOnce.Do(func() { close(r.startCh) })
 	select {
 	case <-r.release:
@@ -115,7 +116,7 @@ type toolFixture struct {
 	recognizer   blockingRecognizer
 	openCount    atomic.Int32
 	recognitions *recognition.Recognition
-	launcher     *launch.Launcher
+	launcher     *recognition.Launcher
 	registry     *tools.Registry
 	ended        map[string]bool
 }
@@ -153,7 +154,7 @@ func newToolFixture(t *testing.T) *toolFixture {
 	documents := document.NewReader()
 	recognitions, err := recognition.New(
 		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: foldersOf(vault.Store()), Texts: textsOf(texts), Queue: s.queue, Documents: documents},
-		func(context.Context) (recognition.Recognizer, error) {
+		func(context.Context) (ports.Recognizer, error) {
 			s.openCount.Add(1)
 			return s.recognizer, nil
 		},
@@ -171,7 +172,7 @@ func newToolFixture(t *testing.T) *toolFixture {
 		documents.SetCompilationCache(compilation)
 	}
 	s.recognitions = recognitions
-	s.launcher = launch.New(recognitions, PluginID)
+	s.launcher = recognition.NewLauncher(recognitions, PluginID)
 	t.Cleanup(s.launcher.Close)
 	s.registry, err = newToolRegistry(s.launcher)
 	if err != nil {
@@ -650,7 +651,7 @@ func (s *toolFixture) countReads(t *testing.T) *readCounts {
 			},
 			Texts: textsOf(s.texts), Queue: s.queue, Documents: document.NewReader(),
 		},
-		func(context.Context) (recognition.Recognizer, error) {
+		func(context.Context) (ports.Recognizer, error) {
 			s.openCount.Add(1)
 			return s.recognizer, nil
 		},
@@ -659,7 +660,7 @@ func (s *toolFixture) countReads(t *testing.T) *readCounts {
 		t.Fatal(err)
 	}
 	s.recognitions = recognitions
-	s.launcher = launch.New(recognitions, PluginID)
+	s.launcher = recognition.NewLauncher(recognitions, PluginID)
 	t.Cleanup(s.launcher.Close)
 	s.registry, err = newToolRegistry(s.launcher)
 	if err != nil {

@@ -1,6 +1,4 @@
-// Package launch starts the recognitions of files and keeps them running until they end or the
-// launcher is closed.
-package launch
+package recognition
 
 import (
 	"context"
@@ -10,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
 // The states a start reports.
@@ -35,7 +32,7 @@ type Outcome struct {
 
 // Launcher starts recognitions that run until they end or Close.
 type Launcher struct {
-	recognitions *recognition.Recognition
+	recognitions *Recognition
 	pluginID     string
 
 	wg sync.WaitGroup
@@ -45,9 +42,9 @@ type Launcher struct {
 	running  map[string]context.CancelFunc
 }
 
-// New returns a launcher of the recognitions. pluginID names the plugin whose text versions count as
+// NewLauncher returns a launcher of the recognitions. pluginID names the plugin whose text versions count as
 // the recognition of a file.
-func New(recognitions *recognition.Recognition, pluginID string) *Launcher {
+func NewLauncher(recognitions *Recognition, pluginID string) *Launcher {
 	return &Launcher{
 		recognitions: recognitions,
 		pluginID:     pluginID,
@@ -83,7 +80,7 @@ func (l *Launcher) Create(ctx context.Context, vault domain.VaultID, path string
 		}
 		return Outcome{}, fmt.Errorf("find %s: %w", path, err)
 	}
-	out := Outcome{TaskID: recognition.GetTaskID(vault, path), Path: path, State: StateRunning, Version: ""}
+	out := Outcome{TaskID: GetTaskID(vault, path), Path: path, State: StateRunning, Version: ""}
 	isRunning, err := l.recognitions.IsRunning(ctx, vault, path)
 	if err != nil {
 		return Outcome{}, err
@@ -120,7 +117,7 @@ func (l *Launcher) StartFile(ctx context.Context, path string) error {
 		return err
 	}
 	if state == StateRunning {
-		return fmt.Errorf("%s: %w", path, recognition.ErrAlreadyRecognizing)
+		return fmt.Errorf("%s: %w", path, ErrAlreadyRecognizing)
 	}
 	return nil
 }
@@ -133,7 +130,7 @@ func (l *Launcher) start(ctx context.Context, vault domain.VaultID, path string)
 		return "", errors.New("the plugin is stopping")
 	}
 	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-	runEnd, isStarted, err := l.recognitions.Start(runCtx, recognition.Request{Vault: vault, Path: path})
+	runEnd, isStarted, err := l.recognitions.Start(runCtx, Request{Vault: vault, Path: path})
 	if err != nil || !isStarted {
 		cancel()
 		if err != nil {
