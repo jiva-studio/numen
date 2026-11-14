@@ -430,8 +430,9 @@ func TestNothingIsDetectedWithoutTheProgram(t *testing.T) {
 
 func TestCompleteReturnsAnErrorWhenThePluginStopsAfterSomeText(t *testing.T) {
 	started := filepath.Join(t.TempDir(), "started")
+	// The marker is created a second after the text is written, so the plugin has read the text by then.
 	script := `printf '%s\n' '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"half an ans"}}}'` +
-		"\ntouch " + started + "\nsleep 30\n"
+		"\nsleep 1\ntouch '" + started + "'\nsleep 30\n"
 	svc := newClaude(t, nil, writeScript(t, "claude", script))
 	type outcome struct {
 		result *llm.CompleteResult
@@ -442,20 +443,32 @@ func TestCompleteReturnsAnErrorWhenThePluginStopsAfterSomeText(t *testing.T) {
 		result, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 		done <- outcome{result: result, err: err}
 	}()
+	deadline := time.After(20 * time.Second)
 	for {
 		if _, err := os.Stat(started); err == nil {
 			break
 		}
-		time.Sleep(10 * time.Millisecond)
+		select {
+		case got := <-done:
+			t.Fatalf("Complete ended before the text was written: %q, %v", got.result.GetText(), got.err)
+		case <-deadline:
+			t.Fatal("the program did not write the text")
+		case <-t.Context().Done():
+			t.Fatal(t.Context().Err())
+		case <-time.After(10 * time.Millisecond):
+		}
 	}
-	time.Sleep(100 * time.Millisecond)
 
 	if err := svc.tasks.Close(); err != nil {
 		t.Fatal(err)
 	}
 
-	got := <-done
-	if got.err == nil || got.result.GetText() != "" {
-		t.Errorf("Complete = %q, %v, want an error and no text", got.result.GetText(), got.err)
+	select {
+	case got := <-done:
+		if got.err == nil || got.result.GetText() != "" {
+			t.Errorf("Complete = %q, %v, want an error and no text", got.result.GetText(), got.err)
+		}
+	case <-time.After(20 * time.Second):
+		t.Fatal("Complete did not end after Close")
 	}
 }
