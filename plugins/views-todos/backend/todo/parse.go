@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	byteOrderMark   = "﻿"
+	byteOrderMark   = "\ufeff"
 	codeIndent      = 4
 	tabWidth        = 4
 	depthWidth      = 2
