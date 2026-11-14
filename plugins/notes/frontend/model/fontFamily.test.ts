@@ -17,7 +17,9 @@ describe('the font family value', () => {
   })
 
   it('keeps a list in order', () => {
-    expect(getFontFamilyValue('Fira Code, Menlo ,monospace')).toBe('"Fira Code", "Menlo", monospace')
+    expect(getFontFamilyValue('Fira Code, Menlo ,monospace')).toBe(
+      '"Fira Code", "Menlo", monospace',
+    )
   })
 
   it('returns an empty text for an empty text, meaning the interface font', () => {

@@ -75,12 +75,7 @@ describe('the editor preferences', () => {
     bindMarkdownEditorPreferences(context)
 
     expect(watched).toEqual(
-      expect.arrayContaining([
-        'tabSize',
-        'fontFamily',
-        'lineHeight',
-        'highlightActiveLine',
-      ]),
+      expect.arrayContaining(['tabSize', 'fontFamily', 'lineHeight', 'highlightActiveLine']),
     )
     expect(watched.filter((key) => key.includes('_'))).toStrictEqual([])
   })

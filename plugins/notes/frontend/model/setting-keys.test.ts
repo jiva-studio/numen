@@ -85,12 +85,7 @@ describe('the keys of the notes plugin settings', () => {
     for (const key of ['tabSize', 'fontFamily', 'lineHeight', 'highlightActiveLine']) {
       expect(watchedKeys).toContain(key)
     }
-    for (const key of [
-      'tab_size',
-      'font_family',
-      'line_height',
-      'highlight_active_line',
-    ]) {
+    for (const key of ['tab_size', 'font_family', 'line_height', 'highlight_active_line']) {
       expect(watchedKeys).not.toContain(key)
     }
   })
