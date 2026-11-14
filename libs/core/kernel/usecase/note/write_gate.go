@@ -14,3 +14,12 @@ func writeUnder[T any](gate windowport.WriteGate, write func() (T, error)) (T, e
 	defer gate.FinishWrite()
 	return write()
 }
+
+// OpenGate admits every write, for an installation with no window that waits for writes.
+type OpenGate struct{}
+
+// BeginWrite admits the write.
+func (OpenGate) BeginWrite() bool { return true }
+
+// FinishWrite does nothing: no window waits for the write.
+func (OpenGate) FinishWrite() {}

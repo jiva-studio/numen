@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -84,7 +83,7 @@ func Moves(c Config, ctx context.Context) (<-chan struct{}, error) {
 // Notes builds everything that changes the notes of a vault, against this
 // installation's vault readers and writers. No view receives a move.
 func Notes(c Config, db *Index, index edit.IndexUpdater) NoteUseCases {
-	return vaultNotes(vaultOf(c), db, index, noteViews{Writes: none.OpenGate{}})
+	return vaultNotes(vaultOf(c), db, index, noteViews{Writes: note.OpenGate{}})
 }
 
 // Queries builds everything that answers a question about the notes of a vault.

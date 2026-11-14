@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -198,7 +197,7 @@ func newWindowUseCases(
 		a.vault, db, vault.NewUpdateIndex(current.Get).Execute,
 		noteViews{
 			Moves:  note.NewTellMoveInShownVault(state.GetShownVault, windowView(state)),
-			Writes: none.OpenGate{},
+			Writes: note.OpenGate{},
 		},
 	)
 	moves := vaultVaults(a.vault, ports, db, notes.Place.Move)
