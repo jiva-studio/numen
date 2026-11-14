@@ -53,19 +53,17 @@ type WindowPlugins = ReturnType<typeof createWindowPlugins>
 export interface WindowPalettesDeps {
   readonly rest: Pick<SettingsStore, 'state' | 'read'>
   readonly writeMessage: MessageWriter
-  readonly registry: CommandRegistry
   readonly openSettings: (request: SettingsRequest) => void
+  readonly commands: WindowBase['commands']
+  readonly windowSettings: WindowBase['settings']['window']
   readonly tabs: WindowBase['tabs']
   readonly vault: WindowBase['vault']
-  readonly windowSettings: WindowBase['windowSettings']
-  readonly getTarget: WindowBase['getTarget']
-  readonly appCommands: WindowBase['appCommands']
   readonly plugins: WindowPlugins
 }
 
 export function createWindowPalettes(deps: WindowPalettesDeps) {
-  const { rest, writeMessage, registry, openSettings } = deps
-  const { vault, windowSettings, getTarget, appCommands, plugins } = deps
+  const { rest, writeMessage, openSettings, vault, windowSettings, plugins } = deps
+  const { registry, appCommands, getTarget } = deps.commands
   const { pluginHost, declaredCommands, hostPort } = plugins
   const { windowTabs } = deps.tabs
   const { commandDeps, searchRequests } = createPaletteBase({

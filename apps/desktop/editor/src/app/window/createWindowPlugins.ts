@@ -11,7 +11,6 @@ import type { SettingsStore } from '@/entities/settings'
 import { useDeclaredCommands } from '@/features/plugin-commands'
 import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
 import { syncKeybindings } from '@/features/hotkeys'
-import type { CommandRegistry } from '@/shared/model/command'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import type { createWindowBase } from './createWindowBase'
 import { createPluginDeclarations } from './createPluginDeclarations'
@@ -31,17 +30,15 @@ export interface WindowPluginsDeps {
   readonly rest: SettingsStore
   readonly frame: WindowFrame
   readonly status: PluginStatus
-  readonly registry: CommandRegistry
+  readonly commands: WindowBase['commands']
+  readonly windowSettings: WindowBase['settings']['window']
   readonly tabs: WindowBase['tabs']
   readonly vault: WindowBase['vault']
-  readonly windowSettings: WindowBase['windowSettings']
-  readonly getTarget: WindowBase['getTarget']
-  readonly appCommands: WindowBase['appCommands']
 }
 
 export function createWindowPlugins(deps: WindowPluginsDeps) {
-  const { log, rest, frame, status, registry } = deps
-  const { tabs, vault, windowSettings, getTarget, appCommands } = deps
+  const { log, rest, frame, status, tabs, vault, windowSettings } = deps
+  const { registry, appCommands, getTarget } = deps.commands
   const { windowTabs, tabOpeners } = tabs
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()

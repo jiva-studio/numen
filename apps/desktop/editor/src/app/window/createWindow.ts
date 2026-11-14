@@ -1,56 +1,71 @@
 /**
- * The window composed in four steps, each made from the ones before: the base (the tabs, the
- * vault, the commands of the features), the plugins, the palettes, and the start.
+ * The window composed in steps, each made from the ones before: the base (the tabs, the vault, the
+ * commands of the features), the plugins, the palettes, the keys, the settings page and the start.
  */
+import { loadFrameRuntime, useWindowFrame } from '@numen/workbench'
 import { createWindowBase } from './createWindowBase'
+import { createWindowKeys } from './createWindowKeys'
 import { createWindowPalettes } from './createWindowPalettes'
 import { createWindowPlugins } from './createWindowPlugins'
 import { createWindowStart } from './createWindowStart'
+import { registerSettingsPage } from './registerSettingsPage'
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const createWindow = () => {
   const base = createWindowBase()
-  const { log, rest, connections, frame, writeMessage, status, registry, settingsRequests } = base
-  const { tabs, tabParts, vault, windowSettings, getTarget, appCommands } = base
+  const { messages, settings, commands, tabs, tabParts, vault } = base
+  const frame = useWindowFrame(loadFrameRuntime)
   const plugins = createWindowPlugins({
-    log,
-    rest,
+    log: messages.log,
+    rest: settings.rest,
     frame,
-    status,
-    registry,
+    status: base.status,
+    commands,
+    windowSettings: settings.window,
     tabs,
     vault,
-    windowSettings,
-    getTarget,
-    appCommands,
   })
   const palettes = createWindowPalettes({
-    rest,
-    writeMessage,
-    registry,
-    openSettings: settingsRequests.emit,
+    rest: settings.rest,
+    writeMessage: messages.writeMessage,
+    openSettings: base.settingsRequests.emit,
+    commands,
+    windowSettings: settings.window,
     tabs,
     vault,
-    windowSettings,
-    getTarget,
-    appCommands,
     plugins,
   })
-  const { views, tabMenu, bootstrap } = createWindowStart({
-    log,
-    rest,
-    connections,
+  createWindowKeys({
+    windowTabs: tabs.windowTabs,
+    getTarget: commands.getTarget,
+    palette: palettes.palette,
+    pluginCommands: palettes.pluginPalette.plugin.pluginCommands,
+  })
+  registerSettingsPage({
+    rest: settings.rest,
+    connections: settings.connections,
+    windowSettings: settings.window,
+    log: messages.log,
+    windowTabs: tabs.windowTabs,
+    plugins: {
+      host: plugins.pluginHost,
+      health: vault.window.pluginHealth,
+      commands: plugins.hostPort.commands,
+    },
     frame,
-    writeMessage,
-    settingsRequests,
+    settingsRequests: base.settingsRequests,
+  })
+  const { views, tabMenu, bootstrap } = createWindowStart({
+    writeMessage: messages.writeMessage,
+    settings,
+    frame,
     tabs,
     tabParts,
     vault,
-    windowSettings,
-    getTarget,
     plugins,
     palettes,
   })
+  const { getTarget } = commands
   return { tabs, tabParts, vault, getTarget, palettes, views, tabMenu, bootstrap }
 }
 

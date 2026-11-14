@@ -1,52 +1,21 @@
 /**
- * The keys of the window and its start: the parts that connect the others to what the person does.
+ * The start of the window: its views, the menu of a tab and the start of the vault, the layout and
+ * the plugins.
  */
 import type { PluginLoader } from '@numen/plugin-loader'
 import type { WindowFrame } from '@numen/workbench'
-import type { ConnectionStore } from '@/entities/connection'
 import type { SettingsStore } from '@/entities/settings'
 import type { createWindowLayout, WindowTabs } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
 import { readDetachedTab } from '@/features/tab-move'
 import { createLayoutStart, createPluginStart, createWindowBootstrap } from '@/features/app-start'
-import type { createWindowPalette } from '@/features/command-palette'
-import { createAppKeyRunner, createKeyHandler, useAppHotkeys } from '@/features/hotkeys'
-import type { createPluginCommandPort, DeclaredCommands } from '@/features/plugin-commands'
-import type { Emitter } from '@/shared/lib/emitter'
-import type { CommandTarget, SettingsRequest } from '@/shared/model/command'
-import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
+import type { DeclaredCommands } from '@/features/plugin-commands'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { createWindowBase } from './createWindowBase'
 import { createWindowViews } from './createPluginHost'
 import type { createWindowPalettes } from './createWindowPalettes'
 import type { createWindowPlugins } from './createWindowPlugins'
 import { createWindowTabMenu } from './createWindowTabMenu'
-import { registerSettingsPage } from './registerSettingsPage'
-
-/** What the keys of the window reach. */
-interface WindowKeysDeps {
-  readonly windowTabs: Pick<WindowTabs, 'panes'>
-  readonly getTarget: () => CommandTarget
-  readonly palette: Pick<ReturnType<typeof createWindowPalette>, 'paletteSwitch' | 'runs'>
-  readonly pluginCommands: ReturnType<typeof createPluginCommandPort>
-}
-
-function createWindowKeys(deps: WindowKeysDeps): void {
-  const { windowTabs, getTarget, palette, pluginCommands } = deps
-  useAppHotkeys(
-    createKeyHandler({
-      windowTabs,
-      getTarget,
-      handleShortcut: pluginCommands.handleShortcut,
-      runApp: createAppKeyRunner({
-        toggleSearch: palette.paletteSwitch.toggleSearch,
-        toggleCommands: palette.paletteSwitch.toggleCommands,
-        runCommand: palette.runs.runCommand,
-        runWithValues: palette.runs.runWithValues,
-        getTarget,
-      }),
-    }),
-  )
-}
 
 /** What the start of the plugins of the window reads. */
 export interface PluginStarterDeps {
@@ -96,43 +65,22 @@ type WindowBase = ReturnType<typeof createWindowBase>
 
 /** What the start of the window reads of the base, the plugins and the palettes. */
 export interface WindowStartDeps {
-  readonly log: MessageLog
-  readonly rest: SettingsStore
-  readonly connections: ConnectionStore
-  readonly frame: WindowFrame
   readonly writeMessage: MessageWriter
-  readonly settingsRequests: Pick<Emitter<SettingsRequest>, 'subscribe'>
+  readonly settings: Pick<WindowBase['settings'], 'rest' | 'window'>
+  readonly frame: Pick<WindowFrame, 'windowEdge'>
   readonly tabs: WindowBase['tabs']
   readonly tabParts: WindowBase['tabParts']
   readonly vault: WindowBase['vault']
-  readonly windowSettings: WindowBase['windowSettings']
-  readonly getTarget: WindowBase['getTarget']
   readonly plugins: ReturnType<typeof createWindowPlugins>
   readonly palettes: ReturnType<typeof createWindowPalettes>
 }
 
 export function createWindowStart(deps: WindowStartDeps) {
-  const { log, rest, connections, frame, writeMessage, settingsRequests } = deps
-  const { tabs, tabParts, vault, windowSettings, getTarget, plugins, palettes } = deps
+  const { writeMessage, frame, tabs, tabParts, vault, plugins, palettes } = deps
+  const { rest, window: windowSettings } = deps.settings
   const { windowTabs } = tabs
   const { pluginHost, pluginLoader, declaredCommands } = plugins
   const { editing, window, vaults } = vault
-  registerSettingsPage({
-    rest,
-    connections,
-    windowSettings,
-    log,
-    windowTabs,
-    plugins: { host: pluginHost, health: window.pluginHealth, commands: plugins.hostPort.commands },
-    frame,
-    settingsRequests,
-  })
-  createWindowKeys({
-    windowTabs,
-    getTarget,
-    palette: palettes.palette,
-    pluginCommands: palettes.pluginPalette.plugin.pluginCommands,
-  })
   return {
     views: createWindowViews({ pluginHost, frame }),
     tabMenu: createWindowTabMenu({

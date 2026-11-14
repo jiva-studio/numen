@@ -1,9 +1,7 @@
 /**
- * The base of the window: the log of messages, the store of the settings, the frame and the
- * registry of the commands, then the tabs, the parts that read the vault, the settings of the
- * window and the commands of the features.
+ * The base of the window: the messages, the settings and the requests to open them, the commands,
+ * the status of the plugins, the tabs and the parts that read the vault.
  */
-import { loadFrameRuntime, useWindowFrame } from '@numen/workbench'
 import { createConnectionStore } from '@/entities/connection'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { measureTabs } from '@/entities/tab'
@@ -25,7 +23,6 @@ export function createWindowBase() {
   const rest = createSettingsStore(SETTINGS_WORDS, log.getWriter('configured'))
   const connections = createConnectionStore(log.getWriter('connections'))
   const writeMessage = log.getWriter('command')
-  const frame = useWindowFrame(loadFrameRuntime)
   const status = createWindowPluginStatus(rest)
   const registry = createCommandRegistry()
   /** The settings a part asks for: the page of a plugin and a setting of it, or the settings tab. */
@@ -57,25 +54,27 @@ export function createWindowBase() {
   )
   registry.registerAll(features.handlers)
   return {
-    log,
-    rest,
-    connections,
-    writeMessage,
-    frame,
-    status,
-    registry,
+    messages: { log, writeMessage },
+    settings: {
+      rest,
+      connections,
+      window: createWindowSettings({
+        rest,
+        connections,
+        words,
+        log,
+        onSizeChanged: () => measureTabs(windowTabs),
+      }),
+    },
+    commands: {
+      registry,
+      appCommands: features.commands,
+      getTarget: createTargetResolver(windowTabs, vaults, window.health),
+    },
     settingsRequests,
+    status,
     tabs,
     vault,
     tabParts,
-    appCommands: features.commands,
-    getTarget: createTargetResolver(windowTabs, vaults, window.health),
-    windowSettings: createWindowSettings({
-      rest,
-      connections,
-      words,
-      log,
-      onSizeChanged: () => measureTabs(windowTabs),
-    }),
   }
 }
