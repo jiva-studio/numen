@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostclient"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/machine"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/settings"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards/deckedit"
@@ -43,7 +44,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 }
 
 func mount(s *server.Server, clients hostclient.Clients) error {
-	backend := New(Config{Vaults: clients.Vaults, Store: clients.Folders, Now: clock.System{}, Cores: 0, Scheduler: nil})
+	backend := New(Config{Vaults: clients.Vaults, Store: clients.Folders, Now: clock.System{}, Cores: machine.GetCores(), Scheduler: nil})
 	s.SetConfigure(func(_ context.Context, values map[string]string) error {
 		backend.Configure(values)
 		return nil
@@ -78,7 +79,7 @@ func (b *Backend) Mount(s *server.Server) error {
 
 // Commands runs the commands the manifest declares.
 func (b *Backend) Commands() (*command.Registry, error) {
-	return cardcommands.New(cards.NewCreate(b.ports.Writers, b.updateIndex, b.now), b.vaults("").Files, b.createCardNote)
+	return cardcommands.New(cards.NewCreate(b.ports.Writers, b.updateIndex, b.now, b.entropy), b.vaults("").Files, b.createCardNote)
 }
 
 // Tools provides the MCP tools for interacting with flashcards and decks.

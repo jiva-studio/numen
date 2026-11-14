@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -111,7 +112,7 @@ func newWorld(t *testing.T) *world {
 		vault: vault, store: vault.Store(), texts: hosttest.NewTexts(vault.Vault().ID, pluginID),
 		queue: hosttest.NewQueue(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
 	}
-	w.links = link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(w.texts), Queue: w.queue, Clock: newFakeClock(time.Unix(1_700_000_000, 0))},
+	w.links = link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(w.texts), Queue: w.queue, Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{}},
 		func() ports.Fetcher { return w.sites },
 		func() fetch.Settings { return fetch.Settings{CopyMaxSize: w.limit} })
 	w.texts.SetStore(pluginID, w.store)

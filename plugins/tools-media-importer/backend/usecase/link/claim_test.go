@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/linkrecord"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/selector"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 )
 
@@ -372,7 +373,7 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 	}, Texts: func(id domain.VaultID) Texts {
 		ht.withVault = id
 		return ht
-	}, Queue: hq, Clock: newFakeClock(time.Unix(1_700_000_000, 0))},
+	}, Queue: hq, Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{}},
 		func() ports.Fetcher { return sf },
 		func() fetch.Settings { return fetch.Settings{CopyMaxSize: *copyMaxSize} })
 	return l, v, hv, hs, ht, hq, sf, copyMaxSize

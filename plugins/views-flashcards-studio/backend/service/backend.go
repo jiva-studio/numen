@@ -31,19 +31,20 @@ type flashReview = flashcards.Review[presets.Presets]
 // Backend answers the cards, the presets and the review.
 type Backend struct {
 	*vaultSession
-	ports hostports.Ports
-	now   ports.Clock
-	cfg   Config
-	runs  *flashcards.RunRegistry
-	flash *flashcards.Current[presets.Presets]
+	ports   hostports.Ports
+	now     ports.Clock
+	entropy ports.Entropy
+	cfg     Config
+	runs    *flashcards.RunRegistry
+	flash   *flashcards.Current[presets.Presets]
 }
 
 // New makes the backend over the host's vault.
 func New(cfg Config) *Backend {
 	hostPorts := hostports.New(cfg.Vaults, cfg.Store)
 	b := &Backend{
-		vaultSession: &vaultSession{vaults: cfg.Vaults, notes: hostPorts.Notes}, ports: hostPorts, now: cfg.Now, cfg: cfg,
-		runs: flashcards.NewRunRegistry(), flash: nil,
+		vaultSession: &vaultSession{vaults: cfg.Vaults, notes: hostPorts.Notes}, ports: hostPorts,
+		now: cfg.Now, entropy: clock.Entropy{}, cfg: cfg, runs: flashcards.NewRunRegistry(), flash: nil,
 	}
 	b.flash = flashcards.NewCurrent(b.getFlashConfig(), b.newPresets)
 	return b
@@ -58,18 +59,19 @@ func (b *Backend) getFlashConfig() flashcards.Config {
 	return flashcards.Config{
 		Readers: c.Readers, Notes: b.ports.Notes, Cards: cards.NewRead(c.Readers, c.Links), NewDeckWriter: c.NewDeckWriter,
 		Index: b.updateIndex, Logs: b.ports.Logs, Schedules: b.ports.Schedules("schedules"), DayCounts: b.ports.Schedules("days"),
-		Report: hostclient.ReportError, Day: review.Day{Starts: 0, In: nil}, Now: b.now, Cores: b.cfg.Cores, Scheduler: b.cfg.Scheduler,
+		Report: hostclient.ReportError, Day: review.Day{Starts: 0, In: nil}, Now: b.now, Entropy: b.entropy, Cores: b.cfg.Cores,
+		Scheduler: b.cfg.Scheduler,
 	}
 }
 
 func (b *Backend) newPresets(index flashcards.IndexUpdate, day review.Day) presets.Presets {
 	return presets.New(presets.Config{Readers: b.ports.Readers, Writers: b.ports.Writers, Links: b.ports.Links, Notes: b.ports.Notes,
-		Problems: b.ports.Problems, Index: index, Now: b.now, Day: day})
+		Problems: b.ports.Problems, Index: index, Now: b.now, Entropy: b.entropy, Day: day})
 }
 
 func (b *Backend) getCardsConfig() cards.Config {
 	return cards.Config{
 		Readers: b.ports.Readers, Writers: b.ports.Writers, Notes: b.ports.Notes, CardModels: b.ports.Notes, Links: b.ports.Links,
-		Index: b.updateIndex, Now: b.now, Entropy: clock.Entropy{},
+		Index: b.updateIndex, Now: b.now, Entropy: b.entropy,
 	}
 }

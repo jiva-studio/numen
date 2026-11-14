@@ -2,7 +2,6 @@ package cards
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"math"
@@ -50,7 +49,7 @@ type RenameField struct {
 	links   ports.LinkQueries
 	index   edit.IndexUpdater
 	now     ports.Clock
-	entropy Entropy
+	entropy ports.Entropy
 }
 
 // TypeQueries is the single index query a rename needs. The rename runs entirely
@@ -73,7 +72,7 @@ func NewRenameField(cfg Config, maxDecks int) RenameField {
 }
 
 func (u RenameField) createIdentifier() (string, error) {
-	return ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
+	return ulid.NewGenerator(format.NewEntropyReader(u.entropy)).NewID(u.now.Now())
 }
 
 // Execute renames the field, in the card model first and then in the vault.
@@ -194,7 +193,7 @@ func (u RenameField) writeCardModelField(
 	if err := f.RenameField(in.From, in.To); err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
-	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader and freshly opened card model frontmatter do not fail when writing an identifier."
+	// gomutants:disable-next-line BRANCH_IF reason="The entropy of the machine and freshly opened card model frontmatter do not fail when writing an identifier."
 	if err := u.writeIdentifier(f.WriteIdentifier); err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
@@ -203,7 +202,7 @@ func (u RenameField) writeCardModelField(
 
 func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
 	identifier, err := u.createIdentifier()
-	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader does not fail in normal execution."
+	// gomutants:disable-next-line BRANCH_IF reason="The entropy of the machine does not fail."
 	if err != nil {
 		return err
 	}

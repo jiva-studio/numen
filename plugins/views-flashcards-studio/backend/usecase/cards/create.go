@@ -2,7 +2,6 @@ package cards
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	pathpkg "path"
@@ -32,13 +31,14 @@ type Create struct {
 	writers ports.VaultWriters
 	index   edit.IndexUpdater
 	now     ports.Clock
+	entropy ports.Entropy
 }
 
-// NewCreate is what a deck, a card model or a preset is made through: the vault it
-// is written into, what updates the index for the new file, and what time
-// it is.
-func NewCreate(writers ports.VaultWriters, index edit.IndexUpdater, now ports.Clock) Create {
-	return Create{writers: writers, index: index, now: now}
+// NewCreate is what a deck, a card model or a preset is made through: the vault it is written
+// into, what updates the index for the new file, what time it is, and the entropy of its
+// identifier.
+func NewCreate(writers ports.VaultWriters, index edit.IndexUpdater, now ports.Clock, entropy ports.Entropy) Create {
+	return Create{writers: writers, index: index, now: now, entropy: entropy}
 }
 
 // New is what to make.
@@ -103,8 +103,8 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	}
 	path := pathpkg.Join(in.Path, name+domain.NoteExtension)
 
-	identifier, err := ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
-	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader does not fail in normal execution."
+	identifier, err := ulid.NewGenerator(format.NewEntropyReader(u.entropy)).NewID(u.now.Now())
+	// gomutants:disable-next-line BRANCH_IF reason="The entropy of the machine does not fail."
 	if err != nil {
 		return CreateNoteResult{}, err
 	}

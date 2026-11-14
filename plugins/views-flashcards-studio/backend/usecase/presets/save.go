@@ -28,7 +28,7 @@ func (u Presets) Point(
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	e, getReleaseError := newEdit(u.readers, u.writers, u.index, u.now)
+	e, getReleaseError := newEdit(u.readers, u.writers, u.index, u.now, u.entropy)
 	e.FileStat = stat
 	written, err := e.PointAt(ctx, v, deck, presetnote.LinkType, to, domain.RoleRef)
 	return written, errors.Join(err, getReleaseError())

@@ -10,9 +10,9 @@ package link
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	pathpkg "path"
 	"strings"
@@ -84,13 +84,15 @@ type Texts interface {
 	host.TextReader
 }
 
-// Host is what the plugin works through the host.
+// Host is what the plugin works through the host. Entropy fills the identifiers of the link notes it
+// creates.
 type Host struct {
 	PluginID string
 	Vaults   func(domain.VaultID) Vault
 	Store    func(domain.VaultID) Folder
 	Texts    func(domain.VaultID) Texts
 	Queue    host.Queue
+	Entropy  ports.Entropy
 	Clock    Clock
 	Report   func(what string, err error)
 }
@@ -209,8 +211,8 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 	if err != nil {
 		return Link{}, err
 	}
-	identifier, err := ulid.NewGenerator(rand.Reader).NewID(l.clock.Now())
-	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader does not fail in ulid generation"
+	identifier, err := ulid.NewGenerator(newEntropyReader(l.host.Entropy)).NewID(l.clock.Now())
+	// gomutants:disable-next-line BRANCH_IF reason="The entropy of the machine does not fail in ulid generation"
 	if err != nil {
 		return Link{}, err
 	}
@@ -340,4 +342,20 @@ func newLinkIn(ctx context.Context, vault Files, path string, parsed address.URL
 	made := newLink(path, parsed, raw)
 	made.Vault = v.ID
 	return made, nil
+}
+
+// newEntropyReader returns what fills entropy as a reader, for a ULID generator. No entropy is a
+// nil reader, which the generator refuses with ulid.ErrNoEntropy.
+func newEntropyReader(entropy ports.Entropy) io.Reader {
+	if entropy == nil {
+		return nil
+	}
+	return entropyReader{fill: entropy.Fill}
+}
+
+type entropyReader struct{ fill func(b []byte) }
+
+func (r entropyReader) Read(b []byte) (int, error) {
+	r.fill(b)
+	return len(b), nil
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/environment"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/process"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/tempfiles"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
@@ -40,10 +41,11 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 			on := store.With(id)
 			return link.Folder{Files: on, Writer: on}
 		},
-		Texts:  func(id domain.VaultID) link.Texts { return texts.With(id) },
-		Queue:  host.NewQueueClient(endpoint),
-		Clock:  clock.System{},
-		Report: process.Runner{}.ReportError,
+		Texts:   func(id domain.VaultID) link.Texts { return texts.With(id) },
+		Queue:   host.NewQueueClient(endpoint),
+		Clock:   clock.System{},
+		Entropy: random.Entropy{},
+		Report:  process.Runner{}.ReportError,
 	}
 }
 

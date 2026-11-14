@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
@@ -82,7 +83,7 @@ func TestRenameField_ErrorsWhenDeckCountExceedsBound(t *testing.T) {
 func TestACardModelIsMadeWithItsTemplatesLaidDown(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
 	made, err := u.CardModel(t.Context(), v, cards.New{
 		Title: "Bird", Fields: []string{"Name", "Call"},
@@ -100,7 +101,7 @@ func TestACardModelIsMadeWithItsTemplatesLaidDown(t *testing.T) {
 func TestACardModelWithTemplatesLargerThanANoteIsRefused(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
 	_, err := u.CardModel(t.Context(), v, cards.New{
 		Title: "Bird", Fields: []string{"Name"},

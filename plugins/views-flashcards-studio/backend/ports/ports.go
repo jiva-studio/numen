@@ -41,6 +41,11 @@ type Clock interface {
 	Now() time.Time
 }
 
+// Entropy fills the random bits of the identifiers a use case mints.
+type Entropy interface {
+	Fill(b []byte)
+}
+
 // VaultReader is what a use case reads of one vault's files.
 type VaultReader interface {
 	// StatFile returns the file's stat without opening it. It returns fs.ErrNotExist

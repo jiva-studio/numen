@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
@@ -53,6 +54,7 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 		Problems: env.Queries,
 		Index:    scanned,
 		Now:      vaulttest.NewClock(),
+		Entropy:  machineclock.Entropy{},
 	})
 
 	return vaulted{

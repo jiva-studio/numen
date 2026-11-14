@@ -2,7 +2,6 @@ package flashcards
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"slices"
@@ -12,12 +11,17 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// Log is one vault's answers: every run that was ever written there.
-type Log struct{ Stores ports.LogStores }
+// Log is one vault's answers: every run that was ever written there. Entropy fills the identifier
+// of a run Open starts.
+type Log struct {
+	Stores  ports.LogStores
+	Entropy ports.Entropy
+}
 
 // ReviewLog is what a vault's log came to.
 type ReviewLog struct {
@@ -132,8 +136,8 @@ func (u Log) Open(_ context.Context, v domain.Vault, now time.Time) (*LogWriter,
 	if err != nil {
 		return nil, err
 	}
-	id, err := ulid.NewGenerator(rand.Reader).NewID(now)
-	// gomutants:disable-next-line BRANCH_IF reason="ULID generation from crypto/rand.Reader does not fail."
+	id, err := ulid.NewGenerator(format.NewEntropyReader(u.Entropy)).NewID(now)
+	// gomutants:disable-next-line BRANCH_IF reason="ULID generation from the entropy of the machine does not fail."
 	if err != nil {
 		return nil, err
 	}
@@ -182,13 +186,19 @@ var ErrNoAnswer = errors.New("an answer taken back names the one it takes back")
 // A line is appended and never rewritten, so a recorded answer persists, including
 // when it is taken back: taking back is a line of its own naming the answer it
 // reverses.
-type Record struct{ now ports.Clock }
+type Record struct {
+	now     ports.Clock
+	entropy ports.Entropy
+}
 
 // errNoClock is what a Record that was given no clock answers.
 var errNoClock = errors.New("an answer is stamped by a clock, and none was given")
 
-// NewRecord is what an answer is written down through: what time it is.
-func NewRecord(now ports.Clock) Record { return Record{now: now} }
+// NewRecord is what an answer is written down through: what time it is, and the entropy of the
+// identifier of each line.
+func NewRecord(now ports.Clock, entropy ports.Entropy) Record {
+	return Record{now: now, entropy: entropy}
+}
 
 // Answer writes down one card answered once, and returns the line as it was
 // written: it carries the identifier that taking this answer back would name.
@@ -206,8 +216,8 @@ func (u Record) Answer(
 		return review.Answer{}, errNoClock
 	}
 	pos := u.now.Now()
-	id, err := ulid.NewGenerator(rand.Reader).NewID(pos)
-	// gomutants:disable-next-line BRANCH_IF reason="ULID generation from crypto/rand.Reader does not fail."
+	id, err := ulid.NewGenerator(format.NewEntropyReader(u.entropy)).NewID(pos)
+	// gomutants:disable-next-line BRANCH_IF reason="ULID generation from the entropy of the machine does not fail."
 	if err != nil {
 		return review.Answer{}, err
 	}
@@ -228,8 +238,8 @@ func (u Record) TakeBack(ctx context.Context, run *LogWriter, id string) (review
 		return review.Answer{}, errNoClock
 	}
 	pos := u.now.Now()
-	own, err := ulid.NewGenerator(rand.Reader).NewID(pos)
-	// gomutants:disable-next-line BRANCH_IF reason="ULID generation from crypto/rand.Reader does not fail."
+	own, err := ulid.NewGenerator(format.NewEntropyReader(u.entropy)).NewID(pos)
+	// gomutants:disable-next-line BRANCH_IF reason="ULID generation from the entropy of the machine does not fail."
 	if err != nil {
 		return review.Answer{}, err
 	}

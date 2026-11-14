@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
@@ -49,7 +50,8 @@ func newFixtureWithSites(t *testing.T, fetcher ports.Fetcher) *importFixture {
 	hosted := link.Host{
 		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
 		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
-		Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
+		Clock:   newFakeClock(time.Unix(1_700_000_000, 0)),
+		Entropy: random.Entropy{},
 	}
 	links := link.New(hosted,
 		func() ports.Fetcher { return fetcher },

@@ -56,7 +56,8 @@ type Notes interface {
 
 // Config is what the scenarios that run a vault's cards are built against. Day is where one day of
 // review gives way to the next. Cards reads the decks and the card models, and NewDeckWriter makes
-// the writer of a deck over the index update the scenarios pass it.
+// the writer of a deck over the index update the scenarios pass it. Entropy fills the identifiers
+// of the runs and the answers, and Cores is how many workers parse decks and project curves.
 type Config struct {
 	Readers       ports.VaultReaders
 	Notes         Notes
@@ -69,6 +70,7 @@ type Config struct {
 	Report        func(what string, err error)
 	Day           review.Day
 	Now           ports.Clock
+	Entropy       ports.Entropy
 	Cores         int
 	Scheduler     ports.ScheduleAlgorithm
 }
@@ -119,8 +121,8 @@ func NewScenarios[P DeckPresets](
 			ReviewCards:   reviewCards,
 			AssignCardIDs: assigning,
 			Session:       NewSession(assigning, reviewCards, schedules, deckPresets, cfg.Day, cfg.Now),
-			Record:        NewRecord(cfg.Now),
-			Log:           Log{Stores: cfg.Logs},
+			Record:        NewRecord(cfg.Now, cfg.Entropy),
+			Log:           Log{Stores: cfg.Logs, Entropy: cfg.Entropy},
 		},
 		ScheduleScenarios[P]{Schedules: schedules, Presets: deckPresets, Curves: curves},
 		CountScenarios{

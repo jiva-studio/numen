@@ -131,7 +131,7 @@ type timedRun struct {
 }
 
 func newTimedRun(run *flashcards.LogWriter, now ports.Clock) timedRun {
-	return timedRun{run: run, record: flashcards.NewRecord(now)}
+	return timedRun{run: run, record: flashcards.NewRecord(now, machineclock.Entropy{})}
 }
 
 func (s timedRun) Answer(
@@ -146,7 +146,7 @@ func (s timedRun) TakeBack(ctx context.Context, id string) (review.Answer, error
 
 func (s vaulted) run(t *testing.T, pos time.Time) timedRun {
 	t.Helper()
-	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, pos)
+	run, err := flashcards.Log{Stores: s.logs, Entropy: machineclock.Entropy{}}.Open(t.Context(), s.vault, pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func (s vaulted) run(t *testing.T, pos time.Time) timedRun {
 
 func (s vaulted) runNamedReview(t *testing.T, named, reviewedAt time.Time) timedRun {
 	t.Helper()
-	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, named)
+	run, err := flashcards.Log{Stores: s.logs, Entropy: machineclock.Entropy{}}.Open(t.Context(), s.vault, named)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -17,7 +17,8 @@ type Scenarios struct {
 }
 
 // Config is what the scenarios on the notes of a card are built over. Index brings the notes a
-// write changed up to date in the index. Entropy fills the card ids given to cards that carry none.
+// write changed up to date in the index. Entropy fills the card ids given to cards that carry none,
+// and the identifiers of the notes written.
 type Config struct {
 	Readers    ports.VaultReaders
 	Writers    ports.VaultWriters
@@ -26,7 +27,7 @@ type Config struct {
 	Links      ports.LinkQueries
 	Index      edit.IndexUpdater
 	Now        ports.Clock
-	Entropy    Entropy
+	Entropy    ports.Entropy
 }
 
 // NewScenarios builds the scenarios on the notes of a card. Its rename takes a vault of any size.
@@ -35,7 +36,7 @@ func NewScenarios(cfg Config) Scenarios {
 		Read:        NewRead(cfg.Readers, cfg.Links),
 		List:        NewList(cfg.Readers, cfg.CardModels),
 		Write:       NewWrite(cfg.Readers, cfg.Writers, cfg.Links, cfg.Index, cfg.Now, cfg.Entropy),
-		Create:      NewCreate(cfg.Writers, cfg.Index, cfg.Now),
+		Create:      NewCreate(cfg.Writers, cfg.Index, cfg.Now, cfg.Entropy),
 		RenameField: NewRenameField(cfg, UnboundedDecks),
 	}
 }

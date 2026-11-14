@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
@@ -330,7 +331,7 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	full := &brimming{LogStores: s.logs}
-	run, err := flashcards.Log{Stores: full}.Open(t.Context(), s.vault, vaulttest.GetEpoch())
+	run, err := flashcards.Log{Stores: full, Entropy: machineclock.Entropy{}}.Open(t.Context(), s.vault, vaulttest.GetEpoch())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -370,7 +371,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	yesterday := vaulttest.GetEpoch().AddDate(0, 0, -1)
-	yesterdayRun, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, yesterday)
+	yesterdayRun, err := flashcards.Log{Stores: s.logs, Entropy: machineclock.Entropy{}}.Open(t.Context(), s.vault, yesterday)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -499,7 +500,7 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
 
 	now := vaulttest.GetEpoch()
-	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, now)
+	run, err := flashcards.Log{Stores: s.logs, Entropy: machineclock.Entropy{}}.Open(t.Context(), s.vault, now)
 	if err != nil {
 		t.Fatal(err)
 	}

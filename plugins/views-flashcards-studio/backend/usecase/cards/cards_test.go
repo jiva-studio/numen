@@ -318,7 +318,7 @@ func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 // written into it.
 func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 	vs := newVaults(t)
-	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock())
+	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock(), machineclock.Entropy{})
 
 	deck, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Path: "decks"})
 	if err != nil {
@@ -355,7 +355,7 @@ func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 // settings.
 func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 	vs := newVaults(t)
-	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock())
+	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock(), machineclock.Entropy{})
 
 	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Path: "presets"})
 	if err != nil {
@@ -387,7 +387,7 @@ func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 // with one and nothing is written where there is none.
 func TestACardModelIsMadeWithAFirstField(t *testing.T) {
 	vs := newVaults(t)
-	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock())
+	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock(), machineclock.Entropy{})
 
 	if _, err := u.CardModel(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
 		err, cards.ErrNoFields,

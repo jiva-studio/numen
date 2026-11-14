@@ -472,6 +472,13 @@ test('a use case imports its ports and domain, the listed standard and SDK packa
   )
 })
 
+test('a use case importing crypto/rand or runtime is refused: the entropy and the cores come through its inputs', () => {
+  assert.deepEqual(refusedImports('plugins/a/backend/usecase/cards/x.go', ['crypto/rand', 'runtime']), [
+    'use case usecase/cards imports crypto/rand',
+    'use case usecase/cards imports runtime',
+  ])
+})
+
 test('an adapter importing the api, wire, service, engine or another technology is refused', () => {
   const own = 'github.com/jiva-studio/numen/plugins/a/backend'
   assert.deepEqual(

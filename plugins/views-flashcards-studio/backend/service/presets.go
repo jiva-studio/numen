@@ -22,7 +22,7 @@ type presetsHandler struct {
 func (b *Backend) newPresetsHandler() *presetsHandler {
 	return &presetsHandler{
 		vaultSession: b.vaultSession,
-		create:       cards.NewCreate(b.ports.Writers, b.updateIndex, b.now),
+		create:       cards.NewCreate(b.ports.Writers, b.updateIndex, b.now, b.entropy),
 		flash:        b.flash.Get,
 	}
 }

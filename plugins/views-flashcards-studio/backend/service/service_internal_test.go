@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -100,24 +99,17 @@ func (f *faultyVault) WatchMoves(ctx context.Context) (<-chan host.Move, error) 
 
 func TestBackendCoresAndVaultHelpers(t *testing.T) {
 	env := vaulttest.New(t, map[string]string{"Term.md": getDeck()["Term.md"]})
-	prev := runtime.GOMAXPROCS(2)
-	defer runtime.GOMAXPROCS(prev)
 
 	for _, tc := range []struct {
 		cores int
 		want  int
 	}{
-		{0, 2},
-		{-1, 2},
 		{1, 1},
 		{3, 3},
 	} {
 		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock(), Cores: tc.cores})
 		if got := b.flash.Get().Reviews.ReviewCards.Cores; got != tc.want {
 			t.Fatalf("Cores=%d: expected %d, got %d", tc.cores, tc.want, got)
-		}
-		if got := runtime.GOMAXPROCS(0); got != 2 {
-			t.Fatalf("expected GOMAXPROCS to remain 2, got %d", got)
 		}
 	}
 

@@ -1032,11 +1032,11 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	}
 
 	// Successful Execute with 1 overdue card and 1 unbegun card in decks/A.md.
-	writer, err := Log{Stores: env.Ports.Logs}.Open(ctx, env.Vault, now.Add(-48*time.Hour))
+	writer, err := Log{Stores: env.Ports.Logs, Entropy: machineclock.Entropy{}}.Open(ctx, env.Vault, now.Add(-48*time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := NewRecord(newFakeClock(now.Add(-48*time.Hour))).Answer(
+	if _, err := NewRecord(newFakeClock(now.Add(-48*time.Hour)), machineclock.Entropy{}).Answer(
 		ctx, writer, review.CardID{Card: "k7m2xq9fzp", Template: "Card"}, review.Again, time.Second,
 	); err != nil {
 		t.Fatal(err)
@@ -1100,7 +1100,7 @@ func TestLogInternalsAndErrors(t *testing.T) {
 		t.Fatalf("expected IsUnreadable with Size=0 Skipped=1, got %+v, %v", lfLocked, err)
 	}
 
-	rec := NewRecord(newFakeClock(now))
+	rec := NewRecord(newFakeClock(now), machineclock.Entropy{})
 	writer := &LogWriter{store: stubLogStore{}, run: "r1"}
 	if _, err := rec.Answer(ctx, writer, review.CardID{Card: "c1", Template: "T"}, review.Rating(99), 0); !errors.Is(err, ErrNoRating) {
 		t.Fatalf("expected wrapped ErrNoRating, got %v", err)
@@ -1632,11 +1632,11 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 			"\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Front\n\none\n" +
 			"\n## Two ^3f4g5h6j7k\n\n[[Term]]\n\n### Front\n\ntwo\n",
 	})
-	wTwo, err := Log{Stores: envTwo.Ports.Logs}.Open(ctx, envTwo.Vault, now.Add(-48*time.Hour))
+	wTwo, err := Log{Stores: envTwo.Ports.Logs, Entropy: machineclock.Entropy{}}.Open(ctx, envTwo.Vault, now.Add(-48*time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := NewRecord(newFakeClock(now.Add(-48*time.Hour))).Answer(
+	if _, err := NewRecord(newFakeClock(now.Add(-48*time.Hour)), machineclock.Entropy{}).Answer(
 		ctx, wTwo, review.CardID{Card: "k7m2xq9fzp", Template: "Card"}, review.Again, time.Second,
 	); err != nil {
 		t.Fatal(err)

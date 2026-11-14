@@ -46,11 +46,13 @@ type Presets struct {
 	index    edit.IndexUpdater
 	day      review.Day
 	now      ports.Clock
+	entropy  ports.Entropy
 }
 
 // Config is what the presets are made from. Notes identifies presets and names them. Problems is
 // optional: a link the index does not carry is accounted for in what parsing turned up. Day is the
-// review day boundary that decides whether a preset schedules anything today.
+// review day boundary that decides whether a preset schedules anything today. Entropy fills the
+// identifier a deck that is pointed at a preset gets when it carries none.
 type Config struct {
 	Readers  ports.VaultReaders
 	Writers  ports.VaultWriters
@@ -60,13 +62,14 @@ type Config struct {
 	Index    edit.IndexUpdater
 	Day      review.Day
 	Now      ports.Clock
+	Entropy  ports.Entropy
 }
 
 // New creates the use case through which a vault's presets are read and written.
 func New(cfg Config) Presets {
 	return Presets{
 		readers: cfg.Readers, writers: cfg.Writers, links: cfg.Links, notes: cfg.Notes,
-		problems: cfg.Problems, index: cfg.Index, day: cfg.Day, now: cfg.Now,
+		problems: cfg.Problems, index: cfg.Index, day: cfg.Day, now: cfg.Now, entropy: cfg.Entropy,
 	}
 }
 

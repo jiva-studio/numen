@@ -1,7 +1,6 @@
 package flashcards
 
 import (
-	"runtime"
 	"sync/atomic"
 	"time"
 
@@ -26,12 +25,8 @@ type Current[P DeckPresets] struct {
 }
 
 // NewCurrent builds the review scenarios from the config and the presets newPresets makes, and
-// holds them. A count of cores that is not positive is the cores the process may use.
+// holds them.
 func NewCurrent[P DeckPresets](cfg Config, newPresets func(index IndexUpdate, day review.Day) P) *Current[P] {
-	if cfg.Cores <= 0 {
-		// gomutants:disable-next-line INTEGER_DECREMENT reason="Any non-positive argument queries GOMAXPROCS without changing it."
-		cfg.Cores = runtime.GOMAXPROCS(0)
-	}
 	c := &Current[P]{config: cfg, newPresets: newPresets, active: atomic.Pointer[Review[P]]{}}
 	c.active.Store(c.build(cfg))
 	return c

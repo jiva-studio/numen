@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
 
@@ -85,7 +86,7 @@ func setNow(handler *API, now time.Time) {
 	handler.flash().Day = day
 	flash := handler.flash()
 	schedules, deckPresets := flash.Schedules.Schedules, flash.Schedules.Presets
-	flash.Reviews.Record = flashcards.NewRecord(pos)
+	flash.Reviews.Record = flashcards.NewRecord(pos, machineclock.Entropy{})
 	flash.Counts.CardsDue = flashcards.NewCountCardsDue(schedules.ReviewCards(), schedules, deckPresets, day, pos)
 	flash.Reviews.Session = flashcards.NewSession(
 		flash.Reviews.AssignCardIDs, schedules.ReviewCards(), schedules, deckPresets, day, pos)

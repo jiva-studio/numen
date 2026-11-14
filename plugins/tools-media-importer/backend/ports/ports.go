@@ -16,3 +16,8 @@ type Fetcher interface {
 	GetText(ctx context.Context, address string, want fetch.PreferredCaptions) (fetch.Text, error)
 	Download(ctx context.Context, address string, media fetch.Media, into io.Writer) (fetch.Copy, error)
 }
+
+// Entropy fills the random bits of the identifiers a use case mints.
+type Entropy interface {
+	Fill(b []byte)
+}

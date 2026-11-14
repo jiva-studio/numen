@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
@@ -35,6 +36,7 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 		Texts:    textsOf(texts),
 		Queue:    hosttest.NewQueue(),
 		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
+		Entropy:  random.Entropy{},
 	}
 	links := link.New(hosted,
 		func() ports.Fetcher { return download.NewMock(webpage.New()) },
@@ -203,6 +205,7 @@ func TestCommandErrorPaths(t *testing.T) {
 		Texts:    textsOf(texts),
 		Queue:    hosttest.NewQueue(),
 		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
+		Entropy:  random.Entropy{},
 	}
 	cf := &configurableFetcher{}
 	links := link.New(hosted,
@@ -283,6 +286,7 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 		Texts:    textsOf(texts),
 		Queue:    queue,
 		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
+		Entropy:  random.Entropy{},
 	}
 	links := link.New(hosted,
 		func() ports.Fetcher { return cf },

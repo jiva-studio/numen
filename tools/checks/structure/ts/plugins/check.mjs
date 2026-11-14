@@ -175,9 +175,9 @@ export const BACKEND_LAYER_PACKAGES = [
 const ADAPTER_FOLDER = 'internal/adapter/'
 
 /**
- * The standard library packages a use case may import: they compute on values and reach no file, process or network.
- * `crypto/rand` is there for the entropy of the identifiers a use case creates, `runtime` for the processor count a
- * use case sizes its work by. `os`, `os/exec`, `net`, `syscall`, `path/filepath`, `io/fs` and `log` are not on the list.
+ * The standard library packages a use case may import: they compute on values and reach no file, process, network or
+ * machine state. `crypto/rand`, `runtime`, `os`, `os/exec`, `net`, `syscall`, `path/filepath`, `io/fs` and `log` are not
+ * on the list: the entropy of an identifier and the processor count reach a use case through a port or an input.
  */
 export const USECASE_STANDARD_IMPORTS = [
   'bufio',
@@ -185,7 +185,6 @@ export const USECASE_STANDARD_IMPORTS = [
   'cmp',
   'container/list',
   'context',
-  'crypto/rand',
   'crypto/sha256',
   'encoding/base64',
   'encoding/binary',
@@ -204,7 +203,6 @@ export const USECASE_STANDARD_IMPORTS = [
   'path',
   'reflect',
   'regexp',
-  'runtime',
   'slices',
   'sort',
   'strconv',

@@ -2,21 +2,23 @@ package presets
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // newEdit is what a change to an existing note is made through: the vault it is read and written
-// through, what updates the index for it, and what time it is. The function returned with it
-// returns the failures to release the write lock of the changes made through it, which edit.Files
-// releases without an error.
-func newEdit(readers ports.VaultReaders, writers ports.VaultWriters, index edit.IndexUpdater, now ports.Clock) (edit.Edit, func() error) {
+// through, what updates the index for it, what time it is, and the entropy of the identifier it
+// writes. The function returned with it returns the failures to release the write lock of the
+// changes made through it, which edit.Files releases without an error.
+func newEdit(
+	readers ports.VaultReaders, writers ports.VaultWriters, index edit.IndexUpdater, now ports.Clock, entropy ports.Entropy,
+) (edit.Edit, func() error) {
 	failures := &releaseFailures{mu: sync.Mutex{}, err: nil}
 	return edit.Edit{
 		Open: func(v domain.Vault) (edit.Files, error) {
@@ -32,7 +34,7 @@ func newEdit(readers ports.VaultReaders, writers ports.VaultWriters, index edit.
 		},
 		Index:           index,
 		Clock:           now,
-		Entropy:         rand.Reader,
+		Entropy:         format.NewEntropyReader(entropy),
 		FileStat:        domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
 		ShouldOverwrite: false,
 		Bound:           0,
