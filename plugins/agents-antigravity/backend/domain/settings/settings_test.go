@@ -36,8 +36,8 @@ func TestUnrelatedValuesKeepTheExecutablePath(t *testing.T) {
 func TestRequestTimeoutIsReadInSecondsAndInvalidValuesLeaveNone(t *testing.T) {
 	var s Settings
 	for value, want := range map[string]time.Duration{
-		"45":         45 * time.Second,
-		"0.5":        500 * time.Millisecond,
+		"45":  45 * time.Second,
+		"0.5": 500 * time.Millisecond,
 	} {
 		s.Apply(map[string]string{"requestTimeout": value})
 		if got := s.RequestTimeout(); got != want {

@@ -122,8 +122,8 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 	t.Setenv("HOME", fileAsHome)
 	if _, clean, err := setupAntigravityHome(nil); err == nil || clean == nil {
 		t.Errorf("expected error and non-nil clean when HOME is a regular file: clean is nil %v, err %v", clean == nil, err)
-	} else if _, ok := errors.AsType[*os.PathError](err); !ok {
-		t.Errorf("expected wrapped *os.PathError, got %T (%v)", err, err)
+	} else if pathErr, ok := errors.AsType[*os.PathError](err); !ok || pathErr.Path == "" {
+		t.Errorf("expected wrapped *os.PathError with a path, got %T (%v)", err, err)
 	}
 
 	// 2) HOME/.gemini is a regular file -> linkEntries(realGemini, tempGemini, "config") fails.
@@ -264,7 +264,7 @@ func TestAProgramThatFailsListsNoModels(t *testing.T) {
 
 	if err == nil || !strings.Contains(err.Error(), "list the models of /bin/sh") {
 		t.Errorf("List error = %v", err)
-	} else if _, ok := errors.AsType[*exec.ExitError](err); !ok {
-		t.Errorf("expected wrapped *exec.ExitError, got %T (%v)", err, err)
+	} else if exitErr, ok := errors.AsType[*exec.ExitError](err); !ok || exitErr.ExitCode() != 3 {
+		t.Errorf("expected wrapped *exec.ExitError with code 3, got %T (%v)", err, err)
 	}
 }

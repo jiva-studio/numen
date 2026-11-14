@@ -182,7 +182,6 @@ func TestReadResultMapsToolErrorsAndStructuredFallback(t *testing.T) {
 	}
 }
 
-// getFirstText returns the text of the first content item, or "" when it is not text.
 func getFirstText(content []sdk.Content) string {
 	if len(content) == 0 {
 		return ""
