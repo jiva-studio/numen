@@ -34,7 +34,7 @@ const GO_MODULES = [
   'plugins/readers-epub',
   'plugins/readers-pdf',
   'plugins/engines-transcription',
-  'plugins/views-todos',
+  'plugins/todos',
 ]
 
 const TS_PACKAGES = ['libs/ui/components', 'apps/desktop/editor', 'apps/desktop/flashcards']

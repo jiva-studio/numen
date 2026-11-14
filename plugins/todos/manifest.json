@@ -1,0 +1,29 @@
+{
+  "id": "md.numen.todos",
+  "name": "Todos",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Lists the tasks written in notes, in the title bar and in a tab",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "views",
+    "feature": "todos",
+    "slots": [
+      { "slot": "titleBar.status", "view": "status", "order": 30, "when": "window.isVaultOpen" }
+    ]
+  },
+  "permissions": ["vault:read", "vault:write"],
+  "services": ["md.numen.todos"],
+  "settings": [
+    {
+      "key": "ignoredFolders",
+      "type": "string",
+      "title": "Ignored folders",
+      "description": "Folders whose notes are not searched for tasks, comma separated",
+      "details": "Paths from the vault root, such as templates, archive/old. A note below one of them is skipped.",
+      "default": ""
+    }
+  ],
+  "backend": { "entrypoint": "bin/todos" },
+  "frontend": {}
+}
