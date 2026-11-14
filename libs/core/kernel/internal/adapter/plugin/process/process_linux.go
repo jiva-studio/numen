@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"runtime"
+	"sync"
 	"syscall"
 
 	"golang.org/x/sys/unix"
@@ -16,6 +18,34 @@ func ConfigureSysProcAttr(cmd *exec.Cmd) {
 		Setpgid:   true,
 		Pdeathsig: syscall.SIGTERM,
 	}
+}
+
+type startRequest struct {
+	cmd    *exec.Cmd
+	result chan<- error
+}
+
+var getStartRequests = sync.OnceValue(func() chan<- startRequest {
+	requests := make(chan startRequest)
+	go serveStartRequests(requests)
+	return requests
+})
+
+func serveStartRequests(requests <-chan startRequest) {
+	// Linux sends the parent-death signal when the thread that started the child ends. This goroutine
+	// keeps its thread locked and never returns, so the thread ends only with the host.
+	runtime.LockOSThread()
+	for request := range requests {
+		request.result <- request.cmd.Start()
+	}
+}
+
+// StartCommand starts cmd from the one OS thread that starts every plugin process and lives as long as
+// the host, and returns the error of cmd.Start.
+func StartCommand(cmd *exec.Cmd) error {
+	result := make(chan error, 1)
+	getStartRequests() <- startRequest{cmd: cmd, result: result}
+	return <-result
 }
 
 func ApplyLimits(pid int, limits Limits) error {

@@ -6,10 +6,12 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 
 	"golang.org/x/sys/unix"
 
@@ -115,5 +117,37 @@ func TestHideInheritedFilesKeepsPipeOutOfChild(t *testing.T) {
 		if n, convErr := strconv.Atoi(line); convErr == nil && (n == ends[0] || n == ends[1]) {
 			t.Errorf("the child inherited descriptor %d of the pipe", n)
 		}
+	}
+}
+
+func TestAPluginKeepsRunningAfterTheThreadThatRequestedItsStartExits(t *testing.T) {
+	exitRead, exitWrite, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := exitRead.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	cmd := newLifetimePlugin(t.Context(), roleIdlePlugin, exitWrite)
+	started := make(chan error, 1)
+	go func() {
+		// The goroutine returns with its thread locked, and Go ends that thread.
+		runtime.LockOSThread()
+		started <- StartCommand(cmd)
+	}()
+	if err := <-started; err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		wiretest.Kill(t, cmd)
+		wiretest.ReapProcess(t, cmd.Process)
+	}()
+	if err := exitWrite.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if isClosedWithin(t, exitRead, time.Second) {
+		t.Fatal("the plugin exited when the thread of the goroutine that started it ended")
 	}
 }
