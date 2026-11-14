@@ -136,12 +136,13 @@ describe('a box is as wide as its title needs', () => {
     for (const node of getNodesByRelation(layout, 'child')) expect(node.width).toBe(minWidth)
   })
 
-  it('puts the first box of a group on the axis of its side, whatever the widths', () => {
+  it('centers the first row of a group on the axis of its side, whatever the widths', () => {
     const mixed = createGraph('child', 'A', 'Domain', 'Composition root', 'Port', 'Use case')
     const children = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'child')
+    const firstRow = children.filter((node) => node.y === children[0]!.y).map((node) => node.x)
 
     expect(new Set(children.map((node) => node.width)).size).toBeGreaterThan(1)
-    expect(children[0]!.x).toBe(0)
+    expect(Math.min(...firstRow) + Math.max(...firstRow)).toBeCloseTo(0, 9)
   })
 
   it('shows as much as it would have shown unmeasured', () => {

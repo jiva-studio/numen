@@ -235,19 +235,17 @@ describe('the title a line carries while the picture moves', () => {
   it('holds the way round the words are read', () => {
     const resolved = new Map(to.edges.map((edge) => [getEdgeKey(edge), edge.titles[0]!.heading]))
 
-    // A child promoted to the focus swings its edge across the page, and
-    // halfway over it runs the other way round from the way it ends.
-    const swung = interpolatePlex(from, to, 0.5).edges.find((e) => e.to === 'a')!
-    expect(swung.titles[0]!.heading).toBe('along')
-    expect(getHeading(swung, MIDDLE)).toBe('against')
-
+    // A line swings across the page as the focus moves, and somewhere on the way it runs the other way round from the way it ends.
+    let isSwung = false
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(from, to, t).edges) {
         const heading = resolved.get(getEdgeKey(edge))
         if (heading === undefined) continue
+        if (getHeading(edge, MIDDLE) !== heading) isSwung = true
         expect(edge.titles[0]!.heading, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(heading)
       }
     }
+    expect(isSwung).toBe(true)
   })
 
   it('holds the words a settled line was cut to', () => {

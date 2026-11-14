@@ -48,7 +48,7 @@ const VIEWPORT = { width: 1200, height: 800 }
  * behavior on a line too short to hold it is only observable where some titles
  * do not fit.
  */
-const CROWDED = { width: 900, height: 800 }
+const CROWDED = { width: 900, height: 400 }
 
 /**
  * The offset along its line of a title that only moved clear of the boxes its

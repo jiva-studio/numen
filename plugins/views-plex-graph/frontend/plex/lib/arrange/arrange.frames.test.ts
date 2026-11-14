@@ -1,7 +1,4 @@
-/**
- * A graph with no references and no names is arranged as the placement by lines left it: the numbers of
- * the typical and the crowded fixture, taken before references and names existed.
- */
+/** A graph with no references and no names is arranged as the grid of blocks left it: the numbers of the typical and the crowded fixture. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { NO_ROOM } from './layout/placement'

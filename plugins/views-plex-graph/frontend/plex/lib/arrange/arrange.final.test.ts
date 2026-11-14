@@ -62,13 +62,13 @@ describe('a final layout that leaves the window', () => {
   it('falls back to the layout admission verified', () => {
     const contexts: PlacementContext[] = []
     const placement = createRows(
-      (context) => context.fits !== undefined && context.options.lineGap > baseline.lineGap,
+      (context) => !context.shouldStop && context.options.lineGap > baseline.lineGap,
       contexts,
     )
 
     const frame = arrangePlex(graph, { options: { viewport: WINDOW }, placement })
 
-    const finals = contexts.filter((context) => context.fits && !context.shouldStop)
+    const finals = contexts.filter((context) => !context.shouldStop)
     expect(finals[0]?.options.lineGap).toBeGreaterThan(baseline.lineGap)
     expect(listNotes(frame).map((node) => node.y)).toStrictEqual(
       [1, 2, 3].map((row) => row * (baseline.nodeSize.height + baseline.lineGap)),
@@ -77,9 +77,7 @@ describe('a final layout that leaves the window', () => {
   })
 
   it('counts a note that is outside in both layouts as overflow', () => {
-    const placement = createRows(
-      (context, node) => !context.shouldStop && context.fits !== undefined && node.id === 'child-1',
-    )
+    const placement = createRows((context, node) => !context.shouldStop && node.id === 'child-1')
 
     const frame = arrangePlex(graph, { options: { viewport: WINDOW }, placement })
 

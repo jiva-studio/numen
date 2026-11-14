@@ -9,12 +9,11 @@ import type { LabelType } from '../edge'
 import { getExtent, type PlexFrame } from '../frame'
 import { assertGraph } from '../graph'
 import type { PlacedNode } from '../node'
-import { admitNodes, countOverflow, requestNodes } from './layout/admission'
+import { admitNodes, countOverflow, refill, requestNodes } from './layout/admission'
 import { clusters } from './layout/clusters'
 import { measureCrowding, packOptions } from './layout/crowding'
 import { applyRoom } from './look'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
-import type { Spot } from './layout/freeSpot'
 import {
   getFootprint,
   getFootprintCenterY,
@@ -56,14 +55,7 @@ export function arrangePlex(
     laid: PlexOptions,
     nodesByRelation: NodesByRelation,
     roomsById: Fit['rooms'],
-    {
-      isLineKept = false,
-      isKeptApart = false,
-      ...limits
-    }: Pick<PlacementContext, 'shouldStop' | 'fits'> & {
-      readonly isLineKept?: boolean
-      readonly isKeptApart?: boolean
-    } = {},
+    limits: Pick<PlacementContext, 'shouldStop'> = {},
   ) => {
     const width = createWidthLookup(laid, measure, request)
     const focus: PlacedNode = {
@@ -81,17 +73,14 @@ export function arrangePlex(
         options: laid,
         width,
         room: (node) => roomsById.get(node.id) ?? NO_ROOM,
-        ...(isLineKept ? { edges: graph.edges } : {}),
-        ...(isKeptApart ? { isKeptApart } : {}),
         ...limits,
       }),
     }
   }
 
   // Packed as closely as this window needs and no closer, so a gap closes, and without `measure` a box
-  // narrows, before a note is given up. With `measure` a box keeps the width of its title: packing does not narrow it. The probes of the packing and of the gaps lay out
-  // without `fits`; with it they pack differently, and arrange.frames.test.ts records the packing
-  // they choose. The names are left out of it:
+  // narrows, before a note is given up. With `measure` a box keeps the width of its title: packing does not narrow it.
+  // arrange.frames.test.ts records the packing the probes choose. The names are left out of it:
   // a pill is the same size with names as without, and the names then cost notes.
   const crowded = measureCrowding(request, (packed) =>
     isInsideWindow(
@@ -112,7 +101,7 @@ export function arrangePlex(
       ? admitNodes(
           requested,
           (nodesByRelation, shouldStop) =>
-            lay(packing, nodesByRelation, rooms, { shouldStop, fits: getFits(packing) }).placed,
+            lay(packing, nodesByRelation, rooms, { shouldStop }).placed,
           (node) => isInside(node, viewport, { margin, rooms }),
         )
       : requested
@@ -123,7 +112,24 @@ export function arrangePlex(
     viewport !== undefined &&
     crowded.gap > tightest.gap &&
     countNodes(admittedCrowded) < countNodes(requested)
-  const admittedTightest = isTightestBetter ? admitAt(tightest) : admittedCrowded
+  // Admission is greedy, so the tightest packing is also grown from what the crowded one admitted, and the larger set is kept.
+  const holdsAtTightest = (nodesByRelation: NodesByRelation) =>
+    isInsideWindow(
+      lay(tightest, nodesByRelation, rooms, {
+        shouldStop: stopAtOutside(viewport, margin, rooms),
+      }).placed,
+      viewport,
+      { margin, rooms },
+    )
+  const growAtTightest = () =>
+    holdsAtTightest(admittedCrowded)
+      ? refill(admittedCrowded, requested, holdsAtTightest)
+      : admittedCrowded
+  const getLarger = (first: NodesByRelation, second: NodesByRelation) =>
+    countNodes(second) > countNodes(first) ? second : first
+  const admittedTightest = isTightestBetter
+    ? getLarger(admitAt(tightest), growAtTightest())
+    : admittedCrowded
   const isTightestChosen = countNodes(admittedTightest) > countNodes(admittedCrowded)
   const resolved = isTightestChosen ? tightest : crowded
   const admitted = isTightestChosen ? admittedTightest : admittedCrowded
@@ -139,27 +145,12 @@ export function arrangePlex(
     ),
   )
   const fit: Fit = { margin, rooms }
-  // The lines and the groups are kept apart only here and only in a window: what the window holds is settled without them, and a layout
-  // that keeps them apart but leaves the window gives way to the one that does not.
   const spacedOptions = { ...resolved, ...spacing }
-  const spaced = lay(spacedOptions, admitted, rooms, {
-    fits: getFits(resolved),
-    isLineKept: viewport !== undefined,
-    isKeptApart: viewport !== undefined,
-  })
-  // The probes of the gaps lay out without `fits`, so the spaced layout can leave the window where the one admission verified does not.
-  const getFinalLayout = () => {
-    if (isInsideWindow(spaced.placed, viewport, fit)) return spaced
-    const spacedLines = lay(spacedOptions, admitted, rooms, {
-      fits: getFits(resolved),
-      isLineKept: true,
-    })
-    if (isInsideWindow(spacedLines.placed, viewport, fit)) return spacedLines
-    const spacedPlain = lay(spacedOptions, admitted, rooms, { fits: getFits(resolved) })
-    if (isInsideWindow(spacedPlain.placed, viewport, fit)) return spacedPlain
-    return lay(resolved, admitted, rooms, { fits: getFits(resolved) })
-  }
-  const finalLayout = getFinalLayout()
+  const spaced = lay(spacedOptions, admitted, rooms)
+  // A placement of another shape can leave the window with the gaps the probes verified; it then gives way to the layout admission verified.
+  const finalLayout = isInsideWindow(spaced.placed, viewport, fit)
+    ? spaced
+    : lay(resolved, admitted, rooms)
   const { focus } = finalLayout
   const placed = viewport
     ? finalLayout.placed.filter((node) => isInside(node, viewport, fit))
@@ -231,17 +222,17 @@ function createRoomLookup(
   return rooms
 }
 
-function isFootprintInside(spot: Spot, viewport: Size, margin: number): boolean {
+/** A box by its center and its size. */
+interface Box extends Size {
+  readonly x: number
+  readonly y: number
+}
+
+function isFootprintInside(spot: Box, viewport: Size, margin: number): boolean {
   return (
     Math.abs(spot.x) + spot.width / 2 <= viewport.width / 2 - margin &&
     Math.abs(spot.y) + spot.height / 2 <= viewport.height / 2 - margin
   )
-}
-
-function getFits(options: PlexOptions): PlacementContext['fits'] {
-  const { viewport, margin } = options
-  if (!viewport) return undefined
-  return (spot) => isFootprintInside(spot, viewport, margin)
 }
 
 function isInside(node: PlacedNode, viewport: Size, { margin, rooms }: Fit): boolean {

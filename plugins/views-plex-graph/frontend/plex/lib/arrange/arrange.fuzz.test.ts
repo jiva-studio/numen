@@ -1,7 +1,6 @@
 /** Random windows, counts, widths and rooms: what the arrangement shows is what fits, and a note is not cut while there is room. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { SpotIndex } from './layout/freeSpot'
 import { getFootprint, getFootprintCenterY, type NodeRoom } from './layout/placement'
 import { resolveOptions } from './options'
 import { RELATION_NAMES } from '../relation'
@@ -90,15 +89,16 @@ describe('what is visible of a graph', () => {
         )
       }
       // The focus is a box like the others: no note lies over it.
-      const index = new SpotIndex([])
-      const overlaps = [getFocusBox(frame), ...boxes].filter((box) => {
-        const isFree = index.isFree(
-          { ...box, width: box.width - 2, height: box.height - 2 },
-          { gap: 0, lineGap: 0 },
-        )
-        index.add(box)
-        return !isFree
-      })
+      const all = [getFocusBox(frame), ...boxes]
+      const overlaps = all.filter((box, index) =>
+        all
+          .slice(0, index)
+          .some(
+            (other) =>
+              Math.abs(box.x - other.x) < (box.width + other.width) / 2 - 1 &&
+              Math.abs(box.y - other.y) < (box.height + other.height) / 2 - 1,
+          ),
+      )
       expect(overlaps).toStrictEqual([])
 
       // A line is drawn for each note that is visible, and for no note that is not.
@@ -150,7 +150,8 @@ describe('a note that is cut', () => {
     for (const { relation, rounds } of cuts)
       expect(rounds.length, relation).toBeGreaterThanOrEqual(5)
     const whole = cases.filter((one) => Object.keys(arrangeCase(one).overflow).length === 0)
-    expect(whole.length).toBeGreaterThanOrEqual(10)
+    // One cell size for every note: the widest and tallest note sets it, so few of these crowded windows hold everything.
+    expect(whole.length).toBeGreaterThanOrEqual(3)
   }, 120_000)
 
   it.each(cuts.map(({ relation, rounds }) => [relation, rounds] as const))(

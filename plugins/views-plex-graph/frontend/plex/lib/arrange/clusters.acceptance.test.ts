@@ -1,4 +1,4 @@
-/** Each relation grows as a compact cluster from its side of the focus, into whatever space is left. */
+/** Each relation fills a block of the grid on its own side of the focus. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { getBox, isOverlapping } from './layout/boxes'
@@ -32,8 +32,6 @@ const getShownNodes = (frame: PlexFrame, relation: PlexNodeRelation): PlacedNode
   frame.nodes.filter((node) => node.relation === relation)
 const getArrivedNodes = (graph: PlexGraph, relation: PlexRelation): PlexNode[] =>
   graph.nodes.filter((node) => node.relation === relation)
-const mean = (values: readonly number[]): number =>
-  values.reduce((sum, value) => sum + value, 0) / values.length
 
 const getOverlaps = (frame: PlexFrame): string[] =>
   frame.nodes.flatMap((a, index) =>
@@ -128,24 +126,14 @@ describe('each relation is placed on its own side of the focus', () => {
     for (const node of getShownNodes(frame, 'jump'))
       expect(node.x + node.width / 2).toBeLessThan(left)
   })
-
-  it.each([
-    ['typical', graphs.typical],
-    ['eight, twenty, eight and eight', full],
-  ])('leans the jumps down in %s', (_name, graph) => {
-    const frame = arrange(graph, inWindow(window))
-    expect(mean(getShownNodes(frame, 'jump').map((node) => node.y))).toBeGreaterThan(
-      getFocus(frame).y,
-    )
-  })
 })
 
 describe('a group is never nearer the focus than its start', () => {
   const DIRECTIONS: Record<PlexRelation, readonly [number, number]> = {
     parent: [0, -1],
     child: [0, 1],
-    jump: [-1 / Math.hypot(1, 0.42), 0.42 / Math.hypot(1, 0.42)],
-    reference: [-1 / Math.hypot(1, 0.42), -0.42 / Math.hypot(1, 0.42)],
+    jump: [-1, 0],
+    reference: [-1, 0],
     sibling: [1, 0],
   }
   const along = (node: PlacedNode, [dx, dy]: readonly [number, number]) => node.x * dx + node.y * dy
@@ -189,15 +177,6 @@ describe('a large group is a block, not a line', () => {
       ).toBeGreaterThanOrEqual(2)
     },
   )
-})
-
-describe('a larger group is placed further out', () => {
-  it('moves the middle of the children away from the focus as they grow in number', () => {
-    const middles = [1, 4, 9, 16].map((child) =>
-      mean(getShownNodes(arrange(build('A note', { child })), 'child').map((node) => node.y)),
-    )
-    for (let i = 1; i < middles.length; i++) expect(middles[i]!).toBeGreaterThan(middles[i - 1]!)
-  })
 })
 
 describe('groups take turns', () => {
