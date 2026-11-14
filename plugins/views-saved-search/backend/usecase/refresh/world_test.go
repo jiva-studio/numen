@@ -22,15 +22,16 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/usecase/refresh"
 )
 
+const testVault domain.VaultID = "harbor-vault"
+
 const (
-	testVault        domain.VaultID = "harbor-vault"
-	stormsID                        = "01JCX6Q4ZB3W8N2V7T5R9K1M0P"
-	stormsPath                      = "Searches/Winter storms.md"
-	galesID                         = "01JCX6Q4ZB3W8N2V7T5R9K1M0Q"
-	galesPath                       = "Searches/Gales.md"
-	stormsQuery                     = `meaning("storm")`
-	stormsRerank                    = "Stories of storms at the harbor"
-	harborConnection                = "conn-harbor"
+	stormsID         = "01JCX6Q4ZB3W8N2V7T5R9K1M0P"
+	stormsPath       = "Searches/Winter storms.md"
+	galesID          = "01JCX6Q4ZB3W8N2V7T5R9K1M0Q"
+	galesPath        = "Searches/Gales.md"
+	stormsQuery      = `meaning("storm")`
+	stormsRerank     = "Stories of storms at the harbor"
+	harborConnection = "conn-harbor"
 
 	galeText     = "A storm at the harbor mouth."
 	mooringText  = "The storm broke two moorings."
@@ -173,8 +174,6 @@ type world struct {
 	runner   *refresh.Runner
 }
 
-// newWorld is a vault with the saved search of storms, three indexed passages of which two match it, and
-// one reranking row served by a stand-in.
 func newWorld(t *testing.T, refreshMinutes int) *world {
 	t.Helper()
 	search := hosttest.NewSearch(testVault)
@@ -227,8 +226,6 @@ func (w *world) index(results ...host.SearchResult) {
 	w.search.With(testVault).SetIndexedResults(results)
 }
 
-// addWinterNote adds a note that matches the saved search of storms, as the index has it after the
-// change.
 func (w *world) addWinterNote() {
 	w.vault.File("Harbor/Winter.md", "# Winter\n\n"+winterText+"\n")
 	w.index(
@@ -239,7 +236,6 @@ func (w *world) addWinterNote() {
 	)
 }
 
-// changeMooringChunk changes the text of one indexed passage.
 func (w *world) changeMooringChunk() {
 	w.index(
 		chunk("c1", "Harbor/Gale.md", 0, 400, galeText),
@@ -248,21 +244,19 @@ func (w *world) changeMooringChunk() {
 	)
 }
 
-func (w *world) runDue(t *testing.T) {
+func (w *world) runDueSearches(t *testing.T) {
 	t.Helper()
 	if err := w.runner.RunDue(t.Context(), testVault); err != nil {
 		t.Fatalf("RunDue = %v", err)
 	}
 }
 
-// changeIndex is what the event of an index change does: mark the searches of the vault stale and run the
-// due ones.
 func (w *world) changeIndex(t *testing.T) {
 	t.Helper()
 	if err := w.runner.MarkStale(t.Context(), testVault); err != nil {
 		t.Fatalf("MarkStale = %v", err)
 	}
-	w.runDue(t)
+	w.runDueSearches(t)
 }
 
 func (w *world) runNow(t *testing.T, notePath string) resultcache.Record {

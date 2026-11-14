@@ -93,7 +93,7 @@ func TestEncodeWritesTheKeysOfTheRecord(t *testing.T) {
 	}
 }
 
-func TestEncodeLeavesOutTheMarksThatAreNotSet(t *testing.T) {
+func TestEncodeOmitsUnsetMarks(t *testing.T) {
 	record := newRecord()
 	record.StaleSince, record.FailedAt, record.Failure, record.Reranker = nil, nil, "", nil
 

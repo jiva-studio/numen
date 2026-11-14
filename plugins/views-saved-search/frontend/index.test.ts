@@ -13,7 +13,6 @@ const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve,
 
 const encoder = new TextEncoder()
 
-/** The backend at the end of the wire: one change on the watch, then the fixture of GetResults. */
 const serveBackend = (url: string, init?: RequestInit): Response => {
   if (url.endsWith('/md.numen.views.saved.search/GetResults')) return Response.json(HARBOR)
   if (url.endsWith('/md.numen.views.saved.search/WatchResults')) {
@@ -61,7 +60,9 @@ describe('the saved search frontend', () => {
   })
 
   it('opens a result through the files of the workspace', async () => {
-    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => serveBackend(String(url), init))
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) =>
+      serveBackend(String(url), init),
+    )
     const { workspace, openAt } = createWorkspace()
     const context = createMockPluginContext({ pluginId: 'md.numen.views.saved.search', workspace })
     activate(context)

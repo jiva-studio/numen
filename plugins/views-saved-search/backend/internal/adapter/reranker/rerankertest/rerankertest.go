@@ -33,7 +33,7 @@ var _ llm.Reranker = (*StandIn)(nil)
 
 // NewStandIn returns a model that scores documents from scores.
 func NewStandIn(scores map[string]float32) *StandIn {
-	return &StandIn{scores: maps.Clone(scores)}
+	return &StandIn{mu: sync.Mutex{}, scores: maps.Clone(scores), err: nil, requests: nil}
 }
 
 // SetScores replaces the scores of the model.
@@ -103,7 +103,7 @@ type Rows struct {
 
 // NewRows returns a setting with no row.
 func NewRows() *Rows {
-	return &Rows{models: map[string]llm.Reranker{}}
+	return &Rows{mu: sync.Mutex{}, rows: nil, models: map[string]llm.Reranker{}, operation: nil, preferred: nil}
 }
 
 // Add appends a row of the connection, with the options of its row fields, served by model.

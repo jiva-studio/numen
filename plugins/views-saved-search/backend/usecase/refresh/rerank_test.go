@@ -27,7 +27,7 @@ func isEverySentOnce(requests []rerankertest.Request, want ...string) bool {
 
 func TestRerunAfterOneChunkChangedReranksOnlyThatChunk(t *testing.T) {
 	w := newWorld(t, 0)
-	w.runDue(t)
+	w.runDueSearches(t)
 	w.standIn.ClearRequests()
 
 	w.changeMooringChunk()
@@ -50,12 +50,12 @@ func TestRerunAfterOneChunkChangedReranksOnlyThatChunk(t *testing.T) {
 
 func TestChangeOfTheRerankerModelReranksEveryResult(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	w.standIn.ClearRequests()
 
 	w.rows.SetOptions(harborConnection, map[string]string{"model": "harbor-rerank-b"})
 	w.clock.Advance(time.Minute)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	requests := w.standIn.GetRequests()
 	if !isEverySentOnce(requests, galeText, mooringText) || requests[0].Options["model"] != "harbor-rerank-b" {
@@ -68,13 +68,13 @@ func TestChangeOfTheRerankerModelReranksEveryResult(t *testing.T) {
 
 func TestChangeOfTheConnectionReranksEveryResult(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	pier := rerankertest.NewStandIn(map[string]float32{galeText: 0.2, mooringText: 0.8})
 	w.rows.Clear()
 	w.rows.Add("conn-pier", "Pier reranker", map[string]string{"model": "harbor-rerank-a"}, pier)
 
 	w.clock.Advance(time.Minute)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if requests := pier.GetRequests(); !isEverySentOnce(requests, galeText, mooringText) {
 		t.Fatalf("rerank requests = %v, want every passage sent to the new connection", getDocuments(requests))
@@ -87,11 +87,11 @@ func TestChangeOfTheConnectionReranksEveryResult(t *testing.T) {
 
 func TestRemovalOfTheLastConnectionRunsInFusedOrder(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	w.rows.Clear()
 
 	ranAt := w.clock.Advance(time.Minute)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	if !record.ComputedAt.Equal(ranAt) || record.Order != "fused" || record.Reranker != nil || len(record.RerankScores) != 0 {
@@ -102,11 +102,11 @@ func TestRemovalOfTheLastConnectionRunsInFusedOrder(t *testing.T) {
 func TestAddingAConnectionRunsAFusedSearchAtOnce(t *testing.T) {
 	w := newWorld(t, 10)
 	w.rows.Clear()
-	w.runDue(t)
+	w.runDueSearches(t)
 	w.rows.Add(harborConnection, "Harbor reranker", map[string]string{"model": "harbor-rerank-a"}, w.standIn)
 
 	w.clock.Advance(time.Minute)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if requests := w.standIn.GetRequests(); !isEverySentOnce(requests, galeText, mooringText) {
 		t.Errorf("rerank requests = %v, want every passage sent once a row is set", getDocuments(requests))
@@ -118,7 +118,7 @@ func TestAddingAConnectionRunsAFusedSearchAtOnce(t *testing.T) {
 
 func TestChangeOfTheFloorReranksEveryResult(t *testing.T) {
 	w := newWorld(t, 0)
-	w.runDue(t)
+	w.runDueSearches(t)
 	w.standIn.ClearRequests()
 
 	w.search.SetModel(hosttest.SearchModel{Name: "harbor-model", Recipe: "harbor-recipe", FloorHint: 0.5})
@@ -135,7 +135,7 @@ func TestChangeOfTheFloorReranksEveryResult(t *testing.T) {
 
 func TestChangeOfTheQueryRunsAtOnceAndReranksEveryResult(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	w.standIn.ClearRequests()
 	query := `meaning("storm") && kind in ["note"]`
 
@@ -153,7 +153,7 @@ func TestChangeOfTheQueryRunsAtOnceAndReranksEveryResult(t *testing.T) {
 
 func TestChangeOfTheRerankTextRunsAtOnceAndReranksEveryResult(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	w.standIn.ClearRequests()
 
 	w.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery, "Moorings broken in storms", 0))
@@ -173,7 +173,7 @@ func TestAnswerFromAnotherRowReranksEveryDocumentWithThatRow(t *testing.T) {
 	w := newWorld(t, 0)
 	pier := rerankertest.NewStandIn(map[string]float32{galeText: 0.1, mooringsText: 0.95})
 	w.rows.Add("conn-pier", "Pier reranker", map[string]string{"model": "pier-model"}, pier)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	w.standIn.Fail(connection.NewTryNextError(connection.ReasonUnavailable, 0))
 	w.changeMooringChunk()
@@ -203,7 +203,7 @@ func TestChangeOfTheLimitRunsAtOnceAndReranksOnlyNewDocuments(t *testing.T) {
 	}
 	w.index(chunks...)
 	w.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery, stormsRerank, 1))
-	w.runDue(t)
+	w.runDueSearches(t)
 	if requests := w.standIn.GetRequests(); len(requests) != 1 || !slices.Equal(requests[0].Documents, texts[:3]) {
 		t.Fatalf("rerank requests = %v, want the first three passages for the limit 1", getDocuments(requests))
 	}
@@ -223,14 +223,14 @@ func TestChangeOfTheLimitRunsAtOnceAndReranksOnlyNewDocuments(t *testing.T) {
 
 func TestChangeOfTheSettingsRunsAtOnce(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	first := w.readRecord(t, stormsID)
 	config := w.getSettings().Preview
 	config.MergeGapBytes = 50
 
 	w.setPreviewConfig(config)
 	ranAt := w.clock.Advance(time.Minute)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	if !record.ComputedAt.Equal(ranAt) || record.SettingsHash == first.SettingsHash {
@@ -240,7 +240,7 @@ func TestChangeOfTheSettingsRunsAtOnce(t *testing.T) {
 
 func TestChangeOfTheRefreshDelayDoesNotRunTheSearch(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	searches := w.host.getCallCount()
 	if searches == 0 {
 		t.Fatal("the first run did not search")
@@ -250,7 +250,7 @@ func TestChangeOfTheRefreshDelayDoesNotRunTheSearch(t *testing.T) {
 	w.settings.RefreshMinutes = 30
 	w.mu.Unlock()
 	w.clock.Advance(time.Minute)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if got := w.host.getCallCount(); got != searches {
 		t.Errorf("%d searches after the delay changed, want none", got-searches)

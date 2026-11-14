@@ -105,7 +105,7 @@ func TestCreateWritesASearchNoteThatUpdateChanges(t *testing.T) {
 	}
 }
 
-func TestCreatePutsTheNoteInTheDefaultFolder(t *testing.T) {
+func TestCreateWritesTheNoteInTheDefaultFolder(t *testing.T) {
 	f := newFixture(t, 10)
 	f.settings.Update(map[string]string{"defaultFolder": "Searches"})
 
@@ -119,7 +119,7 @@ func TestCreatePutsTheNoteInTheDefaultFolder(t *testing.T) {
 	}
 }
 
-func TestCreatePutsTheNoteInTheFolderGiven(t *testing.T) {
+func TestCreateWritesTheNoteInTheGivenFolder(t *testing.T) {
 	f := newFixture(t, 10)
 	f.settings.Update(map[string]string{"defaultFolder": "Searches"})
 
@@ -173,7 +173,7 @@ func TestCreateRefusesAQueryThatDoesNotCompileAndWritesNothing(t *testing.T) {
 	if !isList || len(problems) == 0 {
 		t.Fatalf("output = %v, want the problems", out)
 	}
-	if problem, _ := problems[0].(map[string]any); problem["line"] != float64(1) || problem["column"] != float64(20) {
+	if problem, isObject := problems[0].(map[string]any); !isObject || problem["line"] != float64(1) || problem["column"] != float64(20) {
 		t.Errorf("problem = %v, want line 1, column 20 of the query", problems[0])
 	}
 	if _, isThere := f.vault.Content("Winter storms.md"); isThere || out["path"] != nil {

@@ -30,9 +30,9 @@ const at = (response: GetResultsResponse): GetResultsResponse => ({ ...response,
 describe('the status line', () => {
   it('says the results are being computed before the first run', () => {
     expect(getResultsView(NEVER_COMPUTED, WORDS, LOCALE).status).toBe('Computing the results…')
-    expect(
-      getResultsView({ ...NEVER_COMPUTED, isRunning: true }, WORDS, LOCALE).status,
-    ).toBe('Computing the results…')
+    expect(getResultsView({ ...NEVER_COMPUTED, isRunning: true }, WORDS, LOCALE).status).toBe(
+      'Computing the results…',
+    )
   })
 
   it('says the search is updating while it runs', () => {
@@ -109,7 +109,11 @@ describe('the results', () => {
   it('writes the place of each result', () => {
     const view = getResultsView(HARBOR, WORDS, LOCALE)
 
-    expect(view.items.map((item) => item.place)).toStrictEqual(['Page 14 of 212', '', '12:34–13:32'])
+    expect(view.items.map((item) => item.place)).toStrictEqual([
+      'Page 14 of 212',
+      '',
+      '12:34–13:32',
+    ])
   })
 
   it('keeps the title and the text of each result in order', () => {

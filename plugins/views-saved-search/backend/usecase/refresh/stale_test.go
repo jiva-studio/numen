@@ -12,7 +12,7 @@ import (
 
 func TestMarkStaleKeepsTheFirstStaleTime(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	firstMark := w.clock.Advance(time.Minute)
 	if err := w.runner.MarkStale(t.Context(), testVault); err != nil {
@@ -42,7 +42,7 @@ func TestMarkStaleCreatesNoCache(t *testing.T) {
 
 func TestIndexChangeDuringARunMarksTheSearchStaleAgain(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	w.clock.Advance(time.Minute)
 	var markedAt time.Time
 	w.host.setHook(func() {
@@ -69,7 +69,7 @@ func TestIndexChangeDuringARunMarksTheSearchStaleAgain(t *testing.T) {
 
 func TestStaleMarkPersistsAcrossRunners(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	w.addWinterNote()
 	w.clock.Advance(time.Minute)
 	if err := w.runner.MarkStale(t.Context(), testVault); err != nil {
@@ -78,7 +78,7 @@ func TestStaleMarkPersistsAcrossRunners(t *testing.T) {
 
 	w.runner = w.newRunner()
 	w.clock.Set(getStartTime().Add(10 * time.Minute))
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if got := getResultPaths(w.readRecord(t, stormsID)); !slices.Contains(got, "Harbor/Winter.md") {
 		t.Errorf("results = %v, want the new note included by the new runner", got)
@@ -87,7 +87,7 @@ func TestStaleMarkPersistsAcrossRunners(t *testing.T) {
 
 func TestEditOfTheNoteWithinTheCooldownRunsAtTheNextIndexChange(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	w.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery, stormsRerank, 1))
 	ranAt := w.clock.Advance(8 * time.Second)
@@ -100,7 +100,7 @@ func TestEditOfTheNoteWithinTheCooldownRunsAtTheNextIndexChange(t *testing.T) {
 
 func TestRerankerFailureKeepsTheLastGoodResultsAndRetriesAfterTheCooldown(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	good := w.readRecord(t, stormsID)
 
 	w.standIn.Fail(connection.NewTryNextError(connection.ReasonUnavailable, 0))
@@ -126,7 +126,7 @@ func TestRerankerFailureKeepsTheLastGoodResultsAndRetriesAfterTheCooldown(t *tes
 	}
 
 	retriedAt := w.clock.Advance(9 * time.Minute)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	if !record.ComputedAt.Equal(retriedAt) || record.FailedAt != nil || record.Failure != "" || record.StaleSince != nil {
@@ -139,7 +139,7 @@ func TestRerankerFailureKeepsTheLastGoodResultsAndRetriesAfterTheCooldown(t *tes
 
 func TestHostFailureKeepsTheLastGoodResults(t *testing.T) {
 	w := newWorld(t, 0)
-	w.runDue(t)
+	w.runDueSearches(t)
 	good := w.readRecord(t, stormsID)
 
 	w.search.FailEmbedding(errors.New("the embedding model stopped"))
@@ -147,7 +147,9 @@ func TestHostFailureKeepsTheLastGoodResults(t *testing.T) {
 	if err := w.runner.MarkStale(t.Context(), testVault); err != nil {
 		t.Fatal(err)
 	}
-	_ = w.runner.RunDue(t.Context(), testVault)
+	if err := w.runner.RunDue(t.Context(), testVault); err != nil {
+		t.Logf("RunDue = %v", err)
+	}
 
 	record := w.readRecord(t, stormsID)
 	if !slices.Equal(getResultTexts(record), getResultTexts(good)) || !record.ComputedAt.Equal(good.ComputedAt) {

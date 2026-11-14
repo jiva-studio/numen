@@ -28,9 +28,7 @@ describe('formatPlace', () => {
   })
 
   it('writes hours past one hour', () => {
-    expect(formatPlace({ positionSeconds: 3725, endSeconds: 3790 }, WORDS)).toBe(
-      '1:02:05–1:03:10',
-    )
+    expect(formatPlace({ positionSeconds: 3725, endSeconds: 3790 }, WORDS)).toBe('1:02:05–1:03:10')
   })
 
   it('writes the chapter', () => {

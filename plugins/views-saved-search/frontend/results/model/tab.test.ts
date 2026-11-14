@@ -1,19 +1,13 @@
 /**
  * One saved search tab over a scripted service: it reads the cached results on each change of the
  * watch, keeps the last change, opens a result at its range, saves the query of the note, and
- * lets go of the watch and the calls when it closes. It never asks the backend to run the search.
+ * aborts the watch and the calls when it closes. It never asks the backend to run the search.
  */
 import { describe, expect, it, vi } from 'vitest'
-import {
-  COMPUTED,
-  HARBOR,
-  HARBOR_REFRESHED,
-  NOTE_PATH,
-} from '../fixtures/responses'
+import { COMPUTED, HARBOR, HARBOR_REFRESHED, NOTE_PATH } from '../fixtures/responses'
 import { createScriptedService } from '../fixtures/service'
 import { createSavedSearchTab } from './tab'
 
-/** Lets every pending promise and stream step of the tab run. */
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
 
 const LATER = { computedAt: '2026-11-14T10:05:00Z', isRunning: false }
@@ -232,7 +226,12 @@ describe('saving the query of the note', () => {
     await state.actions.saveSearch(CHANGE)
     await settle()
 
-    expect(service.calls).toStrictEqual(['watchResults', 'getResults', 'updateSearch', 'getResults'])
+    expect(service.calls).toStrictEqual([
+      'watchResults',
+      'getResults',
+      'updateSearch',
+      'getResults',
+    ])
     expect(state.view.value?.query).toBe(CHANGE.query)
     expect(state.view.value?.rerank).toBe(CHANGE.rerank)
     expect(state.view.value?.limit).toBe(20)

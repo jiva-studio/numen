@@ -210,8 +210,6 @@ func (f *fixture) newRequest(t *testing.T, method string, req any) *http.Request
 	return request
 }
 
-// call calls a method of the service and decodes its answer into res; it returns the failure of a call that
-// failed.
 func (f *fixture) call(t *testing.T, method string, req, res any) server.APIError {
 	t.Helper()
 	response, err := f.web.Client().Do(f.newRequest(t, method, req))
@@ -251,7 +249,6 @@ type event struct {
 	data string
 }
 
-// openStream calls a stream method and returns its events as they arrive; the stream ends with the test.
 func (f *fixture) openStream(t *testing.T, method string, req any) <-chan event {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
@@ -260,10 +257,14 @@ func (f *fixture) openStream(t *testing.T, method string, req any) <-chan event 
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		if err := response.Body.Close(); err != nil {
+			t.Log(err)
+		}
+	})
 	events := make(chan event, 16)
 	go func() {
 		defer close(events)
-		defer func() { _ = response.Body.Close() }()
 		scanner := bufio.NewScanner(response.Body)
 		var current event
 		for scanner.Scan() {
@@ -296,8 +297,6 @@ func receiveEvent(t *testing.T, events <-chan event) event {
 	}
 }
 
-// callTool calls a tool of the plugin for the vault and decodes its structured output; it returns the text
-// of a call that failed.
 func (f *fixture) callTool(t *testing.T, vault, name, arguments string) (structured map[string]any, failure string) {
 	t.Helper()
 	res, err := f.registry.InvokeTool(t.Context(), tools.Call{VaultID: vault, Name: name, Arguments: []byte(arguments)})

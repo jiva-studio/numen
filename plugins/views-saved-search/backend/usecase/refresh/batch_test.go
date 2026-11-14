@@ -19,13 +19,13 @@ func addGalesNote(w *world) {
 func TestRunDueDeletesTheCacheOfARemovedSearch(t *testing.T) {
 	w := newWorld(t, 0)
 	addGalesNote(w)
-	w.runDue(t)
+	w.runDueSearches(t)
 	if !w.hasRecord(t, galesID+".json") {
 		t.Fatal("no cache for the gales")
 	}
 
 	w.vault.Remove(galesPath)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if w.hasRecord(t, galesID+".json") || !w.hasRecord(t, stormsID+".json") {
 		t.Error("want the cache of the removed search deleted and the other kept")
@@ -35,13 +35,13 @@ func TestRunDueDeletesTheCacheOfARemovedSearch(t *testing.T) {
 func TestRunDueDeletesTheCacheOfANoteThatIsNoLongerASearch(t *testing.T) {
 	w := newWorld(t, 0)
 	addGalesNote(w)
-	w.runDue(t)
+	w.runDueSearches(t)
 	if !w.hasRecord(t, galesID+".json") {
 		t.Fatal("no cache for the gales")
 	}
 
 	w.vault.File(galesPath, "---\nid: "+galesID+"\n---\nThe gales of 1911.\n")
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if w.hasRecord(t, galesID+".json") {
 		t.Error("want the cache of a note that is no longer a saved search deleted")
@@ -52,7 +52,7 @@ func TestRunDueReportsATaskAndFinishesIt(t *testing.T) {
 	w := newWorld(t, 0)
 	addGalesNote(w)
 
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	reports := w.tasks.getReports()
 	if len(reports) == 0 {
@@ -72,13 +72,13 @@ func TestRunDueReportsATaskAndFinishesIt(t *testing.T) {
 
 func TestRunDueReportsNoTaskWhenNothingIsDue(t *testing.T) {
 	w := newWorld(t, 0)
-	w.runDue(t)
+	w.runDueSearches(t)
 	reports := len(w.tasks.getReports())
 	if reports == 0 {
 		t.Fatal("no task reported for the first run")
 	}
 
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if got := len(w.tasks.getReports()); got != reports {
 		t.Errorf("%d reports with nothing due, want none", got-reports)
@@ -90,7 +90,9 @@ func TestOneFailingSearchDoesNotStopTheOthers(t *testing.T) {
 	addGalesNote(w)
 	w.vault.Refuse(galesPath, errors.New("the disk is busy"))
 
-	_ = w.runner.RunDue(t.Context(), testVault)
+	if err := w.runner.RunDue(t.Context(), testVault); err != nil {
+		t.Logf("RunDue = %v", err)
+	}
 
 	if record := w.readRecord(t, stormsID); len(record.Results) != 2 {
 		t.Errorf("record = %+v, want the storms computed after the gales failed", record)

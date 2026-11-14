@@ -1,6 +1,6 @@
 /**
  * The tab kind of saved search notes: a tab per note path, titled by the note, following its
- * results from the moment it opens and letting go of them when it closes.
+ * results from the moment it opens and aborting the watch when it closes.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
@@ -89,7 +89,7 @@ describe('the saved search tab kind', () => {
     expect(service.watchSignals[0]?.aborted).toBe(true)
   })
 
-  it('disposes the tab when the window goes', async () => {
+  it('disposes the tab when the window is destroyed', async () => {
     const { service, kind } = setup()
     const state = openTab(kind)
     await settle()

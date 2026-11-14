@@ -11,7 +11,7 @@ import (
 
 func TestIndexChangeWithRefreshAtOnceIncludesTheNewNote(t *testing.T) {
 	w := newWorld(t, 0)
-	w.runDue(t)
+	w.runDueSearches(t)
 	if got := getResultPaths(w.readRecord(t, stormsID)); slices.Contains(got, "Harbor/Winter.md") {
 		t.Fatalf("results = %v before the note is added", got)
 	}
@@ -31,7 +31,7 @@ func TestIndexChangeWithRefreshAtOnceIncludesTheNewNote(t *testing.T) {
 
 func TestIndexChangeWithTenMinutesRunsAtTheEndOfTheCooldownNotBefore(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	first := w.readRecord(t, stormsID)
 	searches := w.host.getCallCount()
 
@@ -39,7 +39,7 @@ func TestIndexChangeWithTenMinutesRunsAtTheEndOfTheCooldownNotBefore(t *testing.
 	w.clock.Advance(time.Minute)
 	w.changeIndex(t)
 	w.clock.Set(getStartTime().Add(10*time.Minute - time.Second))
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if got := w.host.getCallCount(); got != searches {
 		t.Errorf("%d searches before the cooldown ended, want none", got-searches)
@@ -49,7 +49,7 @@ func TestIndexChangeWithTenMinutesRunsAtTheEndOfTheCooldownNotBefore(t *testing.
 	}
 
 	w.clock.Set(getStartTime().Add(10 * time.Minute))
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	if !slices.Contains(getResultPaths(record), "Harbor/Winter.md") || !record.ComputedAt.Equal(getStartTime().Add(10*time.Minute)) {
@@ -62,7 +62,7 @@ func TestIndexChangeWithTenMinutesRunsAtTheEndOfTheCooldownNotBefore(t *testing.
 
 func TestIndexChangeAfterTheCooldownRunsAtOnce(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	w.addWinterNote()
 	changedAt := w.clock.Advance(25 * time.Minute)
@@ -76,14 +76,14 @@ func TestIndexChangeAfterTheCooldownRunsAtOnce(t *testing.T) {
 
 func TestRunDueWithoutAnIndexChangeRunsNothing(t *testing.T) {
 	w := newWorld(t, 0)
-	w.runDue(t)
+	w.runDueSearches(t)
 	searches := w.host.getCallCount()
 	if searches == 0 {
 		t.Fatal("the first run did not search")
 	}
 
 	w.clock.Advance(time.Hour)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if got := w.host.getCallCount(); got != searches {
 		t.Errorf("%d searches without a change, want none", got-searches)
@@ -93,7 +93,7 @@ func TestRunDueWithoutAnIndexChangeRunsNothing(t *testing.T) {
 func TestRunDueRunsASearchWithoutACache(t *testing.T) {
 	w := newWorld(t, 10)
 
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	if got := getResultPaths(record); len(got) != 2 || !record.ComputedAt.Equal(getStartTime()) {
@@ -103,21 +103,21 @@ func TestRunDueRunsASearchWithoutACache(t *testing.T) {
 
 func TestABrokenCacheFileRunsAgain(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDue(t)
+	w.runDueSearches(t)
 	w.vault.Store().File(stormsID+".json", []byte(`{"path": "Searches/Winter storms.md", "results": [`))
 
 	ranAt := w.clock.Advance(time.Minute)
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if record := w.readRecord(t, stormsID); !record.ComputedAt.Equal(ranAt) || len(record.Results) != 2 {
 		t.Errorf("record = %+v, want it computed again", record)
 	}
 }
 
-func TestRecordHoldsWhatProducedTheResults(t *testing.T) {
+func TestRecordStoresTheHashesAndTheRowOfTheRun(t *testing.T) {
 	w := newWorld(t, 10)
 
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	if record.Path != stormsPath || record.QueryHash != resultcache.HashText(stormsQuery) || record.RerankHash != resultcache.HashText(stormsRerank) {
@@ -148,7 +148,7 @@ func TestRecordKeepsTheChunkIDsOfMergedResults(t *testing.T) {
 		chunk("c2", "Logbooks/1911.md", 0, 400, mooringText),
 	)
 
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	i := slices.IndexFunc(record.Results, func(result resultcache.Result) bool { return result.Path == "Harbor/Gale.md" })
@@ -164,7 +164,7 @@ func TestRecordKeepsThePlaceAndAddressOfAResult(t *testing.T) {
 	w := newWorld(t, 0)
 	w.index(getLogbookPage())
 
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	if len(record.Results) != 1 {
@@ -184,7 +184,7 @@ func TestASearchWithoutAnIDIsCachedByAHashOfItsPath(t *testing.T) {
 	note := formatSearchNote("", stormsQuery, "", 0)
 	w.vault.File(galesPath, note)
 
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	if name := resultcache.GetFileName("", galesPath); !w.hasRecord(t, name) {
 		t.Errorf("no cache %s for the note without id", name)
@@ -198,7 +198,7 @@ func TestRunOfANoteWithoutAQueryBlockRecordsTheProblem(t *testing.T) {
 	w := newWorld(t, 0)
 	w.vault.File(stormsPath, "---\nid: "+stormsID+"\ntype: search\n---\nStories of storms.\n")
 
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	if len(record.Errors) != 1 || record.Errors[0].Message != "the note has no numen-query block" {
@@ -217,7 +217,7 @@ func TestRunRecordsCompileProblemsAtTheirLineInTheFile(t *testing.T) {
 	// The block opens on line 5: the query is on line 6.
 	w.vault.File(stormsPath, formatSearchNote(stormsID, `meaning("storm") &&`, "", 0))
 
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	if len(record.Errors) == 0 || record.Errors[0].Line != 6 || record.Errors[0].Column != 20 || record.Errors[0].Message == "" {
@@ -232,7 +232,7 @@ func TestRunWithoutAConnectionWritesFusedResults(t *testing.T) {
 	w := newWorld(t, 0)
 	w.rows.Clear()
 
-	w.runDue(t)
+	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
 	if record.Order != api.OrderFused || record.Reranker != nil || len(record.RerankScores) != 0 {

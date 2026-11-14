@@ -57,7 +57,6 @@ const sse = (text: string): Response =>
     { headers: { 'Content-Type': 'text/event-stream' } },
   )
 
-/** A stream that sends one change and stays open until the request is aborted. */
 const openStream = (init: RequestInit, change: ResultsChange): Response =>
   new Response(
     new ReadableStream({
@@ -134,10 +133,7 @@ describe('the saved search service', () => {
 
   it('throws the message of a failed call', async () => {
     const { service } = createService(() =>
-      Response.json(
-        { code: 'not_found', message: `there is no note at ${PATH}` },
-        { status: 404 },
-      ),
+      Response.json({ code: 'not_found', message: `there is no note at ${PATH}` }, { status: 404 }),
     )
 
     const answer = service.getResults({ path: PATH }, new AbortController().signal)

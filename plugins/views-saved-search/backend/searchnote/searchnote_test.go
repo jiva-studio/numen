@@ -70,7 +70,7 @@ func TestReadReadsTheQueryTheRerankAndTheLimit(t *testing.T) {
 	}
 }
 
-func TestReadTakesTheTitleFromTheFileNameWithoutATitle(t *testing.T) {
+func TestReadUsesTheFileNameAsTheTitleWithoutATitle(t *testing.T) {
 	raw := "---\ntype: search\n---\n```numen-query\nwords(\"gale\")\n```\n"
 
 	definition, problems := read(raw)
@@ -206,7 +206,7 @@ func TestCreateWritesANoteThatReadReadsBack(t *testing.T) {
 	}
 }
 
-func TestCreateLeavesOutTheTitleTheFileNameCarries(t *testing.T) {
+func TestCreateWritesNoTitleForAnExactFileName(t *testing.T) {
 	definition := searchnote.Definition{ID: noteID, Title: "Winter storms", Query: "words(\"gale\")"}
 
 	raw, err := searchnote.Create(noteID, "Winter storms", true, definition)
