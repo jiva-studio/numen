@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/engine/onnx"
 )
 
 func twoRows() (flat []float32, mask []int64) {

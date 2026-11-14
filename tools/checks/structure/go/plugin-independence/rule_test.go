@@ -54,7 +54,7 @@ func getDepguardGaps(config []byte) ([]string, error) {
 		}
 	}
 	for _, pkg := range allowed {
-		if strings.HasPrefix(pkg, load.NumenRoot) && !load.IsSDK(pkg) {
+		if strings.HasPrefix(pkg, load.NumenRoot) && !load.IsSDK(pkg) && !load.IsSharedLibrary(pkg) {
 			gaps = append(gaps, "allows "+pkg)
 		}
 	}
