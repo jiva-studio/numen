@@ -29,7 +29,7 @@ func NewOpenPluginVault(guard *Guard, identity IdentityCheck, pages Pages, switc
 	return OpenPluginVault{guard: guard, identity: identity, pages: pages, switcher: switcher}
 }
 
-// Execute opens v on behalf of a plugin.
+// Execute opens v on behalf of a plugin; the vault switch decides whether the window can switch.
 func (u OpenPluginVault) Execute(ctx context.Context, v domain.Vault) error {
 	if err := u.identity.Execute(v); err != nil {
 		return err

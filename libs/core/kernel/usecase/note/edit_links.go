@@ -168,7 +168,6 @@ type LinkPoint struct {
 	Role domain.LinkRole
 	Stat domain.FileStat
 }
-
 // ignoreIndexChange is the index updater of an installation that keeps no index.
 func ignoreIndexChange(context.Context, domain.Vault, []string) error { return nil }
 

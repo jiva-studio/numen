@@ -164,7 +164,6 @@ func (noTexts) IsTextSource(context.Context, string) (bool, error) { return fals
 
 // Recipe returns the recipe that names the version reader and the chunk sizes.
 func (u Index) Recipe() string { return chunking.GetTextVersionRecipe(u.sizes.Resolve()) }
-
 // noTextReaders is the text readers of an installation where no file has text.
 type noTextReaders struct {
 	readers vaultport.VaultReaders
