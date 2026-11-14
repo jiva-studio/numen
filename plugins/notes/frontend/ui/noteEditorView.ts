@@ -28,6 +28,10 @@ export function createNoteEditorView(
             state,
             softWrap: preferences.softWrap,
             lineNumbers: preferences.lineNumbers,
+            tabSize: preferences.tabSize,
+            fontFamily: preferences.fontFamily,
+            lineHeight: preferences.lineHeight,
+            highlightActiveLine: preferences.highlightActiveLine,
           })
       },
     }),

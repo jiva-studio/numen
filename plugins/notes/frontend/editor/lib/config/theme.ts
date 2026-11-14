@@ -5,7 +5,9 @@
  * The embedder sets three of them on the element that hosts the editor:
  * `--editor-measure`, the maximum width of the text column, `--editor-lead`, the
  * space above the first line, and `--editor-margin`, the space on either side of
- * the column and its gutter.
+ * the column and its gutter. Two more are set on the editor element by the
+ * settings: `--editor-font`, the family of the text, and `--editor-line-height`;
+ * each has the interface font and 1.6 as its fallback.
  */
 import { EditorView } from '@codemirror/view'
 
@@ -45,9 +47,9 @@ export const theme = EditorView.theme({
 
     color: 'var(--numen-ink)',
     backgroundColor: 'transparent',
-    fontFamily: 'var(--numen-font-sans)',
+    fontFamily: 'var(--editor-font, var(--numen-font-sans))',
     fontSize: 'var(--numen-reading-size)',
-    lineHeight: '1.6',
+    lineHeight: 'var(--editor-line-height, 1.6)',
     height: '100%',
   },
   '&.cm-focused': { outline: 'none' },
@@ -135,8 +137,8 @@ export const theme = EditorView.theme({
   },
 
   /* The base theme paints the active line and special characters for a light
-     page; both are reset here. */
-  '.cm-activeLine': { backgroundColor: 'transparent' },
+     page; both are set here. */
+  '.cm-activeLine': { backgroundColor: 'var(--numen-selection-match)' },
   '.cm-specialChar': { color: 'var(--editor-mark)' },
   '.cm-selectionMatch': { backgroundColor: 'var(--numen-selection-match)' },
 

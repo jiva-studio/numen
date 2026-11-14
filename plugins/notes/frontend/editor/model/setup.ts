@@ -24,6 +24,7 @@ import {
   GutterMarker,
   drawSelection,
   gutterLineClass,
+  highlightActiveLine,
   keymap,
   lineNumberWidgetMarker,
   lineNumbers,
@@ -44,6 +45,7 @@ import { renderBracketMatch } from '../lib/live/wikilinks'
 import { HEADING } from '../lib/live/styles'
 import { GFM } from '@lezer/markdown'
 import { saveHandler } from '../lib/outside'
+import { getFontFamilyValue } from '../../model/fontFamily'
 import { monospaced, theme } from '../lib/config/theme'
 
 /** What can be changed without the editor being built again. */
@@ -55,6 +57,9 @@ export const languageCompartment = new Compartment()
 export const wrapCompartment = new Compartment()
 export const lineNumbersCompartment = new Compartment()
 export const tabSizeCompartment = new Compartment()
+export const fontCompartment = new Compartment()
+export const lineHeightCompartment = new Compartment()
+export const activeLineCompartment = new Compartment()
 
 export interface Settings {
   readonly isLivePreview?: boolean | undefined
@@ -67,6 +72,9 @@ export interface Settings {
   readonly softWrap?: boolean | undefined
   readonly lineNumbers?: boolean | undefined
   readonly tabSize?: number | undefined
+  readonly fontFamily?: string | undefined
+  readonly lineHeight?: number | undefined
+  readonly highlightActiveLine?: boolean | undefined
 }
 
 export const preview = (isOn: boolean): Extension =>
@@ -158,6 +166,18 @@ export const getTabSizeExtension = (tabSize: number): Extension => {
   return [EditorState.tabSize.of(size), indentUnit.of(' '.repeat(size))]
 }
 
+/** The font of the text, set as a variable the theme reads; no variable where the family is empty or invalid. */
+export const getFontExtension = (family: string): Extension => {
+  const value = getFontFamilyValue(family)
+  return value ? EditorView.editorAttributes.of({ style: `--editor-font: ${value}` }) : []
+}
+
+export const getLineHeightExtension = (height: number): Extension =>
+  EditorView.editorAttributes.of({ style: `--editor-line-height: ${height}` })
+
+export const getActiveLineExtension = (isOn: boolean): Extension =>
+  isOn ? highlightActiveLine() : []
+
 /**
  * The chord that requests an immediate save, handled by the code that hosts the
  * editor. It is handled here, so the letter is not inserted and
@@ -220,6 +240,9 @@ const getLayout = (settings: Settings): Extension[] => [
   wrapCompartment.of(getWrapExtension(settings.softWrap ?? true)),
   lineNumbersCompartment.of(getLineNumbersExtension(settings.lineNumbers ?? false)),
   tabSizeCompartment.of(getTabSizeExtension(settings.tabSize ?? 2)),
+  fontCompartment.of(getFontExtension(settings.fontFamily ?? '')),
+  lineHeightCompartment.of(getLineHeightExtension(settings.lineHeight ?? 1.6)),
+  activeLineCompartment.of(getActiveLineExtension(settings.highlightActiveLine ?? false)),
 ]
 
 const getAccessibility = (settings: Settings): Extension =>

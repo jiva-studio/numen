@@ -24,6 +24,9 @@ const props = withDefaults(defineProps<EditorProps>(), {
   softWrap: true,
   lineNumbers: false,
   tabSize: 2,
+  fontFamily: '',
+  lineHeight: 1.6,
+  highlightActiveLine: false,
 })
 
 const text = defineModel<string>({ default: '' })
@@ -67,6 +70,9 @@ const editor = useEditor({
   softWrap: () => props.softWrap,
   lineNumbers: () => props.lineNumbers,
   tabSize: () => props.tabSize,
+  fontFamily: () => props.fontFamily,
+  lineHeight: () => props.lineHeight,
+  highlightActiveLine: () => props.highlightActiveLine,
 })
 </script>
 

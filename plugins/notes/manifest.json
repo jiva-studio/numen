@@ -50,6 +50,47 @@
       "title": "Line Numbers",
       "description": "Show line numbers in the editor margin",
       "default": false
+    },
+    {
+      "key": "tabSize",
+      "type": "range",
+      "title": "Tab Size",
+      "description": "Spaces a Tab inserts",
+      "default": 2,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "key": "fontFamily",
+      "type": "string",
+      "title": "Font",
+      "description": "Font of the note text; empty uses the interface font",
+      "details": "A comma-separated list of families is allowed. A name with spaces needs no quotes.",
+      "default": "",
+      "options": [
+        { "value": "", "title": "Interface font" },
+        { "value": "serif", "title": "Serif" },
+        { "value": "sans-serif", "title": "Sans-serif" },
+        { "value": "monospace", "title": "Monospace" }
+      ]
+    },
+    {
+      "key": "lineHeight",
+      "type": "range",
+      "title": "Line Height",
+      "description": "Space between lines, as a multiple of the font size",
+      "default": 1.6,
+      "min": 1.2,
+      "max": 2.4,
+      "step": 0.05
+    },
+    {
+      "key": "highlightActiveLine",
+      "type": "boolean",
+      "title": "Highlight Active Line",
+      "description": "Mark the line the caret is on",
+      "default": false
     }
   ]
 }
