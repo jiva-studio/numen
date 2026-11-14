@@ -112,7 +112,6 @@ describe('notes plugin lifecycle', () => {
     wrapper.unmount()
   })
 
-
   it('runs deactivation hook cleanly', () => {
     expect(() => deactivate()).not.toThrow()
   })
@@ -153,13 +152,12 @@ describe('the editor settings in an open note editor', () => {
   const tab = (view: EditorView) => tabKeyBinding.run?.(view) ?? false
   const style = (view: EditorView) => view.dom.getAttribute('style') ?? ''
 
-  it('opens with Tab of 2 spaces, no spellcheck, no active line, no font variable', async () => {
+  it('opens with Tab of 2 spaces, no active line, no font variable', async () => {
     const { view, wrapper } = await open()
 
     tab(view)
     expect(view.state.doc.toString().startsWith('  one')).toBe(true)
     expect(view.state.doc.toString().startsWith('   one')).toBe(false)
-    expect(view.contentDOM.getAttribute('spellcheck')).toBe('false')
     expect(view.dom.querySelector('.cm-activeLine')).toBeNull()
     expect(style(view)).not.toContain('--editor-font')
     wrapper.unmount()
@@ -187,17 +185,6 @@ describe('the editor settings in an open note editor', () => {
 
     await change('highlightActiveLine', false)
     expect(view.dom.querySelector('.cm-activeLine')).toBeNull()
-    wrapper.unmount()
-  })
-
-  it('switches the spellcheck attribute when the setting changes', async () => {
-    const { view, wrapper, change } = await open()
-
-    await change('spellCheck', true)
-    expect(view.contentDOM.getAttribute('spellcheck')).toBe('true')
-
-    await change('spellCheck', false)
-    expect(view.contentDOM.getAttribute('spellcheck')).toBe('false')
     wrapper.unmount()
   })
 
@@ -247,7 +234,6 @@ describe('the editor settings in an open note editor', () => {
     view.dispatch({ selection: { anchor: 5 } })
 
     await change('tabSize', 4)
-    await change('spellCheck', true)
     await change('highlightActiveLine', true)
     await change('fontFamily', 'serif')
     await change('lineHeight', 2)

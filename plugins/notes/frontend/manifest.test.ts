@@ -76,9 +76,9 @@ const settings = (
 const byKey = (key: string) => settings.find((one) => one.key === key)
 
 describe('the editor settings of the manifest', () => {
-  const keys = ['tabSize', 'fontFamily', 'lineHeight', 'spellCheck', 'highlightActiveLine']
+  const keys = ['tabSize', 'fontFamily', 'lineHeight', 'highlightActiveLine']
 
-  it('declares the five editor settings with their defaults', () => {
+  it('declares the four editor settings with their defaults', () => {
     const defaults = readMarkdownEditorPreferences() as unknown as Record<string, unknown>
     for (const key of keys) {
       expect(byKey(key), key).toBeDefined()
@@ -91,8 +91,7 @@ describe('the editor settings of the manifest', () => {
     expect(byKey('lineHeight')).toMatchObject({ type: 'range', min: 1.2, max: 2.4, step: 0.05 })
   })
 
-  it('declares spell check and the active line as switches', () => {
-    expect(byKey('spellCheck')?.type).toBe('boolean')
+  it('declares the active line as a switch', () => {
     expect(byKey('highlightActiveLine')?.type).toBe('boolean')
   })
 

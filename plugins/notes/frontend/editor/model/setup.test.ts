@@ -12,13 +12,11 @@ import {
   getActiveLineExtension,
   getFontExtension,
   getLineHeightExtension,
-  getSpellCheckExtension,
   getTabSizeExtension,
   lineHeightCompartment,
   preview,
   prose,
   setup,
-  spellCheckCompartment,
   tabKeyBinding,
   tabSizeCompartment,
   type Settings,
@@ -313,28 +311,6 @@ describe('the active line', () => {
     expect(activeLines(view)).toStrictEqual(['one'])
     view.dispatch({ effects: activeLineCompartment.reconfigure(getActiveLineExtension(false)) })
     expect(activeLines(view)).toStrictEqual([])
-  })
-})
-
-describe('spell check', () => {
-  it('sets spellcheck true on the content element while spellCheck is on', () => {
-    expect(open({ spellCheck: true }).contentDOM.getAttribute('spellcheck')).toBe('true')
-  })
-
-  it('sets spellcheck false on the content element while spellCheck is off', () => {
-    expect(open({ spellCheck: false }).contentDOM.getAttribute('spellcheck')).toBe('false')
-  })
-
-  it('is false where nothing is set', () => {
-    expect(open({}).contentDOM.getAttribute('spellcheck')).toBe('false')
-  })
-
-  it('turns on and off when the compartment is reconfigured', () => {
-    const view = open({})
-    view.dispatch({ effects: spellCheckCompartment.reconfigure(getSpellCheckExtension(true)) })
-    expect(view.contentDOM.getAttribute('spellcheck')).toBe('true')
-    view.dispatch({ effects: spellCheckCompartment.reconfigure(getSpellCheckExtension(false)) })
-    expect(view.contentDOM.getAttribute('spellcheck')).toBe('false')
   })
 })
 

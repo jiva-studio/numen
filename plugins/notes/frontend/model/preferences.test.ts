@@ -13,25 +13,22 @@ describe('the editor preferences', () => {
       tabSize: 2,
       fontFamily: '',
       lineHeight: 1.6,
-      spellCheck: false,
       highlightActiveLine: false,
     })
   })
 
-  it('reads the stored values of the five editor settings', () => {
+  it('reads the stored values of the four editor settings', () => {
     expect(
       read({
         tabSize: 4,
         fontFamily: 'serif',
         lineHeight: 1.8,
-        spellCheck: true,
         highlightActiveLine: true,
       }),
     ).toMatchObject({
       tabSize: 4,
       fontFamily: 'serif',
       lineHeight: 1.8,
-      spellCheck: true,
       highlightActiveLine: true,
     })
   })
@@ -59,12 +56,11 @@ describe('the editor preferences', () => {
     expect(read({ fontFamily: 12 }).fontFamily).toBe('')
   })
 
-  it('reads false for a spell check or an active line of the wrong type', () => {
-    expect(read({ spellCheck: 'yes' }).spellCheck).toBe(false)
+  it('reads false for an active line of the wrong type', () => {
     expect(read({ highlightActiveLine: 1 }).highlightActiveLine).toBe(false)
   })
 
-  it('listens to the five new keys and to no snake_case key', () => {
+  it('listens to the four new keys and to no snake_case key', () => {
     const watched: string[] = []
     const context = {
       settings: {
@@ -83,7 +79,6 @@ describe('the editor preferences', () => {
         'tabSize',
         'fontFamily',
         'lineHeight',
-        'spellCheck',
         'highlightActiveLine',
       ]),
     )
@@ -111,10 +106,8 @@ describe('the editor preferences', () => {
     handlers.get('tabSize')?.(9)
     handlers.get('lineHeight')?.('tall')
     handlers.get('fontFamily')?.('a;b')
-    handlers.get('spellCheck')?.('on')
     expect(preferences.tabSize).toBe(2)
     expect(preferences.lineHeight).toBe(1.6)
     expect(preferences.fontFamily).toBe('')
-    expect(preferences.spellCheck).toBe(false)
   })
 })
