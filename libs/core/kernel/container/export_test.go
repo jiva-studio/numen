@@ -4,6 +4,7 @@ import (
 	"context"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
@@ -79,7 +80,7 @@ func AbsentBinding() pluginport.PluginBinding { return absent.Runtime{} }
 func NotesShowingMoves(
 	c Config, db *Index, index edit.IndexUpdater, showing func() (domain.Vault, bool), view note.MoveView,
 ) NoteUseCases {
-	return vaultNotes(vaultOf(c), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view), Writes: openGate{}})
+	return vaultNotes(vaultOf(c), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view), Writes: editor.OpenGate{}})
 }
 
 func embedderReady(c searchWiring) bool {

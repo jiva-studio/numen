@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -71,7 +72,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
-	useCases := vaultNotes(c.vault, db, index, noteViews{Writes: openGate{}})
+	useCases := vaultNotes(c.vault, db, index, noteViews{Writes: editor.OpenGate{}})
 	arranger := newArranger(useCases, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	return hostvault.NewAccess(

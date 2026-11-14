@@ -197,7 +197,7 @@ func newWindowUseCases(
 		a.vault, db, vault.NewUpdateIndex(current.Get).Execute,
 		noteViews{
 			Moves:  note.NewTellMoveInShownVault(state.GetShownVault, windowView(state)),
-			Writes: openGate{},
+			Writes: editor.OpenGate{},
 		},
 	)
 	moves := vaultVaults(a.vault, ports, db, notes.Place.Move)
