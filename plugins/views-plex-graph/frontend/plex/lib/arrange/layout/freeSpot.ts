@@ -138,7 +138,7 @@ function isBetter(cost: number, progress: number, best: { cost: number; progress
 }
 
 function roundProgress(progress: number): number {
-  return Math.round(along * COST_PRECISION)
+  return Math.round(progress * COST_PRECISION)
 }
 
 function getRequiredGap(gap: number): number {
