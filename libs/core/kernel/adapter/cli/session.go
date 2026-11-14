@@ -35,8 +35,7 @@ type Session struct {
 	close             func() (failures []string, err error)
 }
 
-// NewSession creates the session that opens vaults with openVaults, the index with openIndexed and the plugin
-// commands with getPluginCommands, and closes what they opened with closeRun.
+// NewSession takes no nil function: the methods of Session call them without a check.
 func NewSession(
 	openVaults func() (Vaults, error),
 	openIndexed func(ctx context.Context, options IndexOptions) (Indexed, error),
