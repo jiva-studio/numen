@@ -246,7 +246,7 @@ describe('a tab kind component', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(received[0]).toBe(ctx)
+    expect(received[0]).toBe(ctx.plugin)
   })
 
   it('passes the plugin context to a reader component and bridges services, tabs, and shortcuts', async () => {
@@ -325,7 +325,7 @@ describe('a tab kind component', () => {
     mount(readerKind!.pane as never, { props: { state: {} }, attachTo: document.body } as never)
     await Promise.resolve()
     await Promise.resolve()
-    expect(received[0]).toBe(ctx)
+    expect(received[0]).toBe(ctx.plugin)
 
     // The palette lists what the manifest declares
     ctx.plugin.register.command({ id: 'rich', handler: vi.fn() })
