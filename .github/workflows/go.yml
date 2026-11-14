@@ -210,7 +210,7 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      # go/dead-exports parses the TypeScript and Vue consumers of the SDK.
+      # go/dead-exports parses the TypeScript and Vue consumers of the SDK, go/api-types the calls of the plugin frontends.
       - uses: ./.github/actions/install-node-modules
 
       - name: Run the Go checks

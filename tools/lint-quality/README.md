@@ -1,8 +1,8 @@
 # Code Quality & Metrics Validator (`@numen/lint-quality`)
 
-Checks over the whole repository that no single module's lint target covers: duplication, unused TypeScript and Vue code, and the plugin API types. Go complexity (`cyclop`, `gocognit`, `nestif`, `funlen`), interface size (`interfacebloat`) and unused parameters and results (`unparam`) are linters of `.golangci-structure.yml`, and ESLint and golangci-lint run in the lint target of each module.
+Checks over the whole repository that no single module's lint target covers: duplication and unused TypeScript and Vue code. Go complexity (`cyclop`, `gocognit`, `nestif`, `funlen`), interface size (`interfacebloat`) and unused parameters and results (`unparam`) are linters of `.golangci-structure.yml`, and ESLint and golangci-lint run in the lint target of each module.
 
-The rules for duplication and the API types are in `tools/checks/structure/ts/duplication` and `tools/checks/structure/ts/api-types` and are listed in the registry of `tools/checks`; this command runs them together with knip.
+The rule for duplication is in `tools/checks/structure/ts/duplication` and is listed in the registry of `tools/checks`; this command runs it together with knip. The comparison of the plugin API types is the Go check `go/api-types` of `tools/checks`.
 
 ## Invariants Checked
 
@@ -14,9 +14,6 @@ The rules for duplication and the API types are in `tools/checks/structure/ts/du
 2. **Unused Files, Dependencies and Exports (`knip`)**:
    - Runs `knip` once with the root `knip.json`, whose workspaces name every TS package and plugin frontend. Unused files, unused and unlisted dependencies fail; unused exports and types are reported. A missing `knip` binary, a missing `knip.json` or a frontend package outside its workspaces fails the check.
 
-3. **Plugin API Types (`api-types`)**:
-   - A plugin with a Go `backend/api` package and a `frontend/api/types.ts` (or `frontend/lib/wire/types.ts`) must declare the same types, JSON fields, optional fields (a Go pointer or `omitempty` is optional; a request field is always optional in TypeScript) and enumeration values on both sides. A difference is named by plugin, type and field.
-
 ---
 
 ## Usage
@@ -27,7 +24,6 @@ The rules for duplication and the API types are in `tools/checks/structure/ts/du
 make check_quality                       # Run full parallel suite
 make check_quality check=duplication     # Run only duplication check
 make check_quality check=knip            # Run only knip
-make check_quality check=api-types       # Run only the Go and TypeScript API comparison
 make check_quality opts="--warn"         # Non-blocking / advisory mode
 ```
 

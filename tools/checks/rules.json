@@ -65,6 +65,27 @@
       "target": "adapters-claim-no-ports"
     },
     {
+      "name": "go/api-types",
+      "paths": [
+        "plugins/**/*.go",
+        "plugins/**/*.ts",
+        "plugins/**/tsconfig.json",
+        "plugins/**/go.mod",
+        "libs/plugin/sdk-go/server/**/*.go",
+        "libs/plugin/sdk-ts/src/**/*.ts",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "slow"
+      ],
+      "selftest": "structure/go/api-types/check_test.go",
+      "runner": "go",
+      "target": "api-types"
+    },
+    {
       "name": "go/clock-port",
       "paths": [
         "**/*.go",
@@ -1408,28 +1429,6 @@
       "runner": "verifiers",
       "module": "docs/paths-exist/check.mjs",
       "export": "DOCUMENT_VERIFIERS"
-    },
-    {
-      "name": "ts/api-types",
-      "paths": [
-        "libs/plugin/sdk-go/**/*.go",
-        "libs/plugin/sdk-ts/**/*.ts",
-        "libs/core/protocol/**/*.go",
-        "libs/core/client/**/*.ts"
-      ],
-      "tags": [
-        "structure",
-        "ts",
-        "plugin",
-        "fast"
-      ],
-      "selftest": "structure/ts/api-types/check.test.mjs",
-      "runner": "command",
-      "cmd": [
-        "node",
-        "tools/lint-quality/check.mjs",
-        "--check=api-types"
-      ]
     },
     {
       "name": "ts/duplication",

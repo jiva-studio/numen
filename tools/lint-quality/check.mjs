@@ -2,9 +2,9 @@
 /**
  * Numen Code Quality & Metrics Validator (@numen/lint-quality)
  *
- * Validates duplication, unused TypeScript and Vue code (knip) and the plugin API types across the
- * monorepo. Go complexity, interface size and unused parameters are rules of .golangci-structure.yml,
- * and ESLint and golangci-lint run in each module's own lint target.
+ * Validates duplication and unused TypeScript and Vue code (knip) across the monorepo. Go complexity,
+ * interface size and unused parameters are rules of .golangci-structure.yml, and ESLint and
+ * golangci-lint run in each module's own lint target.
  *
  * Usage:
  *   node check.mjs [options]
@@ -18,7 +18,6 @@ import path from "node:path";
 import process from "node:process";
 
 import { runDuplicationCheck } from "../checks/structure/ts/duplication/check.mjs";
-import { runApiTypesCheck } from "../checks/structure/ts/api-types/check.mjs";
 import { runKnipCheck } from "./checks/knip.mjs";
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
@@ -35,11 +34,6 @@ const ALL_CHECKS = [
     name: "Unused Files, Dependencies and Exports (knip)",
     run: (opts) => runKnipCheck({ repoRoot: REPO_ROOT, ...opts }),
   },
-  {
-    id: "api-types",
-    name: "Plugin API types match their Go structs",
-    run: (opts) => runApiTypesCheck({ repoRoot: REPO_ROOT, ...opts }),
-  },
 ];
 
 function printHelp() {
@@ -47,7 +41,7 @@ function printHelp() {
 Usage: node check.mjs [options]
 
 Options:
-  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,knip,api-types)
+  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,knip)
   --changed-only       Run only checks relevant to modified files against git base
   --warn               Non-blocking mode: report findings with exit code 0
   --strict             Fail on any detected finding (default)
@@ -112,7 +106,6 @@ function resolveChecks(args, changedOnly) {
     targetIds = targetIds.filter((id) => {
       if (id === "duplication") return hasGo || hasTsOrVue;
       if (id === "knip") return hasTsOrVue || hasPackageManifest;
-      if (id === "api-types") return hasGo || hasTsOrVue;
       return true;
     });
   }

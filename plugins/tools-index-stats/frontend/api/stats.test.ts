@@ -12,11 +12,6 @@ const fixtures = import.meta.glob('../../testdata/api/*.json', {
 
 const read = (name: string): unknown => fixtures[`../../testdata/api/${name}.json`]
 
-const withoutUnread = (message: unknown): unknown => {
-  const { recipe: _recipe, ...read } = message as Record<string, unknown>
-  return read
-}
-
 const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
   GetStats: {
     request: {},
@@ -31,6 +26,7 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
         { kind: 'epub', sources: 5, chunks: 2000 },
       ],
       model: 'bge-m3',
+      recipe: 'local|bge-m3|1024|512|mean|int8@0.4',
       dimensions: 1024,
       profile: 'balanced',
       threads: 4,
@@ -46,7 +42,7 @@ describe('index stats service contract', () => {
   for (const [method, expected] of Object.entries(EXPECTED)) {
     it(`${method} fixtures equal the typed messages`, () => {
       expect(read(`${method}.request`)).toEqual(expected.request)
-      expect(withoutUnread(read(`${method}.response`))).toEqual(expected.response)
+      expect(read(`${method}.response`)).toEqual(expected.response)
     })
   }
 
