@@ -236,4 +236,12 @@ The settings of the plugin Title bar.
 | --- | --- | --- |
 | `buttons` | text | where the bar draws the window buttons. macOS always draws them on the left. One of `mac`, `windows`, `none`. |
 | `hideInFullscreen` | yes or no | hide the bar while the window is full screen. |
+
+### `md.numen.views.todos`
+
+The settings of the plugin Todos.
+
+| | | |
+| --- | --- | --- |
+| `ignoredFolders` | text | paths from the vault root, such as templates, archive/old. A note below one of them is skipped. |
 <!-- END AUTOGEN -->
