@@ -57,7 +57,7 @@ func TestPortRule_ReportsUnreferencedPortTypes(t *testing.T) {
 }
 
 // TestPortMethodsAreCalledOutsidePort checks that every port method has a
-// caller. A method with no caller is never exercised and a defect in it goes unnoticed.
+// caller that calls it through the port. A method with no caller is never exercised and a defect in it goes unnoticed.
 // Test files are not read here, and that asymmetry is the rule: a method called
 // only by a test exists to be tested. The two rules above read tests.
 func TestPortMethodsAreCalledOutsidePort(t *testing.T) {
@@ -86,14 +86,15 @@ func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 }
 
 // TestPortWalk_FindsThePlantedPort verifies on a planted tree that the walks find the method nothing
-// calls and the type nothing names, and fail on a port folder with no declaration.
+// calls through the port and the type nothing names, and fail on a port folder with no declaration.
+// The use case calls Close on a type of its own, which leaves Reader.Close uncalled.
 func TestPortWalk_FindsThePlantedPort(t *testing.T) {
 	root := load.WriteTreeFixture(t, map[string]string{
 		"port/noteport/noteport.go": "package noteport\n\ntype Reader interface {\n\tRead() string\n\tClose()\n}\n\ntype Orphan interface{ Drop() }\n",
-		"usecase/note/note.go":      "package note\n\nimport \"fixture/port/noteport\"\n\nfunc read(r noteport.Reader) string { return r.Read() }\n",
+		"usecase/note/note.go":      "package note\n\nimport \"fixture/port/noteport\"\n\ntype file struct{}\n\nfunc (file) Close() {}\n\nfunc read(r noteport.Reader) string {\n\tfile{}.Close()\n\treturn r.Read()\n}\n",
 	})
 	port := filepath.Join(root, "port", "noteport")
-	uncalled, err := getUncalledMethods(root, port)
+	uncalled, err := getUncalledMethods(root, port, "GOWORK=off")
 	if err != nil {
 		t.Fatal(err)
 	}
