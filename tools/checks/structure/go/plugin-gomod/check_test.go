@@ -13,6 +13,8 @@ import (
 // getPluginGoModViolations defines the whole rule, so it is tested directly.
 func TestWhatThePluginGoModRulesReject(t *testing.T) {
 	const head = "module " + load.PluginsPrefix + "sample\n\ngo 1.26\n\n"
+	const sharedLibraries = head + "require (\n\t" + load.SdkModule + " v0.0.0\n\t" +
+		load.NumenRoot + "libs/shared/onnx v0.0.0\n\t" + load.NumenRoot + "libs/shared/tokenizer v0.0.0\n)\n"
 	for _, one := range []struct {
 		name, text string
 		rejected   int
@@ -26,7 +28,7 @@ func TestWhatThePluginGoModRulesReject(t *testing.T) {
 		{"a direct requirement of protobuf", head + "require google.golang.org/protobuf v1.0.0\n", 1},
 		{"a direct requirement of another plugin", head + "require " + load.PluginsPrefix + "other v0.0.0\n", 1},
 		{"a direct requirement of the core", head + "require " + load.Module + "port v0.0.0\n", 1},
-		{"a direct requirement of a shared library", head + "require (\n\t" + load.SdkModule + " v0.0.0\n\t" + load.NumenRoot + "libs/shared/onnx v0.0.0\n\t" + load.NumenRoot + "libs/shared/tokenizer v0.0.0\n)\n", 0},
+		{"a direct requirement of a shared library", sharedLibraries, 0},
 		{"a direct requirement of the atomic file library", head + "require " + load.NumenRoot + "libs/atomicfile v0.0.0\n", 1},
 		{"a direct requirement of a library named like the shared ones", head + "require " + load.NumenRoot + "libs/sharedx v0.0.0\n", 1},
 		{"a shared library built from a folder", head + "require " + load.NumenRoot + "libs/shared/onnx v0.0.0\nreplace " + load.NumenRoot + "libs/shared/onnx => ../../libs/shared/onnx\n", 1},
@@ -45,8 +47,8 @@ func TestWhatThePluginGoModRulesReject(t *testing.T) {
 }
 
 // The go.mod of every plugin declares the module of its folder and requires directly only the
-// plugin SDK and third-party code.
-func TestNoPluginModuleRequiresMoreThanTheSDK(t *testing.T) {
+// plugin SDK, libs/shared and third-party code.
+func TestNoPluginModuleRequiresMoreThanTheSDKAndTheSharedLibraries(t *testing.T) {
 	for _, dir := range load.ListPluginModules(t) {
 		file := load.ReadGoMod(t, filepath.Join(dir, "go.mod"))
 		for _, why := range getPluginGoModViolations(filepath.Base(dir), file) {

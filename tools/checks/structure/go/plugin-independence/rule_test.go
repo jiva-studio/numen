@@ -54,7 +54,8 @@ func getDepguardGaps(config []byte) ([]string, error) {
 		}
 	}
 	for _, pkg := range allowed {
-		if strings.HasPrefix(pkg, load.NumenRoot) && !load.IsSDK(pkg) && !load.IsSharedLibrary(pkg) {
+		// depguard matches an allow by prefix, so only libs/shared/ with the slash keeps libs/sharedx out.
+		if strings.HasPrefix(pkg, load.NumenRoot) && !load.IsSDK(pkg) && !strings.HasPrefix(pkg, load.SharedLibraries+"/") {
 			gaps = append(gaps, "allows "+pkg)
 		}
 	}

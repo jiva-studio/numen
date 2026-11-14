@@ -14,16 +14,16 @@ type charsmapNode struct {
 	value    int
 }
 
-// buildCharsmapTrie lays out keys as a darts-clone double array, the trie format of the sentencepiece
-// charsmap. A unit holds the label in bits 0-7, has_leaf in bit 8 and the XOR offset to the base of
-// its children in bits 10-30; a leaf unit sets bit 31 and holds the value. The root is unit 0. Every
-// node gets a base of its own, so a byte never matches the child of another node.
 func buildCharsmapTrie(t *testing.T, keys map[string]uint32) []uint32 {
 	t.Helper()
+	// The layout is a darts-clone double array, the trie format of the sentencepiece charsmap. A unit
+	// holds the label in bits 0-7, has_leaf in bit 8 and the XOR offset to the base of its children in
+	// bits 10-30; a leaf unit sets bit 31 and holds the value. The root is unit 0. Every node gets a
+	// base of its own, so a byte never matches the child of another node.
 	root := &charsmapNode{children: map[byte]*charsmapNode{}, value: -1}
 	for key, value := range keys {
 		node := root
-		for i := 0; i < len(key); i++ {
+		for i := range len(key) {
 			next, ok := node.children[key[i]]
 			if !ok {
 				next = &charsmapNode{children: map[byte]*charsmapNode{}, value: -1}
@@ -97,9 +97,9 @@ func buildCharsmapTrie(t *testing.T, keys map[string]uint32) []uint32 {
 	return units
 }
 
-// encodeCharsmap writes the precompiled_charsmap field: the trie size in bytes as a little-endian
-// uint32, the trie units, then the NUL-terminated normalized strings.
 func encodeCharsmap(units []uint32, strs []byte) string {
+	// precompiled_charsmap is the trie size in bytes as a little-endian uint32, the trie units, then
+	// the NUL-terminated normalized strings.
 	raw := binary.LittleEndian.AppendUint32(nil, uint32(4*len(units)))
 	for _, unit := range units {
 		raw = binary.LittleEndian.AppendUint32(raw, unit)
@@ -107,7 +107,6 @@ func encodeCharsmap(units []uint32, strs []byte) string {
 	return base64.StdEncoding.EncodeToString(append(raw, strs...))
 }
 
-// buildCharsmap maps each key to its normalized string.
 func buildCharsmap(t *testing.T, mapping map[string]string) string {
 	t.Helper()
 	var strs []byte
@@ -132,17 +131,19 @@ func writePrecompiledVariant(t *testing.T, charsmap string) string {
 	})
 }
 
-var testCharsmap = map[string]string{
-	"Ｈ":  "H",
-	"ｅ":  "e",
-	"ｌ":  "l",
-	"ｏ":  "o",
-	"ﬁ":  "fi",
-	"é": "é",
+func getTestCharsmap() map[string]string {
+	return map[string]string{
+		"Ｈ":  "H",
+		"ｅ":  "e",
+		"ｌ":  "l",
+		"ｏ":  "o",
+		"ﬁ":  "fi",
+		"é": "é",
+	}
 }
 
 func TestEncodeNormalizesGraphemesThroughThePrecompiledCharsmap(t *testing.T) {
-	tok := loadTokenizer(t, writePrecompiledVariant(t, buildCharsmap(t, testCharsmap)))
+	tok := loadTokenizer(t, writePrecompiledVariant(t, buildCharsmap(t, getTestCharsmap())))
 	checkEncode(t, tok, "Ｈｅｌｌｏ", getSingleIDs(t, "▁Hello"))
 	checkEncode(t, tok, "ﬁ", getSingleIDs(t, "▁fi"))
 	checkEncode(t, tok, "é", getSingleIDs(t, "▁é"))
@@ -152,14 +153,14 @@ func TestEncodeNormalizesGraphemesThroughThePrecompiledCharsmap(t *testing.T) {
 // A cluster under 6 bytes is looked up whole and replaced whole by its first prefix match, as
 // spm_precompiled does: ﬁ and a combining acute (5 bytes) become fi.
 func TestEncodeReplacesAShortClusterByItsFirstPrefixMatch(t *testing.T) {
-	tok := loadTokenizer(t, writePrecompiledVariant(t, buildCharsmap(t, testCharsmap)))
+	tok := loadTokenizer(t, writePrecompiledVariant(t, buildCharsmap(t, getTestCharsmap())))
 	checkEncode(t, tok, "ﬁ́", getSingleIDs(t, "▁fi"))
 }
 
 // A cluster of 6 bytes or more is looked up rune by rune: ﬁ becomes fi, and the two combining
 // acutes, which the charsmap does not hold, stay and become one unknown.
 func TestEncodeLooksUpALongClusterRuneByRune(t *testing.T) {
-	tok := loadTokenizer(t, writePrecompiledVariant(t, buildCharsmap(t, testCharsmap)))
+	tok := loadTokenizer(t, writePrecompiledVariant(t, buildCharsmap(t, getTestCharsmap())))
 	checkEncode(t, tok, "ﬁ́́", getSingleIDs(t, "▁fi", "<unk>"))
 }
 
@@ -182,7 +183,7 @@ func TestLoadRefusesABrokenCharsmap(t *testing.T) {
 }
 
 // A trie that points outside itself or outside the strings matches nothing: the rune is kept.
-func TestEncodeKeepsARuneWhoseLookupLeavesTheCharsmap(t *testing.T) {
+func TestEncodeReturnsTheRuneUnchangedForALookupOutsideTheCharsmap(t *testing.T) {
 	outsideRoot := encodeCharsmap([]uint32{1000 << 10}, []byte("x\x00"))
 
 	pastStrings := encodeCharsmap(buildCharsmapTrie(t, map[string]uint32{"ж": 500}), []byte("x\x00"))

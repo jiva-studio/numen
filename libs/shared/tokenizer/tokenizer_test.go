@@ -3,6 +3,7 @@ package tokenizer_test
 import (
 	"errors"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -13,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/tokenizer"
 )
 
-// loadWithError loads path and turns a panic into a test failure, so a refusal is always an error.
 func loadWithError(t *testing.T, path string) (tok tokenizer.Tokenizer, err error) {
 	t.Helper()
 	defer func() {
@@ -26,9 +26,7 @@ func loadWithError(t *testing.T, path string) (tok tokenizer.Tokenizer, err erro
 
 func setMetaspace(file map[string]any, settings map[string]any) {
 	metaspace := map[string]any{"type": "Metaspace", "replacement": "▁"}
-	for key, value := range settings {
-		metaspace[key] = value
-	}
+	maps.Copy(metaspace, settings)
 	file["pre_tokenizer"] = metaspace
 }
 
@@ -72,13 +70,13 @@ func TestLoadRefusesAStepItDoesNotSupportAndNamesIt(t *testing.T) {
 			setMetaspace(file, map[string]any{"add_prefix_space": false})
 		}, "Metaspace"},
 		{"byte_fallback", func(file map[string]any) {
-			getModel(file)["byte_fallback"] = true
+			getModel(t, file)["byte_fallback"] = true
 		}, "byte_fallback"},
 		{"a Regex that RE2 cannot compile", func(file map[string]any) {
 			file["normalizer"] = map[string]any{"type": "Replace", "pattern": map[string]any{"Regex": "(?<=a)b"}, "content": "c"}
 		}, "Replace"},
 		{"a model without unk_id", func(file map[string]any) {
-			delete(getModel(file), "unk_id")
+			delete(getModel(t, file), "unk_id")
 		}, "unk_id"},
 	} {
 		_, err := loadWithError(t, writeVariant(t, one.change))
@@ -107,13 +105,16 @@ func TestLoadReturnsTheErrorOfAMissingOrMalformedFile(t *testing.T) {
 	}
 }
 
-// fixtureTexts cover every path of the fixture: Viterbi, ties, unknowns, Strip, Replace and Metaspace.
-var fixtureTexts = []string{"abcd", "xy", "ghk", "mnp", "ʘʘ", "ʘhkʘ", "  a  b  ", "hello world", "hello▁world", "", "abcd xy ghk  mnp ʘ"}
+func getFixtureTexts() []string {
+	// The texts cover every path of the fixture: Viterbi, ties, unknowns, Strip, Replace and Metaspace.
+	return []string{"abcd", "xy", "ghk", "mnp", "ʘʘ", "ʘhkʘ", "  a  b  ", "hello world", "hello▁world", "", "abcd xy ghk  mnp ʘ"}
+}
 
 // The tokenizer holds no state that an Encode changes: 16 goroutines get the ids one goroutine gets.
 // Run under -race.
 func TestEncodeIsSafeForConcurrentUse(t *testing.T) {
 	tok := loadFixture(t)
+	fixtureTexts := getFixtureTexts()
 	want := make([][]int, len(fixtureTexts))
 	for i, text := range fixtureTexts {
 		want[i] = tok.Encode(text)

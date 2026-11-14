@@ -30,10 +30,11 @@ type Tokenizer interface {
 // ids it gives for some text change.
 const Version = "unigram-1"
 
-// Encoding is a pair encoded for a cross-encoder.
+// Encoding is a pair encoded for a cross-encoder. TypeIDs holds the type_id the template gives
+// each id.
 type Encoding struct {
 	IDs     []int
-	TypeIDs []int // the type_id of each id, from the template
+	TypeIDs []int
 }
 
 var (
@@ -114,7 +115,7 @@ func loadUnigramTokenizer(raw []byte) (*unigramTokenizer, error) {
 func findPadID(tokens []addedToken) (int, bool) {
 	id, found := 0, false
 	for _, token := range tokens {
-		if token.Content == "<pad>" || token.Content == "[PAD]" {
+		if token.Special && (token.Content == "<pad>" || token.Content == "[PAD]") {
 			id, found = token.ID, true
 		}
 	}

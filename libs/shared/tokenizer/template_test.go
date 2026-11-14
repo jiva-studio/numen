@@ -10,7 +10,7 @@ import (
 
 // The template names <s> and </s>, and its special_tokens give them the ids 5 and 7; their
 // vocabulary positions are 1 and 2.
-func TestEncodeTakesTheSpecialTokenIDsFromTheTemplate(t *testing.T) {
+func TestEncodeUsesTheSpecialTokenIDsOfTheTemplate(t *testing.T) {
 	checkEncode(t, loadFixture(t), "", []int{5, 7})
 }
 
@@ -39,7 +39,7 @@ func TestEncodeWithoutAPostProcessorReturnsThePiecesAlone(t *testing.T) {
 
 func TestEncodePairWithoutAPairTemplateFails(t *testing.T) {
 	path := writeVariant(t, func(file map[string]any) {
-		delete(file["post_processor"].(map[string]any), "pair")
+		delete(getObject(t, file["post_processor"]), "pair")
 	})
 	tok := loadTokenizer(t, path)
 	checkEncode(t, tok, "abcd", getSingleIDs(t, "▁ab", "cd"))
@@ -66,5 +66,20 @@ func TestGetPadIDReturnsTheAddedPadToken(t *testing.T) {
 	})
 	if id, ok := loadTokenizer(t, absent).GetPadID(); ok {
 		t.Errorf("GetPadID() without a pad token = %d, true, want false", id)
+	}
+}
+
+// hftokenizer reads a pad token only among the special added tokens.
+func TestGetPadIDIgnoresAPadTokenThatIsNotSpecial(t *testing.T) {
+	for _, content := range []string{"<pad>", "[PAD]"} {
+		path := writeVariant(t, func(file map[string]any) {
+			file["added_tokens"] = []any{
+				map[string]any{"id": 0, "content": "<unk>", "special": true},
+				map[string]any{"id": 3, "content": content, "special": false},
+			}
+		})
+		if id, ok := loadTokenizer(t, path).GetPadID(); ok {
+			t.Errorf("GetPadID() with a %s that is not special = %d, true, want false", content, id)
+		}
 	}
 }

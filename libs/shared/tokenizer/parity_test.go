@@ -17,13 +17,15 @@ import (
 // its repository id with the slash written as two dashes, holding tokenizer.json.
 const envTestModels = "NUMEN_TEST_MODELS"
 
-// parityModels are the Unigram models of the profiles of engines-embeddings and engines-reranking,
-// at the revisions those profiles pin. testdata/parity/record.py records their reference ids.
-var parityModels = []string{
-	"Xenova/multilingual-e5-small",
-	"Xenova/bge-m3",
-	"onnx-community/gte-multilingual-reranker-base",
-	"onnx-community/bge-reranker-v2-m3-ONNX",
+func getParityModels() []string {
+	// The Unigram models of the profiles of engines-embeddings and engines-reranking, at the revisions
+	// those profiles pin. testdata/parity/record.py records their reference ids.
+	return []string{
+		"Xenova/multilingual-e5-small",
+		"Xenova/bge-m3",
+		"onnx-community/gte-multilingual-reranker-base",
+		"onnx-community/bge-reranker-v2-m3-ONNX",
+	}
 }
 
 type parityFixture struct {
@@ -68,7 +70,7 @@ func TestUnigramModelsMatchHuggingFaceTokenizers(t *testing.T) {
 	if root == "" {
 		t.Skipf("set %s to a folder of model files to run the parity test", envTestModels)
 	}
-	for _, repo := range parityModels {
+	for _, repo := range getParityModels() {
 		t.Run(repo, func(t *testing.T) {
 			folder := strings.ReplaceAll(repo, "/", "--")
 			path := filepath.Join(root, folder, "tokenizer.json")
