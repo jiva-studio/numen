@@ -50,6 +50,7 @@ updates:
       - /plugins/tools-saved-search
       - /plugins/tools-search-relevance
       - /plugins/tools-taxonomy
+      - /plugins/tools-templates
       - /plugins/tools-updater
       - /plugins/views-flashcards-studio
     schedule:
