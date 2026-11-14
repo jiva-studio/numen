@@ -8,7 +8,8 @@ const report = window.REPORT
 const scenarios = new Map(
   report.features.flatMap((feature) => feature.scenarios.map((s) => [s.id, s])),
 )
-const state = { query: '', isFailedOnly: false, currentId: '' }
+// `search` is the text as typed, for the empty state; `query` is the form it is matched in.
+const state = { search: '', query: '', status: 'all', currentId: '' }
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const ICONS = {
@@ -69,45 +70,58 @@ const formatCount = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`
 
 // Sidebar
 
-const createStat = (value, label, status) =>
-  createElement('div', { class: `stat ${status ?? ''} ${value === 0 ? 'is-zero' : ''}` }, [
-    createElement('span', { class: 'stat-value' }, [String(value)]),
-    createElement('span', { class: 'stat-label' }, [label]),
-  ])
+const STATUS_FILTERS = [
+  { status: 'all', label: 'All' },
+  { status: 'passed', label: 'Passed' },
+  { status: 'failed', label: 'Failed' },
+  { status: 'skipped', label: 'Skipped' },
+]
 
-const createRevision = ({ commit, branch }) => {
-  if (!commit) return null
-  return createElement('p', { class: 'run-meta' }, [
-    createElement('code', { title: 'Commit' }, [commit]),
-    branch ? ` on ${branch}` : null,
-  ])
-}
-
-const writeOverview = () => {
-  const { overview } = report
-  const { passed, failed, skipped } = overview.counts
-  const startedAt = new Date(overview.startedAt).toLocaleString(undefined, {
+const writeStartedAt = () => {
+  const startedAt = new Date(report.overview.startedAt)
+  const element = document.getElementById('started-at')
+  element.textContent = startedAt.toLocaleString(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short',
   })
-  document
-    .getElementById('overview')
-    .replaceChildren(
-      createElement('div', { class: 'stats' }, [
-        createStat(overview.scenarios, overview.scenarios === 1 ? 'scenario' : 'scenarios'),
-        createStat(passed, 'passed', 'passed'),
-        createStat(failed, 'failed', 'failed'),
-        skipped > 0 ? createStat(skipped, 'skipped', 'skipped') : null,
-      ]),
-      createElement('p', { class: 'run-meta' }, [
-        `${formatCount(overview.features, 'feature')} · ${startedAt}`,
-      ]),
-      ...[createRevision(overview)].filter(Boolean),
-    )
+  element.title = startedAt.toISOString()
+}
+
+const getFilterCount = (status) =>
+  status === 'all' ? report.overview.scenarios : report.overview.counts[status]
+
+const createFilterButton = ({ status, label }) => {
+  const count = getFilterCount(status)
+  return createElement(
+    'button',
+    {
+      type: 'button',
+      class: count === 0 ? 'is-zero' : null,
+      'data-status': status,
+      'aria-pressed': String(status === state.status),
+    },
+    [label, createElement('span', { class: 'filter-count' }, [String(count)])],
+  )
+}
+
+/** Skipped appears only for a run that skipped something; the other segments always do. */
+const writeStatusFilter = () => {
+  const filters = STATUS_FILTERS.filter(
+    ({ status }) => status !== 'skipped' || getFilterCount(status) > 0,
+  )
+  document.getElementById('status-filter').replaceChildren(...filters.map(createFilterButton))
+}
+
+const selectStatus = (status) => {
+  state.status = status
+  for (const button of document.querySelectorAll('.status-filter button')) {
+    button.setAttribute('aria-pressed', String(button.dataset.status === status))
+  }
+  writeTree()
 }
 
 const isScenarioShown = (feature, scenario) => {
-  if (state.isFailedOnly && scenario.status !== 'failed') return false
+  if (state.status !== 'all' && scenario.status !== state.status) return false
   const text = `${feature.name} ${feature.uri} ${scenario.name}`.toLowerCase()
   return text.includes(state.query)
 }
@@ -145,17 +159,21 @@ const createFeatureNode = (feature, shown) => {
   return createElement('details', { class: 'feature', open: '' }, [summary, list])
 }
 
+const getEmptyTreeText = () => {
+  if (state.search) return `Nothing matches “${state.search}”`
+  return state.status === 'all' ? 'No scenarios' : `No ${state.status} scenarios`
+}
+
+const createEmptyTree = () =>
+  createElement('p', { class: 'tree-empty', role: 'status' }, [getEmptyTreeText()])
+
 const writeTree = () => {
   const nodes = report.features.flatMap((feature) => {
     const shown = feature.scenarios.filter((scenario) => isScenarioShown(feature, scenario))
     return shown.length > 0 ? [createFeatureNode(feature, shown)] : []
   })
   const tree = document.getElementById('tree')
-  tree.replaceChildren(
-    ...(nodes.length > 0
-      ? nodes
-      : [createElement('p', { class: 'empty' }, ['No scenario matches.'])]),
-  )
+  tree.replaceChildren(...(nodes.length > 0 ? nodes : [createEmptyTree()]))
 }
 
 // Scenario header
@@ -309,12 +327,13 @@ const getFirstScenarioId = () => {
 }
 
 document.getElementById('search').addEventListener('input', (event) => {
-  state.query = event.target.value.trim().toLowerCase()
+  state.search = event.target.value.trim()
+  state.query = state.search.toLowerCase()
   writeTree()
 })
-document.getElementById('failed-only').addEventListener('change', (event) => {
-  state.isFailedOnly = event.target.checked
-  writeTree()
+document.getElementById('status-filter').addEventListener('click', (event) => {
+  const button = event.target.closest('button')
+  if (button) selectStatus(button.dataset.status)
 })
 document.getElementById('tree').addEventListener('click', (event) => {
   const button = event.target.closest('.scenario')
@@ -324,7 +343,8 @@ window.addEventListener('hashchange', () =>
   selectScenario(decodeURIComponent(location.hash.slice(1))),
 )
 
-writeOverview()
+writeStartedAt()
+writeStatusFilter()
 state.currentId = decodeURIComponent(location.hash.slice(1)) || getFirstScenarioId() || ''
 writeTree()
 selectScenario(state.currentId)

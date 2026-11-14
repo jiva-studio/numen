@@ -10,18 +10,17 @@
   <body>
     <aside class="sidebar">
       <header class="sidebar-header">
-        <h1>Acceptance scenarios</h1>
-        <section id="overview" class="overview" aria-label="Run"></section>
+        <div class="sidebar-title">
+          <h1>Acceptance scenarios</h1>
+          <p id="started-at" class="started-at"></p>
+        </div>
         <input
           id="search"
           type="search"
           placeholder="Search features and scenarios"
           aria-label="Search"
         />
-        <label class="check">
-          <input id="failed-only" type="checkbox" />
-          Failed only
-        </label>
+        <div id="status-filter" class="status-filter" role="group" aria-label="Status"></div>
       </header>
       <nav id="tree" class="tree" aria-label="Scenarios"></nav>
     </aside>
