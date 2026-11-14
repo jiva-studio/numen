@@ -1,20 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import type { PluginInfo } from '@numen/plugin-manager'
-import {
-  createLostConnection,
-  createMockCatalogEntry,
-  installCoreAnswers,
-} from '@numen/core-client/testing'
+import { createLostConnection, createMockCatalogEntry } from '@numen/core-client/testing'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { useCatalogEntries } from './catalogEntries'
-
-let restore: (() => void) | undefined
-
-afterEach(() => {
-  restore?.()
-  restore = undefined
-})
 
 function createPlugin(id: string, isActive: boolean): PluginInfo {
   return {
@@ -36,10 +26,10 @@ describe('useCatalogEntries', () => {
       entries: [createMockCatalogEntry('sample.notes')],
       sourceErrors: [{ source: 'community', message: 'timed out' }],
     }))
-    restore = installCoreAnswers({ pluginCatalog: { listCatalog } })
+    const api = createAnsweredApi({ pluginCatalog: { listCatalog } })
     const plugins = ref<readonly PluginInfo[]>([])
     const errors: unknown[] = []
-    const entries = useCatalogEntries(plugins, (err) => errors.push(err))
+    const entries = useCatalogEntries(api.listCatalog, plugins, (err) => errors.push(err))
 
     expect(entries.value).toStrictEqual([])
     expect(listCatalog).not.toHaveBeenCalled()
@@ -66,7 +56,7 @@ describe('useCatalogEntries', () => {
   })
 
   it('reports why the catalog is unavailable', async () => {
-    restore = installCoreAnswers({
+    const api = createAnsweredApi({
       pluginCatalog: {
         listCatalog: () => {
           throw createLostConnection('offline')
@@ -75,7 +65,7 @@ describe('useCatalogEntries', () => {
     })
     const plugins = ref<readonly PluginInfo[]>([])
     const errors: unknown[] = []
-    useCatalogEntries(plugins, (err) => errors.push(err))
+    useCatalogEntries(api.listCatalog, plugins, (err) => errors.push(err))
 
     plugins.value = [createPlugin('a', false)]
     await nextTick()

@@ -1,5 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { connections } from '@/shared/api/clients'
+import { describe, expect, it, vi } from 'vitest'
 import { formatError } from '@/shared/api/errors'
 import type { Result } from '@/shared/lib/result'
 import type {
@@ -15,6 +14,7 @@ interface TypeList {
   readonly types: readonly ConnectionTypeInfo[]
   readonly operations: readonly { readonly name: string; readonly title: string }[]
 }
+import { createConnectionApi } from '../api/connections'
 import { createConnectionStore } from './connections'
 
 const asValue = <T>(value: T): Result<T, ConnectionFailure> => ({ ok: true, value })
@@ -31,10 +31,6 @@ interface ConnectionClient {
   update(change: ConnectionChange): Promise<Result<ConnectionInfo, ConnectionFailure>>
   delete(id: string): Promise<Result<undefined, ConnectionFailure>>
 }
-
-afterEach(() => {
-  vi.restoreAllMocks()
-})
 
 const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => ({
   id: 'c00000001',
@@ -62,12 +58,8 @@ const createClient = (overrides: Partial<ConnectionClient> = {}): ConnectionClie
 
 const createStore = (client: ConnectionClient) => {
   const notify = vi.fn()
-  vi.spyOn(connections, 'listTypes').mockImplementation(client.listTypes)
-  vi.spyOn(connections, 'list').mockImplementation(client.list)
-  vi.spyOn(connections, 'create').mockImplementation(client.create)
-  vi.spyOn(connections, 'update').mockImplementation(client.update)
-  vi.spyOn(connections, 'delete').mockImplementation(client.delete)
-  return { notify, store: createConnectionStore(notify) }
+  const api = createConnectionApi({ ...client, listRowOptions: () => Promise.resolve(asValue([])) })
+  return { notify, store: createConnectionStore(api, notify) }
 }
 
 describe('createConnectionStore', () => {

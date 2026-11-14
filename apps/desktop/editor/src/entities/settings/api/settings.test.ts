@@ -2,12 +2,10 @@
  * How the window reads its settings out of what the vault answers, and what it
  * hands the vault to write.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PLUGIN_CONTRIBUTION_KIND } from '@numen/core-client'
-import { installCoreAnswers } from '@numen/core-client/testing'
-import * as settingsApi from './settings'
-
-const core = settingsApi
+import { createAnsweredClients } from '@/testing/coreAnswers'
+import { createSettingsApi } from './settings'
 
 const request = {
   getSettings: vi.fn(),
@@ -17,6 +15,8 @@ const request = {
   deletePluginData: vi.fn(),
   watchSettings: vi.fn(),
 }
+
+const core = createSettingsApi(createAnsweredClients({ settingsService: request }).settingsService)
 
 const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
@@ -28,16 +28,9 @@ const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
 
 const writtenLast = () => request.writeSettings.mock.calls.at(-1)?.[0]
 
-let restore: () => void
-
 beforeEach(() => {
-  restore = installCoreAnswers({ settingsService: request })
   request.getSettings.mockReset()
   request.writeSettings.mockReset().mockResolvedValue({})
-})
-
-afterEach(() => {
-  restore()
 })
 
 describe('every setting', () => {

@@ -2,15 +2,10 @@
  * The commands the plugins declare as the window reads them, and a run as the
  * window dispatches it and reads its result.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
-import { installCoreAnswers } from '@numen/core-client/testing'
-import {
-  listDeclaredCommands,
-  listDeclaredItemLists,
-  runDeclaredCommand,
-  runDeclaredHandler,
-} from './declaredCommands'
+import { createAnsweredClients } from '@/testing/coreAnswers'
+import { createDeclaredCommandsApi } from './declaredCommands'
 
 const request = {
   listCommands: vi.fn(),
@@ -18,32 +13,29 @@ const request = {
   listCommandItems: vi.fn(),
 }
 
-let restore: () => void
-
-beforeEach(() => {
-  restore = installCoreAnswers({
-    pluginCommands: {
-      ...request,
-      listCommands: async (...asked: unknown[]) => {
-        const answer = (await request.listCommands(...asked)) as { slots?: { entry?: object }[] }
-        // A message from the core always carries its maps and lists, empty where it has none.
-        return {
-          contentTypeByExtension: {},
-          handlers: [],
-          keybindings: [],
-          ...answer,
-          slots: (answer.slots ?? []).map((one) =>
-            one.entry ? { ...one, entry: { values: {}, ...one.entry } } : one,
-          ),
-        }
+const { listDeclaredCommands, listDeclaredItemLists, runDeclaredCommand, runDeclaredHandler } =
+  createDeclaredCommandsApi(
+    createAnsweredClients({
+      pluginCommands: {
+        ...request,
+        listCommands: async (...asked: unknown[]) => {
+          const answer = (await request.listCommands(...asked)) as {
+            slots?: { entry?: object }[]
+          }
+          // A message from the core always carries its maps and lists, empty where it has none.
+          return {
+            contentTypeByExtension: {},
+            handlers: [],
+            keybindings: [],
+            ...answer,
+            slots: (answer.slots ?? []).map((one) =>
+              one.entry ? { ...one, entry: { values: {}, ...one.entry } } : one,
+            ),
+          }
+        },
       },
-    },
-  })
-})
-
-afterEach(() => {
-  restore()
-})
+    }).pluginCommands,
+  )
 
 const proofread = {
   pluginId: 'org.example.ink',

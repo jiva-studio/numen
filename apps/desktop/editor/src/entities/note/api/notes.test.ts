@@ -4,7 +4,7 @@
  * The one thing this module decides on its own: how a file the window references is serialized
  * and parsed. Everything else passes a message through unchanged, and the schema defines its shape.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   NOTE_ERROR_CODE,
   NOTE_MARKER,
@@ -12,18 +12,8 @@ import {
   NOTE_ROLE,
   NAME_SOURCE,
 } from '@numen/core-client'
-import { installCoreHandlers } from '@numen/core-client/testing'
-import {
-  createNote,
-  getInitialOpenPath,
-  listRelatedNotes,
-  listHeadings,
-  readNote,
-  renameNote,
-  resolveLinks,
-  watchEdits,
-  writeNote,
-} from './notes'
+import { createHandledClients } from '@/testing/coreAnswers'
+import { createNoteApi } from './notes'
 
 const request = {
   readNote: vi.fn(),
@@ -37,15 +27,7 @@ const request = {
   watchEdits: vi.fn(),
 }
 
-let restore: () => void
-
-beforeEach(() => {
-  restore = installCoreHandlers(request)
-})
-
-afterEach(() => {
-  restore()
-})
+const api = createNoteApi(createHandledClients(request).notes)
 
 describe('the file a save presents', () => {
   it('arrives back as the file it was, through a path that holds spaces', async () => {
@@ -57,9 +39,9 @@ describe('the file a save presents', () => {
     request.readNote.mockResolvedValue({ body: 'prose', at: noteFile })
     request.writeNote.mockResolvedValue({})
 
-    const read = await readNote(noteFile.path)
+    const read = await api.readNote(noteFile.path)
     if (!read.ok) throw new Error('the read failed')
-    await writeNote(noteFile.path, 'prose and more', {
+    await api.writeNote(noteFile.path, 'prose and more', {
       prose: read.value.body,
       stat: read.value.at ?? '',
     })
@@ -74,7 +56,7 @@ describe('the file a save presents', () => {
   it('is left out of a save that presents nothing', async () => {
     request.writeNote.mockResolvedValue({})
 
-    await writeNote('Heat.md', 'mine', null)
+    await api.writeNote('Heat.md', 'mine', null)
 
     expect(request.writeNote.mock.calls.at(-1)?.[0]).toMatchObject({
       path: 'Heat.md',
@@ -86,7 +68,7 @@ describe('the file a save presents', () => {
   it('is a change under the window where the file moved past the save', async () => {
     request.writeNote.mockResolvedValue({ error: NOTE_ERROR_CODE.CONFLICT })
 
-    expect(await writeNote('Heat.md', 'mine', { prose: 'old', stat: '1 1 Heat.md' })).toEqual({
+    expect(await api.writeNote('Heat.md', 'mine', { prose: 'old', stat: '1 1 Heat.md' })).toEqual({
       ok: false,
       error: 'changed',
     })
@@ -97,32 +79,32 @@ describe('a note read', () => {
   it('is requested for by its path', async () => {
     request.readNote.mockResolvedValue({ body: 'prose' })
 
-    expect(await readNote('Notes/Heat.md')).toEqual({ ok: true, value: { body: 'prose' } })
+    expect(await api.readNote('Notes/Heat.md')).toEqual({ ok: true, value: { body: 'prose' } })
     expect(request.readNote.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'Notes/Heat.md' })
   })
 
   it('fails in the words of the error', async () => {
     request.readNote.mockResolvedValue({ error: NOTE_ERROR_CODE.NOT_TEXT })
 
-    expect(await readNote('photo.png')).toEqual({ ok: false, error: 'notText' })
+    expect(await api.readNote('photo.png')).toEqual({ ok: false, error: 'notText' })
   })
 })
 
 describe('a note created', () => {
   it('is created at the path of its folder, and rejected with error of the error', async () => {
     request.createNote.mockResolvedValue({ path: 'Notes/Heat.md' })
-    const created = await createNote({ title: 'Heat', folder: 'Notes' })
+    const created = await api.createNote({ title: 'Heat', folder: 'Notes' })
     expect(created).toEqual({ ok: true, value: { path: 'Notes/Heat.md' } })
     expect(request.createNote.mock.calls.at(-1)?.[0].path).toBe('Notes')
 
     request.createNote.mockResolvedValue({ error: NOTE_ERROR_CODE.ALREADY_EXISTS })
-    expect(await createNote({ title: 'Heat', folder: 'Notes' })).toEqual({
+    expect(await api.createNote({ title: 'Heat', folder: 'Notes' })).toEqual({
       ok: false,
       error: 'alreadyExists',
     })
 
     request.createNote.mockResolvedValue({ isNameExhausted: true })
-    expect(await createNote({ title: '', folder: '' })).toEqual({
+    expect(await api.createNote({ title: '', folder: '' })).toEqual({
       ok: false,
       error: 'alreadyExists',
     })
@@ -136,17 +118,17 @@ describe('a note renamed', () => {
       title: 'B',
       nameSource: NAME_SOURCE.FRONTMATTER,
     })
-    expect(await renameNote('A.md', 'B')).toEqual({
+    expect(await api.renameNote('A.md', 'B')).toEqual({
       ok: true,
       value: { path: 'B.md', title: 'B', hasFrontmatter: true, moved: null },
     })
     expect(request.renameNote.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'A.md', title: 'B' })
 
     request.renameNote.mockResolvedValue({ error: NOTE_ERROR_CODE.CONFLICT })
-    expect(await renameNote('A.md', 'B')).toEqual({ ok: false, error: 'changed' })
+    expect(await api.renameNote('A.md', 'B')).toEqual({ ok: false, error: 'changed' })
 
     request.renameNote.mockResolvedValue({ error: NOTE_ERROR_CODE.ALREADY_EXISTS })
-    expect(await renameNote('A.md', 'B')).toEqual({ ok: false, error: 'alreadyExists' })
+    expect(await api.renameNote('A.md', 'B')).toEqual({ ok: false, error: 'alreadyExists' })
   })
 
   it('carries the file that moved with it, and the links that were repaired', async () => {
@@ -157,7 +139,7 @@ describe('a note renamed', () => {
       moved: { from: 'a.md', to: 'b.md', repaired: ['c.md'] },
     })
 
-    expect(await renameNote('a.md', 'B')).toEqual({
+    expect(await api.renameNote('a.md', 'B')).toEqual({
       ok: true,
       value: {
         path: 'b.md',
@@ -175,7 +157,7 @@ describe('the headings of notes', () => {
       headings: [{ path: 'a.md', headings: [{ text: 'H1', level: 1, line: 1 }] }],
     })
 
-    const headings = await listHeadings(['a.md', 'b.md'])
+    const headings = await api.listHeadings(['a.md', 'b.md'])
 
     expect(request.listHeadings.mock.calls.at(-1)?.[0]).toMatchObject({ paths: ['a.md', 'b.md'] })
     expect(headings.get('a.md')).toEqual([{ text: 'H1', level: 1, line: 1 }])
@@ -197,7 +179,7 @@ describe('the wikilinks of a text', () => {
       ],
     })
 
-    const resolved = await resolveLinks('a.md', '[[B]] [[C|see C]] [[D]]')
+    const resolved = await api.resolveLinks('a.md', '[[B]] [[C|see C]] [[D]]')
 
     expect(request.resolveAddresses.mock.calls.at(-1)?.[0]).toMatchObject({
       from: 'a.md',
@@ -216,14 +198,14 @@ describe('the note the vault opens first', () => {
   it('is requested of no particular caller, and is none where the answer names none', async () => {
     request.getOpeningNote.mockResolvedValue({})
 
-    expect(await getInitialOpenPath()).toBeNull()
+    expect(await api.getInitialOpenPath()).toBeNull()
     expect(request.getOpeningNote.mock.calls.at(-1)?.[0]).toMatchObject({})
   })
 
   it('is the path the answer names', async () => {
     request.getOpeningNote.mockResolvedValue({ note: { path: 'opening.md', title: 'Opening' } })
 
-    expect(await getInitialOpenPath()).toEqual({ path: 'opening.md' })
+    expect(await api.getInitialOpenPath()).toEqual({ path: 'opening.md' })
   })
 })
 
@@ -238,7 +220,7 @@ describe('the edits made to notes', () => {
     })
 
     const observed = []
-    for await (const edit of watchEdits(new AbortController().signal)) observed.push(edit)
+    for await (const edit of api.watchEdits(new AbortController().signal)) observed.push(edit)
 
     expect(observed).toEqual([
       { change: '1', path: 'a.md', span: { start: 2, end: 5 }, text: 'abc', isComplete: false },
@@ -255,7 +237,7 @@ describe('a noteGraph', () => {
       connections: [],
     })
 
-    const noteGraph = await listRelatedNotes('a.md')
+    const noteGraph = await api.listRelatedNotes('a.md')
 
     expect(noteGraph.focus.path).toBe('a.md')
     expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md' })
@@ -264,12 +246,12 @@ describe('a noteGraph', () => {
   it('asks for depth 1 unless a depth is given, and for depth 2 when it is given', async () => {
     request.listRelatedNotes.mockResolvedValue({ focus: { path: 'a.md', title: 'A' } })
 
-    await listRelatedNotes('a.md')
+    await api.listRelatedNotes('a.md')
     expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({
       path: 'a.md',
       depth: 1,
     })
-    await listRelatedNotes('a.md', 2)
+    await api.listRelatedNotes('a.md', 2)
     expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({
       path: 'a.md',
       depth: 2,
@@ -293,7 +275,7 @@ describe('a noteGraph', () => {
       ],
     })
 
-    const noteGraph = await listRelatedNotes('Rota.md', 2)
+    const noteGraph = await api.listRelatedNotes('Rota.md', 2)
 
     expect(noteGraph.related.map((one) => one.relatedTo)).toEqual([undefined, 'Plots.md'])
     expect('relatedTo' in noteGraph.related[0]!).toBe(false)
@@ -320,7 +302,7 @@ describe('a noteGraph', () => {
       ],
     })
 
-    const noteGraph = await listRelatedNotes('Rota.md')
+    const noteGraph = await api.listRelatedNotes('Rota.md')
 
     expect(noteGraph.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
     expect(noteGraph.focusType).toBe('sample')
@@ -348,12 +330,12 @@ describe('a noteGraph', () => {
       ],
     })
 
-    expect((await listRelatedNotes('Rota.md')).related).toEqual([])
+    expect((await api.listRelatedNotes('Rota.md')).related).toEqual([])
   })
 
   it('relies on nothing where the vault no longer holds the note', async () => {
     request.listRelatedNotes.mockResolvedValue({ related: [] })
 
-    expect((await listRelatedNotes('Gone.md')).focus.path).toBe('')
+    expect((await api.listRelatedNotes('Gone.md')).focus.path).toBe('')
   })
 })

@@ -2,10 +2,11 @@
  * The calls of the note service that read and write connections between notes, over the real client
  * and a router in place of the core.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { NOTE_ERROR_CODE, NOTE_MARKER, NOTE_ROLE } from '@numen/core-client'
-import { installCoreHandlers } from '@numen/core-client/testing'
-import { relations } from './relations'
+import { createHandledClients } from '@/testing/coreAnswers'
+import { createNoteApi } from './notes'
+import { createRelations } from './relations'
 
 const request = {
   getConnection: vi.fn(),
@@ -18,15 +19,8 @@ const request = {
   resolveAddresses: vi.fn(),
 }
 
-let restore: () => void
-
-beforeEach(() => {
-  restore = installCoreHandlers(request)
-})
-
-afterEach(() => {
-  restore()
-})
+const clients = createHandledClients(request)
+const relations = createRelations(clients.notes, createNoteApi(clients.notes).resolveLinks)
 
 describe('the connections between notes', () => {
   it('are read with the role the core derived, and the markers of their records', async () => {

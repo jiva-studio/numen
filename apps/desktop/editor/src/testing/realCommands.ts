@@ -31,12 +31,16 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import { useDeclaredCommands, watchCommandLists } from '@/features/plugin-commands'
 import { createSearchMenu, createWindowSlots } from '@/features/plugin-host'
 import { createPluginPalette } from '@/app/window/createPluginPalette'
-import { getVaultList } from '@/features/window-display'
+import { createVaultListReader } from '@/features/window-display'
 import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/features/hotkeys'
 import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import { WORDS } from '@/shared/ui/words'
 import { createNoteWriter } from '@/entities/note'
 import { createAppCommands } from './appCommands'
+import { createAnsweredApi } from './coreAnswers'
+
+/** The calls of a window whose core answers none. */
+const api = createAnsweredApi({})
 
 export interface ManifestKeybinding {
   readonly key: string
@@ -187,7 +191,11 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { menu: createSearchMenu(pluginHost.slots) },
-    getVaultList,
+    getVaultList: createVaultListReader({
+      vaults: api.vaults,
+      getShownVault: api.shownVault.getShownVault,
+    }),
+    searchCore: api.search,
   })
   watchCommandLists(
     {
@@ -232,6 +240,8 @@ export function createRealWindow(parts: RealWindowParts) {
   const declaredCommands = useDeclaredCommands({
     registry,
     list: () => Promise.resolve({ commands: [], slots: [] }),
+    run: api.declaredCommands.runDeclaredCommand,
+    listItems: () => Promise.resolve([]),
   })
   const pluginHost = createHost(parts, declaredCommands)
   const options = {
@@ -275,7 +285,12 @@ export function createRealWindow(parts: RealWindowParts) {
   const features = collectFeatureCommands(
     {
       notes: {
-        making: createNoteWriter(() => undefined),
+        files: api.file,
+        renameNote: api.note.renameNote,
+        making: createNoteWriter(
+          { createNote: api.note.createNote, relations: api.relations },
+          () => undefined,
+        ),
         notes: options.reached,
         navigator: {
           travel: () => Promise.resolve(),
@@ -285,8 +300,10 @@ export function createRealWindow(parts: RealWindowParts) {
         },
         writeMessage: options.writeMessage,
       },
-      files: { notes: options.reached, writeMessage: options.writeMessage },
+      files: { files: api.file, notes: options.reached, writeMessage: options.writeMessage },
       vaults: {
+        vaults: api.vaults,
+        emptyTrash: api.file.emptyTrash,
         tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
         setVaultName: () => undefined,
         reload: () => undefined,
@@ -301,7 +318,11 @@ export function createRealWindow(parts: RealWindowParts) {
         detach: () => undefined,
         move: () => undefined,
       },
-      versions: { listItems: () => Promise.resolve([]), writeMessage: options.writeMessage },
+      versions: {
+        runDeclaredHandler: api.declaredCommands.runDeclaredHandler,
+        listItems: () => Promise.resolve([]),
+        writeMessage: options.writeMessage,
+      },
     },
     WORDS,
   )

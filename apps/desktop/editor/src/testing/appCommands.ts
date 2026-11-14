@@ -7,6 +7,7 @@ import type { Command } from '@/entities/command'
 import type { Notes } from '@/shared/model/command'
 import { createNoteWriter } from '@/entities/note'
 import { WORDS } from '@/shared/ui/words'
+import { createAnsweredApi } from './coreAnswers'
 
 const noop = (): void => undefined
 
@@ -19,10 +20,14 @@ const NO_NOTES: Notes = {
   openFile: noop,
 }
 
-/** A window whose tabs hold nothing and whose core is never asked. */
-export const createEmptyWindow = (): Parameters<typeof collectFeatureCommands>[0] => ({
+/** A window whose tabs hold nothing and whose core answers no call. */
+export const createEmptyWindow = (
+  api = createAnsweredApi({}),
+): Parameters<typeof collectFeatureCommands>[0] => ({
   notes: {
-    making: createNoteWriter(noop),
+    files: api.file,
+    renameNote: api.note.renameNote,
+    making: createNoteWriter({ createNote: api.note.createNote, relations: api.relations }, noop),
     notes: NO_NOTES,
     navigator: {
       travel: () => Promise.resolve(),
@@ -32,8 +37,14 @@ export const createEmptyWindow = (): Parameters<typeof collectFeatureCommands>[0
     },
     writeMessage: noop,
   },
-  files: { notes: NO_NOTES, writeMessage: noop },
-  vaults: { setVaultName: noop, reload: noop, writeMessage: noop },
+  files: { files: api.file, notes: NO_NOTES, writeMessage: noop },
+  vaults: {
+    vaults: api.vaults,
+    emptyTrash: api.file.emptyTrash,
+    setVaultName: noop,
+    reload: noop,
+    writeMessage: noop,
+  },
   tabs: {
     tabLinks: {
       tabs: [],
@@ -49,7 +60,11 @@ export const createEmptyWindow = (): Parameters<typeof collectFeatureCommands>[0
     detach: noop,
     move: noop,
   },
-  versions: { listItems: () => Promise.resolve([]), writeMessage: noop },
+  versions: {
+    runDeclaredHandler: api.declaredCommands.runDeclaredHandler,
+    listItems: () => Promise.resolve([]),
+    writeMessage: noop,
+  },
 })
 
 /** Every command of the editor in the order the palette draws them. */

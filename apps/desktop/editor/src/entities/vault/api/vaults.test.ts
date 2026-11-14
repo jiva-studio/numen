@@ -2,10 +2,10 @@
  * The requests the window makes about the vaults of the installation, and how it words what the
  * core answers.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { VAULTS_ERROR_CODE } from '@numen/core-client'
-import { installCoreHandlers } from '@numen/core-client/testing'
-import { vaults } from './vaults'
+import { createHandledClients } from '@/testing/coreAnswers'
+import { createVaults } from './vaults'
 
 const requestLog = {
   listVaults: vi.fn(),
@@ -16,15 +16,10 @@ const requestLog = {
   openVault: vi.fn(),
 }
 
-let restore: () => void
+const vaults = createVaults(createHandledClients(requestLog).vaultsService)
 
 beforeEach(() => {
   vi.clearAllMocks()
-  restore = installCoreHandlers(requestLog)
-})
-
-afterEach(() => {
-  restore()
 })
 
 describe('a vault requested for', () => {
