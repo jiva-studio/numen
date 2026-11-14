@@ -7,7 +7,7 @@
  */
 import { afterEach } from 'vitest'
 import { createCoreTransport, type CoreAnswers } from '@numen/core-client/testing'
-import type { Transport } from '@/shared/api/clients'
+import type { Transport } from '@numen/core-client'
 import { createTestTransports } from './coreAnswers'
 import { fileAnswers } from './mocks/file'
 import { noteAnswers } from './mocks/note'

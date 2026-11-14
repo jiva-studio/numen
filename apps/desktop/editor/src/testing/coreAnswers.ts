@@ -2,13 +2,14 @@
  * The window's clients and calls over a transport that answers the calls of the core from a test,
  * so the real clients encode each call and only the core is replaced.
  */
+import type { Transport } from '@numen/core-client'
 import {
   createCoreHandlerTransport,
   createCoreTransport,
   type CoreAnswers,
 } from '@numen/core-client/testing'
 import { createWindowApi } from '@/app/window/createWindowApi'
-import { createWindowClients, type Transport, type WindowTransports } from '@/shared/api/clients'
+import { createWindowClients, type WindowTransports } from '@/shared/api/clients'
 
 /** The transports of a window that send every request, keepalive or not, over `transport`. */
 export const createTestTransports = (transport: Transport): WindowTransports => ({

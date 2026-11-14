@@ -69,7 +69,7 @@ const startLookup = (kind: string, services: UnavailableServices) => {
 export const createUnavailableKind = (
   pane: Component,
   kind: string,
-  options?: UnavailableKindOptions,
+  options: UnavailableKindOptions | undefined,
   services: UnavailableServices,
 ): AnyTabKind => {
   const placeholder: {

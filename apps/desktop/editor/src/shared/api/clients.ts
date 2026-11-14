@@ -26,8 +26,6 @@ import {
   type Transport,
 } from '@numen/core-client'
 
-export type { Transport }
-
 /**
  * What the window sends its requests over. `keepalive` carries the requests that must complete
  * after the page unloads.

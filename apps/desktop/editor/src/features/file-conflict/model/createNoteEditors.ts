@@ -18,7 +18,7 @@ import { createFileFlush } from './flush'
 import { createNoteFlushHandler } from './noteFlush'
 
 /** The calls the notes are read, written and made through, and the quit of the window. */
-export interface NoteEditorsApi {
+interface NoteEditorsApi {
   readonly notes: NoteBufferApi
   readonly making: NoteMakingApi
   readonly quit: QuitApi
