@@ -76,10 +76,15 @@ function onClose() {
     <div v-if="isOpen" class="todos-status__popover" role="dialog" :aria-label="words.chipLabel">
       <section v-for="group in groups" :key="group.key" class="todos-status__group">
         <h3 class="todos-status__heading">
-          {{ group.label }} <span class="todos-status__total">{{ group.total }}</span>
+          {{ group.label }}
+          <span class="todos-status__total">{{ group.total }}</span>
         </h3>
         <ul class="todos-status__list">
-          <li v-for="task in group.tasks" :key="`${task.path}:${task.line}`" class="todos-status__row">
+          <li
+            v-for="task in group.tasks"
+            :key="`${task.path}:${task.line}`"
+            class="todos-status__row"
+          >
             <input type="checkbox" disabled :aria-label="words.taskDone" />
             <button
               type="button"
