@@ -17,6 +17,7 @@ const createControls = (parts) =>
     ]),
   ])
 
+/* global createCursor, writeCursor, linkCursor */
 const createVideoSection = () => {
   const parts = {
     player: createElement('video', { class: 'player', preload: 'auto', playsinline: '' }),
@@ -107,6 +108,7 @@ const writePosition = (video) => {
   video.clock.total.textContent = formatOffset(video.length)
   const playhead = video.timeline.querySelector('.playhead')
   if (playhead) playhead.style.left = `${percent}%`
+  writeCursor(video)
 }
 
 const createSegment = (video, segment) => {
@@ -285,6 +287,7 @@ const linkVideo = (video) => {
   video.stepList.addEventListener('click', (event) => handleStepClick(video, event))
   linkTimeline(video)
   linkControls(video)
+  linkCursor(video)
   setSpeed(video, readSpeed())
 }
 
@@ -312,6 +315,7 @@ const createVideo = (scenario, stepList) => {
   if (currentVideo) closeSpeedMenu(currentVideo)
   currentVideo = {
     ...parts,
+    cursor: createCursor(),
     scenario,
     stepList,
     stepItems: [...stepList.querySelectorAll('.step')],

@@ -25,7 +25,7 @@ import { World } from './world.js'
 
 export type Recording = {
   readonly contextOptions: Pick<BrowserContextOptions, 'recordVideo'>
-  readonly onPage: (page: Page) => void
+  readonly onPage: (page: Page) => Promise<void>
 }
 
 export class Scenario {
@@ -151,7 +151,7 @@ export class Scenario {
     // A link without a copy embeds the player of the site, which a run offline does not reach.
     await context.route(/youtube-nocookie\.com/, (route) => route.abort())
     this.currentPage = await context.newPage()
-    this.recording?.onPage(this.currentPage)
+    await this.recording?.onPage(this.currentPage)
     this.hasWorkspace = false
   }
 

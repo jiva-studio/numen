@@ -1,0 +1,40 @@
+.cursor-layer {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cursor-layer[hidden],
+.cursor-ripple[hidden] {
+  display: none;
+}
+
+.cursor-pointer {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  margin: -2.5px 0 0 -5px;
+  overflow: visible;
+  filter: drop-shadow(0 1px 2px var(--black-a7));
+}
+
+.cursor-pointer path {
+  fill: var(--white-a12);
+  stroke: var(--black-a12);
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+.cursor-ripple {
+  --progress: 0;
+
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--white-a12);
+  border-radius: 50%;
+  background: var(--white-a5);
+  box-shadow: 0 0 0 1px var(--black-a6);
+  opacity: calc(1 - var(--progress));
+  transform: translate(-50%, -50%) scale(calc(0.3 + 0.9 * var(--progress)));
+}

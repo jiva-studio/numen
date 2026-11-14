@@ -4,6 +4,7 @@ import {
   findNextStart,
   findPreviousStart,
   findStepAt,
+  getCursorAt,
   getSegments,
   getSetupLength,
   getStepPhases,
@@ -153,5 +154,54 @@ describe('the functions as the page runs them', () => {
     expect(fromSource(getVideoLength)(Number.NaN, [{ start: 1, duration: 500 }])).toBe(1.5)
     expect(fromSource(getSetupLength)([{ keyword: 'Given' }, { keyword: 'When' }])).toBe(1)
     expect(fromSource(findActionStart)(starts, 1)).toBe(2)
+  })
+})
+
+describe('getCursorAt', () => {
+  const clicks = [
+    { t: 2, x: 0.2, y: 0.4 },
+    { t: 5, x: 0.6, y: 0.8 },
+  ]
+
+  it('shows no cursor in a video without clicks', () => {
+    expect(getCursorAt([], 3)).toBeNull()
+  })
+
+  it('rests on the first click before it happens', () => {
+    expect(getCursorAt(clicks, 0.5)).toEqual({ x: 0.2, y: 0.4, ripple: null })
+  })
+
+  it('starts a ripple on the point of a click and ends it after 0.4 s', () => {
+    expect(getCursorAt(clicks, 2)?.ripple).toEqual({ x: 0.2, y: 0.4, progress: 0 })
+    expect(getCursorAt(clicks, 2.2)?.ripple?.progress).toBeCloseTo(0.5)
+    expect(getCursorAt(clicks, 2.41)?.ripple).toBeNull()
+  })
+
+  it('rests on a click until 0.6 s before the next one', () => {
+    expect(getCursorAt(clicks, 4.4)).toMatchObject({ x: 0.2, y: 0.4 })
+  })
+
+  it('travels to the next click with easing and lands on it', () => {
+    const halfway = getCursorAt(clicks, 4.7)
+    expect(halfway?.x).toBeCloseTo(0.4)
+    expect(halfway?.y).toBeCloseTo(0.6)
+    expect(getCursorAt(clicks, 4.55)?.x).toBeLessThan(0.3)
+    expect(getCursorAt(clicks, 5)).toMatchObject({ x: 0.6, y: 0.8 })
+  })
+
+  it('travels between clicks closer than 0.6 s in the time between them', () => {
+    const quick = [
+      { t: 1, x: 0, y: 0 },
+      { t: 1.2, x: 1, y: 1 },
+    ]
+    expect(getCursorAt(quick, 1.1)?.x).toBeCloseTo(0.5)
+  })
+
+  it('stays on the last click after it', () => {
+    expect(getCursorAt(clicks, 9)).toEqual({ x: 0.6, y: 0.8, ripple: null })
+  })
+
+  it('works from its source text, as the report page runs it', () => {
+    expect(fromSource(getCursorAt)(clicks, 4.7)?.x).toBeCloseTo(0.4)
   })
 })

@@ -66,3 +66,38 @@ export const getSetupLength = (steps: readonly { readonly keyword: string }[]): 
 
 export const findActionStart = (starts: StepStarts, setupLength: number): number | null =>
   starts.slice(setupLength).find((start) => start !== null) ?? null
+
+export type Click = { readonly t: number; readonly x: number; readonly y: number }
+
+export type Ripple = { readonly x: number; readonly y: number; readonly progress: number }
+
+export type Cursor = { readonly x: number; readonly y: number; readonly ripple: Ripple | null }
+
+export const getCursorAt = (clicks: readonly Click[], time: number): Cursor | null => {
+  const travelLength = 0.6
+  const rippleLength = 0.4
+  const ease = (share: number): number =>
+    share < 0.5 ? 2 * share * share : 1 - (-2 * share + 2) ** 2 / 2
+  const getShare = (from: Click, to: Click): number => {
+    const start = Math.max(from.t, to.t - travelLength)
+    if (to.t <= start) return 1
+    return ease(Math.min(Math.max((time - start) / (to.t - start), 0), 1))
+  }
+  const getRipple = (click: Click | undefined): Ripple | null => {
+    if (!click || time - click.t >= rippleLength) return null
+    return { x: click.x, y: click.y, progress: (time - click.t) / rippleLength }
+  }
+  const nextIndex = clicks.findIndex((click) => click.t > time)
+  const lastIndex = (nextIndex === -1 ? clicks.length : nextIndex) - 1
+  const previous = lastIndex < 0 ? undefined : clicks.at(lastIndex)
+  const next = nextIndex === -1 ? undefined : clicks.at(nextIndex)
+  const from = previous ?? next
+  if (!from) return null
+  const share = previous && next ? getShare(previous, next) : 0
+  const to = next ?? from
+  return {
+    x: from.x + (to.x - from.x) * share,
+    y: from.y + (to.y - from.y) * share,
+    ripple: getRipple(previous),
+  }
+}

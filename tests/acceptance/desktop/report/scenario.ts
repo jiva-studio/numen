@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { TestCase, TestResult } from 'playwright/types/testReporter'
 import { type BddFile, findBddTest } from './bdd-data.js'
+import { mapClicks, readClicks, type VideoClick } from './clicks.js'
 import { findScenario, type Feature, type GherkinStep } from './gherkin.js'
 import {
   collectBddSteps,
@@ -18,6 +19,7 @@ export type ScenarioRecord = ScenarioEntry & {
   readonly steps: readonly ReportStep[]
   readonly errorMessage: string | undefined
   readonly video: string | undefined
+  readonly clicks: readonly VideoClick[]
   readonly screenshot: string | undefined
 }
 
@@ -52,10 +54,11 @@ export const createScenarioRecord = (
   const id = `${featureUri.replace(/\.feature$/, '').replace(/[^\w-]+/g, '-')}-${scenario.line}`
   const status = getScenarioStatus(result.status)
   const ran = collectBddSteps(result.steps, test.location.file)
+  const videoStart = getVideoStart(result.annotations, ran) ?? result.startTime.getTime()
   const timings = mapStepTimes(
     bddTest.steps.map((step) => step.pwStepLine),
     ran,
-    getVideoStart(result.annotations, ran) ?? result.startTime.getTime(),
+    videoStart,
     status === 'failed',
   )
   const steps = scenario.steps.map((step, index) => ({ ...step, ...cleanTiming(timings[index]) }))
@@ -75,6 +78,7 @@ export const createScenarioRecord = (
     steps,
     errorMessage: readScenarioError(result, steps),
     video: files.video,
+    clicks: mapClicks(readClicks(result), videoStart),
     screenshot: files.screenshot,
   }
 }
