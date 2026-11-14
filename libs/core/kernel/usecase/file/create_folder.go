@@ -10,12 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
-// OpenGate admits every write, for an installation with no window that waits for writes.
-type OpenGate struct{}
-
-func (OpenGate) BeginWrite() bool { return true }
-func (OpenGate) FinishWrite()     {}
-
 // CreateFolder makes an empty folder with the folders above it.
 // Only the failure to make the folder wraps its cause.
 type CreateFolder struct {

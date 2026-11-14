@@ -79,7 +79,7 @@ func AbsentBinding() pluginport.PluginBinding { return absent.Runtime{} }
 func NotesShowingMoves(
 	c Config, db *Index, index edit.IndexUpdater, showing func() (domain.Vault, bool), view note.MoveView,
 ) NoteUseCases {
-	return vaultNotes(vaultOf(c), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view), Writes: note.OpenGate{}})
+	return vaultNotes(vaultOf(c), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view), Writes: openGate{}})
 }
 
 func embedderReady(c searchWiring) bool {
