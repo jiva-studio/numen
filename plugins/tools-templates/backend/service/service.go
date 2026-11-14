@@ -62,7 +62,7 @@ func convertError(err error, template string) error {
 	return fmt.Errorf("make a note from a template: %w", err)
 }
 
-func createNote(useCase newnote.CreateFromTemplate) func(context.Context, api.CreateNoteRequest) (api.CreateNoteResponse, error) {
+func makeCreateNoteHandler(useCase newnote.CreateFromTemplate) func(context.Context, api.CreateNoteRequest) (api.CreateNoteResponse, error) {
 	return func(ctx context.Context, req api.CreateNoteRequest) (api.CreateNoteResponse, error) {
 		made, err := useCase.Execute(ctx, newnote.Request{Template: req.Template, Folder: req.Folder})
 		if err != nil {
@@ -82,7 +82,7 @@ func mount(s *server.Server, vault newnote.Vault, source newnote.Clock, ids newn
 	})
 	useCase := newnote.NewCreateFromTemplate(vault, source, ids, func() string { return current.Load().folder })
 	a := s.NewAPI(api.Service)
-	server.Handle(a, api.MethodCreateNote, createNote(useCase))
+	server.Handle(a, api.MethodCreateNote, makeCreateNoteHandler(useCase))
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="api.Service and api.MethodCreateNote are valid compile-time constants."
 	return a.Err()
 }
