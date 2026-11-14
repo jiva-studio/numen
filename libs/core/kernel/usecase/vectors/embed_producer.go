@@ -55,6 +55,9 @@ type producer struct {
 }
 
 func newProducer(u Embed, isSkipped func(path, hash string) bool) producer {
+	if isSkipped == nil {
+		isSkipped = func(string, string) bool { return false }
+	}
 	return producer{chunks: u.chunks, vectors: u.vectors, batchCharacters: u.BatchCharacters, isSkipped: isSkipped}
 }
 
@@ -175,7 +178,7 @@ func (u producer) read(
 
 	isFirst := true
 	for _, p := range pending {
-		if u.isSkipped != nil && u.isSkipped(p.Source, p.ContentHash) {
+		if u.isSkipped(p.Source, p.ContentHash) {
 			mu.Lock()
 			res.Skipped++
 			mu.Unlock()

@@ -6,7 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
@@ -54,7 +57,8 @@ func TestRemoveTargetLinksRemovesEveryRecordToTheTargetInOneWrite(t *testing.T) 
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Heat.md": heatWithEntropyLinks})
 	writes := 0
-	linking := c.newEditLinks().WithWriters(countingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, writes: &writes})
+	linking := note.NewEditLinks(
+		vaultreader.Readers{}, countingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, writes: &writes}, c.index, testsupport.NewClock())
 
 	stat, err := linking.RemoveTargetLinks(t.Context(), c.vault, "Heat.md", getEntropyAddress(), "", domain.FileStat{})
 	if err != nil {

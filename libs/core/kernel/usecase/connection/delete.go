@@ -40,7 +40,7 @@ func (u *Delete) Execute(ctx context.Context, id string) ([]connection.Use, erro
 	if err := u.removeSecrets(ctx, removed); err != nil {
 		return nil, errors.Join(err, u.restoreEntry(removed, index))
 	}
-	if declared, isFound := u.types.GetType(removed.TypeID); isFound && u.lists != nil {
+	if declared, isFound := u.types.GetType(removed.TypeID); isFound {
 		u.lists.DropConnection(declared.PluginID, removed.ID)
 	}
 	uses = addGrantUses(u.operation, uses, removed.TypeID)

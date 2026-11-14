@@ -110,7 +110,12 @@ type Search struct {
 
 // NewByName creates a Search that resolves the vault and prepares the search over it.
 func NewByName(find VaultFinding, prepare VaultPreparing) Search {
-	return Search{find: find, prepare: prepare}
+	base := Search{find: find}
+	if prepare == nil {
+		prepare = func(context.Context, domain.Vault) (Search, error) { return base, nil }
+	}
+	base.prepare = prepare
+	return base
 }
 
 // ExecuteByName resolves the vault and runs the search.
@@ -122,13 +127,9 @@ func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p P
 	if err != nil {
 		return nil, err
 	}
-	runner := u
-	if u.prepare != nil {
-		var prepErr error
-		runner, prepErr = u.prepare(ctx, v)
-		if prepErr != nil {
-			return nil, prepErr
-		}
+	runner, err := u.prepare(ctx, v)
+	if err != nil {
+		return nil, err
 	}
 	return runner.Execute(ctx, v, query, p)
 }
@@ -141,6 +142,12 @@ func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p P
 func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textdomain.Readers, sources []Participant, errorHandler window.ErrorHandler, reportAnswered func()) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
+	}
+	if reportAnswered == nil {
+		reportAnswered = func() {}
+	}
+	if texts == nil {
+		texts = noTextReaders{}
 	}
 	return Search{
 		words:          NewWords(passages),
@@ -182,10 +189,10 @@ type asked struct {
 
 func (u Search) getAskedParticipants(p Parameters) []asked {
 	var out []asked
-	if p.Lexical > 0 && u.words != nil {
+	if p.Lexical > 0 {
 		out = append(out, asked{participant: u.words, limit: p.Lexical})
 	}
-	if p.Named > 0 && u.names != nil {
+	if p.Named > 0 {
 		out = append(out, asked{participant: u.names, limit: p.Named})
 	}
 	if p.Sources > 0 {
@@ -228,7 +235,7 @@ func (u Search) rank(ctx context.Context, v domain.Vault, one asked, q Query) (*
 	ranking, err := one.participant.Rank(ctx, v, q)
 	switch {
 	case err == nil:
-		if one.isTolerated && u.reportAnswered != nil {
+		if one.isTolerated {
 			u.reportAnswered()
 		}
 		return &ranking, nil

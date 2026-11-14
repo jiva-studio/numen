@@ -6,6 +6,7 @@ import (
 	"math/rand/v2"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
@@ -82,14 +83,12 @@ func vectorOf(text string, dims int) []float32 {
 }
 
 func newEmbed(readers vaultport.VaultReaders, chunks searchsourceport.VectorQueries, vectors searchsourceport.VectorRepository) Embed {
-	embed := NewEmbed(readers, chunks, vectors)
-	embed.Texts = bookTexts{readers: readers}
-	return embed
+	return NewEmbed(readers, chunks, vectors, nil, bookTexts{readers: readers}, nil)
 }
 
 func newExtract(
 	readers vaultport.VaultReaders, index *indexfake.Store,
 ) filetext.Index {
-	extract := filetext.NewIndex(readers, index, index, index, index, bookTexts{readers: readers})
+	extract := filetext.NewIndex(readers, index, index, index, index, bookTexts{readers: readers}, chunking.Sizes{}, chunking.Legibility{}, false)
 	return extract
 }

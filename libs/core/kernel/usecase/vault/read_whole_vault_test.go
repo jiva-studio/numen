@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
@@ -58,9 +59,8 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 
 	var order []string
 	notes := scanner(readers, db)
-	books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-	embed.Source = sourcefake.Wrap(pointing{})
+	books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}, chunking.Sizes{}, chunking.Legibility{}, false)
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), nil, nil, sourcefake.Wrap(pointing{}))
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	if _, err := making.Execute(t.Context(), v, indexing.Reporting{
@@ -94,8 +94,8 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 
 	notes := scanner(refusing{}, db)
 	counted := &counting{VaultReaders: readers}
-	books := filetext.NewIndex(counted, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: counted})
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
+	books := filetext.NewIndex(counted, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: counted}, chunking.Sizes{}, chunking.Legibility{}, false)
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), nil, nil, nil)
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
@@ -118,9 +118,8 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	}
 
 	notes := scanner(readers, db)
-	books := filetext.NewIndex(refusing{}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: refusing{}})
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-	embed.Source = sourcefake.Wrap(unwilling{})
+	books := filetext.NewIndex(refusing{}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: refusing{}}, chunking.Sizes{}, chunking.Legibility{}, false)
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), nil, nil, sourcefake.Wrap(unwilling{}))
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
@@ -149,10 +148,9 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 
 	limitCtx := limit(t.Context())
 	notes := scanner(readers, db)
-	books := filetext.NewIndex(timedOut{limit: limitCtx}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: timedOut{limit: limitCtx}})
+	books := filetext.NewIndex(timedOut{limit: limitCtx}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: timedOut{limit: limitCtx}}, chunking.Sizes{}, chunking.Legibility{}, false)
 	counted := &counting{VaultReaders: readers}
-	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources())
-	embed.Source = sourcefake.Wrap(unwilling{})
+	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources(), nil, nil, sourcefake.Wrap(unwilling{}))
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(limitCtx, v, indexing.Reporting{})
@@ -270,7 +268,7 @@ func (c *counting) Open(v domain.Vault) (vaultport.VaultReader, error) {
 func newWholeVaultRead(readers vaultport.VaultReaders, db *container.Index) indexing.ReadWholeVault {
 	return indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}),
-		vectors.NewEmbed(readers, db.Sources(), db.Sources()),
+		filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}, chunking.Sizes{}, chunking.Legibility{}, false),
+		vectors.NewEmbed(readers, db.Sources(), db.Sources(), nil, nil, nil),
 	)
 }

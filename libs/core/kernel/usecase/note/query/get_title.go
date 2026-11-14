@@ -14,12 +14,15 @@ type GetTitle struct {
 }
 
 func NewGetTitle(queries noteport.NoteRefs) *GetTitle {
+	if queries == nil {
+		queries = noNotes{}
+	}
 	return &GetTitle{queries: queries}
 }
 
 // Execute returns "" for an empty path, an unknown note or an index error.
 func (u *GetTitle) Execute(ctx context.Context, v domain.Vault, path string) string {
-	if u == nil || u.queries == nil || path == "" {
+	if u == nil || path == "" {
 		return ""
 	}
 	found, err := u.queries.GetNotes(ctx, v.ID, []string{path})
@@ -27,4 +30,11 @@ func (u *GetTitle) Execute(ctx context.Context, v domain.Vault, path string) str
 		return ""
 	}
 	return found[path].Title
+}
+
+// noNotes is the index of a build that has none: it holds no note.
+type noNotes struct{}
+
+func (noNotes) GetNotes(context.Context, domain.VaultID, []string) (map[string]domain.NoteRef, error) {
+	return nil, nil
 }

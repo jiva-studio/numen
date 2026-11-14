@@ -8,6 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -30,10 +31,9 @@ type Embed struct {
 	chunks  searchsourceport.VectorQueries
 	vectors searchsourceport.VectorRepository
 
-	Texts textdomain.Readers
-	Claim vaultport.IndexClaim
-
-	Source searchsourceport.Source
+	texts  textdomain.Readers
+	claim  vaultport.IndexClaim
+	source searchsourceport.Source
 
 	BatchCharacters int
 
@@ -44,19 +44,30 @@ func (u Embed) inferWorkers() int {
 	if u.Concurrency > 0 {
 		return u.Concurrency
 	}
-	if u.Source != nil && u.Source.Describe().Concurrency > 0 {
-		return u.Source.Describe().Concurrency
+	if u.source.Describe().Concurrency > 0 {
+		return u.source.Describe().Concurrency
 	}
 	return 1
 }
 
 // NewEmbed creates an Embed from the readers of vault text, the query for chunks
-// lacking a vector for the current model, and the repository where vectors are
-// written.
+// lacking a vector for the current model, the repository where vectors are
+// written, the claim on the index, the readers of file texts and the search source.
+// A nil claim holds nothing, nil texts means no file has text, and a nil source embeds nothing.
 func NewEmbed(
 	readers vaultport.VaultReaders, chunks searchsourceport.VectorQueries, vectors searchsourceport.VectorRepository,
+	claim vaultport.IndexClaim, texts textdomain.Readers, source searchsourceport.Source,
 ) Embed {
-	return Embed{readers: readers, chunks: chunks, vectors: vectors}
+	if claim == nil {
+		claim = noClaim{}
+	}
+	if texts == nil {
+		texts = noTextReaders{}
+	}
+	if source == nil {
+		source = noSource{}
+	}
+	return Embed{readers: readers, chunks: chunks, vectors: vectors, claim: claim, texts: texts, source: source}
 }
 
 // EmbedWithProgress runs Execute with onProgress reporting each step when
@@ -80,11 +91,12 @@ func (u Embed) run(
 	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
 ) (res vaultreading.EmbedResult, err error) {
 	ctx = plugin.WithBackground(ctx, plugin.WhoIndexing)
-	if u.Source == nil {
+	model := u.source.Describe()
+	if !model.IsDescribed() {
 		return res, nil
 	}
 
-	release, isBusy, err := u.claim(ctx)
+	release, isBusy, err := u.claimIndex(ctx)
 	if isBusy {
 		res.IsBusy = true
 		return res, nil
@@ -94,19 +106,13 @@ func (u Embed) run(
 	}
 	defer func() { err = errors.Join(err, release()) }()
 
-	model := u.Source.Describe()
-	if !model.IsDescribed() {
-		return res, nil
-	}
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
 	source := extracted{files: reader}
-	if u.Texts != nil {
-		if source.texts, err = u.Texts.Open(v); err != nil {
-			return res, err
-		}
+	if source.texts, err = u.texts.Open(v); err != nil {
+		return res, err
 	}
 
 	var mu sync.Mutex
@@ -131,7 +137,7 @@ func (u Embed) run(
 	})
 	g.Go(func() error {
 		defer close(completedChan)
-		return inferrer{source: u.Source}.inferBatches(gctx, workers, preparedChan, completedChan)
+		return inferrer{source: u.source}.inferBatches(gctx, workers, preparedChan, completedChan)
 	})
 	g.Go(func() error {
 		return storer{vectors: u.vectors}.storeBatches(gctx, completedChan, updateProgress)
@@ -143,11 +149,8 @@ func (u Embed) run(
 	return res, nil
 }
 
-func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
-	if u.Claim == nil {
-		return func() error { return nil }, false, nil
-	}
-	release, err := u.Claim.ClaimIndex(ctx)
+func (u Embed) claimIndex(ctx context.Context) (func() error, bool, error) {
+	release, err := u.claim.ClaimIndex(ctx)
 	if errors.Is(err, vault.ErrClaimed) {
 		return nil, true, nil
 	}
@@ -155,4 +158,29 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 		return nil, false, err
 	}
 	return release, false, nil
+}
+
+// noClaim holds nothing and is never busy.
+type noClaim struct{}
+
+func (noClaim) ClaimIndex(context.Context) (func() error, error) {
+	return func() error { return nil }, nil
+}
+
+// noTextReaders is a vault where no file has text.
+type noTextReaders struct{}
+
+func (noTextReaders) Open(domain.Vault) (textdomain.VaultTexts, error) { return nil, nil }
+
+// noSource is the search source of an installation that has none: it describes nothing, so nothing is embedded.
+type noSource struct{}
+
+func (noSource) Describe() searchsource.Description { return searchsource.Description{} }
+
+func (noSource) IndexTexts(context.Context, searchsource.Place, []searchsource.Text) ([][]float32, error) {
+	return nil, nil
+}
+
+func (noSource) SearchPassages(context.Context, searchsource.Place, searchsource.Query) ([]searchsource.Match, error) {
+	return nil, nil
 }

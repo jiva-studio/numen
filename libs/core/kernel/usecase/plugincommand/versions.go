@@ -41,3 +41,22 @@ func findEntry(list List, pluginID, command string) (plugin.CommandEntry, bool) 
 	}
 	return plugin.CommandEntry{}, false
 }
+
+// noVersions is the text versions of a window that has none.
+type noVersions struct{}
+
+func (noVersions) ListVersionItems(context.Context, domain.Vault, string, plugin.CommandEntry) ([]text.VersionItem, error) {
+	return nil, errNoVersions
+}
+
+func (noVersions) RunVersionItem(context.Context, domain.Vault, string, plugin.CommandEntry, domain.TextVersionID) (plugin.CommandResult, error) {
+	return plugin.CommandResult{}, errNoVersions
+}
+
+func (noVersions) ListEveryVersion(context.Context, domain.Vault, string) ([]text.VersionItem, error) {
+	return nil, errNoVersions
+}
+
+func (noVersions) DeleteVersion(context.Context, domain.Vault, string, domain.TextVersionID) error {
+	return errNoVersions
+}

@@ -22,7 +22,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 900)), 1)
 
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf, indexfake.GetSecond().ID: shelf}, index, index)
-	embed.Source = sourcefake.Wrap(&faint{dims: dimensions})
+	embed.source = sourcefake.Wrap(&faint{dims: dimensions})
 	embed.BatchCharacters = 4000
 
 	cutBooks(t, index, shelf, indexfake.GetFirst())

@@ -19,7 +19,7 @@ type Read struct {
 var errNotOpen = errors.New("this vault's files are not open")
 
 func NewRead(readers vaultport.VaultReaders) Read {
-	return Read{readers: readers}
+	return Read{readers: getReaders(readers)}
 }
 
 // Execute reads the note at path.
@@ -27,9 +27,6 @@ func NewRead(readers vaultport.VaultReaders) Read {
 // An error is the vault being out of reach. What is wrong with the note itself
 // is an outcome, and the result identifies which one.
 func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (edit.Contents, error) {
-	if u.readers == nil {
-		return edit.Contents{}, errNotOpen
-	}
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return edit.Contents{}, err

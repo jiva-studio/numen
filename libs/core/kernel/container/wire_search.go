@@ -96,8 +96,7 @@ func searchScan(c searchWiring, db *Index) vault.Scan {
 	)
 	setNoteCut(c, &scan)
 	scan.Walks = &db.Walks
-	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
-	return scan
+	return scan.Rebuilding(c.ShouldRebuildIndex)
 }
 
 func readWholeVault(c searchWiring,
@@ -132,9 +131,7 @@ func createUnreadableFinder(refresh vault.Refresh) func(ctx context.Context, v d
 }
 
 func fitIndex(c searchWiring, db *Index) vectorscase.FitIndex {
-	fit := vectorscase.NewFitIndex(db, c.ErrorHandler)
-	fit.ShouldRebuildIndex = c.ShouldRebuildIndex
-	return fit
+	return vectorscase.NewFitIndex(db, c.ErrorHandler, c.ShouldRebuildIndex)
 }
 
 func searchEmbed(c searchWiring, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
@@ -142,11 +139,9 @@ func searchEmbed(c searchWiring, db *Index, source searchsourceport.Source, v do
 	if err != nil {
 		return vectorscase.Embed{}, err
 	}
-	embed := vectorscase.NewEmbed(c.VaultReaders, db.Sources(), db.Sources())
-	embed.Claim = store.NewIndexClaim(coreFolder + "/indexing")
-	embed.Texts = c.TextReaders
-	embed.Source = source
-	return embed, nil
+	return vectorscase.NewEmbed(
+		c.VaultReaders, db.Sources(), db.Sources(), store.NewIndexClaim(coreFolder+"/indexing"), c.TextReaders, source,
+	), nil
 }
 
 func indexTexts(
@@ -155,12 +150,12 @@ func indexTexts(
 	if _, err := c.VaultReaders.Open(v); err != nil {
 		return filetext.Index{}, err
 	}
-	index := filetext.NewHandlingIndex(filetext.NewIndex(c.VaultReaders, db.Sources(), db.Sources(), db.Sources(), db.Sources(), c.TextReaders), c.ErrorHandler, readNote)
 	cutter := cutNotes(c)
-	index.Sizes = cutter.Sizes
-	index.Legibility = cutter.Legibility
-	index.ShouldRebuildIndex = c.ShouldRebuildIndex
-	return index, nil
+	index := filetext.NewIndex(
+		c.VaultReaders, db.Sources(), db.Sources(), db.Sources(), db.Sources(), c.TextReaders,
+		cutter.Sizes, cutter.Legibility, c.ShouldRebuildIndex,
+	)
+	return filetext.NewHandlingIndex(index, c.ErrorHandler, readNote), nil
 }
 
 func newSearch(c searchWiring, db *Index, asking searchsourceport.Source, errorHandler func(error), reportAnswered func()) searchusecase.Search {
@@ -195,10 +190,8 @@ func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, 
 		Stats:    searchusecase.NewStats(db.ChunkVectors(), c.Clock),
 		Policy:   newFloorPolicy(db, source, errorHandler),
 		Passages: searchusecase.NewSearchPassages(newSearch(c, db, source, errorHandler, nil)),
-	}
-	if source != nil {
-		access.Source = source
-		access.Queries = newEmbedQueries(source)
+		Source:   source,
+		Queries:  newEmbedQueries(source),
 	}
 	c.PluginHost.Endpoint.SetPluginSearch(access.Access())
 }

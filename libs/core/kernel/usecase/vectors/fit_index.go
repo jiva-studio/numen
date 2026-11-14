@@ -11,14 +11,17 @@ import (
 type FitIndex struct {
 	index searchsourceport.VectorIndex
 
-	ShouldRebuildIndex bool
+	shouldRebuildIndex bool
 	errorHandler       func(error)
 }
 
 // NewFitIndex returns the use case over the vector index given. A nil errorHandler ignores the error of the
-// compaction after a rebuild.
-func NewFitIndex(index searchsourceport.VectorIndex, errorHandler func(error)) FitIndex {
-	return FitIndex{index: index, errorHandler: errorHandler}
+// compaction after a rebuild. With shouldRebuildIndex the vectors of other recipes are deleted.
+func NewFitIndex(index searchsourceport.VectorIndex, errorHandler func(error), shouldRebuildIndex bool) FitIndex {
+	if errorHandler == nil {
+		errorHandler = func(error) {}
+	}
+	return FitIndex{index: index, errorHandler: errorHandler, shouldRebuildIndex: shouldRebuildIndex}
 }
 
 // Execute fits the index to the description of the source. Without a source, or with one that has not
@@ -37,13 +40,13 @@ func (u FitIndex) Execute(ctx context.Context, source searchsourceport.Source) e
 	if _, err := u.index.ApplyMinChunkLength(ctx, described.MinTextLength); err != nil {
 		return err
 	}
-	if !u.ShouldRebuildIndex {
+	if !u.shouldRebuildIndex {
 		return nil
 	}
 	if _, err := u.index.DeleteVectorsOfOtherRecipes(ctx, described.Recipe()); err != nil {
 		return err
 	}
-	if err := u.index.Compact(ctx); err != nil && u.errorHandler != nil {
+	if err := u.index.Compact(ctx); err != nil {
 		u.errorHandler(err)
 	}
 	return nil

@@ -26,15 +26,12 @@ type RemoveNote struct {
 }
 
 func NewRemoveNote(remove noteRemoving, readers vaultport.VaultReaders) RemoveNote {
-	return RemoveNote{remove: remove, readers: readers}
+	return RemoveNote{remove: remove, readers: getReaders(readers)}
 }
 
 func (u RemoveNote) Execute(
 	ctx context.Context, v domain.Vault, path string, shouldDestroy bool,
 ) (RemoveResult, error) {
-	if u.readers == nil {
-		return RemoveResult{}, errNotOpen
-	}
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return RemoveResult{}, err

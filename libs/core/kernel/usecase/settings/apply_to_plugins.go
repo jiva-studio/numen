@@ -32,9 +32,13 @@ type ApplyToPluginsDeps struct {
 
 // NewApplyToPlugins makes the use case.
 func NewApplyToPlugins(deps ApplyToPluginsDeps) *ApplyToPlugins {
+	hosts := deps.Hosts
+	if deps.Subscribe == nil {
+		hosts = ignoredSubscriptions{}
+	}
 	return &ApplyToPlugins{
 		codec: deps.Codec, config: deps.Config, write: deps.Write, notify: deps.Notify,
-		subscribe: deps.Subscribe, hosts: deps.Hosts,
+		subscribe: deps.Subscribe, hosts: hosts,
 	}
 }
 
@@ -46,9 +50,7 @@ func (u *ApplyToPlugins) Execute(plugins map[string]map[string]any, profile stri
 		u.config.SetSettings(plugins)
 	}
 	u.config.SetPersistHandler(u.persist)
-	if u.subscribe != nil {
-		u.hosts.Subscribe(u.config, u.subscribe, u.notify.Execute)
-	}
+	u.hosts.Subscribe(u.config, u.subscribe, u.notify.Execute)
 }
 
 func (u *ApplyToPlugins) persist(pluginID, key string, value any) error {
@@ -72,4 +74,10 @@ type pluginNotifying interface {
 // hostSubscribing delivers the setting changes to a host once.
 type hostSubscribing interface {
 	Subscribe(host any, subscribe settingsport.ChangeSubscriber, deliver func([]settingsdomain.Setting))
+}
+
+// ignoredSubscriptions follows no setting changes.
+type ignoredSubscriptions struct{}
+
+func (ignoredSubscriptions) Subscribe(any, settingsport.ChangeSubscriber, func([]settingsdomain.Setting)) {
 }

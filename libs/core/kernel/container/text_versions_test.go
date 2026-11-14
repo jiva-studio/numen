@@ -161,7 +161,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	readIntoIndex(t, a, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := vault.NewMove(fileMovers(a.vault), db.NoteQueries(), db.Sources(), db.Sources(), note.Move{})
+	move := vault.NewMove(fileMovers(a.vault), db.NoteQueries(), db.Sources(), db.Sources(), note.NewMove(note.MoveDeps{}))
 	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}

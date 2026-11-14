@@ -16,6 +16,9 @@ type FolderCheck struct {
 
 // NewFolderCheck returns a FolderCheck that opens the folder as a vault.
 func NewFolderCheck(readers vaultport.VaultReaders) FolderCheck {
+	if readers == nil {
+		return FolderCheck{readers: noDisk{}}
+	}
 	return FolderCheck{readers: readers}
 }
 
@@ -25,9 +28,11 @@ func NewFolderCheck(readers vaultport.VaultReaders) FolderCheck {
 // no knowledge of the disk, and reporting every vault as vanished would tell the
 // user their notes are gone without looking.
 func (u FolderCheck) Execute(v domain.Vault) bool {
-	if u.readers == nil {
-		return false
-	}
 	_, err := u.readers.Open(v)
 	return err != nil
 }
+
+// noDisk is the vault readers of a build that knows nothing of the disk: every folder opens.
+type noDisk struct{}
+
+func (noDisk) Open(domain.Vault) (vaultport.VaultReader, error) { return nil, nil }

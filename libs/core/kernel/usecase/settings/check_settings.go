@@ -19,6 +19,9 @@ type CheckSettings struct {
 func NewCheckSettings(
 	codec settingsport.ValueCodec, validator settingsport.WriteValidator, plugins settingsport.PluginSettings,
 ) *CheckSettings {
+	if plugins == nil {
+		plugins = noPluginSettings{}
+	}
 	return &CheckSettings{codec: codec, validator: validator, plugins: plugins}
 }
 
@@ -40,8 +43,13 @@ func (u *CheckSettings) check(one settingsdomain.Setting) error {
 	if err := u.validator.CheckWrite(one.Path, value); err != nil {
 		return err
 	}
-	if u.plugins != nil && settingsdomain.IsPluginSetting(one.Path) {
+	if settingsdomain.IsPluginSetting(one.Path) {
 		return u.plugins.CheckPluginSetting(one.Path[0], one.Path[1], value)
 	}
 	return nil
 }
+
+// noPluginSettings accepts every setting of a plugin: no plugin host runs to refuse one.
+type noPluginSettings struct{}
+
+func (noPluginSettings) CheckPluginSetting(string, string, any) error { return nil }

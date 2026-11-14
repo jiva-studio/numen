@@ -44,7 +44,7 @@ func TestFitIndexSetsTheWidthOfTheModel(t *testing.T) {
 	index := &vectorIndex{}
 	model := &embedder{dims: 8}
 
-	if err := NewFitIndex(index, nil).Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
+	if err := NewFitIndex(index, nil, false).Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(index.calls, []string{"fit", "min 0"}) {
@@ -58,7 +58,7 @@ func TestFitIndexSetsTheWidthOfTheModel(t *testing.T) {
 func TestFitIndexWithoutEmbedderChangesNothing(t *testing.T) {
 	index := &vectorIndex{}
 
-	if err := NewFitIndex(index, nil).Execute(t.Context(), nil); err != nil {
+	if err := NewFitIndex(index, nil, false).Execute(t.Context(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if len(index.calls) != 0 {
@@ -71,8 +71,7 @@ func TestFitIndexOnRebuildDeletesOtherRecipesAndReportsCompaction(t *testing.T) 
 	index := &vectorIndex{compactErr: failed}
 	model := &embedder{dims: 8}
 	var reported error
-	fit := NewFitIndex(index, nil)
-	fit.ShouldRebuildIndex = true
+	fit := NewFitIndex(index, nil, true)
 	fit.errorHandler = func(err error) { reported = err }
 
 	if err := fit.Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
@@ -93,7 +92,7 @@ func TestFitIndexAppliesTheMinimumChunkLengthOfTheModel(t *testing.T) {
 	index := &vectorIndex{}
 	model := &embedder{dims: 8, minLen: 40}
 
-	if err := NewFitIndex(index, nil).Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
+	if err := NewFitIndex(index, nil, false).Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(index.calls, []string{"fit", "min 40"}) {

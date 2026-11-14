@@ -36,3 +36,21 @@ func (u *OpenPluginFile) Execute(ctx context.Context, v domain.Vault, pluginID, 
 	}
 	return PluginFile{Body: body, Size: size}, nil
 }
+
+type pluginFileOpener interface {
+	Execute(ctx context.Context, v domain.Vault, pluginID, path string) (PluginFile, error)
+}
+
+// noPluginFiles is the opening of plugin files on an installation that keeps no plugin stores.
+type noPluginFiles struct{}
+
+func (noPluginFiles) Execute(context.Context, domain.Vault, string, string) (PluginFile, error) {
+	return PluginFile{}, ErrNoPluginFiles
+}
+
+func getPluginFileOpener(open *OpenPluginFile) pluginFileOpener {
+	if open == nil {
+		return noPluginFiles{}
+	}
+	return open
+}
