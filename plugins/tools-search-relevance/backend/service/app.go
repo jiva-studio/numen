@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/hostclient"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/calibration"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
@@ -20,7 +19,7 @@ import (
 const PluginID = "md.numen.tools.search.relevance"
 
 // Hosts is what the plugin works through the host.
-type Hosts = calibration.Hosts
+type Hosts = relevance.Hosts
 
 // App is the backend of the plugin. NewApp and NewAppOver make one.
 type App struct {
@@ -28,7 +27,7 @@ type App struct {
 	clock    relevance.Clock
 	releaser process.Releaser
 
-	calibration *calibration.Calibration
+	calibration *relevance.Session
 }
 
 // NewApp returns the backend that connects to the host the process was launched for when it is mounted,
@@ -39,8 +38,8 @@ func NewApp() *App {
 		releaser = client
 	}
 	return &App{
-		open:  func() (calibration.Hosts, error) { return hostclient.OpenFromEnv(floorrecords.New) },
-		clock: clock.System{}, releaser: releaser, calibration: calibration.New(),
+		open:  func() (relevance.Hosts, error) { return hostclient.OpenFromEnv(floorrecords.New) },
+		clock: clock.System{}, releaser: releaser, calibration: relevance.NewSession(),
 	}
 }
 
@@ -49,7 +48,7 @@ func NewApp() *App {
 func NewAppOver(hosts Hosts, clk relevance.Clock, releaser process.Releaser) *App {
 	return &App{
 		open:  func() (Hosts, error) { return hosts, nil },
-		clock: clk, releaser: releaser, calibration: calibration.New(),
+		clock: clk, releaser: releaser, calibration: relevance.NewSession(),
 	}
 }
 
