@@ -13,19 +13,27 @@ type manifestSetting struct {
 	Type       string   `json:"type"`
 	Title      string   `json:"title"`
 	Operations []string `json:"operations"`
-	Default    *float64 `json:"default"`
+	Default    any      `json:"default"`
 	Min        *float64 `json:"min"`
 }
 
+type manifestNoteType struct {
+	Type   string `json:"type"`
+	Chunks *bool  `json:"chunks"`
+}
+
 type manifestDoc struct {
-	ID           string            `json:"id"`
-	Name         string            `json:"name"`
-	Version      string            `json:"version"`
-	Capabilities []string          `json:"capabilities"`
-	Permissions  []string          `json:"permissions"`
-	Settings     []manifestSetting `json:"settings"`
-	Contributes  struct {
-		Category string `json:"category"`
+	ID               string            `json:"id"`
+	Name             string            `json:"name"`
+	Version          string            `json:"version"`
+	Capabilities     []string          `json:"capabilities"`
+	Permissions      []string          `json:"permissions"`
+	ActivationEvents []string          `json:"activationEvents"`
+	Services         []string          `json:"services"`
+	Settings         []manifestSetting `json:"settings"`
+	Contributes      struct {
+		Category  string             `json:"category"`
+		NoteTypes []manifestNoteType `json:"noteTypes"`
 	} `json:"contributes"`
 	Backend struct {
 		Entrypoint string `json:"entrypoint"`
@@ -41,6 +49,15 @@ func readManifest(t *testing.T) manifestDoc {
 	return m
 }
 
+func findSetting(t *testing.T, m manifestDoc, key string) manifestSetting {
+	t.Helper()
+	i := slices.IndexFunc(m.Settings, func(s manifestSetting) bool { return s.Key == key })
+	if i < 0 {
+		t.Fatalf("settings = %+v, want %s", m.Settings, key)
+	}
+	return m.Settings[i]
+}
+
 func TestManifest(t *testing.T) {
 	m := readManifest(t)
 
@@ -50,22 +67,37 @@ func TestManifest(t *testing.T) {
 	if !slices.Equal(m.Capabilities, []string{"tools"}) {
 		t.Errorf("capabilities = %v, want [tools]", m.Capabilities)
 	}
-	if !slices.Equal(m.Permissions, []string{"vault:read", "index:read"}) {
-		t.Errorf("permissions = %v, want vault:read and index:read", m.Permissions)
+	if !slices.Equal(m.Permissions, []string{"vault:read", "vault:write", "index:read"}) {
+		t.Errorf("permissions = %v, want vault:read, vault:write and index:read", m.Permissions)
 	}
 	if m.Backend.Entrypoint != "bin/views-saved-search" {
 		t.Errorf("entrypoint = %q, want bin/views-saved-search", m.Backend.Entrypoint)
 	}
 }
 
-func TestManifestDeclaresTheRerankingConnections(t *testing.T) {
+func TestManifestDeclaresTheSearchNoteTypeWithoutChunks(t *testing.T) {
 	m := readManifest(t)
 
-	i := slices.IndexFunc(m.Settings, func(s manifestSetting) bool { return s.Key == "connections" })
-	if i < 0 {
-		t.Fatalf("settings = %+v, want connections", m.Settings)
+	types := m.Contributes.NoteTypes
+	if len(types) != 1 || types[0].Type != "search" || types[0].Chunks == nil || *types[0].Chunks {
+		t.Errorf("note types = %+v, want search with chunks false", types)
 	}
-	connections := m.Settings[i]
+}
+
+func TestManifestActivatesOnIndexChangesAndDeclaresTheService(t *testing.T) {
+	m := readManifest(t)
+
+	if !slices.Equal(m.ActivationEvents, []string{"onIndexChanged"}) {
+		t.Errorf("activation events = %v, want [onIndexChanged]", m.ActivationEvents)
+	}
+	if !slices.Equal(m.Services, []string{"md.numen.views.saved.search"}) {
+		t.Errorf("services = %v, want [md.numen.views.saved.search]", m.Services)
+	}
+}
+
+func TestManifestDeclaresTheRerankingConnections(t *testing.T) {
+	connections := findSetting(t, readManifest(t), "connections")
+
 	if connections.Type != "connections" || connections.Title != "Reranking" || !slices.Equal(connections.Operations, []string{"llm.rerank"}) {
 		t.Errorf("connections = %+v, want type connections, title Reranking and operation llm.rerank", connections)
 	}
@@ -74,20 +106,21 @@ func TestManifestDeclaresTheRerankingConnections(t *testing.T) {
 func TestManifestDeclaresTheNumbersAsSettingsWithTheirDefaults(t *testing.T) {
 	want := map[string]float64{
 		"defaultLimit": 20, "maxLimit": 100, "resultsPerSearch": 100, "maxCandidates": 1000, "maxPathPrefixes": 8,
-		"rerankedPerResult": 3, "maxReranked": 100, "mergeGapBytes": 200, "maxQueryBytes": 16384,
+		"rerankedPerResult": 3, "maxReranked": 100, "mergeGapBytes": 200, "maxQueryBytes": 16384, "refreshMinutes": 10,
 	}
 	m := readManifest(t)
 
 	got := map[string]float64{}
 	for _, setting := range m.Settings {
-		if setting.Key == "connections" {
+		if setting.Type != "number" {
 			continue
 		}
-		if setting.Type != "number" || setting.Default == nil || setting.Min == nil {
+		number, isNumber := setting.Default.(float64)
+		if !isNumber || setting.Min == nil {
 			t.Errorf("setting %+v, want a number with a default and a least value", setting)
 			continue
 		}
-		got[setting.Key] = *setting.Default
+		got[setting.Key] = number
 	}
 	if len(got) != len(want) {
 		t.Errorf("number settings = %v, want %v", got, want)
@@ -96,5 +129,24 @@ func TestManifestDeclaresTheNumbersAsSettingsWithTheirDefaults(t *testing.T) {
 		if got[key] != value {
 			t.Errorf("default of %s = %v, want %v", key, got[key], value)
 		}
+	}
+	if refresh := findSetting(t, m, "refreshMinutes"); refresh.Min == nil || *refresh.Min != 0 {
+		t.Errorf("refreshMinutes = %+v, want a least value of 0", refresh)
+	}
+}
+
+func TestManifestDeclaresTheDefaultFolderAsTheVaultFolder(t *testing.T) {
+	folder := findSetting(t, readManifest(t), "defaultFolder")
+
+	if folder.Type != "string" || folder.Default != "" || folder.Title == "" {
+		t.Errorf("defaultFolder = %+v, want a titled string setting whose default is the vault folder", folder)
+	}
+}
+
+func TestManifestDeclaresOnlyKnownSettings(t *testing.T) {
+	m := readManifest(t)
+
+	if len(m.Settings) != 12 {
+		t.Errorf("%d settings, want connections, ten numbers and defaultFolder", len(m.Settings))
 	}
 }
