@@ -872,6 +872,7 @@
       "name": "go/transports",
       "paths": [
         "libs/core/kernel/**",
+        "libs/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -888,6 +889,8 @@
       "name": "go/use-case-fields",
       "paths": [
         "libs/core/kernel/**",
+        "libs/note/**",
+        "plugins/**/*.go",
         "go.work"
       ],
       "tags": [
@@ -1415,7 +1418,9 @@
         "libs/plugin/sdk-go/**/*.go",
         "libs/plugin/sdk-ts/**/*.ts",
         "libs/core/protocol/**/*.go",
-        "libs/core/client/**/*.ts"
+        "libs/core/client/**/*.ts",
+        "plugins/*/backend/api/*.go",
+        "plugins/*/frontend/**/*.ts"
       ],
       "tags": [
         "structure",
