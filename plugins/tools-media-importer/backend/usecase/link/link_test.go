@@ -604,16 +604,16 @@ func TestCopyInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 		t.Fatalf("paths %q and %q, want the same path", inMills.Path, inChemistry.Path)
 	}
 
-	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), inMills, fetch.MediaVideo); err != nil || !isStarted {
-		t.Fatalf("StartMediaCopy in Mills: started=%v, err=%v", isStarted, err)
+	if size, isStarted, err := w.links.StartMediaCopy(t.Context(), inMills, fetch.MediaVideo); err != nil || !isStarted || size != 0 {
+		t.Fatalf("StartMediaCopy in Mills: size=%d, started=%v, err=%v", size, isStarted, err)
 	}
 	<-w.sites.started
 
 	if _, _, err := w.links.StartMediaCopy(t.Context(), inMills, fetch.MediaVideo); !errors.Is(err, link.ErrBeingFetched) {
 		t.Fatalf("second StartMediaCopy in Mills returned %v, want %v", err, link.ErrBeingFetched)
 	}
-	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), inChemistry, fetch.MediaVideo); err != nil || !isStarted {
-		t.Fatalf("StartMediaCopy in Chemistry: started=%v, err=%v", isStarted, err)
+	if size, isStarted, err := w.links.StartMediaCopy(t.Context(), inChemistry, fetch.MediaVideo); err != nil || !isStarted || size != 0 {
+		t.Fatalf("StartMediaCopy in Chemistry: size=%d, started=%v, err=%v", size, isStarted, err)
 	}
 
 	millsID := link.GetCopyTaskID("Mills", inMills.Path)
@@ -635,6 +635,9 @@ func TestCopyInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 	w.links.Wait()
 	if tasks := w.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("tasks %+v after both copies ended", tasks)
+	}
+	if size, isStarted, err := w.links.StartMediaCopy(t.Context(), inMills, fetch.MediaVideo); err != nil || isStarted || size != 2*chunk {
+		t.Errorf("StartMediaCopy when already kept = (%d, %v, %v), want (%d, false, nil)", size, isStarted, err, 2*chunk)
 	}
 }
 

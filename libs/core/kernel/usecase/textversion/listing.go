@@ -10,13 +10,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // live finds the live version of a file among its versions.
 type live struct {
 	files textport.TextFileStores
-	notes NoteReader
+	notes noteport.NoteReader
 }
 
 func (u live) find(

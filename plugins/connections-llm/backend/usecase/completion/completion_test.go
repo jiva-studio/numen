@@ -126,3 +126,23 @@ func TestACompletionNeedsAGatewayAndLimits(t *testing.T) {
 		t.Error("a completion was made with no limits")
 	}
 }
+
+func TestTheFirstCompatibleCompleteAndChatEndTheLongFirstLimit(t *testing.T) {
+	g := &gateway{}
+	subject := newCompletion(t, g)
+	compCall := call("openai-compatible", "qwen-complete", "")
+	if _, err := subject.Complete(t.Context(), compCall, &llm.CompleteRequest{}); err != nil || g.limit != limits.FirstRequestLimit {
+		t.Fatalf("first Complete limit = %v, err = %v", g.limit, err)
+	}
+	if _, err := subject.Complete(t.Context(), compCall, &llm.CompleteRequest{}); err != nil || g.limit != limits.DefaultCompleteLimit {
+		t.Errorf("second Complete limit = %v, err = %v", g.limit, err)
+	}
+
+	chatCall := call("openai-compatible", "qwen-chat", "")
+	if _, err := subject.Chat(t.Context(), chatCall, &llm.ChatRequest{}, ignoreFrame); err != nil || g.limit != limits.FirstRequestLimit {
+		t.Fatalf("first Chat limit = %v, err = %v", g.limit, err)
+	}
+	if _, err := subject.Chat(t.Context(), chatCall, &llm.ChatRequest{}, ignoreFrame); err != nil || g.limit != limits.DefaultOtherLimit {
+		t.Errorf("second Chat limit = %v, err = %v", g.limit, err)
+	}
+}

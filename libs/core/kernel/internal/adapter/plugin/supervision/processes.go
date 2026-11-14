@@ -66,6 +66,7 @@ type Processes struct {
 	report   func(error)
 	services launchServices
 	storage  *storage.Storage
+	starter  *process.Starter
 
 	mu       sync.RWMutex
 	launcher Launcher
@@ -80,7 +81,8 @@ type Processes struct {
 func NewProcesses(sups processTable, clock machineport.Clock, report func(error), services launchServices, files *storage.Storage) *Processes {
 	return &Processes{
 		sups: sups, clock: clock, report: report, services: services, storage: files,
-		limits: process.DefaultLimits(), policy: lifecycle.DefaultActivationPolicy(),
+		starter: process.NewStarter(),
+		limits:  process.DefaultLimits(), policy: lifecycle.DefaultActivationPolicy(),
 		stdins: make(map[stdinKey]io.Closer),
 	}
 }
@@ -319,7 +321,7 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 		return nil, nil, errors.Join(fmt.Errorf("hide inherited files: %w", err), stdin.Close(), stdout.Close())
 	}
 	// A failed Start has closed both pipes already.
-	if err := cmd.Start(); err != nil {
+	if err := p.starter.Start(cmd); err != nil {
 		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
 	}
 
