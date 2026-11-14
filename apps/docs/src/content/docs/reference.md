@@ -224,6 +224,14 @@ The settings of the plugin Saved Search.
 | `refreshMinutes` | a number | minutes a saved search whose tab is closed waits after its last run before an index change runs it again; 0 runs it at once. A saved search whose tab is open, and a change of its query, run at once. |
 | `defaultFolder` | text | folder of the vault, relative to the vault folder, that saved_search_create puts a note in when the agent names no folder; empty is the vault folder. |
 
+### `md.numen.tools.templates`
+
+The settings of the plugin Templates.
+
+| | | |
+| --- | --- | --- |
+| `folder` | text | the folder that holds the templates. Each note in it is a template, and each subfolder is a group. |
+
 ### `md.numen.tools.updater`
 
 The settings of the plugin Update Notifier.
