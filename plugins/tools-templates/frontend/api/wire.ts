@@ -1,8 +1,8 @@
 /**
  * Wire adapter for the plugin's templates service.
  */
-import type { ApiError, Result } from '@numen/plugin-sdk'
-import type { CreateNoteRequest, CreateNoteResponse } from './templates'
+import { createApi, type ApiError, type Result } from '@numen/plugin-sdk'
+import { SERVICE, type CreateNoteRequest, type CreateNoteResponse } from './templates'
 
 /** What the command asks of the backend. */
 export interface TemplatesApi {
@@ -10,6 +10,8 @@ export interface TemplatesApi {
   createNote(request: CreateNoteRequest): Promise<Result<CreateNoteResponse, ApiError>>
 }
 
+const api = createApi(SERVICE)
+
 export const templatesApi: TemplatesApi = {
-  createNote: () => Promise.reject(new Error('not implemented')),
+  createNote: (request) => api.call('CreateNote', request),
 }

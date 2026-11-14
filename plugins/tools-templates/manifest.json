@@ -2,5 +2,30 @@
   "id": "md.numen.tools.templates",
   "name": "Templates",
   "version": "2026.11.17",
-  "protocol": 1
+  "protocol": 1,
+  "description": "Makes a new note from a template",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "tools",
+    "feature": "templates",
+    "commands": [
+      { "id": "note.createFromTemplate", "title": "New note from template", "icon": "file-plus" }
+    ],
+    "slots": [
+      { "slot": "fileTree.new", "command": "note.createFromTemplate", "group": "2-templates", "order": 10, "when": "target.isFolder" }
+    ]
+  },
+  "permissions": ["vault:read", "vault:write"],
+  "services": ["md.numen.tools.templates"],
+  "backend": { "entrypoint": "bin/tools-templates" },
+  "frontend": {},
+  "settings": [
+    {
+      "key": "folder",
+      "type": "string",
+      "title": "Templates folder",
+      "description": "The folder that holds the templates. Each note in it is a template, and each subfolder is a group.",
+      "default": "Templates"
+    }
+  ]
 }

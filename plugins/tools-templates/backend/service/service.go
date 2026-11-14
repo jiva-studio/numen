@@ -3,13 +3,95 @@
 package service
 
 import (
+	"context"
+	"crypto/rand"
+	"errors"
+	"fmt"
+	"strings"
+	"sync/atomic"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/usecase/newnote"
 )
 
-func normalizeFolder(raw string) string { return raw }
+const defaultFolder = "Templates"
 
-func mount(_ *server.Server, _ newnote.Vault, _ newnote.Clock, _ newnote.IDs) error { return nil }
+// settings is the configuration the host gives the plugin.
+//
+//numen:settings
+type settings struct {
+	// folder is the vault folder that holds the templates.
+	folder string
+}
 
-// Mount registers the service on s.
-func Mount(_ *server.Server) error { return nil }
+// normalizeFolder reads the folder setting as a vault path: surrounding space, empty and dot segments and
+// the slashes at both ends are dropped, and a value that is empty or has a parent segment is the default.
+func normalizeFolder(raw string) string {
+	var kept []string
+	for _, segment := range strings.Split(strings.ReplaceAll(strings.TrimSpace(raw), `\`, "/"), "/") {
+		switch segment {
+		case "", ".":
+		case "..":
+			return defaultFolder
+		default:
+			kept = append(kept, segment)
+		}
+	}
+	if len(kept) == 0 {
+		return defaultFolder
+	}
+	return strings.Join(kept, "/")
+}
+
+func convertError(err error, template string) error {
+	switch {
+	case errors.Is(err, newnote.ErrNotATemplate):
+		return server.NewAPIError(server.CodeInvalidArgument, err.Error())
+	case errors.Is(err, host.ErrNotExist):
+		return server.NewAPIError(server.CodeNotFound, "template not found: "+template)
+	case errors.Is(err, newnote.ErrInvalidNote), errors.Is(err, newnote.ErrNoFreeName), errors.Is(err, host.ErrNoVault):
+		return server.NewAPIError(server.CodeFailedPrecondition, err.Error())
+	case errors.Is(err, host.ErrPermissionDenied):
+		return server.NewAPIError(server.CodePermissionDenied, err.Error())
+	}
+	return fmt.Errorf("make a note from a template: %w", err)
+}
+
+func createNote(useCase newnote.CreateFromTemplate) func(context.Context, api.CreateNoteRequest) (api.CreateNoteResponse, error) {
+	return func(ctx context.Context, req api.CreateNoteRequest) (api.CreateNoteResponse, error) {
+		made, err := useCase.Execute(ctx, newnote.Request{Template: req.Template, Folder: req.Folder})
+		if err != nil {
+			return api.CreateNoteResponse{}, convertError(err, req.Template)
+		}
+		return api.CreateNoteResponse{Path: made.Path}, nil
+	}
+}
+
+func mount(s *server.Server, vault newnote.Vault, source newnote.Clock, ids newnote.IDs) error {
+	var current atomic.Pointer[settings]
+	current.Store(&settings{folder: defaultFolder})
+	s.SetUpdateConfig(func(values map[string]string) {
+		if raw, isSet := values["folder"]; isSet {
+			current.Store(&settings{folder: normalizeFolder(raw)})
+		}
+	})
+	useCase := newnote.NewCreateFromTemplate(vault, source, ids, func() string { return current.Load().folder })
+	a := s.NewAPI(api.Service)
+	server.Handle(a, api.MethodCreateNote, createNote(useCase))
+	// gomutants:disable-next-line RETURN_ERROR_NIL reason="api.Service and api.MethodCreateNote are valid compile-time constants."
+	return a.Err()
+}
+
+// Mount registers the service on s. The vault is the one the host the process was launched for shows.
+func Mount(s *server.Server) error {
+	endpoint, err := hostcall.FromEnv()
+	if err != nil {
+		return err
+	}
+	return mount(s, host.NewClient(endpoint), clock.System{}, ulid.NewGenerator(rand.Reader))
+}
