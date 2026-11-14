@@ -33,7 +33,7 @@ interface HealthDeps {
 }
 
 /** The calls of the core the settings tab makes. */
-export interface SettingsPageApi {
+interface SettingsPageApi {
   readonly settings: Pick<
     SettingsApi,
     'choosePluginPath' | 'getPluginData' | 'deletePluginData' | 'retryPlugin'
