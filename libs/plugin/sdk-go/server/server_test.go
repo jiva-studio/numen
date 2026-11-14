@@ -761,6 +761,17 @@ func TestParseDefaultFlagsAndOptions(t *testing.T) {
 	if got := readEnvPort(); got != 0 {
 		t.Fatalf("readEnvPort invalid = %d, want 0", got)
 	}
+	t.Setenv("NUMEN_PLUGIN_PORT", "99999999999999999999")
+	if got := readEnvPort(); got != 0 {
+		t.Fatalf("readEnvPort out of range = %d, want 0", got)
+	}
+
+	flag.CommandLine = flag.NewFlagSet("test", flag.ContinueOnError)
+	flag.CommandLine.String("port", "", "port as text")
+	os.Args = []string{"test", "-port=99999999999999999999"}
+	if got := readFlagPort(); got != 0 {
+		t.Fatalf("readFlagPort out of range = %d, want 0", got)
+	}
 
 	s := New(withPort(8123), withSignals(os.Interrupt))
 	if s.Port() != 8123 {

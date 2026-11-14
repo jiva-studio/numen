@@ -15,22 +15,26 @@ func Validate(targetPath string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	_, issues, err := readManifest(manifestPath, pluginDir)
+	return issues, err
+}
 
+func readManifest(manifestPath, pluginDir string) (manifest.Manifest, []string, error) {
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {
-		return nil, fmt.Errorf("read manifest at %s: %w", manifestPath, err)
+		return manifest.Manifest{}, nil, fmt.Errorf("read manifest at %s: %w", manifestPath, err)
 	}
 
 	m, err := manifestjson.Decode(data)
 	if err != nil {
-		return []string{fmt.Sprintf("invalid json in manifest: %v", err)}, nil
+		return manifest.Manifest{}, []string{fmt.Sprintf("invalid json in manifest: %v", err)}, nil
 	}
 
 	var issues []string
 	for _, issue := range m.ListIssues() {
 		issues = append(issues, issue.Error())
 	}
-	return append(issues, manifestjson.ListPackageIssues(m, pluginDir)...), nil
+	return m, append(issues, manifestjson.ListPackageIssues(m, pluginDir)...), nil
 }
 
 func resolveManifestPath(targetPath string) (manifestPath, pluginDir string, err error) {

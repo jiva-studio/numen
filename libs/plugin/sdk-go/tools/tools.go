@@ -141,14 +141,17 @@ type registryHandler struct {
 func (h registryHandler) ListTools(
 	context.Context, *connect.Request[v1.ListToolsRequest],
 ) (*connect.Response[v1.ListToolsResponse], error) {
-	r := h.registry
+	return connect.NewResponse(h.registry.getListing()), nil
+}
+
+func (r *Registry) getListing() *v1.ListToolsResponse {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	items := make([]*v1.PluginTool, 0, len(r.tools))
 	for _, one := range r.tools {
 		items = append(items, one.tool)
 	}
-	return connect.NewResponse(&v1.ListToolsResponse{Tools: items}), nil
+	return &v1.ListToolsResponse{Tools: items}
 }
 
 // CallTool runs the tool named. A name nothing was added under, and arguments that are no JSON
@@ -242,13 +245,8 @@ func writeResult(out any) *v1.ToolResult {
 	return &v1.ToolResult{Text: string(encoded)}
 }
 
-func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
-	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
-	if err != nil {
-		return Listing{}, err
-	}
-	return readListing(res.Msg), nil
+func (r *Registry) ListTools(context.Context) (Listing, error) {
+	return readListing(r.getListing()), nil
 }
 
 func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {

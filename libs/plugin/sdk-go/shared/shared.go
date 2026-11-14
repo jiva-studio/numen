@@ -45,17 +45,13 @@ func GetModelKey(path string) (string, error) {
 	if sum, ok := readProvisionedSum(path); ok {
 		return sum, nil
 	}
-	hash := sha256.New()
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
-	if _, err := fmt.Fprintf(hash, "%s\n%d\n%d", filepath.Base(path), info.Size(), info.ModTime().UnixNano()); err != nil {
-		return "", err
-	}
-	return "stat-" + hex.EncodeToString(hash.Sum(nil)), nil
+	sum := sha256.Sum256(fmt.Appendf(nil, "%s\n%d\n%d", filepath.Base(path), info.Size(), info.ModTime().UnixNano()))
+	return "stat-" + hex.EncodeToString(sum[:]), nil
 }
 
 func readProvisionedSum(path string) (string, bool) {
 	raw, err := os.ReadFile(filepath.Join(filepath.Dir(path), readyName))
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
+	// gomutants:disable-next-line BRANCH_IF reason="ReadFile returns no data with its error, and no data has fewer than two lines, so the check below returns the same empty sum and false"
 	if err != nil {
 		return "", false
 	}

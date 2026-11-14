@@ -3,6 +3,7 @@
 package performance
 
 import (
+	"cmp"
 	"fmt"
 	"os"
 	"strconv"
@@ -31,10 +32,7 @@ func setNiceIn(dir string, nice int) error {
 		if err != nil {
 			continue
 		}
-		// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
-		if err := setPriority(tid, nice); err != nil && first == nil {
-			first = err
-		}
+		first = cmp.Or(first, setPriority(tid, nice))
 	}
 	return first
 }

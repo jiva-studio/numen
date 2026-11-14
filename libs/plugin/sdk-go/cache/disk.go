@@ -144,12 +144,10 @@ func (c *Cache[V]) storeDiskEntry(key string, one entry[V]) error {
 	}
 	all[key] = diskEntry[V]{Value: one.value, FetchedAt: one.fetchedAt}
 	data, err := json.Marshal(all)
-	// gomutants:disable-next-line reason="json.Marshal of a map keyed by strings fails only for a value type that JSON cannot encode, which no test stores"
 	if err != nil {
 		return err
 	}
 	dir := filepath.Dir(path)
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}

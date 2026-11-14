@@ -54,7 +54,7 @@ func main() {
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfigFor(platform.TargetFlashcards)
 	cfg.ErrorHandler = func(err error) {
-		// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
+		// gomutants:disable-next-line BRANCH_IF,CONDITIONALS_NEGATION reason="the branch returns where the function ends, so skipping it or inverting its condition ends the function at the same point"
 		if _, writeErr := fmt.Fprintln(out, appName+":", err); writeErr != nil {
 			return
 		}

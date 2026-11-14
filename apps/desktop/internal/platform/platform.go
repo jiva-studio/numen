@@ -107,7 +107,6 @@ func getPluginsDirs() []string {
 	observed := make(map[string]bool)
 	addDir := func(dir string) {
 		clean := filepath.Clean(dir)
-		// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 		if abs, err := filepath.Abs(clean); err == nil {
 			clean = abs
 		}
@@ -122,7 +121,6 @@ func getPluginsDirs() []string {
 	}
 
 	execPath, err := os.Executable()
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err == nil {
 		execDir := filepath.Dir(execPath)
 		addDir(filepath.Join(execDir, "plugins"))
