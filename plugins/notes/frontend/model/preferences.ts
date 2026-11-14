@@ -39,7 +39,14 @@ const isValid: { [K in keyof Preferences]: (value: JsonValue | undefined) => boo
   highlightActiveLine: (value) => typeof value === 'boolean',
 }
 
-const KEYS = Object.keys(DEFAULT_PREFERENCES) as (keyof Preferences)[]
+const KEYS = [
+  'softWrap',
+  'lineNumbers',
+  'tabSize',
+  'fontFamily',
+  'lineHeight',
+  'highlightActiveLine',
+] as const satisfies readonly (keyof Preferences)[]
 
 export function readMarkdownEditorPreferences(getSetting?: SettingLookup): Preferences {
   const next: Preferences = { ...DEFAULT_PREFERENCES }

@@ -150,7 +150,8 @@ describe('the editor settings in an open note editor', () => {
     return { view, wrapper, change }
   }
   const tab = (view: EditorView) => tabKeyBinding.run?.(view) ?? false
-  const style = (view: EditorView) => view.dom.getAttribute('style') ?? ''
+  // The attribute selector asks the element whether its style has the text, without reading the style.
+  const hasStyle = (view: EditorView, text: string) => view.dom.matches(`[style*='${text}']`)
 
   it('opens with Tab of 2 spaces, no active line, no font variable', async () => {
     const { view, wrapper } = await open()
@@ -159,7 +160,7 @@ describe('the editor settings in an open note editor', () => {
     expect(view.state.doc.toString().startsWith('  one')).toBe(true)
     expect(view.state.doc.toString().startsWith('   one')).toBe(false)
     expect(view.dom.querySelector('.cm-activeLine')).toBeNull()
-    expect(style(view)).not.toContain('--editor-font')
+    expect(hasStyle(view, '--editor-font')).toBe(false)
     wrapper.unmount()
   })
 
@@ -192,11 +193,11 @@ describe('the editor settings in an open note editor', () => {
     const { view, wrapper, change } = await open()
 
     await change('fontFamily', 'Fira Code')
-    expect(style(view)).toContain('--editor-font')
-    expect(style(view)).toContain('"Fira Code"')
+    expect(hasStyle(view, '--editor-font')).toBe(true)
+    expect(hasStyle(view, '"Fira Code"')).toBe(true)
 
     await change('fontFamily', '')
-    expect(style(view)).not.toContain('--editor-font')
+    expect(hasStyle(view, '--editor-font')).toBe(false)
     wrapper.unmount()
   })
 
@@ -205,8 +206,8 @@ describe('the editor settings in an open note editor', () => {
 
     await change('fontFamily', 'serif; position: fixed')
 
-    expect(style(view)).not.toContain('position')
-    expect(style(view)).not.toContain('--editor-font')
+    expect(hasStyle(view, 'position')).toBe(false)
+    expect(hasStyle(view, '--editor-font')).toBe(false)
     wrapper.unmount()
   })
 
@@ -215,7 +216,7 @@ describe('the editor settings in an open note editor', () => {
 
     await change('lineHeight', 1.8)
 
-    expect(style(view)).toMatch(/--editor-line-height:\s*1\.8\b/)
+    expect(hasStyle(view, '--editor-line-height: 1.8')).toBe(true)
     wrapper.unmount()
   })
 
@@ -224,8 +225,8 @@ describe('the editor settings in an open note editor', () => {
 
     await change('lineHeight', 2)
 
-    expect(style(view)).toMatch(/--editor-font:\s*serif/)
-    expect(style(view)).toMatch(/--editor-line-height:\s*2\b/)
+    expect(hasStyle(view, '--editor-font: serif')).toBe(true)
+    expect(hasStyle(view, '--editor-line-height: 2')).toBe(true)
     wrapper.unmount()
   })
 
