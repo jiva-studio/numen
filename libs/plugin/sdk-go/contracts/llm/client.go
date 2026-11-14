@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"google.golang.org/protobuf/proto"
 
@@ -33,25 +32,6 @@ func Embed(ctx context.Context, caller connection.Caller, request *EmbedRequest,
 	}
 	if len(result.GetVectors()) != len(request.GetTexts()) {
 		return nil, fmt.Errorf("llm: %s answered %d vectors for %d texts", OperationEmbed, len(result.GetVectors()), len(request.GetTexts()))
-	}
-	return result, nil
-}
-
-// Rerank asks the rows of the plugin, in order, for one score for each document. No document is no call. An
-// empty query is an error with no call. A result with another number of scores than documents is an error.
-func Rerank(ctx context.Context, caller connection.Caller, request *RerankRequest, priority connection.Priority) (*RerankResult, error) {
-	result := &RerankResult{}
-	if len(request.GetDocuments()) == 0 {
-		return result, nil
-	}
-	if strings.TrimSpace(request.GetQuery()) == "" {
-		return nil, fmt.Errorf("llm: %s needs a query", OperationRerank)
-	}
-	if err := callOnce(ctx, caller, OperationRerank, request, priority, result); err != nil {
-		return nil, err
-	}
-	if len(result.GetScores()) != len(request.GetDocuments()) {
-		return nil, fmt.Errorf("llm: %s answered %d scores for %d documents", OperationRerank, len(result.GetScores()), len(request.GetDocuments()))
 	}
 	return result, nil
 }
