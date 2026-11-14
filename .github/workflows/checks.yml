@@ -164,8 +164,6 @@ jobs:
     if: inputs.code
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    # A pull request runs the checks its change touches and the planted-violation tests of the checks
-    # whose own code it changes, against the first parent of the merge commit; a manual run runs all.
     env:
       BASE_REF: HEAD^1
       CHANGED: ${{ github.event_name == 'pull_request' && '1' || '' }}
@@ -183,9 +181,6 @@ jobs:
 
       - uses: ./.github/actions/install-node-modules
 
-      # A manual run tests every check against its violation fixtures; on a pull request `make checks`
-      # runs the fixture tests of the checks whose code changed. The rule tests of tools/lint-layers and
-      # the tests of the shared readers run when those folders change.
       - name: Test the checks and the lint rules
         run: |
           if [ -z "$CHANGED" ]; then npm test --prefix tools/checks; fi
@@ -195,7 +190,6 @@ jobs:
             npm test --prefix tools/lint-layers
           fi
 
-      # style/comments reads the Go files with a Go command of its own.
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: tools/checks/style/comments/go.mod

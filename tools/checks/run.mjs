@@ -8,8 +8,7 @@
  *   node run.mjs --tags ?               the tags and what they mean
  *   node run.mjs --exclude slow         without the checks that carry the tag
  *   node run.mjs --only name,name       the named checks
- *   node run.mjs --changed              the checks whose paths a change of the branch touches, and the
- *                                       planted-violation tests of the checks whose own code it touches
+ *   node run.mjs --changed              the checks whose paths the branch touches
  *   node run.mjs --list                 what runs and why; nothing runs
  *   node run.mjs --selftest             the planted-violation tests of the selected checks
  *   node run.mjs --without-lint         skip the verifiers that run a package's own linter
@@ -74,10 +73,7 @@ export function getOwnPaths(entry) {
   return own;
 }
 
-/**
- * The command of a check's planted-violation tests: every test file of its folder. Null when the check itself runs
- * those tests: a Go check, a rule test, the registry.
- */
+/** Null when the check is its own test. */
 function getSelftestCmd(entry) {
   if (entry.selftestCmd) return entry.selftestCmd;
   if (entry.runner === "go" || entry.runner === "eslint" || entry.runner === "stylelint") return null;
@@ -181,7 +177,6 @@ function runCommand(name, cmd, cwd = REPO_ROOT) {
   });
 }
 
-/** Runs the verifiers of a check in a process of its own, so that checks run side by side. */
 async function runVerifiersApart(entry, options) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "numen-check-"));
   const file = path.join(dir, "result.json");
@@ -200,7 +195,7 @@ async function runVerifiersApart(entry, options) {
   return { name: entry.name, status: result.status, ms: run.ms, output };
 }
 
-/** Calls the tasks, at most `limit` at once, and returns their results in the order of the tasks. */
+/** Runs at most `limit` tasks at once; results keep task order. */
 async function runPool(tasks, limit) {
   const results = new Array(tasks.length);
   let next = 0;
@@ -221,10 +216,6 @@ function runCheck(entry, options) {
   return Promise.resolve({ name: entry.name, status: "fail", ms: 0, output: `unknown runner ${entry.runner}` });
 }
 
-/**
- * Runs the selected checks side by side and returns their results, the Go checks first. A check named in
- * `withSelftest` is followed by its planted-violation tests.
- */
 export async function runChecks(entries, options, withSelftest = new Set()) {
   const goEntries = entries.filter((e) => e.runner === "go");
   const goDone = goEntries.length > 0 ? runGo(goEntries) : Promise.resolve([]);
@@ -276,7 +267,6 @@ async function main() {
   const withSelftest = new Set(options.selftest ? [] : selection.filter((s) => s.run && s.selftest).map((s) => s.entry.name));
   const besides = withSelftest.size > 0 ? `, ${withSelftest.size} with their planted-violation tests` : "";
   console.log(`Running ${entries.length} of ${selection.length} checks${options.selftest ? " (planted-violation tests)" : besides}\n`);
-  // The registry test then compares the verifiers of the checks the change touches, not all of them.
   if (options.changed) process.env.NUMEN_CHECKS_CHANGED = "1";
   return printReport(await runChecks(entries, options, withSelftest));
 }

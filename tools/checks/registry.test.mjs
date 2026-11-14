@@ -151,9 +151,6 @@ function run(name, root) {
 // A check that reads a file outside its `paths` gives another answer on a tree that holds only the
 // `paths`. The Go checks (they type-check the workspace through `go list`), the commands and the
 // rule tests are not run this way: a reduced tree has no go.work to load.
-//
-// Under `run.mjs --changed` (NUMEN_CHECKS_CHANGED) only the checks whose own files or registry entry the change
-// touches are compared; a change of the runner or the shared library compares all of them.
 function listComparedVerifiers() {
   const verifiers = registry.checks.filter((e) => e.runner === "verifiers");
   if (!process.env.NUMEN_CHECKS_CHANGED) return verifiers;

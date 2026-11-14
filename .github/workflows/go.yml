@@ -189,8 +189,6 @@ jobs:
     if: inputs.core
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    # A pull request runs the Go checks whose paths its change touches, against the first parent of
-    # the merge commit; a manual run runs all.
     env:
       BASE_REF: HEAD^1
       CHANGED: ${{ github.event_name == 'pull_request' && '1' || '' }}
