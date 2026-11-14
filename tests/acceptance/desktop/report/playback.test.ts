@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
+  findActionStart,
   findNextStart,
   findPreviousStart,
   findStepAt,
   getSegments,
+  getSetupLength,
   getStepPhases,
   getVideoLength,
+  getWorstStatus,
 } from './playback.js'
 
 const starts = [0.5, 2, null, 4.25]
@@ -106,6 +109,50 @@ describe('getVideoLength', () => {
   })
 })
 
+describe('getSetupLength', () => {
+  const steps = (...keywords: string[]) => keywords.map((keyword) => ({ keyword }))
+
+  it('counts the Background and Given steps with the And after them', () => {
+    expect(getSetupLength(steps('Given', 'And', 'Given', 'But', 'When', 'Then'))).toBe(4)
+  })
+
+  it('stops at a Then that comes before any When', () => {
+    expect(getSetupLength(steps('Given', 'Then', 'When'))).toBe(1)
+  })
+
+  it('counts every step of a scenario with no When or Then', () => {
+    expect(getSetupLength(steps('Given', 'And'))).toBe(2)
+  })
+
+  it('counts none for a scenario that starts with an action', () => {
+    expect(getSetupLength(steps('When', 'And', 'Then'))).toBe(0)
+  })
+
+  it('counts none for no steps', () => {
+    expect(getSetupLength([])).toBe(0)
+  })
+})
+
+describe('findActionStart', () => {
+  it('finds the start of the first step after the setup that ran', () => {
+    expect(findActionStart(starts, 1)).toBe(2)
+    expect(findActionStart(starts, 2)).toBe(4.25)
+  })
+
+  it('finds none when no step after the setup ran', () => {
+    expect(findActionStart([1, 1, null], 2)).toBeNull()
+    expect(findActionStart([1, 1], 2)).toBeNull()
+  })
+})
+
+describe('getWorstStatus', () => {
+  it('takes failed over skipped over passed', () => {
+    expect(getWorstStatus(['passed', 'skipped', 'failed'])).toBe('failed')
+    expect(getWorstStatus(['passed', 'skipped'])).toBe('skipped')
+    expect(getWorstStatus(['passed'])).toBe('passed')
+  })
+})
+
 describe('the functions as the page runs them', () => {
   it('run from their own source', () => {
     expect(fromSource(findStepAt)(starts, 2.5)).toBe(1)
@@ -114,5 +161,8 @@ describe('the functions as the page runs them', () => {
     expect(fromSource(getStepPhases)(2, 0)).toEqual(['current', 'ahead'])
     expect(fromSource(getSegments)(starts, 5)).toHaveLength(3)
     expect(fromSource(getVideoLength)(Number.NaN, [{ start: 1, duration: 500 }])).toBe(1.5)
+    expect(fromSource(getSetupLength)([{ keyword: 'Given' }, { keyword: 'When' }])).toBe(1)
+    expect(fromSource(findActionStart)(starts, 1)).toBe(2)
+    expect(fromSource(getWorstStatus)(['passed', 'failed'])).toBe('failed')
   })
 })

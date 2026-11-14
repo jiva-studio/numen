@@ -1,8 +1,8 @@
 // The video of a scenario: the player, the steps on its timeline, the speed and the pause at each
 // step, and the keys. report.js, which the page loads after it, defines the helpers it calls and
 // calls createVideo.
-/* global createElement, createIcon, formatOffset, writeSetting */
-/* exported createVideo */
+/* global createElement, createIcon, formatOffset, loadVideo, writeSetting */
+/* exported createVideo, getOpenTime */
 const playback = window.playback
 const SPEED_KEY = 'acceptance-report.speed'
 const SPEEDS = [0.25, 0.5, 1]
@@ -103,6 +103,17 @@ const setSpeed = (video, speed) => {
 
 const getStarts = (video) => video.scenario.steps.map((step) => step.start)
 
+// The moments the step keys and the pause at each step stop at: the setup is one stop, at 0.
+const getStops = (video) =>
+  getStarts(video).map((start, index) => (index < video.setupLength ? null : start))
+
+const isSetupFailed = (video) =>
+  video.scenario.steps.slice(0, video.setupLength).some((step) => step.status === 'failed')
+
+/** Where the video opens: at the first action, past the start of the app; at 0 if the setup failed. */
+const getOpenTime = (video) =>
+  isSetupFailed(video) ? 0 : (playback.findActionStart(getStarts(video), video.setupLength) ?? 0)
+
 // Steps that start together share one moment of the video; the one clicked stays current there.
 const findCurrentStep = (video, time) => {
   const starts = getStarts(video)
@@ -111,14 +122,24 @@ const findCurrentStep = (video, time) => {
   return picked !== undefined && starts[picked] === starts[index] ? picked : index
 }
 
+const writeSetupPhase = (video, currentIndex) => {
+  const phase = currentIndex < video.setupLength ? 'current' : 'done'
+  for (const element of [video.setupRow, video.timeline.querySelector('.segment.setup')]) {
+    if (!element) continue
+    for (const name of ['done', 'current']) element.classList.toggle(name, phase === name)
+  }
+}
+
 const writePosition = (video) => {
   const time = video.player.currentTime
-  const phases = playback.getStepPhases(video.stepItems.length, findCurrentStep(video, time))
+  const currentIndex = findCurrentStep(video, time)
+  const phases = playback.getStepPhases(video.stepItems.length, currentIndex)
   video.stepItems.forEach((item, index) => {
     for (const phase of ['done', 'current', 'ahead'])
       item.classList.toggle(phase, phases[index] === phase)
   })
-  for (const segment of video.timeline.querySelectorAll('.segment')) {
+  if (video.setupLength > 0) writeSetupPhase(video, currentIndex)
+  for (const segment of video.timeline.querySelectorAll('.segment:not(.setup)')) {
     const phase = phases[Number(segment.dataset.index)]
     for (const name of ['done', 'current', 'ahead']) segment.classList.toggle(name, phase === name)
   }
@@ -139,22 +160,44 @@ const createSegment = (video, segment) => {
   })
 }
 
+const getSetupStatus = (video) =>
+  playback.getWorstStatus(video.scenario.steps.slice(0, video.setupLength).map((s) => s.status))
+
+const getSetupLabel = (video) =>
+  `Setup · ${video.setupLength} step${video.setupLength === 1 ? '' : 's'}`
+
+/** The setup takes the timeline from 0 to the first action, or to the end when no action ran. */
+const createSetupSegment = (video) => {
+  const end = playback.findActionStart(getStarts(video), video.setupLength) ?? video.length
+  const width = Math.min((end * 100) / video.length, 100)
+  return createElement('button', {
+    class: `segment setup ${getSetupStatus(video)}`,
+    type: 'button',
+    'aria-label': getSetupLabel(video),
+    style: `left: 0%; width: ${width}%`,
+  })
+}
+
 const writeTimeline = (video) => {
   video.length = playback.getVideoLength(video.player.duration, video.scenario.steps)
-  const segments = playback.getSegments(getStarts(video), video.length)
+  const segments = playback.getSegments(getStops(video), video.length)
+  const setup = video.setupLength > 0 && video.length > 0 ? [createSetupSegment(video)] : []
   video.timeline.replaceChildren(
+    ...setup,
     ...segments.map((segment) => createSegment(video, segment)),
     createElement('div', { class: 'playhead' }),
   )
   writePosition(video)
 }
 
-const showTooltip = (video, segment) => {
+const getTooltipText = (video, segment) => {
+  if (segment.classList.contains('setup')) return [getSetupLabel(video)]
   const step = video.scenario.steps[Number(segment.dataset.index)]
-  video.tooltip.replaceChildren(
-    createElement('span', { class: 'keyword' }, [step.keyword]),
-    step.text,
-  )
+  return [createElement('span', { class: 'keyword' }, [step.keyword]), step.text]
+}
+
+const showTooltip = (video, segment) => {
+  video.tooltip.replaceChildren(...getTooltipText(video, segment))
   video.tooltip.hidden = false
   const wrap = video.tooltip.parentElement.getBoundingClientRect()
   const box = segment.getBoundingClientRect()
@@ -176,6 +219,12 @@ const seekToStep = (video, index) => {
   seekTo(video, start)
 }
 
+const seekToSetup = (video) => {
+  video.pickedIndex = undefined
+  video.player.pause()
+  seekTo(video, 0)
+}
+
 const seekTo = (video, time) => {
   video.player.currentTime = time
   writePosition(video)
@@ -191,7 +240,7 @@ const goToNextStep = (video) => {
     playVideo(video)
     return
   }
-  const next = playback.findNextStart(getStarts(video), video.player.currentTime)
+  const next = playback.findNextStart(getStops(video), video.player.currentTime)
   if (next === null) return
   // Pausing at each step, the video stops at the step it skipped to.
   if (video.isPausingAtSteps) video.player.pause()
@@ -199,11 +248,11 @@ const goToNextStep = (video) => {
 }
 
 const goToPreviousStep = (video) =>
-  seekTo(video, playback.findPreviousStart(getStarts(video), video.player.currentTime))
+  seekTo(video, playback.findPreviousStart(getStops(video), video.player.currentTime))
 
 const setPausePoint = (video) => {
   video.pauseAt = video.isPausingAtSteps
-    ? playback.findNextStart(getStarts(video), video.player.currentTime)
+    ? playback.findNextStart(getStops(video), video.player.currentTime)
     : null
 }
 
@@ -220,47 +269,11 @@ const followPlayback = (video) => {
   video.frame = requestAnimationFrame(() => followPlayback(video))
 }
 
-/**
- * Shows a frame from the middle of the video before it first plays. A second element takes the
- * frame: seeking the player itself would drop its poster.
- */
-const writePoster = (video) => {
-  const probe = createElement('video', { muted: '', preload: 'auto', src: video.source })
-  probe.muted = true
-  probe.addEventListener(
-    'loadedmetadata',
-    () => {
-      probe.currentTime = playback.getVideoLength(probe.duration, video.scenario.steps) / 2
-    },
-    { once: true },
-  )
-  probe.addEventListener('seeked', () => drawPoster(video.player, probe), { once: true })
-}
-
-/** The frame as an image, or null: a page opened from file:// may not read a frame back. */
-const readFrame = (probe) => {
-  const canvas = createElement('canvas')
-  canvas.width = probe.videoWidth
-  canvas.height = probe.videoHeight
-  try {
-    canvas.getContext('2d').drawImage(probe, 0, 0)
-    return canvas.toDataURL('image/jpeg', 0.85)
-  } catch {
-    return null
-  }
-}
-
-const drawPoster = (player, probe) => {
-  const frame = probe.videoWidth > 0 ? readFrame(probe) : null
-  if (frame) player.poster = frame
-  probe.removeAttribute('src')
-  probe.load()
-}
-
 const linkTimeline = (video) => {
   video.timeline.addEventListener('click', (event) => {
     const segment = event.target.closest('.segment')
-    if (segment) seekToStep(video, Number(segment.dataset.index))
+    if (segment?.classList.contains('setup')) seekToSetup(video)
+    else if (segment) seekToStep(video, Number(segment.dataset.index))
   })
   const show = (event) => {
     const segment = event.target.closest('.segment')
@@ -295,36 +308,27 @@ const linkControls = (video) => {
   writeFullscreenButton(video)
 }
 
-/**
- * The video held in memory: through a server without range requests, such as Python's http.server,
- * the browser cannot seek in it. A page opened from file:// cannot fetch and plays the file itself.
- */
-const fetchVideo = async (url) => {
-  try {
-    const response = await fetch(url)
-    return response.ok ? URL.createObjectURL(await response.blob()) : url
-  } catch {
-    return url
+// The step the video opens at stays current though steps after it may share its start.
+const openVideo = (video) => {
+  const time = getOpenTime(video)
+  video.pickedIndex = time > 0 ? video.setupLength : undefined
+  seekTo(video, time)
+}
+
+const handleStepClick = (video, event) => {
+  if (event.target.closest('.setup-toggle, .error, .doc-string, .screenshot')) return
+  if (event.target.closest('.setup-row')) {
+    seekToSetup(video)
+    return
   }
-}
-
-const setSource = (video, source) => {
-  video.source = source
-  video.player.src = source
-  writePoster(video)
-}
-
-const loadVideo = (video) => {
-  const url = video.scenario.video
-  fetchVideo(url).then(
-    (source) => setSource(video, source),
-    () => setSource(video, url),
-  )
+  const item = event.target.closest('.step')
+  if (item) seekToStep(video, Number(item.dataset.index))
 }
 
 const linkVideo = (video) => {
   const { player } = video
   player.addEventListener('loadedmetadata', () => writeTimeline(video))
+  player.addEventListener('loadedmetadata', () => openVideo(video), { once: true })
   player.addEventListener('durationchange', () => writeTimeline(video))
   player.addEventListener('timeupdate', () => writePosition(video))
   player.addEventListener('seeked', () => {
@@ -338,11 +342,7 @@ const linkVideo = (video) => {
     cancelAnimationFrame(video.frame)
     video.frame = requestAnimationFrame(() => followPlayback(video))
   })
-  video.stepList.addEventListener('click', (event) => {
-    const item = event.target.closest('.step')
-    if (item && !event.target.closest('.error, .doc-string, .screenshot'))
-      seekToStep(video, Number(item.dataset.index))
-  })
+  video.stepList.addEventListener('click', (event) => handleStepClick(video, event))
   linkTimeline(video)
   linkControls(video)
   setSpeed(video, readSpeed())
@@ -372,7 +372,9 @@ const createVideo = (scenario, stepList) => {
     ...parts,
     scenario,
     stepList,
-    stepItems: [...stepList.children],
+    stepItems: [...stepList.querySelectorAll('.step')],
+    setupRow: stepList.querySelector('.setup-row'),
+    setupLength: playback.getSetupLength(scenario.steps),
     length: 0,
     pauseAt: null,
     isPausingAtSteps: false,

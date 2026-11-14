@@ -4,6 +4,8 @@
  * outside it, not even another function of this file.
  */
 
+import type { StepStatus } from './timeline.js'
+
 /** Seconds from the start of the video at which each step started; null for a step that did not run. */
 export type StepStarts = readonly (number | null)[]
 
@@ -82,4 +84,23 @@ export const getVideoLength = (
     (end, step) => (step.start === null ? end : Math.max(end, step.start + step.duration / 1000)),
     0,
   )
+}
+
+/**
+ * How many leading steps set the scenario up: the Background and the scenario's `Given` steps with
+ * the `And` and `But` after them, up to the first `When` or `Then`.
+ */
+export const getSetupLength = (steps: readonly { readonly keyword: string }[]): number => {
+  const index = steps.findIndex((step) => step.keyword === 'When' || step.keyword === 'Then')
+  return index === -1 ? steps.length : index
+}
+
+/** The start of the first step after the setup that ran; null when none ran. */
+export const findActionStart = (starts: StepStarts, setupLength: number): number | null =>
+  starts.slice(setupLength).find((start) => start !== null) ?? null
+
+/** The status of a group of steps: failed if one failed, skipped if one was skipped, else passed. */
+export const getWorstStatus = (statuses: readonly StepStatus[]): StepStatus => {
+  if (statuses.includes('failed')) return 'failed'
+  return statuses.includes('skipped') ? 'skipped' : 'passed'
 }

@@ -9,7 +9,7 @@ import type { ScenarioRecord } from './scenario.js'
 import { buildTree } from './tree.js'
 
 const PAGE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'page')
-const PAGE_FILES = ['index.html', 'report.css', 'video.js', 'report.js']
+const PAGE_FILES = ['index.html', 'report.css', 'video.js', 'video-load.js', 'report.js']
 const FONT = '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2'
 
 export type RunInfo = GitRevision & { readonly startedAt: Date }
