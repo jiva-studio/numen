@@ -33,14 +33,14 @@ type cliRun struct {
 // nothing: each command opens what it works over, and Close closes it.
 func OpenCLI(c Config) cli.Session {
 	r := &cliRun{c: c, tasks: run.NewTasks(), models: &run.Lock{}}
-	return cli.Session{
-		OpenVaults: func() (cli.Vaults, error) { return openCLIVaults(r.c) },
-		OpenIndexed: func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+	return cli.NewSession(
+		func() (cli.Vaults, error) { return openCLIVaults(r.c) },
+		func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
 			return openCLIIndexed(r, ctx, options)
 		},
-		GetPluginCommands: func() cli.PluginCommands { return getCLIPluginCommands(r) },
-		Close:             func() ([]string, error) { return closeCLI(r) },
-	}
+		func() cli.PluginCommands { return getCLIPluginCommands(r) },
+		func() ([]string, error) { return closeCLI(r) },
+	)
 }
 
 func openCLIVaults(c Config) (cli.Vaults, error) {

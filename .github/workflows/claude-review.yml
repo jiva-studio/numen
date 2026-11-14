@@ -1,30 +1,64 @@
 name: Claude review
 
-# Runs the nm-review skill on a pull request and submits its verdict as an approval or a change
-# request from github-actions[bot]. A pull request leaving draft and the comment "/nm-review" start
-# a quick review that only reads the code; the comment "/nm-review full" starts a full review that
-# also writes and runs the tests that prove its hypotheses. Neither runs the gates or the suites,
-# because the pull request's CI runs them. Only users with write access start a review, and pull
-# requests from forks are refused.
+# The first green CI run of a ready pull request starts a review; "/nm-review" starts a later one.
+# A workflow_run event runs main's copy of this file, and its pull_requests list can be empty.
 on:
-  pull_request:
-    types: [ready_for_review]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
   issue_comment:
     types: [created]
 
 permissions: {}
 
 jobs:
-  review:
+  pick:
+    name: Pick the pull request
     if: >-
-      (github.event_name == 'pull_request'
-        && github.event.pull_request.head.repo.full_name == github.repository)
+      github.event_name == 'workflow_run'
+      && github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'pull_request'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      number: ${{ steps.pick.outputs.number }}
+    steps:
+      - id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          number=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$HEAD_BRANCH" --state open \
+            --json number,headRefOid,isDraft \
+            --jq "[.[] | select(.headRefOid == \"$HEAD_SHA\" and (.isDraft | not))][0].number // empty")
+          if [ -z "$number" ]; then
+            echo "::notice::No open pull request out of draft at $HEAD_SHA"
+            exit 0
+          fi
+          reviews=$(gh pr view "$number" --repo "$GITHUB_REPOSITORY" --json reviews \
+            --jq '[.reviews[] | select(.author.login == "github-actions")] | length')
+          if [ "$reviews" != "0" ]; then
+            echo "::notice::Pull request $number has a review; comment /nm-review for another"
+            exit 0
+          fi
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+  review:
+    needs: [pick]
+    if: >-
+      !cancelled()
+      && ((github.event_name == 'workflow_run' && needs.pick.outputs.number != '')
       || (github.event_name == 'issue_comment'
         && github.event.issue.pull_request
         && startsWith(github.event.comment.body, '/nm-review')
-        && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association))
+        && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
     concurrency:
-      group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+      group: claude-review-${{ needs.pick.outputs.number || github.event.issue.number }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -35,7 +69,7 @@ jobs:
       id-token: write
       actions: read
     env:
-      PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+      PR_NUMBER: ${{ needs.pick.outputs.number || github.event.issue.number }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Refuse pull requests from forks
@@ -65,9 +99,7 @@ jobs:
 
       - name: Record the pull request range
         env:
-          EVENT_BASE_REF: ${{ github.event.pull_request.base.ref }}
-          EVENT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
           eval "$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json baseRefName,baseRefOid,headRefOid --jq '
@@ -75,10 +107,6 @@ jobs:
             "base_sha=" + (.baseRefOid | @sh),
             "head_sha=" + (.headRefOid | @sh)
           ')"
-          if [ -n "$EVENT_BASE_SHA" ]; then
-            base_ref=$EVENT_BASE_REF
-            base_sha=$EVENT_BASE_SHA
-          fi
           if [ -n "$EVENT_HEAD_SHA" ] && [ "$EVENT_HEAD_SHA" != "$head_sha" ]; then
             echo "::error::Pull request $PR_NUMBER moved from $EVENT_HEAD_SHA to $head_sha before checkout"
             exit 1
@@ -93,19 +121,10 @@ jobs:
             echo "BASE_SHA=$base_sha"
             echo "REVIEWED_SHA=$head_sha"
           } >> "$GITHUB_ENV"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            approved=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json reviews --jq \
-              '[.reviews[] | select(.author.login == "github-actions" and .commit.oid == "'"$head_sha"'")][-1].state == "APPROVED"')
-            if [ "$approved" = "true" ]; then
-              echo "::notice::Commit $head_sha is already approved by nm-review"
-              echo "ALREADY_APPROVED=true" >> "$GITHUB_ENV"
-            fi
-          fi
 
       # The review follows the rules and tools of main, so a pull request cannot change the
       # instructions of its own review. The pull request's versions stay readable with git show.
       - name: Take the review rules from main
-        if: env.ALREADY_APPROVED != 'true'
         run: |
           set -euo pipefail
           # The text checks sit in tools/checks, and in tools/lint-narrative on a main from before that move.
@@ -116,28 +135,28 @@ jobs:
           rm -rf .agents .claude/skills tools/checks tools/lint-narrative
           git restore --source=origin/main --worktree -- "${paths[@]}"
 
-      - if: env.ALREADY_APPROVED != 'true' && env.MODE == 'full'
+      - if: env.MODE == 'full'
         uses: ./.github/actions/setup-go
         with:
           go-version-file: libs/core/kernel/go.mod
           cache-key: core-test-plain
 
-      - if: env.ALREADY_APPROVED != 'true' && env.MODE == 'full'
+      - if: env.MODE == 'full'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           cache: npm
 
-      - if: env.ALREADY_APPROVED != 'true' && env.MODE == 'full'
+      - if: env.MODE == 'full'
         uses: ./.github/actions/install-node-modules
 
-      - if: env.ALREADY_APPROVED != 'true' && env.MODE == 'full'
+      - if: env.MODE == 'full'
         uses: ./.github/actions/build-ui
         with:
           shell: "true"
 
       - name: Quick review
-        if: env.ALREADY_APPROVED != 'true' && env.MODE == 'quick'
+        if: env.MODE == 'quick'
         timeout-minutes: 20
         uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1
         with:
@@ -150,7 +169,7 @@ jobs:
             --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(node tools/checks/style/names/check.mjs:*),Bash(node tools/lint-narrative/scan.mjs:*)"
 
       - name: Full review
-        if: env.ALREADY_APPROVED != 'true' && env.MODE == 'full'
+        if: env.MODE == 'full'
         timeout-minutes: 75
         uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1
         with:
@@ -163,7 +182,6 @@ jobs:
             --allowedTools "Read,Grep,Glob,Write,Edit,Bash(cd:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(go test:*),Bash(npx vitest run:*),Bash(node tools/checks/style/names/check.mjs:*),Bash(node tools/lint-narrative/scan.mjs:*)"
 
       - name: Submit the review
-        if: env.ALREADY_APPROVED != 'true'
         run: |
           set -euo pipefail
           head=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)

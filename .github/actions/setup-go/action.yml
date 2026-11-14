@@ -9,8 +9,9 @@ inputs:
     required: true
 outputs:
   cache-key:
-    description: "The key save-go-cache saves under; empty when the exact key was restored"
-    value: ${{ steps.restore.outputs.cache-hit != 'true' && steps.key.outputs.key || '' }}
+    description: "The key save-go-cache saves under; empty outside main and when the exact key was restored"
+    # A pull request's cache is visible only to that pull request; main's to all.
+    value: ${{ github.ref == 'refs/heads/main' && steps.restore.outputs.cache-hit != 'true' && steps.key.outputs.key || '' }}
 runs:
   using: "composite"
   steps:
@@ -29,7 +30,7 @@ runs:
         echo "GOLANGCI_LINT_CACHE=$HOME/.cache/golangci-lint" >> "$GITHUB_ENV"
         {
           echo "prefix=$PREFIX-"
-          echo "key=$PREFIX"
+          echo "key=$PREFIX-$GITHUB_SHA"
           echo "build=$(go env GOCACHE)"
           echo "modules=$(go env GOMODCACHE)"
         } >> "$GITHUB_OUTPUT"

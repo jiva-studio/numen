@@ -15,6 +15,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -79,9 +80,10 @@ func openToolsOfHost(t *testing.T, host *container.PluginRoles) numenv1connect.P
 			t.Error(err)
 		}
 	})
-	container.AdaptPluginHost(host).Endpoint.SetPluginVault(&vaultapi.Access{Switch: shownVault{
+	access := &vaultapi.Access{Switch: shownVault{
 		vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}, other: domain.Vault{ID: "v-garden", Name: "Garden"},
-	}})
+	}}
+	container.AdaptPluginHost(host).Lender.Update(func(l *hostendpoint.Lent) { l.Vault = access })
 	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)

@@ -53,6 +53,15 @@ func Embed(ctx context.Context, provider connection.Provider, call connection.Ca
 	return result, nil
 }
 
+// Rerank asks the llm.rerank operation of provider for the scores of the documents of request.
+func Rerank(ctx context.Context, provider connection.Provider, call connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+	result := &llm.RerankResult{}
+	if err := serveInto(ctx, provider, llm.OperationRerank, call, request, result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // GetProfile asks the llm.profile operation of provider for the profile of the model of call.
 func GetProfile(ctx context.Context, provider connection.Provider, call connection.Call) (*llm.Profile, error) {
 	profile := &llm.Profile{}

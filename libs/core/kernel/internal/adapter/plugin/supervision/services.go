@@ -26,42 +26,46 @@ type Closing interface {
 	IsClosed() bool
 }
 
+// Slot holds one value that is replaced as a whole while readers use it.
+type Slot[T any] struct {
+	mu    sync.RWMutex
+	value T
+}
+
+// Get returns the value held, the zero value until one is replaced in.
+func (s *Slot[T]) Get() T {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.value
+}
+
+// Replace holds value from now on.
+func (s *Slot[T]) Replace(value T) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.value = value
+}
+
 // Services holds what the host gives the plugins it launches: the endpoint they call the host
-// through and the provisioner of the dependencies they declare.
+// through and the provisioner of the dependencies they declare. Both are read from the functions
+// the services are made with, at each use.
 type Services struct {
-	closing Closing
-
-	mu           sync.RWMutex
-	dependencies pluginport.DependencyRegistry
-	endpoint     HostEndpoint
+	closing      Closing
+	endpoint     func() HostEndpoint
+	dependencies func() pluginport.DependencyRegistry
 }
 
-// NewServices returns services with nothing set; they open no endpoint once closing reports the host shut down.
-func NewServices(closing Closing) *Services {
-	return &Services{closing: closing}
-}
-
-// SetHostEndpoint sets the endpoint the plugins call the host through. The host opens it when the
-// first plugin launches after it is set.
-func (s *Services) SetHostEndpoint(endpoint HostEndpoint) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.endpoint = endpoint
-}
-
-// SetDependencies sets what provisions the dependencies the plugins declare and
-// what the plugins ask about over the host endpoint.
-func (s *Services) SetDependencies(catalog pluginport.DependencyRegistry) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.dependencies = catalog
+// NewServices returns services that read the endpoint and the provisioner of the dependencies from the
+// given functions; a nil result means there is none. They open no endpoint once closing reports the host shut down.
+func NewServices(
+	closing Closing, endpoint func() HostEndpoint, dependencies func() pluginport.DependencyRegistry,
+) *Services {
+	return &Services{closing: closing, endpoint: endpoint, dependencies: dependencies}
 }
 
 // GetDependencies returns what provisions the dependencies, or nil when nothing does.
 func (s *Services) GetDependencies() pluginport.DependencyRegistry {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.dependencies
+	return s.dependencies()
 }
 
 // ObserveDependencies sets the function that observes each change of the state of a dependency. A
@@ -76,9 +80,7 @@ func (s *Services) ObserveDependencies(observer func(manifest.DependencyRequirem
 // there is no endpoint or nothing to lend through it.
 func (s *Services) OpenHostEndpoint(ctx context.Context) (int, error) {
 	isClosed := s.closing.IsClosed()
-	s.mu.RLock()
-	endpoint := s.endpoint
-	s.mu.RUnlock()
+	endpoint := s.endpoint()
 	if endpoint == nil {
 		return 0, nil
 	}
@@ -89,9 +91,7 @@ func (s *Services) OpenHostEndpoint(ctx context.Context) (int, error) {
 }
 
 func (s *Services) CloseHostEndpoint(ctx context.Context) error {
-	s.mu.RLock()
-	endpoint := s.endpoint
-	s.mu.RUnlock()
+	endpoint := s.endpoint()
 	if endpoint == nil {
 		return nil
 	}
@@ -100,9 +100,7 @@ func (s *Services) CloseHostEndpoint(ctx context.Context) error {
 
 // ClearPlugin forgets what the endpoint holds for a plugin whose process ended.
 func (s *Services) ClearPlugin(pluginID string) {
-	s.mu.RLock()
-	endpoint := s.endpoint
-	s.mu.RUnlock()
+	endpoint := s.endpoint()
 	if endpoint != nil {
 		endpoint.ClearPlugin(pluginID)
 	}

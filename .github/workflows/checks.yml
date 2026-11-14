@@ -164,9 +164,13 @@ jobs:
     if: inputs.code
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      BASE_REF: HEAD^1
+      CHANGED: ${{ github.event_name == 'pull_request' && '1' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 2
           persist-credentials: false
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -177,23 +181,24 @@ jobs:
 
       - uses: ./.github/actions/install-node-modules
 
-      - name: Test the checks against violation fixtures
+      - name: Test the checks and the lint rules
         run: |
-          npm test --prefix tools/checks
-          npm test --prefix tools/lint-layers
+          if [ -z "$CHANGED" ]; then npm test --prefix tools/checks; fi
+          if [ -n "$CHANGED" ] && git diff --quiet "$BASE_REF" HEAD -- tools/lint-layers tools/shared; then
+            echo "tools/lint-layers and tools/shared did not change"
+          else
+            npm test --prefix tools/lint-layers
+          fi
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: tools/checks/style/comments/go.mod
           cache: false
 
-      - name: Check comments on fields, properties and unexported functions
-        run: make lint_comments
-
       # The lint of each package and the Go tests of libs/core/kernel and libs/note run in their own jobs,
       # and the Go checks of tools/checks/structure/go in the job Structure Checks of go.yml.
       - name: Run the structural, style and documentation checks
-        run: make checks EXCLUDE=go
+        run: make checks EXCLUDE=go CHANGED="$CHANGED"
   # Every picture the manual and the landing page show is a story named as a string, and renaming a
   # story leaves the name pointing at nothing. Both lists are held against the tree here. The checks
   # read files and the plugin manifests, which is all they need installed.

@@ -29,7 +29,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 		}
 	})
 	registry := provision.NewRegistry()
-	host.Services.SetDependencies(registry)
+	host.Dependencies.Replace(registry)
 	tasks := run.NewTasks()
 	reportDependencies(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), tasks)
 	req := manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}

@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"time"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
@@ -87,7 +88,7 @@ func OpenPluginRoles(report func(error), target string, dirs ...string) (*Plugin
 	host := NewPluginRoles(clock.System{}, target, dirs...)
 	host.Failures.SetErrorHandler(report)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
-	host.Services.SetDependencies(newDependencyRegistry(""))
+	host.Dependencies.Replace(newDependencyRegistry(""))
 	return host, host.Discovery.Discover()
 }
 
@@ -135,7 +136,7 @@ func setPluginWork(c pluginsWiring, tasks *run.Tasks, models *run.Lock) {
 
 func pluginsOpenPluginWork(c pluginsWiring, tasks *run.Tasks, models *run.Lock) *run.PluginWork {
 	work := run.NewPluginWork(models, tasks, func(pluginID string) string { return pluginsGetPluginName(c, pluginID) })
-	c.PluginHost.Endpoint.SetPluginWork(work)
+	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.Work = work })
 	return work
 }
 
@@ -147,11 +148,11 @@ func pluginsGetPluginName(c pluginsWiring, pluginID string) string {
 }
 
 func setPluginVault(c pluginsWiring, v *pluginvault.Access) {
-	c.PluginHost.Endpoint.SetPluginVault(v)
+	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.Vault = v })
 }
 
 func setPluginVaultList(c pluginsWiring, list pluginvault.List) {
-	c.PluginHost.Endpoint.SetPluginVaultList(list)
+	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.VaultList = list })
 }
 
 func openPluginCache(c pluginsWiring) (pluginport.PluginCache, error) {

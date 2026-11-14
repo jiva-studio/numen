@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"io"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
@@ -188,10 +189,11 @@ func getTextReaders(c vaultWiring) textdomain.Readers {
 
 func setPluginTexts(c vaultWiring) {
 	if c.TextVersions == nil {
-		c.PluginHost.Endpoint.SetPluginTexts(nil)
+		c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.Texts = nil })
 		return
 	}
-	c.PluginHost.Endpoint.SetPluginTexts(hosttext.NewTexts(c.TextVersions.Versions, c.TextVersions.Texts))
+	texts := hosttext.NewTexts(c.TextVersions.Versions, c.TextVersions.Texts)
+	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.Texts = texts })
 }
 
 func openPluginData(c vaultWiring) *textversion.PluginData {

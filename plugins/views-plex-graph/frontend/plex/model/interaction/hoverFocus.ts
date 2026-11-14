@@ -43,11 +43,13 @@ export function useHoverFocus(parts: () => readonly (Element | null)[] = () => [
       isKeyboardFocused.value = isKeyboardOn(event.target as Element)
     },
 
-    // The keyboard stays on the element while it moves to something inside it.
+    // The keyboard stays on the element while it moves to something inside it or another of its parts.
     onFocusOut: (event: FocusEvent) => {
-      const within = event.currentTarget as Element
-      const next = event.relatedTarget as Node | null
-      isKeyboardFocused.value = !!(next && within.contains(next))
+      const within = event.currentTarget instanceof Element ? event.currentTarget : null
+      const next = event.relatedTarget
+      isKeyboardFocused.value =
+        next instanceof Node &&
+        (!!within?.contains(next) || parts().some((part) => part?.contains(next)))
     },
   }
 }

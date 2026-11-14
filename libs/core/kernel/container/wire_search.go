@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
@@ -200,7 +201,7 @@ func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, 
 		access.Source = source
 		access.Queries = newEmbedQueries(source)
 	}
-	c.PluginHost.Endpoint.SetPluginSearch(access.Access())
+	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.Search = access.Access() })
 }
 
 func searchSources(c searchWiring, ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {

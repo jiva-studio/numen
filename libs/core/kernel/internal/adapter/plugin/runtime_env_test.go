@@ -19,7 +19,7 @@ func TestADependencyCannotNameAVariableTheHostOwnsOrAMalformedOne(t *testing.T) 
 					t.Error(err)
 				}
 			})
-			host.Services.SetDependencies(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
+			host.Dependencies.Replace(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
 				"model": {ID: "model", EnvVars: map[string]string{name: "/evil"}},
 			}})
 			requirements := []manifest.DependencyRequirement{{ID: "model", Kind: manifest.DependencyKindModel}}

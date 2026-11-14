@@ -43,7 +43,7 @@ make checks_selftest                 # the planted-violation tests (takes the sa
 
 `CHANGED=1` reads the diff against `origin/main` (`BASE_REF` names another base), the uncommitted changes and the untracked files. A failing git command (no `origin/main`, a shallow clone, no repository) stops the run with exit code 2 and the git message; it never selects nothing. The Go checks list the folders they read in `paths`, so a change outside them does not select them. A check runs when a changed file matches its `paths`, lies in its own folder or in `lib/`; a change of `run.mjs`, `rules.json` or `lib/` selects every check. The checks tagged `gate` have wide paths and run whenever anything in their area changes. `make lint_layers` (`check_layers`) is `TAGS=structure`, `lint_comments` is `ONLY=style/comments` and `lint_narrative` is `ONLY=style/names`, each with its planted-violation tests first.
 
-CI runs everything: the Architecture job runs `make checks EXCLUDE=go` and the tests of this folder, and the job Structure Checks of `go.yml` runs `make checks TAGS=go`.
+`CHANGED=1` runs only the checks whose paths the branch changed, plus the fixture tests of checks whose own code changed. CI uses it on pull requests; a manual run runs everything.
 
 ## Invariants Checked
 

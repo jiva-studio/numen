@@ -1,7 +1,4 @@
-/**
- * A graph with no references and no names is arranged as the plex clusters left it: the numbers of
- * the typical and the crowded fixture, taken before references and names existed.
- */
+/** A graph with no references and no names is arranged as the grid of blocks left it: the numbers of the typical and the crowded fixture. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { NO_ROOM } from './layout/placement'
@@ -44,7 +41,7 @@ describe.each([
   ['no room is given', undefined],
   ['a room of nothing is given', () => NO_ROOM],
 ] as const)('when %s', (_, room) => {
-  it.each(CASES)('arranges $key as it was', ({ key, name, window, isMeasured }) => {
+  it.each(CASES)('arranges $key as fixed', ({ key, name, window, isMeasured }) => {
     const viewport = WINDOWS[window]
     const frame = arrangePlex(graphs[name], {
       ...(viewport ? { options: { viewport } } : {}),

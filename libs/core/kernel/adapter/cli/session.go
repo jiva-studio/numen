@@ -27,14 +27,33 @@ type Locations struct {
 // Session is the installation one run of the terminal works with. A command opens only its own machinery
 // through it: listing vaults opens no index, and a search opens no provider that fills one. OpenIndexed opens
 // the index and everything a command opens is closed by Close, once, when the run ends. Close returns what
-// the background work of the run reported as failed, one line each, and the failure to close. Every field is
-// set.
+// the background work of the run reported as failed, one line each, and the failure to close.
 type Session struct {
-	OpenVaults        func() (Vaults, error)
-	OpenIndexed       func(ctx context.Context, options IndexOptions) (Indexed, error)
-	GetPluginCommands func() PluginCommands
-	Close             func() (failures []string, err error)
+	openVaults        func() (Vaults, error)
+	openIndexed       func(ctx context.Context, options IndexOptions) (Indexed, error)
+	getPluginCommands func() PluginCommands
+	close             func() (failures []string, err error)
 }
+
+// NewSession takes no nil function: the methods of Session call them without a check.
+func NewSession(
+	openVaults func() (Vaults, error),
+	openIndexed func(ctx context.Context, options IndexOptions) (Indexed, error),
+	getPluginCommands func() PluginCommands,
+	closeRun func() (failures []string, err error),
+) Session {
+	return Session{openVaults: openVaults, openIndexed: openIndexed, getPluginCommands: getPluginCommands, close: closeRun}
+}
+
+func (s Session) OpenVaults() (Vaults, error) { return s.openVaults() }
+
+func (s Session) OpenIndexed(ctx context.Context, options IndexOptions) (Indexed, error) {
+	return s.openIndexed(ctx, options)
+}
+
+func (s Session) GetPluginCommands() PluginCommands { return s.getPluginCommands() }
+
+func (s Session) Close() (failures []string, err error) { return s.close() }
 
 // IndexOptions say how the index of a run is used: whether a scan reads every file again, and where the search
 // reports that it runs on words alone.

@@ -1,12 +1,20 @@
 name: CI
 
-# The checks of a pull request and of a manual run. `changes` finds the areas a pull request
-# touches from .github/filters.yml; a manual run takes every area. Each called workflow runs the
-# jobs of its areas. The CI job is the one required check.
+# The checks of a pull request, of a push to main, of the nightly run and of a manual run. `changes`
+# finds the areas a pull request or a push touches from .github/filters.yml; the nightly and a
+# manual run take every area. Each called workflow runs the jobs of its areas. The CI job is the
+# one required check. An area whose inputs passed before is skipped
+# (.github/scripts/skip-passed.sh); `mark` saves the markers of the areas that passed.
+# A green run of a ready pull request starts the Claude review (claude-review.yml).
 on:
   # A new title is checked again, so `edited` is listed beside the default types.
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [main]
+  # mutation.yml starts at 01:23.
+  schedule:
+    - cron: "0 3 * * *"
   # Windows and macOS runners cost two and ten times a Linux one, so a manual run asks for them.
   workflow_dispatch:
     inputs:
@@ -19,7 +27,8 @@ on:
         type: boolean
         default: false
 
-# A pull request keeps only its newest run; a manual run has a group of its own.
+# A pull request keeps only its newest run. Every other run has a group of its own: a group holds
+# one pending run and cancels the older one, so it cannot queue every merge.
 concurrency:
   group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -35,14 +44,20 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+      actions: read
+    env:
+      ENGINES: ${{ github.event_name == 'pull_request' && 'webkit' || 'chromium webkit' }}
     outputs:
-      areas: ${{ steps.areas.outputs.areas }}
-      plugin_dirs: ${{ steps.areas.outputs.plugin_dirs }}
-      e2e: ${{ steps.areas.outputs.e2e }}
+      areas: ${{ steps.passed.outputs.areas }}
+      plugin_dirs: ${{ steps.passed.outputs.plugin_dirs }}
+      e2e: ${{ steps.passed.outputs.e2e }}
+      marks: ${{ steps.passed.outputs.marks }}
       platforms: ${{ steps.platforms.outputs.matrix }}
+      draft: ${{ steps.draft.outputs.draft }}
+      engines: ${{ env.ENGINES }}
     steps:
       # The filters, the plugin manifests and the end-to-end selection; a pull request's changed
-      # files come from the API.
+      # files come from the API, a push's from git.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           filter: blob:none
@@ -53,8 +68,9 @@ jobs:
             /tests/e2e/desktop/
           persist-credentials: false
 
+      # On a push to the default branch the filter diffs github.event.before against github.sha.
       - id: filter
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: .github/filters.yml
@@ -64,9 +80,19 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           PULL: ${{ github.event.pull_request.number }}
+          BEFORE: ${{ github.event.before }}
           GH_TOKEN: ${{ github.token }}
           FILTERS: ${{ toJSON(steps.filter.outputs) }}
         run: .github/scripts/areas.sh | tee -a "$GITHUB_OUTPUT"
+
+      # Read live: the payload of a push made just before `gh pr ready` still says draft, and its
+      # run can be the one that cancels the run of `ready_for_review`.
+      - id: draft
+        if: github.event_name == 'pull_request'
+        env:
+          PULL: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: echo "draft=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PULL" --jq .draft)" | tee -a "$GITHUB_OUTPUT"
 
       - id: platforms
         env:
@@ -76,6 +102,17 @@ jobs:
           PULL: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/platforms.sh | tee -a "$GITHUB_OUTPUT"
+
+      - id: passed
+        env:
+          EVENT: ${{ github.event_name }}
+          PULL: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+          AREAS: ${{ steps.areas.outputs.areas }}
+          PLUGIN_DIRS: ${{ steps.areas.outputs.plugin_dirs }}
+          E2E: ${{ steps.areas.outputs.e2e }}
+          PLATFORMS: ${{ steps.platforms.outputs.matrix }}
+        run: .github/scripts/skip-passed.sh | tee -a "$GITHUB_OUTPUT"
 
   checks:
     needs: [changes]
@@ -118,8 +155,10 @@ jobs:
       plugin_stories: ${{ fromJSON(needs.changes.outputs.areas).plugin_stories }}
       plugin_versions: ${{ fromJSON(needs.changes.outputs.areas).plugin_versions }}
 
+  # docs.yml builds and deploys main from a push trigger of its own.
   docs:
     needs: [changes]
+    if: github.event_name != 'push'
     uses: ./.github/workflows/docs.yml
     secrets:
       BUNNY_DOCS_STORAGE_KEY: ${{ secrets.BUNNY_DOCS_STORAGE_KEY }}
@@ -130,10 +169,11 @@ jobs:
   e2e:
     name: End-to-End
     needs: [changes]
-    if: needs.changes.outputs.e2e != 'none'
+    if: needs.changes.outputs.e2e != 'none' && needs.changes.outputs.draft != 'true'
     uses: ./.github/workflows/desktop-e2e.yml
     with:
       scope: ${{ needs.changes.outputs.e2e }}
+      engines: ${{ needs.changes.outputs.engines }}
 
   # Fails when a job failed or was cancelled, and when the areas were not found: every other job
   # is then skipped.
@@ -149,3 +189,39 @@ jobs:
         run: |
           jq -r 'to_entries[] | "\(.value.result)\t\(.key)"' <<< "$RESULTS" | sort
           jq -e '.changes.result == "success" and all(.[]; .result != "failure" and .result != "cancelled")' <<< "$RESULTS" > /dev/null
+
+  passed:
+    name: Passed
+    if: ${{ !cancelled() && needs.changes.result == 'success' }}
+    needs: [changes, checks, go, frontend, plugins, docs, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    outputs:
+      keys: ${{ steps.keys.outputs.keys }}
+    steps:
+      - id: keys
+        env:
+          MARKS: ${{ needs.changes.outputs.marks }}
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          jq -c --argjson results "$RESULTS" '[.[] | select($results[.job].result == "success") | .key]' <<< "$MARKS" \
+            | sed 's/^/keys=/' | tee -a "$GITHUB_OUTPUT"
+
+  mark:
+    name: Mark ${{ matrix.key }}
+    if: needs.passed.outputs.keys != '' && needs.passed.outputs.keys != '[]'
+    needs: [passed]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    strategy:
+      matrix:
+        key: ${{ fromJSON(needs.passed.outputs.keys) }}
+    steps:
+      - run: touch "$RUNNER_TEMP/passed"
+
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ matrix.key }}
