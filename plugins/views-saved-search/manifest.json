@@ -77,7 +77,7 @@
       "key": "maxPathPrefixes",
       "type": "number",
       "title": "Most folders",
-      "description": "Most folders a query joins with path.startsWith and ||",
+      "description": "Most path.startsWith conditions one query joins with OR",
       "default": 8,
       "min": 1,
       "step": 1

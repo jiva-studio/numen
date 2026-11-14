@@ -27,27 +27,14 @@ func (s *Search) SearchText(_ context.Context, query host.SearchResultQuery) ([]
 	if err != nil {
 		return nil, err
 	}
-	if err := checkKinds(query.Kinds); err != nil {
+	if err := checkSearchQuery(query, s.all.model != nil); err != nil {
 		return nil, err
-	}
-	if query.IsRawWords && query.Mode != host.SearchModeWords {
-		return nil, errors.New("host: raw words need SearchModeWords")
-	}
-	if query.Mode == host.SearchModeMeaning && s.all.model == nil {
-		return nil, host.ErrNoModel
 	}
 	words := getQueryWords(query.Query, query.IsRawWords)
 	if len(words) == 0 {
 		return nil, nil
 	}
-	limit := host.DefaultSearchedResults
-	if query.Limit > 0 {
-		limit = min(query.Limit, host.MaxSearchedResults)
-	}
-	perSourceLimit := host.DefaultSearchedResultsPerSource
-	if query.ResultsPerSource > 0 {
-		perSourceLimit = query.ResultsPerSource
-	}
+	limit, perSourceLimit := getSearchLimits(query)
 	var found []host.SearchResult
 	perSource := map[string]int{}
 	for _, result := range one.indexed {
@@ -63,6 +50,31 @@ func (s *Search) SearchText(_ context.Context, query host.SearchResultQuery) ([]
 		}
 	}
 	return found, nil
+}
+
+func checkSearchQuery(query host.SearchResultQuery, hasModel bool) error {
+	if err := checkKinds(query.Kinds); err != nil {
+		return err
+	}
+	if query.IsRawWords && query.Mode != host.SearchModeWords {
+		return errors.New("host: raw words need SearchModeWords")
+	}
+	if query.Mode == host.SearchModeMeaning && !hasModel {
+		return host.ErrNoModel
+	}
+	return nil
+}
+
+func getSearchLimits(query host.SearchResultQuery) (limit, perSourceLimit int) {
+	limit = host.DefaultSearchedResults
+	if query.Limit > 0 {
+		limit = min(query.Limit, host.MaxSearchedResults)
+	}
+	perSourceLimit = host.DefaultSearchedResultsPerSource
+	if query.ResultsPerSource > 0 {
+		perSourceLimit = query.ResultsPerSource
+	}
+	return limit, perSourceLimit
 }
 
 func (s *Search) isFoundLocked(result host.SearchResult, words []string, mode host.SearchMode) bool {
