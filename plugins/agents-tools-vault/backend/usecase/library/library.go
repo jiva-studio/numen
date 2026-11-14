@@ -26,11 +26,11 @@ type UseCase struct {
 	notes    ports.NoteLookup
 	versions ports.VersionLister
 	texts    ports.TextReader
-	search   ports.PassageSearch
+	search   ports.TextSearch
 }
 
 // New creates a UseCase over the files and notes of one vault and its library.
-func New(files ports.FileReader, notes ports.NoteLookup, versions ports.VersionLister, texts ports.TextReader, search ports.PassageSearch) *UseCase {
+func New(files ports.FileReader, notes ports.NoteLookup, versions ports.VersionLister, texts ports.TextReader, search ports.TextSearch) *UseCase {
 	return &UseCase{files: files, notes: notes, versions: versions, texts: texts, search: search}
 }
 
@@ -47,7 +47,7 @@ func (u *UseCase) Search(ctx context.Context, in api.LibrarySearchInput) (api.Li
 	if u.search == nil {
 		return out, errNoLibrary
 	}
-	found, err := u.search.SearchPassages(ctx, host.PassageQuery{
+	found, err := u.search.SearchText(ctx, host.SearchResultQuery{
 		Query: in.Query, Limit: in.Limit, Kinds: kinds, PathPrefix: folder.GetPrefix(in.Folder),
 	})
 	if err != nil {
@@ -57,33 +57,33 @@ func (u *UseCase) Search(ctx context.Context, in api.LibrarySearchInput) (api.Li
 	if err != nil {
 		return out, err
 	}
-	for _, passage := range found {
-		place := newPlace(textplace.GetSelector(passage.Selector))
+	for _, result := range found {
+		place := newPlace(textplace.GetSelector(result.Selector))
 		if place != nil && place.CFI != "" {
-			place.Chapter = passage.Location
+			place.Chapter = result.PlaceLabel
 		}
 		out.Matches = append(out.Matches, api.LibraryMatch{
-			Path:   passage.Path,
-			Title:  titles[passage.Path],
+			Path:   result.Path,
+			Title:  titles[result.Path],
 			Place:  place,
-			Text:   passage.Text,
-			Start:  passage.Start,
-			Length: passage.Length,
-			Line:   passage.Line + 1,
-			URI:    textplace.FormatAddress(passage.Path, passage.Start, passage.Length),
+			Text:   result.Text,
+			Start:  result.Start,
+			Length: result.Length,
+			Line:   result.MatchLine + 1,
+			URI:    textplace.FormatAddress(result.Path, result.Start, result.Length),
 		})
 	}
 	return out, nil
 }
 
-func (u *UseCase) getTitles(ctx context.Context, found []host.Passage) (map[string]string, error) {
+func (u *UseCase) getTitles(ctx context.Context, found []host.SearchResult) (map[string]string, error) {
 	titles := make(map[string]string, len(found))
 	var notePaths []string
-	for _, passage := range found {
-		base := path.Base(passage.Path)
-		titles[passage.Path] = strings.TrimSuffix(base, path.Ext(base))
-		if strings.HasSuffix(passage.Path, domain.NoteExtension) {
-			notePaths = append(notePaths, passage.Path)
+	for _, result := range found {
+		base := path.Base(result.Path)
+		titles[result.Path] = strings.TrimSuffix(base, path.Ext(base))
+		if strings.HasSuffix(result.Path, domain.NoteExtension) {
+			notePaths = append(notePaths, result.Path)
 		}
 	}
 	refs, err := u.notes.GetNotes(ctx, notePaths)

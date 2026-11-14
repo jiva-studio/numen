@@ -22,28 +22,28 @@ var errInvalidArgument = errors.New("invalid_argument")
 // searchCalls is the queries the host's search received.
 type searchCalls struct {
 	mu      sync.Mutex
-	queries []host.PassageQuery
+	queries []host.SearchResultQuery
 }
 
-func (s *searchCalls) getQueries() []host.PassageQuery {
+func (s *searchCalls) getQueries() []host.SearchResultQuery {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return slices.Clone(s.queries)
 }
 
-// passageSearch is the search the fake passes the queries on to.
-type passageSearch interface {
-	SearchPassages(ctx context.Context, query host.PassageQuery) ([]host.Passage, error)
+// resultStatements is the search the fake passes the queries on to.
+type resultStatements interface {
+	SearchText(ctx context.Context, query host.SearchResultQuery) ([]host.SearchResult, error)
 }
 
 // recordingSearch is the fake search that records every query and rejects a kind it does not know as
 // the host does.
 type recordingSearch struct {
-	search passageSearch
+	search resultStatements
 	calls  *searchCalls
 }
 
-func (r recordingSearch) SearchPassages(ctx context.Context, query host.PassageQuery) ([]host.Passage, error) {
+func (r recordingSearch) SearchText(ctx context.Context, query host.SearchResultQuery) ([]host.SearchResult, error) {
 	r.calls.mu.Lock()
 	r.calls.queries = append(r.calls.queries, query)
 	r.calls.mu.Unlock()
@@ -52,13 +52,13 @@ func (r recordingSearch) SearchPassages(ctx context.Context, query host.PassageQ
 			return nil, fmt.Errorf("%w: %q is not a searchable source kind: use \"note\" or \"file\"", errInvalidArgument, kind)
 		}
 	}
-	return r.search.SearchPassages(ctx, query)
+	return r.search.SearchText(ctx, query)
 }
 
-func newRecordedSearch(t *testing.T, vault *hosttest.Vault, passages []host.Passage) (*searchCalls, *tools.Registry) {
+func newRecordedSearch(t *testing.T, vault *hosttest.Vault, results []host.SearchResult) (*searchCalls, *tools.Registry) {
 	t.Helper()
 	search := hosttest.NewSearch(testVault)
-	search.SetIndexedPassages(passages)
+	search.SetIndexedResults(results)
 	texts := hosttest.NewTexts(testVault, readerID)
 	calls := &searchCalls{}
 	registry, err := service.New(vaultsOf(vault)).
@@ -74,7 +74,7 @@ func newRecordedSearch(t *testing.T, vault *hosttest.Vault, passages []host.Pass
 }
 
 func TestLibrarySearchPassesUnknownKindToHostAndReturnsItsError(t *testing.T) {
-	calls, registry := newRecordedSearch(t, hosttest.New(testVault), []host.Passage{
+	calls, registry := newRecordedSearch(t, hosttest.New(testVault), []host.SearchResult{
 		{Path: "library/Tea.pdf", Text: "green tea leaves", Start: 0, Length: 16},
 	})
 
@@ -90,7 +90,7 @@ func TestLibrarySearchPassesUnknownKindToHostAndReturnsItsError(t *testing.T) {
 }
 
 func TestLibrarySearchPassesTheLimitToTheHostUnchanged(t *testing.T) {
-	calls, registry := newRecordedSearch(t, hosttest.New(testVault), []host.Passage{
+	calls, registry := newRecordedSearch(t, hosttest.New(testVault), []host.SearchResult{
 		{Path: "library/Tea.pdf", Text: "green tea leaves", Start: 0, Length: 16},
 	})
 

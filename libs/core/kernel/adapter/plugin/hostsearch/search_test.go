@@ -86,11 +86,11 @@ type stubSamples struct {
 	vectorRecipe string
 }
 
-func (s *stubSamples) ListSmallChunkVectors(_ context.Context, _ domain.Vault, recipe string, limit int) ([]searchpolicy.Passage, error) {
+func (s *stubSamples) ListSmallChunkVectors(_ context.Context, _ domain.Vault, recipe string, limit int) ([]searchpolicy.SampledChunk, error) {
 	s.vectorLimit, s.vectorRecipe = limit, recipe
-	out := make([]searchpolicy.Passage, 0, min(limit, s.vectors))
+	out := make([]searchpolicy.SampledChunk, 0, min(limit, s.vectors))
 	for i := range min(limit, s.vectors) {
-		out = append(out, searchpolicy.Passage{
+		out = append(out, searchpolicy.SampledChunk{
 			Source: int64(i + 1), Path: fmt.Sprintf("note-%d.md", i+1), Vector: []byte{byte(i), 1, 2, 3},
 		})
 	}
@@ -163,22 +163,22 @@ func unitQuery(path string) plugin.SimilarityQuery {
 	return plugin.SimilarityQuery{Path: path, Vector: []float32{1, 0, 0, 0}}
 }
 
-func TestSampleSimilaritiesCapsThePassages(t *testing.T) {
+func TestSampleSimilaritiesCapsTheChunks(t *testing.T) {
 	f := newFixture()
 	got, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), []plugin.SimilarityQuery{unitQuery("")})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if f.samples.vectorLimit != plugin.MaxSampledPassages || got.PassageCount != plugin.MaxSampledPassages {
-		t.Errorf("asked the index for %d and sampled %d, want %d", f.samples.vectorLimit, got.PassageCount, plugin.MaxSampledPassages)
+	if f.samples.vectorLimit != plugin.MaxSampledChunks || got.ChunkCount != plugin.MaxSampledChunks {
+		t.Errorf("asked the index for %d and sampled %d, want %d", f.samples.vectorLimit, got.ChunkCount, plugin.MaxSampledChunks)
 	}
-	if got.SourceCount != plugin.MaxSampledPassages {
-		t.Errorf("%d sources, want %d", got.SourceCount, plugin.MaxSampledPassages)
+	if got.SourceCount != plugin.MaxSampledChunks {
+		t.Errorf("%d sources, want %d", got.SourceCount, plugin.MaxSampledChunks)
 	}
-	if len(got.Rows) != 1 || len(got.Rows[0]) != plugin.MaxSampledPassages {
-		t.Fatalf("rows %d, want one of %d similarities", len(got.Rows), plugin.MaxSampledPassages)
+	if len(got.Rows) != 1 || len(got.Rows[0]) != plugin.MaxSampledChunks {
+		t.Fatalf("rows %d, want one of %d similarities", len(got.Rows), plugin.MaxSampledChunks)
 	}
-	// Passage i holds {i, 1, 2, 3}: its cosine with the first axis is i / sqrt(i*i + 14).
+	// Chunk i holds {i, 1, 2, 3}: its cosine with the first axis is i / sqrt(i*i + 14).
 	for _, i := range []int{0, 1, 100, 127} {
 		want := float64(int8(i)) / math.Sqrt(float64(int8(i))*float64(int8(i))+14)
 		if math.Abs(got.Rows[0][i]-want) > 1e-6 {
@@ -215,8 +215,8 @@ func TestSampleSimilaritiesExcludesTheNoteOfTheQuery(t *testing.T) {
 	if len(got.Rows[0]) != 9 || len(got.Rows[1]) != 10 || len(got.Rows[2]) != 10 {
 		t.Errorf("rows of %d, %d and %d similarities, want 9, 10 and 10", len(got.Rows[0]), len(got.Rows[1]), len(got.Rows[2]))
 	}
-	if got.PassageCount != 10 || got.SourceCount != 10 {
-		t.Errorf("%d passages from %d sources, want 10 from 10", got.PassageCount, got.SourceCount)
+	if got.ChunkCount != 10 || got.SourceCount != 10 {
+		t.Errorf("%d passages from %d sources, want 10 from 10", got.ChunkCount, got.SourceCount)
 	}
 }
 
@@ -484,11 +484,11 @@ func (storedPlace) ListStoredVectors(context.Context, sourcedomain.StoredVectorQ
 	}, nil
 }
 
-func (storedPlace) GetEnclosingPassages(context.Context, domain.VaultID, []domain.ChunkID) ([]domain.Passage, error) {
+func (storedPlace) GetEnclosingResults(context.Context, domain.VaultID, []domain.ChunkID) ([]domain.SearchResult, error) {
 	return nil, nil
 }
 
-func TestTheNearestPassagesOfAPlaceStopAtTheFloorOfTheQueryElseAtTheFloorOfTheVault(t *testing.T) {
+func TestTheNearestChunksOfAPlaceStopAtTheFloorOfTheQueryElseAtTheFloorOfTheVault(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
 		floor float64
@@ -500,7 +500,7 @@ func TestTheNearestPassagesOfAPlaceStopAtTheFloorOfTheQueryElseAtTheFloorOfTheVa
 		t.Run(tc.name, func(t *testing.T) {
 			f := newFixture()
 			f.search.Places = search.NewFindNearest(storedPlace{})
-			found, err := f.search.FindNearestPassages(t.Context(), getVault(), sourcedomain.NearestQuery{
+			found, err := f.search.FindNearestChunks(t.Context(), getVault(), sourcedomain.NearestQuery{
 				Recipe: getModel().Recipe(), Vector: []float32{1, 0, 0, 0}, Limit: 5, Floor: tc.floor,
 			})
 			if err != nil {
@@ -517,10 +517,10 @@ func TestTheNearestPassagesOfAPlaceStopAtTheFloorOfTheQueryElseAtTheFloorOfTheVa
 	}
 }
 
-func TestTheNearestPassagesOfAPlaceOfAnotherRecipeAreRefused(t *testing.T) {
+func TestTheNearestChunksOfAPlaceOfAnotherRecipeAreRefused(t *testing.T) {
 	f := newFixture()
 	f.search.Places = search.NewFindNearest(storedPlace{})
-	_, err := f.search.FindNearestPassages(t.Context(), getVault(), sourcedomain.NearestQuery{Recipe: "other", Vector: []float32{1, 0, 0, 0}, Limit: 5})
+	_, err := f.search.FindNearestChunks(t.Context(), getVault(), sourcedomain.NearestQuery{Recipe: "other", Vector: []float32{1, 0, 0, 0}, Limit: 5})
 	if !errors.Is(err, plugin.ErrRecipeMismatch) {
 		t.Errorf("err = %v, want ErrRecipeMismatch", err)
 	}

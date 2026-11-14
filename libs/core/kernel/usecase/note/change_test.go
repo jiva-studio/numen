@@ -108,7 +108,7 @@ func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Source != created.Path {
+	if len(found) != 1 || found[0].Path != created.Path {
 		t.Errorf("the new note is not searchable yet: %v", found)
 	}
 }

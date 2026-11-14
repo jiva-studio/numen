@@ -28,7 +28,7 @@ func TestFindLexicalLimitsWithinPathPrefix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(books) != 2 || books[0].Source != "lib/zebra.epub" {
+	if len(books) != 2 || books[0].Path != "lib/zebra.epub" {
 		t.Errorf("a prefix that ends inside a file name found %v, want the two chunks of the book", getSources(books))
 	}
 
@@ -54,7 +54,7 @@ func TestAPathPrefixIsNotAPattern(t *testing.T) {
 	}
 }
 
-func TestGetNamedPassagesLimitsWithinPathPrefix(t *testing.T) {
+func TestGetNamedSectionsLimitsWithinPathPrefix(t *testing.T) {
 	db := openIndex(t)
 	source{
 		path: "lib/guide.epub", kind: "file", producer: "ocr", large: "text", opens: []string{"Gardening"}, smalls: []string{"x"},
@@ -63,7 +63,7 @@ func TestGetNamedPassagesLimitsWithinPathPrefix(t *testing.T) {
 	queries := queriesOf(db)
 
 	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindNote, domain.KindFile}} {
-		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: kinds, Limit: 1, IsGrowing: false, PathPrefix: "notes/"})
+		got, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: kinds, Limit: 1, IsGrowing: false, PathPrefix: "notes/"})
 		if err != nil || !slices.Equal(getSources(got), []string{"notes/Gardening.md"}) {
 			t.Errorf("kinds %v: the section under notes/ is %v, %v", kinds, getSources(got), err)
 		}
@@ -154,9 +154,9 @@ func TestAPathPrefixMatchesTheFolderInEitherNormalForm(t *testing.T) {
 			if err != nil || !slices.Equal(slices.Compact(getSources(lexical)), []string{book}) {
 				t.Errorf("stored %+q, prefix %+q: FindLexical found %+q, %v, want only %+q", stored, prefix, getSources(lexical), err, book)
 			}
-			named, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "tea", Limit: 10, PathPrefix: prefix})
+			named, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "tea", Limit: 10, PathPrefix: prefix})
 			if err != nil || !slices.Equal(slices.Compact(getSources(named)), []string{book}) {
-				t.Errorf("stored %+q, prefix %+q: GetNamedPassages found %+q, %v, want only %+q", stored, prefix, getSources(named), err, book)
+				t.Errorf("stored %+q, prefix %+q: GetNamedSections found %+q, %v, want only %+q", stored, prefix, getSources(named), err, book)
 			}
 			nearest, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 				Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1, PathPrefix: prefix,

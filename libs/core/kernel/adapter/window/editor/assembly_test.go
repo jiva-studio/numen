@@ -76,7 +76,7 @@ func (w readingParts) OpenIndex(ctx context.Context) (*testIndex, error) {
 	target.NoteQueries.LinkBatches = queries
 	target.NoteQueries.NamedPaths, target.NoteQueries.NoteRefs, target.NoteQueries.NoteTypes = queries, queries, queries
 	target.NoteQueries.OpeningNote = queries
-	target.Chunks.Passages, target.Chunks.Nearest, target.Chunks.Progress = db.ChunkSearch(), db.ChunkSearch(), db.ChunkVectors()
+	target.Chunks.Lexical, target.Chunks.Nearest, target.Chunks.Progress = db.ChunkSearch(), db.ChunkSearch(), db.ChunkVectors()
 	target.Chunks.Vectors, target.Chunks.VectorQueries = db.Sources(), db.Sources()
 	target.Source.Sources, target.Source.SourceRecords, target.Source.SourceBacklog = db.Sources(), db.Sources(), db.Sources()
 	target.Source.RemovalLookup = db.Sources()
@@ -106,7 +106,7 @@ type testIndex struct {
 		OpeningNote noteport.OpeningNote
 	}
 	Chunks struct {
-		Passages      sourceport.PassageQueries
+		Lexical       sourceport.LexicalQueries
 		Nearest       sourceport.NearestQueries
 		Progress      indexport.IndexProgress
 		Vectors       searchsourceport.VectorRepository

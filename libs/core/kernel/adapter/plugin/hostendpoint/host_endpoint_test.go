@@ -102,7 +102,7 @@ func searchOf(fake any) *SearchAccess {
 		return nil
 	}
 	return &SearchAccess{
-		SearchIndex: capability[SearchIndex](fake), PassageSearch: capability[PassageSearch](fake),
+		SearchIndex: capability[SearchIndex](fake), TextSearch: capability[TextSearch](fake),
 		SearchFloors: capability[SearchFloors](fake),
 	}
 }

@@ -10,9 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/note/markdown"
 )
 
-// CutSnippet returns the window around the hit of a passage and the matched query spans inside it.
-func CutSnippet(text string, hitAt int, query string) (string, []domain.UnitRange) {
-	read, matched := nearby(text, hitAt)
+// CutSnippet returns the window around the hit of a search result and the matched query spans inside it.
+func CutSnippet(text string, matchOffset int, query string) (string, []domain.UnitRange) {
+	read, matched := nearby(text, matchOffset)
 	return getTextAround(read, spans(read, query), markdown.CountUTF16(read, matched))
 }
 
@@ -89,7 +89,7 @@ func getFoldedRunes(text string) ([]rune, []int) {
 	return runes, append(units, pos)
 }
 
-// glancing is the maximum passage length and leading is how much of it may
+// glancing is the maximum search result length and leading is how much of it may
 // precede the matched span, both in UTF-16 code units. Matched words are cut at
 // word starts, not mid-word.
 const (
@@ -115,7 +115,7 @@ func getTextAround(text string, spans []domain.UnitRange, from int) (string, []d
 	if point > leading {
 		opens = point - leading
 	}
-	// A window reaching past the end of the passage closes there and holds less
+	// A window reaching past the end of the search result closes there and holds less
 	// than a glance.
 	to := min(opens+glancing, total)
 	first, last := getOpeningRune(units, opens), getClosingRune(units, to)
@@ -178,7 +178,7 @@ func getClosingRune(units []int, pos int) int {
 	return len(units) - 1
 }
 
-// reach is how far on either side of a hit a passage is read, in bytes. The
+// reach is how far on either side of a hit a search result is read, in bytes. The
 // window opens slightly before the first matched word and extends from there, so
 // the range read must contain the widest window that can open near the hit and
 // the words that can open it.

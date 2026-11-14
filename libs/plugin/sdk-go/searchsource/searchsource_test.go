@@ -38,7 +38,7 @@ func (f fakeHandler) IndexTexts(_ context.Context, place Place, texts []Text) ([
 	return vectors, nil
 }
 
-func (f fakeHandler) SearchPassages(_ context.Context, _ Place, q Query) ([]Match, error) {
+func (f fakeHandler) SearchChunks(_ context.Context, _ Place, q Query) ([]Match, error) {
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -90,9 +90,9 @@ func TestClient_RoundTripsTheDescriptionAndTheVectorsThroughTheHandler(t *testin
 
 func TestTheAdapterCarriesTheQueryToTheHandler(t *testing.T) {
 	ad := &adapter{h: fakeHandler{}}
-	found, err := ad.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchSourceServiceSearchPassagesRequest{Query: "12", Floor: 0.5}))
+	found, err := ad.SearchChunks(t.Context(), connect.NewRequest(&v1.SearchSourceServiceSearchChunksRequest{Query: "12", Floor: 0.5}))
 	if err != nil || len(found.Msg.GetMatches()) != 1 || found.Msg.GetMatches()[0].GetChunkId() != "12" || found.Msg.GetMatches()[0].GetScore() != 0.5 {
-		t.Fatalf("SearchPassages = %v, %v", found, err)
+		t.Fatalf("SearchChunks = %v, %v", found, err)
 	}
 }
 

@@ -10,11 +10,11 @@ import (
 
 // The 32-bit range is a limit of the wire to the window, which its converters enforce; the use case
 // shows any passage of the file.
-func TestFocusPassagesShowsAPassageThatEndsPastThe32BitRange(t *testing.T) {
-	focus, view, v := newFocusPassages(t)
+func TestFocusFileShowsASpanThatEndsPastThe32BitRange(t *testing.T) {
+	focus, view, v := newFocusFile(t)
 
-	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
-		Path: talkPath, Passages: []domain.ByteRange{{Start: math.MaxInt32 - 2, End: math.MaxInt32 + 3}},
+	err := focus.Execute(t.Context(), v, file.FocusFileInput{
+		Path: talkPath, Ranges: []domain.ByteRange{{Start: math.MaxInt32 - 2, End: math.MaxInt32 + 3}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -24,11 +24,11 @@ func TestFocusPassagesShowsAPassageThatEndsPastThe32BitRange(t *testing.T) {
 	}
 }
 
-func TestFocusPassagesAcceptsAPassageThatEndsAtThe32BitLimit(t *testing.T) {
-	focus, view, v := newFocusPassages(t)
+func TestFocusFileAcceptsASpanThatEndsAtThe32BitLimit(t *testing.T) {
+	focus, view, v := newFocusFile(t)
 
-	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
-		Path: talkPath, Passages: []domain.ByteRange{{Start: math.MaxInt32 - 2, End: math.MaxInt32}},
+	err := focus.Execute(t.Context(), v, file.FocusFileInput{
+		Path: talkPath, Ranges: []domain.ByteRange{{Start: math.MaxInt32 - 2, End: math.MaxInt32}},
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -6,8 +6,8 @@
 
 // What a client may ask of a vault by typing into it.
 //
-// things: SearchNames answers with names, and SearchPassages with the passages
-// of text a vault holds. A client drawing them apart asks each of them.
+// things: SearchNames answers with names, and SearchText with the search
+// results of text a vault holds. A client drawing them apart asks each of them.
 
 package numenv1
 
@@ -288,10 +288,10 @@ func (x *NameMatch) GetTabKind() string {
 	return ""
 }
 
-type SearchPassagesRequest struct {
+type SearchTextRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	// How many passages to answer with. Zero takes the number the vault chooses.
+	// How many search results to answer with. Zero takes the number the vault chooses.
 	Limit int32      `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
 	Mode  SearchMode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.SearchMode" json:"mode,omitempty"`
 	// The id CancelSearch names this call by, chosen by the client and unique
@@ -301,20 +301,20 @@ type SearchPassagesRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SearchPassagesRequest) Reset() {
-	*x = SearchPassagesRequest{}
+func (x *SearchTextRequest) Reset() {
+	*x = SearchTextRequest{}
 	mi := &file_numen_v1_search_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SearchPassagesRequest) String() string {
+func (x *SearchTextRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SearchPassagesRequest) ProtoMessage() {}
+func (*SearchTextRequest) ProtoMessage() {}
 
-func (x *SearchPassagesRequest) ProtoReflect() protoreflect.Message {
+func (x *SearchTextRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_search_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -326,33 +326,33 @@ func (x *SearchPassagesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchPassagesRequest.ProtoReflect.Descriptor instead.
-func (*SearchPassagesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchTextRequest.ProtoReflect.Descriptor instead.
+func (*SearchTextRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *SearchPassagesRequest) GetQuery() string {
+func (x *SearchTextRequest) GetQuery() string {
 	if x != nil {
 		return x.Query
 	}
 	return ""
 }
 
-func (x *SearchPassagesRequest) GetLimit() int32 {
+func (x *SearchTextRequest) GetLimit() int32 {
 	if x != nil {
 		return x.Limit
 	}
 	return 0
 }
 
-func (x *SearchPassagesRequest) GetMode() SearchMode {
+func (x *SearchTextRequest) GetMode() SearchMode {
 	if x != nil {
 		return x.Mode
 	}
 	return SearchMode_SEARCH_MODE_UNSPECIFIED
 }
 
-func (x *SearchPassagesRequest) GetSearchId() string {
+func (x *SearchTextRequest) GetSearchId() string {
 	if x != nil {
 		return x.SearchId
 	}
@@ -439,28 +439,28 @@ func (*CancelSearchResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{5}
 }
 
-type SearchPassagesResponse struct {
+type SearchTextResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The passages that answer, best first, one per source.
-	Found         []*Passage `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
+	// The search results that answer, best first, one per source.
+	Found         []*SearchResult `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SearchPassagesResponse) Reset() {
-	*x = SearchPassagesResponse{}
+func (x *SearchTextResponse) Reset() {
+	*x = SearchTextResponse{}
 	mi := &file_numen_v1_search_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SearchPassagesResponse) String() string {
+func (x *SearchTextResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SearchPassagesResponse) ProtoMessage() {}
+func (*SearchTextResponse) ProtoMessage() {}
 
-func (x *SearchPassagesResponse) ProtoReflect() protoreflect.Message {
+func (x *SearchTextResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_search_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -472,21 +472,21 @@ func (x *SearchPassagesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchPassagesResponse.ProtoReflect.Descriptor instead.
-func (*SearchPassagesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchTextResponse.ProtoReflect.Descriptor instead.
+func (*SearchTextResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *SearchPassagesResponse) GetFound() []*Passage {
+func (x *SearchTextResponse) GetFound() []*SearchResult {
 	if x != nil {
 		return x.Found
 	}
 	return nil
 }
 
-// Passage is what a search returns: the text around a hit, and where it came
+// SearchResult is what a search returns: the text around a hit, and where it came
 // from.
-type Passage struct {
+type SearchResult struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file the text was read out of, as the vault calls it.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -498,16 +498,16 @@ type Passage struct {
 	// Where in that text the words typed stand, counted the way a client counts
 	// text: in UTF-16 code units. Empty for a hit by meaning, which relies on no
 	// word in particular.
-	Ranges []*Range `protobuf:"bytes,4,rep,name=ranges,proto3" json:"ranges,omitempty"`
+	MatchRanges []*Range `protobuf:"bytes,4,rep,name=match_ranges,json=matchRanges,proto3" json:"match_ranges,omitempty"`
 	// What the source's own numbering calls the place, empty when the format
 	// offered none.
-	Location string `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
+	PlaceLabel string `protobuf:"bytes,5,opt,name=place_label,json=placeLabel,proto3" json:"place_label,omitempty"`
 	// counted in bytes. With the path above it is the place this opens, and a hit
 	// in a note carries it as every other hit does.
-	Range *Range `protobuf:"bytes,6,opt,name=range,proto3" json:"range,omitempty"`
+	ByteRange *Range `protobuf:"bytes,6,opt,name=byte_range,json=byteRange,proto3" json:"byte_range,omitempty"`
 	// Where the chunk that matched stands, counted from the first line of the
 	// source's prose. It is the line a note opens on, and the caret stands there.
-	Line int32 `protobuf:"varint,7,opt,name=line,proto3" json:"line,omitempty"`
+	MatchLine int32 `protobuf:"varint,7,opt,name=match_line,json=matchLine,proto3" json:"match_line,omitempty"`
 	// The `type` key of the note's frontmatter, so a client draws a note as what it is.
 	// Empty for an ordinary note. It says nothing about a source that is not a note.
 	Type string `protobuf:"bytes,8,opt,name=type,proto3" json:"type,omitempty"`
@@ -521,20 +521,20 @@ type Passage struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Passage) Reset() {
-	*x = Passage{}
+func (x *SearchResult) Reset() {
+	*x = SearchResult{}
 	mi := &file_numen_v1_search_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Passage) String() string {
+func (x *SearchResult) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Passage) ProtoMessage() {}
+func (*SearchResult) ProtoMessage() {}
 
-func (x *Passage) ProtoReflect() protoreflect.Message {
+func (x *SearchResult) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_search_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -546,75 +546,75 @@ func (x *Passage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Passage.ProtoReflect.Descriptor instead.
-func (*Passage) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchResult.ProtoReflect.Descriptor instead.
+func (*SearchResult) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *Passage) GetPath() string {
+func (x *SearchResult) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Passage) GetNote() *Note {
+func (x *SearchResult) GetNote() *Note {
 	if x != nil {
 		return x.Note
 	}
 	return nil
 }
 
-func (x *Passage) GetText() string {
+func (x *SearchResult) GetText() string {
 	if x != nil {
 		return x.Text
 	}
 	return ""
 }
 
-func (x *Passage) GetRanges() []*Range {
+func (x *SearchResult) GetMatchRanges() []*Range {
 	if x != nil {
-		return x.Ranges
+		return x.MatchRanges
 	}
 	return nil
 }
 
-func (x *Passage) GetLocation() string {
+func (x *SearchResult) GetPlaceLabel() string {
 	if x != nil {
-		return x.Location
+		return x.PlaceLabel
 	}
 	return ""
 }
 
-func (x *Passage) GetRange() *Range {
+func (x *SearchResult) GetByteRange() *Range {
 	if x != nil {
-		return x.Range
+		return x.ByteRange
 	}
 	return nil
 }
 
-func (x *Passage) GetLine() int32 {
+func (x *SearchResult) GetMatchLine() int32 {
 	if x != nil {
-		return x.Line
+		return x.MatchLine
 	}
 	return 0
 }
 
-func (x *Passage) GetType() string {
+func (x *SearchResult) GetType() string {
 	if x != nil {
 		return x.Type
 	}
 	return ""
 }
 
-func (x *Passage) GetSelector() string {
+func (x *SearchResult) GetSelector() string {
 	if x != nil {
 		return x.Selector
 	}
 	return ""
 }
 
-func (x *Passage) GetTabKind() string {
+func (x *SearchResult) GetTabKind() string {
 	if x != nil {
 		return x.TabKind
 	}
@@ -639,25 +639,28 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12\x19\n" +
 	"\btab_kind\x18\x05 \x01(\tR\atabKindB\n" +
 	"\n" +
-	"\b_heading\"\x8a\x01\n" +
-	"\x15SearchPassagesRequest\x12\x14\n" +
+	"\b_heading\"\x86\x01\n" +
+	"\x11SearchTextRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12(\n" +
 	"\x04mode\x18\x03 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\x12\x1b\n" +
 	"\tsearch_id\x18\x04 \x01(\tR\bsearchId\"2\n" +
 	"\x13CancelSearchRequest\x12\x1b\n" +
 	"\tsearch_id\x18\x01 \x01(\tR\bsearchId\"\x16\n" +
-	"\x14CancelSearchResponse\"A\n" +
-	"\x16SearchPassagesResponse\x12'\n" +
-	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xae\x02\n" +
-	"\aPassage\x12\x12\n" +
+	"\x14CancelSearchResponse\"B\n" +
+	"\x12SearchTextResponse\x12,\n" +
+	"\x05found\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\x05found\"\xd7\x02\n" +
+	"\fSearchResult\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04text\x12'\n" +
-	"\x06ranges\x18\x04 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\x12\x1a\n" +
-	"\blocation\x18\x05 \x01(\tR\blocation\x12%\n" +
-	"\x05range\x18\x06 \x01(\v2\x0f.numen.v1.RangeR\x05range\x12\x12\n" +
-	"\x04line\x18\a \x01(\x05R\x04line\x12\x12\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\x122\n" +
+	"\fmatch_ranges\x18\x04 \x03(\v2\x0f.numen.v1.RangeR\vmatchRanges\x12\x1f\n" +
+	"\vplace_label\x18\x05 \x01(\tR\n" +
+	"placeLabel\x12.\n" +
+	"\n" +
+	"byte_range\x18\x06 \x01(\v2\x0f.numen.v1.RangeR\tbyteRange\x12\x1d\n" +
+	"\n" +
+	"match_line\x18\a \x01(\x05R\tmatchLine\x12\x12\n" +
 	"\x04type\x18\b \x01(\tR\x04type\x12\x1a\n" +
 	"\bselector\x18\n" +
 	" \x01(\tR\bselector\x12\x19\n" +
@@ -669,10 +672,11 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x11SEARCH_MODE_WORDS\x10\x01\x12\x17\n" +
 	"\x13SEARCH_MODE_MEANING\x10\x02\x12\x15\n" +
 	"\x11SEARCH_MODE_NAMES\x10\x03\x12\x16\n" +
-	"\x12SEARCH_MODE_HYBRID\x10\x042\xff\x01\n" +
+	"\x12SEARCH_MODE_HYBRID\x10\x042\xf3\x01\n" +
 	"\rSearchService\x12J\n" +
-	"\vSearchNames\x12\x1c.numen.v1.SearchNamesRequest\x1a\x1d.numen.v1.SearchNamesResponse\x12S\n" +
-	"\x0eSearchPassages\x12\x1f.numen.v1.SearchPassagesRequest\x1a .numen.v1.SearchPassagesResponse\x12M\n" +
+	"\vSearchNames\x12\x1c.numen.v1.SearchNamesRequest\x1a\x1d.numen.v1.SearchNamesResponse\x12G\n" +
+	"\n" +
+	"SearchText\x12\x1b.numen.v1.SearchTextRequest\x1a\x1c.numen.v1.SearchTextResponse\x12M\n" +
 	"\fCancelSearch\x12\x1d.numen.v1.CancelSearchRequest\x1a\x1e.numen.v1.CancelSearchResponseBFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -690,34 +694,34 @@ func file_numen_v1_search_proto_rawDescGZIP() []byte {
 var file_numen_v1_search_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_v1_search_proto_goTypes = []any{
-	(SearchMode)(0),                // 0: numen.v1.SearchMode
-	(*SearchNamesRequest)(nil),     // 1: numen.v1.SearchNamesRequest
-	(*SearchNamesResponse)(nil),    // 2: numen.v1.SearchNamesResponse
-	(*NameMatch)(nil),              // 3: numen.v1.NameMatch
-	(*SearchPassagesRequest)(nil),  // 4: numen.v1.SearchPassagesRequest
-	(*CancelSearchRequest)(nil),    // 5: numen.v1.CancelSearchRequest
-	(*CancelSearchResponse)(nil),   // 6: numen.v1.CancelSearchResponse
-	(*SearchPassagesResponse)(nil), // 7: numen.v1.SearchPassagesResponse
-	(*Passage)(nil),                // 8: numen.v1.Passage
-	(*Note)(nil),                   // 9: numen.v1.Note
-	(*Heading)(nil),                // 10: numen.v1.Heading
-	(*Range)(nil),                  // 11: numen.v1.Range
+	(SearchMode)(0),              // 0: numen.v1.SearchMode
+	(*SearchNamesRequest)(nil),   // 1: numen.v1.SearchNamesRequest
+	(*SearchNamesResponse)(nil),  // 2: numen.v1.SearchNamesResponse
+	(*NameMatch)(nil),            // 3: numen.v1.NameMatch
+	(*SearchTextRequest)(nil),    // 4: numen.v1.SearchTextRequest
+	(*CancelSearchRequest)(nil),  // 5: numen.v1.CancelSearchRequest
+	(*CancelSearchResponse)(nil), // 6: numen.v1.CancelSearchResponse
+	(*SearchTextResponse)(nil),   // 7: numen.v1.SearchTextResponse
+	(*SearchResult)(nil),         // 8: numen.v1.SearchResult
+	(*Note)(nil),                 // 9: numen.v1.Note
+	(*Heading)(nil),              // 10: numen.v1.Heading
+	(*Range)(nil),                // 11: numen.v1.Range
 }
 var file_numen_v1_search_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.NameMatch
 	9,  // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
 	10, // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
 	11, // 3: numen.v1.NameMatch.ranges:type_name -> numen.v1.Range
-	0,  // 4: numen.v1.SearchPassagesRequest.mode:type_name -> numen.v1.SearchMode
-	8,  // 5: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
-	9,  // 6: numen.v1.Passage.note:type_name -> numen.v1.Note
-	11, // 7: numen.v1.Passage.ranges:type_name -> numen.v1.Range
-	11, // 8: numen.v1.Passage.range:type_name -> numen.v1.Range
+	0,  // 4: numen.v1.SearchTextRequest.mode:type_name -> numen.v1.SearchMode
+	8,  // 5: numen.v1.SearchTextResponse.found:type_name -> numen.v1.SearchResult
+	9,  // 6: numen.v1.SearchResult.note:type_name -> numen.v1.Note
+	11, // 7: numen.v1.SearchResult.match_ranges:type_name -> numen.v1.Range
+	11, // 8: numen.v1.SearchResult.byte_range:type_name -> numen.v1.Range
 	1,  // 9: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
-	4,  // 10: numen.v1.SearchService.SearchPassages:input_type -> numen.v1.SearchPassagesRequest
+	4,  // 10: numen.v1.SearchService.SearchText:input_type -> numen.v1.SearchTextRequest
 	5,  // 11: numen.v1.SearchService.CancelSearch:input_type -> numen.v1.CancelSearchRequest
 	2,  // 12: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
-	7,  // 13: numen.v1.SearchService.SearchPassages:output_type -> numen.v1.SearchPassagesResponse
+	7,  // 13: numen.v1.SearchService.SearchText:output_type -> numen.v1.SearchTextResponse
 	6,  // 14: numen.v1.SearchService.CancelSearch:output_type -> numen.v1.CancelSearchResponse
 	12, // [12:15] is the sub-list for method output_type
 	9,  // [9:12] is the sub-list for method input_type

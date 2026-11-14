@@ -65,7 +65,7 @@ func getExpectedPlans() []struct {
 			[]any{"model", 1, int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), 0, 0, 50},
 			[]string{"sources_by_modified", "vectors_by_hash"},
 		},
-		{chunks, "passage", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
+		{chunks, "record", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
 		{chunks, "enclosing", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
 		{chunks, "progress", []any{"model", 1, 0}, []string{"chunks_by_vault_parent", "vectors_by_hash"}},
 		// A search by words reads the full-text index and then the row each hit

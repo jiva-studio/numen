@@ -42,10 +42,10 @@ const (
 const (
 	MaxEmbeddedTexts = 256
 	MaxEmbeddedBytes = 8192
-	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledPassages
+	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledChunks
 	// how many small chunks the host compares each of them with.
-	MaxSampledQueries  = 256
-	MaxSampledPassages = 500
+	MaxSampledQueries = 256
+	MaxSampledChunks  = 500
 )
 
 // EmbeddingState is the model in use and how far a vault is embedded under it.
@@ -106,7 +106,7 @@ type EmbeddedTexts struct {
 }
 
 // SimilarityQuery is a query vector of the model in use, and the path of the note it was made from.
-// The passages of that note are left out of the sample of the query; an empty path leaves out none.
+// The chunks of that note are left out of the sample of the query; an empty path leaves out none.
 type SimilarityQuery struct {
 	Path   string
 	Vector []float32
@@ -116,12 +116,12 @@ type SimilarityQuery struct {
 //
 //numen:api
 type SimilaritySample struct {
-	// PassageCount is how many small chunks the host sampled, and SourceCount how many sources they
+	// ChunkCount is how many small chunks the host sampled, and SourceCount how many sources they
 	// belong to.
-	PassageCount int
-	SourceCount  int
-	// Rows holds, for each query in the order given, its similarity with each sampled passage of another
-	// note, in the order of the passages. The row of a query with no vector is empty.
+	ChunkCount  int
+	SourceCount int
+	// Rows holds, for each query in the order given, its similarity with each sampled chunk of another
+	// note, in the order of the chunks. The row of a query with no vector is empty.
 	Rows [][]float64
 }
 
@@ -165,11 +165,11 @@ type SearchIndex interface {
 	EmbedTexts(ctx context.Context, texts []string) (EmbeddedTexts, error)
 	// SampleSimilarities is the cosine similarity of each query with the small chunks of the vault that
 	// carry a vector under the recipe and belong to a note other than the query's. The host takes at
-	// most MaxSampledPassages small chunks in a fixed order, so one index yields one sample, and at most
+	// most MaxSampledChunks small chunks in a fixed order, so one index yields one sample, and at most
 	// MaxSampledQueries queries per call. A query with another dimension count than the index returns
 	// ErrInvalidQuery.
 	SampleSimilarities(ctx context.Context, recipe string, queries []SimilarityQuery) (SimilaritySample, error)
-	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector
+	// GetBestSimilarity is the cosine similarity of the chunk of the vault nearest the query vector
 	// under the recipe, and zero where the vault has none.
 	GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error)
 }
@@ -178,9 +178,9 @@ type SearchIndex interface {
 // permission. A search source answers a query of the core with it, on the client With the vault of the
 // place; a recipe other than the one of the source in use returns ErrRecipeMismatch.
 type PlaceSearch interface {
-	// FindNearestPassages returns the small chunks nearest the vector under the recipe, nearest first,
+	// FindNearestChunks returns the small chunks nearest the vector under the recipe, nearest first,
 	// at or above the floor of the query, else the effective floor of the vault.
-	FindNearestPassages(ctx context.Context, query NearestQuery) ([]NearestMatch, error)
+	FindNearestChunks(ctx context.Context, query NearestQuery) ([]NearestMatch, error)
 }
 
 // NearestQuery is a search of the place of a search source by a vector.
@@ -209,22 +209,22 @@ type NearestMatch struct {
 }
 
 const (
-	// MaxSearchedPassagesPerSource is the maximum number of passages of one source a
-	// SearchPassages call returns.
-	MaxSearchedPassagesPerSource = 3
-	// DefaultSearchedPassages is the maximum number of passages a SearchPassages call returns when its limit
-	// is zero, and MaxSearchedPassages the maximum for any limit.
-	DefaultSearchedPassages = 20
-	MaxSearchedPassages     = 100
+	// MaxSearchedResultsPerSource is the maximum number of search results of one source a
+	// SearchText call returns.
+	MaxSearchedResultsPerSource = 3
+	// DefaultSearchedResults is the maximum number of search results a SearchText call returns when its limit
+	// is zero, and MaxSearchedResults the maximum for any limit.
+	DefaultSearchedResults = 20
+	MaxSearchedResults     = 100
 )
 
-// PassageQuery is a passage search request.
+// SearchResultQuery is a text search request.
 //
 //numen:api
-type PassageQuery struct {
+type SearchResultQuery struct {
 	Query string
-	// Limit is the maximum number of passages to return: DefaultSearchedPassages when zero, at
-	// most MaxSearchedPassages.
+	// Limit is the maximum number of search results to return: DefaultSearchedResults when zero, at
+	// most MaxSearchedResults.
 	Limit int
 	// Kinds are the kinds of source to search, KindNote or KindFile. Empty means every kind.
 	Kinds []domain.SourceKind
@@ -234,23 +234,23 @@ type PassageQuery struct {
 	PathPrefix string
 }
 
-// Passage is a span of source text matching a query.
+// SearchResult is a span of source text matching a query.
 //
 //numen:api
-type Passage struct {
+type SearchResult struct {
 	// Path is the file the text is read from, relative to the vault.
 	Path string
 	// Text is the text around the hit, truncated to a size and so possibly ending mid-sentence.
 	Text string
-	// Location is the location label in the source's numbering (page, chapter, time), empty
+	// PlaceLabel is the location label in the source's numbering (page, chapter, time), empty
 	// when the format has none.
-	Location string
-	// Start and Length locate the whole passage in the source text, in bytes.
+	PlaceLabel string
+	// Start and Length locate the whole search result in the source text, in bytes.
 	Start  int
 	Length int
-	// Line is the line of the hit, counted from 0 at the first line of the source's prose, for every
+	// MatchLine is the line of the hit, counted from 0 at the first line of the source's prose, for every
 	// source.
-	Line int
+	MatchLine int
 	// Selector locates the hit in the text version, as JSON, with the keys of domain.Selector. Empty
 	// for a note.
 	Selector string

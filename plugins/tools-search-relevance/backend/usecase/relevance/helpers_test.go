@@ -43,18 +43,18 @@ func setNotes(vault *hosttest.Vault, n int) {
 	}
 }
 
-func passagesOf(n, sources int) []hosttest.SearchPassage {
-	out := make([]hosttest.SearchPassage, n)
+func sampledChunksOf(n, sources int) []hosttest.SampledChunk {
+	out := make([]hosttest.SampledChunk, n)
 	for i := range out {
-		out[i] = hosttest.SearchPassage{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
+		out[i] = hosttest.SampledChunk{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
 	}
 	return out
 }
 
-func fill(search *hosttest.Search, vault *hosttest.Vault, notes int, passages []hosttest.SearchPassage) {
+func fill(search *hosttest.Search, vault *hosttest.Vault, notes int, chunks []hosttest.SampledChunk) {
 	setNotes(vault, notes)
-	search.SetPassages(modelRecipe, passages)
-	search.SetProgress(int64(len(passages)), int64(len(passages)))
+	search.SetSampledChunks(modelRecipe, chunks)
+	search.SetProgress(int64(len(chunks)), int64(len(chunks)))
 }
 
 func sum(counts []int) int {

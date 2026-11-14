@@ -175,7 +175,7 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Source != "Entropy.md" {
+	if len(found) != 1 || found[0].Path != "Entropy.md" {
 		t.Errorf("the words answered with %+v", found)
 	}
 }

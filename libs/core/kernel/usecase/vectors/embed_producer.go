@@ -16,11 +16,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
-func getSources(chunks []domain.Passage) []string {
+func getSources(chunks []domain.SearchResult) []string {
 	var out []string
 	for _, one := range chunks {
-		if !slices.Contains(out, one.Source) {
-			out = append(out, one.Source)
+		if !slices.Contains(out, one.Path) {
+			out = append(out, one.Path)
 		}
 	}
 	return out
@@ -36,7 +36,7 @@ type batchTarget struct {
 type preparedBatch struct {
 	model       searchsource.Description
 	place       searchsource.Place
-	pending     []domain.Passage
+	pending     []domain.SearchResult
 	hashes      [][]byte
 	reused      map[int]vector.Stored
 	reusedCount int
@@ -102,7 +102,7 @@ func (u producer) produceBatches(
 func (u producer) sendBatches(
 	ctx context.Context,
 	target batchTarget,
-	chunks []domain.Passage,
+	chunks []domain.SearchResult,
 	texts []string,
 	track *tracker,
 	out chan<- preparedBatch,
@@ -127,30 +127,30 @@ func (u producer) sendBatches(
 	return nil
 }
 
-func sortBySource(chunks []domain.Passage, texts []string) {
+func sortBySource(chunks []domain.SearchResult, texts []string) {
 	if len(chunks) < 2 {
 		return
 	}
-	type passageItem struct {
-		chunk       domain.Passage
+	type chunkItem struct {
+		chunk       domain.SearchResult
 		text        string
 		sourceIndex int
 	}
 	sourceOrder := make(map[string]int)
 	for _, c := range chunks {
-		if _, ok := sourceOrder[c.Source]; !ok {
-			sourceOrder[c.Source] = len(sourceOrder)
+		if _, ok := sourceOrder[c.Path]; !ok {
+			sourceOrder[c.Path] = len(sourceOrder)
 		}
 	}
-	items := make([]passageItem, len(chunks))
+	items := make([]chunkItem, len(chunks))
 	for i := range chunks {
-		items[i] = passageItem{
+		items[i] = chunkItem{
 			chunk:       chunks[i],
 			text:        texts[i],
-			sourceIndex: sourceOrder[chunks[i].Source],
+			sourceIndex: sourceOrder[chunks[i].Path],
 		}
 	}
-	slices.SortStableFunc(items, func(a, b passageItem) int {
+	slices.SortStableFunc(items, func(a, b chunkItem) int {
 		if a.sourceIndex != b.sourceIndex {
 			return cmp.Compare(a.sourceIndex, b.sourceIndex)
 		}
@@ -165,17 +165,17 @@ func sortBySource(chunks []domain.Passage, texts []string) {
 func (u producer) read(
 	ctx context.Context,
 	source *extracted,
-	pending []domain.Passage,
+	pending []domain.SearchResult,
 	res *vaultreading.EmbedResult,
 	mu *sync.Mutex,
 	track *tracker,
-) ([]domain.Passage, []string, error) {
-	chunks := make([]domain.Passage, 0, len(pending))
+) ([]domain.SearchResult, []string, error) {
+	chunks := make([]domain.SearchResult, 0, len(pending))
 	texts := make([]string, 0, len(pending))
 
 	isFirst := true
 	for _, p := range pending {
-		if u.isSkipped != nil && u.isSkipped(p.Source, p.ContentHash) {
+		if u.isSkipped != nil && u.isSkipped(p.Path, p.FileHash) {
 			mu.Lock()
 			res.Skipped++
 			mu.Unlock()
@@ -183,9 +183,9 @@ func (u producer) read(
 		}
 		if isFirst {
 			isFirst = false
-			track.publishNext(p.Source)
+			track.publishNext(p.Path)
 		}
-		prose, ok, err := source.textOf(ctx, p.Source, p.Producer)
+		prose, ok, err := source.textOf(ctx, p.Path, p.VersionID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -211,7 +211,7 @@ func (u producer) prepareBatch(
 	ctx context.Context,
 	model searchsource.Description,
 	place searchsource.Place,
-	pending []domain.Passage,
+	pending []domain.SearchResult,
 	texts []string,
 ) (preparedBatch, error) {
 	if len(texts) == 0 {
@@ -253,7 +253,7 @@ func (u producer) prepareBatch(
 			if key == "" {
 				key = texts[i]
 			}
-			prep.queueText(i, key, searchsource.Text{ChunkID: pending[i].ChunkID, Path: pending[i].Source, VersionID: pending[i].Producer, Text: texts[i]}, deduplicated)
+			prep.queueText(i, key, searchsource.Text{ChunkID: pending[i].ChunkID, Path: pending[i].Path, VersionID: pending[i].VersionID, Text: texts[i]}, deduplicated)
 			continue
 		}
 		prep.askingMap[i] = -1

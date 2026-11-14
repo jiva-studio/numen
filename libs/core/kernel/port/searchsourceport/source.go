@@ -15,8 +15,8 @@ type Source interface {
 	// IndexTexts returns one vector per text, in the order the texts arrived, of the width the description
 	// names. Any number of texts may be passed.
 	IndexTexts(ctx context.Context, place searchsource.Place, texts []searchsource.Text) ([][]float32, error)
-	// SearchPassages returns the chunks of the place that answer the query, best first.
-	SearchPassages(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error)
+	// SearchChunks returns the chunks of the place that answer the query, best first.
+	SearchChunks(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error)
 }
 
 // QueryEmbedder makes the vectors of queries the way a source compares a query with its place. A plugin
@@ -26,7 +26,7 @@ type QueryEmbedder interface {
 	EmbedQueries(ctx context.Context, queries []string) ([][]float32, error)
 }
 
-// FloorAdvisor reports the similarity a passage starts out having to reach to answer a query under the
+// FloorAdvisor reports the similarity a chunk starts out having to reach to answer a query under the
 // source. The hint is not part of the identity and is absent from the recipe.
 type FloorAdvisor interface {
 	// GetFloorHint returns the starting floor, and zero where the source has none.

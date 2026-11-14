@@ -147,7 +147,7 @@ func (s source) save(t *testing.T, db *index.DB) {
 	}
 }
 
-func getUnembeddedPassages(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Passage {
+func getUnembeddedChunks(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Record {
 	t.Helper()
 	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), vault, recipe, chunk.Cursor{}, 1000)
 	if err != nil {
@@ -159,7 +159,7 @@ func getUnembeddedPassages(t *testing.T, db *index.DB, vault domain.VaultID) []c
 func embed(t *testing.T, db *index.DB, vault domain.VaultID, path string, seed byte) {
 	t.Helper()
 	var vectors []chunk.Vector
-	for _, p := range getUnembeddedPassages(t, db, vault) {
+	for _, p := range getUnembeddedChunks(t, db, vault) {
 		if p.Path != path {
 			continue
 		}
@@ -184,10 +184,10 @@ func getPaths(found []domain.FileStat) []string {
 	return out
 }
 
-func getSources(found []domain.Passage) []string {
+func getSources(found []domain.SearchResult) []string {
 	out := make([]string, 0, len(found))
 	for _, p := range found {
-		out = append(out, p.Source)
+		out = append(out, p.Path)
 	}
 	return out
 }
@@ -390,8 +390,8 @@ func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 		t.Fatalf("got %d hits, want the one small chunk", len(got))
 	}
 	for _, p := range got {
-		if p.Source != "lib/zebra.epub" || p.Kind != domain.KindFile || p.Producer != "ocr" ||
-			p.ContentHash != "h-zebra" || p.Start != 100 || p.Length != 100 || p.Location != "chapter 4" {
+		if p.Path != "lib/zebra.epub" || p.Kind != domain.KindFile || p.VersionID != "ocr" ||
+			p.FileHash != "h-zebra" || p.Start != 100 || p.Length != 100 || p.PlaceLabel != "chapter 4" {
 			t.Errorf("a hit is %+v, want the large chunk of the book at 100 for 100 in chapter 4", p)
 		}
 		row, err := chunk.Row(p.ChunkID)
@@ -399,8 +399,8 @@ func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 			t.Errorf("a hit is named %q: %d, %v", p.ChunkID, row, err)
 		}
 	}
-	if got[0].HitAt != 50 {
-		t.Errorf("the hit begins at %d inside the passage, want the small chunk's 50", got[0].HitAt)
+	if got[0].MatchOffset != 50 {
+		t.Errorf("the hit begins at %d inside the passage, want the small chunk's 50", got[0].MatchOffset)
 	}
 }
 
@@ -448,7 +448,7 @@ func TestASearchByWordsAnswersBestFirst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 3 || got[0].Source != "lib/zebra.epub" || got[0].HitAt != 0 || got[2].HitAt != 50 {
+	if len(got) != 3 || got[0].Path != "lib/zebra.epub" || got[0].MatchOffset != 0 || got[2].MatchOffset != 50 {
 		t.Errorf("the shortest text with the word comes first and the longest last: %+v", got)
 	}
 }
@@ -528,43 +528,43 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 	source{vault: vaultB, path: "lib/other.epub", kind: "file", large: "t", opens: []string{"Gardening"}, smalls: []string{"x"}}.save(t, db)
 	queries := queriesOf(db)
 
-	got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: nil, Limit: 10})
+	got, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(got) != 2 {
 		t.Fatalf("got %d sections, want 2: %v", len(got), getSources(got))
 	}
-	var book domain.Passage
+	var book domain.SearchResult
 	for _, p := range got {
-		if p.Source == "lib/guide.epub" {
+		if p.Path == "lib/guide.epub" {
 			book = p
 		}
 	}
-	if book.Kind != domain.KindFile || book.Producer != "ocr" || book.ContentHash != "h-guide" ||
-		book.Start != 100 || book.Length != 100 || book.Location != "chapter 9" || book.HitAt != 0 || book.ChunkID == "" {
+	if book.Kind != domain.KindFile || book.VersionID != "ocr" || book.FileHash != "h-guide" ||
+		book.Start != 100 || book.Length != 100 || book.PlaceLabel != "chapter 9" || book.MatchOffset != 0 || book.ChunkID == "" {
 		t.Errorf("the section is %+v, want the chunk it opens in chapter 9", book)
 	}
 
-	notes, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
+	notes, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil || !slices.Equal(getSources(notes), []string{"notes/Gardening.md"}) {
 		t.Errorf("sections of notes: %v, %v", getSources(notes), err)
 	}
 
-	one, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: nil, Limit: 1})
+	one, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: nil, Limit: 1})
 	if err != nil || len(one) != 1 {
 		t.Errorf("asked for 1, got %d, %v", len(one), err)
 	}
-	oneOfKind, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: []domain.SourceKind{domain.KindFile, domain.KindNote}, Limit: 1})
+	oneOfKind, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: []domain.SourceKind{domain.KindFile, domain.KindNote}, Limit: 1})
 	if err != nil || len(oneOfKind) != 1 {
 		t.Errorf("asked for 1 of two kinds, got %d, %v", len(oneOfKind), err)
 	}
 
-	typing, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "garden", Kinds: nil, Limit: 10, IsGrowing: true})
+	typing, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "garden", Kinds: nil, Limit: 10, IsGrowing: true})
 	if err != nil || len(typing) != 2 {
 		t.Errorf("a name still being typed found %d, %v", len(typing), err)
 	}
-	typed, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "garden", Kinds: nil, Limit: 10})
+	typed, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "garden", Kinds: nil, Limit: 10})
 	if err != nil || len(typed) != 0 {
 		t.Errorf("a finished prefix found %d, %v", len(typed), err)
 	}
@@ -573,17 +573,17 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 func TestASearchByNameHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 	queries := queriesOf(openIndex(t))
 	for _, input := range []string{"", "  "} {
-		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: input, Kinds: nil, Limit: 10})
+		got, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: input, Kinds: nil, Limit: 10})
 		if err != nil || got != nil {
 			t.Errorf("%q answered %v, %v", input, got, err)
 		}
 	}
-	got, err := queries.GetNamedPassages(t.Context(), nobody, sourcedomain.LexicalQuery{Text: "word", Kinds: nil, Limit: 10})
+	got, err := queries.GetNamedSections(t.Context(), nobody, sourcedomain.LexicalQuery{Text: "word", Kinds: nil, Limit: 10})
 	if err != nil || got != nil {
 		t.Errorf("an unknown vault answered %v, %v", got, err)
 	}
 	for _, limit := range []int{0, -3} {
-		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "word", Kinds: nil, Limit: limit})
+		got, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "word", Kinds: nil, Limit: limit})
 		if err == nil || got != nil || !strings.Contains(err.Error(), strconv.Itoa(limit)) {
 			t.Errorf("limit %d answered %v, %v", limit, got, err)
 		}
@@ -599,10 +599,10 @@ func TestASearchByNameFailsOnAClosedOrBrokenIndex(t *testing.T) {
 		"no sections": broken(t, seed, `DROP TABLE sections_fts`),
 		"garbled row": broken(t, seed, `UPDATE chunks SET start = 'abc'`),
 	} {
-		if _, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "name", Kinds: nil, Limit: 5}); err == nil {
+		if _, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "name", Kinds: nil, Limit: 5}); err == nil {
 			t.Errorf("%s: a search of every kind answered", name)
 		}
-		if _, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "name", Kinds: []domain.SourceKind{domain.KindFile}, Limit: 5}); err == nil {
+		if _, err := queries.GetNamedSections(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "name", Kinds: []domain.SourceKind{domain.KindFile}, Limit: 5}); err == nil {
 			t.Errorf("%s: a search of one kind answered", name)
 		}
 	}
@@ -647,11 +647,11 @@ func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 		t.Errorf("the nearest are %v, want %v", getSources(got)[:4], want)
 	}
 	first := got[0]
-	if first.Kind != domain.KindFile || first.Producer != "ocr" || first.ContentHash != "h-lib/near.epub" ||
-		first.Start != 100 || first.Length != 100 || first.Location != "chapter 1" {
+	if first.Kind != domain.KindFile || first.VersionID != "ocr" || first.FileHash != "h-lib/near.epub" ||
+		first.Start != 100 || first.Length != 100 || first.PlaceLabel != "chapter 1" {
 		t.Errorf("the nearest is %+v, want the large chunk it is inside", first)
 	}
-	hits := []int{got[0].HitAt, got[1].HitAt}
+	hits := []int{got[0].MatchOffset, got[1].MatchOffset}
 	slices.Sort(hits)
 	if !slices.Equal(hits, []int{0, 50}) {
 		t.Errorf("the two small chunks of the nearest book begin at %v inside it, want 0 and 50", hits)
@@ -684,8 +684,8 @@ func TestASearchByMeaningAnswersNothingBelowTheFloor(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range got {
-		if strings.Contains(p.Source, "far") {
-			t.Errorf("%s is opposite the query and answers", p.Source)
+		if strings.Contains(p.Path, "far") {
+			t.Errorf("%s is opposite the query and answers", p.Path)
 		}
 	}
 	if len(got) != 4 {
@@ -701,7 +701,7 @@ func TestASearchByMeaningStaysInItsKindsRecipeAndVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(notes) != 2 || slices.ContainsFunc(notes, func(p domain.Passage) bool { return p.Kind != domain.KindNote }) {
+	if len(notes) != 2 || slices.ContainsFunc(notes, func(p domain.SearchResult) bool { return p.Kind != domain.KindNote }) {
 		t.Errorf("a search of notes answered %v", getSources(notes))
 	}
 	other, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: "another model", Vector: seedVector(0xF0), Limit: 10, Floor: -1})
@@ -761,7 +761,7 @@ func TestAChunkWhoseVectorIsOfAnotherWidthIsACorruptRow(t *testing.T) {
 	}
 }
 
-func TestAPassageIsWhereOneChunkIsReadFrom(t *testing.T) {
+func TestARecordIsWhereOneChunkIsReadFrom(t *testing.T) {
 	db := openIndex(t)
 	source{
 		path: "lib/a.epub", producer: "ocr", hash: "h-a", location: "chapter 7",
@@ -770,12 +770,12 @@ func TestAPassageIsWhereOneChunkIsReadFrom(t *testing.T) {
 	source{vault: vaultB, path: "lib/b.epub", large: "other", smalls: []string{"x"}}.save(t, db)
 	queries := queriesOf(db)
 
-	unembedded := getUnembeddedPassages(t, db, vaultA)
+	unembedded := getUnembeddedChunks(t, db, vaultA)
 	if len(unembedded) != 2 {
 		t.Fatalf("got %d small chunks, want 2", len(unembedded))
 	}
 	small := unembedded[1]
-	got, found, err := queries.Passage(t.Context(), vaultA, small.Chunk)
+	got, found, err := queries.GetRecord(t.Context(), vaultA, small.Chunk)
 	if err != nil || !found {
 		t.Fatalf("the small chunk is not found: %v", err)
 	}
@@ -784,7 +784,7 @@ func TestAPassageIsWhereOneChunkIsReadFrom(t *testing.T) {
 		t.Errorf("the small chunk is %+v, want it at 150 for 50, inside %d", got, small.Parent)
 	}
 
-	large, found, err := queries.Passage(t.Context(), vaultA, small.Parent)
+	large, found, err := queries.GetRecord(t.Context(), vaultA, small.Parent)
 	if err != nil || !found {
 		t.Fatalf("the large chunk is not found: %v", err)
 	}
@@ -800,15 +800,15 @@ func TestAPassageIsWhereOneChunkIsReadFrom(t *testing.T) {
 		"no such chunk": {vaultA, 987654},
 		"unknown vault": {nobody, small.Chunk},
 	} {
-		got, found, err := queries.Passage(t.Context(), ask.vault, ask.chunk)
-		if err != nil || found || got != (chunk.Passage{}) {
+		got, found, err := queries.GetRecord(t.Context(), ask.vault, ask.chunk)
+		if err != nil || found || got != (chunk.Record{}) {
 			t.Errorf("%s: %+v, %v, %v", name, got, found, err)
 		}
 	}
 }
 
-func TestAPassageFailsOnAClosedOrBrokenIndex(t *testing.T) {
-	if _, _, err := closed(t).Passage(t.Context(), vaultA, 1); err == nil {
+func TestARecordFailsOnAClosedOrBrokenIndex(t *testing.T) {
+	if _, _, err := closed(t).GetRecord(t.Context(), vaultA, 1); err == nil {
 		t.Error("a closed index answered")
 	}
 	seed := func(db *index.DB) {
@@ -818,7 +818,7 @@ func TestAPassageFailsOnAClosedOrBrokenIndex(t *testing.T) {
 		"no chunks":   broken(t, seed, `ALTER TABLE chunks RENAME TO gone`),
 		"garbled row": broken(t, seed, `UPDATE chunks SET start = 'abc'`),
 	} {
-		if _, found, err := queries.Passage(t.Context(), vaultA, 1); err == nil || found {
+		if _, found, err := queries.GetRecord(t.Context(), vaultA, 1); err == nil || found {
 			t.Errorf("%s: answered %v, %v", name, found, err)
 		}
 	}
@@ -903,7 +903,7 @@ func TestUnembeddedChunksAreSmallOnesNewestSourceFirst(t *testing.T) {
 	source{vault: vaultB, path: "lib/b.epub", mtime: century + 9, large: "l", smalls: []string{"b1"}}.save(t, db)
 	embed(t, db, vaultA, "lib/done.epub", 0xF0)
 
-	got := getUnembeddedPassages(t, db, vaultA)
+	got := getUnembeddedChunks(t, db, vaultA)
 	var paths []string
 	for _, p := range got {
 		paths = append(paths, p.Path)
@@ -945,7 +945,7 @@ func TestAWalkOfUnembeddedChunksInPagesVisitsEachOnce(t *testing.T) {
 	source{path: "lib/b.epub", mtime: century + 2, large: "l", smalls: []string{"b1", "b2"}}.save(t, db)
 	source{path: "lib/c.epub", mtime: century + 2, large: "l", smalls: []string{"c1", "c2"}}.save(t, db)
 	queries := queriesOf(db)
-	all := getUnembeddedPassages(t, db, vaultA)
+	all := getUnembeddedChunks(t, db, vaultA)
 
 	for _, limit := range []int{1, 2, 3} {
 		var visited []int64
@@ -1059,7 +1059,7 @@ func TestProgressFailsOnAClosedOrBrokenIndex(t *testing.T) {
 func TestCachedVectorsAreFoundByTheHashOfTheirTextBelowTheRecipe(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2"}}.save(t, db)
-	chunks := getUnembeddedPassages(t, db, vaultA)
+	chunks := getUnembeddedChunks(t, db, vaultA)
 	embed(t, db, vaultA, "lib/a.epub", 0xF0)
 	var hashes [][]byte
 	for _, p := range chunks {
@@ -1214,8 +1214,8 @@ func TestEveryQueryFailsWhenTheVaultCannotBeLooked(t *testing.T) {
 			_, err := q.FindLexical(ctx, vaultA, sourcedomain.LexicalQuery{Text: "w", Kinds: kinds, Limit: 5})
 			return err
 		},
-		"GetNamedPassages": func() error {
-			_, err := q.GetNamedPassages(ctx, vaultA, sourcedomain.LexicalQuery{Text: "w", Kinds: kinds, Limit: 5})
+		"GetNamedSections": func() error {
+			_, err := q.GetNamedSections(ctx, vaultA, sourcedomain.LexicalQuery{Text: "w", Kinds: kinds, Limit: 5})
 			return err
 		},
 		"FindNearest": func() error {
@@ -1240,9 +1240,9 @@ func TestEveryQueryFailsWhenTheVaultCannotBeLooked(t *testing.T) {
 		}
 	}
 
-	p, found, err := q.Passage(ctx, vaultA, 1)
-	if err == nil || found || p != (chunk.Passage{}) {
-		t.Errorf("Passage answered %+v, %v, %v", p, found, err)
+	p, found, err := q.GetRecord(ctx, vaultA, 1)
+	if err == nil || found || p != (chunk.Record{}) {
+		t.Errorf("GetRecord answered %+v, %v, %v", p, found, err)
 	}
 	text, found, err := q.GetSourceText(ctx, vaultA, "p")
 	if err == nil || found || text != (chunk.SourceText{}) {
@@ -1274,14 +1274,14 @@ func TestASourceModifiedAtTheLatestInstantIsStillWalked(t *testing.T) {
 	}
 }
 
-func TestASearchByMeaningThatNothingReachesAnswersWithNoPassages(t *testing.T) {
+func TestASearchByMeaningThatNothingReachesAnswersWithNoChunks(t *testing.T) {
 	got, err := queriesOf(meaningFixture(t)).FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: 2})
 	if err != nil || got != nil {
 		t.Errorf("a floor nothing reaches answered %v, %v", got, err)
 	}
 }
 
-func TestAPassageWhoseOffsetIsNoNumberIsACorruptRow(t *testing.T) {
+func TestAChunkWhoseOffsetIsNoNumberIsACorruptRow(t *testing.T) {
 	queries := broken(t, func(db *index.DB) {
 		source{path: "lib/a.epub", large: "t", smalls: []string{"t"}}.save(t, db)
 		embed(t, db, vaultA, "lib/a.epub", 0xF0)

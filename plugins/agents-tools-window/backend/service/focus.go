@@ -41,14 +41,14 @@ func addSourceFocus(registry *tools.Registry, control window.Control) error {
 			"the user asked to see a passage. Talking about a passage is not asking: the call " +
 			"changes what the window shows.",
 		Effect:       tools.ReadOnly,
-		Instructions: []string{showSentence, passagesSentence},
+		Instructions: []string{showSentence, spansSentence},
 		Requires:     []string{host.PermissionWindowFocus},
 	}, func(ctx context.Context, in api.SourceFocusInput) (api.SourceFocusOutput, error) {
-		passages := make([]host.PassageSpan, 0, len(in.Passages))
-		for _, passage := range in.Passages {
-			passages = append(passages, host.PassageSpan{Start: passage.Start, Length: passage.Length})
+		spans := make([]host.ByteSpan, 0, len(in.Spans))
+		for _, span := range in.Spans {
+			spans = append(spans, host.ByteSpan{Start: span.Start, Length: span.Length})
 		}
-		highlightCount, err := control.FocusPassages(ctx, in.Path, passages)
+		highlightCount, err := control.FocusFile(ctx, in.Path, spans)
 		if err != nil {
 			return api.SourceFocusOutput{}, err
 		}

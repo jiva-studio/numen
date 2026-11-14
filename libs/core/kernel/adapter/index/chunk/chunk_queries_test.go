@@ -28,7 +28,7 @@ func queriesOfRaw(raw *sql.DB) chunkQueries {
 }
 
 // FindNearest runs the search by meaning over the index and returns the passages enclosing the chunks it finds.
-func (c chunkQueries) FindNearest(ctx context.Context, vaultID domain.VaultID, q sourcedomain.NearestQuery) ([]domain.Passage, error) {
+func (c chunkQueries) FindNearest(ctx context.Context, vaultID domain.VaultID, q sourcedomain.NearestQuery) ([]domain.SearchResult, error) {
 	matches, err := search.NewFindNearest(c.Search).Execute(ctx, vaultID, q)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (c chunkQueries) FindNearest(ctx context.Context, vaultID domain.VaultID, q
 	for i, one := range matches {
 		chunks[i] = one.ChunkID
 	}
-	return c.Search.GetEnclosingPassages(ctx, vaultID, chunks)
+	return c.Search.GetEnclosingResults(ctx, vaultID, chunks)
 }
 
 // GetBestSimilarity reads the similarity of the passage nearest the query.

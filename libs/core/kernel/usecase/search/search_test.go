@@ -191,10 +191,10 @@ func (o outOfReach) Embed(context.Context, []string) ([][]float32, error) { retu
 
 func (outOfReach) Close() error { return nil }
 
-func sources(passages []domain.Passage) []string {
-	out := make([]string, 0, len(passages))
-	for _, p := range passages {
-		out = append(out, p.Source)
+func sources(results []domain.SearchResult) []string {
+	out := make([]string, 0, len(results))
+	for _, p := range results {
+		out = append(out, p.Path)
 	}
 	return out
 }
@@ -225,8 +225,8 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 	// Every note of the first vault is a fair answer; nothing of the second is.
 	for _, p := range item {
-		if _, target := getFirstNotes()[p.Source]; !target {
-			t.Errorf("the dense half answered with %s, which the first vault does not hold", p.Source)
+		if _, target := getFirstNotes()[p.Path]; !target {
+			t.Errorf("the dense half answered with %s, which the first vault does not hold", p.Path)
 		}
 	}
 
@@ -240,8 +240,8 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 		t.Fatal("the second vault's words half answered nothing at all")
 	}
 	for _, p := range words {
-		if !strings.Contains(p.Source, "Quasar") {
-			t.Errorf("a search by words answered with %s, which is not the second vault's", p.Source)
+		if !strings.Contains(p.Path, "Quasar") {
+			t.Errorf("a search by words answered with %s, which is not the second vault's", p.Path)
 		}
 	}
 
@@ -254,19 +254,19 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 		t.Fatal("the first vault answered nothing at all")
 	}
 	for _, p := range found {
-		if strings.Contains(p.Source, "Quasar") || strings.Contains(p.Text, "beacon") {
+		if strings.Contains(p.Path, "Quasar") || strings.Contains(p.Text, "beacon") {
 			t.Errorf("the merge answered with %+v, which belongs to the second vault", p)
 		}
 	}
 	// Searched from the other side, using the vector the first vault's chunks carry.
 	for _, p := range c.searchIn(t, c.second, "disorder", oneWay{direction: newNearVector()}) {
-		if !strings.Contains(p.Source, "Quasar") {
-			t.Errorf("the second vault answered with %s, which belongs to the first", p.Source)
+		if !strings.Contains(p.Path, "Quasar") {
+			t.Errorf("the second vault answered with %s, which belongs to the first", p.Path)
 		}
 	}
 }
 
-func (c corpus) searchIn(t *testing.T, v domain.Vault, query string, embedder sourcefake.Embedder) []domain.Passage {
+func (c corpus) searchIn(t *testing.T, v domain.Vault, query string, embedder sourcefake.Embedder) []domain.SearchResult {
 	t.Helper()
 	found, err := c.search(embedder).Execute(t.Context(), v, query, search.Parameters{})
 	if err != nil {
@@ -290,7 +290,7 @@ func TestAVaultWithNoVectorsAnswersFromItsWords(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(found) != 1 || !strings.Contains(found[0].Source, "Entropy") {
+			if len(found) != 1 || !strings.Contains(found[0].Path, "Entropy") {
 				t.Fatalf("the words alone found %v", sources(found))
 			}
 			if !strings.Contains(found[0].Text, "A measure of disorder") {
@@ -313,7 +313,7 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || !strings.Contains(found[0].Source, "Entropy") {
+	if len(found) != 1 || !strings.Contains(found[0].Path, "Entropy") {
 		t.Fatalf("the words alone found %v", sources(found))
 	}
 	if len(errs) != 1 {
@@ -357,8 +357,8 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 	}
 }
 
-func TestAPassageIsReadFromTheFileAndNotFromTheIndex(t *testing.T) {
-	// The text is not stored. A passage carries the words only because the file
+func TestAResultIsReadFromTheFileAndNotFromTheIndex(t *testing.T) {
+	// The text is not stored. A search result carries the words only because the file
 	// was opened at the place the chunk names.
 	c := newCorpus(t)
 
@@ -368,10 +368,10 @@ func TestAPassageIsReadFromTheFileAndNotFromTheIndex(t *testing.T) {
 	}
 	for _, p := range found {
 		if p.Text == "" {
-			t.Errorf("%s came back with no text", p.Source)
+			t.Errorf("%s came back with no text", p.Path)
 		}
 		if strings.Contains(p.Text, "---") {
-			t.Errorf("%s came back with the frontmatter in it: %q", p.Source, p.Text)
+			t.Errorf("%s came back with the frontmatter in it: %q", p.Path, p.Text)
 		}
 	}
 }
@@ -421,12 +421,12 @@ func TestSearch_ReturnsRequestedSection(t *testing.T) {
 	if found[0].Start != 0 {
 		t.Errorf("the search opened at %d, and the section begins at 0", found[0].Start)
 	}
-	if found[0].Location != "Madhavendra Puri" {
-		t.Errorf("the search answered with %q", found[0].Location)
+	if found[0].PlaceLabel != "Madhavendra Puri" {
+		t.Errorf("the search answered with %q", found[0].PlaceLabel)
 	}
 }
 
-func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
+func TestAResultCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 	// The caret is placed where the words were found. A note's frontmatter precedes
 	// its prose and is not counted as a line of it.
 	ctx := t.Context()
@@ -456,9 +456,9 @@ func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 	if len(found) != 1 {
 		t.Fatalf("want the one note holding the word: %v", sources(found))
 	}
-	if found[0].Line != 6 {
+	if found[0].MatchLine != 6 {
 		t.Errorf("the passage is on line %d, and the words are on the seventh line of the prose",
-			found[0].Line)
+			found[0].MatchLine)
 	}
 }
 
@@ -595,7 +595,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by words answered %d passages about books in a vault of notes", len(words))
 	}
 
-	named, err := queries.GetNamedPassages(ctx, c.first.ID, source.LexicalQuery{Text: "Madhavendra Puri", Kinds: books, Limit: 20})
+	named, err := queries.GetNamedSections(ctx, c.first.ID, source.LexicalQuery{Text: "Madhavendra Puri", Kinds: books, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -654,7 +654,7 @@ func TestASearchByWordsAnswersWhileTheSearchByMeaningWaitsForItsSource(t *testin
 	<-model.asked
 
 	found, err := finds.Execute(t.Context(), c.first, "disorder", search.GetTypingParameters(search.Lexical, 8))
-	if err != nil || len(found) != 1 || !strings.Contains(found[0].Source, "Entropy") {
+	if err != nil || len(found) != 1 || !strings.Contains(found[0].Path, "Entropy") {
 		t.Fatalf("the words found %v, %v while the meaning waited", sources(found), err)
 	}
 

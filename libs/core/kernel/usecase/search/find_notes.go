@@ -60,64 +60,64 @@ func (u *FindNames) Execute(ctx context.Context, v domain.Vault, query string, l
 	return NameResults{Matches: found, TabKinds: kinds}, nil
 }
 
-// PassageResults are the passages found and, for the notes they were read from, what each note is
+// FindTextOutput are the search results found and, for the notes they were read from, what each note is
 // and the kind of tab it opens in, by path. A source that is not a note is absent from the maps.
-type PassageResults struct {
-	Passages []domain.Passage
+type FindTextOutput struct {
+	Results  []domain.SearchResult
 	Notes    map[string]domain.NoteRef
 	Types    map[string]domain.NoteType
 	TabKinds map[string]string
 }
 
-// FindPassages searches the text of a vault in one mode and resolves the notes the passages were read from.
-type FindPassages struct {
-	finds    passageFinding
+// FindText searches the text of a vault in one mode and resolves the notes the search results were read from.
+type FindText struct {
+	finds    resultFinding
 	notes    noteport.NoteRefs
 	types    noteport.NoteTypes
 	tabKinds TabKinds
 }
 
-// NewFindPassages creates the search over the text of the vault and the notes of the index.
-func NewFindPassages(finds Search, notes noteport.NoteRefs, types noteport.NoteTypes, tabKinds TabKinds) *FindPassages {
-	return &FindPassages{finds: finds, notes: notes, types: types, tabKinds: tabKinds}
+// NewFindText creates the search over the text of the vault and the notes of the index.
+func NewFindText(finds Search, notes noteport.NoteRefs, types noteport.NoteTypes, tabKinds TabKinds) *FindText {
+	return &FindText{finds: finds, notes: notes, types: types, tabKinds: tabKinds}
 }
 
-// Execute searches the way `mode` names while the query is being typed, and returns at most `limit` passages.
-func (u *FindPassages) Execute(ctx context.Context, v domain.Vault, query string, mode Mode, limit int) (PassageResults, error) {
+// Execute searches the way `mode` names while the query is being typed, and returns at most `limit` search results.
+func (u *FindText) Execute(ctx context.Context, v domain.Vault, query string, mode Mode, limit int) (FindTextOutput, error) {
 	found, err := u.finds.Execute(ctx, v, query, GetTypingParameters(mode, clampWindowLimit(limit)))
 	if err != nil {
-		return PassageResults{}, err
+		return FindTextOutput{}, err
 	}
-	sources := getPassageSources(found)
+	sources := getResultPaths(found)
 	notes, err := u.notes.GetNotes(ctx, v.ID, sources)
 	if err != nil {
-		return PassageResults{}, err
+		return FindTextOutput{}, err
 	}
 	types, err := u.types.GetTypes(ctx, v.ID, sources)
 	if err != nil {
-		return PassageResults{}, err
+		return FindTextOutput{}, err
 	}
 	kinds, err := u.tabKinds.Execute(ctx, v, sources)
 	if err != nil {
-		return PassageResults{}, err
+		return FindTextOutput{}, err
 	}
-	return PassageResults{Passages: found, Notes: notes, Types: types, TabKinds: kinds}, nil
+	return FindTextOutput{Results: found, Notes: notes, Types: types, TabKinds: kinds}, nil
 }
 
-func getPassageSources(found []domain.Passage) []string {
+func getResultPaths(found []domain.SearchResult) []string {
 	observed := make(map[string]bool, len(found))
 	out := make([]string, 0, len(found))
 	for _, p := range found {
-		if observed[p.Source] {
+		if observed[p.Path] {
 			continue
 		}
-		observed[p.Source] = true
-		out = append(out, p.Source)
+		observed[p.Path] = true
+		out = append(out, p.Path)
 	}
 	return out
 }
 
-// passageFinding searches the text of a vault.
-type passageFinding interface {
-	Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error)
+// resultFinding searches the text of a vault.
+type resultFinding interface {
+	Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.SearchResult, error)
 }

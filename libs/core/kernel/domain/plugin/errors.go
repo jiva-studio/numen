@@ -41,7 +41,7 @@ var (
 	// ErrNoWindow is returned by a window call when the host shows no window.
 	ErrNoWindow = errors.New("the host has no window")
 	// ErrInvalidFocus is returned by a focus call for an argument the use case rejects: an empty path,
-	// a passage that starts before the text or is empty, or too many passages. The error wraps it
+	// a range that starts before the text or is empty, or too many ranges. The error wraps it
 	// with the use case's message.
 	ErrInvalidFocus = errors.New("invalid focus target")
 	// ErrTabNotOpen is returned by ActivateTab for an id that no open tab has. It is also fs.ErrNotExist.

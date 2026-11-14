@@ -176,7 +176,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 
 	queries := queriesOf(db)
 
-	nearVal := func(vault domain.Vault, seed byte) []domain.Passage {
+	nearVal := func(vault domain.Vault, seed byte) []domain.SearchResult {
 		matches, err := queries.FindNearest(ctx, vault.ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(seed), Limit: 10, Floor: search.DefaultFloor})
 		if err != nil {
 			t.Fatal(err)
@@ -190,13 +190,13 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 	// Queried with the second vault's vector, the first vault must still
 	// return its own passages.
 	for _, m := range nearVal(getFirstVault(), 0xff) {
-		if !strings.HasPrefix(m.Source, "library/first") {
-			t.Errorf("the first vault answered with %s, which belongs to the second", m.Source)
+		if !strings.HasPrefix(m.Path, "library/first") {
+			t.Errorf("the first vault answered with %s, which belongs to the second", m.Path)
 		}
 	}
 	for _, m := range nearVal(getSecond(), 0xfe) {
-		if !strings.HasPrefix(m.Source, "library/second") {
-			t.Errorf("the second vault answered with %s, which belongs to the first", m.Source)
+		if !strings.HasPrefix(m.Path, "library/second") {
+			t.Errorf("the second vault answered with %s, which belongs to the first", m.Path)
 		}
 	}
 }
@@ -221,8 +221,8 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 		t.Fatal("the first vault answered nothing at all")
 	}
 	for _, p := range shared {
-		if !strings.HasPrefix(p.Source, "library/first") {
-			t.Errorf("the first vault answered with %s, which belongs to the second", p.Source)
+		if !strings.HasPrefix(p.Path, "library/first") {
+			t.Errorf("the first vault answered with %s, which belongs to the second", p.Path)
 		}
 	}
 
@@ -262,13 +262,13 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 	}
 
 	for _, p := range append(dense, lexical...) {
-		if p.Source != "library/first.epub" || p.Start != 0 || p.Length != 100 {
+		if p.Path != "library/first.epub" || p.Start != 0 || p.Length != 100 {
 			t.Errorf("%+v does not read the whole of the chunk enclosing it", p)
 		}
 		// The large chunk carries the human location, and a hit inside it is
 		// read at that place.
-		if p.Location != "chapter 1" {
-			t.Errorf("a hit came back at the location %q", p.Location)
+		if p.PlaceLabel != "chapter 1" {
+			t.Errorf("a hit came back at the location %q", p.PlaceLabel)
 		}
 		if p.ChunkID == "" {
 			t.Error("a hit came back naming no chunk, so nothing can be merged on it")
@@ -276,9 +276,9 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 	}
 }
 
-// TestAPassageReturnsWhatItWasReadOutOf checks that every ranking reports the
+// TestAResultReturnsWhatItWasReadOutOf checks that every ranking reports the
 // source kind (book or recording) of each passage.
-func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
+func TestAResultReturnsWhatItWasReadOutOf(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	source(t, db, getFirstVault(), "library/talk.epub", domain.KindFile, "opening words")
@@ -297,7 +297,7 @@ func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	named, err := queries.GetNamedPassages(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
+	named, err := queries.GetNamedSections(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,14 +307,14 @@ func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 	}
 	for _, half := range []struct {
 		requested string
-		found     []domain.Passage
+		found     []domain.SearchResult
 	}{{"words", lexical}, {"names", named}, {"meaning", dense}} {
 		if len(half.found) == 0 {
 			t.Errorf("the %s half answered with nothing, so it says nothing about a kind", half.requested)
 		}
 		for _, p := range half.found {
-			if p.Kind != want[p.Source] {
-				t.Errorf("%s came back as %q, want %q", p.Source, p.Kind, want[p.Source])
+			if p.Kind != want[p.Path] {
+				t.Errorf("%s came back as %q, want %q", p.Path, p.Kind, want[p.Path])
 			}
 		}
 	}
@@ -425,7 +425,7 @@ func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) == 0 || found[0].Source != note.FileStat.Path {
+	if len(found) == 0 || found[0].Path != note.FileStat.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
 	if stale, err := db.ChunkSearch().FindLexical(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "first", Kinds: nil, Limit: 10}); err != nil {
@@ -956,8 +956,8 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 	if len(data) != 1 {
 		t.Fatalf("%d answers, want the one that was asked for", len(data))
 	}
-	if data[0].Source != "library/true.epub" {
-		t.Errorf("the answer is %s, which is the one the bits put first", data[0].Source)
+	if data[0].Path != "library/true.epub" {
+		t.Errorf("the answer is %s, which is the one the bits put first", data[0].Path)
 	}
 }
 
@@ -1234,7 +1234,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 		t.Fatal("the words half already answers with the section, and this proves nothing")
 	}
 
-	named, err := queries.GetNamedPassages(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	named, err := queries.GetNamedSections(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1244,8 +1244,8 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 	if named[0].Start != 0 {
 		t.Errorf("the section came back at %d, and it begins at 0", named[0].Start)
 	}
-	if named[0].Location != "Madhavendra Puri" {
-		t.Errorf("the section came back as %q", named[0].Location)
+	if named[0].PlaceLabel != "Madhavendra Puri" {
+		t.Errorf("the section came back as %q", named[0].PlaceLabel)
 	}
 	if named[0].ChunkID == "" {
 		t.Error("the section names no chunk, so nothing can be merged on it")
@@ -1260,7 +1260,7 @@ func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
 	db := openDB(t)
 	saveSectionedBook(t, db, getFirstVault(), "library/chaitanya.pdf")
 
-	named, err := db.ChunkSearch().GetNamedPassages(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	named, err := db.ChunkSearch().GetNamedSections(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1275,7 +1275,7 @@ func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 	saveSectionedBook(t, db, getFirstVault(), "library/chaitanya.pdf")
 	saveSectionedBook(t, db, getSecond(), "library/chaitanya.pdf")
 
-	named, err := db.ChunkSearch().GetNamedPassages(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	named, err := db.ChunkSearch().GetNamedSections(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1322,7 +1322,7 @@ func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkSearch().GetNamedPassages(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Thermodynamics", Kinds: nil, Limit: 10})
+	named, err := db.ChunkSearch().GetNamedSections(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Thermodynamics", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1349,7 +1349,7 @@ func TestASectionSplitAwayIsNotFoundByItsName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkSearch().GetNamedPassages(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	named, err := db.ChunkSearch().GetNamedSections(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1383,7 +1383,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkSearch().GetNamedPassages(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	named, err := db.ChunkSearch().GetNamedSections(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1449,7 +1449,7 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(firstPage) != 2 || firstPage[0].Source != "notes/recent.md" || firstPage[1].Source != "notes/recent.md" {
+	if len(firstPage) != 2 || firstPage[0].Path != "notes/recent.md" || firstPage[1].Path != "notes/recent.md" {
 		t.Fatalf("page 1 unexpected: %+v", firstPage)
 	}
 
@@ -1457,12 +1457,12 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(secondPage) != 2 || secondPage[0].Source != "library/old.epub" || secondPage[1].Source != "library/old.epub" {
+	if len(secondPage) != 2 || secondPage[0].Path != "library/old.epub" || secondPage[1].Path != "library/old.epub" {
 		t.Fatalf("page 2 unexpected: %+v", secondPage)
 	}
 }
 
-func getTwoUnembedded(t *testing.T, db *DB) []chunk.Passage {
+func getTwoUnembedded(t *testing.T, db *DB) []chunk.Record {
 	t.Helper()
 	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), getFirstVault().ID, "model", chunk.Cursor{}, 10)
 	if err != nil {

@@ -12,9 +12,9 @@ option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v
 service HostWindowService {
   // FocusNote makes a note the current one, and the neighborhood view is centered on it.
   rpc FocusNote(FocusNoteRequest) returns (FocusNoteResponse);
-  // FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
-  // passages opens the file at its beginning.
-  rpc FocusPassages(FocusPassagesRequest) returns (FocusPassagesResponse);
+  // FocusFile opens a file, scrolls to the first span and highlights all spans. No
+  // spans opens the file at its beginning.
+  rpc FocusFile(FocusFileRequest) returns (FocusFileResponse);
   // ReadOpenTabs returns the tabs the window last reported, and the active one.
   rpc ReadOpenTabs(HostWindowServiceReadOpenTabsRequest) returns (HostWindowServiceReadOpenTabsResponse);
   // ActivateTab makes the open tab with the id the active tab of the window, and returns the tab and
@@ -43,18 +43,18 @@ message FocusNoteResponse {
   string id = 4;
 }
 
-// A PassageSpan is a byte range in a file's text version, as a passage search returns it.
-message PassageSpan {
+// A ByteSpan is a byte range in a file's text version, as a text search returns it.
+message ByteSpan {
   int32 start = 1;
   int32 length = 2;
 }
 
-message FocusPassagesRequest {
+message FocusFileRequest {
   string path = 1;
-  repeated PassageSpan passages = 2;
+  repeated ByteSpan spans = 2;
 }
 
-message FocusPassagesResponse {
+message FocusFileResponse {
   HostWindowErrorCode error = 1;
 }
 

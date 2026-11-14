@@ -248,12 +248,12 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 		t.Error("the vault that was kept answers no search by words")
 	}
 	for _, p := range lexical {
-		if !strings.Contains(p.Source, "second") {
-			t.Errorf("the second vault answered with %s, which belongs to the vault that was forgotten", p.Source)
+		if !strings.Contains(p.Path, "second") {
+			t.Errorf("the second vault answered with %s, which belongs to the vault that was forgotten", p.Path)
 		}
 	}
 
-	sections, err := queries.GetNamedPassages(ctx, getSecond().ID, sourcedomain.LexicalQuery{Text: "second section", Kinds: nil, Limit: 10})
+	sections, err := queries.GetNamedSections(ctx, getSecond().ID, sourcedomain.LexicalQuery{Text: "second section", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}

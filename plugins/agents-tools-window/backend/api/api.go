@@ -72,16 +72,16 @@ type NoteFocusOutput struct {
 	Note FocusedNote `json:"note" jsonschema:"the focused note"`
 }
 
-// Passage is a run of a file's text version in bytes, as a search of the library returns it.
-type Passage struct {
+// Span is a run of a file's text version in bytes, as a search of the library returns it.
+type Span struct {
 	Start  int `json:"start" jsonschema:"the byte offset of the passage in the text of the file, as a search of the library returns it"`
 	Length int `json:"length" jsonschema:"the length of the passage in bytes, as a search of the library returns it"`
 }
 
 // SourceFocusInput represents the arguments for source_focus.
 type SourceFocusInput struct {
-	Path     string    `json:"path" jsonschema:"the file to open, by its path relative to the vault folder"`
-	Passages []Passage `json:"passages,omitempty" jsonschema:"the passages of the file to highlight; the window scrolls to the first, and an empty list opens the file at its beginning"`
+	Path  string `json:"path" jsonschema:"the file to open, by its path relative to the vault folder"`
+	Spans []Span `json:"spans,omitempty" jsonschema:"the passages of the file to highlight; the window scrolls to the first, and an empty list opens the file at its beginning"`
 }
 
 // SourceFocusOutput represents the result of source_focus.

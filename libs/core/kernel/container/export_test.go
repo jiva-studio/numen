@@ -49,8 +49,8 @@ func (c Config) Embedders(ctx context.Context) (indexing, asking searchsourcepor
 	return searchSources(searchOf(c), ctx)
 }
 
-func (c Config) NewSearchOver(passages sourceport.PassageQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(searchOf(c), passages, sources, errorHandler, nil)
+func (c Config) NewSearchOver(queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
+	return newSearchOver(searchOf(c), queries, sources, errorHandler, nil)
 }
 
 func (c Config) OpenGetSettings() *settings.Get {

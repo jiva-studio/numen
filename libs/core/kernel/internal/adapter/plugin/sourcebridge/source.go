@@ -190,8 +190,8 @@ func (b *Source) IndexTexts(ctx context.Context, place searchsource.Place, texts
 	return readVectors(resp.Msg.GetVectors()), nil
 }
 
-// SearchPassages asks the plugin for the chunks of the place that answer the query.
-func (b *Source) SearchPassages(ctx context.Context, place searchsource.Place, q searchsource.Query) (matches []searchsource.Match, err error) {
+// SearchChunks asks the plugin for the chunks of the place that answer the query.
+func (b *Source) SearchChunks(ctx context.Context, place searchsource.Place, q searchsource.Query) (matches []searchsource.Match, err error) {
 	kinds := make([]string, len(q.Kinds))
 	for i, kind := range q.Kinds {
 		kinds[i] = string(kind)
@@ -202,7 +202,7 @@ func (b *Source) SearchPassages(ctx context.Context, place searchsource.Place, q
 	}
 	defer func() { err = errors.Join(err, call.Close()) }()
 
-	resp, err := client.SearchPassages(ctx, connect.NewRequest(&v1.SearchSourceServiceSearchPassagesRequest{
+	resp, err := client.SearchChunks(ctx, connect.NewRequest(&v1.SearchSourceServiceSearchChunksRequest{
 		Place: writePlace(place), Query: q.Text, Limit: int32(min(max(q.Limit, 0), 1<<20)), Kinds: kinds, PathPrefix: q.PathPrefix, Floor: q.Floor,
 	}))
 	if err != nil {

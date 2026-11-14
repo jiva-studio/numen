@@ -101,7 +101,7 @@ func mountSearch(w *windowWiring) {
 	handler := windowsearch.NewHandler(
 		state,
 		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),
-		search.NewFindPassages(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
+		search.NewFindText(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 		searchcancel.NewSearches(w.cfg.Clock()),
 	)
 	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError)
@@ -213,13 +213,13 @@ func mountHealth(w *windowWiring) {
 
 func shareEditorWindow(db *Index, opened *windowWiring) {
 	view := windowView(opened.state)
-	focusPassages := file.NewFocusPassages(vaultReaders(opened.a.vault), view)
+	focusFile := file.NewFocusFile(vaultReaders(opened.a.vault), view)
 	setPluginWindow(opened.a, windowsession.NewPluginWindow(
 		&opened.state.Runtime,
 		&opened.state.Tabs,
 		vaultFocusNote(opened.a.vault, db.NoteQueries(), view),
-		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
-			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
+		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
+			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
 		}),
 		opened.cases.ShowTab,
 	))

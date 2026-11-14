@@ -75,8 +75,8 @@ func TestSearchOver_WithoutModelUsesWords(t *testing.T) {
 	if len(found) != 1 {
 		t.Fatalf("the words answered with %d passages", len(found))
 	}
-	if found[0].Source != "Entropy.md" {
-		t.Errorf("the passage came from %q", found[0].Source)
+	if found[0].Path != "Entropy.md" {
+		t.Errorf("the passage came from %q", found[0].Path)
 	}
 	if found[0].Text != entropy {
 		t.Errorf("the passage reads %q", found[0].Text)

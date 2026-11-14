@@ -36,7 +36,7 @@ type Cursor struct {
 
 // GetUnembeddedChunks is the small chunks of a vault with no vector from the
 // model in use, ordered so recently modified sources are embedded first.
-func (q *Vectors) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after Cursor, limit int) (_ []Passage, err error) {
+func (q *Vectors) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after Cursor, limit int) (_ []Record, err error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -62,9 +62,9 @@ func (q *Vectors) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
-	var out []Passage
+	var out []Record
 	for rows.Next() {
-		var p Passage
+		var p Record
 		if err := rows.Scan(&p.Chunk, &p.Path, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.ChunkHash, &p.MTime, &p.Source); err != nil {
 			return nil, err
 		}

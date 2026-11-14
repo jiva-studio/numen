@@ -8,7 +8,7 @@ import (
 )
 
 // NearestQueries is what the index returns for a search by meaning, unranked: the candidates of the
-// coarse pass, the vectors of some chunks and the passage enclosing a chunk. The caller orders the
+// coarse pass, the vectors of some chunks and the search result enclosing a chunk. The caller orders the
 // candidates, applies the similarity floor and decides how many to keep.
 type NearestQueries interface {
 	// FindCoarseCandidates returns the chunks of one vault nearest `q.Vector` by one bit per
@@ -20,7 +20,7 @@ type NearestQueries interface {
 	// leaving out the chunks without one and those of other kinds than `q.Kinds`.
 	ListStoredVectors(ctx context.Context, q source.StoredVectorQuery) ([]source.StoredVector, error)
 
-	// GetEnclosingPassages returns the passage that encloses each chunk of one vault, in the order
+	// GetEnclosingResults returns the search result that encloses each chunk of one vault, in the order
 	// of `chunks`, leaving out a chunk the vault does not hold.
-	GetEnclosingPassages(ctx context.Context, vaultID domain.VaultID, chunks []domain.ChunkID) ([]domain.Passage, error)
+	GetEnclosingResults(ctx context.Context, vaultID domain.VaultID, chunks []domain.ChunkID) ([]domain.SearchResult, error)
 }

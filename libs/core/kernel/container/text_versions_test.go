@@ -96,7 +96,7 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Source != talkPath || found[0].Producer != string(version.GetID()) || found[0].Selector != `{"t":[0,4]}` {
+	if len(found) != 1 || found[0].Path != talkPath || found[0].VersionID != string(version.GetID()) || found[0].Selector != `{"t":[0,4]}` {
 		t.Fatalf("found %+v, want the talk through its transcript", found)
 	}
 }
@@ -232,7 +232,7 @@ func TestRenamingAFileOnDiskMovesItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Source != renamed {
+	if len(found) != 1 || found[0].Path != renamed {
 		t.Fatalf("found %+v, want the talk at its new path", found)
 	}
 }
@@ -338,7 +338,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Producer != string(subtitles.GetID()) {
+	if len(found) != 1 || found[0].VersionID != string(subtitles.GetID()) {
 		t.Fatalf("found %+v, want the talk through the other plugin's version", found)
 	}
 }
@@ -389,7 +389,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Source != renamed {
+	if len(found) != 1 || found[0].Path != renamed {
 		t.Fatalf("found %+v, want the talk at its new path", found)
 	}
 }

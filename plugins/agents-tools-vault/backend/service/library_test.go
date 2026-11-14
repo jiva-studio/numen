@@ -132,10 +132,10 @@ func newLibrary(t *testing.T) library {
 	})
 
 	search := hosttest.NewSearch(testVault)
-	search.SetIndexedPassages([]host.Passage{
-		{Path: guidePath, Text: "The gray heron stands in the reeds", Location: "page 2", Start: 41, Length: 56, Selector: `{"page":2}`},
-		{Path: "notes/Herons.md", Text: "A heron fishes at dusk.", Start: 0, Length: 23, Line: 1},
-		{Path: talkPath, Text: "Today we speak about the heron.", Location: "00:04", Start: 27, Length: 32, Selector: `{"t":[4.5,9]}`},
+	search.SetIndexedResults([]host.SearchResult{
+		{Path: guidePath, Text: "The gray heron stands in the reeds", PlaceLabel: "page 2", Start: 41, Length: 56, Selector: `{"page":2}`},
+		{Path: "notes/Herons.md", Text: "A heron fishes at dusk.", Start: 0, Length: 23, MatchLine: 1},
+		{Path: talkPath, Text: "Today we speak about the heron.", PlaceLabel: "00:04", Start: 27, Length: 32, Selector: `{"t":[4.5,9]}`},
 	})
 
 	svc := service.New(vaultsOf(vault)).WithLibrary(libraryOf(texts, search))
@@ -186,7 +186,7 @@ func (l library) call(t *testing.T, name, arguments string, out any) (failure st
 	return ""
 }
 
-func TestLibrarySearchFindsPDFPassageWithPageAndAddress(t *testing.T) {
+func TestLibrarySearchFindsPDFResultWithPageAndAddress(t *testing.T) {
 	l := newLibrary(t)
 	var out librarySearchAnswer
 	if failure := l.call(t, "library_search", `{"query":"heron"}`, &out); failure != "" {
@@ -323,8 +323,8 @@ func TestLibrarySearchUsesTheNamedVault(t *testing.T) {
 	garden := hosttest.New("garden-vault")
 	vault.Beside(garden)
 	search := hosttest.NewSearch(testVault, "garden-vault")
-	search.SetIndexedPassages([]host.Passage{{Path: "Physics.md", Text: "heron physics", Start: 0, Length: 13}})
-	search.With("garden-vault").SetIndexedPassages([]host.Passage{{Path: "Beds.md", Text: "heron beds", Start: 0, Length: 10}})
+	search.SetIndexedResults([]host.SearchResult{{Path: "Physics.md", Text: "heron physics", Start: 0, Length: 13}})
+	search.With("garden-vault").SetIndexedResults([]host.SearchResult{{Path: "Beds.md", Text: "heron beds", Start: 0, Length: 10}})
 	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(hosttest.NewTexts(testVault, readerID), search)).Registry()
 	if err != nil {
 		t.Fatal(err)

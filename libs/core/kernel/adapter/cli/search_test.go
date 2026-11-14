@@ -21,15 +21,15 @@ import (
 // fakeSearchIndex is a test double of the search index: it returns the
 // configured passages for a query, or fails with the configured error.
 type fakeSearchIndex struct {
-	passages []domain.Passage
-	err      error
+	results []domain.SearchResult
+	err     error
 }
 
-func (a fakeSearchIndex) FindLexical(context.Context, domain.VaultID, source.LexicalQuery) ([]domain.Passage, error) {
-	return a.passages, a.err
+func (a fakeSearchIndex) FindLexical(context.Context, domain.VaultID, source.LexicalQuery) ([]domain.SearchResult, error) {
+	return a.results, a.err
 }
 
-func (a fakeSearchIndex) GetNamedPassages(context.Context, domain.VaultID, source.LexicalQuery) ([]domain.Passage, error) {
+func (a fakeSearchIndex) GetNamedSections(context.Context, domain.VaultID, source.LexicalQuery) ([]domain.SearchResult, error) {
 	return nil, a.err
 }
 
@@ -119,7 +119,7 @@ func TestASearchByWordsAloneReturnsWhy(t *testing.T) {
 	}
 }
 
-func TestEachPassageIsNamedByItsSourceAndItsPlace(t *testing.T) {
+func TestEachResultIsNamedByItsSourceAndItsPlace(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
@@ -132,9 +132,9 @@ func TestEachPassageIsNamedByItsSourceAndItsPlace(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	index := fakeSearchIndex{passages: []domain.Passage{
-		{ChunkID: "c1", Source: "Bees.md", Kind: domain.KindNote, Length: len("Bees fly\n\n   far"), Location: "p. 3"},
-		{ChunkID: "c2", Source: "Hives.md", Kind: domain.KindNote, Length: len("Hives  hum")},
+	index := fakeSearchIndex{results: []domain.SearchResult{
+		{ChunkID: "c1", Path: "Bees.md", Kind: domain.KindNote, Length: len("Bees fly\n\n   far"), PlaceLabel: "p. 3"},
+		{ChunkID: "c2", Path: "Hives.md", Kind: domain.KindNote, Length: len("Hives  hum")},
 	}}
 
 	out, _, err := runWithStderr(t, createSearchDeps(folder, index, nil), "search", "shelf", "bees")

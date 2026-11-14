@@ -23,7 +23,7 @@ type nearestPlace struct {
 	matches []host.NearestMatch
 }
 
-func (p *nearestPlace) FindNearestPassages(_ context.Context, query host.NearestQuery) ([]host.NearestMatch, error) {
+func (p *nearestPlace) FindNearestChunks(_ context.Context, query host.NearestQuery) ([]host.NearestMatch, error) {
 	p.asked = append(p.asked, query)
 	return p.matches, nil
 }
@@ -75,7 +75,7 @@ func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testin
 		return place, nil
 	}, sourcehealth.New(noHealth, console.Report))
 
-	found, err := h.SearchPassages(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"},
+	found, err := h.SearchChunks(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"},
 		searchsource.Query{Text: "entropy", Limit: 5, Kinds: []string{"file"}, PathPrefix: "books/", Floor: 0.4})
 	if err != nil {
 		t.Fatal(err)

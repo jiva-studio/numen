@@ -50,7 +50,7 @@ func TestMockEmbedderBlocksABatchWithTheHoldWordUntilCancel(t *testing.T) {
 	}
 }
 
-func TestEmbedMock_ParaphraseQuestionNearPassage(t *testing.T) {
+func TestEmbedMock_ParaphraseQuestionNearChunk(t *testing.T) {
 	question := embedMock("boat")
 	passage := embedMock("The ferry leaves the harbor at dawn with the morning post.")
 	if got := cosine(question, passage); got < floor {
@@ -58,7 +58,7 @@ func TestEmbedMock_ParaphraseQuestionNearPassage(t *testing.T) {
 	}
 }
 
-func TestAMockQuestionIsFarFromAPassageSharingNoConcept(t *testing.T) {
+func TestAMockQuestionIsFarFromAChunkSharingNoConcept(t *testing.T) {
 	question := embedMock("boat")
 	passage := embedMock("A measure of uncertainty. To Jaynes it is a property of the description, not of the system.")
 	if got := cosine(question, passage); got >= floor {
@@ -66,7 +66,7 @@ func TestAMockQuestionIsFarFromAPassageSharingNoConcept(t *testing.T) {
 	}
 }
 
-func TestMockQuestionIsNearPassageWithItsWord(t *testing.T) {
+func TestMockQuestionIsNearChunkWithItsWord(t *testing.T) {
 	question := embedMock("Entropy")
 	passage := embedMock("Entropy\n\nA measure of uncertainty. To Jaynes it is a property of the description, not of the system.")
 	if got := cosine(question, passage); got < floor {

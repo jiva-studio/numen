@@ -39,7 +39,7 @@ type calibrationFile struct {
 	Spread       float64 `json:"spread"`
 	Histogram    []int   `json:"histogram"`
 	QueryCount   int     `json:"queryCount"`
-	PassageCount int     `json:"passageCount"`
+	ChunkCount   int     `json:"chunkCount"`
 	CalibratedAt int64   `json:"calibratedAt"`
 }
 
@@ -67,7 +67,7 @@ func (r storeRecords) Read(ctx context.Context, recipe string) (relevance.Record
 	if c := file.Calibration; c != nil {
 		record.Calibration = &relevance.Calibration{
 			Floor: c.Floor, Median: c.Median, Spread: c.Spread, Histogram: c.Histogram,
-			QueryCount: c.QueryCount, PassageCount: c.PassageCount,
+			QueryCount: c.QueryCount, ChunkCount: c.ChunkCount,
 			CalibratedTime: time.Unix(c.CalibratedAt, 0).UTC(),
 		}
 	}
@@ -79,7 +79,7 @@ func (r storeRecords) Write(ctx context.Context, record relevance.Record) error 
 	if c := record.Calibration; c != nil {
 		file.Calibration = &calibrationFile{
 			Floor: c.Floor, Median: c.Median, Spread: c.Spread, Histogram: c.Histogram,
-			QueryCount: c.QueryCount, PassageCount: c.PassageCount, CalibratedAt: c.CalibratedTime.Unix(),
+			QueryCount: c.QueryCount, ChunkCount: c.ChunkCount, CalibratedAt: c.CalibratedTime.Unix(),
 		}
 	}
 	raw, err := json.Marshal(file)

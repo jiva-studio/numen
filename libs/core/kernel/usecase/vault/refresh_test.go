@@ -39,7 +39,7 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 	), db, v
 }
 
-func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
+func findResults(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.SearchResult {
 	t.Helper()
 	found, err := db.ChunkSearch().FindLexical(
 		t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
@@ -182,7 +182,7 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if len(passages(t, db, v, "reversible")) == 0 {
+	if len(findResults(t, db, v, "reversible")) == 0 {
 		t.Fatal("the book was not in the index to begin with")
 	}
 
@@ -193,7 +193,7 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if found := passages(t, db, v, "reversible"); len(found) != 0 {
+	if found := findResults(t, db, v, "reversible"); len(found) != 0 {
 		t.Errorf("the index answers with %d passages of a book the vault does not hold", len(found))
 	}
 	target, err := db.Sources().GetSourcesUnder(t.Context(), v.ID, "library")

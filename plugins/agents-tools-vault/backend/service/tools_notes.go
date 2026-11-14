@@ -20,7 +20,7 @@ func createNoteTools() []registration {
 		bind(createReadSpec("note_search", "Search Notes",
 			"Search the notes of the vault by title, path and text. It does not search books, "+
 				"PDFs, scans or recordings: library_search finds the text of those.",
-			noteLinkSentence, passageLinkSentence, noFileLinkSentence, searchScopeSentence, userWordsSentence),
+			noteLinkSentence, resultLinkSentence, noFileLinkSentence, searchScopeSentence, userWordsSentence),
 			(*call).createNotes, (*notes.UseCase).Search),
 		bind(createReadSpec("note_list", "List Notes",
 			"List the paths and titles of the notes in the vault or in one folder, ordered by path. The result is paged with limit and offset and gives the total count.",

@@ -174,26 +174,26 @@ func TestNoteFocusOfNoteNotInVaultIsAToolErrorAndMovesNothing(t *testing.T) {
 	}
 }
 
-func TestSourceFocusPassesPassagesAndReturnsPathAndCount(t *testing.T) {
+func TestSourceFocusPassesSpansAndReturnsPathAndCount(t *testing.T) {
 	w := newWindowTools(t)
 	var out struct {
 		Path           string `json:"path"`
 		HighlightCount *int   `json:"highlightCount"`
 	}
-	arguments := `{"path":"library/Bird Guide.pdf","passages":[{"start":1500,"length":80},{"start":400,"length":700}]}`
+	arguments := `{"path":"library/Bird Guide.pdf","spans":[{"start":1500,"length":80},{"start":400,"length":700}]}`
 	if failure := w.call(t, "source_focus", arguments, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
 	if out.Path != guidePath || out.HighlightCount == nil || *out.HighlightCount != 2 {
 		t.Errorf("returned %+v", out)
 	}
-	want := []hosttest.FocusRequest{{Path: guidePath, Passages: []host.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}}}
+	want := []hosttest.FocusRequest{{Path: guidePath, Spans: []host.ByteSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}}}
 	if got := w.window.GetFocusRequests(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window received %+v, want %+v", got, want)
 	}
 }
 
-func TestSourceFocusWithNoPassagesOpensTheFileAtItsBeginning(t *testing.T) {
+func TestSourceFocusWithNoSpansOpensTheFileAtItsBeginning(t *testing.T) {
 	w := newWindowTools(t)
 	var out struct {
 		Path           string `json:"path"`
@@ -206,7 +206,7 @@ func TestSourceFocusWithNoPassagesOpensTheFileAtItsBeginning(t *testing.T) {
 		t.Errorf("returned %+v", out)
 	}
 	got := w.window.GetFocusRequests()
-	if len(got) != 1 || got[0].Path != guidePath || len(got[0].Passages) != 0 {
+	if len(got) != 1 || got[0].Path != guidePath || len(got[0].Spans) != 0 {
 		t.Errorf("the window received %+v", got)
 	}
 }

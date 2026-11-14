@@ -87,8 +87,8 @@ type benchCorpus struct {
 	db         *container.Index
 	searchMock search.Search
 	mockModel  sourcefake.Embedder
-	passages   sourceport.PassageQueries
-	candidates []domain.Passage
+	queries    sourceport.LexicalQueries
+	candidates []domain.SearchResult
 	recipe     string
 	queryVec   []float32
 }
@@ -136,8 +136,8 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	searchMock := container.NewSearch(cfg, db, asking, nil)
 
-	passages := db.ChunkSearch()
-	candidates, err := passages.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
+	queries := db.ChunkSearch()
+	candidates, err := queries.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -152,7 +152,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 		db:         db,
 		searchMock: searchMock,
 		mockModel:  mock,
-		passages:   passages,
+		queries:    queries,
 		candidates: candidates,
 		recipe:     model.Recipe(),
 		queryVec:   queryVectors[0],
@@ -185,7 +185,7 @@ func BenchmarkSearch(b *testing.B) {
 				}
 			})
 
-			b.Run("Passages", func(b *testing.B) {
+			b.Run("Results", func(b *testing.B) {
 				p := search.Parameters{Limit: 20, Each: 5, Floor: 0.1}
 				b.ReportAllocs()
 				b.ResetTimer()
@@ -272,11 +272,11 @@ func BenchmarkComponents(b *testing.B) {
 			c := newBenchCorpus(b, notes)
 			ctx := b.Context()
 
-			b.Run("PassagesLexical", func(b *testing.B) {
+			b.Run("ResultsLexical", func(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					res, err := c.passages.FindLexical(ctx, c.vault.ID, source.LexicalQuery{Text: queryLexical, Kinds: nil, Limit: 100})
+					res, err := c.queries.FindLexical(ctx, c.vault.ID, source.LexicalQuery{Text: queryLexical, Kinds: nil, Limit: 100})
 					if err != nil {
 						b.Fatal(err)
 					}
@@ -286,11 +286,11 @@ func BenchmarkComponents(b *testing.B) {
 				}
 			})
 
-			b.Run("PassagesGetNamedPassages", func(b *testing.B) {
+			b.Run("ResultsGetNamedSections", func(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					if _, err := c.passages.GetNamedPassages(ctx, c.vault.ID, source.LexicalQuery{Text: "Section", Kinds: nil, Limit: 20}); err != nil {
+					if _, err := c.queries.GetNamedSections(ctx, c.vault.ID, source.LexicalQuery{Text: "Section", Kinds: nil, Limit: 20}); err != nil {
 						b.Fatal(err)
 					}
 				}
@@ -305,7 +305,7 @@ func BenchmarkComponents(b *testing.B) {
 						b.Fatal(err)
 					}
 					if len(res) == 0 {
-						b.Fatal("findNearestPassages returned no passages")
+						b.Fatal("findNearestChunks returned no passages")
 					}
 				}
 			})
@@ -321,7 +321,7 @@ func BenchmarkComponents(b *testing.B) {
 				}
 			})
 
-			b.Run("ReadPassages/FileAndMarkdownExtraction", func(b *testing.B) {
+			b.Run("ReadResults/FileAndMarkdownExtraction", func(b *testing.B) {
 				if len(c.candidates) == 0 {
 					b.Fatal("no candidate passages to read")
 				}
@@ -333,7 +333,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ResetTimer()
 				for b.Loop() {
 					for _, candidate := range c.candidates {
-						raw, err := reader.Read(ctx, candidate.Source)
+						raw, err := reader.Read(ctx, candidate.Path)
 						if err != nil {
 							b.Fatal(err)
 						}

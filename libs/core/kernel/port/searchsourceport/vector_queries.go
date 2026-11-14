@@ -17,5 +17,5 @@ type VectorQueries interface {
 	//
 	// A large chunk carries no vector and is never in the answer. Neither is
 	// the text: a chunk is a place in a file, and the file holds the words.
-	GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after vector.ChunkCursor, limit int) ([]domain.Passage, vector.ChunkCursor, error)
+	GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after vector.ChunkCursor, limit int) ([]domain.SearchResult, vector.ChunkCursor, error)
 }
