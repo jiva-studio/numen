@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -20,7 +21,7 @@ func TestWriteSettingsWritesTheFileThenRefreshesTheEvents(t *testing.T) {
 	var events []string
 	file := &memoryFile{events: &events}
 
-	err := newWriter(file, nil, &events).Execute([]settingsdomain.Setting{{Path: []string{"app", "appearance", "theme"}, JSON: `"preset:night"`}})
+	err := newWriter(file, none.PluginSettings{}, &events).Execute([]settingsdomain.Setting{{Path: []string{"app", "appearance", "theme"}, JSON: `"preset:night"`}})
 
 	if err != nil || !slices.Equal(events, []string{"write file", "refresh events"}) {
 		t.Fatalf("err = %v, events = %v", err, events)

@@ -11,5 +11,5 @@ func newIndex(shelves indexfake.Vaults, index *indexfake.Store) Index {
 
 func newIndexWithTexts(shelves indexfake.Vaults, index *indexfake.Store) (Index, *libraryTexts) {
 	texts := newLibraryTexts(shelves)
-	return NewIndex(shelves, index, index, index, index, texts), texts
+	return NewIndex(IndexDeps{Readers: shelves, Sources: index, Records: index, Backlog: index, Lookup: index, Texts: texts}), texts
 }

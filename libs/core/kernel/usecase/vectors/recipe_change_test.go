@@ -40,14 +40,13 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	embed.BatchCharacters = 4000
-	embed.Source = sourcefake.Wrap(narrow)
+	embed.source = sourcefake.Wrap(narrow)
 	if _, err := embed.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}
 
 	fit := &vectorIndex{}
-	fitter := NewFitIndex(fit, nil)
-	fitter.ShouldRebuildIndex = true
+	fitter := NewFitIndex(fit, nil, true)
 	if err := fitter.Execute(ctx, sourcefake.Wrap(large)); err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +57,7 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 		t.Errorf("calls = %v, want the vectors of every other recipe taken out on a rebuild", fit.calls)
 	}
 
-	embed.Source = sourcefake.Wrap(large)
+	embed.source = sourcefake.Wrap(large)
 	res, err := embed.Execute(ctx, indexfake.GetFirst())
 	if err != nil {
 		t.Fatal(err)

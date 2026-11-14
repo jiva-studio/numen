@@ -27,10 +27,8 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 		return nil, err
 	}
 	of := sourceTexts{files: reader}
-	if u.texts != nil {
-		if of.texts, err = u.texts.Open(v); err != nil {
-			return nil, err
-		}
+	if of.texts, err = u.texts.Open(v); err != nil {
+		return nil, err
 	}
 
 	groups, order := groupBySource(found)
@@ -213,3 +211,8 @@ func proseOpens(raw string) int {
 	}
 	return 0
 }
+
+// noTextReaders is a vault where no file has text.
+type noTextReaders struct{}
+
+func (noTextReaders) Open(domain.Vault) (textdomain.VaultTexts, error) { return nil, nil }

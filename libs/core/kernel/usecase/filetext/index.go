@@ -28,32 +28,42 @@ type Index struct {
 	queries sourceQueries
 	texts   text.Readers
 
-	Sizes chunking.Sizes
-
-	Legibility chunking.Legibility
-
-	ShouldRebuildIndex bool
+	sizes              chunking.Sizes
+	legibility         chunking.Legibility
+	shouldRebuildIndex bool
 
 	errorHandler window.ErrorHandler
 	readNote     func(ctx context.Context, v domain.Vault, path string) error
 }
 
-// NewIndex creates an Index from the vault readers, the source repository
-// that stores sources and chunks, the queries that report which sources the
-// index records, which still need text and the text kept for the ones that left,
-// and the text readers. Nil texts means no file has text. The result ignores the errors a pass
-// reports and reads no note again before it is cut; NewHandlingIndex adds both.
-func NewIndex(
-	readers vaultport.VaultReaders,
-	sources sourceport.SourceRepository,
-	records sourceport.SourceRecords,
-	backlog sourceport.SourceBacklog,
-	lookup sourceport.RemovalLookup,
-	texts text.Readers,
-) Index {
+// IndexDeps is what NewIndex takes: the vault readers, the source repository that stores sources and chunks,
+// the queries that report which sources the index records, which still need text and the text kept for the
+// ones that left, the text readers, the sizes and the legibility of a cut, and whether the index is rebuilt.
+// Nil Texts means no file has text.
+type IndexDeps struct {
+	Readers vaultport.VaultReaders
+	Sources sourceport.SourceRepository
+	Records sourceport.SourceRecords
+	Backlog sourceport.SourceBacklog
+	Lookup  sourceport.RemovalLookup
+	Texts   text.Readers
+
+	Sizes              chunking.Sizes
+	Legibility         chunking.Legibility
+	ShouldRebuildIndex bool
+}
+
+// NewIndex creates an Index. The result ignores the errors a pass reports and reads no note again before it
+// is cut; NewHandlingIndex adds both.
+func NewIndex(d IndexDeps) Index {
+	texts := d.Texts
+	if texts == nil {
+		texts = noTextReaders{readers: d.Readers}
+	}
 	return Index{
-		readers: readers, sources: sources, texts: texts,
-		queries: sourceQueries{records: records, backlog: backlog, lookup: lookup},
+		readers: d.Readers, sources: d.Sources, texts: texts,
+		sizes: d.Sizes, legibility: d.Legibility, shouldRebuildIndex: d.ShouldRebuildIndex,
+		queries: sourceQueries{records: d.Records, backlog: d.Backlog, lookup: d.Lookup},
 	}
 }
 
@@ -106,7 +116,7 @@ func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (vault
 	if err != nil {
 		return res, err
 	}
-	return res, newCutter(u, nil, nil).source(ctx, v, on, path, u.sizes(), &res)
+	return res, newCutter(u, nil, nil).source(ctx, v, on, path, u.sizes.Resolve(), &res)
 }
 
 // openVault is one vault as a cut reads it: its files and the text versions of them.
@@ -119,9 +129,6 @@ func (u Index) open(v domain.Vault) (openVault, error) {
 	files, err := u.readers.Open(v)
 	if err != nil {
 		return openVault{}, err
-	}
-	if u.texts == nil {
-		return openVault{files: files, texts: noTexts{files: files}}, nil
 	}
 	texts, err := u.texts.Open(v)
 	if err != nil {
@@ -161,6 +168,19 @@ func (noTexts) GetVersionText(context.Context, string, domain.TextVersionID) (do
 func (noTexts) IsTextSource(context.Context, string) (bool, error) { return false, nil }
 
 // Recipe returns the recipe that names the version reader and the chunk sizes.
-func (u Index) Recipe() string { return chunking.GetTextVersionRecipe(u.sizes()) }
+func (u Index) Recipe() string { return chunking.GetTextVersionRecipe(u.sizes.Resolve()) }
 
-func (u Index) sizes() chunking.Sizes { return u.Sizes.Resolve() }
+// IsRebuildingIndex reports whether a source the index remembers is cut again.
+func (u Index) IsRebuildingIndex() bool { return u.shouldRebuildIndex }
+
+type noTextReaders struct {
+	readers vaultport.VaultReaders
+}
+
+func (r noTextReaders) Open(v domain.Vault) (text.VaultTexts, error) {
+	files, err := r.readers.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return noTexts{files: files}, nil
+}

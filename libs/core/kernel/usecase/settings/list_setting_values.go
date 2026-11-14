@@ -58,10 +58,8 @@ func (u *ListSettingValues) list(stored settingsdomain.Stored) (settingsdomain.V
 			add(path, value)
 		}
 	}
-	if u.plugins != nil {
-		for _, one := range u.plugins.GetPluginInfos() {
-			listPluginValues(stored, one, add, values)
-		}
+	for _, one := range u.plugins.GetPluginInfos() {
+		listPluginValues(stored, one, add, values)
 	}
 	connections, err := stored.GetConnectionsJSON()
 	if err != nil {

@@ -178,24 +178,6 @@ func TestAVaultWhoseFolderHasMissingIsMarkedAndStays(t *testing.T) {
 	}
 }
 
-// A build with no way to open a vault marks no folder missing, since it never
-// checked, and a vault wrongly marked missing reports to the user that their notes have
-// vanished.
-func TestABuildThatCannotOpenAVaultMarksNoFolderMissing(t *testing.T) {
-	t.Parallel()
-	list, _ := twoRows()
-
-	recognized, err := registry.NewGetKnownVaults(list, list, nil).Execute("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, one := range recognized {
-		if one.IsMissing {
-			t.Errorf("%s was called missing by a build that cannot open a vault", one.Vault.ID)
-		}
-	}
-}
-
 // An empty list contains no vaults, and the last-opened vault is not queried:
 // there is nothing for the result to describe.
 func TestAnEmptyListIsNoVaults(t *testing.T) {

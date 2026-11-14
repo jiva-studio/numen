@@ -40,6 +40,9 @@ type ListItems struct {
 // NewListItems makes the scenario that lists the items of the commands of the list. versions are the text
 // versions that a command with items lists; without them such a command lists none.
 func NewListItems(list List, versions VersionItems) ListItems {
+	if versions == nil {
+		versions = noVersions{}
+	}
 	return ListItems{list: list, versions: versions}
 }
 
@@ -67,16 +70,10 @@ func (u ListItems) listOne(ctx context.Context, v domain.Vault, path string, id 
 	if !hasItems(u.list.conditions, entry.Command) {
 		return ItemList{}
 	}
-	if u.versions == nil {
-		return ItemList{Err: errNoVersions}
-	}
 	return u.newList(u.versions.ListVersionItems(ctx, v, path, entry))
 }
 
 func (u ListItems) listEveryVersion(ctx context.Context, v domain.Vault, path string) ([]text.VersionItem, error) {
-	if u.versions == nil {
-		return nil, errNoVersions
-	}
 	return u.versions.ListEveryVersion(ctx, v, path)
 }
 

@@ -31,7 +31,7 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 			shelf.Put(bookPath, domain.KindFile, raw, 1)
 
 			extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
-			extract.Sizes = c.sizes
+			extract.sizes = c.sizes
 			res, err := extract.Execute(ctx, indexfake.GetFirst())
 			if err != nil {
 				t.Fatal(err)
@@ -47,7 +47,7 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 			}
 
 			source := index.Sources[indexfake.GetFirst().ID][bookPath]
-			if want := chunking.GetTextVersionRecipe(extract.sizes()); source.Recipe != want {
+			if want := chunking.GetTextVersionRecipe(extract.sizes.Resolve()); source.Recipe != want {
 				t.Errorf("recipe = %q, want %q", source.Recipe, want)
 			}
 			if source.ContentHash == "" {
@@ -182,7 +182,7 @@ func TestTheRecipeNamesTheSizesTheSplitCachedTo(t *testing.T) {
 	if resolved.LargeOverlap != 99 || resolved.SmallOverlap != 19 {
 		t.Fatalf("the cut keeps to %+v", resolved)
 	}
-	if got := (Index{Sizes: request}).sizes(); got != resolved {
+	if got := request.Resolve(); got != resolved {
 		t.Errorf("the recipe names %+v, want %+v", got, resolved)
 	}
 }
@@ -201,12 +201,12 @@ func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 300)), 1)
 
 	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
-	extract.Sizes = one
+	extract.sizes = one
 	if _, err := extract.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}
 
-	stale, err := index.GetSourcesWithOtherRecipe(ctx, indexfake.GetFirst().ID, domain.KindFile, []string{chunking.GetTextVersionRecipe(Index{Sizes: other}.sizes())}, 10)
+	stale, err := index.GetSourcesWithOtherRecipe(ctx, indexfake.GetFirst().ID, domain.KindFile, []string{chunking.GetTextVersionRecipe(other.Resolve())}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +214,7 @@ func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 		t.Errorf("%v were cut by another recipe, want the one book", stale)
 	}
 
-	extract.Sizes = other
+	extract.sizes = other
 	res, err := extract.Execute(ctx, indexfake.GetFirst())
 	if err != nil {
 		t.Fatal(err)
@@ -225,7 +225,7 @@ func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 	if index.Extractions[bookPath] != 2 {
 		t.Errorf("the source was written %d times, want the cut at each of the two sizes", index.Extractions[bookPath])
 	}
-	if want := chunking.GetTextVersionRecipe(extract.sizes()); index.Sources[indexfake.GetFirst().ID][bookPath].Recipe != want {
+	if want := chunking.GetTextVersionRecipe(extract.sizes.Resolve()); index.Sources[indexfake.GetFirst().ID][bookPath].Recipe != want {
 		t.Errorf("recipe = %q, want %q", index.Sources[indexfake.GetFirst().ID][bookPath].Recipe, want)
 	}
 
@@ -373,7 +373,7 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 		t.Errorf("the fingerprint is the path, the size and the time: %+v", res)
 	}
 
-	extract.ShouldRebuildIndex = true
+	extract.shouldRebuildIndex = true
 	if res, err := extract.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	} else if res.Extracted != 1 {
@@ -451,7 +451,7 @@ func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 	if src.Producer != string(transcript.GetID()) {
 		t.Errorf("the source names %q as the version it was cut from, want %q", src.Producer, transcript.GetID())
 	}
-	if want := chunking.GetTextVersionRecipe(extract.sizes()); src.Recipe != want {
+	if want := chunking.GetTextVersionRecipe(extract.sizes.Resolve()); src.Recipe != want {
 		t.Errorf("recipe = %q, want %q", src.Recipe, want)
 	}
 }
@@ -531,7 +531,7 @@ func TestATextThatCannotBeReadIsReportedAndTheRunGoesOn(t *testing.T) {
 }
 
 func TestTheRecipeNamesTheVersionReaderAndTheSizes(t *testing.T) {
-	sizes := (Index{}).sizes()
+	sizes := chunking.Sizes{}.Resolve()
 	if want := "text-version-1/large=200+40/small=50+10/limit=1000"; chunking.GetTextVersionRecipe(sizes) != want {
 		t.Errorf("a source is cut by %q, want %q", chunking.GetTextVersionRecipe(sizes), want)
 	}

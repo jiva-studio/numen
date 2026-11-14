@@ -70,19 +70,23 @@ type Entry struct {
 // list at once.
 type Deps struct{ base operation }
 
-// NewDeps returns the shared parts over the list, the registry of types and the key store. keys is nil on a
+// NewDeps returns the shared parts over the list, the registry of types, the key store, the rows that name a
+// connection and the connections the providers detect, listed after the stored ones. keys is nil on a
 // machine with no key store; a connection with no secret field value still works there.
 func NewDeps(
 	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses connectionport.Uses,
+	detected connectionport.Detected,
 ) Deps {
-	return Deps{base: operation{repository: repository, types: types, keys: keys, uses: uses, gate: &sync.Mutex{}}}
+	return Deps{base: operation{
+		repository: repository, types: types, keys: keys, uses: uses,
+		detected: detected, lists: noOptionLists{}, gate: &sync.Mutex{},
+	}}
 }
 
-// AddDetection returns the shared parts with the connections the providers detect listed after the stored ones.
-func (d Deps) AddDetection(detected connectionport.Detected) Deps {
-	d.base.detected = detected
-	return d
-}
+type noOptionLists struct{}
+
+func (noOptionLists) RefreshConnection(string)      {}
+func (noOptionLists) DropConnection(string, string) {}
 
 // AddOptionLists returns the shared parts with the option lists an update of a connection refreshes and a
 // deletion drops.
@@ -106,7 +110,7 @@ func NewDelete(deps Deps) *Delete { return &Delete{operation: deps.base} }
 func NewList(deps Deps) *List { return &List{operation: deps.base} }
 
 // NewListTypes returns the use case that lists the kinds of connection and the titles the plugins give
-// their operations. titles is nil where no plugin titles an operation.
+// their operations.
 func NewListTypes(deps Deps, titles connectionport.OperationTitles) *ListTypes {
 	return &ListTypes{operation: deps.base, titles: titles}
 }
@@ -175,9 +179,6 @@ func (o operation) listConnections() ([]connection.Connection, error) {
 }
 
 func (o operation) listDetectedConnections() []connection.Connection {
-	if o.detected == nil {
-		return nil
-	}
 	return o.detected.ListDetected()
 }
 
@@ -185,7 +186,7 @@ func (o operation) listConnectionsAfterDetection(typeIDs []string) ([]connection
 	var plugins []string
 	for _, typeID := range typeIDs {
 		found, isFound := o.types.GetType(typeID)
-		if isFound && o.detected != nil && o.detected.IsPending(typeID) && !slices.Contains(plugins, found.PluginID) {
+		if isFound && o.detected.IsPending(typeID) && !slices.Contains(plugins, found.PluginID) {
 			plugins = append(plugins, found.PluginID)
 		}
 	}

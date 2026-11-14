@@ -32,9 +32,6 @@ func NewRemoveNote(remove noteRemoving, readers vaultport.VaultReaders) RemoveNo
 func (u RemoveNote) Execute(
 	ctx context.Context, v domain.Vault, path string, shouldDestroy bool,
 ) (RemoveResult, error) {
-	if u.readers == nil {
-		return RemoveResult{}, errNotOpen
-	}
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return RemoveResult{}, err

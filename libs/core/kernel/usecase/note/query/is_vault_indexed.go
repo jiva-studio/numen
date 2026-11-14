@@ -19,7 +19,7 @@ func NewIsVaultIndexed(queries noteport.VaultHolds) *IsVaultIndexed {
 
 // Execute returns false for a build with no index and for an index error.
 func (u *IsVaultIndexed) Execute(ctx context.Context, v domain.Vault) bool {
-	if u == nil || u.queries == nil {
+	if u == nil {
 		return false
 	}
 	target, err := u.queries.Has(ctx, v.ID)

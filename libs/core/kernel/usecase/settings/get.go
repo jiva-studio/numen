@@ -25,6 +25,12 @@ func NewGet(
 	plugins func() []plugin.Info,
 	app func() []plugin.Setting,
 ) *Get {
+	if plugins == nil {
+		plugins = func() []plugin.Info { return nil }
+	}
+	if app == nil {
+		app = func() []plugin.Setting { return nil }
+	}
 	return &Get{
 		read:    read,
 		plugins: plugins,
@@ -37,14 +43,8 @@ func (u *Get) Execute() (Current, error) {
 	if err != nil {
 		return Current{}, err
 	}
-	var pluginInfos []plugin.Info
-	if u.plugins != nil {
-		pluginInfos = u.plugins()
-	}
-	var app []plugin.Setting
-	if u.app != nil {
-		app = u.app()
-	}
+	pluginInfos := u.plugins()
+	app := u.app()
 	return Current{
 		Written: content,
 		Path:    path,

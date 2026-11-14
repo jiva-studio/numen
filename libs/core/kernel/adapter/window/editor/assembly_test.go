@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
@@ -26,7 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
@@ -148,8 +148,7 @@ func (w readingParts) scan(db *testIndex, rebuild bool) vault.Scan {
 	scan := vault.NewScan(w.GetVaultReaders(), db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
 	w.setNoteCut(&scan)
 	scan.Walks = db.Walks()
-	scan.ShouldRebuildIndex = rebuild
-	return scan
+	return scan.Rebuilding(rebuild)
 }
 
 // GetRefresh brings named notes up to date in the index, over the notes of the cache.
@@ -179,8 +178,7 @@ func (w readingParts) OpenVaultWith(
 func (w readingParts) ReadWholeVault(
 	ctx context.Context, db *testIndex, embedder searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
-	fit := vectors.NewFitIndex(db.VectorIndex(), nil)
-	fit.ShouldRebuildIndex = rebuild
+	fit := vectors.NewFitIndex(db.VectorIndex(), nil, rebuild)
 	if err := fit.Execute(ctx, embedder); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -199,19 +197,20 @@ func (w readingParts) ReadWholeVault(
 		}
 		return nil
 	}
-	texts := filetext.NewHandlingIndex(filetext.NewIndex(w.GetVaultReaders(), db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, w.texts), nil, readNote)
 	cutter := w.cutNotes()
-	texts.Sizes = cutter.Sizes
-	texts.Legibility = cutter.Legibility
-	texts.ShouldRebuildIndex = rebuild
+	base := filetext.NewIndex(filetext.IndexDeps{
+		Readers: w.GetVaultReaders(), Sources: db.Source.Sources, Records: db.Source.SourceRecords, Backlog: db.Source.SourceBacklog, Lookup: db.Source.RemovalLookup,
+		Texts: w.texts, Sizes: cutter.Sizes, Legibility: cutter.Legibility, ShouldRebuildIndex: rebuild,
+	})
+	texts := filetext.NewHandlingIndex(base, nil, readNote)
 	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{}, derivedCoreFolder)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	embed := vectors.NewEmbed(w.GetVaultReaders(), db.Chunks.VectorQueries, db.Chunks.Vectors)
-	embed.Claim = store.NewIndexClaim(derivedCoreFolder + "/indexing")
-	embed.Texts = w.texts
-	embed.Source = embedder
+	if embedder == nil {
+		embedder = none.SearchSource{}
+	}
+	embed := vectors.NewEmbed(w.GetVaultReaders(), db.Chunks.VectorQueries, db.Chunks.Vectors, store.NewIndexClaim(derivedCoreFolder+"/indexing"), w.texts, embedder)
 	return indexing.NewReadWholeVault(w.scan(db, rebuild), texts, embed), nil
 }
 
@@ -240,7 +239,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 	}
 	store := settingsadapter.NewStore(settingsadapter.NewFiles(), getPath, declarations, registries)
 	list := settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, store, settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, nil,
+		settingsadapter.JSONCodec{}, store, settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, none.PluginInfos{},
 	)
 	feed := settingevents.Feed{
 		Events:  settingevents.New(),
@@ -256,9 +255,8 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 		Report: func(error) {},
 		Hub:    hub.GetShared(),
 	}
-	var noPlugins settingsport.PluginSettings
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(declarations, registries), noPlugins,
+		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(declarations, registries), none.PluginSettings{},
 	)
 	write := settingsusecase.NewWriteSettings(check, store, feed)
 

@@ -16,14 +16,18 @@ import (
 type Choose struct {
 	kinds      pluginport.PluginTabKinds
 	types      contenttypeport.ContentTypeTable
-	config     pluginport.WhenConfig
+	config     configValue
 	conditions *when.Conditions
 }
 
 // NewChoose makes the choice over the tab kinds, the table that gives a file its type, and the
 // settings a condition reads as config, which may be none. It needs the tab kinds and the table.
 func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTypeTable, config pluginport.WhenConfig) *Choose {
-	return &Choose{kinds: kinds, types: types, config: config, conditions: when.NewConditions()}
+	var value configValue = noConfig{}
+	if config != nil {
+		value = givenConfig{config}
+	}
+	return &Choose{kinds: kinds, types: types, config: value, conditions: when.NewConditions()}
 }
 
 // Execute gives the kind of tab the note at the path opens in: of the kinds whose when condition
@@ -42,8 +46,8 @@ func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[s
 		if err != nil {
 			continue
 		}
-		if _, isRead := values["config"]; !isRead && u.config != nil && slices.Contains(condition.ListNames(), "config") {
-			values["config"] = u.config.GetWhenConfig()
+		if _, isRead := values["config"]; !isRead && slices.Contains(condition.ListNames(), "config") {
+			u.config.add(values)
 		}
 		if condition.Evaluate(values) != when.True {
 			continue
@@ -61,3 +65,17 @@ func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[s
 	chosen, _ := domain.ChooseHandler(contentType, matching)
 	return chosen.ID
 }
+
+// configValue gives a condition the config variable.
+type configValue interface {
+	add(values map[string]any)
+}
+
+type givenConfig struct{ config pluginport.WhenConfig }
+
+func (c givenConfig) add(values map[string]any) { values["config"] = c.config.GetWhenConfig() }
+
+// noConfig leaves a condition over config undecided.
+type noConfig struct{}
+
+func (noConfig) add(map[string]any) {}

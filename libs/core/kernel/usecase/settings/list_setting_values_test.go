@@ -3,6 +3,7 @@ package settings_test
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -50,7 +51,7 @@ func TestListSettingValuesListsTheValueInForceOfEverySetting(t *testing.T) {
 // The values of an unconfigured installation come from the defaults, not from the file.
 func TestListSettingValuesListsTheDefaultsOfAnUnconfiguredInstallation(t *testing.T) {
 	file := &memoryFile{current: stored{values: map[string]any{"app.appearance.theme": "preset:night"}}}
-	list := settings.NewListSettingValues(jsonCodec{}, file, file, appDeclarations{{Key: "appearance.theme"}}, nil)
+	list := settings.NewListSettingValues(jsonCodec{}, file, file, appDeclarations{{Key: "appearance.theme"}}, none.PluginInfos{})
 
 	got, err := list.ListDefaults()
 

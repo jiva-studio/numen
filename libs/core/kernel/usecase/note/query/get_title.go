@@ -19,7 +19,7 @@ func NewGetTitle(queries noteport.NoteRefs) *GetTitle {
 
 // Execute returns "" for an empty path, an unknown note or an index error.
 func (u *GetTitle) Execute(ctx context.Context, v domain.Vault, path string) string {
-	if u == nil || u.queries == nil || path == "" {
+	if u == nil || path == "" {
 		return ""
 	}
 	found, err := u.queries.GetNotes(ctx, v.ID, []string{path})

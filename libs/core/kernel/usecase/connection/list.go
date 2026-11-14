@@ -15,9 +15,7 @@ type List struct{ operation }
 // not asked lately to detect again in the background. A secret counts as set only when its entry in the key store holds the
 // fingerprint of the type and the address the connection has now.
 func (u *List) Execute(ctx context.Context) ([]Entry, error) {
-	if u.detected != nil {
-		u.detected.Refresh()
-	}
+	u.detected.Refresh()
 	list, err := u.listConnections()
 	if err != nil {
 		return nil, err
@@ -50,9 +48,5 @@ type ListTypes struct {
 // Execute returns the kinds of connection and the titles of the operations; no titles where the use case
 // has no source of titles.
 func (u *ListTypes) Execute() TypeList {
-	list := TypeList{Types: u.types.ListTypes()}
-	if u.titles != nil {
-		list.Operations = u.titles.ListOperationTitles()
-	}
-	return list
+	return TypeList{Types: u.types.ListTypes(), Operations: u.titles.ListOperationTitles()}
 }

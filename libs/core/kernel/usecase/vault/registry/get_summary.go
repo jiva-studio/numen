@@ -19,7 +19,7 @@ func NewGetSummary(queries noteport.VaultSummaries) *GetSummary {
 
 // Execute returns the empty summary where no index is bound.
 func (u *GetSummary) Execute(ctx context.Context, v domain.Vault) (domain.VaultSummary, error) {
-	if u == nil || u.queries == nil {
+	if u == nil {
 		return domain.VaultSummary{}, nil
 	}
 	return u.queries.GetSummary(ctx, v.ID)
