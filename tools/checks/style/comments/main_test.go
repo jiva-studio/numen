@@ -1,27 +1,34 @@
 package main
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
 
 func TestCheckReportsFieldComments(t *testing.T) {
-	src := "package p\n\ntype T struct {\n\t// Name is the name.\n\tName string\n\tsize int // in bytes\n\tplain bool\n}\n"
+	src := "package p\n\ntype Base struct{}\n\ntype T struct {\n\t// Base is embedded.\n\tBase\n\t// Name is the name.\n\tName string\n\tsize int // in bytes\n\tplain bool\n}\n"
 	findings, fixed, err := Check("libs/core/kernel/p/p.go", []byte(src))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(findings) != 2 || findings[0].Line != 4 || findings[1].Line != 6 {
-		t.Fatalf("findings = %+v, want lines 4 and 6", findings)
+	if len(findings) != 3 || findings[0].Line != 6 || findings[1].Line != 8 || findings[2].Line != 10 {
+		t.Fatalf("findings = %+v, want lines 6, 8 and 10", findings)
 	}
-	want := "package p\n\ntype T struct {\n\tName  string\n\tsize  int\n\tplain bool\n}\n"
+	if findings[0].Message != "comment on a struct field; the name and type state what the field holds" {
+		t.Fatalf("findings[0].Message = %q", findings[0].Message)
+	}
+	if findings[1].Message != "comment on struct field Name; the name and type state what the field holds" {
+		t.Fatalf("findings[1].Message = %q", findings[1].Message)
+	}
+	want := "package p\n\ntype Base struct{}\n\ntype T struct {\n\tBase\n\tName  string\n\tsize  int\n\tplain bool\n}\n"
 	if string(fixed) != want {
 		t.Fatalf("fixed =\n%s\nwant\n%s", fixed, want)
 	}
 }
 
 func TestCheckReportsUnexportedFunctionDocs(t *testing.T) {
-	src := "package p\n\n// Open opens the lock the sync daemon holds.\nfunc Open() {}\n\n// read reads.\n//\n//go:noinline\nfunc read() {}\n"
+	src := "package p\n\n// Open opens the lock the sync daemon holds.\nfunc Open() {}\n\n// read reads.\n//\n//go:noinline\n// extra comment\nfunc read() {}\n"
 	findings, fixed, err := Check("p.go", []byte(src))
 	if err != nil {
 		t.Fatal(err)
@@ -29,22 +36,22 @@ func TestCheckReportsUnexportedFunctionDocs(t *testing.T) {
 	if len(findings) != 1 || !strings.Contains(findings[0].Message, "function read") {
 		t.Fatalf("findings = %+v, want one on read", findings)
 	}
-	if !strings.Contains(string(fixed), "// Open opens the lock") || !strings.Contains(string(fixed), "//go:noinline\nfunc read") || strings.Contains(string(fixed), "read reads") {
+	if !strings.Contains(string(fixed), "// Open opens the lock") || !strings.Contains(string(fixed), "//go:noinline\nfunc read") || strings.Contains(string(fixed), "read reads") || strings.Contains(string(fixed), "extra comment") {
 		t.Fatalf("fixed =\n%s", fixed)
 	}
 }
 
 func TestCheckKeepsExportedFieldCommentsOfAMarkedType(t *testing.T) {
 	for _, marker := range []string{"//numen:settings", "//numen:api"} {
-		src := "package p\n\n// Spec describes a tool.\n//\n" + marker + "\n" +
-			"type Spec struct {\n\t// Name is shown to the user.\n\tName string\n\t// cache is filled on first use.\n\tcache map[string]int\n}\n\n" +
+		src := "package p\n\ntype Base struct{}\n\n// Spec describes a tool.\n//\n" + marker + "\n" +
+			"type Spec struct {\n\t// Base is embedded.\n\tBase\n\t// Name is shown to the user.\n\tName string\n\t// cache is filled on first use.\n\tcache map[string]int\n}\n\n" +
 			"// Other is not marked.\ntype Other struct {\n\t// Name is the name.\n\tName string\n}\n"
 		findings, fixed, err := Check("p.go", []byte(src))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(findings) != 2 || findings[0].Line != 9 || findings[1].Line != 15 {
-			t.Fatalf("%s: findings = %+v, want the unexported field on line 9 and the unmarked type on line 15", marker, findings)
+		if len(findings) != 3 || findings[0].Line != 9 || findings[1].Line != 13 || findings[2].Line != 19 {
+			t.Fatalf("%s: findings = %+v, want lines 9, 13 and 19", marker, findings)
 		}
 		if !strings.Contains(string(fixed), marker+"\ntype Spec") || !strings.Contains(string(fixed), "Name is shown to the user") {
 			t.Fatalf("%s: fixed =\n%s", marker, fixed)
@@ -132,5 +139,57 @@ func TestCheckReportsAGroupOnce(t *testing.T) {
 	}
 	if len(findings) != 1 {
 		t.Fatalf("findings = %+v, want one", findings)
+	}
+}
+
+func TestSplitWords(t *testing.T) {
+	cases := []struct {
+		in   string
+		want []string
+	}{
+		{"readID", []string{"read", "id"}},
+		{"v2Reader", []string{"v2", "reader"}},
+		{"HTMLParser", []string{"html", "parser"}},
+		{"ABc", []string{"a", "bc"}},
+		{"GetURL2", []string{"get", "url2"}},
+	}
+	for _, c := range cases {
+		if got := splitWords(c.in); !slices.Equal(got, c.want) {
+			t.Fatalf("splitWords(%q) = %v, want %v", c.in, got, c.want)
+		}
+	}
+}
+
+func TestStemAndSameWord(t *testing.T) {
+	stems := []struct {
+		in, want string
+	}{
+		{"dies", "die"},
+		{"tries", "try"},
+		{"axes", "axe"},
+		{"boxes", "box"},
+		{"passes", "pass"},
+		{"watches", "watch"},
+		{"pushes", "push"},
+		{"has", "has"},
+		{"books", "book"},
+		{"status", "status"},
+	}
+	for _, c := range stems {
+		if got := stem(c.in); got != c.want {
+			t.Fatalf("stem(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+	if isSameWord("win", "window") || isSameWord("window", "win") {
+		t.Fatal("words shorter than minPrefixLength must not prefix-match")
+	}
+	if !isSameWord("wind", "window") || !isSameWord("window", "wind") {
+		t.Fatal("words of minPrefixLength must prefix-match in both directions")
+	}
+	if matched, total, ok := isRestating("", []string{"open"}); matched != 0 || total != 0 || ok {
+		t.Fatalf("isRestating empty = (%d, %d, %v), want (0, 0, false)", matched, total, ok)
+	}
+	if matched, total := restatement("window", []string{"window", "windowsession"}); matched != 1 || total != 1 {
+		t.Fatalf("restatement = (%d, %d), want (1, 1)", matched, total)
 	}
 }
