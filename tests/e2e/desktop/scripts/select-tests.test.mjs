@@ -42,8 +42,7 @@ await test('a change to the window, the support code or the lock file selects ev
     'Makefile',
     'go.work',
     '.github/workflows/desktop-e2e.yml',
-    '.github/actions/setup-webkit/action.yml',
-    '.github/scripts/apt-retry.sh',
+    '.github/actions/setup-playwright/action.yml',
   ]) {
     assert.equal(getScope(['plugins/notes/frontend/index.ts', file]), 'all')
   }

@@ -69,7 +69,7 @@ const isAcceptanceInput = (file) => /^(features|tests\/acceptance)\//.test(file)
 
 /** Paths the desktop window and its tests are built from; a change elsewhere runs no test. */
 const DESKTOP =
-  /^(apps\/desktop\/|libs\/|plugins\/|tests\/e2e\/desktop\/|tests\/vault\/|tools\/(build-plugin-index|shared)\/|\.github\/(workflows\/desktop-e2e\.yml$|actions\/(setup-webkit|build-ui)\/|scripts\/apt-retry\.sh$)|(Makefile|package\.json|package-lock\.json|go\.work(\.sum)?|\.node-version)$)/
+  /^(apps\/desktop\/|libs\/|plugins\/|tests\/e2e\/desktop\/|tests\/vault\/|tools\/(build-plugin-index|shared)\/|\.github\/(workflows\/desktop-e2e\.yml$|actions\/(setup-playwright|setup-webkit|build-ui)\/)|(Makefile|package\.json|package-lock\.json|go\.work(\.sum)?|\.node-version)$)/
 
 /** Unit tests, stories and linter or unit-test configs outside the e2e suite. */
 const NON_E2E_TEST_OR_CONFIG =
