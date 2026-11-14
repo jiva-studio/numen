@@ -41,7 +41,6 @@ const AREAS = [
   'go',
   'js',
   'workflows',
-  'gradle',
   'staging',
   'mutation_tool',
 ]
@@ -105,7 +104,7 @@ describe('the filters of the changed areas', () => {
     for (const area of ['ui', 'desktop_fe', 'mobile_fe', 'plugins_all', 'plugin_stories', 'core', 'protocol']) {
       assert.ok(lockAreas.includes(area), area)
     }
-    for (const area of ['sdk_go', 'desktop', 'mobile', 'go', 'gradle', 'staging', 'mutation_tool']) {
+    for (const area of ['sdk_go', 'desktop', 'mobile', 'go', 'staging', 'mutation_tool']) {
       assert.ok(!lockAreas.includes(area), area)
     }
   })

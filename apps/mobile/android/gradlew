@@ -116,6 +116,16 @@ case "$( uname )" in                #(
 esac
 
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+if [ ! -f "$CLASSPATH" ] ; then
+    WRAPPER_URL=https://raw.githubusercontent.com/gradle/gradle/v8.14.3/gradle/wrapper/gradle-wrapper.jar
+    WRAPPER_SHA256=7d3a4ac4de1c32b59bc6a4eb8ecb8e612ccd0cf1ae1e99f66902da64df296172
+    curl -fsSL "$WRAPPER_URL" -o "$CLASSPATH.tmp" || die "ERROR: failed to download $WRAPPER_URL"
+    printf '%s  %s\n' "$WRAPPER_SHA256" "$CLASSPATH.tmp" | sha256sum -c - >/dev/null 2>&1 || {
+        rm -f "$CLASSPATH.tmp"
+        die "ERROR: checksum mismatch for $WRAPPER_URL"
+    }
+    mv "$CLASSPATH.tmp" "$CLASSPATH"
+fi
 
 
 # Determine the Java command to use to start the JVM.
