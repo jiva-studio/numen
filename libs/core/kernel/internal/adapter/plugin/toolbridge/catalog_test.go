@@ -297,7 +297,7 @@ func TestACallForAConnectionLeasesThePluginOfTheToolForTheConnection(t *testing.
 	}
 }
 
-func TestAToolIsOfferedOnlyToACallerThatHoldsThePermissionsOfItsEffect(t *testing.T) {
+func TestAToolIsOfferedOnlyToACallerWithThePermissionsOfItsEffect(t *testing.T) {
 	host := newPluginHost(t, map[string]*toolPlugin{gardenPlugin: {tools: []*v1.PluginTool{
 		{Name: "bed_list", Effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY},
 		{Name: "bed_plant", Effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE},
