@@ -63,7 +63,7 @@ func Load(path string) (Tokenizer, error) {
 	}
 	var tok Tokenizer
 	if head.Model.Type == "Unigram" {
-		tok, err = loadUnigram(raw)
+		tok, err = loadUnigramTokenizer(raw)
 	} else {
 		tok, err = loadDelegate(raw)
 	}
@@ -82,7 +82,7 @@ type unigramTokenizer struct {
 	hasPad       bool
 }
 
-func loadUnigram(raw []byte) (*unigramTokenizer, error) {
+func loadUnigramTokenizer(raw []byte) (*unigramTokenizer, error) {
 	file, err := parseTokenizerFile(raw)
 	if err != nil {
 		return nil, err

@@ -28,7 +28,7 @@ func buildNormalizers(s step) ([]normalizer, error) {
 		}
 		return out, nil
 	case "Precompiled":
-		one, err := buildPrecompiled(s)
+		one, err := buildCharsmapNormalizer(s)
 		if err != nil {
 			return nil, fmt.Errorf("step Precompiled: %w", err)
 		}
@@ -50,7 +50,7 @@ func buildNormalizers(s step) ([]normalizer, error) {
 	}
 }
 
-func buildPrecompiled(s step) (normalizer, error) {
+func buildCharsmapNormalizer(s step) (normalizer, error) {
 	var encoded string
 	if err := s.fields.read("precompiled_charsmap", &encoded); err != nil {
 		return nil, err

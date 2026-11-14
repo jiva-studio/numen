@@ -18,7 +18,7 @@ const NumenRoot = "github.com/jiva-studio/numen/"
 const NotesModule = NumenRoot + "libs/note"
 
 // SharedLibraries holds the Go libraries a plugin may import beside the SDK: code two or more
-// plugins need that knows nothing of numen. Each folder below it is a module of its own.
+// plugins need that does not depend on numen. Each folder below it is a module of its own.
 const SharedLibraries = NumenRoot + "libs/shared"
 
 func IsSharedLibrary(path string) bool {
