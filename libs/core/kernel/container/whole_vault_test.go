@@ -99,11 +99,11 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	})
 	model := unit{"first"}
 
-	whole, err := container.ReadWholeVault(target, t.Context(), db, nil, v)
-	if err != nil {
+	// ReadWholeVault fits the vector table to the width of the model.
+	if _, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(model), v); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := whole.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
+	if _, err := container.Scan(target, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	if unembeddedTo(t, db, v, model) == 0 {
