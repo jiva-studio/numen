@@ -2,16 +2,13 @@ name: Caches
 
 # A pull request reads the caches of main and of itself, and its own are deleted when it closes, so
 # a cache only a pull request saved is cold for the next one. This saves, on main, the caches that
-# follow from the lock file and from the install actions alone: the Playwright engines and the
-# system packages of the jobs that install them.
+# follow from the install actions alone: the system packages of the jobs that install them.
 on:
   push:
     branches: [main]
     paths:
-      - package-lock.json
       - .github/actions/cache-apt/**
       - .github/actions/setup-webkit/**
-      - .github/actions/setup-playwright/**
       - .github/workflows/caches.yml
   workflow_dispatch:
 
@@ -33,39 +30,3 @@ jobs:
           persist-credentials: false
 
       - uses: ./.github/actions/setup-webkit
-
-  playwright:
-    name: Playwright ${{ matrix.browsers }}${{ matrix.packages && ' + window' || '' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      # The calls of setup-playwright in .github/workflows: the engine of an end-to-end shard with
-      # the window's runtime libraries, both engines with them, and both engines alone.
-      matrix:
-        include:
-          - browsers: chromium
-            packages: libgtk-4-1 libwebkitgtk-6.0-4
-          - browsers: webkit
-            packages: libgtk-4-1 libwebkitgtk-6.0-4
-          - browsers: chromium webkit
-            packages: libgtk-4-1 libwebkitgtk-6.0-4
-          - browsers: chromium webkit
-            packages: ""
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - uses: ./.github/actions/install-node-modules
-
-      - uses: ./.github/actions/setup-playwright
-        with:
-          browsers: ${{ matrix.browsers }}
-          packages: ${{ matrix.packages }}

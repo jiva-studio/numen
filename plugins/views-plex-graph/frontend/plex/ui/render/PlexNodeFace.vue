@@ -46,6 +46,7 @@ defineSlots<PlexDrawnSlots>()
   <PlexNodeHandle
     v-if="isHandleVisible"
     :at="handle"
+    :is-tab-stop="!isLifted"
     @reach="(pointer) => emit('reach', pointer)"
     @ask="emit('ask')"
   />

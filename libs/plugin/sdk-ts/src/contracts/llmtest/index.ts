@@ -17,10 +17,14 @@ import {
   OPERATION_COMPLETE,
   OPERATION_EMBED,
   OPERATION_PROFILE,
+  OPERATION_RERANK,
   ProfileSchema,
+  RerankRequestSchema,
+  RerankResultSchema,
   type ChatRequest,
   type CompleteRequest,
   type EmbedRequest,
+  type RerankRequest,
 } from '../llm'
 
 /** A frame of a turn as a test writes it: the fields it sets, the rest left at their defaults. */
@@ -45,6 +49,10 @@ export interface Roles {
     request: EmbedRequest,
     options: ConnectionCallOptions | undefined,
   ) => Answer<MessageInitShape<typeof EmbedResultSchema>>
+  readonly rerank?: (
+    request: RerankRequest,
+    options: ConnectionCallOptions | undefined,
+  ) => Answer<MessageInitShape<typeof RerankResultSchema>>
   readonly getProfile?: (
     options: ConnectionCallOptions | undefined,
   ) => Answer<MessageInitShape<typeof ProfileSchema>>
@@ -78,7 +86,7 @@ async function* serveChat(
 
 const listOperations = (roles: Roles): ReadonlyMap<string, Served> => {
   const served = new Map<string, Served>()
-  const { complete, chat, embed, getProfile } = roles
+  const { complete, chat, embed, rerank, getProfile } = roles
   if (complete !== undefined)
     served.set(OPERATION_COMPLETE, async function* (payload, options) {
       yield* []
@@ -92,6 +100,12 @@ const listOperations = (roles: Roles): ReadonlyMap<string, Served> => {
       yield* []
       const end = await embed(fromBinary(EmbedRequestSchema, payload), options)
       return encode(end, (value) => toBinary(EmbedResultSchema, create(EmbedResultSchema, value)))
+    })
+  if (rerank !== undefined)
+    served.set(OPERATION_RERANK, async function* (payload, options) {
+      yield* []
+      const end = await rerank(fromBinary(RerankRequestSchema, payload), options)
+      return encode(end, (value) => toBinary(RerankResultSchema, create(RerankResultSchema, value)))
     })
   if (getProfile !== undefined)
     served.set(OPERATION_PROFILE, async function* (_payload, options) {

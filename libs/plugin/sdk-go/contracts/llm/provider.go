@@ -24,6 +24,11 @@ type Embedder interface {
 	Embed(ctx context.Context, call connection.Call, request *EmbedRequest) (*EmbedResult, error)
 }
 
+// Reranker carries out llm.rerank. It returns one score for each document, in the order of the documents.
+type Reranker interface {
+	Rerank(ctx context.Context, call connection.Call, request *RerankRequest) (*RerankResult, error)
+}
+
 // Profiler carries out llm.profile for the model of the row of the call.
 type Profiler interface {
 	GetProfile(ctx context.Context, call connection.Call) (*Profile, error)
@@ -47,6 +52,7 @@ type Roles struct {
 	Completer Completer
 	Chatter   Chatter
 	Embedder  Embedder
+	Reranker  Reranker
 	Profiler  Profiler
 	Models    ModelLister
 	Reasoning ReasoningLister
@@ -65,6 +71,11 @@ func Provide(provider connection.Provider, roles Roles) connection.Provider {
 	if roles.Embedder != nil {
 		provider[OperationEmbed] = serveOnce(func(ctx context.Context, call connection.Call, request *EmbedRequest) (proto.Message, error) {
 			return roles.Embedder.Embed(ctx, call, request)
+		})
+	}
+	if roles.Reranker != nil {
+		provider[OperationRerank] = serveOnce(func(ctx context.Context, call connection.Call, request *RerankRequest) (proto.Message, error) {
+			return roles.Reranker.Rerank(ctx, call, request)
 		})
 	}
 	if roles.Profiler != nil {

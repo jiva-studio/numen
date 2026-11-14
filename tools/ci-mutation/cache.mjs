@@ -5,19 +5,20 @@
  *   node cache.mjs <target> <dir>
  *
  * Every shard reads the target's cache from `.mutation/cache/` and
- * writes it back with its own results. `<dir>` holds one folder per shard,
- * `cache-<shard name>`, with the file that shard wrote. Each file or package
- * is taken from the shard that holds it under the current count, and from the
- * previous cache when that shard left nothing.
+ * writes it back with its own results. `<dir>` holds the file each shard
+ * wrote, named by the shard: `<shard name>.gomutants.json` or
+ * `<shard name>.stryker.json`. Each file or package is taken from the shard
+ * that holds it under the current count, and from the previous cache when that
+ * shard left nothing.
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { listShards } from './shards.mjs'
 import { OUTPUT, getShardOf, getTarget, root } from './targets.mjs'
 
-/** The name of a target's cache file, as each tool writes it. */
-export const getCacheFile = (target) =>
-  `${target.name}.${target.kind === 'go' ? 'gomutants' : 'stryker'}.json`
+/** The name of a target's cache file, as each tool writes it, or of a shard's copy of it. */
+export const getCacheFile = (target, name = target.name) =>
+  `${name}.${target.kind === 'go' ? 'gomutants' : 'stryker'}.json`
 
 /* ---------------------------------- Go ------------------------------------ */
 
@@ -143,17 +144,16 @@ const readSource = (file) => {
   return existsSync(path) ? readFileSync(path, 'utf8') : undefined
 }
 
-const main = () => {
-  const [name, dir] = process.argv.slice(2)
-  if (!name || !dir) throw new Error('usage: cache.mjs <target> <dir>')
-  const target = getTarget(name)
-  const file = getCacheFile(target)
-  const path = join(root, OUTPUT, 'cache', file)
+/**
+ * Merges the shard caches in `dir` over the cache at `path` and writes the
+ * result to `path`.
+ */
+export const writeMergedCache = (target, dir, path) => {
   const previous = readJson(path)
   const outputs = listShards(target.name)
     .map((shard) => ({
       index: Number(shard.shard.split('/')[0]),
-      data: readJson(join(dir, `cache-${shard.name}`, file)),
+      data: readJson(join(dir, getCacheFile(target, shard.name))),
     }))
     .filter((one) => one.data !== null)
   const merged =
@@ -172,7 +172,17 @@ const main = () => {
   console.log(
     `${target.name}: ${outputs.length} of ${target.shards} shard caches merged${previous ? ' over the previous cache' : ''}`,
   )
-  if (merged) writeFileSync(path, JSON.stringify(merged))
+  if (merged) {
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, JSON.stringify(merged))
+  }
+}
+
+const main = () => {
+  const [name, dir] = process.argv.slice(2)
+  if (!name || !dir) throw new Error('usage: cache.mjs <target> <dir>')
+  const target = getTarget(name)
+  writeMergedCache(target, dir, join(root, OUTPUT, 'cache', getCacheFile(target)))
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) main()

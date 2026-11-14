@@ -1,9 +1,9 @@
 {
   "id": "md.numen.connections.llm",
   "name": "Language model services",
-  "version": "2026.11.1",
+  "version": "2026.11.2",
   "protocol": 1,
-  "description": "Connects Numen to OpenRouter, OpenAI and OpenAI-compatible servers for completions, chat and embeddings",
+  "description": "Connects Numen to OpenRouter, OpenAI and OpenAI-compatible servers for completions, chat, embeddings and reranking",
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": {
     "category": "connections",
@@ -11,6 +11,7 @@
       { "name": "llm.complete", "title": "complete text" },
       { "name": "llm.chat", "title": "chat" },
       { "name": "llm.embed", "title": "embed text" },
+      { "name": "llm.rerank", "title": "rerank texts" },
       { "name": "llm.profile", "title": "describe a model" },
       { "name": "llm.models", "title": "list models" },
       { "name": "llm.reasoning", "title": "list reasoning levels" }
@@ -24,6 +25,7 @@
           "llm.complete",
           "llm.chat",
           "llm.embed",
+          "llm.rerank",
           "llm.profile",
           "llm.models",
           "llm.reasoning"
@@ -118,6 +120,7 @@
           "llm.complete",
           "llm.chat",
           "llm.embed",
+          "llm.rerank",
           "llm.profile",
           "llm.models",
           "llm.reasoning"
