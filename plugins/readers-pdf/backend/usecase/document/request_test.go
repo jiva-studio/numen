@@ -13,6 +13,13 @@ func TestParsePageRequestReadsAGoodRequest(t *testing.T) {
 	if want := (PageRequest{Index: 3, Path: "books/a.pdf", PixelWidth: 640}); got != want {
 		t.Errorf("request %v, want %v", got, want)
 	}
+	zeroPage, err := ParsePageRequest("0", "books/a.pdf", "1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (PageRequest{Index: 0, Path: "books/a.pdf", PixelWidth: 1}); zeroPage != want {
+		t.Errorf("request %v, want %v", zeroPage, want)
+	}
 }
 
 func TestParsePageRequestRefusesWhatNamesNoPage(t *testing.T) {
