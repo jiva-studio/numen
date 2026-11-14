@@ -1,9 +1,10 @@
 /** The plugins that run, in the windows' terms. */
-import { afterEach, describe, expect, it } from 'vitest'
-import { HealthSeverity } from '@numen/protocol'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { create } from '@bufbuild/protobuf'
+import { HealthSeverity, WatchPluginProcessesResponseSchema } from '@numen/protocol'
 import { pluginService } from '../clients'
 import { installCoreAnswers } from '../testing'
-import { createProcessClient } from './processes'
+import { createProcessClient, type ProcessRpc } from './processes'
 
 const processes = createProcessClient(pluginService)
 
@@ -94,5 +95,17 @@ describe('the plugins that run', () => {
         ],
       },
     ])
+  })
+
+  it('forwards the abort signal to watchPluginProcesses', async () => {
+    const watchPluginProcesses = vi.fn(async function* () {
+      yield create(WatchPluginProcessesResponseSchema, {})
+    })
+    const rpc: ProcessRpc = { watchPluginProcesses }
+    const signal = new AbortController().signal
+
+    await readFirst(createProcessClient(rpc).watchProcesses(signal))
+
+    expect(watchPluginProcesses).toHaveBeenCalledWith({}, { signal })
   })
 })
