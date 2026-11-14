@@ -7,7 +7,7 @@ import {
   type CatalogEntry,
   type CatalogStateValue,
 } from '@numen/core-client'
-import { pluginCatalog } from '@/shared/api/clients'
+import type { WindowClients } from '@/shared/api/clients'
 import type { PluginStanding, TabKindPlugin } from '../lib/unavailableView'
 
 const standings: Record<CatalogStateValue, PluginStanding> = {
@@ -29,8 +29,13 @@ const mapPlugin = (entry: CatalogEntry, kind: string): TabKindPlugin => ({
   kindTitle: entry.contributes?.tabKinds.find((one) => one.kind === kind)?.title ?? '',
 })
 
-/** The plugin the catalog names for a kind of tab, or null where it names none or cannot be read. */
-export const findTabKindPlugin = async (kind: string): Promise<TabKindPlugin | null> => {
-  const answer = await pluginCatalog.findByTabKind(kind)
-  return answer.ok ? mapPlugin(answer.value.entry, kind) : null
-}
+/**
+ * Finds through `pluginCatalog` the plugin the catalog names for a kind of tab, or null where it
+ * names none or cannot be read.
+ */
+export const createTabKindPluginFinder =
+  (pluginCatalog: WindowClients['pluginCatalog']) =>
+  async (kind: string): Promise<TabKindPlugin | null> => {
+    const answer = await pluginCatalog.findByTabKind(kind)
+    return answer.ok ? mapPlugin(answer.value.entry, kind) : null
+  }

@@ -46,7 +46,7 @@ describe('a command a plugin registers', () => {
     const handler = vi.fn()
     host.lifecycle
       .createContext('md.example.files', declaring('md.example.files'))
-      .register.command({ id: 'tree.open', handler })
+      .plugin.register.command({ id: 'tree.open', handler })
 
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.example.files:tree.open',
@@ -60,7 +60,7 @@ describe('a command a plugin registers', () => {
     const host = createPluginHost(createDeps(declare('md.example.files', 'tree.open')))
     host.lifecycle
       .createContext('md.example.files', declaring('md.example.files'))
-      .register.command({ id: 'tree.open', handler: vi.fn() })
+      .plugin.register.command({ id: 'tree.open', handler: vi.fn() })
 
     expect(host.commands.hasCommand('tree.open')).toBe(false)
     expect(host.commands.hasCommand('plugin:tree.open')).toBe(false)
@@ -75,10 +75,10 @@ describe('a command a plugin registers', () => {
     const second = vi.fn()
     host.lifecycle
       .createContext('md.example.one', declaring('md.example.one'))
-      .register.command({ id: 'note.open', handler: first })
+      .plugin.register.command({ id: 'note.open', handler: first })
     host.lifecycle
       .createContext('md.example.two', declaring('md.example.two'))
-      .register.command({ id: 'note.open', handler: second })
+      .plugin.register.command({ id: 'note.open', handler: second })
 
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.example.one:note.open',
@@ -93,9 +93,9 @@ describe('a command a plugin registers', () => {
     const host = createPluginHost(createDeps())
     const context = host.lifecycle.createContext('md.example.one', declaring('md.example.one'))
     const first = vi.fn()
-    context.register.command({ id: 'note.open', handler: first })
+    context.plugin.register.command({ id: 'note.open', handler: first })
 
-    expect(() => context.register.command({ id: 'note.open', handler: vi.fn() })).toThrow(
+    expect(() => context.plugin.register.command({ id: 'note.open', handler: vi.fn() })).toThrow(
       'md.example.one:note.open',
     )
     expect(host.registered.getRegisteredCommands().map((one) => one.handler)).toStrictEqual([first])
@@ -105,13 +105,13 @@ describe('a command a plugin registers', () => {
     const host = createPluginHost(createDeps())
     host.lifecycle
       .createContext('md.example.one', declaring('md.example.one'))
-      .register.command({ id: 'note.open', handler: vi.fn() })
+      .plugin.register.command({ id: 'note.open', handler: vi.fn() })
     host.lifecycle.disposePlugin('md.example.one')
     const again = vi.fn()
 
     host.lifecycle
       .createContext('md.example.one', declaring('md.example.one'))
-      .register.command({ id: 'note.open', handler: again })
+      .plugin.register.command({ id: 'note.open', handler: again })
 
     expect(host.registered.getRegisteredCommands().map((one) => one.handler)).toStrictEqual([again])
   })

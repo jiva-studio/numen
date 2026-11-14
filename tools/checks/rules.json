@@ -741,7 +741,7 @@
         "structure",
         "go",
         "core",
-        "fast"
+        "slow"
       ],
       "selftest": "structure/go/ports-referenced/check_test.go",
       "runner": "go",

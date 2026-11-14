@@ -4,6 +4,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -112,7 +113,7 @@ func GetConnectionCalls(c Config) connectionport.ModelCalls {
 	return openModelCalls(plugins(c))
 }
 
-func openRowLists(c pluginsWiring) connectionport.RowLists {
+func openRowLists(c pluginsWiring) connectioncall.Rows {
 	deps, ok := openConnectionDeps(c)
 	if !ok {
 		return nil
@@ -127,7 +128,7 @@ func openRowLists(c pluginsWiring) connectionport.RowLists {
 
 // GetConnectionRows is the listing of the rows plugin views offer a choice of, for a window that serves
 // ConnectionCallService without the routes of the editor. It is nil where the installation runs no plugins.
-func GetConnectionRows(c Config) connectionport.RowLists {
+func GetConnectionRows(c Config) connectioncall.Rows {
 	return openRowLists(plugins(c))
 }
 

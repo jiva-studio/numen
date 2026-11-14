@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginContext } from './context'
+import { createPluginParts } from './context'
 import type { PluginContextHost } from './types'
 import { createTestContextHost } from '../testing/contextHost'
 import { STUB_COMPONENT } from '../testing/stubComponent'
@@ -79,7 +79,7 @@ describe('PluginContext', () => {
 
   it('tracks subscriptions and delegates registrations to host', async () => {
     const { host } = createMockHost()
-    const ctx = createPluginContext(
+    const ctx = createPluginParts(
       'test.plugin',
       host,
       createMockManifest('test.plugin', {
@@ -92,175 +92,175 @@ describe('PluginContext', () => {
       }),
     )
 
-    expect(ctx.plugin.id).toBe('test.plugin')
-    expect(ctx.plugin.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.identity.id).toBe('test.plugin')
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(0)
 
-    const sub1 = ctx.register.reader({
+    const sub1 = ctx.plugin.register.reader({
       id: 'pdf',
       component: STUB_COMPONENT,
     })
-    expect(ctx.plugin.subscriptions).toHaveLength(1)
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(1)
     expect(host.registration.registerReader).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ id: 'pdf' }),
     )
 
-    const sub2 = ctx.register.command({
+    const sub2 = ctx.plugin.register.command({
       id: 'cmd1',
       handler: vi.fn(() => Promise.resolve()),
     })
-    expect(ctx.plugin.subscriptions).toHaveLength(2)
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(2)
     expect(host.registration.registerCommand).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ id: 'cmd1' }),
     )
 
-    const sub3 = ctx.register.tabKind({
+    const sub3 = ctx.plugin.register.tabKind({
       kind: 'custom-tab',
       component: STUB_COMPONENT,
     })
-    expect(ctx.plugin.subscriptions).toHaveLength(3)
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(3)
     expect(host.registration.registerTabKind).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ kind: 'custom-tab' }),
     )
 
-    expect(ctx.settings.get('enabled')).toBe(true)
+    expect(ctx.plugin.settings.get('enabled')).toBe(true)
     expect(host.settings.getSetting).toHaveBeenCalledWith('test.plugin', 'enabled')
 
-    const sub4 = ctx.settings.onChange('enabled', vi.fn())
-    expect(ctx.plugin.subscriptions).toHaveLength(4)
+    const sub4 = ctx.plugin.settings.onChange('enabled', vi.fn())
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(4)
     expect(host.settings.onSettingChange).toHaveBeenCalledWith(
       'test.plugin',
       'enabled',
       expect.any(Function),
     )
 
-    const sub5 = ctx.events.onVaultChange(vi.fn())
-    expect(ctx.plugin.subscriptions).toHaveLength(5)
+    const sub5 = ctx.host.events.onVaultChange(vi.fn())
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(5)
 
-    const sub6 = ctx.events.onFileSelect(vi.fn())
-    expect(ctx.plugin.subscriptions).toHaveLength(6)
+    const sub6 = ctx.host.events.onFileSelect(vi.fn())
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(6)
 
-    ctx.events.emitVaultChange({ vaultPath: '/path' })
+    ctx.host.events.emitVaultChange({ vaultPath: '/path' })
     expect(host.events.emitVaultChange).toHaveBeenCalledWith('test.plugin', { vaultPath: '/path' })
 
-    ctx.events.emitFileSelect({ path: '/file.md' })
+    ctx.host.events.emitFileSelect({ path: '/file.md' })
     expect(host.events.emitFileSelect).toHaveBeenCalledWith('test.plugin', { path: '/file.md' })
 
-    const openedTab = await ctx.tabs.open?.('url', 'https://example.com')
+    const openedTab = await ctx.host.tabs.open?.('url', 'https://example.com')
     expect(openedTab).toBe('opened-tab-id')
     expect(host.tabs.openTab).toHaveBeenCalledWith('url', 'https://example.com')
 
-    expect(ctx.tabs.navigate?.('url', 'https://example.com')).toBeUndefined()
-    expect(() => ctx.tabs.close?.('tab-1')).not.toThrow()
+    expect(ctx.host.tabs.navigate?.('url', 'https://example.com')).toBeUndefined()
+    expect(() => ctx.host.tabs.close?.('tab-1')).not.toThrow()
 
     const navigateTab = vi.fn(async () => 'tab-new')
     const closeTab = vi.fn()
-    const hostWithTabs = createPluginContext(
+    const hostWithTabs = createPluginParts(
       'tabs.plugin',
       createTestContextHost({ tabs: { navigateTab, closeTab } }),
       { permissions: ['vault:read', 'vault:write'] },
     )
-    await expect(hostWithTabs.tabs.navigate?.('note', 'a.md')).resolves.toBe('tab-new')
+    await expect(hostWithTabs.host.tabs.navigate?.('note', 'a.md')).resolves.toBe('tab-new')
     expect(navigateTab).toHaveBeenCalledWith('note', 'a.md')
-    hostWithTabs.tabs.close?.('tab-9')
+    hostWithTabs.host.tabs.close?.('tab-9')
     expect(closeTab).toHaveBeenCalledWith('tab-9')
 
-    const ctxWithoutOpen = createPluginContext('noopen.plugin', createTestContextHost(), {
+    const ctxWithoutOpen = createPluginParts('noopen.plugin', createTestContextHost(), {
       permissions: ['vault:read'],
     })
-    expect(ctxWithoutOpen.tabs.open?.('note', 'a.md')).toBeUndefined()
+    expect(ctxWithoutOpen.host.tabs.open?.('note', 'a.md')).toBeUndefined()
 
     const mountedEl = document.createElement('div')
-    const mounted = ctx.ui.mountView('note-editor', mountedEl, { path: 'a.md' })
+    const mounted = ctx.host.ui.mountView('note-editor', mountedEl, { path: 'a.md' })
     mounted.focus()
     const mountResult = vi.mocked(host.views.mountView).mock.results[0]?.value
     expect(mountResult.focus).toHaveBeenCalledTimes(1)
     mounted.dispose()
 
-    expect(ctx.plugin.hasPermission?.('vault:read')).toBe(true)
-    expect(ctx.plugin.hasPermission?.('unknown:perm')).toBe(false)
+    expect(ctx.plugin.identity.hasPermission?.('vault:read')).toBe(true)
+    expect(ctx.plugin.identity.hasPermission?.('unknown:perm')).toBe(false)
 
     // Calling dispose twice on sub1 must not splice another subscription
     sub1.dispose()
-    expect(ctx.plugin.subscriptions).toHaveLength(5)
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(5)
     sub1.dispose()
-    expect(ctx.plugin.subscriptions).toHaveLength(5)
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(5)
     sub2.dispose()
     sub3.dispose()
     sub4.dispose()
     sub5.dispose()
     sub6.dispose()
-    expect(ctx.plugin.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(0)
   })
 
   it('enforces vault:read permission for onVaultChange and onFileSelect, and vault:write for emitFileSelect', () => {
     const { host } = createMockHost()
-    const ctxNoPerms = createPluginContext('restricted.plugin', host, {
+    const ctxNoPerms = createPluginParts('restricted.plugin', host, {
       id: 'restricted.plugin',
       name: 'Restricted',
       version: '1.0.0',
       permissions: [],
     })
 
-    expect(() => ctxNoPerms.events.onVaultChange(vi.fn())).toThrowError(
+    expect(() => ctxNoPerms.host.events.onVaultChange(vi.fn())).toThrowError(
       'Plugin "restricted.plugin" lacks required permission "vault:read" for onVaultChange',
     )
-    expect(() => ctxNoPerms.events.onFileSelect(vi.fn())).toThrowError(
+    expect(() => ctxNoPerms.host.events.onFileSelect(vi.fn())).toThrowError(
       'Plugin "restricted.plugin" lacks required permission "vault:read" for onFileSelect',
     )
-    expect(() => ctxNoPerms.events.emitFileSelect({ path: '/test.md' })).toThrowError(
+    expect(() => ctxNoPerms.host.events.emitFileSelect({ path: '/test.md' })).toThrowError(
       'Plugin "restricted.plugin" lacks required permission "vault:write" for emitFileSelect',
     )
 
-    const ctxUndefinedManifest = createPluginContext('no.manifest', host)
-    expect(ctxUndefinedManifest.plugin.hasPermission?.('vault:read')).toBe(false)
-    expect(() => ctxUndefinedManifest.events.onVaultChange(vi.fn())).toThrowError(
+    const ctxUndefinedManifest = createPluginParts('no.manifest', host)
+    expect(ctxUndefinedManifest.plugin.identity.hasPermission?.('vault:read')).toBe(false)
+    expect(() => ctxUndefinedManifest.host.events.onVaultChange(vi.fn())).toThrowError(
       'Plugin "no.manifest" lacks required permission "vault:read" for onVaultChange',
     )
 
-    const ctxEmptyManifest = createPluginContext('empty.manifest', host, {})
-    expect(ctxEmptyManifest.plugin.hasPermission?.('vault:read')).toBe(false)
-    expect(() => ctxEmptyManifest.events.onVaultChange(vi.fn())).toThrowError(
+    const ctxEmptyManifest = createPluginParts('empty.manifest', host, {})
+    expect(ctxEmptyManifest.plugin.identity.hasPermission?.('vault:read')).toBe(false)
+    expect(() => ctxEmptyManifest.host.events.onVaultChange(vi.fn())).toThrowError(
       'Plugin "empty.manifest" lacks required permission "vault:read" for onVaultChange',
     )
 
-    const ctxWithRead = createPluginContext('reader.plugin', host, {
+    const ctxWithRead = createPluginParts('reader.plugin', host, {
       id: 'reader.plugin',
       name: 'Reader',
       version: '1.0.0',
       permissions: ['vault:read'],
     })
 
-    expect(() => ctxWithRead.events.onVaultChange(vi.fn())).not.toThrow()
-    expect(() => ctxWithRead.events.onFileSelect(vi.fn())).not.toThrow()
-    expect(() => ctxWithRead.events.emitFileSelect({ path: '/test.md' })).toThrowError(
+    expect(() => ctxWithRead.host.events.onVaultChange(vi.fn())).not.toThrow()
+    expect(() => ctxWithRead.host.events.onFileSelect(vi.fn())).not.toThrow()
+    expect(() => ctxWithRead.host.events.emitFileSelect({ path: '/test.md' })).toThrowError(
       'Plugin "reader.plugin" lacks required permission "vault:write" for emitFileSelect',
     )
   })
 
   it('enforces vault:write permission for emitVaultChange', () => {
     const { host } = createMockHost()
-    const ctxReadOnly = createPluginContext('readonly.plugin', host, {
+    const ctxReadOnly = createPluginParts('readonly.plugin', host, {
       id: 'readonly.plugin',
       name: 'Read Only',
       version: '1.0.0',
       permissions: ['vault:read'],
     })
 
-    expect(() => ctxReadOnly.events.emitVaultChange({ vaultPath: '/test' })).toThrowError(
+    expect(() => ctxReadOnly.host.events.emitVaultChange({ vaultPath: '/test' })).toThrowError(
       'Plugin "readonly.plugin" lacks required permission "vault:write" for emitVaultChange',
     )
 
-    const ctxWrite = createPluginContext('writer.plugin', host, {
+    const ctxWrite = createPluginParts('writer.plugin', host, {
       id: 'writer.plugin',
       name: 'Writer',
       version: '1.0.0',
       permissions: ['vault:write'],
     })
 
-    expect(() => ctxWrite.events.emitVaultChange({ vaultPath: '/test' })).not.toThrow()
+    expect(() => ctxWrite.host.events.emitVaultChange({ vaultPath: '/test' })).not.toThrow()
     expect(host.events.emitVaultChange).toHaveBeenCalledWith('writer.plugin', {
       vaultPath: '/test',
     })
@@ -268,16 +268,16 @@ describe('PluginContext', () => {
 
   it('registers a view in the slot its manifest places the id in', () => {
     const { host } = createMockHost()
-    const ctx = createPluginContext('org.example.orchard', host, {
+    const ctx = createPluginParts('org.example.orchard', host, {
       id: 'org.example.orchard',
       name: 'Orchard',
       version: '1.0.0',
       contributes: { slots: [{ slot: 'titleBar', placed: { case: 'view', value: 'bar' } }] },
-    } as unknown as Parameters<typeof createPluginContext>[2])
+    } as unknown as Parameters<typeof createPluginParts>[2])
 
-    ctx.register.slotView({ id: 'bar', component: STUB_COMPONENT })
+    ctx.plugin.register.slotView({ id: 'bar', component: STUB_COMPONENT })
 
-    expect(ctx.plugin.subscriptions).toHaveLength(1)
+    expect(ctx.plugin.identity.subscriptions).toHaveLength(1)
     expect(host.views.registerSlotView).toHaveBeenCalledWith(
       'org.example.orchard',
       'titleBar',
@@ -287,9 +287,9 @@ describe('PluginContext', () => {
 
   it('rejects a view its manifest places nowhere', () => {
     const { host } = createMockHost()
-    const ctx = createPluginContext('org.example.orchard', host)
+    const ctx = createPluginParts('org.example.orchard', host)
 
-    expect(() => ctx.register.slotView({ id: 'bar', component: STUB_COMPONENT })).toThrow(
+    expect(() => ctx.plugin.register.slotView({ id: 'bar', component: STUB_COMPONENT })).toThrow(
       /places nowhere/,
     )
     expect(host.views.registerSlotView).not.toHaveBeenCalled()
@@ -298,7 +298,7 @@ describe('PluginContext', () => {
   it('reports the application build the host runs', () => {
     const { host } = createMockHost()
 
-    expect(createPluginContext('test.plugin', host).plugin.app).toEqual({
+    expect(createPluginParts('test.plugin', host).plugin.identity.app).toEqual({
       name: 'numen',
       version: '2026.10.1',
       build: 884,
@@ -308,14 +308,17 @@ describe('PluginContext', () => {
 
   it('opens a web address through the host and refuses any other', async () => {
     const { host } = createMockHost()
-    const ctx = createPluginContext(
+    const ctx = createPluginParts(
       'test.plugin',
       host,
       createMockManifest('test.plugin', { permissions: ['link:open'] }),
     )
 
-    expect(await ctx.plugin.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
-    expect((await ctx.plugin.openExternal('file:///etc/passwd')).ok).toBe(false)
+    expect(await ctx.plugin.identity.openExternal('https://numen.md/')).toEqual({
+      ok: true,
+      value: null,
+    })
+    expect((await ctx.plugin.identity.openExternal('file:///etc/passwd')).ok).toBe(false)
     expect(host.info.openExternal).toHaveBeenCalledTimes(1)
     expect(host.info.openExternal).toHaveBeenCalledWith('https://numen.md/')
   })

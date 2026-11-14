@@ -3,8 +3,7 @@
  * plugin here is invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { PluginContext } from '@numen/plugin-sdk'
-import type { LoaderHost } from './host'
+import type { LoaderHost, PluginParts } from './host'
 import { createPluginLoader } from './loader'
 
 const ORCHARD = 'org.example.orchard'
@@ -37,7 +36,8 @@ interface LoaderOptions {
 
 const createLoader = (activations: Record<string, number> = {}, options: LoaderOptions = {}) => {
   const host = {
-    createContext: (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+    createContext: (pluginId: string) =>
+      ({ plugin: { identity: { id: pluginId } }, host: {} }) as unknown as PluginParts,
     disposePlugin: vi.fn<(pluginId: string) => void>(),
     disposeAll: vi.fn(),
     getSetting: <T>(pluginId: string, key: string) =>
