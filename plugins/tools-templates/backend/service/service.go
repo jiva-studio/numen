@@ -23,7 +23,7 @@ const defaultFolder = "Templates"
 
 func normalizeFolder(raw string) string {
 	var kept []string
-	for _, segment := range strings.Split(strings.ReplaceAll(strings.TrimSpace(raw), `\`, "/"), "/") {
+	for _, segment := range strings.SplitSeq(strings.ReplaceAll(strings.TrimSpace(raw), `\`, "/"), "/") {
 		switch segment {
 		case "", ".":
 		case "..":
