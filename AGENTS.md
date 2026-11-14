@@ -91,7 +91,7 @@ type Spec struct {
 - `//numen:api`: a type of the plugin SDK; plugin authors read the field comments in the SDK documentation.
 - `//numen:settings`: a settings type; `apps/docs/tools/manual.mjs` writes the field comments into the settings reference and refuses a settings type without the marker.
 
-`tools/checks/style/comments/check.mjs` rejects the rest in Go, TypeScript and Vue: on staged files in the pre-commit hook, on every file in CI (`make lint_comments`). `--fix` removes the reported comments.
+`tools/checks/style/comments/check.mjs` rejects the rest in Go, TypeScript and Vue: on every file in CI (`make lint_comments`). `--fix` removes the reported comments.
 
 ---
 

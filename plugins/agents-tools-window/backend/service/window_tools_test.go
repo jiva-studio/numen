@@ -6,15 +6,13 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/preview"
 )
 
 // The invented vault: a note, a bird guide, a book and a recorded talk.
@@ -41,14 +39,13 @@ func newWindowTools(t *testing.T) windowTools {
 	vault.File(talkPath, "ID3\x00\x03audio")
 
 	window := hosttest.NewWindow(vault)
-	return windowTools{window: window, registry: newRegistry(t, service.Host{Vault: vault, Window: window})}
+	return windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: window})}
 }
 
 func newRegistry(t *testing.T, on service.Host) *tools.Registry {
 	t.Helper()
 	registry := tools.New()
-	manager := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
-	if err := service.RegisterTools(registry, manager, on); err != nil {
+	if err := service.RegisterTools(registry, on); err != nil {
 		t.Fatal(err)
 	}
 	return registry
@@ -368,8 +365,6 @@ func TestWindowTabListPrefersWindowTabsToTheCallFocus(t *testing.T) {
 	}
 }
 
-func newFakeClock(start time.Time) *clock.Fake {
-	source := new(clock.Fake)
-	source.Set(start)
-	return source
+func filesOf(vault *hosttest.Vault) func(domain.VaultID) host.FileReader {
+	return func(id domain.VaultID) host.FileReader { return vault.With(id) }
 }

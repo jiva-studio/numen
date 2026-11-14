@@ -18,11 +18,8 @@ export const measureWindow = (): { width: number; height: number } =>
     ? { width: globalThis.window.innerWidth, height: globalThis.window.innerHeight }
     : { width: 800, height: 600 }
 
-/** The one name of the measurement, which the port alone is allowed to call. */
-const RECT_METHOD = 'getBoundingClientRect'
-
 export function measureElementRect(element: Element): DOMRect {
-  return element[RECT_METHOD]()
+  return element.getBoundingClientRect()
 }
 
 export function measureRect(el: Element): DOMRect

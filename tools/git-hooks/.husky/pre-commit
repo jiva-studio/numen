@@ -1,21 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-# Fast architectural gate and staged module checks before a commit is created.
-# Set NUMEN_SKIP_CHECKS=1 to commit without them.
+# Cheap formatting gate before a commit is created. The architecture and quality checks run in CI.
+# Set NUMEN_SKIP_CHECKS=1 to commit without it.
 [ -n "$NUMEN_SKIP_CHECKS" ] && exit 0
 
-root=$(git rev-parse --show-toplevel)
-
-# 1. Staged files check
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
-
-if [ -z "$STAGED_FILES" ]; then
-  exit 0
-fi
-
-# 2. Formatting validation (gofmt for staged Go files)
-GO_FILES=$(echo "$STAGED_FILES" | grep '\.go$' || true)
+GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
 if [ -n "$GO_FILES" ]; then
   UNFORMATTED=$(gofmt -l $GO_FILES || true)
   if [ -n "$UNFORMATTED" ]; then
@@ -24,43 +14,4 @@ if [ -n "$GO_FILES" ]; then
     echo "Please format them with 'gofmt -w <file>' and stage again."
     exit 1
   fi
-fi
-
-# 3. Fast architecture & boundary gates
-"$root/libs/core/kernel/adapter/index/migration-forward-only.sh" --self-test || exit 1
-
-PRETTIER_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|vue|json|css)$' || true)
-if [ -n "$PRETTIER_FILES" ]; then
-  npx prettier --check $PRETTIER_FILES || exit 1
-fi
-
-
-# 4. ESLint conventions and Vue thin-computed gate on staged TS/Vue files
-FRONTEND_STAGED=$(echo "$STAGED_FILES" | grep -E '\.(ts|vue)$' || true)
-if [ -n "$FRONTEND_STAGED" ] && [ -x "$root/node_modules/.bin/eslint" ]; then
-  # every package with an ESLint config: a library, an application or a plugin that is added is checked as it is
-  ESLINT_PKGS=$(cd "$root" && for dir in libs/*/ libs/core/*/ libs/plugin/*/ libs/ui/*/ apps/*/ apps/desktop/*/ plugins/*/; do dir=${dir%/}; ls "$dir"/eslint.config.* >/dev/null 2>&1 && echo "$dir"; done)
-  for pkg in $ESLINT_PKGS; do
-    PKG_FILES=$(echo "$FRONTEND_STAGED" | grep "^${pkg}/" | sed "s|^${pkg}/||" || true)
-    if [ -n "$PKG_FILES" ] && [ -d "$root/$pkg" ]; then
-      (cd "$root/$pkg" && "$root/node_modules/.bin/eslint" $PKG_FILES) || {
-        echo "❌ Error: staged files in $pkg failed ESLint checks (e.g. numen/thin-computed, component structure, or naming rules)."
-        exit 1
-      }
-    fi
-  done
-fi
-
-# 5. Comments on fields and properties and doc comments on unexported functions in staged files
-if ! COMMENTS_REPORT=$(node "$root/tools/checks/style/comments/check.mjs" --staged 2>&1); then
-  echo "$COMMENTS_REPORT"
-  echo "❌ Error: staged files contain comments that the name and type already state (see AGENTS.md §1)."
-  exit 1
-fi
-
-# 6. Narrative identifiers, test names and comments in staged files
-if ! NARRATIVE_REPORT=$(node "$root/tools/checks/style/names/check.mjs" "$root" --staged --check 2>&1); then
-  echo "$NARRATIVE_REPORT"
-  echo "❌ Error: staged files contain narrative identifiers, test names or comments (see AGENTS.md §13)."
-  exit 1
 fi

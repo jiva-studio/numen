@@ -5,19 +5,17 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/preview"
 )
 
 func TestRegisterTools(t *testing.T) {
-	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, Host{}); err != nil {
+	if err := RegisterTools(registry, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -37,15 +35,14 @@ func TestRegisterTools(t *testing.T) {
 	}
 
 	// Registering duplicate tools returns an error.
-	if err := RegisterTools(registry, mgr, Host{}); err == nil {
+	if err := RegisterTools(registry, Host{}); err == nil {
 		t.Errorf("expected error when registering duplicate tools")
 	}
 }
 
 func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
-	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, Host{}); err != nil {
+	if err := RegisterTools(registry, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -78,9 +75,8 @@ func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
 }
 
 func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
-	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, Host{}); err != nil {
+	if err := RegisterTools(registry, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -121,7 +117,6 @@ func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
 }
 
 func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
-	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	vault := hosttest.New("test-vault")
 	ctx := t.Context()
 	if err := vault.Create(ctx, "notes/sample.md", []byte("hello world\nline 2\n")); err != nil {
@@ -129,7 +124,7 @@ func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 	}
 
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, Host{Vault: vault}); err != nil {
+	if err := RegisterTools(registry, Host{Files: filesOf(vault)}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -159,20 +154,11 @@ func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 	if output.Additions != 2 || output.Deletions != 1 {
 		t.Errorf("got +%d, -%d; want +2, -1 (diff: %s)", output.Additions, output.Deletions, output.Diff)
 	}
-	if output.PreviewID == "" {
-		t.Error("expected non-empty preview ID")
-	}
-
-	saved, ok := mgr.Get(output.PreviewID)
-	if !ok || saved.Path != "notes/sample.md" {
-		t.Errorf("preview not found in store: %+v", saved)
-	}
 }
 
 func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
-	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, Host{}); err != nil {
+	if err := RegisterTools(registry, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -206,7 +192,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 		t.Fatalf("create vault file: %v", err)
 	}
 	registryWithVault := tools.New()
-	if err := RegisterTools(registryWithVault, mgr, Host{Vault: vault}); err != nil {
+	if err := RegisterTools(registryWithVault, Host{Files: filesOf(vault)}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 	respOverride, err := registryWithVault.InvokeTool(t.Context(), tools.Call{
@@ -247,9 +233,8 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 }
 
 func TestNoteEditPreviewRejectsMissingArguments(t *testing.T) {
-	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, Host{}); err != nil {
+	if err := RegisterTools(registry, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -289,8 +274,6 @@ func marshalJSON(t *testing.T, value any) []byte {
 	return encoded
 }
 
-func newFakeClock(start time.Time) *clock.Fake {
-	source := new(clock.Fake)
-	source.Set(start)
-	return source
+func filesOf(vault *hosttest.Vault) func(domain.VaultID) host.FileReader {
+	return func(id domain.VaultID) host.FileReader { return vault.With(id) }
 }
