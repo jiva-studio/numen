@@ -607,7 +607,7 @@ type RelatedNote struct {
 	// Empty for an ordinary note.
 	Type string `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
 	// The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
-	// where none holds, and for a note found by depth 2.
+	// where none holds, and for a note at depth 2.
 	TabKind string `protobuf:"bytes,7,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
 	// Set for RELATION_REFERENCE only. At depth 2 it is relative to `related_to`, not to
 	// the focus.
