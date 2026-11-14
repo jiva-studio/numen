@@ -21,16 +21,6 @@ import (
 
 const defaultFolder = "Templates"
 
-// settings is the configuration the host gives the plugin.
-//
-//numen:settings
-type settings struct {
-	// folder is the vault folder that holds the templates.
-	folder string
-}
-
-// normalizeFolder reads the folder setting as a vault path: surrounding space, empty and dot segments and
-// the slashes at both ends are dropped, and a value that is empty or has a parent segment is the default.
 func normalizeFolder(raw string) string {
 	var kept []string
 	for _, segment := range strings.Split(strings.ReplaceAll(strings.TrimSpace(raw), `\`, "/"), "/") {
@@ -73,14 +63,16 @@ func makeCreateNoteHandler(useCase newnote.CreateFromTemplate) func(context.Cont
 }
 
 func mount(s *server.Server, vault newnote.Vault, source newnote.Clock, ids newnote.IDs) error {
-	var current atomic.Pointer[settings]
-	current.Store(&settings{folder: defaultFolder})
+	var folder atomic.Pointer[string]
+	initial := defaultFolder
+	folder.Store(&initial)
 	s.SetUpdateConfig(func(values map[string]string) {
 		if raw, isSet := values["folder"]; isSet {
-			current.Store(&settings{folder: normalizeFolder(raw)})
+			normalized := normalizeFolder(raw)
+			folder.Store(&normalized)
 		}
 	})
-	useCase := newnote.NewCreateFromTemplate(vault, source, ids, func() string { return current.Load().folder })
+	useCase := newnote.NewCreateFromTemplate(vault, source, ids, func() string { return *folder.Load() })
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodCreateNote, makeCreateNoteHandler(useCase))
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="api.Service and api.MethodCreateNote are valid compile-time constants."
