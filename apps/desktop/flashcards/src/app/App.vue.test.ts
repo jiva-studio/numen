@@ -16,7 +16,7 @@ import { createRoot } from './createRoot'
 import { createWindow } from './window/createWindow'
 
 const runtimeHooks = vi.hoisted(() => ({
-  loadRuntime: vi.fn<() => Promise<unknown>>(async () => undefined),
+  minimizeWindow: undefined as (() => Promise<void>) | undefined,
   startAppearance: undefined as (() => Promise<void>) | undefined,
 }))
 
@@ -24,7 +24,16 @@ vi.mock('@numen/workbench', async (importOriginal) => {
   const actual = await importOriginal<typeof Workbench>()
   return {
     ...actual,
-    loadFrameRuntime: () => runtimeHooks.loadRuntime(),
+    useWindowFrame: (
+      ...args: Parameters<typeof actual.useWindowFrame>
+    ): ReturnType<typeof actual.useWindowFrame> => {
+      const created = actual.useWindowFrame(...args)
+      return {
+        ...created,
+        minimizeWindow: () =>
+          runtimeHooks.minimizeWindow ? runtimeHooks.minimizeWindow() : created.minimizeWindow(),
+      }
+    },
     createWindowAppearance: (
       ...args: Parameters<typeof actual.createWindowAppearance>
     ): ReturnType<typeof actual.createWindowAppearance> => {
@@ -178,8 +187,7 @@ afterEach(() => {
   wire.requestedTasks.length = 0
   wire.taskSignals.length = 0
   wire.themeSignals.length = 0
-  runtimeHooks.loadRuntime.mockReset()
-  runtimeHooks.loadRuntime.mockResolvedValue(undefined)
+  runtimeHooks.minimizeWindow = undefined
   runtimeHooks.startAppearance = undefined
   vi.useRealTimers()
 })
@@ -767,13 +775,9 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('is drawn by the plugin first by id, and the other plugin is reported', async () => {
-    runtimeHooks.loadRuntime.mockResolvedValue({
-      Window: {
-        Minimise: async () => {
-          throw new Error('minimize failed')
-        },
-      },
-    })
+    runtimeHooks.minimizeWindow = async () => {
+      throw new Error('minimize failed')
+    }
     let shell: ReturnType<typeof createWindow> | undefined
     let harborHost: HostServices | undefined
     const deps = createBarDeps([
