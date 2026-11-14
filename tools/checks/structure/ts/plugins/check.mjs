@@ -156,34 +156,186 @@ const isBackendPackageImport = (value, name) =>
   value.endsWith(`/backend/${name}`) || value.includes(`/backend/${name}/`)
 
 /**
- * Finds the imports that run against the layers of a plugin backend: an inner package (below `service` and `wire`)
- * imports `service`, `engine` or `wire`; a `wire` package imports `service`, `engine` or an adapter. `wire` is the layer between
- * `service` and `api`, the domain, the use cases and the ports: the service imports it, it imports them, nothing below
- * imports it. `files` holds `{ file, imports }` with each import as `{ line, value }`.
+ * The top-level packages of a backend that are layers. Any other top-level package (`domain/...`, or one named after
+ * what it computes, such as `epub` or `diff`) is a domain package.
+ */
+export const BACKEND_LAYER_PACKAGES = [
+  'api',
+  'cmd',
+  'engine',
+  'internal',
+  'ports',
+  'service',
+  'testsupport',
+  'usecase',
+  'wire',
+]
+
+/** The folder of the adapters of a backend; the folder below it names the technology of an adapter. */
+const ADAPTER_FOLDER = 'internal/adapter/'
+
+/**
+ * The standard library packages a use case may import: they compute on values and reach no file, process or network.
+ * `crypto/rand` is there for the entropy of the identifiers a use case creates, `runtime` for the processor count a
+ * use case sizes its work by. `os`, `os/exec`, `net`, `syscall`, `path/filepath`, `io/fs` and `log` are not on the list.
+ */
+export const USECASE_STANDARD_IMPORTS = [
+  'bufio',
+  'bytes',
+  'cmp',
+  'container/list',
+  'context',
+  'crypto/rand',
+  'crypto/sha256',
+  'encoding/base64',
+  'encoding/binary',
+  'encoding/hex',
+  'encoding/json',
+  'errors',
+  'fmt',
+  'html/template',
+  'image',
+  'image/jpeg',
+  'io',
+  'iter',
+  'maps',
+  'math',
+  'net/url',
+  'path',
+  'reflect',
+  'regexp',
+  'runtime',
+  'slices',
+  'sort',
+  'strconv',
+  'strings',
+  'sync',
+  'sync/atomic',
+  'time',
+  'unicode',
+  'unicode/utf16',
+  'unicode/utf8',
+]
+
+/**
+ * The packages of the Go SDK a use case may import: the note types and the host client, the connection, tool, search
+ * source, health, command and contract clients, the cache, the clock port, the performance profile and the error codes.
+ * `server`, `hostcall`, `process`, `shared`, `wasm` and `plugintest` belong to the service, the adapters and the tests.
+ */
+export const USECASE_SDK_PACKAGES = [
+  'cache',
+  'clock',
+  'command',
+  'connection',
+  'contracts',
+  'health',
+  'host',
+  'performance',
+  'rpcerror',
+  'searchsource',
+  'tools',
+]
+
+/** Whether `value` is a standard library import: its first element names no host. */
+const isStandardImport = (value) => !value.split('/')[0].includes('.')
+
+/** Whether `value` is a module outside this repository. */
+const isThirdPartyImport = (value) => !isStandardImport(value) && !value.startsWith(GO_MODULE_ROOT)
+
+/** The path of `value` inside the backend of `plugin`, or undefined when `value` is not a package of that backend. */
+function getOwnBackendPath(value, plugin) {
+  const own = `${GO_MODULE_ROOT}plugins/${plugin}/backend/`
+  return value.startsWith(own) ? value.slice(own.length) : undefined
+}
+
+/** Whether a backend path names a domain package: `domain/...` or a top-level package that is not a layer. */
+const isDomainPath = (inner) => !BACKEND_LAYER_PACKAGES.includes(inner.split('/')[0])
+
+/** The technology folder of an adapter path (`internal/adapter/engine/onnx` gives `internal/adapter/engine/`). */
+const getAdapterTechnology = (inner) =>
+  `${ADAPTER_FOLDER}${inner.slice(ADAPTER_FOLDER.length).split('/')[0]}/`
+
+/** Whether a use case of `plugin` may import `value`: its plugin's `ports` and domain, a listed standard or SDK package, a third-party module. */
+function isAllowedUseCaseImport(value, plugin) {
+  if (USECASE_STANDARD_IMPORTS.includes(value)) return true
+  if (isThirdPartyImport(value)) return true
+  const sdk = `${GO_MODULE_ROOT}${SDK_GO_DIR}/`
+  if (value.startsWith(sdk))
+    return USECASE_SDK_PACKAGES.includes(value.slice(sdk.length).split('/')[0])
+  const inner = getOwnBackendPath(value, plugin)
+  if (inner === undefined) return false
+  return inner === 'ports' || inner.startsWith('ports/') || isDomainPath(inner)
+}
+
+/**
+ * Whether an adapter at `adapterPath` of `plugin` may import `value`: anything outside its backend; of its backend the
+ * `ports`, the domain, the use case package that declares the interface it satisfies, and the packages of its own
+ * technology folder.
+ */
+function isAllowedAdapterImport(value, plugin, adapterPath) {
+  const inner = getOwnBackendPath(value, plugin)
+  if (inner === undefined) return true
+  const top = inner.split('/')[0]
+  if (top === 'ports' || top === 'usecase' || isDomainPath(inner)) return true
+  return (inner + '/').startsWith(getAdapterTechnology(adapterPath))
+}
+
+/**
+ * Finds the imports that run against the layers of a plugin backend. Each layer has an allow list:
+ * - a use case (`backend/usecase/...`) imports its plugin's `ports` and domain packages, the standard library packages
+ *   of `USECASE_STANDARD_IMPORTS`, the SDK packages of `USECASE_SDK_PACKAGES` and third-party modules; never another use
+ *   case, `api`, `wire`, `service`, `engine` or an adapter;
+ * - an adapter (`backend/internal/adapter/<technology>/...`) imports, of its own backend, the `ports`, the domain, the
+ *   use case package that declares the interface it satisfies and the packages of its own technology folder; never
+ *   `api`, `wire`, `service`, `engine` or another technology's adapter.
+ * The other packages have a deny list: an inner package (below `service` and `wire`) imports no `service`, `engine` or
+ * `wire`; a `wire` package imports no `service`, `engine` or adapter. `wire` is the layer between `service` and `api`,
+ * the domain, the use cases and the ports: the service imports it, it imports them, nothing below imports it.
+ * `files` holds `{ file, imports }` with each import as `{ line, value }`.
  */
 export function findPluginBackendLayerInversions(files) {
   const found = []
   for (const { file, imports } of files) {
     const [root, plugin, tier, subpkg] = file.split('/')
     if (root !== 'plugins' || tier !== 'backend' || !subpkg || subpkg.endsWith('.go')) continue
+    const dir = path.posix.dirname(file.split('/').slice(3).join('/'))
+    const refuse = (line, symbol) => found.push({ file, line, symbol })
+    if (subpkg === 'usecase') {
+      for (const { line, value } of imports) {
+        if (!isAllowedUseCaseImport(value, plugin))
+          refuse(
+            line,
+            `use case ${dir} imports ${value} in plugins/${plugin}; a use case imports its plugin's ports and domain, the standard library that reaches no machine, the SDK's domain types and clients, and third-party modules`,
+          )
+      }
+      continue
+    }
+    if (dir.startsWith(ADAPTER_FOLDER)) {
+      for (const { line, value } of imports) {
+        if (!isAllowedAdapterImport(value, plugin, dir))
+          refuse(
+            line,
+            `adapter ${dir} imports ${value} in plugins/${plugin}; an adapter imports the ports, the domain and the use case it implements, and its own technology folder`,
+          )
+      }
+      continue
+    }
     const isWire = subpkg === WIRE_BACKEND_PACKAGE
     if (!isWire && NON_INNER_BACKEND_PACKAGES.includes(subpkg)) continue
     const forbidden = isWire
       ? (value) =>
           OUTER_BACKEND_PACKAGES.some((outer) => isBackendPackageImport(value, outer)) ||
-          value.includes('/backend/internal/adapter/')
+          value.includes(`/backend/${ADAPTER_FOLDER}`)
       : (value) =>
           [...OUTER_BACKEND_PACKAGES, WIRE_BACKEND_PACKAGE].some((outer) =>
             isBackendPackageImport(value, outer),
           )
     for (const { line, value } of imports) {
-      if (forbidden(value)) {
-        found.push({
-          file,
+      if (forbidden(value))
+        refuse(
           line,
-          symbol: `${isWire ? 'wire' : 'inner'} package backend/${subpkg} imports ${value} in plugins/${plugin}, against the direction service, wire, then api, domain, usecase and ports`,
-        })
-      }
+          `${isWire ? 'wire' : 'inner'} package backend/${subpkg} imports ${value} in plugins/${plugin}, against the direction service, wire, then api, domain, usecase and ports`,
+        )
     }
   }
   return found
@@ -194,8 +346,12 @@ export function verifyPluginBackendInternalLayers() {
     file,
     imports: getGoReferences(fs.readFileSync(path.join(REPO_ROOT, file), 'utf8')).imports,
   }))
+  const countFiles = (folder) =>
+    files.filter(({ file }) => file.split('/').slice(2).join('/').startsWith(folder)).length
+  requireMatches('plugin use case source files', countFiles('backend/usecase/'))
+  requireMatches('plugin adapter source files', countFiles(`backend/${ADAPTER_FOLDER}`))
   failOnFindings(
-    'Plugin backend package imports against the layers: inner package imports service, engine or wire; wire imports service, engine or an adapter',
+    'Plugin backend package imports against the layers: a use case or an adapter imports a package off its allow list; an inner package imports service, engine or wire; wire imports service, engine or an adapter',
     findPluginBackendLayerInversions(files),
   )
 }

@@ -193,7 +193,7 @@ The complete list, with the verifier of each, is in [`checks.md`](checks.md). In
 - A plugin's `go.mod` requires only the SDK modules and third-party code; its `package.json` names only `@numen/plugin-sdk` and `@numen/ui` among the packages of the repository; the import graph of every plugin, on fourteen platform targets, reaches no other plugin, no core, no application, no `libs/note` and no `libs/core/protocol`.
 - No plugin holds a `.proto` file, a `@/` or `@plugins/` import, or an import past the main entry of the SDK or the UI library.
 - The tooling configuration of a plugin is byte-identical to `plugins/.example/`.
-- Inside a Go backend an inner package does not import `service` or `engine`. Inside a frontend `lib/` imports no `ui`, `model` or `api`, no Vue and no browser global; a component stays within the size limits; no component lies in `lib`, `api` or `model`.
+- Inside a Go backend an inner package does not import `service` or `engine`; a use case imports only `ports`, the domain, the standard library that reaches no machine and the SDK's domain types and clients; an adapter imports only the ports, the domain and the use case it implements. Inside a frontend `lib/` imports no `ui`, `model` or `api`, no Vue and no browser global; a component stays within the size limits; no component lies in `lib`, `api` or `model`.
 - Functions stay within the complexity, depth, length and parameter limits; an interface has at most 5 methods; the machine clock appears only inside a method of a clock port implementation; no lint suppression comment exists.
 - The manifest passes the validator; JSON keys are camelCase; every setting a manifest declares is read by the plugin; every plugin has a README.
 

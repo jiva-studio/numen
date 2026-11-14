@@ -409,3 +409,105 @@ test('wire imports the api, domain, use cases, ports and its sibling wire packag
     [],
   )
 })
+
+const refusedImports = (file, imports) => {
+  const source = `package x\n\nimport (\n${imports.map((one) => `\t"${one}"\n`).join('')})\n`
+  return findPluginBackendLayerInversions([{ file, imports: getGoReferences(source).imports }]).map(
+    (one) => one.symbol.split(' in plugins/')[0],
+  )
+}
+
+test('a use case importing another use case, the api, os, the SDK server or an adapter is refused', () => {
+  const own = 'github.com/jiva-studio/numen/plugins/a/backend'
+  const sdk = 'github.com/jiva-studio/numen/libs/plugin/sdk-go'
+  assert.deepEqual(
+    refusedImports('plugins/a/backend/usecase/cards/x.go', [
+      `${own}/usecase/note`,
+      `${own}/usecase/cards/deckedit`,
+      `${own}/api`,
+      'os',
+      `${sdk}/server`,
+      `${own}/internal/adapter/clock`,
+    ]),
+    [
+      `use case usecase/cards imports ${own}/usecase/note`,
+      `use case usecase/cards imports ${own}/usecase/cards/deckedit`,
+      `use case usecase/cards imports ${own}/api`,
+      'use case usecase/cards imports os',
+      `use case usecase/cards imports ${sdk}/server`,
+      `use case usecase/cards imports ${own}/internal/adapter/clock`,
+    ],
+  )
+})
+
+test('a use case imports its ports and domain, the listed standard and SDK packages and third-party modules', () => {
+  const own = 'github.com/jiva-studio/numen/plugins/a/backend'
+  const sdk = 'github.com/jiva-studio/numen/libs/plugin/sdk-go'
+  assert.deepEqual(
+    refusedImports('plugins/a/backend/usecase/cards/deckedit/x.go', [
+      'context',
+      'strings',
+      `${own}/ports`,
+      `${own}/domain/format`,
+      `${own}/epub/cfi`,
+      `${sdk}/host/domain`,
+      `${sdk}/contracts/llm`,
+      'golang.org/x/text/unicode/norm',
+    ]),
+    [],
+  )
+  assert.deepEqual(
+    refusedImports('plugins/a/backend/usecase/cards/x.go', [
+      'os/exec',
+      'path/filepath',
+      `${sdk}/hostcall`,
+      'github.com/jiva-studio/numen/plugins/b/backend/domain/format',
+    ]),
+    [
+      'use case usecase/cards imports os/exec',
+      'use case usecase/cards imports path/filepath',
+      `use case usecase/cards imports ${sdk}/hostcall`,
+      'use case usecase/cards imports github.com/jiva-studio/numen/plugins/b/backend/domain/format',
+    ],
+  )
+})
+
+test('an adapter importing the api, wire, service, engine or another technology is refused', () => {
+  const own = 'github.com/jiva-studio/numen/plugins/a/backend'
+  assert.deepEqual(
+    refusedImports('plugins/a/backend/internal/adapter/rpc/x.go', [
+      `${own}/api`,
+      `${own}/wire/cardwire`,
+      `${own}/service`,
+      `${own}/engine`,
+      `${own}/internal/adapter/clock`,
+      `${own}/internal/vaulttest`,
+    ]),
+    [
+      `adapter internal/adapter/rpc imports ${own}/api`,
+      `adapter internal/adapter/rpc imports ${own}/wire/cardwire`,
+      `adapter internal/adapter/rpc imports ${own}/service`,
+      `adapter internal/adapter/rpc imports ${own}/engine`,
+      `adapter internal/adapter/rpc imports ${own}/internal/adapter/clock`,
+      `adapter internal/adapter/rpc imports ${own}/internal/vaulttest`,
+    ],
+  )
+})
+
+test('an adapter imports the machine, the SDK, its ports, domain and use case, and its own technology folder', () => {
+  const own = 'github.com/jiva-studio/numen/plugins/a/backend'
+  assert.deepEqual(
+    refusedImports('plugins/a/backend/internal/adapter/engine/segmenter/x.go', [
+      'os',
+      'os/exec',
+      'github.com/jiva-studio/numen/libs/plugin/sdk-go/server',
+      `${own}/ports`,
+      `${own}/domain/settings`,
+      `${own}/pdf`,
+      `${own}/usecase/transcribe`,
+      `${own}/internal/adapter/engine`,
+      `${own}/internal/adapter/engine/onnx`,
+    ]),
+    [],
+  )
+})
