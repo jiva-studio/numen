@@ -17,7 +17,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -28,7 +27,7 @@ type callers struct {
 	plugins    map[string]string
 	allowed    map[string]bool
 	modelCalls ModelCalls
-	rowLists   connectionport.RowLists
+	rowLists   RowLists
 	checked    []string
 	vault      *vaultapi.Access
 	texts      TextVersions

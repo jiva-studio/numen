@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
@@ -23,14 +22,20 @@ type Calls interface {
 	Call(ctx context.Context, callerPluginID string, request modelcall.Request, send modelcall.Send) ([]byte, error)
 }
 
+// Rows lists the rows of the plugins and the values of their row fields.
+type Rows interface {
+	ListRows(callerPluginID, operation string) ([]modelcall.Row, error)
+	ListRowOptions(ctx context.Context, callerPluginID, operation, connectionID, field string, options map[string]string) ([]modelcall.Option, error)
+}
+
 // Handler serves ConnectionCallService over the calls and the rows.
 type Handler struct {
 	calls Calls
-	rows  connectionport.RowLists
+	rows  Rows
 }
 
 // NewHandler is the handler over the calls and the rows of this installation.
-func NewHandler(calls Calls, rows connectionport.RowLists) *Handler {
+func NewHandler(calls Calls, rows Rows) *Handler {
 	return &Handler{calls: calls, rows: rows}
 }
 

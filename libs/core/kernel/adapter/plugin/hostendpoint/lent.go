@@ -4,7 +4,6 @@ import (
 	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 )
 
 // Lent is what the host lends to the plugins that call it: the calls on models, the rows, the vault, the
@@ -12,7 +11,7 @@ import (
 // that needs it is refused.
 type Lent struct {
 	ModelCalls ModelCalls
-	RowLists   connectionport.RowLists
+	RowLists   RowLists
 	Vault      *vault.Access
 	Texts      TextVersions
 	Window     WindowControl
@@ -64,7 +63,7 @@ func NewServices(source func() Lent) *Services { return &Services{source: source
 func (s *Services) GetModelCalls() ModelCalls { return s.source().ModelCalls }
 
 // GetRowLists returns what lists the rows of the plugins and the values of their row fields, or nil.
-func (s *Services) GetRowLists() connectionport.RowLists { return s.source().RowLists }
+func (s *Services) GetRowLists() RowLists { return s.source().RowLists }
 
 // GetPluginVault returns the vault exposed to plugins, or nil.
 func (s *Services) GetPluginVault() *vault.Access { return s.source().Vault }
