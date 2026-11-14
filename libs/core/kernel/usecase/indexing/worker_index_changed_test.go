@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
-// emitted is what the steps of a session had done when the index-changed listener heard of the vault:
-// how many text steps, vector plans and quiet timers had started.
+// emitted counts the text steps, vector plans and quiet timers a session had started when the
+// index-changed listener received the event of the vault.
 type emitted struct {
 	vault  domain.VaultID
 	texts  int
@@ -25,7 +25,7 @@ type emitted struct {
 	timers int
 }
 
-// steps stands in for the index under a session. Each step takes the next result queued for it and
+// steps is a fake of the index under a session. Each step takes the next result queued for it and
 // answers nothing more once the queue is empty. The pass calls it from its own goroutine.
 type steps struct {
 	mu        sync.Mutex
@@ -120,11 +120,10 @@ func (s *steps) snapshot(v domain.Vault) emitted {
 	return emitted{vault: v.ID, texts: s.textCalls, plans: s.planCalls, timers: len(s.timers)}
 }
 
-// waitForTimer waits until the pass has started its n-th quiet timer and returns it.
 func (s *steps) waitForTimer(t *testing.T, n int) chan time.Time {
 	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
-	for time.Now().Before(deadline) {
+	deadline := time.After(10 * time.Second)
+	for {
 		s.mu.Lock()
 		if len(s.timers) >= n {
 			timer := s.timers[n-1]
@@ -132,10 +131,12 @@ func (s *steps) waitForTimer(t *testing.T, n int) chan time.Time {
 			return timer
 		}
 		s.mu.Unlock()
-		time.Sleep(time.Millisecond)
+		select {
+		case <-deadline:
+			t.Fatalf("the pass never started quiet timer %d", n)
+		case <-time.After(time.Millisecond):
+		}
 	}
-	t.Fatalf("the pass never started quiet timer %d", n)
-	return nil
 }
 
 // session is one vault indexed by a worker over steps, with the listener of index changes.
@@ -176,7 +177,6 @@ func newSession(withSource bool) *session {
 	return s
 }
 
-// start runs the session until the test ends. The first walk answers what the steps hold for it.
 func (s *session) start(t *testing.T) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
@@ -201,42 +201,43 @@ func (s *session) getHeard() []emitted {
 	return slices.Clone(s.heard)
 }
 
-// waitForHeard waits until the listener has heard n times and returns all it heard.
 func (s *session) waitForHeard(t *testing.T, n int) []emitted {
 	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
-	for time.Now().Before(deadline) {
+	deadline := time.After(10 * time.Second)
+	for {
 		if heard := s.getHeard(); len(heard) >= n {
 			return heard
 		}
-		time.Sleep(time.Millisecond)
+		select {
+		case <-deadline:
+			t.Fatalf("the listener received %v, want %d events", s.getHeard(), n)
+		case <-time.After(time.Millisecond):
+		}
 	}
-	t.Fatalf("the listener heard %v, want %d events", s.getHeard(), n)
-	return nil
 }
 
-// settle waits until the pass has started as many text steps and vector plans as given, and then for
-// the step to end. Nothing marks the end of a step that sends no event, and a wake sent before it ends
-// would hold the event back for a reason other than the one a test looks at.
 func (s *session) settle(t *testing.T, texts, plans int) {
 	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
+	// Nothing marks the end of a step that sends no event, so the wait ends with a sleep: a wake sent
+	// before the step ends would hold the event back for a reason other than the one a test checks.
+	deadline := time.After(10 * time.Second)
 	for {
 		at := s.steps.snapshot(s.v)
 		if at.texts >= texts && at.plans >= plans {
 			break
 		}
-		if time.Now().After(deadline) {
+		select {
+		case <-deadline:
 			t.Fatalf("the pass reached %+v, want %d text steps and %d vector plans", at, texts, plans)
+		case <-time.After(time.Millisecond):
 		}
-		time.Sleep(time.Millisecond)
 	}
 	time.Sleep(50 * time.Millisecond)
 }
 
-// cutOneSourceMore is a text step that changes the index, run after the steps a test looks at. Every step
-// of the pass runs on one goroutine, so an event a step before it sent is heard before the one it sends.
 func (s *session) cutOneSourceMore() {
+	// Every step of the pass runs on one goroutine, so the event of an earlier step arrives before
+	// the event of this text step.
 	s.steps.queueTexts(vaultreading.IndexResult{Seen: 1, Extracted: 1})
 	s.worker.WakeSources()
 }
@@ -281,7 +282,7 @@ func TestNotesWakeWithoutSourceEmitsAfterQuietTimer(t *testing.T) {
 	timer := s.steps.waitForTimer(t, 1)
 	s.settle(t, 1, 0)
 	s.checkHeardNothing(t)
-	timer <- time.Now()
+	timer <- time.Time{}
 	s.waitForHeard(t, 1)
 	s.cutOneSourceMore()
 
@@ -324,7 +325,7 @@ func TestUnchangedSessionEmitsNothing(t *testing.T) {
 	}
 }
 
-func TestVectorsWrittenEmitOnce(t *testing.T) {
+func TestWritingVectorsEmitsOnce(t *testing.T) {
 	s := newSession(true)
 	s.steps.isPending = true
 	s.steps.vectors = append(s.steps.vectors, func(context.Context, func(vaultreading.EmbedResult)) (vaultreading.EmbedResult, error) {
@@ -448,12 +449,12 @@ func TestStepThatEndsWhileTheQuietTimerRunsEmitsAtTheTimer(t *testing.T) {
 	s.cutOneSourceMore()
 	s.settle(t, 2, 2)
 	s.checkHeardNothing(t)
-	timer <- time.Now()
+	timer <- time.Time{}
 
 	s.checkHeard(t, emitted{vault: s.v.ID, texts: 2, plans: 3, timers: 1})
 }
 
-func TestRecognizedPagesCutIntoTheIndexEmit(t *testing.T) {
+func TestIndexingRecognizedPagesEmits(t *testing.T) {
 	s := newSession(false)
 	s.steps.cuts = []vaultreading.IndexResult{{Seen: 1, Extracted: 1}}
 	s.start(t)

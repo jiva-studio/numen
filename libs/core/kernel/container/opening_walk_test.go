@@ -229,7 +229,7 @@ func TestAWalkThatStopsReturnsHowManyNotesItHadRead(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the walk said %v", err)
 	}
-	if got == 0 {
+	if got.Notes == 0 {
 		t.Error("the walk says it read nothing")
 	}
 }
