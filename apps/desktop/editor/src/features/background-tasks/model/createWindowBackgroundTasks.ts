@@ -2,7 +2,7 @@ import { computed, type Ref } from 'vue'
 import { createBackgroundTaskHost, type NoticeQueue } from '@numen/workbench'
 import { runInBackground } from '@numen/ui'
 import type { PluginHealthItem } from '@/entities/plugin'
-import { cancelTask, type Task } from '@/entities/window'
+import type { Task, TaskApi } from '@/entities/window'
 import { formatError } from '@/shared/api/errors'
 import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
 import { getHealthTasks, runHealthAction, type HealthTaskDeps } from './healthTasks'
@@ -14,6 +14,7 @@ interface HealthSource extends HealthTaskDeps {
 }
 
 export interface WindowBackgroundTasksDeps {
+  readonly cancelTask: TaskApi['cancelTask']
   readonly log: MessageLog
   readonly plugins: NoticeQueue
   readonly window: NoticeTasksDeps['window'] & { readonly tasks: Readonly<Ref<readonly Task[]>> }
@@ -36,7 +37,7 @@ export function createWindowBackgroundTasks(deps: WindowBackgroundTasksDeps) {
   const healthTasks = computed(() => getHealthTasks(deps.health.items.value, deps.health))
   return createBackgroundTaskHost({
     tasks: computed(() => [...deps.window.tasks.value, ...healthTasks.value, ...noticeTasks.value]),
-    cancelTask,
+    cancelTask: deps.cancelTask,
     reportCancelError: (error) =>
       deps.writeMessage(`The task was not cancelled: ${formatError(error)}`, 'error'),
     runAction: (id) =>
