@@ -2,7 +2,12 @@
  * Tree state and operations for the files tree.
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import { formatErrorMessage, getRenamedPath, type PathRename } from '@numen/plugin-sdk'
+import {
+  formatErrorMessage,
+  getRenamedPath,
+  type PathRename,
+  type JsonValue,
+} from '@numen/plugin-sdk'
 import type { Entry, FileTree, Folders, ListingRow } from '../types'
 
 export const ROOT = ''
@@ -26,12 +31,42 @@ export const getParentFolders = (path: string): readonly string[] => {
   return parts.map((_, deep) => parts.slice(0, deep + 1).join('/'))
 }
 
+/** How the entries of a folder are ordered in the rows of the tree. */
+export type SortBy = 'name' | 'modified'
+
+export const readSortBy = (value: JsonValue | undefined): SortBy =>
+  value === 'modified' ? 'modified' : 'name'
+
+const getModifiedAt = (entry: Entry): number => entry.modifiedAt ?? Number.NEGATIVE_INFINITY
+
+const compareModifiedDescending = (one: Entry, other: Entry): number => {
+  const first = getModifiedAt(one)
+  const second = getModifiedAt(other)
+  if (first === second) return 0
+  return second > first ? 1 : -1
+}
+
+/** Folders first, then files; with `modified` each group has the newest first and the undated last. */
+export const sortEntries = (entries: readonly Entry[], sortBy: SortBy): readonly Entry[] => {
+  if (sortBy === 'name') return entries
+  return entries
+    .map((entry, index) => ({ entry, index }))
+    .sort(
+      (one, other) =>
+        Number(other.entry.isFolder) - Number(one.entry.isFolder) ||
+        compareModifiedDescending(one.entry, other.entry) ||
+        one.index - other.index,
+    )
+    .map(({ entry }) => entry)
+}
+
 const isSameEntry = (one: Entry, other: Entry): boolean =>
   one.path === other.path &&
   one.name === other.name &&
   one.isFolder === other.isFolder &&
   one.isNote === other.isNote &&
-  one.type === other.type
+  one.type === other.type &&
+  one.modifiedAt === other.modifiedAt
 
 const isSameEntries = (one: readonly Entry[] | undefined, other: readonly Entry[]): boolean =>
   one !== undefined &&
@@ -42,13 +77,14 @@ function getRowsInFolder(
   entriesByFolder: ReadonlyMap<string, readonly Entry[]>,
   isFolderOpen: (folder: string) => boolean,
   folder: string,
+  sortBy: SortBy,
 ): readonly ListingRow[] {
-  const entries = entriesByFolder.get(folder) ?? []
+  const entries = sortEntries(entriesByFolder.get(folder) ?? [], sortBy)
   return entries.map((entry) => ({
     entry,
     rows:
       entry.isFolder && isFolderOpen(entry.path)
-        ? getRowsInFolder(entriesByFolder, isFolderOpen, entry.path)
+        ? getRowsInFolder(entriesByFolder, isFolderOpen, entry.path, sortBy)
         : [],
   }))
 }
@@ -200,6 +236,7 @@ function initTreeState() {
 function createTreeQueries(
   entriesByFolder: ShallowRef<ReadonlyMap<string, readonly Entry[]>>,
   open: ShallowRef<ReadonlySet<string>>,
+  sortBy: Readonly<Ref<SortBy>> | undefined,
 ) {
   const getEntriesInFolder = (folder: string): readonly Entry[] =>
     entriesByFolder.value.get(folder) ?? []
@@ -207,7 +244,7 @@ function createTreeQueries(
   const isFolderOpen = (folder: string): boolean => open.value.has(folder)
 
   const rows = computed<readonly ListingRow[]>(() =>
-    getRowsInFolder(entriesByFolder.value, isFolderOpen, ROOT),
+    getRowsInFolder(entriesByFolder.value, isFolderOpen, ROOT, sortBy?.value ?? 'name'),
   )
   const openRows = computed<readonly string[]>(() => [...open.value])
 
@@ -217,11 +254,14 @@ function createTreeQueries(
   return { getEntriesInFolder, isFolderOpen, rows, openRows, getEntryAt }
 }
 
-export function createFileTree(core: Folders): FileTree {
+export function createFileTree(
+  core: Folders,
+  options?: { readonly sortBy?: Readonly<Ref<SortBy>> },
+): FileTree {
   const state = initTreeState()
   let isAlive = true
 
-  const queries = createTreeQueries(state.entriesByFolder, state.open)
+  const queries = createTreeQueries(state.entriesByFolder, state.open, options?.sortBy)
 
   const refreshControl = createTreeRefresh({
     core,

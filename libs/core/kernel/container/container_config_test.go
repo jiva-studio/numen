@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
 func isolate(t *testing.T) string {
@@ -237,5 +238,16 @@ func TestEveryFolderOfTheMachineIsGivenAnIdentityAndATrash(t *testing.T) {
 	}
 	if vaultTrash(vaultOf((NewConfig(Config{})))) == nil {
 		t.Error("what is deleted has nowhere to go")
+	}
+}
+
+func TestTheVaultWaitsOnTheClockTheInstallationNamed(t *testing.T) {
+	named := testsupport.NewClock()
+	quiet := vaultBase(NewConfig(Config{Now: named}), nil).Clock.After(indexing.QuietPeriod)
+	named.Advance(indexing.QuietPeriod)
+	select {
+	case <-quiet:
+	default:
+		t.Fatal("the quiet period did not end when the named clock passed it")
 	}
 }

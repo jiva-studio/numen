@@ -3,8 +3,17 @@
  * target's issue.
  */
 import assert from 'node:assert/strict'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
-import { getGoShardOf, keepFiles, mergeGoCaches, mergeStrykerReports } from './cache.mjs'
+import {
+  getGoShardOf,
+  keepFiles,
+  mergeGoCaches,
+  mergeStrykerReports,
+  writeMergedCache,
+} from './cache.mjs'
 import { groupByLine, isTargetIssue, planIssue, readCount, readKeys, renderBody } from './issue.mjs'
 import { findTarget, formatSurvivors, getRunName, renderVitestConfig } from './mutate.mjs'
 import { listShards } from './shards.mjs'
@@ -13,6 +22,7 @@ import {
   findTestdata,
   getShardCount,
   getShardOf,
+  getTarget,
   getTargets,
   isMutatedGo,
   isMutatedSource,
@@ -82,6 +92,23 @@ test('test data outside the package is found from the paths its tests import', (
     },
   ]
   assert.deepEqual(findTestdata('libs/ui/components', tests), ['libs/core/protocol/testdata'])
+})
+
+test('a folder a test helper reads outside the package is kept whole', () => {
+  const tests = [
+    {
+      path: 'apps/desktop/editor/src/testing/realCommands.ts',
+      source:
+        "const PLUGINS = resolve(import.meta.dirname, '../../../../../plugins')\nconst here = new URL('../..', import.meta.url)",
+    },
+  ]
+  const folders = new Set(['apps', 'apps/desktop', 'apps/desktop/editor', 'plugins'])
+  assert.deepEqual(findTestdata('apps/desktop/editor', tests, folders), ['plugins'])
+})
+
+test('the editor keeps the plugins folder its test helpers read', () => {
+  const editor = getTargets().find((one) => one.at === 'apps/desktop/editor')
+  assert.ok(editor.testdata.includes('plugins'))
 })
 
 test('the tree yields the core module and the components package, with what their tests read', () => {
@@ -400,6 +427,36 @@ test('a Go cache written under another toolchain is dropped from the merge', () 
     [first],
   )
   assert.equal(mergeGoCaches(2, null, []), null)
+})
+
+test('the merge reads each shard cache by the shard name and writes where no cache was before', () => {
+  const target = getTarget('libs-core-kernel')
+  const [first, second] = listShards(target.name)
+  const files = Array.from({ length: 200 }, (_, index) => `pkg${index}/a.go`)
+  const held = (shard) =>
+    files.find((file) => getGoShardOf(file, target.shards) === Number(shard.shard.split('/')[0]))
+  const dir = mkdtempSync(join(tmpdir(), 'mutation-merge-'))
+  try {
+    writeFileSync(
+      join(dir, `${first.name}.gomutants.json`),
+      JSON.stringify(goCache([entry(held(first), 'KILLED')])),
+    )
+    writeFileSync(
+      join(dir, `${target.name}.gomutants.json`),
+      JSON.stringify(goCache([entry(held(second), 'KILLED')])),
+    )
+    const path = join(dir, 'cache', `${target.name}.gomutants.json`)
+
+    writeMergedCache(target, dir, path)
+
+    const merged = JSON.parse(readFileSync(path, 'utf8'))
+    assert.deepEqual(
+      merged.entries.map((one) => one.rel_file),
+      [held(first)],
+    )
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
 /** Repository-relative TypeScript files, the first held by shard 1 of 2 and the second by shard 2. */

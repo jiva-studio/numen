@@ -84,6 +84,15 @@ func (a *assistant) Embed(_ context.Context, _ connection.Call, request *llm.Emb
 	return result, nil
 }
 
+// Rerank scores each document by the number of its bytes.
+func (a *assistant) Rerank(_ context.Context, _ connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+	result := &llm.RerankResult{}
+	for _, document := range request.GetDocuments() {
+		result.Scores = append(result.Scores, float32(len(document)))
+	}
+	return result, nil
+}
+
 func (a *assistant) GetProfile(_ context.Context, call connection.Call) (*llm.Profile, error) {
 	return &llm.Profile{Model: call.Options[llm.OptionModel], Source: "server https://models.test/v1", Width: 768, MaxTokens: 512}, nil
 }
@@ -201,15 +210,30 @@ func TestGetProfileIsBackgroundAndNamesTheModelOfTheRow(t *testing.T) {
 func TestOnlyTheRolesGivenAreServed(t *testing.T) {
 	provider := llm.Provide(connection.Provider{"acp.task": nil}, llm.Roles{Models: &assistant{}, Reasoning: &assistant{}})
 
+	if names := getOperations(provider); !slices.Equal(names, []string{"acp.task", llm.OperationModels, llm.OperationReasoning}) {
+		t.Errorf("operations = %v", names)
+	}
+}
+
+func TestRerankIsServedOnlyWithAReranker(t *testing.T) {
+	without := llm.Provide(nil, llm.Roles{Embedder: &assistant{}})
+	with := llm.Provide(nil, llm.Roles{Embedder: &assistant{}, Reranker: &assistant{}})
+
+	if names := getOperations(without); !slices.Equal(names, []string{llm.OperationEmbed}) {
+		t.Errorf("operations without a reranker = %v", names)
+	}
+	if names := getOperations(with); !slices.Equal(names, []string{llm.OperationEmbed, "llm.rerank"}) || llm.OperationRerank != "llm.rerank" {
+		t.Errorf("operations with a reranker = %v", names)
+	}
+}
+
+func getOperations(provider connection.Provider) []string {
 	var names []string
 	for name := range provider {
 		names = append(names, name)
 	}
 	slices.Sort(names)
-
-	if !slices.Equal(names, []string{"acp.task", llm.OperationModels, llm.OperationReasoning}) {
-		t.Errorf("operations = %v", names)
-	}
+	return names
 }
 
 func TestAFailureOfTheProviderIsTheErrorOfTheCall(t *testing.T) {

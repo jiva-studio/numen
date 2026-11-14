@@ -10,7 +10,8 @@
 //                     the cores, at most four, and one when the run names a file or a filter.
 //   --project=<name>  runs that engine alone.
 //   NUMEN_E2E_JSON_DIR=<dir>  writes a JSON report of each process there, for `npm run shards:measure`.
-//   -c <config>       runs that config (the flashcards) one engine after the other, on its own.
+//   -c <config>       runs that config (the flashcards, the acceptance scenarios) one engine after
+//                     the other, on its own; with --project, that engine alone.
 import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -144,10 +145,13 @@ const env = gioModules ? { ...process.env, GIO_EXTRA_MODULES: gioModules } : pro
 const hasFlag = (...names) =>
   args.some((arg) => names.some((name) => arg === name || arg.startsWith(`${name}=`)))
 
+const project = getFlag('--project')
+const engines = project ? [project] : ENGINES
+
 if (hasFlag('-c', '--config')) {
   // The flashcards config has a server and a port of its own: one engine after the other.
   let status = 0
-  for (const engine of ENGINES) {
+  for (const engine of engines) {
     const code = runPlaywright(
       [`--project=${engine}`, `--output=${path.join(root, 'test-results', engine)}`, ...args],
       { ...env, PLAYWRIGHT_HTML_OUTPUT_DIR: path.join(root, 'playwright-report', engine) },
@@ -163,7 +167,6 @@ if (problems.length > 0) {
   process.exit(1)
 }
 
-const project = getFlag('--project')
 const named = getFlag('--shards') ?? process.env.NUMEN_E2E_SHARDS
 // A run that names a file or a filter finds its tests in few shards, and the rest would only start
 // a server: it runs on one server unless it names the count.
@@ -176,7 +179,6 @@ if (!Number.isInteger(shards) || shards < 1) {
   process.exit(1)
 }
 
-const engines = project ? [project] : ENGINES
 const basePort = Number(process.env.NUMEN_TEST_PORT ?? '3456')
 const jobs = engines.flatMap((engine) =>
   Array.from({ length: shards }, (_, shard) => ({ engine, shard })),

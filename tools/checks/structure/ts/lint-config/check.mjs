@@ -1,5 +1,5 @@
 import { runTool } from "../../../../shared/tools.mjs";
-import { spawnSync } from "node:child_process";
+import { ESLint } from "eslint";
 import fs from "node:fs";
 import path from "node:path";
 import { REPO_ROOT, failOnFindings, requireMatches } from "../../../lib/graph.mjs";
@@ -39,7 +39,7 @@ function readRuleEntry(entry) {
 }
 
 /**
- * The gaps between the resolved rules of one file (`eslint --print-config`) and `STRICT_RULES`.
+ * The gaps between the resolved rules of one file (`ESLint#calculateConfigForFile`) and `STRICT_RULES`.
  *
  * @param {Record<string, unknown> | undefined} rules The `rules` object of the resolved config
  * @param {typeof STRICT_RULES} required The rule set the package must resolve
@@ -127,20 +127,18 @@ function readTrackedFiles() {
   return listed.stdout.split("\n").filter((file) => file && fs.existsSync(path.join(REPO_ROOT, file)));
 }
 
-/** The resolved `rules` of a file, read by `eslint --print-config` run in its package. */
-function readResolvedRules(dir, file) {
-  const eslint = path.join(REPO_ROOT, "node_modules/.bin/eslint");
-  const run = spawnSync(eslint, ["--print-config", path.relative(dir, file)], {
-    cwd: path.join(REPO_ROOT, dir),
-    encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  if (run.status !== 0) throw new Error(`eslint --print-config ${file} failed: ${(run.stderr || run.stdout).trim()}`);
-  return JSON.parse(run.stdout).rules;
+const eslintByPackage = new Map();
+
+/** The resolved `rules` of a file, as ESLint run in its package resolves them. */
+async function readResolvedRules(dir, file) {
+  if (!eslintByPackage.has(dir)) eslintByPackage.set(dir, new ESLint({ cwd: path.join(REPO_ROOT, dir) }));
+  const config = await eslintByPackage.get(dir).calculateConfigForFile(path.join(REPO_ROOT, file));
+  if (!config) throw new Error(`ESLint resolves no config for ${file}`);
+  return config.rules;
 }
 
 /** Every package with an ESLint config resolves the strict rule set on a source file and a test file. */
-export function verifyStrictLintRules() {
+export async function verifyStrictLintRules() {
   const tracked = readTrackedFiles();
   const packages = listLintedPackages(tracked);
   requireMatches("Linted packages", packages.length);
@@ -157,7 +155,7 @@ export function verifyStrictLintRules() {
     const required = isScriptPackage ? SCRIPT_STRICT_RULES : STRICT_RULES;
     for (const probe of probes) {
       probed += 1;
-      for (const gap of findStrictRuleGaps(readResolvedRules(dir, probe), required)) {
+      for (const gap of findStrictRuleGaps(await readResolvedRules(dir, probe), required)) {
         findings.push({ file: probe, line: 1, symbol: gap });
       }
     }
@@ -179,13 +177,13 @@ export function listLibProbes(trackedFiles) {
 }
 
 /** Every package with a `lib` segment resolves `numen/pure-segment` as an error on a file of it. */
-export function verifyPureSegmentRule() {
+export async function verifyPureSegmentRule() {
   const probes = listLibProbes(readTrackedFiles());
   requireMatches("Packages with a lib segment", probes.size);
 
   const findings = [];
   for (const [dir, probe] of probes) {
-    const { isError } = readRuleEntry(readResolvedRules(dir, probe)["numen/pure-segment"]);
+    const { isError } = readRuleEntry((await readResolvedRules(dir, probe))["numen/pure-segment"]);
     if (!isError) findings.push({ file: probe, line: 1, symbol: "numen/pure-segment is not an error on a lib file" });
   }
   failOnFindings("A lib segment may reach the browser, Vue, a timer or the clock", findings);

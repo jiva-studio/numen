@@ -10,6 +10,13 @@ const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
 ) as {
   permissions: readonly string[]
+  settings?: readonly {
+    key: string
+    type: string
+    title: string
+    options?: readonly string[]
+    default?: unknown
+  }[]
   contributes: {
     commands: readonly { id: string; title: string; icon: string }[]
     keybindings?: readonly { key: string; command: string }[]
@@ -72,6 +79,22 @@ describe('the manifest', () => {
       title: 'Open file tree',
       icon: 'folder-tree',
     })
+  })
+})
+
+describe('the settings', () => {
+  it('declares a sort setting of name and modified, name by default', () => {
+    const setting = manifest.settings?.find((one) => one.key === 'sortBy')
+
+    expect(setting).toMatchObject({
+      type: 'enum',
+      options: [
+        { value: 'name', title: 'Name' },
+        { value: 'modified', title: 'Date modified' },
+      ],
+      default: 'name',
+    })
+    expect(setting?.title).toBeTruthy()
   })
 })
 

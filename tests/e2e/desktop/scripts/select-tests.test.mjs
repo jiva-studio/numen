@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { getPlan, getPluginTokens, getScope, getScopePaths, planJobs } from './select-tests.mjs'
+import { getPlan, getPluginTokens, getScope, getScopePaths, isE2eInput, planJobs } from './select-tests.mjs'
 
 const e2eRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const pluginsRoot = path.resolve(e2eRoot, '../../../plugins')
@@ -138,4 +138,25 @@ await test('every test runs in at most four shards an engine', () => {
 
 await test('a change to the connections plugin selects the shell and the acceptance scenarios', () => {
   assert.equal(getScope(['plugins/connections-llm/backend/fakeopenai/server.go']), 'shell/ acceptance')
+})
+
+await test('the inputs of the e2e tests leave out documentation, unit tests and linter configs', () => {
+  for (const file of [
+    'apps/desktop/editor/src/main.ts',
+    'plugins/notes/backend/main.go',
+    'tests/e2e/desktop/tests/shell/lifecycle/chaos.spec.ts',
+    'tests/vault/notes/Entropy.md',
+    'features/notes.feature',
+  ]) {
+    assert.equal(isE2eInput(file), true, file)
+  }
+  for (const file of [
+    'libs/core/kernel/README.md',
+    'libs/core/kernel/usecase/note/create_test.go',
+    'libs/ui/components/eslint.config.mjs',
+    '.golangci.yml',
+    'apps/docs/index.md',
+  ]) {
+    assert.equal(isE2eInput(file), false, file)
+  }
 })

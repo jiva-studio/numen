@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { chat, complete, embed, getProfile, type ChatFrame, type ChatRequest } from '../llm'
+import {
+  chat,
+  complete,
+  embed,
+  getProfile,
+  rerank,
+  type ChatFrame,
+  type ChatRequest,
+  type RerankRequest,
+} from '../llm'
 import { createLlmHost } from './index'
 
 const collect = async (frames: AsyncGenerator<ChatFrame, unknown>) => {
@@ -59,6 +68,36 @@ describe('createLlmHost', () => {
 
     expect(vectors.ok && vectors.value.vectors.map((one) => one.values)).toEqual([[0.5], [0.5]])
     expect(profile).toMatchObject({ ok: true, value: { model: 'harbor-embed', width: 1 } })
+  })
+
+  it('passes the request to the served rerank and returns its scores to rerank', async () => {
+    const asked: RerankRequest[] = []
+    const host = createLlmHost({
+      rerank: async (request) => {
+        asked.push(request)
+        return { ok: true, value: { scores: request.documents.map((one) => one.length) } }
+      },
+    })
+
+    const answer = await rerank(host, {
+      query: 'tide',
+      instruction: 'Find the notes about tides',
+      documents: ['ebb', 'flood'],
+    })
+
+    expect(answer.ok && answer.value.scores).toEqual([3, 5])
+    expect(asked.map((one) => [one.query, one.instruction, one.documents])).toEqual([
+      ['tide', 'Find the notes about tides', ['ebb', 'flood']],
+    ])
+  })
+
+  it('ends rerank with no_connection when the roles leave it out', async () => {
+    const host = createLlmHost({})
+
+    expect(await rerank(host, { query: 'tide', documents: ['ebb'] })).toMatchObject({
+      ok: false,
+      error: { error: 'no_connection' },
+    })
   })
 
   it('returns the error the served operation ends with', async () => {

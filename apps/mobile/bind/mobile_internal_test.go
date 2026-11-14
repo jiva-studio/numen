@@ -23,6 +23,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
@@ -708,6 +709,35 @@ func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
 	}
 	if core.Port() != 0 {
 		t.Errorf("a core that was stopped listens on %d", core.Port())
+	}
+}
+
+type refusingCloser struct {
+	err error
+}
+
+func (c refusingCloser) Execute(context.Context) error { return c.err }
+
+func TestStopAnswersTheErrorOfAWindowThatWillNotClose(t *testing.T) {
+	core := NewCore()
+	startIn(t, core, t.TempDir())
+	closeErr := errors.New("the window will not close")
+
+	core.mu.Lock()
+	live := core.running.opened
+	core.running.opened = &container.OpenedWindow{
+		Installation: editor.NewInstallation(live.State, editor.Lifecycle{Close: refusingCloser{closeErr}}, nil, nil, io.Discard),
+		State:        live.State,
+	}
+	core.mu.Unlock()
+	t.Cleanup(func() {
+		if err := live.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	if err := core.Stop(); !errors.Is(err, closeErr) {
+		t.Errorf("Stop() = %v, want the error of closing the window", err)
 	}
 }
 
