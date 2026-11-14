@@ -22,7 +22,7 @@ const (
 // ReadTokens is the requested chunk size, in tokens: the default for a value that is no number,
 // the whole part of a fraction, and the nearest bound for a number outside the bounds.
 func ReadTokens(values map[string]string) int {
-	number, err := strconv.ParseFloat(strings.TrimSpace(values[TokensKey]), strconv.IntSize)
+	number, err := strconv.ParseFloat(strings.TrimSpace(values[TokensKey]), 64)
 	if err != nil || math.IsNaN(number) {
 		return DefaultTokens
 	}

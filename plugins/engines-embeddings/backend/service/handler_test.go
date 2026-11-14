@@ -47,7 +47,6 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	if !hasCode(describeErr, rpcerror.FailedPrecondition) {
 		t.Fatalf("Describe error %v, want FailedPrecondition", describeErr)
 	}
-	hostHealth.Set(t.Context(), "source", nil)
 
 	_, indexErr := h.IndexTexts(t.Context(), searchsource.Place{}, []searchsource.Text{{ChunkID: "1", Text: "text"}})
 	_, searchErr := h.SearchPassages(t.Context(), searchsource.Place{VaultID: "V", Recipe: "r"}, searchsource.Query{Text: "q"})

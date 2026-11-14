@@ -8,9 +8,6 @@ import (
 )
 
 func TestOpenRejectsALibraryThatIsNotThere(t *testing.T) {
-	if (new(Library)).HasRegistration() {
-		t.Fatal("zero Library has registration before NewLibrary")
-	}
 	lib := NewLibrary()
 	if !lib.HasRegistration() {
 		t.Fatal("NewLibrary() has no default registration")

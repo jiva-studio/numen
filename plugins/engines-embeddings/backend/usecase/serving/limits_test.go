@@ -167,6 +167,10 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 			record.nices = append(record.nices, nice)
 		},
 	}
+	// The loader keeps the report it was built with.
+	srv.mu.Lock()
+	srv.loader = srv.newLoader()
+	srv.mu.Unlock()
 
 	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)

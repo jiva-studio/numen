@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -174,7 +175,17 @@ func TestMockEmbedderWaitsForHoldFileAndPollInterval(t *testing.T) {
 	}
 
 	synctest.Test(t, func(t *testing.T) {
-		start := time.Now()
+		// In the bubble the fake clock moves only when every goroutine waits, so the two markers
+		// bracket the second poll, 50ms after the first.
+		var isBeforePoll, isAfterPoll atomic.Bool
+		markers := make(chan struct{})
+		go func() {
+			defer close(markers)
+			time.Sleep(49500 * time.Microsecond)
+			isBeforePoll.Store(true)
+			time.Sleep(time.Millisecond)
+			isAfterPoll.Store(true)
+		}()
 		go func() {
 			time.Sleep(10 * time.Millisecond)
 			if err := os.Remove(holdFile); err != nil {
@@ -185,9 +196,10 @@ func TestMockEmbedderWaitsForHoldFileAndPollInterval(t *testing.T) {
 		if err != nil || len(vectors) != 1 {
 			t.Fatalf("Embed after hold file removed = %d, %v", len(vectors), err)
 		}
-		if elapsed := time.Since(start); elapsed != 50*time.Millisecond {
-			t.Errorf("elapsed = %v, want 50ms", elapsed)
+		if !isBeforePoll.Load() || isAfterPoll.Load() {
+			t.Errorf("Embed returned with markers (49.5ms %v, 50.5ms %v), want only the 49.5ms one", isBeforePoll.Load(), isAfterPoll.Load())
 		}
+		<-markers
 	})
 }
 

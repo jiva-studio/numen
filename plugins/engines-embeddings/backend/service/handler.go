@@ -101,6 +101,9 @@ func (h handler) getQueryVector(ctx context.Context, recipe, query string) ([]fl
 	if err != nil {
 		return nil, err
 	}
+	if len(vectors) != 1 {
+		return nil, fmt.Errorf("the model answered with %d vectors for one query", len(vectors))
+	}
 	h.queries.Put(recipe, query, vectors[0])
 	return vectors[0], nil
 }
@@ -115,7 +118,7 @@ func (h handler) embed(ctx context.Context, role model.Role, texts []string) ([]
 }
 
 func getRPCError(err error) error {
-	if _, isFailure := errors.AsType[serving.PreconditionError](err); isFailure {
+	if failure, isFailure := errors.AsType[serving.PreconditionError](err); isFailure && failure.Err != nil {
 		return rpcerror.New(rpcerror.FailedPrecondition, err)
 	}
 	return rpcerror.New(rpcerror.Internal, err)

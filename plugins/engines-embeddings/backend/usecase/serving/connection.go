@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/chunking"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
@@ -116,6 +117,9 @@ func (c *connectionSource) startFetchLocked(caller context.Context, models ports
 }
 
 func readConnectionError(err error) error {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
 	if failure, isConnection := errors.AsType[ports.ConnectionError](err); isConnection {
 		return PreconditionError{Err: failure}
 	}
@@ -130,13 +134,16 @@ func (s *Server) getConnectionModelInfo(ctx context.Context) (ModelInfo, error) 
 	s.mu.Lock()
 	minChunkLength, chunkTokens, concurrency := s.modelInfo.MinChunkLength, s.chunkTokens, s.modelInfo.Concurrency
 	s.mu.Unlock()
+	if concurrency <= 0 {
+		concurrency = defaultPasses
+	}
 	return ModelInfo{
 		Name:           profile.Model,
 		Dimensions:     profile.Dimensions,
 		MaxTokens:      profile.MaxTokens,
 		Pooling:        profile.Pooling,
 		From:           profile.Source,
-		Concurrency:    getIndexConcurrency(concurrency),
+		Concurrency:    limits.GetIndexShare(concurrency),
 		FloorHint:      0,
 		MinChunkLength: minChunkLength,
 		ChunkTokens:    chunking.ClampTokens(chunkTokens, profile.MaxTokens),

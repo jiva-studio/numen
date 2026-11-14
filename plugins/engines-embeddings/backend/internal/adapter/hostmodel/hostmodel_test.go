@@ -59,7 +59,7 @@ func TestQueriesAreInteractiveAndDocumentsAreBackground(t *testing.T) {
 	if err != nil || len(vectors) != 2 || vectors[0][0] != 1 || vectors[1][0] != 2 {
 		t.Fatalf("vectors = %v, err = %v", vectors, err)
 	}
-	if _, err := models.Embed(t.Context(), model.RoleQuery, []string{"b"}); err != nil {
+	if _, err := models.Embed(t.Context(), model.RoleQuery, []string{"b", "c"}); err != nil {
 		t.Fatal(err)
 	}
 

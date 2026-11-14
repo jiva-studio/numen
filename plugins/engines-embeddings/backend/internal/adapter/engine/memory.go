@@ -16,7 +16,7 @@ const hiddenTensorsLive = 4
 const floatBytes = 4
 
 func getPassBytes(batchTexts, window, hiddenDim int) int64 {
-	window, hiddenDim = max(window, 1), max(hiddenDim, 1)
+	batchTexts, window, hiddenDim = max(batchTexts, 1), max(window, 1), max(hiddenDim, 1)
 	heads := int64(max(hiddenDim/headWidth, 1))
 
 	fullLength := min(window, referenceLength)
