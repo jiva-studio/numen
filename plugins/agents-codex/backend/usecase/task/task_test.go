@@ -11,6 +11,7 @@ import (
 	contract "github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/tempdir"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/task"
 )
 
@@ -74,7 +75,7 @@ func TestAFailureToStopServingTheToolsKeepsTheAnswerOfTheTurn(t *testing.T) {
 	stuck := errors.New("the tool server did not stop")
 	runner, err := task.New(task.Dependencies{
 		Settings: &settings.Settings{}, Finder: foundProgram{}, Commands: plainCommands{}, Launcher: answeringLauncher{},
-		Tools: gardenTools{}, ToolServer: stuckServer{err: stuck},
+		Tools: gardenTools{}, ToolServer: stuckServer{err: stuck}, TempDirs: tempdir.Folders{Pattern: "numen-codex-tasks-*"},
 	})
 	if err != nil {
 		t.Fatal(err)

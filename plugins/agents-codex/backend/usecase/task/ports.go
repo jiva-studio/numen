@@ -79,3 +79,9 @@ type Process interface {
 type Launcher interface {
 	Start(ctx context.Context, cmd Command) (Process, error)
 }
+
+// TempDirs creates the folder the runs start in and removes it.
+type TempDirs interface {
+	Create() (string, error)
+	Remove(dir string) error
+}

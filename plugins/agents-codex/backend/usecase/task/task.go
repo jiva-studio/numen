@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"maps"
-	"os"
 	"slices"
 	"strings"
 	"sync"
@@ -45,6 +44,7 @@ type Dependencies struct {
 	Launcher   Launcher
 	Tools      Tools
 	ToolServer ToolServer
+	TempDirs   TempDirs
 }
 
 // Runner starts the program for each task and answer, and keeps the thread of each conversation. The
@@ -65,7 +65,8 @@ type Runner struct {
 
 // New creates a Runner, and refuses dependencies that are missing.
 func New(deps Dependencies) (*Runner, error) {
-	if deps.Settings == nil || deps.Finder == nil || deps.Commands == nil || deps.Launcher == nil || deps.ToolServer == nil {
+	if deps.Settings == nil || deps.Finder == nil || deps.Commands == nil || deps.Launcher == nil || deps.ToolServer == nil ||
+		deps.TempDirs == nil {
 		return nil, errors.New("task: every dependency but the tools is required")
 	}
 	return &Runner{
@@ -364,7 +365,7 @@ func (r *Runner) getDir() (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.dir == "" {
-		dir, err := os.MkdirTemp("", "numen-codex-tasks-*")
+		dir, err := r.deps.TempDirs.Create()
 		if err != nil {
 			return "", fmt.Errorf("create the folder the program runs in: %w", err)
 		}
@@ -392,7 +393,7 @@ func (r *Runner) Close() error {
 	if r.dir == "" {
 		return r.cleanErrs
 	}
-	if err := os.RemoveAll(r.dir); err != nil {
+	if err := r.deps.TempDirs.Remove(r.dir); err != nil {
 		return errors.Join(r.cleanErrs, fmt.Errorf("remove the folder of the tasks: %w", err))
 	}
 	return r.cleanErrs

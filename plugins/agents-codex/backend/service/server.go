@@ -5,6 +5,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/mcpendpoint"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/tempdir"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/completion"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/modellist"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/task"
@@ -28,7 +29,7 @@ func newAgentServer(p parts) (*agentServer, error) {
 	values := new(settings.Settings)
 	tasks, err := task.New(task.Dependencies{
 		Settings: values, Finder: codexcli.Installation{}, Commands: codexcli.Commands{}, Launcher: codexcli.Launcher{},
-		Tools: p.tools, ToolServer: mcpendpoint.Server{},
+		Tools: p.tools, ToolServer: mcpendpoint.Server{}, TempDirs: tempdir.Folders{Pattern: "numen-codex-tasks-*"},
 	})
 	if err != nil {
 		return nil, err
