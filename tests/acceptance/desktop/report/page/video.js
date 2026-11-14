@@ -40,8 +40,8 @@ const writePlayButton = (video) =>
 
 const writeFullscreenButton = (video) =>
   document.fullscreenElement === video.card
-    ? setControl(video.fullscreenButton, 'shrink', 'Exit full screen')
-    : setControl(video.fullscreenButton, 'expand', 'Full screen')
+    ? setControl(video.fullscreenButton, 'minimize', 'Exit full screen')
+    : setControl(video.fullscreenButton, 'maximize', 'Full screen')
 
 const toggleFullscreen = (video) => {
   const request =

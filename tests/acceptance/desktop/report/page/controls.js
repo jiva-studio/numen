@@ -64,11 +64,9 @@ const createShortcut = ([key, action]) =>
 
 const createHelp = () =>
   createElement('div', { class: 'help' }, [
-    createElement(
-      'button',
-      { class: 'control text-control', type: 'button', 'aria-label': 'Shortcuts' },
-      ['?'],
-    ),
+    createElement('button', { class: 'control', type: 'button', 'aria-label': 'Shortcuts' }, [
+      createIcon('keyboard'),
+    ]),
     createElement('div', { class: 'shortcuts', role: 'tooltip' }, [
       createElement('p', {}, ['Shortcuts']),
       createElement('ul', {}, SHORTCUTS.map(createShortcut)),
@@ -88,7 +86,7 @@ const createClock = () => {
 const createPauseToggle = () => {
   const button = createControl('pause-toggle', 'Pause at each step')
   button.setAttribute('aria-pressed', 'false')
-  button.append(createIcon('stops'))
+  button.append(createIcon('step-forward'))
   return button
 }
 

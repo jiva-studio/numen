@@ -2,6 +2,19 @@ import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  Check,
+  ChevronRight,
+  CircleAlert,
+  Keyboard,
+  Link,
+  Maximize,
+  Minimize,
+  Pause,
+  Play,
+  Search,
+  StepForward,
+} from 'lucide'
 import { createOverview, type GitRevision } from './overview.js'
 import * as playback from './playback.js'
 import type { ScenarioRecord } from './scenario.js'
@@ -17,6 +30,19 @@ const PAGE_FILES = [
   'video-load.js',
   'report.js',
 ]
+const ICONS = {
+  check: Check,
+  'chevron-right': ChevronRight,
+  'circle-alert': CircleAlert,
+  keyboard: Keyboard,
+  link: Link,
+  maximize: Maximize,
+  minimize: Minimize,
+  pause: Pause,
+  play: Play,
+  search: Search,
+  'step-forward': StepForward,
+}
 const FONT = '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2'
 
 export type RunInfo = GitRevision & { readonly startedAt: Date }
@@ -40,6 +66,7 @@ export const writeReport = (
   const functions = Object.entries(playback).map(([name, fn]) => `  ${name}: ${String(fn)},`)
   const script = [
     `window.REPORT = ${JSON.stringify(data)};`,
+    `window.ICONS = ${JSON.stringify(ICONS)};`,
     'window.playback = {',
     ...functions,
     '};',

@@ -62,15 +62,6 @@ button {
   flex: none;
   width: 16px;
   height: 16px;
-  fill: none;
-  stroke: currentcolor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.icon path {
-  vector-effect: non-scaling-stroke;
 }
 
 .dot {
@@ -543,8 +534,6 @@ h2 {
 .control .icon {
   width: 18px;
   height: 18px;
-  fill: currentcolor;
-  stroke: none;
 }
 
 .control:hover,
@@ -593,8 +582,7 @@ h2 {
   transform: none;
 }
 
-.speed-button,
-.text-control {
+.speed-button {
   padding: 0 var(--space-2);
   font-size: var(--text-small);
   font-weight: 500;

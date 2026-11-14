@@ -7,19 +7,6 @@ const scenarios = new Map(
 const state = { search: '', query: '', status: 'all', currentId: '' }
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
-const ICONS = {
-  check: 'M20 6 9 17l-5-5',
-  chevron: 'm9 18 6-6-6-6',
-  link: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',
-  search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm10 2-4.3-4.3',
-  alert: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zm0-14v4m0 4h.01',
-  play: 'M7 4.6v14.8a1 1 0 0 0 1.53.85l11.2-7.4a1 1 0 0 0 0-1.7L8.53 3.75A1 1 0 0 0 7 4.6z',
-  pause: 'M6 4h4v16H6zm8 0h4v16h-4z',
-  expand: 'M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z',
-  shrink: 'M8 4h2v6H4V8h4zm6 0h2v4h4v2h-6zM4 14h6v6H8v-4H4zm10 0h6v2h-4v4h-2z',
-  stops:
-    'M5 4.6v14.8a1 1 0 0 0 1.53.85l9.2-7.4a1 1 0 0 0 0-1.7l-9.2-7.4A1 1 0 0 0 5 4.6zM17 4h2v16h-2z',
-}
 const STATUS_LABELS = { passed: 'Passed', failed: 'Failed', skipped: 'Skipped' }
 
 const writeSetting = (key, value) => {
@@ -40,14 +27,28 @@ const createElement = (tag, attributes = {}, children = []) => {
   return element
 }
 
+const ICON_ATTRIBUTES = {
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  'stroke-width': '2',
+  'stroke-linecap': 'round',
+  'stroke-linejoin': 'round',
+}
+
+const createSvgElement = (tag, attributes) => {
+  const element = document.createElementNS(SVG_NS, tag)
+  for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, String(value))
+  return element
+}
+
 const createIcon = (name) => {
-  const svg = document.createElementNS(SVG_NS, 'svg')
-  svg.setAttribute('class', `icon icon-${name}`)
-  svg.setAttribute('viewBox', '0 0 24 24')
-  svg.setAttribute('aria-hidden', 'true')
-  const path = document.createElementNS(SVG_NS, 'path')
-  path.setAttribute('d', ICONS[name])
-  svg.append(path)
+  const svg = createSvgElement('svg', {
+    ...ICON_ATTRIBUTES,
+    class: `icon icon-${name}`,
+    'aria-hidden': 'true',
+  })
+  svg.append(...window.ICONS[name].map(([tag, attributes]) => createSvgElement(tag, attributes)))
   return svg
 }
 
@@ -143,7 +144,7 @@ const createScenarioButton = (scenario) =>
 const createFeatureNode = (feature, shown) => {
   const total = feature.scenarios.length
   const summary = createElement('summary', { title: feature.uri }, [
-    createIcon('chevron'),
+    createIcon('chevron-right'),
     createElement('span', { class: 'name' }, [feature.name]),
     createElement('span', { class: 'count', title: formatCount(total, 'scenario') }, [
       String(total),
@@ -247,7 +248,7 @@ const createDocString = (docString) =>
 
 const createError = (message) =>
   createElement('div', { class: 'error' }, [
-    createElement('p', { class: 'error-title' }, [createIcon('alert'), 'Error']),
+    createElement('p', { class: 'error-title' }, [createIcon('circle-alert'), 'Error']),
     createElement('pre', {}, [message]),
   ])
 
@@ -347,6 +348,7 @@ window.addEventListener('hashchange', () =>
   selectScenario(decodeURIComponent(location.hash.slice(1))),
 )
 
+document.querySelector('.search').prepend(createIcon('search'))
 writeStartedAt()
 writeStatusFilter()
 state.currentId = decodeURIComponent(location.hash.slice(1)) || getFirstScenarioId() || ''
