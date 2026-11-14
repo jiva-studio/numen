@@ -4,9 +4,21 @@ package newnote
 import (
 	"context"
 	"errors"
+	"fmt"
+	pathpkg "path"
+	"strings"
 	"time"
+	"unicode/utf8"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/substitute"
+)
+
+const (
+	noteExtension = ".md"
+	maxNames      = 100
 )
 
 var (
@@ -47,14 +59,112 @@ type Result struct {
 	Path string
 }
 
-type CreateFromTemplate struct{}
+// CreateFromTemplate makes a note from a note of the templates folder.
+type CreateFromTemplate struct {
+	vault     Vault
+	clock     Clock
+	ids       IDs
+	getFolder func() string
+}
 
 // NewCreateFromTemplate returns the use case. getFolder is read at each call, so a changed setting applies at once.
-func NewCreateFromTemplate(_ Vault, _ Clock, _ IDs, _ func() string) CreateFromTemplate {
-	return CreateFromTemplate{}
+func NewCreateFromTemplate(vault Vault, clock Clock, ids IDs, getFolder func() string) CreateFromTemplate {
+	return CreateFromTemplate{vault: vault, clock: clock, ids: ids, getFolder: getFolder}
 }
 
 // Execute makes the note.
-func (CreateFromTemplate) Execute(_ context.Context, _ Request) (Result, error) {
-	return Result{Path: ""}, errors.New("not implemented")
+func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, error) {
+	if !isTemplate(in.Template, u.getFolder()) {
+		return Result{}, fmt.Errorf("%w: %s", ErrNotATemplate, in.Template)
+	}
+	raw, _, err := u.vault.Read(ctx, in.Template)
+	if err != nil {
+		return Result{}, fmt.Errorf("read the template %s: %w", in.Template, err)
+	}
+	if !utf8.Valid(raw) {
+		return Result{}, fmt.Errorf("%w: it is not UTF-8 text", ErrInvalidNote)
+	}
+	now := u.clock.Now()
+	id, err := u.ids.NewID(now)
+	if err != nil {
+		return Result{}, fmt.Errorf("make the id of the note: %w", err)
+	}
+
+	stem := strings.TrimSuffix(pathpkg.Base(in.Template), noteExtension)
+	for number := 1; number <= maxNames; number++ {
+		name := stem
+		if number > 1 {
+			name = fmt.Sprintf("%s %d", stem, number)
+		}
+		path, isMade, err := u.createAs(ctx, pathpkg.Join(in.Folder, name+noteExtension), render{text: string(raw), title: name, now: now, id: id})
+		if err != nil {
+			return Result{}, err
+		}
+		if isMade {
+			return Result{Path: path}, nil
+		}
+	}
+	return Result{}, fmt.Errorf("%w %s", ErrNoFreeName, stem)
+}
+
+// createAs makes the note at path unless the name is taken, which it reports as not made.
+func (u CreateFromTemplate) createAs(ctx context.Context, path string, r render) (string, bool, error) {
+	isFree, err := u.isFree(ctx, path)
+	if err != nil || !isFree {
+		return "", false, err
+	}
+	content, err := r.getContent()
+	if err != nil {
+		return "", false, err
+	}
+	err = u.vault.Create(ctx, path, content)
+	if errors.Is(err, host.ErrAlreadyExists) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, fmt.Errorf("create the note %s: %w", path, err)
+	}
+	if err := u.vault.Scan(ctx, []string{path}); err != nil {
+		return "", false, fmt.Errorf("index the note %s: %w", path, err)
+	}
+	return path, true, nil
+}
+
+func (u CreateFromTemplate) isFree(ctx context.Context, path string) (bool, error) {
+	_, err := u.vault.StatFile(ctx, path)
+	if errors.Is(err, host.ErrNotExist) {
+		return true, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("check the name %s: %w", path, err)
+	}
+	return false, nil
+}
+
+// isTemplate reports whether path is a note inside root, written in its cleanest form.
+func isTemplate(path, root string) bool {
+	if path != pathpkg.Clean(path) || !strings.HasPrefix(path, root+"/") || !strings.HasSuffix(path, noteExtension) {
+		return false
+	}
+	return strings.TrimSuffix(pathpkg.Base(path), noteExtension) != ""
+}
+
+// render is what a note is made from: the template text, its title and id, and the instant of the call.
+type render struct {
+	text  string
+	title string
+	now   time.Time
+	id    string
+}
+
+func (r render) getContent() ([]byte, error) {
+	applied := substitute.Apply(r.text, substitute.Variables{Title: r.title, Now: r.now})
+	doc, err := markdown.Open([]byte(applied.Text))
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrInvalidNote, err)
+	}
+	if err := doc.SetIdentifier(r.id); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrInvalidNote, err)
+	}
+	return doc.Bytes(), nil
 }
