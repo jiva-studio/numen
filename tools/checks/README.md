@@ -43,7 +43,9 @@ make checks_selftest                 # the planted-violation tests (takes the sa
 
 `CHANGED=1` reads the diff against `origin/main` (`BASE_REF` names another base), the uncommitted changes and the untracked files. A failing git command (no `origin/main`, a shallow clone, no repository) stops the run with exit code 2 and the git message; it never selects nothing. The Go checks list the folders they read in `paths`, so a change outside them does not select them. A check runs when a changed file matches its `paths`, lies in its own folder or in `lib/`; a change of `run.mjs`, `rules.json` or `lib/` selects every check. The checks tagged `gate` have wide paths and run whenever anything in their area changes. `make lint_layers` (`check_layers`) is `TAGS=structure`, `lint_comments` is `ONLY=style/comments` and `lint_narrative` is `ONLY=style/names`, each with its planted-violation tests first.
 
-CI runs everything: the Architecture job runs `make checks EXCLUDE=go` and the tests of this folder, and the job Structure Checks of `go.yml` runs `make checks TAGS=go`.
+`CHANGED=1` also runs the planted-violation tests of each selected check whose own files changed (its folder, its selftest, the script its command runs, or `lib/`), except where the check is its own test (Go checks, rule tests, `registry`). Under `CHANGED=1` the `registry` test compares the full and the reduced tree only for the `verifiers` checks whose own files or registry entry changed, and for all of them when `run.mjs` or `lib/` changed. The checks other than the Go ones run side by side, each `verifiers` check in a process of its own; the report keeps one block per check.
+
+On a pull request CI runs `make checks EXCLUDE=go CHANGED=1` in the Architecture job and `make checks TAGS=go CHANGED=1` in the job Structure Checks of `go.yml`, against `BASE_REF=HEAD^1` (the first parent of the merge commit); `npm test --prefix tools/lint-layers` runs there when `tools/lint-layers` or `tools/shared` changed. A manual run of CI runs every check and the tests of this folder.
 
 ## Invariants Checked
 

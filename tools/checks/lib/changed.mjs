@@ -52,3 +52,13 @@ export function listChangedFiles(root, base = process.env.BASE_REF || "origin/ma
   return [...new Set([...committed, ...worktree, ...untracked])];
 }
 
+/** The text of `file` at the commit the branch forked from `base`; null when the file did not exist there. */
+export function readBaseFile(root, file, base = process.env.BASE_REF || "origin/main") {
+  const [fork] = listLines(["merge-base", base, "HEAD"], root);
+  try {
+    return execFileSync("git", ["show", `${fork}:${file}`], { cwd: root, encoding: "utf8", maxBuffer: 1 << 28, stdio: ["ignore", "pipe", "pipe"] });
+  } catch {
+    return null;
+  }
+}
+
