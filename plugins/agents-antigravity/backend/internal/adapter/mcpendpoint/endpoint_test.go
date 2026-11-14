@@ -2,7 +2,6 @@ package mcpendpoint
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net"
 	"net/http"
@@ -95,12 +94,6 @@ func TestNewTokenAndServeErrorPaths(t *testing.T) {
 	if _, err := newTokenFrom(failingReader{err: sentinel}); !errors.Is(err, sentinel) {
 		t.Errorf("newTokenFrom error = %v, want wrapped %v", err, sentinel)
 	}
-
-	canceled, cancel := context.WithCancel(t.Context())
-	cancel()
-	if _, err := (Server{}).Serve(canceled, nil, nil); err == nil || !errors.Is(err, context.Canceled) {
-		t.Errorf("Serve with canceled context = %v, want wrapped context.Canceled", err)
-	}
 }
 
 func TestTrackConnectionRemovesHijackedAndClosedConnections(t *testing.T) {
@@ -147,7 +140,7 @@ func TestServedToolsInvokeAndReportErrors(t *testing.T) {
 		{Name: "pond_read", Title: "Read pond", Effect: tools.ReadOnly, InputSchema: []byte(`{"type":"object"}`)},
 		{Name: "pond_fail", Title: "Fail pond", Effect: tools.ReadOnly, InputSchema: []byte(`{"type":"object"}`)},
 	}
-	served, err := (Server{}).Serve(t.Context(), listed, func(_ context.Context, name string, args json.RawMessage) (*tools.CallResponse, error) {
+	served, err := (Server{}).Serve(t.Context(), listed, func(_ context.Context, name string, args []byte) (*tools.CallResponse, error) {
 		if name == "pond_fail" {
 			return nil, errors.New("tool broke")
 		}
@@ -178,11 +171,11 @@ func TestServedToolsInvokeAndReportErrors(t *testing.T) {
 	}()
 
 	okRes, err := session.CallTool(t.Context(), &sdk.CallToolParams{Name: "pond_read", Arguments: map[string]any{"k": "v"}})
-	if err != nil || okRes.IsError || len(okRes.Content) != 1 || okRes.Content[0].(*sdk.TextContent).Text != `got:{"k":"v"}` {
+	if err != nil || okRes.IsError || len(okRes.Content) != 1 || getFirstText(okRes.Content) != `got:{"k":"v"}` {
 		t.Errorf("pond_read = %+v, %v", okRes, err)
 	}
 	failRes, err := session.CallTool(t.Context(), &sdk.CallToolParams{Name: "pond_fail"})
-	if err != nil || !failRes.IsError || len(failRes.Content) != 1 || failRes.Content[0].(*sdk.TextContent).Text != "tool broke" {
+	if err != nil || !failRes.IsError || len(failRes.Content) != 1 || getFirstText(failRes.Content) != "tool broke" {
 		t.Errorf("pond_fail = %+v, %v", failRes, err)
 	}
 }

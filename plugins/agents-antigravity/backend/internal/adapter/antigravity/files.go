@@ -16,7 +16,12 @@ func createTempDir(pattern string) (string, func() error, error) {
 	if err != nil {
 		return "", noRelease, err
 	}
-	return dir, func() error { return os.RemoveAll(dir) }, nil
+	return dir, func() error {
+		if err := os.RemoveAll(dir); err != nil {
+			return fmt.Errorf("remove %s: %w", dir, err)
+		}
+		return nil
+	}, nil
 }
 
 func isRunnable(path string) bool {

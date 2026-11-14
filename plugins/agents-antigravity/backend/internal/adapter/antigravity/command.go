@@ -58,11 +58,17 @@ func makeAnswerCommand(path string, run task.Run) (task.Command, error) {
 }
 
 func makeCommand(path string, args []string, prompt string, tools *endpoint) (task.Command, error) {
-	input, inputErr := writeInput(prompt)
-	tempHome, cleanHome, homeErr := setupAntigravityHome(tools)
-	dir, cleanDir, dirErr := createTempDir("numen-antigravity-run-*")
-	if err := errors.Join(inputErr, homeErr, dirErr); err != nil {
-		return task.Command{}, errors.Join(err, cleanHome(), cleanDir())
+	input, err := writeInput(prompt)
+	if err != nil {
+		return task.Command{}, err
+	}
+	tempHome, cleanHome, err := setupAntigravityHome(tools)
+	if err != nil {
+		return task.Command{}, fmt.Errorf("set up the Antigravity home: %w", err)
+	}
+	dir, cleanDir, err := createTempDir("numen-antigravity-run-*")
+	if err != nil {
+		return task.Command{}, errors.Join(fmt.Errorf("create the folder to run in: %w", err), cleanHome())
 	}
 	return task.Command{
 		Path: path, Args: args, Dir: dir, Env: append(hostcall.GetChildEnvironment(), "HOME="+tempHome), Stdin: input,

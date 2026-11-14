@@ -69,7 +69,11 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 	// setupAntigravityHome with tools != nil writes the numen server into tempConfig/mcp_config.json
 	// and links entries before and after the excluded name.
 	home := t.TempDir()
-	for _, rel := range []string{"a-before", "z-after", filepath.Join(".gemini", "sub-a"), filepath.Join(".gemini", "sub-z"), filepath.Join(".gemini", "config", "cfg-a"), filepath.Join(".gemini", "config", "cfg-z")} {
+	linked := []string{
+		"a-before", "z-after", filepath.Join(".gemini", "sub-a"), filepath.Join(".gemini", "sub-z"),
+		filepath.Join(".gemini", "config", "cfg-a"), filepath.Join(".gemini", "config", "cfg-z"),
+	}
+	for _, rel := range linked {
 		full := filepath.Join(home, rel)
 		if err := os.MkdirAll(filepath.Dir(full), 0o700); err != nil {
 			t.Fatal(err)
@@ -83,7 +87,7 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 	if err != nil || !filepath.IsAbs(tempHome) {
 		t.Fatalf("setupAntigravityHome with tools = %q, %v", tempHome, err)
 	}
-	for _, rel := range []string{"a-before", "z-after", filepath.Join(".gemini", "sub-a"), filepath.Join(".gemini", "sub-z"), filepath.Join(".gemini", "config", "cfg-a"), filepath.Join(".gemini", "config", "cfg-z")} {
+	for _, rel := range linked {
 		if got, err := os.ReadFile(filepath.Join(tempHome, rel)); err != nil || string(got) != rel {
 			t.Errorf("linked %s = %q, %v", rel, got, err)
 		}
@@ -117,7 +121,7 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 	}
 	t.Setenv("HOME", fileAsHome)
 	if _, clean, err := setupAntigravityHome(nil); err == nil || clean == nil {
-		t.Errorf("expected error and non-nil clean when HOME is a regular file: clean=%v err=%v", clean, err)
+		t.Errorf("expected error and non-nil clean when HOME is a regular file: clean is nil %v, err %v", clean == nil, err)
 	} else if _, ok := errors.AsType[*os.PathError](err); !ok {
 		t.Errorf("expected wrapped *os.PathError, got %T (%v)", err, err)
 	}
@@ -129,7 +133,7 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 	}
 	t.Setenv("HOME", homeWithGeminiFile)
 	if _, clean, err := setupAntigravityHome(nil); err == nil || clean == nil {
-		t.Errorf("expected error and non-nil clean when HOME/.gemini is a regular file: clean=%v err=%v", clean, err)
+		t.Errorf("expected error and non-nil clean when HOME/.gemini is a regular file: clean is nil %v, err %v", clean == nil, err)
 	}
 
 	// 3) HOME/.gemini/config is a regular file -> linkEntries(realConfig, tempConfig, "mcp_config.json") fails.
@@ -142,7 +146,7 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 	}
 	t.Setenv("HOME", homeWithConfigFile)
 	if _, clean, err := setupAntigravityHome(nil); err == nil || clean == nil {
-		t.Errorf("expected error and non-nil clean when HOME/.gemini/config is a regular file: clean=%v err=%v", clean, err)
+		t.Errorf("expected error and non-nil clean when HOME/.gemini/config is a regular file: clean is nil %v, err %v", clean == nil, err)
 	}
 
 	// 4) No HOME environment variable -> os.UserHomeDir() fails.
@@ -152,7 +156,7 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 	t.Setenv("HOMEPATH", "")
 	if _, err := os.UserHomeDir(); err != nil {
 		if _, clean, err := setupAntigravityHome(nil); err == nil || clean == nil {
-			t.Errorf("expected error and non-nil clean when os.UserHomeDir fails: clean=%v err=%v", clean, err)
+			t.Errorf("expected error and non-nil clean when os.UserHomeDir fails: clean is nil %v, err %v", clean == nil, err)
 		}
 	}
 
@@ -162,7 +166,7 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 		t.Setenv(name, filepath.Join(t.TempDir(), "missing-tmp"))
 	}
 	if _, clean, err := setupAntigravityHome(nil); err == nil || clean == nil {
-		t.Errorf("expected error and non-nil clean when TMPDIR is missing: clean=%v err=%v", clean, err)
+		t.Errorf("expected error and non-nil clean when TMPDIR is missing: clean is nil %v, err %v", clean == nil, err)
 	}
 	if _, err := makeAnswerCommand("/opt/agy", task.Run{Prompt: "p"}); err == nil {
 		t.Error("expected error from makeAnswerCommand when TMPDIR is missing")

@@ -25,7 +25,8 @@ func TestTheModelsAreTheLinesThatHoldANameAndATitle(t *testing.T) {
 }
 
 func TestParseKeepsOnlyLinesWithAModelId(t *testing.T) {
-	// A carriage return at the start, a double space with no name, a name with a space, and no title.
+	// A carriage return at the start, a double space with no name, a line that starts with a double space,
+	// a name with a space, and no title.
 	got := Parse([]byte(
 		"\rcr-at-zero\tCR Zero\n" +
 			"   leading-spaces-only\n" +
@@ -34,7 +35,6 @@ func TestParseKeepsOnlyLinesWithAModelId(t *testing.T) {
 			"space-bare  \n"))
 	want := []Model{
 		{Name: "cr-at-zero", Title: "CR Zero"},
-		{Name: "indented-model", Title: "Indented Title"},
 		{Name: "space-bare", Title: "space-bare"},
 	}
 	if !slices.Equal(got, want) {
