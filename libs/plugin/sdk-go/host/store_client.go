@@ -33,15 +33,6 @@ func NewStoreClientFromEnv() (*StoreClient, error) {
 	return NewStoreClient(addr), nil
 }
 
-// NewStoreClientFromVars is NewStoreClientFromEnv over the variables given.
-func NewStoreClientFromVars(vars map[string]string) (*StoreClient, error) {
-	addr, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return NewStoreClient(addr), nil
-}
-
 func NewStoreClient(endpoint hostcall.Endpoint) *StoreClient {
 	return NewStoreClientOver(hostcall.HTTPClient(), endpoint)
 }

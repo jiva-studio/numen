@@ -88,15 +88,6 @@ func NewQueueClientFromEnv() (*QueueClient, error) {
 	return NewQueueClient(addr), nil
 }
 
-// NewQueueClientFromVars is NewQueueClientFromEnv over the variables given.
-func NewQueueClientFromVars(vars map[string]string) (*QueueClient, error) {
-	addr, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return NewQueueClient(addr), nil
-}
-
 func NewQueueClient(endpoint hostcall.Endpoint) *QueueClient {
 	return NewQueueClientOver(hostcall.HTTPClient(), endpoint)
 }

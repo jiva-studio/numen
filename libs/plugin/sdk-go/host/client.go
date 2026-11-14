@@ -59,15 +59,6 @@ func NewClientFromEnv() (*Client, error) {
 	return NewClient(addr), nil
 }
 
-// NewClientFromVars is NewClientFromEnv over the variables given.
-func NewClientFromVars(vars map[string]string) (*Client, error) {
-	addr, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return NewClient(addr), nil
-}
-
 func NewClient(endpoint hostcall.Endpoint) *Client {
 	return NewClientOver(hostcall.HTTPClient(), endpoint)
 }

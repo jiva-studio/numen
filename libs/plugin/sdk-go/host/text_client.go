@@ -34,15 +34,6 @@ func NewTextClientFromEnv() (*TextClient, error) {
 	return NewTextClient(addr), nil
 }
 
-// NewTextClientFromVars is NewTextClientFromEnv over the variables given.
-func NewTextClientFromVars(vars map[string]string) (*TextClient, error) {
-	addr, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return NewTextClient(addr), nil
-}
-
 func NewTextClient(endpoint hostcall.Endpoint) *TextClient {
 	return NewTextClientOver(hostcall.HTTPClient(), endpoint)
 }
