@@ -84,7 +84,6 @@ jobs:
       GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
     with:
       workflows: ${{ fromJSON(needs.changes.outputs.areas).workflows }}
-      gradle: ${{ fromJSON(needs.changes.outputs.areas).gradle }}
       staging: ${{ fromJSON(needs.changes.outputs.areas).staging }}
       mutation_tool: ${{ fromJSON(needs.changes.outputs.areas).mutation_tool }}
       narrative: ${{ fromJSON(needs.changes.outputs.areas).narrative }}

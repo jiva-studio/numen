@@ -1,40 +1,39 @@
 name: Task
-description: A unit of implementation work
-title: ""
+description: A feature, a change or a cleanup
 labels: ["task"]
 body:
   - type: textarea
-    id: what
+    id: problem
     attributes:
-      label: What to do
-      description: One task per issue. If it needs an "and", it is probably two.
-    validations:
-      required: true
-
-  - type: input
-    id: source
-    attributes:
-      label: Follows from
-      description: |
-        Which existing decision this implements — a rule in AGENTS.md, a file
-        under .agents/rules/, or a spec in docs/. Leave empty only if the task
-        genuinely follows from nothing written down — that is usually a sign
-        the decision has not been made yet.
-      placeholder: "the document and section this task implements"
-
-  - type: dropdown
-    id: priority
-    attributes:
-      label: Priority
-      options:
-        - "1 — core (parser, index, links, sources, FTS5, vault format, submodules, MCP)"
-        - "2 — Anki layer and semantics (SRS, vector index, prerequisite scheduler)"
-        - "neither — tooling, repo, docs"
+      label: Problem
+      description: What is missing or wrong, in plain words.
     validations:
       required: true
 
   - type: textarea
-    id: done
+    id: cause
     attributes:
-      label: Done when
-      description: How we know it is finished. Skip if it is obvious from the task.
+      label: Cause
+      description: Why it is so, if that is known. A feature may leave this empty.
+
+  - type: textarea
+    id: change
+    attributes:
+      label: Change
+      description: What should happen instead. One piece of work per issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: Observable results that mean the issue is done, as a list.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Related issues, order, open questions.

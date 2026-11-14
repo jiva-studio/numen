@@ -23,7 +23,7 @@ Go files are parsed with `go/ast` by `main.go` (standard library only); TypeScri
 
 ```bash
 node tools/checks/style/comments/check.mjs                 # every tracked file (CI: make lint_comments)
-node tools/checks/style/comments/check.mjs --staged        # staged files (pre-commit hook)
+node tools/checks/style/comments/check.mjs --staged        # staged files
 node tools/checks/style/comments/check.mjs a.go b.vue      # the files named
 node tools/checks/style/comments/check.mjs --fix a.go      # remove the reported comments
 make checks_selftest ONLY=style/comments          # fixtures of both checkers

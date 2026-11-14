@@ -484,7 +484,7 @@ func listValidPluginKinds() []string {
 }
 
 func listDomainPlugins() []string {
-	return []string{"notes"}
+	return []string{"notes", "todos"}
 }
 
 func getKebabName(id string) string {

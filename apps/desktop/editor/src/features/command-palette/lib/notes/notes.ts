@@ -4,17 +4,23 @@
  * resolves to nothing.
  */
 import type { Selector } from '@numen/plugin-loader'
+import { runInBackground } from '@numen/ui'
 import type { Store } from '../../types'
 import type { CommandPlace, Notes } from '@/shared/model/command'
+import { formatError } from '@/shared/api/errors'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 
-/** What opens a file: in the current tab or beside it, at a line of the note where one is given. */
+/**
+ * What opens a file: in the current tab or beside it, at a line of the note where one is given.
+ * It rejects where the file cannot be opened.
+ */
 export interface NoteOpeners {
   openFile(
     path: string,
     title: string,
     options:
       'current' | 'split' | { where: 'current' | 'split'; line?: number; selector?: Selector },
-  ): void
+  ): Promise<void>
 }
 
 const createPlacement = (
@@ -32,7 +38,11 @@ const createPlacement = (
   return target
 }
 
-export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners): Notes => {
+export const createNotes = (
+  stores: readonly Store[],
+  noteOpeners: NoteOpeners,
+  writeMessage: MessageWriter,
+): Notes => {
   const holder = (id: string): Store | undefined => stores.find((one) => one.has(id))
   return {
     getTabAt: (path) => {
@@ -49,6 +59,9 @@ export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners):
     },
     close: (id) => holder(id)?.close(id),
     openFile: (path, title, placement, place) =>
-      noteOpeners.openFile(path, title, createPlacement(placement, place)),
+      runInBackground(
+        noteOpeners.openFile(path, title, createPlacement(placement, place)),
+        (error) => writeMessage(formatError(error), 'error'),
+      ),
   }
 }

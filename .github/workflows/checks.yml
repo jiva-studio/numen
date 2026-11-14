@@ -10,9 +10,6 @@ on:
       workflows:
         type: boolean
         required: true
-      gradle:
-        type: boolean
-        required: true
       staging:
         type: boolean
         required: true
@@ -71,7 +68,7 @@ jobs:
 
   workflows:
     name: Workflows
-    if: inputs.workflows || inputs.gradle || inputs.staging || inputs.mutation_tool
+    if: inputs.workflows || inputs.staging || inputs.mutation_tool
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -98,10 +95,6 @@ jobs:
       - name: Test the area filters
         if: inputs.workflows
         run: node --test .github/scripts/*.test.mjs
-
-      - name: Validate Gradle wrapper
-        if: inputs.gradle
-        uses: gradle/actions/wrapper-validation@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       # A plugin with a backend has a bin folder after the build, a plugin with a frontend has a
       # dist folder and a theme plugin carries its themes folder; the release stages that tree.

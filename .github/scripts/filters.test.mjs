@@ -4,11 +4,11 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
-import yaml from 'js-yaml'
+import { load } from 'js-yaml'
 import picomatch from 'picomatch'
 
 const filters = Object.fromEntries(
-  Object.entries(yaml.load(readFileSync(new URL('../filters.yml', import.meta.url), 'utf8'))).map(
+  Object.entries(load(readFileSync(new URL('../filters.yml', import.meta.url), 'utf8'))).map(
     ([name, globs]) => {
       const matchers = [globs].flat(Infinity).map((glob) => picomatch(glob, { dot: true }, true))
       const includes = matchers.filter((matcher) => !matcher.state.negated)
@@ -41,7 +41,6 @@ const AREAS = [
   'go',
   'js',
   'workflows',
-  'gradle',
   'staging',
   'mutation_tool',
 ]
@@ -105,7 +104,7 @@ describe('the filters of the changed areas', () => {
     for (const area of ['ui', 'desktop_fe', 'mobile_fe', 'plugins_all', 'plugin_stories', 'core', 'protocol']) {
       assert.ok(lockAreas.includes(area), area)
     }
-    for (const area of ['sdk_go', 'desktop', 'mobile', 'go', 'gradle', 'staging', 'mutation_tool']) {
+    for (const area of ['sdk_go', 'desktop', 'mobile', 'go', 'staging', 'mutation_tool']) {
       assert.ok(!lockAreas.includes(area), area)
     }
   })

@@ -26,6 +26,9 @@ const clockFunction = 'getNow'
 /** The one function declaration that reads the monotonic clock. */
 const monotonicFunction = 'getMonotonicNow'
 
+/** The port itself, which alone calls the browser's measurements and clock. */
+const portFile = 'src/shared/api/dom.ts'
+
 const clockFunctions = { clockFunction, monotonicFunction }
 
 /** The tests that read the wire's fixtures from `libs/core/protocol/testdata` by relative path. */
@@ -49,6 +52,7 @@ const domainImports = createDomainImports({
 export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, {
     ...clockFunctions,
+    portIgnores: [portFile],
     defaultProject: ['eslint.config.js'],
   }),
 
@@ -74,7 +78,7 @@ export default tseslint.config(
   // the machine what time it is, what the window measures, or what comes next.
   createPortConfig({
     files: ['src/**/*.ts'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
+    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**', portFile],
     ...clockFunctions,
   }),
 

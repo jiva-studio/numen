@@ -49,9 +49,11 @@ const createFolderCommand = async (
 ): Promise<string | void> => {
   const path = invocation.name || (await getUntitledFolderPath(invocation))
   if (!path) return
-  const error = await createFolder(path)
-  if (error === 'alreadyExists') return deps.writeMessage(FILE_WORDS.alreadyExists, 'error')
-  if (error) return deps.writeMessage(FILE_WORDS.errors[error], 'error')
+  const answer = await createFolder(path)
+  if (!answer.ok) {
+    if (answer.error === 'alreadyExists') return deps.writeMessage(FILE_WORDS.alreadyExists, 'error')
+    return deps.writeMessage(FILE_WORDS.errors[answer.error], 'error')
+  }
   return path
 }
 

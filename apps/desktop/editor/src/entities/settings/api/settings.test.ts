@@ -199,13 +199,13 @@ describe('a plugin whose last start failed', () => {
     const failure = await core.retryPlugin('sample.plugin')
 
     expect(request.retryPlugin.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
-    expect(failure).toBe('Timed out while starting')
+    expect(failure).toStrictEqual({ ok: false, error: 'Timed out while starting' })
   })
 
-  it('is answered with nothing where it started', async () => {
+  it('is answered with a value where it started', async () => {
     request.retryPlugin.mockResolvedValue({ failure: '' })
 
-    expect(await core.retryPlugin('sample.plugin')).toBe('')
+    expect(await core.retryPlugin('sample.plugin')).toStrictEqual({ ok: true, value: null })
   })
 })
 
