@@ -88,6 +88,7 @@ export interface PlexNodeFaceProps {
   open: number
   isHandleVisible: boolean
   handle: Position
+  isLifted?: boolean
 }
 
 export interface PlexNodeEvents {
