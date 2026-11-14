@@ -9,7 +9,7 @@ export type Lean = 'up' | 'down'
 
 export interface RelationDescriptor {
   readonly grows: 'up' | 'down' | 'left' | 'right'
-  /** Where the relation stands in a block it shares with others: `up` over them, `down` under them. */
+  /** Where the relation stands on a side it shares with others: `up` from the row of the focus upward, the rest under it. */
   readonly lean: Lean | null
   readonly plural: readonly [one: string, many: string]
 }

@@ -282,3 +282,46 @@ describe('a block of short titles', () => {
       expect(step).toBeLessThanOrEqual(nodeSize.height + lineGap + 1e-6)
   })
 })
+
+const getRowY = (node: PlacedNode): number => {
+  const box = getBox(node)
+  return (box.minY + box.maxY) / 2
+}
+
+describe.each([
+  { reference: 3, jump: 12 },
+  { reference: 12, jump: 3 },
+])('a note with $reference references and $jump jumps in 1400×900', (counts) => {
+  const { frame } = arrange(counts, { width: 1400, height: 900 })
+  const focus = getFocus(frame)
+  const references = ofRelation(frame, 'reference')
+  const jumps = ofRelation(frame, 'jump')
+
+  it('sets the lowest row of references on the row of the focus and every other one over it', () => {
+    expect(references).toHaveLength(counts.reference)
+    expect(Math.max(...references.map(getRowY))).toBeCloseTo(focus.y, 6)
+  })
+
+  it('sets every jump under the row of the focus, its first row the next row under the references', () => {
+    expect(jumps).toHaveLength(counts.jump)
+    for (const jump of jumps) expect(getRowY(jump)).toBeGreaterThan(focus.y)
+    const rows = [...new Set([...references, ...jumps].map((note) => getRowY(note).toFixed(6)))]
+      .map(Number)
+      .sort((first, second) => first - second)
+    const steps = rows.slice(1).map((row, index) => row - rows[index]!)
+    for (const step of steps) expect(step).toBeCloseTo(steps[0]!, 6)
+  })
+
+  it('overlaps no two notes', () => {
+    expect(getOverlaps(frame)).toStrictEqual([])
+  })
+})
+
+describe('a note with only jumps in 1400×900', () => {
+  const { frame } = arrange({ jump: 12 }, { width: 1400, height: 900 })
+
+  it('centers the jumps on the row of the focus', () => {
+    const jumps = getBounds(ofRelation(frame, 'jump').map(getBox))
+    expect((jumps.minY + jumps.maxY) / 2).toBeCloseTo(getFocus(frame).y, 6)
+  })
+})
