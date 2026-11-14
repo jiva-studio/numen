@@ -6,7 +6,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { shallowRef } from 'vue'
-import type { ReaderTabState, Selector, TabPlace } from '@numen/plugin-sdk'
+import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
 import { Reader } from '../reader'
 import type { Documents, TextRange } from '../types'
@@ -46,7 +46,7 @@ const createDocuments = () => {
 const mountTab = (documents: Documents) => {
   const ranges = shallowRef<readonly TextRange[] | null>(null)
   const savePlace = vi.fn((_place: Selector) => undefined)
-  const reportPlace = vi.fn((_place: TabPlace) => undefined)
+  const reportPlace = vi.fn((_place: string) => undefined)
   const state: ReaderTabState = {
     path: PATH,
     title: 'Wading Birds',
@@ -76,7 +76,7 @@ describe('the place a PDF tab saves when the window moves it', () => {
     ranges.value = [...RANGES]
     await flush()
 
-    expect(savePlace).toHaveBeenLastCalledWith({ page: 7, pageCount: 12 })
+    expect(savePlace).toHaveBeenLastCalledWith(JSON.stringify({ page: 7, pageCount: 12 }))
     tab.unmount()
   })
 
@@ -89,7 +89,7 @@ describe('the place a PDF tab saves when the window moves it', () => {
     release()
     await flush()
 
-    expect(savePlace).toHaveBeenLastCalledWith({ page: 7, pageCount: 12 })
+    expect(savePlace).toHaveBeenLastCalledWith(JSON.stringify({ page: 7, pageCount: 12 }))
     tab.unmount()
   })
 })
@@ -104,7 +104,7 @@ describe('the place a PDF tab saves when the reader navigates to another page', 
 
     await goToPage(3)
 
-    expect(savePlace).toHaveBeenLastCalledWith({ page: 4, pageCount: 12 })
+    expect(savePlace).toHaveBeenLastCalledWith(JSON.stringify({ page: 4, pageCount: 12 }))
     tab.unmount()
   })
 })
@@ -119,7 +119,7 @@ describe('the place a PDF tab reports to the window', () => {
 
     await goToPage(3)
 
-    expect(reportPlace).toHaveBeenLastCalledWith({ page: 4, pageCount: 12 })
+    expect(reportPlace).toHaveBeenLastCalledWith(JSON.stringify({ page: 4, pageCount: 12 }))
     tab.unmount()
   })
 
@@ -133,7 +133,7 @@ describe('the place a PDF tab reports to the window', () => {
     ranges.value = [...RANGES]
     await flush()
 
-    expect(reportPlace).toHaveBeenLastCalledWith({ page: 7, pageCount: 12 })
+    expect(reportPlace).toHaveBeenLastCalledWith(JSON.stringify({ page: 7, pageCount: 12 }))
     tab.unmount()
   })
 

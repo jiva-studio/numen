@@ -236,7 +236,7 @@ func TestWindowTabListReturnsTheTabsOfTheWindow(t *testing.T) {
 	w := newWindowTools(t)
 	out := w.readTabs(t, []host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Gray Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":4,"pageCount":120}`},
 	}, "tab-2")
 
 	if len(out.Tabs) != 2 || out.ActiveTabID != "tab-2" {
@@ -259,31 +259,40 @@ func TestWindowTabListReturnsThePlaceTheReaderReported(t *testing.T) {
 		want string
 	}{
 		"a page of a PDF and its page count": {
-			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: &host.TabPlace{Page: 4, PageCount: 120}}, `{"page":4,"pageCount":120}`,
+			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: `{"page":4,"pageCount":120}`}, `{"page":4,"pageCount":120}`,
 		},
 		"a page of a PDF with no page count": {
-			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: &host.TabPlace{Page: 4}}, `{"page":4}`,
+			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: `{"page":4}`}, `{"page":4}`,
 		},
 		"a recording at a time": {
-			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: new(66.5)}}, `{"positionSeconds":66.5}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: `{"positionSeconds":66.5}`}, `{"positionSeconds":66.5}`,
 		},
 		"a recording at its beginning": {
-			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: new(float64(0))}}, `{"positionSeconds":0}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: `{"positionSeconds":0}`}, `{"positionSeconds":0}`,
 		},
 		"a recording past an hour": {
-			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: new(3723.9)}}, `{"positionSeconds":3723.9}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: `{"positionSeconds":3723.9}`}, `{"positionSeconds":3723.9}`,
 		},
 		"a place of an EPUB and its chapter": {
-			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 			`{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`,
 		},
 		"a place of an EPUB with no chapter": {
-			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: &host.TabPlace{CFI: "epubcfi(/6/6!/4/12/1:0)"}}, `{"cfi":"epubcfi(/6/6!/4/12/1:0)"}`,
+			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: `{"cfi":"epubcfi(/6/6!/4/12/1:0)"}`}, `{"cfi":"epubcfi(/6/6!/4/12/1:0)"}`,
 		},
 		"the place of a tab of any kind": {
-			host.OpenTab{Kind: "plex", Path: guidePath, Place: &host.TabPlace{Page: 7}}, `{"page":7}`,
+			host.OpenTab{Kind: "plex", Path: guidePath, Place: `{"page":7}`}, `{"page":7}`,
 		},
 		"a note tab whose kind reports no place": {host.OpenTab{Kind: "note", Path: notePath}, ""},
+		"a place with none of the fields of a reader place": {
+			host.OpenTab{Kind: "plex", Path: guidePath, Place: `{"zoom":2}`}, "",
+		},
+		"a place whose page is not a number": {
+			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: `{"page":"seven"}`}, "",
+		},
+		"a place that is not JSON": {
+			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: "page 4"}, "",
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			w := newWindowTools(t)

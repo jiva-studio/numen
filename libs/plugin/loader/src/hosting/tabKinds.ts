@@ -1,7 +1,7 @@
 /** A tab kind: the state its tabs hold, and the operations a kind may request from the window. */
 import type { Component } from 'vue'
 import type { Result } from '@numen/core-client'
-import type { JsonValue, Selector, TabPlace, TabPlacement, TextRange } from '@numen/plugin-sdk'
+import type { JsonValue, Selector, TabPlacement, TextRange } from '@numen/plugin-sdk'
 
 /**
  * Opens a file in its reader, at the location the selector names, with the ranges of its text
@@ -24,12 +24,12 @@ export interface TabTarget {
 }
 
 /**
- * The file one tab shows, and the place its reader last reported, as reported to an agent acting on
- * the user's behalf. The place is left out where the reader reported none.
+ * The file one tab shows, and the JSON of the place its reader last reported, as reported to an agent
+ * acting on the user's behalf. The place is left out where the reader reported none.
  */
 export interface OpenTab {
   readonly path: string
-  readonly place?: TabPlace
+  readonly place?: string
 }
 
 /** How a kind is drawn in the window: icon, place, mark, and the tab coming into view. */

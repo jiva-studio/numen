@@ -3,7 +3,8 @@
  * reported to the window.
  */
 import { watch, type Ref } from 'vue'
-import type { Selector, TabPlace } from '@numen/plugin-sdk'
+import type { Selector } from '@numen/plugin-sdk'
+import type { readerplace } from '@numen/plugin-sdk/contracts'
 import { createCfiSelector, getSelectorCfi } from '../lib/place'
 
 /** What the place is read from and moved through. */
@@ -22,15 +23,17 @@ export interface PlacedReader {
 export interface PlacedTab {
   readonly selector?: Selector | null
   savePlace?(selector: Selector): void
-  reportPlace?(place: TabPlace): void
+  reportPlace?(place: string): void
 }
 
 const createPlace = (cfi: string, chapter: string): Selector =>
   chapter === '' ? createCfiSelector(cfi) : { ...createCfiSelector(cfi), chapter }
 
 export function useBookPlace(reader: PlacedReader, getTab: () => PlacedTab | undefined) {
-  const reportPlace = (cfi: string, chapter: string) =>
-    getTab()?.reportPlace?.(chapter === '' ? { cfi } : { cfi, chapter })
+  const reportPlace = (cfi: string, chapter: string) => {
+    const place: readerplace.Place = chapter === '' ? { cfi } : { cfi, chapter }
+    getTab()?.reportPlace?.(JSON.stringify(place))
+  }
 
   // The window sets a selector for a search hit and for the place saved before a restart. The place
   // the tab moved to is reported at once, and it is not saved again.

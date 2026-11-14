@@ -63,16 +63,6 @@ export interface AppInfo {
   readonly platform: 'darwin' | 'windows' | 'linux'
 }
 
-// TabPlace is the place a reader tab shows, as its reader reports it. A field the reader does not
-// have is left out.
-export interface TabPlace {
-  readonly page?: number
-  readonly pageCount?: number
-  readonly positionSeconds?: number
-  readonly cfi?: string
-  readonly chapter?: string
-}
-
 // ReaderHandle is what a reader component lets its tab call: moving the keyboard into the reader, and
 // laying it out again once the tab is visible.
 export interface ReaderHandle {
@@ -89,8 +79,9 @@ export interface ReaderTabState {
   // Saves the place the reader shows. The window keeps it with the tab and passes it back as
   // `selector` when the tab opens after a restart.
   savePlace(place: Selector): void
-  // Reports the place the reader shows to the window, which an agent reads with the open tabs.
-  reportPlace(place: TabPlace): void
+  // Reports the place the reader shows to the window, which an agent reads with the open tabs. The
+  // place is JSON in the shape of a contract such as `readerplace`; the window passes it on unread.
+  reportPlace(place: string): void
   // Hands the window the reader, which it focuses and lays out when the tab is shown.
   attachReader?(reader: ReaderHandle | null): void
 }
@@ -153,8 +144,9 @@ export interface TabKindInput<State extends object = object> {
 // TabKindFiles is how a tab relates to the files it shows and edits.
 export interface TabKindFiles<State extends object = object> {
   getTarget?(this: void, state: State): TabTarget
-  // Returns the file the tab shows, and the place its reader last reported, left out when it reported none.
-  getOpenTab?(this: void, state: State): { readonly path: string; readonly place?: TabPlace }
+  // Returns the file the tab shows, and the JSON of the place its reader last reported, left out when it
+  // reported none.
+  getOpenTab?(this: void, state: State): { readonly path: string; readonly place?: string }
   isAsking?(this: void, state: State): boolean
   // Writes what the tab holds out to its file, and answers once nothing is on its way.
   flushPending?(this: void, state: State): Promise<void>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick, reactive, ref } from 'vue'
-import type { Selector, TabPlace } from '@numen/plugin-sdk'
+import type { Selector } from '@numen/plugin-sdk'
 import { useBookPlace, type PlacedTab } from './useBookPlace'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
@@ -27,14 +27,14 @@ const createReader = (isLoading = false) => {
 
 const createTab = (selector: Selector | null = null) => {
   const saved: Selector[] = []
-  const reported: TabPlace[] = []
+  const reported: unknown[] = []
   const tab: PlacedTab = reactive({
     selector,
     savePlace: (place: Selector) => {
       saved.push(place)
     },
-    reportPlace: (place: TabPlace) => {
-      reported.push(place)
+    reportPlace: (place: string) => {
+      reported.push(JSON.parse(place))
     },
   })
   return { tab, saved, reported }

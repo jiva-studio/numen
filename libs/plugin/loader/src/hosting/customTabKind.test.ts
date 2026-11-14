@@ -340,15 +340,15 @@ describe('createReaderTabKind (place)', () => {
   it('reports to the open tabs the last place the reader reports', () => {
     const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
     const state = kind.open('library/Wading Birds.pdf', 'tab') as {
-      reportPlace: (place: unknown) => void
+      reportPlace: (place: string) => void
     }
 
-    state.reportPlace({ page: 7, pageCount: 12 })
-    state.reportPlace({ page: 8, pageCount: 12 })
+    state.reportPlace('{"page":7,"pageCount":12}')
+    state.reportPlace('{"page":8,"pageCount":12}')
 
     expect(kind.address?.getOpenTab?.(state)).toStrictEqual({
       path: 'library/Wading Birds.pdf',
-      place: { page: 8, pageCount: 12 },
+      place: '{"page":8,"pageCount":12}',
     })
   })
 
@@ -364,17 +364,17 @@ describe('createReaderTabKind (place)', () => {
     const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
     const state = kind.open('talks/Heron Talk.mp3', 'tab') as {
       savePlace: (place: unknown) => void
-      reportPlace: (place: unknown) => void
+      reportPlace: (place: string) => void
     }
 
     state.savePlace({ t: [66.5, 70] })
     expect(kind.address?.getOpenTab?.(state)).toStrictEqual({ path: 'talks/Heron Talk.mp3' })
 
-    state.reportPlace({ positionSeconds: 66.5 })
+    state.reportPlace('{"positionSeconds":66.5}')
     expect(kind.address?.getState?.(state)).toEqual({ t: [66.5, 70] })
     expect(kind.address?.getOpenTab?.(state)).toStrictEqual({
       path: 'talks/Heron Talk.mp3',
-      place: { positionSeconds: 66.5 },
+      place: '{"positionSeconds":66.5}',
     })
   })
 

@@ -73,9 +73,9 @@ message OpenTab {
   // Title is what the tab is called, as the person reads it.
   string title = 4;
 
-  // Place is the place the reader of the tab reported; unset for a tab whose
-  // kind reports none.
-  TabPlace place = 5;
+  // Place is the JSON of the place the reader of the tab reported, as the window
+  // passed it on unread; empty for a tab whose kind reports none.
+  string place = 5;
 }
 
 message HostWindowServiceReadOpenTabsRequest {}

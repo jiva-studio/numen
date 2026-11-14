@@ -93,7 +93,7 @@ func TestTheWindowServesTheTabsItWasGiven(t *testing.T) {
 	}
 	open := []host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 4}},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: `{"page":4}`},
 	}
 	window.SetOpenTabs(open, "tab-2")
 
@@ -125,8 +125,8 @@ func TestWindowSetToNoWindowReturnsErrNoWindow(t *testing.T) {
 
 func getBirdTabs() []host.OpenTab {
 	return []host.OpenTab{
-		{ID: "tab-1", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 4, PageCount: 80}},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 61, PageCount: 80}},
+		{ID: "tab-1", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: `{"page":4,"pageCount":80}`},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: `{"page":61,"pageCount":80}`},
 	}
 }
 

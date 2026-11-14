@@ -201,7 +201,7 @@ func TestWindowTabListReturnsPlaceTabIDAndIsActive(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs([]host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Gray Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":4,"pageCount":120}`},
 	}, "tab-2")
 	answer := w.getAnswer(t, "window_tab_list", `{}`)
 	requireKeys(t, "the answer of window_tab_list", answer, []string{"tabs", "activeTabId"}, []string{"summary", "activeId"})
@@ -250,11 +250,10 @@ func requireExactKeys(t *testing.T, what string, object map[string]any, want []s
 
 func TestWindowTabListReturnsThePlaceOfAPDFARecordingAtItsStartAndAnEPUB(t *testing.T) {
 	w := newWindowTools(t)
-	atStart := 0.0
 	w.window.SetOpenTabs([]host.OpenTab{
-		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
-		{ID: "tab-2", Kind: "recording", Path: talkPath, Title: "Marsh Talk", Place: &host.TabPlace{PositionSeconds: &atStart}},
-		{ID: "tab-3", Kind: "reader:reader-epub", Path: bookPath, Title: "Marsh Book", Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":4,"pageCount":120}`},
+		{ID: "tab-2", Kind: "recording", Path: talkPath, Title: "Marsh Talk", Place: `{"positionSeconds":0}`},
+		{ID: "tab-3", Kind: "reader:reader-epub", Path: bookPath, Title: "Marsh Book", Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 	}, "tab-1")
 	list := requireList(t, "answer[tabs]", w.getAnswer(t, "window_tab_list", `{}`)["tabs"])
 	if len(list) != 3 {

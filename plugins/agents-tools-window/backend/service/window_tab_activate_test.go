@@ -15,8 +15,8 @@ import (
 
 func getGuideTabs() []host.OpenTab {
 	return []host.OpenTab{
-		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 88, PageCount: 120}},
+		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":4,"pageCount":120}`},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":88,"pageCount":120}`},
 		{ID: "tab-3", Kind: "note", Path: notePath, Title: "Gray Heron"},
 	}
 }
@@ -186,7 +186,7 @@ func newCountingTools(t *testing.T) (windowTools, *atomic.Int64) {
 	t.Helper()
 	vault := hosttest.New(testVault)
 	window := hosttest.NewWindow(vault)
-	tabs := append(getGuideTabs(), host.OpenTab{ID: "tab-4", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 2, PageCount: 120}})
+	tabs := append(getGuideTabs(), host.OpenTab{ID: "tab-4", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":2,"pageCount":120}`})
 	window.SetOpenTabs(tabs, "tab-1")
 	calls := &atomic.Int64{}
 	on := service.Host{Files: filesOf(vault), Window: countingWindow{Window: window, activateCalls: calls}}

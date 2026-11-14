@@ -1,6 +1,7 @@
 /** Carries the places and ranges the window sets on a reader tab to the document, and the page the tab shows back to the window. */
 import { watch } from 'vue'
 import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
+import type { readerplace } from '@numen/plugin-sdk/contracts'
 import type { DocumentTabState } from './useDocumentTab'
 
 export function useReaderTabSync(
@@ -69,7 +70,8 @@ export function useReaderTabSync(
       ] as const,
     ([page, pageCount, isLoading]) => {
       if (typeof page === 'number' && pageCount > 0 && !isLoading) {
-        getReaderTab()?.reportPlace?.({ page: page + 1, pageCount })
+        const place: readerplace.Place = { page: page + 1, pageCount }
+        getReaderTab()?.reportPlace?.(JSON.stringify(place))
       }
     },
     { immediate: true },

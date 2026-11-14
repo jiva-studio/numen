@@ -20,22 +20,13 @@ func (o OpenTabs) GetActiveTab() (Tab, bool) {
 // A Tab is one tab of a window: what kind it is, and its contents.
 //
 // The kind is the name a plugin registers the tab kind under. State is the
-// JSON that plugin saved for the tab; nothing here reads it.
+// JSON that plugin saved for the tab, and Place the JSON of the place its
+// reader reported; nothing here reads either.
 type Tab struct {
 	ID    string
 	Kind  string
 	Path  string
 	Title string
 	State string
-	Place *TabPlace
-}
-
-// TabPlace is the place a reader tab shows, as its reader reports it. A zero field is a place
-// the reader does not have.
-type TabPlace struct {
-	Page            int
-	PageCount       int
-	PositionSeconds *float64
-	CFI             string
-	Chapter         string
+	Place string
 }

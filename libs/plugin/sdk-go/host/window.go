@@ -16,25 +16,11 @@ var (
 // FocusedNote is the note FocusNote made the current one.
 type FocusedNote struct{ Path, Title, ID string }
 
-// OpenTab is one tab of the window as it last reported it. Place is the place its reader reported,
-// nil for a tab whose kind reports none.
+// OpenTab is one tab of the window as it last reported it. Place is the JSON of the place its reader
+// reported, in the shape of a contract such as contracts/readerplace, and empty for a tab whose kind
+// reports none.
 type OpenTab struct {
-	ID, Kind, Path, Title string
-	Place                 *TabPlace
-}
-
-// TabPlace is the place a reader tab shows, as its reader reports it. A zero field is a place the
-// reader does not have.
-//
-//numen:api
-type TabPlace struct {
-	// Page is the page a PDF shows, from 1, and PageCount the number of its pages.
-	Page, PageCount int
-	// PositionSeconds is the time of a recording, in seconds from its start; nil for a tab that is
-	// not a recording.
-	PositionSeconds *float64
-	// CFI is the EPUB CFI of the place shown, and Chapter the table-of-contents title there.
-	CFI, Chapter string
+	ID, Kind, Path, Title, Place string
 }
 
 // PassageSpan is a byte range in a file's text version, as a passage search returns it. A passage

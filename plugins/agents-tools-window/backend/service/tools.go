@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/readerplace"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
@@ -102,8 +104,11 @@ func newTabInfo(tab host.OpenTab, activeID string) api.TabInfo {
 	}
 }
 
-func newPlace(place *host.TabPlace) *api.Place {
-	if place == nil || *place == (host.TabPlace{}) {
+// newPlace reads the place a reader reported. A tab whose reader reported none, or a place in another
+// shape, has no place.
+func newPlace(reported string) *api.Place {
+	var place readerplace.Place
+	if reported == "" || json.Unmarshal([]byte(reported), &place) != nil || place == (readerplace.Place{}) {
 		return nil
 	}
 	return &api.Place{

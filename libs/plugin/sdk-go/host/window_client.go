@@ -101,18 +101,5 @@ func (c *Client) ActivateTab(ctx context.Context, id string) (OpenTab, string, e
 }
 
 func readOpenTab(tab *v1.OpenTab) OpenTab {
-	out := OpenTab{ID: tab.GetId(), Kind: tab.GetKind(), Path: tab.GetPath(), Title: tab.GetTitle()}
-	if place := tab.GetPlace(); place != nil {
-		out.Place = &TabPlace{
-			Page:      int(place.GetPage()),
-			PageCount: int(place.GetPageCount()),
-			CFI:       place.GetCfi(),
-			Chapter:   place.GetChapter(),
-		}
-		if place.PositionSeconds != nil {
-			seconds := place.GetPositionSeconds()
-			out.Place.PositionSeconds = &seconds
-		}
-	}
-	return out
+	return OpenTab{ID: tab.GetId(), Kind: tab.GetKind(), Path: tab.GetPath(), Title: tab.GetTitle(), Place: tab.GetPlace()}
 }

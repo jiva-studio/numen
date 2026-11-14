@@ -81,7 +81,7 @@ describe('the place a recording tab reports to the window', () => {
 
     tab.unmount()
 
-    expect(reportPlace).toHaveBeenLastCalledWith({ positionSeconds: 66.5 })
+    expect(reportPlace).toHaveBeenLastCalledWith(JSON.stringify({ positionSeconds: 66.5 }))
   })
 
   it('is a time past an hour, in seconds, when it closes there', async () => {
@@ -91,7 +91,7 @@ describe('the place a recording tab reports to the window', () => {
 
     tab.unmount()
 
-    expect(reportPlace).toHaveBeenLastCalledWith({ positionSeconds: 3723.9 })
+    expect(reportPlace).toHaveBeenLastCalledWith(JSON.stringify({ positionSeconds: 3723.9 }))
   })
 
   it('is nothing while another recording owns the shared player', async () => {

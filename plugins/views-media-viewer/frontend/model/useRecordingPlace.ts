@@ -1,5 +1,6 @@
 import { onUnmounted, watch } from 'vue'
 import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
+import type { readerplace } from '@numen/plugin-sdk/contracts'
 import { getSelectorStart, getTimeSelector } from '../lib/place'
 import type { TextRange } from '../types'
 import type { TranscriptState } from './transcript'
@@ -21,9 +22,14 @@ export function useRecordingPlace(
     return start
   }
 
+  const reportTime = (ms: number) => {
+    const place: readerplace.Place = { positionSeconds: ms / 1000 }
+    getState()?.reportPlace?.(JSON.stringify(place))
+  }
+
   const saveTime = (ms: number) => {
     getState()?.savePlace?.(getTimeSelector(ms))
-    getState()?.reportPlace?.({ positionSeconds: Math.max(0, ms) / 1000 })
+    reportTime(Math.max(0, ms))
   }
 
   const seekToSpans = async (...spans: readonly TextRange[]) => {
@@ -38,7 +44,7 @@ export function useRecordingPlace(
   // The window sets a selector for a search hit and for the place saved before a restart. The one the
   // tab opens with is already stored by the window, so it is reported and only a later one is saved.
   const initialTime = seekToSelector(getState()?.selector)
-  if (initialTime !== null) getState()?.reportPlace?.({ positionSeconds: initialTime / 1000 })
+  if (initialTime !== null) reportTime(initialTime)
 
   watch(
     () => getState()?.selector,

@@ -347,9 +347,9 @@ type OpenTab struct {
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Title is what the tab is called, as the person reads it.
 	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	// Place is the place the reader of the tab reported; unset for a tab whose
-	// kind reports none.
-	Place         *TabPlace `protobuf:"bytes,5,opt,name=place,proto3" json:"place,omitempty"`
+	// Place is the JSON of the place the reader of the tab reported, as the window
+	// passed it on unread; empty for a tab whose kind reports none.
+	Place         string `protobuf:"bytes,5,opt,name=place,proto3" json:"place,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -412,11 +412,11 @@ func (x *OpenTab) GetTitle() string {
 	return ""
 }
 
-func (x *OpenTab) GetPlace() *TabPlace {
+func (x *OpenTab) GetPlace() string {
 	if x != nil {
 		return x.Place
 	}
-	return nil
+	return ""
 }
 
 type HostWindowServiceReadOpenTabsRequest struct {
@@ -638,13 +638,13 @@ const file_numen_v1_hostwindow_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x121\n" +
 	"\bpassages\x18\x02 \x03(\v2\x15.numen.v1.PassageSpanR\bpassages\"L\n" +
 	"\x15FocusPassagesResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\"\x81\x01\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\"m\n" +
 	"\aOpenTab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x04 \x01(\tR\x05title\x12(\n" +
-	"\x05place\x18\x05 \x01(\v2\x12.numen.v1.TabPlaceR\x05place\"&\n" +
+	"\x05title\x18\x04 \x01(\tR\x05title\x12\x14\n" +
+	"\x05place\x18\x05 \x01(\tR\x05place\"&\n" +
 	"$HostWindowServiceReadOpenTabsRequest\"\xa0\x01\n" +
 	"%HostWindowServiceReadOpenTabsResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12%\n" +
@@ -692,30 +692,28 @@ var file_numen_v1_hostwindow_proto_goTypes = []any{
 	(*HostWindowServiceReadOpenTabsResponse)(nil), // 8: numen.v1.HostWindowServiceReadOpenTabsResponse
 	(*ActivateTabRequest)(nil),                    // 9: numen.v1.ActivateTabRequest
 	(*ActivateTabResponse)(nil),                   // 10: numen.v1.ActivateTabResponse
-	(*TabPlace)(nil),                              // 11: numen.v1.TabPlace
 }
 var file_numen_v1_hostwindow_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.FocusNoteResponse.error:type_name -> numen.v1.HostWindowErrorCode
 	3,  // 1: numen.v1.FocusPassagesRequest.passages:type_name -> numen.v1.PassageSpan
 	0,  // 2: numen.v1.FocusPassagesResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	11, // 3: numen.v1.OpenTab.place:type_name -> numen.v1.TabPlace
-	0,  // 4: numen.v1.HostWindowServiceReadOpenTabsResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	6,  // 5: numen.v1.HostWindowServiceReadOpenTabsResponse.tabs:type_name -> numen.v1.OpenTab
-	0,  // 6: numen.v1.ActivateTabResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	6,  // 7: numen.v1.ActivateTabResponse.tab:type_name -> numen.v1.OpenTab
-	1,  // 8: numen.v1.HostWindowService.FocusNote:input_type -> numen.v1.FocusNoteRequest
-	4,  // 9: numen.v1.HostWindowService.FocusPassages:input_type -> numen.v1.FocusPassagesRequest
-	7,  // 10: numen.v1.HostWindowService.ReadOpenTabs:input_type -> numen.v1.HostWindowServiceReadOpenTabsRequest
-	9,  // 11: numen.v1.HostWindowService.ActivateTab:input_type -> numen.v1.ActivateTabRequest
-	2,  // 12: numen.v1.HostWindowService.FocusNote:output_type -> numen.v1.FocusNoteResponse
-	5,  // 13: numen.v1.HostWindowService.FocusPassages:output_type -> numen.v1.FocusPassagesResponse
-	8,  // 14: numen.v1.HostWindowService.ReadOpenTabs:output_type -> numen.v1.HostWindowServiceReadOpenTabsResponse
-	10, // 15: numen.v1.HostWindowService.ActivateTab:output_type -> numen.v1.ActivateTabResponse
-	12, // [12:16] is the sub-list for method output_type
-	8,  // [8:12] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	0,  // 3: numen.v1.HostWindowServiceReadOpenTabsResponse.error:type_name -> numen.v1.HostWindowErrorCode
+	6,  // 4: numen.v1.HostWindowServiceReadOpenTabsResponse.tabs:type_name -> numen.v1.OpenTab
+	0,  // 5: numen.v1.ActivateTabResponse.error:type_name -> numen.v1.HostWindowErrorCode
+	6,  // 6: numen.v1.ActivateTabResponse.tab:type_name -> numen.v1.OpenTab
+	1,  // 7: numen.v1.HostWindowService.FocusNote:input_type -> numen.v1.FocusNoteRequest
+	4,  // 8: numen.v1.HostWindowService.FocusPassages:input_type -> numen.v1.FocusPassagesRequest
+	7,  // 9: numen.v1.HostWindowService.ReadOpenTabs:input_type -> numen.v1.HostWindowServiceReadOpenTabsRequest
+	9,  // 10: numen.v1.HostWindowService.ActivateTab:input_type -> numen.v1.ActivateTabRequest
+	2,  // 11: numen.v1.HostWindowService.FocusNote:output_type -> numen.v1.FocusNoteResponse
+	5,  // 12: numen.v1.HostWindowService.FocusPassages:output_type -> numen.v1.FocusPassagesResponse
+	8,  // 13: numen.v1.HostWindowService.ReadOpenTabs:output_type -> numen.v1.HostWindowServiceReadOpenTabsResponse
+	10, // 14: numen.v1.HostWindowService.ActivateTab:output_type -> numen.v1.ActivateTabResponse
+	11, // [11:15] is the sub-list for method output_type
+	7,  // [7:11] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostwindow_proto_init() }

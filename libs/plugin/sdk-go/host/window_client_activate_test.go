@@ -36,7 +36,7 @@ func (h *activateHost) ActivateTab(_ context.Context, req *connect.Request[v1.Ac
 		return connect.NewResponse(&v1.ActivateTabResponse{Error: h.code}), nil
 	}
 	return connect.NewResponse(&v1.ActivateTabResponse{
-		Tab:      &v1.OpenTab{Id: req.Msg.GetTabId(), Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &v1.TabPlace{Page: 12, PageCount: 80}},
+		Tab:      &v1.OpenTab{Id: req.Msg.GetTabId(), Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: `{"page":12,"pageCount":80}`},
 		ActiveId: "tab-1",
 	}), nil
 }
@@ -58,7 +58,7 @@ func TestClientActivateTabReturnsTheTabWithItsPlaceAndTheActiveID(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := host.OpenTab{ID: "tab-4", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 12, PageCount: 80}}
+	want := host.OpenTab{ID: "tab-4", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: `{"page":12,"pageCount":80}`}
 	if !reflect.DeepEqual(tab, want) || activeID != "tab-1" {
 		t.Errorf("returned %s with %q active, want %s with tab-1", formatTabs([]host.OpenTab{tab}), activeID, formatTabs([]host.OpenTab{want}))
 	}

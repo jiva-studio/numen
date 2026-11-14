@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { reactive, ref } from 'vue'
-import type { Selector, TabPlace } from '@numen/plugin-sdk'
+import type { Selector } from '@numen/plugin-sdk'
 import { createCfiSelector } from '../lib/place'
 import { useBookPlace, type PlacedTab } from './useBookPlace'
 
@@ -23,14 +23,14 @@ const createReader = (chapterThere: string, canReach = true) => {
 
 const createTab = (selector: Selector) => {
   const saved: Selector[] = []
-  const reported: TabPlace[] = []
+  const reported: unknown[] = []
   const tab: PlacedTab = reactive({
     selector,
     savePlace: (place: Selector) => {
       saved.push(place)
     },
-    reportPlace: (place: TabPlace) => {
-      reported.push(place)
+    reportPlace: (place: string) => {
+      reported.push(JSON.parse(place))
     },
   })
   return { tab, saved, reported }
