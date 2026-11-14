@@ -173,6 +173,9 @@ const SettingTypeFile = "file"
 // connection and holds the values of the row fields of its type.
 const SettingTypeConnections = "connections"
 
+// SettingTypeList is the type of a setting that holds a list of distinct, non-empty strings.
+const SettingTypeList = "list"
+
 const settingTypeNumber = "number"
 
 // settingTypeBoolean is the type of a setting that stores true or false.

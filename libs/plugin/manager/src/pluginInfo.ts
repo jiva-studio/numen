@@ -18,7 +18,7 @@ interface SettingObject {
 
 /** Declarative setting value types exposed by a plugin. */
 export type PluginSettingType =
-  'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file' | 'connections'
+  'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file' | 'connections' | 'list'
 
 /** One value an enum setting can hold, with its display title. */
 export interface PluginSettingOption {

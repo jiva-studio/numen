@@ -31,6 +31,8 @@ var (
 	ErrNotAnOption = errors.New("not one of the options")
 	// ErrOutOfRange is a number outside the bounds of a range or a number setting.
 	ErrOutOfRange = errors.New("out of range")
+	// ErrInvalidListItem is an item of a list setting that is empty or listed twice.
+	ErrInvalidListItem = errors.New("invalid list item")
 )
 
 // noDeclaringPluginError is returned for an owner that no plugin declares settings under. It

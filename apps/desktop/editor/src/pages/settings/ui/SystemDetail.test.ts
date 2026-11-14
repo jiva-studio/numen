@@ -8,6 +8,7 @@ import { mount } from '@vue/test-utils'
 import { Select, Slider, Switch } from '@numen/ui'
 import SystemDetail from './SystemDetail.vue'
 import SettingRow from './setting-row/SettingRow.vue'
+import { ListField } from './list-field'
 import { createInstallation } from '@/pages/settings/testing/installation'
 import type { PluginSettingInfo, SettingEdit } from '@/entities/settings'
 
@@ -223,5 +224,35 @@ describe('the page of the shell settings', () => {
       .vm.$emit('update:modelValue', true)
 
     expect(writes).toStrictEqual([{ at: ['app', 'naming', 'syncTitleAndFilename'], value: 'true' }])
+  })
+})
+
+describe('a list setting of the shell', () => {
+  const FOLDERS: PluginSettingInfo = {
+    key: 'search.ignoredFolders',
+    type: 'list',
+    title: 'Ignored folders',
+    description: 'Folders whose notes are not searched.',
+    default: [],
+    isShown: true,
+    value: ['templates'],
+  }
+
+  it('draws a list setting of the app with the list control', () => {
+    const { wrapper } = createPage('system', [FOLDERS])
+
+    expect(findRow(wrapper, 'Ignored folders').findComponent(ListField).props('items')).toStrictEqual([
+      'templates',
+    ])
+  })
+
+  it('writes the item added to a list setting of the app under the owner app', () => {
+    const { wrapper, writes } = createPage('system', [FOLDERS])
+
+    findRow(wrapper, 'Ignored folders').findComponent(ListField).vm.$emit('add', 'drafts')
+
+    expect(writes.map((one) => ({ at: one.at, value: JSON.parse(one.value) as unknown }))).toStrictEqual([
+      { at: ['app', 'search', 'ignoredFolders'], value: ['templates', 'drafts'] },
+    ])
   })
 })
