@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/neighborhood"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/reloads"
@@ -23,7 +24,7 @@ type reviewHandler struct {
 	*vaultSession
 	now          ports.Clock
 	runs         *sessions.Registry
-	flash        func() *reviewScenarios
+	flash        func() *flashcards.Scenarios
 	neighborhood neighborhood.Show
 }
 

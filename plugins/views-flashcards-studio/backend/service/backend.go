@@ -32,7 +32,7 @@ type Backend struct {
 	now   ports.Clock
 	cfg   Config
 	runs  *sessions.Registry
-	flash *currentScenarios
+	flash *flashcards.Current
 }
 
 // New makes the backend over the host's vault.
@@ -42,7 +42,7 @@ func New(cfg Config) *Backend {
 		vaultSession: &vaultSession{vaults: cfg.Vaults, notes: hostPorts.Notes}, ports: hostPorts, now: cfg.Now, cfg: cfg,
 		runs: sessions.NewRegistry(), flash: nil,
 	}
-	b.flash = createCurrentScenarios(b.getFlashConfig())
+	b.flash = flashcards.NewCurrent(b.getFlashConfig())
 	return b
 }
 
