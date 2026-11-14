@@ -5,8 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/diff"
 )
@@ -85,7 +85,6 @@ func (c Creator) prepareDiff(ctx context.Context, req Request) (string, int, int
 	return diffText, additions, deletions, nil
 }
 
-// readNote returns the text of the note, empty for a note that does not exist yet.
 func (c Creator) readNote(ctx context.Context, req Request) (string, error) {
 	if c.files == nil {
 		return "", nil
@@ -95,7 +94,7 @@ func (c Creator) readNote(ctx context.Context, req Request) (string, error) {
 		return "", nil
 	}
 	data, _, err := vault.Read(ctx, req.Path)
-	if errors.Is(err, fs.ErrNotExist) {
+	if errors.Is(err, host.ErrNotExist) {
 		return "", nil
 	}
 	if err != nil {
