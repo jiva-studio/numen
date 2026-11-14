@@ -1,4 +1,4 @@
-package shared_test
+package onnx
 
 import (
 	"errors"
@@ -12,18 +12,16 @@ import (
 	"syscall"
 	"testing"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/shared"
 )
 
 const (
-	envHolderDir = "NUMEN_SHARED_TEST_DIR"
-	envHolderLog = "NUMEN_SHARED_TEST_LOG"
+	envHolderDir = "NUMEN_ONNX_LOCK_TEST_DIR"
+	envHolderLog = "NUMEN_ONNX_LOCK_TEST_LOG"
 	holdFor      = 120 * time.Millisecond
 )
 
 func hold(dir, log, name string) error {
-	release, err := shared.Lock(dir)
+	release, err := lockDir(dir)
 	if err != nil {
 		return err
 	}
@@ -96,7 +94,7 @@ func TestTwoProcessesCompilingOneDigestTakeTurns(t *testing.T) {
 	var commands []*exec.Cmd
 	for i := range 3 {
 		cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestHolderProcess$")
-		cmd.Env = append(os.Environ(), envHolderDir+"="+dir, envHolderLog+"="+log, "NUMEN_SHARED_TEST_NAME="+fmt.Sprint("process-", i))
+		cmd.Env = append(os.Environ(), envHolderDir+"="+dir, envHolderLog+"="+log, "NUMEN_ONNX_LOCK_TEST_NAME="+fmt.Sprint("process-", i))
 		if err := cmd.Start(); err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +115,7 @@ func TestHolderProcess(t *testing.T) {
 	if dir == "" {
 		t.Skip("runs only as a child of the test that starts it")
 	}
-	if err := hold(dir, os.Getenv(envHolderLog), os.Getenv("NUMEN_SHARED_TEST_NAME")); err != nil {
+	if err := hold(dir, os.Getenv(envHolderLog), os.Getenv("NUMEN_ONNX_LOCK_TEST_NAME")); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -125,7 +123,7 @@ func TestHolderProcess(t *testing.T) {
 func TestALockedDirectoryIsCreatedForTheUserAlone(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "a", "digest")
 
-	release, err := shared.Lock(dir)
+	release, err := lockDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +152,7 @@ func TestALockedDirectoryIsCreatedForTheUserAlone(t *testing.T) {
 	if err := os.WriteFile(blockingFile, []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := shared.Lock(filepath.Join(blockingFile, "sub")); err == nil || strings.HasPrefix(err.Error(), "lock ") {
+	if _, err := lockDir(filepath.Join(blockingFile, "sub")); err == nil || strings.HasPrefix(err.Error(), "lock ") {
 		t.Errorf("expected direct MkdirAll error without lock prefix, got %v", err)
 	}
 
@@ -162,7 +160,7 @@ func TestALockedDirectoryIsCreatedForTheUserAlone(t *testing.T) {
 	if err := os.Mkdir(filepath.Join(badLockDir, ".lock"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := shared.Lock(badLockDir); err == nil || !strings.HasPrefix(err.Error(), "lock ") || !errors.Is(err, syscall.EISDIR) {
+	if _, err := lockDir(badLockDir); err == nil || !strings.HasPrefix(err.Error(), "lock ") || !errors.Is(err, syscall.EISDIR) {
 		t.Errorf("expected wrapped EISDIR lock error when .lock is a directory, got %v", err)
 	}
 }
@@ -177,10 +175,10 @@ func TestAModelTheHostProvisionedIsKeyedByTheSumItWasVerifiedAgainst(t *testing.
 		}
 	}
 
-	key, err := shared.GetModelKey(model)
+	key, err := getModelKey(model)
 
 	if err != nil || key != sum {
-		t.Errorf("GetModelKey() = %q, %v, want %q", key, err, sum)
+		t.Errorf("getModelKey() = %q, %v, want %q", key, err, sum)
 	}
 }
 
@@ -189,7 +187,7 @@ func TestAModelTheHostDidNotProvisionIsKeyedByItsStat(t *testing.T) {
 	if err := os.WriteFile(model, []byte("weights"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	first, err := shared.GetModelKey(model)
+	first, err := getModelKey(model)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,13 +195,13 @@ func TestAModelTheHostDidNotProvisionIsKeyedByItsStat(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	second, err := shared.GetModelKey(model)
+	second, err := getModelKey(model)
 
 	if err != nil || first == second || !strings.HasPrefix(first, "stat-") {
 		t.Errorf("keys %q and %q, %v, want two different stat keys", first, second, err)
 	}
 
-	if _, err := shared.GetModelKey(filepath.Join(t.TempDir(), "missing.onnx")); err == nil {
+	if _, err := getModelKey(filepath.Join(t.TempDir(), "missing.onnx")); err == nil {
 		t.Fatal("expected error for missing model file")
 	}
 
@@ -218,7 +216,7 @@ func TestAModelTheHostDidNotProvisionIsKeyedByItsStat(t *testing.T) {
 		if err := os.WriteFile(readyPath, []byte(invalidReady), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		key, err := shared.GetModelKey(model)
+		key, err := getModelKey(model)
 		if err != nil || !strings.HasPrefix(key, "stat-") {
 			t.Errorf("ready %q: got key=%q err=%v, want stat- key", invalidReady, key, err)
 		}
