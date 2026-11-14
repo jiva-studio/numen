@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
-import { onScopeDispose } from 'vue'
+import type * as Vue from 'vue'
+import { onScopeDispose, shallowRef } from 'vue'
 import type { AnyTabKind } from '@numen/plugin-loader'
-import { findFrontKind } from '../lib/tab'
 import { createWindowTabs } from './createWindowTabs'
 
-vi.mock('../lib/tab', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../lib/tab')>()
+vi.mock('vue', async (importOriginal) => {
+  const actual = await importOriginal<typeof Vue>()
   return {
     ...actual,
-    findFrontKind: vi.fn(actual.findFrontKind),
+    shallowRef: vi.fn(actual.shallowRef),
   }
 })
 
@@ -62,12 +62,12 @@ describe('createWindowTabs', () => {
   })
 
   it('opens nothing while no kind is in front', () => {
-    vi.mocked(findFrontKind).mockClear()
+    vi.mocked(shallowRef).mockClear()
     const tabs = createWindowTabs()
 
     tabs.openTab('physics')
 
-    expect(findFrontKind).toHaveBeenCalledWith([])
+    expect(shallowRef).toHaveBeenCalledWith([])
     expect(tabs.tab.value).toBeNull()
   })
 

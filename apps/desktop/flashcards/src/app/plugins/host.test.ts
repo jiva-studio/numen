@@ -67,7 +67,7 @@ const createMockBackgroundTaskHost = (): BackgroundTaskHost => ({
   cancel: async () => undefined,
   retry: () => undefined,
   dismiss: () => undefined,
-  runAction: async () => undefined,
+  runAction: () => undefined,
 })
 
 const withVault = (id: string) =>

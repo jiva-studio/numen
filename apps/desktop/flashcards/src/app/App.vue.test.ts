@@ -9,6 +9,7 @@ import {
   getPluginStyle,
   type PluginContext,
 } from '@numen/plugin-loader'
+import type * as Workbench from '@numen/workbench'
 import type { VaultRow } from '@numen/workbench'
 import { createRoot } from './createRoot'
 import { createWindow } from './window/createWindow'
@@ -19,7 +20,7 @@ const runtimeHooks = vi.hoisted(() => ({
 }))
 
 vi.mock('@numen/workbench', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@numen/workbench')>()
+  const actual = await importOriginal<typeof Workbench>()
   return {
     ...actual,
     loadFrameRuntime: () => runtimeHooks.loadRuntime(),
