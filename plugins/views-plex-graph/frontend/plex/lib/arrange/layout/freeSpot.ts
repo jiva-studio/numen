@@ -133,8 +133,15 @@ export class SpotIndex {
   }
 }
 
-function isBetter(cost: number, progress: number, best: { cost: number; progress: number }): boolean {
-  return cost < best.cost || (cost === best.cost && roundProgress(progress) < roundProgress(best.progress))
+function isBetter(
+  cost: number,
+  progress: number,
+  best: { cost: number; progress: number },
+): boolean {
+  return (
+    cost < best.cost ||
+    (cost === best.cost && roundProgress(progress) < roundProgress(best.progress))
+  )
 }
 
 function roundProgress(progress: number): number {
@@ -184,7 +191,8 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
     // The group has no free place in the window on its side of the start. A box wider than the ones before it starts further out, so a place
     // that is free and in the window is also taken where the box reaches back past the start, as long as its center is on the side of the group.
     const relaxedMinProgress = -getReach(request.direction, request.size) - TOLERANCE
-    for (const box of index.list()) considerAll(listNearbyCandidates(box, request), relaxedMinProgress)
+    for (const box of index.list())
+      considerAll(listNearbyCandidates(box, request), relaxedMinProgress)
   }
   if (found.best) return toSpot(found.best.point)
   return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)

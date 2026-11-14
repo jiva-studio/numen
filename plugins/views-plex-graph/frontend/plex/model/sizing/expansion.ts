@@ -34,7 +34,11 @@ export interface ExpandedBoxBounds {
  * It grows about its own midpoint, and shifts back inside the window where the midpoint leaves no space to grow.
  * Returns null when the box already holds the title or the window cannot fit a larger box.
  */
-export function getExpandedBox(node: PlacedNode, room: number, bounds: ExpandedBoxBounds): ExpandedBox | null {
+export function getExpandedBox(
+  node: PlacedNode,
+  room: number,
+  bounds: ExpandedBoxBounds,
+): ExpandedBox | null {
   const { viewport, margin } = bounds
   const width = Math.min(room, viewport.width - 2 * margin)
   if (width <= node.width) return null

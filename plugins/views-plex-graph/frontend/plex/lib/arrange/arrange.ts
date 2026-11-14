@@ -236,6 +236,10 @@ function stopAtOutside(
   return viewport ? (node) => !isInside(node, viewport, { margin, rooms }) : undefined
 }
 
-function isInsideWindow(nodes: readonly PlacedNode[], viewport: Size | undefined, fit: Fit): boolean {
+function isInsideWindow(
+  nodes: readonly PlacedNode[],
+  viewport: Size | undefined,
+  fit: Fit,
+): boolean {
   return !viewport || nodes.every((node) => isInside(node, viewport, fit))
 }

@@ -29,7 +29,9 @@ function groupByOwner(
 }
 
 function listDistinctItems(items: readonly RelatedNote[]): RelatedNote[] {
-  const ordered = NAME_ORDER.flatMap((relation) => items.filter((item) => item.relation === relation))
+  const ordered = NAME_ORDER.flatMap((relation) =>
+    items.filter((item) => item.relation === relation),
+  )
   const named = new Set<string>()
   return ordered.filter((item) => {
     if (named.has(item.path)) return false

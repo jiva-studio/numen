@@ -59,7 +59,9 @@ describe('the sizes requested during a move', () => {
 
     await play(view)
 
-    expect(new Set(placedHeadings.mock.calls.map(([node]) => node.id))).toStrictEqual(new Set([attended.id]))
+    expect(new Set(placedHeadings.mock.calls.map(([node]) => node.id))).toStrictEqual(
+      new Set([attended.id]),
+    )
     expect(new Set(widen.mock.calls.map(([node]) => node.id))).toStrictEqual(new Set([attended.id]))
     expect(placedHeadings.mock.calls.length).toBeLessThanOrEqual(FRAMES)
   })

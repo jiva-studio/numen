@@ -176,7 +176,9 @@ describe('a note that is cut', () => {
         ...one,
         graph: {
           nodes: one.graph.nodes.filter((node) => visibleIds.has(node.id)),
-          edges: one.graph.edges.filter((edge) => visibleIds.has(edge.from) && visibleIds.has(edge.to)),
+          edges: one.graph.edges.filter(
+            (edge) => visibleIds.has(edge.from) && visibleIds.has(edge.to),
+          ),
         },
       })
       const againIds = new Set(again.nodes.map((node) => node.id))

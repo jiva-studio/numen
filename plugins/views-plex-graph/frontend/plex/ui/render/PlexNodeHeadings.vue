@@ -27,7 +27,9 @@ const emit = defineEmits<{
 const scrollOffset = ref(0)
 
 /** The headings, as far out from under the box as they have come. */
-const openHeadings = computed(() => getOpenHeadings(props.placedHeadings, props.open, scrollOffset.value))
+const openHeadings = computed(() =>
+  getOpenHeadings(props.placedHeadings, props.open, scrollOffset.value),
+)
 
 /** The x position where the backdrop behind the headings begins. */
 const backdropX = computed(() => props.placedHeadings.offset - props.placedHeadings.width / 2)
