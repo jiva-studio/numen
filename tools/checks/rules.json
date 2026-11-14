@@ -313,7 +313,9 @@
     {
       "name": "go/identities",
       "paths": [
-        "libs/core/kernel/**",
+        "libs/core/kernel/domain/**",
+        "libs/core/kernel/port/**",
+        "libs/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -329,7 +331,9 @@
     {
       "name": "go/instants",
       "paths": [
-        "libs/core/kernel/**",
+        "libs/core/kernel/domain/**",
+        "libs/core/kernel/port/**",
+        "libs/note/domain/**",
         "go.work"
       ],
       "tags": [

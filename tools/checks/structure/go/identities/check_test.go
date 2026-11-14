@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
@@ -19,20 +20,7 @@ import (
 // one imports the store's numbering into scenario logic, such as a use case
 // looping over ascending integer keys.
 func TestCoreIdentitiesUseDomainTypes(t *testing.T) {
-	var wrong []string
-	var read int
-	for _, item := range []string{"domain", "port"} {
-		dir := load.GetPackageDir(item)
-		for _, file := range load.ParseSourceFiles(t, dir) {
-			for _, found := range getIdentities(file) {
-				read++
-				if getNumberedTypes()[found.Spelled] {
-					wrong = append(wrong, fmt.Sprintf("%s/%s.%s is a %s",
-						item, found.In, found.Field, found.Spelled))
-				}
-			}
-		}
-	}
+	wrong, read := getNumberedIdentities(t, load.ListTypeRoots())
 	for _, one := range wrong {
 		t.Error(one + ": an identity the core carries is a word of its own")
 	}
@@ -40,8 +28,60 @@ func TestCoreIdentitiesUseDomainTypes(t *testing.T) {
 	// A walk that read no identity is a rule checked against nothing, and it
 	// passes.
 	if read == 0 {
-		t.Fatal("domain/ and port/ name no identity: the walk is not reading them")
+		t.Fatal("the domain and port folders name no identity: the walk is not reading them")
 	}
+}
+
+func getNumberedIdentities(t *testing.T, roots []load.Root) (wrong []string, read int) {
+	t.Helper()
+	for _, root := range roots {
+		for _, file := range load.ParseSourceFiles(t, root.Dir) {
+			for _, found := range getIdentities(file) {
+				read++
+				if getNumberedTypes()[found.Spelled] {
+					wrong = append(wrong, fmt.Sprintf("%s/%s.%s is a %s",
+						root.Name, found.In, found.Field, found.Spelled))
+				}
+			}
+		}
+	}
+	return wrong, read
+}
+
+// The walk once read libs/note/domain in place of the kernel's domain, and an
+// integer identity there passed.
+func TestCoreIdentities_ReadKernelDomain(t *testing.T) {
+	dir, err := filepath.Abs(getKernelDomain(t).Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(filepath.ToSlash(dir), "libs/core/kernel/domain") {
+		t.Fatalf("kernel/domain is read from %s, want libs/core/kernel/domain", dir)
+	}
+
+	planted := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(planted, "vault"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	source := "package vault\n\ntype Vault struct {\n\tID int64\n}\n"
+	if err := os.WriteFile(filepath.Join(planted, "vault", "vault.go"), []byte(source), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	wrong, _ := getNumberedIdentities(t, []load.Root{{Name: "kernel/domain", Dir: planted}})
+	if !slices.Equal(wrong, []string{"kernel/domain/Vault.ID is a int64"}) {
+		t.Errorf("the walk rejected %v, want the planted Vault.ID", wrong)
+	}
+}
+
+func getKernelDomain(t *testing.T) load.Root {
+	t.Helper()
+	for _, root := range load.ListTypeRoots() {
+		if root.Name == "kernel/domain" {
+			return root
+		}
+	}
+	t.Fatal("the walk lists no kernel/domain")
+	return load.Root{}
 }
 
 // has to find the field and the type it is spelled in, and let through the ones
