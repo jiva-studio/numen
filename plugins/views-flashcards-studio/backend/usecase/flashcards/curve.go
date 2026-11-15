@@ -230,15 +230,13 @@ func (u ProjectCurve) countPointingDecks(
 	ctx context.Context, v domain.Vault, reads *presets.Reads, path string,
 	decks []string, requested map[string]bool,
 ) (int, error) {
-	var out int
-	var readErr error
+	out := 0
 	for _, deck := range decks {
 		points, target := requested[deck]
 		if !target {
-			var p presets.Contents
-			p, readErr = reads.GetForDeck(ctx, v, deck)
-			if readErr != nil {
-				break
+			p, err := reads.GetForDeck(ctx, v, deck)
+			if err != nil {
+				return 0, err
 			}
 			points = p.Path == path
 		}
@@ -246,7 +244,7 @@ func (u ProjectCurve) countPointingDecks(
 			out++
 		}
 	}
-	return out, readErr
+	return out, nil
 }
 
 func (u ProjectCurve) computePlaces(count int, each func(index int) error) error {

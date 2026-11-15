@@ -44,11 +44,6 @@ func RunWorkerTests(t *testing.T, provide ReadingProvider, newVault func(tb test
 	t.Run("CancelingTheVectorTaskEndsTheEmbedCall", func(t *testing.T) { testCancelingTheVectorTaskEndsTheEmbedCall(t, open) })
 	t.Run("CanceledNoteIsSkippedUntilItChanges", func(t *testing.T) { testCanceledNoteIsSkippedUntilItChanges(t, open) })
 	t.Run("ProgressOfAPassAfterACancelReachesItsTotal", func(t *testing.T) { testProgressOfAPassAfterACancelReachesItsTotal(t, open) })
-	t.Run("SearchSourceReadyExcludesTheCanceledNote", func(t *testing.T) { testSearchSourceReadyExcludesTheCanceledNote(t, open) })
-	t.Run("APassThatEmbeddedEverythingTellsThatTheVectorsOfItsVaultAreReady", func(t *testing.T) { testAPassThatEmbeddedEverythingTellsThatTheVectorsOfItsVaultAreReady(t, open) })
-	t.Run("APassWithNothingNewTellsNothing", func(t *testing.T) { testAPassWithNothingNewTellsNothing(t, open) })
-	t.Run("TheFirstPassOfASessionTellsOfVectorsThatExist", func(t *testing.T) { testTheFirstPassOfASessionTellsOfVectorsThatExist(t, open) })
-	t.Run("APassThatCouldNotEmbedTellsNothing", func(t *testing.T) { testAPassThatCouldNotEmbedTellsNothing(t, open) })
-	t.Run("APassThatWasStoppedTellsNothing", func(t *testing.T) { testAPassThatWasStoppedTellsNothing(t, open) })
+	t.Run("APassAfterACancelEmbedsAllButTheCanceledNote", func(t *testing.T) { testAPassAfterACancelEmbedsAllButTheCanceledNote(t, open) })
 	t.Run("AWorkerWithoutAListenerEmbedsAsBefore", func(t *testing.T) { testAWorkerWithoutAListenerEmbedsAsBefore(t, open) })
 }

@@ -1,14 +1,25 @@
 /** How a window starts: the layout it opens with, and the plugins it loads before that. */
 import { describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h } from 'vue'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { createWindowLayout, useOpenTabs, type AnyTabKind, type MovedTab } from '@/entities/tab'
+import { closeWindow } from '@/entities/window'
+import type * as WindowEntity from '@/entities/window'
+import { ReportedError } from '@/shared/api/errors'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
 import { createLayoutStart } from './createLayoutStart'
 import { createPluginStart } from './createPluginStart'
 import { createWindowBootstrap, type WindowBootstrapDeps } from './createWindowBootstrap'
+
+vi.mock('@/entities/window', async (importOriginal) => {
+  const actual = await importOriginal<typeof WindowEntity>()
+  return {
+    ...actual,
+    closeWindow: vi.fn(() => Promise.resolve()),
+  }
+})
 
 const withPlacement = (kind: string): AnyTabKind => ({
   kind,
@@ -186,5 +197,166 @@ describe('a window starting', () => {
     expect(windowTabs.tabs.tabs.value).toStrictEqual([])
     expect(layout.isReady.value).toBe(false)
     expect(openDetachedTab).not.toHaveBeenCalled()
+  })
+
+  it('opens a detached tab when the URL names one and skips saved tabs', async () => {
+    window.history.replaceState(null, '', '/?id=move-1')
+    try {
+      const detached: MovedTab = {
+        moveId: 'move-1',
+        tab: { id: 'note:9', kind: 'note', path: 'Detached.md', title: 'Detached', state: '' },
+      }
+      const { openDetachedTab, layout, windowTabs } = setup({ detached, saved: true })
+
+      await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
+
+      expect(openDetachedTab).toHaveBeenCalledExactlyOnceWith(detached)
+      expect(windowTabs.tabs.tabs.value).toStrictEqual([])
+    } finally {
+      window.history.replaceState(null, '', '/')
+    }
+  })
+
+  it('opens no tab and marks the layout started when the detached tab is missing', async () => {
+    window.history.replaceState(null, '', '/?id=move-missing')
+    try {
+      const { openDetachedTab, layout, windowTabs } = setup({ detached: null, saved: true })
+
+      await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
+
+      expect(openDetachedTab).not.toHaveBeenCalled()
+      expect(windowTabs.tabs.tabs.value).toStrictEqual([])
+    } finally {
+      window.history.replaceState(null, '', '/')
+    }
+  })
+
+  it('closes a secondary window when its last tab closes and reports close failures', async () => {
+    vi.mocked(closeWindow).mockClear()
+    vi.mocked(closeWindow)
+      .mockRejectedValueOnce(new ReportedError('cannot close'))
+      .mockResolvedValue(undefined)
+    const windowTabs = createTestTabs()
+    windowTabs.kinds.registerKinds([withPlacement('welcome')])
+    const layout = createWindowLayout(false)
+    const writeMessage = vi.fn()
+    const pluginLoader = {
+      status: { startTabPlugins: () => Promise.resolve() },
+    } as unknown as PluginLoader
+
+    const secondaryLayout = createLayoutStart({
+      vaults: { activeVault: computed(() => ({ id: 'sea', name: 'Sea' })) },
+      windowTabs,
+      pluginLoader,
+      writeMessage,
+      layout,
+      isSecondary: true,
+      windowId: 'window-b',
+      readDetachedTab: () => Promise.resolve(null),
+      readOpenTabs: () => Promise.resolve({ tabs: [], activeId: '' }),
+      openDetachedTab: vi.fn(),
+    })
+
+    expect(closeWindow).not.toHaveBeenCalled()
+    await secondaryLayout.start()
+    expect(windowTabs.tabs.tabs.value).toHaveLength(1)
+    expect(closeWindow).not.toHaveBeenCalled()
+
+    windowTabs.panes.closeTab(windowTabs.tabs.tabs.value[0]?.id ?? '')
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith('The window did not close: cannot close', 'error'),
+    )
+    expect(closeWindow).toHaveBeenCalledOnce()
+  })
+
+  it('does not close a primary window when its last tab closes', async () => {
+    vi.mocked(closeWindow).mockClear()
+    const windowTabs = createTestTabs()
+    windowTabs.kinds.registerKinds([withPlacement('welcome')])
+    const layout = createWindowLayout(false)
+    const primaryLayout = createLayoutStart({
+      vaults: { activeVault: computed(() => ({ id: 'sea', name: 'Sea' })) },
+      windowTabs,
+      pluginLoader: {
+        status: { startTabPlugins: () => Promise.resolve() },
+      } as unknown as PluginLoader,
+      writeMessage: vi.fn(),
+      layout,
+      isSecondary: false,
+      windowId: 'window-a',
+      readDetachedTab: () => Promise.resolve(null),
+      readOpenTabs: () => Promise.resolve({ tabs: [], activeId: '' }),
+      openDetachedTab: vi.fn(),
+    })
+
+    await primaryLayout.start()
+    primaryLayout.close()
+    await flushPromises()
+
+    expect(closeWindow).not.toHaveBeenCalled()
+  })
+
+  it('reports plugin, tab-link, and file-flush errors and closes all subsystems on unmount', async () => {
+    const writeMessage = vi.fn()
+    const closeOrder: string[] = []
+    const deps: WindowBootstrapDeps = {
+      vaults: { loadVaults: async () => undefined },
+      settings: {
+        start: async () => undefined,
+        close: () => {
+          closeOrder.push('settings')
+        },
+      },
+      window: {
+        start: async () => undefined,
+        close: () => {
+          closeOrder.push('window')
+        },
+      },
+      editing: {
+        fileFlush: { start: () => Promise.reject(new ReportedError('flush broke')) },
+        close: () => {
+          closeOrder.push('editing')
+        },
+      },
+      tabLinkSession: {
+        start: () => Promise.reject(new ReportedError('link broke')),
+        close: () => {
+          closeOrder.push('tabLinkSession')
+        },
+      },
+      plugins: {
+        start: () => Promise.reject(new ReportedError('plugin broke')),
+        waitForInterface: async () => undefined,
+        close: async () => undefined,
+      },
+      layout: {
+        start: async () => undefined,
+        close: () => {
+          closeOrder.push('layout')
+        },
+      },
+      writeMessage,
+    }
+    const view = mount(
+      defineComponent({
+        setup() {
+          createWindowBootstrap(deps)
+          return () => h('div')
+        },
+      }),
+    )
+
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith('Saving on quit stopped: flush broke', 'error'),
+    )
+    expect(writeMessage).toHaveBeenCalledWith(
+      'The window did not start cleanly: plugin broke',
+      'error',
+    )
+    expect(writeMessage).toHaveBeenCalledWith('The tab links stopped: link broke', 'error')
+
+    view.unmount()
+    expect(closeOrder).toStrictEqual(['tabLinkSession', 'window', 'editing', 'layout', 'settings'])
   })
 })

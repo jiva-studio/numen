@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/queuetest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -97,7 +98,7 @@ type world struct {
 	vault *hosttest.Vault
 	store *hosttest.Store
 	texts *hosttest.Texts
-	queue *hosttest.Queue
+	queue *queuetest.Log
 	sites *sites
 	links *link.Links
 	limit int64
@@ -108,7 +109,7 @@ func newWorld(t *testing.T) *world {
 	vault := hosttest.New("Mills")
 	w := &world{
 		vault: vault, store: vault.Store(), texts: hosttest.NewTexts(vault.Vault().ID, pluginID),
-		queue: hosttest.NewQueue(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
+		queue: queuetest.NewLog(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
 	}
 	w.links = link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(w.texts), Queue: w.queue, Clock: newFakeClock(time.Unix(1_700_000_000, 0))},
 		func() link.Fetcher { return w.sites },
@@ -630,7 +631,8 @@ func TestCopyInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 	}
 
 	close(w.sites.gate)
-	w.links.Wait()
+	w.queue.WaitForEnd(t, millsID)
+	w.queue.WaitForEnd(t, chemID)
 	if tasks := w.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("tasks %+v after both copies ended", tasks)
 	}

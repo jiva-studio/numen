@@ -9,6 +9,11 @@ type ChunkID string
 //
 // `Start` and `Length` address the large chunk enclosing the hit, in bytes of the file
 // `Path` names, and `Text` is the content there once the file has been read.
+//
+// `Similarity` is the cosine similarity of the query with the best small chunk of this place
+// that the search by meaning returned, and `WordScore` the negated bm25 of the best hit of the
+// words in this place, positive and comparable only within one query. Each is nil when its
+// search did not reach the place; a similarity of zero or below is a value.
 type SearchResult struct {
 	ChunkID ChunkID
 
@@ -34,4 +39,8 @@ type SearchResult struct {
 	ChunkHash string
 
 	Text string
+
+	Similarity *float64
+
+	WordScore *float64
 }

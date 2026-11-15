@@ -29,7 +29,7 @@ const request = {
 
 const clients = createHandledClients(request)
 const api = createNoteApi(clients.notes)
-const links = createLinkApi(clients.notes)
+const createLinks = () => createLinkApi(clients.notes)
 
 describe('the file a save presents', () => {
   it('arrives back as the file it was, through a path that holds spaces', async () => {
@@ -169,6 +169,7 @@ describe('the headings of notes', () => {
 
 describe('the wikilinks of a text', () => {
   it('resolve relative to the source note, and omit crossed links', async () => {
+    const links = createLinks()
     request.resolveAddresses.mockResolvedValue({
       found: [
         { raw: '[[B]]', address: 'name://B', text: 'B' },
@@ -194,6 +195,18 @@ describe('the wikilinks of a text', () => {
       { raw: '[[D]]', address: 'name://D', text: 'D', path: '' },
     ])
   })
+
+  it('resolves a name:// address to the path of the note, or empty when unresolved', async () => {
+    const links = createLinks()
+    request.resolveAddresses.mockResolvedValueOnce({
+      found: [{ raw: '[[B]]', address: 'name://B', text: 'B' }],
+      resolved: [{ written: 'name://B', path: 'b.md', isCrossed: false }],
+    })
+    expect(await links.resolveNameLink('a.md', 'name://B')).toBe('b.md')
+
+    request.resolveAddresses.mockResolvedValueOnce({ found: [], resolved: [] })
+    expect(await links.resolveNameLink('a.md', 'name://Missing')).toBe('')
+  })
 })
 
 describe('the note the vault opens first', () => {
@@ -213,6 +226,7 @@ describe('the note the vault opens first', () => {
 
 describe('the edits made to notes', () => {
   it('are read, and a missing span is read as the start', async () => {
+    const apiInstance = createNoteApi(clients.notes)
     const edits = [
       { change: '1', path: 'a.md', range: { start: 2, end: 5 }, text: 'abc', isFinal: false },
       { change: '2', path: 'a.md', text: 'x', isFinal: true },
@@ -222,12 +236,34 @@ describe('the edits made to notes', () => {
     })
 
     const observed = []
-    for await (const edit of api.watchEdits(new AbortController().signal)) observed.push(edit)
+    for await (const edit of apiInstance.watchEdits(new AbortController().signal)) {
+      observed.push(edit)
+    }
 
     expect(observed).toEqual([
       { change: '1', path: 'a.md', span: { start: 2, end: 5 }, text: 'abc', isComplete: false },
       { change: '2', path: 'a.md', span: { start: 0, end: 0 }, text: 'x', isComplete: true },
     ])
+  })
+
+  it('stops watching edits when the signal aborts', async () => {
+    const apiInstance = createNoteApi(clients.notes)
+    request.watchEdits.mockImplementation(async function* (_req, context) {
+      yield { change: '1', path: 'a.md', text: 'a', isFinal: false }
+      if (!context.signal.aborted) {
+        yield { change: '2', path: 'a.md', text: 'b', isFinal: true }
+      }
+    })
+    const controller = new AbortController()
+    const observed: object[] = []
+    await (async () => {
+      for await (const edit of apiInstance.watchEdits(controller.signal)) {
+        observed.push(edit)
+        controller.abort()
+      }
+    })().catch(() => undefined)
+
+    expect(observed).toHaveLength(1)
   })
 })
 

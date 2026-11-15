@@ -236,6 +236,23 @@ The settings of the plugin Plex Graph.
 | `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
 | `noteRoom` | a number | empty space around every note. From 0 to 40. |
 
+### `md.numen.views.saved.search`
+
+The settings of the plugin Saved Search.
+
+| | | |
+| --- | --- | --- |
+| `connections` | text | services that order the results of a saved search by relevance, tried in order until one answers. |
+| `defaultLimit` | a number | results a search returns when the agent names no limit. |
+| `maxLimit` | a number | most results one search returns. |
+| `resultsPerSearch` | a number | passages the index returns for each meaning and words condition. From 1 to 500. |
+| `maxCandidates` | a number | most passages the query is applied to. |
+| `maxPathPrefixes` | a number | most path.startsWith conditions one query joins with OR. |
+| `rerankedPerResult` | a number | passages sent to the reranking service for each result asked for. |
+| `maxReranked` | a number | most passages sent to the reranking service in one search. |
+| `mergeGapBytes` | a number | largest gap in bytes between passages of one file that join. |
+| `maxQueryBytes` | a number | most bytes of the text of one query. |
+
 ### `md.numen.views.titleBar`
 
 The settings of the plugin Title bar.

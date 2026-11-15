@@ -5,11 +5,22 @@
  * way into one, a vault that never opened offers no new note, and a key is
  * drawn on a row only where the table binds that letter to that command.
  */
-import { describe, expect, it } from 'vitest'
+import { defineComponent, ref } from 'vue'
+import { flushPromises, mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { VaultList, Vault } from '@/entities/vault'
-import { createRowKeys } from '@/shared/model/command'
-import { COMMAND } from '@/shared/model/command'
+import { ReportedError } from '@/shared/api/errors'
+import {
+  COMMAND,
+  createRowKeys,
+  findIcon,
+  type CommandDeps,
+  type CommandTarget,
+} from '@/shared/model/command'
+import { WORDS as uiWords } from '@/shared/ui/words'
+import { useWelcomeScreen, type WelcomeScreenProps } from '../model/useWelcomeScreen'
+import { WELCOME_WORDS } from '../words'
 import {
   COMMANDS,
   createVaultRows,
@@ -146,7 +157,7 @@ describe('the keystroke drawn on a way', () => {
 
   it('is the one the table binds to that command', () => {
     expect(getKeys(COMMAND.createNote)).toStrictEqual(createRowKeys(COMMAND.createNote, APPLE).keys)
-    expect(getKeys('org.example.sample:graph.run')).toStrictEqual(CONTRIBUTED[0]!.keys)
+    expect(getKeys('org.example.sample:graph.run')).toStrictEqual(CONTRIBUTED[0]?.keys)
   })
 
   it('is the key the keyboard in hand holds', () => {
@@ -203,5 +214,175 @@ describe('the vaults the screen lists', () => {
 
   it('is empty where the installation holds no vault', () => {
     expect(createVaultRows(createVaultList([], ''), words)).toStrictEqual([])
+  })
+})
+
+describe('useWelcomeScreen', () => {
+  const CustomIcon = defineComponent({ template: '<svg />' })
+
+  const createTarget = (vaultId = 'a', isReady = true): CommandTarget => ({
+    tab: '',
+    kind: null,
+    path: '',
+    title: '',
+    file: '',
+    vault: { id: vaultId, name: 'Physics' },
+    isReady,
+  })
+
+  const createCommandDeps = (overrides: Partial<CommandDeps> = {}): CommandDeps => ({
+    notes: {
+      getTabAt: () => null,
+      getPath: () => '',
+      asking: () => false,
+      flushPending: vi.fn(() => Promise.resolve()),
+      close: vi.fn(),
+      openFile: vi.fn(),
+    },
+    navigator: {
+      openTab: vi.fn(),
+      openSettings: vi.fn(),
+      closeTab: vi.fn(),
+      search: vi.fn(),
+    },
+    runSupport: {
+      canRun: () => true,
+      cannotRun: vi.fn(),
+    },
+    registry: {
+      get: () => undefined,
+    },
+    settings: {
+      chooseSetting: vi.fn(() => Promise.resolve()),
+    },
+    writeMessage: vi.fn(),
+    ...overrides,
+  })
+
+  const mountWelcome = (overrides: Partial<WelcomeScreenProps> = {}) => {
+    const searchOpen = ref(false)
+    const paletteOpen = ref(false)
+    const props: WelcomeScreenProps = {
+      vaultList: two,
+      tabs: [],
+      commands: {
+        palette: { open: paletteOpen, setOpen: vi.fn() },
+      } as unknown as WelcomeScreenProps['commands'],
+      search: { open: searchOpen, setOpen: vi.fn() } as unknown as WelcomeScreenProps['search'],
+      doing: createCommandDeps(),
+      getTarget: () => createTarget(),
+      pluginWays: [
+        { id: 'plugin.custom', text: 'Custom Way', icon: CustomIcon },
+        { id: 'plugin.plain', text: 'Plain Way' },
+      ],
+      runCommand: vi.fn(),
+      agent: LINUX,
+      ...overrides,
+    }
+    let state: ReturnType<typeof useWelcomeScreen> | undefined
+    const Host = defineComponent({
+      setup() {
+        state = useWelcomeScreen(props)
+        return () => null
+      },
+    })
+    const wrapper = mount(Host)
+    if (!state) throw new Error('useWelcomeScreen did not initialize')
+    return { screen: state, props, searchOpen, paletteOpen, wrapper }
+  }
+
+  it('builds adding footer and ways with icons and words', () => {
+    const { screen, wrapper } = mountWelcome()
+
+    expect(screen.adding.value.text).toBe(uiWords.newVault)
+    expect(screen.adding.value.detail).toBe(WELCOME_WORDS.newVaultDetail)
+    expect(screen.adding.value.icon).toBe(findIcon(COMMAND.createVault))
+    expect(screen.adding.value.icon).toBeDefined()
+
+    const ways = screen.ways.value
+    expect(ways.find((w) => w.id === COMMAND.searchVault)?.text).toBe(uiWords.find)
+    expect(ways.find((w) => w.id === COMMAND.searchVault)?.icon).toBe(findIcon(COMMAND.searchVault))
+    expect(ways.find((w) => w.id === COMMAND.createNote)?.text).toBe(uiWords.newNote)
+    expect(ways.find((w) => w.id === 'plugin.custom')?.icon).toBe(CustomIcon)
+    const plain = ways.find((w) => w.id === 'plugin.plain')
+    expect(plain).toBeDefined()
+    expect('icon' in (plain ?? {})).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('handles onOpen for unknown, current, and other vaults and reports invocation errors', async () => {
+    const openCurrentVault = vi.fn()
+    const openHandler = vi.fn()
+    const doing = createCommandDeps({
+      registry: {
+        get: (id) => (id === COMMAND.openVault ? openHandler : undefined),
+      },
+    })
+    const { screen, wrapper } = mountWelcome({ doing, openCurrentVault })
+
+    // Unknown vault id does nothing
+    screen.onOpen('unknown')
+    expect(openCurrentVault).not.toHaveBeenCalled()
+    expect(openHandler).not.toHaveBeenCalled()
+
+    // Current vault id calls openCurrentVault and not openVault command
+    screen.onOpen('a')
+    expect(openCurrentVault).toHaveBeenCalledOnce()
+    expect(openHandler).not.toHaveBeenCalled()
+
+    // Other vault id invokes COMMAND.openVault
+    screen.onOpen('b')
+    await flushPromises()
+    expect(openHandler).toHaveBeenCalledOnce()
+
+    // Registry throwing reports error to doing.writeMessage
+    const failingDoing = createCommandDeps({
+      registry: {
+        get: () => {
+          throw new ReportedError('registry failure')
+        },
+      },
+    })
+    const failing = mountWelcome({ doing: failingDoing })
+    failing.screen.onOpen('b')
+    await flushPromises()
+    expect(failingDoing.writeMessage).toHaveBeenCalledWith('registry failure', 'error')
+
+    failing.wrapper.unmount()
+    wrapper.unmount()
+  })
+
+  it('handles window keydown shortcuts only while welcoming', async () => {
+    const openCurrentVault = vi.fn()
+    const { paletteOpen, wrapper } = mountWelcome({ openCurrentVault })
+
+    // Non-shortcut key does not preventDefault or open
+    const plainKey = new KeyboardEvent('keydown', { key: 'x', cancelable: true })
+    window.dispatchEvent(plainKey)
+    expect(plainKey.defaultPrevented).toBe(false)
+    expect(openCurrentVault).not.toHaveBeenCalled()
+
+    // When command palette is open, shortcut is ignored
+    paletteOpen.value = true
+    const blockedShortcut = new KeyboardEvent('keydown', {
+      key: 'a',
+      cancelable: true,
+    })
+    window.dispatchEvent(blockedShortcut)
+    expect(blockedShortcut.defaultPrevented).toBe(false)
+    expect(openCurrentVault).not.toHaveBeenCalled()
+
+    // When welcoming, A prevents default and opens vault 0 ('a')
+    paletteOpen.value = false
+    const activeShortcut = new KeyboardEvent('keydown', {
+      key: 'a',
+      cancelable: true,
+    })
+    window.dispatchEvent(activeShortcut)
+    expect(activeShortcut.defaultPrevented).toBe(true)
+    expect(openCurrentVault).toHaveBeenCalledOnce()
+
+    wrapper.unmount()
   })
 })

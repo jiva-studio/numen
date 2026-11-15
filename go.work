@@ -36,6 +36,7 @@ use (
 	./plugins/tools-search-relevance
 	./plugins/tools-updater
 	./plugins/views-flashcards-studio
+	./plugins/views-saved-search
 	./tools/checks/structure/go
 	./tools/checks/style/comments
 )

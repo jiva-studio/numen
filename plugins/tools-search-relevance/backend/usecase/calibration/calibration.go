@@ -106,13 +106,13 @@ func (c *Calibration) getParts() (*relevance.Floors, host.Queue) {
 	return c.floors, c.queue
 }
 
-// HandleEvent measures the vault when the host reports that its vectors exist, and ignores any other
+// HandleEvent measures the vault when the host reports that its index changed, and ignores any other
 // event. A vault that is measured, or whose floor a person set, is not measured again: an event the host
 // repeats changes nothing.
 func (c *Calibration) HandleEvent(ctx context.Context, event string) error {
 	floors, queue := c.getParts()
-	vault, isSourceReady := host.ReadSearchSourceReadyEvent(event)
-	if floors == nil || !isSourceReady {
+	vault, isIndexChanged := host.ReadIndexChangedEvent(event)
+	if floors == nil || !isIndexChanged {
 		return nil
 	}
 	if err := floors.Ensure(ctx, vault); err != nil {

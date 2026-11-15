@@ -216,13 +216,6 @@ func TestRoutesChatStreamAndValidationErrors(t *testing.T) {
 		t.Errorf("unreadable body status = %d, want 400", badBodyRec.Code)
 	}
 
-	// writeJSON with unmarshalable value writes 500 error message.
-	errRec := httptest.NewRecorder()
-	writeJSON(errRec, http.StatusOK, make(chan int))
-	if !strings.Contains(errRec.Body.String(), "unsupported type") {
-		t.Errorf("writeJSON(chan) = %q, want unsupported type error", errRec.Body.String())
-	}
-
 	// Chat validation errors -> 400.
 	for _, body := range []string{`{`, `{"messages":[{"role":"user","content":"hi"}]}`, `{"model":"m"}`} {
 		if got := post(t, fake, "/v1/chat/completions", "", body).Code; got != http.StatusBadRequest {

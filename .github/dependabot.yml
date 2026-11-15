@@ -47,6 +47,7 @@ updates:
       - /plugins/tools-search-relevance
       - /plugins/tools-updater
       - /plugins/views-flashcards-studio
+      - /plugins/views-saved-search
     schedule:
       interval: monthly
     cooldown:

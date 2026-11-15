@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	pathpkg "path"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
@@ -252,10 +251,4 @@ func (u Move) repair(
 func (u Move) updateIndex(ctx context.Context, v domain.Vault, paths ...string) error {
 	// The files are written, so the index follows them even when the caller is canceled.
 	return edit.WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
-}
-
-// GetPathUnder is where a note lands when it is filed under a folder, keeping
-// its name.
-func GetPathUnder(folder, path string) string {
-	return pathpkg.Join(folder, pathpkg.Base(path))
 }

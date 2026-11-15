@@ -50,12 +50,6 @@ func (o *VaultOpener) GetRefresh() Refreshing { return o.Refresh }
 // GetScan returns the walk this opener makes, for a caller that re-reads the vault.
 func (o *VaultOpener) GetScan() Scan { return o.scan.Rebuilding(o.ShouldRebuild) }
 
-// UpdateIndex updates the index for the named notes.
-func (o *VaultOpener) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
-	_, err := o.Refresh.Execute(ctx, v, paths)
-	return err
-}
-
 // Begin opens the vault: the watch is started, and Read is the walk beside it. changed receives what the
 // watch collects and errorHandler the errors it meets; a nil one receives nothing.
 func (o *VaultOpener) Begin(
@@ -103,8 +97,8 @@ type runner interface {
 // GetUnwatchedReason is why the vault is not being followed, and nothing while it is.
 func (o *OpenVault) GetUnwatchedReason() error { return o.unwatched }
 
-// Read traverses the vault into the index and returns the number of notes it holds.
-func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err error) {
+// Read traverses the vault into the index and returns what the walk did.
+func (o *OpenVault) Read(ctx context.Context, during func()) (vaultreading.ScanResult, error) {
 	o.buffered.StartRecording()
 
 	var onProgress func(vaultreading.ScanResult)
@@ -115,12 +109,12 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 
 	recSession := o.buffered.StopRecording()
 	if err != nil {
-		return res.Notes, err
+		return res, err
 	}
 	if _, err := o.refresh.Execute(ctx, o.vault, recSession); err != nil {
 		o.handleError(err)
 	}
-	return res.Notes, nil
+	return res, nil
 }
 
 // Run acts on everything the watch collects, and goes on until ctx is done or the watch stops.
@@ -135,10 +129,4 @@ func (o *OpenVault) handleError(err error) {
 	if o.errorHandler != nil {
 		o.errorHandler(err)
 	}
-}
-
-// UpdateIndex updates the index for the named notes.
-func (o *OpenVault) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
-	_, err := o.refresh.Execute(ctx, v, paths)
-	return err
 }
