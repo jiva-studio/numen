@@ -26,8 +26,8 @@ export const MODEL_OPTIONS: readonly ModelOption[] = [
   { agentId: 'gemini', agentTitle: 'Gemini', modelId: 'gemini-2.5-pro', modelTitle: '2.5 Pro' },
 ]
 
-const createAsked = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
-const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'response', text })
+const createPrompt = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
+const createResponse = (id: string, text: string): Turn => ({ id, voice: 'response', text })
 const createDid = (id: string, text: string, subject: string, aside: string): Turn => ({
   id,
   voice: 'doing',
@@ -37,17 +37,17 @@ const createDid = (id: string, text: string, subject: string, aside: string): Tu
 })
 
 const INITIAL_TURNS: readonly Turn[] = [
-  createAsked('1', 'What does this note leave out?'),
+  createPrompt('1', 'What does this note leave out?'),
   createDid('2', 'note neighborhood', 'Entropy', '4 links'),
-  createAnswered(
+  createResponse(
     '3',
     'Two things. The note says the demon has to pay, but not where the payment ' +
       'lands — that is Landauer, and you have no note for him. And p. 373 counts ' +
       'arrangements at **fixed** energy, an assumption the free-energy note drops.',
   ),
-  createAsked('4', 'Then make the Landauer note and put it under Entropy.'),
+  createPrompt('4', 'Then make the Landauer note and put it under Entropy.'),
   createDid('5', 'note create', "Landauer's principle", 'under Entropy'),
-  createAnswered(
+  createResponse(
     '6',
     'Made and filed under Entropy from p. 373 and the 1961 paper: what clearing ' +
       "one bit costs, and why the sorting pays it. Linked across to Maxwell's demon.",
@@ -75,14 +75,14 @@ export function createAgent() {
     draft.value = ''
     turns.value = [
       ...turns.value,
-      createAsked(`${id}-q`, text),
+      createPrompt(`${id}-q`, text),
       createDid(`${id}-tool`, 'note search', title, '3 passages'),
     ]
     isWorking.value = true
     setTimeout(() => {
       turns.value = [
         ...turns.value,
-        createAnswered(
+        createResponse(
           `${id}-a`,
           `In **${title}**, Boltzmann's count of microstates ($S = k_B \\ln W$) and ` +
             `Landauer's erasure bound ($k_B T \\ln 2$ per bit) describe the same constraint from ` +

@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -193,7 +194,7 @@ func TestReadSecretsIsRefusedWhenTheConnectionChangedWhileTheKeyWasRead(t *testi
 				t.Error(err)
 			}
 		}}, Uses: f.uses,
-		Detected: none.Detected{}, Titles: none.OperationTitles{},
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
 	}, nil)
 
 	secrets, err := editing.ReadSecrets.Execute(t.Context(), resolved)
@@ -219,7 +220,7 @@ func TestReadSecretsIsRefusedWhenTheConnectionWasDeletedWhileTheKeyWasRead(t *te
 				t.Error(err)
 			}
 		}}, Uses: f.uses,
-		Detected: none.Detected{}, Titles: none.OperationTitles{},
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
 	}, nil)
 
 	if _, err := deleting.ReadSecrets.Execute(t.Context(), resolved); !errors.Is(err, connectiondomain.ErrStaleRevision) {
@@ -236,7 +237,7 @@ func TestReadSecretsReportsAFailingKeyStore(t *testing.T) {
 	}
 	failing := connectiontest.New(connectiontest.Parts{
 		Repository: f.repository, Types: f.types, Keys: failingKeys{memoryKeys: f.keys}, Uses: f.uses,
-		Detected: none.Detected{}, Titles: none.OperationTitles{},
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
 	}, nil)
 
 	if _, err := failing.ReadSecrets.Execute(t.Context(), resolved); !errors.Is(err, connectiondomain.ErrKeyStore) {

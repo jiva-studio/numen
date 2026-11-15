@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -41,10 +40,9 @@ func TestTheSourceTimeColumnIsNanosecondsSinceTheEpoch(t *testing.T) {
 }
 
 func TestTheStatementsAreTheOnesTheRepositoryRuns(t *testing.T) {
-	got := sqlfile.Load(os.DirFS("."), "sql").All()
 	for _, name := range []string{"save_source", "insert_chunk", "keep_vector", "move_sources"} {
-		if strings.TrimSpace(got[name]) == "" {
-			t.Errorf("no statement is named %s", name)
+		if got, err := os.ReadFile("sql/" + name + ".sql"); err != nil || strings.TrimSpace(string(got)) == "" {
+			t.Errorf("no statement is named %s: %v", name, err)
 		}
 	}
 }

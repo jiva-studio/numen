@@ -152,70 +152,37 @@ func TestEventBusUnsubscribe(t *testing.T) {
 	}
 }
 
-// TestEventBusDebouncesEventsOfOneKey. A key extractor and a debounce rule
-// each put several events under one key, and only the last of them is delivered.
-func TestEventBusDebouncesEventsOfOneKey(t *testing.T) {
-	cases := []struct {
-		name   string
-		option Option
-		prefix string
-		events []string
-	}{
-		{
-			name: "key extractor",
-			option: WithKeyExtractor(func(event string) string {
-				if strings.HasPrefix(event, "customGroup:") {
-					return "customGroup"
-				}
-				return event
-			}),
-			prefix: "customGroup:",
-			events: []string{"customGroup:item1", "customGroup:item2"},
-		},
-		{
-			name: "debounce rule",
-			option: WithDebounceRule(func(event string) (string, bool) {
-				if strings.HasPrefix(event, "ruleA:") {
-					return "ruleA-shared", true
-				}
-				return "", false
-			}),
-			prefix: "ruleA:",
-			events: []string{"ruleA:1", "ruleA:2"},
-		},
+// Typing events all fall under one key, so only the last of them is delivered.
+func TestEventBusDebouncesTypingEvents(t *testing.T) {
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond)
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	var received []string
+	var mu sync.Mutex
+	unsub := bus.Subscribe("onTyping", func(_ context.Context, event string) error {
+		mu.Lock()
+		received = append(received, event)
+		mu.Unlock()
+		return nil
+	})
+	defer unsub()
+
+	events := []string{"onTyping:a.md", "onTyping:b.md"}
+	for _, event := range events {
+		bus.Publish(event)
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond, c.option)
-			defer func() {
-				if err := bus.Close(t.Context()); err != nil {
-					t.Error(err)
-				}
-			}()
+	if err := bus.Flush(t.Context()); err != nil {
+		t.Fatalf("flush failed: %v", err)
+	}
 
-			var received []string
-			var mu sync.Mutex
-			unsub := bus.Subscribe(c.prefix, func(_ context.Context, event string) error {
-				mu.Lock()
-				received = append(received, event)
-				mu.Unlock()
-				return nil
-			})
-			defer unsub()
-
-			for _, event := range c.events {
-				bus.Publish(event)
-			}
-			if err := bus.Flush(t.Context()); err != nil {
-				t.Fatalf("flush failed: %v", err)
-			}
-
-			mu.Lock()
-			defer mu.Unlock()
-			if last := c.events[len(c.events)-1]; len(received) != 1 || received[0] != last {
-				t.Fatalf("expected last event %s, got %v", last, received)
-			}
-		})
+	mu.Lock()
+	defer mu.Unlock()
+	if last := events[len(events)-1]; len(received) != 1 || received[0] != last {
+		t.Fatalf("expected last event %s, got %v", last, received)
 	}
 }
 
@@ -223,11 +190,10 @@ func TestEventBusErrorHandling(t *testing.T) {
 	expectedErr := context.DeadlineExceeded
 	var asyncErr atomic.Pointer[error]
 
-	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond,
-		WithErrorHandler(func(err error) {
-			asyncErr.Store(&err)
-		}),
-	)
+	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond)
+	bus.SetErrorHandler(func(err error) {
+		asyncErr.Store(&err)
+	})
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)

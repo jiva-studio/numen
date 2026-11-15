@@ -390,6 +390,16 @@ func TestRecognitionVersionStorage(t *testing.T) {
 
 }
 
+func runRecognitionNow(ctx context.Context, r *Recognition, req Request) (Result, error) {
+	req, key, err := r.claim(ctx, req)
+	if err != nil {
+		return Result{}, err
+	}
+	release := sync.OnceFunc(func() { r.release(key) })
+	defer release()
+	return r.runRecognition(ctx, req, release)
+}
+
 func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	v := hosttest.New("Physics")
 	pngRaw := encodeTestPNG(t)
@@ -412,7 +422,7 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = rReportFail.Recognize(t.Context(), Request{Path: "refused.png"})
+	_, err = runRecognitionNow(t.Context(), rReportFail, Request{Path: "refused.png"})
 	if !errors.Is(err, readSentinel) || !errors.Is(err, reportSentinel) {
 		t.Fatalf("expected joined read and report error, got %v", err)
 	}
@@ -432,7 +442,7 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rCancel.Recognize(cancelCtx, Request{Path: "scan.png"}); !errors.Is(err, context.Canceled) || res.Pages != 1 {
+	if res, err := runRecognitionNow(cancelCtx, rCancel, Request{Path: "scan.png"}); !errors.Is(err, context.Canceled) || res.Pages != 1 {
 		t.Fatalf("canceled recognition returned %+v, %v; want Pages=1 and context.Canceled", res, err)
 	}
 	if len(qCancel.finished) != 1 {
@@ -450,7 +460,7 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rFinishErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, finishSentinel) || res.Pages != 1 {
+	if res, err := runRecognitionNow(t.Context(), rFinishErr, Request{Path: "scan.png"}); !errors.Is(err, finishSentinel) || res.Pages != 1 {
 		t.Fatalf("FinishTask error returned %+v, %v", res, err)
 	}
 
@@ -474,13 +484,13 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := rStoreErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, storeReadSentinel) {
+	if _, err := runRecognitionNow(t.Context(), rStoreErr, Request{Path: "scan.png"}); !errors.Is(err, storeReadSentinel) {
 		t.Fatalf("readRecord error returned %v", err)
 	}
 
 	// 7. Corrupt document open error in Recognize.
 	v.File("corrupt.png", "not-a-png")
-	if _, err := rOK.Recognize(t.Context(), Request{Path: "corrupt.png"}); err == nil {
+	if _, err := runRecognitionNow(t.Context(), rOK, Request{Path: "corrupt.png"}); err == nil {
 		t.Fatal("corrupt image succeeded")
 	}
 
@@ -494,7 +504,7 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := rEnqueueErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, enqueueSentinel) {
+	if _, err := runRecognitionNow(t.Context(), rEnqueueErr, Request{Path: "scan.png"}); !errors.Is(err, enqueueSentinel) {
 		t.Fatalf("EnqueueWork error returned %v", err)
 	}
 
@@ -508,7 +518,7 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := rOpenErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, openSentinel) {
+	if _, err := runRecognitionNow(t.Context(), rOpenErr, Request{Path: "scan.png"}); !errors.Is(err, openSentinel) {
 		t.Fatalf("open error returned %v", err)
 	}
 
@@ -524,7 +534,7 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rReleaseErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || res.Pages != 1 {
+	if res, err := runRecognitionNow(t.Context(), rReleaseErr, Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || res.Pages != 1 {
 		t.Fatalf("turn release error returned %+v, %v", res, err)
 	}
 
@@ -539,7 +549,7 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rReleaseAndReportErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || !errors.Is(err, reportSentinel) || res.Pages != 1 {
+	if res, err := runRecognitionNow(t.Context(), rReleaseAndReportErr, Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || !errors.Is(err, reportSentinel) || res.Pages != 1 {
 		t.Fatalf("turn release + report error returned %+v, %v", res, err)
 	}
 
@@ -558,7 +568,7 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rEmptyCancel.Recognize(emptyCancelCtx, Request{Path: "scan.png"}); !errors.Is(err, context.Canceled) || !res.IsEmpty {
+	if res, err := runRecognitionNow(emptyCancelCtx, rEmptyCancel, Request{Path: "scan.png"}); !errors.Is(err, context.Canceled) || !res.IsEmpty {
 		t.Fatalf("empty document canceled on release returned %+v, %v; want IsEmpty=true and context.Canceled", res, err)
 	}
 }
@@ -599,9 +609,6 @@ func TestStartIsRunningAndGetVaultIDErrors(t *testing.T) {
 	}
 	if running, err := rVaultErr.IsRunning(t.Context(), "", "scan.png"); running || !errors.Is(err, vaultErr) {
 		t.Fatalf("IsRunning error = (%v, %v), want (false, %v)", running, err, vaultErr)
-	}
-	if _, err := rVaultErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, vaultErr) {
-		t.Fatalf("Recognize error = %v, want %v", err, vaultErr)
 	}
 	if ch, started, err := rVaultErr.Start(t.Context(), Request{Path: "scan.png"}); ch != nil || started || !errors.Is(err, vaultErr) {
 		t.Fatalf("Start error = (%v, %v, %v), want (nil, false, %v)", ch, started, err, vaultErr)
@@ -693,6 +700,54 @@ func versionsOf(texts host.TextVersions) func(domain.VaultID) host.TextVersions 
 
 // pictures opens a scan saved as an image as a document of one page.
 type pictures struct{}
+
+func (pictures) Prepare(func(error)) {}
+
+// preparedPictures are pictures that count the calls of Prepare.
+type preparedPictures struct {
+	pictures
+	prepares *int
+}
+
+func (p preparedPictures) Prepare(func(error)) { *p.prepares++ }
+
+// turnQueue is a queue that keeps how many times the documents were prepared when a recognition asked for its turn.
+type turnQueue struct {
+	stubQueue
+	prepares          *int
+	preparesAtEnqueue int
+}
+
+func (q *turnQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, error) {
+	q.preparesAtEnqueue = *q.prepares
+	return q.stubQueue.EnqueueWork(ctx, work)
+}
+
+func TestRecognitionPreparesDocumentsBeforeItsTurn(t *testing.T) {
+	v := hosttest.New("Physics")
+	pngRaw := encodeTestPNG(t)
+	v.File("scan.png", pngRaw)
+	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
+	texts.SetStore("md.numen.engines.ocr", v.Store())
+	texts.File("scan.png", []byte(pngRaw))
+	prepares := 0
+	queue := &turnQueue{prepares: &prepares}
+	r, err := New(Host{
+		Documents: preparedPictures{prepares: &prepares}, Vaults: func(id domain.VaultID) Files { return v.With(id) },
+		Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: queue,
+	}, func(context.Context) (Recognizer, error) {
+		return &stubRecognizer{blocks: []Block{{Text: "hello"}}}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Recognize(t.Context(), Request{Path: "scan.png"}); err != nil {
+		t.Fatal(err)
+	}
+	if queue.preparesAtEnqueue != 1 {
+		t.Fatalf("the documents were prepared %d times before the turn, want 1", queue.preparesAtEnqueue)
+	}
+}
 
 func (pictures) Open(filePath string, raw []byte) (Document, error) {
 	drawing, _, err := image.Decode(bytes.NewReader(raw))
