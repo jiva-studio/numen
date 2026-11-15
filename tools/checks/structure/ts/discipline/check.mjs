@@ -125,14 +125,25 @@ const REPOSITORY_PATH = /^(apps|libs|plugins|tools|tests)(\/[^/*?{}\s]+)+$/;
 const CHECK_DATA = /^tools\/checks\/.+\/[^/]+\.json$/;
 
 /**
- * The named lists the owner kept, each with its reason (#1949). The file and package list rules do not apply to these
- * files. The Go files are named so that a later scan of the Go checks keeps them too.
+ * A list the owner keeps is marked in its own file with the issue that keeps it and a reason: in a script or a Go file a
+ * comment line of KEPT_LIST_MARKER followed by `#<issue> <reason>`, right above the statement that holds the list; in the
+ * JSON data of a check a top-level field `keptBy` holding `#<issue> <reason>`.
  */
-export const KEPT_LISTS = new Map([
-  ["tools/checks/structure/ts/story-geometry/allowlist.json", "the stories that read geometry stay listed until each is rewritten or replaced"],
-  ["tools/checks/structure/go/adapter-technology/rule_test.go", "the driven adapters that call no technology are a named exception list with a reason per entry (#1957)"],
-  ["tools/checks/structure/go/plugin-copies-agree/rule_test.go", "the copy sets stay explicit: plugin duplicates may drift, so a copy set cannot be derived"],
-]);
+const KEPT_LIST_MARKER = /numen:kept-list/;
+const KEPT_LIST_MARKER_WITH_ISSUE = /numen:kept-list\s+#\d+\s+\S/;
+const KEPT_BY_WITH_ISSUE = /^#\d+\s+\S/;
+
+/** The markers of kept lists in the comments of a source that name no issue and no reason. */
+function findMarkersWithoutIssue(file, comments) {
+  return comments
+    .filter(({ value }) => KEPT_LIST_MARKER.test(value) && !KEPT_LIST_MARKER_WITH_ISSUE.test(value))
+    .map(({ line }) => ({ file, line, symbol: "a kept-list marker names no issue and reason" }));
+}
+
+/** The last lines of the comments of a source that mark a kept list with an issue. */
+function getKeptListMarkerEnds(comments) {
+  return new Set(comments.filter(({ value }) => KEPT_LIST_MARKER_WITH_ISSUE.test(value)).map(({ line, value }) => line + value.split("\n").length - 1));
+}
 
 /** The comments of a TypeScript or JavaScript source with their lines. */
 function getScriptComments(file, text, lineOffset = 0) {
@@ -233,19 +244,27 @@ function findFileEntriesInConfig(file, text) {
 
 /**
  * The arrays of a check that list repository files, in a constant or inline, and the constants that list packages: paths
- * of folders of the repository or import paths of its Go packages. A check derives such a set from the tree.
+ * of folders of the repository or import paths of its Go packages. A check derives such a set from the tree. A list
+ * whose statement has a kept-list marker with an issue right above it is kept.
  */
 export function findFileListsInChecks(file, text) {
   const ts = require("typescript");
-  const sourceFile = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  const { comments, sourceFile } = getScriptComments(file, text);
+  const markerEnds = getKeptListMarkerEnds(comments);
+  const getLine = (node) => sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+  const isKept = (node) => {
+    let statement = node;
+    while (statement.parent && !ts.isSourceFile(statement.parent) && !ts.isBlock(statement.parent)) statement = statement.parent;
+    return markerEnds.has(getLine(statement) - 1) || markerEnds.has(getLine(node) - 1);
+  };
   const isPackage = (value) => REPOSITORY_PATH.test(value) || (value.startsWith(GO_MODULE_ROOT) && !/[*?{}\s]/.test(value));
   const found = [];
   const visit = (node) => {
-    if (ts.isArrayLiteralExpression(node) && node.elements.length > 0 && node.elements.every((one) => ts.isStringLiteralLike(one))) {
+    if (ts.isArrayLiteralExpression(node) && node.elements.length > 0 && node.elements.every((one) => ts.isStringLiteralLike(one)) && !isKept(node)) {
       const values = node.elements.map((one) => one.text);
       const owner = ts.isNewExpression(node.parent) ? node.parent.parent : node.parent;
       const name = ts.isVariableDeclaration(owner) ? owner.name.getText(sourceFile) : undefined;
-      const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+      const line = getLine(node);
       if (values.every((value) => REPOSITORY_FILE_PATH.test(value))) found.push({ file, line, symbol: `file list ${name ?? "inline"}` });
       else if (name && values.every(isPackage)) found.push({ file, line, symbol: `package list ${name}` });
     }
@@ -255,8 +274,16 @@ export function findFileListsInChecks(file, text) {
   return found;
 }
 
-/** The arrays of the JSON data of a check that list repository files: as paths, or as entries that each name a file. */
+/**
+ * The arrays of the JSON data of a check that list repository files: as paths, or as entries that each name a file. Data
+ * whose top-level `keptBy` names an issue and a reason is kept; a `keptBy` without them is a finding.
+ */
 export function findFileListsInCheckData(file, text) {
+  const data = JSON.parse(text);
+  if (data && typeof data === "object" && !Array.isArray(data) && "keptBy" in data) {
+    if (typeof data.keptBy === "string" && KEPT_BY_WITH_ISSUE.test(data.keptBy)) return [];
+    return [{ file, line: 1, symbol: "keptBy names no issue and reason" }];
+  }
   const isFile = (value) => typeof value === "string" && REPOSITORY_FILE_PATH.test(value);
   const namesFile = (value) => isFile(value) || (Boolean(value) && typeof value === "object" && !Array.isArray(value) && Object.values(value).some(isFile));
   const found = [];
@@ -268,31 +295,32 @@ export function findFileListsInCheckData(file, text) {
       for (const [key, one] of Object.entries(value)) visit(one, at ? `${at}.${key}` : key);
     }
   };
-  visit(JSON.parse(text), "");
+  visit(data, "");
   return found;
 }
 
 /**
  * Every suppression in the sources: a lint or type suppression comment, an exclusion in a golangci
  * configuration, a file named in an eslint `ignores` or `files` entry, a list of repository files in a check or
- * in the JSON data of a check, and a constant of a check that lists packages. Generated code, found by its header,
- * is not read.
+ * in the JSON data of a check, a constant of a check that lists packages, and a kept-list marker without an issue. Generated
+ * code, found by its header, is not read.
  */
 export function findSuppressions(sources) {
   const found = [];
   for (const { file, text } of sources) {
     if (isGenerated(text)) continue;
-    for (const { line, value } of getComments(file, text)) {
+    const comments = getComments(file, text);
+    for (const { line, value } of comments) {
       const match = SUPPRESSION_COMMENT.exec(value);
       if (match) found.push({ file, line, symbol: match[1] });
     }
+    found.push(...findMarkersWithoutIssue(file, comments));
     if (GOLANGCI_CONFIG.test(file)) {
       for (const { line, symbol } of parseYamlConfig(text).exclusionKeys) {
         found.push({ file, line, symbol });
       }
     }
     if (ESLINT_CONFIG.test(file)) found.push(...findFileEntriesInConfig(file, text));
-    if (KEPT_LISTS.has(file)) continue;
     if (CHECK_SCRIPT.test(file) && !file.endsWith(".test.mjs")) found.push(...findFileListsInChecks(file, text));
     if (CHECK_DATA.test(file)) found.push(...findFileListsInCheckData(file, text));
   }
