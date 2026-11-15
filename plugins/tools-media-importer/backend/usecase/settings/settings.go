@@ -22,7 +22,7 @@ type Values struct {
 func Defaults() Values {
 	return Values{
 		Programs: download.Defaults(),
-		Fetch:    link.Settings{Captions: nil, IsAutomatic: true, CopyMaxSize: defaultCopyMaxSize},
+		Fetch:    link.Settings{Captions: nil, IsAutomatic: true, CopyMaxSize: defaultCopyMaxSize, IsTextDownloadAutomatic: false},
 	}
 }
 
@@ -40,6 +40,9 @@ func Parse(values map[string]string, current Values) Values {
 	}
 	if v, ok := values["automaticCaptions"]; ok {
 		current.Fetch.IsAutomatic = v != "false"
+	}
+	if v, ok := values["downloadCaptionsAutomatically"]; ok {
+		current.Fetch.IsTextDownloadAutomatic = v == "true"
 	}
 	if mb, err := strconv.ParseInt(values["copyMaxSizeMb"], 10, 64); err == nil && mb >= 0 {
 		current.Fetch.CopyMaxSize = mb << 20

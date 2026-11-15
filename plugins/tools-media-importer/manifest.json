@@ -1,11 +1,12 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.20",
+  "version": "2026.11.21",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
+  "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "textKinds": [
       { "kind": "article", "title": "Article" },
@@ -72,13 +73,6 @@
         "command": "app:file.createText",
         "title": "Download captions",
         "when": "target.noteType == 'link'"
-      }
-    ],
-    "triggers": [
-      {
-        "event": "file.added",
-        "command": "app:file.createText",
-        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true && !target.versions.exists(v, v.pluginId == 'md.numen.tools.media.importer' && v.isValid)"
       }
     ]
   },
