@@ -257,7 +257,7 @@ describe('saving the query of the note', () => {
     await state.actions.saveSearch({ ...CHANGE, query: 'meanin("gale")' })
     await settle()
 
-    expect(state.saveProblems.value).toStrictEqual([
+    expect(state.queryProblems.value).toStrictEqual([
       { line: 2, column: 4, message: "undeclared reference to 'meanin'" },
     ])
     expect(service.calls).toStrictEqual(['watchResults', 'getResults', 'updateSearch'])
@@ -277,7 +277,7 @@ describe('saving the query of the note', () => {
     service.setUpdateAnswer({ errors: [] })
     await state.actions.saveSearch(CHANGE)
 
-    expect(state.saveProblems.value).toStrictEqual([])
+    expect(state.queryProblems.value).toStrictEqual([])
   })
 
   it('shows the failure of a save', async () => {
@@ -379,7 +379,7 @@ describe('the notice of a failed run', () => {
 
     expect(notify).toHaveBeenCalledTimes(1)
     expect(notify).toHaveBeenCalledWith(
-      'Harbor master: winter storms: the query has problems\n9:4 unknown function meanin (did you mean meaning?)',
+      'Harbor master: winter storms: the query has problems\n2:4 unknown function meanin (did you mean meaning?)',
     )
   })
 })
@@ -430,6 +430,49 @@ describe('editing the query of a saved search', () => {
     expect(state.functions.value).toStrictEqual([])
   })
 
+  it('gives the editor the problems of the saved query', async () => {
+    const { service, tab, state } = setup()
+    service.results.set(MISSPELLED)
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+
+    state.actions.setEditing(true)
+
+    expect(state.queryProblems.value).toStrictEqual(MISSPELLED.errors)
+  })
+
+  it('gives the editor no problem of a provider, which has no place in the query', async () => {
+    const { service, tab, state } = setup()
+    service.results.set({
+      ...MISSPELLED,
+      errors: [{ line: 0, column: 0, message: 'the reranking service did not answer' }],
+    })
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+
+    expect(state.queryProblems.value).toStrictEqual([])
+  })
+
+  it('gives the editor the problems of the last save over those of the saved query', async () => {
+    const { service, tab, state } = setup()
+    service.results.set(MISSPELLED)
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    state.actions.setEditing(true)
+    service.setUpdateAnswer({
+      errors: [{ line: 1, column: 1, message: 'unknown function meanin' }],
+    })
+
+    await state.actions.saveSearch({ query: 'meanin("gale")' })
+
+    expect(state.queryProblems.value).toStrictEqual([
+      { line: 1, column: 1, message: 'unknown function meanin' },
+    ])
+  })
+
   it('forgets the problems of the last save when the editor closes', async () => {
     const { service, tab, state } = setup()
     tab.follow()
@@ -443,7 +486,7 @@ describe('editing the query of a saved search', () => {
 
     state.actions.setEditing(false)
 
-    expect(state.saveProblems.value).toStrictEqual([])
+    expect(state.queryProblems.value).toStrictEqual([])
     expect(state.isEditing.value).toBe(false)
   })
 

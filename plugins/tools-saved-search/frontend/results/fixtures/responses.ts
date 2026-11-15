@@ -71,13 +71,13 @@ export const NEVER_COMPUTED: GetResultsResponse = {
 /** A run that found nothing. */
 export const NOTHING_FOUND: GetResultsResponse = { ...HARBOR, results: [] }
 
-/** A note whose query the core rejects: the problem points into the file and the last good results stay. */
+/** A note whose query the core rejects: the problem points into the query and the last good results stay. */
 export const MISSPELLED: GetResultsResponse = {
   ...HARBOR,
   query: 'kind in ["note", "pdf"]\n&& meanin("the harbor master in a winter storm")',
   failedAt: '2026-11-14T09:41:00Z',
   failure: 'the query has problems',
-  errors: [{ line: 9, column: 4, message: 'unknown function meanin (did you mean meaning?)' }],
+  errors: [{ line: 2, column: 4, message: 'unknown function meanin (did you mean meaning?)' }],
 }
 
 /** A warning of the core about the run. */

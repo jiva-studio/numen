@@ -4,7 +4,8 @@
  * last good results, no result, a warning, a failed last run, the filter and the sources of the results
  * and the button that brings back what they hide, and the query edited in the code editor inside the
  * tab, shown and hidden by the edit button: completion from the catalog, the query saved once typing
- * pauses, and the problems of a query not saved underlined with their message on hover.
+ * pauses, and the problems of the saved query and of a query not saved underlined with their message
+ * on hover.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within, type Mock } from 'storybook/test'
@@ -301,7 +302,7 @@ export const ShowsTheProblemsOfTheQueryWithTheLastGoodResults: Story = {
     await userEvent.hover(dot)
     await waitFor(() =>
       expect(canvas.getByRole('tooltip')).toHaveTextContent(
-        '9:4 unknown function meanin (did you mean meaning?)',
+        '2:4 unknown function meanin (did you mean meaning?)',
       ),
     )
   },
@@ -472,6 +473,22 @@ export const CompletesTheNamesOfTheCatalog: Story = {
           .map((one) => one.textContent),
       ).toStrictEqual([expect.stringContaining('rerank')]),
     )
+  },
+}
+
+/** A saved query the core rejects is underlined at its place as soon as the editor opens. */
+export const UnderlinesTheProblemOfTheSavedQuery: Story = {
+  parameters: { reach: EDITOR_KEEPS_TAB },
+  args: { response: MISSPELLED },
+  play: async ({ canvasElement }) => {
+    await openEditor(canvasElement)
+
+    const underlined = await waitFor(() => {
+      const marks = canvasElement.querySelectorAll('.cm-lintRange-error')
+      if (marks.length !== 1) throw new Error(`${marks.length} underlined ranges, want one`)
+      return marks[0]!
+    })
+    await expect(underlined).toHaveTextContent(/^meanin$/)
   },
 }
 

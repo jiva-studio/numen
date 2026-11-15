@@ -133,7 +133,7 @@ describe('the problems and the warnings', () => {
   it('names the problems with line and column in the details of the run', () => {
     const view = getResultsView(MISSPELLED, WORDS, LOCALE)
 
-    expect(view.status.details).toContain('9:4 unknown function meanin (did you mean meaning?)')
+    expect(view.status.details).toContain('2:4 unknown function meanin (did you mean meaning?)')
   })
 
   it('keeps the last good results while the query has problems', () => {

@@ -86,7 +86,7 @@ function onToggleSource(path: string, isShown: boolean) {
         v-if="state.isEditing.value"
         :id="editorId"
         :query="view.query"
-        :problems="state.saveProblems.value"
+        :problems="state.queryProblems.value"
         :functions="state.functions.value"
         @save="onSave"
       />

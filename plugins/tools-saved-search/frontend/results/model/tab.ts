@@ -32,7 +32,8 @@ export interface SearchChange {
 /**
  * What SavedSearchTab draws and the actions it calls. view is null until the first GetResults answers;
  * items are the results the filter and the hidden sources leave; failure is '' when nothing failed;
- * saveProblems are those of the last save, at their line and column in the query; functions is the
+ * queryProblems are those the editor underlines, at their line and column in the query: those of the
+ * last save when it had any, else those of the saved query that have a place in it; functions is the
  * catalog of the search language, read when the editor first opens.
  */
 export interface SavedSearchTabState {
@@ -43,7 +44,7 @@ export interface SavedSearchTabState {
   readonly hiddenSources: Readonly<Ref<ReadonlySet<string>>>
   readonly failure: Readonly<Ref<string>>
   readonly isEditing: Readonly<Ref<boolean>>
-  readonly saveProblems: Readonly<Ref<readonly Problem[]>>
+  readonly queryProblems: Readonly<Ref<readonly Problem[]>>
   readonly functions: Readonly<Ref<readonly SearchFunction[]>>
   readonly actions: {
     openResult(index: number): void
@@ -94,6 +95,11 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   const items = computed(() =>
     filterItems(view.value?.items ?? [], filter.value, hiddenSources.value),
   )
+
+  const queryProblems = computed<readonly Problem[]>(() => {
+    if (saveProblems.value.length > 0) return saveProblems.value
+    return (response.value?.errors ?? []).filter((problem) => problem.line > 0)
+  })
 
   const tellFailure = (answer: GetResultsResponse): void => {
     const key = getFailureKey(answer)
@@ -201,7 +207,7 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
       hiddenSources: readonly(hiddenSources),
       failure: readonly(failure),
       isEditing: readonly(isEditing),
-      saveProblems: readonly(saveProblems),
+      queryProblems,
       functions: readonly(functions),
       actions: {
         openResult,
