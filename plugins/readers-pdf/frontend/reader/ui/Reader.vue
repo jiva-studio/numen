@@ -97,8 +97,11 @@ const { measure, isPutting } = useRowRestore({
 const getImageUrl = usePageImageUrl({ getPicture: () => props.picture, drawnWidth, sharpPages })
 
 /* -------------------------------- Handlers -------------------------------- */
+/** A row that is not displayed reads its scroll offset as 0, which is no place the person scrolled to. */
+const isShown = (): boolean => (area.value?.clientWidth ?? 0) > 0
+
 const onScroll = () => {
-  if (isPutting() || !scroll.moves.isStill()) return
+  if (!isShown() || isPutting() || !scroll.moves.isStill()) return
   if (middle.value !== props.at) emit('go', middle.value)
 }
 
