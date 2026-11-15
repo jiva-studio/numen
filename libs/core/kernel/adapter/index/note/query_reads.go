@@ -164,7 +164,6 @@ func isWordRune(r rune) bool {
 	return unicode.IsLetter(r) || unicode.IsDigit(r)
 }
 
-// CountUnreadableFrontmatter counts the notes of the vault whose frontmatter could not be read.
 func (q *QueryReads) CountUnreadableFrontmatter(ctx context.Context, vaultID domain.VaultID) (int, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
