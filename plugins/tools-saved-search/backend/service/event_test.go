@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 )
 
 func addWinterNote(f *fixture) {
@@ -41,7 +41,7 @@ func TestHandleEventMarksTheSearchesOfTheVaultAndRunsTheDueOnes(t *testing.T) {
 	f.handleIndexChange(t)
 
 	record := f.readRecord(t, stormsID)
-	if record.StaleSince == nil || !record.StaleSince.Equal(markedAt) || slices.ContainsFunc(record.Results, func(r api.Result) bool { return r.Path == "Harbor/Winter.md" }) {
+	if record.StaleSince == nil || !record.StaleSince.Equal(markedAt) || slices.ContainsFunc(record.Results, func(r resultcache.Result) bool { return r.Path == "Harbor/Winter.md" }) {
 		t.Errorf("record = %+v, want the search marked stale and not run within the cooldown", record)
 	}
 

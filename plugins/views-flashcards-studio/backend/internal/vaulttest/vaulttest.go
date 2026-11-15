@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
@@ -20,8 +20,8 @@ func GetEpoch() time.Time {
 }
 
 // NewClock creates a clock that reports GetEpoch until it is moved.
-func NewClock() *clock.Fake {
-	source := new(clock.Fake)
+func NewClock() *clocktest.Fake {
+	source := new(clocktest.Fake)
 	source.Set(GetEpoch())
 	return source
 }
@@ -110,19 +110,6 @@ func (i Installation) Of(id domain.VaultID) *hosttest.Vault { return i.vaults[id
 // Patience is how long a test gives something happening in the background before it calls the thing
 // broken. It is a claim about the slowest machine the suite must pass on.
 const Patience = 10 * time.Second
-
-// WaitFor holds until something is so, and fails the test if it never is.
-func WaitFor(tb testing.TB, condition func() bool) {
-	tb.Helper()
-	const step = 10 * time.Millisecond
-	for range int(Patience / step) {
-		if condition() {
-			return
-		}
-		time.Sleep(step)
-	}
-	tb.Fatal("it never came to be so")
-}
 
 // Vaults gives the ports' calls on the vault of v with an identity; the empty identity is v itself.
 func Vaults(v *hosttest.Vault) func(domain.VaultID) ports.HostVault {

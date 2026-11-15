@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/wordmatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
@@ -58,7 +58,7 @@ func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchquery.F
 		"notes/Forest.md": "Old oaks and the smell of rain in the forest.",
 		"notes/Hill.md":   "Sheep graze on the hill above the village.",
 	}
-	v := vaultfixture.NewVault(t, notes)
+	v := vaulttest.NewVault(t, notes)
 	v.Name = "shelf"
 	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {

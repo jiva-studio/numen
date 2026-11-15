@@ -2,13 +2,14 @@ package refresh_test
 
 import (
 	"context"
+	"log/slog"
 	"slices"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
@@ -161,7 +162,7 @@ type world struct {
 	searches *hosttest.Searches
 	host     *countingSearch
 	tasks    *recordingTasks
-	clock    *clock.Fake
+	clock    *clocktest.Fake
 	mu       sync.Mutex
 	settings refresh.Settings
 	runner   *refresh.Runner
@@ -170,7 +171,7 @@ type world struct {
 func newWorld(t *testing.T, refreshMinutes int) *world {
 	t.Helper()
 	searches := hosttest.NewSearches()
-	fake := new(clock.Fake)
+	fake := new(clocktest.Fake)
 	fake.Set(getStartTime())
 	w := &world{
 		vault:    hosttest.New(string(testVault)),
@@ -189,7 +190,7 @@ func newWorld(t *testing.T, refreshMinutes int) *world {
 }
 
 func (w *world) newRunner() *refresh.Runner {
-	return refresh.New(refresh.Dependencies{Open: w.open, Tasks: w.tasks}, w.getSettings, w.clock)
+	return refresh.New(refresh.Dependencies{Open: w.open, Tasks: w.tasks, Log: slog.Default()}, w.getSettings, w.clock)
 }
 
 func (w *world) open(id domain.VaultID) refresh.Vault {

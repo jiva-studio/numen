@@ -123,8 +123,8 @@ func TestReadReportsANoteWithoutABlock(t *testing.T) {
 	_, problems := read(raw)
 
 	problem := findProblem(t, problems, "the note has no numen-query block")
-	if problem.Line != 5 || problem.Column != 1 {
-		t.Errorf("problem = %+v, want line 5 (the first line of the body), column 1", problem)
+	if problem.Line != 1 || problem.Column != 1 {
+		t.Errorf("problem = %+v, want line 1, column 1 of the query", problem)
 	}
 }
 
@@ -134,8 +134,8 @@ func TestReadReportsASecondBlock(t *testing.T) {
 	_, problems := read(raw)
 
 	problem := findProblem(t, problems, "the note has more than one numen-query block")
-	if problem.Line != 8 || problem.Column != 1 {
-		t.Errorf("problem = %+v, want line 8 (the second block), column 1", problem)
+	if problem.Line != 1 || problem.Column != 1 {
+		t.Errorf("problem = %+v, want line 1, column 1 of the query", problem)
 	}
 }
 

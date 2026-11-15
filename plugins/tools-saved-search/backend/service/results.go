@@ -64,11 +64,11 @@ func updateSearch(ctx context.Context, built *parts, req api.UpdateSearchRequest
 	if err != nil {
 		return api.UpdateSearchResponse{}, err
 	}
-	problems, err := built.notes.Write(ctx, vault, req)
+	problems, err := built.notes.Write(ctx, vault, req.Path, req.Query)
 	if err != nil {
 		return api.UpdateSearchResponse{}, convertNoteError(req.Path, err)
 	}
-	return api.UpdateSearchResponse{Errors: problems}, nil
+	return api.UpdateSearchResponse{Errors: convertProblems(problems)}, nil
 }
 
 func getShownVault(ctx context.Context, built *parts) (domain.VaultID, error) {
@@ -101,14 +101,14 @@ func newResultsResponse(notePath string, state refresh.State) api.GetResultsResp
 	response := api.GetResultsResponse{
 		Path: notePath, Title: state.Definition.Title, Query: state.Definition.Query,
 		ComputedAt: formatTime(record.ComputedAt), FailedAt: "", Failure: record.Failure, IsStale: state.IsStale,
-		IsRunning: state.IsRunning, Order: record.Order, Results: []api.Result{}, Warnings: []string{}, Errors: []api.Problem{},
+		IsRunning: state.IsRunning, Order: api.Order(record.Order), Results: []api.Result{}, Warnings: []string{}, Errors: []api.Problem{},
 	}
 	if record.FailedAt != nil {
 		response.FailedAt = formatTime(*record.FailedAt)
 	}
-	response.Results = append(response.Results, record.Results...)
+	response.Results = append(response.Results, convertResults(record.Results)...)
 	response.Warnings = append(response.Warnings, record.Warnings...)
-	response.Errors = append(response.Errors, state.Problems...)
+	response.Errors = append(response.Errors, convertProblems(state.Problems)...)
 	return response
 }
 

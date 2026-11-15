@@ -7,25 +7,24 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/searchnote"
 )
 
 // target is what a run of a note as it reads now produces a record from: its definition, the problems of
-// the note in the positions of the file, and the hash of its query.
+// the note counted from the first line of its query, and the hash of its query.
 type target struct {
 	definition searchnote.Definition
-	problems   []api.Problem
+	problems   []resultcache.Problem
 	queryHash  string
 }
 
 // State is a saved search as the view reads it: the note as it is now, the problems of the note or of
-// its last run, its cache, and whether a run will replace the cache or is on its way.
+// its last run counted from the first line of the query, its cache, and whether a run will replace the cache or is on its way.
 type State struct {
 	Definition searchnote.Definition
-	Problems   []api.Problem
+	Problems   []resultcache.Problem
 	Record     resultcache.Record
 	HasRecord  bool
 	IsStale    bool
@@ -64,24 +63,12 @@ func readTarget(stat domain.FileStat, raw []byte) target {
 	return target{definition: definition, problems: convertProblems(problems), queryHash: resultcache.HashText(definition.Query)}
 }
 
-func convertProblems(problems []searchnote.Problem) []api.Problem {
-	converted := make([]api.Problem, len(problems))
+func convertProblems(problems []searchnote.Problem) []resultcache.Problem {
+	converted := make([]resultcache.Problem, len(problems))
 	for i, problem := range problems {
-		converted[i] = api.Problem{Line: problem.Line, Column: problem.Column, Message: problem.Message}
+		converted[i] = resultcache.Problem{Line: problem.Line, Column: problem.Column, Message: problem.Message}
 	}
 	return converted
-}
-
-func moveProblems(problems []api.Problem, raw []byte) []api.Problem {
-	queryLine, isFound := searchnote.GetQueryLine(raw)
-	moved := make([]api.Problem, len(problems))
-	for i, problem := range problems {
-		if isFound && problem.Line > 0 {
-			problem.Line += queryLine - 1
-		}
-		moved[i] = problem
-	}
-	return moved
 }
 
 func isChanged(want target, record resultcache.Record) bool {
@@ -97,6 +84,21 @@ func getLastRun(record resultcache.Record) time.Time {
 
 func getCooldownEnd(record resultcache.Record, settings Settings) time.Time {
 	return getLastRun(record).Add(time.Duration(settings.RefreshMinutes) * time.Minute)
+}
+
+func getRunTime(record resultcache.Record, settings Settings, isWatched bool) time.Time {
+	cooldownEnd := getCooldownEnd(record, settings)
+	if !isWatched {
+		return cooldownEnd
+	}
+	debounceStart := getLastRun(record)
+	if record.StaleSince != nil && record.StaleSince.After(debounceStart) {
+		debounceStart = *record.StaleSince
+	}
+	if debounceEnd := debounceStart.Add(staleDebounce); debounceEnd.Before(cooldownEnd) {
+		return debounceEnd
+	}
+	return cooldownEnd
 }
 
 func readRecord(ctx context.Context, store ports.Store, name string) (resultcache.Record, bool, error) {

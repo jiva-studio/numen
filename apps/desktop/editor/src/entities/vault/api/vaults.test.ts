@@ -16,7 +16,7 @@ const requestLog = {
   openVault: vi.fn(),
 }
 
-const vaults = createVaults(createHandledClients(requestLog).vaultsService)
+const getVaults = () => createVaults(createHandledClients(requestLog).vaultsService)
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -24,6 +24,7 @@ beforeEach(() => {
 
 describe('a vault requested for', () => {
   it('is listed as the vaults the installation holds', async () => {
+    const vaults = getVaults()
     requestLog.listVaults.mockResolvedValue({
       vaults: [{ id: 'v1', name: 'Vault 1', path: '/v1', isMissing: true }],
     })
@@ -34,6 +35,7 @@ describe('a vault requested for', () => {
   })
 
   it('is chosen from a folder dialog that starts nowhere in particular', async () => {
+    const vaults = getVaults()
     requestLog.chooseFolder.mockResolvedValue({ isChosen: false, path: '/ignored' })
     expect(await vaults.choose('Pick')).toBe('')
     expect(requestLog.chooseFolder.mock.calls.at(-1)?.[0]).toMatchObject({
@@ -46,6 +48,7 @@ describe('a vault requested for', () => {
   })
 
   it('is added and renamed, and answers the vault the core names', async () => {
+    const vaults = getVaults()
     requestLog.addVault.mockResolvedValue({
       vault: { id: 'v2', name: 'V2', path: '/v2', isMissing: false },
     })
@@ -65,12 +68,14 @@ describe('a vault requested for', () => {
   })
 
   it('leaves the list as it was where the core names no vault', async () => {
+    const vaults = getVaults()
     requestLog.addVault.mockResolvedValue({})
 
     expect(await vaults.add('/v', 'Name')).toStrictEqual({ ok: true, value: null })
   })
 
   it('is removed and opened by what the schema names', async () => {
+    const vaults = getVaults()
     requestLog.removeVault.mockResolvedValue({})
     expect(await vaults.remove('v1', true)).toStrictEqual({ ok: true, value: null })
     expect(requestLog.removeVault.mock.calls.at(-1)?.[0]).toMatchObject({ id: 'v1', trash: true })
@@ -81,6 +86,7 @@ describe('a vault requested for', () => {
   })
 
   it('fails in the words of the error', async () => {
+    const vaults = getVaults()
     requestLog.addVault.mockResolvedValue({ error: VAULTS_ERROR_CODE.NAME_TAKEN })
     expect(await vaults.add('/v', 'Name')).toStrictEqual({ ok: false, error: 'nameTaken' })
 

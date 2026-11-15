@@ -50,12 +50,6 @@ func (o *VaultOpener) GetRefresh() Refreshing { return o.Refresh }
 // GetScan returns the walk this opener makes, for a caller that re-reads the vault.
 func (o *VaultOpener) GetScan() Scan { return o.scan.Rebuilding(o.ShouldRebuild) }
 
-// UpdateIndex updates the index for the named notes.
-func (o *VaultOpener) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
-	_, err := o.Refresh.Execute(ctx, v, paths)
-	return err
-}
-
 // Begin opens the vault: the watch is started, and Read is the walk beside it. changed receives what the
 // watch collects and errorHandler the errors it meets; a nil one receives nothing.
 func (o *VaultOpener) Begin(
@@ -135,10 +129,4 @@ func (o *OpenVault) handleError(err error) {
 	if o.errorHandler != nil {
 		o.errorHandler(err)
 	}
-}
-
-// UpdateIndex updates the index for the named notes.
-func (o *OpenVault) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
-	_, err := o.refresh.Execute(ctx, v, paths)
-	return err
 }

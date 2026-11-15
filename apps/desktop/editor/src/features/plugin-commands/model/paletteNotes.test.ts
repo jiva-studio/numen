@@ -4,24 +4,27 @@ import { flushPromises } from '@vue/test-utils'
 import type { CommandTarget } from '@/shared/model/command'
 import { createPaletteNotes } from './paletteNotes'
 
-const target = (path: string): CommandTarget => ({
+const target = (path: string, override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab-1',
   kind: 'note',
   path,
-  title: '',
+  title: 'Mill',
   file: path,
   vault: { id: 'reef', name: 'Reef' },
   isReady: true,
+  ...override,
 })
 
 const createNotes = () => {
   const reads: string[] = []
+  const targets: Parameters<Parameters<typeof createPaletteNotes>[0]['read']>[0][] = []
   const errors: unknown[] = []
   let media = ''
   let failure: Error | undefined
   const notes = createPaletteNotes({
     read: async (one) => {
       reads.push(one.path)
+      targets.push(one)
       if (failure) throw failure
       return { type: 'link', properties: { media } }
     },
@@ -30,6 +33,7 @@ const createNotes = () => {
   return {
     notes,
     reads,
+    targets,
     errors,
     setMedia: (value: string) => (media = value),
     setFailure: (value: Error | undefined) => (failure = value),
@@ -38,15 +42,22 @@ const createNotes = () => {
 
 describe('the notes the palette reads', () => {
   it('is undefined while the note is read, then the type and properties of the note', async () => {
-    const { notes } = createNotes()
+    const { notes, targets } = createNotes()
 
-    expect(notes.getNote(target('links/Mill.md'))).toBeUndefined()
+    expect(notes.getNote(target('links/Mill.md', { path: '' }))).toBeUndefined()
+    expect(
+      notes.getNote(target('links/Other.md', { others: ['links/Extra.md'] })),
+    ).toBeUndefined()
     await flushPromises()
 
-    expect(notes.getNote(target('links/Mill.md'))).toStrictEqual({
+    expect(notes.getNote(target('links/Mill.md', { path: '' }))).toStrictEqual({
       type: 'link',
       properties: { media: '' },
     })
+    expect(targets).toStrictEqual([
+      { path: 'links/Mill.md', title: 'Mill', isFolder: false, others: [] },
+      { path: 'links/Other.md', title: 'Mill', isFolder: false, others: ['links/Extra.md'] },
+    ])
   })
 
   it('reads a note once until reset, and reads it again after', async () => {
@@ -83,12 +94,19 @@ describe('the notes the palette reads', () => {
   })
 
   it('drops a read that ends after a reset', async () => {
-    const { notes } = createNotes()
+    const { notes, errors, setFailure } = createNotes()
 
     notes.getNote(target('links/Mill.md'))
     notes.reset()
     await flushPromises()
 
     expect(notes.getNote(target('links/Mill.md'))).toBeUndefined()
+
+    setFailure(new Error('closed'))
+    notes.getNote(target('links/Mill.md'))
+    notes.reset()
+    await flushPromises()
+
+    expect(errors).toStrictEqual([])
   })
 })

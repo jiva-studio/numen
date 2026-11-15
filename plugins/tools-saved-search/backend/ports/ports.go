@@ -54,3 +54,13 @@ type Window interface {
 type Clock interface {
 	Now() time.Time
 }
+
+// Log records what a use case does in the background where no caller sees its error.
+type Log interface {
+	Debug(msg string, args ...any)
+}
+
+// Entropy fills the random bits of the identifiers a use case mints.
+type Entropy interface {
+	Fill(b []byte)
+}

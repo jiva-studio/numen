@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 )
 
@@ -17,7 +16,7 @@ func newRecord() resultcache.Record {
 	computedAt := time.Date(2026, 11, 14, 9, 30, 0, 0, time.UTC)
 	staleSince := time.Date(2026, 11, 14, 9, 41, 12, 0, time.UTC)
 	failedAt := time.Date(2026, 11, 14, 9, 52, 0, 0, time.UTC)
-	page := api.Place{Page: 14}
+	page := resultcache.Place{Page: 14}
 	score := 0.913
 	return resultcache.Record{
 		Path:            "Harbor/Harbor master- winter storms.md",
@@ -27,16 +26,16 @@ func newRecord() resultcache.Record {
 		StaleSince:      &staleSince,
 		FailedAt:        &failedAt,
 		Failure:         "the reranking service did not answer",
-		Order:           api.OrderReranked,
+		Order:           resultcache.OrderReranked,
 		Reranker:        "Harbor reranker",
 		IndexGeneration: "gen-42",
-		Results: []api.Result{{
+		Results: []resultcache.Result{{
 			Path: "Logbooks/1911.pdf", Title: "1911", Kind: "pdf", Place: &page,
 			Text:  "…the harbor master rowed out to the moored boats while the storm…",
 			Start: 48210, Length: 2410, Line: 380, URI: "numen:Logbooks%2F1911.pdf?start=48210&length=2410", Score: &score,
 		}},
 		Warnings: []string{},
-		Errors:   []api.Problem{},
+		Errors:   []resultcache.Problem{},
 	}
 }
 

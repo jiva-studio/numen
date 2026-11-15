@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/savedsearch"
 )
 
 var errNoVault = errors.New("the call names no vault")
@@ -24,7 +25,8 @@ func (a *App) newRegistry(built *parts) (*tools.Registry, error) {
 		if id == "" {
 			return api.SavedOutput{}, errNoVault
 		}
-		return built.notes.Create(ctx, domain.VaultID(id), in)
+		saved, err := built.notes.Create(ctx, domain.VaultID(id), savedsearch.CreateInput{Title: in.Title, Folder: in.Folder, Query: in.Query})
+		return newSavedOutput(saved), err
 	})
 	if err != nil {
 		return nil, err
@@ -39,7 +41,8 @@ func (a *App) newRegistry(built *parts) (*tools.Registry, error) {
 		if id == "" {
 			return api.SavedOutput{}, errNoVault
 		}
-		return built.notes.Update(ctx, domain.VaultID(id), in)
+		saved, err := built.notes.Update(ctx, domain.VaultID(id), savedsearch.UpdateInput{Path: in.Path, Query: in.Query})
+		return newSavedOutput(saved), err
 	})
 	if err != nil {
 		return nil, err

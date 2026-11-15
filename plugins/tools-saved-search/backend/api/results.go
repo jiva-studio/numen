@@ -47,9 +47,10 @@ type Result struct {
 	IsWholeFile bool     `json:"isWholeFile,omitempty"`
 }
 
-// Problem is one problem of a query. Line and Column count from 1.
+// Problem is one problem of a query. Line and Column count from 1 over the query; a problem of the note
+// outside its query is at line 1, column 1, and a problem of a provider has 0 for both.
 type Problem struct {
-	Line    int    `json:"line" jsonschema:"the line of the problem, counted from 1"`
+	Line    int    `json:"line" jsonschema:"the line of the problem in the query, counted from 1"`
 	Column  int    `json:"column" jsonschema:"the column of the problem, in characters, counted from 1"`
 	Message string `json:"message" jsonschema:"what is wrong"`
 }

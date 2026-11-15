@@ -16,7 +16,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -161,7 +161,7 @@ func TestABookDroppedInReachesAListener(t *testing.T) {
 
 	reported := getReportedPaths(changes)
 
-	vaultfixture.WriteBook(t, root, "library/A Book.epub")
+	vaulttest.WriteBook(t, root, "library/A Book.epub")
 
 	select {
 	case paths := <-reported:
@@ -319,9 +319,10 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 	// What this watches is the order the writes and the closing land in, so
 	// nothing is updated behind them.
 	noIndex := func(context.Context, domain.Vault, []string) error { return nil }
+	writers := newVaultWriters()
 	writing := note.NewWrite(
-		container.VaultReaders(cfg),
-		recording{NoteWriters: container.NoteWriters(cfg), VaultLocks: container.VaultLocks(cfg), order: recorded, hold: hold},
+		vaultreader.Readers{},
+		recording{NoteWriters: writers, VaultLocks: writers, order: recorded, hold: hold},
 		noIndex,
 		testsupport.NewClock(),
 		installation.State.Writes,

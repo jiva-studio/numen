@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
@@ -105,7 +105,7 @@ type fixture struct {
 	searches *hosttest.Searches
 	search   *failingSearch
 	queue    *hosttest.Queue
-	clock    *clock.Fake
+	clock    *clocktest.Fake
 	settings *settings.Store
 	registry *tools.Registry
 	web      *httptest.Server
@@ -119,7 +119,7 @@ func newFixture(t *testing.T, refreshMinutes int) *fixture {
 	searches.SetAnswer(brokenQuery, getBrokenAnswer())
 	vault := hosttest.New(testVault)
 	vault.File("Notes/Tides.md", "---\ntitle: Tide Tables\n---\nThe tide at the quay.")
-	fake := new(clock.Fake)
+	fake := new(clocktest.Fake)
 	fake.Set(getStartTime())
 	current := settings.NewStore()
 	current.Update(map[string]string{"refreshMinutes": fmt.Sprint(refreshMinutes)})

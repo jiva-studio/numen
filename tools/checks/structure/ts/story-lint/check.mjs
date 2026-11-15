@@ -8,9 +8,6 @@ import { REPO_ROOT, failOnFindings, requireMatches } from "../../../lib/graph.mj
 /** The rule the story rules leave off: a story's component is found through the import graph. */
 const RULE_LEFT_OFF = "storybook/csf-component";
 
-/** The libraries whose story files are linted with the rules of the Storybook plugin. */
-const STORY_LIBRARIES = ["libs/ui/components", "libs/ui/workbench"];
-
 /** The severity of a rule entry as `eslint --print-config` prints it (`[2, ...]`), or as a config writes it (`"error"`, `2`). */
 export function readSeverity(entry) {
   const level = Array.isArray(entry) ? entry[0] : entry;
@@ -46,10 +43,22 @@ async function readRecommendedRules(dir) {
   return plugin.configs["flat/recommended"].find((config) => config.name === "storybook:recommended:stories-rules")?.rules ?? {};
 }
 
-/** The first tracked story file under a library's `src`. */
-function findStoryFile(dir) {
-  const listed = runTool("git", ["ls-files", "--", `${dir}/src/*.stories.ts`], { cwd: REPO_ROOT, encoding: "utf8" });
-  return (listed.stdout || "").split("\n").find(Boolean);
+/**
+ * The libraries that hold story files, each with its first story file: the folder above the `src` of every tracked
+ * `*.stories.ts` under `libs`.
+ *
+ * @param {string[]} files Tracked paths
+ * @returns {Map<string, string>}
+ */
+export function findStoryLibraries(files) {
+  const libraries = new Map();
+  for (const file of files) {
+    const at = file.indexOf("/src/");
+    if (!file.startsWith("libs/") || !file.endsWith(".stories.ts") || at < 0) continue;
+    const dir = file.slice(0, at);
+    if (!libraries.has(dir)) libraries.set(dir, file);
+  }
+  return libraries;
 }
 
 /** The resolved `rules` of a file, read by `eslint --print-config` run in its package. */
@@ -62,12 +71,10 @@ function readResolvedRules(dir, file) {
 
 export async function verifyStoryFilesResolveStorybookRules() {
   const findings = [];
-  for (const dir of STORY_LIBRARIES) {
-    const file = findStoryFile(dir);
-    if (!file) {
-      findings.push({ file: dir, line: 1, symbol: "no story file to read the lint configuration for" });
-      continue;
-    }
+  const listed = runTool("git", ["ls-files", "--", "libs"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
+  const libraries = findStoryLibraries((listed.stdout || "").split("\n").filter(Boolean).sort());
+  requireMatches("Libraries with story files", libraries.size);
+  for (const [dir, file] of libraries) {
     const recommended = await readRecommendedRules(dir);
     requireMatches(`Storybook rules recommended for ${dir}`, Object.keys(recommended).filter((rule) => rule.startsWith("storybook/")).length);
     for (const gap of findStoryRuleGaps(readResolvedRules(dir, file), recommended)) findings.push({ file, line: 1, symbol: gap });

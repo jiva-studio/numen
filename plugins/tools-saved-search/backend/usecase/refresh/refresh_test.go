@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 )
 
@@ -126,7 +125,7 @@ func TestRecordKeepsTheFloorOrderRerankerAndIndexGenerationOfTheCore(t *testing.
 	if record.Path != stormsPath || record.QueryHash != resultcache.HashText(stormsQuery) {
 		t.Errorf("record = %+v, want the path and the hash of the query", record)
 	}
-	if record.Floor != 0.4 || record.Order != api.OrderReranked || record.Reranker != "Harbor reranker" || record.IndexGeneration != "gen-7" {
+	if record.Floor != 0.4 || record.Order != resultcache.OrderReranked || record.Reranker != "Harbor reranker" || record.IndexGeneration != "gen-7" {
 		t.Errorf("record = %+v, want the floor, the order, the reranker and the index generation of the core", record)
 	}
 	if got := getResultTexts(record); !slices.Equal(got, []string{galeText, mooringText}) {
@@ -249,23 +248,23 @@ func TestRunOfANoteWithoutAQueryBlockRecordsTheProblem(t *testing.T) {
 	if len(record.Errors) != 1 || record.Errors[0].Message != "the note has no numen-query block" {
 		t.Fatalf("errors = %+v, want the missing block", record.Errors)
 	}
-	if record.Errors[0].Line != 5 || record.Errors[0].Column != 1 || len(record.Results) != 0 || !isAt(record.FailedAt, getStartTime()) {
-		t.Errorf("record = %+v, want the problem at line 5, column 1, no result, failed now", record)
+	if record.Errors[0].Line != 1 || record.Errors[0].Column != 1 || len(record.Results) != 0 || !isAt(record.FailedAt, getStartTime()) {
+		t.Errorf("record = %+v, want the problem at line 1, column 1 of the query, no result, failed now", record)
 	}
 	if got := w.getStartCount(); got != 0 {
 		t.Errorf("%d searches for a note with problems, want none", got)
 	}
 }
 
-func TestRunRecordsTheProblemsOfTheCoreAtTheirLineInTheFile(t *testing.T) {
+func TestRunRecordsTheProblemsOfTheCoreAtTheirLineInTheQuery(t *testing.T) {
 	w := newWorld(t, 0)
 	w.vault.File(stormsPath, formatSearchNote(stormsID, brokenQuery))
 
 	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
-	if len(record.Errors) != 1 || record.Errors[0].Line != 6 || record.Errors[0].Column != 20 || record.Errors[0].Message == "" {
-		t.Errorf("errors = %+v, want a problem at line 6, column 20 of the file", record.Errors)
+	if len(record.Errors) != 1 || record.Errors[0].Line != 1 || record.Errors[0].Column != 20 || record.Errors[0].Message == "" {
+		t.Errorf("errors = %+v, want a problem at line 1, column 20 of the query", record.Errors)
 	}
 	if len(record.Results) != 0 {
 		t.Errorf("results = %+v, want none", record.Results)
@@ -296,7 +295,7 @@ func TestRunWithoutRerankingWritesFusedResults(t *testing.T) {
 	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
-	if record.Order != api.OrderFused || record.Reranker != "" || record.FailedAt != nil || len(record.Warnings) != 0 {
+	if record.Order != resultcache.OrderFused || record.Reranker != "" || record.FailedAt != nil || len(record.Warnings) != 0 {
 		t.Errorf("record = %+v, want fused order, no reranker, no failure and no warning", record)
 	}
 }

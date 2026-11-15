@@ -37,7 +37,8 @@ type Definition struct {
 	Query string
 }
 
-// Problem is a reason the note cannot run. Line and Column count from 1 over the whole file.
+// Problem is a reason the note cannot run. Line and Column count from 1 over the query; a problem of the
+// note outside its query is at line 1, column 1.
 type Problem struct {
 	Line, Column int
 	Message      string
@@ -48,29 +49,24 @@ func Read(stat domain.FileStat, raw []byte) (Definition, []Problem) {
 	note := markdown.Parse(stat, raw)
 	definition := Definition{ID: note.ID, Title: getTitle(note, stat.Path), Query: ""}
 	if note.Type != NoteType {
-		return definition, []Problem{{Line: firstLine, Column: firstColumn, Message: fmt.Sprintf(problemNotASearch, note.Type)}}
+		return definition, []Problem{newProblem(fmt.Sprintf(problemNotASearch, note.Type))}
 	}
 	doc, err := markdown.Open(raw)
 	if err != nil {
-		return definition, []Problem{{Line: firstLine, Column: firstColumn, Message: problemFrontmatter}}
+		return definition, []Problem{newProblem(problemFrontmatter)}
 	}
-	var problems []Problem
-	bodyLine := getBodyLine(raw, doc.Body())
 	blocks := findQueryBlocks(doc.Body())
 	switch {
 	case len(blocks) == 0:
-		problems = append(problems, Problem{Line: bodyLine, Column: firstColumn, Message: problemNoBlock})
+		return definition, []Problem{newProblem(problemNoBlock)}
 	case len(blocks) > 1:
-		second := bodyLine + countLines(doc.Body()[:blocks[1].opening.start])
-		problems = append(problems, Problem{Line: second, Column: firstColumn, Message: problemSecondBlock})
-	default:
-		definition.Query = blocks[0].getText()
-		if strings.TrimSpace(definition.Query) == "" {
-			opening := bodyLine + countLines(doc.Body()[:blocks[0].opening.start])
-			problems = append(problems, Problem{Line: opening, Column: firstColumn, Message: problemEmptyBlock})
-		}
+		return definition, []Problem{newProblem(problemSecondBlock)}
 	}
-	return definition, problems
+	definition.Query = blocks[0].getText()
+	if strings.TrimSpace(definition.Query) == "" {
+		return definition, []Problem{newProblem(problemEmptyBlock)}
+	}
+	return definition, nil
 }
 
 // IsSearch reports whether the note is of type search.
@@ -78,18 +74,8 @@ func IsSearch(stat domain.FileStat, raw []byte) bool {
 	return markdown.Parse(stat, raw).Type == NoteType
 }
 
-// GetQueryLine returns the line of the file, counted from 1, of the first line of the query of a saved
-// search note, and false when the note has no numen-query block.
-func GetQueryLine(raw []byte) (int, bool) {
-	doc, err := markdown.Open(raw)
-	if err != nil {
-		return 0, false
-	}
-	blocks := findQueryBlocks(doc.Body())
-	if len(blocks) == 0 {
-		return 0, false
-	}
-	return getBodyLine(raw, doc.Body()) + countLines(doc.Body()[:blocks[0].opening.start]) + 1, true
+func newProblem(message string) Problem {
+	return Problem{Line: firstLine, Column: firstColumn, Message: message}
 }
 
 func getTitle(note domain.Note, notePath string) string {
@@ -98,12 +84,4 @@ func getTitle(note domain.Note, notePath string) string {
 	}
 	base := path.Base(notePath)
 	return strings.TrimSuffix(base, path.Ext(base))
-}
-
-func getBodyLine(raw []byte, body string) int {
-	return firstLine + countLines(string(raw[:len(raw)-len(body)]))
-}
-
-func countLines(text string) int {
-	return strings.Count(text, "\n")
 }

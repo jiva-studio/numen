@@ -3,13 +3,11 @@ package refresh
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/textplace"
@@ -17,6 +15,7 @@ import (
 
 const (
 	searchWait      = 30 * time.Second
+	staleDebounce   = 2 * time.Second
 	searchPageSize  = 100
 	scoreKindRerank = "rerank"
 	failureProblems = "the query has problems"
@@ -56,27 +55,27 @@ func (r *Runner) run(ctx context.Context, one job) (resultcache.Record, error) {
 		return written, err
 	}
 	start := host.SearchStart{Query: want.definition.Query, Priority: one.priority, IsBackground: one.isBackground}
-	result, err := runSearch(ctx, one.vault.Search, start)
+	result, err := r.runSearch(ctx, one.vault.Search, start)
 	switch {
 	case err != nil:
 		written = r.recordFailure(ctx, one, name, err)
 		return written, err
 	case len(result.state.Errors) > 0:
-		written, err = r.recordProblems(ctx, one, name, want, moveProblems(convertSearchProblems(result.state.Errors), raw))
+		written, err = r.recordProblems(ctx, one, name, want, convertSearchProblems(result.state.Errors))
 		return written, err
 	}
 	written, err = r.write(ctx, one.vault, name, newRecord(one.path, want, result, r.now()))
 	return written, err
 }
 
-func runSearch(ctx context.Context, search ports.Search, start host.SearchStart) (found, error) {
+func (r *Runner) runSearch(ctx context.Context, search ports.Search, start host.SearchStart) (found, error) {
 	id, err := search.StartSearch(ctx, start)
 	if err != nil {
 		return found{}, err
 	}
 	defer func() {
 		if err := search.RemoveSearch(context.WithoutCancel(ctx), id); err != nil {
-			slog.Debug("saved search: remove a search", "id", id, "error", err)
+			r.log.Debug("saved search: remove a search", "id", id, "error", err)
 		}
 	}()
 	read := host.SearchRead{Wait: searchWait, PageSize: searchPageSize, PageToken: ""}
@@ -120,7 +119,7 @@ func (r *Runner) write(ctx context.Context, vault Vault, name string, record res
 	return record, nil
 }
 
-func (r *Runner) recordProblems(ctx context.Context, one job, name string, want target, problems []api.Problem) (resultcache.Record, error) {
+func (r *Runner) recordProblems(ctx context.Context, one job, name string, want target, problems []resultcache.Problem) (resultcache.Record, error) {
 	r.records.Lock()
 	defer r.records.Unlock()
 	record, hasRecord, err := readRecord(ctx, one.vault.Store, name)
@@ -177,7 +176,7 @@ func writeRecord(ctx context.Context, store ports.Store, name string, record res
 func newEmptyRecord(notePath string) resultcache.Record {
 	return resultcache.Record{
 		Path: notePath, QueryHash: "", Floor: 0, ComputedAt: time.Time{}, StaleSince: nil, FailedAt: nil, Failure: "",
-		Order: "", Reranker: "", IndexGeneration: "", Results: []api.Result{}, Warnings: []string{}, Errors: []api.Problem{},
+		Order: "", Reranker: "", IndexGeneration: "", Results: []resultcache.Result{}, Warnings: []string{}, Errors: []resultcache.Problem{},
 	}
 }
 
@@ -185,9 +184,9 @@ func newRecord(notePath string, want target, result found, now time.Time) result
 	record := newEmptyRecord(notePath)
 	record.QueryHash, record.ComputedAt = want.queryHash, now
 	record.Floor, record.IndexGeneration = result.state.Floor, result.state.IndexGeneration
-	record.Order = api.OrderFused
+	record.Order = resultcache.OrderFused
 	if result.state.ScoreKind == scoreKindRerank {
-		record.Order = api.OrderReranked
+		record.Order = resultcache.OrderReranked
 	}
 	if len(result.state.Reranks) > 0 {
 		record.Reranker = result.state.Reranks[0].ConnectionName
@@ -202,8 +201,8 @@ func newRecord(notePath string, want target, result found, now time.Time) result
 	return record
 }
 
-func newResult(one host.SearchResult) api.Result {
-	result := api.Result{
+func newResult(one host.SearchResult) resultcache.Result {
+	result := resultcache.Result{
 		Path: one.Path, Title: one.Title, Kind: one.Kind, Place: nil, Text: one.Text, Start: one.Start, Length: one.Length,
 		Line: one.MatchLine + 1, URI: textplace.FormatNoteAddress(one.Path), Score: one.Score, IsWholeFile: one.IsWholeFile,
 	}
@@ -214,12 +213,12 @@ func newResult(one host.SearchResult) api.Result {
 	return result
 }
 
-func newPlace(one host.SearchResult) *api.Place {
+func newPlace(one host.SearchResult) *resultcache.Place {
 	s := textplace.GetSelector(one.Selector)
 	if s.IsEmpty() {
 		return nil
 	}
-	place := &api.Place{Page: s.Page, PositionSeconds: nil, EndSeconds: nil, CFI: s.CFI, Chapter: ""}
+	place := &resultcache.Place{Page: s.Page, PositionSeconds: nil, EndSeconds: nil, CFI: s.CFI, Chapter: ""}
 	if s.CFI != "" {
 		place.Chapter = one.PlaceLabel
 	}
@@ -232,14 +231,14 @@ func newPlace(one host.SearchResult) *api.Place {
 	return place
 }
 
-func convertSearchProblems(problems []host.SearchProblem) []api.Problem {
-	converted := make([]api.Problem, len(problems))
+func convertSearchProblems(problems []host.SearchProblem) []resultcache.Problem {
+	converted := make([]resultcache.Problem, len(problems))
 	for i, problem := range problems {
 		message := problem.Message
 		if problem.Suggestion != "" {
 			message += " (did you mean " + problem.Suggestion + "?)"
 		}
-		converted[i] = api.Problem{Line: problem.Line, Column: problem.Column, Message: message}
+		converted[i] = resultcache.Problem{Line: problem.Line, Column: problem.Column, Message: message}
 	}
 	return converted
 }

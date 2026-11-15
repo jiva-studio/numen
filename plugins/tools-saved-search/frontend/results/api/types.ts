@@ -26,7 +26,10 @@ export interface SearchResult {
   readonly isWholeFile?: boolean
 }
 
-/** A problem of the note, at its line and column. */
+/**
+ * A problem of the query, at its line and column counted from 1 over the query: a problem of the note
+ * outside its query at line 1, column 1, a problem of a provider at 0, 0.
+ */
 export interface Problem {
   readonly line: number
   readonly column: number
