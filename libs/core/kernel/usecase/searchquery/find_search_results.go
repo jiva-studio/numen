@@ -29,19 +29,18 @@ type Request struct {
 // FindSearchResultsDeps is what FindSearchResults reads. A nil Source is an installation with no model, and
 // a nil Texts reads the text of notes only. The zone of Clock reads a date written without an offset.
 type FindSearchResultsDeps struct {
-	Parser       QueryParser
-	Documents    DocumentQueries
-	Contents     NoteContents
-	Clock        machineport.Clock
-	Vectors      VectorQueries
-	Words        WordQueries
-	Places       sourceport.ChunkPlaces
-	Matcher      sourceport.WordMatching
-	Readers      vaultport.VaultReaders
-	Texts        textdomain.Readers
-	Source       searchsourceport.QuerySource
-	Floors       FloorReader
-	ContentTypes contenttypeport.ContentTypeTable
+	Parser    QueryParser
+	Documents DocumentQueries
+	Vectors   VectorQueries
+	Words     WordQueries
+	Places    sourceport.ChunkPlaces
+	Matcher   sourceport.WordMatching
+	Readers   vaultport.VaultReaders
+	Texts     textdomain.Readers
+	Source    searchsourceport.QuerySource
+	Floors    FloorReader
+	Contents  NoteContents
+	Clock     machineport.Clock
 }
 
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
@@ -90,15 +89,17 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r Reque
 	if hasMeaning(q.Conditions) && !u.hasModel() {
 		return searchquery.SearchResults{}, searchquery.ErrNoModel
 	}
-	p := u.newPlan(ctx, v, q, zone)
-	results, err := p.execute(ctx)
+	req := u.newRequest(ctx, v, q, zone)
+	warns := &warnings{}
+	docs := newDocumentReader(u.index, u.contentTypes, req, warns)
+	results, err := u.run(ctx, req, docs, warns)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	if len(results.Results) > limit {
 		results.Results = results.Results[:limit]
 	}
-	if err := u.fillTitles(ctx, v, results.Results); err != nil {
+	if err := docs.fillTitles(ctx, results.Results); err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	return results, ctx.Err()
@@ -138,38 +139,6 @@ func (u *FindSearchResults) hasModel() bool {
 	return u.source != nil && u.source.Describe().IsDescribed()
 }
 
-func (u *FindSearchResults) getDocument(path string, sourceKind domain.SourceKind) searchquery.Document {
-	return searchquery.Document{
-		Path: path, Title: searchquery.GetTitle(path, ""), SourceKind: sourceKind,
-		Kind: searchquery.GetKind(sourceKind, u.contentTypes.GetContentType(path)),
-	}
-}
-
-func (u *FindSearchResults) fillTitles(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error {
-	var paths []string
-	for _, r := range results {
-		if r.Document.SourceKind == domain.KindNote {
-			paths = append(paths, r.Document.Path)
-		}
-	}
-	if len(paths) == 0 {
-		return nil
-	}
-	listed, err := u.index.documents.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
-	if err != nil {
-		return err
-	}
-	titles := make(map[string]string, len(listed))
-	for _, d := range listed {
-		titles[d.Path] = d.Title
-	}
-	for i, r := range results {
-		results[i].Document.Title = searchquery.GetTitle(r.Document.Path, titles[r.Document.Path])
-	}
-	return nil
-}
-
-// indexReads are the ports of the index a query reads.
 type indexReads struct {
 	documents DocumentQueries
 	vectors   VectorQueries

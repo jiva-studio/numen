@@ -7,11 +7,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -21,10 +23,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// Plugins is the triggers and the handlers of the enabled plugins.
+// Plugins is the triggers, the handlers and the commands of the enabled plugins.
 type Plugins interface {
 	pluginport.PluginTriggers
 	ListHandlers() []plugin.CommandEntry
+	ListCommands() []plugin.CommandEntry
 }
 
 // Versions gives the text versions of a file as target.versions holds them.
@@ -60,60 +63,115 @@ func NewTriggers(deps TriggersDeps) *Triggers {
 	return &Triggers{deps: deps, conditions: when.NewConditions()}
 }
 
-// ExecuteAll runs every trigger over each file of the vault where its condition and the condition of
-// its handler hold. It returns the failures of the runs, joined; a failed file is tried again in the
-// next pass.
+// ExecuteAll runs the triggers of the file events over each file of the vault where the condition of
+// the trigger and the condition of its handler hold. It returns the failures of the runs, joined; a
+// failed file is tried again in the next pass. A trigger on note.frontmatterChanged runs only in
+// ExecuteFrontmatter.
 func (u *Triggers) ExecuteAll(ctx context.Context, v domain.Vault) error {
-	return u.execute(ctx, v, func(reader vaultport.VaultReader, each func(domain.FileStat) error) error {
-		return reader.WalkFiles(ctx, each)
+	_, err := u.execute(ctx, v, isFileEvent, false, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
+		return reader.WalkFiles(ctx, func(stat domain.FileStat) error {
+			if stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
+				return nil
+			}
+			return each(stat.Path, false)
+		})
 	})
+	return err
 }
 
-// Execute runs every trigger over the files at the paths, as ExecuteAll does over the vault. A path
-// that holds no file is passed over.
+// Execute runs the triggers of the file events over the files at the paths, as ExecuteAll does over
+// the vault. A path that holds no file is passed over.
 func (u *Triggers) Execute(ctx context.Context, v domain.Vault, paths []string) error {
-	return u.execute(ctx, v, func(reader vaultport.VaultReader, each func(domain.FileStat) error) error {
-		for _, path := range paths {
-			stat, err := reader.StatFile(ctx, path)
-			if errors.Is(err, edit.ErrNotExist) {
+	_, err := u.execute(ctx, v, isFileEvent, false, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
+		_, err := walkPaths(ctx, reader, paths, false, each)
+		return err
+	})
+	return err
+}
+
+// FrontmatterBatchSize is the most notes one run of a trigger on note.frontmatterChanged is given.
+const FrontmatterBatchSize = 500
+
+// ExecuteFrontmatter runs the triggers of note.frontmatterChanged over the notes at the paths: each
+// trigger runs once for every FrontmatterBatchSize notes where its condition and the condition of its
+// command hold, with those notes as the paths of the call. A path that holds no file is a removed
+// note, with no note type and no properties. It returns the notes to run over in a later pass: those
+// that could not be read, and those of the batches of a plugin that could not be reached.
+func (u *Triggers) ExecuteFrontmatter(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
+	var failed []string
+	retry, err := u.execute(ctx, v, isFrontmatterEvent, true, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
+		var err error
+		failed, err = walkPaths(ctx, reader, paths, true, each)
+		return err
+	})
+	return slices.Concat(failed, retry), err
+}
+
+func isFileEvent(event string) bool { return event != manifest.EventNoteFrontmatterChanged }
+
+func isFrontmatterEvent(event string) bool { return event == manifest.EventNoteFrontmatterChanged }
+
+func walkPaths(
+	ctx context.Context, reader vaultport.VaultReader, paths []string, isGoneRun bool, each func(path string, isGone bool) error,
+) (failed []string, err error) {
+	var failures []error
+	for _, path := range paths {
+		stat, err := reader.StatFile(ctx, path)
+		switch {
+		case errors.Is(err, edit.ErrNotExist):
+			if !isGoneRun {
 				continue
 			}
-			if err != nil {
-				return fmt.Errorf("read %s: %w", path, err)
+			if err := each(path, true); err != nil {
+				return failed, errors.Join(append(failures, err)...)
 			}
-			if err := each(stat); err != nil {
-				return err
-			}
+			continue
+		case err != nil:
+			failed = append(failed, path)
+			failures = append(failures, fmt.Errorf("read %s: %w", path, err))
+			continue
+		case stat.Kind != domain.KindFile && stat.Kind != domain.KindNote:
+			continue
 		}
-		return nil
-	})
+		if err := each(stat.Path, false); err != nil {
+			return failed, errors.Join(append(failures, err)...)
+		}
+	}
+	return failed, errors.Join(failures...)
 }
 
 func (u *Triggers) execute(
-	ctx context.Context, v domain.Vault, walk func(vaultport.VaultReader, func(domain.FileStat) error) error,
-) error {
+	ctx context.Context, v domain.Vault, isEvent func(string) bool, isBatched bool,
+	walk func(vaultport.VaultReader, func(path string, isGone bool) error) error,
+) (retry []string, err error) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	triggers := u.readTriggers()
+	triggers := u.readTriggers(isEvent)
 	if len(triggers) == 0 {
-		return nil
+		return nil, nil
 	}
 	reader, err := u.deps.Readers.Open(v)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	p := &pass{types: u.deps.Types, run: u.deps.Run, notes: u.deps.Notes, versions: u.deps.Versions, vault: v, list: triggers, config: u.deps.Config.GetWhenConfig(), skipped: map[string]bool{}}
-	err = walk(reader, func(stat domain.FileStat) error {
-		if stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
-			return nil
-		}
+	p := &pass{
+		types: u.deps.Types, run: u.deps.Run, notes: u.deps.Notes, versions: u.deps.Versions, vault: v, list: triggers,
+		config: u.deps.Config.GetWhenConfig(), skipped: map[string]bool{}, retry: map[string]bool{},
+	}
+	if isBatched {
+		p.batches = make([][]string, len(triggers))
+	}
+	err = walk(reader, func(path string, isGone bool) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		p.runFile(ctx, stat.Path)
+		p.runFile(ctx, path, isGone)
 		return nil
 	})
-	return errors.Join(append(p.failures, err)...)
+	if ctx.Err() == nil {
+		p.runBatches(ctx)
+	}
+	return slices.Sorted(maps.Keys(p.retry)), errors.Join(append(p.failures, err)...)
 }
 
 // trigger is one trigger with its condition and the condition of its handler read.
@@ -123,13 +181,16 @@ type trigger struct {
 	handler   when.Condition
 }
 
-func (u *Triggers) readTriggers() []trigger {
+func (u *Triggers) readTriggers(isEvent func(string) bool) []trigger {
 	handlers := map[[2]string]string{}
-	for _, entry := range u.deps.Plugins.ListHandlers() {
+	for _, entry := range slices.Concat(u.deps.Plugins.ListHandlers(), u.deps.Plugins.ListCommands()) {
 		handlers[[2]string{entry.PluginID, entry.Command.ID}] = entry.Command.When
 	}
 	var out []trigger
 	for _, entry := range u.deps.Plugins.ListTriggers() {
+		if !isEvent(entry.Trigger.Event) {
+			continue
+		}
 		handlerWhen, isHandled := handlers[[2]string{entry.PluginID, entry.Trigger.Command}]
 		if !isHandled {
 			continue
@@ -148,7 +209,8 @@ func (u *Triggers) readTriggers() []trigger {
 }
 
 // pass is one run of the triggers over files of a vault. skipped holds the plugins that could not be
-// reached in this pass.
+// reached in this pass. batches, set in a pass over frontmatter, holds the paths each trigger of list
+// runs over once every path is read, and retry the paths of the batches the pass left undone.
 type pass struct {
 	types    contenttypeport.ContentTypeTable
 	run      pluginport.CommandRun
@@ -158,7 +220,9 @@ type pass struct {
 	list     []trigger
 	config   map[string]any
 	skipped  map[string]bool
+	batches  [][]string
 	failures []error
+	retry    map[string]bool
 }
 
 // file is the values of one file as a pass reads them: the note and the versions are read once, and
@@ -170,33 +234,66 @@ type file struct {
 	isVersionsRead bool
 }
 
-func (p *pass) runFile(ctx context.Context, path string) {
+func (p *pass) runFile(ctx context.Context, path string, isGone bool) {
 	current := &file{
 		path:   path,
 		values: plugin.NewTargetValues(path, false, p.types.GetContentType(path)).WithConfig(p.config),
 	}
-	for _, one := range p.list {
+	if isGone {
+		current.values = current.values.WithNote("", nil).WithVersions(nil)
+		current.isNoteRead, current.isVersionsRead = true, true
+	}
+	for index, one := range p.list {
 		if p.skipped[one.entry.PluginID] {
 			continue
 		}
 		isTrue, err := p.isTrue(ctx, current, one)
 		if err != nil {
 			p.failures = append(p.failures, fmt.Errorf("read %s: %w", path, err))
+			if p.batches != nil {
+				p.retry[path] = true
+			}
 			return
 		}
-		if !isTrue {
-			continue
+		switch {
+		case !isTrue:
+		case p.batches != nil:
+			p.batches[index] = append(p.batches[index], path)
+		default:
+			p.runCall(ctx, one, plugin.CommandCall{PluginID: one.entry.PluginID, Command: one.entry.Trigger.Command, Path: path}, path)
 		}
-		_, err = p.run.Execute(ctx, p.vault, plugin.CommandCall{
-			PluginID: one.entry.PluginID, Command: one.entry.Trigger.Command, Path: path,
-		})
-		if err == nil {
-			continue
+	}
+}
+
+func (p *pass) runBatches(ctx context.Context) {
+	for index, paths := range p.batches {
+		one := p.list[index]
+		for batch := range slices.Chunk(paths, FrontmatterBatchSize) {
+			if p.skipped[one.entry.PluginID] {
+				p.keepRetry(batch)
+				continue
+			}
+			call := plugin.CommandCall{PluginID: one.entry.PluginID, Command: one.entry.Trigger.Command, Paths: batch}
+			p.runCall(ctx, one, call, fmt.Sprintf("%d notes from %s", len(batch), batch[0]))
 		}
-		if errors.As(err, new(*plugin.UnavailableError)) {
-			p.skipped[one.entry.PluginID] = true
-		}
-		p.failures = append(p.failures, fmt.Errorf("%s of %s over %s: %w", one.entry.Trigger.Command, one.entry.PluginID, path, err))
+	}
+}
+
+func (p *pass) runCall(ctx context.Context, one trigger, call plugin.CommandCall, target string) {
+	_, err := p.run.Execute(ctx, p.vault, call)
+	if err == nil {
+		return
+	}
+	if errors.As(err, new(*plugin.UnavailableError)) {
+		p.skipped[one.entry.PluginID] = true
+		p.keepRetry(call.Paths)
+	}
+	p.failures = append(p.failures, fmt.Errorf("%s of %s over %s: %w", one.entry.Trigger.Command, one.entry.PluginID, target, err))
+}
+
+func (p *pass) keepRetry(paths []string) {
+	for _, path := range paths {
+		p.retry[path] = true
 	}
 }
 

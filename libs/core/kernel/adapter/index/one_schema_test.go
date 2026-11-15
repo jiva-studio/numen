@@ -18,7 +18,7 @@ import (
 
 // expectedVersion is the schema version of this build. 10 is what the build before the collapse left,
 // and an index of that build is not readable by this one.
-const expectedVersion = 1
+const expectedVersion = 3
 
 type catalogEntry struct{ kind, name, body string }
 
@@ -110,7 +110,7 @@ func TestAFreshIndexHasExactlyTheRecordedSchema(t *testing.T) {
 	}
 }
 
-func TestTheMigrationFolderHasOneFileNamedForTheIndexVersion(t *testing.T) {
+func TestTheMigrationFolderStartsAtTheFirstVersionAndEndsAtTheIndexVersion(t *testing.T) {
 	entries, err := os.ReadDir("migration")
 	if err != nil {
 		t.Fatal(err)
@@ -119,11 +119,14 @@ func TestTheMigrationFolderHasOneFileNamedForTheIndexVersion(t *testing.T) {
 	for _, e := range entries {
 		names = append(names, e.Name())
 	}
-	if len(names) != 1 {
-		t.Fatalf("the folder migration holds %v, want one file", names)
+	if len(names) == 0 {
+		t.Fatal("the folder migration holds no file")
 	}
-	if want := fmt.Sprintf("%04d_", expectedVersion); !strings.HasPrefix(names[0], want) {
-		t.Errorf("the file %s is not numbered %s", names[0], want)
+	if !strings.HasPrefix(names[0], "0001_") {
+		t.Errorf("the first file %s is not numbered 0001", names[0])
+	}
+	if want := fmt.Sprintf("%04d_", expectedVersion); !strings.HasPrefix(names[len(names)-1], want) {
+		t.Errorf("the last file %s is not numbered %s", names[len(names)-1], want)
 	}
 }
 
