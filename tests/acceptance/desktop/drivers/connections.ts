@@ -3,6 +3,7 @@ import { expect, type Locator } from 'playwright/test'
 import { ConnectionRows } from './components/ConnectionRows.js'
 import { ConnectionsPage } from './components/ConnectionsPage.js'
 import { Question } from './components/Question.js'
+import { Keys } from './keys.js'
 import { escapeRegExp } from './rules.js'
 import type { Scenario } from './scenario.js'
 import type { ServiceDriver } from './services.js'
@@ -43,6 +44,8 @@ export const readConnectionEntries = (table: readonly (readonly string[])[]): Co
   }))
 
 export class ConnectionsDriver {
+  private readonly keys = new Keys()
+
   constructor(
     private readonly scenario: Scenario,
     private readonly settings: SettingsDriver,
@@ -58,12 +61,17 @@ export class ConnectionsDriver {
     return new ConnectionRows(this.scenario.page)
   }
 
-  async add(name: string, type: string, service: string): Promise<void> {
+  declareKeys(table: readonly (readonly string[])[]): void {
+    this.keys.declare(table)
+  }
+
+  /** A connection of a type with a fixed address names no service. */
+  async add(name: string, type: string, service?: string): Promise<void> {
     const panel = await this.settings.showConnections()
     await this.page.getAddButton(panel).click()
     await this.page.chooseType(type)
     await this.page.fill('Name', name)
-    await this.page.fill('Address', await this.services.getAddress(service))
+    if (service !== undefined) await this.page.fill('Address', await this.services.getAddress(service))
     await this.page.save()
     await expect(this.page.getRow(panel, name)).toHaveCount(1)
   }
@@ -75,7 +83,7 @@ export class ConnectionsDriver {
   async giveKey(name: string, key: string): Promise<void> {
     const panel = await this.settings.showConnections()
     await this.page.openEdit(panel, name)
-    await this.page.fill(KEY_LABEL, key)
+    await this.page.fill(KEY_LABEL, this.keys.read(key))
     await this.page.save()
   }
 

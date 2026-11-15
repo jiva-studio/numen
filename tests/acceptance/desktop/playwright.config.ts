@@ -12,6 +12,7 @@ const testDir = defineBddConfig({
 })
 
 const isVideoOn = Boolean(process.env.PLAYWRIGHT_VIDEO)
+const isLive = process.env.NUMEN_ACCEPTANCE_LIVE === '1'
 
 // Every scenario starts a world of its own (drivers/world.ts), with a server and a vault of its own,
 // so the scenarios run side by side and need none of the e2e suite's shared servers.
@@ -25,6 +26,7 @@ export default defineConfig({
   use: {
     ...base.use,
     ...(isVideoOn && { video: 'on', trace: 'retain-on-failure' }),
+    ...(isLive && { trace: 'off' }),
   },
   reporter: [
     ['list'],

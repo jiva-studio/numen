@@ -17,6 +17,14 @@ Given(
   },
 )
 
+Given('the connection {string} of the type {string}', async ({ person }, name: string, type: string) => {
+  await person.connections.add(name, type)
+})
+
+Given('the person has the following keys:', ({ person }, keys: DataTable) => {
+  person.connections.declareKeys(keys.raw())
+})
+
 Given('the program {string} is installed on this computer', ({ person }, name: string) => {
   person.connections.installProgram(name)
 })

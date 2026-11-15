@@ -5,6 +5,9 @@ import type { Scenario } from './scenario.js'
 const COMPOSER = 'Ask about the vault'
 /** The stand-in model answers within this time once it is not held. */
 const ANSWER_LIMIT_MS = 20_000
+/** A real model answers within this time. */
+const LIVE_ANSWER_LIMIT_MS = 120_000
+const NO_ANSWER = 'The agent returned no answer.'
 
 export class AgentDriver {
   constructor(private readonly scenario: Scenario) {}
@@ -45,5 +48,21 @@ export class AgentDriver {
 
   async expectText(text: string): Promise<void> {
     await expect(this.getField()).toHaveValue(text)
+  }
+
+  /** The thread has a settled answer with words, and no turn that failed or says the agent returned nothing. */
+  async expectAnswered(): Promise<void> {
+    const failed = this.scenario.page.locator('[data-voice="response"][data-state="failed"]')
+    const settled = this.scenario.page.locator('[data-voice="response"][data-state="settled"]')
+    await expect
+      .poll(
+        async () => {
+          if ((await failed.count()) > 0) return `the agent failed: ${(await failed.first().innerText()).trim()}`
+          const texts = (await settled.allInnerTexts()).map((one) => one.trim())
+          return texts.some((one) => one !== '' && one !== NO_ANSWER) ? 'answered' : 'no answer yet'
+        },
+        { timeout: LIVE_ANSWER_LIMIT_MS, message: 'the agent has not answered' },
+      )
+      .toBe('answered')
   }
 }

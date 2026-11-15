@@ -7,7 +7,7 @@
   "scripts": {
     "acceptance:gen": "bddgen -c playwright.config.ts",
     "acceptance:test": "bddgen -c playwright.config.ts && node ../../e2e/desktop/scripts/run-offline.mjs -c playwright.config.ts --grep-invert @live",
-    "acceptance:live": "bddgen -c playwright.config.ts && playwright test -c playwright.config.ts --grep @live",
+    "acceptance:live": "bddgen -c playwright.config.ts && NUMEN_ACCEPTANCE_LIVE=1 playwright test -c playwright.config.ts --grep @live",
     "acceptance:report": "node scripts/report.mjs",
     "acceptance:merge": "playwright merge-reports -c report.config.ts acceptance-blobs",
     "report": "playwright show-report",
