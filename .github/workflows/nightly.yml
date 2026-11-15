@@ -13,6 +13,10 @@ on:
         description: 'hold the release back when the live run in the macOS virtual machine fails'
         type: boolean
         default: false
+      dry-run-prune:
+        description: 'print the builds the prune would delete on GitHub and the CDN, and delete none'
+        type: boolean
+        default: false
 
 concurrency:
   group: nightly
@@ -100,22 +104,50 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Keep the 14 newest nightly releases
+      - name: Keep the 30 newest nightly releases
         env:
           GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry-run-prune }}
         run: |
           set -euo pipefail
           gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1000 \
             --json tagName,isPrerelease,createdAt \
-            --jq '[.[] | select(.isPrerelease and (.tagName | contains("-nightly.")))] | sort_by(.createdAt) | reverse | .[14:] | .[].tagName' |
+            --jq '[.[] | select(.isPrerelease and (.tagName | contains("-nightly.")))] | sort_by(.createdAt) | reverse | .[30:] | .[].tagName' |
             while read -r tag; do
-              echo "delete $tag"
-              gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+              if [ "$DRY_RUN" = true ]; then
+                echo "would delete $tag"
+              else
+                echo "delete $tag"
+                gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+              fi
             done
+
+  prune-cdn:
+    name: Prune CDN
+    needs: [release]
+    if: ${{ needs.release.result == 'success' }}
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - name: Keep the 30 newest nightly builds on the CDN
+        env:
+          BUNNY_STORAGE_ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
+          DRY_RUN: ${{ inputs.dry-run-prune }}
+          KEEP: 30
+        run: .github/scripts/prune-nightlies.sh
 
   notify:
     name: Notify
-    needs: [changes, tests, release, prune]
+    needs: [changes, tests, release, prune, prune-cdn]
     if: ${{ always() && github.event_name == 'schedule' && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
