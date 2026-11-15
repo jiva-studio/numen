@@ -124,7 +124,7 @@ func TestGetResultsCountsTheProblemsFromTheQueryAfterTheFrontmatterGrows(t *test
 	}
 }
 
-func TestGetResultsPutsAProblemOfTheNoteAtTheStartOfTheQuery(t *testing.T) {
+func TestGetResultsReturnsAProblemOfTheNoteAtLineOneColumnOneOfTheQuery(t *testing.T) {
 	f := newFixture(t, 10)
 	f.vault.File(stormsPath, "---\nid: "+stormsID+"\ntype: search\n---\nStories of storms.\n\n```numen-query\n```\n")
 
