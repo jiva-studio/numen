@@ -13,7 +13,7 @@ func TestListPropertyValuesReadsATopLevelKeyByItsExactName(t *testing.T) {
 	saveNoteWithFrontmatter(t, db, getFirstVault(), "a.md", map[string]any{"a.b": 7, "it's": 7.5, "list": []any{"x", 2}}, "Text.")
 	saveNoteWithFrontmatter(t, db, getFirstVault(), "b.md", map[string]any{"a": map[string]any{"b": 7}}, "Text.")
 	saveNoteWithFrontmatter(t, db, getFirstVault(), "c.md", nil, "Text.")
-	queries := db.NoteContents()
+	queries := db.NoteQueryReads()
 	entries, err := queries.ListPropertyValues(t.Context(), getFirstVault().ID, "a.b")
 	if err != nil {
 		t.Fatal(err)
@@ -42,14 +42,14 @@ func TestFindHeadingsReturnsASupersetOfTheWholeHeading(t *testing.T) {
 	saveNoteWithHeadings(t, db, getFirstVault(), "a.md", domain.Heading{Level: 2, Text: "summary", Line: 0})
 	saveNoteWithHeadings(t, db, getFirstVault(), "b.md", domain.Heading{Level: 2, Text: "Summary of the week", Line: 0})
 	saveNoteWithHeadings(t, db, getFirstVault(), "c.md", domain.Heading{Level: 2, Text: "Other", Line: 0})
-	found, err := db.NoteContents().FindHeadings(t.Context(), getFirstVault().ID, "Summary")
+	found, err := db.NoteQueryReads().FindHeadings(t.Context(), getFirstVault().ID, "Summary")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got := getHeadingPaths(found); !slices.Equal(got, []string{"a.md", "b.md"}) {
 		t.Errorf("Summary found %v, want a.md and b.md", got)
 	}
-	found, err = db.NoteContents().FindHeadings(t.Context(), getFirstVault().ID, "—")
+	found, err = db.NoteQueryReads().FindHeadings(t.Context(), getFirstVault().ID, "—")
 	if err != nil {
 		t.Fatal(err)
 	}
