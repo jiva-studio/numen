@@ -35,7 +35,8 @@ const DefaultFloor = 0.30
 // Parameters selects the participants of a search, the number of candidates each keeps
 // and the floor the query names. A participant with no candidates does not run; when none is
 // configured, all of them run. Lexical is the words of the index, Named the names of its sections,
-// and Sources every search source a plugin provides.
+// and Sources every search source a plugin provides. IsRawWords passes the query to the words as an
+// FTS5 query, unquoted; the section names always quote it.
 type Parameters struct {
 	Limit      int
 	Each       int
@@ -44,6 +45,7 @@ type Parameters struct {
 	Named      int
 	Floor      float64
 	IsGrowing  bool
+	IsRawWords bool
 	Kinds      []domain.SourceKind
 	PathPrefix string
 }
@@ -64,13 +66,15 @@ func (p Parameters) fill() Parameters {
 }
 
 // Query is what a search asks one participant: the text, the filters, how many search results to rank and
-// the floor the query names, zero where the participant applies its own.
+// the floor the query names, zero where the participant applies its own. IsRawWords marks the text as
+// an FTS5 query for the words.
 type Query struct {
 	Text       string
 	Kinds      []domain.SourceKind
 	PathPrefix string
 	Limit      int
 	IsGrowing  bool
+	IsRawWords bool
 	Floor      float64
 }
 
@@ -165,7 +169,8 @@ func New(queries sourceport.LexicalQueries, readers vaultport.VaultReaders, text
 // and returns one search result per document.
 // A chunk that two of them place well outranks one that any of them placed first alone. The rankings are
 // fused by reciprocal rank fusion, which does not know which participant answered which ranking. The answer
-// keeps at most p.Each search results of one source and p.Limit in all.
+// keeps at most p.Each search results of one source and p.Limit in all. Each search result carries the
+// best similarity and the best word score of every hit at its place, in any ranking.
 func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.SearchResult, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -176,7 +181,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	if err != nil {
 		return nil, err
 	}
-	return u.readForQuery(ctx, v, query, collapse(merge(rankings...), rankings, p.Each, p.Limit))
+	return u.readForQuery(ctx, v, query, foldScores(collapse(merge(rankings...), rankings, p.Each, p.Limit), rankings))
 }
 
 // asked is one participant a search asks, with the number of search results it ranks and whether its failure
@@ -210,7 +215,8 @@ func (u Search) rankAll(ctx context.Context, v domain.Vault, query string, p Par
 	for i, one := range asks {
 		g.Go(func() error {
 			ranking, err := u.rank(gctx, v, one, Query{
-				Text: query, Kinds: p.Kinds, PathPrefix: p.PathPrefix, Limit: one.limit, IsGrowing: p.IsGrowing, Floor: p.Floor,
+				Text: query, Kinds: p.Kinds, PathPrefix: p.PathPrefix, Limit: one.limit, IsGrowing: p.IsGrowing,
+				IsRawWords: p.IsRawWords, Floor: p.Floor,
 			})
 			answers[i] = ranking
 			return err

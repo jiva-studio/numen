@@ -21,9 +21,12 @@ func NewWords(queries sourceport.LexicalQueries) Words {
 	return Words{queries: queries}
 }
 
-// Rank returns the chunks that hold the words of the query, best first.
+// Rank returns the chunks that hold the words of the query, best first, each with its word score. A raw
+// query is passed to the index as written.
 func (w Words) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error) {
-	found, err := w.queries.FindLexical(ctx, v.ID, getLexicalQuery(q))
+	lexical := getLexicalQuery(q)
+	lexical.IsRaw = q.IsRawWords
+	found, err := w.queries.FindLexical(ctx, v.ID, lexical)
 	return Ranking{Results: found}, err
 }
 
@@ -67,8 +70,9 @@ func NewSource(source searchsourceport.Source, enclosing EnclosingResults) Sourc
 	return Source{source: source, enclosing: enclosing}
 }
 
-// Rank returns the search results enclosing the chunks the source answers, in the order of the source. A source
-// that has not described itself keeps no vectors and answers nothing.
+// Rank returns the search results enclosing the chunks the source answers, in the order of the source, each
+// with the similarity the source scored its chunk with. A source that has not described itself keeps no vectors
+// and answers nothing.
 func (s Source) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error) {
 	described := s.source.Describe()
 	if !described.IsDescribed() {
@@ -86,5 +90,19 @@ func (s Source) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, err
 		chunks[i] = one.ChunkID
 	}
 	found, err := s.enclosing.GetEnclosingResults(ctx, v.ID, chunks)
-	return Ranking{Results: found}, err
+	if err != nil {
+		return Ranking{}, err
+	}
+	scores := make(map[domain.ChunkID]float64, len(matches))
+	for _, one := range matches {
+		if _, has := scores[one.ChunkID]; !has {
+			scores[one.ChunkID] = one.Score
+		}
+	}
+	for i := range found {
+		if score, has := scores[found[i].ChunkID]; has {
+			found[i].Similarity = &score
+		}
+	}
+	return Ranking{Results: found}, nil
 }

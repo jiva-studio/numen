@@ -70,3 +70,6 @@ var unembeddedSQL string
 
 //go:embed sql/vault_row.sql
 var vaultRowSQL string
+
+//go:embed sql/small_chunks.sql
+var smallChunksSQL string

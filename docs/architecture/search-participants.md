@@ -25,7 +25,11 @@ The core decides what is indexed and when (vault changes, text versions, cut rec
 
 ## Merge
 
-Every participant implements `Rank(vault, query) Ranking`: passages best first. The core fuses all rankings with reciprocal rank fusion (k = 60) and keeps at most `Each` passages of one source. A ranking marked leading (the section names) puts its first passage of a source ahead of the other passages of that source. The merge does not know which participant is built in. A source that fails is reported and left out; the other rankings answer. The parameters of a search name how many candidates the words, the names and the sources keep, and the window's modes set one of the three.
+Every participant implements `Rank(vault, query) Ranking`: passages best first. The core fuses all rankings with reciprocal rank fusion (k = 60) and keeps at most `Each` passages of one source. A ranking marked leading (the section names) puts its first passage of a source ahead of the other passages of that source. The merge does not know which participant is built in. A kept passage carries the best similarity of the search by meaning and the best word score (the negated bm25) of every hit at its place, in any ranking; a score stays empty where its participant did not reach the place. A source that fails is reported and left out; the other rankings answer. The parameters of a search name how many candidates the words, the names and the sources keep, and the window's modes set one of the three.
+
+## Scoring chunks
+
+`ScoreChunks` (`usecase/search/score_chunks.go`) scores given chunks against conditions over the large chunk that encloses each. A meaning condition is embedded with `EmbedQueries`, one text per call, so its vector is the one the source makes for the same query; it is compared with the stored vector of every small chunk inside the large chunk (`ListSmallChunks`, `ListStoredVectors`), the best similarity is the score, and the floor of `FloorPolicy` decides the match. A words condition reads the text of each large chunk with the readers of the search and matches it with `adapter/index/wordmatch`, an in-memory FTS5 table with the tokenizer of `chunks_fts`; the query is bound as a parameter. The host call is `HostSearchService.ScoreChunks`.
 
 ## Index changed event
 

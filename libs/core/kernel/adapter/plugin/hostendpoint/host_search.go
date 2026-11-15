@@ -80,6 +80,10 @@ func answerSearch(ctx context.Context, err error) (v1.HostSearchErrorCode, error
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED, nil
 	case errors.Is(err, plugin.ErrInvalidQuery):
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY, nil
+	case errors.Is(err, plugin.ErrInvalidCondition):
+		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_CONDITION, nil
+	case errors.Is(err, plugin.ErrInvalidWords):
+		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_WORDS, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }
@@ -221,13 +225,11 @@ func (e *searchEndpoint) SearchText(
 	if code := call.getRefusal(true); code != 0 {
 		return connect.NewResponse(&v1.HostSearchServiceSearchTextResponse{Error: code}), nil
 	}
-	kinds, err := readKinds(req.Msg.GetKinds())
+	query, err := readSearchResultQuery(req.Msg)
 	if err != nil {
 		return nil, err
 	}
-	found, err := call.search.SearchText(ctx, call.vault, plugin.SearchResultQuery{
-		Query: req.Msg.GetQuery(), Limit: int(req.Msg.GetLimit()), Kinds: kinds, PathPrefix: req.Msg.GetPathPrefix(),
-	})
+	found, err := call.search.SearchText(ctx, call.vault, query)
 	code, err := answerSearch(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.HostSearchServiceSearchTextResponse{Error: code}), err
@@ -293,6 +295,7 @@ func writeSearchResults(found []domain.SearchResult) ([]*v1.SearchResult, error)
 			ByteRange: &v1.Range{Start: int32(one.Start), End: int32(end)},
 			MatchLine: int32(one.MatchLine),
 			Selector:  string(one.Selector),
+			ChunkId:   string(one.ChunkID), Similarity: one.Similarity, WordScore: one.WordScore,
 		}
 	}
 	return results, nil
@@ -346,4 +349,35 @@ func writeFloorSource(source plugin.FloorSource) v1.SearchFloorSource {
 		return v1.SearchFloorSource_SEARCH_FLOOR_SOURCE_DEFAULT
 	}
 	return v1.SearchFloorSource_SEARCH_FLOOR_SOURCE_UNSPECIFIED
+}
+
+func readSearchResultQuery(msg *v1.HostSearchServiceSearchTextRequest) (plugin.SearchResultQuery, error) {
+	kinds, err := readKinds(msg.GetKinds())
+	if err != nil {
+		return plugin.SearchResultQuery{}, err
+	}
+	mode, err := readSearchMode(msg.GetMode())
+	if err != nil {
+		return plugin.SearchResultQuery{}, err
+	}
+	if msg.GetIsRawWords() && mode != plugin.SearchModeWords {
+		return plugin.SearchResultQuery{}, connect.NewError(connect.CodeInvalidArgument, errors.New("raw words need the mode WORDS"))
+	}
+	return plugin.SearchResultQuery{
+		Query: msg.GetQuery(), Limit: int(msg.GetLimit()), ResultsPerSource: int(msg.GetResultsPerSource()),
+		Kinds: kinds, PathPrefix: msg.GetPathPrefix(), Mode: mode, IsRawWords: msg.GetIsRawWords(),
+	}, nil
+}
+
+func readSearchMode(mode v1.SearchMode) (plugin.SearchMode, error) {
+	switch mode {
+	case v1.SearchMode_SEARCH_MODE_UNSPECIFIED, v1.SearchMode_SEARCH_MODE_HYBRID:
+		return plugin.SearchModeHybrid, nil
+	case v1.SearchMode_SEARCH_MODE_WORDS:
+		return plugin.SearchModeWords, nil
+	case v1.SearchMode_SEARCH_MODE_MEANING:
+		return plugin.SearchModeMeaning, nil
+	case v1.SearchMode_SEARCH_MODE_NAMES:
+	}
+	return 0, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid search mode %s: use HYBRID, WORDS or MEANING", mode))
 }

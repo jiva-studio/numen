@@ -48,7 +48,7 @@ type Progress interface {
 
 // Search lends the search index and the search floors of the vaults to the plugins, over the index of
 // the installation and the search source that fills it. It implements the capabilities of
-// hostendpoint.SearchAccess.
+// hostendpoint.SearchAccess together with Scoring.
 type Search struct {
 	Source     Source
 	Queries    *vectorscase.EmbedQueries
@@ -61,12 +61,79 @@ type Search struct {
 	TextSearch *search.SearchText
 }
 
-// SearchText returns search results matching the query by keywords and, when a search source exists, by
-// the source.
+// Scoring is the search of the plugins with the scoring of chunks against conditions. It implements the
+// capabilities of hostendpoint.SearchAccess.
+type Scoring struct {
+	Search
+	Scores *search.ScoreChunks
+}
+
+// SearchText returns search results matching the query, by keywords and, when a search source exists, by
+// the source, or by the one the mode names. Meaning mode with no search source returns plugin.ErrNoModel,
+// and a raw words query the index cannot parse plugin.ErrInvalidWords.
 func (s Search) SearchText(ctx context.Context, v domain.Vault, q plugin.SearchResultQuery) ([]domain.SearchResult, error) {
-	return s.TextSearch.Execute(ctx, v, search.SearchResultQuery{
-		Query: q.Query, Limit: q.Limit, Kinds: q.Kinds, PathPrefix: q.PathPrefix,
+	mode := convertMode(q.Mode)
+	if mode == search.Sources {
+		if _, err := s.describe(); err != nil {
+			return nil, err
+		}
+	}
+	found, err := s.TextSearch.Execute(ctx, v, search.SearchResultQuery{
+		Query: q.Query, Limit: q.Limit, ResultsPerSource: q.ResultsPerSource, Kinds: q.Kinds, PathPrefix: q.PathPrefix,
+		Mode: mode, IsRawWords: q.IsRawWords,
 	})
+	return found, convertWordsError(err)
+}
+
+// ScoreChunks scores chunks of the vault against conditions and returns the floor applied to the meaning
+// conditions, zero when there are none.
+func (s Scoring) ScoreChunks(ctx context.Context, v domain.Vault, q plugin.ScoreQuery) ([]plugin.ChunkScore, float64, error) {
+	conditions := make([]search.ScoreCondition, len(q.Conditions))
+	hasMeaning := false
+	for i, c := range q.Conditions {
+		conditions[i] = search.ScoreCondition{Meaning: c.Meaning, Words: c.Words}
+		hasMeaning = hasMeaning || c.Meaning != ""
+	}
+	scored, err := s.Scores.Execute(ctx, v, search.ChunkScoreQuery{ChunkIDs: q.ChunkIDs, Conditions: conditions})
+	if err != nil {
+		return nil, 0, convertWordsError(err)
+	}
+	var floor float64
+	if hasMeaning {
+		recipe, err := s.getRecipe()
+		if err != nil {
+			return nil, 0, err
+		}
+		floor = s.Policy.GetFloor(ctx, v, recipe)
+	}
+	out := make([]plugin.ChunkScore, len(scored))
+	for i, one := range scored {
+		scores := make([]plugin.ConditionScore, len(one.Conditions))
+		for j, c := range one.Conditions {
+			scores[j] = plugin.ConditionScore{Similarity: c.Similarity, IsMatch: c.IsMatch}
+		}
+		out[i] = plugin.ChunkScore{ChunkID: one.ChunkID, Conditions: scores}
+	}
+	return out, floor, nil
+}
+
+func convertMode(mode plugin.SearchMode) search.Mode {
+	switch mode {
+	case plugin.SearchModeWords:
+		return search.Lexical
+	case plugin.SearchModeMeaning:
+		return search.Sources
+	case plugin.SearchModeHybrid:
+		return search.Hybrid
+	}
+	return search.Hybrid
+}
+
+func convertWordsError(err error) error {
+	if errors.Is(err, sourcedomain.ErrInvalidWords) {
+		return fmt.Errorf("%w: %w", plugin.ErrInvalidWords, err)
+	}
+	return err
 }
 
 func (s Search) describe() (searchsource.Description, error) {
@@ -196,6 +263,6 @@ func convertSource(source search.FloorSourceKind) plugin.FloorSource {
 }
 
 // Access returns the capabilities of the search the way hostendpoint serves them.
-func (s Search) Access() *hostendpoint.SearchAccess {
+func (s Scoring) Access() *hostendpoint.SearchAccess {
 	return &hostendpoint.SearchAccess{SearchIndex: s, TextSearch: s, SearchFloors: s}
 }
