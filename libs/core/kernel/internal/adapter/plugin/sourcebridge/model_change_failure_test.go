@@ -136,7 +136,7 @@ func TestASuccessfulReadAfterAFailedReadIsReportedWithNoError(t *testing.T) {
 	}
 	settle(t, bridge, mock, reads)
 	if err := <-reports; err == nil {
-		t.Fatal("the failed read of the model was reported with no error")
+		t.Fatal("the failed read is reported without an error")
 	}
 
 	reads = mock.describeCalls.Load()
@@ -215,7 +215,7 @@ func TestASettingThatAllowsTheSourceAnnouncesItsDescription(t *testing.T) {
 	}
 	t.Cleanup(func() { testsupport.Close(t, bridge) })
 	if err := <-reports; err == nil {
-		t.Fatal("the source opened with no description was reported with no error")
+		t.Fatal("the failed start is reported without an error")
 	}
 	var announced atomic.Int32
 	bridge.OnDescriptionChange(func() { announced.Add(1) })
