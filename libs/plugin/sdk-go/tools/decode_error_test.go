@@ -3,6 +3,7 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -57,18 +58,44 @@ func TestAnIntegerAbove2To53KeepsItsExactValue(t *testing.T) {
 }
 
 func TestReadIntegerReadsWholeNumberLiterals(t *testing.T) {
+	nines1000 := strings.Repeat("9", 1000)
+	zeros999 := strings.Repeat("0", 999)
+	zeros1000 := strings.Repeat("0", 1000)
 	for literal, want := range map[string]string{
 		"20": "20", "20.0": "20", "2e1": "20", "2E+1": "20", "200e-1": "20", "-0": "0", "0.0": "0",
-		"-3.00": "-3", "1.5e1": "15", "0": "0",
+		"-3.00": "-3", "1.5e1": "15", "0": "0", "0e-5": "0",
+		"1e999": "1" + zeros999, "0.1e1000": "1" + zeros999,
+		"1" + zeros1000 + "e-1000": "1", zeros1000 + "5": "5",
+		nines1000: nines1000, "-" + nines1000: "-" + nines1000,
 	} {
 		got, isInteger := readInteger(json.Number(literal))
-		if !isInteger || got.String() != want {
+		if !isInteger || got == nil || got.String() != want {
 			t.Errorf("readInteger(%s) = %v, %v, want %s", literal, got, isInteger, want)
 		}
 	}
-	for _, literal := range []string{"20.5", "0.5", "2e-1", "1e1001", "-1.25"} {
-		if got, isInteger := readInteger(json.Number(literal)); isInteger {
-			t.Errorf("readInteger(%s) = %v, want no integer", literal, got)
+	for _, literal := range []string{
+		"20.5", "0.5", "2e-1", "1e1000", "10e999", "1e1001", "0.01e1001",
+		"1" + strings.Repeat("0", 1001) + "e-1001",
+		"1e9223372036854775807", "1e-9223372036854775808",
+		"-1.25", "1e+bad", strings.Repeat("9", 1001),
+	} {
+		if got, isInteger := readInteger(json.Number(literal)); isInteger || got != nil {
+			t.Errorf("readInteger(%s) = %v, %v, want nil, false", literal, got, isInteger)
 		}
+	}
+	if got := formatLimit(1.5); got != "1.5" {
+		t.Errorf("formatLimit(1.5) = %q, want 1.5", got)
+	}
+	if got := describeInvalid("", "too short").Error(); got != "the arguments are invalid: too short" {
+		t.Errorf("describeInvalid empty path = %q", got)
+	}
+	if got := describeDecodeError([]byte("{}"), &json.UnmarshalTypeError{Offset: 1}).Error(); got != "the arguments are invalid" {
+		t.Errorf("describeDecodeError root = %q", got)
+	}
+	if got := describeDecodeError([]byte("{}"), &json.UnmarshalTypeError{Offset: 99}).Error(); got != "the arguments are invalid" {
+		t.Errorf("describeDecodeError past EOF = %q", got)
+	}
+	if path, ok := findPathAt([]byte(`{"a":1}`), 4); ok || path != "" {
+		t.Errorf("findPathAt key = %q, %v, want empty, false", path, ok)
 	}
 }

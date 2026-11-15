@@ -507,7 +507,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 			})
 			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, none.SearchSource{})
 			if s.embedder != nil {
-				if err := db.FitVectors(ctx, width, s.embedder.Describe().Recipe()); err != nil {
+				if err := db.VectorIndex().FitVectors(ctx, width, s.embedder.Describe().Recipe()); err != nil {
 					return cli.Indexed{}, err
 				}
 				embed = vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, sourcefake.Wrap(s.embedder))

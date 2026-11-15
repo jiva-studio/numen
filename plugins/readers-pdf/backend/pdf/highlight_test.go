@@ -293,16 +293,26 @@ func TestIsWordContinued(t *testing.T) {
 	}
 
 	// 4. Zero or negative height
-	zeroHigh := responses.CharPosition{Left: 22, Right: 30, Top: 10, Bottom: 10}
+	zeroHigh := responses.CharPosition{Left: 20, Right: 30, Top: 10, Bottom: 10}
 	if isWordContinued(w, zeroHigh) {
 		t.Error("expected word NOT continued for zero height char")
 	}
-	negHigh := responses.CharPosition{Left: 22, Right: 30, Top: 5, Bottom: 10}
+	negHigh := responses.CharPosition{Left: 20, Right: 30, Top: 5, Bottom: 10}
 	if isWordContinued(w, negHigh) {
 		t.Error("expected word NOT continued for negative height char")
 	}
 	if isWordContinued(zeroHigh, mark) {
 		t.Error("expected word NOT continued when word has zero height")
+	}
+	shortWord := responses.CharPosition{Left: 10, Right: 20, Top: 20, Bottom: 10}
+	tallMark := responses.CharPosition{Left: 24, Right: 30, Top: 30, Bottom: 10}
+	if isWordContinued(shortWord, tallMark) {
+		t.Error("expected word NOT continued when word height is smaller than mark height and gap exceeds wordGap*high")
+	}
+	unitWord := responses.CharPosition{Left: 10, Right: 20, Top: 11, Bottom: 10}
+	unitMark := responses.CharPosition{Left: 20, Right: 30, Top: 11, Bottom: 10}
+	if !isWordContinued(unitWord, unitMark) {
+		t.Error("expected word continued for height 1 characters")
 	}
 
 	// 5. Backwards or equal Right: mark.Right <= word.Right

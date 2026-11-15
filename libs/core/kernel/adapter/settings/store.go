@@ -15,14 +15,14 @@ import (
 type Store struct {
 	files      *Files
 	getPath    func() (string, error)
-	declared   Declarations
-	registries Registries
+	declared   settingsdomain.Declarations
+	registries settingsdomain.Registries
 }
 
 // NewStore makes a store over the files. declared is nil where no plugin host runs: every plugin value
 // then stands.
 func NewStore(
-	files *Files, getPath func() (string, error), declared Declarations, registries Registries,
+	files *Files, getPath func() (string, error), declared settingsdomain.Declarations, registries settingsdomain.Registries,
 ) *Store {
 	return &Store{files: files, getPath: getPath, declared: declared, registries: registries}
 }
@@ -138,21 +138,6 @@ func (f *File) GetConnectionsJSON() (string, error) {
 		return "", nil
 	}
 	return f.WriteConnectionsJSON()
-}
-
-// Validator checks a value against the declaration of the setting it is written to.
-type Validator struct {
-	declared   Declarations
-	registries Registries
-}
-
-func NewValidator(declared Declarations, registries Registries) Validator {
-	return Validator{declared: declared, registries: registries}
-}
-
-// CheckWrite returns the reason the value is refused, and nil where it is accepted.
-func (v Validator) CheckWrite(path []string, value any) error {
-	return CheckWrite(v.declared, v.registries, path, value)
 }
 
 type AppDeclaration struct{}

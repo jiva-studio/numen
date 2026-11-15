@@ -49,10 +49,11 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 		vault: vault, path: path, key: getTranscriptionKey(fileHash), fileHash: fileHash,
 		store: transcripts{store: stores}, texts: texts, turn: nil,
 	}
-	if isWhole, err := j.store.hasWhole(ctx, j.key); err != nil || isWhole {
-		if err != nil {
-			return err
-		}
+	isWhole, err := j.store.hasWhole(ctx, j.key)
+	if err != nil {
+		return err
+	}
+	if isWhole {
 		return t.putWholeVersion(ctx, j)
 	}
 

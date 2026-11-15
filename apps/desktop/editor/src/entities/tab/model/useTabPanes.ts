@@ -26,14 +26,27 @@ export function useTabPanes(store: TabStore) {
     return false
   }
 
+  /**
+   * Closes a tab its kind releases, or runs `hold` where the kind keeps it open, and returns
+   * whether the tab was released. With `hold`, a released tab stays in the layout.
+   */
+  const closeTab = (id: string, hold?: () => void): boolean => {
+    if (!closers.releaseTab(id)) {
+      hold?.()
+      return false
+    }
+    if (!hold) closers.finishClose(id)
+    return true
+  }
+
   return {
     layout,
     show: closers.show,
     onTabShown: closers.onTabShown,
     onKeyPress,
+    closeTab,
     finishClose: closers.finishClose,
-    requestClose: closers.requestClose,
-    releaseTab: closers.releaseTab,
     reconcileTab: closers.reconcileTab,
+    closeAll: closers.closeAll,
   }
 }

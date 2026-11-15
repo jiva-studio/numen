@@ -35,7 +35,7 @@ function createNavigationCommands(
     openTab,
     openSettings: (request) =>
       navigation.openSettings ? navigation.openSettings(request) : openTab(SETTINGS),
-    closeTab: (tab) => windowTabs.panes.requestClose(tab),
+    closeTab: (tab) => windowTabs.panes.closeTab(tab),
     search: navigation.search,
   }
 }

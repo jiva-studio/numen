@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -128,8 +129,8 @@ func TestFindInFolderAndHomeFallbacks(t *testing.T) {
 		t.Fatalf("findInFolder with empty fileName = %q, want empty", got)
 	}
 
-	if _, err := locateModel(filepath.Join(dir, "missing.onnx"), "", "pp-doclayout.onnx", ""); err == nil {
-		t.Fatal("locateModel with missing explicit path succeeded, want error")
+	if _, err := locateModel(filepath.Join(dir, "missing.onnx"), "", "pp-doclayout.onnx", ""); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("locateModel with missing explicit path = %v, want os.ErrNotExist", err)
 	}
 
 	t.Setenv("NUMEN_DEPENDENCY_PP_DOCLAYOUT", filepath.Join(dir, "missing-env.onnx"))

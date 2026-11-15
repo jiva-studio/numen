@@ -38,7 +38,7 @@ func GetOutsideGrid() CurvePoint { return projection.GetOutsideGrid() }
 type ProjectCurve struct {
 	reviewCards ListReviewCards
 	schedules   Schedules
-	presets     DeckPresets
+	presets     OpenPresetReads
 	day         review.Day
 	now         ports.Clock
 	By          func(retention float64) review.Scheduler
@@ -49,7 +49,7 @@ type ProjectCurve struct {
 // each deck is scheduled by, where one day of review gives way to the next, and
 // what time it is.
 func NewProjectCurve(
-	reviewCards ListReviewCards, schedules Schedules, presets DeckPresets,
+	reviewCards ListReviewCards, schedules Schedules, presets OpenPresetReads,
 	day review.Day, now ports.Clock,
 ) ProjectCurve {
 	return ProjectCurve{
@@ -105,7 +105,7 @@ func (u ProjectCurve) Execute(
 	}
 	// A deck is queried once for the preset that schedules it, however many review
 	// cards it holds, and a preset note is opened once however many decks name it.
-	reads := u.presets.OpenReads()
+	reads := u.presets.Execute()
 	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, reviewCards)
 	if err != nil {
 		return Curve{}, err
@@ -201,11 +201,12 @@ func (u ProjectCurve) readScheduledCards(
 
 func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, path string) ([]string, error) {
 	decks, err := u.reviewCards.GetDeckPaths(ctx, v)
-	if err != nil || path == "" || !u.presets.HasLinks() {
+	reads := u.presets.Execute()
+	if err != nil || path == "" || !reads.HasLinks() {
 		return decks, err
 	}
 
-	pos, err := u.presets.GetBacklinks(ctx, v.ID, path)
+	pos, err := reads.GetBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, fmt.Errorf("what points at %s: %w", path, err)
 	}
@@ -229,13 +230,15 @@ func (u ProjectCurve) countPointingDecks(
 	ctx context.Context, v domain.Vault, reads ports.PresetReads, path string,
 	decks []string, requested map[string]bool,
 ) (int, error) {
-	out := 0
+	var out int
+	var readErr error
 	for _, deck := range decks {
 		points, target := requested[deck]
 		if !target {
-			p, err := reads.GetForDeck(ctx, v, deck)
-			if err != nil {
-				return 0, err
+			var p presetnote.Contents
+			p, readErr = reads.GetForDeck(ctx, v, deck)
+			if readErr != nil {
+				break
 			}
 			points = p.Path == path
 		}
@@ -243,7 +246,7 @@ func (u ProjectCurve) countPointingDecks(
 			out++
 		}
 	}
-	return out, nil
+	return out, readErr
 }
 
 func (u ProjectCurve) computePlaces(count int, each func(index int) error) error {

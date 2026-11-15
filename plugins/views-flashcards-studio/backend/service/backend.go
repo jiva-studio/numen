@@ -26,7 +26,7 @@ type Config struct {
 	Scheduler ports.ScheduleAlgorithm
 }
 
-type flashReview = flashcards.Review[presets.Presets]
+type flashReview = flashcards.UseCases[presets.UseCases]
 
 // Backend answers the cards, the presets and the review.
 type Backend struct {
@@ -36,7 +36,7 @@ type Backend struct {
 	entropy ports.Entropy
 	cfg     Config
 	runs    *flashcards.RunRegistry
-	flash   *flashcards.Current[presets.Presets]
+	flash   *flashcards.Current[presets.UseCases]
 }
 
 // New makes the backend over the host's vault.
@@ -64,9 +64,10 @@ func (b *Backend) getFlashConfig() flashcards.Config {
 	}
 }
 
-func (b *Backend) newPresets(index flashcards.IndexUpdate, day review.Day) presets.Presets {
-	return presets.New(presets.Config{Readers: b.ports.Readers, Writers: b.ports.Writers, Links: b.ports.Links, Notes: b.ports.Notes,
-		Problems: b.ports.Problems, Index: index, Now: b.now, Day: day, LinkWriter: b.getCardsConfig().NewLinkWriter(index)})
+func (b *Backend) newPresets(index flashcards.IndexUpdate, day review.Day) (presets.UseCases, flashcards.OpenPresetReads) {
+	cfg := presets.Config{Readers: b.ports.Readers, Writers: b.ports.Writers, Links: b.ports.Links, Notes: b.ports.Notes,
+		Problems: b.ports.Problems, Index: index, Now: b.now, Day: day, LinkWriter: b.getCardsConfig().NewLinkWriter(index)}
+	return presets.NewUseCases(cfg), presets.NewOpenReads(cfg)
 }
 
 func (b *Backend) getCardsConfig() cards.Config {

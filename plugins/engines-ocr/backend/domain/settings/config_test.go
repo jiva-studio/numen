@@ -8,24 +8,34 @@ import (
 
 func TestUnsetThreadsAndJobsTakeTheResolvedProfile(t *testing.T) {
 	cfg := Defaults()
-	cfg.Compute = Compute{Threads: 6, Jobs: 3}
-	if got := cfg.GetThreads(8); got != 6 {
-		t.Errorf("the recognizer takes %d threads, want 6", got)
+	if got := cfg.GetThreads(8); got != 4 {
+		t.Errorf("default fallback threads with 8 cores = %d, want 4", got)
 	}
-	if got := cfg.GetJobs(); got != 3 {
-		t.Errorf("the recognizer runs %d jobs, want 3", got)
+	if got := cfg.GetThreads(2); got != 2 {
+		t.Errorf("default fallback threads with 2 cores = %d, want 2", got)
+	}
+	if got := cfg.GetJobs(); got != 4 {
+		t.Errorf("default fallback jobs = %d, want 4", got)
+	}
+
+	cfg.Compute = Compute{Threads: 1, Jobs: 1}
+	if got := cfg.GetThreads(8); got != 1 {
+		t.Errorf("the recognizer takes %d threads, want 1", got)
+	}
+	if got := cfg.GetJobs(); got != 1 {
+		t.Errorf("the recognizer runs %d jobs, want 1", got)
 	}
 }
 
 func TestExplicitThreadsAndJobsWinOverTheResolvedProfile(t *testing.T) {
 	cfg := Defaults()
 	cfg.Compute = Compute{Threads: 6, Jobs: 3}
-	cfg.Recognize.Threads, cfg.Recognize.Jobs = 2, 5
-	if got := cfg.GetThreads(8); got != 2 {
-		t.Errorf("the recognizer takes %d threads, want 2", got)
+	cfg.Recognize.Threads, cfg.Recognize.Jobs = 1, 1
+	if got := cfg.GetThreads(8); got != 1 {
+		t.Errorf("the recognizer takes %d threads, want 1", got)
 	}
-	if got := cfg.GetJobs(); got != 5 {
-		t.Errorf("the recognizer runs %d jobs, want 5", got)
+	if got := cfg.GetJobs(); got != 1 {
+		t.Errorf("the recognizer runs %d jobs, want 1", got)
 	}
 }
 

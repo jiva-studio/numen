@@ -32,7 +32,7 @@ func (h *presetsHandler) GetDeckPreset(ctx context.Context, req *api.GetDeckPres
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.flash().Schedules.Presets.GetForDeck(ctx, showing, req.Deck)
+	found, err := h.flash().Schedules.Presets.GetForDeck.Execute(ctx, showing, req.Deck)
 	return presetwire.NewDeckPresetResponse(found, err, h.newTitler(ctx, showing))
 }
 
@@ -41,7 +41,7 @@ func (h *presetsHandler) ListPresets(ctx context.Context, _ *api.ListPresetsRequ
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.flash().Schedules.Presets.List(ctx, showing)
+	found, err := h.flash().Schedules.Presets.List.Execute(ctx, showing)
 	return presetwire.NewListResponse(found, err)
 }
 
@@ -60,7 +60,7 @@ func (h *presetsHandler) ScheduleDeck(ctx context.Context, req *api.ScheduleDeck
 	if err != nil {
 		return nil, err
 	}
-	pos, err := h.flash().Schedules.Presets.Point(ctx, showing, req.Deck, req.Preset, filewire.GetStat(req.Baseline))
+	pos, err := h.flash().Schedules.Presets.Point.Execute(ctx, showing, req.Deck, req.Preset, filewire.GetStat(req.Baseline))
 	return presetwire.NewScheduleDeckResponse(pos, err)
 }
 
@@ -69,7 +69,7 @@ func (h *presetsHandler) ReadPreset(ctx context.Context, req *api.ReadPresetRequ
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.flash().Schedules.Presets.Read(ctx, showing, req.Path)
+	found, err := h.flash().Schedules.Presets.Read.Execute(ctx, showing, req.Path)
 	return presetwire.NewReadPresetResponse(found, err, h.newTitler(ctx, showing))
 }
 
@@ -82,7 +82,7 @@ func (h *presetsHandler) WritePreset(ctx context.Context, req *api.WritePresetRe
 	if err != nil {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	pos, err := h.flash().Schedules.Presets.Save(ctx, showing, req.Path, settings, filewire.GetStat(req.Baseline))
+	pos, err := h.flash().Schedules.Presets.Save.Execute(ctx, showing, req.Path, settings, filewire.GetStat(req.Baseline))
 	return presetwire.NewWritePresetResponse(pos, err)
 }
 

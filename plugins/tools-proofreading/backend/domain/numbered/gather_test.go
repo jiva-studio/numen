@@ -137,18 +137,27 @@ func TestGatheredNamesTheBatchesARunRanPast(t *testing.T) {
 
 func TestAReachingRunNamesTheLineItBeginsOn(t *testing.T) {
 	batch := makeBrokenBatch()
-	got := ReadAnswer(batch, "4 | Krishna is Radha.\n5-9 | whatever it says", 0)
+	got := ReadAnswer(batch, "4-6 | Krishna is Radha.\n5-9 | whatever it says", 0)
 	if !got.IsAnswer || !reflect.DeepEqual(got.Reaching, []int{5}) {
 		t.Errorf("answer %+v, want a run reaching past the batch from line 5", got)
 	}
-	if len(got.Lines) != 1 || got.Lines[0].Number != 4 {
-		t.Errorf("lines %v, want line 4 alone", got.Lines)
+	if len(got.Lines) != 1 || got.Lines[0].Number != 4 || got.Lines[0].Last != 6 {
+		t.Errorf("lines %v, want run 4-6 alone", got.Lines)
 	}
 }
 
 func TestARefusedReplyIsNoAnswer(t *testing.T) {
-	if got := ReadAnswer(wide(), "999|invented", 0); got.IsAnswer || got.Lines != nil {
+	if got := ReadAnswer(wide(), "999|invented", 0); got.IsAnswer || got.Lines != nil || got.Batch.Number != wide().Number {
 		t.Errorf("answer %+v", got)
+	}
+	placed, past := GatherAnswers([]Answer{{
+		Batch:    wide(),
+		Lines:    []Line{{Number: 1, Text: "ignored"}},
+		Reaching: []int{1},
+		IsAnswer: false,
+	}})
+	if len(placed) != 0 || len(past) != 0 {
+		t.Errorf("GatherAnswers kept non-answer: placed=%v past=%v", placed, past)
 	}
 }
 
@@ -203,5 +212,51 @@ func TestTwoRunsSharingALineAreNotBothCached(t *testing.T) {
 		if len(placed) != 1 {
 			t.Errorf("gathered %v, want one run", placed)
 		}
+	}
+}
+
+func TestEvictingRunReleasesCoveredTailLinesAndClearsOwner(t *testing.T) {
+	answers := []Answer{
+		{
+			Batch:    joinable(0, 2, 3),
+			Lines:    []Line{{Number: 2, Last: 3, Text: "two and three"}},
+			IsAnswer: true,
+		},
+		{
+			Batch:    joinable(1, 1, 3),
+			Lines:    []Line{{Number: 1, Last: 2, Text: "one and two"}},
+			IsAnswer: true,
+		},
+		{
+			Batch:    joinable(2, 2, 5),
+			Lines:    []Line{{Number: 2, Last: 2, Text: "two alone"}},
+			IsAnswer: true,
+		},
+		{
+			Batch:    joinable(3, 3, 3),
+			Lines:    []Line{{Number: 3, Last: 3, Text: "three alone"}},
+			IsAnswer: true,
+		},
+	}
+	placed, _ := GatherAnswers(answers)
+	if placed[2].Text != "two alone" || placed[3].Text != "three alone" {
+		t.Errorf("placed = %+v, want lines 2 and 3 both kept", placed)
+	}
+
+	remaining := countRemainingLines([]Line{{Number: 10}, {Number: 20}})
+	if remaining[10] != 1 || remaining[20] != 0 {
+		t.Errorf("countRemainingLines = %v", remaining)
+	}
+	if rows := splitRows("  10|fixed  \n   \n"); !reflect.DeepEqual(rows, []string{"10|fixed"}) {
+		t.Errorf("splitRows = %v", rows)
+	}
+	if (Line{Number: 5, Last: 0}).IsJoined() || (Line{Number: 5, Last: 5}).IsJoined() || !(Line{Number: 5, Last: 6}).IsJoined() {
+		t.Error("Line.IsJoined failed")
+	}
+	if (Line{Number: 5, Last: 0}).GetLastNumber() != 5 || (Line{Number: 5, Last: 6}).GetLastNumber() != 6 {
+		t.Error("Line.GetLastNumber failed")
+	}
+	if (Batch{}).Last() != -1 || (Batch{Lines: []Line{{Number: 7}}}).Last() != 7 {
+		t.Error("Batch.Last failed")
 	}
 }

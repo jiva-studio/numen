@@ -35,7 +35,7 @@ type Vault struct {
 type Library struct {
 	Versions ports.VersionLister
 	Texts    ports.TextReader
-	Search   ports.PassageSearch
+	Search   ports.TextSearch
 }
 
 // New creates a Tools instance. vaults gives the calls on the vault with an identity, and on the vault

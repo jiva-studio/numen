@@ -108,12 +108,11 @@ func (u Show) Execute(
 			out.Notes = append(out.Notes, titled)
 		}
 	}
-	if len(out.Notes) > MostRead {
-		out.Unread = len(out.Notes) - MostRead
-	}
-	if err := u.readBodies(ctx, v, out.Notes); err != nil {
+	unread, err := u.readBodies(ctx, v, out.Notes)
+	if err != nil {
 		return Neighborhood{}, err
 	}
+	out.Unread = unread
 	return out, nil
 }
 
@@ -207,20 +206,20 @@ func getNeighborTitle(
 	return one, true
 }
 
-func (u Show) readBodies(ctx context.Context, v domain.Vault, neighbors []Neighbor) error {
+func (u Show) readBodies(ctx context.Context, v domain.Vault, neighbors []Neighbor) (int, error) {
 	for i := range neighbors {
 		if i == MostRead {
-			break
+			return len(neighbors) - MostRead, nil
 		}
 		if neighbors[i].Path == "" {
 			continue
 		}
 		contents, err := u.reads.Execute(ctx, v, neighbors[i].Path)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		neighbors[i].Outcome = contents.Outcome
 		neighbors[i].Body = contents.Body
 	}
-	return nil
+	return 0, nil
 }

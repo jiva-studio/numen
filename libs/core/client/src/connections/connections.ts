@@ -2,18 +2,17 @@
  * The connections to services and programs: the kinds of connection the plugins provide, and the
  * connections the person made of them. No value of a secret is ever read back.
  */
-import { createClient, type Client } from '@connectrpc/connect'
+import type { Client } from '@connectrpc/connect'
 import { fromJson, toJson, type JsonValue } from '@bufbuild/protobuf'
 import { ValueSchema, type Value } from '@bufbuild/protobuf/wkt'
 import {
   ProviderConnectionErrorCode,
-  ProviderConnectionService,
+  type ProviderConnectionService,
   type ManifestConnectionField,
   type ProviderConnection,
   type ProviderConnectionType,
 } from '@numen/protocol'
 import { asFailure, asValue, type Result } from '../result'
-import { createCallerTransport } from '../transport'
 
 /** A value a field of a connection holds. */
 export type ConnectionValue = string | number | boolean
@@ -357,8 +356,3 @@ export const createConnectionClient = (rpc: ConnectionRpc): ConnectionClient => 
     )
   },
 })
-
-/** The connections of the window the page is served from. */
-export const connections = createConnectionClient(
-  createClient(ProviderConnectionService, createCallerTransport('settings')),
-)

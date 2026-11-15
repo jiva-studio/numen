@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -16,12 +17,24 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// Point puts the deck at path on a preset, by writing the entry of its `links:` block that
+// Point puts a deck on a preset.
+type Point struct {
+	notes      presetNotes
+	read       Read
+	linkWriter ports.LinkWriter
+}
+
+// NewPoint creates the use case that puts a deck on a preset.
+func NewPoint(cfg Config) Point {
+	return Point{notes: cfg.Notes, read: NewRead(cfg), linkWriter: cfg.LinkWriter}
+}
+
+// Execute puts the deck at path on a preset, by writing the entry of its `links:` block that
 // carries `type: preset`. An empty preset takes that entry out, and the deck is scheduled by the
 // defaults. A deck changed since stat was read is left alone and port.ErrStale is returned. A
 // landed write answers with the new file stat; an index that could not be updated is
 // edit.ErrIndexOutdated beside it.
-func (u Presets) Point(
+func (u Point) Execute(
 	ctx context.Context, v domain.Vault, deck, preset string, stat domain.FileStat,
 ) (domain.FileStat, error) {
 	to, err := u.getPresetAddress(ctx, v, preset)
@@ -31,7 +44,7 @@ func (u Presets) Point(
 	return u.linkWriter.PointAt(ctx, v, deck, presetnote.LinkType, to, domain.RoleRef, stat)
 }
 
-func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {
+func (u Point) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {
 	var to domain.Address
 	if preset == "" {
 		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
@@ -41,7 +54,7 @@ func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset st
 		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, ErrNoPresets
 	}
-	pos, err := u.Read(ctx, v, preset)
+	pos, err := u.read.Execute(ctx, v, preset)
 	if err != nil {
 		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, err
@@ -50,19 +63,31 @@ func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset st
 	case pos.Outcome == edit.Missing:
 		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, fmt.Errorf("%w: %s", edit.ErrNoNote, preset)
-	case pos.Outcome != edit.Ok || pos.Type != format.TypePreset:
+	case pos.Type != format.TypePreset:
 		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 	}
 	return edit.GetAddress(ctx, u.notes, v.ID, preset)
 }
 
-// Save writes the settings into the preset at path.
+// Save writes the settings into a preset.
+type Save struct {
+	readers ports.VaultReaders
+	writers ports.VaultWriters
+	index   edit.IndexUpdater
+}
+
+// NewSave creates the use case that writes the settings into a preset.
+func NewSave(cfg Config) Save {
+	return Save{readers: cfg.Readers, writers: cfg.Writers, index: cfg.Index}
+}
+
+// Execute writes the settings into the preset at path.
 // Each key the application owns is replaced on its own; every other key, its order, its
 // formatting and the body are left as they arrived. A note changed since stat was read is left
 // alone and port.ErrStale is returned. A landed write answers with the new file stat; an index
 // that could not be updated is edit.ErrIndexOutdated beside it.
-func (u Presets) Save(
+func (u Save) Execute(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	stat domain.FileStat,
 ) (domain.FileStat, error) {
@@ -77,7 +102,7 @@ func (u Presets) Save(
 	return pos, edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }
 
-func (u Presets) save(
+func (u Save) save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	stat domain.FileStat,
 ) (saved domain.FileStat, err error) {
@@ -211,12 +236,9 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 
 func getDayEntries(entries []string, read map[time.Weekday]int) map[time.Weekday]string {
 	out := make(map[time.Weekday]string, len(entries))
-	for _, name := range entries {
+	for _, name := range slices.Sorted(slices.Values(entries)) {
 		weekday, isDay := review.Weekday(name)
-		if _, could := read[weekday]; !isDay || !could {
-			continue
-		}
-		if was, ok := out[weekday]; !ok || name > was {
+		if _, could := read[weekday]; isDay && could {
 			out[weekday] = name
 		}
 	}

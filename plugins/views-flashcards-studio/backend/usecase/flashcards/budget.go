@@ -204,16 +204,16 @@ func (b *budgets) isAllowed(one ReviewCard, scope Scope) bool {
 
 func (b *budgets) getStopError(preset string) error {
 	one, scheduling := b.allowances[preset]
+	reason := "no cards due"
 	switch {
 	case !scheduling:
-		return fmt.Errorf("%w: no deck of this vault is scheduled by it", ErrSchedulesNothing)
+		reason = "no deck of this vault is scheduled by it"
 	case one.admits.IsPaused():
-		return fmt.Errorf("%w: it is paused", ErrSchedulesNothing)
+		reason = "it is paused"
 	case one.spentStats.Answered > 0:
-		return fmt.Errorf("%w: daily budget spent", ErrSchedulesNothing)
-	default:
-		return fmt.Errorf("%w: no cards due", ErrSchedulesNothing)
+		reason = "daily budget spent"
 	}
+	return fmt.Errorf("%w: %s", ErrSchedulesNothing, reason)
 }
 
 func (b *budgets) getAskingBudget(

@@ -151,13 +151,13 @@ func TestAnIndexReturnsWhereItsFileIs(t *testing.T) {
 func TestCompact_SucceedsOpenAndFailsClosed(t *testing.T) {
 	_, db, _ := openVault(t, getNote())
 
-	if err := db.Compact(t.Context()); err != nil {
+	if err := db.VectorIndex().Compact(t.Context()); err != nil {
 		t.Fatalf("an open index rejected: %v", err)
 	}
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Compact(t.Context()); err == nil {
+	if err := db.VectorIndex().Compact(t.Context()); err == nil {
 		t.Error("a closed index made room")
 	}
 }

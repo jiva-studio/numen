@@ -77,10 +77,7 @@ func mount(s *server.Server, h recognition.Host, holder *engines.Holder) error {
 
 func newCommands(launcher *recognition.Launcher) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add(command.CreateText, newRecognizeCommand(launcher)); err != nil {
-		return nil, err
-	}
-	return commands, nil
+	return commands, commands.Add(command.CreateText, newRecognizeCommand(launcher))
 }
 
 func newRecognizeCommand(launcher *recognition.Launcher) command.Run {

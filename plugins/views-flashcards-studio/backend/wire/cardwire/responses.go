@@ -15,10 +15,10 @@ import (
 
 // GetLimit is how many card models a request for limit of them is answered with.
 func GetLimit(limit int32) int {
-	if limit <= 0 || limit > MaxCardModels {
+	if limit <= 0 {
 		return MaxCardModels
 	}
-	return int(limit)
+	return min(int(limit), MaxCardModels)
 }
 
 // NewListResponse is the card models read, and the total the vault holds.

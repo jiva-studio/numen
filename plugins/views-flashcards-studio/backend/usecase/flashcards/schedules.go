@@ -29,7 +29,7 @@ type Schedules struct {
 	scheduler   review.Scheduler
 	day         review.Day
 	reviewCards ListReviewCards
-	presets     DeckPresets
+	presets     OpenPresetReads
 	At          func(retention float64) review.Scheduler
 }
 
@@ -42,7 +42,7 @@ func NewSchedules(
 	scheduler review.Scheduler,
 	day review.Day,
 	reviewCards ListReviewCards,
-	presets DeckPresets,
+	presets OpenPresetReads,
 ) Schedules {
 	return Schedules{
 		logs: logs, Cache: nil, Report: nil, scheduler: scheduler,
@@ -53,11 +53,6 @@ func NewSchedules(
 // ReviewCards returns the ListReviewCards Schedules reads through.
 func (u Schedules) ReviewCards() ListReviewCards {
 	return u.reviewCards
-}
-
-// Presets returns the Presets Schedules resolves presets through.
-func (u Schedules) Presets() DeckPresets {
-	return u.presets
 }
 
 // assignment is the scheduler each review card is computed by, and the mark that
@@ -89,7 +84,8 @@ func (u Schedules) getDayStartMark() string {
 }
 
 func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignment, error) {
-	if !u.presets.HasLinks() || u.reviewCards.notes == nil {
+	reads := u.presets.Execute()
+	if !reads.HasLinks() || u.reviewCards.notes == nil {
 		return u.createPlainAssignment(), nil
 	}
 	reviewCards, err := u.reviewCards.Execute(ctx, v)
@@ -99,7 +95,7 @@ func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignmen
 	if err != nil {
 		return assignment{}, err
 	}
-	return u.getAssignmentFrom(ctx, v, u.presets.OpenReads(), reviewCards)
+	return u.getAssignmentFrom(ctx, v, reads, reviewCards)
 }
 
 func (u Schedules) getAssignmentFrom(

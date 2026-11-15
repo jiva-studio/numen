@@ -1,15 +1,28 @@
 package health_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
 func TestAReportedItemReachesTheHostAndAClearRemovesIt(t *testing.T) {
+	if health.Warning != 1 || health.Error != 2 {
+		t.Fatalf("severities = %d, %d, want 1, 2", health.Warning, health.Error)
+	}
+	t.Setenv(hostcall.HostPortEnv, "")
+	if _, err := health.NewClientFromEnv(); !errors.Is(err, hostcall.ErrNoHost) {
+		t.Fatalf("NewClientFromEnv without host = %v, want ErrNoHost", err)
+	}
+
 	host := healthtest.NewHost(t)
-	client, err := health.NewClientFromVars(host.Vars("token-of-the-plugin"))
+	for name, value := range host.Vars("token-of-the-plugin") {
+		t.Setenv(name, value)
+	}
+	client, err := health.NewClientFromEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,6 +39,13 @@ func TestAReportedItemReachesTheHostAndAClearRemovesIt(t *testing.T) {
 	}
 	if action := items[0].Action; action == nil || action.Command != "app:settings.open" || action.Values["setting"] != "source" {
 		t.Fatalf("action = %+v, want the settings at the setting source", items[0].Action)
+	}
+
+	if err := client.Report(t.Context(), health.Item{Key: "connection", Severity: health.Warning, Text: "Degraded"}); err != nil {
+		t.Fatal(err)
+	}
+	if items := host.List(); len(items) != 1 || items[0].Severity != health.Warning {
+		t.Fatalf("warning items = %+v", items)
 	}
 
 	if err := client.Clear(t.Context(), "connection"); err != nil {

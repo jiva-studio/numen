@@ -55,7 +55,9 @@ func proofreadSpeech(
 	cues := numbered.GetSpokenLines(lines)
 	pos := sort.Search(len(cues), func(i int) bool { return cues[i].Number >= from })
 	if pos >= len(cues) {
-		return textResult{corrections: nil, uncorrected: 0, next: from, isDone: true}, nil
+		var out textResult
+		out.next, out.isDone = from, true
+		return out, nil
 	}
 	end := len(cues)
 	if limit > 0 {
@@ -66,20 +68,21 @@ func proofreadSpeech(
 	about := numbered.DescribeSpeech(cues)
 
 	main := setContext(numbered.SpeechBatches(window, size, overlap), about)
-	answers, err := askBatches(ctx, ask, numbered.SpeechInstruction, main, 0)
+	answers, err := askBatches(ctx, ask, numbered.SpeechInstruction, main, 0.0)
 	if err != nil {
 		return textResult{}, err
 	}
 	_, past := numbered.GatherAnswers(answers)
 	batchedContext := setContext(numbered.CutBatches(window, size, overlap, past), about)
-	more, err := askBatches(ctx, ask, numbered.SpeechInstruction, batchedContext, 0)
+	more, err := askBatches(ctx, ask, numbered.SpeechInstruction, batchedContext, 0.0)
 	if err != nil {
 		return textResult{}, err
 	}
 	answers = append(answers, more...)
 
 	placed, _ := numbered.GatherAnswers(answers)
-	out := textResult{corrections: numbered.SortLines(placed), uncorrected: 0, next: 0, isDone: false}
+	var out textResult
+	out.corrections = numbered.SortLines(placed)
 	for _, one := range answers {
 		if !one.IsAnswer {
 			out.uncorrected++

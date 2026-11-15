@@ -108,16 +108,44 @@ export interface EditorPlacement {
 }
 
 /**
- * target is the target of the window, which the plugins it activates read as theirs. A window that opens
- * no tab for a plugin leaves out openTab. getSlotEntries reads the slot entries from the manifests of the
- * plugins whose context the host made, keyed by plugin id. startPlugin settles once the plugin is active
- * or has failed, and does nothing for a plugin that is off; findPluginsOf matches the manifests read so far.
+ * The window the plugins run in: its target, which the plugins it activates read as theirs, its
+ * application, how it opens web links and reports the failure of a plugin, and its workspace,
+ * commands, frame and notices.
  */
-export interface PluginHostDeps {
+export interface HostWindow {
   readonly target: string
-  readonly getContentTypes?: () => Readonly<Record<string, string>>
-  readonly getWindowValues?: () => WhenValues
-  readonly whenReader?: WhenReader
+  readonly app?: AppInfo
+  readonly openExternal?: (url: string) => Promise<void>
+  readonly onError?: (pluginId: string, error: Caught) => void
+  readonly getWorkspace?: () => WorkspaceHost | undefined
+  readonly getCommands?: () => CommandsHost | undefined
+  readonly getWindow?: () => WindowHost | undefined
+  readonly getNotices?: (pluginId: string) => NoticeHost
+  readonly clearNotices?: (pluginId: string) => void
+}
+
+/**
+ * The plugins of the window: the parts each has, whether its start failed, the starts and the
+ * settings. startPlugin settles once the plugin is active or has failed, and does nothing for a
+ * plugin that is off; findPluginsOf matches the manifests read so far.
+ */
+export interface HostPlugins {
+  readonly hasPluginFrontend?: (pluginId: string) => boolean
+  readonly hasPluginBackend?: (pluginId: string) => boolean
+  readonly isPluginFailed?: (pluginId: string) => boolean
+  readonly startPlugin?: (pluginId: string) => Promise<void>
+  readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
+  readonly findPluginsOf?: (match: ContributionMatch) => readonly string[]
+  readonly getSetting?: (pluginId: string, key: string) => JsonValue | undefined
+  readonly onSettingChange?: (
+    pluginId: string,
+    key: string,
+    handler: (value: JsonValue | undefined) => void | Promise<void>,
+  ) => () => void
+}
+
+/** The commands the plugins declare, the handlers their backends run, and what their conditions read. */
+export interface HostCommands {
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
   readonly getHandlerDeclarations?: () => readonly HandlerDeclaration[] | undefined
   readonly listBackendHandlerItems?: (
@@ -126,14 +154,35 @@ export interface PluginHostDeps {
     target: CommandTarget,
   ) => Promise<readonly CommandItem[]>
   readonly runBackendHandler?: (run: BackendHandlerRun) => Promise<void>
-  readonly hasPluginFrontend?: (pluginId: string) => boolean
-  readonly hasPluginBackend?: (pluginId: string) => boolean
-  readonly isPluginFailed?: (pluginId: string) => boolean
-  readonly startPlugin?: (pluginId: string) => Promise<void>
-  readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
-  readonly findPluginsOf?: (match: ContributionMatch) => readonly string[]
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
+  readonly getContentTypes?: () => Readonly<Record<string, string>>
+  readonly getWindowValues?: () => WhenValues
+  readonly whenReader?: WhenReader
+}
+
+/**
+ * The slots of the window and the views drawn in them. getSlotEntries reads the slot entries from the
+ * manifests of the plugins whose context the host made, keyed by plugin id.
+ */
+export interface HostSlots {
+  readonly getSlotEntries?: (
+    manifests: ReadonlyMap<string, Manifest>,
+  ) => readonly DeclaredSlotEntry[] | undefined
+  readonly createSlotCommandFinder?: (own: HostCommandReads) => SlotCommandFinder
+  readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
+  readonly reportSlotIssue?: (
+    pluginId: string,
+    message: string,
+    severity: 'warning' | 'error',
+  ) => void
   readonly reportViewIssue?: (pluginId: string, message: string) => void
+}
+
+/**
+ * The tab kinds and readers the plugins bring into the window, the tabs of a plugin that stops, and
+ * the notes the tab kinds of the plugins show.
+ */
+export interface HostKinds {
   readonly registerKind: (kind: AnyTabKind) => () => void
   readonly registerExtensionReader?: (
     extension: string,
@@ -145,53 +194,52 @@ export interface PluginHostDeps {
     type: string,
     open: (path: string, title?: string, options?: FilePlacement | EditorPlacement | null) => void,
   ) => (() => void) | void
+  readonly closeTabsForPlugin?: (pluginId: string) => void
+  readonly getNoteBuffer?: () => NoteBuffer | undefined
+  readonly readNote?:
+    ((path: string) => Promise<{ body?: string; error?: string } | string | undefined>) | undefined
+  readonly writeNote?: ((path: string, body: string) => Promise<void>) | undefined
+}
+
+/** The tabs of the window. A window that opens no tab for a plugin leaves out openTab. */
+export interface HostTabs {
   readonly openTab?: (kind: string, at?: string) => Promise<string>
   readonly openTabAdjacent?: (kind: string, at?: string) => Promise<string>
   readonly navigateTab?: (kind: string, path: string) => Promise<string>
   readonly closeTab?: (id: string) => void
   readonly getTabState?: (id: string) => object | undefined
-  readonly getSetting?: (pluginId: string, key: string) => JsonValue | undefined
-  readonly onSettingChange?: (
-    pluginId: string,
-    key: string,
-    handler: (value: JsonValue | undefined) => void | Promise<void>,
-  ) => () => void
-  readonly closeTabsForPlugin?: (pluginId: string) => void
-  readonly onError?: (pluginId: string, error: Caught) => void
+}
 
-  readonly readNote?:
-    ((path: string) => Promise<{ body?: string; error?: string } | string | undefined>) | undefined
-  readonly writeNote?: ((path: string, body: string) => Promise<void>) | undefined
-  readonly getWorkspace?: () => WorkspaceHost | undefined
+/** The vault services of the window, and how it resolves a link between notes. */
+export interface HostVault {
   readonly getNotes?: () => VaultNotes | undefined
   readonly getRelations?: () => VaultRelations | undefined
   readonly getFiles?: () => VaultFiles | undefined
-  readonly getCommands?: () => CommandsHost | undefined
   readonly getVaults?: () => VaultsHost | undefined
-  readonly getWindow?: () => WindowHost | undefined
   readonly getBuffers?: () => BufferHost | undefined
-  readonly getNoteBuffer?: () => NoteBuffer | undefined
-  readonly resolveLink?: (from: string, address: string) => Promise<string>
   readonly getTexts?: (pluginId: string) => VaultTexts
-  readonly getNotices?: (pluginId: string) => NoticeHost
+  readonly resolveLink?: (from: string, address: string) => Promise<string>
+}
+
+/** The background work of the window: the tasks, the connections, the processes and the health items. */
+export interface HostWork {
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
   readonly getConnections?: (pluginId: string) => ConnectionHost
-  readonly getSlotEntries?: (
-    manifests: ReadonlyMap<string, Manifest>,
-  ) => readonly DeclaredSlotEntry[] | undefined
-  readonly createSlotCommandFinder?: (own: HostCommandReads) => SlotCommandFinder
-  readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
-  readonly reportSlotIssue?: (
-    pluginId: string,
-    message: string,
-    severity: 'warning' | 'error',
-  ) => void
   readonly getBackgroundTasks?: () => BackgroundTaskHost | undefined
   readonly getProcesses?: () => ProcessHost | undefined
   readonly health?: HealthReports
-  readonly clearNotices?: (pluginId: string) => void
-  readonly app?: AppInfo
-  readonly openExternal?: (url: string) => Promise<void>
+}
+
+/** What the plugin host is made from, by the responsibility of each part. */
+export interface PluginHostDeps {
+  readonly window: HostWindow
+  readonly plugins?: HostPlugins
+  readonly commands?: HostCommands
+  readonly slots?: HostSlots
+  readonly kinds: HostKinds
+  readonly tabs?: HostTabs
+  readonly vault?: HostVault
+  readonly work?: HostWork
 }
 
 /**
@@ -215,13 +263,6 @@ export interface NoteBuffer {
     readonly state: string
   }
   getErrorMessage(id: string): string
-}
-
-/** The window a plugin runs in: its application, its target and how it opens web links. */
-interface ContextInfoHost {
-  readonly app: AppInfo
-  readonly target: string
-  readonly openExternal: (url: string) => Promise<void>
 }
 
 /** The registrations a plugin makes into the registry of the host. */
@@ -302,36 +343,44 @@ export interface ContextVaultHost {
 }
 
 /**
- * The services of the window itself: its workspace, commands, notices, tasks, connections, slots and the
- * plugins that run. A service
- * the window lacks answers undefined.
+ * The window a plugin draws in: its application, its target, how it opens web links, its workspace,
+ * commands, frame, notices and slots. A service the window lacks answers undefined.
  */
-export interface ContextWindowHost {
+export interface ContextUiHost {
+  readonly app: AppInfo
+  readonly target: string
+  readonly openExternal: (url: string) => Promise<void>
   readonly getWorkspace: () => WorkspaceHost | undefined
   readonly getCommands: () => CommandsHost | undefined
   readonly isCommandListed: (command: string) => boolean
   readonly getCommandPermission?: (command: string) => string | undefined
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
+  readonly getSlots: () => SlotHost
+}
+
+/** The background work of the window and the health items of a plugin. A service the window lacks answers undefined. */
+export interface ContextWorkHost {
   readonly getTasks: (pluginId: string) => TaskHost | undefined
   readonly getConnections: (pluginId: string) => ConnectionHost | undefined
   readonly getBackgroundTasks: () => BackgroundTaskHost | undefined
   readonly getProcesses: () => ProcessHost | undefined
   readonly getHealth: (pluginId: string) => HealthHost | undefined
-  readonly getSlots: () => SlotHost
 }
 
 /** What a plugin context is made from, by the responsibility of each part. */
 export interface PluginContextHost {
-  readonly info: ContextInfoHost
   readonly registration: ContextRegistrationHost
   readonly views: ContextViewHost
   readonly settings: ContextSettingHost
   readonly events: ContextEventHost
   readonly tabs: ContextTabHost
   readonly vault: ContextVaultHost
-  readonly window: ContextWindowHost
+  readonly ui: ContextUiHost
+  readonly work: ContextWorkHost
 }
 
 /** What the host runs with: the deps of the window, with the one reader of its conditions. */
-export type HostDeps = PluginHostDeps & { readonly whenReader: WhenReader }
+export interface HostDeps extends PluginHostDeps {
+  readonly commands: HostCommands & { readonly whenReader: WhenReader }
+}

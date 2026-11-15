@@ -48,12 +48,12 @@ const (
 	// HostSearchServiceGetBestSimilarityProcedure is the fully-qualified name of the
 	// HostSearchService's GetBestSimilarity RPC.
 	HostSearchServiceGetBestSimilarityProcedure = "/numen.v1.HostSearchService/GetBestSimilarity"
-	// HostSearchServiceFindNearestPassagesProcedure is the fully-qualified name of the
-	// HostSearchService's FindNearestPassages RPC.
-	HostSearchServiceFindNearestPassagesProcedure = "/numen.v1.HostSearchService/FindNearestPassages"
-	// HostSearchServiceSearchPassagesProcedure is the fully-qualified name of the HostSearchService's
-	// SearchPassages RPC.
-	HostSearchServiceSearchPassagesProcedure = "/numen.v1.HostSearchService/SearchPassages"
+	// HostSearchServiceFindNearestChunksProcedure is the fully-qualified name of the
+	// HostSearchService's FindNearestChunks RPC.
+	HostSearchServiceFindNearestChunksProcedure = "/numen.v1.HostSearchService/FindNearestChunks"
+	// HostSearchServiceSearchTextProcedure is the fully-qualified name of the HostSearchService's
+	// SearchText RPC.
+	HostSearchServiceSearchTextProcedure = "/numen.v1.HostSearchService/SearchText"
 	// HostSearchServiceGetSearchFloorProcedure is the fully-qualified name of the HostSearchService's
 	// GetSearchFloor RPC.
 	HostSearchServiceGetSearchFloorProcedure = "/numen.v1.HostSearchService/GetSearchFloor"
@@ -83,18 +83,18 @@ type HostSearchServiceClient interface {
 	// small chunks, in the order of their content hashes, so one index yields
 	// one sample. At most 256 queries are sampled in one call.
 	SampleSimilarities(context.Context, *connect.Request[v1.SampleSimilaritiesRequest]) (*connect.Response[v1.SampleSimilaritiesResponse], error)
-	// GetBestSimilarity is the cosine similarity of the passage of the vault
+	// GetBestSimilarity is the cosine similarity of the chunk of the vault
 	// nearest a vector under the recipe, and zero when the vault has none.
 	GetBestSimilarity(context.Context, *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error)
-	// FindNearestPassages is the small chunks of the place nearest a vector, nearest first, at or
+	// FindNearestChunks is the small chunks of the place nearest a vector, nearest first, at or
 	// above the floor: the floor the request names, else the effective floor of the vault under the
 	// recipe. A search source answers a query with it. The vault is the one of the place.
-	FindNearestPassages(context.Context, *connect.Request[v1.FindNearestPassagesRequest]) (*connect.Response[v1.FindNearestPassagesResponse], error)
-	// SearchPassages returns passages matching the query, from the index of every
+	FindNearestChunks(context.Context, *connect.Request[v1.FindNearestChunksRequest]) (*connect.Response[v1.FindNearestChunksResponse], error)
+	// SearchText returns search results matching the query, from the index of every
 	// source and every text version: by keywords, and by embedding when the
 	// installation has an embedding model. It is the search the window runs, with
 	// the window's similarity threshold.
-	SearchPassages(context.Context, *connect.Request[v1.HostSearchServiceSearchPassagesRequest]) (*connect.Response[v1.HostSearchServiceSearchPassagesResponse], error)
+	SearchText(context.Context, *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error)
 	// GetSearchFloor is the floor a search by meaning applies to the vault under
 	// the recipe, and where it comes from.
 	GetSearchFloor(context.Context, *connect.Request[v1.GetSearchFloorRequest]) (*connect.Response[v1.GetSearchFloorResponse], error)
@@ -145,16 +145,16 @@ func NewHostSearchServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(hostSearchServiceMethods.ByName("GetBestSimilarity")),
 			connect.WithClientOptions(opts...),
 		),
-		findNearestPassages: connect.NewClient[v1.FindNearestPassagesRequest, v1.FindNearestPassagesResponse](
+		findNearestChunks: connect.NewClient[v1.FindNearestChunksRequest, v1.FindNearestChunksResponse](
 			httpClient,
-			baseURL+HostSearchServiceFindNearestPassagesProcedure,
-			connect.WithSchema(hostSearchServiceMethods.ByName("FindNearestPassages")),
+			baseURL+HostSearchServiceFindNearestChunksProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("FindNearestChunks")),
 			connect.WithClientOptions(opts...),
 		),
-		searchPassages: connect.NewClient[v1.HostSearchServiceSearchPassagesRequest, v1.HostSearchServiceSearchPassagesResponse](
+		searchText: connect.NewClient[v1.HostSearchServiceSearchTextRequest, v1.HostSearchServiceSearchTextResponse](
 			httpClient,
-			baseURL+HostSearchServiceSearchPassagesProcedure,
-			connect.WithSchema(hostSearchServiceMethods.ByName("SearchPassages")),
+			baseURL+HostSearchServiceSearchTextProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("SearchText")),
 			connect.WithClientOptions(opts...),
 		),
 		getSearchFloor: connect.NewClient[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse](
@@ -174,15 +174,15 @@ func NewHostSearchServiceClient(httpClient connect.HTTPClient, baseURL string, o
 
 // hostSearchServiceClient implements HostSearchServiceClient.
 type hostSearchServiceClient struct {
-	getEmbeddingState   *connect.Client[v1.GetEmbeddingStateRequest, v1.GetEmbeddingStateResponse]
-	getIndexStats       *connect.Client[v1.GetIndexStatsRequest, v1.GetIndexStatsResponse]
-	embedTexts          *connect.Client[v1.EmbedTextsRequest, v1.EmbedTextsResponse]
-	sampleSimilarities  *connect.Client[v1.SampleSimilaritiesRequest, v1.SampleSimilaritiesResponse]
-	getBestSimilarity   *connect.Client[v1.GetBestSimilarityRequest, v1.GetBestSimilarityResponse]
-	findNearestPassages *connect.Client[v1.FindNearestPassagesRequest, v1.FindNearestPassagesResponse]
-	searchPassages      *connect.Client[v1.HostSearchServiceSearchPassagesRequest, v1.HostSearchServiceSearchPassagesResponse]
-	getSearchFloor      *connect.Client[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse]
-	setSearchFloor      *connect.Client[v1.SetSearchFloorRequest, v1.SetSearchFloorResponse]
+	getEmbeddingState  *connect.Client[v1.GetEmbeddingStateRequest, v1.GetEmbeddingStateResponse]
+	getIndexStats      *connect.Client[v1.GetIndexStatsRequest, v1.GetIndexStatsResponse]
+	embedTexts         *connect.Client[v1.EmbedTextsRequest, v1.EmbedTextsResponse]
+	sampleSimilarities *connect.Client[v1.SampleSimilaritiesRequest, v1.SampleSimilaritiesResponse]
+	getBestSimilarity  *connect.Client[v1.GetBestSimilarityRequest, v1.GetBestSimilarityResponse]
+	findNearestChunks  *connect.Client[v1.FindNearestChunksRequest, v1.FindNearestChunksResponse]
+	searchText         *connect.Client[v1.HostSearchServiceSearchTextRequest, v1.HostSearchServiceSearchTextResponse]
+	getSearchFloor     *connect.Client[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse]
+	setSearchFloor     *connect.Client[v1.SetSearchFloorRequest, v1.SetSearchFloorResponse]
 }
 
 // GetEmbeddingState calls numen.v1.HostSearchService.GetEmbeddingState.
@@ -210,14 +210,14 @@ func (c *hostSearchServiceClient) GetBestSimilarity(ctx context.Context, req *co
 	return c.getBestSimilarity.CallUnary(ctx, req)
 }
 
-// FindNearestPassages calls numen.v1.HostSearchService.FindNearestPassages.
-func (c *hostSearchServiceClient) FindNearestPassages(ctx context.Context, req *connect.Request[v1.FindNearestPassagesRequest]) (*connect.Response[v1.FindNearestPassagesResponse], error) {
-	return c.findNearestPassages.CallUnary(ctx, req)
+// FindNearestChunks calls numen.v1.HostSearchService.FindNearestChunks.
+func (c *hostSearchServiceClient) FindNearestChunks(ctx context.Context, req *connect.Request[v1.FindNearestChunksRequest]) (*connect.Response[v1.FindNearestChunksResponse], error) {
+	return c.findNearestChunks.CallUnary(ctx, req)
 }
 
-// SearchPassages calls numen.v1.HostSearchService.SearchPassages.
-func (c *hostSearchServiceClient) SearchPassages(ctx context.Context, req *connect.Request[v1.HostSearchServiceSearchPassagesRequest]) (*connect.Response[v1.HostSearchServiceSearchPassagesResponse], error) {
-	return c.searchPassages.CallUnary(ctx, req)
+// SearchText calls numen.v1.HostSearchService.SearchText.
+func (c *hostSearchServiceClient) SearchText(ctx context.Context, req *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error) {
+	return c.searchText.CallUnary(ctx, req)
 }
 
 // GetSearchFloor calls numen.v1.HostSearchService.GetSearchFloor.
@@ -251,18 +251,18 @@ type HostSearchServiceHandler interface {
 	// small chunks, in the order of their content hashes, so one index yields
 	// one sample. At most 256 queries are sampled in one call.
 	SampleSimilarities(context.Context, *connect.Request[v1.SampleSimilaritiesRequest]) (*connect.Response[v1.SampleSimilaritiesResponse], error)
-	// GetBestSimilarity is the cosine similarity of the passage of the vault
+	// GetBestSimilarity is the cosine similarity of the chunk of the vault
 	// nearest a vector under the recipe, and zero when the vault has none.
 	GetBestSimilarity(context.Context, *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error)
-	// FindNearestPassages is the small chunks of the place nearest a vector, nearest first, at or
+	// FindNearestChunks is the small chunks of the place nearest a vector, nearest first, at or
 	// above the floor: the floor the request names, else the effective floor of the vault under the
 	// recipe. A search source answers a query with it. The vault is the one of the place.
-	FindNearestPassages(context.Context, *connect.Request[v1.FindNearestPassagesRequest]) (*connect.Response[v1.FindNearestPassagesResponse], error)
-	// SearchPassages returns passages matching the query, from the index of every
+	FindNearestChunks(context.Context, *connect.Request[v1.FindNearestChunksRequest]) (*connect.Response[v1.FindNearestChunksResponse], error)
+	// SearchText returns search results matching the query, from the index of every
 	// source and every text version: by keywords, and by embedding when the
 	// installation has an embedding model. It is the search the window runs, with
 	// the window's similarity threshold.
-	SearchPassages(context.Context, *connect.Request[v1.HostSearchServiceSearchPassagesRequest]) (*connect.Response[v1.HostSearchServiceSearchPassagesResponse], error)
+	SearchText(context.Context, *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error)
 	// GetSearchFloor is the floor a search by meaning applies to the vault under
 	// the recipe, and where it comes from.
 	GetSearchFloor(context.Context, *connect.Request[v1.GetSearchFloorRequest]) (*connect.Response[v1.GetSearchFloorResponse], error)
@@ -309,16 +309,16 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 		connect.WithSchema(hostSearchServiceMethods.ByName("GetBestSimilarity")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostSearchServiceFindNearestPassagesHandler := connect.NewUnaryHandler(
-		HostSearchServiceFindNearestPassagesProcedure,
-		svc.FindNearestPassages,
-		connect.WithSchema(hostSearchServiceMethods.ByName("FindNearestPassages")),
+	hostSearchServiceFindNearestChunksHandler := connect.NewUnaryHandler(
+		HostSearchServiceFindNearestChunksProcedure,
+		svc.FindNearestChunks,
+		connect.WithSchema(hostSearchServiceMethods.ByName("FindNearestChunks")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostSearchServiceSearchPassagesHandler := connect.NewUnaryHandler(
-		HostSearchServiceSearchPassagesProcedure,
-		svc.SearchPassages,
-		connect.WithSchema(hostSearchServiceMethods.ByName("SearchPassages")),
+	hostSearchServiceSearchTextHandler := connect.NewUnaryHandler(
+		HostSearchServiceSearchTextProcedure,
+		svc.SearchText,
+		connect.WithSchema(hostSearchServiceMethods.ByName("SearchText")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostSearchServiceGetSearchFloorHandler := connect.NewUnaryHandler(
@@ -345,10 +345,10 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 			hostSearchServiceSampleSimilaritiesHandler.ServeHTTP(w, r)
 		case HostSearchServiceGetBestSimilarityProcedure:
 			hostSearchServiceGetBestSimilarityHandler.ServeHTTP(w, r)
-		case HostSearchServiceFindNearestPassagesProcedure:
-			hostSearchServiceFindNearestPassagesHandler.ServeHTTP(w, r)
-		case HostSearchServiceSearchPassagesProcedure:
-			hostSearchServiceSearchPassagesHandler.ServeHTTP(w, r)
+		case HostSearchServiceFindNearestChunksProcedure:
+			hostSearchServiceFindNearestChunksHandler.ServeHTTP(w, r)
+		case HostSearchServiceSearchTextProcedure:
+			hostSearchServiceSearchTextHandler.ServeHTTP(w, r)
 		case HostSearchServiceGetSearchFloorProcedure:
 			hostSearchServiceGetSearchFloorHandler.ServeHTTP(w, r)
 		case HostSearchServiceSetSearchFloorProcedure:
@@ -382,12 +382,12 @@ func (UnimplementedHostSearchServiceHandler) GetBestSimilarity(context.Context, 
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.GetBestSimilarity is not implemented"))
 }
 
-func (UnimplementedHostSearchServiceHandler) FindNearestPassages(context.Context, *connect.Request[v1.FindNearestPassagesRequest]) (*connect.Response[v1.FindNearestPassagesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.FindNearestPassages is not implemented"))
+func (UnimplementedHostSearchServiceHandler) FindNearestChunks(context.Context, *connect.Request[v1.FindNearestChunksRequest]) (*connect.Response[v1.FindNearestChunksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.FindNearestChunks is not implemented"))
 }
 
-func (UnimplementedHostSearchServiceHandler) SearchPassages(context.Context, *connect.Request[v1.HostSearchServiceSearchPassagesRequest]) (*connect.Response[v1.HostSearchServiceSearchPassagesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.SearchPassages is not implemented"))
+func (UnimplementedHostSearchServiceHandler) SearchText(context.Context, *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.SearchText is not implemented"))
 }
 
 func (UnimplementedHostSearchServiceHandler) GetSearchFloor(context.Context, *connect.Request[v1.GetSearchFloorRequest]) (*connect.Response[v1.GetSearchFloorResponse], error) {

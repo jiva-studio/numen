@@ -169,6 +169,8 @@ type PresetReads interface {
 	// HasLinks reports whether the links of a deck can be resolved. Without them every deck is
 	// scheduled by the defaults.
 	HasLinks() bool
+	// GetBacklinks returns the links that point at the note at path.
+	GetBacklinks(ctx context.Context, vault domain.VaultID, path string) ([]domain.ResolvedLink, error)
 	// GetForDeck returns the preset the deck at path is scheduled by.
 	GetForDeck(ctx context.Context, v domain.Vault, deck string) (presetnote.Contents, error)
 	// GetPreset returns the preset at path.

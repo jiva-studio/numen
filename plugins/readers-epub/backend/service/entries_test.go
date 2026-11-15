@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -14,6 +15,15 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/books"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/wire/bookwire"
 )
+
+type failingResponseWriter struct {
+	http.ResponseWriter
+	err error
+}
+
+func (w *failingResponseWriter) Write([]byte) (int, error) {
+	return 0, w.err
+}
 
 func serveEntries(t *testing.T) (*http.ServeMux, *books.Reader) {
 	t.Helper()
@@ -70,5 +80,25 @@ func TestEntriesRoute_ConflictOnChangedBook(t *testing.T) {
 
 	if answer.Code != http.StatusConflict {
 		t.Errorf("a stale picture answered %d, want %d", answer.Code, http.StatusConflict)
+	}
+}
+
+func TestEntriesRoute_ReportsWriteError(t *testing.T) {
+	_, reader := serveEntries(t)
+	var gotWhat string
+	var gotErr error
+	mux := http.NewServeMux()
+	mux.Handle("GET /"+entriesPattern, NewEntryServer(bookwire.NewMethods(reader), func(what string, err error) {
+		gotWhat = what
+		gotErr = err
+	}))
+
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub", nil)
+	req.Header.Set("Numen-Vault", "Chemistry")
+	writeErr := errors.New("broken pipe")
+	mux.ServeHTTP(&failingResponseWriter{ResponseWriter: httptest.NewRecorder(), err: writeErr}, req)
+
+	if gotWhat != "write the entry EPUB/cover.png" || !errors.Is(gotErr, writeErr) {
+		t.Errorf("reported (%q, %v), want (\"write the entry EPUB/cover.png\", %v)", gotWhat, gotErr, writeErr)
 	}
 }

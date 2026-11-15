@@ -61,6 +61,12 @@ func TestSectionAndLinkHelpers(t *testing.T) {
 	if lvl, name, ok := heading([]byte("## ###"), SectionLevel, FieldLevel); !ok || lvl != 2 || name != "" {
 		t.Fatalf("unexpected empty closed heading: %d %q %v", lvl, name, ok)
 	}
+	if _, _, ok := heading([]byte("##a"), SectionLevel, FieldLevel); ok {
+		t.Fatal("expected single-letter suffix without space not to be a heading")
+	}
+	if text, carried := ReadHeading(" ^k7m2xq9fzp"); text != "" || carried != "k7m2xq9fzp" {
+		t.Fatalf("unexpected ReadHeading with leading space: %q %q", text, carried)
+	}
 	if line, next := lineAt([]byte("no-newline\r"), 0, 11); string(line) != "no-newline" || next != 11 {
 		t.Fatalf("unexpected lineAt: %q %d", string(line), next)
 	}
@@ -76,8 +82,17 @@ func TestSectionAndLinkHelpers(t *testing.T) {
 	if got := oneLine("\nsecond"); got != "" {
 		t.Fatalf("expected empty first line, got %q", got)
 	}
-	if got := links("![[embed]] [single] [[a ] b]] [[unclosed"); len(got) != 2 || got[0][0] != 0 || got[0][1] != 10 || got[1][0] != 20 || got[1][1] != 29 {
+	if got := links("![[embed]] [single] [[a ] b]] [[unclosed"); len(got) != 2 ||
+		got[0][0] != 0 || got[0][1] != 10 || got[1][0] != 20 || got[1][1] != 29 {
 		t.Fatalf("unexpected links: %v", got)
+	}
+	if got := links("[[a[b]] [[[c]] [[]] [[outer [[inner]] end]] [[unclosed["); len(got) != 4 ||
+		got[0][0] != 0 || got[0][1] != 7 || got[1][0] != 8 || got[1][1] != 14 ||
+		got[2][0] != 15 || got[2][1] != 19 || got[3][0] != 20 || got[3][1] != 43 {
+		t.Fatalf("unexpected nested/bracketed links: %v", got)
+	}
+	if got := links("plain["); len(got) != 0 {
+		t.Fatalf("expected no links in plain[, got %v", got)
 	}
 }
 

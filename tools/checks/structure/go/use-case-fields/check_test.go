@@ -81,11 +81,11 @@ type Write struct {
 }
 
 type Search struct {
-	Passages port.PassageQueries
+	Queries port.LexicalQueries
 }
 
-func NewOver(passages port.PassageQueries) Search {
-	return Search{Passages: passages}
+func NewOver(queries port.LexicalQueries) Search {
+	return Search{Queries: queries}
 }
 
 type Level struct {
@@ -108,7 +108,7 @@ func NewLevel(name string) Level {
 	// no constructor to promise anything. Search is reached through a
 	// constructor not named after it.
 	slices.Sort(violations)
-	if !slices.Equal(violations, []string{"Read: Readers", "Search: Passages"}) {
+	if !slices.Equal(violations, []string{"Read: Readers", "Search: Queries"}) {
 		t.Errorf("the rule rejects %v, want the one collaborator left in the open", violations)
 	}
 }

@@ -140,12 +140,20 @@ func (failingFiles) ReadFile(context.Context, domain.VaultID, string) ([]byte, e
 // Chemistry with a recording of its own.
 type requestFixture struct {
 	*scene
-	chemistry *hosttest.Vault
-	chemTexts *hosttest.Texts
-	finishing recordingQueue
-	blocking  *blockingModel
-	requests  *Requests
-	ended     map[string]bool
+	chemistry  *hosttest.Vault
+	chemTexts  *hosttest.Texts
+	finishing  recordingQueue
+	blocking   *blockingModel
+	requests   *Requests
+	ended      map[string]bool
+	reportedMu sync.Mutex
+	reported   []string
+}
+
+func (s *requestFixture) getReportedTasks() []string {
+	s.reportedMu.Lock()
+	defer s.reportedMu.Unlock()
+	return slices.Clone(s.reported)
 }
 
 func newRequestFixture(t *testing.T) *requestFixture {
@@ -170,7 +178,11 @@ func newRequestFixtureWithFiles(t *testing.T, wrap func(Files) Files) *requestFi
 	}
 	s.blocking = &blockingModel{heardModel: s.model, startCh: make(chan struct{}), release: make(chan struct{})}
 	s.transcriber = NewTranscriber(wrap(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}), storesOf(s.store), textsOf(s.texts), s.finishing,
-		func(context.Context) (ports.Recognizer, error) { return s.blocking, nil }, noReport)
+		func(context.Context) (ports.Recognizer, error) { return s.blocking, nil }, func(what string, _ error) {
+			s.reportedMu.Lock()
+			s.reported = append(s.reported, what)
+			s.reportedMu.Unlock()
+		})
 	t.Cleanup(s.transcriber.Close)
 	s.requests = NewRequests(s.transcriber, func(id domain.VaultID) Vault { return s.vault.With(id) })
 	return s
@@ -268,6 +280,9 @@ func TestTranscriptCreateReturnsBeforeTheTranscriptionEnds(t *testing.T) {
 	close(s.blocking.release)
 	s.waitUntilFinished(t, want.TaskID)
 	s.transcriber.Close()
+	if got := s.getReportedTasks(); len(got) != 0 {
+		t.Errorf("successful Start reported %v, want none", got)
+	}
 
 	if _, text := s.readLiveVersionAndText(t); text != "first words\nsecond words\n" {
 		t.Errorf("the transcript reads %q", text)
@@ -651,6 +666,10 @@ func TestTranscriptCreateReportsAFailedReadInTheTask(t *testing.T) {
 			if i < 0 || tasks[i].FailureReason == "" {
 				t.Errorf("the tasks %+v do not list %s with its failure", tasks, want.TaskID)
 			}
+			s.transcriber.Close()
+			if got := s.getReportedTasks(); !slices.Equal(got, []string{"transcribe " + lecture}) {
+				t.Errorf("failed Start reported %v, want [transcribe %s]", got, lecture)
+			}
 			return
 		case <-deadline:
 			t.Fatalf("no failure of %s was reported within %v; tasks %+v", want.TaskID, workDeadline, s.queue.ListTasks())
@@ -817,4 +836,92 @@ func TestStartOfARecordingBeingTranscribedStartsNothing(t *testing.T) {
 	}
 	close(s.blocking.release)
 	s.waitUntilFinished(t, getTaskID("Lectures", lecture))
+}
+
+type failingActiveVaultFiles struct {
+	Files
+	err error
+}
+
+func (f failingActiveVaultFiles) GetActiveVaultID(context.Context) (domain.VaultID, error) {
+	return "", f.err
+}
+
+func TestRequestAndStartErrorBranches(t *testing.T) {
+	ctx := t.Context()
+	s := newRequestFixture(t)
+
+	if _, err := s.requests.Create(ctx, "", lecture); !errors.Is(err, errNoVault) {
+		t.Fatalf("expected errNoVault, got %v", err)
+	}
+	if _, err := s.requests.Create(ctx, "Lectures", ""); err == nil || err.Error() != "path required" {
+		t.Fatalf("expected path required error, got %v", err)
+	}
+
+	// Create while running returns stateRunning even when a whole transcript version exists.
+	s.putTranscript(t, true)
+	key, claimed := s.transcriber.claim("Lectures", lecture)
+	if !claimed {
+		t.Fatal("expected claim to succeed")
+	}
+	runningOut, err := s.requests.Create(ctx, "Lectures", lecture)
+	s.transcriber.clearRunning(key)
+	if err != nil || runningOut.State != stateRunning {
+		t.Fatalf("expected stateRunning while claimed, got %+v, %v", runningOut, err)
+	}
+
+	// Create when ListVersions fails returns the error.
+	errBoom := errors.New("boom")
+	ft := &faultyTexts{TextVersions: s.texts, listErr: errBoom}
+	trListErr := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }},
+		storesOf(s.store),
+		func(domain.VaultID) host.TextVersions { return ft },
+		s.queue,
+		func(context.Context) (ports.Recognizer, error) { return s.model, nil },
+		noReport,
+	)
+	reqListErr := NewRequests(trListErr, func(id domain.VaultID) Vault { return s.vault.With(id) })
+	if _, err := reqListErr.Create(ctx, "Lectures", lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected ListVersions errBoom from Create, got %v", err)
+	}
+
+	// Start and Transcribe when GetActiveVaultID fails.
+	trVaultErr := NewTranscriber(
+		failingActiveVaultFiles{Files: failingFiles{}, err: errBoom},
+		storesOf(s.store),
+		textsOf(s.texts),
+		s.queue,
+		func(context.Context) (ports.Recognizer, error) { return s.model, nil },
+		noReport,
+	)
+	if started, err := trVaultErr.Start(ctx, "", lecture); started || !errors.Is(err, errBoom) {
+		t.Fatalf("expected Start with active vault error to return (false, errBoom), got (%v, %v)", started, err)
+	}
+	if err := trVaultErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected Transcribe with active vault error to return errBoom, got %v", err)
+	}
+
+	// Close cancels an active Start and rejects subsequent requests.
+	sCancel := newRequestFixture(t)
+	if _, err := sCancel.startWithin(t, lecture); err != nil {
+		t.Fatal(err)
+	}
+	sCancel.waitUntilStarted(t)
+	sCancel.transcriber.Close()
+	if got := sCancel.getReportedTasks(); len(got) != 0 {
+		t.Fatalf("canceled Start reported %v, want none", got)
+	}
+	if started, err := sCancel.transcriber.Start(ctx, "Lectures", lecture); started || !errors.Is(err, errClosed) {
+		t.Fatalf("expected Start after Close to return (false, errClosed), got (%v, %v)", started, err)
+	}
+	if err := sCancel.transcriber.Transcribe(ctx, "Lectures", lecture); !errors.Is(err, errClosed) {
+		t.Fatalf("expected Transcribe after Close to return errClosed, got %v", err)
+	}
+	sFresh := newRequestFixture(t)
+	close(sFresh.blocking.release)
+	sFresh.transcriber.Close()
+	if _, err := sFresh.requests.Create(ctx, "Lectures", lecture); !errors.Is(err, errClosed) {
+		t.Fatalf("expected Create after Close to return errClosed, got %v", err)
+	}
 }

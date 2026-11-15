@@ -20,9 +20,9 @@ const createKind = (kind: string, display?: AnyTabKind['display']): AnyTabKind =
 
 const createWindow = () => {
   const window = createTestTabs()
-  window.groups.registerKind(createKind('reader'))
-  window.groups.registerKind(createKind('note'))
-  window.groups.registerKind(
+  window.kinds.registerKind(createKind('reader'))
+  window.kinds.registerKind(createKind('note'))
+  window.kinds.registerKind(
     createKind('files', { isTool: true, placement: { pane: 'aside', order: 1 } }),
   )
   return window
@@ -48,14 +48,14 @@ describe('the open tabs of a window whose files tab is in focus', () => {
       'note-1',
     )
     window.panes.show('files-1')
-    expect(window.groups.handle.front()?.id).toBe('files-1')
+    expect(window.handle.front()?.id).toBe('files-1')
 
     const { open } = createOpenTabs(window)
 
     expect(open.value.activeId).toBe('note-1')
     const restarted = createWindow()
     restarted.restored.restoreTabs(parseSavedTabs(open.value), open.value.activeId)
-    expect(restarted.groups.handle.front()?.id).toBe('note-1')
+    expect(restarted.handle.front()?.id).toBe('note-1')
   })
 
   it('keep the files tab as the active tab where no other tab shows', () => {
@@ -70,7 +70,7 @@ describe('the tab in front of each pane after a restart', () => {
   it('is the tab that was shown last in the pane', () => {
     const create = () => {
       const window = createWindow()
-      window.groups.registerKind(
+      window.kinds.registerKind(
         createKind('plex', { isTool: true, placement: { pane: 'main', order: 0 } }),
       )
       return window

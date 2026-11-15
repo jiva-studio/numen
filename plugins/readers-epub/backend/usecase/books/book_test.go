@@ -152,6 +152,9 @@ func TestReaderPartsPagesAndErrors(t *testing.T) {
 		t.Errorf("got %d parts and %d pages, want 2 and 2", len(resp.Parts), len(resp.Pages))
 	}
 
+	if _, err := books.GetBook(ctx, ""); codeOf(err) != KindInvalidArgument {
+		t.Errorf("GetBook(\"\") = %v, want invalid_argument", err)
+	}
 	if _, err := books.GetBook(ctx, "bad.epub"); codeOf(err) != KindInvalidArgument {
 		t.Errorf("GetBook(bad.epub) = %v, want invalid_argument", err)
 	}

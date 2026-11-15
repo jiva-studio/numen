@@ -33,6 +33,7 @@ describe('which items a query keeps', () => {
 
   it('finds a word in the detail and in the group', () => {
     expect(filterItems(MODELS, 'hedge').map((one) => one.id)).toStrictEqual(['b'])
+    expect(filterItems(MODELS, 'hedge/apple').map((one) => one.id)).toStrictEqual(['b'])
     expect(filterItems(MODELS, 'orchard').map((one) => one.id)).toStrictEqual(['a', 'c'])
   })
 
@@ -140,5 +141,6 @@ describe('the row a step lands on', () => {
 
   it('is none where there is no row', () => {
     expect(stepRow([], 0, 1)).toBe(-1)
+    expect(stepRow(buildRows(MODELS, 'x', true), -1, 1)).toBe(0)
   })
 })

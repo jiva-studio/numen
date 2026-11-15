@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/settings"
 )
 
 // model is a model whose reply is computed from the prompt by its script, and
@@ -45,21 +46,33 @@ func TestProofreadScan_PromptsPerPageAndOrdersCorrections(t *testing.T) {
 		if strings.Contains(prompt, "dgo") {
 			return "12|the dog ran"
 		}
-		return "10|the cat sat"
+		if strings.Contains(prompt, "cta") {
+			return "10|the cat sat"
+		}
+		return "10|the fox jumped"
 	}}
 
-	got, err := proofreadScan(t.Context(), m.ask, twoPages(), 0)
+	pages := []numbered.Batch{
+		{Number: 4, Lines: []numbered.Line{{Number: 12, Text: "the dgo ran"}}},
+		{Number: 3, Lines: []numbered.Line{{Number: 10, Text: "the cta sat"}, {Number: 11, Text: "on the mat"}}},
+		{Number: 5, Lines: []numbered.Line{{Number: 10, Text: "the fxo jumped"}}},
+	}
+	got, err := proofreadScan(t.Context(), m.ask, pages, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []numbered.Line{{Number: 10, Last: 10, Text: "the cat sat"}, {Number: 12, Last: 12, Text: "the dog ran"}}
+	want := []numbered.Line{
+		{Number: 10, Last: 10, Text: "the cat sat"},
+		{Number: 10, Last: 10, Text: "the fox jumped"},
+		{Number: 12, Last: 12, Text: "the dog ran"},
+	}
 	if !reflect.DeepEqual(got.corrections, want) {
 		t.Errorf("corrections %v, want %v", got.corrections, want)
 	}
 	if got.uncorrected != 0 || !got.isDone {
 		t.Errorf("result %+v", got)
 	}
-	if len(m.prompts) != 2 || m.instructions[0] != numbered.ScanInstruction {
+	if len(m.prompts) != 3 || m.instructions[0] != numbered.ScanInstruction {
 		t.Errorf("asked %d times under %q", len(m.prompts), m.instructions)
 	}
 }
@@ -83,6 +96,9 @@ func TestAScanFailureEndsTheRun(t *testing.T) {
 }
 
 func TestProofreadScan_AppliesEditLimit(t *testing.T) {
+	if getScanDistance(0) != settings.DefaultMaxEditDistance || getScanDistance(-1) != settings.DefaultMaxEditDistance || getScanDistance(0.45) != 0.45 {
+		t.Fatal("getScanDistance unexpected value")
+	}
 	pages := []numbered.Batch{{Number: 1, Lines: []numbered.Line{{Number: 1, Text: "abcdefghij"}}}}
 	reply := newReplyModel("1|abcdeXYZ")
 
@@ -92,6 +108,9 @@ func TestProofreadScan_AppliesEditLimit(t *testing.T) {
 	}
 	if len(got.corrections) != 0 {
 		t.Errorf("default limit kept %v", got.corrections)
+	}
+	if got, err = proofreadScan(t.Context(), newReplyModel("1|Z").ask, pages, 0.5); err != nil || len(got.corrections) != 0 {
+		t.Errorf("limit 0.5 kept %v (%v)", got.corrections, err)
 	}
 	got, err = proofreadScan(t.Context(), reply.ask, pages, 0.9)
 	if err != nil {
@@ -156,7 +175,7 @@ func TestProofreadSpeech_ProcessesWindowsAndReturnsNext(t *testing.T) {
 
 func TestSpeechPastTheEndIsCompleted(t *testing.T) {
 	got, err := proofreadSpeech(t.Context(), newReplyModel("").ask, speech(3), batchShape{size: 4, overlap: 1}, 9, 8)
-	if err != nil || !got.isDone || got.next != 9 {
+	if err != nil || !got.isDone || got.next != 9 || got.uncorrected != 0 || got.corrections != nil {
 		t.Errorf("result %+v, %v", got, err)
 	}
 }
@@ -168,6 +187,9 @@ func TestProofreadSpeech_RetriesSplitBatchForSpanningRun(t *testing.T) {
 		if request == 1 {
 			return "2-9|a run reaching past the first batch"
 		}
+		if request == 4 {
+			return "2-3|joined across the seam"
+		}
 		return ""
 	}}
 	got, err := proofreadSpeech(t.Context(), m.ask, speech(8), batchShape{size: 4, overlap: 1}, 0, 0)
@@ -175,13 +197,16 @@ func TestProofreadSpeech_RetriesSplitBatchForSpanningRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Batches 0-3, 3-6, 6-7, then one window over the first cut.
-	if len(m.prompts) != 4 || got.uncorrected != 0 || !got.isDone {
+	if len(m.prompts) != 4 || got.uncorrected != 0 || !got.isDone || len(got.corrections) != 1 || got.corrections[0].Text != "joined across the seam" {
 		t.Errorf("asked %d times, result %+v", len(m.prompts), got)
 	}
 }
 
 func TestProofreadSpeech_RetriesWindowForSpanningRun(t *testing.T) {
 	m := &model{script: func(prompt string) string {
+		if strings.Contains(prompt, numbered.Opens+"0"+numbered.Closes) {
+			return "2-9|a run reaching past the first batch only"
+		}
 		if strings.Contains(prompt, numbered.Opens+"7"+numbered.Closes) {
 			return "6-9|a sentence reaching past the window"
 		}
@@ -193,6 +218,50 @@ func TestProofreadSpeech_RetriesWindowForSpanningRun(t *testing.T) {
 	}
 	if got.next != 6 {
 		t.Errorf("continue from %d, want the line the run begins on, 6", got.next)
+	}
+
+	atWindowStart := &model{script: func(_ string) string {
+		return "2-9|a sentence starting at the beginning of the window"
+	}}
+	gotStart, err := proofreadSpeech(t.Context(), atWindowStart.ask, speech(10), batchShape{size: 4, overlap: 0}, 2, 4)
+	if err != nil || gotStart.next != 3 {
+		t.Errorf("atWindowStart: %+v, %v, want next=3", gotStart, err)
+	}
+}
+
+func TestProofreadSpeechWindowResumeAndErrors(t *testing.T) {
+	for _, overlap := range []int{-1, 0} {
+		got, err := proofreadSpeech(t.Context(), newReplyModel("").ask, speech(10), batchShape{size: 4, overlap: overlap}, 0, 4)
+		if err != nil || got.isDone || got.next != 4 {
+			t.Errorf("overlap %d gave %+v, %v, want next=4", overlap, got, err)
+		}
+	}
+	if got, err := proofreadSpeech(t.Context(), newReplyModel("").ask, speech(3), batchShape{size: 4, overlap: 0}, 0, 1); err != nil || got.isDone || got.next != 1 {
+		t.Errorf("limit 1 gave %+v, %v, want next=1", got, err)
+	}
+	if got, err := proofreadSpeech(t.Context(), newReplyModel("").ask, speech(10), batchShape{size: 4, overlap: 2}, 2, 2); err != nil || got.isDone || got.next != 3 {
+		t.Errorf("overlap == limit gave %+v, %v, want next=3", got, err)
+	}
+
+	boom := errors.New("boom")
+	if _, err := proofreadSpeech(t.Context(), func(context.Context, string, string) (string, error) {
+		return "", boom
+	}, speech(4), batchShape{size: 2, overlap: 0}, 0, 0); !errors.Is(err, boom) {
+		t.Errorf("first ask error got %v, want boom", err)
+	}
+
+	calls := 0
+	if _, err := proofreadSpeech(t.Context(), func(context.Context, string, string) (string, error) {
+		calls++
+		if calls == 1 {
+			return "1-9|overflow", nil
+		}
+		if calls == 3 {
+			return "", boom
+		}
+		return "", nil
+	}, speech(4), batchShape{size: 2, overlap: 0}, 0, 0); !errors.Is(err, boom) {
+		t.Errorf("seam ask error got %v, want boom", err)
 	}
 }
 

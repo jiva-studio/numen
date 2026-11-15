@@ -2,8 +2,8 @@ syntax = "proto3";
 
 // What a client may ask of a vault by typing into it.
 //
-// things: SearchNames answers with names, and SearchPassages with the passages
-// of text a vault holds. A client drawing them apart asks each of them.
+// things: SearchNames answers with names, and SearchText with the search
+// results of text a vault holds. A client drawing them apart asks each of them.
 package numen.v1;
 
 import "numen/v1/note.proto";
@@ -18,16 +18,16 @@ service SearchService {
   // the last word matches on its prefix.
   //
   // It reads names and nothing else. Searching the text a vault holds is
-  // SearchPassages, and that answers with passages.
+  // SearchText, and that answers with search results.
   rpc SearchNames(SearchNamesRequest) returns (SearchNamesResponse);
 
-  // SearchPassages is the text a vault holds that answers what was typed, by
+  // SearchText is the text a vault holds that answers what was typed, by
   // the words in it or by what it means or by what a section is called. The
   // caller says which way it is asked, so a client drawing them apart asks once
   // for each.
-  rpc SearchPassages(SearchPassagesRequest) returns (SearchPassagesResponse);
+  rpc SearchText(SearchTextRequest) returns (SearchTextResponse);
 
-  // CancelSearch stops the SearchNames or SearchPassages call that carries the
+  // CancelSearch stops the SearchNames or SearchText call that carries the
   // search id. A client that aborts its request does not stop the call in the
   // core, so it sends this to free the work the call still does. A cancel that
   // arrives before its call is kept for a few seconds and cancels the call if
@@ -98,10 +98,10 @@ enum SearchMode {
   SEARCH_MODE_HYBRID = 4;
 }
 
-message SearchPassagesRequest {
+message SearchTextRequest {
   string query = 1;
 
-  // How many passages to answer with. Zero takes the number the vault chooses.
+  // How many search results to answer with. Zero takes the number the vault chooses.
   int32 limit = 2;
 
   SearchMode mode = 3;
@@ -117,14 +117,14 @@ message CancelSearchRequest {
 
 message CancelSearchResponse {}
 
-message SearchPassagesResponse {
-  // The passages that answer, best first, one per source.
-  repeated Passage found = 1;
+message SearchTextResponse {
+  // The search results that answer, best first, one per source.
+  repeated SearchResult found = 1;
 }
 
-// Passage is what a search returns: the text around a hit, and where it came
+// SearchResult is what a search returns: the text around a hit, and where it came
 // from.
-message Passage {
+message SearchResult {
   // The file the text was read out of, as the vault calls it.
   string path = 1;
 
@@ -138,19 +138,19 @@ message Passage {
   // Where in that text the words typed stand, counted the way a client counts
   // text: in UTF-16 code units. Empty for a hit by meaning, which relies on no
   // word in particular.
-  repeated Range ranges = 4;
+  repeated Range match_ranges = 4;
 
   // What the source's own numbering calls the place, empty when the format
   // offered none.
-  string location = 5;
+  string place_label = 5;
 
   // counted in bytes. With the path above it is the place this opens, and a hit
   // in a note carries it as every other hit does.
-  Range range = 6;
+  Range byte_range = 6;
 
   // Where the chunk that matched stands, counted from the first line of the
   // source's prose. It is the line a note opens on, and the caret stands there.
-  int32 line = 7;
+  int32 match_line = 7;
 
   // The `type` key of the note's frontmatter, so a client draws a note as what it is.
   // Empty for an ordinary note. It says nothing about a source that is not a note.

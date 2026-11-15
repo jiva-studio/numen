@@ -113,7 +113,7 @@ func (h *reviewHandler) GetVaultDeckPreset(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.flash().Schedules.Presets.GetForDeck(ctx, v, req.Deck)
+	found, err := h.flash().Schedules.Presets.GetForDeck.Execute(ctx, v, req.Deck)
 	return presetwire.NewVaultDeckPresetResponse(found, err, h.newTitler(ctx, v))
 }
 

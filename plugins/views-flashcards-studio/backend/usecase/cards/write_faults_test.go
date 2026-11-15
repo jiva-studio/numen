@@ -20,8 +20,11 @@ const wrenDeck = "\n## Wren\n\n[[Animal]]\n\n### Name\n\nWren\n"
 
 func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
-	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
+	newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
 	before := read(t, vs.first, "decks/Wrens.md")
+	w := cards.NewWrite(
+		vs.ports.Readers, shut{t: t, isWatched: true, hold: errOutOfReach},
+		unanswered{}, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 
 	_, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md",
 		wrenDeck+strings.Repeat("a", format.MaxDeckBytes), domain.FileStat{})
@@ -36,7 +39,8 @@ func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 func TestACardModelOverTheBoundOfANoteIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
+		vs.ports.Readers, shut{t: t, isWatched: true, hold: errOutOfReach},
+		vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 	before := read(t, vs.first, "Animal.md")
 
 	_, err := w.CardModel(t.Context(), vs.first, "Animal.md",

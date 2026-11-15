@@ -45,7 +45,8 @@ type Result struct {
 // Count counts one vault. The vault is brought up to date before it is counted. Nothing is counted
 // from a walk half done, and the numbers arrive with the count that the finished walk wakes.
 func Count(ctx context.Context, index Indexer, due DueCounter, v domain.Vault) Result {
-	one := Result{Vault: v, IsIndexing: false, Unread: "", Counts: review.CardsDue{ReviewCards: 0, Due: 0, New: 0, Decks: nil, Presets: nil}}
+	var noCounts review.CardsDue
+	one := Result{Vault: v, IsIndexing: false, Unread: "", Counts: noCounts}
 	state, err := index.EnsureIndexed(ctx)
 	if err != nil {
 		one.Unread = err.Error()
