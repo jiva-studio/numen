@@ -74,6 +74,7 @@ func getTypeText(t searchquery.ValueType) string {
 		return "one list of texts in quotes"
 	case searchquery.TypeBool, searchquery.TypeSearchResults:
 		return "one condition"
+	case searchquery.TypeTimestamp, searchquery.TypeDyn:
 	}
 	return "one value"
 }
