@@ -73,3 +73,18 @@ var vaultRowSQL string
 
 //go:embed sql/small_chunks.sql
 var smallChunksSQL string
+
+//go:embed sql/documents.sql
+var documentsSQL string
+
+//go:embed sql/document_vectors.sql
+var documentVectorsSQL string
+
+//go:embed sql/words.sql
+var wordsSQL string
+
+//go:embed sql/words_paths.sql
+var wordsPathsSQL string
+
+//go:embed sql/word_scores.sql
+var wordScoresSQL string
