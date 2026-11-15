@@ -1,3 +1,5 @@
+import { columnsInAll } from './columnCount'
+import { columnPitch } from './columnPitch'
 import type { Flow } from './spread'
 
 /**
@@ -8,25 +10,9 @@ import type { Flow } from './spread'
  */
 export const NARROWEST = 448
 
-function columnPitch(flow: Flow): number {
-  if (flow.columns <= 0) return 0
-  return flow.width / flow.columns
-}
-
 /** How wide one column is set: its share of the area, less the gap it keeps. */
 export function columnWidth(flow: Flow): number {
   return Math.max(columnPitch(flow) - flow.gap, 0)
-}
-
-/**
- * How many columns the text evaluates to. The count is taken off the whole run and
- * rounded once: a trailing gap adds no column, and nothing drifts over a long
- * document.
- */
-export function columnsInAll(flow: Flow): number {
-  const pitch = columnPitch(flow)
-  if (pitch <= 0 || flow.contentWidth <= 0) return 0
-  return Math.max(1, Math.round(flow.contentWidth / pitch))
 }
 
 /**

@@ -1,7 +1,5 @@
 import type { JsonValue } from '@numen/plugin-sdk'
-
-/** The hours between two checks where the setting holds no usable number. */
-export const DEFAULT_INTERVAL_HOURS = 4
+import { DEFAULT_INTERVAL_HOURS } from './intervalDefault'
 
 /** The waits before a check is repeated after one that reached no answer, the last repeating. */
 export const RETRY_DELAYS_MS: readonly number[] = [10_000, 60_000, 15 * 60_000]

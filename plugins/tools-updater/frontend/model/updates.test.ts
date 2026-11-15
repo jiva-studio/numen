@@ -5,7 +5,8 @@ import {
   createUpdates,
   type Timer,
 } from './updates'
-import { DEFAULT_INTERVAL_HOURS, RETRY_DELAYS_MS, SETTLE_DELAY_MS, getIntervalMs } from './waits'
+import { DEFAULT_INTERVAL_HOURS } from './intervalDefault'
+import { RETRY_DELAYS_MS, SETTLE_DELAY_MS, getIntervalMs } from './waits'
 
 const APP: AppInfo = { name: 'numen', version: '2026.9.0', build: 900, platform: 'windows' }
 const HOUR = 60 * 60 * 1000

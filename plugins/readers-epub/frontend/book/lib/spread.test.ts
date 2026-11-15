@@ -12,11 +12,13 @@ import {
   type Flow,
   type Mark,
 } from './spread'
-import { NARROWEST, columnWidth, columnsInAll, countSpreads, getColumn, getSpread } from './columnGrid'
+import { columnsInAll } from './columnCount'
+import { NARROWEST, columnWidth, countSpreads, getColumn, getSpread } from './columnGrid'
 import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
 import { goToPage, dragPage } from './pageStep'
-import { EDGE, SWIPE, pressPage, swipePage } from './pageGesture'
+import { pressPage, swipePage } from './pageGesture'
+import { EDGE, SWIPE } from './pageGestureSizes'
 import type { TextRange } from '@numen/ui'
 import type { PageNavigationAction } from '@numen/ui'
 

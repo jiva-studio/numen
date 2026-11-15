@@ -1,7 +1,5 @@
 import type { PageNavigationAction } from '@numen/ui'
-
-/** Minimum horizontal distance in CSS pixels for a swipe gesture. */
-export const SWIPE = 40
+import { EDGE, SWIPE } from './pageGestureSizes'
 
 /** Determine page turn direction from swipe delta. */
 export function swipePage(delta: number): PageNavigationAction | undefined {
@@ -9,9 +7,6 @@ export function swipePage(delta: number): PageNavigationAction | undefined {
   if (delta >= SWIPE) return 'back'
   return undefined
 }
-
-/** Edge margin ratio of the reading area that triggers a page turn tap. */
-export const EDGE = 0.15
 
 /** Which way a press across the reading area turns the page. */
 export function pressPage(x: number, width: number): PageNavigationAction | undefined {
