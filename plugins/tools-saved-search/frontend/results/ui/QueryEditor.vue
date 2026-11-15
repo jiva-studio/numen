@@ -9,7 +9,6 @@
 import { computed, onMounted, useTemplateRef } from 'vue'
 import { Button } from '@numen/ui'
 import { WORDS as words } from '../../words'
-import { getProblemText } from '../lib/problemText'
 import { FormatIcon } from '../model/icons'
 import type { QueryFunction, QueryProblem } from '../lib/queryLanguage'
 import { useQueryEditor } from '../model/queryEditor'
@@ -85,7 +84,7 @@ function onPickProblem(problem: QueryProblem) {
       <li v-for="(problem, index) in shownProblems" :key="index">
         <button type="button" class="saved-search__query-problem" @click="onPickProblem(problem)">
           <span class="saved-search__query-place">{{ problem.line }}:{{ problem.column }}</span>
-          <span class="saved-search__query-message">{{ getProblemText(problem.message) }}</span>
+          <span class="saved-search__query-message">{{ problem.message }}</span>
         </button>
       </li>
       <li v-if="hiddenProblemCount > 0" class="saved-search__query-more">

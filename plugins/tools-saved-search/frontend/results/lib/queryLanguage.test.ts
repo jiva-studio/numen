@@ -178,15 +178,15 @@ describe('getQueryDiagnostics', () => {
     expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe(') tags("pier")')
   })
 
-  it('says a message of the parser in plain words', () => {
+  it('shows the message of the core as it is', () => {
     const doc = Text.of(['words("gale")', 'e'])
 
     const [diagnostic] = getQueryDiagnostics(doc, [
-      { line: 2, column: 1, message: "extraneous input 'e' expecting <EOF>" },
+      { line: 2, column: 1, message: 'Put this text in quotes: e' },
     ])
 
     expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe('e')
-    expect(diagnostic!.message).toBe('Unexpected “e”: the query should end here')
+    expect(diagnostic!.message).toBe('Put this text in quotes: e')
   })
 })
 

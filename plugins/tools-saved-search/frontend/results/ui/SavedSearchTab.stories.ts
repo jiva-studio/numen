@@ -529,19 +529,17 @@ export const UnderlinesTheProblemOfTheSavedQuery: Story = {
   },
 }
 
-const PARSER_PROBLEM = "extraneous input 'meanin' expecting <EOF>"
-const PLAIN_PROBLEM = 'Unexpected “meanin”: the query should end here'
+const PROBLEM = 'Unknown function meanin'
 
 /**
- * A query the core rejects is underlined at its place with its message in plain words in one tooltip on
- * hover, drawn outside the tab, and listed as line:column and message below the query, where a click
- * puts the cursor at it; the parser's own words are not shown, the note keeps its query, and the editor
- * stays open.
+ * A query the core rejects is underlined at its place with the core's message in one tooltip on hover,
+ * drawn outside the tab, and listed as line:column and message below the query, where a click puts the
+ * cursor at it; the note keeps its query, and the editor stays open.
  */
 export const UnderlinesAQueryNotSaved: Story = {
   parameters: { reach: EDITOR_KEEPS_TAB },
   args: {
-    updateAnswer: { errors: [{ line: 1, column: 18, message: PARSER_PROBLEM }] },
+    updateAnswer: { errors: [{ line: 1, column: 18, message: PROBLEM }] },
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
@@ -558,7 +556,6 @@ export const UnderlinesAQueryNotSaved: Story = {
     })
     await expect(underlined).toHaveTextContent(/^meanin$/)
     await expect(canvas.queryByRole('alert')).toBeNull()
-    await expect(canvas.queryByText(new RegExp(PARSER_PROBLEM))).toBeNull()
 
     const browser = await import('vitest/browser')
     await browser.userEvent.hover(underlined)
@@ -567,11 +564,11 @@ export const UnderlinesAQueryNotSaved: Story = {
       if (shown.length !== 1) throw new Error(`${shown.length} problem tooltips, want one`)
       return shown[0]!
     })
-    await expect(lint).toHaveTextContent(PLAIN_PROBLEM)
+    await expect(lint).toHaveTextContent(PROBLEM)
     await expect(canvasElement.querySelector('.saved-search')?.contains(lint)).toBe(false)
 
     const problems = canvas.getByRole('list', { name: 'Problems in the query' })
-    await expect(problems).toHaveTextContent(new RegExp(`^\\s*1:18\\s*${PLAIN_PROBLEM}\\s*$`))
+    await expect(problems).toHaveTextContent(new RegExp(`^\\s*1:18\\s*${PROBLEM}\\s*$`))
     await browser.userEvent.click(within(problems).getByRole('button'))
     await browser.userEvent.keyboard('X')
     await expect(editor).toHaveTextContent('words("gale") && Xmeanin("a night at sea")')

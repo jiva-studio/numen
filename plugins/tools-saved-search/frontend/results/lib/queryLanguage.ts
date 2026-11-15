@@ -8,7 +8,6 @@ import type { Diagnostic } from '@codemirror/lint'
 import type { Text } from '@codemirror/state'
 import { tags as t } from '@lezer/highlight'
 import { WORDS as words } from '../../words'
-import { getProblemText } from './problemText'
 
 /**
  * A function, a variable or a stage of the catalog, or a method of a text; kind is "function",
@@ -176,8 +175,8 @@ const getProblemRange = (doc: Text, from: number): { from: number; to: number } 
 }
 
 /**
- * The problems as diagnostics in plain words: each from its line and column to the end of the name or
- * string there, to the end of the line from any other place, and over the last character from the end
+ * The problems as diagnostics with the message of the core: each from its line and column to the end
+ * of the name or string there, to the end of the line from any other place, and over the last character from the end
  * of a line, so every problem underlines at least one character of a query that has one.
  */
 export function getQueryDiagnostics(doc: Text, problems: readonly QueryProblem[]): Diagnostic[] {
@@ -186,6 +185,6 @@ export function getQueryDiagnostics(doc: Text, problems: readonly QueryProblem[]
     const line = doc.line(lineNumber)
     const start = Math.min(line.from + Math.max(problem.column - 1, 0), line.to)
     const { from, to } = getProblemRange(doc, start)
-    return { from, to, severity: 'error', message: getProblemText(problem.message) }
+    return { from, to, severity: 'error', message: problem.message }
   })
 }

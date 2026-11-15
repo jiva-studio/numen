@@ -37,15 +37,6 @@ export const WORDS = {
   ],
   page: 'Page',
   results: 'Results',
-  problem: {
-    unexpectedAtEnd: (token: string) => `Unexpected “${token}”: the query should end here`,
-    unexpected: (token: string) => `Unexpected “${token}” here`,
-    missingAtEnd: (token: string) => `Missing “${token}” at the end of the query`,
-    missing: (token: string, at: string) => `Missing “${token}” before “${at}”`,
-    unreadable: (token: string) => `Cannot read the query at “${token}”`,
-    notAllowed: (token: string) => `“${token}” is not allowed in a query`,
-    endsEarly: 'The query ends too early',
-  },
 } as const
 
 /** The words the tab is drawn with. */
