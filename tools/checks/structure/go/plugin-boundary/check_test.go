@@ -103,6 +103,8 @@ func TestModuleWalk_FindsThePlantedRequirement(t *testing.T) {
 		"func register(roles roles) error {\n\treturn roles.Discovery.RegisterBuiltIn(alpha.Manifest, serve(alphaservice.Mount))\n}\n"
 	uses := "package main\n\n" + imports +
 		"func register(roles roles) error {\n\treturn roles.Discovery.Register(alpha.Manifest, serve(alphaservice.Mount))\n}\n"
+	mountOnly := "package main\n\n" + imports +
+		"func register(roles roles) error {\n\treturn roles.Discovery.RegisterBuiltIn(other.Manifest, serve(alphaservice.Mount, alpha.Name))\n}\n"
 	root := load.WriteTreeFixture(t, map[string]string{
 		"libs/core/go.mod":                     "module example.test/core\n\ngo 1.26\n\n" + alpha,
 		"libs/clean/go.mod":                    "module example.test/clean\n\ngo 1.26\n",
@@ -110,6 +112,8 @@ func TestModuleWalk_FindsThePlantedRequirement(t *testing.T) {
 		"apps/desktop/cmd/numen/main_test.go":  registers,
 		"apps/imported/go.mod":                 "module example.test/imported\n\ngo 1.26\n\n" + alpha,
 		"apps/imported/cmd/numen/core.go":      uses,
+		"apps/mounted/go.mod":                  "module example.test/mounted\n\ngo 1.26\n\n" + alpha,
+		"apps/mounted/cmd/numen/core.go":       mountOnly,
 		"apps/mobile/go.mod":                   "module example.test/mobile\n\ngo 1.26\n\n" + alpha + beta,
 		"apps/mobile/cmd/numen-linked/core.go": registers,
 		"apps/mobile/nested/go.mod":            "module example.test/nested\n\ngo 1.26\n\n" + beta,
@@ -122,6 +126,7 @@ func TestModuleWalk_FindsThePlantedRequirement(t *testing.T) {
 		"apps/desktop/go.mod requires a plugin: requires " + load.PluginsPrefix + "alpha",
 		"apps/imported/go.mod requires a plugin: requires " + load.PluginsPrefix + "alpha",
 		"apps/mobile/go.mod requires a plugin: requires " + load.PluginsPrefix + "beta",
+		"apps/mounted/go.mod requires a plugin: requires " + load.PluginsPrefix + "alpha",
 		"libs/core/go.mod requires a plugin: requires " + load.PluginsPrefix + "alpha",
 	}
 	if !slices.Equal(found, want) {

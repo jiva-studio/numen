@@ -272,6 +272,8 @@ graph LR
 - A protocol RPC or an export of the shared SDK serves plugins of more than one family, except the parts §11 (c) keeps for one consumer. What one plugin or one family uses lives in that plugin or in a contract. What nothing outside tests uses is deleted (`go/dead-exports`).
 - Every new package, type, RPC or export of the core, the core protocol or the shared SDK answers one question: which product domain does it know, and why is it not in a plugin or a contract? The answer "none" is the only one that keeps it there.
 
+**(m) The mobile app links its plugins into one binary.** A phone runs one process, so the mobile app links the plugins it ships into its binary and registers each with `RegisterBuiltIn`; they run in process and answer on the same routes as a plugin process. The desktop and every library never require a plugin. A `go.mod` requires a plugin only when the non-test code of its own module passes that plugin's `Manifest` to `RegisterBuiltIn` (`go/plugin-boundary`). The owner decided this on 2026-11-15.
+
 ### Comparison with established architectures
 
 - **Clean Architecture dependency rule.** Source code dependencies point inward. Here the plugins are the outermost ring. The SDK is the interface between the core and the plugins. The core loads plugins by manifest and never imports them. Composition roots (`libs/core/kernel/container`, the application entry points) wire the concrete parts together.

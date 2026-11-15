@@ -22,7 +22,10 @@ import (
 	"golang.org/x/mod/modfile"
 )
 
-const linkedRegistration = "RegisterBuiltIn"
+const (
+	linkedRegistration = "RegisterBuiltIn"
+	linkedManifest     = "Manifest"
+)
 
 type pluginRequirement struct {
 	module string
@@ -109,15 +112,15 @@ func listRegisteredImports(file *ast.File) []string {
 		if callee, ok := call.Fun.(*ast.SelectorExpr); !ok || callee.Sel.Name != linkedRegistration {
 			return true
 		}
-		for _, arg := range call.Args {
-			ast.Inspect(arg, func(node ast.Node) bool {
-				if selector, ok := node.(*ast.SelectorExpr); ok {
-					if pkg, ok := selector.X.(*ast.Ident); ok && plugins[pkg.Name] != "" {
-						registered = append(registered, plugins[pkg.Name])
-					}
-				}
-				return true
-			})
+		if len(call.Args) == 0 {
+			return true
+		}
+		manifest, ok := call.Args[0].(*ast.SelectorExpr)
+		if !ok || manifest.Sel.Name != linkedManifest {
+			return true
+		}
+		if pkg, ok := manifest.X.(*ast.Ident); ok && plugins[pkg.Name] != "" {
+			registered = append(registered, plugins[pkg.Name])
 		}
 		return true
 	})
