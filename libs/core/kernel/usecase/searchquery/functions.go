@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -26,7 +27,7 @@ var ErrNoFunctions = errors.New("plugin functions are not answered here")
 // functionCalls are the answers of the plugin functions of one query: every path of the calls found whole, and the
 // paths asked about of the others.
 type functionCalls struct {
-	functions  SearchFunctions
+	functions  pluginport.SearchFunctions
 	query      searchquery.Query
 	vaultID    string
 	generation string
@@ -38,7 +39,7 @@ type functionCalls struct {
 	warning    []string
 }
 
-func newFunctionCalls(functions SearchFunctions, v domain.Vault, q searchquery.Query, limits searchquery.Limits, generation string) *functionCalls {
+func newFunctionCalls(functions pluginport.SearchFunctions, v domain.Vault, q searchquery.Query, limits searchquery.Limits, generation string) *functionCalls {
 	known := make([]map[string]bool, len(q.Calls))
 	for i := range known {
 		known[i] = map[string]bool{}

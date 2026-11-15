@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 )
 
 func newDeepWorld(t *testing.T) world {
@@ -151,7 +151,7 @@ func TestAKindAloneReturnsOneWholeFilePerDocumentByPath(t *testing.T) {
 }
 
 func TestAMeaningWithoutAModelReturnsErrNoModelAndReadsNothing(t *testing.T) {
-	find := searchquery.NewFindSearchResults(searchquery.FindSearchResultsDeps{Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: newClock()})
+	find := searchquerytest.New(searchquerytest.Deps{Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: newClock()})
 	_, err := find.Execute(t.Context(), newWorld(t, nil).v, searchquerydomain.Request{Text: `meaning("a")`})
 	if !errors.Is(err, searchquerydomain.ErrNoModel) {
 		t.Errorf("returned %v, want ErrNoModel", err)

@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 )
 
 const (
@@ -75,17 +76,17 @@ func (s *services) sentTexts(address string) [][]string {
 func (w world) newRerankingFind(s *services, limits searchquerydomain.StageLimits) *searchquery.FindSearchResults {
 	deps := w.newDeps(nil)
 	world := s.world
-	deps.Codec = rerankproto.Codec{}
-	deps.Calls = modelcall.NewCalls(
+	deps.Stages.Codec = rerankproto.Codec{}
+	deps.Stages.Calls = modelcall.NewCalls(
 		modelcall.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows},
 		world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside,
 	)
-	deps.Rows = modelcall.NewRows(world.Resolve, world.Rows.ListRows, nil)
-	deps.Resolve = world.Resolve
-	deps.Results = w.db.OperationResults(1000)
+	deps.Stages.Rows = modelcall.NewRows(world.Resolve, world.Rows.ListRows, nil)
+	deps.Stages.Resolve = world.Resolve
+	deps.Stages.Results = w.db.OperationResults(1000)
 	deps.Clock = world.Clock
-	deps.StageLimits = limits
-	return searchquery.NewFindSearchResults(deps)
+	deps.Stages.Limits = limits
+	return searchquerytest.New(deps)
 }
 
 func readRerankRequest(payload []byte) (string, []string) {

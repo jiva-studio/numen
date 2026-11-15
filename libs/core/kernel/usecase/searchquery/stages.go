@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func (u *FindSearchResults) applyStages(
+func (u *ApplyStages) Execute(
 	ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, req searchquery.Request,
 ) (searchquery.SearchResults, error) {
 	for _, stage := range q.Stages {
@@ -31,7 +31,7 @@ func (u *FindSearchResults) applyStages(
 	return r, nil
 }
 
-func (u *FindSearchResults) rerank(
+func (u *ApplyStages) rerank(
 	ctx context.Context, v domain.Vault, r searchquery.SearchResults, s searchquery.RerankStage, req searchquery.Request,
 ) (searchquery.SearchResults, error) {
 	limits := u.reranker.limits
@@ -57,7 +57,7 @@ func (u *FindSearchResults) rerank(
 	return reranked, nil
 }
 
-func (u *FindSearchResults) readUnitTexts(
+func (u *ApplyStages) readUnitTexts(
 	ctx context.Context, v domain.Vault, r searchquery.SearchResults, units []searchquery.RerankUnit,
 ) ([]string, error) {
 	files, err := u.openFiles(v)
@@ -96,7 +96,7 @@ type unitFiles struct {
 	cache    map[string]fileText
 }
 
-func (u *FindSearchResults) openFiles(v domain.Vault) (*unitFiles, error) {
+func (u *ApplyStages) openFiles(v domain.Vault) (*unitFiles, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return nil, err

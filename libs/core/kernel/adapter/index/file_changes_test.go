@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/changefeed"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
@@ -133,14 +134,14 @@ func TestTrimmedRemovalsMakeAnOlderCursorReset(t *testing.T) {
 	}
 	removal := getFeedHead(t, db, v).Cursor
 
-	if err := db.TrimFileChanges(t.Context(), time.Hour); err != nil {
+	if err := changefeed.Trim(t.Context(), db.write, time.Hour); err != nil {
 		t.Fatal(err)
 	}
 	if got := listChanges(t, db, v, 0); len(got) != 1 {
 		t.Fatalf("a removal of now was trimmed: the feed holds %+v", got)
 	}
 
-	if err := db.TrimFileChanges(t.Context(), -time.Hour); err != nil {
+	if err := changefeed.Trim(t.Context(), db.write, -time.Hour); err != nil {
 		t.Fatal(err)
 	}
 	if got := listChanges(t, db, v, 0); len(got) != 0 {
@@ -206,7 +207,7 @@ func TestAChangeDuringAFullReadIsAfterTheCursorTakenBeforeIt(t *testing.T) {
 	cursor := getFeedHead(t, db, v).Cursor
 
 	saveNoteWithFrontmatter(t, db, v, "b.md", map[string]any{"tags": "two"}, "B")
-	if _, err := db.FrontmatterQueries().ListFrontmatter(t.Context(), v.ID, frontmatter.Query{Limit: 1}); err != nil {
+	if _, err := db.NoteQueryReads().ListFrontmatter(t.Context(), v.ID, frontmatter.Query{Limit: 1}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -223,7 +224,7 @@ func TestTheStartOfTheFeedReadsAfterTrimmedRemovals(t *testing.T) {
 	if err := db.Notes().Remove(t.Context(), v.ID, []string{"a.md"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.TrimFileChanges(t.Context(), -time.Hour); err != nil {
+	if err := changefeed.Trim(t.Context(), db.write, -time.Hour); err != nil {
 		t.Fatal(err)
 	}
 	head := getFeedHead(t, db, v)

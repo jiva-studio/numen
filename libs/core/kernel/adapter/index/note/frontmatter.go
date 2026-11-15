@@ -16,14 +16,9 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// FrontmatterQueries reads the stored frontmatter of the notes.
-type FrontmatterQueries struct{ db *sql.DB }
-
-func NewFrontmatterQueries(db *sql.DB) *FrontmatterQueries { return &FrontmatterQueries{db: db} }
-
 // ListFrontmatter returns the stored frontmatter of the notes the query names, in path order. A note
 // without frontmatter has no values; a path with no note is left out.
-func (q *FrontmatterQueries) ListFrontmatter(ctx context.Context, vaultID domain.VaultID, query frontmatter.Query) ([]frontmatter.Note, error) {
+func (q *QueryReads) ListFrontmatter(ctx context.Context, vaultID domain.VaultID, query frontmatter.Query) ([]frontmatter.Note, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -37,7 +32,7 @@ func (q *FrontmatterQueries) ListFrontmatter(ctx context.Context, vaultID domain
 	return q.listFrontmatterAt(ctx, vault, query)
 }
 
-func (q *FrontmatterQueries) listFrontmatterAfter(ctx context.Context, vault int64, query frontmatter.Query) (_ []frontmatter.Note, err error) {
+func (q *QueryReads) listFrontmatterAfter(ctx context.Context, vault int64, query frontmatter.Query) (_ []frontmatter.Note, err error) {
 	rows, err := q.db.QueryContext(ctx, frontmatterAfterSQL, vault, query.After, query.Limit)
 	if err != nil {
 		return nil, err
@@ -60,7 +55,7 @@ func (q *FrontmatterQueries) listFrontmatterAfter(ctx context.Context, vault int
 	return out, rows.Err()
 }
 
-func (q *FrontmatterQueries) listFrontmatterAt(ctx context.Context, vault int64, query frontmatter.Query) (_ []frontmatter.Note, err error) {
+func (q *QueryReads) listFrontmatterAt(ctx context.Context, vault int64, query frontmatter.Query) (_ []frontmatter.Note, err error) {
 	statement, err := prepareStatement(ctx, q.db, frontmatterAtSQL)
 	if err != nil {
 		return nil, err

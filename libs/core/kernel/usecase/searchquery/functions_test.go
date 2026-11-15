@@ -11,6 +11,7 @@ import (
 
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -102,8 +103,8 @@ func newShelfWorld(t *testing.T) world {
 func (w world) newShelfFind(plugin *shelfPlugin) *searchquery.FindSearchResults {
 	deps := w.newDeps(nil)
 	deps.Catalog = getShelfCatalog
-	deps.Functions = plugin
-	return searchquery.NewFindSearchResults(deps)
+	deps.Evaluate.Functions = plugin
+	return searchquerytest.New(deps)
 }
 
 func newShelves() *shelfPlugin {

@@ -45,11 +45,6 @@ type WordQueries interface {
 	GetWordScores(ctx context.Context, vaultID domain.VaultID, expression string, chunks []domain.ChunkID) (map[domain.ChunkID]float64, error)
 }
 
-// FloorReader returns the similarity floor of a vault under a recipe.
-type FloorReader interface {
-	GetFloor(ctx context.Context, v domain.Vault, recipe string) float64
-}
-
 // NoteContents reads what the frontmatter and the headings of the notes of a vault hold.
 type NoteContents interface {
 	// ListPropertyValues returns the path and the value of every note of the vault whose stored frontmatter
@@ -74,13 +69,4 @@ type LinkReaders interface {
 	// ListLinksByName returns the links written in the notes of the vault whose target's last segment folds
 	// to the name, with the path of the note each is written in and without resolution.
 	ListLinksByName(ctx context.Context, vaultID domain.VaultID, foldedName string) ([]domain.ResolvedLink, error)
-}
-
-// SearchFunctions answers the functions plugins contribute to the query language. An answer holds only paths
-// the function holds for; ErrInvalidFunctionArguments wrapped in the error is arguments the plugin refuses.
-type SearchFunctions interface {
-	// MatchDocuments returns the paths among paths the call holds for.
-	MatchDocuments(ctx context.Context, call searchquery.FunctionCall, paths []string) (searchquery.FunctionAnswer, error)
-	// FindDocuments returns at most limit paths the call holds for and an estimate of their count.
-	FindDocuments(ctx context.Context, call searchquery.FunctionCall, limit int) (searchquery.FunctionAnswer, error)
 }

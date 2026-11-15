@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -40,10 +41,10 @@ func (markdownTypes) ListExtensions(domain.ContentType) []string { return nil }
 
 func newQueryDeps(t *testing.T) stubSession {
 	t.Helper()
-	return newQuerySession(t, func(*index.DB, *searchquery.FindSearchResultsDeps) {})
+	return newQuerySession(t, func(*index.DB, *searchquerytest.Deps) {})
 }
 
-func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchquery.FindSearchResultsDeps)) stubSession {
+func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchquerytest.Deps)) stubSession {
 	t.Helper()
 	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
 	if err != nil {
@@ -71,13 +72,16 @@ func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchquery.F
 		}
 	}
 	search := db.ChunkSearch()
-	deps := searchquery.FindSearchResultsDeps{
-		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search,
-		Places: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
-		Floors: fixedQueryFloor{}, ContentTypes: markdownTypes{}, Contents: db.NoteQueries(), Links: db.NoteQueries(), Clock: testsupport.NewClock(),
+	deps := searchquerytest.Deps{
+		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: testsupport.NewClock(),
+		Evaluate: searchquery.EvaluateQueryDeps{
+			Documents: search, Vectors: search, Places: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
+			Floors:       fixedQueryFloor{},
+			ContentTypes: markdownTypes{}, Contents: db.NoteQueryReads(), Links: db.NoteQueryReads(),
+		},
 	}
 	change(db, &deps)
-	find := searchquery.NewFindSearchResults(deps)
+	find := searchquerytest.New(deps)
 	return stubSession{
 		Vaults: createVaultList(v),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {

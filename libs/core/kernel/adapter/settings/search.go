@@ -23,29 +23,31 @@ const (
 	searchKeyPrefix = "search."
 )
 
-var searchNumberNames = []string{
-	"rerankWindow",
-	"maxReranked",
-	"maxRerankedBytes",
-	"defaultLimit",
-	"maxLimit",
-	"candidatesPerCondition",
-	"maxCandidates",
-	"maxPathPrefixes",
-	"mergeGapBytes",
-	"maxQueryBytes",
+func getSearchNumberNames() []string {
+	return []string{
+		"rerankWindow",
+		"maxReranked",
+		"maxRerankedBytes",
+		"defaultLimit",
+		"maxLimit",
+		"candidatesPerCondition",
+		"maxCandidates",
+		"maxPathPrefixes",
+		"mergeGapBytes",
+		"maxQueryBytes",
+	}
 }
 
 // DefaultSearch returns the search settings the declaration of the shell gives.
 func DefaultSearch() Search {
 	s := Search{Numbers: map[string]float64{}}
-	for _, name := range searchNumberNames {
+	for _, name := range getSearchNumberNames() {
 		s.Numbers[name] = getAppNumber(searchKeyPrefix + name)
 	}
 	return s
 }
 
-func (s Search) MarshalJSON() ([]byte, error) {
+func (s *Search) MarshalJSON() ([]byte, error) {
 	var out bytes.Buffer
 	out.WriteString(`{`)
 	if len(s.Reranking) > 0 {
@@ -57,7 +59,7 @@ func (s Search) MarshalJSON() ([]byte, error) {
 		out.Write(rows)
 		out.WriteString(`,`)
 	}
-	for index, name := range searchNumberNames {
+	for index, name := range getSearchNumberNames() {
 		if index > 0 {
 			out.WriteString(`,`)
 		}
@@ -81,7 +83,7 @@ func (s *Search) UnmarshalJSON(raw []byte) error {
 			return err
 		}
 	}
-	for _, name := range searchNumberNames {
+	for _, name := range getSearchNumberNames() {
 		member, isFound := members[name]
 		if !isFound {
 			continue
@@ -108,14 +110,14 @@ func (s *Search) reset(key string) {
 		return
 	}
 	name := strings.TrimPrefix(key, searchKeyPrefix)
-	if slices.Contains(searchNumberNames, name) {
+	if slices.Contains(getSearchNumberNames(), name) {
 		s.setNumber(name, getAppNumber(key))
 	}
 }
 
-// GetSearchLimits returns the limits of a query and of its stages the settings in force set.
-func (f *File) GetSearchLimits() (searchquery.Limits, searchquery.StageLimits) {
-	n := f.Search.Numbers
+// GetLimits returns the limits of a query and of its stages the settings in force set.
+func (s *Search) GetLimits() (searchquery.Limits, searchquery.StageLimits) {
+	n := s.Numbers
 	limits := searchquery.DefaultLimits()
 	limits.DefaultLimit = int(n["defaultLimit"])
 	limits.MaxLimit = int(n["maxLimit"])
@@ -130,7 +132,7 @@ func (f *File) GetSearchLimits() (searchquery.Limits, searchquery.StageLimits) {
 	return limits, stages
 }
 
-func (f *File) dropInvalidAppRows(registries settingsdomain.Registries) {
+func dropInvalidAppRows(f *File, registries settingsdomain.Registries) {
 	if len(f.Search.Reranking) == 0 {
 		return
 	}
