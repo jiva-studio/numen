@@ -29,7 +29,7 @@ func newListHandler(open window, readers vaultport.VaultReaders) *filewindow.Han
 			file.NewListFolder(file.NewGetFolderEntries(readers, nil), file.NewListTabKinds(fileKinds, choose)),
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),
-		filewindow.NewChanges(open, open, nil, nil, nil, nil),
+		filewindow.NewChanges(open, open, nil, nil, nil),
 	)
 }
 

@@ -2,10 +2,10 @@
  * What a search answers, read into the window's own words: a part of a match
  * the answer left out reads as nothing, and a passage is a start and a length.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SEARCH_MODE } from '@numen/core-client'
-import { installCoreAnswers } from '@numen/core-client/testing'
-import { searchCore } from './search'
+import { createAnsweredClients } from '@/testing/coreAnswers'
+import { createSearchCore } from './search'
 
 const search = {
   searchNames: vi.fn(),
@@ -13,15 +13,10 @@ const search = {
   cancelSearch: vi.fn(),
 }
 
-let restore: () => void
+const searchCore = createSearchCore(createAnsweredClients({ search }).search)
 
 beforeEach(() => {
   vi.clearAllMocks()
-  restore = installCoreAnswers({ search })
-})
-
-afterEach(() => {
-  restore()
 })
 
 describe('a name searched for', () => {

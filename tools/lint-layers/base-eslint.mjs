@@ -208,6 +208,47 @@ export const lifetimes = [
   { name: 'matchMedia', port: 'a prop, or CSS where the browser already knows' },
 ]
 
+/** The globals of the browser page, which `model/` code and components take through a port. */
+export const pageGlobals = ['window', 'document', 'navigator', 'location']
+
+/** The lookups by which a component would find its own children in the document. */
+const templateRefProperties = ['querySelector', 'querySelectorAll', 'getElementById'].map((property) => ({
+  object: 'document',
+  property,
+  message: 'a component finding its own children takes a template ref',
+}))
+
+/**
+ * The rules that ban globals in one block: the lifetimes always, and, where `pagePort` says how
+ * the files reach them instead, the page globals, bare and through `globalThis`. ESLint replaces
+ * the options of a rule set again in a later block instead of merging them, so every block that
+ * bans globals takes its whole list from here.
+ *
+ * @param {string | undefined} pagePort How the files reach the page globals
+ * @param {Array<object>} properties The other properties the block bans
+ * @returns {Record<string, unknown>}
+ */
+export function createGlobalRules(pagePort, properties = []) {
+  const lifetimeGlobals = lifetimes.map(({ name, port }) => ({
+    name,
+    message: `${name} has a lifetime a test must hold still — take ${port}`,
+  }))
+  if (!pagePort) return { 'no-restricted-globals': ['error', ...lifetimeGlobals] }
+  const message = (name) => `${name} belongs to the browser page — ${pagePort}`
+  return {
+    'no-restricted-globals': [
+      'error',
+      ...lifetimeGlobals,
+      ...pageGlobals.map((name) => ({ name, message: message(name) })),
+    ],
+    'no-restricted-properties': [
+      'error',
+      ...properties,
+      ...pageGlobals.map((property) => ({ object: 'globalThis', property, message: message(property) })),
+    ],
+  }
+}
+
 /**
  * Selectors that ban the wall clock (`Date.now()`, `new Date()`) and the monotonic clock
  * (`performance.now()`). When `clockFunction` names a function declaration, the wall clock is
@@ -286,8 +327,9 @@ export function createPureSegmentConfig(options = {}) {
 }
 
 /**
- * The block that bans, in the sources of `files`, the globals with a lifetime a test must hold
- * still and the calls that read the clock, randomness or the window.
+ * The block that bans, in the sources of `files`, the calls that read the clock, randomness or the
+ * window. It sets no `no-restricted-globals`: the base configuration bans the globals, and a list
+ * set here would replace the one of the base.
  *
  * @param {{ files: string[], ignores?: string[], clockFunction?: string, monotonicFunction?: string }} options
  * @returns {object}
@@ -297,13 +339,6 @@ export function createPortConfig({ files, ignores = [], ...clockFunctions }) {
     files,
     ignores,
     rules: {
-      'no-restricted-globals': [
-        'error',
-        ...lifetimes.map(({ name, port }) => ({
-          name,
-          message: `${name} has a lifetime a test must hold still — take ${port}`,
-        })),
-      ],
       'no-restricted-syntax': ['error', ...createDeterminismSelectors(clockFunctions)],
     },
   }
@@ -498,24 +533,7 @@ export function createBaseConfig(dirname, options = {}) {
         'vue/no-useless-mustaches': 'error',
         'vue/prefer-true-attribute-shorthand': 'error',
         'vue/prefer-use-template-ref': 'error',
-        'no-restricted-properties': [
-          'error',
-          {
-            object: 'document',
-            property: 'querySelector',
-            message: 'a component finding its own children takes a template ref',
-          },
-          {
-            object: 'document',
-            property: 'querySelectorAll',
-            message: 'a component finding its own children takes a template ref',
-          },
-          {
-            object: 'document',
-            property: 'getElementById',
-            message: 'a component finding its own children takes a template ref',
-          },
-        ],
+        'no-restricted-properties': ['error', ...templateRefProperties],
       },
     },
 
@@ -529,13 +547,7 @@ export function createBaseConfig(dirname, options = {}) {
         ...(options.portIgnores || []),
       ],
       rules: {
-        'no-restricted-globals': [
-          'error',
-          ...lifetimes.map((l) => ({
-            name: l.name,
-            message: `reach through ${l.port}`,
-          })),
-        ],
+        ...createGlobalRules(),
         'no-restricted-syntax': [
           'error',
           ...createDeterminismSelectors(options),
@@ -578,12 +590,7 @@ export function createBaseConfig(dirname, options = {}) {
             ],
           },
         ],
-        'no-restricted-globals': [
-          'error',
-          { name: 'window', message: 'model/ must not access window directly — use a platform/DOM port' },
-          { name: 'document', message: 'model/ must not access document directly — use a platform/DOM port' },
-          { name: 'navigator', message: 'model/ must not access navigator directly — use a platform/DOM port' },
-        ],
+        ...createGlobalRules('take it as a parameter, with `win` of @numen/ui as the browser default'),
       },
     },
 
@@ -599,12 +606,7 @@ export function createBaseConfig(dirname, options = {}) {
             ],
           },
         ],
-        'no-restricted-globals': [
-          'error',
-          { name: 'window', message: '.vue components must not access window directly — delegate to a composable or port' },
-          { name: 'document', message: '.vue components must not access document directly — use template refs or a composable' },
-          { name: 'navigator', message: '.vue components must not access navigator directly — delegate to a composable or port' },
-        ],
+        ...createGlobalRules('delegate to a composable, or take a template ref', templateRefProperties),
       },
     },
 

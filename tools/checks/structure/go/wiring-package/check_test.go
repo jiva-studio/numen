@@ -10,7 +10,8 @@ import (
 )
 
 // The rule rejects a package that imports a use case and a driven adapter, and accepts a driving adapter,
-// a driven adapter, a package that imports one of the two, and the exempt composition root.
+// a driven adapter, a package that imports one of the two, a package that imports two use cases of which
+// one implements a port, and the exempt composition root.
 func TestWiringPackageRule_RejectsAPackageThatBuildsUseCasesFromDrivenAdapters(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
 		"port/noteport/noteport.go": "package noteport\n\ntype Notes interface{ Read() string }\n",
@@ -46,6 +47,16 @@ func Build() *find.Find { return find.New(&store.Store{}) }
 import "fixture/usecase/find"
 
 func Run(f *find.Find) {}
+`,
+		"usecase/read/read.go": "package read\n\ntype Read struct{}\n\nfunc (Read) Read() string { return \"\" }\n",
+		"internal/pair/pair.go": `package pair
+
+import (
+	"fixture/usecase/find"
+	"fixture/usecase/read"
+)
+
+func Build() *find.Find { return find.New(read.Read{}) }
 `,
 		"internal/stores/stores.go": `package stores
 

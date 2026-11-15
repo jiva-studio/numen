@@ -107,7 +107,7 @@ describe("the selection of changed checks", () => {
     assert.ok(noteDomain.includes("go/transports"));
     assert.ok(noteDomain.includes("go/use-case-fields"));
     assert.ok(getRunningChecks(["plugins/engines-transcription/backend/main.go"]).includes("go/use-case-fields"));
-    assert.ok(getRunningChecks(["plugins/readers-pdf/frontend/api/types.ts"]).includes("ts/api-types"));
+    assert.ok(getRunningChecks(["plugins/readers-pdf/frontend/api/types.ts"]).includes("go/api-types"));
   });
 
   it("selects the check whose own code changed, with the reason", () => {

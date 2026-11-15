@@ -9,12 +9,15 @@ import {
   type HostKinds,
   type HostTabs,
   type PluginHostDeps,
+  type ProcessHost,
 } from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
 import { registerTabKindIcon } from '@/entities/note'
-import { healthReports, processHost } from '@/entities/plugin'
+import type { HealthApi, PluginHostApi } from '@/entities/plugin'
+import type { SettingsStore } from '@/entities/settings'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { PluginServices } from './pluginServices'
+import { createRowChangeSubscriber } from './pluginSettings'
 
 /** The host dependencies of one concern, by group; the host reads the ones it is given. */
 export type HostParts = {
@@ -74,12 +77,13 @@ export function createTabActionParts(deps: {
   }
 }
 
-/** The notes, files, buffers and vaults, and the workspace, commands and frame the window gives a plugin. */
+/** The notes, files, buffers, vaults and texts, and the workspace, commands and frame the window gives a plugin. */
 export function createVaultServiceParts(deps: {
   readonly services: Pick<
     PluginServices,
     'workspace' | 'notes' | 'relations' | 'files' | 'buffers' | 'commands' | 'vaults' | 'window'
   >
+  readonly api: Pick<PluginHostApi, 'getPluginTexts'>
 }): HostParts {
   const { services } = deps
   return {
@@ -94,21 +98,28 @@ export function createVaultServiceParts(deps: {
       getFiles: () => services.files,
       getBuffers: () => services.buffers,
       getVaults: () => services.vaults,
+      getTexts: (pluginId) => deps.api.getPluginTexts(pluginId),
     },
   }
 }
 
-/** The tasks, the health items and the plugins that run the window gives a plugin. */
+/** The tasks, the connections, the health items and the plugins that run the window gives a plugin. */
 export function createTaskServiceParts(deps: {
   readonly services: Pick<PluginServices, 'taskList' | 'backgroundTasks'>
+  readonly processes: ProcessHost
+  readonly healthReports: HealthApi['healthReports']
+  readonly api: Pick<PluginHostApi, 'getPluginConnections'>
+  readonly rest: SettingsStore
 }): HostParts {
   const { services } = deps
+  const subscribeRowChanges = createRowChangeSubscriber(deps.rest)
   return {
     work: {
       getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
       getBackgroundTasks: () => services.backgroundTasks,
-      getProcesses: () => processHost,
-      health: healthReports,
+      getProcesses: () => deps.processes,
+      health: deps.healthReports,
+      getConnections: (pluginId) => deps.api.getPluginConnections(pluginId, subscribeRowChanges),
     },
   }
 }

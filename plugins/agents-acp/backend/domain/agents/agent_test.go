@@ -42,15 +42,19 @@ func TestAnACPProgramOfAKnownNameIsStartedWithItsArguments(t *testing.T) {
 }
 
 func TestAnACPConnectionRequiresAProgram(t *testing.T) {
-	if _, err := Find(TypeACP, "  ", fakePath{}.lookPath); !errors.Is(err, ErrNoProgram) {
-		t.Errorf("Find = %v, want %v", err, ErrNoProgram)
+	agent, err := Find(TypeACP, "  ", fakePath{}.lookPath)
+	if !errors.Is(err, ErrNoProgram) || agent.Type != TypeACP || agent.Command != nil {
+		t.Errorf("Find = %+v, %v, want Type=%q, nil Command, %v", agent, err, TypeACP, ErrNoProgram)
 	}
 }
 
 func TestAProgramThatIsNotThereIsNotFound(t *testing.T) {
-	for _, lookPath := range []func(string) (string, error){fakePath{}.lookPath, nil} {
-		if _, err := Find(TypeACP, "/opt/orchard-agent", lookPath); !errors.Is(err, ErrNotFound) {
-			t.Errorf("Find = %v, want %v", err, ErrNotFound)
+	emptyLookPath := func(string) (string, error) { return "", nil }
+	errWithPath := func(string) (string, error) { return "/opt/orchard-agent", errors.New("permission denied") }
+	for _, lookPath := range []func(string) (string, error){fakePath{}.lookPath, nil, emptyLookPath, errWithPath} {
+		agent, err := Find(TypeACP, "/opt/orchard-agent", lookPath)
+		if !errors.Is(err, ErrNotFound) || agent.Type != TypeACP || agent.Command != nil {
+			t.Errorf("Find = %+v, %v, want Type=%q, nil Command, %v", agent, err, TypeACP, ErrNotFound)
 		}
 	}
 }

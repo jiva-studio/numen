@@ -16,7 +16,7 @@ import type {
 } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { write } from '../lib/write'
-import { getSettings, updateSettings } from '../api/settings'
+import type { SettingsApi } from '../api/settings'
 import { getSettingAt } from '../lib/settingAt'
 
 /** Every label shown in the window. */
@@ -72,9 +72,12 @@ const getDeclaredDefault = (
   return plugin?.settings.find((one) => one.key === key[0])?.default
 }
 
-const askVault = async (): Promise<Configuration | undefined> => {
+/** The calls the settings are read and written through. */
+export type SettingsStoreApi = Pick<SettingsApi, 'getSettings' | 'updateSettings'>
+
+const askVault = async (api: SettingsStoreApi): Promise<Configuration | undefined> => {
   try {
-    return await getSettings()
+    return await api.getSettings()
   } catch {
     return undefined
   }
@@ -88,8 +91,8 @@ const parseSettingsText = (text: string): JsonValue | undefined => {
   }
 }
 
-const readVault = async (words: Words, say: MessageWriter) => {
-  const answer = await askVault()
+const readVault = async (api: SettingsStoreApi, words: Words, say: MessageWriter) => {
+  const answer = await askVault(api)
   if (answer === undefined) return undefined
   const file = parseSettingsText(answer.written)
   if (file === undefined) {
@@ -99,7 +102,7 @@ const readVault = async (words: Words, say: MessageWriter) => {
   return { answer, file }
 }
 
-export function createSettingsStore(words: Words, say: MessageWriter) {
+export function createSettingsStore(api: SettingsStoreApi, words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
   const target = shallowRef<JsonValue>({})
 
@@ -109,13 +112,13 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
   const app = shallowRef<readonly PluginSettingInfo[]>([])
 
   const requested = createRemoteValues<SettingEdit>((values) =>
-    updateSettings([...values.values()]),
+    api.updateSettings([...values.values()]),
   )
 
   /** The settings values, requested once the window is up and after every write. */
   const start = async (): Promise<void> => {
     const pendingRead = requested.beginRead()
-    const read = await readVault(words, say)
+    const read = await readVault(api, words, say)
     if (read === undefined) return
     const { answer } = read
     requested.takeRead(pendingRead, () => {

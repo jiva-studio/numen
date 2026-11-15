@@ -1,14 +1,15 @@
 /**
  * Background streaming subscriptions for the window.
  */
-import type { Ref, ShallowRef } from 'vue'
+import type { ShallowRef } from 'vue'
 import type { createFollower } from '@numen/ui'
-import { watchEdits, type NoteEdit } from '@/entities/note'
-import { watchFocus, watchTasks, type Task } from '@/entities/window'
-import { watchPluginHealth, type PluginHealthItem } from '@/entities/plugin'
-import { watchVaultChanges, type VaultChange } from '@/entities/vault'
+import type { NoteApi, NoteEdit } from '@/entities/note'
+import type { FocusApi, Task, TaskApi } from '@/entities/window'
+import type { HealthApi, PluginHealthItem } from '@/entities/plugin'
+import type { VaultChange, VaultStateApi } from '@/entities/vault'
 import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
+import type { useDisplayOpening } from './useDisplayOpening'
 
 /** What the window reads of the vault it asks about: whether its scan is done and what failed. */
 export interface VaultScan {
@@ -20,9 +21,10 @@ type Follows = ReturnType<typeof createFollower>
 
 /** What the stream of the changes to the vault reaches. */
 export interface VaultStreamDeps {
+  readonly watchVaultChanges: VaultStateApi['watchVaultChanges']
   readonly follows: Follows
   readonly listening: AbortController
-  readonly opening: Ref<string>
+  readonly opening: Pick<ReturnType<typeof useDisplayOpening>, 'path' | 'read'>
   readonly isVaultSwapped: () => Promise<boolean>
   readonly reload: () => void
   readonly onVaultChanged: (
@@ -30,12 +32,12 @@ export interface VaultStreamDeps {
     renamed: readonly PathRename[],
     versionPaths: readonly string[],
   ) => Promise<void> | void
-  readonly readInitialNote: () => Promise<string>
   readonly ask: () => Promise<VaultScan>
 }
 
 /** What the stream of the changes to the notes reaches. */
 export interface EditStreamDeps {
+  readonly watchEdits: NoteApi['watchEdits']
   readonly follows: Follows
   readonly listening: AbortController
   readonly reportChange: (edit: NoteEdit) => void
@@ -43,6 +45,7 @@ export interface EditStreamDeps {
 
 /** What the stream of the requests to show a note reaches. */
 export interface FocusStreamDeps {
+  readonly watchFocus: FocusApi['watchFocus']
   readonly follows: Follows
   readonly listening: AbortController
   readonly travelTo: (path: string) => Promise<void> | void
@@ -52,6 +55,7 @@ export interface FocusStreamDeps {
 
 /** What the stream of the running tasks reaches. */
 export interface TaskStreamDeps {
+  readonly watchTasks: TaskApi['watchTasks']
   readonly follows: Follows
   readonly listening: AbortController
   readonly tasks: ShallowRef<readonly Task[]>
@@ -60,6 +64,7 @@ export interface TaskStreamDeps {
 
 /** What the stream of the health items of the plugins reaches. */
 export interface HealthStreamDeps {
+  readonly watchPluginHealth: HealthApi['watchPluginHealth']
   readonly follows: Follows
   readonly listening: AbortController
   readonly items: ShallowRef<readonly PluginHealthItem[]>
@@ -95,8 +100,8 @@ async function handleVaultChange(change: VaultChange, deps: VaultStreamDeps): Pr
     return
   }
   await reportVaultChange(change, deps)
-  if (change.renamed.some((went) => went.from === deps.opening.value)) {
-    await attempt(deps.readInitialNote)
+  if (change.renamed.some((went) => went.from === deps.opening.path.value)) {
+    await attempt(deps.opening.read)
   }
   await attempt(deps.ask)
 }
@@ -136,7 +141,7 @@ export function createVaultStream(deps: VaultStreamDeps): () => Promise<void> {
     deps.follows(
       () => {
         isOpening = true
-        return watchVaultChanges(deps.listening.signal)
+        return deps.watchVaultChanges(deps.listening.signal)
       },
       async (change) => {
         if (isOpening) {
@@ -152,7 +157,7 @@ export function createVaultStream(deps: VaultStreamDeps): () => Promise<void> {
 export function createEditStream(deps: EditStreamDeps): () => Promise<void> {
   return () =>
     deps.follows(
-      () => watchEdits(deps.listening.signal),
+      () => deps.watchEdits(deps.listening.signal),
       (response) => {
         // The stream opens with an empty message, which distinguishes an open
         // stream from one that never opened.
@@ -165,7 +170,7 @@ export function createEditStream(deps: EditStreamDeps): () => Promise<void> {
 export function createFocusStream(deps: FocusStreamDeps): () => Promise<void> {
   return () =>
     deps.follows(
-      () => watchFocus(deps.listening.signal),
+      () => deps.watchFocus(deps.listening.signal),
       (request) => handleFocusChange(request, deps),
     )
 }
@@ -175,7 +180,7 @@ export function createTaskStream(deps: TaskStreamDeps): () => Promise<void> {
   const { tasks } = deps
   return () =>
     deps.follows(
-      () => watchTasks(deps.listening.signal),
+      () => deps.watchTasks(deps.listening.signal),
       async (list) => {
         const ran = tasks.value.length > 0
         tasks.value = list
@@ -189,7 +194,7 @@ export function createTaskStream(deps: TaskStreamDeps): () => Promise<void> {
 export function createHealthStream(deps: HealthStreamDeps): () => Promise<void> {
   return () =>
     deps.follows(
-      () => watchPluginHealth(deps.listening.signal),
+      () => deps.watchPluginHealth(deps.listening.signal),
       (list) => {
         deps.items.value = list
       },

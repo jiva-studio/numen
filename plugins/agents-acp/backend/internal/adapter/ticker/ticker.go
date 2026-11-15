@@ -15,6 +15,7 @@ func Start(period time.Duration, run func() error) func() error {
 	var lastErr error
 	go func() {
 		defer close(stopped)
+		defer ticks.Stop()
 		for {
 			select {
 			case <-done:
@@ -29,7 +30,6 @@ func Start(period time.Duration, run func() error) func() error {
 	var once sync.Once
 	return func() error {
 		once.Do(func() {
-			ticks.Stop()
 			close(done)
 			<-stopped
 		})

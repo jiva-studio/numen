@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -276,7 +277,7 @@ type Deps struct {
 type WindowPorts struct {
 	Pages    Pages
 	Writes   Writes
-	Tasks    Tasks
+	Tasks    windowport.Tasks
 	Changes  Changes
 	TabFront TabFront
 }
@@ -333,7 +334,7 @@ func NewScenarios(rt *Runtime, tabs *TabReports, deps Deps) *Scenarios {
 	var s Scenarios
 	s.Switching.Rebuild = NewRebuildSession(guard, session)
 	s.Switching.Show = NewShowVault(guard, session, deps.Vault.Identity, flush, deps.Window.Changes)
-	s.Switching.OpenPlugin = NewOpenPluginVault(guard, deps.Vault.Identity, deps.Window.Pages, nil)
+	s.Switching.OpenPlugin = NewOpenPluginVault(guard, deps.Vault.Identity, deps.Window.Pages, switchFunc(func(context.Context, domain.Vault, *PluginOpen) error { return errNoVaultSwitch }))
 	s.guard, s.identity = guard, deps.Vault.Identity
 	s.Closing.Flush = NewFlushPending(guard, flush)
 	s.Closing.Close = NewCloseWindow(deps.Shutdown.Door, session, deps.Shutdown.Closers...)

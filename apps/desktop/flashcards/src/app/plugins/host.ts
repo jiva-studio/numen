@@ -13,15 +13,16 @@ import {
   requireMountAccess,
   type BackgroundTaskHost,
   type CommandsHost,
+  type createPluginConnections,
   type Manifest,
+  type VaultRelations,
   type VaultsHost,
   type WindowHost,
 } from '@numen/plugin-loader'
 import { createNamedIcon } from '@numen/ui'
 import { openExternalUrl, type NoticeQueue, type WindowPlatform } from '@numen/workbench'
-import { createViewIssueReporter, getPluginConnections } from '@/entities/plugin'
+import { createViewIssueReporter } from '@/entities/plugin'
 import type { WindowTabs } from '@/entities/tab'
-import { windowRelations } from '@/entities/vault'
 import { loadFrameRuntime } from '@/app/runtime'
 import { TARGET } from '@/shared/lib/window'
 
@@ -34,11 +35,14 @@ interface ShellServices {
 }
 
 /**
- * What the host is made from: the tabs and notices it registers into, the services it offers (a plugin
- * gets none that is missing), and the platform the plugins read, Windows where none is given, as the
- * frame reports without the Wails runtime.
+ * What the host is made from: the relationships between notes and the connections of a plugin, the
+ * tabs and notices it registers into, the services it offers (a plugin gets none that is missing),
+ * and the platform the plugins read, Windows where none is given, as the frame reports without the
+ * Wails runtime.
  */
 interface ShellHostDeps {
+  readonly relations: VaultRelations
+  readonly getConnections: (pluginId: string) => ReturnType<typeof createPluginConnections>
   readonly tabs: Pick<WindowTabs, 'registerKind' | 'closeTab' | 'closePluginTab'>
   readonly notices: NoticeQueue
   readonly services?: Partial<ShellServices>
@@ -72,10 +76,10 @@ export function createShellHost(deps: ShellHostDeps) {
       getSlotEntries: readSlotEntries,
       reportViewIssue: createViewIssueReporter(notices),
     },
-    vault: { getVaults: () => services.vaults, getRelations: () => windowRelations },
+    vault: { getVaults: () => services.vaults, getRelations: () => deps.relations },
     work: {
       getBackgroundTasks: () => services.backgroundTasks,
-      getConnections: (pluginId) => getPluginConnections(pluginId),
+      getConnections: (pluginId) => deps.getConnections(pluginId),
     },
   })
   const { views } = pluginHost.contextHost

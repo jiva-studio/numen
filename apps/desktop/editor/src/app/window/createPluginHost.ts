@@ -5,9 +5,7 @@
 import { computed } from 'vue'
 import { SLOT, type PluginHost, type PluginStatus } from '@numen/plugin-loader'
 import type { NoticeQueue, WindowFrame } from '@numen/workbench'
-import { resolveNameLink } from '@/entities/note'
 import type { SettingsStore } from '@/entities/settings'
-import type { FileOpeners, WindowTabs } from '@/entities/tab'
 import {
   createNoticeParts,
   createPluginSupport,
@@ -21,21 +19,35 @@ import {
   type PluginNotes,
   type PluginServices,
 } from '@/features/plugin-host'
+import type { createTabsPart } from './createTabsPart'
+import type { WindowApi } from './createWindowApi'
 
 /** What the host parts that read the services of the window are made from. */
 export interface ServicePartsDeps {
+  readonly api: WindowApi
+  readonly rest: SettingsStore
   readonly services: PluginServices
   readonly notices: NoticeQueue
   readonly pluginNotes: PluginNotes
   readonly hostParts: readonly HostParts[]
 }
 
-/** The parts of the host, in the order they are merged: the services, the notices, the notes and the declarations. */
+/**
+ * The parts of the host, in the order they are merged: the services, the notices, the notes and the
+ * declarations.
+ */
 export function createServiceParts(deps: ServicePartsDeps): readonly HostParts[] {
   const { services, pluginNotes } = deps
+  const { plugins } = deps.api
   return [
-    createVaultServiceParts({ services }),
-    createTaskServiceParts({ services }),
+    createVaultServiceParts({ services, api: plugins.pluginHost }),
+    createTaskServiceParts({
+      services,
+      processes: plugins.processes,
+      healthReports: plugins.health.healthReports,
+      api: plugins.pluginHost,
+      rest: deps.rest,
+    }),
     createNoticeParts({ queue: deps.notices }),
     {
       kinds: {
@@ -43,7 +55,7 @@ export function createServiceParts(deps: ServicePartsDeps): readonly HostParts[]
         writeNote: pluginNotes.writeNote,
         getNoteBuffer: () => services.noteBuffer,
       },
-      vault: { resolveLink: resolveNameLink },
+      vault: { resolveLink: deps.api.vault.links.resolveNameLink },
     },
     ...deps.hostParts,
   ]
@@ -55,15 +67,15 @@ export interface PluginHostSupportDeps {
   readonly catalog: ReturnType<typeof createPluginCatalog>
   readonly status: PluginStatus
   readonly frame: Pick<WindowFrame, 'platform'>
-  readonly windowTabs: WindowTabs
-  readonly tabOpeners: FileOpeners
+  readonly tabs: ReturnType<typeof createTabsPart>
   readonly reports: ReturnType<typeof createPluginReports>
   readonly parts: readonly HostParts[]
 }
 
 /** The plugin host and the loader, over the tabs, the services and the declarations of the window. */
 export function createPluginHostSupport(deps: PluginHostSupportDeps) {
-  const { windowTabs, tabOpeners, reports } = deps
+  const { reports } = deps
+  const { windowTabs, tabOpeners } = deps.tabs
   return createPluginSupport({
     rest: deps.rest,
     catalog: deps.catalog,

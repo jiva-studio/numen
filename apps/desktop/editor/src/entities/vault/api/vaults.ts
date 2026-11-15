@@ -2,7 +2,7 @@
  * The vaults the installation holds, and the operations on the list.
  */
 import { VAULTS_ERROR_CODE, type VaultsErrorCodeValue } from '@numen/core-client'
-import { vaultsService } from '@/shared/api/clients'
+import type { WindowClients } from '@/shared/api/clients'
 import type { Vault, VaultAction, VaultErrorCode, VaultResult, Vaults } from '../lib/vault'
 
 interface VaultWire {
@@ -50,8 +50,10 @@ const mapNoValue = (from: { error?: VaultsErrorCodeValue | undefined }): VaultAc
   return error ? { ok: false, error } : { ok: true, value: null }
 }
 
-/** The vaults this installation holds, in the shape the window requests them. */
-export const vaults: Vaults = {
+/**
+ * The vaults this installation holds over `vaultsService`, in the shape the window requests them.
+ */
+export const createVaults = (vaultsService: WindowClients['vaultsService']): Vaults => ({
   list: async () => (await vaultsService.listVaults({})).vaults.map(mapVault),
   choose: async (title) => {
     const answer = await vaultsService.chooseFolder({ title, startingAt: '' })
@@ -62,4 +64,4 @@ export const vaults: Vaults = {
     mapVaultResult(await vaultsService.renameVault({ id, name: called })),
   remove: async (id, trash) => mapNoValue(await vaultsService.removeVault({ id, trash })),
   open: async (id) => mapNoValue(await vaultsService.openVault({ id })),
-}
+})

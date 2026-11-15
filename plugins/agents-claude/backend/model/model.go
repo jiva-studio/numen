@@ -66,21 +66,12 @@ type controlAnswer struct {
 // UnmarshalJSON reads the request id, which the program writes under a key that is not camelCase.
 func (a *controlAnswer) UnmarshalJSON(data []byte) error {
 	type plain controlAnswer
-	var read plain
-	if err := json.Unmarshal(data, &read); err != nil {
-		return err
-	}
 	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
+	err := errors.Join(json.Unmarshal(data, (*plain)(a)), json.Unmarshal(data, &raw))
 	if id, ok := raw["request_id"]; ok {
-		if err := json.Unmarshal(id, &read.RequestID); err != nil {
-			return err
-		}
+		return errors.Join(err, json.Unmarshal(id, &a.RequestID))
 	}
-	*a = controlAnswer(read)
-	return nil
+	return err
 }
 
 // Parse reads the models from the answer to the request with the given id in the output lines of

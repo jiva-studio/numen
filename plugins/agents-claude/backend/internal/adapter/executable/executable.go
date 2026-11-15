@@ -38,7 +38,7 @@ func (Finder) Find(customPath string) string {
 }
 
 func findIn(places []string, customPath string) string {
-	if customPath != "" && isRunnable(customPath) {
+	if isRunnable(customPath) {
 		return customPath
 	}
 	if cmd := os.Getenv("NUMEN_CLAUDE_COMMAND"); cmd != "" {
@@ -60,13 +60,10 @@ func locateExecutablePath(names, places []string) string {
 }
 
 func findInPlaces(places []string) string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = ""
-	}
+	home, homeErr := os.UserHomeDir()
 	for _, place := range places {
 		if after, ok := strings.CutPrefix(place, "~/"); ok {
-			if home == "" {
+			if homeErr != nil {
 				continue
 			}
 			place = filepath.Join(escapeGlob(home), after)

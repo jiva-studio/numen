@@ -31,7 +31,7 @@ func declaredWithRows(owner string) ([]manifest.Setting, bool) {
 }
 
 func knownConnections(name string) ([]string, bool) {
-	if name == settings.RegistryConnections {
+	if name == settingsdomain.RegistryConnections {
 		return []string{"c1f0a9e20", "c77b01d40"}, true
 	}
 	return nil, false
@@ -43,7 +43,7 @@ func checkRows(t *testing.T, rows string) error {
 	if err := json.Unmarshal([]byte(rows), &value); err != nil {
 		t.Fatal(err)
 	}
-	return settings.CheckWrite(declaredWithRows, knownConnections, []string{rowsPluginID, "connections"}, value)
+	return settingsdomain.CheckValue(declaredWithRows, knownConnections, []string{rowsPluginID, "connections"}, value)
 }
 
 func TestRowsOfExistingConnectionsAreAccepted(t *testing.T) {
@@ -68,20 +68,20 @@ func TestRowsThatBreakTheRulesOfTheSettingAreRejected(t *testing.T) {
 		rows string
 		want error
 	}{
-		"a text":                        {`"c1f0a9e20"`, settings.ErrWrongType},
-		"an object":                     {`{"connection":"c1f0a9e20","model":"m"}`, settings.ErrWrongType},
-		"a row that is a text":          {`["c1f0a9e20"]`, settings.ErrWrongType},
-		"a connection that is a number": {`[{"connection":7,"model":"m"}]`, settings.ErrWrongType},
-		"a model that is a number":      {`[{"connection":"c1f0a9e20","model":7}]`, settings.ErrWrongType},
-		"a reasoning that is a flag":    {`[{"connection":"c1f0a9e20","model":"m","reasoning":true}]`, settings.ErrWrongType},
-		"no connection":                 {`[{"model":"m"}]`, settings.ErrWrongType},
-		"an empty connection":           {`[{"connection":"","model":"m"}]`, settings.ErrWrongType},
-		"a connection that is gone":     {`[{"connection":"c00000000","model":"m"}]`, settings.ErrNotAnOption},
+		"a text":                        {`"c1f0a9e20"`, settingsdomain.ErrWrongType},
+		"an object":                     {`{"connection":"c1f0a9e20","model":"m"}`, settingsdomain.ErrWrongType},
+		"a row that is a text":          {`["c1f0a9e20"]`, settingsdomain.ErrWrongType},
+		"a connection that is a number": {`[{"connection":7,"model":"m"}]`, settingsdomain.ErrWrongType},
+		"a model that is a number":      {`[{"connection":"c1f0a9e20","model":7}]`, settingsdomain.ErrWrongType},
+		"a reasoning that is a flag":    {`[{"connection":"c1f0a9e20","model":"m","reasoning":true}]`, settingsdomain.ErrWrongType},
+		"no connection":                 {`[{"model":"m"}]`, settingsdomain.ErrWrongType},
+		"an empty connection":           {`[{"connection":"","model":"m"}]`, settingsdomain.ErrWrongType},
+		"a connection that is gone":     {`[{"connection":"c00000000","model":"m"}]`, settingsdomain.ErrNotAnOption},
 		"the same connection and options twice": {
-			`[{"connection":"c1f0a9e20","model":"m","reasoning":"low"},{"reasoning":"low","connection":"c1f0a9e20","model":"m"}]`, settings.ErrWrongType,
+			`[{"connection":"c1f0a9e20","model":"m","reasoning":"low"},{"reasoning":"low","connection":"c1f0a9e20","model":"m"}]`, settingsdomain.ErrWrongType,
 		},
 		"more rows than max": {
-			`[{"connection":"c1f0a9e20","model":"a"},{"connection":"c1f0a9e20","model":"b"},{"connection":"c77b01d40","model":"a"}]`, settings.ErrOutOfRange,
+			`[{"connection":"c1f0a9e20","model":"a"},{"connection":"c1f0a9e20","model":"b"},{"connection":"c77b01d40","model":"a"}]`, settingsdomain.ErrOutOfRange,
 		},
 	} {
 		if err := checkRows(t, c.rows); !errors.Is(err, c.want) {
@@ -91,7 +91,7 @@ func TestRowsThatBreakTheRulesOfTheSettingAreRejected(t *testing.T) {
 }
 
 func TestAnEmptyValueClearsTheRows(t *testing.T) {
-	err := settings.CheckWrite(declaredWithRows, knownConnections, []string{rowsPluginID, "connections"}, nil)
+	err := settingsdomain.CheckValue(declaredWithRows, knownConnections, []string{rowsPluginID, "connections"}, nil)
 
 	if err != nil {
 		t.Errorf("err = %v, want none", err)
@@ -104,7 +104,7 @@ func TestARowsSettingIsCheckedWithoutAListOfConnectionsWhenNoneIsGiven(t *testin
 		t.Fatal(err)
 	}
 
-	err := settings.CheckWrite(declaredWithRows, installedThemes, []string{rowsPluginID, "connections"}, value)
+	err := settingsdomain.CheckValue(declaredWithRows, installedThemes, []string{rowsPluginID, "connections"}, value)
 
 	if err != nil {
 		t.Errorf("err = %v, want none for a registry that does not list connections", err)
@@ -208,7 +208,7 @@ func checkDiscover(t *testing.T, owner, choices string) error {
 	if err := json.Unmarshal([]byte(choices), &value); err != nil {
 		t.Fatal(err)
 	}
-	return settings.CheckWrite(declaredWithRows, knownConnections, []string{owner, "discover"}, value)
+	return settingsdomain.CheckValue(declaredWithRows, knownConnections, []string{owner, "discover"}, value)
 }
 
 func TestTheChoiceToDiscoverIsAcceptedForASettingThatDiscovers(t *testing.T) {
@@ -224,10 +224,10 @@ func TestAChoiceToDiscoverThatBreaksTheRulesIsRejected(t *testing.T) {
 		owner, choices string
 		want           error
 	}{
-		"a flag":                           {rowsPluginID, `false`, settings.ErrWrongType},
-		"a text for the setting":           {rowsPluginID, `{"connections":"off"}`, settings.ErrWrongType},
-		"a setting that is no rows":        {rowsPluginID, `{"label":false}`, settings.ErrUndeclared},
-		"a setting that does not discover": {"md.numen.engines.embeddings", `{"connections":false}`, settings.ErrUndeclared},
+		"a flag":                           {rowsPluginID, `false`, settingsdomain.ErrWrongType},
+		"a text for the setting":           {rowsPluginID, `{"connections":"off"}`, settingsdomain.ErrWrongType},
+		"a setting that is no rows":        {rowsPluginID, `{"label":false}`, settingsdomain.ErrUndeclared},
+		"a setting that does not discover": {"md.numen.engines.embeddings", `{"connections":false}`, settingsdomain.ErrUndeclared},
 	} {
 		if err := checkDiscover(t, c.owner, c.choices); !errors.Is(err, c.want) {
 			t.Errorf("%s: err = %v, want %v", what, err, c.want)
@@ -268,7 +268,7 @@ func TestARowOfADetectedConnectionIsAcceptedOnWrite(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err := settings.CheckWrite(declaredWithRows, listConnectionsWithDetected, []string{rowsPluginID, "connections"}, value)
+		err := settingsdomain.CheckValue(declaredWithRows, listConnectionsWithDetected, []string{rowsPluginID, "connections"}, value)
 
 		if err != nil {
 			t.Errorf("%s: err = %v, want none", id, err)

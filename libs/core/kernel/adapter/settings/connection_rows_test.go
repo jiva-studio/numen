@@ -379,20 +379,6 @@ func TestReadRowSettingDoesNotDiscoverForAHiddenSetting(t *testing.T) {
 	}
 }
 
-func TestListGrantsReturnsTheOperationsEachPluginIsGrantedInPluginOrder(t *testing.T) {
-	world := newRowsWorld()
-	lantern := rowsPlugin("md.numen.agents.lantern", "Lantern agent")
-	lantern.Permissions = []string{"vault:read", manifest.FormatConnectionsUse("llm.chat"), manifest.FormatConnectionsUse("llm.profile")}
-	world.plugins = append(world.plugins, lantern)
-
-	grants := world.rows().ListGrants()
-
-	want := []connection.Grant{{PluginID: "md.numen.agents.lantern", PluginName: "Lantern agent", Operations: []string{"llm.chat", "llm.profile"}}}
-	if !reflect.DeepEqual(grants, want) {
-		t.Errorf("grants = %+v, want %+v", grants, want)
-	}
-}
-
 func TestReadRowSettingDoesNotDiscoverForAPluginWithNoSettingForTheOperation(t *testing.T) {
 	world := newRowsWorld()
 	lantern := rowsPlugin("md.numen.agents.lantern", "Lantern agent")
