@@ -61,5 +61,10 @@ describe('a command of a plugin', () => {
 
   it('whose condition cannot be read does not run', () => {
     expect(isCommandAvailable(declaration('target.isRemote'), NOTE, deps)).toBe(false)
+    expect(
+      isCommandAvailable(declaration("target.contentType == ''"), NOTE, {
+        whenReader: createWhenReader(),
+      }),
+    ).toBe(true)
   })
 })
