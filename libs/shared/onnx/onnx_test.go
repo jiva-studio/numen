@@ -43,3 +43,15 @@ func TestResolveLibraryIsTheSettingThenTheFolderThenTheHost(t *testing.T) {
 		}
 	}
 }
+
+func TestGetSessionProviderIsTheCPUUnlessTheHostNamesAProvider(t *testing.T) {
+	for _, one := range []struct {
+		name string
+		want Provider
+	}{{"", ProviderCPU}, {"auto", ProviderCPU}, {" AUTO ", ProviderCPU}, {"cuda", ProviderCUDA}} {
+		t.Setenv(EnvProvider, one.name)
+		if got := GetSessionProvider(); got != one.want {
+			t.Errorf("with %q, GetSessionProvider() = %q, want %q", one.name, got, one.want)
+		}
+	}
+}

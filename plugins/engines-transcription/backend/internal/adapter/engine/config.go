@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"strings"
-
 	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
 )
@@ -24,11 +22,4 @@ type sessionThreads struct {
 
 func getSessionThreads(cfg settings.Config) sessionThreads {
 	return sessionThreads{encoder: cfg.GetThreads(onnx.GetDefaultThreads()), decoder: 1, joiner: 1, segmenter: 1}
-}
-
-func getSessionProvider() onnx.Provider {
-	if name := onnx.GetProvider(); !strings.EqualFold(strings.TrimSpace(string(name)), string(onnx.DefaultProvider)) {
-		return name
-	}
-	return onnx.ProviderCPU
 }
