@@ -2,11 +2,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { parseManifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost } from './host'
+import type { PluginHost } from './host'
 import { getTargetValues } from '../when'
-import type { CommandDeclaration, PluginHostDeps } from './types'
+import type { CommandDeclaration } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
-type Manifest = Parameters<ReturnType<typeof createPluginHost>['lifecycle']['registerManifest']>[1]
+type Manifest = Parameters<PluginHost['lifecycle']['registerManifest']>[1]
 
 const NOTE = {
   path: 'Tides.md',
@@ -33,12 +34,12 @@ const LEDGER_MANIFEST = createMockManifest('org.example.ledger', {
 
 function create(
   declarations: CommandDeclaration[] = [LEDGER],
-  extra: Partial<PluginHostDeps> = {},
+  extra: Partial<TestHostDeps> = {},
   manifest?: Manifest,
 ) {
   const windowValues: Record<string, boolean> = {}
   const reportSlotIssue = vi.fn()
-  const host = createPluginHost({
+  const host = createTestPluginHost({
     target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),

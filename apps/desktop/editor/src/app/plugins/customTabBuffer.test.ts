@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { effectScope } from 'vue'
 import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
-import { createCustomTabKind, type PluginHostDeps } from '@numen/plugin-loader'
+import { createCustomTabKind, pickCustomTabParts } from '@numen/plugin-loader'
 import { blank } from '@/testing/stubs'
 import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 
@@ -53,8 +53,12 @@ function openNoteTab(path: string) {
   const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
   const kind = createCustomTabKind(
     'md.numen.notes',
-    { kind: 'note', component: blank, title: 'Note' },
-    { getNoteBuffer: () => notes, isNoteEditor: true } as unknown as PluginHostDeps,
+    pickCustomTabParts({ kind: 'note', component: blank, title: 'Note' }),
+    {
+      window: { target: 'desktop.editor' },
+      kinds: { registerKind: () => () => undefined, getNoteBuffer: () => notes },
+      isNoteEditor: true,
+    },
   )
   const scope = effectScope(true)
   const state = scope.run(() => kind.open(path, 'note:tab')) as unknown as BufferedState
@@ -160,29 +164,33 @@ describe('the links of a note tab of the note kind', () => {
     const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
     const kind = createCustomTabKind(
       'md.numen.notes',
-      { kind: 'note', component: blank, title: 'Note' },
+      pickCustomTabParts({ kind: 'note', component: blank, title: 'Note' }),
       {
-        getNoteBuffer: () => notes,
+        kinds: { getNoteBuffer: () => notes },
         isNoteEditor: true,
-        getNotes: () => ({
-          findNotes: async (query: string) =>
-            query.toLowerCase().startsWith('en')
-              ? [{ path: 'notes/Entropy.md', title: 'Entropy' }]
-              : [],
-          getHeadings: async () => new Map([['notes/Entropy.md', [{ text: 'Shannon formula' }]]]),
-        }),
-        getWorkspace: () => ({
-          files: {
-            open: (path: string, options?: { placement?: string }) =>
-              openCalls.push({
-                path,
-                ...(options?.placement ? { placement: options.placement } : {}),
-              }),
-          },
-        }),
-        resolveLink: async (_from: string, address: string) =>
-          address === 'name://Entropy' ? 'notes/Entropy.md' : '',
-      } as unknown as PluginHostDeps,
+        vault: {
+          getNotes: () => ({
+            findNotes: async (query: string) =>
+              query.toLowerCase().startsWith('en')
+                ? [{ path: 'notes/Entropy.md', title: 'Entropy' }]
+                : [],
+            getHeadings: async () => new Map([['notes/Entropy.md', [{ text: 'Shannon formula' }]]]),
+          }),
+          resolveLink: async (_from: string, address: string) =>
+            address === 'name://Entropy' ? 'notes/Entropy.md' : '',
+        },
+        window: {
+          getWorkspace: () => ({
+            files: {
+              open: (path: string, options?: { placement?: string }) =>
+                openCalls.push({
+                  path,
+                  ...(options?.placement ? { placement: options.placement } : {}),
+                }),
+            },
+          }),
+        },
+      } as unknown as Parameters<typeof createCustomTabKind>[2],
     )
     const scope = effectScope(true)
     const state = scope.run(() => kind.open('notes/Tide.md', 'note:tide')) as unknown as {
@@ -246,11 +254,10 @@ describe('note tab restored from the saved path', () => {
       await first.notes.flush()
       await wait()
       const saved = (
-        createCustomTabKind('md.numen.notes', {
-          kind: 'note',
-          component: blank,
-          title: 'Note',
-        }).address?.getOpenTab?.(first.state) ?? { path: '' }
+        createCustomTabKind(
+          'md.numen.notes',
+          pickCustomTabParts({ kind: 'note', component: blank, title: 'Note' }),
+        ).address?.getOpenTab?.(first.state) ?? { path: '' }
       ).path
       expect(saved).toBe(path)
 

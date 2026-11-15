@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
 import type { LoaderHost, PluginParts } from './host'
-import { createPluginLoader } from './loader'
+import { createTestPluginLoader } from './testing/pluginLoader'
 
 const HARBOR = 'org.example.harbor'
 const MANIFEST = { id: HARBOR, name: 'Harbor', version: '1.0.0', frontend: {} }
@@ -22,7 +22,7 @@ describe('a plugin whose module is read after the start limit', () => {
       disposeAll: vi.fn(),
       getSetting: <T>() => undefined as T,
     } satisfies LoaderHost
-    const loader = createPluginLoader({
+    const loader = createTestPluginLoader({
       host,
       fetch: (async (url: string) =>
         new Response(
@@ -61,7 +61,7 @@ describe('a plugin that started within the limit', () => {
       disposeAll: vi.fn(),
       getSetting: <T>() => undefined as T,
     } satisfies LoaderHost
-    const loader = createPluginLoader({
+    const loader = createTestPluginLoader({
       host,
       fetch: (async (url: string) =>
         new Response(

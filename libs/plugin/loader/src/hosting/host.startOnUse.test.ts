@@ -5,8 +5,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { ContributionMatch } from '../loading'
-import { createPluginHost } from './host'
-import type { CommandDeclaration, PluginHostDeps } from './types'
+import type { PluginHost } from './host'
+import type { CommandDeclaration } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const LEDGER = 'org.example.ledger'
 const LINKS = 'org.example.links'
@@ -36,11 +37,11 @@ const LINKS_MANIFEST = createMockManifest(LINKS, {
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 function createWindow(
-  starts: Record<string, (host: ReturnType<typeof createPluginHost>) => void>,
-  extra: Partial<PluginHostDeps> = {},
+  starts: Record<string, (host: PluginHost) => void>,
+  extra: Partial<TestHostDeps> = {},
 ) {
   const started: string[] = []
-  const deps: PluginHostDeps = {
+  const deps: TestHostDeps = {
     target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     getCommandDeclarations: () => [OPEN],
@@ -51,7 +52,7 @@ function createWindow(
     },
     ...extra,
   }
-  const host = createPluginHost(deps)
+  const host = createTestPluginHost(deps)
   return { host, started }
 }
 

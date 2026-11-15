@@ -6,6 +6,8 @@
 import {
   createPluginNotices,
   createPluginTasks,
+  type HostKinds,
+  type HostTabs,
   type PluginHostDeps,
   type ProcessHost,
 } from '@numen/plugin-loader'
@@ -17,23 +19,22 @@ import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { PluginServices } from './pluginServices'
 import { createRowChangeSubscriber } from './pluginSettings'
 
-/** The host dependencies of one concern; the host reads the ones it is given. */
-export type HostParts = Pick<
-  PluginHostDeps,
-  Exclude<keyof PluginHostDeps, 'target' | 'registerKind' | 'registerExtensionReader' | 'openTab'>
->
+/** The host dependencies of one concern, by group; the host reads the ones it is given. */
+export type HostParts = {
+  readonly [G in keyof PluginHostDeps]?: Partial<NonNullable<PluginHostDeps[G]>>
+}
 
 /** How a plugin registers the tab kinds and the readers it brings. */
 export type TabKindParts = Required<
   Pick<
-    PluginHostDeps,
+    HostKinds,
     'registerKind' | 'registerExtensionReader' | 'registerEditor' | 'closeTabsForPlugin'
   >
 >
 
 /** How a plugin opens, navigates and closes the tabs of the window. */
 export type TabActionParts = Required<
-  Pick<PluginHostDeps, 'openTab' | 'openTabAdjacent' | 'navigateTab' | 'closeTab' | 'getTabState'>
+  Pick<HostTabs, 'openTab' | 'openTabAdjacent' | 'navigateTab' | 'closeTab' | 'getTabState'>
 >
 
 export function createTabKindParts(deps: {
@@ -76,51 +77,50 @@ export function createTabActionParts(deps: {
   }
 }
 
-/** The notes, links, files, commands, vaults and window the window gives a plugin. */
+/** The notes, files, buffers, vaults and texts, and the workspace, commands and frame the window gives a plugin. */
 export function createVaultServiceParts(deps: {
   readonly services: Pick<
     PluginServices,
-    'workspace' | 'notes' | 'relations' | 'files' | 'commands' | 'vaults' | 'window'
+    'workspace' | 'notes' | 'relations' | 'files' | 'buffers' | 'commands' | 'vaults' | 'window'
   >
+  readonly api: Pick<PluginHostApi, 'getPluginTexts'>
 }): HostParts {
   const { services } = deps
   return {
-    getWorkspace: () => services.workspace,
-    getNotes: () => services.notes,
-    getRelations: () => services.relations,
-    getFiles: () => services.files,
-    getCommands: () => services.commands,
-    getVaults: () => services.vaults,
-    getWindow: () => services.window,
+    window: {
+      getWorkspace: () => services.workspace,
+      getCommands: () => services.commands,
+      getWindow: () => services.window,
+    },
+    vault: {
+      getNotes: () => services.notes,
+      getRelations: () => services.relations,
+      getFiles: () => services.files,
+      getBuffers: () => services.buffers,
+      getVaults: () => services.vaults,
+      getTexts: (pluginId) => deps.api.getPluginTexts(pluginId),
+    },
   }
 }
 
-/** The buffers, the tasks, the health items and the plugins that run the window gives a plugin. */
+/** The tasks, the connections, the health items and the plugins that run the window gives a plugin. */
 export function createTaskServiceParts(deps: {
-  readonly services: Pick<PluginServices, 'buffers' | 'noteBuffer' | 'taskList' | 'backgroundTasks'>
+  readonly services: Pick<PluginServices, 'taskList' | 'backgroundTasks'>
   readonly processes: ProcessHost
   readonly healthReports: HealthApi['healthReports']
-}): HostParts {
-  const { services } = deps
-  return {
-    getBuffers: () => services.buffers,
-    getNoteBuffer: () => services.noteBuffer,
-    getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
-    getBackgroundTasks: () => services.backgroundTasks,
-    getProcesses: () => deps.processes,
-    health: deps.healthReports,
-  }
-}
-
-/** The texts a plugin reads, and its connections, which are notified of each change of the rows. */
-export function createPluginApiParts(deps: {
-  readonly api: PluginHostApi
+  readonly api: Pick<PluginHostApi, 'getPluginConnections'>
   readonly rest: SettingsStore
 }): HostParts {
+  const { services } = deps
   const subscribeRowChanges = createRowChangeSubscriber(deps.rest)
   return {
-    getTexts: (pluginId) => deps.api.getPluginTexts(pluginId),
-    getConnections: (pluginId) => deps.api.getPluginConnections(pluginId, subscribeRowChanges),
+    work: {
+      getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
+      getBackgroundTasks: () => services.backgroundTasks,
+      getProcesses: () => deps.processes,
+      health: deps.healthReports,
+      getConnections: (pluginId) => deps.api.getPluginConnections(pluginId, subscribeRowChanges),
+    },
   }
 }
 
@@ -128,7 +128,9 @@ export function createPluginApiParts(deps: {
 export function createNoticeParts(deps: { readonly queue: NoticeQueue }): HostParts {
   const { queue } = deps
   return {
-    getNotices: (pluginId) => createPluginNotices(queue, pluginId),
-    clearNotices: (pluginId) => queue.clear(pluginId),
+    window: {
+      getNotices: (pluginId) => createPluginNotices(queue, pluginId),
+      clearNotices: (pluginId) => queue.clear(pluginId),
+    },
   }
 }
