@@ -34,53 +34,90 @@ func TestTheMountedPluginServesTheModelItsConfigureNames(t *testing.T) {
 	}
 }
 
-func TestMountRegistersCloseCallback(t *testing.T) {
+func mountMockPlugin(t *testing.T) (http.Handler, *server.Server) {
+	t.Helper()
+	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
+	var mounted *server.Server
+	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": linkedToken}, func(s *server.Server) error {
+		mounted = s
+		return Mount(s)
+	})
+	if err != nil {
+		t.Fatalf("NewLinkedHandler: %v", err)
+	}
+	return handler, mounted
+}
+
+func configureLocal(t *testing.T, handler http.Handler) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost,
+		"http://plugin/numen.v1.PluginLifecycleService/Configure", strings.NewReader(`{"config":{"source":"local"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+linkedToken)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Configure status = %d, want 200", rec.Code)
+	}
+}
+
+func embedQuery(t *testing.T, handler http.Handler, within time.Duration) int {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(t.Context(), within)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		"http://plugin/numen.v1.SearchSourceService/EmbedQueries", strings.NewReader(`{"queries":["boat"]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+linkedToken)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	return rec.Code
+}
+
+func TestConfiguringThePluginDoesNotLoadTheModel(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		t.Setenv("NUMEN_TEST_MOCK_ML", "true")
-		var mounted *server.Server
-		handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": linkedToken}, func(s *server.Server) error {
-			mounted = s
-			return Mount(s)
-		})
-		if err != nil {
-			t.Fatalf("NewLinkedHandler: %v", err)
+		handler, mounted := mountMockPlugin(t)
+		configureLocal(t, handler)
+		synctest.Wait()
+
+		t.Setenv("NUMEN_TEST_MOCK_OPEN_HOLD_MS", "60000")
+		if code := embedQuery(t, handler, 10*time.Millisecond); code == http.StatusOK {
+			t.Error("the first embed after Configure found the model already loaded")
 		}
+
+		if err := mounted.Close(); err != nil {
+			t.Errorf("mounted.Close: %v", err)
+		}
+	})
+}
+
+func TestTheModelLoadsOnTheFirstEmbed(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		handler, mounted := mountMockPlugin(t)
 		t.Cleanup(func() {
 			if err := mounted.Close(); err != nil {
 				t.Errorf("mounted.Close: %v", err)
 			}
 		})
-
-		cfgReq, err := http.NewRequestWithContext(t.Context(), http.MethodPost,
-			"http://plugin/numen.v1.PluginLifecycleService/Configure",
-			strings.NewReader(`{"config":{"source":"local"}}`))
-		if err != nil {
-			t.Fatal(err)
-		}
-		cfgReq.Header.Set("Content-Type", "application/json")
-		cfgReq.Header.Set("Authorization", "Bearer "+linkedToken)
-		cfgRec := httptest.NewRecorder()
-		handler.ServeHTTP(cfgRec, cfgReq)
-		if cfgRec.Code != http.StatusOK {
-			t.Fatalf("Configure status = %d, want 200", cfgRec.Code)
-		}
+		configureLocal(t, handler)
 		synctest.Wait()
 
-		t.Setenv("NUMEN_TEST_MOCK_OPEN_HOLD_MS", "60000")
-		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
-		defer cancel()
-		embReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
-			"http://plugin/numen.v1.SearchSourceService/EmbedQueries",
-			strings.NewReader(`{"queries":["boat"]}`))
-		if err != nil {
-			t.Fatal(err)
+		const loadTime = 200 * time.Millisecond
+		t.Setenv("NUMEN_TEST_MOCK_OPEN_HOLD_MS", "200")
+		start := time.Now()
+		code := embedQuery(t, handler, time.Minute)
+
+		if code != http.StatusOK {
+			t.Fatalf("EmbedQueries status = %d, want 200", code)
 		}
-		embReq.Header.Set("Content-Type", "application/json")
-		embReq.Header.Set("Authorization", "Bearer "+linkedToken)
-		embRec := httptest.NewRecorder()
-		handler.ServeHTTP(embRec, embReq)
-		if embRec.Code != http.StatusOK {
-			t.Fatalf("EmbedQueries status = %d: %s", embRec.Code, embRec.Body.String())
+		if waited := time.Since(start); waited < loadTime {
+			t.Errorf("the first embed waited %v, want the %v the model takes to load", waited, loadTime)
 		}
 	})
 }
