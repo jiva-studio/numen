@@ -3,6 +3,7 @@ package searchquery
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -20,6 +21,10 @@ func GetTypeName(t ValueType) string {
 		return "list(string)"
 	case TypeSearchResults:
 		return "SearchResults"
+	case TypeTimestamp:
+		return "timestamp"
+	case TypeDyn:
+		return "dyn"
 	}
 	return "unknown"
 }
@@ -33,6 +38,9 @@ func FormatSignatures(f Function) []string {
 	overloads := f.Overloads
 	if len(overloads) == 0 {
 		overloads = [][]ValueType{f.Args}
+	}
+	if len(f.OptionalArgs) > 0 {
+		overloads = append(overloads, append(slices.Clone(f.Args), f.OptionalArgs...))
 	}
 	name := f.Name
 	if f.IsStage {
