@@ -29,18 +29,19 @@ type Request struct {
 // FindSearchResultsDeps is what FindSearchResults reads. A nil Source is an installation with no model, and
 // a nil Texts reads the text of notes only. The zone of Clock reads a date written without an offset.
 type FindSearchResultsDeps struct {
-	Parser    QueryParser
-	Documents DocumentQueries
-	Vectors   VectorQueries
-	Words     WordQueries
-	Places    sourceport.ChunkPlaces
-	Matcher   sourceport.WordMatching
-	Readers   vaultport.VaultReaders
-	Texts     textdomain.Readers
-	Source    searchsourceport.QuerySource
-	Floors    FloorReader
-	Contents  NoteContents
-	Clock     machineport.Clock
+	Parser       QueryParser
+	Documents    DocumentQueries
+	Vectors      VectorQueries
+	Words        WordQueries
+	Places       sourceport.ChunkPlaces
+	Matcher      sourceport.WordMatching
+	Readers      vaultport.VaultReaders
+	Texts        textdomain.Readers
+	Source       searchsourceport.QuerySource
+	Floors       FloorReader
+	ContentTypes contenttypeport.ContentTypeTable
+	Contents     NoteContents
+	Clock        machineport.Clock
 }
 
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
