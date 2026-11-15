@@ -110,7 +110,7 @@ func TestTheFrontmatterOfEveryNoteIsReadInPagesInPathOrder(t *testing.T) {
 	saveNoteWithFrontmatter(t, db, getFirstVault(), "b.md", nil, "B")
 	saveNoteWithFrontmatter(t, db, getSecond(), "a0.md", map[string]any{"tags": "other"}, "Other")
 
-	first, err := db.NoteQueries().ListFrontmatter(t.Context(), getFirstVault().ID, frontmatter.Query{Keys: []string{"tags"}, Limit: 2})
+	first, err := db.FrontmatterQueries().ListFrontmatter(t.Context(), getFirstVault().ID, frontmatter.Query{Keys: []string{"tags"}, Limit: 2})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func TestTheFrontmatterOfEveryNoteIsReadInPagesInPathOrder(t *testing.T) {
 		first[1].Path != "b.md" || len(first[1].Values) != 0 {
 		t.Fatalf("the first page is %+v", first)
 	}
-	second, err := db.NoteQueries().ListFrontmatter(t.Context(), getFirstVault().ID, frontmatter.Query{After: "b.md", Limit: 2})
+	second, err := db.FrontmatterQueries().ListFrontmatter(t.Context(), getFirstVault().ID, frontmatter.Query{After: "b.md", Limit: 2})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +132,7 @@ func TestTheFrontmatterOfNamedNotesOmitsAPathWithNoNote(t *testing.T) {
 	saveNoteWithFrontmatter(t, db, getFirstVault(), "a.md", map[string]any{"tags": "a"}, "A")
 	saveNoteWithFrontmatter(t, db, getFirstVault(), "b.md", map[string]any{"tags": "b"}, "B")
 
-	got, err := db.NoteQueries().ListFrontmatter(t.Context(), getFirstVault().ID, frontmatter.Query{
+	got, err := db.FrontmatterQueries().ListFrontmatter(t.Context(), getFirstVault().ID, frontmatter.Query{
 		Paths: []string{"b.md", "gone.md", "a.md", "b.md"}, Limit: 10,
 	})
 	if err != nil {

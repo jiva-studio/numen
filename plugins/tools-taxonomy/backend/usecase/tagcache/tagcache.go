@@ -28,6 +28,11 @@ const CursorFile = "tags.cursor.json"
 // readPathLimit is the most notes one read of frontmatter names.
 const readPathLimit = 1000
 
+// Frontmatter reads the frontmatter of the notes of a vault.
+type Frontmatter interface {
+	ReadFrontmatter(ctx context.Context, q host.FrontmatterQuery) (host.FrontmatterPage, error)
+}
+
 // Store reads and writes a file of the plugin's folder of a vault's store.
 type Store interface {
 	Read(ctx context.Context, name string) ([]byte, error)
@@ -36,7 +41,7 @@ type Store interface {
 
 // Vault is what the cache of one vault reads and writes.
 type Vault struct {
-	Frontmatter host.FrontmatterReader
+	Frontmatter Frontmatter
 	Feed        host.FileChangeLister
 	Store       Store
 }
@@ -172,7 +177,7 @@ func (v *vaultTags) review(ctx context.Context, vault Vault) error {
 	return write(ctx, vault.Store, v.notes)
 }
 
-func readTags(ctx context.Context, frontmatter host.FrontmatterReader, paths []string) (map[int64]tagfile.Note, error) {
+func readTags(ctx context.Context, frontmatter Frontmatter, paths []string) (map[int64]tagfile.Note, error) {
 	notes := map[int64]tagfile.Note{}
 	query := host.FrontmatterQuery{Paths: paths, Keys: []string{tags.FrontmatterKey}}
 	for {
