@@ -7,6 +7,8 @@ const (
 		"Use it to build a query for a request that one library_search cannot answer: several phrasings joined, results that must match two things, " +
 		"or results about something that must be left out. The query is a CEL expression. meaning(\"text\") holds for a passage about the text. " +
 		"words(\"query\") holds for a passage whose whole text matches a full-text query: words, \"an exact phrase\", NEAR(word1 word2, 10), a prefix*, AND, OR, NOT. " +
+		"meaning finds a passage by its sense and misses one that is about a named thing but words it differently; " +
+		"when the user names an exact phrase, a name, a place or a term, also add words(\"\\\"the phrase\\\"\") with || next to the meaning conditions. " +
 		"kind is the type of the file by its extension: \"note\" for a markdown note, \"pdf\", \"epub\", \"audio\", \"video\" or \"image\". " +
 		"path is the path of the file relative to the vault folder. Join conditions with && (and), || (or), ! (not) and parentheses; " +
 		"kind == \"note\", kind in [\"pdf\", \"epub\"] and path.startsWith(\"Lectures/\") narrow the search. " +

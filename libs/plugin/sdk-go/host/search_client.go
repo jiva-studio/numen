@@ -205,7 +205,7 @@ func (c *SearchClient) SearchText(ctx context.Context, query SearchResultQuery) 
 	}
 	res, err := c.rpc.SearchText(ctx, newSearchRequest(c, &v1.HostSearchServiceSearchTextRequest{
 		Query: query.Query, Limit: clampInt32(query.Limit), ResultsPerSource: clampInt32(query.ResultsPerSource),
-		Kinds: kinds, PathPrefix: query.PathPrefix, Mode: mode, IsRawWords: query.IsRawWords,
+		Kinds: kinds, PathPrefix: query.PathPrefix, Mode: mode, IsRawWords: query.IsRawWords, IsWholeText: query.IsWholeText,
 	}))
 	if err != nil {
 		return nil, readSearchCallError(err)
@@ -219,7 +219,7 @@ func (c *SearchClient) SearchText(ctx context.Context, query SearchResultQuery) 
 		found[i] = SearchResult{
 			ChunkID: one.GetChunkId(), Path: one.GetPath(), Text: one.GetText(), PlaceLabel: one.GetPlaceLabel(),
 			Start: start, Length: end - start, MatchLine: int(one.GetMatchLine()), Selector: one.GetSelector(),
-			Similarity: one.Similarity, WordScore: one.WordScore,
+			Similarity: one.Similarity, WordScore: one.WordScore, WholeText: one.GetWholeText(),
 		}
 	}
 	return found, nil

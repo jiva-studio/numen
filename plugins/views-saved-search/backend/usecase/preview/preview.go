@@ -66,13 +66,14 @@ func (u *UseCase) Execute(ctx context.Context, in api.PreviewInput) (api.Preview
 }
 
 // Run compiles the query and searches the index once for each meaning and words condition that is not
-// negated, in its mode and in each folder of the filter, one search after another. It joins the result
+// negated, in its mode and in each folder of the filter, one search after another, for the passages of
+// the numbers of Config: those of a reranked run when the reranking setting has a row. It joins the result
 // lists in turns, the first result of every list, then the second, each passage once, up to MaxCandidates;
 // scores every candidate against every condition in batches of host.MaxScoredChunks, dropping a candidate
-// the answer leaves out; and keeps the candidates the query matches. The first RerankedPerResult times the
-// limit of them, at most MaxReranked, go to the reranker in fused order and the rest are dropped, whether
-// the reranker answers or not; its query is the rerank text of the input, else the texts of the conditions
-// that are not negated, one per line. A reranker that fails leaves the fused order with a warning.
+// the answer leaves out; and keeps the candidates the query matches. The first of them in fused order, as
+// many as Config says, go to the reranker with the whole text of their chunks and the rest are dropped,
+// whether the reranker answers or not; its query is the rerank text of the input, else the texts of the
+// conditions that are not negated, one per line. A reranker that fails leaves the fused order with a warning.
 // Neighbors of one file are joined and the results returned best first. A query that is not valid, or a
 // words condition the index refuses, returns its problems in the output with a nil error; the leaf the
 // index refuses is found by scoring each words condition alone.
@@ -118,7 +119,11 @@ func (u *UseCase) Plan(in api.PreviewInput) (Plan, error) {
 }
 
 func (u *UseCase) run(ctx context.Context, compiled query.Query, limit int, run Run) (Run, error) {
-	found, err := u.fetchCandidates(ctx, compiled)
+	gathered, err := u.getPool(ctx)
+	if err != nil {
+		return run, err
+	}
+	found, err := u.fetchCandidates(ctx, compiled, gathered)
 	if problem, isProblem := getWordsProblem(err); isProblem {
 		run.Output.Errors = []api.Problem{problem}
 		return run, nil
@@ -138,7 +143,7 @@ func (u *UseCase) run(ctx context.Context, compiled query.Query, limit int, run 
 	}
 	run.Output.Floor = floor
 	ranking.Sort(kept)
-	reranked, err := u.rerank(ctx, rerankInput{text: run.Rerank, kept: kept, limit: limit, floor: floor})
+	reranked, err := u.rerank(ctx, rerankInput{text: run.Rerank, kept: kept, limit: limit, floor: floor, gathered: gathered})
 	if err != nil {
 		return run, err
 	}

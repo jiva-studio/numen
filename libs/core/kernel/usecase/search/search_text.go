@@ -69,6 +69,9 @@ func (u *SearchText) Execute(ctx context.Context, v domain.Vault, q SearchResult
 		return nil, err
 	}
 	for i := range found {
+		if q.IsWholeText {
+			found[i].WholeText = found[i].Text
+		}
 		found[i].Text = getExcerpt(found[i].Text, found[i].MatchOffset)
 	}
 	return found, nil

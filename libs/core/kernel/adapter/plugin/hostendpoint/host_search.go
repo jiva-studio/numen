@@ -296,6 +296,7 @@ func writeSearchResults(found []domain.SearchResult) ([]*v1.SearchResult, error)
 			MatchLine: int32(one.MatchLine),
 			Selector:  string(one.Selector),
 			ChunkId:   string(one.ChunkID), Similarity: one.Similarity, WordScore: one.WordScore,
+			WholeText: one.WholeText,
 		}
 	}
 	return results, nil
@@ -366,6 +367,7 @@ func readSearchResultQuery(msg *v1.HostSearchServiceSearchTextRequest) (plugin.S
 	return plugin.SearchResultQuery{
 		Query: msg.GetQuery(), Limit: int(msg.GetLimit()), ResultsPerSource: int(msg.GetResultsPerSource()),
 		Kinds: kinds, PathPrefix: msg.GetPathPrefix(), Mode: mode, IsRawWords: msg.GetIsRawWords(),
+		IsWholeText: msg.GetIsWholeText(),
 	}, nil
 }
 

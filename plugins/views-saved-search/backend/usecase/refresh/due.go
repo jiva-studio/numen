@@ -103,8 +103,9 @@ func moveProblems(problems []api.Problem, raw []byte) []api.Problem {
 
 func hashSettings(config preview.Config) string {
 	numbers := []int{
-		config.DefaultLimit, config.MaxLimit, config.ResultsPerSearch, config.MaxCandidates, config.MaxPathPrefixes,
-		config.RerankedPerResult, config.MaxReranked, config.MergeGapBytes, config.MaxQueryBytes,
+		config.DefaultLimit, config.MaxLimit, config.ResultsPerSearch, config.RerankResultsPerSearch, config.MaxCandidates,
+		config.MaxPathPrefixes, config.FusedPerResult, config.MaxFused, config.RerankedPerResult, config.MaxReranked,
+		config.MaxRerankedBytes, config.MergeGapBytes, config.MaxQueryBytes,
 	}
 	texts := make([]string, len(numbers))
 	for i, number := range numbers {
