@@ -258,7 +258,7 @@ func (a *Activation) EnsureActive(ctx context.Context, pluginID string, holder p
 	if err != nil || !isProvisioning(ctx) {
 		return endpoint, err
 	}
-	if err := a.provisionDependencies(ctx, pluginID); err != nil {
+	if err := ensureProvisioned(ctx, a.set, a.processes, pluginID); err != nil {
 		a.Release(pluginID, endpoint.Token, holder)
 		return supervision.NoEndpoint(), err
 	}
@@ -277,18 +277,18 @@ func isProvisioning(ctx context.Context) bool {
 	return ctx.Value(withoutProvisioningKey{}) == nil
 }
 
-// provisionDependencies downloads what the plugin declares and is not on this machine. A failed download is no failure of
+// ensureProvisioned downloads what the plugin declares and is not on this machine. A failed download is no failure of
 // the plugin: it is returned to the caller of the use and tried again at the next one.
-func (a *Activation) provisionDependencies(ctx context.Context, pluginID string) error {
-	p, ok := a.set.getKnownPlugin(pluginID)
+func ensureProvisioned(ctx context.Context, set activationPlugins, processes *supervision.Processes, pluginID string) error {
+	p, ok := set.getKnownPlugin(pluginID)
 	if !ok {
 		return nil
 	}
-	requirements := a.set.getLaunch(p).Requirements
+	requirements := set.getLaunch(p).Requirements
 	if len(requirements) == 0 {
 		return nil
 	}
-	return a.processes.EnsureProvisioned(ctx, requirements)
+	return processes.EnsureProvisioned(ctx, requirements)
 }
 
 // EnsureActiveForQuestion starts the plugin where its process does not run, takes a question lease of the
