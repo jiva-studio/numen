@@ -24,6 +24,9 @@ func TestNewConfigOfBGEM3(t *testing.T) {
 	if info.MinChunkLength != 0 {
 		t.Errorf("expected 0 min chunk length, got %d", info.MinChunkLength)
 	}
+	if info.ChunkTokens != 0 {
+		t.Errorf("expected 0 chunk tokens, got %d", info.ChunkTokens)
+	}
 	if local.Name != "Xenova/bge-m3" {
 		t.Errorf("expected Xenova/bge-m3, got %s", local.Name)
 	}

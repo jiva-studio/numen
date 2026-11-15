@@ -51,14 +51,14 @@ type VaultFile struct {
 type OpenVaultFile struct {
 	find       VaultFinder
 	open       *OpenFile
-	openPlugin *OpenPluginFile
+	openPlugin pluginFileOpener
 	types      MediaTyper
 }
 
 // NewOpenVaultFile returns the use case over the registry of vaults, the opening of a file, the opening of a
 // file of a plugin, which may be nothing, and the table of media types.
 func NewOpenVaultFile(find VaultFinder, open *OpenFile, openPlugin *OpenPluginFile, types MediaTyper) *OpenVaultFile {
-	return &OpenVaultFile{find: find, open: open, openPlugin: openPlugin, types: types}
+	return &OpenVaultFile{find: find, open: open, openPlugin: getPluginFileOpener(openPlugin), types: types}
 }
 
 // Execute opens the file at the path of the vault with the id, which is the vault the window shows or a
@@ -88,9 +88,6 @@ func (u *OpenVaultFile) ExecutePluginFile(ctx context.Context, showing domain.Va
 	target, err := findVault(u.find, showing, id)
 	if err != nil {
 		return VaultPluginFile{}, err
-	}
-	if u.openPlugin == nil {
-		return VaultPluginFile{}, ErrNoPluginFiles
 	}
 	opened, err := u.openPlugin.Execute(ctx, target, pluginID, path)
 	if err != nil {

@@ -2,8 +2,10 @@ package pdf
 
 import (
 	"bytes"
+	"fmt"
 	"math"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -100,14 +102,17 @@ func TestRenderPageAtWidthDrawsThePageThatWide(t *testing.T) {
 	if drawn.Bounds().Dx() != 300 || drawn.Bounds().Dy() != wantDy {
 		t.Errorf("bounds = %v, want 300 by %d", drawn.Bounds(), wantDy)
 	}
-	if _, err := scan.RenderPageAtWidth(0, 300, 1000); err == nil {
-		t.Error("a page over the most pixels was drawn")
+	if _, err := scan.RenderPageAtWidth(0, 300, 1000); err == nil || !strings.Contains(err.Error(), fmt.Sprintf("it is %d pixels, and 1000 is the most", 300*wantDy)) {
+		t.Errorf("RenderPageAtWidth(0, 300, 1000) error = %v, want pixel limit message with %d pixels", err, 300*wantDy)
 	}
 	if _, err := scan.RenderPageAtWidth(0, 0, 1<<24); err == nil {
 		t.Error("a page no pixels across was drawn")
 	}
-	if _, err := scan.RenderPageAtWidth(-1, 100, 1<<24); err == nil {
-		t.Error("an invalid page index was drawn")
+	if _, err := scan.RenderPageAtWidth(-1, 100, 1<<24); err == nil || err.Error() != "pdf: page -1 of 2" {
+		t.Errorf("RenderPageAtWidth(-1, 100, 1<<24) error = %v, want pdf: page -1 of 2", err)
+	}
+	if _, err := newWorkers(t).OpenBytes([]byte("not a pdf")); err == nil {
+		t.Error("OpenBytes succeeded on invalid PDF bytes")
 	}
 	onePixelMax := getHeightAt(1, width, height)
 	drawnOne, err := scan.RenderPageAtWidth(0, 1, onePixelMax)
@@ -165,11 +170,26 @@ func TestGetFittingWidthKeepsThePageWithinTheMostPixels(t *testing.T) {
 	if err != nil || minFitting != 1 {
 		t.Errorf("GetFittingWidth(0, 0, 0) = %d, %v; want 1, nil", minFitting, err)
 	}
-	if _, err := scan.GetFittingWidth(-1, 100, 1000); err == nil {
-		t.Error("GetFittingWidth(-1) succeeded on invalid page")
+	if badWidth, err := scan.GetFittingWidth(-1, 100, 1000); err == nil || badWidth != 0 {
+		t.Errorf("GetFittingWidth(-1) = %d, %v; want 0, error", badWidth, err)
 	}
 	if h := getHeightAt(0, 100, 100); h != 1 {
 		t.Errorf("getHeightAt(0, 100, 100) = %d, want 1", h)
+	}
+
+	scanRaw, err := os.ReadFile("testdata/scan.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	subPointRaw := bytes.ReplaceAll(scanRaw, []byte("[0 0 200 200]"), []byte("[0 0 10 0.25]"))
+	subPointScan, err := newWorkers(t).OpenBytes(subPointRaw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeAndCheck(t, subPointScan)
+	subFitting, err := subPointScan.GetFittingWidth(0, 100, 100)
+	if err != nil || subFitting < 50 {
+		t.Errorf("sub-point GetFittingWidth(0, 100, 100) = %d, %v; want >= 50, nil", subFitting, err)
 	}
 
 	turnedRaw, err := os.ReadFile("testdata/turned.pdf")

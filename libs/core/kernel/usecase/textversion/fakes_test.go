@@ -2,7 +2,7 @@ package textversion_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textversiontest"
 	"slices"
 	"strings"
 	"sync"
@@ -194,7 +194,7 @@ func (l *listener) take() []string {
 type fakeProvider struct {
 	pluginID string
 	kind     domain.TextKind
-	versions *textfake.TextVersions
+	versions *textversiontest.TextVersions
 	vault    domain.Vault
 	folders  *memoryFiles
 	make     func(path string, source domain.VersionText, hasSource bool) []domain.TextSegment

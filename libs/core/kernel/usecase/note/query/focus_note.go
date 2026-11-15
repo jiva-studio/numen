@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
@@ -17,15 +18,10 @@ var ErrNoNotePath = errors.New("note path is empty")
 
 type FocusNote struct {
 	queries noteport.NoteRefs
-	view    PlaceFocus
+	view    windowport.PlaceFocus
 }
 
-// PlaceFocus asks the window to show a place.
-type PlaceFocus interface {
-	FocusPlace(ctx context.Context, pos domain.Place) error
-}
-
-func NewFocusNote(queries noteport.NoteRefs, view PlaceFocus) *FocusNote {
+func NewFocusNote(queries noteport.NoteRefs, view windowport.PlaceFocus) *FocusNote {
 	return &FocusNote{queries: queries, view: view}
 }
 

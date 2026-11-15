@@ -264,9 +264,38 @@ func TestStartLoadingDoesNotOpenTheModelWhileAConnectionServes(t *testing.T) {
 	srv.StartLoading()
 
 	srv.mu.Lock()
-	defer srv.mu.Unlock()
 	if srv.loader.IsOpening() || srv.loader.IsLoaded() {
-		t.Error("the loader started for a connection")
+		srv.mu.Unlock()
+		t.Fatal("the loader started for a connection")
+	}
+	srv.mu.Unlock()
+
+	srv.updateConfig(map[string]string{"source": SourceLocal, "model": "owner/no-such-model"})
+	srv.StartLoading()
+	srv.mu.Lock()
+	if srv.loader.IsOpening() || srv.loader.IsLoaded() {
+		srv.mu.Unlock()
+		t.Fatal("the loader started when localErr != nil")
+	}
+	srv.mu.Unlock()
+
+	t.Setenv("NUMEN_TEST_MOCK_OPEN_HOLD_MS", "60000")
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := srv.openMockModel(ctx, model.ModelInfo{}, model.LocalModel{}); !errors.Is(err, context.Canceled) {
+		t.Fatalf("openMockModel canceled err = %v, want context.Canceled", err)
+	}
+
+	closeErrSrv := newEmbeddingServer()
+	wantCloseErr := errors.New("close failed")
+	closeErrSrv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
+		return stubEmbedder{closeErr: wantCloseErr}, nil
+	}
+	if _, err := closeErrSrv.getEmbedder(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := closeErrSrv.Close(); !errors.Is(err, wantCloseErr) {
+		t.Fatalf("Close() err = %v, want %v", err, wantCloseErr)
 	}
 }
 

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
@@ -24,20 +26,11 @@ type service struct {
 func newService(source openaiapi.Clock, lists models.Lists) (*service, error) {
 	gateway := openaiapi.New(source)
 	requestLimits := new(limits.Limits)
-	completions, err := completion.New(gateway, requestLimits)
-	if err != nil {
-		return nil, err
-	}
-	embeddings, err := embedding.New(gateway, requestLimits)
-	if err != nil {
-		return nil, err
-	}
-	rerankings, err := reranking.New(gateway, requestLimits)
-	if err != nil {
-		return nil, err
-	}
-	listings, err := models.New(gateway, requestLimits, lists)
-	if err != nil {
+	completions, compErr := completion.New(gateway, requestLimits)
+	embeddings, embErr := embedding.New(gateway, requestLimits)
+	rerankings, rerankErr := reranking.New(gateway, requestLimits)
+	listings, listErr := models.New(gateway, requestLimits, lists)
+	if err := errors.Join(compErr, embErr, rerankErr, listErr); err != nil {
 		return nil, err
 	}
 	return &service{

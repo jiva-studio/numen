@@ -16,7 +16,8 @@ func getWiringPackages(pkgs []*packages.Package, root string, isExempt func(path
 	ports := load.ListPortInterfaces(pkgs, root)
 	driven := map[string]bool{}
 	for _, pkg := range pkgs {
-		if load.GetImplementation(pkg, ports).Name != "" {
+		isAdapter := load.IsInLayer(pkg.PkgPath, root, "adapter") || load.IsInLayer(pkg.PkgPath, root, "internal/adapter")
+		if isAdapter && load.GetImplementation(pkg, ports).Name != "" {
 			driven[pkg.PkgPath] = true
 		}
 	}

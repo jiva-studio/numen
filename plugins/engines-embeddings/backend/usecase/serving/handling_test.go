@@ -154,10 +154,20 @@ func TestAUserProfileAddsALocalModelWithoutRecompiling(t *testing.T) {
 	srv := newEmbeddingServer()
 	dir := t.TempDir()
 	srv.profileSrc = profilefiles.NewDirectory(dir)
+	var reportedWhat string
+	var reportedErr error
+	srv.report = func(what string, err error) {
+		reportedWhat = what
+		reportedErr = err
+	}
 	writeFile(t, filepath.Join(dir, "mine.json"), `{"id":"owner/mine","dims":96,"maxTokens":300,"pooling":"last","onnxFile":"onnx/model.onnx","tokenizer":"bpe","queryPrefix":"Q: "}`)
-	writeFile(t, filepath.Join(dir, "broken.json"), `{"id":`)
+	brokenPath := filepath.Join(dir, "broken.json")
+	writeFile(t, brokenPath, `{"id":`)
 	srv.updateConfig(map[string]string{"source": "local", "model": "owner/mine"})
 
+	if reportedWhat != "embeddings: skipped the model profile "+brokenPath || reportedErr == nil {
+		t.Fatalf("reported = %q, %v; want skipped %s", reportedWhat, reportedErr, brokenPath)
+	}
 	info, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)
