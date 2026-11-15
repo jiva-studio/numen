@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -157,4 +158,12 @@ func InstallPluginVault(c Config, db *Index, current func() (domain.Vault, bool)
 		return err
 	}
 	return installPluginVault(plugins(c), vaults, db, current, hooks)
+}
+
+func searchOf(c Config) searchWiring { return plugins(c).search }
+
+func ReadWholeVault(c Config,
+	ctx context.Context, db *Index, source searchsourceport.Source, v domain.Vault,
+) (indexing.ReadWholeVault, error) {
+	return readWholeVault(searchOf(c), ctx, db, source, v, makeRefresh(c, db, db.Notes()))
 }

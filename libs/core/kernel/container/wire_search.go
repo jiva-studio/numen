@@ -29,14 +29,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// ReadWholeVault is what makes a vault answer, put together the one way: the
-// notes read, the file texts cut, and the vectors of the search source made.
-func ReadWholeVault(c Config,
-	ctx context.Context, db *Index, source searchsourceport.Source, v domain.Vault,
-) (indexing.ReadWholeVault, error) {
-	return readWholeVault(searchOf(c), ctx, db, source, v, makeRefresh(c, db, db.Notes()))
-}
-
 // coreFolder is the folder of a vault's store that holds the core's own files.
 const coreFolder = "core"
 
