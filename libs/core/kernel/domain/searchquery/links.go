@@ -7,12 +7,10 @@ import (
 	"slices"
 	"strings"
 
-	"golang.org/x/text/unicode/norm"
-
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// LinkDirection is which end of a link the document of a link function stands at.
+// LinkDirection is the end of a link the document of a link function is at.
 type LinkDirection int
 
 const (
@@ -39,33 +37,73 @@ type LinkFunction struct {
 
 const targetHelp = " The target is a note name, a vault path or note://<id>; a name several notes answer to is an error that lists them. The second argument requires the link's type."
 
-var linkFunctions = []LinkFunction{
-	{Name: "hasLinkTo", Direction: DirectionTo, Description: "documents with a link of any role to the target, a note or a file", Example: `hasLinkTo("Entropy")`},
-	{Name: "hasLinkFrom", Direction: DirectionFrom, Description: "documents the target note links to, by any role", Example: `hasLinkFrom("Reading list")`},
-	{Name: "hasReferenceTo", Role: domain.RoleRef, Direction: DirectionTo, Description: "notes with a ref link (a wikilink in the text) to the target", Example: `hasReferenceTo("Entropy")`},
-	{Name: "hasReferenceFrom", Role: domain.RoleRef, Direction: DirectionFrom, Description: "documents the target note links to by a ref link", Example: `hasReferenceFrom("Entropy")`},
-	{Name: "hasJumpTo", Role: domain.RoleJump, Direction: DirectionTo, Description: "notes with a jump link to the target", Example: `hasJumpTo("Entropy")`},
-	{Name: "hasJumpFrom", Role: domain.RoleJump, Direction: DirectionFrom, Description: "notes the target note links to by a jump link", Example: `hasJumpFrom("Entropy")`},
-	{Name: "isParentOf", Direction: DirectionAbove, Description: "notes directly above the target, written at either end", Example: `isParentOf("Entropy")`},
-	{Name: "isChildOf", Direction: DirectionBelow, Description: "notes directly under the target, written at either end", Example: `isChildOf("Physics")`},
-	{Name: "isAncestorOf", Direction: DirectionAbove, IsTransitive: true, Description: "notes above the target at any depth up to the limit", Example: `isAncestorOf("Entropy")`},
-	{Name: "isDescendantOf", Direction: DirectionBelow, IsTransitive: true, Description: "notes under the target at any depth up to the limit", Example: `isDescendantOf("Physics") && meaning("heat")`},
-	{Name: "hasAttachment", Role: domain.RoleAttachment, Direction: DirectionTo, Description: "notes with an attachment link to the file path or address", Example: `hasAttachment("scans/1897-letter.pdf")`},
-	{Name: "isAttachedTo", Role: domain.RoleAttachment, Direction: DirectionFrom, Description: "indexed files the target note attaches", Example: `isAttachedTo("Letters")`},
+func listLinkFunctions() []LinkFunction {
+	return []LinkFunction{
+		{
+			Name: "hasLinkTo", Direction: DirectionTo,
+			Description: "documents with a link of any role to the target, a note or a file", Example: `hasLinkTo("Entropy")`,
+		},
+		{
+			Name: "hasLinkFrom", Direction: DirectionFrom,
+			Description: "documents the target note links to, by any role", Example: `hasLinkFrom("Reading list")`,
+		},
+		{
+			Name: "hasReferenceTo", Role: domain.RoleRef, Direction: DirectionTo,
+			Description: "notes with a ref link (a wikilink in the text) to the target", Example: `hasReferenceTo("Entropy")`,
+		},
+		{
+			Name: "hasReferenceFrom", Role: domain.RoleRef, Direction: DirectionFrom,
+			Description: "documents the target note links to by a ref link", Example: `hasReferenceFrom("Entropy")`,
+		},
+		{
+			Name: "hasJumpTo", Role: domain.RoleJump, Direction: DirectionTo,
+			Description: "notes with a jump link to the target", Example: `hasJumpTo("Entropy")`,
+		},
+		{
+			Name: "hasJumpFrom", Role: domain.RoleJump, Direction: DirectionFrom,
+			Description: "notes the target note links to by a jump link", Example: `hasJumpFrom("Entropy")`,
+		},
+		{
+			Name: "isParentOf", Direction: DirectionAbove,
+			Description: "notes directly above the target, written at either end", Example: `isParentOf("Entropy")`,
+		},
+		{
+			Name: "isChildOf", Direction: DirectionBelow,
+			Description: "notes directly under the target, written at either end", Example: `isChildOf("Physics")`,
+		},
+		{
+			Name: "isAncestorOf", Direction: DirectionAbove, IsTransitive: true,
+			Description: "notes above the target at any depth up to the limit", Example: `isAncestorOf("Entropy")`,
+		},
+		{
+			Name: "isDescendantOf", Direction: DirectionBelow, IsTransitive: true,
+			Description: "notes under the target at any depth up to the limit", Example: `isDescendantOf("Physics") && meaning("heat")`,
+		},
+		{
+			Name: "hasAttachment", Role: domain.RoleAttachment, Direction: DirectionTo,
+			Description: "notes with an attachment link to the file path or address", Example: `hasAttachment("scans/1897-letter.pdf")`,
+		},
+		{
+			Name: "isAttachedTo", Role: domain.RoleAttachment, Direction: DirectionFrom,
+			Description: "indexed files the target note attaches", Example: `isAttachedTo("Letters")`,
+		},
+	}
 }
 
-// FindLinkFunction returns the link function of a name.
+// FindLinkFunction returns the link function of a name; false for a function that reads no links.
 func FindLinkFunction(name string) (LinkFunction, bool) {
-	index := slices.IndexFunc(linkFunctions, func(f LinkFunction) bool { return f.Name == name })
+	functions := listLinkFunctions()
+	index := slices.IndexFunc(functions, func(f LinkFunction) bool { return f.Name == name })
 	if index < 0 {
 		return LinkFunction{}, false
 	}
-	return linkFunctions[index], true
+	return functions[index], true
 }
 
 func getLinkCatalog() []Function {
-	out := make([]Function, len(linkFunctions))
-	for i, f := range linkFunctions {
+	functions := listLinkFunctions()
+	out := make([]Function, len(functions))
+	for i, f := range functions {
 		out[i] = Function{
 			Name: f.Name, Args: []ValueType{TypeString}, OptionalArgs: []ValueType{TypeString}, Result: TypeBool,
 			Level: LevelDocument, Description: f.Description + "." + targetHelp, Example: f.Example,
@@ -106,15 +144,13 @@ func ChooseTarget(name string, candidates []string) (string, error) {
 	return "", &AmbiguousTargetError{Target: name, Paths: paths}
 }
 
-// CleanPath returns a written file address as a vault path: composed, cleaned, without a leading slash. A
-// value that climbs above the vault root is returned composed and otherwise unchanged.
+// CleanPath returns a written file address as a vault path: cleaned, without a leading slash. A value that
+// climbs above the vault root is returned unchanged.
 func CleanPath(value string) string {
-	composed := norm.NFC.String(value)
-	cleaned := strings.TrimPrefix(path.Clean("/"+composed), "/")
-	if relative := path.Clean(composed); relative == ".." || strings.HasPrefix(relative, "../") {
-		return composed
+	if relative := path.Clean(value); relative == ".." || strings.HasPrefix(relative, "../") {
+		return value
 	}
-	return cleaned
+	return strings.TrimPrefix(path.Clean("/"+value), "/")
 }
 
 // GetFileName returns the folded last segment of a written file address, the key GroupFilesByName files a

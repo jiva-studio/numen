@@ -35,7 +35,7 @@ func (p *plan) computeSets(ctx context.Context) error {
 	var problems []searchquery.Problem
 	for i, s := range p.query.Sets {
 		set, err := p.computeSet(ctx, s)
-		if message, isProblem := getTargetProblem(err); isProblem {
+		if message, isProblem := getTargetMessage(err); isProblem {
 			problems = append(problems, searchquery.Problem{Position: s.Position, Message: message})
 			continue
 		}
@@ -50,15 +50,15 @@ func (p *plan) computeSets(ctx context.Context) error {
 	return nil
 }
 
-type targetProblem struct{ message string }
+type targetError struct{ message string }
 
-func (e *targetProblem) Error() string { return e.message }
+func (e *targetError) Error() string { return e.message }
 
-func getTargetProblem(err error) (string, bool) {
+func getTargetMessage(err error) (string, bool) {
 	if ambiguous, ok := errors.AsType[*searchquery.AmbiguousTargetError](err); ok {
 		return ambiguous.Error(), true
 	}
-	if problem, ok := errors.AsType[*targetProblem](err); ok {
+	if problem, ok := errors.AsType[*targetError](err); ok {
 		return problem.message, true
 	}
 	if errors.Is(err, searchquery.ErrNoTarget) {
@@ -78,7 +78,7 @@ func (p *plan) computeSet(ctx context.Context, s searchquery.SetCondition) (map[
 	}
 	if !t.isNote {
 		if t.address != "" {
-			return nil, &targetProblem{message: fmt.Sprintf(messageNotNote, s.Function, t.address)}
+			return nil, &targetError{message: fmt.Sprintf(messageNotNote, s.Function, t.address)}
 		}
 		return map[string]bool{}, nil
 	}

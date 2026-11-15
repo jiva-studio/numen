@@ -191,7 +191,7 @@ func TestDeepNestingIsRejected(t *testing.T) {
 	}
 }
 
-func TestLinkFunctionsParseToSetLeavesWithTheirTargetAndType(t *testing.T) {
+func TestLinkFunctionsParseToSetConditionsWithTargetAndType(t *testing.T) {
 	q, err := parse(`hasLinkTo("Entropy", "requires") && !isChildOf("Physics")`)
 	if err != nil {
 		t.Fatal(err)
@@ -207,7 +207,7 @@ func TestLinkFunctionsParseToSetLeavesWithTheirTargetAndType(t *testing.T) {
 	}
 }
 
-func TestALinkFunctionTakesStringLiteralsAndATarget(t *testing.T) {
+func TestALinkFunctionReportsABadArgumentOrUse(t *testing.T) {
 	for text, message := range map[string]string{
 		`hasLinkTo(path)`:             "takes a string literal",
 		`hasLinkTo("  ")`:             "the target of hasLinkTo is empty",

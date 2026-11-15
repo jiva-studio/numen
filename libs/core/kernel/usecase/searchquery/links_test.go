@@ -104,7 +104,7 @@ func TestATypeArgumentKeepsOnlyLinksOfThatType(t *testing.T) {
 	checkPaths(t, w, `hasLinkFrom("by-name")`, "notes/Entropy.md")
 }
 
-func TestParentAndChildCountTheEdgeWrittenAtEitherEnd(t *testing.T) {
+func TestParentAndChildCountTheEdgeAtEitherEnd(t *testing.T) {
 	w := newLinkWorld(t)
 	checkPaths(t, w, `isChildOf("Physics")`, "Mechanics.md", "Thermo.md", "cycle/A.md")
 	checkPaths(t, w, `isParentOf("Mechanics")`, "Physics.md")
@@ -191,7 +191,7 @@ func TestAnAmbiguousOrUnknownTargetIsAProblem(t *testing.T) {
 		t.Errorf("a path target found %v, want c.md", paths)
 	}
 	_, err = w.newLinkFind().Execute(t.Context(), w.v, searchquery.Request{Text: `hasLinkTo("Missing")`})
-	if _, ok := errors.AsType[*searchquerydomain.ParseError](err); !ok || !strings.Contains(err.Error(), "Missing") {
+	if parseError, ok := errors.AsType[*searchquerydomain.ParseError](err); !ok || len(parseError.Problems) != 1 || !strings.Contains(err.Error(), "Missing") {
 		t.Errorf("an unknown target returned %v, want a problem naming it", err)
 	}
 }
