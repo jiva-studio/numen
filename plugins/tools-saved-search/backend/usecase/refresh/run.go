@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -131,7 +132,7 @@ func (r *Runner) recordProblems(ctx context.Context, one job, name string, want 
 	}
 	now := r.now()
 	record.QueryHash, record.Errors = want.queryHash, problems
-	record.FailedAt, record.Failure = &now, failureProblems
+	record.FailedAt, record.Failure = &now, getFailure(problems)
 	if record.StaleSince == nil {
 		record.StaleSince = &now
 	}
@@ -139,6 +140,17 @@ func (r *Runner) recordProblems(ctx context.Context, one job, name string, want 
 		return resultcache.Record{}, err
 	}
 	return record, nil
+}
+
+func getFailure(problems []resultcache.Problem) string {
+	messages := make([]string, 0, len(problems))
+	for _, problem := range problems {
+		if problem.Line > 0 {
+			return failureProblems
+		}
+		messages = append(messages, problem.Message)
+	}
+	return strings.Join(messages, "; ")
 }
 
 func (r *Runner) recordFailure(ctx context.Context, one job, name string, failure error) resultcache.Record {
