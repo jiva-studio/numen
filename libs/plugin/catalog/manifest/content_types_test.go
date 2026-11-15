@@ -30,9 +30,6 @@ func TestReadManifestReadsReaders(t *testing.T) {
 	if got := m.ListContentHandlers(); !slices.Equal(got, want) {
 		t.Errorf("ListContentHandlers = %+v; want %+v", got, want)
 	}
-	if !m.IsHandling("audio/mpeg") || m.IsHandling("video/mp4") {
-		t.Error("IsHandling answers for the wrong types")
-	}
 }
 
 func TestReadManifestRejectsAnInvalidReader(t *testing.T) {

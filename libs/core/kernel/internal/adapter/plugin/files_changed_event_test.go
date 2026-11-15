@@ -9,21 +9,16 @@ import (
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func readerOf(contentType domain.ContentType) catalogmanifest.Manifest {
-	return catalogmanifest.Manifest{
-		ActivationEvents: []string{catalogmanifest.ActivationEventFilesChanged},
-		Contributes: catalogmanifest.Contributes{
-			Readers: []catalogmanifest.Reader{{ID: "reader", ContentTypes: []domain.ContentType{contentType}, Rank: domain.RankDefault}},
-		},
-	}
+func takerOf(contentType domain.ContentType) catalogmanifest.Manifest {
+	return catalogmanifest.Manifest{ActivationEvents: []string{catalogmanifest.ActivationEventFilesChanged + ":" + string(contentType)}}
 }
 
 func TestFilesChangedWakesOnlyThePluginsThatTakeTheChangedTypes(t *testing.T) {
 	pdf, epub, tags := &eventRecorder{}, &eventRecorder{}, &eventRecorder{}
 	host := newEventHost(t,
 		map[string]catalogmanifest.Manifest{
-			"md.test.pdf":  readerOf("application/pdf"),
-			"md.test.epub": readerOf("application/epub+zip"),
+			"md.test.pdf":  takerOf("application/pdf"),
+			"md.test.epub": takerOf("application/epub+zip"),
 			"md.test.tags": {ActivationEvents: []string{catalogmanifest.ActivationEventFilesChanged}},
 		},
 		map[string]int{
@@ -46,14 +41,14 @@ func TestFilesChangedWakesOnlyThePluginsThatTakeTheChangedTypes(t *testing.T) {
 		t.Errorf("the plugin that takes epub received %v for a pdf", got)
 	}
 	if got := tags.getEvents(); !slices.Equal(got, []string{event}) {
-		t.Errorf("the plugin with no reader received %v, want [%s]", got, event)
+		t.Errorf("the plugin with no mask received %v, want [%s]", got, event)
 	}
 }
 
-func TestIsTakingFileMatchesReaderContentTypes(t *testing.T) {
+func TestIsTakingFileMatchesTheMasksOfTheActivationEvent(t *testing.T) {
 	host := newEventHost(t,
 		map[string]catalogmanifest.Manifest{
-			"md.test.pdf":  readerOf("application/pdf"),
+			"md.test.pdf":  takerOf("application/pdf"),
 			"md.test.tags": {ActivationEvents: []string{catalogmanifest.ActivationEventFilesChanged}},
 		},
 		map[string]int{},
