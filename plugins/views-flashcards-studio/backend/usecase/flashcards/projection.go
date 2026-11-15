@@ -7,31 +7,31 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
-// projectionScheduler answers what a projection asks of the review rules.
-type projectionScheduler struct {
+// ProjectionScheduler answers what a projection asks of the review rules.
+type ProjectionScheduler struct {
 	by  review.Scheduler
 	day review.Day
 }
 
 // NewProjectionScheduler places each due day on the day a review session places the card on.
-func NewProjectionScheduler(by review.Scheduler, day review.Day) projection.Scheduler {
-	return projectionScheduler{by: by, day: day}
+func NewProjectionScheduler(by review.Scheduler, day review.Day) ProjectionScheduler {
+	return ProjectionScheduler{by: by, day: day}
 }
 
-func (s projectionScheduler) GetEndings(c projection.Card, at time.Time) (recalled, forgotten projection.Card) {
+func (s ProjectionScheduler) GetEndings(c projection.Card, at time.Time) (recalled, forgotten projection.Card) {
 	good, again := s.by.Endings(convertCardToSchedule(c), at)
 	return convertScheduleToCard(good), convertScheduleToCard(again)
 }
 
-func (s projectionScheduler) GetRecall(c projection.Card, at time.Time) float64 {
+func (s ProjectionScheduler) GetRecall(c projection.Card, at time.Time) float64 {
 	return review.GetModeledRecall(convertCardToSchedule(c), at)
 }
 
-func (s projectionScheduler) IsLearned(p projection.Settings, c projection.Card, at time.Time) bool {
+func (s ProjectionScheduler) IsLearned(p projection.Settings, c projection.Card, at time.Time) bool {
 	return convertSettingsToPreset(p).IsLearned(convertCardToSchedule(c), at)
 }
 
-func (s projectionScheduler) GetAllowance(
+func (s ProjectionScheduler) GetAllowance(
 	p projection.Settings, open time.Time, spent projection.Spent, unbegunCards, daysToLearn int,
 ) projection.Allowance {
 	a := convertSettingsToPreset(p).GetAllowance(s.day, open, review.Spent{
@@ -51,15 +51,15 @@ func (s projectionScheduler) GetAllowance(
 	}
 }
 
-func (s projectionScheduler) NewLoad() projection.Load {
+func (s ProjectionScheduler) NewLoad() projection.Load {
 	return projectionLoad{table: review.NewDueByDay(s.day)}
 }
 
-func (s projectionScheduler) GetShare(p projection.Settings, day time.Weekday) float64 {
+func (s ProjectionScheduler) GetShare(p projection.Settings, day time.Weekday) float64 {
 	return convertSettingsToPreset(p).GetShare(day)
 }
 
-func (s projectionScheduler) IsNextCardDebt(a projection.Allowance, debt, begun int, isDue, isNew bool) bool {
+func (s ProjectionScheduler) IsNextCardDebt(a projection.Allowance, debt, begun int, isDue, isNew bool) bool {
 	var day review.Allowance
 	day.Backlog = a.Backlog
 	return day.IsNextCardDebt(debt, begun, isDue, isNew)

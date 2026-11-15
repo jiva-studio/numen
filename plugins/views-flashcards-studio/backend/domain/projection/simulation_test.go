@@ -219,22 +219,22 @@ func TestDaysToLearnACardBegunNow(t *testing.T) {
 	by, d := fakeScheduler{placed: nil}, utcDays{}
 	p := getRetentionSettings(1, 1)
 	p.Interval = 1
-	if got := GetDaysToLearn(by, d, p, getTestNow()); got != 0 {
+	if got := GetDaysToLearn(by, by, d, p, getTestNow()); got != 0 {
 		t.Errorf("a card sent away for a day on its first answer is learned at an interval of 1 in %d days", got)
 	}
 	p.Interval = 4
-	four := GetDaysToLearn(by, d, p, getTestNow())
+	four := GetDaysToLearn(by, by, d, p, getTestNow())
 	if four <= 0 || four == NeverLearns {
 		t.Errorf("a card is learned at an interval of 4 in %d days", four)
 	}
 	p.Interval = 8
-	if eight := GetDaysToLearn(by, d, p, getTestNow()); eight < four {
+	if eight := GetDaysToLearn(by, by, d, p, getTestNow()); eight < four {
 		t.Errorf("a card is learned at an interval of 8 in %d days and at 4 in %d", eight, four)
 	}
 	p.Load = map[time.Weekday]int{
 		time.Sunday: 0, time.Monday: 0, time.Tuesday: 0, time.Wednesday: 0, time.Thursday: 0, time.Friday: 0, time.Saturday: 0,
 	}
-	if got := GetDaysToLearn(by, d, p, getTestNow()); got != NeverLearns {
+	if got := GetDaysToLearn(by, by, d, p, getTestNow()); got != NeverLearns {
 		t.Errorf("a week carrying no load learns a card in %d days", got)
 	}
 }

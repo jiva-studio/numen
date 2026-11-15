@@ -377,8 +377,9 @@ func TestSchedules_ReviewedAndProjectedCardShareDueDay(t *testing.T) {
 
 	// The projection takes the card on from where the first answer left it, and
 	// its one day of review is the day that answer is given in.
+	by := flashcards.NewProjectionScheduler(delta, getToday())
 	run := projection.Simulation{
-		By: flashcards.NewProjectionScheduler(delta, getToday()), Day: getToday(),
+		By: by, Rules: by, Day: getToday(),
 		Cost: flashcards.ConvertCostToProjection(review.GetDefaultCost()), Days: 21,
 	}
 	projected, err := run.Run(t.Context(), when, flashcards.ConvertPresetToSettings(read.Settings), flashcards.ConvertSchedulesToCards(first), 0)

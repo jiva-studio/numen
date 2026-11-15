@@ -28,6 +28,7 @@ const MostShowings = 8
 // the preset's, and the session reads them the same way.
 type Simulation struct {
 	By      Scheduler
+	Rules   DayRules
 	Day     Calendar
 	Cost    Cost
 	Days    int
@@ -73,10 +74,10 @@ func newNoCard() Card {
 // unbegun material. A rule no such card satisfies yields NeverLearns. A day of the week with
 // none of the load shows nothing and is not counted, so the pace holds for a card begun on any
 // day of the week.
-func GetDaysToLearn(scheduler Scheduler, d Calendar, p Settings, now time.Time) int {
+func GetDaysToLearn(scheduler Scheduler, rules DayRules, d Calendar, p Settings, now time.Time) int {
 	s := Simulation{
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Helper getDaysToLearn uses LongestLearning and does not read Simulation.Days."
-		By: scheduler, Day: d, Cost: newNoCost(), Days: 0, Retains: nil, Recalls: nil, Spent: newNoSpent(),
+		By: scheduler, Rules: rules, Day: d, Cost: newNoCost(), Days: 0, Retains: nil, Recalls: nil, Spent: newNoSpent(),
 	}
 	from := d.GetStart(now)
 	// gomutants:disable-next-line INTEGER_DECREMENT reason="Every non-failing weekday returns a non-negative day count that supersedes -1 in max."
@@ -98,7 +99,7 @@ func (s Simulation) getDaysToLearn(p Settings, open time.Time) int {
 	days := 0
 	for range LongestLearning {
 		ends := s.Day.GetEnd(open)
-		if s.By.GetShare(p, open.Weekday()) == 0 {
+		if s.Rules.GetShare(p, open.Weekday()) == 0 {
 			open = ends
 			continue
 		}
@@ -141,7 +142,7 @@ func (s Simulation) canReachGoal(p Settings, c Card, open, delta time.Time) bool
 		ends := s.Day.GetEnd(open)
 		// A day of the week with none of the load does not show the card, and the next
 		// day of review picks it up.
-		if s.By.GetShare(p, open.Weekday()) != 0 {
+		if s.Rules.GetShare(p, open.Weekday()) != 0 {
 			c = s.getScheduleAfterDay(c, open, p)
 		}
 		open = ends
@@ -264,7 +265,7 @@ func (s Simulation) createProjection(
 
 func (s Simulation) getDaysToLearnGoal(p Settings, now time.Time) int {
 	if p.Goal == GoalDate {
-		return GetDaysToLearn(s.By, s.Day, p, now)
+		return GetDaysToLearn(s.By, s.Rules, s.Day, p, now)
 	}
 	return 0
 }

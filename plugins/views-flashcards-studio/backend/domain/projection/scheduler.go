@@ -34,6 +34,9 @@ type Scheduler interface {
 	GetAllowance(s Settings, open time.Time, spent Spent, unbegunCards, daysToLearn int) Allowance
 	// NewLoad opens an empty count of the cards due on each day.
 	NewLoad() Load
+}
+
+type DayRules interface {
 	GetShare(s Settings, day time.Weekday) float64
 	IsNextCardDebt(a Allowance, debt, begun int, isDue, isNew bool) bool
 }

@@ -595,8 +595,9 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	}
 
 	// And the counts the window draws off the projection say the same.
+	by := flashcards.NewProjectionScheduler(review.NewFSRSAt(p.Retention), getToday())
 	run := projection.Simulation{
-		By: flashcards.NewProjectionScheduler(review.NewFSRSAt(p.Retention), getToday()), Day: getToday(),
+		By: by, Rules: by, Day: getToday(),
 		Cost: flashcards.ConvertCostToProjection(review.GetDefaultCost()), Days: 1,
 	}
 	ran, err := run.Run(t.Context(), now, flashcards.ConvertPresetToSettings(p), flashcards.ConvertSchedulesToCards(pos), 0)

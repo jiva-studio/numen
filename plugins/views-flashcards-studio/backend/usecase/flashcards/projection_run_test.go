@@ -23,8 +23,10 @@ type reviewRun struct {
 func (r reviewRun) Run(
 	ctx context.Context, now time.Time, p review.Preset, schedules map[review.CardID]review.Schedule, unbegun int,
 ) (projection.Projection, error) {
+	by := flashcards.NewProjectionScheduler(r.By, r.Day)
 	run := projection.Simulation{
-		By:      flashcards.NewProjectionScheduler(r.By, r.Day),
+		By:      by,
+		Rules:   by,
 		Day:     r.Day,
 		Cost:    flashcards.ConvertCostToProjection(r.Cost),
 		Days:    r.Days,
@@ -45,7 +47,8 @@ func getSchedule(c projection.Card) review.Schedule {
 }
 
 func getDaysToLearn(by review.Scheduler, d review.Day, p review.Preset, now time.Time) int {
-	return projection.GetDaysToLearn(flashcards.NewProjectionScheduler(by, d), d, flashcards.ConvertPresetToSettings(p), now)
+	rules := flashcards.NewProjectionScheduler(by, d)
+	return projection.GetDaysToLearn(rules, rules, d, flashcards.ConvertPresetToSettings(p), now)
 }
 
 func countOverdue(d review.Day, schedules map[review.CardID]review.Schedule, now time.Time) int {

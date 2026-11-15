@@ -327,7 +327,7 @@ func getDaysToLearnWithoutForgetting(
 ) (int, error) {
 	// The day the material is learned is all this run is read for.
 	run = Simulation{
-		By: run.By, Day: run.Day, Cost: run.Cost, Days: run.Days, Retains: nil, Recalls: GetFullRecall, Spent: run.Spent,
+		By: run.By, Rules: run.Rules, Day: run.Day, Cost: run.Cost, Days: run.Days, Retains: nil, Recalls: GetFullRecall, Spent: run.Spent,
 	}
 	ran, err := run.Run(ctx, now, p, pos, unbegunCount)
 	if err != nil {

@@ -139,7 +139,7 @@ func getTestOpen() time.Time { return utcDays{}.GetStart(getTestNow()) }
 
 func newTestSimulation(days int) Simulation {
 	return Simulation{
-		By: fakeScheduler{placed: nil}, Day: utcDays{}, Cost: Cost{New: time.Minute, Review: time.Minute},
+		By: fakeScheduler{placed: nil}, Rules: fakeScheduler{placed: nil}, Day: utcDays{}, Cost: Cost{New: time.Minute, Review: time.Minute},
 		Days: days, Retains: nil, Recalls: GetFullRecall, Spent: Spent{},
 	}
 }

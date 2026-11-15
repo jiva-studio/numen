@@ -81,7 +81,8 @@ func getBudgets(ctx context.Context, v domain.Vault, in budgetInputs) (*budgets,
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Non-date goals ignore the learning-days parameter."
 		learn := 0
 		if p.Goal == review.GoalDate {
-			learned := projection.GetDaysToLearn(NewProjectionScheduler(pos(p.Retention), day), day, ConvertPresetToSettings(p), now)
+			rules := NewProjectionScheduler(pos(p.Retention), day)
+			learned := projection.GetDaysToLearn(rules, rules, day, ConvertPresetToSettings(p), now)
 			learn = convertDaysToLearn(learned)
 		}
 		out.allowances[path] = &allowance{

@@ -136,8 +136,9 @@ func (u ProjectCurve) Execute(
 	// The projection runs with the scheduler this preset requests, which is the one
 	// that schedules its cards, and it starts on the current day with the answers
 	// already given.
+	by := NewProjectionScheduler(u.getScheduler(p.Retention), u.day)
 	run := projection.Simulation{
-		By: u.getProjectionScheduler(p.Retention), Day: u.day, Cost: ConvertCostToProjection(cost),
+		By: by, Rules: by, Day: u.day, Cost: ConvertCostToProjection(cost),
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="Non-positive simulation Days defaults to HorizonDays."
 		Days:    0,
 		Retains: nil,
