@@ -1,15 +1,5 @@
 /* global createElement, createStatusDot, state, writeDetail */
-/* exported createRunsNote, pickRun, createEnvironments */
-const getFailedLabels = (scenario) =>
-  scenario.runs.filter((run) => run.status === 'failed').map((run) => run.environment.label)
-
-const createRunsNote = (scenario) => {
-  const failed = getFailedLabels(scenario)
-  if (failed.length === 0 || failed.length === scenario.runs.length) return null
-  const text = failed.join(', ')
-  return createElement('span', { class: 'runs-note', title: `Fails on ${text}` }, [text])
-}
-
+/* exported pickRun, createEnvironments */
 const pickRun = (scenario) =>
   scenario.runs.find((run) => run.environment.id === state.environment) ??
   scenario.runs.find((run) => run.status === 'failed') ??

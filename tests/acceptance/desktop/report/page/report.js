@@ -1,4 +1,4 @@
-/* global createVideo, createRunsNote, pickRun, createEnvironments */
+/* global createVideo, pickRun, createEnvironments */
 /* exported writeSetting, writeDetail */
 const report = window.REPORT
 const scenarios = new Map(
@@ -137,7 +137,6 @@ const createScenarioButton = (scenario) =>
     [
       createStatusDot(scenario.status),
       createElement('span', { class: 'name' }, [scenario.name]),
-      createRunsNote(scenario),
       createElement('span', { class: 'time' }, [formatDuration(scenario.duration)]),
     ],
   )
