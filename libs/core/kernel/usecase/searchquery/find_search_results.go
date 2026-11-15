@@ -30,10 +30,7 @@ type Request struct {
 // a nil Texts reads the text of notes only. The zone of Clock reads a date written without an offset.
 type FindSearchResultsDeps struct {
 	Parser       QueryParser
-	Documents    DocumentQueries
-	Vectors      VectorQueries
-	Words        WordQueries
-	Places       sourceport.ChunkPlaces
+	Chunks       ChunkIndex
 	Matcher      sourceport.WordMatching
 	Readers      vaultport.VaultReaders
 	Texts        textdomain.Readers
@@ -47,7 +44,8 @@ type FindSearchResultsDeps struct {
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
 type FindSearchResults struct {
 	parser       QueryParser
-	index        indexReads
+	chunks       ChunkIndex
+	contents     NoteContents
 	clock        machineport.Clock
 	matcher      sourceport.WordMatching
 	readers      vaultport.VaultReaders
@@ -61,10 +59,7 @@ type FindSearchResults struct {
 // NewFindSearchResults creates the use case over the index, with the default limits.
 func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 	return &FindSearchResults{
-		parser: deps.Parser, clock: deps.Clock,
-		index: indexReads{
-			documents: deps.Documents, vectors: deps.Vectors, words: deps.Words, places: deps.Places, contents: deps.Contents,
-		},
+		parser: deps.Parser, clock: deps.Clock, chunks: deps.Chunks, contents: deps.Contents,
 		matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts,
 		source: deps.Source, floors: deps.Floors, contentTypes: deps.ContentTypes,
 		Limits: searchquery.DefaultLimits(),
@@ -92,7 +87,7 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r Reque
 	}
 	req := u.newRequest(ctx, v, q, zone)
 	warns := &warnings{}
-	docs := newDocumentReader(u.index, u.contentTypes, req, warns)
+	docs := newDocumentReader(u.chunks, u.contents, u.contentTypes, req, warns)
 	results, err := u.run(ctx, req, docs, warns)
 	if err != nil {
 		return searchquery.SearchResults{}, err
@@ -138,12 +133,4 @@ func hasMeaning(conditions []searchquery.Condition) bool {
 
 func (u *FindSearchResults) hasModel() bool {
 	return u.source != nil && u.source.Describe().IsDescribed()
-}
-
-type indexReads struct {
-	documents DocumentQueries
-	vectors   VectorQueries
-	words     WordQueries
-	places    sourceport.ChunkPlaces
-	contents  NoteContents
 }

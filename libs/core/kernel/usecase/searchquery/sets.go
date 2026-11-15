@@ -9,9 +9,9 @@ import (
 )
 
 func (r *documentReader) findSets(ctx context.Context) error {
-	r.sets = make([]map[string]bool, len(r.req.query.Sets))
+	r.sets = make([]map[string]bool, len(r.req.Query.Sets))
 	hasProperty := false
-	for i, s := range r.req.query.Sets {
+	for i, s := range r.req.Query.Sets {
 		members, err := r.findSet(ctx, s)
 		if err != nil {
 			return err
@@ -22,7 +22,7 @@ func (r *documentReader) findSets(ctx context.Context) error {
 	if !hasProperty {
 		return nil
 	}
-	count, err := r.index.contents.CountUnreadableFrontmatter(ctx, r.req.vault.ID)
+	count, err := r.contents.CountUnreadableFrontmatter(ctx, r.req.Vault.ID)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (r *documentReader) findSets(ctx context.Context) error {
 func (r *documentReader) findSet(ctx context.Context, s searchquery.SetCondition) (map[string]bool, error) {
 	members := map[string]bool{}
 	if s.Function == searchquery.FunctionHasHeading {
-		headings, err := r.index.contents.FindHeadings(ctx, r.req.vault.ID, s.Text)
+		headings, err := r.contents.FindHeadings(ctx, r.req.Vault.ID, s.Text)
 		if err != nil {
 			return nil, err
 		}
@@ -46,12 +46,12 @@ func (r *documentReader) findSet(ctx context.Context, s searchquery.SetCondition
 		}
 		return members, nil
 	}
-	entries, err := r.index.contents.ListPropertyValues(ctx, r.req.vault.ID, s.Key)
+	entries, err := r.contents.ListPropertyValues(ctx, r.req.Vault.ID, s.Key)
 	if err != nil {
 		return nil, err
 	}
 	for _, e := range entries {
-		if searchquery.IsPropertyMatch(e.Value, s.Comparison, s.Operands, r.req.zone) {
+		if searchquery.IsPropertyMatch(e.Value, s.Comparison, s.Operands, r.req.Zone) {
 			members[e.Path] = true
 		}
 	}
@@ -88,7 +88,7 @@ func (r *documentReader) getSetPaths(indexes []int) ([]string, bool) {
 }
 
 func (r *documentReader) loadDocuments(ctx context.Context, paths []string) error {
-	if !hasCompareLeaf(r.req.query.Root) {
+	if !hasCompareLeaf(r.req.Query.Root) {
 		return nil
 	}
 	var missing []string
@@ -102,7 +102,7 @@ func (r *documentReader) loadDocuments(ctx context.Context, paths []string) erro
 	if len(missing) == 0 {
 		return nil
 	}
-	listed, err := r.index.documents.ListDocuments(ctx, r.req.vault.ID, searchquery.DocumentQuery{Paths: missing})
+	listed, err := r.chunks.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{Paths: missing})
 	if err != nil {
 		return err
 	}

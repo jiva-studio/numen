@@ -14,12 +14,9 @@ func newFindSearchResults(
 	search := db.ChunkSearch()
 	deps := searchqueryusecase.FindSearchResultsDeps{
 		Parser:       celquery.NewParser(searchquerydomain.DefaultLimits()),
-		Documents:    search,
+		Chunks:       search,
 		Contents:     db.NoteContents(),
 		Clock:        c.Clock,
-		Vectors:      search,
-		Words:        search,
-		Places:       search,
 		Matcher:      wordmatch.NewMatcher(),
 		Readers:      c.VaultReaders,
 		Texts:        c.TextReaders,
