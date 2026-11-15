@@ -46,7 +46,7 @@ func (p Parser) ParseQuery(text string, catalog searchquery.Catalog) (searchquer
 		return searchquery.RawNode{}, newParseError(issues.Errors())
 	}
 	c := converter{source: checked.NativeRep().SourceInfo()}
-	root := c.convert(checked.NativeRep().Expr())
+	root := c.convertQuery(checked.NativeRep().Expr())
 	if len(c.problems) > 0 {
 		return searchquery.RawNode{}, &searchquery.ParseError{Problems: c.problems}
 	}

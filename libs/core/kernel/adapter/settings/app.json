@@ -79,6 +79,115 @@
         },
         { "value": "maximum", "title": "Maximum", "detail": "All CPU cores and memory." }
       ]
+    },
+    {
+      "key": "search.reranking",
+      "type": "connections",
+      "title": "Reranking",
+      "description": "Services that order the results of a query, tried in order",
+      "details": "Services that order the results of a query with a rerank stage by relevance, tried in order until one answers. With an OpenRouter key, add an OpenRouter connection and choose the model mongodb/rerank-3: it ranks best and answers in a few seconds. Without one, choose the Local reranker, which runs on this machine and takes tens of seconds for each run.",
+      "operations": ["llm.rerank"],
+      "max": 5
+    },
+    {
+      "key": "search.rerankWindow",
+      "type": "number",
+      "title": "Rerank window",
+      "description": "Documents a rerank stage orders when the query names no window",
+      "default": 60,
+      "min": 1,
+      "max": 500,
+      "step": 1
+    },
+    {
+      "key": "search.maxReranked",
+      "type": "number",
+      "title": "Most reranked passages",
+      "description": "Most passages one rerank stage sends to the reranking service",
+      "default": 300,
+      "min": 1,
+      "max": 2000,
+      "step": 1
+    },
+    {
+      "key": "search.maxRerankedBytes",
+      "type": "number",
+      "title": "Longest reranked text",
+      "description": "Most bytes of one passage sent to the reranking service",
+      "default": 4096,
+      "min": 256,
+      "max": 32768,
+      "step": 1
+    },
+    {
+      "key": "search.defaultLimit",
+      "type": "number",
+      "title": "Default results",
+      "description": "Results a query returns when it names no limit",
+      "default": 20,
+      "min": 1,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "key": "search.maxLimit",
+      "type": "number",
+      "title": "Most results",
+      "description": "Most results one query returns",
+      "default": 100,
+      "min": 1,
+      "max": 1000,
+      "step": 1
+    },
+    {
+      "key": "search.candidatesPerCondition",
+      "type": "number",
+      "title": "Passages per condition",
+      "description": "Passages the index returns for each meaning and words condition",
+      "default": 300,
+      "min": 1,
+      "max": 5000,
+      "step": 1
+    },
+    {
+      "key": "search.maxCandidates",
+      "type": "number",
+      "title": "Most passages scored",
+      "description": "Most passages the query is applied to",
+      "default": 1000,
+      "min": 1,
+      "max": 10000,
+      "step": 1
+    },
+    {
+      "key": "search.maxPathPrefixes",
+      "type": "number",
+      "title": "Most folders",
+      "description": "Most path.startsWith conditions one query joins",
+      "default": 8,
+      "min": 1,
+      "max": 64,
+      "step": 1
+    },
+    {
+      "key": "search.mergeGapBytes",
+      "type": "number",
+      "title": "Merge gap",
+      "description": "Largest gap in bytes between passages of one file that join",
+      "default": 200,
+      "min": 0,
+      "max": 4096,
+      "step": 1
+    },
+    {
+      "key": "search.maxQueryBytes",
+      "type": "number",
+      "title": "Longest query",
+      "description": "Most bytes of the text of one query",
+      "default": 16384,
+      "min": 256,
+      "max": 65536,
+      "step": 1
     }
   ]
 }

@@ -50,7 +50,9 @@ function onOpenCategory(category: string): void {
           :section="selectedPluginId"
           :settings="installation.settings"
           :manager="installation.plugin"
+          :connections="installation.connections"
           @back="goBack"
+          @open-connections="selectPlugin('connections')"
         />
         <ConnectionsPage
           v-else-if="selectedPluginId === 'connections'"

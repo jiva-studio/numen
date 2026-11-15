@@ -120,13 +120,6 @@ func TestShapesOutsideTheLanguageAreRejectedAtTheirPosition(t *testing.T) {
 	}
 }
 
-func TestAStageIsUnknown(t *testing.T) {
-	problems := getProblems(t, `meaning("a").top(5)`)
-	if !hasProblem(problems, "unknown stage top") {
-		t.Errorf("problems %+v, want unknown stage top", problems)
-	}
-}
-
 func TestNormalizeOfANegatedGroupNegatesEachLeaf(t *testing.T) {
 	q, err := parse(`meaning("c") && !(meaning("a") || words("b"))`)
 	if err != nil {

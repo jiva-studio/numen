@@ -136,7 +136,7 @@ func (p *plan) mergeFiles(matched []searchquery.SearchResult) []searchquery.Sear
 func newChunkResult(d searchquery.Document, c domain.SearchResult, o searchquery.Outcome, text fileText) searchquery.SearchResult {
 	r := searchquery.SearchResult{
 		Document: d, Chunks: []searchquery.ChunkRange{{ID: c.ChunkID, Start: c.Start, Length: c.Length}},
-		Start: c.Start, Length: c.Length, PlaceLabel: c.PlaceLabel,
+		Start: c.Start, Length: c.Length, PlaceLabel: c.PlaceLabel, TextVersion: c.VersionID,
 		MeaningScore: o.MeaningScore, WordScore: o.WordScore,
 	}
 	if text.isRead {

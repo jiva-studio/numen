@@ -8,6 +8,7 @@ import { mount } from '@vue/test-utils'
 import { Select, Slider, Switch } from '@numen/ui'
 import SystemDetail from './SystemDetail.vue'
 import SettingRow from './setting-row/SettingRow.vue'
+import ConnectionRows from './plugins/connection-rows/ConnectionRows.vue'
 import { createInstallation } from '@/pages/settings/testing/installation'
 import type { PluginSettingInfo, SettingEdit } from '@/entities/settings'
 
@@ -121,6 +122,7 @@ const createPage = (
     props: {
       settings: installation.settings,
       manager: installation.plugin,
+      connections: installation.connections,
       section,
     },
   })
@@ -223,5 +225,43 @@ describe('the page of the shell settings', () => {
       .vm.$emit('update:modelValue', true)
 
     expect(writes).toStrictEqual([{ at: ['app', 'naming', 'syncTitleAndFilename'], value: 'true' }])
+  })
+})
+
+describe('the Reranking setting of the shell', () => {
+  const RERANKING: PluginSettingInfo = {
+    key: 'search.reranking',
+    type: 'connections',
+    title: 'Reranking',
+    description: 'Services that order the results of a query, tried in order',
+    default: undefined,
+    operations: ['llm.rerank'],
+    max: 5,
+    isShown: true,
+  }
+
+  it('draws Reranking on System with the editor of connection rows and not on Appearance', () => {
+    const declaration = [...DECLARATION, RERANKING]
+
+    const rows = createPage('system', declaration).wrapper.findAllComponents(ConnectionRows)
+    expect(rows.map((one) => one.props('setting').title)).toStrictEqual(['Reranking'])
+    expect(
+      createPage('system', declaration)
+        .wrapper.findAllComponents(SettingRow)
+        .map((one) => one.props('name')),
+    ).not.toContain('Reranking')
+    expect(createPage('appearance', declaration).wrapper.findAllComponents(ConnectionRows)).toHaveLength(0)
+  })
+
+  it('writes the rows chosen under app.search.reranking', () => {
+    const { wrapper, writes } = createPage('system', [...DECLARATION, RERANKING])
+
+    wrapper
+      .findComponent(ConnectionRows)
+      .vm.$emit('change', [{ connection: 'c0000001', options: { model: 'rerank-small' } }])
+
+    expect(writes.map((one) => [one.at, JSON.parse(one.value)])).toStrictEqual([
+      [['app', 'search', 'reranking'], [{ connection: 'c0000001', model: 'rerank-small' }]],
+    ])
   })
 })

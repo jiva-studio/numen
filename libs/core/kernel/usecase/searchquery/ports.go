@@ -17,8 +17,8 @@ type QueryParser interface {
 // DocumentQueries lists the documents of a vault within a scope superset.
 type DocumentQueries interface {
 	// ListDocuments returns the sources of one vault under any of q.PathPrefixes and of q.SourceKinds, with
-	// their note title and the count of their small chunks that hold a vector under q.Recipe, ordered by
-	// path, at most q.Limit+1 of them, all of them when q.Limit is zero.
+	// their note title, size, time of change and the count of their small chunks that hold a vector under
+	// q.Recipe, ordered by path, at most q.Limit+1 of them, all of them when q.Limit is zero.
 	ListDocuments(ctx context.Context, vaultID domain.VaultID, q searchquery.DocumentQuery) ([]searchquery.Document, error)
 }
 

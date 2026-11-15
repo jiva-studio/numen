@@ -27,14 +27,17 @@ const (
 	TypeSearchResults
 )
 
-// Function is one entry of the catalog: a global function, or a variable when IsVariable is set and Args
-// is nil.
+// Function is one entry of the catalog: a global function, a variable when IsVariable is set and Args
+// is nil, or a stage, a method of the results, when IsStage is set. A stage with several argument lists has
+// them in Overloads.
 type Function struct {
 	Name        string
 	Args        []ValueType
 	Result      ValueType
 	Level       Level
 	IsVariable  bool
+	IsStage     bool
+	Overloads   [][]ValueType
 	Description string
 	Example     string
 }
@@ -44,8 +47,8 @@ type Catalog struct {
 	Functions []Function
 }
 
-// GetBuiltinCatalog lists words and meaning, which decide per chunk, and the variables kind and path, which decide
-// per document.
+// GetBuiltinCatalog lists words and meaning, which decide per chunk, the variables kind and path, which decide
+// per document, and the stages rerank, top and sortBy.
 func GetBuiltinCatalog() Catalog {
 	return Catalog{Functions: []Function{
 		{
@@ -67,6 +70,25 @@ func GetBuiltinCatalog() Catalog {
 			Name: VariablePath, Result: TypeString, Level: LevelDocument, IsVariable: true,
 			Description: "the path of the file in the vault, compared with startsWith",
 			Example:     `path.startsWith("books/")`,
+		},
+		{
+			Name: StageNameRerank, Result: TypeSearchResults, IsStage: true,
+			Overloads: [][]ValueType{
+				{}, {TypeString}, {TypeString, TypeInt}, {TypeString, TypeString}, {TypeString, TypeString, TypeInt},
+			},
+			Description: "orders the results by a reranking service; the window is the number of documents it takes, 60 by default; results of later documents are dropped",
+			Example:     `meaning("heat").rerank("heat transfer", 100)`,
+		},
+		{
+			Name: StageNameTop, Args: []ValueType{TypeInt}, Result: TypeSearchResults, IsStage: true,
+			Description: "keeps the first N results",
+			Example:     `words("tide").top(10)`,
+		},
+		{
+			Name: StageNameSortBy, Result: TypeSearchResults, IsStage: true,
+			Overloads:   [][]ValueType{{TypeString}, {TypeString, TypeString}},
+			Description: "orders the results by score, path, title, modified or size; modified and size newest or largest first",
+			Example:     `(kind == "pdf").sortBy("modified")`,
 		},
 	}}
 }

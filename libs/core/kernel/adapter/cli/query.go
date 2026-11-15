@@ -4,8 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"strconv"
+	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -65,13 +69,16 @@ func (c queryCommand) Run(ctx context.Context, term terminal, args []string) err
 	for _, warning := range results.Warnings {
 		diagnostics.Printf("warning: %s\n", warning)
 	}
+	for _, report := range results.Reranks {
+		diagnostics.Println(formatRerankReport(report))
+	}
 	r := newReporter(term.out)
 	printResults(r, results)
 	return errors.Join(r.Err(), diagnostics.Err())
 }
 
 func parseQueryArgs(args []string) (searchqueryusecase.Request, string, error) {
-	var request searchqueryusecase.Request
+	request := searchqueryusecase.Request{Priority: modelcall.PriorityInteractive}
 	if len(args) > 0 && args[0] == "--limit" {
 		if len(args) < 2 {
 			return request, "", errors.New(queryUsage)
@@ -120,4 +127,12 @@ func getPlace(r searchquery.SearchResult) string {
 		return r.PlaceLabel
 	}
 	return "line " + strconv.Itoa(r.MatchLine+1)
+}
+
+func formatRerankReport(report searchquery.RerankReport) string {
+	options := make([]string, 0, len(report.Options))
+	for _, key := range slices.Sorted(maps.Keys(report.Options)) {
+		options = append(options, key+"="+report.Options[key])
+	}
+	return fmt.Sprintf("rerank: %s (%s) sent %d, reused %d", report.ConnectionName, strings.Join(options, ", "), report.SentCount, report.ReusedCount)
 }

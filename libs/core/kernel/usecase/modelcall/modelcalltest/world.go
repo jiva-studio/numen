@@ -488,3 +488,21 @@ func (w *World) SetPluginVersion(pluginID, version string) {
 type noTitles struct{}
 
 func (noTitles) ListOperationTitles() []manifest.Operation { return nil }
+
+// RerankOperation is the operation of the type reranker.
+const RerankOperation = "llm.rerank"
+
+// AddReranker creates a connection of the type reranker of the first plugin, which serves llm.rerank only
+// and whose calls go to the address.
+func (w *World) AddReranker(t *testing.T, name, address string) Entry {
+	t.Helper()
+	const typeName = "reranker"
+	typeID := manifest.GetConnectionTypeID(ProviderPluginID, typeName)
+	if _, found := w.Types.GetType(typeID); !found {
+		address := manifest.ConnectionField{Key: addressField, Type: textField, Title: "Address", IsAddress: true, IsRequired: true}
+		w.Types.list = append(w.Types.list, connection.Type{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
+			ID: typeName, Title: "Reranker", Operations: []string{RerankOperation}, Fields: []manifest.ConnectionField{address},
+		}})
+	}
+	return w.Add(t, typeID, name, address, "")
+}

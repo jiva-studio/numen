@@ -2,6 +2,7 @@ package searchquery
 
 import (
 	"slices"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -14,6 +15,8 @@ type Document struct {
 	SourceKind domain.SourceKind
 	Kind       string
 	ChunkCount int
+	ModifiedAt time.Time
+	Size       int64
 }
 
 // IsDocumentMatch evaluates the tree for the document with no chunk: a chunk leaf holds when it is negated.

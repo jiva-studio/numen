@@ -39,6 +39,22 @@ Two things are not settings and are not in here: which files count as notes, and
 | --- | --- | --- |
 | `profile` | text | how much of the hardware indexing and models may use. One of `eco`, `balanced`, `maximum`. |
 
+### `app.search`
+
+| | | |
+| --- | --- | --- |
+| `reranking` | text | services that order the results of a query with a rerank stage by relevance, tried in order until one answers. With an OpenRouter key, add an OpenRouter connection and choose the model mongodb/rerank-3: it ranks best and answers in a few seconds. Without one, choose the Local reranker, which runs on this machine and takes tens of seconds for each run. |
+| `rerankWindow` | a number | documents a rerank stage orders when the query names no window. From 1 to 500. |
+| `maxReranked` | a number | most passages one rerank stage sends to the reranking service. From 1 to 2000. |
+| `maxRerankedBytes` | a number | most bytes of one passage sent to the reranking service. From 256 to 32768. |
+| `defaultLimit` | a number | results a query returns when it names no limit. From 1 to 100. |
+| `maxLimit` | a number | most results one query returns. From 1 to 1000. |
+| `candidatesPerCondition` | a number | passages the index returns for each meaning and words condition. From 1 to 5000. |
+| `maxCandidates` | a number | most passages the query is applied to. From 1 to 10000. |
+| `maxPathPrefixes` | a number | most path.startsWith conditions one query joins. From 1 to 64. |
+| `mergeGapBytes` | a number | largest gap in bytes between passages of one file that join. From 0 to 4096. |
+| `maxQueryBytes` | a number | most bytes of the text of one query. From 256 to 65536. |
+
 ### `md.numen.agents.acp`
 
 The settings of the plugin ACP Agents.

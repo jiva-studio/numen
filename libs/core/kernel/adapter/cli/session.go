@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
@@ -64,14 +65,15 @@ type IndexOptions struct {
 
 // Indexed is what the commands that read or change the index work through, over the one index a run opened.
 type Indexed struct {
-	Rename     vault.RenameByName
-	Unregister vault.UnregisterByName
-	Erase      vault.EraseByName
-	Scan       Scan
-	Search     Search
-	Links      query.ShowLinksByName
-	Problems   vault.GetProblemsByName
-	Query      Query
+	Rename           vault.RenameByName
+	Unregister       vault.UnregisterByName
+	Erase            vault.EraseByName
+	Scan             Scan
+	Search           Search
+	Links            query.ShowLinksByName
+	Problems         vault.GetProblemsByName
+	Query            Query
+	OperationResults *operationresult.ClearOperationResults
 }
 
 // Vaults is what the vault commands that touch the list alone operate on: the use cases over the list this

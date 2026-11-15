@@ -182,6 +182,10 @@ func (extensionTypes) GetContentType(name string) domain.ContentType {
 func (extensionTypes) ListExtensions(domain.ContentType) []string { return nil }
 
 func (w world) newFind(model texts) *searchquery.FindSearchResults {
+	return searchquery.NewFindSearchResults(w.newDeps(model))
+}
+
+func (w world) newDeps(model texts) searchquery.FindSearchResultsDeps {
 	search := w.db.ChunkSearch()
 	deps := searchquery.FindSearchResultsDeps{
 		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search, Words: search,
@@ -191,7 +195,7 @@ func (w world) newFind(model texts) *searchquery.FindSearchResults {
 	if model != nil {
 		deps.Source = sourcefake.Wrap(model)
 	}
-	return searchquery.NewFindSearchResults(deps)
+	return deps
 }
 
 func getPaths(results searchquerydomain.SearchResults) []string {

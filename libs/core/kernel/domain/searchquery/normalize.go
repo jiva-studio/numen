@@ -31,10 +31,12 @@ func Normalize(raw RawNode, limits Limits) (Query, error) {
 	n := normalizer{limits: limits}
 	root := n.convert(raw, false)
 	n.checkHasPositiveLeaf(root)
+	q := Query{Root: root, Conditions: n.conditions, IsSearchResults: hasChunkLeaf(root)}
+	q.Stages = n.convertStages(raw.Stages, GetDefaultRerankQuery(q))
 	if len(n.problems) > 0 {
 		return Query{}, &ParseError{Problems: n.problems}
 	}
-	return Query{Root: root, Conditions: n.conditions, IsSearchResults: hasChunkLeaf(root)}, nil
+	return q, nil
 }
 
 type normalizer struct {

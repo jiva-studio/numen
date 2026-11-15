@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -19,3 +20,8 @@ func (Detected) Refresh()                              {}
 type OperationTitles struct{}
 
 func (OperationTitles) ListOperationTitles() []manifest.Operation { return nil }
+
+// RerankRows is the Reranking setting of an installation that runs no plugin: it has no row.
+type RerankRows struct{}
+
+func (RerankRows) ListRows(string, string) ([]modelcall.Row, error) { return nil, nil }

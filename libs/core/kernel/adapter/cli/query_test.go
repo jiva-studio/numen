@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -39,6 +40,11 @@ func (markdownTypes) GetContentType(name string) domain.ContentType {
 func (markdownTypes) ListExtensions(domain.ContentType) []string { return nil }
 
 func newQueryDeps(t *testing.T) stubSession {
+	t.Helper()
+	return newQuerySession(t, func(*index.DB, *searchquery.FindSearchResultsDeps) {})
+}
+
+func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchquery.FindSearchResultsDeps)) stubSession {
 	t.Helper()
 	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
 	if err != nil {
@@ -65,18 +71,20 @@ func newQueryDeps(t *testing.T) stubSession {
 		}
 	}
 	search := db.ChunkSearch()
-	find := searchquery.NewFindSearchResults(searchquery.FindSearchResultsDeps{
+	deps := searchquery.FindSearchResultsDeps{
 		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search, Words: search,
 		Places: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
 		Floors: fixedQueryFloor{}, ContentTypes: markdownTypes{},
-	})
+	}
+	change(db, &deps)
+	find := searchquery.NewFindSearchResults(deps)
 	return stubSession{
 		Vaults: createVaultList(v),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
 			return cli.Indexed{Query: cli.Query{
 				Find:    registry.NewFind(singleVaultList{v}).Execute,
 				Prepare: func(context.Context, domain.Vault) (*searchquery.FindSearchResults, error) { return find, nil },
-			}}, nil
+			}, OperationResults: operationresult.NewClearOperationResults(db.OperationResults(100))}, nil
 		},
 	}
 }

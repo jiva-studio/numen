@@ -84,6 +84,9 @@ func (c *converter) convertCall(expr ast.Expr) searchquery.RawNode {
 	case overloads.StartsWith:
 		return c.convertStartsWith(expr)
 	}
+	if isStageCall(expr) {
+		return c.reject(expr, messageStageLast)
+	}
 	return c.reject(expr, messageCondition)
 }
 

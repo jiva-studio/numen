@@ -14,6 +14,8 @@ const (
 	ScoreWords
 	// ScoreFused is the reciprocal rank fusion of both, normalized to 0..1.
 	ScoreFused
+	// ScoreRerank is the score a reranking service gave.
+	ScoreRerank
 )
 
 // GetScoreKind returns what the scores of the results of a query with the conditions mean.
@@ -46,7 +48,8 @@ type ChunkRange struct {
 
 // SearchResult is one chunk found, or neighboring chunks of one file merged. A result without chunks is a
 // whole file: a document matched by document conditions only. Text is an excerpt of at most
-// MaxExcerptBytes around the best part, or the start of the file for a whole file.
+// MaxExcerptBytes around the best part, or the start of the file for a whole file. TextVersion is the text
+// version the chunks were cut from, empty for the file of a note.
 type SearchResult struct {
 	Document     Document
 	Chunks       []ChunkRange
@@ -56,9 +59,11 @@ type SearchResult struct {
 	PlaceLabel   string
 	MatchLine    int
 	Text         string
+	TextVersion  string
 	Score        *float64
 	MeaningScore *float64
 	WordScore    *float64
+	RerankScore  *float64
 }
 
 // MaxExcerptBytes is the most text a result carries.
@@ -76,4 +81,5 @@ type SearchResults struct {
 	Floor      float64
 	Candidates int
 	Warnings   []string
+	Reranks    []RerankReport
 }

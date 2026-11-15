@@ -16,8 +16,8 @@ import (
 )
 
 // ListDocuments returns the sources of one vault under any of the prefixes and of the source kinds of the
-// query, with their note title and the count of their small chunks with a vector under the recipe, in order
-// of path, at most q.Limit+1 of them; all of them when q.Limit is zero or below.
+// query, with their note title, size, time of change and the count of their small chunks with a vector under
+// the recipe, in order of path, at most q.Limit+1 of them; all of them when q.Limit is zero or below.
 func (q *Search) ListDocuments(ctx context.Context, vaultID domain.VaultID, query searchquery.DocumentQuery) (_ []searchquery.Document, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -42,9 +42,11 @@ func (q *Search) ListDocuments(ctx context.Context, vaultID domain.VaultID, quer
 	var out []searchquery.Document
 	for rows.Next() {
 		var d searchquery.Document
-		if err := rows.Scan(&d.Path, &d.SourceKind, &d.Title, &d.ChunkCount); err != nil {
+		var modified int64
+		if err := rows.Scan(&d.Path, &d.SourceKind, &d.Title, &d.Size, &modified, &d.ChunkCount); err != nil {
 			return nil, err
 		}
+		d.ModifiedAt = ConvertNanosToTime(modified)
 		out = append(out, d)
 	}
 	return out, rows.Err()

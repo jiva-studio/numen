@@ -54,6 +54,7 @@ func (f *File) GetValue(path ...string) (any, bool) {
 // and is applied nowhere. The bytes of the file on disk are not touched.
 func (f *File) DropInvalid(declared settingsdomain.Declarations, registries settingsdomain.Registries) {
 	registries = withConnectionIDs(f.Connections, registries)
+	f.dropInvalidAppRows(registries)
 	f.dropInvalidApp(declared, registries)
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
 		settings, found := declared(id)
@@ -100,6 +101,8 @@ func (f *File) resetApp(declared manifest.Setting) {
 		f.Titles = DefaultTitles()
 	case keyProfile:
 		f.Performance = DefaultPerformance()
+	default:
+		f.Search.reset(declared.Key)
 	}
 }
 
