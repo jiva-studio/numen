@@ -19,11 +19,11 @@ runs:
       id: key
       shell: bash
       env:
-        KEY: apt-${{ inputs.key }}-${{ runner.os }}-${{ env.ImageVersion }}
+        PREFIX: apt-${{ inputs.key }}-${{ runner.os }}
       run: |
         mkdir -p "$HOME/.cache/apt-archives/partial"
         echo "Dir::Cache::archives \"$HOME/.cache/apt-archives\";" | sudo tee /etc/apt/apt.conf.d/99-numen-archives > /dev/null
-        echo "key=$KEY" >> "$GITHUB_OUTPUT"
+        echo "key=$PREFIX-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
 
     - id: cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
