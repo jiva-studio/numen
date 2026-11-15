@@ -121,26 +121,9 @@ func (u Refresh) isRecent(mtime time.Time) bool {
 	return u.now.Now().Sub(mtime) < TimestampGranularity
 }
 
-// NewRefresh creates a Refresh from the vault readers, the vault repository,
-// the note repository, what the index holds about sources, the source repository that deletes the rows
-// of other files, and the clock that identifies recently modified notes.
-func NewRefresh(
-	readers vaultport.VaultReaders,
-	vaults vaultport.VaultRepository,
-	notes noteport.NoteRepository,
-	queries sourceport.RemovalLookup,
-	sources sourceport.SourceRepository,
-	now machineport.Clock,
-) Refresh {
-	return Refresh{
-		readers: readers, vaults: vaults, notes: notes, queries: queries, sources: sources,
-		now:    now,
-		Ledger: NewLedger(),
-	}
-}
-
-// RefreshDeps are what NewRefreshFrom builds a Refresh over: the collaborators of NewRefresh, the sizes the notes are
-// cut at, and the ledger the refreshes of one index share.
+// RefreshDeps are what NewRefreshFrom builds a Refresh over: the vault readers, the vault repository, the note
+// repository, what the index holds about sources, the source repository that deletes the rows of other files, the clock
+// that identifies recently modified notes, the sizes the notes are cut at, and the ledger the refreshes of one index share.
 type RefreshDeps struct {
 	Readers vaultport.VaultReaders
 	Vaults  vaultport.VaultRepository
