@@ -61,7 +61,7 @@ func (r *Runner) run(ctx context.Context, one job) (resultcache.Record, error) {
 		written = r.recordFailure(ctx, one, name, err)
 		return written, err
 	case len(result.state.Errors) > 0:
-		written, err = r.recordProblems(ctx, one, name, want, moveProblems(convertSearchProblems(result.state.Errors), raw))
+		written, err = r.recordProblems(ctx, one, name, want, convertSearchProblems(result.state.Errors))
 		return written, err
 	}
 	written, err = r.write(ctx, one.vault, name, newRecord(one.path, want, result, r.now()))

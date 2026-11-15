@@ -12,7 +12,7 @@ import (
 // first; StaleSince the time the index changed after it; FailedAt and Failure the time and reason of a
 // run that failed after it. Floor, Order, Reranker and IndexGeneration are what the core reported for the
 // last good run: Reranker is the connection that reranked, empty in fused order. Errors are the problems
-// of the last run, in the lines of the note; the results stay those of the last good run.
+// of the last run, counted from the first line of the query; the results stay those of the last good run.
 type Record struct {
 	Path            string     `json:"path"`
 	QueryHash       string     `json:"queryHash"`

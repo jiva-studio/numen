@@ -248,23 +248,23 @@ func TestRunOfANoteWithoutAQueryBlockRecordsTheProblem(t *testing.T) {
 	if len(record.Errors) != 1 || record.Errors[0].Message != "the note has no numen-query block" {
 		t.Fatalf("errors = %+v, want the missing block", record.Errors)
 	}
-	if record.Errors[0].Line != 5 || record.Errors[0].Column != 1 || len(record.Results) != 0 || !isAt(record.FailedAt, getStartTime()) {
-		t.Errorf("record = %+v, want the problem at line 5, column 1, no result, failed now", record)
+	if record.Errors[0].Line != 1 || record.Errors[0].Column != 1 || len(record.Results) != 0 || !isAt(record.FailedAt, getStartTime()) {
+		t.Errorf("record = %+v, want the problem at line 1, column 1 of the query, no result, failed now", record)
 	}
 	if got := w.getStartCount(); got != 0 {
 		t.Errorf("%d searches for a note with problems, want none", got)
 	}
 }
 
-func TestRunRecordsTheProblemsOfTheCoreAtTheirLineInTheFile(t *testing.T) {
+func TestRunRecordsTheProblemsOfTheCoreAtTheirLineInTheQuery(t *testing.T) {
 	w := newWorld(t, 0)
 	w.vault.File(stormsPath, formatSearchNote(stormsID, brokenQuery))
 
 	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
-	if len(record.Errors) != 1 || record.Errors[0].Line != 6 || record.Errors[0].Column != 20 || record.Errors[0].Message == "" {
-		t.Errorf("errors = %+v, want a problem at line 6, column 20 of the file", record.Errors)
+	if len(record.Errors) != 1 || record.Errors[0].Line != 1 || record.Errors[0].Column != 20 || record.Errors[0].Message == "" {
+		t.Errorf("errors = %+v, want a problem at line 1, column 20 of the query", record.Errors)
 	}
 	if len(record.Results) != 0 {
 		t.Errorf("results = %+v, want none", record.Results)

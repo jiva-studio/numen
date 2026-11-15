@@ -13,7 +13,7 @@ import (
 )
 
 // target is what a run of a note as it reads now produces a record from: its definition, the problems of
-// the note in the positions of the file, and the hash of its query.
+// the note counted from the first line of its query, and the hash of its query.
 type target struct {
 	definition searchnote.Definition
 	problems   []resultcache.Problem
@@ -21,7 +21,7 @@ type target struct {
 }
 
 // State is a saved search as the view reads it: the note as it is now, the problems of the note or of
-// its last run, its cache, and whether a run will replace the cache or is on its way.
+// its last run counted from the first line of the query, its cache, and whether a run will replace the cache or is on its way.
 type State struct {
 	Definition searchnote.Definition
 	Problems   []resultcache.Problem
@@ -69,18 +69,6 @@ func convertProblems(problems []searchnote.Problem) []resultcache.Problem {
 		converted[i] = resultcache.Problem{Line: problem.Line, Column: problem.Column, Message: problem.Message}
 	}
 	return converted
-}
-
-func moveProblems(problems []resultcache.Problem, raw []byte) []resultcache.Problem {
-	queryLine, isFound := searchnote.GetQueryLine(raw)
-	moved := make([]resultcache.Problem, len(problems))
-	for i, problem := range problems {
-		if isFound && problem.Line > 0 {
-			problem.Line += queryLine - 1
-		}
-		moved[i] = problem
-	}
-	return moved
 }
 
 func isChanged(want target, record resultcache.Record) bool {

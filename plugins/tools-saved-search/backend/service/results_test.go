@@ -102,11 +102,36 @@ func TestGetResultsKeepsTheLastGoodResultsWithTheProblemsOfTheQuery(t *testing.T
 	f.handleIndexChange(t)
 
 	res := f.getResults(t, stormsPath)
-	if len(res.Errors) != 1 || res.Errors[0].Line != 6 || res.Errors[0].Column != 20 {
-		t.Errorf("errors = %+v, want the problem at line 6, column 20 of the file", res.Errors)
+	if len(res.Errors) != 1 || res.Errors[0].Line != 1 || res.Errors[0].Column != 20 {
+		t.Errorf("errors = %+v, want the problem at line 1, column 20 of the query", res.Errors)
 	}
 	if got := getResultPaths(res); len(got) != 2 || res.ComputedAt != "2026-11-14T09:30:00Z" || res.FailedAt != "2026-11-14T09:31:00Z" {
 		t.Errorf("response = %+v, want the last good results and the time of the failed run", res)
+	}
+}
+
+func TestGetResultsCountsTheProblemsFromTheQueryAfterTheFrontmatterGrows(t *testing.T) {
+	f := newFixture(t, 10)
+	f.vault.File(stormsPath, formatSearchNote(stormsID, brokenQuery))
+	f.handleIndexChange(t)
+
+	grown := strings.Replace(formatSearchNote(stormsID, brokenQuery), "---\n", "---\ntitle: Winter storms\nsource: logbooks\n", 1)
+	f.vault.File(stormsPath, grown)
+	res := f.getResults(t, stormsPath)
+
+	if len(res.Errors) != 1 || res.Errors[0].Line != 1 || res.Errors[0].Column != 20 {
+		t.Errorf("errors = %+v, want the problem at line 1, column 20 of the query", res.Errors)
+	}
+}
+
+func TestGetResultsPutsAProblemOfTheNoteAtTheStartOfTheQuery(t *testing.T) {
+	f := newFixture(t, 10)
+	f.vault.File(stormsPath, "---\nid: "+stormsID+"\ntype: search\n---\nStories of storms.\n\n```numen-query\n```\n")
+
+	res := f.getResults(t, stormsPath)
+
+	if len(res.Errors) != 1 || res.Errors[0].Line != 1 || res.Errors[0].Column != 1 || !strings.Contains(res.Errors[0].Message, "empty") {
+		t.Errorf("errors = %+v, want the empty block at line 1, column 1 of the query", res.Errors)
 	}
 }
 
