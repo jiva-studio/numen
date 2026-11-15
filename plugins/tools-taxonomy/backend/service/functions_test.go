@@ -24,7 +24,7 @@ const functionToken = "tags-token"
 
 // failingFrontmatter reads the frontmatter of the vault until isFailing is set.
 type failingFrontmatter struct {
-	tagcache.Frontmatter
+	host.FrontmatterReader
 	isFailing *atomic.Bool
 }
 
@@ -32,7 +32,7 @@ func (f failingFrontmatter) ReadFrontmatter(ctx context.Context, q host.Frontmat
 	if f.isFailing.Load() {
 		return host.FrontmatterPage{}, errors.New("the host is not answering")
 	}
-	return f.Frontmatter.ReadFrontmatter(ctx, q)
+	return f.FrontmatterReader.ReadFrontmatter(ctx, q)
 }
 
 type functionScene struct {
@@ -51,7 +51,7 @@ func newFunctionScene(t *testing.T, files map[string]string) functionScene {
 	registries, err := service.NewRegistries(service.Host{
 		Shown: v,
 		Open: func(id domain.VaultID) tagcache.Vault {
-			return tagcache.Vault{Frontmatter: failingFrontmatter{Frontmatter: v.With(id), isFailing: isFailing}, Feed: v.With(id), Store: v.Store().With(id)}
+			return tagcache.Vault{Frontmatter: failingFrontmatter{FrontmatterReader: v.With(id), isFailing: isFailing}, Feed: v.With(id), Store: v.Store().With(id)}
 		},
 	})
 	if err != nil {
