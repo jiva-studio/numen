@@ -45,12 +45,8 @@ func controlDial(ctx context.Context, _, target string, _ syscall.RawConn) error
 	return address.CheckResolved(dialed.Addr(), ok && isLoopbackRequired)
 }
 
-func newDialer() *net.Dialer {
-	return &net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second, ControlContext: controlDial}
-}
-
 func newClient() *http.Client {
-	dialer := newDialer()
+	dialer := &net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second, ControlContext: controlDial}
 	return &http.Client{
 		Transport: &http.Transport{
 			Proxy:               nil,

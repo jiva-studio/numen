@@ -29,35 +29,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Scan is the walk that reads a vault's notes into the index, cut at this
-// installation's sizes. Every application that reads a vault takes it from here.
-func Scan(c Config, db *Index) vault.Scan {
-	return searchScan(searchOf(c), db)
-}
-
-// ReadWholeVault is what makes a vault answer, put together the one way: the
-// notes read, the file texts cut, and the vectors of the search source made.
-func ReadWholeVault(c Config,
-	ctx context.Context, db *Index, source searchsourceport.Source, v domain.Vault,
-) (indexing.ReadWholeVault, error) {
-	return readWholeVault(searchOf(c), ctx, db, source, v, makeRefresh(c, db, db.Notes()))
-}
-
-// Embed gives a vault's chunks the vectors of the search source they need.
-func Embed(c Config, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
-	return searchEmbed(searchOf(c), db, source, v)
-}
-
-// IndexTexts cuts the text versions of a vault's files into chunks.
-func IndexTexts(c Config, db *Index, v domain.Vault) (filetext.Index, error) {
-	return indexTexts(searchOf(c), db, v, nil)
-}
-
-// NewSearch is the search a question is answered by, put together the one way.
-func NewSearch(c Config, db *Index, asking searchsourceport.Source, errorHandler func(error)) searchusecase.Search {
-	return newSearch(searchOf(c), db, asking, errorHandler, nil)
-}
-
 // coreFolder is the folder of a vault's store that holds the core's own files.
 const coreFolder = "core"
 

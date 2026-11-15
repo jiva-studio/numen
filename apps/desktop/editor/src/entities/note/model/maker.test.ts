@@ -147,6 +147,7 @@ describe('making a note under a name a person gave it', () => {
 
 describe('registerTabKindIcon', () => {
   it('keeps the newer icon when an older disposer runs late', () => {
+    const fallback = getNoteIcon(undefined)
     const first = { name: 'FirstIcon' }
     const second = { name: 'SecondIcon' }
     const disposeFirst = registerTabKindIcon('sample', first)
@@ -156,6 +157,6 @@ describe('registerTabKindIcon', () => {
     expect(getNoteIcon('sample')).toBe(second)
 
     disposeSecond()
-    expect(getNoteIcon('sample')).not.toBe(second)
+    expect(getNoteIcon('sample')).toBe(fallback)
   })
 })
