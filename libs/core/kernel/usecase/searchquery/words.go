@@ -13,26 +13,18 @@ import (
 const messageInvalidWords = "words takes an FTS5 expression, and this one is not valid"
 
 func (p *plan) findWords(ctx context.Context, index int, documents []searchquery.Document, isListed bool) ([]domain.ChunkID, error) {
+	q, ok := p.newWordQuery(index, documents, isListed)
+	if !ok {
+		return nil, nil
+	}
 	s := p.scopes[index]
 	limits := p.u.Limits
-	q := searchquery.WordQuery{Expression: p.query.Conditions[index].Text, Limit: limits.CandidatesPerCondition}
-	if isListed && getChunkTotal(documents) <= limits.ExactScanChunks {
-		if len(documents) == 0 {
-			return nil, nil
-		}
-		q.Paths = getPaths(documents)
-	} else {
-		q.PathPrefixes, q.SourceKinds = s.PathPrefixes, s.SourceKinds
-	}
 	for {
 		matches, err := p.u.words.FindWords(ctx, p.v.ID, q)
 		if err != nil {
 			return nil, p.getWordsError(index, err)
 		}
-		ids := make([]domain.ChunkID, len(matches))
-		for i, m := range matches {
-			ids[i] = m.Chunk
-		}
+		ids := getMatchChunks(matches)
 		if s.IsEveryDocument() {
 			return ids, nil
 		}
@@ -50,6 +42,29 @@ func (p *plan) findWords(ctx context.Context, index int, documents []searchquery
 		}
 		q.Limit = min(q.Limit*2, limits.MaxCoarseCandidates)
 	}
+}
+
+func (p *plan) newWordQuery(index int, documents []searchquery.Document, isListed bool) (searchquery.WordQuery, bool) {
+	limits := p.u.Limits
+	q := searchquery.WordQuery{Expression: p.query.Conditions[index].Text, Limit: limits.CandidatesPerCondition}
+	if !isListed || getChunkTotal(documents) > limits.ExactScanChunks {
+		s := p.scopes[index]
+		q.PathPrefixes, q.SourceKinds = s.PathPrefixes, s.SourceKinds
+		return q, true
+	}
+	if len(documents) == 0 {
+		return q, false
+	}
+	q.Paths = getPaths(documents)
+	return q, true
+}
+
+func getMatchChunks(matches []searchquery.WordMatch) []domain.ChunkID {
+	ids := make([]domain.ChunkID, len(matches))
+	for i, m := range matches {
+		ids[i] = m.Chunk
+	}
+	return ids
 }
 
 func (p *plan) keepInScope(ctx context.Context, s searchquery.Scope, ids []domain.ChunkID) ([]domain.ChunkID, error) {

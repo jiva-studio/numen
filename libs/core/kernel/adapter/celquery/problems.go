@@ -26,13 +26,15 @@ func (w *nameWalk) addProblem(expr ast.Expr, message, name string) {
 }
 
 func (w *nameWalk) addMemberProblem(expr ast.Expr, name string) {
-	suggestion, _ := searchquery.SuggestName(name, memberFunctions)
+	suggestion, _ := searchquery.SuggestName(name, getMemberFunctions())
 	w.problems = append(w.problems, searchquery.Problem{
 		Position: getExprPosition(w.text, w.source, expr), Message: "Unknown function " + name, Suggestion: suggestion,
 	})
 }
 
-var memberFunctions = searchquery.Catalog{Functions: []searchquery.Function{{Name: overloads.StartsWith}}}
+func getMemberFunctions() searchquery.Catalog {
+	return searchquery.Catalog{Functions: []searchquery.Function{{Name: overloads.StartsWith}}}
+}
 
 func (w *nameWalk) walk(expr ast.Expr) {
 	switch expr.Kind() {
@@ -82,7 +84,7 @@ func (w *nameWalk) walkCall(expr ast.Expr) {
 
 func isOperator(name string) bool {
 	_, found := operators.FindReverse(name)
-	return found || name == operators.NotStrictlyFalse || name == operators.OldNotStrictlyFalse
+	return found || name == operators.NotStrictlyFalse
 }
 
 func (w *nameWalk) hasChunkCall(expr ast.Expr) bool {
