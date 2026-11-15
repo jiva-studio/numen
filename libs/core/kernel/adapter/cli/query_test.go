@@ -68,7 +68,7 @@ func newQueryDeps(t *testing.T) stubSession {
 	find := searchquery.NewFindSearchResults(searchquery.FindSearchResultsDeps{
 		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search, Words: search,
 		Places: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
-		Floors: fixedQueryFloor{}, ContentTypes: markdownTypes{},
+		Floors: fixedQueryFloor{}, ContentTypes: markdownTypes{}, Contents: db.NoteQueries(), Clock: testsupport.NewClock(),
 	})
 	return stubSession{
 		Vaults: createVaultList(v),
