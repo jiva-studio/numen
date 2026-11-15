@@ -55,13 +55,14 @@ func (x *index) run(ctx context.Context, _ domain.Vault, r searchquery.Request) 
 	q := x.queries[r.Text]
 	x.ran = append(x.ran, r.Text)
 	x.mu.Unlock()
-	x.started <- r.Text
 	if q == nil {
+		x.started <- r.Text
 		return searchquery.SearchResults{}, nil
 	}
 	if q.partial != nil {
 		r.ReportPartial(*q.partial)
 	}
+	x.started <- r.Text
 	if q.release != nil {
 		select {
 		case <-q.release:
