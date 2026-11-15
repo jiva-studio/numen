@@ -11,3 +11,7 @@ func OpenLibrary(name string) (uintptr, error) {
 	h, err := syscall.LoadLibrary(name)
 	return uintptr(h), err
 }
+
+func findSymbol(handle uintptr, name string) (uintptr, error) {
+	return syscall.GetProcAddress(syscall.Handle(handle), name)
+}

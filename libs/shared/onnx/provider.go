@@ -31,6 +31,26 @@ const (
 	ProviderROCm Provider = "rocm"
 )
 
+// ParseProvider converts a string into a valid Provider.
+func ParseProvider(name string) (Provider, error) {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "", "auto":
+		return ProviderAuto, nil
+	case "cpu":
+		return ProviderCPU, nil
+	case "coreml", "core-ml":
+		return ProviderCoreML, nil
+	case "cuda":
+		return ProviderCUDA, nil
+	case "directml", "direct-ml", "dml":
+		return ProviderDirectML, nil
+	case "rocm":
+		return ProviderROCm, nil
+	default:
+		return ProviderCPU, fmt.Errorf("unknown execution provider %q, expected one of: auto, cpu, coreml, cuda, directml, rocm", name)
+	}
+}
+
 // ComputeUnits names the hardware CoreML may place a model on.
 type ComputeUnits string
 
