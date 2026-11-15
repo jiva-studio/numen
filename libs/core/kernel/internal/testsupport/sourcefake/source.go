@@ -72,8 +72,8 @@ func (s *Source) EmbedQueries(ctx context.Context, queries []string) ([][]float3
 	return s.Model.Embed(ctx, queries)
 }
 
-// SearchPassages embeds the query and returns the nearest chunks of the vault of the place.
-func (s *Source) SearchPassages(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error) {
+// SearchChunks embeds the query and returns the nearest chunks of the vault of the place.
+func (s *Source) SearchChunks(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error) {
 	if s.Nearest == nil {
 		return nil, nil
 	}

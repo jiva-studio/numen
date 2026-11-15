@@ -353,11 +353,11 @@ func requireExactSchemaKeys(t *testing.T, what string, properties map[string]any
 func newPlacedLibrary(t *testing.T) library {
 	t.Helper()
 	l := newLibrary(t)
-	l.search.SetIndexedPassages([]host.Passage{
-		{Path: guidePath, Text: "egret on page five", Location: "Waders", Start: 10, Length: 18, Selector: `{"page":5,"boxes":[[0,0,1,1]]}`},
-		{Path: "library/Marsh Book.epub", Text: "egret in the reeds", Location: "The Reed Beds", Start: 20, Length: 18, Selector: `{"cfi":"epubcfi(/6/4!/4/2/1:0)"}`},
-		{Path: talkPath, Text: "egret at the start", Location: "00:00", Start: 0, Length: 18, Selector: `{"t":[0,3.5]}`},
-		{Path: "library/Pond.pdf", Text: "egret by the pond", Location: "Ponds", Start: 0, Length: 17, Selector: `{"page":"two"}`},
+	l.search.SetIndexedResults([]host.SearchResult{
+		{Path: guidePath, Text: "egret on page five", PlaceLabel: "Waders", Start: 10, Length: 18, Selector: `{"page":5,"boxes":[[0,0,1,1]]}`},
+		{Path: "library/Marsh Book.epub", Text: "egret in the reeds", PlaceLabel: "The Reed Beds", Start: 20, Length: 18, Selector: `{"cfi":"epubcfi(/6/4!/4/2/1:0)"}`},
+		{Path: talkPath, Text: "egret at the start", PlaceLabel: "00:00", Start: 0, Length: 18, Selector: `{"t":[0,3.5]}`},
+		{Path: "library/Pond.pdf", Text: "egret by the pond", PlaceLabel: "Ponds", Start: 0, Length: 17, Selector: `{"page":"two"}`},
 	})
 	return l
 }
@@ -411,9 +411,9 @@ func TestLibrarySearchReturnsPositionSecondsZero(t *testing.T) {
 
 func TestLibrarySearchReturnsTheLineCountedFromOne(t *testing.T) {
 	l := newLibrary(t)
-	l.search.SetIndexedPassages([]host.Passage{
-		{Path: "notes/Herons.md", Text: "Herons fish at dusk in the marsh.", Start: 0, Length: 33, Line: 0},
-		{Path: "Entropy.md", Text: "Disorder grows in the marsh.", Start: 10, Length: 28, Line: 1},
+	l.search.SetIndexedResults([]host.SearchResult{
+		{Path: "notes/Herons.md", Text: "Herons fish at dusk in the marsh.", Start: 0, Length: 33, MatchLine: 0},
+		{Path: "Entropy.md", Text: "Disorder grows in the marsh.", Start: 10, Length: 28, MatchLine: 1},
 	})
 	answer := decodeAnswer(t, callTool(t, l.registry, testVault, "library_search", `{"query":"marsh"}`))
 	lines := map[any]any{}

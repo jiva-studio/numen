@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { CommandTarget } from '@/shared/model/command'
 import { createDeferred } from '@/testing/deferred'
 import { useSearch, type NameMatch, type SearchDeps, type Words } from './search'
-import type { Passage } from './lookup'
+import type { SearchResult } from './lookup'
 
 const WORDS: Words = {
   names: 'Names',
@@ -45,10 +45,10 @@ const flushPromises = async () => {
 
 function createHeldVault() {
   const names = createDeferred<readonly NameMatch[]>()
-  const passages = createDeferred<readonly Passage[]>()
-  const core: SearchDeps = { names: () => names.promise, search: () => passages.promise }
+  const results = createDeferred<readonly SearchResult[]>()
+  const core: SearchDeps = { names: () => names.promise, search: () => results.promise }
   const palette = useSearch(core, WORDS, { wait: () => Promise.resolve(), getTarget: () => target })
-  return { palette, names, passages }
+  return { palette, names, results }
 }
 
 const getIds = (palette: ReturnType<typeof useSearch>) => palette.groups.value.map((one) => one.id)
@@ -64,12 +64,12 @@ describe('the headings of the search groups', () => {
   })
 
   it('draws no row where every question returned nothing', async () => {
-    const { palette, names, passages } = createHeldVault()
+    const { palette, names, results } = createHeldVault()
 
     palette.setTyped('Entropy').catch(() => undefined)
     await flushPromises()
     names.answer([])
-    passages.answer([])
+    results.answer([])
     await flushPromises()
 
     expect(palette.groups.value.flatMap((one) => one.items)).toEqual([])
@@ -107,7 +107,7 @@ describe('the headings of the search groups', () => {
   })
 
   it('is busy until the last question answers', async () => {
-    const { palette, names, passages } = createHeldVault()
+    const { palette, names, results } = createHeldVault()
 
     palette.setTyped('Entropy').catch(() => undefined)
     await flushPromises()
@@ -115,7 +115,7 @@ describe('the headings of the search groups', () => {
     await flushPromises()
     expect(palette.status.isBusy.value).toBe(true)
 
-    passages.answer([])
+    results.answer([])
     await flushPromises()
     expect(palette.status.isBusy.value).toBe(false)
   })
@@ -127,12 +127,12 @@ describe('the headings of the search groups', () => {
   })
 
   it('says nothing found once every question answered with no row', async () => {
-    const { palette, names, passages } = createHeldVault()
+    const { palette, names, results } = createHeldVault()
 
     palette.setTyped('Entropy').catch(() => undefined)
     await flushPromises()
     names.answer([])
-    passages.answer([])
+    results.answer([])
     await flushPromises()
 
     expect(palette.groups.value).toEqual([])

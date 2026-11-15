@@ -16,7 +16,7 @@ func TestTheCoarsePassAnswersTheNearestBitsFirstAndNoMoreThanTheLimit(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	found, err := queries.GetEnclosingPassages(t.Context(), vaultA, ids)
+	found, err := queries.GetEnclosingResults(t.Context(), vaultA, ids)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestTheCoarsePassStaysInItsPathPrefixAndVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	found, err := queries.GetEnclosingPassages(t.Context(), vaultA, ids)
+	found, err := queries.GetEnclosingResults(t.Context(), vaultA, ids)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,22 +95,22 @@ func TestStoredVectorsAreThoseOfTheRecipeAndKindsAsked(t *testing.T) {
 	}
 }
 
-func TestAnEnclosingPassageIsFoundOnlyInItsOwnVault(t *testing.T) {
+func TestAnEnclosingResultIsFoundOnlyInItsOwnVault(t *testing.T) {
 	queries := queriesOf(meaningFixture(t))
 	ids, err := queries.FindCoarseCandidates(t.Context(), vaultB, sourcedomain.CoarseQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	inA, err := queries.GetEnclosingPassages(t.Context(), vaultA, ids)
+	inA, err := queries.GetEnclosingResults(t.Context(), vaultA, ids)
 	if err != nil || len(inA) != 0 {
 		t.Errorf("another vault enclosed %v, %v", getSources(inA), err)
 	}
-	inNobody, err := queries.GetEnclosingPassages(t.Context(), nobody, ids)
+	inNobody, err := queries.GetEnclosingResults(t.Context(), nobody, ids)
 	if err != nil || inNobody != nil {
 		t.Errorf("an unknown vault enclosed %v, %v", inNobody, err)
 	}
-	if _, err := queries.GetEnclosingPassages(t.Context(), vaultB, []domain.ChunkID{"not a row"}); err == nil {
+	if _, err := queries.GetEnclosingResults(t.Context(), vaultB, []domain.ChunkID{"not a row"}); err == nil {
 		t.Error("a chunk identifier of no index was accepted")
 	}
 }

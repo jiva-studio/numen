@@ -21,7 +21,7 @@ The core decides what is indexed and when (vault changes, text versions, cut rec
 
 ## Query
 
-`SearchPassages(place, query)` gets the query text, the kinds, the path prefix, the limit and the floor the query names (zero: the floor of the vault). The source answers ranked passages: a chunk id the core handed it and a score, best first. Vector Embeddings embeds the query (it keeps the vectors of recent queries by recipe) and asks the host for the nearest chunks of its place with `HostSearchService.FindNearestPassages(place, vector, ...)`; the host applies the floor of the vault under the recipe (stored, then the hint, then the default). The core turns the chunk ids into the passages that enclose them (note, range, line), in the order of the source.
+`SearchChunks(place, query)` gets the query text, the kinds, the path prefix, the limit and the floor the query names (zero: the floor of the vault). The source answers ranked passages: a chunk id the core handed it and a score, best first. Vector Embeddings embeds the query (it keeps the vectors of recent queries by recipe) and asks the host for the nearest chunks of its place with `HostSearchService.FindNearestChunks(place, vector, ...)`; the host applies the floor of the vault under the recipe (stored, then the hint, then the default). The core turns the chunk ids into the passages that enclose them (note, range, line), in the order of the source.
 
 ## Merge
 

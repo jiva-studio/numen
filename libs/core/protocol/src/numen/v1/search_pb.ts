@@ -4,8 +4,8 @@
 
 // What a client may ask of a vault by typing into it.
 //
-// things: SearchNames answers with names, and SearchPassages with the passages
-// of text a vault holds. A client drawing them apart asks each of them.
+// things: SearchNames answers with names, and SearchText with the search
+// results of text a vault holds. A client drawing them apart asks each of them.
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIkUKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIRCglzZWFyY2hfaWQYAyABKAkiOQoTU2VhcmNoTmFtZXNSZXNwb25zZRIiCgVmb3VuZBgBIAMoCzITLm51bWVuLnYxLk5hbWVNYXRjaCKfAQoJTmFtZU1hdGNoEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESHwoGcmFuZ2VzGAMgAygLMg8ubnVtZW4udjEuUmFuZ2USDAoEdHlwZRgEIAEoCRIQCgh0YWJfa2luZBgFIAEoCUIKCghfaGVhZGluZyJsChVTZWFyY2hQYXNzYWdlc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUSIgoEbW9kZRgDIAEoDjIULm51bWVuLnYxLlNlYXJjaE1vZGUSEQoJc2VhcmNoX2lkGAQgASgJIigKE0NhbmNlbFNlYXJjaFJlcXVlc3QSEQoJc2VhcmNoX2lkGAEgASgJIhYKFENhbmNlbFNlYXJjaFJlc3BvbnNlIjoKFlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2USIAoFZm91bmQYASADKAsyES5udW1lbi52MS5QYXNzYWdlIuQBCgdQYXNzYWdlEgwKBHBhdGgYASABKAkSIQoEbm90ZRgCIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBARIMCgR0ZXh0GAMgASgJEh8KBnJhbmdlcxgEIAMoCzIPLm51bWVuLnYxLlJhbmdlEhAKCGxvY2F0aW9uGAUgASgJEh4KBXJhbmdlGAYgASgLMg8ubnVtZW4udjEuUmFuZ2USDAoEbGluZRgHIAEoBRIMCgR0eXBlGAggASgJEhAKCHNlbGVjdG9yGAogASgJEhAKCHRhYl9raW5kGAsgASgJQgcKBV9ub3RlKogBCgpTZWFyY2hNb2RlEhsKF1NFQVJDSF9NT0RFX1VOU1BFQ0lGSUVEEAASFQoRU0VBUkNIX01PREVfV09SRFMQARIXChNTRUFSQ0hfTU9ERV9NRUFOSU5HEAISFQoRU0VBUkNIX01PREVfTkFNRVMQAxIWChJTRUFSQ0hfTU9ERV9IWUJSSUQQBDL/AQoNU2VhcmNoU2VydmljZRJKCgtTZWFyY2hOYW1lcxIcLm51bWVuLnYxLlNlYXJjaE5hbWVzUmVxdWVzdBodLm51bWVuLnYxLlNlYXJjaE5hbWVzUmVzcG9uc2USUwoOU2VhcmNoUGFzc2FnZXMSHy5udW1lbi52MS5TZWFyY2hQYXNzYWdlc1JlcXVlc3QaIC5udW1lbi52MS5TZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEk0KDENhbmNlbFNlYXJjaBIdLm51bWVuLnYxLkNhbmNlbFNlYXJjaFJlcXVlc3QaHi5udW1lbi52MS5DYW5jZWxTZWFyY2hSZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIkUKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIRCglzZWFyY2hfaWQYAyABKAkiOQoTU2VhcmNoTmFtZXNSZXNwb25zZRIiCgVmb3VuZBgBIAMoCzITLm51bWVuLnYxLk5hbWVNYXRjaCKfAQoJTmFtZU1hdGNoEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESHwoGcmFuZ2VzGAMgAygLMg8ubnVtZW4udjEuUmFuZ2USDAoEdHlwZRgEIAEoCRIQCgh0YWJfa2luZBgFIAEoCUIKCghfaGVhZGluZyJoChFTZWFyY2hUZXh0UmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZRIRCglzZWFyY2hfaWQYBCABKAkiKAoTQ2FuY2VsU2VhcmNoUmVxdWVzdBIRCglzZWFyY2hfaWQYASABKAkiFgoUQ2FuY2VsU2VhcmNoUmVzcG9uc2UiOwoSU2VhcmNoVGV4dFJlc3BvbnNlEiUKBWZvdW5kGAEgAygLMhYubnVtZW4udjEuU2VhcmNoUmVzdWx0Iv0BCgxTZWFyY2hSZXN1bHQSDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSJQoMbWF0Y2hfcmFuZ2VzGAQgAygLMg8ubnVtZW4udjEuUmFuZ2USEwoLcGxhY2VfbGFiZWwYBSABKAkSIwoKYnl0ZV9yYW5nZRgGIAEoCzIPLm51bWVuLnYxLlJhbmdlEhIKCm1hdGNoX2xpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCRIQCgh0YWJfa2luZBgLIAEoCUIHCgVfbm90ZSqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQy8wEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlEkcKClNlYXJjaFRleHQSGy5udW1lbi52MS5TZWFyY2hUZXh0UmVxdWVzdBocLm51bWVuLnYxLlNlYXJjaFRleHRSZXNwb25zZRJNCgxDYW5jZWxTZWFyY2gSHS5udW1lbi52MS5DYW5jZWxTZWFyY2hSZXF1ZXN0Gh4ubnVtZW4udjEuQ2FuY2VsU2VhcmNoUmVzcG9uc2VCRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -128,16 +128,16 @@ export const NameMatchSchema: GenMessage<NameMatch> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 2);
 
 /**
- * @generated from message numen.v1.SearchPassagesRequest
+ * @generated from message numen.v1.SearchTextRequest
  */
-export type SearchPassagesRequest = Message<"numen.v1.SearchPassagesRequest"> & {
+export type SearchTextRequest = Message<"numen.v1.SearchTextRequest"> & {
   /**
    * @generated from field: string query = 1;
    */
   query: string;
 
   /**
-   * How many passages to answer with. Zero takes the number the vault chooses.
+   * How many search results to answer with. Zero takes the number the vault chooses.
    *
    * @generated from field: int32 limit = 2;
    */
@@ -158,10 +158,10 @@ export type SearchPassagesRequest = Message<"numen.v1.SearchPassagesRequest"> & 
 };
 
 /**
- * Describes the message numen.v1.SearchPassagesRequest.
- * Use `create(SearchPassagesRequestSchema)` to create a new message.
+ * Describes the message numen.v1.SearchTextRequest.
+ * Use `create(SearchTextRequestSchema)` to create a new message.
  */
-export const SearchPassagesRequestSchema: GenMessage<SearchPassagesRequest> = /*@__PURE__*/
+export const SearchTextRequestSchema: GenMessage<SearchTextRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 3);
 
 /**
@@ -195,31 +195,31 @@ export const CancelSearchResponseSchema: GenMessage<CancelSearchResponse> = /*@_
   messageDesc(file_numen_v1_search, 5);
 
 /**
- * @generated from message numen.v1.SearchPassagesResponse
+ * @generated from message numen.v1.SearchTextResponse
  */
-export type SearchPassagesResponse = Message<"numen.v1.SearchPassagesResponse"> & {
+export type SearchTextResponse = Message<"numen.v1.SearchTextResponse"> & {
   /**
-   * The passages that answer, best first, one per source.
+   * The search results that answer, best first, one per source.
    *
-   * @generated from field: repeated numen.v1.Passage found = 1;
+   * @generated from field: repeated numen.v1.SearchResult found = 1;
    */
-  found: Passage[];
+  found: SearchResult[];
 };
 
 /**
- * Describes the message numen.v1.SearchPassagesResponse.
- * Use `create(SearchPassagesResponseSchema)` to create a new message.
+ * Describes the message numen.v1.SearchTextResponse.
+ * Use `create(SearchTextResponseSchema)` to create a new message.
  */
-export const SearchPassagesResponseSchema: GenMessage<SearchPassagesResponse> = /*@__PURE__*/
+export const SearchTextResponseSchema: GenMessage<SearchTextResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 6);
 
 /**
- * Passage is what a search returns: the text around a hit, and where it came
+ * SearchResult is what a search returns: the text around a hit, and where it came
  * from.
  *
- * @generated from message numen.v1.Passage
+ * @generated from message numen.v1.SearchResult
  */
-export type Passage = Message<"numen.v1.Passage"> & {
+export type SearchResult = Message<"numen.v1.SearchResult"> & {
   /**
    * The file the text was read out of, as the vault calls it.
    *
@@ -247,33 +247,33 @@ export type Passage = Message<"numen.v1.Passage"> & {
    * text: in UTF-16 code units. Empty for a hit by meaning, which relies on no
    * word in particular.
    *
-   * @generated from field: repeated numen.v1.Range ranges = 4;
+   * @generated from field: repeated numen.v1.Range match_ranges = 4;
    */
-  ranges: Range[];
+  matchRanges: Range[];
 
   /**
    * What the source's own numbering calls the place, empty when the format
    * offered none.
    *
-   * @generated from field: string location = 5;
+   * @generated from field: string place_label = 5;
    */
-  location: string;
+  placeLabel: string;
 
   /**
    * counted in bytes. With the path above it is the place this opens, and a hit
    * in a note carries it as every other hit does.
    *
-   * @generated from field: numen.v1.Range range = 6;
+   * @generated from field: numen.v1.Range byte_range = 6;
    */
-  range?: Range | undefined;
+  byteRange?: Range | undefined;
 
   /**
    * Where the chunk that matched stands, counted from the first line of the
    * source's prose. It is the line a note opens on, and the caret stands there.
    *
-   * @generated from field: int32 line = 7;
+   * @generated from field: int32 match_line = 7;
    */
-  line: number;
+  matchLine: number;
 
   /**
    * The `type` key of the note's frontmatter, so a client draws a note as what it is.
@@ -301,10 +301,10 @@ export type Passage = Message<"numen.v1.Passage"> & {
 };
 
 /**
- * Describes the message numen.v1.Passage.
- * Use `create(PassageSchema)` to create a new message.
+ * Describes the message numen.v1.SearchResult.
+ * Use `create(SearchResultSchema)` to create a new message.
  */
-export const PassageSchema: GenMessage<Passage> = /*@__PURE__*/
+export const SearchResultSchema: GenMessage<SearchResult> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 7);
 
 /**
@@ -371,7 +371,7 @@ export const SearchService: GenService<{
    * the last word matches on its prefix.
    *
    * It reads names and nothing else. Searching the text a vault holds is
-   * SearchPassages, and that answers with passages.
+   * SearchText, and that answers with search results.
    *
    * @generated from rpc numen.v1.SearchService.SearchNames
    */
@@ -381,20 +381,20 @@ export const SearchService: GenService<{
     output: typeof SearchNamesResponseSchema;
   },
   /**
-   * SearchPassages is the text a vault holds that answers what was typed, by
+   * SearchText is the text a vault holds that answers what was typed, by
    * the words in it or by what it means or by what a section is called. The
    * caller says which way it is asked, so a client drawing them apart asks once
    * for each.
    *
-   * @generated from rpc numen.v1.SearchService.SearchPassages
+   * @generated from rpc numen.v1.SearchService.SearchText
    */
-  searchPassages: {
+  searchText: {
     methodKind: "unary";
-    input: typeof SearchPassagesRequestSchema;
-    output: typeof SearchPassagesResponseSchema;
+    input: typeof SearchTextRequestSchema;
+    output: typeof SearchTextResponseSchema;
   },
   /**
-   * CancelSearch stops the SearchNames or SearchPassages call that carries the
+   * CancelSearch stops the SearchNames or SearchText call that carries the
    * search id. A client that aborts its request does not stop the call in the
    * core, so it sends this to free the work the call still does. A cancel that
    * arrives before its call is kept for a few seconds and cancels the call if

@@ -78,7 +78,7 @@ The second row was measured in a less busy hour of the same day, when `Benchmark
 
 **The cold scan takes three to four times the recorded time here, and six and a half times at a hundred thousand notes.** A note now goes into the passage index as its own chunks, so `chunk.Replace` runs inside `saveNote`; by profile it is 42 % of the scan, and the index it fills is twice the size it was. The rest is due to the machine and to one repeated pass, both described below.
 
-**The two search rows of 2026-08-15 cannot be reproduced, and are not kept in this record.** They measured `Queries.Search` and `search.sql`, which read `chunks_fts` and grouped the hits back to notes. That statement was deleted on 2026-09-05 as dead production code, and the benchmark now asks `port.PassageQueries.Lexical` — the query the application has always used for search. It is a heavier plan: a join to `sources`, the folder filter through `json_each` behind a bloom filter, a left join to the enclosing chunk, and a temp B-tree for the ordering. Against the generated vault's twenty-word vocabulary the query matches every note, so what it measures is ranking the whole corpus.
+**The two search rows of 2026-08-15 cannot be reproduced, and are not kept in this record.** They measured `Queries.Search` and `search.sql`, which read `chunks_fts` and grouped the hits back to notes. That statement was deleted on 2026-09-05 as dead production code, and the benchmark now asks `port.LexicalQueries.Lexical` — the query the application has always used for search. It is a heavier plan: a join to `sources`, the folder filter through `json_each` behind a bloom filter, a left join to the enclosing chunk, and a temp B-tree for the ordering. Against the generated vault's twenty-word vocabulary the query matches every note, so what it measures is ranking the whole corpus.
 
 |                                               | Measured 2026-09-06         |
 | --------------------------------------------- | --------------------------- |
@@ -455,13 +455,13 @@ The core identifies a chunk by an opaque `domain.ChunkID` and resumes the walk f
 
 Recorded 2026-09-05 on the same AMD Ryzen 7 6800U, from `BenchmarkUnembedded`, `BenchmarkSaveVectors` and `BenchmarkChunkIdentity` in `adapter/index`. Ten runs of each; the two conversions vary by under 10 % across them, and the pages by two- to fivefold, which is why the conversions are negligible by comparison.
 
-|                                                       | Measured |
-| ----------------------------------------------------- | -------- |
-| A row spelled as a `domain.ChunkID`                   | 25 ns    |
-| A `port.ChunkCursor` read back as a row               | 23 ns    |
-| One chunk read out of the index, in a page of 200     | 3.9 µs   |
-| A row turned into a `domain.Passage`, the whole of it | 0.67 µs  |
-| One vector written, in a page of 200                  | 200 µs   |
+|                                                            | Measured |
+| ---------------------------------------------------------- | -------- |
+| A row spelled as a `domain.ChunkID`                        | 25 ns    |
+| A `port.ChunkCursor` read back as a row                    | 23 ns    |
+| One chunk read out of the index, in a page of 200          | 3.9 µs   |
+| A row turned into a `domain.SearchResult`, the whole of it | 0.67 µs  |
+| One vector written, in a page of 200                       | 200 µs   |
 
 **It is below the noise level.** Over 400 000 chunks — the vault a hundred thousand notes cut into — both conversions together total **19 ms**. Reading those rows out of SQLite is 1.6 s, writing their vectors is 80 s, and the embedding itself is 27 minutes through a service or 36 hours on this laptop's CPU. The conversion is a thousandth of the cheapest adjacent operation, and the row a walk resumes from is serialized once per page of 200, not on each row.
 
