@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/watchhub"
 )
@@ -38,7 +38,7 @@ func nextAfterFixture(next func() []string) []string {
 
 // A file followed inside the vault and released leaves the vault followed.
 func TestAVaultIsFollowedAfterAWatchInsideItStops(t *testing.T) {
-	root := vaultfixture.CreateVault(t, getNestedFixture(), nil)
+	root := vaulttest.CreateVault(t, getNestedFixture(), nil)
 	// The two watches go through one hub, as every watch of one container does.
 	hub := watchhub.NewHub()
 	next := watchVault(t, hub, root)
@@ -53,7 +53,7 @@ func TestAVaultIsFollowedAfterAWatchInsideItStops(t *testing.T) {
 
 // A file followed inside the vault before the vault was, and released after, leaves the vault followed.
 func TestAVaultIsFollowedAfterAnEarlierWatchInsideItStops(t *testing.T) {
-	root := vaultfixture.CreateVault(t, getNestedFixture(), nil)
+	root := vaulttest.CreateVault(t, getNestedFixture(), nil)
 	// The two watches go through one hub, as every watch of one container does.
 	hub := watchhub.NewHub()
 	ctx, stop := context.WithCancel(t.Context())

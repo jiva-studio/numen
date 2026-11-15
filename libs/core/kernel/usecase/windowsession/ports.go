@@ -125,14 +125,18 @@ func (f VaultPassesFunc) Start(ctx context.Context, v domain.Vault, rebuild bool
 type TriggerRunner interface {
 	ExecuteAll(ctx context.Context, v domain.Vault) error
 	Execute(ctx context.Context, v domain.Vault, paths []string) error
+	ExecuteFrontmatter(ctx context.Context, v domain.Vault, paths []string) error
 }
 
 // TriggerSource is where the passes of the triggers come from. Open returns nil where the window runs
 // no plugins. Watch reports each time the plugin host applied settings or forgot the failure of a
-// plugin, and the function it returns stops the reports.
+// plugin, and the function it returns stops the reports. WatchFrontmatter, which may be nil, hands report
+// the paths of the notes of the vault whose frontmatter the index stored changed, until the function it
+// returns is called.
 type TriggerSource struct {
-	Open  func() TriggerRunner
-	Watch func() (<-chan struct{}, func())
+	Open             func() TriggerRunner
+	Watch            func() (<-chan struct{}, func())
+	WatchFrontmatter func(id domain.VaultID, report func(paths []string)) func()
 }
 
 type currentVault interface {

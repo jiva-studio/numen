@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
@@ -285,13 +284,6 @@ func (s *PluginSet) isCoveredByProblemLocked(pluginID string) bool {
 		}
 	}
 	return false
-}
-
-func (s *PluginSet) put(p manifest.Discovered, sup *lifecycle.Supervisor) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.plugins[p.Manifest.ID] = p
-	s.sups.Put(p.Manifest.ID, sup)
 }
 
 func (s *PluginSet) addBuiltIn(p manifest.Discovered, serve func(vars map[string]string) (http.Handler, error)) error {

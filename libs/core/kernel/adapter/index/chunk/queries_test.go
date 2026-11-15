@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -29,8 +29,8 @@ const (
 	century                = int64(1_000_000_000_000_000_000)
 )
 
-func newMigratedTemplate() *vaultfixture.Template {
-	return vaultfixture.NewTemplate(func(ctx context.Context, path string) error {
+func newMigratedTemplate() *vaulttest.Template {
+	return vaulttest.NewTemplate(func(ctx context.Context, path string) error {
 		db, err := index.Open(ctx, path)
 		if err != nil {
 			return err

@@ -253,7 +253,11 @@ func writeResult(out any) *v1.ToolResult {
 }
 
 func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
-	return readListing(r.getListing(ctx)), nil
+	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
+	if err != nil {
+		return Listing{}, err
+	}
+	return readListing(res.Msg), nil
 }
 
 func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {

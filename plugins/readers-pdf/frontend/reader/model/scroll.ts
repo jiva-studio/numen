@@ -108,6 +108,7 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
       // The row is at the place already. An instant scroll there ends a travel still in flight to
       // another place, and no target is left that no scroll event would clear.
       heading = undefined
+      axisOffset.value = to
       area.value.scrollTo({ left: to, behavior: 'auto' })
       return
     }
@@ -122,8 +123,8 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
     if (!area.value || (heading !== undefined && !isTravel)) return
     const goal = heading ?? axisOffset.value
     heading = undefined
-    if (Math.abs(area.value.scrollLeft - goal) <= THERE) return
     axisOffset.value = goal
+    if (Math.abs(area.value.scrollLeft - goal) <= THERE) return
     area.value.scrollLeft = goal
   }
 

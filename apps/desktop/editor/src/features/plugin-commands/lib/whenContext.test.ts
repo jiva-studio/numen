@@ -2,7 +2,12 @@
 import { describe, expect, it } from 'vitest'
 import { createWhenReader } from '@numen/plugin-loader'
 import type { CommandTarget } from '@/shared/model/command'
-import { createWhenAvailability, getWhenGroup, hasNoteVariable } from './whenContext'
+import {
+  createEmptyWhenContext,
+  createWhenAvailability,
+  getWhenGroup,
+  hasNoteVariable,
+} from './whenContext'
 
 const target = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab-1',
@@ -20,6 +25,13 @@ describe('a condition of a command of a plugin', () => {
     getContentTypes: () => ({ md: 'text/markdown', pdf: 'application/pdf' }),
     getConfig: () => ({ org: { example: { ledger: { isOn: true } } } }),
     whenReader: createWhenReader(),
+  })
+
+  it('starts with empty content types and config before the window loads them', () => {
+    const empty = createEmptyWhenContext()
+
+    expect(empty.getContentTypes()).toStrictEqual({})
+    expect(empty.getConfig()).toStrictEqual({})
   })
 
   it('reads the note in front, its content type and the settings', () => {
@@ -55,11 +67,14 @@ describe('a condition that reads the type or the properties of the note', () => 
 
   it('holds over a note whose type and properties match, once the note is read', () => {
     expect(isAvailable("target.noteType == 'link'", target())).toBe(true)
+    expect(isAvailable('has(target.properties.media)', target())).toBe(true)
+    expect(isAvailable("target.isNote && target.noteType == 'link'", target())).toBe(true)
     expect(isAvailable(DELETE_MEDIA, target())).toBe(true)
   })
 
   it('is false while the note is not read yet', () => {
     expect(isAvailable("target.noteType == 'link'", target({ path: 'reef/Kelp.md' }))).toBe(false)
+    expect(isAvailable("target.noteType != 'link'", target({ path: 'reef/Kelp.md' }))).toBe(false)
   })
 
   it('does not ask for a note over a file that is no note', () => {
@@ -95,10 +110,12 @@ describe('the group of a command in the palette', () => {
     expect(getWhenGroupOf("target.contentType == 'application/pdf'")).toBe('file')
     expect(getWhenGroupOf('window.isVaultOpen')).toBe('window')
     expect(getWhenGroupOf(undefined)).toBe('window')
+    expect(getWhenGroup(undefined)).toBe('window')
   })
 
   it('reads target.isNote, or not', () => {
     expect(hasNoteVariableIn('!target.isNote')).toBe(true)
     expect(hasNoteVariableIn('target.isFile')).toBe(false)
+    expect(hasNoteVariable(undefined)).toBe(false)
   })
 })

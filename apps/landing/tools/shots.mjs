@@ -1,9 +1,9 @@
 /**
  * What the page shows, one to a band and one over them all.
  *
- * The list stands on its own so that reading it costs nothing: the check that
- * every name here is still a story runs on a bare node, and a camera nobody
- * has installed is no reason for the names to go unchecked.
+ * The list is a module of its own so that reading it imports nothing: the check
+ * that every name here is still a story runs on plain Node, without the browser
+ * the camera needs.
  *
  * `over` names what the pointer is left on: the picture is taken once whatever
  * a hand resting there brings out is all the way out. `size` is the window it

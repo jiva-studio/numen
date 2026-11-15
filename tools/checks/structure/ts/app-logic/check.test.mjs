@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { REPO_ROOT } from "../../../lib/graph.mjs";
+import { listWindows } from "../frontend-graph/check.mjs";
 import { findFactoriesInScriptSetup, findLogicInApp, findPassThroughFactories, findWideAppFunctions } from "./check.mjs";
 
 const APP = "apps/desktop/editor/src/app";
@@ -8,6 +10,10 @@ const file = (name, text) => ({ file: `${APP}/${name}`, text });
 const symbols = (found) => found.findings.map((one) => `${one.file.split("/").pop()}:${one.line} ${one.symbol}`);
 
 describe("the app layer holds no logic", () => {
+  it("reads the app layer of every window, the mobile one included", () => {
+    assert.ok(listWindows(REPO_ROOT).includes("apps/mobile/src"), listWindows(REPO_ROOT).join(", "));
+  });
+
   it("fails a template literal and a concatenation that build text, once per text", () => {
     const found = findLogicInApp([
       file("a.ts", ["export const a = (n: number) => `Saved ${n} notes`", "export const b = (n: string) => 'Failed: ' + n + '.'"].join("\n")),

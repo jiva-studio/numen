@@ -129,7 +129,8 @@ type Run struct {
 
 // Execute checks the call against the declaration and runs it over the vault; a call of a shared
 // command runs the handler the plugin declares. A call that does not meet the declaration is
-// ErrBadArguments, saying what is wrong, and nothing is run.
+// ErrBadArguments, saying what is wrong, and nothing is run. A call over Paths meets it where each of
+// them does.
 func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
 	var entries []plugin.CommandEntry
 	if manifest.IsSharedCommand(call.Command) {
@@ -162,8 +163,17 @@ func (u Run) IsAvailable(ctx context.Context, v domain.Vault, entry plugin.Comma
 }
 
 func (u Run) checkCall(ctx context.Context, v domain.Vault, declared manifest.Command, call plugin.CommandCall) error {
-	if err := u.checkPath(ctx, v, declared, call); err != nil {
-		return err
+	if len(call.Paths) == 0 {
+		if err := u.checkPath(ctx, v, declared, call); err != nil {
+			return err
+		}
+	}
+	for _, path := range call.Paths {
+		one := call
+		one.Path, one.Paths = path, nil
+		if err := u.checkPath(ctx, v, declared, one); err != nil {
+			return err
+		}
 	}
 	return checkArguments(declared, call, hasItems(u.conditions, declared))
 }

@@ -102,3 +102,8 @@ func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Confi
 func name(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 }
+
+func isPresent(pos string) bool {
+	_, err := os.Stat(pos)
+	return err == nil
+}

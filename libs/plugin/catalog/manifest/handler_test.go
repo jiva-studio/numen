@@ -118,3 +118,25 @@ func TestReadManifest_RejectsATextKindWithoutAKindOrATitleOrDeclaredTwice(t *tes
 		}
 	}
 }
+
+func TestReadManifest_ReadsATriggerOfACommandOfThePluginItself(t *testing.T) {
+	m, err := manifestjson.Read(strings.NewReader(handlerManifestHead + `{
+		"commands":[{"id":"scan.refresh","title":"Refresh the scan","when":"target.isNote"}],
+		"triggers":[{"event":"note.frontmatterChanged","command":"scan.refresh","when":"target.isNote"}]}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []manifest.Trigger{{Event: manifest.EventNoteFrontmatterChanged, Command: "scan.refresh", When: "target.isNote"}}
+	if !reflect.DeepEqual(m.Contributes.Triggers, want) {
+		t.Errorf("triggers = %+v; want %+v", m.Contributes.Triggers, want)
+	}
+}
+
+func TestReadManifest_RejectsATriggerOfACommandThePluginDoesNotDeclare(t *testing.T) {
+	_, err := manifestjson.Read(strings.NewReader(handlerManifestHead + `{
+		"commands":[{"id":"scan.refresh","title":"Refresh the scan"}],
+		"triggers":[{"event":"note.frontmatterChanged","command":"scan.forget"}]}}`))
+	if !errors.Is(err, manifest.ErrInvalidTrigger) {
+		t.Errorf("got %v, want ErrInvalidTrigger", err)
+	}
+}

@@ -36,10 +36,14 @@ The Go shards read the build cache their module's own CI saves (`go-build-core-u
 
 Each target has one issue labelled `mutation`, titled `Mutation survivors: <target>`. Every night its body is rewritten with the current survivors and the count of the run before, and a comment names the survivors that are new. The body lists one survivor per line, with the count of the others on that line. The issue closes when no survivor is left and reopens when one comes back. A target with a shard that did not finish keeps its issue unchanged.
 
-A survivor is resolved in one of two ways:
+A survivor is killed by a new or stronger test. For the survivor `budget.go:42 CONDITIONALS_BOUNDARY: a > b → a >= b`, a test calls the function with `a == b` and asserts the result; the pull request is `test(flashcards-studio): ...` and changes `budget_test.go` only.
 
-- a test that fails on it, which kills it the next night;
-- an inline directive with the reason, when the mutant does not change behaviour. Stryker reads `// Stryker disable next-line <Mutator>: <reason>` (also `disable all` and `restore`); gomutants reads `// gomutants:disable <MUTATOR> reason="<reason>"` on the same line, the next line, a function doc comment, or as a regexp.
+When no test can kill a survivor, the mutant is equivalent or the code is dead:
+
+- an equivalent mutant behaves like the code on every input. It gets an inline directive with the reason, in the test pull request. Stryker reads `// Stryker disable next-line <Mutator>: <reason>` (also `disable all` and `restore`); gomutants reads `// gomutants:disable <MUTATOR> reason="<reason>"` on the same line, the next line, a function doc comment, or as a regexp.
+- dead code is removed in a separate `refactor` pull request, which leaves the test pull request as it is.
+
+Production code does not change in a test pull request. CI fails a pull request of type `test` that changes a file other than tests, test support, `testdata`, `tests/`, `features/` and the Stryker config; a diff that only adds directives, or only changes the `"version"` of a `manifest.json` or `package.json`, passes (`tools/git-hooks/check-test-files.mjs`).
 
 Interface copy is not mutated: each `words.ts` file opens with `// Stryker disable StringLiteral: interface copy`.
 

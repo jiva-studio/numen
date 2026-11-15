@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/agentmodel"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
 )
@@ -195,8 +195,8 @@ func waitFor(t *testing.T, limit time.Duration, isReady func() bool) {
 	}
 }
 
-func newFakeClock(at time.Time) *clock.Fake {
-	fake := &clock.Fake{}
+func newFakeClock(at time.Time) *clocktest.Fake {
+	fake := &clocktest.Fake{}
 	fake.Set(at)
 	return fake
 }

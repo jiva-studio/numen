@@ -10,16 +10,18 @@ import (
 )
 
 // triggerPasses is the passes of the triggers asked for and not run yet: one over the whole vault, or
-// one over the paths that changed. A new one holds a pass over the whole vault.
+// one over the paths that changed, and one over the notes whose frontmatter changed. A new one holds
+// a pass over the whole vault.
 type triggerPasses struct {
-	mu    sync.Mutex
-	isAll bool
-	paths map[string]bool
-	wake  chan struct{}
+	mu          sync.Mutex
+	isAll       bool
+	paths       map[string]bool
+	frontmatter map[string]bool
+	wake        chan struct{}
 }
 
 func newTriggerPasses() *triggerPasses {
-	return &triggerPasses{isAll: true, paths: map[string]bool{}, wake: make(chan struct{}, 1)}
+	return &triggerPasses{isAll: true, paths: map[string]bool{}, frontmatter: map[string]bool{}, wake: make(chan struct{}, 1)}
 }
 
 func (q *triggerPasses) requestAll() {
@@ -30,12 +32,21 @@ func (q *triggerPasses) requestAll() {
 }
 
 func (q *triggerPasses) requestPaths(paths []string) {
+	q.request(func() map[string]bool { return q.paths }, paths)
+}
+
+func (q *triggerPasses) requestFrontmatter(paths []string) {
+	q.request(func() map[string]bool { return q.frontmatter }, paths)
+}
+
+func (q *triggerPasses) request(getSet func() map[string]bool, paths []string) {
 	if len(paths) == 0 {
 		return
 	}
 	q.mu.Lock()
+	into := getSet()
 	for _, path := range paths {
-		q.paths[path] = true
+		into[path] = true
 	}
 	q.mu.Unlock()
 	signal(q.wake)
@@ -47,6 +58,14 @@ func (q *triggerPasses) take() (isAll bool, paths []string) {
 	isAll, paths = q.isAll, slices.Sorted(maps.Keys(q.paths))
 	q.isAll, q.paths = false, map[string]bool{}
 	return isAll, paths
+}
+
+func (q *triggerPasses) takeFrontmatter() []string {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	paths := slices.Sorted(maps.Keys(q.frontmatter))
+	q.frontmatter = map[string]bool{}
+	return paths
 }
 
 func runTriggers(
@@ -64,6 +83,11 @@ func runTriggers(
 		}
 		if err != nil && ctx.Err() == nil {
 			report(err)
+		}
+		if frontmatter := passes.takeFrontmatter(); len(frontmatter) > 0 {
+			if err := triggers.ExecuteFrontmatter(ctx, v, frontmatter); err != nil && ctx.Err() == nil {
+				report(err)
+			}
 		}
 		select {
 		case <-ctx.Done():
@@ -93,6 +117,9 @@ func (s TriggerSource) start(ctx context.Context, v domain.Vault, passes *trigge
 	return func() {
 		changes, stop := s.Watch()
 		defer stop()
+		if s.WatchFrontmatter != nil {
+			defer s.WatchFrontmatter(v.ID, passes.requestFrontmatter)()
+		}
 		runTriggers(ctx, triggers, v, passes, changes, report)
 	}
 }

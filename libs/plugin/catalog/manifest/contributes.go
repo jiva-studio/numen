@@ -234,7 +234,7 @@ func (m Manifest) isViewCapabilityAllowed(capability string) bool {
 		return true
 	}
 	rest, isOwn := strings.CutPrefix(capability, m.ID+".")
-	return isOwn && tabKindPattern.MatchString(rest)
+	return isOwn && rest != "" && tabKindPattern.MatchString(rest)
 }
 
 func (m Manifest) listDropHandlerIssues() []error {

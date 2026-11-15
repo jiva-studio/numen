@@ -26,6 +26,11 @@
   },
   {
     "kind": "index",
+    "name": "file_changes_by_seq",
+    "body": "CREATE INDEX file_changes_by_seq ON file_changes (vault_id, seq)"
+  },
+  {
+    "kind": "index",
     "name": "links_by_name",
     "body": "CREATE INDEX links_by_name ON links (folded_name)"
   },
@@ -91,6 +96,11 @@
   },
   {
     "kind": "table",
+    "name": "change_feeds",
+    "body": "CREATE TABLE change_feeds (\n    vault_id    INTEGER PRIMARY KEY REFERENCES vaults(id) ON DELETE CASCADE,\n    feed_id     TEXT NOT NULL,\n    last_seq    INTEGER NOT NULL DEFAULT 0,\n    trimmed_seq INTEGER NOT NULL DEFAULT 0\n)"
+  },
+  {
+    "kind": "table",
     "name": "chunks",
     "body": "CREATE TABLE chunks (\n    id        INTEGER PRIMARY KEY,\n    source_id INTEGER NOT NULL,\n    vault_id  INTEGER NOT NULL,\n    start     INTEGER NOT NULL,\n    length    INTEGER NOT NULL,\n    parent_id INTEGER REFERENCES chunks(id) ON DELETE CASCADE,\n    location  TEXT,\n    hash      TEXT NOT NULL,\n\n    FOREIGN KEY (source_id, vault_id) REFERENCES sources (id, vault_id) ON DELETE CASCADE\n)"
   },
@@ -153,6 +163,11 @@
     "kind": "table",
     "name": "coarse_recipe",
     "body": "CREATE TABLE coarse_recipe (\n    id     INTEGER PRIMARY KEY CHECK (id = 1),\n    recipe TEXT NOT NULL\n)"
+  },
+  {
+    "kind": "table",
+    "name": "file_changes",
+    "body": "CREATE TABLE file_changes (\n    vault_id    INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,\n    source_id   INTEGER NOT NULL,\n    event       TEXT NOT NULL,\n    seq         INTEGER NOT NULL,\n    change_time INTEGER NOT NULL,\n\n    PRIMARY KEY (vault_id, source_id, event)\n) WITHOUT ROWID"
   },
   {
     "kind": "table",

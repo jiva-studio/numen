@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
+import type { Manifest } from '@numen/core-client'
+import {
+  createUiServiceBridge,
+  createVaultServiceBridge,
+  createWorkServiceBridge,
+} from './bridge/services'
 import { createPluginParts } from './context'
 import type { PluginContextHost } from './types'
 import { createTestContextHost } from '../testing/contextHost'
@@ -124,6 +130,19 @@ describe('PluginContext', () => {
       'test.plugin',
       expect.objectContaining({ kind: 'custom-tab' }),
     )
+    const firstTabReg = vi.mocked(host.registration.registerTabKind).mock.calls[0]?.[1]
+    expect(firstTabReg && 'placement' in firstTabReg).toBe(false)
+
+    const mutablePlacement = { slot: 'main' }
+    const subPlacement = ctx.plugin.register.tabKind({
+      kind: 'custom-tab',
+      component: STUB_COMPONENT,
+      placement: mutablePlacement as never,
+    })
+    mutablePlacement.slot = 'mutated'
+    const secondTabReg = vi.mocked(host.registration.registerTabKind).mock.calls[1]?.[1]
+    expect(secondTabReg?.placement).toEqual({ slot: 'main' })
+    subPlacement.dispose()
 
     expect(ctx.plugin.settings.get('enabled')).toBe(true)
     expect(host.settings.getSetting).toHaveBeenCalledWith('test.plugin', 'enabled')
@@ -275,7 +294,7 @@ describe('PluginContext', () => {
       contributes: { slots: [{ slot: 'titleBar', placed: { case: 'view', value: 'bar' } }] },
     } as unknown as Parameters<typeof createPluginParts>[2])
 
-    ctx.plugin.register.slotView({ id: 'bar', component: STUB_COMPONENT })
+    const sub = ctx.plugin.register.slotView({ id: 'bar', component: STUB_COMPONENT })
 
     expect(ctx.plugin.identity.subscriptions).toHaveLength(1)
     expect(host.views.registerSlotView).toHaveBeenCalledWith(
@@ -283,15 +302,22 @@ describe('PluginContext', () => {
       'titleBar',
       expect.objectContaining({ id: 'bar' }),
     )
+    const slotDisposable = vi.mocked(host.views.registerSlotView).mock.results[0]?.value
+    sub.dispose()
+    expect(slotDisposable.dispose).toHaveBeenCalledOnce()
   })
 
   it('rejects a view its manifest places nowhere', () => {
     const { host } = createMockHost()
     const ctx = createPluginParts('org.example.orchard', host)
+    const ctxPermsOnly = createPluginParts('org.example.orchard', host, { permissions: [] })
 
     expect(() => ctx.plugin.register.slotView({ id: 'bar', component: STUB_COMPONENT })).toThrow(
       /places nowhere/,
     )
+    expect(() =>
+      ctxPermsOnly.plugin.register.slotView({ id: 'bar', component: STUB_COMPONENT }),
+    ).toThrow(/places nowhere/)
     expect(host.views.registerSlotView).not.toHaveBeenCalled()
   })
 
@@ -321,5 +347,90 @@ describe('PluginContext', () => {
     expect((await ctx.plugin.identity.openExternal('file:///etc/passwd')).ok).toBe(false)
     expect(host.ui.openExternal).toHaveBeenCalledTimes(1)
     expect(host.ui.openExternal).toHaveBeenCalledWith('https://numen.md/')
+  })
+})
+
+describe('host service bridges', () => {
+  it('bridges vault, ui, and work services with fallbacks when optional parts are absent', async () => {
+    const emptyVault = createVaultServiceBridge({})
+    expect(emptyVault.getNotes()).toBeUndefined()
+    expect(emptyVault.getRelations()).toBeUndefined()
+    expect(emptyVault.getFiles()).toBeUndefined()
+    expect(emptyVault.getTexts('p')).toBeUndefined()
+    expect(emptyVault.getBuffers()).toBeUndefined()
+    expect(emptyVault.getVaults()).toBeUndefined()
+
+    const emptyWork = createWorkServiceBridge({})
+    expect(emptyWork.getTasks('p')).toBeUndefined()
+    expect(emptyWork.getBackgroundTasks()).toBeUndefined()
+    expect(emptyWork.getProcesses()).toBeUndefined()
+    expect(emptyWork.getHealth('p')).toBeUndefined()
+    expect(emptyWork.getConnections('p')).toBeUndefined()
+
+    const processes = {} as never
+    const connections = {} as never
+    const fullWork = createWorkServiceBridge({
+      work: {
+        getProcesses: () => processes,
+        getConnections: () => connections,
+      },
+    })
+    expect(fullWork.getProcesses()).toBe(processes)
+    expect(fullWork.getConnections('p')).toBe(connections)
+
+    const bareManifest: Manifest = { ...createMockManifest('md.bare'), contributes: undefined }
+    const manifestWithCmd = createMockManifest('md.tree', { commands: ['open', 'free'] })
+    if (manifestWithCmd.contributes?.commands[0]) {
+      manifestWithCmd.contributes.commands[0].permission = 'vault:write'
+    }
+    const manifests = new Map<string, Manifest>([
+      ['md.bare', bareManifest],
+      ['md.tree', manifestWithCmd],
+    ])
+    const slots = {} as never
+    const slotState: {
+      entries?: readonly {
+        pluginId: string
+        slot: string
+        kind: 'command' | 'view'
+        command?: string
+      }[]
+    } = {}
+    const uiNoCommands = createUiServiceBridge(
+      { window: { target: 'desktop.editor' } },
+      { slots, manifests, readSlotEntries: () => slotState.entries as never },
+    )
+    expect(uiNoCommands.getNotices('p').show('info')).toBeUndefined()
+    expect(uiNoCommands.getNotices('p').setTasks([])).toBeUndefined()
+    expect(uiNoCommands.isCommandListed('md.tree:open')).toBe(false)
+
+    slotState.entries = [
+      { pluginId: 'md.tree', slot: 'titleBar', kind: 'view' },
+      { pluginId: 'md.tree', slot: 'titleBar', kind: 'command', command: 'open' },
+      { pluginId: 'md.tree', slot: 'titleBar', kind: 'command', command: 'app:file.createText' },
+    ]
+    expect(uiNoCommands.isCommandListed('md.tree:open')).toBe(true)
+    expect(uiNoCommands.isCommandListed('app:file.createText')).toBe(true)
+    expect(uiNoCommands.isCommandListed('md.tree:close')).toBe(false)
+
+    expect(uiNoCommands.getCommandPermission?.('md.tree:open')).toBe('vault:write')
+    expect(uiNoCommands.getCommandPermission?.('md.tree:free')).toBeUndefined()
+    expect(uiNoCommands.getCommandPermission?.('md.other:open')).toBeUndefined()
+
+    const uiWithCommands = createUiServiceBridge(
+      {
+        window: { target: 'desktop.editor' },
+        commands: {
+          getCommandDeclarations: () => [
+            { pluginId: 'md.other', id: 'noop', title: 'Noop' },
+            { pluginId: 'md.decl', id: 'run', title: 'Run', permission: 'vault:read' },
+          ],
+        },
+      },
+      { slots, manifests, readSlotEntries: () => undefined },
+    )
+    expect(uiWithCommands.getCommandPermission?.('md.decl:run')).toBe('vault:read')
+    expect(uiWithCommands.getCommandPermission?.('md.tree:open')).toBe('vault:write')
+    expect(uiWithCommands.getCommandPermission?.('md.other:noop')).toBeUndefined()
   })
 })

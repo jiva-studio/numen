@@ -78,11 +78,13 @@ func (p Preset) GetWeeklyShare() float64 {
 // load. A week with no day carrying any stops the preset itself, so this day is
 // one of the quiet days of a week that has loud ones.
 func (p Preset) GetStopReason(d Day, now time.Time) StopReason {
-	why := p.GetOverallStopReason(d, now)
-	if why == StoppedNothing && p.GetShare(d.GetDate(now).Weekday()) == 0 {
+	if why := p.GetOverallStopReason(d, now); why != StoppedNothing {
+		return why
+	}
+	if p.GetShare(d.GetDate(now).Weekday()) == 0 {
 		return StoppedNoLoad
 	}
-	return why
+	return StoppedNothing
 }
 
 // IsPaused reports whether the preset schedules nothing.
@@ -102,7 +104,7 @@ const NeverLearns = -1
 const LearnsUnasked = -2
 
 func (p Preset) getPace(d Day, now time.Time, unbegunCards, daysToLearn int) int {
-	reviewDays := p.getCapacityToBegin(d, now, 0)
+	reviewDays := p.getReviewDays(d, now)
 	if reviewDays <= 0 {
 		return 0
 	}
@@ -127,14 +129,36 @@ func (p Preset) getCapacityToBegin(d Day, now time.Time, daysToLearn int) float6
 	y, m, day := p.By.Date()
 	to := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
 	span := int(to.Sub(from).Hours()/24) + 1
-	out := 0.0
-	for i := span - 1; i >= 0; i-- {
-		share := p.GetShare(from.AddDate(0, 0, i).Weekday())
-		if share > 0 && daysToLearn > 0 {
+	for span > 0 && daysToLearn > 0 {
+		span--
+		if p.GetShare(from.AddDate(0, 0, span).Weekday()) > 0 {
 			daysToLearn--
-			continue
 		}
-		out += share
+	}
+	return p.getDaysOfReview(from, span)
+}
+
+func (p Preset) getReviewDays(d Day, now time.Time) float64 {
+	if p.Goal != GoalDate || p.By.IsZero() {
+		return 0
+	}
+	from, err := time.Parse(DayLayout, d.GetName(now))
+	if err != nil {
+		return 0
+	}
+	y, m, day := p.By.Date()
+	to := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
+	return p.getDaysOfReview(from, int(to.Sub(from).Hours()/24)+1)
+}
+
+func (p Preset) getDaysOfReview(from time.Time, days int) float64 {
+	if days <= 0 {
+		return 0
+	}
+	whole := days / 7
+	out := p.GetWeeklyShare() * float64(whole)
+	for i := range days % 7 {
+		out += p.GetShare(from.AddDate(0, 0, whole*7+i).Weekday())
 	}
 	return out
 }
