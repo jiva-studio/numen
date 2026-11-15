@@ -227,11 +227,16 @@ describe('editor preferences in setup', () => {
     expect(numbers).toEqual(['1', '2', '3'])
   })
 
-  it('attaches heading and code-block alignment classes to line number gutter elements', () => {
+  it('attaches heading and code-block alignment classes to line number gutter elements', async () => {
     const view = open({ lineNumbers: true }, '# First\n\n## Second\n\n```ts\nconst x = 1\n```')
-    const elements = Array.from(
-      view.dom.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement:not(:first-child)'),
+    const getElements = () =>
+      Array.from(
+        view.dom.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement:not(:first-child)'),
+      )
+    await vi.waitFor(() =>
+      expect(getElements()[4]?.classList.contains('cm-gutter-code-first')).toBe(true),
     )
+    const elements = getElements()
 
     expect(elements[0]?.classList.contains('cm-gutter-heading-1')).toBe(true)
     expect(elements[0]?.classList.contains('cm-gutter-gap')).toBe(false)
