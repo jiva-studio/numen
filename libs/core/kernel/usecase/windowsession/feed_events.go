@@ -23,7 +23,8 @@ const FeedQuietPeriod = 500 * time.Millisecond
 // starts before the passes of the vault write anything, and the event is sent once for a feed that holds
 // changes when the vault opens, with the types of every file of the feed, once after each burst of writes
 // that moved the head of the feed, with the types of the files those writes changed, and once after each
-// change of the plugins, with the types of every file of the feed. A window without plugins sends none.
+// change of the plugins, with the types of every file of the feed. A read of the feed that failed is tried
+// again once, after the next quiet period. A window without plugins sends none.
 type FeedEvents struct {
 	WatchWrites    func(id domain.VaultID, report func()) func()
 	WatchPlugins   func() (<-chan struct{}, func())
@@ -65,13 +66,23 @@ type feedLoop struct {
 }
 
 func (l *feedLoop) run(ctx context.Context) {
+	retry := notRetried
 	for {
 		isForced, ok := l.waitForChange(ctx)
 		if !ok {
 			return
 		}
+		if retry == retriedForced {
+			isForced = true
+			retry = retriedPlain
+		}
 		head, err := l.events.ReadHead(ctx, l.vault.ID)
-		if err != nil || head.Cursor.Seq == 0 || (!isForced && head.Cursor == l.sent) {
+		if err != nil {
+			retry = l.fail(retry, isForced)
+			continue
+		}
+		if head.Cursor.Seq == 0 || (!isForced && head.Cursor == l.sent) {
+			retry = notRetried
 			continue
 		}
 		after := l.sent.Seq
@@ -80,11 +91,31 @@ func (l *feedLoop) run(ctx context.Context) {
 		}
 		types, err := l.listTypes(ctx, after, head.Cursor.Seq)
 		if err != nil {
+			retry = l.fail(retry, isForced)
 			continue
 		}
+		retry = notRetried
 		l.sent = head.Cursor
 		l.events.Emit(l.vault, types)
 	}
+}
+
+type retryState int
+
+const (
+	notRetried retryState = iota
+	retriedPlain
+	retriedForced
+)
+
+func (l *feedLoop) fail(retry retryState, isForced bool) retryState {
+	if retry == notRetried {
+		signal(l.wake)
+	}
+	if isForced {
+		return retriedForced
+	}
+	return retriedPlain
 }
 
 func (l *feedLoop) listTypes(ctx context.Context, after, upTo int64) ([]domain.ContentType, error) {
