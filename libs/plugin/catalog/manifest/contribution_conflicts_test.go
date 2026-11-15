@@ -52,13 +52,24 @@ func TestListContributionConflicts(t *testing.T) {
 				plugin("md.example.a", manifest.Contributes{TabKinds: tabKinds("reader:pdf"), Readers: []manifest.Reader{{ID: "pdf"}}}),
 			},
 		},
+		"a reader with prefix that takes the tab kind of another plugin": {
+			plugins: []manifest.Discovered{
+				plugin("md.example.a", manifest.Contributes{TabKinds: tabKinds("reader:pdf")}),
+				plugin("md.example.b", manifest.Contributes{Readers: []manifest.Reader{{ID: "reader:pdf"}}}),
+			},
+			want: []string{`plugin "md.example.b" declares the reader "reader:pdf", which plugin "md.example.a" already declares`},
+		},
 		"a refused plugin owns nothing": {
 			plugins: []manifest.Discovered{
 				plugin("md.example.a", manifest.Contributes{TabKinds: tabKinds("deck")}),
 				plugin("md.example.b", manifest.Contributes{TabKinds: tabKinds("deck", "extra")}),
 				plugin("md.example.c", manifest.Contributes{TabKinds: tabKinds("extra")}),
+				plugin("md.example.d", manifest.Contributes{TabKinds: tabKinds("extra")}),
 			},
-			want: []string{`plugin "md.example.b" declares the tab kind "deck"`},
+			want: []string{
+				`plugin "md.example.b" declares the tab kind "deck"`,
+				`plugin "md.example.d" declares the tab kind "extra", which plugin "md.example.c" already declares`,
+			},
 		},
 		"distinct declarations": {
 			plugins: []manifest.Discovered{

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -118,6 +119,9 @@ func TestACacheNeedsAFile(t *testing.T) {
 	if info, err := os.Stat(filepath.Dir(path)); err != nil || info.Mode().Perm() != 0o700 {
 		t.Errorf("folder mode = %v, %v; want 0o700", info.Mode().Perm(), err)
 	}
+	if info, err := os.Stat(path); err != nil || info.Mode().Perm() != 0o600 {
+		t.Errorf("file mode = %v, %v; want 0o600", info.Mode().Perm(), err)
+	}
 
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -137,11 +141,11 @@ func TestACacheNeedsAFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := dirCache.Read(t.Context()); err == nil || errors.Is(err, catalog.ErrEmptyCache) {
-		t.Errorf("expected Read error on directory, got %v", err)
+	if _, err := dirCache.Read(t.Context()); err == nil || !strings.Contains(err.Error(), "read the snapshot:") || errors.Unwrap(err) == nil {
+		t.Errorf("expected wrapped Read error on directory, got %v", err)
 	}
-	if err := dirCache.Write(t.Context(), catalog.Snapshot{}); err == nil {
-		t.Error("expected Write error when destination path is a directory")
+	if err := dirCache.Write(t.Context(), catalog.Snapshot{}); err == nil || errors.Unwrap(err) == nil {
+		t.Errorf("expected wrapped Write error when destination path is a directory, got %v", err)
 	}
 	if entries, err := os.ReadDir(dir); err != nil || len(entries) != 2 {
 		t.Errorf("expected temporary file to be cleaned up on failed Write, got %v, %v", entries, err)
@@ -155,7 +159,7 @@ func TestACacheNeedsAFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := badParentCache.Write(t.Context(), catalog.Snapshot{}); err == nil {
-		t.Error("expected Write error when parent is a file")
+	if err := badParentCache.Write(t.Context(), catalog.Snapshot{}); err == nil || !strings.Contains(err.Error(), "create the snapshot folder:") || errors.Unwrap(err) == nil {
+		t.Errorf("expected wrapped Write error when parent is a file, got %v", err)
 	}
 }
