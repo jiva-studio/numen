@@ -37,11 +37,11 @@ interface PluginItemsDeps {
 function createPluginItems(deps: PluginItemsDeps) {
   const itemLists = shallowRef<ReadonlyMap<string, ListedItems>>(new Map())
   const requests = new Set<string>()
-  let generation = 0
+  let generation: Record<string, never> = {}
 
   /** Stores the items the plugin returned, unless the palette closed or opened since they were requested. */
   const keep = (
-    requestGeneration: number,
+    requestGeneration: Record<string, never>,
     command: string,
     targetKey: string,
     items: readonly CommandItem[],
@@ -57,25 +57,26 @@ function createPluginItems(deps: PluginItemsDeps) {
   }
 
   /** Asks the plugin for the items of the command over the target of the palette, once for each target. */
-  const ask = (command: string): void => {
-    if (!deps.pluginHost) return
+  const ask = (command: string): boolean => {
+    if (!deps.pluginHost?.hasCommandItems(command)) return false
     const target = deps.getTarget()
     const targetKey = getTargetKey(target)
     const request = `${command}\u0000${targetKey}`
-    if (requests.has(request)) return
-    requests.add(request)
-    const requestGeneration = generation
-    const pending = deps.pluginHost.listCommandItems(command, toRunTarget(target))
-    runInBackground(
-      pending.then((items) => keep(requestGeneration, command, targetKey, items)),
-      () => keep(requestGeneration, command, targetKey, []),
-    )
+    if (!requests.has(request)) {
+      requests.add(request)
+      const requestGeneration = generation
+      const pending = deps.pluginHost.listCommandItems(command, toRunTarget(target))
+      runInBackground(
+        pending.then((items) => keep(requestGeneration, command, targetKey, items)),
+        () => keep(requestGeneration, command, targetKey, []),
+      )
+    }
+    return true
   }
 
   /** The pick list of a command with items; undefined for any other command. */
   const getGroups = (command: string, typed: string): readonly StepGroup[] | undefined => {
-    if (!deps.pluginHost?.hasCommandItems(command)) return undefined
-    ask(command)
+    if (!ask(command)) return undefined
     const list = readItems(command)
     const query = typed.trim().toLowerCase()
     const items = list
@@ -88,32 +89,22 @@ function createPluginItems(deps: PluginItemsDeps) {
 
   /** Whether the items of the command over the target of the palette are read and are none. */
   const isEmpty = (command: string): boolean => {
-    if (!deps.pluginHost?.hasCommandItems(command)) return false
     ask(command)
     return readItems(command)?.length === 0
   }
 
-  /** The items of the command read over the target of the palette; undefined while they are read. */
-  const getRead = (command: string): readonly CommandItem[] | undefined => {
-    if (!deps.pluginHost?.hasCommandItems(command)) return undefined
-    ask(command)
-    return readItems(command)
-  }
-
   /** Forgets the items asked for, so the next pick list asks again. */
   const reset = (): void => {
-    generation += 1
+    generation = {}
     requests.clear()
     itemLists.value = new Map()
   }
 
-  return { getGroups, isEmpty, getRead, reset }
+  return { getGroups, isEmpty, getRead: readItems, reset }
 }
 
-const findOnlyHandler = (items: readonly CommandItem[] | undefined): CommandItem | undefined => {
-  const [only] = items ?? []
-  return items?.length === 1 && only?.group === undefined ? only : undefined
-}
+const findOnlyHandler = (items: readonly CommandItem[] | undefined): CommandItem | undefined =>
+  items?.length === 1 ? items.find((one) => one.group === undefined) : undefined
 
 /** What the palette's lists are made of besides the plugin host. */
 interface PaletteParts {

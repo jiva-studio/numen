@@ -21,7 +21,7 @@ export interface RowOrderSource {
 export function useRowOrder(source: RowOrderSource) {
   const heldKey = ref<string | null>(null)
   const announcement = ref('')
-  let heldFrom: readonly RowDraft[] = []
+  let heldFrom: readonly RowDraft[] = source.drafts.value
 
   const findIndexAt = (y: number): number | null => {
     const items = Array.from(source.getList()?.children ?? [])

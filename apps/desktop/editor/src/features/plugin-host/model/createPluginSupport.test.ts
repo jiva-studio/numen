@@ -227,22 +227,29 @@ describe('the settings and notices a plugin is given', () => {
     expect(registerExtensionReader).toHaveBeenCalledWith('.pdf', expect.any(Function), undefined)
   })
 
-  it('lists the declared commands of a plugin with a frontend while it loads, and none of a plugin without one', () => {
+  it('lists the declared commands of a plugin with a frontend while it loads, and none of a plugin without one or a failed one', async () => {
     const rest = {
       state: {
         plugins: ref([
           { id: 'md.numen.tree', hasFrontend: true },
+          { id: 'md.numen.broken', hasFrontend: true },
           { id: 'md.numen.job', hasFrontend: false },
         ]),
       },
     }
-    const { pluginHost } = createWith({
+    const { pluginHost, pluginLoader } = createWith({
       rest: rest as never,
       getCommandDeclarations: () => [
         { pluginId: 'md.numen.tree', id: 'tree.open', title: 'Open tree' },
+        { pluginId: 'md.numen.broken', id: 'broken.open', title: 'Open broken' },
         { pluginId: 'md.numen.job', id: 'job.run', title: 'Run job' },
       ],
     })
+    pluginLoader.registerPluginModule('md.numen.broken', async () => {
+      throw new Error('broken plugin')
+    })
+    await pluginLoader.start()
+    await pluginLoader.status.startPlugin('md.numen.broken')
 
     expect(pluginHost.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.numen.tree:tree.open',
@@ -464,10 +471,11 @@ describe('the plugins the window loads', () => {
       'md.numen.a',
       createMockManifest('md.numen.a', {
         name: 'A',
-        permissions: ['vault:read'],
+        permissions: ['vault:read', 'shell:openExternal'],
         tabKinds: ['sample'],
       }),
     )
+    expect(pluginHost.contextHost.ui.openExternal('https://example.com')).toBeInstanceOf(Promise)
     const icon = { name: 'CustomIcon' }
     ctx.plugin.register.tabKind({
       kind: 'sample' as never,
@@ -477,7 +485,7 @@ describe('the plugins the window loads', () => {
     })
     expect(getNoteIcon('sample')).toBe(icon)
     const tabId = await windowTabs.tabs.openTabOfKind('sample', 'a.md')
-    expect(windowTabs.tabs.getTab(tabId!)).toBeDefined()
+    expect(windowTabs.tabs.getTab(tabId ?? '')).toBeDefined()
 
     // Failing onSettingChange handler reports to reportError
     ctx.plugin.settings.onChange('fontSize', (() =>

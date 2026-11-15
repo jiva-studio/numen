@@ -20,7 +20,7 @@ export function useSettingsViews(deps: SettingsViewsDeps) {
   )
   const views = computed(() =>
     getRegisteredViews(
-      deps.getPlugin().settingsViews ?? [],
+      deps.getPlugin().settingsViews,
       deps.getHost().getSettingsViews(deps.getPlugin().id),
     ),
   )

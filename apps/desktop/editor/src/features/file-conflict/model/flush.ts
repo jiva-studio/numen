@@ -129,14 +129,17 @@ function createFlushReporter(
   function adopt(results: HandlerResults) {
     for (const drop of dropHeld) drop()
     dropHeld = []
-    failed = results.some((one) => one.status === 'rejected')
     for (const one of results) {
-      if (one.status !== 'fulfilled' || one.value === undefined) continue
-      for (const conflict of one.value) dropHeld.push(registry.raise(retrying(conflict)))
+      if (one.status === 'rejected') {
+        failed = true
+      } else if (one.value !== undefined) {
+        for (const conflict of one.value) dropHeld.push(registry.raise(retrying(conflict)))
+      }
     }
   }
 
   function startWrites() {
+    failed = false
     const pendingWrites = Promise.allSettled(
       [...handlers].map((one) => new Promise<void | readonly Conflict[]>((done) => done(one()))),
     )
@@ -163,7 +166,6 @@ function createFlushReporter(
     underVal = null
     lastResult = null
     writing = null
-    failed = false
   }
 
   return { answer, report, reportInBackground, reset }

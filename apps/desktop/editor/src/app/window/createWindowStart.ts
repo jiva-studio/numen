@@ -58,7 +58,7 @@ function createPluginStarter(deps: PluginStarterDeps) {
   return createPluginStart({
     pluginLoader: deps.pluginLoader,
     getPlugins: () => rest.state.plugins.value,
-    waitForDeclaredCommands: () => declaredCommands.waitForFirstList(),
+    waitForDeclaredCommands: declaredCommands.waitForFirstList,
     writeMessage: deps.writeMessage,
   })
 }

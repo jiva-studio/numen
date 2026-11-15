@@ -73,8 +73,8 @@ const round = (value: number): number => Math.round(value * 1e6) / 1e6
 
 const getRangeValues = (setting: PluginSettingInfo): readonly number[] => {
   const { min, max, step } = setting
-  if (min === undefined || max === undefined || !step || step <= 0) return []
-  const count = Math.floor((max - min) / step + 1e-9)
+  if (min === undefined || max === undefined || step === undefined || step <= 0) return []
+  const count = Math.floor((max - min) / step)
   const values = Array.from({ length: count + 1 }, (_, index) => round(min + index * step))
   // The maximum is offered even where the steps do not reach it.
   return values.at(-1) === max ? values : [...values, max]
@@ -104,28 +104,24 @@ const getChoices = (setting: PluginSettingInfo, words: SettingWords): readonly C
     ]
   }
   if (setting.type === 'enum') {
-    const now = typeof current === 'string' ? current : JSON.stringify(current ?? '')
     return getOptions(setting).map((one) => ({
       row: {
         id: one.value,
         title: one.title || one.value,
-        ...getMark(one.value === now, one.detail, words),
+        ...getMark(one.value === current, one.detail, words),
       },
       value: one.value,
     }))
   }
-  if (setting.type === 'range') {
-    const now = Number(current)
-    return getRangeValues(setting).map((one) => ({
-      row: {
-        id: String(one),
-        title: String(one),
-        ...getMark(Math.abs(one - now) < 1e-6, '', words),
-      },
-      value: one,
-    }))
-  }
-  return []
+  const now = round(Number(current))
+  return getRangeValues(setting).map((one) => ({
+    row: {
+      id: String(one),
+      title: String(one),
+      ...getMark(one === now, '', words),
+    },
+    value: one,
+  }))
 }
 
 const getSettingPath = (owner: string, key: string): readonly string[] =>

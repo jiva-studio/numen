@@ -82,8 +82,8 @@ interface BuildGroupsDeps {
   readonly texts: readonly Passage[]
   readonly meanings: readonly Passage[]
   readonly words: Words
-  readonly getMenu: (target: RunTarget) => readonly SlotItem[]
-  readonly isWorking: Record<SearchGroup, boolean>
+  readonly getMenu: (target: RunTarget) => readonly SlotItem[] | undefined
+  readonly isWorking: Partial<Record<SearchGroup, boolean>>
   readonly getSilence: (id: SearchGroup) => string
 }
 
@@ -95,8 +95,8 @@ const getNoteTarget = (path: string, title: string): RunTarget => ({
   tab: '',
 })
 
-const getPassageMenu = (deps: BuildGroupsDeps, one: Passage): readonly SlotItem[] =>
-  one.isNote ? deps.getMenu(getNoteTarget(one.path, one.title)) : []
+const getPassageMenu = (deps: BuildGroupsDeps, one: Passage): readonly SlotItem[] | undefined =>
+  one.isNote ? deps.getMenu(getNoteTarget(one.path, one.title)) : undefined
 
 function buildSearchGroups(deps: BuildGroupsDeps) {
   const hitsById = new Map<string, SearchHit>()
@@ -106,7 +106,7 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
       id,
       title,
       items: rows.map((one) => one.item),
-      isWorking: deps.isWorking[id],
+      isWorking: Boolean(deps.isWorking[id]),
       silence: deps.getSilence(id),
     }
   }
@@ -145,7 +145,6 @@ function appendCreateNoteActions(
   getTarget: SearchOptions['getTarget'],
 ) {
   const created = getTarget ? getCreateNoteActions({ text, words, target: getTarget() }) : []
-  if (created.length === 0) return base
   const ids = created.map((one) => one.id)
   const groups = base.groups.map((one) => ({
     ...one,
@@ -167,7 +166,7 @@ interface SearchRefs {
   names: ShallowRef<readonly NameMatch[]>
   texts: ShallowRef<readonly Passage[]>
   meanings: ShallowRef<readonly Passage[]>
-  isWorking: Ref<Record<SearchGroup, boolean>>
+  isWorking: Ref<Partial<Record<SearchGroup, boolean>>>
   failureMessages: Ref<Partial<Record<SearchGroup, string>>>
   isAnswered: Ref<boolean>
 }
@@ -177,7 +176,7 @@ function createSearchRefs(): SearchRefs {
     names: shallowRef<readonly NameMatch[]>([]),
     texts: shallowRef<readonly Passage[]>([]),
     meanings: shallowRef<readonly Passage[]>([]),
-    isWorking: ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false }),
+    isWorking: ref<Partial<Record<SearchGroup, boolean>>>({}),
     failureMessages: ref<Partial<Record<SearchGroup, string>>>({}),
     isAnswered: ref(false),
   }
@@ -187,7 +186,7 @@ function clearSearchRefs(state: SearchRefs): void {
   state.names.value = []
   state.texts.value = []
   state.meanings.value = []
-  state.isWorking.value = { names: false, text: false, meaning: false }
+  state.isWorking.value = {}
   state.failureMessages.value = {}
   state.isAnswered.value = false
 }
@@ -202,7 +201,6 @@ async function executeSearchQuery(
   },
   state: SearchRefs,
 ) {
-  clearSearchRefs(state)
   state.isWorking.value = { names: true, text: true, meaning: true }
   const onFailed = (g: SearchGroup) => {
     state.failureMessages.value = { ...state.failureMessages.value, [g]: ctx.emptyQueryWord }
@@ -289,7 +287,6 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const ask = (query: string, mine: InFlightRequest) => {
     isWaiting.value = false
-    asking.abort()
     asking = new AbortController()
     return executeSearchQuery(
       { core, query, mine, signal: asking.signal, emptyQueryWord: words.noQuery },
@@ -318,14 +315,12 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const getEmptyGroupMessage = (id: SearchGroup): string => failureMessages.value[id] ?? ''
 
   const searchGroups = computed(() => {
-    if (!inputValue.value.trim())
-      return { groups: [] as readonly PaletteGroup[], hitsById: new Map<string, SearchHit>() }
     const base = buildSearchGroups({
       names: names.value,
       texts: texts.value,
       meanings: meanings.value,
       words,
-      getMenu: (target) => how.menu?.getEntries(target) ?? [],
+      getMenu: (target) => how.menu?.getEntries(target),
       isWorking: isWorking.value,
       getSilence: getEmptyGroupMessage,
     })
@@ -339,9 +334,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const isBusy = computed(() => isWaiting.value || Object.values(isWorking.value).some(Boolean))
 
   /** Whether every question has answered and no group has a row or a message to show. */
-  const isNothingFound = computed(
-    () => isAnswered.value && Boolean(inputValue.value.trim()) && groups.value.length === 0,
-  )
+  const isNothingFound = computed(() => isAnswered.value && groups.value.length === 0)
 
   const chooseResult = (item: string, action: string): ResultChoice | null =>
     resolveChoice(searchGroups.value.hitsById.get(item), action, inputValue.value)

@@ -50,8 +50,8 @@ const isSettingShown = (setting: PluginSettingInfo): boolean => setting.isShown 
 export function createEnumFields(
   getPlugin: () => PluginInfo,
   read: ReadPluginSetting,
-  isRequested: (key: string) => boolean = () => false,
-  getPlatform: () => string = () => '',
+  isRequested: (key: string) => boolean,
+  getPlatform: () => string,
 ): EnumFields {
   const whenReader = createWhenReader()
   /** An option with no condition, or one that cannot be read, is offered. */

@@ -113,7 +113,17 @@ const answerFrom = (core: Fake) => {
     },
     pluginHealth: {
       watchHealth: async function* () {
-        yield { items: [] }
+        yield {
+          items: [
+            {
+              pluginId: 'org.example.atlas',
+              key: 'conn',
+              severity: 1,
+              summary: 'No connection',
+              detail: '',
+            },
+          ],
+        }
         await waitForever()
       },
     },
@@ -710,6 +720,7 @@ describe('a window before it has requested the vault anything', () => {
     expect(window.opening.hasNote.value).toBe(false)
     expect(window.opening.path.value).toBe('')
     expect(window.tasks.value).toStrictEqual([])
+    expect(window.pluginHealth.value).toStrictEqual([])
   })
 })
 
@@ -732,6 +743,7 @@ describe('the first note shown', () => {
 
     expect(one.window.health.isIndexing.value).toBe(false)
     expect(one.changed).toStrictEqual([''])
+    expect(one.window.pluginHealth.value).toHaveLength(1)
   })
 
   it('says what changed in a note while it is being made', async () => {

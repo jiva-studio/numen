@@ -72,10 +72,9 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
       getEditorCommands: deps.facts.getAppCommands,
       hasPluginItems: (command) =>
         own.hasPluginItems(command) ||
-        (deps.declaredCommands.commands.value?.some(
+        deps.declaredCommands.commands.value?.some(
           (one) => one.hasItems && getPaletteId(one) === command,
-        ) ??
-          false),
+        ) === true,
     })
   const hostDeps: WindowSlotParts = {
     slots: {

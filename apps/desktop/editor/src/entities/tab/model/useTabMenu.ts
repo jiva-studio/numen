@@ -32,12 +32,9 @@ export interface TabMenuDeps {
   listItems?(command: string, target: RunTarget): Promise<readonly CommandItem[]>
   /** The tab and the file it shows, which the commands of the entries run over. */
   getTabTarget(tab: string): RunTarget
-  /** Turns the highlight of another window on or off while the pointer is over its item. */
-  onHighlight?(this: void, windowId: string, isOn: boolean): void
-  /** Receives the failure of a command that runs after the menu closed, or of a list read. */
-  reportError?(this: void, error: Caught): void
-  /** The type and the properties of the note of the path, which the entries are asked for over. */
-  readNoteKind?(this: void, path: string): Promise<NoteKind>
+  readonly onHighlight?: ((this: void, windowId: string, isOn: boolean) => void) | undefined
+  readonly reportError?: ((this: void, error: Caught) => void) | undefined
+  readonly readNoteKind?: ((this: void, path: string) => Promise<NoteKind>) | undefined
 }
 
 /** The words of the rows the menu writes itself. */
@@ -55,7 +52,7 @@ const getMoveWindow = (
   id: string | null,
   moveCommand: string,
 ): string | null => {
-  const pick = id === null ? undefined : tree?.getPick(id)
+  const pick = tree?.getPick(id as string)
   return pick?.command === moveCommand ? (pick.itemId ?? null) : null
 }
 
@@ -89,10 +86,10 @@ export function useTabMenu(deps: TabMenuDeps) {
   let highlighted: string | null = null
 
   const menu = computed<TabMenu | null>(() => {
-    const visible = slotMenu.target.value
     const tree = slotMenu.menu.value
-    if (visible === null || tree === null) return null
-    return { tab: visible.tab, at: visible.at, items: tree.items }
+    if (!tree) return null
+    const { tab, at } = slotMenu.target.value as TabMenuTarget
+    return { tab, at, items: tree.items }
   })
 
   const highlight = (id: string | null): void => {

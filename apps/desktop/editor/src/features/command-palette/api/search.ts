@@ -41,7 +41,7 @@ export const createSearchCore = (search: WindowClients['search']): SearchDeps =>
     const cancel = () => {
       search.cancelSearch({ searchId }).catch(() => undefined)
     }
-    signal.addEventListener('abort', cancel, { once: true })
+    signal.addEventListener('abort', cancel)
     try {
       return await ask(searchId, { signal })
     } finally {

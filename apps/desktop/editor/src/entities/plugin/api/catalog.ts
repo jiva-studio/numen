@@ -11,7 +11,8 @@ import type { CatalogListing } from '../lib/catalogEntry'
  * that cannot be read answers why, and a catalog that lists nothing says so.
  */
 export const createCatalogReader =
-  (pluginCatalog: WindowClients['pluginCatalog']) => async (): Promise<Result<CatalogListing>> => {
+  (pluginCatalog: Pick<WindowClients['pluginCatalog'], 'list'>) =>
+  async (): Promise<Result<CatalogListing>> => {
     const answer = await pluginCatalog.list()
     if (!answer.ok) {
       return {

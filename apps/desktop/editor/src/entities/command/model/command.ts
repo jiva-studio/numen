@@ -88,9 +88,7 @@ export interface Command {
   readonly answers?: ConfirmWords
   readonly warns?: RetypeWords
   readonly also?: string
-  /**
-   * The items it offers over the target, for a command whose step is a argument; the argument picked
-   * is the name of its invocation.
-   */
-  listItems?(target: CommandTarget): readonly CommandItem[] | Promise<readonly CommandItem[]>
+  readonly listItems?: (
+    target: CommandTarget,
+  ) => readonly CommandItem[] | Promise<readonly CommandItem[]>
 }

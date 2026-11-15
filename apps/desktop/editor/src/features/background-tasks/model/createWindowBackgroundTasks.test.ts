@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { BackgroundTask } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
@@ -7,6 +7,7 @@ import type { Task } from '@/entities/window'
 import { createMessageLog } from '@/shared/model/notices/messages'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createWindowBackgroundTasks } from './createWindowBackgroundTasks'
+import { getHealthTasks, runHealthAction } from './healthTasks'
 
 const READING: Task = {
   id: 'reading',
@@ -128,5 +129,81 @@ describe('the background tasks of the window', () => {
     host.runAction('health:org.example.atlas:connection')
     await nextTick()
     expect(runs).toStrictEqual([])
+  })
+
+  it('reports cancel and action errors through writeMessage', async () => {
+    const writeMessage = vi.fn()
+    const host = createWindowBackgroundTasks({
+      cancelTask: () => Promise.reject(new Error('cannot cancel')),
+      log: createMessageLog(),
+      plugins: createNoticeQueue(),
+      window: { lost: ref(''), unwatched: ref(''), error: ref(''), tasks: ref([READING]) },
+      settings: { appearance: { state: { lost: ref('') } } },
+      health: {
+        items: ref([CONNECTION]),
+        commands: {
+          getIds: () => ['app:settings.open'],
+          run: () => Promise.reject(new Error('action failed')),
+        },
+        getCommandTitle: () => 'Open settings',
+        getPluginName: () => 'Atlas',
+      },
+      writeMessage,
+    })
+
+    await host.cancel('reading')
+    host.runAction('health:org.example.atlas:connection')
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith(
+        'The task was not cancelled: cannot cancel',
+        'error',
+      ),
+    )
+    await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledWith('action failed', 'error'))
+  })
+
+  it('builds full health tasks and matches the target health item by id', async () => {
+    const secondItem: PluginHealthItem = {
+      pluginId: 'org.example.other',
+      key: 'auth',
+      severity: 'error',
+      text: 'Sign in',
+      detail: '',
+      action: { command: 'app:settings.open', values: { plugin: 'other' }, title: 'Fix auth' },
+    }
+    const runs: string[] = []
+    const items: readonly PluginHealthItem[] = [CONNECTION, secondItem]
+    const deps = {
+      commands: {
+        getIds: () => ['app:settings.open'],
+        run: (
+          command: string,
+          _target?: object,
+          _item?: string,
+          values?: Readonly<Record<string, string>>,
+        ) => {
+          runs.push(`${command}:${values?.plugin ?? ''}`)
+          return Promise.resolve('')
+        },
+      },
+      getCommandTitle: () => 'Open settings',
+      getPluginName: (id: string) => (id === 'org.example.atlas' ? 'Atlas' : 'Other'),
+    }
+    const healthTasks = getHealthTasks(items, deps)
+    expect(healthTasks[0]).toStrictEqual({
+      id: 'health:org.example.atlas:connection',
+      label: 'Atlas',
+      about: 'The atlas has no connection to ask.',
+      progress: { completedCount: 0, total: 0, counting: 'items' },
+      error: 'Choose a connection',
+      action: { label: 'Open settings' },
+      source: { isUserStarted: false, pluginId: 'org.example.atlas', pluginName: 'Atlas' },
+      isCancellable: false,
+      kind: 'work',
+    })
+
+    await runHealthAction('health:org.example.other:auth', items, deps)
+    await runHealthAction('health:missing', items, deps)
+    expect(runs).toStrictEqual(['app:settings.open:other'])
   })
 })

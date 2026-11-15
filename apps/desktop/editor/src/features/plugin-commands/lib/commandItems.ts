@@ -32,8 +32,8 @@ interface CommandItemsDeps {
 }
 
 export function createCommandItems(deps: CommandItemsDeps) {
-  const findAppCommand = (id: string) =>
-    deps.getAppCommands().find((one) => one.id === id && one.listItems !== undefined)
+  const getAppListItems = (id: string) =>
+    deps.getAppCommands().find((one) => one.id === id)?.listItems
 
   const toAppTarget = (target: RunTarget): CommandTarget => getNamedTarget(deps.getTarget(), target)
 
@@ -59,10 +59,10 @@ export function createCommandItems(deps: CommandItemsDeps) {
 
   return {
     hasCommandItems: (id: string): boolean =>
-      findAppCommand(id) !== undefined || deps.pluginCommands.hasCommandItems(id),
+      getAppListItems(id) !== undefined || deps.pluginCommands.hasCommandItems(id),
     listCommandItems: async (id: string, target: RunTarget): Promise<readonly CommandItem[]> => {
-      const command = findAppCommand(id)
-      if (command) return (await command.listItems?.(toAppTarget(target))) ?? []
+      const listItems = getAppListItems(id)
+      if (listItems) return listItems(toAppTarget(target))
       if (!deps.pluginCommands.hasCommandItems(id)) return []
       const noteTarget = isSharedCommand(id) ? await readNoteTarget(target) : target
       return deps.pluginCommands.listCommandItems(id, noteTarget)
@@ -74,7 +74,7 @@ export function createCommandItems(deps: CommandItemsDeps) {
       values?: Values,
     ): Promise<void> => {
       const extra = values === undefined ? [] : [values]
-      return findAppCommand(id)
+      return getAppListItems(id)
         ? deps.runApp(id, toAppTarget(target), itemId, ...extra)
         : runPlugin(id, target, itemId, ...extra)
     },

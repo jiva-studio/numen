@@ -59,7 +59,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
         editing,
         navigation,
         renames,
-        notifyPlugins: (event) => vaultChanges.emit(event),
+        notifyPlugins: vaultChanges.emit,
         writeMessage,
       }),
       ...createFocusHandlers({ navigation, tabOpeners, windowTabs, writeMessage }),

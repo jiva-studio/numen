@@ -402,6 +402,9 @@ describe('the command that makes a note, run over a folder', () => {
     expect(
       commands.palette.startCommand('app:note.rename', folder({ isTargetNamed: true })),
     ).toBeNull()
+    expect(
+      commands.palette.startCommand('app:vault.create', folder({ isTargetNamed: true })),
+    ).toBeNull()
   })
 })
 
@@ -742,7 +745,7 @@ describe('a command that offers a list the window holds', () => {
     commands.navigation.leaveStep()
     commands.palette.startCommand(THEME_ID, front())
     commands.palette.previewItem('preset:dracula')
-    commands.navigation.leaveStep()
+    commands.palette.setOpen(false)
 
     expect(displayedLists).toStrictEqual([
       `${MODE_ID} mode:light`,
@@ -1236,14 +1239,17 @@ describe('a step that asks for a note, as the vault answers', () => {
   })
 
   it('asks nothing once what was typed is taken back, and draws nothing found', async () => {
-    const { commands, names, requests } = createSlowPalette()
+    const { commands, names, requests, signals } = createSlowPalette()
     commands.palette.startCommand('app:file.open#note', front())
     commands.palette.setTyped('en').catch(rethrow)
     await settle()
-    names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
-    await settle()
+    expect(signals[0]?.aborted).toBe(false)
 
     commands.palette.setTyped('').catch(rethrow)
+    await settle()
+    expect(signals[0]?.aborted).toBe(true)
+
+    names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
     await settle()
 
     expect(requests).toStrictEqual(['en'])
@@ -1695,6 +1701,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
     })
 
     expect(commands.palette.startCommand('app:test.reveal', front())).toBeNull()
+    expect(commands.palette.startCommand('app:test.reveal', front(), undefined, {})).toBeNull()
     expect(
       commands.palette.startCommand('app:test.reveal', front(), undefined, { kind: 'plex' }),
     ).toMatchObject({ id: 'app:test.reveal' })
@@ -1791,9 +1798,11 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
     })
     expect(all?.id).toBe('org.example.sample:args.run')
 
+    commands.palette.setOpen(false)
     commands.palette.startCommand('org.example.sample:args.run', front(), undefined, {
       detail: 'Spin',
     })
+    expect(commands.palette.open.value).toBe(true)
     expect(commands.navigation.placeholder.value).toBe('Topic title')
     commands.palette.setTyped('Quantum').catch(rethrow)
     const result = chooseRow(commands)
@@ -1845,6 +1854,22 @@ describe('a command started with the text typed for it', () => {
 
     expect(commands.palette.startCommand('app:note.createChild', front(), '')).toBeNull()
     expect(commands.navigation.crumb.value).toBe(words.child)
+    commands.navigation.leaveStep()
+
+    expect(
+      commands.palette.startCommand('app:note.createChild', front(), undefined, { kind: 'plex' }),
+    ).toBeNull()
+    expect(commands.navigation.crumb.value).toBe(words.child)
+    commands.navigation.leaveStep()
+
+    expect(
+      commands.palette.startCommand(
+        'app:note.createChild',
+        front({ path: '', title: '' }),
+        undefined,
+        { kind: 'plex' },
+      ),
+    ).toBeNull()
   })
 
   it('asks for the name as it did where the text typed is only blank', () => {

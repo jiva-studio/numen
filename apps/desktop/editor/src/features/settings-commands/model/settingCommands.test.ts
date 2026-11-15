@@ -4,7 +4,11 @@
  * writes, and how a setting that is previewed is applied while focused and restored on leaving.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import { createSettingPalette } from './settingCommands'
+import { getWindowConfig } from './windowConfig'
+import { createWindowSettingPalette } from './windowPalette'
+import { createWindowSettings } from './windowSettings'
 import type { SettingOwner } from '../lib/settingsConfig'
 import { getNamedIcon } from '@/shared/ui/icons'
 import type { PluginSettingInfo } from '@/entities/settings'
@@ -309,7 +313,48 @@ describe('the choice step of a setting', () => {
       '1.9',
       '2',
     ])
-    expect(rows.filter((one) => one.isCurrent).map((one) => one.id)).toStrictEqual(['1'])
+    expect(rows.find((one) => one.id === '1')).toStrictEqual({
+      id: '1',
+      title: '1',
+      detail: 'Current',
+      isCurrent: true,
+    })
+    expect(rows.find((one) => one.id === '0.8')).toStrictEqual({ id: '0.8', title: '0.8' })
+  })
+
+  it('offers the maximum of a range whose step does not divide it, and no rows when range bounds or step are invalid', () => {
+    const rangeOwner: SettingOwner = {
+      id: 'app',
+      name: '',
+      settings: [
+        declare({
+          key: 'oddRange',
+          type: 'range',
+          palette: true,
+          min: 0,
+          max: 2.5,
+          step: 1,
+          value: 1,
+        }),
+        declare({ key: 'noMin', type: 'range', palette: true, max: 2, step: 1 }),
+        declare({ key: 'noMax', type: 'range', palette: true, min: 0, step: 1 }),
+        declare({ key: 'noStep', type: 'range', palette: true, min: 0, max: 2 }),
+        declare({ key: 'zeroStep', type: 'range', palette: true, min: 0, max: 2, step: 0 }),
+        declare({ key: 'negStep', type: 'range', palette: true, min: 0, max: 2, step: -1 }),
+      ],
+    }
+
+    expect(rowsOf('setting:app:oddRange', [rangeOwner]).map((one) => one.id)).toStrictEqual([
+      '0',
+      '1',
+      '2',
+      '2.5',
+    ])
+    expect(rowsOf('setting:app:noMin', [rangeOwner])).toStrictEqual([])
+    expect(rowsOf('setting:app:noMax', [rangeOwner])).toStrictEqual([])
+    expect(rowsOf('setting:app:noStep', [rangeOwner])).toStrictEqual([])
+    expect(rowsOf('setting:app:zeroStep', [rangeOwner])).toStrictEqual([])
+    expect(rowsOf('setting:app:negStep', [rangeOwner])).toStrictEqual([])
   })
 
   it('names the group after the setting', () => {
@@ -457,6 +502,7 @@ describe('a setting that is previewed while focused', () => {
     palette.lists.previewItem('setting:app:naming.syncTitleAndFilename', 'off')
     palette.lists.previewItem('setting:md.example.scanner:engine', 'fast')
     palette.lists.previewItem('setting:app:performance.profile', '')
+    palette.lists.previewItem('setting:unknown:missing', 'on')
 
     expect(applied).toStrictEqual([])
   })
@@ -475,5 +521,203 @@ describe('a setting that is previewed while focused', () => {
       'apply md.example.scanner/engine "fast"',
       'restore md.example.scanner/engine',
     ])
+  })
+})
+
+describe('windowConfig, windowPalette and windowSettings', () => {
+  const TEXT_SCALE_SETTING = declare({
+    key: 'appearance.textScale',
+    type: 'range',
+    title: 'Text size',
+    default: 1,
+    palette: true,
+    preview: true,
+    min: 0.8,
+    max: 1.4,
+    step: 0.2,
+    value: 1,
+  })
+  const CUSTOM_MODE = declare({
+    ...MODE,
+    options: [
+      ...(MODE.options ?? []),
+      { value: 'invalid', title: 'Invalid', detail: '' },
+    ],
+  })
+  const NON_STRING_THEME = declare({
+    key: 'appearance.theme',
+    type: 'boolean',
+    title: 'Theme bool',
+    default: true,
+    palette: true,
+    preview: true,
+    value: true,
+  })
+  const NON_NUMBER_SCALE = declare({
+    key: 'appearance.interfaceScale',
+    type: 'enum',
+    title: 'Scale enum',
+    default: 'normal',
+    palette: true,
+    preview: true,
+    options: [{ value: 'normal', title: 'Normal', detail: '' }],
+    value: 'normal',
+  })
+  const OTHER_APPEARANCE_RANGE = declare({
+    key: 'appearance.otherScale',
+    type: 'range',
+    title: 'Other scale',
+    default: 1,
+    palette: true,
+    preview: true,
+    min: 1,
+    max: 2,
+    step: 1,
+    value: 1,
+  })
+  const DEEP_APPEARANCE = declare({
+    key: 'appearance.sub.theme',
+    type: 'enum',
+    title: 'Sub theme',
+    default: 'a',
+    palette: true,
+    preview: true,
+    options: [{ value: 'a', title: 'A', detail: '' }],
+    value: 'a',
+  })
+  const OTHER_APP_PREVIEW = declare({
+    key: 'editor.tabSize',
+    type: 'range',
+    title: 'Tab size',
+    default: 2,
+    palette: true,
+    preview: true,
+    min: 2,
+    max: 4,
+    step: 2,
+    value: 2,
+  })
+
+  it('builds window config from app and plugin settings', () => {
+    const rest = {
+      state: {
+        app: ref([THEME]),
+        plugins: ref([{ id: 'md.example.scanner', name: 'Scanner', settings: PLUGIN.settings }]),
+      },
+    }
+
+    expect(getWindowConfig(rest as never)).toStrictEqual({
+      app: { appearance: { theme: 'preset:numen' } },
+      md: { example: { scanner: { autoScan: false } } },
+    })
+  })
+
+  it('previews appearance settings and reloads appearance only when an appearance setting is written', async () => {
+    const previewTheme = vi.fn()
+    const previewMode = vi.fn()
+    const previewSize = vi.fn()
+    const restore = vi.fn()
+    const reload = vi.fn(async () => undefined)
+    const writeSettings = vi.fn(async () => undefined)
+    const appSettings = ref<readonly PluginSettingInfo[]>([
+      THEME,
+      CUSTOM_MODE,
+      INTERFACE_SCALE,
+      TEXT_SCALE_SETTING,
+      OTHER_APPEARANCE_RANGE,
+      DEEP_APPEARANCE,
+      OTHER_APP_PREVIEW,
+      PROFILE,
+    ])
+    const rest = {
+      state: {
+        app: appSettings,
+        plugins: ref([
+          {
+            id: PLUGIN.id,
+            name: PLUGIN.name,
+            settings: [{ ...(PLUGIN.settings[0] as PluginSettingInfo), preview: true }],
+          },
+        ]),
+      },
+      write: { writeSettings },
+    }
+    const palette = createWindowSettingPalette({
+      rest: rest as never,
+      appearance: {
+        preview: {
+          keyboard: { previewTheme, previewMode, previewSize },
+          restore,
+        },
+        reload,
+      } as never,
+      words: { current: 'Current', on: 'On', off: 'Off' },
+    })
+
+    expect(palette.getCommands().length).toBeGreaterThan(0)
+
+    palette.lists.previewItem('setting:app:appearance.theme', 'preset:dracula')
+    expect(previewTheme).toHaveBeenCalledExactlyOnceWith('preset:dracula')
+
+    palette.lists.previewItem('setting:app:appearance.mode', 'light')
+    palette.lists.previewItem('setting:app:appearance.mode', 'invalid')
+    expect(previewMode).toHaveBeenCalledExactlyOnceWith('light')
+
+    palette.lists.previewItem('setting:app:appearance.interfaceScale', '1.2')
+    palette.lists.previewItem('setting:app:appearance.textScale', '1.2')
+    palette.lists.previewItem('setting:app:appearance.otherScale', '2')
+    palette.lists.previewItem('setting:app:appearance.sub.theme', 'a')
+    palette.lists.previewItem('setting:app:editor.tabSize', '4')
+    palette.lists.previewItem('setting:md.example.scanner:autoScan', 'on')
+    expect(previewSize).toHaveBeenCalledTimes(2)
+    expect(previewSize).toHaveBeenNthCalledWith(1, 'interfaceScale', 1.2)
+    expect(previewSize).toHaveBeenNthCalledWith(2, 'textScale', 1.2)
+
+    appSettings.value = [NON_STRING_THEME, NON_NUMBER_SCALE]
+    palette.lists.previewItem('setting:app:appearance.theme', 'on')
+    palette.lists.previewItem('setting:app:appearance.interfaceScale', 'normal')
+    expect(previewTheme).toHaveBeenCalledTimes(1)
+    expect(previewSize).toHaveBeenCalledTimes(2)
+
+    appSettings.value = [THEME, PROFILE]
+    await palette.choose('setting:app:performance.profile', 'eco')
+    await palette.choose('setting:md.example.scanner:autoScan', 'on')
+    expect(reload).not.toHaveBeenCalled()
+
+    await palette.choose('setting:app:appearance.theme', 'preset:dracula')
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports background startup errors in windowSettings to the configured log writer', async () => {
+    const configuredWriter = vi.fn()
+    const windowSettings = createWindowSettings({
+      themes: {
+        getAppearance: async () => {
+          throw new Error('appearance failed')
+        },
+        readTheme: async () => '',
+      } as never,
+      watchSettings: async function* () {
+        yield []
+      },
+      rest: {
+        state: { app: ref([]), plugins: ref([]) },
+        start: async () => undefined,
+        changes: { emit: vi.fn() },
+        write: { writeSettings: async () => undefined },
+      } as never,
+      connections: { reload: async () => undefined },
+      words: { current: 'Current', on: 'On', off: 'Off' },
+      log: {
+        getWriter: (name: string) => (name === 'configured' ? configuredWriter : vi.fn()),
+      } as never,
+      onSizeChanged: vi.fn(),
+    })
+
+    await windowSettings.start()
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    windowSettings.close()
+
+    expect(configuredWriter).toHaveBeenCalledWith('appearance failed', 'error')
   })
 })

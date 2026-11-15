@@ -10,14 +10,15 @@ import { createTabOpeners } from './tabOperations'
 import { showTab, type TabStore } from './tabStore'
 import type { Caught } from '@/shared/api/errors'
 
-const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
-  // Stryker disable next-line OptionalChaining: comparePlacement is only called on kinds filtered by kind.display.placement.
-  const rank = (kind: AnyTabKind) => (kind.display?.placement?.pane === 'main' ? 0 : 1)
-  // Stryker disable next-line OptionalChaining,LogicalOperator: comparePlacement is only called on kinds with placement.order defined.
-  return (
-    rank(one) - rank(other) ||
-    (one.display?.placement?.order ?? 0) - (other.display?.placement?.order ?? 0)
-  )
+interface PlacedKind {
+  readonly kind: string
+  readonly pane: 'main' | 'aside'
+  readonly order: number
+}
+
+const comparePlacement = (one: PlacedKind, other: PlacedKind): number => {
+  const rank = (placed: PlacedKind) => (placed.pane === 'main' ? 0 : 1)
+  return rank(one) - rank(other) || one.order - other.order
 }
 
 /** The error callback for a placed kind whose tab failed to open. */
@@ -30,11 +31,15 @@ async function createPlacedWorkspace(
 ): Promise<Workspace> {
   const main: string[] = []
   const aside: string[] = []
-  for (const one of kinds.filter((kind) => kind.display?.placement).sort(comparePlacement)) {
+  const placed = kinds
+    .flatMap((one): readonly PlacedKind[] =>
+      one.display?.placement ? [{ kind: one.kind, ...one.display.placement }] : [],
+    )
+    .sort(comparePlacement)
+  for (const one of placed) {
     try {
       const id = await createTab(one.kind)
-      // Stryker disable next-line OptionalChaining: kinds are filtered by kind.display.placement above.
-      if (one.display?.placement?.pane === 'main') main.push(id)
+      if (one.pane === 'main') main.push(id)
       else aside.push(id)
     } catch (error) {
       onError(one.kind, error)

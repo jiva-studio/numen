@@ -10,9 +10,10 @@ export interface MountedSettingsView extends ViewComponent {
 
 /** The declared views that the frontend registered, in declared order. */
 export function getRegisteredViews(
-  declared: readonly PluginSettingsViewInfo[],
+  declared: readonly PluginSettingsViewInfo[] | undefined,
   registered: ReadonlyMap<string, ViewComponent>,
 ): readonly MountedSettingsView[] {
+  if (!declared) return []
   const views: MountedSettingsView[] = []
   for (const one of declared) {
     const entry = registered.get(one.id)
@@ -25,7 +26,7 @@ export function getRegisteredViews(
 export function getSettingValues(
   plugin: PluginInfo,
   read: ReadPluginSetting,
-  isRequested: (key: string) => boolean = () => false,
+  isRequested: (key: string) => boolean,
 ): Readonly<Record<string, JsonValue | undefined>> {
   const values: Record<string, JsonValue | undefined> = {}
   for (const one of plugin.settings) values[one.key] = getValueInForce(one, read, isRequested)

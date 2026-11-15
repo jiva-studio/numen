@@ -48,15 +48,16 @@ type PaletteAction = NonNullable<PaletteItem['actions']>[number]
 
 function createNoteActions(
   openText: string,
-  entries: readonly SlotItem[],
+  entries?: readonly SlotItem[],
 ): {
   actions: readonly PaletteAction[]
   actionIds: readonly string[]
   valuesOfHit: Pick<SearchHit, 'actionValues' | 'actionCommands'>
 } {
-  const commands = entries
-    .filter((one) => one.kind === 'command')
-    .map((one) => ({ one, id: getActionId(one.command, one.values) }))
+  const commands =
+    entries
+      ?.filter((one) => one.kind === 'command')
+      .map((one) => ({ one, id: getActionId(one.command, one.values) })) ?? []
   const menu = commands.map(({ one, id }) => ({ id, text: one.title }))
   const actions = [{ id: COMMAND.openFile, text: openText }, ...menu]
   const withValues = commands.flatMap(({ one, id }) =>
@@ -76,12 +77,10 @@ function createNoteActions(
 }
 
 function getActionId(command: string, values: Readonly<Record<string, string>> | undefined) {
-  const names = Object.keys(values ?? {}).sort()
-  if (!values || names.length === 0) return command
-  const pairs = names.map(
-    (name) => `${encodeURIComponent(name)}=${encodeURIComponent(values[name] ?? '')}`,
-  )
-  return `${command}?${pairs.join('&')}`
+  const pairs = Object.entries(values ?? {})
+    .map(([name, value]) => `${encodeURIComponent(name)}=${encodeURIComponent(value)}`)
+    .sort()
+  return pairs.length === 0 ? command : `${command}?${pairs.join('&')}`
 }
 
 /**
@@ -91,7 +90,7 @@ function getActionId(command: string, values: Readonly<Record<string, string>> |
 export function createNameItem(
   one: NameMatch,
   words: Words,
-  entries: readonly SlotItem[] = [],
+  entries?: readonly SlotItem[],
 ): SearchRow {
   const atHeading = createNoteActions(words.readAt, entries)
   const byName = createNoteActions(words.read, entries)
@@ -164,7 +163,7 @@ export function createPassageItem(
   group: string,
   one: Passage,
   words: Words,
-  entries: readonly SlotItem[] = [],
+  entries?: readonly SlotItem[],
 ): SearchRow {
   const note = createNoteActions(words.read, entries)
   const document = [{ id: ROW.openDocument, text: words.readDocument }]

@@ -92,11 +92,12 @@ const setup = () => {
 
 describe('running a command', () => {
   it('runs the invocation the palette starts', async () => {
-    const { runner, ran } = setup()
+    const { runner, ran, texts } = setup()
 
     runner.runCommand('app:note.save', TARGET)
 
     await vi.waitFor(() => expect(ran).toStrictEqual(['app:note.save']))
+    expect(texts()).toStrictEqual([])
   })
 
   it('opens the step a command needs, runs nothing and closes the search', () => {
@@ -135,6 +136,15 @@ describe('running a command', () => {
     expect(pluginCommands.run).toHaveBeenCalledExactlyOnceWith('org.example.tide', TARGET, {
       values: { kind: 'plex' },
     })
+  })
+
+  it('writes the error of a plugin command that fails in the background', async () => {
+    const { runner, pluginCommands, texts } = setup()
+    pluginCommands.run.mockRejectedValueOnce(FAILURE)
+
+    runner.runCommand('org.example.tide', TARGET)
+
+    await vi.waitFor(() => expect(texts()).toStrictEqual([[FAILURE_TEXT, 'error']]))
   })
 })
 

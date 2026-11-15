@@ -186,7 +186,7 @@ export const createDeclaredCommandsApi = (pluginCommands: WindowClients['pluginC
         command,
         path,
         arguments: { ...run.values },
-        ...(run.itemId === undefined ? {} : { itemId: run.itemId }),
+        itemId: run.itemId ?? '',
       }),
     )
 

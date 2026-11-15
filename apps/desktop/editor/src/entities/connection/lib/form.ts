@@ -33,7 +33,7 @@ export function getMissingFields(
   type: ConnectionTypeInfo,
   values: Readonly<Record<string, ConnectionValue>>,
   secrets: Readonly<Record<string, string>>,
-  storedSecretKeys: readonly string[] = [],
+  storedSecretKeys?: readonly string[],
 ): readonly string[] {
   return getEditableFields(type)
     .filter((one) => one.isRequired && !hasValue(one, values, secrets, storedSecretKeys))
@@ -44,10 +44,10 @@ function hasValue(
   field: ConnectionFieldInfo,
   values: Readonly<Record<string, ConnectionValue>>,
   secrets: Readonly<Record<string, string>>,
-  storedSecretKeys: readonly string[],
+  storedSecretKeys: readonly string[] | undefined,
 ): boolean {
   if (field.type === 'secret') {
-    return (secrets[field.key] ?? '') !== '' || storedSecretKeys.includes(field.key)
+    return (secrets[field.key] ?? '') !== '' || (storedSecretKeys?.includes(field.key) ?? false)
   }
   const value = values[field.key]
   return typeof value === 'string' ? value.trim() !== '' : value !== undefined

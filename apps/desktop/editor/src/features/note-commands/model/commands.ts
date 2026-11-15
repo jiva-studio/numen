@@ -78,19 +78,17 @@ const createNoteCommand = async (
     if (invocation.target.isFolder) return deps.making.createUntitledNote(invocation.target.path)
     return
   }
-  const made = await deps.making.createWithTitle(
-    invocation.name,
-    relation ? invocation.target.path : '',
-    relation,
-  )
+  const made = await deps.making.createWithTitle(invocation.name, invocation.target.path, relation)
   if (!made) return
-  const { kind } = invocation.target
-  if (made.path && kind && kind === (await findNoteKind(made.path, deps))) {
-    deps.notes.openFile(made.path, made.title, 'split')
-  } else if (made.path) {
-    await deps.navigator.travel(made.path)
-  } else {
+  if (!made.path) {
     deps.writeMessage(NOTE_WORDS.nowhere, 'warning')
+    return ''
+  }
+  const { kind } = invocation.target
+  if (kind && kind === (await findNoteKind(made.path, deps))) {
+    deps.notes.openFile(made.path, made.title, 'split')
+  } else {
+    await deps.navigator.travel(made.path)
   }
   return made.path
 }

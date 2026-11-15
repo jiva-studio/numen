@@ -28,8 +28,8 @@ import { WELCOME_WORDS } from '../words'
 export interface WelcomeScreenProps {
   vaultList: VaultList
   tabs: readonly Tab[]
-  commands: Commands
-  search: SearchState
+  commands: { readonly palette: Pick<Commands['palette'], 'open' | 'setOpen'> }
+  search: Pick<SearchState, 'open' | 'setOpen'>
   doing: CommandDeps
   getTarget: () => CommandTarget
   pluginWays: readonly WelcomeAction[]
@@ -102,7 +102,7 @@ export function useWelcomeScreen(props: WelcomeScreenProps) {
   function onKeyDown(event: KeyboardEvent): void {
     if (event.defaultPrevented || !isWelcoming.value) return
     const pos = getVaultForKey(event, vaults.value.length)
-    const one = pos === null ? undefined : vaults.value[pos]
+    const one = vaults.value.find((_, index) => index === pos)
     if (!one) return
     event.preventDefault()
     onOpen(one.id)

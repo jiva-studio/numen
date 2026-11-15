@@ -21,12 +21,10 @@ export interface RowDraftsSource {
 }
 
 function isSameRows(first: readonly StoredRow[], second: readonly StoredRow[]): boolean {
+  const secondKeys = second.map(getRowKey)
   return (
-    first.length === second.length &&
-    first.every((one, index) => {
-      const other = second[index]
-      return other !== undefined && getRowKey(one) === getRowKey(other)
-    })
+    first.length === secondKeys.length &&
+    first.every((one, index) => getRowKey(one) === secondKeys[index])
   )
 }
 

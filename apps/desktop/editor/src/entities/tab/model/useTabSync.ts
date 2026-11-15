@@ -7,6 +7,7 @@
  * sync to it.
  */
 import type { TabId, TabLinkGroup, TabPathSync } from '../lib/links'
+import { getTabPath } from './tabStore'
 import type { WindowTabs } from './windowTabs'
 import type { Caught } from '@/shared/api/errors'
 
@@ -30,17 +31,12 @@ function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' 
   /** Path each tab of this window shows, from its last report or its last move. */
   const shownPaths = new Map<TabId, string>()
 
-  /** Returns the path a tab of this window shows, or '' when it is not known. */
-  const getShownPath = (tabId: TabId): string => {
+  /** Returns the path a tab of this window shows, or undefined when the tab is not in this window. */
+  const getShownPath = (tabId: TabId): string | undefined => {
     const shownPath = shownPaths.get(tabId)
     if (shownPath !== undefined) return shownPath
     const tab = windowTabs.tabs.getTab(tabId)
-    if (!tab) return ''
-    return (
-      tab.kind.address?.getOpenTab?.(tab.state).path ||
-      tab.kind.address?.getTarget?.(tab.state).path ||
-      ''
-    )
+    return tab ? getTabPath(tab) : undefined
   }
 
   /** Removes the echo of a tab and returns the path it expected, if any. */
@@ -148,11 +144,7 @@ export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSy
       if (sentPaths.get(group.id) === path) sentPaths.delete(group.id)
       onError(error)
     })
-    moveTabs(
-      group.tabs.filter((id) => id !== sourceTabId),
-      path,
-      title,
-    )
+    moveTabs(group.tabs, path, title)
     return true
   }
 

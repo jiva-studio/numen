@@ -11,6 +11,7 @@ import type { Workspace } from '@numen/workbench'
 import type { FileKind } from '@/shared/model/fileTypes'
 import type { AnyTabKind, WindowHandle } from '../lib/kinds'
 import { fileOpeners } from './openers'
+import { openInScope } from './tabStore'
 import { createTestTabs, NO_TAB_KIND_PLUGINS } from '@/testing/tabs'
 
 function rethrow(error: unknown): never {
@@ -45,11 +46,14 @@ const PART_OF_HOOK: Readonly<Record<keyof Hooks, 'display' | 'events' | 'address
 }
 
 const groupHooks = (hooks: Partial<Hooks>) => {
-  const parts: Record<string, Record<string, unknown>> = { display: {}, events: {}, address: {} }
+  const parts: Record<string, Record<string, object>> = {}
   for (const [name, hook] of Object.entries(hooks)) {
-    parts[PART_OF_HOOK[name as keyof Hooks]]![name] = hook
+    if (hook === undefined) continue
+    const group = PART_OF_HOOK[name as keyof Hooks]
+    parts[group] ??= {}
+    parts[group][name] = hook as object
   }
-  return parts as unknown as Pick<AnyTabKind, 'display' | 'events' | 'address'>
+  return parts as Pick<AnyTabKind, 'display' | 'events' | 'address'>
 }
 
 const kind = ({ isKept = false, ...options }: KindOptions & { isKept?: boolean } = {}) => {
@@ -126,6 +130,7 @@ describe('the parts of the tabs of a window', () => {
       'openSavedTab',
       'restoreTabs',
     ])
+    expect(window.dragged.value).toStrictEqual([])
   })
 })
 
@@ -284,8 +289,11 @@ describe('a tab that closes', () => {
     const pendingKind = kind({ isKept: true })
     const window = notifiedCalls([pendingKind.declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
+    const hold = vi.fn()
 
     expect(window.panes.closeTab(id)).toBe(false)
+    expect(window.panes.closeTab(id, hold)).toBe(false)
+    expect(hold).toHaveBeenCalledOnce()
     expect(window.tabs.getTab(id)?.state).toBeTruthy()
     expect(onScreen(window.panes.layout.value)).toContain(id)
   })
@@ -440,7 +448,14 @@ describe('a key struck on the window', () => {
   })
 
   it('is left alone where the kind in front reads no key at all', async () => {
-    const window = notifiedCalls([kind().declared])
+    const one = kind().one
+    const bare: AnyTabKind = {
+      kind: one.kind,
+      open: one.open,
+      pane: one.pane,
+      ...(one.getTitle ? { getTitle: one.getTitle } : {}),
+    }
+    const window = notifiedCalls([() => bare])
     await window.tabs.openTabOfKind('thing', 'One.md')
 
     expect(window.panes.onKeyPress(createKeyEvent('ArrowRight'))).toBe(false)
@@ -486,11 +501,19 @@ describe('reconciling tabs for a path', () => {
       kind: 'note',
       getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
+    const noteWithoutDisplay: AnyTabKind = {
+      kind: noteKind.one.kind,
+      open: noteKind.one.open,
+      pane: noteKind.one.pane,
+      ...(noteKind.one.getTitle ? { getTitle: noteKind.one.getTitle } : {}),
+      ...(noteKind.one.events ? { events: noteKind.one.events } : {}),
+      ...(noteKind.one.address ? { address: noteKind.one.address } : {}),
+    }
     const sampleKind = kind({
       kind: 'sample',
       getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
-    const window = notifiedCalls([noteKind.declared, sampleKind.declared])
+    const window = notifiedCalls([() => noteWithoutDisplay, sampleKind.declared])
 
     const noteTabId = await window.tabs.openTabOfKind('note', 'Shapes.md')
     expect(window.tabs.tabs.value.map((t) => t.id)).toContain(noteTabId)
@@ -671,6 +694,13 @@ describe('what a tab watches', () => {
     const window = notifiedCalls([kind().declared])
 
     expect(() => window.handle.closeTab('missing')).not.toThrow()
+  })
+
+  it('rejects opening a tab in an effect scope that is already stopped', () => {
+    const stopped = effectScope()
+    stopped.stop()
+
+    expect(() => openInScope(stopped, () => ({}))).toThrow('the scope of the tab is not active')
   })
 })
 
@@ -946,7 +976,7 @@ describe('the registration of a kind', () => {
     const window = createTestTabs()
 
     expect(() => window.kinds.registerKinds([kind().one, kind().one])).toThrowError(
-      'is registered already',
+      /^The tab kind "thing" is registered already$/,
     )
 
     expect(window.kinds.hasKind('thing')).toBe(false)
@@ -954,9 +984,13 @@ describe('the registration of a kind', () => {
 
   it('is free again after the disposer of the registration runs', () => {
     const window = createTestTabs()
-    window.kinds.registerKind(kind().one)()
+    const disposeFirst = window.kinds.registerKind(kind().one)
+    disposeFirst()
 
-    expect(() => window.kinds.registerKind(kind().one)).not.toThrow()
+    const second = kind().one
+    expect(() => window.kinds.registerKind(second)).not.toThrow()
+    disposeFirst()
+    expect(window.kinds.hasKind('thing')).toBe(true)
   })
 
   it('names the plugin of the kind of a tab', async () => {
@@ -1056,9 +1090,17 @@ describe('a window opened with nothing to restore', () => {
 
   it('opens one tab of every placed kind, in the pane and the order each declares', async () => {
     const window = createTestTabs()
+    const bareOne = kind({ kind: 'bare' }).one
+    const withoutDisplay: AnyTabKind = {
+      kind: bareOne.kind,
+      open: bareOne.open,
+      pane: bareOne.pane,
+      ...(bareOne.getTitle ? { getTitle: bareOne.getTitle } : {}),
+    }
     window.kinds.registerKinds([
       placedTab('files', 'aside', 1),
       kind({ kind: 'unplaced' }).one,
+      withoutDisplay,
       placedTab('agent', 'aside', 0),
       placedTab('plex', 'main', 0),
     ])
@@ -1252,9 +1294,13 @@ describe('a file made as the kind that edits it', () => {
   })
 
   it('is requested of nothing where the kind makes no file or is not registered', () => {
-    const window = notifiedCalls([kind().declared])
+    const window = notifiedCalls([
+      kind().declared,
+      kind({ kind: 'addressed', identity: (p) => p }).declared,
+    ])
 
     expect(window.kinds.createFileOfKind('thing', 'dir', 'Name')).toBeUndefined()
+    expect(window.kinds.createFileOfKind('addressed', 'dir', 'Name')).toBeUndefined()
     expect(window.kinds.createFileOfKind('nothing', 'dir', 'Name')).toBeUndefined()
   })
 })
@@ -1414,14 +1460,23 @@ describe('the tabs of a plugin that stops', () => {
     window.panes.closeTab('paged:a.bin')
   })
 
-  it('leaves the tabs of other plugins as they are', () => {
+  it('leaves the tabs of other plugins as they are', async () => {
     const window = createTestTabs()
     window.kinds.registerKind(pagedKind('other.plugin'))
+    window.kinds.registerKind({
+      kind: 'bare-plugin',
+      pluginId: 'bare.plugin',
+      open: () => ({}),
+      pane: {},
+    })
     window.restored.restoreTabs([{ id: 'paged:a.bin', kind: 'paged', path: 'a.bin' }], '')
+    const bareId = await window.tabs.openTabOfKind('bare-plugin')
 
     window.kinds.closeTabsOfPlugin('viewer.plugin')
-
     expect(window.tabs.getTab('paged:a.bin')?.kind.pluginId).toBe('other.plugin')
+
+    window.kinds.closeTabsOfPlugin('bare.plugin')
+    expect(window.tabs.getTab(bareId)?.kind.pluginId).toBeUndefined()
   })
 })
 

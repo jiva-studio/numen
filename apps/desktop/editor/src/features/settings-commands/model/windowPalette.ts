@@ -14,12 +14,11 @@ import {
 import type { createSettingsStore } from '@/entities/settings'
 import { APP_OWNER } from '../lib/settingsConfig'
 import { createSettingPalette, type SettingPreview, type SettingWords } from './settingCommands'
-import type { Unvalidated } from '@/shared/api/errors'
 
-const SHELL_APPEARANCE = ['app', 'appearance'] as const
+const isAppearancePath = (path: readonly string[]): boolean =>
+  path[0] === APP_OWNER && path[1] === 'appearance'
 
-const isMode = (value: Unvalidated): value is Mode =>
-  typeof value === 'string' && MODES.some((one) => one === value)
+const isMode = (value: JsonValue): value is Mode => MODES.some((one) => one === value)
 
 const isScale = (key: string | undefined): key is typeof INTERFACE_SCALE | typeof TEXT_SCALE =>
   key === INTERFACE_SCALE || key === TEXT_SCALE
@@ -37,7 +36,7 @@ function previewAppearance(
 function createWindowPreview(appearance: WindowAppearance): SettingPreview {
   return {
     apply: (path, value) => {
-      if (path.length !== 3 || !SHELL_APPEARANCE.every((one, index) => path[index] === one)) return
+      if (path.length !== 3 || !isAppearancePath(path)) return
       previewAppearance(appearance.preview.keyboard, path[2], value)
     },
     restore: () => appearance.preview.restore(),
@@ -53,19 +52,18 @@ export function createWindowSettingPalette(deps: {
   return createSettingPalette({
     getOwners: () => [
       { id: APP_OWNER, name: '', settings: rest.state.app.value },
-      ...rest.state.plugins.value.map((one) => ({
-        id: one.id,
-        name: one.name,
-        settings: one.settings,
-      })),
+      ...rest.state.plugins.value,
     ],
     words,
     preview: createWindowPreview(appearance),
     write: async (edits) => {
       await rest.write.writeSettings(edits)
       // The window shows what the settings now hold, also where the write was not accepted.
-      if (edits.some((one) => one.at[0] === APP_OWNER && one.at[1] === 'appearance')) {
-        await appearance.reload()
+      for (const one of edits) {
+        if (isAppearancePath(one.at)) {
+          await appearance.reload()
+          break
+        }
       }
     },
   })

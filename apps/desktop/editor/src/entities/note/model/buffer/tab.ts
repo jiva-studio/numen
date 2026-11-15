@@ -190,8 +190,8 @@ const applySave = (tab: Tab): Transition => {
  * A tab whose dirty text is not in the vault: an error stopped it for a reason another attempt may
  * clear, or its file was deleted and writing it would make the file again, which only the person decides.
  */
-export const isUnsavedTab = (tab: Tab): boolean =>
-  isDirty(tab) && ((getState(tab) === 'stuck' && isRetryable(tab)) || getState(tab) === 'gone')
+export const isUnsavedTab = (tab: Tab): tab is Tab & { readonly savedText: string } =>
+  isDirty(tab) && (isRetryable(tab) || getState(tab) === 'gone')
 
 const applyFlush = (tab: Tab): Transition => {
   const state = getState(tab)
@@ -218,7 +218,7 @@ const applyKeep = (tab: Tab): Transition => {
 
 const applyTake = (tab: Tab): Transition => {
   const state = getState(tab)
-  if (isUnsavedTab(tab) && tab.savedText !== null) {
+  if (isUnsavedTab(tab)) {
     return {
       tab: { ...tab, editorText: tab.savedText, error: null, since: null },
       effects: [{ kind: 'cancelTimer' }, { kind: 'replace', body: tab.savedText }],

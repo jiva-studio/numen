@@ -221,13 +221,37 @@ describe('choosing an action that creates a note on a row of the search', () => 
 describe('choosing a row of the commands', () => {
   it('runs the invocation of the command with the deps of the window and no choice of a result', async () => {
     const one = await mountField({}, 'x')
+    expect(one.field.findComponent(Palette).props('step')).toBe('')
+    expect(one.field.findComponent(Palette).props('opensOn')).toBe('')
     one.search.setOpen(false)
     one.commands.palette.setOpen(true)
+    await flushPromises()
+    expect(one.field.findComponent(Palette).props('isBusy')).toBe(false)
 
     await one.choose(COPY_PATH, COPY_PATH)
 
+    expect(one.commands.palette.open.value).toBe(false)
     expect(copyPath).toHaveBeenCalledTimes(1)
     expect(one.runChoice).not.toHaveBeenCalled()
+  })
+
+  it('switches to commands when > is typed into an empty search and closes search on dismiss', async () => {
+    const one = await mountField({}, '')
+    expect(one.search.open.value).toBe(true)
+    expect(one.commands.palette.open.value).toBe(false)
+
+    one.field.findComponent(Palette).vm.$emit('dismiss')
+    expect(one.search.open.value).toBe(false)
+    expect(one.commands.palette.open.value).toBe(false)
+
+    one.search.setOpen(true)
+    one.field.findComponent(Palette).vm.$emit('update:typed', '>')
+    expect(one.search.open.value).toBe(false)
+    expect(one.commands.palette.open.value).toBe(true)
+
+    one.field.findComponent(Palette).vm.$emit('back')
+    expect(one.commands.palette.open.value).toBe(false)
+    expect(one.search.open.value).toBe(true)
   })
 })
 

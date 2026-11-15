@@ -37,7 +37,7 @@ export interface TabLinkSessionDeps {
 export function createTabLinkSession(deps: TabLinkSessionDeps) {
   let abortController = new AbortController()
   let isOpen = true
-  let isNewStream = false
+  let isNewStream: boolean | undefined
 
   const followStream = createFollower({
     isOpen: () => isOpen,

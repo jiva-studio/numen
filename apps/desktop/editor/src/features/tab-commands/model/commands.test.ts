@@ -4,9 +4,11 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { CommandTarget } from '@/shared/model/command'
-import type { LinkableTab, TabLinkGroup } from '@/entities/tab'
+import type { AnyTabKind, LinkableTab, TabLinkGroup } from '@/entities/tab'
+import { createTestTabs } from '@/testing/tabs'
 import { invoke } from '@/testing/invocation'
 import { createTabCommands, type TabCommandsDeps } from './commands'
+import { createTabCommandsDeps } from './createTabCommandsDeps'
 
 type TabLinks = TabCommandsDeps['tabLinks']
 
@@ -47,10 +49,15 @@ const setup = (
       { id: 'reef', title: 'Reef' },
       { id: 'plex', title: 'Plex' },
       { id: 'chat', title: 'Chat' },
+      { id: 'ghost', title: 'Ghost' },
     ],
     getKind: (tab) =>
-      tab === 'chat' ? 'agent' : ['dock', 'quay', 'lost'].includes(tab) ? undefined : 'note',
-    isLinkable: (tab) => tab !== 'chat',
+      tab === 'chat'
+        ? 'agent'
+        : ['dock', 'quay', 'lost', 'ghost'].includes(tab)
+          ? undefined
+          : 'note',
+    isLinkable: (tab) => tab === 'reef' || tab === 'plex' || tab === 'ghost',
     windowId: 'here',
     isAsking: () => options.isAsking ?? false,
     detach,
@@ -73,11 +80,11 @@ describe('the commands of a tab', () => {
   it('are detaching, unlinking, moving and linking it, the last two listing items', () => {
     const { set } = setup()
 
-    expect(set.commands.map((one) => [one.id, one.text, one.input ?? null])).toStrictEqual([
-      [DETACH, 'Detach tab', null],
-      [UNLINK, 'Unlink tab', null],
-      [MOVE, 'Move to window', 'items'],
-      [LINK, 'Link with tab', 'items'],
+    expect(set.commands.map((one) => [one.id, one.text, one.group, one.input ?? null])).toStrictEqual([
+      [DETACH, 'Detach tab', 'window', null],
+      [UNLINK, 'Unlink tab', 'window', null],
+      [MOVE, 'Move to window', 'window', 'items'],
+      [LINK, 'Link with tab', 'window', 'items'],
     ])
     expect(Object.keys(set.handlers).sort()).toStrictEqual([DETACH, LINK, MOVE, UNLINK].sort())
   })
@@ -112,20 +119,27 @@ describe('the commands of a tab', () => {
       'quay',
     ])
     expect(await link.listItems?.(createTabTarget('chat'))).toStrictEqual([])
+    expect(await link.listItems?.(createTabTarget('ghost'))).toStrictEqual([])
   })
 
   it('are available over a tab only, unlink over a linked tab, and none while the tab asks', () => {
-    const linked = setup({ groups: { reef: GROUP } }).set.commands
+    const linked = setup({ groups: { reef: GROUP, '': GROUP } }).set.commands
     const blocked = setup({ isAsking: true }).set.commands
     const isCommandAvailable = (list: typeof linked, id: string, tab: string) =>
       list.find((one) => one.id === id)!.isAvailable(createTabTarget(tab), {} as never)
 
     expect(isCommandAvailable(linked, UNLINK, 'reef')).toBe(true)
+    expect(isCommandAvailable(linked, UNLINK, '')).toBe(false)
     expect(isCommandAvailable(linked, UNLINK, 'chat')).toBe(false)
+    expect(isCommandAvailable(linked, DETACH, 'reef')).toBe(true)
     expect(isCommandAvailable(linked, DETACH, '')).toBe(false)
     expect(isCommandAvailable(blocked, DETACH, 'reef')).toBe(false)
+    expect(isCommandAvailable(linked, MOVE, 'reef')).toBe(true)
     expect(isCommandAvailable(blocked, MOVE, 'reef')).toBe(false)
+    expect(isCommandAvailable(linked, LINK, 'reef')).toBe(true)
+    expect(isCommandAvailable(linked, LINK, '')).toBe(false)
     expect(isCommandAvailable(linked, LINK, 'chat')).toBe(false)
+    expect(isCommandAvailable(linked, LINK, 'lost')).toBe(false)
   })
 
   it('run over the tab of the target, with the item picked', async () => {
@@ -153,5 +167,43 @@ describe('the commands of a tab', () => {
     expect(detach).not.toHaveBeenCalled()
     expect(move).not.toHaveBeenCalled()
     expect(tabLinks.linkTabs).not.toHaveBeenCalled()
+  })
+
+  it('reads tabs, kinds, and linkability from WindowTabs through createTabCommandsDeps', async () => {
+    const windowTabs = createTestTabs()
+    windowTabs.kinds.registerKinds([
+      {
+        kind: 'note',
+        open: () => ({ title: 'Tides' }),
+        pane: {},
+        getTitle: (state: { title: string }) => state.title,
+        address: { navigate: () => undefined },
+      } as AnyTabKind,
+      {
+        kind: 'chat',
+        open: () => ({ title: 'Chat' }),
+        pane: {},
+        getTitle: (state: { title: string }) => state.title,
+      } as AnyTabKind,
+    ])
+    const noteId = await windowTabs.tabs.openTabOfKind('note', 'Tides.md')
+    const chatId = await windowTabs.tabs.openTabOfKind('chat', '')
+    const deps = createTabCommandsDeps({
+      tabLinks: createLinks(),
+      windowTabs,
+      moves: {
+        windowId: 'here',
+        isTabAsking: () => false,
+        detachTabInPlace: vi.fn(),
+        moveTab: vi.fn(),
+      },
+    })
+
+    expect(deps.getTabs().map((one) => one.id)).toStrictEqual([noteId, chatId])
+    expect(deps.getKind(noteId)).toBe('note')
+    expect(deps.getKind('missing')).toBeUndefined()
+    expect(deps.isLinkable(noteId)).toBe(true)
+    expect(deps.isLinkable(chatId)).toBe(false)
+    expect(deps.isLinkable('missing')).toBe(false)
   })
 })

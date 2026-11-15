@@ -45,15 +45,13 @@ export interface Usability {
 /** The key a row is stored under for its connection; every other key is a row field. */
 const CONNECTION_KEY = 'connection'
 
-const isRecord = (value: JsonValue | undefined): value is JsonObject =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
 const readRow = (value: JsonValue | undefined): StoredRow | undefined => {
-  if (!isRecord(value)) return undefined
-  const connection = value[CONNECTION_KEY]
+  if (!value) return undefined
+  const record = value as JsonObject
+  const connection = record[CONNECTION_KEY]
   if (typeof connection !== 'string') return undefined
   const options: Record<string, string> = {}
-  for (const [key, one] of Object.entries(value)) {
+  for (const [key, one] of Object.entries(record)) {
     if (key === CONNECTION_KEY) continue
     if (typeof one !== 'string') return undefined
     if (one !== '') options[key] = one

@@ -32,7 +32,7 @@ const scheduleTask = (run: () => void): void => {
 export function createCommandItemLists(deps: CommandItemListsDeps) {
   const schedule = deps.schedule ?? scheduleTask
   const sessions = new Map<string, Session>()
-  const waitTurn = (): Promise<void> => new Promise((resolve) => schedule(resolve))
+  const waitTurn = (): Promise<void> => new Promise(schedule)
 
   /** Sends the lists the session requested in one request once the kind of its file is read. */
   const send = async (
@@ -49,7 +49,7 @@ export function createCommandItemLists(deps: CommandItemListsDeps) {
       )
       await waitTurn()
     }
-    if (sessions.get(path) === session) sessions.delete(path)
+    sessions.delete(path)
     const pending = [...session.requests.values()]
     if (pending.length === 0) return []
     return deps.listLists(path, pending)
@@ -76,9 +76,7 @@ export function createCommandItemLists(deps: CommandItemListsDeps) {
     ): Promise<readonly CommandItem[]> => {
       const key = getKey(command.pluginId, command.id)
       const session = getSession(path)
-      if (!session.requests.has(key)) {
-        session.requests.set(key, { pluginId: command.pluginId, command: command.id })
-      }
+      session.requests.set(key, { pluginId: command.pluginId, command: command.id })
       const answers = await session.answers
       const answer = answers.find(
         (each) => each.pluginId === command.pluginId && each.command === command.id,

@@ -25,7 +25,11 @@ describe('a name searched for', () => {
 
     await searchCore.names('lla', 8)
 
-    expect(search.searchNames.mock.lastCall?.[0]).toMatchObject({ query: 'lla', limit: 8 })
+    expect(search.searchNames.mock.lastCall?.[0]).toMatchObject({
+      query: 'lla',
+      limit: 8,
+      searchId: '',
+    })
   })
 
   it('carries the note and the heading it was found at', async () => {
@@ -63,6 +67,7 @@ describe('a passage searched for', () => {
       query: 'grass',
       limit: 8,
       mode: SEARCH_MODE.MEANING,
+      searchId: '',
     })
   })
 
@@ -96,6 +101,7 @@ describe('a passage searched for', () => {
           selector: '{"chapter":2}',
         },
         { path: 'library/null.epub', text: 'grass', line: 0, ranges: [], selector: 'null' },
+        { path: 'library/arr.epub', text: 'grass', line: 0, ranges: [], selector: '[1,2]' },
         { path: 'library/prim.epub', text: 'grass', line: 0, ranges: [], selector: '42' },
         { path: 'library/bad.epub', text: 'grass', line: 0, ranges: [], selector: '{bad' },
         { path: 'library/empty.epub', text: 'grass', line: 0, ranges: [], selector: '' },
@@ -104,6 +110,7 @@ describe('a passage searched for', () => {
 
     expect(await searchCore.search('grass', 'words', 8)).toMatchObject([
       { title: '', start: 0, length: 0, selector: { chapter: 2 } },
+      { selector: null },
       { selector: null },
       { selector: null },
       { selector: null },
@@ -193,10 +200,12 @@ describe('a passage search the window aborts', () => {
 
   it('is not cancelled once the core has answered it', async () => {
     search.searchPassages.mockResolvedValue({ found: [] })
+    search.cancelSearch.mockResolvedValue({})
     const asking = new AbortController()
 
     await searchCore.search('seeds', 'meaning', 8, asking.signal)
     asking.abort()
+    await new Promise((resolve) => setTimeout(resolve, 10))
 
     expect(search.cancelSearch).not.toHaveBeenCalled()
   })

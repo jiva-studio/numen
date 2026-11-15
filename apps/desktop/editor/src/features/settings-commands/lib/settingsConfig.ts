@@ -16,23 +16,28 @@ export interface SettingOwner {
   readonly settings: readonly PluginSettingInfo[]
 }
 
-const getConfigPath = (owner: string, key: string): readonly string[] =>
-  owner === APP_OWNER ? [APP_OWNER, ...key.split('.')] : [...owner.split('.'), ...key.split('.')]
+const getConfigPath = (owner: string, key: string): readonly string[] => [
+  ...owner.split('.'),
+  ...key.split('.'),
+]
 
 /** Every setting of the owners by its dotted key, nested. */
-export function getSettingsConfig(owners: readonly SettingOwner[]): WhenSettings {
+export function getSettingsConfig(
+  owners: readonly Pick<SettingOwner, 'id' | 'settings'>[],
+): WhenSettings {
   const config: Record<string, JsonValue> = {}
   for (const owner of owners) {
     for (const one of owner.settings) {
+      if (one.value === undefined) continue
       const path = getConfigPath(owner.id, one.key)
       let level = config
-      const key = path.at(-1)
-      if (key === undefined) continue
       for (const part of path.slice(0, -1)) {
         level[part] ??= {}
         level = level[part] as Record<string, JsonValue>
       }
-      if (one.value !== undefined) level[key] = one.value
+      for (const key of path.slice(-1)) {
+        level[key] = one.value
+      }
     }
   }
   return config

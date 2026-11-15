@@ -3,6 +3,7 @@
  * window's tabs: what they offer, and what each one asks of the core and of the window.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import { NAME_SOURCE, NOTE_ERROR_CODE, NOTE_ROLE } from '@numen/core-client'
 import { createHandledApi } from '@/testing/coreAnswers'
 import { createNoteWriter } from '@/entities/note'
@@ -10,6 +11,7 @@ import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { NOTE_WORDS as words } from '../words'
 import { createNoteCommands } from './commands'
+import { createNoteNavigator } from './createNoteNavigator'
 
 const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
@@ -26,6 +28,8 @@ interface Answers {
   readonly rename?: object
   readonly remove?: object
   readonly isMade?: boolean
+  readonly isEmptyPathMade?: boolean
+  readonly hasNoFileKinds?: boolean
   readonly isAsking?: boolean
   readonly opening?: string
 }
@@ -48,6 +52,7 @@ const createWindow = (answers: Answers = {}) => {
     createNote: (request: { title: string; path: string }) => {
       actions.push(`createNote ${request.title || '—'} ${request.path || '—'}`)
       if (answers.isMade === false) return { isNameExhausted: true }
+      if (answers.isEmptyPathMade) return { path: '' }
       return {
         path: request.title
           ? `${request.title}.md`
@@ -72,7 +77,9 @@ const createWindow = (answers: Answers = {}) => {
       )
     },
     listFileKinds: (request: { paths: string[] }) => ({
-      kinds: request.paths.map((path) => ({ path, isNote: true, type: '', tabKind: 'page' })),
+      kinds: answers.hasNoFileKinds
+        ? []
+        : request.paths.map((path) => ({ path, isNote: true, type: '', tabKind: 'page' })),
     }),
     removeFile: (request: { path: string }) => {
       actions.push(`remove ${request.path}`)
@@ -159,6 +166,14 @@ describe('the commands over a note', () => {
     expect(find('app:file.open#beside')).toMatchObject({
       command: 'app:file.open',
       values: { placement: 'split' },
+      when: 'target.isNote',
+    })
+    expect(find('app:file.reveal')).toMatchObject({
+      when: 'target.isNote',
+    })
+    expect(find('app:file.reveal')?.isAvailable(front(), {} as never)).toBe(false)
+    expect(find('app:note.create')).toMatchObject({
+      iconName: 'file-plus',
     })
   })
 
@@ -297,6 +312,18 @@ describe('a note made', () => {
     expect(one.actions.at(-1)).toBe('openFile Entropy.md Entropy split')
   })
 
+  it('travels when the vault reports no kind for the made note or makes an empty path', async () => {
+    const withoutKinds = createWindow({ hasNoFileKinds: true })
+    await withoutKinds.carry(invoke('app:note.createChild', front({ kind: 'page' }), 'Entropy'))
+    expect(withoutKinds.actions.at(-1)).toBe('travel Entropy.md')
+
+    const emptyMade = createWindow({ isEmptyPathMade: true })
+    expect(await emptyMade.carry(invoke('app:note.create', front(), 'Entropy'))).toBe('')
+    expect(emptyMade.notices).toStrictEqual([words.nowhere])
+    expect(emptyMade.severities).toStrictEqual(['warning'])
+    expect(emptyMade.actions).toStrictEqual(['createNote Entropy —'])
+  })
+
   it('takes the person nowhere where the vault would not make it', async () => {
     const one = createWindow({ isMade: false })
 
@@ -372,6 +399,7 @@ describe('a note renamed', () => {
     await one.carry(invoke('app:note.rename', front(), 'Entropy'))
 
     expect(one.actions).toStrictEqual(['flushPending active', 'rename physics/Ontology.md Entropy'])
+    expect(one.notices).toStrictEqual([])
   })
 
   it('is rejected while the note is waiting on the person', async () => {
@@ -381,6 +409,7 @@ describe('a note renamed', () => {
 
     expect(one.actions).toStrictEqual([])
     expect(one.notices).toStrictEqual([words.unanswered])
+    expect(one.severities).toStrictEqual(['warning'])
   })
 
   it('says the note was written elsewhere while this was requested', async () => {
@@ -389,6 +418,7 @@ describe('a note renamed', () => {
     await one.carry(invoke('app:note.rename', front(), 'Entropy'))
 
     expect(one.notices).toStrictEqual([words.stale])
+    expect(one.severities).toStrictEqual(['warning'])
   })
 
   it('is renamed where no tab of the window holds it', async () => {
@@ -442,6 +472,7 @@ describe('a note renamed', () => {
     await one.carry(invoke('app:note.rename', front(), 'Entropy'))
 
     expect(one.notices).toStrictEqual([words.errors.alreadyExists])
+    expect(one.severities).toStrictEqual(['error'])
   })
 
   it('says a note whose frontmatter cannot be read cannot be renamed', async () => {
@@ -530,6 +561,7 @@ describe('a note removed', () => {
     await one.carry(invoke('app:file.remove', front()))
 
     expect(one.notices).toStrictEqual([words.errors.notFound])
+    expect(one.severities).toStrictEqual(['error'])
     expect(one.actions.at(-1)).toBe('remove physics/Ontology.md')
   })
 
@@ -540,6 +572,15 @@ describe('a note removed', () => {
 
     expect(one.actions).toStrictEqual([])
     expect(one.notices).toStrictEqual([words.unanswered])
+    expect(one.severities).toStrictEqual(['warning'])
+  })
+
+  it('closes no tab when the removed file was not open in any tab', async () => {
+    const one = createWindow()
+
+    await one.carry(invoke('app:file.remove', front({ path: 'Elsewhere.md' })))
+
+    expect(one.actions).toStrictEqual(['remove Elsewhere.md', 'leave Elsewhere.md Root.md'])
   })
 })
 
@@ -606,5 +647,35 @@ describe('the path of a note copied', () => {
 
     await expect(one.carry(invoke('app:file.copyPath', front()))).resolves.toBe('')
     expect(one.notices).toStrictEqual([])
+  })
+})
+
+describe('createNoteNavigator', () => {
+  it('delegates travel, leave, getOpeningNote, and showTab with error reporting', async () => {
+    const travel = vi.fn(() => Promise.resolve())
+    const leavePath = vi.fn(() => Promise.resolve())
+    const navigateTab = vi
+      .fn<() => Promise<void>>()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('tab missing'))
+    const writeMessage = vi.fn()
+    const navigator = createNoteNavigator({
+      navigation: { travel, leavePath },
+      opening: { path: ref('Welcome.md') },
+      windowTabs: { tabs: { navigateTab } } as never,
+      writeMessage,
+    })
+
+    await navigator.travel('A.md')
+    await navigator.leave('A.md', 'B.md')
+    expect(travel).toHaveBeenCalledWith('A.md')
+    expect(leavePath).toHaveBeenCalledWith('A.md', 'B.md')
+    expect(navigator.getOpeningNote()).toBe('Welcome.md')
+
+    navigator.showTab('plex', 'A.md')
+    expect(navigateTab).toHaveBeenCalledWith('plex', 'A.md')
+
+    navigator.showTab('plex', 'B.md')
+    await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledWith('tab missing', 'error'))
   })
 })

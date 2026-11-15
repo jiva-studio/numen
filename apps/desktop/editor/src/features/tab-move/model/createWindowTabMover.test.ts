@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
+import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
+import type { AnyTabKind } from '@/entities/tab'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
+import { createMovedTabStarter } from './createMovedTabStarter'
 import { createWindowTabMover } from './createWindowTabMover'
 
 type HighlightWindow = NonNullable<NonNullable<CoreAnswers['workspace']>['highlightWindow']>
@@ -60,5 +63,76 @@ describe('the tabs of a window', () => {
   it('say whether a tab waits for an answer, as the notes do', () => {
     expect(setup(true).mover.isTabAsking('plex:1')).toBe(true)
     expect(setup(false).mover.isTabAsking('plex:1')).toBe(false)
+  })
+
+  it('detaches and moves tabs in the background and reports starter errors', async () => {
+    const calls: string[] = []
+    const api = createAnsweredApi({
+      workspace: {
+        detachTab: ({ tab, x, y }) => {
+          calls.push(`detach:${tab?.id}:${x}:${y}`)
+          return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
+        },
+        moveTab: ({ tab, targetWindowId }) => {
+          calls.push(`move:${tab?.id}:${targetWindowId}`)
+          return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
+        },
+      },
+    })
+    const windowTabs = createTestTabs()
+    windowTabs.kinds.registerKinds([
+      {
+        kind: 'note',
+        open: () => ({ title: 'Tides' }),
+        pane: {},
+        getTitle: (state: { title: string }) => state.title,
+      } as AnyTabKind,
+    ])
+    const id1 = await windowTabs.tabs.openTabOfKind('note', 'A.md')
+    const id2 = await windowTabs.tabs.openTabOfKind('note', 'B.md')
+    const id3 = await windowTabs.tabs.openTabOfKind('note', 'C.md')
+
+    const mover = createWindowTabMover({
+      api: api.tabs.tabMove,
+      windowId: 'window-a',
+      windowTabs,
+      notes: { asking: () => false, flushPending: () => Promise.resolve() },
+      closeTab: () => true,
+      writeMessage: vi.fn(),
+    })
+
+    mover.detachTab(id1, { x: 10, y: 20 })
+    mover.detachTabInPlace(id2)
+    mover.moveTab(id3, 'window-b')
+
+    await vi.waitFor(() =>
+      expect(calls).toStrictEqual([
+        `detach:${id1}:10:20`,
+        `detach:${id2}:0:0`,
+        `move:${id3}:window-b`,
+      ]),
+    )
+
+    const writeMessage = vi.fn()
+    const startMoved = createMovedTabStarter({
+      windowTabs: {
+        tabs: windowTabs.tabs,
+        restored: {
+          openSavedTab: () => {
+            throw new Error('bad tab')
+          },
+        },
+      } as never,
+      closeTab: () => true,
+      acceptMove: async () => ({ ok: true, value: undefined }),
+      writeMessage,
+    })
+    startMoved({
+      moveId: 'move-1',
+      tab: { id: 'note:9', kind: 'note', path: 'A.md', title: 'A', state: '' },
+    })
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith('The moved tab did not open: bad tab', 'error'),
+    )
   })
 })

@@ -227,10 +227,7 @@ function createNoteEditing(
     },
     /** The notes whose text an error stopped from being written, which another try may still write. */
     getUnsavedTabs: (): readonly string[] =>
-      getOpenIds().filter((id) => {
-        const tab = tabs.get(id)
-        return tab !== undefined && isUnsavedTab(tab)
-      }),
+      [...tabs.entries()].filter(([, tab]) => isUnsavedTab(tab)).map(([id]) => id),
   }
 }
 

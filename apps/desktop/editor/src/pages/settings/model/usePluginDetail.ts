@@ -101,17 +101,22 @@ export function usePluginDetail(deps: PluginDetailDeps) {
     if (request.isCurrent) readmeText.value = text
   }
 
+  function loadPlugin(pluginId: string): void {
+    runInBackground(Promise.all([readFileCount(pluginId), readReadme(pluginId)]), (error) => {
+      if (deps.getPlugin().id === pluginId) deleteProblem.value = formatError(error)
+    })
+  }
+
+  loadPlugin(deps.getPlugin().id)
+
   watch(
     () => deps.getPlugin().id,
     (pluginId) => {
       deleteProblem.value = ''
       readmeText.value = ''
       fileCount.value = 0
-      runInBackground(Promise.all([readFileCount(pluginId), readReadme(pluginId)]), (error) => {
-        if (deps.getPlugin().id === pluginId) deleteProblem.value = formatError(error)
-      })
+      loadPlugin(pluginId)
     },
-    { immediate: true },
   )
 
   const deleteData = createDataDeletion(deps, deleteProblem, readFileCount)

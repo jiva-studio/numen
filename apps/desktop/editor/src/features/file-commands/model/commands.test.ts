@@ -31,6 +31,7 @@ interface Answers {
 const createWindow = (answers: Answers = {}) => {
   const actions: string[] = []
   const notices: string[] = []
+  const severities: string[] = []
   const api = createHandledApi({
     moveFile: (request: { from: string; to: string }) => {
       actions.push(`move ${request.from} ${request.to}`)
@@ -65,14 +66,17 @@ const createWindow = (answers: Answers = {}) => {
       close: () => undefined,
       openFile: () => undefined,
     },
-    writeMessage: (text: string) => {
-      if (text) notices.push(text)
+    writeMessage: (text: string, severity?: string) => {
+      if (text) {
+        notices.push(text)
+        severities.push(severity ?? '')
+      }
     },
   }
   const set = createFileCommands(deps)
   const carry = async (invocation: CommandInvocation): Promise<string> =>
     (await set.handlers[invocation.id]?.(invocation)) || ''
-  return { actions, notices, carry, set }
+  return { actions, notices, severities, carry, set }
 }
 
 describe('the commands over files', () => {
@@ -115,6 +119,7 @@ describe('a file filed somewhere else', () => {
       'flushPending active',
       'move physics/Ontology.md notes/Ontology.md',
     ])
+    expect(one.notices).toStrictEqual([])
   })
 
   it('keeps its position while its tab is waiting on the person', async () => {
@@ -124,6 +129,7 @@ describe('a file filed somewhere else', () => {
 
     expect(one.actions).toStrictEqual([])
     expect(one.notices).toStrictEqual([words.unanswered])
+    expect(one.severities).toStrictEqual(['warning'])
   })
 
   it('keeps its position where something of that name is filed there', async () => {
@@ -132,6 +138,7 @@ describe('a file filed somewhere else', () => {
     await one.carry(createMoveInvocation('notes/Ontology.md'))
 
     expect(one.notices).toStrictEqual([words.alreadyExists])
+    expect(one.severities).toStrictEqual(['warning'])
   })
 
   it('says why the vault refused it, in the words of the error', async () => {
@@ -140,6 +147,7 @@ describe('a file filed somewhere else', () => {
     await one.carry(createMoveInvocation('notes/Ontology.md'))
 
     expect(one.notices).toStrictEqual([words.errors.notFound])
+    expect(one.severities).toStrictEqual(['error'])
   })
 
   it('asks the vault for nothing where it landed where it already was', async () => {
@@ -167,6 +175,16 @@ describe('a folder made', () => {
     await one.carry(invoke('app:folder.create', front(), 'physics/heat'))
 
     expect(one.notices).toStrictEqual([words.alreadyExists])
+    expect(one.severities).toStrictEqual(['warning'])
+  })
+
+  it('reports an error when the vault refuses the folder name', async () => {
+    const one = createWindow({ folder: { error: NOTE_ERROR_CODE.INVALID_NAME } })
+
+    await one.carry(invoke('app:folder.create', front(), 'physics/..'))
+
+    expect(one.notices).toStrictEqual([words.errors.invalidName])
+    expect(one.severities).toStrictEqual(['error'])
   })
 
   it('asks the vault for nothing where no path was given', async () => {
