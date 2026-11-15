@@ -90,6 +90,17 @@ func (s *feedStub) passQuiet(t *testing.T) {
 	}
 }
 
+func (s *feedStub) settle(t *testing.T) {
+	t.Helper()
+	for {
+		select {
+		case s.quiet <- time.Time{}:
+		case <-time.After(100 * time.Millisecond):
+			return
+		}
+	}
+}
+
 func (s *feedStub) requireEmitted(t *testing.T, want int) {
 	t.Helper()
 	for range want {
@@ -143,8 +154,7 @@ func TestAWriteThatStoredChangesSendsOneEventAfterTheQuietPeriod(t *testing.T) {
 	stub.passQuiet(t)
 	stub.requireEmitted(t, 1)
 
-	stub.write(0)
-	stub.passQuiet(t)
+	stub.settle(t)
 	stub.requireEmitted(t, 0)
 }
 
@@ -230,8 +240,7 @@ func TestAnEventCoversTheTypesOfTheFilesItsWritesChanged(t *testing.T) {
 	stub.writeFile(3, "pictures/cover.png")
 	stub.passQuiet(t)
 	stub.requireTypes(t, "test/png")
-	stub.write(0)
-	stub.passQuiet(t)
+	stub.settle(t)
 	stub.requireEmitted(t, 0)
 
 	stub.plugins <- struct{}{}
