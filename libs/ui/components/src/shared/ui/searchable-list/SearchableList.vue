@@ -5,7 +5,8 @@
  *
  * The keyboard stays on the search line and the arrows move the active row,
  * which Enter chooses. Rows may be set under group names, and an action row may
- * stand first. A press outside it and Escape ask for it to be closed.
+ * stand first. A press outside it and its from element, and Escape, ask for it
+ * to be closed.
  */
 import { computed, provide, useId, useTemplateRef, watch } from 'vue'
 import { useOutsidePress } from '../menu'
@@ -25,6 +26,7 @@ const props = withDefaults(defineProps<SearchableListProps>(), {
   isPending: false,
   hasAction: false,
   needsQuery: false,
+  from: null,
 })
 
 /** What is typed on the search line. */
@@ -70,7 +72,12 @@ const currentIds = computed<readonly string[]>(() => {
 provide(LIST_CONTEXT, { slots, getQuery: () => queryText.value })
 
 /* --------------------------------- Hooks ---------------------------------- */
-useOutsidePress(frame, () => emit('close'))
+useOutsidePress(
+  frame,
+  () => emit('close'),
+  undefined,
+  () => props.from,
+)
 
 useListFocus({ input, rowList, activeIndex, model })
 
