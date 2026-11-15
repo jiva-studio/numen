@@ -22,16 +22,6 @@ const target = "desktop.editor"
 // readHeaderTimeout is how long a client may take to send its request headers.
 const readHeaderTimeout = 10 * time.Second
 
-// linkedPlugin is a Go plugin linked into this binary: its manifest.json and what mounts the services of its backend.
-type linkedPlugin struct {
-	manifest []byte
-	mount    func(*server.Server) error
-}
-
-func getLinkedPlugins() []linkedPlugin {
-	return []linkedPlugin{{manifest: updater.Manifest, mount: updaterservice.Mount}}
-}
-
 // linkedCore is the core serving on a loopback port: its address, the token a request carries, and what Close stops.
 type linkedCore struct {
 	url    string
@@ -85,15 +75,15 @@ func newConfig(dir string, report func(error)) (container.Config, error) {
 	if err != nil {
 		return container.Config{}, err
 	}
-	for _, linked := range getLinkedPlugins() {
-		mount := linked.mount
-		serve := func(vars map[string]string) (http.Handler, error) { return server.NewLinkedHandler(vars, mount) }
-		if err := roles.Discovery.RegisterBuiltIn(linked.manifest, serve); err != nil {
-			return container.Config{}, err
-		}
+	if err := roles.Discovery.RegisterBuiltIn(updater.Manifest, serveLinked(updaterservice.Mount)); err != nil {
+		return container.Config{}, err
 	}
 	base.PluginHost = container.AdaptPluginHost(roles)
 	return container.NewConfig(base), nil
+}
+
+func serveLinked(mount func(*server.Server) error) func(map[string]string) (http.Handler, error) {
+	return func(vars map[string]string) (http.Handler, error) { return server.NewLinkedHandler(vars, mount) }
 }
 
 func (c *linkedCore) serve(ctx context.Context, report func(error)) error {

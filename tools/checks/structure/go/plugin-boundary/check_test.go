@@ -5,13 +5,14 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
-// isPlugin and getPluginRequirements are the whole rule, so they are tested
+// isPlugin and getPluginRequirements are the rule on a go.mod, so they are tested
 // directly: a walk over the tree that reports no violation would also pass if the
 // rule detected nothing.
 func TestPluginBoundaryRule_DetectsPluginImports(t *testing.T) {
@@ -84,37 +85,47 @@ func TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK(t *testing.T) {
 	}
 }
 
-// No module requires a plugin, except a module that builds the mobile binding: a requirement is how a build
-// evaluates to be compiled from one, and the mobile binding links its plugins into one binary.
+// No module requires a plugin its own code does not register as linked into its binary: a requirement is how a
+// build evaluates to be compiled from one.
 func TestNoModuleRequiresAPlugin(t *testing.T) {
 	for _, one := range findPluginRequirementsInModules(t, filepath.Join("..", "..", "..", "..")) {
 		t.Error(one)
 	}
 }
 
-// TestModuleWalk_FindsThePlantedRequirement verifies that the walk finds every go.mod that requires a plugin
-// and does not build the mobile binding, skips node_modules and hidden folders, and fails on a tree without a go.mod.
+// TestModuleWalk_FindsThePlantedRequirement verifies that the walk finds every requirement of a plugin the code of
+// its module does not register as linked in, skips node_modules and hidden folders, and fails on a tree without a go.mod.
 func TestModuleWalk_FindsThePlantedRequirement(t *testing.T) {
-	plugin := "require " + load.PluginsPrefix + "alpha v0.0.0\n"
-	binding := "require " + mobileBindingModule + " v0.0.0\n"
+	alpha := "require " + load.PluginsPrefix + "alpha v0.0.0\n"
+	beta := "require " + load.PluginsPrefix + "beta v0.0.0\n"
+	imports := "import (\n\talpha \"" + load.PluginsPrefix + "alpha\"\n\talphaservice \"" + load.PluginsPrefix + "alpha/backend/service\"\n)\n\n"
+	registers := "package main\n\n" + imports +
+		"func register(roles roles) error {\n\treturn roles.Discovery.RegisterBuiltIn(alpha.Manifest, serve(alphaservice.Mount))\n}\n"
+	uses := "package main\n\n" + imports +
+		"func register(roles roles) error {\n\treturn roles.Discovery.Register(alpha.Manifest, serve(alphaservice.Mount))\n}\n"
 	root := load.WriteTreeFixture(t, map[string]string{
-		"libs/core/go.mod":      "module example.test/core\n\ngo 1.26\n\n" + plugin,
-		"libs/clean/go.mod":     "module example.test/clean\n\ngo 1.26\n",
-		"apps/desktop/go.mod":   "module example.test/desktop\n\ngo 1.26\n\n" + plugin,
-		"apps/mobile/go.mod":    "module example.test/mobile\n\ngo 1.26\n\n" + plugin + binding,
-		"apps/mobiles/go.mod":   "module example.test/mobiles\n\ngo 1.26\n\n" + plugin,
-		"node_modules/x/go.mod": "module example.test/x\n\ngo 1.26\n\n" + plugin,
-		".hidden/go.mod":        "module example.test/hidden\n\ngo 1.26\n\n" + plugin,
+		"libs/core/go.mod":                     "module example.test/core\n\ngo 1.26\n\n" + alpha,
+		"libs/clean/go.mod":                    "module example.test/clean\n\ngo 1.26\n",
+		"apps/desktop/go.mod":                  "module example.test/desktop\n\ngo 1.26\n\n" + alpha,
+		"apps/desktop/cmd/numen/main_test.go":  registers,
+		"apps/imported/go.mod":                 "module example.test/imported\n\ngo 1.26\n\n" + alpha,
+		"apps/imported/cmd/numen/core.go":      uses,
+		"apps/mobile/go.mod":                   "module example.test/mobile\n\ngo 1.26\n\n" + alpha + beta,
+		"apps/mobile/cmd/numen-linked/core.go": registers,
+		"apps/mobile/nested/go.mod":            "module example.test/nested\n\ngo 1.26\n\n" + beta,
+		"apps/mobile/nested/core.go":           strings.ReplaceAll(registers, "alpha", "beta"),
+		"node_modules/x/go.mod":                "module example.test/x\n\ngo 1.26\n\n" + alpha,
+		".hidden/go.mod":                       "module example.test/hidden\n\ngo 1.26\n\n" + alpha,
 	})
 	found := findPluginRequirementsInModules(t, root)
-	want := []string{"apps/desktop/go.mod", "apps/mobiles/go.mod", "libs/core/go.mod"}
-	if len(found) != len(want) {
-		t.Fatalf("the walk found %v, want the requirements in %v only", found, want)
+	want := []string{
+		"apps/desktop/go.mod requires a plugin: requires " + load.PluginsPrefix + "alpha",
+		"apps/imported/go.mod requires a plugin: requires " + load.PluginsPrefix + "alpha",
+		"apps/mobile/go.mod requires a plugin: requires " + load.PluginsPrefix + "beta",
+		"libs/core/go.mod requires a plugin: requires " + load.PluginsPrefix + "alpha",
 	}
-	for i, one := range want {
-		if !strings.HasPrefix(found[i], one+" requires a plugin") {
-			t.Errorf("the walk found %v, want the requirements in %v only", found, want)
-		}
+	if !slices.Equal(found, want) {
+		t.Errorf("the walk found %v, want %v", found, want)
 	}
 }
 
@@ -142,12 +153,15 @@ func findPluginRequirementsInModules(t *testing.T, root string) []string {
 			return err
 		}
 		dir = filepath.ToSlash(dir)
-		file := load.ReadGoMod(t, path)
-		if isMobileBinding(file) {
+		requirements := getPluginRequirements(load.ReadGoMod(t, path))
+		if len(requirements) == 0 {
 			return nil
 		}
-		for _, line := range getPluginRequirements(file) {
-			wrong = append(wrong, dir+"/go.mod requires a plugin: "+line)
+		registered := listRegisteredPlugins(t, filepath.Dir(path))
+		for _, one := range requirements {
+			if !isRegistered(one.module, registered) {
+				wrong = append(wrong, dir+"/go.mod requires a plugin: "+one.line)
+			}
 		}
 		return nil
 	})

@@ -188,7 +188,7 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `plugin-config-golden-parity`: plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`; `eslint.config.js` and `numen-rules.mjs` are byte-identical copies of the golden files.
 - `make plugins_lint` with the golden `eslint.config.js`: a file of a `lib` segment imports no `ui`, `model` or `api` segment at any depth and no `.vue` file (`no-restricted-imports`), and every component passes `numen/max-inline-props`, `numen/vue-script-sections` and `numen/max-script-lines` from `numen-rules.mjs`. `tools/checks/structure/ts/plugins/golden-config.test.mjs` lints planted files in a copy of the template.
 - `plugin-backend-layers`: the layers inside a plugin backend point inward.
-- `go/plugin-boundary` and `go/plugin-isolation-packages` (`make checks TAGS=plugin,go`): apply the dependency rule of §11 to the type-checked import graph on 14 platform targets. No `go.mod` requires a plugin, except a module that builds the mobile binding (its `go.mod` requires `golang.org/x/mobile`, the runtime `gomobile bind` compiles against): such a module links its plugins into one binary.
+- `go/plugin-boundary` and `go/plugin-isolation-packages` (`make checks TAGS=plugin,go`): apply the dependency rule of §11 to the type-checked import graph on 14 platform targets. A `go.mod` requires a plugin only when the non-test code of its own module passes a package of that plugin to `RegisterBuiltIn`, which links the plugin into the binary.
 - `plugins-leakage`: manifest schema and static non-leakage.
 - `plugins-use-main-entry`: the SDK and the UI library are imported through their declared entries.
 - `make plugins_lint`: no `@/**` and no `@plugins/**` in a plugin frontend.
