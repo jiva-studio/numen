@@ -17,17 +17,16 @@ const createCursor = () => {
   const pointer = createPointer()
   const ripple = createElement('span', { class: 'cursor-ripple' })
   const press = createElement('span', { class: 'cursor-press' })
-  const label = createElement('span', { class: 'input-label' })
-  const highlight = createElement('span', { class: 'input-highlight' }, [label])
+  const highlights = createElement('div', { class: 'input-highlights' })
   const badge = createElement('div', { class: 'key-badge' })
   const element = createElement('div', { class: 'cursor-layer', 'aria-hidden': 'true' }, [
-    highlight,
+    highlights,
     ripple,
     press,
     pointer,
     badge,
   ])
-  return { element, pointer, ripple, press, highlight, label, badge }
+  return { element, pointer, ripple, press, highlights, badge }
 }
 
 const getContentBox = (player) => {
@@ -81,21 +80,36 @@ const writeParts = (element, parts) => {
   )
 }
 
-const writeHighlight = (cursor, state, badge) => {
-  const { highlight, label } = cursor
-  highlight.hidden = state === null
-  if (state === null) return
-  placePoint(highlight, state.x, state.y)
-  const room = 1 - state.x
-  highlight.style.width =
-    state.w < room - 0.005 ? `${state.w * 100}%` : `calc(${room * 100}% - 6px)`
-  highlight.style.height = `${state.h * 100}%`
-  highlight.style.opacity = String(state.opacity)
-  highlight.classList.toggle('is-near-bottom', state.y + state.h > 0.9)
-  const last = badge?.parts.at(-1)
-  label.hidden = !last
-  highlight.classList.toggle('has-label', Boolean(last))
-  if (last) writeParts(label, [last])
+const createHighlight = () => {
+  const label = createElement('span', { class: 'input-label' })
+  return createElement('span', { class: 'input-highlight' }, [label])
+}
+
+const getActionLabel = (inputs, ring) => {
+  const upTo = inputs.slice(0, ring.index + 1)
+  return window.playback.getBadgeAt(upTo, inputs[ring.index].t)?.parts.at(-1) ?? ''
+}
+
+const writeHighlight = (highlight, ring, label) => {
+  placePoint(highlight, ring.x, ring.y)
+  const room = 1 - ring.x
+  highlight.style.width = ring.w < room - 0.005 ? `${ring.w * 100}%` : `calc(${room * 100}% - 6px)`
+  highlight.style.height = `${ring.h * 100}%`
+  highlight.style.opacity = String(ring.opacity)
+  highlight.classList.toggle('is-near-bottom', ring.y + ring.h > 0.9)
+  highlight.classList.toggle('has-label', Boolean(label))
+  const tab = highlight.firstElementChild
+  tab.hidden = !label
+  if (label) writeParts(tab, [label])
+}
+
+const writeHighlights = (container, rings, inputs) => {
+  while (container.children.length < rings.length) container.append(createHighlight())
+  ;[...container.children].forEach((highlight, index) => {
+    const ring = rings[index]
+    highlight.hidden = !ring
+    if (ring) writeHighlight(highlight, ring, getActionLabel(inputs, ring))
+  })
 }
 
 const writeBadge = (badge, state) => {
@@ -114,10 +128,9 @@ const writeCursor = (video) => {
   const time = player.currentTime
   placeLayer(cursor.element, box)
   writePointer(cursor, window.playback.getCursorAt(inputs, time))
-  const highlight = window.playback.getHighlightAt(inputs, time)
-  const badge = window.playback.getBadgeAt(inputs, time)
-  writeHighlight(cursor, highlight, badge)
-  writeBadge(cursor.badge, highlight ? null : badge)
+  const rings = window.playback.getHighlightsAt(inputs, time)
+  writeHighlights(cursor.highlights, rings, inputs)
+  writeBadge(cursor.badge, rings.length > 0 ? null : window.playback.getBadgeAt(inputs, time))
 }
 
 const linkCursor = (video) => {

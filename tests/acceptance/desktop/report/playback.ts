@@ -98,6 +98,7 @@ export type Highlight = {
   readonly w: number
   readonly h: number
   readonly opacity: number
+  readonly index: number
 }
 
 export const getCursorAt = (inputs: readonly Input[], time: number): Cursor | null => {
@@ -201,20 +202,29 @@ export const getBadgeAt = (inputs: readonly Input[], time: number): Badge | null
   return { parts: collectParts(findGroup(shown)).slice(-partCount), opacity }
 }
 
-export const getHighlightAt = (inputs: readonly Input[], time: number): Highlight | null => {
+export const getHighlightsAt = (inputs: readonly Input[], time: number): Highlight[] => {
   const showLength = 1
   const fadeLength = 0.3
+  const replaceLength = 0.15
   const hasRect = (input: Input): boolean => (input.w ?? 0) > 0 && (input.h ?? 0) > 0
-  const target = inputs
-    .filter((input) => (input.kind === 'key' || input.kind === 'type') && input.t <= time)
-    .filter(hasRect)
-    .at(-1)
-  if (!target || time - target.t >= showLength) return null
-  return {
-    x: target.x,
-    y: target.y,
-    w: target.w ?? 0,
-    h: target.h ?? 0,
-    opacity: Math.min((showLength - (time - target.t)) / fadeLength, 1),
-  }
+  const isSamePlace = (a: Input, b: Input): boolean =>
+    a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
+  const groups: { first: Input; last: Input; index: number }[] = []
+  inputs.forEach((input, index) => {
+    if (input.kind !== 'key' && input.kind !== 'type') return
+    if (!hasRect(input) || input.t > time) return
+    const group = groups.at(-1)
+    if (group && isSamePlace(group.last, input)) Object.assign(group, { last: input, index })
+    else groups.push({ first: input, last: input, index })
+  })
+  return groups.flatMap((group, position) => {
+    const age = time - group.last.t
+    const next = groups.at(position + 1)
+    const shown = Math.min((showLength - age) / fadeLength, 1)
+    const kept = next ? 1 - (time - next.first.t) / replaceLength : 1
+    const opacity = Math.min(shown, kept)
+    if (opacity <= 0) return []
+    const { x, y } = group.last
+    return [{ x, y, w: group.last.w ?? 0, h: group.last.h ?? 0, opacity, index: group.index }]
+  })
 }

@@ -6,7 +6,7 @@ import {
   findStepAt,
   getBadgeAt,
   getCursorAt,
-  getHighlightAt,
+  getHighlightsAt,
   getSegments,
   getSetupLength,
   getStepPhases,
@@ -318,25 +318,41 @@ describe('getBadgeAt', () => {
   })
 })
 
-describe('getHighlightAt', () => {
+describe('getHighlightsAt', () => {
   it('rings the element a key went to for 1 s, fading out over the last 0.3 s', () => {
     const keys = [createKey(1, 'Enter')]
-    expect(getHighlightAt(keys, 1)).toEqual({ x: 0.1, y: 0.2, w: 0.3, h: 0.04, opacity: 1 })
-    expect(getHighlightAt(keys, 1.5)?.opacity).toBe(1)
-    expect(getHighlightAt(keys, 1.85)?.opacity).toBeCloseTo(0.5)
-    expect(getHighlightAt(keys, 2)).toBeNull()
+    expect(getHighlightsAt(keys, 1)).toEqual([
+      { x: 0.1, y: 0.2, w: 0.3, h: 0.04, opacity: 1, index: 0 },
+    ])
+    expect(getHighlightsAt(keys, 1.5)[0]?.opacity).toBe(1)
+    expect(getHighlightsAt(keys, 1.85)[0]?.opacity).toBeCloseTo(0.5)
+    expect(getHighlightsAt(keys, 2)).toEqual([])
   })
 
-  it('rings the field being typed into', () => {
-    expect(getHighlightAt([createTyping(1, 'Milk')], 1.1)).toMatchObject({ x: 0.4, w: 0.2 })
+  it('fades the old ring out over 0.15 s once a new element is ringed', () => {
+    const keys = [createKey(1, 'Enter'), createTyping(1.2, 'Milk')]
+    expect(getHighlightsAt(keys, 1.2).map((ring) => ring.index)).toEqual([0, 1])
+    expect(getHighlightsAt(keys, 1.275)[0]?.opacity).toBeCloseTo(0.5)
+    expect(getHighlightsAt(keys, 1.35).map((ring) => ring.index)).toEqual([1])
+  })
+
+  it('keeps one ring while the same element takes more keys', () => {
+    const keys = [
+      createTyping(1, 'M'),
+      createTyping(1.1, 'Mi'),
+      createKey(1.2, 'Enter', { x: 0.4, y: 0.1, w: 0.2, h: 0.05 }),
+    ]
+    expect(getHighlightsAt(keys, 1.9)).toEqual([
+      { x: 0.4, y: 0.1, w: 0.2, h: 0.05, opacity: 1, index: 2 },
+    ])
   })
 
   it('rings nothing for a key without a focused element or for a click', () => {
-    expect(getHighlightAt([createKey(1, 'Escape', { w: 0, h: 0 })], 1.1)).toBeNull()
-    expect(getHighlightAt(createClick(1, 0.5, 0.5), 1.1)).toBeNull()
+    expect(getHighlightsAt([createKey(1, 'Escape', { w: 0, h: 0 })], 1.1)).toEqual([])
+    expect(getHighlightsAt(createClick(1, 0.5, 0.5), 1.1)).toEqual([])
   })
 
   it('works from its source text, as the report page runs it', () => {
-    expect(fromSource(getHighlightAt)([createKey(1, 'Enter')], 1.1)?.x).toBe(0.1)
+    expect(fromSource(getHighlightsAt)([createKey(1, 'Enter')], 1.1)[0]?.x).toBe(0.1)
   })
 })
