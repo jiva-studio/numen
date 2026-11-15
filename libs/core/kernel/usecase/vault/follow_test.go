@@ -77,7 +77,11 @@ func newFollowedVault(t *testing.T, notes map[string]string, watcher *manualWatc
 	moved := make(chan vaults.VaultChanges, 8)
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
+		vaults.NewRefreshFrom(vaults.RefreshDeps{
+			Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+			Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
+			Ledger: vaults.NewLedger(),
+		}),
 		scanner(vaultreader.Readers{}, db), func(m vaults.VaultChanges) { moved <- m }, nil,
 	)
 
@@ -206,7 +210,11 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 	readers := &sometimes{VaultReaders: vaultreader.Readers{}}
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
+		vaults.NewRefreshFrom(vaults.RefreshDeps{
+			Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
+			Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
+			Ledger: vaults.NewLedger(),
+		}),
 		scanner(vaultreader.Readers{}, db), nil, func(err error) { reported <- err },
 	)
 	started, err := follow.Begin(t.Context(), v)
@@ -267,7 +275,11 @@ func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
 	db := openIndex(t)
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
+		vaults.NewRefreshFrom(vaults.RefreshDeps{
+			Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+			Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
+			Ledger: vaults.NewLedger(),
+		}),
 		scanner(vaultreader.Readers{}, db), nil, nil,
 	)
 	started, err := follow.Begin(t.Context(), v)
@@ -305,7 +317,11 @@ func TestAWalkThatFailsIsReportedAndClearedByTheNextOne(t *testing.T) {
 	readers := &sometimes{VaultReaders: vaultreader.Readers{}}
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
+		vaults.NewRefreshFrom(vaults.RefreshDeps{
+			Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+			Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
+			Ledger: vaults.NewLedger(),
+		}),
 		scanner(readers, db), func(m vaults.VaultChanges) { moved <- m }, func(err error) { reported <- err },
 	)
 	started, err := follow.Begin(t.Context(), v)

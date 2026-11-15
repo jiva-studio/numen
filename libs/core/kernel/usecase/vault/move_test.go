@@ -40,7 +40,11 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 		t.Fatal(err)
 	}
 	readers := &countingReaders{VaultReaders: vaultreader.Readers{}}
-	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.NewClock())
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.NewClock(),
+		Ledger: vaults.NewLedger(),
+	})
 	return filing{
 		db:      db,
 		vault:   v,

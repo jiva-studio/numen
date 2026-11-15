@@ -11,12 +11,6 @@ type TabKindChooser interface {
 	Execute(path string, noteType domain.NoteType, properties map[string]any) string
 }
 
-// NoTabKinds is the chooser of a build with no plugin that declares a tab kind: no note has one.
-type NoTabKinds struct{}
-
-// Execute gives no kind.
-func (NoTabKinds) Execute(string, domain.NoteType, map[string]any) string { return "" }
-
 func chooseTabKinds(folder Folder, chooser TabKindChooser) map[string]string {
 	kinds := map[string]string{}
 	for path, properties := range folder.Properties {
@@ -39,7 +33,7 @@ func NewListTabKinds(kinds *GetFileKinds, chooser TabKindChooser) *ListTabKinds 
 
 // Execute answers by path, and leaves out a path with no kind of tab.
 func (u *ListTabKinds) Execute(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
-	if _, none := u.chooser.(NoTabKinds); none || len(paths) == 0 {
+	if len(paths) == 0 {
 		return map[string]string{}, nil
 	}
 	listing, err := u.kinds.Execute(ctx, v, paths)
