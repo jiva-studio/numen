@@ -65,7 +65,12 @@ func GetPlaceholderDir() string {
 	return dir
 }
 
-// Resolve is a stub.
-func (p *PlaceholderProvisioner) Resolve(manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
-	return plugin.ResolvedDependency{}, "", errNotImplemented
+// Resolve writes the placeholder, which takes no network and no wait, and returns it as ready: a mock
+// run opens no model, so there is nothing to download later.
+func (p *PlaceholderProvisioner) Resolve(req manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
+	resolved, err := p.Provision(context.Background(), req, nil)
+	if err != nil {
+		return plugin.ResolvedDependency{}, "", err
+	}
+	return resolved, plugin.DependencyStateReady, nil
 }

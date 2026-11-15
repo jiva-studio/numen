@@ -115,7 +115,12 @@ func (r *Registry) run(
 	return resolved, nil
 }
 
-// Resolve is a stub.
-func (r *Registry) Resolve(manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
-	return plugin.ResolvedDependency{}, "", errNotImplemented
+// Resolve asks the provisioner that handles the requirement where the dependency is or will be. It does not
+// join a run in progress and waits for none.
+func (r *Registry) Resolve(req manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
+	provisioner, ok := r.route(req)
+	if !ok {
+		return plugin.ResolvedDependency{}, "", fmt.Errorf("%w: %s %s", plugin.ErrNoProvisioner, req.Kind, req.ID)
+	}
+	return provisioner.Resolve(req)
 }
