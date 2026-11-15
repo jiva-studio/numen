@@ -8,7 +8,6 @@ const NO_SETTINGS: Pick<PluginContext, 'settings'> = {
   settings: { get: () => undefined, onChange: () => ({ dispose: () => undefined }) },
 }
 
-/** The look at its defaults, for a plex no settings are read for. */
 export const getDefaultLook = (): PlexLook => readLook(NO_SETTINGS)
 
 /** The names settings at their defaults, for a plex no settings are read for. */

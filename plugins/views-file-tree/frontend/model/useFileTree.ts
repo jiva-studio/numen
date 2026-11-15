@@ -41,7 +41,6 @@ const compareModifiedDescending = (one: Entry, other: Entry): number => {
   return second > first ? 1 : -1
 }
 
-/** Folders first, then files; with `modified` each group has the newest first and the undated last. */
 const sortEntries = (entries: readonly Entry[], sortBy: SortBy): readonly Entry[] => {
   if (sortBy === 'name') return entries
   return entries

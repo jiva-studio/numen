@@ -69,7 +69,6 @@ export const getHeadings = (rows: readonly ListRow[]): readonly (string | undefi
   })
 }
 
-/** Whether a row can be chosen: the action row, or an item that is not disabled. */
 const isChoosable = (row: ListRow): boolean => row.kind === 'action' || row.item.isDisabled !== true
 
 /** The choosable row a step from `from` lands on, wrapping at both ends; -1 where there is none. */
