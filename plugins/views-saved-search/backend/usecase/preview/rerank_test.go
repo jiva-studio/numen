@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -70,14 +71,14 @@ func TestPreviewSendsThePositiveLeafTextsWithoutARerankText(t *testing.T) {
 	}
 }
 
-func TestPreviewReranksTheFirstThreeTimesTheLimitInFusedOrder(t *testing.T) {
+func TestPreviewReranksTheFirstTenTimesTheLimitInFusedOrder(t *testing.T) {
 	w := newWorld(t)
 	var texts []string
 	var chunks []host.SearchResult
-	for i := range 8 {
-		text := strings.TrimSpace(strings.Repeat("tide ", 9-i)) + " storm"
+	for i := range 25 {
+		text := strings.TrimSpace(strings.Repeat("tide ", 26-i)) + " storm"
 		texts = append(texts, text)
-		chunks = append(chunks, chunk(fmt.Sprintf("c%d", i), fmt.Sprintf("Logs/%d.md", i), 0, 400, text))
+		chunks = append(chunks, chunk(fmt.Sprintf("c%d", i), fmt.Sprintf("Logs/%02d.md", i), 0, 400, text))
 	}
 	w.index(chunks...)
 	standIn := w.withReranker(nil)
@@ -85,8 +86,8 @@ func TestPreviewReranksTheFirstThreeTimesTheLimitInFusedOrder(t *testing.T) {
 	out := w.run(t, api.PreviewInput{Query: `meaning("tides")`, Limit: 2})
 
 	requests := standIn.getRequests()
-	if len(requests) != 1 || !slices.Equal(requests[0].GetDocuments(), texts[:6]) {
-		t.Errorf("rerank requests = %v, want the first six texts in fused order", requests)
+	if len(requests) != 1 || !slices.Equal(requests[0].GetDocuments(), texts[:20]) {
+		t.Errorf("rerank requests = %v, want the first twenty texts in fused order", requests)
 	}
 	if len(out.Results) != 2 {
 		t.Errorf("results = %v, want two", getTexts(out))
@@ -145,5 +146,58 @@ func TestPreviewDoesNotAskTheRerankerWhenNothingMatches(t *testing.T) {
 
 	if len(out.Results) != 0 || len(standIn.getRequests()) != 0 {
 		t.Errorf("output = %+v, rerank requests = %v, want no result and no request", out, standIn.getRequests())
+	}
+}
+
+func TestPreviewSendsTheWholeTextOfEachPassageToTheReranker(t *testing.T) {
+	w := newWorld(t)
+	long := strings.Repeat("The tide log of the north quay. ", 60) + "At the spring tide the water covers the lower steps."
+	w.index(chunk("c1", "Logs/Quay.md", 0, len(long), long))
+	standIn := w.withReranker(nil)
+
+	out := w.run(t, api.PreviewInput{Query: `meaning("tides")`})
+
+	requests := standIn.getRequests()
+	if len(requests) != 1 || !slices.Equal(requests[0].GetDocuments(), []string{long}) {
+		t.Errorf("rerank requests = %v, want the whole text of the passage", requests)
+	}
+	if len(out.Results) != 1 || len(out.Results[0].Text) > host.MaxExcerptBytes {
+		t.Errorf("results = %+v, want the excerpt as the text of the result", out.Results)
+	}
+}
+
+func TestPreviewSendsAtMostMaxRerankedBytesOfEachTextToTheReranker(t *testing.T) {
+	w := newWorld(t)
+	w.config.MaxRerankedBytes = 101
+	long := "tide " + strings.Repeat("прилив у причала ", 20)
+	w.index(chunk("c1", "Logs/Причал.md", 0, len(long), long))
+	standIn := w.withReranker(nil)
+
+	w.run(t, api.PreviewInput{Query: `meaning("tides")`})
+
+	requests := standIn.getRequests()
+	if len(requests) != 1 || len(requests[0].GetDocuments()) != 1 {
+		t.Fatalf("rerank requests = %v, want one with one document", requests)
+	}
+	sent := requests[0].GetDocuments()[0]
+	if len(sent) > 101 || len(sent) < 98 || !utf8.ValidString(sent) || !strings.HasPrefix(long, sent) {
+		t.Errorf("sent %q (%d bytes), want the start of the text cut at a whole character within 101 bytes", sent, len(sent))
+	}
+}
+
+func TestPreviewJoinsOnlyTheFirstThreeTimesTheLimitWithoutAConnection(t *testing.T) {
+	w := newWorld(t)
+	w.index(
+		chunk("c1", "Logs/North.md", 0, 400, "tide tide tide tide tide storm"),
+		chunk("c2", "Logs/East.md", 0, 400, "tide tide tide tide storm"),
+		chunk("c3", "Logs/South.md", 0, 400, "tide tide tide storm"),
+		chunk("c4", "Logs/West.md", 0, 400, "tide tide storm"),
+		chunk("c5", "Logs/North.md", 400, 400, "tide storm"),
+	)
+
+	out := w.run(t, api.PreviewInput{Query: `meaning("tides")`, Limit: 1})
+
+	if len(out.Results) != 1 || out.Results[0].Path != "Logs/North.md" || out.Results[0].ChunkCount != 1 {
+		t.Errorf("results = %+v, want North alone: its neighbor is fifth in fused order, past three times the limit", out.Results)
 	}
 }

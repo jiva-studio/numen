@@ -80,7 +80,7 @@ func (s Search) SearchText(ctx context.Context, v domain.Vault, q plugin.SearchR
 	}
 	found, err := s.TextSearch.Execute(ctx, v, search.SearchResultQuery{
 		Query: q.Query, Limit: q.Limit, ResultsPerSource: q.ResultsPerSource, Kinds: q.Kinds, PathPrefix: q.PathPrefix,
-		Mode: mode, IsRawWords: q.IsRawWords,
+		Mode: mode, IsRawWords: q.IsRawWords, IsWholeText: q.IsWholeText,
 	})
 	return found, convertWordsError(err)
 }

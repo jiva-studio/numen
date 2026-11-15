@@ -334,6 +334,10 @@ message HostSearchServiceSearchTextRequest {
   // (phrases, NEAR, prefix *, AND, OR, NOT), used as written. Without it every
   // word is quoted. Set with another mode it is rejected with INVALID_ARGUMENT.
   bool is_raw_words = 7;
+
+  // Each result carries the whole text of its chunk in whole_text, next to
+  // the excerpt in text.
+  bool is_whole_text = 8;
 }
 
 message HostSearchServiceSearchTextResponse {

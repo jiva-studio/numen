@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/api"
@@ -22,22 +23,45 @@ type reranking struct {
 	reranker   *ports.RerankerID
 }
 
+// pool is how a run gathers passages: perSearch from each search, with the whole text of their chunks
+// when isReranked, and the first perResult times the limit, at most most, of the passages the query keeps.
+// A run takes the numbers of a reranked run when the setting lists a row or cannot be listed, so that the
+// rerank reports a failure to list, and those of a fused run otherwise.
+type pool struct {
+	perSearch, perResult, most int
+	isReranked                 bool
+}
+
+func (u *UseCase) getPool(ctx context.Context) (pool, error) {
+	rows, err := u.reranker.ListRerankers(ctx)
+	if ctx.Err() != nil {
+		return pool{perSearch: 0, perResult: 0, most: 0, isReranked: false}, ctx.Err()
+	}
+	if err == nil && len(rows) == 0 {
+		return pool{perSearch: u.config.ResultsPerSearch, perResult: u.config.FusedPerResult, most: u.config.MaxFused, isReranked: false}, nil
+	}
+	return pool{
+		perSearch: u.config.RerankResultsPerSearch, perResult: u.config.RerankedPerResult, most: u.config.MaxReranked, isReranked: true,
+	}, nil
+}
+
 type rerankInput struct {
-	text  string
-	kept  []ranking.Candidate
-	limit int
-	floor float64
+	text     string
+	kept     []ranking.Candidate
+	limit    int
+	floor    float64
+	gathered pool
 }
 
 func (u *UseCase) rerank(ctx context.Context, in rerankInput) (reranking, error) {
-	kept := in.kept[:min(len(in.kept), u.config.RerankedPerResult*in.limit, u.config.MaxReranked)]
+	kept := in.kept[:min(len(in.kept), in.gathered.perResult*in.limit, in.gathered.most)]
 	fused := reranking{candidates: kept, order: api.OrderFused, warnings: nil, reranker: nil}
-	if len(kept) == 0 {
+	if len(kept) == 0 || !in.gathered.isReranked {
 		return fused, nil
 	}
 	documents := make([]string, len(kept))
 	for i, candidate := range kept {
-		documents[i] = candidate.Text
+		documents[i] = cutText(candidate.WholeText, u.config.MaxRerankedBytes)
 	}
 	answer, err := u.reranker.Rerank(ctx, ports.RerankRequest{
 		Query: in.text, Instruction: "", Documents: documents, Priority: connection.PriorityInteractive, Floor: in.floor,
@@ -77,4 +101,15 @@ func getRerankQuery(text string, leaves []query.Leaf) string {
 		}
 	}
 	return strings.Join(texts, "\n")
+}
+
+func cutText(text string, most int) string {
+	if len(text) <= most {
+		return text
+	}
+	end := most
+	for end > 0 && !utf8.RuneStart(text[end]) {
+		end--
+	}
+	return text[:end]
 }

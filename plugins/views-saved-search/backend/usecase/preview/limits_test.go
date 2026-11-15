@@ -159,8 +159,9 @@ func TestPreviewRejectsMoreThanEightPathPrefixes(t *testing.T) {
 
 func TestDefaultConfigContainsTheNumbersOfTheOwner(t *testing.T) {
 	want := preview.Config{
-		DefaultLimit: 20, MaxLimit: 100, ResultsPerSearch: 100, MaxCandidates: 1000, MaxPathPrefixes: 8,
-		RerankedPerResult: 3, MaxReranked: 100, MergeGapBytes: 200, MaxQueryBytes: 16384,
+		DefaultLimit: 20, MaxLimit: 100, ResultsPerSearch: 100, RerankResultsPerSearch: 300, MaxCandidates: 1000,
+		MaxPathPrefixes: 8, FusedPerResult: 3, MaxFused: 100, RerankedPerResult: 10, MaxReranked: 300, MaxRerankedBytes: 4096,
+		MergeGapBytes: 200, MaxQueryBytes: 16384,
 	}
 
 	if got := preview.DefaultConfig(); got != want {
@@ -171,12 +172,14 @@ func TestDefaultConfigContainsTheNumbersOfTheOwner(t *testing.T) {
 func TestParseConfigReadsEveryNumberOfTheSettings(t *testing.T) {
 	got := preview.ParseConfig(map[string]string{
 		"defaultLimit": "10", "maxLimit": "50", "resultsPerSearch": "200", "maxCandidates": "800", "maxPathPrefixes": "4",
-		"rerankedPerResult": "2", "maxReranked": "60", "mergeGapBytes": "0", "maxQueryBytes": "4096",
+		"rerankResultsPerSearch": "400", "fusedPerResult": "4", "maxFused": "80", "rerankedPerResult": "2", "maxReranked": "60",
+		"maxRerankedBytes": "2048", "mergeGapBytes": "0", "maxQueryBytes": "4096",
 	}, preview.DefaultConfig())
 
 	want := preview.Config{
-		DefaultLimit: 10, MaxLimit: 50, ResultsPerSearch: 200, MaxCandidates: 800, MaxPathPrefixes: 4,
-		RerankedPerResult: 2, MaxReranked: 60, MergeGapBytes: 0, MaxQueryBytes: 4096,
+		DefaultLimit: 10, MaxLimit: 50, ResultsPerSearch: 200, RerankResultsPerSearch: 400, MaxCandidates: 800,
+		MaxPathPrefixes: 4, FusedPerResult: 4, MaxFused: 80, RerankedPerResult: 2, MaxReranked: 60, MaxRerankedBytes: 2048,
+		MergeGapBytes: 0, MaxQueryBytes: 4096,
 	}
 	if got != want {
 		t.Errorf("ParseConfig = %+v, want %+v", got, want)
@@ -203,5 +206,36 @@ func TestPreviewReranksAtMostTheMaximumOfTheSettings(t *testing.T) {
 
 	if requests := standIn.getRequests(); len(requests) != 1 || len(requests[0].GetDocuments()) != 4 {
 		t.Errorf("rerank requests = %v, want one of 4 documents", requests)
+	}
+}
+
+func TestPreviewAsksEachSearchForMorePassagesAndTheirWholeTextWithAConnection(t *testing.T) {
+	w := newWorld(t)
+	indexHarborLogs(w, 3)
+	w.withReranker(nil)
+
+	w.run(t, api.PreviewInput{Query: `words("harbor") || meaning("harbor")`})
+
+	queries := w.host.getQueries()
+	if len(queries) != 2 {
+		t.Fatalf("searches = %+v, want one for each condition", queries)
+	}
+	for _, query := range queries {
+		if query.Limit != 300 || query.ResultsPerSource != 300 || !query.IsWholeText {
+			t.Errorf("search %+v, want a limit of 300, 300 results of one file and the whole text", query)
+		}
+	}
+}
+
+func TestPreviewAsksEachSearchForTheExcerptsAloneWithoutAConnection(t *testing.T) {
+	w := newWorld(t)
+	indexHarborLogs(w, 3)
+
+	w.run(t, api.PreviewInput{Query: `words("harbor")`})
+
+	for _, query := range w.host.getQueries() {
+		if query.Limit != 100 || query.IsWholeText {
+			t.Errorf("search %+v, want a limit of 100 and no whole text", query)
+		}
 	}
 }

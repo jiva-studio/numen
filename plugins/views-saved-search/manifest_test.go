@@ -3,6 +3,7 @@ package savedsearch_test
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 	"testing"
 
 	savedsearch "github.com/jiva-studio/numen/plugins/views-saved-search"
@@ -15,6 +16,8 @@ type manifestSetting struct {
 	Operations []string `json:"operations"`
 	Default    any      `json:"default"`
 	Min        *float64 `json:"min"`
+	Max        *float64 `json:"max"`
+	Details    string   `json:"details"`
 }
 
 type manifestNoteType struct {
@@ -61,8 +64,8 @@ func findSetting(t *testing.T, m manifestDoc, key string) manifestSetting {
 func TestManifest(t *testing.T) {
 	m := readManifest(t)
 
-	if m.ID != "md.numen.views.saved.search" || m.Name != "Saved Search" || m.Version != "2026.11.2" || m.Contributes.Category != "views" {
-		t.Errorf("manifest = %+v, want md.numen.views.saved.search, Saved Search, 2026.11.2 in views", m)
+	if m.ID != "md.numen.views.saved.search" || m.Name != "Saved Search" || m.Version != "2026.11.3" || m.Contributes.Category != "views" {
+		t.Errorf("manifest = %+v, want md.numen.views.saved.search, Saved Search, 2026.11.3 in views", m)
 	}
 	if !slices.Equal(m.Capabilities, []string{"tools"}) {
 		t.Errorf("capabilities = %v, want [tools]", m.Capabilities)
@@ -103,10 +106,29 @@ func TestManifestDeclaresTheRerankingConnections(t *testing.T) {
 	}
 }
 
+func TestManifestRecommendsMongoDBRerankThroughOpenRouterAndTheLocalRerankerOtherwise(t *testing.T) {
+	details := findSetting(t, readManifest(t), "connections").Details
+
+	for _, part := range []string{"OpenRouter", "mongodb/rerank-3", "Local reranker"} {
+		if !strings.Contains(details, part) {
+			t.Errorf("connections details = %q, want %q named", details, part)
+		}
+	}
+}
+
+func TestManifestCapsThePassagesPerConditionWithAConnectionAtTheMaximumOfTheIndex(t *testing.T) {
+	setting := findSetting(t, readManifest(t), "rerankResultsPerSearch")
+
+	if setting.Max == nil || *setting.Max != 500 {
+		t.Errorf("rerankResultsPerSearch = %+v, want a maximum of 500", setting)
+	}
+}
+
 func TestManifestDeclaresTheNumbersAsSettingsWithTheirDefaults(t *testing.T) {
 	want := map[string]float64{
 		"defaultLimit": 20, "maxLimit": 100, "resultsPerSearch": 100, "maxCandidates": 1000, "maxPathPrefixes": 8,
-		"rerankedPerResult": 3, "maxReranked": 100, "mergeGapBytes": 200, "maxQueryBytes": 16384, "refreshMinutes": 10,
+		"rerankResultsPerSearch": 300, "fusedPerResult": 3, "maxFused": 100, "rerankedPerResult": 10, "maxReranked": 300,
+		"maxRerankedBytes": 4096, "mergeGapBytes": 200, "maxQueryBytes": 16384, "refreshMinutes": 10,
 	}
 	m := readManifest(t)
 
@@ -146,7 +168,7 @@ func TestManifestDeclaresTheDefaultFolderAsTheVaultFolder(t *testing.T) {
 func TestManifestDeclaresOnlyKnownSettings(t *testing.T) {
 	m := readManifest(t)
 
-	if len(m.Settings) != 12 {
-		t.Errorf("%d settings, want connections, ten numbers and defaultFolder", len(m.Settings))
+	if len(m.Settings) != 16 {
+		t.Errorf("%d settings, want connections, fourteen numbers and defaultFolder", len(m.Settings))
 	}
 }

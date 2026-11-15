@@ -1,7 +1,8 @@
 // Package api holds the JSON messages of the saved search tools: the input and output of each tool.
 package api
 
-// Order is how the results of a search are ordered.
+// Order is how the results of a run are ordered: OrderReranked when the reranking model ordered them,
+// OrderFused when the scores of the query did.
 type Order string
 
 const (

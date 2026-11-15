@@ -79,7 +79,7 @@ const (
 
 // SearchResultQuery is a text search request. ResultsPerSource is the most results of one source,
 // three where it is zero or less. IsRawWords passes Query to the words as an FTS5 query and is valid
-// in SearchModeWords only.
+// in SearchModeWords only. IsWholeText keeps the whole text of each chunk next to its excerpt.
 type SearchResultQuery struct {
 	Query            string
 	Limit            int
@@ -88,6 +88,7 @@ type SearchResultQuery struct {
 	PathPrefix       string
 	Mode             SearchMode
 	IsRawWords       bool
+	IsWholeText      bool
 }
 
 // ScoreCondition is one condition a chunk is scored against: a text compared by meaning or an FTS5

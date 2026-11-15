@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.saved.search",
   "name": "Saved Search",
-  "version": "2026.11.2",
+  "version": "2026.11.3",
   "protocol": 1,
   "description": "Saved searches over meaning and words: notes that keep a query and its results",
   "capabilities": ["tools"],
@@ -32,7 +32,7 @@
       "type": "connections",
       "title": "Reranking",
       "description": "Services that order the results by relevance, tried in order",
-      "details": "Services that order the results of a saved search by relevance, tried in order until one answers",
+      "details": "Services that order the results of a saved search by relevance, tried in order until one answers. With an OpenRouter key, add an OpenRouter connection and choose the model mongodb/rerank-3: it ranks best and answers in a few seconds. Without one, choose the Local reranker, which runs on this machine and takes tens of seconds for each run.",
       "operations": ["llm.rerank"],
       "max": 5
     },
@@ -58,8 +58,20 @@
       "key": "resultsPerSearch",
       "type": "number",
       "title": "Passages per condition",
-      "description": "Passages the index returns for each meaning and words condition",
+      "description": "Passages the index returns for each condition without reranking",
+      "details": "Passages the index returns for each meaning and words condition when no reranking service is set, and its limit of passages of one file.",
       "default": 100,
+      "min": 1,
+      "max": 500,
+      "step": 1
+    },
+    {
+      "key": "rerankResultsPerSearch",
+      "type": "number",
+      "title": "Passages per condition with reranking",
+      "description": "Passages the index returns for each condition with reranking",
+      "details": "Passages the index returns for each meaning and words condition when a reranking service is set, each with the whole text of its chunk.",
+      "default": 300,
       "min": 1,
       "max": 500,
       "step": 1
@@ -83,11 +95,29 @@
       "step": 1
     },
     {
+      "key": "fusedPerResult",
+      "type": "number",
+      "title": "Passages per result without reranking",
+      "description": "Passages kept for each result asked for without reranking",
+      "default": 3,
+      "min": 1,
+      "step": 1
+    },
+    {
+      "key": "maxFused",
+      "type": "number",
+      "title": "Most passages without reranking",
+      "description": "Most passages kept in one search without reranking",
+      "default": 100,
+      "min": 1,
+      "step": 1
+    },
+    {
       "key": "rerankedPerResult",
       "type": "number",
       "title": "Reranked passages per result",
       "description": "Passages sent to the reranking service for each result asked for",
-      "default": 3,
+      "default": 10,
       "min": 1,
       "step": 1
     },
@@ -96,7 +126,17 @@
       "type": "number",
       "title": "Most reranked passages",
       "description": "Most passages sent to the reranking service in one search",
-      "default": 100,
+      "default": 300,
+      "min": 1,
+      "step": 1
+    },
+    {
+      "key": "maxRerankedBytes",
+      "type": "number",
+      "title": "Longest reranked text",
+      "description": "Most bytes of one passage sent to the reranking service",
+      "details": "Most bytes of the text of one passage sent to the reranking service, from its start. The models read about 512 tokens of it.",
+      "default": 4096,
       "min": 1,
       "step": 1
     },

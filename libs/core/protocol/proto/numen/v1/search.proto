@@ -177,4 +177,8 @@ message SearchResult {
   // result: positive, higher is better, comparable only within one query.
   // Absent when the search by words did not return this result.
   optional double word_score = 14;
+
+  // The whole text of the chunk the text is cut from. Set only in the answer
+  // to a HostSearchService.SearchText that sets is_whole_text.
+  string whole_text = 15;
 }
