@@ -6,7 +6,7 @@
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onFilesChanged"],
+  "activationEvents": ["onFilesChanged:application/pdf", "onFilesChanged:image/png", "onFilesChanged:image/jpeg", "onFilesChanged:image/gif", "onFilesChanged:image/webp"],
   "contributes": {
     "textKinds": [{ "kind": "recognition", "title": "Recognized text" }],
     "category": "engines",

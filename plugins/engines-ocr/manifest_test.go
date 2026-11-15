@@ -55,8 +55,8 @@ func TestTheFilesChangedEventWakesThePlugin(t *testing.T) {
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(manifest.ActivationEvents, []string{"onFilesChanged"}) {
-		t.Errorf("activationEvents = %v, want [onFilesChanged]", manifest.ActivationEvents)
+	if !slices.Equal(manifest.ActivationEvents, []string{"onFilesChanged:application/pdf", "onFilesChanged:image/png", "onFilesChanged:image/jpeg", "onFilesChanged:image/gif", "onFilesChanged:image/webp"}) {
+		t.Errorf("activationEvents = %v, want the masks of pdf and the image types", manifest.ActivationEvents)
 	}
 	if strings.Contains(string(manifest.Contributes), "triggers") {
 		t.Errorf("contributes = %s, want no trigger", manifest.Contributes)

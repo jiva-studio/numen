@@ -6,7 +6,7 @@
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onFilesChanged"],
+  "activationEvents": ["onFilesChanged:audio/*", "onFilesChanged:video/*"],
   "contributes": {
     "textKinds": [{ "kind": "transcript", "title": "Transcript" }],
     "category": "engines",
