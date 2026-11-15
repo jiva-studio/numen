@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"io"
 	"slices"
-	"strings"
 	"time"
 )
 
@@ -133,19 +132,4 @@ func FindLiveVersion(
 		}
 	}
 	return TextVersion{}, false
-}
-
-// FileInput is the files a plugin makes text from, by extension with its dot.
-type FileInput []string
-
-// IsFileAccepted reports whether a file of the path is one the input names.
-// Extensions compare without regard to case.
-func (in FileInput) IsFileAccepted(path string) bool {
-	dot := strings.LastIndexByte(path, '.')
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a slash and a dot cannot occupy the same positive byte index"
-	if dot < 0 || strings.LastIndexByte(path, '/') > dot {
-		return false
-	}
-	ext := strings.ToLower(path[dot:])
-	return slices.ContainsFunc(in, func(one string) bool { return strings.ToLower(one) == ext })
 }

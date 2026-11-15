@@ -39,12 +39,3 @@ func (c *LifecycleClient) Configure(ctx context.Context, values map[string]strin
 	}
 	return res.Msg.GetSuccess(), nil
 }
-
-// Shutdown asks the plugin to terminate and reports whether it accepted.
-func (c *LifecycleClient) Shutdown(ctx context.Context) (bool, error) {
-	res, err := c.rpc.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
-	if err != nil {
-		return false, err
-	}
-	return res.Msg.GetSuccess(), nil
-}

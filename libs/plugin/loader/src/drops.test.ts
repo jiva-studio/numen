@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { createMockManifest } from '@numen/core-client/testing'
+import type { Manifest } from '@numen/core-client'
 import { createDropRegistry } from './drops'
 
 const URI_LIST = 'text/uri-list'
@@ -64,5 +66,58 @@ describe('createDropRegistry', () => {
     expect(drops.canDrop([URI_LIST])).toBe(false)
     expect(drops.canDrop(['text/plain'])).toBe(true)
     expect(await drops.drop('', { [URI_LIST]: 'https://video.example/clip' })).toEqual([])
+  })
+
+  it('allows the same plugin to register another handler for a type it already owns', () => {
+    const drops = createDropRegistry()
+    drops.registerDropHandler('md.numen.links', {
+      types: [URI_LIST],
+      drop: async () => ['first.md'],
+    })
+
+    expect(() =>
+      drops.registerDropHandler('md.numen.links', {
+        types: [URI_LIST],
+        drop: async () => ['second.md'],
+      }),
+    ).not.toThrow()
+  })
+
+  it('queries and starts declaring plugins only when no handler is registered yet', async () => {
+    const bareManifest: Manifest = { ...createMockManifest('bare'), contributes: undefined }
+    const multiManifest = createMockManifest('md.numen.links', { dropTypes: ['image/png'] })
+    const secondDrop = createMockManifest('md.numen.links', {
+      dropTypes: ['text/html', URI_LIST],
+    }).contributes?.dropHandlers
+    if (multiManifest.contributes && secondDrop) {
+      multiManifest.contributes.dropHandlers.push(...secondDrop)
+    }
+    const manifests = [bareManifest, createMockManifest('md.numen.empty'), multiManifest]
+    const findPluginsOf = vi.fn((match: (m: Manifest) => boolean) =>
+      manifests.filter(match).map((m) => m.id),
+    )
+    const startPluginsOf = vi.fn(async (match: (m: Manifest) => boolean) => {
+      if (manifests.some(match)) {
+        drops.registerDropHandler('md.numen.links', {
+          types: [URI_LIST],
+          drop: async (folder, data) => [`${folder}/${data[URI_LIST]}`],
+        })
+      }
+    })
+    const drops = createDropRegistry({ findPluginsOf, startPluginsOf })
+
+    expect(drops.canDrop(['application/pdf'])).toBe(false)
+    expect(drops.canDrop([URI_LIST])).toBe(true)
+    expect(findPluginsOf).toHaveBeenCalledTimes(2)
+
+    expect(await drops.drop('inbox', { [URI_LIST]: 'clip.md' })).toEqual(['inbox/clip.md'])
+    expect(startPluginsOf).toHaveBeenCalledTimes(1)
+
+    findPluginsOf.mockClear()
+    startPluginsOf.mockClear()
+    expect(drops.canDrop([URI_LIST])).toBe(true)
+    expect(await drops.drop('inbox', { [URI_LIST]: 'next.md' })).toEqual(['inbox/next.md'])
+    expect(findPluginsOf).not.toHaveBeenCalled()
+    expect(startPluginsOf).not.toHaveBeenCalled()
   })
 })

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -29,7 +29,7 @@ func (w *placeRecorder) ActivateTab(context.Context, string) error   { return ni
 
 func newFocusFile(t *testing.T) (*file.FocusFile, *placeRecorder, domain.Vault) {
 	t.Helper()
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		talkPath:         "ID3 a recording of the marsh",
 		"notes/Heron.md": "# Gray Heron\nHerons fish at dusk.\n",
 	})

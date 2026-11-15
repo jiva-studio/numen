@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -53,8 +53,8 @@ func getPreciseBytes(v []float32) []byte {
 	return out
 }
 
-func newMigratedTemplate() *vaultfixture.Template {
-	return vaultfixture.NewTemplate(func(ctx context.Context, path string) error {
+func newMigratedTemplate() *vaulttest.Template {
+	return vaulttest.NewTemplate(func(ctx context.Context, path string) error {
 		db, err := Open(ctx, path)
 		if err != nil {
 			return err

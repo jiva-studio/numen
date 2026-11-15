@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/testsupport"
 )
 
 // switchableVault is the vault the host shows, which a test sets to another vault of the host.

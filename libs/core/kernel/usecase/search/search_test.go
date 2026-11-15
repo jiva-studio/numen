@@ -10,12 +10,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
@@ -63,11 +62,11 @@ func newCorpus(t *testing.T) corpus {
 	testsupport.CloseAfter(t, db)
 
 	readers := vaultreader.Readers{}
-	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
+	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 
 	c := corpus{db: db}
 	for i, notes := range []map[string]string{getFirstNotes(), getSecondNotes()} {
-		v := vaultfixture.NewVault(t, notes)
+		v := vaulttest.NewVault(t, notes)
 		if _, err := scan.Execute(ctx, v); err != nil {
 			t.Fatal(err)
 		}
@@ -432,8 +431,8 @@ func TestAResultCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 
 	const path = "notes/Isotherm.md"
 	const target = "The curve holds throughout."
-	v := vaultfixture.NewVault(t, map[string]string{path: getIsotherm()})
-	scan := vaults.NewScan(vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.NoteQueries(), c.db.Maintenance(), none.SourceBacklog{})
+	v := vaulttest.NewVault(t, map[string]string{path: getIsotherm()})
+	scan := vaults.NewScan(vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.NoteQueries(), c.db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
