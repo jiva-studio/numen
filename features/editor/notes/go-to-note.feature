@@ -13,6 +13,7 @@ Feature: Go to note
       | Thermodynamics.md    | ---\nlinks:\n  - to: "[[notes/Entropy]]"\n    role: child\n---\n\nHeat and work. |
     And the application "editor" starts
 
+  @smoke
   Scenario: The note is opened by its title
     When the person runs the command "Go to note" with:
       | Search notes | Entropy |
