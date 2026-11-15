@@ -47,20 +47,26 @@ func mountClients(s *server.Server, files *host.Client, texts *host.TextClient, 
 		func(id domain.VaultID) host.StoreWriter { return store.With(id) },
 		queue, workers, pdfworkers.ReportError,
 	)
-	return mount(s, reader, writer, pdfworkers.ReportError)
+	follower := extract.NewFollower(writer, func(id domain.VaultID) extract.Feed {
+		return extract.Feed{Changes: files.With(id), Store: store.With(id)}
+	}, pdfworkers.ReportError)
+	return mount(s, reader, writer, follower, files, pdfworkers.ReportError)
 }
 
-func mount(s *server.Server, reader *document.Reader, writer *extract.Writer, report func(what string, err error)) error {
+func mount(
+	s *server.Server, reader *document.Reader, writer *extract.Writer, follower *extract.Follower, shown ShownVault, report func(what string, err error),
+) error {
 	if err := NewDocumentServer(reader).Mount(s.NewAPI(api.Service)); err != nil {
 		return err
 	}
 	s.RegisterRoute(pagesPattern, NewPageServer(reader, report))
-	commands, err := newCommands(writer)
+	commands, err := newCommands(writer, follower, shown)
 	if err != nil {
 		return err
 	}
 	command.Mount(s, commands)
 	s.OnClose(func() error {
+		follower.Close()
 		writer.Close()
 		return nil
 	})

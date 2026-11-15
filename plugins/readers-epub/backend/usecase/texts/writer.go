@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"slices"
 	"strings"
 	"sync"
 
@@ -116,12 +117,12 @@ func (s *Writer) readBook(ctx context.Context, files host.FileReader, path strin
 	}
 	book, err := epub.Read(raw)
 	if err != nil {
-		return bookText{}, err
+		return bookText{}, fmt.Errorf("%w: %w", errUnreadable, err)
 	}
 	cut, err := segments.Cut(book.Text, book.Parts, book.ReadPlaces())
 	// gomutants:disable-next-line BRANCH_IF reason="cfiSelector consists of a string field that always marshals"
 	if err != nil {
-		return bookText{}, err
+		return bookText{}, fmt.Errorf("%w: %w", errUnreadable, err)
 	}
 	read := bookText{hash: hash, text: book.Text, segments: cut}
 	s.mu.Lock()
@@ -165,13 +166,20 @@ func (s *Writer) finish(key string) {
 	delete(s.running, key)
 }
 
-func (s *Writer) writeText(ctx context.Context, req Request) {
-	task := host.Task{
+func newTask(req Request) host.Task {
+	return host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="task counters and unit start at zero"
 		CompletedCount: 0, TotalCount: 0, Unit: 0, FailureReason: "", IsUserStarted: false,
 	}
-	err := s.putText(ctx, req, task)
+}
+
+func (s *Writer) writeText(ctx context.Context, req Request) {
+	task := newTask(req)
+	s.finishTask(ctx, task, s.putText(ctx, req, task))
+}
+
+func (s *Writer) finishTask(ctx context.Context, task host.Task, err error) {
 	if err != nil && ctx.Err() == nil {
 		task.FailureReason = err.Error()
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="task report failure is logged to stderr"
@@ -215,4 +223,45 @@ func (s *Writer) putText(ctx context.Context, req Request, task host.Task) (err 
 		Path: req.Path, Key: textKey, Source: "", Kind: Kind, InputHash: read.hash, File: file,
 	})
 	return err
+}
+
+// errUnreadable is a file whose text cannot be read from its content.
+var errUnreadable = errors.New("the book cannot be read")
+
+// WriteMissingText writes the text of a book as CreateText does, unless the book has one made from
+// its content as it is, and returns once it is written. A file that is not there, or whose content
+// cannot be read as a book, is not an error; the latter is shown as a failed task.
+func (s *Writer) WriteMissingText(ctx context.Context, req Request) error {
+	isMade, err := s.isTextMade(ctx, req)
+	if errors.Is(err, host.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("read the text versions of %s: %w", req.Path, err)
+	}
+	if isMade {
+		return nil
+	}
+	task := newTask(req)
+	err = s.putText(ctx, req, task)
+	s.finishTask(ctx, task, err)
+	if errors.Is(err, errUnreadable) || errors.Is(err, host.ErrNotExist) {
+		return nil
+	}
+	return err
+}
+
+func (s *Writer) isTextMade(ctx context.Context, req Request) (bool, error) {
+	raw, _, err := s.vaults(req.Vault).Read(ctx, req.Path)
+	if err != nil {
+		return false, err
+	}
+	listing, err := s.texts(req.Vault).ListVersions(ctx, req.Path)
+	if err != nil {
+		return false, err
+	}
+	hash := domain.HashContent(raw)
+	return slices.ContainsFunc(listing.Versions, func(v domain.TextVersion) bool {
+		return v.Kind == Kind && v.IsFromFile() && v.InputHash == hash
+	}), nil
 }

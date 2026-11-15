@@ -13,7 +13,7 @@ import (
 
 func TestTheHandlerOfCreateTextWritesTheTextLayerOfTheFile(t *testing.T) {
 	texts, server, _ := testsupport.NewVault(t, "books/tiny.pdf", "tiny.pdf")
-	commands, err := newCommands(server)
+	commands, err := newCommands(server, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestTheHandlerOfCreateTextWritesTheTextLayerOfTheFile(t *testing.T) {
 
 func TestTheHandlerOfCreateTextNeedsAFile(t *testing.T) {
 	_, server, _ := testsupport.NewVault(t, "books/tiny.pdf", "tiny.pdf")
-	commands, err := newCommands(server)
+	commands, err := newCommands(server, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,12 +51,30 @@ func TestTheHandlerOfCreateTextNeedsAFile(t *testing.T) {
 	noVault := hosttest.New("vault")
 	noVault.Hide()
 	noVaultWriter := testsupport.NewWriter(t, testsupport.FilesOf(noVault), noVault, hosttest.NewTexts("vault", testsupport.PluginID), hosttest.NewQueue())
-	noVaultCommands, err := newCommands(noVaultWriter)
+	noVaultCommands, err := newCommands(noVaultWriter, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	_, err = noVaultCommands.RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: "books/tiny.pdf"})
 	if !errors.Is(err, host.ErrNoVault) {
 		t.Errorf("a run with no shown vault answered %v, want ErrNoVault", err)
+	}
+}
+
+func TestUpdateWritesTheTextLayersTheFeedOfTheShownVaultNames(t *testing.T) {
+	f := testsupport.NewFollowedVault(t, map[string][]byte{"books/tiny.pdf": testsupport.ReadFixture(t, "tiny.pdf")})
+	follower := f.NewFollower(t)
+	commands, err := newCommands(f.Writer, follower, f.Vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := commands.RunCommand(t.Context(), command.Request{Command: UpdateCommand, Path: "books/tiny.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+	follower.Wait()
+
+	if text := testsupport.ReadLive(t, f.Texts, "books/tiny.pdf"); text.Version().Kind != extract.TextKind {
+		t.Errorf("the live version is of kind %q, want %q", text.Version().Kind, extract.TextKind)
 	}
 }

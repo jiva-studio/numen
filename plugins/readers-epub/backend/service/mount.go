@@ -21,6 +21,7 @@ func Mount(s *server.Server) error {
 func mount(s *server.Server, connected *hostclient.Host) error {
 	reader := books.NewReader(connected.OpenFiles)
 	writer := texts.NewWriter(connected.OpenVault, connected.OpenTexts, connected.OpenStore, connected.GetQueue(), connected.ReportError)
+	follower := texts.NewFollower(writer, connected.OpenFeed, connected.ReportError)
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server close hook releases cached books"
 	s.OnClose(func() error {
 		reader.Close()
@@ -28,6 +29,7 @@ func mount(s *server.Server, connected *hostclient.Host) error {
 	})
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server close hook stops running text extraction jobs"
 	s.OnClose(func() error {
+		follower.Close()
 		writer.Close()
 		return nil
 	})
@@ -36,7 +38,7 @@ func mount(s *server.Server, connected *hostclient.Host) error {
 		return err
 	}
 	s.RegisterRoute(entriesPattern, NewEntryServer(reader, connected.ReportError))
-	commands, err := newCommands(writer)
+	commands, err := newCommands(writer, follower, connected.GetShownVault)
 	// gomutants:disable-next-line BRANCH_IF reason="registering one static command id on a new registry cannot fail"
 	if err != nil {
 		return err
