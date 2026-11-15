@@ -8,12 +8,12 @@ import (
 
 // The messages of the problems Normalize and CheckQueryText find.
 const (
-	messageQueryBytes   = "a query has at most %d bytes"
+	messageQueryBytes   = "A query has at most %d bytes"
 	messageTextSize     = "%s needs a text of 1 to %d bytes"
-	messageConditions   = "a query has at most %d distinct meaning and words conditions"
-	messagePathPrefixes = "a query has at most %d distinct path prefixes"
-	messageNoPositive   = "a query needs a condition that is not negated"
-	messageKind         = "kind is one of %s"
+	messageConditions   = "A query has at most %d distinct meaning and words conditions"
+	messagePathPrefixes = "A query has at most %d distinct path prefixes"
+	messageNoPositive   = "A query needs a condition that is not negated"
+	messageKind         = "The kind is one of %s"
 )
 
 // CheckQueryText returns a *ParseError when the text of a query is longer than the limit.

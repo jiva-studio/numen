@@ -14,13 +14,14 @@ import (
 type nameWalk struct {
 	catalog  searchquery.Catalog
 	source   *ast.SourceInfo
+	text     queryText
 	problems []searchquery.Problem
 }
 
 func (w *nameWalk) addProblem(expr ast.Expr, message, name string) {
 	suggestion, _ := searchquery.SuggestName(name, w.catalog)
 	w.problems = append(w.problems, searchquery.Problem{
-		Position: getExprPosition(w.source, expr), Message: message + " " + name, Suggestion: suggestion,
+		Position: getExprPosition(w.text, w.source, expr), Message: message + " " + name, Suggestion: suggestion,
 	})
 }
 
@@ -30,7 +31,7 @@ func (w *nameWalk) walk(expr ast.Expr) {
 		w.walkCall(expr)
 	case ast.IdentKind:
 		if f, ok := w.catalog.FindFunction(expr.AsIdent()); !ok || !f.IsVariable {
-			w.addProblem(expr, "unknown name", expr.AsIdent())
+			w.addProblem(expr, "Unknown name", expr.AsIdent())
 		}
 	case ast.SelectKind:
 		w.walk(expr.AsSelect().Operand())
@@ -50,16 +51,18 @@ func (w *nameWalk) walkCall(expr ast.Expr) {
 	case call.IsMemberFunction() && name == overloads.StartsWith:
 		w.walk(call.Target())
 	case call.IsMemberFunction() && w.hasChunkCall(call.Target()):
+		w.walk(call.Target())
 		w.problems = append(w.problems, searchquery.Problem{
-			Position: getExprPosition(w.source, expr), Message: "unknown stage " + name,
+			Position: getExprPosition(w.text, w.source, expr), Message: "Unknown stage " + name,
 		})
 		return
 	case call.IsMemberFunction():
-		w.addProblem(expr, "unknown function", name)
+		w.walk(call.Target())
+		w.addProblem(expr, "Unknown function", name)
 		return
 	default:
 		if f, ok := w.catalog.FindFunction(name); !ok || f.IsVariable {
-			w.addProblem(expr, "unknown function", name)
+			w.addProblem(expr, "Unknown function", name)
 			return
 		}
 	}
