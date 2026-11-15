@@ -10,7 +10,7 @@ import (
 )
 
 // DefaultModel is the profile a row with no model runs.
-const DefaultModel = "onnx-community/gte-multilingual-reranker-base"
+const DefaultModel = "onnx-community/bge-reranker-v2-m3-ONNX"
 
 // ProfilesFolder is the folder, inside the data directory of the plugin, that holds the person's profile files.
 const ProfilesFolder = "profiles"

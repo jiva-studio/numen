@@ -35,17 +35,17 @@ func getLocal(t *testing.T, table *profile.Profiles, id string) profile.Profile 
 
 func ignoreReports(string, error) {}
 
-func TestTheShippedTableListsGTEFirstAndBGESecond(t *testing.T) {
+func TestTheShippedTableListsBGEFirstAndGTESecond(t *testing.T) {
 	var ids []string
 	for _, p := range getShippedProfiles(t).GetCurated() {
 		ids = append(ids, p.ID)
 	}
 
-	if !slices.Equal(ids, []string{gteID, bgeID}) {
-		t.Errorf("curated profiles = %v, want gte then bge", ids)
+	if !slices.Equal(ids, []string{bgeID, gteID}) {
+		t.Errorf("curated profiles = %v, want bge then gte", ids)
 	}
-	if profile.DefaultModel != gteID {
-		t.Errorf("DefaultModel = %q, want %q", profile.DefaultModel, gteID)
+	if profile.DefaultModel != bgeID {
+		t.Errorf("DefaultModel = %q, want %q", profile.DefaultModel, bgeID)
 	}
 }
 
@@ -92,7 +92,7 @@ func TestOptionTitlesNameTheTierAndTheSize(t *testing.T) {
 		titles = append(titles, p.GetOptionTitle())
 	}
 
-	want := []string{"GTE multilingual reranker (default, 341 MB)", "BGE reranker v2 M3 (larger, 571 MB)"}
+	want := []string{"BGE reranker v2 M3 (default, 571 MB)", "GTE multilingual reranker (smaller, 341 MB)"}
 	if !slices.Equal(titles, want) {
 		t.Errorf("titles = %q, want %q", titles, want)
 	}
@@ -194,7 +194,7 @@ func TestUserProfileMergesOverTheShippedOneByAlias(t *testing.T) {
 	if p.MaxTokens != 256 {
 		t.Errorf("maxTokens = %d, want the 256 of the file", p.MaxTokens)
 	}
-	if p.Title != "BGE reranker v2 M3" || p.Tier != "larger" || p.Revision == "" || len(p.SHA256) != 2 {
+	if p.Title != "BGE reranker v2 M3" || p.Tier != "default" || p.Revision == "" || len(p.SHA256) != 2 {
 		t.Errorf("a field the file leaves out was lost: %+v", p)
 	}
 	if n := len(table.GetCurated()); n != 2 {
