@@ -24,6 +24,7 @@ type documentReader struct {
 // documentCalls marks the calls of the plugin functions a document matches.
 type documentCalls interface {
 	withCalls(d searchquery.Document) searchquery.Document
+	match(ctx context.Context, paths []string) error
 }
 
 func newDocumentReader(index indexReads, links LinkReaders, contentTypes contenttypeport.ContentTypeTable, req *request, warns *warnings, calls documentCalls,
@@ -54,6 +55,9 @@ func (r *documentReader) listScopeDocuments(ctx context.Context, s searchquery.S
 	if len(listed) > r.req.limits.MaxDocuments {
 		return nil, false, nil
 	}
+	if err := r.calls.match(ctx, getPaths(listed)); err != nil {
+		return nil, false, err
+	}
 	var documents []searchquery.Document
 	for _, d := range listed {
 		if d = r.fillKind(d); s.IsDocumentMatch(d) {
@@ -76,6 +80,9 @@ func (r *documentReader) listCandidateDocuments(ctx context.Context) ([]searchqu
 		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.recipe,
 	})
 	if err != nil {
+		return nil, err
+	}
+	if err := r.calls.match(ctx, getPaths(listed)); err != nil {
 		return nil, err
 	}
 	var documents []searchquery.Document
