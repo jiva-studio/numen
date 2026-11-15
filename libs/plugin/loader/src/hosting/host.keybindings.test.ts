@@ -372,7 +372,7 @@ describe('the keys of the plugins', () => {
           command: 'org.example.ledger:ledger.open',
           values: {},
           when: '',
-          condition: { names: [], evaluate: () => true, evaluatePartial: () => true },
+          condition: { names: [], evaluate: () => true, evaluatePartial: () => 'true' },
         }),
       },
       getAvailableCommands: () => [],

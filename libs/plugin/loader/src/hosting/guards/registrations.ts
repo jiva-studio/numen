@@ -55,6 +55,7 @@ export function createRegistrations(
   deps: RegistrationDeps,
 ): PluginRegistrations {
   const { target, add, slotView } = deps
+  const permissions = target.manifest?.permissions ?? []
   return {
     reader: (reg: ReaderRegistration) => {
       const snapshot = takeSnapshot(reg)
@@ -81,9 +82,7 @@ export function createRegistrations(
       // Read once: a getter on the registration cannot answer the check and the registry differently.
       const { capability, component } = reg
       requireViewRegistration(capability, target)
-      return add(
-        host.views.registerView(pluginId, { capability, component }, target.manifest?.permissions),
-      )
+      return add(host.views.registerView(pluginId, { capability, component }, permissions))
     },
     dropHandler: (reg: DropRegistration) => {
       // Read once: the types checked are the types registered, and a later change to either is not seen.

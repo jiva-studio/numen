@@ -37,16 +37,16 @@ export async function startInterfacePlugins<Loaded>(
   try {
     const kinds = await Promise.all(
       deps.ids.map((id) =>
-        Promise.race([deps.isInterface(id).catch(() => undefined), deadline.late]),
+        Promise.race([deps.isInterface(id).catch(() => false), deadline.late.then(() => false)]),
       ),
     )
-    const first = deps.ids.filter((_, index) => kinds[index] === true)
+    const first = deps.ids.filter((_, index) => kinds[index])
     const loads = first.map((id) => deps.load(id))
     let isLate = false
-    const runs = new Set<Promise<void>>()
+    const runs: Promise<void>[] = []
     for (const [index, id] of first.entries()) {
       const run = (loads[index] as Promise<Loaded>).then((loaded) => deps.start(id, loaded))
-      runs.add(run)
+      runs.push(run)
       if (!isLate) isLate = (await Promise.race([run, deadline.late])) === 'late'
     }
     const started = Promise.all(runs).then(() => undefined)

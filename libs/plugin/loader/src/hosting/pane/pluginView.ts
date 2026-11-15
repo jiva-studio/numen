@@ -30,8 +30,10 @@ function isLoaderFunction(comp: { readonly length: number }): boolean {
   )
 }
 
-function isAsyncRegistration(comp: object): comp is AsyncComponentRegistration {
+function isAsyncRegistration(comp: Unvalidated): comp is AsyncComponentRegistration {
   return (
+    typeof comp === 'object' &&
+    comp !== null &&
     'type' in comp &&
     comp.type === 'async' &&
     'loader' in comp &&
@@ -42,8 +44,7 @@ function isAsyncRegistration(comp: object): comp is AsyncComponentRegistration {
 function isAsyncComponent(
   comp: Unvalidated,
 ): comp is (() => Promise<Component>) | AsyncComponentRegistration {
-  if (typeof comp === 'function') return isLoaderFunction(comp)
-  return typeof comp === 'object' && isAsyncRegistration(comp as object)
+  return typeof comp === 'function' ? isLoaderFunction(comp) : isAsyncRegistration(comp)
 }
 
 /**

@@ -58,9 +58,9 @@ export interface TabKindOwners {
 export interface PluginRecords {
   readonly contexts: Map<string, PluginParts>
   readonly manifests: Map<string, Manifest>
-  readonly contextManifests: { value: ReadonlyMap<string, Manifest> }
+  readonly contextManifests?: { value: ReadonlyMap<string, Manifest> }
   readonly activated: { value: ReadonlySet<string> }
-  readonly starting: { value: ReadonlySet<string> }
+  readonly starting?: { value: ReadonlySet<string> }
   readonly disposed: Set<string>
 }
 
@@ -139,6 +139,7 @@ function removePluginItems<T extends { pluginId: string }>(
 /** Adds a plugin to the plugins whose `activate` has not returned, or removes it. */
 export function setStarting(plugins: PluginRecords, pluginId: string, isStarting: boolean): void {
   const { starting } = plugins
+  if (!starting) return
   const next = new Set(starting.value)
   if (isStarting) next.add(pluginId)
   else next.delete(pluginId)
@@ -175,7 +176,7 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   clearSubscriptions(plugins.contexts.get(pluginId))
   plugins.contexts.delete(pluginId)
   plugins.manifests.delete(pluginId)
-  if (plugins.contextManifests.value.has(pluginId)) {
+  if (plugins.contextManifests?.value.has(pluginId)) {
     const next = new Map(plugins.contextManifests.value)
     next.delete(pluginId)
     plugins.contextManifests.value = next

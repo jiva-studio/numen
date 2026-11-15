@@ -15,5 +15,6 @@ export function formatCommandId(owner: string, id: string): string {
 
 /** Returns the owner a full command id starts with, and an empty string where it has none. */
 export function getCommandOwner(fullId: string): string {
-  return fullId.includes(':') ? fullId.slice(0, fullId.indexOf(':')) : ''
+  const colon = fullId.indexOf(':')
+  return colon < 0 ? '' : fullId.slice(0, colon)
 }

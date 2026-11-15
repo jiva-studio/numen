@@ -147,9 +147,11 @@ function createUi(
 function createUiService(
   pluginId: string,
   host: PluginContextHost,
-  scope: PartsScope,
+  guards: { readonly guard: RegistrationGuard; readonly check: RequirePermission },
 ): PluginUi {
-  const ui = guardService(createUi(pluginId, host, scope.check), SERVICE_RULES.ui, scope.guard)
+  const ui = guardService(createUi(pluginId, host, guards.check), SERVICE_RULES.ui, {
+    check: guards.check,
+  })
   return pickDefinedParts<PluginUi>({
     workspace: ui.workspace,
     window: ui.window,
@@ -157,7 +159,7 @@ function createUiService(
     drops: ui.drops,
     slots: ui.slots,
     notices: ui.notices,
-    mountView: createMountView(host, scope),
+    mountView: createMountView(host, guards.guard),
   })
 }
 
@@ -181,14 +183,15 @@ function createWork(pluginId: string, host: PluginContextHost, add: Track): Plug
 }
 
 /** What both factories build on: the plugin, its permission check and its subscriptions. */
-interface PartsScope extends RegistrationGuard {
+interface PartsScope {
+  readonly target: PermissionTarget
   readonly subscriptions: SubscriptionList
+  readonly add: Track
   readonly check: RequirePermission
-  readonly guard: { readonly check: RequirePermission }
 }
 
 function createPluginContext(scope: PartsScope, host: PluginContextHost): PluginContext {
-  const { target, add, guard } = scope
+  const { target, add, check } = scope
   const { pluginId, manifest } = target
   const slotView = createSlotViewRegistration(
     { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
@@ -205,7 +208,7 @@ function createPluginContext(scope: PartsScope, host: PluginContextHost): Plugin
       openExternal: guardService(
         { openExternal: createExternalOpener(host.ui.openExternal) },
         rules.identity,
-        guard,
+        { check },
       ).openExternal,
       subscriptions: scope.subscriptions.view,
       hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
@@ -213,23 +216,23 @@ function createPluginContext(scope: PartsScope, host: PluginContextHost): Plugin
     register: guardService(
       createRegistrations(pluginId, host, { target, add, slotView }),
       rules.register,
-      guard,
+      { check },
     ),
-    settings: guardService(createSettings(pluginId, host, add), rules.settings, guard),
-    health: health && guardService(health, rules.health, guard),
+    settings: guardService(createSettings(pluginId, host, add), rules.settings, { check }),
+    health: health && guardService(health, rules.health, { check }),
   })
 }
 
 function createHostServices(scope: PartsScope, host: PluginContextHost): HostServices {
-  const { target, add, guard } = scope
+  const { target, add, check } = scope
   const { pluginId } = target
   const rules = SERVICE_RULES
   return {
-    vault: guardService(createVault(pluginId, host, add), rules.vault, guard),
-    tabs: guardService(createTabs(host), rules.tabs, guard),
-    ui: createUiService(pluginId, host, scope),
-    work: guardService(createWork(pluginId, host, add), rules.work, guard),
-    events: guardService(createEvents(pluginId, host, add), rules.events, guard),
+    vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
+    tabs: guardService(createTabs(host), rules.tabs, { check }),
+    ui: createUiService(pluginId, host, { guard: scope, check }),
+    work: guardService(createWork(pluginId, host, add), rules.work, { check }),
+    events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
   }
 }
 
@@ -248,13 +251,11 @@ export function createPluginParts(
 ): PluginParts {
   const subscriptions = createSubscriptionList()
   const target: PermissionTarget = { pluginId, manifest }
-  const check: RequirePermission = (p, op) => checkPermission(target, p, op)
   const scope: PartsScope = {
     target,
     subscriptions,
     add: (d: Disposable) => trackSubscription(subscriptions, d),
-    check,
-    guard: { check },
+    check: (p, op) => checkPermission(target, p, op),
   }
   return { plugin: createPluginContext(scope, host), host: createHostServices(scope, host) }
 }

@@ -134,12 +134,11 @@ async function runSharedCommand(
     await runHandler(parts, only, { note, values, isAwaited: run.isAwaited })
     return true
   }
-  const hasItem = itemId.includes(ITEM_SEPARATOR)
   const separator = itemId.indexOf(ITEM_SEPARATOR)
-  const pluginId = hasItem ? itemId.slice(0, separator) : itemId
+  const pluginId = separator < 0 ? itemId : itemId.slice(0, separator)
   const handler = handlers.find((one) => one.pluginId === pluginId)
   if (!handler) return false
-  const item = hasItem ? itemId.slice(separator + 1) : undefined
+  const item = separator < 0 ? undefined : itemId.slice(separator + 1)
   await runHandler(parts, handler, { note, itemId: item, values, isAwaited: run.isAwaited })
   return true
 }

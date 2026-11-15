@@ -113,7 +113,7 @@ export function registerReaderEntry(
       if (isDisposed) return
       isDisposed = true
       for (const fn of cleanups) fn()
-      readers.delete(registration.id)
+      if (readers.get(registration.id) === entry) readers.delete(registration.id)
     },
   }
   readers.set(registration.id, entry)
@@ -182,7 +182,7 @@ export function registerTabKindEntry(
       if (isDisposed) return
       isDisposed = true
       for (const fn of cleanups) fn()
-      tabKinds.delete(registration.kind)
+      if (tabKinds.get(registration.kind) === entry) tabKinds.delete(registration.kind)
     },
   }
   tabKinds.set(registration.kind, entry)

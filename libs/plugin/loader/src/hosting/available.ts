@@ -38,7 +38,7 @@ function getBeforeHandlerState(
   if (plugins.hasPluginFrontend?.(declaration.pluginId) === false) return 'left'
   if (plugins.isPluginFailed?.(declaration.pluginId)) return 'left'
   if (!registry.plugins.activated.value.has(declaration.pluginId)) return 'available'
-  if (registry.plugins.starting.value.has(declaration.pluginId)) return 'available'
+  if (registry.plugins.starting?.value.has(declaration.pluginId)) return 'available'
   return plugins.hasPluginBackend?.(declaration.pluginId) === true ? 'left' : 'unbound'
 }
 

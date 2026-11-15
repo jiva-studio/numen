@@ -88,7 +88,7 @@ function createRegistrationBridge(
         registration,
         getContext: () => registry.plugins.contexts.get(pluginId)?.plugin,
         isNoteEditor: isNoteEditorKind(
-          registry.plugins.contextManifests.value.get(pluginId),
+          registry.plugins.contextManifests?.value.get(pluginId),
           registration.kind,
         ),
       }),
@@ -275,7 +275,7 @@ function createLifecycleApi({ registry, contextHost, keybindings, entries }: Lif
         const effectiveManifest = manifest ?? registry.plugins.manifests.get(pluginId)
         parts = createPluginParts(pluginId, contextHost, effectiveManifest)
         registry.plugins.contexts.set(pluginId, parts)
-        if (effectiveManifest) {
+        if (effectiveManifest && registry.plugins.contextManifests) {
           registry.plugins.contextManifests.value = new Map(
             registry.plugins.contextManifests.value,
           ).set(pluginId, effectiveManifest)
@@ -324,7 +324,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     hasPluginItems: commands.hasKnownItems,
   })
   const readSlotEntries = () =>
-    slotDeps.getSlotEntries?.(registry.plugins.contextManifests.value)
+    slotDeps.getSlotEntries?.(registry.plugins.contextManifests?.value ?? new Map())
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
     getEntries: readSlotEntries,
