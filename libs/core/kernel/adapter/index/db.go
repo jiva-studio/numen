@@ -188,9 +188,6 @@ func (d *DB) SearchFloors() *searchpolicy.Repository {
 	return searchpolicy.NewRepository(d.read, d.write)
 }
 
-// SearchSamples reads the titles and vectors a plugin measures the floor with.
-func (d *DB) SearchSamples() *searchpolicy.Samples { return searchpolicy.NewSamples(d.read) }
-
 func dsn(path string, pos settings) string {
 	return dsnOf(path, append(slices.Clone(getPragmas()), pos.synchronous))
 }
