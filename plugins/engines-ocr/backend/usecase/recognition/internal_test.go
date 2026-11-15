@@ -741,11 +741,9 @@ func TestRecognitionPreparesDocumentsBeforeItsTurn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runEnd, isStarted, err := r.Start(t.Context(), Request{Path: "scan.png"})
-	if err != nil || !isStarted {
-		t.Fatalf("started %v, err = %v", isStarted, err)
+	if _, err := runRecognitionNow(t.Context(), r, Request{Path: "scan.png"}); err != nil {
+		t.Fatal(err)
 	}
-	<-runEnd
 	if queue.preparesAtEnqueue != 1 {
 		t.Fatalf("the documents were prepared %d times before the turn, want 1", queue.preparesAtEnqueue)
 	}
