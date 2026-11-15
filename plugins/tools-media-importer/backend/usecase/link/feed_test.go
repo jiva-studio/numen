@@ -15,7 +15,7 @@ func (w *world) addLinkNote(t *testing.T, path, content string) {
 	w.texts.File(path, []byte(content))
 }
 
-func (w *world) fetchMissing(t *testing.T) {
+func (w *world) fetchMissingTexts(t *testing.T) {
 	t.Helper()
 	if err := w.links.FetchMissingTexts(t.Context()); err != nil {
 		t.Fatal(err)
@@ -40,12 +40,12 @@ func newAutomaticWorld(t *testing.T) *world {
 
 func TestALinkNoteAddedToTheVaultGetsItsTextOnce(t *testing.T) {
 	w := newAutomaticWorld(t)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 	w.addLinkNote(t, "links/mill.md", linkNote)
 	w.vault.File("notes/plain.md", "---\ntype: deck\nurl: "+videoAddress+"\n---\n")
 
-	w.fetchMissing(t)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
+	w.fetchMissingTexts(t)
 
 	if got := w.sites.texts.Load(); got != 1 {
 		t.Errorf("the text was fetched %d times, want once", got)
@@ -55,11 +55,11 @@ func TestALinkNoteAddedToTheVaultGetsItsTextOnce(t *testing.T) {
 	}
 }
 
-func TestTheLinkNotesTheVaultHoldsGetTheirTextOnTheFirstRun(t *testing.T) {
+func TestTheFirstRunFetchesTheTextOfEveryLinkNote(t *testing.T) {
 	w := newAutomaticWorld(t)
 	w.addLinkNote(t, "links/mill.md", linkNote)
 
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 
 	if got := w.countVersions(t, "links/mill.md"); got != 1 {
 		t.Errorf("the link note has %d versions, want 1", got)
@@ -68,14 +68,14 @@ func TestTheLinkNotesTheVaultHoldsGetTheirTextOnTheFirstRun(t *testing.T) {
 
 func TestAMovedLinkNoteIsNotFetchedAgain(t *testing.T) {
 	w := newAutomaticWorld(t)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 	w.addLinkNote(t, "links/mill.md", linkNote)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 
 	if _, err := w.vault.MoveNotes(t.Context(), []string{"links/mill.md"}, "archive"); err != nil {
 		t.Fatal(err)
 	}
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 
 	if got := w.sites.texts.Load(); got != 1 {
 		t.Errorf("the text was fetched %d times, want once", got)
@@ -84,18 +84,18 @@ func TestAMovedLinkNoteIsNotFetchedAgain(t *testing.T) {
 
 func TestABatchReadTwiceFetchesNothingMore(t *testing.T) {
 	w := newAutomaticWorld(t)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 	before, err := w.store.Read(t.Context(), link.CursorFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 	w.addLinkNote(t, "links/mill.md", linkNote)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 
 	if err := w.store.Write(t.Context(), link.CursorFile, before); err != nil {
 		t.Fatal(err)
 	}
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 
 	if got := w.sites.texts.Load(); got != 1 {
 		t.Errorf("the text was fetched %d times, want once", got)
@@ -108,7 +108,7 @@ func TestABatchReadTwiceFetchesNothingMore(t *testing.T) {
 func TestARestartReadsOnlyTheChangesSinceTheCursor(t *testing.T) {
 	w := newAutomaticWorld(t)
 	w.addLinkNote(t, "links/mill.md", linkNote)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 	made, err := w.links.Read(t.Context(), "links/mill.md")
 	if err != nil {
 		t.Fatal(err)
@@ -137,11 +137,11 @@ func TestARestartReadsOnlyTheChangesSinceTheCursor(t *testing.T) {
 func TestAResetFetchesOnlyTheMissingTexts(t *testing.T) {
 	w := newAutomaticWorld(t)
 	w.addLinkNote(t, "links/mill.md", linkNote)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 	w.addLinkNote(t, "links/video.md", "---\ntype: link\nurl: "+videoAddress+"\n---\n")
 
 	w.vault.ResetFeed()
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 
 	if got := w.sites.texts.Load(); got != 2 {
 		t.Errorf("the texts were fetched %d times, want twice", got)
@@ -150,12 +150,12 @@ func TestAResetFetchesOnlyTheMissingTexts(t *testing.T) {
 
 func TestAChangedAddressIsFetchedAgain(t *testing.T) {
 	w := newAutomaticWorld(t)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 	w.addLinkNote(t, "links/mill.md", linkNote)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 
 	w.addLinkNote(t, "links/mill.md", "---\ntype: link\nurl: "+videoAddress+"\n---\n")
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 
 	if got := w.sites.texts.Load(); got != 2 {
 		t.Errorf("the texts were fetched %d times, want twice", got)
@@ -166,7 +166,7 @@ func TestNothingIsFetchedWhileTheSettingIsOff(t *testing.T) {
 	w := newWorld(t)
 	w.addLinkNote(t, "links/mill.md", linkNote)
 
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 
 	if got := w.sites.texts.Load(); got != 0 {
 		t.Errorf("the text was fetched %d times with the setting off", got)
@@ -175,7 +175,7 @@ func TestNothingIsFetchedWhileTheSettingIsOff(t *testing.T) {
 		t.Error("the cursor moved with the setting off")
 	}
 	w.isTextAutomatic.Store(true)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 	if got := w.countVersions(t, "links/mill.md"); got != 1 {
 		t.Errorf("after the setting is on the link note has %d versions, want 1", got)
 	}
@@ -184,7 +184,7 @@ func TestNothingIsFetchedWhileTheSettingIsOff(t *testing.T) {
 func TestAStartWithReviewFetchesEveryMissingTextInTheBackground(t *testing.T) {
 	w := newAutomaticWorld(t)
 	w.addLinkNote(t, "links/mill.md", linkNote)
-	w.fetchMissing(t)
+	w.fetchMissingTexts(t)
 	made, err := w.links.Read(t.Context(), "links/mill.md")
 	if err != nil {
 		t.Fatal(err)

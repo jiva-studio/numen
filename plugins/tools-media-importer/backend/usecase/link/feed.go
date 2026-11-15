@@ -14,10 +14,6 @@ import (
 // change feed of the vault.
 const CursorFile = "links.cursor.json"
 
-// feedEvents are the events after which a link note can lack the text of its address: the note is
-// added, or its frontmatter, which holds the address, changes. A move keeps the text of the note.
-var feedEvents = []string{host.EventFileAdded, host.EventNoteFrontmatterChanged}
-
 // cursorStore keeps the cursor in the plugin's folder of the store of a vault.
 type cursorStore struct {
 	folder Folder
@@ -110,7 +106,8 @@ func (l *Links) fetchMissingTexts(ctx context.Context, isReview bool) error {
 			return err
 		}
 	}
-	return changes.Follow(ctx, from, feedEvents,
+	events := []string{host.EventFileAdded, host.EventNoteFrontmatterChanged}
+	return changes.Follow(ctx, from, events,
 		func(ctx context.Context, batch []host.FileChange) error {
 			paths := make([]string, 0, len(batch))
 			for _, change := range batch {
