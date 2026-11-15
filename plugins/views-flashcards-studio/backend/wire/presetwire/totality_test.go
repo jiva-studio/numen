@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/apitest"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/enumtest"
 
@@ -16,19 +17,19 @@ import (
 // test and does not convert to a message with no content.
 
 func TestEveryGoalCrossesBothWays(t *testing.T) {
-	enumtest.RoundTrip(t, api.GetGoalValues(), ConvertGoalFromWire, ConvertGoalToWire)
+	enumtest.RoundTrip(t, apitest.GetGoalValues(), ConvertGoalFromWire, ConvertGoalToWire)
 }
 
 func TestEveryRuleCrossesBothWays(t *testing.T) {
-	enumtest.RoundTrip(t, api.GetRuleValues(), ConvertRuleFromWire, ConvertRuleToWire)
+	enumtest.RoundTrip(t, apitest.GetRuleValues(), ConvertRuleFromWire, ConvertRuleToWire)
 }
 
 func TestEveryBudgetUnitCrossesBothWays(t *testing.T) {
-	enumtest.RoundTrip(t, api.GetBudgetUnitValues(), ConvertBudgetUnitFromWire, ConvertBudgetUnitToWire)
+	enumtest.RoundTrip(t, apitest.GetBudgetUnitValues(), ConvertBudgetUnitFromWire, ConvertBudgetUnitToWire)
 }
 
 func TestEveryVerdictIsSavedFromOne(t *testing.T) {
-	enumtest.CheckProduced(t, api.GetStopReasonValues(), map[api.StopReason]review.StopReason{
+	enumtest.CheckProduced(t, apitest.GetStopReasonValues(), map[api.StopReason]review.StopReason{
 		api.StopReasonNothing:   review.StoppedNothing,
 		api.StopReasonNoMinutes: review.StoppedNoMinutes,
 		api.StopReasonNoCards:   review.StoppedNoCards,
