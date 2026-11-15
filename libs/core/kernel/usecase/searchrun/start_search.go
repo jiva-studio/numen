@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchslot"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchkept"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
 	"github.com/jiva-studio/numen/libs/note/ulid"
 )
 

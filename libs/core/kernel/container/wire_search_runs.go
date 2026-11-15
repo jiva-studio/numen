@@ -7,12 +7,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/indexgeneration"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchstore"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchkept"
 	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 

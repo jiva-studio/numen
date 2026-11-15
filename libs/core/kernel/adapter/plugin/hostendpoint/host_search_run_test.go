@@ -14,12 +14,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/indexgeneration"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchstore"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchkept"
 	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
