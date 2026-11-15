@@ -9,3 +9,6 @@ var ErrNotADocument = errors.New("not a document this reads")
 // ErrOtherRecipe is a coarse pass that failed because the index holds its vectors under another
 // recipe than the one asked for.
 var ErrOtherRecipe = errors.New("the vectors are kept under another recipe")
+
+// ErrInvalidWords is a words query that FTS5 cannot parse.
+var ErrInvalidWords = errors.New("the words query is not valid FTS5")

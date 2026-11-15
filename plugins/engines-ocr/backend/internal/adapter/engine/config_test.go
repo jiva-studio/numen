@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
 )
 
 func TestAnUnresolvedProfileConsumesTheFallbackCounts(t *testing.T) {
@@ -72,17 +72,5 @@ func TestTheModelsAreFoundWhereTheConfigurationReturns(t *testing.T) {
 	}
 	if got := onnx.ResolveLibrary(cfg.Runtime, cfg.Dir); got != "lib.so" {
 		t.Errorf("runtime = %q, want lib.so", got)
-	}
-}
-
-func TestTheSessionsOpenOnTheCPUUnlessTheHostNamesAProvider(t *testing.T) {
-	for _, one := range []struct {
-		name string
-		want onnx.Provider
-	}{{"", onnx.ProviderCPU}, {"auto", onnx.ProviderCPU}, {" AUTO ", onnx.ProviderCPU}, {"cuda", onnx.ProviderCUDA}} {
-		t.Setenv("NUMEN_ONNX_PROVIDER", one.name)
-		if got := getSessionProvider(); got != one.want {
-			t.Errorf("with %q, getSessionProvider() = %q, want %q", one.name, got, one.want)
-		}
 	}
 }

@@ -20,9 +20,9 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/features"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/ortraw"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/segmenter"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/tokens"
@@ -143,17 +143,19 @@ func Open(ctx context.Context, runtime Runtime, cfg settings.Config) (*Transcrib
 }
 
 func openSession(library *onnx.Library, engine *ort.Engine, path string, threads int) (*ort.Session, error) {
+	cacheRoot := getCacheRoot()
 	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider:     getSessionProvider(),
+		Provider:     onnx.GetSessionProvider(),
 		Threads:      threads,
 		ComputeUnits: onnx.ComputeUnitsDefault,
+		CacheRoot:    cacheRoot,
 		ModelPath:    path,
 	})
 	if err != nil {
 		return nil, err
 	}
 	defer options.Destroy()
-	return onnx.NewSession(engine, path, options)
+	return onnx.NewSession(engine, cacheRoot, path, options)
 }
 
 // Close releases the models this transcriber loaded. The runtime they ran on
