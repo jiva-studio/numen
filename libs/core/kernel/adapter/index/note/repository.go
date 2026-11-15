@@ -12,10 +12,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/changefeed"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 //go:embed sql/*.sql
@@ -93,11 +95,24 @@ func saveNote(
 	if err != nil {
 		return false, err
 	}
+	before, err := changefeed.ReadState(ctx, tx, vault, n.FileStat.Path)
+	if err != nil {
+		return false, err
+	}
 	row, stored, err := saveSourceAndNote(ctx, tx, vault, indexed)
 	if err != nil {
 		return false, err
 	}
-	return previous != stored, saveNoteParts(ctx, tx, vault, row, indexed)
+	if err := changefeed.RecordSaved(ctx, tx, vault, n.FileStat.Path, before); err != nil {
+		return false, err
+	}
+	isFrontmatterChanged = previous != stored
+	if isFrontmatterChanged {
+		if err := changefeed.Record(ctx, tx, vault, row, manifest.EventNoteFrontmatterChanged); err != nil {
+			return false, err
+		}
+	}
+	return isFrontmatterChanged, saveNoteParts(ctx, tx, vault, row, indexed)
 }
 
 func saveNoteParts(ctx context.Context, tx *sqlwrite.Transaction, vault, row int64, indexed domain.NoteChunks) error {
@@ -174,7 +189,7 @@ func saveSourceAndNote(
 
 func readStoredFrontmatter(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) (sql.NullString, error) {
 	var stored sql.NullString
-	err := tx.QueryRowContext(ctx, getStatement("frontmatter_at"), vault, path).Scan(&path, &stored)
+	err := tx.QueryRowContext(ctx, getStatement("frontmatter_at"), vault, path).Scan(new(int64), &path, &stored)
 	if errors.Is(err, sql.ErrNoRows) {
 		return sql.NullString{}, nil
 	}
@@ -245,6 +260,9 @@ func removeNote(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path
 		if err := exec(ctx, tx, name, row); err != nil {
 			return err
 		}
+	}
+	if err := changefeed.RecordRemoved(ctx, tx, vault, row); err != nil {
+		return err
 	}
 	return exec(ctx, tx, "delete_source", row)
 }

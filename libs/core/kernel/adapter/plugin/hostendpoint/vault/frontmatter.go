@@ -39,7 +39,9 @@ func (e *lookupsCalls) ReadFrontmatter(
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		notes = append(notes, &v1.NoteFrontmatter{Path: one.Path, Values: values})
+		notes = append(notes, &v1.NoteFrontmatter{Path: one.Path, Values: values, SourceId: int64(one.SourceID)})
 	}
-	return connect.NewResponse(&v1.ReadFrontmatterResponse{Notes: notes, NextPageToken: page.After}), nil
+	return connect.NewResponse(&v1.ReadFrontmatterResponse{
+		Notes: notes, NextPageToken: page.After, Cursor: newCursorMessage(page.Cursor),
+	}), nil
 }

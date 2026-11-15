@@ -54,7 +54,7 @@ func (r readingFrontmatter) ReadFrontmatter(ctx context.Context, q frontmatter.Q
 func newFrontmatterClient(t *testing.T, token string, stored storedFrontmatter, limits query.FrontmatterLimits) numenv1connect.HostVaultServiceClient {
 	t.Helper()
 	hosted := newCallers()
-	hosted.vault = vaultOf(readingFrontmatter{read: query.NewReadFrontmatter(stored, limits)})
+	hosted.vault = vaultOf(readingFrontmatter{read: query.NewReadFrontmatter(stored, &memoryFeed{}, limits)})
 	return newVaultClient(t, hosted, token)
 }
 

@@ -39,7 +39,7 @@ func (v *Vault) ReadFrontmatter(ctx context.Context, q host.FrontmatterQuery) (h
 	if len(q.Paths) > 0 {
 		paths = slices.Compact(slices.Sorted(slices.Values(q.Paths)))
 	}
-	var page host.FrontmatterPage
+	page := host.FrontmatterPage{Cursor: v.feed.getCursor()}
 	for _, path := range paths {
 		note, ok := notes[path]
 		if !ok || path <= q.PageToken {
@@ -49,7 +49,7 @@ func (v *Vault) ReadFrontmatter(ctx context.Context, q host.FrontmatterQuery) (h
 		if err != nil {
 			return host.FrontmatterPage{}, fmt.Errorf("%s: %w", path, err)
 		}
-		page.Notes = append(page.Notes, host.NoteFrontmatter{Path: path, Values: values})
+		page.Notes = append(page.Notes, host.NoteFrontmatter{SourceID: v.feed.getSourceID(path), Path: path, Values: values})
 		if len(page.Notes) == limit {
 			page.NextPageToken = path
 			break

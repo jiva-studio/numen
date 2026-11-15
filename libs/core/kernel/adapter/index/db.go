@@ -15,12 +15,14 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"time"
 
 	// The driver and the vector extension register themselves under the names
 	// a DSN opens them by, and nothing here names either package.
 	_ "modernc.org/sqlite"
 	_ "modernc.org/sqlite/vec"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/changefeed"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/opentabs"
@@ -115,6 +117,9 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	}
 	read.SetMaxOpenConns(max(4, runtime.NumCPU()))
 	read.SetMaxIdleConns(max(2, runtime.NumCPU()/2))
+	if err := changefeed.Trim(ctx, write, time.Now().Add(-changefeed.RemovalLifetime)); err != nil {
+		return nil, errors.Join(err, read.Close(), write.Close())
+	}
 	return &DB{write: write, read: read, frontmatter: &note.FrontmatterChanges{}}, nil
 }
 
@@ -132,6 +137,14 @@ func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write) }
 
 // FrontmatterChanges reports the notes whose frontmatter a write through Notes changed.
 func (d *DB) FrontmatterChanges() *note.FrontmatterChanges { return d.frontmatter }
+
+// FileChanges reads the file change feed of each vault.
+func (d *DB) FileChanges() *changefeed.Feed { return changefeed.NewFeed(d.read) }
+
+// TrimFileChanges drops the removals the feeds stored before the time.
+func (d *DB) TrimFileChanges(ctx context.Context, before time.Time) error {
+	return changefeed.Trim(ctx, d.write, before)
+}
 
 // Maintenance writes, so it takes the pool that is allowed to.
 func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.write} }

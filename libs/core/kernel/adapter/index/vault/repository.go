@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/changefeed"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -25,10 +26,18 @@ type Repository struct{ db *sql.DB }
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
 // Register creates a row for the vault that other rows reference. A vault the
-// index already tracks keeps its existing row.
+// index already tracks keeps its existing row and its change feed.
 func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error {
-	_, err := sqlwrite.Exec(ctx, r.db, getStatement("register"), string(vaultID))
-	return err
+	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		if _, err := tx.ExecContext(ctx, getStatement("register"), string(vaultID)); err != nil {
+			return err
+		}
+		var row int64
+		if err := tx.QueryRowContext(ctx, getStatement("vault_row"), string(vaultID)).Scan(&row); err != nil {
+			return fmt.Errorf("which row this vault is filed under: %w", err)
+		}
+		return changefeed.OpenFeed(ctx, tx, row)
+	})
 }
 
 func getForgettingStatements() []string {

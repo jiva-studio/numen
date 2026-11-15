@@ -15,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
 )
 
-// UpdateCommand is the command that reads the tags of notes again: of the notes a trigger on
-// note.frontmatterChanged names, or of the one note of a run from the palette.
+// UpdateCommand is the command that brings the tags of the vault up to date with its file change feed.
+// A trigger on note.frontmatterChanged runs it; the notes the trigger names are read from the feed.
 const UpdateCommand = "tags.update"
 
 // ShownVault names the vault the host shows, which a command runs over.
@@ -37,7 +37,8 @@ func openHostAt(endpoint hostcall.Endpoint) Host {
 	return Host{
 		Shown: client,
 		Open: func(id domain.VaultID) tagcache.Vault {
-			return tagcache.Vault{Frontmatter: client.With(id), Store: store.With(id)}
+			vault := client.With(id)
+			return tagcache.Vault{Frontmatter: vault, Feed: vault, Store: store.With(id)}
 		},
 	}
 }
@@ -72,16 +73,12 @@ func NewRegistries(h Host) (*command.Registry, *tools.Registry, error) {
 }
 
 func newUpdateCommand(shown ShownVault, cache *tagcache.Caches) command.Run {
-	return func(ctx context.Context, req command.Request) (command.Result, error) {
+	return func(ctx context.Context, _ command.Request) (command.Result, error) {
 		v, err := shown.GetVault(ctx)
 		if err != nil {
 			return command.Result{}, err
 		}
-		paths := req.Paths
-		if len(paths) == 0 {
-			paths = []string{req.Path}
-		}
-		if err := cache.UpdateNotes(ctx, v.ID, paths); err != nil {
+		if err := cache.UpdateVault(ctx, v.ID); err != nil {
 			return command.Result{}, err
 		}
 		return command.Result{}, nil

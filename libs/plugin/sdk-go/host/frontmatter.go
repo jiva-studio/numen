@@ -25,17 +25,21 @@ type FrontmatterQuery struct {
 	PageToken string
 }
 
-// NoteFrontmatter is the frontmatter of one note, as JSON decodes it.
+// NoteFrontmatter is the frontmatter of one note, as JSON decodes it, and the number the index keeps
+// the note under, which stays the same when the note moves.
 type NoteFrontmatter struct {
-	Path   string
-	Values map[string]any
+	SourceID int64
+	Path     string
+	Values   map[string]any
 }
 
 // FrontmatterPage is one page of a read, in path order. NextPageToken reads the next page, and is
-// empty after the last.
+// empty after the last. Cursor is the place in the file change feed taken before the page was read:
+// a reader that reads the feed from the cursor of its first page loses no change made during the read.
 type FrontmatterPage struct {
 	Notes         []NoteFrontmatter
 	NextPageToken string
+	Cursor        FileChangeCursor
 }
 
 // FrontmatterReader reads the frontmatter of the notes of a vault as the index holds it. It needs
@@ -57,13 +61,13 @@ func (c *Client) ReadFrontmatter(ctx context.Context, q FrontmatterQuery) (Front
 	if err := fail(res.Msg.GetError()); err != nil {
 		return FrontmatterPage{}, err
 	}
-	page := FrontmatterPage{NextPageToken: res.Msg.GetNextPageToken()}
+	page := FrontmatterPage{NextPageToken: res.Msg.GetNextPageToken(), Cursor: readCursor(res.Msg.GetCursor())}
 	for _, one := range res.Msg.GetNotes() {
 		values := map[string]any{}
 		if err := json.Unmarshal(one.GetValues(), &values); err != nil {
 			return FrontmatterPage{}, fmt.Errorf("read the frontmatter of %s: %w", one.GetPath(), err)
 		}
-		page.Notes = append(page.Notes, NoteFrontmatter{Path: one.GetPath(), Values: values})
+		page.Notes = append(page.Notes, NoteFrontmatter{SourceID: one.GetSourceId(), Path: one.GetPath(), Values: values})
 	}
 	return page, nil
 }

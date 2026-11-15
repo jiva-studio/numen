@@ -90,8 +90,9 @@ func capability[T any](fake any) T {
 func vaultOf(fake any) *vaultapi.Access {
 	return &vaultapi.Access{
 		Notes: capability[vaultapi.NoteLookup](fake), Frontmatter: capability[vaultapi.FrontmatterLookup](fake),
-		Links: capability[vaultapi.LinkLookup](fake),
-		Files: capability[vaultapi.FileReader](fake), Writer: capability[vaultapi.FileWriter](fake),
+		FileChanges: capability[vaultapi.FileChangeLookup](fake),
+		Links:       capability[vaultapi.LinkLookup](fake),
+		Files:       capability[vaultapi.FileReader](fake), Writer: capability[vaultapi.FileWriter](fake),
 		Arranger: capability[vaultapi.Arranger](fake), LinkEditor: capability[vaultapi.LinkEditor](fake),
 		Watch: capability[vaultapi.Watch](fake), Switch: capability[vaultapi.Switch](fake),
 		Stores: capability[vaultapi.StoreOpener](fake), Cache: capability[vaultapi.CacheStore](fake),

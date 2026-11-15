@@ -29,7 +29,7 @@ func newPlugin(t *testing.T, files map[string]string) plugin {
 	commands, registry, err := service.NewRegistries(service.Host{
 		Shown: v,
 		Open: func(id domain.VaultID) tagcache.Vault {
-			return tagcache.Vault{Frontmatter: v.With(id), Store: v.Store().With(id)}
+			return tagcache.Vault{Frontmatter: v.With(id), Feed: v.With(id), Store: v.Store().With(id)}
 		},
 	})
 	if err != nil {

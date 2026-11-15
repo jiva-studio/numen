@@ -14,9 +14,11 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/changefeed"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 //go:embed sql/*.sql
@@ -103,13 +105,22 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s S
 		if err != nil {
 			return err
 		}
-		var row int64
-		if err := tx.QueryRowContext(ctx, getStatement("save_source"),
-			vault, s.Path, s.Kind, s.Size, s.MTime, newNullableValue(s.ContentHash), newNullableValue(s.Recipe), newNullableValue(s.Producer)).Scan(&row); err != nil {
-			return fmt.Errorf("record the source %s: %w", s.Path, err)
-		}
-		return nil
+		_, err = saveSourceRow(ctx, tx, vault, s)
+		return err
 	})
+}
+
+func saveSourceRow(ctx context.Context, tx *sqlwrite.Transaction, vault int64, s Source) (int64, error) {
+	before, err := changefeed.ReadState(ctx, tx, vault, s.Path)
+	if err != nil {
+		return 0, err
+	}
+	var row int64
+	if err := tx.QueryRowContext(ctx, getStatement("save_source"),
+		vault, s.Path, s.Kind, s.Size, s.MTime, newNullableValue(s.ContentHash), newNullableValue(s.Recipe), newNullableValue(s.Producer)).Scan(&row); err != nil {
+		return 0, fmt.Errorf("record the source %s: %w", s.Path, err)
+	}
+	return row, changefeed.RecordSaved(ctx, tx, vault, s.Path, before)
 }
 
 // SaveExtraction records what a file is and replaces its chunks with the ones
@@ -123,10 +134,9 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID,
 		if err != nil {
 			return err
 		}
-		var source int64
-		if err := tx.QueryRowContext(ctx, getStatement("save_source"),
-			vault, s.Path, s.Kind, s.Size, s.MTime, newNullableValue(s.ContentHash), newNullableValue(s.Recipe), newNullableValue(s.Producer)).Scan(&source); err != nil {
-			return fmt.Errorf("record the source %s: %w", s.Path, err)
+		source, err := saveSourceRow(ctx, tx, vault, s)
+		if err != nil {
+			return err
 		}
 		if err := Replace(ctx, tx, source, vault, chunks); err != nil {
 			return err
@@ -189,6 +199,9 @@ func removeSource(ctx context.Context, tx *sqlwrite.Transaction, vault int64, ki
 	if err := Clear(ctx, tx, source); err != nil {
 		return err
 	}
+	if err := changefeed.RecordRemoved(ctx, tx, vault, source); err != nil {
+		return err
+	}
 	return exec(ctx, tx, "delete_source", source)
 }
 
@@ -221,15 +234,28 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 		if err := updateNoteName(ctx, tx, vault, from, to); err != nil {
 			return err
 		}
-		first, past := getRangeUnder(from)
-		// What a path keeps is counted off it in characters: that is what the
-		// statement cuts by, and a path is not Latin alone.
-		fromLen := utf8.RuneCountInString(from) + 1
-		if err := exec(ctx, tx, "move_sources", to, fromLen, vault, from, first, past); err != nil {
+		return moveRows(ctx, tx, vault, from, to)
+	})
+}
+
+func moveRows(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {
+	moving, err := getSourcesUnder(ctx, tx, vault, from)
+	if err != nil {
+		return err
+	}
+	first, past := getRangeUnder(from)
+	// What a path keeps is counted off it in characters: that is what the
+	// statement cuts by, and a path is not Latin alone.
+	fromLen := utf8.RuneCountInString(from) + 1
+	if err := exec(ctx, tx, "move_sources", to, fromLen, vault, from, first, past); err != nil {
+		return err
+	}
+	for _, one := range moving {
+		if err := changefeed.Record(ctx, tx, vault, one.id, manifest.EventFileMoved); err != nil {
 			return err
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func hasSourcesUnder(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) (_ bool, err error) {
@@ -253,42 +279,62 @@ func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64
 		return err
 	}
 	for _, source := range displaced {
-		if err := Clear(ctx, tx, source); err != nil {
+		if err := Clear(ctx, tx, source.id); err != nil {
 			return err
 		}
-		if err := exec(ctx, tx, "delete_source", source); err != nil {
+		if err := changefeed.RecordRemoved(ctx, tx, vault, source.id); err != nil {
+			return err
+		}
+		if err := exec(ctx, tx, "delete_source", source.id); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
+// storedSource is the row number and the path of one source.
+type storedSource struct {
+	id   int64
+	path string
+}
+
 func getDisplacedSources(
 	ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string,
-) (displaced []int64, err error) {
-	first, past := getRangeUnder(to)
-	rows, err := tx.QueryContext(ctx, getStatement("sources_under"), vault, to, first, past)
+) ([]storedSource, error) {
+	under, err := getSourcesUnder(ctx, tx, vault, to)
 	if err != nil {
-		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
+		return nil, err
 	}
-	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
-
 	movingFirst, movingPast := getRangeUnder(from)
-	for rows.Next() {
-		var source int64
-		var path string
-		if err := rows.Scan(&source, &path); err != nil {
-			return nil, fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
-		}
-		if path == from || (path >= movingFirst && path < movingPast) {
+	var displaced []storedSource
+	for _, one := range under {
+		if one.path == from || (one.path >= movingFirst && one.path < movingPast) {
 			continue
 		}
-		displaced = append(displaced, source)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
+		displaced = append(displaced, one)
 	}
 	return displaced, nil
+}
+
+func getSourcesUnder(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) (_ []storedSource, err error) {
+	first, past := getRangeUnder(path)
+	rows, err := tx.QueryContext(ctx, getStatement("sources_under"), vault, path, first, past)
+	if err != nil {
+		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+	var out []storedSource
+	for rows.Next() {
+		var one storedSource
+		if err := rows.Scan(&one.id, &one.path); err != nil {
+			return nil, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
+		}
+		out = append(out, one)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
+	}
+	return out, nil
 }
 
 func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {

@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/filechange"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -39,16 +40,17 @@ func (q *Queries) listFrontmatterAfter(ctx context.Context, vault int64, query f
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 	var out []frontmatter.Note
 	for rows.Next() {
+		var source int64
 		var path string
 		var stored sql.NullString
-		if err := rows.Scan(&path, &stored); err != nil {
+		if err := rows.Scan(&source, &path, &stored); err != nil {
 			return nil, err
 		}
 		values, err := readValues(stored, query.Keys)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", path, err)
 		}
-		out = append(out, frontmatter.Note{Path: path, Values: values})
+		out = append(out, frontmatter.Note{SourceID: filechange.SourceID(source), Path: path, Values: values})
 	}
 	return out, rows.Err()
 }
@@ -68,8 +70,9 @@ func (q *Queries) listFrontmatterAt(ctx context.Context, vault int64, query fron
 		if len(out) >= query.Limit {
 			break
 		}
+		var source int64
 		var stored sql.NullString
-		err := statement.QueryRowContext(ctx, vault, path).Scan(&path, &stored)
+		err := statement.QueryRowContext(ctx, vault, path).Scan(&source, &path, &stored)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}
@@ -80,7 +83,7 @@ func (q *Queries) listFrontmatterAt(ctx context.Context, vault int64, query fron
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", path, err)
 		}
-		out = append(out, frontmatter.Note{Path: path, Values: values})
+		out = append(out, frontmatter.Note{SourceID: filechange.SourceID(source), Path: path, Values: values})
 	}
 	return out, nil
 }

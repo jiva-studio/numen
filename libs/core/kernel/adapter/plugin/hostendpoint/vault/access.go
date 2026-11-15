@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/filechange"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
@@ -15,6 +16,14 @@ type FrontmatterLookup interface {
 	// ReadFrontmatter returns one page of the notes the query names, in path order. A query over the
 	// limits of a read returns frontmatter.ErrInvalidQuery.
 	ReadFrontmatter(ctx context.Context, q frontmatter.Query) (frontmatter.Page, error)
+}
+
+// FileChangeLookup is the file change feed of the vault: the latest event of each kind of each file,
+// in the order the index stored them.
+type FileChangeLookup interface {
+	// ListFileChanges returns one page of the feed after the cursor of the query. A query over the
+	// limits of a read returns filechange.ErrInvalidQuery.
+	ListFileChanges(ctx context.Context, q filechange.Query) (filechange.Page, error)
 }
 
 // NoteLookup reads the index data of the notes of the vault.
@@ -126,6 +135,7 @@ type CacheStore interface {
 type Access struct {
 	Notes       NoteLookup
 	Frontmatter FrontmatterLookup
+	FileChanges FileChangeLookup
 	Links       LinkLookup
 	Files       FileReader
 	Writer      FileWriter

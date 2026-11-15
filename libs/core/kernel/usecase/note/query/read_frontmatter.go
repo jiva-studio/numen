@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 // FrontmatterLimits bound one read of frontmatter: the notes of a page, the paths and the keys a
@@ -26,14 +27,16 @@ func GetFrontmatterLimits() FrontmatterLimits {
 // ReadFrontmatter reads the stored frontmatter of the notes of a vault, a page at a time.
 type ReadFrontmatter struct {
 	queries noteport.FrontmatterQueries
+	feed    sourceport.FileChangeFeed
 	limits  FrontmatterLimits
 }
 
-func NewReadFrontmatter(queries noteport.FrontmatterQueries, limits FrontmatterLimits) ReadFrontmatter {
-	return ReadFrontmatter{queries: queries, limits: limits}
+func NewReadFrontmatter(queries noteport.FrontmatterQueries, feed sourceport.FileChangeFeed, limits FrontmatterLimits) ReadFrontmatter {
+	return ReadFrontmatter{queries: queries, feed: feed, limits: limits}
 }
 
-// Execute returns one page of the notes the query names. A Limit of 0 reads a page of the page size;
+// Execute returns one page of the notes the query names, and the cursor of the file change feed taken
+// before the page was read. A Limit of 0 reads a page of the page size;
 // a larger page, or more paths or keys than the limits allow, is frontmatter.ErrInvalidQuery.
 func (u ReadFrontmatter) Execute(ctx context.Context, v domain.Vault, q frontmatter.Query) (frontmatter.Page, error) {
 	switch {
@@ -47,11 +50,15 @@ func (u ReadFrontmatter) Execute(ctx context.Context, v domain.Vault, q frontmat
 	if q.Limit == 0 {
 		q.Limit = u.limits.PageSize
 	}
+	head, err := u.feed.GetHead(ctx, v.ID)
+	if err != nil {
+		return frontmatter.Page{}, err
+	}
 	notes, err := u.queries.ListFrontmatter(ctx, v.ID, q)
 	if err != nil {
 		return frontmatter.Page{}, err
 	}
-	page := frontmatter.Page{Notes: notes}
+	page := frontmatter.Page{Notes: notes, Cursor: head.Cursor}
 	if len(notes) == q.Limit {
 		page.After = notes[len(notes)-1].Path
 	}
