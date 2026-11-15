@@ -134,6 +134,7 @@ describe('createTabLinkSession', () => {
     const stream = session.start()
 
     await vi.waitFor(() => expect(deps.tabSync.applySync).toHaveBeenCalledWith(SYNC))
+    expect(deps.setHighlighted).not.toHaveBeenCalled()
     expect(core.watchTabLinks).toHaveBeenCalledWith('window-a', expect.any(AbortSignal))
     expect(deps.tabLinks.applySnapshot).toHaveBeenCalledExactlyOnceWith(SNAPSHOT)
     expect(core.writeTabLinks).toHaveBeenCalledExactlyOnceWith(REPORT)
@@ -282,11 +283,18 @@ describe('a snapshot', () => {
 describe('a failed tab report', () => {
   it('is sent again after the retry delay', async () => {
     const { deps, core, session } = setup([])
-    core.writeTabLinks.mockRejectedValueOnce(FAILURE)
+    core.writeTabLinks
+      .mockRejectedValueOnce(FAILURE)
+      .mockRejectedValueOnce(FAILURE)
+      .mockImplementationOnce(async () => {
+        session.reportTabs()
+      })
+      .mockRejectedValueOnce(FAILURE)
 
     session.reportTabs()
 
-    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(5))
+    expect(deps.onError).toHaveBeenCalledTimes(2)
     expect(deps.wait).toHaveBeenCalledWith(2000)
     expect(core.writeTabLinks.mock.calls[1]).toStrictEqual([REPORT])
   })
@@ -407,12 +415,12 @@ describe('getWindowReport', () => {
         ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
-      handle: { front: () => ({ id: 'agent:1', kind: 'agent', state: null }) },
+      handle: { front: () => ({ id: 'plex:1', kind: 'plex', state: null }) },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, false)).toStrictEqual({
       tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }],
-      window: { isMain: false, activeTitle: 'Agent', activeKind: 'agent', tabCount: 2 },
+      window: { isMain: false, activeTitle: 'Orbits', activeKind: 'plex', tabCount: 2 },
     })
   })
 

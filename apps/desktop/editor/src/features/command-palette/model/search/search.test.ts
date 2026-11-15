@@ -111,6 +111,8 @@ describe('asking', () => {
       wait: now,
     })
 
+    expect(palette.typed.value).toBe('')
+    expect(palette.status.isNothingFound.value).toBe(false)
     expect(palette.groups.value).toHaveLength(0)
     expect(vault.queries).toHaveLength(0)
   })
@@ -848,7 +850,11 @@ describe('the palette opened and put away', () => {
     palette.setOpen(true)
     palette.setTyped('heat').catch(rethrow)
     await flushPromises()
+    palette.setOpen(false)
+    holds[1]?.answer()
+    await flushPromises()
 
+    expect(vault.queries).toStrictEqual(['ent', 'ent', 'ent'])
     expect(palette.groups.value).toStrictEqual([])
   })
 })
@@ -961,5 +967,25 @@ describe('the spinner of the field', () => {
     await flushPromises()
 
     expect(palette.status.isBusy.value).toBe(true)
+  })
+
+  it('stays busy while only names or only words are still in flight', async () => {
+    const vaultA = createVault()
+    const paletteA = useSearch(vaultA.core, WORDS, { wait: now })
+    paletteA.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    vaultA.mode('words')?.answer([])
+    vaultA.mode('meaning')?.answer([])
+    await flushPromises()
+    expect(paletteA.status.isBusy.value).toBe(true)
+
+    const vaultB = createVault()
+    const paletteB = useSearch(vaultB.core, WORDS, { wait: now })
+    paletteB.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    vaultB.names[0]?.answer([])
+    vaultB.mode('meaning')?.answer([])
+    await flushPromises()
+    expect(paletteB.status.isBusy.value).toBe(true)
   })
 })

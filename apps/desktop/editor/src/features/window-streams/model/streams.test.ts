@@ -6,14 +6,16 @@ import { createFollower } from '@numen/ui'
 import {
   createEditStream,
   createFocusStream,
+  createHealthStream,
   createTaskStream,
   createVaultStream,
 } from './streams'
 import type { NoteEdit } from '@/entities/note'
+import type { PluginHealthItem } from '@/entities/plugin'
 import type { Task } from '@/entities/window'
 import type { TextRange } from '@/shared/lib/textRange'
 
-async function* yielding<T>(...items: T[]): AsyncIterable<T> {
+async function* yielding<T>(...items: T[]): AsyncGenerator<T> {
   for (const item of items) yield item
 }
 
@@ -187,15 +189,33 @@ describe('following the vault', () => {
   })
 
   it.each([
-    ['a path', { paths: ['a.md'], shouldReload: false, renamed: [] }],
-    ['a reload', { paths: [], shouldReload: true, renamed: [] }],
-    ['a rename', { paths: [], shouldReload: false, renamed: [{ from: 'a.md', to: 'b.md' }] }],
-  ])('tells a change that names %s', async (_name, change) => {
+    [
+      'a path',
+      { paths: ['a.md'], shouldReload: false, renamed: [] },
+      [['a.md'], [], []],
+    ],
+    [
+      'a reload',
+      {
+        paths: ['a.md'],
+        shouldReload: true,
+        renamed: [{ from: 'x.md', to: 'y.md' }],
+        versionPaths: ['v.mp3'],
+      },
+      [[], [{ from: 'x.md', to: 'y.md' }], []],
+    ],
+    [
+      'a rename',
+      { paths: [], shouldReload: false, renamed: [{ from: 'a.md', to: 'b.md' }] },
+      [[], [{ from: 'a.md', to: 'b.md' }], []],
+    ],
+  ])('tells a change that names %s', async (_name, change, expectedArgs) => {
     const deps = setup({ changes: [opened, change] })
 
     await createWindowStreams(deps).follow()
 
     expect(deps.onVaultChanged).toHaveBeenCalledTimes(2)
+    expect(deps.onVaultChanged).toHaveBeenLastCalledWith(...expectedArgs)
     expect(deps.ask).toHaveBeenCalledTimes(1)
   })
 
@@ -400,5 +420,33 @@ describe('following the tasks', () => {
     await createWindowStreams(deps).followTasks()
 
     expect(deps.ask).toHaveBeenCalledTimes(1)
+  })
+
+  it('updates plugin health items from createHealthStream', async () => {
+    let open = true
+    const items = shallowRef<readonly PluginHealthItem[]>([])
+    const healthItem: PluginHealthItem = {
+      pluginId: 'org.example.atlas',
+      key: 'conn',
+      severity: 'error',
+      text: 'No connection',
+      detail: '',
+    }
+    const followHealth = createHealthStream({
+      watchPluginHealth: () => yielding([healthItem]),
+      follows: createFollower({
+        isOpen: () => open,
+        setLost: vi.fn(),
+        wait: async () => {
+          open = false
+        },
+      }),
+      listening: new AbortController(),
+      items,
+    })
+
+    await followHealth()
+
+    expect(items.value).toStrictEqual([healthItem])
   })
 })

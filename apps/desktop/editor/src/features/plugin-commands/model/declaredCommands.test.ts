@@ -7,10 +7,11 @@ import {
   type CommandDeps,
   type CommandInvocation,
 } from '@/shared/model/command'
+import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getPaletteId, type DeclaredCommand, type DeclaredCommandsApi } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/ui/icons'
-import { useDeclaredCommands } from './declaredCommands'
+import { createDeclaredState, useDeclaredCommands } from './declaredCommands'
 import { UNANSWERED_RUNS } from '@/testing/declaredCommands'
 
 type DeclaredList = Awaited<ReturnType<DeclaredCommandsApi['listDeclaredCommands']>>
@@ -99,6 +100,7 @@ describe('a declared command in the palette', () => {
     const runs = { canRun: () => true, cannotRun: vi.fn() }
 
     expect(one?.group).toBe('file')
+    expect(one?.when).toBe("target.contentType == 'application/pdf'")
     expect(one?.input).toBeUndefined()
     expect(one?.isAvailable(front('books/Bees.pdf'), runs)).toBe(true)
     expect(one?.isAvailable(front('books/Bees.epub'), runs)).toBe(false)
@@ -133,16 +135,21 @@ describe('a declared command with items', () => {
   it('asks for one of its items, which it lists over the file of the target', async () => {
     const listItems = vi.fn(async () => [{ id: 'org.example.ears/ears', title: 'transcript' }])
     const [one] = await createPaletteCommands([proofread], {}, { listItems })
+    const runs = { canRun: () => true, cannotRun: vi.fn() }
 
     expect(one?.input).toBe('items')
-    expect(one?.isAvailable(front('talks/a.mp3'), { canRun: () => true, cannotRun: vi.fn() })).toBe(
-      true,
-    )
-    expect(one?.isAvailable(front(''), { canRun: () => true, cannotRun: vi.fn() })).toBe(false)
-    expect(await one?.listItems?.(front('talks/a.mp3'))).toStrictEqual([
+    expect(one?.isAvailable(front('talks/a.mp3'), runs)).toBe(true)
+    expect(one?.isAvailable({ ...front('talks/a.mp3'), path: '' }, runs)).toBe(true)
+    expect(one?.isAvailable({ ...front('talks/a.mp3'), file: '' }, runs)).toBe(true)
+    expect(one?.isAvailable(front(''), runs)).toBe(false)
+    expect(await one?.listItems?.({ ...front('talks/a.mp3'), path: '' })).toStrictEqual([
       { id: 'org.example.ears/ears', title: 'transcript' },
     ])
-    expect(listItems).toHaveBeenCalledWith(proofread, 'talks/a.mp3')
+    expect(await one?.listItems?.({ ...front('talks/a.mp3'), file: '' })).toStrictEqual([
+      { id: 'org.example.ears/ears', title: 'transcript' },
+    ])
+    expect(listItems).toHaveBeenNthCalledWith(1, proofread, 'talks/a.mp3')
+    expect(listItems).toHaveBeenNthCalledWith(2, proofread, 'talks/a.mp3')
   })
 
   it('runs over the file with the item picked as its itemId', async () => {
@@ -445,18 +452,71 @@ describe('the declared commands read more than once', () => {
             command: 'sample.create',
           },
         ],
+        handlers: [
+          {
+            pluginId: 'org.example.sample',
+            command: 'app:file.createText',
+            title: 'Create text',
+            hasItems: false,
+          },
+        ],
+        keybindings: [
+          {
+            pluginId: 'org.example.sample',
+            key: 'mod+b',
+            command: 'org.example.sample:sample.create',
+          },
+        ],
       }),
     })
+    expect(declared.contributions.keybindings.value).toBeUndefined()
     await declared.load()
     const commandsBefore = declared.commands.value
     const slotsBefore = declared.slots.value
+    const handlersBefore = declared.contributions.handlers.value
+    const keybindingsBefore = declared.contributions.keybindings.value
     const paletteBefore = declared.paletteCommands.value
 
     await declared.load()
 
     expect(declared.commands.value).toBe(commandsBefore)
-    expect(declared.slots.value).toStrictEqual(slotsBefore)
+    expect(declared.slots.value).toBe(slotsBefore)
+    expect(declared.contributions.handlers.value).toBe(handlersBefore)
+    expect(declared.contributions.keybindings.value).toBe(keybindingsBefore)
     expect(declared.paletteCommands.value).toBe(paletteBefore)
+  })
+
+  it('defaults handlers and keybindings to empty lists, preserves contentTypes when omitted, and wires paletteNotes and default config', async () => {
+    const lists: DeclaredList[] = [
+      { commands: [], slots: [], contentTypes: { md: 'text/markdown' } },
+      {
+        commands: [],
+        slots: [],
+        keybindings: [{ pluginId: 'p', key: 'mod+k', command: 'p:cmd' }],
+      },
+    ]
+    const state = createDeclaredState({
+      list: async () => lists.shift() as DeclaredList,
+      paletteNotes: {
+        read: async () => ({ type: 'link' }),
+        reportError: vi.fn(),
+      },
+    })
+
+    expect(state.whenContext.getConfig()).toStrictEqual({})
+    expect(state.whenContext.getNote).toBeDefined()
+    expect(state.whenContext.forgetNotes).toBeDefined()
+
+    await state.load()
+    expect(state.contributions.handlers.value).toStrictEqual([])
+    expect(state.contributions.keybindings.value).toStrictEqual([])
+    expect(state.whenContext.getContentTypes()).toStrictEqual({ md: 'text/markdown' })
+
+    await state.load()
+    expect(state.contributions.keybindings.value).toStrictEqual([
+      { pluginId: 'p', key: 'mod+k', command: 'p:cmd' },
+    ])
+    expect(state.whenContext.getContentTypes()).toStrictEqual({ md: 'text/markdown' })
   })
 
   it('take the new list when a read answers another one', async () => {
@@ -523,16 +583,21 @@ describe('the declared commands read more than once', () => {
 })
 
 describe('a declared command the palette leaves out', () => {
-  it('is one the plugin host lists', async () => {
+  it('is one the plugin host lists, and registers synchronously when unlisted', async () => {
+    const listed = ref(true)
     const declared = useDeclaredCommands({
       ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: [createSample, convert], slots: [] }),
-      isListed: () => true,
+      isListed: () => listed.value,
     })
     await declared.load()
 
     expect(declared.paletteCommands.value).toStrictEqual([])
     expect(declared.declarations.value).toHaveLength(2)
+    expect(registry.get(getPaletteId(createSample))).toBeUndefined()
+
+    listed.value = false
+    expect(registry.get(getPaletteId(createSample))).toBeDefined()
   })
 })

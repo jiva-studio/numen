@@ -3,6 +3,7 @@
  * the answer left out reads as nothing, and a passage is a start and a length.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { SEARCH_MODE } from '@numen/core-client'
 import { createAnsweredClients } from '@/testing/coreAnswers'
 import { createSearchCore } from './search'
@@ -25,7 +26,11 @@ describe('a name searched for', () => {
 
     await searchCore.names('lla', 8)
 
-    expect(search.searchNames.mock.lastCall?.[0]).toMatchObject({ query: 'lla', limit: 8 })
+    expect(search.searchNames.mock.lastCall?.[0]).toMatchObject({
+      query: 'lla',
+      limit: 8,
+      searchId: '',
+    })
   })
 
   it('carries the note and the heading it was found at', async () => {
@@ -63,6 +68,7 @@ describe('a passage searched for', () => {
       query: 'grass',
       limit: 8,
       mode: SEARCH_MODE.MEANING,
+      searchId: '',
     })
   })
 
@@ -102,6 +108,13 @@ describe('a passage searched for', () => {
           matchRanges: [],
           selector: 'null',
         },
+        {
+          path: 'library/arr.epub',
+          text: 'grass',
+          matchLine: 0,
+          matchRanges: [],
+          selector: '[1,2]',
+        },
         { path: 'library/prim.epub', text: 'grass', matchLine: 0, matchRanges: [], selector: '42' },
         {
           path: 'library/bad.epub',
@@ -116,6 +129,7 @@ describe('a passage searched for', () => {
 
     expect(await searchCore.search('grass', 'words', 8)).toMatchObject([
       { title: '', start: 0, length: 0, selector: { chapter: 2 } },
+      { selector: null },
       { selector: null },
       { selector: null },
       { selector: null },
@@ -205,10 +219,12 @@ describe('a passage search the window aborts', () => {
 
   it('is not cancelled once the core has answered it', async () => {
     search.searchText.mockResolvedValue({ found: [] })
+    search.cancelSearch.mockResolvedValue({})
     const asking = new AbortController()
 
     await searchCore.search('seeds', 'meaning', 8, asking.signal)
     asking.abort()
+    await flushPromises()
 
     expect(search.cancelSearch).not.toHaveBeenCalled()
   })

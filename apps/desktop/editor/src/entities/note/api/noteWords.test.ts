@@ -146,7 +146,13 @@ describe('mapNoteGraph references', () => {
     const [note] = mapNoteGraph(
       create(ListRelatedNotesResponseSchema, {
         focus: { path: 'Here.md', title: 'Here' },
-        related: [{ note: { path: 'Up.md', title: 'Up' }, relation: NOTE_RELATION.PARENT }],
+        related: [
+          {
+            note: { path: 'Up.md', title: 'Up' },
+            relation: NOTE_RELATION.PARENT,
+            direction: NOTE_LINK_DIRECTION.OUTGOING,
+          },
+        ],
       }),
     ).related
 

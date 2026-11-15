@@ -67,14 +67,21 @@ describe('a note created by a command of the window', () => {
 })
 
 describe('a note renamed', () => {
-  it('moves the tab that holds it', async () => {
-    await mountWithNotes()
+  it('moves the tab that holds it and notifies the plugin host of the vault change', async () => {
+    const window = await mountWithNotes()
+    const { pluginHost } = getWindowParts(window)
+    const onVaultChange = vi.fn()
+    pluginHost.contextHost.events.onVaultChange('md.example.watcher', onVaultChange)
     await showNote(ENTROPY)
 
     await renameNote(ENTROPY, HEAT)
 
     await vi.waitFor(() => expect(readSavedPaths()).toContain(HEAT))
     expect(readSavedPaths()).not.toContain(ENTROPY)
+    expect(onVaultChange).toHaveBeenCalledWith({
+      paths: [HEAT],
+      renamed: [{ from: ENTROPY, to: HEAT }],
+    })
   })
 
   describe('under a step of the palette that waits for its name', () => {
