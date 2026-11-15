@@ -1,7 +1,7 @@
 /** How a window starts: the layout it opens with, and the plugins it loads before that. */
 import { describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h } from 'vue'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { createWindowLayout, useOpenTabs, type AnyTabKind, type MovedTab } from '@/entities/tab'
 import { closeWindow } from '@/entities/window'
@@ -291,7 +291,7 @@ describe('a window starting', () => {
 
     await primaryLayout.start()
     primaryLayout.close()
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    await flushPromises()
 
     expect(closeWindow).not.toHaveBeenCalled()
   })

@@ -4,6 +4,7 @@
  * path is invented.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import type { FileKind } from '@/shared/model/fileTypes'
 import type { ItemListRequest } from '@/entities/plugin'
 import { createCommandItemLists } from './commandItemLists'
@@ -86,7 +87,7 @@ describe('the item lists of the commands of one menu', () => {
     const first = lists.listItems(PROOFREAD, SCAN)
     const second = lists.fileKinds([SCAN]).then(() => lists.listItems(DELETE_TEXT, SCAN))
     const third = lists.fileKinds([SCAN])
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    await flushPromises()
     expect(requests).toStrictEqual([])
     answerKind({ isNote: false, type: 'note' })
     await Promise.all([first, second, third])
@@ -100,7 +101,7 @@ describe('the item lists of the commands of one menu', () => {
     const { lists, requests, kindReads } = setUp(async () => ({ isNote: true, type: 'note' }))
 
     await lists.fileKinds([SCAN])
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    await flushPromises()
     await lists.fileKinds([])
     await lists.fileKinds([SCAN, 'scans/two.png'])
 

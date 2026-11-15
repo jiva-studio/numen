@@ -3,6 +3,7 @@
  * the answer left out reads as nothing, and a passage is a start and a length.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { SEARCH_MODE } from '@numen/core-client'
 import { createAnsweredClients } from '@/testing/coreAnswers'
 import { createSearchCore } from './search'
@@ -223,7 +224,7 @@ describe('a passage search the window aborts', () => {
 
     await searchCore.search('seeds', 'meaning', 8, asking.signal)
     asking.abort()
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    await flushPromises()
 
     expect(search.cancelSearch).not.toHaveBeenCalled()
   })

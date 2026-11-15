@@ -176,7 +176,7 @@ describe('a folder made', () => {
     expect(one.notices).toStrictEqual([words.alreadyExists])
   })
 
-  it('reports an error when the vault refuses the folder name', async () => {
+  it('reports an error when the vault rejects the folder name', async () => {
     const one = createWindow({ folder: { error: NOTE_ERROR_CODE.INVALID_NAME } })
 
     await one.carry(invoke('app:folder.create', front(), 'physics/..'))

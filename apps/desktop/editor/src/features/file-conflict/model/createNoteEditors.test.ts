@@ -8,7 +8,7 @@ import type { AnyTabKind } from '@numen/plugin-loader'
 import { createNoteEditors } from './createNoteEditors'
 
 const settle = async () => {
-  for (let i = 0; i < 10; i++) await new Promise((done) => setTimeout(done, 0))
+  for (let i = 0; i < 10; i++) await new Promise((resolve) => setTimeout(resolve, 0))
 }
 
 const create = (windowTabs = createTestTabs()) => {
