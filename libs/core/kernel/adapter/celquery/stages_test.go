@@ -86,7 +86,7 @@ func TestAMisspelledSortKeyIsAProblemWithASuggestion(t *testing.T) {
 
 func TestAMisspelledStageIsUnknownWithASuggestion(t *testing.T) {
 	problems := getProblems(t, `meaning("a").rerenk("a")`)
-	if len(problems) != 1 || problems[0].Message != "unknown stage rerenk" || problems[0].Suggestion != searchquery.StageNameRerank {
+	if len(problems) != 1 || problems[0].Message != "Unknown stage rerenk" || problems[0].Suggestion != searchquery.StageNameRerank {
 		t.Errorf("problems %+v, want unknown stage rerenk suggesting rerank", problems)
 	}
 }
@@ -134,7 +134,7 @@ func TestAStageInsideAConditionIsAProblem(t *testing.T) {
 	if !hasProblem(getProblems(t, `meaning("a").top(3) && kind == "pdf"`), "a stage comes after the whole query") {
 		t.Error("a stage inside a condition was accepted")
 	}
-	if !hasProblem(getProblems(t, `top(3)`), "unknown function top") {
+	if !hasProblem(getProblems(t, `top(3)`), "Unknown function top") {
 		t.Error("a stage called as a function was accepted")
 	}
 }

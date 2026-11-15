@@ -105,10 +105,13 @@ func getResultPaths(r searchquery.SearchResults) []string {
 func TestFormatSignaturesNamesEachArgumentList(t *testing.T) {
 	catalog := searchquery.GetBuiltinCatalog()
 	cases := map[string][]string{
-		searchquery.FunctionMeaning: {"meaning(string) -> SearchResults"},
-		searchquery.VariableKind:    {"kind: string"},
-		searchquery.StageNameTop:    {"SearchResults.top(int) -> SearchResults"},
-		searchquery.StageNameSortBy: {"SearchResults.sortBy(string) -> SearchResults", "SearchResults.sortBy(string, string) -> SearchResults"},
+		searchquery.FunctionMeaning:  {"meaning(string) -> SearchResults"},
+		searchquery.VariableKind:     {"kind: string"},
+		searchquery.StageNameTop:     {"SearchResults.top(int) -> SearchResults"},
+		searchquery.StageNameSortBy:  {"SearchResults.sortBy(string) -> SearchResults", "SearchResults.sortBy(string, string) -> SearchResults"},
+		searchquery.VariableModified: {"modified: timestamp"},
+		searchquery.FunctionProperty: {"property(string) -> dyn"},
+		"isChildOf":                  {"isChildOf(string) -> bool", "isChildOf(string, string) -> bool"},
 	}
 	for name, want := range cases {
 		f, _ := catalog.FindFunction(name)
@@ -127,5 +130,14 @@ func TestGetCatalogRevisionChangesWithTheCatalog(t *testing.T) {
 	catalog.Functions[0].Description += "."
 	if searchquery.GetCatalogRevision(catalog) == first {
 		t.Fatal("a changed catalog keeps its revision")
+	}
+}
+
+func TestGetCatalogRevisionChangesWithTheSummary(t *testing.T) {
+	catalog := searchquery.GetBuiltinCatalog()
+	first := searchquery.GetCatalogRevision(catalog)
+	catalog.Functions[0].Summary += "."
+	if searchquery.GetCatalogRevision(catalog) == first {
+		t.Fatal("a changed summary keeps the revision")
 	}
 }

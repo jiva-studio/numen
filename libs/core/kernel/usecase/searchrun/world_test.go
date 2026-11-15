@@ -43,17 +43,19 @@ type query struct {
 
 // index answers the queries of a test and records the order they run in and the ones canceled.
 type index struct {
-	mu       sync.Mutex
-	queries  map[string]*query
-	ran      []string
-	started  chan string
-	canceled chan string
+	mu          sync.Mutex
+	queries     map[string]*query
+	ran         []string
+	generations []string
+	started     chan string
+	canceled    chan string
 }
 
 func (x *index) run(ctx context.Context, _ domain.Vault, r searchquery.Request) (searchquery.SearchResults, error) {
 	x.mu.Lock()
 	q := x.queries[r.Text]
 	x.ran = append(x.ran, r.Text)
+	x.generations = append(x.generations, r.IndexGeneration)
 	x.mu.Unlock()
 	x.started <- r.Text
 	if q == nil {

@@ -279,3 +279,21 @@ func TestRunAnswersTheErrorOfANoteItCannotRead(t *testing.T) {
 		t.Errorf("got %v, ran %v, want the read error", err, declared.calls)
 	}
 }
+
+func TestARunOverPathsIsCheckedOverEachPathAndForwardsThem(t *testing.T) {
+	declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "md.numen.a", Command: manifest.Command{
+		ID: "tags.update", Title: "Update tags", When: "target.isNote",
+	}}}}
+	commands := newUseCases(declared, declared, getTypes(), nil, nil)
+
+	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.a", Command: "tags.update", Paths: []string{"a.md", "b.md"}}); err != nil {
+		t.Fatalf("two notes answered %v", err)
+	}
+	if got := declared.calls[len(declared.calls)-1].Paths; !slices.Equal(got, []string{"a.md", "b.md"}) {
+		t.Errorf("the plugin was given %v", got)
+	}
+	mixed := plugin.CommandCall{PluginID: "md.numen.a", Command: "tags.update", Paths: []string{"a.md", "talks/a.mp3"}}
+	if _, err := commands.Run.Execute(t.Context(), getVault(), mixed); !errors.Is(err, plugincommand.ErrBadArguments) {
+		t.Errorf("a recording among the notes answered %v, want ErrBadArguments", err)
+	}
+}

@@ -100,10 +100,25 @@ func TestAChangeOfTheVersionsOfAFileReachesTheWindow(t *testing.T) {
 	}
 }
 
-// listing is a plugin host that declares no trigger and counts how often the triggers are read.
+// listing is a plugin host that declares no trigger and counts how often the triggers are read, and
+// records the notes each pass over changed frontmatter ran over.
 type listing struct {
-	mu    sync.Mutex
-	reads int
+	mu          sync.Mutex
+	reads       int
+	frontmatter [][]string
+}
+
+func (l *listing) ExecuteFrontmatter(_ context.Context, _ domain.Vault, paths []string) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.frontmatter = append(l.frontmatter, paths)
+	return nil
+}
+
+func (l *listing) listFrontmatterPasses() [][]string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return slices.Clone(l.frontmatter)
 }
 
 func (l *listing) count() int {
@@ -171,5 +186,27 @@ func TestAChangeOfThePluginsAsksForAPassOverTheWholeVault(t *testing.T) {
 func TestANewVaultStartsWithAPassOverTheWholeVault(t *testing.T) {
 	if isAll, _ := newTriggerPasses().take(); !isAll {
 		t.Error("the passes of a vault opened start with none over the whole vault")
+	}
+}
+
+func TestNotesWhoseFrontmatterChangedGetAPassOfTheirOwnAfterAPassOverTheWholeVault(t *testing.T) {
+	runner := &listing{}
+	passes := newTriggerPasses()
+	passes.requestFrontmatter([]string{"notes/b.md", "notes/a.md"})
+	passes.requestFrontmatter([]string{"notes/a.md"})
+	go runTriggers(t.Context(), runner, domain.Vault{ID: "v1"}, passes, make(chan struct{}), func(error) {})
+
+	waitFor(t, func() bool { return len(runner.listFrontmatterPasses()) == 1 })
+	if got := runner.listFrontmatterPasses()[0]; !slices.Equal(got, []string{"notes/a.md", "notes/b.md"}) {
+		t.Errorf("the frontmatter pass ran over %v, want both notes once", got)
+	}
+	if got := runner.count(); got != 1 {
+		t.Errorf("%d passes over the vault ran, want 1", got)
+	}
+
+	passes.requestFrontmatter([]string{"notes/c.md"})
+	waitFor(t, func() bool { return len(runner.listFrontmatterPasses()) == 2 })
+	if got := runner.count(); got != 1 {
+		t.Errorf("a frontmatter change ran %d passes over the files, want none beyond the first", got-1)
 	}
 }

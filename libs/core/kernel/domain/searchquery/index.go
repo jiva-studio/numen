@@ -3,13 +3,16 @@ package searchquery
 import "github.com/jiva-studio/numen/libs/note/domain"
 
 // DocumentQuery asks for the documents of a vault under any of the path prefixes (all when empty) and of
-// the source kinds (all when empty), counting their small chunks with a vector under the recipe. Limit
-// bounds the documents returned to Limit+1; zero or below returns all of them.
+// the source kinds (all when empty), at one of Paths when IsWithinPaths is set, counting their small
+// chunks with a vector under the recipe. Limit bounds the documents returned to Limit+1; zero or below
+// returns all of them.
 type DocumentQuery struct {
-	PathPrefixes []string
-	SourceKinds  []domain.SourceKind
-	Recipe       string
-	Limit        int
+	PathPrefixes  []string
+	SourceKinds   []domain.SourceKind
+	Paths         []string
+	IsWithinPaths bool
+	Recipe        string
+	Limit         int
 }
 
 // DocumentVectorQuery asks for the vectors under the recipe of the small chunks of the documents at the

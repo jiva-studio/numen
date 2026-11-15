@@ -9,11 +9,13 @@ type Parts struct {
 	TextKinds   map[string]string
 }
 
-// CommandCall is one run of a command, checked against its declaration.
+// CommandCall is one run of a command, checked against its declaration. Paths, set by a trigger on
+// note.frontmatterChanged in place of Path, are the notes the one run covers.
 type CommandCall struct {
 	PluginID  string
 	Command   string
 	Path      string
+	Paths     []string
 	Arguments map[string]string
 	ItemID    string
 }

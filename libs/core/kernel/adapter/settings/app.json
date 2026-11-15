@@ -71,13 +71,31 @@
       "palette": true,
       "icon": "gauge",
       "options": [
-        { "value": "eco", "title": "Eco", "detail": "Minimal power, 1 worker thread." },
+        {
+          "value": "eco",
+          "title": "Eco",
+          "detail": "One thread and a quarter of the memory, at the lowest priority."
+        },
+        {
+          "value": "low",
+          "title": "Low",
+          "detail": "A quarter of the performance cores and a quarter of the memory."
+        },
         {
           "value": "balanced",
           "title": "Balanced",
-          "detail": "Standard workload, 50% CPU capacity."
+          "detail": "Half of the performance cores and half of the memory."
         },
-        { "value": "maximum", "title": "Maximum", "detail": "All CPU cores and memory." }
+        {
+          "value": "high",
+          "title": "High",
+          "detail": "Three quarters of the performance cores and of the memory."
+        },
+        {
+          "value": "maximum",
+          "title": "Maximum",
+          "detail": "All performance cores and 90% of the memory."
+        }
       ]
     },
     {

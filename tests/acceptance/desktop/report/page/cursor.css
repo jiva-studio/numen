@@ -1,0 +1,120 @@
+.cursor-layer {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cursor-layer[hidden],
+.cursor-ripple[hidden],
+.cursor-press[hidden],
+.input-highlight[hidden],
+.input-label[hidden],
+.key-badge[hidden] {
+  display: none;
+}
+
+.cursor-pointer {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  margin: -2.5px 0 0 -5px;
+  overflow: visible;
+  filter: drop-shadow(0 1px 2px var(--black-a7));
+}
+
+.cursor-pointer path {
+  fill: var(--white-a12);
+  stroke: var(--black-a12);
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+.cursor-ripple {
+  --progress: 0;
+
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--white-a12);
+  border-radius: 50%;
+  background: var(--white-a5);
+  box-shadow: 0 0 0 1px var(--black-a6);
+  opacity: calc(1 - var(--progress));
+  transform: translate(-50%, -50%) scale(calc(0.3 + 0.9 * var(--progress)));
+}
+
+.cursor-press {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--white-a12);
+  border-radius: 50%;
+  background: var(--black-a3);
+  box-shadow: 0 0 0 1px var(--black-a7);
+  transform: translate(-50%, -50%);
+}
+
+.input-highlight {
+  position: absolute;
+  margin: -3px 0 0 -3px;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  background: var(--indigo-a3);
+  box-shadow: 0 0 0 2px var(--indigo-9);
+  box-sizing: content-box;
+}
+
+.input-label {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: -2px;
+  display: flex;
+  padding: 3px 8px 4px;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--indigo-9);
+  color: var(--white-a12);
+  font-size: 13px;
+  font-weight: 600;
+  gap: 8px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.input-highlight.has-label {
+  border-bottom-right-radius: 0;
+}
+
+.input-highlight.has-label.is-near-bottom {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: var(--radius-md);
+}
+
+.is-near-bottom .input-label {
+  top: auto;
+  bottom: calc(100% + 2px);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.key-badge {
+  position: absolute;
+  bottom: 96px;
+  left: 50%;
+  display: flex;
+  max-width: calc(100% - 32px);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--black-a10);
+  box-shadow: 0 4px 16px var(--black-a6);
+  color: var(--white-a12);
+  font-size: 18px;
+  font-weight: 600;
+  gap: 14px;
+  letter-spacing: 0.01em;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.key-part {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

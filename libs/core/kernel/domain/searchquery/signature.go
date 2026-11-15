@@ -3,6 +3,7 @@ package searchquery
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -20,6 +21,10 @@ func GetTypeName(t ValueType) string {
 		return "list(string)"
 	case TypeSearchResults:
 		return "SearchResults"
+	case TypeTimestamp:
+		return "timestamp"
+	case TypeDyn:
+		return "dyn"
 	}
 	return "unknown"
 }
@@ -33,6 +38,9 @@ func FormatSignatures(f Function) []string {
 	overloads := f.Overloads
 	if len(overloads) == 0 {
 		overloads = [][]ValueType{f.Args}
+	}
+	if len(f.OptionalArgs) > 0 {
+		overloads = append(overloads, append(slices.Clone(f.Args), f.OptionalArgs...))
 	}
 	name := f.Name
 	if f.IsStage {
@@ -49,14 +57,15 @@ func FormatSignatures(f Function) []string {
 	return signatures
 }
 
-// GetCatalogRevision returns the hex SHA-256 of the name, kind, level, signatures, description and example of
-// every function of the catalog; it changes whenever one of them does.
+// GetCatalogRevision returns the hex SHA-256 of the name, kind, level, signatures, summary, description, example,
+// plugin and argument names of every function of the catalog; it changes whenever one of them does.
 func GetCatalogRevision(c Catalog) string {
 	hash := sha256.New()
 	for _, f := range c.Functions {
 		fields := []string{
 			f.Name, strconv.FormatBool(f.IsVariable), strconv.FormatBool(f.IsStage), strconv.Itoa(int(f.Level)),
-			strings.Join(FormatSignatures(f), "\x01"), f.Description, f.Example,
+			strings.Join(FormatSignatures(f), "\x01"), f.Summary, f.Description, f.Example, f.PluginID,
+			strings.Join(f.ArgNames, "\x01"),
 		}
 		hash.Write([]byte(strings.Join(fields, "\x00") + "\x02"))
 	}

@@ -206,6 +206,7 @@ func (v *Vault) moveFile(from, target string) error {
 	if _, err := v.files.write(target, content); err != nil {
 		return err
 	}
+	v.feed.move(from, target)
 	v.rescan(from, target)
 	return nil
 }

@@ -159,7 +159,7 @@ func buildWindow(
 	session := newWindowSession(c, a, state, ctx, windowParts{
 		indexer: indexer, embedding: embedding, passes: startVault(a, db, current),
 		recordOpen: cases.Vaults.RecordOpen, importFiles: cases.Vaults.Tree.Import, out: opening.Out,
-		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
+		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close, frontmatter: db.FrontmatterChanges(),
 	})
 	cases.ShowTab = session.tools.showTab
 	inst := editor.NewInstallation(state, editor.Lifecycle{

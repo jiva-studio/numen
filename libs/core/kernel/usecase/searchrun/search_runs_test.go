@@ -308,3 +308,15 @@ func TestListSearchFunctionsReturnsTheCatalogAndItsRevision(t *testing.T) {
 		t.Fatalf("catalog of %d functions, revision %q", len(catalog.Functions), revision)
 	}
 }
+
+func TestASearchRunsTheQueryOnTheGenerationItStartedOn(t *testing.T) {
+	w := newWorld(t, searchrundomain.DefaultPolicy())
+	id := w.start(t, owner, `words("tide")`)
+	page := w.readFinalPage(t, owner, id)
+
+	w.index.mu.Lock()
+	defer w.index.mu.Unlock()
+	if len(w.index.generations) != 1 || w.index.generations[0] == "" || w.index.generations[0] != page.Record.IndexGeneration {
+		t.Errorf("the query ran on generations %v, want %q", w.index.generations, page.Record.IndexGeneration)
+	}
+}

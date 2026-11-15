@@ -21,7 +21,7 @@ const (
 func createQueryDescription(functions host.SearchFunctions) string {
 	var conditions, stages []string
 	for _, f := range functions.Functions {
-		line := "- " + strings.Join(f.Signatures, ", ") + ": " + f.Description + ". Example: " + f.Example
+		line := "- " + strings.Join(f.Signatures, ", ") + ": " + f.Description + " Example: " + f.Example
 		if f.Kind == "stage" {
 			stages = append(stages, line)
 			continue

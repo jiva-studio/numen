@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -22,12 +23,17 @@ var ErrNegativeLimit = errors.New("the limit of results is negative")
 
 // FindSearchResultsDeps is what FindSearchResults reads. A nil Source is an installation with no model, and
 // a nil Texts reads the text of notes only. Calls, Codec, Rows, Resolve, Results and Clock serve the rerank
-// stage. A zero Limits or StageLimits takes the defaults.
+// stage, and the zone of Clock reads a date written without an offset. A zero Limits or StageLimits takes the
+// defaults. Catalog returns the catalog a query is parsed against, the built-in one when nil; Functions answers
+// the functions plugins contribute to it.
 type FindSearchResultsDeps struct {
 	Parser       QueryParser
+	Catalog      func() searchquery.Catalog
+	Functions    SearchFunctions
 	Documents    DocumentQueries
+	Contents     NoteContents
+	Clock        machineport.Clock
 	Vectors      VectorQueries
-	Words        WordQueries
 	Places       sourceport.ChunkPlaces
 	Matcher      sourceport.WordMatching
 	Readers      vaultport.VaultReaders
@@ -40,7 +46,7 @@ type FindSearchResultsDeps struct {
 	Rows         RerankRows
 	Resolve      connectionport.ResolveConnection
 	Results      operationport.OperationResults
-	Clock        machineport.Clock
+	Links        LinkReaders
 	Limits       searchquery.Limits
 	StageLimits  searchquery.StageLimits
 }
@@ -48,10 +54,10 @@ type FindSearchResultsDeps struct {
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
 type FindSearchResults struct {
 	parser       QueryParser
-	documents    DocumentQueries
-	vectors      VectorQueries
-	words        WordQueries
-	places       sourceport.ChunkPlaces
+	catalog      func() searchquery.Catalog
+	functions    SearchFunctions
+	index        indexReads
+	clock        machineport.Clock
 	matcher      sourceport.WordMatching
 	readers      vaultport.VaultReaders
 	texts        textdomain.Readers
@@ -59,6 +65,7 @@ type FindSearchResults struct {
 	floors       FloorReader
 	contentTypes contenttypeport.ContentTypeTable
 	reranker     reranker
+	links        LinkReaders
 	Limits       searchquery.Limits
 }
 
@@ -71,10 +78,17 @@ func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 	if stageLimits == (searchquery.StageLimits{}) {
 		stageLimits = searchquery.DefaultStageLimits()
 	}
+	catalog := deps.Catalog
+	if catalog == nil {
+		catalog = searchquery.GetBuiltinCatalog
+	}
 	return &FindSearchResults{
-		parser: deps.Parser, documents: deps.Documents, vectors: deps.Vectors, words: deps.Words,
-		places: deps.Places, matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts,
-		source: deps.Source, floors: deps.Floors, contentTypes: deps.ContentTypes,
+		parser: deps.Parser, catalog: catalog, functions: deps.Functions, clock: deps.Clock,
+		index: indexReads{
+			documents: deps.Documents, vectors: deps.Vectors, words: deps.Documents, places: deps.Places, contents: deps.Contents,
+		},
+		matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts,
+		source: deps.Source, floors: deps.Floors, contentTypes: deps.ContentTypes, links: deps.Links,
 		reranker: reranker{
 			calls: deps.Calls, codec: deps.Codec, rows: deps.Rows, resolve: deps.Resolve, results: deps.Results, clock: deps.Clock, limits: stageLimits,
 		},
@@ -93,14 +107,15 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r searc
 	if r.Limit < 0 {
 		return searchquery.SearchResults{}, fmt.Errorf("%w: %d", ErrNegativeLimit, r.Limit)
 	}
-	q, err := u.parse(r.Text)
+	zone := u.clock.Now().Location()
+	q, err := u.parse(r.Text, zone)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	if hasMeaning(q.Conditions) && !u.hasModel() {
 		return searchquery.SearchResults{}, searchquery.ErrNoModel
 	}
-	results, err := u.newPlan(ctx, v, q).execute(ctx)
+	results, err := u.newPlan(ctx, v, q, zone, r.IndexGeneration).execute(ctx)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
@@ -138,15 +153,15 @@ func (u *FindSearchResults) getLimit(limit int, hasTop bool) int {
 	return min(limit, u.Limits.MaxLimit)
 }
 
-func (u *FindSearchResults) parse(text string) (searchquery.Query, error) {
+func (u *FindSearchResults) parse(text string, zone *time.Location) (searchquery.Query, error) {
 	if err := searchquery.CheckQueryText(text, u.Limits); err != nil {
 		return searchquery.Query{}, err
 	}
-	raw, err := u.parser.ParseQuery(text, searchquery.GetBuiltinCatalog())
+	raw, err := u.parser.ParseQuery(text, u.catalog())
 	if err != nil {
 		return searchquery.Query{}, err
 	}
-	return searchquery.Normalize(raw, u.Limits)
+	return searchquery.Normalize(raw, u.Limits, zone)
 }
 
 func hasMeaning(conditions []searchquery.Condition) bool {
@@ -177,7 +192,7 @@ func (u *FindSearchResults) fillDocuments(ctx context.Context, v domain.Vault, r
 	for _, r := range results {
 		paths = append(paths, r.Document.Path)
 	}
-	listed, err := u.documents.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
+	listed, err := u.index.documents.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
 	if err != nil {
 		return err
 	}
@@ -191,4 +206,13 @@ func (u *FindSearchResults) fillDocuments(ctx context.Context, v domain.Vault, r
 		results[i].Document.ModifiedAt, results[i].Document.Size = d.ModifiedAt, d.Size
 	}
 	return nil
+}
+
+// indexReads are the ports of the index a query reads.
+type indexReads struct {
+	documents DocumentQueries
+	vectors   VectorQueries
+	words     WordQueries
+	places    sourceport.ChunkPlaces
+	contents  NoteContents
 }

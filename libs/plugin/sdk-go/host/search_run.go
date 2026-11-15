@@ -84,6 +84,7 @@ type SearchFunction struct {
 	Kind        string
 	Level       string
 	Signatures  []string
+	Summary     string
 	Description string
 	Example     string
 }
@@ -172,7 +173,7 @@ func (c *SearchClient) ListSearchFunctions(ctx context.Context) (SearchFunctions
 	for i, f := range res.Msg.GetFunctions() {
 		functions[i] = SearchFunction{
 			Name: f.GetName(), Kind: f.GetKind(), Level: f.GetLevel(), Signatures: f.GetSignatures(),
-			Description: f.GetDescription(), Example: f.GetExample(),
+			Summary: f.GetSummary(), Description: f.GetDescription(), Example: f.GetExample(),
 		}
 	}
 	return SearchFunctions{Functions: functions, Revision: res.Msg.GetRevision()}, nil

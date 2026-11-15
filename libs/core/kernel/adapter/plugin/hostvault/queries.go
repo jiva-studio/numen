@@ -5,6 +5,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/filechange"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
@@ -16,10 +18,12 @@ type Lookups struct {
 
 // Notes reads the index data of the notes of the vault.
 type Notes struct {
-	Notes      query.GetNotes
-	Types      *query.GetTypes
-	NamedPaths *query.GetNamedPaths
-	TypedPaths query.GetPathsOfType
+	Notes       query.GetNotes
+	Types       *query.GetTypes
+	NamedPaths  *query.GetNamedPaths
+	TypedPaths  query.GetPathsOfType
+	Frontmatter query.ReadFrontmatter
+	FileChanges query.ListFileChanges
 
 	session sessionAccess
 }
@@ -100,4 +104,20 @@ func (l Links) ResolveLinks(
 		return nil, err
 	}
 	return l.Targets.Execute(ctx, v.ID, from, targets)
+}
+
+func (n Notes) ReadFrontmatter(ctx context.Context, q frontmatter.Query) (frontmatter.Page, error) {
+	v, err := n.session.open()
+	if err != nil {
+		return frontmatter.Page{}, err
+	}
+	return n.Frontmatter.Execute(ctx, v, q)
+}
+
+func (n Notes) ListFileChanges(ctx context.Context, q filechange.Query) (filechange.Page, error) {
+	v, err := n.session.open()
+	if err != nil {
+		return filechange.Page{}, err
+	}
+	return n.FileChanges.Execute(ctx, v, q)
 }

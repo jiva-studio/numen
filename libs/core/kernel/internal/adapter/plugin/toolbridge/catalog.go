@@ -21,7 +21,7 @@ type Catalog struct {
 // NewCatalog is the tools the plugins of the host offer, each started by activator. The answers of the
 // plugins are kept in memory and in files. Each call is written to out as one JSON line, timed by clock; a
 // failed write is dropped, as there is nowhere else to report it.
-func NewCatalog(activator bridge.Activator, host Host, files ListingFiles, listingRevision string, clock machineport.Clock, out io.Writer) *Catalog {
+func NewCatalog(activator bridge.Activator, host Host, files ListingFiles, listingRevision func() string, clock machineport.Clock, out io.Writer) *Catalog {
 	return &Catalog{
 		plugins: plugins{activator: activator, host: host, listings: newListings(files, listingRevision)}, clock: clock, out: out,
 	}

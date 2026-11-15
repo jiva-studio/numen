@@ -17,6 +17,7 @@ type Tools struct {
 	vaults    func(domain.VaultID) Vault
 	library   func(domain.VaultID) Library
 	functions host.SearchFunctions
+	lister    func(ctx context.Context) (host.SearchFunctions, error)
 	list      ports.VaultList
 }
 
@@ -44,7 +45,7 @@ type Library struct {
 // New creates a Tools instance. vaults gives the calls on the vault with an identity, and on the vault
 // the host shows for the empty identity.
 func New(vaults func(domain.VaultID) Vault) *Tools {
-	return &Tools{vaults: vaults, library: nil, functions: host.SearchFunctions{Functions: nil, Revision: ""}, list: nil}
+	return &Tools{vaults: vaults, library: nil, functions: host.SearchFunctions{Functions: nil, Revision: ""}, lister: nil, list: nil}
 }
 
 // WithVaultList sets the installation's list of vaults, which vault_list reads and the
@@ -61,11 +62,18 @@ func (t *Tools) WithLibrary(library func(domain.VaultID) Library, functions host
 	return t
 }
 
+// WithFunctionLister sets how library_query reads the functions of the search language each time the host
+// lists the tools, so that its description follows the functions of the plugins enabled since the start.
+func (t *Tools) WithFunctionLister(lister func(ctx context.Context) (host.SearchFunctions, error)) *Tools {
+	t.lister = lister
+	return t
+}
+
 // Registry registers and returns all vault tools.
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
 	registrations := joinRegistrations(
-		createNoteTools(), createLibraryTools(), createQueryTools(t.functions), createInspectTools(),
+		createNoteTools(), createLibraryTools(), createQueryTools(t.functions, t.lister), createInspectTools(),
 		createFileTools(), createArrangeTools(), createLinkEditTools(),
 	)
 	if t.list != nil {

@@ -34,6 +34,7 @@ const GO_MODULES = [
   'plugins/tools-proofreading',
   'plugins/tools-saved-search',
   'plugins/tools-search-relevance',
+  'plugins/tools-taxonomy',
   'plugins/tools-updater',
   'plugins/readers-epub',
   'plugins/readers-pdf',

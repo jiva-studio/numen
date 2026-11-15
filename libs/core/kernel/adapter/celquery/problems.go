@@ -1,9 +1,9 @@
 package celquery
 
 import (
-	"strings"
 
 	"cel.dev/cel-go/common/ast"
+	"cel.dev/cel-go/common/operators"
 	"cel.dev/cel-go/common/overloads"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
@@ -13,15 +13,27 @@ import (
 type nameWalk struct {
 	catalog  searchquery.Catalog
 	source   *ast.SourceInfo
+	text     queryText
 	problems []searchquery.Problem
 }
 
 func (w *nameWalk) addProblem(expr ast.Expr, message, name string) {
 	suggestion, _ := searchquery.SuggestName(name, w.catalog)
 	w.problems = append(w.problems, searchquery.Problem{
-		Position: getExprPosition(w.source, expr), Message: message + " " + name, Suggestion: suggestion,
+		Position: getExprPosition(w.text, w.source, expr), Message: message + " " + name, Suggestion: suggestion,
 	})
 }
+
+func (w *nameWalk) addMemberProblem(expr ast.Expr, name string) {
+	suggestion, _ := searchquery.SuggestName(name, memberFunctions)
+	w.problems = append(w.problems, searchquery.Problem{
+		Position: getExprPosition(w.text, w.source, expr), Message: "Unknown function " + name, Suggestion: suggestion,
+	})
+}
+
+var memberFunctions = searchquery.Catalog{Functions: []searchquery.Function{
+	{Name: overloads.StartsWith}, {Name: overloads.EndsWith}, {Name: overloads.Contains},
+}}
 
 func (w *nameWalk) walk(expr ast.Expr) {
 	switch expr.Kind() {
@@ -29,7 +41,7 @@ func (w *nameWalk) walk(expr ast.Expr) {
 		w.walkCall(expr)
 	case ast.IdentKind:
 		if f, ok := w.catalog.FindFunction(expr.AsIdent()); !ok || !f.IsVariable {
-			w.addProblem(expr, "unknown name", expr.AsIdent())
+			w.addProblem(expr, "Unknown name", expr.AsIdent())
 		}
 	case ast.SelectKind:
 		w.walk(expr.AsSelect().Operand())
@@ -52,7 +64,7 @@ func (w *nameWalk) walkCall(expr ast.Expr) {
 		}
 	default:
 		if f, ok := w.catalog.FindFunction(name); !ok || f.IsVariable || f.IsStage {
-			w.addProblem(expr, "unknown function", name)
+			w.addProblem(expr, "Unknown function", name)
 			return
 		}
 	}
@@ -62,7 +74,8 @@ func (w *nameWalk) walkCall(expr ast.Expr) {
 }
 
 func isOperator(name string) bool {
-	return strings.HasPrefix(name, "_") || strings.HasPrefix(name, "@") || strings.HasPrefix(name, "!")
+	_, found := operators.FindReverse(name)
+	return found || name == operators.NotStrictlyFalse || name == operators.OldNotStrictlyFalse
 }
 
 func (w *nameWalk) isStage(name string) bool {
@@ -74,16 +87,22 @@ func (w *nameWalk) walkMember(expr ast.Expr) bool {
 	call := expr.AsCall()
 	name := call.FunctionName()
 	switch {
-	case name == overloads.StartsWith, w.isStage(name):
+	case isStringMethod(name), w.isStage(name):
 		w.walk(call.Target())
 		return true
 	case call.Target().Kind() == ast.CallKind:
+		w.walk(call.Target())
 		suggestion, _ := searchquery.SuggestStage(name, w.catalog)
 		w.problems = append(w.problems, searchquery.Problem{
-			Position: getExprPosition(w.source, expr), Message: "unknown stage " + name, Suggestion: suggestion,
+			Position: getExprPosition(w.text, w.source, expr), Message: "Unknown stage " + name, Suggestion: suggestion,
 		})
 		return false
 	}
-	w.addProblem(expr, "unknown function", name)
+	w.walk(call.Target())
+	w.addMemberProblem(expr, name)
 	return false
+}
+
+func isStringMethod(name string) bool {
+	return name == overloads.StartsWith || name == overloads.EndsWith || name == overloads.Contains
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -66,7 +67,7 @@ func (m Manifests) listUncontestedPlugins() []manifest.Discovered {
 		}
 	}
 	conflicting := map[string]bool{}
-	for _, conflict := range manifest.ListContributionConflicts(enabled) {
+	for _, conflict := range manifest.ListContributionConflicts(enabled, manifest.CoreClaims{}) {
 		conflicting[conflict.PluginID] = true
 	}
 	return slices.DeleteFunc(enabled, func(plugin manifest.Discovered) bool { return conflicting[plugin.Manifest.ID] })
@@ -174,4 +175,14 @@ func (m Manifests) ListFrontendPluginIDs() []string {
 		}
 	}
 	return ids
+}
+
+// ListSearchFunctions lists the query functions the manifests of the enabled, uncontested plugins declare, in
+// the order of the plugins. No plugin is started.
+func (m Manifests) ListSearchFunctions() []searchquery.Function {
+	var found []searchquery.Function
+	for _, plugin := range m.listUncontestedPlugins() {
+		found = append(found, searchquery.ConvertManifestFunctions(plugin.Manifest.ID, plugin.Manifest.Contributes.SearchFunctions)...)
+	}
+	return found
 }

@@ -87,6 +87,36 @@ message ManifestContributes {
   // drop_handlers are the kinds of dropped data the plugin's frontend takes. The frontend registers a
   // drop handler only for types listed here.
   repeated ManifestDropHandler drop_handlers = 21;
+  // search_functions are the functions of the query language the plugin's backend answers.
+  ManifestSearchFunctions search_functions = 24;
+}
+
+// ManifestSearchFunctions are the query functions of a plugin under a version of their schema.
+message ManifestSearchFunctions {
+  // version is the version of the schema; this build reads 1.
+  int32 version = 1;
+  repeated ManifestSearchFunction functions = 2;
+}
+
+// ManifestSearchFunction is one function of the query language a plugin answers.
+message ManifestSearchFunction {
+  // name is what a query calls the function by: a lowercase letter, then letters and digits.
+  string name = 1;
+  // args are the positional arguments of the function.
+  repeated ManifestSearchFunctionArg args = 2;
+  // level is "document"; version 1 refuses "chunk".
+  string level = 3;
+  // description is one line an agent reads about the function.
+  string description = 4;
+  // example is a query that uses the function.
+  string example = 5;
+}
+
+// ManifestSearchFunctionArg is one positional argument of a query function.
+message ManifestSearchFunctionArg {
+  string name = 1;
+  // type is "string", "int" or "bool".
+  string type = 2;
 }
 
 // ManifestDropHandler lists data types of a drag from outside the window, such as text/uri-list, that a
