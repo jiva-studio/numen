@@ -238,7 +238,7 @@ func writeSearchMode(mode SearchMode) (v1.SearchMode, error) {
 // text of the chunk matches the FTS5 query. It needs the index:read permission. More than
 // MaxScoredChunks chunks, MaxScoredConditions conditions or a text over MaxConditionBytes returns
 // ErrLimitExceeded, a condition with no text or both texts ErrInvalidCondition, a words query FTS5
-// refuses ErrInvalidWords, and a meaning condition on a host with no model ErrNoModel.
+// rejects ErrInvalidWords, and a meaning condition on a host with no model ErrNoModel.
 func (c *SearchClient) ScoreChunks(ctx context.Context, query ScoreQuery) (ChunkScores, error) {
 	conditions := make([]*v1.ScoreCondition, len(query.Conditions))
 	for i, one := range query.Conditions {

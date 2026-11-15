@@ -132,7 +132,7 @@ func TestPreviewToolFailsForACallWithoutAVault(t *testing.T) {
 	}
 }
 
-func TestPreviewToolRefusesANegativeLimit(t *testing.T) {
+func TestPreviewToolRejectsANegativeLimit(t *testing.T) {
 	_, failure := call(t, newRegistry(t), testVault, `{"query":"meaning(\"tides\")","limit":-1}`)
 
 	if failure == "" {

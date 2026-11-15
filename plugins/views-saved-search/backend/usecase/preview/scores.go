@@ -41,7 +41,7 @@ func (u *UseCase) scoreCandidates(ctx context.Context, compiled query.Query, fou
 		ids := getChunkIDs(found[start:min(start+host.MaxScoredChunks, len(found))])
 		answer, err := u.search.ScoreChunks(ctx, host.ScoreQuery{ChunkIDs: ids, Conditions: conditions})
 		if errors.Is(err, host.ErrInvalidWords) {
-			return nil, 0, u.findRefusedWords(ctx, compiled, ids, err)
+			return nil, 0, u.findRejectedWords(ctx, compiled, ids, err)
 		}
 		if err != nil {
 			return nil, 0, convertHostError(compiled, -1, err, "score the passages")
@@ -74,7 +74,7 @@ func newConditions(leaves []query.Leaf) []host.ScoreCondition {
 	return conditions
 }
 
-func (u *UseCase) findRefusedWords(ctx context.Context, compiled query.Query, ids []string, refused error) error {
+func (u *UseCase) findRejectedWords(ctx context.Context, compiled query.Query, ids []string, scoreErr error) error {
 	for i, leaf := range compiled.Leaves {
 		if leaf.IsMeaning {
 			continue
@@ -87,5 +87,5 @@ func (u *UseCase) findRefusedWords(ctx context.Context, compiled query.Query, id
 			return convertHostError(compiled, -1, err, "score the passages")
 		}
 	}
-	return convertHostError(compiled, -1, refused, "score the passages")
+	return convertHostError(compiled, -1, scoreErr, "score the passages")
 }

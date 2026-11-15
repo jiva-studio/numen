@@ -28,7 +28,7 @@ func (c *converter) getProblem(id int64, message string) Problem {
 	}
 }
 
-func (c *converter) refuse(expr ast.Expr, message string) Node {
+func (c *converter) reject(expr ast.Expr, message string) Node {
 	c.problems = append(c.problems, c.getProblem(expr.ID(), message))
 	return c.newLeafNode(expr, newTerm(TermWords), false)
 }
@@ -49,12 +49,12 @@ func (c *converter) convert(expr ast.Expr, isNegated bool) Node {
 	case ast.CallKind:
 		return c.convertCall(expr, isNegated)
 	case ast.IdentKind:
-		return c.refuse(expr, getIdentMessage(expr.AsIdent()))
+		return c.reject(expr, getIdentMessage(expr.AsIdent()))
 	case ast.UnspecifiedExprKind, ast.ComprehensionKind, ast.ListKind, ast.LiteralKind,
 		ast.MapKind, ast.SelectKind, ast.StructKind:
-		return c.refuse(expr, messageCondition)
+		return c.reject(expr, messageCondition)
 	}
-	return c.refuse(expr, messageCondition)
+	return c.reject(expr, messageCondition)
 }
 
 func getIdentMessage(name string) string {
@@ -87,7 +87,7 @@ func (c *converter) convertCall(expr ast.Expr, isNegated bool) Node {
 	case overloads.StartsWith:
 		return c.convertStartsWith(expr, isNegated)
 	}
-	return c.refuse(expr, messageCondition)
+	return c.reject(expr, messageCondition)
 }
 
 func (c *converter) convertGroup(args []ast.Expr, operator Operator, isNegated bool) Node {
@@ -118,15 +118,15 @@ func (c *converter) convertText(expr ast.Expr, isNegated bool) Node {
 	name := call.FunctionName()
 	text, isLiteral := getStringLiteral(call.Args()[0])
 	if !isLiteral {
-		return c.refuse(expr, fmt.Sprintf(messageLiteralText, name))
+		return c.reject(expr, fmt.Sprintf(messageLiteralText, name))
 	}
 	if strings.TrimSpace(text) == "" || len(text) > host.MaxConditionBytes {
-		return c.refuse(expr, fmt.Sprintf(messageTextSize, name, host.MaxConditionBytes))
+		return c.reject(expr, fmt.Sprintf(messageTextSize, name, host.MaxConditionBytes))
 	}
 	isMeaning := name == functionMeaning
 	index, isAdded := c.addLeaf(isMeaning, text, !isNegated)
 	if !isAdded {
-		return c.refuse(expr, getLeafCountMessage())
+		return c.reject(expr, getLeafCountMessage())
 	}
 	term := newTerm(TermWords)
 	if isMeaning {
@@ -161,30 +161,30 @@ func (c *converter) convertComparison(expr ast.Expr, isNegated bool) Node {
 		}
 		kind, isLiteral := getStringLiteral(other)
 		if !isLiteral || !isKind(kind) {
-			return c.refuse(expr, messageKind)
+			return c.reject(expr, messageKind)
 		}
 		term := newTerm(TermKind)
 		term.Kinds = []string{kind}
 		return c.newLeafNode(expr, term, isNegated)
 	case isIdent(left, variablePath) || isIdent(right, variablePath):
-		return c.refuse(expr, messagePath)
+		return c.reject(expr, messagePath)
 	}
-	return c.refuse(expr, messageCondition)
+	return c.reject(expr, messageCondition)
 }
 
 func (c *converter) convertIn(expr ast.Expr, isNegated bool) Node {
 	args := expr.AsCall().Args()
 	if !isIdent(args[0], variableKind) {
-		return c.refuse(expr, getInMessage(args[0]))
+		return c.reject(expr, getInMessage(args[0]))
 	}
 	if args[1].Kind() != ast.ListKind {
-		return c.refuse(expr, messageKind)
+		return c.reject(expr, messageKind)
 	}
 	var kinds []string
 	for _, element := range args[1].AsList().Elements() {
 		kind, isLiteral := getStringLiteral(element)
 		if !isLiteral || !isKind(kind) {
-			return c.refuse(expr, messageKind)
+			return c.reject(expr, messageKind)
 		}
 		kinds = append(kinds, kind)
 	}
@@ -204,13 +204,13 @@ func (c *converter) convertStartsWith(expr ast.Expr, isNegated bool) Node {
 	call := expr.AsCall()
 	switch {
 	case isIdent(call.Target(), variableKind):
-		return c.refuse(expr, messageKind)
+		return c.reject(expr, messageKind)
 	case !isIdent(call.Target(), variablePath):
-		return c.refuse(expr, messageCondition)
+		return c.reject(expr, messageCondition)
 	}
 	prefix, isLiteral := getStringLiteral(call.Args()[0])
 	if !isLiteral {
-		return c.refuse(expr, messagePath)
+		return c.reject(expr, messagePath)
 	}
 	term := newTerm(TermPath)
 	term.Prefix = prefix

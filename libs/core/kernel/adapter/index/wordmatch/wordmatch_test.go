@@ -82,7 +82,7 @@ func TestMatchWordsAnswersEveryTextOfAnEmptyList(t *testing.T) {
 	}
 }
 
-func TestMatchWordsRefusesAQueryFTS5CannotParse(t *testing.T) {
+func TestMatchWordsRejectsAQueryFTS5CannotParse(t *testing.T) {
 	for _, expression := range []string{`"heron`, "heron AND", "NEAR(heron", "AND"} {
 		_, err := wordmatch.NewMatcher().MatchWords(t.Context(), expression, []string{"the heron"})
 		if !errors.Is(err, source.ErrInvalidWords) {
