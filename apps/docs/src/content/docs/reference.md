@@ -37,7 +37,7 @@ Two things are not settings and are not in here: which files count as notes, and
 
 | | | |
 | --- | --- | --- |
-| `profile` | text | how much of the hardware indexing and models may use. One of `eco`, `balanced`, `maximum`. |
+| `profile` | text | how much of the hardware indexing and models may use. One of `eco`, `low`, `balanced`, `high`, `maximum`. |
 
 ### `md.numen.agents.acp`
 
