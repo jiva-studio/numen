@@ -90,8 +90,10 @@ const writeHighlight = (cursor, state, badge) => {
   highlight.style.height = `${state.h * 100}%`
   highlight.style.opacity = String(state.opacity)
   highlight.classList.toggle('is-near-bottom', state.y + state.h > 0.9)
-  label.hidden = badge === null
-  if (badge) writeParts(label, badge.parts)
+  const last = badge?.parts.at(-1)
+  label.hidden = !last
+  highlight.classList.toggle('has-label', Boolean(last))
+  if (last) writeParts(label, [last])
 }
 
 const writeBadge = (badge, state) => {

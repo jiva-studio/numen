@@ -80,6 +80,15 @@
   white-space: nowrap;
 }
 
+.input-highlight.has-label {
+  border-bottom-right-radius: 0;
+}
+
+.input-highlight.has-label.is-near-bottom {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: var(--radius-md);
+}
+
 .is-near-bottom .input-label {
   top: auto;
   bottom: calc(100% + 2px);
