@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
 // UpdateCommand is the command that brings the tags of the vault up to date with its file change feed.

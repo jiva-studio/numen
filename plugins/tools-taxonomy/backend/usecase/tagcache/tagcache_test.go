@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
 // recordedReads is the frontmatter and the feed of a vault, recording each query asked of them. A read
