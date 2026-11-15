@@ -252,7 +252,8 @@ func (a *Activation) settlePluginInState(
 }
 
 // EnsureActive starts the plugin where its process does not run, takes a use lease of the holder on it and
-// returns its endpoint. Release returns the lease.
+// returns its endpoint. It then downloads what the plugin declares and is not on this machine, unless the context comes from
+// withoutProvisioning; a failed download releases the lease, is returned and is no failure of the plugin. Release returns the lease.
 func (a *Activation) EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
 	endpoint, err := a.ensureActiveDuringDiscovery(ctx, pluginID, useLease(holder))
 	if err != nil || !isProvisioning(ctx) {
@@ -267,8 +268,6 @@ func (a *Activation) EnsureActive(ctx context.Context, pluginID string, holder p
 
 type withoutProvisioningKey struct{}
 
-// withoutProvisioning marks a call of EnsureActive that starts the plugin without downloading the dependencies it declares,
-// for the delivery of an event or of a connection, which is no use of the models.
 func withoutProvisioning(ctx context.Context) context.Context {
 	return context.WithValue(ctx, withoutProvisioningKey{}, struct{}{})
 }
@@ -277,8 +276,6 @@ func isProvisioning(ctx context.Context) bool {
 	return ctx.Value(withoutProvisioningKey{}) == nil
 }
 
-// ensureProvisioned downloads what the plugin declares and is not on this machine. A failed download is no failure of
-// the plugin: it is returned to the caller of the use and tried again at the next one.
 func ensureProvisioned(ctx context.Context, set activationPlugins, processes *supervision.Processes, pluginID string) error {
 	p, ok := set.getKnownPlugin(pluginID)
 	if !ok {
