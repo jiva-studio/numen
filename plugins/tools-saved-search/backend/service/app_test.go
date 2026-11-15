@@ -160,6 +160,7 @@ func (f *fixture) handleIndexChange(t *testing.T) {
 	if err := f.app.HandleEvent(t.Context(), "onIndexChanged:"+testVault); err != nil {
 		t.Fatalf("HandleEvent = %v", err)
 	}
+	f.app.Wait()
 }
 
 func (f *fixture) readRecord(t *testing.T, noteID string) resultcache.Record {

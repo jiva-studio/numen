@@ -16,16 +16,21 @@ type watchKey struct {
 	path  string
 }
 
-// watchers are the watches of the notes and the notes whose run is on its way.
+// watchers are the watches of the notes, the notes whose run is on its way and the notes without a good
+// run that a batch is to run.
 type watchers struct {
 	mu        sync.Mutex
 	next      int
 	listeners map[watchKey]map[int]chan Change
 	running   map[watchKey]int
+	queued    map[watchKey]bool
 }
 
 func newWatchers() *watchers {
-	return &watchers{mu: sync.Mutex{}, next: 0, listeners: map[watchKey]map[int]chan Change{}, running: map[watchKey]int{}}
+	return &watchers{
+		mu: sync.Mutex{}, next: 0, listeners: map[watchKey]map[int]chan Change{}, running: map[watchKey]int{},
+		queued: map[watchKey]bool{},
+	}
 }
 
 func (w *watchers) add(key watchKey) (<-chan Change, func()) {
@@ -55,8 +60,11 @@ func (w *watchers) add(key watchKey) (<-chan Change, func()) {
 func (w *watchers) begin(key watchKey) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	wasRunning := w.isRunningLocked(key)
 	w.running[key]++
-	w.sendLocked(key, Change{ComputedAt: time.Time{}, IsRunning: true})
+	if !wasRunning {
+		w.sendLocked(key, Change{ComputedAt: time.Time{}, IsRunning: true})
+	}
 }
 
 func (w *watchers) end(key watchKey, computedAt time.Time) {
@@ -66,13 +74,44 @@ func (w *watchers) end(key watchKey, computedAt time.Time) {
 	if w.running[key] <= 0 {
 		delete(w.running, key)
 	}
-	w.sendLocked(key, Change{ComputedAt: computedAt, IsRunning: w.running[key] > 0})
+	if !computedAt.IsZero() {
+		delete(w.queued, key)
+	}
+	if isRunning := w.isRunningLocked(key); !isRunning || !computedAt.IsZero() {
+		w.sendLocked(key, Change{ComputedAt: computedAt, IsRunning: isRunning})
+	}
+}
+
+func (w *watchers) queue(key watchKey) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	wasRunning := w.isRunningLocked(key)
+	w.queued[key] = true
+	if !wasRunning {
+		w.sendLocked(key, Change{ComputedAt: time.Time{}, IsRunning: true})
+	}
+}
+
+func (w *watchers) unqueue(key watchKey) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if !w.queued[key] {
+		return
+	}
+	delete(w.queued, key)
+	if !w.isRunningLocked(key) {
+		w.sendLocked(key, Change{ComputedAt: time.Time{}, IsRunning: false})
+	}
 }
 
 func (w *watchers) isRunning(key watchKey) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return w.running[key] > 0
+	return w.isRunningLocked(key)
+}
+
+func (w *watchers) isRunningLocked(key watchKey) bool {
+	return w.running[key] > 0 || w.queued[key]
 }
 
 func (w *watchers) isWatched(key watchKey) bool {
