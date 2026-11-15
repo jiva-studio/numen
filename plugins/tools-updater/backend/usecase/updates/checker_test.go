@@ -157,7 +157,7 @@ func TestAChangeOfTheEndpointDiscardsTheLastResult(t *testing.T) {
 		t.Fatalf("status after a setting that is not the endpoint = %+v", same)
 	}
 
-	c.Configure(map[string]string{"channel": "beta"})
+	c.Configure(map[string]string{"channel": "nightly"})
 	if changed := c.GetStatus(); changed.State != StateUnchecked {
 		t.Errorf("status after a new endpoint = %+v", changed)
 	}

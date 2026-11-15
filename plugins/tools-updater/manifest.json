@@ -34,8 +34,8 @@
           "detail": "Tested releases"
         },
         {
-          "value": "beta",
-          "title": "Beta",
+          "value": "nightly",
+          "title": "Nightly",
           "detail": "Builds published ahead of the next release"
         },
         {

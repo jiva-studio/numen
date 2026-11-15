@@ -476,6 +476,6 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Not: the mode (light or dark) is not the theme.
 
 ### update and release channel
-- Is: An update is a newer build of Numen. Plugin "Update Notifier" only tells; it does not install. The channel is which builds are announced: "Stable", "Beta", "Custom".
+- Is: An update is a newer build of Numen. Plugin "Update Notifier" only tells; it does not install. The channel is which builds are announced: "Stable", "Nightly", "Custom".
 - Actions: "Download", "Release notes", "Dismiss".
 - Texts: "Update available", "Released on" (plugins/tools-updater/frontend/words.ts); the chip in the title bar shows the version and its tooltip begins "Update available: v" (plugins/tools-updater/frontend/model/tooltip.ts).

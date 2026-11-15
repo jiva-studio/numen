@@ -39,8 +39,8 @@ type Manifest struct {
 type Build int64
 
 // buildStamp matches the build number at the end of a stamp such as `0.4.0-alpha.1-364-283d1d5`
-// or `2026.10.1-beta.920`.
-var buildStamp = regexp.MustCompile(`(?:-beta\.|\b)(\d+)(?:-[a-f0-9]{7})?$`)
+// or `2026.10.1-nightly.920`.
+var buildStamp = regexp.MustCompile(`(?:-nightly\.|\b)(\d+)(?:-[a-f0-9]{7})?$`)
 
 // ParseBuild returns the build number a text holds: a plain number, or the number a stamp ends in.
 // A text that holds none, such as a version without a stamp, is 0.

@@ -13,8 +13,8 @@ The plugin checks without showing messages. A machine without a network connecti
 
 ## Settings
 
-- **Channel**: **Stable** _(default)_ notifies about releases; **Beta** notifies about builds published ahead of the next release; **Custom** asks the release feed address below.
-- **Release feed address**: Shown only for the **Custom** channel, which requires it: the address of the `latest.json` file to request the newest build. The Stable and Beta channels ask their own published feeds, and the stored address is kept while it is hidden.
+- **Channel**: **Stable** _(default)_ notifies about releases; **Nightly** notifies about the build made every night; **Custom** asks the release feed address below.
+- **Release feed address**: Shown only for the **Custom** channel, which requires it: the address of the `latest.json` file to request the newest build. The Stable and Nightly channels ask their own published feeds, and the stored address is kept while it is hidden.
 - **Check interval**: Hours between two checks (`4` by default).
 
 ## How It Works
