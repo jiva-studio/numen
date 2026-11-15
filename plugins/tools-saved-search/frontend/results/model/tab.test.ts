@@ -378,9 +378,7 @@ describe('the notice of a failed run', () => {
     await settle()
 
     expect(notify).toHaveBeenCalledTimes(1)
-    expect(notify).toHaveBeenCalledWith(
-      'Harbor master: winter storms: the query has problems',
-    )
+    expect(notify).toHaveBeenCalledWith('Harbor master: winter storms: the query has problems')
   })
 })
 

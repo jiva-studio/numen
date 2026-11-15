@@ -71,8 +71,7 @@ const getMessage = (error: Caught): string =>
 const getFailureKey = (answer: GetResultsResponse): string =>
   answer.failedAt === '' ? '' : `${answer.failedAt}\n${answer.failure}`
 
-const getNotice = (answer: GetResultsResponse): string =>
-  `${answer.title}: ${answer.failure}`
+const getNotice = (answer: GetResultsResponse): string => `${answer.title}: ${answer.failure}`
 
 /** The tab reads GetResults on each change of the watch, the last change winning, and runs no search. */
 export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps): SavedSearchTab {

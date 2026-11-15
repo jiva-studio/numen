@@ -90,7 +90,6 @@ export function isInQuery(problem: Problem): boolean {
   return problem.line > 0
 }
 
-
 function getFileName(path: string): string {
   return path.slice(path.lastIndexOf('/') + 1)
 }
