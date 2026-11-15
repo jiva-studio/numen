@@ -24,16 +24,22 @@ func TestNoCodeOfTheIndexEmptiesItOrReshapesItsBookkeeping(t *testing.T) {
 	}
 }
 
-// The rule rejects a rewriting statement in a string literal, a removed function of the index package and the
-// removed identifier anywhere, and passes the same words in a comment, a method of a removed name, a removed
-// function name in a subpackage and a test file.
+// The rule rejects a statement in a string literal that drops a table it names at run time, changes the migration
+// table, reads its shape or names a copy of it, and passes a drop of a named table, the statements that create,
+// record and read the migration table, a delete of rows, the same words in a comment and a test file.
 func TestBookkeepingRule_RejectsRewritesOfTheIndex(t *testing.T) {
 	root := load.WriteTreeFixture(t, map[string]string{
-		"db.go": "package index\n\n// resetIndex and ALTER TABLE schema_migrations are gone.\n\n" +
-			"const next = `CREATE TABLE schema_migrations_next (version INTEGER)`\n\n" +
-			"func resetIndex() {}\n\ntype store struct{}\n\nfunc (store) getDropping() {}\n",
-		"chunk/chunk.go": "package chunk\n\nfunc getDropping() {}\n\nfunc findDroppableSQL() string { return \"ALTER TABLE schema_migrations ADD x\" }\n",
-		"db_test.go":     "package index\n\nfunc dropEverything() {}\n",
+		"migrate.go": "package index\n\n// DROP TABLE and ALTER TABLE schema_migrations are not run.\n\n" +
+			"const create = `CREATE TABLE IF NOT EXISTS schema_migrations (\n\tversion INTEGER PRIMARY KEY\n)`\n\n" +
+			"const record = `INSERT INTO schema_migrations (version) VALUES (?)`\n\n" +
+			"const ran = `SELECT version FROM schema_migrations`\n\n" +
+			"const clear = `DELETE FROM chunks WHERE id = ?`\n",
+		"db.go": "package index\n\nconst next = `CREATE TABLE schema_migrations_next (version INTEGER)`\n\n" +
+			"const shape = `SELECT name FROM pragma_table_info('schema_migrations')`\n",
+		"chunk/chunk.go": "package chunk\n\nfunc drop(name string) string { return \"drop table \" + name }\n\n" +
+			"const widen = \"ALTER TABLE schema_migrations ADD x\"\n",
+		"vectors.go": "package index\n\nconst refit = `DROP TABLE IF EXISTS chunks_vec`\n",
+		"db_test.go": "package index\n\nconst reset = `DROP TABLE chunks`\n",
 	})
 	wrong, read, err := findBookkeepingRewrites(root)
 	if err != nil {
@@ -41,16 +47,16 @@ func TestBookkeepingRule_RejectsRewritesOfTheIndex(t *testing.T) {
 	}
 	slices.Sort(wrong)
 	want := []string{
-		`chunk/chunk.go holds "ALTER TABLE schema_migrations"`,
-		"chunk/chunk.go names findDroppableSQL",
-		`db.go declares resetIndex`,
-		`db.go holds "schema_migrations_next"`,
+		"chunk/chunk.go changes the migration table",
+		"chunk/chunk.go drops a table it names at run time",
+		"db.go changes the migration table",
+		"db.go changes the migration table",
 	}
 	if !slices.Equal(wrong, want) {
 		t.Errorf("the rule rejects %v, want %v", wrong, want)
 	}
-	if read != 2 {
-		t.Errorf("%d files read, want 2", read)
+	if read != 4 {
+		t.Errorf("%d files read, want 4", read)
 	}
 }
 

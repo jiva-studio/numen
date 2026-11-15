@@ -71,9 +71,9 @@ func checkPortDeclaresAndDoesNotOrchestrate(t *testing.T, workspace load.Workspa
 		t.Errorf("%s: %s; a use case calls the ports, a port declares them", one.Position, one.Name)
 	}
 
-	// A port declares and does not orchestrate, so it holds few functions to read. A walk that loaded no
-	// port interface did not reach the ports; the fixture test proves the rule fires on a call.
-	if ports := len(load.ListPortInterfaces(pkgs, load.CoreImportPath)); ports == 0 {
+	// A port declares and does not orchestrate, so it holds few functions to read. A walk that loaded few
+	// port interfaces did not reach the ports; the fixture test proves the rule fires on a call.
+	if ports := len(load.ListPortInterfaces(pkgs, load.CoreImportPath)); ports < 40 {
 		t.Fatalf("%d port interfaces read: the rule is checked against nothing", ports)
 	}
 }
