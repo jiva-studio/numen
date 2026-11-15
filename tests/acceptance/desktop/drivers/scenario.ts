@@ -156,8 +156,11 @@ export class Scenario {
   }
 
   private async closeBrowser(): Promise<void> {
-    for (const context of this.browser?.contexts() ?? []) await context.close()
-    await this.browser?.close()
+    try {
+      for (const context of this.browser?.contexts() ?? []) await context.close()
+    } finally {
+      await this.browser?.close()
+    }
   }
 
   readServerLog(): string | undefined {

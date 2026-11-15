@@ -35,6 +35,13 @@ export type ScenarioSource = {
 
 const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
 
+export const getFeatureKey = (featureUri: string): string =>
+  featureUri
+    .replace(/\.feature$/, '')
+    .split('/')
+    .map((part) => part.replace(/[^\w-]+/g, '-'))
+    .join('.')
+
 export const stripAnsi = (text: string): string => text.replace(ANSI, '')
 
 export const getScenarioStatus = (status: TestResult['status']): StepStatus => {
@@ -54,7 +61,7 @@ export const createScenarioRecord = (
     .relative(source.rootDir, source.bddFile.featurePath)
     .split(path.sep)
     .join('/')
-  const id = `${featureUri.replace(/\.feature$/, '').replace(/[^\w-]+/g, '-')}-${scenario.line}`
+  const id = `${getFeatureKey(featureUri)}-${scenario.line}`
   const status = getScenarioStatus(result.status)
   const ran = collectBddSteps(result.steps, test.location.file)
   const videoStart = getVideoStart(result.annotations, ran) ?? result.startTime.getTime()

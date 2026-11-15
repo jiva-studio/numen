@@ -82,11 +82,11 @@ const getPickleLine = (feature: Feature, pickle: Pickle): number | undefined =>
   feature.lines.get(pickle.astNodeIds.at(-1) ?? '')
 
 const toGherkinStep = (feature: Feature, step: PickleStep): GherkinStep => {
-  const written = feature.steps.get(step.astNodeIds[0] ?? '')
+  const astStep = feature.steps.get(step.astNodeIds[0] ?? '')
   return {
-    keyword: written?.keyword.trim() ?? '',
+    keyword: astStep?.keyword.trim() ?? '',
     text: step.text,
-    line: written?.location.line ?? 0,
+    line: astStep?.location.line ?? 0,
     ...readArgument(step.argument),
   }
 }

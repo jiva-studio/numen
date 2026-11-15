@@ -298,11 +298,20 @@ const isTyping = (target) =>
 
 const isInMenu = (target) => target instanceof Element && target.closest('.menu') !== null
 
+const isOnButton = (event) =>
+  event.key === ' ' && event.target instanceof Element && event.target.closest('button') !== null
+
+const isForPage = (event) =>
+  event.altKey ||
+  event.ctrlKey ||
+  event.metaKey ||
+  isTyping(event.target) ||
+  isInMenu(event.target) ||
+  isOnButton(event)
+
 const handleKey = (event) => {
   const action = KEY_ACTIONS[event.key]
-  if (!action || !currentVideo?.player.isConnected) return
-  if (event.altKey || event.ctrlKey || event.metaKey || isTyping(event.target)) return
-  if (isInMenu(event.target)) return
+  if (!action || !currentVideo?.player.isConnected || isForPage(event)) return
   event.preventDefault()
   event.stopPropagation()
   action(currentVideo)

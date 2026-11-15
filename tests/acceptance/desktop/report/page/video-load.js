@@ -11,6 +11,10 @@ const fetchVideo = async (url) => {
 }
 
 const setSource = (video, source) => {
+  if (!video.player.isConnected) {
+    if (source.startsWith('blob:')) URL.revokeObjectURL(source)
+    return
+  }
   video.source = source
   video.player.src = source
   writePoster(video)

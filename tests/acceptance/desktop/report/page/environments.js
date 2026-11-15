@@ -27,6 +27,7 @@ const createEnvironments = (scenario, current) => {
     if (!button) return
     state.environment = button.dataset.environment
     writeDetail(scenario)
+    document.querySelector('.environments [aria-pressed="true"]')?.focus()
   })
   return group
 }

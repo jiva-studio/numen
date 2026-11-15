@@ -73,6 +73,15 @@ describe('mapStepTimes', () => {
     ])
   })
 
+  it('fails a step whose error carries a thrown value instead of a message', () => {
+    const steps = [createStep({ line: 7, at: 100, error: { value: 'no plant' } })]
+
+    expect(mapStepTimes([7], steps, T0, true)[0]).toMatchObject({
+      status: 'failed',
+      errorMessage: 'no plant',
+    })
+  })
+
   it('starts a step that began before the video at zero', () => {
     expect(mapStepTimes([7], [createStep({ line: 7, at: -50 })], T0, false)[0]?.start).toBe(0)
   })

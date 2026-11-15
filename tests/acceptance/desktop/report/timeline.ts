@@ -5,7 +5,7 @@ export type StepNode = {
   readonly location?: { readonly file: string; readonly line: number }
   readonly startTime: Date
   readonly duration: number
-  readonly error?: { readonly message?: string }
+  readonly error?: { readonly message?: string; readonly value?: string }
   readonly steps: readonly StepNode[]
 }
 
@@ -53,8 +53,8 @@ const SKIPPED: StepTiming = { status: 'skipped', start: null, duration: 0 }
 
 const toTiming = (step: StepNode, videoStart: number, isBlamed: boolean): StepTiming => {
   const start = Math.max(0, (step.startTime.getTime() - videoStart) / 1000)
-  const message = step.error?.message
-  if (message !== undefined || isBlamed) {
+  const message = step.error?.message ?? step.error?.value
+  if (step.error !== undefined || isBlamed) {
     return {
       status: 'failed',
       start,

@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import type { Page, TestInfo, ViewportSize } from 'playwright/test'
 import type { Recording } from '../drivers/scenario.js'
 import { attachInputs, recordInputs, type RecordedInput } from './inputs.js'
@@ -51,8 +52,11 @@ const markVideoStart = (testInfo: TestInfo): void => {
 
 const attachVideos = async (testInfo: TestInfo, pages: readonly Page[]): Promise<void> => {
   for (const page of pages) {
-    const video = page.video()
-    if (video)
-      await testInfo.attach('video', { path: await video.path(), contentType: 'video/webm' })
+    const path = await page
+      .video()
+      ?.path()
+      .catch(() => undefined)
+    if (path && fs.existsSync(path))
+      await testInfo.attach('video', { path, contentType: 'video/webm' })
   }
 }

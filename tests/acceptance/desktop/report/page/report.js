@@ -313,7 +313,7 @@ document.getElementById('tree').addEventListener('click', (event) => {
   if (button) location.hash = button.dataset.id
 })
 window.addEventListener('hashchange', () =>
-  selectScenario(decodeURIComponent(location.hash.slice(1))),
+  selectScenario(decodeURIComponent(location.hash.slice(1)) || getFirstScenarioId()),
 )
 
 document.querySelector('.search').prepend(createIcon('search'))
