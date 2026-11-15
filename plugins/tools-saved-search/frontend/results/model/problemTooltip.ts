@@ -34,7 +34,7 @@ const createTooltip = (state: EditorState): Tooltip | null => {
   }
 }
 
-/** The tooltip of the problem the cursor is in. */
+/** Built again when the query, the cursor or the underlined problems change. */
 export const problemAtCursor = StateField.define<Tooltip | null>({
   create: createTooltip,
   update: (tooltip, transaction) =>
