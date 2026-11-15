@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ApiError, BackgroundTask, Result } from '@numen/plugin-sdk'
-import { createMockBackgroundTaskHost, createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockBackgroundTaskHost, createMockHostServices } from '@numen/plugin-sdk/testing'
 import type { Stats } from '../api/stats'
 import { createIndexStats, REFRESH_MS, SETTLE_MS, type Activity, type Timer } from './stats'
 
@@ -11,6 +11,7 @@ const STATS: Stats = {
   sources: 2,
   kinds: [],
   model: 'bge-m3',
+  recipe: 'local|bge-m3|1024|512|mean|int8@0.4',
   dimensions: 1024,
   profile: 'balanced',
   threads: 4,
@@ -58,7 +59,7 @@ const setup = (answers: Array<Result<Stats, ApiError>>, isActive = true) => {
   let calls = 0
   const get = vi.fn(async () => answers[Math.min(calls++, answers.length - 1)]!)
   const tasks = createMockBackgroundTaskHost()
-  const { events } = createMockPluginContext()
+  const { events } = createMockHostServices()
   const model = createIndexStats({ api: { get }, timer, activity, tasks, events })
   const tickAll = () => waits.splice(0).forEach((one) => one.run())
   return { model, get, waits, state, wakes, tickAll, tasks, events }

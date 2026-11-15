@@ -3,16 +3,15 @@
  * an operation by its name only; the payload and the frames are bytes of the contract the operation
  * belongs to.
  */
-import { createClient, type Client } from '@connectrpc/connect'
+import type { Client } from '@connectrpc/connect'
 import {
   CallErrorCode,
-  ConnectionCallService,
+  type ConnectionCallService,
   FailureReason,
   Priority,
   type CallFailure,
 } from '@numen/protocol'
 import { asFailure, asValue, type Result } from '../result'
-import { transport } from '../transport'
 
 /** The calls of ConnectionCallService. */
 export type ConnectionCallRpc = Pick<
@@ -53,11 +52,7 @@ export interface ConnectionCallRequest {
  * has `unavailable`.
  */
 export type ConnectionCallFailureCode =
-  | 'unavailable'
-  | 'rejected_key'
-  | 'payment_required'
-  | 'rate_limited'
-  | 'invalid_request'
+  'unavailable' | 'rejected_key' | 'payment_required' | 'rate_limited' | 'invalid_request'
 
 /** One row of a plugin that did not answer: `reason` is the words the person reads, `code` the reason. */
 export interface ConnectionCallRowFailure {
@@ -234,8 +229,3 @@ export const createConnectionCallClient = (rpc: ConnectionCallRpc): ConnectionCa
     return options.map(({ value, title, group }) => ({ value, title, group }))
   },
 })
-
-/** The calls of the window the page is served from. */
-export const connectionCalls = createConnectionCallClient(
-  createClient(ConnectionCallService, transport),
-)

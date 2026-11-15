@@ -118,7 +118,7 @@ func parseWav(raw []byte) (riffWave, error) {
 		if size < 0 || pos+size > len(raw) {
 			size = len(raw) - pos
 		}
-		body := raw[pos : pos+size]
+		body := raw[pos : pos+size : pos+size]
 		pos += size
 		if size%2 == 1 {
 			pos++
@@ -127,7 +127,7 @@ func parseWav(raw []byte) (riffWave, error) {
 		switch kind {
 		case "fmt ":
 			if err := readWaveFormat(&out, body); err != nil {
-				return out, err
+				return riffWave{}, err
 			}
 			observed = true
 		case "data":
@@ -135,12 +135,12 @@ func parseWav(raw []byte) (riffWave, error) {
 		}
 	}
 	if !observed {
-		return out, fmt.Errorf("the wav recording has no header")
+		return riffWave{}, fmt.Errorf("the wav recording has no header")
 	}
 	// A sample narrower than a byte is a compressed container with a wav
 	// header, which this reads none of.
 	if out.channels <= 0 || out.rate <= 0 || out.bits < 8 {
-		return out, fmt.Errorf("the wav recording is %d channels of %d bits at %d hertz",
+		return riffWave{}, fmt.Errorf("the wav recording is %d channels of %d bits at %d hertz",
 			out.channels, out.bits, out.rate)
 	}
 	return out, nil

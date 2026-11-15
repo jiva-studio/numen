@@ -51,7 +51,7 @@ func BenchmarkEmbedDuplicates(b *testing.B) {
 				cutBooks(b, index, shelf, indexfake.GetFirst())
 				model := &embedder{dims: dimensions}
 				embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
-				embed.Source = sourcefake.Wrap(model)
+				embed.source = sourcefake.Wrap(model)
 				embed.BatchCharacters = 4000
 				b.StartTimer()
 
@@ -88,13 +88,13 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 			}
 
 			texts := make([]string, tc.chunks)
-			passages := make([]domain.Passage, tc.chunks)
+			results := make([]domain.SearchResult, tc.chunks)
 			for i := range tc.chunks {
 				txt := uniqueTexts[i%uniqueCount]
 				texts[i] = txt
-				passages[i] = domain.Passage{
+				results[i] = domain.SearchResult{
 					ChunkID:   domain.ChunkID(fmt.Sprintf("chunk-%d", i)),
-					Source:    "book.epub",
+					Path:      "book.epub",
 					ChunkHash: indexfake.GetHash(txt),
 				}
 			}
@@ -102,16 +102,16 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 			model := searchsource.Description{Name: "fake", Width: dimensions}
 			index := indexfake.NewStore()
 			embed := newEmbed(indexfake.Vaults{}, index, index)
-			embed.Source = sourcefake.Wrap(&embedder{dims: dimensions})
+			embed.source = sourcefake.Wrap(&embedder{dims: dimensions})
 
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				prep, err := newProducer(embed, nil).prepareBatch(b.Context(), model, searchsource.Place{}, passages, texts)
+				prep, err := newProducer(embed, nil).prepareBatch(b.Context(), model, searchsource.Place{}, results, texts)
 				if err != nil {
 					b.Fatal(err)
 				}
-				if _, err := (inferrer{source: embed.Source}).inferBatch(b.Context(), prep); err != nil {
+				if _, err := (inferrer{source: embed.source}).inferBatch(b.Context(), prep); err != nil {
 					b.Fatal(err)
 				}
 			}

@@ -2,7 +2,7 @@
 // made from them.
 //
 // The text itself is not stored. A chunk is a place in a file — where it starts
-// and how long it is — so showing a passage means reading the source again.
+// and how long it is — so showing a search result means reading the source again.
 package chunk
 
 import (

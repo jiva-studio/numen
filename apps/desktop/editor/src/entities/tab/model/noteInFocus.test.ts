@@ -21,7 +21,7 @@ const follow = (kind: string): AnyTabKind =>
 describe('the note a tool tab depends on', () => {
   it('is empty where no tool follows a note', async () => {
     const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([tool('timeline')])
+    windowTabs.kinds.registerKinds([tool('timeline')])
     await windowTabs.tabs.openTabOfKind('timeline', 'Tides.md')
 
     expect(getNoteInFocus(windowTabs)).toStrictEqual({ path: '', title: '' })
@@ -29,7 +29,7 @@ describe('the note a tool tab depends on', () => {
 
   it('is the note of the tool tab opened last among those that follow a note', async () => {
     const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([follow('graph'), follow('outline'), tool('timeline')])
+    windowTabs.kinds.registerKinds([follow('graph'), follow('outline'), tool('timeline')])
     await windowTabs.tabs.openTabOfKind('graph', 'Tides.md')
     await windowTabs.tabs.openTabOfKind('outline', 'Moons.md')
     await windowTabs.tabs.openTabOfKind('timeline', 'Orbits.md')

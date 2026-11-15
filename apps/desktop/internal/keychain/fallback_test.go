@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -64,8 +65,12 @@ func TestTheCredentialsFileIsPrivateToTheUser(t *testing.T) {
 		t.Skip("mode bits do not apply")
 	}
 	useNoKeychain(t)
-	dir := t.TempDir()
+	dir := filepath.Join(t.TempDir(), "settings")
 	if err := newTestStore(dir).SetKey(t.Context(), entryName, valueOne); err != nil {
+		t.Fatal(err)
+	}
+	root, err := os.Stat(dir)
+	if err != nil {
 		t.Fatal(err)
 	}
 	file, err := os.Stat(credentialsPath(dir))
@@ -76,11 +81,21 @@ func TestTheCredentialsFileIsPrivateToTheUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	lock, err := os.Stat(filepath.Join(dir, "credentials.json.lock"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if root.Mode().Perm() != 0o700 {
+		t.Errorf("settings directory mode = %v, want 0700", root.Mode().Perm())
+	}
 	if file.Mode().Perm() != 0o600 {
 		t.Errorf("file mode = %v, want 0600", file.Mode().Perm())
 	}
 	if folder.Mode().Perm() != 0o700 {
 		t.Errorf("directory mode = %v, want 0700", folder.Mode().Perm())
+	}
+	if lock.Mode().Perm() != 0o600 {
+		t.Errorf("lock file mode = %v, want 0600", lock.Mode().Perm())
 	}
 }
 
@@ -180,6 +195,13 @@ func TestAKeyStoredInTheKeychainIsRemovedFromTheFile(t *testing.T) {
 	if value, err := keyring.Get(service, entryName); err != nil || value != "rotated-value" {
 		t.Errorf("the keychain holds %q, %v", value, err)
 	}
+
+	if err := os.WriteFile(credentialsPath(dir), []byte("{corrupt"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := other.SetKey(t.Context(), entryName, "second-rotation"); err == nil {
+		t.Error("expected SetKey to report corrupt credentials file during stale copy cleanup")
+	}
 }
 
 func TestAKeychainThatRefusesIsNotReplacedByTheFile(t *testing.T) {
@@ -188,9 +210,14 @@ func TestAKeychainThatRefusesIsNotReplacedByTheFile(t *testing.T) {
 	dir := t.TempDir()
 	store := newTestStore(dir)
 
-	err := store.SetKey(t.Context(), entryName, valueOne)
-	if !errors.Is(err, plugin.ErrNoKeyStore) {
-		t.Fatalf("a write to a refusing keychain returned %v, want ErrNoKeyStore", err)
+	for name, call := range map[string]func() error{
+		"set": func() error { return store.SetKey(t.Context(), entryName, valueOne) },
+		"get": func() error { _, err := store.GetKey(t.Context(), entryName); return err },
+		"del": func() error { return store.DeleteKey(t.Context(), entryName) },
+	} {
+		if err := call(); !errors.Is(err, plugin.ErrNoKeyStore) {
+			t.Fatalf("%s on a refusing keychain returned %v, want ErrNoKeyStore", name, err)
+		}
 	}
 	if _, statErr := os.Stat(credentialsPath(dir)); !errors.Is(statErr, os.ErrNotExist) {
 		t.Errorf("a key was written to the file: %v", statErr)
@@ -204,6 +231,9 @@ func TestWithAReachableKeychainTheCredentialsFileIsNotCreated(t *testing.T) {
 
 	if err := store.SetKey(t.Context(), entryName, valueOne); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "credentials.json.lock")); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("the lock file exists after SetKey when the credentials file was never created: %v", err)
 	}
 	if got, err := store.GetKey(t.Context(), entryName); err != nil || got != valueOne {
 		t.Fatalf("read %q, %v", got, err)
@@ -253,8 +283,8 @@ func TestAValueOverTheSmallestKeychainLimitFailsNamingTheLimitAndStoresNothing(t
 		keyring.MockInit()
 		store := Store{}
 		err := store.SetKey(t.Context(), entryName, tooLong)
-		if err == nil || !strings.Contains(err.Error(), "2560") || strings.Contains(err.Error(), tooLong) {
-			t.Fatalf("error = %v, want one that names 2560 and not the value", err)
+		if !errors.Is(err, errTooLong) || !strings.Contains(err.Error(), "2560") || strings.Contains(err.Error(), tooLong) {
+			t.Fatalf("error = %v, want errTooLong that names 2560 and not the value", err)
 		}
 		if _, err := keyring.Get(service, entryName); !errors.Is(err, keyring.ErrNotFound) {
 			t.Errorf("a value over the limit was stored: %v", err)
@@ -268,8 +298,8 @@ func TestAValueOverTheSmallestKeychainLimitFailsNamingTheLimitAndStoresNothing(t
 		dir := t.TempDir()
 		store := newTestStore(dir)
 		err := store.SetKey(t.Context(), entryName, tooLong)
-		if err == nil || !strings.Contains(err.Error(), "2560") || strings.Contains(err.Error(), tooLong) {
-			t.Fatalf("error = %v, want one that names 2560 and not the value", err)
+		if !errors.Is(err, errTooLong) || !strings.Contains(err.Error(), "2560") || strings.Contains(err.Error(), tooLong) {
+			t.Fatalf("error = %v, want errTooLong that names 2560 and not the value", err)
 		}
 		if raw, err := os.ReadFile(credentialsPath(dir)); err == nil && strings.Contains(string(raw), tooLong) {
 			t.Error("a value over the limit was written to the file")
@@ -288,8 +318,8 @@ func TestNoErrorOfAFailingStoreCarriesTheValue(t *testing.T) {
 		t.Fatal(err)
 	}
 	err := newTestStore(dir).SetKey(t.Context(), entryName, valueOne)
-	if err == nil {
-		t.Fatal("a write with no place to go succeeded")
+	if pathErr, ok := errors.AsType[*fs.PathError](err); !ok || pathErr == nil {
+		t.Fatalf("a write with no place to go returned %v, want wrapped *fs.PathError", err)
 	}
 	if strings.Contains(err.Error(), valueOne) {
 		t.Errorf("the error carries the value: %v", err)

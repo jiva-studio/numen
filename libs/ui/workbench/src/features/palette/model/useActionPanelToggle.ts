@@ -1,0 +1,48 @@
+/**
+ * The panel of actions standing over the foot of the palette.
+ *
+ * It is about the item that was lit when it opened, and an item that stops
+ */
+import { ref, watch, type Ref } from 'vue'
+import type { PaletteAction } from '../lib/item'
+
+export interface ActionPanelState {
+  readonly open: Ref<boolean>
+  readonly chooseAction: (action: string) => void
+  readonly onPress: () => void
+  readonly onBackdrop: () => void
+}
+
+export interface ActionPanelOptions {
+  readonly getActions: () => readonly PaletteAction[]
+  readonly getLit: () => string | undefined
+  readonly choose: (item: string, action: string) => void
+  readonly dismiss: () => void
+}
+
+export function useActionPanelToggle(options: ActionPanelOptions): ActionPanelState {
+  const open = ref(false)
+
+  watch(options.getActions, (now) => {
+    if (!now.length) open.value = false
+  })
+
+  const chooseAction = (action: string): void => {
+    const item = options.getLit()
+    if (item) options.choose(item, action)
+  }
+
+  const onPress = (): void => {
+    open.value = false
+  }
+
+  const onBackdrop = (): void => {
+    if (open.value) {
+      open.value = false
+      return
+    }
+    options.dismiss()
+  }
+
+  return { open, chooseAction, onPress, onBackdrop }
+}

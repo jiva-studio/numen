@@ -181,8 +181,18 @@ func TestReadRecordHandlesErrorsAndCorruptJSON(t *testing.T) {
 	}
 
 	s = &stubStore{Folder: v.Store(), readData: []byte("{invalid-json"), readErr: nil}
-	if rec, err := readRecord(t.Context(), s, "books/scan.pdf"); rec != nil || err == nil {
-		t.Fatalf("readRecord on invalid JSON: %+v, %v", rec, err)
+	var syntaxErr *json.SyntaxError
+	if rec, err := readRecord(t.Context(), s, "books/scan.pdf"); rec != nil || !errors.As(err, &syntaxErr) {
+		t.Fatalf("readRecord on invalid JSON: %+v, %v, want *json.SyntaxError", rec, err)
+	}
+
+	nanRec := &progress.Record{
+		Path:  "books/scan.pdf",
+		Pages: [][]progress.Part{{{Text: "bad", Rects: [][4]float32{{float32(math.NaN()), 0, 1, 1}}}}},
+	}
+	var unsupported *json.UnsupportedValueError
+	if err := writeRecord(t.Context(), v.Store(), nanRec); !errors.As(err, &unsupported) {
+		t.Fatalf("writeRecord on NaN rect = %v, want *json.UnsupportedValueError", err)
 	}
 }
 
@@ -328,8 +338,8 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	sWriteErr := &stubStore{Folder: v.Store(), writeErr: errors.New("store write failed")}
 	if err := r.readPages(t.Context(), pageReading{
 		doc: stubDocument{pages: 8}, recognizer: recEngine, dpi: 72, store: sWriteErr, task: &host.Task{},
-	}, &progress.Record{Path: "books/scan.pdf", PageCount: 8}); err == nil {
-		t.Fatal("readPages succeeded when batch writeRecord failed")
+	}, &progress.Record{Path: "books/scan.pdf", PageCount: 8}); !errors.Is(err, sWriteErr.writeErr) {
+		t.Fatalf("readPages when batch writeRecord failed = %v, want %v", err, sWriteErr.writeErr)
 	}
 
 	qStepErr := &stubQueue{reportErr: errors.New("step report failed"), reportErrAt: 2}
@@ -365,8 +375,8 @@ func TestRecognitionVersionStorage(t *testing.T) {
 		Pages:     [][]progress.Part{{{Text: "some text\n\n"}}},
 	}
 	writeErrStore := &stubStore{Folder: v.Store(), writeErr: errors.New("write failed")}
-	if _, err := putVersion(t.Context(), reach{vault: v, store: writeErrStore, texts: texts}, fullRec); err == nil {
-		t.Fatal("putVersion succeeded when WriteText failed")
+	if _, err := putVersion(t.Context(), reach{vault: v, store: writeErrStore, texts: texts}, fullRec); !errors.Is(err, writeErrStore.writeErr) {
+		t.Fatalf("putVersion when WriteText failed = %v, want %v", err, writeErrStore.writeErr)
 	}
 
 	putErrTexts := &stubTexts{TextVersions: texts, putErr: errors.New("put version failed")}
@@ -531,6 +541,145 @@ func TestRecognizeErrorAndCancelPaths(t *testing.T) {
 	}
 	if res, err := rReleaseAndReportErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || !errors.Is(err, reportSentinel) || res.Pages != 1 {
 		t.Fatalf("turn release + report error returned %+v, %v", res, err)
+	}
+
+	// 11. Empty document with turn release cancellation returns context.Canceled and IsEmpty=true.
+	emptyCancelCtx, emptyCancel := context.WithCancel(t.Context())
+	t.Cleanup(emptyCancel)
+	qEmptyCancel := &stubQueue{onRelease: emptyCancel, releaseErr: context.Canceled}
+	rEmptyCancel, err := New(
+		Host{
+			Documents: pictures{}, Vaults: func(id domain.VaultID) Files { return v.With(id) },
+			Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: qEmptyCancel},
+		func(context.Context) (Recognizer, error) {
+			return &stubRecognizer{blocks: nil}, nil
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res, err := rEmptyCancel.Recognize(emptyCancelCtx, Request{Path: "scan.png"}); !errors.Is(err, context.Canceled) || !res.IsEmpty {
+		t.Fatalf("empty document canceled on release returned %+v, %v; want IsEmpty=true and context.Canceled", res, err)
+	}
+}
+
+type failingVaultFiles struct {
+	Files
+	vaultErr error
+}
+
+func (f failingVaultFiles) GetVault(context.Context) (domain.Vault, error) {
+	return domain.Vault{}, f.vaultErr
+}
+
+func TestStartIsRunningAndGetVaultIDErrors(t *testing.T) {
+	v := hosttest.New("Physics")
+	pngRaw := encodeTestPNG(t)
+	v.File("scan.png", pngRaw)
+	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
+	texts.SetStore("md.numen.engines.ocr", v.Store())
+	texts.File("scan.png", []byte(pngRaw))
+
+	vaultErr := errors.New("vault lookup failed")
+	rVaultErr, err := New(
+		Host{
+			Documents: pictures{},
+			Vaults:    func(id domain.VaultID) Files { return failingVaultFiles{Files: v.With(id), vaultErr: vaultErr} },
+			Store:     foldersOf(v.Store()),
+			Texts:     versionsOf(texts),
+			Queue:     &stubQueue{},
+		},
+		func(context.Context) (Recognizer, error) { return &stubRecognizer{}, nil },
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := rVaultErr.GetVaultID(t.Context(), ""); !errors.Is(err, vaultErr) {
+		t.Fatalf("GetVaultID error = %v, want %v", err, vaultErr)
+	}
+	if running, err := rVaultErr.IsRunning(t.Context(), "", "scan.png"); running || !errors.Is(err, vaultErr) {
+		t.Fatalf("IsRunning error = (%v, %v), want (false, %v)", running, err, vaultErr)
+	}
+	if _, err := rVaultErr.Recognize(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, vaultErr) {
+		t.Fatalf("Recognize error = %v, want %v", err, vaultErr)
+	}
+	if ch, started, err := rVaultErr.Start(t.Context(), Request{Path: "scan.png"}); ch != nil || started || !errors.Is(err, vaultErr) {
+		t.Fatalf("Start error = (%v, %v, %v), want (nil, false, %v)", ch, started, err, vaultErr)
+	}
+
+	reportErr := errors.New("initial task report failed")
+	rStartReportErr, err := New(
+		Host{
+			Documents: pictures{},
+			Vaults:    func(id domain.VaultID) Files { return v.With(id) },
+			Store:     foldersOf(v.Store()),
+			Texts:     versionsOf(texts),
+			Queue:     &stubQueue{reportErr: reportErr, reportErrAt: 1},
+		},
+		func(context.Context) (Recognizer, error) { return &stubRecognizer{}, nil },
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ch, started, err := rStartReportErr.Start(t.Context(), Request{Vault: "Physics", Path: "scan.png"}); ch != nil || started || !errors.Is(err, reportErr) {
+		t.Fatalf("Start with initial report error = (%v, %v, %v), want (nil, false, %v)", ch, started, err, reportErr)
+	}
+	if running, err := rStartReportErr.IsRunning(t.Context(), "Physics", "scan.png"); err != nil || running {
+		t.Fatalf("IsRunning after failed Start = (%v, %v), want (false, nil)", running, err)
+	}
+
+	entered := make(chan struct{})
+	releaseRec := make(chan struct{})
+	recErr := errors.New("background recognition failed")
+	var reportedWhat string
+	var reportedErr error
+	rBg, err := New(
+		Host{
+			Documents: pictures{},
+			Vaults:    func(id domain.VaultID) Files { return v.With(id) },
+			Store:     foldersOf(v.Store()),
+			Texts:     versionsOf(texts),
+			Queue:     &stubQueue{},
+			Report: func(what string, err error) {
+				reportedWhat = what
+				reportedErr = err
+			},
+		},
+		func(context.Context) (Recognizer, error) {
+			return &stubRecognizer{fn: func(context.Context, image.Image) ([]Block, error) {
+				close(entered)
+				<-releaseRec
+				return nil, recErr
+			}}, nil
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if running, err := rBg.IsRunning(t.Context(), "Physics", "scan.png"); err != nil || running {
+		t.Fatalf("IsRunning before Start = (%v, %v), want (false, nil)", running, err)
+	}
+	doneCh, started, err := rBg.Start(t.Context(), Request{Vault: "Physics", Path: "scan.png"})
+	if err != nil || !started || doneCh == nil {
+		t.Fatalf("first Start = (%v, %v, %v), want (non-nil, true, nil)", doneCh, started, err)
+	}
+	<-entered
+
+	if running, err := rBg.IsRunning(t.Context(), "Physics", "scan.png"); err != nil || !running {
+		t.Fatalf("IsRunning during Start = (%v, %v), want (true, nil)", running, err)
+	}
+	if dupCh, dupStarted, err := rBg.Start(t.Context(), Request{Vault: "Physics", Path: "scan.png"}); err != nil || dupStarted || dupCh != nil {
+		t.Fatalf("duplicate Start = (%v, %v, %v), want (nil, false, nil)", dupCh, dupStarted, err)
+	}
+
+	close(releaseRec)
+	<-doneCh
+	if reportedWhat != "recognize scan.png" || !errors.Is(reportedErr, recErr) {
+		t.Fatalf("Host.Report received (%q, %v), want (\"recognize scan.png\", %v)", reportedWhat, reportedErr, recErr)
+	}
+	if running, err := rBg.IsRunning(t.Context(), "Physics", "scan.png"); err != nil || running {
+		t.Fatalf("IsRunning after Start finishes = (%v, %v), want (false, nil)", running, err)
 	}
 }
 

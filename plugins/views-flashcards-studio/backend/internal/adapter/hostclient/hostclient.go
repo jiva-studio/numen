@@ -38,19 +38,6 @@ func NewFromEnv() (Clients, error) {
 	return newClients(client, store), nil
 }
 
-// NewFromVars returns the clients of the host the variables of a launched process name.
-func NewFromVars(vars map[string]string) (Clients, error) {
-	client, err := host.NewClientFromVars(vars)
-	if err != nil {
-		return Clients{Vaults: nil, Folders: nil}, err
-	}
-	store, err := host.NewStoreClientFromVars(vars)
-	if err != nil {
-		return Clients{Vaults: nil, Folders: nil}, err
-	}
-	return newClients(client, store), nil
-}
-
 func newClients(client *host.Client, store *host.StoreClient) Clients {
 	return Clients{
 		Vaults: func(id domain.VaultID) ports.HostVault {

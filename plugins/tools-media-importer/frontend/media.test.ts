@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import type { CommandNote } from '@numen/plugin-sdk'
 import { activate } from './index'
 import type { LinkFacts, Links } from './types'
@@ -32,8 +32,9 @@ const getHandler = (ctx: ReturnType<typeof createMockPluginContext>) =>
 describe('the handler of link.downloadMedia', () => {
   it('offers the video and the sound of a link whose address publishes a video, and downloads the one picked', async () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
+    const host = createMockHostServices()
     const { links, copied } = createLinks(true)
-    activate(ctx, undefined, links)
+    activate(ctx, host, undefined, links)
     const handler = getHandler(ctx)
 
     expect(await handler?.listItems?.(CLIP)).toStrictEqual([
@@ -47,7 +48,8 @@ describe('the handler of link.downloadMedia', () => {
 
   it('offers nothing for a link whose address publishes no video', async () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
-    activate(ctx, undefined, createLinks(false).links)
+    const host = createMockHostServices()
+    activate(ctx, host, undefined, createLinks(false).links)
 
     expect(await getHandler(ctx)?.listItems?.(CLIP)).toStrictEqual([])
   })

@@ -27,6 +27,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
@@ -100,7 +101,7 @@ func mountSearch(w *windowWiring) {
 	handler := windowsearch.NewHandler(
 		state,
 		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),
-		search.NewFindPassages(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
+		search.NewFindText(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 		searchcancel.NewSearches(w.cfg.Clock()),
 	)
 	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError)
@@ -123,9 +124,8 @@ func mountFile(w *windowWiring) {
 		file.NewCreateFolder(folderWriters(w.a.vault), state.Writes),
 	)
 	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
-	changes := filewindow.NewChanges(
-		state, state.Notices, &moveFile, &w.cases.Notes.Place.Remove, &w.cases.Notes.Place.EmptyTrash, state.Writes,
-	)
+	removeFile := note.NewRemoveFile(&w.cases.Notes.Place.Remove, state.Writes)
+	changes := filewindow.NewChanges(state, state.Notices, &moveFile, &removeFile, &w.cases.Notes.Place.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	w.inst.Mount(editor.NewFileRoute(state, handler))
 }
@@ -212,13 +212,13 @@ func mountHealth(w *windowWiring) {
 
 func shareEditorWindow(db *Index, opened *windowWiring) {
 	view := windowView(opened.state)
-	focusPassages := file.NewFocusPassages(vaultReaders(opened.a.vault), view)
+	focusFile := file.NewFocusFile(vaultReaders(opened.a.vault), view)
 	setPluginWindow(opened.a, windowsession.NewPluginWindow(
 		&opened.state.Runtime,
 		&opened.state.Tabs,
 		vaultFocusNote(opened.a.vault, db.NoteQueries(), view),
-		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
-			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
+		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
+			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
 		}),
 		opened.cases.ShowTab,
 	))

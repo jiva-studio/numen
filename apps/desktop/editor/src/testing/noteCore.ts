@@ -6,8 +6,9 @@
 import { NOTE_ERROR_CODE, parseFingerprint, type NoteErrorCodeValue } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { formatFingerprint } from '@numen/plugin-loader'
+import { createNoteApi, type NoteApi } from '@/entities/note'
 import type { Result } from '@/shared/lib/result'
-import { answerCore } from './coreAnswers'
+import { createAnsweredClients } from './coreAnswers'
 
 /** What a read or a write of a note returned: its prose and the file it is in, or why it is not. */
 export type NoteAnswer = Result<{ readonly body: string; readonly at?: string }, string>
@@ -45,10 +46,10 @@ const toWire = (answer: NoteAnswer) => {
 }
 
 /**
- * The core answers the reads and writes of notes as `core` says until the test ends. A file is
- * named by `<size> <modified> <path>`, as the window carries it.
+ * The answers of a core that reads and writes notes as `core` says. A file is named by
+ * `<size> <modified> <path>`, as the window carries it.
  */
-export const answerNotes = (core: Partial<NoteCore>): void => {
+export const createNoteAnswers = (core: Partial<NoteCore>): CoreAnswers => {
   const { read, write } = core
   const notes: NonNullable<CoreAnswers['notes']> = {}
   if (read) notes.readNote = async (request) => toWire(await read(request.path))
@@ -67,5 +68,9 @@ export const answerNotes = (core: Partial<NoteCore>): void => {
         ),
       )
   }
-  answerCore({ notes })
+  return { notes }
 }
+
+/** The note calls of a window whose core reads and writes notes as `core` says. */
+export const answerNotes = (core: Partial<NoteCore>): NoteApi =>
+  createNoteApi(createAnsweredClients(createNoteAnswers(core)).notes)

@@ -2,18 +2,17 @@
  * The connections to services and programs: the kinds of connection the plugins provide, and the
  * connections the person made of them. No value of a secret is ever read back.
  */
-import { createClient, type Client } from '@connectrpc/connect'
+import type { Client } from '@connectrpc/connect'
 import { fromJson, toJson, type JsonValue } from '@bufbuild/protobuf'
 import { ValueSchema, type Value } from '@bufbuild/protobuf/wkt'
 import {
   ProviderConnectionErrorCode,
-  ProviderConnectionService,
+  type ProviderConnectionService,
   type ManifestConnectionField,
   type ProviderConnection,
   type ProviderConnectionType,
 } from '@numen/protocol'
 import { asFailure, asValue, type Result } from '../result'
-import { createCallerTransport } from '../transport'
 
 /** A value a field of a connection holds. */
 export type ConnectionValue = string | number | boolean
@@ -187,7 +186,7 @@ const readOptions = (field: ManifestConnectionField): ConnectionFieldInfo['optio
   (field.options?.values ?? []).flatMap((one) => {
     const json = toJson(ValueSchema, one)
     if (typeof json === 'string') return [{ value: json, title: json }]
-    if (typeof json === 'object' && json !== null && !Array.isArray(json)) {
+    if (typeof json === 'object' && json !== null && !Array.isArray(json) && 'value' in json) {
       const { value, title } = json
       if (typeof value !== 'string') return []
       return [{ value, title: typeof title === 'string' && title !== '' ? title : value }]
@@ -265,6 +264,8 @@ const readConnection = (connection: ProviderConnection): ConnectionInfo => {
 
 const readErrorCode = (code: ProviderConnectionErrorCode): ConnectionErrorCode | undefined => {
   switch (code) {
+    case ProviderConnectionErrorCode.UNSPECIFIED:
+      return undefined
     case ProviderConnectionErrorCode.NOT_FOUND:
       return 'not_found'
     case ProviderConnectionErrorCode.NAME_TAKEN:
@@ -279,8 +280,6 @@ const readErrorCode = (code: ProviderConnectionErrorCode): ConnectionErrorCode |
       return 'stale_revision'
     case ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE:
       return 'provider_unavailable'
-    case ProviderConnectionErrorCode.UNSPECIFIED:
-      return undefined
   }
 }
 
@@ -357,8 +356,3 @@ export const createConnectionClient = (rpc: ConnectionRpc): ConnectionClient => 
     )
   },
 })
-
-/** The connections of the window the page is served from. */
-export const connections = createConnectionClient(
-  createClient(ProviderConnectionService, createCallerTransport('settings')),
-)

@@ -188,6 +188,18 @@ func GetPackageDir(pos string) string {
 	return filepath.Join("..", pos)
 }
 
+// Root is a folder a check walks, with the name its findings are reported under.
+type Root struct{ Name, Dir string }
+
+// ListTypeRoots returns the folders whose types go/identities and go/instants read.
+func ListTypeRoots() []Root {
+	return []Root{
+		{Name: "kernel/domain", Dir: filepath.Join("..", "domain")},
+		{Name: "kernel/port", Dir: filepath.Join("..", "port")},
+		{Name: "note/domain", Dir: filepath.Join("..", "..", "..", "note", "domain")},
+	}
+}
+
 // TreeEntry is one file of a folder tree, named by its path under the folder.
 type TreeEntry struct{ Path string }
 
@@ -280,4 +292,12 @@ func ParseSourceFiles(t *testing.T, dir string) []*ast.File {
 
 func IsDriving(driving map[string]bool, pkg string) bool {
 	return IsAmong(slices.Collect(maps.Keys(driving)), pkg)
+}
+
+// IsUseCaseTestSupport reports a package under usecase whose directory name ends in "test" (connectiontest).
+// It builds its parent use case for the tests of several packages, as net/http/httptest does for net/http,
+// and is not a use case. pkg is a path relative to the core or a full import path.
+func IsUseCaseTestSupport(pkg string) bool {
+	base := pkg[strings.LastIndex(pkg, "/")+1:]
+	return (strings.HasPrefix(pkg, "usecase/") || strings.Contains(pkg, "/usecase/")) && strings.HasSuffix(base, "test")
 }

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import type { JsonValue, TabKindRegistration } from '@numen/plugin-sdk'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, PlexGraphView, PLEX } from './index'
 import { createHost } from './fixtures/host'
 import { settle } from './fixtures'
@@ -11,13 +11,13 @@ import { Plex } from './plex'
 
 const createContext = () => {
   const { host, requested } = createHost({ opening: 'Root.md' })
-  const ctx = createMockPluginContext({
-    pluginId: 'md.numen.views.plex.graph',
+  const ctx = createMockPluginContext({ pluginId: 'md.numen.views.plex.graph' })
+  const services = createMockHostServices({
     workspace: host.workspace,
     notes: host.notes,
     relations: host.relations,
   })
-  return { ctx, requested }
+  return { ctx, services, requested }
 }
 
 const createWindow = () => {
@@ -43,8 +43,8 @@ const createWindow = () => {
 
 describe('view-plex-graph plugin', () => {
   it('registers the plex tab kind upon activation', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+    const { ctx, services } = createContext()
+    activate(ctx, services)
 
     const tabKinds = ctx.getRegisteredTabKinds()
     expect(tabKinds).toHaveLength(1)
@@ -53,22 +53,22 @@ describe('view-plex-graph plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds subscriptions for tab kind, vault and commands, and releases all', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+  it('holds subscriptions for tab kind and commands, and releases all', () => {
+    const { ctx, services } = createContext()
+    activate(ctx, services)
 
-    // The tab kind, the vault, the command, and one for each of the seventeen settings.
-    expect(ctx.plugin.subscriptions).toHaveLength(20)
+    // The tab kind, the command, and one for each of the seventeen settings.
+    expect(ctx.identity.subscriptions).toHaveLength(19)
 
     ctx.dispose()
-    expect(ctx.plugin.subscriptions).toHaveLength(0)
+    expect(ctx.identity.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
 
   it('registers the handler that opens the plex', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+    const { ctx, services } = createContext()
+    activate(ctx, services)
 
     expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual(['graph.open'])
   })
@@ -76,15 +76,15 @@ describe('view-plex-graph plugin', () => {
   const createWindowContext = () => {
     const { host } = createHost({ opening: 'Root.md' })
     const strip = createWindow()
-    const ctx = createMockPluginContext({
-      pluginId: 'md.numen.views.plex.graph',
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.views.plex.graph' })
+    const services = createMockHostServices({
       workspace: host.workspace,
       notes: host.notes,
       relations: host.relations,
       navigateTab: strip.navigateTab,
     })
     strip.bind(ctx)
-    activate(ctx)
+    activate(ctx, services)
     return { ctx, strip }
   }
 
@@ -170,21 +170,21 @@ describe('view-plex-graph plugin', () => {
   })
 
   it('registers no command that makes a note', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+    const { ctx, services } = createContext()
+    activate(ctx, services)
 
     expect(ctx.getRegisteredCommands().map((one) => one.id)).not.toContain('graph.createNote')
   })
 
   it('asks every plex for its picture again when the vault changes', async () => {
-    const { ctx, requested } = createContext()
-    activate(ctx)
+    const { ctx, services, requested } = createContext()
+    activate(ctx, services)
     const kind = ctx.getRegisteredTabKinds()[0]!
     kind.open!('One.md', 'plex:1') as PlexTabState
     await settle()
     requested.headings.length = 0
 
-    ctx.events.emitVaultChange({ paths: ['One.md'] })
+    services.events.emitVaultChange({ paths: ['One.md'] })
     await settle()
     await settle()
 
@@ -195,12 +195,14 @@ describe('view-plex-graph plugin', () => {
     const { host, requested } = createHost({ opening: 'Root.md' })
     const ctx = createMockPluginContext({
       pluginId: 'md.numen.views.plex.graph',
+      initialSettings: { nestHeadings: false },
+    })
+    const services = createMockHostServices({
       workspace: host.workspace,
       notes: host.notes,
       relations: host.relations,
-      initialSettings: { nestHeadings: false },
     })
-    activate(ctx)
+    activate(ctx, services)
     const state = ctx.getRegisteredTabKinds()[0]!.open!('One.md', 'plex:1') as PlexTabState
     await settle()
     expect(requested.headings).toStrictEqual([])
@@ -215,15 +217,18 @@ describe('view-plex-graph plugin', () => {
 
   it('refuses to activate in a window that offers no workspace, notes or relationships', () => {
     expect(() =>
-      activate(createMockPluginContext({ pluginId: 'md.numen.views.plex.graph' })),
+      activate(
+        createMockPluginContext({ pluginId: 'md.numen.views.plex.graph' }),
+        createMockHostServices(),
+      ),
     ).toThrow(
       'a plex needs the window it is drawn in, the notes of the vault and their relationships',
     )
   })
 
   it('activates through the default plugin lifecycle', async () => {
-    const { ctx } = createContext()
-    await plugin.activate(ctx)
+    const { ctx, services } = createContext()
+    await plugin.activate(ctx, services)
 
     expect(ctx.getRegisteredTabKinds()[0]?.kind).toBe(PLEX)
   })
@@ -232,14 +237,13 @@ describe('view-plex-graph plugin', () => {
 describe('the look of an open plex', () => {
   const openPlex = async (initialSettings: Record<string, JsonValue> = {}) => {
     const { host } = createHost({ opening: 'Root.md' })
-    const ctx = createMockPluginContext({
-      pluginId: 'md.numen.views.plex.graph',
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.views.plex.graph', initialSettings })
+    const services = createMockHostServices({
       workspace: host.workspace,
       notes: host.notes,
       relations: host.relations,
-      initialSettings,
     })
-    activate(ctx)
+    activate(ctx, services)
     const state = ctx.getRegisteredTabKinds()[0]!.open!('One.md', 'plex:1') as PlexTabState
     await settle()
     const tab = mount(PlexGraphView, { props: { state }, attachTo: document.body })
@@ -410,14 +414,13 @@ describe('the names of the notes related to the related notes of an open plex', 
         return answerFor(path, depth)
       },
     }
-    const ctx = createMockPluginContext({
-      pluginId: 'md.numen.views.plex.graph',
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.views.plex.graph', initialSettings })
+    const services = createMockHostServices({
       workspace: host.workspace,
       notes,
       relations: host.relations,
-      initialSettings,
     })
-    activate(ctx)
+    activate(ctx, services)
     const state = ctx.getRegisteredTabKinds()[0]!.open!('One.md', 'plex:1') as PlexTabState
     await settle()
     const tab = mount(PlexGraphView, { props: { state }, attachTo: document.body })

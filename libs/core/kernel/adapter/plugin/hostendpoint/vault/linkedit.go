@@ -31,7 +31,7 @@ func (e *arrangeCalls) AddLinks(
 	if len(req.Msg.GetLinks()) > batchLimit {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyLinks)
 	}
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (e *arrangeCalls) AddLinks(
 func (e *arrangeCalls) UpdateLinks(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceUpdateLinksRequest],
 ) (*connect.Response[v1.HostVaultServiceUpdateLinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (e *arrangeCalls) UpdateLinks(
 func (e *arrangeCalls) RemoveLinks(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveLinksRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveLinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}

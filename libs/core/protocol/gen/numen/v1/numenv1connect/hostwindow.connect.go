@@ -36,9 +36,9 @@ const (
 	// HostWindowServiceFocusNoteProcedure is the fully-qualified name of the HostWindowService's
 	// FocusNote RPC.
 	HostWindowServiceFocusNoteProcedure = "/numen.v1.HostWindowService/FocusNote"
-	// HostWindowServiceFocusPassagesProcedure is the fully-qualified name of the HostWindowService's
-	// FocusPassages RPC.
-	HostWindowServiceFocusPassagesProcedure = "/numen.v1.HostWindowService/FocusPassages"
+	// HostWindowServiceFocusFileProcedure is the fully-qualified name of the HostWindowService's
+	// FocusFile RPC.
+	HostWindowServiceFocusFileProcedure = "/numen.v1.HostWindowService/FocusFile"
 	// HostWindowServiceReadOpenTabsProcedure is the fully-qualified name of the HostWindowService's
 	// ReadOpenTabs RPC.
 	HostWindowServiceReadOpenTabsProcedure = "/numen.v1.HostWindowService/ReadOpenTabs"
@@ -51,9 +51,9 @@ const (
 type HostWindowServiceClient interface {
 	// FocusNote makes a note the current one, and the neighborhood view is centered on it.
 	FocusNote(context.Context, *connect.Request[v1.FocusNoteRequest]) (*connect.Response[v1.FocusNoteResponse], error)
-	// FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
-	// passages opens the file at its beginning.
-	FocusPassages(context.Context, *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error)
+	// FocusFile opens a file, scrolls to the first span and highlights all spans. No
+	// spans opens the file at its beginning.
+	FocusFile(context.Context, *connect.Request[v1.FocusFileRequest]) (*connect.Response[v1.FocusFileResponse], error)
 	// ReadOpenTabs returns the tabs the window last reported, and the active one.
 	ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error)
 	// ActivateTab makes the open tab with the id the active tab of the window, and returns the tab and
@@ -78,10 +78,10 @@ func NewHostWindowServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(hostWindowServiceMethods.ByName("FocusNote")),
 			connect.WithClientOptions(opts...),
 		),
-		focusPassages: connect.NewClient[v1.FocusPassagesRequest, v1.FocusPassagesResponse](
+		focusFile: connect.NewClient[v1.FocusFileRequest, v1.FocusFileResponse](
 			httpClient,
-			baseURL+HostWindowServiceFocusPassagesProcedure,
-			connect.WithSchema(hostWindowServiceMethods.ByName("FocusPassages")),
+			baseURL+HostWindowServiceFocusFileProcedure,
+			connect.WithSchema(hostWindowServiceMethods.ByName("FocusFile")),
 			connect.WithClientOptions(opts...),
 		),
 		readOpenTabs: connect.NewClient[v1.HostWindowServiceReadOpenTabsRequest, v1.HostWindowServiceReadOpenTabsResponse](
@@ -101,10 +101,10 @@ func NewHostWindowServiceClient(httpClient connect.HTTPClient, baseURL string, o
 
 // hostWindowServiceClient implements HostWindowServiceClient.
 type hostWindowServiceClient struct {
-	focusNote     *connect.Client[v1.FocusNoteRequest, v1.FocusNoteResponse]
-	focusPassages *connect.Client[v1.FocusPassagesRequest, v1.FocusPassagesResponse]
-	readOpenTabs  *connect.Client[v1.HostWindowServiceReadOpenTabsRequest, v1.HostWindowServiceReadOpenTabsResponse]
-	activateTab   *connect.Client[v1.ActivateTabRequest, v1.ActivateTabResponse]
+	focusNote    *connect.Client[v1.FocusNoteRequest, v1.FocusNoteResponse]
+	focusFile    *connect.Client[v1.FocusFileRequest, v1.FocusFileResponse]
+	readOpenTabs *connect.Client[v1.HostWindowServiceReadOpenTabsRequest, v1.HostWindowServiceReadOpenTabsResponse]
+	activateTab  *connect.Client[v1.ActivateTabRequest, v1.ActivateTabResponse]
 }
 
 // FocusNote calls numen.v1.HostWindowService.FocusNote.
@@ -112,9 +112,9 @@ func (c *hostWindowServiceClient) FocusNote(ctx context.Context, req *connect.Re
 	return c.focusNote.CallUnary(ctx, req)
 }
 
-// FocusPassages calls numen.v1.HostWindowService.FocusPassages.
-func (c *hostWindowServiceClient) FocusPassages(ctx context.Context, req *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error) {
-	return c.focusPassages.CallUnary(ctx, req)
+// FocusFile calls numen.v1.HostWindowService.FocusFile.
+func (c *hostWindowServiceClient) FocusFile(ctx context.Context, req *connect.Request[v1.FocusFileRequest]) (*connect.Response[v1.FocusFileResponse], error) {
+	return c.focusFile.CallUnary(ctx, req)
 }
 
 // ReadOpenTabs calls numen.v1.HostWindowService.ReadOpenTabs.
@@ -131,9 +131,9 @@ func (c *hostWindowServiceClient) ActivateTab(ctx context.Context, req *connect.
 type HostWindowServiceHandler interface {
 	// FocusNote makes a note the current one, and the neighborhood view is centered on it.
 	FocusNote(context.Context, *connect.Request[v1.FocusNoteRequest]) (*connect.Response[v1.FocusNoteResponse], error)
-	// FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
-	// passages opens the file at its beginning.
-	FocusPassages(context.Context, *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error)
+	// FocusFile opens a file, scrolls to the first span and highlights all spans. No
+	// spans opens the file at its beginning.
+	FocusFile(context.Context, *connect.Request[v1.FocusFileRequest]) (*connect.Response[v1.FocusFileResponse], error)
 	// ReadOpenTabs returns the tabs the window last reported, and the active one.
 	ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error)
 	// ActivateTab makes the open tab with the id the active tab of the window, and returns the tab and
@@ -154,10 +154,10 @@ func NewHostWindowServiceHandler(svc HostWindowServiceHandler, opts ...connect.H
 		connect.WithSchema(hostWindowServiceMethods.ByName("FocusNote")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostWindowServiceFocusPassagesHandler := connect.NewUnaryHandler(
-		HostWindowServiceFocusPassagesProcedure,
-		svc.FocusPassages,
-		connect.WithSchema(hostWindowServiceMethods.ByName("FocusPassages")),
+	hostWindowServiceFocusFileHandler := connect.NewUnaryHandler(
+		HostWindowServiceFocusFileProcedure,
+		svc.FocusFile,
+		connect.WithSchema(hostWindowServiceMethods.ByName("FocusFile")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostWindowServiceReadOpenTabsHandler := connect.NewUnaryHandler(
@@ -176,8 +176,8 @@ func NewHostWindowServiceHandler(svc HostWindowServiceHandler, opts ...connect.H
 		switch r.URL.Path {
 		case HostWindowServiceFocusNoteProcedure:
 			hostWindowServiceFocusNoteHandler.ServeHTTP(w, r)
-		case HostWindowServiceFocusPassagesProcedure:
-			hostWindowServiceFocusPassagesHandler.ServeHTTP(w, r)
+		case HostWindowServiceFocusFileProcedure:
+			hostWindowServiceFocusFileHandler.ServeHTTP(w, r)
 		case HostWindowServiceReadOpenTabsProcedure:
 			hostWindowServiceReadOpenTabsHandler.ServeHTTP(w, r)
 		case HostWindowServiceActivateTabProcedure:
@@ -195,8 +195,8 @@ func (UnimplementedHostWindowServiceHandler) FocusNote(context.Context, *connect
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostWindowService.FocusNote is not implemented"))
 }
 
-func (UnimplementedHostWindowServiceHandler) FocusPassages(context.Context, *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostWindowService.FocusPassages is not implemented"))
+func (UnimplementedHostWindowServiceHandler) FocusFile(context.Context, *connect.Request[v1.FocusFileRequest]) (*connect.Response[v1.FocusFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostWindowService.FocusFile is not implemented"))
 }
 
 func (UnimplementedHostWindowServiceHandler) ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error) {

@@ -3,7 +3,7 @@
  * build of the application and offers its download.
  */
 import { defineComponent, h } from 'vue'
-import { definePlugin, type PluginContext, type Caught } from '@numen/plugin-sdk'
+import { definePlugin, type HostServices, type PluginContext, type Caught } from '@numen/plugin-sdk'
 import { updater, type UpdateApi } from './api/wire'
 import { createUpdates, type Timer, type Updates } from './model/updates'
 import UpdateIndicator from './ui/UpdateIndicator.vue'
@@ -29,59 +29,70 @@ const browserTimer: Timer = {
 const browserParts: UpdateParts = { api: updater, timer: browserTimer }
 
 /** The component of the title bar view: the indicator over the announcement of the model. */
-export function createStatusView(context: Pick<PluginContext, 'plugin' | 'ui'>, updates: Updates) {
+export function createStatusView(
+  plugin: Pick<PluginContext, 'identity'>,
+  host: Pick<HostServices, 'ui'>,
+  updates: Updates,
+) {
   return defineComponent({
     name: 'UpdateStatusView',
     setup: () => () =>
       h(UpdateIndicator, {
-        version: context.plugin.app.version,
+        version: plugin.identity.app.version,
         update: updates.announced.value,
-        platform: context.plugin.app.platform,
-        onDownload: () => showFailure(context, updates.announcement.openDownload()),
-        onReleaseNotes: () => showFailure(context, updates.announcement.openNotes()),
+        platform: plugin.identity.app.platform,
+        onDownload: () => showFailure(host, updates.announcement.openDownload()),
+        onReleaseNotes: () => showFailure(host, updates.announcement.openNotes()),
         onDismiss: () => updates.announcement.dismiss(),
       }),
   })
 }
 
 function showFailure(
-  context: Pick<PluginContext, 'ui'>,
+  host: Pick<HostServices, 'ui'>,
   opening: ReturnType<Updates['announcement']['openDownload']>,
 ): void {
   opening.then(
     (result) => {
-      if (!result.ok) context.ui.notices.show(result.error, 'error')
+      if (!result.ok) host.ui.notices.show(result.error, 'error')
     },
-    (error: Caught) => context.ui.notices.show(String(error), 'error'),
+    (error: Caught) => host.ui.notices.show(String(error), 'error'),
   )
 }
 
-function showMissingAddress(context: PluginContext): void {
-  const address = context.settings.get<string>('endpoint')
-  if (context.settings.get<string>('channel') !== 'custom' || (address ?? '').trim() !== '') return
-  context.ui.notices.show(words.missingAddress, 'error')
+function showMissingAddress(
+  plugin: Pick<PluginContext, 'settings'>,
+  host: Pick<HostServices, 'ui'>,
+): void {
+  const address = plugin.settings.get<string>('endpoint')
+  if (plugin.settings.get<string>('channel') !== 'custom' || (address ?? '').trim() !== '') return
+  host.ui.notices.show(words.missingAddress, 'error')
 }
 
-export const activate = (context: PluginContext, parts: UpdateParts = browserParts): void => {
+export const activate = (
+  plugin: PluginContext,
+  host: HostServices,
+  parts: UpdateParts = browserParts,
+): void => {
   const updates = createUpdates({
     api: parts.api,
-    app: context.plugin.app,
-    openExternal: (url) => context.plugin.openExternal(url),
-    getIntervalHours: () => context.settings.get('checkIntervalHours'),
+    app: plugin.identity.app,
+    openExternal: (url) => plugin.identity.openExternal(url),
+    getIntervalHours: () => plugin.settings.get('checkIntervalHours'),
     timer: parts.timer,
   })
-  context.register.slotView({ id: UPDATE_VIEW, component: createStatusView(context, updates) })
-  context.settings.onChange('checkIntervalHours', () => updates.schedule.reschedule())
-  const warnOfMissingAddress = () => showMissingAddress(context)
-  context.settings.onChange('endpoint', () => {
+  plugin.register.slotView({ id: UPDATE_VIEW, component: createStatusView(plugin, host, updates) })
+  plugin.settings.onChange('checkIntervalHours', () => updates.schedule.reschedule())
+  const warnOfMissingAddress = () => showMissingAddress(plugin, host)
+  plugin.settings.onChange('endpoint', () => {
     updates.schedule.checkSoon()
     warnOfMissingAddress()
   })
-  context.settings.onChange('channel', () => {
+  plugin.settings.onChange('channel', () => {
     updates.schedule.checkSoon()
     warnOfMissingAddress()
   })
-  context.plugin.subscriptions.push({ dispose: () => updates.schedule.stop() })
+  plugin.identity.subscriptions.push({ dispose: () => updates.schedule.stop() })
   updates.schedule.start()
   warnOfMissingAddress()
 }

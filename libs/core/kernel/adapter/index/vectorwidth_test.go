@@ -50,16 +50,16 @@ func TestAFitThatFailsPreservesTheVectorIndexAsItWas(t *testing.T) {
 		t.Run(step.name, func(t *testing.T) {
 			ctx := t.Context()
 			db, faults := openBreakingDB(t)
-			if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
+			if err := db.VectorIndex().FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 				t.Fatal(err)
 			}
 			embedAtWidth(t, db, getFirstVault(), 384)
-			if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
+			if err := db.VectorIndex().FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 				t.Fatal(err)
 			}
 			faults.breakWhere(t, step.breaks)
 
-			err := db.FitVectors(ctx, 384, narrowRecipe(384))
+			err := db.VectorIndex().FitVectors(ctx, 384, narrowRecipe(384))
 			faults.stop()
 			if !errors.Is(err, errBroken) {
 				t.Fatalf("fitting answered %v", err)
@@ -78,7 +78,7 @@ func TestAWidthOfNoDimensionsIsRefused(t *testing.T) {
 	fit(t, db, testRecipe)
 
 	for _, dims := range []int{0, -1} {
-		err := db.FitVectors(t.Context(), dims, testRecipe)
+		err := db.VectorIndex().FitVectors(t.Context(), dims, testRecipe)
 		if err == nil || !strings.Contains(err.Error(), "is not a vector") {
 			t.Errorf("a vector index of %d dimensions was answered %v", dims, err)
 		}
@@ -95,7 +95,7 @@ func TestAnIndexWithoutAVectorIndexIsGivenOne(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := db.FitVectors(t.Context(), 384, narrowRecipe(384)); err != nil {
+	if err := db.VectorIndex().FitVectors(t.Context(), 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
 	if width, _ := readWidth(t, db); width != 384 {
@@ -116,7 +116,7 @@ func TestAVectorIndexOfUnreadableWidthIsReported(t *testing.T) {
 		}
 	}
 
-	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err == nil {
+	if err := db.VectorIndex().FitVectors(ctx, 384, narrowRecipe(384)); err == nil {
 		t.Fatal("a vector index of unreadable width was fitted over")
 	}
 	var created string
@@ -132,7 +132,7 @@ func TestAVectorIndexOfUnreadableWidthIsReported(t *testing.T) {
 // Every positive width is a vector, down to a single dimension.
 func TestTheNarrowestWidthIsFitted(t *testing.T) {
 	db := openDB(t)
-	if err := db.FitVectors(t.Context(), 1, testRecipe); err != nil {
+	if err := db.VectorIndex().FitVectors(t.Context(), 1, testRecipe); err != nil {
 		t.Fatal(err)
 	}
 	if width, _ := readWidth(t, db); width != 1 {
@@ -204,16 +204,16 @@ func TestFitVectors_PreservesIndexOnReadFailure(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			ctx := t.Context()
 			db, faults := openBreakingDB(t)
-			if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
+			if err := db.VectorIndex().FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 				t.Fatal(err)
 			}
 			embedAtWidth(t, db, getFirstVault(), 384)
-			if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
+			if err := db.VectorIndex().FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 				t.Fatal(err)
 			}
 			faults.breakRows(t, "FROM vectors v JOIN chunks", c.unreadable)
 
-			err := db.FitVectors(ctx, 384, narrowRecipe(384))
+			err := db.VectorIndex().FitVectors(ctx, 384, narrowRecipe(384))
 			if err == nil || !strings.Contains(err.Error(), "the vectors the recipe holds") {
 				t.Fatalf("fitting answered %v", err)
 			}

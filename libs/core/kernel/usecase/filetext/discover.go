@@ -30,7 +30,7 @@ type discoverer struct {
 }
 
 func newDiscoverer(u Index) discoverer {
-	return discoverer{sources: u.sources, records: u.queries.records, lookup: u.queries.lookup, shouldRebuild: u.ShouldRebuildIndex}
+	return discoverer{sources: u.sources, records: u.queries.records, lookup: u.queries.lookup, shouldRebuild: u.shouldRebuildIndex}
 }
 
 func (u discoverer) discover(

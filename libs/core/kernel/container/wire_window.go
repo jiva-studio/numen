@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -81,7 +82,7 @@ type WindowOpening struct {
 type WindowUseCases struct {
 	Notes       *NoteUseCases
 	PluginNotes *NoteUseCases
-	Queries     *query.Scenarios
+	Queries     *query.UseCases
 	Listing     *registry.Listing
 	Vaults      *VaultUseCases
 	ShowTab     windowsession.ShowTab
@@ -152,8 +153,9 @@ func buildWindow(
 	cases := newWindowUseCases(a, ports, db, state, current)
 
 	session := newWindowSession(c, a, state, ctx, windowParts{
-		db: db, indexer: indexer, embedding: embedding, moves: cases.Vaults, current: current, out: opening.Out,
-		embedderError: why, closeEmbedder: closeEmbedder,
+		indexer: indexer, embedding: embedding, passes: startVault(a, db, current),
+		recordOpen: cases.Vaults.RecordOpen, importFiles: cases.Vaults.Tree.Import, out: opening.Out,
+		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
 	})
 	cases.ShowTab = session.tools.showTab
 	inst := editor.NewInstallation(state, editor.Lifecycle{
@@ -187,7 +189,7 @@ func newWindowUseCases(
 		a.vault, db, vault.NewUpdateIndex(current.Get).Execute,
 		noteViews{
 			Moves:  note.NewTellMoveInShownVault(state.GetShownVault, windowView(state)),
-			Writes: note.OpenGate{},
+			Writes: none.OpenGate{},
 		},
 	)
 	moves := vaultVaults(a.vault, ports, db, notes.Place.Move)
