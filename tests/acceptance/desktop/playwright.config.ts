@@ -22,6 +22,7 @@ export default defineConfig({
   testMatch: undefined,
   fullyParallel: true,
   workers: 2,
+  ...(isLive && { timeout: 240_000 }),
   webServer: undefined,
   use: {
     ...base.use,

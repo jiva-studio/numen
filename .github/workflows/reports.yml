@@ -137,6 +137,7 @@ jobs:
         env:
           PLAYWRIGHT_VIDEO: '1'
           PWTEST_BLOB_DO_NOT_REMOVE: '1'
+          NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY: ${{ secrets.NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY }}
         run: |
           read -ra engines <<< "$ENGINES"
           read -ra features <<< "$FEATURES"
