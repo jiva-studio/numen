@@ -25,8 +25,8 @@ func CompleteMock(ctx context.Context, request *llm.CompleteRequest) (*llm.Compl
 	var rows []string
 	segments := strings.Split(messages[len(messages)-1].GetText(), numbered.Opens)
 	for _, segment := range segments[1:] {
-		number, text, ok := strings.Cut(segment, numbered.Closes)
-		if _, err := strconv.Atoi(number); !ok || err != nil {
+		number, text, _ := strings.Cut(segment, numbered.Closes)
+		if _, err := strconv.Atoi(number); err != nil {
 			continue
 		}
 		text = strings.TrimSpace(text)

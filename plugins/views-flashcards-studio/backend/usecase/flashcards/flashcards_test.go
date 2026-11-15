@@ -3,9 +3,11 @@ package flashcards_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -937,4 +939,115 @@ func (n named) GetName() string { return n.name }
 func (s vaulted) newAssignCardIDs(index func(ctx context.Context, v domain.Vault, paths []string) error) flashcards.AssignCardIDs {
 	return flashcards.NewAssignCardIDs(
 		s.env.Ports.Readers, s.env.Ports.Writers, s.env.Queries, s.env.Queries, index, vaulttest.NewClock())
+}
+
+type failOnceLinks struct {
+	ports.LinkQueries
+	calls atomic.Int32
+}
+
+func (f *failOnceLinks) GetLinks(ctx context.Context, v domain.VaultID, path string) ([]domain.ResolvedLink, error) {
+	if f.calls.Add(1) == 1 {
+		return nil, errors.New("links boom")
+	}
+	return f.LinkQueries.GetLinks(ctx, v, path)
+}
+
+type statCountReaders struct {
+	inner     ports.VaultReaders
+	target    string
+	statCalls atomic.Int32
+}
+
+func (r *statCountReaders) Open(v domain.Vault) (ports.VaultReader, error) {
+	inner, err := r.inner.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return &statCountReader{VaultReader: inner, parent: r}, nil
+}
+
+type statCountReader struct {
+	ports.VaultReader
+	parent *statCountReaders
+}
+
+func (r *statCountReader) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
+	if path == r.parent.target {
+		r.parent.statCalls.Add(1)
+	}
+	return r.VaultReader.StatFile(ctx, path)
+}
+
+func TestReviewsBudgetDividesAcrossDecksAndColdCacheSkipsExtraStat(t *testing.T) {
+	t.Parallel()
+	notes := map[string]string{
+		"Term.md": getVault()["Term.md"],
+		"Cap.md":  "---\ntype: preset\ngoal: retention\nreviews_a_day: 2\nnew_a_day: 10\nminutes_a_day: 60\n---\n",
+		"decks/A.md": "---\ntype: deck\nlinks:\n  - to: Cap\n    role: ref\n    type: preset\n---\n" +
+			"\n## One ^a000000001\n\n[[Term]]\n\n### Word\n\nOne\n\n### Meaning\n\n1\n" +
+			"\n## Two ^a000000002\n\n[[Term]]\n\n### Word\n\nTwo\n\n### Meaning\n\n2\n",
+		"decks/B.md": "---\ntype: deck\nlinks:\n  - to: Cap\n    role: ref\n    type: preset\n---\n" +
+			"\n## Three ^b000000001\n\n[[Term]]\n\n### Word\n\nThree\n\n### Meaning\n\n3\n" +
+			"\n## Four ^b000000002\n\n[[Term]]\n\n### Word\n\nFour\n\n### Meaning\n\n4\n",
+	}
+	s := openVault(t, notes)
+	past := vaulttest.GetEpoch().Add(-30 * 24 * time.Hour)
+	rec := s.run(t, past)
+	for _, cid := range []string{"a000000001", "a000000002", "b000000001", "b000000002"} {
+		if _, err := rec.Answer(t.Context(), review.CardID{Card: cid, Template: "Say it"}, review.Again, time.Second); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	counts, err := s.newCountCardsDue(getToday()).Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if counts.Due != 2 {
+		t.Fatalf("total Due = %d, want 2", counts.Due)
+	}
+	for _, d := range counts.Decks {
+		if d.Due != 1 {
+			t.Fatalf("deck %s Due = %d, want 1", d.Deck, d.Due)
+		}
+	}
+
+	// CountCardsDue propagates an error from getAssignmentFrom on the first GetForDeck call.
+	flakyLinks := &failOnceLinks{LinkQueries: s.links}
+	flakyPresets := presets.NewOpenReads(presets.Config{
+		Readers: s.env.Ports.Readers,
+		Links:   flakyLinks,
+		Now:     vaulttest.NewClock(),
+	})
+	flakyDue := flashcards.NewCountCardsDue(s.standings, s.schedules, flakyPresets, getToday(), vaulttest.NewClock())
+	if _, err := flakyDue.Execute(t.Context(), s.vault); err == nil {
+		t.Fatal("expected error from getAssignmentFrom when GetForDeck fails")
+	}
+
+	// Cold cache miss in GetReviewCards does not call StatFile inside getCachedCards before parseDeck.
+	counting := &statCountReaders{inner: s.env.Ports.Readers, target: "decks/A.md"}
+	coldList := flashcards.NewListReviewCards(counting, s.notes, s.links)
+	if got := coldList.GetReviewCards(t.Context(), s.vault, []string{"decks/A.md"}); len(got) != 2 {
+		t.Fatalf("GetReviewCards = %d, want 2", len(got))
+	}
+	if got := counting.statCalls.Load(); got != 1 {
+		t.Fatalf("StatFile calls on cold cache miss = %d, want 1", got)
+	}
+
+	// ProjectCurve countPointingDecks stops on the first GetForDeck error over empty decks.
+	remove(t, s, "decks/A.md")
+	remove(t, s, "decks/B.md")
+	write(t, s, "decks/Empty1.md", "---\ntype: deck\n---\n")
+	write(t, s, "decks/Empty2.md", "---\ntype: deck\n---\n")
+	flakyCurveLinks := &failOnceLinks{LinkQueries: s.links}
+	flakyCurvePresets := presets.NewOpenReads(presets.Config{
+		Readers: s.env.Ports.Readers,
+		Links:   flakyCurveLinks,
+		Now:     vaulttest.NewClock(),
+	})
+	curves := flashcards.NewProjectCurve(s.standings, s.schedules, flakyCurvePresets, getToday(), vaulttest.NewClock())
+	if _, err := curves.Execute(t.Context(), s.vault, "", review.Defaults()); err == nil {
+		t.Fatal("expected error from ProjectCurve when GetForDeck fails")
+	}
 }

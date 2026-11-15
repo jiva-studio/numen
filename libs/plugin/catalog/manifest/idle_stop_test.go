@@ -17,7 +17,10 @@ func readIdleStopManifest(seconds int) (manifest.Manifest, error) {
 }
 
 func TestABackendKeepsTheIdleLimitItsManifestSets(t *testing.T) {
-	for _, seconds := range []int{manifest.MinIdleStopSeconds, 600, manifest.MaxIdleStopSeconds} {
+	if manifest.MinIdleStopSeconds != 30 || manifest.MaxIdleStopSeconds != 3600 {
+		t.Fatalf("bounds = %d..%d, want 30..3600", manifest.MinIdleStopSeconds, manifest.MaxIdleStopSeconds)
+	}
+	for _, seconds := range []int{30, 600, 3600} {
 		m, err := readIdleStopManifest(seconds)
 		if err != nil {
 			t.Fatalf("idleStopSeconds %d: %v", seconds, err)
@@ -40,7 +43,7 @@ func TestABackendWithoutAnIdleLimitUsesTheLimitOfTheHost(t *testing.T) {
 }
 
 func TestAnIdleLimitOutsideTheBoundsIsRefused(t *testing.T) {
-	for _, seconds := range []int{-1, manifest.MinIdleStopSeconds - 1, manifest.MaxIdleStopSeconds + 1} {
+	for _, seconds := range []int{-1, 29, 3601} {
 		if _, err := readIdleStopManifest(seconds); !errors.Is(err, manifest.ErrInvalidIdleStop) {
 			t.Errorf("idleStopSeconds %d: error = %v, want ErrInvalidIdleStop", seconds, err)
 		}

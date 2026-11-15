@@ -54,8 +54,5 @@ func (f Files) ReadFile(ctx context.Context, vault domain.VaultID, path string) 
 
 func (f Files) GetActiveVaultID(ctx context.Context) (domain.VaultID, error) {
 	shown, err := f.vaults("").GetVault(ctx)
-	if err != nil {
-		return "", err
-	}
-	return shown.ID, nil
+	return shown.ID, err
 }

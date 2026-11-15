@@ -1,7 +1,9 @@
 package presets_test
 
 import (
+	"context"
 	"errors"
+	"io/fs"
 	"reflect"
 	"slices"
 	"strings"
@@ -506,6 +508,19 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 	if targetVal.Settings.Goal != review.GoalDate || !targetVal.Settings.By.Equal(p.By) {
 		t.Errorf("preset = %+v", targetVal.Settings)
 	}
+
+	// Clearing the target date writes an empty by_date scalar so the date does not linger.
+	cleared := minutes()
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", cleared, domain.FileStat{}); err != nil {
+		t.Fatal(err)
+	}
+	afterClear, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !afterClear.Settings.By.IsZero() {
+		t.Errorf("cleared preset still has By = %v", afterClear.Settings.By)
+	}
 }
 
 // The rule a preset does not name keeps its value through a write, so an interval
@@ -693,7 +708,14 @@ func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
 // A save that changes nothing leaves the file currently, comments and all.
 func TestASaveOfWhatTheNoteAlreadyReturnsWritesNothing(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, getSettledVault())
+	notes := getSettledVault()
+	notes["Sanskrit.md"] = strings.Replace(
+		notes["Sanskrit.md"],
+		"goal: minutes_a_day\n",
+		"goal: minutes_a_day\nload:\n  sat: 50 # weekend\n",
+		1,
+	)
+	s := openVault(t, notes)
 	was := read(t, s.vault, "Sanskrit.md")
 
 	target, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
@@ -1265,4 +1287,86 @@ func getPointingDecks(t *testing.T, s vaulted, path string) []string {
 	}
 	slices.Sort(out)
 	return out
+}
+
+type statNotExistReadErr struct{ ports.VaultReader }
+
+func (statNotExistReadErr) StatFile(_ context.Context, _ string) (domain.FileStat, error) {
+	return domain.FileStat{}, fs.ErrNotExist
+}
+
+func (statNotExistReadErr) Read(_ context.Context, _ string) ([]byte, error) {
+	return nil, errors.New("read failed")
+}
+
+type statNotExistReaders struct{}
+
+func (statNotExistReaders) Open(domain.Vault) (ports.VaultReader, error) {
+	return statNotExistReadErr{}, nil
+}
+
+func TestPresetsReadsCachingNilDependenciesAndMissingSave(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, getPointingVault())
+
+	// Reads.GetForDeck and Reads.GetPreset cache results across calls within a run.
+	reads := presets.NewOpenReads(presets.Config{
+		Readers:  s.env.Ports.Readers,
+		Links:    s.links,
+		Problems: s.notes,
+		Now:      vaulttest.NewClock(),
+	}).Execute()
+	firstDeck, err := reads.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil || firstDeck.Path != "Sanskrit.md" {
+		t.Fatalf("first GetForDeck = %+v, %v", firstDeck, err)
+	}
+	firstPreset, err := reads.GetPreset(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil || firstPreset.Settings.MinutesADay != 20 {
+		t.Fatalf("first GetPreset = %+v, %v", firstPreset, err)
+	}
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{}); err != nil {
+		t.Fatal(err)
+	}
+	cachedDeck, err := reads.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil || cachedDeck.Settings.MinutesADay != 20 {
+		t.Fatalf("second GetForDeck = %+v, %v, want cached 20", cachedDeck, err)
+	}
+	cachedPreset, err := reads.GetPreset(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil || cachedPreset.Settings.MinutesADay != 20 {
+		t.Fatalf("second GetPreset = %+v, %v, want cached 20", cachedPreset, err)
+	}
+
+	// Nil Links returns default preset; nil Problems returns no roleless problems.
+	noLinks := presets.NewGetForDeck(presets.Config{
+		Readers: s.env.Ports.Readers,
+		Now:     vaulttest.NewClock(),
+	})
+	def, err := noLinks.Execute(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil || def.Path != "" || !reflect.DeepEqual(def.Settings, review.Defaults()) {
+		t.Fatalf("noLinks GetForDeck = %+v, %v", def, err)
+	}
+	noProblems := presets.NewGetForDeck(presets.Config{
+		Readers: s.env.Ports.Readers,
+		Links:   s.links,
+		Now:     vaulttest.NewClock(),
+	})
+	terms, err := noProblems.Execute(t.Context(), s.vault, "decks/Terms.md")
+	if err != nil || len(terms.Problems) != 0 {
+		t.Fatalf("noProblems GetForDeck = %+v, %v", terms, err)
+	}
+
+	// Read.Execute propagates a Read error when StatFile reported ErrNotExist.
+	brokenRead := presets.NewRead(presets.Config{
+		Readers: statNotExistReaders{},
+		Now:     vaulttest.NewClock(),
+	})
+	if _, err := brokenRead.Execute(t.Context(), s.vault, "Ghost.md"); err == nil {
+		t.Fatal("expected error when StatFile returns ErrNotExist and Read fails")
+	}
+
+	// Save on a missing preset fails at StatFile ("look at ...").
+	_, err = s.presets.Save.Execute(t.Context(), s.vault, "Missing.md", minutes(), domain.FileStat{})
+	if !errors.Is(err, note.ErrNoNote) || !strings.Contains(err.Error(), "look at Missing.md") {
+		t.Fatalf("Save missing = %v, want 'look at Missing.md' wrapping ErrNoNote", err)
+	}
 }

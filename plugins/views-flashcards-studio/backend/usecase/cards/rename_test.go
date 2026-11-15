@@ -703,3 +703,17 @@ func TestADeckContainingNoCardOfTheCardModelIsLeftAsItWas(t *testing.T) {
 		t.Errorf("the deck was written\n was %q\n now %q", words, after)
 	}
 }
+
+func TestARenameWithBoundedDecksReturnsDeckCountQueryErrorBeforeLocking(t *testing.T) {
+	vs := newVaults(t)
+	u := newRenameFieldOver(
+		t, vs, shut{t: t, isWatched: true, hold: errOutOfReach},
+		decksOf{err: errOutOfReach}, cards.MaxDecksPerRename)
+
+	_, err := u.Execute(t.Context(), vs.first, cards.Rename{
+		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
+	})
+	if !errors.Is(err, errOutOfReach) {
+		t.Fatalf("rename = %v, want %v", err, errOutOfReach)
+	}
+}

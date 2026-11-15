@@ -3,13 +3,12 @@
  */
 import type { ShallowRef } from 'vue'
 import type { createFollower } from '@numen/ui'
-import type { NoteApi, NoteEdit } from '@/entities/note'
+import type { NoteApi, NoteEdit, useOpeningNote } from '@/entities/note'
 import type { FocusApi, Task, TaskApi } from '@/entities/window'
 import type { HealthApi, PluginHealthItem } from '@/entities/plugin'
 import type { VaultChange, VaultStateApi } from '@/entities/vault'
 import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
-import type { useDisplayOpening } from './useDisplayOpening'
 
 /** What the window reads of the vault it asks about: whether its scan is done and what failed. */
 export interface VaultScan {
@@ -24,7 +23,7 @@ export interface VaultStreamDeps {
   readonly watchVaultChanges: VaultStateApi['watchVaultChanges']
   readonly follows: Follows
   readonly listening: AbortController
-  readonly opening: Pick<ReturnType<typeof useDisplayOpening>, 'path' | 'read'>
+  readonly opening: Pick<ReturnType<typeof useOpeningNote>, 'path' | 'read'>
   readonly isVaultSwapped: () => Promise<boolean>
   readonly reload: () => void
   readonly onVaultChanged: (
@@ -71,7 +70,7 @@ export interface HealthStreamDeps {
 }
 
 /** The streams the window follows, each read until the window closes. */
-export interface WindowStreams {
+export interface StreamRunners {
   readonly follow: () => Promise<void>
   readonly draw: () => Promise<void>
   readonly watch: () => Promise<void>

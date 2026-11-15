@@ -169,6 +169,42 @@ func TestACanceledOperationAnswersCanceled(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeCanceled {
 		t.Errorf("code = %v, want canceled", connect.CodeOf(err))
 	}
+
+	canceledCtx, cancel := context.WithCancel(t.Context())
+	cancel()
+	ad := &adapter{
+		provider: Provider{"llm.complete": func(context.Context, Call, []byte, func([]byte) error) ([]byte, error) {
+			return nil, errors.New("aborted")
+		}},
+		calls: &openCalls{},
+	}
+	if err := ad.Call(canceledCtx, newCallRequest("llm.complete"), nil); connect.CodeOf(err) != connect.CodeCanceled {
+		t.Errorf("canceled ctx code = %v, want canceled", connect.CodeOf(err))
+	}
+
+	mux := http.NewServeMux()
+	var server *httptest.Server
+	sendErrCh := make(chan error, 1)
+	mux.Handle(NewHandler(Provider{"llm.chat": func(_ context.Context, _ Call, _ []byte, send func([]byte) error) ([]byte, error) {
+		server.CloseClientConnections()
+		var sendErr error
+		for range 100 {
+			if sendErr = send([]byte("frame")); sendErr != nil {
+				break
+			}
+		}
+		sendErrCh <- sendErr
+		return nil, errors.New("after send failure")
+	}}, nil))
+	server = httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	streamClient := numenv1connect.NewProviderServiceClient(server.Client(), server.URL)
+	if _, callErr := readCallResponse(t, streamClient, newCallRequest("llm.chat")); callErr != nil {
+		t.Log(callErr)
+	}
+	if sendErr := <-sendErrCh; sendErr == nil {
+		t.Error("expected send error after closing client connections")
+	}
 }
 
 func TestEveryReasonOfTheSchemaIsNumberedFromOne(t *testing.T) {

@@ -60,8 +60,7 @@ func (b *Book) getPackageSteps(doc Document) []int {
 // node.
 func (p Places) GetCFI(offset int) (cfi.CFI, bool) {
 	if len(p.runs) == 0 {
-		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="zero CFI Offset is ignored when GetCFI returns false"
-		return cfi.CFI{Package: nil, Document: nil, Offset: 0}, false
+		return cfi.CFI{}, false
 	}
 	i := sort.Search(len(p.runs), func(i int) bool { return p.runs[i].end() > offset })
 	if i == len(p.runs) {
@@ -107,8 +106,7 @@ func findDocumentOffset(doc Document, runs []placedRun, place cfi.CFI) int {
 	if i == len(runs) {
 		return doc.Offset + doc.Length
 	}
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="FindOffset(0) equals Start, so place.Offset <= 0 and place.Offset < 0 return identical offsets"
-	if !slices.Equal(runs[i].Steps, place.Document) || place.Offset < 0 {
+	if !slices.Equal(runs[i].Steps, place.Document) {
 		return runs[i].offset + runs[i].Start
 	}
 	// A comment splits one run of character data into nodes with the same steps.
