@@ -15,7 +15,6 @@ import (
 	"runtime"
 	"slices"
 	"strings"
-	"time"
 
 	// The driver and the vector extension register themselves under the names
 	// a DSN opens them by, and nothing here names either package.
