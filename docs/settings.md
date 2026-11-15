@@ -205,6 +205,10 @@ The plugin reaches a model through the rows of its setting `connections`: up to 
 
 How a link's address is fetched is set by the Media Importer plugin's settings, in the object `md.numen.tools.media.importer`: `ytDlp` and `ffmpeg`, the paths of the programs (empty is the one on `PATH`); `captions`, the languages captions are taken in, best first, separated by commas; `automaticCaptions`, whether captions a machine wrote are used where a site publishes none (on); and `copyMaxSizeMb`, the maximum size in megabytes of a copy of a video (500, and 0 is no limit). What is stored, and where, is [Importing an address](importing.md).
 
+## Templates
+
+The Templates plugin, `md.numen.tools.templates`, has one setting, `folder`, the folder of the vault that holds the templates (`Templates`). A value with a `..` segment, or one that is empty, is read as `Templates`. How a template is written and used is [Templates](templates.md).
+
 ## Which agent answers
 
 The agent chat answers through connections, as every other plugin that needs a service. The page of the plugin `md.numen.views.agent.chat` has the setting `connections` with the operation `acp.task`: one row for each agent to try, in order. A row names a connection of an agent type: `md.numen.agents.claude/claude-code`, `md.numen.agents.codex/codex`, `md.numen.agents.antigravity/antigravity`, `md.numen.agents.acp/acp` (any program that implements the Agent Client Protocol, by its `program` field) or `md.numen.agents.numen/numen`, and the model and the reasoning level the program offers. With no row the chat says that no agent is set up and offers the page. The flashcard review has a setting of its own, `agentConnections`, for the agent it asks about a card. What an agent may request from a vault is in [Agents](agents.md).

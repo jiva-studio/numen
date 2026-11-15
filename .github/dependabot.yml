@@ -42,6 +42,7 @@ updates:
       - /plugins/tools-media-importer
       - /plugins/tools-proofreading
       - /plugins/tools-search-relevance
+      - /plugins/tools-templates
       - /plugins/tools-updater
       - /plugins/views-flashcards-studio
     schedule:

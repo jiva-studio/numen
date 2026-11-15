@@ -1,0 +1,38 @@
+{
+  "name": "@numen/tools.templates",
+  "version": "2026.11.1",
+  "private": true,
+  "type": "module",
+  "description": "Templates plugin frontend for Numen",
+  "main": "./frontend/index.ts",
+  "types": "./frontend/index.ts",
+  "scripts": {
+    "build": "vite build",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ .",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@numen/plugin-sdk": "workspace:*",
+    "@numen/ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^7.4.0",
+    "eslint-plugin-vue": "^10.11.1",
+    "jsdom": "^30.1.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3",
+    "vue": "^3.5.44",
+    "vue-tsc": "^3.3.13"
+  }
+}
