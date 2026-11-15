@@ -50,7 +50,8 @@ func (h Head) IsReset(since Cursor) bool {
 type SourceID int64
 
 // Change is the latest event of one kind of one file: the source the index keeps the file as, which
-// stays the same when the file moves, its path now, empty for a removal, and the number of the change.
+// stays the same when the file moves, its path now, or where it was for a removal, and the number of the
+// change.
 type Change struct {
 	SourceID SourceID
 	Path     string

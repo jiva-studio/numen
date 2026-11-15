@@ -29,11 +29,12 @@ const (
 
 // memoryVault is a vault in memory: its files by path, each with a modification time.
 type memoryVault struct {
-	mu    sync.Mutex
-	files map[string]string
-	times map[string]time.Time
-	reads int
-	opens int
+	mu     sync.Mutex
+	files  map[string]string
+	times  map[string]time.Time
+	reads  int
+	opens  int
+	broken map[string]bool
 }
 
 func newMemoryVault(files map[string]string) *memoryVault {
@@ -99,6 +100,9 @@ func (nopCloser) Close() error { return nil }
 func (s *memoryVault) StatFile(_ context.Context, path string) (domain.FileStat, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.broken[path] {
+		return domain.FileStat{}, errors.New("the disk cannot be read")
+	}
 	content, ok := s.files[path]
 	if !ok {
 		return domain.FileStat{}, edit.ErrNotExist
@@ -427,7 +431,7 @@ func TestAFrontmatterPassRunsTheFrontmatterTriggersOverTheNotesNamedAndOverRemov
 	s := newScene(t, map[string]string{"notes/a.md": "---\ntags: [river]\n---\n", "notes/b.md": "# B\n", "scans/a.pdf": "%PDF a"},
 		getExtractText(), getReadTagsOnFrontmatter())
 
-	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"notes/a.md", "notes/gone.md", "scans/a.pdf"}); err != nil {
+	if _, err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"notes/a.md", "notes/gone.md", "scans/a.pdf"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -463,7 +467,7 @@ func TestATriggerOfAPluginsOwnCommandRunsOnlyWhereTheConditionOfTheCommandIsTrue
 	s := newScene(t, map[string]string{"notes/a.md": "# A\n", "drafts/b.md": "# B\n"}, getReadTagsOnFrontmatter())
 	s.plugins.handlerWhen = map[string]string{"tags.read": "!target.contentType.startsWith('text/') || target.isNote"}
 
-	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"drafts/b.md"}); err != nil {
+	if _, err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"drafts/b.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got, want := s.plugins.take(), []string{tagger + " tags.read drafts/b.md"}; !slices.Equal(got, want) {
@@ -471,7 +475,7 @@ func TestATriggerOfAPluginsOwnCommandRunsOnlyWhereTheConditionOfTheCommandIsTrue
 	}
 
 	s.plugins.handlerWhen = map[string]string{"tags.read": "target.isFolder"}
-	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"drafts/b.md"}); err != nil {
+	if _, err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"drafts/b.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := s.plugins.take(); len(got) != 0 {
@@ -489,7 +493,7 @@ func TestAFrontmatterPassRunsATriggerOncePerBatchOverExactlyTheNotesNamed(t *tes
 	}
 	s := newScene(t, files, getReadTagsOnFrontmatter())
 
-	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, append(named, "scans/a.pdf")); err != nil {
+	if _, err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, append(named, "scans/a.pdf")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -521,10 +525,32 @@ func TestAPluginThatCannotBeReachedGetsNoFurtherBatchesInTheFrontmatterPass(t *t
 	s := newScene(t, files, getReadTagsOnFrontmatter())
 	s.plugins.unavailable[tagger] = true
 
-	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, named); err == nil {
+	retry, err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, named)
+
+	if err == nil {
 		t.Error("a plugin that cannot be reached was not reported")
 	}
 	if got := len(s.plugins.take()); got != 1 {
 		t.Errorf("ran %d times, want 1", got)
+	}
+	if !slices.Equal(retry, named) {
+		t.Errorf("kept %d notes to run over again, want the %d of both batches", len(retry), len(named))
+	}
+}
+
+func TestANoteThatCannotBeReadIsKeptAndTheRestOfTheFrontmatterPassRuns(t *testing.T) {
+	s := newScene(t, map[string]string{"notes/a.md": "# A\n", "notes/b.md": "# B\n", "notes/c.md": "# C\n"}, getReadTagsOnFrontmatter())
+	s.memoryVault.broken = map[string]bool{"notes/a.md": true}
+
+	retry, err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"notes/a.md", "notes/b.md", "notes/c.md"})
+
+	if err == nil {
+		t.Error("a note that cannot be read was not reported")
+	}
+	if got, want := s.plugins.take(), []string{tagger + " tags.read notes/b.md,notes/c.md"}; !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+	if !slices.Equal(retry, []string{"notes/a.md"}) {
+		t.Errorf("kept %v to run over again, want the note that cannot be read", retry)
 	}
 }

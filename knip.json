@@ -182,10 +182,12 @@
     },
     "tests/acceptance/desktop": {
       "ignoreDependencies": [
-        "gplint"
+        "gplint",
+        "@fontsource-variable/inter"
       ],
       "entry": [
         "playwright.config.ts",
+        "report/page/*.js",
         "eslint.config.js",
         "scripts/*.mjs",
         "steps/**/*.ts",

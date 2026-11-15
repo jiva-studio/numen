@@ -62,7 +62,7 @@ func (u *NotifyPlugins) Execute(batch []settingsdomain.Setting) {
 			u.report(fmt.Errorf("the performance profile is not a name: %s", one.JSON))
 			continue
 		}
-		u.config.SetPerformanceProfile(context.Background(), u.resolveProfile(profile))
+		u.config.SetPerformance(context.Background(), u.resolveProfile(profile))
 	}
 }
 

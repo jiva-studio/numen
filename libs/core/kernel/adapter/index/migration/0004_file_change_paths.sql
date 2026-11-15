@@ -1,0 +1,1 @@
+ALTER TABLE file_changes ADD COLUMN path TEXT NOT NULL DEFAULT '';
