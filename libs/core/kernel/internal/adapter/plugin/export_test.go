@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/portproxy"
@@ -57,8 +58,8 @@ func GetLaunch(r *Registry, p manifest.Discovered) supervision.Launch { return r
 
 func GetSupervisors(r *Registry) *supervision.Supervisors { return r.sups }
 
-// SetPerformance sets the performance profile the push holds, without pushing it.
-func SetPerformance(c *ConfigPush, profile string) { c.performance = profile }
+// SetPerformance sets the performance limits the push holds, without pushing them.
+func SetPerformance(c *ConfigPush, performance plugindomain.Performance) { c.performance = performance }
 
 func GetDelivery(c *ConfigPush) *delivery.Delivery { return c.delivery }
 

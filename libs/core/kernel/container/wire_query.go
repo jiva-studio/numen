@@ -24,8 +24,8 @@ func newFindSearchResults(
 	deps := searchqueryusecase.FindSearchResultsDeps{
 		Parser:       celquery.NewParser(limits),
 		Documents:    search,
+		Contents:     db.NoteQueries(),
 		Vectors:      search,
-		Words:        search,
 		Places:       search,
 		Matcher:      wordmatch.NewMatcher(),
 		Readers:      c.search.VaultReaders,
@@ -36,6 +36,7 @@ func newFindSearchResults(
 		Rows:         none.RerankRows{},
 		Results:      db.OperationResults(operationResultRows),
 		Clock:        c.vault.Clock,
+		Links:        db.NoteQueries(),
 		Limits:       limits,
 		StageLimits:  stageLimits,
 	}

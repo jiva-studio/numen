@@ -5,6 +5,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
@@ -16,7 +17,7 @@ func setting(json string, path ...string) settingsdomain.Setting {
 func newNotifier(host *pluginHost, signal func(), report func(error)) *settings.NotifyPlugins {
 	return settings.NewNotifyPlugins(settings.NotifyPluginsDeps{
 		Codec: jsonCodec{}, Apply: host.UpdatePluginSetting, Config: host,
-		ResolveProfile: func(profile string) string { return "resolved-" + profile }, Signal: signal, Report: report,
+		ResolveProfile: func(profile string) plugin.Performance { return plugin.Performance{Profile: "resolved-" + profile} }, Signal: signal, Report: report,
 	})
 }
 
@@ -80,8 +81,8 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 		Codec: jsonCodec{}, Config: host, Write: write, Notify: newNotifier(host, nil, nil), Subscribe: subscribe, Hosts: hosts,
 	})
 
-	apply.Execute(map[string]map[string]any{"org.example.scans": {"depth": 2.0}}, "fast")
-	apply.Execute(nil, "fast")
+	apply.Execute(map[string]map[string]any{"org.example.scans": {"depth": 2.0}}, plugin.Performance{Profile: "fast"})
+	apply.Execute(nil, plugin.Performance{Profile: "fast"})
 	feed <- []settingsdomain.Setting{setting(`4`, "org.example.scans", "depth")}
 	hosts.Unsubscribe(host)
 
@@ -105,7 +106,7 @@ func TestApplyToPluginsSavesWhatAPluginChanges(t *testing.T) {
 	apply := settings.NewApplyToPlugins(settings.ApplyToPluginsDeps{
 		Codec: jsonCodec{}, Config: host, Write: write, Notify: newNotifier(host, nil, nil), Hosts: &settings.HostSubscriptions{},
 	})
-	apply.Execute(nil, "fast")
+	apply.Execute(nil, plugin.Performance{Profile: "fast"})
 
 	err := host.persist("org.example.scans", "depth", 5)
 

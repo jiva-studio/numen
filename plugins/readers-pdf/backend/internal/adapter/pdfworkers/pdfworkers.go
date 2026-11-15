@@ -5,7 +5,6 @@ package pdfworkers
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/tetratelabs/wazero"
@@ -32,10 +31,10 @@ func newCompilationCache() wazero.CompilationCache {
 	return wasm.NewCompilationCache(dir)
 }
 
-// New starts as many workers as the default performance profile allows threads and warms them up,
+// New starts as many workers as the fallback performance limits allow threads and warms them up,
 // keeping every returned worker alive. afterFunc sets the timers that release idle workers.
 func New(afterFunc func(time.Duration, func()) pdf.Timer) *pdf.Workers {
-	threads := getThreads(performance.Read(nil), runtime.NumCPU())
+	threads := performance.Read(nil).Threads
 	workers := pdf.NewWorkers(pdf.Options{
 		Report: ReportError,
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="production workers share the plugin compilation cache"
@@ -49,12 +48,8 @@ func New(afterFunc func(time.Duration, func()) pdf.Timer) *pdf.Workers {
 }
 
 // Configure sizes the workers, and the returned workers kept alive, to the threads the performance
-// profile in the values of a Configure call allows.
+// limits in the values of a Configure call allow.
 func Configure(workers *pdf.Workers, values map[string]string) {
-	threads := getThreads(performance.Read(values), runtime.NumCPU())
+	threads := performance.Read(values).Threads
 	workers.SetWorkers(threads, threads)
-}
-
-func getThreads(profile performance.Profile, cpus int) int {
-	return performance.Resolve(profile, cpus).Threads
 }
