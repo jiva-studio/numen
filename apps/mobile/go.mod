@@ -12,7 +12,6 @@ require (
 require (
 	cel.dev/cel-go v0.32.0 // indirect
 	cel.dev/expr v0.25.1 // indirect
-	connectrpc.com/connect v1.21.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/ebitengine/purego v0.11.3 // indirect
@@ -51,3 +50,13 @@ replace github.com/jiva-studio/numen/libs/note => ../../libs/note
 replace github.com/jiva-studio/numen/libs/plugin/catalog => ../../libs/plugin/catalog
 
 replace github.com/jiva-studio/numen/libs/atomicfile => ../../libs/atomicfile
+
+require (
+	connectrpc.com/connect v1.21.1
+	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0
+	github.com/jiva-studio/numen/plugins/tools-updater v0.0.0
+)
+
+replace github.com/jiva-studio/numen/libs/plugin/sdk-go => ../../libs/plugin/sdk-go
+
+replace github.com/jiva-studio/numen/plugins/tools-updater => ../../plugins/tools-updater

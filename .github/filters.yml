@@ -142,6 +142,11 @@ desktop:
 mobile:
   - *go_base
   - apps/mobile/bind/**
+  - apps/mobile/cmd/**
+  - plugins/tools-updater/*.go
+  - plugins/tools-updater/manifest.json
+  - plugins/tools-updater/go.mod
+  - plugins/tools-updater/backend/**
   - apps/mobile/*.go
   - apps/mobile/go.mod
   - apps/mobile/go.sum
