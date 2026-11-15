@@ -9,9 +9,11 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 // A title no file can be named after fails, and nothing is written.
@@ -148,5 +150,31 @@ func TestANewNoteIsBroughtLevelInTheIndexItWasGiven(t *testing.T) {
 	}
 	if len(updated) != 1 || updated[0] != made.Path {
 		t.Errorf("the index was updated for %v, want %s", updated, made.Path)
+	}
+}
+
+func TestACardModelAtTheNoteBoundIsMadeAndOverTheBoundIsRefused(t *testing.T) {
+	env := vaulttest.New(t, nil)
+	v := env.Vault
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
+
+	baseBody, err := format.CardModelBody("", []format.CardTemplate{{Name: "Recognize", Front: "a", Back: "b"}}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exactFront := strings.Repeat("a", 1+note.MaxBytes-len(baseBody))
+	if _, err := u.CardModel(t.Context(), v, cards.New{
+		Title:     "Exact",
+		Fields:    []string{"Name"},
+		Templates: []format.CardTemplate{{Name: "Recognize", Front: exactFront, Back: "b"}},
+	}); err != nil {
+		t.Fatalf("CardModel at MaxBytes failed: %v", err)
+	}
+	if _, err := u.CardModel(t.Context(), v, cards.New{
+		Title:     "Over",
+		Fields:    []string{"Name"},
+		Templates: []format.CardTemplate{{Name: "Recognize", Front: exactFront + "a", Back: "b"}},
+	}); err == nil {
+		t.Fatal("CardModel over MaxBytes succeeded")
 	}
 }

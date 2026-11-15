@@ -254,6 +254,15 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 	if onDiskContent := onDisk(t, f.root, "Shows.md"); onDiskContent != counting {
 		t.Errorf("the preset on disk is now %q", onDiskContent)
 	}
+
+	badLoad := settings()
+	badLoad.Load = map[string]int32{"funday": 50}
+	_, err = f.writes.WritePreset(t.Context(), &api.WritePresetRequest{
+		Path: "Shows.md", Settings: badLoad,
+	})
+	if code := codeOf(err); code != server.CodeInvalidArgument || !strings.Contains(err.Error(), "funday") {
+		t.Errorf("a save with an invalid weekday was answered %v (%v)", code, err)
+	}
 }
 
 // TestACurveReachesBackWithItsTwoPlaces: the control is drawn from the current
