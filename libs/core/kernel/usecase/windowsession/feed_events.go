@@ -35,7 +35,9 @@ type FeedEvents struct {
 	After          func(time.Duration) <-chan time.Time
 }
 
-func (f FeedEvents) start(ctx context.Context, v domain.Vault) func() {
+// Start begins the watch of the vault and returns the loop that sends its events until ctx ends, or nil
+// where a part is missing.
+func (f FeedEvents) Start(ctx context.Context, v domain.Vault) func() {
 	if f.WatchWrites == nil || f.ReadHead == nil || f.ListPaths == nil || f.GetContentType == nil || f.Emit == nil {
 		return nil
 	}

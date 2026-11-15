@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 
+	"github.com/jiva-studio/numen/libs/note/domain"
+
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -23,7 +25,7 @@ type windowParts struct {
 	closeEmbedder func() error
 	closeIndex    func() error
 	frontmatter   *indexnote.FrontmatterChanges
-	feed          windowsession.FeedEvents
+	startFeed     func(ctx context.Context, v domain.Vault) func()
 }
 
 // windowCases are the use cases that run a window from its start to its close.
@@ -54,7 +56,7 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
-		Passes:   parts.passes, Triggers: getTriggerSource(a, parts.frontmatter), Feed: parts.feed,
+		Passes:   parts.passes, Triggers: getTriggerSource(a, parts.frontmatter), StartFeed: parts.startFeed,
 	})
 	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)
