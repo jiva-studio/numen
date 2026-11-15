@@ -23,11 +23,11 @@ func readManifest(t *testing.T) manifestShape {
 	return shape
 }
 
-func TestTheManifestUpdatesTheTagsOnTheFilesChangedEventAlone(t *testing.T) {
+func TestTheManifestUpdatesTheTagsOnTheFilesChangedEventForNotesAlone(t *testing.T) {
 	shape := readManifest(t)
 
-	if !slices.Equal(shape.ActivationEvents, []string{"onFilesChanged"}) {
-		t.Errorf("activationEvents = %v, want [onFilesChanged]", shape.ActivationEvents)
+	if !slices.Equal(shape.ActivationEvents, []string{"onFilesChanged:text/markdown"}) {
+		t.Errorf("activationEvents = %v, want [onFilesChanged:text/markdown]", shape.ActivationEvents)
 	}
 	if strings.Contains(string(shape.Contributes), "triggers") || strings.Contains(string(shape.Contributes), "commands") {
 		t.Errorf("contributes = %s, want no triggers and no commands", shape.Contributes)

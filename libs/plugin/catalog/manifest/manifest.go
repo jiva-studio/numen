@@ -11,6 +11,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 const (
@@ -430,7 +432,38 @@ func (m Manifest) listActivationEventIssues() []error {
 }
 
 func isValidActivationEvent(event string) bool {
-	return slices.Contains(PluginActivationEvents(), event)
+	if slices.Contains(PluginActivationEvents(), event) {
+		return true
+	}
+	_, isMasked := getFilesChangedMask(event)
+	return isMasked
+}
+
+func getFilesChangedMask(event string) (domain.ContentType, bool) {
+	text, hasPrefix := strings.CutPrefix(event, ActivationEventFilesChanged+":")
+	if !hasPrefix {
+		return "", false
+	}
+	mask, err := domain.ParseContentType(text)
+	return mask, err == nil
+}
+
+// IsTakingFileTypes reports whether the plugin takes a file of one of the types: it declares onFilesChanged
+// without a mask, or with a mask one of the types matches, or declares no onFilesChanged event and so
+// filters nothing.
+func (m Manifest) IsTakingFileTypes(types []domain.ContentType) bool {
+	isMasked := false
+	for _, declared := range m.ActivationEvents {
+		if declared == ActivationEventFilesChanged {
+			return true
+		}
+		mask, hasMask := getFilesChangedMask(declared)
+		if hasMask && slices.ContainsFunc(types, mask.Matches) {
+			return true
+		}
+		isMasked = isMasked || hasMask
+	}
+	return !isMasked
 }
 
 // HasPermission reports whether this plugin requests the given permission.
@@ -478,6 +511,9 @@ func (m Manifest) IsActivatedBy(event string) bool {
 func isMatchingActivationEvent(declared, event string) bool {
 	if !isValidActivationEvent(declared) {
 		return false
+	}
+	if _, isMasked := getFilesChangedMask(declared); isMasked {
+		declared = ActivationEventFilesChanged
 	}
 	vaultID, isScoped := strings.CutPrefix(event, declared+":")
 	return event == declared || (isScoped && vaultID != "")

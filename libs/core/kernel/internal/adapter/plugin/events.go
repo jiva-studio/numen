@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
@@ -63,8 +62,8 @@ func (e *Events) EmitEvent(event string) {
 }
 
 // EmitFilesChanged queues the onFilesChanged event of the vault for the plugins that take a file of one of the
-// types: a plugin whose manifest declares readers takes the types they open, and one with no reader takes
-// every type. Types emitted before the event is delivered are delivered with it.
+// types: a plugin whose manifest declares onFilesChanged with a mask takes the types the mask matches, and
+// one that declares it bare takes every type. Types emitted before the event is delivered are delivered with it.
 func (e *Events) EmitFilesChanged(vaultID string, types []domain.ContentType) {
 	if e.mode.IsSafeMode() || e.bus == nil {
 		return
@@ -104,7 +103,7 @@ func (e *Events) listActivatedBy(event string) []string {
 	defer release()
 	candidates := make([]string, 0)
 	for _, p := range v.enabled() {
-		if p.Manifest.IsActivatedBy(event) && (!isFiltered || isTakingAny(p.Manifest, types)) {
+		if p.Manifest.IsActivatedBy(event) && (!isFiltered || p.Manifest.IsTakingFileTypes(types)) {
 			candidates = append(candidates, p.Manifest.ID)
 		}
 	}
@@ -135,11 +134,4 @@ func (e *Events) TriggerEvent(ctx context.Context, event string) ([]string, erro
 		}
 	}
 	return activated, errors.Join(errs...)
-}
-
-func isTakingAny(m manifest.Manifest, types []domain.ContentType) bool {
-	if len(m.Contributes.Readers) == 0 {
-		return true
-	}
-	return slices.ContainsFunc(types, m.IsHandling)
 }
