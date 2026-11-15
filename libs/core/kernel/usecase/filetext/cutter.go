@@ -161,13 +161,9 @@ func (u cutter) source(
 	res.CurrentSource = path
 	u.progress(*res)
 
-	ref, err := on.files.StatFile(ctx, path)
-	if edit.IsNoNote(err) {
-		res.Vanished++
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("stat %s: %w", path, err)
+	ref, isDone, err := u.statTextSource(ctx, v, on, path, sizes, res)
+	if isDone || err != nil {
+		return err
 	}
 	hash, err := on.texts.GetContentHash(ctx, path)
 	if errors.Is(err, edit.ErrNotExist) {
@@ -280,4 +276,39 @@ func countChunks(chunks []domain.Chunk) int {
 
 func (u cutter) progress(res vaultreading.IndexResult) {
 	u.onProgress(res)
+}
+
+func (u cutter) statTextSource(
+	ctx context.Context, v domain.Vault, on openVault, path string, sizes chunking.Sizes, res *vaultreading.IndexResult,
+) (domain.FileStat, bool, error) {
+	ref, err := on.files.StatFile(ctx, path)
+	if edit.IsNoNote(err) {
+		res.Vanished++
+		return domain.FileStat{}, true, nil
+	}
+	if err != nil {
+		return domain.FileStat{}, false, fmt.Errorf("stat %s: %w", path, err)
+	}
+	isRecorded, err := u.recordIfWithoutText(ctx, v, on, ref, sizes)
+	return ref, isRecorded, err
+}
+
+func (u cutter) recordIfWithoutText(
+	ctx context.Context, v domain.Vault, on openVault, ref domain.FileStat, sizes chunking.Sizes,
+) (bool, error) {
+	if ref.Kind != domain.KindFile {
+		return false, nil
+	}
+	hasText, err := on.texts.IsTextSource(ctx, ref.Path)
+	if err != nil {
+		return false, fmt.Errorf("find the text of %s: %w", ref.Path, err)
+	}
+	if hasText {
+		return false, nil
+	}
+	source := domain.Source{FileStat: ref, Recipe: chunking.GetTextVersionRecipe(sizes)}
+	if err := u.sources.SaveExtraction(ctx, v.ID, domain.SourceChunks{Source: source}); err != nil {
+		return false, fmt.Errorf("write the chunks of %s: %w", ref.Path, err)
+	}
+	return true, nil
 }
