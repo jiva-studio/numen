@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -51,9 +50,6 @@ func (p *Processes) EnsureProvisioned(ctx context.Context, requirements []manife
 		catalog := p.services.GetDependencies()
 		if catalog == nil || !catalog.CanProvision(req) {
 			return fmt.Errorf("%w: nothing provisions %s %s", ErrRuntimeUnavailable, req.Kind, req.ID)
-		}
-		if _, state, err := catalog.Resolve(req); err == nil && state == plugindomain.DependencyStateReady {
-			continue
 		}
 		if _, err := catalog.Provision(ctx, req, nil); err != nil {
 			return fmt.Errorf("provision %s: %w", req.ID, err)

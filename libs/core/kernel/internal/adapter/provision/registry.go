@@ -73,7 +73,7 @@ func (r *Registry) route(req manifest.DependencyRequirement) (pluginport.Depende
 	return nil, false
 }
 
-// Provision makes the dependency ready. Callers that request the same
+// Provision makes the dependency ready; a dependency that is ready already is returned without a run. Callers that request the same
 // requirement while a run is in progress share it and each receives its progress.
 func (r *Registry) Provision(
 	ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugin.DependencyStatus),
@@ -81,6 +81,9 @@ func (r *Registry) Provision(
 	provisioner, ok := r.route(req)
 	if !ok {
 		return plugin.ResolvedDependency{}, fmt.Errorf("%w: %s %s", plugin.ErrNoProvisioner, req.Kind, req.ID)
+	}
+	if resolved, state, err := provisioner.Resolve(req); err == nil && state == plugin.DependencyStateReady {
+		return resolved, nil
 	}
 	return r.flights.do(ctx, getFlightKey(req), onProgress, func(runCtx context.Context, report func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error) {
 		return r.run(runCtx, provisioner, req, report)
