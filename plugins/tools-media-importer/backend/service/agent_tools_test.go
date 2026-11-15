@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/queuetest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -120,7 +121,7 @@ type importFixture struct {
 	texts     *hosttest.Texts
 	chemistry *hosttest.Vault
 	chemTexts *hosttest.Texts
-	links     *link.Links
+	tasks     *queuetest.Log
 	registry  *tools.Registry
 }
 
@@ -136,11 +137,12 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	chemTexts.SetStore(PluginID, chemistry.Store())
 
 	sites := fakeSites{video: download.NewMock(webpage.New()), release: release}
+	tasks := queuetest.NewLog()
 	hosted := link.Host{
 		Vaults: textVault{
 			Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts, "Chemistry": chemTexts},
 		}.vaults(),
-		Store: foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
+		Store: foldersOf(vault), Texts: textsOf(texts), Queue: tasks,
 		Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
@@ -153,7 +155,7 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	}
 	return &importFixture{
 		vault: vault, store: store, texts: texts, chemistry: chemistry, chemTexts: chemTexts,
-		links: links, registry: registry,
+		tasks: tasks, registry: registry,
 	}
 }
 
@@ -406,7 +408,7 @@ func TestURLImportStartsTheDownloadAndReturnsBeforeItEnds(t *testing.T) {
 		t.Error("the copy is in the plugin's folder before the download was let through")
 	}
 	close(release)
-	s.links.Wait()
+	s.tasks.WaitForEnd(t, out.DownloadTaskID)
 	if !hasCopy(t, s.store) {
 		t.Error("the copy is not in the plugin's folder once the background copy ended")
 	}
@@ -427,7 +429,8 @@ func TestURLImportDownloadsInTwoVaultsOnTheSamePath(t *testing.T) {
 			inMills.DownloadTaskID, inChemistry.DownloadTaskID, inMills.Path, inChemistry.Path)
 	}
 	close(release)
-	s.links.Wait()
+	s.tasks.WaitForEnd(t, inMills.DownloadTaskID)
+	s.tasks.WaitForEnd(t, inChemistry.DownloadTaskID)
 	if !hasCopy(t, s.store) || !hasCopy(t, s.chemistry.Store()) {
 		t.Error("one of the two vaults has no copy after both downloads ended")
 	}
@@ -437,7 +440,6 @@ func TestURLImportDownloadsOnlyWhenRequested(t *testing.T) {
 	s := newUnblockedFixture(t)
 
 	out := s.importURL(t, "Mills", importArguments{URL: videoAddress})
-	s.links.Wait()
 
 	if out.DownloadTaskID != "" || out.DownloadError != "" {
 		t.Errorf("url_import returned %+v, want no copy", out)
@@ -451,7 +453,6 @@ func TestURLImportReportsAnAddressNothingCopies(t *testing.T) {
 	s := newUnblockedFixture(t)
 
 	out := s.importURL(t, "Mills", importArguments{URL: articleAddress, DownloadVideo: true})
-	s.links.Wait()
 
 	if out.DownloadError == "" || out.DownloadTaskID != "" {
 		t.Errorf("url_import returned %+v, want the reason no copy was started", out)

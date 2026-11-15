@@ -803,7 +803,7 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	// StartFetch copies video when IsCopyable is true, and reportBackgroundError filters non-actionable errors.
 	sf.downloads = 0
 	l.StartFetch(ctx, made)
-	l.Wait()
+	l.wg.Wait()
 	if sf.downloads != 1 {
 		t.Errorf("StartFetch downloads = %d, want 1", sf.downloads)
 	}
