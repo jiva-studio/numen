@@ -9,12 +9,12 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func (p *plan) findSets(ctx context.Context) error {
-	p.sets = make([]map[string]bool, len(p.query.Sets))
+func (r *documentReader) findSets(ctx context.Context) error {
+	r.sets = make([]map[string]bool, len(r.req.query.Sets))
 	hasProperty := false
 	var problems []searchquery.Problem
-	for i, s := range p.query.Sets {
-		members, err := p.findSet(ctx, s)
+	for i, s := range r.req.query.Sets {
+		members, err := r.findSet(ctx, s)
 		if message, isProblem := getTargetMessage(err); isProblem {
 			problems = append(problems, searchquery.Problem{Position: s.Position, Message: message})
 			continue
@@ -22,7 +22,7 @@ func (p *plan) findSets(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		p.sets[i] = members
+		r.sets[i] = members
 		_, isLink := searchquery.FindLinkFunction(s.Function)
 		hasProperty = hasProperty || (!isLink && s.Function != searchquery.FunctionHasHeading)
 	}
@@ -32,26 +32,26 @@ func (p *plan) findSets(ctx context.Context) error {
 	if !hasProperty {
 		return nil
 	}
-	count, err := p.u.index.contents.CountUnreadableFrontmatter(ctx, p.v.ID)
+	count, err := r.index.contents.CountUnreadableFrontmatter(ctx, r.req.vault.ID)
 	if err != nil {
 		return err
 	}
 	if count > 0 {
-		p.warnings = append(p.warnings, fmt.Sprintf("%d notes have frontmatter that cannot be read; property() and hasProperty() treat them as having no keys", count))
+		r.warnings.add(fmt.Sprintf("%d notes have frontmatter that cannot be read; property() and hasProperty() treat them as having no keys", count))
 	}
 	return nil
 }
 
-func (p *plan) findSet(ctx context.Context, s searchquery.SetCondition) (map[string]bool, error) {
+func (r *documentReader) findSet(ctx context.Context, s searchquery.SetCondition) (map[string]bool, error) {
 	if _, isLink := searchquery.FindLinkFunction(s.Function); isLink {
-		if p.u.links == nil {
+		if r.links == nil {
 			return nil, ErrNoLinks
 		}
-		return p.findLinkSet(ctx, s)
+		return r.links.findLinkSet(ctx, s)
 	}
 	members := map[string]bool{}
 	if s.Function == searchquery.FunctionHasHeading {
-		headings, err := p.u.index.contents.FindHeadings(ctx, p.v.ID, s.Text)
+		headings, err := r.index.contents.FindHeadings(ctx, r.req.vault.ID, s.Text)
 		if err != nil {
 			return nil, err
 		}
@@ -62,33 +62,33 @@ func (p *plan) findSet(ctx context.Context, s searchquery.SetCondition) (map[str
 		}
 		return members, nil
 	}
-	entries, err := p.u.index.contents.ListPropertyValues(ctx, p.v.ID, s.Key)
+	entries, err := r.index.contents.ListPropertyValues(ctx, r.req.vault.ID, s.Key)
 	if err != nil {
 		return nil, err
 	}
 	for _, e := range entries {
-		if searchquery.IsPropertyMatch(e.Value, s.Comparison, s.Operands, p.zone) {
+		if searchquery.IsPropertyMatch(e.Value, s.Comparison, s.Operands, r.req.zone) {
 			members[e.Path] = true
 		}
 	}
 	return members, nil
 }
 
-func (p *plan) getMembership(path string) []bool {
-	if len(p.sets) == 0 {
+func (r *documentReader) getMembership(path string) []bool {
+	if len(r.sets) == 0 {
 		return nil
 	}
-	membership := make([]bool, len(p.sets))
-	for i, members := range p.sets {
+	membership := make([]bool, len(r.sets))
+	for i, members := range r.sets {
 		membership[i] = members[path]
 	}
 	return membership
 }
 
-func (p *plan) getSetPaths(indexes []int) ([]string, bool) {
+func (r *documentReader) getSetPaths(indexes []int) ([]string, bool) {
 	var smallest map[string]bool
 	for _, index := range indexes {
-		if members := p.sets[index]; smallest == nil || len(members) < len(smallest) {
+		if members := r.sets[index]; smallest == nil || len(members) < len(smallest) {
 			smallest = members
 		}
 	}
@@ -103,14 +103,14 @@ func (p *plan) getSetPaths(indexes []int) ([]string, bool) {
 	return paths, true
 }
 
-func (p *plan) loadDocuments(ctx context.Context, paths []string) error {
-	if !hasCompareLeaf(p.query.Root) {
+func (r *documentReader) loadDocuments(ctx context.Context, paths []string) error {
+	if !hasCompareLeaf(r.req.query.Root) {
 		return nil
 	}
 	var missing []string
 	seen := map[string]bool{}
 	for _, path := range paths {
-		if _, found := p.documents[path]; !found && !seen[path] {
+		if _, found := r.documents[path]; !found && !seen[path] {
 			seen[path] = true
 			missing = append(missing, path)
 		}
@@ -118,23 +118,14 @@ func (p *plan) loadDocuments(ctx context.Context, paths []string) error {
 	if len(missing) == 0 {
 		return nil
 	}
-	listed, err := p.u.index.documents.ListDocuments(ctx, p.v.ID, searchquery.DocumentQuery{Paths: missing})
+	listed, err := r.index.documents.ListDocuments(ctx, r.req.vault.ID, searchquery.DocumentQuery{Paths: missing})
 	if err != nil {
 		return err
 	}
 	for _, d := range listed {
-		p.fillKind(d)
+		r.fillKind(d)
 	}
 	return nil
-}
-
-func (p *plan) getDocument(path string, sourceKind domain.SourceKind) searchquery.Document {
-	if d, found := p.documents[path]; found {
-		return d
-	}
-	d := p.u.getDocument(path, sourceKind)
-	d.IsInSet = p.getMembership(path)
-	return d
 }
 
 func hasCompareLeaf(node searchquery.Node) bool {

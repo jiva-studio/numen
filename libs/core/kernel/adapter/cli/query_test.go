@@ -81,10 +81,10 @@ func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchquery.F
 	return stubSession{
 		Vaults: createVaultList(v),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Query: cli.Query{
-				Find:    registry.NewFind(singleVaultList{v}).Execute,
-				Prepare: func(context.Context, domain.Vault) (*searchquery.FindSearchResults, error) { return find, nil },
-			}, OperationResults: operationresult.NewClearOperationResults(db.OperationResults(100))}, nil
+			return cli.Indexed{Query: searchquery.NewFindSearchResultsByName(
+				registry.NewFind(singleVaultList{v}).Execute,
+				func(context.Context, domain.Vault) (*searchquery.FindSearchResults, error) { return find, nil },
+			), OperationResults: operationresult.NewClearOperationResults(db.OperationResults(100))}, nil
 		},
 	}
 }

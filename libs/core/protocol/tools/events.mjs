@@ -1,5 +1,6 @@
-// Writes the list of the events of triggers, from events.json, as Go for the manifest reader and the
-// core. Run by `make lib_protocol_generate`; the generated file is committed.
+// Writes the list of the events of files, from events.json, as Go for the manifest reader and the
+// core, and as the event names of the Go SDK. Run by `make lib_protocol_generate`; the generated
+// files are committed.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
@@ -18,20 +19,26 @@ const getGoName = (name) =>
     .map((part) => part[0].toUpperCase() + part.slice(1))
     .join('')
 
-const go = [
+const declare = (pkg) => [
   `// ${HEADER}`,
   '',
-  'package manifest',
+  `package ${pkg}`,
   '',
   ...events.flatMap((one) => [
     `// ${getGoName(one.name)} is the event raised when ${one.about}.`,
     `const ${getGoName(one.name)} = ${JSON.stringify(one.name)}`,
     '',
   ]),
+]
+
+const triggers = events.filter((one) => one.isTrigger).map((one) => getGoName(one.name))
+
+const manifest = [
+  ...declare('manifest'),
   '// IsEvent reports whether the name is an event a trigger runs on.',
   'func IsEvent(name string) bool {',
   '\tswitch name {',
-  `\tcase ${events.map((one) => getGoName(one.name)).join(', ')}:`,
+  `\tcase ${triggers.join(', ')}:`,
   '\t\treturn true',
   '\t}',
   '\treturn false',
@@ -39,4 +46,5 @@ const go = [
   '',
 ].join('\n')
 
-write('../../../plugin/catalog/manifest/events.go', go)
+write('../../../plugin/catalog/manifest/events.go', manifest)
+write('../../../plugin/sdk-go/host/events.go', declare('host').join('\n'))

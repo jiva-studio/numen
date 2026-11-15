@@ -39,18 +39,31 @@ func (v *Vault) parsed() map[string]domain.Note {
 
 func (v *Vault) rescan(paths ...string) {
 	for _, filePath := range paths {
-		fp, err := v.files.stat(filePath)
-		if err != nil || !isNote(filePath) || isIgnored(filePath) {
-			delete(v.indexed, filePath)
-			continue
-		}
-		raw, err := v.files.read(filePath)
-		if err != nil {
-			delete(v.indexed, filePath)
-			continue
-		}
-		v.indexed[filePath] = notesmarkdown.Parse(fp, raw)
+		v.rescanFile(filePath)
 	}
+}
+
+func (v *Vault) rescanFile(filePath string) {
+	fp, err := v.files.stat(filePath)
+	if err != nil || isIgnored(filePath) {
+		delete(v.indexed, filePath)
+		v.feed.observe(filePath, nil, false, nil)
+		return
+	}
+	raw, err := v.files.read(filePath)
+	if err != nil {
+		delete(v.indexed, filePath)
+		v.feed.observe(filePath, nil, false, nil)
+		return
+	}
+	if !isNote(filePath) {
+		delete(v.indexed, filePath)
+		v.feed.observe(filePath, raw, true, nil)
+		return
+	}
+	note := notesmarkdown.Parse(fp, raw)
+	v.indexed[filePath] = note
+	v.feed.observe(filePath, raw, true, note.Frontmatter)
 }
 
 // Reindex updates the index for every file, as a walk of the vault does.
