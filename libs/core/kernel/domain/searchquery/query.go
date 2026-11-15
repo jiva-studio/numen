@@ -24,6 +24,8 @@ const (
 	LeafKindIn
 	// LeafPathPrefix is path.startsWith("x").
 	LeafPathPrefix
+	// LeafFunction is a call of a function a plugin contributes.
+	LeafFunction
 )
 
 // Position is a place in the text of a query, counted from 1; Column counts Unicode code points.
@@ -31,10 +33,12 @@ type Position struct {
 	Line, Column int
 }
 
-// Leaf is one test of a normalized tree. ConditionIndex is set for LeafMeaning and LeafWords.
+// Leaf is one test of a normalized tree. ConditionIndex is set for LeafMeaning and LeafWords, CallIndex for
+// LeafFunction.
 type Leaf struct {
 	Kind           LeafKind
 	ConditionIndex int
+	CallIndex      int
 	Kinds          []string
 	Prefix         string
 	Position       Position
@@ -66,6 +70,7 @@ type Condition struct {
 type Query struct {
 	Root            Node
 	Conditions      []Condition
+	Calls           []Call
 	Stages          []Stage
 	IsSearchResults bool
 }
@@ -77,6 +82,7 @@ type RawLeaf struct {
 	Kinds    []string
 	Prefix   string
 	Position Position
+	Call     Call
 }
 
 // RawNode is the tree a parser emits, with negations where they are written. Stages is set on the root

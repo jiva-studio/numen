@@ -22,9 +22,12 @@ var ErrNegativeLimit = errors.New("the limit of results is negative")
 
 // FindSearchResultsDeps is what FindSearchResults reads. A nil Source is an installation with no model, and
 // a nil Texts reads the text of notes only. Calls, Codec, Rows, Resolve, Results and Clock serve the rerank
-// stage. A zero Limits or StageLimits takes the defaults.
+// stage. A zero Limits or StageLimits takes the defaults. Catalog returns the catalog a query is parsed against, the
+// built-in one when nil; Functions answers the functions plugins contribute to it.
 type FindSearchResultsDeps struct {
 	Parser       QueryParser
+	Catalog      func() searchquery.Catalog
+	Functions    SearchFunctions
 	Documents    DocumentQueries
 	Vectors      VectorQueries
 	Words        WordQueries
@@ -48,6 +51,8 @@ type FindSearchResultsDeps struct {
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
 type FindSearchResults struct {
 	parser       QueryParser
+	catalog      func() searchquery.Catalog
+	functions    SearchFunctions
 	documents    DocumentQueries
 	vectors      VectorQueries
 	words        WordQueries
@@ -71,8 +76,12 @@ func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 	if stageLimits == (searchquery.StageLimits{}) {
 		stageLimits = searchquery.DefaultStageLimits()
 	}
+	catalog := deps.Catalog
+	if catalog == nil {
+		catalog = searchquery.GetBuiltinCatalog
+	}
 	return &FindSearchResults{
-		parser: deps.Parser, documents: deps.Documents, vectors: deps.Vectors, words: deps.Words,
+		parser: deps.Parser, catalog: catalog, functions: deps.Functions, documents: deps.Documents, vectors: deps.Vectors, words: deps.Words,
 		places: deps.Places, matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts,
 		source: deps.Source, floors: deps.Floors, contentTypes: deps.ContentTypes,
 		reranker: reranker{
@@ -100,7 +109,7 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r searc
 	if hasMeaning(q.Conditions) && !u.hasModel() {
 		return searchquery.SearchResults{}, searchquery.ErrNoModel
 	}
-	results, err := u.newPlan(ctx, v, q).execute(ctx)
+	results, err := u.newPlan(ctx, v, q, r.IndexGeneration).execute(ctx)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
@@ -142,7 +151,7 @@ func (u *FindSearchResults) parse(text string) (searchquery.Query, error) {
 	if err := searchquery.CheckQueryText(text, u.Limits); err != nil {
 		return searchquery.Query{}, err
 	}
-	raw, err := u.parser.ParseQuery(text, searchquery.GetBuiltinCatalog())
+	raw, err := u.parser.ParseQuery(text, u.catalog())
 	if err != nil {
 		return searchquery.Query{}, err
 	}

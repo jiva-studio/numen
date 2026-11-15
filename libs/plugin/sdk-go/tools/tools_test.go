@@ -273,3 +273,33 @@ func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
 		t.Fatal("expected error from unreachable host endpoint")
 	}
 }
+
+func TestEachListingReadsTheDescriptionAgainAndAFailureListsTheFixedOne(t *testing.T) {
+	registry := New()
+	descriptions := []error{nil, errors.New("the host is gone")}
+	asked := 0
+	err := Add(registry, Spec{
+		Name: "greet", Title: "Greet", Description: "Greets.", Effect: ReadOnly,
+		GetDescription: func(context.Context) (string, error) {
+			err := descriptions[asked]
+			asked++
+			return "Greets by name.", err
+		},
+	}, func(_ context.Context, in greetIn) (greetOut, error) { return greetOut{}, nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	first, err := registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if first.Tools[0].Description != "Greets by name." || second.Tools[0].Description != "Greets." || asked != 2 {
+		t.Errorf("descriptions %q then %q after %d reads", first.Tools[0].Description, second.Tools[0].Description, asked)
+	}
+}

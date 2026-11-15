@@ -38,6 +38,7 @@ type PluginSet struct {
 	sups   *supervision.Supervisors
 	values *SettingValues
 	mode   modeReader
+	core   manifest.CoreClaims
 
 	mu       sync.RWMutex
 	plugins  map[string]manifest.Discovered
@@ -47,16 +48,17 @@ type PluginSet struct {
 }
 
 // PluginSetDeps are what a PluginSet reads: the supervisors of the running plugins, the values of their settings and
-// the mode of the host.
+// the mode of the host, and the contributions the core makes itself, which no plugin may make.
 type PluginSetDeps struct {
 	Supervisors *supervision.Supervisors
 	Values      *SettingValues
 	Mode        *Mode
+	Core        manifest.CoreClaims
 }
 
 func NewPluginSet(d PluginSetDeps) *PluginSet {
 	return &PluginSet{
-		sups: d.Supervisors, values: d.Values, mode: d.Mode,
+		sups: d.Supervisors, values: d.Values, mode: d.Mode, core: d.Core,
 		plugins:  make(map[string]manifest.Discovered),
 		onDisk:   make(map[string]bool),
 		builtIns: make(map[string]builtInPlugin),
@@ -215,7 +217,7 @@ func (s *PluginSet) refuseConflicts(discovered []manifest.Discovered, problems [
 	slices.SortFunc(sorted, byID)
 	// Plugins linked into the binary come first, then the discovered ones, each group in the order of the
 	// ids: the first plugin to declare a tab kind, a reader or a type of dropped data keeps it.
-	conflicts := manifest.ListContributionConflicts(append(ordered, sorted...))
+	conflicts := manifest.ListContributionConflicts(append(ordered, sorted...), s.core)
 	if len(conflicts) == 0 {
 		return discovered, problems
 	}
@@ -306,7 +308,7 @@ func (s *PluginSet) addBuiltIn(p manifest.Discovered, serve func(vars map[string
 		}
 	}
 	slices.SortFunc(others, func(a, b manifest.Discovered) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
-	if conflicts := manifest.ListContributionConflicts(append(others, p)); len(conflicts) > 0 {
+	if conflicts := manifest.ListContributionConflicts(append(others, p), s.core); len(conflicts) > 0 {
 		return conflicts[len(conflicts)-1]
 	}
 	s.builtIns[id] = builtInPlugin{plugin: p, serve: serve}

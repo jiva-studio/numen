@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
@@ -23,6 +24,8 @@ func newFindSearchResults(
 	limits, stageLimits := readSearchLimits(c, errorHandler)
 	deps := searchqueryusecase.FindSearchResultsDeps{
 		Parser:       celquery.NewParser(limits),
+		Catalog:      getSearchCatalog(getRuntimeManifests(c.search.PluginHost.Runtime)),
+		Functions:    searchfunctionbridge.Open(c.search.PluginHost.Runtime.Activator),
 		Documents:    search,
 		Vectors:      search,
 		Words:        search,

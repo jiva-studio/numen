@@ -34,7 +34,8 @@ func mount(s *server.Server, client *host.Client, texts *host.TextClient, search
 	if err != nil {
 		return err
 	}
-	registry, err := New(createVaultGetter(client)).WithLibrary(createLibraryGetter(texts, search), functions).WithVaultList(client).Registry()
+	registry, err := New(createVaultGetter(client)).WithLibrary(createLibraryGetter(texts, search), functions).
+		WithFunctionLister(search.ListSearchFunctions).WithVaultList(client).Registry()
 	if err != nil {
 		return err
 	}

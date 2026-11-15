@@ -16,6 +16,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/google/jsonschema-go/jsonschema"
+	"google.golang.org/protobuf/proto"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -50,6 +51,9 @@ type Spec struct {
 	// Requires are the permissions the caller must have besides the one of the effect, such as
 	// vault:manage. The host lists and runs the tool only for a caller that has all of them.
 	Requires []string
+	// GetDescription, when set, returns the description each time the host lists the tools; Description is
+	// listed when it fails.
+	GetDescription func(ctx context.Context) (string, error)
 }
 
 // ErrDuplicate is a second tool added under a name.
@@ -62,8 +66,9 @@ type Registry struct {
 }
 
 type registered struct {
-	tool *v1.PluginTool
-	run  func(ctx context.Context, arguments []byte) *v1.ToolResult
+	tool           *v1.PluginTool
+	getDescription func(ctx context.Context) (string, error)
+	run            func(ctx context.Context, arguments []byte) *v1.ToolResult
 }
 
 func New() *Registry {
@@ -91,6 +96,7 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 		}
 	}
 	return r.add(registered{
+		getDescription: spec.GetDescription,
 		tool: &v1.PluginTool{
 			Name:         spec.Name,
 			Title:        spec.Title,
@@ -139,17 +145,18 @@ type registryHandler struct {
 
 // ListTools lists the tools in the order they were added.
 func (h registryHandler) ListTools(
-	context.Context, *connect.Request[v1.ListToolsRequest],
+	ctx context.Context, _ *connect.Request[v1.ListToolsRequest],
 ) (*connect.Response[v1.ListToolsResponse], error) {
-	return connect.NewResponse(h.registry.getListing()), nil
+	return connect.NewResponse(h.registry.getListing(ctx)), nil
 }
 
-func (r *Registry) getListing() *v1.ListToolsResponse {
+func (r *Registry) getListing(ctx context.Context) *v1.ListToolsResponse {
 	r.mu.RLock()
-	defer r.mu.RUnlock()
-	items := make([]*v1.PluginTool, 0, len(r.tools))
-	for _, one := range r.tools {
-		items = append(items, one.tool)
+	kept := slices.Clone(r.tools)
+	r.mu.RUnlock()
+	items := make([]*v1.PluginTool, 0, len(kept))
+	for _, one := range kept {
+		items = append(items, one.describe(ctx))
 	}
 	return &v1.ListToolsResponse{Tools: items}
 }
@@ -245,8 +252,8 @@ func writeResult(out any) *v1.ToolResult {
 	return &v1.ToolResult{Text: string(encoded)}
 }
 
-func (r *Registry) ListTools(context.Context) (Listing, error) {
-	return readListing(r.getListing()), nil
+func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
+	return readListing(r.getListing(ctx)), nil
 }
 
 func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
@@ -260,4 +267,17 @@ func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, er
 		return nil, err
 	}
 	return readCallResponse(res.Msg), nil
+}
+
+func (one registered) describe(ctx context.Context) *v1.PluginTool {
+	if one.getDescription == nil {
+		return one.tool
+	}
+	description, err := one.getDescription(ctx)
+	if err != nil {
+		return one.tool
+	}
+	tool := proto.CloneOf(one.tool)
+	tool.Description = description
+	return tool
 }

@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// SearchFunctionService answers the query functions a plugin declares in contributes.searchFunctions.
+// The plugin answers for the documents of one vault, named by their paths in the vault. A call ends
+// with the search it serves: its deadline is the search's, and a canceled search cancels it.
+// InvalidArgument is an argument the function does not take; any other error fails the query.
+service SearchFunctionService {
+  // MatchDocuments returns the paths among the paths of the request for which the function holds.
+  rpc MatchDocuments(MatchDocumentsRequest) returns (MatchDocumentsResponse);
+
+  // FindDocuments returns at most limit paths for which the function holds, and an estimate of how
+  // many there are.
+  rpc FindDocuments(FindDocumentsRequest) returns (FindDocumentsResponse);
+}
+
+// SearchFunctionCall is one use of a function in a query.
+message SearchFunctionCall {
+  // function is the name the manifest declares.
+  string function = 1;
+  // arguments are in the order of the manifest.
+  repeated SearchFunctionArgument arguments = 2;
+  string vault_id = 3;
+  // index_generation is the generation of the index the search runs on, opaque.
+  string index_generation = 4;
+}
+
+// SearchFunctionArgument is the value of one argument, by the name the manifest gives it.
+message SearchFunctionArgument {
+  string name = 1;
+  oneof value {
+    string string_value = 2;
+    int64 int_value = 3;
+    bool bool_value = 4;
+  }
+}
+
+message MatchDocumentsRequest {
+  SearchFunctionCall call = 1;
+  // paths are at most 1000.
+  repeated string paths = 2;
+}
+
+message MatchDocumentsResponse {
+  repeated string paths = 1;
+  // warning is a text the query shows with its results, such as an answer that may be out of date.
+  string warning = 2;
+}
+
+message FindDocumentsRequest {
+  SearchFunctionCall call = 1;
+  int32 limit = 2;
+}
+
+message FindDocumentsResponse {
+  // paths are at most limit.
+  repeated string paths = 1;
+  // estimated_count is at least the count of paths: how many documents the function holds for.
+  int64 estimated_count = 2;
+  string warning = 3;
+}

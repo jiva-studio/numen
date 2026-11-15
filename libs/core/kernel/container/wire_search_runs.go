@@ -10,9 +10,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/searchstore"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func newIndexGenerations(clock machineport.Clock) *indexgeneration.Generations {
@@ -36,13 +38,25 @@ func newSearchRuns(w *windowWiring) *searchrunusecase.SearchRuns {
 		Tasks:       w.tasks,
 		Names:       func(pluginID string) string { return pluginsGetPluginName(w.a, pluginID) },
 		Timer:       w.cfg.Clock(),
-		Catalog:     searchquerydomain.GetBuiltinCatalog,
+		Catalog:     getSearchCatalog(getRuntimeManifests(w.a.search.PluginHost.Runtime)),
 		Policy:      searchrundomain.DefaultPolicy(),
 		MaxResults:  find.Limits.MaxLimit,
 	})
 	return &runs
 }
 
-func getListingRevision() string {
-	return searchquerydomain.GetCatalogRevision(searchquerydomain.GetBuiltinCatalog())
+// getSearchCatalog returns the catalog of the query language: the built-in functions and those the manifests of
+// the enabled plugins declare.
+func getSearchCatalog(manifests pluginmanifest.Manifests) func() searchquerydomain.Catalog {
+	return func() searchquerydomain.Catalog {
+		return searchquerydomain.MergeCatalog(searchquerydomain.GetBuiltinCatalog(), manifests.ListSearchFunctions())
+	}
+}
+
+func getListingRevision(catalog func() searchquerydomain.Catalog) func() string {
+	return func() string { return searchquerydomain.GetCatalogRevision(catalog()) }
+}
+
+func getCoreClaims() manifest.CoreClaims {
+	return manifest.CoreClaims{SearchFunctions: searchquerydomain.ListFunctionNames(searchquerydomain.GetBuiltinCatalog())}
 }

@@ -37,10 +37,19 @@ func (p *plan) filterScope(ctx context.Context, s searchquery.Scope, ids []domai
 	if err != nil {
 		return nil, err
 	}
+	var paths []string
+	for _, id := range ids {
+		if place, found := places[id]; found {
+			paths = append(paths, place.Path)
+		}
+	}
+	if err := p.matchCalls(ctx, paths); err != nil {
+		return nil, err
+	}
 	inScope := make(map[domain.ChunkID]bool, len(ids))
 	for _, id := range ids {
 		place, found := places[id]
-		inScope[id] = found && s.IsDocumentMatch(p.u.getDocument(place.Path, place.Kind))
+		inScope[id] = found && s.IsDocumentMatch(p.withCalls(p.u.getDocument(place.Path, place.Kind)))
 	}
 	return inScope, nil
 }

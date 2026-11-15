@@ -10,19 +10,21 @@ import (
 
 // plan is one query being evaluated over the index of one vault.
 type plan struct {
-	u        *FindSearchResults
-	v        domain.Vault
-	query    searchquery.Query
-	scopes   []searchquery.Scope
-	recipe   string
-	floor    float64
-	vectors  map[int][]float32
-	places   map[domain.ChunkID]domain.SearchResult
-	warnings []string
+	u          *FindSearchResults
+	v          domain.Vault
+	query      searchquery.Query
+	scopes     []searchquery.Scope
+	calls      *calls
+	generation string
+	recipe     string
+	floor      float64
+	vectors    map[int][]float32
+	places     map[domain.ChunkID]domain.SearchResult
+	warnings   []string
 }
 
-func (u *FindSearchResults) newPlan(ctx context.Context, v domain.Vault, q searchquery.Query) *plan {
-	p := &plan{u: u, v: v, query: q, scopes: searchquery.GetScopes(q), places: map[domain.ChunkID]domain.SearchResult{}}
+func (u *FindSearchResults) newPlan(ctx context.Context, v domain.Vault, q searchquery.Query, generation string) *plan {
+	p := &plan{u: u, v: v, query: q, generation: generation, places: map[domain.ChunkID]domain.SearchResult{}}
 	if u.hasModel() {
 		p.recipe = u.source.Describe().Recipe()
 		if hasMeaning(q.Conditions) {
@@ -33,6 +35,10 @@ func (u *FindSearchResults) newPlan(ctx context.Context, v domain.Vault, q searc
 }
 
 func (p *plan) execute(ctx context.Context) (searchquery.SearchResults, error) {
+	if err := p.findCalls(ctx); err != nil {
+		return searchquery.SearchResults{}, err
+	}
+	p.scopes = searchquery.GetScopes(p.query, p.calls.found)
 	documents, err := p.listCandidateDocuments(ctx)
 	if err != nil {
 		return searchquery.SearchResults{}, err
@@ -56,11 +62,14 @@ func (p *plan) execute(ctx context.Context) (searchquery.SearchResults, error) {
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
+	if err := p.matchCalls(ctx, getCandidatePaths(candidates)); err != nil {
+		return searchquery.SearchResults{}, err
+	}
 	results := searchquery.SearchResults{
 		ScoreKind: searchquery.GetScoreKind(p.query.Conditions), Floor: p.floor, Candidates: len(candidates),
 	}
 	results.Results = p.evaluate(candidates, scores, texts, documents, results.ScoreKind)
-	results.Warnings = p.warnings
+	results.Warnings = append(p.warnings, p.calls.warning...)
 	searchquery.Sort(&results)
 	return results, nil
 }
@@ -95,7 +104,7 @@ func (p *plan) evaluate(
 ) []searchquery.SearchResult {
 	var matched []searchquery.SearchResult
 	for i, c := range candidates {
-		d := p.u.getDocument(c.Path, c.Kind)
+		d := p.withCalls(p.u.getDocument(c.Path, c.Kind))
 		o := searchquery.Evaluate(p.query.Root, p.query.Conditions, scores[i], p.floor, d)
 		if !o.IsMatch {
 			continue
@@ -147,4 +156,12 @@ func newChunkResult(d searchquery.Document, c domain.SearchResult, o searchquery
 		}
 	}
 	return r
+}
+
+func getCandidatePaths(candidates []domain.SearchResult) []string {
+	paths := make([]string, len(candidates))
+	for i, c := range candidates {
+		paths[i] = c.Path
+	}
+	return paths
 }

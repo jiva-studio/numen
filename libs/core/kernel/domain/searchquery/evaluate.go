@@ -93,7 +93,7 @@ func (e evaluator) evaluateLeaf(node Node) Outcome {
 		return e.evaluateMeaning(e.getScore(leaf.ConditionIndex), node.IsNegated)
 	case LeafWords:
 		return e.evaluateWords(e.getScore(leaf.ConditionIndex), node.IsNegated)
-	case LeafKindIn, LeafPathPrefix:
+	case LeafKindIn, LeafPathPrefix, LeafFunction:
 		return Outcome{IsMatch: isDocumentLeafMatch(leaf, e.document) != node.IsNegated}
 	}
 	return Outcome{}

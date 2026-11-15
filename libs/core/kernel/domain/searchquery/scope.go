@@ -7,12 +7,15 @@ import (
 )
 
 // Scope is the document predicate every candidate of one condition satisfies, and its superset for the
-// index: path prefixes (the whole vault when empty) and source kinds (all when empty). A Predicate that is an
-// OperatorAnd with no children holds for every document.
+// index: path prefixes (the whole vault when empty), source kinds (all when empty) and, when IsWithinPaths is
+// set, the paths of documents a plugin function found. A Predicate that is an OperatorAnd with no children
+// holds for every document.
 type Scope struct {
-	Predicate    Node
-	PathPrefixes []string
-	SourceKinds  []domain.SourceKind
+	Predicate     Node
+	PathPrefixes  []string
+	SourceKinds   []domain.SourceKind
+	Paths         []string
+	IsWithinPaths bool
 }
 
 // IsEveryDocument reports whether the scope holds for every document.
@@ -27,20 +30,21 @@ func (s Scope) IsDocumentMatch(d Document) bool {
 // GetScopes returns the scope of each condition of the query, in the order of the conditions. The scope of
 // one occurrence of a positive condition is the conjunction of the document-only children of every && on its
 // path to the root; a condition that occurs in several places takes the disjunction of its scopes. A
-// condition that is never positive has the scope of every document.
-func GetScopes(q Query) []Scope {
+// condition that is never positive has the scope of every document. Found are the calls whose every path is
+// known, which bound the superset.
+func GetScopes(q Query, found FoundPaths) []Scope {
 	occurrences := make([][][]Node, len(q.Conditions))
 	collectOccurrences(q.Root, nil, occurrences)
 	scopes := make([]Scope, len(q.Conditions))
 	for i, list := range occurrences {
-		scopes[i] = newScope(list)
+		scopes[i] = newScope(list, found)
 	}
 	return scopes
 }
 
 // GetDocumentScope returns the scope of the documents the query may match as whole files: the predicate is
 // the whole tree, the superset comes from its document-only conjuncts.
-func GetDocumentScope(q Query) Scope {
+func GetDocumentScope(q Query, found FoundPaths) Scope {
 	var conjuncts []Node
 	switch {
 	case isDocumentOnly(q.Root):
@@ -52,7 +56,9 @@ func GetDocumentScope(q Query) Scope {
 			}
 		}
 	}
-	return Scope{Predicate: q.Root, PathPrefixes: getPrefixes(conjuncts), SourceKinds: getSourceKinds(conjuncts)}
+	s := Scope{Predicate: q.Root, PathPrefixes: getPrefixes(conjuncts), SourceKinds: getSourceKinds(conjuncts)}
+	s.Paths, s.IsWithinPaths = getFoundPaths(conjuncts, found)
+	return s
 }
 
 func collectOccurrences(node Node, constraints []Node, occurrences [][][]Node) {
@@ -86,21 +92,32 @@ func collectAndOccurrences(node Node, constraints []Node, occurrences [][][]Node
 	}
 }
 
-func newScope(occurrences [][]Node) Scope {
+func newScope(occurrences [][]Node, found FoundPaths) Scope {
 	every := Scope{Predicate: Node{Operator: OperatorAnd}}
 	if len(occurrences) == 0 || slices.ContainsFunc(occurrences, func(c []Node) bool { return len(c) == 0 }) {
 		return every
 	}
 	if len(occurrences) == 1 {
 		c := occurrences[0]
-		return Scope{Predicate: Node{Operator: OperatorAnd, Children: c}, PathPrefixes: getPrefixes(c), SourceKinds: getSourceKinds(c)}
+		s := Scope{Predicate: Node{Operator: OperatorAnd, Children: c}, PathPrefixes: getPrefixes(c), SourceKinds: getSourceKinds(c)}
+		s.Paths, s.IsWithinPaths = getFoundPaths(c, found)
+		return s
 	}
 	scope := Scope{Predicate: Node{Operator: OperatorOr}}
 	prefixes, kinds := []string{}, []domain.SourceKind{}
+	isWithinPaths := true
+	var paths []string
 	for _, c := range occurrences {
 		scope.Predicate.Children = append(scope.Predicate.Children, Node{Operator: OperatorAnd, Children: c})
 		prefixes = joinSuperset(prefixes, getPrefixes(c))
 		kinds = joinSuperset(kinds, getSourceKinds(c))
+		one, isFound := getFoundPaths(c, found)
+		isWithinPaths = isWithinPaths && isFound
+		paths = append(paths, one...)
+	}
+	if isWithinPaths {
+		slices.Sort(paths)
+		scope.Paths, scope.IsWithinPaths = slices.Compact(paths), true
 	}
 	scope.PathPrefixes, scope.SourceKinds = prefixes, kinds
 	return scope
@@ -161,4 +178,30 @@ func getSourceKinds(conjuncts []Node) []domain.SourceKind {
 		}
 	}
 	return nil
+}
+
+// getFoundPaths returns the paths every positive call among the conjuncts holds for, when at least one of
+// them has every path known.
+func getFoundPaths(conjuncts []Node, found FoundPaths) ([]string, bool) {
+	var paths []string
+	isWithinPaths := false
+	for _, c := range conjuncts {
+		if c.Operator != OperatorLeaf || c.Leaf.Kind != LeafFunction || c.IsNegated {
+			continue
+		}
+		one, isFound := found[c.Leaf.CallIndex]
+		if !isFound {
+			continue
+		}
+		if !isWithinPaths {
+			paths, isWithinPaths = slices.Clone(one), true
+			continue
+		}
+		kept := make(map[string]bool, len(one))
+		for _, p := range one {
+			kept[p] = true
+		}
+		paths = slices.DeleteFunc(paths, func(p string) bool { return !kept[p] })
+	}
+	return paths, isWithinPaths
 }

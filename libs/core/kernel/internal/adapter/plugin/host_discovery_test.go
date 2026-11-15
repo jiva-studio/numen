@@ -240,3 +240,39 @@ func TestAPluginThatDeclaresATabKindOfAnotherPluginIsRefused(t *testing.T) {
 		t.Errorf("reported = %v, want an invalid contribution", reported)
 	}
 }
+
+func TestDiscoveryRefusesAPluginThatDeclaresABuiltinSearchFunction(t *testing.T) {
+	tmp := t.TempDir()
+	write := func(dir, id, name string) {
+		path := filepath.Join(tmp, dir)
+		if err := os.Mkdir(path, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		text := `{"id":"` + id + `","name":"A","version":"1.0.0","protocol":1,"targets":["desktop.editor"],"backend":{"entrypoint":"bin/a"},` +
+			`"contributes":{"searchFunctions":{"version":1,"functions":[{"name":"` + name + `","level":"document",` +
+			`"description":"d","example":"` + name + `()"}]}}}`
+		if err := os.WriteFile(filepath.Join(path, "manifest.json"), []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("shelf", "org.example.shelf", "shelved")
+	write("words", "org.example.words", "words")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
+	var reported []error
+	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
+
+	if err := host.Discovery.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	if _, ok := host.Registry.GetPlugin("org.example.shelf"); !ok {
+		t.Error("the plugin with a function of its own was refused")
+	}
+	if _, ok := host.Registry.GetPlugin("org.example.words"); ok {
+		t.Error("the plugin that declares words was registered")
+	}
+	var conflict manifest.DuplicateContributionError
+	if len(reported) == 0 || !errors.As(reported[0], &conflict) || conflict.OwnerID != manifest.CoreOwnerID {
+		t.Errorf("reported = %v, want a conflict with the core", reported)
+	}
+}

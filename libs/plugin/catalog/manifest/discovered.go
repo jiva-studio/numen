@@ -45,12 +45,26 @@ func (c DuplicateContributionError) Unwrap() error { return ErrInvalidContributi
 // readerTabKindPrefix is how the window names the tab kind of a reader.
 const readerTabKindPrefix = "reader:"
 
-// ListContributionConflicts lists the declarations of tab kinds and readers that a
-// plugin makes after an earlier plugin of the list already made them. The reader of an id and the
-// tab kind of the name the window gives that reader are one claim, which one plugin may make as both. A plugin with a conflict owns
-// nothing, because the host refuses it.
-func ListContributionConflicts(plugins []Discovered) []DuplicateContributionError {
+// CoreOwnerID is the owner a conflict names for a contribution the core makes itself.
+const CoreOwnerID = "numen"
+
+// searchFunctionSpace is the space of the names of query functions.
+const searchFunctionSpace = "searchFunction"
+
+// CoreClaims are the contributions the core makes itself: the names of its built-in query functions.
+type CoreClaims struct {
+	SearchFunctions []string
+}
+
+// ListContributionConflicts lists the declarations of tab kinds, readers and search functions that a
+// plugin makes after the core or an earlier plugin of the list already made them. The reader of an id and
+// the tab kind of the name the window gives that reader are one claim, which one plugin may make as both. A
+// plugin with a conflict owns nothing, because the host refuses it.
+func ListContributionConflicts(plugins []Discovered, core CoreClaims) []DuplicateContributionError {
 	owners := map[string]string{}
+	for _, name := range core.SearchFunctions {
+		owners[searchFunctionSpace+"\x00"+name] = CoreOwnerID
+	}
 	var conflicts []DuplicateContributionError
 	for _, p := range plugins {
 		pending := map[string]bool{}
@@ -70,6 +84,9 @@ func ListContributionConflicts(plugins []Discovered) []DuplicateContributionErro
 		}
 		for _, reader := range c.Readers {
 			claim("reader", "tab", getReaderTabKind(reader.ID))
+		}
+		for _, f := range c.SearchFunctions.Functions {
+			claim("search function", searchFunctionSpace, f.Name)
 		}
 		if hasConflict {
 			continue

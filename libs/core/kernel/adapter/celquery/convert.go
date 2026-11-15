@@ -17,11 +17,13 @@ const (
 	messageKind      = `kind is compared with a string literal: kind == "pdf", kind != "pdf" or kind in ["pdf", "epub"]`
 	messagePath      = `path is used as path.startsWith("folder/")`
 	messageLiteral   = "%s takes a string literal"
+	messageArgument  = "%s takes literal arguments"
 )
 
 // converter turns a checked CEL tree into a raw tree, collecting the shapes it does not accept.
 type converter struct {
 	source   *ast.SourceInfo
+	catalog  searchquery.Catalog
 	problems []searchquery.Problem
 }
 
@@ -83,6 +85,9 @@ func (c *converter) convertCall(expr ast.Expr) searchquery.RawNode {
 		return c.convertIn(expr)
 	case overloads.StartsWith:
 		return c.convertStartsWith(expr)
+	}
+	if f, isFound := c.catalog.FindFunction(call.FunctionName()); isFound && f.PluginID != "" && !call.IsMemberFunction() {
+		return c.convertFunction(expr, f)
 	}
 	if isStageCall(expr) {
 		return c.reject(expr, messageStageLast)
