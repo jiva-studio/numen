@@ -87,7 +87,7 @@ func TestSearchSampleChunksAreSmallChunksWithAVectorOfTheRecipe(t *testing.T) {
 	book(t, db, getSecond(), "library/three.epub", 0xaa)
 	cutBook(t, db, getFirstVault(), "library/bare.epub")
 
-	samples := db.SearchSamples()
+	samples := db.SearchFloors()
 	got, err := samples.ListSmallChunkVectors(ctx, getFirstVault(), testRecipe, 100)
 	if err != nil {
 		t.Fatal(err)

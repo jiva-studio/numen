@@ -160,7 +160,7 @@ func setPluginSearch(
 ) {
 	policy := newFloorPolicy(db, source, errorHandler)
 	access := hostsearch.Search{
-		Samples:    db.SearchSamples(),
+		Samples:    db.SearchFloors(),
 		Nearest:    searchusecase.NewGetBestSimilarity(db.ChunkSearch()),
 		Places:     searchusecase.NewFindNearest(db.ChunkSearch()),
 		Progress:   db.ChunkVectors(),
