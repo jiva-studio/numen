@@ -82,6 +82,9 @@ func TestAPackageIsStoredByChecksumAndReadBack(t *testing.T) {
 	if info, err := os.Stat(dir); err != nil || info.Mode().Perm() != 0o700 {
 		t.Errorf("dir mode = %v, %v; want 0o700", info.Mode().Perm(), err)
 	}
+	if info, err := os.Stat(filepath.Join(dir, sum)); err != nil || info.Mode().Perm() != 0o600 {
+		t.Errorf("file mode = %v, %v; want 0o600", info.Mode().Perm(), err)
+	}
 }
 
 func TestContentWithAnotherChecksumIsRejectedAndStoresNoFile(t *testing.T) {
@@ -240,14 +243,14 @@ func TestAnEndedContextStopsTheWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := badCache.Put(t.Context(), checksumOf("x"), strings.NewReader("x")); err == nil {
-		t.Error("expected Put to fail when cache dir is a file")
+	if err := badCache.Put(t.Context(), checksumOf("x"), strings.NewReader("x")); err == nil || !strings.Contains(err.Error(), "create the package cache folder:") || errors.Unwrap(err) == nil {
+		t.Errorf("expected wrapped Put mkdir error when cache dir is a file, got %v", err)
 	}
-	if _, err := badCache.Open(t.Context(), checksumOf("x")); err == nil || errors.Is(err, catalog.ErrPackageNotCached) {
-		t.Errorf("expected Open to fail when cache dir is a file, got %v", err)
+	if _, err := badCache.Open(t.Context(), checksumOf("x")); err == nil || !strings.Contains(err.Error(), "open the package:") || errors.Unwrap(err) == nil {
+		t.Errorf("expected wrapped Open error when cache dir is a file, got %v", err)
 	}
-	if err := badCache.Remove(t.Context(), checksumOf("x")); err == nil {
-		t.Error("expected Remove to fail when cache dir is a file")
+	if err := badCache.Remove(t.Context(), checksumOf("x")); err == nil || errors.Unwrap(err) == nil {
+		t.Errorf("expected wrapped Remove error when cache dir is a file, got %v", err)
 	}
 
 	if err := os.MkdirAll(filepath.Join(dir, checksumOf("x")), 0o700); err != nil {
@@ -255,6 +258,8 @@ func TestAnEndedContextStopsTheWrite(t *testing.T) {
 	}
 	if _, err := cache.Open(t.Context(), checksumOf("x")); err == nil {
 		t.Error("expected Open to fail when package path is a directory")
+	} else if pathErr, ok := errors.AsType[*os.PathError](err); !ok || pathErr == nil {
+		t.Errorf("expected wrapped *os.PathError on directory read, got %v", err)
 	}
 	if err := cache.Put(t.Context(), checksumOf("x"), strings.NewReader("x")); err == nil {
 		t.Error("expected Put to fail when destination is a directory")
@@ -292,7 +297,7 @@ func TestTheDefaultFolderIsSharedInTheUserCacheFolder(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", "")
 	t.Setenv("HOME", "")
 	t.Setenv("LocalAppData", "")
-	if _, err := packagecache.DefaultDir(); err == nil {
-		t.Error("expected error when no user cache dir environment is set")
+	if _, err := packagecache.DefaultDir(); err == nil || errors.Unwrap(err) == nil {
+		t.Errorf("expected wrapped error when no user cache dir environment is set, got %v", err)
 	}
 }

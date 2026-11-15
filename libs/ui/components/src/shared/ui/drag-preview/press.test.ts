@@ -334,4 +334,41 @@ describe('usePressDrag', () => {
     expect(press.getScheduled()).toBe(0)
     expect(press.commit).not.toHaveBeenCalled()
   })
+
+  it.each(['pointermove', 'pointerup', 'pointercancel'])(
+    'ignores %s when dragging is cleared while listeners remain attached',
+    (kind) => {
+      const press = createPress()
+      press.startPress('a row', pointer('pointerdown', 10, 10))
+      press.dragging.value = null
+
+      expect(() => window.dispatchEvent(pointer(kind, 40, 60))).not.toThrow()
+      expect(press.commit).not.toHaveBeenCalled()
+      press.scope.stop()
+    },
+  )
+
+  it('captures on event.target and skips non-elements or uncaptured pointers', () => {
+    const press = createPress()
+    const { element, captured } = createCapturingElement()
+    const releaseSpy = vi.spyOn(element, 'releasePointerCapture')
+    const event = pointer('pointerdown', 10, 10, 9)
+    Object.defineProperty(event, 'target', { value: element })
+    press.startPress('a row', event)
+    expect(captured).toStrictEqual(new Set([9]))
+
+    captured.clear()
+    window.dispatchEvent(pointer('pointerup', 10, 10, 9))
+    expect(releaseSpy).not.toHaveBeenCalled()
+    press.frame()
+
+    const fakeTarget = { setPointerCapture: vi.fn() }
+    const nonElementEvent = pointer('pointerdown', 10, 10, 11)
+    Object.defineProperty(nonElementEvent, 'target', { value: fakeTarget })
+    press.startPress('a row', nonElementEvent)
+    expect(fakeTarget.setPointerCapture).not.toHaveBeenCalled()
+
+    element.remove()
+    press.scope.stop()
+  })
 })

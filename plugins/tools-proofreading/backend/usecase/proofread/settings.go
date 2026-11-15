@@ -9,7 +9,7 @@ func ParseConfig(values map[string]string, base Config) Config {
 	base.Overlap = parseInt(values, "overlap", base.Overlap, 0)
 	base.InFlight = parseInt(values, "inFlight", base.InFlight, 1)
 	if v, ok := values["maxEditDistance"]; ok {
-		if d, err := strconv.ParseFloat(v, 64); err == nil && d >= 0 {
+		if d, err := strconv.ParseFloat(v, strconv.IntSize); err == nil && d >= 0 {
 			base.MaxEditDistance = d
 		}
 	}

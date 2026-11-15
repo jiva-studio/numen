@@ -71,12 +71,30 @@ func TestACallWaitingForASharedProbeReturnsWithItsOwnContext(t *testing.T) {
 
 	second, stop := context.WithTimeout(t.Context(), 100*time.Millisecond)
 	defer stop()
-	_, err := store.GetKey(second, entryName)
+	isUp, err := store.isKeychainReachable(second)
 	cancel()
 	if err := <-first; !errors.Is(err, context.Canceled) {
 		t.Errorf("the first caller returned %v, want its cancellation", err)
 	}
-	if !errors.Is(err, context.DeadlineExceeded) {
-		t.Errorf("a second caller returned %v, want the deadline of its own context", err)
+	if isUp || !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("a second caller returned (%v, %v), want (false, DeadlineExceeded)", isUp, err)
+	}
+}
+
+func TestAReachableKeychainIsProbedOnce(t *testing.T) {
+	backend := newBlockingBackend()
+	close(backend.release)
+	store := newTestStore(t.TempDir())
+	store.backend = backend
+
+	for range 2 {
+		if _, err := store.GetKey(t.Context(), entryName); err != nil {
+			t.Fatal(err)
+		}
+	}
+	backend.mu.Lock()
+	defer backend.mu.Unlock()
+	if backend.probes != 3 {
+		t.Errorf("backend Get calls = %d (1 probe + 2 reads), want 3", backend.probes)
 	}
 }
