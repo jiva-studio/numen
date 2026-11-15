@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createMockCatalogEntry } from '@numen/core-client/testing'
 import { answerTabKinds } from '@/testing/tabCatalog'
 import { NO_TAB_KIND_PLUGINS } from '@/testing/tabs'
+import { createTabKindPluginFinder } from '../api/tabKindPlugin'
 import UnavailablePane from '../ui/UnavailablePane.vue'
 import { createUnavailableKind, type UnavailableState } from './unavailable'
 
@@ -100,5 +101,28 @@ describe('createUnavailableKind', () => {
     await waitForAnswer(state)
 
     expect(kind.getTitle?.(state)).toBe('missing-kind')
+  })
+
+  it('maps catalog entries without contributions or without a matching tab kind', async () => {
+    const baseEntry = createMockCatalogEntry('sample.bare', {
+      tabKinds: [{ kind: 'other', title: 'Other' }],
+    })
+    const { contributes: _omitted, ...withoutContributes } = baseEntry
+    const findWithoutContributes = createTabKindPluginFinder({
+      findByTabKind: async () => ({ ok: true, value: { entry: withoutContributes } }),
+    } as never)
+    expect(await findWithoutContributes('deck')).toMatchObject({
+      id: 'sample.bare',
+      feature: baseEntry.name,
+      kindTitle: '',
+    })
+
+    const findWithoutMatch = createTabKindPluginFinder({
+      findByTabKind: async () => ({ ok: true, value: { entry: baseEntry } }),
+    } as never)
+    expect(await findWithoutMatch('deck')).toMatchObject({
+      id: 'sample.bare',
+      kindTitle: '',
+    })
   })
 })

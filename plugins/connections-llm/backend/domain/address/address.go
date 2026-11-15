@@ -91,5 +91,5 @@ func isForbiddenAddress(ip netip.Addr) bool {
 		return true
 	default:
 	}
-	return ip.IsUnspecified() || ip.IsLinkLocalUnicast() || ip.IsMulticast()
+	return ip.IsUnspecified() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast()
 }

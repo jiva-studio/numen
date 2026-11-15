@@ -13,7 +13,7 @@ const request = {
   listCommandItems: vi.fn(),
 }
 
-const { listDeclaredCommands, listDeclaredItemLists, runDeclaredCommand, runDeclaredHandler } =
+const createApi = () =>
   createDeclaredCommandsApi(
     createAnsweredClients({
       pluginCommands: {
@@ -37,6 +37,15 @@ const { listDeclaredCommands, listDeclaredItemLists, runDeclaredCommand, runDecl
     }).pluginCommands,
   )
 
+const listDeclaredCommands = (...args: Parameters<ReturnType<typeof createApi>['listDeclaredCommands']>) =>
+  createApi().listDeclaredCommands(...args)
+const listDeclaredItemLists = (...args: Parameters<ReturnType<typeof createApi>['listDeclaredItemLists']>) =>
+  createApi().listDeclaredItemLists(...args)
+const runDeclaredCommand = (...args: Parameters<ReturnType<typeof createApi>['runDeclaredCommand']>) =>
+  createApi().runDeclaredCommand(...args)
+const runDeclaredHandler = (...args: Parameters<ReturnType<typeof createApi>['runDeclaredHandler']>) =>
+  createApi().runDeclaredHandler(...args)
+
 const proofread = {
   pluginId: 'org.example.ink',
   id: 'ink.proofread',
@@ -58,6 +67,7 @@ describe('the slot entries the plugins declare', () => {
   it('are read with what each places, its look, its group, its order and its condition', async () => {
     request.listCommands.mockResolvedValue({
       commands: [],
+      contentTypeByExtension: { pdf: 'application/pdf' },
       slots: [
         {
           pluginId: 'org.example.ledger',
@@ -82,11 +92,24 @@ describe('the slot entries the plugins declare', () => {
             when: '',
           },
         },
+        {
+          pluginId: 'org.example.ledger',
+          entry: {
+            slot: 'titleBar.status',
+            placed: { case: 'view', value: '' },
+            title: '',
+            icon: '',
+            group: '',
+            when: '',
+          },
+        },
+        { pluginId: 'org.example.ledger' },
       ],
     })
 
-    const { slots } = await listDeclaredCommands()
+    const { slots, contentTypes } = await listDeclaredCommands()
 
+    expect(contentTypes).toStrictEqual({ pdf: 'application/pdf' })
     expect(slots).toStrictEqual([
       {
         pluginId: 'org.example.ledger',
@@ -99,6 +122,8 @@ describe('the slot entries the plugins declare', () => {
         when: 'isFolder && !isMultiple',
       },
       { pluginId: 'org.example.ledger', slot: 'titleBar.status', view: 'balance' },
+      { pluginId: 'org.example.ledger', slot: 'titleBar.status' },
+      { pluginId: 'org.example.ledger', slot: '' },
     ])
   })
 })
@@ -239,6 +264,7 @@ describe('a run', () => {
       command: 'convert',
       path: 'a.pdf',
       arguments: { pages: '3' },
+      itemId: '',
     })
   })
 
@@ -374,6 +400,10 @@ describe('the handlers of shared commands', () => {
           handler: { command: 'app:file.createText', title: 'Extract text layer', when: '' },
           hasItems: false,
         },
+        {
+          pluginId: 'org.example.bare',
+          hasItems: false,
+        },
       ],
     })
 
@@ -391,6 +421,12 @@ describe('the handlers of shared commands', () => {
         pluginId: 'org.example.pages',
         command: 'app:file.createText',
         title: 'Extract text layer',
+        hasItems: false,
+      },
+      {
+        pluginId: 'org.example.bare',
+        command: '',
+        title: '',
         hasItems: false,
       },
     ])
@@ -452,6 +488,7 @@ describe('the keybindings of the plugins', () => {
             when: '!window.isFieldFocused',
           },
         },
+        { pluginId: 'org.example.bare' },
       ],
     })
 
@@ -466,6 +503,7 @@ describe('the keybindings of the plugins', () => {
         values: { placement: 'split' },
         when: '!window.isFieldFocused',
       },
+      { pluginId: 'org.example.bare', key: '', command: '' },
     ])
 
     request.listCommands.mockResolvedValue({ commands: [], slots: [] })

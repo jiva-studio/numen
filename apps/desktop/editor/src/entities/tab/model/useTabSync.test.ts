@@ -7,7 +7,7 @@ type Navigate = (state: unknown, path: string, title: string) => void | Promise<
 const createPendingNavigation = () => new Promise<void>(() => undefined)
 
 const createWindowTabs = (
-  tabs: Record<string, { state?: unknown; navigate?: Navigate; path?: string }>,
+  tabs: Record<string, { state?: string; navigate?: Navigate; path?: string; bare?: boolean }>,
 ) =>
   ({
     tabs: {
@@ -18,10 +18,14 @@ const createWindowTabs = (
           state: one.state,
           kind: {
             kind: id.split(':')[0],
-            address: {
-              ...(one.navigate ? { navigate: one.navigate } : {}),
-              ...(one.path ? { getOpenTab: () => ({ path: one.path }) } : {}),
-            },
+            ...(one.bare
+              ? {}
+              : {
+                  address: {
+                    ...(one.navigate ? { navigate: one.navigate } : {}),
+                    ...(one.path ? { getOpenTab: () => ({ path: one.path }) } : {}),
+                  },
+                }),
           },
         }
       },
@@ -80,13 +84,18 @@ describe('a path chosen in a linked tab', () => {
 
   it('skips a linked tab whose kind has no navigate', () => {
     const navigate = vi.fn<Navigate>()
-    const { sync } = setup(
-      { 'agent:1': {}, 'files:1': { navigate } },
-      createLinkedTabs('agent:1', 'files:1'),
+    const { sync, sendSync, onError } = setup(
+      { 'agent:1': {}, 'bare:1': { bare: true }, 'files:1': { navigate } },
+      createLinkedTabs('agent:1', 'bare:1', 'files:1'),
     )
 
     expect(sync.syncPathFromTab('s', 'a.md')).toBe(true)
     expect(navigate).toHaveBeenCalledExactlyOnceWith(undefined, 'a.md', '')
+    expect(onError).not.toHaveBeenCalled()
+
+    // Synchronous navigate clears echo immediately so selecting 'a.md' in 'files:1' syncs it
+    expect(sync.syncPathFromTab('files:1', 'a.md')).toBe(true)
+    expect(sendSync).toHaveBeenCalledTimes(2)
   })
 
   it('moves nothing from a tab linked to none', () => {
@@ -99,10 +108,24 @@ describe('a path chosen in a linked tab', () => {
     expect(sync.syncPathFromTab('s', 'a.md')).toBe(false)
     expect(navigate).not.toHaveBeenCalled()
     expect(sendSync).not.toHaveBeenCalled()
+
+    const singleTabGroup = setup({ s: { navigate } }, createLinkedTabs())
+    expect(singleTabGroup.sync.syncPathFromTab('s', 'a.md')).toBe(false)
+    expect(singleTabGroup.sendSync).not.toHaveBeenCalled()
   })
 
-  it('suppresses one echo from a moved tab and syncs the same path selected later', () => {
-    const navigate = vi.fn<Navigate>(createPendingNavigation)
+  it('suppresses one echo from a moved tab and syncs the same path selected later', async () => {
+    let settleFirst = (): void => undefined
+    let callCount = 0
+    const navigate = vi.fn<Navigate>(() => {
+      callCount++
+      if (callCount === 1) {
+        return new Promise<void>((resolve) => {
+          settleFirst = resolve
+        })
+      }
+      return createPendingNavigation()
+    })
     const { sync, sendSync } = setup(
       { s: { navigate: vi.fn() }, 'files:1': { navigate } },
       createLinkedTabs('files:1'),
@@ -115,11 +138,29 @@ describe('a path chosen in a linked tab', () => {
 
     sync.syncPathFromTab('files:1', 'a.md')
     expect(sendSync).toHaveBeenCalledTimes(2)
+
+    // Starting a move to 'b.md' before the 'a.md' navigation settles keeps the 'b.md' echo
+    sync.syncPathFromTab('s', 'b.md')
+    settleFirst()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(sync.syncPathFromTab('files:1', 'b.md')).toBe(true)
+    expect(sendSync).toHaveBeenCalledTimes(3)
   })
 
   it('syncs the path again after a moved tab fails to navigate to it', async () => {
     const failure = new Error('the plugin is gone')
-    const navigate = vi.fn<Navigate>(() => Promise.reject(failure))
+    let rejectFirst = (_error: Error): void => undefined
+    let callCount = 0
+    const navigate = vi.fn<Navigate>(() => {
+      callCount++
+      if (callCount === 1) return Promise.reject(failure)
+      if (callCount === 2) {
+        return new Promise<void>((_resolve, reject) => {
+          rejectFirst = reject
+        })
+      }
+      return Promise.resolve()
+    })
     const { sync, sendSync, onError } = setup(
       { s: { navigate: vi.fn() }, 'files:1': { navigate } },
       createLinkedTabs('files:1'),
@@ -127,8 +168,19 @@ describe('a path chosen in a linked tab', () => {
 
     sync.syncPathFromTab('s', 'a.md')
     await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(failure))
-    sync.syncPathFromTab('files:1', 'a.md')
+    // Because 'a.md' failed on 'files:1', shownPaths was cleared so a retry moves 'files:1' again
+    sync.applySync({ groupId: 'group-1', sourceTabId: 's', path: 'a.md', title: '' })
+    expect(navigate).toHaveBeenCalledTimes(2)
 
+    // Move 'files:1' to 'b.md' before the second 'a.md' navigation rejects; shownPaths stays 'b.md'
+    sync.applySync({ groupId: 'group-1', sourceTabId: 's', path: 'b.md', title: '' })
+    expect(navigate).toHaveBeenCalledTimes(3)
+    rejectFirst(failure)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    sync.applySync({ groupId: 'group-1', sourceTabId: 's', path: 'b.md', title: '' })
+    expect(navigate).toHaveBeenCalledTimes(3)
+
+    sync.syncPathFromTab('files:1', 'a.md')
     expect(sendSync).toHaveBeenCalledTimes(2)
   })
 
@@ -164,13 +216,22 @@ describe('applySync', () => {
   })
 
   it('skips the tabs that show the path of a sync from this window', () => {
+    const sourceNavigate = vi.fn<Navigate>()
     const navigate = vi.fn<Navigate>()
-    const { sync } = setup({ s: {}, 'files:1': { navigate } }, createLinkedTabs('files:1'))
+    const { sync } = setup(
+      { s: { navigate: sourceNavigate }, 'files:1': { navigate } },
+      createLinkedTabs('files:1'),
+    )
     sync.syncPathFromTab('s', 'b.md', 'B')
 
     sync.applySync({ groupId: 'group-1', sourceTabId: 's', path: 'b.md', title: 'B' })
 
+    expect(sourceNavigate).not.toHaveBeenCalled()
     expect(navigate).toHaveBeenCalledOnce()
+
+    // Because applySync cleared sentPaths for group-1, a later group snapshot moves the tabs
+    sync.applyGroupPaths([createGroupAt('d.md', 's', 'files:1')])
+    expect(navigate).toHaveBeenCalledTimes(2)
   })
 
   it('moves the source tab back to the path of an earlier sync from this window', () => {
@@ -273,12 +334,35 @@ describe('a linked tab that fails to move', () => {
 
   it('reports an error when the core rejects the sync', async () => {
     const failure = new Error('the core is gone')
-    const { sync, sendSync, onError } = setup({}, createLinkedTabs('plex:elsewhere'))
+    const navigate = vi.fn<Navigate>()
+    const { sync, sendSync, onError } = setup(
+      { 'files:1': { navigate } },
+      createLinkedTabs('files:1'),
+    )
     sendSync.mockRejectedValueOnce(failure)
 
-    sync.syncPathFromTab('s', 'a.md')
-
+    sync.syncPathFromTab('s', 'b.md')
     await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(failure))
+
+    // Failed sendSync cleared 'b.md' from sentPaths, so a snapshot at 'a.md' moves the tabs
+    sync.applyGroupPaths([createGroupAt('a.md', 's', 'files:1')])
+    expect(navigate).toHaveBeenLastCalledWith(undefined, 'a.md', 'a.md')
+
+    // A late rejection of an older sync does not clear a newer pending sync path
+    let rejectOlder = (_err: Error): void => undefined
+    sendSync.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectOlder = reject
+        }),
+    )
+    sync.syncPathFromTab('s', 'c.md')
+    sync.syncPathFromTab('s', 'd.md')
+    rejectOlder(failure)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    navigate.mockClear()
+    sync.applyGroupPaths([createGroupAt('stale.md', 's', 'files:1')])
+    expect(navigate).not.toHaveBeenCalled()
   })
 })
 
@@ -376,7 +460,10 @@ describe('applyGroupPaths', () => {
 
   it('moves nothing for a group with no synced path', () => {
     const navigate = vi.fn<Navigate>()
-    const { sync } = setup({ 'files:1': { navigate } }, createLinkedTabs('files:1'))
+    const { sync } = setup(
+      { 'files:1': { navigate, path: 'a.md' } },
+      createLinkedTabs('files:1'),
+    )
 
     sync.applyGroupPaths([createGroupAt('', 's', 'files:1')])
 
@@ -388,7 +475,10 @@ describe('applyGroupPaths', () => {
     const { sync } = setup({ s: {}, 'files:1': { navigate } }, createLinkedTabs('files:1'))
     sync.syncPathFromTab('s', 'b.md', 'B')
 
-    sync.applyGroupPaths([createGroupAt('a.md', 's', 'files:1')])
+    sync.applyGroupPaths([
+      createGroupAt('a.md', 's', 'files:1'),
+      { id: 'group-2', colorIndex: 2, tabs: [], path: '', title: '' },
+    ])
     sync.applyGroupPaths([createGroupAt('b.md', 's', 'files:1')])
     sync.applyGroupPaths([createGroupAt('c.md', 's', 'files:1')])
 
@@ -396,6 +486,12 @@ describe('applyGroupPaths', () => {
       [undefined, 'b.md', 'B'],
       [undefined, 'c.md', 'c.md'],
     ])
+
+    // When a group with a pending sentPath disappears from a snapshot, its entry is forgotten
+    sync.syncPathFromTab('s', 'pending.md', 'P')
+    sync.applyGroupPaths([{ id: 'group-2', colorIndex: 2, tabs: [], path: '', title: '' }])
+    sync.applyGroupPaths([createGroupAt('fresh.md', 's', 'files:1')])
+    expect(navigate).toHaveBeenLastCalledWith(undefined, 'fresh.md', 'fresh.md')
   })
 })
 
@@ -459,11 +555,12 @@ describe('a tab renamed outside a sync', () => {
 
 describe('a moved tab that reports another path', () => {
   it('sends the reported path as a sync from the tab', () => {
+    const redirectResults: boolean[] = []
     const { sync, sendSync } = setup(
       {
         'files:1': {
           navigate: (_state, path) => {
-            sync.syncPathFromTab('files:1', `${path}/index.md`, 'Index')
+            redirectResults.push(sync.syncPathFromTab('files:1', `${path}/index.md`, 'Index'))
           },
         },
       },
@@ -472,6 +569,7 @@ describe('a moved tab that reports another path', () => {
 
     sync.applySync({ groupId: 'group-1', sourceTabId: 's', path: 'notes', title: 'Notes' })
 
+    expect(redirectResults).toStrictEqual([true])
     expect(sendSync).toHaveBeenCalledExactlyOnceWith({
       sourceTabId: 'files:1',
       path: 'notes/index.md',
