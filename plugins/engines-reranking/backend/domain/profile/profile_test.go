@@ -194,7 +194,7 @@ func TestUserProfileMergesOverTheShippedOneByAlias(t *testing.T) {
 	if p.MaxTokens != 256 {
 		t.Errorf("maxTokens = %d, want the 256 of the file", p.MaxTokens)
 	}
-	if p.Title != "BGE reranker v2 M3" || p.Tier != "larger" || p.Revision == "" || len(p.SHA256) != 2 {
+	if p.Title != "BGE reranker v2 M3" || p.Tier != "default" || p.Revision == "" || len(p.SHA256) != 2 {
 		t.Errorf("a field the file leaves out was lost: %+v", p)
 	}
 	if n := len(table.GetCurated()); n != 2 {
