@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process/processtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/service"
@@ -80,7 +81,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 		Queue:  queue,
 	}, newFakeClock(getMeasuredAt()), processes.NewClient(t))
 
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount)
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -314,7 +315,7 @@ func (q failingQueue) FinishTask(ctx context.Context, id string) error {
 }
 
 func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) {
-	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, service.NewApp().Mount); !errors.Is(err, hostcall.ErrNoHost) {
+	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, service.NewApp().Mount); !errors.Is(err, hostcall.ErrNoHost) {
 		t.Errorf("Mount without host env gave %v, want ErrNoHost", err)
 	}
 
@@ -334,7 +335,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			app := service.NewAppOver(tc.hosts, clk, nil)
-			if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount); err == nil {
+			if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount); err == nil {
 				t.Error("Mount succeeded with incomplete host")
 			}
 		})
@@ -352,7 +353,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, reportErr: errReport},
 	}, clk, nil)
-	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
+	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
 		t.Fatal(err)
 	}
 	search.FailEmbedding(errors.New("embed fail"))
@@ -366,7 +367,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, finishErr: errFinish},
 	}, clk, nil)
-	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
+	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
 		t.Fatal(err)
 	}
 	if err := appFinishFail.HandleEvent(t.Context(), getReadyEvent("physics")); !errors.Is(err, errFinish) {

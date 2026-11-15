@@ -10,11 +10,3 @@ type Process struct{}
 func (Process) GetVariables() []string {
 	return hostcall.GetChildEnvironment()
 }
-
-// Fixed gives the variables it was made from, and none of the process.
-type Fixed []string
-
-// GetVariables returns the entries the value was made from.
-func (f Fixed) GetVariables() []string {
-	return f
-}

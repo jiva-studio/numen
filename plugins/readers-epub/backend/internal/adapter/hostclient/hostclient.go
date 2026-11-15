@@ -40,27 +40,6 @@ func OpenFromEnv() (*Host, error) {
 	return &Host{files: files, texts: textClient, store: store, queue: queue}, nil
 }
 
-// OpenFromVars connects to the host the variables of a launched process of the plugin name.
-func OpenFromVars(vars map[string]string) (*Host, error) {
-	textClient, err := host.NewTextClientFromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	store, err := host.NewStoreClientFromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	files, err := host.NewClientFromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	queue, err := host.NewQueueClientFromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return &Host{files: files, texts: textClient, store: store, queue: queue}, nil
-}
-
 func (h *Host) OpenFiles(id domain.VaultID) host.FileReader {
 	return h.files.With(id)
 }
