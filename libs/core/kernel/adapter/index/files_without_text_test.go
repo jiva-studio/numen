@@ -188,7 +188,7 @@ func TestANewPDFWithNoTextHasASourceAndAnAddedChangeAndNoChunks(t *testing.T) {
 	}
 }
 
-func TestTextSuppliedLaterForAPDFIsCut(t *testing.T) {
+func TestPDFTextAddedLaterIsChunked(t *testing.T) {
 	f := openFileVault(t)
 	f.write(t, "books/river.pdf", "%PDF-1.7 pages of a river", getFirstTime())
 	f.run(t)
@@ -208,7 +208,7 @@ func TestTextSuppliedLaterForAPDFIsCut(t *testing.T) {
 	}
 }
 
-func TestAFileWithNoTextIsNotWrittenAgainByARunThatFindsItUnchanged(t *testing.T) {
+func TestUnchangedFileWithNoTextIsNotRewritten(t *testing.T) {
 	f := openFileVault(t)
 	f.write(t, "pictures/cover.png", "pixels", getFirstTime())
 	f.run(t)
