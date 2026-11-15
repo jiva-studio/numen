@@ -213,7 +213,7 @@ func TestANewIdleCountClosesThePoolOnceTheLastDocumentCloses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	workers.SetIdleWorkers(3)
+	workers.SetWorkers(0, 3)
 	if !hasPool(workers) {
 		closeAndCheck(t, doc)
 		t.Fatal("the pool was closed while a document was open on it")
@@ -242,7 +242,7 @@ func TestANewIdleCountClosesAPoolNoDocumentIsOpenOn(t *testing.T) {
 		t.Fatal(err)
 	}
 	closeAndCheck(t, doc)
-	workers.SetIdleWorkers(1)
+	workers.SetWorkers(0, 1)
 	if hasPool(workers) {
 		t.Fatal("the idle pool of the old count is kept")
 	}
@@ -255,7 +255,7 @@ func TestTheSameIdleCountKeepsThePool(t *testing.T) {
 		t.Fatal(err)
 	}
 	closeAndCheck(t, doc)
-	workers.SetIdleWorkers(2)
+	workers.SetWorkers(0, 2)
 	if !hasPool(workers) {
 		t.Fatal("the pool was closed for an idle count it already had")
 	}
@@ -281,7 +281,7 @@ func TestANewIdleCountDoesNotWaitForThePoolToStart(t *testing.T) {
 	<-isStarting
 	isSet := make(chan struct{})
 	go func() {
-		workers.SetIdleWorkers(3)
+		workers.SetWorkers(0, 3)
 		close(isSet)
 	}()
 	select {
@@ -301,5 +301,53 @@ func TestANewIdleCountDoesNotWaitForThePoolToStart(t *testing.T) {
 	}
 	if got := getIdleCount(workers); got != 3 {
 		t.Errorf("the pool keeps %d idle workers, want 3", got)
+	}
+}
+
+func TestANewWorkerCountStartsThePoolOfThatSize(t *testing.T) {
+	workers := startIdlePool(t, 2, time.Hour)
+	workers.SetWorkers(minWorkers, 2)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeAndCheck(t, doc)
+	var started []int
+	workers.startPool = func(config webassembly.Config) (pdfium.Pool, error) {
+		started = append(started, config.MaxTotal)
+		return webassembly.Init(config)
+	}
+	workers.SetWorkers(minWorkers+1, 2)
+	if hasPool(workers) {
+		t.Fatal("the idle pool of the old worker count is kept")
+	}
+	again, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeAndCheck(t, again)
+	if len(started) != 1 || started[0] != minWorkers+1 {
+		t.Errorf("the pools started with %v workers, want [%d]", started, minWorkers+1)
+	}
+}
+
+func TestANewWorkerCountClosesThePoolOnceTheLastDocumentCloses(t *testing.T) {
+	workers := startIdlePool(t, 2, time.Hour)
+	workers.SetWorkers(minWorkers, 2)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	workers.SetWorkers(minWorkers+1, 2)
+	if !hasPool(workers) {
+		closeAndCheck(t, doc)
+		t.Fatal("the pool was closed while a document was open on it")
+	}
+	closeAndCheck(t, doc)
+	if hasPool(workers) {
+		t.Fatal("the pool of the old worker count is kept after the last document closed")
+	}
+	if got := workers.GetWorkers(); got != minWorkers+1 {
+		t.Errorf("the pool starts with %d workers, want %d", got, minWorkers+1)
 	}
 }

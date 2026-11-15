@@ -32,28 +32,29 @@ func newCompilationCache() wazero.CompilationCache {
 	return wasm.NewCompilationCache(dir)
 }
 
-// New starts one worker for each processor and warms them up, keeping as many returned workers alive
-// as the default performance profile allows threads. afterFunc sets the timers that release idle
-// workers.
+// New starts as many workers as the default performance profile allows threads and warms them up,
+// keeping every returned worker alive. afterFunc sets the timers that release idle workers.
 func New(afterFunc func(time.Duration, func()) pdf.Timer) *pdf.Workers {
+	threads := getThreads(performance.Read(nil), runtime.NumCPU())
 	workers := pdf.NewWorkers(pdf.Options{
 		Report: ReportError,
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="production workers share the plugin compilation cache"
 		CompilationCache: newCompilationCache(),
 		AfterFunc:        afterFunc,
-		Workers:          runtime.NumCPU(),
-		IdleWorkers:      getIdleWorkers(performance.Read(nil), runtime.NumCPU()),
+		Workers:          threads,
+		IdleWorkers:      threads,
 	})
 	go workers.Warmup()
 	return workers
 }
 
-// Configure keeps as many returned workers alive as the performance profile in the values of a
-// Configure call allows threads.
+// Configure sizes the workers, and the returned workers kept alive, to the threads the performance
+// profile in the values of a Configure call allows.
 func Configure(workers *pdf.Workers, values map[string]string) {
-	workers.SetIdleWorkers(getIdleWorkers(performance.Read(values), runtime.NumCPU()))
+	threads := getThreads(performance.Read(values), runtime.NumCPU())
+	workers.SetWorkers(threads, threads)
 }
 
-func getIdleWorkers(profile performance.Profile, cpus int) int {
+func getThreads(profile performance.Profile, cpus int) int {
 	return performance.Resolve(profile, cpus).Threads
 }

@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
-func TestTheProfileSetsTheIdleWorkers(t *testing.T) {
+func TestTheProfileSetsTheWorkers(t *testing.T) {
 	for _, c := range []struct {
 		profile performance.Profile
 		cpus    int
@@ -21,8 +22,18 @@ func TestTheProfileSetsTheIdleWorkers(t *testing.T) {
 		{performance.Maximum, 8, 4},
 		{performance.Maximum, 32, 8},
 	} {
-		if got := getIdleWorkers(c.profile, c.cpus); got != c.want {
-			t.Errorf("%s on %d cores keeps %d idle workers, want %d", c.profile, c.cpus, got, c.want)
+		if got := getThreads(c.profile, c.cpus); got != c.want {
+			t.Errorf("%s on %d cores runs %d workers, want %d", c.profile, c.cpus, got, c.want)
 		}
+	}
+}
+
+const fewestPoolWorkers = 2
+
+func TestConfigureSizesTheWorkersToTheProfile(t *testing.T) {
+	workers := pdf.NewWorkers(pdf.Options{Report: ReportError, CompilationCache: nil, AfterFunc: nil, Workers: 0, IdleWorkers: 0})
+	Configure(workers, map[string]string{performance.ConfigKey: string(performance.Eco)})
+	if got := workers.GetWorkers(); got != fewestPoolWorkers {
+		t.Errorf("the eco profile runs %d workers, want %d", got, fewestPoolWorkers)
 	}
 }

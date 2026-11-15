@@ -139,6 +139,7 @@ func (w *Workers) waitForStartLocked() {
 }
 
 func (w *Workers) startPoolLocked() error {
+	size := w.size
 	total := w.getPoolSize()
 	idle := w.idle
 	starting := make(chan struct{})
@@ -168,7 +169,7 @@ func (w *Workers) startPoolLocked() error {
 		return err
 	}
 	w.pool = made
-	w.isStale = idle != w.idle
+	w.isStale = size != w.size || idle != w.idle
 	return nil
 }
 
@@ -238,16 +239,17 @@ func (w *Workers) closePoolLocked() {
 	}
 }
 
-// SetIdleWorkers sets how many returned workers the pool keeps alive. A pool that runs keeps its size
-// while a document is open on it: it is closed once none is, and the next document starts a pool of
-// the new size.
-func (w *Workers) SetIdleWorkers(idle int) {
+// SetWorkers sets the most workers the pool runs and how many returned workers it keeps alive. A
+// pool that runs keeps its size while a document is open on it: it is closed once none is, and the
+// next document starts a pool of the new size.
+func (w *Workers) SetWorkers(workers, idle int) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	idle = max(idle, 0)
-	if idle == w.idle {
+	if workers == w.size && idle == w.idle {
 		return
 	}
+	w.size = workers
 	w.idle = idle
 	if w.pool == nil {
 		return
