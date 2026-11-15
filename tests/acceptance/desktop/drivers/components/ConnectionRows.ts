@@ -7,6 +7,8 @@ const SETTING_NAME = '.settings__name'
 const ROW = 'li.connection-rows__row'
 const CONNECTION = 'Connection'
 const NOTE = '.connection-rows__note'
+/** A list the service gives may arrive after the search line is shown; a value it does not hold is typed after this time. */
+const LISTING_LIMIT_MS = 10_000
 
 export class ConnectionRows {
   constructor(private readonly page: Page) {}
@@ -51,7 +53,7 @@ export class ConnectionRows {
     await this.page.getByRole('option', { name: new RegExp(`^${escapeRegExp(name)}`) }).click()
   }
 
-  /** A field of text, such as the model, is searched in the list the service gives, and typed when the list does not hold it. */
+  /** A field of text, such as the model, is chosen from the list the service gives once it holds the value, and typed when it does not. */
   async chooseValue(row: Locator, field: string, value: string): Promise<void> {
     await this.getField(row, field).click()
     const search = this.page.getByRole('combobox', { name: `Search ${field.toLowerCase()}` })
@@ -62,7 +64,10 @@ export class ConnectionRows {
       return
     }
     await search.fill(value)
-    await search.press('Enter')
+    const listed = this.page.getByRole('option', { name: value, exact: true })
+    const isListed = await listed.waitFor({ timeout: LISTING_LIMIT_MS }).then(() => true, () => false)
+    if (isListed) await listed.click()
+    else await search.press('Enter')
   }
 
   /** The button of a field of a row: Connection, or a field of the connection such as Model; it reads the value chosen. */
