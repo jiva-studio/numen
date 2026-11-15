@@ -98,19 +98,27 @@ func (c *converter) convertCall(expr ast.Expr) searchquery.RawNode {
 	case overloads.StartsWith, overloads.EndsWith, overloads.Contains:
 		return c.convertMethod(expr)
 	default:
-		if comparison, isComparison := comparisons[name]; isComparison {
+		if comparison, isComparison := getComparison(name); isComparison {
 			return c.convertComparison(expr, comparison)
 		}
 	}
 	return c.reject(expr, messageCondition)
 }
 
-var comparisons = map[string]searchquery.Comparison{
-	operators.Equals:        searchquery.ComparisonEqual,
-	operators.Less:          searchquery.ComparisonLess,
-	operators.LessEquals:    searchquery.ComparisonLessOrEqual,
-	operators.Greater:       searchquery.ComparisonGreater,
-	operators.GreaterEquals: searchquery.ComparisonGreaterOrEqual,
+func getComparison(name string) (searchquery.Comparison, bool) {
+	switch name {
+	case operators.Equals:
+		return searchquery.ComparisonEqual, true
+	case operators.Less:
+		return searchquery.ComparisonLess, true
+	case operators.LessEquals:
+		return searchquery.ComparisonLessOrEqual, true
+	case operators.Greater:
+		return searchquery.ComparisonGreater, true
+	case operators.GreaterEquals:
+		return searchquery.ComparisonGreaterOrEqual, true
+	}
+	return 0, false
 }
 
 func newNot(child searchquery.RawNode) searchquery.RawNode {

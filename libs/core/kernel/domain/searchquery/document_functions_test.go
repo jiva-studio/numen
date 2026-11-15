@@ -18,7 +18,7 @@ func getZone(t *testing.T, name string) *time.Location {
 	return zone
 }
 
-func TestParseDateReadsTheWrittenFormsAndRejectsOthers(t *testing.T) {
+func TestParseDateAcceptsTheDocumentedFormsAndRejectsOthers(t *testing.T) {
 	kolkata := getZone(t, "Asia/Kolkata")
 	cases := map[string]string{
 		"2026-05-01":                     "2026-04-30T18:30:00Z",
@@ -152,7 +152,7 @@ func newCompare(attribute searchquery.Attribute, comparison searchquery.Comparis
 	}}
 }
 
-func TestANegatedPropertyEqualHoldsForADocumentOutsideTheSet(t *testing.T) {
+func TestANegatedPropertyEqualMatchesADocumentOutsideTheSet(t *testing.T) {
 	q := normalize(t, newAnd(newKind("note", "pdf"), newNot(newPropertyEqual("status", text("done")))))
 	if len(q.Sets) != 1 {
 		t.Fatalf("sets %+v, want one", q.Sets)

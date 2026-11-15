@@ -8,18 +8,33 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 )
 
-var attributes = map[string]searchquery.Attribute{
-	searchquery.VariableTitle:    searchquery.AttributeTitle,
-	searchquery.VariableNoteType: searchquery.AttributeNoteType,
-	searchquery.VariableModified: searchquery.AttributeModified,
-	searchquery.VariableSize:     searchquery.AttributeSize,
+func getAttribute(name string) (searchquery.Attribute, bool) {
+	switch name {
+	case searchquery.VariableTitle:
+		return searchquery.AttributeTitle, true
+	case searchquery.VariableNoteType:
+		return searchquery.AttributeNoteType, true
+	case searchquery.VariableModified:
+		return searchquery.AttributeModified, true
+	case searchquery.VariableSize:
+		return searchquery.AttributeSize, true
+	}
+	return 0, false
 }
 
-var flipped = map[searchquery.Comparison]searchquery.Comparison{
-	searchquery.ComparisonLess:           searchquery.ComparisonGreater,
-	searchquery.ComparisonLessOrEqual:    searchquery.ComparisonGreaterOrEqual,
-	searchquery.ComparisonGreater:        searchquery.ComparisonLess,
-	searchquery.ComparisonGreaterOrEqual: searchquery.ComparisonLessOrEqual,
+func getFlipped(comparison searchquery.Comparison) searchquery.Comparison {
+	switch comparison {
+	case searchquery.ComparisonLess:
+		return searchquery.ComparisonGreater
+	case searchquery.ComparisonLessOrEqual:
+		return searchquery.ComparisonGreaterOrEqual
+	case searchquery.ComparisonGreater:
+		return searchquery.ComparisonLess
+	case searchquery.ComparisonGreaterOrEqual:
+		return searchquery.ComparisonLessOrEqual
+	default:
+		return comparison
+	}
 }
 
 func (c *converter) convertComparison(expr ast.Expr, comparison searchquery.Comparison) searchquery.RawNode {
@@ -27,9 +42,7 @@ func (c *converter) convertComparison(expr ast.Expr, comparison searchquery.Comp
 	subject, other := args[0], args[1]
 	if isValueExpr(subject) && !isValueExpr(other) {
 		subject, other = other, subject
-		if to, isOrder := flipped[comparison]; isOrder {
-			comparison = to
-		}
+		comparison = getFlipped(comparison)
 	}
 	switch name := identName(subject); {
 	case name == searchquery.VariableKind:
@@ -53,7 +66,7 @@ func (c *converter) convertKind(expr, other ast.Expr, comparison searchquery.Com
 }
 
 func (c *converter) convertAttribute(expr ast.Expr, name string, comparison searchquery.Comparison, other ast.Expr) searchquery.RawNode {
-	attribute, isAttribute := attributes[name]
+	attribute, isAttribute := getAttribute(name)
 	if !isAttribute {
 		return c.reject(expr, messageCondition)
 	}
@@ -151,14 +164,18 @@ func (c *converter) convertTextList(expr, element, list ast.Expr) searchquery.Ra
 		operands = append(operands, searchquery.Value{Kind: searchquery.ValueString, Text: text})
 	}
 	return c.newLeaf(expr, searchquery.RawLeaf{
-		Kind: searchquery.LeafCompare, Attribute: attributes[element.AsIdent()], Comparison: searchquery.ComparisonIn, Operands: operands,
+		Kind: searchquery.LeafCompare, Attribute: getElementAttribute(element), Comparison: searchquery.ComparisonIn, Operands: operands,
 	})
 }
 
-var methods = map[string]searchquery.Comparison{
-	overloads.StartsWith: searchquery.ComparisonStartsWith,
-	overloads.EndsWith:   searchquery.ComparisonEndsWith,
-	overloads.Contains:   searchquery.ComparisonSubstring,
+func getMethodComparison(name string) searchquery.Comparison {
+	switch name {
+	case overloads.EndsWith:
+		return searchquery.ComparisonEndsWith
+	case overloads.Contains:
+		return searchquery.ComparisonSubstring
+	}
+	return searchquery.ComparisonStartsWith
 }
 
 func (c *converter) convertMethod(expr ast.Expr) searchquery.RawNode {
@@ -176,7 +193,7 @@ func (c *converter) convertMethod(expr ast.Expr) searchquery.RawNode {
 			return c.reject(expr, messageTitle)
 		}
 		return c.newLeaf(expr, searchquery.RawLeaf{
-			Kind: searchquery.LeafCompare, Attribute: searchquery.AttributeTitle, Comparison: methods[call.FunctionName()],
+			Kind: searchquery.LeafCompare, Attribute: searchquery.AttributeTitle, Comparison: getMethodComparison(call.FunctionName()),
 			Operands: []searchquery.Value{{Kind: searchquery.ValueString, Text: text}},
 		})
 	case isCallOf(target, searchquery.FunctionProperty):
@@ -216,4 +233,9 @@ func (c *converter) getValue(expr ast.Expr) (searchquery.Value, bool) {
 
 func isValueExpr(expr ast.Expr) bool {
 	return expr.Kind() == ast.LiteralKind || isCallOf(expr, searchquery.FunctionDate)
+}
+
+func getElementAttribute(element ast.Expr) searchquery.Attribute {
+	attribute, _ := getAttribute(element.AsIdent())
+	return attribute
 }
