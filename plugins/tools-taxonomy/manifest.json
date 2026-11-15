@@ -1,0 +1,25 @@
+{
+  "id": "md.numen.tools.taxonomy",
+  "name": "Taxonomy",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Reads the tags of notes from their frontmatter and lists them for agents",
+  "capabilities": ["tools"],
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "tools",
+    "commands": [
+      {
+        "id": "tags.update",
+        "title": "Update tags",
+        "icon": "tags",
+        "when": "target.isNote"
+      }
+    ],
+    "triggers": [
+      { "event": "note.frontmatterChanged", "command": "tags.update", "when": "target.isNote" }
+    ]
+  },
+  "permissions": ["vault:read"],
+  "backend": { "entrypoint": "bin/tools-taxonomy" }
+}
