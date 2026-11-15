@@ -1,5 +1,7 @@
 package searchquery
 
+import "slices"
+
 // The names the builtin catalog declares.
 const (
 	FunctionMeaning     = "meaning"
@@ -69,7 +71,18 @@ type Catalog struct {
 // document: kind, path, title, noteType, modified, size, date, property, hasProperty, hasHeading and the link
 // functions, and the stages rerank, top and sortBy.
 func GetBuiltinCatalog() Catalog {
-	c := Catalog{Functions: []Function{
+	return Catalog{Functions: slices.Concat(
+		getTextFunctions(),
+		getScopeVariables(),
+		getStageFunctions(),
+		getDocumentVariables(),
+		getDocumentFunctions(),
+		getLinkCatalog(),
+	)}
+}
+
+func getTextFunctions() []Function {
+	return []Function{
 		{
 			Name: FunctionWords, Args: []ValueType{TypeString}, Result: TypeSearchResults, Level: LevelChunk,
 			Summary:     "passages with these words",
@@ -82,6 +95,11 @@ func GetBuiltinCatalog() Catalog {
 			Description: "Finds passages that say something close to the text you give, even in other words.",
 			Example:     `meaning("how a river changes its course")`,
 		},
+	}
+}
+
+func getScopeVariables() []Function {
+	return []Function{
 		{
 			Name: VariableKind, Result: TypeString, Level: LevelDocument, IsVariable: true,
 			Summary:     "the type of the file",
@@ -94,6 +112,11 @@ func GetBuiltinCatalog() Catalog {
 			Description: `Where the file lies in the vault, such as books/rivers.pdf. Add .startsWith("books/") to keep the files of one folder.`,
 			Example:     `path.startsWith("books/")`,
 		},
+	}
+}
+
+func getStageFunctions() []Function {
+	return []Function{
 		{
 			Name: StageNameRerank, Result: TypeSearchResults, IsStage: true,
 			Overloads: [][]ValueType{
@@ -116,6 +139,11 @@ func GetBuiltinCatalog() Catalog {
 			Description: `Puts the results in order by score, path, title, modified or size. Score, modified and size go highest, newest or largest first, path and title from A to Z; add "asc" or "desc" to choose the direction.`,
 			Example:     `(kind == "pdf").sortBy("modified")`,
 		},
+	}
+}
+
+func getDocumentVariables() []Function {
+	return []Function{
 		{
 			Name: VariableTitle, Result: TypeString, Level: LevelDocument, IsVariable: true,
 			Summary:     "the title of the note or file",
@@ -140,6 +168,11 @@ func GetBuiltinCatalog() Catalog {
 			Description: "the size of the file in bytes",
 			Example:     `size > 1000000`,
 		},
+	}
+}
+
+func getDocumentFunctions() []Function {
+	return []Function{
 		{
 			Name: FunctionDate, Args: []ValueType{TypeString}, Result: TypeTimestamp, Level: LevelDocument,
 			Summary:     "a date and time",
@@ -164,9 +197,7 @@ func GetBuiltinCatalog() Catalog {
 			Description: "true when a note has a heading of exactly this text, ignoring case",
 			Example:     `hasHeading("Summary")`,
 		},
-	}}
-	c.Functions = append(c.Functions, getLinkCatalog()...)
-	return c
+	}
 }
 
 func (c Catalog) FindFunction(name string) (Function, bool) {
