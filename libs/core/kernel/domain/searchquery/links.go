@@ -117,31 +117,38 @@ func CleanPath(value string) string {
 	return cleaned
 }
 
-// ListFilePaths returns the vault paths a link written in a note may point at as a file, in priority order:
-// the value from the vault root, then from the folder of the note. A name and an asset address are paths;
-// any other address is itself.
-func ListFilePaths(from string, target domain.Address) []string {
-	if target.Scheme != domain.SchemeName && target.Scheme != domain.SchemeAsset {
-		return []string{target.String()}
-	}
-	fromRoot := CleanPath(target.Value)
-	fromFolder := CleanPath(path.Join(path.Dir(from), target.Value))
-	if fromFolder == fromRoot {
-		return []string{fromRoot}
-	}
-	return []string{fromRoot, fromFolder}
+// GetFileName returns the folded last segment of a written file address, the key GroupFilesByName files a
+// path under.
+func GetFileName(value string) string {
+	return domain.FoldName(path.Base(CleanPath(value)))
 }
 
-// ChooseFilePath returns the path or address a link written in a note points at as a file: the first of
-// ListFilePaths that is indexed, else the first.
-func ChooseFilePath(from string, target domain.Address, indexed map[string]bool) string {
-	paths := ListFilePaths(from, target)
+// GroupFilesByName returns the paths keyed by GetFileName.
+func GroupFilesByName(paths []string) map[string][]string {
+	out := make(map[string][]string, len(paths))
 	for _, p := range paths {
-		if indexed[p] {
-			return p
-		}
+		name := GetFileName(p)
+		out[name] = append(out[name], p)
 	}
-	return paths[0]
+	return out
+}
+
+// IsFileAddress reports whether an address is written as a vault path: a name or an asset.
+func IsFileAddress(target domain.Address) bool {
+	return target.Scheme == domain.SchemeName || target.Scheme == domain.SchemeAsset
+}
+
+// ChooseFile returns the file a link written in a note points at, by the priority a wikilink resolves by
+// (domain.ChooseMatch): the path from the vault root, the path from the folder of the note, the one file of
+// that name anywhere, else the nearest of several. It returns "" for no file or an address that is not a
+// path.
+func ChooseFile(from string, target domain.Address, files map[string][]string) string {
+	if !IsFileAddress(target) {
+		return ""
+	}
+	value := CleanPath(target.Value)
+	chosen, _ := domain.ChooseMatch(from, value, files[GetFileName(value)])
+	return chosen
 }
 
 // GetRelatives returns the notes one hierarchy step above or below the notes whose links and backlinks are

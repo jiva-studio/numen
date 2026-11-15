@@ -57,8 +57,8 @@ type LinkReaders interface {
 	// for a note address the note with that identifier in this vault, for a name the notes the link
 	// resolution would consider.
 	GetNoteCandidates(ctx context.Context, vaultID domain.VaultID, address domain.Address) ([]string, error)
-	// GetIndexedPaths returns those of the paths that are sources of the vault.
-	GetIndexedPaths(ctx context.Context, vaultID domain.VaultID, paths []string) ([]string, error)
+	// ListFilePaths returns the paths of the sources of the vault that are not notes, ordered by path.
+	ListFilePaths(ctx context.Context, vaultID domain.VaultID) ([]string, error)
 	// ListLinksByName returns the links written in the notes of the vault whose target's last segment folds
 	// to the name, with the path of the note each is written in and without resolution.
 	ListLinksByName(ctx context.Context, vaultID domain.VaultID, foldedName string) ([]domain.ResolvedLink, error)

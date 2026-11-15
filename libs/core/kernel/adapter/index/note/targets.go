@@ -2,8 +2,6 @@ package note
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -24,17 +22,10 @@ func (q *Queries) GetNoteCandidates(ctx context.Context, vaultID domain.VaultID,
 	})
 }
 
-// GetIndexedPaths returns those of the paths that are sources of one vault, ordered by path.
-func (q *Queries) GetIndexedPaths(ctx context.Context, vaultID domain.VaultID, paths []string) ([]string, error) {
-	if len(paths) == 0 {
-		return nil, nil
-	}
-	encoded, err := json.Marshal(paths)
-	if err != nil {
-		return nil, fmt.Errorf("encode the paths: %w", err)
-	}
+// ListFilePaths returns the paths of the sources of one vault that are not notes, ordered by path.
+func (q *Queries) ListFilePaths(ctx context.Context, vaultID domain.VaultID) ([]string, error) {
 	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]string, error) {
-		return r.queryPaths(ctx, indexedPathsSQL, r.vault, string(encoded))
+		return r.queryPaths(ctx, filePathsSQL, r.vault)
 	})
 }
 

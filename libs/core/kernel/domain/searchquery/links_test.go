@@ -26,17 +26,22 @@ func TestChooseTargetRefusesANameSeveralNotesAnswerTo(t *testing.T) {
 	}
 }
 
-func TestChooseFilePathPrefersAnIndexedPathAndKeepsAURL(t *testing.T) {
-	from := "scans/index.md"
+func TestChooseFileResolvesAsAWikilinkDoes(t *testing.T) {
 	letter := domain.ParseAddress("letter.pdf")
-	if got := searchquery.ChooseFilePath(from, letter, map[string]bool{"scans/letter.pdf": true}); got != "scans/letter.pdf" {
-		t.Errorf("got %s, want the path in the folder of the note", got)
-	}
-	if got := searchquery.ChooseFilePath(from, letter, nil); got != "letter.pdf" {
+	both := searchquery.GroupFilesByName([]string{"letter.pdf", "scans/letter.pdf"})
+	if got := searchquery.ChooseFile("scans/index.md", letter, both); got != "letter.pdf" {
 		t.Errorf("got %s, want the path from the root", got)
 	}
-	if got := searchquery.ChooseFilePath(from, domain.ParseAddress("https://example.org/x"), nil); got != "https://example.org/x" {
-		t.Errorf("got %s, want the URL as written", got)
+	inFolder := searchquery.GroupFilesByName([]string{"scans/letter.pdf", "other/letter.pdf"})
+	if got := searchquery.ChooseFile("scans/index.md", letter, inFolder); got != "scans/letter.pdf" {
+		t.Errorf("got %s, want the path in the folder of the note", got)
+	}
+	elsewhere := searchquery.GroupFilesByName([]string{"archive/Letter.pdf"})
+	if got := searchquery.ChooseFile("notes/today.md", letter, elsewhere); got != "archive/Letter.pdf" {
+		t.Errorf("got %s, want the one file of that name", got)
+	}
+	if got := searchquery.ChooseFile("notes/today.md", domain.ParseAddress("https://example.org/x"), elsewhere); got != "" {
+		t.Errorf("a URL chose %s, want none", got)
 	}
 	if got := searchquery.CleanPath("/a/./b/../c.pdf"); got != "a/c.pdf" {
 		t.Errorf("CleanPath returned %s", got)

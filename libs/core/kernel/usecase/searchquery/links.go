@@ -117,15 +117,31 @@ func (p *plan) resolveTarget(ctx context.Context, x string) (target, error) {
 }
 
 func (p *plan) resolveFile(ctx context.Context, x, value string) (target, error) {
-	filePath := searchquery.CleanPath(value)
-	indexed, err := p.u.links.GetIndexedPaths(ctx, p.v.ID, []string{filePath})
+	files, err := p.getFiles(ctx)
 	if err != nil {
 		return target{}, err
 	}
-	if len(indexed) == 0 {
+	filePath := searchquery.CleanPath(value)
+	chosen, err := searchquery.ChooseTarget(filePath, files[searchquery.GetFileName(filePath)])
+	if err != nil {
+		return target{}, err
+	}
+	if chosen == "" {
 		return target{}, fmt.Errorf("%w: %s", searchquery.ErrNoTarget, x)
 	}
-	return target{path: indexed[0]}, nil
+	return target{path: chosen}, nil
+}
+
+func (p *plan) getFiles(ctx context.Context) (map[string][]string, error) {
+	if p.files != nil {
+		return p.files, nil
+	}
+	paths, err := p.u.links.ListFilePaths(ctx, p.v.ID)
+	if err != nil {
+		return nil, err
+	}
+	p.files = searchquery.GroupFilesByName(paths)
+	return p.files, nil
 }
 
 func (p *plan) findLinksTo(ctx context.Context, t target, role domain.LinkRole, linkType string) (map[string]bool, error) {
@@ -142,50 +158,31 @@ func (p *plan) findLinksTo(ctx context.Context, t target, role domain.LinkRole, 
 		}
 		return set, nil
 	}
-	want, value := t.path, t.path
+	value := t.path
 	if t.address != "" {
-		want, value = t.address, domain.ParseAddress(t.address).Value
+		value = domain.ParseAddress(t.address).Value
 	}
 	links, err := p.u.links.ListLinksByName(ctx, p.v.ID, domain.FoldName(domain.LinkName(value)))
 	if err != nil {
 		return nil, err
 	}
-	var matching []domain.ResolvedLink
-	for _, l := range links {
-		if searchquery.IsLinkMatch(l, role, linkType) {
-			matching = append(matching, l)
-		}
-	}
-	indexed, err := p.getIndexedFilePaths(ctx, matching)
+	files, err := p.getFiles(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for _, l := range matching {
-		if searchquery.ChooseFilePath(l.From, l.Target, indexed) == want {
+	for _, l := range links {
+		if searchquery.IsLinkMatch(l, role, linkType) && isLinkToFile(l, t, files) {
 			set[l.From] = true
 		}
 	}
 	return set, nil
 }
 
-func (p *plan) getIndexedFilePaths(ctx context.Context, links []domain.ResolvedLink) (map[string]bool, error) {
-	var paths []string
-	for _, l := range links {
-		paths = append(paths, searchquery.ListFilePaths(l.From, l.Target)...)
+func isLinkToFile(l domain.ResolvedLink, t target, files map[string][]string) bool {
+	if t.address != "" {
+		return l.Target.String() == t.address
 	}
-	if len(paths) == 0 {
-		return map[string]bool{}, nil
-	}
-	slices.Sort(paths)
-	indexed, err := p.u.links.GetIndexedPaths(ctx, p.v.ID, slices.Compact(paths))
-	if err != nil {
-		return nil, err
-	}
-	out := make(map[string]bool, len(indexed))
-	for _, path := range indexed {
-		out[path] = true
-	}
-	return out, nil
+	return searchquery.ChooseFile(l.From, l.Target, files) == t.path
 }
 
 func (p *plan) findLinksFrom(ctx context.Context, from string, role domain.LinkRole, linkType string) (map[string]bool, error) {
@@ -193,8 +190,11 @@ func (p *plan) findLinksFrom(ctx context.Context, from string, role domain.LinkR
 	if err != nil {
 		return nil, err
 	}
+	files, err := p.getFiles(ctx)
+	if err != nil {
+		return nil, err
+	}
 	set := map[string]bool{}
-	var files []domain.ResolvedLink
 	for _, l := range links[from] {
 		switch {
 		case !searchquery.IsLinkMatch(l, role, linkType):
@@ -203,16 +203,9 @@ func (p *plan) findLinksFrom(ctx context.Context, from string, role domain.LinkR
 				set[l.To] = true
 			}
 		default:
-			files = append(files, l)
-		}
-	}
-	indexed, err := p.getIndexedFilePaths(ctx, files)
-	if err != nil {
-		return nil, err
-	}
-	for _, l := range files {
-		if filePath := searchquery.ChooseFilePath(l.From, l.Target, indexed); indexed[filePath] {
-			set[filePath] = true
+			if filePath := searchquery.ChooseFile(l.From, l.Target, files); filePath != "" {
+				set[filePath] = true
+			}
 		}
 	}
 	return set, nil

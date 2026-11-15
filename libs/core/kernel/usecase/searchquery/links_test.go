@@ -146,6 +146,27 @@ func TestHasLinkToAFileCountsAWikilinkToIt(t *testing.T) {
 	checkPaths(t, w, `hasLinkFrom("reading/book")`, "reading/book.pdf")
 }
 
+func TestABareFileNameResolvesAsTheWikilinkDoes(t *testing.T) {
+	w := newWorld(t, map[string]string{
+		"journal/today.md":  "Found [[1897-letter.pdf]] in the attic.\n",
+		"Letters.md":        withLinks("Letters.\n", "attachment 1897-letter.pdf"),
+		"journal/photos.md": "See [[photo.png]].\n",
+	})
+	for _, p := range []string{"archive/scans/1897-letter.pdf", "a/photo.png", "b/photo.png"} {
+		if err := w.db.Chunks().SaveSource(t.Context(), w.v.ID, chunk.Source{Path: p, Kind: "file", Size: 4, MTime: 1, ContentHash: "h-" + p}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	checkPaths(t, w, `hasLinkTo("1897-letter.pdf")`, "Letters.md", "journal/today.md")
+	checkPaths(t, w, `hasAttachment("archive/scans/1897-letter.pdf")`, "Letters.md")
+	checkPaths(t, w, `isAttachedTo("Letters")`, "archive/scans/1897-letter.pdf")
+	checkPaths(t, w, `hasLinkFrom("journal/today")`, "archive/scans/1897-letter.pdf")
+	_, err := w.newLinkFind().Execute(t.Context(), w.v, searchquery.Request{Text: `hasLinkTo("photo.png")`})
+	if err == nil || !strings.Contains(err.Error(), "a/photo.png, b/photo.png") {
+		t.Errorf("a file name two files answer to returned %v, want a problem listing both", err)
+	}
+}
+
 func TestANegatedLinkFunctionFiltersOtherDocuments(t *testing.T) {
 	w := newLinkWorld(t)
 	checkPaths(t, w, `!hasLinkFrom("Index") && kind == "pdf"`, "books/b.pdf", "reading/book.pdf", "scans/1897-letter.pdf")

@@ -65,8 +65,8 @@ var vaultRowSQL string
 //go:embed sql/note_in_vault_by_identifier.sql
 var noteInVaultByIdentifierSQL string
 
-//go:embed sql/indexed_paths.sql
-var indexedPathsSQL string
+//go:embed sql/file_paths.sql
+var filePathsSQL string
 
 //go:embed sql/links_by_name.sql
 var linksByNameSQL string

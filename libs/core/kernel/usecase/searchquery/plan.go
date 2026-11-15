@@ -19,6 +19,7 @@ type plan struct {
 	vectors  map[int][]float32
 	places   map[domain.ChunkID]domain.SearchResult
 	sets     []map[string]bool
+	files    map[string][]string
 	warnings []string
 }
 
