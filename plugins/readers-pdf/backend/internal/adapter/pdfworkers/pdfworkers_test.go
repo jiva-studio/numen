@@ -28,12 +28,12 @@ func TestTheProfileSetsTheWorkers(t *testing.T) {
 	}
 }
 
-const fewestPoolWorkers = 2
+const ecoWorkers = 1
 
 func TestConfigureSizesTheWorkersToTheProfile(t *testing.T) {
 	workers := pdf.NewWorkers(pdf.Options{Report: ReportError, CompilationCache: nil, AfterFunc: nil, Workers: 0, IdleWorkers: 0})
 	Configure(workers, map[string]string{performance.ConfigKey: string(performance.Eco)})
-	if got := workers.GetWorkers(); got != fewestPoolWorkers {
-		t.Errorf("the eco profile runs %d workers, want %d", got, fewestPoolWorkers)
+	if got := workers.GetWorkers(); got != ecoWorkers {
+		t.Errorf("the eco profile runs %d workers, want %d", got, ecoWorkers)
 	}
 }

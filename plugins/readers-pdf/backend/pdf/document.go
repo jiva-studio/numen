@@ -94,15 +94,11 @@ func (w *Workers) getRuntimeConfig() wazero.RuntimeConfig {
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="defaultIdleRelease is the timeout before unused workers are released"
 const defaultIdleRelease = 5 * time.Minute
 
-// minWorkers is the fewest workers the pool starts: a reader and the reader
-// beside it each hold one document.
-const minWorkers = 2
-
 func (w *Workers) getPoolSize() int {
 	if w.size > 0 {
-		return max(w.size, minWorkers)
+		return w.size
 	}
-	return max(runtime.NumCPU(), minWorkers)
+	return runtime.NumCPU()
 }
 
 // waitForWorker is how long a reader waits for a free worker. Reading a

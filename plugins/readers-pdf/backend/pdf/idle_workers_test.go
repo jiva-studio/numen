@@ -306,7 +306,7 @@ func TestANewIdleCountDoesNotWaitForThePoolToStart(t *testing.T) {
 
 func TestANewWorkerCountStartsThePoolOfThatSize(t *testing.T) {
 	workers := startIdlePool(t, 2, time.Hour)
-	workers.SetWorkers(minWorkers, 2)
+	workers.SetWorkers(oldWorkerCount, 2)
 	doc, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
@@ -317,7 +317,7 @@ func TestANewWorkerCountStartsThePoolOfThatSize(t *testing.T) {
 		started = append(started, config.MaxTotal)
 		return webassembly.Init(config)
 	}
-	workers.SetWorkers(minWorkers+1, 2)
+	workers.SetWorkers(newWorkerCount, 2)
 	if hasPool(workers) {
 		t.Fatal("the idle pool of the old worker count is kept")
 	}
@@ -326,19 +326,19 @@ func TestANewWorkerCountStartsThePoolOfThatSize(t *testing.T) {
 		t.Fatal(err)
 	}
 	closeAndCheck(t, again)
-	if len(started) != 1 || started[0] != minWorkers+1 {
-		t.Errorf("the pools started with %v workers, want [%d]", started, minWorkers+1)
+	if len(started) != 1 || started[0] != newWorkerCount {
+		t.Errorf("the pools started with %v workers, want [%d]", started, newWorkerCount)
 	}
 }
 
 func TestANewWorkerCountClosesThePoolOnceTheLastDocumentCloses(t *testing.T) {
 	workers := startIdlePool(t, 2, time.Hour)
-	workers.SetWorkers(minWorkers, 2)
+	workers.SetWorkers(oldWorkerCount, 2)
 	doc, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	workers.SetWorkers(minWorkers+1, 2)
+	workers.SetWorkers(newWorkerCount, 2)
 	if !hasPool(workers) {
 		closeAndCheck(t, doc)
 		t.Fatal("the pool was closed while a document was open on it")
@@ -347,7 +347,54 @@ func TestANewWorkerCountClosesThePoolOnceTheLastDocumentCloses(t *testing.T) {
 	if hasPool(workers) {
 		t.Fatal("the pool of the old worker count is kept after the last document closed")
 	}
-	if got := workers.GetWorkers(); got != minWorkers+1 {
-		t.Errorf("the pool starts with %d workers, want %d", got, minWorkers+1)
+	if got := workers.GetWorkers(); got != newWorkerCount {
+		t.Errorf("the pool starts with %d workers, want %d", got, newWorkerCount)
+	}
+}
+
+const (
+	oldWorkerCount = 2
+	newWorkerCount = 3
+
+	heldWorkerWait  = 200 * time.Millisecond
+	freedWorkerWait = 5 * time.Second
+)
+
+func TestASecondDocumentWaitsForTheOnlyWorker(t *testing.T) {
+	workers := startIdlePool(t, 1, time.Hour)
+	workers.SetWorkers(1, 1)
+	first, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	opened := make(chan *document, 1)
+	go func() {
+		doc, err := openPath(workers, "testdata/tiny.pdf")
+		if err != nil {
+			t.Error(err)
+		}
+		opened <- doc
+	}()
+	select {
+	case doc := <-opened:
+		closeAndCheck(t, first)
+		if doc != nil {
+			closeAndCheck(t, doc)
+		}
+		t.Fatal("the second document opened while the only worker held the first")
+	case <-time.After(heldWorkerWait):
+	}
+	closeAndCheck(t, first)
+	select {
+	case doc := <-opened:
+		if doc == nil {
+			return
+		}
+		if doc.pages == 0 {
+			t.Error("the second document read no pages")
+		}
+		closeAndCheck(t, doc)
+	case <-time.After(freedWorkerWait):
+		t.Fatal("the second document did not open after the first closed")
 	}
 }
