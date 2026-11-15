@@ -91,7 +91,7 @@ func openCLIIndexed(r *cliRun, c Config, ctx context.Context, options cli.IndexO
 		Search:   cli.Search{Search: searchusecase.NewByName(find, prepareSearch)},
 		Links:    query.NewShowLinksByName(find, Queries(db).Refer.Links),
 		Problems: vault.NewGetProblemsByName(find, getProblems(a.vault, db.NoteProblems())),
-		Query:    cli.Query{Find: find, Prepare: prepareQuery},
+		Query:    searchqueryusecase.NewFindSearchResultsByName(find, prepareQuery),
 	}, nil
 }
 

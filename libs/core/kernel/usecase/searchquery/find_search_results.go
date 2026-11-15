@@ -84,15 +84,16 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r Reque
 	if hasMeaning(q.Conditions) && !u.hasModel() {
 		return searchquery.SearchResults{}, searchquery.ErrNoModel
 	}
-	p := u.newPlan(ctx, v, q)
-	results, err := p.execute(ctx)
+	req := u.newRequest(ctx, v, q)
+	docs := &documentReader{documents: u.documents, contentTypes: u.contentTypes, req: req}
+	results, err := u.run(ctx, req, docs)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	if len(results.Results) > limit {
 		results.Results = results.Results[:limit]
 	}
-	if err := u.fillTitles(ctx, v, results.Results); err != nil {
+	if err := docs.fillTitles(ctx, results.Results); err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	return results, ctx.Err()
@@ -130,35 +131,4 @@ func hasMeaning(conditions []searchquery.Condition) bool {
 
 func (u *FindSearchResults) hasModel() bool {
 	return u.source != nil && u.source.Describe().IsDescribed()
-}
-
-func (u *FindSearchResults) getDocument(path string, sourceKind domain.SourceKind) searchquery.Document {
-	return searchquery.Document{
-		Path: path, Title: searchquery.GetTitle(path, ""), SourceKind: sourceKind,
-		Kind: searchquery.GetKind(sourceKind, u.contentTypes.GetContentType(path)),
-	}
-}
-
-func (u *FindSearchResults) fillTitles(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error {
-	var paths []string
-	for _, r := range results {
-		if r.Document.SourceKind == domain.KindNote {
-			paths = append(paths, r.Document.Path)
-		}
-	}
-	if len(paths) == 0 {
-		return nil
-	}
-	listed, err := u.documents.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
-	if err != nil {
-		return err
-	}
-	titles := make(map[string]string, len(listed))
-	for _, d := range listed {
-		titles[d.Path] = d.Title
-	}
-	for i, r := range results {
-		results[i].Document.Title = searchquery.GetTitle(r.Document.Path, titles[r.Document.Path])
-	}
-	return nil
 }

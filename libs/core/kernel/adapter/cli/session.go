@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -71,7 +72,7 @@ type Indexed struct {
 	Search     Search
 	Links      query.ShowLinksByName
 	Problems   vault.GetProblemsByName
-	Query      Query
+	Query      searchqueryusecase.FindSearchResultsByName
 }
 
 // Vaults is what the vault commands that touch the list alone operate on: the use cases over the list this
