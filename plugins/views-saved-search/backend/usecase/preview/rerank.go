@@ -17,7 +17,7 @@ import (
 // order them, and the row that ordered them.
 type reranking struct {
 	candidates []ranking.Candidate
-	order      string
+	order      api.Order
 	warnings   []string
 	reranker   *ports.RerankerID
 }

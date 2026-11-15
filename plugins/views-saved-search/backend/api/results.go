@@ -28,7 +28,7 @@ type GetResultsResponse struct {
 	Failure        string          `json:"failure"`
 	IsStale        bool            `json:"isStale"`
 	IsRunning      bool            `json:"isRunning"`
-	Order          string          `json:"order"`
+	Order          Order           `json:"order"`
 	CandidateCount int             `json:"candidateCount"`
 	Results        []PreviewResult `json:"results"`
 	Warnings       []string        `json:"warnings"`
