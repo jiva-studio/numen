@@ -1,11 +1,18 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.11.21",
+  "version": "2026.11.22",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
+  "activationEvents": [
+    "onFilesChanged:application/pdf",
+    "onFilesChanged:image/png",
+    "onFilesChanged:image/jpeg",
+    "onFilesChanged:image/gif",
+    "onFilesChanged:image/webp"
+  ],
   "contributes": {
     "textKinds": [{ "kind": "recognition", "title": "Recognized text" }],
     "category": "engines",
@@ -22,13 +29,6 @@
         "command": "app:file.createText",
         "title": "Recognize text",
         "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
-      }
-    ],
-    "triggers": [
-      {
-        "event": "file.added",
-        "command": "app:file.createText",
-        "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeAutomatically == true && !target.versions.exists(v, v.kind == 'recognition' && v.isValid)"
       }
     ]
   },

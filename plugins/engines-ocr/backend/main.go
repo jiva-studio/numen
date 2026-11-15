@@ -7,5 +7,6 @@ import (
 )
 
 func main() {
-	server.Run(service.Mount)
+	app := service.NewApp()
+	server.Run(app.Mount, server.WithEventHandler(app.HandleEvent))
 }
