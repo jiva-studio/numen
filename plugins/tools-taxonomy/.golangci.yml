@@ -192,10 +192,10 @@ linters:
             - "**/internal/adapter/clock/**"
             - "**/internal/adapter/filesystem/**"
             - "**/internal/adapter/machine/**"
-            - "**/internal/adapter/onnxruntime/**"
             - "**/internal/adapter/plugin/*.go"
             - "**/internal/adapter/plugin/toolbridge/**"
             - "**/internal/adapter/plugin/bridge/**"
+            - "**/internal/adapter/plugin/searchfunctionbridge/**"
             - "**/internal/adapter/plugin/commandbridge/**"
             - "**/internal/adapter/plugin/delivery/**"
             - "**/internal/adapter/plugin/sourcebridge/**"
@@ -208,6 +208,8 @@ linters:
             - "**/internal/adapter/plugin/storage/**"
             - "**/internal/adapter/plugin/transport/**"
             - "**/internal/adapter/provision/**"
+            - "**/internal/adapter/searchstore/**"
+            - "**/internal/adapter/indexgeneration/**"
             - "**/internal/adapter/settingevents/**"
             - "**/internal/adapter/themefiles/**"
             - "**/internal/adapter/trash/**"
@@ -245,6 +247,10 @@ linters:
             - "**/internal/adapter/plugin/**"
             - "!$test"
           deny:
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
@@ -265,9 +271,11 @@ linters:
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/machine"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/searchstore"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/indexgeneration"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
@@ -300,6 +308,8 @@ linters:
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
               desc: "a bridge to a plugin does not use another bridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
+              desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
@@ -321,6 +331,8 @@ linters:
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
+              desc: "a bridge to a plugin does not use another bridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
@@ -344,6 +356,8 @@ linters:
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
               desc: "a bridge to a plugin does not use another bridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
+              desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
@@ -366,6 +380,8 @@ linters:
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
               desc: "a bridge to a plugin does not use another bridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
+              desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
@@ -381,6 +397,33 @@ linters:
             - "**/internal/adapter/plugin/toolbridge/**"
             - "!$test"
           deny:
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
+              desc: "a bridge to a plugin does not use another bridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+              desc: "a bridge to a plugin does not use another bridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
+              desc: "a bridge to a plugin does not use another bridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
+              desc: "a bridge to a plugin does not use another bridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
+              desc: "a bridge to a plugin does not use another bridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
+              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
+              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
+              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
+
+        plugin-searchfunctionbridge:
+          list-mode: lax
+          files:
+            - "**/internal/adapter/plugin/searchfunctionbridge/**"
+            - "!$test"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
+              desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
@@ -420,10 +463,13 @@ linters:
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
+              desc: "the host side that serves plugin calls does not use the bridges to a plugin"
 
-        # A plugin reaches the host through the plugin SDK. The rule covers every
-        # file outside libs/, apps/ and tools/, which includes a plugin checked out alone.
-        # The longer match wins, so the SDK is allowed under the denied libs/.
+        # A plugin reaches the host through the plugin SDK and may import the shared
+        # libraries under libs/shared. The rule covers every file outside libs/, apps/
+        # and tools/, which includes a plugin checked out alone.
+        # The longer match wins, so the SDK and libs/shared/ are allowed under the denied libs/.
         plugin-isolation:
           list-mode: lax
           files:
@@ -433,9 +479,10 @@ linters:
             - "!**/tools/**"
           allow:
             - "github.com/jiva-studio/numen/libs/plugin/sdk-go"
+            - "github.com/jiva-studio/numen/libs/shared/"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs"
-              desc: "a plugin depends on the plugin SDK and on no other library of this repository"
+              desc: "a plugin depends on the plugin SDK, on the shared libraries and on no other library of this repository"
             - pkg: "github.com/jiva-studio/numen/apps"
               desc: "a plugin reaches no application"
             - pkg: "connectrpc.com/connect"
