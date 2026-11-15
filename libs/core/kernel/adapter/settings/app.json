@@ -94,7 +94,7 @@
         {
           "value": "maximum",
           "title": "Maximum",
-          "detail": "All performance cores and all of the memory."
+          "detail": "All performance cores and 90% of the memory."
         }
       ]
     }

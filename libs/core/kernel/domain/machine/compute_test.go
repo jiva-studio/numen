@@ -138,9 +138,9 @@ func TestResolveCompute_DerivesMemoryLimitFromRAMAndProfile(t *testing.T) {
 	}{
 		{"eco on a Ryzen with 32 GB", machine.ProfileEco, machine.Specs{LogicalCPUs: 16, TotalRAMMB: 32768}, 8192},
 		{"balanced on a Ryzen with 32 GB", machine.ProfileBalanced, machine.Specs{LogicalCPUs: 16, TotalRAMMB: 32768}, 16384},
-		{"maximum on a Ryzen with 32 GB", machine.ProfileMaximum, machine.Specs{LogicalCPUs: 16, TotalRAMMB: 32768}, 32768},
+		{"maximum on a Ryzen with 32 GB", machine.ProfileMaximum, machine.Specs{LogicalCPUs: 16, TotalRAMMB: 32768}, 29491},
 		{"balanced on an M4 with 24 GB", machine.ProfileBalanced, machine.Specs{LogicalCPUs: 10, TotalRAMMB: 24576}, 12288},
-		{"maximum on an M4 with 24 GB", machine.ProfileMaximum, machine.Specs{LogicalCPUs: 10, TotalRAMMB: 24576}, 24576},
+		{"maximum on an M4 with 24 GB", machine.ProfileMaximum, machine.Specs{LogicalCPUs: 10, TotalRAMMB: 24576}, 22118},
 		{"eco on a laptop with 2 GB", machine.ProfileEco, machine.Specs{LogicalCPUs: 2, TotalRAMMB: 2048}, 512},
 		{"balanced on a laptop with 2 GB", machine.ProfileBalanced, machine.Specs{LogicalCPUs: 2, TotalRAMMB: 2048}, 1024},
 		{"unknown memory sets no limit at eco", machine.ProfileEco, machine.Specs{LogicalCPUs: 8}, 0},
@@ -167,7 +167,7 @@ func TestResolveCompute_ResolvesEveryLevel(t *testing.T) {
 		{machine.ProfileLow, machine.ResolvedCompute{Profile: "low", CoreBudget: 4, Workers: 2, MemoryLimitMB: 8192, Nice: 15}},
 		{machine.ProfileBalanced, machine.ResolvedCompute{Profile: "balanced", CoreBudget: 8, Workers: 4, MemoryLimitMB: 16384, Nice: 10}},
 		{machine.ProfileHigh, machine.ResolvedCompute{Profile: "high", CoreBudget: 12, Workers: 12, MemoryLimitMB: 24576, Nice: 5}},
-		{machine.ProfileMaximum, machine.ResolvedCompute{Profile: "maximum", CoreBudget: 16, Workers: 16, MemoryLimitMB: 32768, Nice: 0}},
+		{machine.ProfileMaximum, machine.ResolvedCompute{Profile: "maximum", CoreBudget: 16, Workers: 16, MemoryLimitMB: 29491, Nice: 0}},
 	}
 	for _, c := range cases {
 		if got := machine.ResolveCompute(c.profile, hw); got != c.want {

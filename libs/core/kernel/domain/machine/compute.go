@@ -32,24 +32,26 @@ type ResolvedCompute struct {
 	Nice          int
 }
 
-// level is what one profile lets background work occupy: one share of the performance threads and
-// of installed memory, the niceness of the plugins and the divisor of the budget that sizes the
-// general pool.
+// level is what one profile lets background work occupy: a share of the performance threads, a
+// share of installed memory, the niceness of the plugins and the divisor of the budget that sizes
+// the general pool.
 type level struct {
-	profile        string
-	sharePercent   int
-	isSingleThread bool
-	nice           int
-	workerDivisor  int
+	profile            string
+	threadSharePercent int
+	memorySharePercent int
+	isSingleThread     bool
+	nice               int
+	workerDivisor      int
 }
 
 const (
 	percentBase = 100
 
-	quarterSharePercent      = 25
-	halfSharePercent         = 50
-	threeQuarterSharePercent = 75
-	fullSharePercent         = 100
+	quarterSharePercent       = 25
+	halfSharePercent          = 50
+	threeQuarterSharePercent  = 75
+	fullSharePercent          = 100
+	maximumMemorySharePercent = 90
 
 	ecoNice      = 19
 	lowNice      = 15
@@ -67,17 +69,29 @@ func getLevel(profile string) level {
 	switch profile {
 	case ProfileEco:
 		return level{
-			profile: ProfileEco, sharePercent: quarterSharePercent, isSingleThread: true,
+			profile: ProfileEco, memorySharePercent: quarterSharePercent, isSingleThread: true,
 			nice: ecoNice, workerDivisor: fullBudgetWorkers,
 		}
 	case ProfileLow:
-		return level{profile: ProfileLow, sharePercent: quarterSharePercent, nice: lowNice, workerDivisor: halfBudgetWorkers}
+		return level{
+			profile: ProfileLow, threadSharePercent: quarterSharePercent, memorySharePercent: quarterSharePercent,
+			nice: lowNice, workerDivisor: halfBudgetWorkers,
+		}
 	case ProfileHigh:
-		return level{profile: ProfileHigh, sharePercent: threeQuarterSharePercent, nice: highNice, workerDivisor: fullBudgetWorkers}
+		return level{
+			profile: ProfileHigh, threadSharePercent: threeQuarterSharePercent, memorySharePercent: threeQuarterSharePercent,
+			nice: highNice, workerDivisor: fullBudgetWorkers,
+		}
 	case ProfileMaximum:
-		return level{profile: ProfileMaximum, sharePercent: fullSharePercent, nice: maximumNice, workerDivisor: fullBudgetWorkers}
+		return level{
+			profile: ProfileMaximum, threadSharePercent: fullSharePercent, memorySharePercent: maximumMemorySharePercent,
+			nice: maximumNice, workerDivisor: fullBudgetWorkers,
+		}
 	default:
-		return level{profile: ProfileBalanced, sharePercent: halfSharePercent, nice: balancedNice, workerDivisor: halfBudgetWorkers}
+		return level{
+			profile: ProfileBalanced, threadSharePercent: halfSharePercent, memorySharePercent: halfSharePercent,
+			nice: balancedNice, workerDivisor: halfBudgetWorkers,
+		}
 	}
 }
 
@@ -112,7 +126,7 @@ func (hw Specs) getBudget(l level) int {
 	if l.isSingleThread {
 		return 1
 	}
-	return max(1, hw.getPerformanceThreads()*l.sharePercent/percentBase)
+	return max(1, hw.getPerformanceThreads()*l.threadSharePercent/percentBase)
 }
 
 // ResolveCompute computes the active workload parameters for a given profile and hardware specs. Every pool it sizes occupies at most CoreBudget hardware threads.
@@ -125,7 +139,7 @@ func ResolveCompute(profile string, hw Specs) ResolvedCompute {
 		Profile:       l.profile,
 		CoreBudget:    budget,
 		Workers:       max(budget/l.workerDivisor, 1),
-		MemoryLimitMB: hw.getMemoryLimitMB(l.sharePercent),
+		MemoryLimitMB: hw.getMemoryLimitMB(l.memorySharePercent),
 		Nice:          l.nice,
 	}
 }

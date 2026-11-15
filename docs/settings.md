@@ -126,13 +126,13 @@ Typing a new `# Heading` into a note does not rename its file. A save writes the
 
 numen reads the machine and resolves every pool from it. The machine is described by its logical CPUs (hardware threads the process may run on, limited by the process affinity and, on Linux, the cgroup v2 CPU quota), its physical cores, its performance cores (the cores of the highest performance class; equal to the physical cores when none differ), and its installed and free memory. A figure that cannot be read is unknown and takes the fallback below.
 
-The **core budget** is the number of hardware threads CPU-bound work may occupy at once: a share of the hardware threads of the performance cores. A performance core is counted with as many threads as the machine has logical CPUs per physical core, rounded up. When the core counts are unknown, every logical CPU counts as a core. Each profile uses one share for the threads and for the memory.
+The **core budget** is the number of hardware threads CPU-bound work may occupy at once: a share of the hardware threads of the performance cores. A performance core is counted with as many threads as the machine has logical CPUs per physical core, rounded up. When the core counts are unknown, every logical CPU counts as a core.
 
 |                                  | Eco | Low                         | Balanced _(default)_        | High       | Maximum    |
 | -------------------------------- | --- | --------------------------- | --------------------------- | ---------- | ---------- |
 | Core budget                      | 1   | 25%, at least 1             | 50%, at least 1             | 75%        | 100%       |
 | Workers (general CPU-bound pool) | 1   | half the budget, at least 1 | half the budget, at least 1 | the budget | the budget |
-| Memory limit (soft)              | 25% | 25%                         | 50%                         | 75%        | 100%       |
+| Memory limit (soft)              | 25% | 25%                         | 50%                         | 75%        | 90%        |
 | Niceness of the plugins          | 19  | 15                          | 10                          | 5          | 0          |
 
 The core budget is a share of the performance threads, the memory limit a share of installed memory. The core uses the workers value as the number of sources a search extracts at once; a search built without a plan extracts 4.
