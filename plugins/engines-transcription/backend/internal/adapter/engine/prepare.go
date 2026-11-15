@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/onnx"
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/ortraw"
 )
 

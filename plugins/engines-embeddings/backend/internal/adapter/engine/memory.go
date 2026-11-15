@@ -1,8 +1,8 @@
 package engine
 
 import (
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/engine/onnx"
 )
 
 // headWidth is the width of one attention head in sentence encoders.
