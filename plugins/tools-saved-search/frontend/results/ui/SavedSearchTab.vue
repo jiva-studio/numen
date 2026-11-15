@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * The tab of a saved search note: the title, the dot of the state of the run and the button that shows
- * or hides the editor of the query below them; the warnings; the filter and the sources of the results;
+ * or hides the editor of the query below them; the filter and the sources of the results;
  * and the results, or why there is none with the button that brings them back.
  */
 import { computed, useId } from 'vue'
@@ -90,14 +90,6 @@ function onToggleSource(path: string, isShown: boolean) {
         :functions="state.functions.value"
         @save="onSave"
       />
-      <p
-        v-for="warning in view.warnings"
-        :key="warning"
-        role="status"
-        class="saved-search__warning"
-      >
-        {{ warning }}
-      </p>
       <ResultsFilter
         v-if="view.items.length > 0"
         :filter="state.filter.value"

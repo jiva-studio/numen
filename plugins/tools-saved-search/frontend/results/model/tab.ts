@@ -10,7 +10,7 @@ import type { SavedSearchService } from '../api/service'
 import type { GetResultsResponse, Problem, SearchFunction } from '../api/types'
 import {
   filterItems,
-  formatProblem,
+  isInQuery,
   getResultsView,
   type ResultItemView,
   type ResultsView,
@@ -72,7 +72,7 @@ const getFailureKey = (answer: GetResultsResponse): string =>
   answer.failedAt === '' ? '' : `${answer.failedAt}\n${answer.failure}`
 
 const getNotice = (answer: GetResultsResponse): string =>
-  [`${answer.title}: ${answer.failure}`, ...answer.errors.map(formatProblem)].join('\n')
+  `${answer.title}: ${answer.failure}`
 
 /** The tab reads GetResults on each change of the watch, the last change winning, and runs no search. */
 export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps): SavedSearchTab {
@@ -98,7 +98,7 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
 
   const queryProblems = computed<readonly Problem[]>(() => {
     if (saveProblems.value.length > 0) return saveProblems.value
-    return (response.value?.errors ?? []).filter((problem) => problem.line > 0)
+    return (response.value?.errors ?? []).filter(isInQuery)
   })
 
   const tellFailure = (answer: GetResultsResponse): void => {

@@ -1,12 +1,11 @@
 /**
  * What the tab draws for an answer of the service: the state of the run with its details and the
- * problems of the note, the warnings, the results with their places, the sources the results come from,
+ * warnings of the run, the results with their places, the sources the results come from,
  * the words for no result; and the results a filter text and the hidden sources leave, and why none is
  * left.
  */
 import type { Words } from '../../words'
 import { formatPlace, type PlaceFields } from './place'
-import { getProblemText } from './problemText'
 import { formatTime } from './time'
 
 /** The fields of a result that the tab draws. */
@@ -59,9 +58,12 @@ export interface SourceView {
 }
 
 /** The state of the run: fresh results, a run in progress, results that will update, a failed last run. */
-export type RunState = 'fresh' | 'running' | 'stale' | 'failed'
+export type RunState = 'fresh' | 'running' | 'stale' | 'warned' | 'failed'
 
-/** The state of the run, its name, and the lines that describe it: the state, the times and the failure. */
+/**
+ * The state of the run, its name, and the lines that describe it: the state, the times, the failure and
+ * the warnings.
+ */
 export interface StatusView {
   readonly state: RunState
   readonly label: string
@@ -73,7 +75,6 @@ export interface ResultsView {
   readonly title: string
   readonly query: string
   readonly status: StatusView
-  readonly warnings: readonly string[]
   readonly items: readonly ResultItemView[]
   readonly sources: readonly SourceView[]
   readonly emptyText: string
@@ -81,13 +82,14 @@ export interface ResultsView {
 
 type Problem = ResultsFields['errors'][number]
 
-/** As `9:4 message`: the line and the column, counted from 1, then the message. */
-export function formatProblem(problem: Problem): string {
-  return `${problem.line}:${problem.column} ${problem.message}`
+/**
+ * Whether the problem has a place in the query; a run error, such as a service that did not answer,
+ * has none.
+ */
+export function isInQuery(problem: Problem): boolean {
+  return problem.line > 0
 }
 
-const formatPlainProblem = (problem: Problem): string =>
-  formatProblem({ ...problem, message: getProblemText(problem.message) })
 
 function getFileName(path: string): string {
   return path.slice(path.lastIndexOf('/') + 1)
@@ -110,6 +112,7 @@ function getRunState(response: ResultsFields): RunState {
   if (isLastRunFailed(response)) return 'failed'
   if (response.computedAt === '') return 'running'
   if (response.isStale) return 'stale'
+  if (response.warnings.length > 0) return 'warned'
   return 'fresh'
 }
 
@@ -117,6 +120,7 @@ function getLabel(state: RunState, response: ResultsFields, words: Words): strin
   if (state === 'running') return response.computedAt === '' ? words.computing : words.updating
   if (state === 'failed') return words.lastRunFailed
   if (state === 'stale') return words.willUpdate
+  if (state === 'warned') return words.upToDateWithWarnings
   return words.upToDate
 }
 
@@ -131,7 +135,7 @@ function getStatus(response: ResultsFields, words: Words, locale: string): Statu
     details.push(`${words.computed} ${formatTime(response.computedAt, locale)}`)
   if (response.isStale && state !== 'stale') details.push(words.willUpdate)
   if (failedRun !== '' && state !== 'failed') details.push(failedRun)
-  details.push(...response.errors.map(formatPlainProblem))
+  details.push(...response.warnings)
   return { state, label, details }
 }
 
@@ -165,7 +169,6 @@ export function getResultsView(response: ResultsFields, words: Words, locale: st
     title: response.title,
     query: response.query,
     status: getStatus(response, words, locale),
-    warnings: [...response.warnings],
     items: response.results.map((result, index) => getItem(result, index, words)),
     sources: getSources(response.results),
     emptyText: isEmpty ? words.noMatch : '',

@@ -130,10 +130,10 @@ describe('the query of the note', () => {
 })
 
 describe('the problems and the warnings', () => {
-  it('names the problems with line and column in the details of the run', () => {
+  it('leaves the problems of the query out of the details of the run', () => {
     const view = getResultsView(MISSPELLED, WORDS, LOCALE)
 
-    expect(view.status.details).toContain('2:4 unknown function meanin (did you mean meaning?)')
+    expect(view.status.details.some((line) => line.includes('meanin'))).toBe(false)
   })
 
   it('keeps the last good results while the query has problems', () => {
@@ -143,8 +143,23 @@ describe('the problems and the warnings', () => {
     expect(view.status.state).toBe('failed')
   })
 
-  it('lists the warnings of the run', () => {
-    expect(getResultsView(FUSED, WORDS, LOCALE).warnings).toStrictEqual([WARNING])
+  it('names a run error once, as the failure of the run', () => {
+    const busy = 'no reranking service answered: Local reranker: busy'
+    const view = getResultsView(
+      { ...MISSPELLED, failure: busy, errors: [{ line: 0, column: 0, message: busy }] },
+      WORDS,
+      LOCALE,
+    )
+
+    expect(view.status.state).toBe('failed')
+    expect(view.status.details.filter((line) => line.includes(busy))).toHaveLength(1)
+  })
+
+  it('gives fresh results with a warning the warned state and the warning in the details', () => {
+    const { status } = getResultsView(FUSED, WORDS, LOCALE)
+
+    expect(status.state).toBe('warned')
+    expect(status.details).toContain(WARNING)
   })
 })
 

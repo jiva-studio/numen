@@ -15,6 +15,7 @@ import type { GetResultsResponse, UpdateSearchRequest, UpdateSearchResponse } fr
 import {
   COMPUTED,
   FAILED_LAST_RUN,
+  FAILED_ON_RERANKER,
   FAILURE_REASON,
   FUNCTIONS,
   FUSED,
@@ -24,6 +25,7 @@ import {
   NEVER_COMPUTED,
   NOTE_PATH,
   NOTHING_FOUND,
+  RERANKER_BUSY,
   RUNNING,
   STALE,
   WARNING,
@@ -99,6 +101,22 @@ const COMPUTED_TIME = /Computed 14 Nov 2026, \d\d:\d\d/
 
 const getDot = (canvasElement: HTMLElement, name: string): Promise<HTMLElement> =>
   waitFor(() => within(canvasElement).getByRole('img', { name }))
+
+/** A run that failed on a busy reranking service: the red dot gives its error, nothing is underlined. */
+export const ShowsTheErrorOfTheRunApartFromTheQuery: Story = {
+  args: { response: FAILED_ON_RERANKER },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Last run failed')
+
+    await expect(canvas.queryByText(RERANKER_BUSY)).toBeNull()
+    await userEvent.hover(dot)
+    await waitFor(() => expect(canvas.getByRole('tooltip')).toHaveTextContent(RERANKER_BUSY))
+
+    await openEditor(canvasElement)
+    await expect(canvasElement.querySelectorAll('.cm-lintRange-error')).toHaveLength(0)
+  },
+}
 
 /** The dot of fresh results, the edit button, two passages with their places and a whole file as a file row. */
 export const ShowsTheResults: Story = {
@@ -290,8 +308,8 @@ export const ShowsAllSourcesAgain: Story = {
 }
 
 /**
- * A query the core rejects: no list of problems in the tab, the problems in the tooltip of the red dot,
- * and the results of the last good run.
+ * A query the core rejects: the red dot says the query has problems, the problems themselves only in the
+ * editor, and the results of the last good run.
  */
 export const ShowsTheProblemsOfTheQueryWithTheLastGoodResults: Story = {
   args: { response: MISSPELLED },
@@ -303,11 +321,9 @@ export const ShowsTheProblemsOfTheQueryWithTheLastGoodResults: Story = {
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
 
     await userEvent.hover(dot)
-    await waitFor(() =>
-      expect(canvas.getByRole('tooltip')).toHaveTextContent(
-        '2:4 unknown function meanin (did you mean meaning?)',
-      ),
-    )
+    const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
+    await expect(tooltip).toHaveTextContent('the query has problems')
+    await expect(tooltip).not.toHaveTextContent('meanin')
   },
 }
 
@@ -335,17 +351,16 @@ export const SaysTheResultsAreBeingComputed: Story = {
   },
 }
 
-/** A warning of the core shows beside the results. */
+/** A warning of the core turns the dot yellow and shows in its tooltip, nowhere else. */
 export const ShowsAWarning: Story = {
   args: { response: FUSED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Up to date, with warnings')
 
-    await waitFor(() =>
-      expect(canvas.getAllByRole('status').some((one) => one.textContent?.trim() === WARNING)).toBe(
-        true,
-      ),
-    )
+    await expect(canvas.queryByText(WARNING)).toBeNull()
+    await userEvent.hover(dot)
+    await waitFor(() => expect(canvas.getByRole('tooltip')).toHaveTextContent(WARNING))
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
   },
 }
@@ -499,8 +514,8 @@ const PARSER_PROBLEM = "extraneous input 'meanin' expecting <EOF>"
 const PLAIN_PROBLEM = 'Unexpected “meanin”: the query should end here'
 
 /**
- * A query the core rejects is underlined at its place with its message in plain words on hover and under
- * the cursor, no list of problems is drawn, the note keeps its query, and the editor stays open.
+ * A query the core rejects is underlined at its place with its message in plain words in one tooltip on
+ * hover, no list of problems is drawn, the note keeps its query, and the editor stays open.
  */
 export const UnderlinesAQueryNotSaved: Story = {
   parameters: { reach: EDITOR_KEEPS_TAB },
@@ -527,12 +542,8 @@ export const UnderlinesAQueryNotSaved: Story = {
     const browser = await import('vitest/browser')
     await browser.userEvent.hover(underlined)
     await waitFor(() => expect(canvas.getByText(PLAIN_PROBLEM)).toBeVisible())
-
     await browser.userEvent.click(underlined)
-    await browser.userEvent.hover(canvas.getByRole('heading'))
-    await waitFor(() =>
-      expect(canvasElement.querySelector('.cm-problem-at-cursor')).toHaveTextContent(PLAIN_PROBLEM),
-    )
+    await expect(canvas.getAllByText(PLAIN_PROBLEM)).toHaveLength(1)
 
     await expect(canvas.getByRole('region', { name: 'Edit query' })).toBeVisible()
     await expect(args.onGetResults.mock.calls.length).toBe(readsBefore)

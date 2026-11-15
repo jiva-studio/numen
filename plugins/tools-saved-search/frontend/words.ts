@@ -4,6 +4,7 @@ export const WORDS = {
   updating: 'Updating…',
   willUpdate: 'Will update',
   upToDate: 'Up to date',
+  upToDateWithWarnings: 'Up to date, with warnings',
   computed: 'Computed',
   lastRunFailed: 'Last run failed',
   noMatch: 'The query found nothing',

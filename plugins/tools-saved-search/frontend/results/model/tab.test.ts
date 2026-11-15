@@ -379,7 +379,7 @@ describe('the notice of a failed run', () => {
 
     expect(notify).toHaveBeenCalledTimes(1)
     expect(notify).toHaveBeenCalledWith(
-      'Harbor master: winter storms: the query has problems\n2:4 unknown function meanin (did you mean meaning?)',
+      'Harbor master: winter storms: the query has problems',
     )
   })
 })

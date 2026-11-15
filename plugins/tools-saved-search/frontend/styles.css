@@ -46,7 +46,8 @@
   outline-offset: var(--numen-caret);
 }
 
-.saved-search__dot--stale {
+.saved-search__dot--stale,
+.saved-search__dot--warned {
   background-color: var(--numen-caution-fg);
 }
 
@@ -110,7 +111,6 @@
   font-weight: 600;
 }
 
-.saved-search__warning,
 .saved-search__failure {
   margin: 0;
   font-size: 0.875rem;
@@ -134,10 +134,6 @@
   color: var(--numen-hushed);
   font-size: var(--numen-text-2);
   overflow-wrap: anywhere;
-}
-
-.saved-search__warning {
-  color: var(--numen-caution-fg);
 }
 
 .saved-search__failure {

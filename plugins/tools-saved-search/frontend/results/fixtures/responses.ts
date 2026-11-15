@@ -96,6 +96,17 @@ export const FAILED_LAST_RUN: GetResultsResponse = {
   failure: FAILURE_REASON,
 }
 
+/** The error of a run whose reranking service did not answer. */
+export const RERANKER_BUSY = 'no reranking service answered: Local reranker: busy'
+
+/** A last run that failed at 09:41 UTC on a busy reranking service; the results are those of 09:30. */
+export const FAILED_ON_RERANKER: GetResultsResponse = {
+  ...HARBOR,
+  failedAt: '2026-11-14T09:41:00Z',
+  failure: RERANKER_BUSY,
+  errors: [{ line: 0, column: 0, message: RERANKER_BUSY }],
+}
+
 /** A run in progress over the results of 09:30. */
 export const RUNNING: GetResultsResponse = { ...HARBOR, isRunning: true }
 
