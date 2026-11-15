@@ -214,7 +214,7 @@ func TestALinkFunctionReportsABadArgumentOrUse(t *testing.T) {
 	for text, message := range map[string]string{
 		`hasLinkTo(path)`:             "takes a text in quotes",
 		`hasLinkTo("  ")`:             "The target of hasLinkTo is empty",
-		`isChildOf("a", "b", "c")`:    "isChildOf takes",
+		`isChildOf("a", "b", "c")`:    "isChildOf takes one text in quotes, and optionally one text in quotes",
 		`hasLinkTo("a", "b") == true`: "condition over",
 	} {
 		if problems := getProblems(t, text); !hasProblem(problems, message) {
