@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
 )
 
 // GetSearch returns the state of a search and one page of its results, waiting a while for it to stop.
 type GetSearch struct {
-	*searches
+	kept        *searchkept.Searches
 	generations IndexGenerations
 }
 
@@ -34,11 +35,11 @@ type Page struct {
 // Execute returns searchrun.ErrNotFound for a search that is unknown, expired, removed or of another plugin,
 // and searchrun.ErrInvalidPageToken for a token not of this search.
 func (u *GetSearch) Execute(ctx context.Context, r Read) (Page, error) {
-	record, stopped, err := u.find(r.Owner, r.ID)
+	record, stopped, err := u.kept.Find(r.Owner, r.ID)
 	if err != nil {
 		return Page{}, err
 	}
-	u.touch(r.ID)
+	u.kept.Touch(r.ID)
 	if r.Wait > 0 && record.IsRunning {
 		if record, err = u.wait(ctx, r, stopped); err != nil {
 			return Page{}, err
@@ -50,15 +51,15 @@ func (u *GetSearch) Execute(ctx context.Context, r Read) (Page, error) {
 func (u *GetSearch) wait(ctx context.Context, r Read, stopped <-chan struct{}) (searchrun.Record, error) {
 	select {
 	case <-stopped:
-	case <-u.timer.After(min(r.Wait, u.policy.MaxWait)):
+	case <-u.kept.Timer.After(min(r.Wait, u.kept.Policy.MaxWait)):
 	case <-ctx.Done():
 		return searchrun.Record{}, ctx.Err()
 	}
-	record, _, isFound := u.store.FindSearch(r.ID)
+	record, _, isFound := u.kept.Store.FindSearch(r.ID)
 	if !isFound {
 		return searchrun.Record{}, searchrun.ErrNotFound
 	}
-	u.touch(r.ID)
+	u.kept.Touch(r.ID)
 	return record, nil
 }
 
@@ -67,7 +68,7 @@ func (u *GetSearch) cutPage(record searchrun.Record, r Read) (Page, error) {
 		IsStale:      record.IndexGeneration != u.generations.GetGeneration(record.Start.Vault.ID),
 		TotalResults: len(record.Results.Results),
 	}
-	size := u.policy.GetPageSize(r.PageSize)
+	size := u.kept.Policy.GetPageSize(r.PageSize)
 	offset := 0
 	if r.PageToken != "" && !record.IsRunning {
 		var err error

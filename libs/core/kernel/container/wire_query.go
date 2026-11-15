@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
@@ -22,6 +23,8 @@ func newFindSearchResults(
 ) *searchqueryusecase.FindSearchResults {
 	search := db.ChunkSearch()
 	limits, stageLimits := readSearchLimits(c, errorHandler)
+	rerank := openRerankDeps(c)
+	querySource, _ := source.(searchsourceport.QuerySource)
 	deps := searchqueryusecase.FindSearchResultsDeps{
 		Parser:       celquery.NewParser(limits),
 		Catalog:      getSearchCatalog(getRuntimeManifests(c.search.PluginHost.Runtime)),
@@ -36,28 +39,17 @@ func newFindSearchResults(
 		Floors:       newFloorPolicy(db, source, errorHandler),
 		ContentTypes: c.search.PluginHost.Watch,
 		Codec:        rerankproto.Codec{},
-		Rows:         none.RerankRows{},
+		Resolve:      rerank.resolve,
+		Calls:        rerank.calls,
+		Rows:         rerank.rows,
 		Results:      db.OperationResults(operationResultRows),
 		Clock:        c.vault.Clock,
 		Links:        db.NoteQueries(),
 		Limits:       limits,
 		StageLimits:  stageLimits,
+		Source:       querySource,
 	}
-	if querySource, ok := source.(searchsourceport.QuerySource); ok {
-		deps.Source = querySource
-	}
-	setRerankConnections(c, &deps)
 	return searchqueryusecase.NewFindSearchResults(deps)
-}
-
-func setRerankConnections(c pluginsWiring, deps *searchqueryusecase.FindSearchResultsDeps) {
-	connections, ok := openConnectionDeps(c)
-	if !ok {
-		return
-	}
-	deps.Resolve = connection.NewResolve(connections).Execute
-	deps.Rows = modelcall.NewRows(deps.Resolve, connection.NewListRows(connections, openConnectionRows(c)).Execute, nil)
-	deps.Calls = openModelCalls(c)
 }
 
 func readSearchLimits(c pluginsWiring, errorHandler func(error)) (searchquerydomain.Limits, searchquerydomain.StageLimits) {
@@ -71,4 +63,23 @@ func readSearchLimits(c pluginsWiring, errorHandler func(error)) (searchquerydom
 
 func newClearOperationResults(db *Index) *operationresult.ClearOperationResults {
 	return operationresult.NewClearOperationResults(db.OperationResults(operationResultRows))
+}
+
+type rerankDeps struct {
+	resolve connectionport.ResolveConnection
+	rows    searchqueryusecase.RerankRows
+	calls   connectionport.ModelCalls
+}
+
+func openRerankDeps(c pluginsWiring) rerankDeps {
+	connections, ok := openConnectionDeps(c)
+	if !ok {
+		return rerankDeps{rows: none.RerankRows{}}
+	}
+	resolve := connection.NewResolve(connections).Execute
+	return rerankDeps{
+		resolve: resolve,
+		rows:    modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(c)).Execute, nil),
+		calls:   openModelCalls(c),
+	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -65,15 +66,20 @@ type IndexOptions struct {
 
 // Indexed is what the commands that read or change the index work through, over the one index a run opened.
 type Indexed struct {
-	Rename           vault.RenameByName
-	Unregister       vault.UnregisterByName
-	Erase            vault.EraseByName
+	Changes          VaultChanges
 	Scan             Scan
 	Search           Search
 	Links            query.ShowLinksByName
 	Problems         vault.GetProblemsByName
-	Query            Query
+	Query            searchqueryusecase.FindSearchResultsByName
 	OperationResults *operationresult.ClearOperationResults
+}
+
+// VaultChanges is the commands that rename, unregister or erase a vault named on the command line.
+type VaultChanges struct {
+	Rename     vault.RenameByName
+	Unregister vault.UnregisterByName
+	Erase      vault.EraseByName
 }
 
 // Vaults is what the vault commands that touch the list alone operate on: the use cases over the list this
