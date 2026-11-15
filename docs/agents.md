@@ -110,9 +110,9 @@ Seven plugins register the tools an agent can call, each for its own subject. Th
 
 `tools-taxonomy`, the tags of the notes:
 
-| Tool       | What it does                                                                                                                                                                           | Effect |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `tag_list` | list the tags of the frontmatter key `tags` as a tree read depth first, each with its depth and the number of notes that have it or a tag nested under it; `under` lists one tag alone | reads  |
+| Tool       | What it does                                                                                                                                                                                         | Effect |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `tag_list` | list the tags of the frontmatter key `tags` as a tree read depth first, each with its depth and the number of notes that have it or a tag nested under it; `under` lists one tag and its nested tags | reads  |
 
 A card is named by its card id and never by the place it is in, so the cards stay addressable when a deck is reordered during a run. Every write to a deck takes the fingerprint `card_read` returned, and is applied only to the deck that fingerprint identifies.
 
