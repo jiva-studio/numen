@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { findStoryRuleGaps, readSeverity } from "./check.mjs";
+import { findStoryLibraries, findStoryRuleGaps, readSeverity } from "./check.mjs";
 
 const RECOMMENDED = {
   "react-hooks/rules-of-hooks": "off",
@@ -15,6 +15,24 @@ const resolve = () => ({
   "storybook/default-exports": [2],
   "storybook/prefer-pascal-case": [1],
   "storybook/csf-component": [0],
+});
+
+describe("the libraries whose story files are read", () => {
+  it("are the folders above the src of the story files under libs, each with its first story file", () => {
+    const files = [
+      "apps/desktop/editor/src/app/App.stories.ts",
+      "libs/core/client/src/client.ts",
+      "libs/ui/components/src/shared/ui/a/A.stories.ts",
+      "libs/ui/components/src/shared/ui/b/B.stories.ts",
+      "libs/ui/workbench/src/screens/Window.stories.ts",
+      "libs/plugin/sdk-ts/stories/Loose.stories.ts",
+      "plugins/notes/frontend/ui/Editor.stories.ts",
+    ];
+    assert.deepEqual([...findStoryLibraries(files)], [
+      ["libs/ui/components", "libs/ui/components/src/shared/ui/a/A.stories.ts"],
+      ["libs/ui/workbench", "libs/ui/workbench/src/screens/Window.stories.ts"],
+    ]);
+  });
 });
 
 describe("the severity of a rule", () => {

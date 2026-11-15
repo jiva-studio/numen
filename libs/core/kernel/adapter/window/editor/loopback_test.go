@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -28,7 +28,7 @@ const (
 
 func openRecordingWindow(t *testing.T, _ any) (*Services, http.Handler) {
 	t.Helper()
-	vault := vaultfixture.NewVault(t, map[string]string{talk: sound})
+	vault := vaulttest.NewVault(t, map[string]string{talk: sound})
 	api := newBareServices()
 	api.readFiles(vaultreader.Readers{}, nil, file.NewGetMediaType(contenttype.Open()))
 	api.state.Runtime.SetVault(vault)
@@ -145,7 +145,7 @@ func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	// The window moves to a vault holding nothing of the kind.
-	api.state.Runtime.SetVault(vaultfixture.NewVault(t, map[string]string{"other.md": "somewhere else"}))
+	api.state.Runtime.SetVault(vaulttest.NewVault(t, map[string]string{"other.md": "somewhere else"}))
 
 	if out := ask(t, handler, back.Address(target, statOf(t, api, target, talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording of the vault that moved out of the window was answered %d: %s",
@@ -168,7 +168,7 @@ func TestAFileOfAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 
 // vault's own reader.
 func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
-	vault := vaultfixture.NewVault(t, map[string]string{
+	vault := vaulttest.NewVault(t, map[string]string{
 		talk:      sound,
 		"note.md": "# What a note says",
 	})

@@ -907,6 +907,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     }))
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(lateActivated).toBe(false)
+    expect(await loader.activation.isInterface('late.enabled')).toBe(false)
     expect(listeners.has('late.enabled')).toBe(true)
     await loader.status.startPlugin('late.enabled')
     expect(lateActivated).toBe(true)
@@ -924,8 +925,42 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.trackPlugins(['disabled.after'])
     await loader.close()
 
+    loader.registerPluginModule('after.close.mod', async () => ({}))
     await loader.trackPlugins(['after.close'])
     expect(loader.status.isPluginActive('after.close')).toBe(false)
+    expect(listeners.has('after.close')).toBe(false)
+    expect(listeners.has('after.close.mod')).toBe(false)
+  })
+
+  it('tracks concurrent start runs and deduplicates concurrent startPlugin calls', async () => {
+    const { host } = createHost()
+    let loadCalls = 0
+    let resolveLoad: (() => void) | undefined
+    const loader = createTestPluginLoader({ host })
+    await loader.start()
+    loader.registerPluginModule(
+      'concurrent',
+      () =>
+        new Promise((resolve) => {
+          loadCalls++
+          resolveLoad = () => resolve({ activate: () => undefined })
+        }),
+    )
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(loader.status.isPluginStarting('concurrent')).toBe(false)
+    const first = loader.status.startPlugin('concurrent')
+    const second = loader.status.startPlugin('concurrent')
+    const queued = loader.activation.activatePlugin('concurrent', { activate: () => undefined })
+    expect(loader.status.isPluginStarting('concurrent')).toBe(true)
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    resolveLoad?.()
+    await Promise.all([first, second])
+    await queued
+    expect(loadCalls).toBe(1)
+    expect(loader.status.isPluginStarting('concurrent')).toBe(false)
+    expect(loader.status.isPluginActive('concurrent')).toBe(true)
   })
 })
 

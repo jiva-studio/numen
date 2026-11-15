@@ -155,16 +155,6 @@ describe('--fix', () => {
   })
 })
 
-describe('skipped paths', () => {
-  it('does not scan apps/landing while the website is being rewritten', () => {
-    const file = path.join(ROOT, 'repo/apps/landing/page.md')
-    fs.mkdirSync(path.dirname(file), { recursive: true })
-    fs.writeFileSync(file, 'The window wears a theme.\n')
-    const run = spawnSync('node', [SCAN, path.join(ROOT, 'repo'), '--check'], { encoding: 'utf8' })
-    assert.equal(run.status, 0, run.stdout)
-  })
-})
-
 /** The phrase rules (category 24) that a fixture file breaks, one rule name per finding. */
 function getPhraseRules(name, content) {
   const file = path.join(ROOT, name)

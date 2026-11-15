@@ -64,9 +64,9 @@ func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.Hos
 		ActiveId: "tab-2",
 		Tabs: []*v1.OpenTab{
 			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
-			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &v1.TabPlace{Page: 4, PageCount: 80}},
-			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &v1.TabPlace{PositionSeconds: new(float64)}},
-			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &v1.TabPlace{Cfi: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: `{"page":4,"pageCount":80}`},
+			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: `{"positionSeconds":0}`},
+			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 		},
 	}), nil
 }
@@ -123,12 +123,11 @@ func TestClientReadsTheOpenTabsWithThePlaceEachReaderReported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	atStart := 0.0
 	want := []host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 4, PageCount: 80}},
-		{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &host.TabPlace{PositionSeconds: &atStart}},
-		{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: `{"page":4,"pageCount":80}`},
+		{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: `{"positionSeconds":0}`},
+		{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 	}
 	if !reflect.DeepEqual(tabs, want) || activeID != "tab-2" {
 		t.Errorf("read %s with %q active, want %s with tab-2", formatTabs(tabs), activeID, formatTabs(want))
@@ -138,14 +137,7 @@ func TestClientReadsTheOpenTabsWithThePlaceEachReaderReported(t *testing.T) {
 func formatTabs(tabs []host.OpenTab) string {
 	var b strings.Builder
 	for _, tab := range tabs {
-		fmt.Fprintf(&b, "%+v", tab)
-		if tab.Place != nil {
-			fmt.Fprintf(&b, " at %+v", *tab.Place)
-			if tab.Place.PositionSeconds != nil {
-				fmt.Fprintf(&b, " (%v s)", *tab.Place.PositionSeconds)
-			}
-		}
-		b.WriteString("; ")
+		fmt.Fprintf(&b, "%+v; ", tab)
 	}
 	return b.String()
 }

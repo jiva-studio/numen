@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
@@ -111,7 +112,7 @@ func newAnswererOf(t *testing.T, chat *scriptedChat, tools *fakeTools, store *se
 	return answerer
 }
 
-func newAnswerer(t *testing.T, chat *scriptedChat, tools *fakeTools) (*answer.Answerer, *clock.Fake) {
+func newAnswerer(t *testing.T, chat *scriptedChat, tools *fakeTools) (*answer.Answerer, *clocktest.Fake) {
 	t.Helper()
 	now := newFakeClock(time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC))
 	return newAnswererOf(t, chat, tools, settings.NewStore(), now), now
@@ -629,8 +630,8 @@ func TestAClosedAnswererRejectsNewTasks(t *testing.T) {
 	assertUnavailable(t, err)
 }
 
-func newFakeClock(start time.Time) *clock.Fake {
-	source := new(clock.Fake)
+func newFakeClock(start time.Time) *clocktest.Fake {
+	source := new(clocktest.Fake)
 	source.Set(start)
 	return source
 }
