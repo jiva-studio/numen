@@ -7,7 +7,6 @@ package feed
 import (
 	"cmp"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -18,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/changes"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/pending"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/recording"
 )
 
@@ -27,8 +27,6 @@ const CursorFile = "feed.cursor.json"
 // PendingFile is the file of the plugin's store folder the recordings whose transcription has not
 // ended are kept in.
 const PendingFile = "feed.pending.json"
-
-const pendingVersion = 1
 
 // State is what a start did for a file.
 type State int
@@ -55,7 +53,9 @@ type Vault struct {
 	Store changes.Store
 }
 
-var events = []string{host.EventFileAdded, host.EventFileChanged, host.EventFileMoved, host.EventFileRemoved}
+func getEvents() []string {
+	return []string{host.EventFileAdded, host.EventFileChanged, host.EventFileMoved, host.EventFileRemoved}
+}
 
 // Follower brings the transcriptions of each vault up to date with its file change feed.
 type Follower struct {
@@ -106,28 +106,28 @@ func (f *Follower) Execute(ctx context.Context, id domain.VaultID) error {
 	if err := one.load(ctx, u.vault.Store, from); err != nil {
 		return err
 	}
-	if err := changes.Follow(ctx, from, events, u.apply, u.review); err != nil {
+	if err := changes.Follow(ctx, from, getEvents(), u.apply, u.review); err != nil {
 		one.isLoaded = false
 		return fmt.Errorf("follow the file changes: %w", err)
 	}
-	return u.startPending(ctx)
+	return u.startPendingRuns(ctx)
 }
 
 func (v *vaultRecordings) load(ctx context.Context, store changes.Store, from changes.Source) error {
 	if v.isLoaded {
 		return nil
 	}
-	pending, err := readPending(ctx, store)
+	files, ok, err := readPendingFiles(ctx, store)
 	if err != nil {
 		return err
 	}
-	if pending == nil {
+	if !ok {
 		if err := changes.Forget(ctx, from); err != nil {
 			return err
 		}
-		pending = map[int64]string{}
+		files = map[int64]string{}
 	}
-	v.pending, v.isLoaded = pending, true
+	v.pending, v.isLoaded = files, true
 	return nil
 }
 
@@ -141,7 +141,7 @@ type update struct {
 
 func (u update) apply(ctx context.Context, batch []host.FileChange) error {
 	u.keep(batch)
-	return writePending(ctx, u.vault.Store, u.recordings.pending)
+	return writePendingFiles(ctx, u.vault.Store, u.recordings.pending)
 }
 
 func (u update) keep(batch []host.FileChange) {
@@ -166,10 +166,8 @@ func (u update) keepRecording(change host.FileChange) {
 	delete(u.recordings.pending, change.SourceID)
 }
 
-// review keeps every recording of the vault: the feed holds the latest addition and change of every
-// file it has, from the start of the feed.
 func (u update) review(ctx context.Context) error {
-	head, err := u.vault.Feed.ListFileChanges(ctx, host.FileChangeQuery{Since: host.FileChangeCursor{}, Events: events})
+	head, err := u.vault.Feed.ListFileChanges(ctx, host.FileChangeQuery{Since: host.FileChangeCursor{}, Events: getEvents()})
 	if err != nil {
 		return fmt.Errorf("read the file changes: %w", err)
 	}
@@ -192,10 +190,10 @@ func (u update) review(ctx context.Context) error {
 			break
 		}
 	}
-	return writePending(ctx, u.vault.Store, u.recordings.pending)
+	return writePendingFiles(ctx, u.vault.Store, u.recordings.pending)
 }
 
-func (u update) startPending(ctx context.Context) error {
+func (u update) startPendingRuns(ctx context.Context) error {
 	ids := slices.SortedFunc(maps.Keys(u.recordings.pending), cmp.Compare[int64])
 	isChanged := false
 	for _, id := range ids {
@@ -211,11 +209,9 @@ func (u update) startPending(ctx context.Context) error {
 	if !isChanged {
 		return nil
 	}
-	return writePending(ctx, u.vault.Store, u.recordings.pending)
+	return writePendingFiles(ctx, u.vault.Store, u.recordings.pending)
 }
 
-// startRecording starts the transcription of a kept recording, and returns true when the recording is
-// no longer kept: its transcription, started by this process, ended, or its text is made.
 func (u update) startRecording(ctx context.Context, path string) (bool, error) {
 	if u.recordings.started[path] {
 		isRunning, err := u.follower.runs.IsRunning(ctx, u.id, path)
@@ -239,33 +235,20 @@ func (u update) startRecording(ctx context.Context, path string) (bool, error) {
 	return false, nil
 }
 
-// pendingFile is the content of PendingFile. A missing file, or one of another version, holds no
-// recordings, and the next update walks every recording of the vault.
-type pendingFile struct {
-	Version    int              `json:"version"`
-	Recordings map[int64]string `json:"recordings"`
-}
-
-func readPending(ctx context.Context, store changes.Store) (map[int64]string, error) {
+func readPendingFiles(ctx context.Context, store changes.Store) (map[int64]string, bool, error) {
 	content, err := store.Read(ctx, PendingFile)
 	if errors.Is(err, host.ErrNotExist) {
-		return nil, nil
+		return nil, false, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("read %s: %w", PendingFile, err)
+		return nil, false, fmt.Errorf("read %s: %w", PendingFile, err)
 	}
-	var stored pendingFile
-	if json.Unmarshal(content, &stored) != nil || stored.Version != pendingVersion {
-		return nil, nil
-	}
-	if stored.Recordings == nil {
-		stored.Recordings = map[int64]string{}
-	}
-	return stored.Recordings, nil
+	files, ok := pending.Parse(content)
+	return files, ok, nil
 }
 
-func writePending(ctx context.Context, store changes.Store, pending map[int64]string) error {
-	content, err := json.Marshal(pendingFile{Version: pendingVersion, Recordings: pending})
+func writePendingFiles(ctx context.Context, store changes.Store, files map[int64]string) error {
+	content, err := pending.Encode(files)
 	if err != nil {
 		return err
 	}

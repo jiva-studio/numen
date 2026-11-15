@@ -49,7 +49,7 @@ func (r *Requests) IsRunning(vault domain.VaultID, path string) bool {
 	return r.transcriber.isRunning(vault, path)
 }
 
-// GetShownVaultID returns the vault the host shows.
+// GetShownVaultID asks the host which vault its window has open.
 func (r *Requests) GetShownVaultID(ctx context.Context) (domain.VaultID, error) {
 	return r.transcriber.getClaimVault(ctx, "")
 }

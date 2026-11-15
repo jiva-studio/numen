@@ -61,7 +61,7 @@ func (r *recordedRuns) finish(path string, isTranscribed bool) {
 	r.done[path] = isTranscribed
 }
 
-func (r *recordedRuns) getStarted() []string {
+func (r *recordedRuns) getStartedPaths() []string {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return slices.Clone(r.started)
@@ -113,7 +113,6 @@ func newScene(t *testing.T, files ...string) *scene {
 	return s
 }
 
-// restart starts the plugin again over runs, with the store and the feed of before.
 func (s *scene) restart(runs *recordedRuns) {
 	s.runs = runs
 	s.follower = feed.New(func(domain.VaultID) feed.Vault { return feed.Vault{Feed: s.feed, Store: s.store} }, runs,
@@ -127,9 +126,9 @@ func (s *scene) update(t *testing.T) {
 	}
 }
 
-func (s *scene) checkStarted(t *testing.T, want ...string) {
+func (s *scene) checkStartedPaths(t *testing.T, want ...string) {
 	t.Helper()
-	if got := s.runs.getStarted(); !slices.Equal(got, want) {
+	if got := s.runs.getStartedPaths(); !slices.Equal(got, want) {
 		t.Errorf("started %v, want %v", got, want)
 	}
 }
@@ -137,7 +136,7 @@ func (s *scene) checkStarted(t *testing.T, want ...string) {
 func TestANewRecordingIsStartedOnce(t *testing.T) {
 	s := newScene(t, "lectures/ohm.mp3", "notes/ohm.md")
 	s.update(t)
-	s.checkStarted(t, "lectures/ohm.mp3")
+	s.checkStartedPaths(t, "lectures/ohm.mp3")
 
 	s.update(t)
 	s.runs.finish("lectures/ohm.mp3", true)
@@ -145,7 +144,7 @@ func TestANewRecordingIsStartedOnce(t *testing.T) {
 	s.vault.File("interviews/board.wav", "an interview at the board")
 	s.update(t)
 
-	s.checkStarted(t, "lectures/ohm.mp3", "interviews/board.wav")
+	s.checkStartedPaths(t, "lectures/ohm.mp3", "interviews/board.wav")
 }
 
 func TestAChangedRecordingIsStartedAgain(t *testing.T) {
@@ -157,7 +156,7 @@ func TestAChangedRecordingIsStartedAgain(t *testing.T) {
 	s.vault.File("lectures/ohm.mp3", "the second edition")
 	s.update(t)
 
-	s.checkStarted(t, "lectures/ohm.mp3", "lectures/ohm.mp3")
+	s.checkStartedPaths(t, "lectures/ohm.mp3", "lectures/ohm.mp3")
 }
 
 func TestAMovedRecordingIsNotTranscribedAgain(t *testing.T) {
@@ -173,7 +172,7 @@ func TestAMovedRecordingIsNotTranscribedAgain(t *testing.T) {
 	s.feed.take()
 	s.update(t)
 
-	s.checkStarted(t, "lectures/ohm.mp3")
+	s.checkStartedPaths(t, "lectures/ohm.mp3")
 	if read := s.feed.take(); !slices.Equal(read, []string{"physics/ohm.mp3 file.moved"}) {
 		t.Errorf("read %v, want the move alone", read)
 	}
@@ -193,7 +192,7 @@ func TestARemovedRecordingIsNotStarted(t *testing.T) {
 	s.restart(newRuns())
 	s.update(t)
 
-	s.checkStarted(t)
+	s.checkStartedPaths(t)
 }
 
 func TestABatchAppliedTwiceStartsNothingMore(t *testing.T) {
@@ -212,10 +211,10 @@ func TestABatchAppliedTwiceStartsNothingMore(t *testing.T) {
 	s.store.File(feed.CursorFile, cursor)
 	s.update(t)
 
-	s.checkStarted(t, "lectures/ohm.mp3", "lectures/faraday.mp3")
+	s.checkStartedPaths(t, "lectures/ohm.mp3", "lectures/faraday.mp3")
 }
 
-func TestABatchWhoseCursorWasNotWrittenIsStartedOnTheNextUpdate(t *testing.T) {
+func TestAnUpdateThatFailedIsRetriedOnTheNextUpdate(t *testing.T) {
 	s := newScene(t, "lectures/ohm.mp3")
 	s.update(t)
 	s.vault.File("lectures/faraday.mp3", "the bytes of Faraday")
@@ -228,20 +227,20 @@ func TestABatchWhoseCursorWasNotWrittenIsStartedOnTheNextUpdate(t *testing.T) {
 	s.update(t)
 	s.update(t)
 
-	s.checkStarted(t, "lectures/ohm.mp3", "lectures/faraday.mp3")
+	s.checkStartedPaths(t, "lectures/ohm.mp3", "lectures/faraday.mp3")
 }
 
 func TestAResetStartsOnlyTheRecordingsWithoutText(t *testing.T) {
 	s := newScene(t, "lectures/ohm.mp3", "lectures/faraday.mp3")
 	s.restart(newRuns("lectures/ohm.mp3"))
 	s.update(t)
-	s.checkStarted(t, "lectures/faraday.mp3")
+	s.checkStartedPaths(t, "lectures/faraday.mp3")
 	s.runs.finish("lectures/faraday.mp3", true)
 
 	s.vault.ResetFeed()
 	s.update(t)
 
-	s.checkStarted(t, "lectures/faraday.mp3")
+	s.checkStartedPaths(t, "lectures/faraday.mp3")
 }
 
 func TestARestartReadsOnlyTheChangesAfterTheCursor(t *testing.T) {
@@ -255,7 +254,7 @@ func TestARestartReadsOnlyTheChangesAfterTheCursor(t *testing.T) {
 	s.feed.take()
 	s.update(t)
 
-	s.checkStarted(t, "lectures/faraday.mp3")
+	s.checkStartedPaths(t, "lectures/faraday.mp3")
 	if read := s.feed.take(); !slices.Equal(read, []string{"lectures/faraday.mp3 file.added"}) {
 		t.Errorf("read %v, want the new recording alone", read)
 	}
@@ -268,7 +267,7 @@ func TestARestartStartsAgainATranscriptionThatDidNotEnd(t *testing.T) {
 	s.restart(newRuns())
 	s.update(t)
 
-	s.checkStarted(t, "lectures/ohm.mp3")
+	s.checkStartedPaths(t, "lectures/ohm.mp3")
 }
 
 func TestATranscriptionThatEndedWithoutTextIsNotStartedAgain(t *testing.T) {
@@ -280,5 +279,5 @@ func TestATranscriptionThatEndedWithoutTextIsNotStartedAgain(t *testing.T) {
 	s.vault.File("interviews/board.wav", "an interview at the board")
 	s.update(t)
 
-	s.checkStarted(t, "lectures/ohm.mp3", "interviews/board.wav")
+	s.checkStartedPaths(t, "lectures/ohm.mp3", "interviews/board.wav")
 }

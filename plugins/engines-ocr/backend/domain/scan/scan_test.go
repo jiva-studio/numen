@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/scan"
 )
 
-func TestIsScanTakesPDFsAndImagesAlone(t *testing.T) {
+func TestIsScanAcceptsPDFsAndImages(t *testing.T) {
 	for file, want := range map[string]bool{
 		"books/ohm.pdf": true, "books/OHM.PDF": true, "photos/board.jpeg": true, "photos/board.jpg": true,
 		"photos/board.png": true, "photos/board.gif": true, "photos/board.webp": true,

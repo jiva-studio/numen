@@ -61,7 +61,7 @@ func (r *recordedRuns) finish(path string, isRecognized bool) {
 	r.done[path] = isRecognized
 }
 
-func (r *recordedRuns) getStarted() []string {
+func (r *recordedRuns) getStartedPaths() []string {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return slices.Clone(r.started)
@@ -113,7 +113,6 @@ func newScene(t *testing.T, files ...string) *scene {
 	return s
 }
 
-// restart starts the plugin again over runs, with the store and the feed of before.
 func (s *scene) restart(runs *recordedRuns) {
 	s.runs = runs
 	s.follower = feed.New(func(domain.VaultID) feed.Vault { return feed.Vault{Feed: s.feed, Store: s.store} }, runs,
@@ -127,9 +126,9 @@ func (s *scene) update(t *testing.T) {
 	}
 }
 
-func (s *scene) checkStarted(t *testing.T, want ...string) {
+func (s *scene) checkStartedPaths(t *testing.T, want ...string) {
 	t.Helper()
-	if got := s.runs.getStarted(); !slices.Equal(got, want) {
+	if got := s.runs.getStartedPaths(); !slices.Equal(got, want) {
 		t.Errorf("started %v, want %v", got, want)
 	}
 }
@@ -137,7 +136,7 @@ func (s *scene) checkStarted(t *testing.T, want ...string) {
 func TestANewScanIsStartedOnce(t *testing.T) {
 	s := newScene(t, "books/ohm.pdf", "notes/ohm.md")
 	s.update(t)
-	s.checkStarted(t, "books/ohm.pdf")
+	s.checkStartedPaths(t, "books/ohm.pdf")
 
 	s.update(t)
 	s.runs.finish("books/ohm.pdf", true)
@@ -145,7 +144,7 @@ func TestANewScanIsStartedOnce(t *testing.T) {
 	s.vault.File("photos/board.png", "a photo of the board")
 	s.update(t)
 
-	s.checkStarted(t, "books/ohm.pdf", "photos/board.png")
+	s.checkStartedPaths(t, "books/ohm.pdf", "photos/board.png")
 }
 
 func TestAChangedScanIsStartedAgain(t *testing.T) {
@@ -157,7 +156,7 @@ func TestAChangedScanIsStartedAgain(t *testing.T) {
 	s.vault.File("books/ohm.pdf", "the second edition")
 	s.update(t)
 
-	s.checkStarted(t, "books/ohm.pdf", "books/ohm.pdf")
+	s.checkStartedPaths(t, "books/ohm.pdf", "books/ohm.pdf")
 }
 
 func TestAMovedScanIsNotRecognizedAgain(t *testing.T) {
@@ -173,7 +172,7 @@ func TestAMovedScanIsNotRecognizedAgain(t *testing.T) {
 	s.feed.take()
 	s.update(t)
 
-	s.checkStarted(t, "books/ohm.pdf")
+	s.checkStartedPaths(t, "books/ohm.pdf")
 	if read := s.feed.take(); !slices.Equal(read, []string{"physics/ohm.pdf file.moved"}) {
 		t.Errorf("read %v, want the move alone", read)
 	}
@@ -193,7 +192,7 @@ func TestARemovedScanIsNotStarted(t *testing.T) {
 	s.restart(newRuns())
 	s.update(t)
 
-	s.checkStarted(t)
+	s.checkStartedPaths(t)
 }
 
 func TestABatchAppliedTwiceStartsNothingMore(t *testing.T) {
@@ -212,10 +211,10 @@ func TestABatchAppliedTwiceStartsNothingMore(t *testing.T) {
 	s.store.File(feed.CursorFile, cursor)
 	s.update(t)
 
-	s.checkStarted(t, "books/ohm.pdf", "books/faraday.pdf")
+	s.checkStartedPaths(t, "books/ohm.pdf", "books/faraday.pdf")
 }
 
-func TestABatchWhoseCursorWasNotWrittenIsStartedOnTheNextUpdate(t *testing.T) {
+func TestAnUpdateThatFailedIsRetriedOnTheNextUpdate(t *testing.T) {
 	s := newScene(t, "books/ohm.pdf")
 	s.update(t)
 	s.vault.File("books/faraday.pdf", "the bytes of Faraday")
@@ -228,20 +227,20 @@ func TestABatchWhoseCursorWasNotWrittenIsStartedOnTheNextUpdate(t *testing.T) {
 	s.update(t)
 	s.update(t)
 
-	s.checkStarted(t, "books/ohm.pdf", "books/faraday.pdf")
+	s.checkStartedPaths(t, "books/ohm.pdf", "books/faraday.pdf")
 }
 
 func TestAResetStartsOnlyTheScansWithoutText(t *testing.T) {
 	s := newScene(t, "books/ohm.pdf", "books/faraday.pdf")
 	s.restart(newRuns("books/ohm.pdf"))
 	s.update(t)
-	s.checkStarted(t, "books/faraday.pdf")
+	s.checkStartedPaths(t, "books/faraday.pdf")
 	s.runs.finish("books/faraday.pdf", true)
 
 	s.vault.ResetFeed()
 	s.update(t)
 
-	s.checkStarted(t, "books/faraday.pdf")
+	s.checkStartedPaths(t, "books/faraday.pdf")
 }
 
 func TestARestartReadsOnlyTheChangesAfterTheCursor(t *testing.T) {
@@ -255,7 +254,7 @@ func TestARestartReadsOnlyTheChangesAfterTheCursor(t *testing.T) {
 	s.feed.take()
 	s.update(t)
 
-	s.checkStarted(t, "books/faraday.pdf")
+	s.checkStartedPaths(t, "books/faraday.pdf")
 	if read := s.feed.take(); !slices.Equal(read, []string{"books/faraday.pdf file.added"}) {
 		t.Errorf("read %v, want the new scan alone", read)
 	}
@@ -268,7 +267,7 @@ func TestARestartStartsAgainARecognitionThatDidNotEnd(t *testing.T) {
 	s.restart(newRuns())
 	s.update(t)
 
-	s.checkStarted(t, "books/ohm.pdf")
+	s.checkStartedPaths(t, "books/ohm.pdf")
 }
 
 func TestARecognitionThatEndedWithoutTextIsNotStartedAgain(t *testing.T) {
@@ -280,5 +279,5 @@ func TestARecognitionThatEndedWithoutTextIsNotStartedAgain(t *testing.T) {
 	s.vault.File("photos/board.png", "a photo of the board")
 	s.update(t)
 
-	s.checkStarted(t, "books/ohm.pdf", "photos/board.png")
+	s.checkStartedPaths(t, "books/ohm.pdf", "photos/board.png")
 }

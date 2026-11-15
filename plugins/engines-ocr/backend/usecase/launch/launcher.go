@@ -111,7 +111,7 @@ func (l *Launcher) IsRunning(ctx context.Context, vault domain.VaultID, path str
 	return l.recognitions.IsRunning(ctx, vault, path)
 }
 
-// GetShownVaultID returns the vault the host shows.
+// GetShownVaultID asks the host which vault its window has open.
 func (l *Launcher) GetShownVaultID(ctx context.Context) (domain.VaultID, error) {
 	return l.recognitions.GetVaultID(ctx, "")
 }
