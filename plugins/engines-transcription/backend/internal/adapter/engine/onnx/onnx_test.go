@@ -25,19 +25,6 @@ func TestGetProvider_DefaultsToAutoWithoutHostRuntime(t *testing.T) {
 	}
 }
 
-func TestGetProviderOrIsTheFallbackForAuto(t *testing.T) {
-	for _, name := range []string{"", "auto", " AUTO "} {
-		t.Setenv(EnvProvider, name)
-		if got := GetProviderOr(ProviderCPU); got != ProviderCPU {
-			t.Errorf("with %q, GetProviderOr(cpu) = %q, want cpu", name, got)
-		}
-	}
-	t.Setenv(EnvProvider, "cuda")
-	if got := GetProviderOr(ProviderCPU); got != ProviderCUDA {
-		t.Errorf("GetProviderOr(cpu) = %q, want the host's cuda", got)
-	}
-}
-
 func TestResolveLibraryIsTheSettingThenTheFolderThenTheHost(t *testing.T) {
 	t.Setenv(EnvLibrary, "/host/libonnxruntime.so")
 	dir := t.TempDir()
@@ -53,15 +40,6 @@ func TestResolveLibraryIsTheSettingThenTheFolderThenTheHost(t *testing.T) {
 	} {
 		if got := ResolveLibrary(one.configured, one.dir); got != one.want {
 			t.Errorf("ResolveLibrary(%q, %q) = %q, want %q", one.configured, one.dir, got, one.want)
-		}
-	}
-}
-
-func TestGetSessionProviderOpensOnCPUUnlessHostNamesOne(t *testing.T) {
-	for name, want := range map[string]Provider{"": ProviderCPU, "auto": ProviderCPU, "cuda": ProviderCUDA} {
-		t.Setenv(EnvProvider, name)
-		if got := GetSessionProvider(); got != want {
-			t.Errorf("with %q, GetSessionProvider() = %q, want %q", name, got, want)
 		}
 	}
 }

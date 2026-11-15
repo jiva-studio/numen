@@ -19,8 +19,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -72,7 +72,7 @@ func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan do
 func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
 	t.Helper()
 	state := NewState(run.NewTasks(), nil, nil)
-	state.Runtime.SetVault(vaultfixture.NewVault(t, map[string]string{
+	state.Runtime.SetVault(vaulttest.NewVault(t, map[string]string{
 		"library/Birds.pdf": "%PDF-1.7 a guide to the birds of the marsh",
 		"notes/Heron.md":    "# Gray Heron\nHerons fish at dusk.\n",
 	}))
@@ -124,15 +124,14 @@ func TestPluginWindowRejectsBadSpanOrMissingFile(t *testing.T) {
 func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 	state, window, _ := newBoundWindow(t)
 	api := newWorkspace(t, state)
-	atStart := 0.0
 
 	if _, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
 		ActiveId: "tab-2",
 		Tabs: []*v1.Tab{
 			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
-			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &v1.TabPlace{Page: 4, PageCount: 80}},
-			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &v1.TabPlace{PositionSeconds: &atStart}},
-			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &v1.TabPlace{Cfi: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: `{"page":4,"pageCount":80}`},
+			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: `{"positionSeconds":0}`},
+			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 		},
 	})); err != nil {
 		t.Fatal(err)
@@ -146,9 +145,9 @@ func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 		ActiveID: "tab-2",
 		Tabs: []windowdomain.Tab{
 			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
-			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &windowdomain.TabPlace{Page: 4, PageCount: 80}},
-			{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &windowdomain.TabPlace{PositionSeconds: &atStart}},
-			{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &windowdomain.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: `{"page":4,"pageCount":80}`},
+			{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: `{"positionSeconds":0}`},
+			{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 		},
 	}
 	if !reflect.DeepEqual(got, want) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -18,7 +18,7 @@ import (
 // TestAToolsOwnFilesAreNotNotes. An editor leaves a lock beside the file it has
 // open, and it answers to the extension of a note.
 func TestAToolsOwnFilesAreNotNotes(t *testing.T) {
-	root := vaultfixture.CreateVault(t, map[string]string{
+	root := vaulttest.CreateVault(t, map[string]string{
 		"Note.md":               "# Note\n",
 		".#Note.md":             "someone@somewhere.1234\n",
 		"backup/.git/config.md": "not a note\n",
@@ -39,11 +39,11 @@ func TestAVaultReturnsWhatToIgnore(t *testing.T) {
 		"Draft.tmp.md":       "# Draft\n",
 	}
 
-	if got := walkWithOptions(t, vaultfixture.CreateVault(t, files, nil), vaultconfig.Options{}); len(got) != 4 {
+	if got := walkWithOptions(t, vaulttest.CreateVault(t, files, nil), vaultconfig.Options{}); len(got) != 4 {
 		t.Fatalf("without rules the vault holds %v", got)
 	}
 
-	root := vaultfixture.CreateVault(t, files, []string{"archive/", "*.tmp.md"})
+	root := vaulttest.CreateVault(t, files, []string{"archive/", "*.tmp.md"})
 	if got := walkWithOptions(t, root, vaultconfig.Options{}); !slices.Equal(got, []string{"Note.md"}) {
 		t.Errorf("walked %v, want only the note that survives both rules", got)
 	}
@@ -54,7 +54,7 @@ func TestAVaultReturnsWhatToIgnore(t *testing.T) {
 // remove the defaults no vault has to request, or a line in a file would expose
 // every dotfile folder in the vault to reads and writes.
 func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
-	root := vaultfixture.CreateVault(t, map[string]string{
+	root := vaulttest.CreateVault(t, map[string]string{
 		"Note.md":               "# Note\n",
 		".#Note.md":             "someone@somewhere.1234\n",
 		"backup/.git/config.md": "not a note\n",
@@ -81,7 +81,7 @@ func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
 // A vault's own negation applies to what the same vault excluded, which is what
 // a negation is for.
 func TestAVaultConsumesBackItsOwnRule(t *testing.T) {
-	root := vaultfixture.CreateVault(t, map[string]string{
+	root := vaulttest.CreateVault(t, map[string]string{
 		"Note.md":      "# Note\n",
 		"Old.tmp.md":   "# Old\n",
 		"Draft.tmp.md": "# Draft\n",
@@ -96,8 +96,8 @@ func TestAVaultConsumesBackItsOwnRule(t *testing.T) {
 // they were written in.
 func TestIgnoringOneVaultDoesNotIgnoreAnother(t *testing.T) {
 	files := map[string]string{"Note.md": "# Note\n", "archive/Old.md": "# Old\n"}
-	quietVault := vaultfixture.CreateVault(t, files, []string{"archive/"})
-	loud := vaultfixture.CreateVault(t, files, nil)
+	quietVault := vaulttest.CreateVault(t, files, []string{"archive/"})
+	loud := vaulttest.CreateVault(t, files, nil)
 
 	if got := walkWithOptions(t, quietVault, vaultconfig.Options{}); len(got) != 1 {
 		t.Errorf("the vault with a rule walked %v", got)
