@@ -53,7 +53,7 @@ describe('following the results of a saved search', () => {
     expect(state.view.value?.items.map((item) => item.title)).toStrictEqual([
       '1911',
       'Night of the gale',
-      'Pier talk',
+      'Pier plan',
     ])
     expect(service.calls).toStrictEqual(['watchResults', 'getResults'])
     expect(service.reads).toStrictEqual([{ path: NOTE_PATH }])
