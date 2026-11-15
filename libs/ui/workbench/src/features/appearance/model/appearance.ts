@@ -24,7 +24,7 @@ import {
 import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../api/head'
 import { createAppearancePreview } from './preview'
 
-export interface WindowAppearanceDeps {
+interface WindowAppearanceDeps {
   core: Themes
   words: AppearanceWords
   write: AppearanceWriter

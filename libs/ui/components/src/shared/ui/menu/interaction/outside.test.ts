@@ -22,12 +22,16 @@ const createElement = (): HTMLElement => {
   return element
 }
 
-const setup = (inside: HTMLElement | null, isActive?: () => boolean) => {
+const setup = (
+  inside: HTMLElement | null,
+  isActive?: () => boolean,
+  getFrom?: () => Element | null,
+) => {
   const onOutside = vi.fn<() => void>()
   const element = shallowRef<HTMLElement | null>(inside)
   const host = defineComponent({
     setup() {
-      useOutsidePress(element, onOutside, isActive)
+      useOutsidePress(element, onOutside, isActive, getFrom)
       return () => null
     },
   })
@@ -42,6 +46,13 @@ describe('a press outside', () => {
     const { onOutside } = setup(createElement())
     press(createElement())
     expect(onOutside).toHaveBeenCalledTimes(1)
+  })
+
+  it('is not reported on the element that opened it, which answers the press itself', () => {
+    const from = createElement()
+    const { onOutside } = setup(createElement(), undefined, () => from)
+    press(from)
+    expect(onOutside).not.toHaveBeenCalled()
   })
 
   it('is reported where no element is drawn yet', () => {

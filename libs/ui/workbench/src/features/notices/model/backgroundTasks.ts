@@ -17,7 +17,7 @@ export interface BackgroundTaskHostDeps {
 }
 
 /** The background tasks of a window, as the plugin that lists them reads and acts on them. */
-export interface BackgroundTaskHost {
+interface BackgroundTaskHost {
   /** Calls the handler with the tasks at once and again on every change. */
   watch(handler: (tasks: readonly BackgroundTask[]) => void): { dispose(): void }
   /** Asks the core to stop the task; settles once it has, and rejects with why it did not. */

@@ -165,17 +165,14 @@ type modelsAnswer struct {
 }
 
 // ListModels lists the models of the service that fit the operations of a setting of rows. OpenRouter
-// labels its models, so the list holds its embedding models for a setting used for llm.embed alone and its
-// models of text for a setting used for llm.complete or llm.chat, and none for any other; the other
-// services give no label, and every model is listed. A model with no declared output modalities counts as
-// a model of text, because OpenRouter leaves the list out for some.
+// labels its models, so the list holds its embedding models (/embeddings/models) for a setting used for
+// llm.embed alone, its rerank models (/models?output_modalities=rerank) for a setting used for llm.rerank
+// alone, its models of text for a setting used for llm.complete or llm.chat, and none for any other; the
+// other services give no label, and every model is listed. A model with no declared output modalities counts
+// as a model of text, because OpenRouter leaves the list out for some.
 func (g *Gateway) ListModels(ctx context.Context, call connection.Call, limit time.Duration, operations []string) ([]connection.Option, error) {
-	isText := slices.Contains(operations, llm.OperationComplete) || slices.Contains(operations, llm.OperationChat)
-	isEmbed := slices.Contains(operations, llm.OperationEmbed)
-	path, isLabeled := "/models", call.Type == servicetype.OpenRouter
-	if isLabeled && isEmbed && !isText {
-		path = "/embeddings/models"
-	} else if isLabeled && !isText {
+	path, isKept, isListed := getModelsQuery(call.Type, operations)
+	if !isListed {
 		return []connection.Option{}, nil
 	}
 	var answer modelsAnswer
@@ -184,15 +181,36 @@ func (g *Gateway) ListModels(ctx context.Context, call connection.Call, limit ti
 	}
 	models := make([]connection.Option, 0, len(answer.Data))
 	for _, one := range answer.Data {
-		if isLabeled && isText && !makesText(one.Architecture.OutputModalities) {
-			continue
+		if isKept(one.Architecture.OutputModalities) {
+			models = append(models, connection.Option{Value: one.ID, Title: cmp.Or(one.Name, one.ID)})
 		}
-		models = append(models, connection.Option{Value: one.ID, Title: cmp.Or(one.Name, one.ID)})
 	}
 	slices.SortFunc(models, func(a, b connection.Option) int { return strings.Compare(a.Value, b.Value) })
 	return models, nil
 }
 
+func getModelsQuery(typeID string, operations []string) (path string, isKept func([]string) bool, isListed bool) {
+	if typeID != servicetype.OpenRouter {
+		return "/models", isAnyModel, true
+	}
+	switch {
+	case slices.Contains(operations, llm.OperationComplete) || slices.Contains(operations, llm.OperationChat):
+		return "/models", makesText, true
+	case slices.Contains(operations, llm.OperationEmbed):
+		return "/embeddings/models", isAnyModel, true
+	case slices.Contains(operations, llm.OperationRerank):
+		return "/models?output_modalities=rerank", makesRerank, true
+	default:
+		return "", nil, false
+	}
+}
+
+func isAnyModel([]string) bool { return true }
+
 func makesText(modalities []string) bool {
 	return len(modalities) == 0 || slices.Contains(modalities, "text")
+}
+
+func makesRerank(modalities []string) bool {
+	return slices.Contains(modalities, "rerank")
 }
