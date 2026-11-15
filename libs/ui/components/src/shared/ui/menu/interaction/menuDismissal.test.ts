@@ -53,9 +53,9 @@ describe('what dismisses the menu', () => {
     const from = createElement()
     const { dismiss, ground } = setup(null, undefined, () => from)
     ground.listen()
-    from.appendChild(document.createElement('span')).dispatchEvent(
-      new Event('pointerdown', { bubbles: true, composed: true }),
-    )
+    from
+      .appendChild(document.createElement('span'))
+      .dispatchEvent(new Event('pointerdown', { bubbles: true, composed: true }))
     expect(dismiss).not.toHaveBeenCalled()
   })
 

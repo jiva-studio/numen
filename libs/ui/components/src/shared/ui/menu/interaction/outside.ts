@@ -1,5 +1,6 @@
 /**
- * A press that lands outside an element, reported while the element is active.
+ * A press that lands outside an element, reported while the element is active. A
+ * press on the element that opened it is left to that element.
  *
  * The window is listened to from mount to unmount; a press with no element
  * drawn yet is outside.
@@ -22,9 +23,11 @@ export function useOutsidePress(
   element: Readonly<ShallowRef<HTMLElement | null>>,
   onOutside: () => void,
   isActive: () => boolean = () => true,
+  getFrom?: () => Element | null | undefined,
 ): void {
   const onPress = (event: Event): void => {
     if (!isActive() || isInside(element.value, event)) return
+    if (isInside(getFrom?.() ?? null, event)) return
     onOutside()
   }
 

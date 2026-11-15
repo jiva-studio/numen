@@ -14,13 +14,14 @@ export interface SearchableListProps {
   hasAction?: boolean
   needsQuery?: boolean
   chosen?: readonly string[] | undefined
+  /** The element that opened the list: a press on it is left to it, so it can close the list. */
+  from?: HTMLElement | null
 }
 
 export interface SearchableListPopupProps {
   at: Position
   asking?: number
   viewport?: Size | null
-  from?: HTMLElement | null
 }
 
 export interface SearchableListSlots {

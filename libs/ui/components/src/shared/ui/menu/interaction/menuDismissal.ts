@@ -27,7 +27,7 @@ export function useMenuDismissal(
   menu: Readonly<ShallowRef<HTMLElement | null>>,
   dismiss: () => void,
   isIgnored?: (event: Event) => boolean,
-  getFrom?: () => Element | null,
+  getFrom?: () => Element | null | undefined,
 ): MenuDismissalState {
   /**
    * A pointer event or scroll outside the menu. A scroll of the menu's own list is

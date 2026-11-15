@@ -49,7 +49,7 @@ const frame = shallowRef<HTMLElement | null>(null)
 
 /** What the list itself takes: everything but where it is placed. */
 const listProps = computed(() => {
-  const { at: _at, asking: _asking, viewport: _viewport, from: _from, ...own } = props
+  const { at: _at, asking: _asking, viewport: _viewport, ...own } = props
   return own
 })
 
