@@ -102,6 +102,9 @@ func TestFailingProviderKeepsTheLastGoodResultsAndRetriesAfterTheCooldown(t *tes
 		t.Errorf("failed at %s with %+v, stale since %s, want the problem now and the search still stale",
 			formatMark(failed.FailedAt), failed.Errors, formatMark(failed.StaleSince))
 	}
+	if failed.Failure != "the reranking service did not answer" {
+		t.Errorf("failure = %q, want the error of the run", failed.Failure)
+	}
 
 	w.changeMooringChunk()
 	starts := w.getStartCount()
