@@ -50,12 +50,6 @@ func Parse(address string, hasKey bool) (*url.URL, error) {
 	return parsed, nil
 }
 
-// Check reports why Parse refuses the address, or nil.
-func Check(address string, hasKey bool) error {
-	_, err := Parse(address, hasKey)
-	return err
-}
-
 // CheckResolved refuses an IP address a host name resolved to when it is not allowed, or, where a key
 // travels over http, when it is not a loopback address.
 func CheckResolved(ip netip.Addr, isLoopbackRequired bool) error {

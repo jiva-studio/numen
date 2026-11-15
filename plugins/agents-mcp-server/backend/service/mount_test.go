@@ -216,17 +216,12 @@ func TestStreamableHTTPEndpoint(t *testing.T) {
 		t.Fatalf("NewServer failed: %v", err)
 	}
 
-	serveOnLoopback(t, srv)
+	httpURL := serveOnLoopback(t, srv)
 	defer func() {
 		if err := srv.Close(t.Context()); err != nil {
 			t.Error(err)
 		}
 	}()
-
-	httpURL := srv.GetHTTPURL()
-	if httpURL == "" {
-		t.Fatal("expected non-empty HTTP URL")
-	}
 
 	authClient := &http.Client{
 		Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
