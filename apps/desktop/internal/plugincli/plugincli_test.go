@@ -241,8 +241,10 @@ func TestPluginPackage_ContainsOnlyShippedFiles(t *testing.T) {
 	}
 
 	inBinOut := filepath.Join(pluginDir, "bin", "out.bundle")
-	if _, err := Package(pluginDir, inBinOut, &bytes.Buffer{}); err != nil {
-		t.Fatalf("unexpected package error for bin output: %v", err)
+	for range 2 {
+		if _, err := Package(pluginDir, inBinOut, &bytes.Buffer{}); err != nil {
+			t.Fatalf("unexpected package error for bin output: %v", err)
+		}
 	}
 	binReader, err := zip.OpenReader(inBinOut)
 	if err != nil {

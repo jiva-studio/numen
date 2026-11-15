@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
 // NoteChanges has the use cases that rename, move and remove the notes of a vault, repairing the
@@ -29,13 +30,9 @@ type Arranger struct {
 	Window      NoteChanges
 	WindowVault func() (domain.Vault, bool)
 	Checks      func(ctx context.Context, v domain.Vault, named ...domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
-	Problems    problemQueries
+	Problems    *vaults.GetParseProblems
 
 	session sessionAccess
-}
-
-type problemQueries interface {
-	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 }
 
 func (a Arranger) getChanges(v domain.Vault) NoteChanges {
@@ -150,5 +147,5 @@ func (a Arranger) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, 
 	if err != nil || a.Problems == nil {
 		return nil, err
 	}
-	return a.Problems.GetParseProblems(ctx, v.ID)
+	return a.Problems.Execute(ctx, v)
 }

@@ -13,7 +13,7 @@ export {
   type ContributionMatch,
   type PluginStatus,
 } from './loading'
-export type { LoaderHost } from './host'
+export type { LoaderHost, PluginParts } from './host'
 export type { Manifest } from '@numen/core-client'
 export {
   adoptPluginStyle,
@@ -48,6 +48,7 @@ export { createPluginTasks, type WindowTask } from './pluginTasks'
 export type { HealthReports } from './pluginHealth'
 export {
   createCustomTabKind,
+  pickCustomTabParts,
   createPluginHost,
   createPluginPaneWrapper,
   createWindowHost,
@@ -62,6 +63,14 @@ export {
   type PluginContextHost,
   type PluginHost,
   type PluginHostDeps,
+  type HostWindow,
+  type HostPlugins,
+  type HostCommands,
+  type HostSlots,
+  type HostKinds,
+  type HostTabs,
+  type HostVault,
+  type HostWork,
   type PluginPaletteCommand,
   type SlotCommandFinder,
   type SourceReader,

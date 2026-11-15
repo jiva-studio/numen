@@ -74,7 +74,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	countingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		endpoint.callCount.Add(1)
 		defer endpoint.callCount.Add(-1)
-		if pluginID, err := endpoint.authenticate(r.Header.Get("Authorization")); err == nil {
+		if pluginID, err := endpoint.Authenticate(r.Header.Get("Authorization")); err == nil {
 			caller := plugin.Caller{PluginID: pluginID}
 			r = r.WithContext(plugin.WithCaller(r.Context(), caller))
 		}
@@ -119,7 +119,7 @@ func (e *Endpoint) getVault(header http.Header) (*vault.Access, error) {
 	return vault.Select(e.callers.Lent.GetPluginVault(), header)
 }
 
-func (e *Endpoint) authenticate(header string) (string, error) {
+func (e *Endpoint) Authenticate(header string) (string, error) {
 	token, found := strings.CutPrefix(header, bearerPrefix)
 	pluginID, recognized := e.callers.Identity.GetPluginIDByToken(token)
 	if !found || !recognized {
@@ -129,7 +129,7 @@ func (e *Endpoint) authenticate(header string) (string, error) {
 }
 
 func (e *Endpoint) Authorize(header, permission string) (string, error) {
-	pluginID, err := e.authenticate(header)
+	pluginID, err := e.Authenticate(header)
 	if err != nil {
 		return "", err
 	}

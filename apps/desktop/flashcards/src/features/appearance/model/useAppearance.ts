@@ -5,13 +5,20 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { createWindowAppearance, useAppearancePalette, type NoticeQueue } from '@numen/workbench'
-import { listPlugins } from '@/entities/plugin'
+import type { PluginLister } from '@/entities/plugin'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
-import { themes } from '../api/theme'
+import type { ThemeClient } from '../api/theme'
 import { WORDS } from '../words'
 
-export function useAppearance(notices: NoticeQueue) {
+/** The calls the appearance reads the themes and the names of the plugins through. */
+export interface AppearanceApi {
+  readonly themes: ThemeClient
+  readonly listPlugins: PluginLister
+}
+
+export function useAppearance(api: AppearanceApi, notices: NoticeQueue) {
+  const { themes, listPlugins } = api
   const showError = (text: string) => notices.show(WINDOW_SOURCE, text, 'error')
   const pluginNames = ref<ReadonlyMap<string, string>>(new Map())
   const appearance = createWindowAppearance({ core: themes, words: WORDS, write: showError })

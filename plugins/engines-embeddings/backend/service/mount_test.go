@@ -1,25 +1,25 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"testing/synctest"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 )
 
-// The handler of a host that links the plugin in serves the local model it is configured for.
-func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
+func TestTheMountedPluginServesTheModelItsConfigureNames(t *testing.T) {
 	setEmptyModelDir(t)
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": linkedToken})
-	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
-	}
+	handler := newMountedHandler(t, map[string]string{hostcall.PluginTokenEnv: linkedToken})
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
@@ -35,14 +35,66 @@ func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
 }
 
 func TestMountRegistersCloseCallback(t *testing.T) {
-	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
-	s := server.New()
-	if err := Mount(s); err != nil {
-		t.Fatalf("Mount: %v", err)
+	synctest.Test(t, func(t *testing.T) {
+		t.Setenv("NUMEN_TEST_MOCK_ML", "true")
+		var mounted *server.Server
+		handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": linkedToken}, func(s *server.Server) error {
+			mounted = s
+			return Mount(s)
+		})
+		if err != nil {
+			t.Fatalf("NewLinkedHandler: %v", err)
+		}
+		t.Cleanup(func() {
+			if err := mounted.Close(); err != nil {
+				t.Errorf("mounted.Close: %v", err)
+			}
+		})
+
+		cfgReq, err := http.NewRequestWithContext(t.Context(), http.MethodPost,
+			"http://plugin/numen.v1.PluginLifecycleService/Configure",
+			strings.NewReader(`{"config":{"source":"local"}}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		cfgReq.Header.Set("Content-Type", "application/json")
+		cfgReq.Header.Set("Authorization", "Bearer "+linkedToken)
+		cfgRec := httptest.NewRecorder()
+		handler.ServeHTTP(cfgRec, cfgReq)
+		if cfgRec.Code != http.StatusOK {
+			t.Fatalf("Configure status = %d, want 200", cfgRec.Code)
+		}
+		synctest.Wait()
+
+		t.Setenv("NUMEN_TEST_MOCK_OPEN_HOLD_MS", "60000")
+		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
+		defer cancel()
+		embReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
+			"http://plugin/numen.v1.SearchSourceService/EmbedQueries",
+			strings.NewReader(`{"queries":["boat"]}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		embReq.Header.Set("Content-Type", "application/json")
+		embReq.Header.Set("Authorization", "Bearer "+linkedToken)
+		embRec := httptest.NewRecorder()
+		handler.ServeHTTP(embRec, embReq)
+		if embRec.Code != http.StatusOK {
+			t.Fatalf("EmbedQueries status = %d: %s", embRec.Code, embRec.Body.String())
+		}
+	})
+}
+
+func newMountedHandler(t *testing.T, vars map[string]string) http.Handler {
+	t.Helper()
+	for name, value := range vars {
+		t.Setenv(name, value)
 	}
-	if err := s.Close(); err != nil {
-		t.Fatalf("s.Close: %v", err)
+	handler, err := servertest.NewHandler(vars, Mount)
+	if err != nil {
+		t.Fatalf("NewHandler: %v", err)
 	}
+	return handler
 }
 
 func setEmptyModelDir(t *testing.T) {
@@ -110,10 +162,7 @@ func describeStatus(t *testing.T, web *httptest.Server) int {
 func TestAMissingLocalModelIsReportedAsTheSourceItemUntilAKnownModelAnswers(t *testing.T) {
 	setEmptyModelDir(t)
 	hostHealth := healthtest.NewHost(t)
-	handler, err := NewHandler(hostHealth.Vars(linkedToken))
-	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
-	}
+	handler := newMountedHandler(t, hostHealth.Vars(linkedToken))
 	web := httptest.NewServer(handler)
 	defer web.Close()
 	lifecycle := servertest.NewLifecycleClient(web.Client(), web.URL, linkedToken)

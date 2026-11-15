@@ -1,27 +1,25 @@
 /**
  * Plugin host managing dynamic registration of readers, tab kinds, and commands.
  */
-import { shallowRef } from 'vue'
 import type {
-  PluginContext,
   SettingsViewRegistration,
   VaultChangeEvent,
   DropRegistry,
   JsonValue,
   SlotHost,
 } from '@numen/plugin-sdk'
-import { ReportedError, type Manifest } from '@numen/core-client'
-import { createAppInfo } from '../appInfo'
+import type { Manifest } from '@numen/core-client'
 import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
 import { createSlotRegistry, type DeclaredSlotEntry } from '../slots'
 import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views'
 import { createViewRegistry, type ViewRegistry } from '../views'
-import { createPluginContext } from './context'
+import type { PluginParts } from '../host'
+import { createPluginParts } from './context'
 import { isNoteEditorKind } from './customTabBuffer'
 import { addListener, notifyListeners, requestPluginStart } from './events'
 import { createCommandApi } from './commandApi'
-import { createWhenReader, type WhenReader } from '../when'
+import { createWhenReader } from '../when'
 import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
 import { APP_COMMAND_OWNER } from '../commandId'
 import { createKeybindingRegistry, type KeybindingSource } from '../keybindings'
@@ -29,18 +27,26 @@ import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
   addEntry,
+  createHostRegistry,
   disposeAllEntries,
   disposePluginEntry,
   setStarting,
   type HostRegistry,
 } from './registry'
-import { createVaultServiceBridge, createWindowServiceBridge } from './bridge/services'
+import {
+  createUiServiceBridge,
+  createVaultServiceBridge,
+  createWorkServiceBridge,
+} from './bridge/services'
 import type {
   ContextEventHost,
   ContextRegistrationHost,
   ContextSettingHost,
   ContextTabHost,
   ContextViewHost,
+  HostDeps,
+  HostPlugins,
+  HostSlots,
   PluginContextHost,
   PluginHostDeps,
 } from './types'
@@ -51,34 +57,38 @@ function getEntryKey(pluginId: string, id: string): string {
   return `${pluginId}:${id}`
 }
 
-function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): ContextEventHost {
+function createEventBridge(
+  deps: Pick<PluginHostDeps, 'window'>,
+  registry: HostRegistry,
+): ContextEventHost {
   return {
     onVaultChange: (pluginId, handler) =>
-      addListener(registry.vaultListeners, { pluginId, handler }),
-    onFileSelect: (pluginId, handler) => addListener(registry.fileListeners, { pluginId, handler }),
-    emitVaultChange: (_pluginId, event) => notifyListeners(registry.vaultListeners, event, deps),
-    emitFileSelect: (_pluginId, event) => notifyListeners(registry.fileListeners, event, deps),
+      addListener(registry.listeners.vault, { pluginId, handler }),
+    onFileSelect: (pluginId, handler) =>
+      addListener(registry.listeners.file, { pluginId, handler }),
+    emitVaultChange: (_pluginId, event) => notifyListeners(registry.listeners.vault, event, deps),
+    emitFileSelect: (_pluginId, event) => notifyListeners(registry.listeners.file, event, deps),
   }
 }
 
 function createRegistrationBridge(
-  deps: PluginHostDeps,
+  deps: Pick<PluginHostDeps, 'window' | 'kinds' | 'tabs' | 'vault'>,
   registry: HostRegistry,
 ): ContextRegistrationHost {
   return {
     registerReader: (pluginId, registration) =>
-      registerReaderEntry(deps, registry, {
+      registerReaderEntry(deps, registry.kinds, {
         pluginId,
         registration,
-        getContext: () => registry.contexts.get(pluginId),
+        getContext: () => registry.plugins.contexts.get(pluginId)?.plugin,
       }),
     registerTabKind: (pluginId, registration) =>
-      registerTabKindEntry(deps, registry, {
+      registerTabKindEntry(deps, registry.kinds, {
         pluginId,
         registration,
-        getContext: () => registry.contexts.get(pluginId),
+        getContext: () => registry.plugins.contexts.get(pluginId)?.plugin,
         isNoteEditor: isNoteEditorKind(
-          registry.contextManifests?.value.get(pluginId),
+          registry.plugins.contextManifests?.value.get(pluginId),
           registration.kind,
         ),
       }),
@@ -98,19 +108,25 @@ function createRegistrationBridge(
   }
 }
 
-function createSettingBridge(deps: PluginHostDeps): ContextSettingHost {
+const NO_PLUGINS: HostPlugins = {}
+
+const NO_SLOTS: HostSlots = {}
+
+function createSettingBridge({
+  plugins = NO_PLUGINS,
+}: Pick<PluginHostDeps, 'plugins'>): ContextSettingHost {
   return {
     getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
-      deps.getSetting ? (deps.getSetting(pluginId, key) as T | undefined) : undefined,
+      plugins.getSetting ? (plugins.getSetting(pluginId, key) as T | undefined) : undefined,
     onSettingChange: <T extends JsonValue = JsonValue>(
       pluginId: string,
       key: string,
       handler: (value: T) => void | Promise<void>,
     ) => {
       // Without a host subscription there is nothing to unsubscribe.
-      if (!deps.onSettingChange) return { dispose: () => undefined }
+      if (!plugins.onSettingChange) return { dispose: () => undefined }
       return {
-        dispose: deps.onSettingChange(
+        dispose: plugins.onSettingChange(
           pluginId,
           key,
           handler as (v: JsonValue | undefined) => void | Promise<void>,
@@ -131,11 +147,11 @@ function createViewBridge(shared: SharedRegistries): ContextViewHost {
   }
 }
 
-function createTabBridge(deps: PluginHostDeps): ContextTabHost {
+function createTabBridge({ tabs }: Pick<PluginHostDeps, 'tabs'>): ContextTabHost {
   return {
-    openTab: (kind, target) => deps.openTab?.(kind, target),
-    navigateTab: (kind, target) => deps.navigateTab?.(kind, target),
-    closeTab: (id) => deps.closeTab?.(id),
+    openTab: (kind, target) => tabs?.openTab?.(kind, target),
+    navigateTab: (kind, target) => tabs?.navigateTab?.(kind, target),
+    closeTab: (id) => tabs?.closeTab?.(id),
   }
 }
 
@@ -154,25 +170,18 @@ function createHostContextBridge(
   shared: SharedRegistries,
 ): PluginContextHost {
   return {
-    info: {
-      app: deps.app ?? createAppInfo({ getPlatform: () => 'linux' }),
-      target: deps.target,
-      openExternal: (url) =>
-        deps.openExternal
-          ? deps.openExternal(url)
-          : Promise.reject(new ReportedError('This window cannot open web links')),
-    },
     registration: createRegistrationBridge(deps, registry),
     views: createViewBridge(shared),
     settings: createSettingBridge(deps),
     events: createEventBridge(deps, registry),
     tabs: createTabBridge(deps),
     vault: createVaultServiceBridge(deps),
-    window: createWindowServiceBridge(deps, {
+    ui: createUiServiceBridge(deps, {
       slots: shared.slots,
-      manifests: registry.manifests,
+      manifests: registry.plugins.manifests,
       readSlotEntries: shared.readSlotEntries,
     }),
+    work: createWorkServiceBridge(deps),
   }
 }
 
@@ -187,11 +196,17 @@ function readSettingsViews(
   return views
 }
 
-const hasDeclaredSettingsViews = (deps: PluginHostDeps, pluginId: string): boolean =>
-  (deps.findPluginsOf?.((one) => one.id === pluginId && one.settingsViews.length > 0) ?? [])
+const hasDeclaredSettingsViews = (
+  { plugins }: Pick<PluginHostDeps, 'plugins'>,
+  pluginId: string,
+): boolean =>
+  (plugins?.findPluginsOf?.((one) => one.id === pluginId && one.settingsViews.length > 0) ?? [])
     .length > 0
 
-function createRegisteredApi(deps: PluginHostDeps, registry: HostRegistry) {
+function createRegisteredApi(
+  deps: Pick<PluginHostDeps, 'plugins' | 'window'>,
+  registry: HostRegistry,
+) {
   return {
     /** The settings views a plugin registered, by view id; reactive. */
     getRegisteredSettingsViews: (pluginId: string) => readSettingsViews(registry, pluginId),
@@ -205,17 +220,21 @@ function createRegisteredApi(deps: PluginHostDeps, registry: HostRegistry) {
         requestPluginStart(deps, pluginId)
       return views
     },
-    getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
-    getRegisteredTabKinds: () => [...registry.tabKinds.values()].map((t) => t.reg),
+    getRegisteredReaders: () => [...registry.kinds.readers.values()].map((r) => r.reg),
+    getRegisteredTabKinds: () => [...registry.kinds.tabKinds.values()].map((t) => t.reg),
     getRegisteredCommands: () => [...registry.commands.value.values()].map((c) => c.reg),
   }
 }
 
-function createKeybindingApi(deps: PluginHostDeps & { readonly whenReader: WhenReader }) {
+function createKeybindingApi({
+  window,
+  commands,
+  slots,
+}: Pick<HostDeps, 'window' | 'commands' | 'slots'>) {
   const keybindings = createKeybindingRegistry({
-    isMac: () => deps.app?.platform === 'darwin',
-    whenReader: deps.whenReader,
-    report: (owner, message) => deps.reportSlotIssue?.(owner, message, 'warning'),
+    isMac: () => window.app?.platform === 'darwin',
+    whenReader: commands.whenReader,
+    report: (owner, message) => slots?.reportSlotIssue?.(owner, message, 'warning'),
   })
   keybindings.register(APP_COMMAND_OWNER, APP_KEYBINDINGS)
   const owners = new Set<string>()
@@ -250,32 +269,31 @@ interface LifecycleParts {
 
 function createLifecycleApi({ registry, contextHost, keybindings, entries }: LifecycleParts) {
   return {
-    createContext: (pluginId: string, manifest?: Manifest): PluginContext => {
-      let ctx = registry.contexts.get(pluginId)
-      if (!ctx) {
-        const effectiveManifest = manifest ?? registry.manifests.get(pluginId)
-        ctx = createPluginContext(pluginId, contextHost, effectiveManifest)
-        registry.contexts.set(pluginId, ctx)
-        if (effectiveManifest && registry.contextManifests) {
-          registry.contextManifests.value = new Map(registry.contextManifests.value).set(
-            pluginId,
-            effectiveManifest,
-          )
+    createContext: (pluginId: string, manifest?: Manifest): PluginParts => {
+      let parts = registry.plugins.contexts.get(pluginId)
+      if (!parts) {
+        const effectiveManifest = manifest ?? registry.plugins.manifests.get(pluginId)
+        parts = createPluginParts(pluginId, contextHost, effectiveManifest)
+        registry.plugins.contexts.set(pluginId, parts)
+        if (effectiveManifest && registry.plugins.contextManifests) {
+          registry.plugins.contextManifests.value = new Map(
+            registry.plugins.contextManifests.value,
+          ).set(pluginId, effectiveManifest)
         }
-        registry.disposed.delete(pluginId)
-        registry.activated.value = new Set(registry.activated.value).add(pluginId)
+        registry.plugins.disposed.delete(pluginId)
+        registry.plugins.activated.value = new Set(registry.plugins.activated.value).add(pluginId)
       }
-      return ctx
+      return parts
     },
-    markPluginStarting: (pluginId: string): void => setStarting(registry, pluginId, true),
-    markPluginStarted: (pluginId: string): void => setStarting(registry, pluginId, false),
+    markPluginStarting: (pluginId: string): void => setStarting(registry.plugins, pluginId, true),
+    markPluginStarted: (pluginId: string): void => setStarting(registry.plugins, pluginId, false),
     registerManifest: (pluginId: string, manifest: Manifest): void => {
-      if (registry.contexts.has(pluginId)) {
+      if (registry.plugins.contexts.has(pluginId)) {
         throw new Error(
           `Cannot replace the manifest for plugin "${pluginId}" while its context is cached`,
         )
       }
-      registry.manifests.set(pluginId, manifest)
+      registry.plugins.manifests.set(pluginId, manifest)
       keybindings.registerKeybindings(pluginId, manifest.contributes?.keybindings ?? [])
     },
     disposePlugin: (pluginId: string) => {
@@ -292,47 +310,34 @@ function createLifecycleApi({ registry, contextHost, keybindings, entries }: Lif
 }
 
 export function createPluginHost(windowDeps: PluginHostDeps) {
-  const whenReader = windowDeps.whenReader ?? createWhenReader()
-  const deps = { ...windowDeps, whenReader }
-  const registry: HostRegistry = {
-    readers: new Map(),
-    tabKinds: new Map(),
-    commands: shallowRef(new Map()),
-    handlers: shallowRef(new Map()),
-    settingsViews: shallowRef(new Map()),
-    contexts: new Map(),
-    manifests: new Map(),
-    contextManifests: shallowRef(new Map()),
-    activated: shallowRef(new Set()),
-    starting: shallowRef(new Set()),
-    disposed: new Set(),
-    reportedIssues: new Set(),
-    vaultListeners: new Set(),
-    fileListeners: new Set(),
-  }
+  const whenReader = windowDeps.commands?.whenReader ?? createWhenReader()
+  const deps: HostDeps = { ...windowDeps, commands: { ...windowDeps.commands, whenReader } }
+  const { slots: slotDeps = NO_SLOTS } = deps
+  const registry = createHostRegistry()
   const slotViews = createSlotViewRegistry(
-    deps.reportViewIssue ? { reportIssue: deps.reportViewIssue } : {},
+    slotDeps.reportViewIssue ? { reportIssue: slotDeps.reportViewIssue } : {},
   )
   const keybindings = createKeybindingApi(deps)
   const commands = createCommandApi(deps, registry, keybindings.registry)
-  const findSlotCommand = deps.createSlotCommandFinder?.({
+  const findSlotCommand = slotDeps.createSlotCommandFinder?.({
     getPluginCommands: commands.getPaletteCommands,
     hasPluginItems: commands.hasKnownItems,
   })
-  const readSlotEntries = () => deps.getSlotEntries?.(registry.contextManifests?.value ?? new Map())
+  const readSlotEntries = () =>
+    slotDeps.getSlotEntries?.(registry.plugins.contextManifests?.value ?? new Map())
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
     getEntries: readSlotEntries,
     findCommand: (command, target) => findSlotCommand?.(command, target),
     findView: slotViews.findView,
-    ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
-    ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
+    ...(slotDeps.reportSlotIssue ? { reportIssue: slotDeps.reportSlotIssue } : {}),
+    ...(slotDeps.getSlotWhenValues ? { getWhenValues: slotDeps.getSlotWhenValues } : {}),
     whenReader,
     requestPlugin: (pluginId) => requestPluginStart(deps, pluginId),
   })
   const contextHost = createHostContextBridge(deps, registry, {
-    views: createViewRegistry(deps),
-    drops: createDropRegistry(deps),
+    views: createViewRegistry(deps.plugins),
+    drops: createDropRegistry(deps.plugins),
     slotViews,
     slots,
     readSlotEntries,
@@ -350,7 +355,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     contextHost,
     /** A change to the vault, delivered to every plugin that subscribed to vault changes. */
     notifyVaultChange: (event: VaultChangeEvent): void =>
-      notifyListeners(registry.vaultListeners, event, deps),
+      notifyListeners(registry.listeners.vault, event, deps),
   }
 }
 

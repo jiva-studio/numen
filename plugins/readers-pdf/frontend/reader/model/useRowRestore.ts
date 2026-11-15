@@ -33,9 +33,9 @@ export function useRowRestore(sources: RowRestoreSources): RowRestore {
 
   /**
    * How many puts of the row back wait for a frame. The browser queues a scroll event when the row
-   * scrolls and delivers it with the next frame. An event queued before the row was hidden or moved
-   * reaches the handler after the browser has scrolled the row to its start, and reports the start as
-   * a place the person scrolled to.
+   * scrolls and delivers it with the next frame. An event queued before the row was hidden, moved or
+   * resized reaches the handler before the row is back on its page, and reports that place as one
+   * the person scrolled to.
    */
   let pendingPuts = 0
 
@@ -91,9 +91,22 @@ export function useRowRestore(sources: RowRestoreSources): RowRestore {
     })
   })
 
-  // A viewport that is reported again was hidden or moved, and the browser
+  // A viewport that is reported again at the same width was hidden or moved, and the browser
   // scrolled its row to the start without a scroll event.
-  watch(viewport, putRowBack)
+  // A viewport of another width puts another page under its center line at the same offset, so the
+  // row is scrolled to the current page again once the new width is drawn.
+  watch(viewport, (now, was) => {
+    if (now.width === was.width || was.width === 0) {
+      putRowBack()
+      return
+    }
+    if (pendingZoom) pendingZoom.anchor = undefined
+    pendingPuts += 1
+    getPaint()(() => {
+      pendingPuts -= 1
+      stand(getAt(), 'auto')
+    })
+  })
 
   return {
     measure: () => {

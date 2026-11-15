@@ -2,7 +2,10 @@ package cache_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -263,8 +266,33 @@ func TestErrorHandlerReceivesDiskWriteError(t *testing.T) {
 	if len(reported) != 1 {
 		t.Fatalf("reported %d errors, want 1: %v", len(reported), reported)
 	}
+	var pathErr *fs.PathError
+	if !errors.As(reported[0], &pathErr) || pathErr.Op != "mkdir" {
+		t.Errorf("reported %v, want the error of creating the cache directory", reported[0])
+	}
 	if v, ok, err := c.Get(t.Context(), "k1", nil); err != nil || !ok || !slices.Equal(v, []string{"m1"}) {
 		t.Errorf("the memory entry = %v, %v, %v, want it kept", v, ok, err)
+	}
+}
+
+func TestErrorHandlerReceivesAValueJSONCannotEncode(t *testing.T) {
+	dir := t.TempDir()
+	var reported []error
+	c := cache.New[float64](
+		"ratios",
+		cache.WithDir(dir),
+		cache.WithDisk(true),
+		cache.WithErrorHandler(func(err error) { reported = append(reported, err) }),
+	)
+
+	c.Put("k1", math.NaN())
+
+	var unsupported *json.UnsupportedValueError
+	if len(reported) != 1 || !errors.As(reported[0], &unsupported) {
+		t.Fatalf("reported %v, want one JSON encoding error", reported)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "ratios.json")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the cache file exists after a failed encoding: %v", err)
 	}
 }
 

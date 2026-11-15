@@ -79,7 +79,7 @@ func TestReadFillsEveryResultOfASourceScatteredThroughFound(t *testing.T) {
 		vault.content[s] = proseOf(s, 10)
 	}
 
-	u := Search{readers: fakeVaultReaders{reader: vault}}
+	u := Search{readers: fakeVaultReaders{reader: vault}, texts: noTextReaders{}}
 
 	// "a.md" is first and last; the four other sources lie between its two
 	// search results, so it is read once and requested again only from the result of
@@ -139,7 +139,7 @@ func TestReadFillsEveryResultOfASourceScatteredThroughFound(t *testing.T) {
 func TestReadDropsAResultOfASourceTheVaultNoLongerContains(t *testing.T) {
 	ctx := t.Context()
 	vault := &fakeVault{content: map[string]string{"here.md": "here.md"}, calls: map[string]int{}}
-	u := Search{readers: fakeVaultReaders{reader: vault}}
+	u := Search{readers: fakeVaultReaders{reader: vault}, texts: noTextReaders{}}
 
 	found := []domain.SearchResult{
 		{ChunkID: "1", Path: "gone.md", Start: 0, Length: 4},

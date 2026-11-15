@@ -35,15 +35,6 @@ func NewSearchClientFromEnv() (*SearchClient, error) {
 	return NewSearchClient(addr), nil
 }
 
-// NewSearchClientFromVars is NewSearchClientFromEnv over the variables given.
-func NewSearchClientFromVars(vars map[string]string) (*SearchClient, error) {
-	addr, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return NewSearchClient(addr), nil
-}
-
 func NewSearchClient(endpoint hostcall.Endpoint) *SearchClient {
 	return NewSearchClientOver(hostcall.HTTPClient(), endpoint)
 }

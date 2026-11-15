@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func waitForIndex(t *testing.T, queries *query.Scenarios, v domain.Vault, path string) {
+func waitForIndex(t *testing.T, queries *query.UseCases, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
 		titles, err := queries.Browse.GetTitles.Execute(t.Context(), v, []string{path})

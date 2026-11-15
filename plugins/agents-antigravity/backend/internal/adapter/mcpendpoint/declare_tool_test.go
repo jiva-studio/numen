@@ -150,3 +150,38 @@ func TestTheEndpointAnnotatesAToolFromItsEffectAndItsPermissions(t *testing.T) {
 		})
 	}
 }
+
+func TestReadResultMapsToolErrorsAndStructuredFallback(t *testing.T) {
+	if got := readResult("pond_read", &tools.CallResponse{Error: tools.ErrorCodeUnknownTool}); !got.IsError || getFirstText(got.Content) != "unknown tool: pond_read" {
+		t.Errorf("unknown tool = %+v", got)
+	}
+	if got := readResult("pond_read", &tools.CallResponse{Error: tools.ErrorCodeBadArguments}); !got.IsError || getFirstText(got.Content) != "the arguments are not a JSON object" {
+		t.Errorf("bad arguments = %+v", got)
+	}
+	structuredOnly := readResult("pond_read", &tools.CallResponse{
+		Result: &tools.CallResult{Structured: []byte(`{"ok":true}`)},
+	})
+	if len(structuredOnly.Content) != 1 || getFirstText(structuredOnly.Content) != `{"ok":true}` {
+		t.Errorf("structured fallback = %+v", structuredOnly)
+	}
+	if raw, ok := structuredOnly.StructuredContent.(json.RawMessage); !ok || string(raw) != `{"ok":true}` {
+		t.Errorf("structured content = %+v", structuredOnly.StructuredContent)
+	}
+	emptyRes := readResult("pond_read", &tools.CallResponse{
+		Result: &tools.CallResult{IsError: true},
+	})
+	if !emptyRes.IsError || len(emptyRes.Content) != 0 || emptyRes.StructuredContent != nil {
+		t.Errorf("empty error result = %+v", emptyRes)
+	}
+}
+
+func getFirstText(content []sdk.Content) string {
+	if len(content) == 0 {
+		return ""
+	}
+	text, ok := content[0].(*sdk.TextContent)
+	if !ok {
+		return ""
+	}
+	return text.Text
+}

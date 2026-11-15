@@ -46,22 +46,6 @@ type presetNotes interface {
 	ports.NameQueries
 }
 
-// Presets is how each deck of a vault is scheduled.
-//
-// A deck names its preset with an entry of its `links:` block carrying
-// `type: preset`. A deck naming none is scheduled by the defaults, which is
-// what a vault holding no preset at all gets.
-type Presets struct {
-	readers  ports.VaultReaders
-	writers  ports.VaultWriters
-	links    ports.LinkQueries
-	notes    presetNotes
-	problems ports.ProblemQueries
-	index    note.IndexUpdater
-	day      review.Day
-	now      ports.Clock
-}
-
 // Config is what the presets are made from. Notes identifies presets and names them. Problems is
 // optional: a link the index does not carry is accounted for in what parsing turned up. Day is the
 // review day boundary that decides whether a preset schedules anything today.
@@ -76,26 +60,9 @@ type Config struct {
 	Now      ports.Clock
 }
 
-// New creates the use case through which a vault's presets are read and written.
-func New(cfg Config) Presets {
-	return Presets{
-		readers: cfg.Readers, writers: cfg.Writers, links: cfg.Links, notes: cfg.Notes,
-		problems: cfg.Problems, index: cfg.Index, day: cfg.Day, now: cfg.Now,
-	}
-}
-
-// HasLinks reports whether the use case can resolve the links of a deck. Without them every deck
-// is scheduled by the defaults.
-func (u Presets) HasLinks() bool { return u.links != nil }
-
-// GetBacklinks returns the links that point at the note at path.
-func (u Presets) GetBacklinks(ctx context.Context, vault domain.VaultID, path string) ([]domain.ResolvedLink, error) {
-	return u.links.GetBacklinks(ctx, vault, path)
-}
-
-func (u Presets) getStopReasons(p review.Preset) (review.StopReason, review.StopReason) {
-	pos := u.now.Now()
-	return p.GetOverallStopReason(u.day, pos), p.GetStopReason(u.day, pos)
+func getStopReasons(p review.Preset, day review.Day, clock ports.Clock) (review.StopReason, review.StopReason) {
+	pos := clock.Now()
+	return p.GetOverallStopReason(day, pos), p.GetStopReason(day, pos)
 }
 
 // Summary is one preset as listed for selection: the file path and its
@@ -105,11 +72,17 @@ type Summary struct {
 	Title string
 }
 
-// List returns every preset the vault holds, by path. The defaults are excluded: they schedule a
+// List lists the presets of a vault.
+type List struct{ notes presetNotes }
+
+// NewList creates the use case that lists the presets of a vault.
+func NewList(cfg Config) List { return List{notes: cfg.Notes} }
+
+// Execute returns every preset the vault holds, by path. The defaults are excluded: they schedule a
 // deck that names no preset, and no note holds them. The index identifies the preset notes, so no
 // file is opened. A build without the index gets ErrNoPresets, because it must not answer with an
 // empty list it cannot determine.
-func (u Presets) List(ctx context.Context, v domain.Vault) ([]Summary, error) {
+func (u List) Execute(ctx context.Context, v domain.Vault) ([]Summary, error) {
 	if u.notes == nil {
 		return nil, ErrNoPresets
 	}
@@ -140,12 +113,19 @@ func CreateDefault() Contents {
 	}
 }
 
-// GetForDeck is the preset the deck at path is scheduled by.
+// GetForDeck opens a run of reads of its own on each call, so it sees each preset as the file is
+// at that moment.
+type GetForDeck struct{ open OpenReads }
+
+// NewGetForDeck creates the use case that finds the preset of a deck.
+func NewGetForDeck(cfg Config) GetForDeck { return GetForDeck{open: NewOpenReads(cfg)} }
+
+// Execute returns the preset the deck at path is scheduled by.
 // A link reaching nothing, a link reaching a note that is not a preset, and a `links:` entry with
 // no role all leave the deck on the defaults and say so against it. A deck naming two presets is
 // scheduled by the first and carries a problem.
-func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (Contents, error) {
-	return u.OpenReads().GetForDeck(ctx, v, deck)
+func (u GetForDeck) Execute(ctx context.Context, v domain.Vault, deck string) (Contents, error) {
+	return u.open.Execute().GetForDeck(ctx, v, deck)
 }
 
 // Reads is a run of reads over one vault. It caches each preset note it
@@ -154,20 +134,43 @@ func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (C
 // A Reads is scoped to one call: a preset read from it reflects the file
 // as it was when the run began.
 type Reads struct {
-	Presets
+	links         ports.LinkQueries
+	problems      ports.ProblemQueries
+	read          Read
+	day           review.Day
+	now           ports.Clock
 	cachedPresets map[string]Contents
 	scheduling    map[string]Contents
 	parseProblems map[string][]string
 }
 
-// OpenReads opens a run of reads sharing the notes they open.
-func (u Presets) OpenReads() *Reads {
+// OpenReads opens runs of reads sharing the notes they open.
+type OpenReads struct{ cfg Config }
+
+// NewOpenReads creates the use case that opens runs of reads.
+func NewOpenReads(cfg Config) OpenReads { return OpenReads{cfg: cfg} }
+
+// Execute opens a run of reads.
+func (u OpenReads) Execute() *Reads {
 	return &Reads{
-		Presets:       u,
+		links:         u.cfg.Links,
+		problems:      u.cfg.Problems,
+		read:          NewRead(u.cfg),
+		day:           u.cfg.Day,
+		now:           u.cfg.Now,
 		cachedPresets: make(map[string]Contents),
 		scheduling:    make(map[string]Contents),
 		parseProblems: nil,
 	}
+}
+
+// HasLinks reports whether the run can resolve the links of a deck. Without them every deck is
+// scheduled by the defaults.
+func (r *Reads) HasLinks() bool { return r.links != nil }
+
+// GetBacklinks returns the links that point at the note at path.
+func (r *Reads) GetBacklinks(ctx context.Context, vault domain.VaultID, path string) ([]domain.ResolvedLink, error) {
+	return r.links.GetBacklinks(ctx, vault, path)
 }
 
 // GetForDeck is the preset the deck at path is scheduled by.
@@ -179,7 +182,7 @@ func (r *Reads) GetForDeck(ctx context.Context, v domain.Vault, deck string) (Co
 	if err != nil {
 		return Contents{}, err
 	}
-	out.Stops, out.StopsToday = r.getStopReasons(out.Settings)
+	out.Stops, out.StopsToday = getStopReasons(out.Settings, r.day, r.now)
 	r.scheduling[deck] = out
 	return out, nil
 }
@@ -269,7 +272,7 @@ func (r *Reads) GetPreset(ctx context.Context, v domain.Vault, path string) (Con
 	if target, ok := r.cachedPresets[path]; ok {
 		return target, nil
 	}
-	out, err := r.Read(ctx, v, path)
+	out, err := r.read.Execute(ctx, v, path)
 	if err != nil {
 		return Contents{}, err
 	}
@@ -277,19 +280,30 @@ func (r *Reads) GetPreset(ctx context.Context, v domain.Vault, path string) (Con
 	return out, nil
 }
 
-// Read reads the preset at path.
+// Read opens the preset note on each call and keeps nothing across calls.
+type Read struct {
+	readers ports.VaultReaders
+	day     review.Day
+	now     ports.Clock
+}
+
+// NewRead creates the use case that reads a preset.
+func NewRead(cfg Config) Read { return Read{readers: cfg.Readers, day: cfg.Day, now: cfg.Now} }
+
+// Execute reads the preset at path.
 //
-// An error is the vault being out of reach. What is wrong with the note itself
-func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (Contents, error) {
+// An error is the vault being out of reach. What is wrong with the note itself is in the Outcome
+// and Problems of the result.
+func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Contents, error) {
 	out, err := u.readPreset(ctx, v, path)
 	if err != nil {
 		return Contents{}, err
 	}
-	out.Stops, out.StopsToday = u.getStopReasons(out.Settings)
+	out.Stops, out.StopsToday = getStopReasons(out.Settings, u.day, u.now)
 	return out, nil
 }
 
-func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (Contents, error) {
+func (u Read) readPreset(ctx context.Context, v domain.Vault, path string) (Contents, error) {
 	out := Contents{Path: path, Outcome: "", Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
 
 	reader, err := u.readers.Open(v)

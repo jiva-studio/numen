@@ -17,8 +17,8 @@ import type {
   WorkspaceIcons,
 } from '@numen/plugin-loader'
 import type { FileOpeners } from '@/entities/tab'
-import { listRelatedNotes, listHeadings, type NoteCreator } from '@/entities/note'
-import { getFileKinds } from '@/entities/file'
+import type { NoteApi, NoteCreator } from '@/entities/note'
+import type { FileApi } from '@/entities/file'
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { Task } from '@/entities/window'
@@ -121,6 +121,8 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
 
 /** What the notes of the vault are read and written through. */
 export interface VaultNotesDeps {
+  readonly notes: Pick<NoteApi, 'listRelatedNotes' | 'listHeadings'>
+  readonly getFileKinds: FileApi['getFileKinds']
   readonly search: {
     readonly names: (
       query: string,
@@ -134,15 +136,16 @@ export interface VaultNotesDeps {
 /** How many notes a search for a note to link to answers with, where the plugin names no number. */
 const FOUND_LIMIT = 20
 
-export function createVaultNotes({ search, making, pluginNotes }: VaultNotesDeps): VaultNotes {
+export function createVaultNotes(deps: VaultNotesDeps): VaultNotes {
+  const { notes, search, making, pluginNotes } = deps
   return {
-    listRelatedNotes: (path, depth) => listRelatedNotes(path, depth),
-    getHeadings: (paths) => listHeadings(paths),
+    listRelatedNotes: (path, depth) => notes.listRelatedNotes(path, depth),
+    getHeadings: (paths) => notes.listHeadings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
     createUntitledNote: () => making.createUntitledNote(''),
     read: (path) => pluginNotes.readNote(path),
     write: (path, body) => pluginNotes.writeNote(path, body),
-    readProperties: async (path) => (await getFileKinds([path])).get(path)?.properties ?? {},
+    readProperties: async (path) => (await deps.getFileKinds([path])).get(path)?.properties ?? {},
   }
 }

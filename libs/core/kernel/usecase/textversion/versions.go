@@ -14,11 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
-// NoteReader reads the type and the frontmatter of a note from its current file.
-type NoteReader interface {
-	Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteType, map[string]any, error)
-}
-
 // Versions records, replaces and removes the text versions of vault files, and keeps the files of
 // those versions. Each change is reported to the Changes it was built with.
 type Versions struct {

@@ -7,8 +7,8 @@ import type { Ref } from 'vue'
 import type { Command } from '@/entities/command'
 import type { CommandDeps, CommandTarget } from '@/shared/model/command'
 import { WORDS } from '@/shared/ui/words'
-import { searchCore } from '../../api/search'
 import type { CommandsDeps, NoteLookup, PaletteLists } from '../../types'
+import type { SearchDeps } from '../../lib/search/types'
 import { PALETTE_WORDS } from '../../words'
 import { createCommandPalette } from '../palette/palette'
 import { createChoiceRunner } from '../run/createChoiceRunner'
@@ -34,6 +34,7 @@ interface PluginPaletteParts {
 
 /** What the palettes of the window are made from. */
 export interface WindowPaletteDeps {
+  readonly searchCore: SearchDeps
   readonly commandDeps: CommandDeps
   readonly getTarget: () => CommandTarget
   readonly knows: NoteLookup
@@ -44,7 +45,7 @@ export interface WindowPaletteDeps {
 }
 
 export function createWindowPalette(deps: WindowPaletteDeps) {
-  const { commandDeps, getTarget, plugin } = deps
+  const { commandDeps, getTarget, plugin, searchCore } = deps
   const { lists } = plugin
   const words = { ...WORDS, ...PALETTE_WORDS }
   const search = useSearch(searchCore, words, { ...deps.searchOptions, getTarget })

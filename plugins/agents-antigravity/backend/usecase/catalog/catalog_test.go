@@ -47,7 +47,7 @@ func TestTheModelsOfTheProgramAreListedFoldedByLevel(t *testing.T) {
 }
 
 func TestAProgramWhoseListFailsHasNoModels(t *testing.T) {
-	program := &fakeProgram{err: errors.New("no list")}
+	program := &fakeProgram{items: []model.Model{{Name: "partial", Title: "Partial"}}, err: errors.New("no list")}
 
 	if got := New(program, false).List(t.Context(), "/opt/agy"); len(got) != 0 {
 		t.Errorf("the models are %+v", got)
@@ -64,10 +64,11 @@ func TestAModelAndALevelResolveToTheListedModel(t *testing.T) {
 
 func TestADefaultModelIsNotResolved(t *testing.T) {
 	program := &fakeProgram{}
+	cat := New(program, false)
 
-	got := New(program, false).ResolveModel(t.Context(), "/opt/agy", model.DefaultName, "high")
-
-	if got != model.DefaultName || len(program.commands) != 0 {
-		t.Errorf("the model is %q after listing with %v", got, program.commands)
+	for _, name := range []string{model.DefaultName, ""} {
+		if got := cat.ResolveModel(t.Context(), "/opt/agy", name, "high"); got != name || len(program.commands) != 0 {
+			t.Errorf("ResolveModel(%q) = %q after listing with %v", name, got, program.commands)
+		}
 	}
 }

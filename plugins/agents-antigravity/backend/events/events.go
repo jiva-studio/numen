@@ -32,8 +32,8 @@ type Handler struct {
 	reader *eventReader
 }
 
-// NewHandler returns the handler that hands what each event says to sink.
-func NewHandler(sink Sink) *Handler {
+// New returns the handler that hands what each event says to sink.
+func New(sink Sink) *Handler {
 	return &Handler{reader: &eventReader{sink: sink, sendErr: nil, isTextStreamed: false, currentTool: "", currentArgs: strings.Builder{}}}
 }
 

@@ -40,8 +40,8 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if trimmed.Sizes != target.CutNotes().Sizes {
-		t.Errorf("cut at %+v, and the settings say %+v", trimmed.Sizes, target.CutNotes().Sizes)
+	if want := chunking.GetTextVersionRecipe(target.CutNotes().Sizes); trimmed.Recipe() != want {
+		t.Errorf("cut by %q, and the settings say %q", trimmed.Recipe(), want)
 	}
 }
 
@@ -135,7 +135,7 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 	if _, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(wide{0}), v); err != nil {
 		t.Fatalf("a source that has not described itself gave %v", err)
 	}
-	if err := db.FitVectors(t.Context(), 0, wide{0}.Describe().Recipe()); err == nil || !strings.Contains(err.Error(), "not a vector") {
+	if err := db.VectorIndex().FitVectors(t.Context(), 0, wide{0}.Describe().Recipe()); err == nil || !strings.Contains(err.Error(), "not a vector") {
 		t.Fatalf("the index fitted to no width gave %v", err)
 	}
 }

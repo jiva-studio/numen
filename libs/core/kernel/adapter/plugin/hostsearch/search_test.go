@@ -484,10 +484,6 @@ func (storedPlace) ListStoredVectors(context.Context, sourcedomain.StoredVectorQ
 	}, nil
 }
 
-func (storedPlace) GetEnclosingResults(context.Context, domain.VaultID, []domain.ChunkID) ([]domain.SearchResult, error) {
-	return nil, nil
-}
-
 func TestTheNearestChunksOfAPlaceStopAtTheFloorOfTheQueryElseAtTheFloorOfTheVault(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
