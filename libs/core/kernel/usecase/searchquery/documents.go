@@ -11,7 +11,7 @@ import (
 )
 
 type documentReader struct {
-	chunks       ChunkIndex
+	lister       DocumentQueries
 	contents     NoteContents
 	contentTypes contenttypeport.ContentTypeTable
 	req          *searchquery.Evaluation
@@ -22,10 +22,11 @@ type documentReader struct {
 }
 
 func newDocumentReader(
-	chunks ChunkIndex, contents NoteContents, links LinkReaders, contentTypes contenttypeport.ContentTypeTable, req *searchquery.Evaluation, warns *warnings,
+	lister DocumentQueries, contents NoteContents, links LinkReaders, contentTypes contenttypeport.ContentTypeTable, req *searchquery.Evaluation,
+	warns *warnings,
 ) *documentReader {
 	reader := &documentReader{
-		chunks: chunks, contents: contents, contentTypes: contentTypes, req: req, warnings: warns, documents: map[string]searchquery.Document{},
+		lister: lister, contents: contents, contentTypes: contentTypes, req: req, warnings: warns, documents: map[string]searchquery.Document{},
 	}
 	if links != nil {
 		reader.links = &linkFinder{links: links, req: req}
@@ -41,7 +42,7 @@ func (r *documentReader) listScopeDocuments(ctx context.Context, s searchquery.S
 	if isNarrowed && len(paths) == 0 {
 		return nil, true, nil
 	}
-	listed, err := r.chunks.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{
+	listed, err := r.lister.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{
 		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.Recipe, Limit: r.req.Limits.MaxDocuments,
 	})
 	if err != nil {
@@ -68,7 +69,7 @@ func (r *documentReader) listCandidateDocuments(ctx context.Context) ([]searchqu
 	if isNarrowed && len(paths) == 0 {
 		return nil, nil
 	}
-	listed, err := r.chunks.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{
+	listed, err := r.lister.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{
 		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.Recipe,
 	})
 	if err != nil {
@@ -117,7 +118,7 @@ func (u *EvaluateQuery) FillDocuments(ctx context.Context, v domain.Vault, resul
 	for _, one := range results {
 		paths = append(paths, one.Document.Path)
 	}
-	listed, err := u.chunks.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
+	listed, err := u.documents.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
 	if err != nil {
 		return err
 	}

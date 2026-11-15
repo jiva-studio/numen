@@ -16,7 +16,9 @@ import (
 // EvaluateQueryDeps is what EvaluateQuery reads. A nil Source is an installation with no model, and a nil
 // Texts reads the text of notes only.
 type EvaluateQueryDeps struct {
-	Chunks       ChunkIndex
+	Documents    DocumentQueries
+	Vectors      VectorQueries
+	Places       sourceport.ChunkPlaces
 	Contents     NoteContents
 	Links        LinkReaders
 	Matcher      sourceport.WordMatching
@@ -29,7 +31,9 @@ type EvaluateQueryDeps struct {
 
 // EvaluateQuery evaluates a parsed query over the index of one vault.
 type EvaluateQuery struct {
-	chunks       ChunkIndex
+	documents    DocumentQueries
+	vectors      VectorQueries
+	places       sourceport.ChunkPlaces
 	contents     NoteContents
 	links        LinkReaders
 	matcher      sourceport.WordMatching
@@ -43,8 +47,9 @@ type EvaluateQuery struct {
 // NewEvaluateQuery creates the use case over the index.
 func NewEvaluateQuery(deps EvaluateQueryDeps) *EvaluateQuery {
 	return &EvaluateQuery{
-		chunks: deps.Chunks, contents: deps.Contents, links: deps.Links, matcher: deps.Matcher, readers: deps.Readers,
-		texts: deps.Texts, source: deps.Source, floors: deps.Floors, contentTypes: deps.ContentTypes,
+		documents: deps.Documents, vectors: deps.Vectors, places: deps.Places, contents: deps.Contents,
+		links: deps.Links, matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts, source: deps.Source, floors: deps.Floors,
+		contentTypes: deps.ContentTypes,
 	}
 }
 
@@ -58,7 +63,7 @@ func (u *EvaluateQuery) Execute(
 	}
 	req := u.newRequest(ctx, v, q, zone, limits)
 	warns := &warnings{}
-	docs := newDocumentReader(u.chunks, u.contents, u.links, u.contentTypes, req, warns)
+	docs := newDocumentReader(u.documents, u.contents, u.links, u.contentTypes, req, warns)
 	return u.run(ctx, req, docs, warns)
 }
 

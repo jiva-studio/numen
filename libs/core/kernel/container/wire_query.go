@@ -21,9 +21,12 @@ func newFindSearchResults(
 	c pluginsWiring, db *Index, source searchsourceport.Source, errorHandler func(error),
 ) *searchqueryusecase.FindSearchResults {
 	limits, stageLimits := readSearchLimits(c, errorHandler)
+	search := db.ChunkSearch()
 	rerank := openRerankDeps(c)
 	evaluate := searchqueryusecase.NewEvaluateQuery(searchqueryusecase.EvaluateQueryDeps{
-		Chunks:       db.ChunkSearch(),
+		Documents:    search,
+		Vectors:      search,
+		Places:       search,
 		Contents:     db.NoteQueryReads(),
 		Links:        db.NoteQueryReads(),
 		Matcher:      wordmatch.NewMatcher(),
