@@ -162,7 +162,7 @@ func (c renameVaultCommand) Run(ctx context.Context, term terminal, args []strin
 		return err
 	}
 
-	renamed, err := indexed.Rename.ExecuteByName(ctx, args[0], args[1])
+	renamed, err := indexed.Changes.Rename.ExecuteByName(ctx, args[0], args[1])
 	if err != nil {
 		return err
 	}
@@ -190,7 +190,7 @@ func (c removeVaultCommand) Run(ctx context.Context, term terminal, args []strin
 		return err
 	}
 
-	v, err := indexed.Unregister.ExecuteByName(ctx, args[0])
+	v, err := indexed.Changes.Unregister.ExecuteByName(ctx, args[0])
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ func (c eraseVaultCommand) Run(ctx context.Context, term terminal, args []string
 	if !*yes {
 		confirm = eraseConfirmation{out: term.out}
 	}
-	res, err := indexed.Erase.ExecuteByName(ctx, rest[0], confirm)
+	res, err := indexed.Changes.Erase.ExecuteByName(ctx, rest[0], confirm)
 	if errors.Is(err, machine.ErrNoTrash) {
 		return fmt.Errorf("%w — take it off the list with: numen-cli vault remove %s", err, res.Vault.Name)
 	}

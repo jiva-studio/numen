@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 const (
@@ -22,67 +23,79 @@ const (
 // ErrNoFunctions is a query that calls a plugin function in a core that answers none.
 var ErrNoFunctions = errors.New("plugin functions are not answered here")
 
-// calls are the answers of the plugin functions of one query: every path of the calls found whole, and the
+// functionCalls are the answers of the plugin functions of one query: every path of the calls found whole, and the
 // paths asked about of the others.
-type calls struct {
-	found   searchquery.FoundPaths
-	sets    map[int]map[string]bool
-	known   []map[string]bool
-	mu      sync.Mutex
-	warning []string
+type functionCalls struct {
+	functions  SearchFunctions
+	query      searchquery.Query
+	vaultID    string
+	generation string
+	limits     searchquery.Limits
+	found      searchquery.FoundPaths
+	sets       map[int]map[string]bool
+	known      []map[string]bool
+	mu         sync.Mutex
+	warning    []string
 }
 
-func (p *plan) newCall(index int) searchquery.FunctionCall {
-	c := p.query.Calls[index]
+func newFunctionCalls(functions SearchFunctions, v domain.Vault, q searchquery.Query, limits searchquery.Limits, generation string) *functionCalls {
+	known := make([]map[string]bool, len(q.Calls))
+	for i := range known {
+		known[i] = map[string]bool{}
+	}
+	return &functionCalls{
+		functions: functions, query: q, vaultID: string(v.ID), generation: generation, limits: limits,
+		found: searchquery.FoundPaths{}, sets: map[int]map[string]bool{}, known: known,
+	}
+}
+
+func (c *functionCalls) newCall(index int) searchquery.FunctionCall {
+	call := c.query.Calls[index]
 	return searchquery.FunctionCall{
-		PluginID: c.PluginID, Function: c.Function, Arguments: c.Arguments, VaultID: string(p.v.ID), IndexGeneration: p.generation,
+		PluginID: call.PluginID, Function: call.Function, Arguments: call.Arguments, VaultID: c.vaultID, IndexGeneration: c.generation,
 	}
 }
 
-func (p *plan) findCalls(ctx context.Context) error {
-	p.calls = &calls{found: searchquery.FoundPaths{}, sets: map[int]map[string]bool{}, known: make([]map[string]bool, len(p.query.Calls))}
-	for i := range p.query.Calls {
-		p.calls.known[i] = map[string]bool{}
-	}
-	if len(p.query.Calls) > 0 && p.u.functions == nil {
+func (c *functionCalls) find(ctx context.Context) error {
+	if len(c.query.Calls) > 0 && c.functions == nil {
 		return ErrNoFunctions
 	}
-	for i, c := range p.query.Calls {
-		if !c.IsPositive {
+	for i, call := range c.query.Calls {
+		if !call.IsPositive {
 			continue
 		}
-		answer, err := p.u.functions.FindDocuments(ctx, p.newCall(i), p.u.Limits.MaxDocuments+1)
+		answer, err := c.functions.FindDocuments(ctx, c.newCall(i), c.limits.MaxDocuments+1)
 		if err != nil {
-			return p.getCallError(ctx, i, err)
+			return c.getError(ctx, i, err)
 		}
-		p.calls.addWarning(c.Function, answer.Warning)
-		if len(answer.Paths) > p.u.Limits.MaxDocuments {
+		c.addWarning(call.Function, answer.Warning)
+		if len(answer.Paths) > c.limits.MaxDocuments {
 			continue
 		}
-		p.calls.found[i] = answer.Paths
+		c.found[i] = answer.Paths
 		set := make(map[string]bool, len(answer.Paths))
 		for _, path := range answer.Paths {
 			set[path] = true
 		}
-		p.calls.sets[i] = set
+		c.sets[i] = set
 	}
 	return nil
 }
 
-func (p *plan) matchCalls(ctx context.Context, paths []string) error {
-	for i := range p.query.Calls {
-		if _, isFound := p.calls.found[i]; isFound {
+func (c *functionCalls) match(ctx context.Context, paths []string) error {
+	for i := range c.query.Calls {
+		if _, isFound := c.found[i]; isFound {
 			continue
 		}
-		if err := p.matchCall(ctx, i, paths); err != nil {
+		if err := c.matchCall(ctx, i, paths); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (p *plan) matchCall(ctx context.Context, index int, paths []string) error {
-	known := p.calls.known[index]
+func (c *functionCalls) matchCall(ctx context.Context, index int, paths []string) error {
+	known := c.known[index]
 	var asked []string
 	isAsked := map[string]bool{}
 	for _, path := range paths {
@@ -94,22 +107,22 @@ func (p *plan) matchCall(ctx context.Context, index int, paths []string) error {
 	group.SetLimit(matchCallsAtOnce)
 	for batch := range slices.Chunk(asked, matchBatchSize) {
 		group.Go(func() error {
-			answer, err := p.u.functions.MatchDocuments(groupCtx, p.newCall(index), batch)
+			answer, err := c.functions.MatchDocuments(groupCtx, c.newCall(index), batch)
 			if err != nil {
 				return err
 			}
-			p.calls.keepMatched(index, batch, answer)
-			p.calls.addWarning(p.query.Calls[index].Function, answer.Warning)
+			c.keepMatched(index, batch, answer)
+			c.addWarning(c.query.Calls[index].Function, answer.Warning)
 			return nil
 		})
 	}
 	if err := group.Wait(); err != nil {
-		return p.getCallError(ctx, index, err)
+		return c.getError(ctx, index, err)
 	}
 	return nil
 }
 
-func (c *calls) keepMatched(index int, batch []string, answer searchquery.FunctionAnswer) {
+func (c *functionCalls) keepMatched(index int, batch []string, answer searchquery.FunctionAnswer) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, path := range batch {
@@ -122,7 +135,7 @@ func (c *calls) keepMatched(index int, batch []string, answer searchquery.Functi
 	}
 }
 
-func (c *calls) addWarning(function, warning string) {
+func (c *functionCalls) addWarning(function, warning string) {
 	if warning == "" {
 		return
 	}
@@ -133,28 +146,28 @@ func (c *calls) addWarning(function, warning string) {
 	}
 }
 
-func (p *plan) withCalls(d searchquery.Document) searchquery.Document {
-	if len(p.query.Calls) == 0 {
+func (c *functionCalls) withCalls(d searchquery.Document) searchquery.Document {
+	if len(c.query.Calls) == 0 {
 		return d
 	}
-	d.MatchedCalls = make([]bool, len(p.query.Calls))
-	for i := range p.query.Calls {
-		if set, isFound := p.calls.sets[i]; isFound {
+	d.MatchedCalls = make([]bool, len(c.query.Calls))
+	for i := range c.query.Calls {
+		if set, isFound := c.sets[i]; isFound {
 			d.MatchedCalls[i] = set[d.Path]
 			continue
 		}
-		d.MatchedCalls[i] = p.calls.known[i][d.Path]
+		d.MatchedCalls[i] = c.known[i][d.Path]
 	}
 	return d
 }
 
-func (p *plan) getCallError(ctx context.Context, index int, err error) error {
+func (c *functionCalls) getError(ctx context.Context, index int, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
 	}
-	c := p.query.Calls[index]
+	call := c.query.Calls[index]
 	if errors.Is(err, searchquery.ErrInvalidFunctionArguments) {
-		return &searchquery.ParseError{Problems: []searchquery.Problem{{Position: c.Position, Message: err.Error()}}}
+		return &searchquery.ParseError{Problems: []searchquery.Problem{{Position: call.Position, Message: err.Error()}}}
 	}
-	return fmt.Errorf("the function %s failed: %w", c.Function, err)
+	return fmt.Errorf("the function %s failed: %w", call.Function, err)
 }

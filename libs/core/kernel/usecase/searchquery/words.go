@@ -2,33 +2,38 @@ package searchquery
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 const messageInvalidWords = "words takes an FTS5 expression, and this one is not valid"
 
-func (p *plan) findWords(ctx context.Context, index int, documents []searchquery.Document, isListed bool) ([]domain.ChunkID, error) {
-	q, ok := p.newWordQuery(index, documents, isListed)
+type wordSearch struct {
+	words    WordQueries
+	filter   scopeFilter
+	req      *request
+	warnings *warnings
+}
+
+func (w *wordSearch) findWords(ctx context.Context, index int, documents []searchquery.Document, isListed bool) ([]domain.ChunkID, error) {
+	q, ok := w.newWordQuery(index, documents, isListed)
 	if !ok {
 		return nil, nil
 	}
-	s := p.scopes[index]
-	limits := p.u.Limits
+	s := w.req.scopes[index]
+	limits := w.req.limits
 	for {
-		matches, err := p.u.index.words.FindWords(ctx, p.v.ID, q)
+		matches, err := w.words.FindWords(ctx, w.req.vault.ID, q)
 		if err != nil {
-			return nil, p.getWordsError(index, err)
+			return nil, w.req.getWordsError(index, err)
 		}
 		ids := getMatchChunks(matches)
 		if s.IsEveryDocument() {
 			return ids, nil
 		}
-		kept, err := p.keepInScope(ctx, s, ids)
+		kept, err := w.keepInScope(ctx, s, ids)
 		if err != nil {
 			return nil, err
 		}
@@ -36,7 +41,7 @@ func (p *plan) findWords(ctx context.Context, index int, documents []searchquery
 			return kept[:min(len(kept), limits.CandidatesPerCondition)], nil
 		}
 		if q.Limit >= limits.MaxCoarseCandidates {
-			p.warnings = append(p.warnings, fmt.Sprintf(
+			w.warnings.add(fmt.Sprintf(
 				"the search by words stopped at %d best passages and found %d of the %d asked for", q.Limit, len(kept), limits.CandidatesPerCondition))
 			return kept, nil
 		}
@@ -44,11 +49,11 @@ func (p *plan) findWords(ctx context.Context, index int, documents []searchquery
 	}
 }
 
-func (p *plan) newWordQuery(index int, documents []searchquery.Document, isListed bool) (searchquery.WordQuery, bool) {
-	limits := p.u.Limits
-	q := searchquery.WordQuery{Expression: p.query.Conditions[index].Text, Limit: limits.CandidatesPerCondition}
+func (w *wordSearch) newWordQuery(index int, documents []searchquery.Document, isListed bool) (searchquery.WordQuery, bool) {
+	limits := w.req.limits
+	q := searchquery.WordQuery{Expression: w.req.query.Conditions[index].Text, Limit: limits.CandidatesPerCondition}
 	if !isListed || getChunkTotal(documents) > limits.ExactScanChunks {
-		s := p.scopes[index]
+		s := w.req.scopes[index]
 		q.PathPrefixes, q.SourceKinds = s.PathPrefixes, s.SourceKinds
 		return q, true
 	}
@@ -67,8 +72,8 @@ func getMatchChunks(matches []searchquery.WordMatch) []domain.ChunkID {
 	return ids
 }
 
-func (p *plan) keepInScope(ctx context.Context, s searchquery.Scope, ids []domain.ChunkID) ([]domain.ChunkID, error) {
-	inScope, err := p.filterScope(ctx, s, ids)
+func (w *wordSearch) keepInScope(ctx context.Context, s searchquery.Scope, ids []domain.ChunkID) ([]domain.ChunkID, error) {
+	inScope, err := w.filter(ctx, s, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -79,24 +84,4 @@ func (p *plan) keepInScope(ctx context.Context, s searchquery.Scope, ids []domai
 		}
 	}
 	return kept, nil
-}
-
-func (p *plan) getWordsError(index int, err error) error {
-	if !errors.Is(err, source.ErrInvalidWords) {
-		return err
-	}
-	position, _ := findConditionPosition(p.query.Root, index)
-	return &searchquery.ParseError{Problems: []searchquery.Problem{{Position: position, Message: messageInvalidWords}}}
-}
-
-func findConditionPosition(node searchquery.Node, index int) (searchquery.Position, bool) {
-	if node.Operator == searchquery.OperatorLeaf {
-		return node.Leaf.Position, node.Leaf.IsChunkLevel() && node.Leaf.ConditionIndex == index
-	}
-	for _, child := range node.Children {
-		if position, found := findConditionPosition(child, index); found {
-			return position, true
-		}
-	}
-	return searchquery.StartPosition(), false
 }

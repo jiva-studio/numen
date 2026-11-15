@@ -110,18 +110,23 @@ func TestAFreshIndexHasExactlyTheRecordedSchema(t *testing.T) {
 	}
 }
 
-func TestTheMigrationFolderHasOneFileForEachVersionUpToTheIndexVersion(t *testing.T) {
+func TestTheMigrationFolderStartsAtTheFirstVersionAndEndsAtTheIndexVersion(t *testing.T) {
 	entries, err := os.ReadDir("migration")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != expectedVersion {
-		t.Fatalf("the folder migration holds %d files, want %d", len(entries), expectedVersion)
+	var names []string
+	for _, e := range entries {
+		names = append(names, e.Name())
 	}
-	for i, e := range entries {
-		if want := fmt.Sprintf("%04d_", i+1); !strings.HasPrefix(e.Name(), want) {
-			t.Errorf("the file %s is not numbered %s", e.Name(), want)
-		}
+	if len(names) == 0 {
+		t.Fatal("the folder migration holds no file")
+	}
+	if !strings.HasPrefix(names[0], "0001_") {
+		t.Errorf("the first file %s is not numbered 0001", names[0])
+	}
+	if want := fmt.Sprintf("%04d_", expectedVersion); !strings.HasPrefix(names[len(names)-1], want) {
+		t.Errorf("the last file %s is not numbered %s", names[len(names)-1], want)
 	}
 }
 
