@@ -101,7 +101,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   return { start, close, reopen, reportTabs, waitForReports }
 }
 
-type ReportedTabs = Pick<WindowTabs, 'tabs' | 'groups'>
+type ReportedTabs = Pick<WindowTabs, 'tabs' | 'handle'>
 
 function getLinkableTabs(windowTabs: Pick<ReportedTabs, 'tabs'>): WindowTabsReport['tabs'] {
   return windowTabs.tabs.tabs.value.flatMap((tab) => {
@@ -112,7 +112,7 @@ function getLinkableTabs(windowTabs: Pick<ReportedTabs, 'tabs'>): WindowTabsRepo
 
 /** Returns the linkable tabs, the active tab and the tab count of the window. */
 export function getWindowReport(windowTabs: ReportedTabs, isMain: boolean): WindowTabsReport {
-  const front = windowTabs.groups.handle.front()
+  const front = windowTabs.handle.front()
   const activeTitle = windowTabs.tabs.tabs.value.find((tab) => tab.id === front?.id)?.title ?? ''
   return {
     tabs: getLinkableTabs(windowTabs),

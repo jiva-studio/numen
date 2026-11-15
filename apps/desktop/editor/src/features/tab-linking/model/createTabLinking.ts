@@ -13,7 +13,7 @@ import { useTabLinks } from './useTabLinks'
 export interface TabLinkingDeps {
   readonly writeTabLinks: TabLinksApi['writeTabLinks']
   readonly windowId: string
-  readonly windowTabs: Pick<WindowTabs, 'tabs' | 'groups'>
+  readonly windowTabs: Pick<WindowTabs, 'tabs' | 'handle'>
   readonly isMain: boolean
   readonly writeMessage: MessageWriter
 }

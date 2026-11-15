@@ -5,10 +5,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { Manifest } from '@numen/core-client'
-import { createPluginHost } from './host'
-import type { PluginHostDeps } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
-const createDeps = (extra: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
+const createDeps = (extra: Partial<TestHostDeps> = {}): TestHostDeps => ({
   target: 'desktop.flashcards',
   registerKind: vi.fn(() => vi.fn()),
   ...extra,
@@ -19,8 +18,8 @@ const TIDE = createMockManifest('org.example.tide', { name: 'Tide', version: '1'
 
 describe('a window that names its target', () => {
   it('activates its plugins in that target', () => {
-    const cards = createPluginHost(createDeps({ target: 'desktop.flashcards' }))
-    const editor = createPluginHost(createDeps({ target: 'desktop.editor' }))
+    const cards = createTestPluginHost(createDeps({ target: 'desktop.flashcards' }))
+    const editor = createTestPluginHost(createDeps({ target: 'desktop.editor' }))
 
     expect(cards.lifecycle.createContext('org.example.ledger', LEDGER).plugin.identity.target).toBe(
       'desktop.flashcards',
@@ -38,7 +37,7 @@ describe('the slot entries of a window', () => {
       read.push([...manifests.keys()])
       return []
     }
-    const host = createPluginHost(createDeps({ getSlotEntries }))
+    const host = createTestPluginHost(createDeps({ getSlotEntries }))
 
     host.lifecycle.createContext('org.example.ledger', LEDGER)
     host.lifecycle.createContext('org.example.tide', TIDE)
@@ -57,7 +56,7 @@ describe('the slot entries of a window', () => {
 describe('a window that opens no tab for a plugin', () => {
   it('takes a reader as a tab kind and registers no extension for it', () => {
     const registerKind = vi.fn(() => vi.fn())
-    const host = createPluginHost(
+    const host = createTestPluginHost(
       createDeps({ registerKind, getReaderExtensions: () => ['pdf', 'epub'] }),
     )
     const context = host.lifecycle.createContext(

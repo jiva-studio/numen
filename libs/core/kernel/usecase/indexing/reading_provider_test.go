@@ -37,7 +37,7 @@ func TestWorker(t *testing.T) {
 		}
 		index := &indexing.WorkerIndex{
 			Vaults: db.Vaults(), Notes: db.Notes(), FileStats: db.NoteQueries(),
-			Maintenance: db.Maintenance(), Progress: db.ChunkVectors(), Vectors: db, Closer: db,
+			Maintenance: db.Maintenance(), Progress: db.ChunkVectors(), Vectors: db.VectorIndex(), Closer: db,
 		}
 		return read, container.VaultReaders(cfg), index
 	}, vaultfixture.NewVault)

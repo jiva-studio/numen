@@ -105,25 +105,25 @@ type SearchIndex interface {
 	EmbedTexts(ctx context.Context, texts []string) (plugin.EmbeddedTexts, error)
 	// SampleSimilarities is the cosine similarity of each query with the small chunks of the vault that
 	// carry a vector under the recipe and belong to a source other than the query's note. At most
-	// MaxSampledQueries queries are taken, and at most MaxSampledPassages small chunks, in the order of
+	// MaxSampledQueries queries are taken, and at most MaxSampledChunks small chunks, in the order of
 	// their content hashes. A query longer or shorter than the vectors of the index returns
 	// plugin.ErrInvalidQuery.
 	SampleSimilarities(ctx context.Context, v domain.Vault, recipe string, queries []plugin.SimilarityQuery) (plugin.SimilaritySample, error)
-	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector,
+	// GetBestSimilarity is the cosine similarity of the chunk of the vault nearest the query vector,
 	// zero where there is none.
 	GetBestSimilarity(ctx context.Context, v domain.Vault, recipe string, query []float32) (float64, error)
 }
 
-// PassageSearch searches the text of the vaults for the plugins that call the host.
-type PassageSearch interface {
-	// SearchPassages returns the passages of the vault matching the query, best first, from every
+// TextSearch searches the text of the vaults for the plugins that call the host.
+type TextSearch interface {
+	// SearchText returns the search results of the vault matching the query, best first, from every
 	// source and every text version: by keywords, and by embedding when the installation has a model.
 	// An installation with no model searches by keywords only.
-	SearchPassages(ctx context.Context, v domain.Vault, q plugin.PassageQuery) ([]domain.Passage, error)
-	// FindNearestPassages returns the small chunks of the vault nearest the vector under the recipe of the
+	SearchText(ctx context.Context, v domain.Vault, q plugin.SearchResultQuery) ([]domain.SearchResult, error)
+	// FindNearestChunks returns the small chunks of the vault nearest the vector under the recipe of the
 	// query, nearest first, at or above its floor, else the effective floor of the vault. The recipe
 	// rules of SearchIndex apply.
-	FindNearestPassages(ctx context.Context, v domain.Vault, q sourcedomain.NearestQuery) ([]searchsource.Match, error)
+	FindNearestChunks(ctx context.Context, v domain.Vault, q sourcedomain.NearestQuery) ([]searchsource.Match, error)
 }
 
 // SearchFloors is the floor a search by meaning applies to the vaults, as the plugins that call the
@@ -136,10 +136,10 @@ type SearchFloors interface {
 	SetSearchFloor(ctx context.Context, v domain.Vault, recipe string, floor float64) error
 }
 
-// SearchAccess is the search index, the passage search and the search floors of the vaults.
+// SearchAccess is the search index, the text search and the search floors of the vaults.
 type SearchAccess struct {
 	SearchIndex
-	PassageSearch
+	TextSearch
 	SearchFloors
 }
 
@@ -148,9 +148,9 @@ type SearchAccess struct {
 type WindowControl interface {
 	// FocusNote makes the note at the path the current one and returns it.
 	FocusNote(ctx context.Context, path string) (domain.NoteRef, error)
-	// FocusPassages opens the file at the path at the first passage and highlights every passage. No
-	// passages opens the file at its beginning.
-	FocusPassages(ctx context.Context, path string, passages []domain.ByteRange) error
+	// FocusFile opens the file at the path at the first range and highlights every range. No
+	// ranges opens the file at its beginning.
+	FocusFile(ctx context.Context, path string, ranges []domain.ByteRange) error
 	// ReadOpenTabs returns the tabs the window last reported, and the active one.
 	ReadOpenTabs(ctx context.Context) (windowdomain.OpenTabs, error)
 	// ActivateTab makes the open tab with the id the active tab, and returns the open tabs as the

@@ -31,11 +31,13 @@ const TARGET = { path: 'Tides.md', title: 'Tides', isFolder: false, others: [], 
 const create = (list?: readonly DeclaredKeybinding[]) => {
   const window = { 'window.isFieldFocused': false }
   const host = createPluginHost({
-    target: 'desktop.editor',
-    registerKind: () => () => undefined,
-    registerExtensionReader: () => () => undefined,
-    openTab: async () => 'tab-1',
-    getSlotWhenValues: (target) => getWhenValues({ window, target, contentTypes: {} }),
+    window: { target: 'desktop.editor' },
+    kinds: {
+      registerKind: () => () => undefined,
+      registerExtensionReader: () => () => undefined,
+    },
+    tabs: { openTab: async () => 'tab-1' },
+    slots: { getSlotWhenValues: (target) => getWhenValues({ window, target, contentTypes: {} }) },
   })
   const keybindings = ref<readonly DeclaredKeybinding[] | undefined>(list)
   const plugins = ref<readonly object[]>([])

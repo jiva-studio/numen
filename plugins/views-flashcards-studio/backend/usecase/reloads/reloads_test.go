@@ -77,3 +77,16 @@ func TestWatchEndsWhenTheContextEnds(t *testing.T) {
 		t.Fatalf("expected nil when the context ends, got %v", err)
 	}
 }
+
+func TestWatchStopsWhenInitialSignalFails(t *testing.T) {
+	boom := errors.New("initial signal failed")
+	err := reloads.Watch(t.Context(), moves{channel: make(chan host.Move)}, nil, func() {}, func(reload bool) error {
+		if reload {
+			t.Fatal("initial signal should be false")
+		}
+		return boom
+	})
+	if !errors.Is(err, boom) {
+		t.Fatalf("expected initial signal error, got %v", err)
+	}
+}

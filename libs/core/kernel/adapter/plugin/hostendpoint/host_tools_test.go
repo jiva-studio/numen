@@ -11,6 +11,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -151,6 +152,22 @@ func TestTheToolsRefuseACallerWithoutVaultRead(t *testing.T) {
 	}
 	if len(tools.listedFor) != 0 || len(tools.calls) != 0 {
 		t.Errorf("the tools were reached: %v, %v", tools.listedFor, tools.calls)
+	}
+}
+
+func TestTheToolsRefuseACallerWithOnlyVaultWrite(t *testing.T) {
+	tools := &recordedTools{}
+	fakeCallers := newCallers()
+	fakeCallers.tools = tools
+	fakeCallers.granted, fakeCallers.confined = []string{manifest.PermissionVaultWrite}, true
+
+	_, err := newToolClient(t, fakeCallers, "token-a").ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
+
+	if got := readCode(t, err); got != connect.CodePermissionDenied {
+		t.Errorf("code = %v, want permission denied", got)
+	}
+	if len(tools.listedFor) != 0 {
+		t.Errorf("the tools were listed for %v", tools.listedFor)
 	}
 }
 

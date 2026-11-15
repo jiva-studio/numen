@@ -55,7 +55,7 @@ export function createCommandNotes(reached: Notes, windowTabs: TabsOfWindow): No
     },
     close: (id: string) => {
       reached.close(id)
-      windowTabs.panes.requestClose(id)
+      windowTabs.panes.closeTab(id)
     },
   }
 }

@@ -16,7 +16,7 @@ const lakeToken = "lake-token"
 
 func newLinkedPlugin(t *testing.T, mount func(*server.Server) error) *httptest.Server {
 	t.Helper()
-	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: lakeToken}, mount)
+	handler, err := NewHandler(map[string]string{hostcall.PluginTokenEnv: lakeToken}, mount)
 	if err != nil {
 		t.Fatal(err)
 	}

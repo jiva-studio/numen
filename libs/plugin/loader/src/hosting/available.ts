@@ -1,6 +1,6 @@
 import { formatCommandId } from '../commandId'
 import type { HostRegistry, RegisteredCommand } from './registry'
-import type { CommandDeclaration, PluginHostDeps, PluginPaletteCommand } from './types'
+import type { CommandDeclaration, HostPlugins, PluginHostDeps, PluginPaletteCommand } from './types'
 
 /** A command the window lists: what its manifest declares and, where the plugin registered one, its handler. */
 export interface AvailableCommand {
@@ -31,15 +31,15 @@ export interface AvailableList {
 }
 
 function getBeforeHandlerState(
-  deps: PluginHostDeps,
+  plugins: HostPlugins,
   registry: HostRegistry,
   declaration: CommandDeclaration,
 ): 'available' | 'unbound' | 'left' {
-  if (deps.hasPluginFrontend?.(declaration.pluginId) === false) return 'left'
-  if (deps.isPluginFailed?.(declaration.pluginId)) return 'left'
-  if (!registry.activated.value.has(declaration.pluginId)) return 'available'
-  if (registry.starting?.value.has(declaration.pluginId)) return 'available'
-  return deps.hasPluginBackend?.(declaration.pluginId) === true ? 'left' : 'unbound'
+  if (plugins.hasPluginFrontend?.(declaration.pluginId) === false) return 'left'
+  if (plugins.isPluginFailed?.(declaration.pluginId)) return 'left'
+  if (!registry.plugins.activated.value.has(declaration.pluginId)) return 'available'
+  if (registry.plugins.starting?.value.has(declaration.pluginId)) return 'available'
+  return plugins.hasPluginBackend?.(declaration.pluginId) === true ? 'left' : 'unbound'
 }
 
 /**
@@ -49,21 +49,24 @@ function getBeforeHandlerState(
  * listed, and no issue is returned, until the first list of declarations has loaded. The listing
  * changes nothing and reports nothing.
  */
-export function listAvailableCommands(deps: PluginHostDeps, registry: HostRegistry): AvailableList {
-  const declarations = deps.getCommandDeclarations?.()
+export function listAvailableCommands(
+  deps: Pick<PluginHostDeps, 'plugins' | 'commands'>,
+  registry: HostRegistry,
+): AvailableList {
+  const declarations = deps.commands?.getCommandDeclarations?.()
   if (declarations === undefined) return { commands: [], issues: [] }
   const commands: AvailableCommand[] = []
   const issues = new Map<string, CommandIssue>()
   const addIssue = (issue: CommandIssue) => issues.set(getIssueKey(issue), issue)
   for (const declaration of declarations) {
-    if (registry.disposed.has(declaration.pluginId)) continue
+    if (registry.plugins.disposed.has(declaration.pluginId)) continue
     const id = formatCommandId(declaration.pluginId, declaration.id)
     const entry = registry.commands.value.get(id)
     if (entry) {
       commands.push({ id, declaration, entry })
       continue
     }
-    const state = getBeforeHandlerState(deps, registry, declaration)
+    const state = getBeforeHandlerState(deps.plugins ?? {}, registry, declaration)
     if (state === 'available') commands.push({ id, declaration })
     if (state === 'unbound') {
       addIssue({ pluginId: declaration.pluginId, id: declaration.id, kind: 'unbound' })
@@ -74,10 +77,11 @@ export function listAvailableCommands(deps: PluginHostDeps, registry: HostRegist
 
 /** The palette's view of a listed command. */
 export function createPaletteCommand({ id, declaration }: AvailableCommand): PluginPaletteCommand {
-  return {
+  const command: { -readonly [K in keyof PluginPaletteCommand]: PluginPaletteCommand[K] } = {
     id,
     title: declaration.title,
-    ...(declaration.when ? { when: declaration.when } : {}),
-    ...(declaration.icon ? { icon: declaration.icon } : {}),
   }
+  if (declaration.when) command.when = declaration.when
+  if (declaration.icon) command.icon = declaration.icon
+  return command
 }

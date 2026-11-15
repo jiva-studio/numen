@@ -16,7 +16,7 @@ const createContext = (permissions: readonly string[]) => {
     }),
   }
   const getConnections = vi.fn(() => connections)
-  const host = createTestContextHost({ window: { getConnections } })
+  const host = createTestContextHost({ work: { getConnections } })
   const context = createPluginParts('md.numen.tools.proofreading', host, {
     id: 'md.numen.tools.proofreading',
     name: 'Proofreading',
@@ -50,7 +50,7 @@ describe('the connections of a plugin', () => {
         return { dispose: () => handlers.delete(handler) }
       },
     }
-    const host = createTestContextHost({ window: { getConnections: () => connections } })
+    const host = createTestContextHost({ work: { getConnections: () => connections } })
     const context = createPluginParts('md.numen.views.agent.chat', host, {
       id: 'md.numen.views.agent.chat',
       name: 'Agent Chat',

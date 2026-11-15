@@ -249,4 +249,8 @@ func TestATemplateWithNoBackLaysNothingOut(t *testing.T) {
 	if front != "" || back != "" {
 		t.Errorf("laid out %q and %q, want nothing", front, back)
 	}
+	front, back = format.Lay(format.CardTemplate{Name: "Recognize", Back: "{{Name}}"}, card)
+	if front != "" || back != "" {
+		t.Errorf("laid out %q and %q, want nothing", front, back)
+	}
 }

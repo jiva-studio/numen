@@ -9,7 +9,7 @@ option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v
 // SearchSourceService is a participant of the search of the core that a plugin with the capability
 // search.source serves. The core decides what is indexed and when, hands the source the texts and
 // the place in the index its vectors are kept in, writes the vectors the source answers into that
-// place, and merges the passages the source answers to a query with those of the other participants.
+// place, and merges the chunks the source answers to a query with those of the other participants.
 service SearchSourceService {
   // DescribeSearchSource is what the core needs to keep the data of the source: its recipe, the width
   // of its vectors and the size of the chunks it reads.
@@ -19,8 +19,8 @@ service SearchSourceService {
   // that is searched. The core keeps them in the place under the chunks of the texts.
   rpc IndexTexts(IndexTextsRequest) returns (IndexTextsResponse);
 
-  // SearchPassages returns the chunks of the place that answer the query, best first.
-  rpc SearchPassages(SearchSourceServiceSearchPassagesRequest) returns (SearchSourceServiceSearchPassagesResponse);
+  // SearchChunks returns the chunks of the place that answer the query, best first.
+  rpc SearchChunks(SearchSourceServiceSearchChunksRequest) returns (SearchSourceServiceSearchChunksResponse);
 
   // EmbedQueries returns one vector per query, in the order of the queries, as the source compares a
   // query with its place. The floor calibration of a plugin measures the vault with them.
@@ -58,7 +58,7 @@ message DescribeSearchSourceResponse {
   // How many calls of IndexTexts the source answers at once.
   int32 concurrency = 6;
 
-  // The similarity a passage starts out having to reach to answer a query, zero when the source
+  // The similarity a chunk starts out having to reach to answer a query, zero when the source
   // knows none.
   double floor_hint = 7;
 }
@@ -81,7 +81,7 @@ message IndexTextsResponse {
   repeated FloatVector vectors = 1;
 }
 
-message SearchSourceServiceSearchPassagesRequest {
+message SearchSourceServiceSearchChunksRequest {
   SearchPlace place = 1;
   string query = 2;
 
@@ -104,7 +104,7 @@ message ChunkMatch {
   double score = 2;
 }
 
-message SearchSourceServiceSearchPassagesResponse {
+message SearchSourceServiceSearchChunksResponse {
   // Best first.
   repeated ChunkMatch matches = 1;
 }

@@ -111,7 +111,7 @@ describe('a registration the manifest declares', () => {
 describe('openExternal', () => {
   it('rejects for a plugin without link:open and does not open the address', async () => {
     const openExternal = vi.fn(() => Promise.resolve())
-    const host = createTestContextHost({ info: { openExternal } })
+    const host = createTestContextHost({ ui: { openExternal } })
     const context = createPluginParts(
       'md.numen.sample',
       host,
@@ -126,7 +126,7 @@ describe('openExternal', () => {
 
   it('opens the address for a plugin that declares link:open', async () => {
     const openExternal = vi.fn(() => Promise.resolve())
-    const host = createTestContextHost({ info: { openExternal } })
+    const host = createTestContextHost({ ui: { openExternal } })
     const context = createPluginParts(
       'md.numen.sample',
       host,

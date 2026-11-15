@@ -2,19 +2,18 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, type Component } from 'vue'
 import { CONVERSATION, NOTE_EDITOR, VAULT_SUMMARY, type ViewCapability } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost } from './host'
-import type { PluginHostDeps } from './types'
 import { STUB_CONNECTIONS } from '../testing/stubComponent'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const READ_WRITE = ['vault:read', 'vault:write']
 
 const createHost = () => {
-  const host = createPluginHost({
+  const host = createTestPluginHost({
     target: 'desktop.editor',
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
     openTab: () => Promise.resolve('tab'),
-  } as unknown as PluginHostDeps)
+  } as unknown as TestHostDeps)
   const createPlugin = (
     id: string,
     options: { permissions?: string[]; viewCapabilities?: string[] } = {},

@@ -310,7 +310,7 @@ func addGrantUses(o operation, uses []connection.Use, typeID string) []connectio
 	if !isFound || !found.IsAvailable {
 		return uses
 	}
-	for _, granted := range connection.ListGrantUses(o.uses.ListGrants(), found.Declaration) {
+	for _, granted := range connection.ListGrantUses(connection.ListGrants(o.uses.ListPlugins()), found.Declaration) {
 		at := slices.IndexFunc(uses, func(one connection.Use) bool { return one.PluginID > granted.PluginID })
 		if at < 0 {
 			at = len(uses)

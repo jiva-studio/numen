@@ -52,8 +52,6 @@ func (e SlotEntry) getPlacement() (kind, id string) {
 		return "command", e.Command
 	case e.View != "":
 		return "view", e.View
-	case e.Submenu != "":
-		return "submenu", e.Submenu
 	}
 	return "", ""
 }
@@ -176,7 +174,7 @@ func listSlotLookIssues(entry SlotEntry) []error {
 }
 
 func listForeignValueIssues(entry SlotEntry) []error {
-	if len(entry.Values) == 0 || !strings.HasPrefix(entry.Command, "app:") {
+	if !strings.HasPrefix(entry.Command, "app:") {
 		return nil
 	}
 	return wrapSlotIssues(ListAppValueIssues(entry.Command, entry.Values))
@@ -196,16 +194,13 @@ func ListAppValueIssues(command string, values map[string]string) []error {
 			}
 		}
 	}
-	for _, argument := range GetSharedCommandArguments(command) {
-		allowed[argument.Name] = nil
-	}
 	var issues []error
 	for _, name := range slices.Sorted(maps.Keys(values)) {
 		options, isDeclared := allowed[name]
 		switch {
 		case !isDeclared:
 			issues = append(issues, fmt.Errorf("values of command %q name the argument %q, which the command does not take", command, name))
-		case len(options) > 0 && !slices.Contains(options, values[name]):
+		case options != nil && !slices.Contains(options, values[name]):
 			issues = append(issues, fmt.Errorf("value %q of the argument %q of command %q is not one of %s", values[name], name, command, strings.Join(options, ", ")))
 		}
 	}

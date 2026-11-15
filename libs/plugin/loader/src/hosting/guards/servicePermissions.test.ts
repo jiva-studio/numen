@@ -90,17 +90,20 @@ function createHost(
       ...overrides.vault,
     },
     views: { drops: ui.drops as never, ...overrides.views },
-    window: {
+    ui: {
       getWorkspace: () => ui.workspace,
       getWindow: () => ui.window,
       getCommands: () => ui.commands,
       isCommandListed: () => true,
       getSlots: () => ui.slots as never,
       getNotices: () => ui.notices as never,
+      ...overrides.ui,
+    },
+    work: {
       getTasks: () => work.tasks,
       getBackgroundTasks: () => work.backgroundTasks,
       getProcesses: () => work.processes,
-      ...overrides.window,
+      ...overrides.work,
     },
   })
 }

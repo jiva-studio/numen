@@ -113,17 +113,6 @@ func NewClientFromEnv() (*Client, error) {
 	return newClientAt(endpoint), nil
 }
 
-// NewClientFromVars creates a client for the host named by the NUMEN_HOST_PORT entry of vars,
-// authenticating with its NUMEN_PLUGIN_TOKEN entry. They are the variables a host gives a plugin it links
-// into its own process.
-func NewClientFromVars(vars map[string]string) (*Client, error) {
-	endpoint, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return newClientAt(endpoint), nil
-}
-
 func newClientAt(endpoint hostcall.Endpoint) *Client {
 	return NewClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Token)
 }
@@ -156,22 +145,20 @@ type callStream struct {
 }
 
 func (s *callStream) Next() bool {
-	for !s.isDone {
-		if !s.stream.Receive() {
-			s.isDone = true
-			s.err = s.readEnd()
-			return false
+	if s.isDone || !s.stream.Receive() {
+		if !s.isDone {
+			s.isDone, s.err = true, s.readEnd()
 		}
-		switch frame := s.stream.Msg().GetFrame().(type) {
-		case *v1.HostConnectionServiceCallResponse_Data:
-			s.data = frame.Data
-			return true
-		case *v1.HostConnectionServiceCallResponse_Done:
-			s.isDone, s.done = true, frame.Done
-		case *v1.HostConnectionServiceCallResponse_Failure:
-			s.isDone = true
-			s.err = readFailure(frame.Failure)
-		}
+		return false
+	}
+	switch frame := s.stream.Msg().GetFrame().(type) {
+	case *v1.HostConnectionServiceCallResponse_Data:
+		s.data = frame.Data
+		return true
+	case *v1.HostConnectionServiceCallResponse_Done:
+		s.isDone, s.done = true, frame.Done
+	case *v1.HostConnectionServiceCallResponse_Failure:
+		s.isDone, s.err = true, readFailure(frame.Failure)
 	}
 	return false
 }

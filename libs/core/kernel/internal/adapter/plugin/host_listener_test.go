@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
+	"math/rand/v2"
 	"net"
 	"os"
 	"path/filepath"
@@ -47,11 +48,25 @@ func listenLoopback(t *testing.T) (net.Listener, int) {
 	return ln, addr.Port
 }
 
+// The ports a test picks lie below the ephemeral ranges of Linux (32768 up) and macOS (49152 up): a port
+// the kernel assigned with port 0 can go to a server of another test process before the plugin binds it.
+const (
+	lowestTestPort = 20000
+	testPortCount  = 12000
+)
+
 func getFreePort(t *testing.T) int {
 	t.Helper()
-	ln, port := listenLoopback(t)
-	testsupport.Close(t, ln)
-	return port
+	for range 50 {
+		port := lowestTestPort + rand.IntN(testPortCount)
+		ln, err := new(net.ListenConfig).Listen(t.Context(), "tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
+		if err == nil {
+			testsupport.Close(t, ln)
+			return port
+		}
+	}
+	t.Fatal("no free loopback port below the ephemeral range")
+	return 0
 }
 
 func changePortToFree(t *testing.T, host *container.PluginRoles, change func(context.Context, *container.PluginRoles, int) error) int {

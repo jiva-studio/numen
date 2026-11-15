@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
@@ -40,7 +41,7 @@ func newTwoVaults(t *testing.T) twoVaults {
 
 func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string, response any) int {
 	t.Helper()
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "token"}, func(s *server.Server) error {
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "token"}, func(s *server.Server) error {
 		return documents.Mount(s.NewAPI(api.Service))
 	})
 	if err != nil {

@@ -5,10 +5,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createMockVaultsHost, createMockWindowHost } from '@numen/plugin-sdk/testing'
-import { createPluginHost } from './host'
-import type { PluginHostDeps } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
-function createDeps(extra: Partial<PluginHostDeps> = {}): PluginHostDeps {
+function createDeps(extra: Partial<TestHostDeps> = {}): TestHostDeps {
   return {
     target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
@@ -29,7 +28,9 @@ describe('the vaults and the window of a plugin context', () => {
   it('reach the ones the window gives, for the plugin that holds vault:read', () => {
     const vaults = createMockVaultsHost()
     const window = createMockWindowHost()
-    const host = createPluginHost(createDeps({ getVaults: () => vaults, getWindow: () => window }))
+    const host = createTestPluginHost(
+      createDeps({ getVaults: () => vaults, getWindow: () => window }),
+    )
 
     const context = host.lifecycle.createContext('org.example.ledger', BAR)
 
@@ -40,7 +41,9 @@ describe('the vaults and the window of a plugin context', () => {
   it('are the same for every plugin of the window, the vaults only for one that holds vault:read', () => {
     const vaults = createMockVaultsHost()
     const window = createMockWindowHost()
-    const host = createPluginHost(createDeps({ getVaults: () => vaults, getWindow: () => window }))
+    const host = createTestPluginHost(
+      createDeps({ getVaults: () => vaults, getWindow: () => window }),
+    )
 
     const ledger = host.lifecycle.createContext('org.example.ledger', BAR)
     const tide = host.lifecycle.createContext('org.example.tide', TIDE)
@@ -52,7 +55,7 @@ describe('the vaults and the window of a plugin context', () => {
   })
 
   it('are absent where the window gives none', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
 
     const context = host.lifecycle.createContext('org.example.ledger', BAR)
 

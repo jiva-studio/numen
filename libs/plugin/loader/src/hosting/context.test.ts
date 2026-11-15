@@ -20,7 +20,7 @@ describe('PluginContext', () => {
     }
 
     const host: PluginContextHost = createTestContextHost({
-      info: { openExternal: vi.fn(async (_url: string) => undefined) },
+      ui: { openExternal: vi.fn(async (_url: string) => undefined) },
       registration: {
         registerReader: vi.fn((_id, _reg) => {
           calls.registerReader++
@@ -319,7 +319,7 @@ describe('PluginContext', () => {
       value: null,
     })
     expect((await ctx.plugin.identity.openExternal('file:///etc/passwd')).ok).toBe(false)
-    expect(host.info.openExternal).toHaveBeenCalledTimes(1)
-    expect(host.info.openExternal).toHaveBeenCalledWith('https://numen.md/')
+    expect(host.ui.openExternal).toHaveBeenCalledTimes(1)
+    expect(host.ui.openExternal).toHaveBeenCalledWith('https://numen.md/')
   })
 })

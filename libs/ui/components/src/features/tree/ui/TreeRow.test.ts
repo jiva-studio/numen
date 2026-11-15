@@ -1,8 +1,9 @@
 import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
-import { afterEach, describe, expect, it } from 'vitest'
+import { effectScope, nextTick, ref } from 'vue'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import TreeRow from './TreeRow.vue'
 import type { ShownRow } from '../lib/row'
+import { useRenameFocus } from '../model/useRenameFocus'
 
 const ROW = {
   id: 'plans',
@@ -89,5 +90,26 @@ describe('renaming', () => {
     await row.setProps({ isRenaming: false })
     expect(row.find('input').exists()).toBe(false)
     expect(row.get('.tree__name').text()).toBe('Plans')
+  })
+
+  it('focuses only when renaming turns on and a field is present', async () => {
+    const isRenaming = ref(true)
+    const focus = vi.fn<() => void>()
+    const field = ref<{ focus(): void } | null>({ focus })
+    const getIsRenaming = () => isRenaming.value
+    const scope = effectScope()
+    scope.run(() => useRenameFocus(getIsRenaming, field))
+
+    isRenaming.value = false
+    await nextTick()
+    await nextTick()
+    expect(focus).not.toHaveBeenCalled()
+
+    field.value = null
+    isRenaming.value = true
+    await nextTick()
+    await nextTick()
+    expect(focus).not.toHaveBeenCalled()
+    scope.stop()
   })
 })

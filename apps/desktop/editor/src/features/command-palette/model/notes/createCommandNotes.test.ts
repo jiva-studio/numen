@@ -7,7 +7,7 @@ describe('the open files a command can access', () => {
   it('include the files of the note editors and the files of the tab kinds', async () => {
     const flushTab = vi.fn(() => Promise.resolve())
     const onCloseCalled = vi.fn()
-    const requestClose = vi.fn()
+    const closeTab = vi.fn()
     const notes = createCommandNotes(
       {
         getTabAt: (p: string) => (p === 'Reached.md' ? 'reached:1' : null),
@@ -30,7 +30,7 @@ describe('the open files a command can access', () => {
                 }
               : null,
         },
-        panes: { requestClose },
+        panes: { closeTab },
       } as never,
     )
 
@@ -44,7 +44,7 @@ describe('the open files a command can access', () => {
     expect(flushTab).toHaveBeenCalledOnce()
     notes.close('tab:1')
     expect(onCloseCalled).toHaveBeenCalledWith('tab:1')
-    expect(requestClose).toHaveBeenCalledWith('tab:1')
+    expect(closeTab).toHaveBeenCalledWith('tab:1')
   })
 })
 
@@ -80,7 +80,7 @@ describe('the tab to close when a file is removed', () => {
 
   it('is the tab of the file, not a tool tab with the same path', async () => {
     const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([tool, deck])
+    windowTabs.kinds.registerKinds([tool, deck])
     const toolId = await windowTabs.tabs.openTabOfKind('graph')
     const deckId = await windowTabs.tabs.openTabOfKind('deck', FILE)
     const notes = createCommandNotes(reached, windowTabs)

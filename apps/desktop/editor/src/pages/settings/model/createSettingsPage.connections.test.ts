@@ -30,7 +30,7 @@ const api = createAnsweredApi({})
 
 const createSettings = () => {
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
-  const windowTabs = { groups: { handle: { openTab: vi.fn(() => Promise.resolve('')) } } }
+  const windowTabs = { handle: { openTab: vi.fn(() => Promise.resolve('')) } }
   return createWindowSettingsPart({
     api,
     rest: createSettingsStore(api.configuration.settings, SETTINGS_WORDS, vi.fn()),

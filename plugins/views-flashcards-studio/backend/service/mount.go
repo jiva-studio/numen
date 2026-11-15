@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
@@ -27,19 +26,6 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	return mount(s, clients)
-}
-
-// NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
-// from the variables a launched process of the plugin is given. It works the vault through the host
-// those name.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		clients, err := hostclient.NewFromVars(vars)
-		if err != nil {
-			return err
-		}
-		return mount(s, clients)
-	})
 }
 
 func mount(s *server.Server, clients hostclient.Clients) error {
@@ -85,10 +71,10 @@ func (b *Backend) Commands() (*command.Registry, error) {
 func (b *Backend) Tools() (*tools.Registry, error) {
 	selector := func(id domain.VaultID) host.VaultSelector { return b.vaults(id).Selector }
 	cfg := b.getCardsConfig()
-	set := cards.NewScenarios(cfg)
+	set := cards.NewUseCases(cfg)
 	return cardtools.New(
 		selector, set, cards.NewAgentRename(cfg),
-		deckedit.NewCardScenarios(set.Read, set.Write), deckedit.NewSectionScenarios(set.Read, set.Write),
+		deckedit.NewCardUseCases(set.Read, set.Write), deckedit.NewSectionUseCases(set.Read, set.Write),
 	).Registry()
 }
 

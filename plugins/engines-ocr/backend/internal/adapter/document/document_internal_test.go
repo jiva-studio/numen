@@ -13,6 +13,7 @@ import (
 	"github.com/klippa-app/go-pdfium/references"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
+	"github.com/tetratelabs/wazero"
 )
 
 type stubPool struct {
@@ -71,6 +72,16 @@ func TestGetExtensionsAndRuntimeConfig(t *testing.T) {
 	reader := NewReader()
 	if cfg := reader.getRuntimeConfig(); cfg != nil {
 		t.Fatalf("getRuntimeConfig() = %v, want nil", cfg)
+	}
+	cache := wazero.NewCompilationCache()
+	t.Cleanup(func() {
+		if err := cache.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	})
+	reader.SetCompilationCache(cache)
+	if cfg := reader.getRuntimeConfig(); cfg == nil {
+		t.Fatal("getRuntimeConfig() = nil after SetCompilationCache, want non-nil")
 	}
 }
 
