@@ -2,8 +2,11 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/google/jsonschema-go/jsonschema"
 )
 
 type locationInput struct {
@@ -103,18 +106,53 @@ func TestANullRequiredArgumentIsRejectedNamingItsType(t *testing.T) {
 func TestAnArgumentFailingAnotherKeywordIsInvalidInPlainWords(t *testing.T) {
 	catalog, _ := newCatalogRegistry(t)
 
-	for arguments, argument := range map[string]string{
-		`{"place":{"title":"Ferns"},"links":[],"shelf":300}`:                                             "shelf",
-		`{"place":{"title":"Ferns"},"links":[],"shelf":-1}`:                                              "shelf",
-		`{"place":{"title":"Ferns"},"links":[],"pair":["a.md"]}`:                                         "pair",
-		`{"place":{"title":"Ferns"},"links":[{"target":"a.md","rank":2},{"target":"b.md","weight":-4}]}`: "links[1].weight",
+	for arguments, want := range map[string]string{
+		`{"place":{"title":"Ferns"},"links":[],"shelf":300}`:                                             "catalog_update: the argument shelf is invalid: it must be at most 255",
+		`{"place":{"title":"Ferns"},"links":[],"shelf":-1}`:                                              "catalog_update: the argument shelf is invalid: it must be at least 0",
+		`{"place":{"title":"Ferns"},"links":[],"pair":["a.md"]}`:                                         "catalog_update: the argument pair is invalid: it must have exactly 2 items",
+		`{"place":{"title":"Ferns"},"links":[{"target":"a.md","rank":2},{"target":"b.md","weight":-4}]}`: "catalog_update: the argument links[1].weight is invalid: it must be at least 0",
 	} {
 		res := invoke(t, catalog, "catalog_update", []byte(arguments))
 		text := res.GetResult().GetText()
-		if want := "catalog_update: the argument " + argument + " is invalid"; !res.GetResult().GetIsError() || !strings.HasPrefix(text, want) {
-			t.Errorf("the arguments %s were returned %+v, want an error starting %q", arguments, res.GetResult(), want)
+		if !res.GetResult().GetIsError() || text != want {
+			t.Errorf("the arguments %s were returned %+v, want %q", arguments, res.GetResult(), want)
 		}
 		assertPlainFailureText(t, text)
+	}
+	for _, valid := range []string{
+		`{"place":{"title":"Ferns"},"links":[],"shelf":0,"pair":["a.md","b.md"]}`,
+		`{"place":{"title":"Ferns"},"links":[],"shelf":255}`,
+	} {
+		_ = runCatalog(t, valid)
+	}
+
+	if err := checkType(&jsonschema.Schema{Type: typeNull}, json.Number("1"), "x"); err == nil || err.Error() != "the argument x must be null, not an integer" {
+		t.Errorf("checkType(null, 1) = %v", err)
+	}
+
+	intPtr := func(v int) *int { return &v }
+	for _, tc := range []struct {
+		schema *jsonschema.Schema
+		length int
+		want   string
+	}{
+		{&jsonschema.Schema{MinItems: intPtr(2)}, 1, "it must have at least 2 items"},
+		{&jsonschema.Schema{MinItems: intPtr(2)}, 2, ""},
+		{&jsonschema.Schema{MinItems: intPtr(2)}, 3, ""},
+		{&jsonschema.Schema{MaxItems: intPtr(2)}, 1, ""},
+		{&jsonschema.Schema{MaxItems: intPtr(2)}, 2, ""},
+		{&jsonschema.Schema{MaxItems: intPtr(2)}, 3, "it must have at most 2 items"},
+		{&jsonschema.Schema{MinItems: intPtr(2), MaxItems: intPtr(2)}, 1, "it must have exactly 2 items"},
+		{&jsonschema.Schema{MinItems: intPtr(2), MaxItems: intPtr(2)}, 2, ""},
+		{&jsonschema.Schema{MinItems: intPtr(2), MaxItems: intPtr(2)}, 3, "it must have exactly 2 items"},
+		{&jsonschema.Schema{MinItems: intPtr(1), MaxItems: intPtr(3)}, 0, "it must have at least 1 items"},
+		{&jsonschema.Schema{MinItems: intPtr(1), MaxItems: intPtr(3)}, 1, ""},
+		{&jsonschema.Schema{MinItems: intPtr(1), MaxItems: intPtr(3)}, 3, ""},
+		{&jsonschema.Schema{MinItems: intPtr(1), MaxItems: intPtr(3)}, 4, "it must have at most 3 items"},
+	} {
+		if got := checkLength(tc.schema, tc.length); got != tc.want {
+			t.Errorf("checkLength(%+v, %d) = %q, want %q", tc.schema, tc.length, got, tc.want)
+		}
 	}
 }
 

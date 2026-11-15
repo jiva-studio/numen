@@ -24,12 +24,6 @@ type SettingRefresher interface {
 	Refresh()
 }
 
-// WriteValidator checks a value against the declaration of the setting it is written to.
-type WriteValidator interface {
-	// CheckWrite returns the reason the value is refused, and nil where it is accepted.
-	CheckWrite(path []string, value any) error
-}
-
 // ValueCodec converts the value of a setting between the JSON the settings hold it as and the value
 // it stands for.
 type ValueCodec interface {

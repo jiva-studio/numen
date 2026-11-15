@@ -44,8 +44,10 @@ function stepToFirst(visibleRows: readonly ShownRow[]): Step {
   return { at: visibleRows[0]?.id ?? null, turn: null }
 }
 
-function stepToLast(visibleRows: readonly ShownRow[]): Step {
-  return { at: visibleRows.at(-1)?.id ?? null, turn: null }
+function stepToLast(visibleRows: readonly ShownRow[], _pos: number, here: ShownRow): Step {
+  let last = here
+  for (const row of visibleRows) last = row
+  return { at: last.id, turn: null }
 }
 
 function stepDown(visibleRows: readonly ShownRow[], pos: number, here: ShownRow): Step {

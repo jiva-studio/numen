@@ -18,7 +18,7 @@ import {
   type PluginSettingInfo,
   type SettingEdit,
 } from '@/entities/settings'
-import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
+import { createSettingsCoreApi, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
 import { createConnectionStore } from '@/entities/connection'
@@ -179,11 +179,18 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
     ),
     watchSettings: vi.fn(() => feed.open()),
   } as unknown as SettingsCore
-  restore = installSettingsCore(core, { theme: THEME })
+  const api = createSettingsCoreApi(core, { theme: THEME })
   const log = { getWriter: () => say } as unknown as MessageLog
-  const rest = createSettingsStore(SETTINGS_WORDS, log.getWriter('configured'))
-  const connections = createConnectionStore(log.getWriter('connections'))
+  const { configuration } = api
+  const rest = createSettingsStore(
+    configuration.settings,
+    SETTINGS_WORDS,
+    log.getWriter('configured'),
+  )
+  const connections = createConnectionStore(configuration.connection, log.getWriter('connections'))
   const windowSettings = createWindowSettings({
+    themes: configuration.themes,
+    watchSettings: configuration.settings.watchSettings,
     rest,
     connections,
     words: WORDS,
@@ -194,14 +201,22 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
     rest,
     ...windowSettings,
     ...createSettingsPage({
+      api: {
+        settings: configuration.settings,
+        listFiles: api.vault.file.listFiles,
+        listCatalog: api.plugins.listCatalog,
+        listRowOptions: configuration.connection.listRowOptions,
+      },
       rest,
       connections,
       appearance: windowSettings.appearance,
       log,
       windowTabs: createTestTabs(),
-      getSettingsViews: () => new Map(),
       getPlatform: () => 'linux',
-      health: { items: ref([]), commands: { getIds: () => [], run: () => Promise.resolve('') } },
+      plugins: {
+        getSettingsViews: () => new Map(),
+        health: { items: ref([]), commands: { getIds: () => [], run: () => Promise.resolve('') } },
+      },
     }),
   }
   const page = mount(SettingsTab, {
@@ -290,8 +305,6 @@ const THEME = {
   },
 }
 
-let restore: (() => void) | undefined
-
 beforeEach(() => {
   vi.useFakeTimers()
   vi.stubGlobal(
@@ -305,8 +318,6 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  restore?.()
-  restore = undefined
   vi.useRealTimers()
   vi.unstubAllGlobals()
   document.head.querySelectorAll('style[data-appearance]').forEach((one) => one.remove())

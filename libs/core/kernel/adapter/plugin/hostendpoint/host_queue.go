@@ -31,7 +31,7 @@ type queueCaller struct {
 
 func (e *queueEndpoint) begin(header http.Header) (queueCaller, WorkQueue, error) {
 	authorization := header.Get("Authorization")
-	pluginID, err := e.endpoint.authenticate(authorization)
+	pluginID, err := e.endpoint.Authenticate(authorization)
 	if err != nil {
 		return queueCaller{}, nil, err
 	}

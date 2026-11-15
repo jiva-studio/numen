@@ -38,7 +38,7 @@ func writeLinks(links []domain.ResolvedLink) []*v1.HostLink {
 func (e *lookupsCalls) GetNoteRefs(
 	ctx context.Context, req *connect.Request[v1.GetNoteRefsRequest],
 ) (*connect.Response[v1.GetNoteRefsResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (e *lookupsCalls) GetNoteRefs(
 func (e *lookupsCalls) GetNoteTypes(
 	ctx context.Context, req *connect.Request[v1.GetNoteTypesRequest],
 ) (*connect.Response[v1.GetNoteTypesResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (e *lookupsCalls) GetNoteTypes(
 func (e *lookupsCalls) GetNamedPaths(
 	ctx context.Context, req *connect.Request[v1.GetNamedPathsRequest],
 ) (*connect.Response[v1.GetNamedPathsResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (e *lookupsCalls) GetNamedPaths(
 func (e *lookupsCalls) GetPathsOfType(
 	ctx context.Context, req *connect.Request[v1.GetPathsOfTypeRequest],
 ) (*connect.Response[v1.GetPathsOfTypeResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (e *lookupsCalls) GetPathsOfType(
 func (e *lookupsCalls) GetLinks(
 	ctx context.Context, req *connect.Request[v1.GetLinksRequest],
 ) (*connect.Response[v1.GetLinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (e *lookupsCalls) GetLinks(
 func (e *lookupsCalls) GetBacklinks(
 	ctx context.Context, req *connect.Request[v1.GetBacklinksRequest],
 ) (*connect.Response[v1.GetBacklinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (e *lookupsCalls) GetBacklinks(
 func (e *lookupsCalls) ResolveLinks(
 	ctx context.Context, req *connect.Request[v1.ResolveLinksRequest],
 ) (*connect.Response[v1.ResolveLinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}

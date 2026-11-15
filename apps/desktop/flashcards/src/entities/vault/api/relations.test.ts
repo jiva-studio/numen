@@ -1,18 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installCoreHandlers } from '@numen/core-client/testing'
-import { windowRelations } from './relations'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createCoreHandlerTransport } from '@numen/core-client/testing'
+import { createWindowClients } from '@/shared/api/clients'
+import { createWindowRelations } from './relations'
 
 const core = { resolveAddresses: vi.fn() }
 
-let restore: () => void
+const windowRelations = createWindowRelations(
+  createWindowClients(createCoreHandlerTransport(core)).notes,
+)
 
 beforeEach(() => {
   vi.resetAllMocks()
-  restore = installCoreHandlers(core)
-})
-
-afterEach(() => {
-  restore()
 })
 
 describe('the relationships the window offers', () => {

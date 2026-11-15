@@ -61,7 +61,7 @@ func (p pluginCommands) RunCommand(context.Context, plugin.CommandCall) (plugin.
 
 func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequest) *v1.RunPluginCommandResponse {
 	t.Helper()
-	res, err := newHandler(newScenarios(commands, commands, fileTypes{".md": "text/markdown"}, nil, nil)).RunPluginCommand(t.Context(), connect.NewRequest(request))
+	res, err := newHandler(newUseCases(commands, commands, fileTypes{".md": "text/markdown"}, nil, nil)).RunPluginCommand(t.Context(), connect.NewRequest(request))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequ
 }
 
 func TestListCommands_ListsTheCommandsWithTheirConditionAndTheContentTypesByExtension(t *testing.T) {
-	res, err := newHandler(newScenarios(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil, nil)).ListCommands(
+	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -161,7 +161,7 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 }
 
 func TestListCommands_CarriesEveryArgumentWithItsRequirement(t *testing.T) {
-	res, err := newHandler(newScenarios(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown"}, nil, nil)).ListCommands(
+	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown"}, nil, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
 		t.Fatal(err)

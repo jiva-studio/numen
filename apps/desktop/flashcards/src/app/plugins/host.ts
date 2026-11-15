@@ -13,15 +13,16 @@ import {
   requireMountAccess,
   type BackgroundTaskHost,
   type CommandsHost,
+  type createPluginConnections,
   type Manifest,
+  type VaultRelations,
   type VaultsHost,
   type WindowHost,
 } from '@numen/plugin-loader'
 import { createNamedIcon } from '@numen/ui'
 import { openExternalUrl, type NoticeQueue, type WindowPlatform } from '@numen/workbench'
-import { createViewIssueReporter, getPluginConnections } from '@/entities/plugin'
+import { createViewIssueReporter } from '@/entities/plugin'
 import type { WindowTabs } from '@/entities/tab'
-import { windowRelations } from '@/entities/vault'
 import { loadFrameRuntime } from '@/app/runtime'
 import { TARGET } from '@/shared/lib/window'
 
@@ -34,11 +35,14 @@ interface ShellServices {
 }
 
 /**
- * What the host is made from: the tabs and notices it registers into, the services it offers (a plugin
- * gets none that is missing), and the platform the plugins read, Windows where none is given, as the
- * frame reports without the Wails runtime.
+ * What the host is made from: the relationships between notes and the connections of a plugin, the
+ * tabs and notices it registers into, the services it offers (a plugin gets none that is missing),
+ * and the platform the plugins read, Windows where none is given, as the frame reports without the
+ * Wails runtime.
  */
 interface ShellHostDeps {
+  readonly relations: VaultRelations
+  readonly getConnections: (pluginId: string) => ReturnType<typeof createPluginConnections>
   readonly tabs: Pick<WindowTabs, 'registerKind' | 'closeTab' | 'closePluginTab'>
   readonly notices: NoticeQueue
   readonly services?: Partial<ShellServices>
@@ -53,26 +57,30 @@ const readSlotEntries = (manifests: ReadonlyMap<string, Manifest>) =>
 export function createShellHost(deps: ShellHostDeps) {
   const { tabs, notices, services = {}, getPlatform = () => 'windows' } = deps
   const pluginHost = createPluginHost({
-    target: TARGET,
-    app: createAppInfo({
-      version: import.meta.env.VITE_NUMEN_VERSION,
-      build: import.meta.env.VITE_NUMEN_BUILD,
-      getPlatform,
-    }),
-    openExternal: (url) => openExternalUrl(url, loadFrameRuntime),
-    registerKind: tabs.registerKind,
-    closeTab: (id) => tabs.closeTab(id),
-    closeTabsForPlugin: tabs.closePluginTab,
-    getSlotEntries: readSlotEntries,
-    reportViewIssue: createViewIssueReporter(notices),
-    getNotices: (pluginId) => createPluginNotices(notices, pluginId),
-    clearNotices: (pluginId) => notices.clear(pluginId),
-    getCommands: () => services.commands,
-    getVaults: () => services.vaults,
-    getWindow: () => services.window,
-    getBackgroundTasks: () => services.backgroundTasks,
-    getRelations: () => windowRelations,
-    getConnections: (pluginId) => getPluginConnections(pluginId),
+    window: {
+      target: TARGET,
+      app: createAppInfo({
+        version: import.meta.env.VITE_NUMEN_VERSION,
+        build: import.meta.env.VITE_NUMEN_BUILD,
+        getPlatform,
+      }),
+      openExternal: (url) => openExternalUrl(url, loadFrameRuntime),
+      getNotices: (pluginId) => createPluginNotices(notices, pluginId),
+      clearNotices: (pluginId) => notices.clear(pluginId),
+      getCommands: () => services.commands,
+      getWindow: () => services.window,
+    },
+    kinds: { registerKind: tabs.registerKind, closeTabsForPlugin: tabs.closePluginTab },
+    tabs: { closeTab: (id) => tabs.closeTab(id) },
+    slots: {
+      getSlotEntries: readSlotEntries,
+      reportViewIssue: createViewIssueReporter(notices),
+    },
+    vault: { getVaults: () => services.vaults, getRelations: () => deps.relations },
+    work: {
+      getBackgroundTasks: () => services.backgroundTasks,
+      getConnections: (pluginId) => deps.getConnections(pluginId),
+    },
   })
   const { views } = pluginHost.contextHost
 

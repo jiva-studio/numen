@@ -3,9 +3,11 @@
  * away, and where the keyboard goes afterwards.
  */
 import { mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
-import { nextTick } from 'vue'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { defineComponent, h, nextTick, ref } from 'vue'
 import SearchableListPopup from './SearchableListPopup.vue'
+import { useListFocus, type ScrollableRows } from './useListFocus'
+import { useListMeasure } from './useListMeasure'
 
 type PopupProps = InstanceType<typeof SearchableListPopup>['$props']
 
@@ -68,5 +70,45 @@ describe('the popup', () => {
     mounted = null
     expect(document.activeElement).toBe(asker)
     asker.remove()
+  })
+
+  it('scrolls to the active row and measures on mount and updates', async () => {
+    const scrollToActive = vi.fn<() => void>()
+    const rowList = ref<ScrollableRows | null>({ scrollToActive })
+    const activeIndex = ref(0)
+    const model = ref<string | null>('small')
+    const onMount = vi.fn<() => void>()
+    const measure = vi.fn<() => void>()
+    const watchedSource = ref(0)
+
+    const Host = defineComponent({
+      setup() {
+        useListFocus({ input: ref(null), rowList, activeIndex, model })
+        useListMeasure({ mount: onMount, watched: [watchedSource], measure })
+        return () => h('div')
+      },
+    })
+    const wrapper = mount(Host)
+    expect(onMount).toHaveBeenCalledTimes(1)
+    expect(measure).toHaveBeenCalledTimes(0)
+
+    await nextTick()
+    await nextTick()
+    expect(scrollToActive).toHaveBeenCalledTimes(1)
+    expect(measure).toHaveBeenCalledTimes(1)
+
+    activeIndex.value = 1
+    watchedSource.value = 1
+    await nextTick()
+    await nextTick()
+    expect(scrollToActive).toHaveBeenCalledTimes(2)
+    expect(measure).toHaveBeenCalledTimes(2)
+
+    rowList.value = null
+    model.value = 'large'
+    await nextTick()
+    await nextTick()
+    expect(scrollToActive).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
   })
 })

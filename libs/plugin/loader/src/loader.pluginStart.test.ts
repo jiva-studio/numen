@@ -3,9 +3,8 @@
  * plugin here is invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { PluginContext } from '@numen/plugin-sdk'
-import type { LoaderHost } from './host'
-import { createPluginLoader } from './loader'
+import type { LoaderHost, PluginParts } from './host'
+import { createTestPluginLoader } from './testing/pluginLoader'
 
 const ORCHARD = 'org.example.orchard'
 const LEDGER = 'org.example.ledger'
@@ -37,13 +36,14 @@ interface LoaderOptions {
 
 const createLoader = (activations: Record<string, number> = {}, options: LoaderOptions = {}) => {
   const host = {
-    createContext: (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+    createContext: (pluginId: string) =>
+      ({ plugin: { identity: { id: pluginId } }, host: {} }) as unknown as PluginParts,
     disposePlugin: vi.fn<(pluginId: string) => void>(),
     disposeAll: vi.fn(),
     getSetting: <T>(pluginId: string, key: string) =>
       (key === 'enabled' && options.disabled?.includes(pluginId) ? false : undefined) as T,
   } satisfies LoaderHost
-  return createPluginLoader({
+  return createTestPluginLoader({
     host,
     fetch: (async (url: string) => {
       const id = Object.keys(MANIFESTS).find((one) => String(url).includes(`/${one}/`))!

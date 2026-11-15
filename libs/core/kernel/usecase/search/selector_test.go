@@ -39,7 +39,7 @@ func (t versionTexts) GetContentHash(context.Context, string) (string, error) {
 	return t.text.Version().InputHash, nil
 }
 
-func TestAPassageOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
+func TestAResultOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 	const path = "talks/lecture.mp3"
@@ -75,7 +75,7 @@ func TestAPassageOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(found) != 1 || found[0].Source != path {
+		if len(found) != 1 || found[0].Path != path {
 			t.Fatalf("%q found %+v, want the lecture", tc.query, found)
 		}
 		if found[0].Selector != tc.want {

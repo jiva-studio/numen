@@ -15,14 +15,14 @@ func batch() Batch {
 }
 
 func TestGetFixedLines_RejectsReplyContainingMarker(t *testing.T) {
-	reply := "10|the " + Opens + "12" + Closes + "Södërby garden hedge."
-
-	fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
-	if replyVal {
-		t.Errorf("a reply carrying %s was taken as an answer", Opens)
-	}
-	if fixed != nil {
-		t.Errorf("a rejected batch gave back %v", fixed)
+	for _, reply := range []string{
+		"10|the " + Opens + "12Södërby garden hedge.",
+		"10|the 12" + Closes + "Södërby garden hedge.",
+	} {
+		fixed, hasOverflow, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
+		if replyVal || hasOverflow || fixed != nil {
+			t.Errorf("reply %q gave fixed=%v hasOverflow=%v ok=%v", reply, fixed, hasOverflow, replyVal)
+		}
 	}
 }
 
@@ -131,12 +131,19 @@ func TestTwoLinesOfNoLettersStandNowhereApart(t *testing.T) {
 	if apart := EditDistance(" -- ", "!!!"); apart != 0 {
 		t.Errorf("marks alone stand %v apart", apart)
 	}
+	if apart := EditDistance("$€+", "£¥="); apart != 0 {
+		t.Errorf("symbols alone stand %v apart", apart)
+	}
+	if apart := EditDistance("a", "ab"); apart != 0.5 {
+		t.Errorf("a -> ab stands %v apart, want 0.5", apart)
+	}
 }
 
 func TestTheNumberIsTakenFromTheLineHoweverItIsSeparated(t *testing.T) {
 	for _, reply := range []string{
 		"10|the Södërby garden hedge.",
 		"10 the Södërby garden hedge.",
+		"10\tthe Södërby garden hedge.",
 		"10 | the Södërby garden hedge.",
 	} {
 		fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
@@ -151,10 +158,13 @@ func TestTheNumberIsTakenFromTheLineHoweverItIsSeparated(t *testing.T) {
 }
 
 func TestGetFixedLines_RejectsNumberFusedToText(t *testing.T) {
-	reply := "10the Södërby garden hedge."
-
-	if fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance); replyVal {
-		t.Errorf("a row whose number is part of a word was taken as an answer, giving %v", fixed)
+	for _, reply := range []string{
+		"10the Södërby garden hedge.",
+		"10x|the Södërby garden hedge.",
+	} {
+		if fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance); replyVal {
+			t.Errorf("a row whose number is part of a word was taken as an answer, giving %v", fixed)
+		}
 	}
 }
 
@@ -200,5 +210,114 @@ func TestGetFixedLines_RejectsRowWhenNumberIsTextDigits(t *testing.T) {
 	// The number was left out, and the line's own first word reads as one.
 	if fixed, _, replyVal := GetFixedLines(dated, "1 January 1970 was a Thursday, they say", MaxEditDistance); replyVal {
 		t.Errorf("a row that ate the line's own digits was taken as an answer: %v", fixed)
+	}
+}
+
+func TestGateRowHelpers(t *testing.T) {
+	withZero := Batch{
+		Number:     1,
+		IsJoinable: false,
+		Lines: []Line{
+			{Number: 0, Text: "zero"},
+			{Number: 10, Text: "alpha"},
+			{Number: 11, Text: "beta"},
+		},
+	}
+	read := indexBatchLines(withZero)
+	if line, keep, reaches, ok := processRow("bad", withZero, read, map[int]bool{}, 0); line != (Line{}) || keep || reaches || ok {
+		t.Errorf("non-numbered row gave %+v keep=%v reaches=%v ok=%v", line, keep, reaches, ok)
+	}
+	if line, keep, reaches, ok := processRow("10-11|joined", withZero, read, map[int]bool{}, 0); line != (Line{}) || keep || reaches || ok {
+		t.Errorf("range on non-joinable batch gave %+v keep=%v reaches=%v ok=%v", line, keep, reaches, ok)
+	}
+	if line, keep, reaches, ok := processRow("99|missing", withZero, read, map[int]bool{}, 0); line != (Line{}) || keep || reaches || ok {
+		t.Errorf("unknown line gave %+v keep=%v reaches=%v ok=%v", line, keep, reaches, ok)
+	}
+	joinBatch := withZero
+	joinBatch.IsJoinable = true
+	if line, keep, reaches, ok := processRow("10-12|overflow", joinBatch, read, map[int]bool{}, 0); line != (Line{}) || keep || !reaches || !ok {
+		t.Errorf("overflow range gave %+v keep=%v reaches=%v ok=%v", line, keep, reaches, ok)
+	}
+	if line, keep, reaches, ok := processRow("10|ALPHA", withZero, read, map[int]bool{10: true}, 0); line != (Line{}) || keep || reaches || ok {
+		t.Errorf("already claimed line gave %+v keep=%v reaches=%v ok=%v", line, keep, reaches, ok)
+	}
+	if line, keep, reaches, ok := processRow("10|...", withZero, read, map[int]bool{}, 0); line != (Line{}) || keep || reaches || ok {
+		t.Errorf("emptied letters gave %+v keep=%v reaches=%v ok=%v", line, keep, reaches, ok)
+	}
+	if line, keep, reaches, ok := processRow("10|alpha", withZero, read, map[int]bool{}, 0); line != (Line{}) || keep || reaches || !ok {
+		t.Errorf("unchanged line gave %+v keep=%v reaches=%v ok=%v", line, keep, reaches, ok)
+	}
+	if line, keep, reaches, ok := processRow("10|alphe", withZero, read, map[int]bool{}, 0); line != (Line{Number: 10, Last: 10, Text: "alphe"}) || !keep || reaches || !ok {
+		t.Errorf("valid change gave %+v keep=%v reaches=%v ok=%v", line, keep, reaches, ok)
+	}
+
+	if joined, reaches, ok := matchLines(read, 99, 99, 11); joined != "" || reaches || ok {
+		t.Errorf("matchLines missing start: %q %v %v", joined, reaches, ok)
+	}
+	if joined, reaches, ok := matchLines(map[int]string{1: "a"}, 1, 2, 2); joined != "" || reaches || ok {
+		t.Errorf("matchLines missing at last: %q %v %v", joined, reaches, ok)
+	}
+	if joined, reaches, ok := matchLines(map[int]string{1: "a"}, 1, 2, 1); joined != "" || !reaches || !ok {
+		t.Errorf("matchLines reaching past last: %q %v %v", joined, reaches, ok)
+	}
+	if joined, reaches, ok := matchLines(map[int]string{1: "hello", 2: "world"}, 1, 2, 2); joined != "hello world" || reaches || !ok {
+		t.Errorf("matchLines joined: %q %v %v", joined, reaches, ok)
+	}
+
+	if !isValidRow("1|!", "---", "!", true) || isValidRow("1|!", "a", "!", true) {
+		t.Error("isValidRow mishandled single-letter and letterless lines")
+	}
+	if canKeepCorrection("", "", 1, 1, 0) || !canKeepCorrection("abcd", "abce", 1, 1, 0.25) || canKeepCorrection("abcd", "abce", 1, 1, 0.24) {
+		t.Error("canKeepCorrection mishandled empty or boundary distance")
+	}
+}
+
+func TestReadRowAndFenceHelpers(t *testing.T) {
+	for _, bad := range []string{
+		"",
+		"123",
+		"abc",
+		"999999999999999999999999999999|overflow",
+		"5-5|same",
+		"5-3|backwards",
+		"5-6",
+		"5-|missing",
+		"5-999999999999999999999999999999|overflow",
+		"10x|fused",
+	} {
+		if s, e, txt, barred, ok := readRow(bad); s != 0 || e != 0 || txt != "" || barred || ok {
+			t.Errorf("readRow(%q) = %d, %d, %q, %v, %v", bad, s, e, txt, barred, ok)
+		}
+	}
+	if endLine, rem, ok := readRowRange("-5|same", 5); endLine != 0 || rem != "" || ok {
+		t.Errorf("readRowRange(-5|same, 5) = %d, %q, %v", endLine, rem, ok)
+	}
+	if endLine, rem, ok := readRowRange("-6", 5); endLine != 0 || rem != "" || ok {
+		t.Errorf("readRowRange(-6, 5) = %d, %q, %v", endLine, rem, ok)
+	}
+	if got := readLeadingDigits(""); got != "" {
+		t.Errorf("readLeadingDigits empty = %q", got)
+	}
+	if got := readLeadingDigits("abc"); got != "" {
+		t.Errorf("readLeadingDigits non-digits = %q", got)
+	}
+	if got := readLeadingDigits("42"); got != "42" {
+		t.Errorf("readLeadingDigits all digits = %q", got)
+	}
+	if isPrefixedBySymbols("", "---") ||
+		isPrefixedBySymbols("hello", "-a hello") ||
+		isPrefixedBySymbols("hello", "a hello") ||
+		isPrefixedBySymbols("hello", "1 hello") ||
+		!isPrefixedBySymbols("hello", "- hello") {
+		t.Error("isPrefixedBySymbols failed")
+	}
+	if got := stripFence("```text"); got != "" {
+		t.Errorf("stripFence single line = %q", got)
+	}
+	if got := stripFence("```\n```"); got != "" {
+		t.Errorf("stripFence empty fenced block = %q", got)
+	}
+	if got := stripFence("```\n10|hello"); got != "10|hello" {
+		t.Errorf("stripFence unclosed block = %q", got)
 	}
 }

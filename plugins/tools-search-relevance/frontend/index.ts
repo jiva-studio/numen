@@ -6,8 +6,8 @@ import { FloorPanel } from './floor'
 
 export { FloorPanel, useFloor } from './floor'
 
-export function activate(context: PluginContext): void {
-  context.register.settingsView({ id: 'floor', component: FloorPanel })
+export function activate(plugin: PluginContext): void {
+  plugin.register.settingsView({ id: 'floor', component: FloorPanel })
 }
 
 export function deactivate(): void {

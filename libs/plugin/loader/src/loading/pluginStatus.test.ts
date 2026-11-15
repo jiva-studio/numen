@@ -1,19 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { PluginContext } from '@numen/plugin-sdk'
-import type { LoaderHost } from '../host'
-import { createPluginLoader } from '../loader'
+import type { LoaderHost, PluginParts } from '../host'
+import { createTestPluginLoader } from '../testing/pluginLoader'
 import { createPluginStatus } from './pluginStatus'
 
 const ORCHARD = 'org.example.orchard'
 
 const createHost = (): LoaderHost => ({
-  createContext: (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+  createContext: (pluginId: string) =>
+    ({ plugin: { identity: { id: pluginId } }, host: {} }) as unknown as PluginParts,
   disposePlugin: vi.fn(),
   disposeAll: vi.fn(),
 })
 
 const createLoader = (status: ReturnType<typeof createPluginStatus>, isBroken = false) =>
-  createPluginLoader({
+  createTestPluginLoader({
     host: createHost(),
     status,
     fetch: (async (url: string) =>

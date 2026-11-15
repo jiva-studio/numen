@@ -12,6 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/model"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/settings"
@@ -117,12 +119,29 @@ func TestProofreadWithoutAVersionUsesTheLiveOne(t *testing.T) {
 		return getRows(text, func(line string) string { return strings.ReplaceAll(line, "vacum", "vacuum") })
 	}
 
-	if _, err := newProofreadCommand(s.run)(t.Context(), command.Request{Command: "proofreading.create", Path: scanPath}); err != nil {
+	res, err := newProofreadCommand(s.run)(t.Context(), command.Request{Command: "proofreading.create", Path: scanPath})
+	if err != nil {
 		t.Fatal(err)
+	}
+	if want := "proofread 3 lines of books/flywheel.pdf and corrected 1"; res.Message != want {
+		t.Errorf("message = %q, want %q", res.Message, want)
 	}
 
 	if _, live := s.readLiveSegments(t); live.PluginID != PluginID {
 		t.Errorf("the live version is %+v", live)
+	}
+
+	s.script = func(string) string { return "999|invented" }
+	uncorrectedRes, err := newProofreadCommand(s.run)(t.Context(), command.Request{Command: "proofreading.create", Path: scanPath})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "proofread 3 lines of books/flywheel.pdf and corrected 0; the model returned no reply for 2 batches"; uncorrectedRes.Message != want {
+		t.Errorf("uncorrected message = %q, want %q", uncorrectedRes.Message, want)
+	}
+
+	if failedRes, err := newProofreadCommand(s.run)(t.Context(), command.Request{Command: "proofreading.create", Path: "books/missing.pdf"}); err == nil || failedRes != (command.Result{}) {
+		t.Errorf("missing file gave %+v, %v", failedRes, err)
 	}
 }
 
@@ -217,5 +236,44 @@ func TestAMistakeInTheRequestEndsTheProofreadingWithTheConnectionThatFoundIt(t *
 	var rejected *connection.StoppedError
 	if !errors.As(err, &rejected) || rejected.ConnectionName != "OpenRouter" {
 		t.Fatalf("got %v, want a rejection by OpenRouter", err)
+	}
+}
+
+func TestMountAndHostValidation(t *testing.T) {
+	s := newScene(t)
+	for _, incomplete := range []proofread.Host{
+		{Texts: s.host.Texts, Queue: s.host.Queue},
+		{Store: s.host.Store, Queue: s.host.Queue},
+		{Store: s.host.Store, Texts: s.host.Texts},
+	} {
+		if err := mount(server.New(), incomplete, failWith(connection.ErrNoConnection)); !errors.Is(err, errIncompleteHost) {
+			t.Errorf("incomplete host got %v, want %v", err, errIncompleteHost)
+		}
+	}
+
+	if err := mount(server.New(), s.host, failWith(connection.ErrNoConnection)); err != nil {
+		t.Errorf("valid mount failed: %v", err)
+	}
+
+	opened := openHostAt(hostcall.Endpoint{BaseURL: "http://127.0.0.1:1", Token: "tok"})
+	if opened.Store("v") == nil || opened.Texts("v") == nil || opened.Queue == nil {
+		t.Errorf("openHostAt returned nil field: %+v", opened)
+	}
+
+	t.Setenv("NUMEN_HOST_PORT", "")
+	t.Setenv("NUMEN_PLUGIN_TOKEN", "")
+	if err := Mount(server.New()); err == nil {
+		t.Error("Mount without env succeeded")
+	}
+
+	t.Setenv("NUMEN_HOST_PORT", "12345")
+	t.Setenv("NUMEN_PLUGIN_TOKEN", "token")
+	t.Setenv(model.EnvMockML, "false")
+	if err := Mount(server.New()); err != nil {
+		t.Errorf("Mount with env failed: %v", err)
+	}
+	t.Setenv(model.EnvMockML, "true")
+	if err := Mount(server.New()); err != nil {
+		t.Errorf("Mount with mock env failed: %v", err)
 	}
 }

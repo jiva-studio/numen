@@ -124,7 +124,7 @@ func (s Simulation) getScheduleAfterShowing(c Schedule, open, ends time.Time, p 
 func (s Simulation) getScheduleAfterDay(c Schedule, open time.Time, p Preset) Schedule {
 	for range MostShowings {
 		if !c.IsNew() && !s.Day.IsDue(c, open) {
-			break
+			return c
 		}
 		c = s.step(c, open, p, nil)
 	}
@@ -133,10 +133,10 @@ func (s Simulation) getScheduleAfterDay(c Schedule, open time.Time, p Preset) Sc
 
 func (s Simulation) canReachGoal(p Preset, c Schedule, open, delta time.Time) bool {
 	for range mostAnswers {
-		if !c.IsNew() && !c.Due.Before(delta) {
-			break
+		if !c.Due.Before(delta) {
+			return p.IsLearned(c, delta)
 		}
-		if !c.IsNew() && !c.Due.Before(s.Day.GetEnd(open)) {
+		if !c.Due.Before(s.Day.GetEnd(open)) {
 			// The card is not shown until the day its schedule falls in.
 			open = s.Day.GetStart(c.Due)
 		}
@@ -169,14 +169,12 @@ func (s Simulation) short(p Preset, cards []Schedule, unreviewed int, open time.
 }
 
 func (s Simulation) step(c Schedule, pos time.Time, p Preset, on *DueByDay) Schedule {
-	if !c.IsNew() {
-		c.Stability = math.Max(c.Stability, LeastStability)
-	}
 	if c.IsNew() {
 		good := s.By.Next(c, pos, Good)
 		good.Due = p.AssignDueDay(on, pos, good.Due)
 		return good
 	}
+	c.Stability = math.Max(c.Stability, LeastStability)
 	back := s.getRecallProbability(c, pos)
 	good, again := s.By.Endings(c, pos)
 

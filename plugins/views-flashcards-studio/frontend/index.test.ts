@@ -2,13 +2,14 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createMockBufferHost,
   createMockNoticeHost,
+  createMockHostServices,
   createMockPluginContext,
   createMockTabWindow,
 } from '@numen/plugin-sdk/testing'
 import {
   VAULT_SUMMARY,
   type ConnectionHost,
-  type PluginContext,
+  type HostServices,
   type VaultRelations,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
@@ -29,13 +30,9 @@ const createContext = () => {
   const buffers = createMockBufferHost()
   const window = createMockTabWindow()
   const closeTab = vi.fn(window.finishClose)
-  const ctx = createMockPluginContext({
-    pluginId: 'md.numen.views.flashcards.studio',
-    workspace,
-    buffers,
-    closeTab,
-  })
-  return { ctx, writers, buffers, window, closeTab }
+  const ctx = createMockPluginContext({ pluginId: 'md.numen.views.flashcards.studio' })
+  const host = createMockHostServices({ workspace, buffers, closeTab })
+  return { ctx, host, writers, buffers, window, closeTab }
 }
 
 /** Connections that no review in these tests calls. */
@@ -48,20 +45,16 @@ const connections: ConnectionHost = {
 
 const relations = { resolveLinks: async () => [] } as unknown as VaultRelations
 
-const createReviewContext = (closeTab = vi.fn()) => {
-  const ctx = createMockPluginContext({
-    target: 'desktop.flashcards',
-    notices: createMockNoticeHost(),
-    relations,
-    closeTab,
-  })
-  return { ...ctx, work: { ...ctx.work, connections } } satisfies PluginContext
+const createReviewParts = (closeTab = vi.fn()) => {
+  const ctx = createMockPluginContext({ target: 'desktop.flashcards' })
+  const host = createMockHostServices({ notices: createMockNoticeHost(), relations, closeTab })
+  return { ctx, host: { ...host, work: { ...host.work, connections } } satisfies HostServices }
 }
 
 describe('flashcards-studio plugin', () => {
   it('draws only the review and the summary of each vault in the window of the flashcards target', () => {
-    const ctx = createReviewContext()
-    activate(ctx)
+    const { ctx, host } = createReviewParts()
+    activate(ctx, host)
 
     const kinds = ctx.getRegisteredTabKinds()
     expect(kinds.map((one) => one.kind)).toStrictEqual([REVIEW])
@@ -72,20 +65,20 @@ describe('flashcards-studio plugin', () => {
   })
 
   it('refuses to draw the review in a window that offers no connections', () => {
-    const ctx = createMockPluginContext({
-      target: 'desktop.flashcards',
+    const ctx = createMockPluginContext({ target: 'desktop.flashcards' })
+    const host = createMockHostServices({
       notices: createMockNoticeHost(),
       relations,
       closeTab: vi.fn(),
     })
 
-    expect(() => activate(ctx)).toThrow(/connections/)
+    expect(() => activate(ctx, host)).toThrow(/connections/)
   })
 
   it('takes the window back to its vaults by closing the review tab', async () => {
     const closeTab = vi.fn()
-    const ctx = createReviewContext(closeTab)
-    activate(ctx)
+    const { ctx, host } = createReviewParts(closeTab)
+    activate(ctx, host)
     const kind = ctx.getRegisteredTabKinds()[0]!
     const scope = effectScope()
     const state = scope.run(() => kind.open!('roots', 'tab-1')) as {
@@ -100,8 +93,8 @@ describe('flashcards-studio plugin', () => {
   })
 
   it('registers the deck, card model and preset tab kinds upon activation', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+    const { ctx, host } = createContext()
+    activate(ctx, host)
 
     const kinds = ctx.getRegisteredTabKinds()
     expect(kinds.map((one) => one.kind)).toStrictEqual([DECK, CARD_MODEL, PRESET])
@@ -114,25 +107,25 @@ describe('flashcards-studio plugin', () => {
   })
 
   it('removes the three kinds when the plugin is disabled', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+    const { ctx, host } = createContext()
+    activate(ctx, host)
 
     ctx.dispose()
 
-    expect(ctx.plugin.subscriptions).toHaveLength(0)
+    expect(ctx.identity.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
   })
 
   it('writes the messages of the card models and the presets under a name of their own', () => {
-    const { ctx, writers } = createContext()
-    activate(ctx)
+    const { ctx, host, writers } = createContext()
+    activate(ctx, host)
 
     expect(writers).toStrictEqual(['deck', 'card-model', 'preset'])
   })
 
   it('makes each kind able to make the file it edits', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+    const { ctx, host } = createContext()
+    activate(ctx, host)
 
     expect(ctx.getRegisteredTabKinds().every((one) => typeof one.createFile === 'function')).toBe(
       true,
@@ -140,8 +133,8 @@ describe('flashcards-studio plugin', () => {
   })
 
   it('queries kind handlers for pending changes before flush', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+    const { ctx, host } = createContext()
+    activate(ctx, host)
 
     const [deck, cardModel, preset] = ctx.getRegisteredTabKinds()
     expect(typeof deck?.isAsking).toBe('function')
@@ -153,16 +146,16 @@ describe('flashcards-studio plugin', () => {
   })
 
   it('registers the handler that opens the preset of the note in front', () => {
-    const { ctx } = createContext()
-    activate(ctx)
+    const { ctx, host } = createContext()
+    activate(ctx, host)
 
     expect(ctx.getRegisteredCommands().map(({ id }) => id)).toStrictEqual(['preset.open'])
   })
 
   it('opens a note that is no deck as its own preset', async () => {
-    const { ctx } = createContext()
-    const openTab = vi.spyOn(ctx.tabs, 'open')
-    activate(ctx)
+    const { ctx, host } = createContext()
+    const openTab = vi.spyOn(host.tabs, 'open')
+    activate(ctx, host)
 
     await ctx.triggerCommand('preset.open', {
       path: 'Plan.md',
@@ -177,8 +170,8 @@ describe('flashcards-studio plugin', () => {
   })
 
   it('passes the closing of a tab that took its own close to the window', async () => {
-    const { ctx, window, closeTab } = createContext()
-    activate(ctx)
+    const { ctx, host, window, closeTab } = createContext()
+    activate(ctx, host)
     const kinds = ctx.getRegisteredTabKinds()
     for (const one of kinds) window.register(one as never)
     const id = await window.openTab(PRESET, 'Slow.md')
@@ -189,29 +182,29 @@ describe('flashcards-studio plugin', () => {
   })
 
   it('refuses to activate in a window that offers no workspace or open files', () => {
-    const { ctx } = createContext()
+    const { host } = createContext()
     expect(() =>
       activate(
-        createMockPluginContext({
-          pluginId: 'md.numen.views.flashcards.studio',
-          ...(ctx.ui.workspace ? { workspace: ctx.ui.workspace } : {}),
+        createMockPluginContext({ pluginId: 'md.numen.views.flashcards.studio' }),
+        createMockHostServices({
+          ...(host.ui.workspace ? { workspace: host.ui.workspace } : {}),
         }),
       ),
     ).toThrow('the flashcards need the window their tabs are drawn in and its open files')
   })
 
   it('activates through the default plugin lifecycle', async () => {
-    const { ctx } = createContext()
-    await plugin.activate(ctx)
+    const { ctx, host } = createContext()
+    await plugin.activate(ctx, host)
 
     expect(ctx.getRegisteredTabKinds()).toHaveLength(3)
   })
 
   it('registers no command of its own for the New submenu, where the files of the vault are given', () => {
-    const { ctx } = createContext()
-    ;(ctx as unknown as { files: unknown }).files = { list: async () => [] }
+    const { ctx, host } = createContext()
+    ;(host as unknown as { files: unknown }).files = { list: async () => [] }
 
-    activate(ctx)
+    activate(ctx, host)
 
     expect(ctx.getRegisteredCommands().map(({ id }) => id)).toStrictEqual(['preset.open'])
   })

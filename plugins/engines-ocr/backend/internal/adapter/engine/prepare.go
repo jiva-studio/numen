@@ -20,13 +20,16 @@ func NewLibrary() *onnx.Library {
 	return onnx.NewLibrary(bindRuntime)
 }
 
-func bindRuntime(libPath string) (err error) {
+func bindRuntime(libPath string) error {
 	probe, err := os.MkdirTemp("", "numen-ocr-bind-probe-")
 	if err != nil {
 		return fmt.Errorf("create the probe directory: %w", err)
 	}
-	defer func() { err = errors.Join(err, os.RemoveAll(probe)) }()
 	_, bindErr := paddle.NewEngine(newProbeConfig(libPath, probe))
+	return errors.Join(checkBindError(libPath, bindErr), os.RemoveAll(probe))
+}
+
+func checkBindError(libPath string, bindErr error) error {
 	if bindErr == nil || errors.Is(bindErr, fs.ErrNotExist) {
 		return nil
 	}

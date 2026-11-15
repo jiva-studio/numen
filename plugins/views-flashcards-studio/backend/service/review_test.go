@@ -61,6 +61,9 @@ func newAPIOn(tb testing.TB, notes ...map[string]string) (*API, []domain.Vault, 
 		target = append(target, installation.Add(tb, one))
 	}
 	backend := New(Config{Vaults: vaulttest.Vaults(installation.Host), Store: vaulttest.Folders(installation.Host), Now: vaulttest.NewClock()})
+	if backend.getFlashConfig().Day != (review.Day{Starts: 0, In: nil}) {
+		tb.Fatalf("unexpected default day: %+v", backend.getFlashConfig().Day)
+	}
 	return backend.newReviewHandler(), target, installation
 }
 
@@ -829,7 +832,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	rows := make(map[string]*api.DeckCardsDue, len(response.Decks))
 	for _, one := range response.Decks {
 		rows[one.Deck] = one
-		p, err := handler.flash().Schedules.Presets.GetForDeck(t.Context(), v, one.Deck)
+		p, err := handler.flash().Schedules.Presets.GetForDeck.Execute(t.Context(), v, one.Deck)
 		if err != nil {
 			t.Fatal(err)
 		}

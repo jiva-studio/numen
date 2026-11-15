@@ -60,7 +60,7 @@ func readBudgetUnit(front map[string]any, p *Preset, problems *[]string) {
 func readByDate(front map[string]any, p *Preset, problems *[]string) {
 	raw, present := front["by_date"]
 	if !present || raw == nil {
-		if p.Goal == GoalDate && p.By.IsZero() {
+		if p.Goal == GoalDate {
 			*problems = append(*problems, "a preset targeting a day requires the day, under by_date")
 		}
 		return

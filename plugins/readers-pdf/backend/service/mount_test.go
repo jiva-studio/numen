@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,6 +14,15 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
+
+func newEnvHandler(t *testing.T, vars map[string]string) (http.Handler, error) {
+	t.Helper()
+	t.Setenv(hostcall.HostPortEnv, "")
+	for name, value := range vars {
+		t.Setenv(name, value)
+	}
+	return servertest.NewHandler(vars, Mount)
+}
 
 func postDocument(t *testing.T, baseURL, token, body string) int {
 	t.Helper()
@@ -39,12 +49,12 @@ func postDocument(t *testing.T, baseURL, token, body string) int {
 // The handler a host that links the plugin in answers the document API with the token it was given
 // and rejects a call without it.
 func TestTheLinkedHandlerAnswersTheDocumentAPI(t *testing.T) {
-	handler, err := NewHandler(map[string]string{
+	handler, err := newEnvHandler(t, map[string]string{
 		"NUMEN_PLUGIN_TOKEN": "linked-token",
 		"NUMEN_HOST_PORT":    "1",
 	})
 	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
+		t.Fatalf("Mount: %v", err)
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
@@ -70,8 +80,8 @@ func TestTheLinkedHandlerAnswersTheDocumentAPI(t *testing.T) {
 	if pageRes.StatusCode != http.StatusBadRequest {
 		t.Fatalf("GET /plugin/pages/0 = %d, want 400", pageRes.StatusCode)
 	}
-	if _, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token"}); !errors.Is(err, hostcall.ErrNoHost) {
-		t.Fatalf("NewHandler without host port = %v, want ErrNoHost", err)
+	if _, err := newEnvHandler(t, map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token"}); !errors.Is(err, hostcall.ErrNoHost) {
+		t.Fatalf("Mount without host port = %v, want ErrNoHost", err)
 	}
 }
 
@@ -101,9 +111,9 @@ func TestTheLinkedHandlerReachesTheHostOfItsVariables(t *testing.T) {
 	defer hostServer.Close()
 	port := hostServer.URL[strings.LastIndex(hostServer.URL, ":")+1:]
 
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_HOST_PORT": port})
+	handler, err := newEnvHandler(t, map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_HOST_PORT": port})
 	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
+		t.Fatalf("Mount: %v", err)
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()

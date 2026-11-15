@@ -17,7 +17,7 @@ const CALIBRATION = {
   spread: 0.07,
   histogram: [0, 1, 4, 9, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   queryCount: 200,
-  passageCount: 500,
+  chunkCount: 500,
   calibratedAt: 1_792_000_000,
 }
 
