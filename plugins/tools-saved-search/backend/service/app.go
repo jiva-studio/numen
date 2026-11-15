@@ -95,8 +95,8 @@ func (a *App) NewRegistry() (*tools.Registry, error) {
 	return a.newRegistry(built)
 }
 
-// HandleEvent marks the saved searches of a vault whose index changed stale and runs the ones that are due.
-// Every other event is ignored.
+// HandleEvent marks the saved searches of a vault whose index changed stale and starts the run of the ones
+// that are due in the background. Every other event is ignored.
 func (a *App) HandleEvent(ctx context.Context, event string) error {
 	vault, isIndexChange := host.ReadIndexChangedEvent(event)
 	if !isIndexChange {
@@ -109,7 +109,8 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 	if err := built.runner.MarkStale(ctx, vault); err != nil {
 		return err
 	}
-	return built.runner.RunDue(ctx, vault)
+	built.runner.StartRunDue(context.WithoutCancel(ctx), vault)
+	return nil
 }
 
 func (a *App) updateSettings(ctx context.Context, built *parts, values map[string]string) {

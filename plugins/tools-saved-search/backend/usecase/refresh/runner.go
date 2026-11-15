@@ -4,9 +4,6 @@
 package refresh
 
 import (
-	"context"
-	"maps"
-	"slices"
 	"sync"
 	"time"
 
@@ -43,7 +40,8 @@ type Dependencies struct {
 }
 
 // Runner runs the saved searches of the vaults of one process. The runs of one vault go one after
-// another; the runs of two vaults go on together. A run whose note or query has problems, or that fails,
+// another, an interactive run before the searches of a batch that wait; the runs of two vaults go on
+// together. A run whose note or query has problems, or that fails,
 // keeps the last good results and records the time and the reason, stale, so it is tried again after the
 // cooldown; a failure of the host returns its error. A run the core reports stale stays stale.
 type Runner struct {
@@ -57,6 +55,7 @@ type Runner struct {
 	watchers *watchers
 	timers   *timers
 	edits    *edits
+	started  *sync.WaitGroup
 }
 
 // New returns a runner over the dependencies, with the settings at the time of each run.
@@ -64,6 +63,7 @@ func New(dependencies Dependencies, settings func() Settings, clock ports.Clock)
 	return &Runner{
 		open: dependencies.Open, tasks: dependencies.Tasks, log: dependencies.Log, settings: settings, clock: clock,
 		vaults: newVaultLocks(), records: &sync.Mutex{}, watchers: newWatchers(), timers: newTimers(), edits: newEdits(),
+		started: &sync.WaitGroup{},
 	}
 }
 
@@ -95,34 +95,7 @@ func (r *Runner) now() time.Time {
 	return r.clock.Now().UTC().Truncate(time.Second)
 }
 
-// vaultLocks lets one caller at a time run the searches of a vault.
-type vaultLocks struct {
-	mu    sync.Mutex
-	locks map[domain.VaultID]chan struct{}
-}
-
-func newVaultLocks() *vaultLocks {
-	return &vaultLocks{mu: sync.Mutex{}, locks: map[domain.VaultID]chan struct{}{}}
-}
-
-func (l *vaultLocks) list() []domain.VaultID {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return slices.Sorted(maps.Keys(l.locks))
-}
-
-func (l *vaultLocks) lock(ctx context.Context, vault domain.VaultID) (func(), error) {
-	l.mu.Lock()
-	lock, isKnown := l.locks[vault]
-	if !isKnown {
-		lock = make(chan struct{}, 1)
-		l.locks[vault] = lock
-	}
-	l.mu.Unlock()
-	select {
-	case lock <- struct{}{}:
-		return func() { <-lock }, nil
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
+// Wait returns when the runs the runner started in the background have ended.
+func (r *Runner) Wait() {
+	r.started.Wait()
 }

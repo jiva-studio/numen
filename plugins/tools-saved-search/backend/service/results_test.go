@@ -209,9 +209,7 @@ func TestGetResultsShowsTheFailureOfTheLastRunWithTheLastGoodResults(t *testing.
 
 	f.search.setFailure(errors.New("the core did not answer"))
 	f.clock.Advance(time.Minute)
-	if err := f.app.HandleEvent(t.Context(), "onIndexChanged:"+testVault); err == nil {
-		t.Fatal("HandleEvent = nil, want the failure of the core")
-	}
+	f.handleIndexChange(t)
 
 	res := f.getResults(t, stormsPath)
 	if res.ComputedAt != "2026-11-14T09:30:00Z" || res.FailedAt != "2026-11-14T09:31:00Z" || !strings.Contains(res.Failure, "the core did not answer") {
