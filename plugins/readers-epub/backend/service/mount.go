@@ -73,13 +73,11 @@ func mount(s *server.Server, connected *hostclient.Host) (*texts.Follower, error
 		return nil, err
 	}
 	command.Mount(s, commands)
-	startFollowing(s, connected.GetShownVault, follower)
+	followShownVault(s, connected.GetShownVault, follower)
 	return follower, nil
 }
 
-// startFollowing follows the feed of the shown vault in the background, so changes stored while the
-// plugin was stopped are read when it starts.
-func startFollowing(s *server.Server, shown ShownVault, follower *texts.Follower) {
+func followShownVault(s *server.Server, shown ShownVault, follower *texts.Follower) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {

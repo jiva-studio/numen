@@ -59,7 +59,7 @@ func TestAFilesChangedEventWritesTheTextsTheFeedNames(t *testing.T) {
 func TestAStartedPluginFollowsTheFeedOfTheShownVault(t *testing.T) {
 	files, versions, follower := newFollowedBook(t)
 	s := server.New()
-	startFollowing(s, files.GetVault, follower)
+	followShownVault(s, files.GetVault, follower)
 	defer func() {
 		if err := s.Close(); err != nil {
 			t.Error(err)
