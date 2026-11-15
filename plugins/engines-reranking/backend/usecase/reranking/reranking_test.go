@@ -272,7 +272,7 @@ func TestRerankOfAModelThatDoesNotOpenIsTryNext(t *testing.T) {
 	_, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()})
 
 	checkFailure(t, err, true, connection.ReasonUnavailable)
-	if texts := report.getTexts(); len(texts) != 1 || !strings.Contains(texts[0], "not loadable") || !strings.Contains(texts[0], gteID) {
+	if texts := report.getTexts(); len(texts) != 1 || !strings.Contains(texts[0], "not loadable") || !strings.Contains(texts[0], bgeID) {
 		t.Errorf("reported %q, want the open failure with the profile id", texts)
 	}
 }
@@ -302,7 +302,7 @@ func TestRerankOfTheSameProfileKeepsTheLoadedModel(t *testing.T) {
 	r := newRerankingUseCase(t, open, &reports{})
 	request := &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}
 
-	for _, model := range []string{"", gteID, "gte-multilingual-reranker-base"} {
+	for _, model := range []string{"", bgeID, "bge-reranker-v2-m3"} {
 		if _, err := r.Rerank(t.Context(), callFor(model), request); err != nil {
 			t.Fatal(err)
 		}
@@ -420,8 +420,8 @@ func TestListModelsListsTheProfilesWithATier(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []connection.Option{
-		{Value: gteID, Title: "GTE multilingual reranker (default, 341 MB)"},
-		{Value: bgeID, Title: "BGE reranker v2 M3 (larger, 571 MB)"},
+		{Value: bgeID, Title: "BGE reranker v2 M3 (default, 571 MB)"},
+		{Value: gteID, Title: "GTE multilingual reranker (smaller, 341 MB)"},
 	}
 	if !slices.Equal(listed.Options, want) || listed.IsPartial {
 		t.Errorf("listed %+v, want %+v and not partial", listed, want)

@@ -36,7 +36,7 @@ func getShippedProfiles(t *testing.T) []profile.Profile {
 	}
 	curated := table.GetCurated()
 	if len(curated) != 2 {
-		t.Fatalf("%d shipped profiles, want gte and bge", len(curated))
+		t.Fatalf("%d shipped profiles, want bge and gte", len(curated))
 	}
 	return curated
 }
