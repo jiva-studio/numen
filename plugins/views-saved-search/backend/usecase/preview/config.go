@@ -9,15 +9,19 @@ import "strconv"
 // results go to the reranker. Passages of one file at most MergeGapBytes apart are joined into one result.
 // A query has at most MaxQueryBytes bytes.
 type Config struct {
-	DefaultLimit      int
-	MaxLimit          int
-	ResultsPerSearch  int
-	MaxCandidates     int
-	MaxPathPrefixes   int
-	RerankedPerResult int
-	MaxReranked       int
-	MergeGapBytes     int
-	MaxQueryBytes     int
+	DefaultLimit           int
+	MaxLimit               int
+	ResultsPerSearch       int
+	RerankResultsPerSearch int
+	MaxCandidates          int
+	MaxPathPrefixes        int
+	FusedPerResult         int
+	MaxFused               int
+	RerankedPerResult      int
+	MaxReranked            int
+	MaxRerankedBytes       int
+	MergeGapBytes          int
+	MaxQueryBytes          int
 }
 
 // DefaultConfig returns the defaults the manifest declares.

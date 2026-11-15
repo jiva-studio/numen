@@ -18,6 +18,7 @@ type Candidate struct {
 	Path          string
 	Start, Length int
 	Text          string
+	WholeText     string
 	Selector      string
 	PlaceLabel    string
 	MatchLine     int

@@ -320,3 +320,24 @@ func TestPreviewToolRefusesANegativeLimit(t *testing.T) {
 		t.Error("the tool accepted the limit -1")
 	}
 }
+
+func TestPreviewDescriptionTellsToAddWordsWhenTheUserNamesAnExactThing(t *testing.T) {
+	listing, err := newFixture(t, 10).registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	i := slices.IndexFunc(listing.Tools, func(tool *tools.ToolInfo) bool { return tool.Name == "saved_search_preview" })
+	if i < 0 {
+		t.Fatalf("tools = %+v, want saved_search_preview", listing.Tools)
+	}
+	description := listing.Tools[i].Description
+	for _, part := range []string{"words differently", `words("\"the phrase\"")`, "||"} {
+		if !strings.Contains(description, part) {
+			t.Errorf("description = %q, want %q", description, part)
+		}
+	}
+	if strings.Index(description, `words("\"the phrase\"")`) < strings.Index(description, "words(\"query\")") {
+		t.Errorf("description = %q, want the hint after the sentence about words()", description)
+	}
+}

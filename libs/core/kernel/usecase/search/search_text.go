@@ -22,8 +22,9 @@ type ResultFinder interface {
 	Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.SearchResult, error)
 }
 
-// SearchResultQuery is a text search request. Mode selects the participants, Hybrid by default, and
-// IsRawWords passes Query to the words as an FTS5 query.
+// SearchResultQuery is a text search request. Mode selects the participants, Hybrid by default,
+// IsRawWords passes Query to the words as an FTS5 query, and IsWholeText keeps the whole text of each
+// chunk in WholeText.
 type SearchResultQuery struct {
 	Query            string
 	Limit            int
@@ -32,6 +33,7 @@ type SearchResultQuery struct {
 	PathPrefix       string
 	Mode             Mode
 	IsRawWords       bool
+	IsWholeText      bool
 }
 
 // SearchText finds the search results of a vault matching a query, by keywords and by embedding, with
@@ -49,7 +51,8 @@ func NewSearchText(finder ResultFinder) *SearchText {
 // MaxSearchedResults, and at most q.ResultsPerSource of one source, DefaultSearchedResultsPerSource
 // where it is not positive and q.Limit where it is above. An installation with no model searches by
 // keywords only, and an empty query returns nothing. The text of each search result is truncated to the
-// excerpt around the hit, and its range is the whole search result.
+// excerpt around the hit, and its range is the whole search result; with IsWholeText, WholeText holds the
+// text before the cut.
 func (u *SearchText) Execute(ctx context.Context, v domain.Vault, q SearchResultQuery) ([]domain.SearchResult, error) {
 	query := strings.TrimSpace(q.Query)
 	if query == "" {

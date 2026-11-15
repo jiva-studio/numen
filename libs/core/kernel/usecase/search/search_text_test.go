@@ -120,3 +120,30 @@ func TestTheWindowAroundAHitNeverSplitsACharacter(t *testing.T) {
 		t.Errorf("the window %q does not contain the whole word or splits a character", got[0].Text[:10])
 	}
 }
+
+func TestSearchTextKeepsTheWholeTextOfEachChunkWhenAsked(t *testing.T) {
+	body := strings.Repeat("filler words ", 400) + "the gray heron stands" + strings.Repeat(" trailing words", 400)
+	finder := &recordingFinder{found: []domain.SearchResult{
+		{Path: "library/Birds.pdf", Text: body, MatchOffset: strings.Index(body, "heron"), Start: 4000, Length: len(body)},
+	}}
+
+	got, err := search.NewSearchText(finder).Execute(t.Context(), getMarshVault(), search.SearchResultQuery{Query: "heron", IsWholeText: true})
+	if err != nil || len(got) != 1 {
+		t.Fatalf("found %v, %v, want one passage", got, err)
+	}
+	if got[0].WholeText != body || len(got[0].Text) > search.MaxExcerptBytes {
+		t.Errorf("whole text has %d bytes and text %d, want the %d bytes of the chunk and an excerpt", len(got[0].WholeText), len(got[0].Text), len(body))
+	}
+}
+
+func TestSearchTextLeavesTheWholeTextEmptyWhenNotAsked(t *testing.T) {
+	body := strings.Repeat("filler words ", 400) + "the gray heron stands"
+	finder := &recordingFinder{found: []domain.SearchResult{
+		{Path: "library/Birds.pdf", Text: body, MatchOffset: strings.Index(body, "heron"), Start: 4000, Length: len(body)},
+	}}
+
+	got, err := search.NewSearchText(finder).Execute(t.Context(), getMarshVault(), search.SearchResultQuery{Query: "heron"})
+	if err != nil || len(got) != 1 || got[0].WholeText != "" {
+		t.Errorf("found %+v, %v, want one passage with no whole text", got, err)
+	}
+}

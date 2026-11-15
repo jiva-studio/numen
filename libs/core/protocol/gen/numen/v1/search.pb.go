@@ -527,7 +527,10 @@ type SearchResult struct {
 	// The negated bm25 score of the best hit of the words of the query in this
 	// result: positive, higher is better, comparable only within one query.
 	// Absent when the search by words did not return this result.
-	WordScore     *float64 `protobuf:"fixed64,14,opt,name=word_score,json=wordScore,proto3,oneof" json:"word_score,omitempty"`
+	WordScore *float64 `protobuf:"fixed64,14,opt,name=word_score,json=wordScore,proto3,oneof" json:"word_score,omitempty"`
+	// The whole text of the chunk the text is cut from. Set only in the answer
+	// to a HostSearchService.SearchText that sets is_whole_text.
+	WholeText     string `protobuf:"bytes,15,opt,name=whole_text,json=wholeText,proto3" json:"whole_text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -653,6 +656,13 @@ func (x *SearchResult) GetWordScore() float64 {
 	return 0
 }
 
+func (x *SearchResult) GetWholeText() string {
+	if x != nil {
+		return x.WholeText
+	}
+	return ""
+}
+
 var File_numen_v1_search_proto protoreflect.FileDescriptor
 
 const file_numen_v1_search_proto_rawDesc = "" +
@@ -681,7 +691,7 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\tsearch_id\x18\x01 \x01(\tR\bsearchId\"\x16\n" +
 	"\x14CancelSearchResponse\"B\n" +
 	"\x12SearchTextResponse\x12,\n" +
-	"\x05found\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\x05found\"\xd9\x03\n" +
+	"\x05found\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\x05found\"\xf8\x03\n" +
 	"\fSearchResult\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
@@ -702,7 +712,9 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"similarity\x18\r \x01(\x01H\x01R\n" +
 	"similarity\x88\x01\x01\x12\"\n" +
 	"\n" +
-	"word_score\x18\x0e \x01(\x01H\x02R\twordScore\x88\x01\x01B\a\n" +
+	"word_score\x18\x0e \x01(\x01H\x02R\twordScore\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"whole_text\x18\x0f \x01(\tR\twholeTextB\a\n" +
 	"\x05_noteB\r\n" +
 	"\v_similarityB\r\n" +
 	"\v_word_score*\x88\x01\n" +
