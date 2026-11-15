@@ -16,6 +16,14 @@ import (
 	"golang.org/x/mod/modfile"
 )
 
+const mobileBindingModule = "golang.org/x/mobile"
+
+func isMobileBinding(file *modfile.File) bool {
+	return slices.ContainsFunc(file.Require, func(required *modfile.Require) bool {
+		return required.Mod.Path == mobileBindingModule
+	})
+}
+
 func getPluginRequirements(file *modfile.File) []string {
 	var named []string
 	for _, required := range file.Require {

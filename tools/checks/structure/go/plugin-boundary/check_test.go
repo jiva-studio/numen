@@ -84,36 +84,38 @@ func TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK(t *testing.T) {
 	}
 }
 
-// No module requires a plugin: a requirement is how a build evaluates to be
-// compiled from one.
+// No module requires a plugin, except a module that builds the mobile binding: a requirement is how a build
+// evaluates to be compiled from one, and the mobile binding links its plugins into one binary.
 func TestNoModuleRequiresAPlugin(t *testing.T) {
 	for _, one := range findPluginRequirementsInModules(t, filepath.Join("..", "..", "..", "..")) {
 		t.Error(one)
 	}
 }
 
-// TestModuleWalk_FindsThePlantedRequirement verifies that the walk finds the go.mod that requires a
-// plugin, skips node_modules, hidden folders and the one module that links plugins, and fails on a tree
-// without a go.mod.
+// TestModuleWalk_FindsThePlantedRequirement verifies that the walk finds every go.mod that requires a plugin
+// and does not build the mobile binding, skips node_modules and hidden folders, and fails on a tree without a go.mod.
 func TestModuleWalk_FindsThePlantedRequirement(t *testing.T) {
+	plugin := "require " + load.PluginsPrefix + "alpha v0.0.0\n"
+	binding := "require " + mobileBindingModule + " v0.0.0\n"
 	root := load.WriteTreeFixture(t, map[string]string{
-		"libs/core/go.mod":      "module example.test/core\n\ngo 1.26\n\nrequire " + load.PluginsPrefix + "alpha v0.0.0\n",
+		"libs/core/go.mod":      "module example.test/core\n\ngo 1.26\n\n" + plugin,
 		"libs/clean/go.mod":     "module example.test/clean\n\ngo 1.26\n",
-		"apps/mobile/go.mod":    "module example.test/mobile\n\ngo 1.26\n\nrequire " + load.PluginsPrefix + "alpha v0.0.0\n",
-		"apps/mobiles/go.mod":   "module example.test/mobiles\n\ngo 1.26\n\nrequire " + load.PluginsPrefix + "alpha v0.0.0\n",
-		"node_modules/x/go.mod": "module example.test/x\n\ngo 1.26\n\nrequire " + load.PluginsPrefix + "alpha v0.0.0\n",
-		".hidden/go.mod":        "module example.test/hidden\n\ngo 1.26\n\nrequire " + load.PluginsPrefix + "alpha v0.0.0\n",
+		"apps/desktop/go.mod":   "module example.test/desktop\n\ngo 1.26\n\n" + plugin,
+		"apps/mobile/go.mod":    "module example.test/mobile\n\ngo 1.26\n\n" + plugin + binding,
+		"apps/mobiles/go.mod":   "module example.test/mobiles\n\ngo 1.26\n\n" + plugin,
+		"node_modules/x/go.mod": "module example.test/x\n\ngo 1.26\n\n" + plugin,
+		".hidden/go.mod":        "module example.test/hidden\n\ngo 1.26\n\n" + plugin,
 	})
 	found := findPluginRequirementsInModules(t, root)
-	if len(found) != 2 || !strings.HasPrefix(found[0], "apps/mobiles/go.mod requires a plugin") ||
-		!strings.HasPrefix(found[1], "libs/core/go.mod requires a plugin") {
-		t.Errorf("the walk found %v, want the requirements in apps/mobiles/go.mod and libs/core/go.mod only", found)
+	want := []string{"apps/desktop/go.mod", "apps/mobiles/go.mod", "libs/core/go.mod"}
+	if len(found) != len(want) {
+		t.Fatalf("the walk found %v, want the requirements in %v only", found, want)
 	}
-}
-
-func getLinkingModule() string {
-	// numen:kept-list #2141 the mobile app links its plugins into one binary
-	return "apps/mobile"
+	for i, one := range want {
+		if !strings.HasPrefix(found[i], one+" requires a plugin") {
+			t.Errorf("the walk found %v, want the requirements in %v only", found, want)
+		}
+	}
 }
 
 func findPluginRequirementsInModules(t *testing.T, root string) []string {
@@ -140,10 +142,11 @@ func findPluginRequirementsInModules(t *testing.T, root string) []string {
 			return err
 		}
 		dir = filepath.ToSlash(dir)
-		if dir == getLinkingModule() {
+		file := load.ReadGoMod(t, path)
+		if isMobileBinding(file) {
 			return nil
 		}
-		for _, line := range getPluginRequirements(load.ReadGoMod(t, path)) {
+		for _, line := range getPluginRequirements(file) {
 			wrong = append(wrong, dir+"/go.mod requires a plugin: "+line)
 		}
 		return nil
