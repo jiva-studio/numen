@@ -25,7 +25,9 @@ const PAGE_FILES = [
   'index.html',
   'tokens/colors.css',
   'report.css',
+  'cursor.css',
   'controls.js',
+  'cursor.js',
   'video.js',
   'video-load.js',
   'report.js',
@@ -58,10 +60,13 @@ export const writeReport = (
   scenarios: readonly ScenarioRecord[],
   run: RunInfo,
 ): void => {
+  const version = run.startedAt.getTime().toString(36)
   fs.mkdirSync(outputDir, { recursive: true })
   for (const file of PAGE_FILES) copyPageFile(outputDir, file)
+  const indexPath = path.join(outputDir, 'index.html')
+  fs.writeFileSync(indexPath, addVersion(fs.readFileSync(indexPath, 'utf8'), version))
   copyFont(outputDir)
-  const features = buildTree(scenarios)
+  const features = buildTree(scenarios.map((scenario) => addFileVersions(scenario, version)))
   const data = { overview: createOverview(features, run.startedAt, run), features }
   const functions = Object.entries(playback).map(([name, fn]) => `  ${name}: ${String(fn)},`)
   const script = [
@@ -74,6 +79,15 @@ export const writeReport = (
   ].join('\n')
   fs.writeFileSync(path.join(outputDir, 'data.js'), script)
 }
+
+export const addVersion = (html: string, version: string): string =>
+  html.replace(/(src|href)="([^":?#]+\.(?:js|css))"/g, `$1="$2?v=${version}"`)
+
+const addFileVersions = (scenario: ScenarioRecord, version: string): ScenarioRecord => ({
+  ...scenario,
+  video: scenario.video && `${scenario.video}?v=${version}`,
+  screenshot: scenario.screenshot && `${scenario.screenshot}?v=${version}`,
+})
 
 const copyPageFile = (outputDir: string, file: string): void => {
   const to = path.join(outputDir, file)
