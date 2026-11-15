@@ -222,6 +222,8 @@ func TestASyntaxProblemReadsInPlainWordsAtItsPlace(t *testing.T) {
 		{"two conditions with no operator", `meaning("a") words("b")`, []string{"1:14: Join the conditions with && or || before words"}},
 		{"a number for a text", `meaning(1)`, []string{"1:1: meaning takes one text in quotes"}},
 		{"an operator outside the language", `meaning("a") + 1`, []string{"1:14: The operator + is not allowed in a query"}},
+		{"a misspelled member function", `path.startsWth("books/")`, []string{"1:6: Unknown function startsWth: did you mean startsWith?"}},
+		{"a function named with an underscore", `_words("river")`, []string{"1:1: Unknown function _words: did you mean words?"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -2,9 +2,9 @@ package celquery
 
 import (
 	"slices"
-	"strings"
 
 	"cel.dev/cel-go/common/ast"
+	"cel.dev/cel-go/common/operators"
 	"cel.dev/cel-go/common/overloads"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
@@ -24,6 +24,15 @@ func (w *nameWalk) addProblem(expr ast.Expr, message, name string) {
 		Position: getExprPosition(w.text, w.source, expr), Message: message + " " + name, Suggestion: suggestion,
 	})
 }
+
+func (w *nameWalk) addMemberProblem(expr ast.Expr, name string) {
+	suggestion, _ := searchquery.SuggestName(name, memberFunctions)
+	w.problems = append(w.problems, searchquery.Problem{
+		Position: getExprPosition(w.text, w.source, expr), Message: "Unknown function " + name, Suggestion: suggestion,
+	})
+}
+
+var memberFunctions = searchquery.Catalog{Functions: []searchquery.Function{{Name: overloads.StartsWith}}}
 
 func (w *nameWalk) walk(expr ast.Expr) {
 	switch expr.Kind() {
@@ -58,7 +67,7 @@ func (w *nameWalk) walkCall(expr ast.Expr) {
 		return
 	case call.IsMemberFunction():
 		w.walk(call.Target())
-		w.addProblem(expr, "Unknown function", name)
+		w.addMemberProblem(expr, name)
 		return
 	default:
 		if f, ok := w.catalog.FindFunction(name); !ok || f.IsVariable {
@@ -72,7 +81,8 @@ func (w *nameWalk) walkCall(expr ast.Expr) {
 }
 
 func isOperator(name string) bool {
-	return strings.HasPrefix(name, "_") || strings.HasPrefix(name, "@") || strings.HasPrefix(name, "!")
+	_, found := operators.FindReverse(name)
+	return found || name == operators.NotStrictlyFalse || name == operators.OldNotStrictlyFalse
 }
 
 func (w *nameWalk) hasChunkCall(expr ast.Expr) bool {
