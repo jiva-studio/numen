@@ -95,12 +95,6 @@ Seven plugins register the tools an agent can call, each for its own subject. Th
 | `saved_search_create` | save a query as a note of type `search` in the folder given or the folder of the plugin setting, with the query in a `numen-query` block; reranking and the number of results are part of the query (`.rerank("…")`, `.top(N)`); run it at once and return the path, the `uri` of the note and how many results the run found; a query the core reports problems of returns them and writes nothing | writes |
 | `saved_search_update` | change the query of a saved search note, keeping the prose of the note; run it again at once; a query the core reports problems of returns them and changes nothing                                                                                                                                                                  | writes |
 
-`views-saved-search`, queries over the library of the vault:
-
-| Tool                   | What it does                                                                                                                                                                                                                                                                                                                                                                          | Effect |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `saved_search_preview` | the passages a CEL query over `meaning("…")`, `words("…")`, `kind` and `path` finds, best first, with the path, title, `place`, `line`, text, `uri`, score and the number of neighboring passages joined into each; ordered by a reranking model when the plugin has a reranking connection; a query that is not valid returns its problems under `errors` with their line and column | reads  |
-
 `engines-ocr`, `engines-transcription` and `tools-media-importer`, the text versions of scans, recordings and web addresses:
 
 | Tool                 | What it does                                                                                                                                                                                                | Effect |
