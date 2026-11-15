@@ -63,3 +63,15 @@ type LinkReaders interface {
 	// to the name, with the path of the note each is written in and without resolution.
 	ListLinksByName(ctx context.Context, vaultID domain.VaultID, foldedName string) ([]domain.ResolvedLink, error)
 }
+
+// NoteContents reads what the frontmatter and the headings of the notes of a vault hold.
+type NoteContents interface {
+	// ListPropertyValues returns the path and the value of every note of the vault whose stored frontmatter
+	// has the top-level key. A note without frontmatter or with unreadable frontmatter is absent.
+	ListPropertyValues(ctx context.Context, vaultID domain.VaultID, key string) ([]searchquery.PropertyEntry, error)
+	// FindHeadings returns the headings, with the path of their note, whose words hold every word of the text,
+	// and every heading of the vault when the text has no word.
+	FindHeadings(ctx context.Context, vaultID domain.VaultID, text string) ([]searchquery.HeadingEntry, error)
+	// CountUnreadableFrontmatter counts the notes of the vault whose frontmatter could not be read.
+	CountUnreadableFrontmatter(ctx context.Context, vaultID domain.VaultID) (int, error)
+}

@@ -3,10 +3,13 @@ package searchquery_test
 import (
 	"context"
 	"encoding/hex"
+	"os"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
@@ -15,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
@@ -39,12 +43,22 @@ type world struct {
 
 func newWorld(t *testing.T, files map[string]string) world {
 	t.Helper()
+	return newWorldAt(t, files, nil)
+}
+
+func newWorldAt(t *testing.T, files map[string]string, modified map[string]time.Time) world {
+	t.Helper()
 	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
 	v := vaulttest.NewVault(t, files)
+	for name, instant := range modified {
+		if err := os.Chtimes(filepath.Join(v.Path, filepath.FromSlash(name)), instant, instant); err != nil {
+			t.Fatal(err)
+		}
+	}
 	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -182,17 +196,39 @@ func (extensionTypes) GetContentType(name string) domain.ContentType {
 func (extensionTypes) ListExtensions(domain.ContentType) []string { return nil }
 
 func (w world) newFind(model texts) *searchquery.FindSearchResults {
+	return searchquery.NewFindSearchResults(w.getDeps(model))
+}
+
+// countedVectors counts the approximate searches it passes to the index.
+type countedVectors struct {
+	searchquery.VectorQueries
+	coarseSearches int
+}
+
+func (c *countedVectors) FindCoarseCandidates(ctx context.Context, vaultID domain.VaultID, q source.CoarseQuery) ([]domain.ChunkID, error) {
+	c.coarseSearches++
+	return c.VectorQueries.FindCoarseCandidates(ctx, vaultID, q)
+}
+
+func (w world) newCountedFind(model texts) (*searchquery.FindSearchResults, *countedVectors) {
+	deps := w.getDeps(model)
+	counted := &countedVectors{VectorQueries: deps.Vectors}
+	deps.Vectors = counted
+	return searchquery.NewFindSearchResults(deps), counted
+}
+
+func (w world) getDeps(model texts) searchquery.FindSearchResultsDeps {
 	search := w.db.ChunkSearch()
 	deps := searchquery.FindSearchResultsDeps{
 		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search,
+		Contents: w.db.NoteQueries(), Links: w.db.NoteQueries(), Clock: newClock(),
 		Places: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
 		Floors: fixedFloor(testFloor), ContentTypes: extensionTypes{},
-		Links: w.db.NoteQueries(),
 	}
 	if model != nil {
 		deps.Source = sourcefake.Wrap(model)
 	}
-	return searchquery.NewFindSearchResults(deps)
+	return deps
 }
 
 func getPaths(results searchquerydomain.SearchResults) []string {
@@ -212,4 +248,12 @@ func repeatSentences(word string, count int) string {
 		b.WriteString(" of the filler. ")
 	}
 	return b.String()
+}
+
+func getMoscow() *time.Location {
+	return time.FixedZone("Europe/Moscow", 3*60*60)
+}
+
+func newClock() *testsupport.ManualClock {
+	return testsupport.NewClockAt(time.Date(2026, 11, 15, 12, 0, 0, 0, getMoscow()))
 }

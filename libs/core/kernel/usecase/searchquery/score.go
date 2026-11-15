@@ -34,7 +34,7 @@ func (p *plan) listSmalls(ctx context.Context, candidates []domain.SearchResult)
 		ids[i] = c.ChunkID
 		index[c.ChunkID] = i
 	}
-	listed, err := p.u.places.ListSmallChunks(ctx, p.v.ID, ids)
+	listed, err := p.u.index.places.ListSmallChunks(ctx, p.v.ID, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (p *plan) scoreMeaning(ctx context.Context, smalls [][]domain.ChunkID, scor
 	for _, list := range smalls {
 		all = append(all, list...)
 	}
-	stored, err := p.u.places.ListStoredVectors(ctx, source.StoredVectorQuery{Recipe: p.recipe, Chunks: all})
+	stored, err := p.u.index.places.ListStoredVectors(ctx, source.StoredVectorQuery{Recipe: p.recipe, Chunks: all})
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (p *plan) scoreWords(
 		if err != nil {
 			return p.getWordsError(ci, err)
 		}
-		wordScores, err := p.u.documents.GetWordScores(ctx, p.v.ID, c.Text, all)
+		wordScores, err := p.u.index.words.GetWordScores(ctx, p.v.ID, c.Text, all)
 		if err != nil {
 			return p.getWordsError(ci, err)
 		}

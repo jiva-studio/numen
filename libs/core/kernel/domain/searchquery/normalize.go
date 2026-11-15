@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 )
 
 // The messages of the problems Normalize and CheckQueryText find.
 const (
-	messageQueryBytes   = "a query has at most %d bytes"
+	messageQueryBytes   = "A query has at most %d bytes"
 	messageTextSize     = "%s needs a text of 1 to %d bytes"
-	messageConditions   = "a query has at most %d distinct meaning and words conditions"
-	messagePathPrefixes = "a query has at most %d distinct path prefixes"
-	messageNoPositive   = "a query needs a condition that is not negated"
-	messageKind         = "kind is one of %s"
+	messageConditions   = "A query has at most %d distinct meaning and words conditions"
+	messagePathPrefixes = "A query has at most %d distinct path prefixes"
+	messageNoPositive   = "A query needs a condition that is not negated"
+	messageKind         = "The kind is one of %s"
 )
 
 // CheckQueryText returns a *ParseError when the text of a query is longer than the limit.
@@ -26,9 +27,9 @@ func CheckQueryText(text string, limits Limits) error {
 
 // Normalize turns the tree a parser emitted into a Query: negations pushed to the leaves by De Morgan,
 // nested groups of one operator flattened, and equal conditions given one index. A tree that breaks a rule
-// of the language returns a *ParseError with every problem.
-func Normalize(raw RawNode, limits Limits) (Query, error) {
-	n := normalizer{limits: limits}
+// of the language returns a *ParseError with every problem. A date without an offset is read in zone.
+func Normalize(raw RawNode, limits Limits, zone *time.Location) (Query, error) {
+	n := normalizer{limits: limits, zone: zone}
 	root := n.convert(raw, false)
 	n.checkHasPositiveLeaf(root)
 	if len(n.problems) > 0 {
@@ -39,8 +40,9 @@ func Normalize(raw RawNode, limits Limits) (Query, error) {
 
 type normalizer struct {
 	limits     Limits
-	conditions []Condition
+	zone       *time.Location
 	sets       []SetCondition
+	conditions []Condition
 	prefixes   []string
 	problems   []Problem
 }
@@ -89,7 +91,10 @@ func getOtherOperator(operator Operator) Operator {
 }
 
 func (n *normalizer) convertLeaf(raw RawLeaf, isNegated bool) Node {
-	leaf := Leaf{Kind: raw.Kind, Kinds: raw.Kinds, Prefix: raw.Prefix, Position: raw.Position}
+	leaf := Leaf{
+		Kind: raw.Kind, Kinds: raw.Kinds, Prefix: raw.Prefix, Attribute: raw.Attribute, Comparison: raw.Comparison,
+		Position: raw.Position,
+	}
 	switch raw.Kind {
 	case LeafMeaning, LeafWords:
 		leaf.ConditionIndex = n.addCondition(raw, !isNegated)
@@ -97,6 +102,8 @@ func (n *normalizer) convertLeaf(raw RawLeaf, isNegated bool) Node {
 		n.checkKinds(raw)
 	case LeafPathPrefix:
 		n.addPrefix(raw)
+	case LeafCompare:
+		leaf.Operands = n.parseOperands(raw.Operands)
 	case LeafSet:
 		leaf.SetIndex = n.addSet(raw, !isNegated)
 	}
@@ -105,7 +112,7 @@ func (n *normalizer) convertLeaf(raw RawLeaf, isNegated bool) Node {
 
 func (n *normalizer) addCondition(raw RawLeaf, isPositive bool) int {
 	isMeaning := raw.Kind == LeafMeaning
-	if text := strings.TrimSpace(raw.Text); text == "" || len(text) > n.limits.MaxConditionBytes {
+	if strings.TrimSpace(raw.Text) == "" || len(raw.Text) > n.limits.MaxConditionBytes {
 		name := FunctionWords
 		if isMeaning {
 			name = FunctionMeaning
@@ -125,19 +132,6 @@ func (n *normalizer) addCondition(raw RawLeaf, isPositive bool) int {
 	}
 	n.conditions = append(n.conditions, Condition{IsMeaning: isMeaning, Text: raw.Text, IsPositive: isPositive})
 	return len(n.conditions) - 1
-}
-
-func (n *normalizer) addSet(raw RawLeaf, isPositive bool) int {
-	for i, s := range n.sets {
-		if s.Function == raw.Set.Function && s.Target == raw.Set.Target && s.LinkType == raw.Set.LinkType {
-			n.sets[i].IsPositive = s.IsPositive || isPositive
-			return i
-		}
-	}
-	set := raw.Set
-	set.IsPositive, set.Position = isPositive, raw.Position
-	n.sets = append(n.sets, set)
-	return len(n.sets) - 1
 }
 
 func (n *normalizer) checkKinds(raw RawLeaf) {

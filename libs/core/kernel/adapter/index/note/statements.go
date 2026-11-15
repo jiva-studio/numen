@@ -70,3 +70,15 @@ var filePathsSQL string
 
 //go:embed sql/links_by_name.sql
 var linksByNameSQL string
+
+//go:embed sql/property_values.sql
+var propertyValuesSQL string
+
+//go:embed sql/headings_like.sql
+var headingsLikeSQL string
+
+//go:embed sql/all_headings.sql
+var allHeadingsSQL string
+
+//go:embed sql/count_frontmatter_errors.sql
+var countFrontmatterErrorsSQL string

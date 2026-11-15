@@ -69,7 +69,7 @@ func newQueryDeps(t *testing.T) stubSession {
 	find := searchquery.NewFindSearchResults(searchquery.FindSearchResultsDeps{
 		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search,
 		Places: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
-		Floors: fixedQueryFloor{}, ContentTypes: markdownTypes{}, Links: db.NoteQueries(),
+		Floors: fixedQueryFloor{}, ContentTypes: markdownTypes{}, Contents: db.NoteQueries(), Links: db.NoteQueries(), Clock: testsupport.NewClock(),
 	})
 	return stubSession{
 		Vaults: createVaultList(v),
@@ -107,7 +107,7 @@ func TestQueryReportsAMisspelledFunctionWithItsPlaceAndASuggestion(t *testing.T)
 	if err == nil {
 		t.Fatal("a query that is not valid succeeded")
 	}
-	if !strings.Contains(stderr, "query:1:1: unknown function meanin (did you mean meaning?)") {
+	if !strings.Contains(stderr, "query:1:1: Unknown function meanin: did you mean meaning?") {
 		t.Errorf("stderr is %q", stderr)
 	}
 }

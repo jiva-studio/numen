@@ -24,7 +24,9 @@ const (
 	LeafKindIn
 	// LeafPathPrefix is path.startsWith("x").
 	LeafPathPrefix
-	// LeafSet holds when the document belongs to the set of Query.Sets[SetIndex].
+	// LeafCompare compares an Attribute of the document with its Operands.
+	LeafCompare
+	// LeafSet holds for a document in the set of the SetCondition at SetIndex.
 	LeafSet
 )
 
@@ -38,9 +40,12 @@ type Position struct {
 type Leaf struct {
 	Kind           LeafKind
 	ConditionIndex int
-	SetIndex       int
 	Kinds          []string
 	Prefix         string
+	Attribute      Attribute
+	Comparison     Comparison
+	Operands       []Value
+	SetIndex       int
 	Position       Position
 }
 
@@ -65,16 +70,6 @@ type Condition struct {
 	IsPositive bool
 }
 
-// SetCondition is a document condition whose truth is membership in a set of paths the use case computes
-// once per query. Equal conditions share one index.
-type SetCondition struct {
-	Function   string
-	Target     string
-	LinkType   string
-	IsPositive bool
-	Position   Position
-}
-
 // Stage is one method call on the results of a query.
 type Stage struct {
 	Name     string
@@ -92,14 +87,36 @@ type Query struct {
 	IsSearchResults bool
 }
 
-// RawLeaf is one test as a parser emits it.
+// RawLeaf is one test as a parser emits it. Function and Key name the function of a LeafSet; Text is the
+// heading of hasHeading.
 type RawLeaf struct {
-	Kind     LeafKind
-	Text     string
-	Kinds    []string
-	Prefix   string
-	Set      SetCondition
-	Position Position
+	Kind       LeafKind
+	Text       string
+	Kinds      []string
+	Prefix     string
+	Attribute  Attribute
+	Comparison Comparison
+	Operands   []Value
+	Function   string
+	Key        string
+	Target     string
+	LinkType   string
+	Position   Position
+}
+
+// SetCondition is a distinct document condition whose truth is membership in a set of paths, computed once
+// per query: a property comparison, hasProperty, hasHeading or a link function. Target and LinkType are the
+// arguments of a link function; IsPositive is set when the condition occurs outside a negation.
+type SetCondition struct {
+	Function   string
+	Key        string
+	Text       string
+	Comparison Comparison
+	Operands   []Value
+	Target     string
+	LinkType   string
+	IsPositive bool
+	Position   Position
 }
 
 // RawNode is the tree a parser emits, with negations where they are written.

@@ -25,5 +25,6 @@ const result = spawnSync('npx', ['gplint', '-c', path.join(root, '.gplintrc'), .
 })
 process.stdout.write(result.stdout)
 process.stderr.write(result.stderr)
-if (result.status !== 0 || /Error running gplint/.test(result.stderr + result.stdout)) process.exit(1)
+if (result.status !== 0 || /Error running gplint/.test(result.stderr + result.stdout))
+  process.exit(1)
 console.log(`lint-features: ${files.length} feature files`)

@@ -7,9 +7,9 @@ import (
 )
 
 // Scope is the document predicate every candidate of one condition satisfies, and its superset for the
-// index: path prefixes (the whole vault when empty), source kinds (all when empty) and the sets every document of
-// the scope belongs to (none when empty). A Predicate that is an
-// OperatorAnd with no children holds for every document.
+// index: path prefixes (the whole vault when empty) and source kinds (all when empty). A Predicate that is an
+// OperatorAnd with no children holds for every document. SetIndexes are the sets of the positive set leaves
+// among its conjuncts: every document of the scope is in each of them.
 type Scope struct {
 	Predicate    Node
 	PathPrefixes []string
@@ -175,11 +175,19 @@ func getSetIndexes(conjuncts []Node) []int {
 	var indexes []int
 	for _, c := range conjuncts {
 		switch {
-		case c.Operator == OperatorAnd:
-			indexes = append(indexes, getSetIndexes(c.Children)...)
-		case c.Operator == OperatorLeaf && c.Leaf.Kind == LeafSet && !c.IsNegated && !slices.Contains(indexes, c.Leaf.SetIndex):
+		case isPositiveSet(c):
 			indexes = append(indexes, c.Leaf.SetIndex)
+		case c.Operator == OperatorAnd:
+			for _, child := range c.Children {
+				if isPositiveSet(child) {
+					indexes = append(indexes, child.Leaf.SetIndex)
+				}
+			}
 		}
 	}
 	return indexes
+}
+
+func isPositiveSet(node Node) bool {
+	return node.Operator == OperatorLeaf && node.Leaf.Kind == LeafSet && !node.IsNegated
 }

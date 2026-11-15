@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -25,10 +27,12 @@ type Request struct {
 }
 
 // FindSearchResultsDeps is what FindSearchResults reads. A nil Source is an installation with no model, and
-// a nil Texts reads the text of notes only.
+// a nil Texts reads the text of notes only. The zone of Clock reads a date written without an offset.
 type FindSearchResultsDeps struct {
 	Parser       QueryParser
 	Documents    DocumentQueries
+	Contents     NoteContents
+	Clock        machineport.Clock
 	Vectors      VectorQueries
 	Places       sourceport.ChunkPlaces
 	Matcher      sourceport.WordMatching
@@ -43,9 +47,8 @@ type FindSearchResultsDeps struct {
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
 type FindSearchResults struct {
 	parser       QueryParser
-	documents    DocumentQueries
-	vectors      VectorQueries
-	places       sourceport.ChunkPlaces
+	index        indexReads
+	clock        machineport.Clock
 	matcher      sourceport.WordMatching
 	readers      vaultport.VaultReaders
 	texts        textdomain.Readers
@@ -59,8 +62,11 @@ type FindSearchResults struct {
 // NewFindSearchResults creates the use case over the index, with the default limits.
 func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 	return &FindSearchResults{
-		parser: deps.Parser, documents: deps.Documents, vectors: deps.Vectors,
-		places: deps.Places, matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts,
+		parser: deps.Parser, clock: deps.Clock,
+		index: indexReads{
+			documents: deps.Documents, vectors: deps.Vectors, words: deps.Documents, places: deps.Places, contents: deps.Contents,
+		},
+		matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts,
 		source: deps.Source, floors: deps.Floors, contentTypes: deps.ContentTypes, links: deps.Links,
 		Limits: searchquery.DefaultLimits(),
 	}
@@ -77,14 +83,15 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r Reque
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	q, err := u.parse(r.Text)
+	zone := u.clock.Now().Location()
+	q, err := u.parse(r.Text, zone)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	if hasMeaning(q.Conditions) && !u.hasModel() {
 		return searchquery.SearchResults{}, searchquery.ErrNoModel
 	}
-	p := u.newPlan(ctx, v, q)
+	p := u.newPlan(ctx, v, q, zone)
 	results, err := p.execute(ctx)
 	if err != nil {
 		return searchquery.SearchResults{}, err
@@ -108,7 +115,7 @@ func (u *FindSearchResults) getLimit(limit int) (int, error) {
 	return min(limit, u.Limits.MaxLimit), nil
 }
 
-func (u *FindSearchResults) parse(text string) (searchquery.Query, error) {
+func (u *FindSearchResults) parse(text string, zone *time.Location) (searchquery.Query, error) {
 	if err := searchquery.CheckQueryText(text, u.Limits); err != nil {
 		return searchquery.Query{}, err
 	}
@@ -116,7 +123,7 @@ func (u *FindSearchResults) parse(text string) (searchquery.Query, error) {
 	if err != nil {
 		return searchquery.Query{}, err
 	}
-	return searchquery.Normalize(raw, u.Limits)
+	return searchquery.Normalize(raw, u.Limits, zone)
 }
 
 func hasMeaning(conditions []searchquery.Condition) bool {
@@ -149,7 +156,7 @@ func (u *FindSearchResults) fillTitles(ctx context.Context, v domain.Vault, resu
 	if len(paths) == 0 {
 		return nil
 	}
-	listed, err := u.documents.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
+	listed, err := u.index.documents.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
 	if err != nil {
 		return err
 	}
@@ -161,4 +168,13 @@ func (u *FindSearchResults) fillTitles(ctx context.Context, v domain.Vault, resu
 		results[i].Document.Title = searchquery.GetTitle(r.Document.Path, titles[r.Document.Path])
 	}
 	return nil
+}
+
+// indexReads are the ports of the index a query reads.
+type indexReads struct {
+	documents DocumentQueries
+	vectors   VectorQueries
+	words     WordQueries
+	places    sourceport.ChunkPlaces
+	contents  NoteContents
 }

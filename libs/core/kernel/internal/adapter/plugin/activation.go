@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -101,6 +102,12 @@ func (a *Activation) reportStart(pluginID string) {
 // ClientLookup finds the HTTP client for calls to the plugin process an endpoint belongs to.
 func (a *Activation) ClientLookup() transport.ClientLookup {
 	return transport.NewClientLookup(a.sups.Clients())
+}
+
+// GetClient returns the client that calls the plugin an endpoint belongs to, served in this process or by a process of
+// its own. The bridges and the proxies that call a plugin through the activation take it from here.
+func (a *Activation) GetClient(endpoint transport.Endpoint) *http.Client {
+	return a.ClientLookup().GetClient(endpoint)
 }
 
 // CheckPluginPermission verifies that the specified plugin holds the required permission.

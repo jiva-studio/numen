@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -37,7 +38,7 @@ type ConfigPush struct {
 	delivery *delivery.Delivery
 
 	mu          sync.RWMutex
-	performance string
+	performance plugindomain.Performance
 }
 
 // ConfigPushDeps are what a ConfigPush reads, where it reports an error and the list it keeps the
@@ -87,7 +88,7 @@ func (c *ConfigPush) WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
 // GetPluginConfigRevision returns a digest of what the plugin is configured with: its version, its settings
-// without the enabled flag, and the performance profile. Equal revisions are one configuration, in this
+// without the enabled flag, and the performance limits. Equal revisions are one configuration, in this
 // process or another.
 func (c *ConfigPush) GetPluginConfigRevision(pluginID string) string {
 	settings := maps.Clone(c.set.getPluginSettings(pluginID))
@@ -96,7 +97,12 @@ func (c *ConfigPush) GetPluginConfigRevision(pluginID string) string {
 	if err != nil {
 		return ""
 	}
-	digest := sha256.Sum256([]byte(strings.Join([]string{c.set.GetVersion(pluginID), string(encoded), c.getPerformanceProfile()}, "\x00")))
+	performance := c.getPerformance()
+	parts := []string{
+		c.set.GetVersion(pluginID), string(encoded),
+		performance.Profile, strconv.Itoa(performance.Threads), strconv.Itoa(performance.Nice),
+	}
+	digest := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
 	return hex.EncodeToString(digest[:])
 }
 
@@ -109,26 +115,26 @@ func (c *ConfigPush) NotifyPluginConfig(ctx context.Context, pluginID string) er
 	return c.delivery.Configure(ctx, pluginID)
 }
 
-// SetPerformanceProfile records the profile of the performance setting and pushes it to every
-// running plugin when it changed. A plugin that is not running receives it with its first
+// SetPerformance records the limits of the performance profile and pushes them to every
+// running plugin when they changed. A plugin that is not running receives them with its first
 // Configure call.
-func (c *ConfigPush) SetPerformanceProfile(ctx context.Context, profile string) {
+func (c *ConfigPush) SetPerformance(ctx context.Context, performance plugindomain.Performance) {
 	c.mu.Lock()
-	if c.performance == profile {
+	if c.performance == performance {
 		c.mu.Unlock()
 		return
 	}
-	c.performance = profile
+	c.performance = performance
 	c.mu.Unlock()
 
 	for _, id := range c.sups.ListEndpointOwners() {
 		if err := c.NotifyPluginConfig(ctx, id); err != nil {
-			c.report(fmt.Errorf("push the performance profile to plugin %s: %w", id, err))
+			c.report(fmt.Errorf("push the performance limits to plugin %s: %w", id, err))
 		}
 	}
 }
 
-func (c *ConfigPush) getPerformanceProfile() string {
+func (c *ConfigPush) getPerformance() plugindomain.Performance {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.performance
@@ -175,7 +181,7 @@ func (c *ConfigPush) RecordConfigureAnswer(pluginID string, refused *delivery.Re
 }
 
 func (c *ConfigPush) GetSnapshot(pluginID string) (delivery.Snapshot, bool, error) {
-	profile := c.getPerformanceProfile()
+	performance := c.getPerformance()
 	endpoint, hasEndpoint := c.sups.GetEndpoint(pluginID)
 	sup, hasSup := c.sups.Get(pluginID)
 	if !hasEndpoint || !hasSup {
@@ -190,9 +196,7 @@ func (c *ConfigPush) GetSnapshot(pluginID string) (delivery.Snapshot, bool, erro
 		return delivery.Snapshot{}, true, fmt.Errorf("marshal plugin %s settings: %w", pluginID, err)
 	}
 	values := plugindomain.FormatSettingValues(rawSettings)
-	if profile != "" {
-		values[plugindomain.ConfigPerformanceProfile] = profile
-	}
+	maps.Copy(values, performance.GetConfigValues())
 	return delivery.Snapshot{
 		PluginID:   pluginID,
 		Endpoint:   endpoint,

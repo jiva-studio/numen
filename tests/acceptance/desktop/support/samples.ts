@@ -93,10 +93,13 @@ export const readSample = (kind: SampleKind, fileName: string): Buffer => {
   const samples = SAMPLES[kind]
   const source = samples.get(fileName)
   if (source === undefined) {
-    throw new Error(`there is no sample ${kind} "${fileName}": the samples are ${[...samples.keys()].join(', ')}`)
+    throw new Error(
+      `there is no sample ${kind} "${fileName}": the samples are ${[...samples.keys()].join(', ')}`,
+    )
   }
   if ('make' in source) return source.make()
   const sample = path.join(source.folder, fileName)
-  if (!fs.existsSync(sample)) throw new Error(`the sample ${kind} "${fileName}" is missing at ${sample}`)
+  if (!fs.existsSync(sample))
+    throw new Error(`the sample ${kind} "${fileName}" is missing at ${sample}`)
   return fs.readFileSync(sample)
 }

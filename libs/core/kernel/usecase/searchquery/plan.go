@@ -3,6 +3,7 @@ package searchquery
 import (
 	"context"
 	"slices"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -10,21 +11,26 @@ import (
 
 // plan is one query being evaluated over the index of one vault.
 type plan struct {
-	u        *FindSearchResults
-	v        domain.Vault
-	query    searchquery.Query
-	scopes   []searchquery.Scope
-	recipe   string
-	floor    float64
-	vectors  map[int][]float32
-	places   map[domain.ChunkID]domain.SearchResult
-	sets     []map[string]bool
-	files    map[string][]string
-	warnings []string
+	u         *FindSearchResults
+	v         domain.Vault
+	query     searchquery.Query
+	scopes    []searchquery.Scope
+	recipe    string
+	floor     float64
+	vectors   map[int][]float32
+	places    map[domain.ChunkID]domain.SearchResult
+	warnings  []string
+	zone      *time.Location
+	sets      []map[string]bool
+	files     map[string][]string
+	documents map[string]searchquery.Document
 }
 
-func (u *FindSearchResults) newPlan(ctx context.Context, v domain.Vault, q searchquery.Query) *plan {
-	p := &plan{u: u, v: v, query: q, scopes: searchquery.GetScopes(q), places: map[domain.ChunkID]domain.SearchResult{}}
+func (u *FindSearchResults) newPlan(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location) *plan {
+	p := &plan{
+		u: u, v: v, query: q, scopes: searchquery.GetScopes(q), places: map[domain.ChunkID]domain.SearchResult{}, zone: zone,
+		documents: map[string]searchquery.Document{},
+	}
 	if u.hasModel() {
 		p.recipe = u.source.Describe().Recipe()
 		if hasMeaning(q.Conditions) {
@@ -35,7 +41,7 @@ func (u *FindSearchResults) newPlan(ctx context.Context, v domain.Vault, q searc
 }
 
 func (p *plan) execute(ctx context.Context) (searchquery.SearchResults, error) {
-	if err := p.computeSets(ctx); err != nil {
+	if err := p.findSets(ctx); err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	documents, err := p.listCandidateDocuments(ctx)
@@ -51,6 +57,9 @@ func (p *plan) execute(ctx context.Context) (searchquery.SearchResults, error) {
 	}
 	candidates, err := p.unite(ctx, lists)
 	if err != nil {
+		return searchquery.SearchResults{}, err
+	}
+	if err := p.loadDocuments(ctx, getCandidatePaths(candidates)); err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	texts, err := p.readTexts(ctx, candidates, documents)
@@ -100,7 +109,7 @@ func (p *plan) evaluate(
 ) []searchquery.SearchResult {
 	var matched []searchquery.SearchResult
 	for i, c := range candidates {
-		d := p.markSets(p.u.getDocument(c.Path, c.Kind))
+		d := p.getDocument(c.Path, c.Kind)
 		o := searchquery.Evaluate(p.query.Root, p.query.Conditions, scores[i], p.floor, d)
 		if !o.IsMatch {
 			continue
@@ -152,4 +161,12 @@ func newChunkResult(d searchquery.Document, c domain.SearchResult, o searchquery
 		}
 	}
 	return r
+}
+
+func getCandidatePaths(candidates []domain.SearchResult) []string {
+	paths := make([]string, len(candidates))
+	for i, c := range candidates {
+		paths[i] = c.Path
+	}
+	return paths
 }

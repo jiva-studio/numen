@@ -32,7 +32,7 @@ func DefaultLimits() Limits {
 		MaxDocuments:           10000,
 		ExactScanChunks:        20000,
 		CoarseOversample:       8,
-		MaxCoarseCandidates:    8000,
+		MaxCoarseCandidates:    4096,
 		MergeGapBytes:          200,
 		DefaultLimit:           20,
 		MaxLimit:               100,

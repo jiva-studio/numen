@@ -3,7 +3,7 @@ module github.com/jiva-studio/numen/libs/core/kernel
 go 1.26.11
 
 require (
-	cel.dev/cel-go v0.32.0
+	cel.dev/cel-go v0.33.2
 	connectrpc.com/connect v1.21.1
 	github.com/ebitengine/purego v0.11.3
 	github.com/rjeczalik/notify v0.9.3
@@ -11,7 +11,7 @@ require (
 	golang.org/x/sync v0.25.0
 	golang.org/x/text v0.43.0
 	google.golang.org/protobuf v1.36.12
-	modernc.org/sqlite v1.61.1
+	modernc.org/sqlite v1.62.0
 	pgregory.net/rapid v1.3.0
 )
 
@@ -45,7 +45,7 @@ require (
 	github.com/ncruces/go-strftime v1.1.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/sys v0.50.0
-	modernc.org/libc v1.79.0 // indirect
+	modernc.org/libc v1.80.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
 )

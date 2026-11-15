@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
-	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -22,32 +20,6 @@ type target struct {
 	path    string
 	address string
 	isNote  bool
-}
-
-func (p *plan) computeSets(ctx context.Context) error {
-	if len(p.query.Sets) == 0 {
-		return nil
-	}
-	if p.u.links == nil {
-		return ErrNoLinks
-	}
-	p.sets = make([]map[string]bool, len(p.query.Sets))
-	var problems []searchquery.Problem
-	for i, s := range p.query.Sets {
-		set, err := p.computeSet(ctx, s)
-		if message, isProblem := getTargetMessage(err); isProblem {
-			problems = append(problems, searchquery.Problem{Position: s.Position, Message: message})
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		p.sets[i] = set
-	}
-	if len(problems) > 0 {
-		return &searchquery.ParseError{Problems: problems}
-	}
-	return nil
 }
 
 type targetError struct{ message string }
@@ -67,7 +39,7 @@ func getTargetMessage(err error) (string, bool) {
 	return "", false
 }
 
-func (p *plan) computeSet(ctx context.Context, s searchquery.SetCondition) (map[string]bool, error) {
+func (p *plan) findLinkSet(ctx context.Context, s searchquery.SetCondition) (map[string]bool, error) {
 	f, _ := searchquery.FindLinkFunction(s.Function)
 	t, err := p.resolveTarget(ctx, s.Target)
 	if err != nil {
@@ -268,28 +240,4 @@ func (p *plan) getRelatives(ctx context.Context, notes []string, direction searc
 		return nil, err
 	}
 	return searchquery.GetRelatives(direction, linkType, p.v.ID, links, backlinks), nil
-}
-
-func (p *plan) markSets(d searchquery.Document) searchquery.Document {
-	if len(p.sets) == 0 {
-		return d
-	}
-	d.IsInSet = make([]bool, len(p.sets))
-	for i, set := range p.sets {
-		d.IsInSet[i] = set[d.Path]
-	}
-	return d
-}
-
-func (p *plan) getScopePaths(indexes []int) ([]string, bool) {
-	var smallest map[string]bool
-	for _, i := range indexes {
-		if i < len(p.sets) && (smallest == nil || len(p.sets[i]) < len(smallest)) {
-			smallest = p.sets[i]
-		}
-	}
-	if smallest == nil {
-		return nil, false
-	}
-	return slices.Sorted(maps.Keys(smallest)), true
 }
