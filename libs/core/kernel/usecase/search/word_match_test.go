@@ -35,14 +35,14 @@ func TestWordMatchingMatchesTheTextsTheIndexMatchesForTheSameQuery(t *testing.T)
 	for _, query := range []string{"cafe", "CAFÉ", "naive", "чайтанья", "ВРИНДАВАНЕ", `"au lait"`, "heron NOT naive", "чайт*"} {
 		indexed, err := c.db.ChunkSearch().FindLexical(t.Context(), v.ID, sourcedomain.LexicalQuery{Text: query, Limit: 50, IsRaw: true})
 		if err != nil {
-			t.Fatalf("the index refused %q: %v", query, err)
+			t.Fatalf("the index rejected %q: %v", query, err)
 		}
 		fromIndex := sources(indexed)
 		slices.Sort(fromIndex)
 
 		matched, err := wordmatch.NewMatcher().MatchWords(t.Context(), query, texts)
 		if err != nil {
-			t.Fatalf("the matcher refused %q: %v", query, err)
+			t.Fatalf("the matcher rejected %q: %v", query, err)
 		}
 		var fromMatcher []string
 		for i, isMatch := range matched {

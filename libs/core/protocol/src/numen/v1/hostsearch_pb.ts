@@ -638,7 +638,7 @@ export type HostSearchServiceSearchTextRequest = Message<"numen.v1.HostSearchSer
    * Which participants answer: UNSPECIFIED and HYBRID fuse words, section
    * names and meaning; WORDS asks the words alone; MEANING asks the search
    * source alone and answers NO_MODEL when the installation has none. NAMES is
-   * refused with INVALID_ARGUMENT.
+   * rejected with INVALID_ARGUMENT.
    *
    * @generated from field: numen.v1.SearchMode mode = 6;
    */
@@ -647,7 +647,7 @@ export type HostSearchServiceSearchTextRequest = Message<"numen.v1.HostSearchSer
   /**
    * With mode WORDS only: the query is an FTS5 query in the syntax of the index
    * (phrases, NEAR, prefix *, AND, OR, NOT), used as written. Without it every
-   * word is quoted. Set with another mode it is refused with INVALID_ARGUMENT.
+   * word is quoted. Set with another mode it is rejected with INVALID_ARGUMENT.
    *
    * @generated from field: bool is_raw_words = 7;
    */

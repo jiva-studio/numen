@@ -19,7 +19,7 @@ import (
 // the results whose text contains every word of the query; a raw words query counts its bare words, with
 // the FTS5 operators left out, which is a limit of the fake. Meaning mode keeps the results the embedder
 // gives a vector. The Text of each result is cut to MaxExcerptBytes around the first word of the query,
-// as the host cuts it, and with IsWholeText the indexed text is kept in WholeText. Raw words outside words mode return an error, as the host refuses them.
+// as the host cuts it, and with IsWholeText the indexed text is kept in WholeText. Raw words outside words mode return an error, as the host rejects them.
 func (s *Search) SearchText(_ context.Context, query host.SearchResultQuery) ([]host.SearchResult, error) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()

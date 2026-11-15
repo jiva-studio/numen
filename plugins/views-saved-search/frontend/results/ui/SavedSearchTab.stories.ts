@@ -225,7 +225,7 @@ export const EditsAndSavesTheQuery: Story = {
   },
 }
 
-/** A query the backend refuses shows its problems in the accordion and leaves the note as it was. */
+/** A query the backend rejects shows its problems in the accordion and leaves the note as it was. */
 export const ShowsTheProblemsOfAQueryNotSaved: Story = {
   args: {
     updateAnswer: {

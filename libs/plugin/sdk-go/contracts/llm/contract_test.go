@@ -317,7 +317,7 @@ func TestRerankOfNoDocumentCallsNoProvider(t *testing.T) {
 	}
 }
 
-func TestRerankRefusesAnEmptyQueryWithoutACall(t *testing.T) {
+func TestRerankRejectsAnEmptyQueryWithoutACall(t *testing.T) {
 	for _, query := range []string{"", "  \n\t"} {
 		caller := newCaller(llm.Roles{Reranker: &assistant{}})
 

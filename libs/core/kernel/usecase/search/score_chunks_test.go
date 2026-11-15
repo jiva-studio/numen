@@ -128,7 +128,7 @@ func TestScoreChunksAnswersWordsConditionsWithoutAModel(t *testing.T) {
 	}
 }
 
-func TestScoreChunksRefusesAMeaningConditionWithoutAModel(t *testing.T) {
+func TestScoreChunksRejectsAMeaningConditionWithoutAModel(t *testing.T) {
 	c := newCorpus(t)
 	id := c.findChunkID(t, c.first, "disorder")
 
@@ -245,7 +245,7 @@ func TestScoreChunksOmitsAChunkIDTheVaultDoesNotHold(t *testing.T) {
 	}
 }
 
-func TestScoreChunksRefusesMoreThan500Chunks(t *testing.T) {
+func TestScoreChunksRejectsMoreThan500Chunks(t *testing.T) {
 	c := newCorpus(t)
 	ids := make([]domain.ChunkID, 501)
 	for i := range ids {
@@ -262,7 +262,7 @@ func TestScoreChunksRefusesMoreThan500Chunks(t *testing.T) {
 	}
 }
 
-func TestScoreChunksRefusesMoreThan16Conditions(t *testing.T) {
+func TestScoreChunksRejectsMoreThan16Conditions(t *testing.T) {
 	c := newCorpus(t)
 	id := c.findChunkID(t, c.first, "disorder")
 	conditions := make([]search.ScoreCondition, 17)
@@ -280,7 +280,7 @@ func TestScoreChunksRefusesMoreThan16Conditions(t *testing.T) {
 	}
 }
 
-func TestScoreChunksRefusesAConditionTextOver8192Bytes(t *testing.T) {
+func TestScoreChunksRejectsAConditionTextOver8192Bytes(t *testing.T) {
 	c := newCorpus(t)
 	id := c.findChunkID(t, c.first, "disorder")
 	long := strings.Repeat("a", 8193)
@@ -295,7 +295,7 @@ func TestScoreChunksRefusesAConditionTextOver8192Bytes(t *testing.T) {
 	}
 }
 
-func TestScoreChunksRefusesAConditionWithNoTextOrBothTexts(t *testing.T) {
+func TestScoreChunksRejectsAConditionWithNoTextOrBothTexts(t *testing.T) {
 	c := newCorpus(t)
 	id := c.findChunkID(t, c.first, "disorder")
 

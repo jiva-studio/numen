@@ -113,13 +113,13 @@ func TestScoreChunksReturnsErrNoModelForAMeaningConditionWithoutAModel(t *testin
 	}
 }
 
-func TestScoreChunksReturnsPluginErrInvalidWordsForAQueryTheMatcherRefuses(t *testing.T) {
+func TestScoreChunksReturnsPluginErrInvalidWordsForAQueryTheMatcherRejects(t *testing.T) {
 	s, v := newScoreSearch(t, fixedMatcher{err: sourcedomain.ErrInvalidWords}, true)
 
 	_, _, err := s.ScoreChunks(t.Context(), v, plugin.ScoreQuery{
 		ChunkIDs: []domain.ChunkID{"c1"}, Conditions: []plugin.ScoreCondition{{Words: `"heron`}},
 	})
 	if !errors.Is(err, plugin.ErrInvalidWords) {
-		t.Errorf("a query the matcher refuses returned %v, want plugin.ErrInvalidWords", err)
+		t.Errorf("a query the matcher rejects returned %v, want plugin.ErrInvalidWords", err)
 	}
 }

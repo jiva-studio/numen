@@ -1339,11 +1339,11 @@ type HostSearchServiceSearchTextRequest struct {
 	// Which participants answer: UNSPECIFIED and HYBRID fuse words, section
 	// names and meaning; WORDS asks the words alone; MEANING asks the search
 	// source alone and answers NO_MODEL when the installation has none. NAMES is
-	// refused with INVALID_ARGUMENT.
+	// rejected with INVALID_ARGUMENT.
 	Mode SearchMode `protobuf:"varint,6,opt,name=mode,proto3,enum=numen.v1.SearchMode" json:"mode,omitempty"`
 	// With mode WORDS only: the query is an FTS5 query in the syntax of the index
 	// (phrases, NEAR, prefix *, AND, OR, NOT), used as written. Without it every
-	// word is quoted. Set with another mode it is refused with INVALID_ARGUMENT.
+	// word is quoted. Set with another mode it is rejected with INVALID_ARGUMENT.
 	IsRawWords bool `protobuf:"varint,7,opt,name=is_raw_words,json=isRawWords,proto3" json:"is_raw_words,omitempty"`
 	// Each result carries the whole text of its chunk in whole_text, next to
 	// the excerpt in text.

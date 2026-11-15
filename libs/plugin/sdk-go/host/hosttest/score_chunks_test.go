@@ -84,7 +84,7 @@ func TestTheFakeOmitsAnUnknownChunkIDAndARepeatedOne(t *testing.T) {
 	}
 }
 
-func TestTheFakeRefusesScoreChunksOverTheLimits(t *testing.T) {
+func TestTheFakeRejectsScoreChunksOverTheLimits(t *testing.T) {
 	search := newScoredSearch()
 	ids := make([]string, host.MaxScoredChunks+1)
 	for i := range ids {
@@ -111,7 +111,7 @@ func TestTheFakeRefusesScoreChunksOverTheLimits(t *testing.T) {
 	}
 }
 
-func TestTheFakeRefusesAConditionWithNoTextOrBothTexts(t *testing.T) {
+func TestTheFakeRejectsAConditionWithNoTextOrBothTexts(t *testing.T) {
 	for name, condition := range map[string]host.ScoreCondition{
 		"no text":    {},
 		"both texts": {Meaning: "herons", Words: "heron"},
@@ -123,7 +123,7 @@ func TestTheFakeRefusesAConditionWithNoTextOrBothTexts(t *testing.T) {
 	}
 }
 
-func TestTheFakeAnswersWordsWithoutAModelAndRefusesMeaning(t *testing.T) {
+func TestTheFakeAnswersWordsWithoutAModelAndRejectsMeaning(t *testing.T) {
 	search := newScoredSearch()
 	search.RemoveModel()
 
@@ -136,7 +136,7 @@ func TestTheFakeAnswersWordsWithoutAModelAndRefusesMeaning(t *testing.T) {
 	}
 }
 
-func TestTheFakeRefusesScoreChunksWithoutThePermission(t *testing.T) {
+func TestTheFakeRejectsScoreChunksWithoutThePermission(t *testing.T) {
 	search := newScoredSearch()
 	search.Deny(host.PermissionIndexRead)
 
@@ -159,7 +159,7 @@ func TestTheFakeSearchTextReturnsMoreThanThreeOfOneFileWhenAsked(t *testing.T) {
 	}
 }
 
-func TestTheFakeSearchTextRefusesRawWordsOutsideWordsMode(t *testing.T) {
+func TestTheFakeSearchTextRejectsRawWordsOutsideWordsMode(t *testing.T) {
 	search := newSearch()
 	search.SetIndexedResults(getIndexedResults())
 

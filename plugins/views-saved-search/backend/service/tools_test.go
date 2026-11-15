@@ -161,7 +161,7 @@ func TestCreateReturnsTheResultsOfTheFirstRun(t *testing.T) {
 	}
 }
 
-func TestCreateRefusesAQueryThatDoesNotCompileAndWritesNothing(t *testing.T) {
+func TestCreateRejectsAQueryThatDoesNotCompileAndWritesNothing(t *testing.T) {
 	f := newFixture(t, 10)
 
 	out, failure := f.callTool(t, testVault, "saved_search_create", mustJSON(t, map[string]any{"title": "Winter storms", "query": `meaning("storm") &&`}))
@@ -181,7 +181,7 @@ func TestCreateRefusesAQueryThatDoesNotCompileAndWritesNothing(t *testing.T) {
 	}
 }
 
-func TestCreateRefusesAPathThatExists(t *testing.T) {
+func TestCreateRejectsAPathThatExists(t *testing.T) {
 	f := newFixture(t, 10)
 	f.vault.File("Winter storms.md", "The winter of 1911.\n")
 
@@ -195,7 +195,7 @@ func TestCreateRefusesAPathThatExists(t *testing.T) {
 	}
 }
 
-func TestCreateRefusesAnEmptyTitle(t *testing.T) {
+func TestCreateRejectsAnEmptyTitle(t *testing.T) {
 	_, failure := newFixture(t, 10).callTool(t, testVault, "saved_search_create", mustJSON(t, map[string]any{"title": "  ", "query": stormsQuery}))
 
 	if !strings.Contains(failure, "title is empty") {
@@ -203,7 +203,7 @@ func TestCreateRefusesAnEmptyTitle(t *testing.T) {
 	}
 }
 
-func TestUpdateRefusesANoteThatIsNotASearch(t *testing.T) {
+func TestUpdateRejectsANoteThatIsNotASearch(t *testing.T) {
 	f := newFixture(t, 10)
 
 	_, failure := f.callTool(t, testVault, "saved_search_update", mustJSON(t, map[string]any{"path": "Notes/Tides.md", "query": stormsQuery}))
@@ -224,7 +224,7 @@ func TestUpdateWithoutAFieldIsAnError(t *testing.T) {
 	}
 }
 
-func TestUpdateRefusesAQueryThatDoesNotCompileAndChangesNothing(t *testing.T) {
+func TestUpdateRejectsAQueryThatDoesNotCompileAndChangesNothing(t *testing.T) {
 	f := newFixture(t, 10)
 	f.addStormsNote()
 	before, _ := f.vault.Content(stormsPath)
@@ -313,7 +313,7 @@ func TestPreviewToolReturnsResultsWithTheirKeys(t *testing.T) {
 	}
 }
 
-func TestPreviewToolRefusesANegativeLimit(t *testing.T) {
+func TestPreviewToolRejectsANegativeLimit(t *testing.T) {
 	_, failure := newFixture(t, 10).callTool(t, testVault, "saved_search_preview", `{"query":"meaning(\"tides\")","limit":-1}`)
 
 	if failure == "" {

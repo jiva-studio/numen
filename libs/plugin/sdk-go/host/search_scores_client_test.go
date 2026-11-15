@@ -112,7 +112,7 @@ func TestASearchClientSendsTheResultsPerSourceTheModeAndTheRawWordsFlag(t *testi
 	}
 }
 
-func TestASearchClientRefusesAnUnknownModeBeforeTheCall(t *testing.T) {
+func TestASearchClientRejectsAnUnknownModeBeforeTheCall(t *testing.T) {
 	h := &scoreHost{}
 
 	_, err := dialScoreHost(t, h).SearchText(t.Context(), host.SearchResultQuery{Query: "heron", Mode: host.SearchMode(9)})
