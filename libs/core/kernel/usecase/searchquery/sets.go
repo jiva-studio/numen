@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func (r *documentReader) findSets(ctx context.Context) error {
