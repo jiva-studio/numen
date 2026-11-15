@@ -9,5 +9,12 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["steps/**/*", "drivers/**/*", "support/**/*", "playwright.config.ts"]
+  "include": [
+    "steps/**/*",
+    "drivers/**/*",
+    "support/**/*",
+    "report/**/*.ts",
+    "playwright.config.ts",
+    "report.config.ts"
+  ]
 }

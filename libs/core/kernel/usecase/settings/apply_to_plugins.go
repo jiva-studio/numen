@@ -3,6 +3,7 @@ package settings
 import (
 	"context"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
@@ -42,10 +43,10 @@ func NewApplyToPlugins(deps ApplyToPluginsDeps) *ApplyToPlugins {
 	}
 }
 
-// Execute applies the settings of the plugins and the performance profile to the host, and
+// Execute applies the settings of the plugins and the performance limits to the host, and
 // subscribes the host to the setting changes once.
-func (u *ApplyToPlugins) Execute(plugins map[string]map[string]any, profile string) {
-	u.config.SetPerformanceProfile(context.Background(), profile)
+func (u *ApplyToPlugins) Execute(plugins map[string]map[string]any, performance plugindomain.Performance) {
+	u.config.SetPerformance(context.Background(), performance)
 	if plugins != nil {
 		u.config.SetSettings(plugins)
 	}

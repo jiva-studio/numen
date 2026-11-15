@@ -46,7 +46,7 @@ func TestAHostWithoutAModelOrAVaultIsAFailedPrecondition(t *testing.T) {
 	noVault := newIndex()
 	noVault.HideVault()
 	for name, index := range map[string]indexstats.Index{"no model": noModel, "no vault": noVault} {
-		_, err := getStats(indexstats.NewStats(index, newFakeClock(getStart()), 8))(t.Context(), api.GetStatsRequest{})
+		_, err := getStats(indexstats.NewStats(index, newFakeClock(getStart())))(t.Context(), api.GetStatsRequest{})
 
 		var failure *server.APIError
 		if !errors.As(err, &failure) || failure.Code != server.CodeFailedPrecondition {
@@ -58,13 +58,13 @@ func TestAHostWithoutAModelOrAVaultIsAFailedPrecondition(t *testing.T) {
 func TestAPluginWithoutThePermissionIsDeniedAndAnyOtherFailureIsInternal(t *testing.T) {
 	denied := newIndex()
 	denied.Deny(host.PermissionIndexRead)
-	_, err := getStats(indexstats.NewStats(denied, newFakeClock(getStart()), 8))(t.Context(), api.GetStatsRequest{})
+	_, err := getStats(indexstats.NewStats(denied, newFakeClock(getStart())))(t.Context(), api.GetStatsRequest{})
 	var failure *server.APIError
 	if !errors.As(err, &failure) || failure.Code != server.CodePermissionDenied {
 		t.Errorf("error = %v, want permission_denied", err)
 	}
 
-	_, err = getStats(indexstats.NewStats(failingIndex{}, newFakeClock(getStart()), 8))(t.Context(), api.GetStatsRequest{})
+	_, err = getStats(indexstats.NewStats(failingIndex{}, newFakeClock(getStart())))(t.Context(), api.GetStatsRequest{})
 	if !errors.Is(err, errHostUnreachable) || errors.As(err, &failure) {
 		t.Errorf("error = %v, want wrapped errHostUnreachable", err)
 	}
@@ -104,7 +104,7 @@ func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
 
 func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
-		return mount(s, indexstats.NewStats(newIndex(), newFakeClock(getStart()), 16))
+		return mount(s, indexstats.NewStats(newIndex(), newFakeClock(getStart())))
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -112,7 +112,7 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	configured := `{"values":{"host.performanceProfile":"eco"}}`
+	configured := `{"values":{"host.performanceProfile":"low","host.performanceThreads":"4","host.performanceNice":"15"}}`
 	if status, body := post(t, web, "/numen.v1.PluginLifecycleService/Configure", configured); status != http.StatusOK {
 		t.Fatalf("Configure = %d %s", status, body)
 	}
@@ -122,7 +122,7 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	if err := json.Unmarshal(body, &got); err != nil {
 		t.Fatal(err)
 	}
-	if status != http.StatusOK || got.Vectors != 12480 || got.Profile != "eco" || got.Threads != 1 {
+	if status != http.StatusOK || got.Vectors != 12480 || got.Profile != "low" || got.Threads != 4 {
 		t.Errorf("GetStats = %d %s", status, body)
 	}
 }

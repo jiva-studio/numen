@@ -35,7 +35,7 @@ type portChecker interface {
 
 // profilePusher gives the running plugins the performance profile.
 type profilePusher interface {
-	SetPerformanceProfile(ctx context.Context, profile string)
+	SetPerformance(ctx context.Context, performance plugindomain.Performance)
 }
 
 // settingPlugins is what the settings read of the set of plugins.
@@ -88,10 +88,10 @@ func (s *Settings) SetSettings(all map[string]map[string]any) {
 	s.listeners.syncAll(context.Background())
 }
 
-// SetPerformanceProfile records the profile of the performance setting and pushes it to every
+// SetPerformance records the limits of the performance profile and pushes them to every
 // running plugin when it changed.
-func (s *Settings) SetPerformanceProfile(ctx context.Context, profile string) {
-	s.profile.SetPerformanceProfile(ctx, profile)
+func (s *Settings) SetPerformance(ctx context.Context, performance plugindomain.Performance) {
+	s.profile.SetPerformance(ctx, performance)
 }
 
 // GetPluginSettings returns resolved settings for a plugin with defaults overlaid by stored values.

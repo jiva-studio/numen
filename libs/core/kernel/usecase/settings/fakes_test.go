@@ -90,10 +90,10 @@ func (h *pluginHost) CheckPluginSetting(pluginID, key string, _ any) error {
 
 func (h *pluginHost) SetSettings(all map[string]map[string]any) { h.settings = all }
 
-func (h *pluginHost) SetPerformanceProfile(_ context.Context, profile string) {
+func (h *pluginHost) SetPerformance(_ context.Context, performance plugin.Performance) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.profiles = append(h.profiles, profile)
+	h.profiles = append(h.profiles, performance.Profile)
 }
 
 func (h *pluginHost) SetPersistHandler(handler plugin.PersistHandler) { h.persist = handler }
