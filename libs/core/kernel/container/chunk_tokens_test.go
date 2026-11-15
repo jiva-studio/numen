@@ -18,7 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
@@ -226,7 +226,7 @@ func TestEverySiteThatChunksNotesUsesTheSizeThePluginReports(t *testing.T) {
 	cfg, _, _ := openChunkingConfig(t, 300)
 	openEmbedder(t, cfg)
 	db := makeIndex(t)
-	v := vaultfixture.NewVault(t, map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
+	v := vaulttest.NewVault(t, map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
 	const limit = 600
 
 	scanSizes := container.Scan(cfg, db).Cut.Sizes
@@ -258,7 +258,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 	cfg, _, _ := openChunkingConfig(t, 300)
 	openEmbedder(t, cfg)
 	db := makeIndex(t)
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n",
 		"Gate.md":  "# Gate\n\nThe gate of the orchard sticks in wet weather.\n",
 	})
@@ -307,7 +307,7 @@ func TestAScanChecksTheRecordedChunkingOnlyWhereTheSizeIsKnown(t *testing.T) {
 func TestANewChunkSizeMakesTheNextScanReadTheNotesAgain(t *testing.T) {
 	db := makeIndex(t)
 	cfg := container.NewConfig(container.Config{})
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"Hedge.md":   "# Hedge\n\nThe hedge along the lane is thick and tangled.\n",
 		"Gate.md":    "# Gate\n\nThe gate of the orchard sticks in wet weather.\n",
 		"Compost.md": "# Compost\n\nThe compost heap sits behind the shed.\n",

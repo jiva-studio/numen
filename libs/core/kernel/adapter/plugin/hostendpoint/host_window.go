@@ -144,19 +144,5 @@ func (e *windowEndpoint) ActivateTab(
 }
 
 func convertTabToWire(tab windowdomain.Tab) *v1.OpenTab {
-	out := &v1.OpenTab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title}
-	if place := tab.Place; place != nil {
-		out.Place = &v1.TabPlace{
-			Page:            clampToInt32(place.Page),
-			PageCount:       clampToInt32(place.PageCount),
-			PositionSeconds: place.PositionSeconds,
-			Cfi:             place.CFI,
-			Chapter:         place.Chapter,
-		}
-	}
-	return out
-}
-
-func clampToInt32(n int) int32 {
-	return int32(max(min(n, math.MaxInt32), math.MinInt32))
+	return &v1.OpenTab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, Place: tab.Place}
 }

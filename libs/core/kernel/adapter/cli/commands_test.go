@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -500,17 +500,17 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 			closes.add(db.Close)
 			readerOptions := vaultconfig.Options{}
 			readers := vaultreader.Readers{Options: readerOptions}
-			notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
+			notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 			books := filetext.NewIndex(filetext.IndexDeps{
 				Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 				Texts: testsupport.Texts{Readers: readers},
 			})
-			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, none.SearchSource{})
+			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{})
 			if s.embedder != nil {
 				if err := db.VectorIndex().FitVectors(ctx, width, s.embedder.Describe().Recipe()); err != nil {
 					return cli.Indexed{}, err
 				}
-				embed = vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, sourcefake.Wrap(s.embedder))
+				embed = vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(s.embedder))
 			}
 			read := indexing.NewReadWholeVaultByName(registry.NewFind(singleVaultList{target}).Execute, preparingRead(indexing.NewReadWholeVault(notes, books, embed)))
 			read.Unembedded = s.unembedded
@@ -523,7 +523,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 
 func createNoteVault(t *testing.T) domain.Vault {
 	t.Helper()
-	return vaultfixture.NewVault(t, map[string]string{"Bees.md": "# Bees\n\nBees make honey.\n"})
+	return vaulttest.NewVault(t, map[string]string{"Bees.md": "# Bees\n\nBees make honey.\n"})
 }
 
 func TestScanReportsTheNotesItIndexed(t *testing.T) {
@@ -572,8 +572,8 @@ func TestScanReportsTheVectorsItMade(t *testing.T) {
 
 func TestScanReportsTheBooksItRead(t *testing.T) {
 	t.Parallel()
-	target := vaultfixture.NewVault(t, nil)
-	vaultfixture.WriteBook(t, target.Path, "bee.epub")
+	target := vaulttest.NewVault(t, nil)
+	vaulttest.WriteBook(t, target.Path, "bee.epub")
 	s := &scanFixture{}
 	out, err := runWithDeps(s.deps(t, target), "scan", target.Name)
 	if err != nil {
@@ -676,12 +676,12 @@ func (r refusingSummaries) GetSummary(ctx context.Context, vaultID domain.VaultI
 
 func TestScanReadsEverySourceOfAVaultOfANoteAPdfAndARecording(t *testing.T) {
 	t.Parallel()
-	target := vaultfixture.NewVault(t, map[string]string{
+	target := vaulttest.NewVault(t, map[string]string{
 		"lectures.md":        "# Lectures\n\nA note about the talks.\n",
 		"tidal-mills.md":     "%BOOK\nA tidal mill stored seawater behind a sluice gate.\n",
 		"books/flywheel.pdf": "%PDF-1.4\nA flywheel keeps energy in a rotor.\n",
 	})
-	vaultfixture.WriteBook(t, target.Path, "talks/lecture.wav")
+	vaulttest.WriteBook(t, target.Path, "talks/lecture.wav")
 	s := &scanFixture{}
 	out, err := runWithDeps(s.deps(t, target), "scan", target.Name)
 	if err != nil {

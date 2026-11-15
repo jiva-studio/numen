@@ -9,8 +9,8 @@ import (
 
 func TestOpenRejectsALibraryThatIsNotThere(t *testing.T) {
 	lib := NewLibrary()
-	if !lib.HasRegistration() {
-		t.Fatal("NewLibrary() has no default registration")
+	if len(lib.runtime.hooks) != 1 {
+		t.Fatalf("NewLibrary() has %d hooks, want the graph optimization one", len(lib.runtime.hooks))
 	}
 	withHooks := NewLibrary(func(string) error { return nil }, func(string) error { return nil })
 	if len(withHooks.runtime.hooks) != 3 {

@@ -74,6 +74,22 @@ func TestLocalModelGetProvider(t *testing.T) {
 	}
 }
 
+func TestAModelProviderIsReadInEverySpelling(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		want onnx.Provider
+	}{
+		{" Auto ", onnx.ProviderAuto}, {"cpu", onnx.ProviderCPU},
+		{"coreml", onnx.ProviderCoreML}, {"core-ml", onnx.ProviderCoreML}, {"CUDA", onnx.ProviderCUDA},
+		{"directml", onnx.ProviderDirectML}, {"direct-ml", onnx.ProviderDirectML}, {"dml", onnx.ProviderDirectML},
+		{"rocm", onnx.ProviderROCm},
+	} {
+		if got := getProvider(model.LocalModel{Provider: tc.name}); got != tc.want {
+			t.Errorf("getProvider(%q) = %q, want %q", tc.name, got, tc.want)
+		}
+	}
+}
+
 func TestLocalModelGetThreads(t *testing.T) {
 	prev := runtime.GOMAXPROCS(0)
 	defer runtime.GOMAXPROCS(prev)

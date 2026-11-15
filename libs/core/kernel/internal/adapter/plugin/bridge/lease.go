@@ -3,14 +3,12 @@ package bridge
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // Activator starts a plugin on demand and releases the lease the start took. A use lease is for a use of
@@ -133,14 +131,4 @@ func (s Service[C]) Open(ctx context.Context, why string) (C, *Lease, error) {
 // plugin used or move its idle countdown.
 func (s Service[C]) OpenForQuestion(ctx context.Context, why string) (C, *Lease, error) {
 	return OpenForQuestion(ctx, s.Host, s.PluginID, why, s.NewClient)
-}
-
-// ReadActivationError sorts the failure to start a plugin: the
-// end of a context is returned as it is, and any other failure is
-// port.ErrUnavailable.
-func ReadActivationError(err error) error {
-	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-		return err
-	}
-	return fmt.Errorf("%w: %w", domain.ErrUnavailable, err)
 }
