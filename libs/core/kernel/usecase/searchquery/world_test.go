@@ -220,7 +220,7 @@ func (w world) getDeps(model texts) searchquery.FindSearchResultsDeps {
 	search := w.db.ChunkSearch()
 	deps := searchquery.FindSearchResultsDeps{
 		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search, Words: search,
-		Contents: w.db.NoteQueries(), Clock: newClock(),
+		Contents: w.db.NoteContents(), Clock: newClock(),
 		Places: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
 		Floors: fixedFloor(testFloor), ContentTypes: extensionTypes{},
 	}
