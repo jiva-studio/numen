@@ -3,8 +3,6 @@
 package service
 
 import (
-	"net/http"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -28,33 +26,11 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, client, search, connections, nil)
+	return mount(s, client, search, connections)
 }
 
-// NewHandler returns the handler of the plugin's backend for a host that links the plugin in.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		client, err := host.NewClientFromVars(vars)
-		if err != nil {
-			return err
-		}
-		search, err := host.NewSearchClientFromVars(vars)
-		if err != nil {
-			return err
-		}
-		connections, err := connection.NewClientFromVars(vars)
-		if err != nil {
-			return err
-		}
-		return mount(s, client, search, connections, vars)
-	})
-}
-
-func mount(s *server.Server, client *host.Client, search *host.SearchClient, connections connection.Caller, vars map[string]string) error {
+func mount(s *server.Server, client *host.Client, search *host.SearchClient, connections connection.Caller) error {
 	current := settings.NewStore()
-	if len(vars) > 0 {
-		current.Update(vars)
-	}
 	rerank := reranker.New(connections)
 	open := func(id domain.VaultID) preview.Dependencies {
 		return preview.Dependencies{Search: search.With(id), Notes: client.With(id), Reranker: rerank}
