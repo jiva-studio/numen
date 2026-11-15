@@ -265,6 +265,9 @@ type SearchResultQuery struct {
 	// OR, NOT), unquoted. It is valid with SearchModeWords only; a query FTS5 rejects returns
 	// ErrInvalidWords.
 	IsRawWords bool
+	// IsWholeText asks for the whole text of the chunk of each result in WholeText, next to the excerpt in
+	// Text.
+	IsWholeText bool
 }
 
 // SearchResult is a span of source text matching a query.
@@ -296,6 +299,9 @@ type SearchResult struct {
 	// WordScore is the negated bm25 of the best hit of the words in this result: positive, higher is
 	// better, comparable only within one query; nil when the search by words did not return it.
 	WordScore *float64
+	// WholeText is the whole text of the chunk Text is cut from; set only when the query asks with
+	// IsWholeText.
+	WholeText string
 }
 
 // ScoreCondition is one condition ScoreChunks scores a chunk against.

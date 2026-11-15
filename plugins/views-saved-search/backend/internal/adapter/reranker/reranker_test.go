@@ -3,70 +3,126 @@ package reranker_test
 import (
 	"context"
 	"errors"
+	"maps"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
 	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/internal/adapter/reranker"
+	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/internal/adapter/reranker/rerankertest"
 	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/ports"
 )
 
-// byLength scores a document by the number of its bytes, divided by eight, and records the request.
-type byLength struct {
-	request *llm.RerankRequest
-	err     error
-}
-
-func (b *byLength) Rerank(_ context.Context, _ connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
-	b.request = request
-	if b.err != nil {
-		return nil, b.err
-	}
-	result := &llm.RerankResult{}
-	for _, document := range request.GetDocuments() {
-		result.Scores = append(result.Scores, float32(len(document))/8)
-	}
-	return result, nil
-}
-
-func newReranker(model llm.Reranker) *reranker.Reranker {
-	return reranker.New(llmtest.NewCaller(llm.Provide(nil, llm.Roles{Reranker: model}), connection.Call{ConnectionID: "harbor-reranker"}))
-}
+const (
+	tideText   = "tide"
+	keeperText = "the harbor master"
+)
 
 var _ ports.Reranker = (*reranker.Reranker)(nil)
 
-func TestRerankerReturnsTheScoresOfTheService(t *testing.T) {
-	model := &byLength{}
+func newRequest(documents ...string) ports.RerankRequest {
+	return ports.RerankRequest{Query: "spring tides", Instruction: "", Documents: documents, Priority: connection.PriorityBackground}
+}
 
-	scores, err := newReranker(model).Rerank(t.Context(), "spring tides", "", []string{"tide", "the harbor master"})
+func TestRerankerTriesTheRowsInOrderAndNamesTheOneThatAnswered(t *testing.T) {
+	rows := rerankertest.NewRows()
+	failing := rerankertest.NewStandIn(nil)
+	failing.Fail(connection.NewTryNextError(connection.ReasonRateLimited, 0))
+	answering := rerankertest.NewStandIn(map[string]float32{tideText: 0.5, keeperText: 0.25})
+	rows.Add("conn-quay", "Quay reranker", map[string]string{"model": "quay-model"}, failing)
+	rows.Add("conn-pier", "Pier reranker", map[string]string{"model": "pier-model"}, answering)
 
-	if err != nil || !slices.Equal(scores, []float64{0.5, 2.125}) {
-		t.Errorf("Rerank = %v, %v, want 0.5 and 2.125", scores, err)
+	reranked, err := reranker.New(rows).Rerank(t.Context(), newRequest(tideText, keeperText))
+	if err != nil {
+		t.Fatal(err)
 	}
-	if model.request.GetQuery() != "spring tides" || model.request.GetInstruction() != "" || len(model.request.GetDocuments()) != 2 {
-		t.Errorf("request = %v, want the query, no instruction and both documents", model.request)
+
+	if !slices.Equal(reranked.Scores, []float64{0.5, 0.25}) {
+		t.Errorf("scores = %v, want 0.5 and 0.25 from the second row", reranked.Scores)
+	}
+	if reranked.Reranker.ConnectionID != "conn-pier" || !maps.Equal(reranked.Reranker.Options, map[string]string{"model": "pier-model"}) {
+		t.Errorf("reranker = %+v, want the row of conn-pier with its model", reranked.Reranker)
+	}
+	preferred := rows.GetPreferredRows()
+	if len(preferred) != 2 || preferred[0].ConnectionID != "conn-quay" || preferred[1].ConnectionID != "conn-pier" ||
+		!preferred[0].IsExclusive || !preferred[1].IsExclusive {
+		t.Errorf("preferred rows = %+v, want conn-quay then conn-pier, each exclusive", preferred)
+	}
+	if got := rows.GetOperations(); !slices.Equal(got, []string{llm.OperationRerank}) {
+		t.Errorf("listed operations = %v, want llm.rerank once", got)
+	}
+	requests := answering.GetRequests()
+	if len(requests) != 1 || requests[0].Query != "spring tides" || !slices.Equal(requests[0].Documents, []string{tideText, keeperText}) {
+		t.Errorf("requests = %+v, want the query and both documents", requests)
 	}
 }
 
-func TestRerankerReturnsErrNoRerankerWithoutAConnection(t *testing.T) {
-	caller := llmtest.NewCaller(llm.Provide(nil, llm.Roles{}), connection.Call{})
-
-	_, err := reranker.New(caller).Rerank(t.Context(), "spring tides", "", []string{"tide"})
+func TestRerankerReturnsErrNoRerankerWithoutRows(t *testing.T) {
+	_, err := reranker.New(rerankertest.NewRows()).Rerank(t.Context(), newRequest(tideText))
 
 	if !errors.Is(err, ports.ErrNoReranker) {
 		t.Errorf("Rerank = %v, want ports.ErrNoReranker", err)
 	}
 }
 
-func TestRerankerPassesAFailureOfTheServiceThrough(t *testing.T) {
-	model := &byLength{err: connection.NewTryNextError(connection.ReasonRateLimited, 0)}
+func TestRerankerReturnsTheFailuresOfEveryRow(t *testing.T) {
+	rows := rerankertest.NewRows()
+	quay := rerankertest.NewStandIn(nil)
+	quay.Fail(connection.NewTryNextError(connection.ReasonRateLimited, 0))
+	pier := rerankertest.NewStandIn(nil)
+	pier.Fail(connection.NewTryNextError(connection.ReasonUnavailable, 0))
+	rows.Add("conn-quay", "Quay reranker", nil, quay)
+	rows.Add("conn-pier", "Pier reranker", nil, pier)
 
-	_, err := newReranker(model).Rerank(t.Context(), "spring tides", "", []string{"tide"})
+	_, err := reranker.New(rows).Rerank(t.Context(), newRequest(tideText))
 
-	var failed *connection.AllFailedError
-	if !errors.As(err, &failed) || errors.Is(err, ports.ErrNoReranker) {
-		t.Errorf("Rerank = %v, want the failure of the service", err)
+	if err == nil || errors.Is(err, ports.ErrNoReranker) {
+		t.Fatalf("Rerank = %v, want the failures of both rows", err)
+	}
+	if !strings.Contains(err.Error(), "Quay reranker") || !strings.Contains(err.Error(), "Pier reranker") {
+		t.Errorf("error = %q, want both connection names", err)
+	}
+}
+
+func TestRerankerStopsAtACanceledContext(t *testing.T) {
+	rows := rerankertest.NewRows()
+	quay := rerankertest.NewStandIn(nil)
+	rows.Add("conn-quay", "Quay reranker", nil, quay)
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	_, err := reranker.New(rows).Rerank(ctx, newRequest(tideText))
+
+	if !errors.Is(err, context.Canceled) || len(quay.GetRequests()) != 0 {
+		t.Errorf("Rerank = %v with %d requests, want context.Canceled and no request", err, len(quay.GetRequests()))
+	}
+}
+
+func TestListRerankersReturnsTheRowsInOrder(t *testing.T) {
+	rows := rerankertest.NewRows()
+	rows.Add("conn-quay", "Quay reranker", map[string]string{"model": "quay-model"}, rerankertest.NewStandIn(nil))
+	rows.Add("conn-pier", "Pier reranker", map[string]string{"model": "pier-model"}, rerankertest.NewStandIn(nil))
+
+	listed, err := reranker.New(rows).ListRerankers(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []ports.RerankerID{
+		{ConnectionID: "conn-quay", Options: map[string]string{"model": "quay-model"}},
+		{ConnectionID: "conn-pier", Options: map[string]string{"model": "pier-model"}},
+	}
+	if len(listed) != len(want) {
+		t.Fatalf("rerankers = %+v, want %+v", listed, want)
+	}
+	for i := range want {
+		if listed[i].ConnectionID != want[i].ConnectionID || !maps.Equal(listed[i].Options, want[i].Options) {
+			t.Errorf("rerankers[%d] = %+v, want %+v", i, listed[i], want[i])
+		}
+	}
+	if got := rows.GetOperations(); !slices.Equal(got, []string{llm.OperationRerank}) {
+		t.Errorf("listed operations = %v, want llm.rerank", got)
 	}
 }

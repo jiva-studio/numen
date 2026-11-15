@@ -42,75 +42,125 @@ func New(dependencies Dependencies, config Config) *UseCase {
 	return &UseCase{search: dependencies.Search, notes: dependencies.Notes, reranker: dependencies.Reranker, config: config}
 }
 
-// Execute compiles the query and searches the index once for each meaning and words condition that is not
-// negated, in its mode and in each folder of the filter, one search after another. It joins the result
+// Run is a run of a query and what a saved search keeps of it: for each result of Output.Results the chunk
+// ids of its passages, the row that reranked, nil in fused order, and the rerank query sent.
+type Run struct {
+	Output   api.PreviewOutput
+	ChunkIDs [][]string
+	Reranker *ports.RerankerID
+	Rerank   string
+}
+
+// Plan is what a run of an input uses before it searches: the limit after the default and the cut, the
+// rerank query, and the problems of the query.
+type Plan struct {
+	Limit    int
+	Rerank   string
+	Problems []api.Problem
+}
+
+// Execute returns the output of Run.
+func (u *UseCase) Execute(ctx context.Context, in api.PreviewInput) (api.PreviewOutput, error) {
+	run, err := u.Run(ctx, in)
+	return run.Output, err
+}
+
+// Run compiles the query and searches the index once for each meaning and words condition that is not
+// negated, in its mode and in each folder of the filter, one search after another, for the passages of
+// the numbers of Config: those of a reranked run when the reranking setting has a row. It joins the result
 // lists in turns, the first result of every list, then the second, each passage once, up to MaxCandidates;
 // scores every candidate against every condition in batches of host.MaxScoredChunks, dropping a candidate
-// the answer leaves out; and keeps the candidates the query matches. The first RerankedPerResult times the
-// limit of them, at most MaxReranked, go to the reranker in fused order and the rest are dropped, whether
-// the reranker answers or not; its query is the rerank text of the input, else the texts of the conditions
-// that are not negated, one per line. A reranker that fails leaves the fused order with a warning.
+// the answer leaves out; and keeps the candidates the query matches. The first of them in fused order, as
+// many as Config says, go to the reranker with the whole text of their chunks and the rest are dropped,
+// whether the reranker answers or not; its query is the rerank text of the input, else the texts of the
+// conditions that are not negated, one per line. A reranker that fails leaves the fused order with a warning.
 // Neighbors of one file are joined and the results returned best first. A query that is not valid, or a
 // words condition the index rejects, returns its problems in the output with a nil error; the leaf the
 // index rejects is found by scoring each words condition alone.
-func (u *UseCase) Execute(ctx context.Context, in api.PreviewInput) (api.PreviewOutput, error) {
-	out := api.PreviewOutput{
-		Query: in.Query, Results: []api.PreviewResult{}, Order: api.OrderFused, Floor: 0, CandidateCount: 0,
-		Warnings: nil, Errors: nil,
+func (u *UseCase) Run(ctx context.Context, in api.PreviewInput) (Run, error) {
+	run := Run{
+		Output: api.PreviewOutput{
+			Query: in.Query, Results: []api.PreviewResult{}, Order: api.OrderFused, Floor: 0, CandidateCount: 0,
+			Warnings: nil, Errors: nil,
+		},
+		ChunkIDs: [][]string{}, Reranker: nil, Rerank: getRerankQuery(in.Rerank, nil),
 	}
 	if err := ctx.Err(); err != nil {
-		return out, err
+		return run, err
 	}
 	limit, err := u.getLimit(in.Limit)
 	if err != nil {
-		return out, err
+		return run, err
 	}
 	compiled, problems, err := u.compile(in.Query)
 	if err != nil || len(problems) > 0 {
-		out.Errors = problems
-		return out, err
+		run.Output.Errors = problems
+		return run, err
 	}
+	run.Rerank = getRerankQuery(in.Rerank, compiled.Leaves)
 	if compiled.Filter.IsEveryKindExcluded {
-		out.Warnings = append(out.Warnings, warningKindsExcluded)
-		return out, nil
+		run.Output.Warnings = append(run.Output.Warnings, warningKindsExcluded)
+		return run, nil
 	}
-	return u.run(ctx, in, compiled, limit, out)
+	return u.run(ctx, compiled, limit, run)
 }
 
-func (u *UseCase) run(ctx context.Context, in api.PreviewInput, compiled query.Query, limit int, out api.PreviewOutput) (api.PreviewOutput, error) {
-	found, err := u.fetchCandidates(ctx, compiled)
+// Plan returns what a run of the input uses, without a call to the host or the reranker.
+func (u *UseCase) Plan(in api.PreviewInput) (Plan, error) {
+	limit, err := u.getLimit(in.Limit)
+	if err != nil {
+		return Plan{Limit: 0, Rerank: "", Problems: nil}, err
+	}
+	compiled, problems, err := u.compile(in.Query)
+	if err != nil || len(problems) > 0 {
+		return Plan{Limit: limit, Rerank: getRerankQuery(in.Rerank, nil), Problems: problems}, err
+	}
+	return Plan{Limit: limit, Rerank: getRerankQuery(in.Rerank, compiled.Leaves), Problems: nil}, nil
+}
+
+func (u *UseCase) run(ctx context.Context, compiled query.Query, limit int, run Run) (Run, error) {
+	gathered, err := u.getPool(ctx)
+	if err != nil {
+		return run, err
+	}
+	found, err := u.fetchCandidates(ctx, compiled, gathered)
 	if problem, isProblem := getWordsProblem(err); isProblem {
-		out.Errors = []api.Problem{problem}
-		return out, nil
+		run.Output.Errors = []api.Problem{problem}
+		return run, nil
 	}
 	if err != nil {
-		return out, err
+		return run, err
 	}
-	out.CandidateCount = found.count
-	out.Warnings = append(out.Warnings, found.warnings...)
+	run.Output.CandidateCount = found.count
+	run.Output.Warnings = append(run.Output.Warnings, found.warnings...)
 	kept, floor, err := u.keepMatches(ctx, compiled, found.candidates)
 	if problem, isProblem := getWordsProblem(err); isProblem {
-		out.Errors = []api.Problem{problem}
-		return out, nil
+		run.Output.Errors = []api.Problem{problem}
+		return run, nil
 	}
 	if err != nil {
-		return out, err
+		return run, err
 	}
-	out.Floor = floor
+	run.Output.Floor = floor
 	ranking.Sort(kept)
-	reranked, err := u.rerank(ctx, in, compiled, kept, limit)
+	reranked, err := u.rerank(ctx, rerankInput{text: run.Rerank, kept: kept, limit: limit, floor: floor, gathered: gathered})
 	if err != nil {
-		return out, err
+		return run, err
 	}
-	out.Order = reranked.order
-	out.Warnings = append(out.Warnings, reranked.warnings...)
+	run.Output.Order = reranked.order
+	run.Reranker = reranked.reranker
+	run.Output.Warnings = append(run.Output.Warnings, reranked.warnings...)
 	merged := ranking.Merge(reranked.candidates, u.config.MergeGapBytes)
 	ranking.Sort(merged)
 	if len(merged) > limit {
 		merged = merged[:limit]
 	}
-	out.Results, err = u.writeResults(ctx, merged)
-	return out, err
+	run.ChunkIDs = make([][]string, len(merged))
+	for i, candidate := range merged {
+		run.ChunkIDs[i] = candidate.ChunkIDs
+	}
+	run.Output.Results, err = u.writeResults(ctx, merged)
+	return run, err
 }
 
 func (u *UseCase) getLimit(limit int) (int, error) {

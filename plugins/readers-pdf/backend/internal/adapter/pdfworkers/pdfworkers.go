@@ -5,12 +5,12 @@ package pdfworkers
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/tetratelabs/wazero"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
@@ -31,18 +31,25 @@ func newCompilationCache() wazero.CompilationCache {
 	return wasm.NewCompilationCache(dir)
 }
 
-// New starts one worker for each processor and warms them up. afterFunc sets the timers that
-// release idle workers.
+// New starts as many workers as the fallback performance limits allow threads and warms them up,
+// keeping every returned worker alive. afterFunc sets the timers that release idle workers.
 func New(afterFunc func(time.Duration, func()) pdf.Timer) *pdf.Workers {
+	threads := performance.Read(nil).Threads
 	workers := pdf.NewWorkers(pdf.Options{
 		Report: ReportError,
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="production workers share the plugin compilation cache"
 		CompilationCache: newCompilationCache(),
 		AfterFunc:        afterFunc,
-		Workers:          runtime.NumCPU(),
-		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="idle worker count is bounded between 2 and 4"
-		IdleWorkers: max(2, min(runtime.NumCPU(), 4)),
+		Workers:          threads,
+		IdleWorkers:      threads,
 	})
 	go workers.Warmup()
 	return workers
+}
+
+// Configure sizes the workers, and the returned workers kept alive, to the threads the performance
+// limits in the values of a Configure call allow.
+func Configure(workers *pdf.Workers, values map[string]string) {
+	threads := performance.Read(values).Threads
+	workers.SetWorkers(threads, threads)
 }

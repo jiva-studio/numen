@@ -11,18 +11,21 @@ import (
 // locate it in the text of the file, in bytes; Text, Selector, PlaceLabel and MatchLine are those of the
 // search result of its best passage. Score is the similarity by meaning or the reranking score, nil for a
 // passage found by words, kind or path alone; WordScore the best score of the searches by words, nil when
-// none found it; ChunkCount how many passages were joined into it.
+// none found it; ChunkCount how many passages were joined into it, and ChunkIDs their chunk ids in the
+// order of their start.
 type Candidate struct {
 	ChunkID       string
 	Path          string
 	Start, Length int
 	Text          string
+	WholeText     string
 	Selector      string
 	PlaceLabel    string
 	MatchLine     int
 	Score         *float64
 	WordScore     *float64
 	ChunkCount    int
+	ChunkIDs      []string
 }
 
 const decimals = 1000

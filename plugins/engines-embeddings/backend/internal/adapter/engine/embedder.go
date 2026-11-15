@@ -9,10 +9,9 @@ import (
 	"sync"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
-	"github.com/gomlx/go-huggingface/tokenizers/api"
-	"github.com/gomlx/go-huggingface/tokenizers/hftokenizer"
 
 	"github.com/jiva-studio/numen/libs/shared/onnx"
+	"github.com/jiva-studio/numen/libs/shared/tokenizer"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
 
@@ -40,7 +39,7 @@ type Embedder struct {
 	pooling      string
 	batchTexts   int
 	passes       int
-	tokenizer    api.Tokenizer
+	encoder      tokenizer.Tokenizer
 	pad          int
 	output       string
 	isTyped      bool
@@ -62,7 +61,7 @@ func Open(
 	if err != nil {
 		return nil, err
 	}
-	tokenizer, err := hftokenizer.NewFromFile(nil, paths.Tokenizer)
+	encoder, err := loadTokenizer(identity, paths.Tokenizer)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +108,7 @@ func Open(
 		pooling:      identity.Pooling,
 		batchTexts:   max(cfg.BatchTexts, 1),
 		passes:       passes,
-		tokenizer:    tokenizer,
+		encoder:      encoder,
 		pad:          0,
 		output:       "",
 		isTyped:      false,
@@ -118,7 +117,7 @@ func Open(
 		paddings:     newPaddingPool(),
 		isNormalized: identity.Handling.Normalize,
 	}
-	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
+	if pad, ok := encoder.GetPadID(); ok {
 		e.pad = pad
 	}
 
@@ -189,7 +188,7 @@ func (e *Embedder) GetModel() model.ModelInfo {
 		FloorHint:      0,
 		MinChunkLength: 0,
 		ChunkTokens:    0,
-		Handling:       model.Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalize: e.isNormalized, ExtraInputs: nil},
+		Handling:       model.Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalize: e.isNormalized, ExtraInputs: nil, Tokenizer: e.encoder.GetVersion()},
 	}
 }
 
@@ -287,7 +286,7 @@ func (e *Embedder) tokenize(texts []string) [][]int {
 }
 
 func (e *Embedder) encode(text string) []int {
-	ids := e.tokenizer.Encode(text)
+	ids := e.encoder.Encode(text)
 	if len(ids) <= e.window {
 		return ids
 	}

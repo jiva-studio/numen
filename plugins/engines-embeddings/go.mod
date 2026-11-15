@@ -8,6 +8,7 @@ require (
 	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0
 	github.com/jiva-studio/numen/libs/plugin/sdk-go/host v0.0.0
 	github.com/jiva-studio/numen/libs/shared/onnx v0.0.0
+	github.com/jiva-studio/numen/libs/shared/tokenizer v0.0.0
 )
 
 require (

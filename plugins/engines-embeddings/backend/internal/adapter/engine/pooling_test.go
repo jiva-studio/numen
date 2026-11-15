@@ -125,10 +125,11 @@ func TestPadBatchSetsPositionsOfTheRealTokensAndZeroForPadding(t *testing.T) {
 	in.types[0] = 7
 	in.mask[3] = 7
 	firstIDPtr := &in.ids[0]
-	paddings.Put(in)
-	_, _, again := padBatch(paddings, [][]int{{}}, 0, 512)
+	// New returns the used padding, so padBatch gets it even when the race detector drops what was put.
+	used := &sync.Pool{New: func() any { return in }}
+	_, _, again := padBatch(used, [][]int{{}}, 0, 512)
 	if &again.ids[0] != firstIDPtr {
-		t.Error("expected padBatch to reuse pooled backing slice")
+		t.Error("padBatch did not reuse the backing slice of the padding it was given")
 	}
 	if again.positions[1] != 0 || again.types[0] != 0 || again.mask[0] != 1 || again.mask[1] != 0 || again.mask[3] != 0 {
 		t.Errorf("reused padding state: pos=%v types[0]=%d mask=%v", again.positions[:3], again.types[0], again.mask[:4])

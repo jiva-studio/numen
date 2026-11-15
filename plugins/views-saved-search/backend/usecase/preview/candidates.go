@@ -39,7 +39,7 @@ type candidates struct {
 	warnings   []string
 }
 
-func (u *UseCase) fetchCandidates(ctx context.Context, compiled query.Query) (candidates, error) {
+func (u *UseCase) fetchCandidates(ctx context.Context, compiled query.Query, gathered pool) (candidates, error) {
 	prefixes := compiled.Filter.Prefixes
 	if len(prefixes) == 0 {
 		prefixes = []string{""}
@@ -53,7 +53,7 @@ func (u *UseCase) fetchCandidates(ctx context.Context, compiled query.Query) (ca
 			if err := ctx.Err(); err != nil {
 				return candidates{candidates: nil, count: 0, warnings: nil}, err
 			}
-			found, err := u.search.SearchText(ctx, u.newSearchQuery(leaf, compiled.Filter.Kinds, prefix))
+			found, err := u.search.SearchText(ctx, u.newSearchQuery(leaf, compiled.Filter.Kinds, prefix, gathered))
 			if err != nil {
 				return candidates{candidates: nil, count: 0, warnings: nil}, convertHostError(compiled, i, err, "search the library")
 			}
@@ -63,7 +63,7 @@ func (u *UseCase) fetchCandidates(ctx context.Context, compiled query.Query) (ca
 	return unite(lists, u.config.MaxCandidates), nil
 }
 
-func (u *UseCase) newSearchQuery(leaf query.Leaf, kinds []string, prefix string) host.SearchResultQuery {
+func (u *UseCase) newSearchQuery(leaf query.Leaf, kinds []string, prefix string, gathered pool) host.SearchResultQuery {
 	mode := host.SearchModeWords
 	if leaf.IsMeaning {
 		mode = host.SearchModeMeaning
@@ -73,8 +73,8 @@ func (u *UseCase) newSearchQuery(leaf query.Leaf, kinds []string, prefix string)
 		sourceKinds = append(sourceKinds, domain.SourceKind(kind))
 	}
 	return host.SearchResultQuery{
-		Query: leaf.Text, Limit: u.config.ResultsPerSearch, ResultsPerSource: u.config.ResultsPerSearch,
-		Kinds: sourceKinds, PathPrefix: prefix, Mode: mode, IsRawWords: !leaf.IsMeaning,
+		Query: leaf.Text, Limit: gathered.perSearch, ResultsPerSource: gathered.perSearch,
+		Kinds: sourceKinds, PathPrefix: prefix, Mode: mode, IsRawWords: !leaf.IsMeaning, IsWholeText: gathered.isReranked,
 	}
 }
 
@@ -141,8 +141,8 @@ func (u *union) add(result host.SearchResult) {
 func newCandidate(result host.SearchResult) ranking.Candidate {
 	return ranking.Candidate{
 		ChunkID: result.ChunkID, Path: result.Path, Start: result.Start, Length: result.Length,
-		Text: result.Text, Selector: result.Selector, PlaceLabel: result.PlaceLabel, MatchLine: result.MatchLine,
-		Score: nil, WordScore: result.WordScore, ChunkCount: 1,
+		Text: result.Text, WholeText: result.WholeText, Selector: result.Selector, PlaceLabel: result.PlaceLabel, MatchLine: result.MatchLine,
+		Score: nil, WordScore: result.WordScore, ChunkCount: 1, ChunkIDs: []string{result.ChunkID},
 	}
 }
 

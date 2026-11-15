@@ -1344,7 +1344,10 @@ type HostSearchServiceSearchTextRequest struct {
 	// With mode WORDS only: the query is an FTS5 query in the syntax of the index
 	// (phrases, NEAR, prefix *, AND, OR, NOT), used as written. Without it every
 	// word is quoted. Set with another mode it is rejected with INVALID_ARGUMENT.
-	IsRawWords    bool `protobuf:"varint,7,opt,name=is_raw_words,json=isRawWords,proto3" json:"is_raw_words,omitempty"`
+	IsRawWords bool `protobuf:"varint,7,opt,name=is_raw_words,json=isRawWords,proto3" json:"is_raw_words,omitempty"`
+	// Each result carries the whole text of its chunk in whole_text, next to
+	// the excerpt in text.
+	IsWholeText   bool `protobuf:"varint,8,opt,name=is_whole_text,json=isWholeText,proto3" json:"is_whole_text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1424,6 +1427,13 @@ func (x *HostSearchServiceSearchTextRequest) GetMode() SearchMode {
 func (x *HostSearchServiceSearchTextRequest) GetIsRawWords() bool {
 	if x != nil {
 		return x.IsRawWords
+	}
+	return false
+}
+
+func (x *HostSearchServiceSearchTextRequest) GetIsWholeText() bool {
+	if x != nil {
+		return x.IsWholeText
 	}
 	return false
 }
@@ -1888,7 +1898,7 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x06recipe\x18\x01 \x01(\tR\x06recipe\x12\x14\n" +
 	"\x05floor\x18\x02 \x01(\x01R\x05floor\"M\n" +
 	"\x16SetSearchFloorResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\"\x81\x02\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\"\xa5\x02\n" +
 	"\"HostSearchServiceSearchTextRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x14\n" +
@@ -1898,7 +1908,8 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x12results_per_source\x18\x05 \x01(\x05R\x10resultsPerSource\x12(\n" +
 	"\x04mode\x18\x06 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\x12 \n" +
 	"\fis_raw_words\x18\a \x01(\bR\n" +
-	"isRawWords\"\x8c\x01\n" +
+	"isRawWords\x12\"\n" +
+	"\ris_whole_text\x18\b \x01(\bR\visWholeText\"\x8c\x01\n" +
 	"#HostSearchServiceSearchTextResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x120\n" +
 	"\aresults\x18\x02 \x03(\v2\x16.numen.v1.SearchResultR\aresults\"Q\n" +

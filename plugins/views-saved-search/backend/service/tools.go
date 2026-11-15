@@ -13,24 +13,51 @@ import (
 
 var errNoVault = errors.New("the call names no vault")
 
-// NewRegistry returns the registry of saved_search_preview. open gives what a preview reads of the vault
-// a call names, and config the numbers of the settings at the time of the call.
-func NewRegistry(open func(domain.VaultID) preview.Dependencies, config func() preview.Config) (*tools.Registry, error) {
+func (a *App) newRegistry(built *parts) (*tools.Registry, error) {
 	registry := tools.New()
-	spec := tools.Spec{
+	previewSpec := tools.Spec{
 		Name: "saved_search_preview", Title: "Preview a saved search", Description: previewDescription, Effect: tools.ReadOnly,
 		Instructions: []string{quotesSentence, exampleSentence, resultLinkSentence, truncatedSentence},
 		Requires:     []string{host.PermissionIndexRead},
 	}
-	err := tools.Add(registry, spec, func(ctx context.Context, in api.PreviewInput) (api.PreviewOutput, error) {
+	err := tools.Add(registry, previewSpec, func(ctx context.Context, in api.PreviewInput) (api.PreviewOutput, error) {
 		id := tools.GetVault(ctx)
 		if id == "" {
-			return api.PreviewOutput{
-				Query: in.Query, Results: []api.PreviewResult{}, Order: api.OrderFused, Floor: 0, CandidateCount: 0,
-				Warnings: nil, Errors: nil,
-			}, errNoVault
+			return api.PreviewOutput{}, errNoVault
 		}
-		return preview.New(open(domain.VaultID(id)), config()).Execute(ctx, in)
+		vault := built.hosts.Open(domain.VaultID(id))
+		deps := preview.Dependencies{Search: vault.Search, Notes: vault.Lookup, Reranker: built.reranker}
+		return preview.New(deps, a.settings.GetConfig()).Execute(ctx, in)
+	})
+	if err != nil {
+		return nil, err
+	}
+	createSpec := tools.Spec{
+		Name: "saved_search_create", Title: "Create a saved search", Description: createDescription, Effect: tools.ReadWrite,
+		Instructions: []string{quotesSentence, noteLinkSentence},
+		Requires:     []string{host.PermissionIndexRead},
+	}
+	err = tools.Add(registry, createSpec, func(ctx context.Context, in api.CreateInput) (api.SavedOutput, error) {
+		id := tools.GetVault(ctx)
+		if id == "" {
+			return api.SavedOutput{}, errNoVault
+		}
+		return built.notes.Create(ctx, domain.VaultID(id), in)
+	})
+	if err != nil {
+		return nil, err
+	}
+	updateSpec := tools.Spec{
+		Name: "saved_search_update", Title: "Update a saved search", Description: updateDescription, Effect: tools.ReadWrite,
+		Instructions: []string{quotesSentence, noteLinkSentence},
+		Requires:     []string{host.PermissionIndexRead},
+	}
+	err = tools.Add(registry, updateSpec, func(ctx context.Context, in api.UpdateInput) (api.SavedOutput, error) {
+		id := tools.GetVault(ctx)
+		if id == "" {
+			return api.SavedOutput{}, errNoVault
+		}
+		return built.notes.Update(ctx, domain.VaultID(id), in)
 	})
 	if err != nil {
 		return nil, err
