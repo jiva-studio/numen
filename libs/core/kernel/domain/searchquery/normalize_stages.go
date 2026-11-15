@@ -66,7 +66,7 @@ func (n *normalizer) convertSortBy(raw RawStage) (SortStage, bool) {
 	keyArg := raw.Args[0]
 	key, isKey := ParseSortKey(keyArg.Text)
 	if keyArg.IsInt || !isKey {
-		suggestion, _ := suggestFrom(keyArg.Text, sortKeys)
+		suggestion, _ := suggestFrom(keyArg.Text, listSortKeys())
 		n.problems = append(n.problems, Problem{Position: keyArg.Position, Message: messageSortKey, Suggestion: suggestion})
 		return SortStage{}, false
 	}

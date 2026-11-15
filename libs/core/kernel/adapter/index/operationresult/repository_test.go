@@ -16,7 +16,7 @@ const (
 	recipe    = "recipe-one"
 )
 
-var start = time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)
+func getStart() time.Time { return time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC) }
 
 func openIndex(t *testing.T) *index.DB {
 	t.Helper()
@@ -31,20 +31,20 @@ func openIndex(t *testing.T) *index.DB {
 func TestASaveAboveTheLimitRemovesTheLeastRecentlyUsedAndAFindKeepsARow(t *testing.T) {
 	results := openIndex(t).OperationResults(3)
 	for i, hash := range []string{"a", "b", "c"} {
-		if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{hash: {byte(i)}}, start.Add(time.Duration(i)*time.Minute)); err != nil {
+		if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{hash: {byte(i)}}, getStart().Add(time.Duration(i)*time.Minute)); err != nil {
 			t.Fatal(err)
 		}
 	}
-	found, err := results.FindResults(t.Context(), operation, recipe, []string{"a"}, start.Add(time.Hour))
+	found, err := results.FindResults(t.Context(), operation, recipe, []string{"a"}, getStart().Add(time.Hour))
 	if err != nil || len(found) != 1 {
 		t.Fatalf("FindResults = %v, %v", found, err)
 	}
 
-	if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{"d": {3}}, start.Add(2*time.Hour)); err != nil {
+	if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{"d": {3}}, getStart().Add(2*time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 
-	left, err := results.FindResults(t.Context(), operation, recipe, []string{"a", "b", "c", "d"}, start.Add(3*time.Hour))
+	left, err := results.FindResults(t.Context(), operation, recipe, []string{"a", "b", "c", "d"}, getStart().Add(3*time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,21 +53,21 @@ func TestASaveAboveTheLimitRemovesTheLeastRecentlyUsedAndAFindKeepsARow(t *testi
 	}
 }
 
-func TestAResultIsFoundUnderItsOwnRecipeAndOperationOnly(t *testing.T) {
+func TestAResultIsFoundForItsOwnRecipeAndOperationOnly(t *testing.T) {
 	results := openIndex(t).OperationResults(100)
-	if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{"a": {7}}, start); err != nil {
+	if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{"a": {7}}, getStart()); err != nil {
 		t.Fatal(err)
 	}
-	if found, err := results.FindResults(t.Context(), operation, "recipe-two", []string{"a"}, start); err != nil || len(found) != 0 {
+	if found, err := results.FindResults(t.Context(), operation, "recipe-two", []string{"a"}, getStart()); err != nil || len(found) != 0 {
 		t.Errorf("another recipe found %v, %v", found, err)
 	}
-	if found, err := results.FindResults(t.Context(), "llm.embed", recipe, []string{"a"}, start); err != nil || len(found) != 0 {
+	if found, err := results.FindResults(t.Context(), "llm.embed", recipe, []string{"a"}, getStart()); err != nil || len(found) != 0 {
 		t.Errorf("another operation found %v, %v", found, err)
 	}
-	if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{"a": {8}}, start); err != nil {
+	if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{"a": {8}}, getStart()); err != nil {
 		t.Fatal(err)
 	}
-	if found, err := results.FindResults(t.Context(), operation, recipe, []string{"a"}, start); err != nil || !slices.Equal(found["a"], []byte{8}) {
+	if found, err := results.FindResults(t.Context(), operation, recipe, []string{"a"}, getStart()); err != nil || !slices.Equal(found["a"], []byte{8}) {
 		t.Errorf("a save of an equal key left %v, %v", found, err)
 	}
 }
@@ -81,10 +81,10 @@ func TestFindResultsReadsMoreHashesThanOneBatch(t *testing.T) {
 		outputs[hash] = []byte{1}
 		hashes = append(hashes, hash)
 	}
-	if err := results.SaveResults(t.Context(), operation, recipe, outputs, start); err != nil {
+	if err := results.SaveResults(t.Context(), operation, recipe, outputs, getStart()); err != nil {
 		t.Fatal(err)
 	}
-	found, err := results.FindResults(t.Context(), operation, recipe, hashes, start)
+	found, err := results.FindResults(t.Context(), operation, recipe, hashes, getStart())
 	if err != nil || len(found) != len(hashes) {
 		t.Errorf("found %d of %d, %v", len(found), len(hashes), err)
 	}
@@ -92,14 +92,14 @@ func TestFindResultsReadsMoreHashesThanOneBatch(t *testing.T) {
 
 func TestClearResultsRemovesEveryRowAndCountsThem(t *testing.T) {
 	results := openIndex(t).OperationResults(100)
-	if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{"a": {1}, "b": {2}}, start); err != nil {
+	if err := results.SaveResults(t.Context(), operation, recipe, map[string][]byte{"a": {1}, "b": {2}}, getStart()); err != nil {
 		t.Fatal(err)
 	}
 	removed, err := results.ClearResults(t.Context())
 	if err != nil || removed != 2 {
 		t.Fatalf("ClearResults = %d, %v, want 2", removed, err)
 	}
-	if found, err := results.FindResults(t.Context(), operation, recipe, []string{"a", "b"}, start); err != nil || len(found) != 0 {
+	if found, err := results.FindResults(t.Context(), operation, recipe, []string{"a", "b"}, getStart()); err != nil || len(found) != 0 {
 		t.Errorf("after the clear %v, %v", found, err)
 	}
 }

@@ -17,7 +17,7 @@ func newRankedChunks(path string, score float64, starts ...int) searchquery.Sear
 	return r
 }
 
-func TestSelectRerankUnitsTakesTheChunksOfTheWindowInResultOrderUpToTheMost(t *testing.T) {
+func TestSelectRerankUnitsReturnsTheChunksOfTheWindowInResultOrderUpToTheMost(t *testing.T) {
 	r := searchquery.SearchResults{Results: []searchquery.SearchResult{
 		newRankedChunks("a.md", 0.9, 40, 20),
 		newRankedChunks("b.md", 0.8, 0),
@@ -37,7 +37,7 @@ func TestSelectRerankUnitsTakesTheChunksOfTheWindowInResultOrderUpToTheMost(t *t
 	}
 }
 
-func TestApplyRerankKeepsTheWindowGivesAMergedResultItsBestChunkAndSorts(t *testing.T) {
+func TestApplyRerankKeepsTheWindowScoresAMergedResultByItsBestChunkAndSorts(t *testing.T) {
 	r := searchquery.SearchResults{ScoreKind: searchquery.ScoreMeaning, Results: []searchquery.SearchResult{
 		newRankedChunks("a.md", 0.9, 0, 20),
 		newRankedChunks("b.md", 0.8, 0),
@@ -60,7 +60,7 @@ func TestApplyRerankKeepsTheWindowGivesAMergedResultItsBestChunkAndSorts(t *test
 	}
 }
 
-func TestApplySortByModifiedPutsTheNewestFirstAndTitleDescReversesTitles(t *testing.T) {
+func TestApplySortByModifiedOrdersTheNewestFirstAndTitleDescReversesTitles(t *testing.T) {
 	day := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	older, newer := getNote("old.md"), getNote("new.md")
 	older.ModifiedAt, older.Title = day, "Alpha"
@@ -81,15 +81,15 @@ func TestApplySortByModifiedPutsTheNewestFirstAndTitleDescReversesTitles(t *test
 	}
 }
 
-func TestCutTextNeverSplitsARune(t *testing.T) {
+func TestTruncateTextNeverSplitsARune(t *testing.T) {
 	text := "ёёё"
 	for most := range len(text) + 1 {
-		cut := searchquery.CutText(text, most)
+		cut := searchquery.TruncateText(text, most)
 		if !utf8.ValidString(cut) || len(cut) > most {
-			t.Errorf("CutText(%d) = %q", most, cut)
+			t.Errorf("TruncateText(%d) = %q", most, cut)
 		}
 	}
-	if searchquery.CutText("abc", 10) != "abc" {
+	if searchquery.TruncateText("abc", 10) != "abc" {
 		t.Error("a short text was cut")
 	}
 }

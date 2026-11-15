@@ -59,8 +59,8 @@ func GetDefaultRerankQuery(q Query) string {
 	return strings.Join(texts, "\n")
 }
 
-// CutText returns the first most bytes of text, cut back to a rune boundary.
-func CutText(text string, most int) string {
+// TruncateText returns the first most bytes of text, cut back to a rune boundary.
+func TruncateText(text string, most int) string {
 	if len(text) <= most {
 		return text
 	}

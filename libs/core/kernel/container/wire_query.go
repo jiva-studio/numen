@@ -4,6 +4,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/wordmatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -31,6 +32,7 @@ func newFindSearchResults(
 		Texts:        c.search.TextReaders,
 		Floors:       newFloorPolicy(db, source, errorHandler),
 		ContentTypes: c.search.PluginHost.Watch,
+		Codec:        rerankproto.Codec{},
 		Rows:         none.RerankRows{},
 		Results:      db.OperationResults(operationResultRows),
 		Clock:        c.vault.Clock,

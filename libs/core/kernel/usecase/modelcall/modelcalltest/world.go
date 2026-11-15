@@ -222,7 +222,7 @@ type World struct {
 // New creates a world with two plugins that provide the type server (llm.complete, llm.embed, llm.chat
 // and the list llm.models of its row field model) and, for the first plugin, completer (llm.complete only).
 func New() *World {
-	address := manifest.ConnectionField{Key: addressField, Type: textField, Title: "Address", IsAddress: true, IsRequired: true}
+	address := manifest.ConnectionField{Key: addressField, Type: textField, Title: addressTitle, IsAddress: true, IsRequired: true}
 	key := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key", IsRequired: true}
 	minimum, step := 1.0, 1.0
 	parallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(2), Min: &minimum, Step: &step}
@@ -379,7 +379,10 @@ func (w *World) AddLimited(t *testing.T, name, address string, parallelRequests 
 	return newEntry(entry)
 }
 
-const addressField = "baseUrl"
+const (
+	addressField = "baseUrl"
+	addressTitle = "Address"
+)
 
 const textField = "string"
 
@@ -428,7 +431,7 @@ func newEntry(created connectionuse.Entry) Entry {
 func (w *World) AddDetected(name, address string) Entry {
 	declared := manifest.ConnectionType{
 		ID: "detecting", Title: "Detecting", Operations: append(getCompleteOnly(), connection.OperationDetected),
-		Fields: []manifest.ConnectionField{{Key: addressField, Type: textField, Title: "Address", FixedValue: &address}},
+		Fields: []manifest.ConnectionField{{Key: addressField, Type: textField, Title: addressTitle, FixedValue: &address}},
 	}
 	w.Types.list = append(w.Types.list, connection.Type{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: declared})
 	typeID := manifest.GetConnectionTypeID(ProviderPluginID, declared.ID)
@@ -499,7 +502,7 @@ func (w *World) AddReranker(t *testing.T, name, address string) Entry {
 	const typeName = "reranker"
 	typeID := manifest.GetConnectionTypeID(ProviderPluginID, typeName)
 	if _, found := w.Types.GetType(typeID); !found {
-		address := manifest.ConnectionField{Key: addressField, Type: textField, Title: "Address", IsAddress: true, IsRequired: true}
+		address := manifest.ConnectionField{Key: addressField, Type: textField, Title: addressTitle, IsAddress: true, IsRequired: true}
 		w.Types.list = append(w.Types.list, connection.Type{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
 			ID: typeName, Title: "Reranker", Operations: []string{RerankOperation}, Fields: []manifest.ConnectionField{address},
 		}})

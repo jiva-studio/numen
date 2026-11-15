@@ -22,11 +22,11 @@ type SortStage struct {
 	IsDescending bool
 }
 
-var sortKeys = []string{"score", "path", "title", "modified", "size"}
+func listSortKeys() []string { return []string{"score", "path", "title", "modified", "size"} }
 
 // ParseSortKey returns the key a sortBy literal names, and false for another literal.
 func ParseSortKey(text string) (SortKey, bool) {
-	index := slices.Index(sortKeys, text)
+	index := slices.Index(listSortKeys(), text)
 	return SortKey(index), index >= 0
 }
 

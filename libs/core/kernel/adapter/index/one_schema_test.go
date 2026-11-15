@@ -110,7 +110,7 @@ func TestAFreshIndexHasExactlyTheRecordedSchema(t *testing.T) {
 	}
 }
 
-func TestTheMigrationFolderHoldsOneFileForEachVersionUpToTheIndexVersion(t *testing.T) {
+func TestTheMigrationFolderHasOneFileForEachVersionUpToTheIndexVersion(t *testing.T) {
 	entries, err := os.ReadDir("migration")
 	if err != nil {
 		t.Fatal(err)

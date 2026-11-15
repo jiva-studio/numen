@@ -17,7 +17,7 @@ func (r *ConnectionRows) readAppRowSetting(operation string) (connection.RowSett
 	if !slices.Contains(findAppSetting(keyReranking).Operations, operation) {
 		return connection.RowSetting{}, nil
 	}
-	stored, err := r.readStored()
+	stored, err := r.readStoredFile()
 	if err != nil {
 		return connection.RowSetting{}, err
 	}
@@ -37,7 +37,7 @@ func encodeAppRows(stored File) string {
 }
 
 func (r *ConnectionRows) listAppUses(connectionID string) ([]connection.Use, error) {
-	stored, err := r.readStored()
+	stored, err := r.readStoredFile()
 	if err != nil {
 		return nil, err
 	}
@@ -69,10 +69,18 @@ func removeAppRows(stored File, connectionID string) (settingsdomain.Setting, bo
 	return settingsdomain.Setting{Path: path, JSON: string(encoded)}, true, nil
 }
 
-// readStored reads the stored file, and an empty one from a source that reads none.
-func (r *ConnectionRows) readStored() (File, error) {
+// readStoredFile reads the stored file, and an empty one from a source that reads none.
+func (r *ConnectionRows) readStoredFile() (File, error) {
 	if r.source.ReadStored == nil {
 		return File{}, nil
 	}
 	return r.source.ReadStored()
+}
+
+func listAppEntriesWithout(stored File, connectionID string) ([]settingsdomain.Setting, error) {
+	entry, isChanged, err := removeAppRows(stored, connectionID)
+	if err != nil || !isChanged {
+		return nil, err
+	}
+	return []settingsdomain.Setting{entry}, nil
 }

@@ -1,4 +1,6 @@
-package searchquery
+// Package rerankproto encodes the request and decodes the result of the operation llm.rerank in the protobuf
+// wire format of its contract, which the core does not import.
+package rerankproto
 
 import (
 	"errors"
@@ -7,8 +9,8 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
-// The fields of the messages of llm.rerank: RerankRequest{query 1, instruction 2, repeated documents 3} and
-// RerankResult{repeated float scores 1}. The core does not import the contract.
+// The fields of RerankRequest{query 1, instruction 2, repeated documents 3} and RerankResult{repeated float
+// scores 1}.
 const (
 	fieldQuery       protowire.Number = 1
 	fieldInstruction protowire.Number = 2
@@ -18,7 +20,11 @@ const (
 
 var errRerankResult = errors.New("the answer of the reranking service is not a RerankResult")
 
-func encodeRerankRequest(query, instruction string, documents []string) []byte {
+// Codec is the wire format of llm.rerank.
+type Codec struct{}
+
+// EncodeRequest returns a RerankRequest.
+func (Codec) EncodeRequest(query, instruction string, documents []string) []byte {
 	var out []byte
 	out = protowire.AppendTag(out, fieldQuery, protowire.BytesType)
 	out = protowire.AppendString(out, query)
@@ -33,7 +39,8 @@ func encodeRerankRequest(query, instruction string, documents []string) []byte {
 	return out
 }
 
-func decodeRerankResult(payload []byte) ([]float64, error) {
+// DecodeResult returns the scores of a RerankResult, in order.
+func (Codec) DecodeResult(payload []byte) ([]float64, error) {
 	var scores []float64
 	for len(payload) > 0 {
 		number, kind, n := protowire.ConsumeTag(payload)

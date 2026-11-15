@@ -4,7 +4,7 @@
  * owner `app` that belong to the page, drawn by the renderer of the plugins. Appearance holds the
  * `appearance.*` settings; System holds the rest, the settings of connection rows below them as
  * the plugin pages draw them, and the path of the numen.json configuration file.
- *
+ */
 import { computed } from 'vue'
 import { PluginSettingsCard, SettingsPage } from '@numen/plugin-manager'
 import PluginFields from './plugins/PluginFields.vue'

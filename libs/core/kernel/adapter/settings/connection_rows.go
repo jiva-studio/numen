@@ -205,13 +205,9 @@ func (r *ConnectionRows) Refresh(ctx context.Context, connectionID string) error
 }
 
 func (r *ConnectionRows) listEntriesWithout(stored File, connectionID string) ([]settingsdomain.Setting, error) {
-	var entries []settingsdomain.Setting
-	appEntry, isAppChanged, err := removeAppRows(stored, connectionID)
+	entries, err := listAppEntriesWithout(stored, connectionID)
 	if err != nil {
 		return nil, err
-	}
-	if isAppChanged {
-		entries = append(entries, appEntry)
 	}
 	for _, owner := range slices.Sorted(maps.Keys(stored.Plugins)) {
 		declared, isFound := r.source.Declared(owner)

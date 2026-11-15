@@ -20,10 +20,18 @@ type RerankRows interface {
 	ListRows(owner, operation string) ([]modelcall.Row, error)
 }
 
+// RerankCodec writes the request of llm.rerank and reads its result. A result that cannot be read is an
+// error.
+type RerankCodec interface {
+	EncodeRequest(query, instruction string, documents []string) []byte
+	DecodeResult(payload []byte) ([]float64, error)
+}
+
 // reranker is what a rerank stage calls: the rows of the setting, the connections they name, the calls of
 // the operation and the stored scores.
 type reranker struct {
 	calls   connectionport.ModelCalls
+	codec   RerankCodec
 	rows    RerankRows
 	resolve connectionport.ResolveConnection
 	results operationport.OperationResults
@@ -121,14 +129,14 @@ func (rr reranker) callRow(ctx context.Context, row modelcall.Row, in rerankInpu
 		documents[j] = in.texts[i]
 	}
 	done, err := rr.calls.Call(ctx, settingsdomain.AppOwner, modelcall.Request{
-		Operation: operationresult.OperationRerank, Payload: encodeRerankRequest(in.query, in.instruction, documents),
+		Operation: operationresult.OperationRerank, Payload: rr.codec.EncodeRequest(in.query, in.instruction, documents),
 		Priority:  in.priority,
 		Preferred: &modelcall.PreferredRow{ConnectionID: row.ConnectionID, Options: row.Options, IsExclusive: true},
 	}, func([]byte) error { return nil })
 	if err != nil {
 		return err
 	}
-	got, err := decodeRerankResult(done)
+	got, err := rr.codec.DecodeResult(done)
 	if err != nil {
 		return err
 	}

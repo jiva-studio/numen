@@ -31,8 +31,8 @@ type Request struct {
 }
 
 // FindSearchResultsDeps is what FindSearchResults reads. A nil Source is an installation with no model, and
-// a nil Texts reads the text of notes only. Calls, Rows, Resolve, Results and Clock serve the rerank stage.
-// A zero Limits or StageLimits takes the defaults.
+// a nil Texts reads the text of notes only. Calls, Codec, Rows, Resolve, Results and Clock serve the rerank
+// stage. A zero Limits or StageLimits takes the defaults.
 type FindSearchResultsDeps struct {
 	Parser       QueryParser
 	Documents    DocumentQueries
@@ -46,6 +46,7 @@ type FindSearchResultsDeps struct {
 	Floors       FloorReader
 	ContentTypes contenttypeport.ContentTypeTable
 	Calls        connectionport.ModelCalls
+	Codec        RerankCodec
 	Rows         RerankRows
 	Resolve      connectionport.ResolveConnection
 	Results      operationport.OperationResults
@@ -85,7 +86,7 @@ func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 		places: deps.Places, matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts,
 		source: deps.Source, floors: deps.Floors, contentTypes: deps.ContentTypes,
 		reranker: reranker{
-			calls: deps.Calls, rows: deps.Rows, resolve: deps.Resolve, results: deps.Results, clock: deps.Clock, limits: stageLimits,
+			calls: deps.Calls, codec: deps.Codec, rows: deps.Rows, resolve: deps.Resolve, results: deps.Results, clock: deps.Clock, limits: stageLimits,
 		},
 		Limits: limits,
 	}

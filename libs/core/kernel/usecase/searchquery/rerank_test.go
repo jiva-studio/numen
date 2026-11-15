@@ -12,6 +12,7 @@ import (
 
 	"google.golang.org/protobuf/encoding/protowire"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
@@ -74,6 +75,7 @@ func (s *services) sentTexts(address string) [][]string {
 func (w world) newRerankingFind(s *services, limits searchquerydomain.StageLimits) *searchquery.FindSearchResults {
 	deps := w.newDeps(nil)
 	world := s.world
+	deps.Codec = rerankproto.Codec{}
 	deps.Calls = modelcall.NewCalls(
 		modelcall.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows},
 		world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside,
@@ -212,7 +214,7 @@ func TestASecondRunReusesTheScoresAndAChangedChunkIsSentAlone(t *testing.T) {
 	}
 }
 
-func TestScoresOfUnchangedTextsAreReusedAfterTheChunksAreCutAgain(t *testing.T) {
+func TestScoresOfUnchangedTextsAreReusedAfterTheFilesAreChunkedAgain(t *testing.T) {
 	w := newTideWorld(t)
 	s := newServices(t)
 	s.setRows(s.second)
@@ -253,7 +255,7 @@ func TestAWrongCountOfScoresFailsTheRowAndTheNextIsAsked(t *testing.T) {
 	}
 }
 
-func TestALongChunkIsSentCutAndAWholeFileAsItsTitleAndTheStartOfItsText(t *testing.T) {
+func TestALongChunkIsSentTruncatedAndAWholeFileAsItsTitleAndTheStartOfItsText(t *testing.T) {
 	long := strings.Repeat("tide ", 200)
 	w := newWorld(t, map[string]string{
 		"long.md": long,
@@ -281,7 +283,7 @@ func TestALongChunkIsSentCutAndAWholeFileAsItsTitleAndTheStartOfItsText(t *testi
 	}
 }
 
-func TestTheCutOfTheResultsFollowsTheLimitAndTheTopStage(t *testing.T) {
+func TestTheCountOfResultsFollowsTheLimitAndTheTopStage(t *testing.T) {
 	files := map[string]string{}
 	for i := range 40 {
 		files["n"+strings.Repeat("x", i)+".md"] = "the tide again"

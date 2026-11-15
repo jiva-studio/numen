@@ -30,7 +30,7 @@ func TestThreeStagesParseInOrderWithTheirArguments(t *testing.T) {
 	}
 }
 
-func TestARerankWithoutAQueryTakesTheTextsOfTheConditions(t *testing.T) {
+func TestARerankWithoutAQueryUsesTheTextsOfTheConditions(t *testing.T) {
 	q, err := parse(`meaning("a").rerank()`)
 	if err != nil {
 		t.Fatal(err)
@@ -50,7 +50,7 @@ func TestARerankWithoutAQueryTakesTheTextsOfTheConditions(t *testing.T) {
 	}
 }
 
-func TestADocumentPredicateTakesStages(t *testing.T) {
+func TestADocumentPredicateAcceptsStages(t *testing.T) {
 	q, err := parse(`(kind == "pdf").sortBy("title", "desc").top(3)`)
 	if err != nil {
 		t.Fatal(err)

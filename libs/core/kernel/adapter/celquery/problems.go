@@ -47,19 +47,10 @@ func (w *nameWalk) walkCall(expr ast.Expr) {
 	name := call.FunctionName()
 	switch {
 	case isOperator(name):
-	case call.IsMemberFunction() && name == overloads.StartsWith:
-		w.walk(call.Target())
-	case call.IsMemberFunction() && w.isStage(name):
-		w.walk(call.Target())
-	case call.IsMemberFunction() && (w.hasChunkCall(call.Target()) || isStageCall(call.Target()) || call.Target().Kind() == ast.CallKind):
-		suggestion, _ := searchquery.SuggestStage(name, w.catalog)
-		w.problems = append(w.problems, searchquery.Problem{
-			Position: getExprPosition(w.source, expr), Message: "unknown stage " + name, Suggestion: suggestion,
-		})
-		return
 	case call.IsMemberFunction():
-		w.addProblem(expr, "unknown function", name)
-		return
+		if !w.walkMember(expr) {
+			return
+		}
 	default:
 		if f, ok := w.catalog.FindFunction(name); !ok || f.IsVariable || f.IsStage {
 			w.addProblem(expr, "unknown function", name)
@@ -92,4 +83,23 @@ func (w *nameWalk) hasChunkCall(expr ast.Expr) bool {
 func (w *nameWalk) isStage(name string) bool {
 	f, ok := w.catalog.FindFunction(name)
 	return ok && f.IsStage
+}
+
+// walkMember walks the target of a method call it accepts and reports whether to walk its arguments.
+func (w *nameWalk) walkMember(expr ast.Expr) bool {
+	call := expr.AsCall()
+	name := call.FunctionName()
+	switch {
+	case name == overloads.StartsWith, w.isStage(name):
+		w.walk(call.Target())
+		return true
+	case call.Target().Kind() == ast.CallKind:
+		suggestion, _ := searchquery.SuggestStage(name, w.catalog)
+		w.problems = append(w.problems, searchquery.Problem{
+			Position: getExprPosition(w.source, expr), Message: "unknown stage " + name, Suggestion: suggestion,
+		})
+		return false
+	}
+	w.addProblem(expr, "unknown function", name)
+	return false
 }

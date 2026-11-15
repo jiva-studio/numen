@@ -48,7 +48,7 @@ func TestTheRerankingRowsOfTheShellAreReadAndARowOfAMissingConnectionIsDropped(t
 	}
 }
 
-func TestTheShellIsAUseOfItsRerankingConnectionAndADeletedConnectionLeavesItsRows(t *testing.T) {
+func TestTheShellIsAUseOfItsRerankingConnectionAndDeletingTheConnectionRemovesItsRow(t *testing.T) {
 	world := newRowsWorld()
 	world.stored = openSearch(t, `{"reranking":[{"connection":"c1f0a9e20","model":"mongodb/rerank-3"}]}`)
 

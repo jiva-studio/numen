@@ -71,11 +71,11 @@ func (u *FindSearchResults) readUnitTexts(
 			return nil, fmt.Errorf("read %s: %w", result.Document.Path, err)
 		}
 		if unit.ChunkIndex < 0 {
-			out[i] = searchquery.CutText(result.Document.Title+"\n"+getWholeText(result, text), most)
+			out[i] = searchquery.TruncateText(result.Document.Title+"\n"+getWholeText(result, text), most)
 			continue
 		}
 		c := result.Chunks[unit.ChunkIndex]
-		out[i] = searchquery.CutText(getSpan(text.prose, c.Start, c.Length), most)
+		out[i] = searchquery.TruncateText(getSpan(text.prose, c.Start, c.Length), most)
 	}
 	return out, nil
 }
