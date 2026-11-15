@@ -32,7 +32,7 @@ type appObject struct {
 	Appearance  Appearance  `json:"appearance"`
 	Titles      Titles      `json:"naming"`
 	Performance Performance `json:"performance"`
-	Search      Search      `json:"search"`
+	Search      *Search     `json:"search"`
 }
 
 // appSections are the sections of the owner app that a read fills in place, so that a section the
@@ -76,7 +76,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Version},
-		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Performance, f.Search}},
+		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Performance, &f.Search}},
 	}
 	if len(f.Connections) > 0 {
 		members = append(members, struct {

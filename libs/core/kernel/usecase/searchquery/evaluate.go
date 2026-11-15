@@ -8,7 +8,7 @@ import (
 )
 
 type evaluator struct {
-	req      *request
+	req      *searchquery.Evaluation
 	document func(path string, sourceKind domain.SourceKind) searchquery.Document
 }
 
@@ -19,7 +19,7 @@ func (e evaluator) evaluate(
 	var matched []searchquery.SearchResult
 	for i, c := range candidates {
 		d := e.document(c.Path, c.Kind)
-		o := searchquery.Evaluate(e.req.query.Root, e.req.query.Conditions, scores[i], e.req.floor, d)
+		o := searchquery.Evaluate(e.req.Query.Root, e.req.Query.Conditions, scores[i], e.req.Floor, d)
 		if !o.IsMatch {
 			continue
 		}
@@ -51,7 +51,7 @@ func (e evaluator) mergeFiles(matched []searchquery.SearchResult) []searchquery.
 	slices.Sort(paths)
 	var merged []searchquery.SearchResult
 	for _, path := range paths {
-		merged = append(merged, searchquery.Merge(byPath[path], e.req.limits.MergeGapBytes)...)
+		merged = append(merged, searchquery.Merge(byPath[path], e.req.Limits.MergeGapBytes)...)
 	}
 	return merged
 }

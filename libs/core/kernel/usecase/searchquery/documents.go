@@ -11,17 +11,22 @@ import (
 )
 
 type documentReader struct {
-	index        indexReads
+	chunks       ChunkIndex
+	contents     NoteContents
 	contentTypes contenttypeport.ContentTypeTable
-	req          *request
+	req          *searchquery.Evaluation
 	warnings     *warnings
 	sets         []map[string]bool
 	documents    map[string]searchquery.Document
 	links        *linkFinder
 }
 
-func newDocumentReader(index indexReads, links LinkReaders, contentTypes contenttypeport.ContentTypeTable, req *request, warns *warnings) *documentReader {
-	reader := &documentReader{index: index, contentTypes: contentTypes, req: req, warnings: warns, documents: map[string]searchquery.Document{}}
+func newDocumentReader(
+	chunks ChunkIndex, contents NoteContents, links LinkReaders, contentTypes contenttypeport.ContentTypeTable, req *searchquery.Evaluation, warns *warnings,
+) *documentReader {
+	reader := &documentReader{
+		chunks: chunks, contents: contents, contentTypes: contentTypes, req: req, warnings: warns, documents: map[string]searchquery.Document{},
+	}
 	if links != nil {
 		reader.links = &linkFinder{links: links, req: req}
 	}
@@ -36,13 +41,13 @@ func (r *documentReader) listScopeDocuments(ctx context.Context, s searchquery.S
 	if isNarrowed && len(paths) == 0 {
 		return nil, true, nil
 	}
-	listed, err := r.index.documents.ListDocuments(ctx, r.req.vault.ID, searchquery.DocumentQuery{
-		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.recipe, Limit: r.req.limits.MaxDocuments,
+	listed, err := r.chunks.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{
+		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.Recipe, Limit: r.req.Limits.MaxDocuments,
 	})
 	if err != nil {
 		return nil, false, err
 	}
-	if len(listed) > r.req.limits.MaxDocuments {
+	if len(listed) > r.req.Limits.MaxDocuments {
 		return nil, false, nil
 	}
 	var documents []searchquery.Document
@@ -55,30 +60,30 @@ func (r *documentReader) listScopeDocuments(ctx context.Context, s searchquery.S
 }
 
 func (r *documentReader) listCandidateDocuments(ctx context.Context) ([]searchquery.Document, error) {
-	if !hasPositiveDocumentLeaf(r.req.query.Root) {
+	if !hasPositiveDocumentLeaf(r.req.Query.Root) {
 		return nil, nil
 	}
-	s := searchquery.GetDocumentScope(r.req.query)
+	s := searchquery.GetDocumentScope(r.req.Query)
 	paths, isNarrowed := r.getSetPaths(s.SetIndexes)
 	if isNarrowed && len(paths) == 0 {
 		return nil, nil
 	}
-	listed, err := r.index.documents.ListDocuments(ctx, r.req.vault.ID, searchquery.DocumentQuery{
-		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.recipe,
+	listed, err := r.chunks.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{
+		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.Recipe,
 	})
 	if err != nil {
 		return nil, err
 	}
 	var documents []searchquery.Document
 	for _, d := range listed {
-		if d = r.fillKind(d); searchquery.IsDocumentMatch(r.req.query.Root, d) {
+		if d = r.fillKind(d); searchquery.IsDocumentMatch(r.req.Query.Root, d) {
 			documents = append(documents, d)
 		}
 	}
-	if len(documents) > r.req.limits.MaxDocuments {
+	if len(documents) > r.req.Limits.MaxDocuments {
 		return nil, fmt.Errorf(
 			"%w: the document conditions match more than %d documents (MaxDocuments); add a meaning or words condition or narrow the path",
-			searchquery.ErrLimitExceeded, r.req.limits.MaxDocuments)
+			searchquery.ErrLimitExceeded, r.req.Limits.MaxDocuments)
 	}
 	return documents, nil
 }
@@ -103,7 +108,8 @@ func (r *documentReader) getDocument(path string, sourceKind domain.SourceKind) 
 	return d
 }
 
-func (r *documentReader) fillDocuments(ctx context.Context, results []searchquery.SearchResult) error {
+// FillDocuments sets the title, the time of change and the size of the document of each result.
+func (u *EvaluateQuery) FillDocuments(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error {
 	if len(results) == 0 {
 		return nil
 	}
@@ -111,7 +117,7 @@ func (r *documentReader) fillDocuments(ctx context.Context, results []searchquer
 	for _, one := range results {
 		paths = append(paths, one.Document.Path)
 	}
-	listed, err := r.index.documents.ListDocuments(ctx, r.req.vault.ID, searchquery.DocumentQuery{PathPrefixes: paths})
+	listed, err := u.chunks.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
 	if err != nil {
 		return err
 	}
