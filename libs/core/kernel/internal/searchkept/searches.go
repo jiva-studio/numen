@@ -5,10 +5,10 @@ package searchkept
 import (
 	"context"
 	"slices"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // Store keeps the searches in memory.
@@ -36,12 +36,18 @@ type Tasks interface {
 	Remove(id string)
 }
 
+// Timer reads the time and waits.
+type Timer interface {
+	Now() time.Time
+	After(d time.Duration) <-chan time.Time
+}
+
 // Searches is the kept searches with the cancels, tasks and policy that go with them.
 type Searches struct {
 	Store   Store
 	Cancels Cancels
 	Tasks   Tasks
-	Timer   machineport.Timer
+	Timer   Timer
 	Policy  searchrun.Policy
 }
 

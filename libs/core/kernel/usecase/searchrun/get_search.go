@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchkept"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
 )
 
 // GetSearch returns the state of a search and one page of its results, waiting a while for it to stop.
