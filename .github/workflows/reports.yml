@@ -62,10 +62,11 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - id: go
+        uses: ./.github/actions/setup-go
         with:
           go-version-file: apps/desktop/go.mod
-          cache: false
+          cache-key: e2e-macos
 
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
@@ -106,6 +107,11 @@ jobs:
           path: ${{ runner.temp }}/e2e-build.tar
           compression-level: 1
           retention-days: 1
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-key: ${{ steps.go.outputs.cache-key }}
 
   acceptance-macos:
     name: Acceptance macOS
