@@ -7,12 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -26,42 +21,29 @@ type Request struct {
 	Limit int
 }
 
-// FindSearchResultsDeps is what FindSearchResults reads. A nil Source is an installation with no model, and
-// a nil Texts reads the text of notes only. The zone of Clock reads a date written without an offset.
+// FindSearchResultsDeps is what FindSearchResults reads. The zone of Clock reads a date written without an
+// offset. Evaluate returns the results of a parsed query, and FillTitles sets the title of the document of each
+// note result.
 type FindSearchResultsDeps struct {
-	Parser       QueryParser
-	Chunks       ChunkIndex
-	Matcher      sourceport.WordMatching
-	Readers      vaultport.VaultReaders
-	Texts        textdomain.Readers
-	Source       searchsourceport.QuerySource
-	Floors       FloorReader
-	ContentTypes contenttypeport.ContentTypeTable
-	Contents     NoteContents
-	Clock        machineport.Clock
+	Parser     QueryParser
+	Clock      machineport.Clock
+	Evaluate   func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits) (searchquery.SearchResults, error)
+	FillTitles func(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error
 }
 
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
 type FindSearchResults struct {
-	parser       QueryParser
-	chunks       ChunkIndex
-	contents     NoteContents
-	clock        machineport.Clock
-	matcher      sourceport.WordMatching
-	readers      vaultport.VaultReaders
-	texts        textdomain.Readers
-	source       searchsourceport.QuerySource
-	floors       FloorReader
-	contentTypes contenttypeport.ContentTypeTable
-	Limits       searchquery.Limits
+	parser     QueryParser
+	clock      machineport.Clock
+	evaluate   func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits) (searchquery.SearchResults, error)
+	fillTitles func(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error
+	Limits     searchquery.Limits
 }
 
-// NewFindSearchResults creates the use case over the index, with the default limits.
+// NewFindSearchResults creates the use case with the default limits.
 func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 	return &FindSearchResults{
-		parser: deps.Parser, clock: deps.Clock, chunks: deps.Chunks, contents: deps.Contents,
-		matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts,
-		source: deps.Source, floors: deps.Floors, contentTypes: deps.ContentTypes,
+		parser: deps.Parser, clock: deps.Clock, evaluate: deps.Evaluate, fillTitles: deps.FillTitles,
 		Limits: searchquery.DefaultLimits(),
 	}
 }
@@ -82,20 +64,14 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r Reque
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	if hasMeaning(q.Conditions) && !u.hasModel() {
-		return searchquery.SearchResults{}, searchquery.ErrNoModel
-	}
-	req := u.newRequest(ctx, v, q, zone)
-	warns := &warnings{}
-	docs := newDocumentReader(u.chunks, u.contents, u.contentTypes, req, warns)
-	results, err := u.run(ctx, req, docs, warns)
+	results, err := u.evaluate(ctx, v, q, zone, u.Limits)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	if len(results.Results) > limit {
 		results.Results = results.Results[:limit]
 	}
-	if err := docs.fillTitles(ctx, results.Results); err != nil {
+	if err := u.fillTitles(ctx, v, results.Results); err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	return results, ctx.Err()
@@ -120,17 +96,4 @@ func (u *FindSearchResults) parse(text string, zone *time.Location) (searchquery
 		return searchquery.Query{}, err
 	}
 	return searchquery.Normalize(raw, u.Limits, zone)
-}
-
-func hasMeaning(conditions []searchquery.Condition) bool {
-	for _, c := range conditions {
-		if c.IsMeaning {
-			return true
-		}
-	}
-	return false
-}
-
-func (u *FindSearchResults) hasModel() bool {
-	return u.source != nil && u.source.Describe().IsDescribed()
 }

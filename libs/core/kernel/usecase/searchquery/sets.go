@@ -102,7 +102,7 @@ func (r *documentReader) loadDocuments(ctx context.Context, paths []string) erro
 	if len(missing) == 0 {
 		return nil
 	}
-	listed, err := r.chunks.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{Paths: missing})
+	listed, err := r.lister.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{Paths: missing})
 	if err != nil {
 		return err
 	}

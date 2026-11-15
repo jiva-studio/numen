@@ -11,7 +11,7 @@ import (
 )
 
 type documentReader struct {
-	chunks       ChunkIndex
+	lister       DocumentQueries
 	contents     NoteContents
 	contentTypes contenttypeport.ContentTypeTable
 	req          *searchquery.Evaluation
@@ -20,8 +20,8 @@ type documentReader struct {
 	documents    map[string]searchquery.Document
 }
 
-func newDocumentReader(chunks ChunkIndex, contents NoteContents, contentTypes contenttypeport.ContentTypeTable, req *searchquery.Evaluation, warns *warnings) *documentReader {
-	return &documentReader{chunks: chunks, contents: contents, contentTypes: contentTypes, req: req, warnings: warns, documents: map[string]searchquery.Document{}}
+func newDocumentReader(lister DocumentQueries, contents NoteContents, contentTypes contenttypeport.ContentTypeTable, req *searchquery.Evaluation, warns *warnings) *documentReader {
+	return &documentReader{lister: lister, contents: contents, contentTypes: contentTypes, req: req, warnings: warns, documents: map[string]searchquery.Document{}}
 }
 
 func (r *documentReader) listScopeDocuments(ctx context.Context, s searchquery.Scope) ([]searchquery.Document, bool, error) {
@@ -32,7 +32,7 @@ func (r *documentReader) listScopeDocuments(ctx context.Context, s searchquery.S
 	if isNarrowed && len(paths) == 0 {
 		return nil, true, nil
 	}
-	listed, err := r.chunks.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{
+	listed, err := r.lister.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{
 		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.Recipe, Limit: r.req.Limits.MaxDocuments,
 	})
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *documentReader) listCandidateDocuments(ctx context.Context) ([]searchqu
 	if isNarrowed && len(paths) == 0 {
 		return nil, nil
 	}
-	listed, err := r.chunks.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{
+	listed, err := r.lister.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{
 		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.Recipe,
 	})
 	if err != nil {
@@ -99,7 +99,8 @@ func (r *documentReader) getDocument(path string, sourceKind domain.SourceKind) 
 	return d
 }
 
-func (r *documentReader) fillTitles(ctx context.Context, results []searchquery.SearchResult) error {
+// FillTitles sets the title of the document of each note result.
+func (u *EvaluateQuery) FillTitles(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error {
 	var paths []string
 	for _, one := range results {
 		if one.Document.SourceKind == domain.KindNote {
@@ -109,7 +110,7 @@ func (r *documentReader) fillTitles(ctx context.Context, results []searchquery.S
 	if len(paths) == 0 {
 		return nil
 	}
-	listed, err := r.chunks.ListDocuments(ctx, r.req.Vault.ID, searchquery.DocumentQuery{PathPrefixes: paths})
+	listed, err := u.documents.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
 	if err != nil {
 		return err
 	}

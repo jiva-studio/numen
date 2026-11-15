@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -64,9 +65,12 @@ func newQueryDeps(t *testing.T) stubSession {
 		}
 	}
 	search := db.ChunkSearch()
-	find := searchquery.NewFindSearchResults(searchquery.FindSearchResultsDeps{
-		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Chunks: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
-		Floors: fixedQueryFloor{}, ContentTypes: markdownTypes{}, Contents: db.NoteQueryReads(), Clock: testsupport.NewClock(),
+	find := searchquerytest.New(searchquerytest.Deps{
+		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: testsupport.NewClock(),
+		Evaluate: searchquery.EvaluateQueryDeps{
+			Documents: search, Vectors: search, Words: search, Places: search, Matcher: wordmatch.NewMatcher(),
+			Readers: vaultreader.Readers{}, Floors: fixedQueryFloor{}, ContentTypes: markdownTypes{}, Contents: db.NoteQueryReads(),
+		},
 	})
 	return stubSession{
 		Vaults: createVaultList(v),

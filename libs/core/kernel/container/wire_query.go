@@ -12,19 +12,30 @@ func newFindSearchResults(
 	c searchWiring, db *Index, source searchsourceport.Source, errorHandler func(error),
 ) *searchqueryusecase.FindSearchResults {
 	search := db.ChunkSearch()
-	deps := searchqueryusecase.FindSearchResultsDeps{
-		Parser:       celquery.NewParser(searchquerydomain.DefaultLimits()),
-		Chunks:       search,
+	evaluate := searchqueryusecase.NewEvaluateQuery(searchqueryusecase.EvaluateQueryDeps{
+		Documents:    search,
+		Vectors:      search,
+		Words:        search,
+		Places:       search,
 		Contents:     db.NoteQueryReads(),
-		Clock:        c.Clock,
 		Matcher:      wordmatch.NewMatcher(),
 		Readers:      c.VaultReaders,
 		Texts:        c.TextReaders,
+		Source:       getQuerySource(source),
 		Floors:       newFloorPolicy(db, source, errorHandler),
 		ContentTypes: c.PluginHost.Watch,
+	})
+	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
+		Parser:     celquery.NewParser(searchquerydomain.DefaultLimits()),
+		Clock:      c.Clock,
+		Evaluate:   evaluate.Execute,
+		FillTitles: evaluate.FillTitles,
+	})
+}
+
+func getQuerySource(source searchsourceport.Source) searchsourceport.QuerySource {
+	if query, ok := source.(searchsourceport.QuerySource); ok {
+		return query
 	}
-	if querySource, ok := source.(searchsourceport.QuerySource); ok {
-		deps.Source = querySource
-	}
-	return searchqueryusecase.NewFindSearchResults(deps)
+	return nil
 }
