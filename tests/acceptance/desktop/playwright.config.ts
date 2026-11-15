@@ -7,7 +7,7 @@ import base from '../../e2e/desktop/playwright.config.js'
 const testDir = defineBddConfig({
   featuresRoot: '../../..',
   features: '../../../features/**/*.feature',
-  steps: '{steps,support}/**/*.ts',
+  steps: '{steps,support}/**/!(*.test).ts',
   outputDir: '.features-gen',
 })
 
