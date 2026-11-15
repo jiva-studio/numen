@@ -233,7 +233,7 @@ func (r *Reads) readFirstLink(ctx context.Context, v domain.Vault, first domain.
 	delta = first.To
 	out, err := r.GetPreset(ctx, v, first.To)
 	if err != nil {
-		return Contents{}, delta, err
+		return Contents{}, "", err
 	}
 	// A note that is not a preset schedules nothing, so the deck is treated like
 	// the decks that name no preset and the problem is reported against it.

@@ -25,8 +25,8 @@ func TestAConditionWithAnUnknownKeyOrAMalformedExpressionIsAnInvalidSlotEntry(t 
 	for _, when := range []string{"target.isRemote", "target.isFolder &&"} {
 		_, err := readSlots(`[{"slot":"fileTree.context","command":"ledger.open","when":"` + when + `"}]`)
 
-		if !errors.Is(err, manifest.ErrInvalidSlotEntry) || !strings.Contains(err.Error(), "when") {
-			t.Errorf("%q: error = %v, want an invalid slot entry naming when", when, err)
+		if !errors.Is(err, manifest.ErrInvalidSlotEntry) || !strings.Contains(err.Error(), "when") || !hasWrappedCause(err, manifest.ErrInvalidSlotEntry) {
+			t.Errorf("%q: error = %v, want an invalid slot entry wrapping when", when, err)
 		}
 	}
 }

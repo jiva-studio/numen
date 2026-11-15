@@ -2,6 +2,7 @@ package sound
 
 import (
 	"encoding/binary"
+	"errors"
 	"math"
 	"math/rand"
 	"slices"
@@ -150,8 +151,8 @@ func TestContainerDetectionAndMonoBoundaries(t *testing.T) {
 
 func TestWavParsingAndSampleEncodings(t *testing.T) {
 	// Missing fmt header returns "no header".
-	if _, _, err := Read([]byte("RIFF\x04\x00\x00\x00WAVE")); err == nil || !strings.Contains(err.Error(), "no header") {
-		t.Fatalf("expected no header error, got %v", err)
+	if _, rate, err := Read([]byte("RIFF\x04\x00\x00\x00WAVE")); err == nil || rate != 0 || !strings.Contains(err.Error(), "no header") {
+		t.Fatalf("expected no header error with rate 0, got rate %d, err %v", rate, err)
 	}
 
 	// Short fmt header (< 16 bytes).
@@ -183,7 +184,7 @@ func TestWavParsingAndSampleEncodings(t *testing.T) {
 	clamped = append(clamped, "RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00"...)
 	clamped = append(clamped, fmtEnd...)
 	clamped = append(clamped, "data\x00\x00\x00\x00"...)
-	parsedEmpty, err := parseWav(clamped)
+	parsedEmpty, err := parseWav(slices.Clip(clamped))
 	if err != nil || parsedEmpty.samples == nil || len(parsedEmpty.samples) != 0 {
 		t.Fatalf("expected empty data chunk to set non-nil empty samples, got %#v, err %v", parsedEmpty.samples, err)
 	}
@@ -234,8 +235,9 @@ func TestWavParsingAndSampleEncodings(t *testing.T) {
 
 	// 32-bit float, 64-bit float, 8-bit unsigned int, 24-bit signed int, and unsupported sample formats.
 	f32Bytes := binary.LittleEndian.AppendUint32(nil, math.Float32bits(0.25))
-	if samples, _, err := Read(encodeCustomWav(3, 1, 16000, 32, nil, f32Bytes)); err != nil || len(samples) != 1 || samples[0] != 0.25 {
-		t.Fatalf("expected 32-bit float sample 0.25, got %v, err %v", samples, err)
+	f32Bytes = binary.LittleEndian.AppendUint32(f32Bytes, math.Float32bits(0.75))
+	if samples, _, err := Read(encodeCustomWav(3, 1, 16000, 32, nil, f32Bytes)); err != nil || len(samples) != 2 || samples[0] != 0.25 || samples[1] != 0.75 {
+		t.Fatalf("expected 32-bit float samples [0.25, 0.75], got %v, err %v", samples, err)
 	}
 	f64Bytes := binary.LittleEndian.AppendUint64(nil, math.Float64bits(-0.5))
 	if samples, _, err := Read(encodeCustomWav(3, 1, 16000, 64, nil, f64Bytes)); err != nil || len(samples) != 1 || samples[0] != -0.5 {
@@ -247,19 +249,24 @@ func TestWavParsingAndSampleEncodings(t *testing.T) {
 	if samples, _, err := Read(encodeCustomWav(1, 1, 16000, 24, nil, []byte{0x00, 0x00, 0x40})); err != nil || len(samples) != 1 || samples[0] != 0.5 {
 		t.Fatalf("expected 24-bit sample 0.5, got %v, err %v", samples, err)
 	}
-	if _, _, err := Read(encodeCustomWav(3, 1, 16000, 16, nil, []byte{0x00, 0x40})); err == nil {
-		t.Fatal("expected 16-bit float wav to fail")
+	if _, rate, err := Read(encodeCustomWav(3, 1, 16000, 16, nil, []byte{0x00, 0x40})); err == nil || rate != 0 {
+		t.Fatalf("expected 16-bit float wav to fail with rate 0, got rate %d, err %v", rate, err)
 	}
-	if _, _, err := Read(encodeCustomWav(99, 1, 16000, 16, nil, []byte{0x00, 0x40})); err == nil {
-		t.Fatal("expected unknown format 99 wav to fail")
+	if _, rate, err := Read(encodeCustomWav(99, 1, 16000, 16, nil, []byte{0x00, 0x40})); err == nil || rate != 0 {
+		t.Fatalf("expected unknown format 99 wav to fail with rate 0, got rate %d, err %v", rate, err)
+	}
+	for _, bits := range []int{8, 16, 32, 64} {
+		if val, err := (riffWave{format: 99, bits: bits}).readSample(make([]byte, bits/8)); err == nil || val != 0 {
+			t.Fatalf("expected readSample(format=99, bits=%d) to return (0, err), got (%v, %v)", bits, val, err)
+		}
 	}
 
 	// MP3 exact block multiple (32 frames = 36864 moments = 9 * 4096 moments) hits io.EOF on block boundary.
 	if samples, _, err := Read(encodeMP3(32, 5)); err != nil || len(samples) != 32*1152 {
 		t.Fatalf("expected 32-frame mp3 to decode 36864 moments, got %d, err %v", len(samples), err)
 	}
-	if _, _, err := Read([]byte("ID3invalid")); err == nil {
-		t.Fatal("expected invalid mp3 to fail")
+	if _, rate, err := Read([]byte("ID3invalid")); err == nil || rate != 0 || errors.Unwrap(err) == nil {
+		t.Fatalf("expected invalid mp3 to fail with rate 0 and wrapped error, got rate %d, err %v", rate, err)
 	}
 }
 

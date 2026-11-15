@@ -19,14 +19,14 @@ func SpeechBatches(all []Line, size, overlap int) []Batch {
 
 func CutBatches(all []Line, size, overlap int, cuts []int) []Batch {
 	batches := SpeechBatches(all, size, overlap)
-	if size < 2 || len(batches) < 2 {
+	if size < 2 {
 		return nil
 	}
 
 	lines := GetSpokenLines(all)
 	step := size - getSharedLines(size, overlap)
 	var out []Batch
-	reach := -1
+	var reach int
 	for _, cutIndex := range cuts {
 		if cutIndex < 0 || cutIndex >= len(batches)-1 {
 			continue
@@ -38,7 +38,7 @@ func CutBatches(all []Line, size, overlap int, cuts []int) []Batch {
 			continue
 		}
 		reach = end
-		start := max(end-size, 0)
+		start := end - size
 		out = append(out, Batch{
 			Number:     len(batches) + len(out),
 			Lines:      lines[start:end:end],
@@ -61,8 +61,5 @@ func GetSpokenLines(all []Line) []Line {
 }
 
 func getSharedLines(size, overlap int) int {
-	if overlap < 0 {
-		return 0
-	}
-	return min(overlap, size-1)
+	return max(min(overlap, size-1), 0)
 }

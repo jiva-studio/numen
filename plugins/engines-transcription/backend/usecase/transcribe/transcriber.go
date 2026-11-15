@@ -59,9 +59,7 @@ func NewTranscriber(
 }
 
 func (t *Transcriber) reportError(what string, err error) {
-	if err != nil {
-		t.report(what, err)
-	}
+	t.report(what, err)
 }
 
 // Close stops every transcription and waits for them. A transcription requested after Close is not
@@ -189,7 +187,7 @@ func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.isClosed || t.running[key] {
-		return key, false
+		return "", false
 	}
 	t.running[key] = true
 	t.wg.Add(1)
@@ -213,15 +211,18 @@ func (t *Transcriber) findLiveVersionOfWholeTranscript(ctx context.Context, vaul
 	for _, version := range listing.Versions {
 		byID[version.GetID()] = version
 	}
-	live, isLive := byID[listing.Live]
-	seenIDs := map[domain.TextVersionID]bool{}
-	for version, isFound := live, isLive; isFound && !seenIDs[version.GetID()]; version, isFound = byID[version.Source] {
+	live := byID[listing.Live]
+	for id := listing.Live; ; {
+		version, isFound := byID[id]
+		if !isFound {
+			return domain.TextVersion{}, false, nil
+		}
 		if version.PluginID == PluginID && isWholeFile(version) {
 			return live, true, nil
 		}
-		seenIDs[version.GetID()] = true
+		delete(byID, id)
+		id = version.Source
 	}
-	return domain.TextVersion{}, false, nil
 }
 
 func (t *Transcriber) getClaimVault(ctx context.Context, vault domain.VaultID) (domain.VaultID, error) {

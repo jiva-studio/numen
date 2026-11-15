@@ -2,6 +2,7 @@ package when_test
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"slices"
 	"testing"
@@ -78,34 +79,42 @@ func TestTheExamplesHaveTheirValues(t *testing.T) {
 
 func TestAnInvalidConditionIsAnError(t *testing.T) {
 	for _, one := range readVectors(t).Invalid {
-		if _, err := when.Parse(one.When); err == nil {
-			t.Errorf("%s (%q): read without an error", one.About, one.When)
+		if _, err := when.Parse(one.When); err == nil || errors.Unwrap(err) == nil {
+			t.Errorf("%s (%q): error = %v, want wrapped error", one.About, one.When, err)
 		}
+	}
+	_, unknownVarErr := when.Parse("noSuchVar == true")
+	_, nonBoolErr := when.Parse("'not a bool'")
+	if unknownVarErr == nil || nonBoolErr == nil || errors.Is(unknownVarErr, errors.Unwrap(nonBoolErr)) {
+		t.Errorf("unknownVarErr = %v, nonBoolErr = %v; want distinct wrapped causes", unknownVarErr, nonBoolErr)
 	}
 }
 
 func TestAnEmptyConditionIsAlwaysTrueAndNamesNothing(t *testing.T) {
 	condition := parse(t, "")
 
-	if condition.Evaluate(nil) != when.True || len(condition.ListNames()) != 0 || condition.HasItems() {
+	if condition.Evaluate(nil) != when.True || len(condition.ListNames()) != 0 || condition.HasItems() || condition.HasTargetVariable() {
 		t.Errorf("the empty condition came out as %+v", condition)
 	}
 }
 
 func TestAConditionNamesItsVariables(t *testing.T) {
-	condition := parse(t, "target.isNote && window.isVaultReady || config.editor.lineNumbers == true")
-
-	if names := condition.ListNames(); !slices.Equal(names, []string{"config", "target.isNote", "window.isVaultReady"}) {
-		t.Errorf("names = %v", names)
-	}
-	if condition.HasItems() || !condition.HasTargetVariable() {
-		t.Errorf("a condition over the target has items or names no target: %+v", condition)
+	for range 20 {
+		condition := parse(t, "window.isVaultReady && target.isNote && !target.isNote && target.isFolder && target.isFile && app.platform == 'linux' || config.editor.lineNumbers == true")
+		want := []string{"app.platform", "config", "target.isFile", "target.isFolder", "target.isNote", "window.isVaultReady"}
+		if names := condition.ListNames(); !slices.Equal(names, want) {
+			t.Fatalf("names = %v, want %v", names, want)
+		}
+		if condition.HasItems() || !condition.HasTargetVariable() {
+			t.Fatalf("a condition over the target has items or names no target: %+v", condition)
+		}
 	}
 }
 
 func TestAConditionOverAVersionHasItems(t *testing.T) {
-	if !parse(t, "version.kind == 'ocr'").HasItems() {
-		t.Error("a condition over the version has no items")
+	cond := parse(t, "version.kind == 'ocr'")
+	if !cond.HasItems() || cond.HasTargetVariable() {
+		t.Error("a condition over the version has no items or claims target variable")
 	}
 }
 
@@ -128,13 +137,20 @@ func TestAConditionIsCompiledOnceForItsText(t *testing.T) {
 	}
 
 	allocations := testing.AllocsPerRun(20, func() {
-		if _, err := compiler.Parse(text); err != nil {
-			t.Fatal(err)
+		got, err := compiler.Parse(text)
+		if err != nil || !got.HasTargetVariable() {
+			t.Fatalf("cached Parse = %+v, %v", got, err)
 		}
 	})
 
 	if allocations != 0 {
 		t.Errorf("reading a condition read before allocates %v times, want it taken as compiled", allocations)
+	}
+	if _, err := compiler.Parse("invalid ???"); err == nil {
+		t.Fatal("expected error for invalid expression")
+	}
+	if _, err := compiler.Parse("invalid ???"); err == nil {
+		t.Fatal("expected cached error for invalid expression")
 	}
 }
 

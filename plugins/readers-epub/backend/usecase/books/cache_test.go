@@ -3,6 +3,7 @@ package books
 import (
 	"bytes"
 	"context"
+	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -78,12 +79,25 @@ func TestReadBookEntryReopensTheBookWhenTheFileChanged(t *testing.T) {
 func TestReadBookEntryEvictsTheLeastRecentlyReadBook(t *testing.T) {
 	files, _, _, _ := writeBook(t)
 	books, opens := newCountingReader(t, files)
-	for i := range maxCachedBooks + 1 {
+	for i := range maxCachedBooks {
 		name := "copy" + string(rune('a'+i)) + ".epub"
 		files.File(name, string(testsupport.CreateImageEpub(t)))
 		if _, err := readEntryFrom(books, name, "EPUB/cover.png"); err != nil {
 			t.Fatal(err)
 		}
+	}
+	first := books.books.books[0]
+	second := books.books.books[1]
+	extra := "copy" + string(rune('a'+maxCachedBooks)) + ".epub"
+	files.File(extra, string(testsupport.CreateImageEpub(t)))
+	if _, err := readEntryFrom(books, extra, "EPUB/cover.png"); err != nil {
+		t.Fatal(err)
+	}
+	if !first.evicted || first.archive != nil {
+		t.Errorf("least recently read book evicted=%v archive=%v, want evicted with nil archive", first.evicted, first.archive)
+	}
+	if second.evicted || second.archive == nil {
+		t.Errorf("second book evicted=%v archive=%v, want kept in cache", second.evicted, second.archive)
 	}
 	if got := len(books.books.books); got != maxCachedBooks {
 		t.Fatalf("%d books are open, want %d", got, maxCachedBooks)
@@ -175,6 +189,12 @@ func TestCacheLRUAndConcurrentEviction(t *testing.T) {
 	if got := opens.Load(); got != 2 {
 		t.Fatalf("expected 2 opens, got %d", got)
 	}
+	if got := len(books.books.books); got != 2 {
+		t.Fatalf("expected 2 cached books after cache hit, got %d", got)
+	}
+	if _, err := readEntryFrom(books, "missing.epub", "EPUB/cover.png"); codeOf(err) != server.CodeNotFound || opens.Load() != 2 {
+		t.Fatalf("missing book err = %v, opens = %d, want CodeNotFound without calling readFile", err, opens.Load())
+	}
 
 	// Acquire second.epub and hold it while changing its size only (or mtime only)
 	held, err := books.books.acquire(t.Context(), files, "", "second.epub")
@@ -217,5 +237,27 @@ func TestCacheLRUAndConcurrentEviction(t *testing.T) {
 	books.books.release(b4)
 	if !b3.evicted {
 		t.Error("expected book with changed mtime to be evicted")
+	}
+
+	// Also test when mtime is identical but size differs
+	b4.size--
+	b5, err := books.books.acquire(t.Context(), files, "", name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	books.books.release(b5)
+	if !b4.evicted {
+		t.Error("expected book with changed size to be evicted")
+	}
+
+	// Test openBook readFile failure after StatFile succeeds
+	books.Close()
+	books2 := NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
+	t.Cleanup(books2.Close)
+	books2.books.readFile = func(context.Context, host.FileReader, string) ([]byte, domain.FileStat, error) {
+		return nil, domain.FileStat{}, os.ErrNotExist
+	}
+	if _, err := readEntryFrom(books2, name, "EPUB/cover.png"); codeOf(err) != server.CodeNotFound {
+		t.Errorf("readFile error code = %v (%v), want CodeNotFound", codeOf(err), err)
 	}
 }
