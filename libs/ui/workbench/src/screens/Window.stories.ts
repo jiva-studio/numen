@@ -23,7 +23,8 @@ import {
   type Workspace as State,
 } from '@/features/workspace'
 import { Palette } from '@/features/palette'
-import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palette'
+import type { PaletteGroup, PaletteItem } from '@/features/palette'
+import type { PaletteAction } from '@/features/palette/lib/item'
 
 const NOTE = 'note'
 const BOOK = 'book'
