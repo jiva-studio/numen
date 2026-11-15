@@ -1,0 +1,27 @@
+name: "Fetch the end-to-end build"
+description: "Puts e2e-build.tar in the runner temp folder: from the cache entry the build job found, or from the artifact it uploaded"
+inputs:
+  cache-key:
+    description: "The key of the cache entry the build job found; empty when the build job built and uploaded it"
+    required: false
+    default: ""
+  restore-keys:
+    description: "The keys the build job accepted besides cache-key"
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - if: inputs.cache-key != ''
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/e2e-build.tar
+        key: ${{ inputs.cache-key }}
+        restore-keys: ${{ inputs.restore-keys }}
+        fail-on-cache-miss: true
+
+    - if: inputs.cache-key == ''
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      with:
+        name: e2e-build
+        path: ${{ runner.temp }}
