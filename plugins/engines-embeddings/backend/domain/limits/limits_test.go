@@ -8,35 +8,33 @@ import (
 
 const maximumBatchTexts = 8
 
-func TestTheProfileSetsThreadsBatchAndPriorityOnEveryMachine(t *testing.T) {
+func TestTheProfileSetsTheBatchAndTheHostSetsThreadsAndPriority(t *testing.T) {
 	table := []struct {
-		profile performance.Profile
-		cpus    int
-		want    Run
+		limits performance.Limits
+		want   Run
 	}{
-		{performance.Eco, 2, Run{Threads: 1, BatchTexts: 2, Nice: 19}},
-		{performance.Eco, 16, Run{Threads: 1, BatchTexts: 2, Nice: 19}},
-		{performance.Balanced, 2, Run{Threads: 1, BatchTexts: 4, Nice: 10}},
-		{performance.Balanced, 4, Run{Threads: 1, BatchTexts: 4, Nice: 10}},
-		{performance.Balanced, 8, Run{Threads: 2, BatchTexts: 4, Nice: 10}},
-		{performance.Balanced, 16, Run{Threads: 4, BatchTexts: 4, Nice: 10}},
-		{performance.Maximum, 2, Run{Threads: 1, BatchTexts: 8, Nice: 0}},
-		{performance.Maximum, 4, Run{Threads: 2, BatchTexts: 8, Nice: 0}},
-		{performance.Maximum, 8, Run{Threads: 4, BatchTexts: 8, Nice: 0}},
-		{performance.Maximum, 16, Run{Threads: 8, BatchTexts: 8, Nice: 0}},
+		{performance.Limits{Profile: performance.Eco, Threads: 1, Nice: 19}, Run{Threads: 1, BatchTexts: 2, Nice: 19}},
+		{performance.Limits{Profile: performance.Low, Threads: 4, Nice: 15}, Run{Threads: 4, BatchTexts: 3, Nice: 15}},
+		{performance.Limits{Profile: performance.Balanced, Threads: 8, Nice: 10}, Run{Threads: 8, BatchTexts: 4, Nice: 10}},
+		{performance.Limits{Profile: performance.High, Threads: 12, Nice: 5}, Run{Threads: 12, BatchTexts: 6, Nice: 5}},
+		{performance.Limits{Profile: performance.Maximum, Threads: 16, Nice: 0}, Run{Threads: 16, BatchTexts: 8, Nice: 0}},
 	}
 	for _, c := range table {
-		if got := GetRun(c.profile, c.cpus, maximumBatchTexts); got != c.want {
-			t.Errorf("%s on %d cores: %+v, want %+v", c.profile, c.cpus, got, c.want)
+		if got := GetRun(c.limits, maximumBatchTexts); got != c.want {
+			t.Errorf("%+v: %+v, want %+v", c.limits, got, c.want)
 		}
 	}
 }
 
-func TestDefaultProfileUsesAtMostQuarterOfCores(t *testing.T) {
-	for _, cpus := range []int{4, 8, 12, 16, 32} {
-		if got := GetRun(performance.Read(nil), cpus, maximumBatchTexts).Threads; got*4 > cpus {
-			t.Errorf("%d threads on %d cores", got, cpus)
-		}
+func TestHighNeverBatchesMoreThanMaximum(t *testing.T) {
+	if got := GetRun(performance.Limits{Profile: performance.High, Threads: 2}, 5).BatchTexts; got != 5 {
+		t.Errorf("High batches %d texts where Maximum batches 5", got)
+	}
+}
+
+func TestNoLimitsFromTheHostRunOneThreadAtTheBalancedBatch(t *testing.T) {
+	if got := GetRun(performance.Read(nil), maximumBatchTexts); got != (Run{Threads: 1, BatchTexts: 4, Nice: 10}) {
+		t.Errorf("the run without limits is %+v", got)
 	}
 }
 

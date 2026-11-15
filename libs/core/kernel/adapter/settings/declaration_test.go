@@ -75,7 +75,7 @@ func TestTheScalesAreRangesWithTheirBoundsAndDefaults(t *testing.T) {
 func TestTheModeAndTheProfileAreEnumsOfTheWordsTheFileUses(t *testing.T) {
 	for key, want := range map[string][]string{
 		"appearance.mode":     {"system", "light", "dark"},
-		"performance.profile": {"eco", "balanced", "maximum"},
+		"performance.profile": {"eco", "low", "balanced", "high", "maximum"},
 	} {
 		declared := findDeclaredSetting(t, key)
 		var got []string

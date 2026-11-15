@@ -11,12 +11,22 @@ export default tseslint.config(
     // The driver reads the clock and the dice for names no run repeats.
     portIgnores: ['**/*.ts'],
     allowDefaultProject: ['scripts/*.mjs', 'vitest.config.mjs'],
-    extraIgnores: ['playwright-report/**', 'test-results/**', '.features-gen/**'],
+    extraIgnores: [
+      'playwright-report/**',
+      'test-results/**',
+      '.features-gen/**',
+      'acceptance-report/**',
+    ],
   }),
 
   {
     files: ['**/*.{ts,mjs}'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+
+  {
+    files: ['report/page/*.js'],
+    languageOptions: { sourceType: 'script' },
   },
 
   {

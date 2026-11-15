@@ -14,23 +14,29 @@ type Run struct {
 // the interface a turn between passes.
 const (
 	EcoBatchTexts      = 2
+	LowBatchTexts      = 3
 	BalancedBatchTexts = 4
+	HighBatchTexts     = 6
 )
 
-// GetRun gives the Maximum profile batches of maximumBatchTexts texts; Eco and Balanced use the fixed sizes above.
-func GetRun(profile performance.Profile, cpus, maximumBatchTexts int) Run {
-	shared := performance.Resolve(profile, cpus)
+// GetRun takes the threads and the niceness the host resolved, and the batch size of the profile:
+// Maximum batches maximumBatchTexts texts, High at most that many, the others the sizes above.
+func GetRun(limits performance.Limits, maximumBatchTexts int) Run {
 	batchTexts := BalancedBatchTexts
-	switch profile {
+	switch limits.Profile {
 	case performance.Eco:
 		batchTexts = EcoBatchTexts
+	case performance.Low:
+		batchTexts = LowBatchTexts
 	case performance.Balanced:
 		// gomutants:disable-next-line BRANCH_CASE,STATEMENT_REMOVE reason="batchTexts is initialized to BalancedBatchTexts before switch"
 		batchTexts = BalancedBatchTexts
+	case performance.High:
+		batchTexts = min(HighBatchTexts, maximumBatchTexts)
 	case performance.Maximum:
 		batchTexts = maximumBatchTexts
 	}
-	return Run{Threads: shared.Threads, BatchTexts: batchTexts, Nice: shared.Nice}
+	return Run{Threads: limits.Threads, BatchTexts: batchTexts, Nice: limits.Nice}
 }
 
 // GetIndexShare is the passes the index may take: one pass stays free for questions.

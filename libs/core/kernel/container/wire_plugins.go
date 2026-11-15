@@ -131,7 +131,7 @@ type PluginHost struct {
 	SourceDescriptions  *sourcebridge.Descriptions
 }
 
-// AdaptPluginHost lends the capabilities of host, the roles of a plugin host made with NewPluginRoles, to the container.
+// AdaptPluginHost lends the capabilities of host, the roles of a plugin host made with NewPluginRoles or OpenPluginRoles, to the container.
 func AdaptPluginHost(host *PluginRoles) *PluginHost {
 	lender := hostendpoint.NewLender()
 	lent := lendHostEndpoint(host, lender)
@@ -194,7 +194,7 @@ func lendHostEndpoint(host *PluginRoles, lender *hostendpoint.Lender) *hostendpo
 	toolHost := plugin.NewToolHost(host.Activation, host.Registry)
 	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, host.Clock, toolbridge.GetErrorOutput())
 	host.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
-		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown,
+		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown, Files: host.ContentTypes,
 		Lent: services,
 		Tools: func() hostendpoint.PluginTools {
 			return tools

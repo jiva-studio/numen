@@ -4,7 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/protocol"
+	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
@@ -25,6 +31,9 @@ type Events struct {
 	sups      *supervision.Supervisors
 	activator pluginActivator
 	bus       *eventbus.Bus
+
+	mu        sync.Mutex
+	fileTypes map[string][]domain.ContentType
 }
 
 // EventsDeps are what Events reads and starts, the clock that times the event bus, and where the failures of the
@@ -40,7 +49,7 @@ type EventsDeps struct {
 
 // NewEvents creates the events and the bus that debounces and throttles them.
 func NewEvents(d EventsDeps) *Events {
-	e := &Events{set: d.Set, mode: d.Mode, sups: d.Supervisors, activator: d.Activation}
+	e := &Events{set: d.Set, mode: d.Mode, sups: d.Supervisors, activator: d.Activation, fileTypes: map[string][]domain.ContentType{}}
 	e.bus = eventbus.New(e, d.Clock, 50*time.Millisecond, 250*time.Millisecond, d.Report)
 	return e
 }
@@ -51,6 +60,30 @@ func (e *Events) EmitEvent(event string) {
 		return
 	}
 	e.bus.Publish(event)
+}
+
+// EmitFilesChanged queues the onFilesChanged event of the vault for the plugins that take a file of one of the
+// types: a plugin whose manifest declares readers takes the types they open, and one with no reader takes
+// every type. Types emitted before the event is delivered are delivered with it.
+func (e *Events) EmitFilesChanged(vaultID string, types []domain.ContentType) {
+	if e.mode.IsSafeMode() || e.bus == nil {
+		return
+	}
+	event := protocol.GetFilesChangedEvent(vaultID)
+	e.mu.Lock()
+	merged := slices.Concat(e.fileTypes[event], types)
+	slices.Sort(merged)
+	e.fileTypes[event] = slices.Compact(merged)
+	e.mu.Unlock()
+	e.bus.Publish(event)
+}
+
+func (e *Events) takeFileTypes(event string) ([]domain.ContentType, bool) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	types, isFiltered := e.fileTypes[event]
+	delete(e.fileTypes, event)
+	return types, isFiltered
 }
 
 // GetEventBus returns the event bus attached to this host.
@@ -66,11 +99,12 @@ func (e *Events) closeBus(ctx context.Context) error {
 }
 
 func (e *Events) listActivatedBy(event string) []string {
+	types, isFiltered := e.takeFileTypes(event)
 	v, release := e.set.view()
 	defer release()
 	candidates := make([]string, 0)
 	for _, p := range v.enabled() {
-		if p.Manifest.IsActivatedBy(event) {
+		if p.Manifest.IsActivatedBy(event) && (!isFiltered || isTakingAny(p.Manifest, types)) {
 			candidates = append(candidates, p.Manifest.ID)
 		}
 	}
@@ -101,4 +135,11 @@ func (e *Events) TriggerEvent(ctx context.Context, event string) ([]string, erro
 		}
 	}
 	return activated, errors.Join(errs...)
+}
+
+func isTakingAny(m manifest.Manifest, types []domain.ContentType) bool {
+	if len(m.Contributes.Readers) == 0 {
+		return true
+	}
+	return slices.ContainsFunc(types, m.IsHandling)
 }
