@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// errNoVaultSwitch is returned when the window build binds no vault switch.
+// errNoVaultSwitch is what a window build that binds no vault switch gives.
 var errNoVaultSwitch = errors.New("the window cannot switch vaults")
 
 // OpenPluginVault rejects a vault whose folder is not the vault, then switches the window through the
@@ -29,11 +29,8 @@ func NewOpenPluginVault(guard *Guard, identity IdentityCheck, pages Pages, switc
 	return OpenPluginVault{guard: guard, identity: identity, pages: pages, switcher: switcher}
 }
 
-// Execute opens v on behalf of a plugin. A nil switcher is a window that cannot switch vaults.
+// Execute opens v on behalf of a plugin; the vault switch decides whether the window can switch.
 func (u OpenPluginVault) Execute(ctx context.Context, v domain.Vault) error {
-	if u.switcher == nil {
-		return errNoVaultSwitch
-	}
 	if err := u.identity.Execute(v); err != nil {
 		return err
 	}

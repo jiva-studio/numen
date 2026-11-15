@@ -119,16 +119,6 @@ func IsAbsPath(path string) bool {
 	return filepath.IsAbs(path)
 }
 
-// IsRootPath reports whether path is a filesystem root.
-func IsRootPath(path string) bool {
-	return filepath.Dir(path) == path
-}
-
-// CleanPath returns the shortest path name equivalent to path.
-func CleanPath(path string) string {
-	return filepath.Clean(path)
-}
-
 // BasePath returns the last element of path.
 func BasePath(path string) string {
 	return filepath.Base(path)

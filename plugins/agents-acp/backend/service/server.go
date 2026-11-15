@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/acp"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/settings"
@@ -30,19 +32,13 @@ type agentServer struct {
 
 func newAgentServer(on machine) (*agentServer, error) {
 	values := new(settings.Settings)
-	lister, err := listing.New(on.launcher, on.clock, on.isAsync)
-	if err != nil {
-		return nil, err
-	}
-	answers, err := completion.New(completion.Dependencies{Settings: values, Launcher: on.launcher, Listings: lister, LookPath: on.lookPath})
-	if err != nil {
-		return nil, err
-	}
-	tasks, err := task.New(task.Dependencies{
+	lister, listErr := listing.New(on.launcher, on.clock, on.isAsync)
+	answers, compErr := completion.New(completion.Dependencies{Settings: values, Launcher: on.launcher, Listings: lister, LookPath: on.lookPath})
+	tasks, taskErr := task.New(task.Dependencies{
 		Launcher: on.launcher, LookPath: on.lookPath, Tools: on.tools, ToolServer: mcpendpoint.Server{},
 		Clock: on.clock, Settings: values,
 	})
-	if err != nil {
+	if err := errors.Join(listErr, compErr, taskErr); err != nil {
 		return nil, err
 	}
 	return &agentServer{settings: values, completion: answers, tasks: tasks, detection: detection.New(on.lookPath)}, nil

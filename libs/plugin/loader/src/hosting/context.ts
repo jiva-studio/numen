@@ -1,5 +1,5 @@
 /**
- * Host implementation of PluginContext conforming to @numen/plugin-sdk.
+ * Host implementation of PluginContext and HostServices conforming to @numen/plugin-sdk.
  */
 import type {
   BufferHost,
@@ -7,6 +7,7 @@ import type {
   Disposable,
   FileBuffers,
   FileSelectEvent,
+  HostServices,
   JsonValue,
   PluginContext,
   PluginEvents,
@@ -31,6 +32,7 @@ import {
 import { guardService, SERVICE_RULES } from './guards/servicePermissions'
 import { createSubscriptionList, type SubscriptionList } from './guards/subscriptions'
 import { createSlotViewRegistration } from './guards/slotContext'
+import type { PluginParts } from '../host'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: SubscriptionList, disposable: Disposable): Disposable {
@@ -123,25 +125,23 @@ function createUi(
   host: PluginContextHost,
   check: RequirePermission,
 ): Omit<PluginUi, 'mountView'> {
-  const { window: ui, views } = host
+  const { ui, views } = host
   const commands = ui.getCommands()
-  return {
-    ...pickDefinedParts<Omit<PluginUi, 'mountView' | 'slots' | 'notices'>>({
-      workspace: ui.getWorkspace(),
-      window: ui.getWindow(),
-      commands:
-        commands &&
-        limitCommands(commands, {
-          pluginId,
-          isListed: (one) => ui.isCommandListed(one),
-          getPermission: (one) => ui.getCommandPermission?.(one),
-          checkPermission: check,
-        }),
-      drops: views.drops,
-    }),
+  return pickDefinedParts<Omit<PluginUi, 'mountView'>>({
+    workspace: ui.getWorkspace(),
+    window: ui.getWindow(),
+    commands:
+      commands &&
+      limitCommands(commands, {
+        pluginId,
+        isListed: (one) => ui.isCommandListed(one),
+        getPermission: (one) => ui.getCommandPermission?.(one),
+        checkPermission: check,
+      }),
+    drops: views.drops,
     slots: ui.getSlots(),
     notices: ui.getNotices(pluginId),
-  }
+  })
 }
 
 function createUiService(
@@ -149,12 +149,18 @@ function createUiService(
   host: PluginContextHost,
   guards: { readonly guard: RegistrationGuard; readonly check: RequirePermission },
 ): PluginUi {
-  return {
-    ...guardService(createUi(pluginId, host, guards.check), SERVICE_RULES.ui, {
-      check: guards.check,
-    }),
+  const ui = guardService(createUi(pluginId, host, guards.check), SERVICE_RULES.ui, {
+    check: guards.check,
+  })
+  return pickDefinedParts<PluginUi>({
+    workspace: ui.workspace,
+    window: ui.window,
+    commands: ui.commands,
+    drops: ui.drops,
+    slots: ui.slots,
+    notices: ui.notices,
     mountView: createMountView(host, guards.guard),
-  }
+  })
 }
 
 function trackConnections(
@@ -167,7 +173,7 @@ function trackConnections(
 }
 
 function createWork(pluginId: string, host: PluginContextHost, add: Track): PluginWork {
-  const { window: work } = host
+  const { work } = host
   return pickDefinedParts<PluginWork>({
     tasks: work.getTasks(pluginId),
     backgroundTasks: work.getBackgroundTasks(),
@@ -176,53 +182,80 @@ function createWork(pluginId: string, host: PluginContextHost, add: Track): Plug
   })
 }
 
-/**
- * The context of a plugin. Every service in it is built from the table of SERVICE_RULES: a member
- * the table does not list is not reachable, and a member that lists a permission throws, or rejects,
- * where the manifest of the plugin does not declare it.
- */
-export function createPluginContext(
-  pluginId: string,
-  host: PluginContextHost,
-  manifest?: Manifest | { permissions?: readonly string[] },
-): PluginContext {
-  const subscriptions = createSubscriptionList()
-  const add = (d: Disposable) => trackSubscription(subscriptions, d)
-  const target: PermissionTarget = { pluginId, manifest }
-  const check: RequirePermission = (p, op) => checkPermission(target, p, op)
-  const registration = { target, add }
+/** What both factories build on: the plugin, its permission check and its subscriptions. */
+interface PartsScope {
+  readonly target: PermissionTarget
+  readonly subscriptions: SubscriptionList
+  readonly add: Track
+  readonly check: RequirePermission
+}
+
+function createPluginContext(scope: PartsScope, host: PluginContextHost): PluginContext {
+  const { target, add, check } = scope
+  const { pluginId, manifest } = target
   const slotView = createSlotViewRegistration(
     { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
     host,
     add,
   )
   const rules = SERVICE_RULES
-  const health = host.window.getHealth(pluginId)
-
-  return {
-    plugin: {
+  const health = host.work.getHealth(pluginId)
+  return pickDefinedParts<PluginContext>({
+    identity: {
       id: pluginId,
-      target: host.info.target,
-      app: host.info.app,
+      target: host.ui.target,
+      app: host.ui.app,
       openExternal: guardService(
-        { openExternal: createExternalOpener(host.info.openExternal) },
-        rules.plugin,
+        { openExternal: createExternalOpener(host.ui.openExternal) },
+        rules.identity,
         { check },
       ).openExternal,
-      subscriptions: subscriptions.view,
+      subscriptions: scope.subscriptions.view,
       hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     },
     register: guardService(
-      createRegistrations(pluginId, host, { ...registration, slotView }),
+      createRegistrations(pluginId, host, { target, add, slotView }),
       rules.register,
       { check },
     ),
     settings: guardService(createSettings(pluginId, host, add), rules.settings, { check }),
-    events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
-    tabs: guardService(createTabs(host), rules.tabs, { check }),
+    health: health && guardService(health, rules.health, { check }),
+  })
+}
+
+function createHostServices(scope: PartsScope, host: PluginContextHost): HostServices {
+  const { target, add, check } = scope
+  const { pluginId } = target
+  const rules = SERVICE_RULES
+  return {
     vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
-    ui: createUiService(pluginId, host, { guard: registration, check }),
+    tabs: guardService(createTabs(host), rules.tabs, { check }),
+    ui: createUiService(pluginId, host, { guard: scope, check }),
     work: guardService(createWork(pluginId, host, add), rules.work, { check }),
-    ...(health && { health: guardService(health, rules.health, { check }) }),
+    events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
   }
+}
+
+/**
+ * The arguments of `activate`: the context the plugin owns (identity, registrations, settings,
+ * health) and the services the host lends it (vault, tabs, window, background work, events). Every
+ * service in both is built from the table of SERVICE_RULES: a member the table does not list is not
+ * reachable, and a member that lists a permission throws, or rejects, where the manifest of the
+ * plugin does not declare it. What the plugin is handed through them is tracked in its
+ * subscriptions.
+ */
+export function createPluginParts(
+  pluginId: string,
+  host: PluginContextHost,
+  manifest?: Manifest | { permissions?: readonly string[] },
+): PluginParts {
+  const subscriptions = createSubscriptionList()
+  const target: PermissionTarget = { pluginId, manifest }
+  const scope: PartsScope = {
+    target,
+    subscriptions,
+    add: (d: Disposable) => trackSubscription(subscriptions, d),
+    check: (p, op) => checkPermission(target, p, op),
+  }
+  return { plugin: createPluginContext(scope, host), host: createHostServices(scope, host) }
 }

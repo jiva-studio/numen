@@ -203,8 +203,8 @@ func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
 func TestTheMockModelReportsNoFloorHint(t *testing.T) {
 	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	srv := newEmbeddingServer()
-	if srv.modelInfo.MinChunkLength != 40 {
-		t.Fatalf("initial mock MinChunkLength = %d, want 40", srv.modelInfo.MinChunkLength)
+	if srv.modelInfo.MinChunkLength != 40 || srv.localName != "mock-embedding" {
+		t.Fatalf("initial mock MinChunkLength = %d, localName = %q, want 40 and mock-embedding", srv.modelInfo.MinChunkLength, srv.localName)
 	}
 	srv.updateConfig(map[string]string{"source": "local", "model": "Xenova/multilingual-e5-small"})
 	info, err := srv.GetModelInfo(t.Context())
@@ -309,6 +309,9 @@ func TestGetModelInfoConcurrencyAndGetLocalErrLocked(t *testing.T) {
 	if err := srv.getLocalErrLocked(); err == nil {
 		t.Fatal("local getLocalErrLocked = nil, want error")
 	}
+	if got := getHandlingHash(model.ModelInfo{}); got != "" {
+		t.Fatalf("getHandlingHash(zero) = %q, want empty", got)
+	}
 }
 
 type funcEmbedder struct {
@@ -352,15 +355,16 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 	}
 
 	srv3 := newEmbeddingServer()
+	crashErr := errors.New("onnx crash")
 	srv3.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		return funcEmbedder{
 			embed: func(_ context.Context, _ []string) ([][]float32, error) {
-				return nil, errors.New("onnx crash")
+				return nil, crashErr
 			},
 		}, nil
 	}
 	_, err = srv3.EmbedTexts(t.Context(), model.RoleDocument, []string{"hi"})
-	if isPrecondition(err) || !strings.Contains(err.Error(), "embed batch: onnx crash") {
+	if isPrecondition(err) || !errors.Is(err, crashErr) || !strings.Contains(err.Error(), "embed batch: onnx crash") {
 		t.Fatalf("embed error = %v", err)
 	}
 

@@ -75,7 +75,7 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 		return feed, func() { close(feed); close(stopCalls) }
 	}
 	file := &memoryFile{}
-	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
+	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, declare([]string{"org.example.scans", "depth"}), nil, host), file, refreshRecorder{new([]string)})
 	apply := settings.NewApplyToPlugins(settings.ApplyToPluginsDeps{
 		Codec: jsonCodec{}, Config: host, Write: write, Notify: newNotifier(host, nil, nil), Subscribe: subscribe, Hosts: hosts,
 	})
@@ -101,7 +101,7 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 func TestApplyToPluginsSavesWhatAPluginChanges(t *testing.T) {
 	host := &pluginHost{}
 	file := &memoryFile{}
-	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
+	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, declare([]string{"org.example.scans", "depth"}), nil, host), file, refreshRecorder{new([]string)})
 	apply := settings.NewApplyToPlugins(settings.ApplyToPluginsDeps{
 		Codec: jsonCodec{}, Config: host, Write: write, Notify: newNotifier(host, nil, nil), Hosts: &settings.HostSubscriptions{},
 	})

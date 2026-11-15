@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process/processtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/domain/release"
 )
@@ -66,7 +67,7 @@ func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
 
 func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	fetcher := &fakeFetcher{manifest: newManifest()}
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
 		return mount(s, fetcher, nil)
 	})
 	if err != nil {
@@ -81,17 +82,30 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 		t.Fatalf("Check before Configure = %d, want 412", status)
 	}
 
+	status, body := post(t, web, "/"+api.Service+"/"+api.MethodGetStatus, `{}`)
+	var initial api.Status
+	if err := json.Unmarshal(body, &initial); err != nil {
+		t.Fatal(err)
+	}
+	if status != http.StatusOK || initial.State != api.StateUnchecked || initial.Update != nil {
+		t.Fatalf("GetStatus before Check = %d %s", status, body)
+	}
+
 	configured := `{"values":{"channel":"custom","endpoint":"http://127.0.0.1:9/latest.json"}}`
 	if status, body := post(t, web, configurePath, configured); status != http.StatusOK {
 		t.Fatalf("Configure = %d %s", status, body)
 	}
 
-	status, body := post(t, web, checkPath, check)
+	status, body = post(t, web, checkPath, `{"app":{"version":"2026.9.0","build":900,"platform":"windows"}}`)
 	var got api.Status
 	if err := json.Unmarshal(body, &got); err != nil {
 		t.Fatal(err)
 	}
-	if status != http.StatusOK || got.State != api.StateAvailable || got.Update == nil || got.Update.Version != "2026.10.1" {
+	wantFile := api.File{
+		Name: "numen-windows-setup.exe", Arch: "amd64", Kind: "exe",
+		URL: "https://dl.numen.md/setup.exe", Size: 10, SHA256: "hash",
+	}
+	if status != http.StatusOK || got.State != api.StateAvailable || got.Update == nil || got.Update.Version != "2026.10.1" || got.Update.File == nil || *got.Update.File != wantFile {
 		t.Errorf("Check after Configure = %d %s", status, body)
 	}
 	if len(fetcher.requested) != 1 || fetcher.requested[0] != "http://127.0.0.1:9/latest.json" {
@@ -104,7 +118,7 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 }
 
 func TestACheckOfAnUnknownBuildIsAnInvalidArgument(t *testing.T) {
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
 		return mount(s, &fakeFetcher{manifest: newManifest()}, nil)
 	})
 	if err != nil {
@@ -130,7 +144,7 @@ func TestACheckOfAnUnknownBuildIsAnInvalidArgument(t *testing.T) {
 
 func TestACheckReleasesTheProcessOnceItIsAnswered(t *testing.T) {
 	host := processtest.NewHost(t)
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
 		return mount(s, &fakeFetcher{manifest: newManifest()}, host.NewClient(t))
 	})
 	if err != nil {

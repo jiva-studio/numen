@@ -14,7 +14,7 @@ func TestAWindowWithoutAVaultSwitchCannotOpenAVaultForAPlugin(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden())
 
-	err := w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio())
+	err := w.useCases.Switching.OpenPlugin.Execute(t.Context(), studio())
 
 	if err == nil {
 		t.Error("a window with no switch opened a vault")
@@ -25,7 +25,7 @@ func TestAPluginOpenShowsTheVaultThroughTheSwitchItIsGiven(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden())
 	show := func(ctx context.Context, v domain.Vault, open *PluginOpen) error {
-		return w.scenarios.Switching.Show.Execute(ctx, v, open)
+		return w.useCases.Switching.Show.Execute(ctx, v, open)
 	}
 
 	if err := openVia(w, show).Execute(t.Context(), studio()); err != nil {
@@ -74,7 +74,7 @@ func TestAUserSwitchCancelsAPluginOpenThatIsRunning(t *testing.T) {
 	go func() { canceled <- openVia(w, show).Execute(t.Context(), studio()) }()
 	<-entered
 
-	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
+	if err := w.useCases.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -90,7 +90,7 @@ func (f switchFunc) Execute(ctx context.Context, v domain.Vault, open *PluginOpe
 }
 
 func openVia(w *testWindow, show func(context.Context, domain.Vault, *PluginOpen) error) OpenPluginVault {
-	return NewOpenPluginVault(w.scenarios.guard, w.scenarios.identity, w.pages, switchFunc(show))
+	return NewOpenPluginVault(w.useCases.guard, w.useCases.identity, w.pages, switchFunc(show))
 }
 
 // A switch given a plugin open that has ended takes the exclusion like any other switch: during the
@@ -102,7 +102,7 @@ func TestASwitchOfAnEndedPluginOpenFailsDuringTheClose(t *testing.T) {
 	var recordedOpen *PluginOpen
 	record := func(ctx context.Context, v domain.Vault, open *PluginOpen) error {
 		recordedCtx, recordedOpen = ctx, open
-		return w.scenarios.Switching.Show.Execute(ctx, v, open)
+		return w.useCases.Switching.Show.Execute(ctx, v, open)
 	}
 	if err := openVia(w, record).Execute(t.Context(), studio()); err != nil {
 		t.Fatal(err)
@@ -110,9 +110,9 @@ func TestASwitchOfAnEndedPluginOpenFailsDuringTheClose(t *testing.T) {
 
 	w.pages.holdNextFlush()
 	closed := make(chan bool, 1)
-	go func() { closed <- w.scenarios.Closing.Flush.Execute(t.Context()) }()
+	go func() { closed <- w.useCases.Closing.Flush.Execute(t.Context()) }()
 	w.pages.waitUntilHeld(t)
-	err := w.scenarios.Switching.Show.Execute(recordedCtx, garden(), recordedOpen)
+	err := w.useCases.Switching.Show.Execute(recordedCtx, garden(), recordedOpen)
 	w.pages.release()
 
 	if err == nil {

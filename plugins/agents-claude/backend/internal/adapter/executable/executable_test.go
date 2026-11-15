@@ -77,22 +77,47 @@ func TestDiscoveryCustomPathAndGlobEscaping(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", "/opt/env-claude")
 
 	// A runnable custom path takes precedence over environment variables.
-	if got := findIn(nil, runnable); got != runnable {
-		t.Errorf("findIn(runnable) = %q, want %q", got, runnable)
+	if got := (Finder{}).Find(runnable); got != runnable {
+		t.Errorf("Find(runnable) = %q, want %q", got, runnable)
 	}
-	// An empty or non-runnable custom path falls through to the environment variable.
+	// An empty, directory, or non-runnable custom path falls through to the environment variable.
 	if got := findIn(nil, ""); got != "/opt/env-claude" {
 		t.Errorf("findIn(\"\") = %q, want /opt/env-claude", got)
+	}
+	if got := findIn(nil, t.TempDir()); got != "/opt/env-claude" {
+		t.Errorf("findIn(dir) = %q, want /opt/env-claude", got)
 	}
 	if got := findIn(nil, "/nonexistent/claude"); got != "/opt/env-claude" {
 		t.Errorf("findIn(nonexistent) = %q, want /opt/env-claude", got)
 	}
 
-	// An empty HOME skips ~/ places and uses absolute places.
+	// An empty HOME skips ~/ places (even when a relative path matches) and uses absolute places.
 	t.Setenv("NUMEN_CLAUDE_COMMAND", "")
 	t.Setenv("HOME", "")
-	if got := findInPlaces([]string{"~/.local/bin/claude", runnable}); got != runnable {
+	relDir := t.TempDir()
+	writeRunnableFile(t, filepath.Join(relDir, "claude-rel"))
+	t.Chdir(relDir)
+	if got := findInPlaces([]string{"~/claude-rel", runnable}); got != runnable {
 		t.Errorf("findInPlaces with empty HOME = %q, want %q", got, runnable)
+	}
+
+	if runtime.GOOS != "windows" {
+		mode602 := filepath.Join(t.TempDir(), "claude-602")
+		writeRunnableFile(t, mode602)
+		if err := os.Chmod(mode602, 0o602); err != nil {
+			t.Fatal(err)
+		}
+		if isRunnable(mode602) {
+			t.Error("expected mode 0o602 file to not be runnable")
+		}
+		mode001 := filepath.Join(t.TempDir(), "claude-001")
+		writeRunnableFile(t, mode001)
+		if err := os.Chmod(mode001, 0o001); err != nil {
+			t.Fatal(err)
+		}
+		if !isRunnable(mode001) {
+			t.Error("expected mode 0o001 file to be runnable")
+		}
 	}
 
 	// Glob characters in a path are escaped.

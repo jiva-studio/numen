@@ -16,19 +16,21 @@ func getWaits() []time.Duration {
 // Both names are inside the root, so neither end of the move can be redirected
 // outside it by a link.
 func Rename(ctx context.Context, root *os.Root, from, to string) error {
-	err := root.Rename(from, to)
-	for _, wait := range getWaits() {
-		if !isFileInUse(err) {
+	return retryRename(ctx, func() error { return root.Rename(from, to) }, isFileInUse, getWaits())
+}
+
+func retryRename(ctx context.Context, rename func() error, isBusy func(error) bool, waits []time.Duration) error {
+	err := rename()
+	for _, wait := range waits {
+		if !isBusy(err) {
 			return err
 		}
-		rest := time.NewTimer(wait)
 		select {
 		case <-ctx.Done():
-			rest.Stop()
 			return ctx.Err()
-		case <-rest.C:
+		case <-time.After(wait):
 		}
-		err = root.Rename(from, to)
+		err = rename()
 	}
 	return err
 }

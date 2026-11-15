@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost } from './host'
-import type { CommandDeclaration, PluginHostDeps } from './types'
+import type { CommandDeclaration } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const declaration: CommandDeclaration = {
   pluginId: 'md.tree',
@@ -11,8 +11,8 @@ const declaration: CommandDeclaration = {
 
 const TREE_MANIFEST = createMockManifest('md.tree', { commands: ['tree.open'] })
 
-function createHost(extra: Partial<PluginHostDeps> = {}) {
-  return createPluginHost({
+function createHost(extra: Partial<TestHostDeps> = {}) {
+  return createTestPluginHost({
     target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
@@ -88,7 +88,7 @@ describe('a plugin that was disposed', () => {
     const host = createHost()
     host.lifecycle
       .createContext('md.tree', TREE_MANIFEST)
-      .register.command({ id: 'tree.open', handler: vi.fn() })
+      .plugin.register.command({ id: 'tree.open', handler: vi.fn() })
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.tree:tree.open',
     ])
@@ -99,7 +99,7 @@ describe('a plugin that was disposed', () => {
 
     host.lifecycle
       .createContext('md.tree', TREE_MANIFEST)
-      .register.command({ id: 'tree.open', handler: vi.fn() })
+      .plugin.register.command({ id: 'tree.open', handler: vi.fn() })
 
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.tree:tree.open',

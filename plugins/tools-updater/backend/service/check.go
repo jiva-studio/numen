@@ -13,7 +13,7 @@ import (
 func newCheckHandler(checker *updates.Checker, releaser process.Releaser) func(context.Context, api.CheckRequest) (api.Status, error) {
 	return func(ctx context.Context, req api.CheckRequest) (api.Status, error) {
 		defer process.ReleaseAndLog(ctx, releaser)
-		app := updates.App{Version: req.App.Version, Build: req.App.Build, Platform: req.App.Platform}
+		app := updates.App{Version: req.App.Version, Build: req.App.Build, Platform: string(req.App.Platform)}
 		status, err := checker.Check(ctx, app)
 		if err != nil {
 			return api.Status{}, getAPIError(err)

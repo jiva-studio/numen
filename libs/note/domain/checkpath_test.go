@@ -11,6 +11,7 @@ func TestCheckPathRefusesNamesNoFileCanHave(t *testing.T) {
 	for _, path := range []string{
 		"note:dd.md", "a/note:dd.md", `a\b.md`, "star*.md", "what?.md", `quote".md`,
 		"<in>.md", "a|b.md", "dd.md ", "dd.", "folder /dd.md", "folder./dd.md",
+		"./note:dd.md", "../dd.",
 	} {
 		if err := CheckPath(path); !errors.Is(err, ErrInvalidName) {
 			t.Errorf("CheckPath(%q) = %v, want ErrInvalidName", path, err)
@@ -98,7 +99,22 @@ func TestFilenameAndLengthBoundary(t *testing.T) {
 	if got := truncateAtRuneBoundary("short", 10); got != "short" {
 		t.Errorf("truncateAtRuneBoundary short = %q", got)
 	}
+	if got := truncateAtRuneBoundary("exact", 5); got != "exact" {
+		t.Errorf("truncateAtRuneBoundary exact = %q", got)
+	}
 	if got := truncateAtRuneBoundary("\x80\x80", 1); got != "" {
 		t.Errorf("truncateAtRuneBoundary continuation = %q", got)
+	}
+}
+
+func TestContentTypeWidth(t *testing.T) {
+	if got := AnyContentType.getWidth(); got != 2 {
+		t.Errorf("AnyContentType.getWidth() = %d, want 2", got)
+	}
+	if got := ContentType("audio/*").getWidth(); got != 1 {
+		t.Errorf("audio/*.getWidth() = %d, want 1", got)
+	}
+	if got := ContentType("audio/mpeg").getWidth(); got != 0 {
+		t.Errorf("audio/mpeg.getWidth() = %d, want 0", got)
 	}
 }

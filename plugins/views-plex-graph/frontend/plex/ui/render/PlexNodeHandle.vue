@@ -9,9 +9,13 @@
 import { HANDLE_RADIUS, type Position } from '../../lib/node'
 import { isPress } from '../../lib/keys'
 
-defineProps<{
-  at: Position
-}>()
+withDefaults(
+  defineProps<{
+    at: Position
+    isTabStop?: boolean
+  }>(),
+  { isTabStop: true },
+)
 
 const emit = defineEmits<{
   /** Pressed by a pointer, which is now free to drag it somewhere. */
@@ -43,7 +47,7 @@ const onKey = (event: KeyboardEvent) => {
   >
     <circle
       class="plex__handle"
-      tabindex="0"
+      :tabindex="isTabStop ? 0 : -1"
       role="button"
       aria-label="Reach out from here"
       @pointerdown="onPointerDown"

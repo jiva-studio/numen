@@ -2,7 +2,6 @@ package eventbus
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -12,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
-func getRealClock() machineport.Clock { return testsupport.GetMachine() }
+func getRealClock() Clock { return testsupport.GetMachine() }
 
 func TestEventBusDebounceTyping(t *testing.T) {
 	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond)

@@ -4,9 +4,9 @@
  * Every one of these has a failure that looks like nothing at all: a window
  * showing something stale, with no error and no way back.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { TASK_KIND, TASK_UNIT } from '@numen/core-client'
-import { installCoreAnswers } from '@numen/core-client/testing'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Task } from '@/entities/window'
 import type { TextRange } from '@/shared/lib/textRange'
@@ -50,15 +50,8 @@ interface NoteStreams {
 
 type Fake = Streams & NoteStreams
 
-let restore: () => void = () => undefined
-
-afterEach(() => {
-  restore()
-})
-
 const answerFrom = (core: Fake) => {
-  restore()
-  restore = installCoreAnswers({
+  const api = createAnsweredApi({
     vault: {
       getVaultState: async () => {
         const state = await core.state()
@@ -125,12 +118,18 @@ const answerFrom = (core: Fake) => {
       },
     },
   })
+  return {
+    ...api.vault.vaultState,
+    ...api.window.focus,
+    getInitialOpenPath: api.vault.note.getInitialOpenPath,
+    watchEdits: api.vault.note.watchEdits,
+    watchTasks: api.window.tasks.watchTasks,
+    watchPluginHealth: api.plugins.health.watchPluginHealth,
+  }
 }
 
-const useDisplay = (core: Fake, how?: Parameters<typeof useWindowDisplay>[0]) => {
-  answerFrom(core)
-  return useWindowDisplay(how)
-}
+const useDisplay = (core: Fake, how?: Parameters<typeof useWindowDisplay>[1]) =>
+  useWindowDisplay(answerFrom(core), how)
 
 function fake(overrides: Partial<Fake> = {}): Fake {
   return {

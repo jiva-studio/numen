@@ -22,12 +22,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/windowstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
@@ -124,9 +124,8 @@ func mountFile(w *windowWiring) {
 		file.NewCreateFolder(folderWriters(w.a.vault), state.Writes),
 	)
 	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
-	changes := filewindow.NewChanges(
-		state, state.Notices, &moveFile, &w.cases.Notes.Place.Remove, &w.cases.Notes.Place.EmptyTrash, state.Writes,
-	)
+	removeFile := note.NewRemoveFile(&w.cases.Notes.Place.Remove, state.Writes)
+	changes := filewindow.NewChanges(state, state.Notices, &moveFile, &removeFile, &w.cases.Notes.Place.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	w.inst.Mount(editor.NewFileRoute(state, handler))
 }
@@ -197,7 +196,7 @@ func mountSettings(w *windowWiring) {
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
 	host := w.a.PluginHost
-	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime, getConnectionResolve(w.a), clock.System{})
+	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.PluginResolver, getConnectionResolve(w.a), w.cfg.Clock())
 	handler := windowplugin.NewHandler(watch)
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
 }
@@ -205,7 +204,7 @@ func mountPlugin(w *windowWiring) {
 func mountHealth(w *windowWiring) {
 	host := w.a.PluginHost
 	handler := windowhealth.NewHandler(
-		host.Health, pluginhealth.NewReport(host.Health, host.Runtime), pluginhealth.NewClear(host.Health),
+		host.Health, pluginhealth.NewReport(host.Health, host.Runtime.PluginResolver), pluginhealth.NewClear(host.Health),
 	)
 	path, served := windowhealth.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
@@ -260,7 +259,7 @@ func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *
 		IndexChanged: state.Events.EmitIndexChanged,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
 		Quiet:        indexing.QuietPeriod,
-		After:        clock.System{}.After,
+		After:        a.vault.Clock.After,
 	})
 }
 

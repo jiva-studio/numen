@@ -3,8 +3,8 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
@@ -12,11 +12,10 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
@@ -31,21 +30,14 @@ type PluginVaultHooks struct {
 	Written    func()
 	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
-	Notes      *NoteUseCases
+	Notes      *hostvault.NoteChanges
 }
 
 func getNoteChanges(notes NoteUseCases) hostvault.NoteChanges {
 	return hostvault.NoteChanges{
-		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking, AddLinks: notes.Refer.AddLinks,
+		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking,
+		AddLinks: note.NewAddLinks(notes.Edit.Linking),
 	}
-}
-
-func openNoteWriter(c pluginsWiring, v domain.Vault) (hostvault.NoteWriter, error) {
-	writer, err := noteWriters(c.vault).OpenNoteWriter(v)
-	if err != nil {
-		return nil, err
-	}
-	return writer, nil
 }
 
 func installPluginVault(c pluginsWiring,
@@ -71,7 +63,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
-	useCases := vaultNotes(c.vault, db, index, noteViews{Writes: note.OpenGate{}})
+	useCases := vaultNotes(c.vault, db, index, noteViews{Writes: none.OpenGate{}})
 	arranger := newArranger(useCases, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	return hostvault.NewAccess(
@@ -87,17 +79,14 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			Stat:        file.NewStatFile(vaultReaders(c.vault)),
 			ReadFile:    file.NewReadFile(vaultReaders(c.vault)),
 			RangeReader: file.Read{Readers: vaultReaders(c.vault)},
-			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
-			Index:       index,
-			Locks:       hold.NewLocks(writeLocks(c.vault), hold.LockHold),
 		},
-		hostvault.Lookups{
-			Notes:      db.NoteQueries(),
-			Types:      db.NoteQueries(),
-			NamedPaths: db.NoteQueries(),
-			TypedPaths: db.NoteQueries(),
-			Links:      db.NoteQueries(),
+		hostvault.Writer{
+			Write:  file.NewWriteFile(noteWriters(c.vault), index),
+			Create: file.NewCreateFile(noteWriters(c.vault), index),
+			Index:  file.NewScanFiles(index),
+			Locks:  hold.NewLocks(writeLocks(c.vault), hold.LockHold),
 		},
+		getPluginLookups(db),
 		arranger,
 		hostvault.Stores{
 			StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
@@ -112,22 +101,22 @@ func pluginsOpenPluginVault(c pluginsWiring,
 }
 
 func newArranger(
-	useCases NoteUseCases, db *Index, window *NoteUseCases, current func() (domain.Vault, bool),
+	useCases NoteUseCases, db *Index, window *hostvault.NoteChanges, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
 		Notes:    getNoteChanges(useCases),
 		Checks:   getProblemChecks(getProblems(vaultWiring{}, db.NoteProblems())),
-		Problems: db.NoteProblems(),
+		Problems: vault.NewGetParseProblems(db.NoteProblems()),
 	}
 	if window != nil {
-		arranger.Window, arranger.WindowVault = getNoteChanges(*window), current
+		arranger.Window, arranger.WindowVault = *window, current
 	}
 	return arranger
 }
 
 func completeHooks(c pluginsWiring, db *Index, hooks PluginVaultHooks) PluginVaultHooks {
 	if hooks.IndexState == nil {
-		hooks.IndexState = query.NewGetIndexState(db.NoteQueries()).Execute
+		hooks.IndexState = getIndexState(db).Execute
 	}
 	if hooks.Moved == nil {
 		hooks.Moved = func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(c.vault, ctx) }
@@ -141,7 +130,7 @@ func getPluginDir(c pluginsWiring, id string) (string, bool) {
 }
 
 func getFrontendPluginIDs(c pluginsWiring) []string {
-	return pluginmanifest.New(c.PluginHost.Runtime).ListFrontendPluginIDs()
+	return getRuntimeManifests(c.PluginHost.Runtime).ListFrontendPluginIDs()
 }
 
 func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
@@ -161,7 +150,7 @@ func watchPluginChanges(c pluginsWiring) (<-chan struct{}, func()) {
 }
 
 func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
-	return tabkind.NewChoose(pluginmanifest.New(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
+	return tabkind.NewChoose(getRuntimeManifests(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
 }
 
 func openVersionItems(c pluginsWiring) *textversion.VersionItems {
@@ -177,12 +166,12 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: pluginmanifest.New(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost, nil).Run, Readers: vaultReaders(c.vault),
+		Plugins: getRuntimeManifests(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost, nil).Run, Readers: vaultReaders(c.vault),
 		Notes: pluginsNewNoteReader(c), Types: c.RunningHost.Watch, Versions: c.vault.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }
 
-func pluginsNewNoteReader(c pluginsWiring) plugincommand.NoteReader {
+func pluginsNewNoteReader(c pluginsWiring) noteport.NoteReader {
 	return note.NewReadFrontmatter(vaultReaders(c.vault))
 }
 
