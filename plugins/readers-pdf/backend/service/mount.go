@@ -85,7 +85,7 @@ func mountClients(
 	if err := mount(s, reader, writer, follower, pdfworkers.ReportError); err != nil {
 		return nil, err
 	}
-	startFollowing(s, files, follower)
+	followShownVault(s, files, follower)
 	return follower, nil
 }
 
@@ -109,9 +109,7 @@ func mount(
 	return nil
 }
 
-// startFollowing follows the feed of the shown vault in the background, so changes stored while the
-// plugin was stopped are read when it starts.
-func startFollowing(s *server.Server, shown ShownVault, follower *extract.Follower) {
+func followShownVault(s *server.Server, shown ShownVault, follower *extract.Follower) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {

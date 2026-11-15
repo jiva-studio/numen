@@ -37,7 +37,7 @@ func TestAStartedPluginFollowsTheFeedOfTheShownVault(t *testing.T) {
 	follower := f.NewFollower(t)
 	s := server.New()
 
-	startFollowing(s, f.Vault, follower)
+	followShownVault(s, f.Vault, follower)
 	defer func() {
 		if err := s.Close(); err != nil {
 			t.Error(err)
