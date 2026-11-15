@@ -18,7 +18,13 @@ import {
   isAxisLabelClear,
   type Box,
 } from './labelBox'
-import { createAxisLabels, createCallout, createLabels, getKnobValueStyle, type Mark } from './label'
+import {
+  createAxisLabels,
+  createCallout,
+  createLabels,
+  getKnobValueStyle,
+  type Mark,
+} from './label'
 import {
   BACKLOG_PLOT,
   PLOT_BOTTOM,

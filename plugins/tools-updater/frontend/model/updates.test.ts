@@ -1,10 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { AppInfo, JsonValue } from '@numen/plugin-sdk'
 import type { Status } from '../api/updater'
-import {
-  createUpdates,
-  type Timer,
-} from './updates'
+import { createUpdates, type Timer } from './updates'
 import { DEFAULT_INTERVAL_HOURS } from './intervalDefault'
 import { RETRY_DELAYS_MS, SETTLE_DELAY_MS, getIntervalMs } from './waits'
 

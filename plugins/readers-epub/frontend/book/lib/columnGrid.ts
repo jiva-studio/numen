@@ -39,4 +39,3 @@ export function getSpread(flow: Flow, x: number): number {
   const last = Math.max(countSpreads(flow) - 1, 0)
   return Math.min(Math.floor(getColumn(flow, x) / flow.columns), last)
 }
-

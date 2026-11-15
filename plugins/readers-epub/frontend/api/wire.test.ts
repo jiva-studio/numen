@@ -31,18 +31,13 @@ import { createBooks } from './books'
 
 // The fixtures are the messages the Go backend encodes; these assignments fail to compile when a
 // message and its fixture differ in shape.
-const requests: [
-  GetBookRequest,
-  ReadBookMarkupRequest,
-  GetCfiRequest,
-  FindOffsetRequest,
-] = [getBookRequest, readBookMarkupRequest, getCfiRequest, findOffsetRequest]
-const responses: [
-  GetBookResponse,
-  ReadBookMarkupResponse,
-  GetCfiResponse,
-  FindOffsetResponse,
-] = [
+const requests: [GetBookRequest, ReadBookMarkupRequest, GetCfiRequest, FindOffsetRequest] = [
+  getBookRequest,
+  readBookMarkupRequest,
+  getCfiRequest,
+  findOffsetRequest,
+]
+const responses: [GetBookResponse, ReadBookMarkupResponse, GetCfiResponse, FindOffsetResponse] = [
   getBookResponse,
   readBookMarkupResponse,
   getCfiResponse,

@@ -6,13 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { flatten, getMarkOf, type RowId, type RowMarker } from './row'
-import {
-  everyRow,
-  resolveSelection,
-  isSameSelection,
-  PLAIN,
-  type Press,
-} from './select'
+import { everyRow, resolveSelection, isSameSelection, PLAIN, type Press } from './select'
 import { getRowsBetween } from './rowsBetween'
 import { isTreeKey, stepTo } from './step'
 import { TREE_KEYS } from './treeKeys'

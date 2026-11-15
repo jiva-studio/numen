@@ -4,10 +4,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApi } from '@numen/plugin-sdk'
 import { createBooks } from '../api/books'
-import {
-  useBookReader as openBookReader,
-  type Books,
-} from './useBookReader'
+import { useBookReader as openBookReader, type Books } from './useBookReader'
 import { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
 import type { Book } from '../types'
 import type { MessageWriter } from './useBookDocument'

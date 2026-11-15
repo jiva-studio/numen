@@ -124,11 +124,7 @@ describe('the row a step lands on', () => {
   })
 
   it('passes over a disabled item', () => {
-    const rows = buildRows(
-      [MODELS[0]!, { ...MODELS[1]!, isDisabled: true }, MODELS[2]!],
-      '',
-      false,
-    )
+    const rows = buildRows([MODELS[0]!, { ...MODELS[1]!, isDisabled: true }, MODELS[2]!], '', false)
     expect(stepRow(rows, 0, 1)).toBe(2)
     expect(stepRow(rows, 2, -1)).toBe(0)
   })

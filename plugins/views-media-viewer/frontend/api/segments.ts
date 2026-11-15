@@ -40,5 +40,4 @@ export const findSegmentTime = (
   return null
 }
 
-
 const toMS = (seconds: number): number => Math.round(seconds * 1000)

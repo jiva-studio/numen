@@ -16,4 +16,3 @@ export const byHandle: ReachStrategy = {
   hasHandle: true,
   listeners: () => ({}),
 }
-

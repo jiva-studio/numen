@@ -59,7 +59,10 @@ const meta: Meta<Knobs> = {
       const levelOf = ref<Record<string, number>>({ ...args.levelOf })
       const days = computed(() => {
         const names = args.names === 'Russian' ? RUSSIAN : WEEK
-        const start = Math.max(names.findIndex((day) => day.id === args.startsOn), 0)
+        const start = Math.max(
+          names.findIndex((day) => day.id === args.startsOn),
+          0,
+        )
         const named = args.named ?? [...names.slice(start), ...names.slice(0, start)]
         return named.map((one) => ({ ...one, level: levelOf.value[one.id] ?? 1 }))
       })
