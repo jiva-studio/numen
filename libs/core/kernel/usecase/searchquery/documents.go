@@ -3,12 +3,11 @@ package searchquery
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 )
 
-// listScopeDocuments returns the documents of the scope, and false when the scope is every document or holds
-// more than Limits.MaxDocuments of them: the searches then run over the vault and the scope filters after.
 func (p *plan) listScopeDocuments(ctx context.Context, s searchquery.Scope) ([]searchquery.Document, bool, error) {
 	if s.IsEveryDocument() {
 		return nil, false, nil
@@ -31,8 +30,6 @@ func (p *plan) listScopeDocuments(ctx context.Context, s searchquery.Scope) ([]s
 	return documents, true, nil
 }
 
-// listCandidateDocuments returns the documents the query matches as whole files when it has a document
-// condition that is not negated.
 func (p *plan) listCandidateDocuments(ctx context.Context) ([]searchquery.Document, error) {
 	if !hasPositiveDocumentLeaf(p.query.Root) {
 		return nil, nil
@@ -68,12 +65,7 @@ func hasPositiveDocumentLeaf(node searchquery.Node) bool {
 	if node.Operator == searchquery.OperatorLeaf {
 		return !node.Leaf.IsChunkLevel() && !node.IsNegated
 	}
-	for _, child := range node.Children {
-		if hasPositiveDocumentLeaf(child) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(node.Children, hasPositiveDocumentLeaf)
 }
 
 func getChunkTotal(documents []searchquery.Document) int {

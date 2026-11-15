@@ -47,10 +47,8 @@ func normalize(t *testing.T, raw searchquery.RawNode) searchquery.Query {
 	return q
 }
 
-func score(value float64) *float64 { return &value }
-
 func similarity(value float64) searchquery.ConditionScore {
-	return searchquery.ConditionScore{Similarity: score(value)}
+	return searchquery.ConditionScore{Similarity: new(value)}
 }
 
 func getNote(path string) searchquery.Document {
@@ -139,14 +137,14 @@ func TestIsDocumentMatchIsTrueForADocumentThatSatisfiesTheDocumentPart(t *testin
 
 func TestFuseScoresTheChunkFirstInBothRankingsOneAndAChunkFirstInOneHalf(t *testing.T) {
 	results := []searchquery.SearchResult{
-		{Document: getNote("a.md"), Start: 0, MeaningScore: score(0.9), WordScore: score(5)},
-		{Document: getNote("b.md"), Start: 0, MeaningScore: score(0.8), WordScore: score(4)},
+		{Document: getNote("a.md"), Start: 0, MeaningScore: new(0.9), WordScore: new(5.0)},
+		{Document: getNote("b.md"), Start: 0, MeaningScore: new(0.8), WordScore: new(4.0)},
 	}
 	searchquery.Fuse(results, searchquery.ScoreFused)
 	if math.Abs(*results[0].Score-1) > 1e-9 {
 		t.Errorf("the chunk first in both scored %v, want 1", *results[0].Score)
 	}
-	half := []searchquery.SearchResult{{Document: getNote("a.md"), MeaningScore: score(0.9)}}
+	half := []searchquery.SearchResult{{Document: getNote("a.md"), MeaningScore: new(0.9)}}
 	searchquery.Fuse(half, searchquery.ScoreFused)
 	if math.Abs(*half[0].Score-0.5) > 1e-9 {
 		t.Errorf("the chunk first by meaning and absent from words scored %v, want 0.5", *half[0].Score)
@@ -155,7 +153,7 @@ func TestFuseScoresTheChunkFirstInBothRankingsOneAndAChunkFirstInOneHalf(t *test
 
 func newChunkResult(path string, start, length int, value float64) searchquery.SearchResult {
 	return searchquery.SearchResult{
-		Document: getNote(path), Start: start, Length: length, Text: path, Score: score(value), MeaningScore: score(value),
+		Document: getNote(path), Start: start, Length: length, Text: path, Score: new(value), MeaningScore: new(value),
 		Chunks: []searchquery.ChunkRange{{ID: domain.ChunkID(path), Start: start, Length: length}},
 	}
 }

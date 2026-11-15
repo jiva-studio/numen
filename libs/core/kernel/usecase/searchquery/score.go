@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// score scores every candidate against every condition.
 func (p *plan) score(ctx context.Context, candidates []domain.SearchResult, texts map[string]fileText) ([][]searchquery.ConditionScore, error) {
 	scores := make([][]searchquery.ConditionScore, len(candidates))
 	for i := range scores {
@@ -28,7 +27,6 @@ func (p *plan) score(ctx context.Context, candidates []domain.SearchResult, text
 	return scores, p.scoreWords(ctx, candidates, smalls, texts, scores)
 }
 
-// listSmalls returns the chunks inside each candidate, the candidate's own chunk among them.
 func (p *plan) listSmalls(ctx context.Context, candidates []domain.SearchResult) ([][]domain.ChunkID, error) {
 	ids := make([]domain.ChunkID, len(candidates))
 	index := make(map[domain.ChunkID]int, len(candidates))

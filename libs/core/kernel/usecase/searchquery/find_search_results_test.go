@@ -16,7 +16,7 @@ import (
 func newDeepWorld(t *testing.T) world {
 	t.Helper()
 	w := newWorld(t, map[string]string{
-		"deep/target.md": "The harbour at dusk, where the boats come home. " + strings.Repeat("calm water ", 10),
+		"deep/target.md": "The harbor at dusk, where the boats come home. " + strings.Repeat("calm water ", 10),
 		"out/many.md":    repeatSentences("near", 500),
 	})
 	w.cutBySize(t, "deep/target.md", 40)

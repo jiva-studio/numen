@@ -20,7 +20,6 @@ type similarChunk struct {
 	similarity float64
 }
 
-// embed makes the vector of every meaning condition, in one call.
 func (p *plan) embed(ctx context.Context) error {
 	var indices []int
 	var texts []string
@@ -47,9 +46,6 @@ func (p *plan) embed(ctx context.Context) error {
 	return nil
 }
 
-// findMeaning returns the candidate chunks of a meaning condition: an exact scan over the documents of its
-// scope when they are listed and few, else the approximate search, grown until enough chunks of the scope
-// remain.
 func (p *plan) findMeaning(ctx context.Context, index int, documents []searchquery.Document, isListed bool) ([]domain.ChunkID, error) {
 	query := p.vectors[index]
 	if isListed && getChunkTotal(documents) <= p.u.Limits.ExactScanChunks {

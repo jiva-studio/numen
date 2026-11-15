@@ -38,7 +38,6 @@ func (markdownTypes) GetContentType(name string) domain.ContentType {
 
 func (markdownTypes) ListExtensions(domain.ContentType) []string { return nil }
 
-// newQueryDeps is a session over a real index of a vault named shelf with two notes about the tide.
 func newQueryDeps(t *testing.T) stubSession {
 	t.Helper()
 	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
@@ -47,11 +46,11 @@ func newQueryDeps(t *testing.T) stubSession {
 	}
 	testsupport.CloseAfter(t, db)
 	notes := map[string]string{
-		"notes/Harbour.md": "The tide comes into the harbour twice a day.",
-		"notes/Moon.md":    "The moon pulls the tide, and the tide follows the moon.",
-		"notes/Field.md":   "A field of wheat under a dry wind.",
-		"notes/Forest.md":  "Old oaks and the smell of rain in the forest.",
-		"notes/Hill.md":    "Sheep graze on the hill above the village.",
+		"notes/Harbor.md": "The tide comes into the harbor twice a day.",
+		"notes/Moon.md":   "The moon pulls the tide, and the tide follows the moon.",
+		"notes/Field.md":  "A field of wheat under a dry wind.",
+		"notes/Forest.md": "Old oaks and the smell of rain in the forest.",
+		"notes/Hill.md":   "Sheep graze on the hill above the village.",
 	}
 	v := vaultfixture.NewVault(t, notes)
 	v.Name = "shelf"
@@ -97,7 +96,7 @@ func TestQueryPrintsEachResultWithItsScoreKindPlaceAndExcerpt(t *testing.T) {
 	if lines[1] != "    The moon pulls the tide, and the tide follows the moon." {
 		t.Errorf("the first excerpt is %q", lines[1])
 	}
-	if !strings.Contains(lines[2], "  notes/Harbour.md  note  line 1  ") {
+	if !strings.Contains(lines[2], "  notes/Harbor.md  note  line 1  ") {
 		t.Errorf("the second result line is %q", lines[2])
 	}
 }

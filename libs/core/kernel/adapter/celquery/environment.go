@@ -1,6 +1,8 @@
 package celquery
 
 import (
+	"strings"
+
 	"cel.dev/cel-go/cel"
 	"cel.dev/cel-go/common/env"
 	"cel.dev/cel-go/common/operators"
@@ -9,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 )
 
-// newEnvironment declares the catalog in CEL. The checker of cel-go types && and || as bool only, so a
-// function of type SearchResults is declared as bool, and the converted tree records whether the query names one.
 func newEnvironment(catalog searchquery.Catalog, maxDepth, maxCodePoints int) (*cel.Env, error) {
 	subset := &env.LibrarySubset{
 		DisableMacros: true,
@@ -36,12 +36,12 @@ func declare(f searchquery.Function) cel.EnvOption {
 		return cel.Variable(f.Name, getType(f.Result))
 	}
 	args := make([]*cel.Type, len(f.Args))
-	overloadID := f.Name
+	parts := []string{f.Name}
 	for i, arg := range f.Args {
 		args[i] = getType(arg)
-		overloadID += "_" + args[i].String()
+		parts = append(parts, args[i].String())
 	}
-	return cel.Function(f.Name, cel.Overload(overloadID, args, getType(f.Result)))
+	return cel.Function(f.Name, cel.Overload(strings.Join(parts, "_"), args, getType(f.Result)))
 }
 
 func getType(t searchquery.ValueType) *cel.Type {
@@ -52,6 +52,7 @@ func getType(t searchquery.ValueType) *cel.Type {
 		return cel.IntType
 	case searchquery.TypeStringList:
 		return cel.ListType(cel.StringType)
+	// The checker of cel-go types && and || as bool only, so SearchResults is declared as bool.
 	case searchquery.TypeBool, searchquery.TypeSearchResults:
 		return cel.BoolType
 	}

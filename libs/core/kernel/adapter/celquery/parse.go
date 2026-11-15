@@ -65,9 +65,8 @@ func getPosition(location common.Location) searchquery.Position {
 	return searchquery.Position{Line: max(location.Line(), 1), Column: max(location.Column()+1, 1)}
 }
 
-// getExprPosition returns where an expression starts. CEL places a call at its opening parenthesis; the
-// position of a named call is moved back to the start of its name.
 func getExprPosition(source *ast.SourceInfo, expr ast.Expr) searchquery.Position {
+	// CEL places a call at its opening parenthesis.
 	position := getPosition(source.GetStartLocation(expr.ID()))
 	if expr.Kind() != ast.CallKind {
 		return position

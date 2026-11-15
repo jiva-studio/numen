@@ -1,6 +1,7 @@
 package celquery
 
 import (
+	"slices"
 	"strings"
 
 	"cel.dev/cel-go/common/ast"
@@ -82,10 +83,5 @@ func (w *nameWalk) hasChunkCall(expr ast.Expr) bool {
 	if call.IsMemberFunction() && w.hasChunkCall(call.Target()) {
 		return true
 	}
-	for _, arg := range call.Args() {
-		if w.hasChunkCall(arg) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(call.Args(), w.hasChunkCall)
 }

@@ -11,8 +11,6 @@ import (
 
 const messageInvalidWords = "words takes an FTS5 expression, and this one is not valid"
 
-// findWords returns the candidate chunks of a words condition: within the documents of its scope when they
-// are listed and few, else within the superset of the scope, filtered by the scope.
 func (p *plan) findWords(ctx context.Context, index int, documents []searchquery.Document, isListed bool) ([]domain.ChunkID, error) {
 	s := p.scopes[index]
 	q := searchquery.WordQuery{Expression: p.query.Conditions[index].Text, Limit: p.u.Limits.CandidatesPerCondition}
@@ -48,7 +46,6 @@ func (p *plan) findWords(ctx context.Context, index int, documents []searchquery
 	return kept, nil
 }
 
-// getWordsError turns an expression the index rejects into a problem at the words condition.
 func (p *plan) getWordsError(index int, err error) error {
 	if !errors.Is(err, source.ErrInvalidWords) {
 		return err

@@ -18,9 +18,7 @@ const (
 type LeafKind int
 
 const (
-	// LeafMeaning is meaning("…").
 	LeafMeaning LeafKind = iota
-	// LeafWords is words("…").
 	LeafWords
 	// LeafKindIn is kind == "x" or kind in ["x", …].
 	LeafKindIn

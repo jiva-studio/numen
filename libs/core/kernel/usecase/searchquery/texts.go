@@ -22,22 +22,8 @@ type fileText struct {
 	isRead  bool
 }
 
-// readTexts reads once the text of every file of the candidates and of the whole-file notes.
 func (p *plan) readTexts(ctx context.Context, candidates []domain.SearchResult, documents []searchquery.Document) (map[string]fileText, error) {
-	versions := map[string]string{}
-	var paths []string
-	for _, c := range candidates {
-		if _, found := versions[c.Path]; !found {
-			paths = append(paths, c.Path)
-			versions[c.Path] = c.VersionID
-		}
-	}
-	for _, d := range documents {
-		if _, found := versions[d.Path]; !found && d.SourceKind == domain.KindNote {
-			paths = append(paths, d.Path)
-			versions[d.Path] = ""
-		}
-	}
+	paths, versions := listTextPaths(candidates, documents)
 	if len(paths) == 0 {
 		return map[string]fileText{}, nil
 	}
@@ -63,6 +49,24 @@ func (p *plan) readTexts(ctx context.Context, candidates []domain.SearchResult, 
 		out[path] = text
 	}
 	return out, nil
+}
+
+func listTextPaths(candidates []domain.SearchResult, documents []searchquery.Document) ([]string, map[string]string) {
+	versions := map[string]string{}
+	var paths []string
+	for _, c := range candidates {
+		if _, found := versions[c.Path]; !found {
+			paths = append(paths, c.Path)
+			versions[c.Path] = c.VersionID
+		}
+	}
+	for _, d := range documents {
+		if _, found := versions[d.Path]; !found && d.SourceKind == domain.KindNote {
+			paths = append(paths, d.Path)
+			versions[d.Path] = ""
+		}
+	}
+	return paths, versions
 }
 
 func readText(
@@ -98,7 +102,6 @@ func getSpan(text string, start, length int) string {
 	return text[start:min(start+length, len(text))]
 }
 
-// getExcerpt returns at most searchquery.MaxExcerptBytes of the span, cut at a character boundary.
 func getExcerpt(text string, start, length int) string {
 	excerpt := getSpan(text, start, length)
 	if len(excerpt) <= searchquery.MaxExcerptBytes {
@@ -111,7 +114,6 @@ func getExcerpt(text string, start, length int) string {
 	return strings.Clone(excerpt[:end])
 }
 
-// getLine returns the line of the offset, counted from 0 after the frontmatter of a note.
 func getLine(text string, offset int) int {
 	offset = min(offset, len(text))
 	opens := getProseStart(text)

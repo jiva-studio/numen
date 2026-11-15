@@ -44,7 +44,8 @@ type Catalog struct {
 	Functions []Function
 }
 
-// GetBuiltinCatalog returns the catalog of the core.
+// GetBuiltinCatalog lists words and meaning, which decide per chunk, and the variables kind and path, which decide
+// per document.
 func GetBuiltinCatalog() Catalog {
 	return Catalog{Functions: []Function{
 		{
@@ -70,7 +71,6 @@ func GetBuiltinCatalog() Catalog {
 	}}
 }
 
-// FindFunction returns the entry of the catalog with the name.
 func (c Catalog) FindFunction(name string) (Function, bool) {
 	for _, f := range c.Functions {
 		if f.Name == name {

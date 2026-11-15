@@ -20,7 +20,6 @@ func (s Scope) IsEveryDocument() bool {
 	return s.Predicate.Operator == OperatorAnd && len(s.Predicate.Children) == 0
 }
 
-// IsDocumentMatch reports whether the document is in the scope.
 func (s Scope) IsDocumentMatch(d Document) bool {
 	return IsDocumentMatch(s.Predicate, d)
 }
@@ -64,23 +63,26 @@ func collectOccurrences(node Node, constraints []Node, occurrences [][][]Node) {
 			occurrences[index] = append(occurrences[index], slices.Clone(constraints))
 		}
 	case OperatorAnd:
-		var documentOnly []Node
-		for _, child := range node.Children {
-			if isDocumentOnly(child) {
-				documentOnly = append(documentOnly, child)
-			}
-		}
-		inner := append(slices.Clone(constraints), documentOnly...)
-		for _, child := range node.Children {
-			if !isDocumentOnly(child) {
-				collectOccurrences(child, inner, occurrences)
-			}
-		}
+		collectAndOccurrences(node, constraints, occurrences)
 	case OperatorOr:
 		for _, child := range node.Children {
 			collectOccurrences(child, constraints, occurrences)
 		}
 	case OperatorNot:
+	}
+}
+
+func collectAndOccurrences(node Node, constraints []Node, occurrences [][][]Node) {
+	inner := slices.Clone(constraints)
+	for _, child := range node.Children {
+		if isDocumentOnly(child) {
+			inner = append(inner, child)
+		}
+	}
+	for _, child := range node.Children {
+		if !isDocumentOnly(child) {
+			collectOccurrences(child, inner, occurrences)
+		}
 	}
 }
 

@@ -13,7 +13,6 @@ type placeKey struct {
 	start, length int
 }
 
-// getPlaces returns the large chunk that encloses each chunk, reading each chunk once per query.
 func (p *plan) getPlaces(ctx context.Context, ids []domain.ChunkID) (map[domain.ChunkID]domain.SearchResult, error) {
 	var missing []domain.ChunkID
 	for _, id := range ids {
@@ -33,7 +32,6 @@ func (p *plan) getPlaces(ctx context.Context, ids []domain.ChunkID) (map[domain.
 	return p.places, nil
 }
 
-// filterScope reports which chunks lie in a document of the scope.
 func (p *plan) filterScope(ctx context.Context, s searchquery.Scope, ids []domain.ChunkID) (map[domain.ChunkID]bool, error) {
 	places, err := p.getPlaces(ctx, ids)
 	if err != nil {
@@ -47,8 +45,6 @@ func (p *plan) filterScope(ctx context.Context, s searchquery.Scope, ids []domai
 	return inScope, nil
 }
 
-// unite takes the enclosing chunks of the candidates of every condition in turns, the first of every list,
-// then the second, each chunk once, up to Limits.MaxCandidates.
 func (p *plan) unite(ctx context.Context, lists [][]domain.ChunkID) ([]domain.SearchResult, error) {
 	var all []domain.ChunkID
 	for _, list := range lists {

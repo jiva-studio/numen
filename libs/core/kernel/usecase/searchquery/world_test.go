@@ -65,7 +65,6 @@ func (w world) read(t *testing.T, filePath string) string {
 	return string(raw)
 }
 
-// cutBySize cuts a note into one large chunk and small chunks of about size bytes.
 func (w world) cutBySize(t *testing.T, filePath string, size int) {
 	t.Helper()
 	text := w.read(t, filePath)
@@ -81,7 +80,6 @@ func (w world) cutBySize(t *testing.T, filePath string, size int) {
 	w.replace(t, filePath, []chunk.Chunk{whole})
 }
 
-// cutRanges cuts a note into large chunks at the ranges, each with one small chunk of the same range.
 func (w world) cutRanges(t *testing.T, filePath string, ranges ...[2]int) {
 	t.Helper()
 	text := w.read(t, filePath)
@@ -140,8 +138,6 @@ func getModel() searchsource.Description {
 	return searchsource.Description{Name: "test", Width: dimensions}
 }
 
-// newVector returns a vector of ones with the first `flipped` values negated: its similarity with
-// newVector(0) is 1 - 2*flipped/dimensions.
 func newVector(flipped int) []float32 {
 	v := make([]float32, dimensions)
 	for i := range v {
