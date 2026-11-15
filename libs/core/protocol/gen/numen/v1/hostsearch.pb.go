@@ -2579,9 +2579,11 @@ type SearchFunction struct {
 	// chunk or document; empty for a stage.
 	Level string `protobuf:"bytes,3,opt,name=level,proto3" json:"level,omitempty"`
 	// Each argument list, such as "meaning(string) -> SearchResults".
-	Signatures    []string `protobuf:"bytes,4,rep,name=signatures,proto3" json:"signatures,omitempty"`
-	Description   string   `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	Example       string   `protobuf:"bytes,6,opt,name=example,proto3" json:"example,omitempty"`
+	Signatures  []string `protobuf:"bytes,4,rep,name=signatures,proto3" json:"signatures,omitempty"`
+	Description string   `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	Example     string   `protobuf:"bytes,6,opt,name=example,proto3" json:"example,omitempty"`
+	// What it does in a few plain words, shown beside its name.
+	Summary       string `protobuf:"bytes,7,opt,name=summary,proto3" json:"summary,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2654,6 +2656,13 @@ func (x *SearchFunction) GetDescription() string {
 func (x *SearchFunction) GetExample() string {
 	if x != nil {
 		return x.Example
+	}
+	return ""
+}
+
+func (x *SearchFunction) GetSummary() string {
+	if x != nil {
+		return x.Summary
 	}
 	return ""
 }
@@ -2847,7 +2856,7 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x1bListSearchFunctionsResponse\x123\n" +
 	"\x05error\x18\x03 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x126\n" +
 	"\tfunctions\x18\x01 \x03(\v2\x18.numen.v1.SearchFunctionR\tfunctions\x12\x1a\n" +
-	"\brevision\x18\x02 \x01(\tR\brevision\"\xaa\x01\n" +
+	"\brevision\x18\x02 \x01(\tR\brevision\"\xc4\x01\n" +
 	"\x0eSearchFunction\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x14\n" +
@@ -2856,7 +2865,8 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"signatures\x18\x04 \x03(\tR\n" +
 	"signatures\x12 \n" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x18\n" +
-	"\aexample\x18\x06 \x01(\tR\aexample*\xc1\x04\n" +
+	"\aexample\x18\x06 \x01(\tR\aexample\x12\x18\n" +
+	"\asummary\x18\a \x01(\tR\asummary*\xc1\x04\n" +
 	"\x13HostSearchErrorCode\x12&\n" +
 	"\"HOST_SEARCH_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fHOST_SEARCH_ERROR_CODE_NO_VAULT\x10\x01\x12#\n" +

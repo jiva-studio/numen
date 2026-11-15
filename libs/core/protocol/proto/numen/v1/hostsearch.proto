@@ -547,4 +547,7 @@ message SearchFunction {
 
   string description = 5;
   string example = 6;
+
+  // What it does in a few plain words, shown beside its name.
+  string summary = 7;
 }

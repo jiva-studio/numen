@@ -20,9 +20,9 @@ const tideQuery = `words("tide") && kind == "pdf"`
 
 func getTideFunctions() host.SearchFunctions {
 	return host.SearchFunctions{Revision: "r1", Functions: []host.SearchFunction{
-		{Name: "words", Kind: "function", Level: "chunk", Signatures: []string{"words(string) -> SearchResults"}, Description: "passages whose words match", Example: `words("tide")`},
-		{Name: "kind", Kind: "variable", Level: "document", Signatures: []string{"kind: string"}, Description: "the kind of the file", Example: `kind == "pdf"`},
-		{Name: "top", Kind: "stage", Signatures: []string{"SearchResults.top(int) -> SearchResults"}, Description: "keeps the first N results", Example: `words("tide").top(10)`},
+		{Name: "words", Kind: "function", Level: "chunk", Signatures: []string{"words(string) -> SearchResults"}, Description: "Finds passages that contain the words you give.", Example: `words("tide")`},
+		{Name: "kind", Kind: "variable", Level: "document", Signatures: []string{"kind: string"}, Description: "The type of the file.", Example: `kind == "pdf"`},
+		{Name: "top", Kind: "stage", Signatures: []string{"SearchResults.top(int) -> SearchResults"}, Description: "Keeps only the first results; give how many.", Example: `words("tide").top(10)`},
 	}}
 }
 
@@ -143,7 +143,7 @@ func TestTheDescriptionOfLibraryQueryNamesEveryFunction(t *testing.T) {
 	}
 	description := listing.Tools[index].GetDescription()
 	for _, f := range getTideFunctions().Functions {
-		if !strings.Contains(description, f.Signatures[0]) || !strings.Contains(description, f.Example) {
+		if !strings.Contains(description, f.Signatures[0]+": "+f.Description+" Example: "+f.Example) {
 			t.Errorf("the description lacks %s or its example: %s", f.Signatures[0], description)
 		}
 	}

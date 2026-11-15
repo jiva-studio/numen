@@ -91,7 +91,7 @@ func writeSearchFunctions(catalog searchquery.Catalog) []*v1.SearchFunction {
 	for i, f := range catalog.Functions {
 		out[i] = &v1.SearchFunction{
 			Name: f.Name, Kind: getFunctionKind(f), Level: getLevelName(f), Signatures: searchquery.FormatSignatures(f),
-			Description: f.Description, Example: f.Example,
+			Summary: f.Summary, Description: f.Description, Example: f.Example,
 		}
 	}
 	return out
