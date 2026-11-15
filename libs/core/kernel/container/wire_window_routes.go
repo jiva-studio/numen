@@ -352,5 +352,5 @@ func getFeedStart(a pluginsWiring, db *Index) func(ctx context.Context, v domain
 		Quiet: windowsession.FeedQuietPeriod,
 		After: a.vault.Clock.After,
 	}
-	return func(ctx context.Context, v domain.Vault) func() { return events.Start(ctx, v) }
+	return events.Start
 }
