@@ -9,8 +9,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
@@ -86,7 +84,7 @@ func callTags(tag string) searchfunctiontest.Call {
 	return searchfunctiontest.Call{Function: service.FunctionTags, VaultID: "garden", IndexGeneration: "g4", Arguments: map[string]any{"tag": tag}}
 }
 
-func TestTagsMatchesTheNotesWithTheTagOrATagNestedUnderItInAnyCase(t *testing.T) {
+func TestTagsMatchesTheNotesWithTheTagOrANestedTagInAnyCase(t *testing.T) {
 	s := newFunctionScene(t, getTagsVault())
 
 	matched, warning, err := s.client.MatchDocuments(t.Context(), callTags("A"), []string{"a.md", "b.md", "c.md", "d.md", "e.md"})
@@ -121,7 +119,7 @@ func TestTagsWithoutATagIsInvalidArgument(t *testing.T) {
 
 	_, _, _, err := s.client.FindDocuments(t.Context(), callTags(" # "), 10)
 
-	if connect.CodeOf(err) != connect.CodeInvalidArgument || !strings.Contains(err.Error(), "tags needs a tag") {
+	if err == nil || !strings.Contains(err.Error(), "invalid_argument") || !strings.Contains(err.Error(), "tags needs a tag") {
 		t.Errorf("err = %v, want InvalidArgument", err)
 	}
 }
