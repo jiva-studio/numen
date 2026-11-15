@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func TestResolveGivesTheFolderPathOfAMissingDependencyWithoutDownloading(t *testing.T) {
+func TestResolveReturnsTheFolderPathOfAMissingDependencyWithoutDownloading(t *testing.T) {
 	data := bytes.Repeat([]byte("model-bytes"), 100)
 	server, requests := serveFiles(t, map[string][]byte{"/w.bin": data})
 	provisioner := newTestProvisioner(t, false)
@@ -47,7 +47,7 @@ func TestResolveGivesTheFolderPathOfAMissingDependencyWithoutDownloading(t *test
 	}
 }
 
-func TestResolveGivesTheFileOfADownloadedDependencyAsReady(t *testing.T) {
+func TestResolveReturnsTheFileOfADownloadedDependencyAsReady(t *testing.T) {
 	data := bytes.Repeat([]byte("model-bytes"), 100)
 	server, requests := serveFiles(t, map[string][]byte{"/w.bin": data})
 	provisioner := newTestProvisioner(t, false)
@@ -78,7 +78,7 @@ func TestResolveGivesTheFileOfADownloadedDependencyAsReady(t *testing.T) {
 	}
 }
 
-func TestResolveGivesThePlannedPathThatProvisionFillsLater(t *testing.T) {
+func TestResolveReturnsThePlannedPathThatProvisionFillsLater(t *testing.T) {
 	data := bytes.Repeat([]byte("model-bytes"), 100)
 	server, _ := serveFiles(t, map[string][]byte{"/w.bin": data})
 	provisioner := newTestProvisioner(t, false)
@@ -99,7 +99,7 @@ func TestResolveGivesThePlannedPathThatProvisionFillsLater(t *testing.T) {
 	}
 }
 
-func TestResolveGivesThePlannedPathOfAFileUnpackedFromAnArchive(t *testing.T) {
+func TestResolveReturnsThePlannedPathOfAFileUnpackedFromAnArchive(t *testing.T) {
 	library := []byte("library bytes")
 	archive := buildTgz(t, map[string][]byte{"pack/libsample.so": library})
 	server, requests := serveFiles(t, map[string][]byte{"/pack.tgz": archive})
@@ -127,7 +127,7 @@ func TestResolveGivesThePlannedPathOfAFileUnpackedFromAnArchive(t *testing.T) {
 	}
 }
 
-func TestResolveGivesTheFileTheSearchPatternFindsAsReady(t *testing.T) {
+func TestResolveReturnsTheFileTheSearchPatternFindsAsReady(t *testing.T) {
 	found := filepath.Join(t.TempDir(), "libsample.so")
 	if err := os.WriteFile(found, []byte("library"), 0o644); err != nil {
 		t.Fatal(err)
@@ -222,7 +222,7 @@ func TestResolveDoesNotFailOnAnOfflineMachine(t *testing.T) {
 	}
 }
 
-func TestResolveGivesMissingForAFolderWithoutItsReadyMarker(t *testing.T) {
+func TestResolveReturnsMissingForAFolderWithoutItsReadyMarker(t *testing.T) {
 	data := []byte("model-bytes")
 	provisioner := newTestProvisioner(t, false)
 	req := newModelRequirement("https://models.invalid/w.bin", data)
@@ -247,7 +247,7 @@ func TestResolveGivesMissingForAFolderWithoutItsReadyMarker(t *testing.T) {
 	}
 }
 
-func TestPlaceholderResolveGivesItsPlaceholderFileAsReady(t *testing.T) {
+func TestPlaceholderResolveReturnsItsPlaceholderFileAsReady(t *testing.T) {
 	provisioner := NewPlaceholderProvisioner(t.TempDir())
 	req := manifest.DependencyRequirement{ID: "pp-det", Kind: manifest.DependencyKindModel, SourceURL: "https://models.invalid/det.onnx"}
 
