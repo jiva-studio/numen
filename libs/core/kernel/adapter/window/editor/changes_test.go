@@ -135,7 +135,7 @@ func TestAnEditReachesAListener(t *testing.T) {
 		if !slices.Contains(paths, "Note.md") {
 			t.Errorf("reported %v", paths)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the edit never reached the listener")
 	}
 
@@ -168,7 +168,7 @@ func TestABookDroppedInReachesAListener(t *testing.T) {
 		if !slices.Contains(paths, "library/A Book.epub") {
 			t.Errorf("reported %v", paths)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the book never reached the listener")
 	}
 }
@@ -446,7 +446,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 	// a write the quit must not close the database underneath.
 	select {
 	case <-hold.begun:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the write never reached the vault")
 	}
 
@@ -472,7 +472,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 
 	select {
 	case <-shutCh:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the quit never finished")
 	}
 	if err := <-writing; err != nil {
@@ -549,7 +549,7 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 
 	select {
 	case <-flushed:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the page never answered")
 	}
 
@@ -689,7 +689,7 @@ func (p *speaking) endStream(t *testing.T) {
 	p.hangUp()
 	select {
 	case <-p.question:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the stream never ended")
 	}
 	// The stream ends at both ends, and what the application makes of it
@@ -767,7 +767,7 @@ func TestFlushPending_ClosesAfterPromptsResolved(t *testing.T) {
 		if !let {
 			t.Fatal("the page has nothing left and the window was not let go")
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the window was never let go")
 	}
 }

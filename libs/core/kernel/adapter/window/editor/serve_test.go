@@ -248,7 +248,7 @@ func sendChange(t *testing.T, watcher *hand, paths ...string) {
 	t.Helper()
 	select {
 	case watcher.changes <- paths:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("nothing is acting on the watch")
 	}
 }
@@ -258,7 +258,7 @@ func next[T any](t *testing.T, from <-chan T) T {
 	select {
 	case value := <-from:
 		return value
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("nothing was reported")
 		var zero T
 		return zero

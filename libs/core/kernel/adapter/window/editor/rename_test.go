@@ -472,7 +472,7 @@ func TestWatchVaultChanges_ReportsRemovedAsset(t *testing.T) {
 		if !slices.Contains(paths, "assets/diagram.png") {
 			t.Errorf("the removal was reported as %v", paths)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Error("the removal reached nobody, and the tree still draws the row")
 	}
 }
@@ -1534,7 +1534,7 @@ func TestImports_DroppedFileAppearsInTree(t *testing.T) {
 		if !slices.Equal(paths, []string{"physics/Cover.png"}) {
 			t.Errorf("reported %v", paths)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the drop never reached the listener")
 	}
 }

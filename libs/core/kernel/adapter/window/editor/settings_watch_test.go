@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
@@ -50,7 +52,7 @@ func (w *watcher) await(t *testing.T) []*v1.Setting {
 			t.Fatalf("the stream ended: %v", w.stream.Err())
 		}
 		return changed
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("nothing arrived on the stream")
 		return nil
 	}

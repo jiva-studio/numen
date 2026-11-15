@@ -3,13 +3,15 @@ package editor_test
 import (
 	"context"
 	"errors"
-	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 
 	"connectrpc.com/connect"
 
@@ -277,7 +279,7 @@ func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 	}()
 	select {
 	case <-flushRequest:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		close(release)
 		t.Fatal("the close never requested a flush from the page")
 	}
@@ -320,7 +322,7 @@ func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 	first := callOpenVault(t.Context(), list, f.second.ID)
 	select {
 	case <-flushRequest:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		close(release)
 		t.Fatal("the first open never requested a flush from the page")
 	}
@@ -384,7 +386,7 @@ func startPluginOpen(t *testing.T, f *showing, flushRequest <-chan struct{}, rel
 	openResult := callOpenVault(context.WithoutCancel(t.Context()), list, f.second.ID)
 	select {
 	case <-flushRequest:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		if release != nil {
 			close(release)
 		}
@@ -499,7 +501,7 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	go func() { switchCh <- f.installation.Show(t.Context(), f.second, nil) }()
 	select {
 	case <-flushRequest:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		close(release)
 		t.Fatal("the switch never requested a flush from the page")
 	}
@@ -696,7 +698,7 @@ func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	openResult := callOpenVault(ctx, list, f.second.ID)
 	select {
 	case <-flushRequest:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the plugin's open never requested a flush from the page")
 	}
 	hangUp()
@@ -705,7 +707,7 @@ func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 		if !errors.Is(err, domain.ErrUnavailable) {
 			t.Errorf("the plugin's open whose call ended returned %v, want ErrUnavailable", err)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the plugin's open whose call ended never returned")
 	}
 	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {

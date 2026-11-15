@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -24,7 +26,7 @@ func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
 	openResult := callOpenVault(ctx, list, f.second.ID)
 	select {
 	case <-flushRequest:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		close(release)
 		t.Fatal("the plugin's open never requested a flush from the page")
 	}

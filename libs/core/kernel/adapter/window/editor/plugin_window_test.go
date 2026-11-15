@@ -3,7 +3,6 @@ package editor
 import (
 	"context"
 	"errors"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +10,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 
 	"connectrpc.com/connect"
 
@@ -94,7 +96,7 @@ func TestPluginWindowFocusFileSendsRangesToWindow(t *testing.T) {
 		if !reflect.DeepEqual(place, want) {
 			t.Errorf("the window received %+v, want %+v", place, want)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testsupport.Patience):
 		t.Fatal("the window received no place")
 	}
 }
@@ -200,7 +202,7 @@ func newActivateFixtureWith(t *testing.T, limit time.Duration) activateFixture {
 
 func (f activateFixture) waitUntilSubscribed(t *testing.T) {
 	t.Helper()
-	deadline := time.After(5 * time.Second)
+	deadline := time.After(testsupport.Patience)
 	for {
 		if err := ViewOf(f.state).FocusPlace(t.Context(), domain.Place{Path: "notes/Heron.md"}); err != nil {
 			t.Fatal(err)
