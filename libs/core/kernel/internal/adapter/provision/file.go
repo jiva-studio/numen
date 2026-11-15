@@ -219,3 +219,11 @@ func GetEnvName(req manifest.DependencyRequirement) string {
 	}
 	return "NUMEN_DEPENDENCY_" + strings.ToUpper(unsafeNameChars.ReplaceAllString(req.ID, "_"))
 }
+
+// errNotImplemented marks the Resolve stubs the implementation replaces.
+var errNotImplemented = errors.New("resolve is not implemented")
+
+// Resolve is a stub.
+func (p *FileProvisioner) Resolve(manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
+	return plugin.ResolvedDependency{}, "", errNotImplemented
+}

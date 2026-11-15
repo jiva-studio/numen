@@ -64,3 +64,8 @@ func GetPlaceholderDir() string {
 	}
 	return dir
 }
+
+// Resolve is a stub.
+func (p *PlaceholderProvisioner) Resolve(manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
+	return plugin.ResolvedDependency{}, "", errNotImplemented
+}

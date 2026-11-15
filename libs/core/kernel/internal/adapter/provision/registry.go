@@ -114,3 +114,8 @@ func (r *Registry) run(
 	note(plugin.DependencyStatus{State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved})
 	return resolved, nil
 }
+
+// Resolve is a stub.
+func (r *Registry) Resolve(manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
+	return plugin.ResolvedDependency{}, "", errNotImplemented
+}
