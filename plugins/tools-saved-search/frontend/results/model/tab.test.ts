@@ -410,7 +410,7 @@ describe('editing the query of a saved search', () => {
   })
 
   it('reads the catalog again on the next open after it failed', async () => {
-    const { service, state } = setup()
+    const { state } = setup()
     catalog = 'the catalog is not ready'
     state.actions.setEditing(true)
     await settle()
@@ -424,7 +424,7 @@ describe('editing the query of a saved search', () => {
   })
 
   it('shows the failure of reading the catalog', async () => {
-    const { service, state } = setup()
+    const { state } = setup()
     catalog = 'the catalog is not ready'
 
     state.actions.setEditing(true)

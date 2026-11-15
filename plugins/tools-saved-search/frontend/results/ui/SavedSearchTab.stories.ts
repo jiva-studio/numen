@@ -305,7 +305,10 @@ export const CancelsTheEdit: Story = {
   },
 }
 
-/** Typing a name offers the functions of the catalog with their description; after a dot, the stages. */
+/**
+ * Typing a name offers the functions of the catalog with their description; a click on one writes it;
+ * after a dot, the stages are offered.
+ */
 export const CompletesTheNamesOfTheCatalog: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -326,7 +329,7 @@ export const CompletesTheNamesOfTheCatalog: Story = {
     await waitFor(() => expect(canvas.getByText(/Notes that carry the tag\./)).toBeVisible())
     await expect(canvas.getByText(/tags\("harbor"\)/)).toBeVisible()
 
-    await browser.userEvent.keyboard('{Enter}')
+    await browser.userEvent.click(within(list).getByRole('option'))
     await waitFor(() => expect(editor).toHaveTextContent('words("gale") && tags'))
 
     await browser.userEvent.keyboard('("harbor").r')
