@@ -19,7 +19,7 @@ type SavedOutput struct {
 	Path        string    `json:"path,omitempty" jsonschema:"the path of the note written; absent when nothing was written"`
 	URI         string    `json:"uri,omitempty" jsonschema:"the address of the note; use it as the target of a markdown link"`
 	ResultCount int       `json:"resultCount" jsonschema:"how many results the first run found"`
-	Order       string    `json:"order,omitempty" jsonschema:"reranked or fused, as saved_search_preview answers"`
+	Order       Order     `json:"order,omitempty" jsonschema:"reranked or fused, as saved_search_preview answers"`
 	ComputedAt  string    `json:"computedAt,omitempty" jsonschema:"when the results were computed, RFC 3339"`
 	Warnings    []string  `json:"warnings,omitempty" jsonschema:"what limited the result, or why the run failed"`
 	Errors      []Problem `json:"errors,omitempty" jsonschema:"the problems of a query that is not valid; nothing is written when there are any"`

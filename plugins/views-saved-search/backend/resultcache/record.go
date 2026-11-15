@@ -28,7 +28,7 @@ type Record struct {
 	StaleSince     *time.Time         `json:"staleSince,omitempty"`
 	FailedAt       *time.Time         `json:"failedAt,omitempty"`
 	Failure        string             `json:"failure,omitempty"`
-	Order          string             `json:"order"`
+	Order          api.Order          `json:"order"`
 	CandidateCount int                `json:"candidateCount"`
 	Results        []Result           `json:"results"`
 	RerankScores   map[string]float64 `json:"rerankScores"`
