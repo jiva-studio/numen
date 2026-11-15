@@ -339,8 +339,8 @@ func getConnectionResolve(c pluginsWiring) connectionport.ResolveConnection {
 	return connection.NewResolve(deps).Execute
 }
 
-func getFeedEvents(a pluginsWiring, db *Index) windowsession.FeedEvents {
-	return windowsession.FeedEvents{
+func getFeedStart(a pluginsWiring, db *Index) func(ctx context.Context, v domain.Vault) func() {
+	events := windowsession.FeedEvents{
 		WatchWrites:    db.FeedChanges().Watch,
 		WatchPlugins:   func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
 		ReadHead:       db.FileChanges().GetHead,
@@ -352,4 +352,5 @@ func getFeedEvents(a pluginsWiring, db *Index) windowsession.FeedEvents {
 		Quiet: windowsession.FeedQuietPeriod,
 		After: a.vault.Clock.After,
 	}
+	return func(ctx context.Context, v domain.Vault) func() { return events.Start(ctx, v) }
 }

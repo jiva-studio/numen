@@ -24,11 +24,11 @@ type PassRunner struct {
 	reporter   ChangeReporting
 	passes     VaultPasses
 	triggers   TriggerSource
-	feed       FeedEvents
+	startFeed  func(ctx context.Context, v domain.Vault) func()
 }
 
-// PassRunnerConfig is what a PassRunner is made of. Closing ends every run when it closes. The open of
-// Triggers may be nil.
+// PassRunnerConfig is what a PassRunner is made of. Closing ends every run when it closes. Triggers.Open and
+// StartFeed may be nil.
 type PassRunnerConfig struct {
 	Failures   FailureSink
 	Diag       *Diagnostics
@@ -37,14 +37,14 @@ type PassRunnerConfig struct {
 	Reporter   ChangeReporting
 	Passes     VaultPasses
 	Triggers   TriggerSource
-	Feed       FeedEvents
+	StartFeed  func(ctx context.Context, v domain.Vault) func()
 }
 
 // NewPassRunner makes the runner over the passes of a vault.
 func NewPassRunner(cfg PassRunnerConfig) *PassRunner {
 	return &PassRunner{
 		failures: cfg.Failures, diag: cfg.Diag, closing: cfg.Closing, newSession: cfg.NewSession,
-		reporter: cfg.Reporter, passes: cfg.Passes, triggers: cfg.Triggers, feed: cfg.Feed,
+		reporter: cfg.Reporter, passes: cfg.Passes, triggers: cfg.Triggers, startFeed: cfg.StartFeed,
 	}
 }
 
@@ -84,7 +84,10 @@ func (r *PassRunner) startIndexing(
 
 	var running sync.WaitGroup
 
-	runFeed := r.feed.start(ctx, v)
+	var runFeed func()
+	if r.startFeed != nil {
+		runFeed = r.startFeed(ctx, v)
+	}
 	triggerPasses := newTriggerPasses()
 	started := r.passes.Start(ctx, v, rebuild, Reporters{
 		Changed: r.reporter.newChangeReporter(triggerPasses, func(paths []string) { r.reporter.checkTexts(ctx, v, paths) }),
