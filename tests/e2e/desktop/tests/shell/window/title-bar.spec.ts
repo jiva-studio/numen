@@ -19,14 +19,18 @@ test.describe('The title bar of the plugin', () => {
     await writeSetting(request, [BAR_ID, 'enabled'], true)
   })
 
-  test('draws the bar with its buttons and no strips at the top', async ({ page }) => {
-    await serveRuntime(page, 'windows')
-    await openWorkspace(page)
+  test(
+    'draws the bar with its buttons and no strips at the top',
+    { tag: '@smoke' },
+    async ({ page }) => {
+      await serveRuntime(page, 'windows')
+      await openWorkspace(page)
 
-    await expect(getBar(page)).toBeVisible()
-    await expect(getControl(page, 'close')).toBeVisible()
-    await expect(getTopStrips(page)).toHaveCount(0)
-  })
+      await expect(getBar(page)).toBeVisible()
+      await expect(getControl(page, 'close')).toBeVisible()
+      await expect(getTopStrips(page)).toHaveCount(0)
+    },
+  )
 
   test('minimizes, maximizes and closes the window through the runtime', async ({ page }) => {
     await serveRuntime(page, 'windows')
