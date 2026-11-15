@@ -125,7 +125,7 @@ func (f VaultPassesFunc) Start(ctx context.Context, v domain.Vault, rebuild bool
 type TriggerRunner interface {
 	ExecuteAll(ctx context.Context, v domain.Vault) error
 	Execute(ctx context.Context, v domain.Vault, paths []string) error
-	ExecuteFrontmatter(ctx context.Context, v domain.Vault, paths []string) error
+	ExecuteFrontmatter(ctx context.Context, v domain.Vault, paths []string) ([]string, error)
 }
 
 // TriggerSource is where the passes of the triggers come from. Open returns nil where the window runs

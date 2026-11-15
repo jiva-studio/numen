@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/service"
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
 const functionToken = "tags-token"

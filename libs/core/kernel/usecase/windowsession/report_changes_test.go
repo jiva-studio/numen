@@ -108,11 +108,11 @@ type listing struct {
 	frontmatter [][]string
 }
 
-func (l *listing) ExecuteFrontmatter(_ context.Context, _ domain.Vault, paths []string) error {
+func (l *listing) ExecuteFrontmatter(_ context.Context, _ domain.Vault, paths []string) ([]string, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.frontmatter = append(l.frontmatter, paths)
-	return nil
+	return nil, nil
 }
 
 func (l *listing) listFrontmatterPasses() [][]string {
@@ -208,5 +208,21 @@ func TestNotesWhoseFrontmatterChangedGetAPassOfTheirOwnAfterAPassOverTheWholeVau
 	waitFor(t, func() bool { return len(runner.listFrontmatterPasses()) == 2 })
 	if got := runner.count(); got != 1 {
 		t.Errorf("a frontmatter change ran %d passes over the files, want none beyond the first", got-1)
+	}
+}
+
+func TestKeepFrontmatterAddsToNextPassWithoutSignal(t *testing.T) {
+	passes := newTriggerPasses()
+	passes.take()
+	passes.keepFrontmatter([]string{"notes/a.md"})
+
+	select {
+	case <-passes.wake:
+		t.Error("a note kept for the next pass started a pass")
+	default:
+	}
+	passes.requestFrontmatter([]string{"notes/b.md"})
+	if got := passes.takeFrontmatter(); !slices.Equal(got, []string{"notes/a.md", "notes/b.md"}) {
+		t.Errorf("the next frontmatter pass runs over %v, want the kept note with the changed one", got)
 	}
 }
