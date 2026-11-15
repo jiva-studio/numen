@@ -69,6 +69,9 @@ type Document interface {
 
 // Documents opens the bytes of the file at a path, by its extension.
 type Documents interface {
+	// Prepare starts in the background what opening a document needs, so a recognition prepares while it waits for its turn.
+	// report receives the failure.
+	Prepare(report func(err error))
 	Open(filePath string, raw []byte) (Document, error)
 }
 
@@ -319,6 +322,7 @@ func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task
 	if err != nil {
 		return Result{}, err
 	}
+	r.host.Documents.Prepare(func(err error) { r.reportError("prepare the documents", err) })
 	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: func() {
 		queuedTask := *task
 		if rec != nil {
