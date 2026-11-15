@@ -29,6 +29,7 @@ const GO_MODULES = [
   'plugins/tools-index-stats',
   'plugins/tools-media-importer',
   'plugins/engines-embeddings',
+  'plugins/engines-reranking',
   'plugins/engines-ocr',
   'plugins/tools-proofreading',
   'plugins/tools-search-relevance',
@@ -36,6 +37,7 @@ const GO_MODULES = [
   'plugins/readers-epub',
   'plugins/readers-pdf',
   'plugins/engines-transcription',
+  'plugins/views-saved-search',
 ]
 
 const TS_PACKAGES = ['libs/ui/components', 'apps/desktop/editor', 'apps/desktop/flashcards']

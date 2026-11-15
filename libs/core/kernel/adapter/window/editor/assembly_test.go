@@ -157,7 +157,11 @@ func (w readingParts) GetRefresh(db *testIndex) vault.Refresh {
 }
 
 func (w readingParts) makeRefresh(db *testIndex, notes noteport.NoteRepository) vault.Refresh {
-	refresh := vault.NewRefresh(w.GetVaultReaders(), db.Stores.Vaults, notes, db.Source.RemovalLookup, db.Source.Sources, clock.System{})
+	refresh := vault.NewRefreshFrom(vault.RefreshDeps{
+		Readers: w.GetVaultReaders(), Vaults: db.Stores.Vaults, Notes: notes,
+		Queries: db.Source.RemovalLookup, Sources: db.Source.Sources, Now: clock.System{},
+		Ledger: vault.NewLedger(),
+	})
 	refresh.Cut = w.cutNotes()
 	refresh.Ledger = db.Ledger()
 	return refresh

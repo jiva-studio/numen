@@ -16,7 +16,8 @@
       "onnx/model_quantized.onnx": "f80102d3f2a1229f387d3c81909990d8945513e347b0eab049f7de3c6f98c193",
       "tokenizer.json": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39"
     },
-    "floorHint": 0.81
+    "floorHint": 0.81,
+    "tokenizer": "unigram"
   },
   {
     "id": "onnx-community/harrier-oss-v1-270m-ONNX",
@@ -34,7 +35,8 @@
       "onnx/model_quantized.onnx": "44fe93efec64ac3446703403634fd8410c7dabf3814bf00dc0825f1e2dde75c0",
       "onnx/model_quantized.onnx_data": "a81e3db98eaedd77deafe07d7c3c03b254b7e012790a7a1774295aff03d4fbdf",
       "tokenizer.json": "ec95be298bea26f90370854faa650744c9fb0a04ca5e5ff95dd3913393ac5e45"
-    }
+    },
+    "tokenizer": "bpe"
   },
   {
     "id": "Xenova/bge-m3",
@@ -52,6 +54,7 @@
       "onnx/model_int8.onnx": "a206e10e995aa2a833924bcd725ba5dd6c3425cd34bac3cf2b5677cd2a1c51d6",
       "tokenizer.json": "6710678b12670bc442b99edc952c4d996ae309a7020c1fa0096dd245c2faf790"
     },
-    "floorHint": 0.3
+    "floorHint": 0.3,
+    "tokenizer": "unigram"
   }
 ]

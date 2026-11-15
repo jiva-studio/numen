@@ -103,15 +103,15 @@ func name(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 }
 
-func isPresent(pos string) bool {
-	_, err := os.Stat(pos)
-	return err == nil
-}
-
 func getCacheRoot() string {
 	root, err := cache.GetSharedDirOrPluginDir()
 	if err != nil {
 		return ""
 	}
 	return root
+}
+
+func isPresent(pos string) bool {
+	_, err := os.Stat(pos)
+	return err == nil
 }

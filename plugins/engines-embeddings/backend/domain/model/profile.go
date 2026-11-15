@@ -54,6 +54,7 @@ type Profile struct {
 	SHA256         map[string]string `json:"sha256,omitempty"`
 	ExtraInputs    []string          `json:"extraInputs,omitempty"`
 	FloorHint      float64           `json:"floorHint,omitempty"`
+	Tokenizer      string            `json:"tokenizer"`
 }
 
 // IsNormalized reports whether the vectors of the model are scaled to unit length.
@@ -82,13 +83,15 @@ func (p Profile) GetOptionDetail() string {
 }
 
 // Handling is what is done to a text before the model reads it and to the output after. It decides
-// which vector a text gets, so it is part of the recipe.
+// which vector a text gets, so it is part of the recipe. Tokenizer is the version of the tokenizer the
+// plugin reads the text with: empty for a connection, the mock model and a BPE tokenizer.
 type Handling struct {
 	QueryPrefix    string   `json:"queryPrefix"`
 	DocumentPrefix string   `json:"documentPrefix"`
 	File           string   `json:"file"`
 	Normalize      bool     `json:"normalize"`
 	ExtraInputs    []string `json:"extraInputs"`
+	Tokenizer      string   `json:"tokenizer"`
 }
 
 // Role is what a text is embedded for.
@@ -116,10 +119,14 @@ func (h Handling) Apply(role Role, texts []string) []string {
 	return out
 }
 
-// Hash returns a short value that changes with the prefixes, the model file, the token limit and the
-// normalization, and with nothing else.
+// Hash returns a short value that changes with the prefixes, the model file, the token limit, the
+// normalization and the tokenizer version, and with nothing else. A handling without a tokenizer version
+// hashes as it did before the version joined the hash, so its recipe stays.
 func (h Handling) Hash(maxTokens int) string {
 	parts := []string{h.QueryPrefix, h.DocumentPrefix, h.File, strconv.Itoa(maxTokens), strconv.FormatBool(h.Normalize)}
+	if h.Tokenizer != "" {
+		parts = append(parts, h.Tokenizer)
+	}
 	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
 	return hex.EncodeToString(sum[:])[:handlingHashLength]
 }
@@ -133,6 +140,7 @@ func (p Profile) GetHandling() Handling {
 		File:           p.GetModelFile(),
 		Normalize:      p.IsNormalized(),
 		ExtraInputs:    p.ExtraInputs,
+		Tokenizer:      p.GetTokenizerVersion(),
 	}
 }
 
@@ -161,7 +169,7 @@ func (p Profile) Validate() error {
 	if p.OnnxFile == "" {
 		return fmt.Errorf("%s: a local model needs onnxFile", p.ID)
 	}
-	return nil
+	return checkTokenizerKind(p)
 }
 
 func isPooling(name string) bool {
@@ -223,7 +231,7 @@ func GetShippedProfiles() (*Profiles, error) {
 		return table, fmt.Errorf("profiles.json: %w", err)
 	}
 	for _, p := range list {
-		if err := p.Validate(); err != nil {
+		if err := errors.Join(p.Validate(), checkTokenizerNamed(p)); err != nil {
 			return table, fmt.Errorf("profiles.json: %w", err)
 		}
 		table.put(p)
@@ -304,7 +312,11 @@ func (t *Profiles) layer(entry json.RawMessage) (Profile, error) {
 	if err := decodeStrict(entry, &p); err != nil {
 		return Profile{}, err
 	}
-	if base.ID != "" {
+	if base.ID == "" {
+		if err := checkTokenizerNamed(p); err != nil {
+			return Profile{}, err
+		}
+	} else {
 		p.ID = base.ID
 		dropStalePins(&p, base, entry)
 	}
@@ -369,5 +381,6 @@ func (t *Profiles) GetCurated() []Profile {
 
 // IsZero reports whether the handling changes nothing.
 func (h Handling) IsZero() bool {
-	return h.QueryPrefix == "" && h.DocumentPrefix == "" && h.File == "" && !h.Normalize && len(h.ExtraInputs) == 0
+	return h.QueryPrefix == "" && h.DocumentPrefix == "" && h.File == "" && !h.Normalize && len(h.ExtraInputs) == 0 &&
+		h.Tokenizer == ""
 }

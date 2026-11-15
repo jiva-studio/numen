@@ -38,7 +38,7 @@ type Manifest struct {
 	// targets are the application windows the plugin runs in. Empty means every target.
 	Targets []string `protobuf:"bytes,7,rep,name=targets,proto3" json:"targets,omitempty"`
 	// activation_events are the events that start the plugin's backend and deliver the event to it, such
-	// as `onSearchSourceReady` when the search source has indexed a vault.
+	// as `onIndexChanged` when indexing changed the index of a vault.
 	ActivationEvents []string `protobuf:"bytes,8,rep,name=activation_events,json=activationEvents,proto3" json:"activation_events,omitempty"`
 	Permissions      []string `protobuf:"bytes,9,rep,name=permissions,proto3" json:"permissions,omitempty"`
 	// dependencies are what the host provisions for the plugin: runtimes, models, binaries and datasets.

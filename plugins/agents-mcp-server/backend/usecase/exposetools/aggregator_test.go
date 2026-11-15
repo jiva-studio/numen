@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"slices"
 	"sync"
 	"testing"
 
@@ -102,11 +103,6 @@ func TestAggregatorSyncTools(t *testing.T) {
 		t.Fatalf("GetInstructions() = %q, want %q", got, wantInstructions)
 	}
 
-	names := agg.GetRegisteredTools()
-	if len(names) != 3 || names[0] != "note_delete" || names[1] != "note_read" || names[2] != "note_write" {
-		t.Fatalf("unexpected registered tools: %v", names)
-	}
-
 	serverSide, clientSide := sdk.NewInMemoryTransports()
 	if _, err := mcpServer.Connect(t.Context(), serverSide, nil); err != nil {
 		t.Fatal(err)
@@ -121,8 +117,13 @@ func TestAggregatorSyncTools(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(listed.Tools) != 3 {
-		t.Fatalf("expected 3 tools in MCP server, got %d", len(listed.Tools))
+	names := make([]string, 0, len(listed.Tools))
+	for _, tool := range listed.Tools {
+		names = append(names, tool.Name)
+	}
+	slices.Sort(names)
+	if !slices.Equal(names, []string{"note_delete", "note_read", "note_write"}) {
+		t.Fatalf("the MCP server lists %v, want note_delete, note_read and note_write", names)
 	}
 	for _, tool := range listed.Tools {
 		switch tool.Name {
