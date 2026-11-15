@@ -190,3 +190,47 @@ func TestDeepNestingIsRejected(t *testing.T) {
 		t.Error("40 levels of parentheses were accepted")
 	}
 }
+
+func TestLinkFunctionsParseToSetLeavesWithTheirTargetAndType(t *testing.T) {
+	q, err := parse(`hasLinkTo("Entropy", "requires") && !isChildOf("Physics")`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if countLeaves(q.Root, searchquery.LeafSet) != 2 || len(q.Sets) != 2 || q.IsSearchResults {
+		t.Fatalf("the query is %+v, want two set leaves", q)
+	}
+	if q.Sets[0] != (searchquery.SetCondition{Function: "hasLinkTo", Target: "Entropy", LinkType: "requires", IsPositive: true, Position: searchquery.StartPosition()}) {
+		t.Errorf("the first set is %+v", q.Sets[0])
+	}
+	if q.Sets[1].Function != "isChildOf" || q.Sets[1].IsPositive || !q.Root.Children[1].IsNegated {
+		t.Errorf("the second set is %+v, want a negated isChildOf", q.Sets[1])
+	}
+}
+
+func TestALinkFunctionTakesStringLiteralsAndATarget(t *testing.T) {
+	for text, message := range map[string]string{
+		`hasLinkTo(path)`:             "takes a string literal",
+		`hasLinkTo("  ")`:             "the target of hasLinkTo is empty",
+		`isChildOf("a", "b", "c")`:    "no matching overload",
+		`hasLinkTo("a", "b") == true`: "condition over",
+	} {
+		if problems := getProblems(t, text); !hasProblem(problems, message) {
+			t.Errorf("%s gave %+v, want %q", text, problems, message)
+		}
+	}
+}
+
+func TestAMisspelledLinkFunctionSuggestsTheName(t *testing.T) {
+	problems := getProblems(t, `isDescendentOf("x")`)
+	if len(problems) != 1 || problems[0].Suggestion != "isDescendantOf" {
+		t.Errorf("got %+v, want a suggestion of isDescendantOf", problems)
+	}
+}
+
+func TestEveryCatalogExampleParses(t *testing.T) {
+	for _, f := range searchquery.GetBuiltinCatalog().Functions {
+		if _, err := parse(f.Example); err != nil {
+			t.Errorf("the example of %s, %s, does not parse: %v", f.Name, f.Example, err)
+		}
+	}
+}
