@@ -44,7 +44,8 @@ type WorkQueue interface {
 
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
 // plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
-// window shows a vault; the tools are read at each call.
+// window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
+// every file.
 type Callers struct {
 	Identity  Identity
 	Leases    Leases
@@ -52,6 +53,12 @@ type Callers struct {
 	Tools     func() PluginTools
 	Health    HealthCalls
 	Processes ProcessRelease
+	Files     FileTypes
+}
+
+// FileTypes tells which files a plugin takes, by the types its manifest declares.
+type FileTypes interface {
+	IsTakingFile(pluginID, path string) bool
 }
 
 // ProcessRelease stops the process of a plugin that has finished its work: at once where it holds no

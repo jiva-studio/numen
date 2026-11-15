@@ -3,12 +3,11 @@ package service_test
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchfunction"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/service"
@@ -16,10 +15,8 @@ import (
 )
 
 type plugin struct {
-	vault     *hosttest.Vault
-	commands  *command.Registry
-	tools     *tools.Registry
-	functions *searchfunction.Registry
+	vault *hosttest.Vault
+	app   *service.App
 }
 
 func newPlugin(t *testing.T, files map[string]string) plugin {
@@ -28,21 +25,18 @@ func newPlugin(t *testing.T, files map[string]string) plugin {
 	for path, content := range files {
 		v.File(path, content)
 	}
-	registries, err := service.NewRegistries(service.Host{
-		Shown: v,
-		Open: func(id domain.VaultID) tagcache.Vault {
-			return tagcache.Vault{Frontmatter: v.With(id), Feed: v.With(id), Store: v.Store().With(id)}
-		},
+	app, err := service.NewApp(func(id domain.VaultID) tagcache.Vault {
+		return tagcache.Vault{Frontmatter: v.With(id), Feed: v.With(id), Store: v.Store().With(id)}
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return plugin{vault: v, commands: registries.Commands, tools: registries.Tools, functions: registries.Functions}
+	return plugin{vault: v, app: app}
 }
 
 func (p plugin) listTags(t *testing.T, input string) service.TagListOutput {
 	t.Helper()
-	res, err := p.tools.InvokeTool(t.Context(), tools.Call{Name: "tag_list", Arguments: []byte(input), VaultID: "garden"})
+	res, err := p.app.Tools().InvokeTool(t.Context(), tools.Call{Name: "tag_list", Arguments: []byte(input), VaultID: "garden"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,31 +87,42 @@ func TestTagListWithATagListsOnlyThatTagAndItsNestedTags(t *testing.T) {
 	}
 }
 
-func TestTheUpdateCommandReadsTheChangedTagsOfTheNote(t *testing.T) {
-	p := newPlugin(t, map[string]string{"a.md": "---\ntags: river\n---\n"})
-	p.listTags(t, `{}`)
-
-	p.vault.File("a.md", "---\ntags: lake\n---\n")
-	if _, err := p.commands.RunCommand(t.Context(), command.Request{Command: service.UpdateCommand, Path: "a.md"}); err != nil {
+func (p plugin) deliver(t *testing.T, event string) {
+	t.Helper()
+	if err := p.app.HandleEvent(t.Context(), event); err != nil {
 		t.Fatal(err)
-	}
-
-	if got := p.listTags(t, `{}`); len(got.Tags) != 1 || got.Tags[0].Tag != "lake" {
-		t.Errorf("tags = %+v", got.Tags)
 	}
 }
 
-func TestTheUpdateCommandReadsTheChangedTagsOfEveryNoteOfATrigger(t *testing.T) {
-	p := newPlugin(t, map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: river\n---\n"})
-	p.listTags(t, `{}`)
-
-	p.vault.File("a.md", "---\ntags: lake\n---\n")
-	p.vault.File("b.md", "---\ntags: lake\n---\n")
-	if _, err := p.commands.RunCommand(t.Context(), command.Request{Command: service.UpdateCommand, Paths: []string{"a.md", "b.md"}}); err != nil {
+func readStoredTags(t *testing.T, p plugin) string {
+	t.Helper()
+	content, err := p.vault.Store().With("garden").Read(t.Context(), tagcache.FileName)
+	if err != nil {
 		t.Fatal(err)
 	}
+	return string(content)
+}
 
-	if got := p.listTags(t, `{}`); len(got.Tags) != 1 || got.Tags[0].Tag != "lake" || got.Tags[0].Count != 2 {
-		t.Errorf("tags = %+v", got.Tags)
+func TestAFilesChangedEventReadsTheChangedTagsWithoutATrigger(t *testing.T) {
+	p := newPlugin(t, map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: river\n---\n"})
+	p.deliver(t, "onFilesChanged:garden")
+	if stored := readStoredTags(t, p); !strings.Contains(stored, "river") {
+		t.Fatalf("the first event stored %s", stored)
+	}
+
+	p.vault.File("a.md", "---\ntags: lake\n---\n")
+	p.deliver(t, "onFilesChanged:garden")
+
+	stored := readStoredTags(t, p)
+	if !strings.Contains(stored, "lake") || strings.Count(stored, "river") != 1 {
+		t.Errorf("the event stored %s", stored)
+	}
+}
+
+func TestAnEventOfAnotherKindReadsNothing(t *testing.T) {
+	p := newPlugin(t, map[string]string{"a.md": "---\ntags: river\n---\n"})
+	p.deliver(t, "onIndexChanged:garden")
+	if _, err := p.vault.Store().With("garden").Read(t.Context(), tagcache.FileName); err == nil {
+		t.Error("an onIndexChanged event read the tags")
 	}
 }

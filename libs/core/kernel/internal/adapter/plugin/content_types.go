@@ -45,3 +45,15 @@ func (c *ContentTypes) GetContentType(name string) domain.ContentType {
 func (c *ContentTypes) ListExtensions(mask domain.ContentType) []string {
 	return c.lookup.ListExtensions(c.set.listEnabledPlugins(), mask)
 }
+
+// IsTakingFile reports whether the enabled plugin takes the file at the path: a plugin whose manifest
+// declares onFilesChanged with a mask takes the types it matches, and one that declares none, or one that is not enabled, takes
+// every file.
+func (c *ContentTypes) IsTakingFile(pluginID, path string) bool {
+	for _, p := range c.set.listEnabledPlugins() {
+		if p.Manifest.ID == pluginID {
+			return p.Manifest.IsTakingFileTypes([]domain.ContentType{c.GetContentType(path)})
+		}
+	}
+	return true
+}

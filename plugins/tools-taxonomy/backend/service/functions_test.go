@@ -48,17 +48,14 @@ func newFunctionScene(t *testing.T, files map[string]string) functionScene {
 		v.File(path, content)
 	}
 	isFailing := &atomic.Bool{}
-	registries, err := service.NewRegistries(service.Host{
-		Shown: v,
-		Open: func(id domain.VaultID) tagcache.Vault {
-			return tagcache.Vault{Frontmatter: failingFrontmatter{Frontmatter: v.With(id), isFailing: isFailing}, Feed: v.With(id), Store: v.Store().With(id)}
-		},
+	app, err := service.NewApp(func(id domain.VaultID) tagcache.Vault {
+		return tagcache.Vault{Frontmatter: failingFrontmatter{Frontmatter: v.With(id), isFailing: isFailing}, Feed: v.With(id), Store: v.Store().With(id)}
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": functionToken}, func(s *server.Server) error {
-		registries.Functions.Mount(s)
+		app.Functions().Mount(s)
 		return nil
 	})
 	if err != nil {
