@@ -107,7 +107,7 @@ func (s *feedStub) requireEmitted(t *testing.T, want int) {
 func startFeedEvents(t *testing.T, stub *feedStub) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
-	run := stub.events().start(ctx, garden())
+	run := stub.events().Start(ctx, garden())
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -175,7 +175,7 @@ func TestAChangeOfThePluginsSendsTheEventAgain(t *testing.T) {
 }
 
 func TestAWindowWithoutPluginsWatchesNoFeed(t *testing.T) {
-	if run := (FeedEvents{}).start(t.Context(), garden()); run != nil {
+	if run := (FeedEvents{}).Start(t.Context(), garden()); run != nil {
 		t.Error("a window without plugins runs a feed loop")
 	}
 }
