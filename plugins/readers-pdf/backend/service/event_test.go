@@ -44,13 +44,17 @@ func TestAStartedPluginFollowsTheFeedOfTheShownVault(t *testing.T) {
 		}
 	}()
 
-	deadline := time.Now().Add(10 * time.Second)
-	for time.Now().Before(deadline) {
+	deadline := time.After(10 * time.Second)
+	for {
 		follower.Wait()
 		if got := f.Texts.TakeChanges(); slices.Equal(got, []string{"books/tiny.pdf"}) {
 			return
 		}
-		time.Sleep(10 * time.Millisecond)
+		select {
+		case <-deadline:
+			t.Error("the started plugin made no text layer of books/tiny.pdf")
+			return
+		case <-time.After(10 * time.Millisecond):
+		}
 	}
-	t.Error("the started plugin made no text layer of books/tiny.pdf")
 }

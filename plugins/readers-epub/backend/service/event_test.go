@@ -66,13 +66,17 @@ func TestAStartedPluginFollowsTheFeedOfTheShownVault(t *testing.T) {
 		}
 	}()
 
-	deadline := time.Now().Add(10 * time.Second)
-	for time.Now().Before(deadline) {
+	deadline := time.After(10 * time.Second)
+	for {
 		follower.Wait()
 		if kinds := listKinds(t, versions); slices.Equal(kinds, []string{string(texts.Kind)}) {
 			return
 		}
-		time.Sleep(10 * time.Millisecond)
+		select {
+		case <-deadline:
+			t.Error("the started plugin made no text of book.epub")
+			return
+		case <-time.After(10 * time.Millisecond):
+		}
 	}
-	t.Error("the started plugin made no text of book.epub")
 }
