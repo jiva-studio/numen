@@ -5,6 +5,7 @@ package searchrun
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -20,3 +21,9 @@ type RunQuery func(ctx context.Context, v domain.Vault, r searchquery.Request) (
 
 // PluginNames returns the manifest name of a plugin, which its search tasks show.
 type PluginNames func(pluginID string) string
+
+// SearchSlots limits how many searches run at once and queues the others by priority.
+type SearchSlots interface {
+	Acquire(ctx context.Context, priority modelcall.Priority) error
+	Release()
+}

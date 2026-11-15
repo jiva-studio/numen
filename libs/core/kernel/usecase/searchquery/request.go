@@ -2,23 +2,10 @@ package searchquery
 
 import (
 	"errors"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-type request struct {
-	vault  domain.Vault
-	query  searchquery.Query
-	scopes []searchquery.Scope
-	found  searchquery.FoundPaths
-	recipe string
-	floor  float64
-	limits searchquery.Limits
-	zone   *time.Location
-}
 
 type warnings struct {
 	list []string
@@ -28,11 +15,11 @@ func (w *warnings) add(text string) {
 	w.list = append(w.list, text)
 }
 
-func (r *request) getWordsError(index int, err error) error {
+func getWordsError(req *searchquery.Evaluation, index int, err error) error {
 	if !isInvalidWords(err) {
 		return err
 	}
-	position, _ := findConditionPosition(r.query.Root, index)
+	position, _ := findConditionPosition(req.Query.Root, index)
 	return &searchquery.ParseError{Problems: []searchquery.Problem{{Position: position, Message: messageInvalidWords}}}
 }
 
