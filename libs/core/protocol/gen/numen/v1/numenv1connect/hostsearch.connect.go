@@ -54,6 +54,9 @@ const (
 	// HostSearchServiceSearchTextProcedure is the fully-qualified name of the HostSearchService's
 	// SearchText RPC.
 	HostSearchServiceSearchTextProcedure = "/numen.v1.HostSearchService/SearchText"
+	// HostSearchServiceScoreChunksProcedure is the fully-qualified name of the HostSearchService's
+	// ScoreChunks RPC.
+	HostSearchServiceScoreChunksProcedure = "/numen.v1.HostSearchService/ScoreChunks"
 	// HostSearchServiceGetSearchFloorProcedure is the fully-qualified name of the HostSearchService's
 	// GetSearchFloor RPC.
 	HostSearchServiceGetSearchFloorProcedure = "/numen.v1.HostSearchService/GetSearchFloor"
@@ -95,6 +98,15 @@ type HostSearchServiceClient interface {
 	// installation has an embedding model. It is the search the window runs, with
 	// the window's similarity threshold.
 	SearchText(context.Context, *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error)
+	// ScoreChunks scores chunks of the vault against conditions over the whole
+	// of each chunk. A chunk is the large chunk enclosing the given id, the range
+	// a SearchResult covers. A meaning condition is embedded once and compared
+	// with the stored vector of every small chunk inside the chunk; the best one
+	// is the similarity, and it matches when it reaches the effective floor of
+	// the vault under the recipe. A words condition is an FTS5 query and matches
+	// when the whole text of the chunk matches it. At most 500 chunks and 16
+	// conditions of at most 8192 bytes each; more is LIMIT_EXCEEDED.
+	ScoreChunks(context.Context, *connect.Request[v1.ScoreChunksRequest]) (*connect.Response[v1.ScoreChunksResponse], error)
 	// GetSearchFloor is the floor a search by meaning applies to the vault under
 	// the recipe, and where it comes from.
 	GetSearchFloor(context.Context, *connect.Request[v1.GetSearchFloorRequest]) (*connect.Response[v1.GetSearchFloorResponse], error)
@@ -157,6 +169,12 @@ func NewHostSearchServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(hostSearchServiceMethods.ByName("SearchText")),
 			connect.WithClientOptions(opts...),
 		),
+		scoreChunks: connect.NewClient[v1.ScoreChunksRequest, v1.ScoreChunksResponse](
+			httpClient,
+			baseURL+HostSearchServiceScoreChunksProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("ScoreChunks")),
+			connect.WithClientOptions(opts...),
+		),
 		getSearchFloor: connect.NewClient[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse](
 			httpClient,
 			baseURL+HostSearchServiceGetSearchFloorProcedure,
@@ -181,6 +199,7 @@ type hostSearchServiceClient struct {
 	getBestSimilarity  *connect.Client[v1.GetBestSimilarityRequest, v1.GetBestSimilarityResponse]
 	findNearestChunks  *connect.Client[v1.FindNearestChunksRequest, v1.FindNearestChunksResponse]
 	searchText         *connect.Client[v1.HostSearchServiceSearchTextRequest, v1.HostSearchServiceSearchTextResponse]
+	scoreChunks        *connect.Client[v1.ScoreChunksRequest, v1.ScoreChunksResponse]
 	getSearchFloor     *connect.Client[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse]
 	setSearchFloor     *connect.Client[v1.SetSearchFloorRequest, v1.SetSearchFloorResponse]
 }
@@ -218,6 +237,11 @@ func (c *hostSearchServiceClient) FindNearestChunks(ctx context.Context, req *co
 // SearchText calls numen.v1.HostSearchService.SearchText.
 func (c *hostSearchServiceClient) SearchText(ctx context.Context, req *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error) {
 	return c.searchText.CallUnary(ctx, req)
+}
+
+// ScoreChunks calls numen.v1.HostSearchService.ScoreChunks.
+func (c *hostSearchServiceClient) ScoreChunks(ctx context.Context, req *connect.Request[v1.ScoreChunksRequest]) (*connect.Response[v1.ScoreChunksResponse], error) {
+	return c.scoreChunks.CallUnary(ctx, req)
 }
 
 // GetSearchFloor calls numen.v1.HostSearchService.GetSearchFloor.
@@ -263,6 +287,15 @@ type HostSearchServiceHandler interface {
 	// installation has an embedding model. It is the search the window runs, with
 	// the window's similarity threshold.
 	SearchText(context.Context, *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error)
+	// ScoreChunks scores chunks of the vault against conditions over the whole
+	// of each chunk. A chunk is the large chunk enclosing the given id, the range
+	// a SearchResult covers. A meaning condition is embedded once and compared
+	// with the stored vector of every small chunk inside the chunk; the best one
+	// is the similarity, and it matches when it reaches the effective floor of
+	// the vault under the recipe. A words condition is an FTS5 query and matches
+	// when the whole text of the chunk matches it. At most 500 chunks and 16
+	// conditions of at most 8192 bytes each; more is LIMIT_EXCEEDED.
+	ScoreChunks(context.Context, *connect.Request[v1.ScoreChunksRequest]) (*connect.Response[v1.ScoreChunksResponse], error)
 	// GetSearchFloor is the floor a search by meaning applies to the vault under
 	// the recipe, and where it comes from.
 	GetSearchFloor(context.Context, *connect.Request[v1.GetSearchFloorRequest]) (*connect.Response[v1.GetSearchFloorResponse], error)
@@ -321,6 +354,12 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 		connect.WithSchema(hostSearchServiceMethods.ByName("SearchText")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostSearchServiceScoreChunksHandler := connect.NewUnaryHandler(
+		HostSearchServiceScoreChunksProcedure,
+		svc.ScoreChunks,
+		connect.WithSchema(hostSearchServiceMethods.ByName("ScoreChunks")),
+		connect.WithHandlerOptions(opts...),
+	)
 	hostSearchServiceGetSearchFloorHandler := connect.NewUnaryHandler(
 		HostSearchServiceGetSearchFloorProcedure,
 		svc.GetSearchFloor,
@@ -349,6 +388,8 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 			hostSearchServiceFindNearestChunksHandler.ServeHTTP(w, r)
 		case HostSearchServiceSearchTextProcedure:
 			hostSearchServiceSearchTextHandler.ServeHTTP(w, r)
+		case HostSearchServiceScoreChunksProcedure:
+			hostSearchServiceScoreChunksHandler.ServeHTTP(w, r)
 		case HostSearchServiceGetSearchFloorProcedure:
 			hostSearchServiceGetSearchFloorHandler.ServeHTTP(w, r)
 		case HostSearchServiceSetSearchFloorProcedure:
@@ -388,6 +429,10 @@ func (UnimplementedHostSearchServiceHandler) FindNearestChunks(context.Context, 
 
 func (UnimplementedHostSearchServiceHandler) SearchText(context.Context, *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.SearchText is not implemented"))
+}
+
+func (UnimplementedHostSearchServiceHandler) ScoreChunks(context.Context, *connect.Request[v1.ScoreChunksRequest]) (*connect.Response[v1.ScoreChunksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.ScoreChunks is not implemented"))
 }
 
 func (UnimplementedHostSearchServiceHandler) GetSearchFloor(context.Context, *connect.Request[v1.GetSearchFloorRequest]) (*connect.Response[v1.GetSearchFloorResponse], error) {

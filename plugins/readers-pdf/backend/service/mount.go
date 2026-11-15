@@ -36,6 +36,7 @@ func Mount(s *server.Server) error {
 
 func mountClients(s *server.Server, files *host.Client, texts *host.TextClient, store *host.StoreClient, queue host.Queue) error {
 	workers := pdfworkers.New(clock.AfterFunc)
+	s.SetUpdateConfig(func(values map[string]string) { pdfworkers.Configure(workers, values) })
 	reader := document.NewReader(
 		func(id domain.VaultID) host.FileReader { return files.With(id) },
 		func(id domain.VaultID) document.LiveTexts { return texts.With(id) },

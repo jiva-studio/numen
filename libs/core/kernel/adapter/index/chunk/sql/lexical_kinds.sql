@@ -17,7 +17,8 @@ SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.content_hash, 
        COALESCE(p.start, c.start),
        COALESCE(p.length, c.length),
        COALESCE(p.location, c.location, ''),
-       c.start - COALESCE(p.start, c.start)
+       c.start - COALESCE(p.start, c.start),
+       -h.rank
 FROM hits h
 JOIN chunks c ON c.id = h.rowid
 JOIN sources s ON s.id = c.source_id

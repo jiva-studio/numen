@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -99,8 +100,8 @@ func TestTheSearchKeepsAtMostThreeResultsOfOneSource(t *testing.T) {
 	}
 	search.SetIndexedResults(many)
 	got, err := search.SearchText(t.Context(), host.SearchResultQuery{Query: "heron"})
-	if err != nil || len(got) != host.MaxSearchedResultsPerSource {
-		t.Errorf("found %d passages of one source, %v, want %d", len(got), err, host.MaxSearchedResultsPerSource)
+	if err != nil || len(got) != host.DefaultSearchedResultsPerSource {
+		t.Errorf("found %d passages of one source, %v, want %d", len(got), err, host.DefaultSearchedResultsPerSource)
 	}
 	if !slices.IsSortedFunc(got, func(a, b host.SearchResult) int { return a.Start - b.Start }) {
 		t.Errorf("the passages are not in the order of the index: %+v", got)
@@ -140,5 +141,26 @@ func TestSearchTextAppliesDefaultAndMaximumLimit(t *testing.T) {
 	capped, err := search.SearchText(t.Context(), host.SearchResultQuery{Query: "heron", Limit: host.MaxSearchedResults * 2})
 	if err != nil || len(capped) != host.MaxSearchedResults {
 		t.Errorf("a limit above the most found %d, %v, want %d", len(capped), err, host.MaxSearchedResults)
+	}
+}
+
+func TestTheSearchReturnsTheWholeIndexedTextWhenAsked(t *testing.T) {
+	search := newSearch()
+	long := strings.Repeat("reeds and water ", 200) + "the gray heron"
+	search.SetIndexedResults([]host.SearchResult{{Path: "library/Marsh.pdf", Text: long, Start: 0, Length: len(long)}})
+
+	asked, err := search.SearchText(t.Context(), host.SearchResultQuery{Query: "heron", IsWholeText: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	plain, err := search.SearchText(t.Context(), host.SearchResultQuery{Query: "heron"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(asked) != 1 || asked[0].WholeText != long || len(asked[0].Text) > host.MaxExcerptBytes {
+		t.Errorf("asked: found %d results, want one with the whole text and an excerpt", len(asked))
+	}
+	if len(plain) != 1 || plain[0].WholeText != "" {
+		t.Errorf("not asked: found %+v, want one result with no whole text", plain)
 	}
 }

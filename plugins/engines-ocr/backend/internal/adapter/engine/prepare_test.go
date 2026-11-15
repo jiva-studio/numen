@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 )
 
 func findRuntime(t *testing.T) string {

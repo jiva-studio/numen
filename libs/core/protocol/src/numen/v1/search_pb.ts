@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIkUKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIRCglzZWFyY2hfaWQYAyABKAkiOQoTU2VhcmNoTmFtZXNSZXNwb25zZRIiCgVmb3VuZBgBIAMoCzITLm51bWVuLnYxLk5hbWVNYXRjaCKfAQoJTmFtZU1hdGNoEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESHwoGcmFuZ2VzGAMgAygLMg8ubnVtZW4udjEuUmFuZ2USDAoEdHlwZRgEIAEoCRIQCgh0YWJfa2luZBgFIAEoCUIKCghfaGVhZGluZyJoChFTZWFyY2hUZXh0UmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZRIRCglzZWFyY2hfaWQYBCABKAkiKAoTQ2FuY2VsU2VhcmNoUmVxdWVzdBIRCglzZWFyY2hfaWQYASABKAkiFgoUQ2FuY2VsU2VhcmNoUmVzcG9uc2UiOwoSU2VhcmNoVGV4dFJlc3BvbnNlEiUKBWZvdW5kGAEgAygLMhYubnVtZW4udjEuU2VhcmNoUmVzdWx0Iv0BCgxTZWFyY2hSZXN1bHQSDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSJQoMbWF0Y2hfcmFuZ2VzGAQgAygLMg8ubnVtZW4udjEuUmFuZ2USEwoLcGxhY2VfbGFiZWwYBSABKAkSIwoKYnl0ZV9yYW5nZRgGIAEoCzIPLm51bWVuLnYxLlJhbmdlEhIKCm1hdGNoX2xpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCRIQCgh0YWJfa2luZBgLIAEoCUIHCgVfbm90ZSqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQy8wEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlEkcKClNlYXJjaFRleHQSGy5udW1lbi52MS5TZWFyY2hUZXh0UmVxdWVzdBocLm51bWVuLnYxLlNlYXJjaFRleHRSZXNwb25zZRJNCgxDYW5jZWxTZWFyY2gSHS5udW1lbi52MS5DYW5jZWxTZWFyY2hSZXF1ZXN0Gh4ubnVtZW4udjEuQ2FuY2VsU2VhcmNoUmVzcG9uc2VCRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIkUKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIRCglzZWFyY2hfaWQYAyABKAkiOQoTU2VhcmNoTmFtZXNSZXNwb25zZRIiCgVmb3VuZBgBIAMoCzITLm51bWVuLnYxLk5hbWVNYXRjaCKfAQoJTmFtZU1hdGNoEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESHwoGcmFuZ2VzGAMgAygLMg8ubnVtZW4udjEuUmFuZ2USDAoEdHlwZRgEIAEoCRIQCgh0YWJfa2luZBgFIAEoCUIKCghfaGVhZGluZyJoChFTZWFyY2hUZXh0UmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZRIRCglzZWFyY2hfaWQYBCABKAkiKAoTQ2FuY2VsU2VhcmNoUmVxdWVzdBIRCglzZWFyY2hfaWQYASABKAkiFgoUQ2FuY2VsU2VhcmNoUmVzcG9uc2UiOwoSU2VhcmNoVGV4dFJlc3BvbnNlEiUKBWZvdW5kGAEgAygLMhYubnVtZW4udjEuU2VhcmNoUmVzdWx0IvMCCgxTZWFyY2hSZXN1bHQSDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSJQoMbWF0Y2hfcmFuZ2VzGAQgAygLMg8ubnVtZW4udjEuUmFuZ2USEwoLcGxhY2VfbGFiZWwYBSABKAkSIwoKYnl0ZV9yYW5nZRgGIAEoCzIPLm51bWVuLnYxLlJhbmdlEhIKCm1hdGNoX2xpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCRIQCgh0YWJfa2luZBgLIAEoCRIQCghjaHVua19pZBgMIAEoCRIXCgpzaW1pbGFyaXR5GA0gASgBSAGIAQESFwoKd29yZF9zY29yZRgOIAEoAUgCiAEBEhIKCndob2xlX3RleHQYDyABKAlCBwoFX25vdGVCDQoLX3NpbWlsYXJpdHlCDQoLX3dvcmRfc2NvcmUqiAEKClNlYXJjaE1vZGUSGwoXU0VBUkNIX01PREVfVU5TUEVDSUZJRUQQABIVChFTRUFSQ0hfTU9ERV9XT1JEUxABEhcKE1NFQVJDSF9NT0RFX01FQU5JTkcQAhIVChFTRUFSQ0hfTU9ERV9OQU1FUxADEhYKElNFQVJDSF9NT0RFX0hZQlJJRBAEMvMBCg1TZWFyY2hTZXJ2aWNlEkoKC1NlYXJjaE5hbWVzEhwubnVtZW4udjEuU2VhcmNoTmFtZXNSZXF1ZXN0Gh0ubnVtZW4udjEuU2VhcmNoTmFtZXNSZXNwb25zZRJHCgpTZWFyY2hUZXh0EhsubnVtZW4udjEuU2VhcmNoVGV4dFJlcXVlc3QaHC5udW1lbi52MS5TZWFyY2hUZXh0UmVzcG9uc2USTQoMQ2FuY2VsU2VhcmNoEh0ubnVtZW4udjEuQ2FuY2VsU2VhcmNoUmVxdWVzdBoeLm51bWVuLnYxLkNhbmNlbFNlYXJjaFJlc3BvbnNlQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -298,6 +298,40 @@ export type SearchResult = Message<"numen.v1.SearchResult"> & {
    * @generated from field: string tab_kind = 11;
    */
   tabKind: string;
+
+  /**
+   * The chunk that was hit, as the host names it. A plugin passes it to
+   * HostSearchService.ScoreChunks. Empty in the answer to the window.
+   *
+   * @generated from field: string chunk_id = 12;
+   */
+  chunkId: string;
+
+  /**
+   * The cosine similarity of the query with the best small chunk of this
+   * result that the search by meaning returned. Absent when the search by
+   * meaning did not return this result.
+   *
+   * @generated from field: optional double similarity = 13;
+   */
+  similarity?: number | undefined;
+
+  /**
+   * The negated bm25 score of the best hit of the words of the query in this
+   * result: positive, higher is better, comparable only within one query.
+   * Absent when the search by words did not return this result.
+   *
+   * @generated from field: optional double word_score = 14;
+   */
+  wordScore?: number | undefined;
+
+  /**
+   * The whole text of the chunk the text is cut from. Set only in the answer
+   * to a HostSearchService.SearchText that sets is_whole_text.
+   *
+   * @generated from field: string whole_text = 15;
+   */
+  wholeText: string;
 };
 
 /**

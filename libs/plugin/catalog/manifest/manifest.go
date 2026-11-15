@@ -87,12 +87,16 @@ func (m Manifest) ListConnectionsUse() []string {
 	return operations
 }
 
-// ActivationEventSearchSourceReady is the event the host emits when the search source has indexed a vault.
-const ActivationEventSearchSourceReady = "onSearchSourceReady"
+// ActivationEventIndexChanged is the event the host emits when indexing changed the index of a vault.
+const ActivationEventIndexChanged = "onIndexChanged"
+
+// ActivationEventFilesChanged is the event the host emits when the index wrote changes into the file change
+// feed of a vault.
+const ActivationEventFilesChanged = "onFilesChanged"
 
 // PluginActivationEvents is every activation event pattern a manifest may declare.
 func PluginActivationEvents() []string {
-	return []string{ActivationEventSearchSourceReady}
+	return []string{ActivationEventIndexChanged, ActivationEventFilesChanged}
 }
 
 // PluginCapabilities is every capability a manifest may declare: the capabilities the host resolves
@@ -472,9 +476,9 @@ func (m Manifest) IsActivatedBy(event string) bool {
 }
 
 func isMatchingActivationEvent(declared, event string) bool {
-	if declared != ActivationEventSearchSourceReady {
+	if !isValidActivationEvent(declared) {
 		return false
 	}
-	vaultID, isScoped := strings.CutPrefix(event, ActivationEventSearchSourceReady+":")
-	return event == ActivationEventSearchSourceReady || (isScoped && vaultID != "")
+	vaultID, isScoped := strings.CutPrefix(event, declared+":")
+	return event == declared || (isScoped && vaultID != "")
 }
