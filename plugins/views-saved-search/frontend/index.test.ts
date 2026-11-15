@@ -4,7 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TabKindRegistration, WorkspaceHost } from '@numen/plugin-sdk'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import { HARBOR, NOTE_PATH } from './results/fixtures/responses'
 import type { SavedSearchTabState } from './results'
 import { activate } from './index'
@@ -44,9 +44,9 @@ afterEach(() => {
 describe('the saved search frontend', () => {
   it('registers the saved-search kind', () => {
     const { workspace } = createWorkspace()
-    const context = createMockPluginContext({ pluginId: 'md.numen.views.saved.search', workspace })
+    const context = createMockPluginContext({ pluginId: 'md.numen.views.saved.search' })
 
-    activate(context)
+    activate(context, createMockHostServices({ workspace }))
 
     expect(context.getRegisteredTabKinds().map((kind) => kind.kind)).toStrictEqual(['saved-search'])
   })
@@ -54,7 +54,7 @@ describe('the saved search frontend', () => {
   it('registers nothing in a window without a workspace', () => {
     const context = createMockPluginContext({ pluginId: 'md.numen.views.saved.search' })
 
-    activate(context)
+    activate(context, createMockHostServices())
 
     expect(context.getRegisteredTabKinds()).toStrictEqual([])
   })
@@ -64,8 +64,8 @@ describe('the saved search frontend', () => {
       serveBackend(String(url), init),
     )
     const { workspace, openAt } = createWorkspace()
-    const context = createMockPluginContext({ pluginId: 'md.numen.views.saved.search', workspace })
-    activate(context)
+    const context = createMockPluginContext({ pluginId: 'md.numen.views.saved.search' })
+    activate(context, createMockHostServices({ workspace }))
     const [kind] = context.getRegisteredTabKinds() as TabKindRegistration<SavedSearchTabState>[]
     if (!kind?.open) throw new Error('the saved search kind opens no tab')
 

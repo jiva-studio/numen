@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { WorkspaceHost } from '@numen/plugin-sdk'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import { activate } from './index'
 
 interface TabKind {
@@ -27,12 +27,10 @@ const manifest = JSON.parse(
 
 describe('the manifest of the saved search frontend', () => {
   it('declares the kind it registers', () => {
-    const context = createMockPluginContext({
-      pluginId: 'md.numen.views.saved.search',
-      workspace: { files: { openAt: () => undefined } } as unknown as WorkspaceHost,
-    })
+    const context = createMockPluginContext({ pluginId: 'md.numen.views.saved.search' })
+    const workspace = { files: { openAt: () => undefined } } as unknown as WorkspaceHost
 
-    activate(context)
+    activate(context, createMockHostServices({ workspace }))
 
     expect(manifest.contributes.tabKinds?.map((one) => one.kind)).toStrictEqual(
       context.getRegisteredTabKinds().map((one) => one.kind),
