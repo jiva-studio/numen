@@ -14,7 +14,6 @@ export interface SearchableListProps {
   hasAction?: boolean
   needsQuery?: boolean
   chosen?: readonly string[] | undefined
-  /** The element that opened the list: a press on it is left to it, so it can close the list. */
   from?: HTMLElement | null
 }
 
