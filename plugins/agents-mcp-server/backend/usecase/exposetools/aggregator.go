@@ -71,18 +71,6 @@ func (a *Aggregator) getClient() Host {
 	return a.client
 }
 
-// GetRegisteredTools returns the sorted list of currently registered tool names.
-func (a *Aggregator) GetRegisteredTools() []string {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	names := make([]string, 0, len(a.registered))
-	for name := range a.registered {
-		names = append(names, name)
-	}
-	slices.Sort(names)
-	return names
-}
-
 // GetInstructions returns the distinct instructions of the tools registered at the latest sync, in
 // listing order, joined with one space.
 func (a *Aggregator) GetInstructions() string {

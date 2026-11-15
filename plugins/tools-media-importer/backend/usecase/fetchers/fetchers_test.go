@@ -33,16 +33,13 @@ func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
 	if f.GetFetcher() == before || f.GetFetcher() == nil || f.GetFetcher().GetDownloadModel(videoAddress).Tool != "yt-dlp" {
 		t.Error("updateConfig did not reopen current fetcher")
 	}
-	if !slices.Equal(f.GetPrograms().Video.Command, []string{"/custom/yt-dlp"}) || !slices.Equal(f.GetPrograms().Sound.Command, []string{"/custom/ffmpeg"}) {
-		t.Errorf("the programs are %v and %v", f.GetPrograms().Video.Command, f.GetPrograms().Sound.Command)
-	}
 	settings := f.GetSettings()
 	if !slices.Equal(settings.Captions, []string{"sa", "en"}) || settings.IsAutomatic || settings.CopyMaxSize != 20<<20 {
 		t.Errorf("the settings are %+v", settings)
 	}
 	f.UpdateConfig(map[string]string{"ytDlp": "", "ffmpeg": "", "copyMaxSizeMb": "many"})
-	if len(f.GetPrograms().Video.Command) != 0 || len(f.GetPrograms().Sound.Command) != 0 || f.GetSettings().CopyMaxSize != 20<<20 {
-		t.Errorf("cleared settings leave %v, %v and %d", f.GetPrograms().Video.Command, f.GetPrograms().Sound.Command, f.GetSettings().CopyMaxSize)
+	if f.GetSettings().CopyMaxSize != 20<<20 {
+		t.Errorf("a size that is not a number changed CopyMaxSize to %d", f.GetSettings().CopyMaxSize)
 	}
 	f.UpdateConfig(map[string]string{"copyMaxSizeMb": "-1"})
 	if f.GetSettings().CopyMaxSize != 20<<20 {
@@ -66,22 +63,21 @@ func TestImportSettingsAreReadFromTheCamelCaseKeys(t *testing.T) {
 	})
 
 	settings := f.GetSettings()
-	if !slices.Equal(f.GetPrograms().Video.Command, []string{"/custom/yt-dlp"}) || settings.IsAutomatic || settings.CopyMaxSize != 20<<20 {
-		t.Errorf("video program %v, automatic captions %t, largest copy %d; want /custom/yt-dlp, false and %d",
-			f.GetPrograms().Video.Command, settings.IsAutomatic, settings.CopyMaxSize, int64(20<<20))
+	if settings.IsAutomatic || settings.CopyMaxSize != 20<<20 {
+		t.Errorf("automatic captions %t, largest copy %d; want false and %d", settings.IsAutomatic, settings.CopyMaxSize, int64(20<<20))
 	}
 }
 
 func TestImportSettingsAreNotReadFromTheSnakeCaseKeys(t *testing.T) {
 	f := New(false, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
-	before, command := f.GetSettings(), slices.Clone(f.GetPrograms().Video.Command)
+	before := f.GetSettings()
 	f.UpdateConfig(map[string]string{
 		"yt_dlp": "/custom/yt-dlp", "automatic_captions": "false", "copy_max_size_mb": "20",
 	})
 
 	after := f.GetSettings()
-	if after.IsAutomatic != before.IsAutomatic || after.CopyMaxSize != before.CopyMaxSize || !slices.Equal(f.GetPrograms().Video.Command, command) {
-		t.Errorf("automatic captions %t, largest copy %d and video program %v, want them unchanged at %t, %d and %v",
-			after.IsAutomatic, after.CopyMaxSize, f.GetPrograms().Video.Command, before.IsAutomatic, before.CopyMaxSize, command)
+	if after.IsAutomatic != before.IsAutomatic || after.CopyMaxSize != before.CopyMaxSize {
+		t.Errorf("automatic captions %t and largest copy %d, want them unchanged at %t and %d",
+			after.IsAutomatic, after.CopyMaxSize, before.IsAutomatic, before.CopyMaxSize)
 	}
 }

@@ -10,13 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -65,7 +64,7 @@ func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string
 }
 
 func scanner(readers vaultport.VaultReaders, db *container.Index) vaults.Scan {
-	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
+	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	scan.Walks = &db.Walks
 	return scan
 }
@@ -73,7 +72,7 @@ func scanner(readers vaultport.VaultReaders, db *container.Index) vaults.Scan {
 func TestScanIndexesEveryNoteOnce(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 
 	res, err := scanner(readers, db).Execute(ctx, v)
@@ -102,8 +101,8 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 func TestAScanSeesBooksAdjacentNotes(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	root := vaultfixture.CopyVault(t)
-	vaultfixture.WriteBook(t, root, "library/A Book.epub")
+	root := vaulttest.CopyVault(t)
+	vaulttest.WriteBook(t, root, "library/A Book.epub")
 	v, readers := vaultAt(t, root)
 	db := openIndex(t)
 
@@ -135,7 +134,7 @@ func TestAScanSeesBooksAdjacentNotes(t *testing.T) {
 // file of any format is a source of another kind.
 func TestEveryFileThatIsNotANoteIsAnAsset(t *testing.T) {
 	t.Parallel()
-	root := vaultfixture.CopyVault(t)
+	root := vaulttest.CopyVault(t)
 	if err := os.WriteFile(filepath.Join(root, "assets", "scan.png"), []byte("PNG"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -161,17 +160,17 @@ func TestEveryFileThatIsNotANoteIsAnAsset(t *testing.T) {
 func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	first := vaultfixture.NewVault(t, map[string]string{
+	first := vaulttest.NewVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\nthermodynamics\n",
 	})
-	vaultfixture.WriteBook(t, first.Path, "library/Thermodynamics.epub")
+	vaulttest.WriteBook(t, first.Path, "library/Thermodynamics.epub")
 
-	second := vaultfixture.NewVault(t, map[string]string{
+	second := vaulttest.NewVault(t, map[string]string{
 		"Quasar.md": "---\ntitle: Quasar\n---\n\n# Quasar\n\nredshift\n",
 		"Pulsar.md": "---\ntitle: Pulsar\n---\n\n# Pulsar\n\nredshift\n",
 	})
-	vaultfixture.WriteBook(t, second.Path, "shelf/Astronomy.epub")
-	vaultfixture.WriteBook(t, second.Path, "shelf/Cosmology.epub")
+	vaulttest.WriteBook(t, second.Path, "shelf/Astronomy.epub")
+	vaulttest.WriteBook(t, second.Path, "shelf/Cosmology.epub")
 
 	db := openIndex(t)
 	scan := scanner(vaultreader.Readers{}, db)
@@ -208,7 +207,7 @@ func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
 func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
 		t.Fatal(err)
@@ -224,7 +223,7 @@ func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 func TestSecondScanOpensNoFiles(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 
 	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
@@ -251,7 +250,7 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 	ctx := t.Context()
 	// A copy, because this test writes: the fixture is shared and must stay
 	// exactly as committed.
-	root := vaultfixture.CopyVault(t)
+	root := vaulttest.CopyVault(t)
 	v, readers := vaultAt(t, root)
 	db := openIndex(t)
 	scan := scanner(readers, db)
@@ -353,8 +352,8 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 	ctx := t.Context()
 	db := openIndex(t)
 
-	first, readers := vaultAt(t, vaultfixture.VaultDir(t))
-	second := vaultfixture.NewVault(t, map[string]string{
+	first, readers := vaultAt(t, vaulttest.VaultDir(t))
+	second := vaulttest.NewVault(t, map[string]string{
 		"quasar.md": "# Quasar\n\nA word that exists in no other vault.\n",
 	})
 
@@ -393,10 +392,10 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 	// vault's note looks unchanged and is never indexed — silently, with the
 	// scan reporting success.
 	shared := "notes/Entropy.md"
-	first := vaultfixture.NewVault(t, map[string]string{
+	first := vaulttest.NewVault(t, map[string]string{
 		shared: "# Entropy\n\nthe first vault\n",
 	})
-	second := vaultfixture.NewVault(t, map[string]string{
+	second := vaulttest.NewVault(t, map[string]string{
 		shared:     "# Entropy\n\nthe second vault\n",
 		"extra.md": "# Extra\n\nonly the second vault has this\n",
 	})
@@ -465,7 +464,7 @@ func (v vanishingReaders) Open(vault domain.Vault) (vaultport.VaultReader, error
 func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 
 	scan := scanner(vanishingReaders{VaultReaders: readers, vanishedVal: "notes/Entropy.md"}, db)
@@ -515,7 +514,7 @@ func (r refusingReaders) Open(vault domain.Vault) (vaultport.VaultReader, error)
 func TestAnUnreadableFileDoesNotStopAScan(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 
 	scan := scanner(refusingReaders{VaultReaders: readers, failingPath: "notes/Entropy.md"}, db)
@@ -540,7 +539,7 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 	// A scan that catches that moment must not take the note out of search
 	// until the next one.
 	ctx := t.Context()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 
 	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
@@ -574,7 +573,7 @@ func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
 	db := openIndex(t)
 	// `.nan` is valid YAML and not representable in JSON. The note is still a
 	// note, so it must still be indexed.
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"odd.md": "---\nvalue: .nan\n---\n\n# Odd\n\nsearchable all the same\n",
 	})
 
@@ -591,7 +590,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	// A vault has a working set and an archive. While a scan runs, recently
 	// modified notes are the ones in demand, so they are indexed first.
 	ctx := t.Context()
-	root := vaultfixture.CopyVault(t)
+	root := vaulttest.CopyVault(t)
 	v, readers := vaultAt(t, root)
 	db := openIndex(t)
 
@@ -604,7 +603,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	// Checks the order in which notes reach the index: the index contents
 	// part-way through are whole groups, which does not show the order.
 	content := &groupedWrites{}
-	scan := vaults.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
+	scan := vaults.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	scan.Walks = &db.Walks
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
@@ -624,7 +623,7 @@ func TestScanStopsWhenCanceled(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	v := vaultfixture.GenerateVault(t, 600)
+	v := vaulttest.GenerateVault(t, 600)
 	db := openIndex(t)
 
 	scan := scanner(vaultreader.Readers{}, db)
@@ -653,7 +652,7 @@ func TestScanStopsWhenCanceled(t *testing.T) {
 // first query fails and the loop check is never reached.
 func TestAWarmScanStopsWhenCanceled(t *testing.T) {
 	t.Parallel()
-	v := vaultfixture.GenerateVault(t, 600)
+	v := vaulttest.GenerateVault(t, 600)
 	db := openIndex(t)
 	scan := scanner(vaultreader.Readers{}, db)
 

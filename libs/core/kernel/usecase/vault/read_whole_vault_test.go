@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -27,7 +27,7 @@ import (
 // the same vault: the three passes, in the one order.
 func TestAVaultIsMadeSearchableByThreePasses(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 
 	made, err := newWholeVaultRead(readers, db).Execute(t.Context(), v, indexing.Reporting{})
@@ -51,7 +51,7 @@ func TestAVaultIsMadeSearchableByThreePasses(t *testing.T) {
 // vault whose books are read next.
 func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 
 	if err := db.VectorIndex().FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
@@ -64,7 +64,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 		Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: readers},
 	})
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, sourcefake.Wrap(pointing{}))
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	if _, err := making.Execute(t.Context(), v, indexing.Reporting{
@@ -93,7 +93,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 // Reading the notes is what the whole pass relies on.
 func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 
 	notes := scanner(refusing{}, db)
@@ -102,7 +102,7 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 		Readers: counted, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: counted},
 	})
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, none.SearchSource{})
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{})
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
@@ -117,7 +117,7 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 // Two failed passes are two faults in the vault, and the caller receives both.
 func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 
 	if err := db.VectorIndex().FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
@@ -129,7 +129,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 		Readers: refusing{}, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: refusing{}},
 	})
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
@@ -149,7 +149,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 // reached the limit, and the context is not consulted afterwards.
 func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 
 	if err := db.VectorIndex().FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
@@ -163,7 +163,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 		Texts: testsupport.Texts{Readers: timedOut{limit: limitCtx}},
 	})
 	counted := &counting{VaultReaders: readers}
-	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources(), none.IndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
+	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(limitCtx, v, indexing.Reporting{})
@@ -285,6 +285,6 @@ func newWholeVaultRead(readers vaultport.VaultReaders, db *container.Index) inde
 			Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 			Texts: testsupport.Texts{Readers: readers},
 		}),
-		vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, none.SearchSource{}),
+		vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
 	)
 }

@@ -136,6 +136,7 @@ jobs:
       atomicfile: ${{ fromJSON(needs.changes.outputs.areas).atomicfile }}
       protocol: ${{ fromJSON(needs.changes.outputs.areas).protocol }}
       sdk_go: ${{ fromJSON(needs.changes.outputs.areas).sdk_go }}
+      shared_go: ${{ fromJSON(needs.changes.outputs.areas).shared_go }}
       desktop: ${{ fromJSON(needs.changes.outputs.areas).desktop }}
       mobile: ${{ fromJSON(needs.changes.outputs.areas).mobile }}
       platforms: ${{ needs.changes.outputs.platforms }}

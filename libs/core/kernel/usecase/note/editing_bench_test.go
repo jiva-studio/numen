@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -27,7 +27,7 @@ func indexNothing(context.Context, domain.Vault, []string) error { return nil }
 func BenchmarkRead(b *testing.B) {
 	for _, notes := range []int{1_000, 100_000} {
 		b.Run(fmt.Sprintf("%d notes", notes), func(b *testing.B) {
-			v := vaultfixture.GenerateVault(b, notes)
+			v := vaulttest.GenerateVault(b, notes)
 			read := note.NewRead(vaultreader.Readers{})
 			path := "01/note-000001.md"
 
@@ -51,7 +51,7 @@ func BenchmarkRead(b *testing.B) {
 func BenchmarkSave(b *testing.B) {
 	for _, size := range []int{500, 5_000} {
 		b.Run(fmt.Sprintf("%d words", size), func(b *testing.B) {
-			v := vaultfixture.GenerateVault(b, 100)
+			v := vaulttest.GenerateVault(b, 100)
 			write := note.NewWrite(
 				vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, indexNothing, testsupport.NewClock(),
 				testsupport.OpenGate{},

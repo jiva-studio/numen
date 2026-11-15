@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/testsupport"
 )
 
 func newCountingReader(t *testing.T, files *hosttest.Vault) (*Reader, *atomic.Int64) {

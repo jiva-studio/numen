@@ -193,11 +193,12 @@ func TestURLImportReturnsHasTextFalseWhenAddressHasNoText(t *testing.T) {
 func TestURLImportDownloadsTheVideoWhenDownloadVideoIsSet(t *testing.T) {
 	s := newUnblockedFixture(t)
 	answer := s.getImportAnswer(t, `{"url":"`+videoAddress+`","downloadVideo":true}`)
-	s.links.Wait()
 	requireKeys(t, "the answer of url_import", answer, []string{"downloadTaskId"}, []string{"copy_task_id", "copy_error"})
-	if want := "copy:Mills:" + fmt.Sprint(answer["path"]); answer["downloadTaskId"] != want {
-		t.Errorf("downloadTaskId = %v, want %s", answer["downloadTaskId"], want)
+	want := "copy:Mills:" + fmt.Sprint(answer["path"])
+	if answer["downloadTaskId"] != want {
+		t.Fatalf("downloadTaskId = %v, want %s", answer["downloadTaskId"], want)
 	}
+	s.tasks.WaitForEnd(t, want)
 	if !hasCopy(t, s.store) {
 		t.Error("the video was not downloaded with downloadVideo set")
 	}
@@ -208,7 +209,6 @@ func TestURLImportRejectsTheCopyArgumentAndStartsNoDownload(t *testing.T) {
 	res := invokeAtOnce(t, s.registry, tools.Call{
 		VaultID: "Mills", Name: "url_import", Arguments: []byte(`{"url":"` + videoAddress + `","copy":true}`),
 	})
-	s.links.Wait()
 	if !res.GetResult().GetIsError() || !strings.Contains(res.GetResult().GetText(), "copy") {
 		t.Errorf("url_import with the argument copy returned %+v, want an error naming copy", res.GetResult())
 	}
@@ -220,7 +220,6 @@ func TestURLImportRejectsTheCopyArgumentAndStartsNoDownload(t *testing.T) {
 func TestURLImportReturnsDownloadErrorKeyForAddressWithNoVideo(t *testing.T) {
 	s := newUnblockedFixture(t)
 	answer := s.getImportAnswer(t, `{"url":"`+articleAddress+`","downloadVideo":true}`)
-	s.links.Wait()
 	requireKeys(t, "the answer of url_import", answer, []string{"downloadError"}, []string{"copy_error", "copy_task_id"})
 	if taskID, present := answer["downloadTaskId"]; present && taskID != "" {
 		t.Errorf("downloadTaskId = %v, want none for an address with no video", taskID)

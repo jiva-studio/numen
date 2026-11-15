@@ -27,19 +27,21 @@ type Events struct {
 	bus       *eventbus.Bus
 }
 
-// EventsDeps are what Events reads and starts, and the clock that times the event bus.
+// EventsDeps are what Events reads and starts, the clock that times the event bus, and where the failures of the
+// deliveries that run after an event was emitted are reported.
 type EventsDeps struct {
 	Set         pluginViews
 	Mode        safeModeReader
 	Supervisors *supervision.Supervisors
 	Activation  pluginActivator
 	Clock       machineport.Clock
+	Report      func(error)
 }
 
 // NewEvents creates the events and the bus that debounces and throttles them.
 func NewEvents(d EventsDeps) *Events {
 	e := &Events{set: d.Set, mode: d.Mode, sups: d.Supervisors, activator: d.Activation}
-	e.bus = eventbus.New(e, d.Clock, 50*time.Millisecond, 250*time.Millisecond)
+	e.bus = eventbus.New(e, d.Clock, 50*time.Millisecond, 250*time.Millisecond, d.Report)
 	return e
 }
 

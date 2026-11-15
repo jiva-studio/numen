@@ -40,27 +40,12 @@ func applySettingsFile(c Config, s settingsadapter.File) Config {
 	return c
 }
 
-// SyncSetting returns whether note title and filename synchronization is enabled.
-func SyncSetting(c Config) naming.SyncSetting {
-	return syncSetting(settingsOf(c))
-}
-
-// GetSettingsWriter patches specific settings paths in the configuration file. The readers of the
-// setting-changed event receive the settings whose value changed.
-func GetSettingsWriter(c Config) func(entries []settingsdomain.Setting) error {
-	return getSettingsWriter(settingsOf(c))
-}
-
 // SetThemes gives the window the themes it can use: the catalog of themes, and the settings file that
 // stores the selection. The window keeps the themes the binary ships when the answer is a fault.
 func SetThemes(c Config, inst *editor.Installation, scales Scales, say func(string)) error {
 	service, err := settingsThemes(settingsOf(c), scales, say)
 	inst.SetThemes(service)
 	return err
-}
-
-func UnsubscribeHost(c Config) {
-	unsubscribeHost(settingsOf(c))
 }
 
 type settingsPlaces struct {
@@ -84,10 +69,6 @@ type settingsWiring struct {
 	settingsStores
 	PluginHost   *PluginHost
 	ErrorHandler func(error)
-}
-
-func defaultSettings() settingsadapter.File {
-	return settingsadapter.DefaultFile()
 }
 
 func settingsSettings(c settingsWiring) (settingsadapter.File, error) {
@@ -115,13 +96,6 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Configuration, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
 		Subscribe: c.PluginHost.Views.Follow(subscribe), Hosts: hosts,
 	}).Execute(s.Plugins, c.ResolvedCompute.Profile)
-}
-
-func unsubscribeHost(c settingsWiring) {
-	if c.SubscribedHosts == nil {
-		return
-	}
-	c.SubscribedHosts.Unsubscribe(c.PluginHost.Configuration)
 }
 
 func settingsPlugins(c settingsWiring) func() []plugindomain.Info {

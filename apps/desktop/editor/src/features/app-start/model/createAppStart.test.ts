@@ -171,7 +171,10 @@ describe('a window mounting while a plugin does not start', () => {
   })
 
   it('is drawn when a step before the plugins fails, to show what did not load', async () => {
-    const { bootstrap } = setup({ loadVaults: () => Promise.reject(new Error('vaults gone')) })
+    const { bootstrap } = setup({
+      loadVaults: () => Promise.reject(new Error('vaults gone')),
+      startPlugins: () => new Promise<void>(() => undefined),
+    })
 
     await new Promise((resolve) => setTimeout(resolve, 0))
 

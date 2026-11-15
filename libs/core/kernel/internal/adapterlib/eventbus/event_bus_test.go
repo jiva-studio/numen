@@ -2,7 +2,7 @@ package eventbus
 
 import (
 	"context"
-	"strings"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -14,7 +14,7 @@ import (
 func getRealClock() Clock { return testsupport.GetMachine() }
 
 func TestEventBusDebounceTyping(t *testing.T) {
-	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond)
+	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -41,7 +41,7 @@ func TestEventBusDebounceTyping(t *testing.T) {
 }
 
 func TestEventBusThrottle(t *testing.T) {
-	bus := New(nil, getRealClock(), 40*time.Millisecond, 100*time.Millisecond)
+	bus := New(nil, getRealClock(), 40*time.Millisecond, 100*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -70,7 +70,7 @@ func TestEventBusThrottle(t *testing.T) {
 }
 
 func TestEventBusNonBlocking(t *testing.T) {
-	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond)
+	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -89,7 +89,7 @@ func TestEventBusNonBlocking(t *testing.T) {
 }
 
 func TestEventBusFlush(t *testing.T) {
-	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond)
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -120,7 +120,7 @@ func TestEventBusFlush(t *testing.T) {
 }
 
 func TestEventBusUnsubscribe(t *testing.T) {
-	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond)
+	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -152,99 +152,70 @@ func TestEventBusUnsubscribe(t *testing.T) {
 	}
 }
 
-// TestEventBusDebouncesEventsOfOneKey. A key extractor and a debounce rule
-// each put several events under one key, and only the last of them is delivered.
-func TestEventBusDebouncesEventsOfOneKey(t *testing.T) {
-	cases := []struct {
-		name   string
-		option Option
-		prefix string
-		events []string
-	}{
-		{
-			name: "key extractor",
-			option: WithKeyExtractor(func(event string) string {
-				if strings.HasPrefix(event, "customGroup:") {
-					return "customGroup"
-				}
-				return event
-			}),
-			prefix: "customGroup:",
-			events: []string{"customGroup:item1", "customGroup:item2"},
-		},
-		{
-			name: "debounce rule",
-			option: WithDebounceRule(func(event string) (string, bool) {
-				if strings.HasPrefix(event, "ruleA:") {
-					return "ruleA-shared", true
-				}
-				return "", false
-			}),
-			prefix: "ruleA:",
-			events: []string{"ruleA:1", "ruleA:2"},
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond, c.option)
-			defer func() {
-				if err := bus.Close(t.Context()); err != nil {
-					t.Error(err)
-				}
-			}()
-
-			var received []string
-			var mu sync.Mutex
-			unsub := bus.Subscribe(c.prefix, func(_ context.Context, event string) error {
-				mu.Lock()
-				received = append(received, event)
-				mu.Unlock()
-				return nil
-			})
-			defer unsub()
-
-			for _, event := range c.events {
-				bus.Publish(event)
-			}
-			if err := bus.Flush(t.Context()); err != nil {
-				t.Fatalf("flush failed: %v", err)
-			}
-
-			mu.Lock()
-			defer mu.Unlock()
-			if last := c.events[len(c.events)-1]; len(received) != 1 || received[0] != last {
-				t.Fatalf("expected last event %s, got %v", last, received)
-			}
-		})
-	}
-}
-
-func TestEventBusErrorHandling(t *testing.T) {
-	expectedErr := context.DeadlineExceeded
-	var asyncErr atomic.Pointer[error]
-
-	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond,
-		WithErrorHandler(func(err error) {
-			asyncErr.Store(&err)
-		}),
-	)
+// Typing events all fall under one key, so only the last of them is delivered.
+func TestEventBusDebouncesTypingEvents(t *testing.T) {
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
 		}
 	}()
 
-	unsub := bus.Subscribe("failing", func(_ context.Context, _ string) error {
-		return expectedErr
+	var received []string
+	var mu sync.Mutex
+	unsub := bus.Subscribe("onTyping", func(_ context.Context, event string) error {
+		mu.Lock()
+		received = append(received, event)
+		mu.Unlock()
+		return nil
 	})
 	defer unsub()
 
-	bus.Publish("failing:event")
-	err := bus.Flush(t.Context())
-	if err == nil {
-		t.Fatal("expected Flush to return error, got nil")
+	events := []string{"onTyping:a.md", "onTyping:b.md"}
+	for _, event := range events {
+		bus.Publish(event)
 	}
-	if !strings.Contains(err.Error(), expectedErr.Error()) {
-		t.Fatalf("expected error containing %v, got %v", expectedErr, err)
+	if err := bus.Flush(t.Context()); err != nil {
+		t.Fatalf("flush failed: %v", err)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if last := events[len(events)-1]; len(received) != 1 || received[0] != last {
+		t.Fatalf("expected last event %s, got %v", last, received)
+	}
+}
+
+// A delivery that fails after Publish returned is reported, and Flush returns the failure of the delivery it runs.
+func TestEventBusReportsTheFailureOfADelivery(t *testing.T) {
+	failure := errors.New("the plugin refused the event")
+	reported := make(chan error, 1)
+	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond, func(err error) {
+		select {
+		case reported <- err:
+		default:
+		}
+	})
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
+	unsub := bus.Subscribe("failing", func(context.Context, string) error { return failure })
+	defer unsub()
+
+	bus.Publish("failing:first")
+	select {
+	case err := <-reported:
+		if !errors.Is(err, failure) {
+			t.Errorf("reported %v, want %v", err, failure)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the failed delivery was not reported")
+	}
+
+	bus.Publish("failing:second")
+	if err := bus.Flush(t.Context()); !errors.Is(err, failure) {
+		t.Errorf("Flush returned %v, want %v", err, failure)
 	}
 }

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -35,7 +34,6 @@ type discoveredPlugins interface {
 
 // pluginRegistrar adds a plugin to the set.
 type pluginRegistrar interface {
-	put(p manifest.Discovered, sup *lifecycle.Supervisor)
 	addBuiltIn(p manifest.Discovered, serve func(vars map[string]string) (http.Handler, error)) error
 }
 
@@ -134,11 +132,6 @@ func (d *Discovery) retirePlugin(pluginID string) {
 	if !d.set.isRegistered(pluginID) {
 		d.sups.Forget(pluginID)
 	}
-}
-
-// RegisterPlugin adds a plugin with the supervisor that tracks it, as discovery does for a plugin found on disk.
-func (d *Discovery) RegisterPlugin(p manifest.Discovered, sup *lifecycle.Supervisor) {
-	d.registrar.put(p, sup)
 }
 
 // RegisterBuiltIn registers a plugin linked into this binary from its manifest.json and what

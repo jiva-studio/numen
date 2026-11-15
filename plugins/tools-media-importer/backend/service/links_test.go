@@ -9,7 +9,7 @@ import (
 )
 
 func TestCreateLinksMakesANoteOfEachWebAddressInTheFolder(t *testing.T) {
-	links, _, hosted := newMockLinks(t)
+	links, _, hosted, tasks := newMockLinks(t)
 	service := linkServer{links: links}
 
 	created, err := service.createLinks(t.Context(), api.CreateLinksRequest{
@@ -21,7 +21,7 @@ func TestCreateLinksMakesANoteOfEachWebAddressInTheFolder(t *testing.T) {
 	if len(created.Paths) != 1 {
 		t.Fatalf("created %v", created.Paths)
 	}
-	links.Wait()
+	waitForFetch(t, tasks, created.Paths[0])
 	found, err := service.getLink(t.Context(), api.GetLinkRequest{Path: created.Paths[0]})
 	if err != nil {
 		t.Fatal(err)
@@ -38,13 +38,13 @@ func TestCreateLinksMakesANoteOfEachWebAddressInTheFolder(t *testing.T) {
 }
 
 func TestCreateLinksOpensTheNoteOfAnAddressThatHasOne(t *testing.T) {
-	links, _, _ := newMockLinks(t)
+	links, _, _, tasks := newMockLinks(t)
 	service := linkServer{links: links}
 	first, err := service.createLinks(t.Context(), api.CreateLinksRequest{Folder: "talks", URLs: []string{videoAddress}})
 	if err != nil || len(first.Paths) != 1 {
 		t.Fatalf("first drop = %+v, %v", first, err)
 	}
-	links.Wait()
+	waitForFetch(t, tasks, first.Paths[0])
 
 	again, err := service.createLinks(t.Context(), api.CreateLinksRequest{Folder: "talks", URLs: []string{videoAddress}})
 	if err != nil {
@@ -56,7 +56,7 @@ func TestCreateLinksOpensTheNoteOfAnAddressThatHasOne(t *testing.T) {
 }
 
 func TestCreateLinksReturnsThePathOfAnAddressDroppedTwiceOnce(t *testing.T) {
-	links, _, _ := newMockLinks(t)
+	links, _, _, _ := newMockLinks(t)
 	service := linkServer{links: links}
 	got, err := service.createLinks(t.Context(), api.CreateLinksRequest{
 		Folder: "talks", URLs: []string{videoAddress, videoAddress},
@@ -70,14 +70,15 @@ func TestCreateLinksReturnsThePathOfAnAddressDroppedTwiceOnce(t *testing.T) {
 }
 
 func TestCreateLinksHandlesEachAddressOnItsOwn(t *testing.T) {
-	links, _, hosted := newMockLinks(t)
+	links, _, hosted, tasks := newMockLinks(t)
 	service := linkServer{links: links}
 	const second = "https://www.youtube.com/watch?v=reedlamp02"
 	const blocked = "https://www.youtube.com/watch?v=copperfern03"
-	if _, err := service.createLinks(t.Context(), api.CreateLinksRequest{Folder: "talks", URLs: []string{second}}); err != nil {
-		t.Fatal(err)
+	early, err := service.createLinks(t.Context(), api.CreateLinksRequest{Folder: "talks", URLs: []string{second}})
+	if err != nil || len(early.Paths) != 1 {
+		t.Fatalf("the drop of %s = %+v, %v", second, early, err)
 	}
-	links.Wait()
+	waitForFetch(t, tasks, early.Paths[0])
 	name, _, err := domain.Filename(blocked)
 	if err != nil {
 		t.Fatal(err)
@@ -92,10 +93,10 @@ func TestCreateLinksHandlesEachAddressOnItsOwn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	links.Wait()
 	if len(got.Paths) != 2 || !strings.HasPrefix(got.Paths[0], "talks/") || !strings.HasPrefix(got.Paths[1], "talks/") {
-		t.Errorf("paths = %v, want the notes of the first and second address", got.Paths)
+		t.Fatalf("paths = %v, want the notes of the first and second address", got.Paths)
 	}
+	waitForFetch(t, tasks, got.Paths[0])
 	if len(got.Failed) != 1 || got.Failed[0] != blocked {
 		t.Errorf("failed = %v, want [%s]", got.Failed, blocked)
 	}

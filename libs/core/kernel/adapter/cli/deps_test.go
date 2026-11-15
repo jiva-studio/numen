@@ -133,14 +133,14 @@ func (s *session) openIndexedSession(
 	readers := vaultreader.Readers{Options: vaultOptions}
 	find := registry.NewFind(parts.ports.Lookup).Execute
 
-	notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
+	notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	notes = notes.Rebuilding(options.Rebuild)
 	books := filetext.NewIndex(filetext.IndexDeps{
 		Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: readers}, ShouldRebuildIndex: options.Rebuild,
 	})
 	// No vectors: a test uses no model, and a vault is searched by words alone.
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, testsupport.Texts{Readers: readers}, none.SearchSource{})
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, testsupport.Texts{Readers: readers}, none.SearchSource{})
 
 	indexed := parts.indexedOver(rows)
 	indexed.Scan = cli.Scan{

@@ -18,8 +18,6 @@ import {
 const outsideLayers = [
   'src/**/*.stories.ts',
   'src/**/fixtures/**',
-  'src/vite.ts',
-  'src/vite.test.ts',
 ]
 
 /** The port itself, which alone measures elements on screen. */

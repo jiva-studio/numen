@@ -41,6 +41,45 @@ describe('a change of the vault', () => {
     createVaultChangeHandlers(deps).onVaultChanged(['notes/a.md'], [])
 
     expect(leavePath).not.toHaveBeenCalled()
+    expect(deps.editing.notes.applyPathChanges).toHaveBeenCalledExactlyOnceWith(
+      ['notes/a.md'],
+      [],
+    )
+    expect(deps.notifyPlugins).toHaveBeenCalledExactlyOnceWith({
+      paths: ['notes/a.md'],
+      renamed: [],
+    })
+  })
+
+  it('applies path changes when everything is empty or when renames accompany version changes and reloads', () => {
+    const leavePath = vi.fn(() => Promise.resolve())
+    const { deps } = createDeps(leavePath)
+    const handlers = createVaultChangeHandlers(deps)
+
+    handlers.onVaultChanged([], [], [])
+    expect(deps.editing.notes.applyPathChanges).toHaveBeenCalledExactlyOnceWith([], [])
+
+    handlers.onVaultChanged([], [{ from: 'a.md', to: 'b.md' }], ['talks/b.mp3'])
+    expect(deps.editing.notes.applyPathChanges).toHaveBeenCalledWith(
+      [],
+      [{ from: 'a.md', to: 'b.md' }],
+    )
+
+    const reload = vi.fn()
+    const originalLocation = window.location
+    Object.defineProperty(window, 'location', {
+      value: { ...originalLocation, reload },
+      configurable: true,
+    })
+    try {
+      handlers.reload()
+      expect(reload).toHaveBeenCalledOnce()
+    } finally {
+      Object.defineProperty(window, 'location', {
+        value: originalLocation,
+        configurable: true,
+      })
+    }
   })
 
   it('reports a tab that failed to move', async () => {
