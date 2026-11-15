@@ -6,69 +6,125 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func (p *plan) listScopeDocuments(ctx context.Context, s searchquery.Scope) ([]searchquery.Document, bool, error) {
+type documentReader struct {
+	index        indexReads
+	contentTypes contenttypeport.ContentTypeTable
+	req          *request
+	warnings     *warnings
+	sets         []map[string]bool
+	documents    map[string]searchquery.Document
+	links        *linkFinder
+}
+
+func newDocumentReader(index indexReads, links LinkReaders, contentTypes contenttypeport.ContentTypeTable, req *request, warns *warnings) *documentReader {
+	reader := &documentReader{index: index, contentTypes: contentTypes, req: req, warnings: warns, documents: map[string]searchquery.Document{}}
+	if links != nil {
+		reader.links = &linkFinder{links: links, req: req}
+	}
+	return reader
+}
+
+func (r *documentReader) listScopeDocuments(ctx context.Context, s searchquery.Scope) ([]searchquery.Document, bool, error) {
 	if s.IsEveryDocument() {
 		return nil, false, nil
 	}
-	paths, isNarrowed := p.getSetPaths(s.SetIndexes)
+	paths, isNarrowed := r.getSetPaths(s.SetIndexes)
 	if isNarrowed && len(paths) == 0 {
 		return nil, true, nil
 	}
-	listed, err := p.u.index.documents.ListDocuments(ctx, p.v.ID, searchquery.DocumentQuery{
-		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: p.recipe, Limit: p.u.Limits.MaxDocuments,
+	listed, err := r.index.documents.ListDocuments(ctx, r.req.vault.ID, searchquery.DocumentQuery{
+		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.recipe, Limit: r.req.limits.MaxDocuments,
 	})
 	if err != nil {
 		return nil, false, err
 	}
-	if len(listed) > p.u.Limits.MaxDocuments {
+	if len(listed) > r.req.limits.MaxDocuments {
 		return nil, false, nil
 	}
 	var documents []searchquery.Document
 	for _, d := range listed {
-		if d = p.fillKind(d); s.IsDocumentMatch(d) {
+		if d = r.fillKind(d); s.IsDocumentMatch(d) {
 			documents = append(documents, d)
 		}
 	}
 	return documents, true, nil
 }
 
-func (p *plan) listCandidateDocuments(ctx context.Context) ([]searchquery.Document, error) {
-	if !hasPositiveDocumentLeaf(p.query.Root) {
+func (r *documentReader) listCandidateDocuments(ctx context.Context) ([]searchquery.Document, error) {
+	if !hasPositiveDocumentLeaf(r.req.query.Root) {
 		return nil, nil
 	}
-	s := searchquery.GetDocumentScope(p.query)
-	paths, isNarrowed := p.getSetPaths(s.SetIndexes)
+	s := searchquery.GetDocumentScope(r.req.query)
+	paths, isNarrowed := r.getSetPaths(s.SetIndexes)
 	if isNarrowed && len(paths) == 0 {
 		return nil, nil
 	}
-	listed, err := p.u.index.documents.ListDocuments(ctx, p.v.ID, searchquery.DocumentQuery{
-		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: p.recipe,
+	listed, err := r.index.documents.ListDocuments(ctx, r.req.vault.ID, searchquery.DocumentQuery{
+		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.recipe,
 	})
 	if err != nil {
 		return nil, err
 	}
 	var documents []searchquery.Document
 	for _, d := range listed {
-		if d = p.fillKind(d); searchquery.IsDocumentMatch(p.query.Root, d) {
+		if d = r.fillKind(d); searchquery.IsDocumentMatch(r.req.query.Root, d) {
 			documents = append(documents, d)
 		}
 	}
-	if len(documents) > p.u.Limits.MaxDocuments {
+	if len(documents) > r.req.limits.MaxDocuments {
 		return nil, fmt.Errorf(
 			"%w: the document conditions match more than %d documents (MaxDocuments); add a meaning or words condition or narrow the path",
-			searchquery.ErrLimitExceeded, p.u.Limits.MaxDocuments)
+			searchquery.ErrLimitExceeded, r.req.limits.MaxDocuments)
 	}
 	return documents, nil
 }
 
-func (p *plan) fillKind(d searchquery.Document) searchquery.Document {
-	d.Kind = searchquery.GetKind(d.SourceKind, p.u.contentTypes.GetContentType(d.Path))
+func (r *documentReader) fillKind(d searchquery.Document) searchquery.Document {
+	d.Kind = searchquery.GetKind(d.SourceKind, r.contentTypes.GetContentType(d.Path))
 	d.Title = searchquery.GetTitle(d.Path, d.Title)
-	d.IsInSet = p.getMembership(d.Path)
-	p.documents[d.Path] = d
+	d.IsInSet = r.getMembership(d.Path)
+	r.documents[d.Path] = d
 	return d
+}
+
+func (r *documentReader) getDocument(path string, sourceKind domain.SourceKind) searchquery.Document {
+	if d, found := r.documents[path]; found {
+		return d
+	}
+	d := searchquery.Document{
+		Path: path, Title: searchquery.GetTitle(path, ""), SourceKind: sourceKind,
+		Kind: searchquery.GetKind(sourceKind, r.contentTypes.GetContentType(path)),
+	}
+	d.IsInSet = r.getMembership(path)
+	return d
+}
+
+func (r *documentReader) fillDocuments(ctx context.Context, results []searchquery.SearchResult) error {
+	if len(results) == 0 {
+		return nil
+	}
+	var paths []string
+	for _, one := range results {
+		paths = append(paths, one.Document.Path)
+	}
+	listed, err := r.index.documents.ListDocuments(ctx, r.req.vault.ID, searchquery.DocumentQuery{PathPrefixes: paths})
+	if err != nil {
+		return err
+	}
+	byPath := make(map[string]searchquery.Document, len(listed))
+	for _, d := range listed {
+		byPath[d.Path] = d
+	}
+	for i, one := range results {
+		d := byPath[one.Document.Path]
+		results[i].Document.Title = searchquery.GetTitle(one.Document.Path, d.Title)
+		results[i].Document.ModifiedAt, results[i].Document.Size = d.ModifiedAt, d.Size
+	}
+	return nil
 }
 
 func hasPositiveDocumentLeaf(node searchquery.Node) bool {

@@ -104,6 +104,12 @@ Seven plugins register the tools an agent can call, each for its own subject. Th
 | `transcript_create`  | start the transcription of a recording in the background and return its task id; a second call while it runs reports `running`, a call on a transcribed recording reports `done` and the version to read    | writes |
 | `url_import`         | create a link note for an http or https address, fetch its text before returning, and with `downloadVideo` start a download of the video in the background                                                  | writes |
 
+`tools-taxonomy`, the tags of the notes:
+
+| Tool       | What it does                                                                                                                                                                                         | Effect |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `tag_list` | list the tags of the frontmatter key `tags` as a tree read depth first, each with its depth and the number of notes that have it or a tag nested under it; `under` lists one tag and its nested tags | reads  |
+
 A card is named by its card id and never by the place it is in, so the cards stay addressable when a deck is reordered during a run. Every write to a deck takes the fingerprint `card_read` returned, and is applied only to the deck that fingerprint identifies.
 
 `file_read` is how a text file that is not a note is read — a transcript somebody typed, an export, any other text file — and how a file too long to return whole is read one range at a time. A binary file, such as a PDF, is read with `library_read`.

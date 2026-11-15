@@ -28,8 +28,6 @@ var ErrNegativeLimit = errors.New("the limit of results is negative")
 type FindSearchResultsDeps struct {
 	Parser       QueryParser
 	Documents    DocumentQueries
-	Contents     NoteContents
-	Clock        machineport.Clock
 	Vectors      VectorQueries
 	Places       sourceport.ChunkPlaces
 	Matcher      sourceport.WordMatching
@@ -38,12 +36,14 @@ type FindSearchResultsDeps struct {
 	Source       searchsourceport.QuerySource
 	Floors       FloorReader
 	ContentTypes contenttypeport.ContentTypeTable
+	Contents     NoteContents
 	Calls        connectionport.ModelCalls
 	Codec        RerankCodec
 	Rows         RerankRows
 	Resolve      connectionport.ResolveConnection
 	Results      operationport.OperationResults
 	Links        LinkReaders
+	Clock        machineport.Clock
 	Limits       searchquery.Limits
 	StageLimits  searchquery.StageLimits
 }
@@ -53,6 +53,7 @@ type FindSearchResults struct {
 	parser       QueryParser
 	index        indexReads
 	clock        machineport.Clock
+	links        LinkReaders
 	matcher      sourceport.WordMatching
 	readers      vaultport.VaultReaders
 	texts        textdomain.Readers
@@ -60,11 +61,10 @@ type FindSearchResults struct {
 	floors       FloorReader
 	contentTypes contenttypeport.ContentTypeTable
 	reranker     reranker
-	links        LinkReaders
 	Limits       searchquery.Limits
 }
 
-// NewFindSearchResults creates the use case over the index.
+// NewFindSearchResults creates the use case over the index, .
 func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 	limits, stageLimits := deps.Limits, deps.StageLimits
 	if limits == (searchquery.Limits{}) {
@@ -106,16 +106,19 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r searc
 	if hasMeaning(q.Conditions) && !u.hasModel() {
 		return searchquery.SearchResults{}, searchquery.ErrNoModel
 	}
-	results, err := u.newPlan(ctx, v, q, zone).execute(ctx)
+	req := u.newRequest(ctx, v, q, zone)
+	warns := &warnings{}
+	docs := newDocumentReader(u.index, u.links, u.contentTypes, req, warns)
+	results, err := u.run(ctx, req, docs, warns)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	if results, err = u.runStages(ctx, v, q, results, r); err != nil {
+	if results, err = u.runStages(ctx, docs, v, q, results, r); err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	results = searchquery.ApplyTop(results, u.getLimit(r.Limit, q.HasStage(searchquery.StageTop)))
 	if len(q.Stages) == 0 {
-		if err := u.fillDocuments(ctx, v, results.Results); err != nil {
+		if err := docs.fillDocuments(ctx, results.Results); err != nil {
 			return searchquery.SearchResults{}, err
 		}
 	}
@@ -123,12 +126,13 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r searc
 }
 
 func (u *FindSearchResults) runStages(
-	ctx context.Context, v domain.Vault, q searchquery.Query, results searchquery.SearchResults, r searchquery.Request,
+	ctx context.Context, docs *documentReader, v domain.Vault, q searchquery.Query, results searchquery.SearchResults,
+	r searchquery.Request,
 ) (searchquery.SearchResults, error) {
 	if len(q.Stages) == 0 {
 		return results, nil
 	}
-	if err := u.fillDocuments(ctx, v, results.Results); err != nil {
+	if err := docs.fillDocuments(ctx, results.Results); err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	return u.applyStages(ctx, v, q, results, r)
@@ -168,38 +172,6 @@ func (u *FindSearchResults) hasModel() bool {
 	return u.source != nil && u.source.Describe().IsDescribed()
 }
 
-func (u *FindSearchResults) getDocument(path string, sourceKind domain.SourceKind) searchquery.Document {
-	return searchquery.Document{
-		Path: path, Title: searchquery.GetTitle(path, ""), SourceKind: sourceKind,
-		Kind: searchquery.GetKind(sourceKind, u.contentTypes.GetContentType(path)),
-	}
-}
-
-func (u *FindSearchResults) fillDocuments(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error {
-	if len(results) == 0 {
-		return nil
-	}
-	var paths []string
-	for _, r := range results {
-		paths = append(paths, r.Document.Path)
-	}
-	listed, err := u.index.documents.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
-	if err != nil {
-		return err
-	}
-	byPath := make(map[string]searchquery.Document, len(listed))
-	for _, d := range listed {
-		byPath[d.Path] = d
-	}
-	for i, r := range results {
-		d := byPath[r.Document.Path]
-		results[i].Document.Title = searchquery.GetTitle(r.Document.Path, d.Title)
-		results[i].Document.ModifiedAt, results[i].Document.Size = d.ModifiedAt, d.Size
-	}
-	return nil
-}
-
-// indexReads are the ports of the index a query reads.
 type indexReads struct {
 	documents DocumentQueries
 	vectors   VectorQueries

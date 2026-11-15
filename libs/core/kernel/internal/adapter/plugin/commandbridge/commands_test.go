@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -193,5 +194,20 @@ func TestRunCommand_PluginWithoutCommandServiceIsUnavailable(t *testing.T) {
 
 	if !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("a plugin that serves no commands is %v, want it unavailable", err)
+	}
+}
+
+func TestRunCommandSendsThePathsOfATrigger(t *testing.T) {
+	plugin := &commandPlugin{reply: &v1.RunCommandResponse{}}
+	host := &commandHost{
+		plugins:   []catalogmanifest.Discovered{declaring("md.numen.a", "make")},
+		endpoints: map[string]transport.Endpoint{"md.numen.a": serveCommandPlugin(t, plugin)},
+	}
+
+	if _, err := Open(host).RunCommand(t.Context(), plugindomain.CommandCall{PluginID: "md.numen.a", Command: "make", Paths: []string{"a.md", "b.md"}}); err != nil {
+		t.Fatal(err)
+	}
+	if got := plugin.received[0].GetPaths(); !slices.Equal(got, []string{"a.md", "b.md"}) {
+		t.Errorf("the plugin received the paths %v", got)
 	}
 }
