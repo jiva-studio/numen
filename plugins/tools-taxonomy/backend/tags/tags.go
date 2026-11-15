@@ -153,3 +153,13 @@ func (b *branch) listNodes() []Node {
 	})
 	return out
 }
+
+// IsUnder reports whether the tag is the parent or a tag nested under it, compared as GetKey does. An
+// empty parent holds for every tag.
+func IsUnder(tag, parent string) bool {
+	if parent == "" {
+		return true
+	}
+	key, parentKey := GetKey(tag), GetKey(parent)
+	return key == parentKey || strings.HasPrefix(key, parentKey+"/")
+}

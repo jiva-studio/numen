@@ -1,0 +1,145 @@
+package service_test
+
+import (
+	"context"
+	"errors"
+	"net/http/httptest"
+	"slices"
+	"strings"
+	"sync/atomic"
+	"testing"
+
+	"connectrpc.com/connect"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchfunction/searchfunctiontest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
+
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/service"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
+)
+
+const functionToken = "tags-token"
+
+// failingFrontmatter reads the frontmatter of the vault until isFailing is set.
+type failingFrontmatter struct {
+	tagcache.Frontmatter
+	isFailing *atomic.Bool
+}
+
+func (f failingFrontmatter) ReadFrontmatter(ctx context.Context, q host.FrontmatterQuery) (host.FrontmatterPage, error) {
+	if f.isFailing.Load() {
+		return host.FrontmatterPage{}, errors.New("the host is not answering")
+	}
+	return f.Frontmatter.ReadFrontmatter(ctx, q)
+}
+
+type functionScene struct {
+	vault     *hosttest.Vault
+	isFailing *atomic.Bool
+	client    *searchfunctiontest.Client
+}
+
+func newFunctionScene(t *testing.T, files map[string]string) functionScene {
+	t.Helper()
+	v := hosttest.New("garden")
+	for path, content := range files {
+		v.File(path, content)
+	}
+	isFailing := &atomic.Bool{}
+	registries, err := service.NewRegistries(service.Host{
+		Shown: v,
+		Open: func(id domain.VaultID) tagcache.Vault {
+			return tagcache.Vault{Frontmatter: failingFrontmatter{Frontmatter: v.With(id), isFailing: isFailing}, Feed: v.With(id), Store: v.Store().With(id)}
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": functionToken}, func(s *server.Server) error {
+		registries.Functions.Mount(s)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	httpServer := httptest.NewServer(handler)
+	t.Cleanup(httpServer.Close)
+	return functionScene{vault: v, isFailing: isFailing, client: searchfunctiontest.NewClient(httpServer.Client(), httpServer.URL, functionToken)}
+}
+
+func getTagsVault() map[string]string {
+	return map[string]string{
+		"a.md": "---\ntags: [a]\n---\n",
+		"b.md": "---\ntags: A/b\n---\n",
+		"c.md": "---\ntags: '#a'\n---\n",
+		"d.md": "---\ntags: Ab\n---\n",
+		"e.md": "# no tags\n",
+		"f.md": "---\ntags: [Враджа/Матхура]\n---\n",
+	}
+}
+
+func callTags(tag string) searchfunctiontest.Call {
+	return searchfunctiontest.Call{Function: service.FunctionTags, VaultID: "garden", IndexGeneration: "g4", Arguments: map[string]any{"tag": tag}}
+}
+
+func TestTagsMatchesTheNotesWithTheTagOrATagNestedUnderItInAnyCase(t *testing.T) {
+	s := newFunctionScene(t, getTagsVault())
+
+	matched, warning, err := s.client.MatchDocuments(t.Context(), callTags("A"), []string{"a.md", "b.md", "c.md", "d.md", "e.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !slices.Equal(matched, []string{"a.md", "b.md", "c.md"}) || warning != "" {
+		t.Errorf("tags(\"A\") matched %v (%q), want a.md, b.md and c.md", matched, warning)
+	}
+	nested, _, err := s.client.MatchDocuments(t.Context(), callTags("враджа"), []string{"a.md", "f.md"})
+	if err != nil || !slices.Equal(nested, []string{"f.md"}) {
+		t.Errorf("tags(\"враджа\") matched %v, %v, want f.md", nested, err)
+	}
+}
+
+func TestIsTaggedFindsEveryNoteWithATagSortedWithTheExactCount(t *testing.T) {
+	s := newFunctionScene(t, getTagsVault())
+
+	paths, count, _, err := s.client.FindDocuments(t.Context(), searchfunctiontest.Call{Function: service.FunctionIsTagged, VaultID: "garden"}, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !slices.Equal(paths, []string{"a.md", "b.md", "c.md"}) || count != 5 {
+		t.Errorf("isTagged() found %v of %d, want the first three of five", paths, count)
+	}
+}
+
+func TestTagsWithoutATagIsInvalidArgument(t *testing.T) {
+	s := newFunctionScene(t, getTagsVault())
+
+	_, _, _, err := s.client.FindDocuments(t.Context(), callTags(" # "), 10)
+
+	if connect.CodeOf(err) != connect.CodeInvalidArgument || !strings.Contains(err.Error(), "tags needs a tag") {
+		t.Errorf("err = %v, want InvalidArgument", err)
+	}
+}
+
+func TestTagsThatCannotBeUpdatedAnswerWithAWarningOfTheGeneration(t *testing.T) {
+	s := newFunctionScene(t, getTagsVault())
+	if _, _, _, err := s.client.FindDocuments(t.Context(), callTags("a"), 10); err != nil {
+		t.Fatal(err)
+	}
+	s.isFailing.Store(true)
+	s.vault.File("e.md", "---\ntags: a\n---\n")
+
+	paths, _, warning, err := s.client.FindDocuments(t.Context(), callTags("a"), 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !slices.Equal(paths, []string{"a.md", "b.md", "c.md"}) || warning != "the tags may be out of date (index generation g4)" {
+		t.Errorf("found %v with %q, want the kept tags and a warning", paths, warning)
+	}
+}

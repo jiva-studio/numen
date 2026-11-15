@@ -1,5 +1,6 @@
 // Package service is the backend of the tags plugin: it builds the host clients and the cache of the
-// tags, and registers the command that updates the tags of notes and the tool tag_list.
+// tags, and registers the command that updates the tags of notes, the tool tag_list and the query
+// functions tags and isTagged.
 package service
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchfunction"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 
@@ -49,27 +51,39 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	commands, registry, err := NewRegistries(openHostAt(endpoint))
+	registries, err := NewRegistries(openHostAt(endpoint))
 	if err != nil {
 		return err
 	}
-	command.Mount(s, commands)
-	registry.Mount(s)
+	command.Mount(s, registries.Commands)
+	registries.Tools.Mount(s)
+	registries.Functions.Mount(s)
 	return nil
 }
 
-// NewRegistries returns the command and the tool of the plugin over h, sharing one cache of tags.
-func NewRegistries(h Host) (*command.Registry, *tools.Registry, error) {
+// Registries are the command, the tool and the query functions of the plugin.
+type Registries struct {
+	Commands  *command.Registry
+	Tools     *tools.Registry
+	Functions *searchfunction.Registry
+}
+
+// NewRegistries returns the registries of the plugin over h, sharing one cache of tags.
+func NewRegistries(h Host) (Registries, error) {
 	cache := tagcache.New(h.Open)
 	commands := command.New()
 	if err := commands.Add(UpdateCommand, newUpdateCommand(h.Shown, cache)); err != nil {
-		return nil, nil, err
+		return Registries{}, err
 	}
 	registry, err := newTools(cache)
 	if err != nil {
-		return nil, nil, err
+		return Registries{}, err
 	}
-	return commands, registry, nil
+	functions, err := newFunctions(cache)
+	if err != nil {
+		return Registries{}, err
+	}
+	return Registries{Commands: commands, Tools: registry, Functions: functions}, nil
 }
 
 func newUpdateCommand(shown ShownVault, cache *tagcache.Caches) command.Run {

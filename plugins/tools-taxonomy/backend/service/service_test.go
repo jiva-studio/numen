@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchfunction"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/service"
@@ -15,9 +16,10 @@ import (
 )
 
 type plugin struct {
-	vault    *hosttest.Vault
-	commands *command.Registry
-	tools    *tools.Registry
+	vault     *hosttest.Vault
+	commands  *command.Registry
+	tools     *tools.Registry
+	functions *searchfunction.Registry
 }
 
 func newPlugin(t *testing.T, files map[string]string) plugin {
@@ -26,7 +28,7 @@ func newPlugin(t *testing.T, files map[string]string) plugin {
 	for path, content := range files {
 		v.File(path, content)
 	}
-	commands, registry, err := service.NewRegistries(service.Host{
+	registries, err := service.NewRegistries(service.Host{
 		Shown: v,
 		Open: func(id domain.VaultID) tagcache.Vault {
 			return tagcache.Vault{Frontmatter: v.With(id), Feed: v.With(id), Store: v.Store().With(id)}
@@ -35,7 +37,7 @@ func newPlugin(t *testing.T, files map[string]string) plugin {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return plugin{vault: v, commands: commands, tools: registry}
+	return plugin{vault: v, commands: registries.Commands, tools: registries.Tools, functions: registries.Functions}
 }
 
 func (p plugin) listTags(t *testing.T, input string) service.TagListOutput {
