@@ -2,10 +2,18 @@ package searchquery
 
 // The names the builtin catalog declares.
 const (
-	FunctionMeaning = "meaning"
-	FunctionWords   = "words"
-	VariableKind    = "kind"
-	VariablePath    = "path"
+	FunctionMeaning     = "meaning"
+	FunctionWords       = "words"
+	VariableKind        = "kind"
+	VariablePath        = "path"
+	VariableTitle       = "title"
+	VariableNoteType    = "noteType"
+	VariableModified    = "modified"
+	VariableSize        = "size"
+	FunctionDate        = "date"
+	FunctionProperty    = "property"
+	FunctionHasProperty = "hasProperty"
+	FunctionHasHeading  = "hasHeading"
 )
 
 // Level is where a function decides: on one chunk or on a whole document.
@@ -25,23 +33,27 @@ const (
 	TypeInt
 	TypeStringList
 	TypeSearchResults
+	TypeTimestamp
+	// TypeDyn is the value of a frontmatter key: any YAML value.
+	TypeDyn
 )
 
 // Function is one entry of the catalog: a global function, a variable when IsVariable is set and Args
 // is nil, or a stage, a method of the results, when IsStage is set. A stage with several argument lists has
-// them in Overloads. Summary says what it does in a few plain words; Description says it in one or two plain
-// sentences that name the arguments.
+// them in Overloads. A function with OptionalArgs also takes them after Args. Summary says what it does in a
+// few plain words; Description says it in one or two plain sentences that name the arguments.
 type Function struct {
-	Name        string
-	Args        []ValueType
-	Result      ValueType
-	Level       Level
-	IsVariable  bool
-	IsStage     bool
-	Overloads   [][]ValueType
-	Summary     string
-	Description string
-	Example     string
+	Name         string
+	Args         []ValueType
+	OptionalArgs []ValueType
+	Result       ValueType
+	Level        Level
+	IsVariable   bool
+	IsStage      bool
+	Overloads    [][]ValueType
+	Summary      string
+	Description  string
+	Example      string
 }
 
 // Catalog lists the functions and variables a query may name.
@@ -49,10 +61,11 @@ type Catalog struct {
 	Functions []Function
 }
 
-// GetBuiltinCatalog lists words and meaning, which decide per chunk, the variables kind and path, which decide
-// per document, and the stages rerank, top and sortBy.
+// GetBuiltinCatalog lists words and meaning, which decide per chunk, the functions and variables that decide per
+// document: kind, path, title, noteType, modified, size, date, property, hasProperty, hasHeading and the link
+// functions, and the stages rerank, top and sortBy.
 func GetBuiltinCatalog() Catalog {
-	return Catalog{Functions: []Function{
+	c := Catalog{Functions: []Function{
 		{
 			Name: FunctionWords, Args: []ValueType{TypeString}, Result: TypeSearchResults, Level: LevelChunk,
 			Summary:     "passages with these words",
@@ -99,7 +112,57 @@ func GetBuiltinCatalog() Catalog {
 			Description: `Puts the results in order by score, path, title, modified or size. Score, modified and size go highest, newest or largest first, path and title from A to Z; add "asc" or "desc" to choose the direction.`,
 			Example:     `(kind == "pdf").sortBy("modified")`,
 		},
+		{
+			Name: VariableTitle, Result: TypeString, Level: LevelDocument, IsVariable: true,
+			Summary:     "the title of the note or file",
+			Description: "the title of a document: the title of a note, else the file name without its extension; compared case-sensitively with ==, in, startsWith, endsWith or contains",
+			Example:     `title.startsWith("Lecture")`,
+		},
+		{
+			Name: VariableNoteType, Result: TypeString, Level: LevelDocument, IsVariable: true,
+			Summary:     "the type of the note",
+			Description: "the type key of a note, note when it has none; empty for a document that is not a note",
+			Example:     `noteType == "book"`,
+		},
+		{
+			Name: VariableModified, Result: TypeTimestamp, Level: LevelDocument, IsVariable: true,
+			Summary:     "when the file was last changed",
+			Description: "when the file was last changed, compared with date(…); == holds only at that instant, so compare with a range",
+			Example:     `modified >= date("2026-01-01")`,
+		},
+		{
+			Name: VariableSize, Result: TypeInt, Level: LevelDocument, IsVariable: true,
+			Summary:     "the size of the file",
+			Description: "the size of the file in bytes",
+			Example:     `size > 1000000`,
+		},
+		{
+			Name: FunctionDate, Args: []ValueType{TypeString}, Result: TypeTimestamp, Level: LevelDocument,
+			Summary:     "a date and time",
+			Description: "an instant: YYYY-MM-DD or YYYY-MM-DDTHH:MM[:SS] with an optional Z or ±HH:MM; the local time of the machine when it has no offset",
+			Example:     `modified < date("2026-06-01T12:00")`,
+		},
+		{
+			Name: FunctionProperty, Args: []ValueType{TypeString}, Result: TypeDyn, Level: LevelDocument,
+			Summary:     "the value of a property",
+			Description: `the value of a top-level frontmatter key; a note without the key satisfies no comparison but !=, so write hasProperty("k") && property("k") != x; "x" in property("k") tests a list for an item`,
+			Example:     `property("status") == "done"`,
+		},
+		{
+			Name: FunctionHasProperty, Args: []ValueType{TypeString}, Result: TypeBool, Level: LevelDocument,
+			Summary:     "notes with this property",
+			Description: "true when the frontmatter of a note has the key, whatever its value",
+			Example:     `hasProperty("source")`,
+		},
+		{
+			Name: FunctionHasHeading, Args: []ValueType{TypeString}, Result: TypeBool, Level: LevelDocument,
+			Summary:     "notes with this heading",
+			Description: "true when a note has a heading of exactly this text, ignoring case",
+			Example:     `hasHeading("Summary")`,
+		},
 	}}
+	c.Functions = append(c.Functions, getLinkCatalog()...)
+	return c
 }
 
 func (c Catalog) FindFunction(name string) (Function, bool) {

@@ -2,9 +2,12 @@ package celquery_test
 
 import (
 	"errors"
+	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
@@ -19,7 +22,7 @@ func parse(text string) (searchquery.Query, error) {
 	if err != nil {
 		return searchquery.Query{}, err
 	}
-	return searchquery.Normalize(raw, limits)
+	return searchquery.Normalize(raw, limits, time.UTC)
 }
 
 func getProblems(t *testing.T, text string) []searchquery.Problem {
@@ -102,8 +105,8 @@ func TestAProblemOnTheSecondLineIsReportedInCodePoints(t *testing.T) {
 
 func TestAMacroIsAnUnknownFunction(t *testing.T) {
 	problems := getProblems(t, `has(x.y) && meaning("a")`)
-	if !hasProblem(problems, "unknown function has") {
-		t.Errorf("problems %+v, want unknown function has", problems)
+	if !hasProblem(problems, "Unknown function has") {
+		t.Errorf("problems %+v, want Unknown function has", problems)
 	}
 }
 
@@ -151,7 +154,7 @@ func TestSeventeenDistinctConditionsAreRejectedAndSixteenPass(t *testing.T) {
 
 func TestAQueryWithOnlyNegatedConditionsIsRejected(t *testing.T) {
 	for _, text := range []string{`!words("x")`, `kind != "pdf"`} {
-		if !hasProblem(getProblems(t, text), "a query needs a condition that is not negated") {
+		if !hasProblem(getProblems(t, text), "A query needs a condition that is not negated") {
 			t.Errorf("%s was accepted", text)
 		}
 	}
@@ -181,5 +184,107 @@ func TestDeepNestingIsRejected(t *testing.T) {
 	text := strings.Repeat("(", 40) + `words("a")` + strings.Repeat(")", 40)
 	if len(getProblems(t, text)) == 0 {
 		t.Error("40 levels of parentheses were accepted")
+	}
+}
+
+func TestLinkFunctionsParseToSetConditionsWithTargetAndType(t *testing.T) {
+	q, err := parse(`hasLinkTo("Entropy", "requires") && !isChildOf("Physics")`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if countLeaves(q.Root, searchquery.LeafSet) != 2 || len(q.Sets) != 2 || q.IsSearchResults {
+		t.Fatalf("the query is %+v, want two set leaves", q)
+	}
+	if !reflect.DeepEqual(q.Sets[0], searchquery.SetCondition{Function: "hasLinkTo", Target: "Entropy", LinkType: "requires", IsPositive: true, Position: searchquery.StartPosition()}) {
+		t.Errorf("the first set is %+v", q.Sets[0])
+	}
+	if q.Sets[1].Function != "isChildOf" || q.Sets[1].IsPositive || !q.Root.Children[1].IsNegated {
+		t.Errorf("the second set is %+v, want a negated isChildOf", q.Sets[1])
+	}
+}
+
+func TestALinkFunctionReportsABadArgumentOrUse(t *testing.T) {
+	for text, message := range map[string]string{
+		`hasLinkTo(path)`:             "takes a text in quotes",
+		`hasLinkTo("  ")`:             "The target of hasLinkTo is empty",
+		`isChildOf("a", "b", "c")`:    "isChildOf takes one text in quotes, and optionally one text in quotes",
+		`hasLinkTo("a", "b") == true`: "condition over",
+	} {
+		if problems := getProblems(t, text); !hasProblem(problems, message) {
+			t.Errorf("%s gave %+v, want %q", text, problems, message)
+		}
+	}
+}
+
+func TestAMisspelledLinkFunctionSuggestsTheName(t *testing.T) {
+	problems := getProblems(t, `isDescendentOf("x")`)
+	if len(problems) != 1 || problems[0].Suggestion != "isDescendantOf" {
+		t.Errorf("got %+v, want a suggestion of isDescendantOf", problems)
+	}
+}
+
+func TestEveryCatalogExampleParses(t *testing.T) {
+	for _, f := range searchquery.GetBuiltinCatalog().Functions {
+		if _, err := parse(f.Example); err != nil {
+			t.Errorf("the example of %s, %s, does not parse: %v", f.Name, f.Example, err)
+		}
+	}
+}
+
+func TestASyntaxProblemReadsInPlainWordsAtItsPlace(t *testing.T) {
+	owner := "(meaninng\n(\"Мадхавендра Пури) && meaning(\"Кришна\"\n)).rerank(\"как Мадхавендрапури и Кришна связаны?\")."
+	tests := []struct {
+		name string
+		text string
+		want []string
+	}{
+		{"the query of the owner", owner, []string{
+			"1:2: Unknown function meaninng: did you mean meaning?",
+			"2:33: A quote is missing before Кришна",
+			"3:51: The query ends with a dot: remove it or write a stage after it",
+		}},
+		{"an unclosed string", `meaning("river`, []string{"1:9: This quote is not closed"}},
+		{"an unclosed string before another line", "words(\"a\" && meaning(\"b)\n|| words(\"c\")", []string{"1:22: This quote is not closed"}},
+		{"a word with no opening quote", `meaning(Кришна")`, []string{"1:9: A quote is missing before Кришна"}},
+		{"an unclosed parenthesis", `(meaning("a") && words("b")`, []string{"1:1: This parenthesis is not closed"}},
+		{"a parenthesis with no opening one", `meaning("a"))`, []string{"1:13: This parenthesis has no opening one"}},
+		{"an unknown function", `meaninng("a")`, []string{"1:1: Unknown function meaninng: did you mean meaning?"}},
+		{"an unknown function next to a syntax error", "meaninng(\"a\") &&", []string{
+			"1:1: Unknown function meaninng: did you mean meaning?", "1:15: A condition must follow &&",
+		}},
+		{"a trailing dot", `meaning("a").`, []string{"1:13: The query ends with a dot: remove it or write a stage after it"}},
+		{"a trailing operator", `meaning("a") || !`, []string{"1:17: A condition must follow !"}},
+		{"letters outside a string", `meaning("a") && Мадхавендра Пури`, []string{"1:17: Put this text in quotes: Мадхавендра Пури"}},
+		{"a single ampersand", `meaning("a") & words("b")`, []string{`1:14: Write && for "and"`}},
+		{"a character outside the language", `meaning("a") @ words("b")`, []string{`1:14: "@" is not allowed in a query`}},
+		{"two conditions with no operator", `meaning("a") words("b")`, []string{"1:14: Join the conditions with && or || before words"}},
+		{"a number for a text", `meaning(1)`, []string{"1:1: meaning takes one text in quotes"}},
+		{"an operator outside the language", `meaning("a") + 1`, []string{"1:14: The operator + is not allowed in a query"}},
+		{"a misspelled member function", `path.startsWth("books/")`, []string{"1:6: Unknown function startsWth: did you mean startsWith?"}},
+		{"a misspelled text method", `title.contans("Lecture")`, []string{"1:7: Unknown function contans: did you mean contains?"}},
+		{"a function named with an underscore", `_words("river")`, []string{"1:1: Unknown function _words: did you mean words?"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			problems := getProblems(t, tt.text)
+			got := make([]string, len(problems))
+			for i, p := range problems {
+				got[i] = searchquery.FormatProblem(p)
+			}
+			if !slices.Equal(got, tt.want) {
+				t.Errorf("problems\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(tt.want, "\n"))
+			}
+		})
+	}
+}
+
+func TestConsecutiveLettersOutsideQuotesAreOneProblemOverTheirRange(t *testing.T) {
+	problems := getProblems(t, `meaning("a") && Кришна`)
+	want := searchquery.Problem{
+		Position: searchquery.Position{Line: 1, Column: 17}, End: searchquery.Position{Line: 1, Column: 22},
+		Message: "Put this text in quotes: Кришна",
+	}
+	if len(problems) != 1 || problems[0] != want {
+		t.Errorf("problems %+v, want %+v", problems, want)
 	}
 }

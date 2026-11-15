@@ -61,6 +61,50 @@ func TestAMeaningInAScopeOverTheExactScanFindsItsChunkByTheApproximateSearch(t *
 	}
 }
 
+func TestAMeaningWithFewChunksAboveTheFloorSearchesOnceWithoutAWarning(t *testing.T) {
+	w := newWorld(t, map[string]string{
+		"near.md": "The harbor at dusk, where the boats come home. " + strings.Repeat("calm water ", 6),
+		"far.md":  repeatSentences("far", 200),
+	})
+	w.cutBySize(t, "near.md", 40)
+	w.cutBySize(t, "far.md", 40)
+	w.vectorize(t, "near.md", func(chunk.Record) []float32 { return newVector(0) })
+	w.vectorize(t, "far.md", func(chunk.Record) []float32 { return newVector(dimensions / 2) })
+	find, counted := w.newCountedFind(texts{"a": newVector(0)})
+	find.Limits.ExactScanChunks = 0
+	find.Limits.CandidatesPerCondition = 10
+	find.Limits.CoarseOversample = 1
+	find.Limits.MaxCoarseCandidates = 80
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("a")`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Results) == 0 || got.Results[0].Document.Path != "near.md" {
+		t.Errorf("found %v, want near.md", getPaths(got))
+	}
+	if len(got.Warnings) != 0 || counted.coarseSearches != 1 {
+		t.Errorf("searched %d times with warnings %v, want once and no warning", counted.coarseSearches, got.Warnings)
+	}
+}
+
+func TestAMeaningWhoseNearestChunksAreOutOfScopeWidensTheSearch(t *testing.T) {
+	w := newDeepWorld(t)
+	find, counted := w.newCountedFind(texts{"a": newVector(0)})
+	find.Limits.ExactScanChunks = 0
+	find.Limits.CandidatesPerCondition = 1
+	find.Limits.CoarseOversample = 1
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("a") && !path.startsWith("out/")`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Results) != 1 || got.Results[0].Document.Path != "deep/target.md" {
+		t.Errorf("found %v, want the chunk under deep/", getPaths(got))
+	}
+	if counted.coarseSearches < 2 || len(got.Warnings) != 0 {
+		t.Errorf("searched %d times with warnings %v, want a wider search and no warning", counted.coarseSearches, got.Warnings)
+	}
+}
+
 func TestWordsOrMeaningFusesAndTheChunkMatchedByBothRanksFirst(t *testing.T) {
 	w := newWorld(t, map[string]string{
 		"a.md": "The tide comes over the sand at night.",
@@ -107,7 +151,7 @@ func TestAKindAloneReturnsOneWholeFilePerDocumentByPath(t *testing.T) {
 }
 
 func TestAMeaningWithoutAModelReturnsErrNoModelAndReadsNothing(t *testing.T) {
-	find := searchquery.NewFindSearchResults(searchquery.FindSearchResultsDeps{Parser: celquery.NewParser(searchquerydomain.DefaultLimits())})
+	find := searchquery.NewFindSearchResults(searchquery.FindSearchResultsDeps{Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: newClock()})
 	_, err := find.Execute(t.Context(), newWorld(t, nil).v, searchquerydomain.Request{Text: `meaning("a")`})
 	if !errors.Is(err, searchquerydomain.ErrNoModel) {
 		t.Errorf("returned %v, want ErrNoModel", err)
@@ -196,5 +240,24 @@ func TestACanceledQueryReturnsTheCancellation(t *testing.T) {
 	_, err := w.newFind(nil).Execute(ctx, w.v, searchquerydomain.Request{Text: `words("tide")`})
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("returned %v, want context.Canceled", err)
+	}
+}
+
+func TestWordsWhoseBestChunksAreOutOfScopeWidenTheSearch(t *testing.T) {
+	w := newWorld(t, map[string]string{
+		"deep/target.md": "The boats come home to the harbor at dusk. " + strings.Repeat("calm water ", 10),
+		"out/many.md":    strings.Repeat("Harbor, harbor, harbor. ", 200),
+	})
+	w.cutBySize(t, "deep/target.md", 40)
+	w.cutBySize(t, "out/many.md", 40)
+	find := w.newFind(texts{})
+	find.Limits.MaxDocuments = 0
+	find.Limits.CandidatesPerCondition = 1
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("harbor") && !path.startsWith("out/")`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Results) != 1 || got.Results[0].Document.Path != "deep/target.md" {
+		t.Errorf("found %v, want the chunk under deep/", getPaths(got))
 	}
 }

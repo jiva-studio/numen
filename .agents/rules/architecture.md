@@ -188,7 +188,7 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `plugin-config-golden-parity`: plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`; `eslint.config.js` and `numen-rules.mjs` are byte-identical copies of the golden files.
 - `make plugins_lint` with the golden `eslint.config.js`: a file of a `lib` segment imports no `ui`, `model` or `api` segment at any depth and no `.vue` file (`no-restricted-imports`), and every component passes `numen/max-inline-props`, `numen/vue-script-sections` and `numen/max-script-lines` from `numen-rules.mjs`. `tools/checks/structure/ts/plugins/golden-config.test.mjs` lints planted files in a copy of the template.
 - `plugin-backend-layers`: the layers inside a plugin backend point inward.
-- `go/plugin-boundary` and `go/plugin-isolation-packages` (`make checks TAGS=plugin,go`): apply the dependency rule of §11 to the type-checked import graph on 14 platform targets.
+- `go/plugin-boundary` and `go/plugin-isolation-packages` (`make checks TAGS=plugin,go`): apply the dependency rule of §11 to the type-checked import graph on 14 platform targets. A `go.mod` requires a plugin only when the non-test code of its own module passes a package of that plugin to `RegisterBuiltIn`, which links the plugin into the binary.
 - `plugins-leakage`: manifest schema and static non-leakage.
 - `plugins-use-main-entry`: the SDK and the UI library are imported through their declared entries.
 - `make plugins_lint`: no `@/**` and no `@plugins/**` in a plugin frontend.
@@ -271,6 +271,8 @@ graph LR
 - An agent is a provider of `acp.task`: agents-claude, agents-codex and agents-antigravity for the CLIs of Claude Code, Codex and Antigravity, agents-acp for ACP programs, agents-numen for its own loop over `llm.chat`. A plugin that runs an agent calls `acp.task` on the connection rows of its settings. The core starts no agent program and keeps no agent setting.
 - A protocol RPC or an export of the shared SDK serves plugins of more than one family, except the parts §11 (c) keeps for one consumer. What one plugin or one family uses lives in that plugin or in a contract. What nothing outside tests uses is deleted (`go/dead-exports`).
 - Every new package, type, RPC or export of the core, the core protocol or the shared SDK answers one question: which product domain does it know, and why is it not in a plugin or a contract? The answer "none" is the only one that keeps it there.
+
+**(m) The mobile app links its plugins into one binary.** A phone runs one process, so the mobile app links the plugins it ships into its binary and registers each with `RegisterBuiltIn`; they run in process and answer on the same routes as a plugin process. The desktop and every library never require a plugin. A `go.mod` requires a plugin only when the non-test code of its own module passes that plugin's `Manifest` to `RegisterBuiltIn` (`go/plugin-boundary`). The owner decided this on 2026-11-15.
 
 ### Comparison with established architectures
 

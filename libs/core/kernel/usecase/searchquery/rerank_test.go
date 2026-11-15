@@ -3,6 +3,7 @@ package searchquery_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
@@ -167,10 +169,8 @@ func TestARerankWithNoRowOrWithEveryRowFailingIsAQueryError(t *testing.T) {
 	if !ok || len(rerankError.Failures) != 2 || rerankError.Failures[0].ConnectionName != "First" || rerankError.Failures[1].ConnectionName != "Second" {
 		t.Fatalf("with every row failing the query answered %v, want a RerankError naming both", err)
 	}
-	for _, f := range rerankError.Failures {
-		if f.Reason == "" {
-			t.Errorf("the failure of %s has no reason", f.ConnectionName)
-		}
+	if want := "no reranking service answered: First: unavailable; Second: invalid request"; err.Error() != want {
+		t.Errorf("the error reads %q, want %q", err.Error(), want)
 	}
 }
 
@@ -370,5 +370,78 @@ func TestTheResultsBeforeTheFirstRerankAreReportedBeforeTheServiceIsAsked(t *tes
 	}
 	if paths := getPaths(got); !slices.Equal(paths, []string{"a.md", "b.md", "c.md"}) {
 		t.Errorf("results %v, want the reranked order", paths)
+	}
+}
+
+func newShoreWorld(t *testing.T, count int) world {
+	t.Helper()
+	files := map[string]string{}
+	for i := range count {
+		files[fmt.Sprintf("shore-%02d.md", i)] = fmt.Sprintf("The tide reaches shore number %d.", i)
+	}
+	w := newWorld(t, files)
+	for name := range files {
+		w.cutBySize(t, name, 400)
+	}
+	return w
+}
+
+func TestARerankSendsItsTextsInBatchesOfAtMost32(t *testing.T) {
+	w := newShoreWorld(t, 40)
+	s := newServices(t)
+	s.setRows(s.second)
+	s.answerBy(secondAddress, byLength)
+	limits := searchquerydomain.StageLimits{RerankWindow: 100, MaxReranked: 300, MaxRerankedBytes: 4096}
+
+	got, err := w.newRerankingFind(s, limits).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide").rerank()`, Limit: 100})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sizes []int
+	for _, sent := range s.sentTexts(secondAddress) {
+		sizes = append(sizes, len(sent))
+	}
+	if !slices.Equal(sizes, []int{32, 8}) {
+		t.Errorf("calls sent %v texts, want 32 and 8", sizes)
+	}
+	if len(got.Results) != 40 || got.ScoreKind != searchquerydomain.ScoreRerank {
+		t.Errorf("%d results scored %v, want 40 reranked", len(got.Results), got.ScoreKind)
+	}
+}
+
+func TestAWaitingInteractiveRerankGoesBeforeTheNextBatchOfABackgroundRerank(t *testing.T) {
+	w := newShoreWorld(t, 40)
+	s := newServices(t)
+	s.setRows(s.second)
+	s.answerBy(secondAddress, byLength)
+	s.world.Provider.Block(secondAddress)
+	find := w.newRerankingFind(s, searchquerydomain.StageLimits{RerankWindow: 100, MaxReranked: 300, MaxRerankedBytes: 4096})
+	run := func(text string, priority modelcalldomain.Priority) chan error {
+		done := make(chan error, 1)
+		go func() {
+			_, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: text, Limit: 100, Priority: priority})
+			done <- err
+		}()
+		return done
+	}
+
+	background := run(`words("tide").rerank("background")`, modelcalldomain.PriorityBackground)
+	<-s.world.Provider.Entered()
+	interactive := run(`words("tide").rerank("person")`, modelcalldomain.PriorityInteractive)
+	s.world.Waits.AwaitCount(t, 1)
+	s.world.Provider.Release(secondAddress)
+	<-s.world.Provider.Entered()
+
+	calls := s.world.Provider.CallsTo(secondAddress)
+	if query, _ := readRerankRequest(calls[len(calls)-1].Payload); query != "person" {
+		t.Errorf("the call after the first background batch reranks for %q, want the interactive query", query)
+	}
+	s.world.Provider.Unblock(secondAddress)
+	if err := <-interactive; err != nil {
+		t.Errorf("the interactive rerank answered %v", err)
+	}
+	if err := <-background; err != nil {
+		t.Errorf("the background rerank answered %v", err)
 	}
 }
