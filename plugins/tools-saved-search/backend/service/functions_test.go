@@ -11,8 +11,14 @@ import (
 
 func getGardenFunctions() host.SearchFunctions {
 	return host.SearchFunctions{Revision: "r1", Functions: []host.SearchFunction{
-		{Name: "words", Kind: "function", Level: "chunk", Summary: "passages with these words", Signatures: []string{"words(text)"}, Description: "Finds passages that contain the words you give.", Example: `words("spade")`},
-		{Name: "tags", Kind: "function", Level: "document", Summary: "notes with this tag", Signatures: []string{"tags(name)"}, Description: "Finds notes that carry the tag you give.", Example: `tags("garden")`},
+		{
+			Name: "words", Kind: "function", Level: "chunk", Summary: "passages with these words", Signatures: []string{"words(text)"},
+			Description: "Finds passages that contain the words you give.", Example: `words("spade")`,
+		},
+		{
+			Name: "tags", Kind: "function", Level: "document", Summary: "notes with this tag", Signatures: []string{"tags(name)"},
+			Description: "Finds notes that carry the tag you give.", Example: `tags("garden")`,
+		},
 		{Name: "top", Kind: "stage", Summary: "keep the first N", Signatures: []string{".top(count)"}, Description: "Keeps only the first results; give how many.", Example: `words("seed").top(5)`},
 	}}
 }
