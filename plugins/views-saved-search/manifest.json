@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.saved.search",
   "name": "Saved Search",
-  "version": "2026.11.2",
+  "version": "2026.11.3",
   "protocol": 1,
   "description": "Saved searches over meaning and words: notes that keep a query and its results",
   "capabilities": ["tools"],
