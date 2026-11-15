@@ -41,6 +41,27 @@ func TestCompleteAsksTheOperationOfTheProvider(t *testing.T) {
 	}
 }
 
+// byLength scores each document by the number of its bytes.
+type byLength struct{}
+
+func (byLength) Rerank(_ context.Context, _ connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+	result := &llm.RerankResult{}
+	for _, document := range request.GetDocuments() {
+		result.Scores = append(result.Scores, float32(len(document)))
+	}
+	return result, nil
+}
+
+func TestRerankAsksTheOperationOfTheProvider(t *testing.T) {
+	provider := llm.Provide(nil, llm.Roles{Reranker: byLength{}})
+
+	result, err := llmtest.Rerank(t.Context(), provider, connection.Call{}, &llm.RerankRequest{Query: "tide", Documents: []string{"ebb", "flood"}})
+
+	if err != nil || len(result.GetScores()) != 2 || result.GetScores()[0] != 3 || result.GetScores()[1] != 5 {
+		t.Errorf("Rerank = %v, %v, want the scores of the reranker", result, err)
+	}
+}
+
 func TestTheCallerAnswersTheClientOfTheContract(t *testing.T) {
 	stream, err := llm.Chat(t.Context(), llmtest.NewCaller(newProvider(nil), connection.Call{}), &llm.ChatRequest{}, connection.PriorityInteractive)
 	if err != nil {
