@@ -64,8 +64,8 @@ func findSetting(t *testing.T, m manifestDoc, key string) manifestSetting {
 func TestManifest(t *testing.T) {
 	m := readManifest(t)
 
-	if m.ID != "md.numen.tools.saved.search" || m.Name != "Saved Search" || m.Version != "2026.11.1" || m.Contributes.Category != "tools" {
-		t.Errorf("manifest = %+v, want md.numen.tools.saved.search, Saved Search, 2026.11.1 in tools", m)
+	if m.ID != "md.numen.tools.saved.search" || m.Name != "Saved Search" || m.Version != "2026.11.2" || m.Contributes.Category != "tools" {
+		t.Errorf("manifest = %+v, want md.numen.tools.saved.search, Saved Search, 2026.11.2 in tools", m)
 	}
 	if !slices.Equal(m.Capabilities, []string{"tools"}) {
 		t.Errorf("capabilities = %v, want [tools]", m.Capabilities)
