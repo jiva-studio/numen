@@ -3,6 +3,7 @@ package manifest
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
@@ -23,7 +24,8 @@ type Handler struct {
 	When    string
 }
 
-// Trigger runs the plugin's own handler of a shared command over the file of an event.
+// Trigger runs the plugin's own handler of a shared command, or a command the plugin declares, over the
+// file of an event.
 type Trigger struct {
 	Event   string
 	Command string
@@ -70,7 +72,7 @@ func (m Manifest) listTriggerIssues() []error {
 		if !IsEvent(declared.Event) {
 			issues = append(issues, fmt.Errorf("%w: %q is no event", ErrInvalidTrigger, declared.Event))
 		}
-		if _, isHandled := m.GetHandler(declared.Command); !isHandled {
+		if !m.isTriggerCommand(declared.Command) {
 			issues = append(issues, fmt.Errorf("%w: on %q runs %q, which the plugin does not handle", ErrInvalidTrigger, declared.Event, declared.Command))
 		}
 		if _, err := when.Parse(declared.When); err != nil {
@@ -78,4 +80,11 @@ func (m Manifest) listTriggerIssues() []error {
 		}
 	}
 	return issues
+}
+
+func (m Manifest) isTriggerCommand(command string) bool {
+	if _, isHandled := m.GetHandler(command); isHandled {
+		return true
+	}
+	return slices.ContainsFunc(m.Contributes.Commands, func(one Command) bool { return one.ID == command })
 }

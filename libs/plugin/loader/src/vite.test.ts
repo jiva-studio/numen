@@ -28,8 +28,37 @@ describe('vite host module entries', () => {
     }
   })
 
+  it('serves one CodeMirror and one Lezer to every plugin', () => {
+    expect(hostModuleInputs['sdk/codemirror/state']).toBe('host-module:@codemirror/state')
+    expect(hostModuleInputs['sdk/codemirror/view']).toBe('host-module:@codemirror/view')
+    expect(hostModuleInputs['sdk/codemirror/language']).toBe('host-module:@codemirror/language')
+    expect(hostModuleInputs['sdk/lezer/common']).toBe('host-module:@lezer/common')
+    expect(hostModuleInputs['sdk/lezer/markdown']).toBe('host-module:@lezer/markdown')
+  })
+
+  it('loads a scoped host module by its full name', () => {
+    const load = createHostModuleEntries().load as (id: string) => string | undefined
+    expect(load('\0host-module:@codemirror/state')).toBe("export * from '@codemirror/state'")
+  })
+
+  it('resolves an editor module of a host-module entry from the loader package', () => {
+    const resolveId = createHostModuleEntries().resolveId as (
+      this: unknown,
+      id: string,
+      importer?: string,
+    ) => unknown
+    const context = { resolve: (id: string, importer: string) => `${id} from ${importer}` }
+
+    expect(resolveId.call(context, '@codemirror/state', '\0host-module:@codemirror/state')).toMatch(
+      /^@codemirror\/state from .*libs\/plugin\/loader\/src\/vite\.ts$/,
+    )
+    expect(resolveId.call(context, 'vue', '\0host-module:vue')).toBeUndefined()
+    expect(resolveId.call(context, '@codemirror/state', '/app/src/main.ts')).toBeUndefined()
+  })
+
   it('writes host modules to unhashed paths and other chunks to built/', () => {
     expect(getEntryFileName({ name: 'sdk/vue' })).toBe('[name].js')
+    expect(getEntryFileName({ name: 'sdk/codemirror/state' })).toBe('[name].js')
     expect(getEntryFileName({ name: 'index' })).toBe('built/[name]-[hash].js')
   })
 })

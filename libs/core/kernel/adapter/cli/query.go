@@ -8,20 +8,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 const queryUsage = "usage: numen-cli query [--limit N] <vault> <query>"
 
 // errInvalidQuery is a query the command reported the problems of.
 var errInvalidQuery = errors.New("the query is not valid")
-
-// Query is a query of the search language run within one vault: Find resolves the vault, Prepare creates
-// the use case over it.
-type Query struct {
-	Find    func(nameOrPath string) (domain.Vault, error)
-	Prepare func(ctx context.Context, v domain.Vault) (*searchqueryusecase.FindSearchResults, error)
-}
 
 type queryCommand struct {
 	session Session
@@ -44,15 +36,7 @@ func (c queryCommand) Run(ctx context.Context, term terminal, args []string) err
 	if err != nil {
 		return err
 	}
-	v, err := indexed.Query.Find(vaultName)
-	if err != nil {
-		return formatVaultError(err)
-	}
-	find, err := indexed.Query.Prepare(ctx, v)
-	if err != nil {
-		return err
-	}
-	results, err := find.Execute(ctx, v, request)
+	results, err := indexed.Query.ExecuteByName(ctx, vaultName, request)
 	if parseError, ok := errors.AsType[*searchquery.ParseError](err); ok {
 		for _, p := range parseError.Problems {
 			diagnostics.Printf("query:%s\n", searchquery.FormatProblem(p))
@@ -60,7 +44,7 @@ func (c queryCommand) Run(ctx context.Context, term terminal, args []string) err
 		return errors.Join(errInvalidQuery, diagnostics.Err())
 	}
 	if err != nil {
-		return err
+		return formatVaultError(err)
 	}
 	for _, warning := range results.Warnings {
 		diagnostics.Printf("warning: %s\n", warning)

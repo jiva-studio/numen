@@ -76,6 +76,11 @@ This file lists the things that exist in Numen, the word a person reads for each
 - States: unreadable frontmatter: `unreadable`, text "frontmatter unreadable"; "text cannot start with frontmatter" (`bodyUnwritable`).
 - Not: not a content type and not a tab kind.
 
+### tag
+- Is: A name in the frontmatter key `tags` of a note, a list or a single text. A slash nests a tag under another (`Projects/Web` is under `Projects`). Two spellings that differ only in case, in Unicode composition or by a leading `#` are one tag. Plugin "Tags".
+- Actions: `tags.update` "Update tags"; agent tool `tag_list` "List tags".
+- Not: a `#word` in the body of a note is not a tag. Not a note type.
+
 ### note tab
 - Is: A tab of kind `note` (tab title "Note"; editor "Markdown Note Editor") that shows and edits one note. It saves by itself after a quiet time.
 - States: `loading`, `clean`, `unsaved` (also while `saving`), `stale` (file changed on disk; saving paused), `gone` (file removed from the vault; saving paused, text kept), `stuck` (an error blocks read or write).

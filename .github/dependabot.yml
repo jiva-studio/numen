@@ -46,6 +46,7 @@ updates:
       - /plugins/tools-proofreading
       - /plugins/tools-saved-search
       - /plugins/tools-search-relevance
+      - /plugins/tools-taxonomy
       - /plugins/tools-updater
       - /plugins/views-flashcards-studio
     schedule:

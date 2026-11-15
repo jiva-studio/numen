@@ -72,6 +72,15 @@ service HostVaultService {
   // GetPathsOfType lists the notes of a type.
   rpc GetPathsOfType(GetPathsOfTypeRequest) returns (GetPathsOfTypeResponse);
 
+  // ReadFrontmatter returns the frontmatter of notes as the index holds it, in
+  // pages ordered by path. It needs vault:read.
+  rpc ReadFrontmatter(ReadFrontmatterRequest) returns (ReadFrontmatterResponse);
+
+  // ListFileChanges returns the file change feed of the vault after a cursor:
+  // the latest event of each kind of each file, in the order the index stored
+  // them. It needs vault:read.
+  rpc ListFileChanges(ListFileChangesRequest) returns (ListFileChangesResponse);
+
   // GetLinks lists the links written in a note, with what each reaches now.
   rpc GetLinks(GetLinksRequest) returns (GetLinksResponse);
 
@@ -371,6 +380,81 @@ message GetPathsOfTypeRequest {
 message GetPathsOfTypeResponse {
   HostVaultErrorCode error = 1;
   repeated string paths = 2;
+}
+
+message ReadFrontmatterRequest {
+  // paths are the notes to read; empty reads every note of the vault. At most
+  // 1000.
+  repeated string paths = 1;
+  // keys are the frontmatter keys returned; empty returns every key. At most 64.
+  repeated string keys = 2;
+  // page_size is the number of notes of a page: 0 reads 1000, the most.
+  int32 page_size = 3;
+  // page_token is the next_page_token of the page before, empty for the first.
+  string page_token = 4;
+}
+
+message ReadFrontmatterResponse {
+  HostVaultErrorCode error = 1;
+  repeated NoteFrontmatter notes = 2;
+  // next_page_token reads the next page; empty after the last.
+  string next_page_token = 3;
+  // cursor is the place in the file change feed taken before this page was
+  // read. A reader keeps the cursor of its first page and reads the feed from
+  // it, so a change made during the read is not lost.
+  FileChangeCursor cursor = 4;
+}
+
+// NoteFrontmatter is the frontmatter of one note.
+message NoteFrontmatter {
+  string path = 1;
+  // values is a JSON object of the requested keys the note has.
+  bytes values = 2;
+  // source_id is the number the index keeps the file under. It stays the same
+  // when the file moves.
+  int64 source_id = 3;
+}
+
+// FileChangeCursor is a place in the file change feed of a vault. The empty
+// cursor is before the start of any feed.
+message FileChangeCursor {
+  // feed_id names the feed. A new index starts a feed of another id.
+  string feed_id = 1;
+  // seq is the number of the last change read.
+  int64 seq = 2;
+}
+
+message ListFileChangesRequest {
+  // since is the cursor of the last read, empty for the first.
+  FileChangeCursor since = 1;
+  // events are the events returned: file.added, file.changed, file.moved,
+  // file.removed, note.frontmatterChanged. At least one.
+  repeated string events = 2;
+  // limit is the number of changes of a page: 0 reads 1000, the most.
+  int32 limit = 3;
+}
+
+message ListFileChangesResponse {
+  HostVaultErrorCode error = 1;
+  repeated FileChange changes = 2;
+  // next is the cursor the next read starts from.
+  FileChangeCursor next = 3;
+  // is_reset is true when the feed cannot continue from since: since is empty,
+  // of another feed, or older than the removals the feed keeps. The reader
+  // reads the vault again from the start, and changes is empty.
+  bool is_reset = 4;
+  // has_more is true when more changes follow next.
+  bool has_more = 5;
+}
+
+// FileChange is the latest event of one kind of one file.
+message FileChange {
+  // source_id is the number the index keeps the file under.
+  int64 source_id = 1;
+  // path is where the file is now, or for file.removed where it was.
+  string path = 2;
+  string event = 3;
+  int64 seq = 4;
 }
 
 // HostLink is a link written in a note, and what it reaches now.

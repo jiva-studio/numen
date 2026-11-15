@@ -173,14 +173,14 @@ export function createCruiseConfig(root, matrix = PACKAGE_DEPENDENCIES) {
       ...createSegmentRules(),
       ...listFlatLibraryRoots(root, packages).flatMap(createAreaRules),
       {
-        name: 'plugin-loader-reaches-only-vue-vite-and-cel',
+        name: 'plugin-loader-reaches-only-host-modules-vite-and-cel',
         comment:
-          'of third-party code the plugin host knows Vue, its build helper Vite and the CEL evaluator of when conditions; its tests are not shipped',
+          'of third-party code the plugin host knows the host modules it serves (Vue, CodeMirror, Lezer), its build helper Vite and the CEL evaluator of when conditions; its tests are not shipped',
         severity: 'error',
         from: { path: '^libs/plugin/loader/src/', pathNot: NOT_SHIPPED },
         to: {
           path: '(^|/)node_modules/',
-          pathNot: '(^|/)node_modules/(vue|@vue/[^/]+|vite|@bufbuild/cel)/',
+          pathNot: '(^|/)node_modules/(vue|@vue/[^/]+|@codemirror/[^/]+|@lezer/[^/]+|vite|@bufbuild/cel)/',
         },
       },
       {

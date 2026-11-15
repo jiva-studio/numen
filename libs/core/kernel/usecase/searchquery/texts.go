@@ -7,12 +7,19 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 )
+
+type textReader struct {
+	readers vaultport.VaultReaders
+	texts   textdomain.Readers
+	vault   domain.Vault
+}
 
 // fileText is the text of one file a result is read from: a note's own file, or the text version another
 // source was cut from.
@@ -22,18 +29,18 @@ type fileText struct {
 	isRead  bool
 }
 
-func (p *plan) readTexts(ctx context.Context, candidates []domain.SearchResult, documents []searchquery.Document) (map[string]fileText, error) {
+func (r textReader) readTexts(ctx context.Context, candidates []domain.SearchResult, documents []searchquery.Document) (map[string]fileText, error) {
 	paths, versions := listTextPaths(candidates, documents)
 	if len(paths) == 0 {
 		return map[string]fileText{}, nil
 	}
-	reader, err := p.u.readers.Open(p.v)
+	reader, err := r.readers.Open(r.vault)
 	if err != nil {
 		return nil, err
 	}
 	var texts textdomain.Texts
-	if p.u.texts != nil {
-		if texts, err = p.u.texts.Open(p.v); err != nil {
+	if r.texts != nil {
+		if texts, err = r.texts.Open(r.vault); err != nil {
 			return nil, err
 		}
 	}

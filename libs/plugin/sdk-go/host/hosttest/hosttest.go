@@ -26,6 +26,7 @@ type Vault struct {
 	isShown    bool
 	files      vaultFiles
 	indexed    map[string]domain.Note
+	feed       feed
 	rejected   map[string]error
 	unwritable map[string]error
 	cache      map[string][]byte
@@ -80,6 +81,7 @@ func newVault(v domain.Vault, files vaultFiles) *Vault {
 		isShown:  true,
 		files:    files,
 		indexed:  map[string]domain.Note{},
+		feed:     newFeed(),
 		rejected: map[string]error{},
 
 		unwritable: map[string]error{},
