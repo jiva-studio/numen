@@ -5,6 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+
+	"modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
@@ -20,7 +24,8 @@ type Search struct{ db *sql.DB }
 func NewSearch(db *sql.DB) *Search { return &Search{db: db} }
 
 // FindLexical is a word search: the chunks of one vault whose text matches the
-// query, best first.
+// query, best first, each with its word score. A raw query FTS5 cannot parse
+// returns source.ErrInvalidWords.
 //
 // The result is the large chunk enclosing each hit, which is what a result
 // displays.
@@ -30,7 +35,7 @@ func (q *Search) FindLexical(ctx context.Context, vaultID domain.VaultID, query 
 		// it, and arriving here without one is a mistake in the caller.
 		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", query.Limit)
 	}
-	return q.findResults(ctx, vaultID, query, resultStatements{all: lexicalSQL, kinds: lexicalKindsSQL})
+	return q.findResults(ctx, vaultID, query, resultStatements{all: lexicalSQL, kinds: lexicalKindsSQL, hasWordScore: true})
 }
 
 // GetNamedSections returns the sections of one vault whose names match the
@@ -45,15 +50,23 @@ func (q *Search) GetNamedSections(ctx context.Context, vaultID domain.VaultID, q
 	return q.findResults(ctx, vaultID, query, resultStatements{all: sectionsSQL, kinds: sectionsKindsSQL})
 }
 
-// resultStatements is a full-text statement over every source, and its variant
-// limited to sources of some kinds.
+// resultStatements is a full-text statement over every source, its variant
+// limited to sources of some kinds, and whether its last column is a word score.
 type resultStatements struct {
-	all   string
-	kinds string
+	all          string
+	kinds        string
+	hasWordScore bool
 }
 
-func (q *Search) findResults(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery, search resultStatements) (_ []domain.SearchResult, err error) {
-	expression := Expression(query.Text, query.IsGrowing)
+func getExpression(query source.LexicalQuery) string {
+	if query.IsRaw {
+		return strings.TrimSpace(query.Text)
+	}
+	return Expression(query.Text, query.IsGrowing)
+}
+
+func (q *Search) findResults(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery, search resultStatements) ([]domain.SearchResult, error) {
+	expression := getExpression(query)
 	if expression == "" {
 		return nil, nil
 	}
@@ -64,7 +77,14 @@ func (q *Search) findResults(ctx context.Context, vaultID domain.VaultID, query 
 	if err != nil {
 		return nil, err
 	}
+	found, err := q.readResults(ctx, vault, expression, query, search)
+	if query.IsRaw && isQueryError(err) {
+		return nil, fmt.Errorf("%w: %w", source.ErrInvalidWords, err)
+	}
+	return found, err
+}
 
+func (q *Search) readResults(ctx context.Context, vault int64, expression string, query source.LexicalQuery, search resultStatements) (_ []domain.SearchResult, err error) {
 	var rows *sql.Rows
 	composed, decomposed := norm.NFC.String(query.PathPrefix), norm.NFD.String(query.PathPrefix)
 	if len(query.Kinds) == 0 {
@@ -82,13 +102,23 @@ func (q *Search) findResults(ctx context.Context, vaultID domain.VaultID, query 
 	for rows.Next() {
 		var p domain.SearchResult
 		var row int64
-		if err := rows.Scan(&row, &p.Path, &p.Kind, &p.VersionID, &p.FileHash, &p.Start, &p.Length, &p.PlaceLabel, &p.MatchOffset); err != nil {
+		var score float64
+		if err := rows.Scan(&row, &p.Path, &p.Kind, &p.VersionID, &p.FileHash, &p.Start, &p.Length, &p.PlaceLabel, &p.MatchOffset, &score); err != nil {
 			return nil, err
 		}
 		p.ChunkID = ID(row)
+		if search.hasWordScore {
+			p.WordScore = &score
+		}
 		out = append(out, p)
 	}
 	return out, rows.Err()
+}
+
+func isQueryError(err error) bool {
+	// The statement is fixed and the expression is bound, so SQLITE_ERROR comes from the expression.
+	var response *sqlite.Error
+	return errors.As(err, &response) && response.Code()&0xff == sqlite3.SQLITE_ERROR
 }
 
 // FindCoarseCandidates returns the chunks of one vault whose one-bit vectors are nearest the query

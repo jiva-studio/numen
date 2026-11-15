@@ -17,6 +17,7 @@ SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.content_hash, 
        c.start,
        c.length,
        COALESCE(c.location, ''),
+       0,
        0
 FROM hits h
 JOIN chunks c ON c.id = h.rowid

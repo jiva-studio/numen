@@ -7,7 +7,6 @@ import (
 	"time"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
@@ -72,8 +71,7 @@ var errSafeMode = errors.New("numen is running in safe mode")
 
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories, on the
 // clock of c.
-// The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
-// provider NUMEN_ONNX_PROVIDER names (auto when unset). The host is returned also when the discovery of the
+// The host provisions the dependencies the plugins declare. The host is returned also when the discovery of the
 // plugins failed, with the failure. report receives the problems the host meets outside a call, such as a failed
 // shutdown of a plugin.
 func NewPluginHost(c Config, report func(error), target string, dirs ...string) (*PluginHost, error) {
@@ -160,17 +158,10 @@ func openPluginCache(c pluginsWiring) (*appstate.PluginCaches, error) {
 }
 
 func newDependencyRegistry(clock machineport.Clock, defaultDir string) pluginport.DependencyRegistry {
-	if onnxruntime.IsMockML() {
-		return provision.NewRegistry(provision.NewPlaceholderProvisioner(
-			provision.GetPlaceholderDir(),
-			map[string]func(string) map[string]string{plugindomain.RuntimeONNX: onnxruntime.GetPlaceholderEnv},
-		))
+	if provision.IsMockML() {
+		return provision.NewRegistry(provision.NewPlaceholderProvisioner(provision.GetPlaceholderDir()))
 	}
-	runtimeConfig := onnxruntime.FromEnvironment(clock)
-	runtimeConfig.Dir = onnxruntime.GetModelsDir(defaultDir)
-	runtimeConfig.Offline = provision.IsOffline()
-	return provision.NewRegistry(
-		onnxruntime.NewONNXProvisioner(runtimeConfig),
-		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: runtimeConfig.Offline, Clock: clock}),
-	)
+	return provision.NewRegistry(provision.NewFileProvisioner(provision.Config{
+		Dir: provision.GetModelsDir(defaultDir), Offline: provision.IsOffline(), Clock: clock,
+	}))
 }
