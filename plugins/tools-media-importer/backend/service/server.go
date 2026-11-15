@@ -5,7 +5,6 @@ package service
 
 import (
 	"context"
-	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
@@ -75,11 +74,8 @@ func (a *App) Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	if err != nil {
 		return err
 	}
-	var isConfigured atomic.Bool
 	s.SetConfigure(func(ctx context.Context, values map[string]string) error {
-		wasAutomatic := f.GetSettings().IsTextDownloadAutomatic
-		f.UpdateConfig(values)
-		links.StartMissingTextFetch(ctx, isConfigured.Swap(true) && !wasAutomatic)
+		links.Configure(ctx, func() { f.UpdateConfig(values) })
 		return nil
 	})
 	// gomutants:disable-next-line BRANCH_IF reason="mountAPI with static service and method constants never returns an error"

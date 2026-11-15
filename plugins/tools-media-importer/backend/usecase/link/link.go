@@ -137,7 +137,7 @@ func New(h Host, fetcher func() Fetcher, settings func() Settings) *Links {
 	return &Links{
 		host: h, fetcher: fetcher, settings: settings, clock: h.Clock,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
-		mu: sync.Mutex{}, running: map[string]chan struct{}{}, feed: feedRun{isRunning: false, isAgain: false, isReview: false},
+		mu: sync.Mutex{}, running: map[string]chan struct{}{}, feed: feedRun{isRunning: false, isAgain: false, isReview: false, isConfigured: false},
 	}
 }
 

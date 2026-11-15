@@ -28,11 +28,26 @@ func (s cursorStore) Write(ctx context.Context, name string, content []byte) err
 }
 
 // feedRun is the background run of FetchMissingTexts. isRunning is true while one runs, isAgain asks
-// it to run once more when it ends, and isReview to read every link note in that run.
+// it to run once more when it ends, and isReview to read every link note in that run. isConfigured is
+// true once the settings were applied.
 type feedRun struct {
-	isRunning bool
-	isAgain   bool
-	isReview  bool
+	isRunning    bool
+	isAgain      bool
+	isReview     bool
+	isConfigured bool
+}
+
+// Configure applies the settings through update and fetches the missing texts in the background: over
+// every link note when the automatic download was turned on after the first settings, and from the
+// cursor of the feed otherwise.
+func (l *Links) Configure(ctx context.Context, update func()) {
+	wasAutomatic := l.settings().IsTextDownloadAutomatic
+	update()
+	l.mu.Lock()
+	wasConfigured := l.feed.isConfigured
+	l.feed.isConfigured = true
+	l.mu.Unlock()
+	l.StartMissingTextFetch(ctx, wasConfigured && !wasAutomatic)
 }
 
 // StartMissingTextFetch runs FetchMissingTexts in the background; a call while it runs makes it run
