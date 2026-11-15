@@ -16,7 +16,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -161,7 +161,7 @@ func TestABookDroppedInReachesAListener(t *testing.T) {
 
 	reported := getReportedPaths(changes)
 
-	vaultfixture.WriteBook(t, root, "library/A Book.epub")
+	vaulttest.WriteBook(t, root, "library/A Book.epub")
 
 	select {
 	case paths := <-reported:

@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 )
 
-func newMigratedTemplate() *vaultfixture.Template {
-	return vaultfixture.NewTemplate(func(ctx context.Context, path string) error {
+func newMigratedTemplate() *vaulttest.Template {
+	return vaulttest.NewTemplate(func(ctx context.Context, path string) error {
 		db, err := index.Open(ctx, path, index.Unsynchronized())
 		if err != nil {
 			return err

@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -50,7 +50,7 @@ func TestWorker(t *testing.T) {
 			Maintenance: db.Maintenance(), Progress: db.ChunkVectors(), Vectors: db.VectorIndex(), Closer: db,
 		}
 		return read, vaultreader.Readers{}, index
-	}, vaultfixture.NewVault)
+	}, vaulttest.NewVault)
 }
 
 func createReadWholeVault(

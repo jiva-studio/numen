@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -97,7 +97,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	b.Helper()
 	ctx := b.Context()
 
-	v := vaultfixture.GenerateVault(b, notes)
+	v := vaulttest.GenerateVault(b, notes)
 	const maxTokens = 256
 	model := searchsource.Description{Name: "bench", Width: 384, SourceRecipe: "mean"}
 
