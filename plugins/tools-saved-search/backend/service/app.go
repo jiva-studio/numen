@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/logging"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/random"
@@ -27,7 +26,7 @@ type Hosts struct {
 	Tasks  ports.Tasks
 }
 
-// App is the backend of the plugin. NewApp and NewAppOver make one.
+// App is the backend of the plugin. NewApp makes one.
 type App struct {
 	open     func() (Hosts, error)
 	settings *settings.Store
@@ -46,13 +45,6 @@ type parts struct {
 // the server mounts it before it serves a call or an event.
 func NewApp() *App {
 	return &App{open: openFromEnv, settings: settings.NewStore(), clock: clock.System{}, parts: nil}
-}
-
-// NewAppOver returns the backend over the hosts given, with the settings of current and the time of clk.
-func NewAppOver(hosts Hosts, current *settings.Store, clk ports.Clock) *App {
-	app := &App{open: func() (Hosts, error) { return hosts, nil }, settings: current, clock: clk, parts: nil}
-	app.parts = app.newParts(hosts)
-	return app
 }
 
 // Mount registers the tools, the settings and the service of the tab on the server.
@@ -81,15 +73,6 @@ func (a *App) Mount(s *server.Server) error {
 		return updateSearch(ctx, built, req)
 	})
 	return service.Err()
-}
-
-// NewRegistry returns the registry of the tools of the plugin.
-func (a *App) NewRegistry() (*tools.Registry, error) {
-	built, err := a.getParts()
-	if err != nil {
-		return nil, err
-	}
-	return a.newRegistry(built)
 }
 
 // HandleEvent marks the saved searches of a vault whose index changed stale and runs the ones that are due.
