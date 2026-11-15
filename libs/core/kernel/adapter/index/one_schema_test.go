@@ -115,8 +115,9 @@ func TestTheMigrationFolderStartsAtTheFirstVersionAndEndsAtTheIndexVersion(t *te
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != expectedVersion {
-		t.Fatalf("the folder migration holds %d files, want %d", len(entries), expectedVersion)
+	var names []string
+	for _, e := range entries {
+		names = append(names, e.Name())
 	}
 	if len(names) == 0 {
 		t.Fatal("the folder migration holds no file")

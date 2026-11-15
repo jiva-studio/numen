@@ -167,15 +167,15 @@ func (l *linkFinder) findLinksFrom(ctx context.Context, from string, role domain
 		return nil, err
 	}
 	set := map[string]bool{}
-	for _, l := range links[from] {
+	for _, link := range links[from] {
 		switch {
-		case !searchquery.IsLinkMatch(l, role, linkType):
-		case l.To != "":
-			if _, isCrossed := l.InVault(l.req.vault.ID); !isCrossed {
-				set[l.To] = true
+		case !searchquery.IsLinkMatch(link, role, linkType):
+		case link.To != "":
+			if _, isCrossed := link.InVault(l.req.vault.ID); !isCrossed {
+				set[link.To] = true
 			}
 		default:
-			if filePath := searchquery.ChooseFile(l.From, l.Target, files); filePath != "" {
+			if filePath := searchquery.ChooseFile(link.From, link.Target, files); filePath != "" {
 				set[filePath] = true
 			}
 		}
