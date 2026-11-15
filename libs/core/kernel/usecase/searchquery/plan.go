@@ -69,7 +69,7 @@ func (p *plan) execute(ctx context.Context) (searchquery.SearchResults, error) {
 		ScoreKind: searchquery.GetScoreKind(p.query.Conditions), Floor: p.floor, Candidates: len(candidates),
 	}
 	results.Results = p.evaluate(candidates, scores, texts, documents, results.ScoreKind)
-	results.Warnings = append(p.warnings, p.calls.warning...)
+	results.Warnings = slices.Concat(p.warnings, p.calls.warning)
 	searchquery.Sort(&results)
 	return results, nil
 }

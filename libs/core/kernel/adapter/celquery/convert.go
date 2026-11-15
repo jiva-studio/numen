@@ -86,13 +86,7 @@ func (c *converter) convertCall(expr ast.Expr) searchquery.RawNode {
 	case overloads.StartsWith:
 		return c.convertStartsWith(expr)
 	}
-	if f, isFound := c.catalog.FindFunction(call.FunctionName()); isFound && f.PluginID != "" && !call.IsMemberFunction() {
-		return c.convertFunction(expr, f)
-	}
-	if isStageCall(expr) {
-		return c.reject(expr, messageStageLast)
-	}
-	return c.reject(expr, messageCondition)
+	return c.convertOther(expr)
 }
 
 func (c *converter) convertGroup(args []ast.Expr, operator searchquery.Operator) searchquery.RawNode {

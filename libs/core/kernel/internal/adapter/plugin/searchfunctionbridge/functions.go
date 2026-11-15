@@ -91,9 +91,8 @@ func readError(ctx context.Context, call searchquery.FunctionCall, err error) er
 		return ctxErr
 	}
 	if connect.CodeOf(err) == connect.CodeInvalidArgument {
-		var failure *connect.Error
 		message := err.Error()
-		if errors.As(err, &failure) {
+		if failure, isConnect := errors.AsType[*connect.Error](err); isConnect {
 			message = failure.Message()
 		}
 		return fmt.Errorf("%w: %s", searchquery.ErrInvalidFunctionArguments, message)

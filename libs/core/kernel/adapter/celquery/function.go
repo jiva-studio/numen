@@ -43,3 +43,14 @@ func getArgument(expr ast.Expr, name string, t searchquery.ValueType) (searchque
 	}
 	return searchquery.Argument{}, false
 }
+
+func (c *converter) convertOther(expr ast.Expr) searchquery.RawNode {
+	call := expr.AsCall()
+	if f, isFound := c.catalog.FindFunction(call.FunctionName()); isFound && f.PluginID != "" && !call.IsMemberFunction() {
+		return c.convertFunction(expr, f)
+	}
+	if isStageCall(expr) {
+		return c.reject(expr, messageStageLast)
+	}
+	return c.reject(expr, messageCondition)
+}

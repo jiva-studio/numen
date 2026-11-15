@@ -285,7 +285,7 @@ func TestEachListingReadsTheDescriptionAgainAndAFailureListsTheFixedOne(t *testi
 			asked++
 			return "Greets by name.", err
 		},
-	}, func(_ context.Context, in greetIn) (greetOut, error) { return greetOut{}, nil })
+	}, func(context.Context, greetIn) (greetOut, error) { return greetOut{}, nil })
 	if err != nil {
 		t.Fatal(err)
 	}

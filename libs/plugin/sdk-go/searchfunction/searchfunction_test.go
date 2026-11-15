@@ -18,10 +18,9 @@ import (
 
 const token = "shelf-token"
 
-var shelves = map[string][]string{"east": {"a.md", "b.md", "c.md"}}
-
 func newShelfClient(t *testing.T, calls chan<- searchfunction.Call) *searchfunctiontest.Client {
 	t.Helper()
+	shelves := map[string][]string{"east": {"a.md", "b.md", "c.md"}}
 	registry := searchfunction.New()
 	err := registry.Add("shelved", searchfunction.Function{
 		Match: func(_ context.Context, call searchfunction.Call, _ []string) (searchfunction.Matched, error) {
@@ -32,7 +31,7 @@ func newShelfClient(t *testing.T, calls chan<- searchfunction.Call) *searchfunct
 			}
 			return searchfunction.Matched{Paths: append(slices.Clone(shelves[shelf]), "unasked.md"), Warning: "late"}, nil
 		},
-		Find: func(_ context.Context, call searchfunction.Call, limit int) (searchfunction.Found, error) {
+		Find: func(_ context.Context, call searchfunction.Call, _ int) (searchfunction.Found, error) {
 			calls <- call
 			shelf, _ := call.Arguments.GetString("shelf")
 			return searchfunction.Found{Paths: shelves[shelf], EstimatedCount: int64(len(shelves[shelf]))}, nil

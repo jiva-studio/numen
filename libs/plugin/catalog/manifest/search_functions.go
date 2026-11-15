@@ -78,6 +78,24 @@ func (m Manifest) listSearchFunctionIssues() []error {
 }
 
 func listSearchFunctionFieldIssues(f SearchFunction) []error {
+	issues := listSearchFunctionArgIssues(f)
+	switch f.Level {
+	case SearchFunctionLevelDocument:
+	case SearchFunctionLevelChunk:
+		issues = append(issues, newSearchFunctionIssue("%q: chunk-level search functions are not supported", f.Name))
+	default:
+		issues = append(issues, newSearchFunctionIssue("%q has the level %q; the level is document", f.Name, f.Level))
+	}
+	if d := f.Description; strings.TrimSpace(d) == "" || len(d) > maxSearchFunctionDescription || strings.ContainsAny(d, "\r\n") {
+		issues = append(issues, newSearchFunctionIssue("%q needs a description of one line of 1 to %d bytes", f.Name, maxSearchFunctionDescription))
+	}
+	if !strings.Contains(f.Example, f.Name+"(") {
+		issues = append(issues, newSearchFunctionIssue("%q needs an example that calls it", f.Name))
+	}
+	return issues
+}
+
+func listSearchFunctionArgIssues(f SearchFunction) []error {
 	var issues []error
 	args := map[string]bool{}
 	for _, arg := range f.Args {
@@ -91,19 +109,6 @@ func listSearchFunctionFieldIssues(f SearchFunction) []error {
 		if arg.Type != SearchFunctionArgString && arg.Type != SearchFunctionArgInt && arg.Type != SearchFunctionArgBool {
 			issues = append(issues, newSearchFunctionIssue("%q has an argument of type %q; the type is string, int or bool", f.Name, arg.Type))
 		}
-	}
-	switch f.Level {
-	case SearchFunctionLevelDocument:
-	case SearchFunctionLevelChunk:
-		issues = append(issues, newSearchFunctionIssue("%q: chunk-level search functions are not supported", f.Name))
-	default:
-		issues = append(issues, newSearchFunctionIssue("%q has the level %q; the level is document", f.Name, f.Level))
-	}
-	if d := f.Description; strings.TrimSpace(d) == "" || len(d) > maxSearchFunctionDescription || strings.ContainsAny(d, "\r\n") {
-		issues = append(issues, newSearchFunctionIssue("%q needs a description of one line of 1 to %d bytes", f.Name, maxSearchFunctionDescription))
-	}
-	if !strings.Contains(f.Example, f.Name+"(") {
-		issues = append(issues, newSearchFunctionIssue("%q needs an example that calls it", f.Name))
 	}
 	return issues
 }
