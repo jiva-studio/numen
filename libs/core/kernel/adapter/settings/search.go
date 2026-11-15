@@ -1,7 +1,11 @@
 package settings
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
@@ -10,48 +14,92 @@ import (
 
 // Search is the settings section of the queries of the search language.
 type Search struct {
-	Reranking              []any   `json:"reranking,omitempty"`
-	RerankWindow           float64 `json:"rerankWindow"`
-	MaxReranked            float64 `json:"maxReranked"`
-	MaxRerankedBytes       float64 `json:"maxRerankedBytes"`
-	DefaultLimit           float64 `json:"defaultLimit"`
-	MaxLimit               float64 `json:"maxLimit"`
-	CandidatesPerCondition float64 `json:"candidatesPerCondition"`
-	MaxCandidates          float64 `json:"maxCandidates"`
-	MaxPathPrefixes        float64 `json:"maxPathPrefixes"`
-	MergeGapBytes          float64 `json:"mergeGapBytes"`
-	MaxQueryBytes          float64 `json:"maxQueryBytes"`
+	Reranking []any
+	Numbers   map[string]float64
 }
 
-const keyReranking = "search.reranking"
+const (
+	keyReranking    = "search.reranking"
+	searchKeyPrefix = "search."
+)
+
+var searchNumberNames = []string{
+	"rerankWindow",
+	"maxReranked",
+	"maxRerankedBytes",
+	"defaultLimit",
+	"maxLimit",
+	"candidatesPerCondition",
+	"maxCandidates",
+	"maxPathPrefixes",
+	"mergeGapBytes",
+	"maxQueryBytes",
+}
 
 // DefaultSearch returns the search settings the declaration of the shell gives.
 func DefaultSearch() Search {
-	s := Search{}
-	for _, field := range s.listNumbers() {
-		*field.value = getAppNumber(field.key)
+	s := Search{Numbers: map[string]float64{}}
+	for _, name := range searchNumberNames {
+		s.Numbers[name] = getAppNumber(searchKeyPrefix + name)
 	}
 	return s
 }
 
-type searchNumber struct {
-	key   string
-	value *float64
+func (s Search) MarshalJSON() ([]byte, error) {
+	var out bytes.Buffer
+	out.WriteString(`{`)
+	if len(s.Reranking) > 0 {
+		rows, err := json.Marshal(s.Reranking)
+		if err != nil {
+			return nil, err
+		}
+		out.WriteString(`"reranking":`)
+		out.Write(rows)
+		out.WriteString(`,`)
+	}
+	for index, name := range searchNumberNames {
+		if index > 0 {
+			out.WriteString(`,`)
+		}
+		value, err := json.Marshal(s.Numbers[name])
+		if err != nil {
+			return nil, err
+		}
+		fmt.Fprintf(&out, `%q:%s`, name, value)
+	}
+	out.WriteString(`}`)
+	return out.Bytes(), nil
 }
 
-func (s *Search) listNumbers() []searchNumber {
-	return []searchNumber{
-		{"search.rerankWindow", &s.RerankWindow},
-		{"search.maxReranked", &s.MaxReranked},
-		{"search.maxRerankedBytes", &s.MaxRerankedBytes},
-		{"search.defaultLimit", &s.DefaultLimit},
-		{"search.maxLimit", &s.MaxLimit},
-		{"search.candidatesPerCondition", &s.CandidatesPerCondition},
-		{"search.maxCandidates", &s.MaxCandidates},
-		{"search.maxPathPrefixes", &s.MaxPathPrefixes},
-		{"search.mergeGapBytes", &s.MergeGapBytes},
-		{"search.maxQueryBytes", &s.MaxQueryBytes},
+func (s *Search) UnmarshalJSON(raw []byte) error {
+	var members map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &members); err != nil {
+		return err
 	}
+	if rows, isFound := members["reranking"]; isFound {
+		if err := json.Unmarshal(rows, &s.Reranking); err != nil {
+			return err
+		}
+	}
+	for _, name := range searchNumberNames {
+		member, isFound := members[name]
+		if !isFound {
+			continue
+		}
+		var value float64
+		if err := json.Unmarshal(member, &value); err != nil {
+			return err
+		}
+		s.setNumber(name, value)
+	}
+	return nil
+}
+
+func (s *Search) setNumber(name string, value float64) {
+	if s.Numbers == nil {
+		s.Numbers = map[string]float64{}
+	}
+	s.Numbers[name] = value
 }
 
 func (s *Search) reset(key string) {
@@ -59,26 +107,25 @@ func (s *Search) reset(key string) {
 		s.Reranking = nil
 		return
 	}
-	for _, field := range s.listNumbers() {
-		if field.key == key {
-			*field.value = getAppNumber(key)
-		}
+	name := strings.TrimPrefix(key, searchKeyPrefix)
+	if slices.Contains(searchNumberNames, name) {
+		s.setNumber(name, getAppNumber(key))
 	}
 }
 
 // GetSearchLimits returns the limits of a query and of its stages the settings in force set.
 func (f *File) GetSearchLimits() (searchquery.Limits, searchquery.StageLimits) {
-	s := f.Search
+	n := f.Search.Numbers
 	limits := searchquery.DefaultLimits()
-	limits.DefaultLimit = int(s.DefaultLimit)
-	limits.MaxLimit = int(s.MaxLimit)
-	limits.CandidatesPerCondition = int(s.CandidatesPerCondition)
-	limits.MaxCandidates = int(s.MaxCandidates)
-	limits.MaxPathPrefixes = int(s.MaxPathPrefixes)
-	limits.MergeGapBytes = int(s.MergeGapBytes)
-	limits.MaxQueryBytes = int(s.MaxQueryBytes)
+	limits.DefaultLimit = int(n["defaultLimit"])
+	limits.MaxLimit = int(n["maxLimit"])
+	limits.CandidatesPerCondition = int(n["candidatesPerCondition"])
+	limits.MaxCandidates = int(n["maxCandidates"])
+	limits.MaxPathPrefixes = int(n["maxPathPrefixes"])
+	limits.MergeGapBytes = int(n["mergeGapBytes"])
+	limits.MaxQueryBytes = int(n["maxQueryBytes"])
 	stages := searchquery.StageLimits{
-		RerankWindow: int(s.RerankWindow), MaxReranked: int(s.MaxReranked), MaxRerankedBytes: int(s.MaxRerankedBytes),
+		RerankWindow: int(n["rerankWindow"]), MaxReranked: int(n["maxReranked"]), MaxRerankedBytes: int(n["maxRerankedBytes"]),
 	}
 	return limits, stages
 }
