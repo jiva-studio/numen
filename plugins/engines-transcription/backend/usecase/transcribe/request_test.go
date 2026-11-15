@@ -667,8 +667,12 @@ func TestTranscriptCreateReportsAFailedReadInTheTask(t *testing.T) {
 				t.Errorf("the tasks %+v do not list %s with its failure", tasks, want.TaskID)
 			}
 			s.transcriber.Close()
-			if got := s.getReportedTasks(); !slices.Equal(got, []string{"transcribe " + lecture}) {
-				t.Errorf("failed Start reported %v, want [transcribe %s]", got, lecture)
+			for got := s.getReportedTasks(); !slices.Equal(got, []string{"transcribe " + lecture}); got = s.getReportedTasks() {
+				select {
+				case <-deadline:
+					t.Fatalf("failed Start reported %v, want [transcribe %s]", got, lecture)
+				case <-time.After(time.Millisecond):
+				}
 			}
 			return
 		case <-deadline:
