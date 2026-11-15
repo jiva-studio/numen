@@ -102,7 +102,7 @@ func (n *normalizer) convertLeaf(raw RawLeaf, isNegated bool) Node {
 
 func (n *normalizer) addCondition(raw RawLeaf, isPositive bool) int {
 	isMeaning := raw.Kind == LeafMeaning
-	if text := strings.TrimSpace(raw.Text); text == "" || len(text) > n.limits.MaxConditionBytes {
+	if strings.TrimSpace(raw.Text) == "" || len(raw.Text) > n.limits.MaxConditionBytes {
 		name := FunctionWords
 		if isMeaning {
 			name = FunctionMeaning
