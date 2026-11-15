@@ -16,7 +16,7 @@ tart="${TART:-tart}"
 export TART_NO_AUTO_PRUNE=1
 export SSHPASS="${GUEST_PASSWORD:-admin}"
 guest_user="${GUEST_USER:-admin}"
-ssh_options=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5 -o ServerAliveInterval=15 -o ServerAliveCountMax=4)
+ssh_options=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -o PubkeyAuthentication=no -o PreferredAuthentications=password)
 
 claude_code_version="${CLAUDE_CODE_VERSION:-2.1.325}"
 playwright_version="$(sed -n '/"node_modules\/playwright": {/{n;p;}' "$repo/package-lock.json" | sed -E 's/.*"version": "([^"]+)".*/\1/')"
