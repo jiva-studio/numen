@@ -35,9 +35,10 @@ import (
 // sized to the cores: in WAL mode a reader never waits for the writer.
 // Several processes may open the one file; see sqlwrite for the retry.
 type DB struct {
-	write   *sql.DB
-	read    *sql.DB
-	minimum chunk.Minimum
+	write       *sql.DB
+	read        *sql.DB
+	minimum     chunk.Minimum
+	frontmatter *note.FrontmatterChanges
 }
 
 func getPragmas() []string {
@@ -114,7 +115,7 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	}
 	read.SetMaxOpenConns(max(4, runtime.NumCPU()))
 	read.SetMaxIdleConns(max(2, runtime.NumCPU()/2))
-	return &DB{write: write, read: read}, nil
+	return &DB{write: write, read: read, frontmatter: &note.FrontmatterChanges{}}, nil
 }
 
 func (d *DB) Close() error {
@@ -126,8 +127,11 @@ func (d *DB) Close() error {
 }
 
 func (d *DB) Vaults() *vault.Repository { return vault.NewRepository(d.write) }
-func (d *DB) Notes() *note.Repository   { return note.NewRepository(d.write) }
+func (d *DB) Notes() *note.Repository   { return note.NewRepository(d.write).ReportingTo(d.frontmatter) }
 func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write) }
+
+// FrontmatterChanges reports the notes whose frontmatter a write through Notes changed.
+func (d *DB) FrontmatterChanges() *note.FrontmatterChanges { return d.frontmatter }
 
 // Maintenance writes, so it takes the pool that is allowed to.
 func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.write} }

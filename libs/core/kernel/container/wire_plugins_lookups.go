@@ -9,10 +9,11 @@ func getPluginLookups(db *Index) hostvault.Lookups {
 	queries := db.NoteQueries()
 	return hostvault.Lookups{
 		Notes: hostvault.Notes{
-			Notes:      query.NewGetNotes(queries),
-			Types:      query.NewGetTypes(queries),
-			NamedPaths: query.NewGetNamedPaths(queries),
-			TypedPaths: query.NewGetPathsOfType(queries),
+			Notes:       query.NewGetNotes(queries),
+			Types:       query.NewGetTypes(queries),
+			NamedPaths:  query.NewGetNamedPaths(queries),
+			TypedPaths:  query.NewGetPathsOfType(queries),
+			Frontmatter: query.NewReadFrontmatter(queries, query.GetFrontmatterLimits()),
 		},
 		Links: hostvault.Links{
 			Links:     query.NewGetLinks(queries),

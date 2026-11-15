@@ -150,13 +150,25 @@ func (p *plugins) ListTriggers() []plugin.TriggerEntry {
 	return slices.Clone(p.triggers)
 }
 
-// ListHandlers lists a handler of each command a trigger runs, under the condition handlerWhen gives
-// its command, or none.
+// ListHandlers lists a handler of each shared command a trigger runs, under the condition handlerWhen
+// gives its command, or none.
 func (p *plugins) ListHandlers() []plugin.CommandEntry {
+	return p.listCommands(true)
+}
+
+// ListCommands lists each command of a plugin's own a trigger runs, as ListHandlers does.
+func (p *plugins) ListCommands() []plugin.CommandEntry {
+	return p.listCommands(false)
+}
+
+func (p *plugins) listCommands(isShared bool) []plugin.CommandEntry {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	var out []plugin.CommandEntry
 	for _, one := range p.triggers {
+		if manifest.IsSharedCommand(one.Trigger.Command) != isShared {
+			continue
+		}
 		out = append(out, plugin.CommandEntry{PluginID: one.PluginID, Command: manifest.Command{
 			ID: one.Trigger.Command, When: p.handlerWhen[one.Trigger.Command],
 		}})
@@ -395,5 +407,68 @@ func TestOnePassRunsAtATime(t *testing.T) {
 	}
 	if got := s.plugins.take(); len(got) != 2 {
 		t.Errorf("ran %v, want the file once in each pass", got)
+	}
+}
+
+const tagger = "org.example.tags"
+
+func getReadTagsOnFrontmatter() plugin.TriggerEntry {
+	return plugin.TriggerEntry{PluginID: tagger, Trigger: manifest.Trigger{
+		Event: manifest.EventNoteFrontmatterChanged, Command: "tags.read", When: "target.isNote",
+	}}
+}
+
+func TestAFrontmatterPassRunsTheFrontmatterTriggersOverTheNotesNamedAndOverRemovedOnes(t *testing.T) {
+	s := newScene(t, map[string]string{"notes/a.md": "---\ntags: [river]\n---\n", "notes/b.md": "# B\n", "scans/a.pdf": "%PDF a"},
+		getExtractText(), getReadTagsOnFrontmatter())
+
+	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"notes/a.md", "notes/gone.md", "scans/a.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{tagger + " tags.read notes/a.md", tagger + " tags.read notes/gone.md"}
+	if got := s.plugins.take(); !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+}
+
+func TestAPassOverChangedFilesRunsNoFrontmatterTrigger(t *testing.T) {
+	s := newScene(t, map[string]string{"notes/a.md": "# A\n", "scans/a.pdf": "%PDF a"}, getExtractText(), getReadTagsOnFrontmatter())
+
+	if err := s.triggers.Execute(t.Context(), domain.Vault{ID: "v1"}, []string{"notes/a.md", "scans/a.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := s.plugins.take(), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+}
+
+func TestAPassOverTheVaultRunsTheFrontmatterTriggersOverEveryNote(t *testing.T) {
+	s := newScene(t, map[string]string{"notes/a.md": "# A\n", "notes/b.md": "# B\n", "scans/a.pdf": "%PDF a"}, getReadTagsOnFrontmatter())
+
+	want := []string{tagger + " tags.read notes/a.md", tagger + " tags.read notes/b.md"}
+	if got := s.runAll(t); !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+}
+
+func TestATriggerOfAPluginsOwnCommandRunsOnlyWhereTheConditionOfTheCommandIsTrue(t *testing.T) {
+	s := newScene(t, map[string]string{"notes/a.md": "# A\n", "drafts/b.md": "# B\n"}, getReadTagsOnFrontmatter())
+	s.plugins.handlerWhen = map[string]string{"tags.read": "!target.contentType.startsWith('text/') || target.isNote"}
+
+	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"drafts/b.md"}); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := s.plugins.take(), []string{tagger + " tags.read drafts/b.md"}; !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+
+	s.plugins.handlerWhen = map[string]string{"tags.read": "target.isFolder"}
+	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"drafts/b.md"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.plugins.take(); len(got) != 0 {
+		t.Errorf("ran %v where the condition of the command does not hold", got)
 	}
 }

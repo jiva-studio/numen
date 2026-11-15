@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -21,10 +22,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// Plugins is the triggers and the handlers of the enabled plugins.
+// Plugins is the triggers, the handlers and the commands of the enabled plugins.
 type Plugins interface {
 	pluginport.PluginTriggers
 	ListHandlers() []plugin.CommandEntry
+	ListCommands() []plugin.CommandEntry
 }
 
 // Versions gives the text versions of a file as target.versions holds them.
@@ -64,37 +66,71 @@ func NewTriggers(deps TriggersDeps) *Triggers {
 // its handler hold. It returns the failures of the runs, joined; a failed file is tried again in the
 // next pass.
 func (u *Triggers) ExecuteAll(ctx context.Context, v domain.Vault) error {
-	return u.execute(ctx, v, func(reader vaultport.VaultReader, each func(domain.FileStat) error) error {
-		return reader.WalkFiles(ctx, each)
+	return u.execute(ctx, v, isAnyEvent, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
+		return reader.WalkFiles(ctx, func(stat domain.FileStat) error {
+			if stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
+				return nil
+			}
+			return each(stat.Path, false)
+		})
 	})
 }
 
-// Execute runs every trigger over the files at the paths, as ExecuteAll does over the vault. A path
-// that holds no file is passed over.
+// Execute runs the triggers of the file events over the files at the paths, as ExecuteAll does over
+// the vault. A path that holds no file is passed over.
 func (u *Triggers) Execute(ctx context.Context, v domain.Vault, paths []string) error {
-	return u.execute(ctx, v, func(reader vaultport.VaultReader, each func(domain.FileStat) error) error {
-		for _, path := range paths {
-			stat, err := reader.StatFile(ctx, path)
-			if errors.Is(err, edit.ErrNotExist) {
+	return u.execute(ctx, v, isFileEvent, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
+		return walkPaths(ctx, reader, paths, false, each)
+	})
+}
+
+// ExecuteFrontmatter runs the triggers of note.frontmatterChanged over the notes at the paths. A path
+// that holds no file is a removed note: its trigger runs with no note type and no properties.
+func (u *Triggers) ExecuteFrontmatter(ctx context.Context, v domain.Vault, paths []string) error {
+	return u.execute(ctx, v, isFrontmatterEvent, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
+		return walkPaths(ctx, reader, paths, true, each)
+	})
+}
+
+func isAnyEvent(string) bool { return true }
+
+func isFileEvent(event string) bool { return event != manifest.EventNoteFrontmatterChanged }
+
+func isFrontmatterEvent(event string) bool { return event == manifest.EventNoteFrontmatterChanged }
+
+func walkPaths(
+	ctx context.Context, reader vaultport.VaultReader, paths []string, isGoneRun bool, each func(path string, isGone bool) error,
+) error {
+	for _, path := range paths {
+		stat, err := reader.StatFile(ctx, path)
+		switch {
+		case errors.Is(err, edit.ErrNotExist):
+			if !isGoneRun {
 				continue
 			}
-			if err != nil {
-				return fmt.Errorf("read %s: %w", path, err)
-			}
-			if err := each(stat); err != nil {
+			if err := each(path, true); err != nil {
 				return err
 			}
+			continue
+		case err != nil:
+			return fmt.Errorf("read %s: %w", path, err)
+		case stat.Kind != domain.KindFile && stat.Kind != domain.KindNote:
+			continue
 		}
-		return nil
-	})
+		if err := each(stat.Path, false); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (u *Triggers) execute(
-	ctx context.Context, v domain.Vault, walk func(vaultport.VaultReader, func(domain.FileStat) error) error,
+	ctx context.Context, v domain.Vault, isEvent func(string) bool,
+	walk func(vaultport.VaultReader, func(path string, isGone bool) error) error,
 ) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	triggers := u.readTriggers()
+	triggers := u.readTriggers(isEvent)
 	if len(triggers) == 0 {
 		return nil
 	}
@@ -103,14 +139,11 @@ func (u *Triggers) execute(
 		return err
 	}
 	p := &pass{types: u.deps.Types, run: u.deps.Run, notes: u.deps.Notes, versions: u.deps.Versions, vault: v, list: triggers, config: u.deps.Config.GetWhenConfig(), skipped: map[string]bool{}}
-	err = walk(reader, func(stat domain.FileStat) error {
-		if stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
-			return nil
-		}
+	err = walk(reader, func(path string, isGone bool) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		p.runFile(ctx, stat.Path)
+		p.runFile(ctx, path, isGone)
 		return nil
 	})
 	return errors.Join(append(p.failures, err)...)
@@ -123,13 +156,16 @@ type trigger struct {
 	handler   when.Condition
 }
 
-func (u *Triggers) readTriggers() []trigger {
+func (u *Triggers) readTriggers(isEvent func(string) bool) []trigger {
 	handlers := map[[2]string]string{}
-	for _, entry := range u.deps.Plugins.ListHandlers() {
+	for _, entry := range slices.Concat(u.deps.Plugins.ListHandlers(), u.deps.Plugins.ListCommands()) {
 		handlers[[2]string{entry.PluginID, entry.Command.ID}] = entry.Command.When
 	}
 	var out []trigger
 	for _, entry := range u.deps.Plugins.ListTriggers() {
+		if !isEvent(entry.Trigger.Event) {
+			continue
+		}
 		handlerWhen, isHandled := handlers[[2]string{entry.PluginID, entry.Trigger.Command}]
 		if !isHandled {
 			continue
@@ -170,10 +206,14 @@ type file struct {
 	isVersionsRead bool
 }
 
-func (p *pass) runFile(ctx context.Context, path string) {
+func (p *pass) runFile(ctx context.Context, path string, isGone bool) {
 	current := &file{
 		path:   path,
 		values: plugin.NewTargetValues(path, false, p.types.GetContentType(path)).WithConfig(p.config),
+	}
+	if isGone {
+		current.values = current.values.WithNote("", nil).WithVersions(nil)
+		current.isNoteRead, current.isVersionsRead = true, true
 	}
 	for _, one := range p.list {
 		if p.skipped[one.entry.PluginID] {

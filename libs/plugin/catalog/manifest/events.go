@@ -8,10 +8,13 @@ const EventFileAdded = "file.added"
 // EventFileChanged is the event raised when the content of a file of the vault changes.
 const EventFileChanged = "file.changed"
 
+// EventNoteFrontmatterChanged is the event raised when the frontmatter of a note changes, a note with frontmatter is added, or a note with frontmatter is removed.
+const EventNoteFrontmatterChanged = "note.frontmatterChanged"
+
 // IsEvent reports whether the name is an event a trigger runs on.
 func IsEvent(name string) bool {
 	switch name {
-	case EventFileAdded, EventFileChanged:
+	case EventFileAdded, EventFileChanged, EventNoteFrontmatterChanged:
 		return true
 	}
 	return false
