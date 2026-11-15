@@ -69,7 +69,7 @@ async function activateModule(
     await activate(parts.plugin, parts.host)
     if (isLatest()) host.markPluginStarted?.(pluginId)
   }
-  if (start.scope.isCancelled() || start.limit.isPassed()) {
+  if (start.limit.isPassed()) {
     if (isLatest()) discardEntry(ctx, pluginId)
     return 'expired'
   }
@@ -84,14 +84,13 @@ async function startEntry(
   pluginId: string,
   start: EntryStart,
 ): Promise<StartOutcome> {
-  const isExpired = (): boolean => start.scope.isCancelled() || start.limit.isPassed()
   try {
     const resolved = await resolveModule(pluginId, start.module, ctx)
-    if (isExpired()) return 'expired'
+    if (start.limit.isPassed()) return 'expired'
     if (!resolved) return false
     return await activateModule(ctx, pluginId, { ...start, resolved })
   } catch (error) {
-    if (isExpired()) {
+    if (start.limit.isPassed()) {
       if (ctx.starts.get(pluginId) === start.number) discardEntry(ctx, pluginId)
       return 'expired'
     }

@@ -15,8 +15,8 @@ const RUNNABLE_APP_COMMANDS: ReadonlySet<string> = new Set([
 export interface CommandRunPolicy {
   readonly pluginId: string
   readonly isListed: (command: string) => boolean
-  readonly getPermission?: (command: string) => string | undefined
-  readonly checkPermission?: RequirePermission
+  readonly getPermission: (command: string) => string | undefined
+  readonly checkPermission: RequirePermission
 }
 
 /**
@@ -40,10 +40,10 @@ export function limitCommands(commands: CommandsHost, policy: CommandRunPolicy):
           ),
         )
       }
-      const permission = policy.getPermission?.(args[0])
+      const permission = policy.getPermission(args[0])
       if (permission) {
         try {
-          policy.checkPermission?.(permission, 'commands.run')
+          policy.checkPermission(permission, 'commands.run')
         } catch (error) {
           return Promise.reject(error)
         }

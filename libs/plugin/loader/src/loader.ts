@@ -248,8 +248,10 @@ function createRuntime(deps: PluginLoaderDeps, status: PluginStatus, activation:
 
   /** A plugin listed while the window runs starts at once only where it fills a window slot. */
   const startInterfacePlugin = async (id: string): Promise<void> => {
-    if (!isEnabled(id) || !(await activation.isInterface(id).catch(() => false))) return
-    await activatePlugin(id)
+    if (!isEnabled(id)) return
+    if ((await activation.isInterface(id).catch(() => undefined)) === true) {
+      await activatePlugin(id)
+    }
   }
 
   return {
