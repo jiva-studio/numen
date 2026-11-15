@@ -338,3 +338,18 @@ func TestAPluginWithOnlyVaultWriteOffersNoTools(t *testing.T) {
 		t.Errorf("a plugin with only vault:write offers %v", names)
 	}
 }
+
+func TestAListingOfAnotherCatalogRevisionIsAskedAgain(t *testing.T) {
+	dir := t.TempDir()
+	newCatalog(newTwoPlugins(t), filesIn(t, dir)).ListTools(t.Context(), callerPlugin)
+
+	host := newTwoPlugins(t)
+	names := getNames(newCatalogOf(host, filesIn(t, dir), "r2").ListTools(t.Context(), callerPlugin))
+
+	if !slices.Equal(names, []string{"bed_list", "tree_count"}) {
+		t.Errorf("the catalog lists %v", names)
+	}
+	if starts := host.takeStarts(); len(starts) != 2 {
+		t.Errorf("the catalog of another revision started %v, want both plugins", starts)
+	}
+}

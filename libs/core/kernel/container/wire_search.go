@@ -3,7 +3,9 @@ package container
 import (
 	"context"
 	"errors"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
@@ -183,7 +185,9 @@ func newFloorPolicy(db *Index, source searchsourceport.Source, errorHandler func
 	return searchusecase.NewFloorPolicy(db.SearchFloors(), getFloorHint(source), errorHandler)
 }
 
-func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, errorHandler func(error)) {
+func setPluginSearch(
+	c searchWiring, db *Index, source searchsourceport.Source, errorHandler func(error), runs *searchrunusecase.SearchRuns,
+) {
 	policy := newFloorPolicy(db, source, errorHandler)
 	access := hostsearch.Search{
 		Samples:    db.SearchSamples(),
@@ -197,7 +201,7 @@ func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, 
 		Queries:    newEmbedQueries(source),
 	}
 	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
-		l.Search = hostsearch.Scoring{Search: access, Scores: newScoreChunks(c, db, source, policy)}.Access()
+		l.Search = hostsearch.Scoring{Search: access, Scores: newScoreChunks(c, db, source, policy)}.Access(runs)
 	})
 }
 

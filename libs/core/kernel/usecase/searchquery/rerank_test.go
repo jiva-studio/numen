@@ -134,7 +134,7 @@ func TestTheSecondRowAnswersWhenTheFirstFailsAndTheResultIsInItsOrder(t *testing
 	s.world.Provider.FailAlways(firstAddress, &connection.TryNextError{Reason: connection.FailureReasonUnavailable})
 	s.answerBy(secondAddress, func(text string) float32 { return -byLength(text) })
 
-	got, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquery.Request{Text: `words("tide").rerank()`})
+	got, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide").rerank()`})
 
 	if err != nil {
 		t.Fatal(err)
@@ -154,7 +154,7 @@ func TestARerankWithNoRowOrWithEveryRowFailingIsAQueryError(t *testing.T) {
 	w := newTideWorld(t)
 	s := newServices(t)
 	s.setRows()
-	_, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquery.Request{Text: `words("tide").rerank()`})
+	_, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide").rerank()`})
 	if !errors.Is(err, searchquerydomain.ErrNoReranker) {
 		t.Errorf("with no row the query answered %v, want ErrNoReranker", err)
 	}
@@ -162,7 +162,7 @@ func TestARerankWithNoRowOrWithEveryRowFailingIsAQueryError(t *testing.T) {
 	s.setRows(s.first, s.second)
 	s.world.Provider.FailAlways(firstAddress, &connection.TryNextError{Reason: connection.FailureReasonUnavailable})
 	s.world.Provider.FailAlways(secondAddress, &connection.StopError{Reason: connection.FailureReasonInvalidRequest})
-	_, err = w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquery.Request{Text: `words("tide").rerank()`})
+	_, err = w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide").rerank()`})
 	rerankError, ok := errors.AsType[*searchquerydomain.RerankError](err)
 	if !ok || len(rerankError.Failures) != 2 || rerankError.Failures[0].ConnectionName != "First" || rerankError.Failures[1].ConnectionName != "Second" {
 		t.Fatalf("with every row failing the query answered %v, want a RerankError naming both", err)
@@ -180,7 +180,7 @@ func TestASecondRunReusesTheScoresAndAChangedChunkIsSentAlone(t *testing.T) {
 	s.setRows(s.second)
 	s.answerBy(secondAddress, byLength)
 	find := w.newRerankingFind(s, searchquerydomain.StageLimits{})
-	request := searchquery.Request{Text: `words("tide").rerank()`}
+	request := searchquerydomain.Request{Text: `words("tide").rerank()`}
 	if _, err := find.Execute(t.Context(), w.v, request); err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +217,7 @@ func TestScoresOfUnchangedTextsAreReusedAfterTheFilesAreChunkedAgain(t *testing.
 	s.setRows(s.second)
 	s.answerBy(secondAddress, byLength)
 	find := w.newRerankingFind(s, searchquerydomain.StageLimits{})
-	request := searchquery.Request{Text: `words("tide").rerank()`}
+	request := searchquerydomain.Request{Text: `words("tide").rerank()`}
 	if _, err := find.Execute(t.Context(), w.v, request); err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +242,7 @@ func TestAWrongCountOfScoresFailsTheRowAndTheNextIsAsked(t *testing.T) {
 	s.world.Provider.Answer(firstAddress, func([]byte) ([]byte, error) { return writeRerankResult([]float32{1}), nil })
 	s.answerBy(secondAddress, byLength)
 
-	got, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquery.Request{Text: `words("tide").rerank()`})
+	got, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide").rerank()`})
 
 	if err != nil {
 		t.Fatal(err)
@@ -264,10 +264,10 @@ func TestALongChunkIsSentTruncatedAndAWholeFileAsItsTitleAndTheStartOfItsText(t 
 	s.answerBy(secondAddress, byLength)
 	find := w.newRerankingFind(s, searchquerydomain.StageLimits{RerankWindow: 60, MaxReranked: 300, MaxRerankedBytes: 300})
 
-	if _, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `words("tide").rerank()`}); err != nil {
+	if _, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide").rerank()`}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `(kind == "note" && path.startsWith("Pier")).rerank("pier")`}); err != nil {
+	if _, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `(kind == "note" && path.startsWith("Pier")).rerank("pier")`}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -300,7 +300,7 @@ func TestTheCountOfResultsFollowsTheLimitAndTheTopStage(t *testing.T) {
 		{`words("tide").top(50)`, 10, 10},
 		{`words("tide").top(30)`, 0, 30},
 	} {
-		got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: c.text, Limit: c.limit})
+		got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: c.text, Limit: c.limit})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -309,7 +309,7 @@ func TestTheCountOfResultsFollowsTheLimitAndTheTopStage(t *testing.T) {
 		}
 	}
 	find.Limits.DefaultLimit = 30
-	if got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `words("tide")`}); err != nil || len(got.Results) != 30 {
+	if got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide")`}); err != nil || len(got.Results) != 30 {
 		t.Errorf("with a default of 30 the query returned %d results, %v", len(got.Results), err)
 	}
 }
@@ -325,7 +325,7 @@ func TestACanceledCallReturnsTheCancellationAndStoresNothing(t *testing.T) {
 		cancel()
 	}()
 
-	_, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(ctx, w.v, searchquery.Request{Text: `words("tide").rerank()`})
+	_, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(ctx, w.v, searchquerydomain.Request{Text: `words("tide").rerank()`})
 
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the query answered %v, want context.Canceled", err)
@@ -340,5 +340,35 @@ func writeFile(t *testing.T, w world, name, text string) {
 	t.Helper()
 	if err := os.WriteFile(filepath.Join(w.v.Path, filepath.FromSlash(name)), []byte(text), 0o644); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestTheResultsBeforeTheFirstRerankAreReportedBeforeTheServiceIsAsked(t *testing.T) {
+	w := newTideWorld(t)
+	s := newServices(t)
+	s.setRows(s.second)
+	s.answerBy(secondAddress, func(text string) float32 { return -byLength(text) })
+	var partials [][]string
+	var callsAtReport int
+	report := func(partial searchquerydomain.SearchResults) {
+		partials = append(partials, getPaths(partial))
+		callsAtReport = len(s.world.Provider.CallsTo(secondAddress))
+	}
+	find := w.newRerankingFind(s, searchquerydomain.StageLimits{})
+	words, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide")`})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide").rerank().rerank()`, ReportPartial: report})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(partials) != 1 || !slices.Equal(partials[0], getPaths(words)) || callsAtReport != 0 {
+		t.Fatalf("partials %v after %d calls, want once %v before any call", partials, callsAtReport, getPaths(words))
+	}
+	if paths := getPaths(got); !slices.Equal(paths, []string{"a.md", "b.md", "c.md"}) {
+		t.Errorf("results %v, want the reranked order", paths)
 	}
 }

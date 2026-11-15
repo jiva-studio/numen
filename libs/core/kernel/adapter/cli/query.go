@@ -77,8 +77,8 @@ func (c queryCommand) Run(ctx context.Context, term terminal, args []string) err
 	return errors.Join(r.Err(), diagnostics.Err())
 }
 
-func parseQueryArgs(args []string) (searchqueryusecase.Request, string, error) {
-	request := searchqueryusecase.Request{Priority: modelcall.PriorityInteractive}
+func parseQueryArgs(args []string) (searchquery.Request, string, error) {
+	request := searchquery.Request{Priority: modelcall.PriorityInteractive}
 	if len(args) > 0 && args[0] == "--limit" {
 		if len(args) < 2 {
 			return request, "", errors.New(queryUsage)

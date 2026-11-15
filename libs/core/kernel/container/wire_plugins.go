@@ -209,7 +209,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 func lendHostEndpoint(host *PluginRoles, lender *hostendpoint.Lender) *hostendpoint.Services {
 	services := hostendpoint.NewServices(lender.Get)
 	toolHost := plugin.NewToolHost(host.Activation, host.Registry)
-	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, host.Clock, toolbridge.GetErrorOutput())
+	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, getListingRevision(), host.Clock, toolbridge.GetErrorOutput())
 	host.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown,
 		Lent: services,

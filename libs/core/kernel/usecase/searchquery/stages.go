@@ -3,21 +3,22 @@ package searchquery
 import (
 	"context"
 	"fmt"
+	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func (u *FindSearchResults) applyStages(
-	ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, priority modelcall.Priority,
+	ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, req searchquery.Request,
 ) (searchquery.SearchResults, error) {
 	for _, stage := range q.Stages {
 		var err error
 		switch stage.Kind {
 		case searchquery.StageRerank:
-			r, err = u.rerank(ctx, v, r, stage.Rerank, priority)
+			r, err = u.rerank(ctx, v, r, stage.Rerank, req)
+			req.ReportPartial = nil
 		case searchquery.StageTop:
 			r = searchquery.ApplyTop(r, stage.Count)
 		case searchquery.StageSortBy:
@@ -31,7 +32,7 @@ func (u *FindSearchResults) applyStages(
 }
 
 func (u *FindSearchResults) rerank(
-	ctx context.Context, v domain.Vault, r searchquery.SearchResults, s searchquery.RerankStage, priority modelcall.Priority,
+	ctx context.Context, v domain.Vault, r searchquery.SearchResults, s searchquery.RerankStage, req searchquery.Request,
 ) (searchquery.SearchResults, error) {
 	limits := u.reranker.limits
 	window := s.Window
@@ -42,11 +43,12 @@ func (u *FindSearchResults) rerank(
 	if len(units) == 0 {
 		return r, nil
 	}
+	reportPartial(r, req.ReportPartial)
 	texts, err := u.readUnitTexts(ctx, v, r, units)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	scores, report, err := u.reranker.score(ctx, rerankInput{query: s.Query, instruction: s.Instruction, texts: texts, priority: priority})
+	scores, report, err := u.reranker.score(ctx, rerankInput{query: s.Query, instruction: s.Instruction, texts: texts, priority: req.Priority})
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
@@ -122,4 +124,13 @@ func (f *unitFiles) read(ctx context.Context, result searchquery.SearchResult) (
 	}
 	f.cache[key] = text
 	return text, nil
+}
+
+func reportPartial(r searchquery.SearchResults, report func(searchquery.SearchResults)) {
+	if report == nil {
+		return
+	}
+	partial := r
+	partial.Results = slices.Clone(r.Results)
+	report(partial)
 }

@@ -165,3 +165,8 @@ func CheckRead(page, start, length int) error {
 func FormatAddress(source string, start, length int) string {
 	return fmt.Sprintf("numen:%s?start=%d&length=%d", url.PathEscape(source), start, length)
 }
+
+// FormatFileAddress writes the address of a whole source file.
+func FormatFileAddress(source string) string {
+	return "numen:" + url.PathEscape(source)
+}

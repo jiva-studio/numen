@@ -101,3 +101,31 @@ func getResultPaths(r searchquery.SearchResults) []string {
 	}
 	return out
 }
+
+func TestFormatSignaturesNamesEachArgumentList(t *testing.T) {
+	catalog := searchquery.GetBuiltinCatalog()
+	cases := map[string][]string{
+		searchquery.FunctionMeaning: {"meaning(string) -> SearchResults"},
+		searchquery.VariableKind:    {"kind: string"},
+		searchquery.StageNameTop:    {"SearchResults.top(int) -> SearchResults"},
+		searchquery.StageNameSortBy: {"SearchResults.sortBy(string) -> SearchResults", "SearchResults.sortBy(string, string) -> SearchResults"},
+	}
+	for name, want := range cases {
+		f, _ := catalog.FindFunction(name)
+		if got := searchquery.FormatSignatures(f); !slices.Equal(got, want) {
+			t.Errorf("%s: %v, want %v", name, got, want)
+		}
+	}
+}
+
+func TestGetCatalogRevisionChangesWithTheCatalog(t *testing.T) {
+	catalog := searchquery.GetBuiltinCatalog()
+	first := searchquery.GetCatalogRevision(catalog)
+	if first == "" || first != searchquery.GetCatalogRevision(searchquery.GetBuiltinCatalog()) {
+		t.Fatalf("revision %q is not stable", first)
+	}
+	catalog.Functions[0].Description += "."
+	if searchquery.GetCatalogRevision(catalog) == first {
+		t.Fatal("a changed catalog keeps its revision")
+	}
+}

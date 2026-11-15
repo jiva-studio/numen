@@ -30,15 +30,17 @@ var _ numenv1connect.HostSearchServiceHandler = (*searchEndpoint)(nil)
 // where the host has no search index.
 type searchCall struct {
 	search   *SearchAccess
+	pluginID string
 	vault    domain.Vault
 	hasVault bool
 }
 
 func (e *searchEndpoint) begin(header http.Header, permission string, needsVault bool) (searchCall, error) {
-	if _, err := e.endpoint.Authorize(header.Get("Authorization"), permission); err != nil {
+	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), permission)
+	if err != nil {
 		return searchCall{}, err
 	}
-	call := searchCall{search: e.endpoint.callers.Lent.GetPluginSearch()}
+	call := searchCall{search: e.endpoint.callers.Lent.GetPluginSearch(), pluginID: pluginID}
 	if call.search == nil || !needsVault {
 		return call, nil
 	}

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -20,15 +19,6 @@ import (
 
 // ErrNegativeLimit is a request for a negative count of results.
 var ErrNegativeLimit = errors.New("the limit of results is negative")
-
-// Request is one query. Limit is the count of results: zero takes Limits.DefaultLimit, or no cut when the
-// query has a top stage; a count above Limits.MaxLimit is cut to it. Priority is whose action the calls of
-// a rerank stage serve.
-type Request struct {
-	Text     string
-	Limit    int
-	Priority modelcall.Priority
-}
 
 // FindSearchResultsDeps is what FindSearchResults reads. A nil Source is an installation with no model, and
 // a nil Texts reads the text of notes only. Calls, Codec, Rows, Resolve, Results and Clock serve the rerank
@@ -96,7 +86,7 @@ func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 // FTS5 expression the index rejects included; a limit exceeded searchquery.ErrLimitExceeded; meaning with no
 // model searchquery.ErrNoModel; a rerank stage with no row searchquery.ErrNoReranker and with every row
 // failing *searchquery.RerankError; cancellation ctx.Err().
-func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r Request) (searchquery.SearchResults, error) {
+func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r searchquery.Request) (searchquery.SearchResults, error) {
 	if err := ctx.Err(); err != nil {
 		return searchquery.SearchResults{}, err
 	}
@@ -114,7 +104,7 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r Reque
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	if results, err = u.runStages(ctx, v, q, results, r.Priority); err != nil {
+	if results, err = u.runStages(ctx, v, q, results, r); err != nil {
 		return searchquery.SearchResults{}, err
 	}
 	results = searchquery.ApplyTop(results, u.getLimit(r.Limit, q.HasStage(searchquery.StageTop)))
@@ -127,7 +117,7 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r Reque
 }
 
 func (u *FindSearchResults) runStages(
-	ctx context.Context, v domain.Vault, q searchquery.Query, results searchquery.SearchResults, priority modelcall.Priority,
+	ctx context.Context, v domain.Vault, q searchquery.Query, results searchquery.SearchResults, r searchquery.Request,
 ) (searchquery.SearchResults, error) {
 	if len(q.Stages) == 0 {
 		return results, nil
@@ -135,7 +125,7 @@ func (u *FindSearchResults) runStages(
 	if err := u.fillDocuments(ctx, v, results.Results); err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	return u.applyStages(ctx, v, q, results, priority)
+	return u.applyStages(ctx, v, q, results, r)
 }
 
 func (u *FindSearchResults) getLimit(limit int, hasTop bool) int {

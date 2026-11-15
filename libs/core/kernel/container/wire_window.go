@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -23,18 +24,20 @@ import (
 // The state, the useCases of notes and vaults and the installation are the window's own, and each
 // service is handed the ones it uses.
 type windowWiring struct {
-	cfg       Config
-	a         pluginsWiring
-	ports     registry.Ports
-	db        *Index
-	embedder  searchsourceport.Source
-	asking    searchsourceport.Source
-	inst      *editor.Installation
-	state     *editor.State
-	kinds     tabKinds
-	server    *editor.FileServer
-	switching windowsession.UserSwitch
-	cases     WindowUseCases
+	cfg         Config
+	a           pluginsWiring
+	ports       registry.Ports
+	db          *Index
+	embedder    searchsourceport.Source
+	asking      searchsourceport.Source
+	inst        *editor.Installation
+	state       *editor.State
+	kinds       tabKinds
+	server      *editor.FileServer
+	switching   windowsession.UserSwitch
+	cases       WindowUseCases
+	tasks       *run.Tasks
+	generations *indexgeneration.Generations
 }
 
 // tabKinds are the use cases that name the kind of a file for the tabs of a window.
@@ -144,7 +147,8 @@ func buildWindow(
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })
 	state.SetIndexing(embedding)
-	indexer := newIndexWorker(a, db, state, embedding, opening.Out)
+	generations := newIndexGenerations(c.Clock())
+	indexer := newIndexWorker(a, db, state, embedding, emitIndexChanged(generations, state.Events), opening.Out)
 	state.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
@@ -168,6 +172,7 @@ func buildWindow(
 		wiring: &windowWiring{
 			cfg: c, a: a, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
 			kinds: kinds, server: newFileServer(a, state, cases), switching: session.userSwitch, cases: cases,
+			tasks: tasks, generations: generations,
 		},
 		closeEmbedder: closeEmbedder,
 	}
