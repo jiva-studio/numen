@@ -30,10 +30,10 @@ use (
 	./plugins/tools-index-stats
 	./plugins/tools-media-importer
 	./plugins/tools-proofreading
+	./plugins/tools-saved-search
 	./plugins/tools-search-relevance
 	./plugins/tools-updater
 	./plugins/views-flashcards-studio
-	./plugins/views-saved-search
 	./tools/checks/structure/go
 	./tools/checks/style/comments
 )
