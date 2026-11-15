@@ -2,6 +2,7 @@ package searchquery
 
 import (
 	"cmp"
+	"math"
 	"slices"
 	"strings"
 	"time"
@@ -104,7 +105,7 @@ func getPropertyOrder(v PropertyValue, operand Value, zone *time.Location) (int,
 	case v.Kind == PropertyInt && operand.Kind == ValueInt:
 		return cmp.Compare(v.Int, operand.Int), true
 	case isNumber(v) && (operand.Kind == ValueInt || operand.Kind == ValueDouble):
-		return cmp.Compare(getPropertyNumber(v), getValueNumber(operand)), true
+		return compareNumbers(getPropertyNumber(v), getValueNumber(operand)), true
 	}
 	return 0, false
 }
@@ -113,19 +114,55 @@ func isNumber(v PropertyValue) bool {
 	return v.Kind == PropertyInt || v.Kind == PropertyDouble
 }
 
-func getPropertyNumber(v PropertyValue) float64 {
-	if v.Kind == PropertyInt {
-		return float64(v.Int)
-	}
-	return v.Double
+type number struct {
+	isInt    bool
+	whole    int64
+	fraction float64
 }
 
-func getValueNumber(v Value) float64 {
-	if v.Kind == ValueInt {
-		return float64(v.Int)
+func getPropertyNumber(v PropertyValue) number {
+	if v.Kind == PropertyInt {
+		return number{isInt: true, whole: v.Int}
 	}
-	return v.Double
+	return number{fraction: v.Double}
 }
+
+func getValueNumber(v Value) number {
+	if v.Kind == ValueInt {
+		return number{isInt: true, whole: v.Int}
+	}
+	return number{fraction: v.Double}
+}
+
+func compareNumbers(a, b number) int {
+	switch {
+	case a.isInt && b.isInt:
+		return cmp.Compare(a.whole, b.whole)
+	case a.isInt:
+		return compareWholeToFraction(a.whole, b.fraction)
+	case b.isInt:
+		return -compareWholeToFraction(b.whole, a.fraction)
+	}
+	return cmp.Compare(a.fraction, b.fraction)
+}
+
+func compareWholeToFraction(whole int64, fraction float64) int {
+	switch {
+	case math.IsNaN(fraction):
+		return 1
+	case fraction >= maxInt64AsFloat:
+		return -1
+	case fraction < -maxInt64AsFloat:
+		return 1
+	}
+	truncated := math.Trunc(fraction)
+	if order := cmp.Compare(whole, int64(truncated)); order != 0 {
+		return order
+	}
+	return cmp.Compare(0, fraction-truncated)
+}
+
+const maxInt64AsFloat = float64(1 << 63)
 
 // IsHeadingMatch reports whether a heading of a note is the heading text: the whole of it, without the spaces
 // around it, ignoring case.
