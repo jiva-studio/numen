@@ -23,7 +23,7 @@ import (
 // recordings the file change feed names on each onFilesChanged event while Transcribe automatically is
 // on.
 type App struct {
-	auto *automatic
+	auto *feed.Automatic
 }
 
 func NewApp() *App { return &App{auto: nil} }
@@ -33,7 +33,7 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 	if a.auto == nil {
 		return nil
 	}
-	return a.auto.handleEvent(ctx, event)
+	return a.auto.HandleEvent(ctx, event)
 }
 
 // Mount registers the handlers and the agent tool transcript_create on s over the host the process
@@ -49,7 +49,7 @@ func (a *App) Mount(s *server.Server) error {
 	return err
 }
 
-func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock bool) (*automatic, error) {
+func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock bool) (*feed.Automatic, error) {
 	holder := model.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock))
 	report := process.Process{}.ReportError
 	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, holder.GetRecognizer, report)
@@ -57,10 +57,10 @@ func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock
 	feeds := func(id domain.VaultID) feed.Vault {
 		return feed.Vault{Feed: hosted.Vaults(id), Store: hosted.Store(id)}
 	}
-	auto := newAutomatic(newFollower(requests, feeds, report), requests.GetShownVaultID, report)
+	auto := feed.NewAutomatic(newFollower(requests, feeds, report), requests.GetShownVaultID, report)
 	s.SetUpdateConfig(func(values map[string]string) {
 		holder.UpdateSettings(values)
-		auto.updateSettings(values)
+		auto.UpdateSettings(values)
 	})
 	commands, err := newCommands(transcriber)
 	if err != nil {
@@ -73,7 +73,7 @@ func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock
 	command.Mount(s, commands)
 	registry.Mount(s)
 	s.OnClose(func() error {
-		auto.close()
+		auto.Close()
 		transcriber.Close()
 		return holder.Close()
 	})

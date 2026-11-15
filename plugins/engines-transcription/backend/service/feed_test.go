@@ -2,18 +2,20 @@ package service
 
 import (
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/feed"
 )
 
 func (w *wire) deliver(t *testing.T, event string) {
 	t.Helper()
-	if err := w.auto.handleEvent(t.Context(), event); err != nil {
+	if err := w.auto.HandleEvent(t.Context(), event); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestAFilesChangedEventTranscribesTheRecordingOfTheFeedOnceInTheBackground(t *testing.T) {
 	w := newWire(t)
-	w.auto.isOn.Store(true)
+	w.auto.UpdateSettings(map[string]string{feed.SettingAutomatic: "true"})
 
 	w.deliver(t, "onFilesChanged:Lectures")
 	w.waitUntilStarted(t)
@@ -51,7 +53,7 @@ func TestAFilesChangedEventTranscribesNothingWhileTheSettingIsOff(t *testing.T) 
 func TestTurningTheSettingOnTranscribesTheRecordingsOfTheShownVault(t *testing.T) {
 	w := newWire(t)
 
-	w.auto.updateSettings(map[string]string{settingAutomatic: "true"})
+	w.auto.UpdateSettings(map[string]string{feed.SettingAutomatic: "true"})
 	w.waitUntilStarted(t)
 	close(w.recognizer.release)
 	w.waitUntilNoTask(t)
@@ -64,7 +66,7 @@ func TestTurningTheSettingOnTranscribesTheRecordingsOfTheShownVault(t *testing.T
 
 func TestAResetOfTheFeedSkipsARecordingWithItsTranscript(t *testing.T) {
 	w := newWire(t)
-	w.auto.isOn.Store(true)
+	w.auto.UpdateSettings(map[string]string{feed.SettingAutomatic: "true"})
 	w.deliver(t, "onFilesChanged:Lectures")
 	w.waitUntilStarted(t)
 	close(w.recognizer.release)

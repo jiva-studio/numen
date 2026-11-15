@@ -9,19 +9,19 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
-func (s *toolFixture) newAutomatic(t *testing.T) *automatic {
+func (s *toolFixture) newAutomatic(t *testing.T) *feed.Automatic {
 	t.Helper()
 	follower := newFollower(s.launcher, func(id domain.VaultID) feed.Vault {
 		return feed.Vault{Feed: s.vault.With(id), Store: s.vault.Store().With(id)}
 	}, nil)
-	auto := newAutomatic(follower, s.launcher.GetShownVaultID, func(what string, err error) { t.Errorf("%s: %v", what, err) })
-	t.Cleanup(auto.close)
+	auto := feed.NewAutomatic(follower, s.launcher.GetShownVaultID, func(what string, err error) { t.Errorf("%s: %v", what, err) })
+	t.Cleanup(auto.Close)
 	return auto
 }
 
-func (s *toolFixture) deliver(t *testing.T, auto *automatic, event string) {
+func (s *toolFixture) deliver(t *testing.T, auto *feed.Automatic, event string) {
 	t.Helper()
-	if err := auto.handleEvent(t.Context(), event); err != nil {
+	if err := auto.HandleEvent(t.Context(), event); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -29,7 +29,7 @@ func (s *toolFixture) deliver(t *testing.T, auto *automatic, event string) {
 func TestAFilesChangedEventRecognizesTheScanOfTheFeedOnceInTheBackground(t *testing.T) {
 	s := newToolFixture(t)
 	auto := s.newAutomatic(t)
-	auto.isOn.Store(true)
+	auto.UpdateSettings(map[string]string{feed.SettingAutomatic: "true"})
 
 	s.deliver(t, auto, "onFilesChanged:Physics")
 	s.waitUntilStarted(t)
@@ -63,7 +63,7 @@ func TestTurningTheSettingOnRecognizesTheScansOfTheShownVault(t *testing.T) {
 	s := newToolFixture(t)
 	auto := s.newAutomatic(t)
 
-	auto.updateSettings(map[string]string{settingAutomatic: "true"})
+	auto.UpdateSettings(map[string]string{feed.SettingAutomatic: "true"})
 	s.waitUntilStarted(t)
 	close(s.recognizer.release)
 	s.waitUntilFinished(t, recognition.GetTaskID("Physics", scanPath))
@@ -77,7 +77,7 @@ func TestTheUpdateWithARecognitionSkipsTheScan(t *testing.T) {
 	s := newToolFixture(t)
 	s.putRecognition(t)
 	auto := s.newAutomatic(t)
-	auto.isOn.Store(true)
+	auto.UpdateSettings(map[string]string{feed.SettingAutomatic: "true"})
 
 	s.deliver(t, auto, "onFilesChanged:Physics")
 

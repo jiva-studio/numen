@@ -25,7 +25,7 @@ const PluginID = "md.numen.engines.ocr"
 // App is the backend of the plugin: Mount registers its services, and HandleEvent recognizes the scans
 // the file change feed names on each onFilesChanged event while Recognize automatically is on.
 type App struct {
-	auto *automatic
+	auto *feed.Automatic
 }
 
 func NewApp() *App { return &App{auto: nil} }
@@ -35,7 +35,7 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 	if a.auto == nil {
 		return nil
 	}
-	return a.auto.handleEvent(ctx, event)
+	return a.auto.HandleEvent(ctx, event)
 }
 
 // Mount registers the services of the plugin on s, working the vault, the plugin's folder, the text
@@ -72,7 +72,7 @@ func (a *App) Mount(s *server.Server) error {
 	return err
 }
 
-func mount(s *server.Server, h recognition.Host, feeds func(domain.VaultID) feed.Vault, holder *engines.Holder) (*automatic, error) {
+func mount(s *server.Server, h recognition.Host, feeds func(domain.VaultID) feed.Vault, holder *engines.Holder) (*feed.Automatic, error) {
 	recognitions, err := recognition.New(h, holder.GetEngine)
 	if err != nil {
 		return nil, err
@@ -86,15 +86,15 @@ func mount(s *server.Server, h recognition.Host, feeds func(domain.VaultID) feed
 	if err != nil {
 		return nil, err
 	}
-	auto := newAutomatic(newFollower(launcher, feeds, h.Report), launcher.GetShownVaultID, getReport(h.Report))
+	auto := feed.NewAutomatic(newFollower(launcher, feeds, h.Report), launcher.GetShownVaultID, getReport(h.Report))
 	s.SetUpdateConfig(func(values map[string]string) {
 		holder.UpdateSettings(values)
-		auto.updateSettings(values)
+		auto.UpdateSettings(values)
 	})
 	command.Mount(s, commands)
 	registry.Mount(s)
 	s.OnClose(func() error {
-		auto.close()
+		auto.Close()
 		launcher.Close()
 		return holder.Close()
 	})
