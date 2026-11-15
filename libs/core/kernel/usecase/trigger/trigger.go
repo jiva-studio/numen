@@ -154,7 +154,10 @@ func (u *Triggers) execute(
 	if err != nil {
 		return nil, err
 	}
-	p := &pass{types: u.deps.Types, run: u.deps.Run, notes: u.deps.Notes, versions: u.deps.Versions, vault: v, list: triggers, config: u.deps.Config.GetWhenConfig(), skipped: map[string]bool{}, retry: map[string]bool{}}
+	p := &pass{
+		types: u.deps.Types, run: u.deps.Run, notes: u.deps.Notes, versions: u.deps.Versions, vault: v, list: triggers,
+		config: u.deps.Config.GetWhenConfig(), skipped: map[string]bool{}, retry: map[string]bool{},
+	}
 	if isBatched {
 		p.batches = make([][]string, len(triggers))
 	}

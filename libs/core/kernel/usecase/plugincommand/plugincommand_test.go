@@ -298,7 +298,7 @@ func TestARunOverPathsIsCheckedOverEachPathAndForwardsThem(t *testing.T) {
 	}
 }
 
-func TestARunOverPathsTakesARemovedNoteAsANoteWithoutFrontmatter(t *testing.T) {
+func TestRunOverPathsReadsRemovedNoteAsNoteWithoutFrontmatter(t *testing.T) {
 	declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "md.numen.a", Command: manifest.Command{
 		ID: "tags.update", Title: "Update tags", When: "target.isNote && target.noteType != 'link'",
 	}}}}
