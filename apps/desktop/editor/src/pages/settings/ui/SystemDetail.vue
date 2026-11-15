@@ -10,11 +10,7 @@ import { PluginSettingsCard, SettingsPage } from '@numen/plugin-manager'
 import PluginFields from './plugins/PluginFields.vue'
 import PluginConnectionSections from './plugins/PluginConnectionSections.vue'
 import type { PluginInfo } from '@/entities/settings'
-import type {
-  InstallationConnections,
-  InstallationPlugin,
-  InstallationSettings,
-} from '../types'
+import type { InstallationConnections, InstallationPlugin, InstallationSettings } from '../types'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
