@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/ranking"
 )
 
-// wordsError is a words leaf whose full-text query the index refuses.
+// wordsError is a words leaf whose full-text query the index rejects.
 type wordsError struct {
 	text string
 	term query.Term
@@ -25,11 +25,11 @@ func (e *wordsError) Error() string {
 func (e *wordsError) Unwrap() error { return host.ErrInvalidWords }
 
 func getWordsProblem(err error) (api.Problem, bool) {
-	refused, isRefused := errors.AsType[*wordsError](err)
-	if !isRefused {
+	wordsFailure, isWordsFailure := errors.AsType[*wordsError](err)
+	if !isWordsFailure {
 		return api.Problem{Line: 0, Column: 0, Message: ""}, false
 	}
-	return api.Problem{Line: refused.term.Line, Column: refused.term.Column, Message: refused.Error()}, true
+	return api.Problem{Line: wordsFailure.term.Line, Column: wordsFailure.term.Column, Message: wordsFailure.Error()}, true
 }
 
 // candidates are the union of the results of the searches of a query.

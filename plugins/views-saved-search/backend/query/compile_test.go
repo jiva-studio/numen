@@ -21,14 +21,14 @@ func compile(t *testing.T, text string) query.Query {
 func getProblems(t *testing.T, text string) []query.Problem {
 	t.Helper()
 	_, err := query.Compile(text)
-	var refused *query.CompileError
-	if !errors.As(err, &refused) {
+	var compileError *query.CompileError
+	if !errors.As(err, &compileError) {
 		t.Fatalf("Compile(%q) = %v, want a *query.CompileError", text, err)
 	}
-	if len(refused.Problems) == 0 {
-		t.Fatalf("Compile(%q) refused the query with no problem", text)
+	if len(compileError.Problems) == 0 {
+		t.Fatalf("Compile(%q) rejected the query with no problem", text)
 	}
-	return refused.Problems
+	return compileError.Problems
 }
 
 func hasProblem(problems []query.Problem, line, column int, message string) bool {
@@ -82,7 +82,7 @@ func TestCompileCountsColumnsInCharacters(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesAnUnknownFunction(t *testing.T) {
+func TestCompileRejectsAnUnknownFunction(t *testing.T) {
 	problems := getProblems(t, `similar("tides")`)
 
 	if !hasProblem(problems, 1, 8, "undeclared reference to 'similar'") {
@@ -90,7 +90,7 @@ func TestCompileRefusesAnUnknownFunction(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesAnUnknownField(t *testing.T) {
+func TestCompileRejectsAnUnknownField(t *testing.T) {
 	for _, field := range []string{"tags", "modified", "title"} {
 		problems := getProblems(t, `meaning("tides") && `+field+` == "x"`)
 
@@ -100,7 +100,7 @@ func TestCompileRefusesAnUnknownField(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesAMacro(t *testing.T) {
+func TestCompileRejectsAMacro(t *testing.T) {
 	for _, text := range []string{`has(meaning.x) && meaning("tides")`, `size("tides") == 5 && meaning("tides")`} {
 		problems := getProblems(t, text)
 
@@ -110,7 +110,7 @@ func TestCompileRefusesAMacro(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesArithmeticAndOtherStringFunctions(t *testing.T) {
+func TestCompileRejectsArithmeticAndOtherStringFunctions(t *testing.T) {
 	for _, text := range []string{
 		`words("tide" + "s")`,
 		`meaning("tides") && path.endsWith(".md")`,
@@ -123,7 +123,7 @@ func TestCompileRefusesArithmeticAndOtherStringFunctions(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesANonLiteralText(t *testing.T) {
+func TestCompileRejectsANonLiteralText(t *testing.T) {
 	problems := getProblems(t, `meaning(path)`)
 
 	if !hasMessage(problems, "meaning takes a string literal") || problems[0].Line != 1 {
@@ -134,7 +134,7 @@ func TestCompileRefusesANonLiteralText(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesAnEmptyText(t *testing.T) {
+func TestCompileRejectsAnEmptyText(t *testing.T) {
 	for _, text := range []string{`meaning("")`, `meaning("  \t")`, `words("") || meaning("tides")`} {
 		problems := getProblems(t, text)
 
@@ -144,7 +144,7 @@ func TestCompileRefusesAnEmptyText(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesATextOverEightThousandOneHundredNinetyTwoBytes(t *testing.T) {
+func TestCompileRejectsATextOverEightThousandOneHundredNinetyTwoBytes(t *testing.T) {
 	problems := getProblems(t, `meaning("`+strings.Repeat("a", 8193)+`")`)
 
 	if !hasMessage(problems, "meaning needs a text of 1 to 8192 bytes") {
@@ -161,7 +161,7 @@ func TestCompileSendsATextVerbatim(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesAKindOtherThanTheKindsOfFiles(t *testing.T) {
+func TestCompileRejectsAKindOtherThanTheKindsOfFiles(t *testing.T) {
 	for _, text := range []string{
 		`meaning("tides") && kind == "book"`,
 		`meaning("tides") && kind in ["note", "recording"]`,
@@ -181,7 +181,7 @@ func TestCompileAcceptsEveryKindOfFile(t *testing.T) {
 	compile(t, `meaning("tides") && kind in ["pdf", "epub"] && kind != "image"`)
 }
 
-func TestCompileRefusesPathOutsideStartsWith(t *testing.T) {
+func TestCompileRejectsPathOutsideStartsWith(t *testing.T) {
 	for _, text := range []string{
 		`meaning("tides") && path == "Logs/Storm.md"`,
 		`meaning("tides") && path.startsWith(kind)`,
@@ -192,7 +192,7 @@ func TestCompileRefusesPathOutsideStartsWith(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesPathEndsWith(t *testing.T) {
+func TestCompileRejectsPathEndsWith(t *testing.T) {
 	problems := getProblems(t, `meaning("tides") && path.endsWith(".md")`)
 
 	if problems[0].Line != 1 {
@@ -200,7 +200,7 @@ func TestCompileRefusesPathEndsWith(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesALoneLiteral(t *testing.T) {
+func TestCompileRejectsALoneLiteral(t *testing.T) {
 	for _, text := range []string{`meaning("tides") || true`, `"tides"`} {
 		problems := getProblems(t, text)
 
@@ -210,7 +210,7 @@ func TestCompileRefusesALoneLiteral(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesSeventeenLeafNodes(t *testing.T) {
+func TestCompileRejectsSeventeenLeafNodes(t *testing.T) {
 	leaves := make([]string, 17)
 	for i := range leaves {
 		leaves[i] = fmt.Sprintf(`meaning("tide %d")`, i)
@@ -236,7 +236,7 @@ func TestCompileCountsARepeatedLeafOnce(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesAQueryWithoutAPositiveLeaf(t *testing.T) {
+func TestCompileRejectsAQueryWithoutAPositiveLeaf(t *testing.T) {
 	for _, text := range []string{`!words("lighthouse")`, `kind == "note"`, `path.startsWith("Logs/")`, `!(meaning("tides") || words("harbor"))`} {
 		problems := getProblems(t, text)
 

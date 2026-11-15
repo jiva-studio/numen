@@ -167,7 +167,7 @@ func TestReadReportsARerankThatIsNotText(t *testing.T) {
 	}
 }
 
-func TestReadRefusesANoteOfAnotherType(t *testing.T) {
+func TestReadRejectsANoteOfAnotherType(t *testing.T) {
 	raw := "---\ntype: deck\n---\n```numen-query\nwords(\"gale\")\n```\n"
 
 	if _, problems := read(raw); !hasProblem(problems, "the note is not a saved search (type: deck)") {

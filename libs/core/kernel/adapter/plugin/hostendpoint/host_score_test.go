@@ -71,7 +71,7 @@ func TestHostScoreChunksReturnsTheScoresAndTheFloor(t *testing.T) {
 	}
 }
 
-func TestHostScoreChunksRefusesAPluginWithoutIndexRead(t *testing.T) {
+func TestHostScoreChunksRejectsAPluginWithoutIndexRead(t *testing.T) {
 	search := &recordingSearch{}
 	client := newSearchClient(t, newSearchCallers(search), "token-b")
 
@@ -80,7 +80,7 @@ func TestHostScoreChunksRefusesAPluginWithoutIndexRead(t *testing.T) {
 		t.Errorf("a plugin without index:read got %v, want permission denied", err)
 	}
 	if len(search.scoreQueries) != 0 {
-		t.Errorf("the search ran for a refused call: %+v", search.scoreQueries)
+		t.Errorf("the search ran for a rejected call: %+v", search.scoreQueries)
 	}
 }
 

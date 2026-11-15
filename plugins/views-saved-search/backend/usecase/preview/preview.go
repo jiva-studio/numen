@@ -74,8 +74,8 @@ func (u *UseCase) Execute(ctx context.Context, in api.PreviewInput) (api.Preview
 // the reranker answers or not; its query is the rerank text of the input, else the texts of the conditions
 // that are not negated, one per line. A reranker that fails leaves the fused order with a warning.
 // Neighbors of one file are joined and the results returned best first. A query that is not valid, or a
-// words condition the index refuses, returns its problems in the output with a nil error; the leaf the
-// index refuses is found by scoring each words condition alone.
+// words condition the index rejects, returns its problems in the output with a nil error; the leaf the
+// index rejects is found by scoring each words condition alone.
 func (u *UseCase) Run(ctx context.Context, in api.PreviewInput) (Run, error) {
 	run := Run{
 		Output: api.PreviewOutput{
@@ -174,9 +174,9 @@ func (u *UseCase) compile(text string) (query.Query, []api.Problem, error) {
 		return query.Query{}, []api.Problem{{Line: firstLine, Column: firstColumn, Message: message}}, nil
 	}
 	compiled, err := query.Compile(text)
-	if refused, isRefused := errors.AsType[*query.CompileError](err); isRefused {
-		problems := make([]api.Problem, len(refused.Problems))
-		for i, problem := range refused.Problems {
+	if compileError, isCompileError := errors.AsType[*query.CompileError](err); isCompileError {
+		problems := make([]api.Problem, len(compileError.Problems))
+		for i, problem := range compileError.Problems {
 			problems[i] = api.Problem{Line: problem.Line, Column: problem.Column, Message: problem.Message}
 		}
 		return query.Query{}, problems, nil

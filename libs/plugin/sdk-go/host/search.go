@@ -24,9 +24,9 @@ var (
 	// ErrInvalidQuery is what a sampling call gets whose query vector has another dimension count than the vectors of the index.
 	ErrInvalidQuery = errors.New("host: a query vector does not match the vectors of the index")
 	// ErrInvalidCondition is what ScoreChunks gets for a condition with no text, with both texts or with an
-	// empty text. A words query FTS5 refuses gets ErrInvalidWords.
+	// empty text. A words query FTS5 rejects gets ErrInvalidWords.
 	ErrInvalidCondition = errors.New("host: a condition names neither or both of meaning and words")
-	// ErrInvalidWords is what a words query gets that FTS5 refuses.
+	// ErrInvalidWords is what a words query gets that FTS5 rejects.
 	ErrInvalidWords = errors.New("host: the words query is not valid FTS5")
 )
 
@@ -262,7 +262,7 @@ type SearchResultQuery struct {
 	// Mode selects the participants; the zero value is SearchModeHybrid.
 	Mode SearchMode
 	// IsRawWords passes Query to the words of the index as an FTS5 query (phrases, NEAR, prefix *, AND,
-	// OR, NOT), unquoted. It is valid with SearchModeWords only; a query FTS5 refuses returns
+	// OR, NOT), unquoted. It is valid with SearchModeWords only; a query FTS5 rejects returns
 	// ErrInvalidWords.
 	IsRawWords bool
 }

@@ -248,7 +248,7 @@ func TestPreviewWithWordsRunsWithoutAModel(t *testing.T) {
 func TestPreviewReportsAnInvalidWordsQueryWithItsPosition(t *testing.T) {
 	w := newWorld(t)
 	w.index(chunk("c1", "Logs/One.md", 0, 400, "The tide at one."))
-	w.host.refusedWords = "harbor NEAR("
+	w.host.rejectedWords = "harbor NEAR("
 
 	out, err := w.execute(t.Context(), api.PreviewInput{Query: "meaning(\"tides\") ||\n words(\"harbor NEAR(\")"})
 
@@ -261,10 +261,10 @@ func TestPreviewReportsAnInvalidWordsQueryWithItsPosition(t *testing.T) {
 	}
 }
 
-func TestPreviewNamesTheNegatedWordsLeafTheScoresRefuse(t *testing.T) {
+func TestPreviewNamesTheNegatedWordsLeafTheScoresReject(t *testing.T) {
 	w := newWorld(t)
 	w.index(chunk("c1", "Logs/One.md", 0, 400, "The tide at one."))
-	w.host.refusedWords = "NEAR("
+	w.host.rejectedWords = "NEAR("
 
 	out, err := w.execute(t.Context(), api.PreviewInput{Query: `meaning("tides") && !words("anchor") && !words("NEAR(")`})
 

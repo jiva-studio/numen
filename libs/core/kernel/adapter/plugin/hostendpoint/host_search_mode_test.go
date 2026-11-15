@@ -51,7 +51,7 @@ func TestHostSearchTextReadsEveryModeOfTheWire(t *testing.T) {
 	}
 }
 
-func TestHostSearchTextRefusesModeNames(t *testing.T) {
+func TestHostSearchTextRejectsModeNames(t *testing.T) {
 	for _, mode := range []v1.SearchMode{v1.SearchMode_SEARCH_MODE_NAMES, v1.SearchMode(99)} {
 		search := &recordingSearch{}
 		client := newSearchClient(t, newSearchCallers(search), "token-a")
@@ -66,7 +66,7 @@ func TestHostSearchTextRefusesModeNames(t *testing.T) {
 	}
 }
 
-func TestHostSearchTextRefusesRawWordsWithAnotherModeThanWords(t *testing.T) {
+func TestHostSearchTextRejectsRawWordsWithAnotherModeThanWords(t *testing.T) {
 	for _, mode := range []v1.SearchMode{v1.SearchMode_SEARCH_MODE_UNSPECIFIED, v1.SearchMode_SEARCH_MODE_HYBRID, v1.SearchMode_SEARCH_MODE_MEANING} {
 		search := &recordingSearch{}
 		client := newSearchClient(t, newSearchCallers(search), "token-a")
@@ -81,7 +81,7 @@ func TestHostSearchTextRefusesRawWordsWithAnotherModeThanWords(t *testing.T) {
 	}
 }
 
-func TestHostSearchTextAnswersInvalidWordsForARawQueryTheIndexRefuses(t *testing.T) {
+func TestHostSearchTextAnswersInvalidWordsForARawQueryTheIndexRejects(t *testing.T) {
 	client := newSearchClient(t, newSearchCallers(&recordingSearch{err: plugin.ErrInvalidWords}), "token-a")
 
 	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{

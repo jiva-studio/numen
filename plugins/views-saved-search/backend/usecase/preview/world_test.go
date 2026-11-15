@@ -38,23 +38,23 @@ func embedByTopic(text string) []float32 {
 	return vector
 }
 
-// recordingSearch is the host search of the vault, recording the calls of the plugin. It refuses a words
-// query of refusedWords as FTS5 does and leaves out of its scores the chunks the index forgot.
+// recordingSearch is the host search of the vault, recording the calls of the plugin. It rejects a words
+// query of rejectedWords as FTS5 does and leaves out of its scores the chunks the index forgot.
 type recordingSearch struct {
 	*hosttest.Search
-	mu           sync.Mutex
-	queries      []host.SearchResultQuery
-	scoredChunks [][]string
-	refusedWords string
-	forgotten    map[string]bool
+	mu            sync.Mutex
+	queries       []host.SearchResultQuery
+	scoredChunks  [][]string
+	rejectedWords string
+	forgotten     map[string]bool
 }
 
 func (r *recordingSearch) SearchText(ctx context.Context, query host.SearchResultQuery) ([]host.SearchResult, error) {
 	r.mu.Lock()
 	r.queries = append(r.queries, query)
-	refused := r.refusedWords != "" && query.Mode == host.SearchModeWords && query.Query == r.refusedWords
+	isRejected := r.rejectedWords != "" && query.Mode == host.SearchModeWords && query.Query == r.rejectedWords
 	r.mu.Unlock()
-	if refused {
+	if isRejected {
 		return nil, host.ErrInvalidWords
 	}
 	return r.Search.SearchText(ctx, query)
@@ -63,10 +63,10 @@ func (r *recordingSearch) SearchText(ctx context.Context, query host.SearchResul
 func (r *recordingSearch) ScoreChunks(ctx context.Context, query host.ScoreQuery) (host.ChunkScores, error) {
 	r.mu.Lock()
 	r.scoredChunks = append(r.scoredChunks, slices.Clone(query.ChunkIDs))
-	refused := r.refusedWords != "" && slices.ContainsFunc(query.Conditions, func(c host.ScoreCondition) bool { return c.Words == r.refusedWords })
+	isRejected := r.rejectedWords != "" && slices.ContainsFunc(query.Conditions, func(c host.ScoreCondition) bool { return c.Words == r.rejectedWords })
 	kept := slices.DeleteFunc(slices.Clone(query.ChunkIDs), func(id string) bool { return r.forgotten[id] })
 	r.mu.Unlock()
-	if refused {
+	if isRejected {
 		return host.ChunkScores{}, host.ErrInvalidWords
 	}
 	query.ChunkIDs = kept
@@ -168,7 +168,7 @@ func (w *world) run(t *testing.T, input api.PreviewInput) api.PreviewOutput {
 		t.Fatalf("Execute(%+v) = %v", input, err)
 	}
 	if len(out.Errors) > 0 {
-		t.Fatalf("Execute(%+v) refused the query: %+v", input, out.Errors)
+		t.Fatalf("Execute(%+v) rejected the query: %+v", input, out.Errors)
 	}
 	return out
 }

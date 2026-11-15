@@ -50,7 +50,7 @@ func TestSearchTextAsksOnlyTheMeaningInMeaningMode(t *testing.T) {
 	}
 }
 
-func TestSearchTextRefusesMeaningModeWithoutAModel(t *testing.T) {
+func TestSearchTextRejectsMeaningModeWithoutAModel(t *testing.T) {
 	finder := &failingFinder{}
 	s := Search{TextSearch: search.NewSearchText(finder)}
 
@@ -63,12 +63,12 @@ func TestSearchTextRefusesMeaningModeWithoutAModel(t *testing.T) {
 	}
 }
 
-func TestSearchTextReturnsErrInvalidWordsForARawQueryTheIndexRefuses(t *testing.T) {
+func TestSearchTextReturnsErrInvalidWordsForARawQueryTheIndexRejects(t *testing.T) {
 	finder := &failingFinder{err: sourcedomain.ErrInvalidWords}
 	s := Search{TextSearch: search.NewSearchText(finder)}
 
 	_, err := s.SearchText(t.Context(), getVault(), plugin.SearchResultQuery{Query: `"heron`, Mode: plugin.SearchModeWords, IsRawWords: true})
 	if !errors.Is(err, plugin.ErrInvalidWords) {
-		t.Errorf("a query the index refuses returned %v, want plugin.ErrInvalidWords", err)
+		t.Errorf("a query the index rejects returned %v, want plugin.ErrInvalidWords", err)
 	}
 }

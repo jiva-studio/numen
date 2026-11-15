@@ -56,7 +56,7 @@ func TestPreviewUsesTheLimitsOfTheSettings(t *testing.T) {
 	}
 }
 
-func TestPreviewRefusesANegativeLimit(t *testing.T) {
+func TestPreviewRejectsANegativeLimit(t *testing.T) {
 	w := newWorld(t)
 	indexHarborLogs(w, 3)
 
@@ -120,14 +120,14 @@ func TestPreviewScoresAtMostOneThousandCandidatesInBatchesOfFiveHundred(t *testi
 	}
 }
 
-func TestPreviewRefusesAQueryOverTheMaximumBytes(t *testing.T) {
+func TestPreviewRejectsAQueryOverTheMaximumBytes(t *testing.T) {
 	w := newWorld(t)
 	indexHarborLogs(w, 3)
 	long := `words("harbor")` + strings.Repeat(" ", 16384)
 
 	out, err := w.execute(t.Context(), api.PreviewInput{Query: long})
 	if err != nil || len(out.Errors) != 1 || !strings.Contains(out.Errors[0].Message, "a query has at most 16384 bytes") {
-		t.Errorf("Execute = %+v, %v, want the query refused for its size", out.Errors, err)
+		t.Errorf("Execute = %+v, %v, want the query rejected for its size", out.Errors, err)
 	}
 
 	w.config.MaxQueryBytes = 32768
@@ -136,7 +136,7 @@ func TestPreviewRefusesAQueryOverTheMaximumBytes(t *testing.T) {
 	}
 }
 
-func TestPreviewRefusesMoreThanEightPathPrefixes(t *testing.T) {
+func TestPreviewRejectsMoreThanEightPathPrefixes(t *testing.T) {
 	w := newWorld(t)
 	indexHarborLogs(w, 3)
 	prefixes := make([]string, 9)
@@ -147,7 +147,7 @@ func TestPreviewRefusesMoreThanEightPathPrefixes(t *testing.T) {
 
 	out, err := w.execute(t.Context(), api.PreviewInput{Query: text})
 	if err != nil || len(out.Errors) == 0 {
-		t.Errorf("Execute = %+v, %v, want nine prefixes refused", out, err)
+		t.Errorf("Execute = %+v, %v, want nine prefixes rejected", out, err)
 	}
 
 	w.config.MaxPathPrefixes = 9
