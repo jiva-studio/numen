@@ -52,7 +52,8 @@ func ReadState(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path 
 }
 
 // RecordSaved records file.added for a source the write created at the path and file.changed for one
-// whose size, modification time or hash it changed.
+// whose size, modification time or hash it changed. A hash that was not known before, or that the write
+// leaves unknown, is not a change.
 func RecordSaved(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string, before State) error {
 	after, err := ReadState(ctx, tx, vault, path)
 	if err != nil || !after.IsFound {
@@ -61,10 +62,14 @@ func RecordSaved(ctx context.Context, tx *sqlwrite.Transaction, vault int64, pat
 	switch {
 	case !before.IsFound || before.ID != after.ID:
 		return Record(ctx, tx, vault, after.ID, manifest.EventFileAdded)
-	case before.Size != after.Size || before.ModifiedAt != after.ModifiedAt || before.Hash != after.Hash:
+	case before.Size != after.Size || before.ModifiedAt != after.ModifiedAt || isHashChanged(before.Hash, after.Hash):
 		return Record(ctx, tx, vault, after.ID, manifest.EventFileChanged)
 	}
 	return nil
+}
+
+func isHashChanged(before, after string) bool {
+	return before != "" && after != "" && before != after
 }
 
 // Record stores the event of the source as its latest, under the next number of the vault's feed.
@@ -162,6 +167,25 @@ func (f *Feed) ListFileChanges(
 			return nil, err
 		}
 		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// ListChangedPaths returns the paths of the files of the changes after the number after and up to the
+// number upTo, each once. A removed file has the path it had when it was removed.
+func (f *Feed) ListChangedPaths(ctx context.Context, vaultID domain.VaultID, after, upTo int64) (_ []string, err error) {
+	rows, err := f.db.QueryContext(ctx, getStatement("changed_paths"), manifest.EventFileRemoved, string(vaultID), after, upTo)
+	if err != nil {
+		return nil, fmt.Errorf("list the changed files: %w", err)
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+	var out []string
+	for rows.Next() {
+		var path string
+		if err := rows.Scan(&path); err != nil {
+			return nil, err
+		}
+		out = append(out, path)
 	}
 	return out, rows.Err()
 }

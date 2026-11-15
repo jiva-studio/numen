@@ -100,8 +100,8 @@ func TestARemovalReplacesTheOtherEventsOfItsFile(t *testing.T) {
 	}
 
 	changes := listChanges(t, db, v, 0)
-	if len(changes) != 1 || changes[0].Event != manifest.EventFileRemoved || changes[0].SourceID != id || changes[0].Path != "" {
-		t.Errorf("the feed holds %+v, want only the removal of source %d", changes, id)
+	if len(changes) != 1 || changes[0].Event != manifest.EventFileRemoved || changes[0].SourceID != id || changes[0].Path != "notes/river.md" {
+		t.Errorf("the feed holds %+v, want only the removal of source %d at the path it had", changes, id)
 	}
 }
 

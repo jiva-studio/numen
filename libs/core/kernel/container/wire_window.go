@@ -156,7 +156,7 @@ func buildWindow(
 		indexer: indexer, embedding: embedding, passes: startVault(a, db, current),
 		recordOpen: cases.Vaults.RecordOpen, importFiles: cases.Vaults.Tree.Import, out: opening.Out,
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close, frontmatter: db.FrontmatterChanges(),
-		feed: getFeedEvents(a, db, state),
+		feed: getFeedEvents(a, db),
 	})
 	cases.ShowTab = session.tools.showTab
 	inst := editor.NewInstallation(state, editor.Lifecycle{

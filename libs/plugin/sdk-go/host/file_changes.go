@@ -24,8 +24,8 @@ type FileChangeCursor struct {
 }
 
 // FileChange is the latest event of one kind of one file: the number the index keeps the file under,
-// which stays the same when the file moves, its path now, empty for file.removed, and the number of
-// the change.
+// which stays the same when the file moves, its path now, or where it was for file.removed, and the
+// number of the change.
 type FileChange struct {
 	SourceID int64
 	Path     string
