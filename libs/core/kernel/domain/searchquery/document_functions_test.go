@@ -248,3 +248,34 @@ func TestTheCatalogDescribesEveryDocumentFunction(t *testing.T) {
 		}
 	}
 }
+
+func TestAnIntegerBeyondTheExactRangeOfADoubleComparesExactly(t *testing.T) {
+	const beyond = int64(9007199254740993)
+	exact := float64(1 << 53)
+	value := searchquery.PropertyValue{Kind: searchquery.PropertyInt, Int: beyond}
+	cases := []struct {
+		name       string
+		comparison searchquery.Comparison
+		operand    searchquery.Value
+		want       bool
+	}{
+		{"is not equal to the double below it", searchquery.ComparisonEqual, double(exact), false},
+		{"is greater than the double below it", searchquery.ComparisonGreater, double(exact), true},
+		{"is not in the list of the double below it", searchquery.ComparisonIn, double(exact), false},
+		{"is equal to its own integer", searchquery.ComparisonEqual, integer(beyond), true},
+		{"is less than a larger double", searchquery.ComparisonLess, double(exact * 2), true},
+		{"is greater than a fraction", searchquery.ComparisonGreater, double(0.5), true},
+	}
+	for _, c := range cases {
+		if got := searchquery.IsPropertyMatch(value, c.comparison, []searchquery.Value{c.operand}, time.UTC); got != c.want {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
+	}
+	floating := searchquery.PropertyValue{Kind: searchquery.PropertyDouble, Double: exact}
+	if searchquery.IsPropertyMatch(floating, searchquery.ComparisonEqual, []searchquery.Value{integer(beyond)}, time.UTC) {
+		t.Error("the double below the integer is equal to it")
+	}
+	if !searchquery.IsPropertyMatch(floating, searchquery.ComparisonLess, []searchquery.Value{integer(beyond)}, time.UTC) {
+		t.Error("the double below the integer is not less than it")
+	}
+}

@@ -262,3 +262,18 @@ func TestWordsWhoseBestChunksAreOutOfScopeWidenTheSearch(t *testing.T) {
 		t.Errorf("found %v, want the chunk under deep/", getPaths(got))
 	}
 }
+
+func TestADocumentLoadedForANegatedCompareCountsItsChunksUnderTheActiveRecipe(t *testing.T) {
+	w := newDeepWorld(t)
+	find := w.newFind(texts{"a": newVector(0)})
+	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("a") && path.startsWith("deep/") && !(title == "other")`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Results) == 0 || got.Results[0].Document.Path != "deep/target.md" {
+		t.Fatalf("found %v, want deep/target.md", getPaths(got))
+	}
+	if got.Results[0].Document.ChunkCount == 0 {
+		t.Errorf("the document has %d chunks, want the chunks that hold a vector", got.Results[0].Document.ChunkCount)
+	}
+}
