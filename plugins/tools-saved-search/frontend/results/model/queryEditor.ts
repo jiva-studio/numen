@@ -6,8 +6,15 @@
  */
 import { onBeforeUnmount, onMounted, watch, type Ref } from 'vue'
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
-import { defaultKeymap, history, historyKeymap, indentLess, insertTab } from '@codemirror/commands'
-import { syntaxHighlighting } from '@codemirror/language'
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentLess,
+  indentMore,
+} from '@codemirror/commands'
+import { getIndentUnit, indentString, syntaxHighlighting } from '@codemirror/language'
+import type { StateCommand } from '@codemirror/state'
 import { setDiagnostics } from '@codemirror/lint'
 import { EditorView, keymap } from '@codemirror/view'
 import { WORDS as words } from '../../words'
@@ -20,6 +27,13 @@ import {
   type QueryProblem,
 } from '../lib/queryLanguage'
 import { queryTheme } from '../lib/queryTheme'
+
+const insertIndent: StateCommand = ({ state, dispatch }) => {
+  if (state.selection.ranges.some((range) => !range.empty)) return indentMore({ state, dispatch })
+  const unit = indentString(state, getIndentUnit(state))
+  dispatch(state.update(state.replaceSelection(unit), { scrollIntoView: true, userEvent: 'input' }))
+  return true
+}
 
 /** How long typing pauses before the query is sent. */
 export const QUERY_PAUSE_MS = 1000
@@ -72,7 +86,7 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
           ...completionKeymap,
           ...historyKeymap,
           ...defaultKeymap,
-          { key: 'Tab', run: insertTab, shift: indentLess },
+          { key: 'Tab', run: insertIndent, shift: indentLess },
         ]),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ 'aria-label': words.queryField }),

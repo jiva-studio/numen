@@ -102,22 +102,6 @@ const COMPUTED_TIME = /Computed 14 Nov 2026, \d\d:\d\d/
 const getDot = (canvasElement: HTMLElement, name: string): Promise<HTMLElement> =>
   waitFor(() => within(canvasElement).getByRole('img', { name }))
 
-/** A run that failed on a busy reranking service: the red dot gives its error, nothing is underlined. */
-export const ShowsTheErrorOfTheRunApartFromTheQuery: Story = {
-  args: { response: FAILED_ON_RERANKER },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const dot = await getDot(canvasElement, 'Last run failed')
-
-    await expect(canvas.queryByText(RERANKER_BUSY)).toBeNull()
-    await userEvent.hover(dot)
-    await waitFor(() => expect(canvas.getByRole('tooltip')).toHaveTextContent(RERANKER_BUSY))
-
-    await openEditor(canvasElement)
-    await expect(canvasElement.querySelectorAll('.cm-lintRange-error')).toHaveLength(0)
-  },
-}
-
 /** The dot of fresh results, the edit button, two passages with their places and a whole file as a file row. */
 export const ShowsTheResults: Story = {
   play: async ({ canvasElement }) => {
@@ -237,7 +221,7 @@ export const FiltersTheResults: Story = {
 }
 
 /**
- * The sources button sits inside the filter field and opens the sources list: a search line and a row
+ * The sources button is inside the filter field and opens the sources list: a search line and a row
  * per file, each checked at first; choosing a checked file hides its passages, choosing it again shows
  * them, and Escape puts the list away.
  */
@@ -407,6 +391,23 @@ const AFTER_PAUSE = { timeout: QUERY_PAUSE_MS * 3 }
 
 /** Tab inserts indentation while the query editor has focus; Escape hands Tab back to the page. */
 const EDITOR_KEEPS_TAB = { keeps: 'Escape hands Tab back to the page' }
+
+/** A run that failed on a busy reranking service: the red dot gives its error, nothing is underlined. */
+export const ShowsTheErrorOfTheRunApartFromTheQuery: Story = {
+  parameters: { reach: EDITOR_KEEPS_TAB },
+  args: { response: FAILED_ON_RERANKER },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Last run failed')
+
+    await expect(canvas.queryByText(RERANKER_BUSY)).toBeNull()
+    await userEvent.hover(dot)
+    await waitFor(() => expect(canvas.getByRole('tooltip')).toHaveTextContent(RERANKER_BUSY))
+
+    await openEditor(canvasElement)
+    await expect(canvasElement.querySelectorAll('.cm-lintRange-error')).toHaveLength(0)
+  },
+}
 
 /** The edit button shows the query in the editor inside the tab, and hides it again. */
 export const ShowsAndHidesTheEditor: Story = {
