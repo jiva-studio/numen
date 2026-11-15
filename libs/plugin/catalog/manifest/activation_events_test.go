@@ -43,7 +43,7 @@ func TestAPluginIsActivatedByTheVaultEventsItDeclaresOnly(t *testing.T) {
 	}
 }
 
-func TestAMaskedFilesChangedEventTakesTheFilesItsMaskMatches(t *testing.T) {
+func TestFilesChangedMaskSelectsMatchingTypes(t *testing.T) {
 	m := Manifest{ID: "a.b", ActivationEvents: []string{"onFilesChanged:image/*", "onFilesChanged:application/pdf"}}
 	if !m.IsActivatedBy("onFilesChanged:vault-1") {
 		t.Error("the masked event does not activate the plugin")
