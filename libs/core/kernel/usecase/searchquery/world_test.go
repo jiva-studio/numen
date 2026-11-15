@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
@@ -182,10 +183,28 @@ func (extensionTypes) GetContentType(name string) domain.ContentType {
 func (extensionTypes) ListExtensions(domain.ContentType) []string { return nil }
 
 func (w world) newFind(model texts) *searchquery.FindSearchResults {
-	return searchquery.NewFindSearchResults(w.newDeps(model))
+	return searchquery.NewFindSearchResults(w.getDeps(model))
 }
 
-func (w world) newDeps(model texts) searchquery.FindSearchResultsDeps {
+// countedVectors counts the approximate searches it passes to the index.
+type countedVectors struct {
+	searchquery.VectorQueries
+	coarseSearches int
+}
+
+func (c *countedVectors) FindCoarseCandidates(ctx context.Context, vaultID domain.VaultID, q source.CoarseQuery) ([]domain.ChunkID, error) {
+	c.coarseSearches++
+	return c.VectorQueries.FindCoarseCandidates(ctx, vaultID, q)
+}
+
+func (w world) newCountedFind(model texts) (*searchquery.FindSearchResults, *countedVectors) {
+	deps := w.getDeps(model)
+	counted := &countedVectors{VectorQueries: deps.Vectors}
+	deps.Vectors = counted
+	return searchquery.NewFindSearchResults(deps), counted
+}
+
+func (w world) getDeps(model texts) searchquery.FindSearchResultsDeps {
 	search := w.db.ChunkSearch()
 	deps := searchquery.FindSearchResultsDeps{
 		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search, Words: search,

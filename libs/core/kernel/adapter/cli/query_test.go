@@ -114,7 +114,7 @@ func TestQueryReportsAMisspelledFunctionWithItsPlaceAndASuggestion(t *testing.T)
 	if err == nil {
 		t.Fatal("a query that is not valid succeeded")
 	}
-	if !strings.Contains(stderr, "query:1:1: unknown function meanin (did you mean meaning?)") {
+	if !strings.Contains(stderr, "query:1:1: Unknown function meanin: did you mean meaning?") {
 		t.Errorf("stderr is %q", stderr)
 	}
 }

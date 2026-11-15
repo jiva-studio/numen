@@ -71,7 +71,7 @@ func (s *services) sentTexts(address string) [][]string {
 }
 
 func (w world) newRerankingFind(s *services, limits searchquerydomain.StageLimits) *searchquery.FindSearchResults {
-	deps := w.newDeps(nil)
+	deps := w.getDeps(nil)
 	world := s.world
 	deps.Codec = rerankproto.Codec{}
 	deps.Calls = modelcall.NewCalls(

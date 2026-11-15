@@ -13,20 +13,21 @@ import (
 
 // The messages of the shapes the language does not accept.
 const (
-	messageCondition = "the query is a condition over meaning, words, kind and path"
-	messageKind      = `kind is compared with a string literal: kind == "pdf", kind != "pdf" or kind in ["pdf", "epub"]`
-	messagePath      = `path is used as path.startsWith("folder/")`
-	messageLiteral   = "%s takes a string literal"
+	messageCondition = "A query is a condition over meaning, words, kind and path"
+	messageKind      = `Compare kind with a text in quotes: kind == "pdf", kind != "pdf" or kind in ["pdf", "epub"]`
+	messagePath      = `Use path as path.startsWith("folder/")`
+	messageLiteral   = "%s takes a text in quotes"
 )
 
 // converter turns a checked CEL tree into a raw tree, collecting the shapes it does not accept.
 type converter struct {
 	source   *ast.SourceInfo
+	text     queryText
 	problems []searchquery.Problem
 }
 
 func (c *converter) getPosition(expr ast.Expr) searchquery.Position {
-	return getExprPosition(c.source, expr)
+	return getExprPosition(c.text, c.source, expr)
 }
 
 func (c *converter) reject(expr ast.Expr, message string) searchquery.RawNode {
