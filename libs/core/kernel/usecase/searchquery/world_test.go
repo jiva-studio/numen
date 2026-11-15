@@ -45,7 +45,6 @@ func newWorld(t *testing.T, files map[string]string) world {
 	return newWorldAt(t, files, nil)
 }
 
-// newWorldAt is a world whose files were last changed at the given instants.
 func newWorldAt(t *testing.T, files map[string]string, modified map[string]time.Time) world {
 	t.Helper()
 	db, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())

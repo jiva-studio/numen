@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// findSets computes the paths of every set condition of the query once, and warns when a property condition
-// meets notes whose frontmatter could not be read.
 func (p *plan) findSets(ctx context.Context) error {
 	p.sets = make([]map[string]bool, len(p.query.Sets))
 	hasProperty := false
@@ -72,7 +70,6 @@ func (p *plan) getMembership(path string) []bool {
 	return membership
 }
 
-// getSetPaths returns the paths of the smallest of the sets, sorted, and whether there was a set to take.
 func (p *plan) getSetPaths(indexes []int) ([]string, bool) {
 	var smallest map[string]bool
 	for _, index := range indexes {
@@ -91,8 +88,6 @@ func (p *plan) getSetPaths(indexes []int) ([]string, bool) {
 	return paths, true
 }
 
-// loadDocuments reads the documents at the paths that the plan does not hold yet, when the query compares a
-// column of a document that only the index holds.
 func (p *plan) loadDocuments(ctx context.Context, paths []string) error {
 	if !hasCompareLeaf(p.query.Root) {
 		return nil

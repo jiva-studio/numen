@@ -22,7 +22,7 @@ func getAttribute(name string) (searchquery.Attribute, bool) {
 	return 0, false
 }
 
-func getFlipped(comparison searchquery.Comparison) searchquery.Comparison {
+func reverseComparison(comparison searchquery.Comparison) searchquery.Comparison {
 	switch comparison {
 	case searchquery.ComparisonLess:
 		return searchquery.ComparisonGreater
@@ -42,7 +42,7 @@ func (c *converter) convertComparison(expr ast.Expr, comparison searchquery.Comp
 	subject, other := args[0], args[1]
 	if isValueExpr(subject) && !isValueExpr(other) {
 		subject, other = other, subject
-		comparison = getFlipped(comparison)
+		comparison = reverseComparison(comparison)
 	}
 	switch name := identName(subject); {
 	case name == searchquery.VariableKind:
@@ -202,7 +202,6 @@ func (c *converter) convertMethod(expr ast.Expr) searchquery.RawNode {
 	return c.reject(expr, getIdentMessage(identName(target)))
 }
 
-// getValue reads a literal: a string, an integer, a double, a bool, null, or date("…") with a string literal.
 func (c *converter) getValue(expr ast.Expr) (searchquery.Value, bool) {
 	if isCallOf(expr, searchquery.FunctionDate) {
 		arg := expr.AsCall().Args()[0]
