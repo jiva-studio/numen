@@ -217,7 +217,7 @@ func GetEnvName(req manifest.DependencyRequirement) string {
 	if named := req.Metadata["envVar"]; named != "" {
 		return named
 	}
-	return "NUMEN_DEPENDENCY_" + strings.ToUpper(unsafeNameChars.ReplaceAllString(req.ID, "_"))
+	return "NUMEN_DEPENDENCY_" + strings.ToUpper(nonEnvNameChars.ReplaceAllString(req.ID, "_"))
 }
 
 // Resolve returns where the dependency is or will be, and whether it is ready there. It reads the
