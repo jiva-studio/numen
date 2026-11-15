@@ -1,16 +1,17 @@
 ---
 name: nm-place-plugin
-description: Tells where the code of a Numen plugin goes and how a plugin is shaped inside (manifest, Go backend packages, frontend slices and segments, permissions, what is copied and what belongs in the SDK). Load it before adding or moving code under plugins/, libs/plugin/sdk-go, libs/plugin/sdk-ts or libs/plugin/loader, when scaffolding a plugin, and when reviewing where a plugin change put its code. Trigger with "/nm-place-plugin", "where does this go in the plugin", "new plugin", "cut the plugin backend".
+description: Tells where the code of a Numen plugin goes and how a plugin is shaped inside (manifest, Go backend packages, frontend slices and segments, permissions, what is copied and what belongs in the SDK). Load it before adding or moving code under plugins/, libs/plugin/sdk-go, libs/plugin/sdk-ts, libs/plugin/loader or libs/shared, when scaffolding a plugin, and when reviewing where a plugin change put its code. Trigger with "/nm-place-plugin", "where does this go in the plugin", "new plugin", "cut the plugin backend".
 paths:
   - 'plugins/**'
   - 'libs/plugin/sdk-go/**'
   - 'libs/plugin/sdk-ts/**'
   - 'libs/plugin/loader/**'
+  - 'libs/shared/**'
 ---
 
 # Placing code in a plugin (`/nm-place-plugin`)
 
-A plugin is a folder under `plugins/` that reaches the rest of the repository only through the plugin SDK. It does not move to a repository of its own yet: the Go SDK requires `libs/core/protocol` and `libs/note` through `replace` lines to folders, which the build of a consumer ignores, so a plugin outside this repository builds only after the SDK is published. It depends on the plugin SDK (`libs/plugin/sdk-go`, `@numen/plugin-sdk`), on `@numen/ui` in its frontend, and on third-party code. Its backend and its frontend do not import each other. Its tooling configuration files are its own copies of `plugins/.example/`. Code that two plugins need is written in both.
+A plugin is a folder under `plugins/` that reaches the rest of the repository only through the plugin SDK. It does not move to a repository of its own yet: the Go SDK requires `libs/core/protocol` and `libs/note` through `replace` lines to folders, which the build of a consumer ignores, so a plugin outside this repository builds only after the SDK is published. It depends on the plugin SDK (`libs/plugin/sdk-go`, `@numen/plugin-sdk`), on the shared Go libraries `libs/shared/<name>`, on `@numen/ui` in its frontend, and on third-party code. Its backend and its frontend do not import each other. Its tooling configuration files are its own copies of `plugins/.example/`. Code that two plugins need is written in both, unless it does not depend on numen and lives in `libs/shared`.
 
 This skill covers what the checks cannot decide: how a plugin is cut, where a piece of code goes, what is copied. The rules the checks enforce are in `.agents/rules/architecture.md` §10 and §11 and are listed by effect in [`checks.md`](checks.md). The manifest fields, the host calls and the SDK calls are described in `docs/plugins/README.md`; this skill points to them and does not repeat them. Worked examples are in [`examples.md`](examples.md). Where the code in `plugins/` differs from what is written here, this skill is the target and the code is brought to it.
 
@@ -43,7 +44,7 @@ A plugin has a backend, a frontend or both. A frontend-only plugin (`plugins/not
 
 ### What a plugin may import
 
-- Go: `libs/plugin/sdk-go` and its packages (`host`, `connection`, `searchsource`, `health`, `tools`, `wasm`) and the contracts (`contracts/llm`, `contracts/acp`), the standard library, third-party modules. The note types come from `plugin/sdk-go/host/domain`, `host/markdown`, `host/edit` and `host/ulid`. `go.mod` requires nothing else directly and has no `replace` to a folder; `go.work` resolves the SDK in this repository.
+- Go: `libs/plugin/sdk-go` and its packages (`host`, `connection`, `searchsource`, `health`, `tools`, `wasm`) and the contracts (`contracts/llm`, `contracts/acp`), the shared libraries `libs/shared/<name>` (`onnx`, `tokenizer`), the standard library, third-party modules. The note types come from `plugin/sdk-go/host/domain`, `host/markdown`, `host/edit` and `host/ulid`. `go.mod` requires nothing else directly and has no `replace` to a folder; `go.work` resolves the SDK and the shared libraries in this repository.
 - TypeScript: `@numen/plugin-sdk` and `@numen/ui` through their main entries (and the entries their `exports` declare: `@numen/plugin-sdk/testing`, `/vite`, `/host-modules`, `/contracts/llm`, `/contracts/acp`), `vue`, third-party packages, and files of the plugin by relative path.
 - A frontend file imports nothing from `backend/`, and a backend file imports nothing from `frontend/`. The two sides meet only in the JSON fixtures of `testdata/api/`.
 - The rest of the repository stays out of a plugin: `libs/note`, `libs/core/protocol`, `@numen/core-client`, `@numen/plugin-loader`, `@numen/workbench`, `@connectrpc/*`, `@bufbuild/*`, another plugin, the core, an application, the `@/` and `@plugins/` aliases, and any `.proto` file.
@@ -70,7 +71,7 @@ A plugin has a backend, a frontend or both. A frontend-only plugin (`plugins/not
 | A dependency on a binary, a runtime, a model or a dataset                            | `dependencies` in the manifest (`kind`, `sourceUrl`, `checksumSha256`); the host fetches and verifies it. A model lives in the shared models directory                                                                                    |
 | A background job                                                                     | A task reported to the host from the backend (`host.Queue`: `ReportTask`, `EnqueueWork`), started by a command, a trigger or an event; the host keeps the plugin running while it holds the task                                          |
 | Something that runs when an event happens                                            | `activationEvents` plus `server.WithEventHandler` for host events; `contributes.triggers` for a command that runs on a file event                                                                                                         |
-| A helper two plugins both need                                                       | A copy in each plugin, in the package or segment that uses it                                                                                                                                                                             |
+| A helper two plugins both need                                                       | A copy in each plugin, in the package or segment that uses it; code that does not depend on numen goes to `libs/shared/<name>`, a new folder only with the owner's approval                                                               |
 | A helper one package uses                                                            | That package. It moves to a package of its own when a second package of the plugin imports it                                                                                                                                             |
 | Pure logic (parsing, formatting, scheduling, geometry)                               | Backend: a package named after what it computes, importing nothing of the plugin. Frontend: the `lib` segment of the slice                                                                                                                |
 | A message between frontend and backend                                               | A struct in `backend/api`, a type in the `api` segment of the frontend, and a JSON fixture in `testdata/api/` that the tests of both sides read                                                                                           |
@@ -104,7 +105,7 @@ The imports point inward and nowhere else.
 - `wire` is the layer between `service` and `api`, the domain, the use cases and `ports`: the service imports it, it imports them, and nothing below it imports it. A `wire` package imports no `service`, no `engine`, no adapter and touches no machine. Scenario logic is not wire: a package that decides something goes to `usecase`.
 - A use case imports `ports` and the domain. A port file imports the domain and the SDK's domain types.
 - A domain package imports the standard library and `plugin/sdk-go/host/domain`. It reads no file, opens no socket, and takes no clock.
-- An adapter imports the domain and, when it names the interface it satisfies, the package that declares it. It imports no `service`, no `wire` and no other adapter. An engine that runs a model is an adapter and owns its runtime as a package below it (`internal/adapter/engine/onnx`); a clock reaches an adapter as the SDK `clock` port or a parameter.
+- An adapter imports the domain and, when it names the interface it satisfies, the package that declares it. It imports no `service`, no `wire` and no other adapter. An engine that runs a model is an adapter and runs the ONNX Runtime through `libs/shared/onnx`, passing it the cache root it resolves with the SDK (`cache.GetSharedDirOrPluginDir`); a clock reaches an adapter as the SDK `clock` port or a parameter.
 - `api` imports nothing of the plugin.
 - A package named `service` or `engine` is outer; inner packages never import it.
 
@@ -144,7 +145,7 @@ A component of general use belongs in `@numen/ui` (what plugins need goes into `
 
 ## When something belongs in the SDK, is copied, or stays in the core
 
-- A helper that several plugins need is copied into each. The number of plugins that use it moves nothing into the SDK, `@numen/ui` or a shared package.
+- A helper that several plugins need is copied into each. The number of plugins that use it moves nothing into the SDK or `@numen/ui`. The exception is `libs/shared`: code that two or more plugins need and that does not depend on numen (no note, no vault, no host, no SDK, no plugin domain) is a Go module of its own there, `libs/shared/<name>`, importing no module of this repository. A new `libs/shared/<name>` needs the owner's approval first.
 - The shared SDK holds the contract between a plugin and the host: a host call and its types, the lifecycle of the server, the generic connection, search source, health and tool clients, a testing harness. Its exports serve plugins of more than one family, each has a consumer outside tests (`go/dead-exports`), and it holds no engine, agent program or runtime.
 - The shape of an operation is a contract in `plugin/sdk-go/contracts/<name>` and `sdk-ts/src/contracts/<name>`: protobuf messages, a typed client and a typed provider adapter. Plugins and applications import a contract; the core, the core protocol and the rest of the SDK never do (`ts/contracts-imports`).
 - The SDK lacks a call when the plugin reads an environment variable the host sets without an SDK function, builds a path the host owns, calls a host service without an SDK client, or parses a format the host defines (a note, a manifest, a vault path). The plugin needs that call from the SDK; it does not copy the parsing.
@@ -190,7 +191,7 @@ A structure is judged by what one object does, not by the interfaces it is cut i
 
 The complete list, with the verifier of each, is in [`checks.md`](checks.md). In short:
 
-- A plugin's `go.mod` requires only the SDK modules and third-party code; its `package.json` names only `@numen/plugin-sdk` and `@numen/ui` among the packages of the repository; the import graph of every plugin, on fourteen platform targets, reaches no other plugin, no core, no application, no `libs/note` and no `libs/core/protocol`.
+- A plugin's `go.mod` requires only the SDK modules, the shared libraries and third-party code; its `package.json` names only `@numen/plugin-sdk` and `@numen/ui` among the packages of the repository; the import graph of every plugin, on fourteen platform targets, reaches no other plugin, no core, no application, no `libs/note` and no `libs/core/protocol`.
 - No plugin holds a `.proto` file, a `@/` or `@plugins/` import, or an import past the main entry of the SDK or the UI library.
 - The tooling configuration of a plugin is byte-identical to `plugins/.example/`.
 - Inside a Go backend an inner package does not import `service` or `engine`. Inside a frontend `lib/` imports no `ui`, `model` or `api`, no Vue and no browser global; a component stays within the size limits; no component lies in `lib`, `api` or `model`.

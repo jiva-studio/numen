@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
@@ -119,7 +120,7 @@ func newHandlerOver(keys *memoryKeys, uses connectionport.Uses, provider *modelL
 	next := 0
 	return NewHandler(useCasesOf(connectiontest.New(connectiontest.Parts{
 		Repository: &memoryRepository{}, Types: getTypes(), Keys: keys, Uses: uses,
-		Detected: none.Detected{}, Titles: none.OperationTitles{},
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
 	}, func() (string, error) {
 		next++
 		return "c0000000" + string(rune('0'+next)), nil
@@ -467,7 +468,7 @@ func (t fixedTitles) ListOperationTitles() []manifest.Operation { return t }
 
 func TestListProviderConnectionTypesReturnsTheTitlesOfTheOperations(t *testing.T) {
 	handler := newHandler(newKeys())
-	deps := connections.NewDeps(&memoryRepository{}, getTypes(), newKeys(), fixedUses{}, none.Detected{})
+	deps := connections.NewDeps(&memoryRepository{}, getTypes(), newKeys(), fixedUses{}, testsupport.NoDetection{})
 	handler.connections.ListTypes = connections.NewListTypes(deps, fixedTitles{
 		{Name: "llm.complete", Title: "complete text"}, {Name: "acp.task", Title: "run agent tasks"},
 	})

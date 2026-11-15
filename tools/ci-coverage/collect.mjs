@@ -16,6 +16,8 @@ const tmpDir = join(root, '.coverage_tmp')
 const GO_MODULES = [
   'libs/core/kernel',
   'libs/core/protocol',
+  'libs/shared/onnx',
+  'libs/shared/tokenizer',
   'apps/desktop',
   'apps/mobile',
   'plugins/agents-numen',
@@ -27,6 +29,7 @@ const GO_MODULES = [
   'plugins/tools-index-stats',
   'plugins/tools-media-importer',
   'plugins/engines-embeddings',
+  'plugins/engines-reranking',
   'plugins/engines-ocr',
   'plugins/tools-proofreading',
   'plugins/tools-search-relevance',
@@ -34,6 +37,7 @@ const GO_MODULES = [
   'plugins/readers-epub',
   'plugins/readers-pdf',
   'plugins/engines-transcription',
+  'plugins/views-saved-search',
 ]
 
 const TS_PACKAGES = ['libs/ui/components', 'apps/desktop/editor', 'apps/desktop/flashcards']

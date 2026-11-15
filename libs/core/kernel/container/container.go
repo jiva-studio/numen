@@ -223,5 +223,3 @@ func assemble(c Config, texts *TextVersions) pluginsWiring {
 func plugins(c Config) pluginsWiring { return assemble(c, nil) }
 
 func vaultOf(c Config) vaultWiring { return plugins(c).vault }
-
-func searchOf(c Config) searchWiring { return plugins(c).search }

@@ -105,8 +105,8 @@ func TestClient_PropagatesHandlerErrors(t *testing.T) {
 	if _, err := ad.IndexTexts(t.Context(), connect.NewRequest(&v1.IndexTextsRequest{})); !errors.Is(err, wantErr) {
 		t.Fatalf("adapter.IndexTexts err = %v, want %v", err, wantErr)
 	}
-	if _, err := ad.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchSourceServiceSearchPassagesRequest{})); !errors.Is(err, wantErr) {
-		t.Fatalf("adapter.SearchPassages err = %v, want %v", err, wantErr)
+	if _, err := ad.SearchChunks(t.Context(), connect.NewRequest(&v1.SearchSourceServiceSearchChunksRequest{})); !errors.Is(err, wantErr) {
+		t.Fatalf("adapter.SearchChunks err = %v, want %v", err, wantErr)
 	}
 	if _, err := ad.EmbedQueries(t.Context(), connect.NewRequest(&v1.EmbedQueriesRequest{})); !errors.Is(err, wantErr) {
 		t.Fatalf("adapter.EmbedQueries err = %v, want %v", err, wantErr)

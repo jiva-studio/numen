@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
 )
 
@@ -46,7 +47,7 @@ func TestDeleteRestoresTheEntryWhenASecretCannotBeRemoved(t *testing.T) {
 	failing := &failingDelete{memoryKeys: f.keys}
 	f.connection = connectiontest.New(connectiontest.Parts{
 		Repository: f.repository, Types: f.types, Keys: failing, Uses: f.uses,
-		Detected: none.Detected{}, Titles: none.OperationTitles{},
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
 	}, func() (string, error) { return "c0000000b", nil })
 
 	_, err := f.connection.Delete.Execute(t.Context(), created.ID)

@@ -62,6 +62,7 @@ func (f *frames) Close() error { return nil }
 // assistant is a provider of every role of the contract that answers from what it received.
 type assistant struct {
 	request *llm.ChatRequest
+	rerank  *llm.RerankRequest
 }
 
 func (a *assistant) Complete(_ context.Context, _ connection.Call, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
@@ -90,6 +91,7 @@ func (a *assistant) Embed(_ context.Context, _ connection.Call, request *llm.Emb
 
 // Rerank scores each document by the number of its bytes.
 func (a *assistant) Rerank(_ context.Context, _ connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+	a.rerank = request
 	result := &llm.RerankResult{}
 	for _, document := range request.GetDocuments() {
 		result.Scores = append(result.Scores, float32(len(document)))
@@ -274,13 +276,19 @@ func (f *failingAssistant) Chat(_ context.Context, _ connection.Call, _ *llm.Cha
 
 func TestAFailureOfTheProviderIsTheErrorOfTheCall(t *testing.T) {
 	encodeCaller := newCaller(llm.Roles{Completer: &assistant{}, Embedder: &assistant{}, Chatter: &assistant{}})
-	if _, err := llm.Complete(t.Context(), encodeCaller, &llm.CompleteRequest{Messages: []*llm.Message{{Text: "\xff"}}}, connection.PriorityBackground); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationComplete) {
+	if _, err := llm.Complete(
+		t.Context(), encodeCaller, &llm.CompleteRequest{Messages: []*llm.Message{{Text: "\xff"}}}, connection.PriorityBackground,
+	); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationComplete) {
 		t.Errorf("Complete invalid UTF-8 err = %v", err)
 	}
-	if _, err := llm.Embed(t.Context(), encodeCaller, &llm.EmbedRequest{Texts: []string{"\xff"}}, connection.PriorityBackground); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationEmbed) {
+	if _, err := llm.Embed(
+		t.Context(), encodeCaller, &llm.EmbedRequest{Texts: []string{"\xff"}}, connection.PriorityBackground,
+	); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationEmbed) {
 		t.Errorf("Embed invalid UTF-8 err = %v", err)
 	}
-	if _, err := llm.Chat(t.Context(), encodeCaller, &llm.ChatRequest{Messages: []*llm.ChatMessage{{Text: "\xff"}}}, connection.PriorityBackground); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationChat) {
+	if _, err := llm.Chat(
+		t.Context(), encodeCaller, &llm.ChatRequest{Messages: []*llm.ChatMessage{{Text: "\xff"}}}, connection.PriorityBackground,
+	); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationChat) {
 		t.Errorf("Chat invalid UTF-8 err = %v", err)
 	}
 	if len(encodeCaller.operations) != 0 {
@@ -489,6 +497,77 @@ func TestGeneratedProtoMethods(t *testing.T) {
 	} {
 		if m.ProtoReflect() == nil {
 			t.Fatalf("nil ProtoReflect failed for %T", m)
+		}
+	}
+}
+
+func TestRerankReturnsScoresInDocumentOrder(t *testing.T) {
+	caller := newCaller(llm.Roles{Reranker: &assistant{}})
+
+	result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{
+		Query:     "harbor tides",
+		Documents: []string{"a long note about the harbor", "tides", "the quay at dawn"},
+	}, connection.PriorityInteractive)
+
+	if err != nil || !slices.Equal(result.GetScores(), []float32{28, 5, 16}) {
+		t.Fatalf("Rerank = %v, %v, want the scores in the order of the documents", result, err)
+	}
+	if !slices.Equal(caller.operations, []string{llm.OperationRerank}) || caller.priorities[0] != connection.PriorityInteractive {
+		t.Errorf("operations = %v, priorities = %v", caller.operations, caller.priorities)
+	}
+}
+
+func TestRerankPassesTheQueryAndTheInstructionUnchanged(t *testing.T) {
+	a := &assistant{}
+	caller := newCaller(llm.Roles{Reranker: a})
+
+	_, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{
+		Query:       " when does the ferry leave? ",
+		Instruction: "Find the notes that answer the question",
+		Documents:   []string{"Ferry times"},
+	}, connection.PriorityBackground)
+
+	if err != nil || a.rerank.GetQuery() != " when does the ferry leave? " || a.rerank.GetInstruction() != "Find the notes that answer the question" ||
+		!slices.Equal(a.rerank.GetDocuments(), []string{"Ferry times"}) {
+		t.Errorf("Rerank = %v, request = %v", err, a.rerank)
+	}
+}
+
+// oneScore scores every request with one score, whatever the number of its documents.
+type oneScore struct{}
+
+func (oneScore) Rerank(context.Context, connection.Call, *llm.RerankRequest) (*llm.RerankResult, error) {
+	return &llm.RerankResult{Scores: []float32{0.5}}, nil
+}
+
+func TestRerankOfAnotherNumberOfScoresThanDocumentsIsAnError(t *testing.T) {
+	caller := newCaller(llm.Roles{Reranker: oneScore{}})
+
+	result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{Query: "quay", Documents: []string{"quay", "jetty"}}, connection.PriorityBackground)
+
+	if err == nil || result != nil {
+		t.Errorf("Rerank = %v, %v, want an error", result, err)
+	}
+}
+
+func TestRerankOfNoDocumentCallsNoProvider(t *testing.T) {
+	caller := newCaller(llm.Roles{Reranker: &assistant{}})
+
+	result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{Query: "quay"}, connection.PriorityBackground)
+
+	if err != nil || len(result.GetScores()) != 0 || len(caller.operations) != 0 {
+		t.Errorf("Rerank = %v, %v, operations = %v", result, err, caller.operations)
+	}
+}
+
+func TestRerankRejectsAnEmptyQueryWithoutACall(t *testing.T) {
+	for _, query := range []string{"", "  \n\t"} {
+		caller := newCaller(llm.Roles{Reranker: &assistant{}})
+
+		result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{Query: query, Documents: []string{"quay"}}, connection.PriorityBackground)
+
+		if err == nil || result != nil || len(caller.operations) != 0 {
+			t.Errorf("Rerank of query %q = %v, %v, operations = %v, want an error and no call", query, result, err, caller.operations)
 		}
 	}
 }

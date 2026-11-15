@@ -3,10 +3,9 @@
  * What a url points at, played at the top of its tab: a copy on this disk where
  * there is one, and a frame where there is not.
  *
- * The transcript stands under this and is where a moment is chosen. What that
- * moment does is here: a copy is seeked, and a frame is told through the
- * messages a player takes from the page holding it, so nothing that host serves
- * runs in this window.
+ * The transcript is below this and selects a moment. Selecting it seeks the
+ * local copy, or posts a message to the frame that its player accepts from the
+ * parent page, so no code of that host runs in this window.
  */
 import { computed, useTemplateRef } from 'vue'
 import { reportFailure, runInBackground } from '@numen/ui'
@@ -122,8 +121,8 @@ function seek(ms: number): void {
 </template>
 
 <style scoped>
-/* What is at the address sits at the top of the tab and keeps its height: the
-   transcript below it is what scrolls. */
+/* The player is fixed at the top of the tab with its own height; the
+   transcript below it scrolls. */
 .embed {
   display: flex;
   flex-direction: column;

@@ -349,12 +349,12 @@ function listSourceFiles() {
 export function verifyAppHoldsNoLogic() {
   const findings = [];
   let read = 0;
-  for (const root of listWindows(REPO_ROOT).filter((one) => one.startsWith("apps/desktop/"))) {
+  for (const root of listWindows(REPO_ROOT)) {
     const one = findLogicInApp(listAppFiles(root));
     findings.push(...one.findings);
     read += one.read;
   }
-  requireMatches("Source files of the app layers of the desktop windows", read);
+  requireMatches("Source files of the app layers of the windows", read);
   failOnFindings("The app layer of a window builds text or holds an adapter function that calls and decides", findings);
 }
 
@@ -387,7 +387,7 @@ export const APP_LOGIC_VERIFIERS = [
     id: "app-holds-no-logic",
     scope: "apps",
     module: "boundary",
-    name: "The app Layer of a Desktop Window Builds No Text and Gives No Adapter Function That Calls and Decides",
+    name: "The app Layer of a Window Builds No Text and Gives No Adapter Function That Calls and Decides",
     run: verifyAppHoldsNoLogic,
   },
   {

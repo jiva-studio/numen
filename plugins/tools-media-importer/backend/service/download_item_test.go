@@ -6,20 +6,21 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 func TestDownloadMediaDownloadsTheItemPicked(t *testing.T) {
 	for item, want := range map[string]string{"audio": ".audio.wav", "video": ".video.wav", "": ".video.wav"} {
 		t.Run("item "+item, func(t *testing.T) {
-			commands, store, links := newMockCommandsWithLinks(t)
+			commands, store, tasks := newMockCommandsWithLinks(t)
 			made := runImport(t, commands, videoAddress)
 
 			_, err := commands.RunCommand(t.Context(), command.Request{Command: commandDownloadMedia, Path: made.OpenedPath, ItemID: item})
-			links.Wait()
 
 			if err != nil {
 				t.Fatal(err)
 			}
+			tasks.WaitForEnd(t, link.GetCopyTaskID("Mills", made.OpenedPath))
 			files, err := store.List(t.Context())
 			if err != nil {
 				t.Fatal(err)
@@ -49,7 +50,7 @@ func TestDownloadMediaRejectsAnUnknownItem(t *testing.T) {
 }
 
 func TestTheHandlersAnswerInOnePlainForm(t *testing.T) {
-	commands, _, links := newMockCommandsWithLinks(t)
+	commands, _, tasks := newMockCommandsWithLinks(t)
 	made := runImport(t, commands, videoAddress)
 	path := made.OpenedPath
 	if made.Message != "Created "+path {
@@ -57,16 +58,18 @@ func TestTheHandlersAnswerInOnePlainForm(t *testing.T) {
 	}
 
 	for _, step := range []struct {
-		command, want string
+		command, want, task string
 	}{
-		{commandCreateText, "Fetching the text of " + path},
-		{commandDownloadMedia, "Downloading the media of " + path},
-		{commandDeleteMedia, "Deleted the media of " + path},
+		{commandCreateText, "Fetching the text of " + path, "text:Mills:" + path},
+		{commandDownloadMedia, "Downloading the media of " + path, link.GetCopyTaskID("Mills", path)},
+		{commandDeleteMedia, "Deleted the media of " + path, ""},
 	} {
 		answer, err := commands.RunCommand(t.Context(), command.Request{Command: step.command, Path: path})
-		links.Wait()
 		if err != nil || answer.Message != step.want {
-			t.Errorf("%s answered %q (%v), want %q", step.command, answer.Message, err, step.want)
+			t.Fatalf("%s answered %q (%v), want %q", step.command, answer.Message, err, step.want)
+		}
+		if step.task != "" {
+			tasks.WaitForEnd(t, step.task)
 		}
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
@@ -20,8 +20,8 @@ func GetEpoch() time.Time {
 }
 
 // NewClock creates a clock that reports GetEpoch until it is moved.
-func NewClock() *clock.Fake {
-	source := new(clock.Fake)
+func NewClock() *clocktest.Fake {
+	source := new(clocktest.Fake)
 	source.Set(GetEpoch())
 	return source
 }

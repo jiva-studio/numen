@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -123,14 +123,16 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 			t.Fatal(err)
 		}
 		testsupport.CloseAfter(t, db)
-		v := vaultfixture.NewVault(t, map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"})
+		v := vaulttest.NewVault(t, map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"})
 
 		opening := vaultOpener(vaultOf(cfg), db)
 		broken := errors.New("index unavailable")
-		opening.Refresh = vault.NewRefresh(
-			vaultReaders(vaultOf(cfg)), db.Vaults(), repositoryAnswering{err: broken},
-			db.Sources(), db.Sources(), cfg.Clock(),
-		)
+		opening.Refresh = vault.NewRefreshFrom(vault.RefreshDeps{
+			Readers: vaultReaders(vaultOf(cfg)), Vaults: db.Vaults(), Notes: repositoryAnswering{err: broken},
+			Queries: db.Sources(), Sources: db.Sources(), Now: cfg.Clock(),
+			Ledger: vault.NewLedger(),
+		})
+
 		var received []error
 		open := opening.Begin(t.Context(), v, nil, func(err error) { received = append(received, err) })
 
@@ -146,8 +148,8 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", one.what, err)
 		}
-		if got != 1 {
-			t.Errorf("%s: the walk read %d notes", one.what, got)
+		if got.Notes != 1 {
+			t.Errorf("%s: the walk read %d notes", one.what, got.Notes)
 		}
 		if len(received) != one.reports {
 			t.Errorf("%s: %d failures reported, want %d: %v", one.what, len(received), one.reports, received)
@@ -171,18 +173,18 @@ func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"One.md": "---\ntitle: One\n---\n\n# One\n",
 		"Two.md": "---\ntitle: Two\n---\n\n# Two\n",
 	})
 
-	if err := vaultOpener(vaultOf(cfg), db).UpdateIndex(t.Context(), v, []string{"One.md"}); err != nil {
+	if _, err := vaultOpener(vaultOf(cfg), db).GetRefresh().Execute(t.Context(), v, []string{"One.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := db.Ledger.Len(); got != 1 {
 		t.Fatalf("the opener's refresh left %d notes in the index's ledger", got)
 	}
-	if err := updateIndex(vaultOf(cfg), db)(t.Context(), v, []string{"Two.md"}); err != nil {
+	if err := UpdateIndex(cfg, db)(t.Context(), v, []string{"Two.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := db.Ledger.Len(); got != 2 {

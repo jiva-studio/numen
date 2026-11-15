@@ -22,7 +22,7 @@ const PluginID = "md.numen.tools.search.relevance"
 // Hosts is what the plugin works through the host.
 type Hosts = calibration.Hosts
 
-// App is the backend of the plugin. NewApp and NewAppOver make one.
+// App is the backend of the plugin. NewApp makes one.
 type App struct {
 	open     func() (Hosts, error)
 	clock    relevance.Clock
@@ -41,15 +41,6 @@ func NewApp() *App {
 	return &App{
 		open:  func() (calibration.Hosts, error) { return hostclient.OpenFromEnv(floorrecords.New) },
 		clock: clock.System{}, releaser: releaser, calibration: calibration.New(),
-	}
-}
-
-// NewAppOver returns the backend over the hosts given, with measurements stamped by the clock, that
-// releases its process through releaser. A nil releaser releases nothing.
-func NewAppOver(hosts Hosts, clk relevance.Clock, releaser process.Releaser) *App {
-	return &App{
-		open:  func() (Hosts, error) { return hosts, nil },
-		clock: clk, releaser: releaser, calibration: calibration.New(),
 	}
 }
 

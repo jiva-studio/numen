@@ -67,11 +67,7 @@ func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardI
 	var out AssignCardIDsResult
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
-		if err != nil {
-			out.Unwritten = append(out.Unwritten, path)
-			continue
-		}
-		if !hasCardWithoutID(deck.Body) {
+		if err != nil || deck.Outcome != note.Ok || !hasCardWithoutID(deck.Body) {
 			continue
 		}
 

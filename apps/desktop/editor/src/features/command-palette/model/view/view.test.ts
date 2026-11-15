@@ -156,30 +156,30 @@ describe('a command that gives no words for its confirmation', () => {
 
     expect(items).toStrictEqual([
       {
-        id: expect.any(String),
+        id: 'bare:keep',
         title: '',
         detail: '',
-        actions: [{ id: expect.any(String), text: '' }],
+        actions: [{ id: 'bare:keep', text: '' }],
       },
       {
-        id: expect.any(String),
+        id: 'bare',
         title: ' Ontology.md',
         detail: '',
-        actions: [{ id: expect.any(String), text: '' }],
+        actions: [{ id: 'bare', text: '' }],
       },
     ])
   })
 
   it('draws the name to type back with empty words', () => {
-    const items = view.createGroups(step('retypedName'), front(), 'Ontology')[0]?.items
-
-    expect(items).toStrictEqual([
+    const group = view.createGroups(step('retypedName'), front(), '  Ontology  ')[0]
+    expect(group?.id).toBe('exactly')
+    expect(group?.items).toStrictEqual([
       {
-        id: expect.any(String),
+        id: 'bare',
         title: ' “Ontology”',
         detail: '',
         isDisabled: false,
-        actions: [{ id: expect.any(String), text: '' }],
+        actions: [{ id: 'bare', text: '' }],
       },
     ])
   })

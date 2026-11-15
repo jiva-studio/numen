@@ -4,11 +4,12 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 )
 
 func findRuntime(t *testing.T) string {
@@ -29,10 +30,21 @@ func findRuntime(t *testing.T) string {
 	return ""
 }
 
+const bindChildEnv = "NUMEN_TEST_BIND_CHILD"
+
 func TestBindRuntime_BindsARealRuntime(t *testing.T) {
 	lib := findRuntime(t)
 	if lib == "" {
 		t.Skipf("no %s found: set %s or provision the runtime in the Numen models folder", onnx.GetLibraryName(), onnx.EnvLibrary)
+	}
+	// A process binds the runtime once, so the test of a missing library would bind this one first.
+	if os.Getenv(bindChildEnv) == "" {
+		child := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestBindRuntime_BindsARealRuntime$")
+		child.Env = append(os.Environ(), bindChildEnv+"=1")
+		if out, err := child.CombinedOutput(); err != nil {
+			t.Fatalf("the child that binds %s failed: %v\n%s", lib, err, out)
+		}
+		return
 	}
 	if err := bindRuntime(lib); err != nil {
 		t.Fatalf("bindRuntime(%q) = %v, want the runtime bound", lib, err)

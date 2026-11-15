@@ -28,9 +28,10 @@ const createContext = (permissions: readonly string[]) => {
 
 describe('the connections of a plugin', () => {
   it('are made for the plugin that asks', () => {
-    const { getConnections } = createContext([])
+    const { context, getConnections } = createContext([])
 
     expect(getConnections).toHaveBeenCalledWith('md.numen.tools.proofreading')
+    expect(context.host.work.connections?.onChange).toBeUndefined()
   })
 
   it('carry out an operation without any permission', async () => {

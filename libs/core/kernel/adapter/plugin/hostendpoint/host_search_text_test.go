@@ -21,7 +21,10 @@ func (s *recordingSearch) SearchText(_ context.Context, v domain.Vault, q plugin
 	s.vaults = append(s.vaults, v.ID)
 	s.textQueries = append(s.textQueries, q)
 	return []domain.SearchResult{
-		{Path: "library/Birds.pdf", Text: "the gray heron", PlaceLabel: "page 12", Start: 400, Length: 700, Selector: domain.Selector(`{"page":12}`)},
+		{
+			Path: "library/Birds.pdf", Text: "the gray heron", WholeText: "reeds by the bank, the gray heron stands", PlaceLabel: "page 12",
+			Start: 400, Length: 700, Selector: domain.Selector(`{"page":12}`),
+		},
 		{Path: "notes/Heron.md", Text: "herons fish", Start: 20, Length: 40, MatchLine: 4},
 	}, s.err
 }
@@ -121,5 +124,23 @@ func TestHostSearchTextRejectsResultBeyondWireRange(t *testing.T) {
 	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{Query: "heron"}))
 	if readCode(t, err) != connect.CodeOutOfRange {
 		t.Errorf("a passage ending past the largest range returned %v (%v), want out of range", got, err)
+	}
+}
+
+func TestHostSearchTextPassesTheAskForTheWholeTextAndReturnsIt(t *testing.T) {
+	search := &recordingSearch{}
+	client := newSearchClient(t, newSearchCallers(search), "token-a")
+
+	got, err := client.SearchText(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchTextRequest{
+		Query: "heron", Limit: 5, IsWholeText: true,
+	}))
+	if err != nil || len(got.Msg.GetResults()) != 2 {
+		t.Fatalf("returned %v (%v)", got.Msg, err)
+	}
+	if whole := got.Msg.GetResults()[0].GetWholeText(); whole != "reeds by the bank, the gray heron stands" {
+		t.Errorf("the whole text is %q, want the one the search returned", whole)
+	}
+	if received := search.textQueries; len(received) != 1 || !received[0].IsWholeText {
+		t.Errorf("the search was received %+v, want the ask for the whole text", received)
 	}
 }
