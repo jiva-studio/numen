@@ -22,13 +22,17 @@ const createElement = (): HTMLElement => {
   return element
 }
 
-const setup = (menuElement: HTMLElement | null = null, isIgnored?: (event: Event) => boolean) => {
+const setup = (
+  menuElement: HTMLElement | null = null,
+  isIgnored?: (event: Event) => boolean,
+  getFrom?: () => Element | null,
+) => {
   const dismiss = vi.fn<() => void>()
   const menu: ShallowRef<HTMLElement | null> = shallowRef(menuElement)
   let dismissal: MenuDismissalState | null = null
   const host = defineComponent({
     setup() {
-      dismissal = useMenuDismissal(menu, dismiss, isIgnored)
+      dismissal = useMenuDismissal(menu, dismiss, isIgnored, getFrom)
       return () => null
     },
   })
@@ -43,6 +47,16 @@ describe('what dismisses the menu', () => {
     ground.listen()
     createElement().dispatchEvent(new Event('pointerdown', { bubbles: true }))
     expect(dismiss).toHaveBeenCalledTimes(1)
+  })
+
+  it('is not a press on the element that opened the menu, which answers it itself', () => {
+    const from = createElement()
+    const { dismiss, ground } = setup(null, undefined, () => from)
+    ground.listen()
+    from.appendChild(document.createElement('span')).dispatchEvent(
+      new Event('pointerdown', { bubbles: true, composed: true }),
+    )
+    expect(dismiss).not.toHaveBeenCalled()
   })
 
   it('is a press the page itself would hold back', () => {
