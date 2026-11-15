@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 )
 
@@ -36,7 +36,7 @@ func TestRunningCancelsRemainingTasksOnClose(t *testing.T) {
 }
 
 func TestHistoryIgnoresEmptyIDAndExpiresIdleOnAppend(t *testing.T) {
-	fakeClock := new(clock.Fake)
+	fakeClock := new(clocktest.Fake)
 	fakeClock.Set(time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC))
 	h := newHistory(fakeClock)
 

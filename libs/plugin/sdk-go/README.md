@@ -32,7 +32,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | `cache`                          | keyed values in memory and on disk, with expiration, backoff and background refresh                                 |
 | `shared`                         | the lock and the model key of the directory the host shares between plugins                                         |
 | `performance`                    | the performance profile of the person and `SetNice`                                                                 |
-| `clock`                          | `clock.System` for the entry point and `clock.Fake` for tests                                                       |
+| `clock`, `clocktest`             | `clock.System` for the entry point and `clocktest.Fake` for tests                                                   |
 | `rpcerror`                       | the error codes of the calls a plugin serves                                                                        |
 | `plugintest`                     | message fixtures, the manifest as the host reads it, and `GrantStorage` for tests                                   |
 

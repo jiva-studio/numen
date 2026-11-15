@@ -71,6 +71,8 @@ Every pull request follows this sequence:
 
 Scenarios in `features/` cover business rules. Technical end-to-end tests (`tests/e2e/desktop`) stay for what needs the whole app but is not a business rule. Checks of layout or file formats belong to stories, vitest or Go tests.
 
+A mutation survivor is killed by a new or stronger test. For `budget.go:42 CONDITIONALS_BOUNDARY: a > b → a >= b`, a test calls the function with `a == b` and asserts the result, and the pull request `test(flashcards-studio): kill the budget survivors` changes `budget_test.go` only. A survivor that no test can kill is an equivalent mutant or dead code: the equivalent mutant gets an inline directive with its reason, and the dead code is removed in a separate `refactor` pull request that leaves the test pull request as it is. Production code does not change in a `test` pull request; CI fails one that does (`tools/git-hooks/check-test-files.mjs`, the directive forms in `tools/ci-mutation/README.md`).
+
 ---
 
 ## 6. Decisions reserved for the human
