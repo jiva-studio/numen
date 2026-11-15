@@ -62,6 +62,16 @@ The reply is only the lines that changed. If the proofreader would change nothin
 
 A row whose number runs into a word is not a row. Where no bar separates them and the line as read starts with the same digits as the row, the row's number is missing and the batch is rejected.
 
+## What the person adds
+
+Besides the numbered lines the model is told two things the person set in the plugin's settings, both empty by default. With both empty the instruction is the built-in one, unchanged.
+
+The language of the text, if set, is one sentence placed directly after the opening paragraph: the text is in that language, it is proofread as text of that language, and it is not translated into another one. The language is a name the person typed or picked, up to 64 characters, and it is placed in the sentence as data.
+
+The own prompt, if set, is added after the whole built-in instruction, up to 2000 characters, with its line breaks. A fixed closing sentence follows it: the rules add to the rules above, and the answer format, the numbered marks and the rule that no word leaves its line stay as stated whatever they say. The prompt never replaces anything, and a reply that breaks the format is rejected by the gates whatever the prompt asked for.
+
+A run reads the settings once, so one proofreading uses one language and one prompt. The key of the version it makes follows the version read, the language and the prompt: the same values replace the version made before, and another prompt or language makes a second version beside it. The input hash stays the hash of the text read, so the check of the chain does not change.
+
 ## The digest of a transcript
 
 A batch is forty lines of an hour, and a name or a term that the rest of the recording establishes has no support inside those forty lines. It looks like a mishearing and is returned as an ordinary word, a different one in each batch.
@@ -121,7 +131,7 @@ The version shown, searched and passed to the next processor is the newest live 
 
 ## Settings
 
-The sizes at which a text is split into requests are settings of the plugin: `batchSize`, `overlap`, `inFlight` and `maxEditDistance`, in [Settings](settings.md).
+The sizes at which a text is split into requests are settings of the plugin: `batchSize`, `overlap`, `inFlight` and `maxEditDistance`, and the `language` and `prompt` added to the instruction, in [Settings](settings.md).
 
 A line that two batches of a transcript both replied to is taken from the batch in which it is further from the end. A transcript is asked about a window of `inFlight` batches at a time; a correction is kept from the window it begins in when it begins before the next window's first line, and the next window starts after the last line such a correction covers.
 
