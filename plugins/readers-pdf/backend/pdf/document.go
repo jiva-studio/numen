@@ -49,6 +49,8 @@ type Workers struct {
 	compilation wazero.CompilationCache
 	report      func(what string, err error)
 	isStale     bool
+	starting    chan struct{}
+	startPool   func(webassembly.Config) (pdfium.Pool, error)
 }
 
 // Options is what a pool is made from.
@@ -67,6 +69,7 @@ func NewWorkers(options Options) *Workers {
 		mu: sync.Mutex{}, pool: nil, size: options.Workers, idle: max(options.IdleWorkers, 0), open: 0, isWarmed: false,
 		release: nil, afterFunc: options.AfterFunc, idleRelease: defaultIdleRelease,
 		compilation: options.CompilationCache, report: options.Report, isStale: false,
+		starting: nil, startPool: webassembly.Init,
 	}
 }
 
@@ -111,28 +114,14 @@ const waitForWorker = 2 * time.Minute
 func (w *Workers) acquirePool() (pdfium.Pool, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if w.pool == nil {
-		total := w.getPoolSize()
-		made, err := webassembly.Init(webassembly.Config{
-			Context: nil,
-			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="MinIdle starts at zero workers"
-			MinIdle:       0,
-			MaxTotal:      total,
-			MaxIdle:       min(w.idle, total),
-			WASM:          nil,
-			FSConfig:      nil,
-			RuntimeConfig: w.getRuntimeConfig(),
-			Stdout:        nil,
-			Stderr:        nil,
-			RandomSource:  nil,
-			// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="workers are only reused when idle allowance is positive"
-			ReuseWorkers: w.idle > 0,
-		})
-		// gomutants:disable-next-line BRANCH_IF reason="webassembly initialization errors abort the pool acquisition"
-		if err != nil {
+	for w.pool == nil {
+		if w.starting != nil {
+			w.waitForStartLocked()
+			continue
+		}
+		if err := w.startPoolLocked(); err != nil {
 			return nil, err
 		}
-		w.pool = made
 	}
 	w.open++
 	if w.release != nil {
@@ -140,6 +129,47 @@ func (w *Workers) acquirePool() (pdfium.Pool, error) {
 		w.release = nil
 	}
 	return w.pool, nil
+}
+
+func (w *Workers) waitForStartLocked() {
+	starting := w.starting
+	w.mu.Unlock()
+	<-starting
+	w.mu.Lock()
+}
+
+func (w *Workers) startPoolLocked() error {
+	total := w.getPoolSize()
+	idle := w.idle
+	starting := make(chan struct{})
+	w.starting = starting
+	config := webassembly.Config{
+		Context: nil,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="MinIdle starts at zero workers"
+		MinIdle:       0,
+		MaxTotal:      total,
+		MaxIdle:       min(idle, total),
+		WASM:          nil,
+		FSConfig:      nil,
+		RuntimeConfig: w.getRuntimeConfig(),
+		Stdout:        nil,
+		Stderr:        nil,
+		RandomSource:  nil,
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="workers are only reused when idle allowance is positive"
+		ReuseWorkers: idle > 0,
+	}
+	w.mu.Unlock()
+	made, err := w.startPool(config)
+	w.mu.Lock()
+	w.starting = nil
+	close(starting)
+	// gomutants:disable-next-line BRANCH_IF reason="webassembly initialization errors abort the pool acquisition"
+	if err != nil {
+		return err
+	}
+	w.pool = made
+	w.isStale = idle != w.idle
+	return nil
 }
 
 func (w *Workers) getWorker() (pdfium.Pdfium, error) {
@@ -234,6 +264,9 @@ func (w *Workers) SetIdleWorkers(idle int) {
 func (w *Workers) Close() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	for w.starting != nil {
+		w.waitForStartLocked()
+	}
 	if w.release != nil {
 		w.release.Stop()
 		w.release = nil

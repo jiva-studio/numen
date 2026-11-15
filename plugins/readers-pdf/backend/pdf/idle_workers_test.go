@@ -7,6 +7,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/klippa-app/go-pdfium"
+	"github.com/klippa-app/go-pdfium/webassembly"
 )
 
 func startIdlePool(t *testing.T, idle int, period time.Duration) *Workers {
@@ -255,5 +258,48 @@ func TestTheSameIdleCountKeepsThePool(t *testing.T) {
 	workers.SetIdleWorkers(2)
 	if !hasPool(workers) {
 		t.Fatal("the pool was closed for an idle count it already had")
+	}
+}
+
+func TestANewIdleCountDoesNotWaitForThePoolToStart(t *testing.T) {
+	workers := startIdlePool(t, 1, time.Hour)
+	isStarting := make(chan struct{})
+	finishStart := make(chan struct{})
+	workers.startPool = func(config webassembly.Config) (pdfium.Pool, error) {
+		close(isStarting)
+		<-finishStart
+		return webassembly.Init(config)
+	}
+	opened := make(chan *document, 1)
+	go func() {
+		doc, err := openPath(workers, "testdata/tiny.pdf")
+		if err != nil {
+			t.Error(err)
+		}
+		opened <- doc
+	}()
+	<-isStarting
+	isSet := make(chan struct{})
+	go func() {
+		workers.SetIdleWorkers(3)
+		close(isSet)
+	}()
+	select {
+	case <-isSet:
+	case <-time.After(5 * time.Second):
+		close(finishStart)
+		t.Fatal("setting the idle count waited for the pool to start")
+	}
+	close(finishStart)
+	doc := <-opened
+	if doc == nil {
+		return
+	}
+	closeAndCheck(t, doc)
+	if hasPool(workers) {
+		t.Fatal("the pool started with the old idle count is kept after its document closed")
+	}
+	if got := getIdleCount(workers); got != 3 {
+		t.Errorf("the pool keeps %d idle workers, want 3", got)
 	}
 }
