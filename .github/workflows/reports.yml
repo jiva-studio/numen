@@ -3,8 +3,6 @@ name: Reports
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       features:
@@ -23,6 +21,27 @@ on:
         description: 'publish the report to Pages'
         type: boolean
         default: false
+  workflow_call:
+    inputs:
+      features:
+        type: string
+        default: ''
+      engines:
+        type: string
+        default: chromium webkit
+      environments:
+        type: string
+        default: linux macos
+      publish:
+        type: boolean
+        default: false
+    outputs:
+      linux:
+        description: result of the acceptance run on the GitHub runners
+        value: ${{ jobs.summary.outputs.linux }}
+      macos:
+        description: result of the live run in the macOS virtual machine
+        value: ${{ jobs.summary.outputs.macos }}
 
 env:
   ENGINES: ${{ inputs.engines || 'chromium webkit' }}
@@ -38,7 +57,7 @@ permissions:
 jobs:
   acceptance:
     name: Acceptance
-    if: ${{ github.event_name != 'workflow_dispatch' || contains(inputs.environments, 'linux') }}
+    if: ${{ github.event_name == 'push' || contains(inputs.environments, 'linux') }}
     uses: ./.github/workflows/desktop-e2e.yml
     with:
       scope: acceptance
@@ -48,7 +67,7 @@ jobs:
 
   build-macos:
     name: Build macOS
-    if: ${{ github.event_name != 'push' && (github.event_name != 'workflow_dispatch' || contains(inputs.environments, 'macos')) }}
+    if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -116,7 +135,7 @@ jobs:
   acceptance-macos:
     name: Acceptance macOS
     needs: [build-macos]
-    if: ${{ github.event_name != 'push' && (github.event_name != 'workflow_dispatch' || contains(inputs.environments, 'macos')) }}
+    if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
     runs-on: numen-macos-26
     timeout-minutes: 60
     steps:
@@ -192,7 +211,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          nightly=$(gh run list --workflow reports.yml --event schedule --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          nightly=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=acceptance-blobs-macos&per_page=30" \
+            --jq '[.artifacts[] | select(.expired == false and .workflow_run.head_branch == "main")][0].workflow_run.id // empty')
           if [ -z "$nightly" ]; then exit 0; fi
           gh run download "$nightly" --name acceptance-blobs-macos --dir tests/acceptance/desktop/acceptance-blobs || true
 
@@ -211,7 +231,7 @@ jobs:
   pages:
     name: Pages
     needs: [report]
-    if: ${{ !cancelled() && needs.report.result == 'success' && (github.event_name != 'workflow_dispatch' || inputs.publish) }}
+    if: ${{ !cancelled() && needs.report.result == 'success' && (github.event_name == 'push' || inputs.publish) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -252,3 +272,22 @@ jobs:
 
       - id: deploy
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  summary:
+    name: Summary
+    needs: [acceptance, acceptance-macos]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      linux: ${{ steps.results.outputs.linux }}
+      macos: ${{ steps.results.outputs.macos }}
+    steps:
+      - id: results
+        env:
+          LINUX: ${{ needs.acceptance.result }}
+          MACOS: ${{ needs.acceptance-macos.result }}
+        run: |
+          echo "linux=$LINUX" >> "$GITHUB_OUTPUT"
+          echo "macos=$MACOS" >> "$GITHUB_OUTPUT"
