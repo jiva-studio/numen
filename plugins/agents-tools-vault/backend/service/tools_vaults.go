@@ -21,7 +21,7 @@ func createLibraryTools() []registration {
 				"before concluding that a source does not cover a subject. For a question about a book, "+
 				"pass kinds [\"file\"]: a vault has far more notes than books, and a search of every "+
 				"kind returns mostly notes.",
-			noteLinkSentence, passageLinkSentence, noFileLinkSentence, searchScopeSentence, userWordsSentence, truncatedSentence, bookKindSentence),
+			noteLinkSentence, resultLinkSentence, noFileLinkSentence, searchScopeSentence, userWordsSentence, truncatedSentence, bookKindSentence),
 			host.PermissionIndexRead),
 			(*call).createLibrary, (*library.UseCase).Search),
 		bind(requirePermission(createReadSpec("library_read", "Read the text of a file",
@@ -33,7 +33,7 @@ func createLibraryTools() []registration {
 				"recognized or transcribed first. file_read reads the bytes of a text file and returns an error "+
 				"for a binary file; "+
 				"library_search finds the passage to read.",
-			passageLinkSentence, truncatedSentence, libraryReadSentence),
+			resultLinkSentence, truncatedSentence, libraryReadSentence),
 			host.PermissionIndexRead),
 			(*call).createLibrary, (*library.UseCase).Read),
 	}

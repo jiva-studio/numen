@@ -6,11 +6,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
-func TestSearchPassagesRequestsTwentyWhenLimitIsZeroOrLess(t *testing.T) {
+func TestSearchTextRequestsTwentyWhenLimitIsZeroOrLess(t *testing.T) {
 	for _, limit := range []int{0, -1, -500} {
 		finder := &recordingFinder{}
 
-		if _, err := search.NewSearchPassages(finder).Execute(t.Context(), getMarshVault(), search.PassageQuery{Query: "glacier", Limit: limit}); err != nil {
+		if _, err := search.NewSearchText(finder).Execute(t.Context(), getMarshVault(), search.SearchResultQuery{Query: "glacier", Limit: limit}); err != nil {
 			t.Fatal(err)
 		}
 
@@ -20,11 +20,11 @@ func TestSearchPassagesRequestsTwentyWhenLimitIsZeroOrLess(t *testing.T) {
 	}
 }
 
-func TestSearchPassagesRequestsAtMostOneHundredFromTheFinder(t *testing.T) {
+func TestSearchTextRequestsAtMostOneHundredFromTheFinder(t *testing.T) {
 	for limit, want := range map[int]int{1: 1, 100: 100, 101: 100, 500: 100} {
 		finder := &recordingFinder{}
 
-		if _, err := search.NewSearchPassages(finder).Execute(t.Context(), getMarshVault(), search.PassageQuery{Query: "glacier", Limit: limit}); err != nil {
+		if _, err := search.NewSearchText(finder).Execute(t.Context(), getMarshVault(), search.SearchResultQuery{Query: "glacier", Limit: limit}); err != nil {
 			t.Fatal(err)
 		}
 

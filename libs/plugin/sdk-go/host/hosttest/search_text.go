@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
-func (s *Search) SearchPassages(_ context.Context, query host.PassageQuery) ([]host.Passage, error) {
+func (s *Search) SearchText(_ context.Context, query host.SearchResultQuery) ([]host.SearchResult, error) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
 	one, err := s.openVaultLocked(host.PermissionIndexRead)
@@ -26,19 +26,19 @@ func (s *Search) SearchPassages(_ context.Context, query host.PassageQuery) ([]h
 	if len(words) == 0 {
 		return nil, nil
 	}
-	limit := host.DefaultSearchedPassages
+	limit := host.DefaultSearchedResults
 	if query.Limit > 0 {
-		limit = min(query.Limit, host.MaxSearchedPassages)
+		limit = min(query.Limit, host.MaxSearchedResults)
 	}
-	var found []host.Passage
+	var found []host.SearchResult
 	perSource := map[string]int{}
-	for _, passage := range one.indexed {
-		if !notesdomain.HasPathPrefix(passage.Path, query.PathPrefix) || !hasKind(passage.Path, query.Kinds) ||
-			!hasEveryWord(passage.Text, words) || perSource[passage.Path] >= host.MaxSearchedPassagesPerSource {
+	for _, result := range one.indexed {
+		if !notesdomain.HasPathPrefix(result.Path, query.PathPrefix) || !hasKind(result.Path, query.Kinds) ||
+			!hasEveryWord(result.Text, words) || perSource[result.Path] >= host.MaxSearchedResultsPerSource {
 			continue
 		}
-		perSource[passage.Path]++
-		found = append(found, passage)
+		perSource[result.Path]++
+		found = append(found, result)
 		if len(found) == limit {
 			break
 		}
@@ -66,13 +66,13 @@ func getWords(text string) []string {
 	return strings.FieldsFunc(strings.ToLower(text), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
 }
 
-// SetIndexedPassages sets the passages in the index of the vault, in the order it lists them. A
-// SearchPassages call returns those whose text contains every word of the query.
-func (s *Search) SetIndexedPassages(passages []host.Passage) {
+// SetIndexedResults sets the results in the index of the vault, in the order it lists them. A
+// SearchText call returns those whose text contains every word of the query.
+func (s *Search) SetIndexedResults(results []host.SearchResult) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
 	if one, ok := s.lookupVaultLocked(); ok {
-		one.indexed = slices.Clone(passages)
+		one.indexed = slices.Clone(results)
 	}
 }
 

@@ -22,7 +22,7 @@ import {
   mountWindow,
   mountWindowWithPalette,
   nameAnswer,
-  passageAnswer,
+  searchResultAnswer,
   vaultState,
   settle,
   sourceAnswer,
@@ -88,9 +88,9 @@ describe('the palette', () => {
   it('draws a passage as the note it was read out of', async () => {
     drawPluginTypes()
     vaultState.names = []
-    vaultState.passages = [
-      passageAnswer('Animals.md', 'Animals', 'sample'),
-      passageAnswer('Ants.md', 'Ants'),
+    vaultState.searchResults = [
+      searchResultAnswer('Animals.md', 'Animals', 'sample'),
+      searchResultAnswer('Ants.md', 'Ants'),
     ]
     const window = await mountWindowWithPalette()
 
@@ -102,7 +102,7 @@ describe('the palette', () => {
 
   it('draws a passage out of a file no reader opens as a plain file', async () => {
     vaultState.names = []
-    vaultState.passages = [
+    vaultState.searchResults = [
       sourceAnswer('Ants.bin', { page: 3 }),
       sourceAnswer('Talk.bin', { t: [12, 14] }),
     ]

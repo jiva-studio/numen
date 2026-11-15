@@ -21,11 +21,11 @@ import (
 // windowHost returns HostWindowService with fixed values and records the requests.
 type windowHost struct {
 	numenv1connect.UnimplementedHostWindowServiceHandler
-	code       v1.HostWindowErrorCode
-	status     *connect.Error
-	authHeader string
-	notes      []*v1.FocusNoteRequest
-	passages   []*v1.FocusPassagesRequest
+	code          v1.HostWindowErrorCode
+	status        *connect.Error
+	authHeader    string
+	notes         []*v1.FocusNoteRequest
+	focusRequests []*v1.FocusFileRequest
 }
 
 func (h *windowHost) FocusNote(_ context.Context, req *connect.Request[v1.FocusNoteRequest]) (*connect.Response[v1.FocusNoteResponse], error) {
@@ -40,16 +40,16 @@ func (h *windowHost) FocusNote(_ context.Context, req *connect.Request[v1.FocusN
 	return connect.NewResponse(&v1.FocusNoteResponse{Path: req.Msg.GetPath(), Title: "Gray Heron", Id: "01J8HERON0000000000000000"}), nil
 }
 
-func (h *windowHost) FocusPassages(_ context.Context, req *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error) {
+func (h *windowHost) FocusFile(_ context.Context, req *connect.Request[v1.FocusFileRequest]) (*connect.Response[v1.FocusFileResponse], error) {
 	h.authHeader = req.Header().Get("Authorization")
-	h.passages = append(h.passages, req.Msg)
+	h.focusRequests = append(h.focusRequests, req.Msg)
 	if h.status != nil {
 		return nil, h.status
 	}
 	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
-		return connect.NewResponse(&v1.FocusPassagesResponse{Error: h.code}), nil
+		return connect.NewResponse(&v1.FocusFileResponse{Error: h.code}), nil
 	}
-	return connect.NewResponse(&v1.FocusPassagesResponse{}), nil
+	return connect.NewResponse(&v1.FocusFileResponse{}), nil
 }
 
 func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error) {
@@ -97,18 +97,18 @@ func TestClientFocusesANoteAndReadsWhatTheHostFocused(t *testing.T) {
 	}
 }
 
-func TestClientSendsThePassagesInTheirOrder(t *testing.T) {
+func TestClientSendsTheSpansInTheirOrder(t *testing.T) {
 	h := &windowHost{}
 	c := dialWindow(t, h)
 
-	if err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}); err != nil {
+	if err := c.FocusFile(t.Context(), "library/Birds.pdf", []host.ByteSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}); err != nil {
 		t.Fatal(err)
 	}
-	if len(h.passages) != 1 {
-		t.Fatalf("the host received %d times, want once", len(h.passages))
+	if len(h.focusRequests) != 1 {
+		t.Fatalf("the host received %d times, want once", len(h.focusRequests))
 	}
-	r := h.passages[0]
-	spans := r.GetPassages()
+	r := h.focusRequests[0]
+	spans := r.GetSpans()
 	if r.GetPath() != "library/Birds.pdf" || len(spans) != 2 ||
 		spans[0].GetStart() != 1500 || spans[0].GetLength() != 80 || spans[1].GetStart() != 400 || spans[1].GetLength() != 700 {
 		t.Errorf("the host received %v", r)
@@ -166,8 +166,8 @@ func TestClientReturnsTheErrorsOfTheWindowCalls(t *testing.T) {
 			if _, err := c.FocusNote(ctx, "notes/Heron.md"); !errors.Is(err, tc.want) {
 				t.Errorf("FocusNote got %v, want %v", err, tc.want)
 			}
-			if err := c.FocusPassages(ctx, "library/Birds.pdf", nil); !errors.Is(err, tc.want) {
-				t.Errorf("FocusPassages got %v, want %v", err, tc.want)
+			if err := c.FocusFile(ctx, "library/Birds.pdf", nil); !errors.Is(err, tc.want) {
+				t.Errorf("FocusFile got %v, want %v", err, tc.want)
 			}
 			if errors.Is(tc.want, host.ErrNotExist) {
 				return
@@ -179,11 +179,11 @@ func TestClientReturnsTheErrorsOfTheWindowCalls(t *testing.T) {
 	}
 }
 
-func TestClientReturnsAnInvalidPassageAsTheHostRejectedIt(t *testing.T) {
+func TestClientReturnsAnInvalidSpanAsTheHostRejectedIt(t *testing.T) {
 	h := &windowHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New("highlight at most 8 places of one document"))}
 	c := dialWindow(t, h)
 
-	err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: -1, Length: 4}})
+	err := c.FocusFile(t.Context(), "library/Birds.pdf", []host.ByteSpan{{Start: -1, Length: 4}})
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("got %v, want the invalid argument the host returned", err)
 	}

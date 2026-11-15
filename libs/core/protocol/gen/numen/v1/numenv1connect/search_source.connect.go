@@ -39,9 +39,9 @@ const (
 	// SearchSourceServiceIndexTextsProcedure is the fully-qualified name of the SearchSourceService's
 	// IndexTexts RPC.
 	SearchSourceServiceIndexTextsProcedure = "/numen.v1.SearchSourceService/IndexTexts"
-	// SearchSourceServiceSearchPassagesProcedure is the fully-qualified name of the
-	// SearchSourceService's SearchPassages RPC.
-	SearchSourceServiceSearchPassagesProcedure = "/numen.v1.SearchSourceService/SearchPassages"
+	// SearchSourceServiceSearchChunksProcedure is the fully-qualified name of the SearchSourceService's
+	// SearchChunks RPC.
+	SearchSourceServiceSearchChunksProcedure = "/numen.v1.SearchSourceService/SearchChunks"
 	// SearchSourceServiceEmbedQueriesProcedure is the fully-qualified name of the SearchSourceService's
 	// EmbedQueries RPC.
 	SearchSourceServiceEmbedQueriesProcedure = "/numen.v1.SearchSourceService/EmbedQueries"
@@ -55,8 +55,8 @@ type SearchSourceServiceClient interface {
 	// IndexTexts returns one vector per text, in the order of the texts, made for the text as a passage
 	// that is searched. The core keeps them in the place under the chunks of the texts.
 	IndexTexts(context.Context, *connect.Request[v1.IndexTextsRequest]) (*connect.Response[v1.IndexTextsResponse], error)
-	// SearchPassages returns the chunks of the place that answer the query, best first.
-	SearchPassages(context.Context, *connect.Request[v1.SearchSourceServiceSearchPassagesRequest]) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error)
+	// SearchChunks returns the chunks of the place that answer the query, best first.
+	SearchChunks(context.Context, *connect.Request[v1.SearchSourceServiceSearchChunksRequest]) (*connect.Response[v1.SearchSourceServiceSearchChunksResponse], error)
 	// EmbedQueries returns one vector per query, in the order of the queries, as the source compares a
 	// query with its place. The floor calibration of a plugin measures the vault with them.
 	EmbedQueries(context.Context, *connect.Request[v1.EmbedQueriesRequest]) (*connect.Response[v1.EmbedQueriesResponse], error)
@@ -85,10 +85,10 @@ func NewSearchSourceServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(searchSourceServiceMethods.ByName("IndexTexts")),
 			connect.WithClientOptions(opts...),
 		),
-		searchPassages: connect.NewClient[v1.SearchSourceServiceSearchPassagesRequest, v1.SearchSourceServiceSearchPassagesResponse](
+		searchChunks: connect.NewClient[v1.SearchSourceServiceSearchChunksRequest, v1.SearchSourceServiceSearchChunksResponse](
 			httpClient,
-			baseURL+SearchSourceServiceSearchPassagesProcedure,
-			connect.WithSchema(searchSourceServiceMethods.ByName("SearchPassages")),
+			baseURL+SearchSourceServiceSearchChunksProcedure,
+			connect.WithSchema(searchSourceServiceMethods.ByName("SearchChunks")),
 			connect.WithClientOptions(opts...),
 		),
 		embedQueries: connect.NewClient[v1.EmbedQueriesRequest, v1.EmbedQueriesResponse](
@@ -104,7 +104,7 @@ func NewSearchSourceServiceClient(httpClient connect.HTTPClient, baseURL string,
 type searchSourceServiceClient struct {
 	describeSearchSource *connect.Client[v1.DescribeSearchSourceRequest, v1.DescribeSearchSourceResponse]
 	indexTexts           *connect.Client[v1.IndexTextsRequest, v1.IndexTextsResponse]
-	searchPassages       *connect.Client[v1.SearchSourceServiceSearchPassagesRequest, v1.SearchSourceServiceSearchPassagesResponse]
+	searchChunks         *connect.Client[v1.SearchSourceServiceSearchChunksRequest, v1.SearchSourceServiceSearchChunksResponse]
 	embedQueries         *connect.Client[v1.EmbedQueriesRequest, v1.EmbedQueriesResponse]
 }
 
@@ -118,9 +118,9 @@ func (c *searchSourceServiceClient) IndexTexts(ctx context.Context, req *connect
 	return c.indexTexts.CallUnary(ctx, req)
 }
 
-// SearchPassages calls numen.v1.SearchSourceService.SearchPassages.
-func (c *searchSourceServiceClient) SearchPassages(ctx context.Context, req *connect.Request[v1.SearchSourceServiceSearchPassagesRequest]) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error) {
-	return c.searchPassages.CallUnary(ctx, req)
+// SearchChunks calls numen.v1.SearchSourceService.SearchChunks.
+func (c *searchSourceServiceClient) SearchChunks(ctx context.Context, req *connect.Request[v1.SearchSourceServiceSearchChunksRequest]) (*connect.Response[v1.SearchSourceServiceSearchChunksResponse], error) {
+	return c.searchChunks.CallUnary(ctx, req)
 }
 
 // EmbedQueries calls numen.v1.SearchSourceService.EmbedQueries.
@@ -136,8 +136,8 @@ type SearchSourceServiceHandler interface {
 	// IndexTexts returns one vector per text, in the order of the texts, made for the text as a passage
 	// that is searched. The core keeps them in the place under the chunks of the texts.
 	IndexTexts(context.Context, *connect.Request[v1.IndexTextsRequest]) (*connect.Response[v1.IndexTextsResponse], error)
-	// SearchPassages returns the chunks of the place that answer the query, best first.
-	SearchPassages(context.Context, *connect.Request[v1.SearchSourceServiceSearchPassagesRequest]) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error)
+	// SearchChunks returns the chunks of the place that answer the query, best first.
+	SearchChunks(context.Context, *connect.Request[v1.SearchSourceServiceSearchChunksRequest]) (*connect.Response[v1.SearchSourceServiceSearchChunksResponse], error)
 	// EmbedQueries returns one vector per query, in the order of the queries, as the source compares a
 	// query with its place. The floor calibration of a plugin measures the vault with them.
 	EmbedQueries(context.Context, *connect.Request[v1.EmbedQueriesRequest]) (*connect.Response[v1.EmbedQueriesResponse], error)
@@ -162,10 +162,10 @@ func NewSearchSourceServiceHandler(svc SearchSourceServiceHandler, opts ...conne
 		connect.WithSchema(searchSourceServiceMethods.ByName("IndexTexts")),
 		connect.WithHandlerOptions(opts...),
 	)
-	searchSourceServiceSearchPassagesHandler := connect.NewUnaryHandler(
-		SearchSourceServiceSearchPassagesProcedure,
-		svc.SearchPassages,
-		connect.WithSchema(searchSourceServiceMethods.ByName("SearchPassages")),
+	searchSourceServiceSearchChunksHandler := connect.NewUnaryHandler(
+		SearchSourceServiceSearchChunksProcedure,
+		svc.SearchChunks,
+		connect.WithSchema(searchSourceServiceMethods.ByName("SearchChunks")),
 		connect.WithHandlerOptions(opts...),
 	)
 	searchSourceServiceEmbedQueriesHandler := connect.NewUnaryHandler(
@@ -180,8 +180,8 @@ func NewSearchSourceServiceHandler(svc SearchSourceServiceHandler, opts ...conne
 			searchSourceServiceDescribeSearchSourceHandler.ServeHTTP(w, r)
 		case SearchSourceServiceIndexTextsProcedure:
 			searchSourceServiceIndexTextsHandler.ServeHTTP(w, r)
-		case SearchSourceServiceSearchPassagesProcedure:
-			searchSourceServiceSearchPassagesHandler.ServeHTTP(w, r)
+		case SearchSourceServiceSearchChunksProcedure:
+			searchSourceServiceSearchChunksHandler.ServeHTTP(w, r)
 		case SearchSourceServiceEmbedQueriesProcedure:
 			searchSourceServiceEmbedQueriesHandler.ServeHTTP(w, r)
 		default:
@@ -201,8 +201,8 @@ func (UnimplementedSearchSourceServiceHandler) IndexTexts(context.Context, *conn
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchSourceService.IndexTexts is not implemented"))
 }
 
-func (UnimplementedSearchSourceServiceHandler) SearchPassages(context.Context, *connect.Request[v1.SearchSourceServiceSearchPassagesRequest]) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchSourceService.SearchPassages is not implemented"))
+func (UnimplementedSearchSourceServiceHandler) SearchChunks(context.Context, *connect.Request[v1.SearchSourceServiceSearchChunksRequest]) (*connect.Response[v1.SearchSourceServiceSearchChunksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchSourceService.SearchChunks is not implemented"))
 }
 
 func (UnimplementedSearchSourceServiceHandler) EmbedQueries(context.Context, *connect.Request[v1.EmbedQueriesRequest]) (*connect.Response[v1.EmbedQueriesResponse], error) {

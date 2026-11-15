@@ -9,7 +9,7 @@ import { createSearchCore } from './search'
 
 const search = {
   searchNames: vi.fn(),
-  searchPassages: vi.fn(),
+  searchText: vi.fn(),
   cancelSearch: vi.fn(),
 }
 
@@ -55,11 +55,11 @@ describe('a name searched for', () => {
 
 describe('a passage searched for', () => {
   it('is requested for in the mode chosen', async () => {
-    search.searchPassages.mockResolvedValue({ found: [] })
+    search.searchText.mockResolvedValue({ found: [] })
 
     await searchCore.search('grass', 'meaning', 8)
 
-    expect(search.searchPassages.mock.lastCall?.[0]).toMatchObject({
+    expect(search.searchText.mock.lastCall?.[0]).toMatchObject({
       query: 'grass',
       limit: 8,
       mode: SEARCH_MODE.MEANING,
@@ -67,15 +67,15 @@ describe('a passage searched for', () => {
   })
 
   it('starts where its run of text starts, as long as that run', async () => {
-    search.searchPassages.mockResolvedValue({
+    search.searchText.mockResolvedValue({
       found: [
         {
           path: 'Llama.md',
           note: { title: 'Llama' },
           text: 'eats grass',
-          range: { start: 3, end: 10 },
-          line: 2,
-          ranges: [],
+          byteRange: { start: 3, end: 10 },
+          matchLine: 2,
+          matchRanges: [],
         },
       ],
     })
@@ -86,19 +86,31 @@ describe('a passage searched for', () => {
   })
 
   it('is untitled and empty where the answer names no note and no run', async () => {
-    search.searchPassages.mockResolvedValue({
+    search.searchText.mockResolvedValue({
       found: [
         {
           path: 'library/book.epub',
           text: 'grass',
-          line: 0,
-          ranges: [],
+          matchLine: 0,
+          matchRanges: [],
           selector: '{"chapter":2}',
         },
-        { path: 'library/null.epub', text: 'grass', line: 0, ranges: [], selector: 'null' },
-        { path: 'library/prim.epub', text: 'grass', line: 0, ranges: [], selector: '42' },
-        { path: 'library/bad.epub', text: 'grass', line: 0, ranges: [], selector: '{bad' },
-        { path: 'library/empty.epub', text: 'grass', line: 0, ranges: [], selector: '' },
+        {
+          path: 'library/null.epub',
+          text: 'grass',
+          matchLine: 0,
+          matchRanges: [],
+          selector: 'null',
+        },
+        { path: 'library/prim.epub', text: 'grass', matchLine: 0, matchRanges: [], selector: '42' },
+        {
+          path: 'library/bad.epub',
+          text: 'grass',
+          matchLine: 0,
+          matchRanges: [],
+          selector: '{bad',
+        },
+        { path: 'library/empty.epub', text: 'grass', matchLine: 0, matchRanges: [], selector: '' },
       ],
     })
 
@@ -147,15 +159,15 @@ describe('the kind of a note found by name', () => {
 
 describe('the kind of a passage', () => {
   it('is the kind of the note it was read out of', async () => {
-    search.searchPassages.mockResolvedValue({
+    search.searchText.mockResolvedValue({
       found: [
         {
           path: 'Daily.md',
           note: { path: 'Daily.md', title: 'Daily' },
-          ranges: [],
+          matchRanges: [],
           type: 'sheet',
         },
-        { path: 'Ants.md', note: { path: 'Ants.md', title: 'Ants' }, ranges: [] },
+        { path: 'Ants.md', note: { path: 'Ants.md', title: 'Ants' }, matchRanges: [] },
       ],
     })
     const found = await searchCore.search('an', 'words', 8)
@@ -164,8 +176,8 @@ describe('the kind of a passage', () => {
   })
 
   it('is no note at all where the answer names none', async () => {
-    search.searchPassages.mockResolvedValue({
-      found: [{ path: 'library/mahabharata.epub', text: 'war', ranges: [] }],
+    search.searchText.mockResolvedValue({
+      found: [{ path: 'library/mahabharata.epub', text: 'war', matchRanges: [] }],
     })
     const found = await searchCore.search('war', 'words', 8)
     expect(found[0]?.isNote).toBe(false)
@@ -175,16 +187,16 @@ describe('the kind of a passage', () => {
 
 describe('a passage search the window aborts', () => {
   it('cancels the search in the core by its search id', async () => {
-    search.searchPassages.mockReturnValue(new Promise(() => undefined))
+    search.searchText.mockReturnValue(new Promise(() => undefined))
     search.cancelSearch.mockResolvedValue({})
     const asking = new AbortController()
 
     const answer = searchCore.search('seeds', 'meaning', 8, asking.signal)
-    await vi.waitFor(() => expect(search.searchPassages).toHaveBeenCalled())
+    await vi.waitFor(() => expect(search.searchText).toHaveBeenCalled())
     asking.abort()
     await expect(answer).rejects.toThrow()
 
-    const searchId: unknown = search.searchPassages.mock.lastCall?.[0]?.searchId
+    const searchId: unknown = search.searchText.mock.lastCall?.[0]?.searchId
     expect(searchId).toEqual(expect.any(String))
     expect(searchId).not.toBe('')
     await vi.waitFor(() => expect(search.cancelSearch).toHaveBeenCalledOnce())
@@ -192,7 +204,7 @@ describe('a passage search the window aborts', () => {
   })
 
   it('is not cancelled once the core has answered it', async () => {
-    search.searchPassages.mockResolvedValue({ found: [] })
+    search.searchText.mockResolvedValue({ found: [] })
     const asking = new AbortController()
 
     await searchCore.search('seeds', 'meaning', 8, asking.signal)
@@ -202,12 +214,12 @@ describe('a passage search the window aborts', () => {
   })
 
   it('sends a new search id with each search', async () => {
-    search.searchPassages.mockResolvedValue({ found: [] })
+    search.searchText.mockResolvedValue({ found: [] })
 
     await searchCore.search('seeds', 'meaning', 8, new AbortController().signal)
     await searchCore.search('seeds', 'words', 8, new AbortController().signal)
 
-    const [first, second] = search.searchPassages.mock.calls.map(
+    const [first, second] = search.searchText.mock.calls.map(
       (call) => (call[0] as { searchId: string }).searchId,
     )
     expect(first).not.toBe(second)
@@ -246,7 +258,7 @@ describe('a name search the window aborts', () => {
 describe('the three questions of a query the window aborts', () => {
   it('are each cancelled in the core by their own id', async () => {
     search.searchNames.mockReturnValue(new Promise(() => undefined))
-    search.searchPassages.mockReturnValue(new Promise(() => undefined))
+    search.searchText.mockReturnValue(new Promise(() => undefined))
     search.cancelSearch.mockResolvedValue({})
     const asking = new AbortController()
 
@@ -255,11 +267,11 @@ describe('the three questions of a query the window aborts', () => {
       searchCore.search('seeds', 'words', 8, asking.signal),
       searchCore.search('seeds', 'meaning', 8, asking.signal),
     ]
-    await vi.waitFor(() => expect(search.searchPassages).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => expect(search.searchText).toHaveBeenCalledTimes(2))
     asking.abort()
     await Promise.allSettled(answers)
 
-    const asked = [...search.searchNames.mock.calls, ...search.searchPassages.mock.calls].map(
+    const asked = [...search.searchNames.mock.calls, ...search.searchText.mock.calls].map(
       (call) => (call[0] as { searchId: string }).searchId,
     )
     await vi.waitFor(() => expect(search.cancelSearch).toHaveBeenCalledTimes(3))

@@ -28,6 +28,6 @@ func (SearchSource) IndexTexts(context.Context, searchsource.Place, []searchsour
 	return nil, nil
 }
 
-func (SearchSource) SearchPassages(context.Context, searchsource.Place, searchsource.Query) ([]searchsource.Match, error) {
+func (SearchSource) SearchChunks(context.Context, searchsource.Place, searchsource.Query) ([]searchsource.Match, error) {
 	return nil, nil
 }
