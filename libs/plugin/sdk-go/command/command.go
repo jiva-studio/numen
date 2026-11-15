@@ -50,7 +50,10 @@ type Request struct {
 	Command string
 	// Path is the file the command runs over, relative to the vault folder. Empty for a run with no
 	// target, such as one from the palette.
-	Path      string
+	Path string
+	// Paths are the notes a trigger on note.frontmatterChanged runs the command over in one call; Path
+	// is empty then. Empty for any other run.
+	Paths     []string
 	Arguments Arguments
 	// ItemID is the id of the item a person picked, for a command that offers its own items. Empty for
 	// a run without a pick, such as one from numen-cli or a trigger.
@@ -140,6 +143,7 @@ func readRequest(msg *v1.RunCommandRequest) Request {
 	return Request{
 		Command:   msg.GetCommand(),
 		Path:      msg.GetPath(),
+		Paths:     msg.GetPaths(),
 		Arguments: Arguments(msg.GetArguments()),
 		ItemID:    msg.GetItemId(),
 	}

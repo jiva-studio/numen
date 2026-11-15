@@ -17,6 +17,12 @@ var candidatesSQL string
 //go:embed sql/dangling.sql
 var danglingSQL string
 
+//go:embed sql/frontmatter_after.sql
+var frontmatterAfterSQL string
+
+//go:embed sql/frontmatter_at.sql
+var frontmatterAtSQL string
+
 //go:embed sql/frontmatter_errors.sql
 var frontmatterErrorsSQL string
 

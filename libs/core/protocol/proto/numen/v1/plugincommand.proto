@@ -32,6 +32,11 @@ message RunCommandRequest {
   // The id of the item a person picked, for a command that offers its own
   // items; empty for a run without a pick.
   string item_id = 4;
+
+  // The notes a trigger on note.frontmatterChanged runs the command over in
+  // one call, as paths relative to the vault folder; path is empty then. Empty
+  // for any other run.
+  repeated string paths = 5;
 }
 
 message RunCommandResponse {
