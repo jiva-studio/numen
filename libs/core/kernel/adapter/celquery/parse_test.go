@@ -224,6 +224,7 @@ func TestASyntaxProblemReadsInPlainWordsAtItsPlace(t *testing.T) {
 		{"a number for a text", `meaning(1)`, []string{"1:1: meaning takes one text in quotes"}},
 		{"an operator outside the language", `meaning("a") + 1`, []string{"1:14: The operator + is not allowed in a query"}},
 		{"a misspelled member function", `path.startsWth("books/")`, []string{"1:6: Unknown function startsWth: did you mean startsWith?"}},
+		{"a misspelled text method", `title.contans("Lecture")`, []string{"1:7: Unknown function contans: did you mean contains?"}},
 		{"a function named with an underscore", `_words("river")`, []string{"1:1: Unknown function _words: did you mean words?"}},
 	}
 	for _, tt := range tests {
