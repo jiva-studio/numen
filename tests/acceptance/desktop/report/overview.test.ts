@@ -54,7 +54,7 @@ describe('createOverview', () => {
 })
 
 describe('readGitRevision', () => {
-  it('tells nothing for a folder git cannot read', () => {
+  it('returns no revision for a folder outside git', () => {
     const missing = path.join(os.tmpdir(), 'no-such-garden-checkout-7f3e')
     expect(readGitRevision(missing)).toEqual({ commit: undefined, branch: undefined })
   })

@@ -45,7 +45,7 @@ const listenForInputs = (binding: string): void => {
     (target instanceof HTMLElement && target.isContentEditable)
   const getMods = (event: KeyboardEvent): string[] =>
     modifiers.filter((name) => event.getModifierState(name))
-  const getTyped = (event: Event) => {
+  const getInputText = (event: Event) => {
     const target = event.target
     if (target instanceof HTMLInputElement && target.type === 'password')
       return { text: '••••', isAppend: false }
@@ -74,7 +74,7 @@ const listenForInputs = (binding: string): void => {
   }
   const sendTyped = (event: Event): void => {
     if (!isField(event.target)) return
-    send({ kind: 'type', ...getRect(event.target), ...getTyped(event) })
+    send({ kind: 'type', ...getRect(event.target), ...getInputText(event) })
   }
   window.addEventListener('pointerdown', (event) => sendPointer('down', event), { capture: true })
   window.addEventListener('pointermove', sendMove, { capture: true })

@@ -37,7 +37,7 @@ describe('findNextStart', () => {
     expect(findNextStart(starts, 2.5)).toBe(4.25)
   })
 
-  it('moves on from a step the video stands at', () => {
+  it('returns the next start after the current time', () => {
     expect(findNextStart(starts, 1.99)).toBe(4.25)
     expect(findNextStart(starts, 2.01)).toBe(4.25)
   })
@@ -118,7 +118,7 @@ describe('getSetupLength', () => {
     expect(getSetupLength(steps('Given', 'And', 'Given', 'But', 'When', 'Then'))).toBe(4)
   })
 
-  it('stops at a Then that comes before any When', () => {
+  it('counts the steps before the first Then as setup without a When', () => {
     expect(getSetupLength(steps('Given', 'Then', 'When'))).toBe(1)
   })
 
@@ -176,7 +176,7 @@ const createClick = (t: number, x: number, y: number): Input[] => [
 const createKey = (t: number, key: string, fields: Partial<Input> = {}): Input =>
   createInput('key', t, { key, mods: [], x: 0.1, y: 0.2, w: 0.3, h: 0.04, ...fields })
 
-const createTyping = (t: number, text: string, fields: Partial<Input> = {}): Input =>
+const createTypeInput = (t: number, text: string, fields: Partial<Input> = {}): Input =>
   createInput('type', t, { text, x: 0.4, y: 0.1, w: 0.2, h: 0.05, ...fields })
 
 describe('getCursorAt', () => {
@@ -274,7 +274,7 @@ describe('getBadgeAt', () => {
   })
 
   it('shows the value a field holds after the typing', () => {
-    expect(getBadgeAt([createTyping(1, 'Shopping list')], 1.2)?.parts).toEqual([
+    expect(getBadgeAt([createTypeInput(1, 'Shopping list')], 1.2)?.parts).toEqual([
       'Typing “Shopping list”',
     ])
   })
@@ -282,9 +282,9 @@ describe('getBadgeAt', () => {
   it('collapses the letters of typing into one badge', () => {
     const typing = [
       createKey(1, 'a', { isField: true }),
-      createTyping(1, 'a'),
+      createTypeInput(1, 'a'),
       createKey(1.05, 'B', { isField: true, mods: ['Shift'] }),
-      createTyping(1.05, 'aB'),
+      createTypeInput(1.05, 'aB'),
       createKey(1.1, 'Enter', { isField: true }),
     ]
     expect(getBadgeAt(typing, 1.2)?.parts).toEqual(['Typing “aB”', 'Enter'])
@@ -292,9 +292,9 @@ describe('getBadgeAt', () => {
 
   it('joins the text typed into an editable element', () => {
     const typing = [
-      createTyping(1, 'Milk', { isAppend: true }),
-      createTyping(1.1, ' and tea', { isAppend: true }),
-      createTyping(1.2, '', { isAppend: true }),
+      createTypeInput(1, 'Milk', { isAppend: true }),
+      createTypeInput(1.1, ' and tea', { isAppend: true }),
+      createTypeInput(1.2, '', { isAppend: true }),
     ]
     expect(getBadgeAt(typing, 1.3)?.parts).toEqual(['Typing “Milk and tea”'])
   })
@@ -305,12 +305,12 @@ describe('getBadgeAt', () => {
 
   it('shows the last 40 characters of long typing', () => {
     const text = 'a'.repeat(30) + 'b'.repeat(20)
-    const part = getBadgeAt([createTyping(1, text)], 1.1)?.parts[0]
+    const part = getBadgeAt([createTypeInput(1, text)], 1.1)?.parts[0]
     expect(part).toBe(`Typing “…${'a'.repeat(19)}${'b'.repeat(20)}”`)
   })
 
   it('shows the dots recorded for a password', () => {
-    expect(getBadgeAt([createTyping(1, '••••')], 1.1)?.parts).toEqual(['Typing “••••”'])
+    expect(getBadgeAt([createTypeInput(1, '••••')], 1.1)?.parts).toEqual(['Typing “••••”'])
   })
 
   it('works from its source text, as the report page runs it', () => {
@@ -330,7 +330,7 @@ describe('getHighlightsAt', () => {
   })
 
   it('fades the old ring out over 0.15 s once a new element is ringed', () => {
-    const keys = [createKey(1, 'Enter'), createTyping(1.2, 'Milk')]
+    const keys = [createKey(1, 'Enter'), createTypeInput(1.2, 'Milk')]
     expect(getHighlightsAt(keys, 1.2).map((ring) => ring.index)).toEqual([0, 1])
     expect(getHighlightsAt(keys, 1.275)[0]?.opacity).toBeCloseTo(0.5)
     expect(getHighlightsAt(keys, 1.35).map((ring) => ring.index)).toEqual([1])
@@ -338,8 +338,8 @@ describe('getHighlightsAt', () => {
 
   it('keeps one ring while the same element takes more keys', () => {
     const keys = [
-      createTyping(1, 'M'),
-      createTyping(1.1, 'Mi'),
+      createTypeInput(1, 'M'),
+      createTypeInput(1.1, 'Mi'),
       createKey(1.2, 'Enter', { x: 0.4, y: 0.1, w: 0.2, h: 0.05 }),
     ]
     expect(getHighlightsAt(keys, 1.9)).toEqual([
