@@ -6,14 +6,10 @@ package service
 import (
 	"context"
 
-	"github.com/tetratelabs/wazero"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/process"
@@ -51,24 +47,9 @@ func Mount(s *server.Server) error {
 		Store:     func(id domain.VaultID) recognition.Folder { return store.With(id) },
 		Texts:     func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		Queue:     queue,
-		Documents: newDocuments(),
+		Documents: document.NewCachedReader(),
 		Report:    env.ReportError,
 	}, holder)
-}
-
-// newDocuments returns the reader of the scans, which keeps PDFium compiled in the cache directory of the plugin.
-func newDocuments() *document.Reader {
-	documents := document.NewReader()
-	documents.SetCompilationCache(newCompilationCache())
-	return documents
-}
-
-func newCompilationCache() wazero.CompilationCache {
-	dir, err := cache.GetPluginDir()
-	if err != nil {
-		return wasm.NewCompilationCache("")
-	}
-	return wasm.NewCompilationCache(dir)
 }
 
 func mount(s *server.Server, h recognition.Host, holder *engines.Holder) error {

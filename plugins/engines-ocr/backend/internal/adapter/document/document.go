@@ -82,13 +82,13 @@ func (r *Reader) Prepare(report func(err error)) {
 	go func() {
 		r.mu.Lock()
 		defer r.mu.Unlock()
-		if err := r.startLocked(); err != nil {
+		if err := r.startWorkers(); err != nil {
 			report(err)
 		}
 	}()
 }
 
-func (r *Reader) startLocked() error {
+func (r *Reader) startWorkers() error {
 	if r.workers != nil {
 		return nil
 	}
@@ -109,7 +109,7 @@ func (r *Reader) startLocked() error {
 func (r *Reader) getWorker() (pdfium.Pdfium, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if err := r.startLocked(); err != nil {
+	if err := r.startWorkers(); err != nil {
 		return nil, err
 	}
 	return r.workers.GetInstance(waitForWorker)
