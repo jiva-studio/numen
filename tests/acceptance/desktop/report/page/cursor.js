@@ -86,7 +86,9 @@ const writeHighlight = (cursor, state, badge) => {
   highlight.hidden = state === null
   if (state === null) return
   placePoint(highlight, state.x, state.y)
-  highlight.style.width = `${state.w * 100}%`
+  const room = 1 - state.x
+  highlight.style.width =
+    state.w < room - 0.005 ? `${state.w * 100}%` : `calc(${room * 100}% - 6px)`
   highlight.style.height = `${state.h * 100}%`
   highlight.style.opacity = String(state.opacity)
   highlight.classList.toggle('is-near-bottom', state.y + state.h > 0.9)
