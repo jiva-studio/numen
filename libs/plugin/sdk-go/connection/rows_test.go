@@ -25,6 +25,9 @@ func (h *rowsHost) ListRows(
 	_ context.Context, request *connect.Request[v1.HostConnectionServiceListRowsRequest],
 ) (*connect.Response[v1.HostConnectionServiceListRowsResponse], error) {
 	h.token, h.listed = request.Header().Get("Authorization"), request.Msg
+	if request.Msg.GetOperation() == "missing" {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("operation not found"))
+	}
 	return connect.NewResponse(&v1.HostConnectionServiceListRowsResponse{Rows: []*v1.CallRow{{
 		ConnectionId: "c-meadow", ConnectionName: "Meadow", Options: map[string]string{"model": "wren-2"},
 		Fields: []*v1.CallRowField{{Key: "model", Title: "Model", OptionsFrom: "llm.models", IsRequired: true}},
@@ -66,6 +69,18 @@ func TestListRowsReadsTheRowsOfTheOperation(t *testing.T) {
 	}
 	if host.token != "Bearer token-1" || host.listed.GetOperation() != "llm.chat" {
 		t.Errorf("token = %q, request = %v", host.token, host.listed)
+	}
+	client := newRowsClient(t, host)
+	if _, err := client.ListRows(t.Context(), "missing"); connect.CodeOf(err) != connect.CodeNotFound {
+		t.Errorf("ListRows(missing) = %v, want CodeNotFound", err)
+	}
+	canceledCtx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := client.ListRows(canceledCtx, "llm.chat"); !errors.Is(err, context.Canceled) {
+		t.Errorf("ListRows(canceled) = %v, want context.Canceled", err)
+	}
+	if _, err := client.ListRowOptions(canceledCtx, RowOptionsRequest{Operation: "llm.chat", ConnectionID: "c-meadow", Field: "model"}); !errors.Is(err, context.Canceled) {
+		t.Errorf("ListRowOptions(canceled) = %v, want context.Canceled", err)
 	}
 }
 
