@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -27,7 +27,7 @@ import (
 
 func newOrchardVault(t *testing.T) domain.Vault {
 	t.Helper()
-	return vaultfixture.NewVault(t, map[string]string{
+	return vaulttest.NewVault(t, map[string]string{
 		"Hedge.md":   "# Hedge\n\nThe hedge along the lane is thick and tangled.\n",
 		"Gate.md":    "# Gate\n\nThe gate of the orchard sticks in wet weather.\n",
 		"Compost.md": "# Compost\n\nThe compost heap sits behind the shed.\n",
@@ -110,7 +110,7 @@ func TestAScanWithNoCheckGivenReadsNoUnchangedNoteWhateverItsSize(t *testing.T) 
 	v, db := newOrchardVault(t), openIndex(t)
 	runScan(t, scanAt(db, 256), v)
 
-	scan := scanAtBacklog(db, 512, none.SourceBacklog{})
+	scan := scanAtBacklog(db, 512, testsupport.EmptySourceBacklog{})
 	if res := runScan(t, scan, v); res.Indexed != 0 || res.Unchanged != 3 {
 		t.Errorf("indexed %d, unchanged %d; want 0 and 3", res.Indexed, res.Unchanged)
 	}
@@ -169,7 +169,7 @@ func (r recipeless) Save(ctx context.Context, v domain.VaultID, notes []domain.N
 func TestNotesWithoutARecordedChunkingAreChunkedOnceWhenTheSizeIsKnown(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
-	old := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
+	old := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	old.Walks = &db.Walks
 	old.Cut = chunking.NewCutNotes(512)
 	runScan(t, old, v)
@@ -191,7 +191,7 @@ func TestNotesWithoutARecordedChunkingAreChunkedOnceWhenTheSizeIsKnown(t *testin
 func TestRechunkedNotesAreCountedAndSavedInGroupsLikeChangedFiles(t *testing.T) {
 	t.Parallel()
 	const notes = 600
-	v, db := vaultfixture.GenerateVault(t, notes), openIndex(t)
+	v, db := vaulttest.GenerateVault(t, notes), openIndex(t)
 	runScan(t, scanAt(db, 256), v)
 
 	content := &groupedWrites{}

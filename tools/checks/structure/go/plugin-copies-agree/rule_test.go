@@ -16,6 +16,7 @@ type copySet struct {
 }
 
 func listCopySets() []copySet {
+	// numen:kept-list #1949 the copy sets stay explicit: plugin duplicates may drift, so a copy set cannot be derived
 	return []copySet{{
 		Folder:   "backend/internal/adapter/engine/onnx",
 		Plugins:  []string{"engines-embeddings", "engines-ocr", "engines-transcription"},

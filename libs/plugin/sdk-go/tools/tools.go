@@ -141,17 +141,14 @@ type registryHandler struct {
 func (h registryHandler) ListTools(
 	context.Context, *connect.Request[v1.ListToolsRequest],
 ) (*connect.Response[v1.ListToolsResponse], error) {
-	return connect.NewResponse(h.registry.getListing()), nil
-}
-
-func (r *Registry) getListing() *v1.ListToolsResponse {
+	r := h.registry
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	items := make([]*v1.PluginTool, 0, len(r.tools))
 	for _, one := range r.tools {
 		items = append(items, one.tool)
 	}
-	return &v1.ListToolsResponse{Tools: items}
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: items}), nil
 }
 
 // CallTool runs the tool named. A name nothing was added under, and arguments that are no JSON
@@ -245,8 +242,12 @@ func writeResult(out any) *v1.ToolResult {
 	return &v1.ToolResult{Text: string(encoded)}
 }
 
-func (r *Registry) ListTools(context.Context) (Listing, error) {
-	return readListing(r.getListing()), nil
+func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
+	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
+	if err != nil {
+		return Listing{}, err
+	}
+	return readListing(res.Msg), nil
 }
 
 func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {

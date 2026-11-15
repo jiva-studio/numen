@@ -12,7 +12,7 @@ import (
 )
 
 // TestEveryAdapterServingTheSchemaIsDriving ensures adapters serving or mounting
-// generated protocol handlers are declared as driving adapters.
+// generated protocol handlers are among the driving adapters load.GetDriving reads from the tree.
 func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 	wrong, serving, err := findDrivenSchemaServers("..")
 	if err != nil {
@@ -29,8 +29,8 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 // The walk rejects a driven adapter that mounts a handler, and passes a driving adapter that mounts one, a driven
 // adapter that only calls a client, a test file and a package outside the adapters.
 func TestSchemaDrivingRule_RejectsADrivenAdapterThatServes(t *testing.T) {
-	serve := "package p\n\nimport \"" + schema + "\"\n\nfunc mount(h any) { numenv1connect.NewNoteServiceHandler(h) }\n"
-	call := "package p\n\nimport \"" + schema + "\"\n\nfunc call() { numenv1connect.NewNoteServiceClient(nil, \"\") }\n"
+	serve := "package p\n\nimport \"" + load.Schema + "\"\n\nfunc mount(h any) { numenv1connect.NewNoteServiceHandler(h) }\n"
+	call := "package p\n\nimport \"" + load.Schema + "\"\n\nfunc call() { numenv1connect.NewNoteServiceClient(nil, \"\") }\n"
 	root := load.WriteTreeFixture(t, map[string]string{
 		"internal/adapter/notes/notes.go":      serve,
 		"adapter/cli/cli.go":                   serve,
@@ -63,12 +63,12 @@ func TestHandlerRule_SeparatesServingFromCalling(t *testing.T) {
 		{"a client constructor", `numenv1connect.NewNoteServiceClient(nil, "")`, false},
 		{"a service name", `_ = numenv1connect.NoteServiceName`, false},
 	} {
-		source := "package p\n\nimport \"" + schema + "\"\n\nfunc f(h any) {\n\t" + tc.body + "\n}\n"
+		source := "package p\n\nimport \"" + load.Schema + "\"\n\nfunc f(h any) {\n\t" + tc.body + "\n}\n"
 		file, err := parser.ParseFile(token.NewFileSet(), "p.go", source, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := isServingSchema(file); got != tc.isServing {
+		if got := load.NamesHandler(file); got != tc.isServing {
 			t.Errorf("%s: serving is %v, want %v", tc.what, got, tc.isServing)
 		}
 	}

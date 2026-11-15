@@ -11,9 +11,9 @@ import (
 
 // No use case imports another use case. Every package under usecase, nested ones included, is a use case
 // of its own: it imports neither its parent, nor its child, nor a sibling. A use case imports
-// from internal/ only the packages of getSharedPackagesOfUseCases. A package under usecase whose directory
-// name ends in "test" is test support: it may import any use case, and no production file of the module
-// imports it, so the walk reads the whole module.
+// from internal/ only a helper (load.IsHelper). A package under usecase whose directory name ends in "test" is
+// test support: it may import any use case, and no production file of the module imports it, so the walk reads
+// the whole module.
 //
 // Test files are not walked.
 func TestNoUseCaseImportsAnotherUseCase(t *testing.T) {
@@ -71,12 +71,15 @@ func TestUseCaseEdgeRule_RejectsImportsBetweenUseCases(t *testing.T) {
 		{"usecase/note", "usecase/note", false},
 		{"usecase/notebook", "usecase/note", true},
 
-		// Shared packages: the listed ones are allowed, every other package under internal/ is refused.
+		// A helper directly under internal/ is allowed; an adapter, shared adapter code, test support and a package
+		// nested in a helper are refused.
 		{"usecase/vectors", "internal/vector", false},
 		{"usecase/file", "internal/text", false},
-		{"usecase/vault", "internal/vaultreading", true},
-		{"usecase/vault", "internal/operation", true},
+		{"usecase/vault", "internal/vaultreading/sub", true},
+		{"usecase/vault", "internal/adapter", true},
 		{"usecase/vault", "internal/adapter/filesystem/vaultreader", true},
+		{"usecase/vault", "internal/adapterlib/wire", true},
+		{"usecase/vault", "internal/testsupport/indexfake", true},
 
 		// A package whose directory name ends in "test" is test support: it imports its parent use case
 		// and any other use case or test support, and no production package imports it.

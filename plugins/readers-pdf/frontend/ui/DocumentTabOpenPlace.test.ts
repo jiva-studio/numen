@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import type { ReaderTabState, Selector, TabPlace } from '@numen/plugin-sdk'
+import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
 import type { Documents } from '../types'
 
@@ -25,7 +25,7 @@ const documents: Documents = {
 
 const mountTab = (selector: Selector | null) => {
   const savePlace = vi.fn((_place: Selector) => undefined)
-  const reportPlace = vi.fn((_place: TabPlace) => undefined)
+  const reportPlace = vi.fn((_place: string) => undefined)
   const state: ReaderTabState = {
     path: PATH,
     title: 'Marsh Birds',
@@ -44,7 +44,7 @@ describe('the place a PDF tab reports when it opens', () => {
     await flush()
     await flush()
 
-    expect(reportPlace).toHaveBeenLastCalledWith({ page: 1, pageCount: 9 })
+    expect(reportPlace).toHaveBeenLastCalledWith(JSON.stringify({ page: 1, pageCount: 9 }))
     tab.unmount()
   })
 
@@ -53,7 +53,7 @@ describe('the place a PDF tab reports when it opens', () => {
     await flush()
     await flush()
 
-    expect(reportPlace).toHaveBeenLastCalledWith({ page: 5, pageCount: 9 })
+    expect(reportPlace).toHaveBeenLastCalledWith(JSON.stringify({ page: 5, pageCount: 9 }))
     tab.unmount()
   })
 })

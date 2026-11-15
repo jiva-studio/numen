@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, onUnmounted } from 'vue'
 import { CONVERSATION } from '@numen/plugin-sdk'
+import { createMockManifest } from '@numen/core-client/testing'
+import type { Manifest } from '@numen/core-client'
 import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from './styles'
 import { createViewRegistry, type MountAccess } from './views'
 
@@ -220,5 +222,35 @@ describe('createViewRegistry', () => {
     views.mountView('graph', element, {}, NO_ACCESS)
 
     expect(element.childElementCount).toBe(0)
+  })
+
+  it('starts declaring plugins only when the capability is not registered yet', () => {
+    const bareManifest: Manifest = { ...createMockManifest('bare'), contributes: undefined }
+    const emptyManifest = createMockManifest('empty')
+    const matchingManifest = createMockManifest('chat.plugin', {
+      viewCapabilities: [CONVERSATION],
+    })
+    const manifests = [bareManifest, emptyManifest, matchingManifest]
+    const matchedIds: string[] = []
+    const startPluginsOf = vi.fn(async (match: (m: Manifest) => boolean) => {
+      for (const m of manifests) {
+        if (match(m)) matchedIds.push(m.id)
+      }
+    })
+    const views = createViewRegistry({ startPluginsOf })
+    const element = document.createElement('section')
+
+    views.mountView(CONVERSATION, element, { focus: 'Note.md' }, NO_ACCESS)
+    expect(startPluginsOf).toHaveBeenCalledOnce()
+    expect(matchedIds).toStrictEqual(['chat.plugin'])
+
+    startPluginsOf.mockClear()
+    views.registerView('chat.plugin', {
+      capability: CONVERSATION,
+      component: createView('chat').component,
+    })
+    const secondElement = document.createElement('section')
+    views.mountView(CONVERSATION, secondElement, { focus: 'Second.md' }, NO_ACCESS)
+    expect(startPluginsOf).not.toHaveBeenCalled()
   })
 })
