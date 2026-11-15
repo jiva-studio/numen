@@ -1,4 +1,4 @@
-package review_test
+package projection_test
 
 import (
 	"flag"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/projection"
 )
 
 // updateFlag names the flag that writes the projections down again, and compares against none of
@@ -79,7 +80,7 @@ func projections(t *testing.T) string {
 	var out strings.Builder
 	for _, m := range goldenMaterials(delta) {
 		for _, p := range goldenPresets() {
-			run := review.Simulation{
+			run := projection.Simulation{
 				By: delta, Day: getGoldenDay(), Days: 60, Retains: goldenDays(60),
 				Cost: review.AnswerCost{New: 19 * time.Second, Review: 7 * time.Second},
 				Spent: review.Spent{
@@ -118,7 +119,7 @@ func goldenDays(days int) []int {
 	return out
 }
 
-func writeProjection(out *strings.Builder, p review.Projection) {
+func writeProjection(out *strings.Builder, p projection.Projection) {
 	fmt.Fprintf(out, "days %d cards %d seen %d due %d clears %d learned %d learns %d short %d\n",
 		p.Days, p.ReviewCards, p.Seen, p.Due, p.Clears, p.Learned, p.Learns, p.Short)
 	fmt.Fprintf(out, "answered %d reviews %.6f minutes %.6f admits %d\n",
@@ -132,7 +133,7 @@ func writeProjection(out *strings.Builder, p review.Projection) {
 	fmt.Fprintf(out, "retained %s\n", formatShares(getRetainedShares(p.Retained)))
 }
 
-func getRetainedShares(one review.RetentionByDay) []float64 {
+func getRetainedShares(one projection.RetentionByDay) []float64 {
 	days := one.Days()
 	out := make([]float64, 0, len(days))
 	for _, day := range days {

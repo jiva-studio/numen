@@ -1,4 +1,4 @@
-package review
+package projection
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
 func TestAliasesAndGridHelpers(t *testing.T) {
@@ -164,7 +166,7 @@ func TestProjectionMethodsAndDateSuggestions(t *testing.T) {
 	}
 
 	// getNamedOffset boundaries.
-	d := Day{Starts: DayStartTime, In: time.UTC}
+	d := Day{Starts: review.DayStartTime, In: time.UTC}
 	open := d.GetStart(time.Date(2026, 3, 2, 12, 0, 0, 0, time.UTC))
 	if got := getNamedOffset(d, open, d.GetName(open)); got != 0 {
 		t.Fatalf("getNamedOffset(0) = %d, want 0", got)
@@ -278,7 +280,7 @@ func (s multiDayNewScheduler) Endings(c Schedule, at time.Time) (good, again Sch
 
 func TestCurveAndSimulationEdgeCases(t *testing.T) {
 	t.Parallel()
-	d := Day{Starts: DayStartTime, In: time.UTC}
+	d := Day{Starts: review.DayStartTime, In: time.UTC}
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.UTC)
 	open := d.GetStart(now)
 	fsrs := NewFSRSAt(0.9)
@@ -290,9 +292,9 @@ func TestCurveAndSimulationEdgeCases(t *testing.T) {
 		t.Fatalf("createCurve = %+v", emptyCurve)
 	}
 
-	schedules := make(map[CardID]Schedule, 30)
+	schedules := make(map[ReviewCardID]Schedule, 30)
 	for i := range 30 {
-		id := CardID{Card: string(rune('a' + i)), Template: "T"}
+		id := ReviewCardID{Card: string(rune('a' + i)), Template: "T"}
 		schedules[id] = Schedule{
 			Last:       open.AddDate(0, 0, -20),
 			Due:        open.AddDate(0, 0, -5),
@@ -413,7 +415,7 @@ func TestCurveAndSimulationEdgeCases(t *testing.T) {
 	gotDate, err := sim.Curve(t.Context(), now, Preset{
 		Goal: GoalDate, By: target4, MinutesADay: 30, Retention: 0.9, Rule: RuleInterval, Interval: 3,
 	}, CurveInputs{
-		Schedules:    map[CardID]Schedule{{Card: "a", Template: "T"}: schedules[CardID{Card: "a", Template: "T"}]},
+		Schedules:    map[ReviewCardID]Schedule{{Card: "a", Template: "T"}: schedules[ReviewCardID{Card: "a", Template: "T"}]},
 		UnbegunCount: 2,
 	})
 	if err != nil {
@@ -459,8 +461,8 @@ func TestCurveAndSimulationEdgeCases(t *testing.T) {
 	}
 
 	// Cancel during free load Run so first grid point's Run fails (line 142).
-	oneCard := map[CardID]Schedule{
-		{Card: "c1", Template: "T"}: schedules[CardID{Card: "a", Template: "T"}],
+	oneCard := map[ReviewCardID]Schedule{
+		{Card: "c1", Template: "T"}: schedules[ReviewCardID{Card: "a", Template: "T"}],
 	}
 	sim1Day := Simulation{By: fsrs, Day: d, Cost: GetDefaultCost(), Days: 1}
 	ctxMinPlace, cancelMinPlace := context.WithCancel(t.Context())
@@ -520,7 +522,7 @@ func TestCurveAndSimulationEdgeCases(t *testing.T) {
 	}
 
 	// Stability==0 floor prevents NaN recall; 1-day admitted run sets ReviewsADay and MinutesADay.
-	zeroStab := map[CardID]Schedule{
+	zeroStab := map[ReviewCardID]Schedule{
 		{Card: "z", Template: "T"}: {
 			Last: open.AddDate(0, 0, -2), Due: open.AddDate(0, 0, -1), Reps: 1, Stability: 0, Difficulty: 5, Phase: 2,
 		},

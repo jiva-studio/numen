@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/projection"
 )
 
 // Settings that name no rule count by the default rule at its default value.
@@ -47,15 +48,15 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 // A place with no day to name carries none, and a place whose horizon ended
 // first carries the day it never reached.
 func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
-	got := ConvertCurveToWire(review.Curve{
+	got := ConvertCurveToWire(projection.Curve{
 		Goal: review.GoalRetention,
 		Grid: []float64{0.9},
-		Points: []review.Point{
+		Points: []projection.Point{
 			{Learns: review.LearnsUnasked},
 			{Learns: review.NeverLearns},
 			{Learns: 12},
 		},
-		Now: review.GetOutsideGrid(), Suggested: review.GetOutsideGrid(),
+		Now: projection.GetOutsideGrid(), Suggested: projection.GetOutsideGrid(),
 	})
 
 	if pos := got.At[0]; pos.Learns != nil {
@@ -73,8 +74,8 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 }
 
 func TestConvertCurveToWireCopiesBacklogAndConvertSettingsFromWireHandlesNil(t *testing.T) {
-	got := ConvertCurveToWire(review.Curve{
-		Points: []review.Point{
+	got := ConvertCurveToWire(projection.Curve{
+		Points: []projection.Point{
 			{Backlog: []int{3, 7}},
 		},
 	})

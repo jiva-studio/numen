@@ -57,7 +57,7 @@ type UseCases struct {
 	Save       Save
 }
 
-// NewUseCases creates the use cases on the presets of a vault.
+// NewUseCases builds the use cases over one Config, so each reads a preset at the same day and clock.
 func NewUseCases(cfg Config) UseCases {
 	return UseCases{
 		Read: NewRead(cfg), GetForDeck: NewGetForDeck(cfg), List: NewList(cfg), Point: NewPoint(cfg), Save: NewSave(cfg),

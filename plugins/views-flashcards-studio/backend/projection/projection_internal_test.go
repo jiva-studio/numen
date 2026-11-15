@@ -1,4 +1,4 @@
-package review
+package projection
 
 import (
 	"errors"
@@ -6,6 +6,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
 func TestProjectionAndCurveInternals(t *testing.T) {
@@ -25,9 +27,9 @@ func TestProjectionAndCurveInternals(t *testing.T) {
 		t.Fatalf("expected LeastCeiling 60 from getMinutesUpperBound(1,1), got %g", got)
 	}
 
-	sim := Simulation{By: NewFSRSAt(0.9), Day: day, Cost: GetDefaultCost(), Days: 5}
+	sim := Simulation{By: NewFSRSAt(0.9), Day: day, Cost: review.GetDefaultCost(), Days: 5}
 	for _, goal := range []Goal{GoalMinutes, GoalRetention, GoalDate} {
-		p := Defaults()
+		p := review.Defaults()
 		p.Goal = goal
 		p.By = time.Date(2026, 6, 20, 0, 0, 0, 0, time.UTC)
 		if _, err := sim.Curve(ctx, now, p, CurveInputs{
@@ -57,8 +59,8 @@ func TestProjectionAndCurveInternals(t *testing.T) {
 
 	// Test learnedCount: countBegunCards when !isCarried and when isCarried && isLearned;
 	// countLearnedCards when isCarried && !wanted, when !isCarried with new card vs learned card, and when reviewCards == 0.
-	pRet := Defaults()
-	pRet.Rule = RuleRetention
+	pRet := review.Defaults()
+	pRet.Rule = review.RuleRetention
 	pRet.Retention = 0.9
 	lcNotCarried := newLearnedCount(pRet, nil, now)
 	lcNotCarried.countBegunCards(Schedule{Last: now, Due: now.Add(30 * 24 * time.Hour), Stability: 100}, now)
@@ -66,7 +68,7 @@ func TestProjectionAndCurveInternals(t *testing.T) {
 		t.Fatalf("expected countBegunCards no-op when !isCarried, got %+v", lcNotCarried)
 	}
 
-	pInt := Defaults()
+	pInt := review.Defaults()
 	pInt.Rule = RuleInterval
 	pInt.Interval = 1
 	lcCarried := newLearnedCount(pInt, nil, now)
@@ -84,7 +86,7 @@ func TestProjectionAndCurveInternals(t *testing.T) {
 	if stands, _ := lcZeroTarget.countLearnedCards([]Schedule{{}}, now, 1, true); stands != 0 {
 		t.Fatalf("expected unanswered card (IsNew) to not count in stands even when target==0, got %d", stands)
 	}
-	lcExact := &learnedCount{preset: pRet, isCarried: false, target: Recall(24*time.Hour, 1.0)}
+	lcExact := &learnedCount{preset: pRet, isCarried: false, target: review.Recall(24*time.Hour, 1.0)}
 	sExact := Schedule{Last: now.Add(-24 * time.Hour), Due: now, Stability: 1.0}
 	if stands, back := lcExact.countLearnedCards([]Schedule{sExact}, now, 0, true); stands != 1 || back != 0 {
 		t.Fatalf("expected stands=1 and back=0 when reviewCards==0 and one == target, got stands=%d back=%g",
@@ -110,7 +112,7 @@ func TestSimulationInternals(t *testing.T) {
 		t.Fatalf("expected zero Schedule, got %+v", newNoSchedule())
 	}
 	if createEmptyAllowance() != (Allowance{
-		Limits: Limits{
+		Limits: review.Limits{
 			New:     ClosedNothing,
 			Reviews: ClosedNothing,
 			Minutes: ClosedNothing,
@@ -121,7 +123,7 @@ func TestSimulationInternals(t *testing.T) {
 	}
 
 	sim := Simulation{By: NewFSRSAt(0.9), Day: day, Cost: AnswerCost{New: time.Minute, Review: time.Minute}}
-	pNoLoad := Defaults()
+	pNoLoad := review.Defaults()
 	pNoLoad.Load = map[time.Weekday]int{
 		time.Sunday: 0, time.Monday: 0, time.Tuesday: 0, time.Wednesday: 0,
 		time.Thursday: 0, time.Friday: 0, time.Saturday: 0,
@@ -134,19 +136,19 @@ func TestSimulationInternals(t *testing.T) {
 	open := day.GetStart(now)
 	ends := day.GetEnd(open)
 	futureSched := Schedule{Last: open.Add(-24 * time.Hour), Due: ends.Add(24 * time.Hour), Reps: 1, Stability: 5, Difficulty: 5}
-	if got := sim.getScheduleAfterShowing(futureSched, open, ends, Defaults(), nil); got != futureSched {
+	if got := sim.getScheduleAfterShowing(futureSched, open, ends, review.Defaults(), nil); got != futureSched {
 		t.Fatalf("expected answered card due after ends to be unchanged, got %+v", got)
 	}
 	newWithFutureDue := Schedule{Last: time.Time{}, Due: ends.Add(24 * time.Hour)}
-	if got := sim.getScheduleAfterShowing(newWithFutureDue, open, ends, Defaults(), nil); got.IsNew() {
+	if got := sim.getScheduleAfterShowing(newWithFutureDue, open, ends, review.Defaults(), nil); got.IsNew() {
 		t.Fatalf("expected new card to be stepped even if Due >= ends, got %+v", got)
 	}
 
 	// Test getScheduleAfterDay stopping once !c.IsNew() && !s.Day.IsDue(c, open), and stepping when c.IsNew() with future Due.
-	if got := sim.getScheduleAfterDay(newWithFutureDue, open, Defaults()); got.IsNew() {
+	if got := sim.getScheduleAfterDay(newWithFutureDue, open, review.Defaults()); got.IsNew() {
 		t.Fatalf("expected new card with future Due to be stepped in getScheduleAfterDay, got %+v", got)
 	}
-	steppedOnce := sim.getScheduleAfterDay(Schedule{}, open, Defaults())
+	steppedOnce := sim.getScheduleAfterDay(Schedule{}, open, review.Defaults())
 	if steppedOnce.Reps >= MostShowings {
 		t.Fatalf("expected getScheduleAfterDay to break once card is scheduled beyond today, got Reps=%d", steppedOnce.Reps)
 	}
@@ -154,7 +156,7 @@ func TestSimulationInternals(t *testing.T) {
 	// Test canReachGoal: card due after delta breaks immediately; card due on a later day jumps open to c.Due;
 	// new card with future Due still steps; zero load skips getScheduleAfterDay.
 	delta := open.AddDate(0, 0, 10)
-	pEasyInt := Defaults()
+	pEasyInt := review.Defaults()
 	pEasyInt.Rule = RuleInterval
 	pEasyInt.Interval = 1
 	pEasyInt.Goal = GoalDate
@@ -174,7 +176,7 @@ func TestSimulationInternals(t *testing.T) {
 	}
 	// Verify jumping open = s.Day.GetStart(c.Due) allows a card requiring multiple multi-day reviews to reach a 30-day interval over 365 days
 	// in far fewer than mostAnswers steps (without jumping open to c.Due, 1000 steps would still be needed if days were walked 1 by 1 beyond 1000 days).
-	pLong := Defaults()
+	pLong := review.Defaults()
 	pLong.Rule = RuleInterval
 	pLong.Interval = 100
 	pLong.Goal = GoalDate
@@ -185,7 +187,7 @@ func TestSimulationInternals(t *testing.T) {
 	}
 
 	// Test short: p.Goal != GoalDate, p.By.IsZero(), unreviewed == 0 vs unreviewed > 0, and += vs = when both cards and unreviewed fail.
-	if got := sim.short(Defaults(), []Schedule{{}}, 5, open); got != 0 {
+	if got := sim.short(review.Defaults(), []Schedule{{}}, 5, open); got != 0 {
 		t.Fatalf("expected 0 from short when Goal != GoalDate, got %d", got)
 	}
 	pZeroBy := pEasyInt
@@ -193,7 +195,7 @@ func TestSimulationInternals(t *testing.T) {
 	if got := sim.short(pZeroBy, []Schedule{{}}, 5, open); got != 0 {
 		t.Fatalf("expected 0 from short when By is zero, got %d", got)
 	}
-	pImpossible := Defaults()
+	pImpossible := review.Defaults()
 	pImpossible.Goal = GoalDate
 	pImpossible.By = open
 	pImpossible.Rule = RuleInterval
@@ -209,12 +211,12 @@ func TestSimulationInternals(t *testing.T) {
 	tinyStab := Schedule{Last: open.Add(-24 * time.Hour), Due: open, Reps: 1, Stability: 1e-9, Difficulty: 5, Phase: 2}
 	simZeroRecall := sim
 	simZeroRecall.Recalls = func(Schedule, time.Time) float64 { return 0.5 }
-	steppedTiny := simZeroRecall.step(tinyStab, open, Defaults(), nil)
+	steppedTiny := simZeroRecall.step(tinyStab, open, review.Defaults(), nil)
 	if math.IsNaN(steppedTiny.Stability) || steppedTiny.Stability <= 0 || !steppedTiny.Due.After(open) {
 		t.Fatalf("expected valid positive stability and future Due after stepping tiny stability, got %+v", steppedTiny)
 	}
-	onTable := NewDueByDay(day)
-	pBalance := Defaults()
+	onTable := review.NewDueByDay(day)
+	pBalance := review.Defaults()
 	pBalance.IsEvenLoad = true
 	// Pre-load the day 3 days out so AssignDueDay shifts a new card's due day if it falls in the window.
 	for range 10 {
@@ -236,19 +238,19 @@ func TestSimulationInternals(t *testing.T) {
 	// Test createProjection, getDaysToLearnGoal, createSimulationDay initial zero fields,
 	// startDay resetting observed=0, isDebtNext(!hasDue), isRepeat(!d.hasNew()), stepDebt observed++,
 	// stepNew exact minutes boundary and showings=1, finishDay d.today+1 < d.days, finalizeProjection admitted == 0.
-	proj := sim.createProjection(5, nil, 2, now, Defaults())
+	proj := sim.createProjection(5, nil, 2, now, review.Defaults())
 	if proj.Learned != 0 || proj.Short != 0 {
 		t.Fatalf("expected Learned=0 and Short=0 in createProjection, got %+v", proj)
 	}
-	if got := sim.getDaysToLearnGoal(Defaults(), now); got != 0 {
+	if got := sim.getDaysToLearnGoal(review.Defaults(), now); got != 0 {
 		t.Fatalf("expected 0 from getDaysToLearnGoal for non-date goal, got %d", got)
 	}
 
-	reckoned := newLearnedCount(Defaults(), []Schedule{tinyStab}, open)
+	reckoned := newLearnedCount(review.Defaults(), []Schedule{tinyStab}, open)
 	sd := sim.createSimulationDay(simulationSetup{
-		days: 2, base: 0, open: open, p: Defaults(),
+		days: 2, base: 0, open: open, p: review.Defaults(),
 		cards: []Schedule{tinyStab}, falls: make([][]int, 2),
-		on: NewDueByDay(day), reckoned: reckoned, unreviewed: 2,
+		on: review.NewDueByDay(day), reckoned: reckoned, unreviewed: 2,
 	})
 	if sd.today != 0 || sd.used != 0 || sd.reply != 0 || sd.observed != 0 || sd.begun != 0 ||
 		sd.charged != 0 || sd.reviewed != 0 || sd.take != 0 || sd.next != 0 {
@@ -284,7 +286,7 @@ func TestSimulationInternals(t *testing.T) {
 
 	// Check stepNew when d.used + d.sim.Cost.New == d.admits.Minutes (exact boundary allowed) vs > d.admits.Minutes,
 	// and verify showings appended as 1.
-	sd.admits.Limits.Minutes = ClosedMinutes
+	sd.admits.Limits.Minutes = review.ClosedMinutes
 	sd.admits.Minutes = sd.used + sd.sim.Cost.New
 	sd.admits.Limits.New = ClosedNothing
 	beforeCardsLen := len(sd.cards)
@@ -295,7 +297,7 @@ func TestSimulationInternals(t *testing.T) {
 	}
 	sd.remaining = 1
 	sd.stepNew()
-	if !sd.isNewDone || !slices.Contains(sd.closed, ClosedMinutes) {
+	if !sd.isNewDone || !slices.Contains(sd.closed, review.ClosedMinutes) {
 		t.Fatalf("expected stepNew to close with ClosedMinutes when exceeding budget, closed=%v", sd.closed)
 	}
 

@@ -1,4 +1,4 @@
-package review
+package projection
 
 import (
 	"context"
@@ -71,7 +71,7 @@ type curveBuilder struct {
 	run          Simulation
 	now          time.Time
 	preset       Preset
-	schedules    map[CardID]Schedule
+	schedules    map[ReviewCardID]Schedule
 	unbegunCount int
 	scheduler    func(retention float64) Scheduler
 	places       func(count int, each func(index int) error) error
@@ -80,7 +80,7 @@ type curveBuilder struct {
 // CurveInputs are the cards and the helpers a curve is evaluated with. A nil Scheduler is FSRS and a nil
 // Places visits the places in order.
 type CurveInputs struct {
-	Schedules    map[CardID]Schedule
+	Schedules    map[ReviewCardID]Schedule
 	UnbegunCount int
 	Scheduler    func(retention float64) Scheduler
 	Places       func(count int, each func(index int) error) error
@@ -319,7 +319,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 
 func getDaysToLearnWithoutForgetting(
 	ctx context.Context, run Simulation, now time.Time, p Preset,
-	pos map[CardID]Schedule, unbegunCount int,
+	pos map[ReviewCardID]Schedule, unbegunCount int,
 ) (int, error) {
 	// The day the material is learned is all this run is read for.
 	run = Simulation{

@@ -8,26 +8,27 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/projection"
 )
 
 // Curve is the simulated progression of a preset across its target range.
-type Curve = review.Curve
+type Curve = projection.Curve
 
-type CurvePoint = review.CurvePoint
+type CurvePoint = projection.CurvePoint
 
 // Point is one place of a simulated curve.
-type Point = review.Point
+type Point = projection.Point
 
 // Points is how many places a curve is worked out at.
-const Points = review.Points
+const Points = projection.Points
 
 // Ahead is how many days a projection runs when no length is given.
-const Ahead = review.Ahead
+const Ahead = projection.Ahead
 
 // MostAhead is how far ahead a goal of a date is projected.
-const MostAhead = review.MostAhead
+const MostAhead = projection.MostAhead
 
-func GetOutsideGrid() CurvePoint { return review.GetOutsideGrid() }
+func GetOutsideGrid() CurvePoint { return projection.GetOutsideGrid() }
 
 // ProjectCurve is the simulator behind the one control of a preset.
 //
@@ -132,7 +133,7 @@ func (u ProjectCurve) Execute(
 	// The projection runs with the scheduler this preset requests, which is the one
 	// that schedules its cards, and it starts on the current day with the answers
 	// already given.
-	run := review.Simulation{
+	run := projection.Simulation{
 		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="Non-positive simulation Days defaults to HorizonDays."
 		Days:    0,
@@ -141,7 +142,7 @@ func (u ProjectCurve) Execute(
 		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
-	out, err := run.Curve(ctx, now, p, review.CurveInputs{
+	out, err := run.Curve(ctx, now, p, projection.CurveInputs{
 		Schedules: pos, UnbegunCount: unbegunCount, Scheduler: u.getScheduler, Places: u.computePlaces,
 	})
 	if err != nil {
@@ -150,7 +151,7 @@ func (u ProjectCurve) Execute(
 	out.Stops = p.GetOverallStopReason(u.day, now)
 	out.Decks = pointing
 	out.Cards = len(presets)
-	out.Overdue = review.CountOverdue(u.day, pos, now)
+	out.Overdue = projection.CountOverdue(u.day, pos, now)
 	out.Unbegun = unbegunCount
 	return out, nil
 }
