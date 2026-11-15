@@ -1,10 +1,14 @@
 package platform
 
 import (
+	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
 	"testing"
+
+	"github.com/zalando/go-keyring"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/indexsource"
 )
@@ -139,6 +143,52 @@ func TestGetConfig(t *testing.T) {
 func TestGetConfigNamesTheSystemKeychain(t *testing.T) {
 	if GetConfigFor(TargetFlashcards).KeyStore == nil {
 		t.Error("the desktop configuration names no key store")
+	}
+
+	keyring.MockInitWithError(keyring.ErrUnsupportedPlatform)
+	configHome := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", configHome)
+	withDir := getKeyStore()
+	if withDir == nil {
+		t.Fatal("expected non-nil key store when settings path is available")
+	}
+	if err := withDir.SetKey(t.Context(), "test-key", "test-val"); err != nil {
+		t.Fatalf("SetKey with configured fallback dir failed: %v", err)
+	}
+
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("HOME", "")
+	withoutDir := getKeyStore()
+	if withoutDir == nil {
+		t.Fatal("expected non-nil zero key store when settings path fails")
+	}
+	if err := withoutDir.SetKey(t.Context(), "test-key", "test-val"); err == nil {
+		t.Fatal("expected SetKey on zero key store without keychain to fail")
+	}
+}
+
+func TestReportPluginFailure(t *testing.T) {
+	origStderr := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = w
+	t.Cleanup(func() {
+		os.Stderr = origStderr
+	})
+
+	reportPluginFailure("discover plugins", nil)
+	reportPluginHost(errors.New("bad manifest"))
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	out, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(out), "numen: plugin host: bad manifest\n"; got != want {
+		t.Fatalf("got %q, want %q", got, want)
 	}
 }
 

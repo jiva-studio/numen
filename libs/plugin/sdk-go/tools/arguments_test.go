@@ -2,11 +2,14 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"github.com/google/jsonschema-go/jsonschema"
 )
 
 type shelveIn struct {
@@ -287,5 +290,49 @@ func TestErrorCodesOfACallCarryNoText(t *testing.T) {
 			t.Errorf("%s %s returned %+v with the error code %v, want an error code and no result",
 				name, arguments, res.GetResult(), res.GetError())
 		}
+	}
+
+	if _, err := readArguments[shelveIn](nil, []byte("{bad")); err == nil || err.Error() != "the arguments are not JSON" {
+		t.Errorf("readArguments({bad) = %v", err)
+	}
+	if _, err := readArguments[shelveIn](nil, []byte("{}{}")); err == nil || err.Error() != "the arguments are not JSON" {
+		t.Errorf("readArguments({}{}) = %v", err)
+	}
+	if got, err := readArguments[shelveIn](nil, []byte(`{"title":"Ferns"}`)); err != nil || got.Title != "Ferns" {
+		t.Errorf("readArguments(nil schema) = %+v, %v", got, err)
+	}
+
+	type extraIn struct {
+		Counts   map[string]int `json:"counts,omitempty"`
+		Scores   []int          `json:"scores,omitempty"`
+		Ratio    float64        `json:"ratio,omitempty"`
+		Anything any            `json:"anything,omitempty"`
+	}
+	extraReg := New()
+	if err := Add(extraReg, Spec{Name: "extra", Effect: ReadOnly}, func(_ context.Context, in extraIn) (extraIn, error) {
+		return in, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if res := invoke(t, extraReg, "extra", []byte(`{"counts":{"a":1},"scores":[1,2],"ratio":1.5,"anything":"x"}`)); res.GetResult().GetIsError() {
+		t.Errorf("extra valid failed: %+v", res.GetResult())
+	}
+	for args, want := range map[string]string{
+		`{"counts":{"a":"bad"}}`: "extra: the argument counts.a must be an integer, not a string",
+		`{"scores":[1,"bad"]}`:   "extra: the argument scores[1] must be an integer, not a string",
+		`{"ratio":"bad"}`:        "extra: the argument ratio must be a number, not a string",
+	} {
+		if res := invoke(t, extraReg, "extra", []byte(args)); !res.GetResult().GetIsError() || res.GetResult().GetText() != want {
+			t.Errorf("extra(%s) = %+v, want %q", args, res.GetResult(), want)
+		}
+	}
+	if res := invoke(t, registry, "shelve_book", []byte(`{"title":"Ferns","count":1e9223372036854775807}`)); !res.GetResult().GetIsError() {
+		t.Errorf("expected error for MaxInt exponent, got %+v", res.GetResult())
+	}
+	if got, err := normalizeValue(&jsonschema.Schema{Type: typeNumber}, json.Number("1e2"), "ratio"); err != nil || got != json.Number("1e2") {
+		t.Errorf("normalizeValue(number, 1e2) = %v (%T), %v, want json.Number(1e2)", got, got, err)
+	}
+	if got, err := normalizeValue(&jsonschema.Schema{Type: typeInteger}, json.Number("1e2"), "count"); err != nil || got != json.Number("100") {
+		t.Errorf("normalizeValue(integer, 1e2) = %v (%T), %v, want json.Number(100)", got, got, err)
 	}
 }

@@ -1,7 +1,9 @@
 package proofread
 
 import (
+	"context"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -138,7 +140,7 @@ func TestProofreadMakesTheLiveVersionFromTheScan(t *testing.T) {
 	}
 
 	parts, live := s.readLiveSegments(t, scanPath)
-	if live.PluginID != pluginID || live.Source != scan.GetID() || live.InputHash != scan.TextHash || live.Kind != ProofreadingKind {
+	if live.PluginID != pluginID || live.Source != scan.GetID() || live.InputHash != scan.TextHash || live.Kind != ProofreadingKind || len(live.Key) != len(keyPrefix)+16 {
 		t.Fatalf("the live version is %+v", live)
 	}
 	if res.Lines != 3 || res.Corrected != 1 {
@@ -210,6 +212,7 @@ func TestProofread_PromptsLongTranscriptByWindow(t *testing.T) {
 
 func TestProofread_OCRVersionStaysLiveWithoutOCRPlugin(t *testing.T) {
 	s := newScene(t)
+	s.run.kinds = map[domain.TextKind]bool{kindRecognition: true}
 	s.hold(t, layerID, scanPath, "layer", kindPageText, "the scan", []domain.TextSegment{{Text: "shipping manifest"}})
 	scan := s.holdScan(t)
 	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); err != nil {
@@ -217,6 +220,9 @@ func TestProofread_OCRVersionStaysLiveWithoutOCRPlugin(t *testing.T) {
 	}
 	if _, live := s.readLiveSegments(t, scanPath); live.PluginID != pluginID {
 		t.Fatalf("the live version is %+v", live)
+	}
+	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath}); !errors.Is(err, errFormat) {
+		t.Errorf("live proofreading version outside kinds got %v, want %v", err, errFormat)
 	}
 }
 
@@ -233,7 +239,7 @@ func TestProofread_ErrorsOnUnreadableInput(t *testing.T) {
 		"an article":          {Request{Path: "notes/article.url", Source: article.GetID()}, errFormat},
 		"a version not there": {Request{Path: scanPath, Source: ocrID + "/gone"}, host.ErrNotExist},
 	} {
-		if _, err := s.run.Proofread(t.Context(), req.request); !errors.Is(err, req.want) {
+		if _, err := s.run.Proofread(t.Context(), req.request); !errors.Is(err, req.want) || strings.HasPrefix(err.Error(), "read ") {
 			t.Errorf("%s: got %v, want %v", name, err, req.want)
 		}
 	}
@@ -309,5 +315,252 @@ func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	}
 	if len(names) != 0 {
 		t.Errorf("the shown vault's folder holds %v, want nothing", names)
+	}
+}
+
+type stubTurn struct {
+	releaseErr error
+}
+
+func (s stubTurn) Release() error { return s.releaseErr }
+
+func (s stubTurn) WatchWaiting() <-chan struct{} { return nil }
+
+type stubQueue struct {
+	enqueueErr error
+	releaseErr error
+	reportErr  error
+	reportAt   int
+	finishErr  error
+	reported   []host.Task
+}
+
+func (q *stubQueue) EnqueueWork(context.Context, host.Work) (host.Turn, error) {
+	if q.enqueueErr != nil {
+		return nil, q.enqueueErr
+	}
+	return stubTurn{releaseErr: q.releaseErr}, nil
+}
+
+func (q *stubQueue) ReportTask(_ context.Context, task host.Task) error {
+	q.reported = append(q.reported, task)
+	if q.reportErr != nil && (q.reportAt == 0 || len(q.reported) == q.reportAt) {
+		return q.reportErr
+	}
+	return nil
+}
+
+func (q *stubQueue) FinishTask(context.Context, string) error {
+	return q.finishErr
+}
+
+type stubTexts struct {
+	Texts
+	listErr error
+	readErr error
+	putErr  error
+	pages   map[string]host.TextPage
+}
+
+func (s *stubTexts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
+	if s.listErr != nil {
+		return host.TextListing{}, s.listErr
+	}
+	return s.Texts.ListVersions(ctx, path)
+}
+
+func (s *stubTexts) ReadText(ctx context.Context, path string, version domain.TextVersionID, cursor string) (host.TextPage, error) {
+	if s.readErr != nil {
+		return host.TextPage{}, s.readErr
+	}
+	if s.pages != nil {
+		return s.pages[cursor], nil
+	}
+	return s.Texts.ReadText(ctx, path, version, cursor)
+}
+
+func (s *stubTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.TextVersion, error) {
+	if s.putErr != nil {
+		return domain.TextVersion{}, s.putErr
+	}
+	return s.Texts.PutVersion(ctx, req)
+}
+
+type failingStore struct {
+	host.StoreWriter
+	writeErr error
+}
+
+func (f failingStore) Write(ctx context.Context, name string, data []byte) error {
+	if f.writeErr != nil {
+		return f.writeErr
+	}
+	return f.StoreWriter.Write(ctx, name, data)
+}
+
+func TestProofreadQueueAndHostFailures(t *testing.T) {
+	s := newScene(t)
+	scan := s.holdScan(t)
+
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	finishCancelBoom := errors.New("finish failed on cancel")
+	qCancel := &stubQueue{finishErr: finishCancelBoom}
+	s.run.host.Queue = qCancel
+	if _, err := s.run.Proofread(ctx, Request{Path: scanPath, Source: scan.GetID()}); err == nil || errors.Is(err, finishCancelBoom) || len(qCancel.reported) != 0 {
+		t.Errorf("canceled run got %v, reported %+v", err, qCancel.reported)
+	}
+
+	reportBoom := errors.New("report failed")
+	qFailBoth := &stubQueue{reportErr: reportBoom}
+	s.run.host.Queue = qFailBoth
+	_, err := s.run.Proofread(t.Context(), Request{Path: talkPath})
+	if !errors.Is(err, errNoText) || !errors.Is(err, reportBoom) {
+		t.Errorf("joined failure got %v", err)
+	}
+
+	releaseBoom := errors.New("release failed")
+	qRelease := &stubQueue{releaseErr: releaseBoom}
+	s.run.host.Queue = qRelease
+	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()})
+	if !errors.Is(err, releaseBoom) || res.Lines != 3 {
+		t.Errorf("release failure got res=%+v err=%v", res, err)
+	}
+
+	finishBoom := errors.New("finish failed")
+	s.run.host.Queue = &stubQueue{finishErr: finishBoom}
+	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); !errors.Is(err, finishBoom) {
+		t.Errorf("finish failure got %v", err)
+	}
+
+	enqueueBoom := errors.New("enqueue failed")
+	s.run.host.Queue = &stubQueue{enqueueErr: enqueueBoom}
+	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); !errors.Is(err, enqueueBoom) {
+		t.Errorf("enqueue failure got %v", err)
+	}
+
+	for _, call := range []int{1, 2} {
+		s.run.host.Queue = &stubQueue{reportErr: reportBoom, reportAt: call}
+		if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); !errors.Is(err, reportBoom) {
+			t.Errorf("reportAt %d got %v", call, err)
+		}
+	}
+
+	talk := s.holdTalk(t, "one", "two")
+	s.run.host.Queue = &stubQueue{reportErr: reportBoom, reportAt: 2}
+	if _, err := s.run.Proofread(t.Context(), Request{Path: talkPath, Source: talk.GetID()}); !errors.Is(err, reportBoom) {
+		t.Errorf("speech reportAt 2 got %v", err)
+	}
+
+	s.run.host.Queue = s.queue
+	listBoom := errors.New("list failed")
+	s.run.host.Texts = func(id domain.VaultID) Texts {
+		return &stubTexts{Texts: s.texts.With(id), listErr: listBoom}
+	}
+	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); !errors.Is(err, listBoom) {
+		t.Errorf("list failure got %v", err)
+	}
+
+	readBoom := errors.New("read failed")
+	s.run.host.Texts = func(id domain.VaultID) Texts {
+		return &stubTexts{Texts: s.texts.With(id), readErr: readBoom}
+	}
+	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); !errors.Is(err, readBoom) {
+		t.Errorf("read failure got %v", err)
+	}
+
+	putBoom := errors.New("put failed")
+	s.run.host.Texts = func(id domain.VaultID) Texts {
+		return &stubTexts{Texts: s.texts.With(id), putErr: putBoom}
+	}
+	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); !errors.Is(err, putBoom) {
+		t.Errorf("put failure got %v", err)
+	}
+
+	s.run.host.Texts = func(id domain.VaultID) Texts { return s.texts.With(id) }
+	writeBoom := errors.New("write failed")
+	s.run.host.Store = func(id domain.VaultID) host.StoreWriter {
+		return failingStore{StoreWriter: s.store.With(id), writeErr: writeBoom}
+	}
+	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); !errors.Is(err, writeBoom) {
+		t.Errorf("write failure got %v", err)
+	}
+}
+
+func TestReadPartsPaginationAndCorrectWindows(t *testing.T) {
+	paged := &stubTexts{
+		pages: map[string]host.TextPage{
+			"":   {Segments: []domain.TextSegment{{Text: "a"}}, NextCursor: "p2"},
+			"p2": {Segments: []domain.TextSegment{{Text: "b"}}, NextCursor: "p2"},
+		},
+	}
+	parts, err := ReadParts(t.Context(), paged, domain.TextVersion{Path: scanPath})
+	if err != nil || len(parts) != 2 || parts[0].Text != "a" || parts[1].Text != "b" {
+		t.Errorf("ReadParts = %+v, %v", parts, err)
+	}
+
+	s := newScene(t)
+	qProgress := &stubQueue{}
+	s.run.host.Queue = qProgress
+	scan := s.holdScan(t)
+	s.model.script = func(string) string { return "999|refused" }
+	scanRes, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()})
+	if err != nil || scanRes.Uncorrected != 2 {
+		t.Errorf("scan refused = %+v, %v", scanRes, err)
+	}
+	if len(qProgress.reported) != 3 ||
+		qProgress.reported[0].TotalCount != 3 || qProgress.reported[0].CompletedCount != 0 ||
+		qProgress.reported[1].CompletedCount != 2 ||
+		qProgress.reported[2].CompletedCount != 3 {
+		t.Errorf("scan task reports = %+v", qProgress.reported)
+	}
+
+	s.config = Config{BatchSize: 2, Overlap: 1, InFlight: 2, MaxEditDistance: s.config.MaxEditDistance}
+	talk := s.holdTalk(t, "one", "two", "three", "four", "five")
+	qSpeech := &stubQueue{}
+	s.run.host.Queue = qSpeech
+	s.model.prompts = nil
+	s.model.script = func(string) string { return "999|refused" }
+	speechRes, err := s.run.Proofread(t.Context(), Request{Path: talkPath, Source: talk.GetID()})
+	if err != nil || speechRes.Uncorrected != 4 {
+		t.Errorf("speech refused = %+v, %v", speechRes, err)
+	}
+	if len(qSpeech.reported) != 3 || qSpeech.reported[1].CompletedCount != 3 || qSpeech.reported[2].CompletedCount != 5 {
+		t.Errorf("speech task reports = %+v", qSpeech.reported)
+	}
+
+	// A joined run reaching the end of the first window advances next past its last line.
+	s.config = Config{BatchSize: 2, Overlap: 1, InFlight: 1, MaxEditDistance: s.config.MaxEditDistance}
+	s.model.prompts = nil
+	s.model.script = func(prompt string) string {
+		if strings.Contains(prompt, numbered.Opens+"1"+numbered.Closes) {
+			return "1-2|joined one and two"
+		}
+		return getRows(prompt, func(_, text string) string { return text + "!" })
+	}
+	joinedRes, err := s.run.Proofread(t.Context(), Request{Path: talkPath, Source: talk.GetID()})
+	if err != nil || joinedRes.Corrected != 4 {
+		t.Errorf("joined window res = %+v, %v", joinedRes, err)
+	}
+
+	// Direct calls to correctSpeech and correctScan verify start line 1 and zero uncorrected on error.
+	s.model.script = func(prompt string) string {
+		return getRows(prompt, func(_, text string) string { return text + "!" })
+	}
+	var task host.Task
+	correctedLines, uncorr, err := s.run.correctSpeech(t.Context(), []numbered.Line{
+		{Number: 0, Text: "zero"},
+		{Number: 1, Text: "one"},
+	}, &task)
+	if err != nil || uncorr != 0 || !reflect.DeepEqual(correctedLines, []numbered.Line{{Number: 1, Last: 1, Text: "one!"}}) {
+		t.Errorf("correctSpeech from 1 = %+v, %d, %v", correctedLines, uncorr, err)
+	}
+
+	s.model.failure = errors.New("ask boom")
+	if _, uncorr, err := s.run.correctSpeech(t.Context(), []numbered.Line{{Number: 1, Text: "one"}}, &task); err == nil || uncorr != 0 {
+		t.Errorf("correctSpeech error = %d, %v", uncorr, err)
+	}
+	if _, uncorr, err := s.run.correctScan(t.Context(), []numbered.Batch{{Number: 1, Lines: []numbered.Line{{Number: 1, Text: "one"}}}}, &task); err == nil || uncorr != 0 {
+		t.Errorf("correctScan error = %d, %v", uncorr, err)
 	}
 }

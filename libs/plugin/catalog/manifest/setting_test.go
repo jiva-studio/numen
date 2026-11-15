@@ -158,17 +158,19 @@ func TestTheDependenciesOfTheChosenOptionAreRequired(t *testing.T) {
 // The validator names each link between settings that leads nowhere.
 func TestTheValidatorRejectsLinksThatLeadNowhere(t *testing.T) {
 	for name, settings := range map[string]string{
-		"options follow nothing":     `{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{}}}`,
-		"options follow a string":    `{"key":"b","type":"string","title":"B"},{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{}}}`,
-		"a value with no options":    `{"key":"b","type":"enum","title":"B","options":["x","y"]},{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{"x":["1"]}}}`,
-		"options follow a later":     `{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{"x":["1"]}}},{"key":"b","type":"enum","title":"B","options":["x"]}`,
-		"a condition on nothing":     `{"key":"a","type":"string","title":"A","when":{"setting":"b","is":["x"]}}`,
-		"a condition on no option":   `{"key":"b","type":"enum","title":"B","options":["x"]},{"key":"a","type":"string","title":"A","when":{"setting":"b","is":["y"]}}`,
-		"a condition on no values":   `{"key":"b","type":"enum","title":"B","options":["x"]},{"key":"a","type":"string","title":"A","when":{"setting":"b","is":[]}}`,
-		"a condition on bad bool":    `{"key":"b","type":"boolean","title":"B"},{"key":"a","type":"string","title":"A","when":{"setting":"b","is":["yes"]}}`,
-		"an option of no dependency": `{"key":"a","type":"enum","title":"A","options":[{"value":"x","dependencies":["none"]}]}`,
-		"optionsBy on number":        `{"key":"b","type":"enum","title":"B","options":["x"]},{"key":"a","type":"number","title":"A","optionsBy":{"setting":"b","options":{"x":["1"]}}}`,
-		"optionsBy with own options": `{"key":"b","type":"enum","title":"B","options":["x"]},{"key":"a","type":"enum","title":"A","options":["1"],"optionsBy":{"setting":"b","options":{"x":["1"]}}}`,
+		"options follow nothing":             `{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{}}}`,
+		"options follow a string":            `{"key":"b","type":"string","title":"B"},{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{}}}`,
+		"options follow string with options": `{"key":"b","type":"string","title":"B","options":["x"]},{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{"x":["1"]}}}`,
+		"options follow optionsFrom enum":    `{"key":"b","type":"enum","title":"B","optionsFrom":"themes"},{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{"x":["1"]}}}`,
+		"a value with no options":            `{"key":"b","type":"enum","title":"B","options":["x","y"]},{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{"x":["1"]}}}`,
+		"options follow a later":             `{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{"x":["1"]}}},{"key":"b","type":"enum","title":"B","options":["x"]}`,
+		"a condition on nothing":             `{"key":"a","type":"string","title":"A","when":{"setting":"b","is":["x"]}}`,
+		"a condition on no option":           `{"key":"b","type":"enum","title":"B","options":["x"]},{"key":"a","type":"string","title":"A","when":{"setting":"b","is":["y"]}}`,
+		"a condition on no values":           `{"key":"b","type":"enum","title":"B","options":["x"]},{"key":"a","type":"string","title":"A","when":{"setting":"b","is":[]}}`,
+		"a condition on bad bool":            `{"key":"b","type":"boolean","title":"B"},{"key":"a","type":"string","title":"A","when":{"setting":"b","is":["yes"]}}`,
+		"an option of no dependency":         `{"key":"a","type":"enum","title":"A","options":[{"value":"x","dependencies":["none"]}]}`,
+		"optionsBy on number":                `{"key":"b","type":"enum","title":"B","options":["x"]},{"key":"a","type":"number","title":"A","optionsBy":{"setting":"b","options":{"x":["1"]}}}`,
+		"optionsBy with own options":         `{"key":"b","type":"enum","title":"B","options":["x"]},{"key":"a","type":"enum","title":"A","options":["1"],"optionsBy":{"setting":"b","options":{"x":["1"]}}}`,
 		"optionsBy on optionsBy": `{"key":"c","type":"enum","title":"C","options":["x"]},` +
 			`{"key":"b","type":"enum","title":"B","optionsBy":{"setting":"c","options":{"x":["y"]}}},` +
 			`{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{"y":["1"]}}}`,
@@ -198,8 +200,8 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 	if got := FormatSettingValue(true); got != "true" {
 		t.Errorf("FormatSettingValue(true) = %q, want true", got)
 	}
-	if got := FormatSettingValue(1000000.5); got != "1000000.5" {
-		t.Errorf("FormatSettingValue(1000000.5) = %q, want 1000000.5", got)
+	if got := FormatSettingValue(3.5); got != "3.5" {
+		t.Errorf("FormatSettingValue(3.5) = %q, want 3.5", got)
 	}
 	if got := FormatSettingValue(42); got != "42" {
 		t.Errorf("FormatSettingValue(42) = %q, want 42", got)
@@ -225,6 +227,18 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 	if _, ok := resolved["model"]; ok {
 		t.Errorf("expected stale model from another group to be deleted when active group has no options and no default: %v", resolved)
 	}
+	emptyOptsWithDefault := Manifest{
+		Settings: []Setting{
+			{Key: "provider", Type: SettingTypeEnum, Default: "custom", Options: SettingOptions{{Value: "local"}, {Value: "custom"}}},
+			{Key: "model", Type: SettingTypeString, Default: "fallback", OptionsBy: &OptionsBy{
+				Setting: "provider",
+				Options: map[string]SettingOptions{"local": {{Value: "m1"}}},
+			}},
+		},
+	}
+	if got := emptyOptsWithDefault.ResolveSettings(nil)["model"]; got != "fallback" {
+		t.Errorf("expected fallback default when active group has no options, got %v", got)
+	}
 	if reqs := emptyOptsManifest.GetDependencyRequirements("/p", map[string]any{"provider": "local", "model": "m1"}); len(reqs) != 1 || reqs[0].ID != "dep1" {
 		t.Errorf("expected dep1 when m1 is active: %v", reqs)
 	}
@@ -249,7 +263,10 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 
 	// Valid settings: boolean When with true/false, string When, string OptionsBy with partial keys, file with 2-char extension, range bounds.
 	validJSON := `{
-		"id": "a.b", "name": "A", "version": "1.0.0",
+		"id": "a.b", "name": "A", "version": "1.0.0", "protocol": 1,
+		"capabilities": ["tools", "search.source"],
+		"activationEvents": ["onIndexChanged"],
+		"services": ["a.b.S"],
 		"backend": {"entrypoint": "bin/a"},
 		"dependencies": [{"id": "d1", "kind": "model"}],
 		"settings": [
@@ -258,6 +275,8 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 			{"key": "dependent", "type": "string", "title": "Dep", "when": {"setting": "str", "is": ["custom"]}},
 			{"key": "prov", "type": "enum", "title": "Prov", "options": ["a", "b"]},
 			{"key": "optStr", "type": "string", "title": "OptStr", "optionsBy": {"setting": "prov", "options": {"a": [{"value": "v1", "dependencies": ["d1"]}]}}},
+			{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes"},
+			{"key": "secret", "type": "string", "title": "Secret", "generate": "token"},
 			{"key": "r1", "type": "range", "title": "R1", "min": 10, "max": 10},
 			{"key": "r2", "type": "range", "title": "R2", "min": 10},
 			{"key": "r3", "type": "range", "title": "R3", "max": 10},
@@ -268,52 +287,72 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 	if _, err := manifestjson.Read(strings.NewReader(validJSON)); err != nil {
 		t.Fatalf("valid manifest failed: %v", err)
 	}
+	if _, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d1","kind":"model"}]}`)); err != nil {
+		t.Fatalf("backendless manifest with model dependency failed: %v", err)
+	}
 
 	// Manifest-level validation rules in package manifest.
 	sum := strings.Repeat("a", 64)
 	for name, tc := range map[string]struct {
 		json string
-		want error
+		want []error
 	}{
-		"empty id":              {`{"name":"A","version":"1.0.0"}`, ErrEmptyID},
-		"invalid id":            {`{"id":"bad","name":"A","version":"1.0.0"}`, ErrInvalidID},
-		"empty name":            {`{"id":"a.b","version":"1.0.0"}`, ErrEmptyName},
-		"empty version":         {`{"id":"a.b","name":"A"}`, ErrEmptyVersion},
-		"invalid version":       {`{"id":"a.b","name":"A","version":"1.0"}`, ErrInvalidVersion},
-		"protocol negative":     {`{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, ErrUnsupportedProtocol},
-		"protocol too high":     {`{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, ErrUnsupportedProtocol},
-		"invalid capability":    {`{"id":"a.b","name":"A","version":"1.0.0","capabilities":["none"]}`, ErrInvalidCapability},
-		"invalid activation":    {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["bad"]}`, ErrInvalidActivationEvent},
-		"wildcard activation":   {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["*"]}`, ErrInvalidActivationEvent},
-		"blank entrypoint":      {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":" "}}`, ErrInvalidBackend},
-		"activation no backend": {`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onIndexChanged"]}`, ErrNoBackend},
-		"services no backend":   {`{"id":"a.b","name":"A","version":"1.0.0","services":["a.b.S"]}`, ErrNoBackend},
-		"runtime no backend":    {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"r","kind":"runtime"}]}`, ErrNoBackend},
-		"invalid permission":    {`{"id":"a.b","name":"A","version":"1.0.0","permissions":["bad"]}`, ErrInvalidPermission},
-		"dep empty id":          {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"kind":"model"}]}`, ErrInvalidDependency},
-		"dep duplicate id":      {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model"},{"id":"d","kind":"model"}]}`, ErrInvalidDependency},
-		"dep unknown kind":      {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"bad"}]}`, ErrInvalidDependency},
-		"dep checksum no url":   {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","checksumSha256":"` + sum + `"}]}`, ErrInvalidDependency},
+		"empty id":              {`{"name":"A","version":"1.0.0"}`, []error{ErrEmptyID}},
+		"invalid id":            {`{"id":"bad","name":"A","version":"1.0.0"}`, []error{ErrInvalidID}},
+		"empty name":            {`{"id":"a.b","version":"1.0.0"}`, []error{ErrEmptyName}},
+		"empty version":         {`{"id":"a.b","name":"A"}`, []error{ErrEmptyVersion}},
+		"invalid version":       {`{"id":"a.b","name":"A","version":"1.0"}`, []error{ErrInvalidVersion}},
+		"protocol negative":     {`{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, []error{ErrUnsupportedProtocol}},
+		"protocol too high":     {`{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, []error{ErrUnsupportedProtocol}},
+		"invalid capability":    {`{"id":"a.b","name":"A","version":"1.0.0","capabilities":["none"]}`, []error{ErrInvalidCapability}},
+		"invalid activation":    {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["bad"]}`, []error{ErrInvalidActivationEvent}},
+		"wildcard activation":   {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["*"]}`, []error{ErrInvalidActivationEvent}},
+		"blank entrypoint":      {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":" "}}`, []error{ErrInvalidBackend}},
+		"activation no backend": {`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onIndexChanged"]}`, []error{ErrNoBackend}},
+		"services no backend":   {`{"id":"a.b","name":"A","version":"1.0.0","services":["a.b.S"]}`, []error{ErrNoBackend}},
+		"runtime no backend":    {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"r","kind":"runtime"}]}`, []error{ErrNoBackend}},
+		"invalid permission":    {`{"id":"a.b","name":"A","version":"1.0.0","permissions":["bad"]}`, []error{ErrInvalidPermission}},
+		"dep empty id":          {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"kind":"model"}]}`, []error{ErrInvalidDependency}},
+		"dep duplicate id":      {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model"},{"id":"d","kind":"model"}]}`, []error{ErrInvalidDependency}},
+		"dep unknown kind":      {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"bad"}]}`, []error{ErrInvalidDependency}},
+		"dep checksum no url":   {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","checksumSha256":"` + sum + `"}]}`, []error{ErrInvalidDependency}},
 		"dep http url": {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model",` +
-			`"sourceUrl":"http://example.com/a","checksumSha256":"` + sum + `"}]}`, ErrInvalidDependency},
-		"dep bad checksum":        {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","sourceUrl":"https://example.com/a","checksumSha256":"bad"}]}`, ErrInvalidDependency},
-		"service bad name":        {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["Bad"]}`, ErrInvalidService},
-		"service duplicate":       {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["a.b.S","a.b.S"]}`, ErrInvalidService},
-		"setting empty key":       {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"","type":"string","title":"T"}]}`, ErrEmptySettingKey},
-		"setting named enabled":   {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"enabled","type":"boolean","title":"T"}]}`, ErrReservedSettingKey},
-		"setting named discover":  {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"discover","type":"boolean","title":"T"}]}`, ErrReservedSettingKey},
-		"setting duplicate key":   {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":"T"},{"key":"k","type":"string","title":"T"}]}`, ErrDuplicateSettingKey},
-		"setting empty title":     {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":" "}]}`, ErrEmptySettingTitle},
-		"setting bad type":        {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"bad","title":"T"}]}`, ErrInvalidSettingType},
-		"setting enum no options": {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"enum","title":"T"}]}`, ErrEnumMissingOptions},
-		"setting range min > max": {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"range","title":"T","min":20,"max":10}]}`, ErrRangeInvalidBounds},
+			`"sourceUrl":"http://example.com/a","checksumSha256":"` + sum + `"}]}`, []error{ErrInvalidDependency}},
+		"dep bad checksum": {
+			`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","sourceUrl":"https://example.com/a","checksumSha256":"bad"}]}`,
+			[]error{ErrInvalidDependency},
+		},
+		"service bad name":  {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["/bad"]}`, []error{ErrInvalidService}},
+		"service duplicate": {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["a.b.S","a.b.S"]}`, []error{ErrInvalidService}},
+		"setting empty key": {
+			`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"","type":"string","title":"T"},{"key":"b","type":"bad","title":"T"}]}`,
+			[]error{ErrEmptySettingKey, ErrInvalidSettingType},
+		},
+		"setting named enabled": {
+			`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"enabled","type":"boolean","title":"T"},{"key":"b","type":"bad","title":"T"}]}`,
+			[]error{ErrReservedSettingKey, ErrInvalidSettingType},
+		},
+		"setting named discover": {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"discover","type":"boolean","title":"T"}]}`, []error{ErrReservedSettingKey}},
+		"setting duplicate key": {
+			`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":"T"},{"key":"k","type":"string","title":"T"},{"key":"b","type":"bad","title":"T"}]}`,
+			[]error{ErrDuplicateSettingKey, ErrInvalidSettingType},
+		},
+		"setting key with dot":     {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"a.b","type":"string","title":"T"}]}`, []error{ErrInvalidSettingKey}},
+		"setting empty title":      {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":" "}]}`, []error{ErrEmptySettingTitle}},
+		"setting bad type":         {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"bad","title":"T"}]}`, []error{ErrInvalidSettingType}},
+		"setting enum no options":  {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"enum","title":"T"}]}`, []error{ErrEnumMissingOptions}},
+		"setting range min > max":  {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"range","title":"T","min":20,"max":10}]}`, []error{ErrRangeInvalidBounds}},
+		"setting bad generate":     {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":"T","generate":"uuid"}]}`, []error{ErrInvalidSetting}},
+		"setting generate default": {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":"T","generate":"token","default":"x"}]}`, []error{ErrInvalidSetting}},
 		"setting badoption dep": {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d1","kind":"model"}],` +
-			`"settings":[{"key":"k","type":"enum","title":"T","options":[{"value":"v","dependencies":["d2"]}]}]}`, ErrInvalidSetting},
-		"setting view no frontend": {`{"id":"a.b","name":"A","version":"1.0.0","settingsViews":[{"id":"v","title":"T"}]}`, ErrInvalidSettingsView},
+			`"settings":[{"key":"k","type":"enum","title":"T","options":[{"value":"v","dependencies":["d2"]}]}]}`, []error{ErrInvalidSetting}},
+		"setting view no frontend": {`{"id":"a.b","name":"A","version":"1.0.0","settingsViews":[{"id":"v","title":"T"}]}`, []error{ErrInvalidSettingsView}},
 	} {
 		_, err := manifestjson.Read(strings.NewReader(tc.json))
-		if !errors.Is(err, tc.want) {
-			t.Errorf("%s: got %v, want %v", name, err, tc.want)
+		for _, want := range tc.want {
+			if !errors.Is(err, want) {
+				t.Errorf("%s: got %v, want %v", name, err, want)
+			}
 		}
 	}
 }
@@ -348,8 +387,8 @@ func TestAnOptionMayCarryACondition(t *testing.T) {
 func TestAnOptionConditionThatIsNotValidIsRejected(t *testing.T) {
 	for _, text := range []string{"app.os == 'linux'", "app.platform =="} {
 		err := readOptionWhenManifest(`{"value":"y","when":"` + text + `"}`)
-		if !errors.Is(err, ErrInvalidSetting) || !strings.Contains(err.Error(), "when") {
-			t.Errorf("%q: err = %v, want an invalid setting naming when", text, err)
+		if !errors.Is(err, ErrInvalidSetting) || !strings.Contains(err.Error(), "when") || !hasWrappedCause(err, ErrInvalidSetting) {
+			t.Errorf("%q: err = %v, want an invalid setting wrapping when", text, err)
 		}
 	}
 }
@@ -362,7 +401,10 @@ func readDescribedSetting(description, details string) (Manifest, error) {
 }
 
 func TestASettingDescriptionLongerThanOneLineIsRefused(t *testing.T) {
-	_, err := readDescribedSetting(strings.Repeat("w", MaxSettingDescriptionLength+1), "")
+	if MaxSettingDescriptionLength != 64 {
+		t.Fatalf("MaxSettingDescriptionLength = %d, want 64", MaxSettingDescriptionLength)
+	}
+	_, err := readDescribedSetting(strings.Repeat("w", 65), "")
 
 	if !errors.Is(err, ErrLongSettingDescription) {
 		t.Fatalf("got %v, want %v", err, ErrLongSettingDescription)
@@ -370,7 +412,7 @@ func TestASettingDescriptionLongerThanOneLineIsRefused(t *testing.T) {
 }
 
 func TestASettingDescriptionOfOneLineIsAcceptedWithItsDetails(t *testing.T) {
-	description := strings.Repeat("é", MaxSettingDescriptionLength)
+	description := strings.Repeat("é", 64)
 	details := "Long lines break at the edge of the editor and are kept whole in the file."
 
 	m, err := readDescribedSetting(description, details)

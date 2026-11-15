@@ -3,6 +3,8 @@ package keychain
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
@@ -15,8 +17,18 @@ import (
 // and gone once deleted.
 func TestAKeyIsStoredReplacedAndDeleted(t *testing.T) {
 	keyring.MockInit()
+	work := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(work, "credentials"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(work, "credentials", "credentials.json"), []byte(`{"md.numen.agent/apiKey":"old"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(work)
+
 	store := Store{}
-	ctx := t.Context()
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	defer cancel()
 
 	if err := store.SetKey(ctx, "md.numen.agent/apiKey", "value-one"); err != nil {
 		t.Fatal(err)
@@ -85,6 +97,11 @@ func TestAMachineWithoutAKeychainFailsWithANamedError(t *testing.T) {
 	keyring.MockInit()
 	if _, err := store.GetKey(ctx, "n"); !errors.Is(err, plugin.ErrNoKey) {
 		t.Errorf("a key set while the keychain was down was kept: %v", err)
+	}
+
+	useNoKeychain(t)
+	if _, err := store.GetKey(ctx, "n"); !errors.Is(err, plugin.ErrNoKeyStore) {
+		t.Errorf("zero Store without keychain returned %v, want ErrNoKeyStore", err)
 	}
 }
 

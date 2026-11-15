@@ -20,24 +20,21 @@ type section struct {
 func sections(body []byte, first, last int) []section {
 	var out []section
 	var f markdown.Fence
-	for pos := 0; pos <= len(body); {
-		// gomutants:disable-next-line INTEGER_INCREMENT reason="Any value > len(body) terminates the loop on the next iteration."
-		end, next := len(body), len(body)+1
-		if i := bytes.IndexByte(body[pos:], '\n'); i >= 0 {
-			end, next = pos+i, pos+i+1
+	for pos := 0; ; {
+		end := len(body)
+		i := bytes.IndexByte(body[pos:], '\n')
+		if i >= 0 {
+			end = pos + i
 		}
 		line := bytes.TrimRight(body[pos:end], "\r")
 		if !f.IsCrossedByBytes(line) && !f.IsInside() {
-			out = openSection(out, line, levelRange{first: first, last: last}, lineOffsets{pos: pos, next: next, size: len(body)})
+			out = openSection(out, line, levelRange{first: first, last: last}, lineOffsets{pos: pos, next: min(end+1, len(body)), size: len(body)})
 		}
-		pos = next
+		if i < 0 {
+			return out
+		}
+		pos = end + 1
 	}
-	// gomutants:disable-next-line INTEGER_INCREMENT,BRANCH_IF reason="openSection already initializes every section with to = len(body)."
-	if n := len(out); n > 0 {
-		// gomutants:disable-next-line STATEMENT_REMOVE reason="openSection already initializes every section with to = len(body)."
-		out[n-1].to = len(body)
-	}
-	return out
 }
 
 func openSection(out []section, line []byte, levels levelRange, offsets lineOffsets) []section {

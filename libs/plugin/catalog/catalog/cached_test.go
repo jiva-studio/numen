@@ -31,6 +31,11 @@ func TestAnEmptyCacheFillsFromTheSource(t *testing.T) {
 	if readErr != nil || !snapshot.At.Equal(getEpoch()) || len(snapshot.Entries) != 1 {
 		t.Errorf("snapshot = %+v, %v; want the listing taken at %v", snapshot, readErr, getEpoch())
 	}
+
+	zeroClock := catalog.NewCachedSource(source, &catalogtest.FakeCache{}, time.Hour, func() time.Time { return time.Time{} })
+	if zeroEntries, zeroErr := zeroClock.List(t.Context()); zeroErr != nil || len(zeroEntries) != 1 {
+		t.Errorf("zeroClock List on empty cache = %v, %v; want 1 entry", zeroEntries, zeroErr)
+	}
 }
 
 func TestAnEmptyCacheAndAFailingSourceReturnTheFailure(t *testing.T) {
@@ -65,18 +70,19 @@ func TestAFreshSnapshotIsNotReadFromTheSourceAgain(t *testing.T) {
 }
 
 func TestAStaleSnapshotAnswersWhenTheSourceCannot(t *testing.T) {
-	source := catalogtest.NewFakeSource("remote", entry("org.example.a", "1.0.0", catalog.StateAvailable))
+	source := &partialSource{entries: []catalog.Entry{entry("org.example.a", "1.0.0", catalog.StateAvailable)}}
 	now := &clock{now: getEpoch()}
 	cached := catalog.NewCachedSource(source, &catalogtest.FakeCache{}, time.Hour, now.Now)
 	if _, err := cached.List(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	source.Err = errors.New("offline")
+	source.entries = nil
+	source.err = errors.New("offline")
 	now.now = getEpoch().Add(2 * time.Hour)
 
 	entries, err := cached.List(t.Context())
 
-	if len(entries) != 1 || !errors.Is(err, source.Err) {
+	if len(entries) != 1 || !errors.Is(err, source.err) {
 		t.Errorf("List = %v, %v; want the last snapshot with the failure of the source", entries, err)
 	}
 }

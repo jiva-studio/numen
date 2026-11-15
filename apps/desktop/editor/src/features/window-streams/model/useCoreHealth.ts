@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 
 /** Whether the window can read the vault at all, and what it lost its connection to. */
-export function useDisplayHealth() {
+export function useCoreHealth() {
   return {
     isIndexing: ref(true),
     /** The core could not be reached: nothing else in the window is true. */
@@ -11,4 +11,4 @@ export function useDisplayHealth() {
   }
 }
 
-export type DisplayHealth = ReturnType<typeof useDisplayHealth>
+export type CoreHealth = ReturnType<typeof useCoreHealth>

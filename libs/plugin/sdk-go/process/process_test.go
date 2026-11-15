@@ -1,8 +1,10 @@
 package process_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
@@ -38,6 +40,11 @@ func (r *failingReleaser) Release(context.Context) error {
 }
 
 func TestReleaseAndLogTellsTheHost(t *testing.T) {
+	var logBuf bytes.Buffer
+	origLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logBuf, nil)))
+	t.Cleanup(func() { slog.SetDefault(origLogger) })
+
 	host := processtest.NewHost(t)
 
 	process.ReleaseAndLog(t.Context(), host.NewClient(t))
@@ -45,9 +52,17 @@ func TestReleaseAndLogTellsTheHost(t *testing.T) {
 	if got := host.CountReleases(); got != 1 {
 		t.Errorf("releases = %d, want 1", got)
 	}
+	if logBuf.Len() != 0 {
+		t.Errorf("unexpected log on clean release: %s", logBuf.String())
+	}
 }
 
 func TestReleaseAndLogSurvivesAFailedReleaseAndANilReleaser(t *testing.T) {
+	var logBuf bytes.Buffer
+	origLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logBuf, nil)))
+	t.Cleanup(func() { slog.SetDefault(origLogger) })
+
 	releaser := &failingReleaser{}
 
 	process.ReleaseAndLog(t.Context(), releaser)
@@ -55,5 +70,8 @@ func TestReleaseAndLogSurvivesAFailedReleaseAndANilReleaser(t *testing.T) {
 
 	if releaser.calls != 1 {
 		t.Errorf("calls = %d, want 1", releaser.calls)
+	}
+	if logBuf.Len() == 0 {
+		t.Error("expected warning log on failed release")
 	}
 }

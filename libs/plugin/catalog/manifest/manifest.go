@@ -397,7 +397,7 @@ func (m Manifest) listPermissionIssues() []error {
 	}
 	for _, operation := range m.ListConnectionsUse() {
 		for _, s := range m.Settings {
-			if s.Type == SettingTypeConnections && slices.Contains(s.Operations, operation) {
+			if slices.Contains(s.Operations, operation) {
 				issues = append(issues, fmt.Errorf("%w: %s, and the setting %s holds rows for the operation", ErrInvalidPermission, FormatConnectionsUse(operation), s.Key))
 			}
 		}

@@ -42,10 +42,7 @@ func (t *toolset) registry() (*tools.Registry, error) {
 		Effect:       tools.ReadWrite,
 		Instructions: []string{transcriptUseSentence, transcriptSlowSentence, transcriptBackgroundSentence, transcriptOnceSentence},
 	}, t.createTranscript)
-	if err != nil {
-		return nil, err
-	}
-	return registry, nil
+	return registry, err
 }
 
 func (t *toolset) createTranscript(ctx context.Context, in api.TranscriptCreateInput) (api.TranscriptCreateOutput, error) {
