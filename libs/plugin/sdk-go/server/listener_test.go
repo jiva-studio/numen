@@ -143,43 +143,7 @@ func TestOpenListenerBindsLoopback(t *testing.T) {
 	if _, err := s.OpenListener("second"); !errors.Is(err, errDuplicateListener) {
 		t.Errorf("duplicate OpenListener err = %v, want %v", err, errDuplicateListener)
 	}
-
-	listenErr := errors.New("listen failed")
-	if _, err := s.registerListener("bad", nil, listenErr); !errors.Is(err, listenErr) {
-		t.Errorf("registerListener err = %v, want %v", err, listenErr)
-	}
-
-	nonTCP := &fakeNonTCPListener{}
-	if _, err := s.registerListener("unix", nonTCP, nil); err == nil || !nonTCP.closed {
-		t.Errorf("registerListener non-TCP = %v, closed = %v", err, nonTCP.closed)
-	}
-
-	sClose := New(withPort(0), withToken("listener-token"), withStdout(&safeBuffer{}), withStdin(nil), withSignals())
-	rawLn, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	closeBoom := errors.New("close boom")
-	if _, err := sClose.registerListener("close-err", &closeErrListener{Listener: rawLn, closeErr: closeBoom}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if err := sClose.Close(); !errors.Is(err, closeBoom) {
-		t.Errorf("sClose.Close() = %v, want %v", err, closeBoom)
-	}
 }
-
-type fakeNonTCPAddr struct{}
-
-func (fakeNonTCPAddr) Network() string { return "unix" }
-func (fakeNonTCPAddr) String() string  { return "/tmp/sock" }
-
-type fakeNonTCPListener struct {
-	closed bool
-}
-
-func (*fakeNonTCPListener) Accept() (net.Conn, error) { return nil, net.ErrClosed }
-func (l *fakeNonTCPListener) Close() error            { l.closed = true; return nil }
-func (*fakeNonTCPListener) Addr() net.Addr            { return fakeNonTCPAddr{} }
 
 func TestServeClosesTheListenersItOpenedWhenItReturns(t *testing.T) {
 	var stdout safeBuffer

@@ -252,7 +252,10 @@ func (h History) GetSpentUnder(
 				one.Reviews++
 			}
 		}
-		one.Took += a.GetCountedTime()
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="Adding a zero duration leaves one.Took unchanged."
+		if took := a.GetCountedTime(); took > 0 {
+			one.Took += took
+		}
 		out[path] = one
 	}
 	return out

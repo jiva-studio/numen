@@ -50,7 +50,7 @@ export function verifyStoriesReadNoGeometryOutsideAllowlist() {
   const files = (listed.stdout || "").split("\0").filter((file) => file.endsWith(".stories.ts") && fs.existsSync(path.join(REPO_ROOT, file)));
   requireMatches("Story files", files.length);
   const stories = files.map((file) => [file, fs.readFileSync(path.join(REPO_ROOT, file), "utf8")]);
-  const allowed = JSON.parse(fs.readFileSync(ALLOWLIST, "utf8"));
+  const allowed = JSON.parse(fs.readFileSync(ALLOWLIST, "utf8")).stories;
   failOnFindings("A story reads a box or a style outside the allow-list", findGeometryReadsOutsideAllowlist(stories, allowed));
 }
 

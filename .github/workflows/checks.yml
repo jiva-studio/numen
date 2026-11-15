@@ -60,6 +60,17 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node tools/git-hooks/check-commit.mjs
 
+      # A pull request of type test changes test material only; HEAD^1 is the base of the merge commit.
+      - name: Check that a test pull request changes tests only
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: node tools/git-hooks/check-test-files.mjs
+
+      - name: Test the pull request title checks
+        if: ${{ !cancelled() }}
+        run: node --test tools/git-hooks/*.test.mjs
+
       - id: go
         if: ${{ !cancelled() && inputs.workflows }}
         uses: ./.github/actions/setup-go

@@ -20,12 +20,12 @@ const request = {
 }
 
 const clients = createHandledClients(request)
-const api = {
+const getApi = () => ({
   ...createTaskApi(clients.windowService),
   ...createQuitApi(clients.windowService),
   ...createFocusApi(clients.workspace),
   ...createShownVaultApi(clients.windowService),
-}
+})
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -33,7 +33,7 @@ beforeEach(() => {
 
 describe('a flush reported', () => {
   it('says nothing was left where the window had nothing unsaved', async () => {
-    await api.reportFlush('token-1')
+    await getApi().reportFlush('token-1')
 
     expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -43,7 +43,7 @@ describe('a flush reported', () => {
   })
 
   it('says what the window wrote', async () => {
-    await api.reportFlush('token-1', 'written')
+    await getApi().reportFlush('token-1', 'written')
 
     expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -63,7 +63,7 @@ describe('the vault the window shows', () => {
   it('is the vault the core names for this window', async () => {
     request.getCurrentVault.mockResolvedValue({ vault: 'physics' })
 
-    expect(await api.getShownVault()).toBe('physics')
+    expect(await getApi().getShownVault()).toBe('physics')
     expect(request.getCurrentVault.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 })
@@ -76,7 +76,7 @@ describe('the streams a window follows', () => {
       yield { path: 'Heat.md', ranges: [{ start: 4, end: 9 }], tabId: 'note:1' }
     })
 
-    expect(await readAll(api.watchFocus(signal))).toStrictEqual([
+    expect(await readAll(getApi().watchFocus(signal))).toStrictEqual([
       { path: 'Heat.md', ranges: [{ start: 4, end: 9 }], tabId: 'note:1' },
     ])
   })
@@ -90,7 +90,7 @@ describe('the streams a window follows', () => {
     })
     const controller = new AbortController()
 
-    const readTask = readAll(api.watchFocus(controller.signal))
+    const readTask = readAll(getApi().watchFocus(controller.signal))
     await vi.waitFor(() => expect(requestSignal).toBeDefined())
     controller.abort()
 
@@ -99,11 +99,23 @@ describe('the streams a window follows', () => {
   })
 
   it('follows a quit requested of this window', async () => {
-    request.watchQuit.mockImplementation(async function* () {
+    request.watchQuit.mockImplementation(async function* (_req, context) {
       yield { token: 'token-9', flush: true }
+      if (!context.signal.aborted) {
+        yield { token: 'token-10', flush: false }
+      }
     })
+    const controller = new AbortController()
+    const seen: object[] = []
 
-    expect(await readAll(api.watchQuit(signal))).toStrictEqual([{ token: 'token-9', flush: true }])
+    await (async () => {
+      for await (const item of getApi().watchQuit(controller.signal)) {
+        seen.push(item)
+        controller.abort()
+      }
+    })().catch(() => undefined)
+
+    expect(seen).toStrictEqual([{ token: 'token-9', flush: true }])
     expect(request.watchQuit.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 
@@ -143,7 +155,7 @@ describe('the streams a window follows', () => {
       }
     })
 
-    expect(await readAll(api.watchTasks(signal))).toStrictEqual([
+    expect(await readAll(getApi().watchTasks(signal))).toStrictEqual([
       [
         {
           id: 'scan',
@@ -173,7 +185,7 @@ describe('the streams a window follows', () => {
   it('asks the core of this window to cancel a task by its id', async () => {
     request.cancelTask.mockResolvedValue({})
 
-    await api.cancelTask('making the vectors')
+    await getApi().cancelTask('making the vectors')
 
     expect(request.cancelTask.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -184,6 +196,6 @@ describe('the streams a window follows', () => {
   it('rejects when the core does not cancel the task', async () => {
     request.cancelTask.mockRejectedValue(createLostConnection('not found'))
 
-    await expect(api.cancelTask('gone')).rejects.toThrow('not found')
+    await expect(getApi().cancelTask('gone')).rejects.toThrow('not found')
   })
 })

@@ -10,20 +10,24 @@ const PLUGINS = [
 
 const createStarts = () => {
   const started: string[] = []
+  const startedTabKinds: (readonly string[])[] = []
   const writeMessage = vi.fn()
   const starts = createTabPluginStarts({
     status: {
       startPlugin: async (id) => {
         started.push(id)
       },
-      startTabPlugins: async () => {
-        throw new ReportedError('The chart kind is not declared')
+      startTabPlugins: async (kinds = []) => {
+        startedTabKinds.push(kinds)
+        if (kinds.includes('chart')) {
+          throw new ReportedError('The chart kind is not declared')
+        }
       },
     },
     getPlugins: () => PLUGINS,
     writeMessage,
   })
-  return { starts, started, writeMessage }
+  return { starts, started, startedTabKinds, writeMessage }
 }
 
 describe('the plugin starts of the tabs', () => {
@@ -35,12 +39,21 @@ describe('the plugin starts of the tabs', () => {
     expect(started).toStrictEqual(['org.example.scrolls'])
   })
 
+  it('starts the plugin of a tab kind and waits for it', async () => {
+    const { starts, startedTabKinds } = createStarts()
+
+    await starts.startTabKind('deck')
+
+    expect(startedTabKinds).toStrictEqual([['deck']])
+  })
+
   it('reports a plugin of a tab kind that did not start', async () => {
-    const { starts, writeMessage } = createStarts()
+    const { starts, startedTabKinds, writeMessage } = createStarts()
 
     starts.startKindPlugin('chart')
     await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledOnce())
 
+    expect(startedTabKinds).toStrictEqual([['chart']])
     expect(writeMessage).toHaveBeenCalledWith(
       'The plugin of the chart tab did not start: The chart kind is not declared',
       'error',

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/apitest"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
@@ -23,7 +24,7 @@ func TestEveryBudgetTheSchemaNamesIsOneTheCoreContains(t *testing.T) {
 		api.BudgetNamePaused:      review.ClosedPaused,
 	}
 
-	for _, named := range api.GetBudgetNameValues() {
+	for _, named := range apitest.GetBudgetNameValues() {
 		one, reply := target[named]
 		if !reply {
 			t.Errorf("the schema names %s and nothing in the core answers to it", named)

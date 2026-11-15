@@ -25,7 +25,7 @@ const QUALITY = 90
 const DRAWN = 20_000
 /*
  * A window narrower than the column it is drawn in, so the application's own
- * text lands on the page larger than it stands on screen and can be read at a
+ * text is drawn on the page larger than on screen and can be read at a
  * glance.
  */
 const VIEWPORT = { width: 1180, height: 740 }

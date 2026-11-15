@@ -29,15 +29,6 @@ func NewLevel(name string) Level {
 	return Level{Name: name, Title: title}
 }
 
-// NewLevels returns the levels of the names, in the order given.
-func NewLevels(names ...string) []Level {
-	levels := make([]Level, 0, len(names))
-	for _, name := range names {
-		levels = append(levels, NewLevel(name))
-	}
-	return levels
-}
-
 // IsKnown reports whether the name is one of the level names.
 func IsKnown(name string) bool {
 	return slices.Contains(listLevelNames(), strings.ToLower(strings.TrimSpace(name)))

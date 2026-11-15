@@ -70,6 +70,9 @@ func (c *Cache) Put(ctx context.Context, checksum string, content io.Reader) err
 	}
 	checked := &checkedReader{getContextError: ctx.Err, content: content, hash: sha256.New(), checksum: checksum}
 	if err := atomicfile.WriteFile(destination, checked, 0o600); err != nil {
+		if errors.Is(err, catalog.ErrChecksumMismatch) {
+			return err
+		}
 		return fmt.Errorf("write the package: %w", err)
 	}
 	return nil

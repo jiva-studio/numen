@@ -62,7 +62,9 @@ describe('the plugins a window loads', () => {
     const { start, pluginLoader } = setup()
 
     await start.waitForInterface()
+    await start.close()
 
     expect(pluginLoader.status.waitForInterface).toHaveBeenCalledOnce()
+    expect(pluginLoader.close).toHaveBeenCalledOnce()
   })
 })

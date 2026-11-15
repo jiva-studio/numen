@@ -69,6 +69,9 @@ type Document interface {
 
 // Documents opens the bytes of the file at a path, by its extension.
 type Documents interface {
+	// Prepare starts in the background what opening a document needs, so a recognition prepares while it waits for its turn.
+	// report receives the failure.
+	Prepare(report func(err error))
 	Open(filePath string, raw []byte) (Document, error)
 }
 
@@ -133,19 +136,6 @@ type Request struct {
 type Result struct {
 	Pages   int
 	IsEmpty bool
-}
-
-// Recognize reads the file and stores its text version. A failure is shown as a task until
-// the file is recognized again, and so is a file from which nothing is read. A failure of a missing
-// file ends the task. For a file another run has locked, it returns ErrAlreadyRecognizing.
-func (r *Recognition) Recognize(ctx context.Context, req Request) (Result, error) {
-	req, key, err := r.claim(ctx, req)
-	if err != nil {
-		return Result{}, err
-	}
-	release := sync.OnceFunc(func() { r.release(key) })
-	defer release()
-	return r.runRecognition(ctx, req, release)
 }
 
 // Start claims the file and recognizes it in the background under ctx, and returns false when
@@ -319,6 +309,7 @@ func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task
 	if err != nil {
 		return Result{}, err
 	}
+	r.host.Documents.Prepare(func(err error) { r.reportError("prepare the documents", err) })
 	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: func() {
 		queuedTask := *task
 		if rec != nil {

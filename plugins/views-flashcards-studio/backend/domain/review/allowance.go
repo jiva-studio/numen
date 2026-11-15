@@ -80,15 +80,6 @@ func (c BudgetNames) Add(one BudgetName) BudgetNames {
 	return out
 }
 
-// GetName is the key one budget is written under, and empty where the day was
-// closed by none or by more than one.
-func (c BudgetNames) GetName() string {
-	if len(c) != 1 {
-		return ""
-	}
-	return string(c[0])
-}
-
 // Limits is which key caps each budget under the goal in force, each written as
 // the preset writes the key, and empty where it takes no part.
 //

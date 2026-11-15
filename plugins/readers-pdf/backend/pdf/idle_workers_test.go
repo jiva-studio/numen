@@ -7,35 +7,10 @@ import (
 	"sync"
 	"testing"
 	"time"
-)
 
-func TestTheIdleWorkersFitTheAvailableMemory(t *testing.T) {
-	const mb = int64(1 << 20)
-	cases := []struct {
-		name      string
-		planned   int
-		available int64
-		want      int
-	}{
-		{"a small laptop is capped by memory", 4, 2048 * mb, 3},
-		{"a desktop is capped by the plan", 6, 16 * 1024 * mb, 6},
-		{"a server is capped by the plan", 32, 64 * 1024 * mb, 32},
-		{"unknown memory keeps none", 8, 0, 0},
-		{"no plan keeps none", 0, 16 * 1024 * mb, 0},
-		{"negative plan keeps none", -1, 2048 * mb, 0},
-		{"negative memory keeps none", 4, -1, 0},
-		{"one planned worker with minimal fitting memory", 1, 700 * mb, 1},
-		{"one planned worker with 1 byte of memory", 1, 1, 0},
-	}
-	for _, c := range cases {
-		if got := ComputeIdleWorkers(c.planned, c.available); got != c.want {
-			t.Errorf("%s: %d idle workers, want %d", c.name, got, c.want)
-		}
-	}
-	if got := ComputeIdleWorkers(4, 2048*mb); got < 1 || got >= 4 {
-		t.Errorf("a small laptop keeps %d idle workers, want fewer than planned but some", got)
-	}
-}
+	"github.com/klippa-app/go-pdfium"
+	"github.com/klippa-app/go-pdfium/webassembly"
+)
 
 func startIdlePool(t *testing.T, idle int, period time.Duration) *Workers {
 	t.Helper()
@@ -223,5 +198,203 @@ func TestAcquiringDocumentCancelsPendingIdleRelease(t *testing.T) {
 	workers.mu.Unlock()
 	if !timerStopped {
 		t.Error("expected release timer to be canceled and cleared upon acquiring document")
+	}
+}
+
+func getIdleCount(workers *Workers) int {
+	workers.mu.Lock()
+	defer workers.mu.Unlock()
+	return workers.idle
+}
+
+func TestANewIdleCountClosesThePoolOnceTheLastDocumentCloses(t *testing.T) {
+	workers := startIdlePool(t, 1, time.Hour)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	workers.SetWorkers(0, 3)
+	if !hasPool(workers) {
+		closeAndCheck(t, doc)
+		t.Fatal("the pool was closed while a document was open on it")
+	}
+	closeAndCheck(t, doc)
+	if hasPool(workers) {
+		t.Fatal("the pool of the old idle count is kept after the last document closed")
+	}
+	if got := getIdleCount(workers); got != 3 {
+		t.Errorf("the pool keeps %d idle workers, want 3", got)
+	}
+	again, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeAndCheck(t, again)
+	if !hasPool(workers) {
+		t.Error("the pool of the new idle count closed with its document")
+	}
+}
+
+func TestANewIdleCountClosesAPoolNoDocumentIsOpenOn(t *testing.T) {
+	workers := startIdlePool(t, 2, time.Hour)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeAndCheck(t, doc)
+	workers.SetWorkers(0, 1)
+	if hasPool(workers) {
+		t.Fatal("the idle pool of the old count is kept")
+	}
+}
+
+func TestTheSameIdleCountKeepsThePool(t *testing.T) {
+	workers := startIdlePool(t, 2, time.Hour)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeAndCheck(t, doc)
+	workers.SetWorkers(0, 2)
+	if !hasPool(workers) {
+		t.Fatal("the pool was closed for an idle count it already had")
+	}
+}
+
+func TestANewIdleCountDoesNotWaitForThePoolToStart(t *testing.T) {
+	workers := startIdlePool(t, 1, time.Hour)
+	isStarting := make(chan struct{})
+	finishStart := make(chan struct{})
+	workers.startPool = func(config webassembly.Config) (pdfium.Pool, error) {
+		close(isStarting)
+		<-finishStart
+		return webassembly.Init(config)
+	}
+	opened := make(chan *document, 1)
+	go func() {
+		doc, err := openPath(workers, "testdata/tiny.pdf")
+		if err != nil {
+			t.Error(err)
+		}
+		opened <- doc
+	}()
+	<-isStarting
+	isSet := make(chan struct{})
+	go func() {
+		workers.SetWorkers(0, 3)
+		close(isSet)
+	}()
+	select {
+	case <-isSet:
+	case <-time.After(5 * time.Second):
+		close(finishStart)
+		t.Fatal("setting the idle count waited for the pool to start")
+	}
+	close(finishStart)
+	doc := <-opened
+	if doc == nil {
+		return
+	}
+	closeAndCheck(t, doc)
+	if hasPool(workers) {
+		t.Fatal("the pool started with the old idle count is kept after its document closed")
+	}
+	if got := getIdleCount(workers); got != 3 {
+		t.Errorf("the pool keeps %d idle workers, want 3", got)
+	}
+}
+
+func TestANewWorkerCountStartsThePoolOfThatSize(t *testing.T) {
+	workers := startIdlePool(t, 2, time.Hour)
+	workers.SetWorkers(oldWorkerCount, 2)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeAndCheck(t, doc)
+	var started []int
+	workers.startPool = func(config webassembly.Config) (pdfium.Pool, error) {
+		started = append(started, config.MaxTotal)
+		return webassembly.Init(config)
+	}
+	workers.SetWorkers(newWorkerCount, 2)
+	if hasPool(workers) {
+		t.Fatal("the idle pool of the old worker count is kept")
+	}
+	again, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeAndCheck(t, again)
+	if len(started) != 1 || started[0] != newWorkerCount {
+		t.Errorf("the pools started with %v workers, want [%d]", started, newWorkerCount)
+	}
+}
+
+func TestANewWorkerCountClosesThePoolOnceTheLastDocumentCloses(t *testing.T) {
+	workers := startIdlePool(t, 2, time.Hour)
+	workers.SetWorkers(oldWorkerCount, 2)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	workers.SetWorkers(newWorkerCount, 2)
+	if !hasPool(workers) {
+		closeAndCheck(t, doc)
+		t.Fatal("the pool was closed while a document was open on it")
+	}
+	closeAndCheck(t, doc)
+	if hasPool(workers) {
+		t.Fatal("the pool of the old worker count is kept after the last document closed")
+	}
+	if got := workers.GetWorkers(); got != newWorkerCount {
+		t.Errorf("the pool starts with %d workers, want %d", got, newWorkerCount)
+	}
+}
+
+const (
+	oldWorkerCount = 2
+	newWorkerCount = 3
+
+	heldWorkerWait  = 200 * time.Millisecond
+	freedWorkerWait = 5 * time.Second
+)
+
+func TestASecondDocumentWaitsForTheOnlyWorker(t *testing.T) {
+	workers := startIdlePool(t, 1, time.Hour)
+	workers.SetWorkers(1, 1)
+	first, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	opened := make(chan *document, 1)
+	go func() {
+		doc, err := openPath(workers, "testdata/tiny.pdf")
+		if err != nil {
+			t.Error(err)
+		}
+		opened <- doc
+	}()
+	select {
+	case doc := <-opened:
+		closeAndCheck(t, first)
+		if doc != nil {
+			closeAndCheck(t, doc)
+		}
+		t.Fatal("the second document opened while the only worker held the first")
+	case <-time.After(heldWorkerWait):
+	}
+	closeAndCheck(t, first)
+	select {
+	case doc := <-opened:
+		if doc == nil {
+			return
+		}
+		if doc.pages == 0 {
+			t.Error("the second document read no pages")
+		}
+		closeAndCheck(t, doc)
+	case <-time.After(freedWorkerWait):
+		t.Fatal("the second document did not open after the first closed")
 	}
 }
