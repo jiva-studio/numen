@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
@@ -18,6 +20,7 @@ const (
 	StateStarted = "started"
 	StateRunning = "running"
 	StateDone    = "done"
+	StateSkipped = "skipped"
 )
 
 var (
@@ -43,6 +46,16 @@ type Launcher struct {
 	mu       sync.Mutex
 	isClosed bool
 	running  map[string]context.CancelFunc
+	mode     settings.RecognizeMode
+	skipped  map[skipKey]struct{}
+}
+
+// skipKey names one version of a file: a change of its size or modification time makes a new key.
+type skipKey struct {
+	vault   domain.VaultID
+	path    string
+	size    int64
+	modTime time.Time
 }
 
 // New returns a launcher of the recognitions. pluginID names the plugin whose text versions count as
@@ -55,6 +68,8 @@ func New(recognitions *recognition.Recognition, pluginID string) *Launcher {
 		mu:           sync.Mutex{},
 		isClosed:     false,
 		running:      map[string]context.CancelFunc{},
+		mode:         settings.ModeOff,
+		skipped:      map[skipKey]struct{}{},
 	}
 }
 
@@ -106,23 +121,88 @@ func (l *Launcher) Create(ctx context.Context, vault domain.VaultID, path string
 	return out, nil
 }
 
-// StartFile starts the recognition of a file of the shown vault and fails when one already runs.
-func (l *Launcher) StartFile(ctx context.Context, path string) error {
+// SetMode sets when StartMissingFile recognizes a file. A change of the mode makes the launcher forget the
+// files it skipped.
+func (l *Launcher) SetMode(mode settings.RecognizeMode) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if mode != l.mode {
+		l.skipped = map[skipKey]struct{}{}
+	}
+	l.mode = mode
+}
+
+// StartFile starts the recognition of a file of the shown vault whatever the mode, and fails when one
+// already runs.
+func (l *Launcher) StartFile(ctx context.Context, path string) (string, error) {
+	vault, _, err := l.statFile(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	return l.startNew(ctx, vault, path)
+}
+
+// StartMissingFile starts the recognition of a file that has no text of its own, and returns
+// StateSkipped for a file with a text layer under the mode whenNoTextLayer.
+func (l *Launcher) StartMissingFile(ctx context.Context, path string) (string, error) {
+	vault, stat, err := l.statFile(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	isSkipped, err := l.isSkipped(ctx, skipKey{vault: vault, path: path, size: stat.Size, modTime: stat.ModTime})
+	if err != nil {
+		return "", err
+	}
+	if isSkipped {
+		return StateSkipped, nil
+	}
+	return l.startNew(ctx, vault, path)
+}
+
+func (l *Launcher) statFile(ctx context.Context, path string) (domain.VaultID, domain.FileStat, error) {
 	vault, err := l.recognitions.GetVaultID(ctx, "")
 	if err != nil {
-		return err
+		return "", domain.FileStat{}, err
 	}
-	if _, err := l.recognitions.StatFile(ctx, vault, path); err != nil {
-		return err
+	stat, err := l.recognitions.StatFile(ctx, vault, path)
+	if err != nil {
+		return "", domain.FileStat{}, err
 	}
+	return vault, stat, nil
+}
+
+func (l *Launcher) startNew(ctx context.Context, vault domain.VaultID, path string) (string, error) {
 	state, err := l.start(ctx, vault, path)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if state == StateRunning {
-		return fmt.Errorf("%s: %w", path, recognition.ErrAlreadyRecognizing)
+		return "", fmt.Errorf("%s: %w", path, recognition.ErrAlreadyRecognizing)
 	}
-	return nil
+	return state, nil
+}
+
+func (l *Launcher) isSkipped(ctx context.Context, key skipKey) (bool, error) {
+	l.mu.Lock()
+	mode := l.mode
+	_, isKnown := l.skipped[key]
+	l.mu.Unlock()
+	if mode != settings.ModeWhenNoTextLayer {
+		return false, nil
+	}
+	if isKnown {
+		return true, nil
+	}
+	hasLayer, err := l.recognitions.HasTextLayer(ctx, key.vault, key.path)
+	if err != nil || !hasLayer {
+		return false, err
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.mode == mode {
+		l.skipped[key] = struct{}{}
+	}
+	return true, nil
 }
 
 func (l *Launcher) start(ctx context.Context, vault domain.VaultID, path string) (string, error) {

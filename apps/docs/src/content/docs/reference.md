@@ -124,7 +124,7 @@ The settings of the plugin Document OCR.
 | `customModelPath` | text | paddleOCR text recognition model in ONNX format. |
 | `customDictPath` | text | a UTF-8 text file with one character per line. Leave it empty when the model carries its own dictionary. |
 | `dpi` | text | resolution a page is rendered at before recognition. One of `150`, `200`, `300`, `400`, `600`. |
-| `recognizeAutomatically` | yes or no | recognize every PDF and image in the vault that has no text. |
+| `recognizeMode` | text | when the text of a PDF or image is recognized without a request. One of `off`, `whenNoTextLayer`, `always`. |
 
 ### `md.numen.engines.transcription`
 

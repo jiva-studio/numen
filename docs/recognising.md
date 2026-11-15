@@ -53,7 +53,7 @@ A page was printed before it was scanned, so the recognition can be corrected ag
 
 ## A run
 
-The plugin runs automatically on a file of its types that has no live text version and whose pages have no text of their own, and a person can request any such file from its menu. A run nobody requested skips a file whose record is complete for its current bytes. A run waits in the host's queue, with a person's request before work nobody requested, and shows its progress as a task.
+The plugin runs by itself on a file of its types that has no live text version when the setting `recognizeMode` says so (see Settings): under `whenNoTextLayer` a PDF with any page text is left alone, and under `always` every file is recognised. A person can request any such file from its menu, and a request always recognises it, whatever the mode, also a PDF that has text. A run nobody requested skips a file whose record is complete for its current bytes. A run waits in the host's queue, with a person's request before work nobody requested, and shows its progress as a task.
 
 Recognition resumes where it stopped: the record is written after every eight pages, and a run whose record was made from the same bytes with the same recipe continues from the first page that the record does not contain. A record made from other bytes or by other models restarts from the first page. The version is reported once every page is read.
 
@@ -61,4 +61,4 @@ A file being recognised is not started again while its run is in progress.
 
 ## Settings
 
-The plugin's settings are specific to it: `dpi`, the resolution a page is drawn at before it is read (300), `language`, the recognition model (`auto`, `cyrillic`, `latin`, `ch`), and `customModelPath` and `customDictPath`, a recognition model and its character dictionary supplied by the person. A change to any of them reopens the recogniser for the next page. The settings of proofreading are in [Proofreading](proofreading.md).
+The plugin's settings are specific to it: `recognizeMode`, when text is recognized without a request (`off`, `whenNoTextLayer`, `always`; `off` by default), `dpi`, the resolution a page is drawn at before it is read (300), `language`, the recognition model (`auto`, `cyrillic`, `latin`, `ch`), and `customModelPath` and `customDictPath`, a recognition model and its character dictionary supplied by the person. A change to any of them reopens the recogniser for the next page. The settings of proofreading are in [Proofreading](proofreading.md).

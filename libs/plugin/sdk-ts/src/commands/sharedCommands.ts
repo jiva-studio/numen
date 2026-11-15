@@ -21,6 +21,8 @@ export interface SharedCommand {
 export const SHARED_COMMANDS: readonly SharedCommand[] = [
   // Creates a text version of a file.
   { id: 'app:file.createText', title: 'Create text', arguments: [] },
+  // Creates a text version of a file that has no text of its own.
+  { id: 'app:file.createMissingText', title: 'Create missing text', arguments: [] },
 ]
 
 /** A key of the application: a chord bound to the full id of a command, with values for its arguments and a condition. */

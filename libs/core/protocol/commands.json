@@ -5,6 +5,11 @@
       "id": "app:file.createText",
       "title": "Create text",
       "about": "creates a text version of a file"
+    },
+    {
+      "id": "app:file.createMissingText",
+      "title": "Create missing text",
+      "about": "creates a text version of a file that has no text of its own"
     }
   ],
   "appCommands": [

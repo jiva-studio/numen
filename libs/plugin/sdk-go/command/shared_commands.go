@@ -7,4 +7,6 @@ package command
 const (
 	// CreateText creates a text version of a file.
 	CreateText = "app:file.createText"
+	// CreateMissingText creates a text version of a file that has no text of its own.
+	CreateMissingText = "app:file.createMissingText"
 )
