@@ -104,10 +104,11 @@ func (s *modelSource) Resolve(req catalogmanifest.DependencyRequirement) (plugin
 	resolved := plugindomain.ResolvedDependency{
 		ID: req.ID, RootPath: s.dir, PrimaryPath: path, EnvVars: map[string]string{s.envName(req.ID): path},
 	}
+	state := plugindomain.DependencyStateReady
 	if _, err := os.Stat(path); err != nil {
-		return resolved, plugindomain.DependencyStateMissing, nil
+		state = plugindomain.DependencyStateMissing
 	}
-	return resolved, plugindomain.DependencyStateReady, nil
+	return resolved, state, nil
 }
 
 func (s *modelSource) Provision(
