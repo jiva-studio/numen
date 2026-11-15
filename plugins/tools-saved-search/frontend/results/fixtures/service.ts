@@ -143,7 +143,7 @@ export function createScriptedService(first: GetResultsResponse): ScriptedServic
       if (signal.aborted) throw abortError()
       if (typeof updateAnswer === 'string') throw new ServiceFailure(updateAnswer)
       if (updateAnswer.errors.length === 0) {
-        answer = { ...answer, query: request.query, rerank: request.rerank, limit: request.limit }
+        answer = { ...answer, query: request.query }
       }
       return updateAnswer
     },

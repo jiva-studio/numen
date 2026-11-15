@@ -8,14 +8,13 @@ export const WORDS = {
   separator: ' · ',
   lastRunFailed: 'Last run failed',
   noMatch: 'No passage matches the query.',
-  rerankLabel: 'Rerank:',
+  noFilterMatch: 'No result matches the filter.',
+  filterResults: 'Filter results',
+  sources: 'Sources',
   editQuery: 'Edit query',
   queryField: 'Query',
-  rerankField: 'Rerank',
-  limitField: 'Limit',
   save: 'Save',
   page: 'Page',
-  of: 'of',
   results: 'Results',
 } as const
 

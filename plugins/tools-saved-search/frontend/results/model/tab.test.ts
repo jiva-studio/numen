@@ -4,7 +4,15 @@
  * aborts the watch and the calls when it closes. It never asks the backend to run the search.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { COMPUTED, HARBOR, HARBOR_REFRESHED, NOTE_PATH } from '../fixtures/responses'
+import {
+  COMPUTED,
+  FAILED_LAST_RUN,
+  HARBOR,
+  HARBOR_REFRESHED,
+  HARBOR_TWO_LOGBOOK_PASSAGES,
+  MISSPELLED,
+  NOTE_PATH,
+} from '../fixtures/responses'
 import { createScriptedService } from '../fixtures/service'
 import { createSavedSearchTab } from './tab'
 
@@ -15,14 +23,13 @@ const LATER = { computedAt: '2026-11-14T10:05:00Z', isRunning: false }
 const setup = () => {
   const service = createScriptedService(HARBOR)
   const openAt = vi.fn()
-  const tab = createSavedSearchTab(NOTE_PATH, { service, openAt, locale: 'en-GB' })
-  return { service, openAt, tab, state: tab.state }
+  const notify = vi.fn()
+  const tab = createSavedSearchTab(NOTE_PATH, { service, openAt, notify, locale: 'en-GB' })
+  return { service, openAt, notify, tab, state: tab.state }
 }
 
 const CHANGE = {
   query: 'kind in ["note", "pdf"]\n&& meaning("the lighthouse keeper in a gale")',
-  rerank: 'The keeper of the lighthouse on a night of gale.',
-  limit: 20,
 }
 
 describe('following the results of a saved search', () => {
@@ -178,7 +185,7 @@ describe('following the results of a saved search', () => {
 })
 
 describe('opening a result', () => {
-  it('opens the file of a result at its range', async () => {
+  it('opens a passage at its range and a whole file at its start', async () => {
     const { service, openAt, tab, state } = setup()
     tab.follow()
     service.watch.emit(COMPUTED)
@@ -188,9 +195,7 @@ describe('opening a result', () => {
     state.actions.openResult(2)
 
     expect(openAt).toHaveBeenNthCalledWith(1, 'Logbooks/1911.pdf', [{ start: 48210, end: 50620 }])
-    expect(openAt).toHaveBeenNthCalledWith(2, 'Recordings/Pier talk.m4a', [
-      { start: 10233, end: 11413 },
-    ])
+    expect(openAt).toHaveBeenNthCalledWith(2, 'Harbor/Pier plan.png', [{ start: 0, end: 0 }])
   })
 
   it('opens nothing for an index without a result', async () => {
@@ -206,7 +211,7 @@ describe('opening a result', () => {
 })
 
 describe('saving the query of the note', () => {
-  it('saves the query, the rerank text and the limit of the note', async () => {
+  it('saves the query of the note', async () => {
     const { service, tab, state } = setup()
     tab.follow()
     service.watch.emit(COMPUTED)
@@ -233,8 +238,6 @@ describe('saving the query of the note', () => {
       'getResults',
     ])
     expect(state.view.value?.query).toBe(CHANGE.query)
-    expect(state.view.value?.rerank).toBe(CHANGE.rerank)
-    expect(state.view.value?.limit).toBe(20)
   })
 
   it('shows the problems of a query that was not saved', async () => {
@@ -295,5 +298,85 @@ describe('saving the query of the note', () => {
 
     expect(during).toBe(true)
     expect(state.isSaving.value).toBe(false)
+  })
+})
+
+describe('filtering the results', () => {
+  const setupWith = async (answer = HARBOR_TWO_LOGBOOK_PASSAGES) => {
+    const found = setup()
+    found.service.results.set(answer)
+    found.tab.follow()
+    found.service.watch.emit(COMPUTED)
+    await settle()
+    return found
+  }
+
+  it('shows every result in the order of the core before a filter', async () => {
+    const { state } = await setupWith()
+
+    expect(state.items.value.map((item) => item.index)).toStrictEqual([0, 1, 2, 3])
+  })
+
+  it('narrows the results by the filter text and starts no search', async () => {
+    const { service, state } = await setupWith()
+
+    state.actions.setFilter('quay')
+
+    expect(state.items.value.map((item) => item.text)).toStrictEqual([
+      'Ice on the quay; no boat went out for a week.',
+    ])
+    expect(service.calls).toStrictEqual(['watchResults', 'getResults'])
+  })
+
+  it('hides the results of an unchecked source and shows them again when checked', async () => {
+    const { state } = await setupWith()
+
+    state.actions.setSourceShown('Logbooks/1911.pdf', false)
+    const hidden = state.items.value.map((item) => item.source)
+    state.actions.setSourceShown('Logbooks/1911.pdf', true)
+
+    expect(hidden).toStrictEqual(['Harbor/Night of the gale.md', 'Harbor/Pier plan.png'])
+    expect(state.items.value).toHaveLength(4)
+  })
+
+  it('opens the result the filter leaves by its index in the answer', async () => {
+    const { openAt, state } = await setupWith()
+
+    state.actions.setFilter('quay')
+    const [item] = state.items.value
+    if (!item) throw new Error('the filter left no result')
+    state.actions.openResult(item.index)
+
+    expect(openAt).toHaveBeenCalledWith('Logbooks/1911.pdf', [{ start: 190400, end: 191220 }])
+  })
+})
+
+describe('telling of a failed run', () => {
+  it('tells nothing of the failure the tab opens with', async () => {
+    const { service, notify, tab } = setup()
+    service.results.set(FAILED_LAST_RUN)
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+
+    expect(notify).not.toHaveBeenCalled()
+  })
+
+  it('tells of a new failure once, with the problems of the query', async () => {
+    const { service, notify, tab } = setup()
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+
+    service.results.set(MISSPELLED)
+    service.watch.emit(LATER)
+    await settle()
+    service.watch.emit(LATER)
+    await settle()
+
+    expect(notify).toHaveBeenCalledTimes(1)
+    expect(notify).toHaveBeenCalledWith(
+      'Harbor master: winter storms: the query has problems\n9:4 unknown function meanin (did you mean meaning?)',
+    )
   })
 })

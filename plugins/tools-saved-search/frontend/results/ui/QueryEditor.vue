@@ -11,8 +11,6 @@ import QueryFields from './QueryFields.vue'
 defineProps<{
   isOpen: boolean
   query: string
-  rerank: string
-  limit: number
   problems: readonly string[]
   isSaving: boolean
 }>()
@@ -51,8 +49,6 @@ function onSave(change: SearchChange) {
       v-if="isOpen"
       :id="fieldsId"
       :query="query"
-      :rerank="rerank"
-      :limit="limit"
       :problems="problems"
       :is-saving="isSaving"
       @save="onSave"

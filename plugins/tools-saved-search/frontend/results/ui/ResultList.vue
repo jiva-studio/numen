@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * The results of a saved search, best first, each one button that opens its file at its place.
+ * The results of a saved search in the order of the core, each one button that opens its file at its
+ * place.
  */
 import type { ResultItemView } from '../lib/view'
 import ResultItem from './ResultItem.vue'
@@ -24,13 +25,15 @@ function onOpen(index: number) {
 
 <template>
   <ol class="saved-search__results" :aria-label="label">
-    <li v-for="(item, index) in items" :key="index" class="saved-search__results-item">
+    <li v-for="item in items" :key="item.index" class="saved-search__results-item">
       <ResultItem
         :title="item.title"
         :path="item.path"
         :place="item.place"
         :text="item.text"
-        @open="onOpen(index)"
+        :kind="item.kind"
+        :is-whole-file="item.isWholeFile"
+        @open="onOpen(item.index)"
       />
     </li>
   </ol>

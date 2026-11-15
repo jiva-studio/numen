@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * The tab of a saved search note: the title, the status line and a failed last run; the accordion that
- * edits the query; the query and the rerank text; the problems, the warnings and the results.
+ * edits the query; the query; the problems and the warnings; the filter and the sources of the results;
+ * and the results.
  */
 import { computed } from 'vue'
 import { WORDS as words } from '../../words'
@@ -9,6 +10,7 @@ import type { SavedSearchTabState, SearchChange } from '../model/tab'
 import QueryEditor from './QueryEditor.vue'
 import QueryPanel from './QueryPanel.vue'
 import ResultList from './ResultList.vue'
+import ResultsFilter from './ResultsFilter.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -17,6 +19,7 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const view = computed(() => props.state.view.value)
+const items = computed(() => props.state.items.value)
 const failure = computed(() => props.state.failure.value)
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -31,6 +34,14 @@ function onToggle() {
 function onOpen(index: number) {
   props.state.actions.openResult(index)
 }
+
+function onFilter(filter: string) {
+  props.state.actions.setFilter(filter)
+}
+
+function onToggleSource(path: string, isShown: boolean) {
+  props.state.actions.setSourceShown(path, isShown)
+}
 </script>
 
 <template>
@@ -44,14 +55,12 @@ function onOpen(index: number) {
       <QueryEditor
         :is-open="state.isEditing.value"
         :query="view.query"
-        :rerank="view.rerank"
-        :limit="view.limit"
         :problems="state.saveProblems.value"
         :is-saving="state.isSaving.value"
         @toggle="onToggle"
         @save="onSave"
       />
-      <QueryPanel :query="view.query" :rerank="view.rerank" :rerank-label="words.rerankLabel" />
+      <QueryPanel :query="view.query" />
       <p v-for="problem in view.problems" :key="problem" role="alert" class="saved-search__problem">
         {{ problem }}
       </p>
@@ -63,12 +72,16 @@ function onOpen(index: number) {
       >
         {{ warning }}
       </p>
-      <ResultList
+      <ResultsFilter
         v-if="view.items.length > 0"
-        :items="view.items"
-        :label="words.results"
-        @open="onOpen"
+        :filter="state.filter.value"
+        :sources="view.sources"
+        :hidden="state.hiddenSources.value"
+        @filter="onFilter"
+        @toggle="onToggleSource"
       />
+      <ResultList v-if="items.length > 0" :items="items" :label="words.results" @open="onOpen" />
+      <p v-else-if="view.items.length > 0" class="saved-search__empty">{{ words.noFilterMatch }}</p>
       <p v-else-if="view.emptyText" class="saved-search__empty">{{ view.emptyText }}</p>
     </template>
     <p v-if="failure" role="alert" class="saved-search__failure">{{ failure }}</p>

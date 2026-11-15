@@ -5,25 +5,25 @@
 /** The place of a result in its source: a page, a time of a recording, a position in a book. */
 export interface Place {
   readonly page?: number
-  readonly pageCount?: number
   readonly positionSeconds?: number
   readonly endSeconds?: number
   readonly cfi?: string
   readonly chapter?: string
 }
 
-/** One result: a passage, or neighbouring passages of one file joined. */
+/** One result: a passage of a file, or a whole file when isWholeFile is set. */
 export interface SearchResult {
   readonly path: string
   readonly title: string
+  readonly kind: string
   readonly place?: Place
-  readonly text: string
+  readonly text?: string
   readonly start: number
   readonly length: number
   readonly line: number
   readonly uri: string
   readonly score?: number
-  readonly chunkCount: number
+  readonly isWholeFile?: boolean
 }
 
 /** A problem of the note, at its line and column. */
@@ -45,15 +45,12 @@ export interface GetResultsResponse {
   readonly path: string
   readonly title: string
   readonly query: string
-  readonly rerank: string
-  readonly limit: number
   readonly computedAt: string
   readonly failedAt: string
   readonly failure: string
   readonly isStale: boolean
   readonly isRunning: boolean
   readonly order: '' | 'reranked' | 'fused'
-  readonly candidateCount: number
   readonly results: readonly SearchResult[]
   readonly warnings: readonly string[]
   readonly errors: readonly Problem[]
@@ -69,12 +66,10 @@ export interface ResultsChange {
   readonly isRunning: boolean
 }
 
-/** The query, the rerank text and the limit written into the note. */
+/** The query written into the note. */
 export interface UpdateSearchRequest {
   readonly path: string
   readonly query: string
-  readonly rerank: string
-  readonly limit: number
 }
 
 /** The problems of a query that was not written, counted from its first line; empty when written. */

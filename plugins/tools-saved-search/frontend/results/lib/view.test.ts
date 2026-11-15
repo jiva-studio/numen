@@ -1,6 +1,7 @@
 /**
  * What the tab draws for an answer of GetResults: the status line, the failed last run, the
- * problems, the warnings, the results with their places, and the words for no result.
+ * problems, the warnings, the results with their places, the sources, the filter, and the words for
+ * no result.
  */
 import { describe, expect, it } from 'vitest'
 import { WORDS } from '../../words'
@@ -8,16 +9,17 @@ import {
   FAILED_LAST_RUN,
   FAILURE_REASON,
   FUSED,
-  FUSED_WARNING,
   HARBOR,
+  HARBOR_TWO_LOGBOOK_PASSAGES,
   MISSPELLED,
   NEVER_COMPUTED,
   NOTHING_FOUND,
   RUNNING,
   STALE,
+  WARNING,
 } from '../fixtures/responses'
 import type { GetResultsResponse } from '../api/types'
-import { getResultsView } from './view'
+import { filterItems, getResultsView } from './view'
 
 const LOCALE = 'en-GB'
 
@@ -76,13 +78,11 @@ describe('the status line', () => {
 })
 
 describe('the query of the note', () => {
-  it('shows the query, the rerank text and the limit as the note has them', () => {
+  it('shows the title and the query as the note has them', () => {
     const view = getResultsView(HARBOR, WORDS, LOCALE)
 
     expect(view.title).toBe('Harbor master: winter storms')
     expect(view.query).toBe(HARBOR.query)
-    expect(view.rerank).toBe(HARBOR.rerank)
-    expect(view.limit).toBe(30)
   })
 })
 
@@ -90,52 +90,61 @@ describe('the problems and the warnings', () => {
   it('lists the problems with line and column', () => {
     const view = getResultsView(MISSPELLED, WORDS, LOCALE)
 
-    expect(view.problems).toStrictEqual(["9:4 undeclared reference to 'meanin'"])
+    expect(view.problems).toStrictEqual(['9:4 unknown function meanin (did you mean meaning?)'])
   })
 
-  it('shows no result while the note has problems', () => {
-    const view = getResultsView({ ...MISSPELLED, results: HARBOR.results }, WORDS, LOCALE)
+  it('keeps the last good results while the query has problems', () => {
+    const view = getResultsView(MISSPELLED, WORDS, LOCALE)
 
-    expect(view.items).toStrictEqual([])
-    expect(view.emptyText).toBe('')
+    expect(view.items).toHaveLength(3)
+    expect(view.failedRun).not.toBe('')
   })
 
   it('lists the warnings of the run', () => {
-    expect(getResultsView(FUSED, WORDS, LOCALE).warnings).toStrictEqual([FUSED_WARNING])
+    expect(getResultsView(FUSED, WORDS, LOCALE).warnings).toStrictEqual([WARNING])
   })
 })
 
 describe('the results', () => {
-  it('writes the place of each result', () => {
+  it('writes the place of each passage', () => {
     const view = getResultsView(HARBOR, WORDS, LOCALE)
 
-    expect(view.items.map((item) => item.place)).toStrictEqual([
-      'Page 14 of 212',
-      '',
-      '12:34–13:32',
-    ])
+    expect(view.items.map((item) => item.place)).toStrictEqual(['Page 14', '', ''])
   })
 
-  it('keeps the title and the text of each result in order', () => {
+  it('keeps the title and the text of each result in the order of the core', () => {
     const view = getResultsView(HARBOR, WORDS, LOCALE)
 
     expect(view.items.map((item) => item.title)).toStrictEqual([
       '1911',
       'Night of the gale',
-      'Pier talk',
+      'Pier plan',
     ])
     expect(view.items[1]?.text).toBe(
       'The gale broke two moorings before the harbor master reached the pier.',
     )
   })
 
-  it('hides the path of a result titled as its file name', () => {
-    const view = getResultsView(HARBOR, WORDS, LOCALE)
+  it('draws a whole file as a file row with its path and kind', () => {
+    const file = getResultsView(HARBOR, WORDS, LOCALE).items[2]
 
-    expect(view.items.map((item) => item.path)).toStrictEqual(['', '', ''])
+    expect(file).toMatchObject({
+      isWholeFile: true,
+      title: 'Pier plan',
+      path: 'Harbor/Pier plan.png',
+      kind: 'image',
+      text: '',
+      place: '',
+    })
   })
 
-  it('shows the path of a result whose title is not its file name', () => {
+  it('hides the path of a passage titled as its file name', () => {
+    const view = getResultsView(HARBOR, WORDS, LOCALE)
+
+    expect(view.items.slice(0, 2).map((item) => item.path)).toStrictEqual(['', ''])
+  })
+
+  it('shows the path of a passage whose title is not its file name', () => {
     const [first] = HARBOR.results
     if (!first) throw new Error('the fixture has no result')
     const view = getResultsView(
@@ -145,6 +154,16 @@ describe('the results', () => {
     )
 
     expect(view.items[0]?.path).toBe('Logbooks/1911.pdf')
+  })
+
+  it('lists each file the results come from once, in the order of its first result', () => {
+    const view = getResultsView(HARBOR_TWO_LOGBOOK_PASSAGES, WORDS, LOCALE)
+
+    expect(view.sources.map((source) => source.path)).toStrictEqual([
+      'Logbooks/1911.pdf',
+      'Harbor/Night of the gale.md',
+      'Harbor/Pier plan.png',
+    ])
   })
 
   it('says nothing matches when the run found no result', () => {
@@ -159,5 +178,38 @@ describe('the results', () => {
 
   it('says nothing about matches when there are results', () => {
     expect(getResultsView(HARBOR, WORDS, LOCALE).emptyText).toBe('')
+  })
+})
+
+describe('the filter over the results', () => {
+  const { items } = getResultsView(HARBOR_TWO_LOGBOOK_PASSAGES, WORDS, LOCALE)
+  const titlesOf = (filter: string, hidden: readonly string[] = []): string[] =>
+    filterItems(items, filter, new Set(hidden)).map((item) => `${item.title}@${item.index}`)
+
+  it('keeps every result for an empty filter', () => {
+    expect(titlesOf('  ')).toHaveLength(4)
+  })
+
+  it('keeps the passages whose text holds the filter, without regard to case', () => {
+    expect(titlesOf('MOORINGS')).toStrictEqual(['Night of the gale@1'])
+  })
+
+  it('keeps the results whose title holds the filter', () => {
+    expect(titlesOf('pier')).toStrictEqual(['Night of the gale@1', 'Pier plan@2'])
+  })
+
+  it('keeps the results whose place holds the filter', () => {
+    expect(titlesOf('page 52')).toStrictEqual(['1911@3'])
+  })
+
+  it('keeps the results whose file name holds the filter', () => {
+    expect(titlesOf('.png')).toStrictEqual(['Pier plan@2'])
+  })
+
+  it('leaves out the results of a hidden source', () => {
+    expect(titlesOf('', ['Logbooks/1911.pdf'])).toStrictEqual([
+      'Night of the gale@1',
+      'Pier plan@2',
+    ])
   })
 })

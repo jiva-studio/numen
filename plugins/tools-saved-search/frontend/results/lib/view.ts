@@ -1,6 +1,7 @@
 /**
  * What the tab draws for an answer of the service: the status line, the failed last run, the problems,
- * the warnings, the results with their places, and the words for no result.
+ * the warnings, the results with their places, the sources the results come from, and the words for no
+ * result; and the results a filter text and the hidden sources leave.
  */
 import type { Words } from '../../words'
 import { formatPlace, type PlaceFields } from './place'
@@ -10,16 +11,16 @@ import { formatTime } from './time'
 export interface ResultFields {
   readonly path: string
   readonly title: string
+  readonly kind: string
   readonly place?: PlaceFields
-  readonly text: string
+  readonly text?: string
+  readonly isWholeFile?: boolean
 }
 
 /** The fields of an answer of GetResults that the tab draws. */
 export interface ResultsFields {
   readonly title: string
   readonly query: string
-  readonly rerank: string
-  readonly limit: number
   readonly computedAt: string
   readonly failedAt: string
   readonly failure: string
@@ -34,25 +35,37 @@ export interface ResultsFields {
   }[]
 }
 
-/** One result as the tab draws it; path is '' when the title is the file name. */
+/**
+ * One result as the tab draws it: index is its place in the answer, source the path of its file, path
+ * '' when the title is the file name. A whole file has no place and no text and shows its kind.
+ */
 export interface ResultItemView {
+  readonly index: number
+  readonly source: string
   readonly title: string
   readonly path: string
   readonly place: string
   readonly text: string
+  readonly kind: string
+  readonly isWholeFile: boolean
+}
+
+/** A file the results come from, with the title of its first result. */
+export interface SourceView {
+  readonly path: string
+  readonly title: string
 }
 
 /** The tab of a saved search as it is drawn. */
 export interface ResultsView {
   readonly title: string
   readonly query: string
-  readonly rerank: string
-  readonly limit: number
   readonly status: string
   readonly failedRun: string
   readonly problems: readonly string[]
   readonly warnings: readonly string[]
   readonly items: readonly ResultItemView[]
+  readonly sources: readonly SourceView[]
   readonly emptyText: string
 }
 
@@ -65,8 +78,12 @@ export function formatProblem(problem: {
   return `${problem.line}:${problem.column} ${problem.message}`
 }
 
+function getFileName(path: string): string {
+  return path.slice(path.lastIndexOf('/') + 1)
+}
+
 function getFileStem(path: string): string {
-  const name = path.slice(path.lastIndexOf('/') + 1)
+  const name = getFileName(path)
   const dot = name.lastIndexOf('.')
   return dot > 0 ? name.slice(0, dot) : name
 }
@@ -84,30 +101,59 @@ function getFailedRun(response: ResultsFields, words: Words, locale: string): st
   return `${words.lastRunFailed} ${formatTime(response.failedAt, locale)}: ${response.failure}`
 }
 
-function getItem(result: ResultFields, words: Words): ResultItemView {
+function getItem(result: ResultFields, index: number, words: Words): ResultItemView {
+  const isWholeFile = result.isWholeFile === true
   return {
+    index,
+    source: result.path,
     title: result.title,
-    path: result.title === getFileStem(result.path) ? '' : result.path,
-    place: formatPlace(result.place, words),
-    text: result.text,
+    path: !isWholeFile && result.title === getFileStem(result.path) ? '' : result.path,
+    place: isWholeFile ? '' : formatPlace(result.place, words),
+    text: isWholeFile ? '' : (result.text ?? ''),
+    kind: result.kind,
+    isWholeFile,
   }
+}
+
+function getSources(results: readonly ResultFields[]): SourceView[] {
+  const sources = new Map<string, SourceView>()
+  for (const result of results) {
+    if (!sources.has(result.path)) sources.set(result.path, { path: result.path, title: result.title })
+  }
+  return [...sources.values()]
 }
 
 /** Computes what the tab draws for the answer, with the words and the locale of the person. */
 export function getResultsView(response: ResultsFields, words: Words, locale: string): ResultsView {
-  const problems = response.errors.map(formatProblem)
-  const hasProblems = problems.length > 0
-  const isEmpty = !hasProblems && response.computedAt !== '' && response.results.length === 0
+  const isEmpty = response.computedAt !== '' && response.results.length === 0
   return {
     title: response.title,
     query: response.query,
-    rerank: response.rerank,
-    limit: response.limit,
     status: getStatus(response, words, locale),
     failedRun: getFailedRun(response, words, locale),
-    problems,
+    problems: response.errors.map(formatProblem),
     warnings: [...response.warnings],
-    items: hasProblems ? [] : response.results.map((result) => getItem(result, words)),
+    items: response.results.map((result, index) => getItem(result, index, words)),
+    sources: getSources(response.results),
     emptyText: isEmpty ? words.noMatch : '',
   }
+}
+
+function isMatch(item: ResultItemView, needle: string): boolean {
+  return [item.text, item.title, item.place, getFileName(item.source)].some((field) =>
+    field.toLocaleLowerCase().includes(needle),
+  )
+}
+
+/**
+ * The items whose source is not hidden and whose text, title, place or file name holds the filter text,
+ * without regard to case; every item of a shown source for an empty filter.
+ */
+export function filterItems(
+  items: readonly ResultItemView[],
+  filter: string,
+  hidden: ReadonlySet<string>,
+): ResultItemView[] {
+  const needle = filter.trim().toLocaleLowerCase()
+  return items.filter((item) => !hidden.has(item.source) && (needle === '' || isMatch(item, needle)))
 }
