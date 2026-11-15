@@ -16,14 +16,14 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Contents reads what the frontmatter and the headings of the notes hold.
-type Contents struct{ db *sql.DB }
+// QueryReads answers the reads of the search query language over the notes: what their frontmatter and headings hold.
+type QueryReads struct{ db *sql.DB }
 
-func NewContents(db *sql.DB) *Contents { return &Contents{db: db} }
+func NewQueryReads(db *sql.DB) *QueryReads { return &QueryReads{db: db} }
 
 // ListPropertyValues returns the path and the value of every note of the vault whose stored frontmatter has the
 // top-level key. A note without frontmatter, or whose frontmatter could not be read, is absent.
-func (q *Contents) ListPropertyValues(ctx context.Context, vaultID domain.VaultID, key string) (_ []searchquery.PropertyEntry, err error) {
+func (q *QueryReads) ListPropertyValues(ctx context.Context, vaultID domain.VaultID, key string) (_ []searchquery.PropertyEntry, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -132,7 +132,7 @@ func convertNumber(number json.Number) searchquery.PropertyValue {
 // FindHeadings returns the headings of the notes of the vault whose words hold every word of the text, as one
 // phrase of the heading index, with the path of their note; every heading of the vault when the text has no
 // word.
-func (q *Contents) FindHeadings(ctx context.Context, vaultID domain.VaultID, text string) (_ []searchquery.HeadingEntry, err error) {
+func (q *QueryReads) FindHeadings(ctx context.Context, vaultID domain.VaultID, text string) (_ []searchquery.HeadingEntry, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -165,7 +165,7 @@ func isWordRune(r rune) bool {
 }
 
 // CountUnreadableFrontmatter counts the notes of the vault whose frontmatter could not be read.
-func (q *Contents) CountUnreadableFrontmatter(ctx context.Context, vaultID domain.VaultID) (int, error) {
+func (q *QueryReads) CountUnreadableFrontmatter(ctx context.Context, vaultID domain.VaultID) (int, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return 0, nil
