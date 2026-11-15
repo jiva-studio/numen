@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -75,12 +74,4 @@ type NoteContents interface {
 	FindHeadings(ctx context.Context, vaultID domain.VaultID, text string) ([]searchquery.HeadingEntry, error)
 	// CountUnreadableFrontmatter counts the notes of the vault whose frontmatter could not be read.
 	CountUnreadableFrontmatter(ctx context.Context, vaultID domain.VaultID) (int, error)
-}
-
-// ChunkIndex reads the documents, words, vectors and places of the chunks of a vault.
-type ChunkIndex interface {
-	DocumentQueries
-	VectorQueries
-	WordQueries
-	sourceport.ChunkPlaces
 }

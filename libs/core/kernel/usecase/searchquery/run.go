@@ -9,8 +9,10 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func (u *FindSearchResults) newRequest(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location) *searchquery.Evaluation {
-	req := &searchquery.Evaluation{Vault: v, Query: q, Scopes: searchquery.GetScopes(q), Limits: u.Limits, Zone: zone}
+func (u *EvaluateQuery) newRequest(
+	ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits,
+) *searchquery.Evaluation {
+	req := &searchquery.Evaluation{Vault: v, Query: q, Scopes: searchquery.GetScopes(q), Limits: limits, Zone: zone}
 	if u.hasModel() {
 		req.Recipe = u.source.Describe().Recipe()
 		if hasMeaning(q.Conditions) {
@@ -20,7 +22,7 @@ func (u *FindSearchResults) newRequest(ctx context.Context, v domain.Vault, q se
 	return req
 }
 
-func (u *FindSearchResults) run(ctx context.Context, req *searchquery.Evaluation, docs *documentReader, warns *warnings) (searchquery.SearchResults, error) {
+func (u *EvaluateQuery) run(ctx context.Context, req *searchquery.Evaluation, docs *documentReader, warns *warnings) (searchquery.SearchResults, error) {
 	if err := docs.findSets(ctx); err != nil {
 		return searchquery.SearchResults{}, err
 	}
@@ -29,14 +31,14 @@ func (u *FindSearchResults) run(ctx context.Context, req *searchquery.Evaluation
 		return searchquery.SearchResults{}, err
 	}
 	places := &placeCache{
-		source: u.chunks, vaultID: req.Vault.ID, found: map[domain.ChunkID]domain.SearchResult{}, document: docs.getDocument, load: docs.loadDocuments,
+		source: u.places, vaultID: req.Vault.ID, found: map[domain.ChunkID]domain.SearchResult{}, document: docs.getDocument, load: docs.loadDocuments,
 	}
-	meaning := &meaningSearch{vectors: u.chunks, source: u.source, filter: places.filterScope, req: req, warnings: warns}
+	meaning := &meaningSearch{vectors: u.vectors, source: u.source, filter: places.filterScope, req: req, warnings: warns}
 	vectors, err := meaning.embed(ctx)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	words := &wordSearch{words: u.chunks, filter: places.filterScope, req: req, warnings: warns}
+	words := &wordSearch{words: u.documents, filter: places.filterScope, req: req, warnings: warns}
 	lists, err := findConditionCandidates(ctx, req, docs, meaning, words, vectors)
 	if err != nil {
 		return searchquery.SearchResults{}, err
@@ -56,7 +58,7 @@ func (u *FindSearchResults) run(ctx context.Context, req *searchquery.Evaluation
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	scorer := scorer{places: u.chunks, matcher: u.matcher, words: u.chunks, req: req}
+	scorer := scorer{places: u.places, matcher: u.matcher, words: u.documents, req: req}
 	scores, err := scorer.score(ctx, candidates, texts, vectors)
 	if err != nil {
 		return searchquery.SearchResults{}, err
