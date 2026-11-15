@@ -78,7 +78,7 @@ func Record(ctx context.Context, tx *sqlwrite.Transaction, vault, source int64, 
 	if err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, getStatement("save_change"), vault, source, event, seq, time.Now().UnixNano()); err != nil {
+	if _, err := tx.ExecContext(ctx, getStatement("save_change"), vault, source, event, seq); err != nil {
 		return fmt.Errorf("record %s of source %d: %w", event, source, err)
 	}
 	return nil
@@ -115,11 +115,11 @@ func OpenFeed(ctx context.Context, tx *sqlwrite.Transaction, vault int64) error 
 	return nil
 }
 
-// Trim drops the removals stored before the time and raises the number each feed dropped removals up to.
-func Trim(ctx context.Context, db *sql.DB, before time.Time) error {
+// Trim drops the removals stored longer ago than the age and raises the number each feed dropped removals up to.
+func Trim(ctx context.Context, db *sql.DB, age time.Duration) error {
 	return sqlwrite.InTransaction(ctx, db, func(tx *sqlwrite.Transaction) error {
 		for _, name := range []string{"trim_seq", "trim"} {
-			if _, err := tx.ExecContext(ctx, getStatement(name), manifest.EventFileRemoved, before.UnixNano()); err != nil {
+			if _, err := tx.ExecContext(ctx, getStatement(name), manifest.EventFileRemoved, age.Nanoseconds()); err != nil {
 				return fmt.Errorf("%s: %w", name, err)
 			}
 		}
