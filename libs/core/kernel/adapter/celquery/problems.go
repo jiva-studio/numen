@@ -33,7 +33,9 @@ func (w *nameWalk) addMemberProblem(expr ast.Expr, name string) {
 }
 
 func getMemberFunctions() searchquery.Catalog {
-	return searchquery.Catalog{Functions: []searchquery.Function{{Name: overloads.StartsWith}}}
+	return searchquery.Catalog{Functions: []searchquery.Function{
+		{Name: overloads.StartsWith}, {Name: overloads.EndsWith}, {Name: overloads.Contains},
+	}}
 }
 
 func (w *nameWalk) walk(expr ast.Expr) {
@@ -59,7 +61,7 @@ func (w *nameWalk) walkCall(expr ast.Expr) {
 	name := call.FunctionName()
 	switch {
 	case isOperator(name):
-	case call.IsMemberFunction() && name == overloads.StartsWith:
+	case call.IsMemberFunction() && isStringMethod(name):
 		w.walk(call.Target())
 	case call.IsMemberFunction() && w.hasChunkCall(call.Target()):
 		w.walk(call.Target())
@@ -99,4 +101,8 @@ func (w *nameWalk) hasChunkCall(expr ast.Expr) bool {
 		return true
 	}
 	return slices.ContainsFunc(call.Args(), w.hasChunkCall)
+}
+
+func isStringMethod(name string) bool {
+	return name == overloads.StartsWith || name == overloads.EndsWith || name == overloads.Contains
 }

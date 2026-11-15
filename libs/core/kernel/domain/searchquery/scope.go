@@ -8,11 +8,13 @@ import (
 
 // Scope is the document predicate every candidate of one condition satisfies, and its superset for the
 // index: path prefixes (the whole vault when empty) and source kinds (all when empty). A Predicate that is an
-// OperatorAnd with no children holds for every document.
+// OperatorAnd with no children holds for every document. SetIndexes are the sets of the positive set leaves
+// among its conjuncts: every document of the scope is in each of them.
 type Scope struct {
 	Predicate    Node
 	PathPrefixes []string
 	SourceKinds  []domain.SourceKind
+	SetIndexes   []int
 }
 
 // IsEveryDocument reports whether the scope holds for every document.
@@ -52,7 +54,10 @@ func GetDocumentScope(q Query) Scope {
 			}
 		}
 	}
-	return Scope{Predicate: q.Root, PathPrefixes: getPrefixes(conjuncts), SourceKinds: getSourceKinds(conjuncts)}
+	return Scope{
+		Predicate: q.Root, PathPrefixes: getPrefixes(conjuncts), SourceKinds: getSourceKinds(conjuncts),
+		SetIndexes: getSetIndexes(conjuncts),
+	}
 }
 
 func collectOccurrences(node Node, constraints []Node, occurrences [][][]Node) {
@@ -93,7 +98,10 @@ func newScope(occurrences [][]Node) Scope {
 	}
 	if len(occurrences) == 1 {
 		c := occurrences[0]
-		return Scope{Predicate: Node{Operator: OperatorAnd, Children: c}, PathPrefixes: getPrefixes(c), SourceKinds: getSourceKinds(c)}
+		return Scope{
+			Predicate: Node{Operator: OperatorAnd, Children: c}, PathPrefixes: getPrefixes(c), SourceKinds: getSourceKinds(c),
+			SetIndexes: getSetIndexes(c),
+		}
 	}
 	scope := Scope{Predicate: Node{Operator: OperatorOr}}
 	prefixes, kinds := []string{}, []domain.SourceKind{}
@@ -161,4 +169,25 @@ func getSourceKinds(conjuncts []Node) []domain.SourceKind {
 		}
 	}
 	return nil
+}
+
+func getSetIndexes(conjuncts []Node) []int {
+	var indexes []int
+	for _, c := range conjuncts {
+		switch {
+		case isPositiveSet(c):
+			indexes = append(indexes, c.Leaf.SetIndex)
+		case c.Operator == OperatorAnd:
+			for _, child := range c.Children {
+				if isPositiveSet(child) {
+					indexes = append(indexes, child.Leaf.SetIndex)
+				}
+			}
+		}
+	}
+	return indexes
+}
+
+func isPositiveSet(node Node) bool {
+	return node.Operator == OperatorLeaf && node.Leaf.Kind == LeafSet && !node.IsNegated
 }

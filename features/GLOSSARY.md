@@ -197,7 +197,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Not: a chunk is inside the index; a passage is what the person sees. A "quote" is the copied text.
 
 ### query
-- Is: A text in the search language of the core: conditions (`words("…")`, `meaning("…")`, `kind`, `path`) joined with `&&`, `||`, `!`. Its results are passages, or whole files when only file conditions match. Run with `numen-cli query <vault> <query>`.
+- Is: A text in the search language of the core: conditions (`words("…")`, `meaning("…")`, `kind`, `path`, link functions such as `hasLinkTo("…")` and `isDescendantOf("…")`) joined with `&&`, `||`, `!`. Its results are passages, or whole files when only file conditions match. Run with `numen-cli query <vault> <query>`.
 - Not: the text typed in the command palette search, which runs the search above.
 
 ### index
@@ -271,6 +271,14 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Actions: "Create child note", "Create parent note", "Create jump note". No "Create sibling note".
 - Texts: drop labels "as child", "as parent", "as jump".
 - Not: a role is what a link is for; a relation is where a note stands.
+
+### ancestor
+- Is: A note above another at any depth, through parent and child links written at either end. A query finds them with `isAncestorOf("…")`, up to 16 steps.
+- Not: not only the parent; the parent is the ancestor one step above.
+
+### descendant
+- Is: A note below another at any depth, through parent and child links written at either end. A query finds them with `isDescendantOf("…")`, up to 16 steps.
+- Not: not only the child; the child is the descendant one step below.
 
 ### node menu
 - Is: The menu on a node of the plex.

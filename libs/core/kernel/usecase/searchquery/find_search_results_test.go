@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 )
 
 func newDeepWorld(t *testing.T) world {
@@ -151,7 +152,7 @@ func TestAKindAloneReturnsOneWholeFilePerDocumentByPath(t *testing.T) {
 }
 
 func TestAMeaningWithoutAModelReturnsErrNoModelAndReadsNothing(t *testing.T) {
-	find := searchquery.NewFindSearchResults(searchquery.FindSearchResultsDeps{Parser: celquery.NewParser(searchquerydomain.DefaultLimits())})
+	find := searchquerytest.New(searchquerytest.Deps{Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: newClock()})
 	_, err := find.Execute(t.Context(), newWorld(t, nil).v, searchquery.Request{Text: `meaning("a")`})
 	if !errors.Is(err, searchquerydomain.ErrNoModel) {
 		t.Errorf("returned %v, want ErrNoModel", err)
@@ -259,5 +260,20 @@ func TestWordsWhoseBestChunksAreOutOfScopeWidenTheSearch(t *testing.T) {
 	}
 	if len(got.Results) != 1 || got.Results[0].Document.Path != "deep/target.md" {
 		t.Errorf("found %v, want the chunk under deep/", getPaths(got))
+	}
+}
+
+func TestADocumentLoadedForANegatedCompareCountsTheChunksOfTheActiveRecipe(t *testing.T) {
+	w := newDeepWorld(t)
+	find := w.newFind(texts{"a": newVector(0)})
+	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("a") && path.startsWith("deep/") && !(title == "other")`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Results) == 0 || got.Results[0].Document.Path != "deep/target.md" {
+		t.Fatalf("found %v, want deep/target.md", getPaths(got))
+	}
+	if got.Results[0].Document.ChunkCount == 0 {
+		t.Errorf("the document has %d chunks, want the chunks that hold a vector", got.Results[0].Document.ChunkCount)
 	}
 }

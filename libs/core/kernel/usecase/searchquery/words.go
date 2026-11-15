@@ -13,7 +13,7 @@ const messageInvalidWords = "words takes an FTS5 expression, and this one is not
 type wordSearch struct {
 	words    WordQueries
 	filter   scopeFilter
-	req      *request
+	req      *searchquery.Evaluation
 	warnings *warnings
 }
 
@@ -22,12 +22,12 @@ func (w *wordSearch) findWords(ctx context.Context, index int, documents []searc
 	if !ok {
 		return nil, nil
 	}
-	s := w.req.scopes[index]
-	limits := w.req.limits
+	s := w.req.Scopes[index]
+	limits := w.req.Limits
 	for {
-		matches, err := w.words.FindWords(ctx, w.req.vault.ID, q)
+		matches, err := w.words.FindWords(ctx, w.req.Vault.ID, q)
 		if err != nil {
-			return nil, w.req.getWordsError(index, err)
+			return nil, getWordsError(w.req, index, err)
 		}
 		ids := getMatchChunks(matches)
 		if s.IsEveryDocument() {
@@ -50,10 +50,10 @@ func (w *wordSearch) findWords(ctx context.Context, index int, documents []searc
 }
 
 func (w *wordSearch) newWordQuery(index int, documents []searchquery.Document, isListed bool) (searchquery.WordQuery, bool) {
-	limits := w.req.limits
-	q := searchquery.WordQuery{Expression: w.req.query.Conditions[index].Text, Limit: limits.CandidatesPerCondition}
+	limits := w.req.Limits
+	q := searchquery.WordQuery{Expression: w.req.Query.Conditions[index].Text, Limit: limits.CandidatesPerCondition}
 	if !isListed || getChunkTotal(documents) > limits.ExactScanChunks {
-		s := w.req.scopes[index]
+		s := w.req.Scopes[index]
 		q.PathPrefixes, q.SourceKinds = s.PathPrefixes, s.SourceKinds
 		return q, true
 	}

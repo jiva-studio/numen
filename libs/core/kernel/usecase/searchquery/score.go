@@ -14,7 +14,7 @@ type scorer struct {
 	places  sourceport.ChunkPlaces
 	matcher sourceport.WordMatching
 	words   WordQueries
-	req     *request
+	req     *searchquery.Evaluation
 }
 
 func (s scorer) score(
@@ -22,9 +22,9 @@ func (s scorer) score(
 ) ([][]searchquery.ConditionScore, error) {
 	scores := make([][]searchquery.ConditionScore, len(candidates))
 	for i := range scores {
-		scores[i] = make([]searchquery.ConditionScore, len(s.req.query.Conditions))
+		scores[i] = make([]searchquery.ConditionScore, len(s.req.Query.Conditions))
 	}
-	if len(candidates) == 0 || len(s.req.query.Conditions) == 0 {
+	if len(candidates) == 0 || len(s.req.Query.Conditions) == 0 {
 		return scores, nil
 	}
 	smalls, err := s.listSmalls(ctx, candidates)
@@ -44,7 +44,7 @@ func (s scorer) listSmalls(ctx context.Context, candidates []domain.SearchResult
 		ids[i] = c.ChunkID
 		index[c.ChunkID] = i
 	}
-	listed, err := s.places.ListSmallChunks(ctx, s.req.vault.ID, ids)
+	listed, err := s.places.ListSmallChunks(ctx, s.req.Vault.ID, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s scorer) scoreMeaning(ctx context.Context, queries map[int][]float32, sma
 	for _, list := range smalls {
 		all = append(all, list...)
 	}
-	stored, err := s.places.ListStoredVectors(ctx, source.StoredVectorQuery{Recipe: s.req.recipe, Chunks: all})
+	stored, err := s.places.ListStoredVectors(ctx, source.StoredVectorQuery{Recipe: s.req.Recipe, Chunks: all})
 	if err != nil {
 		return err
 	}
@@ -110,17 +110,17 @@ func (s scorer) scoreWords(
 	for _, list := range smalls {
 		all = append(all, list...)
 	}
-	for ci, c := range s.req.query.Conditions {
+	for ci, c := range s.req.Query.Conditions {
 		if c.IsMeaning {
 			continue
 		}
 		matched, err := s.matcher.MatchWords(ctx, c.Text, chunkTexts)
 		if err != nil {
-			return s.req.getWordsError(ci, err)
+			return getWordsError(s.req, ci, err)
 		}
-		wordScores, err := s.words.GetWordScores(ctx, s.req.vault.ID, c.Text, all)
+		wordScores, err := s.words.GetWordScores(ctx, s.req.Vault.ID, c.Text, all)
 		if err != nil {
-			return s.req.getWordsError(ci, err)
+			return getWordsError(s.req, ci, err)
 		}
 		for i := range candidates {
 			scores[i][ci].IsMatch = i < len(matched) && matched[i]

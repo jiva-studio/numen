@@ -15,7 +15,6 @@ import (
 	"runtime"
 	"slices"
 	"strings"
-	"time"
 
 	// The driver and the vector extension register themselves under the names
 	// a DSN opens them by, and nothing here names either package.
@@ -147,16 +146,14 @@ func (d *DB) FeedChanges() *changefeed.Changes { return d.feed }
 // FileChanges reads the file change feed of each vault.
 func (d *DB) FileChanges() *changefeed.Feed { return changefeed.NewFeed(d.read) }
 
-// TrimFileChanges drops the removals the feeds stored longer ago than the age.
-func (d *DB) TrimFileChanges(ctx context.Context, age time.Duration) error {
-	return changefeed.Trim(ctx, d.write, age)
-}
-
 // Maintenance writes, so it takes the pool that is allowed to.
 func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.write} }
 
 // NoteQueries reads, so it takes the pool that does not wait for the writer.
 func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
+
+// NoteQueryReads reads, so it takes the pool that does not wait for the writer.
+func (d *DB) NoteQueryReads() *note.QueryReads { return note.NewQueryReads(d.read) }
 
 // NoteProblems reads what the index found wrong in the notes.
 func (d *DB) NoteProblems() *note.Problems { return note.NewProblems(d.read) }

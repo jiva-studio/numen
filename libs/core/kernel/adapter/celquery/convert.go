@@ -2,6 +2,7 @@ package celquery
 
 import (
 	"fmt"
+	"strings"
 
 	"cel.dev/cel-go/common/ast"
 	"cel.dev/cel-go/common/operators"
@@ -13,10 +14,17 @@ import (
 
 // The messages of the shapes the language does not accept.
 const (
-	messageCondition = "A query is a condition over meaning, words, kind and path"
+	messageCondition = "A query is a condition over meaning, words, the document functions and the link functions"
 	messageKind      = `Compare kind with a text in quotes: kind == "pdf", kind != "pdf" or kind in ["pdf", "epub"]`
 	messagePath      = `Use path as path.startsWith("folder/")`
 	messageLiteral   = "%s takes a text in quotes"
+	messageTitle     = `Compare title with a text in quotes: title == "x", title in ["x", "y"], title.startsWith("x"), title.endsWith("x") or title.contains("x")`
+	messageNoteType  = `Compare noteType with a text in quotes: noteType == "book", noteType != "book" or noteType in ["book", "article"]`
+	messageModified  = `Compare modified with date(…): modified >= date("2026-01-01")`
+	messageSize      = `Compare size with a whole number: size > 1000`
+	messageProperty  = `property takes a key in quotes and is compared with a value: property("status") == "done", property("rating") >= 4 or "x" in property("tags")`
+	messageDate      = `date takes a date in quotes: date("2026-01-01")`
+	messageTarget    = "The target of %s is empty"
 )
 
 // converter turns a checked CEL tree into a raw tree, collecting the shapes it does not accept.
@@ -59,15 +67,23 @@ func getIdentMessage(name string) string {
 		return messageKind
 	case searchquery.VariablePath:
 		return messagePath
+	case searchquery.VariableTitle:
+		return messageTitle
+	case searchquery.VariableNoteType:
+		return messageNoteType
+	case searchquery.VariableModified:
+		return messageModified
+	case searchquery.VariableSize:
+		return messageSize
 	}
 	return messageCondition
 }
 
 func (c *converter) convertCall(expr ast.Expr) searchquery.RawNode {
 	call := expr.AsCall()
-	switch call.FunctionName() {
+	switch name := call.FunctionName(); name {
 	case operators.LogicalNot:
-		return searchquery.RawNode{Operator: searchquery.OperatorNot, Children: []searchquery.RawNode{c.convert(call.Args()[0])}}
+		return newNot(c.convert(call.Args()[0]))
 	case operators.LogicalAnd:
 		return c.convertGroup(call.Args(), searchquery.OperatorAnd)
 	case operators.LogicalOr:
@@ -76,16 +92,47 @@ func (c *converter) convertCall(expr ast.Expr) searchquery.RawNode {
 		return c.convertText(expr, searchquery.LeafMeaning)
 	case searchquery.FunctionWords:
 		return c.convertText(expr, searchquery.LeafWords)
-	case operators.Equals:
-		return c.convertComparison(expr)
+	case searchquery.FunctionHasProperty, searchquery.FunctionHasHeading:
+		return c.convertPresence(expr)
 	case operators.NotEquals:
-		return searchquery.RawNode{Operator: searchquery.OperatorNot, Children: []searchquery.RawNode{c.convertComparison(expr)}}
+		return newNot(c.convertComparison(expr, searchquery.ComparisonEqual))
 	case operators.In:
 		return c.convertIn(expr)
-	case overloads.StartsWith:
-		return c.convertStartsWith(expr)
+	case overloads.StartsWith, overloads.EndsWith, overloads.Contains:
+		return c.convertMethod(expr)
+	default:
+		return c.convertComparisonOrLink(expr, name)
+	}
+}
+
+func (c *converter) convertComparisonOrLink(expr ast.Expr, name string) searchquery.RawNode {
+	if comparison, isComparison := getComparison(name); isComparison {
+		return c.convertComparison(expr, comparison)
+	}
+	if _, isLink := searchquery.FindLinkFunction(name); isLink {
+		return c.convertLink(expr)
 	}
 	return c.reject(expr, messageCondition)
+}
+
+func getComparison(name string) (searchquery.Comparison, bool) {
+	switch name {
+	case operators.Equals:
+		return searchquery.ComparisonEqual, true
+	case operators.Less:
+		return searchquery.ComparisonLess, true
+	case operators.LessEquals:
+		return searchquery.ComparisonLessOrEqual, true
+	case operators.Greater:
+		return searchquery.ComparisonGreater, true
+	case operators.GreaterEquals:
+		return searchquery.ComparisonGreaterOrEqual, true
+	}
+	return 0, false
+}
+
+func newNot(child searchquery.RawNode) searchquery.RawNode {
+	return searchquery.RawNode{Operator: searchquery.OperatorNot, Children: []searchquery.RawNode{child}}
 }
 
 func (c *converter) convertGroup(args []ast.Expr, operator searchquery.Operator) searchquery.RawNode {
@@ -105,58 +152,25 @@ func (c *converter) convertText(expr ast.Expr, kind searchquery.LeafKind) search
 	return c.newLeaf(expr, searchquery.RawLeaf{Kind: kind, Text: text})
 }
 
-func (c *converter) convertComparison(expr ast.Expr) searchquery.RawNode {
-	args := expr.AsCall().Args()
-	left, right := args[0], args[1]
-	switch {
-	case isIdent(left, searchquery.VariableKind) || isIdent(right, searchquery.VariableKind):
-		other := right
-		if isIdent(right, searchquery.VariableKind) {
-			other = left
-		}
-		kind, isLiteral := getStringLiteral(other)
-		if !isLiteral {
-			return c.reject(expr, messageKind)
-		}
-		return c.newLeaf(expr, searchquery.RawLeaf{Kind: searchquery.LeafKindIn, Kinds: []string{kind}})
-	case isIdent(left, searchquery.VariablePath) || isIdent(right, searchquery.VariablePath):
-		return c.reject(expr, messagePath)
-	}
-	return c.reject(expr, messageCondition)
-}
-
-func (c *converter) convertIn(expr ast.Expr) searchquery.RawNode {
-	args := expr.AsCall().Args()
-	if !isIdent(args[0], searchquery.VariableKind) {
-		return c.reject(expr, getIdentMessage(identName(args[0])))
-	}
-	if args[1].Kind() != ast.ListKind {
-		return c.reject(expr, messageKind)
-	}
-	var kinds []string
-	for _, element := range args[1].AsList().Elements() {
-		kind, isLiteral := getStringLiteral(element)
-		if !isLiteral {
-			return c.reject(expr, messageKind)
-		}
-		kinds = append(kinds, kind)
-	}
-	return c.newLeaf(expr, searchquery.RawLeaf{Kind: searchquery.LeafKindIn, Kinds: kinds})
-}
-
-func (c *converter) convertStartsWith(expr ast.Expr) searchquery.RawNode {
+func (c *converter) convertLink(expr ast.Expr) searchquery.RawNode {
 	call := expr.AsCall()
-	switch {
-	case isIdent(call.Target(), searchquery.VariableKind):
-		return c.reject(expr, messageKind)
-	case !isIdent(call.Target(), searchquery.VariablePath):
-		return c.reject(expr, messageCondition)
+	name := call.FunctionName()
+	var texts []string
+	for _, arg := range call.Args() {
+		text, isLiteral := getStringLiteral(arg)
+		if !isLiteral {
+			return c.reject(arg, fmt.Sprintf(messageLiteral, name))
+		}
+		texts = append(texts, text)
 	}
-	prefix, isLiteral := getStringLiteral(call.Args()[0])
-	if !isLiteral {
-		return c.reject(expr, messagePath)
+	if strings.TrimSpace(texts[0]) == "" {
+		return c.reject(call.Args()[0], fmt.Sprintf(messageTarget, name))
 	}
-	return c.newLeaf(expr, searchquery.RawLeaf{Kind: searchquery.LeafPathPrefix, Prefix: prefix})
+	leaf := searchquery.RawLeaf{Kind: searchquery.LeafSet, Function: name, Target: texts[0]}
+	if len(texts) > 1 {
+		leaf.LinkType = texts[1]
+	}
+	return c.newLeaf(expr, leaf)
 }
 
 func identName(expr ast.Expr) string {
@@ -168,6 +182,10 @@ func identName(expr ast.Expr) string {
 
 func isIdent(expr ast.Expr, name string) bool {
 	return expr.Kind() == ast.IdentKind && expr.AsIdent() == name
+}
+
+func isCallOf(expr ast.Expr, name string) bool {
+	return expr.Kind() == ast.CallKind && !expr.AsCall().IsMemberFunction() && expr.AsCall().FunctionName() == name
 }
 
 func getStringLiteral(expr ast.Expr) (string, bool) {

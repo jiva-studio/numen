@@ -16,6 +16,7 @@ type Limits struct {
 	MergeGapBytes          int
 	DefaultLimit           int
 	MaxLimit               int
+	MaxLinkDepth           int
 }
 
 // DefaultLimits returns the limits of a query when no setting changes them.
@@ -35,5 +36,6 @@ func DefaultLimits() Limits {
 		MergeGapBytes:          200,
 		DefaultLimit:           20,
 		MaxLimit:               100,
+		MaxLinkDepth:           16,
 	}
 }

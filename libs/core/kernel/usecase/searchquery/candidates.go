@@ -20,6 +20,7 @@ type placeCache struct {
 	vaultID  domain.VaultID
 	found    map[domain.ChunkID]domain.SearchResult
 	document func(path string, sourceKind domain.SourceKind) searchquery.Document
+	load     func(ctx context.Context, paths []string) error
 }
 
 func (c *placeCache) getPlaces(ctx context.Context, ids []domain.ChunkID) (map[domain.ChunkID]domain.SearchResult, error) {
@@ -44,6 +45,15 @@ func (c *placeCache) getPlaces(ctx context.Context, ids []domain.ChunkID) (map[d
 func (c *placeCache) filterScope(ctx context.Context, s searchquery.Scope, ids []domain.ChunkID) (map[domain.ChunkID]bool, error) {
 	places, err := c.getPlaces(ctx, ids)
 	if err != nil {
+		return nil, err
+	}
+	var paths []string
+	for _, id := range ids {
+		if place, found := places[id]; found {
+			paths = append(paths, place.Path)
+		}
+	}
+	if err := c.load(ctx, paths); err != nil {
 		return nil, err
 	}
 	inScope := make(map[domain.ChunkID]bool, len(ids))
