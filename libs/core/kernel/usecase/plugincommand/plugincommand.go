@@ -6,12 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"maps"
 	"slices"
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
@@ -189,7 +189,7 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared manifest.Co
 	}
 	target := plugin.NewTargetValues(call.Path, false, u.getContentType(call.Path))
 	values, err := u.readNote(ctx, v, condition, target, call.Path)
-	if isGoneAllowed && errors.Is(err, fs.ErrNotExist) {
+	if isGoneAllowed && errors.Is(err, edit.ErrNotExist) {
 		values, err = target.WithNote("", nil), nil
 	}
 	if err != nil {
