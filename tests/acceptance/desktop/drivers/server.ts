@@ -79,11 +79,12 @@ export interface ServerOptions {
   readonly readPageText: (address: string) => string | undefined
   readonly environment: readonly EnvironmentSetting[]
   readonly programs: readonly string[]
+  readonly isLive: boolean
 }
 
 interface Services {
-  readonly standIns: { close: () => void; chatUrl: string; updateUrl: string }
-  readonly proxy: http.Server
+  readonly standIns: { close: () => void; chatUrl: string; updateUrl: string } | undefined
+  readonly proxy: http.Server | undefined
   readonly mcpPort: number
 }
 
@@ -99,12 +100,12 @@ export class Server {
     private readonly services: Services,
   ) {}
 
-  /** Starts the binary of the application with the vault of the options as the vault it opens. */
+  /** Starts the binary of the application with the vault of the options as the vault it opens; a live scenario starts no stand-ins. */
   static async start(options: ServerOptions): Promise<Server> {
     const state = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'numen-state-')))
     holdForRemoval('dir', state)
-    const standIns = await startStandIns()
-    const proxy = await startPageProxy(options.readPageText)
+    const standIns = options.isLive ? undefined : await startStandIns()
+    const proxy = options.isLive ? undefined : await startPageProxy(options.readPageText)
     const server = new Server(options, state, { standIns, proxy, mcpPort: await getFreePort() })
     try {
       for (const name of STATE_FOLDERS) fs.mkdirSync(path.join(state, name))
@@ -126,7 +127,7 @@ export class Server {
 
   /** The address of the release feed the updater plugin asks. */
   getUpdateUrl(): string {
-    return this.services.standIns.updateUrl
+    return this.getStandIns().updateUrl
   }
 
   /** Makes the folder dialog answer with the folder, which the command Create vault asks for. */
@@ -134,10 +135,23 @@ export class Server {
     fs.writeFileSync(path.join(this.state, 'folder-choice.txt'), folder)
   }
 
+  private getStandIns(): NonNullable<Services['standIns']> {
+    if (this.services.standIns === undefined) throw new Error('a live scenario has no stand-ins')
+    return this.services.standIns
+  }
+
   private installProgram(name: string): void {
     const program = INSTALLED_PROGRAMS[name]
     if (program === undefined) {
       throw new Error(`no stand-in of the program "${name}": use ${Object.keys(INSTALLED_PROGRAMS).join(', ')}`)
+    }
+    if (this.options.isLive) {
+      const command = path.basename(program.place)
+      const isFound = (process.env.PATH ?? '')
+        .split(path.delimiter)
+        .some((folder) => folder !== '' && fs.existsSync(path.join(folder, command)))
+      if (!isFound) throw new Error(`the program "${name}" is not installed on this computer: "${command}" is not on the PATH`)
+      return
     }
     const target = path.join(this.state, 'home', program.place)
     fs.mkdirSync(path.dirname(target), { recursive: true })
@@ -147,7 +161,7 @@ export class Server {
 
   /** Puts the settings of the environment in force in the stand-ins of this server. */
   async setEnvironment(settings: readonly EnvironmentSetting[]): Promise<void> {
-    await applyEnvironment(settings, getTargets(this.state, this.services.standIns.updateUrl))
+    await applyEnvironment(settings, getTargets(this.state, this.getStandIns().updateUrl))
   }
 
   /** The hash that makes Chromium trust the certificate of this server alone. */
@@ -170,8 +184,8 @@ export class Server {
     try {
       await this.end()
     } finally {
-      this.services.standIns.close()
-      this.services.proxy.close()
+      this.services.standIns?.close()
+      this.services.proxy?.close()
       fs.rmSync(this.state, { recursive: true, force: true })
       freeFromRemoval('dir', this.state)
     }
@@ -179,18 +193,19 @@ export class Server {
 
   private getStartFlags(isFirst: boolean): string[] {
     if (this.options.application === 'flashcards') return [`-debug-vault=${this.options.vault}`]
-    const common = ['-debug-mock-ml', `-debug-folder-file=${path.join(this.state, 'folder-choice.txt')}`]
+    const mockMl = this.options.isLive ? [] : ['-debug-mock-ml']
+    const common = [...mockMl, `-debug-folder-file=${path.join(this.state, 'folder-choice.txt')}`]
     return isFirst ? [`-vault=${this.options.vault}`, ...common] : common
   }
 
-  private writeSettings(standIns: { chatUrl: string; updateUrl: string }): void {
+  private writeSettings(standIns: Services['standIns']): void {
     const home = path.join(this.state, 'home')
     const folder =
       process.platform === 'darwin'
         ? path.join(home, 'Library', 'Application Support', 'numen')
         : path.join(this.state, 'config', 'numen')
     fs.mkdirSync(folder, { recursive: true })
-    const settings = {
+    const settings = standIns === undefined ? this.getLiveSettings() : {
       v: 1,
       connections: [
         {
@@ -227,12 +242,24 @@ export class Server {
     fs.writeFileSync(path.join(folder, 'numen.json'), JSON.stringify(settings, null, 2))
   }
 
+  private getLiveSettings(): Record<string, unknown> {
+    return {
+      v: 1,
+      ...(this.options.application === 'editor'
+        ? {
+            'md.numen.agents.mcp.server': { port: this.services.mcpPort },
+            'md.numen.engines.embeddings': { minChunkLength: 0 },
+          }
+        : {}),
+    }
+  }
+
   private async launch(flags: readonly string[]): Promise<void> {
     const certificate = path.join(this.state, 'cert.pem')
     const log = fs.openSync(path.join(this.state, 'server.log'), 'a')
-    const proxyAddress = this.services.proxy.address() as net.AddressInfo
+    const proxyAddress = this.services.proxy?.address() as net.AddressInfo | undefined
     const editorEnv =
-      this.options.application === 'editor'
+      this.options.application === 'editor' && proxyAddress !== undefined
         ? { NUMEN_TEST_MOCK_ML: 'true', HTTP_PROXY: `http://${HOST}:${proxyAddress.port}`, NO_PROXY: HOST }
         : {}
     const child = spawn(BINARIES[this.options.application], [`-debug-http-addr=${HOST}:0`, ...flags], {
@@ -248,7 +275,7 @@ export class Server {
         XDG_RUNTIME_DIR: path.join(this.state, 'home', 'run'),
         DBUS_SESSION_BUS_ADDRESS: '',
         ...editorEnv,
-        NUMEN_TEST_MOCK_EMBED_HOLD_FILE: path.join(this.state, 'embedding-hold'),
+        ...(this.options.isLive ? {} : { NUMEN_TEST_MOCK_EMBED_HOLD_FILE: path.join(this.state, 'embedding-hold') }),
         NUMEN_PLUGINS_PATH: path.join(REPO_ROOT, 'plugins'),
         NUMEN_DEBUG_TLS_CERT: certificate,
         NUMEN_DEBUG_TLS_KEY: path.join(this.state, 'key.pem'),
