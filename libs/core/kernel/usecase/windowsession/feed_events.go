@@ -42,7 +42,7 @@ func (f FeedEvents) Start(ctx context.Context, v domain.Vault) func() {
 	if f.WatchWrites == nil || f.ReadHead == nil || f.ListPaths == nil || f.GetContentType == nil || f.Emit == nil {
 		return nil
 	}
-	loop := &feedLoop{events: f, vault: v, wake: make(chan struct{}, 1), plugins: nil, sent: filechange.Cursor{}}
+	loop := &feedLoop{events: f, vault: v, wake: make(chan struct{}, 1), plugins: nil, sent: filechange.Cursor{}, retry: notRetried}
 	stopWrites := f.WatchWrites(v.ID, func() { signal(loop.wake) })
 	signal(loop.wake)
 	return func() {
@@ -63,9 +63,7 @@ type feedLoop struct {
 	wake    chan struct{}
 	plugins <-chan struct{}
 	sent    filechange.Cursor
-
-	hasRetried  bool
-	retryForced bool
+	retry   retryState
 }
 
 func (l *feedLoop) run(ctx context.Context) {
@@ -74,15 +72,17 @@ func (l *feedLoop) run(ctx context.Context) {
 		if !ok {
 			return
 		}
-		isForced = isForced || l.retryForced
-		l.retryForced = false
+		if l.retry == retriedForced {
+			isForced = true
+			l.retry = retriedPlain
+		}
 		head, err := l.events.ReadHead(ctx, l.vault.ID)
 		if err != nil {
-			l.retry(isForced)
+			l.fail(isForced)
 			continue
 		}
 		if head.Cursor.Seq == 0 || (!isForced && head.Cursor == l.sent) {
-			l.hasRetried = false
+			l.retry = notRetried
 			continue
 		}
 		after := l.sent.Seq
@@ -91,22 +91,32 @@ func (l *feedLoop) run(ctx context.Context) {
 		}
 		types, err := l.listTypes(ctx, after, head.Cursor.Seq)
 		if err != nil {
-			l.retry(isForced)
+			l.fail(isForced)
 			continue
 		}
-		l.hasRetried = false
+		l.retry = notRetried
 		l.sent = head.Cursor
 		l.events.Emit(l.vault, types)
 	}
 }
 
-func (l *feedLoop) retry(isForced bool) {
-	l.retryForced = isForced
-	if l.hasRetried {
-		return
+type retryState int
+
+const (
+	notRetried retryState = iota
+	retriedPlain
+	retriedForced
+)
+
+func (l *feedLoop) fail(isForced bool) {
+	isFirst := l.retry == notRetried
+	l.retry = retriedPlain
+	if isForced {
+		l.retry = retriedForced
 	}
-	l.hasRetried = true
-	signal(l.wake)
+	if isFirst {
+		signal(l.wake)
+	}
 }
 
 func (l *feedLoop) listTypes(ctx context.Context, after, upTo int64) ([]domain.ContentType, error) {
