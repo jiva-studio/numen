@@ -45,8 +45,6 @@ func newSearchRuns(w *windowWiring) *searchrunusecase.SearchRuns {
 	return &runs
 }
 
-// getSearchCatalog returns the catalog of the query language: the built-in functions and those the manifests of
-// the enabled plugins declare.
 func getSearchCatalog(manifests pluginmanifest.Manifests) func() searchquerydomain.Catalog {
 	return func() searchquerydomain.Catalog {
 		return searchquerydomain.MergeCatalog(searchquerydomain.GetBuiltinCatalog(), manifests.ListSearchFunctions())

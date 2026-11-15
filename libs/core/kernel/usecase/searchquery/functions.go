@@ -39,8 +39,6 @@ func (p *plan) newCall(index int) searchquery.FunctionCall {
 	}
 }
 
-// findCalls asks the plugin of each positive call for its documents, and keeps every path of a call that
-// holds for at most MaxDocuments of them.
 func (p *plan) findCalls(ctx context.Context) error {
 	p.calls = &calls{found: searchquery.FoundPaths{}, sets: map[int]map[string]bool{}, known: make([]map[string]bool, len(p.query.Calls))}
 	for i := range p.query.Calls {
@@ -71,7 +69,6 @@ func (p *plan) findCalls(ctx context.Context) error {
 	return nil
 }
 
-// matchCalls asks the plugins of the calls not found whole about the paths not asked about yet.
 func (p *plan) matchCalls(ctx context.Context, paths []string) error {
 	for i := range p.query.Calls {
 		if _, isFound := p.calls.found[i]; isFound {
@@ -136,7 +133,6 @@ func (c *calls) addWarning(function, warning string) {
 	}
 }
 
-// withCalls returns the document with whether each call holds for it.
 func (p *plan) withCalls(d searchquery.Document) searchquery.Document {
 	if len(p.query.Calls) == 0 {
 		return d

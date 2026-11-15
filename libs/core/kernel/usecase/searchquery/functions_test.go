@@ -30,7 +30,7 @@ type shelfPlugin struct {
 	calls   []searchquerydomain.FunctionCall
 }
 
-func (p *shelfPlugin) holds(call searchquerydomain.FunctionCall) []string {
+func (p *shelfPlugin) getHeldPaths(call searchquerydomain.FunctionCall) []string {
 	if len(call.Arguments) == 0 {
 		var all []string
 		for _, paths := range p.shelves {
@@ -53,7 +53,7 @@ func (p *shelfPlugin) MatchDocuments(ctx context.Context, call searchquerydomain
 	if err := ctx.Err(); err != nil {
 		return searchquerydomain.FunctionAnswer{}, err
 	}
-	held := p.holds(call)
+	held := p.getHeldPaths(call)
 	return searchquerydomain.FunctionAnswer{Paths: slices.DeleteFunc(slices.Clone(paths), func(path string) bool { return !slices.Contains(held, path) }), Warning: p.warning}, nil
 }
 
@@ -72,7 +72,7 @@ func (p *shelfPlugin) FindDocuments(ctx context.Context, call searchquerydomain.
 	if err := ctx.Err(); err != nil {
 		return searchquerydomain.FunctionAnswer{}, err
 	}
-	held := p.holds(call)
+	held := p.getHeldPaths(call)
 	return searchquerydomain.FunctionAnswer{Paths: held[:min(limit, len(held))], EstimatedCount: int64(len(held)), Warning: p.warning}, nil
 }
 

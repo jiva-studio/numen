@@ -180,8 +180,6 @@ func getSourceKinds(conjuncts []Node) []domain.SourceKind {
 	return nil
 }
 
-// getFoundPaths returns the paths every positive call among the conjuncts holds for, when at least one of
-// them has every path known.
 func getFoundPaths(conjuncts []Node, found FoundPaths) ([]string, bool) {
 	var paths []string
 	isWithinPaths := false

@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// ErrInvalidFunctionArguments is a call of a plugin function with arguments the plugin does not take.
-var ErrInvalidFunctionArguments = errors.New("the function does not take these arguments")
+// ErrInvalidFunctionArguments is a call of a plugin function whose arguments the plugin rejects.
+var ErrInvalidFunctionArguments = errors.New("the function rejects these arguments")
 
 // Argument is the value of one argument of a call of a plugin function, by the name the manifest gives it.
 type Argument struct {

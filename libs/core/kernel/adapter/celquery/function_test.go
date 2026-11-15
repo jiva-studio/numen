@@ -63,7 +63,7 @@ func TestAFunctionOfAPluginNotInTheCatalogIsUnknown(t *testing.T) {
 	}
 }
 
-func TestAPluginFunctionTakesLiteralArgumentsOfItsTypes(t *testing.T) {
+func TestAPluginFunctionAcceptsOnlyLiteralArgumentsOfItsTypes(t *testing.T) {
 	for _, text := range []string{`shelved(1)`, `shelved("a", "b")`, `shelved(kind)`} {
 		if _, err := parseOver(text, getShelfCatalog()); !errors.As(err, new(*searchquery.ParseError)) {
 			t.Errorf("%s returned %v, want a ParseError", text, err)

@@ -123,7 +123,7 @@ func New() *Registry {
 	return &Registry{functions: map[string]Function{}}
 }
 
-// Add adds the function that answers the name.
+// Add registers f under the name a manifest declares; a second function of one name is ErrDuplicate.
 func (r *Registry) Add(name string, f Function) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

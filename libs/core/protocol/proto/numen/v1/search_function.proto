@@ -7,7 +7,7 @@ option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v
 // SearchFunctionService answers the query functions a plugin declares in contributes.searchFunctions.
 // The plugin answers for the documents of one vault, named by their paths in the vault. A call ends
 // with the search it serves: its deadline is the search's, and a canceled search cancels it.
-// InvalidArgument is an argument the function does not take; any other error fails the query.
+// InvalidArgument reports arguments the function rejects; any other error fails the query.
 service SearchFunctionService {
   // MatchDocuments returns the paths among the paths of the request for which the function holds.
   rpc MatchDocuments(MatchDocumentsRequest) returns (MatchDocumentsResponse);

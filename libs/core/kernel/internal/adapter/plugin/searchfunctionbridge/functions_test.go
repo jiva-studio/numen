@@ -111,7 +111,7 @@ func callShelved(shelf string) searchquery.FunctionCall {
 	}
 }
 
-func TestACallCarriesTheFunctionItsArgumentsTheVaultAndTheGenerationUnderAUseLease(t *testing.T) {
+func TestACallSendsTheFunctionArgumentsVaultAndGenerationWithAUseLease(t *testing.T) {
 	service := newShelves()
 	host := serve(t, service)
 
