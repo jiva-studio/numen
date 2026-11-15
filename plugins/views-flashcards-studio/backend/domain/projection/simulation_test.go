@@ -71,7 +71,7 @@ func TestAPausedPresetAnswersNothing(t *testing.T) {
 
 func TestADayStopsAtItsMinutes(t *testing.T) {
 	t.Parallel()
-	p := Settings{Goal: GoalMinutes, MinutesADay: 3, Rule: RuleInterval, Interval: 4, Backlog: WholeBacklog}
+	p := Settings{Goal: GoalMinutes, MinutesADay: 3, Rule: RuleInterval, Interval: 4, Backlog: wholeBacklog}
 	got, err := newTestSimulation(1).Run(t.Context(), getTestNow(), p, getOverdueCards(5), 0)
 	if err != nil {
 		t.Fatal(err)
@@ -270,38 +270,10 @@ func TestCountOverdue(t *testing.T) {
 	}
 }
 
-func TestTheNextCardOfADayIsSplitByTheBacklog(t *testing.T) {
-	t.Parallel()
-	a := Allowance{Backlog: 50}
-	for _, one := range []struct {
-		debt, begun   int
-		isDue, isNew  bool
-		isNextCardDue bool
-	}{
-		{debt: 0, begun: 0, isDue: true, isNew: true, isNextCardDue: true},
-		{debt: 1, begun: 0, isDue: true, isNew: true, isNextCardDue: false},
-		{debt: 1, begun: 1, isDue: true, isNew: true, isNextCardDue: true},
-		{debt: 0, begun: 0, isDue: false, isNew: true, isNextCardDue: false},
-		{debt: 5, begun: 0, isDue: true, isNew: false, isNextCardDue: true},
-	} {
-		if got := a.isNextCardDebt(one.debt, one.begun, one.isDue, one.isNew); got != one.isNextCardDue {
-			t.Errorf("%+v: the next card is debt %v", one, got)
-		}
-	}
-}
-
 func TestBudgetNamesAreNamedOnceInOrder(t *testing.T) {
 	t.Parallel()
 	got := BudgetNames{}.Add(ClosedReviews).Add(ClosedNew).Add(ClosedReviews).Add(ClosedNothing)
 	if !slices.Equal(got, BudgetNames{ClosedNew, ClosedReviews}) {
 		t.Errorf("the budgets read %v, want [new reviews]", got)
-	}
-}
-
-func TestADayOfTheWeekCarriesItsShare(t *testing.T) {
-	t.Parallel()
-	p := Settings{Load: map[time.Weekday]int{time.Monday: 50}}
-	if p.GetShare(time.Monday) != 0.5 || p.GetShare(time.Tuesday) != 1 {
-		t.Errorf("Monday carries %v and Tuesday %v, want 0.5 and 1", p.GetShare(time.Monday), p.GetShare(time.Tuesday))
 	}
 }

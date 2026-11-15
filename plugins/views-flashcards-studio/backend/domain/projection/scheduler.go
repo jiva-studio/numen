@@ -34,6 +34,8 @@ type Scheduler interface {
 	GetAllowance(s Settings, open time.Time, spent Spent, unbegunCards, daysToLearn int) Allowance
 	// NewLoad opens an empty count of the cards due on each day.
 	NewLoad() Load
+	GetShare(s Settings, day time.Weekday) float64
+	IsNextCardDebt(a Allowance, debt, begun int, isDue, isNew bool) bool
 }
 
 // Load counts the cards due on each review day.
@@ -95,19 +97,6 @@ type Limits struct {
 	New     BudgetName
 	Reviews BudgetName
 	Minutes BudgetName
-}
-
-// WholeBacklog is a day that offers every card already begun before a new one.
-const WholeBacklog = 100
-
-func (a Allowance) isNextCardDebt(debt, begun int, isDue, isNew bool) bool {
-	if !isDue {
-		return false
-	}
-	if !isNew {
-		return true
-	}
-	return debt*WholeBacklog < a.Backlog*(debt+begun+1)
 }
 
 // BudgetName is a budget that closes a review day.

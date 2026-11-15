@@ -12,7 +12,7 @@ func getRetentionBounds() Bounds { return Bounds{Min: 0.7, Max: 0.99} }
 
 func TestACurveOfMinutesContainsThePresetMinutes(t *testing.T) {
 	t.Parallel()
-	p := Settings{Goal: GoalMinutes, MinutesADay: 7, Rule: RuleInterval, Interval: 4, Backlog: WholeBacklog}
+	p := Settings{Goal: GoalMinutes, MinutesADay: 7, Rule: RuleInterval, Interval: 4, Backlog: wholeBacklog}
 	got, err := newTestSimulation(5).Curve(t.Context(), getTestNow(), p, CurveInputs{
 		Cards: getOverdueCards(20), UnbegunCount: 5, Scheduler: nil, Places: nil, RetentionBounds: getRetentionBounds(),
 	})

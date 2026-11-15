@@ -98,7 +98,7 @@ func (s Simulation) getDaysToLearn(p Settings, open time.Time) int {
 	days := 0
 	for range LongestLearning {
 		ends := s.Day.GetEnd(open)
-		if p.GetShare(open.Weekday()) == 0 {
+		if s.By.GetShare(p, open.Weekday()) == 0 {
 			open = ends
 			continue
 		}
@@ -141,7 +141,7 @@ func (s Simulation) canReachGoal(p Settings, c Card, open, delta time.Time) bool
 		ends := s.Day.GetEnd(open)
 		// A day of the week with none of the load does not show the card, and the next
 		// day of review picks it up.
-		if p.GetShare(open.Weekday()) != 0 {
+		if s.By.GetShare(p, open.Weekday()) != 0 {
 			c = s.getScheduleAfterDay(c, open, p)
 		}
 		open = ends

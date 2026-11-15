@@ -39,18 +39,6 @@ const (
 	RuleRetention Rule = "retention"
 )
 
-// FullLoad is the percentage of a whole day's load.
-const FullLoad = 100
-
-// GetShare returns how much of a day's load this day of the week carries, as a share of one.
-func (s Settings) GetShare(day time.Weekday) float64 {
-	per, named := s.Load[day]
-	if !named {
-		return 1
-	}
-	return float64(per) / FullLoad
-}
-
 func (s Settings) isCharged(isShown bool) bool { return s.IsEveryShowingCharged || !isShown }
 
 // MinutesInDay is the most minutes a review day holds.

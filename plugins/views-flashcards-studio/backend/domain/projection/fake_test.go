@@ -5,7 +5,11 @@ import (
 	"time"
 )
 
-const oneDay = 24 * time.Hour
+const (
+	oneDay       = 24 * time.Hour
+	wholeBacklog = 100
+	fullLoad     = 100
+)
 
 // utcDays is a calendar whose review days begin at midnight UTC.
 type utcDays struct{}
@@ -60,8 +64,8 @@ func (s fakeScheduler) IsLearned(p Settings, c Card, at time.Time) bool {
 	return c.Due.Sub(c.Last) >= time.Duration(p.Interval)*oneDay
 }
 
-func (fakeScheduler) GetAllowance(p Settings, open time.Time, spent Spent, unbegunCards, _ int) Allowance {
-	share := p.GetShare(open.Weekday())
+func (s fakeScheduler) GetAllowance(p Settings, open time.Time, spent Spent, unbegunCards, _ int) Allowance {
+	share := s.GetShare(p, open.Weekday())
 	out := Allowance{
 		New:      int(math.Round(share*float64(p.NewADay))) - spent.New,
 		Reviews:  int(math.Round(share*float64(p.ReviewsADay))) - spent.Reviews,
@@ -73,12 +77,12 @@ func (fakeScheduler) GetAllowance(p Settings, open time.Time, spent Spent, unbeg
 	switch p.Goal {
 	case GoalRetention:
 		out.Limits = Limits{New: ClosedNew, Reviews: ClosedReviews, Minutes: ClosedNothing}
-		out.Backlog = WholeBacklog
+		out.Backlog = wholeBacklog
 	case GoalDate:
 		left := max(1, int(p.By.Sub(open)/oneDay)+1)
 		out.New = (unbegunCards + left - 1) / left
 		out.Limits = Limits{New: ClosedDate, Reviews: ClosedNothing, Minutes: ClosedNothing}
-		out.Backlog = WholeBacklog
+		out.Backlog = wholeBacklog
 		out.IsPaused = out.IsPaused || p.By.IsZero()
 	case GoalMinutes:
 		out.IsPaused = out.IsPaused || p.MinutesADay == 0
@@ -87,6 +91,24 @@ func (fakeScheduler) GetAllowance(p Settings, open time.Time, spent Spent, unbeg
 }
 
 func (s fakeScheduler) NewLoad() Load { return &fakeLoad{on: make(map[int]int), placed: s.placed} }
+
+func (fakeScheduler) GetShare(p Settings, day time.Weekday) float64 {
+	per, named := p.Load[day]
+	if !named {
+		return 1
+	}
+	return float64(per) / fullLoad
+}
+
+func (fakeScheduler) IsNextCardDebt(a Allowance, debt, begun int, isDue, isNew bool) bool {
+	if !isDue {
+		return false
+	}
+	if !isNew {
+		return true
+	}
+	return debt*wholeBacklog < a.Backlog*(debt+begun+1)
+}
 
 // fakeLoad moves a card to the day before its due day when that day holds fewer cards and the
 // settings even the load out.
@@ -134,6 +156,6 @@ func getOverdueCards(count int) []Card {
 func getRetentionSettings(newADay, reviewsADay int) Settings {
 	return Settings{
 		Goal: GoalRetention, NewADay: newADay, ReviewsADay: reviewsADay, Retention: 0.9,
-		Rule: RuleInterval, Interval: 4, Backlog: WholeBacklog,
+		Rule: RuleInterval, Interval: 4, Backlog: wholeBacklog,
 	}
 }

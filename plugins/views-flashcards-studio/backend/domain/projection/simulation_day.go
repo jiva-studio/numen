@@ -152,7 +152,7 @@ func (d *simulationDay) isDebtNext() bool {
 	hasDue := d.isDue()
 	hasNew := d.hasNew()
 	repeat := !hasDue && !hasNew
-	return repeat || d.admits.isNextCardDebt(d.observed, d.begun, hasDue, hasNew)
+	return repeat || d.sim.By.IsNextCardDebt(d.admits, d.observed, d.begun, hasDue, hasNew)
 }
 
 func (d *simulationDay) isRepeat() bool {

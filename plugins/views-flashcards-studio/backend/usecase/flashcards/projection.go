@@ -55,6 +55,16 @@ func (s projectionScheduler) NewLoad() projection.Load {
 	return projectionLoad{table: review.NewDueByDay(s.day)}
 }
 
+func (s projectionScheduler) GetShare(p projection.Settings, day time.Weekday) float64 {
+	return convertSettingsToPreset(p).GetShare(day)
+}
+
+func (s projectionScheduler) IsNextCardDebt(a projection.Allowance, debt, begun int, isDue, isNew bool) bool {
+	var day review.Allowance
+	day.Backlog = a.Backlog
+	return day.IsNextCardDebt(debt, begun, isDue, isNew)
+}
+
 // projectionLoad is the review count of cards due on each day.
 type projectionLoad struct{ table *review.DueByDay }
 
