@@ -12,6 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/logging"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/settings"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/refresh"
@@ -127,12 +129,13 @@ func (a *App) getParts() (*parts, error) {
 }
 
 func (a *App) newParts(hosts Hosts) *parts {
-	runner := refresh.New(refresh.Dependencies{Open: hosts.Open, Tasks: hosts.Tasks}, a.settings.GetSettings, a.clock)
+	runner := refresh.New(refresh.Dependencies{Open: hosts.Open, Tasks: hosts.Tasks, Log: logging.Log{}}, a.settings.GetSettings, a.clock)
 	notes := savedsearch.New(savedsearch.Dependencies{
 		Open:     func(id domain.VaultID) ports.Notes { return hosts.Open(id).Notes },
 		Runner:   runner,
 		Settings: a.getNoteSettings,
 		Clock:    a.clock,
+		Entropy:  random.Entropy{},
 	})
 	return &parts{hosts: hosts, runner: runner, notes: notes}
 }

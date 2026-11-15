@@ -34,10 +34,12 @@ type Vault struct {
 	Store  ports.Store
 }
 
-// Dependencies are the vaults the runner opens and the task list of the host.
+// Dependencies are the vaults the runner opens, the task list of the host and the log of the runs in the
+// background.
 type Dependencies struct {
 	Open  func(id domain.VaultID) Vault
 	Tasks ports.Tasks
+	Log   ports.Log
 }
 
 // Runner runs the saved searches of the vaults of one process. The runs of one vault go one after
@@ -47,6 +49,7 @@ type Dependencies struct {
 type Runner struct {
 	open     func(id domain.VaultID) Vault
 	tasks    ports.Tasks
+	log      ports.Log
 	settings func() Settings
 	clock    ports.Clock
 	vaults   *vaultLocks
@@ -58,8 +61,8 @@ type Runner struct {
 // New returns a runner over the dependencies, with the settings at the time of each run.
 func New(dependencies Dependencies, settings func() Settings, clock ports.Clock) *Runner {
 	return &Runner{
-		open: dependencies.Open, tasks: dependencies.Tasks, settings: settings, clock: clock, vaults: newVaultLocks(),
-		records: &sync.Mutex{}, watchers: newWatchers(), timers: newTimers(),
+		open: dependencies.Open, tasks: dependencies.Tasks, log: dependencies.Log, settings: settings, clock: clock,
+		vaults: newVaultLocks(), records: &sync.Mutex{}, watchers: newWatchers(), timers: newTimers(),
 	}
 }
 

@@ -2,6 +2,7 @@ package refresh_test
 
 import (
 	"context"
+	"log/slog"
 	"slices"
 	"strings"
 	"sync"
@@ -189,7 +190,7 @@ func newWorld(t *testing.T, refreshMinutes int) *world {
 }
 
 func (w *world) newRunner() *refresh.Runner {
-	return refresh.New(refresh.Dependencies{Open: w.open, Tasks: w.tasks}, w.getSettings, w.clock)
+	return refresh.New(refresh.Dependencies{Open: w.open, Tasks: w.tasks, Log: slog.Default()}, w.getSettings, w.clock)
 }
 
 func (w *world) open(id domain.VaultID) refresh.Vault {

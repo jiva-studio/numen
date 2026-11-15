@@ -6,8 +6,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"time"
-
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 )
 
 // Record is the cache of one saved search. ComputedAt is the time of the last good run, zero before the
@@ -16,19 +14,19 @@ import (
 // last good run: Reranker is the connection that reranked, empty in fused order. Errors are the problems
 // of the last run, in the lines of the note; the results stay those of the last good run.
 type Record struct {
-	Path            string        `json:"path"`
-	QueryHash       string        `json:"queryHash"`
-	Floor           float64       `json:"floor"`
-	ComputedAt      time.Time     `json:"computedAt"`
-	StaleSince      *time.Time    `json:"staleSince,omitempty"`
-	FailedAt        *time.Time    `json:"failedAt,omitempty"`
-	Failure         string        `json:"failure,omitempty"`
-	Order           api.Order     `json:"order"`
-	Reranker        string        `json:"reranker,omitempty"`
-	IndexGeneration string        `json:"indexGeneration,omitempty"`
-	Results         []api.Result  `json:"results"`
-	Warnings        []string      `json:"warnings"`
-	Errors          []api.Problem `json:"errors"`
+	Path            string     `json:"path"`
+	QueryHash       string     `json:"queryHash"`
+	Floor           float64    `json:"floor"`
+	ComputedAt      time.Time  `json:"computedAt"`
+	StaleSince      *time.Time `json:"staleSince,omitempty"`
+	FailedAt        *time.Time `json:"failedAt,omitempty"`
+	Failure         string     `json:"failure,omitempty"`
+	Order           Order      `json:"order"`
+	Reranker        string     `json:"reranker,omitempty"`
+	IndexGeneration string     `json:"indexGeneration,omitempty"`
+	Results         []Result   `json:"results"`
+	Warnings        []string   `json:"warnings"`
+	Errors          []Problem  `json:"errors"`
 }
 
 // Encode returns the bytes of the record.

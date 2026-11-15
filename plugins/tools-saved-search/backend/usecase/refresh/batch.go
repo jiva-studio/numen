@@ -4,14 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/searchnote"
 )
@@ -130,7 +128,7 @@ func (r *Runner) schedule(ctx context.Context, vault domain.VaultID, wakeAt time
 	detached := context.WithoutCancel(ctx)
 	r.timers.set(vault, delay, func() {
 		if err := r.RunDue(detached, vault); err != nil {
-			slog.Debug("saved search: run the due searches at the end of the cooldown", "vault", vault, "error", err)
+			r.log.Debug("saved search: run the due searches at the end of the cooldown", "vault", vault, "error", err)
 		}
 	})
 }
@@ -203,7 +201,7 @@ func deleteOtherFiles(ctx context.Context, v Vault, searches []search) error {
 func (r *Runner) StartRunDue(ctx context.Context, vault domain.VaultID) {
 	go func() {
 		if err := r.RunDue(ctx, vault); err != nil {
-			slog.Debug("saved search: run the due searches", "vault", vault, "error", err)
+			r.log.Debug("saved search: run the due searches", "vault", vault, "error", err)
 		}
 	}()
 }
@@ -212,16 +210,16 @@ func (r *Runner) StartRunDue(ctx context.Context, vault domain.VaultID) {
 func (r *Runner) StartRunNow(ctx context.Context, vault domain.VaultID, notePath string) {
 	go func() {
 		if _, err := r.RunNow(ctx, vault, notePath); err != nil {
-			slog.Debug("saved search: run an edited search", "vault", vault, "path", notePath, "error", err)
+			r.log.Debug("saved search: run an edited search", "vault", vault, "path", notePath, "error", err)
 		}
 	}()
 }
 
 // CheckQuery runs the query on the core as an interactive search and returns its problems, counted from
 // the first line of the query; none when the query is valid and its providers answered.
-func (r *Runner) CheckQuery(ctx context.Context, vault domain.VaultID, query string) ([]api.Problem, error) {
+func (r *Runner) CheckQuery(ctx context.Context, vault domain.VaultID, query string) ([]resultcache.Problem, error) {
 	start := host.SearchStart{Query: query, Priority: host.SearchPriorityInteractive, IsBackground: false}
-	result, err := runSearch(ctx, r.open(vault).Search, start)
+	result, err := r.runSearch(ctx, r.open(vault).Search, start)
 	if err != nil {
 		return nil, err
 	}

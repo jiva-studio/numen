@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 )
 
@@ -126,7 +125,7 @@ func TestRecordKeepsTheFloorOrderRerankerAndIndexGenerationOfTheCore(t *testing.
 	if record.Path != stormsPath || record.QueryHash != resultcache.HashText(stormsQuery) {
 		t.Errorf("record = %+v, want the path and the hash of the query", record)
 	}
-	if record.Floor != 0.4 || record.Order != api.OrderReranked || record.Reranker != "Harbor reranker" || record.IndexGeneration != "gen-7" {
+	if record.Floor != 0.4 || record.Order != resultcache.OrderReranked || record.Reranker != "Harbor reranker" || record.IndexGeneration != "gen-7" {
 		t.Errorf("record = %+v, want the floor, the order, the reranker and the index generation of the core", record)
 	}
 	if got := getResultTexts(record); !slices.Equal(got, []string{galeText, mooringText}) {
@@ -296,7 +295,7 @@ func TestRunWithoutRerankingWritesFusedResults(t *testing.T) {
 	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
-	if record.Order != api.OrderFused || record.Reranker != "" || record.FailedAt != nil || len(record.Warnings) != 0 {
+	if record.Order != resultcache.OrderFused || record.Reranker != "" || record.FailedAt != nil || len(record.Warnings) != 0 {
 		t.Errorf("record = %+v, want fused order, no reranker, no failure and no warning", record)
 	}
 }

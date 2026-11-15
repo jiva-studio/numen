@@ -7,9 +7,15 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/searchnote"
 )
+
+// UpdateInput is the path of a saved search note and its new query; Query is nil when the call gives none.
+type UpdateInput struct {
+	Path  string
+	Query *string
+}
 
 var (
 	errNoQuery = errors.New("give query")
@@ -19,12 +25,12 @@ var (
 
 // Update writes the query of the input into a saved search note, scans it, and runs it at once. A query
 // the core reports problems of returns them in the output and changes nothing.
-func (u *UseCase) Update(ctx context.Context, vault domain.VaultID, in api.UpdateInput) (api.SavedOutput, error) {
+func (u *UseCase) Update(ctx context.Context, vault domain.VaultID, in UpdateInput) (Saved, error) {
 	if in.Query == nil {
 		if err := u.checkSearch(ctx, vault, in.Path); err != nil {
-			return api.SavedOutput{}, err
+			return Saved{}, err
 		}
-		return api.SavedOutput{}, errNoQuery
+		return Saved{}, errNoQuery
 	}
 	problems, err := u.write(ctx, vault, in.Path, *in.Query)
 	if err != nil || len(problems) > 0 {
@@ -33,16 +39,16 @@ func (u *UseCase) Update(ctx context.Context, vault domain.VaultID, in api.Updat
 	return u.runFirst(ctx, vault, in.Path)
 }
 
-// Write writes the query of the request into a saved search note, scans it, and starts its run in the
+// Write writes the query into the saved search note at notePath, scans it, and starts its run in the
 // background without waiting for it: a saved search note is not indexed, so no index change runs it. A
 // query the core reports problems of returns its problems, counted from the first line of
 // the query, and changes nothing.
-func (u *UseCase) Write(ctx context.Context, vault domain.VaultID, in api.UpdateSearchRequest) ([]api.Problem, error) {
-	problems, err := u.write(ctx, vault, in.Path, in.Query)
+func (u *UseCase) Write(ctx context.Context, vault domain.VaultID, notePath string, query string) ([]resultcache.Problem, error) {
+	problems, err := u.write(ctx, vault, notePath, query)
 	if err != nil || len(problems) > 0 {
 		return problems, err
 	}
-	u.runner.StartRunNow(context.WithoutCancel(ctx), vault, in.Path)
+	u.runner.StartRunNow(context.WithoutCancel(ctx), vault, notePath)
 	return problems, nil
 }
 
@@ -57,7 +63,7 @@ func (u *UseCase) checkSearch(ctx context.Context, vault domain.VaultID, notePat
 	return nil
 }
 
-func (u *UseCase) write(ctx context.Context, vault domain.VaultID, notePath string, query string) ([]api.Problem, error) {
+func (u *UseCase) write(ctx context.Context, vault domain.VaultID, notePath string, query string) ([]resultcache.Problem, error) {
 	notes := u.open(vault)
 	raw, stat, err := notes.Read(ctx, notePath)
 	if err != nil {
@@ -80,5 +86,5 @@ func (u *UseCase) write(ctx context.Context, vault domain.VaultID, notePath stri
 		}
 		return nil, err
 	}
-	return []api.Problem{}, notes.Scan(ctx, []string{notePath})
+	return []resultcache.Problem{}, notes.Scan(ctx, []string{notePath})
 }

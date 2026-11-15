@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/searchnote"
@@ -17,7 +16,7 @@ import (
 // the note in the positions of the file, and the hash of its query.
 type target struct {
 	definition searchnote.Definition
-	problems   []api.Problem
+	problems   []resultcache.Problem
 	queryHash  string
 }
 
@@ -25,7 +24,7 @@ type target struct {
 // its last run, its cache, and whether a run will replace the cache or is on its way.
 type State struct {
 	Definition searchnote.Definition
-	Problems   []api.Problem
+	Problems   []resultcache.Problem
 	Record     resultcache.Record
 	HasRecord  bool
 	IsStale    bool
@@ -64,17 +63,17 @@ func readTarget(stat domain.FileStat, raw []byte) target {
 	return target{definition: definition, problems: convertProblems(problems), queryHash: resultcache.HashText(definition.Query)}
 }
 
-func convertProblems(problems []searchnote.Problem) []api.Problem {
-	converted := make([]api.Problem, len(problems))
+func convertProblems(problems []searchnote.Problem) []resultcache.Problem {
+	converted := make([]resultcache.Problem, len(problems))
 	for i, problem := range problems {
-		converted[i] = api.Problem{Line: problem.Line, Column: problem.Column, Message: problem.Message}
+		converted[i] = resultcache.Problem{Line: problem.Line, Column: problem.Column, Message: problem.Message}
 	}
 	return converted
 }
 
-func moveProblems(problems []api.Problem, raw []byte) []api.Problem {
+func moveProblems(problems []resultcache.Problem, raw []byte) []resultcache.Problem {
 	queryLine, isFound := searchnote.GetQueryLine(raw)
-	moved := make([]api.Problem, len(problems))
+	moved := make([]resultcache.Problem, len(problems))
 	for i, problem := range problems {
 		if isFound && problem.Line > 0 {
 			problem.Line += queryLine - 1
