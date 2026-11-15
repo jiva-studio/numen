@@ -132,6 +132,7 @@ jobs:
     uses: ./.github/workflows/go.yml
     with:
       core: ${{ fromJSON(needs.changes.outputs.areas).core }}
+      structure: ${{ fromJSON(needs.changes.outputs.areas).structure }}
       atomicfile: ${{ fromJSON(needs.changes.outputs.areas).atomicfile }}
       protocol: ${{ fromJSON(needs.changes.outputs.areas).protocol }}
       sdk_go: ${{ fromJSON(needs.changes.outputs.areas).sdk_go }}

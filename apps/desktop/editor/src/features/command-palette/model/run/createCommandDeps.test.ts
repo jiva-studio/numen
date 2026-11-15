@@ -17,7 +17,7 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
           return Promise.resolve()
         },
       },
-      panes: { requestClose: record('requestClose') },
+      panes: { closeTab: record('closeTab') },
     } as never,
     reached: {} as never,
     runs: {} as never,
@@ -59,14 +59,14 @@ describe('the commands reach the window', () => {
     deps.navigator.closeTab('tab-1')
     expect(calls).toStrictEqual([
       ['openTabOfKind', 'settings'],
-      ['requestClose', 'tab-1'],
+      ['closeTab', 'tab-1'],
     ])
 
     const failing = createOptions({
       writeMessage,
       windowTabs: {
         tabs: { openTabOfKind: () => Promise.reject(new Error('tab failed')) },
-        panes: { requestClose: vi.fn() },
+        panes: { closeTab: vi.fn() },
       } as never,
     })
     failing.deps.navigator.openTab('broken')

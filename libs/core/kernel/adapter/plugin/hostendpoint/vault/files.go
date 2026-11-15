@@ -117,7 +117,7 @@ func readKind(f *v1.HostFileStat) domain.SourceKind {
 func (e *filesCalls) GetHostVault(
 	_ context.Context, req *connect.Request[v1.GetHostVaultRequest],
 ) (*connect.Response[v1.GetHostVaultResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (e *filesCalls) GetHostVault(
 func (e *filesCalls) ListHostVaults(
 	_ context.Context, req *connect.Request[v1.ListHostVaultsRequest],
 ) (*connect.Response[v1.ListHostVaultsResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +262,7 @@ func (e *filesCalls) getLocks() Locks {
 func (e *filesCalls) UnlockVault(
 	_ context.Context, req *connect.Request[v1.UnlockVaultRequest],
 ) (*connect.Response[v1.UnlockVaultResponse], error) {
-	if _, _, err := e.begin(req.Header(), manifest.PermissionVaultWrite); err != nil {
+	if _, err := e.begin(req.Header(), manifest.PermissionVaultWrite); err != nil {
 		return nil, err
 	}
 	if locks := e.getLocks(); locks != nil {
@@ -277,7 +277,7 @@ func (e *filesCalls) ScanFiles(
 	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
 		func(code v1.HostVaultErrorCode) *v1.ScanFilesResponse { return &v1.ScanFilesResponse{Error: code} },
 		func(vault *Access) (*v1.ScanFilesResponse, error) {
-			return &v1.ScanFilesResponse{}, vault.Writer.Scan(ctx, req.Msg.GetPaths())
+			return &v1.ScanFilesResponse{}, vault.Writer.ScanFiles(ctx, req.Msg.GetPaths())
 		})
 }
 

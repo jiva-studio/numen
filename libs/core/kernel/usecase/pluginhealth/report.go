@@ -9,21 +9,17 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
-
-// Plugins gives the manifest of an enabled plugin, whose commands a health action may name.
-type Plugins interface {
-	GetPlugin(id string) (manifest.Discovered, bool)
-}
 
 // Report puts a health item a plugin reports about itself in the list.
 type Report struct {
 	items   *Items
-	plugins Plugins
+	plugins pluginport.PluginManifests
 }
 
 // NewReport returns the use case over the list and the plugins.
-func NewReport(items *Items, plugins Plugins) *Report {
+func NewReport(items *Items, plugins pluginport.PluginManifests) *Report {
 	return &Report{items: items, plugins: plugins}
 }
 

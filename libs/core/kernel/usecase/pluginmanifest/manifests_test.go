@@ -16,8 +16,6 @@ type manifestHost struct {
 	infoReads int
 }
 
-func (h *manifestHost) Discover() error { return nil }
-
 func (h *manifestHost) IsPluginEnabled(id string) bool { return !h.disabled[id] }
 
 func (h *manifestHost) IsPluginSuspended(string) bool { return false }

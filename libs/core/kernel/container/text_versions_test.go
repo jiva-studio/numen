@@ -125,10 +125,10 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	versions := newTextVersions(vaultOf(cfg), db)
 	a := assemble(cfg, versions)
 	readIntoIndex(t, a, db, v)
-	if _, err := db.DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
+	if _, err := db.VectorIndex().DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Compact(t.Context()); err != nil {
+	if err := db.VectorIndex().Compact(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -161,7 +161,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	readIntoIndex(t, a, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := vault.NewMove(fileMovers(a.vault), db.NoteQueries(), db.Sources(), db.Sources(), note.Move{})
+	move := vault.NewMove(fileMovers(a.vault), db.NoteQueries(), db.Sources(), db.Sources(), note.NewMove(note.MoveDeps{}))
 	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}

@@ -287,7 +287,7 @@ func TestSectionsAreAddedRenamedAndRemovedWithoutTouchingCards(t *testing.T) {
 	}
 }
 
-func TestDeckEditScenariosCoverEdgesAndErrors(t *testing.T) {
+func TestDeckEditUseCasesCoverEdgesAndErrors(t *testing.T) {
 	e := newEditorFixture(t)
 
 	// Query second card by CardID (pos == 1) and with empty Fields (len(fields) == 0).

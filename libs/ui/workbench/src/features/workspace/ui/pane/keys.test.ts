@@ -1,6 +1,6 @@
 /** What a key means along a strip of tabs. */
 import { describe, expect, it } from 'vitest'
-import { stepTo } from './keys'
+import { isFocusable, stepTo } from './keys'
 
 describe('the arrows along a strip', () => {
   it('step one along, and the ends meet', () => {
@@ -40,5 +40,15 @@ describe('a key that means nothing along a strip', () => {
 
   it('goes nowhere along a strip of no tabs', () => {
     expect(stepTo('Home', 0, 0)).toBeNull()
+  })
+})
+
+describe('isFocusable', () => {
+  it('accepts an object with a focus method and rejects everything else', () => {
+    expect(isFocusable({ focus: () => undefined })).toBe(true)
+    expect(isFocusable(null)).toBe(false)
+    expect(isFocusable('button')).toBe(false)
+    expect(isFocusable({})).toBe(false)
+    expect(isFocusable({ focus: 'not-a-function' })).toBe(false)
   })
 })

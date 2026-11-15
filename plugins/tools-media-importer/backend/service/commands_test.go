@@ -227,8 +227,8 @@ func TestCommandErrorPaths(t *testing.T) {
 
 	// The handlers over a missing note.
 	for _, cmd := range []string{commandCreateText, commandDownloadMedia, commandDeleteMedia} {
-		if _, err := commands.RunCommand(t.Context(), command.Request{Command: cmd, Path: "missing.md"}); err == nil {
-			t.Errorf("%s(missing.md) succeeded", cmd)
+		if _, err := commands.RunCommand(t.Context(), command.Request{Command: cmd, Path: "missing.md"}); !errors.Is(err, host.ErrNotExist) {
+			t.Errorf("%s(missing.md) = %v, want ErrNotExist", cmd, err)
 		}
 	}
 
@@ -341,6 +341,9 @@ func TestDownloadCaptionsAnswersOnceItsTaskIsShown(t *testing.T) {
 		t.Errorf("the fetch of the text is not shown as a task once the handler answered: %+v", queue.ListTasks())
 	}
 	<-cf.textStartedCh
+	if _, err := runWithin(t, commands, command.Request{Command: commandCreateText, Path: path}); !errors.Is(err, link.ErrBeingFetched) {
+		t.Errorf("second app:file.createText while running answered %v, want ErrBeingFetched", err)
+	}
 	close(cf.textBlockCh)
 	links.Wait()
 	if tasks := queue.ListTasks(); len(tasks) != 0 {

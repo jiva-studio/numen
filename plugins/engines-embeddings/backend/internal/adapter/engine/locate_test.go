@@ -221,8 +221,8 @@ func TestLocateFromDir(t *testing.T) {
 	if err := os.WriteFile(modelPath, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Locate(t.Context(), model.LocalModel{Dir: dir}, nil); err == nil {
-		t.Fatal("Locate() succeeded with missing tokenizer")
+	if _, err := Locate(t.Context(), model.LocalModel{Dir: dir}, nil); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("Locate() with missing tokenizer = %v, want fs.ErrNotExist", err)
 	}
 	if err := os.WriteFile(tokenPath, []byte("tokens"), 0o644); err != nil {
 		t.Fatal(err)
@@ -412,8 +412,8 @@ func TestDiscardDownloadAndSnapshotEdgeCases(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(cacheDir, "snapshots"), []byte("file"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok, err := locateNewestSnapshot(cacheDir, "owner/repo", "model.onnx"); ok || err == nil {
-		t.Errorf("locateNewestSnapshot with file snapshots = %v, %v", ok, err)
+	if _, ok, err := locateNewestSnapshot(cacheDir, "owner/repo", "model.onnx"); ok || err == nil || errors.Unwrap(err) == nil {
+		t.Errorf("locateNewestSnapshot with file snapshots = %v, %v, want wrapped error", ok, err)
 	}
 
 	snapRoot := t.TempDir()
@@ -424,7 +424,7 @@ func TestDiscardDownloadAndSnapshotEdgeCases(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(snapRoot, "snapshots", "a-incomplete", model.TokenizerFile), []byte("t"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	// Snapshot "b-complete" has both files with zero Time.
+	// Snapshot "b-complete" has both files with a timestamp before time.Time{}.
 	bModel := filepath.Join(snapRoot, "snapshots", "b-complete", "onnx", "model.onnx")
 	if err := os.MkdirAll(filepath.Dir(bModel), 0o755); err != nil {
 		t.Fatal(err)
@@ -435,8 +435,15 @@ func TestDiscardDownloadAndSnapshotEdgeCases(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(snapRoot, "snapshots", "b-complete", model.TokenizerFile), []byte("t"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	zeroTime := time.Time{}
-	if err := os.Chtimes(bModel, zeroTime, zeroTime); err != nil {
+	beforeZero := time.Unix(-62135596801, 0)
+	if err := os.Chtimes(bModel, beforeZero, beforeZero); err != nil {
+		t.Fatal(err)
+	}
+	// Snapshot "c-incomplete" sorts after "b-complete" and has onnx/model.onnx as a directory with current mtime.
+	if err := os.MkdirAll(filepath.Join(snapRoot, "snapshots", "c-incomplete", "onnx", "model.onnx"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(snapRoot, "snapshots", "c-incomplete", model.TokenizerFile), []byte("t"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

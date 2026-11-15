@@ -89,14 +89,55 @@ func TestDiscoveryPlacesAndFallbacks(t *testing.T) {
 		t.Errorf("findIn(~/...) = %q, want %q", got, inHome)
 	}
 
-	// Empty HOME skips ~/ places and uses absolute place.
+	// Empty HOME skips ~/ places and uses absolute place, even when relative .local/bin/agy exists in CWD.
 	absBin := filepath.Join(t.TempDir(), "abs-agy")
 	if err := os.WriteFile(absBin, []byte("#!/bin/sh\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+	if got := findIn([]string{absBin}); got != absBin {
+		t.Errorf("findIn(absBin) with HOME set = %q, want %q", got, absBin)
+	}
+	workDir := t.TempDir()
+	relBin := filepath.Join(workDir, ".local", "bin", "agy")
+	if err := os.MkdirAll(filepath.Dir(relBin), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(relBin, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(workDir)
 	t.Setenv("HOME", "")
+	t.Setenv("USERPROFILE", "")
+	t.Setenv("HOMEDRIVE", "")
+	t.Setenv("HOMEPATH", "")
 	if got := findIn([]string{"~/.local/bin/agy", absBin}); got != absBin {
 		t.Errorf("findIn with empty HOME = %q, want %q", got, absBin)
 	}
 
+	if isRunnable(t.TempDir()) {
+		t.Error("a directory should not be runnable")
+	}
+	if runtime.GOOS != "windows" {
+		modeFile := filepath.Join(t.TempDir(), "mode-check")
+		if err := os.WriteFile(modeFile, []byte("#!/bin/sh\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		for _, tc := range []struct {
+			mode os.FileMode
+			want bool
+		}{
+			{0o600, false},
+			{0o002, false},
+			{0o001, true},
+			{0o010, true},
+			{0o100, true},
+		} {
+			if err := os.Chmod(modeFile, tc.mode); err != nil {
+				t.Fatal(err)
+			}
+			if got := isRunnable(modeFile); got != tc.want {
+				t.Errorf("isRunnable(mode %04o) = %v, want %v", tc.mode, got, tc.want)
+			}
+		}
+	}
 }

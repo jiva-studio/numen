@@ -8,15 +8,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createWindowSettingsPart } from '@/testing/windowSettings'
 import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
 import { WORDS } from '@/shared/ui/words'
-import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
+import { createSettingsCoreApi, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 
-let restore: (() => void) | undefined
-
 afterEach(() => {
-  restore?.()
-  restore = undefined
   vi.restoreAllMocks()
 })
 
@@ -58,7 +54,7 @@ const createWindow = () => {
     updateSettings: vi.fn(async () => undefined),
   } as unknown as SettingsCore
   const listThemes = vi.fn(() => DUSK)
-  restore = installSettingsCore(core, {
+  const api = createSettingsCoreApi(core, {
     theme: {
       listThemes,
       readTheme: () => ({ css: ':root { --numen-surface: #223; }' }),
@@ -66,10 +62,15 @@ const createWindow = () => {
   })
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = {
-    groups: { handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') } },
+    handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') },
   } as unknown as WindowTabs
   const settings = createWindowSettingsPart({
-    rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
+    api,
+    rest: createSettingsStore(
+      api.configuration.settings,
+      SETTINGS_WORDS,
+      log.getWriter('configured'),
+    ),
     words: WORDS,
     log,
     windowTabs,

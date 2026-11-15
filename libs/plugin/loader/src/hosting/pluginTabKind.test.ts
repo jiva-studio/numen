@@ -3,7 +3,6 @@ import { defineComponent, h, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { PluginUi, PluginVault, TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost } from './host'
 import {
   clearPluginStyles,
   loadPluginStyle,
@@ -16,8 +15,8 @@ import {
   pickDeclaredParts,
   type DeclaredTabKindRegistration,
 } from './pluginTabKind'
-import type { PluginHostDeps } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 interface Held {
   readonly at: string
@@ -207,7 +206,7 @@ describe('the pane of a declared kind', () => {
 describe('a declared kind registered through a plugin context', () => {
   it('reaches the window as the kind the plugin declared', () => {
     const registered: unknown[] = []
-    const deps: PluginHostDeps = {
+    const deps: TestHostDeps = {
       target: 'desktop.editor',
       registerKind: (kind) => {
         registered.push(kind)
@@ -216,7 +215,7 @@ describe('a declared kind registered through a plugin context', () => {
       registerExtensionReader: vi.fn(() => vi.fn()),
       openTab: vi.fn(() => Promise.resolve('tab')),
     }
-    const context = createPluginHost(deps).lifecycle.createContext(
+    const context = createTestPluginHost(deps).lifecycle.createContext(
       'md.numen.sample',
       createMockManifest('md.numen.sample', {
         name: 'Sample',
@@ -225,7 +224,7 @@ describe('a declared kind registered through a plugin context', () => {
       }),
     )
 
-    const sub = context.register.tabKind<Held>({
+    const sub = context.plugin.register.tabKind<Held>({
       kind: 'member',
       component: Pane,
       open: (folderPath, id) => ({ at: folderPath, id, title: 'T' }),
@@ -241,7 +240,7 @@ describe('a declared kind registered through a plugin context', () => {
 })
 
 describe('the services a plugin context is given', () => {
-  const createDeps = (overrides: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
+  const createDeps = (overrides: Partial<TestHostDeps> = {}): TestHostDeps => ({
     target: 'desktop.editor',
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
@@ -256,7 +255,7 @@ describe('the services a plugin context is given', () => {
     >
     const read = vi.fn(async () => ({ body: 'Pruning notes.' }))
     const notes = { read } as unknown as NonNullable<PluginVault['notes']>
-    const host = createPluginHost(
+    const host = createTestPluginHost(
       createDeps({ getWorkspace: () => workspace, getNotes: () => notes }),
     )
 
@@ -265,15 +264,15 @@ describe('the services a plugin context is given', () => {
       createMockManifest('md.numen.sample', { name: 'Sample', permissions: ['vault:read'] }),
     )
 
-    expect(context.ui.workspace?.getNoteInFocus()).toStrictEqual(focus)
-    await expect(context.vault.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
+    expect(context.host.ui.workspace?.getNoteInFocus()).toStrictEqual(focus)
+    await expect(context.host.vault.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
       body: 'Pruning notes.',
     })
     expect(read).toHaveBeenCalledWith('Orchard/Pruning.md')
   })
 
   it('are absent where the host offers none', () => {
-    const context = createPluginHost(createDeps()).lifecycle.createContext('md.numen.sample')
+    const context = createTestPluginHost(createDeps()).lifecycle.createContext('md.numen.sample')
 
     expect(context).not.toHaveProperty('workspace')
     expect(context).not.toHaveProperty('notes')
@@ -281,16 +280,16 @@ describe('the services a plugin context is given', () => {
 
   it('tell every plugin listening for a change to the vault, and a failing one is reported', async () => {
     const onError = vi.fn()
-    const host = createPluginHost(createDeps({ onError }))
+    const host = createTestPluginHost(createDeps({ onError }))
     const received: unknown[] = []
     const readText = createMockManifest('md.numen.one', {
       name: 'One',
       permissions: ['vault:read'],
     })
-    host.lifecycle.createContext('md.numen.one', readText).events.onVaultChange((event) => {
+    host.lifecycle.createContext('md.numen.one', readText).host.events.onVaultChange((event) => {
       received.push(event)
     })
-    host.lifecycle.createContext('md.numen.two', readText).events.onVaultChange(() => {
+    host.lifecycle.createContext('md.numen.two', readText).host.events.onVaultChange(() => {
       throw new Error('no')
     })
 

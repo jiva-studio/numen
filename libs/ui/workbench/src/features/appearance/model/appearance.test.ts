@@ -7,9 +7,11 @@
  * after the keyboard focus has stayed on its row.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DESIGNED, type Appearance, type Themes } from '../lib/appearance'
+import { ref } from 'vue'
+import { DESIGNED, type Appearance, type Mode, type Sizes, type Themes } from '../lib/appearance'
 import { IS_SIZES } from '../api/head'
 import { createWindowAppearance } from './appearance'
+import { createAppearancePreview } from './preview'
 
 const words = { unlisted: 'Themes unavailable', themeUnreadable: 'Theme unreadable' }
 
@@ -317,6 +319,49 @@ describe('the size the keyboard is standing on', () => {
     expect(sizes(one.sheet)).toBe(SIZED)
   })
 
+  it('cancels a pending size timer when cleared before the hold elapses or when another size is previewed', async () => {
+    vi.useFakeTimers()
+    try {
+      const one = window()
+      await one.appearance.start()
+
+      one.appearance.preview.keyboard.previewSize('interfaceScale', 1.25)
+      await vi.advanceTimersByTimeAsync(100)
+      one.appearance.preview.keyboard.previewSize('interfaceScale', 1.5)
+      await vi.advanceTimersByTimeAsync(60)
+      expect(one.appearance.preview.display.sized.value.interfaceScale).toBe(1)
+
+      await vi.advanceTimersByTimeAsync(100)
+      expect(one.appearance.preview.display.sized.value.interfaceScale).toBe(1.5)
+
+      one.appearance.preview.keyboard.previewSize('textScale', 1.75)
+      one.appearance.preview.clear()
+      await vi.advanceTimersByTimeAsync(200)
+      expect(one.appearance.preview.display.sized.value.textScale).toBe(1)
+      one.appearance.close()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('reports an error when applying a previewed theme rejects', async () => {
+    const messages: [string, string][] = []
+    const preview = createAppearancePreview({
+      write: (text, kind) => messages.push([text, kind]),
+      applied: ref('preset:numen'),
+      mode: ref<Mode>('system'),
+      settings: ref<Sizes>({ interfaceScale: 1, textScale: 1 }),
+      applyTheme: async () => {
+        throw new Error('apply failed')
+      },
+    })
+
+    preview.keyboard.previewTheme('mine:sea')
+    await settle()
+
+    expect(messages).toStrictEqual([['apply failed', 'error']])
+  })
+
   it('keeps the theme and the mode unchanged', async () => {
     const one = await startWindow()
 
@@ -366,6 +411,20 @@ describe('the person editing their own theme file', () => {
     await one.changeThemes('mine:sea')
 
     expect(one.getAppearanceCount()).toBe(2)
+  })
+
+  it('applies the fallback theme or mode when the watched change moved the settings choice', async () => {
+    const one = await startWindow({ applied: 'mine:sea', mode: 'light' })
+    one.setAppearance({ applied: 'preset:dracula', mode: 'light' })
+
+    await one.changeThemes('mine:sea')
+
+    expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: preset:dracula }')
+
+    one.setAppearance({ applied: 'preset:dracula', mode: 'dark' })
+    await one.changeThemes('mine:other')
+
+    expect(getHeadStyles(one.sheet)[0]).toBe(':root { color-scheme: dark; }')
   })
 })
 
@@ -470,8 +529,10 @@ describe('the window before it has received anything', () => {
   it('has no themes, applies no theme, reads as a system pair, and draws at the designed size', () => {
     const { appearance } = createManualThemes()
 
+    expect(appearance.state.themes.value).toStrictEqual([])
     expect(appearance.state.applied.value).toBe('')
     expect(appearance.state.mode.value).toBe('system')
+    expect(appearance.state.lost.value).toBe('')
     expect(appearance.preview.display.sized.value).toStrictEqual({
       interfaceScale: DESIGNED,
       textScale: DESIGNED,
@@ -581,12 +642,10 @@ describe('a window that is closed', () => {
 
     one.appearance.preview.keyboard.previewSize('interfaceScale', 1.5)
     one.appearance.close()
+    one.appearance.state.settings.value = { interfaceScale: 1.75, textScale: 1.5 }
     await wait()
 
-    expect(one.appearance.preview.display.sized.value).toStrictEqual({
-      interfaceScale: 1,
-      textScale: 1,
-    })
+    expect(sizes(one.sheet)).toBe(SIZED)
   })
 })
 

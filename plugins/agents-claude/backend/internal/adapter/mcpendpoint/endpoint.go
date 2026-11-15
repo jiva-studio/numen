@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -70,7 +71,11 @@ func (Server) Serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.I
 }
 
 func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*Endpoint, error) {
-	token, err := newToken()
+	return serveOn(ctx, rand.Reader, "127.0.0.1:0", listed, invoke)
+}
+
+func serveOn(ctx context.Context, random io.Reader, address string, listed []*tools.ToolInfo, invoke task.Invoke) (*Endpoint, error) {
+	token, err := newToken(random)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +95,7 @@ func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*
 		})
 	}
 
-	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", address)
 	if err != nil {
 		return nil, fmt.Errorf("listen for the tools of the agent: %w", err)
 	}
@@ -212,6 +217,10 @@ func readInputSchema(raw []byte) json.RawMessage {
 	if hasObjectType(schema) {
 		return json.RawMessage(raw)
 	}
+	return encodeObjectSchema(schema)
+}
+
+func encodeObjectSchema(schema map[string]json.RawMessage) json.RawMessage {
 	schema["type"] = json.RawMessage(`"object"`)
 	encoded, err := json.Marshal(schema)
 	if err != nil {
@@ -268,9 +277,9 @@ func newTextContent(text string) *sdk.TextContent {
 	return &sdk.TextContent{Text: text, Meta: nil, Annotations: nil}
 }
 
-func newToken() (string, error) {
+func newToken(random io.Reader) (string, error) {
 	raw := make([]byte, tokenBytes)
-	if _, err := rand.Read(raw); err != nil {
+	if _, err := io.ReadFull(random, raw); err != nil {
 		return "", fmt.Errorf("create a token for the tools of the agent: %w", err)
 	}
 	return hex.EncodeToString(raw), nil

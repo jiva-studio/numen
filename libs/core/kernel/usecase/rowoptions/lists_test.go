@@ -9,8 +9,8 @@ import (
 	"testing/synctest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 

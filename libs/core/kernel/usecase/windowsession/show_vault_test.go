@@ -13,7 +13,7 @@ func TestShowingAnotherVaultStopsTheFirstAndStartsTheSecond(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden())
 
-	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
+	if err := w.useCases.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -30,7 +30,7 @@ func TestShowVaultPublishesAReloadAndOpensWrites(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden())
 
-	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
+	if err := w.useCases.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -46,7 +46,7 @@ func TestShowingTheVaultThatIsShownChangesNothing(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden())
 
-	if err := w.scenarios.Switching.Show.Execute(t.Context(), garden(), nil); err != nil {
+	if err := w.useCases.Switching.Show.Execute(t.Context(), garden(), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -60,7 +60,7 @@ func TestAPageAwaitingAnAnswerKeepsTheVaultInTheWindow(t *testing.T) {
 	w.open(t, garden())
 	w.pages.isAsking = true
 
-	err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil)
+	err := w.useCases.Switching.Show.Execute(t.Context(), studio(), nil)
 
 	if !errors.Is(err, window.ErrAnswerPending) {
 		t.Fatalf("the switch returned %v, want %v", err, window.ErrAnswerPending)
@@ -75,7 +75,7 @@ func TestAVaultThatIsNotTheOneItsFolderCarriesIsNotShown(t *testing.T) {
 	w := newTestWindow(t, func(deps *Deps) { deps.Vault.Identity = identity{mismatched: mismatched} })
 	w.open(t, garden())
 
-	err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil)
+	err := w.useCases.Switching.Show.Execute(t.Context(), studio(), nil)
 
 	if !errors.Is(err, mismatched) {
 		t.Fatalf("the switch returned %v, want %v", err, mismatched)
@@ -88,11 +88,11 @@ func TestAVaultThatIsNotTheOneItsFolderCarriesIsNotShown(t *testing.T) {
 func TestAWindowThatClosedShowsNoOtherVault(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden())
-	if !w.scenarios.Closing.Flush.Execute(t.Context()) {
+	if !w.useCases.Closing.Flush.Execute(t.Context()) {
 		t.Fatal("the pages did not flush")
 	}
 
-	err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil)
+	err := w.useCases.Switching.Show.Execute(t.Context(), studio(), nil)
 
 	if !errors.Is(err, window.ErrClosing) {
 		t.Errorf("the switch returned %v, want %v", err, window.ErrClosing)
@@ -104,7 +104,7 @@ func TestSwitchingStartsTheTasksOfTheNewVaultFromNothing(t *testing.T) {
 	w.open(t, garden())
 	w.tasks.AddTask(work.Task{ID: work.MakingVectors, Title: "Indexing"})
 
-	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
+	if err := w.useCases.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
 		t.Fatal(err)
 	}
 
