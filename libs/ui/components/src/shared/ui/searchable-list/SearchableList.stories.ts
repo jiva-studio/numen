@@ -272,3 +272,45 @@ export const Popup: Story = {
     await expect(args.onClose).toHaveBeenCalled()
   },
 }
+
+/** A press on the button that opened the popup closes it, and the next press opens it again. */
+export const ClosesFromItsTrigger: Story = {
+  render: (args) => ({
+    components: { SearchableListPopup },
+    setup: () => {
+      const trigger = ref<HTMLButtonElement | null>(null)
+      const isOpen = ref(false)
+      const onToggle = (): void => {
+        isOpen.value = !isOpen.value
+      }
+      const onClose = (): void => {
+        isOpen.value = false
+      }
+      return { args, trigger, isOpen, onToggle, onClose }
+    },
+    template: `
+      <button ref="trigger" type="button" :aria-expanded="isOpen" @click="onToggle">Model</button>
+      <SearchableListPopup
+        v-if="isOpen"
+        :items="args.items"
+        :label="args.label"
+        :at="{ x: 24, y: 64 }"
+        :from="trigger"
+        @select="onClose"
+        @close="onClose"
+      />
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole('button', { name: 'Model' })
+    const options = () => document.body.querySelectorAll('[role="option"]')
+    await userEvent.click(trigger)
+    await expect(options()).not.toHaveLength(0)
+    await userEvent.click(trigger)
+    await new Promise((done) => requestAnimationFrame(done))
+    await expect(options()).toHaveLength(0)
+    await expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    await userEvent.click(trigger)
+    await expect(options()).not.toHaveLength(0)
+  },
+}

@@ -14,13 +14,13 @@ export interface SearchableListProps {
   hasAction?: boolean
   needsQuery?: boolean
   chosen?: readonly string[] | undefined
+  from?: HTMLElement | null
 }
 
 export interface SearchableListPopupProps {
   at: Position
   asking?: number
   viewport?: Size | null
-  from?: HTMLElement | null
 }
 
 export interface SearchableListSlots {
