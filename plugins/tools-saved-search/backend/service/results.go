@@ -43,6 +43,7 @@ func watchResults(ctx context.Context, built *parts, req api.WatchResultsRequest
 	if err := send(api.ResultsChange{ComputedAt: formatTime(computedAt), IsRunning: state.IsRunning}); err != nil {
 		return err
 	}
+	built.runner.StartRunIfDue(ctx, vault, req.Path)
 	built.runner.StartRunDue(ctx, vault)
 	for {
 		select {

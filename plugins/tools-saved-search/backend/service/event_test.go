@@ -90,3 +90,30 @@ func TestHandleEventIgnoresAnotherEvent(t *testing.T) {
 		t.Errorf("store = %v, %v, want nothing written", files, err)
 	}
 }
+
+func TestHandleEventReturnsBeforeTheBatchEnds(t *testing.T) {
+	f := newFixture(t, 0)
+	f.addStormsNote()
+	release := f.searches.HoldSearch(stormsQuery)
+	defer release()
+
+	returned := make(chan error, 1)
+	go func() { returned <- f.app.HandleEvent(t.Context(), "onIndexChanged:"+testVault) }()
+
+	select {
+	case err := <-returned:
+		if err != nil {
+			t.Fatalf("HandleEvent = %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("HandleEvent waits for the held search, want it to return at once")
+	}
+	if files, err := f.vault.Store().List(t.Context()); err != nil || len(files) != 0 {
+		t.Errorf("store = %v, %v while the search is held, want nothing written yet", files, err)
+	}
+	release()
+	f.app.Wait()
+	if record := f.readRecord(t, stormsID); len(record.Results) != 2 {
+		t.Errorf("record = %+v, want the batch to run the search after the event returned", record)
+	}
+}
