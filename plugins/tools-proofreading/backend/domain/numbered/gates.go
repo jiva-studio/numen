@@ -51,26 +51,26 @@ func buildFixedLines(batch Batch, reply string, maxDistance float64, read map[in
 func processRow(row string, batch Batch, read map[int]string, claimedLines map[int]bool, maxDistance float64) (line Line, keep, reaches, ok bool) {
 	startLine, endLine, text, barred, numbers := readRow(row)
 	if !numbers {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
+		return Line{}, false, false, false
 	}
 	if endLine > startLine && !batch.IsJoinable {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
+		return Line{}, false, false, false
 	}
 	was, reaches, matchOk := matchLines(read, startLine, endLine, batch.Last())
 	if !matchOk {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
+		return Line{}, false, false, false
 	}
 	if reaches {
-		return Line{Number: 0, Last: 0, Text: ""}, false, true, true
+		return Line{}, false, true, true
 	}
 	if !claimLines(claimedLines, startLine, endLine) {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
+		return Line{}, false, false, false
 	}
 	if !isValidRow(row, was, text, barred) {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
+		return Line{}, false, false, false
 	}
 	if !canKeepCorrection(was, text, startLine, endLine, maxDistance) {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, true
+		return Line{}, false, false, true
 	}
 	return Line{Number: startLine, Last: endLine, Text: text}, true, false, true
 }
@@ -131,7 +131,7 @@ func canKeepCorrection(was, text string, startLine, endLine int, maxDistance flo
 
 func readRow(row string) (startLine, endLine int, text string, barred, ok bool) {
 	digits := readLeadingDigits(row)
-	if digits == "" || len(digits) == len(row) {
+	if len(digits) == len(row) {
 		return 0, 0, "", false, false
 	}
 	startLine, err := strconv.Atoi(digits)
@@ -159,9 +159,6 @@ func readRow(row string) (startLine, endLine int, text string, barred, ok bool) 
 
 func readRowRange(rest string, startLine int) (endLine int, remainder string, ok bool) {
 	last := readLeadingDigits(rest[1:])
-	if last == "" {
-		return 0, "", false
-	}
 	endLine, err := strconv.Atoi(last)
 	if err != nil || endLine <= startLine {
 		return 0, "", false
@@ -199,11 +196,10 @@ func stripFence(reply string) string {
 	if !strings.HasPrefix(body, "```") {
 		return body
 	}
-	head := strings.IndexByte(body, '\n')
-	if head < 0 {
+	_, body, ok := strings.Cut(body, "\n")
+	if !ok {
 		return ""
 	}
-	body = body[head+1:]
 	if tail := strings.LastIndex(body, "```"); tail >= 0 {
 		body = body[:tail]
 	}
@@ -250,5 +246,5 @@ func countEdits(x, y []rune) int {
 			last = keep
 		}
 	}
-	return row[len(y)]
+	return row[len(row)-1]
 }
