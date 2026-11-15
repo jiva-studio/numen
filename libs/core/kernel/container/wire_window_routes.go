@@ -254,13 +254,13 @@ func getReadVault(a pluginsWiring, db *Index) indexing.OpenReading {
 
 func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:           getReadVault(a, db),
-		Source:            embedding.GetSource(),
-		VectorCounts:      indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
-		SearchSourceReady: state.Events.EmitSearchSourceReady,
-		Events:            windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
-		Quiet:             indexing.QuietPeriod,
-		After:             a.vault.Clock.After,
+		Reading:      getReadVault(a, db),
+		Source:       embedding.GetSource(),
+		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
+		IndexChanged: state.Events.EmitIndexChanged,
+		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
+		Quiet:        indexing.QuietPeriod,
+		After:        a.vault.Clock.After,
 	})
 }
 
@@ -337,4 +337,15 @@ func getConnectionResolve(c pluginsWiring) connectionport.ResolveConnection {
 		return nil
 	}
 	return connection.NewResolve(deps).Execute
+}
+
+func getFeedEvents(a pluginsWiring, db *Index, state *editor.State) windowsession.FeedEvents {
+	return windowsession.FeedEvents{
+		WatchWrites:  db.FeedChanges().Watch,
+		WatchPlugins: func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
+		ReadHead:     db.FileChanges().GetHead,
+		Emit:         state.Events.EmitFilesChanged,
+		Quiet:        windowsession.FeedQuietPeriod,
+		After:        a.vault.Clock.After,
+	}
 }

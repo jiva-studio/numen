@@ -3,25 +3,15 @@ package taxonomy
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 	"testing"
 )
 
-type declaredCommand struct {
-	ID   string `json:"id"`
-	When string `json:"when"`
-}
-
 type manifestShape struct {
-	Permissions  []string `json:"permissions"`
-	Capabilities []string `json:"capabilities"`
-	Contributes  struct {
-		Commands []declaredCommand `json:"commands"`
-		Triggers []struct {
-			Event   string `json:"event"`
-			Command string `json:"command"`
-			When    string `json:"when"`
-		} `json:"triggers"`
-	} `json:"contributes"`
+	Permissions      []string        `json:"permissions"`
+	Capabilities     []string        `json:"capabilities"`
+	ActivationEvents []string        `json:"activationEvents"`
+	Contributes      json.RawMessage `json:"contributes"`
 }
 
 func readManifest(t *testing.T) manifestShape {
@@ -33,18 +23,14 @@ func readManifest(t *testing.T) manifestShape {
 	return shape
 }
 
-func TestTheManifestUpdatesTheTagsOfANoteWhoseFrontmatterChanged(t *testing.T) {
+func TestTheManifestUpdatesTheTagsOnTheFilesChangedEventAlone(t *testing.T) {
 	shape := readManifest(t)
 
-	if len(shape.Contributes.Triggers) != 1 {
-		t.Fatalf("triggers = %+v, want one", shape.Contributes.Triggers)
+	if !slices.Equal(shape.ActivationEvents, []string{"onFilesChanged"}) {
+		t.Errorf("activationEvents = %v, want [onFilesChanged]", shape.ActivationEvents)
 	}
-	trigger := shape.Contributes.Triggers[0]
-	if trigger.Event != "note.frontmatterChanged" || trigger.Command != "tags.update" || trigger.When != "target.isNote" {
-		t.Errorf("trigger = %+v", trigger)
-	}
-	if !slices.ContainsFunc(shape.Contributes.Commands, func(c declaredCommand) bool { return c.ID == "tags.update" }) {
-		t.Error("the manifest declares no command tags.update")
+	if strings.Contains(string(shape.Contributes), "triggers") || strings.Contains(string(shape.Contributes), "commands") {
+		t.Errorf("contributes = %s, want no triggers and no commands", shape.Contributes)
 	}
 }
 

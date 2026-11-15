@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/apitest"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/enumtest"
 )
 
 func TestEveryFaultIsSavedFromOne(t *testing.T) {
-	enumtest.CheckProduced(t, api.GetProblemKindValues(), map[api.ProblemKind]format.Fault{
+	enumtest.CheckProduced(t, apitest.GetProblemKindValues(), map[api.ProblemKind]format.Fault{
 		api.ProblemKindFieldDeclaredTwice:     format.FaultTwoFields,
 		api.ProblemKindCardModelWithoutFields: format.FaultNoFields,
 		api.ProblemKindTemplateMissingASide:   format.FaultTemplateSide,

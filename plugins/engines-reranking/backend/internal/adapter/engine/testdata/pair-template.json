@@ -1,0 +1,79 @@
+{
+  "version": "1.0",
+  "truncation": null,
+  "padding": null,
+  "added_tokens": [
+    { "id": 0, "content": "<unk>", "single_word": false, "lstrip": false, "rstrip": false, "normalized": false, "special": true },
+    { "id": 1, "content": "<s>", "single_word": false, "lstrip": false, "rstrip": false, "normalized": false, "special": true },
+    { "id": 2, "content": "</s>", "single_word": false, "lstrip": false, "rstrip": false, "normalized": false, "special": true },
+    { "id": 3, "content": "<pad>", "single_word": false, "lstrip": false, "rstrip": false, "normalized": false, "special": true }
+  ],
+  "normalizer": {
+    "type": "Sequence",
+    "normalizers": [
+      { "type": "Strip", "strip_left": true, "strip_right": true },
+      { "type": "Replace", "pattern": { "Regex": " {2,}" }, "content": "▁" }
+    ]
+  },
+  "pre_tokenizer": { "type": "Metaspace", "replacement": "▁", "prepend_scheme": "always", "split": true },
+  "post_processor": {
+    "type": "TemplateProcessing",
+    "single": [
+      { "SpecialToken": { "id": "<s>", "type_id": 0 } },
+      { "Sequence": { "id": "A", "type_id": 0 } },
+      { "SpecialToken": { "id": "</s>", "type_id": 0 } }
+    ],
+    "pair": [
+      { "SpecialToken": { "id": "<s>", "type_id": 0 } },
+      { "Sequence": { "id": "A", "type_id": 0 } },
+      { "SpecialToken": { "id": "</s>", "type_id": 0 } },
+      { "SpecialToken": { "id": "</s>", "type_id": 1 } },
+      { "Sequence": { "id": "B", "type_id": 1 } },
+      { "SpecialToken": { "id": "</s>", "type_id": 1 } }
+    ],
+    "special_tokens": {
+      "<s>": { "id": "<s>", "ids": [5], "tokens": ["<s>"] },
+      "</s>": { "id": "</s>", "ids": [7], "tokens": ["</s>"] }
+    }
+  },
+  "decoder": { "type": "Metaspace", "replacement": "▁", "prepend_scheme": "always", "split": true },
+  "model": {
+    "type": "Unigram",
+    "unk_id": 0,
+    "byte_fallback": false,
+    "vocab": [
+      ["<unk>", 0.0],
+      ["<s>", 0.0],
+      ["</s>", 0.0],
+      ["<pad>", 0.0],
+      ["<mask>", 0.0],
+      ["<cls>", 0.0],
+      ["<extra>", 0.0],
+      ["<sep>", 0.0],
+      ["▁", -4.0],
+      ["a", -8.0],
+      ["b", -8.0],
+      ["c", -8.0],
+      ["d", -6.0],
+      ["▁ab", -3.0],
+      ["▁abc", -5.0],
+      ["cd", -3.0],
+      ["x", -5.0],
+      ["y", -5.0],
+      ["xy", -10.0],
+      ["gh", -20.0],
+      ["hk", -1.0],
+      ["k", -9.5],
+      ["mn", -20.0],
+      ["np", -1.0],
+      ["p", -11.5],
+      ["▁hello", -2.0],
+      ["▁world", -2.0],
+      ["▁hello▁world", -1.0],
+      ["▁Hello", -2.0],
+      ["▁fi", -2.0],
+      ["▁é", -2.0],
+      ["▁ж", -2.0]
+    ]
+  }
+}

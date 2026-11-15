@@ -38,9 +38,11 @@ type Head struct {
 }
 
 // IsReset reports whether a reader at since has to read the vault again from the start: since is the
-// zero cursor, is of another feed, or is before changes the feed no longer has.
+// zero cursor, is of another feed, or is after the start of the feed and before changes the feed no
+// longer has. A reader at the start of the feed, number 0, reads the latest events of every file the
+// vault holds.
 func (h Head) IsReset(since Cursor) bool {
-	return since.FeedID == "" || since.FeedID != h.Cursor.FeedID || since.Seq < h.TrimmedSeq
+	return since.FeedID == "" || since.FeedID != h.Cursor.FeedID || (since.Seq > 0 && since.Seq < h.TrimmedSeq)
 }
 
 // SourceID is the number the index keeps a file under. It stays the same when the file moves, and a
