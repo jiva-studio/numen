@@ -3,6 +3,7 @@ import type { Recording } from '../drivers/scenario.js'
 import { attachInputs, recordInputs, type RecordedInput } from './inputs.js'
 
 export const VIDEO_START = 'video-start'
+export const PLATFORM = 'platform'
 
 const DEFAULT_SIZE: ViewportSize = { width: 1280, height: 860 }
 
@@ -42,7 +43,10 @@ export const createVideoRecorder = (
 }
 
 const markVideoStart = (testInfo: TestInfo): void => {
-  testInfo.annotations.push({ type: VIDEO_START, description: String(Date.now()) })
+  testInfo.annotations.push(
+    { type: VIDEO_START, description: String(Date.now()) },
+    { type: PLATFORM, description: process.platform },
+  )
 }
 
 const attachVideos = async (testInfo: TestInfo, pages: readonly Page[]): Promise<void> => {

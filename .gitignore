@@ -60,3 +60,4 @@ refactoring-plan.md
 # Scenarios of features/ as Playwright tests, written by bddgen.
 tests/acceptance/desktop/.features-gen/
 tests/acceptance/desktop/acceptance-report/
+tests/acceptance/desktop/acceptance-blobs/

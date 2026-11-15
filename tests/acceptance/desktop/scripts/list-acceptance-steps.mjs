@@ -6,7 +6,10 @@ import { fileURLToPath } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const stepsDir = path.join(root, 'steps')
 
-for (const file of fs.readdirSync(stepsDir).filter((name) => name.endsWith('.ts')).sort()) {
+for (const file of fs
+  .readdirSync(stepsDir)
+  .filter((name) => name.endsWith('.ts'))
+  .sort()) {
   console.log(`\n${file}`)
   const source = fs.readFileSync(path.join(stepsDir, file), 'utf8')
   for (const hit of source.matchAll(/\b(Given|When|Then)\(\s*(['"`])((?:\\.|(?!\2).)*)\2/g)) {

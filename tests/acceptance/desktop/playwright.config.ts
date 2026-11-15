@@ -30,7 +30,7 @@ export default defineConfig({
     ['list'],
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
     ...(isVideoOn
-      ? [['./report/scenario-report.ts', { outputFolder: 'acceptance-report' }] as const]
+      ? [['blob', { outputDir: 'acceptance-blobs', fileName: `run-${process.pid}.zip` }] as const]
       : []),
   ],
 })

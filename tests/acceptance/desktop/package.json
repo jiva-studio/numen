@@ -7,7 +7,8 @@
   "scripts": {
     "acceptance:gen": "bddgen -c playwright.config.ts",
     "acceptance:test": "bddgen -c playwright.config.ts && node ../../e2e/desktop/scripts/run-offline.mjs -c playwright.config.ts",
-    "acceptance:report": "PLAYWRIGHT_VIDEO=1 npm run -s acceptance:test --",
+    "acceptance:report": "node scripts/report.mjs",
+    "acceptance:merge": "playwright merge-reports -c report.config.ts acceptance-blobs",
     "report": "playwright show-report",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "acceptance:lint": "node scripts/lint-features.mjs && eslint . && npm run -s acceptance:unit && node scripts/check-acceptance.mjs",
