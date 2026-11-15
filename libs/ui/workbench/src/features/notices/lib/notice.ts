@@ -11,7 +11,7 @@ import type { TallyUnit, Severity } from './tally'
  * removed once it has been up long enough to be read. `kept` stays until the
  * user dismisses it.
  */
-export type Stay = 'holds' | 'read' | 'kept'
+type Stay = 'holds' | 'read' | 'kept'
 
 /**
  * One message of the window: a task running in the background, a standing
