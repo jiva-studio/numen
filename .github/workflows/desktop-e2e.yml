@@ -60,7 +60,9 @@ permissions:
 
 jobs:
   # Plans the jobs the scope needs, each engine split into shards of about five minutes by
-  # shards.json, and builds the window, its plugins and the debug binaries once for them.
+  # shards.json, and builds the windows, the plugins and the debug binaries they run once for them.
+  # A cache entry of main holds the build of the same sources; a hit skips the build, and the jobs
+  # restore the entry instead of downloading the artifact.
   build:
     name: Build
     runs-on: ubuntu-latest
