@@ -694,6 +694,54 @@ func versionsOf(texts host.TextVersions) func(domain.VaultID) host.TextVersions 
 // pictures opens a scan saved as an image as a document of one page.
 type pictures struct{}
 
+func (pictures) Prepare(func(error)) {}
+
+// preparedPictures are pictures that count the calls of Prepare.
+type preparedPictures struct {
+	pictures
+	prepares *int
+}
+
+func (p preparedPictures) Prepare(func(error)) { *p.prepares++ }
+
+// turnQueue is a queue that keeps how many times the documents were prepared when a recognition asked for its turn.
+type turnQueue struct {
+	stubQueue
+	prepares          *int
+	preparesAtEnqueue int
+}
+
+func (q *turnQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, error) {
+	q.preparesAtEnqueue = *q.prepares
+	return q.stubQueue.EnqueueWork(ctx, work)
+}
+
+func TestRecognitionPreparesDocumentsBeforeItsTurn(t *testing.T) {
+	v := hosttest.New("Physics")
+	pngRaw := encodeTestPNG(t)
+	v.File("scan.png", pngRaw)
+	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
+	texts.SetStore("md.numen.engines.ocr", v.Store())
+	texts.File("scan.png", []byte(pngRaw))
+	prepares := 0
+	queue := &turnQueue{prepares: &prepares}
+	r, err := New(Host{
+		Documents: preparedPictures{prepares: &prepares}, Vaults: func(id domain.VaultID) Files { return v.With(id) },
+		Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: queue,
+	}, func(context.Context) (Recognizer, error) {
+		return &stubRecognizer{blocks: []Block{{Text: "hello"}}}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Recognize(t.Context(), Request{Path: "scan.png"}); err != nil {
+		t.Fatal(err)
+	}
+	if queue.preparesAtEnqueue != 1 {
+		t.Fatalf("the documents were prepared %d times before the turn, want 1", queue.preparesAtEnqueue)
+	}
+}
+
 func (pictures) Open(filePath string, raw []byte) (Document, error) {
 	drawing, _, err := image.Decode(bytes.NewReader(raw))
 	if err != nil {
