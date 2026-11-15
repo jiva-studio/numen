@@ -34,20 +34,22 @@ type Model struct {
 
 // Config sets what the server answers. A zero Config serves no key check, no models and vectors of
 // DefaultDimensions. When APIKey is set, every request must carry it as a bearer token. With IsLabeled,
-// Models carry the architecture and the supported parameters OpenRouter gives, and EmbeddingModels are
-// listed at /embeddings/models, which OpenRouter serves.
+// Models carry the architecture and the supported parameters OpenRouter gives, EmbeddingModels are
+// listed at /embeddings/models and RerankModels at /models?output_modalities=rerank, as OpenRouter serves them.
 type Config struct {
 	APIKey          string
 	Dimensions      int
 	Models          []Model
 	IsLabeled       bool
 	EmbeddingModels []Model
+	RerankModels    []Model
 }
 
 // Request is one request the server received.
 type Request struct {
 	Method string
 	Path   string
+	Query  string
 	Header http.Header
 	Body   []byte
 }
@@ -131,7 +133,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.mu.Lock()
-	s.requests = append(s.requests, Request{Method: r.Method, Path: path, Header: r.Header.Clone(), Body: body})
+	s.requests = append(s.requests, Request{Method: r.Method, Path: path, Query: r.URL.RawQuery, Header: r.Header.Clone(), Body: body})
 	one := s.behavior[path]
 	s.mu.Unlock()
 
@@ -170,10 +172,12 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string, body
 		return
 	}
 	switch {
+	case r.Method == http.MethodGet && path == "/models" && s.config.IsLabeled && r.URL.Query().Get("output_modalities") == "rerank":
+		s.serveModels(w, s.config.RerankModels, true, "rerank")
 	case r.Method == http.MethodGet && path == "/models":
-		s.serveModels(w, s.config.Models, s.config.IsLabeled, false)
+		s.serveModels(w, s.config.Models, s.config.IsLabeled, "text")
 	case r.Method == http.MethodGet && path == "/embeddings/models" && s.config.IsLabeled:
-		s.serveModels(w, s.config.EmbeddingModels, true, true)
+		s.serveModels(w, s.config.EmbeddingModels, true, "embeddings")
 	default:
 		http.NotFound(w, r)
 	}
@@ -345,16 +349,12 @@ func (s *Server) Vector(text string) []float32 {
 	return vector
 }
 
-func (s *Server) serveModels(w http.ResponseWriter, models []Model, isLabeled, isEmbedding bool) {
+func (s *Server) serveModels(w http.ResponseWriter, models []Model, isLabeled bool, output string) {
 	data := make([]any, len(models))
 	for i, model := range models {
 		entry := map[string]any{"id": model.ID, objectKey: "model"}
 		if isLabeled {
 			entry["name"] = model.Name
-			output := "text"
-			if isEmbedding {
-				output = "embeddings"
-			}
 			entry["architecture"] = map[string]any{"input_modalities": []string{"text"}, "output_modalities": []string{output}}
 			entry["context_length"] = 128000
 			entry["supported_parameters"] = []string{"tools", "reasoning"}
