@@ -6,10 +6,9 @@ import { createMockManifest } from '@numen/core-client/testing'
 import { describe, expect, it, vi } from 'vitest'
 import type { TextRange } from '@numen/plugin-sdk'
 import { createReaderTabKind } from './customTabKind'
-import { createPluginHost } from './host'
 import type { SourceReader } from './tabKinds'
-import type { PluginHostDeps } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 describe('the ranges of a reader tab', () => {
   it('are none on a tab just opened', () => {
@@ -27,7 +26,7 @@ describe('the ranges of a reader tab', () => {
     const states: Record<string, { ranges?: unknown; selector?: unknown }> = { 'tab-1': {} }
     let reader: SourceReader | undefined
     const openTab = vi.fn(async () => 'tab-1')
-    const deps: PluginHostDeps = {
+    const deps: TestHostDeps = {
       target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader: vi.fn((_ext: string, read: SourceReader) => {
@@ -38,12 +37,12 @@ describe('the ranges of a reader tab', () => {
       getTabState: (id: string) => states[id],
       getReaderExtensions: () => ['bin'],
     }
-    createPluginHost(deps)
+    createTestPluginHost(deps)
       .lifecycle.createContext(
         'sample.plugin',
         createMockManifest('sample.plugin', { readers: ['reader:bin'] }),
       )
-      .register.reader({ id: 'reader:bin', component: STUB_COMPONENT })
+      .plugin.register.reader({ id: 'reader:bin', component: STUB_COMPONENT })
     const ranges: readonly TextRange[] = [
       { start: 1500, end: 1580 },
       { start: 400, end: 1100 },

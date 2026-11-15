@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostwindow.proto.
  */
 export const file_numen_v1_hostwindow: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiLAoLUGFzc2FnZVNwYW4SDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIk0KFEZvY3VzUGFzc2FnZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkSJwoIcGFzc2FnZXMYAiADKAsyFS5udW1lbi52MS5QYXNzYWdlU3BhbiJFChVGb2N1c1Bhc3NhZ2VzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlImMKB09wZW5UYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEiEKBXBsYWNlGAUgASgLMhIubnVtZW4udjEuVGFiUGxhY2UiJgokSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXF1ZXN0IokBCiVIb3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1Jlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFdpbmRvd0Vycm9yQ29kZRIfCgR0YWJzGAIgAygLMhEubnVtZW4udjEuT3BlblRhYhIRCglhY3RpdmVfaWQYAyABKAkiJAoSQWN0aXZhdGVUYWJSZXF1ZXN0Eg4KBnRhYl9pZBgBIAEoCSJ2ChNBY3RpdmF0ZVRhYlJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFdpbmRvd0Vycm9yQ29kZRIeCgN0YWIYAiABKAsyES5udW1lbi52MS5PcGVuVGFiEhEKCWFjdGl2ZV9pZBgDIAEoCSqJAQoTSG9zdFdpbmRvd0Vycm9yQ29kZRImCiJIT1NUX1dJTkRPV19FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJAogSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9OT19XSU5ET1cQARIkCiBIT1NUX1dJTkRPV19FUlJPUl9DT0RFX05PVF9GT1VORBACMugCChFIb3N0V2luZG93U2VydmljZRJECglGb2N1c05vdGUSGi5udW1lbi52MS5Gb2N1c05vdGVSZXF1ZXN0GhsubnVtZW4udjEuRm9jdXNOb3RlUmVzcG9uc2USUAoNRm9jdXNQYXNzYWdlcxIeLm51bWVuLnYxLkZvY3VzUGFzc2FnZXNSZXF1ZXN0Gh8ubnVtZW4udjEuRm9jdXNQYXNzYWdlc1Jlc3BvbnNlEm8KDFJlYWRPcGVuVGFicxIuLm51bWVuLnYxLkhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVxdWVzdBovLm51bWVuLnYxLkhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVzcG9uc2USSgoLQWN0aXZhdGVUYWISHC5udW1lbi52MS5BY3RpdmF0ZVRhYlJlcXVlc3QaHS5udW1lbi52MS5BY3RpdmF0ZVRhYlJlc3BvbnNlQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_workspace]);
+  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiKQoIQnl0ZVNwYW4SDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIkMKEEZvY3VzRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIhCgVzcGFucxgCIAMoCzISLm51bWVuLnYxLkJ5dGVTcGFuIkEKEUZvY3VzRmlsZVJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFdpbmRvd0Vycm9yQ29kZSJjCgdPcGVuVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIhCgVwbGFjZRgFIAEoCzISLm51bWVuLnYxLlRhYlBsYWNlIiYKJEhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVxdWVzdCKJAQolSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RXaW5kb3dFcnJvckNvZGUSHwoEdGFicxgCIAMoCzIRLm51bWVuLnYxLk9wZW5UYWISEQoJYWN0aXZlX2lkGAMgASgJIiQKEkFjdGl2YXRlVGFiUmVxdWVzdBIOCgZ0YWJfaWQYASABKAkidgoTQWN0aXZhdGVUYWJSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RXaW5kb3dFcnJvckNvZGUSHgoDdGFiGAIgASgLMhEubnVtZW4udjEuT3BlblRhYhIRCglhY3RpdmVfaWQYAyABKAkqiQEKE0hvc3RXaW5kb3dFcnJvckNvZGUSJgoiSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiQKIEhPU1RfV0lORE9XX0VSUk9SX0NPREVfTk9fV0lORE9XEAESJAogSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9OT1RfRk9VTkQQAjLcAgoRSG9zdFdpbmRvd1NlcnZpY2USRAoJRm9jdXNOb3RlEhoubnVtZW4udjEuRm9jdXNOb3RlUmVxdWVzdBobLm51bWVuLnYxLkZvY3VzTm90ZVJlc3BvbnNlEkQKCUZvY3VzRmlsZRIaLm51bWVuLnYxLkZvY3VzRmlsZVJlcXVlc3QaGy5udW1lbi52MS5Gb2N1c0ZpbGVSZXNwb25zZRJvCgxSZWFkT3BlblRhYnMSLi5udW1lbi52MS5Ib3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1JlcXVlc3QaLy5udW1lbi52MS5Ib3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1Jlc3BvbnNlEkoKC0FjdGl2YXRlVGFiEhwubnVtZW4udjEuQWN0aXZhdGVUYWJSZXF1ZXN0Gh0ubnVtZW4udjEuQWN0aXZhdGVUYWJSZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_workspace]);
 
 /**
  * @generated from message numen.v1.FocusNoteRequest
@@ -66,11 +66,11 @@ export const FocusNoteResponseSchema: GenMessage<FocusNoteResponse> = /*@__PURE_
   messageDesc(file_numen_v1_hostwindow, 1);
 
 /**
- * A PassageSpan is a byte range in a file's text version, as a passage search returns it.
+ * A ByteSpan is a byte range in a file's text version, as a text search returns it.
  *
- * @generated from message numen.v1.PassageSpan
+ * @generated from message numen.v1.ByteSpan
  */
-export type PassageSpan = Message<"numen.v1.PassageSpan"> & {
+export type ByteSpan = Message<"numen.v1.ByteSpan"> & {
   /**
    * @generated from field: int32 start = 1;
    */
@@ -83,38 +83,38 @@ export type PassageSpan = Message<"numen.v1.PassageSpan"> & {
 };
 
 /**
- * Describes the message numen.v1.PassageSpan.
- * Use `create(PassageSpanSchema)` to create a new message.
+ * Describes the message numen.v1.ByteSpan.
+ * Use `create(ByteSpanSchema)` to create a new message.
  */
-export const PassageSpanSchema: GenMessage<PassageSpan> = /*@__PURE__*/
+export const ByteSpanSchema: GenMessage<ByteSpan> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostwindow, 2);
 
 /**
- * @generated from message numen.v1.FocusPassagesRequest
+ * @generated from message numen.v1.FocusFileRequest
  */
-export type FocusPassagesRequest = Message<"numen.v1.FocusPassagesRequest"> & {
+export type FocusFileRequest = Message<"numen.v1.FocusFileRequest"> & {
   /**
    * @generated from field: string path = 1;
    */
   path: string;
 
   /**
-   * @generated from field: repeated numen.v1.PassageSpan passages = 2;
+   * @generated from field: repeated numen.v1.ByteSpan spans = 2;
    */
-  passages: PassageSpan[];
+  spans: ByteSpan[];
 };
 
 /**
- * Describes the message numen.v1.FocusPassagesRequest.
- * Use `create(FocusPassagesRequestSchema)` to create a new message.
+ * Describes the message numen.v1.FocusFileRequest.
+ * Use `create(FocusFileRequestSchema)` to create a new message.
  */
-export const FocusPassagesRequestSchema: GenMessage<FocusPassagesRequest> = /*@__PURE__*/
+export const FocusFileRequestSchema: GenMessage<FocusFileRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostwindow, 3);
 
 /**
- * @generated from message numen.v1.FocusPassagesResponse
+ * @generated from message numen.v1.FocusFileResponse
  */
-export type FocusPassagesResponse = Message<"numen.v1.FocusPassagesResponse"> & {
+export type FocusFileResponse = Message<"numen.v1.FocusFileResponse"> & {
   /**
    * @generated from field: numen.v1.HostWindowErrorCode error = 1;
    */
@@ -122,10 +122,10 @@ export type FocusPassagesResponse = Message<"numen.v1.FocusPassagesResponse"> & 
 };
 
 /**
- * Describes the message numen.v1.FocusPassagesResponse.
- * Use `create(FocusPassagesResponseSchema)` to create a new message.
+ * Describes the message numen.v1.FocusFileResponse.
+ * Use `create(FocusFileResponseSchema)` to create a new message.
  */
-export const FocusPassagesResponseSchema: GenMessage<FocusPassagesResponse> = /*@__PURE__*/
+export const FocusFileResponseSchema: GenMessage<FocusFileResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostwindow, 4);
 
 /**
@@ -314,15 +314,15 @@ export const HostWindowService: GenService<{
     output: typeof FocusNoteResponseSchema;
   },
   /**
-   * FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
-   * passages opens the file at its beginning.
+   * FocusFile opens a file, scrolls to the first span and highlights all spans. No
+   * spans opens the file at its beginning.
    *
-   * @generated from rpc numen.v1.HostWindowService.FocusPassages
+   * @generated from rpc numen.v1.HostWindowService.FocusFile
    */
-  focusPassages: {
+  focusFile: {
     methodKind: "unary";
-    input: typeof FocusPassagesRequestSchema;
-    output: typeof FocusPassagesResponseSchema;
+    input: typeof FocusFileRequestSchema;
+    output: typeof FocusFileResponseSchema;
   },
   /**
    * ReadOpenTabs returns the tabs the window last reported, and the active one.

@@ -1,22 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { CATALOG_STATE } from '@numen/core-client'
-import {
-  createLostConnection,
-  createMockCatalogEntry,
-  installCoreAnswers,
-} from '@numen/core-client/testing'
-import { listCatalog } from './catalog'
-
-let restore: (() => void) | undefined
-
-afterEach(() => {
-  restore?.()
-  restore = undefined
-})
+import { createLostConnection, createMockCatalogEntry } from '@numen/core-client/testing'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 
 describe('the entries of the catalog', () => {
   it('arrive with the category, the feature and the kinds of tab of each plugin', async () => {
-    restore = installCoreAnswers({
+    const { listCatalog } = createAnsweredApi({
       pluginCatalog: {
         listCatalog: () => ({
           entries: [
@@ -28,7 +17,7 @@ describe('the entries of the catalog', () => {
           ],
         }),
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 
@@ -53,7 +42,7 @@ describe('the entries of the catalog', () => {
   })
 
   it('mark only an available entry as offered', async () => {
-    restore = installCoreAnswers({
+    const { listCatalog } = createAnsweredApi({
       pluginCatalog: {
         listCatalog: () => ({
           entries: [
@@ -62,7 +51,7 @@ describe('the entries of the catalog', () => {
           ],
         }),
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 
@@ -73,14 +62,14 @@ describe('the entries of the catalog', () => {
   })
 
   it('name the sources that could not be read', async () => {
-    restore = installCoreAnswers({
+    const { listCatalog } = createAnsweredApi({
       pluginCatalog: {
         listCatalog: () => ({
           entries: [],
           sourceErrors: [{ source: 'sample-index', message: 'timed out' }],
         }),
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 
@@ -90,13 +79,13 @@ describe('the entries of the catalog', () => {
   })
 
   it('answer why the catalog cannot be read', async () => {
-    restore = installCoreAnswers({
+    const { listCatalog } = createAnsweredApi({
       pluginCatalog: {
         listCatalog: () => {
           throw createLostConnection('gone')
         },
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 

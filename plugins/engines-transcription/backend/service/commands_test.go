@@ -39,6 +39,10 @@ func TestTheHandlerOfCreateTextFailsForARecordingBeingTranscribed(t *testing.T) 
 	}
 	close(w.recognizer.release)
 	w.waitUntilNoTask(t)
+	w.transcriber.Close()
+	if _, err := w.commands.RunCommand(t.Context(), command.Request{Command: "app:file.createText", Path: lecture}); err == nil || errors.Is(err, transcribe.ErrAlreadyTranscribing) {
+		t.Errorf("a run after the transcriber closed answered %v, want close error", err)
+	}
 }
 
 func TestThePluginRunsNeitherDeleteTextNorTheCommandOfBefore(t *testing.T) {

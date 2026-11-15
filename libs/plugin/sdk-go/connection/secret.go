@@ -2,7 +2,6 @@ package connection
 
 import (
 	"fmt"
-	"io"
 	"log/slog"
 )
 
@@ -24,8 +23,10 @@ func (s Secret) Format(f fmt.State, verb rune) {
 	if verb == 'v' && f.Flag('#') {
 		text = s.GoString()
 	}
-	if _, err := io.WriteString(f, text); err != nil {
-		return
+	for _, b := range []byte(text) {
+		if _, err := f.Write([]byte{b}); err != nil {
+			return
+		}
 	}
 }
 

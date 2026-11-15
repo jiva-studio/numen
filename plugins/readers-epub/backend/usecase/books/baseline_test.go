@@ -11,10 +11,11 @@ func TestParseBaselineReadsSizeAndTime(t *testing.T) {
 }
 
 func TestParseBaselineOfBadMtimeHasZeroMtime(t *testing.T) {
-	got := ParseBaseline("1200", "soon")
-
-	if got == nil || got.Size != 1200 || got.Mtime != 0 {
-		t.Errorf("baseline %+v, want size 1200 and mtime 0", got)
+	for _, mtime := range []string{"soon", "999999999999999999999"} {
+		got := ParseBaseline("1200", mtime)
+		if got == nil || got.Size != 1200 || got.Mtime != 0 {
+			t.Errorf("mtime %q: baseline %+v, want size 1200 and mtime 0", mtime, got)
+		}
 	}
 }
 

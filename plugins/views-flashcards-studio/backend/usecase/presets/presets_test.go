@@ -1,7 +1,9 @@
 package presets_test
 
 import (
+	"context"
 	"errors"
+	"io/fs"
 	"reflect"
 	"slices"
 	"strings"
@@ -36,7 +38,7 @@ func TestADeckIsScheduledByThePresetItNames(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getPointingVault())
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +58,7 @@ func TestADeckNamingNoPreset(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getPointingVault())
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +81,7 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	}
 	s := openVault(t, notes)
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +103,7 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 func TestAPresetSavedWithNoIndexUpdatePassesBackItsFingerprint(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getPointingVault())
-	busyPresets := presets.New(presets.Config{
+	busyPresets := createPresetUseCases(presets.Config{
 		Readers: s.env.Ports.Readers,
 		Writers: s.env.Ports.Writers,
 		Links:   s.links,
@@ -110,14 +112,14 @@ func TestAPresetSavedWithNoIndexUpdatePassesBackItsFingerprint(t *testing.T) {
 		Now:     vaulttest.NewClock(),
 	})
 
-	target, err := busyPresets.Read(t.Context(), s.vault, "Sanskrit.md")
+	target, err := busyPresets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 	settings := target.Settings
 	settings.MinutesADay = 35
 
-	pos, err := busyPresets.Save(t.Context(), s.vault, "Sanskrit.md", settings, target.FileStat)
+	pos, err := busyPresets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", settings, target.FileStat)
 	if !errors.Is(err, note.ErrIndexOutdated) {
 		t.Fatalf("an index update that failed came back as %v", err)
 	}
@@ -126,7 +128,7 @@ func TestAPresetSavedWithNoIndexUpdatePassesBackItsFingerprint(t *testing.T) {
 	}
 
 	settings.MinutesADay = 40
-	if _, err := busyPresets.Save(t.Context(), s.vault, "Sanskrit.md", settings, pos); err != nil &&
+	if _, err := busyPresets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", settings, pos); err != nil &&
 		!errors.Is(err, note.ErrIndexOutdated) {
 		t.Fatalf("the next save failed: %v", err)
 	}
@@ -142,7 +144,7 @@ func TestAPresetLeftAloneIsNotAnIndexOutdatedWrite(t *testing.T) {
 	s := openVault(t, getPointingVault())
 	was := read(t, s.vault, "Sanskrit.md")
 
-	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	target, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +155,7 @@ func TestAPresetLeftAloneIsNotAnIndexOutdatedWrite(t *testing.T) {
 	settings := target.Settings
 	settings.MinutesADay = 35
 
-	_, err = s.presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, staleFileStat)
+	_, err = s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", settings, staleFileStat)
 	if errors.Is(err, note.ErrIndexOutdated) {
 		t.Errorf("a write that did not land came back as an index update: %v", err)
 	}
@@ -171,7 +173,7 @@ func TestGetForDeck_NoPresetHasNoProblems(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getPointingVault())
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,7 +188,7 @@ func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getPointingVault())
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Mantras.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Mantras.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +217,7 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 	}
 	s := openVault(t, notes)
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +264,7 @@ func TestAWritePreservesWhatItDoesNotOwn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getSettledVault())
 
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -305,7 +307,7 @@ func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 			"  goal: minutes_a_day\n  minutes_a_day: 20\n  color: green\n---\n\n# Sanskrit\n",
 	})
 
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -318,7 +320,7 @@ func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 		t.Errorf("frontmatter = %v,\n           want %v", got, want)
 	}
 
-	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	target, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -336,7 +338,7 @@ func TestAWriteKeepsTheLineEndingsAndTheMark(t *testing.T) {
 			"minutes_a_day: 20\r\n---\r\n\r\n# Sanskrit\r\n",
 	})
 
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -360,7 +362,7 @@ func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
 
 	p := minutes()
 	p.Retention = 1.5
-	_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{})
+	_, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{})
 	if !errors.Is(err, presets.ErrOutOfBounds) {
 		t.Fatalf("saving a retention of 1.5 said %v", err)
 	}
@@ -375,7 +377,7 @@ func TestANoteThatIsNotAPresetIsNotSaved(t *testing.T) {
 	s := openVault(t, getSettledVault())
 	was := read(t, s.vault, "Grammar.md")
 
-	_, err := s.presets.Save(t.Context(), s.vault, "Grammar.md", minutes(), domain.FileStat{})
+	_, err := s.presets.Save.Execute(t.Context(), s.vault, "Grammar.md", minutes(), domain.FileStat{})
 	if !errors.Is(err, presets.ErrNotAPreset) {
 		t.Fatalf("saving into an ordinary note said %v", err)
 	}
@@ -391,11 +393,11 @@ func TestTheLoadReachesBackAsItWentIn(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Saturday: 50, time.Sunday: 0}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
-	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	target, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -419,7 +421,7 @@ func TestASavePreservesTheLoadItCouldNotRead(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Sunday: 0}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -435,7 +437,7 @@ func TestASavePreservesTheLoadItCouldNotRead(t *testing.T) {
 	}
 	// The two entries that the read cannot parse are still unreadable, and they are
 	// still reported as problems on the note.
-	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	target, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -455,7 +457,7 @@ func TestASavePreservesALoadItCouldReadNoneOf(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Sunday: 0}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -476,7 +478,7 @@ func TestASavePreservesALoadThatIsNotAWeek(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Saturday: 50}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -492,19 +494,32 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 
 	p := minutes()
 	p.Goal, p.By = review.GoalDate, time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
 	if target := read(t, s.vault, "Sanskrit.md"); !strings.Contains(target, "by_date: 2026-12-01") {
 		t.Errorf("the day was not written to\n%s", target)
 	}
-	targetVal, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	targetVal, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if targetVal.Settings.Goal != review.GoalDate || !targetVal.Settings.By.Equal(p.By) {
 		t.Errorf("preset = %+v", targetVal.Settings)
+	}
+
+	// Clearing the target date writes an empty by_date scalar so the date does not linger.
+	cleared := minutes()
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", cleared, domain.FileStat{}); err != nil {
+		t.Fatal(err)
+	}
+	afterClear, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !afterClear.Settings.By.IsZero() {
+		t.Errorf("cleared preset still has By = %v", afterClear.Settings.By)
 	}
 }
 
@@ -516,7 +531,7 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 
 	p := minutes()
 	p.Rule, p.Interval, p.Retention = review.RuleRetention, 45, 0.87
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -527,7 +542,7 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 		}
 	}
 
-	back, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	back, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -550,7 +565,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 			"even_load: true\n---\n\n# Steady\n",
 	})
 
-	read, err := s.presets.Read(t.Context(), s.vault, "Old.md")
+	read, err := s.presets.Read.Execute(t.Context(), s.vault, "Old.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -606,7 +621,7 @@ func TestPresetsSave_ErrorsOnNoteOverBound(t *testing.T) {
 	})
 	was := read(t, s.vault, "Sanskrit.md")
 
-	_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{})
+	_, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("saving into a note of %d bytes said %v", len(was), err)
 	}
@@ -643,13 +658,13 @@ func TestASavePreservesTheSettingsItCouldNotRead(t *testing.T) {
 			})
 
 			// Only the minutes control was changed.
-			target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+			target, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 			if err != nil {
 				t.Fatal(err)
 			}
 			settings := target.Settings
 			settings.MinutesADay = 35
-			if _, err := s.presets.Save(
+			if _, err := s.presets.Save.Execute(
 				t.Context(), s.vault, "Sanskrit.md", settings, domain.FileStat{}); err != nil {
 				t.Fatal(err)
 			}
@@ -674,13 +689,13 @@ func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
 			"even_load: no\n---\n\n# Sanskrit\n",
 	})
 
-	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	target, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 	settings := target.Settings
 	settings.IsEvenLoad = false
-	if _, err := s.presets.Save(
+	if _, err := s.presets.Save.Execute(
 		t.Context(), s.vault, "Sanskrit.md", settings, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -693,14 +708,21 @@ func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
 // A save that changes nothing leaves the file currently, comments and all.
 func TestASaveOfWhatTheNoteAlreadyReturnsWritesNothing(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, getSettledVault())
+	notes := getSettledVault()
+	notes["Sanskrit.md"] = strings.Replace(
+		notes["Sanskrit.md"],
+		"goal: minutes_a_day\n",
+		"goal: minutes_a_day\nload:\n  sat: 50 # weekend\n",
+		1,
+	)
+	s := openVault(t, notes)
 	was := read(t, s.vault, "Sanskrit.md")
 
-	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	target, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.presets.Save(
+	if _, err := s.presets.Save.Execute(
 		t.Context(), s.vault, "Sanskrit.md", target.Settings, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -721,7 +743,7 @@ func TestADayTheBlockNamesIsRewrittenWhereItExists(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Wednesday: 30, time.Monday: 80}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -730,7 +752,7 @@ func TestADayTheBlockNamesIsRewrittenWhereItExists(t *testing.T) {
 		t.Errorf("the load was rewritten as:\n%s", got)
 	}
 
-	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	target, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -751,11 +773,11 @@ func TestADayNamedTwiceIsSavedWhereTheReadConsumesIt(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Monday: 80}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
-	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	target, err := s.presets.Read.Execute(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -798,7 +820,7 @@ func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 			s := openVault(t, getSettledVault())
 			was := read(t, s.vault, "Sanskrit.md")
 
-			_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", one.of(minutes()), domain.FileStat{})
+			_, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", one.of(minutes()), domain.FileStat{})
 			if !errors.Is(err, presets.ErrOutOfBounds) {
 				t.Fatalf("saving %s said %v", one.what, err)
 			}
@@ -831,7 +853,7 @@ func TestThePresetsOfAVaultAreListed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getChoosingVault())
 
-	target, err := s.presets.List(t.Context(), s.vault)
+	target, err := s.presets.List.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -852,7 +874,7 @@ func TestAVaultOfNoPresetsListsNone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
 
-	target, err := s.presets.List(t.Context(), s.vault)
+	target, err := s.presets.List.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -867,7 +889,7 @@ func TestPresetsList_ErrorsWithoutPresetIndex(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getChoosingVault())
 
-	blind := presets.New(presets.Config{
+	blind := createPresetUseCases(presets.Config{
 		Readers: s.env.Ports.Readers,
 		Writers: s.env.Ports.Writers,
 		Links:   s.links,
@@ -875,7 +897,7 @@ func TestPresetsList_ErrorsWithoutPresetIndex(t *testing.T) {
 		Now:     vaulttest.NewClock(),
 	})
 
-	if _, err := blind.List(t.Context(), s.vault); !errors.Is(err, presets.ErrNoPresets) {
+	if _, err := blind.List.Execute(t.Context(), s.vault); !errors.Is(err, presets.ErrNoPresets) {
 		t.Errorf("listing the presets of a vault it cannot reach answered %v", err)
 	}
 }
@@ -885,7 +907,7 @@ func TestADeckIsInsertOnAPreset(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getChoosingVault())
 
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -898,7 +920,7 @@ func TestADeckIsInsertOnAPreset(t *testing.T) {
 		t.Errorf("the card was not left alone:\n%s", got)
 	}
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -913,7 +935,7 @@ func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getChoosingVault())
 
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -926,7 +948,7 @@ func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
 		t.Errorf("the deck names more than one preset:\n%s", got)
 	}
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -944,7 +966,7 @@ func TestADeckIsTakenOffItsPreset(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getChoosingVault())
 
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Roots.md", "", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -954,7 +976,7 @@ func TestADeckIsTakenOffItsPreset(t *testing.T) {
 		t.Errorf("the deck still names a preset:\n%s", got)
 	}
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -975,7 +997,7 @@ func TestPointingADeckPreservesTheRestOfTheFrontmatter(t *testing.T) {
 			"---\n\n## Root ^k7m2xq9fzp\n",
 	})
 
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Roots.md", "Sanskrit.md", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -1006,7 +1028,7 @@ func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
 			"    type: preset\n    note: twenty minutes is as much as I have\n---\n\n## Root ^k7m2xq9fzp\n",
 	})
 
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -1027,7 +1049,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 	s := openVault(t, getChoosingVault())
 	was := read(t, s.vault, "decks/Terms.md")
 
-	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Grammar.md", domain.FileStat{})
+	_, err := s.presets.Point.Execute(t.Context(), s.vault, "decks/Terms.md", "Grammar.md", domain.FileStat{})
 	if !errors.Is(err, presets.ErrNotAPreset) {
 		t.Fatalf("err = %v", err)
 	}
@@ -1041,7 +1063,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
 	s := openVault(t, getChoosingVault())
 	was := read(t, s.vault, "decks/Terms.md")
 
-	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Pali.md", domain.FileStat{})
+	_, err := s.presets.Point.Execute(t.Context(), s.vault, "decks/Terms.md", "Pali.md", domain.FileStat{})
 	if !errors.Is(err, note.ErrNoNote) {
 		t.Fatalf("err = %v", err)
 	}
@@ -1055,7 +1077,7 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getChoosingVault())
 
-	pos, err := s.presets.Point(
+	pos, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileStat{})
 	if err != nil {
 		t.Fatal(err)
@@ -1064,7 +1086,7 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 
 	staleFileStat := pos
 	staleFileStat.Size += 3
-	_, err = s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", staleFileStat)
+	_, err = s.presets.Point.Execute(t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", staleFileStat)
 	if !errors.Is(err, ports.ErrStale) {
 		t.Fatalf("err = %v", err)
 	}
@@ -1077,17 +1099,17 @@ func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getChoosingVault())
 
-	pos, err := s.presets.Point(
+	pos, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileStat{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", pos); err != nil {
 		t.Fatal(err)
 	}
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1126,7 +1148,7 @@ func TestPointingADeckWritesOneEntryAndNothingElse(t *testing.T) {
 				"decks/Roots.md":  deck,
 			})
 
-			if _, err := s.presets.Point(
+			if _, err := s.presets.Point.Execute(
 				t.Context(), s.vault, "decks/Roots.md", one.preset, domain.FileStat{}); err != nil {
 				t.Fatal(err)
 			}
@@ -1146,7 +1168,7 @@ func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getChoosingVault())
 
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Roots.md", "", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -1174,7 +1196,7 @@ func TestTakingADeckOffItsPresetKeepsItsOtherLinks(t *testing.T) {
 			"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
 	})
 
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Roots.md", "", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -1199,7 +1221,7 @@ func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
 			"  - to: Slow\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
 	})
 
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -1207,7 +1229,7 @@ func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
 	if got := read(t, s.vault, "decks/Roots.md"); strings.Count(got, "type: preset") != 1 {
 		t.Errorf("the deck still names more than one preset:\n%s", got)
 	}
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	target, err := s.presets.GetForDeck.Execute(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1229,7 +1251,7 @@ func TestPresetsPoint_BacklinksResolveAfterChoice(t *testing.T) {
 			"    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
 	})
 
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -1239,7 +1261,7 @@ func TestPresetsPoint_BacklinksResolveAfterChoice(t *testing.T) {
 
 	// The deck that named it by identifier is moved, and the entry is written
 	// in the form a link is written in.
-	if _, err := s.presets.Point(
+	if _, err := s.presets.Point.Execute(
 		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -1265,4 +1287,86 @@ func getPointingDecks(t *testing.T, s vaulted, path string) []string {
 	}
 	slices.Sort(out)
 	return out
+}
+
+type statNotExistReadErr struct{ ports.VaultReader }
+
+func (statNotExistReadErr) StatFile(_ context.Context, _ string) (domain.FileStat, error) {
+	return domain.FileStat{}, fs.ErrNotExist
+}
+
+func (statNotExistReadErr) Read(_ context.Context, _ string) ([]byte, error) {
+	return nil, errors.New("read failed")
+}
+
+type statNotExistReaders struct{}
+
+func (statNotExistReaders) Open(domain.Vault) (ports.VaultReader, error) {
+	return statNotExistReadErr{}, nil
+}
+
+func TestPresetsReadsCachingNilDependenciesAndMissingSave(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, getPointingVault())
+
+	// Reads.GetForDeck and Reads.GetPreset cache results across calls within a run.
+	reads := presets.NewOpenReads(presets.Config{
+		Readers:  s.env.Ports.Readers,
+		Links:    s.links,
+		Problems: s.notes,
+		Now:      vaulttest.NewClock(),
+	}).Execute()
+	firstDeck, err := reads.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil || firstDeck.Path != "Sanskrit.md" {
+		t.Fatalf("first GetForDeck = %+v, %v", firstDeck, err)
+	}
+	firstPreset, err := reads.GetPreset(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil || firstPreset.Settings.MinutesADay != 20 {
+		t.Fatalf("first GetPreset = %+v, %v", firstPreset, err)
+	}
+	if _, err := s.presets.Save.Execute(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{}); err != nil {
+		t.Fatal(err)
+	}
+	cachedDeck, err := reads.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil || cachedDeck.Settings.MinutesADay != 20 {
+		t.Fatalf("second GetForDeck = %+v, %v, want cached 20", cachedDeck, err)
+	}
+	cachedPreset, err := reads.GetPreset(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil || cachedPreset.Settings.MinutesADay != 20 {
+		t.Fatalf("second GetPreset = %+v, %v, want cached 20", cachedPreset, err)
+	}
+
+	// Nil Links returns default preset; nil Problems returns no roleless problems.
+	noLinks := presets.NewGetForDeck(presets.Config{
+		Readers: s.env.Ports.Readers,
+		Now:     vaulttest.NewClock(),
+	})
+	def, err := noLinks.Execute(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil || def.Path != "" || !reflect.DeepEqual(def.Settings, review.Defaults()) {
+		t.Fatalf("noLinks GetForDeck = %+v, %v", def, err)
+	}
+	noProblems := presets.NewGetForDeck(presets.Config{
+		Readers: s.env.Ports.Readers,
+		Links:   s.links,
+		Now:     vaulttest.NewClock(),
+	})
+	terms, err := noProblems.Execute(t.Context(), s.vault, "decks/Terms.md")
+	if err != nil || len(terms.Problems) != 0 {
+		t.Fatalf("noProblems GetForDeck = %+v, %v", terms, err)
+	}
+
+	// Read.Execute propagates a Read error when StatFile reported ErrNotExist.
+	brokenRead := presets.NewRead(presets.Config{
+		Readers: statNotExistReaders{},
+		Now:     vaulttest.NewClock(),
+	})
+	if _, err := brokenRead.Execute(t.Context(), s.vault, "Ghost.md"); err == nil {
+		t.Fatal("expected error when StatFile returns ErrNotExist and Read fails")
+	}
+
+	// Save on a missing preset fails at StatFile ("look at ...").
+	_, err = s.presets.Save.Execute(t.Context(), s.vault, "Missing.md", minutes(), domain.FileStat{})
+	if !errors.Is(err, note.ErrNoNote) || !strings.Contains(err.Error(), "look at Missing.md") {
+		t.Fatalf("Save missing = %v, want 'look at Missing.md' wrapping ErrNoNote", err)
+	}
 }

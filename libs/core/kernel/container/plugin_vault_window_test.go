@@ -54,7 +54,7 @@ func TestTheWindowFollowsANoteAPluginRenamesOrMoves(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Writer.Scan(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
+	if err := shared.Writer.ScanFiles(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -105,7 +105,7 @@ func TestWindowIgnoresPluginMoveInOtherVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := lakes.Writer.Scan(t.Context(), []string{"Baikal.md", "Lakes.md"}); err != nil {
+	if err := lakes.Writer.ScanFiles(t.Context(), []string{"Baikal.md", "Lakes.md"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -170,7 +170,7 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Writer.Scan(t.Context(), []string{"Danube.md"}); err != nil {
+	if err := shared.Writer.ScanFiles(t.Context(), []string{"Danube.md"}); err != nil {
 		t.Fatal(err)
 	}
 	isSwitched.Store(false)
@@ -202,7 +202,7 @@ func TestWindowMoveAfterPluginMoveIsShownToTheWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Writer.Scan(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
+	if err := shared.Writer.ScanFiles(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := shared.Arranger.MoveNote(t.Context(), "Danube.md", "Donau.md"); err != nil {

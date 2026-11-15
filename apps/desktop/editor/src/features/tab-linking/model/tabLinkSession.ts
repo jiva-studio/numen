@@ -10,17 +10,23 @@ import type {
   TabPathSync,
   WindowTabsReport,
 } from '@/entities/tab'
-import { cancelTabLinksWatch, watchTabLinks } from '../api/tab-links'
+import type { TabLinksApi } from '../api/tab-links'
 import type { TabLinksState } from '../types'
 import type { TabReports } from './tabReports'
 import type { Caught } from '@/shared/api/errors'
 import { wait } from '@/shared/model/wait'
 
-export interface TabLinkSessionDeps {
-  readonly windowId: string
-  readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
+/** What the stream of the tab links applies to the tabs of this window. */
+export interface TabPathApplier {
   readonly applySync: (sync: TabPathSync) => void
   readonly applyGroupPaths: (groups: readonly TabLinkGroup[]) => void
+}
+
+export interface TabLinkSessionDeps {
+  readonly api: Pick<TabLinksApi, 'watchTabLinks' | 'cancelTabLinksWatch'>
+  readonly windowId: string
+  readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
+  readonly tabSync: TabPathApplier
   readonly openMovedTab: (moved: MovedTab) => void
   readonly setHighlighted: (isOn: boolean) => void
   readonly reports: Pick<TabReports, 'reportTabs' | 'waitForReports' | 'stop' | 'resume'>
@@ -46,7 +52,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     followStream(
       () => {
         isNewStream = true
-        return watchTabLinks(deps.windowId, abortController.signal)
+        return deps.api.watchTabLinks(deps.windowId, abortController.signal)
       },
       (event) => {
         if (isNewStream) {
@@ -57,9 +63,9 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
         try {
           if (event.links) {
             deps.tabLinks.applySnapshot(event.links)
-            deps.applyGroupPaths(event.links.groups)
+            deps.tabSync.applyGroupPaths(event.links.groups)
           } else if (event.sync) {
-            deps.applySync(event.sync)
+            deps.tabSync.applySync(event.sync)
           } else if (event.movedTab) {
             deps.openMovedTab(event.movedTab)
           } else if (event.isHighlighted !== undefined) {
@@ -80,7 +86,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     isOpen = false
     deps.reports.stop()
     abortController.abort()
-    cancelTabLinksWatch(deps.windowId).catch(deps.onError)
+    deps.api.cancelTabLinksWatch(deps.windowId).catch(deps.onError)
   }
 
   /** Starts the stream again after close; does nothing while the session is open. */
@@ -95,7 +101,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   return { start, close, reopen, reportTabs, waitForReports }
 }
 
-type ReportedTabs = Pick<WindowTabs, 'tabs' | 'groups'>
+type ReportedTabs = Pick<WindowTabs, 'tabs' | 'handle'>
 
 function getLinkableTabs(windowTabs: Pick<ReportedTabs, 'tabs'>): WindowTabsReport['tabs'] {
   return windowTabs.tabs.tabs.value.flatMap((tab) => {
@@ -106,7 +112,7 @@ function getLinkableTabs(windowTabs: Pick<ReportedTabs, 'tabs'>): WindowTabsRepo
 
 /** Returns the linkable tabs, the active tab and the tab count of the window. */
 export function getWindowReport(windowTabs: ReportedTabs, isMain: boolean): WindowTabsReport {
-  const front = windowTabs.groups.handle.front()
+  const front = windowTabs.handle.front()
   const activeTitle = windowTabs.tabs.tabs.value.find((tab) => tab.id === front?.id)?.title ?? ''
   return {
     tabs: getLinkableTabs(windowTabs),

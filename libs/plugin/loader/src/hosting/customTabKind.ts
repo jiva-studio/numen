@@ -49,7 +49,7 @@ import {
 import { createLineReveal } from './customTabReveal'
 import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
-import { pickDeclaredParts } from './pluginTabKind'
+import { pickDeclaredParts, type DeclaredParts } from './pluginTabKind'
 import { createBufferedNoteState } from './customTabBuffer'
 
 export function createPluginPaneWrapper(
@@ -177,8 +177,7 @@ export function createReaderTabKind(
 
 interface CustomTabStateDeps {
   readonly pluginId: string
-  readonly registration: TabKindRegistration
-  readonly hostDeps?: PluginHostDeps | undefined
+  readonly hostDeps?: Pick<PluginHostDeps, 'kinds'> | undefined
 }
 
 function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
@@ -189,10 +188,10 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
   let currentPath = targetPath
   let hasEdited = false
   const lines = createLineReveal(() => !isLoading.value)
-  let write = createNoteWriter(targetPath, deps.hostDeps?.writeNote, errorMessageRef)
+  let write = createNoteWriter(targetPath, deps.hostDeps?.kinds.writeNote, errorMessageRef)
 
   const readAt = (pathToRead: string): void => {
-    const readNote = deps.hostDeps?.readNote
+    const readNote = deps.hostDeps?.kinds.readNote
     if (!readNote) return
     isLoading.value = true
     startNoteRead(pathToRead, readNote, {
@@ -237,7 +236,7 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
       state.title = resolveTargetTitle(nextTitle, stripMarkdownExtension(extractFilename(nextPath)))
       errorMessageRef.value = ''
       noteRef.value = { path: nextPath, body: '' }
-      write = createNoteWriter(nextPath, deps.hostDeps?.writeNote, errorMessageRef)
+      write = createNoteWriter(nextPath, deps.hostDeps?.kinds.writeNote, errorMessageRef)
       readAt(nextPath)
     },
   })
@@ -251,7 +250,7 @@ function resolveTargetTitle(title?: string, defaultName?: string, fallback = '')
 type CustomTabState =
   ReturnType<typeof createCustomTabState> | ReturnType<typeof createBufferedNoteState>
 
-function resolveCustomTabTarget(state: CustomTabState, registration: TabKindRegistration) {
+function resolveCustomTabTarget(state: CustomTabState, registration: CustomTabRegistration) {
   const defaultName = stripMarkdownExtension(extractFilename(state.path))
   const title = resolveTargetTitle(
     state.title,
@@ -268,23 +267,45 @@ function resolveCustomTabTarget(state: CustomTabState, registration: TabKindRegi
 function notifyCustomTabShown(
   state: CustomTabState,
   id: string | undefined,
-  deps?: PluginHostDeps,
+  deps?: Pick<PluginHostDeps, 'window'>,
 ): void {
   state.measure()
-  if (!id || !deps?.getWorkspace) return
-  if (state.path) deps.getWorkspace()?.files.syncPath(id, state.path, state.title)
+  const getWorkspace = deps?.window.getWorkspace
+  if (!id || !getWorkspace) return
+  if (state.path) getWorkspace()?.files.syncPath(id, state.path, state.title)
+}
+
+/** What a custom tab kind reads of the window, the context of its plugin, and whether it edits notes. */
+type CustomTabKindDeps = Pick<PluginHostDeps, 'window' | 'kinds' | 'vault'> & {
+  readonly getContext?: (() => PluginContext | undefined) | undefined
+  readonly isNoteEditor?: boolean
+}
+
+/** What a custom tab kind takes of its registration: the kind, title and pane, and the hooks the window takes unchanged. */
+export interface CustomTabRegistration extends Pick<
+  TabKindRegistration,
+  'kind' | 'title' | 'component'
+> {
+  readonly declared: DeclaredParts<object>
+}
+
+export function pickCustomTabParts(registration: TabKindRegistration): CustomTabRegistration {
+  const { kind, title, component } = registration
+  return {
+    kind,
+    ...(title === undefined ? {} : { title }),
+    component,
+    declared: pickDeclaredParts(registration),
+  }
 }
 
 /** isNoteEditor marks a kind the manifest declares as the editor of the text of a note: its tabs hold the note in the store of open notes. */
 export function createCustomTabKind(
   pluginId: string,
-  registration: TabKindRegistration,
-  deps?: PluginHostDeps & {
-    readonly getContext?: (() => PluginContext | undefined) | undefined
-    readonly isNoteEditor?: boolean
-  },
+  registration: CustomTabRegistration,
+  deps?: CustomTabKindDeps,
 ): AnyTabKind {
-  const declared = pickDeclaredParts(registration)
+  const { declared } = registration
   const display: TabKindDisplay<CustomTabState> = {
     onShow: (state, id) => notifyCustomTabShown(state, id, deps),
     ...declared.display,
@@ -303,9 +324,8 @@ export function createCustomTabKind(
     kind: registration.kind,
     pluginId,
     open: (targetPath, id) => {
-      const buffer = deps?.isNoteEditor ? deps.getNoteBuffer?.() : undefined
-      if (!buffer)
-        return createCustomTabState(targetPath, { pluginId, registration, hostDeps: deps })
+      const buffer = deps?.isNoteEditor ? deps.kinds.getNoteBuffer?.() : undefined
+      if (!buffer) return createCustomTabState(targetPath, { pluginId, hostDeps: deps })
       return createBufferedNoteState(
         { targetPath, id, buffer },
         {

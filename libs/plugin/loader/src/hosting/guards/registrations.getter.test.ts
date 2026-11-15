@@ -7,7 +7,7 @@ import type { CommandRegistration, SettingsViewRegistration } from '@numen/plugi
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
 import { createTestContextHost } from '../../testing/contextHost'
-import { createPluginContext } from '../context'
+import { createPluginParts } from '../context'
 
 function createFlippingId(declared: string, other: string) {
   let reads = 0
@@ -25,10 +25,10 @@ describe('RED UNTIL FIXED: a registration whose getter answers differently on ea
     }))
     const host = createTestContextHost({ registration: { registerCommand: registered } })
     const manifest = createMockManifest('md.numen.sample', { commands: ['tree.open'] })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
     const readId = createFlippingId('tree.open', 'tree.close')
 
-    context.register.command({
+    context.plugin.register.command({
       get id() {
         return readId()
       },
@@ -45,10 +45,10 @@ describe('RED UNTIL FIXED: a registration whose getter answers differently on ea
     }))
     const host = createTestContextHost({ registration: { registerSettingsView: registered } })
     const manifest = createMockManifest('md.numen.sample', { settingsViews: ['general'] })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
     const readId = createFlippingId('general', 'advanced')
 
-    context.register.settingsView({
+    context.plugin.register.settingsView({
       get id() {
         return readId()
       },

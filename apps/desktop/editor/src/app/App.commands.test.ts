@@ -16,12 +16,13 @@ import { registerTabKindIcon } from '@/entities/note'
 import {
   requests,
   cards,
+  createWindowTransport,
   DEBOUNCE,
   getWindowParts,
   mountWindow,
   mountWindowWithPalette,
   nameAnswer,
-  passageAnswer,
+  searchResultAnswer,
   vaultState,
   settle,
   sourceAnswer,
@@ -87,9 +88,9 @@ describe('the palette', () => {
   it('draws a passage as the note it was read out of', async () => {
     drawPluginTypes()
     vaultState.names = []
-    vaultState.passages = [
-      passageAnswer('Animals.md', 'Animals', 'sample'),
-      passageAnswer('Ants.md', 'Ants'),
+    vaultState.searchResults = [
+      searchResultAnswer('Animals.md', 'Animals', 'sample'),
+      searchResultAnswer('Ants.md', 'Ants'),
     ]
     const window = await mountWindowWithPalette()
 
@@ -101,7 +102,7 @@ describe('the palette', () => {
 
   it('draws a passage out of a file no reader opens as a plain file', async () => {
     vaultState.names = []
-    vaultState.passages = [
+    vaultState.searchResults = [
       sourceAnswer('Ants.bin', { page: 3 }),
       sourceAnswer('Talk.bin', { t: [12, 14] }),
     ]
@@ -324,7 +325,7 @@ function drawPluginTypes(): void {
 
 describe('the request to open the settings', () => {
   it('opens the settings tab from the placeholder of a plugin that is not running', async () => {
-    answerTabKinds([
+    const tabKinds = answerTabKinds([
       createMockCatalogEntry('sample.notes', {
         name: 'Notes',
         feature: 'Markdown notes',
@@ -332,7 +333,7 @@ describe('the request to open the settings', () => {
         state: CATALOG_STATE.INSTALLED,
       }),
     ])
-    const window = await mountWindow()
+    const window = await mountWindow(createWindowTransport(tabKinds.answers))
     const getTabNames = () => window.findAll('[role="tab"]').map((one) => one.text())
     expect(getTabNames().some((name) => name.includes(WORDS.settings))).toBe(false)
     const saved = [

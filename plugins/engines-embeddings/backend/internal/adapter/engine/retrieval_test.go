@@ -32,11 +32,11 @@ type retrievalFixture struct {
 	} `json:"queries"`
 }
 
-// TestCuratedModelsFindThePassageOfAQuery loads each curated model that this machine holds the files of,
+// TestCuratedModelsFindTheChunkOfAQuery loads each curated model that this machine holds the files of,
 // embeds a fixture of invented passages and queries through the engine, and checks the width of the
 // vectors and that most queries rank their passage first or second. A model whose files are absent is
 // skipped, and nothing is downloaded.
-func TestCuratedModelsFindThePassageOfAQuery(t *testing.T) {
+func TestCuratedModelsFindTheChunkOfAQuery(t *testing.T) {
 	root := os.Getenv(envTestModels)
 	if root == "" {
 		t.Skipf("set %s to a folder of model files to run the retrieval test", envTestModels)

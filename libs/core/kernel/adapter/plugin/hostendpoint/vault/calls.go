@@ -15,6 +15,8 @@ const Header = "Numen-Vault"
 
 // Authority tells which plugin made a call and whether it holds a permission.
 type Authority interface {
+	// Authenticate returns the id of the plugin the Authorization header names.
+	Authenticate(authorization string) (pluginID string, err error)
 	// Authorize returns the id of the plugin the Authorization header names, and refuses a plugin
 	// without the permission.
 	Authorize(authorization, permission string) (pluginID string, err error)
@@ -45,11 +47,22 @@ type calls struct {
 	source Source
 }
 
-func (c *calls) begin(header http.Header, permission string) (string, *Access, error) {
-	pluginID, err := c.auth.Authorize(header.Get("Authorization"), permission)
+func (c *calls) begin(header http.Header, permission string) (*Access, error) {
+	if _, err := c.auth.Authorize(header.Get("Authorization"), permission); err != nil {
+		return nil, err
+	}
+	return Select(c.source.GetPluginVault(), header)
+}
+
+func (c *calls) beginOwnData(header http.Header) (string, *Access, error) {
+	pluginID, err := c.auth.Authenticate(header.Get("Authorization"))
 	if err != nil {
 		return "", nil, err
 	}
+	return c.selectVault(pluginID, header)
+}
+
+func (c *calls) selectVault(pluginID string, header http.Header) (string, *Access, error) {
 	access, err := Select(c.source.GetPluginVault(), header)
 	if err != nil {
 		return "", nil, err
@@ -61,7 +74,7 @@ func serve[Q, R any](
 	ctx context.Context, c *calls, req *connect.Request[Q], permission string,
 	withCode func(code v1.HostVaultErrorCode) *R, work func(access *Access) (*R, error),
 ) (*connect.Response[R], error) {
-	_, access, err := c.begin(req.Header(), permission)
+	access, err := c.begin(req.Header(), permission)
 	if err != nil {
 		return nil, err
 	}

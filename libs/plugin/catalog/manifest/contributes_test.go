@@ -69,6 +69,16 @@ func TestAContributionThatTheApplicationCannotUseIsRefused(t *testing.T) {
 		if !errors.Is(err, manifest.ErrInvalidContribution) {
 			t.Errorf("%s: error = %v, want an invalid contribution", name, err)
 		}
+		if name == "an unreadable when" && !hasWrappedCause(err, manifest.ErrInvalidContribution) {
+			t.Errorf("%s: error = %v, expected wrapped when cause", name, err)
+		}
+	}
+
+	if _, err := manifestjson.Read(strings.NewReader(contributesHead + `,"contributes":{"noteTypes":[{"type":"deck"},{"type":"card"}]}}`)); err != nil {
+		t.Errorf("valid noteTypes failed: %v", err)
+	}
+	if _, err := manifestjson.Read(strings.NewReader(contributesHead + `,"contributes":{"noteTypes":[{"type":"deck"},{"type":"bad type"}]}}`)); !errors.Is(err, manifest.ErrInvalidNoteType) {
+		t.Errorf("invalid second noteType = %v, want ErrInvalidNoteType", err)
 	}
 }
 
@@ -122,6 +132,9 @@ func TestCheckThemeFileAndThemeIssues(t *testing.T) {
 		_, err := manifestjson.Read(strings.NewReader(contributesHead + `,"contributes":{"themes":` + themes + `}}`))
 		if !errors.Is(err, manifest.ErrInvalidContribution) {
 			t.Errorf("%s: error = %v, want ErrInvalidContribution", name, err)
+		}
+		if name == "invalid file" && !hasWrappedCause(err, manifest.ErrInvalidContribution) {
+			t.Errorf("%s: error = %v, expected wrapped theme file cause", name, err)
 		}
 	}
 }

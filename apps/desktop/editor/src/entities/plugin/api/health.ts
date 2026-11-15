@@ -3,20 +3,26 @@
  * the plugins.
  */
 import { createHealthClient, type HealthReport, type PluginHealthItem } from '@numen/core-client'
-import { pluginHealth } from '@/shared/api/clients'
+import type { WindowClients } from '@/shared/api/clients'
 
 export type { PluginHealthItem }
 
-const health = createHealthClient(pluginHealth)
+/** The health items of the plugins over `pluginHealth`. */
+export const createHealthApi = (pluginHealth: WindowClients['pluginHealth']) => {
+  const health = createHealthClient(pluginHealth)
+  return {
+    /** The items of every plugin until the signal aborts: at once and again on every change. */
+    watchPluginHealth: (signal: AbortSignal): AsyncGenerator<readonly PluginHealthItem[]> =>
+      health.watchHealth(signal),
 
-/** The items of every plugin until the signal aborts: at once and again on every change. */
-export const watchPluginHealth = (
-  signal: AbortSignal,
-): AsyncGenerator<readonly PluginHealthItem[]> => health.watchHealth(signal)
-
-/** The reports of the frontends of the plugins, each filed under the id of its plugin. */
-export const healthReports = {
-  reportHealth: (pluginId: string, item: HealthReport): Promise<void> =>
-    health.reportHealth(pluginId, item),
-  clearHealth: (pluginId: string, key: string): Promise<void> => health.clearHealth(pluginId, key),
+    /** The reports of the frontends of the plugins, each filed under the id of its plugin. */
+    healthReports: {
+      reportHealth: (pluginId: string, item: HealthReport): Promise<void> =>
+        health.reportHealth(pluginId, item),
+      clearHealth: (pluginId: string, key: string): Promise<void> =>
+        health.clearHealth(pluginId, key),
+    },
+  }
 }
+
+export type HealthApi = ReturnType<typeof createHealthApi>

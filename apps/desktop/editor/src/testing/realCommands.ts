@@ -31,12 +31,16 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import { useDeclaredCommands, watchCommandLists } from '@/features/plugin-commands'
 import { createSearchMenu, createWindowSlots } from '@/features/plugin-host'
 import { createPluginPalette } from '@/app/window/createPluginPalette'
-import { getVaultList } from '@/features/window-display'
 import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/features/hotkeys'
 import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import { WORDS } from '@/shared/ui/words'
 import { createNoteWriter } from '@/entities/note'
+import { createVaultListReader } from '@/entities/vault'
 import { createAppCommands } from './appCommands'
+import { createAnsweredApi } from './coreAnswers'
+
+/** The calls of a window whose core answers none. */
+const api = createAnsweredApi({})
 
 export interface ManifestKeybinding {
   readonly key: string
@@ -118,12 +122,14 @@ const createHost = (
     writeIssue: () => undefined,
   })
   const host = createPluginHost({
-    ...slots.hostDeps,
-    target: 'desktop.editor',
-    registerKind: () => () => undefined,
-    registerExtensionReader: () => () => undefined,
-    openTab: () => Promise.resolve('tab-1'),
-    getSlotEntries: () => entries,
+    window: { target: 'desktop.editor' },
+    commands: slots.hostDeps.commands,
+    slots: { ...slots.hostDeps.slots, getSlotEntries: () => entries },
+    kinds: {
+      registerKind: () => () => undefined,
+      registerExtensionReader: () => () => undefined,
+    },
+    tabs: { openTab: () => Promise.resolve('tab-1') },
   })
   for (const manifest of parts.manifests) {
     host.keybindings.registerKeybindings(manifest.id, manifest.contributes.keybindings ?? [])
@@ -187,7 +193,11 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { menu: createSearchMenu(pluginHost.slots) },
-    getVaultList,
+    getVaultList: createVaultListReader({
+      vaults: api.vault.vaults,
+      getShownVault: api.window.shownVault.getShownVault,
+    }),
+    searchCore: api.vault.search,
   })
   watchCommandLists(
     {
@@ -232,12 +242,14 @@ export function createRealWindow(parts: RealWindowParts) {
   const declaredCommands = useDeclaredCommands({
     registry,
     list: () => Promise.resolve({ commands: [], slots: [] }),
+    run: api.plugins.declaredCommands.runDeclaredCommand,
+    listItems: () => Promise.resolve([]),
   })
   const pluginHost = createHost(parts, declaredCommands)
   const options = {
     emitEvent: parts.emitEvent,
     windowTabs: {
-      panes: { onKeyPress: () => false, requestClose: () => undefined },
+      panes: { onKeyPress: () => false, closeTab: () => true },
       tabs: {
         navigateTab: parts.navigateTab,
         openTabOfKind: () => Promise.resolve(),
@@ -275,7 +287,12 @@ export function createRealWindow(parts: RealWindowParts) {
   const features = collectFeatureCommands(
     {
       notes: {
-        making: createNoteWriter(() => undefined),
+        files: api.vault.file,
+        renameNote: api.vault.note.renameNote,
+        making: createNoteWriter(
+          { createNote: api.vault.note.createNote, relations: api.vault.relations },
+          () => undefined,
+        ),
         notes: options.reached,
         navigator: {
           travel: () => Promise.resolve(),
@@ -285,8 +302,10 @@ export function createRealWindow(parts: RealWindowParts) {
         },
         writeMessage: options.writeMessage,
       },
-      files: { notes: options.reached, writeMessage: options.writeMessage },
+      files: { files: api.vault.file, notes: options.reached, writeMessage: options.writeMessage },
       vaults: {
+        vaults: api.vault.vaults,
+        emptyTrash: api.vault.file.emptyTrash,
         tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
         setVaultName: () => undefined,
         reload: () => undefined,
@@ -301,7 +320,11 @@ export function createRealWindow(parts: RealWindowParts) {
         detach: () => undefined,
         move: () => undefined,
       },
-      versions: { listItems: () => Promise.resolve([]), writeMessage: options.writeMessage },
+      versions: {
+        runDeclaredHandler: api.plugins.declaredCommands.runDeclaredHandler,
+        listItems: () => Promise.resolve([]),
+        writeMessage: options.writeMessage,
+      },
     },
     WORDS,
   )

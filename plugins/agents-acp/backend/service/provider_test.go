@@ -313,21 +313,14 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	hostServer := httptest.NewServer(hostMux)
 	defer hostServer.Close()
 
-	if err := mountWith(server.New(), func() (hostcall.Endpoint, error) {
-		return hostcall.Endpoint{BaseURL: hostServer.URL, Token: "orchard-token"}, nil
-	}); err != nil {
-		t.Fatal(err)
-	}
-
 	program, _ := fakeProgram(t, "mcp")
 	hostAddress, err := url.Parse(hostServer.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handlerWithHost, err := NewHandler(map[string]string{
-		hostcall.PluginTokenEnv: "tok",
-		hostcall.HostPortEnv:    hostAddress.Port(),
-	})
+	t.Setenv(hostcall.HostPortEnv, hostAddress.Port())
+	t.Setenv(hostcall.PluginTokenEnv, "tok")
+	handlerWithHost, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "tok"}, Mount)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +332,8 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	}
 
 	cfgProgram, _ := fakeProgram(t, "config")
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"})
+	t.Setenv(hostcall.HostPortEnv, "")
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "tok"}, Mount)
 	if err != nil {
 		t.Fatal(err)
 	}

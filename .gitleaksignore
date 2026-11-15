@@ -2,6 +2,21 @@
 3471a241d7bc4005ab2842fb41b761ca5e2b9961:libs/core/internal/adapter/plugin/hostendpoint/host_model_test.go:generic-api-key:246
 3471a241d7bc4005ab2842fb41b761ca5e2b9961:libs/core/usecase/modelcall/calls_test.go:generic-api-key:21
 3471a241d7bc4005ab2842fb41b761ca5e2b9961:libs/core/usecase/modelcall/calls_test.go:generic-api-key:22
-# Checksums of model files, which the generic key rule takes for keys.
+
+# Hashes of model files and invented keys of tests, found by the scan of the whole history.
+33306904cf51a338788089fca302cf4994596d3f:plugins/engines-embeddings/backend/engine/profiles.json:generic-api-key:17
+33306904cf51a338788089fca302cf4994596d3f:plugins/engines-embeddings/backend/engine/profiles.json:generic-api-key:36
+33306904cf51a338788089fca302cf4994596d3f:plugins/engines-embeddings/backend/engine/profiles.json:generic-api-key:53
+4a8cacb96b1492a001b41ca352bd57a3b72ebe75:libs/core/kernel/internal/adapter/plugin/process/process_test.go:generic-api-key:72
+4baf66aeaf03e7e1cd1766860a3cd90a215580c7:modules/plugins/transcription/backend/engine/pins.go:generic-api-key:14
+5375aafcccddcd9e3f7012ec08accbea0cf32230:plugins/agents-codex/backend/service/runner_token_test.go:generic-api-key:16
 80a5b4ac5bfbea3f68a3a2995583529b40d1689d:plugins/engines-reranking/backend/domain/profile/profiles.json:generic-api-key:13
 80a5b4ac5bfbea3f68a3a2995583529b40d1689d:plugins/engines-reranking/backend/domain/profile/profiles.json:generic-api-key:27
+8962c8e60eed9485c0e966c523d31825dfe864ab:modules/libs/core/internal/adapter/plugin/process_test.go:generic-api-key:67
+a092f992cf6f592b5b91dcfbc4c11114c8524a7d:modules/apps/desktop/internal/adapter/claudecode/environment_test.go:generic-api-key:19
+a490a4c39487817292a0aecbff667bfc40a9e76c:modules/apps/desktop/internal/adapter/agent/claudecode/glimpse_test.go:generic-api-key:79
+c52db24d40cab618d19adbd6fab913c34cdd1468:libs/core/kernel/adapter/plugin/hostendpoint/host_connection_test.go:generic-api-key:236
+c52db24d40cab618d19adbd6fab913c34cdd1468:libs/core/kernel/usecase/modelcall/calls_test.go:generic-api-key:22
+c52db24d40cab618d19adbd6fab913c34cdd1468:libs/core/kernel/usecase/modelcall/calls_test.go:generic-api-key:23
+c75f92de20c90fefd9955fd2303d0076d8bb7f39:apps/desktop/editor/src/pages/settings/ui/secrets/SecretDraftRow.vue:generic-api-key:67
+e17145d5fe8c01d8834fda4d40edd82a772f4d9c:modules/apps/desktop/internal/adapter/claudecode/environment_test.go:generic-api-key:19

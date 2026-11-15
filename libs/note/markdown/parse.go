@@ -143,7 +143,7 @@ func isFrontmatterDelimiter(line []byte) bool {
 
 // Body is the prose below the frontmatter, as the bytes stored in the
 // file. A note's chunks are offsets into it, so the chunker and every reader of a
-// passage must obtain it the same way.
+// chunk must obtain it the same way.
 func Body(raw []byte) string {
 	_, body, _ := splitFrontmatter(raw)
 	return string(body)

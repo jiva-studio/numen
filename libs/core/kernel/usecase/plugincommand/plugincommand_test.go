@@ -86,7 +86,7 @@ func newDeclaredCommands() *declaredCommands {
 func TestRunCommandNormalizesBooleanArguments(t *testing.T) {
 	declared := newDeclaredCommands()
 
-	result, err := newScenarios(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
+	result, err := newUseCases(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "md.numen.a", Command: "convert", Path: "books/Some.PDF",
 		Arguments: map[string]string{"pages": "12", "again": "1"},
 	})
@@ -125,7 +125,7 @@ func TestACallThatDoesNotMeetItsDeclarationRunsNothing(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			declared := newDeclaredCommands()
 
-			_, err := newScenarios(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), call)
+			_, err := newUseCases(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), call)
 
 			if !errors.Is(err, plugincommand.ErrBadArguments) {
 				t.Errorf("the call answered %v, want ErrBadArguments", err)
@@ -139,7 +139,7 @@ func TestACallThatDoesNotMeetItsDeclarationRunsNothing(t *testing.T) {
 
 func TestACommandIsRunInThePluginTheCallNames(t *testing.T) {
 	declared := newDeclaredCommands()
-	commands := newScenarios(declared, declared, getTypes(), nil, nil)
+	commands := newUseCases(declared, declared, getTypes(), nil, nil)
 
 	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.b", Command: "tidy"}); err != nil {
 		t.Fatal(err)
@@ -155,7 +155,7 @@ func TestACommandIsRunInThePluginTheCallNames(t *testing.T) {
 }
 
 func TestACommandIsFoundByThePluginOfTheLowestID(t *testing.T) {
-	found, isFound := newScenarios(newDeclaredCommands(), newDeclaredCommands(), getTypes(), nil, nil).List.Find("tidy")
+	found, isFound := newUseCases(newDeclaredCommands(), newDeclaredCommands(), getTypes(), nil, nil).List.Find("tidy")
 
 	if !isFound || found.PluginID != "md.numen.a" {
 		t.Errorf("found %+v, %v", found, isFound)
@@ -163,7 +163,7 @@ func TestACommandIsFoundByThePluginOfTheLowestID(t *testing.T) {
 }
 
 func TestTheContentTypesAreListedByExtension(t *testing.T) {
-	got := newScenarios(newDeclaredCommands(), newDeclaredCommands(), getTypes(), nil, nil).Listing.Execute().ContentTypeByExtension
+	got := newUseCases(newDeclaredCommands(), newDeclaredCommands(), getTypes(), nil, nil).Listing.Execute().ContentTypeByExtension
 
 	want := map[string]string{"pdf": "application/pdf", "epub": "application/epub+zip", "mp3": "audio/mpeg", "wav": "audio/vnd.wave"}
 	if !maps.Equal(got, want) {
@@ -173,7 +173,7 @@ func TestTheContentTypesAreListedByExtension(t *testing.T) {
 
 func TestACommandWithoutAConditionRunsOverAnyPathOrNone(t *testing.T) {
 	declared := newDeclaredCommands()
-	commands := newScenarios(declared, declared, getTypes(), nil, nil)
+	commands := newUseCases(declared, declared, getTypes(), nil, nil)
 
 	for _, path := range []string{"", "talks", "a.md"} {
 		if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.a", Command: "tidy", Path: path}); err != nil {
@@ -187,7 +187,7 @@ func TestRunCommandRejectsEmptyPathForFileCommand(t *testing.T) {
 		declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "md.numen.a", Command: manifest.Command{
 			ID: "proofreading.create", Title: "Proofread", When: when,
 		}}}}
-		commands := newScenarios(declared, declared, getTypes(), nil, nil)
+		commands := newUseCases(declared, declared, getTypes(), nil, nil)
 
 		if !commands.List.HasTargetVariable(declared.entries[0].Command) {
 			t.Errorf("%q was reported as taking no file", when)
@@ -232,7 +232,7 @@ func TestACommandOverNotesOfATypeRunsOverThoseNotesAlone(t *testing.T) {
 		"links/talk.md":  "---\ntype: link\nurl: https://video.example/talk\n---\n",
 		"notes/plain.md": "# A plain note\n",
 	}
-	commands := newScenarios(declared, declared, getTypes(), note.NewReadFrontmatter(files), nil)
+	commands := newUseCases(declared, declared, getTypes(), note.NewReadFrontmatter(files), nil)
 
 	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.links", Command: "fetch", Path: "links/talk.md"}); err != nil {
 		t.Fatalf("a link note was refused: %v", err)
@@ -258,7 +258,7 @@ func TestRunRejectsDisabledCommandSetting(t *testing.T) {
 		ID: "scan", Title: "Scan", When: "config.org.example.scans.isEnabled == true",
 	}}}}
 	config := settingsOf{"org": map[string]any{"example": map[string]any{"scans": map[string]any{"isEnabled": false}}}}
-	run := newScenarios(declared, declared, getTypes(), nil, config).Run
+	run := newUseCases(declared, declared, getTypes(), nil, config).Run
 
 	_, err := run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "org.example.scans", Command: "scan"})
 
@@ -271,7 +271,7 @@ func TestRunAnswersTheErrorOfANoteItCannotRead(t *testing.T) {
 	declared := &declaredCommands{entries: []plugin.CommandEntry{
 		{PluginID: "md.numen.links", Command: manifest.Command{ID: "fetch", Title: "Fetch", When: "target.noteType == 'link'"}},
 	}}
-	commands := newScenarios(declared, declared, getTypes(), note.NewReadFrontmatter(noteFiles{}), nil)
+	commands := newUseCases(declared, declared, getTypes(), note.NewReadFrontmatter(noteFiles{}), nil)
 
 	_, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.links", Command: "fetch", Path: "links/gone.md"})
 

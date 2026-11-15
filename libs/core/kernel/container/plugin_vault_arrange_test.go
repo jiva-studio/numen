@@ -37,7 +37,7 @@ func openScannedPluginVault(t *testing.T, notes map[string]string, hooks contain
 		paths = append(paths, path)
 	}
 	slices.Sort(paths)
-	if err := shared.Writer.Scan(t.Context(), paths); err != nil {
+	if err := shared.Writer.ScanFiles(t.Context(), paths); err != nil {
 		t.Fatal(err)
 	}
 	return v, shared

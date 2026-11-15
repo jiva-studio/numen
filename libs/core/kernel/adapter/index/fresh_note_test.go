@@ -27,7 +27,7 @@ func TestAFreshNoteIsSearchableByItsWordsBeforeItsVector(t *testing.T) {
 	}
 	var paths []string
 	for _, p := range found {
-		paths = append(paths, p.Source)
+		paths = append(paths, p.Path)
 	}
 	if !slices.Equal(paths, []string{"n/fresh.md"}) {
 		t.Errorf("found %v before any vector exists", paths)

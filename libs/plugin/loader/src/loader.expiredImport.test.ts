@@ -1,8 +1,8 @@
 /** A start that passes its limit while the module of the plugin is still being read. The plugin is invented. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
-import type { LoaderHost } from './host'
-import { createPluginLoader } from './loader'
+import type { LoaderHost, PluginParts } from './host'
+import { createTestPluginLoader } from './testing/pluginLoader'
 
 const HARBOR = 'org.example.harbor'
 const MANIFEST = { id: HARBOR, name: 'Harbor', version: '1.0.0', frontend: {} }
@@ -17,12 +17,12 @@ describe('a plugin whose module is read after the start limit', () => {
     const activate = vi.fn()
     const host = {
       createContext: (pluginId: string) =>
-        ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+        ({ plugin: { identity: { id: pluginId } }, host: {} }) as unknown as PluginParts,
       disposePlugin: vi.fn<(pluginId: string) => void>(),
       disposeAll: vi.fn(),
       getSetting: <T>() => undefined as T,
     } satisfies LoaderHost
-    const loader = createPluginLoader({
+    const loader = createTestPluginLoader({
       host,
       fetch: (async (url: string) =>
         new Response(
@@ -54,14 +54,14 @@ describe('a plugin that started within the limit', () => {
     const host = {
       createContext: (pluginId: string) =>
         ({
-          plugin: { id: pluginId },
-          register: { command: registerCommand },
-        }) as unknown as PluginContext,
+          plugin: { identity: { id: pluginId }, register: { command: registerCommand } },
+          host: {},
+        }) as unknown as PluginParts,
       disposePlugin: vi.fn<(pluginId: string) => void>(),
       disposeAll: vi.fn(),
       getSetting: <T>() => undefined as T,
     } satisfies LoaderHost
-    const loader = createPluginLoader({
+    const loader = createTestPluginLoader({
       host,
       fetch: (async (url: string) =>
         new Response(

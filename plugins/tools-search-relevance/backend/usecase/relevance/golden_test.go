@@ -27,18 +27,18 @@ type goldenFixture struct {
 		Text   string    `json:"text"`
 		Vector []float32 `json:"vector"`
 	} `json:"titles"`
-	Passages []struct {
+	Chunks []struct {
 		Source int64  `json:"source"`
 		Vector []byte `json:"vector"`
-	} `json:"passages"`
+	} `json:"chunks"`
 	Expected struct {
-		Outcome      string  `json:"outcome"`
-		Floor        float64 `json:"floor"`
-		Median       float64 `json:"median"`
-		Spread       float64 `json:"spread"`
-		Histogram    []int   `json:"histogram"`
-		QueryCount   int     `json:"queryCount"`
-		PassageCount int     `json:"passageCount"`
+		Outcome    string  `json:"outcome"`
+		Floor      float64 `json:"floor"`
+		Median     float64 `json:"median"`
+		Spread     float64 `json:"spread"`
+		Histogram  []int   `json:"histogram"`
+		QueryCount int     `json:"queryCount"`
+		ChunkCount int     `json:"chunkCount"`
 	} `json:"expected"`
 }
 
@@ -125,15 +125,15 @@ func hostOf(fixture goldenFixture) (*hosttest.Search, *hosttest.Vault) {
 		vault.File(sourcePath(one.Source), fmt.Sprintf("---\ntitle: %s\n---\n", one.Text))
 	}
 	search.SetEmbedder(func(text string) []float32 { return vectors[text] })
-	passages := make([]hosttest.SearchPassage, len(fixture.Passages))
-	for i, one := range fixture.Passages {
+	chunks := make([]hosttest.SampledChunk, len(fixture.Chunks))
+	for i, one := range fixture.Chunks {
 		values := make([]float32, len(one.Vector))
 		for j, b := range one.Vector {
 			values[j] = float32(int8(b))
 		}
-		passages[i] = hosttest.SearchPassage{Path: sourcePath(one.Source), Vector: values}
+		chunks[i] = hosttest.SampledChunk{Path: sourcePath(one.Source), Vector: values}
 	}
-	search.SetPassages(modelRecipe, passages)
+	search.SetSampledChunks(modelRecipe, chunks)
 	search.SetCosine(coreCosine)
 	return search, vault
 }
@@ -170,9 +170,9 @@ func TestTheSamplesOfTheCoreGiveTheSameFloorInThePlugin(t *testing.T) {
 			if !slices.Equal(got.Histogram, want.Histogram) {
 				t.Errorf("histogram %v, want %v", got.Histogram, want.Histogram)
 			}
-			if got.QueryCount != want.QueryCount || got.PassageCount != want.PassageCount {
+			if got.QueryCount != want.QueryCount || got.ChunkCount != want.ChunkCount {
 				t.Errorf("measured %d queries against %d passages, want %d against %d",
-					got.QueryCount, got.PassageCount, want.QueryCount, want.PassageCount)
+					got.QueryCount, got.ChunkCount, want.QueryCount, want.ChunkCount)
 			}
 		})
 	}
