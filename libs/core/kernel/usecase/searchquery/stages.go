@@ -24,7 +24,7 @@ func (u *FindSearchResults) applyStages(
 			r = searchquery.ApplySort(r, stage.Sort)
 		}
 		if err != nil {
-			return searchquery.SearchResults{}, fmt.Errorf("%d:%d: %w", stage.Position.Line, stage.Position.Column, err)
+			return searchquery.SearchResults{}, err
 		}
 	}
 	return r, nil
