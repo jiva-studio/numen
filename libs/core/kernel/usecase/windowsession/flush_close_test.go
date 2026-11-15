@@ -11,8 +11,8 @@ func TestFlushingTwiceAnswersTrueTheSecondTime(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden())
 
-	first := w.scenarios.Closing.Flush.Execute(t.Context())
-	second := w.scenarios.Closing.Flush.Execute(t.Context())
+	first := w.useCases.Closing.Flush.Execute(t.Context())
+	second := w.useCases.Closing.Flush.Execute(t.Context())
 
 	if !first || !second || w.pages.flushes != 1 {
 		t.Errorf("flushes answered %v and %v after %d requests, want true, true after one", first, second, w.pages.flushes)
@@ -24,12 +24,12 @@ func TestFlushPendingReturnsFalseWhileAPageAsks(t *testing.T) {
 	w.open(t, garden())
 	w.pages.isAsking = true
 
-	if w.scenarios.Closing.Flush.Execute(t.Context()) {
+	if w.useCases.Closing.Flush.Execute(t.Context()) {
 		t.Fatal("the flush ended with a page awaiting an answer")
 	}
 	w.pages.isAsking = false
 
-	if !w.scenarios.Closing.Flush.Execute(t.Context()) {
+	if !w.useCases.Closing.Flush.Execute(t.Context()) {
 		t.Error("the flush after the answer did not end")
 	}
 }
@@ -52,7 +52,7 @@ func TestClosingShutsTheDoorFirstThenStopsThePassesThenClosesResourcesInOrder(t 
 	})
 	w.open(t, garden())
 
-	if err := w.scenarios.Closing.Close.Execute(t.Context()); err != nil {
+	if err := w.useCases.Closing.Close.Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -70,7 +70,7 @@ func TestClosingReportsEveryResourceThatFailedToClose(t *testing.T) {
 	})
 	w.open(t, garden())
 
-	err := w.scenarios.Closing.Close.Execute(t.Context())
+	err := w.useCases.Closing.Close.Execute(t.Context())
 
 	if !errors.Is(err, socket) || !errors.Is(err, index) {
 		t.Errorf("closing returned %v, want both failures", err)

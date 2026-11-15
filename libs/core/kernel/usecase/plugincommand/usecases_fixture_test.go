@@ -1,9 +1,6 @@
-package cli_test
+package plugincommand_test
 
 import (
-	"context"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -12,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-// scenarios are the scenarios over the commands the plugins declare, built the way the container builds them.
-type scenarios struct {
+// useCases are the use cases over the commands the plugins declare, built the way the container builds them.
+type useCases struct {
 	List       plugincommand.List
 	Listing    plugincommand.ListCommands
 	Run        plugincommand.Run
@@ -21,17 +18,17 @@ type scenarios struct {
 	ListItems  plugincommand.ListItems
 }
 
-func newScenarios(
+func newUseCases(
 	commands pluginport.PluginCommands, runs pluginport.PluginCommandRuns, types contenttypeport.ContentTypeTable,
 	notes noteport.NoteReader, config pluginport.WhenConfig,
-) scenarios {
+) useCases {
 	if types == nil {
 		types = noTypes{}
 	}
 	conditions := when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
 	run := plugincommand.NewRun(commands, runs, types, notes, config, conditions)
-	return scenarios{
+	return useCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, types),
 		Run:        run,
@@ -40,20 +37,14 @@ func newScenarios(
 	}
 }
 
+func (s useCases) withVersions(versions plugincommand.VersionItems) useCases {
+	s.RunCommand = plugincommand.NewRunCommand(s.List, s.Run, versions)
+	s.ListItems = plugincommand.NewListItems(s.List, versions)
+	return s
+}
+
 // noTypes is a table that gives no file a type.
 type noTypes struct{}
 
 func (noTypes) GetContentType(string) domain.ContentType   { return domain.UnknownContentType }
 func (noTypes) ListExtensions(domain.ContentType) []string { return nil }
-
-// noCommands is a plugin host with no plugin.
-type noCommands struct{}
-
-func (noCommands) ListCommands() []plugin.CommandEntry       { return nil }
-func (noCommands) ListSlots() []plugin.SlotEntry             { return nil }
-func (noCommands) ListKeybindings() []plugin.KeybindingEntry { return nil }
-func (noCommands) ListHandlers() []plugin.CommandEntry       { return nil }
-func (noCommands) GetParts(string) plugin.Parts              { return plugin.Parts{} }
-func (noCommands) RunCommand(context.Context, plugin.CommandCall) (plugin.CommandResult, error) {
-	return plugin.CommandResult{}, domain.ErrUnavailable
-}

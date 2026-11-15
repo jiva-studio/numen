@@ -120,7 +120,7 @@ func TestApplyMinChunkLength(t *testing.T) {
 			recipe := getQuantizingModel().Recipe()
 			embedPieces(t, db, recipe)
 
-			removed, err := db.ApplyMinChunkLength(t.Context(), tc.minimum)
+			removed, err := db.VectorIndex().ApplyMinChunkLength(t.Context(), tc.minimum)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -167,7 +167,7 @@ func TestMinChunkLengthDecidesWhichChunksAreChosenToEmbed(t *testing.T) {
 		db := openDB(t)
 		recipe := getQuantizingModel().Recipe()
 		cutPieces(t, db)
-		if _, err := db.ApplyMinChunkLength(t.Context(), tc.minimum); err != nil {
+		if _, err := db.VectorIndex().ApplyMinChunkLength(t.Context(), tc.minimum); err != nil {
 			t.Fatal(err)
 		}
 		if got := pendingLengths(t, db, recipe); !slices.Equal(got, tc.want) {
@@ -183,13 +183,13 @@ func TestLoweringTheMinimumChoosesTheChunksThatLostTheirVectors(t *testing.T) {
 	recipe := getQuantizingModel().Recipe()
 	embedPieces(t, db, recipe)
 
-	if _, err := db.ApplyMinChunkLength(t.Context(), 40); err != nil {
+	if _, err := db.VectorIndex().ApplyMinChunkLength(t.Context(), 40); err != nil {
 		t.Fatal(err)
 	}
-	if removed, err := db.ApplyMinChunkLength(t.Context(), 40); err != nil || removed != 0 {
+	if removed, err := db.VectorIndex().ApplyMinChunkLength(t.Context(), 40); err != nil || removed != 0 {
 		t.Fatalf("the same minimum removed %d, %v; want nothing", removed, err)
 	}
-	if _, err := db.ApplyMinChunkLength(t.Context(), 0); err != nil {
+	if _, err := db.VectorIndex().ApplyMinChunkLength(t.Context(), 0); err != nil {
 		t.Fatal(err)
 	}
 	if got := pendingLengths(t, db, recipe); !slices.Equal(got, []int{5, 39}) {

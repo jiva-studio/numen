@@ -115,7 +115,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	if err := db.Vaults().Register(ctx, v.ID); err != nil {
 		b.Fatal(err)
 	}
-	if err := db.FitVectors(ctx, model.Width, model.Recipe()); err != nil {
+	if err := db.VectorIndex().FitVectors(ctx, model.Width, model.Recipe()); err != nil {
 		b.Fatal(err)
 	}
 
