@@ -22,7 +22,6 @@ func (q *QueryReads) GetNoteCandidates(ctx context.Context, vaultID domain.Vault
 	})
 }
 
-// ListFilePaths returns the paths of the sources of one vault that are not notes, ordered by path.
 func (q *QueryReads) ListFilePaths(ctx context.Context, vaultID domain.VaultID) ([]string, error) {
 	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]string, error) {
 		return r.queryPaths(ctx, filePathsSQL, r.vault)
