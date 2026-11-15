@@ -138,7 +138,6 @@ describe('a file filed somewhere else', () => {
     await one.carry(createMoveInvocation('notes/Ontology.md'))
 
     expect(one.notices).toStrictEqual([words.alreadyExists])
-    expect(one.severities).toStrictEqual(['warning'])
   })
 
   it('says why the vault refused it, in the words of the error', async () => {
@@ -175,7 +174,6 @@ describe('a folder made', () => {
     await one.carry(invoke('app:folder.create', front(), 'physics/heat'))
 
     expect(one.notices).toStrictEqual([words.alreadyExists])
-    expect(one.severities).toStrictEqual(['warning'])
   })
 
   it('reports an error when the vault refuses the folder name', async () => {

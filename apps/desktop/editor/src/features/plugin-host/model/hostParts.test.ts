@@ -1,5 +1,6 @@
 /** The small parts the window makes the host of its plugins from. */
 import { describe, expect, it, vi } from 'vitest'
+import { ReportedError } from '@/shared/api/errors'
 import { ref } from 'vue'
 import { SLOT, type ProcessHost } from '@numen/plugin-loader'
 import type { Command } from '@/entities/command'
@@ -16,7 +17,11 @@ import {
   createVaultServiceParts,
 } from './createHostParts'
 import { createHostPort } from './hostPort'
-import { createPluginSettingsAccessor, createRowChangeSubscriber, createWindowPluginStatus } from './pluginSettings'
+import {
+  createPluginSettingsAccessor,
+  createRowChangeSubscriber,
+  createWindowPluginStatus,
+} from './pluginSettings'
 import { createNoteKindReader } from './window/createNoteKindReader'
 import { createPluginCatalog } from './createPluginCatalog'
 import { createPluginReports } from './createPluginReports'
@@ -97,8 +102,8 @@ describe('the problems of a plugin', () => {
     reports.reportViewIssue('md.example.sketch', 'no pane')
     reports.reportCommandIssue('md.example.sketch', 'no title')
     reports.writeIssue('md.example.sketch', 'bad slot', 'warning')
-    reports.reportError('md.example.sketch', new Error('boom'))
-    reports.reportLoadError('md.example.sketch', new Error('syntax error'))
+    reports.reportError('md.example.sketch', new ReportedError('boom'))
+    reports.reportLoadError('md.example.sketch', new ReportedError('syntax error'))
 
     expect(writers.get('plugin:md.example.sketch')).toHaveBeenNthCalledWith(
       1,

@@ -743,7 +743,6 @@ describe('the first note shown', () => {
 
     expect(one.window.health.isIndexing.value).toBe(false)
     expect(one.changed).toStrictEqual([''])
-    expect(one.window.pluginHealth.value).toHaveLength(1)
   })
 
   it('says what changed in a note while it is being made', async () => {

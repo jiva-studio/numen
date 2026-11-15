@@ -245,7 +245,7 @@ describe('choosing a row of the commands', () => {
     expect(one.commands.palette.open.value).toBe(false)
 
     one.search.setOpen(true)
-    one.field.findComponent(Palette).vm.$emit('update:typed', '>')
+    one.field.findComponent(Palette).vm.$emit('update:modelValue', '>')
     expect(one.search.open.value).toBe(false)
     expect(one.commands.palette.open.value).toBe(true)
 

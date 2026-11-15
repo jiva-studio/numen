@@ -236,6 +236,7 @@ describe('the settings and notices a plugin is given', () => {
           { id: 'md.numen.job', hasFrontend: false },
         ]),
       },
+      read: { getCommittedSetting: () => undefined },
     }
     const { pluginHost, pluginLoader } = createWith({
       rest: rest as never,

@@ -4,6 +4,7 @@ import type { BackgroundTask } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
 import type { PluginHealthItem } from '@/entities/plugin'
 import type { Task } from '@/entities/window'
+import { ReportedError } from '@/shared/api/errors'
 import { createMessageLog } from '@/shared/model/notices/messages'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createWindowBackgroundTasks } from './createWindowBackgroundTasks'
@@ -134,7 +135,7 @@ describe('the background tasks of the window', () => {
   it('reports cancel and action errors through writeMessage', async () => {
     const writeMessage = vi.fn()
     const host = createWindowBackgroundTasks({
-      cancelTask: () => Promise.reject(new Error('cannot cancel')),
+      cancelTask: () => Promise.reject(new ReportedError('cannot cancel')),
       log: createMessageLog(),
       plugins: createNoticeQueue(),
       window: { lost: ref(''), unwatched: ref(''), error: ref(''), tasks: ref([READING]) },
@@ -143,7 +144,7 @@ describe('the background tasks of the window', () => {
         items: ref([CONNECTION]),
         commands: {
           getIds: () => ['app:settings.open'],
-          run: () => Promise.reject(new Error('action failed')),
+          run: () => Promise.reject(new ReportedError('action failed')),
         },
         getCommandTitle: () => 'Open settings',
         getPluginName: () => 'Atlas',
@@ -151,7 +152,7 @@ describe('the background tasks of the window', () => {
       writeMessage,
     })
 
-    await host.cancel('reading')
+    await expect(host.cancel('reading')).rejects.toThrow('cannot cancel')
     host.runAction('health:org.example.atlas:connection')
     await vi.waitFor(() =>
       expect(writeMessage).toHaveBeenCalledWith(

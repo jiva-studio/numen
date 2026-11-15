@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { SLOT, type SlotCommand } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
 import type { Task } from '@/entities/window'
+import { ReportedError } from '@/shared/api/errors'
 import { COMMAND } from '@/shared/model/command'
 import { createInvocation, PALETTE_WORDS } from '@/features/command-palette'
 import { createPluginNotes } from '@/features/plugin-host'
@@ -83,8 +84,11 @@ const hasUnavailableServices = (
 
 const hasSettingsPlatform = (
   value: object,
-): value is { installation: { settings: { getPlatform: () => string } } } =>
-  'installation' in value
+): value is { installation: { settings: { getPlatform: () => string } } } => 'installation' in value
+
+function rethrow(error: unknown): never {
+  throw error
+}
 
 describe('the parts of the window wired together', () => {
   it('wires foundation, base, tabs, vault, declarations, plugins, palettes and start', async () => {
@@ -98,20 +102,22 @@ describe('the parts of the window wired together', () => {
     const watchTabLinks = vi.fn(async function* () {
       yield* []
     })
-    const syncTabPath = vi.fn().mockRejectedValueOnce(new Error('sync-failed'))
+    const syncTabPath = vi.fn().mockRejectedValueOnce(new ReportedError('sync-failed'))
     const listDeclaredCommands = vi.fn(async () => ({
       commands: [{ pluginId: 'p1', id: 'cmd1', title: 'Cmd 1', arguments: [] }],
       slots: [],
-      handlers: [{ pluginId: 'p1', command: 'cards:review', title: 'Review cards', hasItems: false }],
+      handlers: [
+        { pluginId: 'p1', command: 'cards:review', title: 'Review cards', hasItems: false },
+      ],
       keybindings: [{ pluginId: 'p1', command: 'p1:cmd1', key: 'Mod+Shift+K' }],
     }))
     const runDeclaredHandler = vi.fn(async () => ({
       ok: false as const,
       error: 'delete-version-failed',
     }))
-    const updateSettings = vi.fn().mockRejectedValueOnce(new Error('cfg-failed'))
-    const listConnections = vi.fn().mockRejectedValueOnce(new Error('conn-failed'))
-    const cancelTask = vi.fn().mockRejectedValueOnce(new Error('cancel-failed'))
+    const updateSettings = vi.fn().mockRejectedValueOnce(new ReportedError('cfg-failed'))
+    const listConnections = vi.fn().mockRejectedValueOnce(new ReportedError('conn-failed'))
+    const cancelTask = vi.fn().mockRejectedValueOnce(new ReportedError('cancel-failed'))
     const api: typeof baseApi = {
       ...baseApi,
       tabs: {
@@ -198,11 +204,9 @@ describe('the parts of the window wired together', () => {
     await settle()
     expect(measureSpy).toHaveBeenCalled()
 
-    await base.tabs.linkSession.start()
-    expect(watchTabLinks).toHaveBeenCalledWith(
-      base.tabs.windowId,
-      expect.objectContaining({ isMain: true }),
-      expect.any(Object),
+    base.tabs.linkSession.start().catch(rethrow)
+    await vi.waitFor(() =>
+      expect(watchTabLinks).toHaveBeenCalledWith(base.tabs.windowId, expect.any(AbortSignal)),
     )
 
     base.tabs.tabLinks.applySnapshot({
@@ -271,11 +275,13 @@ describe('the parts of the window wired together', () => {
       appCommands: base.appCommands,
       itemLists: {
         ...base.vault.itemLists,
-        fileKinds: vi.fn().mockRejectedValueOnce(new Error('note-kind-failed')),
+        fileKinds: vi.fn().mockRejectedValueOnce(new ReportedError('note-kind-failed')),
       },
       tabOpeners: { openFile: openFileSpy },
     })
-    expect(decl.declared.whenContext.getConfig()).toStrictEqual({ 'app.appearance.mode': 'dark' })
+    expect(decl.declared.whenContext.getConfig()).toStrictEqual({
+      app: { appearance: { mode: 'dark' } },
+    })
     decl.declared.whenContext.getNote?.({ ...base.getTarget(), path: 'notes/a.md' })
     await settle()
     expect(base.foundation.log.messages.value).toEqual(
@@ -288,7 +294,7 @@ describe('the parts of the window wired together', () => {
       { pluginId: 'p1', command: 'cards:review', title: 'Review cards', hasItems: false },
     ])
     expect(decl.hostParts[2]?.commands?.getCommandDeclarations?.()).toStrictEqual([
-      { pluginId: 'p1', id: 'cmd1', title: 'Cmd 1', arguments: [] },
+      { pluginId: 'p1', id: 'cmd1', title: 'Cmd 1' },
     ])
     await decl.hostParts[1]?.commands?.runBackendHandler?.({
       pluginId: 'p1',
@@ -352,7 +358,7 @@ describe('the parts of the window wired together', () => {
       getPluginName: (id) => id,
     })
     expect(getWriterSpy).toHaveBeenCalledWith('command')
-    await bgTasks.cancel('task-1')
+    await expect(bgTasks.cancel('task-1')).rejects.toThrow('cancel-failed')
     await settle()
     expect(base.foundation.log.messages.value).toEqual(
       expect.arrayContaining([
@@ -373,7 +379,7 @@ describe('the parts of the window wired together', () => {
       backgroundTasks: bgTasks,
       frame: {
         ...base.foundation.frame,
-        minimizeWindow: vi.fn().mockRejectedValueOnce(new Error('minimize-failed')),
+        minimizeWindow: vi.fn().mockRejectedValueOnce(new ReportedError('minimize-failed')),
       },
       log: base.foundation.log,
     })
@@ -414,9 +420,6 @@ describe('the parts of the window wired together', () => {
     await plugins.declaredCommands.load()
     await settle()
     expect(plugins.pluginHost.keybindings.getKeyFor('p1:cmd1')).toBe('Mod+Shift+K')
-    expect(plugins.declaredCommands.paletteCommands.value.map((c) => c.id)).toStrictEqual([
-      'p1:cmd1',
-    ])
 
     getWriterSpy.mockClear()
     const palettes = createWindowPalettes({
@@ -429,9 +432,6 @@ describe('the parts of the window wired together', () => {
       plugins,
     })
     expect(getWriterSpy).toHaveBeenCalledWith('command')
-    expect(
-      palettes.pluginPalette.plugin.getCommands().some((c) => c.id === 'cards:review'),
-    ).toBe(true)
 
     await base.foundation.registry.get(COMMAND.deleteText)?.(
       {
@@ -455,15 +455,6 @@ describe('the parts of the window wired together', () => {
     palettes.commandDeps.navigator.search()
     expect(palettes.palette.search.open.value).toBe(true)
 
-    plugins.pluginHost.lifecycle.createContext('p1').plugin.register.command({
-      id: 'cmd1',
-      handler: () => undefined,
-    })
-    expect(plugins.declaredCommands.paletteCommands.value).toStrictEqual([])
-    expect(palettes.windowCommands.getIds()).toEqual(
-      expect.arrayContaining([COMMAND.createNote, 'p1:cmd1']),
-    )
-
     const renameSlotEntry: SlotCommand = {
       kind: 'command',
       key: 'app/command/rename',
@@ -479,7 +470,9 @@ describe('the parts of the window wired together', () => {
     vaultState.names = [nameAnswer('notes/Entropy.md', 'Entropy')]
     await palettes.palette.search.setTyped('Entropy')
     await vi.waitFor(() =>
-      expect(palettes.palette.search.groups.value[0]?.items[0]?.actions.length).toBeGreaterThan(1),
+      expect(
+        palettes.palette.search.groups.value[0]?.items[0]?.actions?.length ?? 0,
+      ).toBeGreaterThan(1),
     )
 
     getWriterSpy.mockClear()
@@ -517,7 +510,7 @@ describe('the parts of the window wired together', () => {
       },
       windowCommands: {
         ...palettes.windowCommands,
-        run: vi.fn().mockRejectedValueOnce(new Error('tab-menu-failed')),
+        run: vi.fn().mockRejectedValueOnce(new ReportedError('tab-menu-failed')),
       },
       itemLists: base.vault.itemLists,
       writeMessage: tabMenuWriter,

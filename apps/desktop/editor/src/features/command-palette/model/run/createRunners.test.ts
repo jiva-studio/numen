@@ -75,7 +75,7 @@ describe('a command run with the values of a keybinding', () => {
   it('runs over the target with the values', async () => {
     const { deps, runs } = setup()
 
-    createValuesRunner(deps)('app:file.reveal', TARGET, { kind: 'plex' })
+    createValuesRunner(deps, deps.writeMessage)('app:file.reveal', TARGET, { kind: 'plex' })
 
     await vi.waitFor(() =>
       expect(runs).toStrictEqual([
@@ -122,7 +122,15 @@ describe('the action of a chosen result', () => {
 
     expect(run.mock.lastCall).toStrictEqual([
       'app:file.open',
-      { ...TARGET, tab: '', kind: null, path: 'Moons.md', file: 'Moons.md', title: 'Moons', line: 4 },
+      {
+        ...TARGET,
+        tab: '',
+        kind: null,
+        path: 'Moons.md',
+        file: 'Moons.md',
+        title: 'Moons',
+        line: 4,
+      },
       'Moons',
       undefined,
     ])

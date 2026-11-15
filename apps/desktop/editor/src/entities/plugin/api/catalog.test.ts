@@ -138,7 +138,7 @@ describe('the entries of the catalog', () => {
           ok: false,
           error: { kind: 'not-found', sourceErrors: [] },
         }),
-    })
+    } as never)
     expect(await readEmpty()).toStrictEqual({ ok: false, error: 'it lists nothing' })
   })
 })

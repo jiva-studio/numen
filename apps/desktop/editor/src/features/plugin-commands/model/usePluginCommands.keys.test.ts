@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import type { PluginPaletteCommand } from '@numen/plugin-loader'
+import type { PluginHost, PluginPaletteCommand } from '@numen/plugin-loader'
 import {
   createCommandRegistry,
   type CommandDeps,
@@ -33,12 +33,12 @@ describe('the palette entry of a command a plugin declares with a Shift shortcut
         executeCommand,
       },
       keybindings: { getKeyFor: (id: string) => shortcuts[id] },
-    }
+    } as unknown as PluginHost
 
     const registry = createCommandRegistry()
     const pluginCommands = usePluginCommands(
       registry,
-      createCommandNoteReader({ fileKinds: getFileKinds }),
+      createCommandNoteReader({ fileKinds: async () => new Map() }),
       host,
     )
     const entries = pluginCommands.getPaletteEntries()
@@ -49,8 +49,20 @@ describe('the palette entry of a command a plugin declares with a Shift shortcut
       [undefined, undefined],
     ])
     expect(entries[2]?.input).toBe('items')
-    const noteTarget = { path: 'a.md', file: 'a.md', isReady: true } as CommandTarget
-    const pdfTarget = { path: 'a.pdf', file: 'a.pdf', isReady: true } as CommandTarget
+    const noteTarget = {
+      path: 'a.md',
+      file: 'a.md',
+      isReady: true,
+      tab: '',
+      vault: { id: 'v', name: 'V' },
+    } as CommandTarget
+    const pdfTarget = {
+      path: 'a.pdf',
+      file: 'a.pdf',
+      isReady: true,
+      tab: '',
+      vault: { id: 'v', name: 'V' },
+    } as CommandTarget
     expect(entries[1]?.isAvailable(noteTarget, RUNS)).toBe(true)
     expect(entries[1]?.isAvailable(pdfTarget, RUNS)).toBe(false)
 

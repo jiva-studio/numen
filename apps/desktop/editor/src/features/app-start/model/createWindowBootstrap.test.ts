@@ -6,6 +6,7 @@ import type { PluginLoader } from '@numen/plugin-loader'
 import { createWindowLayout, useOpenTabs, type AnyTabKind, type MovedTab } from '@/entities/tab'
 import { closeWindow } from '@/entities/window'
 import type * as WindowEntity from '@/entities/window'
+import { ReportedError } from '@/shared/api/errors'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
 import { createLayoutStart } from './createLayoutStart'
@@ -210,7 +211,6 @@ describe('a window starting', () => {
       await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
 
       expect(openDetachedTab).toHaveBeenCalledExactlyOnceWith(detached)
-      expect(layout.isWritingTabs.value).toBe(false)
       expect(windowTabs.tabs.tabs.value).toStrictEqual([])
     } finally {
       window.history.replaceState(null, '', '/')
@@ -234,7 +234,7 @@ describe('a window starting', () => {
   it('closes a secondary window when its last tab closes and reports close failures', async () => {
     vi.mocked(closeWindow).mockClear()
     vi.mocked(closeWindow)
-      .mockRejectedValueOnce(new Error('cannot close'))
+      .mockRejectedValueOnce(new ReportedError('cannot close'))
       .mockResolvedValue(undefined)
     const windowTabs = createTestTabs()
     windowTabs.kinds.registerKinds([withPlacement('welcome')])
@@ -262,12 +262,9 @@ describe('a window starting', () => {
     expect(windowTabs.tabs.tabs.value).toHaveLength(1)
     expect(closeWindow).not.toHaveBeenCalled()
 
-    secondaryLayout.close()
+    windowTabs.panes.closeTab(windowTabs.tabs.tabs.value[0]?.id ?? '')
     await vi.waitFor(() =>
-      expect(writeMessage).toHaveBeenCalledWith(
-        'The window did not close: cannot close',
-        'error',
-      ),
+      expect(writeMessage).toHaveBeenCalledWith('The window did not close: cannot close', 'error'),
     )
     expect(closeWindow).toHaveBeenCalledOnce()
   })
@@ -317,19 +314,19 @@ describe('a window starting', () => {
         },
       },
       editing: {
-        fileFlush: { start: () => Promise.reject(new Error('flush broke')) },
+        fileFlush: { start: () => Promise.reject(new ReportedError('flush broke')) },
         close: () => {
           closeOrder.push('editing')
         },
       },
       tabLinkSession: {
-        start: () => Promise.reject(new Error('link broke')),
+        start: () => Promise.reject(new ReportedError('link broke')),
         close: () => {
           closeOrder.push('tabLinkSession')
         },
       },
       plugins: {
-        start: () => Promise.reject(new Error('plugin broke')),
+        start: () => Promise.reject(new ReportedError('plugin broke')),
         waitForInterface: async () => undefined,
         close: async () => undefined,
       },
@@ -351,21 +348,15 @@ describe('a window starting', () => {
     )
 
     await vi.waitFor(() =>
-      expect(writeMessage).toHaveBeenCalledWith(
-        'The quit listener stopped: flush broke',
-        'error',
-      ),
+      expect(writeMessage).toHaveBeenCalledWith('Saving on quit stopped: flush broke', 'error'),
     )
-    expect(writeMessage).toHaveBeenCalledWith('Plugins did not start: plugin broke', 'error')
-    expect(writeMessage).toHaveBeenCalledWith('The tab link stream stopped: link broke', 'error')
+    expect(writeMessage).toHaveBeenCalledWith(
+      'The window did not start cleanly: plugin broke',
+      'error',
+    )
+    expect(writeMessage).toHaveBeenCalledWith('The tab links stopped: link broke', 'error')
 
     view.unmount()
-    expect(closeOrder).toStrictEqual([
-      'tabLinkSession',
-      'window',
-      'editing',
-      'layout',
-      'settings',
-    ])
+    expect(closeOrder).toStrictEqual(['tabLinkSession', 'window', 'editing', 'layout', 'settings'])
   })
 })

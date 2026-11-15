@@ -49,15 +49,10 @@ const setup = (
       { id: 'reef', title: 'Reef' },
       { id: 'plex', title: 'Plex' },
       { id: 'chat', title: 'Chat' },
-      { id: 'ghost', title: 'Ghost' },
     ],
     getKind: (tab) =>
-      tab === 'chat'
-        ? 'agent'
-        : ['dock', 'quay', 'lost', 'ghost'].includes(tab)
-          ? undefined
-          : 'note',
-    isLinkable: (tab) => tab === 'reef' || tab === 'plex' || tab === 'ghost',
+      tab === 'chat' ? 'agent' : ['dock', 'quay', 'lost'].includes(tab) ? undefined : 'note',
+    isLinkable: (tab) => tab === 'reef' || tab === 'plex',
     windowId: 'here',
     isAsking: () => options.isAsking ?? false,
     detach,
@@ -80,7 +75,9 @@ describe('the commands of a tab', () => {
   it('are detaching, unlinking, moving and linking it, the last two listing items', () => {
     const { set } = setup()
 
-    expect(set.commands.map((one) => [one.id, one.text, one.group, one.input ?? null])).toStrictEqual([
+    expect(
+      set.commands.map((one) => [one.id, one.text, one.group, one.input ?? null]),
+    ).toStrictEqual([
       [DETACH, 'Detach tab', 'window', null],
       [UNLINK, 'Unlink tab', 'window', null],
       [MOVE, 'Move to window', 'window', 'items'],
@@ -119,7 +116,6 @@ describe('the commands of a tab', () => {
       'quay',
     ])
     expect(await link.listItems?.(createTabTarget('chat'))).toStrictEqual([])
-    expect(await link.listItems?.(createTabTarget('ghost'))).toStrictEqual([])
   })
 
   it('are available over a tab only, unlink over a linked tab, and none while the tab asks', () => {

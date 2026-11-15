@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { ReportedError } from '@/shared/api/errors'
 import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import type { AnyTabKind } from '@/entities/tab'
@@ -119,7 +120,7 @@ describe('the tabs of a window', () => {
         tabs: windowTabs.tabs,
         restored: {
           openSavedTab: () => {
-            throw new Error('bad tab')
+            throw new ReportedError('bad tab')
           },
         },
       } as never,

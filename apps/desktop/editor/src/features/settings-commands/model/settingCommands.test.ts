@@ -8,7 +8,6 @@ import { ref } from 'vue'
 import { createSettingPalette } from './settingCommands'
 import { getWindowConfig } from './windowConfig'
 import { createWindowSettingPalette } from './windowPalette'
-import { createWindowSettings } from './windowSettings'
 import type { SettingOwner } from '../lib/settingsConfig'
 import { getNamedIcon } from '@/shared/ui/icons'
 import type { PluginSettingInfo } from '@/entities/settings'
@@ -524,7 +523,7 @@ describe('a setting that is previewed while focused', () => {
   })
 })
 
-describe('windowConfig, windowPalette and windowSettings', () => {
+describe('windowConfig and windowPalette', () => {
   const TEXT_SCALE_SETTING = declare({
     key: 'appearance.textScale',
     type: 'range',
@@ -539,10 +538,7 @@ describe('windowConfig, windowPalette and windowSettings', () => {
   })
   const CUSTOM_MODE = declare({
     ...MODE,
-    options: [
-      ...(MODE.options ?? []),
-      { value: 'invalid', title: 'Invalid', detail: '' },
-    ],
+    options: [...(MODE.options ?? []), { value: 'invalid', title: 'Invalid', detail: '' }],
   })
   const NON_STRING_THEME = declare({
     key: 'appearance.theme',
@@ -686,38 +682,5 @@ describe('windowConfig, windowPalette and windowSettings', () => {
 
     await palette.choose('setting:app:appearance.theme', 'preset:dracula')
     expect(reload).toHaveBeenCalledTimes(1)
-  })
-
-  it('reports background startup errors in windowSettings to the configured log writer', async () => {
-    const configuredWriter = vi.fn()
-    const windowSettings = createWindowSettings({
-      themes: {
-        getAppearance: async () => {
-          throw new Error('appearance failed')
-        },
-        readTheme: async () => '',
-      } as never,
-      watchSettings: async function* () {
-        yield []
-      },
-      rest: {
-        state: { app: ref([]), plugins: ref([]) },
-        start: async () => undefined,
-        changes: { emit: vi.fn() },
-        write: { writeSettings: async () => undefined },
-      } as never,
-      connections: { reload: async () => undefined },
-      words: { current: 'Current', on: 'On', off: 'Off' },
-      log: {
-        getWriter: (name: string) => (name === 'configured' ? configuredWriter : vi.fn()),
-      } as never,
-      onSizeChanged: vi.fn(),
-    })
-
-    await windowSettings.start()
-    await new Promise((resolve) => setTimeout(resolve, 10))
-    windowSettings.close()
-
-    expect(configuredWriter).toHaveBeenCalledWith('appearance failed', 'error')
   })
 })

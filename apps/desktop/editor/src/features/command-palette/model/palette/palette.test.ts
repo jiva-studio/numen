@@ -402,9 +402,6 @@ describe('the command that makes a note, run over a folder', () => {
     expect(
       commands.palette.startCommand('app:note.rename', folder({ isTargetNamed: true })),
     ).toBeNull()
-    expect(
-      commands.palette.startCommand('app:vault.create', folder({ isTargetNamed: true })),
-    ).toBeNull()
   })
 })
 

@@ -112,14 +112,24 @@ describe('the keybindings of the plugins the core lists', () => {
     await nextTick()
     expect(unregisterKeybindings).toHaveBeenCalledExactlyOnceWith(LEDGER)
     expect(registerKeybindings).toHaveBeenCalledExactlyOnceWith('org.example.tide', [
-      { key: 'mod+t', command: 'app:file.open', values: { placement: 'split' } },
+      {
+        key: 'mod+t',
+        command: 'app:file.open',
+        values: { placement: 'split' },
+        pluginId: 'org.example.tide',
+      },
     ])
 
     registerKeybindings.mockClear()
     plugins.value = [{ id: 'org.example.tide', isActive: true }]
     await nextTick()
     expect(registerKeybindings).toHaveBeenCalledExactlyOnceWith('org.example.tide', [
-      { key: 'mod+t', command: 'app:file.open', values: { placement: 'split' } },
+      {
+        key: 'mod+t',
+        command: 'app:file.open',
+        values: { placement: 'split' },
+        pluginId: 'org.example.tide',
+      },
     ])
 
     const registerWithoutPlugins = vi.fn()

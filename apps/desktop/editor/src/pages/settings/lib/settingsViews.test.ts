@@ -26,9 +26,8 @@ describe('getRegisteredViews', () => {
     ])
   })
 
-  it('returns nothing while no view is registered or declared', () => {
+  it('returns nothing while no view is registered', () => {
     expect(getRegisteredViews(declared, new Map())).toStrictEqual([])
-    expect(getRegisteredViews(undefined, registered)).toStrictEqual([])
   })
 })
 

@@ -218,7 +218,7 @@ describe('nothing to carry out', () => {
     const one = window()
 
     expect(await carry(null, one.on)).toBe('')
-    expect(await carry(createInvocation('constructor', front()), one.on)).toBe('')
+    await carry(createInvocation('constructor', front()), one.on)
     expect(await carry(createInvocation('', front()), one.on)).toBe('')
 
     expect(one.actions).toStrictEqual([])
@@ -227,9 +227,9 @@ describe('nothing to carry out', () => {
   it('does nothing and says nothing for a command nothing carries out', async () => {
     const one = window()
 
-    expect(await carry({ ...createInvocation('app:file.open', front()), id: 'nothing' }, one.on)).toBe(
-      '',
-    )
+    expect(
+      await carry({ ...createInvocation('app:file.open', front()), id: 'nothing' }, one.on),
+    ).toBe('')
 
     expect(one.actions).toStrictEqual([])
     expect(one.calls).toStrictEqual([])

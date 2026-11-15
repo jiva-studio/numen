@@ -3,6 +3,7 @@
  * window's tabs: what they offer, and what each one asks of the core and of the window.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ReportedError } from '@/shared/api/errors'
 import { ref } from 'vue'
 import { NAME_SOURCE, NOTE_ERROR_CODE, NOTE_ROLE } from '@numen/core-client'
 import { createHandledApi } from '@/testing/coreAnswers'
@@ -657,7 +658,7 @@ describe('createNoteNavigator', () => {
     const navigateTab = vi
       .fn<() => Promise<void>>()
       .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(new Error('tab missing'))
+      .mockRejectedValueOnce(new ReportedError('tab missing'))
     const writeMessage = vi.fn()
     const navigator = createNoteNavigator({
       navigation: { travel, leavePath },

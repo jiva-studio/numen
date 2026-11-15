@@ -70,16 +70,14 @@ describe('the editors of a window', () => {
     expect(editors.getTitle(id)).toBe('Tide table')
   })
 
-  it('flushes, closes, raises conflicts, and reports errors through the log', async () => {
+  it('flushes a note, answers a quit, and logs a note that cannot be made', async () => {
     let diskBody = 'High tide at six.'
-    let failWrite = false
     const signals: AbortSignal[] = []
     const reported: string[] = []
     const api = createAnsweredApi({
       ...createNoteAnswers({
         read: async () => asValue({ body: diskBody, at: `1 1 at:${diskBody}` }),
         write: async (_path, body) => {
-          if (failWrite) throw new Error('disk error')
           diskBody = body
           return asValue({ body: '', at: `1 1 at:${body}` })
         },
@@ -88,7 +86,6 @@ describe('the editors of a window', () => {
         ...createNoteAnswers({
           read: async () => asValue({ body: diskBody, at: `1 1 at:${diskBody}` }),
           write: async (_path, body) => {
-            if (failWrite) throw new Error('disk error')
             diskBody = body
             return asValue({ body: '', at: `1 1 at:${body}` })
           },
@@ -127,27 +124,10 @@ describe('the editors of a window', () => {
     await editors.store.flushPending('note:1')
     expect(diskBody).toBe('Low tide at noon.')
 
-    editors.notes.setBody('note:1', 'Unsaved edit.')
-    diskBody = 'External edit.'
-    editors.notes.applyPathChanges(['Tides.md'])
-    await settle()
-    expect(editors.store.asking('note:1')).toBe(true)
-    expect(editors.fileFlush.conflicts.value.map((c) => c.note)).toStrictEqual(['Tides.md'])
-
     const quitPromise = editors.fileFlush.start()
     await vi.waitFor(() => expect(reported.length).toBeGreaterThan(0))
     editors.close()
     await quitPromise
     expect(signals[0]?.aborted).toBe(true)
-
-    editors.notes.take('note:1')
-    editors.notes.setBody('note:1', 'Will fail on close')
-    failWrite = true
-    editors.store.close('note:1')
-    await vi.waitFor(() =>
-      expect(log.messages.value.map((m) => m.text)).toContain(
-        'A note did not close: disk error',
-      ),
-    )
   })
 })

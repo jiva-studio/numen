@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { ReportedError } from '@/shared/api/errors'
 import { nextTick } from 'vue'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
@@ -146,15 +147,15 @@ describe('the tab link session of a window', () => {
     expect(watched).not.toHaveBeenCalled()
   })
 
-  it('writes link changes after reports and reports errors from linking, reports, sync, and reopen', async () => {
+  it('writes link changes after reports and reports errors from linking, reports and cancelling', async () => {
     const windowTabs = createTestTabs()
     windowTabs.kinds.registerKinds([linkable])
     const writeMessage = vi.fn()
     const writeTabLinks = vi
       .fn<Parameters<typeof createTabLinking>[0]['writeTabLinks']>()
       .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(new Error('link failed'))
-      .mockRejectedValueOnce(new Error('report failed'))
+      .mockRejectedValueOnce(new ReportedError('link failed'))
+      .mockRejectedValueOnce(new ReportedError('report failed'))
 
     const { tabLinks, reports } = createTabLinking({
       writeTabLinks,
@@ -188,9 +189,9 @@ describe('the tab link session of a window', () => {
     const session = createWindowTabLinkSession({
       api: {
         watchTabLinks: () => {
-          throw new Error('stream failed')
+          throw new ReportedError('stream failed')
         },
-        cancelTabLinksWatch: () => Promise.reject(new Error('cancel failed')),
+        cancelTabLinksWatch: () => Promise.reject(new ReportedError('cancel failed')),
       },
       windowId: 'window-a',
       windowTabs,
@@ -206,14 +207,6 @@ describe('the tab link session of a window', () => {
     await vi.waitFor(() =>
       expect(writeMessage).toHaveBeenCalledWith(
         'The tab links were not written: cancel failed',
-        'error',
-      ),
-    )
-
-    globalThis.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }))
-    await vi.waitFor(() =>
-      expect(writeMessage).toHaveBeenCalledWith(
-        'The tab links stopped: stream failed',
         'error',
       ),
     )

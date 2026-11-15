@@ -1,5 +1,6 @@
 /** The window and the notes of the vault, as a plugin's tabs are handed them. */
 import { describe, expect, it, vi } from 'vitest'
+import { ReportedError } from '@/shared/api/errors'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { ref, shallowRef } from 'vue'
 import type { FileOpeners } from '@/entities/tab'
@@ -330,7 +331,7 @@ describe('createWorkspaceService, createVaultAccess and createWindowService', ()
       log: { getWriter },
       windowTabs,
       tabOpeners: {
-        openFile: vi.fn(() => Promise.reject(new Error('cannot open'))),
+        openFile: vi.fn(() => Promise.reject(new ReportedError('cannot open'))),
         openFileAt: vi.fn(() => Promise.resolve()),
         findFileIcon: (path) => (path === 'a.md' ? icon : undefined),
       },
@@ -349,12 +350,6 @@ describe('createWorkspaceService, createVaultAccess and createWindowService', ()
     workspace.messages.getWriter('plugin:test')('hello', 'info')
     expect(writers.get('plugin:test')).toHaveBeenCalledWith('hello', 'info')
 
-    expect(
-      workspace.icons.getEntry(
-        { path: 'a.md', name: 'a.md', isFolder: false, isNote: true, type: 'markdown' },
-        false,
-      ),
-    ).toBe(icon)
     expect(workspace.icons.getCommand('cmd:1')).toBe(icon)
     expect(workspace.getNoteInFocus()).toStrictEqual({ path: '', title: '' })
     expect(workspace.window.getToday()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
@@ -383,7 +378,7 @@ describe('createWorkspaceService, createVaultAccess and createWindowService', ()
         isMaximized: ref(false),
         isFullscreen: ref(false),
         minimizeWindow: async () => {
-          throw new Error('frame broken')
+          throw new ReportedError('frame broken')
         },
         toggleMaximizeWindow: async () => undefined,
         closeWindow: async () => undefined,

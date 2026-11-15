@@ -10,6 +10,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { VaultList, Vault } from '@/entities/vault'
+import { ReportedError } from '@/shared/api/errors'
 import {
   COMMAND,
   createRowKeys,
@@ -264,8 +265,10 @@ describe('useWelcomeScreen', () => {
     const props: WelcomeScreenProps = {
       vaultList: two,
       tabs: [],
-      commands: { palette: { open: paletteOpen, setOpen: vi.fn() } },
-      search: { open: searchOpen, setOpen: vi.fn() },
+      commands: {
+        palette: { open: paletteOpen, setOpen: vi.fn() },
+      } as unknown as WelcomeScreenProps['commands'],
+      search: { open: searchOpen, setOpen: vi.fn() } as unknown as WelcomeScreenProps['search'],
       doing: createCommandDeps(),
       getTarget: () => createTarget(),
       pluginWays: [
@@ -298,9 +301,7 @@ describe('useWelcomeScreen', () => {
 
     const ways = screen.ways.value
     expect(ways.find((w) => w.id === COMMAND.searchVault)?.text).toBe(uiWords.find)
-    expect(ways.find((w) => w.id === COMMAND.searchVault)?.icon).toBe(
-      findIcon(COMMAND.searchVault),
-    )
+    expect(ways.find((w) => w.id === COMMAND.searchVault)?.icon).toBe(findIcon(COMMAND.searchVault))
     expect(ways.find((w) => w.id === COMMAND.createNote)?.text).toBe(uiWords.newNote)
     expect(ways.find((w) => w.id === 'plugin.custom')?.icon).toBe(CustomIcon)
     const plain = ways.find((w) => w.id === 'plugin.plain')
@@ -339,7 +340,7 @@ describe('useWelcomeScreen', () => {
     const failingDoing = createCommandDeps({
       registry: {
         get: () => {
-          throw new Error('registry failure')
+          throw new ReportedError('registry failure')
         },
       },
     })
@@ -365,19 +366,17 @@ describe('useWelcomeScreen', () => {
     // When command palette is open, shortcut is ignored
     paletteOpen.value = true
     const blockedShortcut = new KeyboardEvent('keydown', {
-      key: '1',
-      ctrlKey: true,
+      key: 'a',
       cancelable: true,
     })
     window.dispatchEvent(blockedShortcut)
     expect(blockedShortcut.defaultPrevented).toBe(false)
     expect(openCurrentVault).not.toHaveBeenCalled()
 
-    // When welcoming, Ctrl+1 prevents default and opens vault 0 ('a')
+    // When welcoming, A prevents default and opens vault 0 ('a')
     paletteOpen.value = false
     const activeShortcut = new KeyboardEvent('keydown', {
-      key: '1',
-      ctrlKey: true,
+      key: 'a',
       cancelable: true,
     })
     window.dispatchEvent(activeShortcut)
