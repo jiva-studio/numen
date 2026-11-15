@@ -136,7 +136,7 @@ func TestSearchTextKeepsTheWholeTextOfEachChunkWhenAsked(t *testing.T) {
 	}
 }
 
-func TestSearchTextLeavesTheWholeTextEmptyWhenNotAsked(t *testing.T) {
+func TestSearchTextReturnsNoWholeTextByDefault(t *testing.T) {
 	body := strings.Repeat("filler words ", 400) + "the gray heron stands"
 	finder := &recordingFinder{found: []domain.SearchResult{
 		{Path: "library/Birds.pdf", Text: body, MatchOffset: strings.Index(body, "heron"), Start: 4000, Length: len(body)},

@@ -195,17 +195,17 @@ func TestAnswerFromAnotherRowReranksEveryDocumentWithThatRow(t *testing.T) {
 
 func TestChangeOfTheLimitRunsAtOnceAndReranksOnlyNewDocuments(t *testing.T) {
 	w := newWorld(t, 10)
-	texts := make([]string, 8)
-	chunks := make([]host.SearchResult, 8)
+	texts := make([]string, 25)
+	chunks := make([]host.SearchResult, 25)
 	for i := range texts {
 		texts[i] = fmt.Sprintf("Storm number %d at the quay.", i)
-		chunks[i] = chunk(fmt.Sprintf("c%d", i), fmt.Sprintf("Logbooks/%d.md", i), 0, 400, texts[i])
+		chunks[i] = chunk(fmt.Sprintf("c%d", i), fmt.Sprintf("Logbooks/%02d.md", i), 0, 400, texts[i])
 	}
 	w.index(chunks...)
 	w.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery, stormsRerank, 1))
 	w.runDueSearches(t)
-	if requests := w.standIn.GetRequests(); len(requests) != 1 || !slices.Equal(requests[0].Documents, texts[:3]) {
-		t.Fatalf("rerank requests = %v, want the first three passages for the limit 1", getDocuments(requests))
+	if requests := w.standIn.GetRequests(); len(requests) != 1 || !slices.Equal(requests[0].Documents, texts[:10]) {
+		t.Fatalf("rerank requests = %v, want the first ten passages for the limit 1", getDocuments(requests))
 	}
 	w.standIn.ClearRequests()
 
@@ -213,11 +213,11 @@ func TestChangeOfTheLimitRunsAtOnceAndReranksOnlyNewDocuments(t *testing.T) {
 	w.clock.Advance(time.Minute)
 	w.changeIndex(t)
 
-	if requests := w.standIn.GetRequests(); len(requests) != 1 || !slices.Equal(requests[0].Documents, texts[3:6]) {
-		t.Errorf("rerank requests = %v, want the three passages not scored before, in fused order", getDocuments(requests))
+	if requests := w.standIn.GetRequests(); len(requests) != 1 || !slices.Equal(requests[0].Documents, texts[10:20]) {
+		t.Errorf("rerank requests = %v, want the ten passages not scored before, in fused order", getDocuments(requests))
 	}
-	if record := w.readRecord(t, stormsID); record.Limit != 2 || len(record.Results) != 2 || len(record.RerankScores) != 6 {
-		t.Errorf("record = %+v, want the limit 2, two results and six scores", record)
+	if record := w.readRecord(t, stormsID); record.Limit != 2 || len(record.Results) != 2 || len(record.RerankScores) != 20 {
+		t.Errorf("record = %+v, want the limit 2, two results and twenty scores", record)
 	}
 }
 

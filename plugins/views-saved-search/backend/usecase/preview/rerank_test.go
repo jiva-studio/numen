@@ -166,7 +166,7 @@ func TestPreviewSendsTheWholeTextOfEachPassageToTheReranker(t *testing.T) {
 	}
 }
 
-func TestPreviewCutsTheTextSentToTheRerankerAtTheMaximumBytesOfTheSettings(t *testing.T) {
+func TestPreviewSendsAtMostMaxRerankedBytesOfEachTextToTheReranker(t *testing.T) {
 	w := newWorld(t)
 	w.config.MaxRerankedBytes = 101
 	long := "tide " + strings.Repeat("прилив у причала ", 20)

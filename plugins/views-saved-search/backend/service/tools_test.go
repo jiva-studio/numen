@@ -332,7 +332,7 @@ func TestPreviewDescriptionTellsToAddWordsWhenTheUserNamesAnExactThing(t *testin
 		t.Fatalf("tools = %+v, want saved_search_preview", listing.Tools)
 	}
 	description := listing.Tools[i].Description
-	for _, part := range []string{"words differently", `words("\"the phrase\"")`, "||"} {
+	for _, part := range []string{"but words it differently", `words("\"the phrase\"")`, "||"} {
 		if !strings.Contains(description, part) {
 			t.Errorf("description = %q, want %q", description, part)
 		}
