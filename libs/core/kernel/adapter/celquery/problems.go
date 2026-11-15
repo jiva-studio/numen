@@ -1,7 +1,6 @@
 package celquery
 
 import (
-
 	"cel.dev/cel-go/common/ast"
 	"cel.dev/cel-go/common/operators"
 	"cel.dev/cel-go/common/overloads"
