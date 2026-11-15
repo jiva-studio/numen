@@ -15,6 +15,7 @@ import (
 
 const (
 	searchWait      = 30 * time.Second
+	staleDebounce   = 2 * time.Second
 	searchPageSize  = 100
 	scoreKindRerank = "rerank"
 	failureProblems = "the query has problems"

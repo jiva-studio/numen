@@ -32,7 +32,7 @@
       "type": "number",
       "title": "Refresh delay",
       "description": "Minutes between runs of a saved search after the index changes",
-      "details": "Minutes a saved search waits after its last run before an index change runs it again; 0 runs it at once. A change of its query runs it at once.",
+      "details": "Minutes a saved search whose tab is closed waits after its last run before an index change runs it again; 0 runs it at once. A saved search whose tab is open, and a change of its query, run at once.",
       "default": 10,
       "min": 0,
       "step": 1

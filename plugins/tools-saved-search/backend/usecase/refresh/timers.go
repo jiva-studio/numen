@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
-// timers hold, for each vault, the timer that runs its due searches when the earliest cooldown of a stale
+// timers hold, for each vault, the timer that runs its due searches when the earliest wait of a stale
 // search ends, while the process lives. No lease is held for it.
 type timers struct {
 	mu     sync.Mutex

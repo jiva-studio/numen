@@ -75,6 +75,12 @@ func (w *watchers) isRunning(key watchKey) bool {
 	return w.running[key] > 0
 }
 
+func (w *watchers) isWatched(key watchKey) bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return len(w.listeners[key]) > 0
+}
+
 func (w *watchers) sendLocked(key watchKey, change Change) {
 	for _, changes := range w.listeners[key] {
 		select {

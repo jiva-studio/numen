@@ -57,9 +57,10 @@ func (r *Runner) MarkStale(ctx context.Context, vault domain.VaultID) error {
 
 // RunDue deletes the caches of notes that are no longer saved searches of the vault and runs, one after
 // another in path order, every saved search that is due: one without a cache, one whose query changed
-// since its run, and one marked stale whose cooldown since its last run ended. Its searches are background
-// searches, for which the core shows no task; it reports the runs as one task of the plugin. When a stale search waits for its cooldown, a timer runs RunDue again at its
-// end, for as long as the process lives.
+// since its run, and one marked stale whose cooldown since its last run ended or, while a tab of it is
+// open, whose short debounce since it went stale ended. Its searches are background searches, for which
+// the core shows no task; it reports the runs as one task of the plugin. When a stale search waits, a
+// timer runs RunDue again at the end of its wait, for as long as the process lives.
 func (r *Runner) RunDue(ctx context.Context, vault domain.VaultID) error {
 	unlock, err := r.vaults.lock(ctx, vault)
 	if err != nil {
@@ -75,7 +76,7 @@ func (r *Runner) RunDue(ctx context.Context, vault domain.VaultID) error {
 		return err
 	}
 	settings := r.settings()
-	due, wakeAt := r.listDueSearches(ctx, v, searches, settings)
+	due, wakeAt := r.listDueSearches(ctx, vault, v, searches, settings)
 	r.schedule(ctx, vault, wakeAt)
 	if len(due) == 0 {
 		return nil
@@ -96,7 +97,7 @@ func (r *Runner) RunNow(ctx context.Context, vault domain.VaultID, notePath stri
 	})
 }
 
-func (r *Runner) listDueSearches(ctx context.Context, v Vault, searches []search, settings Settings) ([]search, time.Time) {
+func (r *Runner) listDueSearches(ctx context.Context, vault domain.VaultID, v Vault, searches []search, settings Settings) ([]search, time.Time) {
 	now := r.now()
 	var due []search
 	var wakeAt time.Time
@@ -110,11 +111,16 @@ func (r *Runner) listDueSearches(ctx context.Context, v Vault, searches []search
 		switch {
 		case err != nil, !hasRecord, isChanged(readTarget(stat, raw), record):
 			due = append(due, one)
+			continue
 		case record.StaleSince == nil:
-		case !now.Before(getCooldownEnd(record, settings)):
+			continue
+		}
+		runAt := getRunTime(record, settings, r.watchers.isWatched(watchKey{vault: vault, path: one.path}))
+		switch {
+		case !now.Before(runAt):
 			due = append(due, one)
-		case wakeAt.IsZero() || getCooldownEnd(record, settings).Before(wakeAt):
-			wakeAt = getCooldownEnd(record, settings)
+		case wakeAt.IsZero() || runAt.Before(wakeAt):
+			wakeAt = runAt
 		}
 	}
 	return due, wakeAt
