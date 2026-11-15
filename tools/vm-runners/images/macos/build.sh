@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if ! command -v sshpass >/dev/null; then
-  exec nix shell nixpkgs#sshpass --command "$0" "$@"
-fi
-
 here="$(cd "$(dirname "$0")" && pwd)"
 repo="$(cd "$here/../../../.." && pwd)"
 base_image="${BASE_IMAGE:-ghcr.io/cirruslabs/macos-tahoe-base:latest}"
@@ -14,14 +10,26 @@ cpu="${CPU:-4}"
 memory="${MEMORY:-8192}"
 tart="${TART:-tart}"
 export TART_NO_AUTO_PRUNE=1
-export SSHPASS="${GUEST_PASSWORD:-admin}"
-guest_user="${GUEST_USER:-admin}"
-ssh_options=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -o PubkeyAuthentication=no -o PreferredAuthentications=password)
 
-claude_code_version="${CLAUDE_CODE_VERSION:-2.1.325}"
+log() {
+  printf '%s build.sh: %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
+}
+
 playwright_version="$(sed -n '/"node_modules\/playwright": {/{n;p;}' "$repo/package-lock.json" | sed -E 's/.*"version": "([^"]+)".*/\1/')"
 if [ -z "$playwright_version" ]; then
-  echo "build.sh: playwright version not found in $repo/package-lock.json" >&2
+  log "playwright version not found in $repo/package-lock.json" >&2
+  exit 1
+fi
+
+runner_version="${RUNNER_VERSION:-}"
+runner_sha256="${RUNNER_SHA256:-}"
+if [ -z "$runner_version" ] || [ -z "$runner_sha256" ]; then
+  release="$(curl --proto '=https' --tlsv1.2 -fsSL https://api.github.com/repos/actions/runner/releases/latest)"
+  runner_version="$(printf '%s' "$release" | grep -o '"tag_name": *"v[0-9.]*"' | head -n 1 | sed -E 's/.*"v([0-9.]+)"/\1/')"
+  runner_sha256="$(printf '%s' "$release" | grep -o 'BEGIN SHA osx-arm64 -->[0-9a-f]\{64\}' | head -n 1 | sed -E 's/.*-->//')"
+fi
+if [ -z "$runner_version" ] || [ -z "$runner_sha256" ]; then
+  log "runner version or sha256 not found in the latest actions/runner release" >&2
   exit 1
 fi
 
@@ -32,65 +40,80 @@ has_vm() {
   "$tart" list --source local --quiet | grep -qx "$1"
 }
 
-stop_building_vm() {
-  if [ -n "$tart_pid" ] && kill -0 "$tart_pid" 2>/dev/null; then
-    "$tart" stop "$building" --timeout 60 || true
-    wait "$tart_pid" || true
-  fi
-  tart_pid=""
+is_vm_running() {
+  "$tart" list --source local | awk -v n="$1" '$2 == n { print $NF }' | grep -qx running
+}
+
+wait_for_stop() {
+  for _ in $(seq 1 180); do
+    is_vm_running "$building" || return 0
+    sleep 2
+  done
+  return 1
 }
 
 cleanup() {
-  stop_building_vm
-  if has_vm "$building"; then
+  status=$?
+  if [ -n "$tart_pid" ] && kill -0 "$tart_pid" 2>/dev/null; then
+    "$tart" stop "$building" --timeout 30 || true
+    wait "$tart_pid" || true
+  fi
+  if [ "$status" -ne 0 ] && has_vm "$building"; then
+    log "build failed, deleting $building"
     "$tart" delete "$building"
   fi
   rm -rf "$workdir"
 }
 trap cleanup EXIT
 
-guest_ssh() {
-  sshpass -e ssh "${ssh_options[@]}" "$guest_user@$ip" "$@"
+guest() {
+  "$tart" exec "$building" "$@"
 }
 
 if has_vm "$building"; then
+  log "deleting stale $building"
   "$tart" delete "$building"
 fi
 
-echo "cloning $base_image to $building"
+log "cloning $base_image to $building"
 "$tart" clone "$base_image" "$building"
 "$tart" set "$building" --cpu "$cpu" --memory "$memory"
 
-echo "booting $building"
+log "booting $building"
 "$tart" run --no-graphics --no-audio "$building" >"$workdir/tart.log" 2>&1 &
 tart_pid=$!
-ip="$("$tart" ip --wait 300 "$building")"
 
-for _ in $(seq 1 60); do
-  guest_ssh true 2>/dev/null && break
+for _ in $(seq 1 90); do
+  guest true 2>/dev/null && break
   sleep 5
 done
-guest_ssh true
+guest true
 
-echo "provisioning $building at $ip"
-mkdir -p "$workdir/image/numen"
-cp "$here/provision.sh" "$here/claude" "$here/numen-runner-bootstrap" "$here/md.numen.runner-bootstrap.plist" "$workdir/image/"
-cp "$here/../numen/flake.nix" "$here/../numen/flake.lock" "$workdir/image/numen/"
-guest_ssh "rm -rf /tmp/numen-image"
-sshpass -e scp -r "${ssh_options[@]}" "$workdir/image" "$guest_user@$ip:/tmp/numen-image"
-guest_ssh "PLAYWRIGHT_VERSION=$playwright_version CLAUDE_CODE_VERSION=$claude_code_version bash /tmp/numen-image/provision.sh"
-guest_ssh "rm -rf /tmp/numen-image"
+log "copying provisioning files"
+guest rm -rf /tmp/numen-image
+guest mkdir -p /tmp/numen-image/numen
+"$tart" exec -i "$building" tar -C /tmp/numen-image -xf - < <(
+  tar -C "$here/.." -cf - macos/provision.sh numen/flake.nix numen/flake.lock
+)
+guest mv /tmp/numen-image/macos/provision.sh /tmp/numen-image/provision.sh
 
-echo "shutting down $building"
-guest_ssh "sudo shutdown -h now" || true
-for _ in $(seq 1 120); do
-  kill -0 "$tart_pid" 2>/dev/null || break
-  sleep 1
-done
-stop_building_vm
+log "provisioning: playwright $playwright_version, actions runner $runner_version"
+guest env \
+  PLAYWRIGHT_VERSION="$playwright_version" \
+  RUNNER_VERSION="$runner_version" \
+  RUNNER_SHA256="$runner_sha256" \
+  bash /tmp/numen-image/provision.sh
+guest rm -rf /tmp/numen-image
+
+log "shutting down $building"
+guest sh -c 'sync; sudo shutdown -h now' || true
+wait_for_stop
+wait "$tart_pid" || true
+tart_pid=""
 
 if has_vm "$name"; then
+  log "replacing $name"
   "$tart" delete "$name"
 fi
 "$tart" rename "$building" "$name"
-echo "image ready: $name"
+log "image ready: $name"

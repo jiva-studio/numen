@@ -3,25 +3,38 @@ set -euo pipefail
 
 src="$(cd "$(dirname "$0")" && pwd)"
 : "${PLAYWRIGHT_VERSION:?PLAYWRIGHT_VERSION is not set}"
-: "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set}"
+: "${RUNNER_VERSION:?RUNNER_VERSION is not set}"
+: "${RUNNER_SHA256:?RUNNER_SHA256 is not set}"
+
+home="$HOME"
+job_path="$home/.nix-profile/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+log() {
+  printf '%s provision.sh: %s\n' "$(date '+%H:%M:%S')" "$*"
+}
 
 if [ ! -x /nix/var/nix/profiles/default/bin/nix ]; then
+  log "installing nix"
   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
 fi
-export PATH="$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"
+export PATH="$home/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"
 
+log "installing the nix profile"
 nix profile install "path:$src/numen#default"
 node --version
 git --version
 
+log "installing playwright browsers"
 npx --yes "playwright@$PLAYWRIGHT_VERSION" install chromium webkit
 
-sudo mkdir -p /usr/local/bin /usr/local/claude-code
-sudo chown "$(id -un)" /usr/local/claude-code
-npm install --global --prefix /usr/local/claude-code "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION"
-sudo install -m 755 "$src/claude" /usr/local/bin/claude
-/usr/local/bin/claude --version
-
-sudo install -m 755 "$src/numen-runner-bootstrap" /usr/local/bin/numen-runner-bootstrap
-mkdir -p "$HOME/Library/LaunchAgents"
-install -m 644 "$src/md.numen.runner-bootstrap.plist" "$HOME/Library/LaunchAgents/md.numen.runner-bootstrap.plist"
+log "installing the actions runner $RUNNER_VERSION"
+rm -rf "$home/actions-runner"
+mkdir -p "$home/actions-runner"
+archive="$home/actions-runner/actions-runner-osx-arm64-$RUNNER_VERSION.tar.gz"
+curl --proto '=https' --tlsv1.2 -fsSL -o "$archive" "https://github.com/actions/runner/releases/download/v$RUNNER_VERSION/actions-runner-osx-arm64-$RUNNER_VERSION.tar.gz"
+printf '%s  %s\n' "$RUNNER_SHA256" "$archive" | shasum -a 256 -c -
+tar -C "$home/actions-runner" -xzf "$archive"
+rm -f "$archive"
+printf 'PATH=%s\n' "$job_path" >"$home/actions-runner/.env"
+test -x "$home/actions-runner/run.sh"
+log "done"

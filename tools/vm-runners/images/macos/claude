@@ -1,3 +1,0 @@
-#!/bin/bash
-export PATH="$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"
-exec /usr/local/claude-code/bin/claude "$@"

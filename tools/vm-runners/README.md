@@ -1,77 +1,41 @@
 # vm-runners
 
-GitHub Actions self-hosted runners in Tart virtual machines on a Mac host. [GARM](https://github.com/cloudbase/garm) manages the runners through a runner scale set. GARM starts each runner VM through `garm-provider-tart`, an external provider. Each runner VM is a copy-on-write clone of a golden image and runs one job.
+GitHub Actions self-hosted runners in Tart virtual machines on a Mac host. [runscaler](https://github.com/ysya/runscaler) registers a runner scale set, starts one fresh Tart clone of the image `numen-macos-26` for each job and deletes the clone after the job.
 
 | Path | Contents |
 | --- | --- |
-| `garm-provider-tart/` | GARM external provider (Go, interface v0.1.0) that clones, starts, stops and deletes Tart VMs |
-| `images/macos/` | Build script for the macOS golden image `numen-macos-26` and the bootstrap LaunchAgent baked into it |
-| `images/numen/flake.nix` | Tools installed into the image with `nix profile install`: Node.js 22 and git |
+| `images/macos/build.sh` | Builds the image `numen-macos-26` |
+| `images/macos/provision.sh` | Runs inside the image build VM |
+| `images/numen/flake.nix` | Tools installed with `nix profile install`: Node.js 22 and git |
+| `runscaler/config.example.toml` | runscaler config with placeholders |
 
-## How a runner starts
+Apple allows two macOS VMs at a time per host, so `max-runners` must not be above 2.
 
-1. GARM calls the provider with `GARM_COMMAND=CreateInstance` and the bootstrap parameters on stdin.
-2. The provider writes `bootstrap.json` and `bootstrap.sh` into `<state_dir>/instances/<name>/shared`, clones the golden VM named by the pool image to a VM named after the instance, and starts `tart run --no-graphics --no-audio --dir=garm:<shared dir> <name>` in the background.
-3. The guest logs in as `admin` automatically. The LaunchAgent `md.numen.runner-bootstrap` waits for `/Volumes/My Shared Files/garm/bootstrap.sh` and runs it once. Output goes to `bootstrap.log` in the shared directory, the exit code to `bootstrap.exit`.
-4. `bootstrap.sh` downloads `<metadata-url>/install-script/` with the instance token and runs it. GARM renders that script from the runner install template of the pool or scale set.
+## Build the image
 
-The guest reaches the host at the Tart gateway address `192.168.64.1`. GARM's `metadata_url` and `callback_url` must use that address.
-
-The provider keeps one directory per instance under `state_dir/instances/`: `instance.json` (controller ID, pool ID, image), `tart-run.pid`, `tart-run.log` and the shared directory. It only touches VMs that have such a directory, and only those of the calling controller.
-
-## Build the macOS image
-
-On the Mac host, with Tart and Nix installed:
+On the Mac host, with Tart installed:
 
 ```sh
 tools/vm-runners/images/macos/build.sh
 ```
 
-The script clones `ghcr.io/cirruslabs/macos-tahoe-base:latest` (about 27 GB on the first pull) to `numen-macos-26-building`, boots it, and provisions it over SSH with the image's default `admin`/`admin` login: Nix (Determinate installer), the tools from `images/numen/flake.nix`, the Claude Code CLI (npm package pinned by `CLAUDE_CODE_VERSION`, installed to `/usr/local/claude-code`, started through the wrapper `/usr/local/bin/claude`, no login or API key), Playwright Chromium and WebKit of the version in `package-lock.json`, and the bootstrap LaunchAgent. It then shuts the VM down and renames it to `numen-macos-26`, replacing an older image of that name. `IMAGE_NAME`, `BASE_IMAGE`, `CPU` and `MEMORY` override the defaults.
+The script clones `ghcr.io/cirruslabs/macos-tahoe-base:latest` (33 GB on the first pull) to `numen-macos-26-building`, boots it headless and provisions it with `tart exec`: Nix (Determinate installer), the profile from `images/numen/flake.nix`, Playwright Chromium and WebKit of the version in `package-lock.json`, and the newest GitHub Actions runner for osx-arm64 in `/Users/admin/actions-runner`, checked against the sha256 in its release notes. `actions-runner/.env` sets the job `PATH` so that Node.js 22 from the Nix profile comes before Homebrew's. Then the script syncs and halts the guest, waits until the VM is stopped and renames it to `numen-macos-26`. The old image is deleted only after that. On failure the `-building` VM is deleted.
 
-## Install the provider
+`IMAGE_NAME`, `BASE_IMAGE`, `CPU`, `MEMORY`, `RUNNER_VERSION` and `RUNNER_SHA256` override the defaults.
 
-```sh
-cd tools/vm-runners/garm-provider-tart
-GOWORK=off go build -o ~/garm/garm-provider-tart .
-```
+## Install runscaler
 
-Provider config, for example `~/garm/garm-provider-tart.toml`:
-
-```toml
-tart = "/opt/homebrew/bin/tart"
-state_dir = "/Users/runner/garm/tart"
-cpu = 4
-memory = 8192
-
-[images]
-numen-macos-26 = "numen-macos-26"
-```
-
-`images` maps the image name of a GARM pool or scale set to a local Tart VM.
-
-Provider entry in the GARM config:
-
-```toml
-[[provider]]
-name = "tart"
-provider_type = "external"
-description = "Tart VMs on this Mac"
-  [provider.external]
-  provider_executable = "/Users/runner/garm/garm-provider-tart"
-  config_file = "/Users/runner/garm/garm-provider-tart.toml"
-  interface_version = "v0.1.0"
-```
-
-GARM must run as the user who owns the Tart VMs, in a session that may use Virtualization.framework.
-
-## Run the provider by hand
+1. Create a GitHub App for the organization with the permission Self-hosted runners (organization, read and write), install it on the organization and download its private key.
+2. Put the key at `~/.config/runner/app.pem` with mode 600. It never goes into the repository.
+3. Download the `darwin_arm64` tarball and `checksums.txt` of the latest release from <https://github.com/ysya/runscaler/releases>, check the tarball with `shasum -a 256 -c --ignore-missing checksums.txt`, unpack it and install the binary as `~/.local/bin/runner`.
+4. Copy `runscaler/config.example.toml` to `~/.config/runner/config.toml`, set `url`, `runner-group` and the `github-app.*` values, and set the mode to 600.
+5. Install and start the user service:
 
 ```sh
-export GARM_PROVIDER_CONFIG_FILE=~/garm/garm-provider-tart.toml GARM_CONTROLLER_ID=test-controller GARM_POOL_ID=test-pool
-GARM_COMMAND=CreateInstance ./garm-provider-tart < bootstrap.json
-GARM_COMMAND=ListInstances ./garm-provider-tart
-GARM_COMMAND=DeleteInstance GARM_INSTANCE_ID=<name> ./garm-provider-tart
+runner service install --scope user
+runner status
 ```
 
-`bootstrap.json` needs `name`, `image`, `pool_id`, `os_type`, `arch`, `metadata-url` and `instance-token`.
+## Refresh the image
+
+When GitHub retires the runner version in the image, jobs stop being picked up. Run `build.sh` again. It takes the latest runner release and replaces the image. Running jobs keep their clones.
