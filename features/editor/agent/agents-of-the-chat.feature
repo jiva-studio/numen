@@ -1,4 +1,3 @@
-@live
 Feature: Agents of the chat
   The chat answers through the agents a person chooses on the page of Agent Chat. An agent program
   installed on this computer is found and listed with no setup.
