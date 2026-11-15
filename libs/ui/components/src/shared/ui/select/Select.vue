@@ -83,6 +83,11 @@ const onOpenChoices = () => {
   menuAnchor.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
 }
 
+const onToggleChoices = () => {
+  if (menuAnchor.value) onCloseChoices()
+  else onOpenChoices()
+}
+
 const onCloseChoices = () => {
   menuAnchor.value = null
   query.value = ''
@@ -111,7 +116,7 @@ const onKey = (event: KeyboardEvent) => {
     :has-popup="isSearchable ? 'listbox' : 'menu'"
     :problem="problem"
     :class="props.class"
-    @click="onOpenChoices"
+    @click="onToggleChoices"
     @keydown="onKey"
   />
 
@@ -149,7 +154,7 @@ const onKey = (event: KeyboardEvent) => {
     is-open
     trigger="keyboard"
     @choose="onChoose"
-    @dismiss="menuAnchor = null"
+    @dismiss="onCloseChoices"
   >
     <template #silence>{{ problem || 'Nothing to choose' }}</template>
   </Menu>
