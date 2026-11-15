@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchkept"
 )
 
 // GetSearch returns the state of a search and one page of its results, waiting a while for it to stop.
 type GetSearch struct {
-	kept        *Kept
+	kept        *searchkept.Searches
 	generations IndexGenerations
 }
 
@@ -34,11 +35,11 @@ type Page struct {
 // Execute returns searchrun.ErrNotFound for a search that is unknown, expired, removed or of another plugin,
 // and searchrun.ErrInvalidPageToken for a token not of this search.
 func (u *GetSearch) Execute(ctx context.Context, r Read) (Page, error) {
-	record, stopped, err := u.kept.find(r.Owner, r.ID)
+	record, stopped, err := u.kept.Find(r.Owner, r.ID)
 	if err != nil {
 		return Page{}, err
 	}
-	u.kept.touch(r.ID)
+	u.kept.Touch(r.ID)
 	if r.Wait > 0 && record.IsRunning {
 		if record, err = u.wait(ctx, r, stopped); err != nil {
 			return Page{}, err
@@ -58,7 +59,7 @@ func (u *GetSearch) wait(ctx context.Context, r Read, stopped <-chan struct{}) (
 	if !isFound {
 		return searchrun.Record{}, searchrun.ErrNotFound
 	}
-	u.kept.touch(r.ID)
+	u.kept.Touch(r.ID)
 	return record, nil
 }
 

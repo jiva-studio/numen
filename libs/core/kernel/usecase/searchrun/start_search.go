@@ -11,6 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchkept"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
 	"github.com/jiva-studio/numen/libs/note/ulid"
 )
 
@@ -22,11 +24,11 @@ const (
 // StartSearch starts a search, or returns the id of an equal search of the same plugin that is still
 // running.
 type StartSearch struct {
-	kept        *Kept
+	kept        *searchkept.Searches
 	generations IndexGenerations
 	run         RunQuery
 	names       PluginNames
-	slots       SearchSlots
+	slots       *searchslot.Slots
 	maxResults  int
 	mu          sync.Mutex
 }
@@ -36,10 +38,10 @@ type StartSearch struct {
 func (u *StartSearch) Execute(ctx context.Context, start searchrun.Start) (searchrun.ID, error) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	kept := u.kept.dropExpired(1)
+	kept := u.kept.DropExpired(1)
 	for _, r := range kept {
 		if r.IsRunning && searchrun.IsSameSearch(r.Start, start) {
-			u.kept.touch(r.ID)
+			u.kept.Touch(r.ID)
 			return r.ID, nil
 		}
 	}
@@ -72,7 +74,7 @@ func (u *StartSearch) Execute(ctx context.Context, start searchrun.Start) (searc
 
 func (u *StartSearch) newTask(r searchrun.Record) work.Task {
 	return work.Task{
-		ID: getTaskID(r.ID), Title: taskTitle, About: getAbout(r.Start.Query), IsUserStarted: true,
+		ID: searchkept.GetTaskID(r.ID), Title: taskTitle, About: getAbout(r.Start.Query), IsUserStarted: true,
 		PluginID: r.Start.Owner, PluginName: u.names(r.Start.Owner),
 		Cancel: func() { u.kept.Cancels.Cancel(string(r.ID)) },
 	}
@@ -88,7 +90,7 @@ func getAbout(query string) string {
 
 func (u *StartSearch) runSearch(ctx context.Context, end func(), r searchrun.Record) {
 	defer end()
-	defer u.kept.Tasks.Remove(getTaskID(r.ID))
+	defer u.kept.Tasks.Remove(searchkept.GetTaskID(r.ID))
 	if err := u.slots.Acquire(ctx, r.Start.Priority); err != nil {
 		u.finish(r.ID, searchquery.SearchResults{}, err)
 		return
