@@ -1,10 +1,10 @@
 /**
  * Frontend entrypoint for the Title bar plugin: the bar at the top of each window, drawn in the
- * slot `titleBar`. The bar reads its slots, the vaults and the window from the context.
+ * slot `titleBar`. The bar reads its slots, the vaults and the window from the host services.
  */
 import { defineComponent, h, shallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { definePlugin, type PluginContext, type Caught } from '@numen/plugin-sdk'
+import { definePlugin, type HostServices, type PluginContext, type Caught } from '@numen/plugin-sdk'
 import {
   BUTTONS_SETTING,
   HIDE_IN_FULLSCREEN_SETTING,
@@ -23,32 +23,33 @@ export const TITLE_BAR_VIEW = 'bar'
 /** The command of the window that creates a vault, which the last row of the list of vaults runs. */
 const CREATE_VAULT = 'app:vault.create'
 
-/** The view of the slot: the bar over the context, with the window buttons where `buttons` says. */
+/** The view of the slot: the bar, with the window buttons where `buttons` says. */
 export function createTitleBarView(
-  context: Pick<PluginContext, 'plugin' | 'settings' | 'ui' | 'vault'>,
+  plugin: Pick<PluginContext, 'identity' | 'settings'>,
+  host: Pick<HostServices, 'ui' | 'vault'>,
 ) {
-  const buttons = shallowRef(readButtonsSetting(context.settings.get(BUTTONS_SETTING)))
-  context.settings.onChange(BUTTONS_SETTING, (value) => {
+  const buttons = shallowRef(readButtonsSetting(plugin.settings.get(BUTTONS_SETTING)))
+  plugin.settings.onChange(BUTTONS_SETTING, (value) => {
     buttons.value = readButtonsSetting(value)
   })
   const hideInFullscreen = shallowRef(
-    readHideInFullscreenSetting(context.settings.get(HIDE_IN_FULLSCREEN_SETTING)),
+    readHideInFullscreenSetting(plugin.settings.get(HIDE_IN_FULLSCREEN_SETTING)),
   )
-  context.settings.onChange(HIDE_IN_FULLSCREEN_SETTING, (value) => {
+  plugin.settings.onChange(HIDE_IN_FULLSCREEN_SETTING, (value) => {
     hideInFullscreen.value = readHideInFullscreenSetting(value)
   })
   const reportError = (error: Caught): void =>
-    context.ui.notices.show(error instanceof Error ? error.message : String(error), 'error')
+    host.ui.notices.show(error instanceof Error ? error.message : String(error), 'error')
   return defineComponent({
     name: 'TitleBarView',
     setup: () => {
-      const hosts = useTitleBarHosts(context)
+      const hosts = useTitleBarHosts(host)
       return () =>
         !isBarShown(hideInFullscreen.value, hosts.window.value.isFullscreen)
           ? null
           : h(TitleBar, {
-              appName: context.plugin.app.name,
-              platform: context.plugin.app.platform,
+              appName: plugin.identity.app.name,
+              platform: plugin.identity.app.platform,
               buttons: buttons.value,
               isMaximized: hosts.window.value.isMaximized,
               isFullscreen: hosts.window.value.isFullscreen,
@@ -57,38 +58,37 @@ export function createTitleBarView(
               status: hosts.status.value,
               canCreateVault: hosts.commandIds.value.includes(CREATE_VAULT),
               listItems: (command: string) =>
-                context.ui.commands?.listItems(command) ?? Promise.resolve([]),
+                host.ui.commands?.listItems(command) ?? Promise.resolve([]),
               reportError,
               onRunCommand: (
                 command: string,
                 itemId?: string,
                 values?: Readonly<Record<string, string>>,
               ) => {
-                if (context.ui.commands) {
+                if (host.ui.commands) {
                   runInBackground(
-                    context.ui.commands.run(command, undefined, itemId, values),
+                    host.ui.commands.run(command, undefined, itemId, values),
                     reportError,
                   )
                 }
               },
               onSwitchVault: (id: string) => {
-                if (context.vault.vaults)
-                  runInBackground(context.vault.vaults.switchTo(id), reportError)
+                if (host.vault.vaults) runInBackground(host.vault.vaults.switchTo(id), reportError)
               },
               onCreateVault: () => {
-                if (context.ui.commands)
-                  runInBackground(context.ui.commands.run(CREATE_VAULT), reportError)
+                if (host.ui.commands)
+                  runInBackground(host.ui.commands.run(CREATE_VAULT), reportError)
               },
-              onMinimizeWindow: () => context.ui.window?.minimize(),
-              onToggleMaximizeWindow: () => context.ui.window?.toggleMaximize(),
-              onCloseWindow: () => context.ui.window?.close(),
+              onMinimizeWindow: () => host.ui.window?.minimize(),
+              onToggleMaximizeWindow: () => host.ui.window?.toggleMaximize(),
+              onCloseWindow: () => host.ui.window?.close(),
             })
     },
   })
 }
 
-export const activate = (context: PluginContext): void => {
-  context.register.slotView({ id: TITLE_BAR_VIEW, component: createTitleBarView(context) })
+export const activate = (plugin: PluginContext, host: HostServices): void => {
+  plugin.register.slotView({ id: TITLE_BAR_VIEW, component: createTitleBarView(plugin, host) })
 }
 
 export default definePlugin({

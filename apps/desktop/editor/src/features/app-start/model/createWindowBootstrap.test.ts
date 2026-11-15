@@ -4,7 +4,7 @@ import { computed, defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { createWindowLayout, useOpenTabs, type AnyTabKind, type MovedTab } from '@/entities/tab'
-import { answerCore } from '@/testing/coreAnswers'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
 import { createLayoutStart } from './createLayoutStart'
 import { createPluginStart } from './createPluginStart'
@@ -35,7 +35,7 @@ const setup = ({
   vaultId = 'sea',
   detached = null,
 }: Parts = {}) => {
-  answerCore({
+  const api = createAnsweredApi({
     workspace: {
       readOpenTabs: () => {
         if (isReadFailing) throw new Error('core is busy')
@@ -45,7 +45,7 @@ const setup = ({
     },
   })
   const windowTabs = createTestTabs()
-  windowTabs.groups.registerKinds([
+  windowTabs.kinds.registerKinds([
     withPlacement('welcome'),
     { ...withPlacement('note'), display: {} },
   ])
@@ -100,6 +100,7 @@ const setup = ({
       isSecondary: false,
       windowId: 'window-a',
       readDetachedTab: vi.fn(() => Promise.resolve(detached)),
+      readOpenTabs: api.tabs.savedTabs.readOpenTabs,
       openDetachedTab,
     }),
   }
@@ -107,7 +108,12 @@ const setup = ({
     defineComponent({
       setup() {
         createWindowBootstrap(deps)
-        useOpenTabs({ windowTabs, isWriting: layout.isWritingTabs, writeMessage })
+        useOpenTabs({
+          windowTabs,
+          isWriting: layout.isWritingTabs,
+          writeMessage,
+          writeOpenTabs: api.tabs.savedTabs.writeOpenTabs,
+        })
         return () => h('div')
       },
     }),
@@ -155,7 +161,7 @@ describe('a window starting', () => {
 
     await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
     const [first] = windowTabs.tabs.tabs.value
-    if (first) windowTabs.closeTab(first.id)
+    if (first) windowTabs.panes.closeTab(first.id)
     await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(writeMessage).toHaveBeenCalledWith(expect.stringContaining('saved tabs'), 'error')

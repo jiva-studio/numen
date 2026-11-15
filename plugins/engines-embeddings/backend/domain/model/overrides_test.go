@@ -3,17 +3,18 @@ package model
 import "testing"
 
 func TestOverridesThatAreSetReplaceTheLocalModelFields(t *testing.T) {
-	local := LocalModel{Threads: 4}
-	Overrides{Dir: "/custom/dir", Runtime: "/custom/libonnx.so", Threads: 6}.ApplyToLocal(&local)
-	if local.Dir != "/custom/dir" || local.Runtime != "/custom/libonnx.so" || local.Threads != 6 {
+	local := LocalModel{Name: "orig/repo", File: "orig.onnx", Threads: 4, Revision: "abc", Sums: map[string]string{"a": "b"}}
+	Overrides{Repository: "custom/repo", Dir: "/custom/dir", File: "custom.onnx", Runtime: "/custom/libonnx.so", Threads: 1}.ApplyToLocal(&local)
+	if local.Name != "custom/repo" || local.Revision != "" || local.Sums != nil ||
+		local.Dir != "/custom/dir" || local.File != "custom.onnx" || local.Runtime != "/custom/libonnx.so" || local.Threads != 1 {
 		t.Fatalf("local = %+v", local)
 	}
 }
 
 func TestOverridesThatAreNotSetKeepTheLocalModelFields(t *testing.T) {
-	local := LocalModel{Dir: "/kept", Runtime: "libkept.so", Threads: 4}
+	local := LocalModel{Name: "kept/repo", Dir: "/kept", File: "kept.onnx", Runtime: "libkept.so", Threads: 4}
 	Overrides{}.ApplyToLocal(&local)
-	if local.Dir != "/kept" || local.Runtime != "libkept.so" || local.Threads != 4 {
+	if local.Name != "kept/repo" || local.Dir != "/kept" || local.File != "kept.onnx" || local.Runtime != "libkept.so" || local.Threads != 4 {
 		t.Fatalf("local = %+v", local)
 	}
 }

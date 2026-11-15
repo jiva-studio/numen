@@ -1,7 +1,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { waitWithinInterfaceLimit } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
-import { listPlugins } from '@/entities/plugin'
+import type { PluginLister } from '@/entities/plugin'
 import { formatError, type Caught } from '@/shared/api/errors'
 
 /** What the start needs of the plugin loader. */
@@ -17,11 +17,11 @@ export interface PluginStarter {
 }
 
 /**
- * Starts the plugins the core lists when the window mounts and closes them when it unmounts. The
- * window is started once the plugins of its slots have started or INTERFACE_WAIT_MS has passed since
- * it mounted.
+ * Starts the plugins `listPlugins` lists when the window mounts and closes them when it unmounts.
+ * The window is started once the plugins of its slots have started or INTERFACE_WAIT_MS has passed
+ * since it mounted.
  */
-export function useAppStart(loader: PluginStarter) {
+export function useAppStart(listPlugins: PluginLister, loader: PluginStarter) {
   const isLoading = ref(true)
   const isStarted = ref(false)
   const listError = ref('')

@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 )
 
 func postMethod(t *testing.T, handler http.Handler, method, body, token string) *httptest.ResponseRecorder {
@@ -19,14 +22,19 @@ func postMethod(t *testing.T, handler http.Handler, method, body, token string) 
 	return recorded
 }
 
-func TestLinkedHandler_RequiresTheHostToken(t *testing.T) {
-	handler, err := NewHandler(map[string]string{
-		"NUMEN_PLUGIN_TOKEN": "linked-token",
-		"NUMEN_HOST_PORT":    "1",
-	})
+func newMountedHandler(t *testing.T, port string) http.Handler {
+	t.Helper()
+	t.Setenv(hostcall.HostPortEnv, port)
+	t.Setenv(hostcall.PluginTokenEnv, "linked-token")
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "linked-token"}, Mount)
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
 	}
+	return handler
+}
+
+func TestMountedHandler_RequiresTheHostToken(t *testing.T) {
+	handler := newMountedHandler(t, "1")
 
 	if got := postMethod(t, handler, "GetBook", `{"path":"book.epub"}`, "").Code; got != http.StatusUnauthorized {
 		t.Fatalf("GetBook without the token = %d, want %d", got, http.StatusUnauthorized)
@@ -48,15 +56,12 @@ func TestLinkedHandler_RequiresTheHostToken(t *testing.T) {
 	}
 }
 
-func TestLinkedHandler_ReachesTheHostOfItsVariables(t *testing.T) {
+func TestMountedHandler_ReachesTheHostOfItsEnvironment(t *testing.T) {
 	hostServer := httptest.NewServer(http.NotFoundHandler())
 	defer hostServer.Close()
 	port := hostServer.URL[strings.LastIndex(hostServer.URL, ":")+1:]
 
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_HOST_PORT": port})
-	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
-	}
+	handler := newMountedHandler(t, port)
 
 	body := `{"path":"` + filepath.Join("books", "book.epub") + `"}`
 	if got := postMethod(t, handler, "GetBook", body, "linked-token"); got.Code != http.StatusNotFound {

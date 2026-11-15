@@ -1,6 +1,6 @@
 import { formatError } from '@/shared/api/errors'
 import type { VaultChangeEvent } from '@numen/plugin-loader'
-import { runInBackground } from '@numen/ui'
+import { runInBackground, win } from '@numen/ui'
 import type { FileOpeners, WindowTabs } from '@/entities/tab'
 import type { Emitter } from '@/shared/lib/emitter'
 import type { MessageWriter } from '@/shared/model/notices/messages'
@@ -20,7 +20,7 @@ export interface DisplayWiring {
   }
   renames: Emitter<readonly PathRename[]>
   tabOpeners: Pick<FileOpeners, 'openFileAt'>
-  windowTabs: Pick<WindowTabs, 'groups'>
+  windowTabs: Pick<WindowTabs, 'handle'>
   notifyPlugins: (event: VaultChangeEvent) => void
   writeMessage: MessageWriter
 }
@@ -55,7 +55,7 @@ export function createDisplayOptions(deps: DisplayWiring) {
       runInBackground(tabOpeners.openFileAt(path, spans), (error) =>
         writeMessage(formatError(error), 'error'),
       ),
-    activateTab: (id: string) => windowTabs.groups.handle.show(id),
-    reload: () => globalThis.location.reload(),
+    activateTab: (id: string) => windowTabs.handle.show(id),
+    reload: () => win.location.reload(),
   }
 }

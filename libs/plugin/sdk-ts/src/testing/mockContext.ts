@@ -3,6 +3,7 @@ import type {
   CommandNote,
   CommandRegistration,
   Disposable,
+  HostServices,
   PluginContext,
   PluginEvents,
   PluginRegistrations,
@@ -53,7 +54,7 @@ export interface MockMountedView {
   focusCount: number
 }
 
-// MockPluginUi is the window part of a mock context, with the hosts a test sets and reads back.
+// MockPluginUi is the window part of mock host services, with the hosts a test sets and reads back.
 export interface MockPluginUi extends PluginUi {
   readonly commands: MockCommandsHost
   readonly slots: MockSlotHost
@@ -69,12 +70,17 @@ export interface MockPluginWork extends PluginWork {
   readonly processes: MockProcessHost
 }
 
-// MockContextInit is what a test gives a mock context: the services it hands the plugin and the settings it starts with.
-export interface MockContextInit {
+// MockPluginContextInit is what a test gives a mock plugin context: who the plugin is and the
+// settings it starts with.
+export interface MockPluginContextInit {
   readonly pluginId?: string
   readonly target?: string
   readonly app?: AppInfo
   readonly initialSettings?: Record<string, JsonValue>
+}
+
+// MockHostServicesInit is the services a test hands the plugin through mock host services.
+export interface MockHostServicesInit {
   readonly workspace?: WorkspaceHost
   readonly notes?: VaultNotes
   readonly relations?: VaultRelations
@@ -89,9 +95,6 @@ export interface MockContextInit {
 
 // MockPluginContext extends PluginContext with inspection and simulation methods.
 export interface MockPluginContext extends PluginContext {
-  readonly ui: MockPluginUi
-  readonly vault: MockPluginVault
-  readonly work: MockPluginWork
   readonly health: MockHealthHost
   getRegisteredReaders(): ReaderRegistration[]
   getRegisteredSettingsViews(): SettingsViewRegistration[]
@@ -101,7 +104,6 @@ export interface MockPluginContext extends PluginContext {
   getRegisteredCommands(): CommandRegistration[]
   getRegisteredViews(): ViewRegistration[]
   getRegisteredDropHandlers(): DropRegistration[]
-  getMountedViews(): MockMountedView[]
   triggerCommand(
     commandId: string,
     note?: CommandNote,
@@ -109,6 +111,15 @@ export interface MockPluginContext extends PluginContext {
     values?: Readonly<Record<string, string>>,
   ): Promise<void>
   setSetting(key: string, value: JsonValue): void
+  dispose(): void
+}
+
+// MockHostServices extends HostServices with the hosts a test sets and reads back.
+export interface MockHostServices extends HostServices {
+  readonly ui: MockPluginUi
+  readonly vault: MockPluginVault
+  readonly work: MockPluginWork
+  getMountedViews(): MockMountedView[]
   dispose(): void
 }
 
@@ -175,8 +186,8 @@ function pickDefinedParts<T extends object>(parts: { [K in keyof T]: T[K] | unde
   return picked as T
 }
 
-// createMockPluginContext builds a controllable context for unit tests.
-export function createMockPluginContext(initialValues?: MockContextInit): MockPluginContext {
+// createMockPluginContext builds a controllable plugin context for unit tests.
+export function createMockPluginContext(initialValues?: MockPluginContextInit): MockPluginContext {
   const init = initialValues ?? {}
   const readers: ReaderRegistration[] = []
   const settingsViews: SettingsViewRegistration[] = []
@@ -186,11 +197,8 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
   const commands: CommandRegistration[] = []
   const views: ViewRegistration[] = []
   const drops: DropRegistration[] = []
-  const mounted: MockMountedView[] = []
   const settings = new Map<string, JsonValue>(Object.entries(init.initialSettings ?? {}))
   const settingListeners = new Map<string, Set<(val: JsonValue) => void>>()
-  const vaultListeners = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
-  const fileSelectListeners = new Set<(event: FileSelectEvent) => void | Promise<void>>()
   const subscriptions: Disposable[] = []
 
   const register: PluginRegistrations = {
@@ -202,29 +210,6 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
     command: (registration) => registerInList(commands, registration, subscriptions),
     dropHandler: (registration) => registerInList(drops, registration, subscriptions),
     view: (registration) => registerInList(views, registration, subscriptions),
-  }
-
-  const mountView = <C extends ViewCapability>(
-    capability: C,
-    element: HTMLElement,
-    viewContext: ViewContexts[C],
-  ): MountedView => {
-    const view: MockMountedView = {
-      capability,
-      element,
-      context: viewContext,
-      isDisposed: false,
-      focusCount: 0,
-    }
-    mounted.push(view)
-    return {
-      focus: () => {
-        view.focusCount++
-      },
-      dispose: () => {
-        view.isDisposed = true
-      },
-    }
   }
 
   const getSettingValue = <T extends JsonValue = JsonValue>(key: string): T | undefined =>
@@ -242,31 +227,8 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
     return addSetListener(listeners, handler as (val: JsonValue) => void, subscriptions)
   }
 
-  const events: PluginEvents = {
-    onVaultChange: (handler) => addSetListener(vaultListeners, handler, subscriptions),
-    onFileSelect: (handler) => addSetListener(fileSelectListeners, handler, subscriptions),
-    emitVaultChange: (event) => {
-      for (const listener of vaultListeners) notifyListener(listener, event)
-    },
-    emitFileSelect: (event) => {
-      for (const listener of fileSelectListeners) notifyListener(listener, event)
-    },
-  }
-
-  const tabs: PluginTabs = {
-    open: (kind, path) => {
-      if (init.openTab) return init.openTab(kind, path)
-      return Promise.resolve(`${kind}:${path ?? ''}`)
-    },
-    navigate: (kind, path) => {
-      if (init.navigateTab) return init.navigateTab(kind, path)
-      return Promise.resolve(`${kind}:${path}`)
-    },
-    close: init.closeTab ?? (() => undefined),
-  }
-
-  const context: MockPluginContext = {
-    plugin: {
+  return {
+    identity: {
       id: init.pluginId ?? 'test.plugin',
       target: init.target ?? 'desktop.editor',
       subscriptions,
@@ -279,30 +241,6 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
     },
     register,
     settings: { get: getSettingValue, onChange: onSettingChange },
-    events,
-    tabs,
-    vault: {
-      ...pickDefinedParts<Omit<PluginVault, 'vaults'>>({
-        notes: init.notes,
-        relations: init.relations,
-        files: init.files,
-        texts: init.texts,
-        buffers: init.buffers,
-      }),
-      vaults: createMockVaultsHost(),
-    },
-    ui: {
-      ...pickDefinedParts<Pick<PluginUi, 'workspace'>>({ workspace: init.workspace }),
-      notices: init.notices ?? createMockNoticeHost(),
-      commands: createMockCommandsHost(),
-      slots: createMockSlotHost(),
-      window: createMockWindowHost(),
-      mountView,
-    },
-    work: {
-      backgroundTasks: createMockBackgroundTaskHost(),
-      processes: createMockProcessHost(),
-    },
     health: createMockHealthHost(),
 
     setSetting(key: string, value: JsonValue): void {
@@ -347,10 +285,6 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
       return [...drops]
     },
 
-    getMountedViews(): MockMountedView[] {
-      return [...mounted]
-    },
-
     async triggerCommand(
       commandId: string,
       note?: CommandNote,
@@ -369,11 +303,107 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
         const d = subscriptions.pop()
         d?.dispose()
       }
-      vaultListeners.clear()
-      fileSelectListeners.clear()
       settingListeners.clear()
     },
   }
+}
 
-  return context
+function createMockMountView(mounted: MockMountedView[]): PluginUi['mountView'] {
+  return <C extends ViewCapability>(
+    capability: C,
+    element: HTMLElement,
+    viewContext: ViewContexts[C],
+  ): MountedView => {
+    const view: MockMountedView = {
+      capability,
+      element,
+      context: viewContext,
+      isDisposed: false,
+      focusCount: 0,
+    }
+    mounted.push(view)
+    return {
+      focus: () => {
+        view.focusCount++
+      },
+      dispose: () => {
+        view.isDisposed = true
+      },
+    }
+  }
+}
+
+function createMockTabs(init: MockHostServicesInit): PluginTabs {
+  return {
+    open: (kind, path) => {
+      if (init.openTab) return init.openTab(kind, path)
+      return Promise.resolve(`${kind}:${path ?? ''}`)
+    },
+    navigate: (kind, path) => {
+      if (init.navigateTab) return init.navigateTab(kind, path)
+      return Promise.resolve(`${kind}:${path}`)
+    },
+    close: init.closeTab ?? (() => undefined),
+  }
+}
+
+// createMockHostServices builds controllable host services for unit tests, apart from any plugin
+// context.
+export function createMockHostServices(initialValues?: MockHostServicesInit): MockHostServices {
+  const init = initialValues ?? {}
+  const mounted: MockMountedView[] = []
+  const vaultListeners = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
+  const fileSelectListeners = new Set<(event: FileSelectEvent) => void | Promise<void>>()
+  const subscriptions: Disposable[] = []
+
+  const events: PluginEvents = {
+    onVaultChange: (handler) => addSetListener(vaultListeners, handler, subscriptions),
+    onFileSelect: (handler) => addSetListener(fileSelectListeners, handler, subscriptions),
+    emitVaultChange: (event) => {
+      for (const listener of vaultListeners) notifyListener(listener, event)
+    },
+    emitFileSelect: (event) => {
+      for (const listener of fileSelectListeners) notifyListener(listener, event)
+    },
+  }
+
+  return {
+    vault: {
+      ...pickDefinedParts<Omit<PluginVault, 'vaults'>>({
+        notes: init.notes,
+        relations: init.relations,
+        files: init.files,
+        texts: init.texts,
+        buffers: init.buffers,
+      }),
+      vaults: createMockVaultsHost(),
+    },
+    tabs: createMockTabs(init),
+    ui: {
+      ...pickDefinedParts<Pick<PluginUi, 'workspace'>>({ workspace: init.workspace }),
+      notices: init.notices ?? createMockNoticeHost(),
+      commands: createMockCommandsHost(),
+      slots: createMockSlotHost(),
+      window: createMockWindowHost(),
+      mountView: createMockMountView(mounted),
+    },
+    work: {
+      backgroundTasks: createMockBackgroundTaskHost(),
+      processes: createMockProcessHost(),
+    },
+    events,
+
+    getMountedViews(): MockMountedView[] {
+      return [...mounted]
+    },
+
+    dispose(): void {
+      while (subscriptions.length > 0) {
+        const d = subscriptions.pop()
+        d?.dispose()
+      }
+      vaultListeners.clear()
+      fileSelectListeners.clear()
+    },
+  }
 }

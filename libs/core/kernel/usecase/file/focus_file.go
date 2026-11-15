@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // maxRanges is the maximum number of byte ranges of one file a focus highlights at once.
@@ -29,15 +30,10 @@ type FocusFileInput struct {
 // FocusFile opens a file of the vault in the window at its byte ranges and highlights them.
 type FocusFile struct {
 	readers vaultport.VaultReaders
-	view    PlaceFocus
+	view    windowport.PlaceFocus
 }
 
-// PlaceFocus asks the window to show a place.
-type PlaceFocus interface {
-	FocusPlace(ctx context.Context, pos domain.Place) error
-}
-
-func NewFocusFile(readers vaultport.VaultReaders, view PlaceFocus) *FocusFile {
+func NewFocusFile(readers vaultport.VaultReaders, view windowport.PlaceFocus) *FocusFile {
 	return &FocusFile{readers: readers, view: view}
 }
 

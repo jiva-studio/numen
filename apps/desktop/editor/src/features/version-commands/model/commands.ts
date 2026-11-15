@@ -5,7 +5,7 @@
 import type { CommandItem } from '@numen/plugin-loader'
 import { type Command, type FeatureCommands } from '@/entities/command'
 import { COMMAND, type CommandInvocation, type CommandTarget } from '@/shared/model/command'
-import { runDeclaredHandler } from '@/entities/plugin'
+import type { DeclaredCommandsApi } from '@/entities/plugin'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { VERSION_WORDS } from '../words'
 
@@ -13,6 +13,7 @@ import { VERSION_WORDS } from '../words'
 const CORE_PLUGIN = ''
 
 export interface VersionCommandsDeps {
+  readonly runDeclaredHandler: DeclaredCommandsApi['runDeclaredHandler']
   /** The items of a command the core serves, over the file. */
   listItems(
     command: { readonly pluginId: string; readonly id: string },
@@ -28,7 +29,7 @@ const deleteText = async (
   deps: VersionCommandsDeps,
 ): Promise<void> => {
   if (invocation.name === '') return
-  const outcome = await runDeclaredHandler(
+  const outcome = await deps.runDeclaredHandler(
     { pluginId: CORE_PLUGIN, command: COMMAND.deleteText },
     { path: getFile(invocation.target), values: {}, itemId: invocation.name },
   )

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
@@ -41,7 +42,7 @@ func TestRemovingWithNoFilesOpenIsRefused(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Work.md": "# Work\n"})
 
-	if _, err := note.NewRemoveNote(c.remove(), nil).Execute(t.Context(), c.vault, "Work.md", false); err == nil {
+	if _, err := note.NewRemoveNote(c.remove(), none.VaultReaders{}).Execute(t.Context(), c.vault, "Work.md", false); err == nil {
 		t.Error("a removal with no files open went ahead")
 	}
 }

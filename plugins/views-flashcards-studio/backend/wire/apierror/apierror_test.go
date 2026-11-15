@@ -80,7 +80,7 @@ func TestIsIndexOutdatedIsTrueOnlyForTheIndexFailure(t *testing.T) {
 	}
 }
 
-func TestClassifyCreateReadsEachEndOfTheScenario(t *testing.T) {
+func TestClassifyCreateReadsEachEndOfTheUseCase(t *testing.T) {
 	for _, one := range []struct {
 		what     string
 		made     cards.CreateNoteResult

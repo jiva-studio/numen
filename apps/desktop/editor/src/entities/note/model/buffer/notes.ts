@@ -16,7 +16,7 @@ import {
   type Tab,
 } from './tab'
 import type { OpenNote, OpenNotesOptions } from './types'
-import { createNoteQueue } from './queue'
+import { createNoteQueue, type NoteBufferApi } from './queue'
 import { createConflictCoordinator } from './conflict'
 
 export * from './types'
@@ -116,11 +116,15 @@ function applyTabTransition(
 }
 
 function createNoteStoreContext(
+  api: NoteBufferApi,
   tabs: Map<string, Tab>,
   bodies: Map<string, string>,
-  limits: Parameters<typeof transitionTab>[2],
-  onReplaced: (path: string) => void,
+  how: {
+    readonly limits: Parameters<typeof transitionTab>[2]
+    readonly onReplaced: (path: string) => void
+  },
 ) {
+  const { limits, onReplaced } = how
   const reportedIds = new Set<string>()
   const closeCallbacks = new Map<string, ((removed: boolean) => void)[]>()
 
@@ -130,6 +134,7 @@ function createNoteStoreContext(
     reportedIds,
     closeCallbacks,
     queue: createNoteQueue({
+      api,
       dispatch: (id, event) => dispatch(id, event),
       hasTab: (id) => tabs.has(id),
       resumeClosing: (id) => {
@@ -229,7 +234,7 @@ function createNoteEditing(
   }
 }
 
-export function useOpenNotes(how: OpenNotesOptions = {}) {
+export function useOpenNotes(api: NoteBufferApi, how: OpenNotesOptions = {}) {
   const limits = how.limits ?? DEFAULT_WRITE_LIMITS
   // Without a listener, a replaced body needs no notification.
   const onReplaced = how.onReplaced ?? (() => undefined)
@@ -237,7 +242,10 @@ export function useOpenNotes(how: OpenNotesOptions = {}) {
 
   const tabs = shallowReactive(new Map<string, Tab>())
   const bodies = shallowReactive(new Map<string, string>())
-  const { context, dispatch } = createNoteStoreContext(tabs, bodies, limits, onReplaced)
+  const { context, dispatch } = createNoteStoreContext(api, tabs, bodies, {
+    limits,
+    onReplaced,
+  })
 
   const opening = createNoteOpening(context)
   const queries = createNoteQueries(context)

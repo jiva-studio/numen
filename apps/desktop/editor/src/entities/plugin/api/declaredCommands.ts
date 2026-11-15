@@ -17,7 +17,7 @@ import {
   type HandlerDeclaration,
   type WhenReader,
 } from '@numen/plugin-loader'
-import { pluginCommands } from '@/shared/api/clients'
+import type { WindowClients } from '@/shared/api/clients'
 import { getRunPath } from '../lib/commandRun'
 
 interface DeclaredArgument {
@@ -26,7 +26,10 @@ interface DeclaredArgument {
   readonly isRequired: boolean
 }
 
-/** One entry of `contributes.slots` of an enabled plugin, as the core lists it. Exactly one of command, view and submenu is set. */
+/**
+ * One entry of `contributes.slots` of an enabled plugin, as the core lists it. Exactly one of
+ * command, view and submenu is set.
+ */
 export interface DeclaredSlot {
   readonly pluginId: string
   readonly slot: string
@@ -50,7 +53,9 @@ export interface DeclaredKeybinding {
   readonly when?: string
 }
 
-/** What the core lists of the enabled plugins: the commands they declare and where they place them. */
+/**
+ * What the core lists of the enabled plugins: the commands they declare and where they place them.
+ */
 interface DeclaredList {
   readonly commands: readonly DeclaredCommand[]
   readonly slots: readonly DeclaredSlot[]
@@ -146,64 +151,10 @@ const readKeybinding = ({ pluginId, keybinding }: PluginKeybinding): DeclaredKey
   ...(keybinding?.when ? { when: keybinding.when } : {}),
 })
 
-/** Every command the enabled plugins declare, in the order of the plugins' ids, their slot entries and their keybindings. */
-export async function listDeclaredCommands(): Promise<DeclaredList> {
-  const answer = await pluginCommands.listCommands({})
-  return {
-    commands: answer.commands.map(readCommand),
-    slots: answer.slots.map(readSlotEntry),
-    contentTypes: { ...answer.contentTypeByExtension },
-    handlers: answer.handlers.map(readHandler),
-    keybindings: answer.keybindings.map(readKeybinding),
-  }
-}
-
-const readOutcome = (answer: RunPluginCommandResponse): DeclaredCommandOutcome =>
-  answer.error === COMMAND_ERROR_CODE.UNSPECIFIED
-    ? { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
-    : { ok: false, error: answer.message }
-
-const runPluginCommand = async (
-  pluginId: string,
-  command: string,
-  path: string,
-  run: DeclaredCommandRun,
-): Promise<DeclaredCommandOutcome> =>
-  readOutcome(
-    await pluginCommands.runPluginCommand({
-      pluginId,
-      command,
-      path,
-      arguments: { ...run.values },
-      ...(run.itemId === undefined ? {} : { itemId: run.itemId }),
-    }),
-  )
-
 /**
- * Runs the plugin's handler of the shared command in its backend, over the file, with the values of
- * the arguments the command declares and the item picked.
+ * One command of a plugin whose items are listed: a command it declares, or its handler of a shared
+ * command.
  */
-export function runDeclaredHandler(
-  handler: Pick<HandlerDeclaration, 'pluginId' | 'command'>,
-  run: DeclaredCommandRun,
-): Promise<DeclaredCommandOutcome> {
-  return runPluginCommand(handler.pluginId, handler.command, run.path, run)
-}
-
-/**
- * Runs the command in the backend of the plugin that declares it, over the file where its condition
- * reads the target, it offers items, or a place named the file. The reader reads the condition; a
- * window passes its one reader.
- */
-export function runDeclaredCommand(
-  command: DeclaredCommand,
-  run: DeclaredCommandRun,
-  whenReader: WhenReader = createWhenReader(),
-): Promise<DeclaredCommandOutcome> {
-  return runPluginCommand(command.pluginId, command.id, getRunPath(command, run, whenReader), run)
-}
-
-/** One command of a plugin whose items are listed: a command it declares, or its handler of a shared command. */
 export interface ItemListRequest {
   readonly pluginId: string
   readonly command: string
@@ -216,28 +167,95 @@ export interface ItemListAnswer extends ItemListRequest {
     | { readonly ok: false; readonly error: string }
 }
 
-/** The items each of the commands offers over the file, as the core lists them in one request. */
-export async function listDeclaredItemLists(
-  path: string,
-  commands: readonly ItemListRequest[],
-): Promise<readonly ItemListAnswer[]> {
-  const answer = await pluginCommands.listCommandItems({
-    path,
-    commands: commands.map((one) => ({ pluginId: one.pluginId, command: one.command })),
-  })
-  return answer.lists.map((one): ItemListAnswer => ({
-    pluginId: one.pluginId,
-    command: one.command,
-    result:
-      one.error === COMMAND_ERROR_CODE.UNSPECIFIED
-        ? {
-            ok: true,
-            value: one.items.map((item) => ({
-              id: item.id,
-              title: item.title,
-              ...(item.detail ? { detail: item.detail } : {}),
-            })),
-          }
-        : { ok: false, error: one.message },
-  }))
+const readOutcome = (answer: RunPluginCommandResponse): DeclaredCommandOutcome =>
+  answer.error === COMMAND_ERROR_CODE.UNSPECIFIED
+    ? { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
+    : { ok: false, error: answer.message }
+
+/** The commands the plugins declare, listed and run over `pluginCommands`. */
+export const createDeclaredCommandsApi = (pluginCommands: WindowClients['pluginCommands']) => {
+  const runPluginCommand = async (
+    pluginId: string,
+    command: string,
+    path: string,
+    run: DeclaredCommandRun,
+  ): Promise<DeclaredCommandOutcome> =>
+    readOutcome(
+      await pluginCommands.runPluginCommand({
+        pluginId,
+        command,
+        path,
+        arguments: { ...run.values },
+        ...(run.itemId === undefined ? {} : { itemId: run.itemId }),
+      }),
+    )
+
+  return {
+    /**
+     * Every command the enabled plugins declare, in the order of the plugins' ids, their slot
+     * entries and their keybindings.
+     */
+    listDeclaredCommands: async (): Promise<DeclaredList> => {
+      const answer = await pluginCommands.listCommands({})
+      return {
+        commands: answer.commands.map(readCommand),
+        slots: answer.slots.map(readSlotEntry),
+        contentTypes: { ...answer.contentTypeByExtension },
+        handlers: answer.handlers.map(readHandler),
+        keybindings: answer.keybindings.map(readKeybinding),
+      }
+    },
+
+    /**
+     * Runs the plugin's handler of the shared command in its backend, over the file, with the
+     * values of the arguments the command declares and the item picked.
+     */
+    runDeclaredHandler: (
+      handler: Pick<HandlerDeclaration, 'pluginId' | 'command'>,
+      run: DeclaredCommandRun,
+    ): Promise<DeclaredCommandOutcome> =>
+      runPluginCommand(handler.pluginId, handler.command, run.path, run),
+
+    /**
+     * Runs the command in the backend of the plugin that declares it, over the file where its
+     * condition reads the target, it offers items, or a place named the file. The reader reads the
+     * condition; a window passes its one reader.
+     */
+    runDeclaredCommand: (
+      command: DeclaredCommand,
+      run: DeclaredCommandRun,
+      whenReader: WhenReader = createWhenReader(),
+    ): Promise<DeclaredCommandOutcome> =>
+      runPluginCommand(command.pluginId, command.id, getRunPath(command, run, whenReader), run),
+
+    /**
+     * The items each of the commands offers over the file, as the core lists them in one request.
+     */
+    listDeclaredItemLists: async (
+      path: string,
+      commands: readonly ItemListRequest[],
+    ): Promise<readonly ItemListAnswer[]> => {
+      const answer = await pluginCommands.listCommandItems({
+        path,
+        commands: commands.map((one) => ({ pluginId: one.pluginId, command: one.command })),
+      })
+      return answer.lists.map((one): ItemListAnswer => ({
+        pluginId: one.pluginId,
+        command: one.command,
+        result:
+          one.error === COMMAND_ERROR_CODE.UNSPECIFIED
+            ? {
+                ok: true,
+                value: one.items.map((item) => ({
+                  id: item.id,
+                  title: item.title,
+                  ...(item.detail ? { detail: item.detail } : {}),
+                })),
+              }
+            : { ok: false, error: one.message },
+      }))
+    },
+  }
 }
+
+export type DeclaredCommandsApi = ReturnType<typeof createDeclaredCommandsApi>

@@ -13,6 +13,9 @@ func TestTheTextOfAFieldIsReadAsFarAsItHasArrived(t *testing.T) {
 		{`{"path":"Garden/Beds.md","text":"Tomatoes \`, "Tomatoes "},
 		{`{"path":"Garden/Beds.md","text":"Tomatoes \u00`, "Tomatoes "},
 		{"{\"path\":\"Garden/Beds.md\",\"text\":\"Beet \xc3", "Beet "},
+		{`{"path":"Garden/Beds.md","text":"a\`, "a"},
+		{`{"path":"Garden/Beds.md","text":""}`, ""},
+		{`{"path":"Garden/Beds.md","text" "missing colon"}`, ""},
 		{`{"path":"Garden/Beds.md","te`, ""},
 		{`{"path":"Garden/Beds.md","text":4}`, ""},
 	}

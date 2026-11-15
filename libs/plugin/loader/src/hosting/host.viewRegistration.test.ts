@@ -2,19 +2,18 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, type Component } from 'vue'
 import { CONVERSATION, NOTE_EDITOR, VAULT_SUMMARY, type ViewCapability } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost } from './host'
-import type { PluginHostDeps } from './types'
 import { STUB_CONNECTIONS } from '../testing/stubComponent'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const READ_WRITE = ['vault:read', 'vault:write']
 
 const createHost = () => {
-  const host = createPluginHost({
+  const host = createTestPluginHost({
     target: 'desktop.editor',
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
     openTab: () => Promise.resolve('tab'),
-  } as unknown as PluginHostDeps)
+  } as unknown as TestHostDeps)
   const createPlugin = (
     id: string,
     options: { permissions?: string[]; viewCapabilities?: string[] } = {},
@@ -41,7 +40,8 @@ const createView = (owner: string, received: string[]): Component =>
 const mountConversation = (
   plugin: ReturnType<ReturnType<typeof createHost>['createPlugin']>,
   element: HTMLElement,
-) => plugin.ui.mountView(CONVERSATION, element, { connections: STUB_CONNECTIONS, vault: 'roots' })
+) =>
+  plugin.host.ui.mountView(CONVERSATION, element, { connections: STUB_CONNECTIONS, vault: 'roots' })
 
 describe('a plugin that registers a view for other plugins', () => {
   it('is refused a capability its manifest does not list', () => {
@@ -49,7 +49,7 @@ describe('a plugin that registers a view for other plugins', () => {
     const hijacker = createPlugin('org.example.hijacker')
 
     expect(() =>
-      hijacker.register.view({ capability: CONVERSATION, component: createView('x', []) }),
+      hijacker.plugin.register.view({ capability: CONVERSATION, component: createView('x', []) }),
     ).toThrowError(/contributes.viewCapabilities does not list/)
   })
 
@@ -58,7 +58,7 @@ describe('a plugin that registers a view for other plugins', () => {
     const hijacker = createPlugin('org.example.hijacker', { viewCapabilities: [VAULT_SUMMARY] })
 
     expect(() =>
-      hijacker.register.view({ capability: CONVERSATION, component: createView('x', []) }),
+      hijacker.plugin.register.view({ capability: CONVERSATION, component: createView('x', []) }),
     ).toThrowError(/does not list/)
   })
 
@@ -68,7 +68,7 @@ describe('a plugin that registers a view for other plugins', () => {
     expect(() =>
       host.lifecycle
         .createContext('org.example.bare')
-        .register.view({ capability: CONVERSATION, component: createView('x', []) }),
+        .plugin.register.view({ capability: CONVERSATION, component: createView('x', []) }),
     ).toThrowError(/does not list/)
   })
 
@@ -80,7 +80,7 @@ describe('a plugin that registers a view for other plugins', () => {
     mountConversation(createPlugin('md.numen.mounter'), element)
 
     expect(() =>
-      hijacker.register.view({
+      hijacker.plugin.register.view({
         capability: CONVERSATION,
         component: createView('hijacker', received),
       }),
@@ -95,10 +95,13 @@ describe('a plugin that registers a view for other plugins', () => {
     const received: string[] = []
     const chat = createPlugin('md.numen.chat', { viewCapabilities: [CONVERSATION] })
     const second = createPlugin('org.example.second', { viewCapabilities: [CONVERSATION] })
-    chat.register.view({ capability: CONVERSATION, component: createView('chat', received) })
+    chat.plugin.register.view({ capability: CONVERSATION, component: createView('chat', received) })
 
     expect(() =>
-      second.register.view({ capability: CONVERSATION, component: createView('second', received) }),
+      second.plugin.register.view({
+        capability: CONVERSATION,
+        component: createView('second', received),
+      }),
     ).toThrowError(/"md.numen.chat" already draws/)
     const element = document.createElement('div')
     mountConversation(createPlugin('md.numen.mounter'), element)
@@ -109,7 +112,9 @@ describe('a plugin that registers a view for other plugins', () => {
 
   it('may register the capability once the plugin that drew it is disposed', () => {
     const { host, createPlugin } = createHost()
-    createPlugin('md.numen.chat', { viewCapabilities: [CONVERSATION] }).register.view({
+    createPlugin('md.numen.chat', {
+      viewCapabilities: [CONVERSATION],
+    }).plugin.register.view({
       capability: CONVERSATION,
       component: createView('chat', []),
     })
@@ -117,7 +122,9 @@ describe('a plugin that registers a view for other plugins', () => {
     const element = document.createElement('div')
     mountConversation(createPlugin('md.numen.mounter'), element)
 
-    createPlugin('org.example.next', { viewCapabilities: [CONVERSATION] }).register.view({
+    createPlugin('org.example.next', {
+      viewCapabilities: [CONVERSATION],
+    }).plugin.register.view({
       capability: CONVERSATION,
       component: createView('next', []),
     })
@@ -139,14 +146,14 @@ describe('a plugin that registers a view for other plugins', () => {
         viewCapabilities: [capability],
       })
       const element = document.createElement('div')
-      createPlugin('md.numen.mounter').ui.mountView(capability, element, {
+      createPlugin('md.numen.mounter').host.ui.mountView(capability, element, {
         connections: STUB_CONNECTIONS,
         path: 'Notes/Secret.md',
         vault: 'roots',
       })
 
       expect(() =>
-        registrant.register.view({
+        registrant.plugin.register.view({
           capability,
           component: createView('registrant', received),
         }),
@@ -170,7 +177,7 @@ describe('a plugin that registers a view for other plugins', () => {
         viewCapabilities: [capability],
       })
       expect(() =>
-        registrant.register.view({ capability, component: createView('registrant', []) }),
+        registrant.plugin.register.view({ capability, component: createView('registrant', []) }),
       ).not.toThrow()
     }
   })
@@ -186,7 +193,7 @@ describe('a plugin that registers a view for other plugins', () => {
       },
       component: createView('hijacker', received),
     }
-    hijacker.register.view(registration as never)
+    hijacker.plugin.register.view(registration as never)
     const element = document.createElement('div')
 
     mountConversation(createPlugin('md.numen.mounter'), element)
@@ -211,7 +218,7 @@ describe('a plugin that registers a view for other plugins', () => {
             : Reflect.get(target, key),
       },
     )
-    hijacker.register.view(registration as never)
+    hijacker.plugin.register.view(registration as never)
     const element = document.createElement('div')
 
     mountConversation(createPlugin('md.numen.mounter'), element)
@@ -228,12 +235,14 @@ describe('a plugin that registers a view for other plugins', () => {
     const hijacker = createPlugin('org.example.hijacker', { permissions: ['vault:read'] })
 
     expect(() =>
-      hijacker.register.view({
+      hijacker.plugin.register.view({
         capability: CONVERSATION,
         component: createView('hijacker', received),
       }),
     ).toThrowError()
-    createPlugin('md.numen.chat', { viewCapabilities: [CONVERSATION] }).register.view({
+    createPlugin('md.numen.chat', {
+      viewCapabilities: [CONVERSATION],
+    }).plugin.register.view({
       capability: CONVERSATION,
       component: createView('chat', received),
     })

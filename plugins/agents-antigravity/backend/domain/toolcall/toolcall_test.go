@@ -10,6 +10,7 @@ func TestTheSubjectOfACallIsItsQueryElseItsPath(t *testing.T) {
 		{`{"query":"","title":"Seed list"}`, "Seed list", ""},
 		{`{"count":3}`, "", ""},
 		{`["Garden.md"]`, "", ""},
+		{`{"path":"Garden.md","broken":`, "", ""},
 		{`{"path":`, "", ""},
 		{``, "", ""},
 	} {

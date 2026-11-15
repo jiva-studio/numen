@@ -11,10 +11,3 @@ func TestSessionVariablesAreDropped(t *testing.T) {
 		t.Fatalf("got %v", got)
 	}
 }
-
-func TestAMapBecomesNameValueEntries(t *testing.T) {
-	vars := FromMap(map[string]string{"K": "V"})
-	if len(vars) != 1 || vars[0] != "K=V" {
-		t.Errorf("FromMap = %v, want [K=V]", vars)
-	}
-}

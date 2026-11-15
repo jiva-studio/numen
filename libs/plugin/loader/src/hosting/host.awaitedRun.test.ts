@@ -5,8 +5,7 @@
 import { createMockManifest } from '@numen/core-client/testing'
 import { describe, expect, it, vi } from 'vitest'
 import type { CommandNote } from '@numen/plugin-sdk'
-import { createPluginHost } from './host'
-import type { PluginHostDeps } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const TIDES = 'org.example.tides'
 const CREATE = 'app:file.createText'
@@ -25,7 +24,7 @@ function createHost(hasFrontend: boolean) {
   const runBackendHandler = vi.fn(async () => {
     throw new Error('the backend is down')
   })
-  const deps: PluginHostDeps = {
+  const deps: TestHostDeps = {
     getCommandDeclarations: () => [{ pluginId: TIDES, id: 'tide.read', title: 'Read the tide' }],
     getHandlerDeclarations: () => [
       { pluginId: TIDES, command: CREATE, title: 'Read the tide table', when: '', hasItems: false },
@@ -39,7 +38,7 @@ function createHost(hasFrontend: boolean) {
     openTab: vi.fn(async () => 'tab-1'),
     onError,
   }
-  const host = createPluginHost(deps)
+  const host = createTestPluginHost(deps)
   const context = host.lifecycle.createContext(
     TIDES,
     createMockManifest(TIDES, { commands: ['tide.read'], handlers: [CREATE] }),
@@ -47,8 +46,8 @@ function createHost(hasFrontend: boolean) {
   const fail = async () => {
     throw new Error('the tide is out')
   }
-  context.register.command({ id: 'tide.read', handler: fail })
-  if (hasFrontend) context.register.command({ id: CREATE, handler: fail })
+  context.plugin.register.command({ id: 'tide.read', handler: fail })
+  if (hasFrontend) context.plugin.register.command({ id: CREATE, handler: fail })
   return { host, onError }
 }
 

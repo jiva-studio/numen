@@ -19,6 +19,15 @@ import (
 
 const testToken = "plugin-token"
 
+func newEnvHandler(t *testing.T, vars map[string]string) (http.Handler, error) {
+	t.Helper()
+	t.Setenv(hostcall.HostPortEnv, "")
+	for name, value := range vars {
+		t.Setenv(name, value)
+	}
+	return servertest.NewHandler(vars, Mount)
+}
+
 func startPlugin(t *testing.T) string {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, "4000")
@@ -46,11 +55,20 @@ func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 
 func callTask(t *testing.T, client *http.Client, baseURL string) string {
 	t.Helper()
+	return callTaskWithOptions(t, client, baseURL, nil)
+}
+
+func callTaskWithOptions(t *testing.T, client *http.Client, baseURL string, options map[string]string) string {
+	t.Helper()
 	payload, err := acptest.EncodeTaskRequest(&acp.TaskRequest{Prompt: "When does the ferry leave?"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	message, err := json.Marshal(map[string]any{"operation": acp.OperationTask, "call": map[string]any{"type": "numen"}, "payload": payload})
+	call := map[string]any{"type": "numen"}
+	if options != nil {
+		call["options"] = options
+	}
+	message, err := json.Marshal(map[string]any{"operation": acp.OperationTask, "call": call, "payload": payload})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +110,7 @@ func TestThePluginServesAgentTasksAsAProvider(t *testing.T) {
 }
 
 func TestTheLinkedHandlerServesAgentTasksAsAProvider(t *testing.T) {
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken, "NUMEN_HOST_PORT": "4000"})
+	handler, err := newEnvHandler(t, map[string]string{"NUMEN_PLUGIN_TOKEN": testToken, "NUMEN_HOST_PORT": "4000"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,8 +124,17 @@ func TestTheLinkedHandlerServesAgentTasksAsAProvider(t *testing.T) {
 	}
 }
 
-func TestNewHandlerNeedsTheHostOfTheCore(t *testing.T) {
-	if _, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken}); err == nil {
-		t.Error("NewHandler accepted variables with no host port")
+func TestMountNeedsTheHostOfTheCore(t *testing.T) {
+	t.Setenv(hostcall.HostPortEnv, "")
+	if _, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, Mount); err == nil {
+		t.Error("Mount accepted an environment with no host port")
+	}
+}
+
+func TestMountRejectsMissingHostParts(t *testing.T) {
+	if _, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, func(s *server.Server) error {
+		return mount(s, host{})
+	}); err == nil {
+		t.Error("mount accepted an empty host")
 	}
 }

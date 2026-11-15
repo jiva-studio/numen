@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -48,9 +47,4 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	return srv.Serve(ln)
-}
-
-// NewHandler returns the handler of the plugin backend for a host that links the plugin in.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, Mount)
 }

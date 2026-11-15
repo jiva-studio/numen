@@ -88,13 +88,15 @@ func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 		"corrupted.pdf": []byte("INVALID_PDF_HEADER"),
 	} {
 		t.Run(name, func(t *testing.T) {
-			var texts *hosttest.Texts
-			var writer *extract.Writer
 			if raw == nil {
-				texts, writer, _ = testsupport.NewVault(t, name, name)
-			} else {
-				texts, writer, _ = testsupport.NewVaultOf(t, name, raw)
+				raw = testsupport.ReadFixture(t, name)
 			}
+			files := hosttest.OnDisk(t, "vault", map[string]string{name: string(raw)})
+			texts := hosttest.NewTexts("vault", pluginID)
+			texts.File(name, raw)
+			texts.SetStore(pluginID, files.Store())
+			queue := hosttest.NewQueue()
+			writer := testsupport.NewWriter(t, testsupport.FilesOf(files), files, texts, queue)
 
 			testsupport.CreateText(t, writer, extract.Request{Path: name})
 
@@ -104,6 +106,9 @@ func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 			}
 			if len(listing.Versions) != 0 {
 				t.Errorf("versions %v, want none", listing.Versions)
+			}
+			if tasks := queue.ListTasks(); len(tasks) != 0 {
+				t.Errorf("tasks %v, want none", tasks)
 			}
 		})
 	}
@@ -204,5 +209,16 @@ func TestTheWriterIgnoresARepeatedAndALateRequest(t *testing.T) {
 	// CreateText after Close is a no-op
 	if err := writer.CreateText(t.Context(), extract.Request{Path: "tiny.pdf"}); err != nil {
 		t.Fatal(err)
+	}
+	writer.Wait()
+	listing, err := texts.ListVersions(t.Context(), "tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
+		t.Errorf("versions %v after Close, want none", listing.Versions)
+	}
+	if tasks := queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("tasks %v after Close, want none", tasks)
 	}
 }

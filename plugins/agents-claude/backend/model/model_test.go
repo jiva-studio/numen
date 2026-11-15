@@ -107,4 +107,11 @@ func TestModelConstantsLevelsAndParseEdgeCases(t *testing.T) {
 	if _, err := Parse(iotest.ErrReader(readErr), "r1"); !errors.Is(err, readErr) {
 		t.Errorf("Parse ErrReader = %v, want %v", err, readErr)
 	}
+
+	if err := (new(controlAnswer)).UnmarshalJSON([]byte(`{"subtype":123,"request_id":"r1"}`)); err == nil {
+		t.Error("expected error unmarshaling non-string subtype")
+	}
+	if err := (new(controlAnswer)).UnmarshalJSON([]byte(`{"subtype":"success","request_id":123}`)); err == nil {
+		t.Error("expected error unmarshaling non-string request_id")
+	}
 }
