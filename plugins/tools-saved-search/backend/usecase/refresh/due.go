@@ -66,7 +66,7 @@ func readTarget(stat domain.FileStat, raw []byte) target {
 func convertProblems(problems []searchnote.Problem) []resultcache.Problem {
 	converted := make([]resultcache.Problem, len(problems))
 	for i, problem := range problems {
-		converted[i] = resultcache.Problem{Line: problem.Line, Column: problem.Column, Message: problem.Message}
+		converted[i] = resultcache.Problem{Line: problem.Line, Column: problem.Column, EndLine: 0, EndColumn: 0, Message: problem.Message}
 	}
 	return converted
 }
