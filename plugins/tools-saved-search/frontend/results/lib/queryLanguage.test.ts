@@ -178,6 +178,32 @@ describe('getQueryDiagnostics', () => {
     expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe(') tags("pier")')
   })
 
+  it('underlines a problem with an end from its start through its last character', () => {
+    const doc = Text.of(['meaning("a") && Мадхавендра Пури'])
+
+    const [diagnostic] = getQueryDiagnostics(doc, [
+      {
+        line: 1,
+        column: 17,
+        endLine: 1,
+        endColumn: 32,
+        message: 'Put this text in quotes: Мадхавендра Пури',
+      },
+    ])
+
+    expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe('Мадхавендра Пури')
+  })
+
+  it('underlines a problem with an end over the lines it spans', () => {
+    const doc = Text.of(['words("a") && Мадхавендра', 'Пури || tags("b")'])
+
+    const [diagnostic] = getQueryDiagnostics(doc, [
+      { line: 1, column: 15, endLine: 2, endColumn: 4, message: 'Put this text in quotes' },
+    ])
+
+    expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe('Мадхавендра\nПури')
+  })
+
   it('shows the message of the core as it is', () => {
     const doc = Text.of(['words("gale")', 'e'])
 

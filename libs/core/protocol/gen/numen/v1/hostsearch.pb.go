@@ -1908,7 +1908,10 @@ type SearchProblem struct {
 	Column  int32  `protobuf:"varint,2,opt,name=column,proto3" json:"column,omitempty"`
 	Message string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	// A name of the language close to the one written, empty for none.
-	Suggestion    string `protobuf:"bytes,4,opt,name=suggestion,proto3" json:"suggestion,omitempty"`
+	Suggestion string `protobuf:"bytes,4,opt,name=suggestion,proto3" json:"suggestion,omitempty"`
+	// The last character of a problem that covers more than one, zero otherwise.
+	EndLine       int32 `protobuf:"varint,5,opt,name=end_line,json=endLine,proto3" json:"end_line,omitempty"`
+	EndColumn     int32 `protobuf:"varint,6,opt,name=end_column,json=endColumn,proto3" json:"end_column,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1969,6 +1972,20 @@ func (x *SearchProblem) GetSuggestion() string {
 		return x.Suggestion
 	}
 	return ""
+}
+
+func (x *SearchProblem) GetEndLine() int32 {
+	if x != nil {
+		return x.EndLine
+	}
+	return 0
+}
+
+func (x *SearchProblem) GetEndColumn() int32 {
+	if x != nil {
+		return x.EndColumn
+	}
+	return 0
 }
 
 type SearchRerank struct {
@@ -2451,14 +2468,17 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x05floor\x18\r \x01(\x01R\x05floor\x12)\n" +
 	"\x10index_generation\x18\x0e \x01(\tR\x0findexGeneration\"$\n" +
 	"\x0eSearchProgress\x12\x12\n" +
-	"\x04step\x18\x01 \x01(\tR\x04step\"u\n" +
+	"\x04step\x18\x01 \x01(\tR\x04step\"\xaf\x01\n" +
 	"\rSearchProblem\x12\x12\n" +
 	"\x04line\x18\x01 \x01(\x05R\x04line\x12\x16\n" +
 	"\x06column\x18\x02 \x01(\x05R\x06column\x12\x18\n" +
 	"\amessage\x18\x03 \x01(\tR\amessage\x12\x1e\n" +
 	"\n" +
 	"suggestion\x18\x04 \x01(\tR\n" +
-	"suggestion\"y\n" +
+	"suggestion\x12\x19\n" +
+	"\bend_line\x18\x05 \x01(\x05R\aendLine\x12\x1d\n" +
+	"\n" +
+	"end_column\x18\x06 \x01(\x05R\tendColumn\"y\n" +
 	"\fSearchRerank\x12'\n" +
 	"\x0fconnection_name\x18\x01 \x01(\tR\x0econnectionName\x12\x1d\n" +
 	"\n" +

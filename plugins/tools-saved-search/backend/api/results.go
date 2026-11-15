@@ -50,9 +50,11 @@ type Result struct {
 // Problem is one problem of a query. Line and Column count from 1 over the query; a problem of the note
 // outside its query is at line 1, column 1, and a problem of a provider has 0 for both.
 type Problem struct {
-	Line    int    `json:"line" jsonschema:"the line of the problem in the query, counted from 1"`
-	Column  int    `json:"column" jsonschema:"the column of the problem, in characters, counted from 1"`
-	Message string `json:"message" jsonschema:"what is wrong"`
+	Line      int    `json:"line" jsonschema:"the line of the problem in the query, counted from 1"`
+	Column    int    `json:"column" jsonschema:"the column of the problem, in characters, counted from 1"`
+	EndLine   int    `json:"endLine,omitempty" jsonschema:"the line of the last character of a problem over more than one, else 0"`
+	EndColumn int    `json:"endColumn,omitempty" jsonschema:"the column of the last character of a problem over more than one, else 0"`
+	Message   string `json:"message" jsonschema:"what is wrong"`
 }
 
 type GetResultsRequest struct {

@@ -135,6 +135,28 @@ func TestGetResultsReturnsAProblemOfTheNoteAtLineOneColumnOneOfTheQuery(t *testi
 	}
 }
 
+func TestGetResultsKeepsTheRangeOfAProblemAndNamesItsSuggestionOnce(t *testing.T) {
+	f := newFixture(t, 0)
+	f.searches.SetAnswer(stormsQuery, host.SearchState{Errors: []host.SearchProblem{
+		{Line: 1, Column: 17, EndLine: 1, EndColumn: 22, Message: "Put this text in quotes: Кришна"},
+		{Line: 2, Column: 4, Message: "Unknown function meanin", Suggestion: "meaning"},
+		{Line: 2, Column: 20, Message: "Unknown stage rerenk: did you mean rerank?", Suggestion: "rerank"},
+	}})
+	f.addStormsNote()
+	f.handleIndexChange(t)
+
+	res := f.getResults(t, stormsPath)
+
+	want := []api.Problem{
+		{Line: 1, Column: 17, EndLine: 1, EndColumn: 22, Message: "Put this text in quotes: Кришна"},
+		{Line: 2, Column: 4, Message: "Unknown function meanin: did you mean meaning?"},
+		{Line: 2, Column: 20, Message: "Unknown stage rerenk: did you mean rerank?"},
+	}
+	if !slices.Equal(res.Errors, want) {
+		t.Errorf("errors = %+v, want %+v", res.Errors, want)
+	}
+}
+
 func TestGetResultsShowsAFailingProviderAsAProblemWithTheLastGoodResults(t *testing.T) {
 	f := newFixture(t, 0)
 	f.addStormsNote()

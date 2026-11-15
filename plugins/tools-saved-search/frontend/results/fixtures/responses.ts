@@ -77,7 +77,7 @@ export const MISSPELLED: GetResultsResponse = {
   query: 'kind in ["note", "pdf"]\n&& meanin("the harbor master in a winter storm")',
   failedAt: '2026-11-14T09:41:00Z',
   failure: 'the query has problems',
-  errors: [{ line: 2, column: 4, message: 'unknown function meanin (did you mean meaning?)' }],
+  errors: [{ line: 2, column: 4, message: 'Unknown function meanin: did you mean meaning?' }],
 }
 
 /** A warning of the core about the run. */

@@ -35,9 +35,12 @@ type Result struct {
 	IsWholeFile bool     `json:"isWholeFile,omitempty"`
 }
 
-// Problem is one problem of a query. Line and Column count from 1.
+// Problem is one problem of a query. Line and Column count from 1. EndLine and EndColumn are the last character
+// of a problem that covers more than one, else zero.
 type Problem struct {
-	Line    int    `json:"line"`
-	Column  int    `json:"column"`
-	Message string `json:"message"`
+	Line      int    `json:"line"`
+	Column    int    `json:"column"`
+	EndLine   int    `json:"endLine,omitempty"`
+	EndColumn int    `json:"endColumn,omitempty"`
+	Message   string `json:"message"`
 }

@@ -21,10 +21,15 @@ export interface QueryFunction {
   readonly example: string
 }
 
-/** A problem of the query, at its line and column counted from 1. */
+/**
+ * A problem of the query, at its line and column counted from 1, and at the line and column of its last
+ * character when it covers more than one.
+ */
 export interface QueryProblem {
   readonly line: number
   readonly column: number
+  readonly endLine?: number
+  readonly endColumn?: number
   readonly message: string
 }
 
@@ -174,17 +179,28 @@ const getProblemRange = (doc: Text, from: number): { from: number; to: number } 
   return { from, to: Math.min(from + 1, doc.length) }
 }
 
+const getOffset = (doc: Text, lineNumber: number, column: number): number => {
+  const line = doc.line(Math.min(Math.max(lineNumber, 1), doc.lines))
+  return Math.min(line.from + Math.max(column - 1, 0), line.to)
+}
+
+const getEndOffset = (doc: Text, problem: QueryProblem): number => {
+  const { endLine = 0, endColumn = 0 } = problem
+  if (endLine < 1 || endColumn < 1) return 0
+  return Math.min(getOffset(doc, endLine, endColumn) + 1, doc.length)
+}
+
 /**
- * The problems as diagnostics with the message of the core: each from its line and column to the end
- * of the name or string there, to the end of the line from any other place, and over the last character from the end
- * of a line, so every problem underlines at least one character of a query that has one.
+ * The problems as diagnostics with the message of the core: a problem with an end from its line and column
+ * through its last character; any other from its line and column to the end of the name or string there,
+ * to the end of the line from any other place, and over the last character from the end of a line, so every
+ * problem underlines at least one character of a query that has one.
  */
 export function getQueryDiagnostics(doc: Text, problems: readonly QueryProblem[]): Diagnostic[] {
   return problems.map((problem) => {
-    const lineNumber = Math.min(Math.max(problem.line, 1), doc.lines)
-    const line = doc.line(lineNumber)
-    const start = Math.min(line.from + Math.max(problem.column - 1, 0), line.to)
-    const { from, to } = getProblemRange(doc, start)
+    const start = getOffset(doc, problem.line, problem.column)
+    const end = getEndOffset(doc, problem)
+    const { from, to } = end > start ? { from: start, to: end } : getProblemRange(doc, start)
     return { from, to, severity: 'error', message: problem.message }
   })
 }
