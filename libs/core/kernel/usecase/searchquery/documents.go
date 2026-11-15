@@ -28,16 +28,13 @@ type documentCalls interface {
 	match(ctx context.Context, paths []string) error
 }
 
-func newDocumentReader(
-	lister DocumentQueries, contents NoteContents, links LinkReaders, contentTypes contenttypeport.ContentTypeTable, req *searchquery.Evaluation,
-	warns *warnings, calls documentCalls,
-) *documentReader {
+func newDocumentReader(u *EvaluateQuery, req *searchquery.Evaluation, warns *warnings, calls documentCalls) *documentReader {
 	reader := &documentReader{
-		lister: lister, contents: contents, contentTypes: contentTypes, req: req, warnings: warns, calls: calls,
+		lister: u.documents, contents: u.contents, contentTypes: u.contentTypes, req: req, warnings: warns, calls: calls,
 		documents: map[string]searchquery.Document{},
 	}
-	if links != nil {
-		reader.links = &linkFinder{links: links, req: req}
+	if u.links != nil {
+		reader.links = &linkFinder{links: u.links, req: req}
 	}
 	return reader
 }
