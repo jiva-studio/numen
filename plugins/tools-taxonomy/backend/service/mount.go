@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
 // Open returns the frontmatter, the feed and the store folder of a vault.

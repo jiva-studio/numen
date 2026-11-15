@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
 )
 
 func TestTheTagsOfAValueOfTheKeyTags(t *testing.T) {
