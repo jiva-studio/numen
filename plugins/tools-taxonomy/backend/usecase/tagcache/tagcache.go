@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/changes"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
 )
 
 // FileName is the file of the plugin's store folder the tags of a vault are written to.
