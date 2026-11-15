@@ -71,6 +71,7 @@ type Indexed struct {
 	Search     Search
 	Links      query.ShowLinksByName
 	Problems   vault.GetProblemsByName
+	Query      Query
 }
 
 // Vaults is what the vault commands that touch the list alone operate on: the use cases over the list this

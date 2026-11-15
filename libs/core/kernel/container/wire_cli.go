@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -76,6 +77,9 @@ func openCLIIndexed(r *cliRun, c Config, ctx context.Context, options cli.IndexO
 	prepareSearch := func(ctx context.Context, v domain.Vault) (searchusecase.Search, error) {
 		return prepareCLISearch(r, c, db, options.ErrorHandler, ctx, v)
 	}
+	prepareQuery := func(ctx context.Context, v domain.Vault) (*searchqueryusecase.FindSearchResults, error) {
+		return prepareCLIQuery(r, c, db, options.ErrorHandler, ctx, v)
+	}
 	return cli.Indexed{
 		Rename:     vault.NewRenameByName(find, vault.NewRename(ports.Vaults, ports.Saver, db.Vaults())),
 		Unregister: vault.NewUnregisterByName(find, unregister),
@@ -87,6 +91,7 @@ func openCLIIndexed(r *cliRun, c Config, ctx context.Context, options cli.IndexO
 		Search:   cli.Search{Search: searchusecase.NewByName(find, prepareSearch)},
 		Links:    query.NewShowLinksByName(find, Queries(db).Refer.Links),
 		Problems: vault.NewGetProblemsByName(find, getProblems(a.vault, db.NoteProblems())),
+		Query:    cli.Query{Find: find, Prepare: prepareQuery},
 	}, nil
 }
 
@@ -116,6 +121,18 @@ func prepareCLISearch(
 	embedder, why := openCLIEmbedder(r, asking, ctx)
 	reportSearchFallback(errorHandler, why)
 	return newSearch(asking.search, db, embedder, errorHandler, nil), nil
+}
+
+func prepareCLIQuery(
+	r *cliRun, c Config, db *Index, errorHandler window.ErrorHandler, ctx context.Context, v domain.Vault,
+) (*searchqueryusecase.FindSearchResults, error) {
+	asking, _, err := openPluginWork(c, db, v, r.tasks, r.models)
+	if err != nil {
+		return nil, err
+	}
+	embedder, why := openCLIEmbedder(r, asking, ctx)
+	reportSearchFallback(errorHandler, why)
+	return newFindSearchResults(asking.search, db, embedder, errorHandler), nil
 }
 
 func reportSearchFallback(errorHandler window.ErrorHandler, err error) {
