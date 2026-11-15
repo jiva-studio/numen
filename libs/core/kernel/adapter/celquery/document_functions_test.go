@@ -66,8 +66,8 @@ func TestABadArgumentIsAProblemAtTheArgument(t *testing.T) {
 
 func TestShapesOutsideTheDocumentFunctionsAreRejected(t *testing.T) {
 	cases := map[string]string{
-		`title < "b"`:                              "title is compared",
-		`noteType.startsWith("b")`:                 "noteType is compared",
+		`title < "b"`:                              "Compare title",
+		`noteType.startsWith("b")`:                 "Compare noteType",
 		`property("a") == property("b")`:           "property takes",
 		`property("k").startsWith("x")`:            "property takes",
 		`title in property("k")`:                   "property takes",

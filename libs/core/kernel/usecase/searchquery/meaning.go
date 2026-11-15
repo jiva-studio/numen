@@ -75,7 +75,8 @@ func (p *plan) scanVectors(ctx context.Context, documents []searchquery.Document
 		if err != nil {
 			return nil, err
 		}
-		found = append(found, p.keepSimilar(query, page)...)
+		similar, _ := p.keepSimilar(query, page)
+		found = append(found, similar...)
 		if len(page) < vectorPage {
 			return found, nil
 		}
@@ -98,11 +99,11 @@ func (p *plan) searchCoarse(ctx context.Context, s searchquery.Scope, query []fl
 		if err != nil {
 			return nil, err
 		}
-		found, err := p.rankCoarse(ctx, s, query, ids)
+		found, isPastFloor, err := p.rankCoarse(ctx, s, query, ids)
 		if err != nil {
 			return nil, err
 		}
-		if len(found) >= limits.CandidatesPerCondition || len(ids) < limit {
+		if len(found) >= limits.CandidatesPerCondition || len(ids) < limit || isPastFloor {
 			return found, nil
 		}
 		if limit >= limits.MaxCoarseCandidates {
@@ -114,14 +115,14 @@ func (p *plan) searchCoarse(ctx context.Context, s searchquery.Scope, query []fl
 	}
 }
 
-func (p *plan) rankCoarse(ctx context.Context, s searchquery.Scope, query []float32, ids []domain.ChunkID) ([]similarChunk, error) {
+func (p *plan) rankCoarse(ctx context.Context, s searchquery.Scope, query []float32, ids []domain.ChunkID) ([]similarChunk, bool, error) {
 	stored, err := p.u.index.vectors.ListStoredVectors(ctx, source.StoredVectorQuery{Recipe: p.recipe, Kinds: s.SourceKinds, Chunks: ids})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	found := p.keepSimilar(query, stored)
+	found, isPastFloor := p.keepSimilar(query, stored)
 	if s.IsEveryDocument() {
-		return found, nil
+		return found, isPastFloor, nil
 	}
 	ids = make([]domain.ChunkID, len(found))
 	for i, f := range found {
@@ -129,22 +130,26 @@ func (p *plan) rankCoarse(ctx context.Context, s searchquery.Scope, query []floa
 	}
 	inScope, err := p.filterScope(ctx, s, ids)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return slices.DeleteFunc(found, func(f similarChunk) bool { return !inScope[f.id] }), nil
+	return slices.DeleteFunc(found, func(f similarChunk) bool { return !inScope[f.id] }), isPastFloor, nil
 }
 
-func (p *plan) keepSimilar(query []float32, stored []source.StoredVector) []similarChunk {
+func (p *plan) keepSimilar(query []float32, stored []source.StoredVector) ([]similarChunk, bool) {
 	var found []similarChunk
+	isPastFloor := false
 	for _, one := range stored {
 		if len(one.Vector) != len(query) {
 			continue
 		}
-		if similarity := vector.SimilarityBytes(query, one.Vector); similarity >= p.floor {
-			found = append(found, similarChunk{id: one.Chunk, similarity: similarity})
+		similarity := vector.SimilarityBytes(query, one.Vector)
+		if similarity < p.floor {
+			isPastFloor = true
+			continue
 		}
+		found = append(found, similarChunk{id: one.Chunk, similarity: similarity})
 	}
-	return found
+	return found, isPastFloor
 }
 
 func getBest(found []similarChunk, limit int) []domain.ChunkID {

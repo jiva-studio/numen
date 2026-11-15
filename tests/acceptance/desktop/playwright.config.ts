@@ -11,6 +11,8 @@ const testDir = defineBddConfig({
   outputDir: '.features-gen',
 })
 
+const isVideoOn = Boolean(process.env.PLAYWRIGHT_VIDEO)
+
 // Every scenario starts a world of its own (drivers/world.ts), with a server and a vault of its own,
 // so the scenarios run side by side and need none of the e2e suite's shared servers.
 export default defineConfig({
@@ -20,5 +22,23 @@ export default defineConfig({
   fullyParallel: true,
   workers: 2,
   webServer: undefined,
-  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
+  use: {
+    ...base.use,
+    ...(isVideoOn && { video: 'on', trace: 'retain-on-failure' }),
+  },
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    ...(isVideoOn
+      ? [
+          [
+            'blob',
+            {
+              outputDir: 'acceptance-blobs',
+              fileName: `run-${process.platform}-${process.pid}.zip`,
+            },
+          ] as const,
+        ]
+      : []),
+  ],
 })

@@ -1,4 +1,4 @@
-// Package process reads and sets what the operating system lets the plugin process use.
+// Package process sets what the operating system lets the plugin process use.
 package process
 
 import (
@@ -9,11 +9,6 @@ import (
 
 // Process is the running plugin process.
 type Process struct{}
-
-// CountCPUs returns the cores the machine has.
-func (Process) CountCPUs() int {
-	return runtime.NumCPU()
-}
 
 // SetMaxProcs sets how many threads run Go code at once.
 func (Process) SetMaxProcs(count int) {

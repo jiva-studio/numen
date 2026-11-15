@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -270,5 +271,14 @@ func TestNormalizeRejectsTheSeventeenthDistinctCondition(t *testing.T) {
 	_, err := searchquery.Normalize(newOr(append(children, newWords("w17"))...), searchquery.DefaultLimits(), time.UTC)
 	if parseError, ok := errors.AsType[*searchquery.ParseError](err); !ok || len(parseError.Problems) != 1 {
 		t.Errorf("17 conditions: %v", err)
+	}
+}
+
+func TestNormalizeCountsTheSpacesAroundAConditionTextInItsSize(t *testing.T) {
+	limits := searchquery.DefaultLimits()
+	padded := strings.Repeat(" ", limits.MaxConditionBytes) + "x"
+	_, err := searchquery.Normalize(newWords(padded), limits, time.UTC)
+	if _, ok := errors.AsType[*searchquery.ParseError](err); !ok {
+		t.Errorf("a text of %d bytes: %v", len(padded), err)
 	}
 }

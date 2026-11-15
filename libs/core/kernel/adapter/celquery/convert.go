@@ -13,26 +13,27 @@ import (
 
 // The messages of the shapes the language does not accept.
 const (
-	messageCondition = "the query is a condition over meaning, words and the document functions of the catalog"
-	messageKind      = `kind is compared with a string literal: kind == "pdf", kind != "pdf" or kind in ["pdf", "epub"]`
-	messagePath      = `path is used as path.startsWith("folder/")`
-	messageLiteral   = "%s takes a string literal"
-	messageTitle     = `title is compared with a string literal: title == "x", title in ["x", "y"], title.startsWith("x"), title.endsWith("x") or title.contains("x")`
-	messageNoteType  = `noteType is compared with a string literal: noteType == "book", noteType != "book" or noteType in ["book", "article"]`
-	messageModified  = `modified is compared with date(…): modified >= date("2026-01-01")`
-	messageSize      = `size is compared with an integer: size > 1000`
-	messageProperty  = `property takes a string literal key and is compared with a literal: property("status") == "done", property("rating") >= 4 or "x" in property("tags")`
-	messageDate      = `date takes a string literal: date("2026-01-01")`
+	messageCondition = "A query is a condition over meaning, words and the document functions"
+	messageKind      = `Compare kind with a text in quotes: kind == "pdf", kind != "pdf" or kind in ["pdf", "epub"]`
+	messagePath      = `Use path as path.startsWith("folder/")`
+	messageLiteral   = "%s takes a text in quotes"
+	messageTitle     = `Compare title with a text in quotes: title == "x", title in ["x", "y"], title.startsWith("x"), title.endsWith("x") or title.contains("x")`
+	messageNoteType  = `Compare noteType with a text in quotes: noteType == "book", noteType != "book" or noteType in ["book", "article"]`
+	messageModified  = `Compare modified with date(…): modified >= date("2026-01-01")`
+	messageSize      = `Compare size with a whole number: size > 1000`
+	messageProperty  = `property takes a key in quotes and is compared with a value: property("status") == "done", property("rating") >= 4 or "x" in property("tags")`
+	messageDate      = `date takes a date in quotes: date("2026-01-01")`
 )
 
 // converter turns a checked CEL tree into a raw tree, collecting the shapes it does not accept.
 type converter struct {
 	source   *ast.SourceInfo
+	text     queryText
 	problems []searchquery.Problem
 }
 
 func (c *converter) getPosition(expr ast.Expr) searchquery.Position {
-	return getExprPosition(c.source, expr)
+	return getExprPosition(c.text, c.source, expr)
 }
 
 func (c *converter) reject(expr ast.Expr, message string) searchquery.RawNode {

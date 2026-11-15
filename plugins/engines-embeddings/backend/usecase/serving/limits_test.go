@@ -61,7 +61,7 @@ func (r *openRecord) openedCount() int {
 
 func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 	srv, record := newRecordedServer(t)
-	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"})
+	srv.updateConfig(getEcoValues())
 	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
@@ -77,13 +77,13 @@ func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 // threads closes, and the next batch opens one with the new threads.
 func TestAChangeOfTheProfileReachesTheRunningModel(t *testing.T) {
 	srv, record := newRecordedServer(t)
-	srv.updateConfig(map[string]string{performance.ConfigKey: "maximum"})
+	srv.updateConfig(getMaximumValues())
 	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	first := record.opened[0]
 
-	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"})
+	srv.updateConfig(getEcoValues())
 	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func TestAChangeOfTheProfileReachesTheRunningModel(t *testing.T) {
 // The same profile in the next Configure call keeps the model.
 func TestTheSameProfileKeepsTheRunningModel(t *testing.T) {
 	srv, record := newRecordedServer(t)
-	values := map[string]string{performance.ConfigKey: "eco"}
+	values := getEcoValues()
 	srv.updateConfig(values)
 	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
@@ -120,7 +120,7 @@ func TestTheSameProfileKeepsTheRunningModel(t *testing.T) {
 func TestTheThreadsOfTheEnvironmentWinOverTheProfile(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_THREADS", "3")
 	srv, record := newRecordedServer(t)
-	srv.updateConfig(map[string]string{performance.ConfigKey: "eco", "source": "local"})
+	srv.updateConfig(withSource(getEcoValues(), "local"))
 	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
@@ -134,18 +134,18 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 	t.Cleanup(func() { runtime.GOMAXPROCS(prevProcs) })
 
 	srv, record := newRecordedServer(t)
-	srv.updateConfig(map[string]string{performance.ConfigKey: "balanced"})
+	srv.updateConfig(getBalancedValues())
 	if len(record.nices) != 1 || record.nices[0] != 10 {
 		t.Fatalf("nices on first balanced config = %v, want [10]", record.nices)
 	}
 
-	srv.updateConfig(map[string]string{performance.ConfigKey: "balanced"})
+	srv.updateConfig(getBalancedValues())
 	if len(record.nices) != 1 {
 		t.Fatalf("nices on repeated balanced config = %v, want [10]", record.nices)
 	}
 
 	runtime.GOMAXPROCS(4)
-	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"})
+	srv.updateConfig(getEcoValues())
 	if len(record.nices) != 2 || record.nices[1] != 19 {
 		t.Fatalf("nices on eco config = %v, want [10 19]", record.nices)
 	}
@@ -180,7 +180,7 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 	}
 	srv.mu.Lock()
 	srv.isProfileSet = false
-	srv.applyProfileLocked(performance.Eco)
+	srv.applyProfileLocked(performance.Read(getEcoValues()))
 	isLoaded := srv.loader.IsLoaded()
 	srv.mu.Unlock()
 	if !isLoaded {
@@ -210,9 +210,9 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 
 	srv.mu.Lock()
 	srv.isProfileSet = false
-	srv.applyProfileLocked(performance.Eco)
+	srv.applyProfileLocked(performance.Read(getEcoValues()))
 	isOpeningAfterSameLimits := srv.loader.IsOpening()
-	srv.applyProfileLocked(performance.Maximum)
+	srv.applyProfileLocked(performance.Read(getMaximumValues()))
 	isOpeningAfterNewLimits := srv.loader.IsOpening()
 	srv.mu.Unlock()
 	if !isOpeningAfterSameLimits {
@@ -226,7 +226,7 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 	runtime.GOMAXPROCS(4)
 	srv.mu.Lock()
 	srv.isMock = true
-	srv.applyProfileLocked(performance.Eco)
+	srv.applyProfileLocked(performance.Read(getEcoValues()))
 	srv.mu.Unlock()
 	if got := runtime.GOMAXPROCS(0); got != 4 {
 		t.Fatalf("mock profile changed GOMAXPROCS to %d, want 4", got)
@@ -243,4 +243,21 @@ type niceRecorder struct {
 func (n niceRecorder) LowerNice(nice int) error {
 	n.record(nice)
 	return n.err
+}
+
+func getEcoValues() map[string]string {
+	return map[string]string{performance.ProfileKey: "eco", performance.ThreadsKey: "1", performance.NiceKey: "19"}
+}
+
+func getBalancedValues() map[string]string {
+	return map[string]string{performance.ProfileKey: "balanced", performance.ThreadsKey: "4", performance.NiceKey: "10"}
+}
+
+func getMaximumValues() map[string]string {
+	return map[string]string{performance.ProfileKey: "maximum", performance.ThreadsKey: "8", performance.NiceKey: "0"}
+}
+
+func withSource(values map[string]string, source string) map[string]string {
+	values["source"] = source
+	return values
 }
