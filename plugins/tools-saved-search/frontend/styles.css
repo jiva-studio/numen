@@ -111,32 +111,8 @@
 }
 
 .saved-search__tooltip-title {
-  display: flex;
-  align-items: center;
-  gap: var(--numen-inset);
   margin: 0;
   font-weight: 600;
-}
-
-.saved-search__tooltip-mark {
-  flex: none;
-  inline-size: 0.5rem;
-  block-size: 0.5rem;
-  border-radius: 50%;
-  background-color: var(--numen-positive);
-}
-
-.saved-search__tooltip-mark--stale,
-.saved-search__tooltip-mark--warned {
-  background-color: var(--numen-caution-fg);
-}
-
-.saved-search__tooltip-mark--failed {
-  background-color: var(--numen-alarm);
-}
-
-.saved-search__tooltip-mark--running {
-  color: var(--numen-accent);
 }
 
 .saved-search__tooltip-facts {

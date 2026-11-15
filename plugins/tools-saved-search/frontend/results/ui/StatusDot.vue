@@ -6,7 +6,6 @@
  * under a rule.
  */
 import { ref, useId } from 'vue'
-import { Spinner } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import { formatRelativeTime } from '../lib/time'
 import type { StatusFact, StatusView } from '../lib/view'
@@ -54,12 +53,6 @@ function getValue(fact: StatusFact): string {
     />
     <div v-if="isOpen" :id="tooltipId" role="tooltip" class="saved-search__tooltip">
       <p class="saved-search__tooltip-title">
-        <Spinner v-if="status.state === 'running'" class="saved-search__tooltip-mark--running" />
-        <span
-          v-else
-          class="saved-search__tooltip-mark"
-          :class="`saved-search__tooltip-mark--${status.state}`"
-        />
         {{ status.label }}
       </p>
       <dl v-if="status.facts.length > 0" class="saved-search__tooltip-facts">
