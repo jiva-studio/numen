@@ -37,7 +37,11 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	complete := model.NewCompleter(connection.NewClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Token))
+	client, err := connection.NewClientFromEnv()
+	if err != nil {
+		return err
+	}
+	complete := model.NewCompleter(client)
 	if model.IsMockSelected() {
 		complete = model.WithMock(complete)
 	}
@@ -53,9 +57,12 @@ func mount(s *server.Server, h proofread.Host, complete model.Completer) error {
 	current := settings.NewStore()
 	run := newProofreading(h, complete, current)
 	commands, err := newCommands(run)
+	if err != nil {
+		return err
+	}
 	s.SetUpdateConfig(current.Update)
 	command.Mount(s, commands)
-	return err
+	return nil
 }
 
 func newProofreading(h proofread.Host, complete model.Completer, current *settings.Store) *proofread.Proofreading {
@@ -64,5 +71,8 @@ func newProofreading(h proofread.Host, complete model.Completer, current *settin
 
 func newCommands(run *proofread.Proofreading) (*command.Registry, error) {
 	commands := command.New()
-	return commands, commands.Add("proofreading.create", newProofreadCommand(run))
+	if err := commands.Add("proofreading.create", newProofreadCommand(run)); err != nil {
+		return nil, err
+	}
+	return commands, nil
 }

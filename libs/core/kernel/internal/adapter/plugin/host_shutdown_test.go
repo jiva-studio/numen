@@ -60,7 +60,7 @@ func TestAShutDownHostDoesNotStartPluginsAgain(t *testing.T) {
 }
 
 func TestClosingTheEventBusWaitsForDispatchesInFlight(t *testing.T) {
-	bus := eventbus.New(nil, testsupport.NewClock(), time.Millisecond, 10*time.Millisecond)
+	bus := eventbus.New(nil, testsupport.NewClock(), time.Millisecond, 10*time.Millisecond, nil)
 	entered := make(chan struct{})
 	release := make(chan struct{})
 	bus.Subscribe("onSlow", func(_ context.Context, _ string) error {

@@ -22,7 +22,6 @@ import {
   type ReaderRegistration,
   type Selector,
   type TabKindRegistration,
-  type TabPlace,
   type TextRange,
   type Unvalidated,
 } from '@numen/plugin-sdk'
@@ -125,13 +124,13 @@ const createReaderState = (pluginId: string, targetPath: string, saved: JsonValu
     savePlace: (next: Selector) => {
       state.place = next
     },
-    reported: null as TabPlace | null,
+    reported: null as string | null,
     attachReader: (attached: ReaderHandle | null): void => {
       reader = attached
     },
     focusTab: (): void => reader?.focus(),
     measure: (): void => reader?.measure(),
-    reportPlace: (next: TabPlace) => {
+    reportPlace: (next: string) => {
       state.reported = next
     },
   })
@@ -141,7 +140,7 @@ const createReaderState = (pluginId: string, targetPath: string, saved: JsonValu
 type ReaderState = ReturnType<typeof createReaderState>
 
 const getReaderOpenTab = (state: ReaderState): OpenTab =>
-  state.reported ? { path: state.path, place: { ...state.reported } } : { path: state.path }
+  state.reported ? { path: state.path, place: state.reported } : { path: state.path }
 
 export function createReaderTabKind(
   pluginId: string,

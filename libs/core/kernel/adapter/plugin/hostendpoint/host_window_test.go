@@ -71,7 +71,7 @@ func (w *recordingWindow) ReadOpenTabs(context.Context) (windowdomain.OpenTabs, 
 		ActiveID: "tab-2",
 		Tabs: []windowdomain.Tab{
 			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
-			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4,"zoom":2}`, Place: &windowdomain.TabPlace{Page: 4, PageCount: 80}},
+			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4,"zoom":2}`, Place: `{"page":4,"pageCount":80}`},
 		},
 	}, nil
 }
@@ -198,10 +198,10 @@ func TestHostWindowReturnsOpenTabsWithPlacesAndNoState(t *testing.T) {
 		t.Errorf("the first tab is %v", tabs[0])
 	}
 	if tabs[1].GetId() != "tab-2" || tabs[1].GetKind() != "reader:reader-pdf" || tabs[1].GetPath() != "library/Birds.pdf" ||
-		tabs[1].GetTitle() != "Birds" || tabs[1].GetPlace().GetPage() != 4 || tabs[1].GetPlace().GetPageCount() != 80 {
+		tabs[1].GetTitle() != "Birds" || tabs[1].GetPlace() != `{"page":4,"pageCount":80}` {
 		t.Errorf("the second tab is %v, want page 4 of 80", tabs[1])
 	}
-	if tabs[0].GetPlace() != nil {
+	if tabs[0].GetPlace() != "" {
 		t.Errorf("the note tab has the place %v, want none", tabs[0].GetPlace())
 	}
 	requireOpenTabMessage(t, (&v1.HostWindowServiceReadOpenTabsResponse{}).ProtoReflect().Descriptor(), "tabs")
@@ -301,13 +301,20 @@ func readWindowCode[T any, M interface {
 	return M(res.Msg).GetError().String()
 }
 
-func TestHostWindowReturnsEveryPlaceFieldEachReaderReported(t *testing.T) {
-	atStart, pastAnHour := 0.0, 3723.9
+func TestHostWindowReturnsThePlaceEachReaderReportedUnread(t *testing.T) {
+	places := []string{
+		`{"positionSeconds":0}`,
+		`{"positionSeconds":3723.9}`,
+		`{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`,
+		`{"zoom":2,"page":"seven"}`,
+		"",
+	}
 	window := &recordingWindow{open: &windowdomain.OpenTabs{ActiveID: "tab-1", Tabs: []windowdomain.Tab{
-		{ID: "tab-1", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &windowdomain.TabPlace{PositionSeconds: &atStart}},
-		{ID: "tab-2", Kind: "recording", Path: "talks/Marsh Talk.mp3", Title: "Marsh Talk", Place: &windowdomain.TabPlace{PositionSeconds: &pastAnHour}},
-		{ID: "tab-3", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &windowdomain.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
-		{ID: "tab-4", Kind: "recording", Path: "talks/Bees.mp3", Title: "Bees", Place: &windowdomain.TabPlace{}},
+		{ID: "tab-1", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: places[0]},
+		{ID: "tab-2", Kind: "recording", Path: "talks/Marsh Talk.mp3", Title: "Marsh Talk", Place: places[1]},
+		{ID: "tab-3", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: places[2]},
+		{ID: "tab-4", Kind: "plex", Path: "notes/Heron.md", Title: "Heron", Place: places[3]},
+		{ID: "tab-5", Kind: "recording", Path: "talks/Bees.mp3", Title: "Bees", Place: places[4]},
 	}}}
 	client, _ := newWindowClient(t, window, "token-a")
 
@@ -316,20 +323,13 @@ func TestHostWindowReturnsEveryPlaceFieldEachReaderReported(t *testing.T) {
 		t.Fatal(err)
 	}
 	tabs := got.Msg.GetTabs()
-	if len(tabs) != 4 {
-		t.Fatalf("returned %d tabs, want 4: %v", len(tabs), tabs)
+	if len(tabs) != len(places) {
+		t.Fatalf("returned %d tabs, want %d: %v", len(tabs), len(places), tabs)
 	}
-	if place := tabs[0].GetPlace(); place == nil || place.PositionSeconds == nil || place.GetPositionSeconds() != 0 {
-		t.Errorf("the recording at its start is at %v, want 0 seconds", place)
-	}
-	if place := tabs[1].GetPlace(); place == nil || place.PositionSeconds == nil || place.GetPositionSeconds() != 3723.9 {
-		t.Errorf("the recording past an hour is at %v, want 3723.9 seconds", place)
-	}
-	if place := tabs[2].GetPlace(); place == nil || place.GetCfi() != "epubcfi(/6/4!/4/2/1:0)" || place.GetChapter() != "The Reed Beds" || place.GetPage() != 0 {
-		t.Errorf("the book is at %v, want its CFI and chapter", place)
-	}
-	if place := tabs[3].GetPlace(); place == nil || place.PositionSeconds != nil {
-		t.Errorf("a recording that reported no time is at %v, want a place with no time", place)
+	for i, want := range places {
+		if place := tabs[i].GetPlace(); place != want {
+			t.Errorf("the tab %s has the place %q, want %q", tabs[i].GetId(), place, want)
+		}
 	}
 }
 

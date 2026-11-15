@@ -7,7 +7,6 @@ package onnx
 import (
 	"cmp"
 	"os"
-	"strings"
 )
 
 const (
@@ -42,19 +41,4 @@ func GetProvider() Provider {
 		return Provider(name)
 	}
 	return DefaultProvider
-}
-
-// GetProviderOr returns the execution provider the host chose, or fallback when
-// it chose auto or none.
-func GetProviderOr(fallback Provider) Provider {
-	if name := GetProvider(); !strings.EqualFold(strings.TrimSpace(string(name)), string(DefaultProvider)) {
-		return name
-	}
-	return fallback
-}
-
-// GetSessionProvider returns the execution provider sessions open on: the one
-// the host names, and the CPU when it names auto.
-func GetSessionProvider() Provider {
-	return GetProviderOr(ProviderCPU)
 }

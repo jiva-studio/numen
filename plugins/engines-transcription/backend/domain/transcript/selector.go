@@ -20,9 +20,3 @@ func (s timeSelector) encode() (domain.Selector, error) {
 	}
 	return domain.Selector(raw), nil
 }
-
-func readTimeSelector(raw domain.Selector) (timeSelector, error) {
-	var out timeSelector
-	err := json.Unmarshal([]byte(raw), &out)
-	return out, err
-}

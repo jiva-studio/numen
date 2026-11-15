@@ -294,3 +294,27 @@ func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 		t.Fatalf("convertEventRefusal(99) = %v, want an error naming the unknown code", err)
 	}
 }
+
+// A delivery of an emitted event that fails after EmitEvent returned reaches the handler the host reports
+// its problems to.
+func TestAFailedDeliveryOfAnEventIsReported(t *testing.T) {
+	host := newEventHost(t, nil, nil)
+	failure := errors.New("the listener refused the event")
+	reported := make(chan struct{})
+	var once sync.Once
+	host.Failures.SetErrorHandler(func(err error) {
+		if errors.Is(err, failure) {
+			once.Do(func() { close(reported) })
+		}
+	})
+	unsubscribe := host.Events.GetEventBus().Subscribe("onRefused", func(context.Context, string) error { return failure })
+	defer unsubscribe()
+
+	host.Events.EmitEvent("onRefused")
+
+	select {
+	case <-reported:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the failed delivery was not reported")
+	}
+}

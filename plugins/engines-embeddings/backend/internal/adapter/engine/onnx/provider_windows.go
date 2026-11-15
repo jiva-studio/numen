@@ -47,7 +47,7 @@ func (l *Library) enableDirectML(opts *ort.SessionOptions) error {
 		return fmt.Errorf("onnx runtime not loaded")
 	}
 
-	handle, err := loadLibrary(loadedPath)
+	handle, err := OpenLibrary(loadedPath)
 	if err != nil {
 		return err
 	}

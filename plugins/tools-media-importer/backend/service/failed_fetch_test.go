@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/queuetest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -44,9 +45,10 @@ func newFixtureWithSites(t *testing.T, fetcher link.Fetcher) *importFixture {
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
+	tasks := queuetest.NewLog()
 	hosted := link.Host{
 		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
-		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
+		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: tasks,
 		Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
@@ -57,7 +59,7 @@ func newFixtureWithSites(t *testing.T, fetcher link.Fetcher) *importFixture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &importFixture{vault: vault, store: store, texts: texts, links: links, registry: registry}
+	return &importFixture{vault: vault, store: store, texts: texts, tasks: tasks, registry: registry}
 }
 
 // The spec: "With copy true: where Links.IsCopyable the copy starts in the background". A failed
@@ -68,13 +70,15 @@ func TestURLImportCopiesAVideoWhoseCaptionsFailed(t *testing.T) {
 	s := newFixtureWithSites(t, captionlessSites{fakeSites{video: download.NewMock(webpage.New()), release: release}})
 
 	out := s.importURL(t, "Mills", importArguments{URL: videoAddress, DownloadVideo: true})
-	s.links.Wait()
 
 	if out.Error == "" {
 		t.Fatalf("url_import returned %+v, want the failure of the captions", out)
 	}
 	if out.DownloadTaskID == "" && out.DownloadError == "" {
 		t.Errorf("url_import with copy set returned %+v: no copy task and no reason why no copy was started", out)
+	}
+	if out.DownloadTaskID != "" {
+		s.tasks.WaitForEnd(t, out.DownloadTaskID)
 	}
 	if !hasCopy(t, s.store) {
 		t.Error("the copyable video was not copied")
