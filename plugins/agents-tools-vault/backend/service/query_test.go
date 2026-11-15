@@ -166,7 +166,7 @@ func TestTheDescriptionOfLibraryQueryNamesTheFunctionsOfEachListing(t *testing.T
 	shelved.Revision = "r2"
 	shelved.Functions = append(shelved.Functions, host.SearchFunction{
 		Name: "shelved", Kind: "function", Level: "document", Signatures: []string{"shelved(string) -> bool"},
-		Description: "notes on a shelf", Example: `shelved("east")`,
+		Description: "notes on a shelf.", Example: `shelved("east")`,
 	})
 	searches.SetFunctions(shelved, nil)
 

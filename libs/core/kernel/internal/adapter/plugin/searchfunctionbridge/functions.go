@@ -78,7 +78,8 @@ func writeCall(call searchquery.FunctionCall) *v1.SearchFunctionCall {
 			one.Value = &v1.SearchFunctionArgument_IntValue{IntValue: arg.Int}
 		case searchquery.TypeBool:
 			one.Value = &v1.SearchFunctionArgument_BoolValue{BoolValue: arg.Bool}
-		case searchquery.TypeString, searchquery.TypeStringList, searchquery.TypeSearchResults:
+		case searchquery.TypeString, searchquery.TypeStringList, searchquery.TypeSearchResults,
+			searchquery.TypeTimestamp, searchquery.TypeDyn:
 			one.Value = &v1.SearchFunctionArgument_StringValue{StringValue: arg.String}
 		}
 		wire.Arguments = append(wire.Arguments, one)
