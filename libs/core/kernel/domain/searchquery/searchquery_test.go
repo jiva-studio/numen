@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -40,7 +41,7 @@ func newNot(child searchquery.RawNode) searchquery.RawNode {
 
 func normalize(t *testing.T, raw searchquery.RawNode) searchquery.Query {
 	t.Helper()
-	q, err := searchquery.Normalize(raw, searchquery.DefaultLimits())
+	q, err := searchquery.Normalize(raw, searchquery.DefaultLimits(), time.UTC)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,10 +264,10 @@ func TestNormalizeRejectsTheSeventeenthDistinctCondition(t *testing.T) {
 	for i := range 16 {
 		children = append(children, newWords("w"+strconv.Itoa(i+1)))
 	}
-	if _, err := searchquery.Normalize(newOr(children...), searchquery.DefaultLimits()); err != nil {
+	if _, err := searchquery.Normalize(newOr(children...), searchquery.DefaultLimits(), time.UTC); err != nil {
 		t.Errorf("16 conditions: %v", err)
 	}
-	_, err := searchquery.Normalize(newOr(append(children, newWords("w17"))...), searchquery.DefaultLimits())
+	_, err := searchquery.Normalize(newOr(append(children, newWords("w17"))...), searchquery.DefaultLimits(), time.UTC)
 	if parseError, ok := errors.AsType[*searchquery.ParseError](err); !ok || len(parseError.Problems) != 1 {
 		t.Errorf("17 conditions: %v", err)
 	}

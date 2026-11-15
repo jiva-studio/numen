@@ -17,7 +17,8 @@ func newEnvironment(catalog searchquery.Catalog, maxDepth, maxCodePoints int) (*
 		IncludeFunctions: []*env.Function{
 			{Name: operators.LogicalAnd}, {Name: operators.LogicalOr}, {Name: operators.LogicalNot},
 			{Name: operators.Equals}, {Name: operators.NotEquals}, {Name: operators.In},
-			{Name: overloads.StartsWith},
+			{Name: operators.Less}, {Name: operators.LessEquals}, {Name: operators.Greater}, {Name: operators.GreaterEquals},
+			{Name: overloads.StartsWith}, {Name: overloads.EndsWith}, {Name: overloads.Contains},
 		},
 	}
 	options := []cel.EnvOption{
@@ -52,6 +53,10 @@ func getType(t searchquery.ValueType) *cel.Type {
 		return cel.IntType
 	case searchquery.TypeStringList:
 		return cel.ListType(cel.StringType)
+	case searchquery.TypeTimestamp:
+		return cel.TimestampType
+	case searchquery.TypeDyn:
+		return cel.DynType
 	// The checker of cel-go types && and || as bool only, so SearchResults is declared as bool.
 	case searchquery.TypeBool, searchquery.TypeSearchResults:
 		return cel.BoolType

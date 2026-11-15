@@ -47,7 +47,7 @@ func (w *nameWalk) walkCall(expr ast.Expr) {
 	name := call.FunctionName()
 	switch {
 	case isOperator(name):
-	case call.IsMemberFunction() && name == overloads.StartsWith:
+	case call.IsMemberFunction() && isStringMethod(name):
 		w.walk(call.Target())
 	case call.IsMemberFunction() && w.hasChunkCall(call.Target()):
 		w.problems = append(w.problems, searchquery.Problem{
@@ -84,4 +84,8 @@ func (w *nameWalk) hasChunkCall(expr ast.Expr) bool {
 		return true
 	}
 	return slices.ContainsFunc(call.Args(), w.hasChunkCall)
+}
+
+func isStringMethod(name string) bool {
+	return name == overloads.StartsWith || name == overloads.EndsWith || name == overloads.Contains
 }

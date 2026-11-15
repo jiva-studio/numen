@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
@@ -19,7 +20,7 @@ func parse(text string) (searchquery.Query, error) {
 	if err != nil {
 		return searchquery.Query{}, err
 	}
-	return searchquery.Normalize(raw, limits)
+	return searchquery.Normalize(raw, limits, time.UTC)
 }
 
 func getProblems(t *testing.T, text string) []searchquery.Problem {

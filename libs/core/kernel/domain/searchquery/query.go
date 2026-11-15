@@ -24,6 +24,10 @@ const (
 	LeafKindIn
 	// LeafPathPrefix is path.startsWith("x").
 	LeafPathPrefix
+	// LeafCompare compares an Attribute of the document with its Operands.
+	LeafCompare
+	// LeafSet holds for a document in the set of the SetCondition at SetIndex.
+	LeafSet
 )
 
 // Position is a place in the text of a query, counted from 1; Column counts Unicode code points.
@@ -31,12 +35,17 @@ type Position struct {
 	Line, Column int
 }
 
-// Leaf is one test of a normalized tree. ConditionIndex is set for LeafMeaning and LeafWords.
+// Leaf is one test of a normalized tree. ConditionIndex is set for LeafMeaning and LeafWords, SetIndex for
+// LeafSet.
 type Leaf struct {
 	Kind           LeafKind
 	ConditionIndex int
 	Kinds          []string
 	Prefix         string
+	Attribute      Attribute
+	Comparison     Comparison
+	Operands       []Value
+	SetIndex       int
 	Position       Position
 }
 
@@ -73,17 +82,34 @@ type Stage struct {
 type Query struct {
 	Root            Node
 	Conditions      []Condition
+	Sets            []SetCondition
 	Stages          []Stage
 	IsSearchResults bool
 }
 
-// RawLeaf is one test as a parser emits it.
+// RawLeaf is one test as a parser emits it. Function and Key name the function of a LeafSet; Text is the
+// heading of hasHeading.
 type RawLeaf struct {
-	Kind     LeafKind
-	Text     string
-	Kinds    []string
-	Prefix   string
-	Position Position
+	Kind       LeafKind
+	Text       string
+	Kinds      []string
+	Prefix     string
+	Attribute  Attribute
+	Comparison Comparison
+	Operands   []Value
+	Function   string
+	Key        string
+	Position   Position
+}
+
+// SetCondition is a distinct document condition whose truth is membership in a set of paths, computed once
+// per query: a property comparison, hasProperty or hasHeading.
+type SetCondition struct {
+	Function   string
+	Key        string
+	Text       string
+	Comparison Comparison
+	Operands   []Value
 }
 
 // RawNode is the tree a parser emits, with negations where they are written.

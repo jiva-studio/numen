@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"golang.org/x/text/unicode/norm"
 
@@ -15,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// ListDocuments returns the sources of one vault under any of the prefixes and of the source kinds of the
-// query, with their note title and the count of their small chunks with a vector under the recipe, in order
+// ListDocuments returns the sources of one vault under any of the prefixes, of the source kinds and at the paths
+// of the query, with their note title and type, the time of their last change, their size and the count of their small chunks with a vector under the recipe, in order
 // of path, at most q.Limit+1 of them; all of them when q.Limit is zero or below.
 func (q *Search) ListDocuments(ctx context.Context, vaultID domain.VaultID, query searchquery.DocumentQuery) (_ []searchquery.Document, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
@@ -34,7 +35,11 @@ func (q *Search) ListDocuments(ctx context.Context, vaultID domain.VaultID, quer
 	if query.Limit > 0 {
 		limit = query.Limit + 1
 	}
-	rows, err := q.db.QueryContext(ctx, documentsSQL, vault, composed, decomposed, formatKinds(query.SourceKinds), query.Recipe, limit)
+	paths, err := json.Marshal(append([]string{}, query.Paths...))
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.db.QueryContext(ctx, documentsSQL, vault, composed, decomposed, formatKinds(query.SourceKinds), query.Recipe, limit, string(paths))
 	if err != nil {
 		return nil, err
 	}
@@ -42,9 +47,11 @@ func (q *Search) ListDocuments(ctx context.Context, vaultID domain.VaultID, quer
 	var out []searchquery.Document
 	for rows.Next() {
 		var d searchquery.Document
-		if err := rows.Scan(&d.Path, &d.SourceKind, &d.Title, &d.ChunkCount); err != nil {
+		var modified int64
+		if err := rows.Scan(&d.Path, &d.SourceKind, &d.Title, &d.NoteType, &modified, &d.Size, &d.ChunkCount); err != nil {
 			return nil, err
 		}
+		d.Modified = time.Unix(0, modified)
 		out = append(out, d)
 	}
 	return out, rows.Err()

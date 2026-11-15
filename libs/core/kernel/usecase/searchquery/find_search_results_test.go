@@ -107,7 +107,7 @@ func TestAKindAloneReturnsOneWholeFilePerDocumentByPath(t *testing.T) {
 }
 
 func TestAMeaningWithoutAModelReturnsErrNoModelAndReadsNothing(t *testing.T) {
-	find := searchquery.NewFindSearchResults(searchquery.FindSearchResultsDeps{Parser: celquery.NewParser(searchquerydomain.DefaultLimits())})
+	find := searchquery.NewFindSearchResults(searchquery.FindSearchResultsDeps{Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: newClock()})
 	_, err := find.Execute(t.Context(), newWorld(t, nil).v, searchquery.Request{Text: `meaning("a")`})
 	if !errors.Is(err, searchquerydomain.ErrNoModel) {
 		t.Errorf("returned %v, want ErrNoModel", err)

@@ -22,7 +22,7 @@ func (p *plan) findWords(ctx context.Context, index int, documents []searchquery
 	} else {
 		q.PathPrefixes, q.SourceKinds = s.PathPrefixes, s.SourceKinds
 	}
-	matches, err := p.u.words.FindWords(ctx, p.v.ID, q)
+	matches, err := p.u.index.words.FindWords(ctx, p.v.ID, q)
 	if err != nil {
 		return nil, p.getWordsError(index, err)
 	}
