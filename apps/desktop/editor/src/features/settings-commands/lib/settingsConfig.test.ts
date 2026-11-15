@@ -4,10 +4,10 @@ import type { PluginSettingInfo } from '@/entities/settings'
 import { getSettingWhen, getSettingsConfig } from './settingsConfig'
 
 const setting = (key: string, value: unknown, when?: PluginSettingInfo['when']) =>
-  ({ key, value, ...(when ? { when } : {}) }) as unknown as PluginSettingInfo
+  ({ key, value, ...(when ? { when } : {}) }) as never
 
 const OWNERS = [
-  { id: 'app', name: '', settings: [setting('appearance.theme', 'dark')] },
+  { id: 'app', name: '', settings: [setting('appearance.theme', 'dark'), setting('unset', undefined)] },
   {
     id: 'org.example.ledger',
     name: 'Ledger',
@@ -30,12 +30,36 @@ describe('the settings as config', () => {
 
 describe('the condition of a setting command', () => {
   it('is empty for a setting shown always', () => {
-    expect(getSettingWhen(OWNERS[1]!, OWNERS[1]!.settings[0]!)).toBe('')
+    const owner = OWNERS[1]
+    const first = owner?.settings[0]
+    expect(owner && first ? getSettingWhen(owner, first) : null).toBe('')
   })
 
   it('reads the setting its condition names, and the conditions of that setting', () => {
-    expect(getSettingWhen(OWNERS[1]!, OWNERS[1]!.settings[2]!)).toBe(
+    const owner = OWNERS[1]
+    const third = owner?.settings[2]
+    expect(owner && third ? getSettingWhen(owner, third) : null).toBe(
       "string(config.org.example.ledger.path) in ['/tmp'] && string(config.org.example.ledger.mode) in ['custom', 'local']",
+    )
+  })
+
+  it('escapes quotes, stops on missing parent settings, and breaks cycles in conditions', () => {
+    const cyclicOwner = {
+      id: 'org.example.cycle',
+      name: 'Cycle',
+      settings: [
+        setting('a', '1', { setting: 'b', is: ["don't"] }),
+        setting('b', '2', { setting: 'a', is: ['yes'] }),
+        setting('orphan', '3', { setting: 'missing', is: ['no'] }),
+      ],
+    }
+    const [first, , orphan] = cyclicOwner.settings
+
+    expect(first ? getSettingWhen(cyclicOwner, first) : null).toBe(
+      "string(config.org.example.cycle.b) in ['don\\'t'] && string(config.org.example.cycle.a) in ['yes']",
+    )
+    expect(orphan ? getSettingWhen(cyclicOwner, orphan) : null).toBe(
+      "string(config.org.example.cycle.missing) in ['no']",
     )
   })
 })

@@ -3,8 +3,11 @@ package serving
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/console"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/environment"
@@ -48,4 +51,15 @@ func getModelInfoOf(t *testing.T, srv *Server) ModelInfo {
 		t.Fatal(err)
 	}
 	return info
+}
+
+func useProfileFolder(t *testing.T) string {
+	t.Helper()
+	data := t.TempDir()
+	t.Setenv(cache.EnvDataDir, data)
+	dir := filepath.Join(data, model.ProfilesFolder)
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return dir
 }

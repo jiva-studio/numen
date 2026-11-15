@@ -32,10 +32,10 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Completion, erro
 
 // Complete asks the service for an answer. A level of reasoning outside those the model supports is a stop.
 func (c *Completion) Complete(ctx context.Context, call connection.Call, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
-	if !isReasoningSupported(call) {
-		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
+	asked, err := c.getTarget(call, operation.Complete)
+	if err != nil {
+		return nil, err
 	}
-	asked := c.getTarget(call, operation.Complete)
 	result, err := c.gateway.Complete(ctx, call, asked.limit, request)
 	if err != nil {
 		return nil, err
@@ -49,10 +49,10 @@ func (c *Completion) Complete(ctx context.Context, call connection.Call, request
 func (c *Completion) Chat(
 	ctx context.Context, call connection.Call, request *llm.ChatRequest, send func(*llm.ChatFrame) error,
 ) (*llm.ChatFinish, error) {
-	if !isReasoningSupported(call) {
-		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
+	asked, err := c.getTarget(call, operation.Chat)
+	if err != nil {
+		return nil, err
 	}
-	asked := c.getTarget(call, operation.Chat)
 	finish, err := c.gateway.Chat(ctx, call, asked.limit, request, send)
 	if err != nil {
 		return nil, err
@@ -68,12 +68,11 @@ type target struct {
 	limit   time.Duration
 }
 
-func isReasoningSupported(call connection.Call) bool {
-	return reasoning.IsSupported(call.Type, call.Options[llm.OptionModel], call.Options[llm.OptionReasoning])
-}
-
-func (c *Completion) getTarget(call connection.Call, op string) target {
+func (c *Completion) getTarget(call connection.Call, op string) (target, error) {
 	model := call.Options[llm.OptionModel]
+	if !reasoning.IsSupported(call.Type, model, call.Options[llm.OptionReasoning]) {
+		return target{model: "", address: "", limit: 0}, connection.NewStopError(connection.ReasonInvalidRequest)
+	}
 	address := call.Fields[servicetype.FieldBaseURL]
-	return target{model: model, address: address, limit: c.limits.Get(call.Type, address, model, op)}
+	return target{model: model, address: address, limit: c.limits.Get(call.Type, address, model, op)}, nil
 }

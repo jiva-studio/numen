@@ -131,17 +131,3 @@ func (o *OpenVaults[I]) IndexVault(ctx context.Context, v domain.Vault) error {
 	_, err := o.getOpenedVault(ctx, v).open.Read(ctx, nil)
 	return errors.Join(err, o.takeOutputError())
 }
-
-// UpdateIndex brings the paths a write touched up to date, through the opening of the vault they are in.
-func (o *OpenVaults[I]) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
-	if !o.tryBeginWork() {
-		return ErrClosing
-	}
-	defer o.running.Done()
-
-	err := o.getOpenedVault(ctx, v).open.UpdateIndex(ctx, v, paths)
-	return errors.Join(err, o.takeOutputError())
-}
-
-// OpenedCount returns the number of opened vaults.
-func (o *OpenVaults[I]) OpenedCount() int { return len(o.opened) }

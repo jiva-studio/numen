@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { listAvailableCommands } from './available'
+import { getIssueKey, listAvailableCommands } from './available'
 import type { HostRegistry, RegisteredCommand } from './registry'
 import type { CommandDeclaration } from './types'
 import { createTestHostDeps, createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
@@ -9,11 +9,16 @@ const declaration: CommandDeclaration = { pluginId: 'md.tree', id: 'tree.open', 
 function createRegistry(
   activated: string[],
   handlers: [string, RegisteredCommand][],
+  starting: string[] = [],
 ): HostRegistry {
   return {
     commands: { value: new Map(handlers) },
     handlers: { value: new Map() },
-    plugins: { activated: { value: new Set(activated) }, disposed: new Set<string>() },
+    plugins: {
+      activated: { value: new Set(activated) },
+      starting: { value: new Set(starting) },
+      disposed: new Set<string>(),
+    },
     reportedIssues: new Set<string>(),
   } as unknown as HostRegistry
 }
@@ -79,6 +84,70 @@ describe('listing the listed commands', () => {
 
     expect(commands.map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
     expect(issues).toStrictEqual([])
+  })
+
+  it('returns empty lists before command declarations are available and keys issues by plugin, id, and kind', () => {
+    expect(getIssueKey({ pluginId: 'md.tree', id: 'tree.open', kind: 'unbound' })).toBe(
+      'md.tree:tree.open:unbound',
+    )
+    expect(listAvailableCommands({}, createRegistry([], []))).toStrictEqual({
+      commands: [],
+      issues: [],
+    })
+    expect(listAvailableCommands({ commands: {} }, createRegistry([], []))).toStrictEqual({
+      commands: [],
+      issues: [],
+    })
+
+    const multi = listAvailableCommands(
+      {
+        commands: {
+          getCommandDeclarations: () => [
+            declaration,
+            { pluginId: 'md.tree', id: 'tree.close', title: 'Close tree' },
+            { pluginId: 'md.other', id: 'tree.open', title: 'Open other' },
+          ],
+        },
+      },
+      createRegistry(['md.tree', 'md.other'], []),
+    )
+    expect(multi.issues).toStrictEqual([
+      { pluginId: 'md.tree', id: 'tree.open', kind: 'unbound' },
+      { pluginId: 'md.tree', id: 'tree.close', kind: 'unbound' },
+      { pluginId: 'md.other', id: 'tree.open', kind: 'unbound' },
+    ])
+  })
+
+  it('leaves out commands of backend-only or failed plugins and keeps starting plugins available', () => {
+    expect(
+      listAvailableCommands(
+        {
+          commands: { getCommandDeclarations: () => [declaration] },
+          plugins: { hasPluginFrontend: () => false },
+        },
+        createRegistry([], []),
+      ),
+    ).toStrictEqual({ commands: [], issues: [] })
+
+    expect(
+      listAvailableCommands(
+        {
+          commands: { getCommandDeclarations: () => [declaration] },
+          plugins: { hasPluginFrontend: () => true, isPluginFailed: () => true },
+        },
+        createRegistry([], []),
+      ),
+    ).toStrictEqual({ commands: [], issues: [] })
+
+    const starting = listAvailableCommands(
+      {
+        commands: { getCommandDeclarations: () => [declaration] },
+        plugins: { hasPluginFrontend: () => true, isPluginFailed: () => false },
+      },
+      createRegistry(['md.tree'], [], ['md.tree']),
+    )
+    expect(starting.commands.map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
+    expect(starting.issues).toStrictEqual([])
   })
 })
 

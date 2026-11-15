@@ -423,9 +423,10 @@ linters:
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
 
-        # A plugin reaches the host through the plugin SDK. The rule covers every
-        # file outside libs/, apps/ and tools/, which includes a plugin checked out alone.
-        # The longer match wins, so the SDK is allowed under the denied libs/.
+        # A plugin reaches the host through the plugin SDK and may import the shared
+        # libraries under libs/shared. The rule covers every file outside libs/, apps/
+        # and tools/, which includes a plugin checked out alone.
+        # The longer match wins, so the SDK and libs/shared/ are allowed under the denied libs/.
         plugin-isolation:
           list-mode: lax
           files:
@@ -435,9 +436,10 @@ linters:
             - "!**/tools/**"
           allow:
             - "github.com/jiva-studio/numen/libs/plugin/sdk-go"
+            - "github.com/jiva-studio/numen/libs/shared/"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs"
-              desc: "a plugin depends on the plugin SDK and on no other library of this repository"
+              desc: "a plugin depends on the plugin SDK, on the shared libraries and on no other library of this repository"
             - pkg: "github.com/jiva-studio/numen/apps"
               desc: "a plugin reaches no application"
             - pkg: "connectrpc.com/connect"

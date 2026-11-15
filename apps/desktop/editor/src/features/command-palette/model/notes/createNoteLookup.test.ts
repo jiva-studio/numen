@@ -14,7 +14,13 @@ const findEditorTabAt = (windowTabs: WindowTabs, path: string): string | null =>
 const createWindowTabs = (
   tabs: Record<
     string,
-    { editsFiles: boolean; path?: string | undefined; hasOpenTab?: boolean } | undefined
+    | {
+        editsFiles: boolean
+        path?: string | undefined
+        hasAddress?: boolean
+        hasOpenTab?: boolean
+      }
+    | undefined
   >,
 ): WindowTabs =>
   ({
@@ -26,24 +32,28 @@ const createWindowTabs = (
         return {
           state: tab,
           kind: {
-            ...(tab.hasOpenTab === false
+            ...(tab.hasAddress === false
               ? {}
               : {
-                  address: {
-                    getOpenTab: (state: { path?: string }) => ({ path: state.path ?? '' }),
-                  },
+                  address:
+                    tab.hasOpenTab === false
+                      ? {}
+                      : {
+                          getOpenTab: (state: { path?: string }) => ({ path: state.path ?? '' }),
+                        },
                 }),
             ...(tab.editsFiles ? { events: { flushPending: () => Promise.resolve() } } : {}),
           },
         }
       },
     },
-  }) as unknown as WindowTabs
+  }) as never
 
 describe('the tab that edits the file at a path', () => {
   it('is the tab of a kind that writes files out, standing at the path', () => {
     const windowTabs = createWindowTabs({
       'document:a': { editsFiles: false, path: 'a.md' },
+      'no-address:a': { editsFiles: true, hasAddress: false },
       'no-open:a': { editsFiles: true, hasOpenTab: false },
       'empty-open:a': { editsFiles: true, path: undefined },
       'sample:a': { editsFiles: true, path: 'a.md' },
@@ -106,7 +116,15 @@ describe('what the window knows of the note open at a path', () => {
   })
 
   it('is no tab and no title where nothing remains at the path', () => {
-    const lookup = create(null)
+    const lookup = createNoteLookup(
+      {
+        reached: { getTabAt: () => null },
+        getTitle: () => 'unexpected',
+      },
+      createWindowTabs({
+        'sample:a': { editsFiles: true, path: 'a.md' },
+      }),
+    )
 
     expect(lookup.getTabAt('b.md')).toBeNull()
     expect(lookup.getTitle('b.md')).toBe('')

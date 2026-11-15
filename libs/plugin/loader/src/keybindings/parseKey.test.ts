@@ -57,7 +57,7 @@ describe('parseKey', () => {
     expect(parseKey('Mod + Shift + P')).toMatchObject({ mod: true, shift: true, code: 'KeyP' })
   })
 
-  it.each(['', 'mod+', 'mod+pp', 'f13', 'hyper+p', 'mod+shift', 'p+mod'])(
+  it.each(['', 'mod+', 'mod+pp', 'mod+55', 'mod+xf3', 'f13', 'hyper+p', 'mod+shift', 'p+mod'])(
     'reads %j as nothing',
     (text) => {
       expect(parseKey(text)).toBeUndefined()
@@ -83,6 +83,7 @@ describe('isKeyEvent', () => {
   it('reads the letter of an event that has no code', () => {
     expect(isKeyEvent(chord, press({ key: 'P', ctrlKey: true }), false)).toBe(true)
     expect(isKeyEvent(chord, press({ key: 'з', ctrlKey: true }), false)).toBe(false)
+    expect(isKeyEvent({ ...chord, code: '' }, press({ key: 'з', ctrlKey: true }), false)).toBe(true)
   })
 
   it('is false with a missing or extra modifier', () => {

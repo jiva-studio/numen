@@ -34,7 +34,7 @@ func writeProfile(t *testing.T, dir, name, content string) {
 func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, "a-broken.json", `{"id": "owner/x", `)
-	writeProfile(t, dir, "e-good.json", `{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"}`)
+	writeProfile(t, dir, "e-good.json", `{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","tokenizer":"bpe"}`)
 	writeProfile(t, dir, "notes.txt", `not a profile`)
 	if err := os.MkdirAll(filepath.Join(dir, "sub.json"), 0o700); err != nil {
 		t.Fatal(err)
@@ -44,7 +44,7 @@ func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 	}
 
 	reported := map[string]error{}
-	table, err := NewDirectory(dir).Load(func(file string, err error) { reported[filepath.Base(file)] = err })
+	table, err := Directory{path: dir}.Load(func(file string, err error) { reported[filepath.Base(file)] = err })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 }
 
 func TestLoadKeepsShippedProfilesWhenFolderIsMissing(t *testing.T) {
-	table, err := NewDirectory(filepath.Join(t.TempDir(), "profiles")).Load(func(file string, err error) {
+	table, err := Directory{path: filepath.Join(t.TempDir(), "profiles")}.Load(func(file string, err error) {
 		t.Errorf("unexpected report for missing folder: %s: %v", file, err)
 	})
 	if err != nil {
@@ -79,7 +79,7 @@ func TestLoadKeepsShippedProfilesWhenPathIsNotFolder(t *testing.T) {
 	}
 
 	var reportedPath string
-	table, err := NewDirectory(file).Load(func(path string, _ error) { reportedPath = path })
+	table, err := Directory{path: file}.Load(func(path string, _ error) { reportedPath = path })
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -326,6 +326,7 @@ describe('the services of a plugin context', () => {
     expect(() => denied.host.ui.workspace?.window.openingPath).toThrowError('vault:read')
     expect(denied.host.ui.workspace?.window.isReady.value).toBe(true)
     expect(allowed.host.ui.workspace?.window.openingPath).toBe(openingPath)
+    expect(Object.keys(allowed.host.ui.workspace?.window ?? {})).toContain('openingPath')
   })
 })
 
@@ -363,5 +364,6 @@ describe('the subscriptions of a plugin', () => {
     expect(first).toHaveBeenCalledOnce()
     expect(second).toHaveBeenCalledOnce()
     expect(subscriptions.length).toBe(0)
+    expect(() => disposeSubscriptions([] as never)).not.toThrow()
   })
 })

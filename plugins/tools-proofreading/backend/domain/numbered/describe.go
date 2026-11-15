@@ -52,7 +52,7 @@ func getRecurringNames(response []string) []string {
 		cleanWord := strings.TrimFunc(word, func(r rune) bool {
 			return !unicode.IsLetter(r) && !unicode.IsMark(r)
 		})
-		if here || !isName(cleanWord) {
+		if cleanWord == "" || here || !isName(cleanWord) {
 			continue
 		}
 		key := strings.ToLower(cleanWord)
@@ -80,7 +80,11 @@ func isName(word string) bool {
 	if letter, _ := utf8.DecodeRuneInString(word); !unicode.IsUpper(letter) {
 		return false
 	}
-	head, tail, _ := strings.Cut(strings.ReplaceAll(word, "’", "'"), "'")
+	head, tail := word, ""
+	if pos := strings.IndexAny(word, "'’"); pos >= 0 {
+		_, runeLen := utf8.DecodeRuneInString(word[pos:])
+		head, tail = word[:pos], word[pos+runeLen:]
+	}
 	return utf8.RuneCountInString(head) > 1 || utf8.RuneCountInString(tail) > 2
 }
 
@@ -94,6 +98,9 @@ func isSentenceEnd(word string) bool {
 
 func isShortening(word string) bool {
 	body := strings.TrimRight(word, ".")
+	if body == "" {
+		return false
+	}
 	if strings.ContainsRune(body, '.') {
 		return true
 	}

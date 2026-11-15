@@ -25,10 +25,6 @@ func (s *Server) OpenListener(name string) (net.Listener, error) {
 		}
 	}
 	ln, err := new(net.ListenConfig).Listen(context.Background(), "tcp", "127.0.0.1:0")
-	return s.registerListener(name, ln, err)
-}
-
-func (s *Server) registerListener(name string, ln net.Listener, err error) (net.Listener, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open listener %s: %w", name, err)
 	}

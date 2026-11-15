@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { FileText } from '@lucide/vue'
 import { createWhenReader, getTargetValues, type CommandTarget } from '@numen/plugin-loader'
 import type { DeclaredCommand } from '@/entities/plugin'
+import { findIcon } from '@/shared/model/command'
 import { getNamedIcon } from '@/shared/ui/icons'
 import { APP_SLOT_ENTRIES } from '../../lib/appPlacements'
 import { createSlotCommandFinder, readSlotEntries } from './pluginSlots'
@@ -134,10 +135,22 @@ describe('a command of a slot entry', () => {
         title: 'Chart',
         when: "target.contentType == 'text/csv'",
       }),
+      declared({
+        id: 'tide.items',
+        title: 'Tide items',
+      }),
+      declared({
+        id: 'tide.invalid',
+        title: 'Invalid when',
+        when: 'target.isRemote',
+      }),
     ],
     getEditorCommands: () => [
       { id: 'app:settings.open', text: 'Open settings', iconName: 'settings' },
+      { id: 'app:file.open', text: 'Open file' },
+      { id: 'app:custom.none', text: 'Custom command' },
     ],
+    hasPluginItems: (id) => id === `${TIDE}:tide.items`,
     getWhenValues: (target) => getTargetValues(target, { csv: 'text/csv', md: 'text/markdown' }),
   })
 
@@ -157,11 +170,32 @@ describe('a command of a slot entry', () => {
       icon: getNamedIcon('settings'),
       hasItems: false,
     })
+    expect(find('app:file.open', undefined)).toStrictEqual({
+      title: 'Open file',
+      icon: findIcon('app:file.open'),
+      hasItems: false,
+    })
+    expect(find('app:custom.none', undefined)).toStrictEqual({
+      title: 'Custom command',
+      hasItems: false,
+    })
   })
 
-  it('is not available where no command of the id is listed', () => {
+  it('is not available where no command of the id is listed or its condition is invalid', () => {
     expect(find(`${TIDE}:tide.gone`, undefined)).toBeUndefined()
     expect(find('app:gone.away', undefined)).toBeUndefined()
+    expect(find('app:file.createText', undefined)).toBeUndefined()
+    expect(find(`${TIDE}:tide.invalid`, NOTE)).toBeUndefined()
+  })
+
+  it('with items is available only over a non-folder file with a path', () => {
+    expect(find(`${TIDE}:tide.items`, undefined)).toBeUndefined()
+    expect(find(`${TIDE}:tide.items`, FOLDER)).toBeUndefined()
+    expect(find(`${TIDE}:tide.items`, { ...NOTE, path: '' })).toBeUndefined()
+    expect(find(`${TIDE}:tide.items`, NOTE)).toStrictEqual({
+      title: 'Tide items',
+      hasItems: true,
+    })
   })
 
   it('over a note is available only over a target that is no folder', () => {
@@ -205,11 +239,22 @@ describe('a shared command in a slot', () => {
       getPluginCommands: () => [],
       getDeclaredCommands: () => [],
       getEditorCommands: () => [],
-      getHandlerDeclarations: () => [],
+      getHandlerDeclarations: () => [
+        { pluginId: TIDE, command: 'other.command', title: 'Other', hasItems: false },
+      ],
+      getWhenValues: (target) => getTargetValues(target, {}),
+    })
+    const unloaded = createSlotCommandFinder({
+      whenReader: createWhenReader(),
+      getPluginCommands: () => [],
+      getDeclaredCommands: () => [],
+      getEditorCommands: () => [],
+      getHandlerDeclarations: () => undefined,
       getWhenValues: (target) => getTargetValues(target, {}),
     })
 
     expect(unhandled('app:file.createText', NOTE)).toBeUndefined()
+    expect(unloaded('app:file.createText', NOTE)).toBeUndefined()
   })
 })
 
@@ -241,6 +286,10 @@ describe('a shared command over what the window knows of the target', () => {
 
   it('is not drawn where every handler is false over the note type and the content type', () => {
     expect(createFinder(OVER_PDF, OVER_MEDIA)(CREATE_TEXT, DECK)).toBeUndefined()
+    expect(createFinder(OVER_MEDIA)(CREATE_TEXT, PAPER)).toBeUndefined()
+    expect(createFinder('target.isRemote')(CREATE_TEXT, undefined)).toMatchObject({
+      title: 'Create text',
+    })
   })
 
   it('is drawn where a handler is true over what is known', () => {
