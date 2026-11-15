@@ -37,7 +37,7 @@ func reverseComparison(comparison searchquery.Comparison) searchquery.Comparison
 	}
 }
 
-func (c *converter) convertComparison(expr ast.Expr, comparison searchquery.Comparison) searchquery.RawNode {
+func (c *comparer) convertComparison(expr ast.Expr, comparison searchquery.Comparison) searchquery.RawNode {
 	args := expr.AsCall().Args()
 	subject, other := args[0], args[1]
 	if isValueExpr(subject) && !isValueExpr(other) {
@@ -57,7 +57,7 @@ func (c *converter) convertComparison(expr ast.Expr, comparison searchquery.Comp
 	return c.reject(expr, messageCondition)
 }
 
-func (c *converter) convertKind(expr, other ast.Expr, comparison searchquery.Comparison) searchquery.RawNode {
+func (c *comparer) convertKind(expr, other ast.Expr, comparison searchquery.Comparison) searchquery.RawNode {
 	kind, isLiteral := getStringLiteral(other)
 	if !isLiteral || comparison != searchquery.ComparisonEqual {
 		return c.reject(expr, messageKind)
@@ -65,7 +65,7 @@ func (c *converter) convertKind(expr, other ast.Expr, comparison searchquery.Com
 	return c.newLeaf(expr, searchquery.RawLeaf{Kind: searchquery.LeafKindIn, Kinds: []string{kind}})
 }
 
-func (c *converter) convertAttribute(expr ast.Expr, name string, comparison searchquery.Comparison, other ast.Expr) searchquery.RawNode {
+func (c *comparer) convertAttribute(expr ast.Expr, name string, comparison searchquery.Comparison, other ast.Expr) searchquery.RawNode {
 	attribute, isAttribute := getAttribute(name)
 	if !isAttribute {
 		return c.reject(expr, messageCondition)
@@ -91,7 +91,7 @@ func isAttributeOperand(attribute searchquery.Attribute, comparison searchquery.
 	return false
 }
 
-func (c *converter) convertProperty(expr, call ast.Expr, comparison searchquery.Comparison, others []ast.Expr) searchquery.RawNode {
+func (c *comparer) convertProperty(expr, call ast.Expr, comparison searchquery.Comparison, others []ast.Expr) searchquery.RawNode {
 	key, isLiteral := getStringLiteral(call.AsCall().Args()[0])
 	if !isLiteral {
 		return c.reject(call.AsCall().Args()[0], messageProperty)
@@ -109,7 +109,7 @@ func (c *converter) convertProperty(expr, call ast.Expr, comparison searchquery.
 	})
 }
 
-func (c *converter) convertPresence(expr ast.Expr) searchquery.RawNode {
+func (c *comparer) convertPresence(expr ast.Expr) searchquery.RawNode {
 	call := expr.AsCall()
 	text, isLiteral := getStringLiteral(call.Args()[0])
 	if !isLiteral {
@@ -124,7 +124,7 @@ func (c *converter) convertPresence(expr ast.Expr) searchquery.RawNode {
 	return c.newLeaf(call.Args()[0], leaf)
 }
 
-func (c *converter) convertIn(expr ast.Expr) searchquery.RawNode {
+func (c *comparer) convertIn(expr ast.Expr) searchquery.RawNode {
 	args := expr.AsCall().Args()
 	element, list := args[0], args[1]
 	switch {
@@ -142,7 +142,7 @@ func (c *converter) convertIn(expr ast.Expr) searchquery.RawNode {
 	return c.reject(expr, getIdentMessage(identName(element)))
 }
 
-func (c *converter) convertKindList(expr, list ast.Expr) searchquery.RawNode {
+func (c *comparer) convertKindList(expr, list ast.Expr) searchquery.RawNode {
 	var kinds []string
 	for _, element := range list.AsList().Elements() {
 		kind, isLiteral := getStringLiteral(element)
@@ -154,7 +154,7 @@ func (c *converter) convertKindList(expr, list ast.Expr) searchquery.RawNode {
 	return c.newLeaf(expr, searchquery.RawLeaf{Kind: searchquery.LeafKindIn, Kinds: kinds})
 }
 
-func (c *converter) convertTextList(expr, element, list ast.Expr) searchquery.RawNode {
+func (c *comparer) convertTextList(expr, element, list ast.Expr) searchquery.RawNode {
 	var operands []searchquery.Value
 	for _, item := range list.AsList().Elements() {
 		text, isLiteral := getStringLiteral(item)
@@ -178,7 +178,7 @@ func getMethodComparison(name string) searchquery.Comparison {
 	return searchquery.ComparisonStartsWith
 }
 
-func (c *converter) convertMethod(expr ast.Expr) searchquery.RawNode {
+func (c *comparer) convertMethod(expr ast.Expr) searchquery.RawNode {
 	call := expr.AsCall()
 	target := call.Target()
 	text, isLiteral := getStringLiteral(call.Args()[0])
@@ -202,7 +202,7 @@ func (c *converter) convertMethod(expr ast.Expr) searchquery.RawNode {
 	return c.reject(expr, getIdentMessage(identName(target)))
 }
 
-func (c *converter) getValue(expr ast.Expr) (searchquery.Value, bool) {
+func (c *comparer) getValue(expr ast.Expr) (searchquery.Value, bool) {
 	if isCallOf(expr, searchquery.FunctionDate) {
 		arg := expr.AsCall().Args()[0]
 		text, isLiteral := getStringLiteral(arg)
