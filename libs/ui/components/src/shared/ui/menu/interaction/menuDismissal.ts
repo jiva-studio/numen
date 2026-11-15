@@ -2,7 +2,9 @@
  * The window events that dismiss an open menu: a press, a scroll, a resize,
  * and Escape.
  *
- * Each of them closes the menu, and the caller decides what closing does. A
+ * Each of them closes the menu, and the caller decides what closing does. A press
+ * on the element that opened the menu is left to that element, so a trigger that
+ * toggles closes the menu with its click. A
  * scroll closes it only once the user has given input since the menu opened; the
  * scroll that opening itself causes does not.
  */
@@ -25,6 +27,7 @@ export function useMenuDismissal(
   menu: Readonly<ShallowRef<HTMLElement | null>>,
   dismiss: () => void,
   isIgnored?: (event: Event) => boolean,
+  getFrom?: () => Element | null,
 ): MenuDismissalState {
   /**
    * A pointer event or scroll outside the menu. A scroll of the menu's own list is
@@ -33,6 +36,7 @@ export function useMenuDismissal(
   const dismissOutside = (event: Event): void => {
     if (isIgnored?.(event)) return
     if (isInside(menu.value, event)) return
+    if (isInside(getFrom?.() ?? null, event)) return
     dismiss()
   }
 

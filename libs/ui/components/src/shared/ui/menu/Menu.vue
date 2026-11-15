@@ -50,7 +50,12 @@ const isIgnored = (event: Event): boolean =>
   event.target instanceof Element &&
   Boolean(event.target.closest('.menu') && event.target.closest('.menu') !== menu.value)
 
-const { listen, release } = useMenuDismissal(menu, () => emit('dismiss'), isIgnored)
+const { listen, release } = useMenuDismissal(
+  menu,
+  () => emit('dismiss'),
+  isIgnored,
+  () => props.from ?? null,
+)
 
 const { visibleItems, rows, here, submenu, focusInitial, pointTo, onKey, onResetNavigation } =
   useMenuNavigation({
