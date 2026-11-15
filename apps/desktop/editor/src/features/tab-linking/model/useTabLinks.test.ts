@@ -29,6 +29,7 @@ describe('useTabLinks snapshot', () => {
 
     expect(tabLinks.groups.size).toBe(0)
     expect(tabLinks.tabs).toStrictEqual([])
+    expect(tabLinks.windows).toStrictEqual([])
     expect(tabLinks.getGroupOf('plex:1')).toBeNull()
     expect(tabLinks.getLinkedTargets('plex:1')).toStrictEqual([])
   })
@@ -63,12 +64,13 @@ describe('useTabLinks changes', () => {
     expect(tabLinks.getGroupOf('plex:1')).toBeNull()
   })
 
-  it('writes no link for an empty tab id or a tab linked to itself', () => {
+  it('writes no link for an empty tab id or a tab linked to itself', async () => {
     const { tabLinks, write } = setup()
 
     tabLinks.linkTabs('', 'files:2')
     tabLinks.linkTabs('plex:1', '')
     tabLinks.linkTabs('plex:1', 'plex:1')
+    await Promise.resolve()
 
     expect(write).not.toHaveBeenCalled()
   })
@@ -78,6 +80,7 @@ describe('useTabLinks changes', () => {
     tabLinks.applySnapshot(SNAPSHOT)
 
     tabLinks.unlinkTab('plex:9')
+    await Promise.resolve()
     expect(write).not.toHaveBeenCalled()
 
     tabLinks.unlinkTab('plex:1')

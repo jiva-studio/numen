@@ -109,6 +109,9 @@ describe('the command that opens a document chosen as a result', () => {
 
   it('is filed under the file group with the words that open a document', () => {
     expect(open()).toMatchObject({ text: words.readDocument, group: 'file' })
+    expect(createAppCommands().find((one) => one.id === 'app:settings.open')).toMatchObject({
+      iconName: 'settings',
+    })
   })
 
   it('needs no input, so it runs as soon as it is chosen', () => {

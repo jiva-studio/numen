@@ -23,6 +23,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | `connection`                     | providing the operations of a connection type, and asking the core to carry out an operation                        |
 | `contracts/llm`, `llmtest`       | the messages, typed client and provider adapter of `llm.complete`, `llm.chat`, `llm.embed`, `llm.rerank` and others |
 | `contracts/acp`, `acptest`       | the messages and provider adapter of `acp.task`                                                                     |
+| `contracts/readerplace`          | the place a reader tab shows, as JSON in the Place of an open tab                                                   |
 | `health`, `health/healthtest`    | the health items a plugin reports                                                                                   |
 | `process`, `process/processtest` | the release of the process of a plugin whose work is done                                                           |
 | `command`                        | the commands the manifest declares, served as `PluginCommandService`                                                |

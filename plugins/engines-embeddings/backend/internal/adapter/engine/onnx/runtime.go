@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 	"sync/atomic"
 )
@@ -104,28 +103,10 @@ func (r *Runtime[E]) Register(hook func(libPath string) error) {
 	r.hooks = append(r.hooks, hook)
 }
 
-// HasRegistration reports whether any hook is registered.
-func (r *Runtime[E]) HasRegistration() bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return len(r.hooks) > 0
-}
-
 // GetLoaded returns the engine and its library, or the zero engine and an empty
 // path while the runtime is not open.
 func (r *Runtime[E]) GetLoaded() (E, string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.engine, r.libPath
-}
-
-// IsAvailable reports whether the runtime is open, or the library at is there
-// to open it from. It opens nothing and does not wait on a caller that is
-// opening it.
-func (r *Runtime[E]) IsAvailable(libPath string) bool {
-	if r.loaded.Load() {
-		return true
-	}
-	_, err := os.Stat(libPath)
-	return err == nil
 }

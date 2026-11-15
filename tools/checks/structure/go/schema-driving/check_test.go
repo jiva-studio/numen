@@ -14,8 +14,9 @@ import (
 )
 
 // TestEveryAdapterServingTheSchemaIsDriving ensures adapters serving or mounting
-// generated protocol handlers are declared as driving adapters.
+// generated protocol handlers are among the driving adapters load.GetDriving reads from the tree.
 func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
+	driving := load.GetDriving(t)
 	var wrong []string
 	var found int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
@@ -34,7 +35,7 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 			return nil
 		}
 		found++
-		if !load.IsDriving(pkg) {
+		if !load.IsDriving(driving, pkg) {
 			wrong = append(wrong, load.GetFamily(pkg)+" serves the schema and is named driven")
 		}
 		return nil

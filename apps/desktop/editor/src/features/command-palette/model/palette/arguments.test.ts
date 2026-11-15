@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 import { runSupport } from './runSupport'
 import { createCommandPalette, type Commands } from './palette'
+import { createPaletteSession } from './session'
 import type { Command } from '@/entities/command'
 import type { CommandTarget } from '@/shared/model/command'
 import { WORDS as windowWords } from '@/shared/ui/words'
@@ -143,5 +144,19 @@ describe('a command that arrives after the palette is made', () => {
 
     expect(commands.palette.startCommand('create-sample', front)).toBeNull()
     expect(commands.navigation.placeholder.value).toBe('Title')
+  })
+
+  it('falls back to an empty command list and creates invocations for unlisted commands', () => {
+    const session = createPaletteSession({
+      core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+      words,
+      at: () => front,
+      knows: { getTitle: () => '', getTabAt: () => null },
+      lists: { getStepGroups: () => [], previewItem: vi.fn() },
+      runs: runSupport(),
+    })
+
+    expect(session.rows.getCommands()).toStrictEqual([])
+    expect(session.invocation('unlisted', front)).toMatchObject({ id: 'unlisted' })
   })
 })
