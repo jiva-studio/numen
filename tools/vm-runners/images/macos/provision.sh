@@ -3,6 +3,7 @@ set -euo pipefail
 
 src="$(cd "$(dirname "$0")" && pwd)"
 : "${PLAYWRIGHT_VERSION:?PLAYWRIGHT_VERSION is not set}"
+: "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set}"
 
 if [ ! -x /nix/var/nix/profiles/default/bin/nix ]; then
   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
@@ -15,7 +16,12 @@ git --version
 
 npx --yes "playwright@$PLAYWRIGHT_VERSION" install chromium webkit
 
-sudo mkdir -p /usr/local/bin
+sudo mkdir -p /usr/local/bin /usr/local/claude-code
+sudo chown "$(id -un)" /usr/local/claude-code
+npm install --global --prefix /usr/local/claude-code "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION"
+sudo install -m 755 "$src/claude" /usr/local/bin/claude
+/usr/local/bin/claude --version
+
 sudo install -m 755 "$src/numen-runner-bootstrap" /usr/local/bin/numen-runner-bootstrap
 mkdir -p "$HOME/Library/LaunchAgents"
 install -m 644 "$src/md.numen.runner-bootstrap.plist" "$HOME/Library/LaunchAgents/md.numen.runner-bootstrap.plist"

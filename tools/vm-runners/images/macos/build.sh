@@ -18,6 +18,7 @@ export SSHPASS="${GUEST_PASSWORD:-admin}"
 guest_user="${GUEST_USER:-admin}"
 ssh_options=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5 -o ServerAliveInterval=15 -o ServerAliveCountMax=4)
 
+claude_code_version="${CLAUDE_CODE_VERSION:-2.1.325}"
 playwright_version="$(sed -n '/"node_modules\/playwright": {/{n;p;}' "$repo/package-lock.json" | sed -E 's/.*"version": "([^"]+)".*/\1/')"
 if [ -z "$playwright_version" ]; then
   echo "build.sh: playwright version not found in $repo/package-lock.json" >&2
@@ -73,11 +74,11 @@ guest_ssh true
 
 echo "provisioning $building at $ip"
 mkdir -p "$workdir/image/numen"
-cp "$here/provision.sh" "$here/numen-runner-bootstrap" "$here/md.numen.runner-bootstrap.plist" "$workdir/image/"
+cp "$here/provision.sh" "$here/claude" "$here/numen-runner-bootstrap" "$here/md.numen.runner-bootstrap.plist" "$workdir/image/"
 cp "$here/../numen/flake.nix" "$here/../numen/flake.lock" "$workdir/image/numen/"
 guest_ssh "rm -rf /tmp/numen-image"
 sshpass -e scp -r "${ssh_options[@]}" "$workdir/image" "$guest_user@$ip:/tmp/numen-image"
-guest_ssh "PLAYWRIGHT_VERSION=$playwright_version bash /tmp/numen-image/provision.sh"
+guest_ssh "PLAYWRIGHT_VERSION=$playwright_version CLAUDE_CODE_VERSION=$claude_code_version bash /tmp/numen-image/provision.sh"
 guest_ssh "rm -rf /tmp/numen-image"
 
 echo "shutting down $building"

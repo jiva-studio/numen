@@ -27,7 +27,7 @@ On the Mac host, with Tart and Nix installed:
 tools/vm-runners/images/macos/build.sh
 ```
 
-The script clones `ghcr.io/cirruslabs/macos-tahoe-base:latest` (about 27 GB on the first pull) to `numen-macos-26-building`, boots it, and provisions it over SSH with the image's default `admin`/`admin` login: Nix (Determinate installer), the tools from `images/numen/flake.nix`, Playwright Chromium and WebKit of the version in `package-lock.json`, and the bootstrap LaunchAgent. It then shuts the VM down and renames it to `numen-macos-26`, replacing an older image of that name. `IMAGE_NAME`, `BASE_IMAGE`, `CPU` and `MEMORY` override the defaults.
+The script clones `ghcr.io/cirruslabs/macos-tahoe-base:latest` (about 27 GB on the first pull) to `numen-macos-26-building`, boots it, and provisions it over SSH with the image's default `admin`/`admin` login: Nix (Determinate installer), the tools from `images/numen/flake.nix`, the Claude Code CLI (npm package pinned by `CLAUDE_CODE_VERSION`, installed to `/usr/local/claude-code`, started through the wrapper `/usr/local/bin/claude`, no login or API key), Playwright Chromium and WebKit of the version in `package-lock.json`, and the bootstrap LaunchAgent. It then shuts the VM down and renames it to `numen-macos-26`, replacing an older image of that name. `IMAGE_NAME`, `BASE_IMAGE`, `CPU` and `MEMORY` override the defaults.
 
 ## Install the provider
 
