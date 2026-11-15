@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
 type greetIn struct {
@@ -215,13 +216,13 @@ func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
 	}
 	if err := Add(registry, Spec{Name: "bad-in"}, func(context.Context, unencodable) (greetOut, error) {
 		return greetOut{}, nil
-	}); err == nil {
-		t.Fatal("expected error for unencodable input schema")
+	}); err == nil || !strings.HasPrefix(err.Error(), "tool bad-in: arguments: ") {
+		t.Fatalf("expected error for unencodable input schema, got %v", err)
 	}
 	if err := Add(registry, Spec{Name: "bad-out"}, func(context.Context, greetIn) (unencodable, error) {
 		return unencodable{}, nil
-	}); err == nil {
-		t.Fatal("expected error for unencodable output schema")
+	}); err == nil || !strings.HasPrefix(err.Error(), "tool bad-out: result: ") {
+		t.Fatalf("expected error for unencodable output schema, got %v", err)
 	}
 
 	if err := Add(registry, Spec{Name: "ptr-struct"}, func(context.Context, *greetIn) (*greetOut, error) {
@@ -245,5 +246,30 @@ func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
 	var nilInfo *ToolInfo
 	if nilInfo.GetName() != "" || nilInfo.GetInputSchema() != nil || nilInfo.GetOutputSchema() != nil {
 		t.Fatal("expected empty name and nil schemas for nil ToolInfo")
+	}
+	var nilRes *CallResult
+	if nilRes.GetText() != "" || nilRes.GetStructured() != nil || nilRes.GetIsError() {
+		t.Fatal("expected zero values for nil CallResult")
+	}
+	var nilResp *CallResponse
+	if nilResp.GetResult() != nil || nilResp.GetError() != ErrorCodeUnspecified {
+		t.Fatal("expected zero values for nil CallResponse")
+	}
+	if err := Add(registry, Spec{Name: "slice-in"}, func(context.Context, []greetIn) ([]greetOut, error) {
+		return nil, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	listing, err = registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, info := range listing.Tools {
+		if info.GetName() == "slice-in" && (string(info.GetInputSchema()) != `{"type":"object"}` || len(info.GetOutputSchema()) != 0) {
+			t.Fatalf("slice-in schemas: in=%s out=%s", info.GetInputSchema(), info.GetOutputSchema())
+		}
+	}
+	if _, err := NewClient(hostcall.Endpoint{BaseURL: "http://127.0.0.1:1"}).ListTools(t.Context()); err == nil {
+		t.Fatal("expected error from unreachable host endpoint")
 	}
 }

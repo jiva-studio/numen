@@ -37,8 +37,8 @@ export function useTree(options: TreeOptions) {
   function getRowHeight(): number {
     const listEl = list.value
     const anyRow = listEl?.querySelector('[data-tree-row]')
-    const height = anyRow ? measureElementRect(anyRow).height : undefined
-    return height && height > 0 ? height : 24
+    const height = anyRow ? measureElementRect(anyRow).height : 0
+    return height > 0 ? height : 24
   }
 
   const layout = useTreeLayout({ box, list, visibleRows, getRowHeight })

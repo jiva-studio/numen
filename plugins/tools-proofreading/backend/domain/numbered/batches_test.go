@@ -208,6 +208,20 @@ func TestSplitBatches_BuildsOnlyRequestedBatches(t *testing.T) {
 	if got := numbers(CutBatches(cues, 4, 1, []int{1})); !reflect.DeepEqual(got, [][]int{{4, 5, 6, 7}}) {
 		t.Errorf("batchesAcrossCuts %v, want the window over the second cut", got)
 	}
+	if got := numbers(CutBatches(cues, 4, 1, []int{-1, 9, 0})); !reflect.DeepEqual(got, [][]int{{1, 2, 3, 4}}) {
+		t.Errorf("batchesAcrossCuts %v, want the valid cut after skipping out-of-range cuts", got)
+	}
+	if got := numbers(CutBatches(cues, 4, 1, []int{0, 0, 1})); !reflect.DeepEqual(got, [][]int{{1, 2, 3, 4}, {4, 5, 6, 7}}) {
+		t.Errorf("batchesAcrossCuts %v, want duplicate cut skipped and later cut kept", got)
+	}
+	if got := numbers(CutBatches(makeTranscript(4), 2, 0, []int{0})); !reflect.DeepEqual(got, [][]int{{1, 2}}) {
+		t.Errorf("size 2 batchesAcrossCuts %v, want {{1, 2}}", got)
+	}
+	for _, overlap := range []int{2, 3} {
+		if got := numbers(CutBatches(makeTranscript(6), 4, overlap, []int{0})); !reflect.DeepEqual(got, [][]int{{0, 1, 2, 3}}) {
+			t.Errorf("overlap %d batchesAcrossCuts %v, want {{0, 1, 2, 3}}", overlap, got)
+		}
+	}
 	if batchesAcrossCuts := CutBatches(cues, 4, 1, nil); batchesAcrossCuts != nil {
 		t.Errorf("no cuts gave back %v", batchesAcrossCuts)
 	}

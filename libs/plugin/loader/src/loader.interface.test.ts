@@ -3,9 +3,8 @@
  * draws after. Every plugin here is invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { PluginContext } from '@numen/plugin-sdk'
-import type { LoaderHost } from './host'
-import { createPluginLoader } from './loader'
+import type { LoaderHost, PluginParts } from './host'
+import { createTestPluginLoader } from './testing/pluginLoader'
 
 const BAR = 'org.example.ledger'
 const TABS = 'org.example.orchard'
@@ -31,7 +30,8 @@ const MANIFESTS: Record<string, unknown> = {
 
 const createHost = () =>
   ({
-    createContext: (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+    createContext: (pluginId: string) =>
+      ({ plugin: { identity: { id: pluginId } }, host: {} }) as unknown as PluginParts,
     disposePlugin: vi.fn<(pluginId: string) => void>(),
     disposeAll: vi.fn(),
   }) satisfies LoaderHost
@@ -42,7 +42,7 @@ const createLoader = (
 ) => {
   const log: string[] = []
   const host = createHost()
-  const loader = createPluginLoader({
+  const loader = createTestPluginLoader({
     host,
     fetch: (async (url: string) => {
       const id = Object.keys(MANIFESTS).find((one) => String(url).includes(`/${one}/`))!

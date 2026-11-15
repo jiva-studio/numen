@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process/processtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/service"
@@ -44,10 +45,10 @@ type fixture struct {
 	web       *httptest.Server
 }
 
-func passages(n, sources int) []hosttest.SearchPassage {
-	out := make([]hosttest.SearchPassage, n)
+func sampledChunks(n, sources int) []hosttest.SampledChunk {
+	out := make([]hosttest.SampledChunk, n)
 	for i := range out {
-		out[i] = hosttest.SearchPassage{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
+		out[i] = hosttest.SampledChunk{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
 	}
 	return out
 }
@@ -67,7 +68,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	search := hosttest.NewSearch("physics", "chemistry")
 	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: hint})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
-	search.SetPassages(modelRecipe, passages(60, 3))
+	search.SetSampledChunks(modelRecipe, sampledChunks(60, 3))
 	search.SetProgress(60, 60)
 
 	vault := hosttest.New("physics")
@@ -80,7 +81,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 		Queue:  queue,
 	}, newFakeClock(getMeasuredAt()), processes.NewClient(t))
 
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount)
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +150,7 @@ func TestTheServiceCalibratesSetsAndReadsTheFloor(t *testing.T) {
 		t.Errorf("calibrated %+v", calibrated)
 	}
 	c := state.Calibration
-	if c == nil || c.QueryCount != 25 || c.PassageCount != 60 || len(c.Histogram) != 20 || c.Histogram[10] != 25*60 ||
+	if c == nil || c.QueryCount != 25 || c.ChunkCount != 60 || len(c.Histogram) != 20 || c.Histogram[10] != 25*60 ||
 		c.CalibratedAt != getMeasuredAt().Unix() {
 		t.Errorf("calibration %+v", c)
 	}
@@ -165,7 +166,7 @@ func TestTheServiceCalibratesSetsAndReadsTheFloor(t *testing.T) {
 		t.Errorf("the host applies %v, want 0.7", stored)
 	}
 
-	f.search.SetPassages(modelRecipe, []hosttest.SearchPassage{{Path: "note-1.md", Vector: []float32{127, 0, 0, 0}}})
+	f.search.SetSampledChunks(modelRecipe, []hosttest.SampledChunk{{Path: "note-1.md", Vector: []float32{127, 0, 0, 0}}})
 	var probe api.ProbeFloorResponse
 	if status, failure := f.call(t, api.MethodProbeFloor, api.ProbeFloorRequest{Query: "entropy"}, &probe); status != http.StatusOK {
 		t.Fatalf("probe: %d %v", status, failure)
@@ -314,7 +315,7 @@ func (q failingQueue) FinishTask(ctx context.Context, id string) error {
 }
 
 func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) {
-	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, service.NewApp().Mount); !errors.Is(err, hostcall.ErrNoHost) {
+	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, service.NewApp().Mount); !errors.Is(err, hostcall.ErrNoHost) {
 		t.Errorf("Mount without host env gave %v, want ErrNoHost", err)
 	}
 
@@ -334,7 +335,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			app := service.NewAppOver(tc.hosts, clk, nil)
-			if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount); err == nil {
+			if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount); err == nil {
 				t.Error("Mount succeeded with incomplete host")
 			}
 		})
@@ -344,7 +345,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	errFinish := errors.New("finish task failed")
 	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: 0.4})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
-	search.SetPassages(modelRecipe, passages(60, 3))
+	search.SetSampledChunks(modelRecipe, sampledChunks(60, 3))
 	search.SetProgress(60, 60)
 	setNotes(vault, 25)
 
@@ -352,7 +353,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, reportErr: errReport},
 	}, clk, nil)
-	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
+	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
 		t.Fatal(err)
 	}
 	search.FailEmbedding(errors.New("embed fail"))
@@ -366,7 +367,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, finishErr: errFinish},
 	}, clk, nil)
-	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
+	if _, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
 		t.Fatal(err)
 	}
 	if err := appFinishFail.HandleEvent(t.Context(), getReadyEvent("physics")); !errors.Is(err, errFinish) {

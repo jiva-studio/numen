@@ -2,7 +2,7 @@
  * How a plugin's note tab reads its note and shows the failures of its writes.
  */
 import type { Ref } from 'vue'
-import type { PluginHostDeps } from './types'
+import type { HostKinds } from './types'
 import type { Caught } from '@numen/plugin-sdk'
 
 const getErrorMessage = (err: Caught): string => (err instanceof Error ? err.message : String(err))
@@ -13,7 +13,7 @@ const getErrorMessage = (err: Caught): string => (err instanceof Error ? err.mes
  */
 export const createNoteWriter = (
   path: string,
-  writeNote: PluginHostDeps['writeNote'],
+  writeNote: HostKinds['writeNote'],
   errorMessage: Ref<string>,
 ): ((body: string) => void) => {
   let writes = 0
@@ -44,7 +44,7 @@ export interface NoteReadState {
   readonly hasEdited: () => boolean
 }
 
-type NoteRead = Awaited<ReturnType<NonNullable<PluginHostDeps['readNote']>>>
+type NoteRead = Awaited<ReturnType<NonNullable<HostKinds['readNote']>>>
 
 const splitRead = (result: NoteRead): { body?: string; error?: string } => {
   if (typeof result === 'string') return { body: result }
@@ -70,7 +70,7 @@ const failRead = (err: Caught, state: NoteReadState): void => {
 /** The body the first read gives, unless the tab was edited while it was in flight. */
 export const startNoteRead = (
   path: string,
-  readNote: NonNullable<PluginHostDeps['readNote']>,
+  readNote: NonNullable<HostKinds['readNote']>,
   state: NoteReadState,
 ): void => {
   readNote(path)

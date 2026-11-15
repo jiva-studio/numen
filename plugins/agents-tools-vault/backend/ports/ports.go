@@ -82,7 +82,7 @@ type TextReader interface {
 	ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (host.TextRange, error)
 }
 
-// PassageSearch searches the passages of the vault index.
-type PassageSearch interface {
-	SearchPassages(ctx context.Context, query host.PassageQuery) ([]host.Passage, error)
+// TextSearch searches the passages of the vault index.
+type TextSearch interface {
+	SearchText(ctx context.Context, query host.SearchResultQuery) ([]host.SearchResult, error)
 }

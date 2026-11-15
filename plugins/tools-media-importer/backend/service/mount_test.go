@@ -3,6 +3,8 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,12 +19,21 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
+func newEnvHandler(t *testing.T, vars map[string]string) (http.Handler, error) {
+	t.Helper()
+	t.Setenv(hostcall.HostPortEnv, "")
+	for name, value := range vars {
+		t.Setenv(name, value)
+	}
+	return servertest.NewHandler(vars, MountFromEnv)
+}
+
 // The handler a host that links the plugin in answers the importer API with the token it was
 // given, and rejects a call without it.
 func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_HOST_PORT": "1"})
+	handler, err := newEnvHandler(t, map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_HOST_PORT": "1"})
 	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
+		t.Fatalf("Mount: %v", err)
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
@@ -64,11 +75,11 @@ func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 		t.Errorf("a file that is no note is answered %d %+v, want 404 not_found", status, failure)
 	}
 
-	if _, err := NewHandler(map[string]string{}); err == nil {
-		t.Error("NewHandler with empty vars succeeded")
+	if _, err := newEnvHandler(t, map[string]string{}); err == nil {
+		t.Error("Mount with empty vars succeeded")
 	}
-	if _, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"}); err == nil {
-		t.Error("NewHandler without host port succeeded")
+	if _, err := newEnvHandler(t, map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"}); err == nil {
+		t.Error("Mount without host port succeeded")
 	}
 }
 
@@ -160,14 +171,14 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 		t.Fatalf("GetLink after Configure = %+v (%v), want IsCopyable=true", afterLink, err)
 	}
 
-	// Verify NewHandler forwards the mock variable == "true" vs "false".
-	mockHandler, err := NewHandler(map[string]string{
+	// Verify Mount forwards the mock variable == "true" vs "false".
+	mockHandler, err := newEnvHandler(t, map[string]string{
 		"NUMEN_PLUGIN_TOKEN":          "tok",
 		"NUMEN_HOST_PORT":             "1",
 		environment.MockModelVariable: "true",
 	})
 	if err != nil || mockHandler == nil {
-		t.Fatalf("NewHandler(mock): %v", err)
+		t.Fatalf("Mount(mock): %v", err)
 	}
 }
 

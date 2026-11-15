@@ -33,8 +33,8 @@ const create = (
   const { writeOpenTabs } = coreCalls
   const tabs = ref(entries.map(({ id, title }) => ({ id, title })))
   const windowTabs = {
-    groups: {
-      handle: { front: () => front },
+    handle: { front: () => front },
+    kinds: {
       findKind: (isWanted: (kind: { kind: string }) => boolean) =>
         entries
           .map((one) => ({ kind: one.kind ?? 'note', display: { icon: one.icon } }))
@@ -210,7 +210,7 @@ describe('the open tabs', () => {
     })
     const tabs = ref([{ id: 'a', title: 'A' }])
     const windowTabs = {
-      groups: { handle: { front: () => null } },
+      handle: { front: () => null },
       tabs: {
         tabs,
         getTab: (id: string) => ({
@@ -254,7 +254,7 @@ describe('the open tabs', () => {
     coreCalls.writeOpenTabs.mockRejectedValue(new Error('down'))
     const rejecting = {
       windowTabs: {
-        groups: { handle: { front: () => null } },
+        handle: { front: () => null },
         tabs: { tabs: ref([]), getTab: () => undefined },
       },
       writeMessage: vi.fn(),

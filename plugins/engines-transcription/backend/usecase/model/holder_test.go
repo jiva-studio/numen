@@ -65,4 +65,7 @@ func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 	if _, err := failModels.GetRecognizer(t.Context()); !errors.Is(err, errOpen) {
 		t.Fatalf("expected errOpen, got %v", err)
 	}
+	if err := failModels.Close(); err != nil {
+		t.Fatalf("expected Close on unopened holder to return nil, got %v", err)
+	}
 }

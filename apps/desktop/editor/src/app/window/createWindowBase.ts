@@ -3,41 +3,69 @@
  * settings of the window and the commands of the features.
  */
 import { measureTabs } from '@/entities/tab'
+import { createTargetResolver } from '@/features/command-target'
 import { createWindowSettings } from '@/features/settings-commands'
 import { createTabCommandsDeps } from '@/features/tab-commands'
-import { createTargetResolver } from '@/features/window-display'
 import { WORDS as words } from '@/shared/ui/words'
 import { collectFeatureCommands } from './createFeatureCommands'
 import { createTabsPart } from './createTabsPart'
 import { createVaultServices } from './createVaultServices'
 import { createWindowFoundation } from './createWindowFoundation'
+import type { WindowApi } from './createWindowApi'
 import { createWindowTabParts } from './createWindowTabParts'
 
-export function createWindowBase() {
-  const foundation = createWindowFoundation()
-  const { log, rest, writeMessage, status, registry, settingsRequests } = foundation
+export function createWindowBase(api: WindowApi) {
+  const foundation = createWindowFoundation(api)
+  const { log, rest, status, registry, settingsRequests } = foundation
+  const writeMessage = log.getWriter('command')
   const tabs = createTabsPart({
+    api,
     writeMessage,
     rest,
     status,
     openPluginSettings: (pluginId) => settingsRequests.emit({ pluginId }),
   })
   const { windowTabs, windowId, tabOpeners, tabLinks } = tabs
-  const vault = createVaultServices({ log, windowTabs, tabOpeners, navigation: tabs.navigation })
+  const vault = createVaultServices({
+    api,
+    log,
+    windowTabs,
+    tabOpeners,
+    navigation: tabs.navigation,
+  })
   const { editing, notes, window, vaults, itemLists } = vault
-  const tabParts = createWindowTabParts({ windowTabs, windowId, notes, writeMessage })
+  const tabParts = createWindowTabParts({
+    api: api.tabs,
+    windowTabs,
+    windowId,
+    notes,
+    writeMessage,
+  })
   const features = collectFeatureCommands(
     {
-      notes: { making: editing.making, notes, navigator: vault.navigator, writeMessage },
-      files: { notes, writeMessage },
+      notes: {
+        files: api.vault.file,
+        renameNote: api.vault.note.renameNote,
+        making: editing.making,
+        notes,
+        navigator: vault.navigator,
+        writeMessage,
+      },
+      files: { files: api.vault.file, notes, writeMessage },
       vaults: {
+        vaults: api.vault.vaults,
+        emptyTrash: api.vault.file.emptyTrash,
         tabsHold: tabParts.openTabs,
         setVaultName: vaults.setVaultName,
         reload: vaults.reload,
         writeMessage,
       },
       tabs: createTabCommandsDeps({ tabLinks, windowTabs, moves: tabParts.moves }),
-      versions: { listItems: itemLists.listItems, writeMessage },
+      versions: {
+        runDeclaredHandler: api.plugins.declaredCommands.runDeclaredHandler,
+        listItems: itemLists.listItems,
+        writeMessage,
+      },
     },
     words,
   )
@@ -48,8 +76,10 @@ export function createWindowBase() {
     vault,
     tabParts,
     appCommands: features.commands,
-    getTarget: createTargetResolver(windowTabs, vaults, window),
+    getTarget: createTargetResolver(windowTabs, vaults, window.health),
     windowSettings: createWindowSettings({
+      themes: api.configuration.themes,
+      watchSettings: api.configuration.settings.watchSettings,
       rest,
       connections: foundation.connections,
       words,

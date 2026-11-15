@@ -32,8 +32,8 @@ func TestCardToolsHelpersAndBounds(t *testing.T) {
 		t.Fatalf("unexpected WriteOutcome: %+v", out)
 	}
 
-	parsed, err := parseFingerprint("123-456")
-	if err != nil || parsed.Size != 123 || parsed.ModTime.UnixNano() != 456 {
+	parsed, err := parseFingerprint("9223372036854775807-9223372036854775807")
+	if err != nil || parsed.Size != 9223372036854775807 || parsed.ModTime.UnixNano() != 9223372036854775807 {
 		t.Fatalf("unexpected parsed stat: %+v, err: %v", parsed, err)
 	}
 	for _, invalid := range []string{"", "nohyphen", "bad-456", "123-bad"} {
@@ -42,6 +42,17 @@ func TestCardToolsHelpersAndBounds(t *testing.T) {
 		}
 	}
 
+	for outcome, want := range map[edit.ReadOutcome]api.ErrorCode{
+		edit.Missing:    api.ErrorCodeNotFound,
+		edit.NotANote:   api.ErrorCodeNotANote,
+		edit.NotText:    api.ErrorCodeNotText,
+		edit.TooLarge:   api.ErrorCodeTooLarge,
+		edit.Unreadable: api.ErrorCodeUnreadable,
+	} {
+		if code, ok := convertOutcomeToErrorCode(outcome); !ok || code != want {
+			t.Fatalf("expected %v -> %v/true, got %v/%v", outcome, want, code, ok)
+		}
+	}
 	if code, ok := convertOutcomeToErrorCode(edit.Ok); ok || code != api.ErrorCodeUnspecified {
 		t.Fatalf("expected Ok -> Unspecified/false, got %v/%v", code, ok)
 	}

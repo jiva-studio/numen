@@ -88,7 +88,7 @@ func Notes(c Config, db *Index, index edit.IndexUpdater) NoteUseCases {
 }
 
 // Queries builds everything that answers a question about the notes of a vault.
-func Queries(db *Index) query.Scenarios {
+func Queries(db *Index) query.UseCases {
 	return vaultQueries(db)
 }
 

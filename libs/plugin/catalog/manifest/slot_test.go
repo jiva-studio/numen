@@ -22,14 +22,19 @@ func TestAManifestPlacesCommandsViewsAndSubmenusInSlots(t *testing.T) {
 		{"slot": "titleBar.status", "view": "balance"},
 		{"slot": "fileTree.context", "submenu": "ledger.new", "title": "New", "icon": "plus", "group": "0-new"},
 		{"slot": "ledger.new", "command": "ledger.sum", "order": 0},
-		{"slot": "otherPlugin.menu", "command": "app:note.create"}
+		{"slot": "otherPlugin.menu", "command": "app:note.create"},
+		{"slot": "titleBar.commands", "command": "ledger.sum"},
+		{"slot": "titleBar.status", "view": "summary"},
+		{"slot": "fileTree.context", "submenu": "ledger.export", "title": "Export"},
+		{"slot": "titleBar", "view": "bar"},
+		{"slot": "titleBar", "command": "ledger.open"}
 	]`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	slots := parsed.Contributes.Slots
-	if len(slots) != 5 {
+	if len(slots) != 10 {
 		t.Fatalf("the slots came out as %+v", slots)
 	}
 	if one := slots[0]; one.Slot != "titleBar.commands" || one.Command != "ledger.open" || one.Group != "navigate" || one.Order == nil || *one.Order != 10 {
@@ -142,6 +147,9 @@ func TestASlotEntryWithValuesThatBreakARuleIsAnInvalidSlotEntry(t *testing.T) {
 		if !errors.Is(err, manifest.ErrInvalidSlotEntry) {
 			t.Errorf("%s: error = %v, want an invalid slot entry", name, err)
 		}
+		if name == "an argument the command does not declare" && !hasWrappedCause(err, manifest.ErrInvalidSlotEntry) {
+			t.Errorf("%s: error = %v, expected wrapped value issue", name, err)
+		}
 	}
 }
 
@@ -157,6 +165,7 @@ func TestAValueForACommandOfTheWindowIsCheckedAgainstTheRegistry(t *testing.T) {
 	valid := []string{
 		`[{"slot":"titleBar.commands","command":"app:file.open","values":{"placement":"split"}}]`,
 		`[{"slot":"titleBar.commands","command":"app:file.reveal","values":{"kind":"atlas"}}]`,
+		`[{"slot":"titleBar.commands","command":"app:settings.open","values":{"plugin":"a.b","setting":"mode"}}]`,
 		`[{"slot":"titleBar.commands","command":"org.example.harbor:harbor.open","values":{"any":"thing"}}]`,
 		`[{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"current"}},{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"split"}}]`,
 	}

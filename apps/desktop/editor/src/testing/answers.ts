@@ -15,7 +15,7 @@ interface MockVaultState {
   detachError: string
   opening: string | null
   names: ReturnType<typeof nameAnswer>[]
-  passages: (ReturnType<typeof passageAnswer> | ReturnType<typeof sourceAnswer>)[]
+  searchResults: (ReturnType<typeof searchResultAnswer> | ReturnType<typeof sourceAnswer>)[]
   savedTabs: { readonly tabs: readonly Tab[]; readonly activeId: string }
   detachedTab: Tab | null
   types: Record<string, string>
@@ -37,7 +37,7 @@ export const mockVaultState: MockVaultState = {
   opening: 'Root.md',
   names: [],
   /** The passages the search answers with. */
-  passages: [],
+  searchResults: [],
   /** The open tabs the core kept from before the window started. */
   savedTabs: { tabs: [], activeId: '' },
   /** The tab that readDetachedTab returns for its id. */
@@ -194,13 +194,13 @@ export const nameAnswer = (path: string, title: string, type: string = 'note') =
 })
 
 /** One passage the search answers with, read out of a note of some kind, as the core sends it. */
-export const passageAnswer = (path: string, title: string, type: string = 'note') => ({
+export const searchResultAnswer = (path: string, title: string, type: string = 'note') => ({
   path,
   note: { path, title },
   text: 'what it says',
-  range: { start: 0, end: 4 },
-  line: 3,
-  ranges: [] as [],
+  byteRange: { start: 0, end: 4 },
+  matchLine: 3,
+  matchRanges: [] as [],
   type,
   ...(type === 'note' ? {} : { tabKind: type }),
   selector: '',
@@ -210,9 +210,9 @@ export const passageAnswer = (path: string, title: string, type: string = 'note'
 export const sourceAnswer = (path: string, selector: JsonObject) => ({
   path,
   text: 'what it says',
-  range: { start: 0, end: 4 },
-  line: 3,
-  ranges: [] as [],
+  byteRange: { start: 0, end: 4 },
+  matchLine: 3,
+  matchRanges: [] as [],
   type: 'note',
   selector: JSON.stringify(selector),
 })
@@ -222,7 +222,7 @@ export const forgetAnswers = () => {
   mockVaultState.isReady = true
   mockVaultState.opening = 'Root.md'
   mockVaultState.names = []
-  mockVaultState.passages = []
+  mockVaultState.searchResults = []
   mockVaultState.savedTabs = { tabs: [], activeId: '' }
   mockVaultState.detachedTab = null
   mockVaultState.types = {}

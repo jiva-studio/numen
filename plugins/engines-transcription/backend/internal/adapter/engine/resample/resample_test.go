@@ -92,6 +92,9 @@ func TestResampleEdgeCasesAndKernel(t *testing.T) {
 	if out, err := Convert(ctx, sample, 1, 2, 1); err != nil || len(out) != 4 {
 		t.Errorf("Convert(from=1, to=2) = len %d, %v, want 4", len(out), err)
 	}
+	if out, err := Convert(ctx, nil, 48000, 16000, 1); err != nil || out != nil {
+		t.Errorf("Convert(nil) = %v, %v, want nil", out, err)
+	}
 	if out, err := Convert(ctx, []float32{}, 48000, 16000, 1); err != nil || len(out) != 0 {
 		t.Errorf("Convert(empty) = %v, %v", out, err)
 	}
@@ -101,8 +104,8 @@ func TestResampleEdgeCasesAndKernel(t *testing.T) {
 
 	canceled, cancel := context.WithCancel(ctx)
 	cancel()
-	if out, err := Convert(canceled, []float32{1}, 16000, 8000, 1); err != nil || len(out) != 0 {
-		t.Errorf("Convert(out len=0, canceled) = %v, %v, want empty nil", out, err)
+	if out, err := Convert(canceled, []float32{1}, 16000, 8000, 1); err != nil || out == nil || len(out) != 0 {
+		t.Errorf("Convert(out len=0, canceled) = %v, %v, want empty non-nil", out, err)
 	}
 	if out, err := Convert(ctx, []float32{5}, 8000, 8001, 1); err != nil || len(out) != 1 || out[0] != 5 {
 		t.Errorf("Convert(out len=1) = %v, %v, want [5]", out, err)

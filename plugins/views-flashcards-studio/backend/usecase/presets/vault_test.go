@@ -27,11 +27,27 @@ func getVault() map[string]string {
 	}
 }
 
+// presetUseCases is the use cases of the presets, made over one set of collaborators.
+type presetUseCases struct {
+	Read       presets.Read
+	GetForDeck presets.GetForDeck
+	List       presets.List
+	Point      presets.Point
+	Save       presets.Save
+}
+
+func createPresetUseCases(cfg presets.Config) presetUseCases {
+	return presetUseCases{
+		Read: presets.NewRead(cfg), GetForDeck: presets.NewGetForDeck(cfg), List: presets.NewList(cfg),
+		Point: presets.NewPoint(cfg), Save: presets.NewSave(cfg),
+	}
+}
+
 // vaulted is one vault on disk, and the presets built over it.
 type vaulted struct {
 	vault   domain.Vault
 	env     vaulttest.Env
-	presets presets.Presets
+	presets presetUseCases
 	notes   vaulttest.Queries
 	links   ports.LinkQueries
 	scan    func(ctx context.Context, v domain.Vault, paths []string) error
@@ -45,7 +61,7 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 		return nil
 	}
 
-	deckPresets := presets.New(presets.Config{
+	deckPresets := createPresetUseCases(presets.Config{
 		Readers:  env.Ports.Readers,
 		Writers:  env.Ports.Writers,
 		Links:    env.Queries,

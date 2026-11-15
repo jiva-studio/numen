@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -139,8 +140,8 @@ func TestAnIndexThatIsNotJSONIsAnError(t *testing.T) {
 
 	// Directory as index path causes os.ReadFile error != ErrNotExist
 	dirSource := indexsource.New([]string{dir}, nil)
-	if _, dirErr := dirSource.List(t.Context()); dirErr == nil {
-		t.Error("expected error when index path is a directory")
+	if _, dirErr := dirSource.List(t.Context()); dirErr == nil || !strings.Contains(dirErr.Error(), "read the plugin index:") || errors.Unwrap(dirErr) == nil {
+		t.Errorf("expected wrapped read error when index path is a directory, got %v", dirErr)
 	}
 
 	// Fallback folders with multiple invalid plugins

@@ -23,22 +23,21 @@ const lockPollInterval = 20 * time.Millisecond
 // errLocked is returned by tryLockFile while another handle has the lock.
 var errLocked = errors.New("the file is locked")
 
-func (s *Store) changeEntries(ctx context.Context, work func() error) (err error) {
+func (s *Store) changeEntries(ctx context.Context, work func() error) error {
 	select {
 	case s.writer <- struct{}{}:
 	case <-ctx.Done():
 		return ctx.Err()
 	}
 	defer func() { <-s.writer }()
-	if err := os.MkdirAll(s.dir, 0o700); err != nil {
+	if err := os.MkdirAll(s.dir, credentialsDirPerm); err != nil {
 		return fmt.Errorf("lock the credentials file: %w", err)
 	}
 	file, err := lockFile(ctx, s.wait, filepath.Join(s.dir, credentialsFile+lockSuffix))
 	if err != nil {
 		return fmt.Errorf("lock the credentials file: %w", err)
 	}
-	defer func() { err = errors.Join(err, file.Close()) }()
-	return work()
+	return errors.Join(work(), file.Close())
 }
 
 func lockFile(ctx context.Context, wait machine.Wait, path string) (*os.File, error) {
@@ -46,16 +45,19 @@ func lockFile(ctx context.Context, wait machine.Wait, path string) (*os.File, er
 	if err != nil {
 		return nil, err
 	}
+	if err := acquireLock(ctx, wait, file); err != nil {
+		return nil, errors.Join(err, file.Close())
+	}
+	return file, nil
+}
+
+func acquireLock(ctx context.Context, wait machine.Wait, file *os.File) error {
 	for {
-		err := tryLockFile(file)
-		if err == nil {
-			return file, nil
-		}
-		if !errors.Is(err, errLocked) {
-			return nil, errors.Join(err, file.Close())
+		if err := tryLockFile(file); !errors.Is(err, errLocked) {
+			return err
 		}
 		if err := wait(ctx, lockPollInterval); err != nil {
-			return nil, errors.Join(err, file.Close())
+			return err
 		}
 	}
 }

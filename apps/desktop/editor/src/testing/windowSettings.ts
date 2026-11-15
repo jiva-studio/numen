@@ -3,6 +3,7 @@
  * read, and the settings tab.
  */
 import { shallowRef } from 'vue'
+import type { WindowApi } from '@/app/window/createWindowApi'
 import { createConnectionStore, type ConnectionStore } from '@/entities/connection'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
@@ -13,32 +14,52 @@ import type { MessageLog } from '@/shared/model/notices/messages'
 type PageDeps = Parameters<typeof createSettingsPage>[0]
 
 export interface WindowSettingsDeps {
+  readonly api: WindowApi
   readonly rest: SettingsStore
   readonly connections?: ConnectionStore
   readonly words: Parameters<typeof createWindowSettings>[0]['words']
   readonly log: MessageLog
   readonly windowTabs: WindowTabs
   readonly onSizeChanged: () => void
-  readonly getSettingsViews: PageDeps['getSettingsViews']
+  readonly getSettingsViews: PageDeps['plugins']['getSettingsViews']
   readonly getPlatform: PageDeps['getPlatform']
-  readonly health?: PageDeps['health']
+  readonly health?: PageDeps['plugins']['health']
 }
 
 export function createWindowSettingsPart(deps: WindowSettingsDeps) {
-  const { rest, words, log, onSizeChanged } = deps
-  const connections = deps.connections ?? createConnectionStore(log.getWriter('connections'))
-  const windowSettings = createWindowSettings({ rest, connections, words, log, onSizeChanged })
+  const { api, rest, words, log, onSizeChanged } = deps
+  const { configuration } = api
+  const connections =
+    deps.connections ??
+    createConnectionStore(configuration.connection, log.getWriter('connections'))
+  const windowSettings = createWindowSettings({
+    themes: configuration.themes,
+    watchSettings: configuration.settings.watchSettings,
+    rest,
+    connections,
+    words,
+    log,
+    onSizeChanged,
+  })
   const page = createSettingsPage({
+    api: {
+      settings: configuration.settings,
+      listFiles: api.vault.file.listFiles,
+      listCatalog: api.plugins.listCatalog,
+      listRowOptions: configuration.connection.listRowOptions,
+    },
     rest,
     connections,
     appearance: windowSettings.appearance,
     log,
     windowTabs: deps.windowTabs,
-    getSettingsViews: deps.getSettingsViews,
     getPlatform: deps.getPlatform,
-    health: deps.health ?? {
-      items: shallowRef([]),
-      commands: { getIds: () => [], run: () => Promise.resolve('') },
+    plugins: {
+      getSettingsViews: deps.getSettingsViews,
+      health: deps.health ?? {
+        items: shallowRef([]),
+        commands: { getIds: () => [], run: () => Promise.resolve('') },
+      },
     },
   })
   return {

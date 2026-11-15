@@ -6,13 +6,12 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"connectrpc.com/connect"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func (e *cacheCalls) ReadCache(
 	ctx context.Context, req *connect.Request[v1.ReadCacheRequest],
 ) (*connect.Response[v1.ReadCacheResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	pluginID, vault, err := e.beginOwnData(req.Header())
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +29,7 @@ func (e *cacheCalls) ReadCache(
 func (e *cacheCalls) WriteCache(
 	ctx context.Context, req *connect.Request[v1.WriteCacheRequest],
 ) (*connect.Response[v1.WriteCacheResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
+	pluginID, vault, err := e.beginOwnData(req.Header())
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -31,7 +33,7 @@ func (c counter) Execute(context.Context, domain.Vault) (flashcards.CardsDue, er
 
 func TestCountReportsAVaultStillBeingIndexedWithoutCountingIt(t *testing.T) {
 	got := vaultcount.Count(t.Context(), indexer{state: host.IndexState{Status: host.Indexing}}, counter{err: errors.New("unreached")}, domain.Vault{ID: "a"})
-	if !got.IsIndexing || got.Unread != "" {
+	if !got.IsIndexing || got.Unread != "" || got.Counts.ReviewCards != 0 || got.Counts.Due != 0 || got.Counts.New != 0 {
 		t.Errorf("a vault being indexed came back as %+v", got)
 	}
 }
@@ -70,6 +72,44 @@ func TestStartCountsEveryVaultAndThenCloses(t *testing.T) {
 	slices.Sort(seen)
 	if !slices.Equal(seen, []string{"a", "b", "c", "d", "e", "f", "g"}) {
 		t.Errorf("counted %v", seen)
+	}
+}
+
+func TestStartBoundsConcurrencyToFour(t *testing.T) {
+	var vaults []domain.Vault
+	for _, id := range []domain.VaultID{"a", "b", "c", "d", "e"} {
+		vaults = append(vaults, domain.Vault{ID: id})
+	}
+	var inFlight atomic.Int32
+	var maxInFlight atomic.Int32
+	fourEntered := make(chan struct{})
+	release := make(chan struct{})
+	var closeOnce sync.Once
+
+	counted := vaultcount.Start(t.Context(), vaults, func(_ context.Context, v domain.Vault) string {
+		cur := inFlight.Add(1)
+		for {
+			prev := maxInFlight.Load()
+			if cur <= prev || maxInFlight.CompareAndSwap(prev, cur) {
+				break
+			}
+		}
+		if cur == 4 {
+			closeOnce.Do(func() { close(fourEntered) })
+		}
+		<-release
+		inFlight.Add(-1)
+		return string(v.ID)
+	})
+	<-fourEntered
+	if got := inFlight.Load(); got != 4 {
+		t.Fatalf("inFlight when fourth worker entered = %d, want 4", got)
+	}
+	close(release)
+	for range counted {
+	}
+	if got := maxInFlight.Load(); got != 4 {
+		t.Fatalf("maxInFlight = %d, want 4", got)
 	}
 }
 
