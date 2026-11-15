@@ -11,6 +11,7 @@ import (
 	"github.com/tetratelabs/wazero"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
@@ -31,8 +32,9 @@ func newCompilationCache() wazero.CompilationCache {
 	return wasm.NewCompilationCache(dir)
 }
 
-// New starts one worker for each processor and warms them up. afterFunc sets the timers that
-// release idle workers.
+// New starts one worker for each processor and warms them up, keeping as many returned workers alive
+// as the default performance profile allows threads. afterFunc sets the timers that release idle
+// workers.
 func New(afterFunc func(time.Duration, func()) pdf.Timer) *pdf.Workers {
 	workers := pdf.NewWorkers(pdf.Options{
 		Report: ReportError,
@@ -40,9 +42,18 @@ func New(afterFunc func(time.Duration, func()) pdf.Timer) *pdf.Workers {
 		CompilationCache: newCompilationCache(),
 		AfterFunc:        afterFunc,
 		Workers:          runtime.NumCPU(),
-		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="idle worker count is bounded between 2 and 4"
-		IdleWorkers: max(2, min(runtime.NumCPU(), 4)),
+		IdleWorkers:      getIdleWorkers(performance.Read(nil), runtime.NumCPU()),
 	})
 	go workers.Warmup()
 	return workers
+}
+
+// Configure keeps as many returned workers alive as the performance profile in the values of a
+// Configure call allows threads.
+func Configure(workers *pdf.Workers, values map[string]string) {
+	workers.SetIdleWorkers(getIdleWorkers(performance.Read(values), runtime.NumCPU()))
+}
+
+func getIdleWorkers(profile performance.Profile, cpus int) int {
+	return performance.Resolve(profile, cpus).Threads
 }

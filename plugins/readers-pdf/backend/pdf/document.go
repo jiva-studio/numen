@@ -48,6 +48,7 @@ type Workers struct {
 	idleRelease time.Duration
 	compilation wazero.CompilationCache
 	report      func(what string, err error)
+	isStale     bool
 }
 
 // Options is what a pool is made from.
@@ -65,7 +66,7 @@ func NewWorkers(options Options) *Workers {
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="NewWorkers initializes pool counters to zero"
 		mu: sync.Mutex{}, pool: nil, size: options.Workers, idle: max(options.IdleWorkers, 0), open: 0, isWarmed: false,
 		release: nil, afterFunc: options.AfterFunc, idleRelease: defaultIdleRelease,
-		compilation: options.CompilationCache, report: options.Report,
+		compilation: options.CompilationCache, report: options.Report, isStale: false,
 	}
 }
 
@@ -89,30 +90,6 @@ func (w *Workers) getRuntimeConfig() wazero.RuntimeConfig {
 // memory for as long as it lives.
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="defaultIdleRelease is the timeout before unused workers are released"
 const defaultIdleRelease = 5 * time.Minute
-
-// idleMemoryPercent is the share of the available memory the idle workers may
-// hold together.
-// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="idleMemoryPercent is the 5 percent memory cap for idle workers"
-const idleMemoryPercent = 5
-
-// workerBytes is the memory one worker holds after reading a document: the
-// linear memory of a freshly instantiated pdfium module plus space for the
-// document's working set.
-// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="workerBytes is the 32 megabyte working set estimate per worker"
-const workerBytes int64 = 32 << 20
-
-// ComputeIdleWorkers is how many returned workers to keep alive: the planned
-// worker count, capped to what fits in idleMemoryPercent of the available
-// memory. Zero when the available memory is unknown.
-func ComputeIdleWorkers(planned int, availableBytes int64) int {
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT,EXPRESSION_REMOVE reason="non-positive planned count or available memory yields zero idle workers"
-	if planned <= 0 || availableBytes <= 0 {
-		return 0
-	}
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="100 computes the percentage of available memory"
-	fits := availableBytes / 100 * idleMemoryPercent / workerBytes
-	return int(min(int64(planned), fits))
-}
 
 // minWorkers is the fewest workers the pool starts: a reader and the reader
 // beside it each hold one document.
@@ -190,6 +167,10 @@ func (w *Workers) markDocumentClosed() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.open--
+	if w.open == 0 && w.isStale && w.pool != nil {
+		w.closePoolLocked()
+		return
+	}
 	// gomutants:disable-next-line EXPRESSION_REMOVE,INVERT_LOGICAL,INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="markDocumentClosed only arms the idle release timer when no documents remain open and idle workers are kept"
 	if w.open > 0 || w.pool == nil || w.idle == 0 {
 		return
@@ -210,16 +191,42 @@ func (w *Workers) releasePool() {
 	if w.open > 0 || w.pool == nil {
 		return
 	}
-	// gomutants:disable-next-line STATEMENT_REMOVE,CONDITIONALS_NEGATION,BRANCH_IF reason="releasePool closes idle workers pool and logs any failure"
+	w.closePoolLocked()
+}
+
+func (w *Workers) closePoolLocked() {
+	// gomutants:disable-next-line STATEMENT_REMOVE,CONDITIONALS_NEGATION,BRANCH_IF reason="closePoolLocked closes idle workers pool and logs any failure"
 	if err := w.pool.Close(); err != nil {
 		w.reportError("close the worker pool", err)
 	}
 	w.pool = nil
+	w.isStale = false
 	if w.release != nil {
-		// gomutants:disable-next-line STATEMENT_REMOVE reason="releasePool cancels any pending timer when closing pool"
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="closePoolLocked cancels any pending timer when closing pool"
 		w.release.Stop()
 		w.release = nil
 	}
+}
+
+// SetIdleWorkers sets how many returned workers the pool keeps alive. A pool that runs keeps its size
+// while a document is open on it: it is closed once none is, and the next document starts a pool of
+// the new size.
+func (w *Workers) SetIdleWorkers(idle int) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	idle = max(idle, 0)
+	if idle == w.idle {
+		return
+	}
+	w.idle = idle
+	if w.pool == nil {
+		return
+	}
+	if w.open > 0 {
+		w.isStale = true
+		return
+	}
+	w.closePoolLocked()
 }
 
 // Close closes the pool and every worker in it, whether or not a document is open on it. A later
@@ -236,6 +243,7 @@ func (w *Workers) Close() error {
 	}
 	err := w.pool.Close()
 	w.pool = nil
+	w.isStale = false
 	return err
 }
 

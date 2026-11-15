@@ -9,34 +9,6 @@ import (
 	"time"
 )
 
-func TestTheIdleWorkersFitTheAvailableMemory(t *testing.T) {
-	const mb = int64(1 << 20)
-	cases := []struct {
-		name      string
-		planned   int
-		available int64
-		want      int
-	}{
-		{"a small laptop is capped by memory", 4, 2048 * mb, 3},
-		{"a desktop is capped by the plan", 6, 16 * 1024 * mb, 6},
-		{"a server is capped by the plan", 32, 64 * 1024 * mb, 32},
-		{"unknown memory keeps none", 8, 0, 0},
-		{"no plan keeps none", 0, 16 * 1024 * mb, 0},
-		{"negative plan keeps none", -1, 2048 * mb, 0},
-		{"negative memory keeps none", 4, -1, 0},
-		{"one planned worker with minimal fitting memory", 1, 700 * mb, 1},
-		{"one planned worker with 1 byte of memory", 1, 1, 0},
-	}
-	for _, c := range cases {
-		if got := ComputeIdleWorkers(c.planned, c.available); got != c.want {
-			t.Errorf("%s: %d idle workers, want %d", c.name, got, c.want)
-		}
-	}
-	if got := ComputeIdleWorkers(4, 2048*mb); got < 1 || got >= 4 {
-		t.Errorf("a small laptop keeps %d idle workers, want fewer than planned but some", got)
-	}
-}
-
 func startIdlePool(t *testing.T, idle int, period time.Duration) *Workers {
 	t.Helper()
 	workers := NewWorkers(Options{
@@ -223,5 +195,65 @@ func TestAcquiringDocumentCancelsPendingIdleRelease(t *testing.T) {
 	workers.mu.Unlock()
 	if !timerStopped {
 		t.Error("expected release timer to be canceled and cleared upon acquiring document")
+	}
+}
+
+func getIdleCount(workers *Workers) int {
+	workers.mu.Lock()
+	defer workers.mu.Unlock()
+	return workers.idle
+}
+
+func TestANewIdleCountClosesThePoolOnceTheLastDocumentCloses(t *testing.T) {
+	workers := startIdlePool(t, 1, time.Hour)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	workers.SetIdleWorkers(3)
+	if !hasPool(workers) {
+		closeAndCheck(t, doc)
+		t.Fatal("the pool was closed while a document was open on it")
+	}
+	closeAndCheck(t, doc)
+	if hasPool(workers) {
+		t.Fatal("the pool of the old idle count is kept after the last document closed")
+	}
+	if got := getIdleCount(workers); got != 3 {
+		t.Errorf("the pool keeps %d idle workers, want 3", got)
+	}
+	again, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeAndCheck(t, again)
+	if !hasPool(workers) {
+		t.Error("the pool of the new idle count closed with its document")
+	}
+}
+
+func TestANewIdleCountClosesAPoolNoDocumentIsOpenOn(t *testing.T) {
+	workers := startIdlePool(t, 2, time.Hour)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeAndCheck(t, doc)
+	workers.SetIdleWorkers(1)
+	if hasPool(workers) {
+		t.Fatal("the idle pool of the old count is kept")
+	}
+}
+
+func TestTheSameIdleCountKeepsThePool(t *testing.T) {
+	workers := startIdlePool(t, 2, time.Hour)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closeAndCheck(t, doc)
+	workers.SetIdleWorkers(2)
+	if !hasPool(workers) {
+		t.Fatal("the pool was closed for an idle count it already had")
 	}
 }
