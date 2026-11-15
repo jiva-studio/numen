@@ -7,6 +7,7 @@
 //
 // Cutting is deterministic and either produces a file's chunks or leaves the
 // file without them. It keeps no record of its own progress: pending work is
-// derived from the data, so a source with no small chunk needs a cut. Embedding the
-// chunks is the use case of vectors.
+// derived from the data, so a source with no small chunk needs a cut, unless it is a file
+// with no text version, which is recorded under the recipe with no content hash. Embedding
+// the chunks is the use case of vectors.
 package filetext

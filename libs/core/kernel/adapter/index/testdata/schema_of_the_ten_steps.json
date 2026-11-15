@@ -167,7 +167,7 @@
   {
     "kind": "table",
     "name": "file_changes",
-    "body": "CREATE TABLE file_changes (\n    vault_id    INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,\n    source_id   INTEGER NOT NULL,\n    event       TEXT NOT NULL,\n    seq         INTEGER NOT NULL,\n    change_time INTEGER NOT NULL,\n\n    PRIMARY KEY (vault_id, source_id, event)\n) WITHOUT ROWID"
+    "body": "CREATE TABLE file_changes (\n    vault_id    INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,\n    source_id   INTEGER NOT NULL,\n    event       TEXT NOT NULL,\n    seq         INTEGER NOT NULL,\n    change_time INTEGER NOT NULL, path TEXT NOT NULL DEFAULT '',\n\n    PRIMARY KEY (vault_id, source_id, event)\n) WITHOUT ROWID"
   },
   {
     "kind": "table",

@@ -23,3 +23,23 @@ func ReadIndexChangedEvent(event string) (string, bool) {
 	}
 	return vaultID, true
 }
+
+// filesChangedPrefix starts the event the host emits when the index wrote changes into the file change feed of a vault.
+const filesChangedPrefix = "onFilesChanged:"
+
+// GetFilesChangedEvent is the event the host emits to plugins after a write of the index stored changes in the
+// file change feed of the vault of the given identity. The host emits it once the write is committed, so the
+// changes are readable through ListFileChanges; several writes close together are one event.
+func GetFilesChangedEvent(vaultID string) string {
+	return filesChangedPrefix + vaultID
+}
+
+// ReadFilesChangedEvent returns the identity of the vault that a files-changed event names, and false for any
+// other event.
+func ReadFilesChangedEvent(event string) (string, bool) {
+	vaultID, found := strings.CutPrefix(event, filesChangedPrefix)
+	if !found || vaultID == "" {
+		return "", false
+	}
+	return vaultID, true
+}

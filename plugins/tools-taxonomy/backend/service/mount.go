@@ -1,11 +1,10 @@
 // Package service is the backend of the tags plugin: it builds the host clients and the cache of the
-// tags, and registers the command that updates the tags of notes and the tool tag_list.
+// tags, registers the tool tag_list, and brings the tags up to date on each onFilesChanged event.
 package service
 
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
@@ -15,72 +14,63 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
-// UpdateCommand is the command that brings the tags of the vault up to date with its file change feed.
-// A trigger on note.frontmatterChanged runs it; the notes the trigger names are read from the feed.
-const UpdateCommand = "tags.update"
+// Open returns the frontmatter, the feed and the store folder of a vault.
+type Open func(id domain.VaultID) tagcache.Vault
 
-// ShownVault names the vault the host shows, which a command runs over.
-type ShownVault interface {
-	GetVault(ctx context.Context) (domain.Vault, error)
-}
-
-// Host is what the plugin reaches of the host: the vault it shows and the frontmatter and the store
-// folder of each vault.
-type Host struct {
-	Shown ShownVault
-	Open  func(id domain.VaultID) tagcache.Vault
-}
-
-func openHostAt(endpoint hostcall.Endpoint) Host {
+func openHostAt(endpoint hostcall.Endpoint) Open {
 	client := host.NewClient(endpoint)
 	store := host.NewStoreClient(endpoint)
-	return Host{
-		Shown: client,
-		Open: func(id domain.VaultID) tagcache.Vault {
-			vault := client.With(id)
-			return tagcache.Vault{Frontmatter: vault, Feed: vault, Store: store.With(id)}
-		},
+	return func(id domain.VaultID) tagcache.Vault {
+		vault := client.With(id)
+		return tagcache.Vault{Frontmatter: vault, Feed: vault, Store: store.With(id)}
 	}
 }
 
-// Mount registers the command and the tool on s, over the host the environment names.
-func Mount(s *server.Server) error {
-	endpoint, err := hostcall.FromEnv()
-	if err != nil {
-		return err
-	}
-	commands, registry, err := NewRegistries(openHostAt(endpoint))
-	if err != nil {
-		return err
-	}
-	command.Mount(s, commands)
-	registry.Mount(s)
-	return nil
+// App is the tool of the plugin and its handler of the events of the host, over one cache of tags.
+type App struct {
+	cache *tagcache.Caches
+	tools *tools.Registry
 }
 
-// NewRegistries returns the command and the tool of the plugin over h, sharing one cache of tags.
-func NewRegistries(h Host) (*command.Registry, *tools.Registry, error) {
-	cache := tagcache.New(h.Open)
-	commands := command.New()
-	if err := commands.Add(UpdateCommand, newUpdateCommand(h.Shown, cache)); err != nil {
-		return nil, nil, err
-	}
+// NewApp returns the plugin over the vaults open returns.
+func NewApp(open Open) (*App, error) {
+	cache := tagcache.New(open)
 	registry, err := newTools(cache)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return commands, registry, nil
+	return &App{cache: cache, tools: registry}, nil
 }
 
-func newUpdateCommand(shown ShownVault, cache *tagcache.Caches) command.Run {
-	return func(ctx context.Context, _ command.Request) (command.Result, error) {
-		v, err := shown.GetVault(ctx)
+// Run serves the plugin over the host the environment names.
+func Run() {
+	var app *App
+	server.Run(func(s *server.Server) error {
+		endpoint, err := hostcall.FromEnv()
 		if err != nil {
-			return command.Result{}, err
+			return err
 		}
-		if err := cache.UpdateVault(ctx, v.ID); err != nil {
-			return command.Result{}, err
+		app, err = NewApp(openHostAt(endpoint))
+		if err != nil {
+			return err
 		}
-		return command.Result{}, nil
+		app.Mount(s)
+		return nil
+	}, server.WithEventHandler(func(ctx context.Context, event string) error { return app.HandleEvent(ctx, event) }))
+}
+
+// Mount registers the tool on s.
+func (a *App) Mount(s *server.Server) { a.tools.Mount(s) }
+
+// Tools is the registry of the tool tag_list.
+func (a *App) Tools() *tools.Registry { return a.tools }
+
+// HandleEvent brings the tags of the vault an onFilesChanged event names up to date with its file change
+// feed, and ignores any other event.
+func (a *App) HandleEvent(ctx context.Context, event string) error {
+	id, ok := host.ReadFilesChangedEvent(event)
+	if !ok {
+		return nil
 	}
+	return a.cache.UpdateVault(ctx, id)
 }
