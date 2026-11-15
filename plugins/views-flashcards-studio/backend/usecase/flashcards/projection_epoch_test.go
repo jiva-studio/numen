@@ -1,4 +1,4 @@
-package projection_test
+package flashcards_test
 
 import (
 	"time"

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
@@ -144,7 +145,7 @@ func ConvertSettingsFromWire(s *api.Settings) (review.Preset, error) {
 // ConvertCurveToWire is a curve as the schema carries it.
 func ConvertCurveToWire(c flashcards.Curve) *api.Curve {
 	out := &api.Curve{
-		Goal:      ConvertGoalToWire(c.Goal),
+		Goal:      convertCurveGoalToWire(c.Goal),
 		Grid:      c.Grid,
 		Days:      c.Days,
 		At:        make([]*api.Point, 0, len(c.Points)),
@@ -175,11 +176,11 @@ func ConvertCurveToWire(c flashcards.Curve) *api.Curve {
 }
 
 // ConvertBudgetsToWire are the budgets that closed a day, as the schema names them.
-func ConvertBudgetsToWire(names review.BudgetNames) []api.BudgetName {
+func ConvertBudgetsToWire(names projection.BudgetNames) []api.BudgetName {
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="Slice capacity hint does not affect observable behavior."
 	out := make([]api.BudgetName, 0, len(names))
 	for _, one := range names {
-		out = append(out, ConvertBudgetToWire(one))
+		out = append(out, ConvertBudgetToWire(convertClosedToReview(one)))
 	}
 	return out
 }
@@ -302,7 +303,7 @@ func ConvertBudgetUnitFromWire(u api.BudgetUnit) review.BudgetUnit {
 }
 
 func convertLearnedDay(day int) *int32 {
-	if day == review.LearnsUnasked {
+	if day == projection.LearnsUnasked {
 		return nil
 	}
 	out := int32(day)
@@ -315,4 +316,36 @@ func convertBacklog(days []int) []int32 {
 		out = append(out, int32(one))
 	}
 	return out
+}
+
+func convertClosedToReview(name projection.BudgetName) review.BudgetName {
+	switch name {
+	case projection.ClosedMinutes:
+		return review.ClosedMinutes
+	case projection.ClosedNew:
+		return review.ClosedNew
+	case projection.ClosedReviews:
+		return review.ClosedReviews
+	case projection.ClosedDate:
+		return review.ClosedDate
+	case projection.ClosedPaused:
+		return review.ClosedPaused
+	case projection.ClosedNothing:
+		return review.ClosedNothing
+	default:
+		return review.ClosedNothing
+	}
+}
+
+func convertCurveGoalToWire(g projection.Goal) api.Goal {
+	switch g {
+	case projection.GoalMinutes:
+		return api.GoalMinutesADay
+	case projection.GoalRetention:
+		return api.GoalRetention
+	case projection.GoalDate:
+		return api.GoalByDate
+	default:
+		return api.GoalUnspecified
+	}
 }

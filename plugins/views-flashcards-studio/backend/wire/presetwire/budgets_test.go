@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
@@ -36,7 +37,7 @@ func TestEveryBudgetTheSchemaNamesIsOneTheCoreContains(t *testing.T) {
 }
 
 func TestTheBudgetsThatClosedADayTravelInTheOrderTheyWereNamed(t *testing.T) {
-	got := ConvertBudgetsToWire(review.BudgetNames{review.ClosedNew, review.ClosedReviews})
+	got := ConvertBudgetsToWire(projection.BudgetNames{projection.ClosedNew, projection.ClosedReviews})
 	want := []api.BudgetName{
 		api.BudgetNameNewADay,
 		api.BudgetNameReviewsADay,

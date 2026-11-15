@@ -1,4 +1,4 @@
-package projection_test
+package flashcards_test
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/projection"
 )
 
 // A projection reports the returning share for the requested days only and holds no value for
@@ -28,7 +28,7 @@ func TestProjection_ReturningShareForRequestedDays(t *testing.T) {
 	for name, p := range map[string]review.Preset{
 		"an interval": interval, "a chance of recall": recall,
 	} {
-		run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 10}
+		run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 10}
 		whole := run
 		whole.Retains = everyDay(10)
 		run.Retains = []int{2, 7}
@@ -62,7 +62,7 @@ func TestProjection_ReturnsNoAnswersForNonSchedulingPreset(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeOverdueCards(delta, now, 12)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 5}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 5}
 	p := review.Defaults()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, -1)
 
@@ -77,7 +77,7 @@ func TestProjection_ReturnsNoAnswersForNonSchedulingPreset(t *testing.T) {
 		if got.Admitted[day] {
 			t.Errorf("day %d was admitted", day)
 		}
-		if !got.Closed[day].Has(review.ClosedPaused) {
+		if !got.Closed[day].Has(projection.ClosedPaused) {
 			t.Errorf("day %d was closed by %v, want the pause", day, got.Closed[day])
 		}
 	}
@@ -92,7 +92,7 @@ func TestTheLoadOfARunIsOverTheDaysAdmitted(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 600)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 14}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 14}
 	p := review.Preset{
 		Goal: review.GoalRetention, ReviewsADay: 40,
 		Load: map[time.Weekday]int{time.Sunday: 0},
@@ -141,19 +141,19 @@ func TestWhatExistsOverdue(t *testing.T) {
 	pos := map[review.CardID]review.Schedule{
 		late: lateAt, soon: soonAt, unbegun: {},
 	}
-	if got := projection.CountOverdue(day, pos, now); got != 1 {
+	if got := countOverdue(day, pos, now); got != 1 {
 		t.Errorf("%d review cards stand overdue, want the one due yesterday", got)
 	}
 
 	// A run that starts with nothing overdue has nothing to clear, and a run with
 	// no answers never clears.
-	run := projection.Simulation{By: review.NewFSRS(), Day: day, Cost: review.GetDefaultCost(), Days: 3}
+	run := reviewRun{By: review.NewFSRS(), Day: day, Cost: review.GetDefaultCost(), Days: 3}
 	p := review.Preset{Goal: review.GoalRetention}
 	schedules := map[review.CardID]review.Schedule{soon: soonAt, unbegun: {}}
 	if got := runProjection(t, run, now, p, schedules, 0).Clears; got != 0 {
 		t.Errorf("a run with nothing overdue clears in %d days, want none", got)
 	}
-	if got := runProjection(t, run, now, p, pos, 0).Clears; got != review.NeverClears {
+	if got := runProjection(t, run, now, p, pos, 0).Clears; got != projection.NeverClears {
 		t.Errorf("a run nobody answers clears in %d days", got)
 	}
 }
@@ -179,7 +179,7 @@ func TestADayAnswersTheReviewCardsWaitingLongest(t *testing.T) {
 	fourth, fourthAt := reviewCard("fourth", 101, -2)
 	fifth, fifthAt := reviewCard("fifth", 102, -1)
 
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: day, Cost: review.GetDefaultCost(), Days: 1, Retains: []int{0},
 	}
 	p := review.Preset{Goal: review.GoalRetention, ReviewsADay: 2}
@@ -219,7 +219,7 @@ func TestADayAnswersTheReviewCardsWaitingLongest(t *testing.T) {
 func TestAPaceForARuleNoCardCanReach(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 10}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 10}
 	p := review.Defaults()
 	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 5)
 	p.Rule, p.Interval = review.RuleInterval, 365
@@ -241,7 +241,7 @@ func TestAPaceForARuleNoCardCanReach(t *testing.T) {
 // on every day of a run.
 func TestAPresetWithNoMaterialIsThroughIt(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 5,
 	}
 
@@ -266,7 +266,7 @@ func TestAProjectionAnswersTheCallersCancellation(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	stop()
 
-	run := projection.Simulation{By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost()}
+	run := reviewRun{By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost()}
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	if _, err := run.Run(ctx, getTestEpoch(), p, nil, 30); !errors.Is(err, context.Canceled) {
 		t.Errorf("a canceled projection said %v", err)
@@ -280,7 +280,7 @@ func getAheadDay() review.Day {
 func getDayStart(pos time.Time) time.Time { return getAheadDay().GetEnd(pos).AddDate(0, 0, -1) }
 
 func runProjection(
-	t *testing.T, run projection.Simulation, now time.Time, p review.Preset,
+	t *testing.T, run reviewRun, now time.Time, p review.Preset,
 	pos map[review.CardID]review.Schedule, unbegunCount int,
 ) projection.Projection {
 	t.Helper()
@@ -326,7 +326,7 @@ func TestMinutesADayCountedOneCardAtATime(t *testing.T) {
 	days := 60
 
 	pos := makeLearnedCards(delta, now, 40)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: cost, Days: days}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: cost, Days: days}
 	// Nothing is capped and no card is new, so every review card falls due on its
 	// own and the two counts are of the same answers.
 	p := review.Preset{
@@ -386,7 +386,7 @@ func TestALongerDayAnswersMore(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 60)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 45}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 45}
 
 	var reply, due []int
 	for minutes := 2; minutes <= 40; minutes += 2 {
@@ -414,7 +414,7 @@ func TestAHigherTargetIsMoreReviews(t *testing.T) {
 
 	var minutes []float64
 	for share := review.GetRetentionBounds().Min; share <= review.GetRetentionBounds().Max; share += 0.01 {
-		run := projection.Simulation{
+		run := reviewRun{
 			By: review.NewFSRSAt(share), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 120,
 		}
 		got := runProjection(t, run, now, review.Preset{ReviewsADay: 9999, Retention: share}, pos, 0)
@@ -438,7 +438,7 @@ func TestADayCarriesTheShareOfTheLoadItIsGiven(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeOverdueCards(delta, now, 600)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 7}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 7}
 	p := review.Preset{
 		Goal: review.GoalRetention, ReviewsADay: 40,
 		Load: map[time.Weekday]int{time.Wednesday: 50, time.Sunday: 20},
@@ -465,7 +465,7 @@ func TestADayCarryingNoneOfTheLoadConsumesNoCard(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 600)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 14}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 14}
 	p := review.Preset{
 		Goal: review.GoalRetention, NewADay: 20, ReviewsADay: 40, IsEvenLoad: true,
 		Load: map[time.Weekday]int{time.Wednesday: 0},
@@ -496,7 +496,7 @@ func TestAPresetSchedulingNothingProjectsNothing(t *testing.T) {
 	now := getDayStart(getTestEpoch())
 	pos := makeLearnedCards(delta, now.AddDate(0, 0, -30), 12)
 
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost()}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost()}
 	nothing := review.Preset{Goal: review.GoalRetention, MinutesADay: 60}
 	got := runProjection(t, run, now, nothing, pos, 8)
 
@@ -516,9 +516,9 @@ func TestHowLongABacklogConsumesToClear(t *testing.T) {
 	// Two hundred review cards last answered sixty days ago, which is a vault a
 	// person has been away from.
 	pos := makeLearnedCards(delta, now, 200)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost()}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost()}
 
-	if got := projection.CountOverdue(getAheadDay(), pos, now); got == 0 {
+	if got := countOverdue(getAheadDay(), pos, now); got == 0 {
 		t.Fatal("got 0 overdue cards, want > 0")
 	}
 
@@ -526,7 +526,7 @@ func TestHowLongABacklogConsumesToClear(t *testing.T) {
 	starved := runProjection(t, run, now, review.Preset{
 		Goal: review.GoalRetention, NewADay: 0, ReviewsADay: 1,
 	}, pos, 0)
-	if starved.Clears != review.NeverClears {
+	if starved.Clears != projection.NeverClears {
 		t.Errorf("one review a day clears the backlog in %d days", starved.Clears)
 	}
 
@@ -542,7 +542,7 @@ func TestHowLongABacklogConsumesToClear(t *testing.T) {
 	slower := runProjection(t, run, now, review.Preset{
 		Goal: review.GoalRetention, NewADay: 0, ReviewsADay: 20,
 	}, pos, 0)
-	if slower.Clears <= freely.Clears || slower.Clears == review.NeverClears {
+	if slower.Clears <= freely.Clears || slower.Clears == projection.NeverClears {
 		t.Errorf("twenty reviews a day clears in %d days and the whole load in %d",
 			slower.Clears, freely.Clears)
 	}
@@ -552,11 +552,11 @@ func TestHowLongABacklogConsumesToClear(t *testing.T) {
 func TestNothingOverdueClearsInNoDays(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost()}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost()}
 
 	// Vault with only unreviewed cards: none have scheduled reviews.
 	pos := map[review.CardID]review.Schedule{}
-	if got := projection.CountOverdue(getAheadDay(), pos, now); got != 0 {
+	if got := countOverdue(getAheadDay(), pos, now); got != 0 {
 		t.Errorf("got %d overdue cards, want 0", got)
 	}
 	got := runProjection(t, run, now, review.Preset{
@@ -578,12 +578,12 @@ func TestBeginningNewCardsDoesNotHoldTheBacklogOpen(t *testing.T) {
 	// Sixty review cards overdue, and material enough to be starting new ones on
 	// every day of the projection.
 	pos := makeLearnedCards(delta, now, 60)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost()}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost()}
 	p := review.Preset{
 		Goal: review.GoalRetention, NewADay: 5, ReviewsADay: 9999,
 	}
 
-	if got := projection.CountOverdue(getAheadDay(), pos, now); got == 0 {
+	if got := countOverdue(getAheadDay(), pos, now); got == 0 {
 		t.Fatal("got 0 overdue cards, want > 0")
 	}
 	got := runProjection(t, run, now, p, pos, 500)
@@ -602,7 +602,7 @@ func TestTheBacklogDayByDayAgreesWithTheDayItClears(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 200)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost()}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost()}
 
 	for _, one := range []struct {
 		what string
@@ -623,7 +623,7 @@ func TestTheBacklogDayByDayAgreesWithTheDayItClears(t *testing.T) {
 			}
 		}
 
-		first := review.NeverClears
+		first := projection.NeverClears
 		for day, backlog := range got.Backlog {
 			if backlog == 0 {
 				first = day + 1
@@ -643,7 +643,7 @@ func TestAPausedDayNeverDropsTheOverduePile(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now.AddDate(0, 0, -40), 300)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 28}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 28}
 
 	for what, load := range map[string]map[time.Weekday]int{
 		"a week of nothing": {
@@ -694,7 +694,7 @@ func makeSentAway(
 // ago.
 func TestWhatExistsLearnedToday(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 1,
 	}
 
@@ -780,7 +780,7 @@ func TestTheDayEveryCardIsLearned(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 40)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 365}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 365}
 	p := review.Defaults()
 	p.Goal, p.ReviewsADay, p.NewADay = review.GoalRetention, 9999, 50
 	p.Rule, p.Interval = review.RuleInterval, 21
@@ -788,7 +788,7 @@ func TestTheDayEveryCardIsLearned(t *testing.T) {
 	// Forty review cards answered a few times each, and a year to carry them all
 	// past an interval of 21 days.
 	got := runProjection(t, run, now, p, pos, 0)
-	if got.Learns == review.NeverLearns || got.Learns > got.Days {
+	if got.Learns == projection.NeverLearns || got.Learns > got.Days {
 		t.Errorf("a year of review learns the whole material in %d days", got.Learns)
 	}
 	if got.Learned == got.ReviewCards {
@@ -803,7 +803,7 @@ func TestTheDayEveryCardIsLearned(t *testing.T) {
 	shorter := run
 	shorter.Days = 60
 	crowded := runProjection(t, shorter, now, p, pos, 5000)
-	if crowded.Learns != review.NeverLearns {
+	if crowded.Learns != projection.NeverLearns {
 		t.Errorf("a material of %d review cards was learned in %d days",
 			crowded.ReviewCards, crowded.Learns)
 	}
@@ -811,7 +811,7 @@ func TestTheDayEveryCardIsLearned(t *testing.T) {
 
 func TestAMaterialAlreadyLearnedIsLearnedInNoDays(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 30,
 	}
 	reviewCard, schedule := makeSentAway("long", now, 30, 40, 60)
@@ -832,7 +832,7 @@ func TestAMaterialAlreadyLearnedIsLearnedInNoDays(t *testing.T) {
 // is begun on it. The same material and the same date are two paces.
 func TestADateIsPacedByTheRuleItCountsBy(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 40,
 	}
 
@@ -862,7 +862,7 @@ func TestADateIsPacedByTheRuleItCountsBy(t *testing.T) {
 // covers every card that can be reached.
 func TestWhatNoPaceCanReachIsCounted(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 30,
 	}
 	// One review card with a forty-day interval, and five unbegun cards.
@@ -903,7 +903,7 @@ func TestWhatNoPaceCanReachIsCounted(t *testing.T) {
 // A preset aiming at no day has nothing it cannot reach.
 func TestAPresetAimingAtNoDayIsNeverShort(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 7,
 	}
 	p := review.Defaults()
@@ -922,7 +922,7 @@ func TestProjection_LearnedDayByRule(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 40)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 120}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 120}
 
 	preset := review.Defaults()
 	preset.Goal, preset.ReviewsADay, preset.NewADay = review.GoalRetention, 9999, 50
@@ -935,14 +935,14 @@ func TestProjection_LearnedDayByRule(t *testing.T) {
 	// The same material counted by a chance of recall.
 	level := preset
 	level.Rule = review.RuleRetention
-	if got := runProjection(t, run, now, level, pos, 0).Learns; got != review.LearnsUnasked {
+	if got := runProjection(t, run, now, level, pos, 0).Learns; got != projection.LearnsUnasked {
 		t.Errorf("a material counted by a chance of recall is all learned on day %d", got)
 	}
 
 	// And the same material under a date, which is its own answer.
 	dated := preset
 	dated.Goal, dated.By = review.GoalDate, now.AddDate(0, 0, 60)
-	if got := runProjection(t, run, now, dated, pos, 0).Learns; got != review.LearnsUnasked {
+	if got := runProjection(t, run, now, dated, pos, 0).Learns; got != projection.LearnsUnasked {
 		t.Errorf("a preset aiming at a day answers with day %d beside it", got)
 	}
 	// A date is qualified by the count that no pace can complete.
@@ -964,7 +964,7 @@ func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 	p.NewADay, p.ReviewsADay, p.IsEvenLoad = 1, 1000, false
 	p.Rule = review.RuleInterval
 
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 400}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 400}
 	for _, interval := range []int{1, 2, 5, 7, 14, 21, 30, 60} {
 		one := p
 		one.Interval = interval
@@ -975,7 +975,7 @@ func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 				break
 			}
 		}
-		if got := projection.GetDaysToLearn(delta, getAheadDay(), one, now); got != learns {
+		if got := getDaysToLearn(delta, getAheadDay(), one, now); got != learns {
 			t.Errorf("an interval of %d days daysToLearn in %d days of review, and the "+
 				"projection learns the review card on day %d", interval, got, learns)
 		}
@@ -993,7 +993,7 @@ func TestADateReachesTheSameMaterialWithTheDaysEvenedOut(t *testing.T) {
 	p.Rule, p.Interval = review.RuleInterval, 21
 	p.MinutesADay, p.NewADay, p.ReviewsADay = 20, 8, 45
 
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRSAt(p.Retention), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 22,
 	}
 	even, flat := p, p
@@ -1023,7 +1023,7 @@ func TestADateIsPacedOverTheDaysThePresetAdmits(t *testing.T) {
 	p.MinutesADay, p.NewADay, p.ReviewsADay = 20, 8, 45
 	p.Load = map[time.Weekday]int{time.Saturday: 0, time.Sunday: 0}
 
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRSAt(p.Retention), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 22,
 	}
 	got := runProjection(t, run, now, p, nil, 40)
@@ -1057,7 +1057,7 @@ func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 	p := review.Defaults()
 	p.Goal, p.MinutesADay = review.GoalMinutes, 1440
 	p.NewADay, p.ReviewsADay = 40, 4000
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 30,
 		Retains: everyDay(30),
 	}
@@ -1119,7 +1119,7 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	p := review.Preset{
 		Goal: review.GoalRetention, ReviewsADay: 9999, NewADay: 0, MinutesADay: 0,
 	}
-	run := projection.Simulation{
+	run := reviewRun{
 		By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 1, Retains: []int{0},
 	}
 
@@ -1163,25 +1163,25 @@ func makeOverdueCards(
 func TestADayTwoBudgetsClosedNamesBoth(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 1}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 1}
 	pos := makeOverdueCards(delta, now, 30)
 
 	for _, one := range []struct {
 		what        string
 		new, review int
-		want        review.BudgetNames
+		want        projection.BudgetNames
 	}{
 		{
 			what: "both counts spent", new: 12, review: 5,
-			want: review.BudgetNames{review.ClosedNew, review.ClosedReviews},
+			want: projection.BudgetNames{projection.ClosedNew, projection.ClosedReviews},
 		},
 		{
 			what: "the reviews over", new: 12, review: 500,
-			want: review.BudgetNames{review.ClosedNew},
+			want: projection.BudgetNames{projection.ClosedNew},
 		},
 		{
 			what: "the new cards over", new: 500, review: 5,
-			want: review.BudgetNames{review.ClosedReviews},
+			want: projection.BudgetNames{projection.ClosedReviews},
 		},
 		{
 			what: "both over", new: 500, review: 500,
@@ -1221,8 +1221,8 @@ func TestProjection_LightWeekPaceDividesByRemainingCapacity(t *testing.T) {
 	for _, out := range []int{29, 45, 60} {
 		p.By = now.AddDate(0, 0, out).Truncate(24 * time.Hour)
 		full.By = p.By
-		light := projection.GetDaysToLearn(delta, getAheadDay(), p, now)
-		whole := projection.GetDaysToLearn(delta, getAheadDay(), full, now)
+		light := getDaysToLearn(delta, getAheadDay(), p, now)
+		whole := getDaysToLearn(delta, getAheadDay(), full, now)
 
 		pos := p.GetAllowance(getAheadDay(), now, review.Spent{}, 500, light).Keeps.New
 		was := full.GetAllowance(getAheadDay(), now, review.Spent{}, 500, whole).Keeps.New
@@ -1242,7 +1242,7 @@ func allForgotten(review.Schedule, time.Time) float64 { return 0 }
 func TestADayCountingShowingsSpendsASlotOnEveryShowing(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 1, Recalls: allForgotten,
 	}
 	pos := makeOverdueCards(delta, now, 40)
@@ -1273,7 +1273,7 @@ func TestWhatADaysBudgetIsSpentOnIsReadBelowEachGoal(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 60)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 30}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 30}
 	newADay, reviewsADay := 10, 40
 
 	for _, one := range []struct {
@@ -1322,7 +1322,7 @@ func TestWhatADaysBudgetIsSpentOnIsReadBelowEachGoal(t *testing.T) {
 func TestANewCardsLearningStepFallsInTheDayItWasBegun(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 2}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 2}
 	p := review.Preset{
 		Goal: review.GoalRetention, NewADay: 1, ReviewsADay: 9999,
 	}
@@ -1341,7 +1341,7 @@ func TestANewCardsLearningStepFallsInTheDayItWasBegun(t *testing.T) {
 // and the day presents it again.
 func TestProjection_ReanswersLapsedCardWithinDay(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 1,
 		Recalls: allForgotten,
 	}
@@ -1360,7 +1360,7 @@ func TestProjection_ReanswersLapsedCardWithinDay(t *testing.T) {
 // picks it up.
 func TestADayAsksOneReviewCardNoMoreThanMostShowings(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 2,
 		Recalls: allForgotten,
 	}
@@ -1385,7 +1385,7 @@ func TestABudgetThatNeverBindsGetsThroughTheSameAtEitherCounting(t *testing.T) {
 	delta := review.NewFSRS()
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	pos := makeLearnedCards(delta, now, 40)
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 20}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 20}
 
 	p := review.Preset{Goal: review.GoalRetention, NewADay: 9999, ReviewsADay: 9999}
 	p.Counts = review.BudgetUnitCards
@@ -1401,7 +1401,7 @@ func TestABudgetThatNeverBindsGetsThroughTheSameAtEitherCounting(t *testing.T) {
 
 func TestADeckOfNothingProjectsNothingAtEitherCounting(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 10,
 	}
 
@@ -1424,7 +1424,7 @@ func TestADeckOfNothingProjectsNothingAtEitherCounting(t *testing.T) {
 // day is one card, and the second showing costs time and not another card.
 func TestADaysShowingsAndItsReviewCardsAreTwoCounts(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := projection.Simulation{
+	run := reviewRun{
 		By: review.NewFSRS(), Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 3,
 	}
 	// A budget that never binds, so the day presents everything it has.
@@ -1455,10 +1455,10 @@ func TestAWeekLearnsAsSlowlyAsItsSlowestDay(t *testing.T) {
 	p.Load = map[time.Weekday]int{time.Saturday: 0, time.Sunday: 0}
 
 	from := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	want := projection.GetDaysToLearn(delta, getAheadDay(), p, from)
+	want := getDaysToLearn(delta, getAheadDay(), p, from)
 	for i := 1; i < 7; i++ {
 		on := from.AddDate(0, 0, i)
-		if got := projection.GetDaysToLearn(delta, getAheadDay(), p, on); got != want {
+		if got := getDaysToLearn(delta, getAheadDay(), p, on); got != want {
 			t.Errorf("a week daysToLearn in %d days of review asked on a %s and %d asked on a %s",
 				got, on.Weekday(), want, from.Weekday())
 		}
@@ -1473,7 +1473,7 @@ func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 	pos := makeLearnedCards(delta, now, 600)
 	// No budget binds, so a day carries what falls on it and what is compared is
 	// where the reviews fall.
-	run := projection.Simulation{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 60}
+	run := reviewRun{By: delta, Day: getAheadDay(), Cost: review.GetDefaultCost(), Days: 60}
 	p := review.Preset{Goal: review.GoalRetention, ReviewsADay: 9999}
 
 	lumpy := runProjection(t, run, now, p, pos, 0)

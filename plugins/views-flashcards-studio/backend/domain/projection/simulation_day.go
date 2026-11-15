@@ -8,7 +8,7 @@ import (
 // simulationDay holds execution state for a day session.
 type simulationDay struct {
 	sim          Simulation
-	preset       Preset
+	preset       Settings
 	days         int
 	daysToLearn  int
 	base         int
@@ -29,25 +29,25 @@ type simulationDay struct {
 	isRepeatDone bool
 	isNewDone    bool
 	remaining    int
-	cards        []Schedule
+	cards        []Card
 	showings     []int
 	due          []int
 	spare        []int
 	again        []int
 	falls        [][]int
 	reckoned     *learnedCount
-	on           *DueByDay
+	on           Load
 }
 
 // simulationSetup is what the state of a simulated day starts from.
 type simulationSetup struct {
 	days, base  int
 	open        time.Time
-	p           Preset
+	p           Settings
 	daysToLearn int
-	cards       []Schedule
+	cards       []Card
 	falls       [][]int
-	on          *DueByDay
+	on          Load
 	reckoned    *learnedCount
 	unreviewed  int
 }
@@ -89,8 +89,8 @@ func (s Simulation) createSimulationDay(in simulationSetup) *simulationDay {
 	}
 }
 
-func (s Simulation) initLearned(p Preset, cards []Schedule, out *Projection, open time.Time) *learnedCount {
-	reckoned := newLearnedCount(p, cards, open)
+func (s Simulation) initLearned(p Settings, cards []Card, out *Projection, open time.Time) *learnedCount {
+	reckoned := newLearnedCount(s.By, p, cards, open)
 	out.Learned = reckoned.count
 	if out.Learns == NeverLearns && out.Learned == out.ReviewCards {
 		out.Learns = 0
@@ -113,13 +113,13 @@ func (d *simulationDay) startDay(today int) {
 	if today == 0 {
 		removed = d.sim.Spent
 	}
-	d.admits = d.preset.GetAllowance(d.sim.Day, d.open, removed, d.remaining, d.daysToLearn)
-	if d.admits.IsPaused() {
+	d.admits = d.sim.By.GetAllowance(d.preset, d.open, removed, d.remaining, d.daysToLearn)
+	if d.admits.IsPaused {
 		d.closed = d.closed.Add(ClosedPaused)
 	}
-	d.isDebtDone = d.admits.IsPaused()
-	d.isRepeatDone = d.admits.IsPaused()
-	d.isNewDone = d.admits.IsPaused()
+	d.isDebtDone = d.admits.IsPaused
+	d.isRepeatDone = d.admits.IsPaused
+	d.isNewDone = d.admits.IsPaused
 
 	slices.SortFunc(d.falls[today], func(a, b int) int {
 		return compareByDue(d.cards[a], d.cards[b])
@@ -151,7 +151,7 @@ func (d *simulationDay) hasPendingCards() bool {
 func (d *simulationDay) isDebtNext() bool {
 	hasDue := d.isDue()
 	hasNew := d.hasNew()
-	return !hasNew || d.admits.IsNextCardDebt(d.observed, d.begun, hasDue, hasNew)
+	return !hasNew || d.admits.isNextCardDebt(d.observed, d.begun, hasDue, hasNew)
 }
 
 func (d *simulationDay) isRepeat() bool {
@@ -173,8 +173,8 @@ func (d *simulationDay) stopDebt(repeat bool) {
 	d.isDebtDone = true
 }
 
-func (d *simulationDay) queueNextShowing(c Schedule, pos int) {
-	if d.sim.Day.IsDue(c, d.open) && d.showings[pos] < MostShowings {
+func (d *simulationDay) queueNextShowing(c Card, pos int) {
+	if c.isDue(d.sim.Day, d.open) && d.showings[pos] < MostShowings {
 		d.again = append(d.again, pos)
 		return
 	}
@@ -186,7 +186,7 @@ func (d *simulationDay) queueNextShowing(c Schedule, pos int) {
 func (d *simulationDay) stepDebt() {
 	repeat := d.isRepeat()
 	pos := d.getCardIndex(repeat)
-	counted := d.preset.Counts.IsCharged(d.showings[pos] > 0)
+	counted := d.preset.isCharged(d.showings[pos] > 0)
 	if counted && d.admits.Limits.Reviews != ClosedNothing && d.charged >= d.admits.Reviews {
 		d.closed = d.closed.Add(d.admits.Limits.Reviews)
 		d.stopDebt(repeat)
@@ -233,7 +233,7 @@ func (d *simulationDay) stepNew() {
 	d.reply++
 	d.reviewed++
 	d.remaining--
-	one := d.sim.getScheduleAfterShowing(newNoSchedule(), d.open, d.ends, d.preset, d.on)
+	one := d.sim.getScheduleAfterShowing(newNoCard(), d.open, d.ends, d.preset, d.on)
 	d.cards = append(d.cards, one)
 	d.showings = append(d.showings, 1)
 	d.reckoned.countBegunCards(one, d.ends)
@@ -251,7 +251,7 @@ func (d *simulationDay) finishDay(out *Projection, answerRetained bool, elapsed 
 	out.Load = append(out.Load, d.reply)
 	out.Reviewed = append(out.Reviewed, d.reviewed)
 	out.Spent = append(out.Spent, d.used)
-	out.Admitted = append(out.Admitted, !d.admits.IsPaused())
+	out.Admitted = append(out.Admitted, !d.admits.IsPaused)
 	out.Closed = append(out.Closed, d.closed)
 
 	stands, back := d.reckoned.countLearnedCards(d.cards, d.ends, out.ReviewCards, answerRetained)

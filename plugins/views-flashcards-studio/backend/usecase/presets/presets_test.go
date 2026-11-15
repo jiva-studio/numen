@@ -13,10 +13,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/projection"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
@@ -595,9 +596,10 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 
 	// And the counts the window draws off the projection say the same.
 	run := projection.Simulation{
-		By: review.NewFSRSAt(p.Retention), Day: getToday(), Cost: review.GetDefaultCost(), Days: 1,
+		By: flashcards.NewProjectionScheduler(review.NewFSRSAt(p.Retention), getToday()), Day: getToday(),
+		Cost: flashcards.ConvertCostToProjection(review.GetDefaultCost()), Days: 1,
 	}
-	ran, err := run.Run(t.Context(), now, p, pos, 0)
+	ran, err := run.Run(t.Context(), now, flashcards.ConvertPresetToSettings(p), flashcards.ConvertSchedulesToCards(pos), 0)
 	if err != nil {
 		t.Fatal(err)
 	}

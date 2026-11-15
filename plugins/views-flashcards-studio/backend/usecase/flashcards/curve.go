@@ -6,13 +6,16 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/projection"
 )
 
-// Curve is the simulated progression of a preset across its target range.
-type Curve = projection.Curve
+// Curve is the simulated progression of a preset across its target range, and why the preset schedules nothing.
+type Curve struct {
+	projection.Curve
+	Stops review.StopReason
+}
 
 type CurvePoint = projection.CurvePoint
 
@@ -134,24 +137,27 @@ func (u ProjectCurve) Execute(
 	// that schedules its cards, and it starts on the current day with the answers
 	// already given.
 	run := projection.Simulation{
-		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
+		By: u.getProjectionScheduler(p.Retention), Day: u.day, Cost: ConvertCostToProjection(cost),
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="Non-positive simulation Days defaults to HorizonDays."
 		Days:    0,
 		Retains: nil,
 		Recalls: nil,
-		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
-			map[string]review.BudgetUnit{path: p.Counts})[path],
+		Spent: ConvertSpentToProjection(review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
+			map[string]review.BudgetUnit{path: p.Counts})[path]),
 	}
-	out, err := run.Curve(ctx, now, p, projection.CurveInputs{
-		Schedules: pos, UnbegunCount: unbegunCount, Scheduler: u.getScheduler, Places: u.computePlaces,
+	cards := ConvertSchedulesToCards(pos)
+	bounds := review.GetRetentionBounds()
+	drawn, err := run.Curve(ctx, now, ConvertPresetToSettings(p), projection.CurveInputs{
+		Cards: cards, UnbegunCount: unbegunCount, Scheduler: u.getProjectionScheduler, Places: u.computePlaces,
+		RetentionBounds: projection.Bounds{Min: bounds.Min, Max: bounds.Max},
 	})
 	if err != nil {
 		return Curve{}, err
 	}
-	out.Stops = p.GetOverallStopReason(u.day, now)
+	out := Curve{Curve: drawn, Stops: p.GetOverallStopReason(u.day, now)}
 	out.Decks = pointing
 	out.Cards = len(presets)
-	out.Overdue = projection.CountOverdue(u.day, pos, now)
+	out.Overdue = projection.CountOverdue(u.day, cards, now)
 	out.Unbegun = unbegunCount
 	return out, nil
 }
@@ -275,4 +281,8 @@ func (u ProjectCurve) getScheduler(retention float64) review.Scheduler {
 		return u.By(retention)
 	}
 	return review.NewFSRSAt(retention)
+}
+
+func (u ProjectCurve) getProjectionScheduler(retention float64) projection.Scheduler {
+	return NewProjectionScheduler(u.getScheduler(retention), u.day)
 }

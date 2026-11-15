@@ -104,23 +104,21 @@ func (p Projection) Session() (int, bool) {
 	return 0, false
 }
 
-// CountOverdue is how many review cards standing at these schedules have had their day
-// and were not answered on it.
+// CountOverdue is how many of these cards have had their day and were not answered on it.
 //
-// A card falling due later in the day holding at is not overdue: its day is
-// has had no day.
-func CountOverdue(d Day, schedules map[ReviewCardID]Schedule, now time.Time) int {
+// A card falling due later in the day holding now is not overdue: its day has not passed.
+func CountOverdue(d Calendar, cards []Card, now time.Time) int {
 	startTime := d.GetStart(now)
 	out := 0
-	for _, s := range schedules {
-		if !s.IsNew() && s.Due.Before(startTime) {
+	for _, c := range cards {
+		if !c.IsNew() && c.Due.Before(startTime) {
 			out++
 		}
 	}
 	return out
 }
 
-func mergeByDue(into, carried, fell []int, cards []Schedule) []int {
+func mergeByDue(into, carried, fell []int, cards []Card) []int {
 	a, b := 0, 0
 	for a < len(carried) && b < len(fell) {
 		if compareByDue(cards[carried[a]], cards[fell[b]]) <= 0 {
@@ -141,23 +139,22 @@ func mergeByDue(into, carried, fell []int, cards []Schedule) []int {
 // Under an interval rule, learned is a property of a review card's schedule: the
 // count is carried from day to day and recomputed only for review cards that the
 // day answered. Under a recall-chance rule, learned is a property of the instant,
-// and is read from the same value as the share that is recalled.
+// and is counted again at the close of every day.
 type learnedCount struct {
-	preset    Preset
+	by        Scheduler
+	settings  Settings
 	isCarried bool
-	target    float64
 	learned   []bool
 	count     int
 }
 
-func newLearnedCount(p Preset, cards []Schedule, pos time.Time) *learnedCount {
-	rule, _, retention := p.GetLearnedRule()
-	out := &learnedCount{preset: p, isCarried: rule == RuleInterval, target: retention, learned: nil, count: 0}
+func newLearnedCount(by Scheduler, s Settings, cards []Card, pos time.Time) *learnedCount {
+	out := &learnedCount{by: by, settings: s, isCarried: s.Rule == RuleInterval, learned: nil, count: 0}
 	if out.isCarried {
 		out.learned = make([]bool, len(cards))
 	}
 	for i, c := range cards {
-		if !p.IsLearned(c, pos) {
+		if !by.IsLearned(s, c, pos) {
 			continue
 		}
 		out.count++
@@ -168,11 +165,11 @@ func newLearnedCount(p Preset, cards []Schedule, pos time.Time) *learnedCount {
 	return out
 }
 
-func (r *learnedCount) countAnswer(card int, c Schedule, pos time.Time) {
+func (r *learnedCount) countAnswer(card int, c Card, pos time.Time) {
 	if !r.isCarried {
 		return
 	}
-	isLearned := r.preset.IsLearned(c, pos)
+	isLearned := r.by.IsLearned(r.settings, c, pos)
 	if isLearned == r.learned[card] {
 		return
 	}
@@ -184,11 +181,11 @@ func (r *learnedCount) countAnswer(card int, c Schedule, pos time.Time) {
 	r.count--
 }
 
-func (r *learnedCount) countBegunCards(c Schedule, pos time.Time) {
+func (r *learnedCount) countBegunCards(c Card, pos time.Time) {
 	if !r.isCarried {
 		return
 	}
-	isLearned := r.preset.IsLearned(c, pos)
+	isLearned := r.by.IsLearned(r.settings, c, pos)
 	r.learned = append(r.learned, isLearned)
 	if isLearned {
 		r.count++
@@ -196,7 +193,7 @@ func (r *learnedCount) countBegunCards(c Schedule, pos time.Time) {
 }
 
 func (r *learnedCount) countLearnedCards(
-	cards []Schedule, pos time.Time, reviewCards int, wanted bool,
+	cards []Card, pos time.Time, reviewCards int, wanted bool,
 ) (int, float64) {
 	if r.isCarried {
 		if !wanted || reviewCards == 0 {
@@ -204,15 +201,14 @@ func (r *learnedCount) countLearnedCards(
 		}
 		back := 0.0
 		for _, c := range cards {
-			back += Recall(pos.Sub(c.Last), c.Stability)
+			back += r.by.GetRecall(c, pos)
 		}
 		return r.count, back / float64(reviewCards)
 	}
 	stands, back := 0, 0.0
 	for _, c := range cards {
-		one := Recall(pos.Sub(c.Last), c.Stability)
-		back += one
-		if !c.IsNew() && one >= r.target {
+		back += r.by.GetRecall(c, pos)
+		if r.by.IsLearned(r.settings, c, pos) {
 			stands++
 		}
 	}
@@ -222,7 +218,7 @@ func (r *learnedCount) countLearnedCards(
 	return stands, back / float64(reviewCards)
 }
 
-func compareByDue(a, b Schedule) int {
+func compareByDue(a, b Card) int {
 	if !a.Due.Equal(b.Due) {
 		return a.Due.Compare(b.Due)
 	}

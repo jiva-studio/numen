@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
@@ -144,7 +144,7 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 			got.Suggested, want)
 	}
 	// And the place before it is one the minutes closed.
-	if before := got.Points[want.Index-1]; !before.Closed.Has(review.ClosedMinutes) {
+	if before := got.Points[want.Index-1]; !before.Closed.Has(projection.ClosedMinutes) {
 		t.Errorf("the place under the one suggested was closed by %v", before.Closed)
 	}
 }
@@ -475,7 +475,7 @@ func inRange(t *testing.T, c flashcards.Curve, names ...string) {
 			t.Errorf("the %s mark is at %v and the place it names is %v",
 				name, mark.Value, c.Grid[mark.Index])
 		}
-		if c.Goal == review.GoalDate && !strings.Contains(mark.Day, "-") {
+		if c.Goal == projection.GoalDate && !strings.Contains(mark.Day, "-") {
 			t.Errorf("the %s mark names no day: %q", name, mark.Day)
 		}
 	}
@@ -1220,7 +1220,7 @@ func atOnceGoals() []struct {
 	}
 }
 
-func describeCurve(c projection.Curve) string {
+func describeCurve(c flashcards.Curve) string {
 	return fmt.Sprintf("%v", c)
 }
 
@@ -1485,7 +1485,7 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					for _, one := range []projection.Curve{got, want} {
+					for _, one := range []flashcards.Curve{got, want} {
 						if one.Decks != len(decks) || one.Cards != reviewCards {
 							t.Errorf("the curve carries %d decks and %d review cards, and %d decks "+
 								"point at %s with %d review cards in them",
@@ -1502,7 +1502,7 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 	}
 }
 
-func curveOf(c projection.Curve) string {
+func curveOf(c flashcards.Curve) string {
 	return fmt.Sprintf("%d decks, %d review cards, %d overdue, %d unbegun\ngrid %v\nnow %+v"+
 		"\nsuggested %+v\nat %+v", c.Decks, c.Cards, c.Overdue, c.Unbegun, c.Grid,
 		c.Now, c.Suggested, c.Points)

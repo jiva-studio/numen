@@ -23,7 +23,6 @@ type Curve struct {
 	Points    []Point
 	Now       CurvePoint
 	Suggested CurvePoint
-	Stops     StopReason
 	Decks     int
 	Cards     int
 	Overdue   int
@@ -70,27 +69,30 @@ func createCurve(goal Goal) Curve {
 type curveBuilder struct {
 	run          Simulation
 	now          time.Time
-	preset       Preset
-	schedules    map[ReviewCardID]Schedule
+	preset       Settings
+	cards        []Card
+	bounds       Bounds
 	unbegunCount int
 	scheduler    func(retention float64) Scheduler
 	places       func(count int, each func(index int) error) error
 }
 
-// CurveInputs are the cards and the helpers a curve is evaluated with. A nil Scheduler is FSRS and a nil
+// CurveInputs are the cards and the helpers a curve is evaluated with: the scheduler at each retention, how the
+// places are visited, and how far the retention goes. A nil Scheduler is the simulation's own and a nil
 // Places visits the places in order.
 type CurveInputs struct {
-	Schedules    map[ReviewCardID]Schedule
-	UnbegunCount int
-	Scheduler    func(retention float64) Scheduler
-	Places       func(count int, each func(index int) error) error
+	Cards           []Card
+	UnbegunCount    int
+	Scheduler       func(retention float64) Scheduler
+	Places          func(count int, each func(index int) error) error
+	RetentionBounds Bounds
 }
 
 // Curve evaluates a preset over the goal range using simulation.
-func (s Simulation) Curve(ctx context.Context, now time.Time, p Preset, in CurveInputs) (Curve, error) {
-	schedules, unbegunCount, scheduler, places := in.Schedules, in.UnbegunCount, in.Scheduler, in.Places
+func (s Simulation) Curve(ctx context.Context, now time.Time, p Settings, in CurveInputs) (Curve, error) {
+	cards, unbegunCount, scheduler, places := in.Cards, in.UnbegunCount, in.Scheduler, in.Places
 	if scheduler == nil {
-		scheduler = func(retention float64) Scheduler { return NewFSRSAt(retention) }
+		scheduler = func(float64) Scheduler { return s.By }
 	}
 	if places == nil {
 		places = func(count int, each func(index int) error) error {
@@ -102,7 +104,10 @@ func (s Simulation) Curve(ctx context.Context, now time.Time, p Preset, in Curve
 			return nil
 		}
 	}
-	d := curveBuilder{run: s, now: now, preset: p, schedules: schedules, unbegunCount: unbegunCount, scheduler: scheduler, places: places}
+	d := curveBuilder{
+		run: s, now: now, preset: p, cards: cards, bounds: in.RetentionBounds,
+		unbegunCount: unbegunCount, scheduler: scheduler, places: places,
+	}
 	switch p.Goal {
 	case GoalRetention:
 		return d.retention(ctx)
@@ -116,10 +121,10 @@ func (s Simulation) Curve(ctx context.Context, now time.Time, p Preset, in Curve
 }
 
 func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
-	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.schedules, d.unbegunCount
+	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.cards, d.unbegunCount
 
 	free := p
-	free.MinutesADay = int(GetMinutesADayBounds().Max)
+	free.MinutesADay = MinutesInDay
 	load, err := run.Run(ctx, now, free, pos, unreviewed)
 	if err != nil {
 		return Curve{}, err
@@ -168,10 +173,10 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 }
 
 func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
-	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.schedules, d.unbegunCount
+	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.cards, d.unbegunCount
 
 	out := createCurve(GoalRetention)
-	least, most := GetRetentionBounds().Min, GetRetentionBounds().Max
+	least, most := d.bounds.Min, d.bounds.Max
 	for i := range Points {
 		out.Grid = append(out.Grid, least+(most-least)*float64(i)/float64(Points-1))
 	}
@@ -205,7 +210,7 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 	return out, nil
 }
 
-func getNamedOffset(d Day, open time.Time, targetDate string) int {
+func getNamedOffset(d Calendar, open time.Time, targetDate string) int {
 	named := 0
 	for day := open; d.GetName(day) < targetDate; day = day.AddDate(0, 0, 1) {
 		named++
@@ -255,11 +260,11 @@ func findSuggestedDate(points []Point, grid []float64, days []string, minutesADa
 	return GetOutsideGrid()
 }
 func (d curveBuilder) date(ctx context.Context) (Curve, error) {
-	run, now, p, pos, unreviewedCount := d.run, d.now, d.preset, d.schedules, d.unbegunCount
+	run, now, p, pos, unreviewedCount := d.run, d.now, d.preset, d.cards, d.unbegunCount
 
 	out := createCurve(GoalDate)
 	open := run.Day.GetStart(now)
-	delta := p.By.Format(DayLayout)
+	delta := p.By.Format(time.DateOnly)
 	if p.By.IsZero() || delta < run.Day.GetName(open) {
 		return out, nil
 	}
@@ -318,8 +323,8 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 }
 
 func getDaysToLearnWithoutForgetting(
-	ctx context.Context, run Simulation, now time.Time, p Preset,
-	pos map[ReviewCardID]Schedule, unbegunCount int,
+	ctx context.Context, run Simulation, now time.Time, p Settings,
+	pos []Card, unbegunCount int,
 ) (int, error) {
 	// The day the material is learned is all this run is read for.
 	run = Simulation{

@@ -1,4 +1,4 @@
-package projection_test
+package flashcards_test
 
 import (
 	"flag"
@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/projection"
 )
 
 // updateFlag names the flag that writes the projections down again, and compares against none of
@@ -80,7 +80,7 @@ func projections(t *testing.T) string {
 	var out strings.Builder
 	for _, m := range goldenMaterials(delta) {
 		for _, p := range goldenPresets() {
-			run := projection.Simulation{
+			run := reviewRun{
 				By: delta, Day: getGoldenDay(), Days: 60, Retains: goldenDays(60),
 				Cost: review.AnswerCost{New: 19 * time.Second, Review: 7 * time.Second},
 				Spent: review.Spent{
@@ -171,7 +171,7 @@ func formatAdmittedFlags(one []bool) string {
 	return out.String()
 }
 
-func formatClosedBudgets(one []review.BudgetNames) string {
+func formatClosedBudgets(one []projection.BudgetNames) string {
 	out := make([]string, len(one))
 	for i, each := range one {
 		named := make([]string, len(each))
