@@ -5,7 +5,7 @@
  */
 import { onBeforeUnmount, onMounted, watch, type Ref } from 'vue'
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { syntaxHighlighting } from '@codemirror/language'
 import { setDiagnostics } from '@codemirror/lint'
 import { EditorView, keymap } from '@codemirror/view'
@@ -67,7 +67,7 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
         syntaxHighlighting(queryHighlighting),
         queryTheme,
         autocompletion({ override: [createQueryCompletion(options.getFunctions)] }),
-        keymap.of([...completionKeymap, ...historyKeymap, ...defaultKeymap]),
+        keymap.of([...completionKeymap, ...historyKeymap, ...defaultKeymap, indentWithTab]),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ 'aria-label': words.queryField }),
         typingListener,
