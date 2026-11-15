@@ -2,13 +2,13 @@ package searchrun
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchkept"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
 )
 
-// Deps is what the searches read. MaxResults is the most results one search holds.
+// Deps is what the searches read. MaxResults is the most results one search holds, and Slots is shared by
+// every search that runs.
 type Deps struct {
-	Kept        *searchkept.Searches
+	Kept        *Kept
+	Slots       SearchSlots
 	Generations IndexGenerations
 	Run         RunQuery
 	Names       PluginNames
@@ -29,7 +29,7 @@ func NewSearchRuns(deps Deps) SearchRuns {
 	return SearchRuns{
 		Start: &StartSearch{
 			kept: deps.Kept, generations: deps.Generations, run: deps.Run, names: deps.Names,
-			slots: searchslot.New(deps.Kept.Policy.MaxRunning), maxResults: deps.MaxResults,
+			slots: deps.Slots, maxResults: deps.MaxResults,
 		},
 		Get:       &GetSearch{kept: deps.Kept, generations: deps.Generations},
 		Remove:    &RemoveSearch{kept: deps.Kept},

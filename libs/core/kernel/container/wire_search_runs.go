@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchkept"
 	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -30,10 +30,11 @@ func emitIndexChanged(generations *indexgeneration.Generations, events *editor.E
 func newSearchRuns(w *windowWiring) *searchrunusecase.SearchRuns {
 	find := newFindSearchResults(w.a, w.db, w.asking, w.state.ReportFloorError)
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
-		Kept: &searchkept.Searches{
+		Kept: &searchrunusecase.Kept{
 			Store: searchstore.New(), Cancels: searchcancel.NewSearches(w.cfg.Clock()), Tasks: w.tasks,
 			Timer: w.cfg.Clock(), Policy: searchrundomain.DefaultPolicy(),
 		},
+		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
 		Generations: w.generations,
 		Run:         find.Execute,
 		Names:       func(pluginID string) string { return pluginsGetPluginName(w.a, pluginID) },
