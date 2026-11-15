@@ -329,20 +329,26 @@ func TestABuiltInPluginIsGivenTheRuntime(t *testing.T) {
 	}
 }
 
-// A built-in plugin whose runtime cannot be provisioned is not activated.
-func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
+// A built-in plugin whose runtime cannot be downloaded is started with the planned path and fails at its first use.
+func TestABuiltInPluginWhoseRuntimeCannotBeDownloadedFailsAtItsFirstUse(t *testing.T) {
 	t.Setenv(envSampleLib, "")
 	failure := errors.New("the archive is not the pinned one")
 	host := newBuiltInHost(t)
-	host.Dependencies.Replace(newFixedCatalog("", "", failure))
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, sampleRuntime), newBuiltInBackend().serve("first tools"))
+	catalog := newFixedCatalog("/models/libsample.so", "coreml", failure)
+	host.Dependencies.Replace(catalog)
+	backend := newBuiltInBackend()
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, sampleRuntime), backend.serve("first tools"))
 
 	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, getTestHolder())
-	if !errors.Is(err, failure) || !strings.Contains(err.Error(), firstBuiltInID) {
-		t.Fatalf("EnsureActive() = %v, want the failure with the plugin named", err)
+
+	if !errors.Is(err, failure) {
+		t.Fatalf("EnsureActive() = %v, want the download failure", err)
 	}
-	if got := os.Getenv(envSampleLib); got != "" {
-		t.Errorf("%s = %q after a failed provisioning", envSampleLib, got)
+	if got := backend.lastVars(t)[envSampleLib]; got != "/models/libsample.so" {
+		t.Errorf("the plugin was started with %s = %q, want the planned path", envSampleLib, got)
+	}
+	if len(catalog.calls) != 1 {
+		t.Errorf("the use downloaded %d times, want 1", len(catalog.calls))
 	}
 }
 
