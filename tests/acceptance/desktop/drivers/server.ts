@@ -35,6 +35,8 @@ const STAND_IN_AGENT_CONNECTION = 'c57a4d101'
 const INSTALLED_PROGRAMS: Readonly<Record<string, { place: string; variable: string } | undefined>> = {
   'Claude Code': { place: '.local/bin/claude', variable: 'NUMEN_CLAUDE_COMMAND' },
 }
+/** The models and runtimes the application downloads; one folder for every live scenario, so they are fetched once. */
+const LIVE_MODELS_DIR = path.join(os.homedir(), '.cache', 'numen-acceptance', 'models')
 const STATE_FOLDERS = ['config', 'cache', 'data', 'state', 'home'] as const
 
 const getFreePort = (): Promise<number> =>
@@ -275,7 +277,9 @@ export class Server {
         XDG_RUNTIME_DIR: path.join(this.state, 'home', 'run'),
         DBUS_SESSION_BUS_ADDRESS: '',
         ...editorEnv,
-        ...(this.options.isLive ? {} : { NUMEN_TEST_MOCK_EMBED_HOLD_FILE: path.join(this.state, 'embedding-hold') }),
+        ...(this.options.isLive
+          ? { NUMEN_MODELS_DIR: process.env.NUMEN_MODELS_DIR ?? LIVE_MODELS_DIR }
+          : { NUMEN_TEST_MOCK_EMBED_HOLD_FILE: path.join(this.state, 'embedding-hold') }),
         NUMEN_PLUGINS_PATH: path.join(REPO_ROOT, 'plugins'),
         NUMEN_DEBUG_TLS_CERT: certificate,
         NUMEN_DEBUG_TLS_KEY: path.join(this.state, 'key.pem'),

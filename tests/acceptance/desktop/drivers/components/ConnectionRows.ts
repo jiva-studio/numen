@@ -64,7 +64,10 @@ export class ConnectionRows {
       return
     }
     await search.fill(value)
-    const listed = this.page.getByRole('option', { name: value, exact: true })
+    const listed = this.page
+      .getByRole('option', { name: value, exact: true })
+      .or(this.page.getByRole('option', { name: new RegExp(`^${escapeRegExp(value)}.*\\|`) }))
+      .first()
     const isListed = await listed.waitFor({ timeout: LISTING_LIMIT_MS }).then(() => true, () => false)
     if (isListed) await listed.click()
     else await search.press('Enter')
