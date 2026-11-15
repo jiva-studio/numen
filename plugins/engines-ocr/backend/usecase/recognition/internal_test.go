@@ -741,8 +741,8 @@ func TestRecognitionPreparesDocumentsBeforeItsTurn(t *testing.T) {
 	r, err := New(Host{
 		Documents: preparedPictures{prepares: &prepares}, Vaults: func(id domain.VaultID) Files { return v.With(id) },
 		Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: queue,
-	}, func(context.Context) (Recognizer, error) {
-		return &stubRecognizer{blocks: []Block{{Text: "hello"}}}, nil
+	}, func(context.Context) (ports.Recognizer, error) {
+		return &stubRecognizer{blocks: []scan.Block{{Text: "hello"}}}, nil
 	})
 	if err != nil {
 		t.Fatal(err)

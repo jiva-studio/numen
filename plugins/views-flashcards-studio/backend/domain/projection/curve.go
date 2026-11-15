@@ -60,7 +60,7 @@ func GetOutsideGrid() CurvePoint { return CurvePoint{Index: -1, Value: 0, Day: "
 func createCurve(goal Goal) Curve {
 	return Curve{
 		Goal: goal, Grid: nil, Days: nil, Points: nil, Now: GetOutsideGrid(), Suggested: GetOutsideGrid(),
-		Stops: "", Decks: 0, Cards: 0, Overdue: 0, Unbegun: 0,
+		Decks: 0, Cards: 0, Overdue: 0, Unbegun: 0,
 	}
 }
 
