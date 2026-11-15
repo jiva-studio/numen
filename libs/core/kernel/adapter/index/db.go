@@ -41,6 +41,7 @@ type DB struct {
 	read        *sql.DB
 	minimum     chunk.Minimum
 	frontmatter *note.FrontmatterChanges
+	feed        *changefeed.Changes
 }
 
 func getPragmas() []string {
@@ -120,7 +121,7 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	if err := changefeed.Trim(ctx, write, changefeed.RemovalLifetime); err != nil {
 		return nil, errors.Join(err, read.Close(), write.Close())
 	}
-	return &DB{write: write, read: read, frontmatter: &note.FrontmatterChanges{}}, nil
+	return &DB{write: write, read: read, frontmatter: &note.FrontmatterChanges{}, feed: &changefeed.Changes{}}, nil
 }
 
 func (d *DB) Close() error {
@@ -132,11 +133,16 @@ func (d *DB) Close() error {
 }
 
 func (d *DB) Vaults() *vault.Repository { return vault.NewRepository(d.write) }
-func (d *DB) Notes() *note.Repository   { return note.NewRepository(d.write).ReportingTo(d.frontmatter) }
-func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write) }
+func (d *DB) Notes() *note.Repository {
+	return note.NewRepository(d.write).ReportingTo(d.frontmatter).ReportingFeedTo(d.feed)
+}
+func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write).ReportingTo(d.feed) }
 
 // FrontmatterChanges reports the notes whose frontmatter a write through Notes changed.
 func (d *DB) FrontmatterChanges() *note.FrontmatterChanges { return d.frontmatter }
+
+// FeedChanges reports each committed write through Notes or Chunks that can change the file change feed.
+func (d *DB) FeedChanges() *changefeed.Changes { return d.feed }
 
 // FileChanges reads the file change feed of each vault.
 func (d *DB) FileChanges() *changefeed.Feed { return changefeed.NewFeed(d.read) }
