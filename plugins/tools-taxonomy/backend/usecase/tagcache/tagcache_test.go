@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tagfile"
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
@@ -109,8 +110,8 @@ func (s *scene) readFile(t *testing.T) map[string][]string {
 		t.Fatal(err)
 	}
 	var stored struct {
-		Version int                      `json:"version"`
-		Notes   map[string]tagcache.Note `json:"notes"`
+		Version int                     `json:"version"`
+		Notes   map[string]tagfile.Note `json:"notes"`
 	}
 	if err := json.Unmarshal(raw, &stored); err != nil {
 		t.Fatal(err)
