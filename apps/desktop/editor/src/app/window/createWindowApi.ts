@@ -15,7 +15,7 @@ import {
 } from '@/entities/plugin'
 import { createSettingsApi, createThemes } from '@/entities/settings'
 import { createSavedTabsApi, createTabKindPluginFinder } from '@/entities/tab'
-import { createVaults, createVaultStateApi } from '@/entities/vault'
+import { createVaultListReader, createVaults, createVaultStateApi } from '@/entities/vault'
 import {
   createFocusApi,
   createQuitApi,
@@ -25,7 +25,6 @@ import {
 import { createSearchCore } from '@/features/command-palette'
 import { createTabLinksApi } from '@/features/tab-linking'
 import { createTabMoveApi } from '@/features/tab-move'
-import { createVaultListReader } from '@/features/window-display'
 import {
   createPluginHostClients,
   createSettingsClients,

@@ -11,7 +11,7 @@ option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v
 // HostSearchService is the search index and the search floor of a vault, as a
 // plugin reads and sets them. The host identifies the plugin by its token.
 // GetEmbeddingState, GetIndexStats, EmbedTexts, SampleSimilarities,
-// GetBestSimilarity, FindNearestPassages and SearchPassages need index:read; GetSearchFloor and SetSearchFloor need
+// GetBestSimilarity, FindNearestChunks and SearchText need index:read; GetSearchFloor and SetSearchFloor need
 // search:policy.
 //
 // Numen-Vault works the vault of that identity; without it a call works the
@@ -46,20 +46,20 @@ service HostSearchService {
   // one sample. At most 256 queries are sampled in one call.
   rpc SampleSimilarities(SampleSimilaritiesRequest) returns (SampleSimilaritiesResponse);
 
-  // GetBestSimilarity is the cosine similarity of the passage of the vault
+  // GetBestSimilarity is the cosine similarity of the chunk of the vault
   // nearest a vector under the recipe, and zero when the vault has none.
   rpc GetBestSimilarity(GetBestSimilarityRequest) returns (GetBestSimilarityResponse);
 
-  // FindNearestPassages is the small chunks of the place nearest a vector, nearest first, at or
+  // FindNearestChunks is the small chunks of the place nearest a vector, nearest first, at or
   // above the floor: the floor the request names, else the effective floor of the vault under the
   // recipe. A search source answers a query with it. The vault is the one of the place.
-  rpc FindNearestPassages(FindNearestPassagesRequest) returns (FindNearestPassagesResponse);
+  rpc FindNearestChunks(FindNearestChunksRequest) returns (FindNearestChunksResponse);
 
-  // SearchPassages returns passages matching the query, from the index of every
+  // SearchText returns search results matching the query, from the index of every
   // source and every text version: by keywords, and by embedding when the
   // installation has an embedding model. It is the search the window runs, with
   // the window's similarity threshold.
-  rpc SearchPassages(HostSearchServiceSearchPassagesRequest) returns (HostSearchServiceSearchPassagesResponse);
+  rpc SearchText(HostSearchServiceSearchTextRequest) returns (HostSearchServiceSearchTextResponse);
 
   // GetSearchFloor is the floor a search by meaning applies to the vault under
   // the recipe, and where it comes from.
@@ -194,7 +194,7 @@ message SimilarityQuery {
   FloatVector vector = 1;
 
   // The path of the note the query was made from, relative to the vault. The
-  // passages of that note are left out of the sample of the query. An empty
+  // chunks of that note are left out of the sample of the query. An empty
   // path leaves out none.
   string path = 2;
 }
@@ -205,16 +205,16 @@ message SampleSimilaritiesRequest {
 }
 
 message SimilarityRow {
-  // The similarity of the query with each sampled passage, in the order of the
-  // passages. A query with no vector, or whose note is the only source, has none.
+  // The similarity of the query with each sampled chunk, in the order of the
+  // chunks. A query with no vector, or whose note is the only source, has none.
   repeated double values = 1;
 }
 
 message SampleSimilaritiesResponse {
   HostSearchErrorCode error = 1;
 
-  // How many passages the host sampled, and how many sources they come from.
-  int32 passage_count = 2;
+  // How many chunks the host sampled, and how many sources they come from.
+  int32 chunk_count = 2;
   int32 source_count = 3;
 
   // One row per query, in the order the queries arrived.
@@ -231,7 +231,7 @@ message GetBestSimilarityResponse {
   double similarity = 2;
 }
 
-message FindNearestPassagesRequest {
+message FindNearestChunksRequest {
   SearchPlace place = 1;
   repeated float vector = 2;
 
@@ -248,7 +248,7 @@ message FindNearestPassagesRequest {
   double floor = 6;
 }
 
-message FindNearestPassagesResponse {
+message FindNearestChunksResponse {
   HostSearchErrorCode error = 1;
 
   // Nearest first. The score is the cosine similarity.
@@ -289,10 +289,10 @@ message SetSearchFloorResponse {
   HostSearchErrorCode error = 1;
 }
 
-message HostSearchServiceSearchPassagesRequest {
+message HostSearchServiceSearchTextRequest {
   string query = 1;
 
-  // Maximum passages to return. Zero means the number the host chooses.
+  // Maximum search results to return. Zero means the number the host chooses.
   int32 limit = 2;
 
   // The kinds of source to search, "note" or "file". Empty means every kind.
@@ -300,14 +300,14 @@ message HostSearchServiceSearchPassagesRequest {
 
   // Limits the search to the sources whose path starts with it, relative to the
   // vault, in either Unicode form (NFC or NFD). The index applies it, so the
-  // limit counts passages under the prefix.
+  // limit counts search results under the prefix.
   // Empty means the whole vault.
   string path_prefix = 4;
 }
 
-message HostSearchServiceSearchPassagesResponse {
+message HostSearchServiceSearchTextResponse {
   HostSearchErrorCode error = 1;
 
-  // Matching passages, best first, at most three of one source.
-  repeated Passage passages = 2;
+  // Matching search results, best first, at most three of one source.
+  repeated SearchResult results = 2;
 }

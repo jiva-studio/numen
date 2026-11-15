@@ -66,8 +66,8 @@ func (h handler) EmbedQueries(ctx context.Context, queries []string) ([][]float3
 	return h.embed(ctx, model.RoleQuery, queries)
 }
 
-// SearchPassages embeds the query and asks the core for the chunks of the place nearest it.
-func (h handler) SearchPassages(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error) {
+// SearchChunks embeds the query and asks the core for the chunks of the place nearest it.
+func (h handler) SearchChunks(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error) {
 	vector, err := h.getQueryVector(ctx, place.Recipe, q.Text)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (h handler) SearchPassages(ctx context.Context, place searchsource.Place, q
 	for i, kind := range q.Kinds {
 		kinds[i] = hostdomain.SourceKind(kind)
 	}
-	found, err := places.FindNearestPassages(ctx, host.NearestQuery{
+	found, err := places.FindNearestChunks(ctx, host.NearestQuery{
 		Recipe: place.Recipe, Vector: vector, Limit: q.Limit, Kinds: kinds, PathPrefix: q.PathPrefix, Floor: q.Floor,
 	})
 	if err != nil {

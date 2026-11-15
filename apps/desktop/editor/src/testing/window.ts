@@ -28,7 +28,7 @@ import {
   mockVaultList,
   nameAnswer,
   outside,
-  passageAnswer,
+  searchResultAnswer,
   mockVaultState,
   sourceAnswer,
 } from './answers'
@@ -176,7 +176,7 @@ export {
   mountWindowWithPalette,
   nameAnswer,
   outside,
-  passageAnswer,
+  searchResultAnswer,
   mockVaultState,
   mockVaultState as vaultState,
   mockVaultList as listed,

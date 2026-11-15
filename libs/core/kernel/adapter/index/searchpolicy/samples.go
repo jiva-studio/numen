@@ -18,26 +18,26 @@ func NewSamples(db *sql.DB) *Samples { return &Samples{db: db} }
 
 // ListSmallChunkVectors returns at most `limit` small chunks of the vault that carry a
 // vector under the recipe, in the order of their content hashes.
-func (s *Samples) ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]searchpolicydomain.Passage, error) {
-	out, err := s.readPassages(ctx, v, recipe, limit)
+func (s *Samples) ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]searchpolicydomain.SampledChunk, error) {
+	out, err := s.readSampledChunks(ctx, v, recipe, limit)
 	if err != nil {
 		return nil, fmt.Errorf("read the passages of %s: %w", v.ID, err)
 	}
 	return out, nil
 }
 
-func (s *Samples) readPassages(ctx context.Context, v domain.Vault, recipe string, limit int) (out []searchpolicydomain.Passage, err error) {
-	rows, err := s.db.QueryContext(ctx, passagesSQL, string(v.ID), recipe, limit)
+func (s *Samples) readSampledChunks(ctx context.Context, v domain.Vault, recipe string, limit int) (out []searchpolicydomain.SampledChunk, err error) {
+	rows, err := s.db.QueryContext(ctx, sampledChunksSQL, string(v.ID), recipe, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = errors.Join(err, rows.Close()) }()
 	for rows.Next() {
-		var passage searchpolicydomain.Passage
-		if err := rows.Scan(&passage.Source, &passage.Path, &passage.Vector); err != nil {
+		var chunk searchpolicydomain.SampledChunk
+		if err := rows.Scan(&chunk.Source, &chunk.Path, &chunk.Vector); err != nil {
 			return nil, err
 		}
-		out = append(out, passage)
+		out = append(out, chunk)
 	}
 	return out, rows.Err()
 }

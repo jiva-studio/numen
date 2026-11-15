@@ -69,8 +69,9 @@ func ConvertWrite(pos domain.FileStat, err error, reasons ...Reason) (Outcome, e
 		}
 	}
 	code, ok := apierror.GetErrorCode(err)
+	var outErr error
 	if !ok {
-		return Outcome{Error: api.ErrorCodeUnspecified, At: nil, IsIndexOutdated: false}, apierror.NewError(apierror.GetCode(err), err)
+		outErr = apierror.NewError(apierror.GetCode(err), err)
 	}
-	return Outcome{Error: code, At: nil, IsIndexOutdated: false}, nil
+	return Outcome{Error: code, At: nil, IsIndexOutdated: false}, outErr
 }

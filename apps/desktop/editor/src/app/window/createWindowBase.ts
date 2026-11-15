@@ -3,9 +3,9 @@
  * settings of the window and the commands of the features.
  */
 import { measureTabs } from '@/entities/tab'
+import { createTargetResolver } from '@/features/command-target'
 import { createWindowSettings } from '@/features/settings-commands'
 import { createTabCommandsDeps } from '@/features/tab-commands'
-import { createTargetResolver } from '@/features/window-display'
 import { WORDS as words } from '@/shared/ui/words'
 import { collectFeatureCommands } from './createFeatureCommands'
 import { createTabsPart } from './createTabsPart'
@@ -76,7 +76,7 @@ export function createWindowBase(api: WindowApi) {
     vault,
     tabParts,
     appCommands: features.commands,
-    getTarget: createTargetResolver(windowTabs, vaults, window),
+    getTarget: createTargetResolver(windowTabs, vaults, window.health),
     windowSettings: createWindowSettings({
       themes: api.configuration.themes,
       watchSettings: api.configuration.settings.watchSettings,

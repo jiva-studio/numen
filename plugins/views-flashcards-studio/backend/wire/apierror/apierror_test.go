@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
@@ -93,6 +94,7 @@ func TestClassifyCreateReadsEachEndOfTheUseCase(t *testing.T) {
 		{what: "made", made: cards.CreateNoteResult{Path: "Deck.md"}, path: "Deck.md"},
 		{what: "index behind", made: cards.CreateNoteResult{Path: "Deck.md"}, err: note.ErrIndexOutdated, path: "Deck.md", outdated: true},
 		{what: "no fields", err: cards.ErrNoFields, failure: server.CodeInvalidArgument},
+		{what: "outside vault", err: host.ErrOutside, failure: server.CodeInvalidArgument},
 		{what: "name taken", err: ports.ErrAlreadyExists, code: api.ErrorCodeAlreadyExists},
 		{what: "disk", err: errors.New("disk boom"), failure: server.CodeInternal},
 	} {

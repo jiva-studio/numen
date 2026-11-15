@@ -37,19 +37,19 @@ type TabPlace struct {
 	CFI, Chapter string
 }
 
-// PassageSpan is a byte range in a file's text version, as a passage search returns it. A passage
+// ByteSpan is a byte range in a file's text version, as a text search returns it. A span
 // address has the form numen:<path>?start=<bytes>&length=<bytes>: the path relative to the vault,
 // percent-encoded as one path segment (url.PathEscape), and start and length the byte range of the
-// passage in the file's text version.
-type PassageSpan struct{ Start, Length int }
+// span in the file's text version.
+type ByteSpan struct{ Start, Length int }
 
 // Window is the main window of the plugin's vault. Every call needs window:focus. A path with no file
 // in the vault returns ErrNotExist, and a host with no window returns ErrNoWindow.
 type Window interface {
 	// FocusNote makes the note at the path the current one, and the neighborhood view is centered on it.
 	FocusNote(ctx context.Context, path string) (FocusedNote, error)
-	// FocusPassages opens the file at the first passage and highlights every passage.
-	FocusPassages(ctx context.Context, path string, passages []PassageSpan) error
+	// FocusFile opens the file at the first span and highlights every span.
+	FocusFile(ctx context.Context, path string, spans []ByteSpan) error
 	// ReadOpenTabs returns the tabs the window last reported, and the ID of the active one.
 	ReadOpenTabs(ctx context.Context) (tabs []OpenTab, activeID string, err error)
 	// ActivateTab makes the open tab with the id the active tab, and returns the tab and the active id
