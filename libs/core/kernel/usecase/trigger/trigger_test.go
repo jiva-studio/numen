@@ -538,7 +538,7 @@ func TestAPluginThatCannotBeReachedGetsNoFurtherBatchesInTheFrontmatterPass(t *t
 	}
 }
 
-func TestANoteThatCannotBeReadIsKeptAndTheRestOfTheFrontmatterPassRuns(t *testing.T) {
+func TestFrontmatterPassKeepsUnreadableNoteAndRunsTheRest(t *testing.T) {
 	s := newScene(t, map[string]string{"notes/a.md": "# A\n", "notes/b.md": "# B\n", "notes/c.md": "# C\n"}, getReadTagsOnFrontmatter())
 	s.memoryVault.broken = map[string]bool{"notes/a.md": true}
 
