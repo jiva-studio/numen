@@ -19,7 +19,7 @@ func TestSwitchVaultPointsThePluginsAtTheVaultOnlyWhereItWasShown(t *testing.T) 
 	w := newTestWindow(t, nil)
 	w.open(t, garden())
 	plugins, tabs := &recordedPath{}, &countedView{}
-	switching := NewSwitchVault(w.scenarios.Switching.Show, plugins, tabs)
+	switching := NewSwitchVault(w.useCases.Switching.Show, plugins, tabs)
 
 	shownErr := switching.Execute(t.Context(), studio(), nil)
 	w.pages.isAsking = true

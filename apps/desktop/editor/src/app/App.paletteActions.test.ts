@@ -76,7 +76,7 @@ describe('the actions that create a note, chosen on the window', () => {
 describe('the row of a passage of a document, chosen on the window', () => {
   it('draws the command that opens the document as its first action', async () => {
     vaultState.names = []
-    vaultState.passages = [sourceAnswer('Ants.bin', { page: 3 })]
+    vaultState.searchResults = [sourceAnswer('Ants.bin', { page: 3 })]
     const window = await mountWindowWithPalette()
 
     await search(window, 'ants')
@@ -90,7 +90,7 @@ describe('the row of a passage of a document, chosen on the window', () => {
 
   it('closes the search once and writes no message on the choice of that command', async () => {
     vaultState.names = []
-    vaultState.passages = [sourceAnswer('Ants.bin', { page: 3 })]
+    vaultState.searchResults = [sourceAnswer('Ants.bin', { page: 3 })]
     const window = await mountWindowWithPalette()
     await search(window, 'ants')
     const item = getGroups(window).find((one) => one.items.length > 0)?.items[0]?.id ?? ''

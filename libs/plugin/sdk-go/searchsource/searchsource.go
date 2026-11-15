@@ -32,7 +32,7 @@ type Description struct {
 	MinTextLength int32
 	// Concurrency is how many calls of IndexTexts the source answers at once.
 	Concurrency int32
-	// FloorHint is the similarity a passage starts out having to reach, zero where the source knows none.
+	// FloorHint is the similarity a chunk starts out having to reach, zero where the source knows none.
 	FloorHint float64
 }
 
@@ -82,8 +82,8 @@ type Handler interface {
 	Describe(ctx context.Context) (Description, error)
 	// IndexTexts returns one vector per text, in order, of the width of the description.
 	IndexTexts(ctx context.Context, place Place, texts []Text) ([][]float32, error)
-	// SearchPassages returns the chunks of the place that answer the query, best first.
-	SearchPassages(ctx context.Context, place Place, q Query) ([]Match, error)
+	// SearchChunks returns the chunks of the place that answer the query, best first.
+	SearchChunks(ctx context.Context, place Place, q Query) ([]Match, error)
 	// EmbedQueries returns one vector per query, in order, as the source compares a query with its place.
 	EmbedQueries(ctx context.Context, queries []string) ([][]float32, error)
 }
@@ -119,12 +119,12 @@ func (a *adapter) IndexTexts(
 	return connect.NewResponse(&v1.IndexTextsResponse{Vectors: writeVectors(vectors)}), nil
 }
 
-func (a *adapter) SearchPassages(
+func (a *adapter) SearchChunks(
 	ctx context.Context,
-	req *connect.Request[v1.SearchSourceServiceSearchPassagesRequest],
-) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error) {
+	req *connect.Request[v1.SearchSourceServiceSearchChunksRequest],
+) (*connect.Response[v1.SearchSourceServiceSearchChunksResponse], error) {
 	msg := req.Msg
-	matches, err := a.h.SearchPassages(ctx, readPlace(msg.GetPlace()), Query{
+	matches, err := a.h.SearchChunks(ctx, readPlace(msg.GetPlace()), Query{
 		Text: msg.GetQuery(), Limit: int(msg.GetLimit()), Kinds: msg.GetKinds(), PathPrefix: msg.GetPathPrefix(), Floor: msg.GetFloor(),
 	})
 	if err != nil {
@@ -134,7 +134,7 @@ func (a *adapter) SearchPassages(
 	for i, one := range matches {
 		out[i] = &v1.ChunkMatch{ChunkId: one.ChunkID, Score: one.Score}
 	}
-	return connect.NewResponse(&v1.SearchSourceServiceSearchPassagesResponse{Matches: out}), nil
+	return connect.NewResponse(&v1.SearchSourceServiceSearchChunksResponse{Matches: out}), nil
 }
 
 func (a *adapter) EmbedQueries(

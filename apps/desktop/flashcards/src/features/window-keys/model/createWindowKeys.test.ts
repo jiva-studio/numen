@@ -81,15 +81,18 @@ describe('a key pressed while a tab is open', () => {
 
   it('is left to the page by a kind that reads no keys', () => {
     const tab = createTab()
-    const onKeyDown = createWindowKeys({
-      getTab: () => ({ ...tab, kind: { ...tab.kind, events: {} } }),
-      getVaults: () => VAULTS,
-      openVault: vi.fn(),
-    })
-    const event = press('Escape')
+    const { events: _, ...kindWithoutEvents } = tab.kind
+    for (const kind of [{ ...tab.kind, events: {} }, kindWithoutEvents]) {
+      const onKeyDown = createWindowKeys({
+        getTab: () => ({ ...tab, kind }),
+        getVaults: () => VAULTS,
+        openVault: vi.fn(),
+      })
+      const event = press('Escape')
 
-    onKeyDown(event)
+      onKeyDown(event)
 
-    expect(event.defaultPrevented).toBe(false)
+      expect(event.defaultPrevented).toBe(false)
+    }
   })
 })

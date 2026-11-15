@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
@@ -40,5 +42,21 @@ func TestTheHandlerOfCreateTextNeedsAFile(t *testing.T) {
 	_, err = commands.RunCommand(t.Context(), command.Request{Command: command.CreateText})
 	if !errors.Is(err, command.ErrBadArguments) {
 		t.Errorf("a run over no file answered %v, want ErrBadArguments", err)
+	}
+	_, err = commands.RunCommand(t.Context(), command.Request{Command: "unknown"})
+	if !errors.Is(err, command.ErrUnknownCommand) {
+		t.Errorf("an unknown command answered %v, want ErrUnknownCommand", err)
+	}
+
+	noVault := hosttest.New("vault")
+	noVault.Hide()
+	noVaultWriter := testsupport.NewWriter(t, testsupport.FilesOf(noVault), noVault, hosttest.NewTexts("vault", testsupport.PluginID), hosttest.NewQueue())
+	noVaultCommands, err := newCommands(noVaultWriter)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = noVaultCommands.RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: "books/tiny.pdf"})
+	if !errors.Is(err, host.ErrNoVault) {
+		t.Errorf("a run with no shown vault answered %v, want ErrNoVault", err)
 	}
 }

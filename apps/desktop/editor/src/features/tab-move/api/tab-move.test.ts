@@ -1,9 +1,9 @@
 /**
  * Tab moves: the requests that send a tab to another window and the answers they get.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installCoreAnswers } from '@numen/core-client/testing'
-import * as tabMoveCore from './tab-move'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createAnsweredClients } from '@/testing/coreAnswers'
+import { createTabMoveApi } from './tab-move'
 
 const request = {
   readDetachedTab: vi.fn(),
@@ -13,6 +13,8 @@ const request = {
   highlightWindow: vi.fn(),
 }
 
+const tabMoveCore = createTabMoveApi(createAnsweredClients({ workspace: request }).workspace)
+
 const ORBITS = {
   id: 'plex:1',
   kind: 'plex',
@@ -21,15 +23,8 @@ const ORBITS = {
   state: '{"focus":"Kepler"}',
 }
 
-let restore: () => void
-
 beforeEach(() => {
   vi.clearAllMocks()
-  restore = installCoreAnswers({ workspace: request })
-})
-
-afterEach(() => {
-  restore()
 })
 
 describe('tab move requests', () => {

@@ -28,7 +28,7 @@ type recordingSearch struct {
 	queries []plugin.SimilarityQuery
 	floors  []float64
 
-	passageQueries []plugin.PassageQuery
+	textQueries []plugin.SearchResultQuery
 }
 
 func (s *recordingSearch) GetEmbeddingState(_ context.Context, v domain.Vault) (plugin.EmbeddingState, error) {
@@ -57,7 +57,7 @@ func (s *recordingSearch) SampleSimilarities(_ context.Context, v domain.Vault, 
 	s.vaults = append(s.vaults, v.ID)
 	s.recipes = append(s.recipes, recipe)
 	s.queries = append(s.queries, queries...)
-	return plugin.SimilaritySample{PassageCount: 3, SourceCount: 2, Rows: [][]float64{{0.25, 0.5}, nil}}, s.err
+	return plugin.SimilaritySample{ChunkCount: 3, SourceCount: 2, Rows: [][]float64{{0.25, 0.5}, nil}}, s.err
 }
 
 func (s *recordingSearch) GetBestSimilarity(context.Context, domain.Vault, string, []float32) (float64, error) {
@@ -115,7 +115,7 @@ func TestHostSearchAnswersEveryCallAndChecksItsPermission(t *testing.T) {
 			{},
 		},
 	}))
-	if err != nil || sample.Msg.GetPassageCount() != 3 || sample.Msg.GetSourceCount() != 2 || len(sample.Msg.GetRows()) != 2 ||
+	if err != nil || sample.Msg.GetChunkCount() != 3 || sample.Msg.GetSourceCount() != 2 || len(sample.Msg.GetRows()) != 2 ||
 		!slices.Equal(sample.Msg.GetRows()[0].GetValues(), []float64{0.25, 0.5}) || len(sample.Msg.GetRows()[1].GetValues()) != 0 {
 		t.Fatalf("sample %v (%v)", sample.Msg, err)
 	}
@@ -243,7 +243,7 @@ func TestHostSearchAnswersACodeForWhatItCannotServe(t *testing.T) {
 				t.Errorf("answered %v (%v), want %v", set.Msg, err, tc.want)
 			}
 			sampled, err := client.SampleSimilarities(ctx, connect.NewRequest(&v1.SampleSimilaritiesRequest{Recipe: "r"}))
-			if err != nil || sampled.Msg.GetError() != tc.want || len(sampled.Msg.GetRows()) != 0 || sampled.Msg.GetPassageCount() != 0 {
+			if err != nil || sampled.Msg.GetError() != tc.want || len(sampled.Msg.GetRows()) != 0 || sampled.Msg.GetChunkCount() != 0 {
 				t.Errorf("answered %v (%v), want only the code %v", sampled.Msg, err, tc.want)
 			}
 		})

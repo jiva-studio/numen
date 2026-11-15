@@ -17,21 +17,21 @@ const kind = (onClose: () => boolean): AnyTabKind => ({
 describe('closing a tab', () => {
   it('removes a tab its kind releases', async () => {
     const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([kind(() => true)])
+    windowTabs.kinds.registerKinds([kind(() => true)])
     const id = await windowTabs.tabs.openTabOfKind('form', 'Tides')
 
-    expect(windowTabs.closeTab(id)).toBe(true)
+    expect(windowTabs.panes.closeTab(id)).toBe(true)
 
     expect(onScreen(windowTabs)).toStrictEqual([])
   })
 
   it('keeps a tab its kind holds, and runs the hold instead', async () => {
     const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([kind(() => false)])
+    windowTabs.kinds.registerKinds([kind(() => false)])
     const id = await windowTabs.tabs.openTabOfKind('form', 'Tides')
     const hold = vi.fn()
 
-    expect(windowTabs.closeTab(id, hold)).toBe(false)
+    expect(windowTabs.panes.closeTab(id, hold)).toBe(false)
 
     expect(hold).toHaveBeenCalledOnce()
     expect(onScreen(windowTabs)).toStrictEqual([id])
@@ -39,11 +39,11 @@ describe('closing a tab', () => {
 
   it('leaves the removal to the caller where one passes a hold and the kind releases it', async () => {
     const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([kind(() => true)])
+    windowTabs.kinds.registerKinds([kind(() => true)])
     const id = await windowTabs.tabs.openTabOfKind('form', 'Tides')
     const hold = vi.fn()
 
-    expect(windowTabs.closeTab(id, hold)).toBe(true)
+    expect(windowTabs.panes.closeTab(id, hold)).toBe(true)
 
     expect(hold).not.toHaveBeenCalled()
     expect(onScreen(windowTabs)).toStrictEqual([id])

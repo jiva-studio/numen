@@ -26,7 +26,7 @@ func CompareVersions(a, b string) (int, error) {
 }
 
 type version struct {
-	numbers    [3]uint64
+	numbers    []uint64
 	prerelease []string
 }
 
@@ -38,12 +38,12 @@ func parseVersion(text string) (version, error) {
 	core, _, _ = strings.Cut(core, "+")
 	core, prerelease, hasPrerelease := strings.Cut(core, "-")
 	var parsed version
-	for i, part := range strings.Split(core, ".") {
+	for part := range strings.SplitSeq(core, ".") {
 		number, err := strconv.ParseUint(part, 10, 64)
 		if err != nil {
 			return version{}, fmt.Errorf("%w: %q: %w", ErrInvalidVersion, text, err)
 		}
-		parsed.numbers[i] = number
+		parsed.numbers = append(parsed.numbers, number)
 	}
 	if hasPrerelease {
 		parsed.prerelease = strings.Split(prerelease, ".")

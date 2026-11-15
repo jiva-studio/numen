@@ -51,4 +51,4 @@ The code below does not follow the target. It is not a model.
 - Doc comments in `libs/ui/components/src/index.ts` name domain things: a "moment of a recording" for `clock`, a "manifest" for `NamedIcon`, "both windows" for the number formatters. The exports are general; the comments name their first consumer.
 - `libs/ui/workbench/src/features/welcome` exposes `VaultRow` and `getVaultForKey`; the shell's other slices (workspace, palette, notices, window frame) are chrome.
 - `Menu.types.ts:16` takes `clock?: () => number` while `Tree.types.ts:15` takes `clock?: Clock`. The target is `Clock`.
-- `libs/core/client/src/clients.ts:44-50` creates clients at import time on the shared transport (`export const vault = createVaultClient()`), and `errors/codes.ts:19` words a code with the domain term "vault". The target is a client created from a transport parameter, and sentences stated once as data.
+- `libs/core/client/src/errors/codes.ts:19` words a code with the domain term "vault". The target is sentences stated once as data. Clients are created from a transport parameter (`create*Client(transport)`); no client is created at import time.

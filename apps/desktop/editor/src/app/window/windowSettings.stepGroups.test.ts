@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { WORDS } from '@/shared/ui/words'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createWindowSettingsPart } from '@/testing/windowSettings'
 
 describe('settings step groups', () => {
@@ -9,17 +10,17 @@ describe('settings step groups', () => {
       getWriter: () => vi.fn(),
     } as never
     const windowTabs = {
-      groups: {
-        handle: {
-          front: () => null,
-          open: vi.fn(),
-          close: vi.fn(),
-        },
+      handle: {
+        front: () => null,
+        open: vi.fn(),
+        close: vi.fn(),
       },
     } as never
 
+    const api = createAnsweredApi({})
     const settings = createWindowSettingsPart({
-      rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
+      api,
+      rest: createSettingsStore(api.configuration.settings, SETTINGS_WORDS, vi.fn()),
       words: WORDS,
       log,
       windowTabs,

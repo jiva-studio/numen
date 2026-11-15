@@ -38,15 +38,6 @@ func FromEnvironment() (*Tools, error) {
 	return New(tools.NewClient(endpoint)), nil
 }
 
-// FromVariables returns Tools of the host the variables name.
-func FromVariables(vars map[string]string) (*Tools, error) {
-	endpoint, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return New(tools.NewClient(endpoint)), nil
-}
-
 // ListTools returns the tools the permissions of the plugin allow, in the order of the listing; a tool that
 // declares no parameters takes an empty object.
 func (t *Tools) ListTools(ctx context.Context) ([]conversation.Tool, error) {

@@ -3,8 +3,6 @@
 package service
 
 import (
-	"net/http"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
@@ -27,19 +25,6 @@ func Mount(s *server.Server) error {
 	}
 	env := process.Process{}
 	return mount(s, hostclient.Open(endpoint), env.GetConfig(), env.IsMockML())
-}
-
-// NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
-// from the variables a launched process of the plugin is given.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	endpoint, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	hosted := hostclient.Open(endpoint)
-	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return mount(s, hosted, process.Process{}.GetConfig(), process.IsMockML(vars))
-	})
 }
 
 func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock bool) error {

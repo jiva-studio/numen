@@ -1,9 +1,9 @@
 /** Whether the host runs a command of a plugin over a note: the when condition of its declaration. */
 import type { CommandNote } from '@numen/plugin-sdk'
 import { type WhenReader, getWhenValues } from '../when'
-import type { CommandDeclaration, PluginHostDeps } from './types'
+import type { CommandDeclaration, HostCommands } from './types'
 
-export type CommandWhenDeps = Pick<PluginHostDeps, 'getContentTypes' | 'getWindowValues'> & {
+export type CommandWhenDeps = Pick<HostCommands, 'getContentTypes' | 'getWindowValues'> & {
   readonly whenReader: WhenReader
 }
 

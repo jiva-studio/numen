@@ -59,11 +59,11 @@ func (p *meaningPlugin) IndexTexts(
 	return connect.NewResponse(&v1.IndexTextsResponse{Vectors: vectors}), nil
 }
 
-func (p *meaningPlugin) SearchPassages(
-	context.Context, *connect.Request[v1.SearchSourceServiceSearchPassagesRequest],
-) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error) {
+func (p *meaningPlugin) SearchChunks(
+	context.Context, *connect.Request[v1.SearchSourceServiceSearchChunksRequest],
+) (*connect.Response[v1.SearchSourceServiceSearchChunksResponse], error) {
 	p.searches.Add(1)
-	return connect.NewResponse(&v1.SearchSourceServiceSearchPassagesResponse{}), nil
+	return connect.NewResponse(&v1.SearchSourceServiceSearchChunksResponse{}), nil
 }
 
 // meaningCore is one process of the core over the meaning plugin: its plugin host and the times it started

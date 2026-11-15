@@ -32,14 +32,14 @@ import (
 )
 
 func newPluginWindow(
-	state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages, limit time.Duration,
+	state *State, focusNote *query.FocusNote, focusFile *file.FocusFile, limit time.Duration,
 ) hostendpoint.WindowControl {
 	return windowsession.NewPluginWindow(
 		&state.Runtime,
 		&state.Tabs,
 		focusNote,
-		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
-			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
+		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
+			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
 		}),
 		windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, limit),
 	)
@@ -78,14 +78,14 @@ func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint
 	}))
 	line, unsubscribe := state.Notices.Places.Subscribe()
 	t.Cleanup(unsubscribe)
-	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, ViewOf(state)), limit), line
+	return state, newPluginWindow(state, nil, file.NewFocusFile(vaultreader.Readers{}, ViewOf(state)), limit), line
 }
 
-func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {
+func TestPluginWindowFocusFileSendsRangesToWindow(t *testing.T) {
 	_, window, line := newBoundWindow(t)
 	ranges := []domain.ByteRange{{Start: 1500, End: 1580}, {Start: 400, End: 1100}}
 
-	if err := window.FocusPassages(t.Context(), "library/Birds.pdf", ranges); err != nil {
+	if err := window.FocusFile(t.Context(), "library/Birds.pdf", ranges); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -99,10 +99,10 @@ func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {
 	}
 }
 
-func TestPluginWindowRejectsBadPassageOrMissingFile(t *testing.T) {
+func TestPluginWindowRejectsBadSpanOrMissingFile(t *testing.T) {
 	_, window, line := newBoundWindow(t)
 
-	invalid := window.FocusPassages(t.Context(), "library/Birds.pdf", []domain.ByteRange{{Start: -1, End: 4}})
+	invalid := window.FocusFile(t.Context(), "library/Birds.pdf", []domain.ByteRange{{Start: -1, End: 4}})
 	if !errors.Is(invalid, plugin.ErrInvalidFocus) {
 		t.Errorf("a passage before the text returned %v, want ErrInvalidFocus", invalid)
 	}
@@ -110,7 +110,7 @@ func TestPluginWindowRejectsBadPassageOrMissingFile(t *testing.T) {
 	if !errors.Is(emptyPath, plugin.ErrInvalidFocus) {
 		t.Errorf("a note with no path returned %v, want ErrInvalidFocus", emptyPath)
 	}
-	missing := window.FocusPassages(t.Context(), "library/Gone.pdf", nil)
+	missing := window.FocusFile(t.Context(), "library/Gone.pdf", nil)
 	if !errors.Is(missing, fs.ErrNotExist) {
 		t.Errorf("a missing file returned %v, want fs.ErrNotExist", missing)
 	}

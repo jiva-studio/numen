@@ -15,8 +15,8 @@ const (
 	shelfNFD = "Bücher"
 )
 
-func shelfPassages() []host.Passage {
-	return []host.Passage{
+func shelfResults() []host.SearchResult {
+	return []host.SearchResult{
 		{Path: "library/Tea.pdf", Text: "green tea leaves", Start: 0, Length: 16},
 		{Path: "library2/Tea Atlas.pdf", Text: "tea gardens of the hills", Start: 0, Length: 24},
 		{Path: shelfNFC + "/Teebuch.pdf", Text: "black tea from the hills", Start: 0, Length: 24},
@@ -24,7 +24,7 @@ func shelfPassages() []host.Passage {
 }
 
 func TestLibrarySearchSendsEveryFolderPrefixFormWithASlash(t *testing.T) {
-	calls, registry := newRecordedSearch(t, hosttest.New(testVault), shelfPassages())
+	calls, registry := newRecordedSearch(t, hosttest.New(testVault), shelfResults())
 
 	for _, prefix := range []string{"./library", "/library/", "library", "library/"} {
 		var out librarySearchAnswer
@@ -42,7 +42,7 @@ func TestLibrarySearchSendsEveryFolderPrefixFormWithASlash(t *testing.T) {
 }
 
 func TestLibrarySearchSendsADecomposedPrefixDecomposedAndFindsTheComposedShelf(t *testing.T) {
-	calls, registry := newRecordedSearch(t, hosttest.New(testVault), shelfPassages())
+	calls, registry := newRecordedSearch(t, hosttest.New(testVault), shelfResults())
 
 	var out librarySearchAnswer
 	if failure := callFailure(t, registry, testVault, "library_search", `{"query":"tea","folder":"`+shelfNFD+`"}`, &out); failure != "" {
@@ -58,7 +58,7 @@ func TestLibrarySearchSendsADecomposedPrefixDecomposedAndFindsTheComposedShelf(t
 }
 
 func TestLibrarySearchWithoutAPrefixSearchesTheWholeVault(t *testing.T) {
-	calls, registry := newRecordedSearch(t, hosttest.New(testVault), shelfPassages())
+	calls, registry := newRecordedSearch(t, hosttest.New(testVault), shelfResults())
 
 	for _, prefix := range []string{"", "./", "/"} {
 		var out librarySearchAnswer

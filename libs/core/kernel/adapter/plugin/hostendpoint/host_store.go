@@ -26,7 +26,7 @@ type storeEndpoint struct {
 var _ numenv1connect.HostStoreServiceHandler = (*storeEndpoint)(nil)
 
 func (e *storeEndpoint) begin(header http.Header) (*vault.Access, string, error) {
-	pluginID, err := e.endpoint.authenticate(header.Get("Authorization"))
+	pluginID, err := e.endpoint.Authenticate(header.Get("Authorization"))
 	if err != nil {
 		return nil, "", err
 	}

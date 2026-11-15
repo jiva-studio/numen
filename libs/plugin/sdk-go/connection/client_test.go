@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -21,6 +22,7 @@ type fakeHost struct {
 	token    string
 	received *v1.HostConnectionServiceCallRequest
 	frames   []*v1.HostConnectionServiceCallResponse
+	onCall   func()
 	err      error
 }
 
@@ -29,6 +31,9 @@ func (h *fakeHost) Call(
 	stream *connect.ServerStream[v1.HostConnectionServiceCallResponse],
 ) error {
 	h.token, h.received = request.Header().Get("Authorization"), request.Msg
+	if h.onCall != nil {
+		h.onCall()
+	}
 	for _, one := range h.frames {
 		if err := stream.Send(one); err != nil {
 			return err
@@ -150,9 +155,32 @@ func TestAStatusOfTheHostIsAnErrorOfNoFailureKind(t *testing.T) {
 	_, _, err := collectCall(t, newTestClient(t, host), PriorityBackground)
 
 	var failed *AllFailedError
-	if err == nil || errors.Is(err, ErrNoConnection) || errors.As(err, &failed) {
-		t.Errorf("err = %v, want an error of no failure kind", err)
+	if connect.CodeOf(err) != connect.CodeInternal || errors.Is(err, ErrNoConnection) || errors.As(err, &failed) {
+		t.Errorf("err = %v, want CodeInternal of no failure kind", err)
 	}
+}
+
+type failingCloseBody struct {
+	io.ReadCloser
+	closeErr error
+}
+
+func (b *failingCloseBody) Close() error {
+	return errors.Join(b.ReadCloser.Close(), b.closeErr)
+}
+
+type failingCloseClient struct {
+	base     connect.HTTPClient
+	closeErr error
+}
+
+func (c *failingCloseClient) Do(req *http.Request) (*http.Response, error) {
+	resp, err := c.base.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body = &failingCloseBody{ReadCloser: resp.Body, closeErr: c.closeErr}
+	return resp, nil
 }
 
 func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
@@ -160,13 +188,75 @@ func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	frames, err := client.Call(ctx, "llm.complete", nil, PriorityBackground)
-	if err == nil {
-		_, _, err = Collect(frames)
+	if _, err := client.Call(ctx, "llm.complete", nil, PriorityBackground); !errors.Is(err, context.Canceled) {
+		t.Errorf("err = %v, want context.Canceled", err)
 	}
 
-	if !errors.Is(err, context.Canceled) {
-		t.Errorf("err = %v, want context.Canceled", err)
+	streamCtx, cancelStream := context.WithCancel(t.Context())
+	streamHost := &fakeHost{
+		frames: []*v1.HostConnectionServiceCallResponse{hostData("first")},
+		err:    connect.NewError(connect.CodeInternal, errors.New("aborted")),
+	}
+	frames, err := newTestClient(t, streamHost).Call(streamCtx, "llm.complete", nil, PriorityBackground)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !frames.Next() {
+		t.Fatal("expected first frame")
+	}
+	cancelStream()
+	if frames.Next() || !errors.Is(frames.Err(), context.Canceled) {
+		t.Errorf("stream err = %v, want context.Canceled", frames.Err())
+	}
+	if err := frames.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	doneHost := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostDone("finish"), hostData("trailing")}}
+	doneFrames, err := newTestClient(t, doneHost).Call(t.Context(), "llm.complete", nil, PriorityBackground)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstDone := doneFrames.Next()
+	secondDone := doneFrames.Next()
+	if firstDone || secondDone || string(doneFrames.Done()) != "finish" {
+		t.Errorf("doneFrames = %q, want finish and no more frames", doneFrames.Done())
+	}
+	if err := doneFrames.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	failHost := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{
+		hostFailure(&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION}),
+		hostData("trailing"),
+	}}
+	failFrames, err := newTestClient(t, failHost).Call(t.Context(), "llm.complete", nil, PriorityBackground)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstFail := failFrames.Next()
+	secondFail := failFrames.Next()
+	if firstFail || secondFail || !errors.Is(failFrames.Err(), ErrNoConnection) {
+		t.Errorf("failFrames err = %v, want ErrNoConnection and no more frames", failFrames.Err())
+	}
+	if err := failFrames.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewHostConnectionServiceHandler(&fakeHost{
+		frames: []*v1.HostConnectionServiceCallResponse{hostData("chunk"), hostDone("ok")},
+	}))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	closeErr := errors.New("close failed")
+	closingClient := NewClient(&failingCloseClient{base: server.Client(), closeErr: closeErr}, server.URL, "token-1")
+	closingFrames, err := closingClient.Call(t.Context(), "llm.chat", nil, PriorityBackground)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := Collect(closingFrames); !errors.Is(err, closeErr) {
+		t.Errorf("Collect close err = %v, want %v", err, closeErr)
 	}
 }
 

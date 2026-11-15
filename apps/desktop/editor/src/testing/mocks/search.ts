@@ -7,7 +7,7 @@ import { mockVaultState } from '../answers'
 export const searchAnswers = {
   search: {
     searchNames: () => ({ found: mockVaultState.names }),
-    searchPassages: () => ({ found: mockVaultState.passages }),
+    searchText: () => ({ found: mockVaultState.searchResults }),
     cancelSearch: () => ({}),
   },
 }

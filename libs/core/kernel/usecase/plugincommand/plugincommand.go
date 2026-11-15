@@ -16,13 +16,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
-
-// NoteReader reads the type and the frontmatter of a note from its current file.
-type NoteReader interface {
-	Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteType, map[string]any, error)
-}
 
 // VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
 type VaultFinding = func(nameOrPath string) (domain.Vault, error)
@@ -49,7 +45,7 @@ func NewList(commands pluginport.PluginCommands, conditions *when.Conditions) Li
 // undecided and holds.
 func NewRun(
 	commands pluginport.PluginCommands, runs pluginport.PluginCommandRuns, types contenttypeport.ContentTypeTable,
-	notes NoteReader, config pluginport.WhenConfig, conditions *when.Conditions,
+	notes noteport.NoteReader, config pluginport.WhenConfig, conditions *when.Conditions,
 ) Run {
 	run := Run{commands: commands, runs: runs, types: types, notes: noNotes{}, config: noConfig{}, conditions: conditions}
 	if notes != nil {
@@ -284,7 +280,7 @@ type targetNotes interface {
 	addNote(ctx context.Context, v domain.Vault, target plugin.TargetValues, path string) (plugin.TargetValues, error)
 }
 
-type readingNotes struct{ reader NoteReader }
+type readingNotes struct{ reader noteport.NoteReader }
 
 func (n readingNotes) addNote(ctx context.Context, v domain.Vault, target plugin.TargetValues, path string) (plugin.TargetValues, error) {
 	noteType, properties, err := n.reader.Execute(ctx, v, path)

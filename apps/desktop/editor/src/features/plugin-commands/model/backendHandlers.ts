@@ -3,8 +3,8 @@
  * lists, the items the core lists for one, and a run of one that writes its message and opens the
  * file it returns, or rejects with a ReportedError of the plugin's message, which the caller of the run reports.
  */
-import type { CommandItem, HandlerDeclaration, PluginHostDeps } from '@numen/plugin-loader'
-import type { runDeclaredHandler } from '@/entities/plugin'
+import type { CommandItem, HandlerDeclaration, HostCommands } from '@numen/plugin-loader'
+import type { DeclaredCommandsApi } from '@/entities/plugin'
 import { ReportedError } from '@/shared/api/errors'
 
 export interface BackendHandlersDeps {
@@ -13,7 +13,7 @@ export interface BackendHandlersDeps {
     command: { readonly pluginId: string; readonly id: string },
     path: string,
   ) => Promise<readonly CommandItem[]>
-  readonly run: typeof runDeclaredHandler
+  readonly run: DeclaredCommandsApi['runDeclaredHandler']
   readonly writeMessage: (text: string, severity: 'info') => void
   readonly openFile: (path: string) => Promise<void>
 }
@@ -21,7 +21,7 @@ export interface BackendHandlersDeps {
 export function createBackendHandlers(
   deps: BackendHandlersDeps,
 ): Required<
-  Pick<PluginHostDeps, 'getHandlerDeclarations' | 'listBackendHandlerItems' | 'runBackendHandler'>
+  Pick<HostCommands, 'getHandlerDeclarations' | 'listBackendHandlerItems' | 'runBackendHandler'>
 > {
   return {
     getHandlerDeclarations: deps.getHandlers,

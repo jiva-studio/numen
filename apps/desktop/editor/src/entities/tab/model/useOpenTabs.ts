@@ -5,7 +5,7 @@ import { computed, ref, watch, type Component, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { getPanes } from '@numen/workbench'
 import { findTabKindIcon } from '../lib/icons'
-import { writeOpenTabs as writeOpenTabsToCore } from '../api/saved-tabs'
+import type { SavedTabsApi } from '../api/saved-tabs'
 import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
 import type { WindowTabs } from './windowTabs'
 import { formatError, type Caught } from '@/shared/api/errors'
@@ -16,7 +16,7 @@ export interface OpenTabsDeps {
   windowTabs: WindowTabs
   isWriting?: Readonly<Ref<boolean>>
   writeMessage: MessageWriter
-  writeOpenTabs?: (open: OpenTabs) => Promise<void>
+  writeOpenTabs: SavedTabsApi['writeOpenTabs']
 }
 
 /** The state a kind saved, as JSON, and empty where it saved none. */
@@ -41,7 +41,7 @@ export function useOpenTabs({
   windowTabs,
   isWriting = ref(true),
   writeMessage,
-  writeOpenTabs = writeOpenTabsToCore,
+  writeOpenTabs,
 }: OpenTabsDeps) {
   const reportError = (error: Caught) =>
     writeMessage(`The open tabs were not saved: ${formatError(error)}`, 'error')
@@ -59,7 +59,7 @@ export function useOpenTabs({
    * from. Where the tab in front takes text, the last tab that takes no text.
    */
   const getActiveTabId = (): string => {
-    const frontTab = windowTabs.groups.handle.front()
+    const frontTab = windowTabs.handle.front()
     if (frontTab && !isTakingText(frontTab.id)) {
       if (!isTool(frontTab.id)) return frontTab.id
       const shown = new Set(getPanes(windowTabs.panes.layout.value.root).map((one) => one.active))
@@ -125,7 +125,7 @@ export function useOpenTabs({
 
   /** Returns the declared icon of a kind, or its built-in icon. Tabs of other windows use it. */
   const getKindIcon = (kind: string): Component | null =>
-    windowTabs.groups.findKind((one) => one.kind === kind)?.display?.icon ?? findTabKindIcon(kind)
+    windowTabs.kinds.findKind((one) => one.kind === kind)?.display?.icon ?? findTabKindIcon(kind)
 
   /** The icon the tab's kind declares, or the one the window keeps for that kind. */
   const getTabIcon = (id: string): Component | null => {

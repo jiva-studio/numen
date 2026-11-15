@@ -13,7 +13,7 @@ import (
 func (e *watchCalls) WatchMoves(
 	ctx context.Context, req *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse],
 ) error {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return err
 	}

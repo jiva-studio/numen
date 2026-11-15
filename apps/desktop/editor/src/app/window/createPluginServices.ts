@@ -6,9 +6,7 @@
 import type { Ref } from 'vue'
 import type { BackgroundTaskHost, CommandsHost, WindowControls } from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
-import type { FileOpeners, WindowTabs } from '@/entities/tab'
 import { createWindowBackgroundTasks } from '@/features/background-tasks'
-import { searchCore } from '@/features/command-palette'
 import { createBufferHost } from '@/features/file-conflict'
 import {
   createVaultAccess,
@@ -21,15 +19,15 @@ import {
 import type { CommandTarget } from '@/shared/model/command'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import type { createVaultServices } from './createVaultServices'
+import type { createTabsPart } from './createTabsPart'
+import type { WindowApi } from './createWindowApi'
 
 type VaultServices = ReturnType<typeof createVaultServices>
 
 /** What the workspace a plugin is given is made from. */
 export interface PluginWorkspaceDeps {
   readonly log: MessageLog
-  readonly windowTabs: WindowTabs
-  readonly tabOpeners: FileOpeners
-  readonly tabSync: Parameters<typeof createWorkspaceService>[0]['tabSync']
+  readonly tabs: ReturnType<typeof createTabsPart>
   readonly window: VaultServices['window']
   readonly hostPort: Pick<HostPort, 'getCommandIcon'>
 }
@@ -38,9 +36,9 @@ export interface PluginWorkspaceDeps {
 export function createPluginWorkspace(deps: PluginWorkspaceDeps) {
   return createWorkspaceService({
     log: deps.log,
-    windowTabs: deps.windowTabs,
-    tabOpeners: deps.tabOpeners,
-    tabSync: deps.tabSync,
+    windowTabs: deps.tabs.windowTabs,
+    tabOpeners: deps.tabs.tabOpeners,
+    tabSync: deps.tabs.tabSync,
     window: deps.window,
     getPluginCommandIcon: deps.hostPort.getCommandIcon,
   })
@@ -48,6 +46,7 @@ export function createPluginWorkspace(deps: PluginWorkspaceDeps) {
 
 /** What the notes, the links and the files a plugin is given are made from. */
 export interface PluginAccessDeps {
+  readonly api: WindowApi['vault']
   readonly making: VaultServices['editing']['making']
   readonly pluginNotes: PluginNotes
   readonly getTarget: () => CommandTarget
@@ -57,7 +56,10 @@ export interface PluginAccessDeps {
 /** The notes, the links and the files a plugin is given. */
 export function createPluginAccess(deps: PluginAccessDeps) {
   return createVaultAccess({
-    search: searchCore,
+    notes: deps.api.note,
+    files: deps.api.file,
+    relations: deps.api.relations,
+    search: deps.api.search,
     making: deps.making,
     pluginNotes: deps.pluginNotes,
     getTarget: deps.getTarget,
@@ -67,6 +69,7 @@ export function createPluginAccess(deps: PluginAccessDeps) {
 
 /** What the background tasks of the plugins read of the window. */
 export interface PluginBackgroundTasksDeps {
+  readonly cancelTask: WindowApi['window']['tasks']['cancelTask']
   readonly log: MessageLog
   readonly notices: NoticeQueue
   readonly window: Pick<VaultServices['window'], 'health' | 'vault' | 'tasks' | 'pluginHealth'>
@@ -80,6 +83,7 @@ export interface PluginBackgroundTasksDeps {
 export function createPluginBackgroundTasks(deps: PluginBackgroundTasksDeps): BackgroundTaskHost {
   const { window } = deps
   return createWindowBackgroundTasks({
+    cancelTask: deps.cancelTask,
     log: deps.log,
     plugins: deps.notices,
     window: {
