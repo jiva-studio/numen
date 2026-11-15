@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
@@ -234,7 +234,7 @@ func (r *refreshedLists) DropConnection(pluginID, connectionID string) {
 func TestUpdateRefreshesTheOptionListsOfTheConnection(t *testing.T) {
 	f := newFixture(t)
 	lists := &refreshedLists{}
-	deps := connection.NewDeps(f.repository, f.types, f.keys, f.uses, none.Detected{}).AddOptionLists(lists)
+	deps := connection.NewDeps(f.repository, f.types, f.keys, f.uses, testsupport.NoDetection{}).AddOptionLists(lists)
 	created, err := connection.NewCreate(deps, func() (string, error) { return "c0000heron", nil }).Execute(t.Context(), connection.CreateRequest{
 		TypeID: openRouterID, Name: "Work", Secrets: map[string]string{"apiKey": "sk-or-1"},
 	})
@@ -258,7 +258,7 @@ func TestARefusedUpdateRefreshesNoOptionList(t *testing.T) {
 	created := f.createOpenRouter(t, "Work")
 	lists := &refreshedLists{}
 
-	_, err := connection.NewUpdate(connection.NewDeps(f.repository, f.types, f.keys, f.uses, none.Detected{}).AddOptionLists(lists)).Execute(t.Context(), connection.UpdateRequest{
+	_, err := connection.NewUpdate(connection.NewDeps(f.repository, f.types, f.keys, f.uses, testsupport.NoDetection{}).AddOptionLists(lists)).Execute(t.Context(), connection.UpdateRequest{
 		ID: created.ID, Revision: created.Revision + 1, Name: "Home",
 	})
 

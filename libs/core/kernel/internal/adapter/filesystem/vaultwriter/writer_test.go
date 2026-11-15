@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -116,7 +116,7 @@ func TestAnyFileOfTheVaultMoves(t *testing.T) {
 		"notes.txt":   "assets/notes.txt",
 	}
 	for from := range moves {
-		vaultfixture.PlaceFile(t, root, from)
+		vaulttest.PlaceFile(t, root, from)
 	}
 
 	for from, to := range moves {
@@ -138,9 +138,9 @@ func TestAFolderMovesWithWhatIsBelowIt(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
 
-	vaultfixture.PlaceFile(t, root, "physics/Entropy.md")
-	vaultfixture.PlaceFile(t, root, "physics/deeper/Heat.md")
-	vaultfixture.PlaceFile(t, root, "physics/A Book.epub")
+	vaulttest.PlaceFile(t, root, "physics/Entropy.md")
+	vaulttest.PlaceFile(t, root, "physics/deeper/Heat.md")
+	vaulttest.PlaceFile(t, root, "physics/A Book.epub")
 
 	if err := w.Move(ctx, "physics", "science/physics"); err != nil {
 		t.Fatalf("the folder did not move: %v", err)
@@ -161,8 +161,8 @@ func TestAMoveOntoATakenNameIsRefused(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
 
-	vaultfixture.PlaceFile(t, root, "scan.png")
-	vaultfixture.PlaceFile(t, root, "assets/scan.png")
+	vaulttest.PlaceFile(t, root, "scan.png")
+	vaulttest.PlaceFile(t, root, "assets/scan.png")
 
 	if err := w.Move(ctx, "scan.png", "assets/scan.png"); !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Errorf("want ErrAlreadyExists, got %v", err)
@@ -178,7 +178,7 @@ func TestAnyFileOfTheVaultIsRemoved(t *testing.T) {
 	ctx := t.Context()
 
 	for _, path := range []string{"library/A Book.epub", "assets/scan.png", "notes/Entropy.md"} {
-		vaultfixture.PlaceFile(t, root, path)
+		vaulttest.PlaceFile(t, root, path)
 		if err := w.Remove(ctx, path); err != nil {
 			t.Errorf("remove %s: %v", path, err)
 		}
@@ -208,7 +208,7 @@ func TestAFolderIsMade(t *testing.T) {
 		t.Errorf("making it again: %v", err)
 	}
 
-	vaultfixture.PlaceFile(t, root, "science/Entropy.md")
+	vaulttest.PlaceFile(t, root, "science/Entropy.md")
 	if err := w.MakeFolder(ctx, "science/Entropy.md"); !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Errorf("a folder over a file: want ErrAlreadyExists, got %v", err)
 	}
@@ -220,7 +220,7 @@ func TestAFolderIsMade(t *testing.T) {
 // A note kept as a link to another file in the vault is a link after a write,
 // and the file at the other end holds the new bytes.
 func TestWritingThroughALinkPreservesTheLink(t *testing.T) {
-	v := vaultfixture.NewVault(t, map[string]string{"notes/Real.md": "# Entropy\n"})
+	v := vaulttest.NewVault(t, map[string]string{"notes/Real.md": "# Entropy\n"})
 	link := filepath.Join(v.Path, "Entropy.md")
 	if err := os.Symlink(filepath.Join("notes", "Real.md"), link); err != nil {
 		t.Fatal(err)
@@ -291,8 +291,8 @@ func TestStatingAFileOpensNothing(t *testing.T) {
 // affect another.
 func TestLock_AllowsOneWriterPerVault(t *testing.T) {
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
-	here := vaultfixture.NewVault(t, nil)
-	elsewhere := vaultfixture.NewVault(t, nil)
+	here := vaulttest.NewVault(t, nil)
+	elsewhere := vaulttest.NewVault(t, nil)
 
 	release, err := writers.Lock(t.Context(), here)
 	if err != nil {
