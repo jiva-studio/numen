@@ -69,7 +69,6 @@ func removeAppRows(stored File, connectionID string) (settingsdomain.Setting, bo
 	return settingsdomain.Setting{Path: path, JSON: string(encoded)}, true, nil
 }
 
-// readStoredFile reads the stored file, and an empty one from a source that reads none.
 func (r *ConnectionRows) readStoredFile() (File, error) {
 	if r.source.ReadStored == nil {
 		return File{}, nil

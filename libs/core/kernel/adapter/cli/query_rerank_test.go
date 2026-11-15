@@ -18,7 +18,6 @@ import (
 
 const rerankAddress = "https://rerank.test/v1"
 
-// answerEachPassage answers a rerank request with a score for each passage it holds.
 func answerEachPassage(payload []byte) ([]byte, error) {
 	var packed []byte
 	for len(payload) > 0 {

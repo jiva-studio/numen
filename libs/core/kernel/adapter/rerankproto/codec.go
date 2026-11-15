@@ -23,7 +23,7 @@ var errRerankResult = errors.New("the answer of the reranking service is not a R
 // Codec is the wire format of llm.rerank.
 type Codec struct{}
 
-// EncodeRequest returns a RerankRequest.
+// EncodeRequest leaves out an empty instruction.
 func (Codec) EncodeRequest(query, instruction string, documents []string) []byte {
 	var out []byte
 	out = protowire.AppendTag(out, fieldQuery, protowire.BytesType)
@@ -39,7 +39,7 @@ func (Codec) EncodeRequest(query, instruction string, documents []string) []byte
 	return out
 }
 
-// DecodeResult returns the scores of a RerankResult, in order.
+// DecodeResult reads the scores packed or one field each.
 func (Codec) DecodeResult(payload []byte) ([]float64, error) {
 	var scores []float64
 	for len(payload) > 0 {

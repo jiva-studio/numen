@@ -179,7 +179,6 @@ func (u *FindSearchResults) getDocument(path string, sourceKind domain.SourceKin
 	}
 }
 
-// fillDocuments sets the note title, the size and the time of change of the document of each result.
 func (u *FindSearchResults) fillDocuments(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error {
 	if len(results) == 0 {
 		return nil

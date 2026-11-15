@@ -492,7 +492,6 @@ type noTitles struct{}
 
 func (noTitles) ListOperationTitles() []manifest.Operation { return nil }
 
-// RerankOperation is the operation of the type reranker.
 const RerankOperation = "llm.rerank"
 
 // AddReranker creates a connection of the type reranker of the first plugin, which serves llm.rerank only

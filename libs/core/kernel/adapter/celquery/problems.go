@@ -1,7 +1,6 @@
 package celquery
 
 import (
-	"slices"
 	"strings"
 
 	"cel.dev/cel-go/common/ast"
@@ -66,26 +65,11 @@ func isOperator(name string) bool {
 	return strings.HasPrefix(name, "_") || strings.HasPrefix(name, "@") || strings.HasPrefix(name, "!")
 }
 
-func (w *nameWalk) hasChunkCall(expr ast.Expr) bool {
-	if expr.Kind() != ast.CallKind {
-		return false
-	}
-	call := expr.AsCall()
-	if f, ok := w.catalog.FindFunction(call.FunctionName()); ok && f.Level == searchquery.LevelChunk && !call.IsMemberFunction() {
-		return true
-	}
-	if call.IsMemberFunction() && w.hasChunkCall(call.Target()) {
-		return true
-	}
-	return slices.ContainsFunc(call.Args(), w.hasChunkCall)
-}
-
 func (w *nameWalk) isStage(name string) bool {
 	f, ok := w.catalog.FindFunction(name)
 	return ok && f.IsStage
 }
 
-// walkMember walks the target of a method call it accepts and reports whether to walk its arguments.
 func (w *nameWalk) walkMember(expr ast.Expr) bool {
 	call := expr.AsCall()
 	name := call.FunctionName()

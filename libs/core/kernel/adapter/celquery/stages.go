@@ -10,9 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 )
 
-// declareStage declares a stage as a method of bool, the type SearchResults is declared as, with one
-// overload for each count of arguments. The arguments are dyn so that the converter reports a wrong one at
-// its own place.
 func declareStage(f searchquery.Function) cel.EnvOption {
 	lists := f.Overloads
 	if lists == nil {
@@ -34,8 +31,6 @@ const (
 	messageStageLiteral = "the arguments of a stage are string or number literals"
 )
 
-// convertQuery converts the root of a query: the stages written after it, then the condition they are
-// called on.
 func (c *converter) convertQuery(expr ast.Expr) searchquery.RawNode {
 	var stages []searchquery.RawStage
 	for isStageCall(expr) {

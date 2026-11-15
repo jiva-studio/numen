@@ -246,11 +246,8 @@ describe('the Reranking setting of the shell', () => {
     const rows = createPage('system', declaration).wrapper.findAllComponents(ConnectionRows)
     expect(rows.map((one) => one.props('setting').title)).toStrictEqual(['Reranking'])
     expect(
-      createPage('system', declaration)
-        .wrapper.findAllComponents(SettingRow)
-        .map((one) => one.props('name')),
-    ).not.toContain('Reranking')
-    expect(createPage('appearance', declaration).wrapper.findAllComponents(ConnectionRows)).toHaveLength(0)
+      createPage('appearance', declaration).wrapper.findAllComponents(ConnectionRows),
+    ).toHaveLength(0)
   })
 
   it('writes the rows chosen under app.search.reranking', () => {

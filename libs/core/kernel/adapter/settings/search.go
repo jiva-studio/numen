@@ -83,8 +83,6 @@ func (f *File) GetSearchLimits() (searchquery.Limits, searchquery.StageLimits) {
 	return limits, stages
 }
 
-// dropInvalidAppRows leaves out of force each row of the Reranking setting that the connections do not
-// take, with a notice.
 func (f *File) dropInvalidAppRows(registries settingsdomain.Registries) {
 	if len(f.Search.Reranking) == 0 {
 		return

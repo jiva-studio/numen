@@ -50,7 +50,6 @@ func (s *services) setRows(entries ...modelcalltest.Entry) {
 	s.world.Rows.Set(settingsdomain.AppOwner, modelcalltest.RerankOperation, rows...)
 }
 
-// answerBy makes the service at the address score each passage by score.
 func (s *services) answerBy(address string, score func(text string) float32) {
 	s.world.Provider.Answer(address, func(payload []byte) ([]byte, error) {
 		_, documents := readRerankRequest(payload)
@@ -62,7 +61,6 @@ func (s *services) answerBy(address string, score func(text string) float32) {
 	})
 }
 
-// sentTexts returns the passages each call to the address sent, in order.
 func (s *services) sentTexts(address string) [][]string {
 	var sent [][]string
 	for _, call := range s.world.Provider.CallsTo(address) {
@@ -128,7 +126,6 @@ func newTideWorld(t *testing.T) world {
 	return w
 }
 
-// byLength scores a passage by its length, so the longest ranks first.
 func byLength(text string) float32 { return float32(len(text)) / 100 }
 
 func TestTheSecondRowAnswersWhenTheFirstFailsAndTheResultIsInItsOrder(t *testing.T) {

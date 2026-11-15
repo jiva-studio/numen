@@ -7,7 +7,6 @@ const (
 	StageNameSortBy = "sortBy"
 )
 
-// IsStageName reports whether name is the name of a stage.
 func IsStageName(name string) bool {
 	return name == StageNameRerank || name == StageNameTop || name == StageNameSortBy
 }
@@ -53,7 +52,6 @@ type RawArg struct {
 	Position Position
 }
 
-// HasStage reports whether the query has a stage of the kind.
 func (q Query) HasStage(kind StageKind) bool {
 	for _, s := range q.Stages {
 		if s.Kind == kind {
