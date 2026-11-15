@@ -13,8 +13,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tagfile"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
 // recordedReads is the frontmatter and the feed of a vault, recording each query asked of them. A read
@@ -109,8 +110,8 @@ func (s *scene) readFile(t *testing.T) map[string][]string {
 		t.Fatal(err)
 	}
 	var stored struct {
-		Version int                      `json:"version"`
-		Notes   map[string]tagcache.Note `json:"notes"`
+		Version int                     `json:"version"`
+		Notes   map[string]tagfile.Note `json:"notes"`
 	}
 	if err := json.Unmarshal(raw, &stored); err != nil {
 		t.Fatal(err)

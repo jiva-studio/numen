@@ -106,9 +106,9 @@ Seven plugins register the tools an agent can call, each for its own subject. Th
 
 `tools-taxonomy`, the tags of the notes:
 
-| Tool       | What it does                                                                                                                                                                           | Effect |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `tag_list` | list the tags of the frontmatter key `tags` as a tree read depth first, each with its depth and the number of notes that have it or a tag nested under it; `under` lists one tag alone | reads  |
+| Tool       | What it does                                                                                                                                                                                         | Effect |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `tag_list` | list the tags of the frontmatter key `tags` as a tree read depth first, each with its depth and the number of notes that have it or a tag nested under it; `under` lists one tag and its nested tags | reads  |
 
 The plugin also adds the query functions `tags("Projects")`, the notes with the tag or a tag nested under it, and `isTagged()`, the notes with any tag, to the language of `library_query`; the description of `library_query` names them while the plugin is enabled.
 

@@ -5,7 +5,6 @@ package tagcache
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -16,7 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/changes"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tagfile"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
 )
 
 // FileName is the file of the plugin's store folder the tags of a vault are written to.
@@ -24,8 +24,6 @@ const FileName = "tags.json"
 
 // CursorFile is the file of the plugin's store folder the cursor of the feed of a vault is kept in.
 const CursorFile = "tags.cursor.json"
-
-const fileVersion = 2
 
 // readPathLimit is the most notes one read of frontmatter names.
 const readPathLimit = 1000
@@ -50,19 +48,13 @@ type Caches struct {
 	vaults map[domain.VaultID]*vaultTags
 }
 
-// Note is the tags of one note and where it is now.
-type Note struct {
-	Path string   `json:"path"`
-	Tags []string `json:"tags"`
-}
-
 // vaultTags is the tags of the notes of one vault that have any, by the number the index keeps each
 // note under. Updates and answers of one vault take mu in turn. isLoaded is false until tags.json was
 // read, and again after an update failed.
 type vaultTags struct {
 	mu       sync.Mutex
 	isLoaded bool
-	notes    map[int64]Note
+	notes    map[int64]tagfile.Note
 }
 
 func New(open func(id domain.VaultID) Vault) *Caches {
@@ -74,7 +66,7 @@ func (c *Caches) getVault(id domain.VaultID) *vaultTags {
 	defer c.mu.Unlock()
 	one, ok := c.vaults[id]
 	if !ok {
-		one = &vaultTags{mu: sync.Mutex{}, isLoaded: false, notes: map[int64]Note{}}
+		one = &vaultTags{mu: sync.Mutex{}, isLoaded: false, notes: map[int64]tagfile.Note{}}
 		c.vaults[id] = one
 	}
 	return one
@@ -133,7 +125,7 @@ func (v *vaultTags) load(ctx context.Context, vault Vault, from changes.Source) 
 		if err := changes.Forget(ctx, from); err != nil {
 			return err
 		}
-		notes = map[int64]Note{}
+		notes = map[int64]tagfile.Note{}
 	}
 	v.notes, v.isLoaded = notes, true
 	return nil
@@ -180,8 +172,8 @@ func (v *vaultTags) review(ctx context.Context, vault Vault) error {
 	return write(ctx, vault.Store, v.notes)
 }
 
-func readTags(ctx context.Context, frontmatter host.FrontmatterReader, paths []string) (map[int64]Note, error) {
-	notes := map[int64]Note{}
+func readTags(ctx context.Context, frontmatter host.FrontmatterReader, paths []string) (map[int64]tagfile.Note, error) {
+	notes := map[int64]tagfile.Note{}
 	query := host.FrontmatterQuery{Paths: paths, Keys: []string{tags.FrontmatterKey}}
 	for {
 		page, err := frontmatter.ReadFrontmatter(ctx, query)
@@ -190,7 +182,7 @@ func readTags(ctx context.Context, frontmatter host.FrontmatterReader, paths []s
 		}
 		for _, note := range page.Notes {
 			if found := tags.Parse(note.Values[tags.FrontmatterKey]); len(found) > 0 {
-				notes[note.SourceID] = Note{Path: note.Path, Tags: found}
+				notes[note.SourceID] = tagfile.Note{Path: note.Path, Tags: found}
 			}
 		}
 		if page.NextPageToken == "" {
@@ -200,15 +192,7 @@ func readTags(ctx context.Context, frontmatter host.FrontmatterReader, paths []s
 	}
 }
 
-// file is the content of tags.json: the tags of each note that has any, by the number the index keeps
-// the note under. A missing tags.json, or one of another version, holds no tags, and the next update
-// reads every note.
-type file struct {
-	Version int            `json:"version"`
-	Notes   map[int64]Note `json:"notes"`
-}
-
-func readFile(ctx context.Context, store Store) (map[int64]Note, error) {
+func readFile(ctx context.Context, store Store) (map[int64]tagfile.Note, error) {
 	content, err := store.Read(ctx, FileName)
 	if errors.Is(err, host.ErrNotExist) {
 		return nil, nil
@@ -219,16 +203,12 @@ func readFile(ctx context.Context, store Store) (map[int64]Note, error) {
 	return parseFile(content), nil
 }
 
-func parseFile(content []byte) map[int64]Note {
-	var stored file
-	if json.Unmarshal(content, &stored) != nil || stored.Version != fileVersion {
-		return nil
-	}
-	return stored.Notes
+func parseFile(content []byte) map[int64]tagfile.Note {
+	return tagfile.Parse(content)
 }
 
-func write(ctx context.Context, store Store, notes map[int64]Note) error {
-	content, err := json.Marshal(file{Version: fileVersion, Notes: maps.Clone(notes)})
+func write(ctx context.Context, store Store, notes map[int64]tagfile.Note) error {
+	content, err := tagfile.Encode(maps.Clone(notes))
 	if err != nil {
 		return err
 	}

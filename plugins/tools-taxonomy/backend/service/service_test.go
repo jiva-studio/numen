@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/service"
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
 type plugin struct {

@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
 )
 
 func TestTheTagsOfAValueOfTheKeyTags(t *testing.T) {
@@ -22,6 +22,7 @@ func TestTheTagsOfAValueOfTheKeyTags(t *testing.T) {
 		"empty segments are dropped":           {value: "//delta//mouth/", want: []string{"delta/mouth"}},
 		"a hash and spaces alone are no tag":   {value: []any{"#", "  ", "/"}, want: nil},
 		"only one leading hash is dropped":     {value: "##river", want: []string{"#river"}},
+		"a doubled hash is another tag":        {value: []any{"##river", "river"}, want: []string{"#river", "river"}},
 	} {
 		if got := tags.Parse(c.value); !slices.Equal(got, c.want) {
 			t.Errorf("%s: Parse(%#v) = %q, want %q", name, c.value, got, c.want)

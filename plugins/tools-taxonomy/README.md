@@ -1,4 +1,4 @@
-# Tags
+# Taxonomy
 
 Reads the tags of your notes from their frontmatter, finds notes by tag in search queries, and lists the tags for agents with the number of notes under each tag.
 
