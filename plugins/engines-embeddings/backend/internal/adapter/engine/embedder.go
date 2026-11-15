@@ -12,8 +12,8 @@ import (
 	"github.com/gomlx/go-huggingface/tokenizers/api"
 	"github.com/gomlx/go-huggingface/tokenizers/hftokenizer"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/engine/onnx"
 )
 
 // The inputs a sentence encoder exported to ONNX requires.
@@ -66,16 +66,16 @@ func Open(
 	if err != nil {
 		return nil, err
 	}
-
+	cacheRoot := getCacheRoot()
 	engine, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, ""))
 	if err != nil {
 		return nil, err
 	}
 	options, provider, err := library.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider: getProvider(cfg),
-		Threads:  getThreads(cfg),
-
+		Provider:     getProvider(cfg),
+		Threads:      getThreads(cfg),
 		ComputeUnits: onnx.ComputeUnitsDefault,
+		CacheRoot:    cacheRoot,
 		ModelPath:    paths.Model,
 	})
 	if err != nil {
@@ -93,7 +93,7 @@ func Open(
 		}
 	}
 
-	session, err := onnx.NewSession(engine, paths.Model, options)
+	session, err := onnx.NewSession(engine, cacheRoot, paths.Model, options)
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", paths.Model, err)
 	}
