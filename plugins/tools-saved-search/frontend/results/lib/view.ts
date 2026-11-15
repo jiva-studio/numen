@@ -118,7 +118,8 @@ function getItem(result: ResultFields, index: number, words: Words): ResultItemV
 function getSources(results: readonly ResultFields[]): SourceView[] {
   const sources = new Map<string, SourceView>()
   for (const result of results) {
-    if (!sources.has(result.path)) sources.set(result.path, { path: result.path, title: result.title })
+    if (!sources.has(result.path))
+      sources.set(result.path, { path: result.path, title: result.title })
   }
   return [...sources.values()]
 }
@@ -155,5 +156,7 @@ export function filterItems(
   hidden: ReadonlySet<string>,
 ): ResultItemView[] {
   const needle = filter.trim().toLocaleLowerCase()
-  return items.filter((item) => !hidden.has(item.source) && (needle === '' || isMatch(item, needle)))
+  return items.filter(
+    (item) => !hidden.has(item.source) && (needle === '' || isMatch(item, needle)),
+  )
 }

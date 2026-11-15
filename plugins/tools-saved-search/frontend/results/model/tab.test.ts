@@ -290,21 +290,6 @@ describe('saving the query of the note', () => {
     await state.actions.saveSearch(CHANGE)
 
     expect(state.failure.value).toBe('the note changed while it was updated; try again')
-    expect(state.isSaving.value).toBe(false)
-  })
-
-  it('is saving until the backend answers', async () => {
-    const { service, tab, state } = setup()
-    tab.follow()
-    service.watch.emit(COMPUTED)
-    await settle()
-
-    const saving = state.actions.saveSearch(CHANGE)
-    const during = state.isSaving.value
-    await saving
-
-    expect(during).toBe(true)
-    expect(state.isSaving.value).toBe(false)
   })
 })
 
@@ -451,7 +436,7 @@ describe('editing the query of a saved search', () => {
     expect(state.isEditing.value).toBe(false)
   })
 
-  it('closes the editor after a good save', async () => {
+  it('keeps the editor open after a good save and reads the results again', async () => {
     const { service, tab, state } = setup()
     tab.follow()
     service.watch.emit(COMPUTED)
@@ -460,7 +445,8 @@ describe('editing the query of a saved search', () => {
 
     await state.actions.saveSearch(CHANGE)
 
-    expect(state.isEditing.value).toBe(false)
+    expect(state.isEditing.value).toBe(true)
     expect(service.updates).toStrictEqual([{ path: NOTE_PATH, query: CHANGE.query }])
+    expect(service.calls.filter((call) => call === 'getResults')).toHaveLength(2)
   })
 })

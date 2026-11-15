@@ -42,7 +42,6 @@ export interface SavedSearchTabState {
   readonly filter: Readonly<Ref<string>>
   readonly hiddenSources: Readonly<Ref<ReadonlySet<string>>>
   readonly failure: Readonly<Ref<string>>
-  readonly isSaving: Readonly<Ref<boolean>>
   readonly isEditing: Readonly<Ref<boolean>>
   readonly saveProblems: Readonly<Ref<readonly Problem[]>>
   readonly functions: Readonly<Ref<readonly SearchFunction[]>>
@@ -82,7 +81,6 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   const filter = ref('')
   const hiddenSources = shallowRef<ReadonlySet<string>>(new Set())
   const failure = ref('')
-  const isSaving = ref(false)
   const isEditing = ref(false)
   const saveProblems = shallowRef<readonly Problem[]>([])
   const functions = shallowRef<readonly SearchFunction[]>([])
@@ -153,18 +151,12 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   }
 
   const saveSearch = async (change: SearchChange): Promise<void> => {
-    isSaving.value = true
     try {
       const answer = await service.updateSearch({ path: path.value, ...change }, life.signal)
       saveProblems.value = answer.errors
-      if (answer.errors.length === 0) {
-        isEditing.value = false
-        await read()
-      }
+      if (answer.errors.length === 0) await read()
     } catch (error) {
       if (!life.signal.aborted) failure.value = getMessage(error)
-    } finally {
-      isSaving.value = false
     }
   }
 
@@ -207,7 +199,6 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
       filter: readonly(filter),
       hiddenSources: readonly(hiddenSources),
       failure: readonly(failure),
-      isSaving: readonly(isSaving),
       isEditing: readonly(isEditing),
       saveProblems: readonly(saveProblems),
       functions: readonly(functions),

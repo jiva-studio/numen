@@ -15,8 +15,6 @@ export const WORDS = {
   noSourceMatch: 'No source matches',
   editQuery: 'Edit query',
   queryField: 'Query',
-  save: 'Save',
-  cancel: 'Cancel',
   page: 'Page',
   results: 'Results',
 } as const

@@ -75,15 +75,33 @@ export const queryLanguage = StreamLanguage.define<QueryScan>({
   tokenTable: { function: t.function(t.variableName) },
 })
 
-/** The colours of the tokens, from the syntax tokens of the kit. */
+/** The colours of the tokens, as the notes editor paints code: the syntax tokens of the kit. */
 export const queryHighlighting = HighlightStyle.define([
-  { tag: t.string, color: 'var(--numen-syntax-string)' },
-  { tag: t.number, color: 'var(--numen-syntax-number)' },
-  { tag: t.function(t.variableName), color: 'var(--numen-syntax-name)' },
-  { tag: t.variableName, color: 'var(--numen-syntax-type)' },
-  { tag: t.propertyName, color: 'var(--numen-syntax-keyword)' },
-  { tag: t.logicOperator, color: 'var(--numen-syntax-keyword)', fontWeight: '600' },
-  { tag: [t.punctuation, t.derefOperator], color: 'var(--numen-syntax-punctuation)' },
+  {
+    tag: [t.keyword, t.modifier, t.controlKeyword, t.operatorKeyword],
+    color: 'var(--numen-syntax-keyword)',
+  },
+  {
+    tag: [t.name, t.variableName, t.propertyName, t.attributeName],
+    color: 'var(--numen-syntax-name)',
+  },
+  { tag: [t.typeName, t.className, t.namespace, t.tagName], color: 'var(--numen-syntax-type)' },
+  { tag: [t.string, t.special(t.string), t.regexp], color: 'var(--numen-syntax-string)' },
+  { tag: [t.number, t.bool, t.atom, t.literal], color: 'var(--numen-syntax-number)' },
+  {
+    tag: [t.comment, t.lineComment, t.blockComment, t.docComment],
+    color: 'var(--numen-syntax-comment)',
+    fontStyle: 'italic',
+  },
+  {
+    tag: [t.operator, t.punctuation, t.bracket, t.separator, t.derefOperator],
+    color: 'var(--numen-syntax-punctuation)',
+  },
+  { tag: t.meta, color: 'var(--numen-syntax-comment)' },
+  { tag: t.processingInstruction, color: 'var(--numen-syntax-mark)' },
+  { tag: t.escape, color: 'var(--numen-syntax-number)' },
+  { tag: t.link, color: 'var(--numen-ring)' },
+  { tag: t.invalid, color: 'var(--numen-alarm)' },
 ])
 
 const getOption = (fn: QueryFunction): Completion => ({

@@ -111,7 +111,7 @@ describe('getQueryDiagnostics', () => {
 })
 
 describe('queryLanguage', () => {
-  it('styles strings, function names, operators, numbers and stages differently', () => {
+  it('styles strings, names, operators and numbers apart, and stages as names', () => {
     const styles = new Map(getStyles('!words("seed") || tags("garden").top(5)'))
 
     expect(styles.get('"seed"')).toBeTruthy()
@@ -119,8 +119,9 @@ describe('queryLanguage', () => {
     expect(styles.get('words')).not.toBe(styles.get('"seed"'))
     expect(styles.get('||')).toBeTruthy()
     expect(styles.get('!')).toBe(styles.get('||'))
-    expect(styles.get('top')).toBeTruthy()
-    expect(styles.get('top')).not.toBe(styles.get('words'))
+    expect(styles.get('||')).not.toBe(styles.get('words'))
+    expect(styles.get('top')).toBe(styles.get('words'))
     expect(styles.get('5')).toBeTruthy()
+    expect(styles.get('5')).not.toBe(styles.get('"seed"'))
   })
 })

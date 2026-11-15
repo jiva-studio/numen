@@ -1,7 +1,7 @@
 /**
  * The code editor of the query in an element: the search language highlighted, the names of the catalog
- * completed, the problems underlined, and Mod-Enter to save. It is made when the component mounts and
- * destroyed when it unmounts.
+ * completed, the problems underlined, and the query sent once typing pauses. It is made when the
+ * component mounts and destroyed when it unmounts; a query still waiting then is sent at once.
  */
 import { onBeforeUnmount, onMounted, watch, type Ref } from 'vue'
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
@@ -18,33 +18,42 @@ import {
   type QueryFunction,
   type QueryProblem,
 } from '../lib/queryLanguage'
+import { queryTheme } from '../lib/queryTheme'
 
-/** Where the editor is drawn, what it starts with, and what it reads while it is open. */
+/** How long typing pauses before the query is sent. */
+export const QUERY_PAUSE_MS = 1000
+
+/** Where the editor is drawn, what it starts with, what it reads while it is open, and where a query goes. */
 export interface QueryEditorOptions {
   readonly host: Readonly<Ref<HTMLElement | null>>
   readonly query: string
   readonly getProblems: () => readonly QueryProblem[]
   readonly getFunctions: () => readonly QueryFunction[]
-  readonly onSave: () => void
+  readonly onChange: (query: string) => void
 }
 
-/** The editor of the query: its text now ('' before it is drawn), and focus to put the cursor in it. */
+/** The editor of the query: focus puts the cursor in it. */
 export interface QueryEditor {
-  getQuery(): string
   focus(): void
 }
 
 /** The editor of the query, drawn into the host when the component mounts. */
 export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
   let view: EditorView | null = null
+  let pause: ReturnType<typeof setTimeout> | null = null
 
-  const saveKey = {
-    key: 'Mod-Enter',
-    run: () => {
-      options.onSave()
-      return true
-    },
+  const flush = (): void => {
+    if (pause === null) return
+    clearTimeout(pause)
+    pause = null
+    if (view) options.onChange(view.state.doc.toString())
   }
+
+  const typingListener = EditorView.updateListener.of((update) => {
+    if (!update.docChanged) return
+    if (pause !== null) clearTimeout(pause)
+    pause = setTimeout(flush, QUERY_PAUSE_MS)
+  })
 
   onMounted(() => {
     const parent = options.host.value
@@ -56,15 +65,18 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
         history(),
         queryLanguage,
         syntaxHighlighting(queryHighlighting),
+        queryTheme,
         autocompletion({ override: [createQueryCompletion(options.getFunctions)] }),
-        keymap.of([saveKey, ...completionKeymap, ...historyKeymap, ...defaultKeymap]),
+        keymap.of([...completionKeymap, ...historyKeymap, ...defaultKeymap]),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ 'aria-label': words.queryField }),
+        typingListener,
       ],
     })
   })
 
   onBeforeUnmount(() => {
+    flush()
     view?.destroy()
     view = null
   })
@@ -75,7 +87,6 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
   })
 
   return {
-    getQuery: () => view?.state.doc.toString() ?? '',
     focus: () => view?.focus(),
   }
 }

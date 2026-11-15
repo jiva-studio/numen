@@ -2,10 +2,11 @@
  * The tab of a saved search note over a scripted service: the query and its results, a passage and a
  * whole file opened, the problems of the query with the last good results, no result, a warning, a
  * failed last run, the filter and the sources of the results, and the query edited in the code editor
- * the edit button opens: completion from the catalog, the problems underlined, Save and Cancel.
+ * inside the tab, shown and hidden by the edit button: completion from the catalog, the query saved once
+ * typing pauses, and the problems of a query not saved underlined.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within, type Mock } from 'storybook/test'
 import { onBeforeUnmount } from 'vue'
 import type { TextRange } from '@numen/plugin-sdk'
 import type { GetResultsResponse, UpdateSearchRequest, UpdateSearchResponse } from '../api/types'
@@ -24,6 +25,7 @@ import {
   WARNING,
 } from '../fixtures/responses'
 import { createScriptedService } from '../fixtures/service'
+import { QUERY_PAUSE_MS } from '../model/queryEditor'
 import { createSavedSearchTab } from '../model/tab'
 import SavedSearchTab from './SavedSearchTab.vue'
 import '../../styles.css'
@@ -34,6 +36,7 @@ interface Knobs {
   onOpenAt: (path: string, ranges: readonly TextRange[]) => void
   onNotify: (text: string) => void
   onUpdateSearch: (request: UpdateSearchRequest) => void
+  onGetResults: Mock<() => void>
 }
 
 const NEW_QUERY = 'words("lighthouse") && meaning("the keeper in a gale").top(20)'
@@ -47,6 +50,7 @@ const meta: Meta<Knobs> = {
     onOpenAt: fn(),
     onNotify: fn(),
     onUpdateSearch: fn(),
+    onGetResults: fn(),
   },
   render: (args) => ({
     components: { SavedSearchTab },
@@ -54,9 +58,14 @@ const meta: Meta<Knobs> = {
       const service = createScriptedService(args.response, () => FUNCTIONS)
       service.setUpdateAnswer(args.updateAnswer)
       const updateSearch = service.updateSearch.bind(service)
+      const getResults = service.getResults.bind(service)
       const tab = createSavedSearchTab(NOTE_PATH, {
         service: {
           ...service,
+          getResults: (request, signal) => {
+            args.onGetResults()
+            return getResults(request, signal)
+          },
           updateSearch: (request, signal) => {
             args.onUpdateSearch(request)
             return updateSearch(request, signal)
@@ -264,7 +273,7 @@ const getEditor = (canvasElement: HTMLElement): HTMLElement =>
 const openEditor = async (canvasElement: HTMLElement): Promise<HTMLElement> => {
   const canvas = within(canvasElement)
   await userEvent.click(await waitFor(() => canvas.getByRole('button', { name: 'Edit query' })))
-  await waitFor(() => expect(canvas.getByRole('dialog', { name: 'Edit query' })).toBeVisible())
+  await waitFor(() => expect(canvas.getByRole('region', { name: 'Edit query' })).toBeVisible())
   return getEditor(canvasElement)
 }
 
@@ -273,35 +282,50 @@ const fillEditor = async (editor: HTMLElement, text: string): Promise<void> => {
   await browser.userEvent.fill(editor, text)
 }
 
-/** The edit button opens the query in the editor; Save writes it, closes the editor and keeps the new query. */
-export const EditsAndSavesTheQuery: Story = {
-  play: async ({ args, canvasElement }) => {
+const AFTER_PAUSE = { timeout: QUERY_PAUSE_MS * 3 }
+
+/** The edit button shows the query in the editor inside the tab, and hides it again. */
+export const ShowsAndHidesTheEditor: Story = {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const button = await waitFor(() => canvas.getByRole('button', { name: 'Edit query' }))
+    await expect(button).toHaveAttribute('aria-expanded', 'false')
+
     const editor = await openEditor(canvasElement)
+
+    await expect(button).toHaveAttribute('aria-expanded', 'true')
     await expect(editor).toHaveTextContent('meaning("the harbor master in a winter storm")')
+    await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
+    await expect(canvas.queryByRole('dialog')).toBeNull()
 
-    await fillEditor(editor, NEW_QUERY)
-    await userEvent.click(canvas.getByRole('button', { name: 'Save' }))
+    await userEvent.click(button)
 
-    await expect(args.onUpdateSearch).toHaveBeenCalledWith({ path: NOTE_PATH, query: NEW_QUERY })
-    await waitFor(() => expect(canvas.queryByRole('dialog')).toBeNull())
-    await expect(await openEditor(canvasElement)).toHaveTextContent(NEW_QUERY)
+    await waitFor(() => expect(canvas.queryByRole('region', { name: 'Edit query' })).toBeNull())
+    await expect(button).toHaveAttribute('aria-expanded', 'false')
   },
 }
 
-/** Cancel closes the editor and writes nothing. */
-export const CancelsTheEdit: Story = {
+/** A valid query is saved once typing pauses, the results are read again, and the editor stays open. */
+export const SavesTheQueryAfterTypingPauses: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await fillEditor(await openEditor(canvasElement), NEW_QUERY)
+    const editor = await openEditor(canvasElement)
+    const readsBefore = args.onGetResults.mock.calls.length
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Cancel' }))
+    await fillEditor(editor, NEW_QUERY)
 
-    await waitFor(() => expect(canvas.queryByRole('dialog')).toBeNull())
     await expect(args.onUpdateSearch).not.toHaveBeenCalled()
-    await expect(await openEditor(canvasElement)).toHaveTextContent(
-      'meaning("the harbor master in a winter storm")',
+    await waitFor(
+      () => expect(args.onUpdateSearch).toHaveBeenCalledWith({ path: NOTE_PATH, query: NEW_QUERY }),
+      AFTER_PAUSE,
     )
+    await expect(args.onUpdateSearch).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(args.onGetResults.mock.calls.length).toBeGreaterThan(readsBefore))
+    await expect(canvas.getByRole('region', { name: 'Edit query' })).toBeVisible()
+    await expect(canvasElement.querySelectorAll('.cm-lintRange-error')).toHaveLength(0)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Edit query' }))
+    await expect(await openEditor(canvasElement)).toHaveTextContent(NEW_QUERY)
   },
 }
 
@@ -344,8 +368,8 @@ export const CompletesTheNamesOfTheCatalog: Story = {
   },
 }
 
-/** A query the core rejects keeps the editor open, lists its problems and underlines each at its place. */
-export const UnderlinesTheProblemsOfAQueryNotSaved: Story = {
+/** A query the core rejects is underlined at its place and listed, the note keeps its query, and the editor stays open. */
+export const UnderlinesAQueryNotSaved: Story = {
   args: {
     updateAnswer: {
       errors: [{ line: 1, column: 18, message: 'unknown function meanin (did you mean meaning?)' }],
@@ -354,11 +378,11 @@ export const UnderlinesTheProblemsOfAQueryNotSaved: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const editor = await openEditor(canvasElement)
+    const readsBefore = args.onGetResults.mock.calls.length
 
     await fillEditor(editor, 'words("gale") && meanin("a night at sea")')
-    await userEvent.click(canvas.getByRole('button', { name: 'Save' }))
 
-    await expect(args.onUpdateSearch).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(args.onUpdateSearch).toHaveBeenCalledTimes(1), AFTER_PAUSE)
     await waitFor(() =>
       expect(canvas.getByRole('alert')).toHaveTextContent(
         '1:18 unknown function meanin (did you mean meaning?)',
@@ -370,6 +394,12 @@ export const UnderlinesTheProblemsOfAQueryNotSaved: Story = {
       return marks[0]!
     })
     await expect(underlined).toHaveTextContent(/^meanin$/)
-    await expect(canvas.getByRole('dialog', { name: 'Edit query' })).toBeVisible()
+    await expect(canvas.getByRole('region', { name: 'Edit query' })).toBeVisible()
+    await expect(args.onGetResults.mock.calls.length).toBe(readsBefore)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Edit query' }))
+    await expect(await openEditor(canvasElement)).toHaveTextContent(
+      'meaning("the harbor master in a winter storm")',
+    )
   },
 }
