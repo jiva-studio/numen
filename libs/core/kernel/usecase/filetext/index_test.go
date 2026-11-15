@@ -445,7 +445,7 @@ func TestIndexRecordsAFileWithNoTextSourceWithoutChunks(t *testing.T) {
 	}
 }
 
-func TestTextSuppliedLaterForAFileWithNoTextIsCut(t *testing.T) {
+func TestFileTextAddedLaterIsChunked(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)

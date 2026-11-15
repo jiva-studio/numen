@@ -50,7 +50,7 @@ func TestFilesChangedWakesOnlyThePluginsThatTakeTheChangedTypes(t *testing.T) {
 	}
 }
 
-func TestAPluginTakesTheFilesOfTheTypesItsReadersOpen(t *testing.T) {
+func TestIsTakingFileMatchesReaderContentTypes(t *testing.T) {
 	host := newEventHost(t,
 		map[string]catalogmanifest.Manifest{
 			"md.test.pdf":  readerOf("application/pdf"),
