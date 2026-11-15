@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/wordmatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -141,8 +141,13 @@ func (q *QueryReads) FindHeadings(ctx context.Context, vaultID domain.VaultID, t
 		return nil, err
 	}
 	statement, args := allHeadingsSQL, []any{vault}
-	if strings.IndexFunc(text, isWordRune) >= 0 {
-		statement, args = headingsLikeSQL, []any{`"` + strings.ReplaceAll(text, `"`, `""`) + `"`, vault}
+	phrase := `"` + strings.ReplaceAll(text, `"`, `""`) + `"`
+	found, err := hasTokens(ctx, phrase, text)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		statement, args = headingsLikeSQL, []any{phrase, vault}
 	}
 	rows, err := q.db.QueryContext(ctx, statement, args...)
 	if err != nil {
@@ -160,8 +165,12 @@ func (q *QueryReads) FindHeadings(ctx context.Context, vaultID domain.VaultID, t
 	return out, rows.Err()
 }
 
-func isWordRune(r rune) bool {
-	return unicode.IsLetter(r) || unicode.IsDigit(r)
+func hasTokens(ctx context.Context, phrase, text string) (bool, error) {
+	matched, err := wordmatch.NewMatcher().MatchWords(ctx, phrase, []string{text})
+	if err != nil {
+		return false, err
+	}
+	return matched[0], nil
 }
 
 func (q *QueryReads) CountUnreadableFrontmatter(ctx context.Context, vaultID domain.VaultID) (int, error) {
