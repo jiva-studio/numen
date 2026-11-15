@@ -20,3 +20,4 @@ c52db24d40cab618d19adbd6fab913c34cdd1468:libs/core/kernel/usecase/modelcall/call
 c52db24d40cab618d19adbd6fab913c34cdd1468:libs/core/kernel/usecase/modelcall/calls_test.go:generic-api-key:23
 c75f92de20c90fefd9955fd2303d0076d8bb7f39:apps/desktop/editor/src/pages/settings/ui/secrets/SecretDraftRow.vue:generic-api-key:67
 e17145d5fe8c01d8834fda4d40edd82a772f4d9c:modules/apps/desktop/internal/adapter/claudecode/environment_test.go:generic-api-key:19
+e3da42800f681543756125d20b1cb537a45c111f:plugins/engines-reranking/backend/domain/profile/profiles.json:generic-api-key:27
