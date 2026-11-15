@@ -6,7 +6,7 @@
   "description": "PDF document reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onFilesChanged"],
+  "activationEvents": ["onFilesChanged:application/pdf"],
   "contributes": {
     "textKinds": [{ "kind": "page-text", "title": "Text layer" }],
     "tabKinds": [
