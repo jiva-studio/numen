@@ -1,10 +1,12 @@
 // Package api holds the JSON messages of the saved search tools: the input and output of each tool.
 package api
 
-// The values of PreviewOutput.Order.
+// Order is how the results of a search are ordered.
+type Order string
+
 const (
-	OrderReranked = "reranked"
-	OrderFused    = "fused"
+	OrderReranked Order = "reranked"
+	OrderFused    Order = "fused"
 )
 
 type PreviewInput struct {
@@ -48,7 +50,7 @@ type Problem struct {
 type PreviewOutput struct {
 	Query          string          `json:"query" jsonschema:"the query run"`
 	Results        []PreviewResult `json:"results" jsonschema:"the results, best first"`
-	Order          string          `json:"order" jsonschema:"reranked when the reranking model ordered the results, fused when they are ordered by the scores of the query"`
+	Order          Order           `json:"order" jsonschema:"reranked when the reranking model ordered the results, fused when they are ordered by the scores of the query"`
 	Floor          float64         `json:"floor,omitempty" jsonschema:"the similarity a passage reaches for meaning to hold; absent for a query without meaning"`
 	CandidateCount int             `json:"candidateCount" jsonschema:"how many passages the searches found before the query was applied"`
 	Warnings       []string        `json:"warnings,omitempty" jsonschema:"what limited the result, such as a reranking service that did not answer"`

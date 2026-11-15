@@ -7,8 +7,8 @@ import (
 
 // Merge joins the candidates of one file whose ranges overlap or lie at most gap bytes apart, one after
 // another. A joined candidate covers the range of all its parts, takes the highest score and word score
-// of its parts, and the text, selector and line of the part that Compare puts first. The result is in no
-// particular order.
+// of its parts, the chunk ids of its parts in the order of their start, and the text, selector and line
+// of the part that Compare puts first. The result is in no particular order.
 func Merge(candidates []Candidate, gap int) []Candidate {
 	byPath := map[string][]Candidate{}
 	var paths []string
@@ -56,7 +56,9 @@ func join(group []Candidate) Candidate {
 	best := slices.MinFunc(group, Compare)
 	start, end, count := group[0].Start, 0, 0
 	var score, wordScore *float64
+	var chunkIDs []string
 	for _, part := range group {
+		chunkIDs = append(chunkIDs, part.ChunkIDs...)
 		start = min(start, part.Start)
 		end = max(end, part.Start+part.Length)
 		count += part.ChunkCount
@@ -64,7 +66,7 @@ func join(group []Candidate) Candidate {
 		wordScore = getHigher(wordScore, part.WordScore)
 	}
 	best.Start, best.Length = start, end-start
-	best.Score, best.WordScore, best.ChunkCount = score, wordScore, count
+	best.Score, best.WordScore, best.ChunkCount, best.ChunkIDs = score, wordScore, count, chunkIDs
 	return best
 }
 

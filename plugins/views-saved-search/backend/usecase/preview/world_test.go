@@ -9,11 +9,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/internal/adapter/reranker"
+	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/internal/adapter/reranker/rerankertest"
 	"github.com/jiva-studio/numen/plugins/views-saved-search/backend/usecase/preview"
 )
 
@@ -123,7 +123,7 @@ type world struct {
 	search  *hosttest.Search
 	host    *recordingSearch
 	standIn *standIn
-	caller  connection.Caller
+	rows    *rerankertest.Rows
 	config  preview.Config
 }
 
@@ -137,7 +137,7 @@ func newWorld(t *testing.T) *world {
 		vault:  hosttest.New(testVault),
 		search: search,
 		host:   &recordingSearch{Search: search.With(testVault), forgotten: map[string]bool{}},
-		caller: llmtest.NewCaller(llm.Provide(nil, llm.Roles{}), connection.Call{ConnectionID: "none"}),
+		rows:   rerankertest.NewRows(),
 		config: preview.DefaultConfig(),
 	}
 }
@@ -145,7 +145,7 @@ func newWorld(t *testing.T) *world {
 func (w *world) withReranker(scores map[string]float32) *standIn {
 	// One row for reranking, served by the stand-in.
 	w.standIn = &standIn{scores: scores}
-	w.caller = llmtest.NewCaller(llm.Provide(nil, llm.Roles{Reranker: w.standIn}), connection.Call{ConnectionID: "harbor-reranker"})
+	w.rows.Add("harbor-reranker", "Harbor reranker", map[string]string{"model": "harbor-rerank-model"}, w.standIn)
 	return w.standIn
 }
 
@@ -154,8 +154,11 @@ func (w *world) index(results ...host.SearchResult) {
 }
 
 func (w *world) execute(ctx context.Context, input api.PreviewInput) (api.PreviewOutput, error) {
-	useCase := preview.New(preview.Dependencies{Search: w.host, Notes: w.vault, Reranker: reranker.New(w.caller)}, w.config)
-	return useCase.Execute(ctx, input)
+	return w.newUseCase().Execute(ctx, input)
+}
+
+func (w *world) newUseCase() *preview.UseCase {
+	return preview.New(preview.Dependencies{Search: w.host, Notes: w.vault, Reranker: reranker.New(w.rows)}, w.config)
 }
 
 func (w *world) run(t *testing.T, input api.PreviewInput) api.PreviewOutput {
