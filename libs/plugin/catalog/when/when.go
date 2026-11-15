@@ -31,13 +31,14 @@ type variable struct {
 
 func (k kind) getType() *cel.Type {
 	switch k {
+	case kindBool:
+		return cel.BoolType
 	case kindString:
 		return cel.StringType
 	case kindMap:
 		return cel.MapType(cel.StringType, cel.DynType)
 	case kindList:
 		return cel.ListType(cel.MapType(cel.StringType, cel.DynType))
-	case kindBool:
 	}
 	return cel.BoolType
 }
@@ -47,7 +48,7 @@ type Result int
 
 const (
 	// False is a condition that does not hold.
-	False Result = iota + 1
+	False Result = iota
 	// True is a condition that holds.
 	True
 	// Unknown is a condition whose value depends on a variable that was not given.
@@ -179,12 +180,15 @@ func (c Condition) Evaluate(values map[string]any) Result {
 			unknown = append(unknown, cel.AttributePattern(name))
 		}
 	}
-	partial, partialErr := cel.PartialVars(activation, unknown...)
-	out, _, evalErr := c.program.Eval(partial)
-	switch {
-	case types.IsUnknown(out):
+	partial, err := cel.PartialVars(activation, unknown...)
+	if err != nil {
 		return Unknown
-	case errors.Join(partialErr, evalErr) != nil:
+	}
+	out, _, err := c.program.Eval(partial)
+	switch {
+	case out != nil && types.IsUnknown(out):
+		return Unknown
+	case err != nil:
 		return False
 	case out.Value() == true:
 		return True

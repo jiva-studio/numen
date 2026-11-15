@@ -88,7 +88,10 @@ func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 
 	dueDay := s.GetDayNumber(due)
 	from, to := s.GetDayNumber(counted.AddDate(0, 0, first)), s.GetDayNumber(counted.AddDate(0, 0, last))
-	on, heaviest := dueDay, p.getWeight(s, dueDay)
+	on, heaviest := dueDay, -1.0
+	if dueDay >= from && dueDay <= to {
+		heaviest = p.getWeight(s, dueDay)
+	}
 	for day := from; day <= to; day++ {
 		if weight := p.getWeight(s, day); weight > heaviest {
 			on, heaviest = day, weight
@@ -124,5 +127,7 @@ func window(away time.Duration) (first, last int, opens bool) {
 	for _, one := range getSlacks() {
 		slack += one.factor * math.Max(math.Min(days, one.to)-one.from, 0)
 	}
-	return int(math.Round(days - slack)), int(math.Round(days + slack)), true
+	first = int(math.Max(2, math.Round(days-slack)))
+	last = int(math.Round(days + slack))
+	return first, last, last > first
 }

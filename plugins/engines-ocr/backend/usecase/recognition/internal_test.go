@@ -741,7 +741,7 @@ func TestRecognitionPreparesDocumentsBeforeItsTurn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := r.Recognize(t.Context(), Request{Path: "scan.png"}); err != nil {
+	if _, err := runRecognitionNow(t.Context(), r, Request{Path: "scan.png"}); err != nil {
 		t.Fatal(err)
 	}
 	if queue.preparesAtEnqueue != 1 {

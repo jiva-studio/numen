@@ -40,4 +40,25 @@ describe('the tabs the kinds place', () => {
 
     await vi.waitFor(() => expect(windowTabs.tabs.tabs.value).toHaveLength(1))
   })
+
+  it('reports a failure of the background open', async () => {
+    const writeMessage = vi.fn()
+    startPlacedTabs(
+      {
+        restored: {
+          openPlacedTabs: async () => {
+            throw createLostConnection('offline')
+          },
+        },
+      } as never,
+      writeMessage,
+    )
+
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledExactlyOnceWith(
+        'The tabs did not open: Numen is not responding; retrying',
+        'error',
+      ),
+    )
+  })
 })

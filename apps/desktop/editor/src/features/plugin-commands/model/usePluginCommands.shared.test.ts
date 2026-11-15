@@ -61,6 +61,8 @@ describe('a shared command in the palette', () => {
     const target = { path: 'scan.pdf', file: 'scan.pdf', isReady: true } as CommandTarget
 
     expect(entry?.isAvailable(target, RUNS)).toBe(true)
+    expect(entry?.isAvailable({ ...target, path: '' }, RUNS)).toBe(true)
+    expect(entry?.isAvailable({ ...target, file: '' }, RUNS)).toBe(true)
     expect(entry?.isAvailable({ ...target, path: '', file: '' }, RUNS)).toBe(false)
   })
 })

@@ -3,7 +3,6 @@
 package performance
 
 import (
-	"cmp"
 	"fmt"
 	"os"
 	"strconv"
@@ -32,7 +31,9 @@ func setNiceIn(dir string, nice int) error {
 		if err != nil {
 			continue
 		}
-		first = cmp.Or(first, setPriority(tid, nice))
+		if err := setPriority(tid, nice); err != nil && first == nil {
+			first = err
+		}
 	}
 	return first
 }
