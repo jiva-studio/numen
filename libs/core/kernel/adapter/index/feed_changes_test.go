@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestAReportOfTheFeedComesAfterTheWriteWithItsChangesReadable(t *testing.T) {
+func TestFeedWatcherReadsTheCommittedChanges(t *testing.T) {
 	db := openDB(t)
 	v := getFirstVault()
 	var seen [][]string
@@ -21,11 +21,11 @@ func TestAReportOfTheFeedComesAfterTheWriteWithItsChangesReadable(t *testing.T) 
 		t.Errorf("the watcher read %v", seen)
 	}
 	if unwatched != 0 {
-		t.Errorf("the watcher of another vault was told %d times", unwatched)
+		t.Errorf("the watcher of another vault was called %d times", unwatched)
 	}
 }
 
-func TestAWatcherThatStoppedIsNotTold(t *testing.T) {
+func TestStoppedFeedWatcherIsNotCalled(t *testing.T) {
 	db := openDB(t)
 	v := getFirstVault()
 	told := 0
@@ -34,6 +34,6 @@ func TestAWatcherThatStoppedIsNotTold(t *testing.T) {
 	saveNoteWithFrontmatter(t, db, v, "notes/river.md", nil, "River")
 
 	if told != 0 {
-		t.Errorf("a stopped watcher was told %d times", told)
+		t.Errorf("a stopped watcher was called %d times", told)
 	}
 }
