@@ -254,7 +254,42 @@ func (a *Activation) settlePluginInState(
 // EnsureActive starts the plugin where its process does not run, takes a use lease of the holder on it and
 // returns its endpoint. Release returns the lease.
 func (a *Activation) EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
-	return a.ensureActiveDuringDiscovery(ctx, pluginID, useLease(holder))
+	endpoint, err := a.ensureActiveDuringDiscovery(ctx, pluginID, useLease(holder))
+	if err != nil || !isProvisioning(ctx) {
+		return endpoint, err
+	}
+	if err := a.provisionDependencies(ctx, pluginID); err != nil {
+		a.Release(pluginID, endpoint.Token, holder)
+		return supervision.NoEndpoint(), err
+	}
+	return endpoint, nil
+}
+
+type withoutProvisioningKey struct{}
+
+// withoutProvisioning marks a call of EnsureActive that starts the plugin without downloading the dependencies it declares,
+// for the delivery of an event or of a connection, which is no use of the models.
+func withoutProvisioning(ctx context.Context) context.Context {
+	return context.WithValue(ctx, withoutProvisioningKey{}, true)
+}
+
+func isProvisioning(ctx context.Context) bool {
+	skipped, _ := ctx.Value(withoutProvisioningKey{}).(bool)
+	return !skipped
+}
+
+// provisionDependencies downloads what the plugin declares and is not on this machine. A failed download is no failure of
+// the plugin: it is returned to the caller of the use and tried again at the next one.
+func (a *Activation) provisionDependencies(ctx context.Context, pluginID string) error {
+	p, ok := a.set.getKnownPlugin(pluginID)
+	if !ok {
+		return nil
+	}
+	requirements := a.set.getLaunch(p).Requirements
+	if len(requirements) == 0 {
+		return nil
+	}
+	return a.processes.EnsureProvisioned(ctx, requirements)
 }
 
 // EnsureActiveForQuestion starts the plugin where its process does not run, takes a question lease of the
