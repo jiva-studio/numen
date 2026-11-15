@@ -32,7 +32,8 @@ func (r recording) Embed(ctx context.Context, texts []string) ([][]float32, erro
 func newRecordingServer(t *testing.T) (*Server, *[]string) {
 	t.Helper()
 	srv := newEmbeddingServer()
-	srv.profileSrc = profilefiles.NewDirectory(t.TempDir())
+	useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	var mu sync.Mutex
 	var received []string
 	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
@@ -89,8 +90,8 @@ func TestAnUnsetRoleIsADocument(t *testing.T) {
 
 func TestTheRecipeHandlingChangesWithTheProfileAndNotWithMinChunkLength(t *testing.T) {
 	srv := newEmbeddingServer()
-	dir := t.TempDir()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
+	dir := useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	handling := func(values map[string]string) string {
 		t.Helper()
 		values["source"], values["model"] = "local", model.DefaultModel
@@ -127,8 +128,8 @@ func TestTheRecipeHandlingChangesWithTheProfileAndNotWithMinChunkLength(t *testi
 
 func TestAChangeOfTheProfileDropsTheLoadedModel(t *testing.T) {
 	srv := newEmbeddingServer()
-	dir := t.TempDir()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
+	dir := useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	openCount := 0
 	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
 		openCount++
@@ -152,8 +153,8 @@ func TestAChangeOfTheProfileDropsTheLoadedModel(t *testing.T) {
 
 func TestAUserProfileAddsALocalModelWithoutRecompiling(t *testing.T) {
 	srv := newEmbeddingServer()
-	dir := t.TempDir()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
+	dir := useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	var reportedWhat string
 	var reportedErr error
 	srv.report = func(what string, err error) {
@@ -179,8 +180,8 @@ func TestAUserProfileAddsALocalModelWithoutRecompiling(t *testing.T) {
 
 func TestTheModelOfAUserProfileThatWasRemovedFailsWithAClearError(t *testing.T) {
 	srv := newEmbeddingServer()
-	dir := t.TempDir()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
+	dir := useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	srv.updateConfig(map[string]string{"source": "local", "model": "owner/gone"})
 	_, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"text"})
 	if !isPrecondition(err) || !strings.Contains(err.Error(), dir) {

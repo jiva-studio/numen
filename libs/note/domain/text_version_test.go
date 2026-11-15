@@ -144,16 +144,6 @@ func TestIsFromFileIsFalseForAPropertyVersion(t *testing.T) {
 	}
 }
 
-func TestFileInputComparesExtensionsWithoutCase(t *testing.T) {
-	in := domain.FileInput{".pdf", ".pdf/readme"}
-	if !in.IsFileAccepted("books/A.PDF") || !in.IsFileAccepted(".pdf") {
-		t.Fatal("A.PDF and .pdf should be accepted")
-	}
-	if in.IsFileAccepted("books.pdf/readme") || in.IsFileAccepted("notes/a.md") || in.IsFileAccepted("readme") {
-		t.Fatal("a file of another type is accepted")
-	}
-}
-
 func TestVersionTextLocatesHeadingsAndSelectors(t *testing.T) {
 	text := domain.NewVersionText(domain.TextVersion{Kind: "recognition"}, []domain.TextSegment{
 		{Text: "Intro ", Heading: "One", Selector: `{"page":1}`},

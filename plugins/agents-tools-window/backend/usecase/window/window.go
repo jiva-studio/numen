@@ -49,7 +49,7 @@ func (c Control) ListTabs(ctx context.Context, focus string) ([]host.OpenTab, st
 		return nil, "", err
 	}
 	if len(tabs) == 0 && focus != "" {
-		inferred := host.OpenTab{ID: inferredTabID, Kind: "", Path: focus, Title: getTitle(focus), Place: nil}
+		inferred := host.OpenTab{ID: inferredTabID, Kind: "", Path: focus, Title: getTitle(focus), Place: ""}
 		return []host.OpenTab{inferred}, inferred.ID, nil
 	}
 	return tabs, activeID, nil

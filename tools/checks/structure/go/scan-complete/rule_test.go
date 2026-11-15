@@ -17,21 +17,14 @@ func listLayerGroups() []string {
 	return []string{"domain", "port", "usecase", "adapter", "internal/adapter", "internal/adapterlib", "internal/testsupport", "container"}
 }
 
-func getHelperPackages() map[string]string {
-	return map[string]string{
-		"internal/appearance": "builds the appearance section of a page from settings values",
-		"internal/csp":        "builds the content security policy string of a window",
-	}
-}
-
-func getLayerGroup(rel string, helpers map[string]string) (group string, ok bool) {
+func getLayerGroup(rel string) (group string, ok bool) {
 	var found []string
 	for _, one := range listLayerGroups() {
 		if load.IsWithin(rel, one) {
 			found = append(found, one)
 		}
 	}
-	if _, isHelper := helpers[rel]; isHelper {
+	if load.IsHelper(rel) {
 		found = append(found, rel)
 	}
 	found = slices.Compact(found)
@@ -73,10 +66,10 @@ func listProductionDirs(root string) ([]string, error) {
 	return dirs, err
 }
 
-func getUnplacedPackages(dirs []string, helpers map[string]string) []string {
+func getUnplacedPackages(dirs []string) []string {
 	var found []string
 	for _, dir := range dirs {
-		if group, ok := getLayerGroup(dir, helpers); !ok {
+		if group, ok := getLayerGroup(dir); !ok {
 			found = append(found, dir+" is in "+strconv.Quote(group)+" groups, want exactly one")
 		}
 	}
@@ -101,12 +94,12 @@ func getUseCaseImports(pkgs []*packages.Package, corePath string) (imports map[s
 	return imports, read
 }
 
-func getBadUseCaseImports(imports map[string][]string, helpers map[string]string) []string {
+func getBadUseCaseImports(imports map[string][]string) []string {
 	var found []string
 	for from, targets := range imports {
 		for _, target := range targets {
-			group, _ := getLayerGroup(target, helpers)
-			if _, isHelper := helpers[target]; isHelper {
+			group, _ := getLayerGroup(target)
+			if load.IsHelper(target) {
 				continue
 			}
 			if group != "domain" && group != "port" && group != "usecase" {
@@ -121,7 +114,7 @@ func getBadUseCaseImports(imports map[string][]string, helpers map[string]string
 func checkUseCasesImportOnlyDomainAndPorts(t *testing.T, workspace load.WorkspacePackages) {
 	t.Helper()
 	imports, read := getUseCaseImports(load.GetModulePackages(t, workspace, "libs/core/kernel"), load.CoreImportPath)
-	for _, one := range getBadUseCaseImports(imports, getHelperPackages()) {
+	for _, one := range getBadUseCaseImports(imports) {
 		t.Error(one)
 	}
 	if read == 0 {

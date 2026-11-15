@@ -91,14 +91,14 @@ describe('the open tabs', () => {
         id: 'b',
         title: 'B',
         kind: 'reader:reader-pdf',
-        openTab: { path: 'b.pdf', place: { page: 7, pageCount: 12 } },
+        openTab: { path: 'b.pdf', place: '{"page":7,"pageCount":12}' },
         savedState: { page: 7, pageCount: 12 },
       },
       {
         id: 'c',
         title: 'C',
         kind: 'reader:recording',
-        openTab: { path: 'c.mp3', place: { positionSeconds: 0 } },
+        openTab: { path: 'c.mp3', place: '{"positionSeconds":0}' },
       },
       {
         id: 'd',
@@ -106,7 +106,7 @@ describe('the open tabs', () => {
         kind: 'reader:reader-epub',
         openTab: {
           path: 'd.epub',
-          place: { cfi: 'epubcfi(/6/4!/4/2/1:0)', chapter: 'The Reed Beds' },
+          place: '{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}',
         },
       },
     ])
@@ -119,7 +119,7 @@ describe('the open tabs', () => {
         title: 'B',
         path: 'b.pdf',
         state: '{"page":7,"pageCount":12}',
-        place: { page: 7, pageCount: 12 },
+        place: '{"page":7,"pageCount":12}',
       },
       {
         id: 'c',
@@ -127,7 +127,7 @@ describe('the open tabs', () => {
         title: 'C',
         path: 'c.mp3',
         state: '',
-        place: { positionSeconds: 0 },
+        place: '{"positionSeconds":0}',
       },
       {
         id: 'd',
@@ -135,7 +135,7 @@ describe('the open tabs', () => {
         title: 'D',
         path: 'd.epub',
         state: '',
-        place: { cfi: 'epubcfi(/6/4!/4/2/1:0)', chapter: 'The Reed Beds' },
+        place: '{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}',
       },
     ])
   })
@@ -146,7 +146,7 @@ describe('the open tabs', () => {
         id: 'b',
         title: 'B',
         kind: 'reader:reader-pdf',
-        openTab: { path: 'b.pdf', place: { page: 3, pageCount: 12 } },
+        openTab: { path: 'b.pdf', place: '{"page":3,"pageCount":12}' },
       },
     ])
 
@@ -159,7 +159,7 @@ describe('the open tabs', () => {
           title: 'B',
           path: 'b.pdf',
           state: '',
-          place: { page: 3, pageCount: 12 },
+          place: '{"page":3,"pageCount":12}',
         },
       ],
     })

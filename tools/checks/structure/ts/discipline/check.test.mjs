@@ -103,7 +103,44 @@ describe("the suppressions", () => {
     assert.equal(found("tools/checks/structure/ts/x/check.mjs", 'const EXEMPT = ["apps/desktop/a.ts", "libs/x/b.go"]').length, 1);
     assert.equal(found("tools/checks/structure/ts/x/check.mjs", 'for (const one of ["plugins/vite.shared.ts", "plugins/vitest.config.ts"]) check(one)').length, 1);
     assert.equal(found("tools/checks/structure/ts/x/check.test.mjs", 'const fixture = ["apps/desktop/a.ts"]').length, 0);
-    assert.equal(found("tools/checks/structure/ts/x/check.mjs", 'const ROOTS = ["apps/desktop", "libs/x"]').length, 0);
+    assert.equal(found("tools/checks/structure/ts/x/check.mjs", 'const TOP = ["apps", "libs", "plugins"]').length, 0);
+  });
+  it("finds a constant of a check that lists packages, by folder or by Go import path", () => {
+    assert.deepEqual(found("tools/checks/structure/ts/x/check.mjs", 'const ROOTS = ["apps/desktop", "libs/x"]'), ["package list ROOTS"]);
+    assert.deepEqual(found("tools/checks/style/x/check.mjs", "const SKIPPED = new Set(['apps/landing'])"), ["package list SKIPPED"]);
+    assert.deepEqual(found("tools/lint-layers/x.mjs", 'const DRIVING = ["github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"]'), ["package list DRIVING"]);
+    assert.deepEqual(found("tools/checks/structure/ts/x/check.mjs", 'const GLOBS = ["apps/**/*.ts", "libs/x"]'), []);
+    assert.deepEqual(found("tools/checks/structure/ts/x/check.mjs", 'run(["apps/desktop", "libs/x"])'), []);
+  });
+  it("finds a list of repository files in the JSON data of a check", () => {
+    const data = (text) => found("tools/checks/structure/ts/x/allowed.json", text);
+    assert.deepEqual(data('["apps/desktop/a.ts", "libs/x/b.go"]'), ["file list (root)"]);
+    assert.deepEqual(data('[{ "file": "plugins/p/frontend/A.stories.ts", "reason": "it is drawn" }]'), ["file list (root)"]);
+    assert.deepEqual(data('{ "exempt": { "files": ["libs/x/b.go"] } }'), ["file list exempt.files"]);
+    assert.deepEqual(data('{ "go": { "libs/note": ["libs/atomicfile"] }, "words": ["get", "set"] }'), []);
+    assert.deepEqual(found("tools/checks/rules.json", '[{ "paths": ["tools/lint-layers/layers.mjs"] }]'), []);
+  });
+  it("keeps a list of JSON data whose keptBy names an issue and a reason, and fails one without", () => {
+    const data = (text) => found("tools/checks/structure/ts/x/allowed.json", text);
+    const entries = '[{ "file": "plugins/p/frontend/A.stories.ts", "reason": "it is drawn" }]';
+    assert.deepEqual(data(`{ "keptBy": "#1949 the stories stay listed", "stories": ${entries} }`), []);
+    assert.deepEqual(data(`{ "stories": ${entries} }`), ["file list stories"]);
+    assert.deepEqual(data(`{ "keptBy": "the stories stay listed", "stories": ${entries} }`), ["keptBy names no issue and reason"]);
+    assert.deepEqual(data(`{ "keptBy": "#1949", "stories": ${entries} }`), ["keptBy names no issue and reason"]);
+  });
+  it("keeps a list of a check with a kept-list marker and an issue right above it, and fails an unmarked one", () => {
+    const check = (text) => found("tools/checks/structure/ts/x/check.mjs", text);
+    const list = 'const ROOTS = ["apps/desktop", "libs/x"];\n';
+    assert.deepEqual(check(`// numen:kept-list #2126 the catalog stays listed\n${list}`), []);
+    assert.deepEqual(check(`/**\n * numen:kept-list #2126 the catalog stays listed\n */\n${list}`), []);
+    assert.deepEqual(check(list), ["package list ROOTS"]);
+    assert.deepEqual(check(`// numen:kept-list #2126 the catalog stays listed\n\n${list}`), ["package list ROOTS"]);
+    assert.deepEqual(check(`// the catalog stays listed\n${list}`), ["package list ROOTS"]);
+    assert.deepEqual(check(`// numen:kept-list the catalog stays listed\n${list}`), ["a kept-list marker names no issue and reason", "package list ROOTS"]);
+  });
+  it("fails a kept-list marker without an issue in a Go file", () => {
+    assert.deepEqual(found("tools/checks/structure/go/x/rule_test.go", "package x\n\n// numen:kept-list #1957 the bridge is kept\nvar a = 1\n"), []);
+    assert.deepEqual(found("tools/checks/structure/go/x/rule_test.go", "package x\n\n// numen:kept-list\nvar a = 1\n"), ["a kept-list marker names no issue and reason"]);
   });
   it("does not read a marker inside a string, or generated code", () => {
     assert.deepEqual(found("a.ts", "const a = '// eslint-disable-next-line'"), []);

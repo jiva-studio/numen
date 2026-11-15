@@ -110,3 +110,8 @@ func getCacheRoot() string {
 	}
 	return root
 }
+
+func isPresent(pos string) bool {
+	_, err := os.Stat(pos)
+	return err == nil
+}

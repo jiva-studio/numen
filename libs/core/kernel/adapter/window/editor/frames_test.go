@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -63,7 +63,7 @@ func TestAPluginPageThatDeclaresNoOriginsFramesItselfOnTheLoopback(t *testing.T)
 
 func getStorePagePolicy(t *testing.T, setBeforeStart bool, plugins PluginServices) string {
 	t.Helper()
-	vault := vaultfixture.NewVault(t, map[string]string{talk: sound})
+	vault := vaulttest.NewVault(t, map[string]string{talk: sound})
 	api := newBareServices()
 	api.readFiles(vaultreader.Readers{}, file.NewOpenPluginFile(storedFiles{importer: {pageName: []byte(pageBytes)}}), file.NewGetMediaType(contenttype.Open()))
 	api.state.Runtime.SetVault(vault)

@@ -91,6 +91,21 @@ func TestScannedPDFHasNoTextLayer(t *testing.T) {
 	}
 }
 
+func TestPreparedReaderOpensPDF(t *testing.T) {
+	reader := newReader(t)
+	for range 2 {
+		reader.Prepare(func(err error) { t.Error(err) })
+	}
+	doc, err := reader.Open("books/scan.pdf", readFixture(t, "scan.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { closeAndCheck(t, doc) })
+	if doc.GetPageCount() != 2 {
+		t.Fatalf("pages %d, want 2", doc.GetPageCount())
+	}
+}
+
 func TestPDFWithTextHasTextLayer(t *testing.T) {
 	if doc := open(t, "books/tiny.PDF", readFixture(t, "tiny.pdf")); !doc.HasTextLayer() {
 		t.Error("a PDF that carries text has no layer")

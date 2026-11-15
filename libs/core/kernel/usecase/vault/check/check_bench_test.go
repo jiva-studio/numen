@@ -5,10 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
@@ -61,7 +60,7 @@ func vaultOf(b *testing.B, notes int) map[string]string {
 
 func scanBenchVault(b *testing.B, notes map[string]string) (check.Checks, domain.Vault) {
 	b.Helper()
-	v := vaultfixture.NewVault(b, notes)
+	v := vaulttest.NewVault(b, notes)
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(b.TempDir(), "index.db")},
 	}), b.Context())
@@ -70,7 +69,7 @@ func scanBenchVault(b *testing.B, notes map[string]string) (check.Checks, domain
 	}
 	testsupport.CloseAfter(b, db)
 
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(b.Context(), v); err != nil {
 		b.Fatal(err)
 	}

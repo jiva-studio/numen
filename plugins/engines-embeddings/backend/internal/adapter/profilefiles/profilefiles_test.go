@@ -44,7 +44,7 @@ func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 	}
 
 	reported := map[string]error{}
-	table, err := NewDirectory(dir).Load(func(file string, err error) { reported[filepath.Base(file)] = err })
+	table, err := Directory{path: dir}.Load(func(file string, err error) { reported[filepath.Base(file)] = err })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 }
 
 func TestLoadKeepsShippedProfilesWhenFolderIsMissing(t *testing.T) {
-	table, err := NewDirectory(filepath.Join(t.TempDir(), "profiles")).Load(func(file string, err error) {
+	table, err := Directory{path: filepath.Join(t.TempDir(), "profiles")}.Load(func(file string, err error) {
 		t.Errorf("unexpected report for missing folder: %s: %v", file, err)
 	})
 	if err != nil {
@@ -79,7 +79,7 @@ func TestLoadKeepsShippedProfilesWhenPathIsNotFolder(t *testing.T) {
 	}
 
 	var reportedPath string
-	table, err := NewDirectory(file).Load(func(path string, _ error) { reportedPath = path })
+	table, err := Directory{path: file}.Load(func(path string, _ error) { reportedPath = path })
 	if err != nil {
 		t.Fatal(err)
 	}

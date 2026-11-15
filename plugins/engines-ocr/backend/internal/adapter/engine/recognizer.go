@@ -40,7 +40,7 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Rec
 	}
 	cacheRoot := getCacheRoot()
 	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider: onnx.GetSessionProvider(),
+		Provider: getSessionProvider(),
 		Threads:  getThreads(cfg),
 
 		ComputeUnits: onnx.ComputeUnitsDefault,
@@ -238,22 +238,4 @@ func toSet(names []string) map[string]bool {
 
 func collapseSpaces(text string) string {
 	return strings.Join(strings.Fields(text), " ")
-}
-
-func NewTestRecognizer(
-	layout func(image.Image) ([]Region, error),
-	read func(image.Image) ([]read.RecResult, error),
-	model Model,
-) *Recognizer {
-	return &Recognizer{
-		shape:  nil,
-		lines:  nil,
-		layout: layout,
-		read:   read,
-		body:   map[string]bool{settings.LabelText: true, "paragraph": true, settings.LabelParagraphTitle: true},
-		head:   map[string]int{settings.LabelParagraphTitle: 1},
-		margin: 10,
-		jobs:   1,
-		model:  model,
-	}
 }
