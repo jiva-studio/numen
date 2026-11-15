@@ -147,11 +147,6 @@ func (d *DB) FeedChanges() *changefeed.Changes { return d.feed }
 // FileChanges reads the file change feed of each vault.
 func (d *DB) FileChanges() *changefeed.Feed { return changefeed.NewFeed(d.read) }
 
-// TrimFileChanges drops the removals the feeds stored longer ago than the age.
-func (d *DB) TrimFileChanges(ctx context.Context, age time.Duration) error {
-	return changefeed.Trim(ctx, d.write, age)
-}
-
 // Maintenance writes, so it takes the pool that is allowed to.
 func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.write} }
 
