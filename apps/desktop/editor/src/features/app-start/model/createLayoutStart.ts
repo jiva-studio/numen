@@ -87,5 +87,5 @@ export function createLayoutStart(deps: LayoutStartDeps) {
     })
   }
 
-  return { start, close: () => windowTabs.restored.close() }
+  return { start, close: () => windowTabs.panes.closeAll() }
 }

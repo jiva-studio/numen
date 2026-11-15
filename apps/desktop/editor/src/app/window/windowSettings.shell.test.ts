@@ -62,7 +62,7 @@ const createWindow = () => {
   })
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = {
-    groups: { handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') } },
+    handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') },
   } as unknown as WindowTabs
   const settings = createWindowSettingsPart({
     api,

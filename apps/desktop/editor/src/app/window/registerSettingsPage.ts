@@ -47,5 +47,5 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
     },
   })
   foundation.settingsRequests.subscribe(settingsPage.configured.openSettings)
-  windowTabs.groups.registerKinds(settingsPage.kinds)
+  windowTabs.kinds.registerKinds(settingsPage.kinds)
 }

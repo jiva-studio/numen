@@ -1,22 +1,16 @@
 /**
- * The tabs by kind: which kinds a window can open, the tabs of a plugin whose kind goes away, and
- * what a kind may ask of the window.
+ * The kinds a window can open: how they are registered and found, the tabs of a plugin whose kind
+ * goes away, and the files a kind creates.
  */
 import { computed } from 'vue'
 import type { Result } from '@/shared/lib/result'
 import type { AnyTabKind } from '../lib/kinds'
-import {
-  createPlaceholders,
-  createTabNavigation,
-  createTabOpeners,
-  createWindowHandle,
-} from './tabOperations'
+import { createPlaceholders } from './tabOperations'
 import type { TabStore } from './tabStore'
 
-export function useTabGroups(store: TabStore) {
+export function useTabKinds(store: TabStore) {
   const { byKind } = store
   const placeholders = createPlaceholders(store)
-  const navigation = createTabNavigation(store, createTabOpeners(store))
   const kinds = computed(() => [...byKind.value.values()])
 
   const requireFree = (registered: ReadonlyMap<string, AnyTabKind>, kind: AnyTabKind): void => {
@@ -64,7 +58,5 @@ export function useTabGroups(store: TabStore) {
     findKind,
     closeTabsOfPlugin: placeholders.closeTabsOfPlugin,
     createFileOfKind,
-    handle: createWindowHandle(store),
-    sendText: navigation.sendText,
   }
 }

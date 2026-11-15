@@ -15,7 +15,7 @@ import type { TabLinksApi } from '../api/tab-links'
 export interface WindowTabLinkSessionDeps {
   readonly api: Pick<TabLinksApi, 'watchTabLinks' | 'cancelTabLinksWatch'>
   readonly windowId: string
-  readonly windowTabs: Pick<WindowTabs, 'tabs' | 'groups'>
+  readonly windowTabs: Pick<WindowTabs, 'tabs' | 'handle'>
   readonly isMain: boolean
   readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
   readonly reports: Pick<TabReports, 'reportTabs' | 'waitForReports' | 'stop' | 'resume'>

@@ -47,7 +47,7 @@ const createSettings = (
     },
   } as unknown as MessageLog
   const handle = { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') }
-  const windowTabs = { groups: { handle } } as unknown as WindowTabs
+  const windowTabs = { handle } as unknown as WindowTabs
   const onSizeChanged = vi.fn()
   const settings = createWindowSettingsPart({
     api,

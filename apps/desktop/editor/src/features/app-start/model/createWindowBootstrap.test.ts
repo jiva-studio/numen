@@ -45,7 +45,7 @@ const setup = ({
     },
   })
   const windowTabs = createTestTabs()
-  windowTabs.groups.registerKinds([
+  windowTabs.kinds.registerKinds([
     withPlacement('welcome'),
     { ...withPlacement('note'), display: {} },
   ])
@@ -161,7 +161,7 @@ describe('a window starting', () => {
 
     await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
     const [first] = windowTabs.tabs.tabs.value
-    if (first) windowTabs.closeTab(first.id)
+    if (first) windowTabs.panes.closeTab(first.id)
     await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(writeMessage).toHaveBeenCalledWith(expect.stringContaining('saved tabs'), 'error')

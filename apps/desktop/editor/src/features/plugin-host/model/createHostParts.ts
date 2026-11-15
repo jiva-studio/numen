@@ -37,7 +37,7 @@ export type TabActionParts = Required<
 >
 
 export function createTabKindParts(deps: {
-  readonly windowTabs: Pick<WindowTabs, 'groups'>
+  readonly windowTabs: Pick<WindowTabs, 'kinds'>
   readonly tabOpeners: Pick<
     ReturnType<typeof fileOpeners>,
     'registerExtensionReader' | 'registerEditor'
@@ -46,7 +46,7 @@ export function createTabKindParts(deps: {
   const { windowTabs, tabOpeners } = deps
   return {
     registerKind: (kind) => {
-      const unregisterKind = windowTabs.groups.registerKind(kind)
+      const unregisterKind = windowTabs.kinds.registerKind(kind)
       const icon = kind.display?.icon
       const unregisterIcon = icon ? registerTabKindIcon(kind.kind, icon) : () => undefined
       return () => {
@@ -58,7 +58,7 @@ export function createTabKindParts(deps: {
     registerEditor: tabOpeners.registerEditor,
     /** The tabs of a plugin that stops, kept as placeholders that hold their saved state. */
     closeTabsForPlugin: (pluginId) => {
-      if (pluginId) windowTabs.groups.closeTabsOfPlugin(pluginId)
+      if (pluginId) windowTabs.kinds.closeTabsOfPlugin(pluginId)
     },
   }
 }

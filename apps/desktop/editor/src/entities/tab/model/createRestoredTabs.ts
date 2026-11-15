@@ -1,15 +1,13 @@
 /**
- * The tabs a window opens again: the tabs its kinds place, the tabs the core kept, and the close
- * of all of them.
+ * The tabs a window opens again: the tabs its kinds place and the tabs the core kept.
  */
 import { getPanes, openTab } from '@numen/workbench'
 import type { Workspace } from '@numen/workbench'
 import type { AnyTabKind } from '../lib/kinds'
 import type { SavedTab } from '../lib/tab'
 import { createWorkspace } from '../lib/workspace'
-import { createTabClosers, createTabOpeners } from './tabOperations'
-import type { TabStore } from './tabStore'
-import { useTabPanes } from './useTabPanes'
+import { createTabOpeners } from './tabOperations'
+import { showTab, type TabStore } from './tabStore'
 import type { Caught } from '@/shared/api/errors'
 
 const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
@@ -45,10 +43,9 @@ async function createPlacedWorkspace(
   return createWorkspace(main, aside)
 }
 
-export function useRestoredTabs(store: TabStore) {
+export function createRestoredTabs(store: TabStore) {
   const { open, layout, byKind } = store
   const openers = createTabOpeners(store)
-  const { show } = useTabPanes(store)
 
   /** A kind whose tab fails to open is reported to `onError` and omitted from the layout. */
   const openPlacedTabs = async (onError: PlacementError) => {
@@ -90,13 +87,12 @@ export function useRestoredTabs(store: TabStore) {
   /** A tab the core kept, opened and shown; a tab already open is only shown. */
   const openSavedTab = (saved: SavedTab) => {
     if (!open.value.has(saved.id)) openers.openSavedTab(saved)
-    show(saved.id)
+    showTab(store, saved.id)
   }
 
   return {
     openPlacedTabs,
     restoreTabs,
     openSavedTab,
-    close: createTabClosers(store).close,
   }
 }

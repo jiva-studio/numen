@@ -243,14 +243,14 @@ export function createTabClosers(store: TabStore) {
     }
   }
 
-  const close = () => {
+  const closeAll = () => {
     for (const [id, one] of store.open.value) {
       destroyTab(one, id)
       store.drop(id)
     }
   }
 
-  return { show, finishClose, onTabShown, releaseTab, requestClose, reconcileTab, close }
+  return { show, finishClose, onTabShown, releaseTab, reconcileTab, closeAll }
 }
 
 export function createTabNavigation(
@@ -292,21 +292,7 @@ export function createTabNavigation(
     )
   }
 
-  /**
-   * Sends text to the most recently active tab of a kind and brings it to the
-   * front; opens a tab of the kind to receive it when none is open.
-   */
-  const sendText = async (kind: string, text: string): Promise<string> => {
-    const last = [...open.value].filter(([, one]) => one.kind.kind === kind).at(-1)
-    const id = last?.[0] ?? (await openers.openTabOfKind(kind))
-    const one = open.value.get(id)
-    // Stryker disable next-line OptionalChaining: id is either in open.value or just created by openTabOfKind.
-    one?.kind.events?.receiveText?.(one.state, text)
-    showTab(store, id)
-    return id
-  }
-
-  return { navigateTab, navigateTabsAt, sendText }
+  return { navigateTab, navigateTabsAt }
 }
 
 export function createWindowHandle(store: TabStore): WindowHandle {

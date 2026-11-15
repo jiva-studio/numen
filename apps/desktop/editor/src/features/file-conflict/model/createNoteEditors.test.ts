@@ -49,7 +49,7 @@ describe('the editors of a window', () => {
 
   it('name a note by the title of the tab it is open in', async () => {
     const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([
+    windowTabs.kinds.registerKinds([
       {
         kind: 'note',
         open: () => ({ title: 'Tide table' }),
