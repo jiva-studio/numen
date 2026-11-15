@@ -60,3 +60,29 @@ func TestTheManifestKeepsTheProcessForTenIdleMinutes(t *testing.T) {
 		t.Errorf("idleStopSeconds = %d, want 600", manifest.Backend.IdleStopSeconds)
 	}
 }
+
+// Transcribe automatically wakes the plugin on a new or changed recording; the recordings to
+// transcribe are read from the file change feed, so no trigger transcribes the file it runs on.
+func TestTheTriggersWakeTheCommandThatReadsTheFeed(t *testing.T) {
+	var manifest struct {
+		Contributes struct {
+			Triggers []struct {
+				Event   string `json:"event"`
+				Command string `json:"command"`
+			} `json:"triggers"`
+		} `json:"contributes"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	var events []string
+	for _, one := range manifest.Contributes.Triggers {
+		if one.Command != "transcripts.update" {
+			t.Errorf("a trigger on %s runs %s", one.Event, one.Command)
+		}
+		events = append(events, one.Event)
+	}
+	if !slices.Equal(events, []string{"file.added", "file.changed"}) {
+		t.Errorf("the triggers run on %v, want file.added and file.changed", events)
+	}
+}

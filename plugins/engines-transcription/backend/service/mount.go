@@ -1,5 +1,6 @@
 // Package service is the backend of the transcription plugin: it builds the adapters and the use
-// cases and registers the commands, the settings and the agent tool with the host.
+// cases and registers the commands, among them the one that transcribes the recordings the file change
+// feed names, the settings and the agent tool with the host.
 package service
 
 import (
@@ -11,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/hostclient"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/process"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/feed"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/model"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
 )
@@ -32,7 +34,10 @@ func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock
 	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, holder.GetRecognizer, process.Process{}.ReportError)
 	requests := transcribe.NewRequests(transcriber, func(id domain.VaultID) transcribe.Vault { return hosted.Vaults(id) })
 	s.SetUpdateConfig(func(values map[string]string) { holder.UpdateSettings(values) })
-	commands, err := newCommands(transcriber)
+	feeds := func(id domain.VaultID) feed.Vault {
+		return feed.Vault{Feed: hosted.Vaults(id), Store: hosted.Store(id)}
+	}
+	commands, err := newCommands(transcriber, requests, newFollower(requests, feeds, process.Process{}.ReportError))
 	if err != nil {
 		return err
 	}

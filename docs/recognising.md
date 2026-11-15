@@ -53,7 +53,7 @@ A page was printed before it was scanned, so the recognition can be corrected ag
 
 ## A run
 
-The plugin runs automatically on a file of its types that has no live text version and whose pages have no text of their own, and a person can request any such file from its menu. A run nobody requested skips a file whose record is complete for its current bytes. A run waits in the host's queue, with a person's request before work nobody requested, and shows its progress as a task.
+With the setting `recognizeAutomatically`, the plugin recognizes the scans that the file change feed of the vault names as added or changed since the cursor the plugin keeps, and that have no live text version: its triggers on `file.added` and `file.changed` run its command `recognitions.update` (**Recognize scans without text** in the palette), which reads the feed. On the first run, and when the feed resets, it reads every scan of the feed. A scan moved or renamed keeps its text, which the core moves with it, and is not recognized again; a recognition that had not ended when the plugin stopped starts again on its next run. A person can request any scan from its menu. A run nobody requested skips a file whose record is complete for its current bytes. A run waits in the host's queue, with a person's request before work nobody requested, and shows its progress as a task.
 
 Recognition resumes where it stopped: the record is written after every eight pages, and a run whose record was made from the same bytes with the same recipe continues from the first page that the record does not contain. A record made from other bytes or by other models restarts from the first page. The version is reported once every page is read.
 

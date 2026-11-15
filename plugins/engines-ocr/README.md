@@ -6,7 +6,7 @@ Recognizes text in scanned PDFs and images on your computer so their contents ca
 
 ## What You Can Do
 
-- **Make scans searchable**: Run **Recognize text** from a PDF or image file's right-click menu in the file tree, or turn on **Recognize automatically** to recognize new files when they are added to the vault.
+- **Make scans searchable**: Run **Recognize text** from a PDF or image file's right-click menu in the file tree, or turn on **Recognize automatically** to recognize new and changed files of the vault that have no text.
 - **Open matched passages on scanned pages**: Stores each recognized line with its page number and bounding box in a `recognition` text version, so search results and agent links open a scanned PDF at that page and highlight the passage on the page.
 - **Resume after closing**: Saves progress every eight pages while a document is processed, so an interrupted run continues from the last saved batch.
 - **Ask the agent to recognize a scan**: The agent in the chat panel can start the recognition of a scan with the tool `recognition_create` and read the text once it is recognized.

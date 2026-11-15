@@ -106,6 +106,16 @@ func (l *Launcher) Create(ctx context.Context, vault domain.VaultID, path string
 	return out, nil
 }
 
+// IsRunning reports whether a recognition of the file of the vault runs.
+func (l *Launcher) IsRunning(ctx context.Context, vault domain.VaultID, path string) (bool, error) {
+	return l.recognitions.IsRunning(ctx, vault, path)
+}
+
+// GetShownVaultID returns the vault the host shows.
+func (l *Launcher) GetShownVaultID(ctx context.Context) (domain.VaultID, error) {
+	return l.recognitions.GetVaultID(ctx, "")
+}
+
 // StartFile starts the recognition of a file of the shown vault and fails when one already runs.
 func (l *Launcher) StartFile(ctx context.Context, path string) error {
 	vault, err := l.recognitions.GetVaultID(ctx, "")
