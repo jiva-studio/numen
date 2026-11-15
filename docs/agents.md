@@ -88,7 +88,7 @@ Seven plugins register the tools an agent can call, each for its own subject. Th
 | `card_remove`                                                    | remove one card from a deck                                                     | writes |
 | `card_section_add`, `card_section_rename`, `card_section_remove` | write, rename and remove the sections a deck is divided into                    | writes |
 
-`views-saved-search`, queries over the library of the vault and the saved search notes that keep them:
+`tools-saved-search`, queries over the library of the vault and the saved search notes that keep them:
 
 | Tool                   | What it does                                                                                                                                                                                                                                                                                                                                                                          | Effect |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
