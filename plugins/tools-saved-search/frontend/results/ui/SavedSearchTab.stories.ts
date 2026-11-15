@@ -219,8 +219,9 @@ export const FiltersTheResults: Story = {
 }
 
 /**
- * The sources list has a search line and a row per file, each checked at first; choosing a checked
- * file hides its passages, choosing it again shows them, and Escape puts the list away.
+ * The sources button sits inside the filter field and opens the sources list: a search line and a row
+ * per file, each checked at first; choosing a checked file hides its passages, choosing it again shows
+ * them, and Escape puts the list away.
  */
 export const HidesTheResultsOfASource: Story = {
   args: { response: HARBOR_TWO_LOGBOOK_PASSAGES },
@@ -228,6 +229,8 @@ export const HidesTheResultsOfASource: Story = {
     const canvas = within(canvasElement)
     const page = within(canvasElement.ownerDocument.body)
     const toggle = await waitFor(() => canvas.getByRole('button', { name: 'Sources' }))
+    const field = canvas.getByRole('searchbox', { name: 'Filter results' }).parentElement
+    await expect(field).toContainElement(toggle)
 
     await userEvent.click(toggle)
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
@@ -387,7 +390,7 @@ const fillEditor = async (editor: HTMLElement, text: string): Promise<void> => {
 
 const AFTER_PAUSE = { timeout: QUERY_PAUSE_MS * 3 }
 
-/** Tab indents while the query editor has focus; Escape hands Tab back to the page. */
+/** Tab inserts indentation while the query editor has focus; Escape hands Tab back to the page. */
 const EDITOR_KEEPS_TAB = { keeps: 'Escape hands Tab back to the page' }
 
 /** The edit button shows the query in the editor inside the tab, and hides it again. */
@@ -538,5 +541,21 @@ export const UnderlinesAQueryNotSaved: Story = {
     await expect(await openEditor(canvasElement)).toHaveTextContent(
       'meaning("the harbor master in a winter storm")',
     )
+  },
+}
+
+/** Tab inserts indentation at the cursor and leaves the rest of the line where it is. */
+export const InsertsIndentationAtTheCursor: Story = {
+  parameters: { reach: EDITOR_KEEPS_TAB },
+  play: async ({ canvasElement }) => {
+    const browser = await import('vitest/browser')
+    const editor = await openEditor(canvasElement)
+
+    await fillEditor(editor, 'words("gale") && tags("sea")')
+    await browser.userEvent.keyboard('{ArrowLeft}'.repeat('tags("sea")'.length))
+    await browser.userEvent.keyboard('{Tab}')
+
+    await waitFor(() => expect(editor.textContent).toBe('words("gale") &&   tags("sea")'))
+    await expect(editor).toHaveFocus()
   },
 }

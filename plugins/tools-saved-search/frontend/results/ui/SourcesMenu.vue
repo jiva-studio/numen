@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
- * The button that opens the searchable list of the files the results come from, each checked while
+ * The button at the end of the filter field that opens the searchable list of the files the results come from, each checked while
  * its results are shown; choosing a file shows or hides its results.
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { Button, SearchableListPopup, measureRect, type ListItem } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import type { SourceView } from '../lib/view'
+import { SourcesIcon } from '../model/icons'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -29,6 +30,7 @@ const items = computed<readonly ListItem[]>(() =>
 const shown = computed(() =>
   props.sources.map((source) => source.path).filter((path) => !props.hidden.has(path)),
 )
+const isFiltered = computed(() => props.hidden.size > 0)
 const triggerElement = computed(() => (trigger.value?.$el as HTMLElement | undefined) ?? null)
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -49,12 +51,17 @@ function onSelect(path: string) {
 <template>
   <Button
     ref="trigger"
-    variant="outline"
+    variant="ghost"
+    size="icon-small"
+    class="saved-search__sources"
+    :class="{ 'saved-search__sources--filtered': isFiltered }"
+    :aria-label="words.sources"
+    :title="words.sources"
     aria-haspopup="listbox"
     :aria-expanded="anchor !== null"
     @click="onOpen"
   >
-    {{ words.sources }}
+    <SourcesIcon :size="16" aria-hidden="true" />
   </Button>
   <SearchableListPopup
     v-if="anchor"
