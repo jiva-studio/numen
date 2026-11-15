@@ -1451,9 +1451,9 @@ type ManifestDependency struct {
 	SourceUrl      string            `protobuf:"bytes,4,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
 	ChecksumSha256 string            `protobuf:"bytes,5,opt,name=checksum_sha256,json=checksumSha256,proto3" json:"checksum_sha256,omitempty"`
 	Metadata       map[string]string `protobuf:"bytes,6,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// sources names, by platform as os/arch (linux/amd64), the file fetched on that platform. A
-	// dependency declares sources or source_url, not both.
-	Sources map[string]*ManifestDependencySource `protobuf:"bytes,7,rep,name=sources,proto3" json:"sources,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// sources holds the file fetched on each platform, at most one per platform. A dependency
+	// declares sources or source_url, not both.
+	Sources []*ManifestDependencySource `protobuf:"bytes,7,rep,name=sources,proto3" json:"sources,omitempty"`
 	// environment names the variables of the host passed to the plugin process while the plugin
 	// declares the dependency: a name, or a prefix followed by *. A variable whose name holds KEY,
 	// TOKEN, SECRET, PASSWORD, CREDENTIAL or AUTH is never passed.
@@ -1539,7 +1539,7 @@ func (x *ManifestDependency) GetMetadata() map[string]string {
 	return nil
 }
 
-func (x *ManifestDependency) GetSources() map[string]*ManifestDependencySource {
+func (x *ManifestDependency) GetSources() []*ManifestDependencySource {
 	if x != nil {
 		return x.Sources
 	}
@@ -1562,15 +1562,17 @@ func (x *ManifestDependency) GetSearch() []string {
 
 // ManifestDependencySource is the file a dependency is fetched from on one platform.
 type ManifestDependencySource struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	SourceUrl      string                 `protobuf:"bytes,1,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
-	ChecksumSha256 string                 `protobuf:"bytes,2,opt,name=checksum_sha256,json=checksumSha256,proto3" json:"checksum_sha256,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// platform is the os/arch the file is fetched on, as in linux/amd64.
+	Platform       string `protobuf:"bytes,1,opt,name=platform,proto3" json:"platform,omitempty"`
+	SourceUrl      string `protobuf:"bytes,2,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
+	ChecksumSha256 string `protobuf:"bytes,3,opt,name=checksum_sha256,json=checksumSha256,proto3" json:"checksum_sha256,omitempty"`
 	// archive_member names the file unpacked from the archive (.tar.gz, .tgz or .zip) at source_url:
 	// a path pattern of the archive, matched against the base name of each entry when it holds no
 	// slash. Empty uses the downloaded file as it is.
-	ArchiveMember string `protobuf:"bytes,3,opt,name=archive_member,json=archiveMember,proto3" json:"archive_member,omitempty"`
+	ArchiveMember string `protobuf:"bytes,4,opt,name=archive_member,json=archiveMember,proto3" json:"archive_member,omitempty"`
 	// member_sha256 is the sha256 the unpacked file holds; it is required with archive_member.
-	MemberSha256  string `protobuf:"bytes,4,opt,name=member_sha256,json=memberSha256,proto3" json:"member_sha256,omitempty"`
+	MemberSha256  string `protobuf:"bytes,5,opt,name=member_sha256,json=memberSha256,proto3" json:"member_sha256,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1603,6 +1605,13 @@ func (x *ManifestDependencySource) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ManifestDependencySource.ProtoReflect.Descriptor instead.
 func (*ManifestDependencySource) Descriptor() ([]byte, []int) {
 	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ManifestDependencySource) GetPlatform() string {
+	if x != nil {
+		return x.Platform
+	}
+	return ""
 }
 
 func (x *ManifestDependencySource) GetSourceUrl() string {
@@ -2613,7 +2622,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x12\n" +
 	"\x04when\x18\x04 \x01(\tR\x04when\x12\x12\n" +
 	"\x04rank\x18\x05 \x01(\tR\x04rank\x12$\n" +
-	"\x0eis_note_editor\x18\x06 \x01(\bR\fisNoteEditor\"\xfe\x03\n" +
+	"\x0eis_note_editor\x18\x06 \x01(\bR\fisNoteEditor\"\x97\x03\n" +
 	"\x12ManifestDependency\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +
@@ -2621,22 +2630,20 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"source_url\x18\x04 \x01(\tR\tsourceUrl\x12'\n" +
 	"\x0fchecksum_sha256\x18\x05 \x01(\tR\x0echecksumSha256\x12F\n" +
-	"\bmetadata\x18\x06 \x03(\v2*.numen.v1.ManifestDependency.MetadataEntryR\bmetadata\x12C\n" +
-	"\asources\x18\a \x03(\v2).numen.v1.ManifestDependency.SourcesEntryR\asources\x12 \n" +
+	"\bmetadata\x18\x06 \x03(\v2*.numen.v1.ManifestDependency.MetadataEntryR\bmetadata\x12<\n" +
+	"\asources\x18\a \x03(\v2\".numen.v1.ManifestDependencySourceR\asources\x12 \n" +
 	"\venvironment\x18\b \x03(\tR\venvironment\x12\x16\n" +
 	"\x06search\x18\t \x03(\tR\x06search\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a^\n" +
-	"\fSourcesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x128\n" +
-	"\x05value\x18\x02 \x01(\v2\".numen.v1.ManifestDependencySourceR\x05value:\x028\x01\"\xae\x01\n" +
-	"\x18ManifestDependencySource\x12\x1d\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xca\x01\n" +
+	"\x18ManifestDependencySource\x12\x1a\n" +
+	"\bplatform\x18\x01 \x01(\tR\bplatform\x12\x1d\n" +
 	"\n" +
-	"source_url\x18\x01 \x01(\tR\tsourceUrl\x12'\n" +
-	"\x0fchecksum_sha256\x18\x02 \x01(\tR\x0echecksumSha256\x12%\n" +
-	"\x0earchive_member\x18\x03 \x01(\tR\rarchiveMember\x12#\n" +
-	"\rmember_sha256\x18\x04 \x01(\tR\fmemberSha256\"]\n" +
+	"source_url\x18\x02 \x01(\tR\tsourceUrl\x12'\n" +
+	"\x0fchecksum_sha256\x18\x03 \x01(\tR\x0echecksumSha256\x12%\n" +
+	"\x0earchive_member\x18\x04 \x01(\tR\rarchiveMember\x12#\n" +
+	"\rmember_sha256\x18\x05 \x01(\tR\fmemberSha256\"]\n" +
 	"\x0fManifestBackend\x12\x1e\n" +
 	"\n" +
 	"entrypoint\x18\x02 \x01(\tR\n" +
@@ -2730,7 +2737,7 @@ func file_numen_v1_manifest_proto_rawDescGZIP() []byte {
 	return file_numen_v1_manifest_proto_rawDescData
 }
 
-var file_numen_v1_manifest_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_numen_v1_manifest_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_numen_v1_manifest_proto_goTypes = []any{
 	(*Manifest)(nil),                 // 0: numen.v1.Manifest
 	(*ManifestContributes)(nil),      // 1: numen.v1.ManifestContributes
@@ -2762,10 +2769,9 @@ var file_numen_v1_manifest_proto_goTypes = []any{
 	nil,                              // 27: numen.v1.ManifestKeybinding.ValuesEntry
 	nil,                              // 28: numen.v1.ManifestSlotEntry.ValuesEntry
 	nil,                              // 29: numen.v1.ManifestDependency.MetadataEntry
-	nil,                              // 30: numen.v1.ManifestDependency.SourcesEntry
-	nil,                              // 31: numen.v1.ManifestOptionsBy.OptionsEntry
-	(*structpb.Value)(nil),           // 32: google.protobuf.Value
-	(*structpb.ListValue)(nil),       // 33: google.protobuf.ListValue
+	nil,                              // 30: numen.v1.ManifestOptionsBy.OptionsEntry
+	(*structpb.Value)(nil),           // 31: google.protobuf.Value
+	(*structpb.ListValue)(nil),       // 32: google.protobuf.ListValue
 }
 var file_numen_v1_manifest_proto_depIdxs = []int32{
 	14, // 0: numen.v1.Manifest.dependencies:type_name -> numen.v1.ManifestDependency
@@ -2791,25 +2797,24 @@ var file_numen_v1_manifest_proto_depIdxs = []int32{
 	27, // 20: numen.v1.ManifestKeybinding.values:type_name -> numen.v1.ManifestKeybinding.ValuesEntry
 	6,  // 21: numen.v1.ManifestConnectionType.fields:type_name -> numen.v1.ManifestConnectionField
 	6,  // 22: numen.v1.ManifestConnectionType.row_fields:type_name -> numen.v1.ManifestConnectionField
-	32, // 23: numen.v1.ManifestConnectionField.default:type_name -> google.protobuf.Value
-	33, // 24: numen.v1.ManifestConnectionField.options:type_name -> google.protobuf.ListValue
+	31, // 23: numen.v1.ManifestConnectionField.default:type_name -> google.protobuf.Value
+	32, // 24: numen.v1.ManifestConnectionField.options:type_name -> google.protobuf.ListValue
 	28, // 25: numen.v1.ManifestSlotEntry.values:type_name -> numen.v1.ManifestSlotEntry.ValuesEntry
 	29, // 26: numen.v1.ManifestDependency.metadata:type_name -> numen.v1.ManifestDependency.MetadataEntry
-	30, // 27: numen.v1.ManifestDependency.sources:type_name -> numen.v1.ManifestDependency.SourcesEntry
-	31, // 28: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
-	32, // 29: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value
-	33, // 30: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
+	15, // 27: numen.v1.ManifestDependency.sources:type_name -> numen.v1.ManifestDependencySource
+	30, // 28: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
+	31, // 29: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value
+	32, // 30: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
 	19, // 31: numen.v1.ManifestSetting.options_by:type_name -> numen.v1.ManifestOptionsBy
 	20, // 32: numen.v1.ManifestSetting.when:type_name -> numen.v1.ManifestCondition
-	33, // 33: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
+	32, // 33: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
 	23, // 34: numen.v1.ManifestCommand.arguments:type_name -> numen.v1.ManifestCommandArgument
-	15, // 35: numen.v1.ManifestDependency.SourcesEntry.value:type_name -> numen.v1.ManifestDependencySource
-	33, // 36: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue
-	37, // [37:37] is the sub-list for method output_type
-	37, // [37:37] is the sub-list for method input_type
-	37, // [37:37] is the sub-list for extension type_name
-	37, // [37:37] is the sub-list for extension extendee
-	0,  // [0:37] is the sub-list for field type_name
+	32, // 35: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue
+	36, // [36:36] is the sub-list for method output_type
+	36, // [36:36] is the sub-list for method input_type
+	36, // [36:36] is the sub-list for extension type_name
+	36, // [36:36] is the sub-list for extension extendee
+	0,  // [0:36] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_manifest_proto_init() }
@@ -2831,7 +2836,7 @@ func file_numen_v1_manifest_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_manifest_proto_rawDesc), len(file_numen_v1_manifest_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   32,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

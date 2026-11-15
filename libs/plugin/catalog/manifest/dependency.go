@@ -3,7 +3,6 @@ package manifest
 import (
 	"errors"
 	"fmt"
-	"maps"
 	"regexp"
 	"slices"
 
@@ -30,10 +29,10 @@ var (
 	environmentEntryPattern   = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*\*?$`)
 )
 
-// DependencyRequirement is one dependency a plugin declares. Sources maps a platform, os/arch as in
-// linux/amd64, to the file fetched on it. Environment holds the names of host variables, or
-// prefixes ending in *, passed to the plugin process. Search holds glob patterns of files on this
-// machine that are the dependency.
+// DependencyRequirement is one dependency a plugin declares. Sources holds the file fetched on each
+// platform, at most one per platform. Environment holds the names of host variables, or prefixes
+// ending in *, passed to the plugin process. Search holds glob patterns of files on this machine
+// that are the dependency.
 type DependencyRequirement struct {
 	ID             string
 	Kind           DependencyKind
@@ -41,16 +40,18 @@ type DependencyRequirement struct {
 	SourceURL      string
 	ChecksumSHA256 string
 	Metadata       map[string]string
-	Sources        map[string]DependencySource
+	Sources        []DependencySource
 	Environment    []string
 	Search         []string
 
 	PluginDir string
 }
 
-// DependencySource is the file a dependency is fetched from on one platform. ArchiveMember names
-// the file unpacked from the archive at SourceURL, and MemberSHA256 is the sha256 it holds.
+// DependencySource is the file a dependency is fetched from on one platform, os/arch as in
+// linux/amd64. ArchiveMember names the file unpacked from the archive at SourceURL, and
+// MemberSHA256 is the sha256 it holds.
 type DependencySource struct {
+	Platform       string
 	SourceURL      string
 	ChecksumSHA256 string
 	ArchiveMember  string
@@ -61,8 +62,12 @@ type DependencySource struct {
 // of Sources, or SourceURL for every platform.
 func (req DependencyRequirement) GetSource(goos, goarch string) (DependencySource, bool) {
 	if len(req.Sources) > 0 {
-		source, ok := req.Sources[goos+"/"+goarch]
-		return source, ok
+		platform := goos + "/" + goarch
+		i := slices.IndexFunc(req.Sources, func(source DependencySource) bool { return source.Platform == platform })
+		if i < 0 {
+			return DependencySource{}, false
+		}
+		return req.Sources[i], true
 	}
 	if req.SourceURL == "" {
 		return DependencySource{}, false
@@ -140,12 +145,16 @@ func listDependencySourceIssues(req DependencyRequirement) []error {
 
 func listPlatformSourceIssues(req DependencyRequirement) []error {
 	var issues []error
-	for _, platform := range slices.Sorted(maps.Keys(req.Sources)) {
-		name := req.ID + " " + platform
-		if !platformPattern.MatchString(platform) {
-			issues = append(issues, fmt.Errorf("%w: %s source %q is not os/arch", ErrInvalidDependency, req.ID, platform))
+	observed := make(map[string]bool, len(req.Sources))
+	for _, source := range req.Sources {
+		name := req.ID + " " + source.Platform
+		switch {
+		case !platformPattern.MatchString(source.Platform):
+			issues = append(issues, fmt.Errorf("%w: %s source platform %q is not os/arch", ErrInvalidDependency, req.ID, source.Platform))
+		case observed[source.Platform]:
+			issues = append(issues, fmt.Errorf("%w: %s declares platform %s twice", ErrInvalidDependency, req.ID, source.Platform))
 		}
-		source := req.Sources[platform]
+		observed[source.Platform] = true
 		if source.SourceURL == "" {
 			issues = append(issues, fmt.Errorf("%w: %s has no sourceUrl", ErrInvalidDependency, name))
 			continue

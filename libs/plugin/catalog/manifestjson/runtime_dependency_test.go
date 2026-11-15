@@ -35,9 +35,9 @@ func TestAPluginThatDeclaresARuntimeHasABackendToRunIt(t *testing.T) {
 func TestARuntimeIsFetchedFromTheSourceOfThePlatform(t *testing.T) {
 	sum, member := strings.Repeat("a", 64), strings.Repeat("b", 64)
 	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},
-		"dependencies":[{"id":"lib","kind":"runtime","sources":{
-			"linux/amd64":{"sourceUrl":"https://example.com/linux.tgz","checksumSha256":"` + sum + `","archiveMember":"lib.so","memberSha256":"` + member + `"},
-			"windows/amd64":{"sourceUrl":"https://example.com/windows.zip","checksumSha256":"` + sum + `","archiveMember":"lib.dll","memberSha256":"` + member + `"}},
+		"dependencies":[{"id":"lib","kind":"runtime","sources":[
+			{"platform":"linux/amd64","sourceUrl":"https://example.com/linux.tgz","checksumSha256":"` + sum + `","archiveMember":"lib.so","memberSha256":"` + member + `"},
+			{"platform":"windows/amd64","sourceUrl":"https://example.com/windows.zip","checksumSha256":"` + sum + `","archiveMember":"lib.dll","memberSha256":"` + member + `"}],
 			"search":["/opt/lib/lib.so*"]}]}`))
 	if err != nil {
 		t.Fatal(err)
@@ -57,13 +57,15 @@ func TestARuntimeIsFetchedFromTheSourceOfThePlatform(t *testing.T) {
 
 func TestAManifestRejectsAnInvalidPlatformSource(t *testing.T) {
 	sum := strings.Repeat("a", 64)
+	linux := `{"platform":"linux/amd64","sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `"`
 	for name, dependency := range map[string]string{
-		"sources and sourceUrl": `{"id":"x","kind":"runtime","sourceUrl":"https://example.com/x","checksumSha256":"` + sum + `",` +
-			`"sources":{"linux/amd64":{"sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `"}}}`,
-		"platform not os/arch":   `{"id":"x","kind":"runtime","sources":{"linux":{"sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `"}}}`,
-		"http source":            `{"id":"x","kind":"runtime","sources":{"linux/amd64":{"sourceUrl":"http://example.com/y","checksumSha256":"` + sum + `"}}}`,
-		"member without sha256":  `{"id":"x","kind":"runtime","sources":{"linux/amd64":{"sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `","archiveMember":"lib.so"}}}`,
-		"sha256 without member":  `{"id":"x","kind":"runtime","sources":{"linux/amd64":{"sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `","memberSha256":"` + sum + `"}}}`,
+		"sources and sourceUrl":  `{"id":"x","kind":"runtime","sourceUrl":"https://example.com/x","checksumSha256":"` + sum + `","sources":[` + linux + `}]}`,
+		"no platform":            `{"id":"x","kind":"runtime","sources":[{"sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `"}]}`,
+		"platform not os/arch":   `{"id":"x","kind":"runtime","sources":[{"platform":"linux","sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `"}]}`,
+		"platform twice":         `{"id":"x","kind":"runtime","sources":[` + linux + `},` + linux + `}]}`,
+		"http source":            `{"id":"x","kind":"runtime","sources":[{"platform":"linux/amd64","sourceUrl":"http://example.com/y","checksumSha256":"` + sum + `"}]}`,
+		"member without sha256":  `{"id":"x","kind":"runtime","sources":[` + linux + `,"archiveMember":"lib.so"}]}`,
+		"sha256 without member":  `{"id":"x","kind":"runtime","sources":[` + linux + `,"memberSha256":"` + sum + `"}]}`,
 		"variable with a space":  `{"id":"x","kind":"runtime","environment":["GPU PATH"]}`,
 		"star inside a variable": `{"id":"x","kind":"runtime","environment":["GPU_*_PATH"]}`,
 		"empty search pattern":   `{"id":"x","kind":"runtime","search":[""]}`,

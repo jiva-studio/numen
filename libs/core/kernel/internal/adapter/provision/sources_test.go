@@ -77,7 +77,7 @@ func serveFiles(t *testing.T, files map[string][]byte) (*httptest.Server, *atomi
 
 func getPlatform() string { return runtime.GOOS + "/" + runtime.GOARCH }
 
-func newRuntimeRequirement(sources map[string]manifest.DependencySource) manifest.DependencyRequirement {
+func newRuntimeRequirement(sources []manifest.DependencySource) manifest.DependencyRequirement {
 	return manifest.DependencyRequirement{
 		ID: "sample-runtime", Kind: manifest.DependencyKindRuntime, Version: "1.0.0", Sources: sources,
 		Metadata: map[string]string{"envVar": "SAMPLE_RUNTIME_LIB"},
@@ -87,9 +87,9 @@ func newRuntimeRequirement(sources map[string]manifest.DependencySource) manifes
 func TestTheSourceOfThisPlatformIsFetched(t *testing.T) {
 	here, there := []byte("library of this platform"), []byte("library of another platform")
 	server, _ := serveFiles(t, map[string][]byte{"/here.so": here, "/there.so": there})
-	req := newRuntimeRequirement(map[string]manifest.DependencySource{
-		getPlatform():  {SourceURL: server.URL + "/here.so", ChecksumSHA256: sumOf(here)},
-		"plan9/mips64": {SourceURL: server.URL + "/there.so", ChecksumSHA256: sumOf(there)},
+	req := newRuntimeRequirement([]manifest.DependencySource{
+		{Platform: getPlatform(), SourceURL: server.URL + "/here.so", ChecksumSHA256: sumOf(here)},
+		{Platform: "plan9/mips64", SourceURL: server.URL + "/there.so", ChecksumSHA256: sumOf(there)},
 	})
 	provisioner := newTestProvisioner(t, false)
 	provisioner.cfg.Client = server.Client()
@@ -109,8 +109,8 @@ func TestTheSourceOfThisPlatformIsFetched(t *testing.T) {
 
 func TestADependencyWithNoSourceForThisPlatformIsRefused(t *testing.T) {
 	server, requests := serveFiles(t, map[string][]byte{"/there.so": []byte("x")})
-	req := newRuntimeRequirement(map[string]manifest.DependencySource{
-		"plan9/mips64": {SourceURL: server.URL + "/there.so", ChecksumSHA256: sumOf([]byte("x"))},
+	req := newRuntimeRequirement([]manifest.DependencySource{
+		{Platform: "plan9/mips64", SourceURL: server.URL + "/there.so", ChecksumSHA256: sumOf([]byte("x"))},
 	})
 	provisioner := newTestProvisioner(t, false)
 	provisioner.cfg.Client = server.Client()
@@ -128,7 +128,7 @@ func TestTheArchiveMemberIsUnpackedAndTheArchiveRemoved(t *testing.T) {
 	library := []byte("the library")
 	archive := buildTgz(t, map[string][]byte{"runtime-1.0.0/README": []byte("read me"), "runtime-1.0.0/lib/libsample.so.1.0.0": library})
 	server, _ := serveFiles(t, map[string][]byte{"/runtime.tgz": archive})
-	req := newRuntimeRequirement(map[string]manifest.DependencySource{getPlatform(): {
+	req := newRuntimeRequirement([]manifest.DependencySource{{Platform: getPlatform(),
 		SourceURL: server.URL + "/runtime.tgz", ChecksumSHA256: sumOf(archive),
 		ArchiveMember: "libsample.so.*", MemberSHA256: sumOf(library),
 	}})
@@ -158,7 +158,7 @@ func TestAZipMemberIsMatchedByItsPath(t *testing.T) {
 	library := []byte("the windows library")
 	archive := buildZip(t, "runtime-1.0.0/lib/sample.dll", library)
 	server, _ := serveFiles(t, map[string][]byte{"/runtime.zip": archive})
-	req := newRuntimeRequirement(map[string]manifest.DependencySource{getPlatform(): {
+	req := newRuntimeRequirement([]manifest.DependencySource{{Platform: getPlatform(),
 		SourceURL: server.URL + "/runtime.zip", ChecksumSHA256: sumOf(archive),
 		ArchiveMember: "*/lib/sample.dll", MemberSHA256: sumOf(library),
 	}})
@@ -178,7 +178,7 @@ func TestAnArchiveMemberWithAnotherChecksumIsRefused(t *testing.T) {
 	library := []byte("a library that is not the pinned one")
 	archive := buildTgz(t, map[string][]byte{"runtime-1.0.0/lib/libsample.so.1.0.0": library})
 	server, _ := serveFiles(t, map[string][]byte{"/runtime.tgz": archive})
-	req := newRuntimeRequirement(map[string]manifest.DependencySource{getPlatform(): {
+	req := newRuntimeRequirement([]manifest.DependencySource{{Platform: getPlatform(),
 		SourceURL: server.URL + "/runtime.tgz", ChecksumSHA256: sumOf(archive),
 		ArchiveMember: "libsample.so.*", MemberSHA256: sumOf([]byte("the pinned library")),
 	}})
@@ -210,8 +210,8 @@ func TestASearchPatternFindsTheDependencyOnThisMachine(t *testing.T) {
 		t.Fatal(err)
 	}
 	server, requests := serveFiles(t, nil)
-	req := newRuntimeRequirement(map[string]manifest.DependencySource{
-		getPlatform(): {SourceURL: server.URL + "/runtime.so", ChecksumSHA256: sumOf([]byte("downloaded"))},
+	req := newRuntimeRequirement([]manifest.DependencySource{
+		{Platform: getPlatform(), SourceURL: server.URL + "/runtime.so", ChecksumSHA256: sumOf([]byte("downloaded"))},
 	})
 	req.Search = []string{"relative/lib/libsample.so*", "$SAMPLE_UNSET/lib/libsample.so*", "$SAMPLE_ROOT/lib/libsample.so*"}
 	provisioner := newTestProvisioner(t, false)
