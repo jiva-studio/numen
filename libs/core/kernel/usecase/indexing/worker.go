@@ -39,27 +39,26 @@ type OpenReading func(
 	ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (ReadWholeVault, error)
 
-// ReadNotes is the first walk over a vault. It answers how many notes it read.
-type ReadNotes func(ctx context.Context, during func()) (int, error)
+// ReadNotes is the first walk over a vault. It answers what the walk did.
+type ReadNotes func(ctx context.Context, during func()) (vaultreading.ScanResult, error)
 
 // GetVectorCounts answers how many chunks the vault holds that can carry a vector, and how
 // many carry one.
 type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
-// SearchSourceReady is notified that the search source has indexed every chunk of a vault, but those of the
-// sources whose indexing a person canceled: those stay out until they change. It is notified after the first
-// pass of a session that leaves no other chunk pending, and after every later pass that makes vectors.
-type SearchSourceReady func(ctx context.Context, v domain.Vault)
+// IndexChanged is notified after a pass changed the index of a vault and left nothing pending. A pass that
+// changes nothing notifies nothing.
+type IndexChanged func(ctx context.Context, v domain.Vault)
 
 // Config is what a worker is made from.
 type Config struct {
-	Reading           OpenReading
-	Source            searchsourceport.Source
-	VectorCounts      GetVectorCounts
-	SearchSourceReady SearchSourceReady
-	Events            Events
-	Quiet             time.Duration
-	After             func(time.Duration) <-chan time.Time
+	Reading      OpenReading
+	Source       searchsourceport.Source
+	VectorCounts GetVectorCounts
+	IndexChanged IndexChanged
+	Events       Events
+	Quiet        time.Duration
+	After        func(time.Duration) <-chan time.Time
 }
 
 // Worker keeps the index of a vault in sync with its content, one pass at a
@@ -69,28 +68,28 @@ type Config struct {
 // vectors; and a file a plugin extended with more text. A search source that has not described itself is
 // not indexed for yet: the change of its description starts the pass that indexes for it.
 type Worker struct {
-	reading           OpenReading
-	source            searchsourceport.Source
-	vectorCounts      GetVectorCounts
-	searchSourceReady SearchSourceReady
-	events            Events
-	debounce          time.Duration
-	after             func(time.Duration) <-chan time.Time
-	wakes             *channelWakes
-	skips             *vaultreading.Skips
+	reading      OpenReading
+	source       searchsourceport.Source
+	vectorCounts GetVectorCounts
+	indexChanged IndexChanged
+	events       Events
+	debounce     time.Duration
+	after        func(time.Duration) <-chan time.Time
+	wakes        *channelWakes
+	skips        *vaultreading.Skips
 }
 
 func NewWorker(cfg Config) *Worker {
 	return &Worker{
-		reading:           cfg.Reading,
-		source:            cfg.Source,
-		vectorCounts:      cfg.VectorCounts,
-		searchSourceReady: cfg.SearchSourceReady,
-		events:            cfg.Events,
-		debounce:          cfg.Quiet,
-		after:             cfg.After,
-		wakes:             newChannelWakes(),
-		skips:             vaultreading.NewSkips(),
+		reading:      cfg.Reading,
+		source:       cfg.Source,
+		vectorCounts: cfg.VectorCounts,
+		indexChanged: cfg.IndexChanged,
+		events:       cfg.Events,
+		debounce:     cfg.Quiet,
+		after:        cfg.After,
+		wakes:        newChannelWakes(),
+		skips:        vaultreading.NewSkips(),
 	}
 }
 
@@ -117,11 +116,11 @@ func (w *Worker) waitForQuiet() <-chan time.Time { return w.after(w.debounce) }
 
 func (w *Worker) wakeRead() { w.wakes.wakeRead() }
 
-func (w *Worker) notifySearchSourceReady(ctx context.Context, v domain.Vault) {
-	if w.searchSourceReady == nil || ctx.Err() != nil {
+func (w *Worker) notifyIndexChanged(ctx context.Context, v domain.Vault) {
+	if w.indexChanged == nil || ctx.Err() != nil {
 		return
 	}
-	w.searchSourceReady(ctx, v)
+	w.indexChanged(ctx, v)
 }
 
 func (w *Worker) newPass(s *Session, v domain.Vault, rebuild bool) *pass {
@@ -135,6 +134,8 @@ type wakeWaits interface {
 	readWakeChannel() <-chan struct{}
 	// stopOnWake returns a context that ends when any of the signals arrives, and leaves that signal held.
 	stopOnWake(ctx context.Context) (context.Context, func())
+	// hasWakes reports whether a signal is held and not taken.
+	hasWakes() bool
 }
 
 // channelWakes are the signals that something arrived for a pass to do. Each is held until a pass takes it,
@@ -160,6 +161,10 @@ func (c *channelWakes) sourcesWoken() <-chan struct{} { return c.sources }
 func (c *channelWakes) notesWoken() <-chan struct{} { return c.notes }
 
 func (c *channelWakes) readWakeChannel() <-chan struct{} { return c.read }
+
+func (c *channelWakes) hasWakes() bool {
+	return len(c.sources) > 0 || len(c.notes) > 0 || len(c.read) > 0
+}
 
 func (c *channelWakes) stopOnWake(ctx context.Context) (context.Context, func()) {
 	underCtx, end := context.WithCancel(ctx)

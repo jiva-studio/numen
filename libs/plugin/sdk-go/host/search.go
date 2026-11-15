@@ -268,11 +268,10 @@ type SearchPolicy interface {
 	SetSearchFloor(ctx context.Context, recipe string, floor float64) error
 }
 
-// ReadSearchSourceReadyEvent returns the identity of the vault that an event of the host names as indexed by
-// the search source, and false for any other event. The host emits the event after each indexing
-// pass that leaves no chunk pending, so it repeats: a handler reads the state again and acts only on
-// what is not done.
-func ReadSearchSourceReadyEvent(event string) (domain.VaultID, bool) {
-	vaultID, found := protocol.ReadSearchSourceReadyEvent(event)
+// ReadIndexChangedEvent returns the identity of the vault whose index an event of the host names as changed,
+// and false for any other event. The host emits the event after each indexing pass that changed the index
+// and left nothing pending, so it repeats: a handler reads the state again and acts only on what is not done.
+func ReadIndexChangedEvent(event string) (domain.VaultID, bool) {
+	vaultID, found := protocol.ReadIndexChangedEvent(event)
 	return domain.VaultID(vaultID), found
 }
