@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"sync"
 
@@ -67,7 +68,7 @@ func NewTriggers(deps TriggersDeps) *Triggers {
 // failed file is tried again in the next pass. A trigger on note.frontmatterChanged runs only in
 // ExecuteFrontmatter.
 func (u *Triggers) ExecuteAll(ctx context.Context, v domain.Vault) error {
-	return u.execute(ctx, v, isFileEvent, false, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
+	_, err := u.execute(ctx, v, isFileEvent, false, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
 		return reader.WalkFiles(ctx, func(stat domain.FileStat) error {
 			if stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
 				return nil
@@ -75,14 +76,17 @@ func (u *Triggers) ExecuteAll(ctx context.Context, v domain.Vault) error {
 			return each(stat.Path, false)
 		})
 	})
+	return err
 }
 
 // Execute runs the triggers of the file events over the files at the paths, as ExecuteAll does over
 // the vault. A path that holds no file is passed over.
 func (u *Triggers) Execute(ctx context.Context, v domain.Vault, paths []string) error {
-	return u.execute(ctx, v, isFileEvent, false, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
-		return walkPaths(ctx, reader, paths, false, each)
+	_, err := u.execute(ctx, v, isFileEvent, false, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
+		_, err := walkPaths(ctx, reader, paths, false, each)
+		return err
 	})
+	return err
 }
 
 // FrontmatterBatchSize is the most notes one run of a trigger on note.frontmatterChanged is given.
@@ -91,11 +95,16 @@ const FrontmatterBatchSize = 500
 // ExecuteFrontmatter runs the triggers of note.frontmatterChanged over the notes at the paths: each
 // trigger runs once for every FrontmatterBatchSize notes where its condition and the condition of its
 // command hold, with those notes as the paths of the call. A path that holds no file is a removed
-// note, with no note type and no properties.
-func (u *Triggers) ExecuteFrontmatter(ctx context.Context, v domain.Vault, paths []string) error {
-	return u.execute(ctx, v, isFrontmatterEvent, true, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
-		return walkPaths(ctx, reader, paths, true, each)
+// note, with no note type and no properties. It returns the notes to run over in a later pass: those
+// that could not be read, and those of the batches of a plugin that could not be reached.
+func (u *Triggers) ExecuteFrontmatter(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
+	var failed []string
+	retry, err := u.execute(ctx, v, isFrontmatterEvent, true, func(reader vaultport.VaultReader, each func(path string, isGone bool) error) error {
+		var err error
+		failed, err = walkPaths(ctx, reader, paths, true, each)
+		return err
 	})
+	return slices.Concat(failed, retry), err
 }
 
 func isFileEvent(event string) bool { return event != manifest.EventNoteFrontmatterChanged }
@@ -104,7 +113,8 @@ func isFrontmatterEvent(event string) bool { return event == manifest.EventNoteF
 
 func walkPaths(
 	ctx context.Context, reader vaultport.VaultReader, paths []string, isGoneRun bool, each func(path string, isGone bool) error,
-) error {
+) (failed []string, err error) {
+	var failures []error
 	for _, path := range paths {
 		stat, err := reader.StatFile(ctx, path)
 		switch {
@@ -113,36 +123,38 @@ func walkPaths(
 				continue
 			}
 			if err := each(path, true); err != nil {
-				return err
+				return failed, errors.Join(append(failures, err)...)
 			}
 			continue
 		case err != nil:
-			return fmt.Errorf("read %s: %w", path, err)
+			failed = append(failed, path)
+			failures = append(failures, fmt.Errorf("read %s: %w", path, err))
+			continue
 		case stat.Kind != domain.KindFile && stat.Kind != domain.KindNote:
 			continue
 		}
 		if err := each(stat.Path, false); err != nil {
-			return err
+			return failed, errors.Join(append(failures, err)...)
 		}
 	}
-	return nil
+	return failed, errors.Join(failures...)
 }
 
 func (u *Triggers) execute(
 	ctx context.Context, v domain.Vault, isEvent func(string) bool, isBatched bool,
 	walk func(vaultport.VaultReader, func(path string, isGone bool) error) error,
-) error {
+) (retry []string, err error) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	triggers := u.readTriggers(isEvent)
 	if len(triggers) == 0 {
-		return nil
+		return nil, nil
 	}
 	reader, err := u.deps.Readers.Open(v)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	p := &pass{types: u.deps.Types, run: u.deps.Run, notes: u.deps.Notes, versions: u.deps.Versions, vault: v, list: triggers, config: u.deps.Config.GetWhenConfig(), skipped: map[string]bool{}}
+	p := &pass{types: u.deps.Types, run: u.deps.Run, notes: u.deps.Notes, versions: u.deps.Versions, vault: v, list: triggers, config: u.deps.Config.GetWhenConfig(), skipped: map[string]bool{}, retry: map[string]bool{}}
 	if isBatched {
 		p.batches = make([][]string, len(triggers))
 	}
@@ -153,10 +165,10 @@ func (u *Triggers) execute(
 		p.runFile(ctx, path, isGone)
 		return nil
 	})
-	if err == nil {
+	if ctx.Err() == nil {
 		p.runBatches(ctx)
 	}
-	return errors.Join(append(p.failures, err)...)
+	return slices.Sorted(maps.Keys(p.retry)), errors.Join(append(p.failures, err)...)
 }
 
 // trigger is one trigger with its condition and the condition of its handler read.
@@ -195,7 +207,7 @@ func (u *Triggers) readTriggers(isEvent func(string) bool) []trigger {
 
 // pass is one run of the triggers over files of a vault. skipped holds the plugins that could not be
 // reached in this pass. batches, set in a pass over frontmatter, holds the paths each trigger of list
-// runs over once every path is read.
+// runs over once every path is read, and retry the paths of the batches the pass left undone.
 type pass struct {
 	types    contenttypeport.ContentTypeTable
 	run      pluginport.CommandRun
@@ -207,6 +219,7 @@ type pass struct {
 	skipped  map[string]bool
 	batches  [][]string
 	failures []error
+	retry    map[string]bool
 }
 
 // file is the values of one file as a pass reads them: the note and the versions are read once, and
@@ -234,6 +247,9 @@ func (p *pass) runFile(ctx context.Context, path string, isGone bool) {
 		isTrue, err := p.isTrue(ctx, current, one)
 		if err != nil {
 			p.failures = append(p.failures, fmt.Errorf("read %s: %w", path, err))
+			if p.batches != nil {
+				p.retry[path] = true
+			}
 			return
 		}
 		switch {
@@ -251,7 +267,8 @@ func (p *pass) runBatches(ctx context.Context) {
 		one := p.list[index]
 		for batch := range slices.Chunk(paths, FrontmatterBatchSize) {
 			if p.skipped[one.entry.PluginID] {
-				break
+				p.keepRetry(batch)
+				continue
 			}
 			call := plugin.CommandCall{PluginID: one.entry.PluginID, Command: one.entry.Trigger.Command, Paths: batch}
 			p.runCall(ctx, one, call, fmt.Sprintf("%d notes from %s", len(batch), batch[0]))
@@ -266,8 +283,15 @@ func (p *pass) runCall(ctx context.Context, one trigger, call plugin.CommandCall
 	}
 	if errors.As(err, new(*plugin.UnavailableError)) {
 		p.skipped[one.entry.PluginID] = true
+		p.keepRetry(call.Paths)
 	}
 	p.failures = append(p.failures, fmt.Errorf("%s of %s over %s: %w", one.entry.Trigger.Command, one.entry.PluginID, target, err))
+}
+
+func (p *pass) keepRetry(paths []string) {
+	for _, path := range paths {
+		p.retry[path] = true
+	}
 }
 
 func (p *pass) isTrue(ctx context.Context, current *file, one trigger) (bool, error) {

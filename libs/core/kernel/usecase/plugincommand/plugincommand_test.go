@@ -297,3 +297,19 @@ func TestARunOverPathsIsCheckedOverEachPathAndForwardsThem(t *testing.T) {
 		t.Errorf("a recording among the notes answered %v, want ErrBadArguments", err)
 	}
 }
+
+func TestARunOverPathsTakesARemovedNoteAsANoteWithoutFrontmatter(t *testing.T) {
+	declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "md.numen.a", Command: manifest.Command{
+		ID: "tags.update", Title: "Update tags", When: "target.isNote && target.noteType != 'link'",
+	}}}}
+	files := noteFiles{"notes/kept.md": "---\ntags: [river]\n---\n"}
+	commands := newUseCases(declared, declared, getTypes(), note.NewReadFrontmatter(files), nil)
+
+	call := plugin.CommandCall{PluginID: "md.numen.a", Command: "tags.update", Paths: []string{"notes/gone.md", "notes/kept.md"}}
+	if _, err := commands.Run.Execute(t.Context(), getVault(), call); err != nil {
+		t.Fatalf("a removed note among the paths answered %v", err)
+	}
+	if got := declared.calls[len(declared.calls)-1].Paths; !slices.Equal(got, []string{"notes/gone.md", "notes/kept.md"}) {
+		t.Errorf("the plugin was given %v", got)
+	}
+}
