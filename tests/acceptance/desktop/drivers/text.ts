@@ -1,4 +1,5 @@
 /** The person at the text of a file or a link: making it, proofreading it, downloading it, deleting it. */
+import path from 'node:path'
 import { expect } from 'playwright/test'
 import { getTab } from '../../../e2e/desktop/tests/support/layout.js'
 import type { ApplicationDriver } from './application.js'
@@ -7,7 +8,8 @@ import { getAddressTitle, getLinkNotePath, getCurrentVersionLabel, getVersionTit
 import { TabPanel } from './components/TabPanel.js'
 import type { Scenario } from './scenario.js'
 import type { TabDriver } from './tabs.js'
-import { hasMadeText, hasVersions, listVersions } from './text-versions.js'
+import { hasMadeText, hasTextLayerVersion, hasVersions, listVersions } from './text-versions.js'
+import { hasTextLayer } from '../support/samples.js'
 
 const CREATE_TEXT = 'Create text'
 const RECOGNIZE_TEXT = 'Recognize text'
@@ -33,6 +35,7 @@ export class TextDriver {
   ) {}
 
   async recognize(filePath: string): Promise<void> {
+    await this.expectTextLayer(filePath)
     await this.tab.showFile(filePath)
     await this.application.runCommand(CREATE_TEXT)
     await this.application.pickItem(RECOGNIZE_TEXT)
@@ -117,6 +120,12 @@ export class TextDriver {
     const notePath = getLinkNotePath(address)
     await this.tab.showFile(notePath)
     return notePath
+  }
+
+  private async expectTextLayer(filePath: string): Promise<void> {
+    if (!hasTextLayer(path.basename(filePath))) return
+    const { request } = this.scenario.page
+    await expect.poll(() => hasTextLayerVersion(request, filePath), { timeout: FIRST_TEXT_LIMIT_MS }).toBe(true)
   }
 
   private async expectMadeText(filePath: string): Promise<void> {
