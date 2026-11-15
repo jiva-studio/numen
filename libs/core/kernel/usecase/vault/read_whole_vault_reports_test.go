@@ -76,7 +76,7 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
-	if err := db.FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
+	if err := db.VectorIndex().FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, sourcefake.Wrap(pointing{}))
@@ -174,7 +174,7 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
-	if err := db.FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
+	if err := db.VectorIndex().FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 	stopErr := errors.New("the model has stopped")

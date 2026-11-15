@@ -26,7 +26,7 @@ type nearestPlace struct {
 	err     error
 }
 
-func (p *nearestPlace) FindNearestPassages(_ context.Context, query host.NearestQuery) ([]host.NearestMatch, error) {
+func (p *nearestPlace) FindNearestChunks(_ context.Context, query host.NearestQuery) ([]host.NearestMatch, error) {
 	p.asked = append(p.asked, query)
 	return p.matches, p.err
 }
@@ -38,10 +38,10 @@ func noHealth() (*health.Client, error) { return nil, hostcall.ErrNoHost }
 func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_MODEL", "owner/model")
 	hostHealth := healthtest.NewHost(t)
-	vars := hostHealth.Vars(linkedToken)
-	h := newHandler(newServer(nil), noPlaces, sourcehealth.New(func() (*health.Client, error) {
-		return health.NewClientFromVars(vars)
-	}, console.Report))
+	for name, value := range hostHealth.Vars(linkedToken) {
+		t.Setenv(name, value)
+	}
+	h := newHandler(newServer(nil), noPlaces, sourcehealth.New(health.NewClientFromEnv, console.Report))
 
 	_, describeErr := h.Describe(t.Context())
 	if !hasCode(describeErr, rpcerror.FailedPrecondition) {
@@ -49,10 +49,10 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	}
 
 	_, indexErr := h.IndexTexts(t.Context(), searchsource.Place{}, []searchsource.Text{{ChunkID: "1", Text: "text"}})
-	_, searchErr := h.SearchPassages(t.Context(), searchsource.Place{VaultID: "V", Recipe: "r"}, searchsource.Query{Text: "q"})
+	_, searchErr := h.SearchChunks(t.Context(), searchsource.Place{VaultID: "V", Recipe: "r"}, searchsource.Query{Text: "q"})
 
 	if !hasCode(indexErr, rpcerror.FailedPrecondition) || !hasCode(searchErr, rpcerror.FailedPrecondition) {
-		t.Fatalf("IndexTexts error %v and SearchPassages error %v, want FailedPrecondition", indexErr, searchErr)
+		t.Fatalf("IndexTexts error %v and SearchChunks error %v, want FailedPrecondition", indexErr, searchErr)
 	}
 	if items := hostHealth.List(); len(items) != 1 || items[0].Key != "source" {
 		t.Fatalf("health items after embed failure = %+v, want one source item", items)
@@ -94,7 +94,7 @@ func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testin
 	}, sourcehealth.New(noHealth, console.Report))
 
 	query := searchsource.Query{Text: "entropy", Limit: 5, Kinds: []string{"file", "note"}, PathPrefix: "books/", Floor: 0.4}
-	found, err := h.SearchPassages(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"}, query)
+	found, err := h.SearchChunks(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"}, query)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,13 +114,13 @@ func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testin
 
 	wantErr := errors.New("index broken")
 	place.err = wantErr
-	if _, err := h.SearchPassages(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"}, query); !errors.Is(err, wantErr) {
-		t.Fatalf("SearchPassages place error = %v, want %v", err, wantErr)
+	if _, err := h.SearchChunks(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"}, query); !errors.Is(err, wantErr) {
+		t.Fatalf("SearchChunks place error = %v, want %v", err, wantErr)
 	}
 
 	hNoPlace := newHandler(h.model, noPlaces, sourcehealth.New(noHealth, console.Report))
-	if _, err := hNoPlace.SearchPassages(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"}, query); !hasCode(err, rpcerror.Unavailable) {
-		t.Fatalf("SearchPassages noPlaces error = %v, want Unavailable", err)
+	if _, err := hNoPlace.SearchChunks(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"}, query); !hasCode(err, rpcerror.Unavailable) {
+		t.Fatalf("SearchChunks noPlaces error = %v, want Unavailable", err)
 	}
 }
 

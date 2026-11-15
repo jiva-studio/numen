@@ -13,7 +13,7 @@ import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from './palette/runSupport'
 import { createCommandPalette } from './palette/palette'
 import { useSearch, type NameMatch, type SearchDeps } from './search/search'
-import type { Passage } from './search/lookup'
+import type { SearchResult } from './search/lookup'
 import type { CommandTarget } from '@/shared/model/command'
 
 const words = { ...windowWords, ...PALETTE_WORDS }
@@ -56,7 +56,7 @@ const heading: NameMatch = {
   type: 'note',
 }
 const byName: NameMatch = { ...heading, heading: '', line: -1 }
-const notePassage: Passage = {
+const noteResult: SearchResult = {
   path: 'reef/Coral.md',
   title: 'Coral',
   isNote: true,
@@ -65,11 +65,11 @@ const notePassage: Passage = {
   text: 'polyps build the reef',
   start: 12,
   length: 4,
-  line: 3,
-  at: [],
+  matchLine: 3,
+  matchRanges: [],
 }
-const bookPassage: Passage = {
-  ...notePassage,
+const bookResult: SearchResult = {
+  ...noteResult,
   path: 'books/Atlas.pdf',
   title: '',
   isNote: false,
@@ -88,12 +88,12 @@ const collectActionIds = (groups: readonly PaletteGroup[]): string[] =>
 
 const searchFor = async (
   text: string,
-  found: { names?: NameMatch[]; passages?: Passage[] },
+  found: { names?: NameMatch[]; searchResults?: SearchResult[] },
   target: CommandTarget,
 ) => {
   const core: SearchDeps = {
     names: async () => found.names ?? [],
-    search: async (_query, mode) => (mode === 'words' ? (found.passages ?? []) : []),
+    search: async (_query, mode) => (mode === 'words' ? (found.searchResults ?? []) : []),
   }
   const search = useSearch(core, words, {
     wait: now,
@@ -138,7 +138,7 @@ describe('the actions of the palette', () => {
   it('are commands on the rows of a note found by name, by heading and by a passage', async () => {
     const search = await searchFor(
       'coral',
-      { names: [byName, heading], passages: [notePassage] },
+      { names: [byName, heading], searchResults: [noteResult] },
       inFront,
     )
 
@@ -146,7 +146,7 @@ describe('the actions of the palette', () => {
   })
 
   it('are commands on the row of a passage of a document', async () => {
-    const search = await searchFor('reef', { passages: [bookPassage] }, inFront)
+    const search = await searchFor('reef', { searchResults: [bookResult] }, inFront)
 
     const ids = collectActionIds(search.groups.value)
     expect(ids).toStrictEqual([

@@ -31,11 +31,11 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import { useDeclaredCommands, watchCommandLists } from '@/features/plugin-commands'
 import { createSearchMenu, createWindowSlots } from '@/features/plugin-host'
 import { createPluginPalette } from '@/app/window/createPluginPalette'
-import { createVaultListReader } from '@/features/window-display'
 import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/features/hotkeys'
 import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import { WORDS } from '@/shared/ui/words'
 import { createNoteWriter } from '@/entities/note'
+import { createVaultListReader } from '@/entities/vault'
 import { createAppCommands } from './appCommands'
 import { createAnsweredApi } from './coreAnswers'
 
@@ -122,12 +122,14 @@ const createHost = (
     writeIssue: () => undefined,
   })
   const host = createPluginHost({
-    ...slots.hostDeps,
-    target: 'desktop.editor',
-    registerKind: () => () => undefined,
-    registerExtensionReader: () => () => undefined,
-    openTab: () => Promise.resolve('tab-1'),
-    getSlotEntries: () => entries,
+    window: { target: 'desktop.editor' },
+    commands: slots.hostDeps.commands,
+    slots: { ...slots.hostDeps.slots, getSlotEntries: () => entries },
+    kinds: {
+      registerKind: () => () => undefined,
+      registerExtensionReader: () => () => undefined,
+    },
+    tabs: { openTab: () => Promise.resolve('tab-1') },
   })
   for (const manifest of parts.manifests) {
     host.keybindings.registerKeybindings(manifest.id, manifest.contributes.keybindings ?? [])
@@ -247,7 +249,7 @@ export function createRealWindow(parts: RealWindowParts) {
   const options = {
     emitEvent: parts.emitEvent,
     windowTabs: {
-      panes: { onKeyPress: () => false, requestClose: () => undefined },
+      panes: { onKeyPress: () => false, closeTab: () => true },
       tabs: {
         navigateTab: parts.navigateTab,
         openTabOfKind: () => Promise.resolve(),

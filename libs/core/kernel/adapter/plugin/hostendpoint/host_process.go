@@ -23,7 +23,7 @@ type processEndpoint struct {
 func (e *processEndpoint) ReleaseProcess(
 	ctx context.Context, req *connect.Request[v1.ReleaseProcessRequest],
 ) (*connect.Response[v1.ReleaseProcessResponse], error) {
-	pluginID, err := e.endpoint.authenticate(req.Header().Get("Authorization"))
+	pluginID, err := e.endpoint.Authenticate(req.Header().Get("Authorization"))
 	if err != nil {
 		return nil, err
 	}

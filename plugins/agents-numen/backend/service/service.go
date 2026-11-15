@@ -4,7 +4,6 @@ package service
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
@@ -91,20 +90,4 @@ func (m modelOptions) ListModels(ctx context.Context, _ connection.Call, _ conne
 		options[i] = connection.Option{Value: one.Value, Title: one.Title, Group: ""}
 	}
 	return connection.ListedOptions{Options: options, IsPartial: listing.IsPartial}, nil
-}
-
-// NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made from
-// the variables a launched process of the plugin is given. The models, the connections that serve them
-// and the tools are those of the host those variables name.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	chat, connections, err := hostchat.FromVariables(vars)
-	if err != nil {
-		return nil, err
-	}
-	tools, err := hosttools.FromVariables(vars)
-	if err != nil {
-		return nil, err
-	}
-	reach := host{chat: chat, models: connections, tools: tools}
-	return server.NewLinkedHandler(vars, func(s *server.Server) error { return mount(s, reach) })
 }

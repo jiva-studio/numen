@@ -26,7 +26,7 @@ type healthEndpoint struct {
 func (e *healthEndpoint) ReportHealth(
 	_ context.Context, req *connect.Request[v1.ReportHealthRequest],
 ) (*connect.Response[v1.ReportHealthResponse], error) {
-	pluginID, err := e.endpoint.authenticate(req.Header().Get("Authorization"))
+	pluginID, err := e.endpoint.Authenticate(req.Header().Get("Authorization"))
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (e *healthEndpoint) ReportHealth(
 func (e *healthEndpoint) ClearHealth(
 	_ context.Context, req *connect.Request[v1.ClearHealthRequest],
 ) (*connect.Response[v1.ClearHealthResponse], error) {
-	pluginID, err := e.endpoint.authenticate(req.Header().Get("Authorization"))
+	pluginID, err := e.endpoint.Authenticate(req.Header().Get("Authorization"))
 	if err != nil {
 		return nil, err
 	}

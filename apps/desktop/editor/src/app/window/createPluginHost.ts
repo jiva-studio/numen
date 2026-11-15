@@ -8,7 +8,6 @@ import type { NoticeQueue, WindowFrame } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
 import {
   createNoticeParts,
-  createPluginApiParts,
   createPluginSupport,
   createTabActionParts,
   createTabKindParts,
@@ -34,26 +33,30 @@ export interface ServicePartsDeps {
 }
 
 /**
- * The parts of the host, in the order they are merged: the services, the notices, the notes, the
- * texts and connections, and the declarations.
+ * The parts of the host, in the order they are merged: the services, the notices, the notes and the
+ * declarations.
  */
 export function createServiceParts(deps: ServicePartsDeps): readonly HostParts[] {
   const { services, pluginNotes } = deps
   const { plugins } = deps.api
   return [
-    createVaultServiceParts({ services }),
+    createVaultServiceParts({ services, api: plugins.pluginHost }),
     createTaskServiceParts({
       services,
       processes: plugins.processes,
       healthReports: plugins.health.healthReports,
+      api: plugins.pluginHost,
+      rest: deps.rest,
     }),
     createNoticeParts({ queue: deps.notices }),
     {
-      readNote: pluginNotes.readNote,
-      writeNote: pluginNotes.writeNote,
-      resolveLink: deps.api.vault.links.resolveNameLink,
+      kinds: {
+        readNote: pluginNotes.readNote,
+        writeNote: pluginNotes.writeNote,
+        getNoteBuffer: () => services.noteBuffer,
+      },
+      vault: { resolveLink: deps.api.vault.links.resolveNameLink },
     },
-    createPluginApiParts({ api: plugins.pluginHost, rest: deps.rest }),
     ...deps.hostParts,
   ]
 }

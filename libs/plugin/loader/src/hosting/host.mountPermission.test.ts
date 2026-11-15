@@ -2,8 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref, type PropType } from 'vue'
 import type { VaultNotes, ViewCapability } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost } from './host'
-import type { PluginHostDeps } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const asCapability = (name: string) => name as ViewCapability
 
@@ -18,13 +17,13 @@ const settle = async () => {
 
 const createHost = () => {
   const read = vi.fn(async (path: string) => ({ body: `Body of ${path}` }))
-  const host = createPluginHost({
+  const host = createTestPluginHost({
     target: 'desktop.editor',
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
     openTab: () => Promise.resolve('tab'),
     getNotes: () => ({ read }) as unknown as VaultNotes,
-  } as unknown as PluginHostDeps)
+  } as unknown as TestHostDeps)
   const createPlugin = (id: string, permissions: string[]) =>
     host.lifecycle.createContext(
       id,

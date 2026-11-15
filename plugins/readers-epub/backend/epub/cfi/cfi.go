@@ -148,7 +148,6 @@ func (p *parser) readPath() (path, error) {
 				return path{}, err
 			}
 			read.offset = offset
-			p.skipAssertion()
 			p.skipSpatial()
 			return read, nil
 		default:

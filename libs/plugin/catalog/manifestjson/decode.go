@@ -82,25 +82,29 @@ func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 var errSlotOrderShape = fmt.Errorf("%w: the order of an entry must be a number, not a string", manifest.ErrInvalidSlotEntry)
 
 func checkSlotOrders(root any) error {
-	object, isObject := root.(map[string]any)
-	if !isObject {
-		return nil
-	}
-	contributes, isObject := object["contributes"].(map[string]any)
-	if !isObject {
-		return nil
-	}
-	entries, isList := contributes["slots"].([]any)
-	if !isList {
-		return nil
-	}
-	for _, entry := range entries {
-		fields, isObject := entry.(map[string]any)
-		if !isObject {
-			continue
+	for _, entry := range getSlotEntries(root) {
+		if fields, isObject := entry.(map[string]any); isObject {
+			if text, isText := fields["order"].(string); isText {
+				return fmt.Errorf("%w: %q", errSlotOrderShape, text)
+			}
 		}
-		if text, isText := fields["order"].(string); isText {
-			return fmt.Errorf("%w: %q", errSlotOrderShape, text)
+	}
+	return nil
+}
+
+func getSlotEntries(root any) []any {
+	if contributes := getObjectField(root, "contributes"); contributes != nil {
+		if entries, isList := contributes["slots"].([]any); isList {
+			return entries
+		}
+	}
+	return nil
+}
+
+func getObjectField(value any, key string) map[string]any {
+	if object, isObject := value.(map[string]any); isObject {
+		if child, isObject := object[key].(map[string]any); isObject {
+			return child
 		}
 	}
 	return nil
@@ -291,18 +295,16 @@ func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
 }
 
 func pruneUnknown(value any, message protoreflect.MessageDescriptor, path string, unknown []string) []string {
-	object, ok := value.(map[string]any)
-	if !ok {
-		return unknown
-	}
-	for _, key := range slices.Sorted(maps.Keys(object)) {
-		field := message.Fields().ByJSONName(key)
-		if field == nil {
-			delete(object, key)
-			unknown = append(unknown, joinPath(path, key))
-			continue
+	if object, ok := value.(map[string]any); ok {
+		for _, key := range slices.Sorted(maps.Keys(object)) {
+			field := message.Fields().ByJSONName(key)
+			if field == nil {
+				delete(object, key)
+				unknown = append(unknown, joinPath(path, key))
+				continue
+			}
+			unknown = pruneField(object[key], field, joinPath(path, key), unknown)
 		}
-		unknown = pruneField(object[key], field, joinPath(path, key), unknown)
 	}
 	return unknown
 }
@@ -317,20 +319,16 @@ func joinPath(path, key string) string {
 func pruneField(value any, field protoreflect.FieldDescriptor, path string, unknown []string) []string {
 	switch {
 	case field.IsMap():
-		entries, ok := value.(map[string]any)
-		if !ok {
-			return unknown
-		}
-		for _, name := range slices.Sorted(maps.Keys(entries)) {
-			unknown = pruneEntry(entries[name], field.MapValue(), joinPath(path, name), unknown)
+		if entries, ok := value.(map[string]any); ok {
+			for _, name := range slices.Sorted(maps.Keys(entries)) {
+				unknown = pruneEntry(entries[name], field.MapValue(), joinPath(path, name), unknown)
+			}
 		}
 	case field.IsList():
-		items, ok := value.([]any)
-		if !ok {
-			return unknown
-		}
-		for index, item := range items {
-			unknown = pruneEntry(item, field, fmt.Sprintf("%s[%d]", path, index), unknown)
+		if items, ok := value.([]any); ok {
+			for index, item := range items {
+				unknown = pruneEntry(item, field, fmt.Sprintf("%s[%d]", path, index), unknown)
+			}
 		}
 	default:
 		return pruneEntry(value, field, path, unknown)
@@ -355,13 +353,11 @@ func pruneEntry(value any, field protoreflect.FieldDescriptor, path string, unkn
 const listValueName protoreflect.FullName = "google.protobuf.ListValue"
 
 func pruneOptionList(value any, path string, unknown []string) []string {
-	items, ok := value.([]any)
-	if !ok {
-		return unknown
-	}
-	descriptor := (&v1.ManifestSettingOption{}).ProtoReflect().Descriptor()
-	for index, item := range items {
-		unknown = pruneUnknown(item, descriptor, fmt.Sprintf("%s[%d]", path, index), unknown)
+	if items, ok := value.([]any); ok {
+		descriptor := (&v1.ManifestSettingOption{}).ProtoReflect().Descriptor()
+		for index, item := range items {
+			unknown = pruneUnknown(item, descriptor, fmt.Sprintf("%s[%d]", path, index), unknown)
+		}
 	}
 	return unknown
 }

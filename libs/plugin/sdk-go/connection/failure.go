@@ -29,7 +29,6 @@ func (r Reason) String() string {
 	case ReasonInvalidRequest:
 		return "invalid request"
 	case ReasonUnavailable:
-		return "unavailable"
 	}
 	return "unavailable"
 }

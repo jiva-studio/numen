@@ -30,11 +30,15 @@ const bind = (
 
 const setup = (keybindings: readonly DeclaredKeybinding[], takesKey = false) => {
   const host = createPluginHost({
-    target: 'desktop.editor',
-    registerKind: () => () => undefined,
-    registerExtensionReader: () => () => undefined,
-    openTab: () => Promise.resolve('tab-1'),
-    getSlotWhenValues: (target) => getWhenValues({ window: {}, target, contentTypes: {} }),
+    window: { target: 'desktop.editor' },
+    kinds: {
+      registerKind: () => () => undefined,
+      registerExtensionReader: () => () => undefined,
+    },
+    tabs: { openTab: () => Promise.resolve('tab-1') },
+    slots: {
+      getSlotWhenValues: (target) => getWhenValues({ window: {}, target, contentTypes: {} }),
+    },
   })
   const calls = {
     toggleSearch: vi.fn(),

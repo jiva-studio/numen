@@ -233,7 +233,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Source != "science/physics/Entropy.md" {
+	if len(found) != 1 || found[0].Path != "science/physics/Entropy.md" {
 		t.Errorf("the passages of the note that moved are %+v", found)
 	}
 	if got := f.resolves(t, "science/physics/heat/Heat.md"); got != "science/physics/Entropy.md" {

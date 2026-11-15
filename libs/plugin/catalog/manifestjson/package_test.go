@@ -42,4 +42,18 @@ func TestListPackageIssuesAsksNothingOfABlankEntrypoint(t *testing.T) {
 	if issues := manifestjson.ListPackageIssues(m, t.TempDir()); len(issues) != 0 {
 		t.Fatalf("issues = %v, want none", issues)
 	}
+
+	themed, err := manifestjson.Decode([]byte(`{"id":"org.example.tides","name":"Tides","version":"1.0.0",
+		"contributes":{"themes":[{"id":"day","file":"day.css"},{"id":"night","file":"night.css"}]}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	themeDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(themeDir, "day.css"), []byte(":root{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	themeIssues := manifestjson.ListPackageIssues(themed, themeDir)
+	if len(themeIssues) != 1 || !strings.Contains(themeIssues[0], `theme "night"`) {
+		t.Fatalf("theme issues = %v, want missing night theme", themeIssues)
+	}
 }

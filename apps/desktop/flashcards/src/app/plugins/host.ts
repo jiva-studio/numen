@@ -57,26 +57,30 @@ const readSlotEntries = (manifests: ReadonlyMap<string, Manifest>) =>
 export function createShellHost(deps: ShellHostDeps) {
   const { tabs, notices, services = {}, getPlatform = () => 'windows' } = deps
   const pluginHost = createPluginHost({
-    target: TARGET,
-    app: createAppInfo({
-      version: import.meta.env.VITE_NUMEN_VERSION,
-      build: import.meta.env.VITE_NUMEN_BUILD,
-      getPlatform,
-    }),
-    openExternal: (url) => openExternalUrl(url, loadFrameRuntime),
-    registerKind: tabs.registerKind,
-    closeTab: (id) => tabs.closeTab(id),
-    closeTabsForPlugin: tabs.closePluginTab,
-    getSlotEntries: readSlotEntries,
-    reportViewIssue: createViewIssueReporter(notices),
-    getNotices: (pluginId) => createPluginNotices(notices, pluginId),
-    clearNotices: (pluginId) => notices.clear(pluginId),
-    getCommands: () => services.commands,
-    getVaults: () => services.vaults,
-    getWindow: () => services.window,
-    getBackgroundTasks: () => services.backgroundTasks,
-    getRelations: () => deps.relations,
-    getConnections: (pluginId) => deps.getConnections(pluginId),
+    window: {
+      target: TARGET,
+      app: createAppInfo({
+        version: import.meta.env.VITE_NUMEN_VERSION,
+        build: import.meta.env.VITE_NUMEN_BUILD,
+        getPlatform,
+      }),
+      openExternal: (url) => openExternalUrl(url, loadFrameRuntime),
+      getNotices: (pluginId) => createPluginNotices(notices, pluginId),
+      clearNotices: (pluginId) => notices.clear(pluginId),
+      getCommands: () => services.commands,
+      getWindow: () => services.window,
+    },
+    kinds: { registerKind: tabs.registerKind, closeTabsForPlugin: tabs.closePluginTab },
+    tabs: { closeTab: (id) => tabs.closeTab(id) },
+    slots: {
+      getSlotEntries: readSlotEntries,
+      reportViewIssue: createViewIssueReporter(notices),
+    },
+    vault: { getVaults: () => services.vaults, getRelations: () => deps.relations },
+    work: {
+      getBackgroundTasks: () => services.backgroundTasks,
+      getConnections: (pluginId) => deps.getConnections(pluginId),
+    },
   })
   const { views } = pluginHost.contextHost
 

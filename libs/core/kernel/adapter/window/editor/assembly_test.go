@@ -70,13 +70,13 @@ func (w readingParts) OpenIndex(ctx context.Context) (*testIndex, error) {
 		return nil, err
 	}
 	queries := db.NoteQueries()
-	target := &testIndex{closer: db, vectors: db, ledger: vault.NewLedger()}
+	target := &testIndex{closer: db, vectors: db.VectorIndex(), ledger: vault.NewLedger()}
 	target.Stores.Vaults, target.Stores.Notes, target.Stores.Maintenance = db.Vaults(), db.Notes(), db.Maintenance()
 	target.NoteQueries.FileStats, target.NoteQueries.Headings, target.NoteQueries.Links = queries, queries, queries
 	target.NoteQueries.LinkBatches = queries
 	target.NoteQueries.NamedPaths, target.NoteQueries.NoteRefs, target.NoteQueries.NoteTypes = queries, queries, queries
 	target.NoteQueries.OpeningNote = queries
-	target.Chunks.Passages, target.Chunks.Nearest, target.Chunks.Progress = db.ChunkSearch(), db.ChunkSearch(), db.ChunkVectors()
+	target.Chunks.Lexical, target.Chunks.Nearest, target.Chunks.Progress = db.ChunkSearch(), db.ChunkSearch(), db.ChunkVectors()
 	target.Chunks.Vectors, target.Chunks.VectorQueries = db.Sources(), db.Sources()
 	target.Source.Sources, target.Source.SourceRecords, target.Source.SourceBacklog = db.Sources(), db.Sources(), db.Sources()
 	target.Source.RemovalLookup = db.Sources()
@@ -106,7 +106,7 @@ type testIndex struct {
 		OpeningNote noteport.OpeningNote
 	}
 	Chunks struct {
-		Passages      sourceport.PassageQueries
+		Lexical       sourceport.LexicalQueries
 		Nearest       sourceport.NearestQueries
 		Progress      indexport.IndexProgress
 		Vectors       searchsourceport.VectorRepository
@@ -228,7 +228,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 		return nil, false
 	}
 	registries := func(name string) ([]string, bool) {
-		if name != settingsadapter.RegistryThemes {
+		if name != settingsdomain.RegistryThemes {
 			return nil, false
 		}
 		var names []string
@@ -256,7 +256,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 		Hub:    hub.GetShared(),
 	}
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(declarations, registries), none.PluginSettings{},
+		settingsadapter.JSONCodec{}, declarations, registries, none.PluginSettings{},
 	)
 	write := settingsusecase.NewWriteSettings(check, store, feed)
 

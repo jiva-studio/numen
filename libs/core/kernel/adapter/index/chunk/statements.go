@@ -32,8 +32,8 @@ var lexicalSQL string
 //go:embed sql/lexical_kinds.sql
 var lexicalKindsSQL string
 
-//go:embed sql/passage.sql
-var passageSQL string
+//go:embed sql/record.sql
+var recordSQL string
 
 //go:embed sql/progress.sql
 var progressSQL string

@@ -36,7 +36,7 @@ const setup = (events: readonly object[] = []) => {
     },
   })
   const windowTabs = createTestTabs()
-  windowTabs.groups.registerKinds([linkable])
+  windowTabs.kinds.registerKinds([linkable])
   const writeMessage = vi.fn()
   const { tabLinks, reports: tabReports } = createTabLinking({
     writeTabLinks: api.tabs.tabLinks.writeTabLinks,

@@ -1,6 +1,7 @@
 package tokens
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -41,11 +42,11 @@ func TestTokensReadsTheFilePublishedAdjacentAModel(t *testing.T) {
 		t.Errorf("the file names %v", response)
 	}
 
-	if _, err := Read(t.TempDir() + "/missing.txt"); err == nil {
-		t.Fatal("expected error for missing file")
+	if _, err := Read(t.TempDir() + "/missing.txt"); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected ErrNotExist for missing file, got %v", err)
 	}
-	if _, err := Read(t.TempDir()); err == nil {
-		t.Fatal("expected scanner error when reading directory")
+	if _, err := Read(t.TempDir()); err == nil || strings.Contains(err.Error(), "names no pieces") {
+		t.Fatalf("expected scanner error when reading directory, got %v", err)
 	}
 
 	emptyPath := t.TempDir() + "/empty.txt"

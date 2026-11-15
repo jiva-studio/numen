@@ -1,8 +1,8 @@
 import { createMockManifest } from '@numen/core-client/testing'
 import { describe, expect, it, vi } from 'vitest'
-import { createPluginHost } from './host'
 import { formatCommandId } from '../commandId'
-import type { CommandDeclaration, PluginHostDeps } from './types'
+import type { CommandDeclaration } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const note = {
   path: 'a.md',
@@ -26,8 +26,8 @@ function declare(changes: Partial<CommandDeclaration> = {}): CommandDeclaration 
   }
 }
 
-function createHost(declarations: CommandDeclaration[], extra: Partial<PluginHostDeps> = {}) {
-  const deps: PluginHostDeps = {
+function createHost(declarations: CommandDeclaration[], extra: Partial<TestHostDeps> = {}) {
+  const deps: TestHostDeps = {
     target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
@@ -36,7 +36,7 @@ function createHost(declarations: CommandDeclaration[], extra: Partial<PluginHos
     reportCommandIssue: vi.fn(),
     ...extra,
   }
-  return { host: createPluginHost(deps), deps }
+  return { host: createTestPluginHost(deps), deps }
 }
 
 describe('the commands a plugin declares in its manifest', () => {

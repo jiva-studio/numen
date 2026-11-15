@@ -150,10 +150,10 @@ func TestACanceledContextStopsTheListing(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	_, err := newService(t, catalogtest.NewFakeSource("local")).List(ctx)
+	listing, err := newService(t, catalogtest.NewFakeSource("local")).List(ctx)
 
-	if !errors.Is(err, context.Canceled) {
-		t.Errorf("error = %v, want context.Canceled", err)
+	if !errors.Is(err, context.Canceled) || len(listing.Errors) != 0 {
+		t.Errorf("error = %v, listing errors = %v; want context.Canceled with no source error", err, listing.Errors)
 	}
 }
 

@@ -108,8 +108,8 @@ func TestServerLifecycleRPC(t *testing.T) {
 	if pingResp.Msg.GetStatus() != "ok" {
 		t.Errorf("status = %q, want 'ok'", pingResp.Msg.GetStatus())
 	}
-	if got := pingResp.Msg.GetProtocol(); got != ProtocolVersion {
-		t.Errorf("protocol = %d, want %d", got, ProtocolVersion)
+	if got := pingResp.Msg.GetProtocol(); got != ProtocolVersion || ProtocolVersion != 1 {
+		t.Errorf("protocol = %d, want %d (1)", got, ProtocolVersion)
 	}
 
 	// 2. Configure
@@ -704,17 +704,29 @@ func TestLifecycleServer_EdgeCases(t *testing.T) {
 			return errors.New("shutdown hook error")
 		}),
 	)
-	if _, err := ls.ApplyConfig(t.Context(), map[string]string{"k1": "v1"}); err != nil {
-		t.Fatal(err)
+	if ok, err := ls.ApplyConfig(t.Context(), map[string]string{"k1": "v1"}); err != nil || !ok {
+		t.Fatalf("ApplyConfig = %v, %v, want true, nil", ok, err)
 	}
-	if _, err := ls.ApplyConfig(t.Context(), map[string]string{"k2": "v2"}); err != nil {
-		t.Fatal(err)
+	if ok, err := ls.ApplyConfig(t.Context(), map[string]string{"k2": "v2"}); err != nil || !ok {
+		t.Fatalf("ApplyConfig = %v, %v, want true, nil", ok, err)
 	}
 	if v, ok := ls.GetConfig("k1"); !ok || v != "v1" {
 		t.Fatalf("expected k1=v1 to be preserved across configure calls, got %q %v", v, ok)
 	}
 	if ok, err := ls.RequestShutdown(t.Context()); ok || err == nil || err.Error() != "shutdown hook error" {
 		t.Fatalf("expected shutdown hook error, got ok=%v err=%v", ok, err)
+	}
+	handler := lifecycleHandler{state: ls}
+	if _, err := handler.Shutdown(t.Context(), connect.NewRequest(&v1.ShutdownRequest{})); connect.CodeOf(err) != connect.CodeInternal {
+		t.Fatalf("expected CodeInternal on shutdown hook error, got %v", err)
+	}
+	cfgErr := errors.New("bad config")
+	ls.SetConfigure(func(context.Context, map[string]string) error { return cfgErr })
+	if ok, err := ls.ApplyConfig(t.Context(), map[string]string{"k3": "v3"}); ok || !errors.Is(err, cfgErr) {
+		t.Fatalf("ApplyConfig with error = %v, %v", ok, err)
+	}
+	if _, err := handler.Configure(t.Context(), connect.NewRequest(&v1.ConfigureRequest{})); !errors.Is(err, cfgErr) {
+		t.Fatalf("Configure handler with error = %v, want %v", err, cfgErr)
 	}
 
 	var zeroLS LifecycleServer

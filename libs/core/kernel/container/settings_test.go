@@ -16,7 +16,7 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 func writeSettings(t *testing.T, output string) (Config, string) {
@@ -179,7 +179,7 @@ func TestSettings_AddNoticeAccumulatesNotices(t *testing.T) {
 
 // profileHost records the profiles the container gives the plugin host.
 type profileHost struct {
-	pluginport.SettingsPush
+	settingsport.PluginConfig
 	profiles []string
 }
 
@@ -190,7 +190,7 @@ func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
 func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	host := &profileHost{}
-	cfg.PluginHost = &PluginHost{Configuration: PluginConfiguration{SettingsPush: host}}
+	cfg.PluginHost = &PluginHost{Configuration: PluginConfiguration{PluginConfig: host}}
 
 	err := getSettingsWriter(settingsOf(cfg))([]settingsdomain.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
 	if err != nil {

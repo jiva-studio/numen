@@ -9,7 +9,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { COMMAND, ROW } from '@/shared/model/command'
 import { useSearch, type SearchDeps, type NameMatch, type Words } from './search'
-import type { Passage } from './lookup'
+import type { SearchResult } from './lookup'
 import type { SearchMode } from '../../lib/search/types'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 
@@ -39,7 +39,7 @@ function createVault() {
   const names: Deferred<readonly NameMatch[]>[] = []
   const searched: {
     mode: SearchMode
-    answer: Deferred<readonly Passage[]>
+    answer: Deferred<readonly SearchResult[]>
     signal: AbortSignal | undefined
   }[] = []
   const queries: string[] = []
@@ -53,7 +53,7 @@ function createVault() {
     },
     search: (query, mode, _limit, signal) => {
       queries.push(query)
-      const one = createDeferred<readonly Passage[]>()
+      const one = createDeferred<readonly SearchResult[]>()
       searched.push({ mode, answer: one, signal })
       return one.promise
     },
@@ -80,7 +80,7 @@ const createNameMatch = (override: Partial<NameMatch> = {}): NameMatch => ({
   ...override,
 })
 
-const passage = (override: Partial<Passage> = {}): Passage => ({
+const searchResult = (override: Partial<SearchResult> = {}): SearchResult => ({
   path: 'notes/heat.md',
   title: 'Heat engines',
   text: 'no engine beats a reversible one',
@@ -89,8 +89,8 @@ const passage = (override: Partial<Passage> = {}): Passage => ({
   selector: null,
   start: 0,
   length: 0,
-  line: 0,
-  at: [{ start: 3, end: 9 }],
+  matchLine: 0,
+  matchRanges: [{ start: 3, end: 9 }],
   ...override,
 })
 
@@ -182,13 +182,13 @@ describe('answers arriving', () => {
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
     vault.names[0]?.answer([])
-    vault.mode('words')?.answer([passage()])
+    vault.mode('words')?.answer([searchResult()])
     await flushPromises()
 
     expect(palette.groups.value.map((one) => one.id)).toEqual(['text'])
     expect(palette.status.isBusy.value).toBe(true)
 
-    vault.mode('meaning')?.answer([passage({ path: 'notes/carnot.md', title: 'Carnot' })])
+    vault.mode('meaning')?.answer([searchResult({ path: 'notes/carnot.md', title: 'Carnot' })])
     await flushPromises()
 
     expect(palette.groups.value.map((one) => one.id)).toEqual(['text', 'meaning'])
@@ -289,11 +289,11 @@ describe('answers arriving', () => {
         path: 'note.md',
         title: 'Note',
         text: 'some snippet',
-        at: [],
+        matchRanges: [],
         isNote: true,
         start: 0,
         length: 10,
-        line: 1,
+        matchLine: 1,
         type: 'note',
         selector: null,
       },
@@ -311,7 +311,7 @@ describe('answers arriving', () => {
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
     vault.names[0]?.answer([createNameMatch()])
-    vault.mode('words')?.answer([passage()])
+    vault.mode('words')?.answer([searchResult()])
     await flushPromises()
 
     const textGroup = getGroup(palette.groups.value, 'text')
@@ -360,7 +360,7 @@ describe('where a thing found takes the person', () => {
         line: 12,
       }),
     ])
-    vault.mode('words')?.answer([passage()])
+    vault.mode('words')?.answer([searchResult()])
     await flushPromises()
     return palette
   }
@@ -401,7 +401,7 @@ describe('where a thing found takes the person', () => {
     await flushPromises()
 
     vault.names[0]?.answer([createNameMatch()])
-    vault.mode('words')?.answer([passage({ line: 12 })])
+    vault.mode('words')?.answer([searchResult({ matchLine: 12 })])
     await flushPromises()
     const item = getGroup(palette.groups.value, 'text')!.items[0]!
 
@@ -431,7 +431,7 @@ describe('what a key reaches, per kind of thing found', () => {
       createNameMatch(),
       createNameMatch({ heading: 'Entropy here', line: 12 }),
     ])
-    vault.mode('words')?.answer([passage()])
+    vault.mode('words')?.answer([searchResult()])
     await flushPromises()
 
     const getActions = (group: string, pos: number) =>
@@ -455,7 +455,7 @@ describe('a passage from something that is not a note', () => {
     await flushPromises()
 
     vault.mode('words')?.answer([
-      passage({
+      searchResult({
         path: 'library/mahabharata.epub',
         title: '',
         isNote: false,
@@ -558,8 +558,8 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     vault.mode('words')?.answer([
-      passage({ path: 'sheets/daily.md', type: 'sheet', tabKind: 'sheet' }),
-      passage({
+      searchResult({ path: 'sheets/daily.md', type: 'sheet', tabKind: 'sheet' }),
+      searchResult({
         path: 'library/mahabharata.epub',
         title: '',
         isNote: false,
@@ -584,9 +584,9 @@ describe('what a row is drawn as', () => {
     vault
       .mode('words')
       ?.answer([
-        passage({ path: 'notes/heat.md' }),
-        passage({ path: 'library/a.bin', isNote: false, selector: { page: 3 } }),
-        passage({ path: 'talks/b.bin', isNote: false, selector: { t: [12, 14] } }),
+        searchResult({ path: 'notes/heat.md' }),
+        searchResult({ path: 'library/a.bin', isNote: false, selector: { page: 3 } }),
+        searchResult({ path: 'talks/b.bin', isNote: false, selector: { t: [12, 14] } }),
       ])
     await flushPromises()
 
@@ -635,7 +635,7 @@ describe('a group landing under the keyboard', () => {
     palette.setTyped('war').catch(rethrow)
     await flushPromises()
 
-    vault.mode('words')?.answer([passage({ path: 'notes/heat.md' })])
+    vault.mode('words')?.answer([searchResult({ path: 'notes/heat.md' })])
     await flushPromises()
     const before = getGroup(palette.groups.value, 'text')!.items[0]!.id
 
@@ -646,8 +646,8 @@ describe('a group landing under the keyboard', () => {
       .filter((one) => one.mode === 'words')
       .at(-1)
       ?.answer.answer([
-        passage({ path: 'notes/fire.md', title: 'Fire' }),
-        passage({ path: 'notes/heat.md' }),
+        searchResult({ path: 'notes/fire.md', title: 'Fire' }),
+        searchResult({ path: 'notes/heat.md' }),
       ])
     await flushPromises()
 
@@ -720,7 +720,7 @@ describe('what was typed taken back', () => {
     holds[0]?.answer()
     await flushPromises()
     vault.names[0]?.answer([createNameMatch()])
-    vault.mode('words')?.answer([passage()])
+    vault.mode('words')?.answer([searchResult()])
     vault.mode('meaning')?.fail('no model is set')
     await flushPromises()
 
@@ -802,8 +802,8 @@ describe('answers to a question overtaken', () => {
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
     vault.names[0]?.answer([createNameMatch()])
-    vault.mode('words')?.answer([passage()])
-    vault.mode('meaning')?.answer([passage({ path: 'notes/heat.md', title: 'Heat' })])
+    vault.mode('words')?.answer([searchResult()])
+    vault.mode('meaning')?.answer([searchResult({ path: 'notes/heat.md', title: 'Heat' })])
     await flushPromises()
 
     palette.setTyped('entr').catch(rethrow)
@@ -843,7 +843,7 @@ describe('the palette opened and put away', () => {
     await flushPromises()
 
     palette.setOpen(false)
-    vault.mode('words')?.answer([passage()])
+    vault.mode('words')?.answer([searchResult()])
     await flushPromises()
     palette.setOpen(true)
     palette.setTyped('heat').catch(rethrow)

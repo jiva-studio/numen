@@ -40,7 +40,7 @@ func TestJsonFieldsOfAnotherTypeAreEmpty(t *testing.T) {
 
 func TestEventsAreReportedInTheOrderTheProgramWritesThem(t *testing.T) {
 	r := &recorder{}
-	handler := NewHandler(r)
+	handler := New(r)
 	handle := handler.Handle
 
 	handler.SendText("plain line")
@@ -126,7 +126,7 @@ func TestEventsAreReportedInTheOrderTheProgramWritesThem(t *testing.T) {
 
 func TestTheResponseOfTheResultIsReportedWhenNoTextWasStreamed(t *testing.T) {
 	r := &recorder{}
-	NewHandler(r).Handle(map[string]any{"event": "result", "result": map[string]any{"status": "success", "response": "Raised beds.", "conversation_id": "s-1"}})
+	New(r).Handle(map[string]any{"event": "result", "result": map[string]any{"status": "success", "response": "Raised beds.", "conversation_id": "s-1"}})
 
 	if !slices.Equal(r.reports, []string{"text Raised beds."}) || !slices.Equal(r.sessions, []string{"s-1"}) {
 		t.Errorf("reports = %q, sessions = %v", r.reports, r.sessions)
@@ -136,7 +136,7 @@ func TestTheResponseOfTheResultIsReportedWhenNoTextWasStreamed(t *testing.T) {
 func TestASinkThatRefusedAReportIsHandedNoOther(t *testing.T) {
 	refusal := errors.New("closed")
 	r := &recorder{refusal: refusal}
-	handler := NewHandler(r)
+	handler := New(r)
 
 	handler.Handle(map[string]any{"content": "one"})
 	handler.SendText("two")
@@ -146,7 +146,7 @@ func TestASinkThatRefusedAReportIsHandedNoOther(t *testing.T) {
 	}
 
 	toolSink := &recorder{refusal: refusal}
-	toolHandler := NewHandler(toolSink)
+	toolHandler := New(toolSink)
 	toolHandler.Handle(map[string]any{"tool_calls": []any{map[string]any{"name": "note_read"}}})
 	toolHandler.SendText("after tool refusal")
 	if len(toolSink.reports) != 1 || !errors.Is(toolHandler.Err(), refusal) {

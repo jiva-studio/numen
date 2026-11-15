@@ -1,8 +1,6 @@
 package service
 
 import (
-	"net/http"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -23,25 +21,6 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	return mount(s, client, texts, search)
-}
-
-// NewHandler returns the handler of the plugin's backend for a host that links the plugin in.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		client, err := host.NewClientFromVars(vars)
-		if err != nil {
-			return err
-		}
-		texts, err := host.NewTextClientFromVars(vars)
-		if err != nil {
-			return err
-		}
-		search, err := host.NewSearchClientFromVars(vars)
-		if err != nil {
-			return err
-		}
-		return mount(s, client, texts, search)
-	})
 }
 
 func mount(s *server.Server, client *host.Client, texts *host.TextClient, search *host.SearchClient) error {

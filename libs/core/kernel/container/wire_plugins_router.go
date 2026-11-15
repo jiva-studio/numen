@@ -153,12 +153,8 @@ func setPluginVaultList(c pluginsWiring, list pluginvault.List) {
 	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.VaultList = list })
 }
 
-func openPluginCache(c pluginsWiring) (pluginport.PluginCache, error) {
-	retained, err := appstate.OpenPluginCachesIn(c.PluginCachePath)
-	if err != nil {
-		return nil, err
-	}
-	return retained, nil
+func openPluginCache(c pluginsWiring) (*appstate.PluginCaches, error) {
+	return appstate.OpenPluginCachesIn(c.PluginCachePath)
 }
 
 func newDependencyRegistry(clock machineport.Clock, defaultDir string) pluginport.DependencyRegistry {

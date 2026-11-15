@@ -5,9 +5,10 @@
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { computed, defineComponent, h, ref, type Ref } from 'vue'
-import type { ShownRow } from '../lib/row'
+import { computed, defineComponent, effectScope, h, ref, type Ref } from 'vue'
+import type { Row, ShownRow } from '../lib/row'
 import { useTreeLayout } from './layout'
+import { useTree } from './useTree'
 
 class FakeObserver {
   static all: FakeObserver[] = []
@@ -103,5 +104,69 @@ describe('how tall the rows are drawn', () => {
     expect(layout.rowsStyle.value.blockSize).toBe(`${100 * ROW_HEIGHT}px`)
     expect(layout.rowsStyle.value.paddingBlockStart).toBe('0px')
     expect(layout.rowsStyle.value.boxSizing).toBe('border-box')
+  })
+
+  it('scrolls to a focused row and skips drag measurement when unmounted', async () => {
+    const rows: Row[] = Array.from({ length: 20 }, (_, i) => ({
+      id: `row-${i}`,
+      name: `Row ${i}`,
+      hasChildren: false,
+    }))
+    const boxEl = document.createElement('div')
+    Object.defineProperty(boxEl, 'clientHeight', { value: 40, configurable: true })
+    const listEl = document.createElement('div')
+    const box = ref<HTMLElement | null>(boxEl)
+    const list = ref<HTMLElement | null>(listEl)
+    const scope = effectScope()
+    const tree = scope.run(() =>
+      useTree({
+        input: {
+          rows,
+          open: [],
+          selected: [],
+          threshold: 4,
+          clock: { now: () => 0, schedule: () => 0, cancel: () => undefined },
+          counted: (n) => `${n} rows`,
+        },
+        box,
+        list,
+        renamingPath: ref(null),
+        select: () => undefined,
+        emit: () => undefined,
+      }),
+    )!
+
+    tree.layout.virtual.measureViewport()
+    await tree.rows.focusRow('row-10')
+    expect(boxEl.scrollTop).toBe(224)
+
+    const rowEl = document.createElement('div')
+    rowEl.setAttribute('data-tree-row', 'row-0')
+    listEl.append(rowEl)
+    const rectSpy = vi.spyOn(rowEl, 'getBoundingClientRect')
+    rectSpy.mockReturnValue({ height: 0 } as DOMRect)
+
+    boxEl.scrollTop = 0
+    await tree.rows.focusRow('row-10')
+    expect(boxEl.scrollTop).toBe(224)
+
+    rectSpy.mockReturnValue({ height: 30 } as DOMRect)
+    boxEl.scrollTop = 0
+    await tree.rows.focusRow('row-10')
+    expect(boxEl.scrollTop).toBe(290)
+
+    box.value = null
+    tree.drag.startPress(['row-0'], new PointerEvent('pointerdown', { clientX: 10, clientY: 10 }))
+    window.dispatchEvent(new PointerEvent('pointermove', { clientX: 10, clientY: 30 }))
+    expect(tree.drag.into.value).toBeNull()
+    expect(tree.drag.before.value).toBeNull()
+
+    box.value = boxEl
+    list.value = null
+    window.dispatchEvent(new PointerEvent('pointermove', { clientX: 10, clientY: 40 }))
+    expect(tree.drag.into.value).toBeNull()
+    expect(tree.drag.before.value).toBeNull()
+    window.dispatchEvent(new PointerEvent('pointerup', { clientX: 10, clientY: 40 }))
+    scope.stop()
   })
 })

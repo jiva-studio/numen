@@ -54,7 +54,7 @@ func createPluginCommandDeps() (stubSession, *pluginCommands, *[]domain.Vault) {
 		}},
 	}}
 	var vaults []domain.Vault
-	commands := newScenarios(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
@@ -191,7 +191,7 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 		PluginID: "md.numen.engines.transcription",
 		Command:  manifest.Command{ID: "transcript.create", Title: "Transcribe a recording", When: "target.contentType.startsWith('audio/')"},
 	}}}
-	commands := newScenarios(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
@@ -243,7 +243,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 		PluginID: "md.numen.links",
 		Command:  manifest.Command{ID: "link.deleteVideo", Title: "Delete the copy", When: "target.noteType == 'link'"},
 	}}}
-	commands := newScenarios(declared, declared, fileTypes{}, nil, nil)
+	commands := newUseCases(declared, declared, fileTypes{}, nil, nil)
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
@@ -262,7 +262,7 @@ func TestVersionCommandRequiresFile(t *testing.T) {
 		PluginID: "md.numen.tools.proofreading",
 		Command:  manifest.Command{ID: "proofreading.create", Title: "Proofread", When: "version.isLive && version.kind != ''"},
 	}}}
-	commands := newScenarios(declared, declared, fileTypes{".wav": "audio/vnd.wave"}, nil, nil)
+	commands := newUseCases(declared, declared, fileTypes{".wav": "audio/vnd.wave"}, nil, nil)
 	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
-import { createPluginHost, createPluginPaneWrapper } from './host'
+import { createPluginPaneWrapper } from './host'
 import { registerPluginStyle } from '../styles'
 import {
   CONVERSATION,
@@ -11,19 +11,19 @@ import {
 } from '@numen/plugin-sdk'
 import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
 import { createMockManifest } from '@numen/core-client/testing'
-import type { PluginHostDeps } from './types'
 import { STUB_COMPONENT, STUB_CONNECTIONS } from '../testing/stubComponent'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 describe('createPluginHost', () => {
   function createMockDeps(): {
-    deps: PluginHostDeps
+    deps: TestHostDeps
     registeredKinds: unknown[]
     extensionReaders: Map<string, unknown>
   } {
     const registeredKinds: unknown[] = []
     const extensionReaders = new Map<string, unknown>()
 
-    const deps: PluginHostDeps = {
+    const deps: TestHostDeps = {
       getCommandDeclarations: () => [
         {
           pluginId: 'sample.plugin',
@@ -59,7 +59,7 @@ describe('createPluginHost', () => {
 
   it('manages readers, tab kinds, commands, and settings', async () => {
     const { deps, registeredKinds, extensionReaders } = createMockDeps()
-    const host = createPluginHost(deps)
+    const host = createTestPluginHost(deps)
     host.keybindings.registerKeybindings('sample.plugin', [
       { key: 'ctrl+shift+k', command: 'test.run' },
     ])
@@ -154,7 +154,7 @@ describe('createPluginHost', () => {
 
   it('disposes all registrations when plugin is disposed', () => {
     const { deps, extensionReaders } = createMockDeps()
-    const host = createPluginHost({
+    const host = createTestPluginHost({
       ...deps,
       getCommandDeclarations: () => [
         {
@@ -198,7 +198,7 @@ describe('createPluginHost', () => {
     })
 
     // Host without getReaderExtensions does not register extension readers
-    const hostNoExt = createPluginHost({
+    const hostNoExt = createTestPluginHost({
       target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader,
@@ -223,7 +223,7 @@ describe('createPluginHost', () => {
     expect(() => tabSubVoid.dispose()).not.toThrow()
 
     // Host with getReaderExtensions and getTabState returning undefined vs object
-    const hostWithExt = createPluginHost({
+    const hostWithExt = createTestPluginHost({
       target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader,
@@ -255,7 +255,7 @@ describe('createPluginHost', () => {
   it('calls closeTabsForPlugin when plugin is disposed', () => {
     const { deps } = createMockDeps()
     const closeTabsForPlugin = vi.fn()
-    const host = createPluginHost({ ...deps, closeTabsForPlugin })
+    const host = createTestPluginHost({ ...deps, closeTabsForPlugin })
 
     host.lifecycle.disposePlugin('test.plugin')
     expect(closeTabsForPlugin).toHaveBeenCalledWith('test.plugin')
@@ -266,7 +266,7 @@ describe('createPluginHost', () => {
     const notices = { show: vi.fn(), setTasks: vi.fn() }
     const getNotices = vi.fn(() => notices)
     const clearNotices = vi.fn()
-    const host = createPluginHost({ ...deps, getNotices, clearNotices })
+    const host = createTestPluginHost({ ...deps, getNotices, clearNotices })
 
     host.lifecycle.createContext('test.plugin').host.ui.notices.show('Saved.')
     host.lifecycle.disposePlugin('test.plugin')
@@ -278,7 +278,7 @@ describe('createPluginHost', () => {
 
   it('drops what a plugin reports where the window offers no notices', () => {
     const { deps } = createMockDeps()
-    const host = createPluginHost(deps)
+    const host = createTestPluginHost(deps)
 
     expect(() =>
       host.lifecycle.createContext('test.plugin').host.ui.notices.show('Saved.'),
@@ -289,7 +289,7 @@ describe('createPluginHost', () => {
     const { deps } = createMockDeps()
     const tasks = { watch: vi.fn(), watchAll: vi.fn() }
     const getTasks = vi.fn(() => tasks)
-    const host = createPluginHost({ ...deps, getTasks })
+    const host = createTestPluginHost({ ...deps, getTasks })
 
     const handler = vi.fn()
     host.lifecycle.createContext('test.plugin').host.work.tasks?.watch(handler)
@@ -300,7 +300,7 @@ describe('createPluginHost', () => {
 
   it('gives a plugin no task host where the window offers none', () => {
     const { deps } = createMockDeps()
-    const host = createPluginHost(deps)
+    const host = createTestPluginHost(deps)
 
     expect(host.lifecycle.createContext('test.plugin').host.work.tasks).toBeUndefined()
   })
@@ -308,7 +308,7 @@ describe('createPluginHost', () => {
   it('gives every plugin the background tasks of the window', () => {
     const { deps } = createMockDeps()
     const backgroundTasks = createMockBackgroundTaskHost()
-    const host = createPluginHost({ ...deps, getBackgroundTasks: () => backgroundTasks })
+    const host = createTestPluginHost({ ...deps, getBackgroundTasks: () => backgroundTasks })
 
     const first = vi.fn()
     const second = vi.fn()
@@ -322,18 +322,18 @@ describe('createPluginHost', () => {
 
   it('gives a plugin no background tasks where the window offers none', () => {
     const { deps } = createMockDeps()
-    const host = createPluginHost({ ...deps, getBackgroundTasks: () => undefined })
+    const host = createTestPluginHost({ ...deps, getBackgroundTasks: () => undefined })
 
     expect(host.lifecycle.createContext('test.plugin').host.work.backgroundTasks).toBeUndefined()
     expect(
-      createPluginHost(deps).lifecycle.createContext('test.plugin').host.work.backgroundTasks,
+      createTestPluginHost(deps).lifecycle.createContext('test.plugin').host.work.backgroundTasks,
     ).toBeUndefined()
   })
 
   it('files the health items of a plugin under its own id', async () => {
     const { deps } = createMockDeps()
     const filed: string[] = []
-    const host = createPluginHost({
+    const host = createTestPluginHost({
       ...deps,
       health: {
         reportHealth: (pluginId, item) => {
@@ -352,14 +352,14 @@ describe('createPluginHost', () => {
     await health?.clear('connection')
 
     expect(filed).toStrictEqual(['org.example.atlas connection', 'org.example.atlas -connection'])
-    expect(createPluginHost(deps).lifecycle.createContext('org.example.atlas').plugin.health).toBe(
-      undefined,
-    )
+    expect(
+      createTestPluginHost(deps).lifecycle.createContext('org.example.atlas').plugin.health,
+    ).toBe(undefined)
   })
 
   it('delegates getSetting and onSettingChange through host', () => {
     const { deps } = createMockDeps()
-    const host = createPluginHost(deps)
+    const host = createTestPluginHost(deps)
 
     expect(host.lifecycle.getSetting('test.plugin', 'fontSize')).toBe(14)
     expect(deps.getSetting).toHaveBeenCalledWith('test.plugin', 'fontSize')
@@ -376,7 +376,7 @@ describe('createPluginHost', () => {
 
   it('rejects manifest registration when context already exists', () => {
     const { deps } = createMockDeps()
-    const host = createPluginHost(deps)
+    const host = createTestPluginHost(deps)
     const initialManifest = createMockManifest('test.plugin', { name: 'Original' })
     host.lifecycle.createContext('test.plugin', initialManifest)
 
@@ -447,7 +447,7 @@ describe('createPluginHost', () => {
 
   it('draws a view one plugin declares into the element of another', () => {
     const { deps } = createMockDeps()
-    const host = createPluginHost(deps)
+    const host = createTestPluginHost(deps)
     const conversation = defineComponent({
       props: { context: { type: Object, required: true } },
       setup: (props) => () => h('p', (props.context as { vault: string }).vault),
@@ -474,7 +474,7 @@ describe('createPluginHost', () => {
 
   it('takes a drawn view away with the plugin that declared it', () => {
     const { deps } = createMockDeps()
-    const host = createPluginHost(deps)
+    const host = createTestPluginHost(deps)
     const conversation = defineComponent({ setup: () => () => h('p', 'conversation') })
     host.lifecycle
       .createContext(
@@ -497,7 +497,7 @@ describe('createPluginHost', () => {
 
   it('routes a drop to the handler another plugin registered until it is disposed', async () => {
     const { deps } = createMockDeps()
-    const host = createPluginHost(deps)
+    const host = createTestPluginHost(deps)
     host.lifecycle
       .createContext(
         'md.numen.links',
@@ -531,13 +531,13 @@ describe('a view mounted by a plugin', () => {
   // context.path unconditionally, through the notes service of the plugin that registered it.
   const createHost = (registerNow = true) => {
     const read = vi.fn(async (path: string) => ({ body: `Body of ${path}` }))
-    const host = createPluginHost({
+    const host = createTestPluginHost({
       target: 'desktop.editor',
       registerKind: () => vi.fn(),
       registerExtensionReader: () => vi.fn(),
       openTab: () => Promise.resolve('tab'),
       getNotes: () => ({ read }) as unknown as VaultNotes,
-    } as unknown as PluginHostDeps)
+    } as unknown as TestHostDeps)
     const notesPlugin = host.lifecycle.createContext(
       'md.numen.notes',
       createMockManifest('md.numen.notes', {
