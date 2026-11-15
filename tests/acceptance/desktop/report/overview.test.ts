@@ -1,7 +1,7 @@
 import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { createOverview, readGitRevision } from './overview.js'
+import { createBadge, createOverview, readGitRevision } from './overview.js'
 import { buildTree, type ScenarioEntry } from './tree.js'
 
 const createScenario = (overrides: Partial<ScenarioEntry>): ScenarioEntry => ({
@@ -57,5 +57,34 @@ describe('readGitRevision', () => {
   it('tells nothing for a folder git cannot read', () => {
     const missing = path.join(os.tmpdir(), 'no-such-garden-checkout-7f3e')
     expect(readGitRevision(missing)).toEqual({ commit: undefined, branch: undefined })
+  })
+})
+
+describe('createBadge', () => {
+  const overview = (passed: number, failed: number) =>
+    createOverview(
+      buildTree([
+        ...Array.from({ length: passed }, (_, index) =>
+          createScenario({ id: `p${index}`, line: index }),
+        ),
+        ...Array.from({ length: failed }, (_, index) =>
+          createScenario({ id: `f${index}`, line: 100 + index, status: 'failed' }),
+        ),
+      ]),
+      new Date(0),
+      { commit: undefined, branch: undefined },
+    )
+
+  it('counts the passed scenarios in green when none failed', () => {
+    expect(createBadge(overview(3, 0))).toEqual({
+      schemaVersion: 1,
+      label: 'acceptance',
+      message: '3 passed',
+      color: 'brightgreen',
+    })
+  })
+
+  it('counts the failed scenarios in red', () => {
+    expect(createBadge(overview(3, 2))).toMatchObject({ message: '2 failed', color: 'red' })
   })
 })

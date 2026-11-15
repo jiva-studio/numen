@@ -30,7 +30,15 @@ export default defineConfig({
     ['list'],
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
     ...(isVideoOn
-      ? [['blob', { outputDir: 'acceptance-blobs', fileName: `run-${process.pid}.zip` }] as const]
+      ? [
+          [
+            'blob',
+            {
+              outputDir: 'acceptance-blobs',
+              fileName: `run-${process.platform}-${process.pid}.zip`,
+            },
+          ] as const,
+        ]
       : []),
   ],
 })

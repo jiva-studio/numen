@@ -43,3 +43,22 @@ export const createOverview = (
     counts,
   }
 }
+
+export type Badge = {
+  readonly schemaVersion: 1
+  readonly label: string
+  readonly message: string
+  readonly color: string
+}
+
+export const createBadge = (overview: Overview): Badge => {
+  const { passed, failed } = overview.counts
+  if (failed > 0)
+    return { schemaVersion: 1, label: 'acceptance', message: `${failed} failed`, color: 'red' }
+  return {
+    schemaVersion: 1,
+    label: 'acceptance',
+    message: `${passed} passed`,
+    color: passed > 0 ? 'brightgreen' : 'lightgrey',
+  }
+}

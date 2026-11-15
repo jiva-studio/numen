@@ -14,7 +14,7 @@ import {
   Search,
   StepForward,
 } from 'lucide'
-import { createOverview, type GitRevision } from './overview.js'
+import { createBadge, createOverview, type GitRevision } from './overview.js'
 import * as playback from './playback.js'
 import { groupRuns, type ScenarioRun } from './runs.js'
 import type { ScenarioRecord } from './scenario.js'
@@ -72,7 +72,9 @@ export const writeReport = (
       runs: scenario.runs.map((one) => addFileVersions(one, version)),
     })),
   )
-  const data = { overview: createOverview(features, run.startedAt, run), features }
+  const overview = createOverview(features, run.startedAt, run)
+  const data = { overview, features }
+  fs.writeFileSync(path.join(outputDir, 'badge.json'), JSON.stringify(createBadge(overview)))
   const functions = Object.entries(playback).map(([name, fn]) => `  ${name}: ${String(fn)},`)
   const script = [
     `window.REPORT = ${JSON.stringify(data)};`,
