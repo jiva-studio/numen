@@ -2,25 +2,23 @@ import { describe, expect, it } from 'vitest'
 
 import {
   AXIS_LABEL_HEIGHT,
+  AXIS_LABEL_LIFT,
   AXIS_LABEL_WIDTH,
-  createCallout,
   CALLOUT_GAP,
   CALLOUT_HEIGHT,
   CALLOUT_WIDTH,
+  LABEL,
+} from './labelSizes'
+import {
+  areBoxesSeparate,
   getAxisNumber,
   getAxisNumberBox,
-  isAxisLabelClear,
-  getNameBox,
-  areBoxesSeparate,
-  createAxisLabels,
-  LABEL,
-  createLabels,
-  AXIS_LABEL_LIFT,
   getMarkNameStyle,
-  getKnobValueStyle,
+  getNameBox,
+  isAxisLabelClear,
   type Box,
-  type Mark,
-} from './label'
+} from './labelBox'
+import { createAxisLabels, createCallout, createLabels, getKnobValueStyle, type Mark } from './label'
 import {
   BACKLOG_PLOT,
   PLOT_BOTTOM,

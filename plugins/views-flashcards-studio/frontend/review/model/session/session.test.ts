@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useReviewSession } from './session'
-import type { SessionClient, SessionStart } from './session'
+import type { SessionClient } from './session'
 import type { UndoReviewResponse } from '../../../lib/wire/review'
+
+type SessionStart = Awaited<ReturnType<SessionClient['startSession']>>
 
 const createCard = (cardId: string) => ({
   deck: 'decks/Words.md',

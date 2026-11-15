@@ -9,6 +9,7 @@ import {
   type JsonValue,
 } from '@numen/plugin-sdk'
 import type { Entry, FileTree, Folders, ListingRow } from '../types'
+import { getParentFolders } from './parentFolders'
 
 export const ROOT = ''
 
@@ -24,12 +25,6 @@ export const getFolderPath = (path: string): string => {
  */
 export const resolveDropFolder = (target: { into: string | null } | { before: string }): string =>
   'into' in target ? (target.into ?? ROOT) : getFolderPath(target.before)
-
-/** The folders above a path, from the root down. */
-export const getParentFolders = (path: string): readonly string[] => {
-  const parts = path.split('/').slice(0, -1)
-  return parts.map((_, deep) => parts.slice(0, deep + 1).join('/'))
-}
 
 /** How the entries of a folder are ordered in the rows of the tree. */
 export type SortBy = 'name' | 'modified'
@@ -47,7 +42,7 @@ const compareModifiedDescending = (one: Entry, other: Entry): number => {
 }
 
 /** Folders first, then files; with `modified` each group has the newest first and the undated last. */
-export const sortEntries = (entries: readonly Entry[], sortBy: SortBy): readonly Entry[] => {
+const sortEntries = (entries: readonly Entry[], sortBy: SortBy): readonly Entry[] => {
   if (sortBy === 'name') return entries
   return entries
     .map((entry, index) => ({ entry, index }))

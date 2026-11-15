@@ -5,7 +5,7 @@ import { formatStopReasonMessage } from '../../lib/wire/stop'
 /** Interface copy of the preset tab: the control, its settings, and error messages. */
 import { many, percent } from '@numen/ui'
 import type { BudgetUnit, Goal, Rule } from '../../lib/presets'
-import type { Field } from './fields'
+import type { Field } from './field'
 import {
   getBuyFacts,
   getLearningFacts,

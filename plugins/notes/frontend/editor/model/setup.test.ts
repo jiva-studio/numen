@@ -5,7 +5,8 @@ import { EditorView } from '@codemirror/view'
 import type { Tree } from '@lezer/common'
 import { LANGUAGES } from '../lib/config/languages'
 import { live } from './live/live'
-import { tabKeyBinding, escapeKeyBinding, preview, prose, setup, type Settings } from './setup'
+import { preview, prose, setup, type Settings } from './setup'
+import { escapeKeyBinding, tabKeyBinding } from './tabCapture'
 
 // Nothing here has a size, and the editor measures anyway.
 Range.prototype.getClientRects = () =>

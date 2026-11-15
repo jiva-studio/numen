@@ -3,7 +3,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
-import { CREATE_TEXT, createTextCommand } from './text'
+import { createTextCommand } from './text'
+import { CREATE_TEXT } from './createText'
 
 const TARGET = { path: 'talks/Ants.mp3', title: 'Ants', isFolder: false, others: [], tab: '' }
 

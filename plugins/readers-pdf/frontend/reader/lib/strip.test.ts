@@ -8,8 +8,6 @@ import {
   getPagesWithin,
   getCurrentPage,
   row,
-  findPageScroll,
-  getScrollTarget,
   getTurnTarget,
   getFitZoom,
   getAnchor,
@@ -19,6 +17,7 @@ import {
   SHARP,
   type Page,
 } from './strip'
+import { findPageScroll, getScrollTarget } from './scrollTarget'
 import type { Size } from '@numen/ui'
 
 const VIEWPORT: Size = { width: 900, height: 800 }

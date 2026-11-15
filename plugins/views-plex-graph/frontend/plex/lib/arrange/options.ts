@@ -7,8 +7,6 @@ export type Direction = 'up' | 'down' | 'left' | 'right'
 
 export type { Size }
 
-export type { Padding }
-
 /**
  * `focusScale` is how much larger the focus pill is than the box its title would have as a
  * neighbor. `room` is empty space kept on every side of a box, on top of the gaps.

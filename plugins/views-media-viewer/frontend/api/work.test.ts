@@ -1,6 +1,7 @@
 /** Which files work is going on, from one shared subscription to the plugin tasks. */
 import { describe, expect, it } from 'vitest'
-import { createWorkWatcher, type TaskSource, type WatchedTask } from './work'
+import { createWorkWatcher, type TaskSource } from './work'
+import type { WatchedTask } from './watchedTask'
 
 function createSource() {
   let handler: ((tasks: readonly WatchedTask[]) => void) | null = null

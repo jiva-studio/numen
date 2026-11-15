@@ -1,7 +1,5 @@
 import type { TaskBatch } from '../lib/summary'
-
-export const APPEAR_DELAY_MS = 300
-export const HOLD_MS = 500
+import { APPEAR_DELAY_MS, HOLD_MS } from './chipTimings'
 
 /** What the chip draws: the text and the ring fraction together. */
 export interface ChipState extends TaskBatch {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Connection, ConnectionSide } from '@numen/plugin-sdk'
+import { NEW_LINK_ROLE } from './newLinkRole'
 import {
-  NEW_LINK_ROLE,
   addReverseSide,
   areConnectionsEqual,
   cycleDirection,

@@ -11,9 +11,11 @@ import {
   createWriteOpts,
   flushPromises,
 } from '../fixtures/writes'
-import type { Presets, PresetWriteResult } from '../../lib/presets'
+import type { Presets } from '../../lib/presets'
+import type { PresetWriteResult } from '../../lib/presetResults'
 import { WORDS as words } from '../lib/words'
-import { createWriteQueue, flushWrites, requestWrite, sendWrite } from './writeQueue'
+import { createWriteQueue, sendWrite } from './presetWrite'
+import { flushWrites, requestWrite } from './writeQueue'
 
 const requestInBackground = createBackgroundRequest(requestWrite)
 

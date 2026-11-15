@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SEARCH_DEBOUNCE_MS } from '../model/useSearchResults'
+import { SEARCH_DEBOUNCE_MS } from '../model/searchDebounce'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 import { WORDS as words } from '../words'
 

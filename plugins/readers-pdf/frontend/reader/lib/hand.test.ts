@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { DRAG_THRESHOLD, Hand, getWheelOffset } from './hand'
+import { DRAG_THRESHOLD } from './dragThreshold'
+import { Hand, getWheelOffset } from './hand'
 
 describe('a wheel turned over the row', () => {
   it('moves the row sideways where there is nothing below', () => {

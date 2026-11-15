@@ -13,7 +13,7 @@ import { NO_BOUNDS } from '../../lib/presets'
 import { BOUNDS, mountPresetTab, rows, createTab } from '../fixtures'
 import { WORDS as words } from '../lib/words'
 import type { PresetTabState } from '../model/types'
-import type { Field } from '../lib/fields'
+import type { Field } from '../lib/field'
 import type { SettingValue } from '../lib/settings'
 
 describe('the settings under the control', () => {

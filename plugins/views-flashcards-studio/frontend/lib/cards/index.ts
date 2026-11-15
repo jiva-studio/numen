@@ -12,7 +12,7 @@ export {
   type TemplateRow,
   templateRows,
 } from './card-model'
-export { type CardModel, type FieldValue } from './card'
+export { type CardModel } from './card'
 export {
   type CardWords,
   getRunEndPoint,
@@ -26,7 +26,7 @@ export {
   HEAD,
   NO_DECK_PROBLEMS,
 } from './deck'
-export { insert, renameField, sampleValues } from './fill'
+export { insert, sampleValues } from './fill'
 export {
   getGrid,
   isMoved,

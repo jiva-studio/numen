@@ -5,7 +5,9 @@
  */
 import { describe, expect, it } from 'vitest'
 import { createApi } from '@numen/plugin-sdk'
-import { createSavedSearchService, SERVICE, ServiceFailure } from './service'
+import { createSavedSearchService } from './service'
+import { SERVICE } from './serviceName'
+import { ServiceFailure } from './serviceFailure'
 import type {
   GetResultsRequest,
   GetResultsResponse,

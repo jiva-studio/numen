@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PluginProcess } from '../types'
-import { getRow } from './rows'
+import { getRow } from './row'
 
 const NOW = 1_700_000_600_000
 

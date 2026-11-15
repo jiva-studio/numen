@@ -2,7 +2,8 @@
  * What a deck tab does to the deck it holds, handed on to be stored.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { dropCard, type BufferCard, type BufferDeck } from '../../lib/deck/deck'
+import { dropCard, type BufferDeck } from '../../lib/deck/deck'
+import type { BufferCard } from '../../lib/deck/types'
 import { createDeckTabActions } from './deckTabActions'
 
 const card = (id: string): BufferCard => ({

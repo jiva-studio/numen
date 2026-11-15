@@ -14,16 +14,7 @@ import {
   createBufferCardModel,
 } from '../../lib/card-model/card-model'
 import type { ErrorCode, Cards, DeckProblem } from '../../../types'
-
-/** What the vault reported about one file the last time it was read or written. */
-export interface VaultAnswer {
-  readonly problems: readonly DeckProblem[]
-  readonly reading: ErrorCode | null
-  readonly writing: ErrorCode | null
-  readonly at: string
-}
-
-export const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, at: '' }
+import { NOTHING, type VaultAnswer } from './answer'
 
 /** What the vault answered per file, and the titles of the open files. */
 export function createCardModelState() {

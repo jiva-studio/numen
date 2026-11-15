@@ -136,28 +136,6 @@ export function getCurrentPage(row: Row, viewport: Size, offset: number): number
   return page
 }
 
-/** How far the row is scrolled to put one page against the left edge. */
-export function findPageScroll(row: Row, page: number): number | undefined {
-  const begins = row.starts[page]
-  return begins === undefined ? undefined : begins - GAP
-}
-
-/**
- * How far the row is scrolled to show a page, held inside the row. Nothing for a page the row does not hold.
- * The page goes against the left edge when the viewport's center line then falls on it, and is centered otherwise.
- * `getCurrentPage` at the returned offset is the page, unless the offset was clamped at an end of the row.
- */
-export function getScrollTarget(row: Row, viewport: Size, page: number): number | undefined {
-  const leftEdge = findPageScroll(row, page)
-  const begins = row.starts[page]
-  const width = row.widths[page]
-  if (leftEdge === undefined || begins === undefined || width === undefined) return undefined
-  const isCenterOnPage = leftEdge + viewport.width / 2 < begins + width
-  const target = isCenterOnPage ? leftEdge : Math.round(begins + width / 2 - viewport.width / 2)
-  const furthest = Math.max(row.length - viewport.width, 0)
-  return Math.min(Math.max(target, 0), furthest)
-}
-
 /**
  * The page a key turns to, counted from the first. Nothing for a key that turns
  * no page, a document with no pages, or a turn that leaves the document.

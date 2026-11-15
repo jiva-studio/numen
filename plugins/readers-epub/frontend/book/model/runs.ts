@@ -12,6 +12,7 @@ import { doc } from '@numen/ui'
 import { countBytes, getUnitOffset } from '../lib/bytes'
 import type { TextRange } from '@numen/ui'
 import type { Mark } from '../lib/spread'
+import { findRun } from './runLookup'
 
 /** Single contiguous text run in rendered book. */
 export interface Run {
@@ -40,16 +41,6 @@ export function createMarks(runs: readonly Run[], origin: number): Mark[] {
     if (first) placedMarks.push({ at: run.at, x: first.left - origin })
   }
   return placedMarks
-}
-
-/** The run an offset falls in: the last one beginning at or before it. */
-export function findRun(runs: readonly Run[], offset: number): Run | undefined {
-  let found: Run | undefined
-  for (const run of runs) {
-    if (run.at > offset) break
-    found = run
-  }
-  return found
 }
 
 /**

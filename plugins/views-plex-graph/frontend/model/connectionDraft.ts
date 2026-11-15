@@ -2,7 +2,8 @@
  * The draft of the connection the link inspector edits, and the rows it shows for it. Each
  * function returns a new draft; which roles the two records carry is the core's to decide.
  */
-import type { Connection, ConnectionRole, ConnectionSide } from '@numen/plugin-sdk'
+import type { Connection, ConnectionSide } from '@numen/plugin-sdk'
+import { NEW_LINK_ROLE } from './newLinkRole'
 
 /** Which of the two records of a connection: the one the first note writes, or the second. */
 export type SideKey = 'first' | 'second'
@@ -19,9 +20,6 @@ export interface ConnectionRow {
   readonly side: ConnectionSide
   readonly direction: LinkDirection
 }
-
-/** The role a connection takes when a record is added to one that has none. */
-export const NEW_LINK_ROLE: ConnectionRole = 'jump'
 
 const BLANK_SIDE: ConnectionSide = { label: '', marker: null, reason: '' }
 

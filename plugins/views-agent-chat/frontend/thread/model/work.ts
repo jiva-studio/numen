@@ -8,7 +8,7 @@ import type { Turn } from '../../types'
 const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
 
 /** What the line says about one tool call: its title, what it is about, and the file it works on. */
-export interface WorkCall {
+interface WorkCall {
   readonly title: string
   readonly subject: string
   readonly path: string

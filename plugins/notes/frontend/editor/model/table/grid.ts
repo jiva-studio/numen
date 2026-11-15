@@ -8,6 +8,7 @@ import type { ChangeDesc, EditorState } from '@codemirror/state'
 import { EditorView, WidgetType } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
 import { listen } from './cells'
+import { isWritable } from './writable'
 import {
   readCell,
   readTable,
@@ -121,10 +122,6 @@ const place = (element: HTMLElement, cell: Cell | null, isWritable: boolean) => 
   element.dataset['from'] = String(cell.from)
   element.dataset['to'] = String(cell.to)
 }
-
-/** Whether this editor takes typing at all. */
-export const isWritable = (state: EditorState) =>
-  !state.readOnly && state.facet(EditorView.editable)
 
 const shiftCells = (row: Row, delta: number): Row =>
   row.map((cell) => (cell ? { ...cell, from: cell.from + delta, to: cell.to + delta } : null))

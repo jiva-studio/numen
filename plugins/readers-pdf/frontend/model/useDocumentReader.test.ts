@@ -3,7 +3,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createApi } from '@numen/plugin-sdk'
-import { createDocuments } from '../api/wire'
+import { createDocuments } from '../api/documents'
 import { useDocumentReader } from './useDocumentReader'
 import type { Documents, PageHighlight, DocumentLayout } from '../types'
 

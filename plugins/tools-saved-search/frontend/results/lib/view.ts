@@ -9,7 +9,7 @@ import { formatPlace, type PlaceFields } from './place'
 import { formatTime } from './time'
 
 /** The fields of a result that the tab draws. */
-export interface ResultFields {
+interface ResultFields {
   readonly path: string
   readonly title: string
   readonly kind: string

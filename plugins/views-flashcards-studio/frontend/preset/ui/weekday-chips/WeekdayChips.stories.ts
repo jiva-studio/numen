@@ -10,7 +10,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import WeekdayChips from './WeekdayChips.vue'
-import { rotateWeek, WEEK, type DayName } from './week'
+import { WEEK, type DayName } from './week'
 
 const RUSSIAN: readonly DayName[] = [
   { id: 'mon', short: 'Пн', long: 'Понедельник' },
@@ -58,8 +58,9 @@ const meta: Meta<Knobs> = {
     setup: () => {
       const levelOf = ref<Record<string, number>>({ ...args.levelOf })
       const days = computed(() => {
-        const named =
-          args.named ?? rotateWeek(args.startsOn, args.names === 'Russian' ? RUSSIAN : WEEK)
+        const names = args.names === 'Russian' ? RUSSIAN : WEEK
+        const start = Math.max(names.findIndex((day) => day.id === args.startsOn), 0)
+        const named = args.named ?? [...names.slice(start), ...names.slice(0, start)]
         return named.map((one) => ({ ...one, level: levelOf.value[one.id] ?? 1 }))
       })
       const onChoose = (day: string, level: number) => {

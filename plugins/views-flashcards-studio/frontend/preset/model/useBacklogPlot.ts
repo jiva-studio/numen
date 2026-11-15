@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 import { createBacklogAxisLabels } from '../lib/label'
-import { getBacklogExtent, getBacklogPositions, getBacklogRun, createLinePath } from '../lib/plot'
+import { getBacklogExtent, getBacklogRun, createLinePath } from '../lib/plot'
+import { getBacklogPositions } from '../lib/positions'
 import type { Extent } from '../lib/plot'
 import { WORDS as words } from '../lib/words'
 import type { Curve } from '../../lib/presets'

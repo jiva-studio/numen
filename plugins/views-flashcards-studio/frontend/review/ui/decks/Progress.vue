@@ -7,7 +7,7 @@
  */
 import Heatmap from '../heatmap/Heatmap.vue'
 import { dayName as heatmapDayName } from '../../lib/heatmap/dates'
-import type { Tally as HeatmapTally } from '../../lib/heatmap/heatmap'
+import type { Tally as HeatmapTally } from '../../lib/heatmap/tally'
 import type { Words as HeatmapWords } from '../../lib/heatmap/words'
 
 import { GRADE_LABELS } from '../../lib/card/grades'

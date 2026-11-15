@@ -3,12 +3,9 @@ import type { AppInfo, JsonValue } from '@numen/plugin-sdk'
 import type { Status } from '../api/updater'
 import {
   createUpdates,
-  DEFAULT_INTERVAL_HOURS,
-  getIntervalMs,
-  RETRY_DELAYS_MS,
-  SETTLE_DELAY_MS,
   type Timer,
 } from './updates'
+import { DEFAULT_INTERVAL_HOURS, RETRY_DELAYS_MS, SETTLE_DELAY_MS, getIntervalMs } from './waits'
 
 const APP: AppInfo = { name: 'numen', version: '2026.9.0', build: 900, platform: 'windows' }
 const HOUR = 60 * 60 * 1000

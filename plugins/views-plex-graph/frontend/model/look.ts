@@ -4,7 +4,7 @@
  */
 import type { Ref } from 'vue'
 import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
-import { followSetting, NO_SETTINGS } from './followSetting'
+import { followSetting } from './followSetting'
 import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../plex'
 import type { PlexLook, ReferenceMode } from '../types'
 
@@ -70,6 +70,3 @@ export function readLook(context: Pick<PluginContext, 'settings'>): PlexLook {
     references: followSetting(context, REFERENCES, parseReferences),
   }
 }
-
-/** The look at its defaults, for a plex no settings are read for. */
-export const getDefaultLook = (): PlexLook => readLook(NO_SETTINGS)

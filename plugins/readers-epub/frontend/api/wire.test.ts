@@ -14,8 +14,6 @@ import getBookRequest from '../../testdata/api/GetBook.request.json'
 import getBookResponse from '../../testdata/api/GetBook.response.json'
 import getCfiRequest from '../../testdata/api/GetCfi.request.json'
 import getCfiResponse from '../../testdata/api/GetCfi.response.json'
-import readBookEntryRequest from '../../testdata/api/ReadBookEntry.request.json'
-import readBookEntryResponse from '../../testdata/api/ReadBookEntry.response.json'
 import readBookMarkupRequest from '../../testdata/api/ReadBookMarkup.request.json'
 import readBookMarkupResponse from '../../testdata/api/ReadBookMarkup.response.json'
 import type {
@@ -25,32 +23,28 @@ import type {
   GetBookResponse,
   GetCfiRequest,
   GetCfiResponse,
-  ReadBookEntryRequest,
-  ReadBookEntryResponse,
   ReadBookMarkupRequest,
   ReadBookMarkupResponse,
 } from './messages'
-import { createBooks, BookApiError } from './wire'
+import { BookApiError } from './bookApiError'
+import { createBooks } from './books'
 
 // The fixtures are the messages the Go backend encodes; these assignments fail to compile when a
 // message and its fixture differ in shape.
 const requests: [
   GetBookRequest,
   ReadBookMarkupRequest,
-  ReadBookEntryRequest,
   GetCfiRequest,
   FindOffsetRequest,
-] = [getBookRequest, readBookMarkupRequest, readBookEntryRequest, getCfiRequest, findOffsetRequest]
+] = [getBookRequest, readBookMarkupRequest, getCfiRequest, findOffsetRequest]
 const responses: [
   GetBookResponse,
   ReadBookMarkupResponse,
-  ReadBookEntryResponse,
   GetCfiResponse,
   FindOffsetResponse,
 ] = [
   getBookResponse,
   readBookMarkupResponse,
-  readBookEntryResponse,
   getCfiResponse,
   findOffsetResponse,
 ]
@@ -69,8 +63,8 @@ const createFailingApiStub = (error: ApiError) => {
 
 describe('the fixtures', () => {
   it('are the JSON of the message types', () => {
-    expect(requests).toHaveLength(5)
-    expect(responses).toHaveLength(5)
+    expect(requests).toHaveLength(4)
+    expect(responses).toHaveLength(4)
     expect(JSON.parse(JSON.stringify(getBookResponse))).toEqual(getBookResponse)
   })
 })

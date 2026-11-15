@@ -4,8 +4,10 @@
  */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex, easeOut } from './arrange'
-import { getNodeHeadings as baseGetNodeHeadings, type HeadingsDeps } from './inside'
-import { getFurthestOffset, getOpenHeadings, scrollBy } from './open'
+import { getNodeHeadings as baseGetNodeHeadings } from './inside'
+import type { HeadingsDeps } from './headingsDeps'
+import { getFurthestOffset } from './offset'
+import { getOpenHeadings, scrollBy } from './open'
 import type { PlacedNode } from './node'
 import type { PlexHeading } from '../../types'
 

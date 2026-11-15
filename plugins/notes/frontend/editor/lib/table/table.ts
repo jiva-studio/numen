@@ -7,6 +7,7 @@
  */
 import type { EditorState } from '@codemirror/state'
 import type { SyntaxNode } from '@lezer/common'
+import { getWidth } from './width'
 
 type Align = 'none' | 'start' | 'centre' | 'end'
 
@@ -86,10 +87,6 @@ export const readTable = (state: EditorState, node: SyntaxNode): Table => {
     body,
   }
 }
-
-/** How many columns the table has, counting the widest row. */
-export const getWidth = (table: Table): number =>
-  Math.max(table.align.length, table.head.length, ...table.body.map((row) => row.length), 1)
 
 /** Every row, head first, each as wide as the table. */
 export const getRows = (table: Table): Row[] => {

@@ -10,7 +10,6 @@ import { ref, watch } from 'vue'
 import CardModel from './CardModelEditor.vue'
 import { orderNames, reorderFields, type Half, type InsertionPoint } from '../../../../lib/cards'
 import type { CardModelTemplate } from '../../../../lib/cards'
-import { renameField } from '../../../../lib/cards'
 
 interface Corpus {
   readonly fields: readonly string[]
@@ -169,8 +168,8 @@ const meta: Meta<Knobs> = {
           fields.value = fields.value.map((each) => (each === field ? name : each))
           templates.value = templates.value.map((template) => ({
             ...template,
-            front: renameField(template.front, field, name),
-            back: renameField(template.back, field, name),
+            front: template.front.replaceAll(`{{${field}}}`, `{{${name}}}`),
+            back: template.back.replaceAll(`{{${field}}}`, `{{${name}}}`),
           }))
         },
         onRemoveField: (field: string) => {

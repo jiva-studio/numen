@@ -14,7 +14,8 @@ import {
   setLoadOn,
   type BudgetUnit,
 } from '../../../lib/presets'
-import { getFieldCount, getFieldLimits, getFieldValue, type Field } from '../../lib/fields'
+import { getFieldCount, getFieldLimits, getFieldValue } from '../../lib/fields'
+import type { Field } from '../../lib/field'
 import { WORDS as words } from '../../lib/words'
 import type { PresetTabState } from '../../model/types'
 import type { SettingValue } from '../../lib/settings'

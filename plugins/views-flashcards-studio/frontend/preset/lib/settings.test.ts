@@ -4,14 +4,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, NO_BOUNDS, type Settings } from '../../lib/presets'
-import {
-  applyGoal,
-  applyTypedSetting,
-  clampShares,
-  findGridIndex,
-  isLoad,
-  reconcileSettings,
-} from './settings'
+import { applyGoal, applyTypedSetting, findGridIndex, reconcileSettings } from './settings'
+import { clampShares, isLoad } from './load'
 
 const today = '2026-08-30'
 

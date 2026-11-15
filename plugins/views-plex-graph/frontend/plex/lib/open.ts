@@ -5,6 +5,7 @@
 import { clamp01, easeOut, lerp } from './arrange'
 import type { HungHeading, NodeHeadings } from './inside'
 import type { Position } from './node'
+import { getFurthestOffset } from './offset'
 
 /**
  * How far behind the one above it each heading sets off, as a fraction of the
@@ -75,10 +76,6 @@ function getStride(suspended: NodeHeadings, mode: number): number {
 /** The wheel delta units, numbered as the browser's `deltaMode` numbers them. */
 const LINES = 1
 const WINDOWS = 2
-
-/** The furthest offset the window on the headings may be scrolled to, counted in headings. */
-export const getFurthestOffset = (suspended: NodeHeadings): number =>
-  Math.max(0, suspended.headings.length - suspended.visibleCount)
 
 /**
  * What a node hangs at a moment of the opening. Returns null while the node is closed.

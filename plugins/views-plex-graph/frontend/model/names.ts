@@ -4,17 +4,12 @@
  */
 import type { Ref } from 'vue'
 import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
-import { followSetting, NO_SETTINGS } from './followSetting'
+import { followSetting } from './followSetting'
+import { NAMES_PER_NOTE, NAMES_PER_NOTE_MAX, NAMES_PER_NOTE_MIN, SHOW_NAMES } from './namesDefaults'
 
 /** The keys the manifest declares the two settings under. */
-export const SHOW_NAMES_KEY = 'showNames'
-export const NAMES_PER_NOTE_KEY = 'namesPerNote'
-
-/** The defaults the manifest declares, and the range of the count. */
-export const SHOW_NAMES = true
-export const NAMES_PER_NOTE = 6
-export const NAMES_PER_NOTE_MIN = 1
-export const NAMES_PER_NOTE_MAX = 12
+const SHOW_NAMES_KEY = 'showNames'
+const NAMES_PER_NOTE_KEY = 'namesPerNote'
 
 /** The two settings, kept in sync as the user changes them. */
 export interface Names {
@@ -37,6 +32,3 @@ export function readNames(context: Pick<PluginContext, 'settings'>): Names {
     namesPerNote: followSetting(context, NAMES_PER_NOTE_KEY, parseNamesPerNote),
   }
 }
-
-/** The names settings at their defaults, for a plex no settings are read for. */
-export const getDefaultNames = (): Names => readNames(NO_SETTINGS)

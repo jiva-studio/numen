@@ -6,7 +6,8 @@
  * three, and no offset below is a count of characters.
  */
 import { describe, expect, it } from 'vitest'
-import { createMarks, findOffset, createRangesOver, findRun, getRuns } from './runs'
+import { createMarks, findOffset, createRangesOver, getRuns } from './runs'
+import { findRun } from './runLookup'
 
 const createMarkupPaper = (markup: string): HTMLElement => {
   const paper = document.createElement('div')

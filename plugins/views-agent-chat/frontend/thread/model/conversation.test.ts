@@ -9,7 +9,8 @@ import { describe, expect, it } from 'vitest'
 import type { ConnectionHost } from '@numen/plugin-sdk'
 import { acp } from '@numen/plugin-sdk/contracts'
 import type { Paint } from '@numen/ui'
-import { useConversation as baseUseConversation, type ConversationStrings } from './conversation'
+import { useConversation as baseUseConversation } from './conversation'
+import type { ConversationStrings } from './conversationStrings'
 import {
   callTool,
   createAgentConnections,

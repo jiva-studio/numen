@@ -15,8 +15,6 @@ export interface RelatedNoteQueries {
   listRelatedNotes(path: string, depth?: 1 | 2): Promise<NoteGraph>
 }
 
-export type PlexView = ReturnType<typeof usePlexView>
-
 /**
  * `depth` is how far the notes are read: 2 also reads the notes related to each related note.
  * The plex reads again when it changes.

@@ -1,6 +1,6 @@
 // Stryker disable StringLiteral: interface copy
 import type { BudgetUnit, Goal, Rule } from '../../lib/presets'
-import type { Field } from './fields'
+import type { Field } from './field'
 
 /** What each of the three goals is offered as: the value it steers. */
 export const GOALS: Record<Goal, string> = {

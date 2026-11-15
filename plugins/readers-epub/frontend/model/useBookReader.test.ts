@@ -3,15 +3,13 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApi } from '@numen/plugin-sdk'
-import { createBooks } from '../api/wire'
+import { createBooks } from '../api/books'
 import {
-  getContents,
-  getDocumentAtOffset,
   useBookReader as openBookReader,
-  getPageNumber,
-  type Book,
   type Books,
 } from './useBookReader'
+import { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
+import type { Book } from '../types'
 import type { MessageWriter } from './useBookDocument'
 
 const WORDS = { page: 'Page' }

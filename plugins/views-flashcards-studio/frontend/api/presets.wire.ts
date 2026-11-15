@@ -23,9 +23,9 @@ import {
   type Point,
   type Preset,
   type Presets,
-  type PresetReadResult,
   type SettingsBounds,
 } from '../lib/presets'
+import type { PresetReadResult } from '../lib/presetResults'
 
 /** The same requests, in the shape the window uses. */
 export const presets: Presets = {

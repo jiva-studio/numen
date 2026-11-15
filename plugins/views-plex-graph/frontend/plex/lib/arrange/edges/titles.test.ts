@@ -2,17 +2,11 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { DEFAULT_OPTIONS } from '../options'
-import {
-  MIDDLE,
-  createTitle,
-  getLabelPlaces,
-  type LabelPlace,
-  getDepth,
-  getRise,
-  getShift,
-  routeEdges,
-  createRouting,
-} from './routing'
+import { createTitle, getLabelPlaces, getRise, getShift } from './labels'
+import { getDepth } from './ink'
+import { MIDDLE } from './positions'
+import { createRouting } from './routing'
+import { routeEdges } from './routeEdges'
 import { separateTitles } from './titles'
 import { runBoxes } from '../layout/boxes'
 import { build } from '../../../fixtures/build'
@@ -34,7 +28,7 @@ const labelDepth = getDepth(labelType)
 /** What every arrangement here measures its titles with. */
 const measured = { measureLabel, labelType }
 
-const setting = ({ side, heading }: LabelPlace) => ({
+const setting = ({ side, heading }: ReturnType<typeof getLabelPlaces>[number]) => ({
   side,
   shift: getShift(side, labelType),
   rise: getRise(side, labelType),

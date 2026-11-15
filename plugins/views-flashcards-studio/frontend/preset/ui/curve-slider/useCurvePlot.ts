@@ -1,13 +1,8 @@
 import { computed, shallowRef, watch } from 'vue'
 import type { Curve } from '../../../lib/presets'
 import { getKnobValue } from '../../lib/curve'
-import {
-  getExtent,
-  createLinePath,
-  createPositions,
-  getShortPath,
-  type Extent,
-} from '../../lib/plot'
+import { getExtent, createLinePath, getShortPath, type Extent } from '../../lib/plot'
+import { createPositions } from '../../lib/positions'
 
 function useCurveScale(getCurve: () => Curve) {
   const scale = shallowRef<{ goal: string; extent: Extent } | null>(null)

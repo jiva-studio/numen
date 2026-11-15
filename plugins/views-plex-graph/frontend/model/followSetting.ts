@@ -13,8 +13,3 @@ export function followSetting<T>(
   })
   return value
 }
-
-/** The settings of a context that holds none, so every one is at its default. */
-export const NO_SETTINGS: Pick<PluginContext, 'settings'> = {
-  settings: { get: () => undefined, onChange: () => ({ dispose: () => undefined }) },
-}

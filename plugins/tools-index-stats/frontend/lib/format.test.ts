@@ -4,10 +4,10 @@ import {
   formatCount,
   formatSummary,
   formatVectors,
-  isPending,
   formatRate,
   formatTime,
 } from './format'
+import { isPending } from './pending'
 
 describe('formatCount', () => {
   it('separates the thousands as the locale does', () => {

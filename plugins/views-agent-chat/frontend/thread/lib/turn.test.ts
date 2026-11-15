@@ -1,7 +1,8 @@
 import vm from 'node:vm'
 import { setFlagsFromString } from 'node:v8'
 import { describe, expect, it } from 'vitest'
-import { placeTurns, VOICES, writeCharCount } from './turn'
+import { placeTurns, writeCharCount } from './turn'
+import { VOICES } from './voices'
 import type { Turn } from '../../types'
 
 setFlagsFromString('--expose-gc')

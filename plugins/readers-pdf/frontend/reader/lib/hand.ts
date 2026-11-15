@@ -5,6 +5,7 @@
  * input to row offset for one-axis and two-axis layouts is testable without a
  * browser.
  */
+import { DRAG_THRESHOLD } from './dragThreshold'
 
 /** How far something is to be moved, in CSS pixels. */
 export interface Offset {
@@ -17,8 +18,6 @@ export interface Wheel {
   readonly x: number
   readonly y: number
 }
-
-export const DRAG_THRESHOLD = 3
 
 /**
  * How far a wheel moves the row.

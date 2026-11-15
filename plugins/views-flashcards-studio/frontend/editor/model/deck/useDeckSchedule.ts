@@ -2,7 +2,8 @@
  * Which preset schedules a deck, and putting one on another.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PresetChoice, Presets, PresetReadResult } from '../../../lib/presets'
+import type { PresetChoice, Presets } from '../../../lib/presets'
+import type { PresetReadResult } from '../../../lib/presetResults'
 import { WORDS as words } from '../../../words'
 
 /** The preset a deck is scheduled by, as the line at the top of it draws it. */

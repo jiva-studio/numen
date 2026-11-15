@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { effectScope, shallowRef } from 'vue'
-import { APPEAR_DELAY_MS, IDLE_CHIP, type ChipState } from '../model/chipDisplay'
+import { IDLE_CHIP, type ChipState } from '../model/chipDisplay'
+import { APPEAR_DELAY_MS } from '../model/chipTimings'
 import { useChipDisplay } from './useChipDisplay'
 
 beforeEach(() => vi.useFakeTimers())

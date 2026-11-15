@@ -11,10 +11,9 @@ import {
   pendingChange,
   changeMarks,
   createPacePlugin,
-  createReveal,
-  setReveal,
   type EditorChange,
 } from './change'
+import { createReveal, setReveal } from './reveal'
 import type { Clock } from '@numen/ui'
 import { createState } from '../../fixtures/state'
 import { RUSSIAN } from '../../fixtures/prose'

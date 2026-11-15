@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexView from './PlexView.vue'
 import { arrangePlex, DEFAULT_OPTIONS } from '../../lib/arrange'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
-import { EXPANSION_DURATION } from '../../model/sizing/expansion'
+import { EXPANSION_DURATION } from '../../model/sizing/expansionDuration'
 import { stubClock } from '../../../fixtures/clock'
 import type { PlexGraph } from '../../../types'
 

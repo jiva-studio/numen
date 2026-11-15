@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '../../../lib/stop'
 
 import { useReviewCounter } from './counts'
-import type { CardsDueClient, DueCounts, VaultCounts } from './counts'
+import type { CountsDeps } from './counts'
+
+type CardsDueClient = CountsDeps['cards']
+type DueCounts =
+  ReturnType<CardsDueClient['watchCardsDue']> extends AsyncIterable<infer One> ? One : never
+type VaultCounts = DueCounts['vaults'][number]
 
 const vault = (id: string, fields: Partial<VaultCounts> = {}): VaultCounts => ({
   id,

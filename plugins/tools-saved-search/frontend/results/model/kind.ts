@@ -10,12 +10,10 @@ import {
   type SavedSearchTabDeps,
   type SavedSearchTabState,
 } from './tab'
-
-/** The kind of the tabs of saved search notes, as the manifest declares it. */
-export const SAVED_SEARCH = 'saved-search'
+import { SAVED_SEARCH } from './tabKind'
 
 /** What the window gives the kind, and the component that draws a tab. */
-export interface SavedSearchKindDeps extends SavedSearchTabDeps {
+interface SavedSearchKindDeps extends SavedSearchTabDeps {
   readonly component: Component
 }
 

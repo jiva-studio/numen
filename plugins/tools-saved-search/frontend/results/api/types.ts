@@ -1,37 +1,14 @@
 /**
  * The messages of the saved search service, as the Go structs of backend/api encode them.
  */
-
-/** The place of a result in its source: a page, a time of a recording, a position in a book. */
-export interface Place {
-  readonly page?: number
-  readonly positionSeconds?: number
-  readonly endSeconds?: number
-  readonly cfi?: string
-  readonly chapter?: string
-}
-
-/** One result: a passage of a file, or a whole file when isWholeFile is set. */
-export interface SearchResult {
-  readonly path: string
-  readonly title: string
-  readonly kind: string
-  readonly place?: Place
-  readonly text?: string
-  readonly start: number
-  readonly length: number
-  readonly line: number
-  readonly uri: string
-  readonly score?: number
-  readonly isWholeFile?: boolean
-}
+import type { SearchResult } from './searchResult'
 
 /**
  * A problem of the query, at its line and column counted from 1 over the query: a problem of the note
  * outside its query at line 1, column 1, a problem of a provider at 0, 0. endLine and endColumn are the
  * last character of a problem over more than one.
  */
-export interface Problem {
+interface Problem {
   readonly line: number
   readonly column: number
   readonly endLine?: number

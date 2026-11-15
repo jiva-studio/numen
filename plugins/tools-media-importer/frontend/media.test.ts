@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import type { CommandNote } from '@numen/plugin-sdk'
 import { activate } from './index'
-import type { LinkFacts, Links } from './types'
+import type { Links } from './types'
 
 const CLIP: CommandNote = {
   path: 'links/clip.md',
@@ -15,7 +15,7 @@ const CLIP: CommandNote = {
 
 function createLinks(isCopyable: boolean) {
   const copied: string[] = []
-  const facts: LinkFacts = { url: 'https://videos.example/clip', isCopyable }
+  const facts = { url: 'https://videos.example/clip', isCopyable }
   const links: Links = {
     getLink: async () => ({ ok: true, value: facts }),
     copyMedia: async (path, kind) => {

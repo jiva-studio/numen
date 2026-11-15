@@ -1,6 +1,7 @@
 /** Where the handle of a node sits, and the side it takes at the edge of the window. */
 import { describe, expect, it } from 'vitest'
-import { getHandle, HANDLE_RADIUS, HANDLE_STROKE, type PlacedNode } from './node'
+import { HANDLE_STROKE } from './handle'
+import { getHandle, HANDLE_RADIUS, type PlacedNode } from './node'
 
 const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',

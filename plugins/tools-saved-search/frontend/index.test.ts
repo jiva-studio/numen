@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TabKindRegistration, WorkspaceHost } from '@numen/plugin-sdk'
 import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import { HARBOR, NOTE_PATH } from './results/fixtures/responses'
-import type { SavedSearchTabState } from './results'
+import type { SavedSearchTabState } from './results/model/tab'
 import { activate } from './index'
 
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
