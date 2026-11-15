@@ -279,17 +279,25 @@ describe('detachTab', () => {
 
   it('sends an empty state and path for a kind without getState and getOpenTab', async () => {
     const { core, deps, mover } = setup()
-    ;(deps.windowTabs.tabs.getTab as (id: string) => unknown) = () => ({
-      kind: { kind: 'settings' },
-      state: {},
-    })
+    ;(deps.windowTabs.tabs.getTab as (id: string) => unknown) = (id: string) =>
+      id === 'settings:address'
+        ? { kind: { kind: 'settings', address: {} }, state: {} }
+        : { kind: { kind: 'settings' }, state: {} }
 
     await mover.detachTab('settings:settings', { x: 1, y: 2 })
+    await mover.detachTab('settings:address', { x: 3, y: 4 })
 
     expect(core.detachTab).toHaveBeenCalledWith({
       tab: { id: 'settings:settings', kind: 'settings', path: '', title: '', state: '' },
       x: 1,
       y: 2,
+      width: 0,
+      height: 0,
+    })
+    expect(core.detachTab).toHaveBeenCalledWith({
+      tab: { id: 'settings:address', kind: 'settings', path: '', title: '', state: '' },
+      x: 3,
+      y: 4,
       width: 0,
       height: 0,
     })

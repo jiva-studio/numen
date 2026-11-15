@@ -28,5 +28,14 @@ describe('measuring the open tabs', () => {
 
     expect(measureNote).toHaveBeenCalledOnce()
     expect(measureReader).toHaveBeenCalledOnce()
+
+    expect(() =>
+      measureTabs({
+        tabs: {
+          tabs: { value: [{ id: 'gone', title: '' }] },
+          getTab: () => null,
+        },
+      } as never),
+    ).not.toThrow()
   })
 })

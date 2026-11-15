@@ -15,6 +15,7 @@ describe('a command over a target', () => {
       'Shells.md',
     )
     expect(getRunPath({ when: 'window.isVaultReady' }, run, reader)).toBe('')
+    expect(getRunPath({ when: 'target.isRemote' }, run, reader)).toBe('')
     expect(getRunPath({}, run, reader)).toBe('')
   })
 

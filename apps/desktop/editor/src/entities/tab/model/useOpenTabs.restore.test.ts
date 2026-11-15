@@ -64,6 +64,26 @@ describe('the open tabs of a window whose files tab is in focus', () => {
 
     expect(createOpenTabs(window).open.value.activeId).toBe('files-1')
   })
+
+  it('picks the most recently shown non-tool tab that does not accept text across panes', async () => {
+    const window = createWindow()
+    window.kinds.registerKind({
+      ...createKind('chat', { placement: { pane: 'aside', order: 2 } }),
+      events: { receiveText: () => undefined },
+    })
+    const first = await window.tabs.openTabOfKind('reader', 'assets/shore.pdf')
+    const second = await window.handle.openTabAdjacent('note', 'notes/Entropy.md')
+    const hidden = await window.tabs.openTabOfKind('note', 'notes/Hidden.md')
+    window.panes.show(second)
+    const chat = await window.handle.openTabAdjacent('chat', '')
+    const files = await window.handle.openTabAdjacent('files', '')
+    window.panes.show(files)
+
+    expect(first).toBeDefined()
+    expect(hidden).toBeDefined()
+    expect(chat).toBeDefined()
+    expect(createOpenTabs(window).open.value.activeId).toBe(second)
+  })
 })
 
 describe('the tab in front of each pane after a restart', () => {
@@ -78,21 +98,27 @@ describe('the tab in front of each pane after a restart', () => {
     const window = create()
     window.restored.restoreTabs(
       [
+        { id: 'note-1', kind: 'note', path: 'notes/First.md' },
         { id: 'reader-1', kind: 'reader', path: 'assets/shore.pdf' },
         { id: 'plex-1', kind: 'plex', path: 'notes/Entropy.md' },
-        { id: 'files-1', kind: 'files', path: '' },
+        { id: 'files-1', kind: 'files', path: 'a' },
+        { id: 'files-2', kind: 'files', path: 'b' },
+        { id: 'files-3', kind: 'files', path: 'c' },
       ],
-      'files-1',
+      'files-3',
     )
+    window.panes.show('note-1')
     window.panes.show('reader-1')
     window.panes.show('plex-1')
     window.panes.show('files-1')
+    window.panes.show('files-2')
+    window.panes.show('files-3')
 
     const { open } = createOpenTabs(window)
     const restarted = create()
     restarted.restored.restoreTabs(parseSavedTabs(open.value), open.value.activeId)
 
     const fronts = getPanes(restarted.panes.layout.value.root).map((one) => one.active)
-    expect(fronts).toEqual(['plex-1', 'files-1'])
+    expect(fronts).toEqual(['plex-1', 'files-3'])
   })
 })

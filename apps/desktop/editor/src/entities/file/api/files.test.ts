@@ -15,10 +15,11 @@ const request = {
   listFileKinds: vi.fn(),
 }
 
-const api = createFileApi(createHandledClients(request).files)
+const createApi = () => createFileApi(createHandledClients(request).files)
 
 describe('a file removed', () => {
   it('is moved to the trash, and rejected with error', async () => {
+    const api = createApi()
     request.removeFile.mockResolvedValue({ trashed: '.trash/a.md', dangling: ['b.md'] })
     expect(await api.removeFile('a.md')).toEqual({
       ok: true,
@@ -31,6 +32,7 @@ describe('a file removed', () => {
   })
 
   it('is counted by the paths the trash could not delete, when it is emptied', async () => {
+    const api = createApi()
     request.emptyTrash.mockResolvedValue({ undeleted: ['.trash/a.md', '.trash/b/c.md'] })
 
     expect(await api.emptyTrash()).toBe(2)
@@ -40,6 +42,7 @@ describe('a file removed', () => {
 
 describe('a folder listed', () => {
   it('is listed under its path, each row in the words of the window', async () => {
+    const api = createApi()
     request.listFiles.mockResolvedValue({
       entries: [
         { path: 'Notes/test.md', name: 'test.md', isFolder: false, isNote: true, type: '' },
@@ -55,6 +58,7 @@ describe('a folder listed', () => {
 
 describe('a file moved', () => {
   it('is moved from one path to another, and rejected with error', async () => {
+    const api = createApi()
     request.moveFile.mockResolvedValue({ moved: { from: 'a.md', to: 'b.md', repaired: [] } })
     expect(await api.moveFile('a.md', 'b.md')).toEqual({
       ok: true,
@@ -72,6 +76,7 @@ describe('a file moved', () => {
 
 describe('a folder created', () => {
   it('is created at its path, and refused with the error', async () => {
+    const api = createApi()
     request.createFolder.mockResolvedValue({})
     expect(await api.createFolder('Notes/New')).toStrictEqual({ ok: true, value: null })
     expect(request.createFolder.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'Notes/New' })
@@ -83,10 +88,11 @@ describe('a folder created', () => {
 
 describe('the kinds of files', () => {
   it('are requested of every path given', async () => {
+    const api = createApi()
     request.listFileKinds.mockResolvedValue({
       kinds: [
         { path: 'a.bin', isNote: false, type: '' },
-        { path: 'a.md', isNote: true, type: 'deck' },
+        { path: 'a.md', isNote: true, type: 'deck', properties: {} },
       ],
     })
 
@@ -100,6 +106,7 @@ describe('the kinds of files', () => {
   })
 
   it('carry the properties of a note, and the tab kind that opens it', async () => {
+    const api = createApi()
     request.listFileKinds.mockResolvedValue({
       kinds: [
         {
