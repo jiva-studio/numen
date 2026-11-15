@@ -147,28 +147,39 @@ func parseFingerprint(s string) (domain.FileStat, error) {
 	if s == "" {
 		return domain.FileStat{}, errors.New("present the fingerprint the read gave you: card_read for a deck, card_model_read for a card model")
 	}
-	sizeText, mtimeText, _ := strings.Cut(s, "-")
-	size, err := strconv.ParseInt(sizeText, 10, 64)
+	size, mtime, found := strings.Cut(s, "-")
+	if !found {
+		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
+	}
+	ref := domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}
+	var err error
+	if ref.Size, err = strconv.ParseInt(size, 10, 64); err != nil {
+		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
+	}
+	nanos, err := strconv.ParseInt(mtime, 10, 64)
 	if err != nil {
 		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
 	}
-	nanos, err := strconv.ParseInt(mtimeText, 10, 64)
-	if err != nil {
-		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
-	}
-	return domain.FileStat{Path: "", Kind: "", Size: size, ModTime: instant(nanos)}, nil
+	ref.ModTime = instant(nanos)
+	return ref, nil
 }
 
 func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
-	codes := map[edit.ReadOutcome]api.ErrorCode{
-		edit.Missing:    api.ErrorCodeNotFound,
-		edit.NotANote:   api.ErrorCodeNotANote,
-		edit.NotText:    api.ErrorCodeNotText,
-		edit.TooLarge:   api.ErrorCodeTooLarge,
-		edit.Unreadable: api.ErrorCodeUnreadable,
+	switch o {
+	case edit.Missing:
+		return api.ErrorCodeNotFound, true
+	case edit.NotANote:
+		return api.ErrorCodeNotANote, true
+	case edit.NotText:
+		return api.ErrorCodeNotText, true
+	case edit.TooLarge:
+		return api.ErrorCodeTooLarge, true
+	case edit.Unreadable:
+		return api.ErrorCodeUnreadable, true
+	case edit.Ok:
+		return api.ErrorCodeUnspecified, false
 	}
-	code, ok := codes[o]
-	return code, ok
+	return api.ErrorCodeUnspecified, false
 }
 
 func describeCode(reason api.ErrorCode) string {

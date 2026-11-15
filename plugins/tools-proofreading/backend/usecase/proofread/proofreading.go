@@ -54,12 +54,10 @@ func New(h Host, kinds map[domain.TextKind]bool, ask AskModel, getConfig func() 
 // Proofread reads the version, puts its lines right and puts the version made from it. A failure
 // is shown as a task until the file is proofread again.
 func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, error) {
-	var task host.Task
-	task.ID = "proofread:" + req.Path
-	task.Title = "Proofreading " + path.Base(req.Path)
-	task.Detail = req.Path
-	task.Unit = host.UnitThings
-	task.IsUserStarted = true
+	task := host.Task{
+		ID: "proofread:" + req.Path, Title: "Proofreading " + path.Base(req.Path), Detail: req.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
+	}
 	res, err := p.proofread(ctx, req, &task)
 	if err != nil && ctx.Err() == nil {
 		task.FailureReason = err.Error()
@@ -92,7 +90,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	defer func() { err = errors.Join(err, turn.Release()) }()
 
 	lines := numbered.ReadLines(parts)
-	task.TotalCount = int64(len(lines))
+	task.TotalCount, task.CompletedCount = int64(len(lines)), 0
 	if err := p.host.Queue.ReportTask(ctx, *task); err != nil {
 		return Result{}, err
 	}
@@ -125,7 +123,7 @@ func (p *Proofreading) findSource(ctx context.Context, texts Texts, filePath str
 		id = listing.Live
 	}
 	for _, version := range listing.Versions {
-		if version.GetID() != id {
+		if id == "" || version.GetID() != id {
 			continue
 		}
 		if !p.kinds[version.Kind] && !p.kinds["*"] {
@@ -167,7 +165,7 @@ func (p *Proofreading) correct(
 func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line, task *host.Task) ([]numbered.Line, int, error) {
 	cfg := p.getConfig()
 	var out []numbered.Line
-	var uncorrected int
+	uncorrected := 0
 	for from := 1; ; {
 		result, err := proofreadSpeech(ctx, p.ask, lines, batchShape{size: cfg.BatchSize, overlap: cfg.Overlap}, from, cfg.InFlight*cfg.BatchSize)
 		if err != nil {
@@ -176,7 +174,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line,
 		uncorrected += result.uncorrected
 		next := result.next
 		for _, line := range result.corrections {
-			if line.Number < result.next {
+			if result.isDone || line.Number < result.next {
 				out = append(out, line)
 				next = max(next, line.GetLastNumber()+1)
 			}
@@ -185,7 +183,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line,
 		if err := p.host.Queue.ReportTask(ctx, *task); err != nil {
 			return nil, 0, err
 		}
-		if result.isDone {
+		if result.isDone || next <= from {
 			return out, uncorrected, nil
 		}
 		from = next
@@ -195,7 +193,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line,
 func (p *Proofreading) correctScan(ctx context.Context, pages []numbered.Batch, task *host.Task) ([]numbered.Line, int, error) {
 	cfg := p.getConfig()
 	var out []numbered.Line
-	var uncorrected int
+	uncorrected := 0
 	for _, page := range pages {
 		result, err := proofreadScan(ctx, p.ask, []numbered.Batch{page}, cfg.MaxEditDistance)
 		if err != nil {
