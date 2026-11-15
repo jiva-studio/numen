@@ -345,3 +345,43 @@ describe('a scroll event that reaches a reader after its tab was moved', () => {
     expect(area.scrollLeft).toBe(1200)
   })
 })
+
+describe('a scroll event that reaches a reader while its tab is hidden', () => {
+  it('turns to no page', async () => {
+    const target = await reader(1000, 800)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    area.scrollLeft = 1200
+    await target.find('.reader__viewport').trigger('scroll')
+    const turns = () => (target.emitted('go') ?? []).map((one) => (one as [number])[0])
+    await target.setProps({ at: turns().at(-1) as number })
+    const turnsBefore = turns().length
+
+    Object.defineProperty(area, 'clientWidth', { value: 0, configurable: true })
+    area.scrollLeft = 0
+    await target.find('.reader__viewport').trigger('scroll')
+
+    expect(turns().slice(turnsBefore)).toStrictEqual([])
+  })
+})
+
+describe('a reader measured again when its row has arrived at the page it was turned to', () => {
+  it('leaves the row on that page', async () => {
+    // The browser scrolls the row there before it delivers the scroll event of the arrival.
+    const target = await reader(1000, 800)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    const sent: number[] = []
+    area.scrollTo = ((options: ScrollToOptions) => {
+      sent.push(options.left ?? 0)
+    }) as typeof area.scrollTo
+    await target.setProps({ at: 5 })
+    const travelled = sent.at(-1) as number
+
+    area.scrollLeft = travelled
+    for (let measured = 0; measured < 2; measured += 1) {
+      await room(target, 1000, 800)
+      await new Promise((done) => requestAnimationFrame(() => done(undefined)))
+    }
+
+    expect(area.scrollLeft).toBe(travelled)
+  })
+})
