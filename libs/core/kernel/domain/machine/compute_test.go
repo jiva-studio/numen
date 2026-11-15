@@ -157,7 +157,7 @@ func TestResolveCompute_DerivesMemoryLimitFromRAMAndProfile(t *testing.T) {
 	}
 }
 
-func TestResolveCompute_GivesEachLevelItsShareOfThreadsAndMemoryAndItsNiceness(t *testing.T) {
+func TestResolveCompute_ResolvesEveryLevel(t *testing.T) {
 	hw := machine.Specs{LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8, TotalRAMMB: 32768}
 	cases := []struct {
 		profile string

@@ -15,7 +15,7 @@ func TestTheLimitsBecomeConfigureValues(t *testing.T) {
 	}
 }
 
-func TestNoProfileGivesNoConfigureValues(t *testing.T) {
+func TestGetConfigValuesIsEmptyWithoutAProfile(t *testing.T) {
 	if got := (plugin.Performance{}).GetConfigValues(); len(got) != 0 {
 		t.Errorf("values = %v, want none", got)
 	}

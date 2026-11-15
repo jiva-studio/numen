@@ -2,7 +2,7 @@ package performance
 
 import "testing"
 
-func TestReadTakesTheLimitsTheHostResolved(t *testing.T) {
+func TestReadReturnsTheHostLimits(t *testing.T) {
 	got := Read(map[string]string{ProfileKey: "high", ThreadsKey: "12", NiceKey: "5"})
 
 	if want := (Limits{Profile: High, Threads: 12, Nice: 5}); got != want {
@@ -18,7 +18,7 @@ func TestReadKnowsEveryProfile(t *testing.T) {
 	}
 }
 
-func TestReadWithoutValuesGivesOneThreadAtTheBalancedNiceness(t *testing.T) {
+func TestReadFallbackWithoutValues(t *testing.T) {
 	if got, want := Read(nil), (Limits{Profile: Balanced, Threads: 1, Nice: 10}); got != want {
 		t.Errorf("Read(nil) = %+v, want %+v", got, want)
 	}
