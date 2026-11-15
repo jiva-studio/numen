@@ -66,7 +66,7 @@ func (w *watchers) end(key watchKey, computedAt time.Time) {
 	if w.running[key] <= 0 {
 		delete(w.running, key)
 	}
-	w.sendLocked(key, Change{ComputedAt: computedAt, IsRunning: false})
+	w.sendLocked(key, Change{ComputedAt: computedAt, IsRunning: w.running[key] > 0})
 }
 
 func (w *watchers) isRunning(key watchKey) bool {

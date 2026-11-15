@@ -120,3 +120,55 @@ func TestAnEditOfAnotherNoteLeavesTheCheckRunning(t *testing.T) {
 		t.Errorf("the check answered %v after an edit of another note, want none", err)
 	}
 }
+
+func (w *world) awaitNotRunning(t *testing.T) {
+	t.Helper()
+	deadline := time.After(5 * time.Second)
+	for w.runner.IsRunning(testVault, stormsPath) {
+		select {
+		case <-deadline:
+			t.Fatal("the note still runs 5 seconds after its edit ended")
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+}
+
+func TestAnEditIsRunningFromItsCheckToTheEndOfItsRun(t *testing.T) {
+	w := newWorld(t, 0)
+	changes, stop := w.runner.Watch(testVault, stormsPath)
+	defer stop()
+	release := w.searches.HoldSearch(stormsQuery)
+	started := w.signalStarts()
+	checked := make(chan error, 1)
+
+	go func() {
+		_, err := w.runner.CheckNoteQuery(t.Context(), testVault, stormsPath, stormsQuery)
+		checked <- err
+	}()
+	awaitStart(t, started)
+	select {
+	case first := <-changes:
+		if !first.IsRunning {
+			t.Errorf("the watch received %+v when the check started, want a running change", first)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the watch received nothing when the check started")
+	}
+	if !w.runner.IsRunning(testVault, stormsPath) {
+		t.Error("the note is not running while its edit is checked")
+	}
+	w.runner.StartRunNow(t.Context(), testVault, stormsPath)
+	if !w.runner.IsRunning(testVault, stormsPath) {
+		t.Error("the note is not running once its edit starts the run")
+	}
+	release()
+	if err := <-checked; err != nil && !errors.Is(err, context.Canceled) {
+		t.Errorf("the check answered %v", err)
+	}
+	awaitStart(t, started)
+
+	w.awaitNotRunning(t)
+	if w.readRecord(t, stormsID).ComputedAt.IsZero() {
+		t.Error("the run of the edit wrote no results")
+	}
+}

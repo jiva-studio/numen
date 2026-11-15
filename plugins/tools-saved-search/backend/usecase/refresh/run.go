@@ -39,8 +39,13 @@ type found struct {
 }
 
 func (r *Runner) run(ctx context.Context, one job) (resultcache.Record, error) {
+	r.watchers.begin(watchKey{vault: one.vaultID, path: one.path})
+	return r.runBegun(ctx, one)
+}
+
+// runBegun runs the job whose start the watchers already received, and sends them its end.
+func (r *Runner) runBegun(ctx context.Context, one job) (resultcache.Record, error) {
 	key := watchKey{vault: one.vaultID, path: one.path}
-	r.watchers.begin(key)
 	var written resultcache.Record
 	defer func() { r.watchers.end(key, written.ComputedAt) }()
 

@@ -343,11 +343,16 @@ func TestUpdateSearchRunsTheSearchInteractivelyWithinTheCooldown(t *testing.T) {
 		t.Fatal(failure)
 	}
 
-	if start := receiveEvent(t, events); !strings.Contains(start.data, `"isRunning":true`) {
-		t.Errorf("event = %+v, want the start of the run", start)
+	wantEvents := []string{
+		`{"computedAt":"","isRunning":true}`,
+		`{"computedAt":"","isRunning":false}`,
+		`{"computedAt":"","isRunning":true}`,
+		`{"computedAt":"2026-11-14T09:31:00Z","isRunning":false}`,
 	}
-	if write := receiveEvent(t, events); write.data != `{"computedAt":"2026-11-14T09:31:00Z","isRunning":false}` {
-		t.Errorf("event = %+v, want the write of the run", write)
+	for _, data := range wantEvents {
+		if event := receiveEvent(t, events); event.data != data {
+			t.Errorf("event = %+v, want %s: the check of the edit, its end, the start of the run, its write", event, data)
+		}
 	}
 	if res := f.getResults(t, stormsPath); len(res.Results) != 1 || res.ComputedAt != "2026-11-14T09:31:00Z" || res.IsStale {
 		t.Errorf("response = %+v, want one result computed after the edit", res)
