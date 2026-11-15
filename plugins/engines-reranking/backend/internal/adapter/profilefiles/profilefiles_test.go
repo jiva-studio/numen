@@ -38,7 +38,7 @@ func TestLoadReportsAndSkipsAFileWithAnUnknownField(t *testing.T) {
 	writeProfile(t, dir, "b-good.json", `{"id":"owner/harbor-reranker","maxTokens":256,"onnxFile":"onnx/model.onnx"}`)
 	var reported []string
 
-	table, err := NewDirectory(dir).Load(func(file string, _ error) { reported = append(reported, file) })
+	table, err := Directory{path: dir}.Load(func(file string, _ error) { reported = append(reported, file) })
 
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	table, err := NewDirectory(dir).Load(func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
+	table, err := Directory{path: dir}.Load(func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
 
 	if err != nil {
 		t.Fatal(err)
@@ -78,7 +78,7 @@ func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 }
 
 func TestLoadKeepsTheShippedProfilesWhenTheFolderIsMissing(t *testing.T) {
-	table, err := NewDirectory(filepath.Join(t.TempDir(), "profiles")).Load(func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
+	table, err := Directory{path: filepath.Join(t.TempDir(), "profiles")}.Load(func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
 
 	if err != nil {
 		t.Fatal(err)

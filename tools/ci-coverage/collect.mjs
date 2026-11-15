@@ -32,13 +32,13 @@ const GO_MODULES = [
   'plugins/engines-reranking',
   'plugins/engines-ocr',
   'plugins/tools-proofreading',
+  'plugins/tools-saved-search',
   'plugins/tools-search-relevance',
   'plugins/tools-taxonomy',
   'plugins/tools-updater',
   'plugins/readers-epub',
   'plugins/readers-pdf',
   'plugins/engines-transcription',
-  'plugins/views-saved-search',
 ]
 
 const TS_PACKAGES = ['libs/ui/components', 'apps/desktop/editor', 'apps/desktop/flashcards']
