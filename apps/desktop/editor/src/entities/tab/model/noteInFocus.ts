@@ -8,12 +8,15 @@ export function getNoteInFocus(windowTabs: Pick<WindowTabs, 'tabs'>): {
   readonly path: string
   readonly title: string
 } {
-  for (const entry of [...windowTabs.tabs.tabs.value].reverse()) {
-    const one = windowTabs.tabs.getTab(entry.id)
-    if (one?.kind.display?.isTool && one.kind.address?.navigate && one.kind.address.getTarget) {
-      const target = one.kind.address.getTarget(one.state)
-      return { path: target.path ?? '', title: target.title ?? '' }
-    }
-  }
-  return { path: '', title: '' }
+  const last = [...windowTabs.tabs.tabs.value]
+    .reverse()
+    .map((one) => windowTabs.tabs.getTab(one.id))
+    .find(
+      (one) =>
+        one?.kind.display?.isTool &&
+        one.kind.address?.navigate !== undefined &&
+        one.kind.address.getTarget !== undefined,
+    )
+  const target = last?.kind.address?.getTarget?.(last.state)
+  return { path: target?.path ?? '', title: target?.title ?? '' }
 }

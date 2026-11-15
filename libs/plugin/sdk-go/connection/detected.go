@@ -46,21 +46,19 @@ func ServeDetected(detect DetectConnections) Operation {
 		}
 		markLookup(ctx)
 		home, homeErr := os.UserHomeDir()
-		if homeErr != nil {
-			home = ""
-		}
 		wire := &v1.DetectedConnections{Connections: make([]*v1.DetectedConnection, len(found))}
 		for i, one := range found {
-			wire.Connections[i] = &v1.DetectedConnection{Name: one.Name, Fields: one.Fields, Path: writeHomeAsTilde(one.Path, home)}
+			path := one.Path
+			if homeErr == nil {
+				path = writeHomeAsTilde(path, home)
+			}
+			wire.Connections[i] = &v1.DetectedConnection{Name: one.Name, Fields: one.Fields, Path: path}
 		}
 		return proto.Marshal(wire)
 	}
 }
 
 func writeHomeAsTilde(path, home string) string {
-	if home == "" {
-		return path
-	}
 	home = filepath.Clean(home)
 	if path == home {
 		return "~"

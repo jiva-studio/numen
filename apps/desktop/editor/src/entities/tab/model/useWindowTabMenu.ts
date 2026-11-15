@@ -43,8 +43,8 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
         : Promise.resolve(),
     listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
     getTabTarget: (id) => getTabFileTarget(windowTabs, id),
-    onHighlight: deps.onHighlight,
-    readNoteKind: deps.readNoteKind,
-    reportError: deps.reportError,
+    ...(deps.onHighlight ? { onHighlight: deps.onHighlight } : {}),
+    ...(deps.readNoteKind ? { readNoteKind: deps.readNoteKind } : {}),
+    ...(deps.reportError ? { reportError: deps.reportError } : {}),
   })
 }

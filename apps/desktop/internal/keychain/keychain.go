@@ -71,11 +71,14 @@ type probeCall struct {
 	err      error
 }
 
+// singleSlot is the buffer capacity for single-writer locks and one-shot call outcomes.
+const singleSlot = 1
+
 // NewStore returns a store that keeps keys in the system keychain, and in
 // <dir>/credentials/credentials.json where the keychain cannot be reached. dir is the folder of
 // the settings file.
 func NewStore(dir string, wait machine.Wait) *Store {
-	return &Store{dir: dir, wait: wait, writer: make(chan struct{}, 1)}
+	return &Store{dir: dir, wait: wait, writer: make(chan struct{}, singleSlot)}
 }
 
 // GetKey returns the key stored under the name: the one in the keychain, or, on a machine that has
@@ -124,7 +127,7 @@ func (s *Store) removeStaleCopy(ctx context.Context, name string) error {
 	if _, err := os.Stat(s.getCredentialsFile()); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
-	if err := s.removeFromFile(ctx, name); err != nil && !errors.Is(err, plugin.ErrNoKey) {
+	if err := s.removeFromFile(ctx, name); !errors.Is(err, plugin.ErrNoKey) {
 		return err
 	}
 	return nil
@@ -222,7 +225,7 @@ func await[T any](ctx context.Context, call func() (T, error)) (T, error) {
 		value T
 		err   error
 	}
-	results := make(chan outcome, 1)
+	results := make(chan outcome, singleSlot)
 	go func() {
 		value, err := call()
 		results <- outcome{value, err}

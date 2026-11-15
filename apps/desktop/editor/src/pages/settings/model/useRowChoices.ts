@@ -57,7 +57,7 @@ const readChoice = (one: RowOption): SelectChoice => ({
  */
 export function useRowChoices(source: RowChoicesSource) {
   const listed = ref<Readonly<Record<string, Listed>>>({})
-  const requests = new Map<string, symbol>()
+  const requests = new Map<string, number>()
 
   const getValue = (field: ConnectionFieldInfo): string => source.getRow().options[field.key] ?? ''
 
@@ -100,7 +100,7 @@ export function useRowChoices(source: RowChoicesSource) {
   )
 
   const ask = async (field: ConnectionFieldInfo, index: number): Promise<void> => {
-    const request = Symbol()
+    const request = (requests.get(field.key) ?? 0) + 1
     requests.set(field.key, request)
     listed.value = Object.fromEntries(
       Object.entries(listed.value).filter(([key]) => key !== field.key),

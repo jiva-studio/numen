@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest'
 import { COMMAND, ROW } from '@/shared/model/command'
 import {
   createNameItem,
-  createPassageItem,
+  createResultItem,
   resolveChoice,
   type NameMatch,
-  type Passage,
+  type SearchResult,
   type SearchHit,
 } from './lookup'
 import type { Words } from './search'
@@ -41,7 +41,7 @@ const createName = (overrides: Partial<NameMatch> = {}): NameMatch => ({
   ...overrides,
 })
 
-const createPassage = (overrides: Partial<Passage> = {}): Passage => ({
+const createSearchResult = (overrides: Partial<SearchResult> = {}): SearchResult => ({
   path: 'physics/Ontology.md',
   title: 'Ontology',
   isNote: true,
@@ -50,8 +50,8 @@ const createPassage = (overrides: Partial<Passage> = {}): Passage => ({
   text: 'what is',
   start: 12,
   length: 4,
-  line: 3,
-  at: [],
+  matchLine: 3,
+  matchRanges: [],
   ...overrides,
 })
 
@@ -90,7 +90,7 @@ describe('a note found by name, heading or passage', () => {
     expect(
       createNameItem(createName({ heading: 'Being', line: 7 }), WORDS).hit.actionIds,
     ).toStrictEqual([OPEN_NOTE])
-    expect(createPassageItem('text', createPassage(), WORDS).item.actions).toStrictEqual(read)
+    expect(createResultItem('text', createSearchResult(), WORDS).item.actions).toStrictEqual(read)
   })
 })
 
@@ -108,7 +108,7 @@ describe('a heading found by its name', () => {
 
 describe('a passage found in a note', () => {
   it('offers the note, and remains at its line', () => {
-    const row = createPassageItem('text', createPassage(), WORDS)
+    const row = createResultItem('text', createSearchResult(), WORDS)
 
     expect(row.item.id).toBe('text:physics/Ontology.md:12')
     expect(row.item.actions).toStrictEqual([{ id: OPEN_NOTE, text: WORDS.read }])
@@ -118,9 +118,9 @@ describe('a passage found in a note', () => {
 
 describe('a passage found in a file that is no note', () => {
   it('offers opening the file at its selector, remains at no line, and is of no note type', () => {
-    const row = createPassageItem(
+    const row = createResultItem(
       'meaning',
-      createPassage({ isNote: false, selector: { page: 3 }, title: '', type: 'sample' }),
+      createSearchResult({ isNote: false, selector: { page: 3 }, title: '', type: 'sample' }),
       WORDS,
     )
 

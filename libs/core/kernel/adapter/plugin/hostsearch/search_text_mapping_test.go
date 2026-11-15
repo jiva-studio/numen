@@ -12,27 +12,27 @@ import (
 
 // askedFinder returns a search with fixed passages and records the query and the parameters.
 type askedFinder struct {
-	found  []domain.Passage
+	found  []domain.SearchResult
 	query  string
 	params search.Parameters
 }
 
-func (f *askedFinder) Execute(_ context.Context, _ domain.Vault, query string, p search.Parameters) ([]domain.Passage, error) {
+func (f *askedFinder) Execute(_ context.Context, _ domain.Vault, query string, p search.Parameters) ([]domain.SearchResult, error) {
 	f.query, f.params = query, p
 	return f.found, nil
 }
 
-func TestSearchPassagesPassesPluginQueryToThePassageSearch(t *testing.T) {
-	finder := &askedFinder{found: []domain.Passage{{Source: "library/Birds.pdf", Text: "the gray heron"}}}
-	s := Search{Passages: search.NewSearchPassages(finder)}
+func TestSearchTextPassesPluginQueryToTheTextSearch(t *testing.T) {
+	finder := &askedFinder{found: []domain.SearchResult{{Path: "library/Birds.pdf", Text: "the gray heron"}}}
+	s := Search{TextSearch: search.NewSearchText(finder)}
 
-	got, err := s.SearchPassages(t.Context(), getVault(), plugin.PassageQuery{
+	got, err := s.SearchText(t.Context(), getVault(), plugin.SearchResultQuery{
 		Query: "heron", Limit: 7, Kinds: []domain.SourceKind{domain.KindFile}, PathPrefix: "library/",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 1 || got[0].Source != "library/Birds.pdf" {
+	if len(got) != 1 || got[0].Path != "library/Birds.pdf" {
 		t.Errorf("returned %+v, want the passage the search found", got)
 	}
 	p := finder.params

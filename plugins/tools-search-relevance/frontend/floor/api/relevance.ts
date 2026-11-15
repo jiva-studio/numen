@@ -19,7 +19,7 @@ export interface Calibration {
   readonly spread: number
   readonly histogram: readonly number[]
   readonly queryCount: number
-  readonly passageCount: number
+  readonly chunkCount: number
   readonly calibratedAt: number
 }
 

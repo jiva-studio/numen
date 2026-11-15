@@ -19,6 +19,12 @@ func TestATryNextErrorCarriesItsReasonAndRetryAfter(t *testing.T) {
 	if IsStop(err) {
 		t.Error("a try-next error is a stop")
 	}
+	for _, d := range []time.Duration{0, -time.Nanosecond} {
+		got, ok := IsTryNext(NewTryNextError(ReasonRateLimited, d))
+		if !ok || got != 0 {
+			t.Errorf("IsTryNext(%v) = %v, %v, want 0, true", d, got, ok)
+		}
+	}
 }
 
 func TestAStopErrorCarriesItsReason(t *testing.T) {
@@ -29,8 +35,8 @@ func TestAStopErrorCarriesItsReason(t *testing.T) {
 	if reason, ok := getReason(err); !ok || reason != ReasonInvalidRequest {
 		t.Errorf("getReason = %v, %v, want invalid request", reason, ok)
 	}
-	if _, isTryNext := IsTryNext(err); isTryNext {
-		t.Error("a stop error is a try-next")
+	if retryAfter, isTryNext := IsTryNext(err); isTryNext || retryAfter != 0 {
+		t.Errorf("IsTryNext(stop) = %v, %v, want 0, false", retryAfter, isTryNext)
 	}
 }
 

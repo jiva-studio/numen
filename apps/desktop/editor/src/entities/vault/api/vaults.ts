@@ -12,18 +12,22 @@ interface VaultWire {
   readonly isMissing: boolean
 }
 
-const unvaulted = new Map<VaultsErrorCodeValue | undefined, VaultErrorCode>([
-  [VAULTS_ERROR_CODE.UNSPECIFIED, 'unreadable'],
-  [VAULTS_ERROR_CODE.UNREADABLE, 'unreadable'],
-  [VAULTS_ERROR_CODE.COPY, 'copy'],
-  [VAULTS_ERROR_CODE.OVERLAPS, 'overlaps'],
-  [VAULTS_ERROR_CODE.NAME_TAKEN, 'nameTaken'],
-  [VAULTS_ERROR_CODE.LAST_VAULT, 'lastVault'],
-  [VAULTS_ERROR_CODE.CURRENT, 'current'],
-  [VAULTS_ERROR_CODE.NOT_FOUND, 'notFound'],
-  [VAULTS_ERROR_CODE.NO_TRASH, 'noTrash'],
-  [VAULTS_ERROR_CODE.UNSAVED, 'unsaved'],
-])
+const unvaulted: Record<VaultsErrorCodeValue, VaultErrorCode> = {
+  [VAULTS_ERROR_CODE.UNSPECIFIED]: 'unreadable',
+  [VAULTS_ERROR_CODE.UNREADABLE]: 'unreadable',
+  [VAULTS_ERROR_CODE.COPY]: 'copy',
+  [VAULTS_ERROR_CODE.OVERLAPS]: 'overlaps',
+  [VAULTS_ERROR_CODE.NAME_TAKEN]: 'nameTaken',
+  [VAULTS_ERROR_CODE.LAST_VAULT]: 'lastVault',
+  [VAULTS_ERROR_CODE.CURRENT]: 'current',
+  [VAULTS_ERROR_CODE.NOT_FOUND]: 'notFound',
+  [VAULTS_ERROR_CODE.NO_TRASH]: 'noTrash',
+  [VAULTS_ERROR_CODE.UNSAVED]: 'unsaved',
+}
+
+const getVaultError = (from: {
+  error?: VaultsErrorCodeValue | undefined
+}): VaultErrorCode | null => (from.error === undefined ? null : unvaulted[from.error])
 
 const mapVault = (one: VaultWire): Vault => ({
   id: one.id,
@@ -36,13 +40,13 @@ const mapVaultResult = (from: {
   vault?: VaultWire | undefined
   error?: VaultsErrorCodeValue | undefined
 }): VaultResult => {
-  const error = unvaulted.get(from.error)
+  const error = getVaultError(from)
   if (error) return { ok: false, error }
   return { ok: true, value: from.vault ? mapVault(from.vault) : null }
 }
 
 const mapNoValue = (from: { error?: VaultsErrorCodeValue | undefined }): VaultAction => {
-  const error = unvaulted.get(from.error)
+  const error = getVaultError(from)
   return error ? { ok: false, error } : { ok: true, value: null }
 }
 

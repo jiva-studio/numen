@@ -76,7 +76,7 @@ func newHandler(vault domain.Vault, found names, kinds tabKinds) *Handler {
 	return NewHandler(
 		shownVault{v: vault},
 		search.NewFindNames(found, kinds),
-		search.NewFindPassages(search.Search{}, titles{}, types{}, kinds),
+		search.NewFindText(search.Search{}, titles{}, types{}, kinds),
 		searchcancel.NewSearches(testsupport.NewClock()),
 	)
 }
@@ -136,10 +136,10 @@ func TestSearchNamesAsksForAtMostTheLimitOfTheWindow(t *testing.T) {
 	}
 }
 
-func TestSearchPassagesWithoutAModeIsRefused(t *testing.T) {
+func TestSearchTextWithoutAModeIsRefused(t *testing.T) {
 	handler := newHandler(domain.Vault{ID: "v1"}, nil, nil)
 
-	_, err := handler.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{Query: "engine"}))
+	_, err := handler.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{Query: "engine"}))
 
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("answered %v", err)

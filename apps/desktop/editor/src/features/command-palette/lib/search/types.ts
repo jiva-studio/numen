@@ -18,8 +18,8 @@ export interface NameMatch {
   tabKind?: string
 }
 
-/** One passage: the text around a hit, and where it came from. */
-export interface Passage {
+/** One search result: the text around a hit, and where it came from. */
+export interface SearchResult {
   path: string
   title: string
   isNote: boolean
@@ -29,8 +29,8 @@ export interface Passage {
   text: string
   start: number
   length: number
-  line: number
-  at: readonly TextRange[]
+  matchLine: number
+  matchRanges: readonly TextRange[]
 }
 
 /**
@@ -47,5 +47,5 @@ export interface SearchDeps {
     mode: SearchMode,
     limit: number,
     signal?: AbortSignal,
-  ): Promise<readonly Passage[]>
+  ): Promise<readonly SearchResult[]>
 }

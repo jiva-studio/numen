@@ -6,7 +6,7 @@
 import { shallowReactive, type Component } from 'vue'
 import { FileText } from '@lucide/vue'
 
-const icons = shallowReactive(new Map<string | undefined, Component>())
+const icons = shallowReactive(new Map<string, Component>())
 
 /** Draws the notes the tab kind opens with an icon, until the returned function is called. */
 export function registerTabKindIcon(tabKind: string, icon: Component): () => void {
@@ -18,4 +18,4 @@ export function registerTabKindIcon(tabKind: string, icon: Component): () => voi
 
 /** The icon of a note by the tab kind that opens it; every note has one. */
 export const getNoteIcon = (tabKind: string | undefined): Component =>
-  icons.get(tabKind) ?? FileText
+  (tabKind === undefined ? undefined : icons.get(tabKind)) ?? FileText

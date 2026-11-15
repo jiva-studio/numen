@@ -119,9 +119,12 @@ export function findUnsuppliedPrompt(
   from: number,
   values: Readonly<Record<string, string>>,
 ): number {
-  return (command.prompts ?? []).findIndex(
-    (prompt, index) => index >= from && !(prompt.name in values),
-  )
+  const prompts = command.prompts ?? []
+  for (let index = from; index < prompts.length; index += 1) {
+    const name = prompts[index]?.name
+    if (name !== undefined && !(name in values)) return index
+  }
+  return -1
 }
 
 function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): CommandInvocation | null {
@@ -131,7 +134,7 @@ function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): Command
   if (!value && prompt.isRequired) return null
   const values = value ? { ...step.values, [prompt.name]: value } : { ...step.values }
   const promptIndex = findUnsuppliedPrompt(step.command, (step.promptIndex ?? 0) + 1, values)
-  if (promptIndex !== -1) {
+  if (promptIndex >= 0) {
     deps.pushStep({ step: 'arguments', command: step.command, on: step.on, promptIndex, values })
     return null
   }

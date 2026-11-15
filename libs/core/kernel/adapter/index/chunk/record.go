@@ -7,10 +7,10 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Passage is one chunk, and where its text is read from.
+// Record is one chunk, and where its text is read from.
 //
 // chunk.
-type Passage struct {
+type Record struct {
 	Chunk       int64
 	Path        string
 	Start       int

@@ -5,6 +5,8 @@ import {
   type CommandTarget,
   type Values,
 } from '@/shared/model/command'
+import { formatError } from '@/shared/api/errors'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { createInvocation } from '../../lib/entries/invocation'
 import { runInvocation } from '../handlers/handlers'
 
@@ -14,9 +16,9 @@ import { runInvocation } from '../handlers/handlers'
  * and the condition of the key was judged when the key matched.
  */
 export const createValuesRunner =
-  (deps: CommandDeps) =>
+  (deps: CommandDeps, writeMessage: MessageWriter) =>
   (command: string, target: CommandTarget, values: Values): void =>
     runInBackground(
       runInvocation(withValues(createInvocation(command, target), values), deps),
-      () => undefined,
+      (error) => writeMessage(formatError(error), 'error'),
     )

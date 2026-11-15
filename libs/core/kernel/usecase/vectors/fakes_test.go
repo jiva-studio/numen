@@ -111,6 +111,6 @@ func (noModel) IndexTexts(context.Context, searchsource.Place, []searchsource.Te
 	return nil, nil
 }
 
-func (noModel) SearchPassages(context.Context, searchsource.Place, searchsource.Query) ([]searchsource.Match, error) {
+func (noModel) SearchChunks(context.Context, searchsource.Place, searchsource.Query) ([]searchsource.Match, error) {
 	return nil, nil
 }

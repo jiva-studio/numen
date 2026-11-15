@@ -46,6 +46,9 @@ func TestReadManifest_RejectsAnInvalidHandler(t *testing.T) {
 		if !errors.Is(err, manifest.ErrInvalidHandler) {
 			t.Errorf("%s: got %v, want ErrInvalidHandler", name, err)
 		}
+		if name == "a when that does not parse" && !hasWrappedCause(err, manifest.ErrInvalidHandler) {
+			t.Errorf("%s: got %v, expected wrapped when cause", name, err)
+		}
 	}
 }
 
@@ -54,6 +57,10 @@ func TestReadManifest_RejectsAHandlerOfAPluginWithNothingToRunIt(t *testing.T) {
 		"contributes":{"handlers":[{"command":"app:file.createText","title":"Read"}]}}`))
 	if !errors.Is(err, manifest.ErrInvalidHandler) {
 		t.Errorf("got %v, want ErrInvalidHandler", err)
+	}
+	if _, err := manifestjson.Read(strings.NewReader(`{"id":"org.example.scans","name":"Scans","version":"1.0.0","frontend":{},
+		"contributes":{"handlers":[{"command":"app:file.createText","title":"Read"}]}}`)); err != nil {
+		t.Errorf("frontend-only handler failed: %v", err)
 	}
 }
 
@@ -67,6 +74,9 @@ func TestReadManifest_RejectsAnInvalidTrigger(t *testing.T) {
 		_, err := manifestjson.Read(strings.NewReader(handlerManifestHead + `{` + handlers + `,"triggers":` + triggers + `}}`))
 		if !errors.Is(err, manifest.ErrInvalidTrigger) {
 			t.Errorf("%s: got %v, want ErrInvalidTrigger", name, err)
+		}
+		if name == "a when that does not parse" && !hasWrappedCause(err, manifest.ErrInvalidTrigger) {
+			t.Errorf("%s: got %v, expected wrapped when cause", name, err)
 		}
 	}
 }

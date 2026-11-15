@@ -21,9 +21,9 @@ func newNearestQuery(limit int) source.NearestQuery {
 }
 
 func holdsEnclosing(f *nearestFake, names ...domain.ChunkID) {
-	f.enclosing = map[domain.ChunkID]domain.Passage{}
+	f.enclosing = map[domain.ChunkID]domain.SearchResult{}
 	for _, n := range names {
-		f.enclosing[n] = domain.Passage{ChunkID: n, Source: string(n)}
+		f.enclosing[n] = domain.SearchResult{ChunkID: n, Path: string(n)}
 	}
 }
 

@@ -186,8 +186,8 @@ func (x *FocusNoteResponse) GetId() string {
 	return ""
 }
 
-// A PassageSpan is a byte range in a file's text version, as a passage search returns it.
-type PassageSpan struct {
+// A ByteSpan is a byte range in a file's text version, as a text search returns it.
+type ByteSpan struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Start         int32                  `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
 	Length        int32                  `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"`
@@ -195,20 +195,20 @@ type PassageSpan struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PassageSpan) Reset() {
-	*x = PassageSpan{}
+func (x *ByteSpan) Reset() {
+	*x = ByteSpan{}
 	mi := &file_numen_v1_hostwindow_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PassageSpan) String() string {
+func (x *ByteSpan) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PassageSpan) ProtoMessage() {}
+func (*ByteSpan) ProtoMessage() {}
 
-func (x *PassageSpan) ProtoReflect() protoreflect.Message {
+func (x *ByteSpan) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostwindow_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -220,47 +220,47 @@ func (x *PassageSpan) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PassageSpan.ProtoReflect.Descriptor instead.
-func (*PassageSpan) Descriptor() ([]byte, []int) {
+// Deprecated: Use ByteSpan.ProtoReflect.Descriptor instead.
+func (*ByteSpan) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *PassageSpan) GetStart() int32 {
+func (x *ByteSpan) GetStart() int32 {
 	if x != nil {
 		return x.Start
 	}
 	return 0
 }
 
-func (x *PassageSpan) GetLength() int32 {
+func (x *ByteSpan) GetLength() int32 {
 	if x != nil {
 		return x.Length
 	}
 	return 0
 }
 
-type FocusPassagesRequest struct {
+type FocusFileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Passages      []*PassageSpan         `protobuf:"bytes,2,rep,name=passages,proto3" json:"passages,omitempty"`
+	Spans         []*ByteSpan            `protobuf:"bytes,2,rep,name=spans,proto3" json:"spans,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FocusPassagesRequest) Reset() {
-	*x = FocusPassagesRequest{}
+func (x *FocusFileRequest) Reset() {
+	*x = FocusFileRequest{}
 	mi := &file_numen_v1_hostwindow_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FocusPassagesRequest) String() string {
+func (x *FocusFileRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FocusPassagesRequest) ProtoMessage() {}
+func (*FocusFileRequest) ProtoMessage() {}
 
-func (x *FocusPassagesRequest) ProtoReflect() protoreflect.Message {
+func (x *FocusFileRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostwindow_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -272,46 +272,46 @@ func (x *FocusPassagesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FocusPassagesRequest.ProtoReflect.Descriptor instead.
-func (*FocusPassagesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use FocusFileRequest.ProtoReflect.Descriptor instead.
+func (*FocusFileRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *FocusPassagesRequest) GetPath() string {
+func (x *FocusFileRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *FocusPassagesRequest) GetPassages() []*PassageSpan {
+func (x *FocusFileRequest) GetSpans() []*ByteSpan {
 	if x != nil {
-		return x.Passages
+		return x.Spans
 	}
 	return nil
 }
 
-type FocusPassagesResponse struct {
+type FocusFileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         HostWindowErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostWindowErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FocusPassagesResponse) Reset() {
-	*x = FocusPassagesResponse{}
+func (x *FocusFileResponse) Reset() {
+	*x = FocusFileResponse{}
 	mi := &file_numen_v1_hostwindow_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FocusPassagesResponse) String() string {
+func (x *FocusFileResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FocusPassagesResponse) ProtoMessage() {}
+func (*FocusFileResponse) ProtoMessage() {}
 
-func (x *FocusPassagesResponse) ProtoReflect() protoreflect.Message {
+func (x *FocusFileResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostwindow_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -323,12 +323,12 @@ func (x *FocusPassagesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FocusPassagesResponse.ProtoReflect.Descriptor instead.
-func (*FocusPassagesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use FocusFileResponse.ProtoReflect.Descriptor instead.
+func (*FocusFileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *FocusPassagesResponse) GetError() HostWindowErrorCode {
+func (x *FocusFileResponse) GetError() HostWindowErrorCode {
 	if x != nil {
 		return x.Error
 	}
@@ -630,14 +630,14 @@ const file_numen_v1_hostwindow_proto_rawDesc = "" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x0e\n" +
-	"\x02id\x18\x04 \x01(\tR\x02id\";\n" +
-	"\vPassageSpan\x12\x14\n" +
+	"\x02id\x18\x04 \x01(\tR\x02id\"8\n" +
+	"\bByteSpan\x12\x14\n" +
 	"\x05start\x18\x01 \x01(\x05R\x05start\x12\x16\n" +
-	"\x06length\x18\x02 \x01(\x05R\x06length\"]\n" +
-	"\x14FocusPassagesRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x121\n" +
-	"\bpassages\x18\x02 \x03(\v2\x15.numen.v1.PassageSpanR\bpassages\"L\n" +
-	"\x15FocusPassagesResponse\x123\n" +
+	"\x06length\x18\x02 \x01(\x05R\x06length\"P\n" +
+	"\x10FocusFileRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12(\n" +
+	"\x05spans\x18\x02 \x03(\v2\x12.numen.v1.ByteSpanR\x05spans\"H\n" +
+	"\x11FocusFileResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\"\x81\x01\n" +
 	"\aOpenTab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -659,10 +659,10 @@ const file_numen_v1_hostwindow_proto_rawDesc = "" +
 	"\x13HostWindowErrorCode\x12&\n" +
 	"\"HOST_WINDOW_ERROR_CODE_UNSPECIFIED\x10\x00\x12$\n" +
 	" HOST_WINDOW_ERROR_CODE_NO_WINDOW\x10\x01\x12$\n" +
-	" HOST_WINDOW_ERROR_CODE_NOT_FOUND\x10\x022\xe8\x02\n" +
+	" HOST_WINDOW_ERROR_CODE_NOT_FOUND\x10\x022\xdc\x02\n" +
 	"\x11HostWindowService\x12D\n" +
-	"\tFocusNote\x12\x1a.numen.v1.FocusNoteRequest\x1a\x1b.numen.v1.FocusNoteResponse\x12P\n" +
-	"\rFocusPassages\x12\x1e.numen.v1.FocusPassagesRequest\x1a\x1f.numen.v1.FocusPassagesResponse\x12o\n" +
+	"\tFocusNote\x12\x1a.numen.v1.FocusNoteRequest\x1a\x1b.numen.v1.FocusNoteResponse\x12D\n" +
+	"\tFocusFile\x12\x1a.numen.v1.FocusFileRequest\x1a\x1b.numen.v1.FocusFileResponse\x12o\n" +
 	"\fReadOpenTabs\x12..numen.v1.HostWindowServiceReadOpenTabsRequest\x1a/.numen.v1.HostWindowServiceReadOpenTabsResponse\x12J\n" +
 	"\vActivateTab\x12\x1c.numen.v1.ActivateTabRequest\x1a\x1d.numen.v1.ActivateTabResponseBFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -684,9 +684,9 @@ var file_numen_v1_hostwindow_proto_goTypes = []any{
 	(HostWindowErrorCode)(0),                      // 0: numen.v1.HostWindowErrorCode
 	(*FocusNoteRequest)(nil),                      // 1: numen.v1.FocusNoteRequest
 	(*FocusNoteResponse)(nil),                     // 2: numen.v1.FocusNoteResponse
-	(*PassageSpan)(nil),                           // 3: numen.v1.PassageSpan
-	(*FocusPassagesRequest)(nil),                  // 4: numen.v1.FocusPassagesRequest
-	(*FocusPassagesResponse)(nil),                 // 5: numen.v1.FocusPassagesResponse
+	(*ByteSpan)(nil),                              // 3: numen.v1.ByteSpan
+	(*FocusFileRequest)(nil),                      // 4: numen.v1.FocusFileRequest
+	(*FocusFileResponse)(nil),                     // 5: numen.v1.FocusFileResponse
 	(*OpenTab)(nil),                               // 6: numen.v1.OpenTab
 	(*HostWindowServiceReadOpenTabsRequest)(nil),  // 7: numen.v1.HostWindowServiceReadOpenTabsRequest
 	(*HostWindowServiceReadOpenTabsResponse)(nil), // 8: numen.v1.HostWindowServiceReadOpenTabsResponse
@@ -696,19 +696,19 @@ var file_numen_v1_hostwindow_proto_goTypes = []any{
 }
 var file_numen_v1_hostwindow_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.FocusNoteResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	3,  // 1: numen.v1.FocusPassagesRequest.passages:type_name -> numen.v1.PassageSpan
-	0,  // 2: numen.v1.FocusPassagesResponse.error:type_name -> numen.v1.HostWindowErrorCode
+	3,  // 1: numen.v1.FocusFileRequest.spans:type_name -> numen.v1.ByteSpan
+	0,  // 2: numen.v1.FocusFileResponse.error:type_name -> numen.v1.HostWindowErrorCode
 	11, // 3: numen.v1.OpenTab.place:type_name -> numen.v1.TabPlace
 	0,  // 4: numen.v1.HostWindowServiceReadOpenTabsResponse.error:type_name -> numen.v1.HostWindowErrorCode
 	6,  // 5: numen.v1.HostWindowServiceReadOpenTabsResponse.tabs:type_name -> numen.v1.OpenTab
 	0,  // 6: numen.v1.ActivateTabResponse.error:type_name -> numen.v1.HostWindowErrorCode
 	6,  // 7: numen.v1.ActivateTabResponse.tab:type_name -> numen.v1.OpenTab
 	1,  // 8: numen.v1.HostWindowService.FocusNote:input_type -> numen.v1.FocusNoteRequest
-	4,  // 9: numen.v1.HostWindowService.FocusPassages:input_type -> numen.v1.FocusPassagesRequest
+	4,  // 9: numen.v1.HostWindowService.FocusFile:input_type -> numen.v1.FocusFileRequest
 	7,  // 10: numen.v1.HostWindowService.ReadOpenTabs:input_type -> numen.v1.HostWindowServiceReadOpenTabsRequest
 	9,  // 11: numen.v1.HostWindowService.ActivateTab:input_type -> numen.v1.ActivateTabRequest
 	2,  // 12: numen.v1.HostWindowService.FocusNote:output_type -> numen.v1.FocusNoteResponse
-	5,  // 13: numen.v1.HostWindowService.FocusPassages:output_type -> numen.v1.FocusPassagesResponse
+	5,  // 13: numen.v1.HostWindowService.FocusFile:output_type -> numen.v1.FocusFileResponse
 	8,  // 14: numen.v1.HostWindowService.ReadOpenTabs:output_type -> numen.v1.HostWindowServiceReadOpenTabsResponse
 	10, // 15: numen.v1.HostWindowService.ActivateTab:output_type -> numen.v1.ActivateTabResponse
 	12, // [12:16] is the sub-list for method output_type

@@ -41,7 +41,7 @@ export const createSearchCore = (search: WindowClients['search']): SearchDeps =>
     const cancel = () => {
       search.cancelSearch({ searchId }).catch(() => undefined)
     }
-    signal.addEventListener('abort', cancel)
+    signal.addEventListener('abort', cancel, { once: true })
     try {
       return await ask(searchId, { signal })
     } finally {
@@ -66,7 +66,7 @@ export const createSearchCore = (search: WindowClients['search']): SearchDeps =>
     },
     search: async (query, mode, limit, signal) => {
       const answer = await askCancellable(signal, (searchId, options) =>
-        search.searchPassages({ query, limit, mode: modes[mode], searchId }, options),
+        search.searchText({ query, limit, mode: modes[mode], searchId }, options),
       )
       return answer.found.map((one) => ({
         path: one.path,
@@ -76,10 +76,10 @@ export const createSearchCore = (search: WindowClients['search']): SearchDeps =>
         ...(one.tabKind ? { tabKind: one.tabKind } : {}),
         selector: parseSelector(one.selector),
         text: one.text,
-        start: one.range?.start ?? 0,
-        length: (one.range?.end ?? 0) - (one.range?.start ?? 0),
-        line: one.line,
-        at: one.ranges.map(mapRange),
+        start: one.byteRange?.start ?? 0,
+        length: (one.byteRange?.end ?? 0) - (one.byteRange?.start ?? 0),
+        matchLine: one.matchLine,
+        matchRanges: one.matchRanges.map(mapRange),
       }))
     },
   }

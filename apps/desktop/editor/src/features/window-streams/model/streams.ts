@@ -105,8 +105,13 @@ async function handleVaultChange(change: VaultChange, deps: VaultStreamDeps): Pr
   await attempt(deps.ask)
 }
 
-async function attempt<T>(step: () => Promise<T>): Promise<void> {
-  await step().catch(() => undefined)
+async function attempt<T>(step: () => Promise<T>): Promise<boolean> {
+  try {
+    await step()
+    return true
+  } catch {
+    return false
+  }
 }
 
 async function handleFocusChange(
@@ -130,7 +135,7 @@ async function handleFocusChange(
 
 /** Follows the changes to the vault. */
 export function createVaultStream(deps: VaultStreamDeps): () => Promise<void> {
-  let isOpening: boolean | undefined
+  let isOpening = true
   return () =>
     deps.follows(
       () => {

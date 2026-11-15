@@ -58,4 +58,7 @@ func TestApplyKeepsTheRestOfTheOptions(t *testing.T) {
 			t.Errorf("%s: options changed: %+v", goos, got)
 		}
 	}
+	if BarHeight != 32 {
+		t.Errorf("BarHeight = %d, want 32", BarHeight)
+	}
 }

@@ -104,7 +104,8 @@ export function fileOpeners(vault: FileOpenerDeps) {
     if (!extensionReaders.has(extension)) await vault.startExtensionReader?.(extension)
     const reader = extensionReaders.get(extension)
     if (!reader) return
-    reader.read(path, selector, ranges)
+    if (ranges) reader.read(path, selector, ranges)
+    else reader.read(path, selector)
   }
 
   /**

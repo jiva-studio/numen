@@ -10,6 +10,12 @@ func TestResolveEmptyHref(t *testing.T) {
 	if got := href.Resolve("OEBPS", ""); got != "" {
 		t.Errorf("Resolve(\"OEBPS\", \"\") = %q, want \"\"", got)
 	}
+	if got := href.Resolve("OEBPS", "part%201/ch%201.xhtml"); got != "OEBPS/part 1/ch 1.xhtml" {
+		t.Errorf("Resolve(\"OEBPS\", \"part%%201/ch%%201.xhtml\") = %q, want \"OEBPS/part 1/ch 1.xhtml\"", got)
+	}
+	if got := href.Resolve("OEBPS", "100%.xhtml"); got != "OEBPS/100%.xhtml" {
+		t.Errorf("Resolve(\"OEBPS\", \"100%%.xhtml\") = %q, want \"OEBPS/100%%.xhtml\"", got)
+	}
 }
 
 func TestResolveWithFragmentWhenTargetResolvesToEmpty(t *testing.T) {

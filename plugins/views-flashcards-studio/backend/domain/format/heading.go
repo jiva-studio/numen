@@ -113,12 +113,11 @@ func matchLinkEnd(line string, pos int) (int, bool) {
 			depth, to = depth+1, to+2
 		case line[to] == ']' && line[to+1] == ']':
 			depth, to = depth-1, to+2
+			if depth == 0 {
+				return to, true
+			}
 		default:
 			to++
-			continue
-		}
-		if depth == 0 {
-			return to, true
 		}
 	}
 	// gomutants:disable-next-line RETURN_ZERO reason="Caller ignores the returned offset when ok is false."
@@ -134,20 +133,19 @@ func linkStart(line string, pos int) int {
 
 func links(line string) [][]int {
 	var out [][]int
-	for pos := 0; pos+1 < len(line); {
-		if line[pos] != '[' || line[pos+1] != '[' {
-			pos++
-			continue
+	for pos := 0; ; {
+		open := strings.Index(line[pos:], "[[")
+		if open == -1 {
+			return out
 		}
-		head := linkStart(line, pos)
-		to, ok := matchLinkEnd(line, pos)
+		open += pos
+		to, ok := matchLinkEnd(line, open)
 		if !ok {
 			return out
 		}
-		out = append(out, []int{head, to})
+		out = append(out, []int{linkStart(line, open), to})
 		pos = to
 	}
-	return out
 }
 
 func oneLine(name string) string {

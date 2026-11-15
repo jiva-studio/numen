@@ -25,7 +25,7 @@ export interface PaletteNotesDeps {
 export function createPaletteNotes(deps: PaletteNotesDeps) {
   const notes = shallowRef<ReadonlyMap<string, PaletteNote>>(new Map())
   const requests = new Set<string>()
-  let generation: Record<string, never> = {}
+  let generation = 0
 
   /** The note at the path of the target; undefined while it is read, and the read is begun once. */
   const getNote = (target: CommandTarget): PaletteNote | undefined => {
@@ -59,7 +59,7 @@ export function createPaletteNotes(deps: PaletteNotesDeps) {
 
   /** Forgets the notes read, so the next palette reads them again. */
   const reset = (): void => {
-    generation = {}
+    generation += 1
     requests.clear()
     notes.value = new Map()
   }

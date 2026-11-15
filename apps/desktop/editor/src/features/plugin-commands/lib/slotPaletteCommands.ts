@@ -20,9 +20,8 @@ export function createSlotPaletteCommands(
   declared: readonly DeclaredSlot[] | undefined,
   context: WindowWhenContext,
 ): readonly Command[] {
-  if (!declared) return []
   const isWhenAvailable = createWhenAvailability(context)
-  return declared.flatMap((entry): Command[] => {
+  return (declared ?? []).flatMap((entry): Command[] => {
     if (entry.slot !== PALETTE_NOTE_SLOT || !entry.command || !entry.title) return []
     const { when } = entry
     return [

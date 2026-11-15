@@ -4,6 +4,7 @@
  */
 import {
   APP_COMMAND_OWNER,
+  isSharedCommand,
   SHARED_COMMANDS,
   getCommandOwner,
   type DeclaredSlotEntry,
@@ -20,8 +21,6 @@ import { findIcon } from '@/shared/model/command'
 import { getPaletteId, type DeclaredCommand, type DeclaredSlot } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/ui/icons'
 import { APP_SLOT_ENTRIES } from '../../lib/appPlacements'
-
-type SharedCommand = (typeof SHARED_COMMANDS)[number]
 
 /** The entries of the plugins with those of the application; undefined until the plugins have been listed. */
 export function readSlotEntries(
@@ -96,7 +95,7 @@ export function createSlotCommandFinder(
    */
   const getKnownValues = (target: CommandTarget | undefined): WhenValues => {
     const { ['target.properties']: _properties, ...known } = deps.getWhenValues(target)
-    if (target?.noteType !== undefined || known['target.isNote'] !== true) return known
+    if (known['target.isNote'] !== true || target?.noteType !== undefined) return known
     const { ['target.noteType']: _noteType, ...typeless } = known
     return typeless
   }
@@ -105,24 +104,25 @@ export function createSlotCommandFinder(
    * A shared command some enabled plugin handles: its handlers are its items, read when a menu opens.
    * It is not drawn where every handler is false over what the window knows of the target.
    */
-  const findSharedLook = (shared: SharedCommand, target: CommandTarget | undefined) => {
+  const findSharedLook = (command: string, target: CommandTarget | undefined) => {
+    const shared = SHARED_COMMANDS.find((one) => one.id === command)
+    if (!shared) return undefined
     const partialValues = getKnownValues(target)
     const isPossible = deps
       .getHandlerDeclarations?.()
       ?.some(
         (one) =>
-          one.command === shared.id &&
+          one.command === command &&
           deps.whenReader.getCondition(one.when)?.evaluatePartial(partialValues) !== 'false',
       )
-    const icon = findIcon(shared.id)
+    const icon = findIcon(command)
     return isPossible
       ? { title: shared.title, ...(icon ? { icon } : {}), hasItems: true }
       : undefined
   }
 
   return (command, target) => {
-    const shared = SHARED_COMMANDS.find((one) => one.id === command)
-    if (shared) return findSharedLook(shared, target)
+    if (isSharedCommand(command)) return findSharedLook(command, target)
     return getCommandOwner(command) === APP_COMMAND_OWNER
       ? findEditorLook(command, target)
       : findPluginLook(command, target)

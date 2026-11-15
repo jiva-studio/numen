@@ -51,37 +51,20 @@ export interface PluginCommandsExtras {
   readonly getHandlers?: () => readonly HandlerDeclaration[] | undefined
 }
 
-interface CommandHost {
-  readonly commands: Pick<
-    PluginHost['commands'],
-    'getPaletteCommands' | 'hasCommandItems' | 'executeCommand'
-  >
-  readonly keybindings: Pick<PluginHost['keybindings'], 'getKeyFor'>
-}
-
 export function usePluginCommands(
   registry: Pick<CommandRegistry, 'register'>,
   getCommandNote: ReturnType<typeof createCommandNoteReader>,
-  pluginHost: CommandHost | undefined,
+  pluginHost: PluginHost | undefined,
   extras: PluginCommandsExtras = {},
 ) {
   const context = extras.context ?? createEmptyWhenContext()
+  const getHandlers = extras.getHandlers ?? (() => [])
   const isWhenAvailable = createWhenAvailability(context)
-  const { getSharedCommands, getSharedEntries } = createSharedCommands(
-    () => extras.getHandlers?.(),
-    isWhenAvailable,
-  )
-  if (!pluginHost) {
-    return {
-      getPaletteEntries: getSharedEntries,
-      getCommandNote,
-      pluginWays: computed<readonly WelcomeAction[]>(() => []),
-    }
-  }
-  const getPluginCommands = () => pluginHost.commands.getPaletteCommands()
+  const getPluginCommands = () => pluginHost?.commands.getPaletteCommands() ?? []
+  const { getSharedCommands, getSharedEntries } = createSharedCommands(getHandlers, isWhenAvailable)
   /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
   const getPluginLooks = (cmd: PluginPaletteCommand) => {
-    const key = pluginHost.keybindings.getKeyFor(cmd.id)
+    const key = pluginHost?.keybindings.getKeyFor(cmd.id)
     const keys = key ? findShortcutKeys(key, win.navigator.userAgent) : undefined
     return {
       ...(keys ? { keys } : {}),
@@ -101,7 +84,7 @@ export function usePluginCommands(
         ? ('note' as const)
         : ('window' as const),
       ...(cmd.when ? { when: cmd.when } : {}),
-      ...(pluginHost.commands.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
+      ...(pluginHost?.commands.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
       isAvailable: (target: CommandTarget) => isWhenAvailable(cmd.when, target),
     })),
     ...getSharedEntries(),
@@ -116,29 +99,31 @@ export function usePluginCommands(
       .filter(
         (cmd) =>
           !hasNoteVariable(context.whenReader.getCondition(cmd.when)) &&
-          pluginHost.keybindings.getKeyFor(cmd.id),
+          pluginHost?.keybindings.getKeyFor(cmd.id),
       )
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
 
-  let unregisterAll: readonly (() => void)[] = []
-  watch(
-    () => [...pluginHost.commands.getPaletteCommands(), ...getSharedCommands()],
-    (list) => {
-      for (const unregister of unregisterAll) unregister()
-      unregisterAll = list.map((cmd) =>
-        registry.register(cmd.id, async (invocation) => {
-          const note = await getCommandNote(invocation.target)
-          if (invocation.values) {
-            await pluginHost.commands.executeCommand(cmd.id, note, { values: invocation.values })
-          } else if (pluginHost.commands.hasCommandItems(cmd.id) && invocation.name !== '') {
-            await pluginHost.commands.executeCommand(cmd.id, note, { itemId: invocation.name })
-          } else await pluginHost.commands.executeCommand(cmd.id, note)
-        }),
-      )
-    },
-    { immediate: true },
-  )
+  if (pluginHost) {
+    let unregisterAll: readonly (() => void)[] = []
+    watch(
+      () => [...pluginHost.commands.getPaletteCommands(), ...getSharedCommands()],
+      (list) => {
+        for (const unregister of unregisterAll) unregister()
+        unregisterAll = list.map((cmd) =>
+          registry.register(cmd.id, async (invocation) => {
+            const note = await getCommandNote(invocation.target)
+            if (invocation.values) {
+              await pluginHost.commands.executeCommand(cmd.id, note, { values: invocation.values })
+            } else if (pluginHost.commands.hasCommandItems(cmd.id) && invocation.name !== '') {
+              await pluginHost.commands.executeCommand(cmd.id, note, { itemId: invocation.name })
+            } else await pluginHost.commands.executeCommand(cmd.id, note)
+          }),
+        )
+      },
+      { immediate: true },
+    )
+  }
 
   return {
     getPaletteEntries,

@@ -25,6 +25,7 @@ import {
   type DeclaredSlot,
 } from '@/entities/plugin'
 import { createWhenAvailability, getWhenGroup, type WindowWhenContext } from '../lib/whenContext'
+import type { Caught } from '@/shared/api/errors'
 import { createPaletteNotes, type PaletteNotesDeps } from './paletteNotes'
 
 /** The items a command of a plugin offers over a file. */
@@ -72,7 +73,7 @@ function createDeclaredPaletteCommands(
 }
 
 const isSameList = <T>(current: readonly T[] | undefined, received: readonly T[]): boolean =>
-  JSON.stringify(current) === JSON.stringify(received)
+  current !== undefined && JSON.stringify(current) === JSON.stringify(received)
 
 /** What the lists of declarations are read through. */
 export interface DeclaredStateDeps {
@@ -127,15 +128,27 @@ export function createDeclaredState(deps: DeclaredStateDeps) {
     whenReader: deps.whenReader ?? createWhenReader(),
     ...(paletteNotes ? { getNote: paletteNotes.getNote, forgetNotes: paletteNotes.reset } : {}),
   }
-  let newest: Record<string, never> = {}
-  let settleFirstList: () => void = () => undefined
-  const firstList = new Promise<void>((resolve) => {
-    settleFirstList = resolve
-  })
+  let newest = 0
+  const isFirstListSettled = shallowRef(false)
+
+  const waitForFirstList = (): Promise<void> =>
+    isFirstListSettled.value
+      ? Promise.resolve()
+      : new Promise((resolve) => {
+          const stop = watch(
+            isFirstListSettled,
+            (isSettled) => {
+              if (!isSettled) return
+              stop()
+              resolve()
+            },
+            { flush: 'sync' },
+          )
+        })
 
   const read = async (): Promise<void> => {
-    const mine = {}
-    newest = mine
+    newest += 1
+    const mine = newest
     const commands = await list()
     if (mine !== newest) return
     // An answer equal to the lists held keeps them, so the commands are not registered again while
@@ -147,11 +160,12 @@ export function createDeclaredState(deps: DeclaredStateDeps) {
     const keybindings = commands.keybindings ?? []
     if (!isSameList(declaredKeybindings.value, keybindings)) declaredKeybindings.value = keybindings
     if (commands.contentTypes) contentTypes.value = commands.contentTypes
+    isFirstListSettled.value = true
   }
 
   return {
     /** Settles once the lists of a read are held, or a read has failed. */
-    waitForFirstList: () => firstList,
+    waitForFirstList,
     /** What the when conditions of the commands read besides their target. */
     whenContext,
     commands: computed(() => declared.value),
@@ -162,7 +176,11 @@ export function createDeclaredState(deps: DeclaredStateDeps) {
       keybindings: computed(() => declaredKeybindings.value),
     },
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
-    load: (): Promise<void> => read().finally(settleFirstList),
+    load: (): Promise<void> =>
+      read().catch((error: Caught) => {
+        isFirstListSettled.value = true
+        throw error
+      }),
   }
 }
 
@@ -175,6 +193,7 @@ type DeclaredState = ReturnType<typeof createDeclaredState>
 export function useDeclaredCommands(deps: DeclaredCommandsDeps) {
   const state = deps.state ?? createDeclaredState(deps)
   const { run, listItems } = deps
+  const isListed = deps.isListed ?? (() => false)
   const hasBackend = deps.hasBackend ?? (() => true)
   let unregisterAll: readonly (() => void)[] = []
 
@@ -185,7 +204,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps) {
    */
   const backendCommands = computed(() =>
     (state.commands.value ?? []).filter(
-      (one) => hasBackend(one.pluginId) && !deps.isListed?.(getPaletteId(one)),
+      (one) => hasBackend(one.pluginId) && !isListed(getPaletteId(one)),
     ),
   )
 

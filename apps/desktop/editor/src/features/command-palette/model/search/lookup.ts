@@ -5,10 +5,10 @@ import type { PaletteItem } from '@numen/workbench'
 import type { Selector, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { NoteType } from '@/entities/file'
 import { COMMAND, ROW } from '@/shared/model/command'
-import type { NameMatch, Passage } from '../../lib/search/types'
+import type { NameMatch, SearchResult } from '../../lib/search/types'
 import type { Words } from './search'
 
-export type { NameMatch, Passage }
+export type { NameMatch, SearchResult }
 
 /** The entries of the slot of a search result, over the note of a result, in the order drawn. */
 export interface SearchMenuDeps {
@@ -48,16 +48,15 @@ type PaletteAction = NonNullable<PaletteItem['actions']>[number]
 
 function createNoteActions(
   openText: string,
-  entries?: readonly SlotItem[],
+  entries: readonly SlotItem[],
 ): {
   actions: readonly PaletteAction[]
   actionIds: readonly string[]
   valuesOfHit: Pick<SearchHit, 'actionValues' | 'actionCommands'>
 } {
-  const commands =
-    entries
-      ?.filter((one) => one.kind === 'command')
-      .map((one) => ({ one, id: getActionId(one.command, one.values) })) ?? []
+  const commands = entries
+    .filter((one) => one.kind === 'command')
+    .map((one) => ({ one, id: getActionId(one.command, one.values) }))
   const menu = commands.map(({ one, id }) => ({ id, text: one.title }))
   const actions = [{ id: COMMAND.openFile, text: openText }, ...menu]
   const withValues = commands.flatMap(({ one, id }) =>
@@ -77,10 +76,12 @@ function createNoteActions(
 }
 
 function getActionId(command: string, values: Readonly<Record<string, string>> | undefined) {
-  const pairs = Object.entries(values ?? {})
-    .map(([name, value]) => `${encodeURIComponent(name)}=${encodeURIComponent(value)}`)
-    .sort()
-  return pairs.length === 0 ? command : `${command}?${pairs.join('&')}`
+  const names = Object.keys(values ?? {}).sort()
+  if (!values || names.length === 0) return command
+  const pairs = names.map(
+    (name) => `${encodeURIComponent(name)}=${encodeURIComponent(values[name] ?? '')}`,
+  )
+  return `${command}?${pairs.join('&')}`
 }
 
 /**
@@ -90,7 +91,7 @@ function getActionId(command: string, values: Readonly<Record<string, string>> |
 export function createNameItem(
   one: NameMatch,
   words: Words,
-  entries?: readonly SlotItem[],
+  entries: readonly SlotItem[] = [],
 ): SearchRow {
   const atHeading = createNoteActions(words.readAt, entries)
   const byName = createNoteActions(words.read, entries)
@@ -139,18 +140,21 @@ function getNoteHit(
   }
 }
 
-function createNotePassageHit(one: Passage, note: ReturnType<typeof createNoteActions>): SearchHit {
+function createNoteResultHit(
+  one: SearchResult,
+  note: ReturnType<typeof createNoteActions>,
+): SearchHit {
   const spot = {
     path: one.path,
     title: one.title,
-    line: one.line,
+    line: one.matchLine,
     start: one.start,
     length: one.length,
   }
   return getNoteHit(spot, note, one)
 }
 
-function createDocumentPassageHit(one: Passage, actionIds: readonly string[]): SearchHit {
+function createDocumentResultHit(one: SearchResult, actionIds: readonly string[]): SearchHit {
   return {
     spot: { path: one.path, title: one.title, line: -1, start: one.start, length: one.length },
     actionIds,
@@ -159,11 +163,11 @@ function createDocumentPassageHit(one: Passage, actionIds: readonly string[]): S
   }
 }
 
-export function createPassageItem(
+export function createResultItem(
   group: string,
-  one: Passage,
+  one: SearchResult,
   words: Words,
-  entries?: readonly SlotItem[],
+  entries: readonly SlotItem[] = [],
 ): SearchRow {
   const note = createNoteActions(words.read, entries)
   const document = [{ id: ROW.openDocument, text: words.readDocument }]
@@ -172,12 +176,12 @@ export function createPassageItem(
       id: `${group}:${one.path}:${one.start}`,
       title: one.title || one.path,
       detail: one.text,
-      detailAt: one.at,
+      detailAt: one.matchRanges,
       actions: one.isNote ? note.actions : document,
     },
     hit: one.isNote
-      ? createNotePassageHit(one, note)
-      : createDocumentPassageHit(
+      ? createNoteResultHit(one, note)
+      : createDocumentResultHit(
           one,
           document.map((each) => each.id),
         ),

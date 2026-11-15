@@ -118,6 +118,7 @@ function createNamesAsking(): NamesAsking {
   let asking = new AbortController()
   return {
     start: () => {
+      asking.abort()
       asking = new AbortController()
       return asking.signal
     },

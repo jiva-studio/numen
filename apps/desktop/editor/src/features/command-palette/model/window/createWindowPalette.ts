@@ -76,7 +76,7 @@ export function createWindowPalette(deps: WindowPaletteDeps) {
       runCommand,
       runCommandToEnd,
       runChoice: createChoiceRunner(runCommand, getTarget),
-      runWithValues: createValuesRunner(commandDeps),
+      runWithValues: createValuesRunner(commandDeps, commandDeps.writeMessage),
     },
   }
 }

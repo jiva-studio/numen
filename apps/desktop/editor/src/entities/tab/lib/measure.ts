@@ -5,4 +5,4 @@ export type MeasurableState = Required<Pick<NoteTabState, 'measure'>>
 
 /** Whether the state of a tab has the `measure` of the note tab contract. */
 export const isMeasurable = (state: object): state is MeasurableState =>
-  typeof (state as Partial<MeasurableState>).measure === 'function'
+  'measure' in state && typeof state.measure === 'function'

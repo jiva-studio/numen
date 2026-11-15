@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func TestSpansFindsMatchedWordsInPassage(t *testing.T) {
+func TestSpansFindsMatchedWordsInResult(t *testing.T) {
 	for _, c := range []struct {
 		name  string
 		text  string
@@ -37,7 +37,7 @@ func TestSpansFindsMatchedWordsInPassage(t *testing.T) {
 		},
 		{
 			// The index matched a word. A run of the same letters inside another word is not
-			// that word, and marking it would indicate a passage for something not typed.
+			// that word, and marking it would indicate a search result for something not typed.
 			name:  "letters standing inside another word are not marked",
 			text:  "the party started early",
 			query: "art",
@@ -145,7 +145,7 @@ func TestSpansFindsMatchedWordsInPassage(t *testing.T) {
 	}
 }
 
-func TestGetTextAroundSplitsPassageToGlanceWindow(t *testing.T) {
+func TestGetTextAroundSplitsResultToGlanceWindow(t *testing.T) {
 	long := func(n int) string {
 		out := make([]rune, n)
 		for i := range out {

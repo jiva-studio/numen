@@ -30,18 +30,15 @@ export function useConnectionEntries(
     sortByUsability(
       stored.value.map((connection) => {
         const type = types.value.find((one) => one.id === connection.typeId)
-        const usability = getConnectionUsability(
-          connection,
-          type,
-          { ids: getOperations(), titles: getConnections().operationTitles.value },
-          USABILITY_WORDS,
-        )
-        const title = type?.title ?? usability.reason
         return {
           connection,
           type,
-          title,
-          ...usability,
+          ...getConnectionUsability(
+            connection,
+            type,
+            { ids: getOperations(), titles: getConnections().operationTitles.value },
+            USABILITY_WORDS,
+          ),
         }
       }),
     ),
@@ -51,7 +48,7 @@ export function useConnectionEntries(
     entries.value.map((one) => ({
       id: one.connection.id,
       text: one.connection.name,
-      detail: one.isUsable ? one.title : one.reason,
+      detail: one.isUsable ? (one.type?.title ?? '') : one.reason,
       ...(one.isUsable ? {} : { isDisabled: true }),
     })),
   )

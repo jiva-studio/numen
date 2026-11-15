@@ -33,9 +33,10 @@ export function getPaletteValues(
   note: PaletteNote = {},
 ): WhenValues {
   const path = target.path || target.file
-  const inFront = target.isReady
-    ? { path, isFolder: false, others: target.others ?? [] }
-    : undefined
+  const inFront =
+    target.isReady && path !== ''
+      ? { path, isFolder: false, others: target.others ?? [] }
+      : undefined
   return getWhenValues({
     window: {
       'window.isVaultOpen': target.vault.id !== '',

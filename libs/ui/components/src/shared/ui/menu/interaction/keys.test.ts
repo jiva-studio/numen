@@ -4,7 +4,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { effectScope, shallowRef } from 'vue'
 import type { MenuItem } from '../items/item'
-import { useMenuKeys } from './keys'
+import { isMenuRowHandle, useMenuKeys } from './keys'
 import { useMenuNavigation } from './useMenuNavigation'
 
 const ITEMS: MenuItem[] = [
@@ -77,6 +77,31 @@ describe('taking the keyboard onto a row', () => {
     menu.value = null
     expect(() => keys.goTo(-1)).not.toThrow()
     expect(keys.here.value).toBe(-1)
+  })
+
+  it('points to a row without scrolling and checks row handles', () => {
+    const { keys } = setup()
+    const focus = vi.fn<(options?: FocusOptions) => void>()
+    keys.holdRow('copy', { focus })
+
+    keys.pointTo(-1)
+    expect(keys.here.value).toBe(-1)
+    keys.pointTo(0)
+    expect(keys.here.value).toBe(0)
+    expect(focus).not.toHaveBeenCalled()
+
+    keys.pointTo(1)
+    expect(keys.here.value).toBe(1)
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+
+    const fnWithProps = Object.assign(() => undefined, {
+      focus: () => undefined,
+      getElement: () => null,
+    })
+    expect(isMenuRowHandle(fnWithProps)).toBe(false)
+    expect(isMenuRowHandle({ focus: 'invalid', getElement: () => null })).toBe(false)
+    expect(isMenuRowHandle({ focus: () => undefined, getElement: 'invalid' })).toBe(false)
+    expect(isMenuRowHandle({ focus: () => undefined, getElement: () => null })).toBe(true)
   })
 })
 

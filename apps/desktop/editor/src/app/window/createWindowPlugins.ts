@@ -92,7 +92,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       hostParts: declarations.hostParts,
     }),
   })
-  vault.vaultChanges.subscribe(pluginHost.notifyVaultChange)
+  vault.vaultChanges.subscribe((event) => pluginHost.notifyVaultChange(event))
   const declaredCommands = useDeclaredCommands({
     list: api.plugins.declaredCommands.listDeclaredCommands,
     run: api.plugins.declaredCommands.runDeclaredCommand,

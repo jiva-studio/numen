@@ -8,9 +8,9 @@ import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from './debounced'
 import {
   createNameItem,
-  createPassageItem,
+  createResultItem,
   type NameMatch,
-  type Passage,
+  type SearchResult,
   resolveChoice,
   type ResultChoice,
   type SearchHit,
@@ -79,11 +79,11 @@ async function fillSearchGroup<T>(options: FillOptions<T>) {
 
 interface BuildGroupsDeps {
   readonly names: readonly NameMatch[]
-  readonly texts: readonly Passage[]
-  readonly meanings: readonly Passage[]
+  readonly texts: readonly SearchResult[]
+  readonly meanings: readonly SearchResult[]
   readonly words: Words
-  readonly getMenu: (target: RunTarget) => readonly SlotItem[] | undefined
-  readonly isWorking: Partial<Record<SearchGroup, boolean>>
+  readonly getMenu: (target: RunTarget) => readonly SlotItem[]
+  readonly isWorking: Record<SearchGroup, boolean>
   readonly getSilence: (id: SearchGroup) => string
 }
 
@@ -95,8 +95,8 @@ const getNoteTarget = (path: string, title: string): RunTarget => ({
   tab: '',
 })
 
-const getPassageMenu = (deps: BuildGroupsDeps, one: Passage): readonly SlotItem[] | undefined =>
-  one.isNote ? deps.getMenu(getNoteTarget(one.path, one.title)) : undefined
+const getResultMenu = (deps: BuildGroupsDeps, one: SearchResult): readonly SlotItem[] =>
+  one.isNote ? deps.getMenu(getNoteTarget(one.path, one.title)) : []
 
 function buildSearchGroups(deps: BuildGroupsDeps) {
   const hitsById = new Map<string, SearchHit>()
@@ -106,7 +106,7 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
       id,
       title,
       items: rows.map((one) => one.item),
-      isWorking: Boolean(deps.isWorking[id]),
+      isWorking: deps.isWorking[id],
       silence: deps.getSilence(id),
     }
   }
@@ -122,15 +122,13 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
     group(
       'text',
       deps.words.text,
-      deps.texts.map((one) =>
-        createPassageItem('text', one, deps.words, getPassageMenu(deps, one)),
-      ),
+      deps.texts.map((one) => createResultItem('text', one, deps.words, getResultMenu(deps, one))),
     ),
     group(
       'meaning',
       deps.words.meaning,
       deps.meanings.map((one) =>
-        createPassageItem('meaning', one, deps.words, getPassageMenu(deps, one)),
+        createResultItem('meaning', one, deps.words, getResultMenu(deps, one)),
       ),
     ),
   ]
@@ -145,6 +143,7 @@ function appendCreateNoteActions(
   getTarget: SearchOptions['getTarget'],
 ) {
   const created = getTarget ? getCreateNoteActions({ text, words, target: getTarget() }) : []
+  if (created.length === 0) return base
   const ids = created.map((one) => one.id)
   const groups = base.groups.map((one) => ({
     ...one,
@@ -164,9 +163,9 @@ const hasContent = (group: PaletteGroup): boolean =>
 
 interface SearchRefs {
   names: ShallowRef<readonly NameMatch[]>
-  texts: ShallowRef<readonly Passage[]>
-  meanings: ShallowRef<readonly Passage[]>
-  isWorking: Ref<Partial<Record<SearchGroup, boolean>>>
+  texts: ShallowRef<readonly SearchResult[]>
+  meanings: ShallowRef<readonly SearchResult[]>
+  isWorking: Ref<Record<SearchGroup, boolean>>
   failureMessages: Ref<Partial<Record<SearchGroup, string>>>
   isAnswered: Ref<boolean>
 }
@@ -174,9 +173,9 @@ interface SearchRefs {
 function createSearchRefs(): SearchRefs {
   return {
     names: shallowRef<readonly NameMatch[]>([]),
-    texts: shallowRef<readonly Passage[]>([]),
-    meanings: shallowRef<readonly Passage[]>([]),
-    isWorking: ref<Partial<Record<SearchGroup, boolean>>>({}),
+    texts: shallowRef<readonly SearchResult[]>([]),
+    meanings: shallowRef<readonly SearchResult[]>([]),
+    isWorking: ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false }),
     failureMessages: ref<Partial<Record<SearchGroup, string>>>({}),
     isAnswered: ref(false),
   }
@@ -186,7 +185,7 @@ function clearSearchRefs(state: SearchRefs): void {
   state.names.value = []
   state.texts.value = []
   state.meanings.value = []
-  state.isWorking.value = {}
+  state.isWorking.value = { names: false, text: false, meaning: false }
   state.failureMessages.value = {}
   state.isAnswered.value = false
 }
@@ -201,6 +200,7 @@ async function executeSearchQuery(
   },
   state: SearchRefs,
 ) {
+  clearSearchRefs(state)
   state.isWorking.value = { names: true, text: true, meaning: true }
   const onFailed = (g: SearchGroup) => {
     state.failureMessages.value = { ...state.failureMessages.value, [g]: ctx.emptyQueryWord }
@@ -287,6 +287,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const ask = (query: string, mine: InFlightRequest) => {
     isWaiting.value = false
+    asking.abort()
     asking = new AbortController()
     return executeSearchQuery(
       { core, query, mine, signal: asking.signal, emptyQueryWord: words.noQuery },
@@ -315,12 +316,14 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const getEmptyGroupMessage = (id: SearchGroup): string => failureMessages.value[id] ?? ''
 
   const searchGroups = computed(() => {
+    if (!inputValue.value.trim())
+      return { groups: [] as readonly PaletteGroup[], hitsById: new Map<string, SearchHit>() }
     const base = buildSearchGroups({
       names: names.value,
       texts: texts.value,
       meanings: meanings.value,
       words,
-      getMenu: (target) => how.menu?.getEntries(target),
+      getMenu: (target) => how.menu?.getEntries(target) ?? [],
       isWorking: isWorking.value,
       getSilence: getEmptyGroupMessage,
     })
@@ -334,7 +337,9 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const isBusy = computed(() => isWaiting.value || Object.values(isWorking.value).some(Boolean))
 
   /** Whether every question has answered and no group has a row or a message to show. */
-  const isNothingFound = computed(() => isAnswered.value && groups.value.length === 0)
+  const isNothingFound = computed(
+    () => isAnswered.value && Boolean(inputValue.value.trim()) && groups.value.length === 0,
+  )
 
   const chooseResult = (item: string, action: string): ResultChoice | null =>
     resolveChoice(searchGroups.value.hitsById.get(item), action, inputValue.value)

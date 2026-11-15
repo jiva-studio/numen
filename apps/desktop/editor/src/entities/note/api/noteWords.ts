@@ -56,11 +56,12 @@ const relationByWire: Record<NoteRelationCode, NoteRelation | null> = {
 }
 
 /** Which note wrote a text link, as named in the window. An unspecified one has no direction. */
-const directionByWire = new Map<NoteLinkDirectionCode | undefined, LinkDirection>([
-  [NOTE_LINK_DIRECTION.OUTGOING, 'outgoing'],
-  [NOTE_LINK_DIRECTION.INCOMING, 'incoming'],
-  [NOTE_LINK_DIRECTION.BOTH, 'both'],
-])
+const directionByWire: Record<NoteLinkDirectionCode, LinkDirection | null> = {
+  [NOTE_LINK_DIRECTION.UNSPECIFIED]: null,
+  [NOTE_LINK_DIRECTION.OUTGOING]: 'outgoing',
+  [NOTE_LINK_DIRECTION.INCOMING]: 'incoming',
+  [NOTE_LINK_DIRECTION.BOTH]: 'both',
+}
 
 export const mapBaseline = (baseline: { prose: string; stat: string }) => ({
   prose: baseline.prose,
@@ -100,7 +101,10 @@ export const mapNoteGraph = (answer: NoteGraphWire): NoteGraph => ({
   related: answer.related.flatMap((one) => {
     const relation = relationByWire[one.relation] ?? null
     if (relation === null || one.note === undefined) return []
-    const direction = relation === 'reference' ? directionByWire.get(one.direction) : undefined
+    const direction =
+      relation === 'reference' && one.direction !== undefined
+        ? (directionByWire[one.direction] ?? null)
+        : null
     return [
       {
         path: one.note.path,
@@ -108,7 +112,7 @@ export const mapNoteGraph = (answer: NoteGraphWire): NoteGraph => ({
         type: mapNoteType(one.type),
         ...(one.tabKind ? { tabKind: one.tabKind } : {}),
         relation,
-        ...(direction === undefined ? {} : { direction }),
+        ...(direction === null ? {} : { direction }),
         ...(one.relatedTo ? { relatedTo: one.relatedTo } : {}),
       },
     ]

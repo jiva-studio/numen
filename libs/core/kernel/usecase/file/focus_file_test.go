@@ -27,21 +27,21 @@ func (w *placeRecorder) ShowMove(context.Context, domain.Move) error { return ni
 func (w *placeRecorder) ShowEdit(context.Context, domain.Edit) error { return nil }
 func (w *placeRecorder) ActivateTab(context.Context, string) error   { return nil }
 
-func newFocusPassages(t *testing.T) (*file.FocusPassages, *placeRecorder, domain.Vault) {
+func newFocusFile(t *testing.T) (*file.FocusFile, *placeRecorder, domain.Vault) {
 	t.Helper()
 	v := vaultfixture.NewVault(t, map[string]string{
 		talkPath:         "ID3 a recording of the marsh",
 		"notes/Heron.md": "# Gray Heron\nHerons fish at dusk.\n",
 	})
 	view := &placeRecorder{}
-	return file.NewFocusPassages(vaultreader.Readers{}, view), view, v
+	return file.NewFocusFile(vaultreader.Readers{}, view), view, v
 }
 
-func TestFocusPassagesShowsFileWithPassagesHighlightedInOrder(t *testing.T) {
-	focus, view, v := newFocusPassages(t)
+func TestFocusFileShowsFileWithSpansHighlightedInOrder(t *testing.T) {
+	focus, view, v := newFocusFile(t)
 
-	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
-		Path: talkPath, Passages: []domain.ByteRange{{Start: 40, End: 50}, {Start: 10, End: 15}},
+	err := focus.Execute(t.Context(), v, file.FocusFileInput{
+		Path: talkPath, Ranges: []domain.ByteRange{{Start: 40, End: 50}, {Start: 10, End: 15}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -52,10 +52,10 @@ func TestFocusPassagesShowsFileWithPassagesHighlightedInOrder(t *testing.T) {
 	}
 }
 
-func TestFocusPassagesWithNoPassagesOpensTheFileAtItsBeginning(t *testing.T) {
-	focus, view, v := newFocusPassages(t)
+func TestFocusFileWithNoSpansOpensTheFileAtItsBeginning(t *testing.T) {
+	focus, view, v := newFocusFile(t)
 
-	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{Path: talkPath})
+	err := focus.Execute(t.Context(), v, file.FocusFileInput{Path: talkPath})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,11 +64,11 @@ func TestFocusPassagesWithNoPassagesOpensTheFileAtItsBeginning(t *testing.T) {
 	}
 }
 
-func TestFocusPassagesOfANoteOpensTheNote(t *testing.T) {
-	focus, view, v := newFocusPassages(t)
+func TestFocusFileOfANoteOpensTheNote(t *testing.T) {
+	focus, view, v := newFocusFile(t)
 
-	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
-		Path: "notes/Heron.md", Passages: []domain.ByteRange{{Start: 2, End: 12}},
+	err := focus.Execute(t.Context(), v, file.FocusFileInput{
+		Path: "notes/Heron.md", Ranges: []domain.ByteRange{{Start: 2, End: 12}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -78,14 +78,14 @@ func TestFocusPassagesOfANoteOpensTheNote(t *testing.T) {
 	}
 }
 
-func TestFocusPassagesHighlightsAtMostEightPassages(t *testing.T) {
-	focus, view, v := newFocusPassages(t)
+func TestFocusFileHighlightsAtMostEightSpans(t *testing.T) {
+	focus, view, v := newFocusFile(t)
 	eight := make([]domain.ByteRange, 8)
 	for i := range eight {
 		eight[i] = domain.ByteRange{Start: i * 10, End: i*10 + 5}
 	}
 
-	if err := focus.Execute(t.Context(), v, file.FocusPassagesInput{Path: talkPath, Passages: eight}); err != nil {
+	if err := focus.Execute(t.Context(), v, file.FocusFileInput{Path: talkPath, Ranges: eight}); err != nil {
 		t.Fatalf("eight passages were rejected: %v", err)
 	}
 	if len(view.requested) != 1 || len(view.requested[0].Ranges) != 8 {
@@ -93,27 +93,27 @@ func TestFocusPassagesHighlightsAtMostEightPassages(t *testing.T) {
 	}
 }
 
-func TestFocusPassagesRejectsInvalidPlaceAndKeepsTheWindow(t *testing.T) {
-	focus, view, v := newFocusPassages(t)
+func TestFocusFileRejectsInvalidPlaceAndKeepsTheWindow(t *testing.T) {
+	focus, view, v := newFocusFile(t)
 	nine := make([]domain.ByteRange, 9)
 	for i := range nine {
 		nine[i] = domain.ByteRange{Start: i, End: i + 1}
 	}
 
 	for name, tc := range map[string]struct {
-		in   file.FocusPassagesInput
+		in   file.FocusFileInput
 		want string
 	}{
-		"no path":        {file.FocusPassagesInput{}, "path is empty"},
-		"negative start": {file.FocusPassagesInput{Path: talkPath, Passages: []domain.ByteRange{{Start: -1, End: 4}}}, "passage start must be >= 0"},
-		"empty range":    {file.FocusPassagesInput{Path: talkPath, Passages: []domain.ByteRange{{Start: 3, End: 3}}}, "length > 0"},
-		"later empty":    {file.FocusPassagesInput{Path: talkPath, Passages: []domain.ByteRange{{Start: 0, End: 4}, {Start: 9, End: 2}}}, "length > 0"},
-		"nine passages":  {file.FocusPassagesInput{Path: talkPath, Passages: nine}, "too many passages: at most 8"},
+		"no path":        {file.FocusFileInput{}, "path is empty"},
+		"negative start": {file.FocusFileInput{Path: talkPath, Ranges: []domain.ByteRange{{Start: -1, End: 4}}}, "passage start must be >= 0"},
+		"empty range":    {file.FocusFileInput{Path: talkPath, Ranges: []domain.ByteRange{{Start: 3, End: 3}}}, "length > 0"},
+		"later empty":    {file.FocusFileInput{Path: talkPath, Ranges: []domain.ByteRange{{Start: 0, End: 4}, {Start: 9, End: 2}}}, "length > 0"},
+		"nine passages":  {file.FocusFileInput{Path: talkPath, Ranges: nine}, "too many passages: at most 8"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			err := focus.Execute(t.Context(), v, tc.in)
-			if !errors.Is(err, file.ErrInvalidPassage) || !strings.Contains(err.Error(), tc.want) {
-				t.Errorf("rejected as %v, want ErrInvalidPassage saying %q", err, tc.want)
+			if !errors.Is(err, file.ErrInvalidRange) || !strings.Contains(err.Error(), tc.want) {
+				t.Errorf("rejected as %v, want ErrInvalidRange saying %q", err, tc.want)
 			}
 		})
 	}
@@ -122,10 +122,10 @@ func TestFocusPassagesRejectsInvalidPlaceAndKeepsTheWindow(t *testing.T) {
 	}
 }
 
-func TestFocusPassagesOfPathNotInVaultFailsAndKeepsTheWindow(t *testing.T) {
-	focus, view, v := newFocusPassages(t)
+func TestFocusFileOfPathNotInVaultFailsAndKeepsTheWindow(t *testing.T) {
+	focus, view, v := newFocusFile(t)
 
-	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{Path: "talks/Gone.mp3"})
+	err := focus.Execute(t.Context(), v, file.FocusFileInput{Path: "talks/Gone.mp3"})
 	if !errors.Is(err, fs.ErrNotExist) || !strings.Contains(err.Error(), "no file at talks/Gone.mp3") {
 		t.Errorf("a missing file returned %v, want fs.ErrNotExist saying the vault contains nothing there", err)
 	}

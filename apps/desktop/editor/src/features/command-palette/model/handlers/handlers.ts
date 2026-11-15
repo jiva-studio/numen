@@ -26,8 +26,12 @@ const HANDLERS: Record<string, CommandHandler> = {
   [COMMAND.searchVault]: (_, on) => on.navigator.search(),
 }
 
-const runSetting: CommandHandler = async (invocation, on) => {
-  await on.settings.chooseSetting(invocation.id, invocation.name)
+async function runSetting(invocation: CommandInvocation, on: CommandDeps): Promise<void> {
+  try {
+    await on.settings.chooseSetting(invocation.id, invocation.name)
+  } catch (error) {
+    on.writeMessage(formatError(error), 'error')
+  }
 }
 
 const withCurrentNotePath = (invocation: CommandInvocation, on: CommandDeps): CommandInvocation =>
@@ -40,17 +44,20 @@ export async function runInvocation(
   on: CommandDeps,
 ): Promise<string> {
   if (!invocation) return ''
-  const handler = invocation.id.startsWith(SETTING_COMMAND_PREFIX)
-    ? runSetting
-    : (on.registry.get(invocation.id) ?? HANDLERS[invocation.id])
-  if (!handler) return ''
+  const isSetting = invocation.id.startsWith(SETTING_COMMAND_PREFIX)
+  const handler = on.registry.get(invocation.id) ?? HANDLERS[invocation.id]
+  if (!isSetting && !handler) return ''
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)
   try {
-    const made = await handler(withCurrentNotePath(invocation, on), on)
-    return made || ''
+    if (isSetting) {
+      await runSetting(invocation, on)
+    } else if (handler) {
+      const made = await handler(withCurrentNotePath(invocation, on), on)
+      return made || ''
+    }
   } catch (error) {
     on.writeMessage(formatError(error), 'error')
-    return ''
   }
+  return ''
 }

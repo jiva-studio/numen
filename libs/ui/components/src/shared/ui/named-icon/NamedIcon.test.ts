@@ -35,6 +35,7 @@ describe('findNamedIcon', () => {
     expect(await findNamedIcon('icon')).toBeNull()
     expect(await findNamedIcon('use-lucide-props')).toBeNull()
     expect(await findNamedIcon('lucide-trash-2')).toBeNull()
+    expect(await findNamedIcon('LUCIDE_CONTEXT')).toBeNull()
     expect(await findNamedIcon('1-trash')).toBeNull()
   })
 })
@@ -67,6 +68,14 @@ describe('NamedIcon', () => {
 
     expect(icon.find('svg').exists()).toBe(true)
     expect(icon.html()).not.toBe(before)
+  })
+
+  it('drops an older lookup when the name changes before it settles', async () => {
+    const icon = mount(NamedIcon, { props: { name: 'no-such-icon' } })
+    await icon.setProps({ name: '' })
+    await flushPromises()
+
+    expect(icon.find('svg').exists()).toBe(false)
   })
 })
 

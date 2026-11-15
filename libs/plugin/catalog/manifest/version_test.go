@@ -24,11 +24,13 @@ func TestVersionsAreOrderedByPrecedence(t *testing.T) {
 		{"1.0.0-alpha.1", "1.0.0-alpha.1", 0},
 		{"1.0.0-alpha.1", "1.0.0-alpha.beta", -1},
 		{"1.0.0-9", "1.0.0-1a", -1},
+		{"1.0.0-a", "1.0.0-20", 1},
 		{"1.0.0-beta.2", "1.0.0-beta.11", -1},
 		{"1.0.0-rc.1", "1.0.0-beta.11", 1},
 		{"1.10.0", "1.9.0", 1},
 		{"18446744073709551615.0.0", "1.0.0", 1},
 		{"1.0.0-18446744073709551615", "1.0.0-9", 1},
+		{"1.0.0-18446744073709551615", "1.0.0-0a", -1},
 	}
 	for _, one := range cases {
 		got, err := manifest.CompareVersions(one.a, one.b)
@@ -48,8 +50,12 @@ func TestVersionsAreOrderedByPrecedence(t *testing.T) {
 
 func TestAVersionThatIsNoVersionCannotBeCompared(t *testing.T) {
 	for _, text := range []string{"", "1.0", "one", "1.0.0.0", "01.0.0", "18446744073709551616.0.0"} {
-		if got, err := manifest.CompareVersions(text, "1.0.0"); !errors.Is(err, manifest.ErrInvalidVersion) || got != 0 {
+		got, err := manifest.CompareVersions(text, "1.0.0")
+		if !errors.Is(err, manifest.ErrInvalidVersion) || got != 0 {
 			t.Errorf("CompareVersions(%q, 1.0.0) = %d, %v; want 0, invalid version", text, got, err)
+		}
+		if text == "18446744073709551616.0.0" && !hasWrappedCause(err, manifest.ErrInvalidVersion) {
+			t.Errorf("CompareVersions(%q, 1.0.0) = %v, expected wrapped parse cause", text, err)
 		}
 		if got, err := manifest.CompareVersions("1.0.0", text); !errors.Is(err, manifest.ErrInvalidVersion) || got != 0 {
 			t.Errorf("CompareVersions(1.0.0, %q) = %d, %v; want 0, invalid version", text, got, err)
