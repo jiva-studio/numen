@@ -25,14 +25,14 @@ type meaningSearch struct {
 	vectors  VectorQueries
 	source   searchsourceport.QuerySource
 	filter   scopeFilter
-	req      *request
+	req      *searchquery.Evaluation
 	warnings *warnings
 }
 
 func (m *meaningSearch) embed(ctx context.Context) (map[int][]float32, error) {
 	var indices []int
 	var texts []string
-	for i, c := range m.req.query.Conditions {
+	for i, c := range m.req.Query.Conditions {
 		if c.IsMeaning {
 			indices = append(indices, i)
 			texts = append(texts, c.Text)
@@ -58,7 +58,7 @@ func (m *meaningSearch) embed(ctx context.Context) (map[int][]float32, error) {
 func (m *meaningSearch) findMeaning(
 	ctx context.Context, index int, query []float32, documents []searchquery.Document, isListed bool,
 ) ([]domain.ChunkID, error) {
-	limits := m.req.limits
+	limits := m.req.Limits
 	if isListed && getChunkTotal(documents) <= limits.ExactScanChunks {
 		found, err := m.scanVectors(ctx, documents, query)
 		if err != nil {
@@ -66,7 +66,7 @@ func (m *meaningSearch) findMeaning(
 		}
 		return getBest(found, limits.CandidatesPerCondition), nil
 	}
-	found, err := m.searchCoarse(ctx, m.req.scopes[index], query)
+	found, err := m.searchCoarse(ctx, m.req.Scopes[index], query)
 	if err != nil {
 		return nil, err
 	}
@@ -80,8 +80,8 @@ func (m *meaningSearch) scanVectors(ctx context.Context, documents []searchquery
 	var found []similarChunk
 	after := domain.ChunkID("")
 	for {
-		page, err := m.vectors.ListDocumentVectors(ctx, m.req.vault.ID, searchquery.DocumentVectorQuery{
-			Paths: getPaths(documents), Recipe: m.req.recipe, After: after, Limit: vectorPage,
+		page, err := m.vectors.ListDocumentVectors(ctx, m.req.Vault.ID, searchquery.DocumentVectorQuery{
+			Paths: getPaths(documents), Recipe: m.req.Recipe, After: after, Limit: vectorPage,
 		})
 		if err != nil {
 			return nil, err
@@ -99,14 +99,14 @@ func (m *meaningSearch) scanVectors(ctx context.Context, documents []searchquery
 }
 
 func (m *meaningSearch) searchCoarse(ctx context.Context, s searchquery.Scope, query []float32) ([]similarChunk, error) {
-	limits := m.req.limits
+	limits := m.req.Limits
 	limit := min(limits.CandidatesPerCondition*limits.CoarseOversample, limits.MaxCoarseCandidates)
 	prefix := ""
 	if len(s.PathPrefixes) == 1 {
 		prefix = s.PathPrefixes[0]
 	}
 	for {
-		ids, err := m.vectors.FindCoarseCandidates(ctx, m.req.vault.ID, source.CoarseQuery{Recipe: m.req.recipe, Vector: query, PathPrefix: prefix, Limit: limit})
+		ids, err := m.vectors.FindCoarseCandidates(ctx, m.req.Vault.ID, source.CoarseQuery{Recipe: m.req.Recipe, Vector: query, PathPrefix: prefix, Limit: limit})
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +127,7 @@ func (m *meaningSearch) searchCoarse(ctx context.Context, s searchquery.Scope, q
 }
 
 func (m *meaningSearch) rankCoarse(ctx context.Context, s searchquery.Scope, query []float32, ids []domain.ChunkID) ([]similarChunk, bool, error) {
-	stored, err := m.vectors.ListStoredVectors(ctx, source.StoredVectorQuery{Recipe: m.req.recipe, Kinds: s.SourceKinds, Chunks: ids})
+	stored, err := m.vectors.ListStoredVectors(ctx, source.StoredVectorQuery{Recipe: m.req.Recipe, Kinds: s.SourceKinds, Chunks: ids})
 	if err != nil {
 		return nil, false, err
 	}
@@ -154,7 +154,7 @@ func (m *meaningSearch) keepSimilar(query []float32, stored []source.StoredVecto
 			continue
 		}
 		similarity := vector.SimilarityBytes(query, one.Vector)
-		if similarity < m.req.floor {
+		if similarity < m.req.Floor {
 			isPastFloor = true
 			continue
 		}
