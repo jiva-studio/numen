@@ -128,10 +128,10 @@ func (o *Installation) Start(ctx context.Context, first domain.Vault, files *Fil
 	// dependency it answers through is in place. When the socket cannot be opened,
 	// the player has no address.
 	onStop := func(why error) {
-		writeDiagnostic(o.pages.window.AddTask, o.out, "recordings will no longer play: %v\n", why)
+		writeDiagnostic(o.pages.window.GetTasks().AddTask, o.out, "recordings will no longer play: %v\n", why)
 	}
 	if playing, why := Listen(ctx, files, onStop); why != nil {
-		writeDiagnostic(o.pages.window.AddTask, o.out, "recordings will not play: %v\n", why)
+		writeDiagnostic(o.pages.window.GetTasks().AddTask, o.out, "recordings will not play: %v\n", why)
 	} else {
 		playing.setPluginServices(o.pages.plugins)
 		o.pages.window.GetPlaying().Store(playing)
@@ -181,16 +181,16 @@ const (
 // which says the theme the settings name is found now.
 func (o *Installation) RecordThemeWarning(message string) {
 	if message == "" {
-		o.pages.window.RemoveTask(applyingTheme)
+		o.pages.window.GetTasks().RemoveTask(applyingTheme)
 		return
 	}
-	o.pages.window.AddTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
+	o.pages.window.GetTasks().AddTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
 // Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
-		o.pages.window.AddTask(work.Task{
+		o.pages.window.GetTasks().AddTask(work.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Read settings",
 			About: one,

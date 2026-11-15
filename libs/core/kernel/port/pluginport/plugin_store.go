@@ -23,12 +23,3 @@ type PluginStores interface {
 	// folder that is not there is deleted.
 	DeleteFolder(ctx context.Context, v domain.Vault, pluginID string) error
 }
-
-// PluginCache keeps what a plugin worked out for a vault between launches. It belongs to the
-// installation and not to the vault, and can be made again.
-type PluginCache interface {
-	// Read returns what is kept under the name, and false where nothing is.
-	Read(ctx context.Context, pluginID string, vaultID domain.VaultID, name string) ([]byte, bool, error)
-	// Write replaces what is kept under the name, whole.
-	Write(ctx context.Context, pluginID string, vaultID domain.VaultID, name string, content []byte) error
-}

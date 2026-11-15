@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { EditorView } from '@codemirror/view'
-import { NOTE_EDITOR, type PluginContext } from '@numen/plugin-sdk'
+import { NOTE_EDITOR, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { activate, deactivate, MarkdownNoteEditor, readMarkdownEditorPreferences } from './index'
+
+/** Host services whose vault offers no notes. */
+const NO_NOTES = { vault: {} } as unknown as HostServices
 
 describe('notes plugin lifecycle', () => {
   it('registers markdown reader and note tab kind on activation', () => {
@@ -10,10 +13,9 @@ describe('notes plugin lifecycle', () => {
     const registerTabKind = vi.fn()
     const context = {
       register: { reader: registerReader, tabKind: registerTabKind },
-      vault: {},
     } as unknown as PluginContext
 
-    activate(context)
+    activate(context, NO_NOTES)
 
     expect(registerReader).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -34,10 +36,9 @@ describe('notes plugin lifecycle', () => {
     const registerCommand = vi.fn()
     const context = {
       register: { reader: vi.fn(), tabKind: vi.fn(), command: registerCommand },
-      vault: {},
     } as unknown as PluginContext
 
-    activate(context)
+    activate(context, NO_NOTES)
 
     expect(registerCommand).not.toHaveBeenCalled()
   })
@@ -46,10 +47,10 @@ describe('notes plugin lifecycle', () => {
     const registerView = vi.fn()
     const context = {
       register: { reader: vi.fn(), tabKind: vi.fn(), view: registerView },
-      vault: { notes: { read: vi.fn(), write: vi.fn() } },
     } as unknown as PluginContext
+    const host = { vault: { notes: { read: vi.fn(), write: vi.fn() } } } as unknown as HostServices
 
-    activate(context)
+    activate(context, host)
 
     expect(registerView).toHaveBeenCalledWith(expect.objectContaining({ capability: NOTE_EDITOR }))
   })
@@ -69,7 +70,6 @@ describe('notes plugin lifecycle', () => {
     const listeners = new Map<string, (value: unknown) => void>()
     const context = {
       register: { reader: vi.fn(), tabKind: vi.fn() },
-      vault: {},
       settings: {
         get: (key: string) => settings[key],
         onChange: (key: string, handler: (value: unknown) => void) => {
@@ -84,7 +84,7 @@ describe('notes plugin lifecycle', () => {
       lineNumbers: true,
     })
 
-    activate(context)
+    activate(context, NO_NOTES)
 
     const wrapper = mount(MarkdownNoteEditor, {
       props: { modelValue: 'hello', filePath: 'test.md' },

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginContext } from '../context'
+import { createPluginParts } from '../context'
 import { createPluginHost } from '../host'
 import type { PluginHostDeps } from '../types'
 import { createTestContextHost } from '../../testing/contextHost'
@@ -23,29 +23,29 @@ describe('a drop handler registration', () => {
       permissions: ['vault:read'],
       dropTypes: ['text/plain'],
     })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
 
     expect(() =>
-      context.register.dropHandler?.({ types: [URI_LIST], drop: takeNoPaths }),
+      context.plugin.register.dropHandler?.({ types: [URI_LIST], drop: takeNoPaths }),
     ).toThrowError(
       'Plugin "md.numen.sample" registers the drop type "text/uri-list", which its manifest does not declare in contributes.dropHandlers',
     )
     expect(() =>
-      context.register.dropHandler?.({ types: ['text/plain', URI_LIST], drop: takeNoPaths }),
+      context.plugin.register.dropHandler?.({ types: ['text/plain', URI_LIST], drop: takeNoPaths }),
     ).toThrowError('registers the drop type "text/uri-list"')
     expect(registered).not.toHaveBeenCalled()
   })
 
   it('fails for a plugin whose manifest declares no drop types', () => {
     const { host, registered } = createRegisteringHost()
-    const context = createPluginContext(
+    const context = createPluginParts(
       'md.numen.sample',
       host,
       createMockManifest('md.numen.sample', { permissions: ['vault:read'] }),
     )
 
     expect(() =>
-      context.register.dropHandler?.({ types: [URI_LIST], drop: takeNoPaths }),
+      context.plugin.register.dropHandler?.({ types: [URI_LIST], drop: takeNoPaths }),
     ).toThrowError('does not declare')
     expect(registered).not.toHaveBeenCalled()
   })
@@ -56,10 +56,10 @@ describe('a drop handler registration', () => {
       permissions: ['vault:write'],
       dropTypes: [URI_LIST],
     })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
 
     expect(() =>
-      context.register.dropHandler?.({ types: [URI_LIST], drop: takeNoPaths }),
+      context.plugin.register.dropHandler?.({ types: [URI_LIST], drop: takeNoPaths }),
     ).toThrowError('lacks required permission "vault:read" for dropHandler')
     expect(registered).not.toHaveBeenCalled()
   })
@@ -70,10 +70,10 @@ describe('a drop handler registration', () => {
       permissions: ['vault:read'],
       dropTypes: [URI_LIST],
     })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
     const types = [URI_LIST]
 
-    context.register.dropHandler?.({ types, drop: takeNoPaths })
+    context.plugin.register.dropHandler?.({ types, drop: takeNoPaths })
     types.push('text/html')
 
     expect(registered.mock.calls[0]?.[1].types).toEqual([URI_LIST])
@@ -85,7 +85,7 @@ describe('a drop handler registration', () => {
       permissions: ['vault:read'],
       dropTypes: [URI_LIST],
     })
-    const context = createPluginContext('md.numen.sample', host, manifest)
+    const context = createPluginParts('md.numen.sample', host, manifest)
     let reads = 0
     const registration: DropRegistration = {
       get types() {
@@ -95,7 +95,7 @@ describe('a drop handler registration', () => {
       drop: takeNoPaths,
     }
 
-    context.register.dropHandler?.(registration)
+    context.plugin.register.dropHandler?.(registration)
 
     expect(registered.mock.calls[0]?.[1].types).toEqual([URI_LIST])
   })
@@ -125,7 +125,7 @@ describe('a drop in a host with several plugins', () => {
     const delivered: string[] = []
 
     expect(() =>
-      intruder.register.dropHandler?.({
+      intruder.plugin.register.dropHandler?.({
         types: [URI_LIST],
         drop: async () => {
           delivered.push('intruder')
@@ -133,7 +133,7 @@ describe('a drop in a host with several plugins', () => {
         },
       }),
     ).toThrowError('does not declare')
-    taker.register.dropHandler?.({
+    taker.plugin.register.dropHandler?.({
       types: [URI_LIST],
       drop: async () => {
         delivered.push('links')
@@ -143,7 +143,7 @@ describe('a drop in a host with several plugins', () => {
     const drops = host.lifecycle.createContext(
       'md.numen.views.file.tree',
       createMockManifest('md.numen.views.file.tree', { permissions: ['vault:write'] }),
-    ).ui.drops
+    ).host.ui.drops
 
     expect(await drops?.drop('', { [URI_LIST]: 'https://video.example/clip' })).toEqual(['clip.md'])
     expect(delivered).toEqual(['links'])
@@ -160,17 +160,17 @@ describe('a drop in a host with several plugins', () => {
       sampleManifest('md.numen.second', [URI_LIST]),
     )
 
-    first.register.dropHandler?.({ types: [URI_LIST], drop: async () => ['first.md'] })
+    first.plugin.register.dropHandler?.({ types: [URI_LIST], drop: async () => ['first.md'] })
 
     expect(() =>
-      second.register.dropHandler?.({ types: [URI_LIST], drop: async () => ['second.md'] }),
+      second.plugin.register.dropHandler?.({ types: [URI_LIST], drop: async () => ['second.md'] }),
     ).toThrowError(
       'Plugin "md.numen.second" registers a drop handler for "text/uri-list", which plugin "md.numen.first" already takes',
     )
     const drops = host.lifecycle.createContext(
       'md.numen.views.file.tree',
       createMockManifest('md.numen.views.file.tree', { permissions: ['vault:write'] }),
-    ).ui.drops
+    ).host.ui.drops
     expect(await drops?.drop('', { [URI_LIST]: 'x' })).toEqual(['first.md'])
   })
 })

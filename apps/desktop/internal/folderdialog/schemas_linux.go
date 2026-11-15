@@ -55,7 +55,7 @@ func getSchemasDir(prefix string) string {
 		return pos
 	}
 	filed, err := filepath.Glob(filepath.Join(prefix, "share", "gsettings-schemas", "*", "glib-2.0", "schemas"))
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
+	// gomutants:disable-next-line BRANCH_IF reason="Glob returns no match with its error, so without the return the loop below runs over nothing and returns the same empty string"
 	if err != nil {
 		return ""
 	}

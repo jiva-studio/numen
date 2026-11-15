@@ -193,7 +193,7 @@ describe('a setting that changes', () => {
     })
     await settings.start()
     const handler = vi.fn()
-    support.pluginHost.lifecycle.createContext(PLUGIN).settings.onChange('mode', handler)
+    support.pluginHost.lifecycle.createContext(PLUGIN).plugin.settings.onChange('mode', handler)
 
     change(feed, [PLUGIN, 'mode'], 'b')
     await vi.advanceTimersByTimeAsync(0)
@@ -216,7 +216,7 @@ describe('a setting that changes', () => {
     })
     await settings.start()
     const handler = vi.fn()
-    support.pluginHost.lifecycle.createContext(PLUGIN).settings.onChange('mode', handler)
+    support.pluginHost.lifecycle.createContext(PLUGIN).plugin.settings.onChange('mode', handler)
 
     change(feed, ['md.numen.other', 'mode'], 'b')
     await vi.advanceTimersByTimeAsync(0)
@@ -239,7 +239,7 @@ describe('a setting that changes', () => {
     })
     await settings.start()
     const handler = vi.fn()
-    support.pluginHost.lifecycle.createContext(PLUGIN).work.connections!.onChange!(handler)
+    support.pluginHost.lifecycle.createContext(PLUGIN).host.work.connections!.onChange!(handler)
 
     change(feed, ['app', 'appearance', 'mode'], 'dark')
     await vi.advanceTimersByTimeAsync(0)

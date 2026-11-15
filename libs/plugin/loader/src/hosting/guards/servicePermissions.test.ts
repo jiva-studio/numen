@@ -8,8 +8,8 @@ import {
   type BufferHost,
   type CommandsHost,
   type DropHost,
+  type HostServices,
   type NoticeHost,
-  type PluginContext,
   type PluginEvents,
   type PluginRegistrations,
   type PluginSettings,
@@ -27,7 +27,7 @@ import {
   type WindowHost,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
-import { createPluginContext } from '../context'
+import { createPluginParts } from '../context'
 import { disposeSubscriptions } from './subscriptions'
 import { SERVICE_RULES, type RulesOf } from './servicePermissions'
 import type { PluginContextHost } from '../types'
@@ -109,11 +109,13 @@ const SERVICE_PARTS = ['vault', 'ui', 'work'] as const
 
 function createFakes() {
   const rules = SERVICE_RULES as unknown as Record<string, Tree>
-  return Object.fromEntries(SERVICE_PARTS.map((part) => [part, createFakeServices(asTree(rules[part]))]))
+  return Object.fromEntries(
+    SERVICE_PARTS.map((part) => [part, createFakeServices(asTree(rules[part]))]),
+  )
 }
 
-function pick(context: PluginContext, path: readonly string[]): { target: unknown; key: string } {
-  let target: unknown = context
+function pick(services: HostServices, path: readonly string[]): { target: unknown; key: string } {
+  let target: unknown = services
   for (const step of path.slice(0, -1)) target = (target as Record<string, unknown>)[step]
   return { target, key: path[path.length - 1] ?? '' }
 }
@@ -123,8 +125,8 @@ const ARGUMENTS: Readonly<Record<string, readonly unknown[]>> = {
   'vault.buffers.track': [{ flush: async () => undefined }],
 }
 
-function call(context: PluginContext, path: readonly string[]): unknown {
-  const { target, key } = pick(context, path)
+function call(services: HostServices, path: readonly string[]): unknown {
+  const { target, key } = pick(services, path)
   return (target as Record<string, (...args: unknown[]) => unknown>)[key]?.(
     ...(ARGUMENTS[path.join('.')] ?? ['a.md', 'b.md']),
   )
@@ -146,15 +148,15 @@ describe('every member of a service that lists a permission', () => {
       const fakes = createFakes()
       const host = createHost(fakes)
       const missing = member.rule.permissions[0] ?? ''
-      const denied = createPluginContext('md.numen.sample', host, MANIFEST([]))
+      const denied = createPluginParts('md.numen.sample', host, MANIFEST([]))
 
       const failure = member.rule.isAsync
         ? await Promise.resolve()
-            .then(() => call(denied, member.path))
+            .then(() => call(denied.host, member.path))
             .catch((error: unknown) => error)
         : (() => {
             try {
-              call(denied, member.path)
+              call(denied.host, member.path)
             } catch (error) {
               return error
             }
@@ -162,14 +164,10 @@ describe('every member of a service that lists a permission', () => {
           })()
       expect(String(failure)).toContain(`lacks required permission "${missing}"`)
 
-      const allowed = createPluginContext(
-        'md.numen.sample',
-        host,
-        MANIFEST(member.rule.permissions),
-      )
-      const reached = call(allowed, member.path)
+      const allowed = createPluginParts('md.numen.sample', host, MANIFEST(member.rule.permissions))
+      const reached = call(allowed.host, member.path)
       await Promise.resolve(reached)
-      const service = pick({ ...fakes, plugin: undefined } as unknown as PluginContext, member.path)
+      const service = pick(fakes as unknown as HostServices, member.path)
       expect((service.target as Record<string, unknown>)[service.key]).toHaveBeenCalled()
     },
   )
@@ -197,28 +195,28 @@ describe('the services of a plugin context', () => {
     const host = createHost(createFakes(), {
       vault: { getNotes: () => notes as unknown as VaultNotes },
     })
-    const context = createPluginContext(
+    const context = createPluginParts(
       'md.numen.sample',
       host,
       MANIFEST(['vault:read', 'vault:write']),
     )
 
-    expect(Object.keys(context.vault.notes ?? {})).toStrictEqual(['read'])
+    expect(Object.keys(context.host.vault.notes ?? {})).toStrictEqual(['read'])
   })
 
   it('leave out a member a host service answers to any name, such as a proxy', () => {
     const everything = new Proxy({}, { get: () => vi.fn() })
     const host = createHost(createFakes(), { vault: { getNotes: () => everything as VaultNotes } })
-    const context = createPluginContext(
+    const context = createPluginParts(
       'md.numen.sample',
       host,
       MANIFEST(['vault:read', 'vault:write']),
     )
 
-    expect(Object.keys(context.vault.notes ?? {})).toStrictEqual(
+    expect(Object.keys(context.host.vault.notes ?? {})).toStrictEqual(
       Object.keys(SERVICE_RULES.vault.notes),
     )
-    expect((context.vault.notes as unknown as Record<string, unknown>).purge).toBeUndefined()
+    expect((context.host.vault.notes as unknown as Record<string, unknown>).purge).toBeUndefined()
   })
 
   it('check a member a host service defines as a getter', async () => {
@@ -228,9 +226,9 @@ describe('the services of a plugin context', () => {
     const host = createHost(createFakes(), {
       vault: { getBuffers: () => buffers as unknown as BufferHost },
     })
-    const context = createPluginContext('md.numen.sample', host, MANIFEST(['vault:read']))
+    const context = createPluginParts('md.numen.sample', host, MANIFEST(['vault:read']))
 
-    expect(() => context.vault.buffers?.track({} as never)).toThrowError(
+    expect(() => context.host.vault.buffers?.track({} as never)).toThrowError(
       'lacks required permission "vault:write" for buffers.track',
     )
     expect(track).not.toHaveBeenCalled()
@@ -239,17 +237,17 @@ describe('the services of a plugin context', () => {
   it('check a service the window offers after the context was made', () => {
     const services: { vaults?: VaultsHost } = {}
     const host = createHost(createFakes(), { vault: { getVaults: () => services.vaults } })
-    const context = createPluginContext('md.numen.sample', host, MANIFEST([]))
-    expect(context.vault.vaults).toBeUndefined()
+    const context = createPluginParts('md.numen.sample', host, MANIFEST([]))
+    expect(context.host.vault.vaults).toBeUndefined()
 
     services.vaults = {
       getState: vi.fn(),
       watch: vi.fn(),
       switchTo: vi.fn(),
     } as unknown as VaultsHost
-    const later = createPluginContext('md.numen.sample', host, MANIFEST([]))
+    const later = createPluginParts('md.numen.sample', host, MANIFEST([]))
 
-    expect(() => later.vault.vaults?.getState()).toThrowError('vault:read')
+    expect(() => later.host.vault.vaults?.getState()).toThrowError('vault:read')
   })
 
   it('lists the same members as the SDK types, no more and no fewer', () => {
@@ -293,9 +291,9 @@ describe('the services of a plugin context', () => {
     const asyncMembers = MEMBERS.filter((one) => one.rule.isAsync)
     expect(asyncMembers.length).toBeGreaterThan(0)
     for (const member of asyncMembers) {
-      const denied = createPluginContext('md.numen.sample', createHost(createFakes()), MANIFEST([]))
+      const denied = createPluginParts('md.numen.sample', createHost(createFakes()), MANIFEST([]))
       let returned: unknown
-      expect(() => (returned = call(denied, member.path)), label(member.path)).not.toThrow()
+      expect(() => (returned = call(denied.host, member.path)), label(member.path)).not.toThrow()
       await expect(returned, label(member.path)).rejects.toThrowError('lacks required permission')
     }
   })
@@ -319,19 +317,19 @@ describe('the services of a plugin context', () => {
     })
     const host = createHost(fakes)
 
-    const denied = createPluginContext('md.numen.sample', host, MANIFEST([]))
-    const allowed = createPluginContext('md.numen.sample', host, MANIFEST(['vault:read']))
+    const denied = createPluginParts('md.numen.sample', host, MANIFEST([]))
+    const allowed = createPluginParts('md.numen.sample', host, MANIFEST(['vault:read']))
 
-    expect(() => denied.ui.workspace?.window.openingPath).toThrowError('vault:read')
-    expect(denied.ui.workspace?.window.isReady.value).toBe(true)
-    expect(allowed.ui.workspace?.window.openingPath).toBe(openingPath)
+    expect(() => denied.host.ui.workspace?.window.openingPath).toThrowError('vault:read')
+    expect(denied.host.ui.workspace?.window.isReady.value).toBe(true)
+    expect(allowed.host.ui.workspace?.window.openingPath).toBe(openingPath)
   })
 })
 
 describe('the subscriptions of a plugin', () => {
   const createSubscriptions = () => {
-    const context = createPluginContext('md.numen.sample', createHost(createFakes()), MANIFEST([]))
-    return context.plugin.subscriptions
+    const context = createPluginParts('md.numen.sample', createHost(createFakes()), MANIFEST([]))
+    return context.plugin.identity.subscriptions
   }
 
   it('cannot be spliced, popped, shifted or reassigned', () => {

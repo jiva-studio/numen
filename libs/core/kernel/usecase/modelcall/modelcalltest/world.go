@@ -9,7 +9,7 @@ import (
 	"time"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -255,7 +255,9 @@ func New() *World {
 	}
 	w.Source = NewSource(w.Provider)
 	w.Detected = &Detected{}
-	w.Connections = connectiontest.NewWithDetection(w.repository, types, w.Keys, NoUses{}, w.Detected, func() (string, error) {
+	w.Connections = connectiontest.New(connectiontest.Parts{
+		Repository: w.repository, Types: types, Keys: w.Keys, Uses: NoUses{}, Detected: w.Detected, Titles: noTitles{},
+	}, func() (string, error) {
 		w.next++
 		return fmt.Sprintf("c%08x", w.next), nil
 	})
@@ -358,7 +360,7 @@ func (NoUses) RemoveRows(string) error { return nil }
 // Refresh configures no plugin.
 func (NoUses) Refresh(context.Context, string) error { return nil }
 
-func (NoUses) ListGrants() []connection.Grant { return nil }
+func (NoUses) ListPlugins() []plugindomain.Info { return nil }
 
 // AddLimited creates a connection of the type limited, which runs two calls at once unless the field
 // parallelRequests says otherwise. A parallelRequests of 0 leaves the field unset.
@@ -481,3 +483,8 @@ func (w *World) SetPluginVersion(pluginID, version string) {
 		}
 	}
 }
+
+// noTitles is a machine where no plugin titles an operation.
+type noTitles struct{}
+
+func (noTitles) ListOperationTitles() []manifest.Operation { return nil }

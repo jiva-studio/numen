@@ -449,11 +449,15 @@ func TestEditSpliceAndHelperBranches(t *testing.T) {
 	if err != nil {
 		t.Fatalf("StatFile: %v", err)
 	}
+	fNoStat.statCalls = 0
 	fNoStat.statErr = errors.New("StatFile must not be called")
 	eNoStat := editing(fNoStat)
 	eNoStat.FileStat = statNoStat
 	if _, err := eNoStat.Apply(t.Context(), getVault(), "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") }); err != nil {
 		t.Errorf("StatFile should be skipped when FileStat is set and Baseline is nil: %v", err)
+	}
+	if fNoStat.statCalls != 0 {
+		t.Errorf("expected StatFile not to be called when FileStat is set, got %d", fNoStat.statCalls)
 	}
 
 	// When Baseline == nil and ShouldOverwrite is true, StatFile is not called.
@@ -463,6 +467,13 @@ func TestEditSpliceAndHelperBranches(t *testing.T) {
 	eOverwriteNoStat.ShouldOverwrite = true
 	if _, err := eOverwriteNoStat.Apply(t.Context(), getVault(), "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") }); err != nil {
 		t.Errorf("StatFile should be skipped when ShouldOverwrite is true and Baseline is nil: %v", err)
+	}
+	if fOverwriteNoStat.statCalls != 0 {
+		t.Errorf("expected StatFile not to be called when ShouldOverwrite is true, got %d", fOverwriteNoStat.statCalls)
+	}
+
+	if edit.MaxBytes != 1048576 {
+		t.Errorf("MaxBytes = %d, want 1048576", edit.MaxBytes)
 	}
 
 	// Missing note with ShouldOverwrite: true and non-empty Baseline creates the note.

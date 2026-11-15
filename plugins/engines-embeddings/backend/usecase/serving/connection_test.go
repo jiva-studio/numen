@@ -114,7 +114,7 @@ func TestAConnectionSourceReportsTheModelOfTheProfileBeforeAnyTextIsEmbedded(t *
 	info := getModelInfoOf(t, srv)
 
 	if info.Name != "text-embedding-3-small" || info.From != openAIProfile().Source || info.Dimensions != 1536 ||
-		info.MaxTokens != 8191 || info.Pooling != "cls" {
+		info.MaxTokens != 8191 || info.Pooling != "cls" || info.FloorHint != 0 {
 		t.Errorf("model = %+v, want the profile of the connection", info)
 	}
 	if got := host.listEmbeddedCalls(); len(got) != 0 {
@@ -167,7 +167,11 @@ func TestThePrefixesOfTheProfileChangeTheHandlingHash(t *testing.T) {
 // edited connection reaches the recipe.
 func TestTheProfileIsReadOncePerConfiguration(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
-	srv := newConnectionServer(host)
+	openCalls := 0
+	srv := newEmbeddingServerWith(func() (ports.Models, error) {
+		openCalls++
+		return host, nil
+	})
 	srv.updateConfig(connectionValues())
 
 	for range 3 {
@@ -180,6 +184,9 @@ func TestTheProfileIsReadOncePerConfiguration(t *testing.T) {
 	getModelInfoOf(t, srv)
 	if got := host.countProfileCalls(); got != 2 {
 		t.Errorf("the profile was asked for %d times after a configuration, want 2", got)
+	}
+	if openCalls != 1 {
+		t.Errorf("the host models client was opened %d times, want 1", openCalls)
 	}
 }
 
@@ -252,6 +259,9 @@ func TestVectorsOfAnotherWidthThanTheProfileAreRefused(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "8") || !strings.Contains(err.Error(), "1536") {
 		t.Fatalf("err = %v, want one that names both widths", err)
 	}
+	if _, err := checkVectors([][]float32{{1}}, 2, 1); err == nil || !strings.Contains(err.Error(), "expected 2 vectors, got 1") {
+		t.Fatalf("checkVectors count mismatch err = %v", err)
+	}
 }
 
 // A connection that rejects the key or asks for payment stops the indexing with a text that names the
@@ -267,10 +277,16 @@ func TestFailuresOfTheConnectionAreFailedPreconditionsThatNameTheReason(t *testi
 	if !isPrecondition(err) || !strings.Contains(err.Error(), "OpenRouter: payment required") {
 		t.Errorf("err = %v, want a failed precondition naming the reason", err)
 	}
-	host.setProfileError(failure)
+	host.mu.Lock()
+	host.embedErr = nil
+	host.profileErr = failure
+	host.mu.Unlock()
 	srv.updateConfig(connectionValues())
 	if _, err := srv.GetModelInfo(t.Context()); !isPrecondition(err) || !strings.Contains(err.Error(), "payment required") {
 		t.Errorf("model info err = %v, want a failed precondition naming the reason", err)
+	}
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); !isPrecondition(err) || !strings.Contains(err.Error(), "payment required") {
+		t.Errorf("embed profile err = %v, want a failed precondition naming the reason", err)
 	}
 }
 
@@ -294,8 +310,8 @@ func TestAFreshInstallStaysOnTheLocalModel(t *testing.T) {
 
 	info := getModelInfoOf(t, srv)
 
-	if info.Name != model.DefaultModel || info.Dimensions != 384 {
-		t.Errorf("model = %s at %d, want the default local model", info.Name, info.Dimensions)
+	if srv.source != SourceLocal || info.Name != model.DefaultModel || info.Dimensions != 384 {
+		t.Errorf("source = %q, model = %s at %d, want the default local model", srv.source, info.Name, info.Dimensions)
 	}
 	if host.countProfileCalls() != 0 {
 		t.Error("the host was asked for a profile while the source is the local model")
@@ -361,6 +377,12 @@ func TestAHostThatCannotBeReachedIsReportedWhenTheModelIsRead(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "no host") || !isPrecondition(err) {
 		t.Errorf("err = %v", err)
 	}
+
+	nilOpenSrv := newEmbeddingServerWith(nil)
+	nilOpenSrv.updateConfig(connectionValues())
+	if _, err := nilOpenSrv.GetModelInfo(t.Context()); err == nil || !strings.Contains(err.Error(), "not available") || !isPrecondition(err) {
+		t.Errorf("nilOpenSrv err = %v", err)
+	}
 }
 
 // The smallest piece and the longest chunk apply to the connection as they do to the local model; a
@@ -418,4 +440,36 @@ func TestAProfileThatArrivesAfterTheCallerStoppedWaitingIsUsedByTheNextCall(t *t
 	if info.Dimensions != 1536 || host.countProfileCalls() != 1 {
 		t.Errorf("width %d after %d reads of the profile, want 1536 after 1", info.Dimensions, host.countProfileCalls())
 	}
+
+	canceledFetch := make(chan struct{})
+	cancelHost := &cancelableProfileHost{started: make(chan struct{}), canceled: canceledFetch}
+	cancelSrv := newEmbeddingServerWith(func() (ports.Models, error) { return cancelHost, nil })
+	cancelSrv.updateConfig(connectionValues())
+	firstErr := make(chan error, 1)
+	go func() {
+		_, err := cancelSrv.GetModelInfo(t.Context())
+		firstErr <- err
+	}()
+	<-cancelHost.started
+	cancelSrv.updateConfig(connectionValues())
+	<-canceledFetch
+	if err := <-firstErr; !errors.Is(err, context.Canceled) {
+		t.Fatalf("first fetch after reset err = %v, want context.Canceled", err)
+	}
+}
+
+type cancelableProfileHost struct {
+	started  chan struct{}
+	canceled chan struct{}
+}
+
+func (c *cancelableProfileHost) GetEmbeddingProfile(ctx context.Context) (model.ConnectionProfile, error) {
+	close(c.started)
+	<-ctx.Done()
+	close(c.canceled)
+	return model.ConnectionProfile{}, ctx.Err()
+}
+
+func (c *cancelableProfileHost) Embed(context.Context, model.Role, []string) ([][]float32, error) {
+	return nil, nil
 }

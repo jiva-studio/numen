@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"sync/atomic"
 	"testing"
 	"testing/synctest"
+	"time"
 
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/models"
@@ -17,6 +19,7 @@ type fakeModels struct {
 	connections []conversation.ChatConnection
 	models      map[string][]conversation.ModelOption
 	slow        map[string]bool
+	onList      func(conversation.ChatConnection)
 	err         error
 }
 
@@ -25,6 +28,9 @@ func (f *fakeModels) ListConnections(context.Context) ([]conversation.ChatConnec
 }
 
 func (f *fakeModels) ListModels(ctx context.Context, chat conversation.ChatConnection) ([]conversation.ModelOption, error) {
+	if f.onList != nil {
+		f.onList(chat)
+	}
 	if f.slow[chat.ID] {
 		<-ctx.Done()
 		return nil, ctx.Err()
@@ -88,8 +94,8 @@ func TestAConnectionWhoseModelsCannotBeListedIsLeftOutOfAPartialListing(t *testi
 func TestAConnectionWithNoFieldOfModelsIsLeftOutOfAWholeListing(t *testing.T) {
 	listing := listOptions(t, &fakeModels{
 		connections: []conversation.ChatConnection{
-			{ID: "c-meadow", Name: "Meadow", ModelField: "model"},
 			{ID: "c-quarry", Name: "Quarry", ModelField: ""},
+			{ID: "c-meadow", Name: "Meadow", ModelField: "model"},
 		},
 		models: map[string][]conversation.ModelOption{
 			"c-meadow": {{ID: "wren-2", Title: "Wren 2"}},
@@ -104,6 +110,20 @@ func TestAConnectionWithNoFieldOfModelsIsLeftOutOfAWholeListing(t *testing.T) {
 
 func TestASlowConnectionIsGivenUpAfterItsLimitAndTheOthersAreListed(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
+		if models.ConnectionLimit != 3*time.Second {
+			t.Fatalf("limit = %v, want 3s", models.ConnectionLimit)
+		}
+		// In the bubble the fake clock moves only when every goroutine waits, so the two markers bracket
+		// the limit of the slow connection.
+		var isBeforeLimit, isAfterLimit atomic.Bool
+		markers := make(chan struct{})
+		go func() {
+			defer close(markers)
+			time.Sleep(models.ConnectionLimit - time.Millisecond)
+			isBeforeLimit.Store(true)
+			time.Sleep(2 * time.Millisecond)
+			isAfterLimit.Store(true)
+		}()
 		listing := listOptions(t, &fakeModels{
 			connections: []conversation.ChatConnection{
 				{ID: "c-stall", Name: "Stall", ModelField: "model"},
@@ -113,10 +133,33 @@ func TestASlowConnectionIsGivenUpAfterItsLimitAndTheOthersAreListed(t *testing.T
 			slow:   map[string]bool{"c-stall": true},
 		})
 
+		if !isBeforeLimit.Load() || isAfterLimit.Load() {
+			t.Errorf("the listing ended with markers (limit-1ms %v, limit+1ms %v), want only the first", isBeforeLimit.Load(), isAfterLimit.Load())
+		}
+		<-markers
 		if !reflect.DeepEqual(listing.Options, []models.Option{{Value: "c-harbor|gull-7b", Title: "Harbor · Gull 7B"}}) || !listing.IsPartial {
 			t.Errorf("listing = %+v, want Harbor alone, partial", listing)
 		}
 	})
+}
+
+func TestACanceledContextStopsTheListingWithItsError(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	lister, err := models.NewLister(&fakeModels{
+		connections: []conversation.ChatConnection{
+			{ID: "c-meadow", Name: "Meadow", ModelField: "model"},
+		},
+		onList: func(conversation.ChatConnection) {
+			cancel()
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := lister.ListOptions(ctx); !errors.Is(err, context.Canceled) {
+		t.Errorf("err = %v, want context.Canceled", err)
+	}
 }
 
 func TestTheOptionsOfAChoiceNameTheConnectionAndTheModel(t *testing.T) {

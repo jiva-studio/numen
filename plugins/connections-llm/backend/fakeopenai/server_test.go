@@ -1,7 +1,10 @@
 package fakeopenai
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -148,5 +151,163 @@ func TestAPathWithNoRouteAnswersNotFound(t *testing.T) {
 	fake := New(Config{})
 	if got := post(t, fake, "/v1/classify", "", `{"model":"m"}`).Code; got != http.StatusNotFound {
 		t.Errorf("status %d, want 404", got)
+	}
+}
+
+type brokenReader struct{}
+
+func (brokenReader) Read([]byte) (int, error) { return 0, errors.New("unreadable") }
+
+func TestVectorMathAndDefaultDimensions(t *testing.T) {
+	if DefaultDimensions != 8 {
+		t.Fatalf("DefaultDimensions = %d, want 8", DefaultDimensions)
+	}
+	for _, dims := range []int{0, -1} {
+		srv := New(Config{Dimensions: dims})
+		if got := len(srv.Vector("ferry")); got != 8 {
+			t.Errorf("New(Dimensions=%d).Vector len = %d, want 8", dims, got)
+		}
+		if got := cap(srv.Aborted()); got != 64 {
+			t.Errorf("cap(Aborted) = %d, want 64", got)
+		}
+	}
+
+	vec := New(Config{Dimensions: 28}).Vector("ferry")
+	if len(vec) != 28 {
+		t.Fatalf("len(vec) = %d, want 28", len(vec))
+	}
+	var sum float64
+	for _, x := range vec {
+		sum += float64(x) * float64(x)
+	}
+	if math.Abs(sum-1.0) > 1e-5 {
+		t.Errorf("squared norm = %v, want 1.0", sum)
+	}
+	if !(vec[0] > 0 && vec[1] < 0 && vec[25] < 0 && vec[26] > 0 && vec[27] < 0) {
+		t.Errorf("unexpected signs in vec: v0=%v v1=%v v25=%v v26=%v v27=%v", vec[0], vec[1], vec[25], vec[26], vec[27])
+	}
+	raw0 := float64(uint32(0x9883d8cf))/float64(math.MaxUint32) - 0.5
+	for idx, rawBits := range map[int]uint32{1: 0x759ad11d, 25: 0x50886fd3, 26: 0xaae2586d, 27: 0x26cc7ecb} {
+		wantRatio := (float64(rawBits)/float64(math.MaxUint32) - 0.5) / raw0
+		gotRatio := float64(vec[idx]) / float64(vec[0])
+		if math.Abs(gotRatio-wantRatio) > 1e-4 {
+			t.Errorf("vec[%d]/vec[0] = %v, want %v", idx, gotRatio, wantRatio)
+		}
+	}
+
+	score := New(Config{}).Score("ferry", "Ferry times")
+	if score <= 0 || score >= 1 {
+		t.Errorf("Score = %v, want in (0, 1)", score)
+	}
+}
+
+func TestRoutesChatStreamAndValidationErrors(t *testing.T) {
+	fake := New(Config{
+		Models:          []Model{{ID: "m1", Name: "Model 1"}},
+		IsLabeled:       true,
+		EmbeddingModels: []Model{{ID: "e1", Name: "Embed 1"}},
+	})
+
+	// Unreadable request body -> 400.
+	badBodyReq := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/v1/chat/completions", brokenReader{})
+	badBodyRec := httptest.NewRecorder()
+	fake.ServeHTTP(badBodyRec, badBodyReq)
+	if badBodyRec.Code != http.StatusBadRequest {
+		t.Errorf("unreadable body status = %d, want 400", badBodyRec.Code)
+	}
+
+	// writeJSON with unmarshalable value writes 500 error message.
+	errRec := httptest.NewRecorder()
+	writeJSON(errRec, http.StatusOK, make(chan int))
+	if !strings.Contains(errRec.Body.String(), "unsupported type") {
+		t.Errorf("writeJSON(chan) = %q, want unsupported type error", errRec.Body.String())
+	}
+
+	// Chat validation errors -> 400.
+	for _, body := range []string{`{`, `{"messages":[{"role":"user","content":"hi"}]}`, `{"model":"m"}`} {
+		if got := post(t, fake, "/v1/chat/completions", "", body).Code; got != http.StatusBadRequest {
+			t.Errorf("chat(%s) status = %d, want 400", body, got)
+		}
+	}
+	// Embeddings validation errors -> 400.
+	for _, body := range []string{`{`, `{"model":"m"}`} {
+		if got := post(t, fake, "/v1/embeddings", "", body).Code; got != http.StatusBadRequest {
+			t.Errorf("embeddings(%s) status = %d, want 400", body, got)
+		}
+	}
+	// Rerank validation errors -> 400.
+	for _, body := range []string{`{`, `{"query":"q","documents":["a"]}`, `{"model":"m","query":"q"}`} {
+		if got := post(t, fake, "/v1/rerank", "", body).Code; got != http.StatusBadRequest {
+			t.Errorf("rerank(%s) status = %d, want 400", body, got)
+		}
+	}
+
+	// Chat non-streaming response content and Content-Type header.
+	chatRec := post(t, fake, "/v1/chat/completions", "", `{"model":"m1","messages":[{"role":"user","content":"hello"}]}`)
+	if chatRec.Code != http.StatusOK || chatRec.Header().Get("Content-Type") != "application/json" {
+		t.Fatalf("chat status = %d, content-type = %q", chatRec.Code, chatRec.Header().Get("Content-Type"))
+	}
+	var chatOut struct {
+		ID      string `json:"id"`
+		Choices []struct {
+			Index   int `json:"index"`
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.Unmarshal(chatRec.Body.Bytes(), &chatOut); err != nil || len(chatOut.Choices) != 1 || chatOut.Choices[0].Index != 0 || chatOut.Choices[0].Message.Content != "echo: hello" {
+		t.Errorf("chat response = %s (%v)", chatRec.Body.String(), err)
+	}
+
+	// Chat streaming response.
+	streamRec := post(t, fake, "/v1/chat/completions", "", `{"model":"m1","stream":true,"messages":[{"role":"user","content":"hello"}]}`)
+	if streamRec.Code != http.StatusOK || !strings.Contains(streamRec.Body.String(), "data: [DONE]") {
+		t.Errorf("stream response = %d %q", streamRec.Code, streamRec.Body.String())
+	}
+
+	// GET routes and non-matching methods/paths.
+	get := func(srv *Server, method, path string) *httptest.ResponseRecorder {
+		req := httptest.NewRequestWithContext(t.Context(), method, path, nil)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, req)
+		return rec
+	}
+	if rec := get(fake, http.MethodGet, "/v1/models"); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "m1") {
+		t.Errorf("GET /v1/models = %d %q", rec.Code, rec.Body.String())
+	}
+	if rec := get(fake, http.MethodGet, "/v1/embeddings/models"); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "e1") {
+		t.Errorf("GET /v1/embeddings/models (labeled) = %d %q", rec.Code, rec.Body.String())
+	}
+	unlabeled := New(Config{Models: []Model{{ID: "m1"}}})
+	if rec := get(unlabeled, http.MethodGet, "/v1/embeddings/models"); rec.Code != http.StatusNotFound {
+		t.Errorf("GET /v1/embeddings/models (unlabeled) = %d, want 404", rec.Code)
+	}
+	if rec := get(fake, http.MethodGet, "/v1/unknown"); rec.Code != http.StatusNotFound {
+		t.Errorf("GET /v1/unknown = %d, want 404", rec.Code)
+	}
+	if rec := get(fake, http.MethodDelete, "/v1/models"); rec.Code != http.StatusNotFound {
+		t.Errorf("DELETE /v1/models = %d, want 404", rec.Code)
+	}
+	if rec := get(fake, http.MethodDelete, "/v1/embeddings/models"); rec.Code != http.StatusNotFound {
+		t.Errorf("DELETE /v1/embeddings/models = %d, want 404", rec.Code)
+	}
+
+	// Delay == 0 with an already-canceled context still serves the response without aborting;
+	// Delay == 1ns with a live context waits and serves the response.
+	canceledCtx, cancel := context.WithCancel(t.Context())
+	cancel()
+	canceledReq := httptest.NewRequestWithContext(canceledCtx, http.MethodGet, "/v1/models", nil)
+	canceledRec := httptest.NewRecorder()
+	fake.ServeHTTP(canceledRec, canceledReq)
+	if canceledRec.Code != http.StatusOK {
+		t.Errorf("delay=0 with canceled context = %d, want 200", canceledRec.Code)
+	}
+	fake.Delay("/models", time.Nanosecond)
+	if rec := get(fake, http.MethodGet, "/v1/models"); rec.Code != http.StatusOK {
+		t.Errorf("delay=1ns with live context = %d, want 200", rec.Code)
+	}
+	if len(fake.Requests()) == 0 {
+		t.Error("expected recorded requests")
 	}
 }

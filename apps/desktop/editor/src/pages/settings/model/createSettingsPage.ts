@@ -21,7 +21,7 @@ import {
 } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
 import { formatError, type Caught } from '@/shared/api/errors'
-import { useSettingsTab } from '../kind'
+import { useSettingsTabKind } from '../useSettingsTabKind'
 import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
@@ -220,7 +220,7 @@ export function createSettingsPage({
 
   const catalogEntries = useCatalogEntries(api.listCatalog, rest.state.plugins, reportError)
 
-  const configured = useSettingsTab(
+  const configured = useSettingsTabKind(
     windowTabs.handle,
     createSettingsTabConfig({
       settings: { appearance, rest, getPlatform, reportError },

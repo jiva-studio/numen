@@ -17,13 +17,13 @@ func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHo
 	lender := hostendpoint.NewLender()
 	return &PluginHost{
 		Runtime: PluginRuntime{
-			Activator: runtime, PluginRetrier: runtime, PluginDiscoverer: runtime, PluginLister: runtime,
+			Activator: runtime, PluginRetrier: runtime, PluginLister: runtime,
 			PluginResolver: runtime, PluginEventEmitter: runtime, PluginBinding: runtime, TextPlugins: runtime,
 			PluginFailures: runtime, ConfigWatcher: runtime, ClientLookup: transport.NewClientLookup(nil),
 		},
 		Configuration: PluginConfiguration{
-			PluginSettingDeclarer: settings, ConfigRefresher: settings, SettingsPush: settings,
-			SettingChecker: settings, PersistHook: settings,
+			PluginSettingDeclarer: settings, ConfigRefresher: settings, PluginConfig: settings,
+			PluginSettings: settings,
 		},
 		Watch:               PluginWatch{PluginShutdown: settings, DependencyReporter: settings, ContentTypeTable: contenttype.Open()},
 		Endpoint:            hostendpoint.NewServices(lender.Get),

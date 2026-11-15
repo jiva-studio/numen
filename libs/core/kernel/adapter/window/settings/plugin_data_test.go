@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textversiontest"
 )
 
 type shownVault domain.Vault
@@ -20,11 +21,11 @@ func (v shownVault) GetCurrentVault() domain.Vault { return domain.Vault(v) }
 
 const transcription = "org.example.transcription"
 
-func newFolders(t *testing.T, current shownVault) (*Handler, *textfake.TextVersions) {
+func newFolders(t *testing.T, current shownVault) (*Handler, *textversiontest.TextVersions) {
 	t.Helper()
 	files := textfake.Readers{"talk.mp3": []byte("audio")}
 	folders := &textfake.Folders{}
-	versions := textfake.NewTextVersions(
+	versions := textversiontest.NewTextVersions(
 		&textfake.Versions{}, folders, textfake.Plugins{transcription}, files, textfake.NewSteppingClock(),
 	)
 	segments := []domain.TextSegment{{Text: "Hello.\n"}}

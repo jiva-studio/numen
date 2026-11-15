@@ -21,11 +21,11 @@ func TestTheAllowanceNamesTheSearchAndTheTasksTools(t *testing.T) {
 // The person's own servers are named in the configuration, every tool of them allowed, by the name their
 // tools start with; an answer reads no configuration but its own.
 func TestATaskAllowsEveryToolOfThePersonsServers(t *testing.T) {
-	task := Build(Options{Configuration: "cfg.json", Tools: []string{"note_read"}, Servers: []string{"weather", "my.server v2"}})
+	task := Build(Options{Configuration: "cfg.json", Tools: []string{"note_read"}, Servers: []string{"weather", "my.server_v-2", "café"}})
 	answer := Build(Options{Servers: []string{"weather"}})
 
 	assertPair(t, task, "--mcp-config", "cfg.json")
-	assertPair(t, task, "--allowedTools", "WebSearch,mcp__my_server_v2__*,mcp__numen__note_read,mcp__weather__*")
+	assertPair(t, task, "--allowedTools", "WebSearch,mcp__caf___*,mcp__my_server_v-2__*,mcp__numen__note_read,mcp__weather__*")
 	assertPair(t, answer, "--tools", "")
 	for name, args := range map[string][]string{"task": task, "answer": answer} {
 		if !slices.Contains(args, "--strict-mcp-config") {
@@ -45,13 +45,15 @@ func TestTheDefaultNumberOfTurnsIsOneHundred(t *testing.T) {
 	withFlags := Build(Options{
 		Tools:        []string{"note_read"},
 		Instructions: "inst",
+		Model:        "claude-opus-4-6",
 		Session:      "sess-1",
 	})
 	assertPair(t, withFlags, "--append-system-prompt", "inst")
+	assertPair(t, withFlags, "--model", "claude-opus-4-6")
 	assertPair(t, withFlags, "--resume", "sess-1")
 
 	withoutFlags := Build(Options{Tools: []string{"note_read"}})
-	if slices.Contains(withoutFlags, "--append-system-prompt") || slices.Contains(withoutFlags, "--resume") {
+	if slices.Contains(withoutFlags, "--append-system-prompt") || slices.Contains(withoutFlags, "--model") || slices.Contains(withoutFlags, "--resume") {
 		t.Errorf("unexpected flags in %v", withoutFlags)
 	}
 }

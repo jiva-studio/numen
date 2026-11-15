@@ -484,10 +484,6 @@ func (storedPlace) ListStoredVectors(context.Context, sourcedomain.StoredVectorQ
 	}, nil
 }
 
-func (storedPlace) GetEnclosingPassages(context.Context, domain.VaultID, []domain.ChunkID) ([]domain.Passage, error) {
-	return nil, nil
-}
-
 func TestTheNearestPassagesOfAPlaceStopAtTheFloorOfTheQueryElseAtTheFloorOfTheVault(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
