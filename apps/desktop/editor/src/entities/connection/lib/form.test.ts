@@ -65,7 +65,12 @@ describe('getEditableFields', () => {
 
 describe('createFieldValues', () => {
   it('holds the default of each plain field and leaves secrets and fields with no default out', () => {
+    const withDefaultSecret = type([
+      field({ key: 'apiKey', type: 'secret', defaultValue: 'hidden' }),
+      field({ key: 'parallelRequests', type: 'number', defaultValue: 4 }),
+    ])
     expect(createFieldValues(openRouter)).toStrictEqual({ parallelRequests: 4 })
+    expect(createFieldValues(withDefaultSecret)).toStrictEqual({ parallelRequests: 4 })
     expect(createFieldValues(compatible)).toStrictEqual({ mode: 'fast' })
   })
 })
@@ -88,9 +93,14 @@ describe('getMissingFields', () => {
     expect(getMissingFields(openRouter, {}, { apiKey: 'k' })).toStrictEqual([])
   })
 
-  it('counts a secret that is already stored, and a blank text as no value', () => {
+  it('counts a secret that is already stored, a non-string value as present, and a blank text as no value', () => {
+    const withRequiredNumber = type([
+      field({ key: 'parallelRequests', type: 'number', isRequired: true }),
+    ])
     expect(getMissingFields(openRouter, {}, {}, ['apiKey'])).toStrictEqual([])
     expect(getMissingFields(compatible, { baseUrl: '   ' }, {})).toStrictEqual(['baseUrl'])
+    expect(getMissingFields(withRequiredNumber, {}, {})).toStrictEqual(['parallelRequests'])
+    expect(getMissingFields(withRequiredNumber, { parallelRequests: 4 }, {})).toStrictEqual([])
   })
 })
 
@@ -117,11 +127,12 @@ describe('createInitialValues', () => {
   })
 
   it('holds the stored values over the defaults of its type for an existing connection', () => {
-    expect(createInitialValues([compatible], stored())).toStrictEqual({
+    const other = { ...openRouter, id: 'other/type' }
+    expect(createInitialValues([other, compatible], stored())).toStrictEqual({
       mode: 'fast',
       baseUrl: 'https://a.example',
     })
-    expect(createInitialValues([], stored())).toStrictEqual({ baseUrl: 'https://a.example' })
+    expect(createInitialValues([other], stored())).toStrictEqual({ baseUrl: 'https://a.example' })
   })
 })
 

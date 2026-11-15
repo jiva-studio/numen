@@ -13,7 +13,11 @@ describe('readPluginReadme', () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
 
-    fetchMock.mockResolvedValueOnce({ ok: false, text: async () => 'Error body' })
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      headers: new Headers(),
+      text: async () => 'Error body',
+    })
     expect(await readPluginReadme('my-plugin')).toBe('')
     expect(fetchMock).toHaveBeenCalledWith('/plugin/my-plugin/README.md')
 

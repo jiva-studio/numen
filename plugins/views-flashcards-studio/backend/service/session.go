@@ -42,13 +42,8 @@ func (s *vaultSession) createCardNote(
 	ctx context.Context, create func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, api.ErrorCode, bool, error) {
 	showing, err := s.getCurrentVault(ctx)
-	var made cards.CreateNoteResult
-	var code api.ErrorCode
-	var indexOutdated bool
-	if err == nil {
-		made, code, indexOutdated, err = apierror.ClassifyCreate(
-			create(showing, cards.New{Title: title, Body: "", Path: folder, Fields: nil, Templates: nil}),
-		)
+	if err != nil {
+		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, err
 	}
-	return made, code, indexOutdated, err
+	return apierror.ClassifyCreate(create(showing, cards.New{Title: title, Body: "", Path: folder, Fields: nil, Templates: nil}))
 }

@@ -95,3 +95,35 @@ func collapse(fused []domain.SearchResult, rankings []Ranking, each, limit int) 
 	}
 	return out
 }
+
+// placeScores is the best similarity and the best word score of the hits at one place.
+type placeScores struct {
+	similarity *float64
+	wordScore  *float64
+}
+
+func foldScores(kept []domain.SearchResult, rankings []Ranking) []domain.SearchResult {
+	best := map[resultPlace]placeScores{}
+	for _, ranking := range rankings {
+		for _, p := range ranking.Results {
+			pos := resultPlace{p.Path, p.Start, p.Length}
+			scores := best[pos]
+			scores.similarity = getHigher(scores.similarity, p.Similarity)
+			scores.wordScore = getHigher(scores.wordScore, p.WordScore)
+			best[pos] = scores
+		}
+	}
+	for i, p := range kept {
+		scores := best[resultPlace{p.Path, p.Start, p.Length}]
+		kept[i].Similarity, kept[i].WordScore = scores.similarity, scores.wordScore
+	}
+	return kept
+}
+
+func getHigher(current, candidate *float64) *float64 {
+	if candidate == nil || (current != nil && *current >= *candidate) {
+		return current
+	}
+	value := *candidate
+	return &value
+}

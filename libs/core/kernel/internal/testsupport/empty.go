@@ -30,10 +30,6 @@ func (EmptyNoteQueries) GetNotes(context.Context, domain.VaultID, []string) (map
 
 func (EmptyNoteQueries) Has(context.Context, domain.VaultID) (bool, error) { return false, nil }
 
-func (EmptyNoteQueries) GetSummary(context.Context, domain.VaultID) (domain.VaultSummary, error) {
-	return domain.VaultSummary{}, nil
-}
-
 // EmptySourceBacklog is the backlog of an index that has no source to cut again.
 type EmptySourceBacklog struct{}
 

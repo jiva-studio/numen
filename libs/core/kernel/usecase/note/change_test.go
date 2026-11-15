@@ -33,8 +33,12 @@ type changeFixture struct {
 func openChangeFixture(t *testing.T, notes map[string]string) changeFixture {
 	t.Helper()
 	db, v := newIndexedVault(t, notes)
-	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.NewClock())
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.NewClock(),
+		Ledger: vaults.NewLedger(),
+	})
+
 	return changeFixture{
 		db:    db,
 		vault: v,

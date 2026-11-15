@@ -54,8 +54,9 @@ type Bus struct {
 	errorHandler     ErrorHandler
 }
 
-// New creates a debouncing and throttling event bus.
-func New(host Trigger, clock Clock, debounceDelay, throttleInterval time.Duration) *Bus {
+// New creates a debouncing and throttling event bus. report receives the errors of the deliveries that run after
+// Publish returned; a nil report drops them.
+func New(host Trigger, clock Clock, debounceDelay, throttleInterval time.Duration, report ErrorHandler) *Bus {
 	if debounceDelay <= 0 {
 		debounceDelay = 50 * time.Millisecond
 	}
@@ -73,15 +74,8 @@ func New(host Trigger, clock Clock, debounceDelay, throttleInterval time.Duratio
 		isClosed:         false,
 		inFlight:         sync.WaitGroup{},
 		clock:            clock,
-		errorHandler:     nil,
+		errorHandler:     report,
 	}
-}
-
-// SetErrorHandler sets the callback for asynchronous errors.
-func (b *Bus) SetErrorHandler(handler ErrorHandler) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	b.errorHandler = handler
 }
 
 func (b *Bus) getNow() time.Time {
@@ -244,12 +238,8 @@ func (b *Bus) dispatchAsyncKey(key string) {
 }
 
 func (b *Bus) reportError(err error) {
-	b.mu.Lock()
-	handler := b.errorHandler
-	b.mu.Unlock()
-
-	if handler != nil {
-		handler(err)
+	if b.errorHandler != nil {
+		b.errorHandler(err)
 	}
 }
 

@@ -87,12 +87,12 @@ func (m Manifest) ListConnectionsUse() []string {
 	return operations
 }
 
-// ActivationEventSearchSourceReady is the event the host emits when the search source has indexed a vault.
-const ActivationEventSearchSourceReady = "onSearchSourceReady"
+// ActivationEventIndexChanged is the event the host emits when indexing changed the index of a vault.
+const ActivationEventIndexChanged = "onIndexChanged"
 
 // PluginActivationEvents is every activation event pattern a manifest may declare.
 func PluginActivationEvents() []string {
-	return []string{ActivationEventSearchSourceReady}
+	return []string{ActivationEventIndexChanged}
 }
 
 // PluginCapabilities is every capability a manifest may declare: the capabilities the host resolves
@@ -397,7 +397,7 @@ func (m Manifest) listPermissionIssues() []error {
 	}
 	for _, operation := range m.ListConnectionsUse() {
 		for _, s := range m.Settings {
-			if slices.Contains(s.Operations, operation) {
+			if s.Type == SettingTypeConnections && slices.Contains(s.Operations, operation) {
 				issues = append(issues, fmt.Errorf("%w: %s, and the setting %s holds rows for the operation", ErrInvalidPermission, FormatConnectionsUse(operation), s.Key))
 			}
 		}
@@ -472,9 +472,9 @@ func (m Manifest) IsActivatedBy(event string) bool {
 }
 
 func isMatchingActivationEvent(declared, event string) bool {
-	if declared != ActivationEventSearchSourceReady {
+	if declared != ActivationEventIndexChanged {
 		return false
 	}
-	vaultID, isScoped := strings.CutPrefix(event, ActivationEventSearchSourceReady+":")
-	return event == ActivationEventSearchSourceReady || (isScoped && vaultID != "")
+	vaultID, isScoped := strings.CutPrefix(event, ActivationEventIndexChanged+":")
+	return event == ActivationEventIndexChanged || (isScoped && vaultID != "")
 }

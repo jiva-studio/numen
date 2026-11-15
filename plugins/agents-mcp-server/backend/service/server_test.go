@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -45,24 +46,12 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 		t.Fatalf("NewServer failed: %v", err)
 	}
 
-	if got := srv.GetAggregator().GetRegisteredTools(); len(got) != 1 || got[0] != "note_get" {
-		t.Fatalf("expected initial SyncTools in NewServer, got %v", got)
-	}
-	if srv.GetHTTPURL() != "" {
-		t.Fatal("expected empty URL before Serve")
-	}
-
-	serveOnLoopback(t, srv)
+	mcpURL := serveOnLoopback(t, srv)
 	defer func() {
 		if err := srv.Close(t.Context()); err != nil {
 			t.Error(err)
 		}
 	}()
-
-	mcpURL := srv.GetHTTPURL()
-	if mcpURL == "" {
-		t.Fatal("expected non-empty streamable HTTP URL")
-	}
 
 	assertUnauthorized(t, mcpURL)
 
@@ -80,9 +69,9 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 	}
 }
 
-func assertUnauthorized(t *testing.T, url string) {
+func assertUnauthorized(t *testing.T, endpoint string) {
 	t.Helper()
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, endpoint, nil)
 	if err != nil {
 		t.Fatalf("http.NewRequest failed: %v", err)
 	}
@@ -168,7 +157,7 @@ func connectStreamableClient(ctx context.Context, t *testing.T, mcpURL, token st
 	return session
 }
 
-func serveOnLoopback(t *testing.T, srv *testServer) {
+func serveOnLoopback(t *testing.T, srv *testServer) string {
 	t.Helper()
 	ln, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
@@ -178,4 +167,5 @@ func serveOnLoopback(t *testing.T, srv *testServer) {
 		closeAndCheck(t, ln)
 		t.Fatalf("Serve failed: %v", err)
 	}
+	return (&url.URL{Scheme: "http", Host: ln.Addr().String(), Path: "/mcp"}).String()
 }

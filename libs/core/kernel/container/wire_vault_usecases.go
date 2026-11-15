@@ -42,14 +42,6 @@ func openIndex(c vaultWiring, ctx context.Context) (*Index, error) {
 	return &Index{DB: db, File: path, Ledger: vault.NewLedger(), Versions: version.NewIndexVersions(db.TextVersions())}, nil
 }
 
-func updateIndex(c vaultWiring, db *Index) edit.IndexUpdater {
-	refresh := vaultMakeRefresh(c, db, db.Notes())
-	return func(ctx context.Context, v domain.Vault, paths []string) error {
-		_, err := refresh.Execute(ctx, v, paths)
-		return err
-	}
-}
-
 func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
 	path, err := indexfolder.Prepare(c.IndexPath)
 	if err != nil {

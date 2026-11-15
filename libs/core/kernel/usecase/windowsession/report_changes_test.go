@@ -28,7 +28,7 @@ func TestAFileEventAsksForAPassOverTheChangedPathsOnly(t *testing.T) {
 	}
 }
 
-func TestAReloadAsksForAPassOverTheWholeVaultAndWakesTheSources(t *testing.T) {
+func TestAReloadAsksForAPassOverTheWholeVaultAndWakesTheNotesAndTheSources(t *testing.T) {
 	w := newTestWindow(t, nil)
 	passes := newTriggerPasses()
 	passes.take()
@@ -39,8 +39,9 @@ func TestAReloadAsksForAPassOverTheWholeVaultAndWakesTheSources(t *testing.T) {
 	if isAll, _ := passes.take(); !isAll {
 		t.Error("a reload asked for no pass over the whole vault")
 	}
-	if _, sources := w.wake.counts(); sources != 1 {
-		t.Errorf("the sources were woken %d times, want once", sources)
+	if notes, sources := w.wake.counts(); notes != 1 || sources != 1 {
+		// The rescan behind a reload may have saved or removed notes.
+		t.Errorf("woke the notes %d times and the sources %d times, want once each", notes, sources)
 	}
 }
 

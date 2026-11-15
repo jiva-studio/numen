@@ -7,6 +7,7 @@ import { nextTick, ref } from 'vue'
 import type { CommandItem } from '@numen/plugin-loader'
 import type { Command } from '@/entities/command'
 import type { CommandTarget, RunSupport } from '@/shared/model/command'
+import { WORDS } from '@/shared/ui/words'
 import { createItemLists } from './pluginItems'
 
 const TARGET = {
@@ -50,16 +51,67 @@ function setUp(itemsById: Readonly<Record<string, readonly CommandItem[]>>) {
 
 describe('the commands with items in the palette', () => {
   it('are left out once their items are read and none is listed', async () => {
-    const { removeEmptyCommands } = setUp({
+    const { removeEmptyCommands, listCommandItems } = setUp({
       'tab.move': [{ id: 'w1', title: 'Window 1' }],
       'version.delete': [],
     })
     const palette = [createCommand('tab.move'), createCommand('version.delete'), createCommand('x')]
 
     removeEmptyCommands(palette)
+    removeEmptyCommands(palette)
     await settle()
 
+    expect(listCommandItems).toHaveBeenCalledTimes(2)
     expect(removeEmptyCommands(palette).map((one) => one.id)).toStrictEqual(['tab.move', 'x'])
+  })
+
+  it('treat a rejected item read as an empty list and filter step groups by trimmed lowercase query', async () => {
+    const previewItem = vi.fn()
+    const getStepGroups = vi.fn(() => [{ id: 'fallback', title: 'Fallback', items: [] }])
+    const listCommandItems = vi.fn(async (id: string) => {
+      if (id === 'broken') throw new Error('failed')
+      return [
+        { id: 'w1', title: 'Window One' },
+        { id: 'w2', title: 'Other Tab' },
+      ]
+    })
+    const lists = createItemLists(
+      { hasCommandItems: (id: string) => id === 'broken' || id === 'tab.move', listCommandItems },
+      {
+        paletteLists: { getStepGroups, previewItem },
+        getTarget: () => TARGET,
+        runs: RUNS,
+      },
+    )
+
+    expect(lists.removeEmptyCommands([createCommand('broken')])).toHaveLength(1)
+    const isOpen = ref(true)
+    lists.resetWhenClosed(isOpen)
+
+    expect(lists.lists.getStepGroups('tab.move', '')).toStrictEqual([
+      {
+        id: 'tab.move',
+        title: '',
+        items: [{ id: '', title: WORDS.loadingItems, isDisabled: true }],
+      },
+    ])
+    expect(lists.lists.getStepGroups('unknown', 'q')).toStrictEqual([
+      { id: 'fallback', title: 'Fallback', items: [] },
+    ])
+    lists.lists.previewItem('tab.move', 'w1')
+    expect(previewItem).toHaveBeenCalledWith('tab.move', 'w1')
+
+    lists.removeEmptyCommands([createCommand('broken')])
+    await settle()
+
+    expect(lists.removeEmptyCommands([createCommand('broken')])).toStrictEqual([])
+    expect(lists.lists.getStepGroups('tab.move', '  WIN  ')).toStrictEqual([
+      {
+        id: 'tab.move',
+        title: '',
+        items: [{ id: 'w1', title: 'Window One' }],
+      },
+    ])
   })
 
   it('are listed while their items are being read', () => {
@@ -123,9 +175,9 @@ describe('the commands with items in the palette', () => {
   })
 
   it('are read again when the target changes while the palette is open', async () => {
-    const front = ref({ ...TARGET, path: 'assets', file: 'assets', isFolder: true })
-    const listCommandItems = vi.fn(async (_id: string, target: { path: string }) =>
-      target.path.endsWith('.pdf') ? [{ id: 'pdf', title: 'Extract text layer' }] : [],
+    const front = ref<CommandTarget>({ ...TARGET, path: 'assets', file: 'assets' })
+    const listCommandItems = vi.fn(async (_id: string, target: { isFolder: boolean }) =>
+      target.isFolder ? [] : [{ id: 'pdf', title: 'Extract text layer' }],
     )
     const lists = createItemLists(
       { hasCommandItems: (id: string) => id === 'app:file.createText', listCommandItems },
@@ -136,12 +188,16 @@ describe('the commands with items in the palette', () => {
     const command = [createCommand('app:file.createText')]
     lists.removeEmptyCommands(command)
     await settle()
-    expect(lists.removeEmptyCommands(command)).toHaveLength(0)
+    expect(lists.removeEmptyCommands(command).map((one) => one.id)).toStrictEqual([
+      'app:file.createText',
+    ])
 
-    front.value = { ...TARGET, path: 'assets/scan.pdf', file: 'assets/scan.pdf', isFolder: false }
+    front.value = { ...TARGET, path: 'assets', file: 'assets', isFolder: true }
     lists.removeEmptyCommands(command)
     await settle()
+    expect(lists.removeEmptyCommands(command)).toHaveLength(0)
 
+    front.value = { ...TARGET, path: 'assets', file: 'assets', isFolder: false }
     expect(lists.removeEmptyCommands(command).map((one) => one.id)).toStrictEqual([
       'app:file.createText',
     ])
@@ -256,6 +312,10 @@ describe('the notes the conditions of the palette read', () => {
 
     isOpen.value = true
     await nextTick()
+    expect(lists.removeEmptyCommands([createCommand('x')]).map((one) => one.id)).toStrictEqual([
+      'x',
+    ])
+    expect(lists.lists.getStepGroups('x', '')).toStrictEqual([])
     isOpen.value = false
     await nextTick()
 

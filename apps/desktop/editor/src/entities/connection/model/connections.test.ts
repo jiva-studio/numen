@@ -47,8 +47,21 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
   ...overrides,
 })
 
+const typeInfo = (overrides: Partial<ConnectionTypeInfo> = {}): ConnectionTypeInfo => ({
+  id: 'a.b/x',
+  pluginId: 'a.b',
+  pluginName: 'A',
+  title: 'X',
+  description: '',
+  operations: ['llm.complete'],
+  fields: [],
+  rowFields: [],
+  isAvailable: true,
+  ...overrides,
+})
+
 const createClient = (overrides: Partial<ConnectionClient> = {}): ConnectionClient => ({
-  listTypes: () => Promise.resolve({ types: [], operations: [] }),
+  listTypes: () => Promise.resolve({ types: [typeInfo()], operations: [] }),
   list: () => Promise.resolve([connection()]),
   create: () => Promise.resolve(asValue(connection({ id: 'c00000002' }))),
   update: () => Promise.resolve(asValue(connection({ revision: 2 }))),
@@ -59,16 +72,40 @@ const createClient = (overrides: Partial<ConnectionClient> = {}): ConnectionClie
 const createStore = (client: ConnectionClient) => {
   const notify = vi.fn()
   const api = createConnectionApi({ ...client, listRowOptions: () => Promise.resolve(asValue([])) })
-  return { notify, store: createConnectionStore(api, notify) }
+  return { api, notify, store: createConnectionStore(api, notify) }
 }
 
 describe('createConnectionStore', () => {
-  it('loads the types and the connections', async () => {
-    const { store } = createStore(createClient())
+  it('starts empty, then loads the types and the connections and clears the notice', async () => {
+    const { notify, store } = createStore(createClient())
+    expect(store.connections.value).toStrictEqual([])
+    expect(store.types.value).toStrictEqual([])
 
     await store.load()
 
     expect(store.connections.value.map((one) => one.name)).toStrictEqual(['Work'])
+    expect(store.types.value).toStrictEqual([typeInfo()])
+    expect(notify).toHaveBeenCalledWith('')
+  })
+
+  it('lists row options through the client', async () => {
+    const listRowOptions = vi.fn((_request: object) =>
+      Promise.resolve(asValue([{ value: 'gpt-4o', title: 'GPT-4o', group: '' }])),
+    )
+    const api = createConnectionApi({ ...createClient(), listRowOptions })
+
+    const answer = await api.listRowOptions('c00000001', 'model', { tier: 'pro' }, ['llm.complete'])
+
+    expect(listRowOptions).toHaveBeenCalledWith({
+      connectionId: 'c00000001',
+      field: 'model',
+      options: { tier: 'pro' },
+      operations: ['llm.complete'],
+    })
+    expect(answer).toStrictEqual({
+      ok: true,
+      value: [{ value: 'gpt-4o', title: 'GPT-4o', group: '' }],
+    })
   })
 
   it('keeps the first title of each operation and leaves out an empty one', async () => {
@@ -179,22 +216,30 @@ describe('createConnectionStore', () => {
     expect(store.connections.value).toHaveLength(0)
   })
 
-  it('keeps the answer to the later read when an earlier read answers last', async () => {
-    const answers: ((rows: readonly ConnectionInfo[]) => void)[] = []
+  it('keeps the answer to the later read when an earlier read answers or rejects last', async () => {
+    const answers: {
+      resolve: (rows: readonly ConnectionInfo[]) => void
+      reject: (reason: Error) => void
+    }[] = []
     const list = () =>
-      new Promise<readonly ConnectionInfo[]>((resolve) => {
-        answers.push(resolve)
+      new Promise<readonly ConnectionInfo[]>((resolve, reject) => {
+        answers.push({ resolve, reject })
       })
-    const { store } = createStore(createClient({ list }))
+    const { notify, store } = createStore(createClient({ list }))
 
     const first = store.load()
     const second = store.load()
-    answers[1]!([connection({ name: 'Home' })])
-    await second
-    answers[0]!([connection({ name: 'Work' })])
+    const third = store.load()
+    answers[2]?.resolve([connection({ name: 'Home' })])
+    await third
+    answers[0]?.resolve([connection({ name: 'Work' })])
     await first
+    notify.mockClear()
+    answers[1]?.reject(new Error('stale failure'))
+    await second
 
     expect(store.connections.value.map((one) => one.name)).toStrictEqual(['Home'])
+    expect(notify).not.toHaveBeenCalled()
   })
 
   it('reads the list again after an update the core refuses as stale', async () => {
@@ -211,7 +256,10 @@ describe('createConnectionStore', () => {
       secrets: {},
     })
 
-    expect(answer.ok).toBe(false)
+    expect(answer).toStrictEqual({
+      ok: false,
+      error: 'Another window changed this connection. Save again to replace its changes.',
+    })
     expect(list).toHaveBeenCalledTimes(2)
     expect(store.connections.value.map((one) => one.revision)).toStrictEqual([3])
   })

@@ -42,7 +42,7 @@ const createWindow = (answers: Answers = {}, withHold = false) => {
       path: answers.chose ?? '/vaults/Heat',
     }),
     addVault: (request: { path: string; name: string }) => {
-      calls.push(`add ${request.path}`)
+      calls.push(`add ${request.path}${request.name ? ` ${request.name}` : ''}`)
       return answers.added ?? { vault: wireVault('heat', 'Heat') }
     },
     renameVault: (request: { id: string; name: string }) => {
