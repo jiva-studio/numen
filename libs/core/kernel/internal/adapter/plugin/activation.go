@@ -270,12 +270,11 @@ type withoutProvisioningKey struct{}
 // withoutProvisioning marks a call of EnsureActive that starts the plugin without downloading the dependencies it declares,
 // for the delivery of an event or of a connection, which is no use of the models.
 func withoutProvisioning(ctx context.Context) context.Context {
-	return context.WithValue(ctx, withoutProvisioningKey{}, true)
+	return context.WithValue(ctx, withoutProvisioningKey{}, struct{}{})
 }
 
 func isProvisioning(ctx context.Context) bool {
-	skipped, _ := ctx.Value(withoutProvisioningKey{}).(bool)
-	return !skipped
+	return ctx.Value(withoutProvisioningKey{}) == nil
 }
 
 // provisionDependencies downloads what the plugin declares and is not on this machine. A failed download is no failure of

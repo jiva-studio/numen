@@ -254,7 +254,8 @@ func TestSwitchingToAConnectionEndsTheLoadOfTheLocalModel(t *testing.T) {
 	srv, started, release := slowModel(t)
 	defer close(release)
 
-	go func() { _, _ = srv.getEmbedder(t.Context()) }()
+	opened := make(chan error, 1)
+	go func() { _, err := srv.getEmbedder(t.Context()); opened <- err }()
 	<-started
 	srv.updateConfig(map[string]string{"source": SourceConnection})
 
