@@ -70,7 +70,7 @@ export function openTab(
  *
  * The middle is not a side, and a tab requested there keeps its position.
  */
-export interface OpenAdjacentPlacement {
+interface OpenAdjacentPlacement {
   readonly side: Side
   readonly createId: NodeIdFactory
   readonly onto?: NodeId
