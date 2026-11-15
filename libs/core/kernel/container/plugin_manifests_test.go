@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
@@ -551,5 +552,42 @@ func TestPluginNamingRule_ReportsNamingIssues(t *testing.T) {
 		if got := listPluginNamingIssues(one.folder, one.id); len(got) != one.issues {
 			t.Errorf("%s: %d issues found, want %d: %v", name, len(got), one.issues, got)
 		}
+	}
+}
+
+func TestShippedPluginsOnTheFeedTakeOnlyTheFilesOfTheirKind(t *testing.T) {
+	note, pdf, epub := domain.ContentType("text/markdown"), domain.ContentType("application/pdf"), domain.ContentType("application/epub+zip")
+	png, mp3, mp4 := domain.ContentType("image/png"), domain.ContentType("audio/mpeg"), domain.ContentType("video/mp4")
+	want := map[string]struct{ takes, ignores []domain.ContentType }{
+		"md.numen.tools.taxonomy":        {takes: []domain.ContentType{note}, ignores: []domain.ContentType{pdf, epub, png, mp3, mp4}},
+		"md.numen.tools.media.importer":  {takes: []domain.ContentType{note}, ignores: []domain.ContentType{pdf, epub, png, mp3, mp4}},
+		"md.numen.readers.pdf":           {takes: []domain.ContentType{pdf}, ignores: []domain.ContentType{note, epub, png, mp3, mp4}},
+		"md.numen.readers.epub":          {takes: []domain.ContentType{epub}, ignores: []domain.ContentType{note, pdf, png, mp3, mp4}},
+		"md.numen.engines.ocr":           {takes: []domain.ContentType{pdf, png}, ignores: []domain.ContentType{note, epub, mp3, mp4}},
+		"md.numen.engines.transcription": {takes: []domain.ContentType{mp3, mp4}, ignores: []domain.ContentType{note, pdf, epub, png}},
+	}
+	found := 0
+	for _, one := range getPluginManifests(t) {
+		if slices.Contains(one.ActivationEvents, manifest.ActivationEventFilesChanged) {
+			t.Errorf("%s declares onFilesChanged without a mask", one.ID)
+		}
+		expected, ok := want[one.ID]
+		if !ok {
+			continue
+		}
+		found++
+		for _, kind := range expected.takes {
+			if !one.IsTakingFileTypes([]domain.ContentType{kind}) {
+				t.Errorf("%s ignores %s", one.ID, kind)
+			}
+		}
+		for _, kind := range expected.ignores {
+			if one.IsTakingFileTypes([]domain.ContentType{kind}) {
+				t.Errorf("%s takes %s", one.ID, kind)
+			}
+		}
+	}
+	if found == 0 {
+		t.Fatal("no plugin of the feed found: a rule checked against nothing")
 	}
 }

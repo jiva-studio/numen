@@ -21,7 +21,7 @@ type Authority interface {
 	// without the permission.
 	Authorize(authorization, permission string) (pluginID string, err error)
 	// IsTakingFile reports whether the plugin takes the file at the path: a plugin whose manifest declares
-	// readers takes the types they open, and one with no reader takes every file.
+	// onFilesChanged with a mask takes the types it matches, and one that declares none takes every file.
 	IsTakingFile(pluginID, path string) bool
 }
 
