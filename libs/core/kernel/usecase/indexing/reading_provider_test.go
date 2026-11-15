@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -39,6 +40,6 @@ func TestWorker(t *testing.T) {
 			Vaults: db.Vaults(), Notes: db.Notes(), FileStats: db.NoteQueries(),
 			Maintenance: db.Maintenance(), Progress: db.ChunkVectors(), Vectors: db.VectorIndex(), Closer: db,
 		}
-		return read, container.VaultReaders(cfg), index
+		return read, vaultreader.Readers{}, index
 	}, vaultfixture.NewVault)
 }

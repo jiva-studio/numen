@@ -182,7 +182,7 @@ func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 	if got := db.Ledger.Len(); got != 1 {
 		t.Fatalf("the opener's refresh left %d notes in the index's ledger", got)
 	}
-	if err := updateIndex(vaultOf(cfg), db)(t.Context(), v, []string{"Two.md"}); err != nil {
+	if err := UpdateIndex(cfg, db)(t.Context(), v, []string{"Two.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := db.Ledger.Len(); got != 2 {

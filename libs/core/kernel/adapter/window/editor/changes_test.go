@@ -319,9 +319,10 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 	// What this watches is the order the writes and the closing land in, so
 	// nothing is updated behind them.
 	noIndex := func(context.Context, domain.Vault, []string) error { return nil }
+	writers := newVaultWriters()
 	writing := note.NewWrite(
-		container.VaultReaders(cfg),
-		recording{NoteWriters: container.NoteWriters(cfg), VaultLocks: container.VaultLocks(cfg), order: recorded, hold: hold},
+		vaultreader.Readers{},
+		recording{NoteWriters: writers, VaultLocks: writers, order: recorded, hold: hold},
 		noIndex,
 		testsupport.NewClock(),
 		installation.State.Writes,
