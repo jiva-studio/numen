@@ -6,13 +6,7 @@
  */
 import { onBeforeUnmount, onMounted, watch, type Ref } from 'vue'
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
-import {
-  defaultKeymap,
-  history,
-  historyKeymap,
-  indentLess,
-  indentMore,
-} from '@codemirror/commands'
+import { defaultKeymap, history, historyKeymap, indentLess, indentMore } from '@codemirror/commands'
 import { getIndentUnit, indentString, syntaxHighlighting } from '@codemirror/language'
 import type { StateCommand } from '@codemirror/state'
 import { setDiagnostics } from '@codemirror/lint'
