@@ -10,10 +10,8 @@ import (
 
 func newCommands(transcriber *transcribe.Transcriber) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add(command.CreateText, newTranscribeCommand(transcriber)); err != nil {
-		return nil, err
-	}
-	return commands, nil
+	err := commands.Add(command.CreateText, newTranscribeCommand(transcriber))
+	return commands, err
 }
 
 func newTranscribeCommand(transcriber *transcribe.Transcriber) command.Run {

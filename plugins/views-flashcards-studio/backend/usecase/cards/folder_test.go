@@ -18,6 +18,7 @@ func (s statter) StatFile(_ context.Context, path string) (domain.FileStat, erro
 
 func TestGetRowFolderIsTheFolderANoteMadeFromARowGoesIn(t *testing.T) {
 	files := statter{
+		"":                 errors.New("empty row should not stat"),
 		"Languages":        host.ErrNotANote,
 		"Languages/Sa.md":  nil,
 		"Top.md":           nil,

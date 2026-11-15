@@ -25,7 +25,7 @@ const create = (failure = '') => {
   const resolve = createTargetResolver(
     windowTabs,
     { activeVault: ref(vault) } as unknown as Parameters<typeof createTargetResolver>[1],
-    { health: { failure: ref(failure) } } as unknown as Parameters<typeof createTargetResolver>[2],
+    { failure: ref(failure) },
   )
   return { windowTabs, resolve, vault }
 }

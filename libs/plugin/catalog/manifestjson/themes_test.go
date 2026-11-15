@@ -128,6 +128,9 @@ func TestDiscoveryReportsAThemeFileThatCannotBeRead(t *testing.T) {
 		if name == "a missing file" && !errors.Is(problems[0].Err, os.ErrNotExist) {
 			t.Errorf("%s: expected os.ErrNotExist, got %v", name, problems[0].Err)
 		}
+		if name == "a directory" && !strings.Contains(problems[0].Err.Error(), "is not a regular file") {
+			t.Errorf("%s: expected is not a regular file, got %v", name, problems[0].Err)
+		}
 		if name == "a link to the parent folder" && !strings.Contains(problems[0].Err.Error(), "leaves the plugin folder") {
 			t.Errorf("%s: expected leaves the plugin folder, got %v", name, problems[0].Err)
 		}
@@ -160,10 +163,10 @@ func TestAThemeFileLinkedInsideThePluginFolderIsRead(t *testing.T) {
 	if got, err := manifestjson.ReadThemeFile(dir, "max.css"); err != nil || len(got) != manifest.MaxThemeSize {
 		t.Errorf("ReadThemeFile max.css: len=%d, err=%v", len(got), err)
 	}
-	if _, err := manifestjson.ReadThemeFile(dir, "../bad.css"); err == nil {
-		t.Error("expected error for invalid theme file name")
+	if _, err := manifestjson.ReadThemeFile(dir, "../bad.css"); err == nil || !strings.Contains(err.Error(), "leaves the plugin folder") {
+		t.Errorf("expected leaves the plugin folder for invalid theme file name, got %v", err)
 	}
-	if _, err := manifestjson.ReadThemeFile(filepath.Join(dir, "nonexistent"), "n.css"); !errors.Is(err, os.ErrNotExist) {
-		t.Errorf("expected ErrNotExist for nonexistent dir, got %v", err)
+	if _, err := manifestjson.ReadThemeFile(filepath.Join(dir, "nonexistent"), "n.css"); !errors.Is(err, os.ErrNotExist) || !strings.Contains(err.Error(), "nonexistent") {
+		t.Errorf("expected ErrNotExist naming nonexistent dir, got %v", err)
 	}
 }

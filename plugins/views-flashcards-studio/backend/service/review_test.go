@@ -61,6 +61,9 @@ func newAPIOn(tb testing.TB, notes ...map[string]string) (*API, []domain.Vault, 
 		target = append(target, installation.Add(tb, one))
 	}
 	backend := New(Config{Vaults: vaulttest.Vaults(installation.Host), Store: vaulttest.Folders(installation.Host), Now: vaulttest.NewClock()})
+	if backend.getFlashConfig().Day != (review.Day{Starts: 0, In: nil}) {
+		tb.Fatalf("unexpected default day: %+v", backend.getFlashConfig().Day)
+	}
 	return backend.newReviewHandler(), target, installation
 }
 

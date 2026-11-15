@@ -1139,6 +1139,15 @@ func TestAssignCardIDsInternalsAndErrors(t *testing.T) {
 	if _, err := acErr.Execute(ctx, v); !errors.Is(err, errBoom) {
 		t.Fatalf("expected GetPathsOfType error from AssignCardIDs, got %v", err)
 	}
+	acReadErr := NewAssignCardIDs(
+		stubVaultReaders{openErr: errBoom}, nil,
+		stubNoteQueries{paths: map[domain.NoteType][]string{format.TypeDeck: {"Broken.md"}}},
+		nil, nil, nil,
+	)
+	resReadErr, err := acReadErr.Execute(ctx, v)
+	if err != nil || !slices.Equal(resReadErr.Unwritten, []string{"Broken.md"}) {
+		t.Fatalf("expected Unwritten=[Broken.md] on read error, got %+v, %v", resReadErr, err)
+	}
 
 	env := vaulttest.New(t, map[string]string{
 		"NotADeck.md":   "plain note\n",

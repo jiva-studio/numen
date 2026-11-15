@@ -16,8 +16,9 @@ import (
 
 // The fallback file is a flat JSON object keyed by the same entry names as the keychain.
 const (
-	credentialsDir  = "credentials"
-	credentialsFile = "credentials.json"
+	credentialsDir     = "credentials"
+	credentialsFile    = "credentials.json"
+	credentialsDirPerm = 0o700
 )
 
 func (s *Store) getCredentialsFile() string {
@@ -85,18 +86,14 @@ func (s *Store) removeFromFile(ctx context.Context, name string) error {
 
 func (s *Store) writeEntries(entries map[string]string) error {
 	content, err := json.Marshal(entries)
-	if err != nil {
-		return fmt.Errorf("write the credentials file: %w", err)
-	}
 	target := s.getCredentialsFile()
 	folder := filepath.Dir(target)
-	if err := os.MkdirAll(folder, 0o700); err != nil {
-		return fmt.Errorf("write the credentials file: %w", err)
-	}
-	if err := os.Chmod(folder, 0o700); err != nil {
-		return fmt.Errorf("write the credentials file: %w", err)
-	}
-	if err := atomicfile.WriteFile(target, bytes.NewReader(content), 0o600); err != nil {
+	if err := errors.Join(
+		err,
+		os.MkdirAll(folder, credentialsDirPerm),
+		os.Chmod(folder, credentialsDirPerm),
+		atomicfile.WriteFile(target, bytes.NewReader(content), 0o600),
+	); err != nil {
 		return fmt.Errorf("write the credentials file: %w", err)
 	}
 	return nil
