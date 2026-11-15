@@ -7,6 +7,7 @@ import type {
   TestResult,
 } from 'playwright/types/testReporter'
 import { type BddFile, readBddFile } from './bdd-data.js'
+import { getEnvironment } from './environment.js'
 import { type Feature, readFeature } from './gherkin.js'
 import { readGitRevision } from './overview.js'
 import { createScenarioRecord, type ScenarioRecord } from './scenario.js'
@@ -48,8 +49,9 @@ export default class ScenarioReport implements Reporter {
       feature: this.getFeature(bddFile.featurePath),
       rootDir: this.rootDir,
       outputDir: this.outputDir,
+      environment: getEnvironment(test.parent.project()?.name ?? 'chromium', process.platform),
     })
-    if (record) this.scenarios.set(record.id, record)
+    if (record) this.scenarios.set(`${record.id} ${record.environment.id}`, record)
   }
 
   onEnd(result: FullResult): void {

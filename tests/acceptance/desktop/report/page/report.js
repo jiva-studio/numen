@@ -1,10 +1,10 @@
-/* global createVideo */
-/* exported writeSetting */
+/* global createVideo, createRunsNote, pickRun, createEnvironments */
+/* exported writeSetting, writeDetail */
 const report = window.REPORT
 const scenarios = new Map(
   report.features.flatMap((feature) => feature.scenarios.map((s) => [s.id, s])),
 )
-const state = { search: '', query: '', status: 'all', currentId: '' }
+const state = { search: '', query: '', status: 'all', currentId: '', environment: '' }
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const STATUS_LABELS = { passed: 'Passed', failed: 'Failed', skipped: 'Skipped' }
@@ -137,6 +137,7 @@ const createScenarioButton = (scenario) =>
     [
       createStatusDot(scenario.status),
       createElement('span', { class: 'name' }, [scenario.name]),
+      createRunsNote(scenario),
       createElement('span', { class: 'time' }, [formatDuration(scenario.duration)]),
     ],
   )
@@ -303,16 +304,22 @@ const createStepList = (scenario) =>
   )
 
 const writeDetail = (scenario) => {
-  const stepList = createStepList(scenario)
-  const video = scenario.video
-    ? createVideo(scenario, stepList)
+  const run = pickRun(scenario)
+  const view = { ...scenario, ...run }
+  const stepList = createStepList(view)
+  const video = view.video
+    ? createVideo(view, stepList)
     : createElement('p', { class: 'empty' }, ['No video.'])
   document
     .getElementById('detail')
     .replaceChildren(
-      ...[createScenarioHeader(scenario), video, createScenarioError(scenario), stepList].filter(
-        Boolean,
-      ),
+      ...[
+        createScenarioHeader(view),
+        createEnvironments(scenario, run),
+        video,
+        createScenarioError(view),
+        stepList,
+      ].filter(Boolean),
     )
 }
 

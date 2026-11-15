@@ -147,6 +147,46 @@ h1 {
   color: var(--slate-9);
 }
 
+.environments {
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: var(--space-3);
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--slate-4);
+}
+
+.environments button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--slate-11);
+  font-size: var(--text-small);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.environments button:hover {
+  color: var(--slate-12);
+}
+
+.environments button[aria-pressed='true'] {
+  background: var(--slate-1);
+  color: var(--slate-12);
+  box-shadow: 0 1px 2px var(--black-a2);
+}
+
+.runs-note {
+  flex: none;
+  color: var(--red-11);
+  font-size: 12px;
+}
+
 .status-filter {
   display: flex;
   gap: 2px;

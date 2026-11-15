@@ -17,6 +17,7 @@ import {
 } from 'lucide'
 import { createOverview, type GitRevision } from './overview.js'
 import * as playback from './playback.js'
+import { groupRuns, type ScenarioRun } from './runs.js'
 import type { ScenarioRecord } from './scenario.js'
 import { buildTree } from './tree.js'
 
@@ -28,6 +29,7 @@ const PAGE_FILES = [
   'cursor.css',
   'controls.js',
   'cursor.js',
+  'environments.js',
   'video.js',
   'video-load.js',
   'report.js',
@@ -66,7 +68,12 @@ export const writeReport = (
   const indexPath = path.join(outputDir, 'index.html')
   fs.writeFileSync(indexPath, addVersion(fs.readFileSync(indexPath, 'utf8'), version))
   copyFont(outputDir)
-  const features = buildTree(scenarios.map((scenario) => addFileVersions(scenario, version)))
+  const features = buildTree(
+    groupRuns(scenarios).map((scenario) => ({
+      ...scenario,
+      runs: scenario.runs.map((one) => addFileVersions(one, version)),
+    })),
+  )
   const data = { overview: createOverview(features, run.startedAt, run), features }
   const functions = Object.entries(playback).map(([name, fn]) => `  ${name}: ${String(fn)},`)
   const script = [
@@ -83,10 +90,10 @@ export const writeReport = (
 export const addVersion = (html: string, version: string): string =>
   html.replace(/(src|href)="([^":?#]+\.(?:js|css))"/g, `$1="$2?v=${version}"`)
 
-const addFileVersions = (scenario: ScenarioRecord, version: string): ScenarioRecord => ({
-  ...scenario,
-  video: scenario.video && `${scenario.video}?v=${version}`,
-  screenshot: scenario.screenshot && `${scenario.screenshot}?v=${version}`,
+const addFileVersions = (run: ScenarioRun, version: string): ScenarioRun => ({
+  ...run,
+  video: run.video && `${run.video}?v=${version}`,
+  screenshot: run.screenshot && `${run.screenshot}?v=${version}`,
 })
 
 const copyPageFile = (outputDir: string, file: string): void => {

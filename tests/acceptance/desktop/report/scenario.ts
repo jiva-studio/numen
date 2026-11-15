@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { TestCase, TestResult } from 'playwright/types/testReporter'
 import { type BddFile, findBddTest } from './bdd-data.js'
+import type { Environment } from './environment.js'
 import { mapInputs, readInputs, type VideoInput } from './inputs.js'
 import { findScenario, type Feature, type GherkinStep } from './gherkin.js'
 import {
@@ -21,10 +22,12 @@ export type ScenarioRecord = ScenarioEntry & {
   readonly video: string | undefined
   readonly inputs: readonly VideoInput[]
   readonly screenshot: string | undefined
+  readonly environment: Environment
 }
 
 export type ScenarioSource = {
   readonly bddFile: BddFile
+  readonly environment: Environment
   readonly feature: Feature
   readonly rootDir: string
   readonly outputDir: string
@@ -64,8 +67,8 @@ export const createScenarioRecord = (
   const steps = scenario.steps.map((step, index) => ({ ...step, ...cleanTiming(timings[index]) }))
   const files = copyAttachments(
     result,
-    path.join(source.outputDir, 'scenarios', id),
-    `scenarios/${id}`,
+    path.join(source.outputDir, 'scenarios', id, source.environment.id),
+    `scenarios/${id}/${source.environment.id}`,
   )
   return {
     id,
@@ -80,6 +83,7 @@ export const createScenarioRecord = (
     video: files.video,
     inputs: mapInputs(readInputs(result), videoStart),
     screenshot: files.screenshot,
+    environment: source.environment,
   }
 }
 
