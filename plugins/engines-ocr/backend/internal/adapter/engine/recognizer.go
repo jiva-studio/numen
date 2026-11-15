@@ -11,8 +11,8 @@ import (
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
@@ -38,11 +38,13 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Rec
 	if err != nil {
 		return nil, err
 	}
+	cacheRoot := getCacheRoot()
 	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: getSessionProvider(),
 		Threads:  getThreads(cfg),
 
 		ComputeUnits: onnx.ComputeUnitsDefault,
+		CacheRoot:    cacheRoot,
 		ModelPath:    found.layout,
 	})
 	if err != nil {
@@ -50,8 +52,7 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Rec
 	}
 	defer options.Destroy()
 
-	layout, err := OpenLayout(engine, found.layout, options,
-		cfg.Layout.GetLabels(), cfg.Layout.GetMinimum(), cfg.Layout.GetOverlap())
+	layout, err := OpenLayout(engine, cacheRoot, found.layout, options, cfg.Layout)
 	if err != nil {
 		return nil, err
 	}

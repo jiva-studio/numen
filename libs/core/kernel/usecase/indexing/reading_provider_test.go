@@ -1,22 +1,31 @@
 package indexing_test
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
-	"context"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// The tests of the worker read vaults into an index through the composition root, which imports
-// this package and so can only be imported by its external tests.
+// The tests of the worker read vaults into a real index with the use cases that read the notes, cut the
+// file texts and embed the chunks. They are put together here, in the external package, because those use
+// cases and the index import this package.
 func TestWorker(t *testing.T) {
 	indexing.RunWorkerTests(t, func(t *testing.T) (indexing.OpenReading, vaultport.VaultReaders, *indexing.WorkerIndex) {
 		t.Helper()
@@ -31,14 +40,46 @@ func TestWorker(t *testing.T) {
 		read := func(
 			ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 		) (indexing.ReadWholeVault, error) {
-			request := cfg
-			request.ShouldRebuildIndex = rebuild
-			return container.ReadWholeVault(request, ctx, db, source, v)
+			if err := vectors.NewFitIndex(db.VectorIndex(), nil, rebuild).Execute(ctx, source); err != nil {
+				return indexing.ReadWholeVault{}, err
+			}
+			return createReadWholeVault(db, source, v, rebuild)
 		}
 		index := &indexing.WorkerIndex{
 			Vaults: db.Vaults(), Notes: db.Notes(), FileStats: db.NoteQueries(),
 			Maintenance: db.Maintenance(), Progress: db.ChunkVectors(), Vectors: db.VectorIndex(), Closer: db,
 		}
-		return read, container.VaultReaders(cfg), index
+		return read, vaultreader.Readers{}, index
 	}, vaulttest.NewVault)
+}
+
+func createReadWholeVault(
+	db *container.Index, source searchsourceport.Source, v domain.Vault, rebuild bool,
+) (indexing.ReadWholeVault, error) {
+	readers := vaultreader.Readers{}
+	scan := vault.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), db.Sources())
+	scan.Walks = &db.Walks
+	refresh := vault.NewRefreshFrom(vault.RefreshDeps{
+		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(), Queries: db.Sources(), Sources: db.Sources(),
+		Now: testsupport.GetMachine(), Ledger: db.Ledger,
+	})
+	refresh.Force = true
+	findUnreadable := func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
+		result, err := refresh.Execute(ctx, v, paths)
+		return result.Unreadable, err
+	}
+	cutter := chunking.NewCutNotes(0)
+	texts := filetext.NewHandlingIndex(filetext.NewIndex(filetext.IndexDeps{
+		Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
+		Sizes: cutter.Sizes, Legibility: cutter.Legibility, ShouldRebuildIndex: rebuild,
+	}), nil, file.NewReadNoteAgain(findUnreadable).Execute)
+	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{}, "core")
+	if err != nil {
+		return indexing.ReadWholeVault{}, err
+	}
+	if source == nil {
+		source = none.SearchSource{}
+	}
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), store.NewIndexClaim("core/indexing"), nil, source)
+	return indexing.NewReadWholeVault(scan.Rebuilding(rebuild), texts, embed), nil
 }

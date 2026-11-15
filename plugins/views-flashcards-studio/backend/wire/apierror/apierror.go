@@ -128,17 +128,16 @@ func ClassifyCreate(made cards.CreateNoteResult, err error) (cards.CreateNoteRes
 		// gomutants:disable-next-line RETURN_ZERO reason="ErrorCodeUnspecified is the zero value of ErrorCode."
 		return made, api.ErrorCodeUnspecified, IsIndexOutdated(err), nil
 	}
+	if errors.Is(err, cards.ErrNoFields) {
+		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, NewError(server.CodeInvalidArgument, err)
+	}
 	reason, ok := GetErrorCode(err)
-	var outErr error
 	if !ok {
-		code := GetCode(err)
-		if errors.Is(err, cards.ErrNoFields) {
-			code = server.CodeInvalidArgument
-		}
-		outErr = NewError(code, err)
+		// gomutants:disable-next-line RETURN_ZERO reason="ErrorCodeUnspecified is the zero value of ErrorCode."
+		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, NewError(GetCode(err), err)
 	}
 	// gomutants:disable-next-line RETURN_ZERO reason="Empty struct literal equals the zero value."
-	return cards.CreateNoteResult{Path: "", ID: "", Title: ""}, reason, false, outErr
+	return cards.CreateNoteResult{Path: "", ID: "", Title: ""}, reason, false, nil
 }
 
 // NewFailure is err as an API error whose code is the one GetCode gives.

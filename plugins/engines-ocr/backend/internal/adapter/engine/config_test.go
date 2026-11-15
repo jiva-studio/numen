@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
 )
 
 func TestAnUnresolvedProfileConsumesTheFallbackCounts(t *testing.T) {
