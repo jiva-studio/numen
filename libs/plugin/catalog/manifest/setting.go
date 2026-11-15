@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"strconv"
 )
 
 // SettingOption is one value an enum setting can hold. Its When is a condition over the variables of
@@ -60,16 +59,8 @@ func (m Manifest) GetSetting(key string) (Setting, bool) {
 
 // FormatSettingValue is the value as a condition and a list of options compare it.
 func FormatSettingValue(value any) string {
-	switch v := value.(type) {
-	case nil:
+	if value == nil {
 		return ""
-	// gomutants:disable-next-line BRANCH_CASE reason="string case avoids fmt.Sprint allocation"
-	case string:
-		return v
-	case bool:
-		return strconv.FormatBool(v)
-	case float64:
-		return strconv.FormatFloat(v, 'f', -1, 64)
 	}
 	return fmt.Sprint(value)
 }
