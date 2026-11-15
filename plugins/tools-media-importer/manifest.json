@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.20",
+  "version": "2026.11.21",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "capabilities": ["tools"],
@@ -65,6 +65,12 @@
         "title": "Delete media",
         "icon": "trash-2",
         "when": "target.noteType == 'link' && has(target.properties.media) && target.properties.media != ''"
+      },
+      {
+        "id": "link.downloadMissingCaptions",
+        "title": "Download missing captions",
+        "icon": "download",
+        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true"
       }
     ],
     "handlers": [
@@ -75,11 +81,7 @@
       }
     ],
     "triggers": [
-      {
-        "event": "file.added",
-        "command": "app:file.createText",
-        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true && !target.versions.exists(v, v.pluginId == 'md.numen.tools.media.importer' && v.isValid)"
-      }
+      { "event": "note.frontmatterChanged", "command": "link.downloadMissingCaptions", "when": "target.noteType == 'link'" }
     ]
   },
   "permissions": ["vault:read", "vault:write", "link:open"],

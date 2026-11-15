@@ -4,6 +4,9 @@
 package service
 
 import (
+	"context"
+	"sync/atomic"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -30,7 +33,7 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 		PluginID: PluginID,
 		Vaults: func(id domain.VaultID) link.Vault {
 			on := client.With(id)
-			return link.Vault{Files: on, Writer: on}
+			return link.Vault{Files: on, Writer: on, Feed: on}
 		},
 		Store: func(id domain.VaultID) link.Folder {
 			on := store.With(id)
@@ -54,7 +57,13 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	if err != nil {
 		return err
 	}
-	s.SetUpdateConfig(func(values map[string]string) { f.UpdateConfig(values) })
+	var isConfigured atomic.Bool
+	s.SetConfigure(func(ctx context.Context, values map[string]string) error {
+		wasAutomatic := f.GetSettings().IsTextDownloadAutomatic
+		f.UpdateConfig(values)
+		links.StartMissingTextFetch(ctx, isConfigured.Swap(true) && !wasAutomatic)
+		return nil
+	})
 	// gomutants:disable-next-line BRANCH_IF reason="mountAPI with static service and method constants never returns an error"
 	if err := mountAPI(s, links); err != nil {
 		return err

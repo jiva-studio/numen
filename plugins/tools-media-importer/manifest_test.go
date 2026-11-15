@@ -44,17 +44,22 @@ func TestManifestDeclaresTheCommandsOfLinks(t *testing.T) {
 	for _, one := range manifest.Contributes.Handlers {
 		handlers = append(handlers, one.Command)
 	}
-	wantCommands := []string{"link.import", "link.downloadMedia", "link.deleteMedia"}
+	wantCommands := []string{"link.import", "link.downloadMedia", "link.deleteMedia", "link.downloadMissingCaptions"}
 	if !slices.Equal(commands, wantCommands) || !slices.Equal(handlers, []string{"app:file.createText"}) {
 		t.Errorf("commands %v and handlers %v, want %v and app:file.createText", commands, handlers, wantCommands)
 	}
 }
 
 // Captions are downloaded for a link note on its own only while the setting for it is on, which is
-// off by default.
+// off by default. A change of the frontmatter of a link note wakes the plugin, which reads the file
+// change feed.
 func TestManifestDownloadsCaptionsAutomaticallyOnlyWithItsSetting(t *testing.T) {
 	var manifest struct {
 		Contributes struct {
+			Commands []struct {
+				ID   string `json:"id"`
+				When string `json:"when"`
+			} `json:"commands"`
 			Triggers []struct {
 				Event   string `json:"event"`
 				Command string `json:"command"`
@@ -70,9 +75,18 @@ func TestManifestDownloadsCaptionsAutomaticallyOnlyWithItsSetting(t *testing.T) 
 		t.Fatal(err)
 	}
 	triggers := manifest.Contributes.Triggers
-	if len(triggers) != 1 || triggers[0].Event != "file.added" || !strings.Contains(triggers[0].When, "config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true") ||
-		!strings.Contains(triggers[0].When, "!target.versions.exists(v, v.pluginId == 'md.numen.tools.media.importer' && v.isValid)") {
+	if len(triggers) != 1 || triggers[0].Event != "note.frontmatterChanged" || triggers[0].Command != "link.downloadMissingCaptions" || triggers[0].When != "target.noteType == 'link'" {
 		t.Errorf("the triggers are %+v", triggers)
+	}
+	commands := manifest.Contributes.Commands
+	command := slices.IndexFunc(commands, func(one struct {
+		ID   string `json:"id"`
+		When string `json:"when"`
+	}) bool {
+		return one.ID == "link.downloadMissingCaptions"
+	})
+	if command < 0 || !strings.Contains(commands[command].When, "config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true") {
+		t.Errorf("the command of the trigger does not ask for the setting: %+v", commands)
 	}
 	found := slices.IndexFunc(manifest.Settings, func(one struct {
 		Key     string `json:"key"`

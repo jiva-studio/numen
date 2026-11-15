@@ -9,7 +9,7 @@ import (
 func vaultsOf(v *hosttest.Vault) func(domain.VaultID) link.Vault {
 	return func(id domain.VaultID) link.Vault {
 		on := v.With(id)
-		return link.Vault{Files: on, Writer: on}
+		return link.Vault{Files: on, Writer: on, Feed: on}
 	}
 }
 

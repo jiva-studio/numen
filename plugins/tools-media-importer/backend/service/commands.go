@@ -16,6 +16,7 @@ const (
 	commandCreateText    = command.CreateText
 	commandDownloadMedia = "link.downloadMedia"
 	commandDeleteMedia   = "link.deleteMedia"
+	commandFetchMissing  = "link.downloadMissingCaptions"
 )
 
 // argumentAddress is the argument of link.import that holds the web address.
@@ -28,6 +29,7 @@ func newCommands(links *link.Links) (*command.Registry, error) {
 		commandCreateText:    newDownloadTextCommand(links),
 		commandDownloadMedia: newDownloadCopyCommand(links),
 		commandDeleteMedia:   newDeleteCopyCommand(links),
+		commandFetchMissing:  newFetchMissingCommand(links),
 	} {
 		// gomutants:disable-next-line BRANCH_IF reason="registering distinct static command IDs on a new registry cannot fail"
 		if err := commands.Add(id, run); err != nil {
@@ -107,4 +109,11 @@ func getMedia(item string) (download.Media, error) {
 		return "", fmt.Errorf("%w: %s offers no item %q", command.ErrBadArguments, commandDownloadMedia, item)
 	}
 	return media, nil
+}
+
+func newFetchMissingCommand(links *link.Links) command.Run {
+	return func(ctx context.Context, _ command.Request) (command.Result, error) {
+		links.StartMissingTextFetch(ctx, false)
+		return command.Result{Message: "Downloading the missing texts of the links", OpenedPath: ""}, nil
+	}
 }

@@ -25,3 +25,22 @@ func TestTheProgramsAreNotReadFromTheSnakeCaseKey(t *testing.T) {
 		t.Errorf("the video program is %v, want it unchanged at %v", after.Programs.Video.Command, before.Programs.Video.Command)
 	}
 }
+
+func TestTextsAreDownloadedAutomaticallyOnlyWithTheSettingOn(t *testing.T) {
+	values := settings.Defaults()
+	if values.Fetch.IsTextDownloadAutomatic {
+		t.Error("texts are downloaded automatically by default")
+	}
+	values = settings.Parse(map[string]string{"downloadCaptionsAutomatically": "true"}, values)
+	if !values.Fetch.IsTextDownloadAutomatic {
+		t.Error("the setting on does not download texts automatically")
+	}
+	values = settings.Parse(map[string]string{"copyMaxSizeMb": "10"}, values)
+	if !values.Fetch.IsTextDownloadAutomatic {
+		t.Error("another setting turned the automatic download off")
+	}
+	values = settings.Parse(map[string]string{"downloadCaptionsAutomatically": "false"}, values)
+	if values.Fetch.IsTextDownloadAutomatic {
+		t.Error("the setting off still downloads texts automatically")
+	}
+}
