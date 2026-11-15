@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 )
 
