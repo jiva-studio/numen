@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
@@ -129,7 +130,8 @@ type Run struct {
 
 // Execute checks the call against the declaration and runs it over the vault; a call of a shared
 // command runs the handler the plugin declares. A call that does not meet the declaration is
-// ErrBadArguments, saying what is wrong, and nothing is run.
+// ErrBadArguments, saying what is wrong, and nothing is run. A call over Paths meets it where each of
+// them does; a path of Paths that holds no file is a removed note, with no note type and no properties.
 func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
 	var entries []plugin.CommandEntry
 	if manifest.IsSharedCommand(call.Command) {
@@ -158,17 +160,26 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCal
 // IsAvailable reports whether the condition of the command of the entry holds over the path, as a
 // run of it checks; a condition the core cannot decide holds.
 func (u Run) IsAvailable(ctx context.Context, v domain.Vault, entry plugin.CommandEntry, path string) bool {
-	return u.checkPath(ctx, v, entry.Command, plugin.CommandCall{PluginID: entry.PluginID, Command: entry.Command.ID, Path: path}) == nil
+	return u.checkPath(ctx, v, entry.Command, plugin.CommandCall{PluginID: entry.PluginID, Command: entry.Command.ID, Path: path}, false) == nil
 }
 
 func (u Run) checkCall(ctx context.Context, v domain.Vault, declared manifest.Command, call plugin.CommandCall) error {
-	if err := u.checkPath(ctx, v, declared, call); err != nil {
-		return err
+	if len(call.Paths) == 0 {
+		if err := u.checkPath(ctx, v, declared, call, false); err != nil {
+			return err
+		}
+	}
+	for _, path := range call.Paths {
+		one := call
+		one.Path, one.Paths = path, nil
+		if err := u.checkPath(ctx, v, declared, one, true); err != nil {
+			return err
+		}
 	}
 	return checkArguments(declared, call, hasItems(u.conditions, declared))
 }
 
-func (u Run) checkPath(ctx context.Context, v domain.Vault, declared manifest.Command, call plugin.CommandCall) error {
+func (u Run) checkPath(ctx context.Context, v domain.Vault, declared manifest.Command, call plugin.CommandCall, isGoneAllowed bool) error {
 	condition, err := u.conditions.Parse(declared.When)
 	if err != nil {
 		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
@@ -176,7 +187,11 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared manifest.Co
 	if condition.HasItems() && call.Path == "" {
 		return fmt.Errorf("%w: %s needs a file", ErrBadArguments, declared.ID)
 	}
-	values, err := u.readNote(ctx, v, condition, plugin.NewTargetValues(call.Path, false, u.getContentType(call.Path)), call.Path)
+	target := plugin.NewTargetValues(call.Path, false, u.getContentType(call.Path))
+	values, err := u.readNote(ctx, v, condition, target, call.Path)
+	if isGoneAllowed && errors.Is(err, edit.ErrNotExist) {
+		values, err = target.WithNote("", nil), nil
+	}
 	if err != nil {
 		return fmt.Errorf("read the note %s: %w", call.Path, err)
 	}

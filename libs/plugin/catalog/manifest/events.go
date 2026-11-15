@@ -8,10 +8,19 @@ const EventFileAdded = "file.added"
 // EventFileChanged is the event raised when the content of a file of the vault changes.
 const EventFileChanged = "file.changed"
 
+// EventFileMoved is the event raised when a file of the vault gets another path and keeps its content.
+const EventFileMoved = "file.moved"
+
+// EventFileRemoved is the event raised when a file is removed from the vault.
+const EventFileRemoved = "file.removed"
+
+// EventNoteFrontmatterChanged is the event raised when the index stores a note whose frontmatter differs from what it held: the frontmatter changes, or a note with frontmatter is added or removed.
+const EventNoteFrontmatterChanged = "note.frontmatterChanged"
+
 // IsEvent reports whether the name is an event a trigger runs on.
 func IsEvent(name string) bool {
 	switch name {
-	case EventFileAdded, EventFileChanged:
+	case EventFileAdded, EventFileChanged, EventNoteFrontmatterChanged:
 		return true
 	}
 	return false
