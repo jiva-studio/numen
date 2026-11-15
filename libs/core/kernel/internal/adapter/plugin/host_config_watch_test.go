@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -129,7 +130,7 @@ func TestTheConfigRevisionFollowsTheSettingsButNotTheEnabledFlag(t *testing.T) {
 	if afterModel == first {
 		t.Errorf("a new model left the revision as it was")
 	}
-	host.Config.SetPerformanceProfile(t.Context(), "quiet")
+	host.Config.SetPerformance(t.Context(), plugindomain.Performance{Profile: "low", Threads: 2, Nice: 15})
 	if got := host.Config.GetPluginConfigRevision(stoppedPluginID); got == afterModel {
 		t.Errorf("a new performance profile left the revision as it was")
 	}

@@ -34,8 +34,8 @@ func newIndex() *hosttest.Search {
 }
 
 func TestTheStatsCarryTheCountsTheModelAndTheProfile(t *testing.T) {
-	view := NewStats(newIndex(), newFakeClock(getStart()), 16)
-	view.Configure(map[string]string{"host.performanceProfile": "maximum"})
+	view := NewStats(newIndex(), newFakeClock(getStart()))
+	view.Configure(map[string]string{"host.performanceProfile": "maximum", "host.performanceThreads": "16", "host.performanceNice": "0"})
 
 	got, err := view.Get(t.Context())
 
@@ -50,7 +50,7 @@ func TestTheStatsCarryTheCountsTheModelAndTheProfile(t *testing.T) {
 			{Kind: api.KindEPUB, Sources: 5, Chunks: 2000},
 		},
 		Model: "bge-m3", Recipe: recipe, Dimensions: 1024,
-		Profile: "maximum", Threads: 8, Speed: nil, ChangedAt: "",
+		Profile: "maximum", Threads: 16, Speed: nil, ChangedAt: "",
 		DatabaseBytes: 73400320, VectorBytes: 52428800,
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -59,19 +59,19 @@ func TestTheStatsCarryTheCountsTheModelAndTheProfile(t *testing.T) {
 }
 
 func TestTheProfileIsBalancedUntilTheHostConfiguresThePlugin(t *testing.T) {
-	view := NewStats(newIndex(), newFakeClock(getStart()), 16)
+	view := NewStats(newIndex(), newFakeClock(getStart()))
 
 	got, err := view.Get(t.Context())
 
-	if err != nil || got.Profile != "balanced" || got.Threads != 4 {
-		t.Errorf("profile %q with %d threads (%v), want balanced with 4", got.Profile, got.Threads, err)
+	if err != nil || got.Profile != "balanced" || got.Threads != 1 {
+		t.Errorf("profile %q with %d threads (%v), want balanced with 1", got.Profile, got.Threads, err)
 	}
 }
 
 func TestTheSpeedAndTheTimeOfTheLastChangeFollowTheCallsOfTheView(t *testing.T) {
 	index := newIndex()
 	now := newFakeClock(getStart())
-	view := NewStats(index, now, 8)
+	view := NewStats(index, now)
 	ctx := t.Context()
 
 	first, err := view.Get(ctx)
@@ -98,7 +98,7 @@ func TestAnIndexWithMoreVectorsThanChunksWaitsForNothing(t *testing.T) {
 	index := newIndex()
 	index.SetProgress(10, 12)
 
-	got, err := NewStats(index, newFakeClock(getStart()), 8).Get(t.Context())
+	got, err := NewStats(index, newFakeClock(getStart())).Get(t.Context())
 
 	if err != nil || got.Waiting != 0 {
 		t.Errorf("waiting %d (%v), want 0", got.Waiting, err)
@@ -109,7 +109,7 @@ func TestAnIndexWithoutAVaultReturnsItsError(t *testing.T) {
 	index := newIndex()
 	index.HideVault()
 
-	got, err := NewStats(index, newFakeClock(getStart()), 8).Get(t.Context())
+	got, err := NewStats(index, newFakeClock(getStart())).Get(t.Context())
 
 	if !errors.Is(err, host.ErrNoVault) || !reflect.DeepEqual(got, api.Stats{}) {
 		t.Errorf("got %+v, %v; want empty stats and %v", got, err, host.ErrNoVault)

@@ -39,6 +39,8 @@ export const WORDS = {
   threadUnit: 'threads',
   thread: 'thread',
   eco: 'Eco',
+  low: 'Low',
   balanced: 'Balanced',
+  high: 'High',
   maximum: 'Maximum',
 } as const
