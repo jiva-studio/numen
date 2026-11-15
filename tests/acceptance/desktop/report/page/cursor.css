@@ -8,6 +8,7 @@
 .cursor-ripple[hidden],
 .cursor-press[hidden],
 .input-highlight[hidden],
+.input-label[hidden],
 .key-badge[hidden] {
   display: none;
 }
@@ -54,17 +55,35 @@
 }
 
 .input-highlight {
-  --progress: 0;
-
   position: absolute;
   margin: -3px 0 0 -3px;
   padding: 3px;
   border-radius: var(--radius-md);
-  box-shadow:
-    0 0 0 2px var(--indigo-9),
-    0 0 12px 4px var(--indigo-8);
-  opacity: calc(1 - var(--progress) * var(--progress));
+  background: var(--indigo-a3);
+  box-shadow: 0 0 0 2px var(--indigo-9);
   box-sizing: content-box;
+}
+
+.input-label {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: -2px;
+  display: flex;
+  padding: 3px 8px 4px;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--indigo-9);
+  color: var(--white-a12);
+  font-size: 13px;
+  font-weight: 600;
+  gap: 8px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.is-near-bottom .input-label {
+  top: auto;
+  bottom: calc(100% + 2px);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .key-badge {

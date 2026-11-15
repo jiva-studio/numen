@@ -319,11 +319,12 @@ describe('getBadgeAt', () => {
 })
 
 describe('getHighlightAt', () => {
-  it('rings the element a key went to for 0.5 s', () => {
+  it('rings the element a key went to for 1 s, fading out over the last 0.3 s', () => {
     const keys = [createKey(1, 'Enter')]
-    expect(getHighlightAt(keys, 1)).toEqual({ x: 0.1, y: 0.2, w: 0.3, h: 0.04, progress: 0 })
-    expect(getHighlightAt(keys, 1.25)?.progress).toBeCloseTo(0.5)
-    expect(getHighlightAt(keys, 1.5)).toBeNull()
+    expect(getHighlightAt(keys, 1)).toEqual({ x: 0.1, y: 0.2, w: 0.3, h: 0.04, opacity: 1 })
+    expect(getHighlightAt(keys, 1.5)?.opacity).toBe(1)
+    expect(getHighlightAt(keys, 1.85)?.opacity).toBeCloseTo(0.5)
+    expect(getHighlightAt(keys, 2)).toBeNull()
   })
 
   it('rings the field being typed into', () => {

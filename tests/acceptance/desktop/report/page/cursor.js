@@ -17,7 +17,8 @@ const createCursor = () => {
   const pointer = createPointer()
   const ripple = createElement('span', { class: 'cursor-ripple' })
   const press = createElement('span', { class: 'cursor-press' })
-  const highlight = createElement('span', { class: 'input-highlight' })
+  const label = createElement('span', { class: 'input-label' })
+  const highlight = createElement('span', { class: 'input-highlight' }, [label])
   const badge = createElement('div', { class: 'key-badge' })
   const element = createElement('div', { class: 'cursor-layer', 'aria-hidden': 'true' }, [
     highlight,
@@ -26,7 +27,7 @@ const createCursor = () => {
     pointer,
     badge,
   ])
-  return { element, pointer, ripple, press, highlight, badge }
+  return { element, pointer, ripple, press, highlight, label, badge }
 }
 
 const getContentBox = (player) => {
@@ -71,25 +72,33 @@ const writePointer = (cursor, state) => {
   placePoint(cursor.press, state.x, state.y)
 }
 
-const writeHighlight = (highlight, state) => {
+const writeParts = (element, parts) => {
+  const text = parts.join('\n')
+  if (element.dataset.text === text) return
+  element.dataset.text = text
+  element.replaceChildren(
+    ...parts.map((part) => createElement('span', { class: 'key-part' }, [part])),
+  )
+}
+
+const writeHighlight = (cursor, state, badge) => {
+  const { highlight, label } = cursor
   highlight.hidden = state === null
   if (state === null) return
   placePoint(highlight, state.x, state.y)
   highlight.style.width = `${state.w * 100}%`
   highlight.style.height = `${state.h * 100}%`
-  highlight.style.setProperty('--progress', String(state.progress))
+  highlight.style.opacity = String(state.opacity)
+  highlight.classList.toggle('is-near-bottom', state.y + state.h > 0.9)
+  label.hidden = badge === null
+  if (badge) writeParts(label, badge.parts)
 }
 
 const writeBadge = (badge, state) => {
   badge.hidden = state === null
   if (state === null) return
   badge.style.opacity = String(state.opacity)
-  const text = state.parts.join('\n')
-  if (badge.dataset.text === text) return
-  badge.dataset.text = text
-  badge.replaceChildren(
-    ...state.parts.map((part) => createElement('span', { class: 'key-part' }, [part])),
-  )
+  writeParts(badge, state.parts)
 }
 
 const writeCursor = (video) => {
@@ -101,8 +110,10 @@ const writeCursor = (video) => {
   const time = player.currentTime
   placeLayer(cursor.element, box)
   writePointer(cursor, window.playback.getCursorAt(inputs, time))
-  writeHighlight(cursor.highlight, window.playback.getHighlightAt(inputs, time))
-  writeBadge(cursor.badge, window.playback.getBadgeAt(inputs, time))
+  const highlight = window.playback.getHighlightAt(inputs, time)
+  const badge = window.playback.getBadgeAt(inputs, time)
+  writeHighlight(cursor, highlight, badge)
+  writeBadge(cursor.badge, highlight ? null : badge)
 }
 
 const linkCursor = (video) => {

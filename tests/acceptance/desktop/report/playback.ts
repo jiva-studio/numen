@@ -97,7 +97,7 @@ export type Highlight = {
   readonly y: number
   readonly w: number
   readonly h: number
-  readonly progress: number
+  readonly opacity: number
 }
 
 export const getCursorAt = (inputs: readonly Input[], time: number): Cursor | null => {
@@ -202,18 +202,19 @@ export const getBadgeAt = (inputs: readonly Input[], time: number): Badge | null
 }
 
 export const getHighlightAt = (inputs: readonly Input[], time: number): Highlight | null => {
-  const length = 0.5
+  const showLength = 1
+  const fadeLength = 0.3
   const hasRect = (input: Input): boolean => (input.w ?? 0) > 0 && (input.h ?? 0) > 0
   const target = inputs
     .filter((input) => (input.kind === 'key' || input.kind === 'type') && input.t <= time)
     .filter(hasRect)
     .at(-1)
-  if (!target || time - target.t >= length) return null
+  if (!target || time - target.t >= showLength) return null
   return {
     x: target.x,
     y: target.y,
     w: target.w ?? 0,
     h: target.h ?? 0,
-    progress: (time - target.t) / length,
+    opacity: Math.min((showLength - (time - target.t)) / fadeLength, 1),
   }
 }
