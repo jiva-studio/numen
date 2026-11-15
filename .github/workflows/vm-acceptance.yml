@@ -1,0 +1,122 @@
+name: VM acceptance
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      features:
+        description: 'feature files under features/, separated by spaces'
+        type: string
+        default: notes/create-note.feature files/open-file.feature
+
+env:
+  FEATURES: ${{ inputs.features || 'notes/create-note.feature files/open-file.feature' }}
+
+concurrency:
+  group: vm-acceptance
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-macos:
+    name: Build macOS
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: apps/desktop/go.mod
+          cache: false
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
+      - name: Build UI library
+        uses: ./.github/actions/build-ui
+        with:
+          shell: 'true'
+
+      - name: Build the plugins, the windows and the debug binaries
+        run: |
+          make plugins_build SKIP_UI_BUILD=1 > "$RUNNER_TEMP/plugins.log" 2>&1 &
+          plugins=$!
+          npm run build --prefix apps/desktop/editor
+          npm run build --prefix apps/desktop/flashcards
+          (
+            cd apps/desktop
+            go build -tags numen_debug -o numen-debug ./cmd/numen
+            go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
+          )
+          status=0
+          wait "$plugins" || status=$?
+          cat "$RUNNER_TEMP/plugins.log"
+          if [ "$status" -eq 0 ]; then
+            (cd plugins/connections-llm && go build -o bin/fakeopenai ./backend/cmd/fakeopenai) || status=$?
+          fi
+          exit "$status"
+
+      - name: Pack what the tests run
+        run: |
+          tar -cf "$RUNNER_TEMP/e2e-build.tar" \
+            apps/desktop/numen-debug apps/desktop/numen-flashcards-debug \
+            plugins/plugins-index.json plugins/*/bin plugins/*/dist
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-build-darwin-arm64
+          path: ${{ runner.temp }}/e2e-build.tar
+          compression-level: 1
+          retention-days: 1
+
+  acceptance-macos:
+    name: Acceptance macOS
+    needs: [build-macos]
+    runs-on: numen-macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
+      - name: Install the browsers
+        run: npx playwright install chromium webkit
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: e2e-build-darwin-arm64
+          path: ${{ runner.temp }}
+
+      - name: Unpack the build
+        run: tar -xf "$RUNNER_TEMP/e2e-build.tar"
+
+      - name: Run the scenarios
+        working-directory: tests/acceptance/desktop
+        env:
+          PLAYWRIGHT_VIDEO: '1'
+          PWTEST_BLOB_DO_NOT_REMOVE: '1'
+        run: |
+          read -ra features <<< "$FEATURES"
+          npm run acceptance:test -- --workers=1 "${features[@]}"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: acceptance-blobs-macos
+          path: tests/acceptance/desktop/acceptance-blobs/
+          retention-days: 3
