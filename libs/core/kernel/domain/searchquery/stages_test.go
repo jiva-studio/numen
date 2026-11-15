@@ -129,3 +129,12 @@ func TestGetCatalogRevisionChangesWithTheCatalog(t *testing.T) {
 		t.Fatal("a changed catalog keeps its revision")
 	}
 }
+
+func TestGetCatalogRevisionChangesWithTheSummary(t *testing.T) {
+	catalog := searchquery.GetBuiltinCatalog()
+	first := searchquery.GetCatalogRevision(catalog)
+	catalog.Functions[0].Summary += "."
+	if searchquery.GetCatalogRevision(catalog) == first {
+		t.Fatal("a changed summary keeps the revision")
+	}
+}

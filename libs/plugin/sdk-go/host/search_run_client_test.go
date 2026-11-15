@@ -56,7 +56,7 @@ func (h *runHost) RemoveSearch(_ context.Context, req *connect.Request[v1.Remove
 func (h *runHost) ListSearchFunctions(context.Context, *connect.Request[v1.ListSearchFunctionsRequest]) (*connect.Response[v1.ListSearchFunctionsResponse], error) {
 	return connect.NewResponse(&v1.ListSearchFunctionsResponse{Error: h.code, Revision: "r1", Functions: []*v1.SearchFunction{{
 		Name: "meaning", Kind: "function", Level: "chunk", Signatures: []string{"meaning(string) -> SearchResults"},
-		Description: "close in meaning", Example: `meaning("tide")`,
+		Summary: "passages close in meaning", Description: "Finds passages close in meaning.", Example: `meaning("tide")`,
 	}}}), nil
 }
 
@@ -101,6 +101,7 @@ func TestASearchClientStartsReadsAndRemovesASearch(t *testing.T) {
 	}
 	functions, err := c.ListSearchFunctions(ctx)
 	if err != nil || functions.Revision != "r1" || len(functions.Functions) != 1 || functions.Functions[0].Example != `meaning("tide")` ||
+		functions.Functions[0].Summary != "passages close in meaning" ||
 		!slices.Equal(functions.Functions[0].Signatures, []string{"meaning(string) -> SearchResults"}) {
 		t.Errorf("functions %+v (%v)", functions, err)
 	}
