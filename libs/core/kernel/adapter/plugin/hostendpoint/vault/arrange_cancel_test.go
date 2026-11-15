@@ -24,6 +24,8 @@ func (a *recordingArranger) MoveNote(_ context.Context, from, to string) (domain
 
 type anyCaller struct{}
 
+func (anyCaller) Authenticate(string) (string, error) { return "md.numen.a", nil }
+
 func (anyCaller) Authorize(string, string) (string, error) { return "md.numen.a", nil }
 
 type shownAccess struct{ access *Access }
