@@ -1,6 +1,7 @@
 package celquery
 
 import (
+	"slices"
 	"strings"
 
 	"cel.dev/cel-go/cel"
@@ -35,13 +36,21 @@ func declare(f searchquery.Function) cel.EnvOption {
 	if f.IsVariable {
 		return cel.Variable(f.Name, getType(f.Result))
 	}
-	args := make([]*cel.Type, len(f.Args))
-	parts := []string{f.Name}
-	for i, arg := range f.Args {
+	overloads := []cel.FunctionOpt{newOverload(f.Name, f.Args, f.Result)}
+	if len(f.OptionalArgs) > 0 {
+		overloads = append(overloads, newOverload(f.Name, append(slices.Clone(f.Args), f.OptionalArgs...), f.Result))
+	}
+	return cel.Function(f.Name, overloads...)
+}
+
+func newOverload(name string, valueTypes []searchquery.ValueType, result searchquery.ValueType) cel.FunctionOpt {
+	args := make([]*cel.Type, len(valueTypes))
+	parts := []string{name}
+	for i, arg := range valueTypes {
 		args[i] = getType(arg)
 		parts = append(parts, args[i].String())
 	}
-	return cel.Function(f.Name, cel.Overload(strings.Join(parts, "_"), args, getType(f.Result)))
+	return cel.Overload(strings.Join(parts, "_"), args, getType(result))
 }
 
 func getType(t searchquery.ValueType) *cel.Type {

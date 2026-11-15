@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -14,9 +15,10 @@ type QueryParser interface {
 	ParseQuery(text string, catalog searchquery.Catalog) (searchquery.RawNode, error)
 }
 
-// DocumentQueries lists the documents of a vault within a scope superset.
+// DocumentQueries lists the documents of a vault within a scope superset and reads its word index.
 type DocumentQueries interface {
-	// ListDocuments returns the sources of one vault under any of q.PathPrefixes and of q.SourceKinds, with
+	WordQueries
+	// ListDocuments returns the sources of one vault under any of q.PathPrefixes, of q.SourceKinds and at q.Paths, with
 	// their note title and the count of their small chunks that hold a vector under q.Recipe, ordered by
 	// path, at most q.Limit+1 of them, all of them when q.Limit is zero.
 	ListDocuments(ctx context.Context, vaultID domain.VaultID, q searchquery.DocumentQuery) ([]searchquery.Document, error)
@@ -46,4 +48,18 @@ type WordQueries interface {
 // FloorReader returns the similarity floor of a vault under a recipe.
 type FloorReader interface {
 	GetFloor(ctx context.Context, v domain.Vault, recipe string) float64
+}
+
+// LinkReaders reads the links of a vault for the link functions.
+type LinkReaders interface {
+	noteport.LinkBatches
+	// GetNoteCandidates returns the paths of the notes of the vault an address could mean, ordered by path:
+	// for a note address the note with that identifier in this vault, for a name the notes the link
+	// resolution would consider.
+	GetNoteCandidates(ctx context.Context, vaultID domain.VaultID, address domain.Address) ([]string, error)
+	// GetIndexedPaths returns those of the paths that are sources of the vault.
+	GetIndexedPaths(ctx context.Context, vaultID domain.VaultID, paths []string) ([]string, error)
+	// ListLinksByName returns the links written in the notes of the vault whose target's last segment folds
+	// to the name, with the path of the note each is written in and without resolution.
+	ListLinksByName(ctx context.Context, vaultID domain.VaultID, foldedName string) ([]domain.ResolvedLink, error)
 }

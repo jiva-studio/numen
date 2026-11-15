@@ -2,6 +2,7 @@ package celquery
 
 import (
 	"fmt"
+	"strings"
 
 	"cel.dev/cel-go/common/ast"
 	"cel.dev/cel-go/common/operators"
@@ -13,10 +14,11 @@ import (
 
 // The messages of the shapes the language does not accept.
 const (
-	messageCondition = "the query is a condition over meaning, words, kind and path"
+	messageCondition = "the query is a condition over meaning, words, kind, path and the link functions"
 	messageKind      = `kind is compared with a string literal: kind == "pdf", kind != "pdf" or kind in ["pdf", "epub"]`
 	messagePath      = `path is used as path.startsWith("folder/")`
 	messageLiteral   = "%s takes a string literal"
+	messageTarget    = "the target of %s is empty"
 )
 
 // converter turns a checked CEL tree into a raw tree, collecting the shapes it does not accept.
@@ -84,6 +86,9 @@ func (c *converter) convertCall(expr ast.Expr) searchquery.RawNode {
 	case overloads.StartsWith:
 		return c.convertStartsWith(expr)
 	}
+	if _, isLink := searchquery.FindLinkFunction(call.FunctionName()); isLink {
+		return c.convertLink(expr)
+	}
 	return c.reject(expr, messageCondition)
 }
 
@@ -102,6 +107,27 @@ func (c *converter) convertText(expr ast.Expr, kind searchquery.LeafKind) search
 		return c.reject(expr, fmt.Sprintf(messageLiteral, call.FunctionName()))
 	}
 	return c.newLeaf(expr, searchquery.RawLeaf{Kind: kind, Text: text})
+}
+
+func (c *converter) convertLink(expr ast.Expr) searchquery.RawNode {
+	call := expr.AsCall()
+	name := call.FunctionName()
+	var texts []string
+	for _, arg := range call.Args() {
+		text, isLiteral := getStringLiteral(arg)
+		if !isLiteral {
+			return c.reject(arg, fmt.Sprintf(messageLiteral, name))
+		}
+		texts = append(texts, text)
+	}
+	if strings.TrimSpace(texts[0]) == "" {
+		return c.reject(call.Args()[0], fmt.Sprintf(messageTarget, name))
+	}
+	set := searchquery.SetCondition{Function: name, Target: texts[0]}
+	if len(texts) > 1 {
+		set.LinkType = texts[1]
+	}
+	return c.newLeaf(expr, searchquery.RawLeaf{Kind: searchquery.LeafSet, Set: set})
 }
 
 func (c *converter) convertComparison(expr ast.Expr) searchquery.RawNode {

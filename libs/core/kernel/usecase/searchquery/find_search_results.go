@@ -30,7 +30,6 @@ type FindSearchResultsDeps struct {
 	Parser       QueryParser
 	Documents    DocumentQueries
 	Vectors      VectorQueries
-	Words        WordQueries
 	Places       sourceport.ChunkPlaces
 	Matcher      sourceport.WordMatching
 	Readers      vaultport.VaultReaders
@@ -38,6 +37,7 @@ type FindSearchResultsDeps struct {
 	Source       searchsourceport.QuerySource
 	Floors       FloorReader
 	ContentTypes contenttypeport.ContentTypeTable
+	Links        LinkReaders
 }
 
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
@@ -45,7 +45,6 @@ type FindSearchResults struct {
 	parser       QueryParser
 	documents    DocumentQueries
 	vectors      VectorQueries
-	words        WordQueries
 	places       sourceport.ChunkPlaces
 	matcher      sourceport.WordMatching
 	readers      vaultport.VaultReaders
@@ -53,15 +52,16 @@ type FindSearchResults struct {
 	source       searchsourceport.QuerySource
 	floors       FloorReader
 	contentTypes contenttypeport.ContentTypeTable
+	links        LinkReaders
 	Limits       searchquery.Limits
 }
 
 // NewFindSearchResults creates the use case over the index, with the default limits.
 func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 	return &FindSearchResults{
-		parser: deps.Parser, documents: deps.Documents, vectors: deps.Vectors, words: deps.Words,
+		parser: deps.Parser, documents: deps.Documents, vectors: deps.Vectors,
 		places: deps.Places, matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts,
-		source: deps.Source, floors: deps.Floors, contentTypes: deps.ContentTypes,
+		source: deps.Source, floors: deps.Floors, contentTypes: deps.ContentTypes, links: deps.Links,
 		Limits: searchquery.DefaultLimits(),
 	}
 }

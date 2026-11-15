@@ -24,6 +24,8 @@ const (
 	LeafKindIn
 	// LeafPathPrefix is path.startsWith("x").
 	LeafPathPrefix
+	// LeafSet holds when the document belongs to the set of Query.Sets[SetIndex].
+	LeafSet
 )
 
 // Position is a place in the text of a query, counted from 1; Column counts Unicode code points.
@@ -31,10 +33,12 @@ type Position struct {
 	Line, Column int
 }
 
-// Leaf is one test of a normalized tree. ConditionIndex is set for LeafMeaning and LeafWords.
+// Leaf is one test of a normalized tree. ConditionIndex is set for LeafMeaning and LeafWords, SetIndex for
+// LeafSet.
 type Leaf struct {
 	Kind           LeafKind
 	ConditionIndex int
+	SetIndex       int
 	Kinds          []string
 	Prefix         string
 	Position       Position
@@ -61,6 +65,16 @@ type Condition struct {
 	IsPositive bool
 }
 
+// SetCondition is a document condition whose truth is membership in a set of paths the use case computes
+// once per query. Equal conditions share one index.
+type SetCondition struct {
+	Function   string
+	Target     string
+	LinkType   string
+	IsPositive bool
+	Position   Position
+}
+
 // Stage is one method call on the results of a query.
 type Stage struct {
 	Name     string
@@ -73,6 +87,7 @@ type Stage struct {
 type Query struct {
 	Root            Node
 	Conditions      []Condition
+	Sets            []SetCondition
 	Stages          []Stage
 	IsSearchResults bool
 }
@@ -83,6 +98,7 @@ type RawLeaf struct {
 	Text     string
 	Kinds    []string
 	Prefix   string
+	Set      SetCondition
 	Position Position
 }
 

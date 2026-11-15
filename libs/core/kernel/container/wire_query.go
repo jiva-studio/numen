@@ -16,13 +16,13 @@ func newFindSearchResults(
 		Parser:       celquery.NewParser(searchquerydomain.DefaultLimits()),
 		Documents:    search,
 		Vectors:      search,
-		Words:        search,
 		Places:       search,
 		Matcher:      wordmatch.NewMatcher(),
 		Readers:      c.VaultReaders,
 		Texts:        c.TextReaders,
 		Floors:       newFloorPolicy(db, source, errorHandler),
 		ContentTypes: c.PluginHost.Watch,
+		Links:        db.NoteQueries(),
 	}
 	if querySource, ok := source.(searchsourceport.QuerySource); ok {
 		deps.Source = querySource

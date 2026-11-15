@@ -40,7 +40,7 @@ func (p *plan) filterScope(ctx context.Context, s searchquery.Scope, ids []domai
 	inScope := make(map[domain.ChunkID]bool, len(ids))
 	for _, id := range ids {
 		place, found := places[id]
-		inScope[id] = found && s.IsDocumentMatch(p.u.getDocument(place.Path, place.Kind))
+		inScope[id] = found && s.IsDocumentMatch(p.markSets(p.u.getDocument(place.Path, place.Kind)))
 	}
 	return inScope, nil
 }

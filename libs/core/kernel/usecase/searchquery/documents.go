@@ -12,8 +12,12 @@ func (p *plan) listScopeDocuments(ctx context.Context, s searchquery.Scope) ([]s
 	if s.IsEveryDocument() {
 		return nil, false, nil
 	}
+	paths, isLimited := p.getScopePaths(s.SetIndexes)
+	if isLimited && len(paths) == 0 {
+		return nil, true, nil
+	}
 	listed, err := p.u.documents.ListDocuments(ctx, p.v.ID, searchquery.DocumentQuery{
-		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Recipe: p.recipe, Limit: p.u.Limits.MaxDocuments,
+		PathPrefixes: s.PathPrefixes, Paths: paths, SourceKinds: s.SourceKinds, Recipe: p.recipe, Limit: p.u.Limits.MaxDocuments,
 	})
 	if err != nil {
 		return nil, false, err
@@ -35,8 +39,12 @@ func (p *plan) listCandidateDocuments(ctx context.Context) ([]searchquery.Docume
 		return nil, nil
 	}
 	s := searchquery.GetDocumentScope(p.query)
+	paths, isLimited := p.getScopePaths(s.SetIndexes)
+	if isLimited && len(paths) == 0 {
+		return nil, nil
+	}
 	listed, err := p.u.documents.ListDocuments(ctx, p.v.ID, searchquery.DocumentQuery{
-		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Recipe: p.recipe,
+		PathPrefixes: s.PathPrefixes, Paths: paths, SourceKinds: s.SourceKinds, Recipe: p.recipe,
 	})
 	if err != nil {
 		return nil, err
@@ -58,7 +66,7 @@ func (p *plan) listCandidateDocuments(ctx context.Context) ([]searchquery.Docume
 func (p *plan) fillKind(d searchquery.Document) searchquery.Document {
 	d.Kind = searchquery.GetKind(d.SourceKind, p.u.contentTypes.GetContentType(d.Path))
 	d.Title = searchquery.GetTitle(d.Path, d.Title)
-	return d
+	return p.markSets(d)
 }
 
 func hasPositiveDocumentLeaf(node searchquery.Node) bool {

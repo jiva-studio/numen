@@ -28,15 +28,16 @@ const (
 )
 
 // Function is one entry of the catalog: a global function, or a variable when IsVariable is set and Args
-// is nil.
+// is nil. A function with OptionalArgs also takes them after Args.
 type Function struct {
-	Name        string
-	Args        []ValueType
-	Result      ValueType
-	Level       Level
-	IsVariable  bool
-	Description string
-	Example     string
+	Name         string
+	Args         []ValueType
+	OptionalArgs []ValueType
+	Result       ValueType
+	Level        Level
+	IsVariable   bool
+	Description  string
+	Example      string
 }
 
 // Catalog lists the functions and variables a query may name.
@@ -44,10 +45,10 @@ type Catalog struct {
 	Functions []Function
 }
 
-// GetBuiltinCatalog lists words and meaning, which decide per chunk, and the variables kind and path, which decide
-// per document.
+// GetBuiltinCatalog lists words and meaning, which decide per chunk, and the variables kind and path and the link
+// functions, which decide per document.
 func GetBuiltinCatalog() Catalog {
-	return Catalog{Functions: []Function{
+	c := Catalog{Functions: []Function{
 		{
 			Name: FunctionWords, Args: []ValueType{TypeString}, Result: TypeSearchResults, Level: LevelChunk,
 			Description: "passages whose words match an FTS5 expression: words, \"phrases\", prefix*, AND, OR, NOT, NEAR",
@@ -69,6 +70,8 @@ func GetBuiltinCatalog() Catalog {
 			Example:     `path.startsWith("books/")`,
 		},
 	}}
+	c.Functions = append(c.Functions, getLinkCatalog()...)
+	return c
 }
 
 func (c Catalog) FindFunction(name string) (Function, bool) {

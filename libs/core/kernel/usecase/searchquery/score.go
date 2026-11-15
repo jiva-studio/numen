@@ -108,7 +108,7 @@ func (p *plan) scoreWords(
 		if err != nil {
 			return p.getWordsError(ci, err)
 		}
-		wordScores, err := p.u.words.GetWordScores(ctx, p.v.ID, c.Text, all)
+		wordScores, err := p.u.documents.GetWordScores(ctx, p.v.ID, c.Text, all)
 		if err != nil {
 			return p.getWordsError(ci, err)
 		}

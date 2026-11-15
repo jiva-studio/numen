@@ -18,6 +18,7 @@ type plan struct {
 	floor    float64
 	vectors  map[int][]float32
 	places   map[domain.ChunkID]domain.SearchResult
+	sets     []map[string]bool
 	warnings []string
 }
 
@@ -33,6 +34,9 @@ func (u *FindSearchResults) newPlan(ctx context.Context, v domain.Vault, q searc
 }
 
 func (p *plan) execute(ctx context.Context) (searchquery.SearchResults, error) {
+	if err := p.computeSets(ctx); err != nil {
+		return searchquery.SearchResults{}, err
+	}
 	documents, err := p.listCandidateDocuments(ctx)
 	if err != nil {
 		return searchquery.SearchResults{}, err
@@ -95,7 +99,7 @@ func (p *plan) evaluate(
 ) []searchquery.SearchResult {
 	var matched []searchquery.SearchResult
 	for i, c := range candidates {
-		d := p.u.getDocument(c.Path, c.Kind)
+		d := p.markSets(p.u.getDocument(c.Path, c.Kind))
 		o := searchquery.Evaluate(p.query.Root, p.query.Conditions, scores[i], p.floor, d)
 		if !o.IsMatch {
 			continue

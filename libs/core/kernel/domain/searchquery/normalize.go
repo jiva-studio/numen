@@ -34,12 +34,13 @@ func Normalize(raw RawNode, limits Limits) (Query, error) {
 	if len(n.problems) > 0 {
 		return Query{}, &ParseError{Problems: n.problems}
 	}
-	return Query{Root: root, Conditions: n.conditions, IsSearchResults: hasChunkLeaf(root)}, nil
+	return Query{Root: root, Conditions: n.conditions, Sets: n.sets, IsSearchResults: hasChunkLeaf(root)}, nil
 }
 
 type normalizer struct {
 	limits     Limits
 	conditions []Condition
+	sets       []SetCondition
 	prefixes   []string
 	problems   []Problem
 }
@@ -96,6 +97,8 @@ func (n *normalizer) convertLeaf(raw RawLeaf, isNegated bool) Node {
 		n.checkKinds(raw)
 	case LeafPathPrefix:
 		n.addPrefix(raw)
+	case LeafSet:
+		leaf.SetIndex = n.addSet(raw, !isNegated)
 	}
 	return Node{Operator: OperatorLeaf, Leaf: leaf, IsNegated: isNegated}
 }
@@ -122,6 +125,19 @@ func (n *normalizer) addCondition(raw RawLeaf, isPositive bool) int {
 	}
 	n.conditions = append(n.conditions, Condition{IsMeaning: isMeaning, Text: raw.Text, IsPositive: isPositive})
 	return len(n.conditions) - 1
+}
+
+func (n *normalizer) addSet(raw RawLeaf, isPositive bool) int {
+	for i, s := range n.sets {
+		if s.Function == raw.Set.Function && s.Target == raw.Set.Target && s.LinkType == raw.Set.LinkType {
+			n.sets[i].IsPositive = s.IsPositive || isPositive
+			return i
+		}
+	}
+	set := raw.Set
+	set.IsPositive, set.Position = isPositive, raw.Position
+	n.sets = append(n.sets, set)
+	return len(n.sets) - 1
 }
 
 func (n *normalizer) checkKinds(raw RawLeaf) {

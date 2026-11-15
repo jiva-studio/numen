@@ -7,12 +7,14 @@ import (
 )
 
 // Scope is the document predicate every candidate of one condition satisfies, and its superset for the
-// index: path prefixes (the whole vault when empty) and source kinds (all when empty). A Predicate that is an
+// index: path prefixes (the whole vault when empty), source kinds (all when empty) and the sets every document of
+// the scope belongs to (none when empty). A Predicate that is an
 // OperatorAnd with no children holds for every document.
 type Scope struct {
 	Predicate    Node
 	PathPrefixes []string
 	SourceKinds  []domain.SourceKind
+	SetIndexes   []int
 }
 
 // IsEveryDocument reports whether the scope holds for every document.
@@ -52,7 +54,10 @@ func GetDocumentScope(q Query) Scope {
 			}
 		}
 	}
-	return Scope{Predicate: q.Root, PathPrefixes: getPrefixes(conjuncts), SourceKinds: getSourceKinds(conjuncts)}
+	return Scope{
+		Predicate: q.Root, PathPrefixes: getPrefixes(conjuncts), SourceKinds: getSourceKinds(conjuncts),
+		SetIndexes: getSetIndexes(conjuncts),
+	}
 }
 
 func collectOccurrences(node Node, constraints []Node, occurrences [][][]Node) {
@@ -93,7 +98,10 @@ func newScope(occurrences [][]Node) Scope {
 	}
 	if len(occurrences) == 1 {
 		c := occurrences[0]
-		return Scope{Predicate: Node{Operator: OperatorAnd, Children: c}, PathPrefixes: getPrefixes(c), SourceKinds: getSourceKinds(c)}
+		return Scope{
+			Predicate: Node{Operator: OperatorAnd, Children: c}, PathPrefixes: getPrefixes(c), SourceKinds: getSourceKinds(c),
+			SetIndexes: getSetIndexes(c),
+		}
 	}
 	scope := Scope{Predicate: Node{Operator: OperatorOr}}
 	prefixes, kinds := []string{}, []domain.SourceKind{}
@@ -161,4 +169,17 @@ func getSourceKinds(conjuncts []Node) []domain.SourceKind {
 		}
 	}
 	return nil
+}
+
+func getSetIndexes(conjuncts []Node) []int {
+	var indexes []int
+	for _, c := range conjuncts {
+		switch {
+		case c.Operator == OperatorAnd:
+			indexes = append(indexes, getSetIndexes(c.Children)...)
+		case c.Operator == OperatorLeaf && c.Leaf.Kind == LeafSet && !c.IsNegated && !slices.Contains(indexes, c.Leaf.SetIndex):
+			indexes = append(indexes, c.Leaf.SetIndex)
+		}
+	}
+	return indexes
 }
