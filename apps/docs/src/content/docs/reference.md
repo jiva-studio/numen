@@ -206,7 +206,7 @@ The settings of the plugin Update Notifier.
 
 | | | |
 | --- | --- | --- |
-| `channel` | text | which builds are announced. Until one is chosen, the channel of this build. One of `stable`, `nightly`, `custom`. |
+| `channel` | text | which builds are announced. Unset follows this build. One of `stable`, `nightly`, `custom`. |
 | `endpoint` | text | required. Address of latest.json for the Custom channel. |
 | `checkIntervalHours` | a number | hours between two update checks. From 1 to 168. |
 

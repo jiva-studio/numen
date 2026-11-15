@@ -25,7 +25,7 @@
       "key": "channel",
       "type": "enum",
       "title": "Channel",
-      "description": "Which builds are announced. Until one is chosen, the channel of this build",
+      "description": "Which builds are announced. Unset follows this build",
       "options": [
         {
           "value": "stable",
