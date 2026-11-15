@@ -51,6 +51,28 @@ describe('how a key is drawn on the row that names it', () => {
     expect(createRowKeys('app:file.open#note', 'Linux x86_64', {})).toEqual({
       keys: { icons: ['control'], letter: 'G' },
     })
+    const mutable = APP_KEYBINDINGS as unknown as {
+      key: string
+      command: string
+      values: Record<string, string>
+      when: string
+    }[]
+    mutable.push({
+      key: 'mod+t',
+      command: 'test:with-values',
+      values: { placement: 'split' },
+      when: '',
+    })
+    try {
+      expect(createRowKeys('test:with-values', 'Linux x86_64', { placement: 'split' })).toEqual({
+        keys: { icons: ['control'], letter: 'T' },
+      })
+      expect(createRowKeys('test:with-values', 'Linux x86_64', { placement: 'current' })).toEqual(
+        {},
+      )
+    } finally {
+      mutable.pop()
+    }
   })
 
   it('is nothing for a command no key reaches', () => {

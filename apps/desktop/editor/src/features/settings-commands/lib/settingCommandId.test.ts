@@ -22,6 +22,8 @@ describe('the address of the command of a setting', () => {
 
   it('gives no owner for the id of another command', () => {
     expect(parseSettingCommandId('app:note.create')).toBeNull()
+    expect(parseSettingCommandId('prefix:setting:app:theme')).toBeNull()
+    expect(parseSettingCommandId('setting:app:theme\nextra')).toBeNull()
     expect(parseSettingCommandId('setting::key')).toBeNull()
     expect(parseSettingCommandId('setting:app:')).toBeNull()
   })

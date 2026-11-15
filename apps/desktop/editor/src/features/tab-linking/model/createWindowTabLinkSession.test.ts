@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { ReportedError } from '@/shared/api/errors'
 import { nextTick } from 'vue'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
@@ -75,13 +76,43 @@ describe('the tab link session of a window', () => {
   })
 
   it('is outlined while another window offers it a tab, and not after', async () => {
-    const { session } = setup([
-      { event: { case: 'highlight', value: { isOn: true } } },
-      { event: { case: 'highlight', value: { isOn: false } } },
-    ])
+    let releaseSecond!: () => void
+    const { windowTabs, writeMessage } = setup()
+    const api = createAnsweredApi({
+      workspace: {
+        watchTabLinks: async function* (_request, context) {
+          yield { event: { case: 'highlight' as const, value: { isOn: true } } }
+          await new Promise<void>((resolve) => {
+            releaseSecond = resolve
+          })
+          yield { event: { case: 'highlight' as const, value: { isOn: false } } }
+          await new Promise((resolve) => context.signal.addEventListener('abort', resolve))
+        },
+      },
+    })
+    const { tabLinks, reports } = createTabLinking({
+      writeTabLinks: api.tabs.tabLinks.writeTabLinks,
+      windowId: 'window-a',
+      windowTabs,
+      isMain: true,
+      writeMessage,
+    })
+    const session = createWindowTabLinkSession({
+      api: api.tabs.tabLinks,
+      windowId: 'window-a',
+      windowTabs,
+      isMain: true,
+      tabLinks,
+      reports,
+      tabSync: { applySync: vi.fn(), applyGroupPaths: vi.fn() },
+      openMovedTab: vi.fn(),
+      writeMessage,
+    })
 
     expect(session.isHighlighted.value).toBe(false)
     const stream = session.start()
+    await vi.waitFor(() => expect(session.isHighlighted.value).toBe(true))
+    releaseSecond()
     await vi.waitFor(() => expect(session.isHighlighted.value).toBe(false))
     session.close()
     await stream
@@ -114,5 +145,70 @@ describe('the tab link session of a window', () => {
     await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(watched).not.toHaveBeenCalled()
+  })
+
+  it('writes link changes after reports and reports errors from linking, reports and cancelling', async () => {
+    const windowTabs = createTestTabs()
+    windowTabs.kinds.registerKinds([linkable])
+    const writeMessage = vi.fn()
+    const writeTabLinks = vi
+      .fn<Parameters<typeof createTabLinking>[0]['writeTabLinks']>()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new ReportedError('link failed'))
+      .mockRejectedValueOnce(new ReportedError('report failed'))
+
+    const { tabLinks, reports } = createTabLinking({
+      writeTabLinks,
+      windowId: 'window-a',
+      windowTabs,
+      isMain: true,
+      writeMessage,
+    })
+
+    tabLinks.linkTabs('a', 'b')
+    await vi.waitFor(() =>
+      expect(writeTabLinks).toHaveBeenCalledWith('window-a', {
+        link: { source: 'a', target: 'b' },
+      }),
+    )
+
+    tabLinks.linkTabs('a', 'c')
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith('The tabs were not linked: link failed', 'error'),
+    )
+
+    reports.reportTabs()
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith(
+        'The tab links were not written: report failed',
+        'error',
+      ),
+    )
+    reports.stop()
+
+    const session = createWindowTabLinkSession({
+      api: {
+        watchTabLinks: () => {
+          throw new ReportedError('stream failed')
+        },
+        cancelTabLinksWatch: () => Promise.reject(new ReportedError('cancel failed')),
+      },
+      windowId: 'window-a',
+      windowTabs,
+      isMain: true,
+      tabLinks,
+      reports,
+      tabSync: { applySync: vi.fn(), applyGroupPaths: vi.fn() },
+      openMovedTab: vi.fn(),
+      writeMessage,
+    })
+
+    session.close()
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith(
+        'The tab links were not written: cancel failed',
+        'error',
+      ),
+    )
   })
 })

@@ -1,0 +1,49 @@
+{
+  "id": "md.numen.engines.reranking",
+  "name": "Local Reranking",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Reranks search results with a model on this machine",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "engines",
+    "operations": [
+      { "name": "llm.rerank", "title": "rerank texts" },
+      { "name": "llm.models", "title": "list models" }
+    ],
+    "connectionTypes": [
+      {
+        "id": "local-reranker",
+        "title": "Local reranker",
+        "description": "Reranks texts with a model on this machine.",
+        "operations": ["llm.rerank", "llm.models", "connections.detected"],
+        "rowFields": [
+          { "key": "model", "type": "string", "title": "Model", "optionsFrom": "llm.models" }
+        ],
+        "fields": [
+          {
+            "key": "parallelRequests",
+            "type": "number",
+            "title": "Parallel requests",
+            "default": 1,
+            "min": 1,
+            "max": 4,
+            "step": 1
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": ["link:open"],
+  "dependencies": [
+    {
+      "id": "onnxruntime",
+      "kind": "runtime"
+    }
+  ],
+  "backend": {
+    "entrypoint": "bin/engines-reranking",
+    "idleStopSeconds": 600
+  },
+  "services": ["numen.v1.ProviderService"]
+}

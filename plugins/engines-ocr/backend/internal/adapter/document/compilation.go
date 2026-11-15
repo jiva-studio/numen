@@ -4,7 +4,22 @@ import (
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
 	"github.com/tetratelabs/wazero/experimental"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
 )
+
+// NewCachedReader returns a reader that keeps PDFium compiled in the cache directory the host granted the plugin, and in
+// memory where the host granted none.
+func NewCachedReader() *Reader {
+	reader := NewReader()
+	dir, err := cache.GetPluginDir()
+	if err != nil {
+		dir = ""
+	}
+	reader.SetCompilationCache(wasm.NewCompilationCache(dir))
+	return reader
+}
 
 // SetCompilationCache makes the worker that starts afterwards compile PDFium into cache, so readers
 // that share a cache compile it once. It has no effect on a reader whose worker has started.

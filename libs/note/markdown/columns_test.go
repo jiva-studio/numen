@@ -366,7 +366,7 @@ func TestLinkBlockBoundsAndErrors(t *testing.T) {
 }
 
 func TestParseRangesScalarAndWikilinksBounds(t *testing.T) {
-	if got := Body([]byte("not-delim\n---\n")); got != "not-delim\n---\n" {
+	if got := Parse(domain.FileStat{}, []byte("not-delim\n---\n")).Body; got != "not-delim\n---\n" {
 		t.Errorf("Body without opening delimiter = %q", got)
 	}
 

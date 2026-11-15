@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -88,9 +87,6 @@ func TestServerSetTokenServeAndClose(t *testing.T) {
 	t.Parallel()
 
 	srv := newTestServer("tok-1")
-	if got := srv.GetHTTPURL(); got != "" {
-		t.Fatalf("GetHTTPURL() before Serve = %q, want empty", got)
-	}
 	serveOnLoopback(t, srv)
 	defer func() {
 		if err := srv.Close(t.Context()); err != nil {
@@ -98,14 +94,9 @@ func TestServerSetTokenServeAndClose(t *testing.T) {
 		}
 	}()
 
-	url1 := srv.GetHTTPURL()
-	if !strings.HasPrefix(url1, "http://127.0.0.1:") {
-		t.Fatalf("expected loopback streamable HTTP URL, got %s", url1)
-	}
-
 	srv.SetToken("tok-2")
-	if srv.GetToken() != "tok-2" || srv.GetHTTPURL() != url1 {
-		t.Fatalf("expected token tok-2 and unchanged URL %s, got token=%s url=%s", url1, srv.GetToken(), srv.GetHTTPURL())
+	if srv.GetToken() != "tok-2" {
+		t.Fatalf("expected token tok-2, got %s", srv.GetToken())
 	}
 
 	if err := srv.Close(t.Context()); err != nil {

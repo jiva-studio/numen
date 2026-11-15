@@ -1,0 +1,58 @@
+[
+  {
+    "query": "how often should I water tomatoes grown in pots",
+    "relevant": "Tomatoes in pots dry out fast: water them every morning in summer, and twice a day when it is hot.",
+    "unrelated": [
+      "The night train to the coast leaves from platform four at eleven.",
+      "A sourdough starter is fed with equal weights of flour and water."
+    ]
+  },
+  {
+    "query": "when does the ferry leave the harbor",
+    "relevant": "The ferry to the island leaves the harbor at 7:45 and returns at 18:10.",
+    "unrelated": [
+      "Basil grows best in warm soil and full sun.",
+      "The chess club meets on Thursdays in the library."
+    ]
+  },
+  {
+    "query": "how to replace a bicycle chain",
+    "relevant": "To replace the chain, shift to the smallest cog, open the master link with pliers and thread the new chain over the derailleur.",
+    "unrelated": [
+      "The museum is closed on Mondays and public holidays.",
+      "Green tea tastes bitter when the water is too hot."
+    ]
+  },
+  {
+    "query": "как часто поливать комнатные растения зимой",
+    "relevant": "Зимой комнатные растения поливают реже: раз в неделю, когда верхний слой земли высохнет.",
+    "unrelated": [
+      "Поезд до Казани отправляется с третьего пути в девять вечера.",
+      "Шахматный турнир пройдёт в субботу в городской библиотеке."
+    ]
+  },
+  {
+    "query": "где купить билеты на концерт органной музыки",
+    "relevant": "Билеты на органный концерт продаются в кассе филармонии и на её сайте за неделю до выступления.",
+    "unrelated": [
+      "Тесто для блинов замешивают на молоке и оставляют на полчаса.",
+      "Велосипедную цепь смазывают после каждой поездки под дождём."
+    ]
+  },
+  {
+    "query": "where did Kṛṣṇa spend his childhood",
+    "relevant": "Kṛṣṇa spent his childhood in Vṛndāvana, herding cows with the cowherd boys on the bank of the Yamunā.",
+    "unrelated": [
+      "The ferry timetable changes in October.",
+      "A bicycle chain stretches after a few thousand kilometers."
+    ]
+  },
+  {
+    "query": "what did Caitanya teach about chanting",
+    "relevant": "Caitanya Mahāprabhu taught that chanting the holy names together, saṅkīrtana, is the practice of this age.",
+    "unrelated": [
+      "Tomato seedlings need sixteen hours of light a day.",
+      "Ящики для рассады моют тёплой водой с содой."
+    ]
+  }
+]

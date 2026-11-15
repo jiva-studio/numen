@@ -18,7 +18,7 @@ describe('the commands the plugins list in the palette', () => {
   })
 
   it('include a command of an id the host reports', () => {
-    expect(isCommandListed(createHost(['sample.a']), 'sample.a')).toBe(true)
+    expect(isCommandListed(createHost(['sample.a', 'sample.b']), 'sample.a')).toBe(true)
   })
 
   it('leave out a command of an id the host does not report', () => {

@@ -12,23 +12,15 @@ import (
 
 // The layers are the folders domain, port, usecase, adapter, internal/adapter, internal/adapterlib,
 // internal/testsupport and container. A package belongs to exactly one, so a new folder cannot sit outside
-// every rule that reads a layer. The pure packages that belong to none are listed with the reason each needs
-// no layer: they hold no scenario and no port, they compute over values or hand out a grant.
+// every rule that reads a layer. A package directly under internal/ outside those folders is a helper
+// (load.IsHelper), which TestHelperPackagesImportNothingAndKeepNoState holds to no scenario, no port and no state.
 func TestEveryKernelPackageBelongsToOneKnownLayer(t *testing.T) {
 	dirs, err := listProductionDirs("..")
 	if err != nil {
 		t.Fatal(err)
 	}
-	helpers := getHelperPackages()
-	for _, one := range getUnplacedPackages(dirs, helpers) {
+	for _, one := range getUnplacedPackages(dirs) {
 		t.Error(one)
-	}
-
-	// Every helper must exist, or its entry hides a package that is gone and may return unseen.
-	for helper, reason := range helpers {
-		if !slices.Contains(dirs, helper) || reason == "" {
-			t.Errorf("the helper %s is not a package of the kernel or has no reason", helper)
-		}
 	}
 }
 
@@ -66,20 +58,18 @@ func TestUseCaseImports_ListsThePlantedEdge(t *testing.T) {
 	}
 }
 
-// A package outside every group fails, a package in a helper entry passes, and adapter and adapterlib are
-// separate groups although one name is the prefix of the other.
+// A package outside every group fails, a helper directly under internal/ passes, a package nested in a helper and
+// internal/ itself fail, and adapter and adapterlib are separate groups although one name is the prefix of the other.
 func TestScanRule_RejectsAPackageOutsideEveryGroup(t *testing.T) {
-	helpers := map[string]string{"internal/csp": "policy string"}
 	got := getUnplacedPackages([]string{
 		"domain/theme", "port", "port/noteport", "usecase/note/query", "adapter/window/editor", "internal/adapter/clock",
 		"internal/adapterlib/wire", "internal/testsupport/indexfake", "container", "internal/csp",
-		"internal/vaultreading", "internal/adapterx", "scratch", "internal/csp/sub",
-	}, helpers)
+		"internal/adapterx", "scratch", "internal/csp/sub", "internal",
+	})
 	want := []string{
-		`internal/vaultreading is in "" groups, want exactly one`,
-		`internal/adapterx is in "" groups, want exactly one`,
 		`scratch is in "" groups, want exactly one`,
 		`internal/csp/sub is in "" groups, want exactly one`,
+		`internal is in "" groups, want exactly one`,
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("the rule rejects %v, want %v", got, want)
@@ -87,13 +77,16 @@ func TestScanRule_RejectsAPackageOutsideEveryGroup(t *testing.T) {
 }
 
 func TestUseCaseImportRule_RejectsASharedPackageOutsideDomainPortAndHelpers(t *testing.T) {
-	helpers := map[string]string{"internal/text": "ranges"}
 	got := getBadUseCaseImports(map[string][]string{
-		"usecase/note": {"domain/theme", "port/noteport", "internal/text", "internal/vaultreading", "adapter/index", "usecase/note/query"},
-	}, helpers)
+		"usecase/note": {
+			"domain/theme", "port/noteport", "internal/text", "internal/vaultreading/sub", "internal/testsupport/indexfake",
+			"adapter/index", "usecase/note/query",
+		},
+	})
 	want := []string{
 		"usecase/note imports adapter/index (adapter): a use case imports the domain, ports and its own helpers",
-		`usecase/note imports internal/vaultreading (): a use case imports the domain, ports and its own helpers`,
+		"usecase/note imports internal/testsupport/indexfake (internal/testsupport): a use case imports the domain, ports and its own helpers",
+		`usecase/note imports internal/vaultreading/sub (): a use case imports the domain, ports and its own helpers`,
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("the rule rejects %v, want %v", got, want)
@@ -117,12 +110,8 @@ func TestHelperPackagesImportNothingAndKeepNoState(t *testing.T) {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
 	pkgs := load.GetModulePackages(t, load.Workspace(t, "libs/core/kernel"), "libs/core/kernel")
-	helpers := getHelperPackages()
-	found, read := getHelperFindings(pkgs, load.CoreImportPath, helpers)
+	found, read := getHelperFindings(pkgs, load.CoreImportPath)
 	for _, one := range found {
-		t.Error(one)
-	}
-	for _, one := range getHelperReasonFindings(pkgs, load.CoreImportPath, helpers) {
 		t.Error(one)
 	}
 	if read == 0 {
@@ -206,9 +195,7 @@ var _ noteport.Reader = (*Reader)(nil)
 		"internal/adapterlib/reach/reach.go": "package reach\n\nimport (\n\t_ \"fixture/adapter/index\"\n\t_ \"fixture/internal/adapter/clock\"\n\t_ \"fixture/usecase/find\"\n)\n",
 		"internal/adapter/clock/clock.go":    "package clock\n\nfunc Now() int { return 0 }\n",
 	})
-	found, read := getHelperFindings(load.LoadFixture(t, dir), "fixture", map[string]string{
-		"internal/csp": "builds the policy", "internal/vector": "vectors", "internal/text": "text", "internal/chunking": "chunks",
-	})
+	found, read := getHelperFindings(load.LoadFixture(t, dir), "fixture")
 	want := []string{
 		"internal/adapterlib/reach imports adapter/index: shared adapter code depends on no other adapter",
 		"internal/adapterlib/reach imports internal/adapter/clock: shared adapter code depends on no other adapter",
@@ -231,28 +218,6 @@ var _ noteport.Reader = (*Reader)(nil)
 	}
 	if read != 9 {
 		t.Errorf("%d helper packages read, want 9", read)
-	}
-}
-
-// A reason that shares no word with the name, the documentation and the exported identifiers of its package
-// describes another package, or none.
-func TestHelperRule_RejectsAReasonThatNamesNothingOfThePackage(t *testing.T) {
-	dir := load.WriteTreeFixture(t, map[string]string{
-		"internal/ranges/ranges.go": "// Package ranges works on byte ranges of text.\npackage ranges\n\nfunc Overlap() {}\n",
-		"internal/colors/colors.go": "package colors\n\nfunc MixHue() {}\n",
-	})
-	helpers := map[string]string{
-		"internal/ranges":  "byte-range arithmetic over text",
-		"internal/colors":  "a reason that is a sentence",
-		"internal/missing": "gone",
-	}
-	got := getHelperReasonFindings(load.LoadFixture(t, dir), "fixture", helpers)
-	want := []string{
-		"the helper internal/missing is not a package of the kernel",
-		"the reason of the helper internal/colors names nothing the package declares or documents: a reason that is a sentence",
-	}
-	if !slices.Equal(got, want) {
-		t.Errorf("the rule rejects %v, want %v", got, want)
 	}
 }
 

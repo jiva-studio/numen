@@ -3,7 +3,6 @@ package wire
 import (
 	"context"
 	"errors"
-	"sync/atomic"
 	"time"
 
 	"connectrpc.com/connect"
@@ -23,25 +22,6 @@ var ErrAnotherWindow = errors.New("that is another window")
 // ErrNoCancellableTask is a cancel naming a task that is not listed or cannot
 // be canceled.
 var ErrNoCancellableTask = errors.New("no cancellable task has that id")
-
-// A Reason is a human-readable cause for a degraded window state, written by the
-// component that detects it and read by the UI.
-//
-// The empty reason means no problem. It is a string, not a flag, so the UI can
-// display the cause.
-type Reason struct{ why atomic.Value }
-
-// Store records the reason, or the empty string when there is no problem.
-func (r *Reason) Store(why string) { r.why.Store(why) }
-
-// Why returns the last stored reason, or the empty string when there is no problem.
-func (r *Reason) Why() string {
-	why, isText := r.why.Load().(string)
-	if !isText {
-		return ""
-	}
-	return why
-}
 
 // Window is one window of this application, as the schema describes it: the
 // running tasks and the connected clients that take part in the flush at quit.

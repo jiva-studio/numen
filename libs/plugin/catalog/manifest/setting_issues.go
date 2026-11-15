@@ -131,8 +131,8 @@ func (m Manifest) listOptionsByIssues(s Setting, declared map[string]Setting) []
 	if (s.Type != SettingTypeEnum && s.Type != SettingTypeString) || len(s.Options) > 0 {
 		return []error{fmt.Errorf("%w: %s takes its options from %s and is no enum or string without options of its own", ErrInvalidSetting, s.Key, s.OptionsBy.Setting)}
 	}
-	parent := declared[s.OptionsBy.Setting]
-	if parent.Type != SettingTypeEnum || len(parent.Options) == 0 {
+	parent, ok := declared[s.OptionsBy.Setting]
+	if !ok || parent.Type != SettingTypeEnum || parent.OptionsBy != nil || len(parent.Options) == 0 {
 		return []error{fmt.Errorf("%w: %s takes its options from %q, which is no enum with options declared before it", ErrInvalidSetting, s.Key, s.OptionsBy.Setting)}
 	}
 	var issues []error
@@ -221,12 +221,15 @@ func listDuplicateOperationIssues(settings []Setting) []error {
 	var issues []error
 	keyOf := map[string]string{}
 	for _, s := range settings {
+		if s.Type != SettingTypeConnections {
+			continue
+		}
 		for _, operation := range s.Operations {
 			if first, isTaken := keyOf[operation]; isTaken && first != s.Key {
 				issues = append(issues, fmt.Errorf("%w: %s and %s both hold rows for the operation %q", ErrInvalidSetting, first, s.Key, operation))
-			} else {
-				keyOf[operation] = s.Key
+				continue
 			}
+			keyOf[operation] = s.Key
 		}
 	}
 	return issues

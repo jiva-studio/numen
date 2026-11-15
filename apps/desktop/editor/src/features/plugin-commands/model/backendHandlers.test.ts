@@ -56,6 +56,26 @@ describe('createBackendHandlers', () => {
     expect(deps.openFile).toHaveBeenCalledWith('talks/a.md')
   })
 
+  it('omits itemId when none is picked and skips empty message and openedPath', async () => {
+    const { deps, handlers } = createWith({
+      ok: true,
+      value: { message: '', openedPath: '' },
+    })
+
+    await handlers.runBackendHandler({
+      pluginId: 'md.ears',
+      command: 'app:file.createText',
+      target: TARGET,
+    })
+
+    expect(deps.run).toHaveBeenCalledWith(
+      { pluginId: 'md.ears', command: 'app:file.createText' },
+      { path: 'talks/a.mp3', values: {} },
+    )
+    expect(deps.writeMessage).not.toHaveBeenCalled()
+    expect(deps.openFile).not.toHaveBeenCalled()
+  })
+
   it('rejects a run that did not succeed with the error as the plugin words it, and writes nothing', async () => {
     const { deps, handlers } = createWith({ ok: false, error: 'no audio' })
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -179,16 +178,6 @@ func (s *Server) Close(ctx context.Context) error {
 
 func (s *Server) Handler() http.Handler {
 	return s.handler
-}
-
-// GetHTTPURL returns the streamable HTTP endpoint URL, or an empty string before Serve.
-func (s *Server) GetHTTPURL() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.actualAddr == "" {
-		return ""
-	}
-	return (&url.URL{Scheme: "http", Host: s.actualAddr, Path: "/mcp"}).String()
 }
 
 func (s *Server) GetToken() string {

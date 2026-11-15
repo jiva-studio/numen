@@ -1,9 +1,15 @@
 /** The window and the notes of the vault, as a plugin's tabs are handed them. */
 import { describe, expect, it, vi } from 'vitest'
+import { ReportedError } from '@/shared/api/errors'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { ref, shallowRef } from 'vue'
 import type { FileOpeners } from '@/entities/tab'
 import { createIconHost } from './fileServices'
+import {
+  createVaultAccess,
+  createWindowService,
+  createWorkspaceService,
+} from './createPluginServices'
 import {
   createVaultNotes,
   createWorkspaceFiles,
@@ -12,7 +18,10 @@ import {
   type WorkspaceFilesDeps,
   type WorkspaceHostDeps,
 } from './pluginServices'
+import { createTestTabs } from '@/testing/tabs'
+import { blank } from '@/testing/stubs'
 import type { NoteCreator } from '@/entities/note'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 
 interface WorkspaceParts extends Pick<WorkspaceFilesDeps, 'writeMessage'> {
   readonly tabOpeners: WorkspaceFilesDeps['tabOpeners'] & Pick<FileOpeners, 'findFileIcon'>
@@ -118,6 +127,12 @@ describe('the window a plugin is handed', () => {
 
     workspace.dragged.setPaths(['One.md'])
     workspace.messages.showError('the link was not written')
+    const customWriter = vi.fn()
+    const { workspace: withWriter } = createWorkspace({
+      getMessageWriter: (name) => (name === 'custom' ? customWriter : vi.fn()),
+    })
+    withWriter.messages.getWriter('custom')('hello', 'info')
+    expect(customWriter).toHaveBeenCalledWith('hello', 'info')
     expect(workspace.window.getToday()).toBe('2026-09-04')
 
     expect(deps.dragged.value).toStrictEqual(['One.md'])
@@ -299,5 +314,79 @@ describe('the notes of the vault a plugin is handed', () => {
     vi.mocked(making.createUntitledNote).mockResolvedValueOnce('')
 
     expect(await notes.createUntitledNote()).toBe('')
+  })
+})
+
+describe('createWorkspaceService, createVaultAccess and createWindowService', () => {
+  it('wires workspace, vault access and window service from window dependencies', async () => {
+    const writers = new Map<string, ReturnType<typeof vi.fn<MessageWriter>>>()
+    const getWriter = vi.fn((name: string): MessageWriter => {
+      const existing = writers.get(name) ?? vi.fn<MessageWriter>()
+      writers.set(name, existing)
+      return existing
+    })
+    const windowTabs = createTestTabs()
+    const icon = blank
+    const workspace = createWorkspaceService({
+      log: { getWriter },
+      windowTabs,
+      tabOpeners: {
+        openFile: vi.fn(() => Promise.reject(new ReportedError('cannot open'))),
+        openFileAt: vi.fn(() => Promise.resolve()),
+        findFileIcon: (path) => (path === 'a.md' ? icon : undefined),
+      },
+      tabSync: { syncPathFromTab: () => true },
+      window: {
+        health: { failure: ref('') },
+        opening: { path: ref(''), read: async () => '' },
+      },
+      getPluginCommandIcon: (id) => (id === 'cmd:1' ? icon : undefined),
+    })
+
+    expect(getWriter).toHaveBeenCalledWith('command')
+    workspace.messages.showError('bad command')
+    expect(writers.get('command')).toHaveBeenCalledWith('bad command', 'error')
+
+    workspace.messages.getWriter('plugin:test')('hello', 'info')
+    expect(writers.get('plugin:test')).toHaveBeenCalledWith('hello', 'info')
+
+    expect(workspace.icons.getCommand('cmd:1')).toBe(icon)
+    expect(workspace.getNoteInFocus()).toStrictEqual({ path: '', title: '' })
+    expect(workspace.window.getToday()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+
+    workspace.files.open('a.md')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(writers.get('command')).toHaveBeenCalledWith('cannot open', 'error')
+
+    const createUntitledNote = vi.fn(async () => 'New.md')
+    const api = createAnsweredApi({})
+    const access = createVaultAccess({
+      notes: api.vault.note,
+      files: api.vault.file,
+      relations: { roles: [] } as never,
+      search: { names: async () => [] },
+      making: { createUntitledNote, createWithTitle: async () => null } as never,
+      pluginNotes: { readNote: async () => ({ body: '' }), writeNote: async () => undefined },
+      getTarget: () => ({}) as never,
+      runInvocation: async () => undefined,
+    })
+    expect(await access.notes.createUntitledNote()).toBe('New.md')
+
+    const writeWindowMessage = vi.fn()
+    const windowService = createWindowService({
+      frame: {
+        isMaximized: ref(false),
+        isFullscreen: ref(false),
+        minimizeWindow: async () => {
+          throw new ReportedError('frame broken')
+        },
+        toggleMaximizeWindow: async () => undefined,
+        closeWindow: async () => undefined,
+      },
+      writeMessage: writeWindowMessage,
+    })
+    windowService.minimize()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(writeWindowMessage).toHaveBeenCalledWith('frame broken', 'error')
   })
 })

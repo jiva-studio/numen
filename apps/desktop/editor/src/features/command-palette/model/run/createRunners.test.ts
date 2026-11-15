@@ -52,13 +52,14 @@ const setup = () => {
 
 describe('a command run with the item picked for it', () => {
   it('names the item in the invocation and carries the values', async () => {
-    const { deps, runs } = setup()
+    const { deps, runs, messages } = setup()
 
     await createAppItemRunner(deps)('app:note.move', TARGET, 'folder-2', { keep: 'yes' })
 
     expect(runs).toStrictEqual([
       expect.objectContaining({ id: 'app:note.move', name: 'folder-2', values: { keep: 'yes' } }),
     ])
+    expect(messages).toStrictEqual([['', undefined]])
   })
 
   it('rejects with the error of the command', async () => {
@@ -74,7 +75,7 @@ describe('a command run with the values of a keybinding', () => {
   it('runs over the target with the values', async () => {
     const { deps, runs } = setup()
 
-    createValuesRunner(deps, vi.fn())('app:file.reveal', TARGET, { kind: 'plex' })
+    createValuesRunner(deps, deps.writeMessage)('app:file.reveal', TARGET, { kind: 'plex' })
 
     await vi.waitFor(() =>
       expect(runs).toStrictEqual([
@@ -119,12 +120,44 @@ describe('the action of a chosen result', () => {
       over: { path: 'Moons.md', file: 'Moons.md', title: 'Moons', line: 4 },
     } as never)
 
-    expect(run).toHaveBeenCalledExactlyOnceWith(
+    expect(run.mock.lastCall).toStrictEqual([
       'app:file.open',
-      expect.objectContaining({ tab: '', path: 'Moons.md', title: 'Moons', line: 4 }),
+      {
+        ...TARGET,
+        tab: '',
+        kind: null,
+        path: 'Moons.md',
+        file: 'Moons.md',
+        title: 'Moons',
+        line: 4,
+      },
       'Moons',
       undefined,
-    )
+    ])
+
+    createChoiceRunner(
+      run,
+      () => TARGET,
+    )({
+      command: 'app:file.open',
+      input: 'Atlas',
+      over: { path: 'Atlas.pdf', file: 'Atlas.pdf', title: 'Atlas', selector: { page: 3 } },
+    } as never)
+
+    expect(run.mock.lastCall).toStrictEqual([
+      'app:file.open',
+      {
+        ...TARGET,
+        tab: '',
+        kind: null,
+        path: 'Atlas.pdf',
+        file: 'Atlas.pdf',
+        title: 'Atlas',
+        selector: { page: 3 },
+      },
+      'Atlas',
+      undefined,
+    ])
   })
 
   it('runs the command over the target in front where it names no place', () => {

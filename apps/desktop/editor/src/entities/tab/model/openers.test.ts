@@ -80,7 +80,7 @@ describe('a path opened', () => {
   it('opens a note in the tab kind the core names for it, whatever its type', async () => {
     const one = vault({ 'links/tide.md': note('link', 'form') })
     const tabOpeners = fileOpeners(one.core)
-    const activeEditors = editors(tabOpeners)
+    const activeEditors = editorsWithNotes(tabOpeners)
 
     await tabOpeners.openFile('links/tide.md', 'tide')
 
@@ -88,13 +88,19 @@ describe('a path opened', () => {
   })
 
   it('opens a note no tab kind takes in the reader of its extension', async () => {
-    const one = vault({ 'Entropy.md': note('note', '') })
-    const tabOpeners = fileOpeners(one.core)
+    const startTabKind = vi.fn()
+    const one = vault({
+      'Entropy.md': note('note', ''),
+      'NonNote.md': { isNote: false, type: 'note', tabKind: 'note' },
+    })
+    const tabOpeners = fileOpeners({ ...one.core, startTabKind })
     const activeEditors = editorsWithNotes(tabOpeners)
 
     await tabOpeners.openFile('Entropy.md', 'Entropy')
+    await tabOpeners.openFile('NonNote.md', 'NonNote')
 
-    expect(activeEditors).toStrictEqual(['reader Entropy.md null'])
+    expect(activeEditors).toStrictEqual(['reader Entropy.md null', 'reader NonNote.md null'])
+    expect(startTabKind).not.toHaveBeenCalled()
   })
 
   it('opens a file that is no note in the reader of its extension, at no place', async () => {
@@ -173,6 +179,12 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
 
     await expect(tabOpeners.openFile('Animals.md', 'Animals')).resolves.toBeUndefined()
+
+    const fallback: string[] = []
+    tabOpeners.registerExtensionReader('md', (path) => fallback.push(`reader ${path}`))
+    await tabOpeners.openFile('Animals.md', 'Animals')
+    await tabOpeners.openFileAt('Animals.md', [{ start: 1, end: 2 }])
+    expect(fallback).toStrictEqual(['reader Animals.md', 'reader Animals.md'])
   })
 
   it('opens a file in nothing where no reader was passed for its extension', async () => {
@@ -214,7 +226,7 @@ describe('a file opened at runs of its text', () => {
   it('opens a note in its editor', async () => {
     const one = vault({ 'Entropy.md': note('note') })
     const tabOpeners = fileOpeners(one.core)
-    const activeEditors = editors(tabOpeners)
+    const activeEditors = editorsWithNotes(tabOpeners)
 
     await tabOpeners.openFileAt('Entropy.md', [{ start: 1, end: 4 }])
 
@@ -311,29 +323,53 @@ describe('the same extension reader registered twice', () => {
 describe('a path opened before the plugin that opens it has started', () => {
   it('starts the plugin of the tab kind of the note, and opens the note in the kind it registers', async () => {
     const opened: string[] = []
+    const startTabKind = vi.fn(async (kind: string) => {
+      tabOpeners.registerEditor(kind, (path) => opened.push(`${kind} ${path}`))
+    })
     const tabOpeners = fileOpeners({
       ...vault({ 'Tides.md': note('note', 'tide-chart') }).core,
-      startTabKind: async (kind) => {
-        tabOpeners.registerEditor(kind, (path) => opened.push(`${kind} ${path}`))
-      },
+      startTabKind,
     })
 
     await tabOpeners.openFile('Tides.md', 'Tides')
+    await tabOpeners.openFile('Tides.md', 'Tides')
 
-    expect(opened).toStrictEqual(['tide-chart Tides.md'])
+    expect(opened).toStrictEqual(['tide-chart Tides.md', 'tide-chart Tides.md'])
+    expect(startTabKind).toHaveBeenCalledOnce()
   })
 
   it('starts the plugin of the reader of the extension, and opens the file in the reader it registers', async () => {
     const opened: string[] = []
+    const startExtensionReader = vi.fn(async (extension: string) => {
+      tabOpeners.registerExtensionReader(extension, (path) => opened.push(`${extension} ${path}`))
+    })
     const tabOpeners = fileOpeners({
       ...vault({ 'Charts/Harbor.tide': OTHER }).core,
-      startExtensionReader: async (extension) => {
-        tabOpeners.registerExtensionReader(extension, (path) => opened.push(`${extension} ${path}`))
-      },
+      startExtensionReader,
     })
 
     await tabOpeners.openFile('Charts/Harbor.tide')
+    await tabOpeners.openFile('Charts/Harbor.tide')
 
-    expect(opened).toStrictEqual(['tide Charts/Harbor.tide'])
+    expect(opened).toStrictEqual(['tide Charts/Harbor.tide', 'tide Charts/Harbor.tide'])
+    expect(startExtensionReader).toHaveBeenCalledOnce()
+  })
+})
+
+describe('an editor registered twice', () => {
+  it('stays registered when the disposer of the editor it replaced runs late, and is removed by its own disposer', async () => {
+    const one = vault({ 'Animals.md': note('sample') })
+    const tabOpeners = fileOpeners(one.core)
+    const activeEditors: string[] = []
+    const disposeFirst = tabOpeners.registerEditor('sample', () => activeEditors.push('first'))
+    const disposeSecond = tabOpeners.registerEditor('sample', () => activeEditors.push('second'))
+
+    disposeFirst()
+    await tabOpeners.openFile('Animals.md')
+    expect(activeEditors).toStrictEqual(['second'])
+
+    disposeSecond()
+    await tabOpeners.openFile('Animals.md')
+    expect(activeEditors).toStrictEqual(['second'])
   })
 })

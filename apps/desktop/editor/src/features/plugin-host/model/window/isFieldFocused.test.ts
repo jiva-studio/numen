@@ -44,5 +44,6 @@ describe('the focus in a field', () => {
     document.body.innerHTML = '<input id="x">'
 
     expect(isFieldFocused()).toBe(false)
+    expect(isFieldFocused({ activeElement: null })).toBe(false)
   })
 })
