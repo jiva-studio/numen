@@ -152,6 +152,9 @@ func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.wr
 // NoteQueries reads, so it takes the pool that does not wait for the writer.
 func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
 
+// NoteContents reads, so it takes the pool that does not wait for the writer.
+func (d *DB) NoteContents() *note.Contents { return note.NewContents(d.read) }
+
 // NoteProblems reads what the index found wrong in the notes.
 func (d *DB) NoteProblems() *note.Problems { return note.NewProblems(d.read) }
 

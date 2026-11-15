@@ -15,7 +15,7 @@ func newFindSearchResults(
 	deps := searchqueryusecase.FindSearchResultsDeps{
 		Parser:       celquery.NewParser(searchquerydomain.DefaultLimits()),
 		Documents:    search,
-		Contents:     db.NoteQueries(),
+		Contents:     db.NoteContents(),
 		Clock:        c.Clock,
 		Vectors:      search,
 		Places:       search,
