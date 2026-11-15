@@ -10,9 +10,42 @@ import {
   type HostServices,
   type PluginContext,
 } from '@numen/plugin-loader'
+import type * as Workbench from '@numen/workbench'
 import type { VaultRow } from '@numen/workbench'
 import { createRoot } from './createRoot'
 import { createWindow } from './window/createWindow'
+
+const runtimeHooks = vi.hoisted(() => ({
+  minimizeWindow: undefined as (() => Promise<void>) | undefined,
+  startAppearance: undefined as (() => Promise<void>) | undefined,
+}))
+
+vi.mock('@numen/workbench', async (importOriginal) => {
+  const actual = await importOriginal<typeof Workbench>()
+  return {
+    ...actual,
+    useWindowFrame: (
+      ...args: Parameters<typeof actual.useWindowFrame>
+    ): ReturnType<typeof actual.useWindowFrame> => {
+      const created = actual.useWindowFrame(...args)
+      return {
+        ...created,
+        minimizeWindow: () =>
+          runtimeHooks.minimizeWindow ? runtimeHooks.minimizeWindow() : created.minimizeWindow(),
+      }
+    },
+    createWindowAppearance: (
+      ...args: Parameters<typeof actual.createWindowAppearance>
+    ): ReturnType<typeof actual.createWindowAppearance> => {
+      const created = actual.createWindowAppearance(...args)
+      return {
+        ...created,
+        start: () =>
+          runtimeHooks.startAppearance ? runtimeHooks.startAppearance() : created.start(),
+      }
+    },
+  }
+})
 
 // jsdom draws no layout, and the palette scrolls the highlighted row into view.
 Element.prototype.scrollIntoView = () => undefined
@@ -28,6 +61,7 @@ const wire = {
   getPlugins: vi.fn(),
   listVaults: vi.fn(),
   tasks: (): AsyncIterable<unknown> => waits(),
+  cancelTask: vi.fn(),
   requestedTasks: [] as unknown[],
   taskSignals: [] as AbortSignal[],
   listThemes: vi.fn(),
@@ -57,6 +91,7 @@ const core = createCoreHandlerTransport({
     wire.taskSignals.push(context.signal)
     return wire.tasks()
   },
+  cancelTask: (request: unknown) => wire.cancelTask(request),
 })
 
 const VAULTS: readonly VaultRow[] = [
@@ -129,6 +164,7 @@ beforeEach(() => {
   wire.listThemes.mockReset()
   wire.readTheme.mockReset()
   wire.writeAppearance.mockReset()
+  wire.cancelTask.mockReset()
   wire.resolveAddresses.mockReset()
   wire.resolveAddresses.mockResolvedValue({ found: [], resolved: [] })
   wire.getPlugins.mockResolvedValue({ plugins: [] })
@@ -151,6 +187,8 @@ afterEach(() => {
   wire.requestedTasks.length = 0
   wire.taskSignals.length = 0
   wire.themeSignals.length = 0
+  runtimeHooks.minimizeWindow = undefined
+  runtimeHooks.startAppearance = undefined
   vi.useRealTimers()
 })
 
@@ -380,15 +418,18 @@ describe('the work behind the window', () => {
     }
     vi.useFakeTimers()
     let shell: ReturnType<typeof createWindow> | undefined
+    let initialListed: readonly { label: string; state: string }[] | undefined
     const wrapper = mount(
       defineComponent({
         setup: () => {
           shell = createWindow(core, createDeps())
+          shell.backgroundTasks.watch((tasks) => (initialListed = tasks)).dispose()
           return () => null
         },
       }),
     )
     mounted.push(wrapper)
+    expect(initialListed).toStrictEqual([])
     await flushPromises()
 
     expect(wire.requestedTasks).toMatchObject([{ window: 'desktop.flashcards' }])
@@ -408,6 +449,12 @@ describe('the work behind the window', () => {
       ['lost touch with numen — the window keeps trying', 'failed'],
     ])
 
+    wire.cancelTask.mockRejectedValueOnce(new Error('cancel failed'))
+    shell?.notices.clear('window')
+    await expect(shell?.backgroundTasks.cancel('indexing\t01A')).rejects.toThrow()
+    expect(shell?.notices.notices.value).toMatchObject([{ text: CORE_FAULT, severity: 'error' }])
+    shell?.notices.clear('window')
+
     const signal = wire.taskSignals.at(-1)
     expect(signal?.aborted).toBe(false)
     wrapper.unmount()
@@ -416,6 +463,7 @@ describe('the work behind the window', () => {
     await vi.advanceTimersByTimeAsync(1_000)
     await flushPromises()
     expect(attempts).toBe(2)
+    expect(shell?.notices.notices.value).toStrictEqual([])
   })
 })
 
@@ -524,13 +572,9 @@ describe('the appearance palette', () => {
     await vi.advanceTimersByTimeAsync(1_000)
     await flushPromises()
     expect(streamStep).toBe(2)
-    expect(
-      shell?.notices.notices.value.some(
-        (one) =>
-          one.severity === 'error' &&
-          one.text === 'lost touch with numen — the window keeps trying',
-      ),
-    ).toBe(true)
+    expect(shell?.notices.notices.value.map((one) => [one.text, one.severity])).toStrictEqual([
+      ['lost touch with numen — the window keeps trying', 'error'],
+    ])
 
     for (const ignored of [
       new KeyboardEvent('keydown', { key: 'p', cancelable: true }),
@@ -573,6 +617,11 @@ describe('the appearance palette', () => {
     await shell?.appearance.onChoose('other:noop')
     expect(shell?.appearance.isOpen.value).toBe(false)
 
+    shell?.notices.clear('window')
+    wire.writeAppearance.mockRejectedValueOnce(new Error('write failed'))
+    await shell?.appearance.onChoose('theme:preset:numen')
+    expect(shell?.notices.notices.value).toMatchObject([{ text: CORE_FAULT, severity: 'error' }])
+
     const themeSignal = wire.themeSignals.at(-1)
     expect(themeSignal?.aborted).toBe(false)
     wrapper.unmount()
@@ -585,10 +634,31 @@ describe('the appearance palette', () => {
       new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }),
     )
     expect(shell?.appearance.isOpen.value).toBe(false)
+
+    runtimeHooks.startAppearance = async () => {
+      throw new Error('appearance start failed')
+    }
+    let failedShell: ReturnType<typeof createWindow> | undefined
+    const failedWrapper = mount(
+      defineComponent({
+        setup: () => {
+          failedShell = createWindow(core)
+          return () => null
+        },
+      }),
+    )
+    mounted.push(failedWrapper)
+    await flushPromises()
+    expect(failedShell?.notices.notices.value).toMatchObject([
+      { text: formatErrorMessage(new Error('appearance start failed')), severity: 'error' },
+    ])
   })
 })
 
-const createBarPlugin = (pluginId: string) => ({
+const createBarPlugin = (
+  pluginId: string,
+  onActivate?: (plugin: PluginContext, host: HostServices) => void,
+) => ({
   manifest: {
     id: pluginId,
     name: 'Bar',
@@ -598,6 +668,7 @@ const createBarPlugin = (pluginId: string) => ({
     contributes: { slots: [{ slot: 'titleBar', view: 'bar' }] },
   },
   activate: (plugin: PluginContext, host: HostServices) => {
+    onActivate?.(plugin, host)
     plugin.register.slotView({
       id: 'bar',
       component: defineComponent({
@@ -610,6 +681,7 @@ const createBarPlugin = (pluginId: string) => ({
               {
                 'data-title-bar': pluginId,
                 'data-maximized': String(host.ui.window!.getState().isMaximized),
+                'data-platform': plugin.identity.app.platform,
               },
               [
                 h('span', { 'data-title': '' }, plugin.identity.app.name),
@@ -699,13 +771,20 @@ describe('the title bar of the flashcards window', () => {
     await flushPromises()
 
     expect(window.find('[data-title-bar]').attributes('data-maximized')).toBe('false')
+    expect(window.find('[data-title-bar]').attributes('data-platform')).toBe('windows')
   })
 
   it('is drawn by the plugin first by id, and the other plugin is reported', async () => {
+    runtimeHooks.minimizeWindow = async () => {
+      throw new Error('minimize failed')
+    }
     let shell: ReturnType<typeof createWindow> | undefined
+    let harborHost: HostServices | undefined
     const deps = createBarDeps([
       createBarPlugin('org.example.ledger'),
-      createBarPlugin('org.example.harbor'),
+      createBarPlugin('org.example.harbor', (_plugin, host) => {
+        harborHost = host
+      }),
     ])
     mounted.push(
       mount(
@@ -725,6 +804,13 @@ describe('the title bar of the flashcards window', () => {
         (one) => one.severity === 'error' && one.text.includes('org.example.ledger'),
       ),
     ).toBe(true)
+
+    shell?.notices.clear('org.example.ledger')
+    harborHost?.ui.window?.minimize()
+    await flushPromises()
+    expect(shell?.notices.notices.value).toMatchObject([
+      { text: formatErrorMessage(new Error('minimize failed')), severity: 'error' },
+    ])
   })
 
   it('shows only the loading indicator while the plugins of the window slots start', async () => {
