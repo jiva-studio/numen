@@ -2,12 +2,8 @@
 package containerdowncast
 
 import (
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"os"
-	"path/filepath"
-	"strings"
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
@@ -17,41 +13,45 @@ import (
 // solely through the capabilities of container.PluginHost and the fields of container.PluginRoles, never by an
 // assertion to a concrete role of package plugin (*plugin.Discovery, *plugin.Settings and the like).
 func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
-	files, err := filepath.Glob("*.go")
+	wrong, read, err := findPluginDowncasts(".")
 	if err != nil {
 		t.Fatal(err)
 	}
-	fset := token.NewFileSet()
-	for _, file := range files {
-		if strings.HasSuffix(file, "_test.go") {
-			continue
-		}
-		node, err := parser.ParseFile(fset, file, nil, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-		ast.Inspect(node, func(n ast.Node) bool {
-			ta, ok := n.(*ast.TypeAssertExpr)
-			if !ok {
-				return true
-			}
-			star, ok := ta.Type.(*ast.StarExpr)
-			if !ok {
-				return true
-			}
-			sel, ok := star.X.(*ast.SelectorExpr)
-			if !ok {
-				return true
-			}
-			pkg, ok := sel.X.(*ast.Ident)
-			if !ok {
-				return true
-			}
-			if pkg.Name == "plugin" {
-				t.Errorf("%s: assertion to *plugin.%s is forbidden; use the capabilities of container.PluginHost", file, sel.Sel.Name)
-			}
-			return true
-		})
+	for _, one := range wrong {
+		t.Errorf("%s is forbidden; use the capabilities of container.PluginHost", one)
+	}
+	if read == 0 {
+		t.Fatal("no file of the container read: the rule is checked against nothing")
+	}
+}
+
+// The rule rejects an assertion to a pointer of package plugin, and passes an
+// assertion to an interface of package plugin, to a pointer of another package and one in a test file.
+func TestDowncastRule_RejectsAssertionsToPluginRoles(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"host.go": `package container
+
+func roles(host any) {
+	_ = host.(*plugin.Discovery)
+	_ = host.(plugin.Host)
+	_ = host.(*catalog.Entry)
+}
+`,
+		"host_test.go": `package container
+
+func check(host any) { _ = host.(*plugin.Discovery) }
+`,
+	})
+	wrong, read, err := findPluginDowncasts(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"host.go: assertion to *plugin.Discovery"}
+	if !slices.Equal(wrong, want) {
+		t.Errorf("the rule rejects %v, want %v", wrong, want)
+	}
+	if read != 1 {
+		t.Errorf("%d files read, want 1", read)
 	}
 }
 

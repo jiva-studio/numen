@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/apitest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/enumtest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/reloads"
 )
@@ -35,7 +36,7 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 // A rating the parser does not recognize is parsed as zero, which the use case rejects; a button
 // press would be reported as not an answer.
 func TestEveryRatingIsRead(t *testing.T) {
-	enumtest.CheckHandled(t, api.GetRatingValues(), func(r api.Rating) bool { return ParseRating(r) != 0 })
+	enumtest.CheckHandled(t, apitest.GetRatingValues(), func(r api.Rating) bool { return ParseRating(r) != 0 })
 }
 
 // A card with no projection of what each answer would do carries none.
