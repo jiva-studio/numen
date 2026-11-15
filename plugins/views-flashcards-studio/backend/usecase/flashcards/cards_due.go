@@ -74,7 +74,7 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 	if err := ctx.Err(); err != nil {
 		return dueInputs{}, err
 	}
-	log, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
+	log, err := Log{Stores: u.schedules.logs, Entropy: nil}.Read(ctx, v)
 	if err != nil {
 		return dueInputs{}, err
 	}

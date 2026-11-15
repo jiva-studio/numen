@@ -23,13 +23,13 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	day := review.Day{Starts: 4 * time.Hour, In: time.UTC}
 	errBoom := errors.New("boom")
 
-	p0 := NewOpenReads(Config{Now: newFakeClock(now)}).Execute().(*Reads)
-	if p0.day.Starts != 0 || p0.day.In != nil {
-		t.Fatalf("expected zero day on NewOpenReads, got %+v", p0.day)
+	p0, isReads := NewOpenReads(Config{Now: newFakeClock(now)}).Execute().(*Reads)
+	if !isReads || p0.day.Starts != 0 || p0.day.In != nil {
+		t.Fatalf("expected zero day on NewOpenReads, got %+v", p0)
 	}
-	pDay := NewOpenReads(Config{Now: newFakeClock(now), Day: day}).Execute().(*Reads)
-	if pDay.day.Starts != 4*time.Hour {
-		t.Fatalf("expected NewOpenReads to set day, got %+v", pDay.day)
+	pDay, isReads := NewOpenReads(Config{Now: newFakeClock(now), Day: day}).Execute().(*Reads)
+	if !isReads || pDay.day.Starts != 4*time.Hour {
+		t.Fatalf("expected NewOpenReads to set day, got %+v", pDay)
 	}
 
 	def := review.CreateDefaultPresetNote()

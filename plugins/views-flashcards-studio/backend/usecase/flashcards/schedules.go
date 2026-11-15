@@ -162,7 +162,7 @@ func (u Schedules) getScheduler(retention float64) review.Scheduler {
 func (u Schedules) Execute(
 	ctx context.Context, v domain.Vault,
 ) (map[review.CardID]review.Schedule, error) {
-	log := Log{Stores: u.logs}
+	log := Log{Stores: u.logs, Entropy: nil}
 
 	// The listing comes first, and the files are read only when the cache does
 	// not answer: reading the folder is what a launch does anyway, and reading

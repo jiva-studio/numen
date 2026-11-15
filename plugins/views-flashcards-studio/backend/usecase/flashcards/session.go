@@ -73,7 +73,7 @@ func (u Session) Execute(
 		return SessionResult{}, err
 	}
 
-	target, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
+	target, err := Log{Stores: u.schedules.logs, Entropy: nil}.Read(ctx, v)
 	if err != nil {
 		return SessionResult{}, err
 	}

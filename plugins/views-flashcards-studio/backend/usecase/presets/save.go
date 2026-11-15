@@ -40,7 +40,7 @@ func (u Point) Execute(
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	return u.linkWriter.PointAt(ctx, v, deck, review.PresetLinkType, to, domain.RoleRef, stat)
+	return u.linkWriter.PointAt(ctx, v, deck, ports.LinkEntry{Type: review.PresetLinkType, To: to, Role: domain.RoleRef}, stat)
 }
 
 func (u Point) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {

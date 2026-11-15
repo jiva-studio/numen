@@ -25,10 +25,16 @@ type DeckWriter interface {
 	Deck(ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat) (format.DeckWriteResult, error)
 }
 
+// LinkEntry is an entry of the `links:` block of a note: the type it carries, the note it points at
+// and its role. An empty address takes the entry out.
+type LinkEntry struct {
+	Type string
+	To   domain.Address
+	Role domain.LinkRole
+}
+
 // LinkWriter points an entry of the `links:` block of a note at another note, over the file stat
 // the caller read.
 type LinkWriter interface {
-	PointAt(
-		ctx context.Context, v domain.Vault, path, of string, to domain.Address, role domain.LinkRole, stat domain.FileStat,
-	) (domain.FileStat, error)
+	PointAt(ctx context.Context, v domain.Vault, path string, entry LinkEntry, stat domain.FileStat) (domain.FileStat, error)
 }

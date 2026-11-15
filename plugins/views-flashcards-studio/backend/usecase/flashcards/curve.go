@@ -97,7 +97,7 @@ func (u ProjectCurve) Execute(
 		return Curve{}, err
 	}
 	reviewCards := u.reviewCards.GetReviewCards(ctx, v, scheduled)
-	target, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
+	target, err := Log{Stores: u.schedules.logs, Entropy: nil}.Read(ctx, v)
 	if err != nil {
 		return Curve{}, err
 	}
