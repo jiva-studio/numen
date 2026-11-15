@@ -379,6 +379,9 @@ func TestAUseOfAPluginAlreadyRunningForAQuestionDownloadsTheModels(t *testing.T)
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { p.host.Activation.ReleaseQuestion(firstBuiltInID, asked.Token, getTestHolder()) })
+	if got := source.count(); got != 0 {
+		t.Fatalf("the question downloaded %d times, want none", got)
+	}
 
 	if err := p.use(t); err != nil {
 		t.Fatal(err)
@@ -675,32 +678,48 @@ func TestAChangedModelSettingDownloadsTheNewModelAtTheNextUse(t *testing.T) {
 	}
 }
 
-func newSpawnedLazyHost(t *testing.T, source *modelSource, events []string) (*container.PluginRoles, *eventRecorder) {
+func newEventPlugin(t *testing.T, source *modelSource) (*container.PluginRoles, *eventRecorder) {
 	t.Helper()
+	t.Setenv(source.envName(sampleRuntime), "")
+	host := newBuiltInHost(t)
+	host.Dependencies.Replace(provision.NewRegistry(source))
 	recorder := &eventRecorder{}
+	manifest := fmt.Appendf(nil, `{
+		"id": %q, "name": "Example Events", "version": "1.0.0", "targets": ["desktop.editor"], "permissions": [],
+		"activationEvents": [%q], "dependencies": [{"id": %q, "kind": "runtime"}],
+		"services": ["numen.v1.PluginEventService"], "backend": {"entrypoint": "bin/example"}
+	}`, firstBuiltInID, catalogmanifest.ActivationEventIndexChanged, sampleRuntime)
+	registerBuiltIn(t, host, manifest, func(map[string]string) (http.Handler, error) {
+		mux := http.NewServeMux()
+		wiretest.HandlePluginLifecycle(mux)
+		mux.Handle(numenv1connect.NewPluginEventServiceHandler(recorder))
+		return mux, nil
+	})
+	return host, recorder
+}
+
+func newSpawnedLazyHost(t *testing.T, source *modelSource) *container.PluginRoles {
+	t.Helper()
 	host := newEventHost(t,
 		map[string]catalogmanifest.Manifest{
-			"md.test.lazy": {
-				ActivationEvents: events,
-				Dependencies:     []catalogmanifest.DependencyRequirement{{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindRuntime}},
-			},
+			"md.test.lazy": {Dependencies: []catalogmanifest.DependencyRequirement{{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindRuntime}}},
 		},
-		map[string]int{"md.test.lazy": servePlugin(t, recorder)},
+		map[string]int{"md.test.lazy": servePlugin(t, nil)},
 	)
 	host.Dependencies.Replace(provision.NewRegistry(source))
-	return host, recorder
+	return host
 }
 
 func TestAnEventDeliveredToAPluginDownloadsNothing(t *testing.T) {
 	source := newModelSource(t)
-	host, recorder := newSpawnedLazyHost(t, source, []string{catalogmanifest.ActivationEventIndexChanged})
+	host, recorder := newEventPlugin(t, source)
 
 	activated, err := host.Events.TriggerEvent(t.Context(), indexChangedEvent)
 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(activated, []string{"md.test.lazy"}) || !slices.Equal(recorder.getEvents(), []string{indexChangedEvent}) {
+	if !slices.Equal(activated, []string{firstBuiltInID}) || !slices.Equal(recorder.getEvents(), []string{indexChangedEvent}) {
 		t.Fatalf("activated %v and delivered %v, want the plugin to get the event", activated, recorder.getEvents())
 	}
 	if got := source.count(); got != 0 {
@@ -710,7 +729,7 @@ func TestAnEventDeliveredToAPluginDownloadsNothing(t *testing.T) {
 
 func TestAnEventOnTheBusDownloadsNothing(t *testing.T) {
 	source := newModelSource(t)
-	host, recorder := newSpawnedLazyHost(t, source, []string{catalogmanifest.ActivationEventIndexChanged})
+	host, recorder := newEventPlugin(t, source)
 
 	host.Events.EmitEvent(indexChangedEvent)
 	if err := host.Events.GetEventBus().Flush(t.Context()); err != nil {
@@ -727,7 +746,7 @@ func TestAnEventOnTheBusDownloadsNothing(t *testing.T) {
 
 func TestASpawnedPluginDownloadsOnceForTwoUses(t *testing.T) {
 	source := newModelSource(t)
-	host, _ := newSpawnedLazyHost(t, source, nil)
+	host := newSpawnedLazyHost(t, source)
 
 	for range 2 {
 		endpoint, err := host.Activation.EnsureActive(t.Context(), "md.test.lazy", getTestHolder())
@@ -744,7 +763,7 @@ func TestASpawnedPluginDownloadsOnceForTwoUses(t *testing.T) {
 
 func TestADownloadLongerThanTheActivationTimeoutStillFinishes(t *testing.T) {
 	source := newModelSource(t)
-	host, _ := newSpawnedLazyHost(t, source, nil)
+	host := newSpawnedLazyHost(t, source)
 	policy := lifecycle.DefaultActivationPolicy()
 	policy.Timeout = 50 * time.Millisecond
 	host.Processes.SetActivationPolicy(policy)
