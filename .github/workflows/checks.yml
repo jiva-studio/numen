@@ -71,7 +71,7 @@ jobs:
         if: ${{ !cancelled() && inputs.workflows }}
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
 
-      - if: inputs.workflows
+      - if: ${{ !cancelled() && inputs.workflows }}
         uses: ./.github/actions/install-lock-packages
         with:
           packages: js-yaml picomatch
@@ -111,7 +111,7 @@ jobs:
 
       # Every picture the manual and the landing page show is a story named as a string, and
       # renaming a story leaves the name pointing at nothing. Both lists are held against the tree.
-      - if: inputs.references
+      - if: ${{ !cancelled() && inputs.references }}
         uses: ./.github/actions/install-lock-packages
         with:
           packages: "@bufbuild/protobuf typescript"
