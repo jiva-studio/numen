@@ -104,8 +104,8 @@ func (Settings) Refresh(context.Context, ...string) error { return nil }
 // SetSettings is accepted and ignored.
 func (Settings) SetSettings(map[string]map[string]any) {}
 
-// SetPerformanceProfile is accepted and ignored.
-func (Settings) SetPerformanceProfile(context.Context, string) {}
+// SetPerformance is accepted and ignored.
+func (Settings) SetPerformance(context.Context, plugindomain.Performance) {}
 
 // CheckPluginSetting accepts every value: no plugin declares the setting.
 func (Settings) CheckPluginSetting(string, string, any) error { return nil }

@@ -118,43 +118,38 @@ Typing a new `# Heading` into a note does not rename its file. A save writes the
 }
 ```
 
-|           |                                                                                                                                   |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `profile` | the workload profile: `eco`, `balanced` (default) or `maximum`. Any other value is ignored, with a notice, and `balanced` stands. |
+|           |                                                                                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `profile` | the workload profile: `eco`, `low`, `balanced` (default), `high` or `maximum`. Any other value is ignored, with a notice, and `balanced` stands. |
 
 ### Hardware adaptation
 
 numen reads the machine and resolves every pool from it. The machine is described by its logical CPUs (hardware threads the process may run on, limited by the process affinity and, on Linux, the cgroup v2 CPU quota), its physical cores, its performance cores (the cores of the highest performance class; equal to the physical cores when none differ), and its installed and free memory. A figure that cannot be read is unknown and takes the fallback below.
 
-The **core budget** is the number of hardware threads CPU-bound work may occupy at once: a share of the hardware threads of the performance cores. A performance core is counted with as many threads as the machine has logical CPUs per physical core, rounded up. When the core counts are unknown, every logical CPU counts as a core.
+The **core budget** is the number of hardware threads CPU-bound work may occupy at once: a share of the hardware threads of the performance cores. A performance core is counted with as many threads as the machine has logical CPUs per physical core, rounded up. When the core counts are unknown, every logical CPU counts as a core. Each profile uses one share for the threads and for the memory.
 
-|                                  | Eco                     | Balanced _(default)_                       | Maximum                         |
-| -------------------------------- | ----------------------- | ------------------------------------------ | ------------------------------- |
-| Core budget                      | 1                       | 50% of the performance threads, at least 1 | 100% of the performance threads |
-| Workers (general CPU-bound pool) | 1                       | half the budget, at least 1                | the budget                      |
-| Memory limit (soft)              | 25% of installed memory | 50% of installed memory                    | 75% of installed memory         |
+|                                  | Eco | Low                         | Balanced _(default)_        | High       | Maximum    |
+| -------------------------------- | --- | --------------------------- | --------------------------- | ---------- | ---------- |
+| Core budget                      | 1   | 25%, at least 1             | 50%, at least 1             | 75%        | 100%       |
+| Workers (general CPU-bound pool) | 1   | half the budget, at least 1 | half the budget, at least 1 | the budget | the budget |
+| Memory limit (soft)              | 25% | 25%                         | 50%                         | 75%        | 100%       |
+| Niceness of the plugins          | 19  | 15                          | 10                          | 5          | 0          |
 
-The core uses the workers value as the number of sources a search extracts at once; a search built without a plan extracts 4.
+The core budget is a share of the performance threads, the memory limit a share of installed memory. The core uses the workers value as the number of sources a search extracts at once; a search built without a plan extracts 4.
 
 The memory limit is a soft limit on the memory the Go runtime manages, set once at startup from the installed memory: near it the collector runs more often, and no allocation fails. It is not set when the installed memory is unknown, when `GOMEMLIMIT` is set, or when a limit is already in force.
-
-- **Eco**: Keeps background work unobtrusive and battery-friendly: one thread for each pool.
-- **Balanced**: Optimized for everyday responsive use; half the performance threads, so the interface keeps the rest.
-- **Maximum**: Full use of the performance cores for fast initial indexing and bulk processing.
 
 `Performance profile` is a command in the palette, made from this declaration. Choosing a profile writes the configuration and applies it to the plugins that are running at once. The core sizes its own pools and the memory limit once, at start-up, so they take the profile after the next start of the application.
 
 ### Plugin background work
 
-The core passes the profile to every running plugin, in each Configure call, as the value `host.performanceProfile` (`performance.Read` of `plugin/sdk-go` reads it, and `performance.Resolve` gives the threads and the niceness the table below lists). A change of the profile in the palette is pushed to the running plugins at once, so a plugin needs no restart; the core itself takes it at the next start. A profile that is not one of the three is refused when it is written, and ignored with a notice when the file holds it.
+The core resolves the profile on the machine and passes the result to every running plugin, in each Configure call: `host.performanceProfile` holds the name of the profile, `host.performanceThreads` the core budget and `host.performanceNice` the niceness. `performance.Read` of `plugin/sdk-go` reads them; without them a plugin runs one thread at niceness 10 under `balanced`. A change of the profile in the palette is pushed to the running plugins at once, so a plugin needs no restart; the core itself takes it at the next start. A profile that is not one of the five is refused when it is written, and ignored with a notice when the file holds it.
 
 The Vector Embeddings plugin sizes the local model by it while it indexes the vault. The threads are the intra-op threads of the model and the workers that tokenize; the texts are the most texts in one pass. An `NUMEN_ONNX_THREADS` in the environment of the plugin wins over the threads of the profile.
 
-|                     | Eco | Balanced _(default)_           | Maximum                |
-| ------------------- | --- | ------------------------------ | ---------------------- |
-| Threads             | 1   | a quarter of the cores, 1 to 4 | half the cores, 1 to 8 |
-| Texts in one pass   | 2   | 4                              | 8                      |
-| Niceness (priority) | 19  | 10                             | 0                      |
+|                   | Eco | Low | Balanced _(default)_ | High         | Maximum |
+| ----------------- | --- | --- | -------------------- | ------------ | ------- |
+| Texts in one pass | 2   | 3   | 4                    | 6, at most 8 | 8       |
 
 A model open when the profile changes closes when its running batches end, and the next batch opens it with the new threads. The niceness is set on every thread of the plugin process, and the system lets a process only lower its priority: a change to a profile that asks for a higher priority than the plugin has keeps the priority in force until the plugin restarts. The mock model of the tests takes the niceness but is not sized by the profile.
 

@@ -2,11 +2,15 @@ package machine
 
 // The workload presets a person chooses between.
 const (
-	// ProfileEco minimizes power consumption and CPU heat (1 thread).
+	// ProfileEco runs background work on one thread at the lowest priority.
 	ProfileEco = "eco"
-	// ProfileBalanced provides responsive balance between speed and UI (50% CPU).
+	// ProfileLow gives background work a quarter of the performance threads.
+	ProfileLow = "low"
+	// ProfileBalanced gives background work half of the performance threads.
 	ProfileBalanced = "balanced"
-	// ProfileMaximum saturates 100% of detected hardware for maximum throughput.
+	// ProfileHigh gives background work three quarters of the performance threads.
+	ProfileHigh = "high"
+	// ProfileMaximum gives background work every performance thread.
 	ProfileMaximum = "maximum"
 )
 
@@ -19,30 +23,63 @@ type Specs struct {
 	AvailableRAMMB  int64
 }
 
-// ResolvedCompute holds the concrete, calibrated parameters to apply to worker pools.
+// ResolvedCompute holds the concrete, calibrated parameters to apply to worker pools and plugins.
 type ResolvedCompute struct {
 	Profile       string
 	CoreBudget    int
 	Workers       int
 	MemoryLimitMB int64
+	Nice          int
+}
+
+// level is what one profile lets background work occupy: one share of the performance threads and
+// of installed memory, the niceness of the plugins and the divisor of the budget that sizes the
+// general pool.
+type level struct {
+	profile        string
+	sharePercent   int
+	isSingleThread bool
+	nice           int
+	workerDivisor  int
 }
 
 const (
-	// balancedSharePercent is the share of the performance threads Balanced leaves to CPU-bound work, so the rest stays with the interface.
-	balancedSharePercent = 50
-	// maximumSharePercent is the share Maximum gives to CPU-bound work.
-	maximumSharePercent = 100
+	percentBase = 100
 
-	// ecoCoreBudget is the single hardware thread Eco occupies.
-	ecoCoreBudget = 1
-	// The share of installed memory each profile lets the Go runtime use before the collector works harder. Eco leaves the most to other programs; Maximum leaves the least.
-	ecoMemoryLimitPercent      = 25
-	balancedMemoryLimitPercent = 50
-	maximumMemoryLimitPercent  = 75
+	quarterSharePercent      = 25
+	halfSharePercent         = 50
+	threeQuarterSharePercent = 75
+	fullSharePercent         = 100
 
-	// balancedWorkerShare divides the Balanced budget into the size of the general pool.
-	balancedWorkerShare = 2
+	ecoNice      = 19
+	lowNice      = 15
+	balancedNice = 10
+	highNice     = 5
+	maximumNice  = 0
+
+	// halfBudgetWorkers gives the general pool half the budget, the rest stays with the interface.
+	halfBudgetWorkers = 2
+	// fullBudgetWorkers gives the general pool the whole budget.
+	fullBudgetWorkers = 1
 )
+
+func getLevel(profile string) level {
+	switch profile {
+	case ProfileEco:
+		return level{
+			profile: ProfileEco, sharePercent: quarterSharePercent, isSingleThread: true,
+			nice: ecoNice, workerDivisor: fullBudgetWorkers,
+		}
+	case ProfileLow:
+		return level{profile: ProfileLow, sharePercent: quarterSharePercent, nice: lowNice, workerDivisor: halfBudgetWorkers}
+	case ProfileHigh:
+		return level{profile: ProfileHigh, sharePercent: threeQuarterSharePercent, nice: highNice, workerDivisor: fullBudgetWorkers}
+	case ProfileMaximum:
+		return level{profile: ProfileMaximum, sharePercent: fullSharePercent, nice: maximumNice, workerDivisor: fullBudgetWorkers}
+	default:
+		return level{profile: ProfileBalanced, sharePercent: halfSharePercent, nice: balancedNice, workerDivisor: halfBudgetWorkers}
+	}
+}
 
 // Normalize returns the specs with every count made consistent: at least one CPU, no more physical
 // than logical CPUs, no more performance than physical CPUs, and no more available than total memory.
@@ -67,44 +104,28 @@ func (hw Specs) getPerformanceThreads() int {
 	return min(hw.PerformanceCPUs*threadsPerCore, hw.LogicalCPUs)
 }
 
-func (hw Specs) getMemoryLimitMB(sharePercent int64) int64 {
-	return hw.TotalRAMMB * sharePercent / 100
+func (hw Specs) getMemoryLimitMB(sharePercent int) int64 {
+	return hw.TotalRAMMB * int64(sharePercent) / percentBase
 }
 
-func (hw Specs) getBudget(sharePercent int) int {
-	return max(1, hw.getPerformanceThreads()*sharePercent/100)
+func (hw Specs) getBudget(l level) int {
+	if l.isSingleThread {
+		return 1
+	}
+	return max(1, hw.getPerformanceThreads()*l.sharePercent/percentBase)
 }
 
 // ResolveCompute computes the active workload parameters for a given profile and hardware specs. Every pool it sizes occupies at most CoreBudget hardware threads.
-// A profile that is none of the three is Balanced.
+// A profile that is none of the five is Balanced.
 func ResolveCompute(profile string, hw Specs) ResolvedCompute {
 	hw = hw.Normalize()
-
-	switch profile {
-	case ProfileEco:
-		return ResolvedCompute{
-			Profile:       ProfileEco,
-			CoreBudget:    ecoCoreBudget,
-			Workers:       1,
-			MemoryLimitMB: hw.getMemoryLimitMB(ecoMemoryLimitPercent),
-		}
-
-	case ProfileMaximum:
-		budget := hw.getBudget(maximumSharePercent)
-		return ResolvedCompute{
-			Profile:       ProfileMaximum,
-			CoreBudget:    budget,
-			Workers:       budget,
-			MemoryLimitMB: hw.getMemoryLimitMB(maximumMemoryLimitPercent),
-		}
-
-	default:
-		budget := hw.getBudget(balancedSharePercent)
-		return ResolvedCompute{
-			Profile:       ProfileBalanced,
-			CoreBudget:    budget,
-			Workers:       max(budget/balancedWorkerShare, 1),
-			MemoryLimitMB: hw.getMemoryLimitMB(balancedMemoryLimitPercent),
-		}
+	l := getLevel(profile)
+	budget := hw.getBudget(l)
+	return ResolvedCompute{
+		Profile:       l.profile,
+		CoreBudget:    budget,
+		Workers:       max(budget/l.workerDivisor, 1),
+		MemoryLimitMB: hw.getMemoryLimitMB(l.sharePercent),
+		Nice:          l.nice,
 	}
 }

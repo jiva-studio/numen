@@ -2,40 +2,35 @@ package performance
 
 import "testing"
 
-func TestResolveFollowsTheProfileAndTheCores(t *testing.T) {
-	table := []struct {
-		profile Profile
-		cpus    int
-		threads int
-		nice    int
-	}{
-		{Eco, 2, 1, 19}, {Eco, 4, 1, 19}, {Eco, 8, 1, 19}, {Eco, 16, 1, 19},
-		{Balanced, 2, 1, 10}, {Balanced, 4, 1, 10}, {Balanced, 8, 2, 10}, {Balanced, 16, 4, 10},
-		{Maximum, 2, 1, 0}, {Maximum, 4, 2, 0}, {Maximum, 8, 4, 0}, {Maximum, 16, 8, 0},
-		{Balanced, 64, 4, 10}, {Maximum, 64, 8, 0}, {Balanced, 1, 1, 10}, {Maximum, 0, 1, 0},
+func TestReadTakesTheLimitsTheHostResolved(t *testing.T) {
+	got := Read(map[string]string{ProfileKey: "high", ThreadsKey: "12", NiceKey: "5"})
+
+	if want := (Limits{Profile: High, Threads: 12, Nice: 5}); got != want {
+		t.Errorf("Read = %+v, want %+v", got, want)
 	}
-	for _, c := range table {
-		got := Resolve(c.profile, c.cpus)
-		if got.Threads != c.threads || got.Nice != c.nice {
-			t.Errorf("Resolve(%s, %d) = %+v, want threads %d nice %d", c.profile, c.cpus, got, c.threads, c.nice)
+}
+
+func TestReadKnowsEveryProfile(t *testing.T) {
+	for _, want := range []Profile{Eco, Low, Balanced, High, Maximum} {
+		if got := Read(map[string]string{ProfileKey: string(want)}).Profile; got != want {
+			t.Errorf("Read(%q) = %s", want, got)
 		}
 	}
 }
 
-func TestDefaultProfileUsesAtMostQuarterOfCores(t *testing.T) {
-	for _, cpus := range []int{4, 8, 12, 16, 32, 64} {
-		if got := Resolve(Read(nil), cpus).Threads; got*4 > cpus {
-			t.Errorf("the default profile takes %d of %d cores", got, cpus)
-		}
+func TestReadWithoutValuesGivesOneThreadAtTheBalancedNiceness(t *testing.T) {
+	if got, want := Read(nil), (Limits{Profile: Balanced, Threads: 1, Nice: 10}); got != want {
+		t.Errorf("Read(nil) = %+v, want %+v", got, want)
 	}
 }
 
-func TestReadFallsBackToBalanced(t *testing.T) {
-	for value, want := range map[string]Profile{
-		"eco": Eco, "maximum": Maximum, "balanced": Balanced, "": Balanced, "turbo": Balanced,
-	} {
-		if got := Read(map[string]string{ConfigKey: value}); got != want {
-			t.Errorf("Read(%q) = %s, want %s", value, got, want)
-		}
+func TestReadReplacesValuesItCannotUse(t *testing.T) {
+	got := Read(map[string]string{ProfileKey: "turbo", ThreadsKey: "0", NiceKey: "low"})
+
+	if want := (Limits{Profile: Balanced, Threads: 1, Nice: 10}); got != want {
+		t.Errorf("Read = %+v, want %+v", got, want)
+	}
+	if got := Read(map[string]string{ThreadsKey: "-3"}).Threads; got != 1 {
+		t.Errorf("threads = %d, want 1", got)
 	}
 }

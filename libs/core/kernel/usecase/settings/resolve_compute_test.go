@@ -15,7 +15,7 @@ func TestTheProfileIsResolvedOnTheMachineRead(t *testing.T) {
 	specs := machine.Specs{LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8, TotalRAMMB: 32768}
 	got := settingsusecase.NewResolveCompute(machineOf(specs)).Execute(machine.ProfileMaximum)
 
-	if got.Profile != machine.ProfileMaximum || got.Workers != 16 || got.MemoryLimitMB != 24576 {
+	if got.Profile != machine.ProfileMaximum || got.Workers != 16 || got.MemoryLimitMB != 32768 || got.Nice != 0 {
 		t.Errorf("resolved %+v", got)
 	}
 }
