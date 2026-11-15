@@ -311,3 +311,15 @@ func TestASearchClientReadsTheIndexStatistics(t *testing.T) {
 		t.Errorf("a denied read gave %v", err)
 	}
 }
+
+func TestTheFilesChangedEventNamesTheVaultAndOnlyThatEvent(t *testing.T) {
+	id, ok := host.ReadFilesChangedEvent(protocol.GetFilesChangedEvent("01VAULT"))
+	if !ok || id != "01VAULT" {
+		t.Errorf("read %q, %v", id, ok)
+	}
+	for _, event := range []string{"", "onFilesChanged:", "onFilesChanged", protocol.GetIndexChangedEvent("01VAULT")} {
+		if id, ok := host.ReadFilesChangedEvent(event); ok {
+			t.Errorf("%q was read as the event of the vault %q", event, id)
+		}
+	}
+}

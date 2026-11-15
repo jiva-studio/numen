@@ -139,6 +139,11 @@ func (e *Endpoint) Authorize(header, permission string) (string, error) {
 	return pluginID, nil
 }
 
+// IsTakingFile reports whether the plugin takes the file at the path, as the manifests of the plugins declare.
+func (e *Endpoint) IsTakingFile(pluginID, path string) bool {
+	return e.callers.Files == nil || e.callers.Files.IsTakingFile(pluginID, path)
+}
+
 func checkLoopback(address string) error {
 	host, _, err := net.SplitHostPort(address)
 	if err != nil {

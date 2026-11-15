@@ -57,7 +57,6 @@ func (f *feed) recordRemoved(id int64) {
 			delete(f.changes, key)
 		}
 	}
-	delete(f.paths, id)
 	f.record(id, host.EventFileRemoved)
 }
 

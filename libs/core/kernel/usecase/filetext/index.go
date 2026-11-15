@@ -19,9 +19,8 @@ import (
 const sourcesPerQuery = 100
 
 // Index cuts the live text versions of the files a vault holds into chunks, in two passes.
-// The first records the files that have text or that a plugin can extract text
-// from, without opening them. The second reads the live text of every file that
-// needs it and cuts it into chunks, one write per file.
+// The first records every file of the vault, without opening it. The second reads the live text of every
+// file that has text and needs it, and cuts it into chunks, one write per file.
 type Index struct {
 	readers vaultport.VaultReaders
 	sources sourceport.SourceRepository
