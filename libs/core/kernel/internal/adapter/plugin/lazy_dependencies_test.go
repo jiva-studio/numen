@@ -598,7 +598,9 @@ func TestAModelWithAWrongChecksumFailsAtTheFirstUse(t *testing.T) {
 		server.URL+"/speech.bin", sumHex([]byte("the real bytes")),
 	)))
 
-	p.listTools(t)
+	if names := p.listTools(t); !slices.Equal(names, []string{lazyToolName}) {
+		t.Fatalf("the listing gave %v", names)
+	}
 	err := p.use(t)
 
 	if !errors.Is(err, provision.ErrChecksum) {
@@ -687,7 +689,7 @@ func newEventPlugin(t *testing.T, source *modelSource) (*container.PluginRoles, 
 	manifest := fmt.Appendf(nil, `{
 		"id": %q, "name": "Example Events", "version": "1.0.0", "targets": ["desktop.editor"], "permissions": [],
 		"activationEvents": [%q], "dependencies": [{"id": %q, "kind": "runtime"}],
-		"services": ["numen.v1.PluginEventService"], "backend": {"entrypoint": "bin/example"}
+		"backend": {"entrypoint": "bin/example"}
 	}`, firstBuiltInID, catalogmanifest.ActivationEventIndexChanged, sampleRuntime)
 	registerBuiltIn(t, host, manifest, func(map[string]string) (http.Handler, error) {
 		mux := http.NewServeMux()
