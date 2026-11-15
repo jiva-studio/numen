@@ -211,7 +211,7 @@ func TestNotesWhoseFrontmatterChangedGetAPassOfTheirOwnAfterAPassOverTheWholeVau
 	}
 }
 
-func TestANoteAFrontmatterPassLeftUndoneRunsWithTheNextPassAndStartsNone(t *testing.T) {
+func TestKeepFrontmatterAddsToNextPassWithoutSignal(t *testing.T) {
 	passes := newTriggerPasses()
 	passes.take()
 	passes.keepFrontmatter([]string{"notes/a.md"})
