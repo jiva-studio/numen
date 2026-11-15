@@ -3,6 +3,7 @@ package searchquery
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
@@ -13,8 +14,9 @@ const messageInvalidWords = "words takes an FTS5 expression, and this one is not
 
 func (p *plan) findWords(ctx context.Context, index int, documents []searchquery.Document, isListed bool) ([]domain.ChunkID, error) {
 	s := p.scopes[index]
-	q := searchquery.WordQuery{Expression: p.query.Conditions[index].Text, Limit: p.u.Limits.CandidatesPerCondition}
-	if isListed && getChunkTotal(documents) <= p.u.Limits.ExactScanChunks {
+	limits := p.u.Limits
+	q := searchquery.WordQuery{Expression: p.query.Conditions[index].Text, Limit: limits.CandidatesPerCondition}
+	if isListed && getChunkTotal(documents) <= limits.ExactScanChunks {
 		if len(documents) == 0 {
 			return nil, nil
 		}
@@ -22,17 +24,35 @@ func (p *plan) findWords(ctx context.Context, index int, documents []searchquery
 	} else {
 		q.PathPrefixes, q.SourceKinds = s.PathPrefixes, s.SourceKinds
 	}
-	matches, err := p.u.words.FindWords(ctx, p.v.ID, q)
-	if err != nil {
-		return nil, p.getWordsError(index, err)
+	for {
+		matches, err := p.u.words.FindWords(ctx, p.v.ID, q)
+		if err != nil {
+			return nil, p.getWordsError(index, err)
+		}
+		ids := make([]domain.ChunkID, len(matches))
+		for i, m := range matches {
+			ids[i] = m.Chunk
+		}
+		if s.IsEveryDocument() {
+			return ids, nil
+		}
+		kept, err := p.keepInScope(ctx, s, ids)
+		if err != nil {
+			return nil, err
+		}
+		if len(kept) >= limits.CandidatesPerCondition || len(matches) < q.Limit {
+			return kept[:min(len(kept), limits.CandidatesPerCondition)], nil
+		}
+		if q.Limit >= limits.MaxCoarseCandidates {
+			p.warnings = append(p.warnings, fmt.Sprintf(
+				"the search by words stopped at %d best passages and found %d of the %d asked for", q.Limit, len(kept), limits.CandidatesPerCondition))
+			return kept, nil
+		}
+		q.Limit = min(q.Limit*2, limits.MaxCoarseCandidates)
 	}
-	ids := make([]domain.ChunkID, len(matches))
-	for i, m := range matches {
-		ids[i] = m.Chunk
-	}
-	if s.IsEveryDocument() {
-		return ids, nil
-	}
+}
+
+func (p *plan) keepInScope(ctx context.Context, s searchquery.Scope, ids []domain.ChunkID) ([]domain.ChunkID, error) {
 	inScope, err := p.filterScope(ctx, s, ids)
 	if err != nil {
 		return nil, err

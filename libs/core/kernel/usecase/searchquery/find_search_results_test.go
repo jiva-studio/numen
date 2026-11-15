@@ -242,3 +242,22 @@ func TestACanceledQueryReturnsTheCancellation(t *testing.T) {
 		t.Errorf("returned %v, want context.Canceled", err)
 	}
 }
+
+func TestWordsWhoseBestChunksAreOutOfScopeWidenTheSearch(t *testing.T) {
+	w := newWorld(t, map[string]string{
+		"deep/target.md": "The boats come home to the harbor at dusk. " + strings.Repeat("calm water ", 10),
+		"out/many.md":    strings.Repeat("Harbor, harbor, harbor. ", 200),
+	})
+	w.cutBySize(t, "deep/target.md", 40)
+	w.cutBySize(t, "out/many.md", 40)
+	find := w.newFind(texts{})
+	find.Limits.MaxDocuments = 0
+	find.Limits.CandidatesPerCondition = 1
+	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `words("harbor") && !path.startsWith("out/")`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Results) != 1 || got.Results[0].Document.Path != "deep/target.md" {
+		t.Errorf("found %v, want the chunk under deep/", getPaths(got))
+	}
+}
