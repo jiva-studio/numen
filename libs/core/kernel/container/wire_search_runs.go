@@ -7,8 +7,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/indexgeneration"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/searchstore"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/indexgeneration"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchstore"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
@@ -31,15 +32,14 @@ func emitIndexChanged(generations *indexgeneration.Generations, events *editor.E
 func newSearchRuns(w *windowWiring) *searchrunusecase.SearchRuns {
 	find := newFindSearchResults(w.a, w.db, w.asking, w.state.ReportFloorError)
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
-		Store:       searchstore.New(),
+		Kept: &searchkept.Searches{
+			Store: searchstore.New(), Cancels: searchcancel.NewSearches(w.cfg.Clock()), Tasks: w.tasks,
+			Timer: w.cfg.Clock(), Policy: searchrundomain.DefaultPolicy(),
+		},
 		Generations: w.generations,
 		Run:         find.Execute,
-		Cancels:     searchcancel.NewSearches(w.cfg.Clock()),
-		Tasks:       w.tasks,
 		Names:       func(pluginID string) string { return pluginsGetPluginName(w.a, pluginID) },
-		Timer:       w.cfg.Clock(),
 		Catalog:     getSearchCatalog(getRuntimeManifests(w.a.search.PluginHost.Runtime)),
-		Policy:      searchrundomain.DefaultPolicy(),
 		MaxResults:  find.Limits.MaxLimit,
 	})
 	return &runs

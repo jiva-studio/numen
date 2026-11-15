@@ -2,8 +2,10 @@
  * The build of the host modules an application serves to plugin frontends: one entry for each
  * module in `HOST_MODULES`, re-exporting it and written to its path there.
  */
+import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 import { HOST_MODULES } from '@numen/plugin-sdk/host-modules'
+import { EDITOR_MODULES } from '@numen/plugin-loader/editor-modules'
 
 /** The id of the entry that serves one host module to plugin bundles. */
 const HOST_MODULE_ENTRY = 'host-module:'
@@ -12,7 +14,13 @@ const HOST_MODULE_ENTRY = 'host-module:'
 export function createHostModuleEntries(): Plugin {
   return {
     name: 'host-module-entries',
-    resolveId: (id) => (id.startsWith(HOST_MODULE_ENTRY) ? `\0${id}` : undefined),
+    resolveId(id, importer) {
+      if (id.startsWith(HOST_MODULE_ENTRY)) return `\0${id}`
+      if (importer?.startsWith(`\0${HOST_MODULE_ENTRY}`) && id in EDITOR_MODULES) {
+        return this.resolve(id, fileURLToPath(import.meta.url), { skipSelf: true })
+      }
+      return undefined
+    },
     load: (id) =>
       id.startsWith(`\0${HOST_MODULE_ENTRY}`)
         ? `export * from '${id.slice(HOST_MODULE_ENTRY.length + 1)}'`

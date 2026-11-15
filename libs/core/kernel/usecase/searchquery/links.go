@@ -39,14 +39,14 @@ func getTargetMessage(err error) (string, bool) {
 	return "", false
 }
 
-func (p *plan) findLinkSet(ctx context.Context, s searchquery.SetCondition) (map[string]bool, error) {
+func (l *linkFinder) findLinkSet(ctx context.Context, s searchquery.SetCondition) (map[string]bool, error) {
 	f, _ := searchquery.FindLinkFunction(s.Function)
-	t, err := p.resolveTarget(ctx, s.Target)
+	t, err := l.resolveTarget(ctx, s.Target)
 	if err != nil {
 		return nil, err
 	}
 	if f.Direction == searchquery.DirectionTo {
-		return p.findLinksTo(ctx, t, f.Role, s.LinkType)
+		return l.findLinksTo(ctx, t, f.Role, s.LinkType)
 	}
 	if !t.isNote {
 		if t.address != "" {
@@ -55,16 +55,16 @@ func (p *plan) findLinkSet(ctx context.Context, s searchquery.SetCondition) (map
 		return map[string]bool{}, nil
 	}
 	if f.Direction == searchquery.DirectionFrom {
-		return p.findLinksFrom(ctx, t.path, f.Role, s.LinkType)
+		return l.findLinksFrom(ctx, t.path, f.Role, s.LinkType)
 	}
-	return p.findRelatives(ctx, t.path, f, s.LinkType)
+	return l.findRelatives(ctx, t.path, f, s.LinkType)
 }
 
-func (p *plan) resolveTarget(ctx context.Context, x string) (target, error) {
+func (l *linkFinder) resolveTarget(ctx context.Context, x string) (target, error) {
 	a := domain.ParseAddress(x)
 	switch a.Scheme {
 	case domain.SchemeNote:
-		paths, err := p.u.links.GetNoteCandidates(ctx, p.v.ID, a)
+		paths, err := l.links.GetNoteCandidates(ctx, l.req.vault.ID, a)
 		if err != nil {
 			return target{}, err
 		}
@@ -73,7 +73,7 @@ func (p *plan) resolveTarget(ctx context.Context, x string) (target, error) {
 		}
 		return target{path: paths[0], isNote: true}, nil
 	case domain.SchemeName:
-		candidates, err := p.u.links.GetNoteCandidates(ctx, p.v.ID, a)
+		candidates, err := l.links.GetNoteCandidates(ctx, l.req.vault.ID, a)
 		if err != nil {
 			return target{}, err
 		}
@@ -81,15 +81,15 @@ func (p *plan) resolveTarget(ctx context.Context, x string) (target, error) {
 		if err != nil || chosen != "" {
 			return target{path: chosen, isNote: true}, err
 		}
-		return p.resolveFile(ctx, x, a.Value)
+		return l.resolveFile(ctx, x, a.Value)
 	case domain.SchemeAsset:
-		return p.resolveFile(ctx, x, a.Value)
+		return l.resolveFile(ctx, x, a.Value)
 	}
 	return target{address: a.String()}, nil
 }
 
-func (p *plan) resolveFile(ctx context.Context, x, value string) (target, error) {
-	files, err := p.getFiles(ctx)
+func (l *linkFinder) resolveFile(ctx context.Context, x, value string) (target, error) {
+	files, err := l.getFiles(ctx)
 	if err != nil {
 		return target{}, err
 	}
@@ -104,22 +104,22 @@ func (p *plan) resolveFile(ctx context.Context, x, value string) (target, error)
 	return target{path: chosen}, nil
 }
 
-func (p *plan) getFiles(ctx context.Context) (map[string][]string, error) {
-	if p.files != nil {
-		return p.files, nil
+func (l *linkFinder) getFiles(ctx context.Context) (map[string][]string, error) {
+	if l.files != nil {
+		return l.files, nil
 	}
-	paths, err := p.u.links.ListFilePaths(ctx, p.v.ID)
+	paths, err := l.links.ListFilePaths(ctx, l.req.vault.ID)
 	if err != nil {
 		return nil, err
 	}
-	p.files = searchquery.GroupFilesByName(paths)
-	return p.files, nil
+	l.files = searchquery.GroupFilesByName(paths)
+	return l.files, nil
 }
 
-func (p *plan) findLinksTo(ctx context.Context, t target, role domain.LinkRole, linkType string) (map[string]bool, error) {
+func (l *linkFinder) findLinksTo(ctx context.Context, t target, role domain.LinkRole, linkType string) (map[string]bool, error) {
 	set := map[string]bool{}
 	if t.isNote {
-		backlinks, err := p.u.links.GetBacklinksOf(ctx, p.v.ID, []string{t.path})
+		backlinks, err := l.links.GetBacklinksOf(ctx, l.req.vault.ID, []string{t.path})
 		if err != nil {
 			return nil, err
 		}
@@ -134,11 +134,11 @@ func (p *plan) findLinksTo(ctx context.Context, t target, role domain.LinkRole, 
 	if t.address != "" {
 		value = domain.ParseAddress(t.address).Value
 	}
-	links, err := p.u.links.ListLinksByName(ctx, p.v.ID, domain.FoldName(domain.LinkName(value)))
+	links, err := l.links.ListLinksByName(ctx, l.req.vault.ID, domain.FoldName(domain.LinkName(value)))
 	if err != nil {
 		return nil, err
 	}
-	files, err := p.getFiles(ctx)
+	files, err := l.getFiles(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -157,25 +157,25 @@ func isLinkToFile(l domain.ResolvedLink, t target, files map[string][]string) bo
 	return searchquery.ChooseFile(l.From, l.Target, files) == t.path
 }
 
-func (p *plan) findLinksFrom(ctx context.Context, from string, role domain.LinkRole, linkType string) (map[string]bool, error) {
-	links, err := p.u.links.GetLinksOf(ctx, p.v.ID, []string{from})
+func (l *linkFinder) findLinksFrom(ctx context.Context, from string, role domain.LinkRole, linkType string) (map[string]bool, error) {
+	links, err := l.links.GetLinksOf(ctx, l.req.vault.ID, []string{from})
 	if err != nil {
 		return nil, err
 	}
-	files, err := p.getFiles(ctx)
+	files, err := l.getFiles(ctx)
 	if err != nil {
 		return nil, err
 	}
 	set := map[string]bool{}
-	for _, l := range links[from] {
+	for _, link := range links[from] {
 		switch {
-		case !searchquery.IsLinkMatch(l, role, linkType):
-		case l.To != "":
-			if _, isCrossed := l.InVault(p.v.ID); !isCrossed {
-				set[l.To] = true
+		case !searchquery.IsLinkMatch(link, role, linkType):
+		case link.To != "":
+			if _, isCrossed := link.InVault(l.req.vault.ID); !isCrossed {
+				set[link.To] = true
 			}
 		default:
-			if filePath := searchquery.ChooseFile(l.From, l.Target, files); filePath != "" {
+			if filePath := searchquery.ChooseFile(link.From, link.Target, files); filePath != "" {
 				set[filePath] = true
 			}
 		}
@@ -183,17 +183,17 @@ func (p *plan) findLinksFrom(ctx context.Context, from string, role domain.LinkR
 	return set, nil
 }
 
-func (p *plan) findRelatives(ctx context.Context, start string, f searchquery.LinkFunction, linkType string) (map[string]bool, error) {
+func (l *linkFinder) findRelatives(ctx context.Context, start string, f searchquery.LinkFunction, linkType string) (map[string]bool, error) {
 	visited := map[string]bool{start: true}
 	set := map[string]bool{}
 	frontier := []string{start}
 	for step := 1; len(frontier) > 0; step++ {
-		relatives, err := p.getRelatives(ctx, frontier, f.Direction, linkType)
+		relatives, err := l.getRelatives(ctx, frontier, f.Direction, linkType)
 		if err != nil {
 			return nil, err
 		}
 		fresh := markVisited(visited, relatives)
-		if err := p.checkHierarchy(start, step, len(fresh), len(visited)); err != nil {
+		if err := l.checkHierarchy(start, step, len(fresh), len(visited)); err != nil {
 			return nil, err
 		}
 		for _, r := range fresh {
@@ -218,26 +218,32 @@ func markVisited(visited map[string]bool, relatives []string) []string {
 	return fresh
 }
 
-func (p *plan) checkHierarchy(start string, step, freshCount, visitedCount int) error {
-	if freshCount > 0 && step > p.u.Limits.MaxLinkDepth {
+func (l *linkFinder) checkHierarchy(start string, step, freshCount, visitedCount int) error {
+	if freshCount > 0 && step > l.req.limits.MaxLinkDepth {
 		return fmt.Errorf("%w: the hierarchy of %s is deeper than %d steps (MaxLinkDepth)",
-			searchquery.ErrLimitExceeded, start, p.u.Limits.MaxLinkDepth)
+			searchquery.ErrLimitExceeded, start, l.req.limits.MaxLinkDepth)
 	}
-	if visitedCount > p.u.Limits.MaxDocuments {
+	if visitedCount > l.req.limits.MaxDocuments {
 		return fmt.Errorf("%w: the hierarchy of %s holds more than %d notes (MaxDocuments)",
-			searchquery.ErrLimitExceeded, start, p.u.Limits.MaxDocuments)
+			searchquery.ErrLimitExceeded, start, l.req.limits.MaxDocuments)
 	}
 	return nil
 }
 
-func (p *plan) getRelatives(ctx context.Context, notes []string, direction searchquery.LinkDirection, linkType string) ([]string, error) {
-	links, err := p.u.links.GetLinksOf(ctx, p.v.ID, notes)
+func (l *linkFinder) getRelatives(ctx context.Context, notes []string, direction searchquery.LinkDirection, linkType string) ([]string, error) {
+	links, err := l.links.GetLinksOf(ctx, l.req.vault.ID, notes)
 	if err != nil {
 		return nil, err
 	}
-	backlinks, err := p.u.links.GetBacklinksOf(ctx, p.v.ID, notes)
+	backlinks, err := l.links.GetBacklinksOf(ctx, l.req.vault.ID, notes)
 	if err != nil {
 		return nil, err
 	}
-	return searchquery.GetRelatives(direction, linkType, p.v.ID, links, backlinks), nil
+	return searchquery.GetRelatives(direction, linkType, l.req.vault.ID, links, backlinks), nil
+}
+
+type linkFinder struct {
+	links LinkReaders
+	req   *request
+	files map[string][]string
 }
