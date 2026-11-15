@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -24,26 +23,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 func (c Config) registry() (vaultregistry.Ports, error) {
 	return vaultRegistry(vaultOf(c))
-}
-
-// VaultReaders opens vaults for reading.
-func VaultReaders(c Config) vaultport.VaultReaders {
-	return vaultReaders(vaultOf(c))
-}
-
-// NoteWriters opens vaults for writing notes.
-func NoteWriters(c Config) vaultport.NoteWriters {
-	return noteWriters(vaultOf(c))
-}
-
-// VaultLocks holds the write locks of the vaults.
-func VaultLocks(c Config) vaultport.VaultLocks {
-	return writeLocks(vaultOf(c))
 }
 
 // AddVault registers a new vault in the registry with the given root path and name.
@@ -71,31 +54,9 @@ func OpenIndex(c Config, ctx context.Context) (*Index, error) {
 	return openIndex(vaultOf(c), ctx)
 }
 
-// UpdateIndex updates the notes at the paths given up to date in the index.
-func UpdateIndex(c Config, db *Index) edit.IndexUpdater {
-	return updateIndex(vaultOf(c), db)
-}
-
-// Moves reports each time the index file changes.
-func Moves(c Config, ctx context.Context) (<-chan struct{}, error) {
-	return vaultMoves(vaultOf(c), ctx)
-}
-
-// Notes builds everything that changes the notes of a vault, against this
-// installation's vault readers and writers. No view receives a move.
-func Notes(c Config, db *Index, index edit.IndexUpdater) NoteUseCases {
-	return vaultNotes(vaultOf(c), db, index, noteViews{Writes: none.OpenGate{}})
-}
-
 // Queries builds everything that answers a question about the notes of a vault.
 func Queries(db *Index) query.UseCases {
 	return vaultQueries(db)
-}
-
-// VaultOpener is how this installation opens a vault, the way the settings say
-// one is read and watched.
-func VaultOpener(c Config, db *Index) *vault.VaultOpener {
-	return vaultOpener(vaultOf(c), db)
 }
 
 // GetRefresh brings named notes up to date in the index, over the notes of the cache.

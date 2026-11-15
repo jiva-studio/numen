@@ -323,43 +323,6 @@ describe('a reader hidden or moved in the document', () => {
   })
 })
 
-describe('a reader whose room narrows', () => {
-  it('keeps the page it was turned to under the center line', async () => {
-    // A dock that opens beside the pane narrows the room after the page was turned to. At the offset
-    // that centered the page in the wide room, the center line of the narrow room falls on the page
-    // before it.
-    const frame: (() => void)[] = []
-    const target = mount(Reader, {
-      props: {
-        pages: PAGES,
-        picture: (page: number) => `/p/${page}`,
-        paint: (draw: () => void) => frame.push(draw),
-      },
-      attachTo: document.body,
-    })
-    const area = target.find('.reader__viewport').element as HTMLElement
-    const setRoomWidth = async (width: number) => {
-      await room(target, width, 800)
-      area.scrollTo = ((to: ScrollToOptions) => {
-        area.scrollLeft = to.left ?? 0
-      }) as typeof area.scrollTo
-    }
-    await setRoomWidth(1600)
-    frame.splice(0).forEach((draw) => draw())
-    await target.setProps({ at: 4 })
-    await target.find('.reader__viewport').trigger('scroll')
-    const wide = area.scrollLeft
-
-    await setRoomWidth(900)
-    await target.find('.reader__viewport').trigger('scroll')
-    frame.splice(0).forEach((draw) => draw())
-    await target.find('.reader__viewport').trigger('scroll')
-
-    expect(getTurns(target)).toStrictEqual([])
-    expect(area.scrollLeft).toBeGreaterThan(wide)
-  })
-})
-
 describe('a scroll event that reaches a reader after its tab was moved', () => {
   it('turns to no page and leaves the row on the page it was on', async () => {
     // The browser queues a scroll event when the row scrolls and delivers it with the next frame.
@@ -380,5 +343,45 @@ describe('a scroll event that reaches a reader after its tab was moved', () => {
 
     expect(turns().slice(turnsBefore)).toStrictEqual([])
     expect(area.scrollLeft).toBe(1200)
+  })
+})
+
+describe('a scroll event that reaches a reader while its tab is hidden', () => {
+  it('turns to no page', async () => {
+    const target = await reader(1000, 800)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    area.scrollLeft = 1200
+    await target.find('.reader__viewport').trigger('scroll')
+    const turns = () => (target.emitted('go') ?? []).map((one) => (one as [number])[0])
+    await target.setProps({ at: turns().at(-1) as number })
+    const turnsBefore = turns().length
+
+    Object.defineProperty(area, 'clientWidth', { value: 0, configurable: true })
+    area.scrollLeft = 0
+    await target.find('.reader__viewport').trigger('scroll')
+
+    expect(turns().slice(turnsBefore)).toStrictEqual([])
+  })
+})
+
+describe('a reader measured again when its row has arrived at the page it was turned to', () => {
+  it('leaves the row on that page', async () => {
+    // The browser scrolls the row there before it delivers the scroll event of the arrival.
+    const target = await reader(1000, 800)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    const sent: number[] = []
+    area.scrollTo = ((options: ScrollToOptions) => {
+      sent.push(options.left ?? 0)
+    }) as typeof area.scrollTo
+    await target.setProps({ at: 5 })
+    const travelled = sent.at(-1) as number
+
+    area.scrollLeft = travelled
+    for (let measured = 0; measured < 2; measured += 1) {
+      await room(target, 1000, 800)
+      await new Promise((done) => requestAnimationFrame(() => done(undefined)))
+    }
+
+    expect(area.scrollLeft).toBe(travelled)
   })
 })

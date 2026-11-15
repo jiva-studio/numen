@@ -245,10 +245,11 @@ func getSettingsPath(cfg container.Config) string {
 	if cfg.RegistryPath != "" {
 		return filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	}
-	if path, err := settings.Path(); err == nil {
-		return path
+	path, err := settings.Path()
+	if err != nil {
+		return ""
 	}
-	return ""
+	return path
 }
 
 func getFatalPage() *template.Template {

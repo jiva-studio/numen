@@ -38,8 +38,6 @@ const testdataReaders = []
 const outsideLayers = [
   'src/**/*.stories.ts',
   'src/**/fixtures/**',
-  'src/vite.ts',
-  'src/vite.test.ts',
   ...testdataReaders,
 ]
 

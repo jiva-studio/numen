@@ -26,7 +26,7 @@ libs/core/kernel/                       the hexagon
 │   │   ├── trash/               driven: the operating system's trash
 │   │   ├── plugin/              the plugin adapter: host* packages drive the core, *bridge packages are driven by it
 │   │   ├── theme/               driving: the stylesheet catalogue a window asks for
-│   │   └── (one folder per other technology: provision, onnxruntime, appstate, machine)
+│   │   └── (one folder per other technology: provision, appstate, machine)
 │   ├── adapterlib/              code several adapters share and that is not a port (retry, watchhub, wire)
 │   └── testsupport/             helpers for tests
 └── container/                   the composition root: one package, wiring only

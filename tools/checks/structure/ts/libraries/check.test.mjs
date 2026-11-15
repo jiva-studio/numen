@@ -127,6 +127,43 @@ test("the family of a library is the path of its outermost library, read from wh
   assert.equal(getFamily("libs/core/kernel", dirs), "libs/core/kernel");
 });
 
+test("each shared library is a family of its own, with no library above it", () => {
+  const dirs = ["libs/plugin/sdk-go", "libs/shared/onnx", "libs/shared/tokenizer"];
+  assert.equal(getFamily("libs/shared/onnx", dirs), "libs/shared/onnx");
+  assert.equal(getFamily("libs/shared/tokenizer", dirs), "libs/shared/tokenizer");
+});
+
+test("the shared libraries depend on no library of this repository", () => {
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/onnx"], []);
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/tokenizer"], []);
+  const alone = [library("libs/shared/onnx"), library("libs/shared/tokenizer")];
+  assert.deepEqual(findLibraryViolations(alone, LIBRARY_DEPENDENCIES), []);
+});
+
+test("a shared library that reaches the plugin SDK is reported", () => {
+  const libraries = [
+    library("libs/plugin/sdk-go"),
+    library("libs/shared/onnx", ["libs/plugin/sdk-go/cache"]),
+    library("libs/shared/tokenizer", ["libs/plugin/sdk-go"]),
+  ];
+  const found = findLibraryViolations(libraries, LIBRARY_DEPENDENCIES);
+  assert.equal(found.length, 2);
+  assert.match(found[0].symbol, /family libs\/shared\/onnx reaches libs\/plugin\/sdk-go/);
+  assert.match(found[1].symbol, /family libs\/shared\/tokenizer reaches libs\/plugin\/sdk-go/);
+});
+
+test("no library row lists a shared library", () => {
+  for (const [family, allowed] of Object.entries(LIBRARY_DEPENDENCIES)) {
+    assert.ok(!allowed.some((one) => one.startsWith("libs/shared/")), `${family} may reach a shared library`);
+  }
+});
+
+test("the shared libraries of this repository are read", () => {
+  const dirs = readLibraries().map((one) => one.dir);
+  assert.ok(dirs.includes("libs/shared/onnx"));
+  assert.ok(dirs.includes("libs/shared/tokenizer"));
+});
+
 test("a nested library with no outer library is its own family, and a library with no row is reported", () => {
   const libraries = [library("libs/group/inner")];
   const found = findLibraryViolations(libraries, MATRIX);

@@ -16,6 +16,7 @@ type ConnectionProfile struct {
 func (p ConnectionProfile) GetHandling() Handling {
 	return Handling{
 		QueryPrefix: p.QueryPrefix, DocumentPrefix: p.DocumentPrefix, File: "", Normalize: false, ExtraInputs: nil,
+		Tokenizer: "",
 	}
 }
 

@@ -404,3 +404,11 @@ func hasFile(name string) bool {
 	info, err := os.Stat(name)
 	return err == nil && !info.IsDir()
 }
+
+func getCacheRoot() string {
+	root, err := cache.GetSharedDirOrPluginDir()
+	if err != nil {
+		return ""
+	}
+	return root
+}

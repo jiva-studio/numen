@@ -30,7 +30,7 @@ func TestImportOfAnAddressThatHasALinkNoteOpensThatNote(t *testing.T) {
 }
 
 func TestImportOfAnAddressWhoseLinkNoteMovedOpensTheMovedNote(t *testing.T) {
-	links, _, hosted := newMockLinks(t)
+	links, _, hosted, _ := newMockLinks(t)
 	commands, err := newCommands(links)
 	if err != nil {
 		t.Fatal(err)

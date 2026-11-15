@@ -5,23 +5,25 @@ import (
 	"testing"
 )
 
+const setWorkerCount = 5
+
 func TestThePoolStartsWithTheWorkersItIsSetTo(t *testing.T) {
-	workers := NewWorkers(Options{Report: failOnReport(t), CompilationCache: nil, AfterFunc: nil, Workers: minWorkers + 3, IdleWorkers: 0})
-	if got, want := workers.GetWorkers(), minWorkers+3; got != want {
-		t.Errorf("the pool starts with %d workers, want %d", got, want)
+	workers := NewWorkers(Options{Report: failOnReport(t), CompilationCache: nil, AfterFunc: nil, Workers: setWorkerCount, IdleWorkers: 0})
+	if got := workers.GetWorkers(); got != setWorkerCount {
+		t.Errorf("the pool starts with %d workers, want %d", got, setWorkerCount)
 	}
 }
 
 func TestThePoolStartsWithOneWorkerPerCPUWhenNoneIsSet(t *testing.T) {
 	workers := NewWorkers(Options{Report: failOnReport(t), CompilationCache: nil, AfterFunc: nil, Workers: 0, IdleWorkers: 0})
-	if got, want := workers.GetWorkers(), max(runtime.NumCPU(), minWorkers); got != want {
+	if got, want := workers.GetWorkers(), runtime.NumCPU(); got != want {
 		t.Errorf("the pool starts with %d workers, want %d", got, want)
 	}
 }
 
-func TestThePoolStartsWithAtLeastTheMinimumWhenFewerAreSet(t *testing.T) {
+func TestThePoolStartsWithOneWorkerWhenOneIsSet(t *testing.T) {
 	workers := NewWorkers(Options{Report: failOnReport(t), CompilationCache: nil, AfterFunc: nil, Workers: 1, IdleWorkers: 0})
-	if got := workers.GetWorkers(); got != 2 {
-		t.Errorf("the pool starts with %d workers, want 2", got)
+	if got := workers.GetWorkers(); got != 1 {
+		t.Errorf("the pool starts with %d workers, want 1", got)
 	}
 }

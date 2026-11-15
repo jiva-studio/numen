@@ -82,29 +82,25 @@ func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 var errSlotOrderShape = fmt.Errorf("%w: the order of an entry must be a number, not a string", manifest.ErrInvalidSlotEntry)
 
 func checkSlotOrders(root any) error {
-	for _, entry := range getSlotEntries(root) {
-		if fields, isObject := entry.(map[string]any); isObject {
-			if text, isText := fields["order"].(string); isText {
-				return fmt.Errorf("%w: %q", errSlotOrderShape, text)
-			}
-		}
+	object, isObject := root.(map[string]any)
+	if !isObject {
+		return nil
 	}
-	return nil
-}
-
-func getSlotEntries(root any) []any {
-	if contributes := getObjectField(root, "contributes"); contributes != nil {
-		if entries, isList := contributes["slots"].([]any); isList {
-			return entries
-		}
+	contributes, isObject := object["contributes"].(map[string]any)
+	if !isObject {
+		return nil
 	}
-	return nil
-}
-
-func getObjectField(value any, key string) map[string]any {
-	if object, isObject := value.(map[string]any); isObject {
-		if child, isObject := object[key].(map[string]any); isObject {
-			return child
+	entries, isList := contributes["slots"].([]any)
+	if !isList {
+		return nil
+	}
+	for _, entry := range entries {
+		fields, isObject := entry.(map[string]any)
+		if !isObject {
+			continue
+		}
+		if text, isText := fields["order"].(string); isText {
+			return fmt.Errorf("%w: %q", errSlotOrderShape, text)
 		}
 	}
 	return nil
@@ -161,7 +157,27 @@ func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequire
 			SourceURL:      one.GetSourceUrl(),
 			ChecksumSHA256: one.GetChecksumSha256(),
 			Metadata:       one.GetMetadata(),
+			Sources:        newDependencySources(one.GetSources()),
+			Environment:    one.GetEnvironment(),
+			Search:         one.GetSearch(),
 			PluginDir:      "",
+		})
+	}
+	return out
+}
+
+func newDependencySources(wire []*v1.ManifestDependencySource) []manifest.DependencySource {
+	if len(wire) == 0 {
+		return nil
+	}
+	out := make([]manifest.DependencySource, 0, len(wire))
+	for _, one := range wire {
+		out = append(out, manifest.DependencySource{
+			Platform:       one.GetPlatform(),
+			SourceURL:      one.GetSourceUrl(),
+			ChecksumSHA256: one.GetChecksumSha256(),
+			ArchiveMember:  one.GetArchiveMember(),
+			MemberSHA256:   one.GetMemberSha256(),
 		})
 	}
 	return out
@@ -276,16 +292,18 @@ func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
 }
 
 func pruneUnknown(value any, message protoreflect.MessageDescriptor, path string, unknown []string) []string {
-	if object, ok := value.(map[string]any); ok {
-		for _, key := range slices.Sorted(maps.Keys(object)) {
-			field := message.Fields().ByJSONName(key)
-			if field == nil {
-				delete(object, key)
-				unknown = append(unknown, joinPath(path, key))
-				continue
-			}
-			unknown = pruneField(object[key], field, joinPath(path, key), unknown)
+	object, ok := value.(map[string]any)
+	if !ok {
+		return unknown
+	}
+	for _, key := range slices.Sorted(maps.Keys(object)) {
+		field := message.Fields().ByJSONName(key)
+		if field == nil {
+			delete(object, key)
+			unknown = append(unknown, joinPath(path, key))
+			continue
 		}
+		unknown = pruneField(object[key], field, joinPath(path, key), unknown)
 	}
 	return unknown
 }
@@ -300,16 +318,20 @@ func joinPath(path, key string) string {
 func pruneField(value any, field protoreflect.FieldDescriptor, path string, unknown []string) []string {
 	switch {
 	case field.IsMap():
-		if entries, ok := value.(map[string]any); ok {
-			for _, name := range slices.Sorted(maps.Keys(entries)) {
-				unknown = pruneEntry(entries[name], field.MapValue(), joinPath(path, name), unknown)
-			}
+		entries, ok := value.(map[string]any)
+		if !ok {
+			return unknown
+		}
+		for _, name := range slices.Sorted(maps.Keys(entries)) {
+			unknown = pruneEntry(entries[name], field.MapValue(), joinPath(path, name), unknown)
 		}
 	case field.IsList():
-		if items, ok := value.([]any); ok {
-			for index, item := range items {
-				unknown = pruneEntry(item, field, fmt.Sprintf("%s[%d]", path, index), unknown)
-			}
+		items, ok := value.([]any)
+		if !ok {
+			return unknown
+		}
+		for index, item := range items {
+			unknown = pruneEntry(item, field, fmt.Sprintf("%s[%d]", path, index), unknown)
 		}
 	default:
 		return pruneEntry(value, field, path, unknown)
@@ -334,11 +356,13 @@ func pruneEntry(value any, field protoreflect.FieldDescriptor, path string, unkn
 const listValueName protoreflect.FullName = "google.protobuf.ListValue"
 
 func pruneOptionList(value any, path string, unknown []string) []string {
-	if items, ok := value.([]any); ok {
-		descriptor := (&v1.ManifestSettingOption{}).ProtoReflect().Descriptor()
-		for index, item := range items {
-			unknown = pruneUnknown(item, descriptor, fmt.Sprintf("%s[%d]", path, index), unknown)
-		}
+	items, ok := value.([]any)
+	if !ok {
+		return unknown
+	}
+	descriptor := (&v1.ManifestSettingOption{}).ProtoReflect().Descriptor()
+	for index, item := range items {
+		unknown = pruneUnknown(item, descriptor, fmt.Sprintf("%s[%d]", path, index), unknown)
 	}
 	return unknown
 }

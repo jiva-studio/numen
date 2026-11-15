@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/engines"
 )
 
