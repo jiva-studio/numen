@@ -62,7 +62,7 @@ describe('a plugin that has not started', () => {
       [LEDGER]: (one) =>
         one.lifecycle
           .createContext(LEDGER, LEDGER_MANIFEST)
-          .register.command({ id: 'ledger.open', handler }),
+          .plugin.register.command({ id: 'ledger.open', handler }),
     })
     host.keybindings.registerKeybindings(LEDGER, [{ key: 'mod+l', command: 'ledger.open' }])
 
@@ -83,7 +83,7 @@ describe('a plugin that has not started', () => {
       [LEDGER]: (one) =>
         one.lifecycle
           .createContext(LEDGER, LEDGER_MANIFEST)
-          .register.command({ id: 'ledger.open', handler }),
+          .plugin.register.command({ id: 'ledger.open', handler }),
     })
 
     expect(host.commands.hasCommand(`${LEDGER}:ledger.open`)).toBe(true)
@@ -97,7 +97,7 @@ describe('a plugin that has not started', () => {
   it('starts when the palette asks whether its command offers items, and answers once it has', async () => {
     const { host, started } = createWindow({
       [LEDGER]: (one) =>
-        one.lifecycle.createContext(LEDGER, LEDGER_MANIFEST).register.command({
+        one.lifecycle.createContext(LEDGER, LEDGER_MANIFEST).plugin.register.command({
           id: 'ledger.open',
           handler: vi.fn(),
           listItems: async () => [{ id: 'march', title: 'March' }],
@@ -114,7 +114,7 @@ describe('a plugin that has not started', () => {
   it('starts when the items of its command are listed, and lists them', async () => {
     const { host } = createWindow({
       [LEDGER]: (one) =>
-        one.lifecycle.createContext(LEDGER, LEDGER_MANIFEST).register.command({
+        one.lifecycle.createContext(LEDGER, LEDGER_MANIFEST).plugin.register.command({
           id: 'ledger.open',
           handler: vi.fn(),
           listItems: async () => [{ id: 'march', title: 'March' }],
@@ -137,7 +137,7 @@ describe('a plugin that has not started', () => {
           if (!match(LINKS_MANIFEST)) return
           host.lifecycle
             .createContext(LINKS, LINKS_MANIFEST)
-            .register.dropHandler?.({ types: [URI_LIST], drop })
+            .plugin.register.dropHandler?.({ types: [URI_LIST], drop })
         },
       },
     )
@@ -179,11 +179,10 @@ describe('a plugin that has not started', () => {
         [LEDGER]: (one) =>
           one.lifecycle
             .createContext(LEDGER, LEDGER_MANIFEST)
-            .register.settingsView({ id: 'ledger-columns', component: {} }),
+            .plugin.register.settingsView({ id: 'ledger-columns', component: {} }),
       },
       {
-        findPluginsOf: (match) =>
-          manifests.filter((one) => match(one)).map((one) => one.id),
+        findPluginsOf: (match) => manifests.filter((one) => match(one)).map((one) => one.id),
       },
     )
 

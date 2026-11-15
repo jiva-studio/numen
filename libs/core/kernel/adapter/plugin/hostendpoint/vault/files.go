@@ -277,7 +277,7 @@ func (e *filesCalls) ScanFiles(
 	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
 		func(code v1.HostVaultErrorCode) *v1.ScanFilesResponse { return &v1.ScanFilesResponse{Error: code} },
 		func(vault *Access) (*v1.ScanFilesResponse, error) {
-			return &v1.ScanFilesResponse{}, vault.Writer.Scan(ctx, req.Msg.GetPaths())
+			return &v1.ScanFilesResponse{}, vault.Writer.ScanFiles(ctx, req.Msg.GetPaths())
 		})
 }
 

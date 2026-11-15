@@ -198,7 +198,7 @@ func TestAWriteUsesThePortsItIsGiven(t *testing.T) {
 			updated++
 			return nil
 		}, testsupport.NewClock(),
-		note.OpenGate{},
+		testsupport.OpenGate{},
 	)
 
 	if _, err := w.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", domain.FileStat{}); err != nil {

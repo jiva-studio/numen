@@ -14,3 +14,8 @@ func ListShippedPlatforms() []Platform {
 		{GOOS: "android", GOARCH: "arm64"},
 	}
 }
+
+// GetEnv returns the environment variables that build for the platform.
+func (p Platform) GetEnv() []string {
+	return []string{"GOOS=" + p.GOOS, "GOARCH=" + p.GOARCH}
+}

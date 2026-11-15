@@ -1,4 +1,9 @@
-import { definePlugin, type CommandNote, type PluginContext } from '@numen/plugin-sdk'
+import {
+  definePlugin,
+  type CommandNote,
+  type HostServices,
+  type PluginContext,
+} from '@numen/plugin-sdk'
 import { shallowRef } from 'vue'
 import FilesTab from './ui/FilesTab.vue'
 import { createFilesKind, FILES } from './model/kind'
@@ -13,14 +18,14 @@ export { useFilesTab } from './model/useFilesTab'
 export type { FilesTabDeps, FilesTabState } from './types'
 export * from './words'
 
-export function activate(context: PluginContext): void {
-  const { workspace, drops, slots, commands } = context.ui
-  const { files } = context.vault
+export function activate(plugin: PluginContext, host: HostServices): void {
+  const { workspace, drops, slots, commands } = host.ui
+  const { files } = host.vault
   if (!workspace || !files) {
     throw new Error('a files tab needs the window it is drawn in and the files of the vault')
   }
-  const sortBy = shallowRef<SortBy>(readSortBy(context.settings.get('sortBy')))
-  context.settings.onChange('sortBy', (value) => {
+  const sortBy = shallowRef<SortBy>(readSortBy(plugin.settings.get('sortBy')))
+  plugin.settings.onChange('sortBy', (value) => {
     sortBy.value = readSortBy(value)
   })
   const trees = createFilesKind(
@@ -34,8 +39,8 @@ export function activate(context: PluginContext): void {
     () => createFileTree(files, { sortBy }),
     FilesTab,
   )
-  context.register.tabKind(trees.kind)
-  context.events.onVaultChange((event) => trees.refresh(event))
+  plugin.register.tabKind(trees.kind)
+  host.events.onVaultChange((event) => trees.refresh(event))
 
   /** The handler of a command over a row of the tab whose menu was opened last. */
   const runOnTab =
@@ -45,13 +50,13 @@ export function activate(context: PluginContext): void {
       if (state) await run(state, note.path)
     }
 
-  context.register.command({
+  plugin.register.command({
     id: 'tree.open',
     handler: async (note) => {
-      await context.tabs.navigate?.(FILES, note.path)
+      await host.tabs.navigate?.(FILES, note.path)
     },
   })
-  context.register.command({
+  plugin.register.command({
     id: 'tree.renameFile',
     handler: runOnTab((state, path) => {
       if (path !== ROOT) state.renaming.setPath(path)

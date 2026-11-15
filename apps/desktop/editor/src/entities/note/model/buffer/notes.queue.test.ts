@@ -30,12 +30,13 @@ describe('the queue of an open note', () => {
   const setup = (notes: Partial<Notes> = {}, hasTab = true) => {
     const turned: [string, Event][] = []
     const resumed: string[] = []
-    answerNotes({
+    const api = answerNotes({
       read: async () => asValue({ body: '' }),
       write: async () => asValue({ body: '' }),
       ...notes,
     })
     const queue = createNoteQueue({
+      api,
       dispatch: (id, event) => turned.push([id, event]),
       hasTab: () => hasTab,
       resumeClosing: (id) => resumed.push(id),

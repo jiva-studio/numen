@@ -31,4 +31,19 @@ func TestTheFunctionRunsEachPeriodUntilStopped(t *testing.T) {
 	if !errors.Is(err, errLate) || !errors.Is(stop(), errLate) {
 		t.Errorf("stop = %v, want the error of the last call that failed", err)
 	}
+
+	entered := make(chan struct{})
+	errInFlight := errors.New("in-flight tick failed")
+	var once atomic.Int32
+	stopInFlight := Start(time.Millisecond, func() error {
+		if once.Add(1) == 1 {
+			close(entered)
+		}
+		time.Sleep(20 * time.Millisecond)
+		return errInFlight
+	})
+	<-entered
+	if got := stopInFlight(); !errors.Is(got, errInFlight) {
+		t.Errorf("stopInFlight() = %v, want %v", got, errInFlight)
+	}
 }

@@ -13,6 +13,7 @@ import type {
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
+import type { PluginParts } from '../host'
 import type { SlotViewRegistry } from '../slot-views'
 import type { PluginListener } from './events'
 import { disposeSubscriptions } from './guards/subscriptions'
@@ -48,7 +49,7 @@ export interface HostRegistry {
   readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
   readonly handlers: { value: ReadonlyMap<string, RegisteredCommand> }
   readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
-  readonly contexts: Map<string, PluginContext>
+  readonly contexts: Map<string, PluginParts>
   readonly manifests: Map<string, Manifest>
   readonly contextManifests?: { value: ReadonlyMap<string, Manifest> }
   readonly activated: { value: ReadonlySet<string> }
@@ -63,8 +64,8 @@ export interface PluginItemRegistration<T> {
   readonly getContext?: () => PluginContext | undefined
 }
 
-function clearSubscriptions(ctx?: PluginContext): void {
-  if (ctx) disposeSubscriptions(ctx.plugin.subscriptions)
+function clearSubscriptions(parts?: PluginParts): void {
+  if (parts) disposeSubscriptions(parts.plugin.identity.subscriptions)
 }
 
 function cleanupMapItems(

@@ -3,12 +3,19 @@
  * services of the window and the notices. Each part is made from what it reads of the
  * window and holds the host dependencies of one concern.
  */
-import { createPluginNotices, createPluginTasks, type PluginHostDeps } from '@numen/plugin-loader'
+import {
+  createPluginNotices,
+  createPluginTasks,
+  type PluginHostDeps,
+  type ProcessHost,
+} from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
 import { registerTabKindIcon } from '@/entities/note'
-import { healthReports, processHost } from '@/entities/plugin'
+import type { HealthApi, PluginHostApi } from '@/entities/plugin'
+import type { SettingsStore } from '@/entities/settings'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { PluginServices } from './pluginServices'
+import { createRowChangeSubscriber } from './pluginSettings'
 
 /** The host dependencies of one concern; the host reads the ones it is given. */
 export type HostParts = Pick<
@@ -91,6 +98,8 @@ export function createVaultServiceParts(deps: {
 /** The buffers, the tasks, the health items and the plugins that run the window gives a plugin. */
 export function createTaskServiceParts(deps: {
   readonly services: Pick<PluginServices, 'buffers' | 'noteBuffer' | 'taskList' | 'backgroundTasks'>
+  readonly processes: ProcessHost
+  readonly healthReports: HealthApi['healthReports']
 }): HostParts {
   const { services } = deps
   return {
@@ -98,8 +107,20 @@ export function createTaskServiceParts(deps: {
     getNoteBuffer: () => services.noteBuffer,
     getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
     getBackgroundTasks: () => services.backgroundTasks,
-    getProcesses: () => processHost,
-    health: healthReports,
+    getProcesses: () => deps.processes,
+    health: deps.healthReports,
+  }
+}
+
+/** The texts a plugin reads, and its connections, which are notified of each change of the rows. */
+export function createPluginApiParts(deps: {
+  readonly api: PluginHostApi
+  readonly rest: SettingsStore
+}): HostParts {
+  const subscribeRowChanges = createRowChangeSubscriber(deps.rest)
+  return {
+    getTexts: (pluginId) => deps.api.getPluginTexts(pluginId),
+    getConnections: (pluginId) => deps.api.getPluginConnections(pluginId, subscribeRowChanges),
   }
 }
 
