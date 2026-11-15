@@ -40,7 +40,7 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Rec
 	}
 	cacheRoot := getCacheRoot()
 	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider: getSessionProvider(),
+		Provider: onnx.GetSessionProvider(),
 		Threads:  getThreads(cfg),
 
 		ComputeUnits: onnx.ComputeUnitsDefault,

@@ -7,6 +7,7 @@ package onnx
 import (
 	"cmp"
 	"os"
+	"strings"
 )
 
 const (
@@ -41,4 +42,13 @@ func GetProvider() Provider {
 		return Provider(name)
 	}
 	return DefaultProvider
+}
+
+// GetSessionProvider returns the execution provider a plugin opens its sessions
+// on: the one the host named, else the CPU.
+func GetSessionProvider() Provider {
+	if name := GetProvider(); !strings.EqualFold(strings.TrimSpace(string(name)), string(DefaultProvider)) {
+		return name
+	}
+	return ProviderCPU
 }
