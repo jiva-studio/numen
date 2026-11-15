@@ -259,7 +259,7 @@ func readInteger(number json.Number) (*big.Int, bool) {
 	if digits == "" {
 		return new(big.Int), true
 	}
-	if exponent < 0 || exponent > maxIntegerDigits-len(digits) {
+	if exponent < 0 || len(digits)+exponent > maxIntegerDigits {
 		return nil, false
 	}
 	integer, isValid := new(big.Int).SetString(sign+digits+strings.Repeat("0", exponent), 10)
@@ -316,7 +316,8 @@ func findPathAt(encoded []byte, offset int64) (string, bool) {
 		if err != nil {
 			return "", false
 		}
-		if token == json.Delim('}') || token == json.Delim(']') {
+		delim, isDelim := token.(json.Delim)
+		if isDelim && (delim == '}' || delim == ']') {
 			stack = stack[:len(stack)-1]
 			continue
 		}
@@ -327,8 +328,8 @@ func findPathAt(encoded []byte, offset int64) (string, bool) {
 		if decoder.InputOffset() == offset {
 			return path, true
 		}
-		if token == json.Delim('{') || token == json.Delim('[') {
-			stack = append(stack, &pathLevel{path: path, isArray: token == json.Delim('[')})
+		if isDelim {
+			stack = append(stack, &pathLevel{path: path, isArray: delim == '['})
 		}
 	}
 }
