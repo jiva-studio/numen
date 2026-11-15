@@ -76,28 +76,33 @@ func (l *feedLoop) run(ctx context.Context) {
 			isForced = true
 			retry = retriedPlain
 		}
-		head, err := l.events.ReadHead(ctx, l.vault.ID)
-		if err != nil {
-			retry = l.fail(retry, isForced)
-			continue
-		}
-		if head.Cursor.Seq == 0 || (!isForced && head.Cursor == l.sent) {
-			retry = notRetried
-			continue
-		}
-		after := l.sent.Seq
-		if isForced || l.sent.FeedID != head.Cursor.FeedID {
-			after = 0
-		}
-		types, err := l.listTypes(ctx, after, head.Cursor.Seq)
-		if err != nil {
+		if err := l.send(ctx, isForced); err != nil {
 			retry = l.fail(retry, isForced)
 			continue
 		}
 		retry = notRetried
-		l.sent = head.Cursor
-		l.events.Emit(l.vault, types)
 	}
+}
+
+func (l *feedLoop) send(ctx context.Context, isForced bool) error {
+	head, err := l.events.ReadHead(ctx, l.vault.ID)
+	if err != nil {
+		return err
+	}
+	if head.Cursor.Seq == 0 || (!isForced && head.Cursor == l.sent) {
+		return nil
+	}
+	after := l.sent.Seq
+	if isForced || l.sent.FeedID != head.Cursor.FeedID {
+		after = 0
+	}
+	types, err := l.listTypes(ctx, after, head.Cursor.Seq)
+	if err != nil {
+		return err
+	}
+	l.sent = head.Cursor
+	l.events.Emit(l.vault, types)
+	return nil
 }
 
 type retryState int
