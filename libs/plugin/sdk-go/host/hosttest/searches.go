@@ -17,7 +17,7 @@ type Searches struct {
 	mu        sync.Mutex
 	functions host.SearchFunctions
 	listErr   error
-	answers   map[string][]host.SearchResult
+	answers   map[string]host.SearchState
 	held      map[string]chan struct{}
 	searches  map[string]string
 	removed   []string
@@ -26,7 +26,7 @@ type Searches struct {
 
 // NewSearches returns searches with no query answered and an empty language.
 func NewSearches() *Searches {
-	return &Searches{answers: map[string][]host.SearchResult{}, held: map[string]chan struct{}{}, searches: map[string]string{}}
+	return &Searches{answers: map[string]host.SearchState{}, held: map[string]chan struct{}{}, searches: map[string]string{}}
 }
 
 // SetFunctions sets the language ListSearchFunctions returns, and err its failure when not nil.
@@ -38,9 +38,15 @@ func (s *Searches) SetFunctions(functions host.SearchFunctions, err error) {
 
 // SetResults makes every search of the query text end with the results.
 func (s *Searches) SetResults(query string, results []host.SearchResult) {
+	s.SetAnswer(query, host.SearchState{Results: results})
+}
+
+// SetAnswer makes every search of the query text end as the state says: its results cut into pages, and
+// its errors, warnings, reranks, score kind, floor, index generation and IsStale as they are.
+func (s *Searches) SetAnswer(query string, state host.SearchState) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.answers[query] = results
+	s.answers[query] = state
 }
 
 // HoldSearch keeps the searches of a query running until the returned function is called.
@@ -111,8 +117,9 @@ func (s *Searches) isReleasedWithin(ctx context.Context, held chan struct{}, wai
 
 func (s *Searches) cutPage(id, query string, read host.SearchRead) (host.SearchState, error) {
 	s.mu.Lock()
-	results := s.answers[query]
+	answer := s.answers[query]
 	s.mu.Unlock()
+	results := answer.Results
 	offset := 0
 	if read.PageToken != "" {
 		parsed, err := strconv.Atoi(read.PageToken)
@@ -126,7 +133,12 @@ func (s *Searches) cutPage(id, query string, read host.SearchRead) (host.SearchS
 		size = 20
 	}
 	end := min(offset+size, len(results))
-	state := host.SearchState{ID: id, Step: "done", Results: slices.Clone(results[offset:end]), TotalResults: len(results)}
+	state := answer
+	state.ID, state.IsRunning, state.Step, state.NextPageToken = id, false, "done", ""
+	state.Results, state.TotalResults = slices.Clone(results[offset:end]), len(results)
+	if state.Results == nil {
+		state.Results = []host.SearchResult{}
+	}
 	if end < len(results) {
 		state.NextPageToken = strconv.Itoa(end)
 	}

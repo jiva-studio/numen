@@ -6,13 +6,12 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 )
 
 func addWinterNote(f *fixture) {
 	f.vault.File("Harbor/Winter.md", "# Winter\n\n"+winterText+"\n")
-	f.search.With(testVault).SetIndexedResults(getIndex(mooringText,
-		host.SearchResult{ChunkID: "c5", Path: "Harbor/Winter.md", Text: winterText, Start: 0, Length: 400}))
+	f.searches.SetAnswer(stormsQuery, getStormsAnswer(mooringText, passage("Harbor/Winter.md", "Winter", winterText, 0.5)))
 }
 
 func TestHandleEventWithRefreshAtOnceIncludesTheNewNote(t *testing.T) {
@@ -42,7 +41,7 @@ func TestHandleEventMarksTheSearchesOfTheVaultAndRunsTheDueOnes(t *testing.T) {
 	f.handleIndexChange(t)
 
 	record := f.readRecord(t, stormsID)
-	if record.StaleSince == nil || !record.StaleSince.Equal(markedAt) || slices.ContainsFunc(record.Results, func(r resultcache.Result) bool { return r.Path == "Harbor/Winter.md" }) {
+	if record.StaleSince == nil || !record.StaleSince.Equal(markedAt) || slices.ContainsFunc(record.Results, func(r api.Result) bool { return r.Path == "Harbor/Winter.md" }) {
 		t.Errorf("record = %+v, want the search marked stale and not run within the cooldown", record)
 	}
 
@@ -67,6 +66,11 @@ func TestHandleEventReportsTheRefreshAndFinishesIt(t *testing.T) {
 	if tasks := f.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("tasks = %+v after the event, want the refresh finished", tasks)
 	}
+	for _, start := range f.searches.ListStarted() {
+		if !start.IsBackground || start.Priority != host.SearchPriorityBackground {
+			t.Errorf("start = %+v, want a background search the core shows no task for", start)
+		}
+	}
 }
 
 func TestHandleEventIgnoresAnotherEvent(t *testing.T) {
@@ -79,8 +83,8 @@ func TestHandleEventIgnoresAnotherEvent(t *testing.T) {
 		}
 	}
 
-	if f.host.getCallCount() != 0 {
-		t.Errorf("%d searches for other events, want none", f.host.getCallCount())
+	if f.getStartCount() != 0 {
+		t.Errorf("%d searches for other events, want none", f.getStartCount())
 	}
 	if files, err := f.vault.Store().List(t.Context()); err != nil || len(files) != 0 {
 		t.Errorf("store = %v, %v, want nothing written", files, err)

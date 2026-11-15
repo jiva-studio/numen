@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/searchnote"
 )
@@ -42,7 +42,6 @@ func (r *Runner) MarkStale(ctx context.Context, vault domain.VaultID) error {
 	r.records.Lock()
 	defer r.records.Unlock()
 	for _, one := range searches {
-		r.marks.add(fileKey{vault: vault, name: one.name}, now)
 		record, hasRecord, err := readRecord(ctx, v.Store, one.name)
 		if err != nil {
 			return err
@@ -59,9 +58,9 @@ func (r *Runner) MarkStale(ctx context.Context, vault domain.VaultID) error {
 }
 
 // RunDue deletes the caches of notes that are no longer saved searches of the vault and runs, one after
-// another in path order, every saved search that is due: one without a cache, one whose note, settings or
-// reranking row changed since its run, and one marked stale whose cooldown since its last run ended. It
-// reports the runs as a task. When a stale search waits for its cooldown, a timer runs RunDue again at its
+// another in path order, every saved search that is due: one without a cache, one whose query changed
+// since its run, and one marked stale whose cooldown since its last run ended. Its searches are background
+// searches, for which the core shows no task; it reports the runs as one task of the plugin. When a stale search waits for its cooldown, a timer runs RunDue again at its
 // end, for as long as the process lives.
 func (r *Runner) RunDue(ctx context.Context, vault domain.VaultID) error {
 	unlock, err := r.vaults.lock(ctx, vault)
@@ -83,22 +82,23 @@ func (r *Runner) RunDue(ctx context.Context, vault domain.VaultID) error {
 	if len(due) == 0 {
 		return nil
 	}
-	return r.runBatch(ctx, job{vaultID: vault, vault: v, path: "", priority: connection.PriorityBackground, settings: settings}, due)
+	return r.runBatch(ctx, job{vaultID: vault, vault: v, path: "", priority: host.SearchPriorityBackground, isBackground: true}, due)
 }
 
-// RunNow runs one saved search at once, whatever its marks, after the runs of the vault on their way.
-func (r *Runner) RunNow(ctx context.Context, vault domain.VaultID, notePath string, priority connection.Priority) (resultcache.Record, error) {
+// RunNow runs one saved search at once, whatever its marks, after the runs of the vault on their way. Its
+// search is interactive and the core shows it as a task.
+func (r *Runner) RunNow(ctx context.Context, vault domain.VaultID, notePath string) (resultcache.Record, error) {
 	unlock, err := r.vaults.lock(ctx, vault)
 	if err != nil {
 		return resultcache.Record{}, err
 	}
 	defer unlock()
-	return r.run(ctx, job{vaultID: vault, vault: r.open(vault), path: notePath, priority: priority, settings: r.settings()})
+	return r.run(ctx, job{
+		vaultID: vault, vault: r.open(vault), path: notePath, priority: host.SearchPriorityInteractive, isBackground: false,
+	})
 }
 
 func (r *Runner) listDueSearches(ctx context.Context, v Vault, searches []search, settings Settings) ([]search, time.Time) {
-	listed, err := r.reranker.ListRerankers(ctx)
-	current := rows{rerankers: listed, isKnown: err == nil}
 	now := r.now()
 	var due []search
 	var wakeAt time.Time
@@ -110,7 +110,7 @@ func (r *Runner) listDueSearches(ctx context.Context, v Vault, searches []search
 		}
 		record, hasRecord, err := readRecord(ctx, v.Store, one.name)
 		switch {
-		case err != nil, !hasRecord, isChanged(readTarget(stat, raw, settings), record), isRerankerChanged(record, current):
+		case err != nil, !hasRecord, isChanged(readTarget(stat, raw), record):
 			due = append(due, one)
 		case record.StaleSince == nil:
 		case !now.Before(getCooldownEnd(record, settings)):
@@ -209,10 +209,21 @@ func (r *Runner) StartRunDue(ctx context.Context, vault domain.VaultID) {
 }
 
 // StartRunNow runs RunNow in the background until ctx ends, as an edit of the search in the tab does.
-func (r *Runner) StartRunNow(ctx context.Context, vault domain.VaultID, notePath string, priority connection.Priority) {
+func (r *Runner) StartRunNow(ctx context.Context, vault domain.VaultID, notePath string) {
 	go func() {
-		if _, err := r.RunNow(ctx, vault, notePath, priority); err != nil {
+		if _, err := r.RunNow(ctx, vault, notePath); err != nil {
 			slog.Debug("saved search: run an edited search", "vault", vault, "path", notePath, "error", err)
 		}
 	}()
+}
+
+// CheckQuery runs the query on the core as an interactive search and returns its problems, counted from
+// the first line of the query; none when the query is valid and its providers answered.
+func (r *Runner) CheckQuery(ctx context.Context, vault domain.VaultID, query string) ([]api.Problem, error) {
+	start := host.SearchStart{Query: query, Priority: host.SearchPriorityInteractive, IsBackground: false}
+	result, err := runSearch(ctx, r.open(vault).Search, start)
+	if err != nil {
+		return nil, err
+	}
+	return convertSearchProblems(result.state.Errors), nil
 }

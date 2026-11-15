@@ -99,17 +99,14 @@ func convertNoteError(notePath string, err error) error {
 func newResultsResponse(notePath string, state refresh.State) api.GetResultsResponse {
 	record := state.Record
 	response := api.GetResultsResponse{
-		Path: notePath, Title: state.Definition.Title, Query: state.Definition.Query, Rerank: state.Definition.Rerank,
-		Limit: state.Definition.Limit, ComputedAt: formatTime(record.ComputedAt), FailedAt: "", Failure: record.Failure,
-		IsStale: state.IsStale, IsRunning: state.IsRunning, Order: record.Order, CandidateCount: record.CandidateCount,
-		Results: make([]api.PreviewResult, len(record.Results)), Warnings: []string{}, Errors: []api.Problem{},
+		Path: notePath, Title: state.Definition.Title, Query: state.Definition.Query,
+		ComputedAt: formatTime(record.ComputedAt), FailedAt: "", Failure: record.Failure, IsStale: state.IsStale,
+		IsRunning: state.IsRunning, Order: record.Order, Results: []api.Result{}, Warnings: []string{}, Errors: []api.Problem{},
 	}
 	if record.FailedAt != nil {
 		response.FailedAt = formatTime(*record.FailedAt)
 	}
-	for i, result := range record.Results {
-		response.Results[i] = result.PreviewResult
-	}
+	response.Results = append(response.Results, record.Results...)
 	response.Warnings = append(response.Warnings, record.Warnings...)
 	response.Errors = append(response.Errors, state.Problems...)
 	return response

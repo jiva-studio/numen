@@ -2,7 +2,6 @@ package refresh_test
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -10,32 +9,26 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/reranker"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/reranker/rerankertest"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/preview"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/refresh"
 )
 
 const testVault domain.VaultID = "harbor-vault"
 
 const (
-	stormsID         = "01JCX6Q4ZB3W8N2V7T5R9K1M0P"
-	stormsPath       = "Searches/Winter storms.md"
-	galesID          = "01JCX6Q4ZB3W8N2V7T5R9K1M0Q"
-	galesPath        = "Searches/Gales.md"
-	stormsQuery      = `meaning("storm")`
-	stormsRerank     = "Stories of storms at the harbor"
-	harborConnection = "conn-harbor"
+	stormsID    = "01JCX6Q4ZB3W8N2V7T5R9K1M0P"
+	stormsPath  = "Searches/Winter storms.md"
+	galesID     = "01JCX6Q4ZB3W8N2V7T5R9K1M0Q"
+	galesPath   = "Searches/Gales.md"
+	stormsQuery = `meaning("storm").rerank("Stories of storms at the harbor")`
+	galesQuery  = `words("storm")`
+	brokenQuery = `meaning("storm") &&`
 
 	galeText     = "A storm at the harbor mouth."
 	mooringText  = "The storm broke two moorings."
-	lampText     = "The lighthouse lamp was lit."
 	winterText   = "Storm after storm all winter."
 	mooringsText = "The storm broke three moorings."
 )
@@ -44,80 +37,66 @@ func getStartTime() time.Time {
 	return time.Date(2026, 11, 14, 9, 30, 0, 0, time.UTC)
 }
 
-func embedByTopic(text string) []float32 {
-	// The fake model gives a text one dimension for each topic, the count of the topic's word in it.
-	topics := []string{"tide", "lighthouse", "storm", "harbor"}
-	lower := strings.ToLower(text)
-	vector := make([]float32, len(topics))
-	hasTopic := false
-	for i, topic := range topics {
-		vector[i] = float32(strings.Count(lower, topic))
-		hasTopic = hasTopic || vector[i] > 0
-	}
-	if !hasTopic {
-		return nil
-	}
-	return vector
-}
-
-func formatSearchNote(id, query, rerank string, limit int) string {
+func formatSearchNote(id, query string) string {
 	var b strings.Builder
 	b.WriteString("---\n")
 	if id != "" {
 		b.WriteString("id: " + id + "\n")
 	}
-	b.WriteString("type: search\n")
-	if rerank != "" {
-		b.WriteString("rerank: " + rerank + "\n")
-	}
-	if limit > 0 {
-		fmt.Fprintf(&b, "limit: %d\n", limit)
-	}
-	b.WriteString("---\n```numen-query\n" + query + "\n```\n")
+	b.WriteString("type: search\n---\n```numen-query\n" + query + "\n```\n")
 	return b.String()
 }
 
-func chunk(id, path string, start, length int, text string) host.SearchResult {
-	return host.SearchResult{ChunkID: id, Path: path, Start: start, Length: length, Text: text}
+func passage(path, text string, score float64) host.SearchResult {
+	return host.SearchResult{Path: path, Title: strings.TrimSuffix(path[strings.LastIndex(path, "/")+1:], ".md"), Kind: "note",
+		Text: text, Start: 0, Length: 400, Score: &score}
 }
 
-// countingSearch is the host search of the vault, counting the searches of the plugin. onSearch, when set,
-// runs at the start of each search. failure, when set, is the answer of every search.
+func getStormsAnswer(results ...host.SearchResult) host.SearchState {
+	return host.SearchState{
+		Results: results, ScoreKind: "rerank", Floor: 0.4, IndexGeneration: "gen-7", Warnings: []string{},
+		Reranks: []host.SearchRerank{{ConnectionName: "Harbor reranker", SentCount: len(results), ReusedCount: 0}},
+	}
+}
+
+// countingSearch is the search of the core, counting the searches on their way between their start and
+// their removal. onStart, when set, runs at each start; failure, when set, is the answer of every read.
 type countingSearch struct {
-	ports.Search
+	*hosttest.Searches
 	mu        sync.Mutex
-	calls     int
 	active    int
 	maxActive int
-	onSearch  func()
+	onStart   func()
 	failure   error
 }
 
-func (c *countingSearch) SearchText(ctx context.Context, query host.SearchResultQuery) ([]host.SearchResult, error) {
+func (c *countingSearch) StartSearch(ctx context.Context, start host.SearchStart) (string, error) {
 	c.mu.Lock()
-	c.calls++
 	c.active++
 	c.maxActive = max(c.maxActive, c.active)
-	hook, failure := c.onSearch, c.failure
+	hook := c.onStart
 	c.mu.Unlock()
 	if hook != nil {
 		hook()
 	}
-	defer func() {
-		c.mu.Lock()
-		c.active--
-		c.mu.Unlock()
-	}()
-	if failure != nil {
-		return nil, failure
-	}
-	return c.Search.SearchText(ctx, query)
+	return c.Searches.StartSearch(ctx, start)
 }
 
-func (c *countingSearch) getCallCount() int {
+func (c *countingSearch) GetSearch(ctx context.Context, id string, read host.SearchRead) (host.SearchState, error) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.calls
+	failure := c.failure
+	c.mu.Unlock()
+	if failure != nil {
+		return host.SearchState{}, failure
+	}
+	return c.Searches.GetSearch(ctx, id, read)
+}
+
+func (c *countingSearch) RemoveSearch(ctx context.Context, id string) error {
+	c.mu.Lock()
+	c.active--
+	c.mu.Unlock()
+	return c.Searches.RemoveSearch(ctx, id)
 }
 
 func (c *countingSearch) getMaxActive() int {
@@ -126,10 +105,16 @@ func (c *countingSearch) getMaxActive() int {
 	return c.maxActive
 }
 
+func (c *countingSearch) getActiveCount() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.active
+}
+
 func (c *countingSearch) setHook(hook func()) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.onSearch = hook
+	c.onStart = hook
 }
 
 func (c *countingSearch) setFailure(failure error) {
@@ -173,10 +158,8 @@ func (r *recordingTasks) getFinishedIDs() []string {
 
 type world struct {
 	vault    *hosttest.Vault
-	search   *hosttest.Search
+	searches *hosttest.Searches
 	host     *countingSearch
-	rows     *rerankertest.Rows
-	standIn  *rerankertest.StandIn
 	tasks    *recordingTasks
 	clock    *clock.Fake
 	mu       sync.Mutex
@@ -186,34 +169,27 @@ type world struct {
 
 func newWorld(t *testing.T, refreshMinutes int) *world {
 	t.Helper()
-	search := hosttest.NewSearch(testVault)
-	search.SetModel(hosttest.SearchModel{Name: "harbor-model", Recipe: "harbor-recipe", FloorHint: 0.4})
-	search.SetEmbedder(embedByTopic)
+	searches := hosttest.NewSearches()
 	fake := new(clock.Fake)
 	fake.Set(getStartTime())
 	w := &world{
 		vault:    hosttest.New(string(testVault)),
-		search:   search,
-		host:     &countingSearch{Search: search.With(testVault)},
-		rows:     rerankertest.NewRows(),
-		standIn:  rerankertest.NewStandIn(map[string]float32{galeText: 0.9, mooringText: 0.6, winterText: 0.8, mooringsText: 0.7}),
+		searches: searches,
+		host:     &countingSearch{Searches: searches},
 		tasks:    &recordingTasks{},
 		clock:    fake,
-		settings: refresh.Settings{Preview: preview.DefaultConfig(), RefreshMinutes: refreshMinutes},
+		settings: refresh.Settings{RefreshMinutes: refreshMinutes},
 	}
-	w.rows.Add(harborConnection, "Harbor reranker", map[string]string{"model": "harbor-rerank-a"}, w.standIn)
-	w.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery, stormsRerank, 0))
-	w.index(
-		chunk("c1", "Harbor/Gale.md", 0, 400, galeText),
-		chunk("c2", "Logbooks/1911.md", 0, 400, mooringText),
-		chunk("c3", "Harbor/Lamp.md", 0, 400, lampText),
-	)
+	w.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery))
+	w.setStorms(passage("Harbor/Gale.md", galeText, 0.9), passage("Logbooks/1911.md", mooringText, 0.6))
+	searches.SetAnswer(galesQuery, host.SearchState{Results: []host.SearchResult{passage("Harbor/Gale.md", galeText, 1)}, ScoreKind: "words"})
+	searches.SetAnswer(brokenQuery, host.SearchState{Errors: []host.SearchProblem{{Line: 1, Column: 20, Message: "Syntax error: unexpected end of input"}}})
 	w.runner = w.newRunner()
 	return w
 }
 
 func (w *world) newRunner() *refresh.Runner {
-	return refresh.New(refresh.Dependencies{Open: w.open, Reranker: reranker.New(w.rows), Tasks: w.tasks}, w.getSettings, w.clock)
+	return refresh.New(refresh.Dependencies{Open: w.open, Tasks: w.tasks}, w.getSettings, w.clock)
 }
 
 func (w *world) open(id domain.VaultID) refresh.Vault {
@@ -226,32 +202,21 @@ func (w *world) getSettings() refresh.Settings {
 	return w.settings
 }
 
-func (w *world) setPreviewConfig(config preview.Config) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.settings.Preview = config
-}
-
-func (w *world) index(results ...host.SearchResult) {
-	w.search.With(testVault).SetIndexedResults(results)
+func (w *world) setStorms(results ...host.SearchResult) {
+	w.searches.SetAnswer(stormsQuery, getStormsAnswer(results...))
 }
 
 func (w *world) addWinterNote() {
 	w.vault.File("Harbor/Winter.md", "# Winter\n\n"+winterText+"\n")
-	w.index(
-		chunk("c1", "Harbor/Gale.md", 0, 400, galeText),
-		chunk("c2", "Logbooks/1911.md", 0, 400, mooringText),
-		chunk("c3", "Harbor/Lamp.md", 0, 400, lampText),
-		chunk("c4", "Harbor/Winter.md", 0, 400, winterText),
-	)
+	w.setStorms(passage("Harbor/Gale.md", galeText, 0.9), passage("Harbor/Winter.md", winterText, 0.8), passage("Logbooks/1911.md", mooringText, 0.6))
 }
 
 func (w *world) changeMooringChunk() {
-	w.index(
-		chunk("c1", "Harbor/Gale.md", 0, 400, galeText),
-		chunk("c2", "Logbooks/1911.md", 0, 400, mooringsText),
-		chunk("c3", "Harbor/Lamp.md", 0, 400, lampText),
-	)
+	w.setStorms(passage("Harbor/Gale.md", galeText, 0.9), passage("Logbooks/1911.md", mooringsText, 0.7))
+}
+
+func (w *world) getStartCount() int {
+	return len(w.searches.ListStarted())
 }
 
 func (w *world) runDueSearches(t *testing.T) {
@@ -271,7 +236,7 @@ func (w *world) changeIndex(t *testing.T) {
 
 func (w *world) runNow(t *testing.T, notePath string) resultcache.Record {
 	t.Helper()
-	record, err := w.runner.RunNow(t.Context(), testVault, notePath, connection.PriorityInteractive)
+	record, err := w.runner.RunNow(t.Context(), testVault, notePath)
 	if err != nil {
 		t.Fatalf("RunNow(%s) = %v", notePath, err)
 	}
@@ -329,13 +294,7 @@ func formatMark(mark *time.Time) string {
 
 func getLogbookPage() host.SearchResult {
 	return host.SearchResult{
-		ChunkID: "ch-1911-14", Path: "Logbooks/1911.pdf", Start: 48210, Length: 2410,
-		Text: "The harbor master rowed out while the storm rose.", Selector: `{"page":14}`,
+		Path: "Logbooks/1911.pdf", Title: "1911", Kind: "pdf", Start: 48210, Length: 2410, MatchLine: 379,
+		Text: "The harbor master rowed out while the storm rose.", Selector: `{"page":14}`, PlaceLabel: "p. 14",
 	}
-}
-
-func (c *countingSearch) getActiveCount() int {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.active
 }

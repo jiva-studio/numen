@@ -1,5 +1,5 @@
-// Package service is the backend of the saved search plugin: it builds the host clients, the reranker,
-// the settings and the runner of the saved searches, registers the tools and the service of the tab, and
+// Package service is the backend of the saved search plugin: it builds the host clients, the settings and
+// the runner of the saved searches, registers the tools and the service of the tab, and
 // handles the index changes of the host.
 package service
 
@@ -7,25 +7,21 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/reranker"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/settings"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/refresh"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/savedsearch"
 )
 
-// Hosts is what the plugin works through the host: the vaults it opens, the window, the rows of its
-// connections setting and the task list.
+// Hosts is what the plugin works through the host: the vaults it opens, the window and the task list.
 type Hosts struct {
 	Open   func(id domain.VaultID) refresh.Vault
 	Window ports.Window
-	Rows   reranker.Rows
 	Tasks  ports.Tasks
 }
 
@@ -39,10 +35,9 @@ type App struct {
 
 // parts are what the hosts are worked through, built once.
 type parts struct {
-	hosts    Hosts
-	reranker *reranker.Reranker
-	runner   *refresh.Runner
-	notes    *savedsearch.UseCase
+	hosts  Hosts
+	runner *refresh.Runner
+	notes  *savedsearch.UseCase
 }
 
 // NewApp returns the backend that connects to the host the process was launched for when it is mounted;
@@ -132,19 +127,18 @@ func (a *App) getParts() (*parts, error) {
 }
 
 func (a *App) newParts(hosts Hosts) *parts {
-	rerank := reranker.New(hosts.Rows)
-	runner := refresh.New(refresh.Dependencies{Open: hosts.Open, Reranker: rerank, Tasks: hosts.Tasks}, a.settings.GetSettings, a.clock)
+	runner := refresh.New(refresh.Dependencies{Open: hosts.Open, Tasks: hosts.Tasks}, a.settings.GetSettings, a.clock)
 	notes := savedsearch.New(savedsearch.Dependencies{
 		Open:     func(id domain.VaultID) ports.Notes { return hosts.Open(id).Notes },
 		Runner:   runner,
 		Settings: a.getNoteSettings,
 		Clock:    a.clock,
 	})
-	return &parts{hosts: hosts, reranker: rerank, runner: runner, notes: notes}
+	return &parts{hosts: hosts, runner: runner, notes: notes}
 }
 
 func (a *App) getNoteSettings() savedsearch.Settings {
-	return savedsearch.Settings{Preview: a.settings.GetConfig(), DefaultFolder: a.settings.GetDefaultFolder()}
+	return savedsearch.Settings{DefaultFolder: a.settings.GetDefaultFolder()}
 }
 
 func openFromEnv() (Hosts, error) {
@@ -164,13 +158,9 @@ func openFromEnv() (Hosts, error) {
 	if err != nil {
 		return Hosts{}, err
 	}
-	connections, err := connection.NewClientFromEnv()
-	if err != nil {
-		return Hosts{}, err
-	}
 	open := func(id domain.VaultID) refresh.Vault {
 		vault := client.With(id)
 		return refresh.Vault{Notes: vault, Lookup: vault, Search: search.With(id), Store: store.With(id)}
 	}
-	return Hosts{Open: open, Window: client, Rows: connections, Tasks: queue}, nil
+	return Hosts{Open: open, Window: client, Tasks: queue}, nil
 }

@@ -1,5 +1,5 @@
-// Package savedsearch writes saved search notes: it creates them and changes their query, rerank text and
-// limit for the agent tools and the tab.
+// Package savedsearch writes saved search notes: it creates them and changes their query for the agent
+// tools and the tab.
 package savedsearch
 
 import (
@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
@@ -20,20 +19,20 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/searchnote"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/textplace"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/preview"
 )
 
 var errEmptyTitle = errors.New("title is empty")
 
-// Runner runs a saved search at once, waiting for the run or in the background.
+// Runner runs a saved search at once, waiting for the run or in the background, and checks a query on the
+// core.
 type Runner interface {
-	RunNow(ctx context.Context, vault domain.VaultID, notePath string, priority connection.Priority) (resultcache.Record, error)
-	StartRunNow(ctx context.Context, vault domain.VaultID, notePath string, priority connection.Priority)
+	RunNow(ctx context.Context, vault domain.VaultID, notePath string) (resultcache.Record, error)
+	StartRunNow(ctx context.Context, vault domain.VaultID, notePath string)
+	CheckQuery(ctx context.Context, vault domain.VaultID, query string) ([]api.Problem, error)
 }
 
-// Settings are the numbers a query is checked with and the folder a note goes to when the call names none.
+// Settings are the folder a note goes to when the call names none.
 type Settings struct {
-	Preview       preview.Config
 	DefaultFolder string
 }
 
@@ -60,11 +59,11 @@ func New(dependencies Dependencies) *UseCase {
 }
 
 // Create writes a new saved search note named after its title, in the folder of the input or of the
-// setting, scans it, and runs it at once. A query that is not valid returns its problems in the output and
-// writes nothing.
+// setting, scans it, and runs it at once. A query the core reports problems of returns them in the output
+// and writes nothing.
 func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in api.CreateInput) (api.SavedOutput, error) {
 	settings := u.settings()
-	problems, err := checkQuery(settings.Preview, in.Query, in.Limit)
+	problems, err := u.runner.CheckQuery(ctx, vault, in.Query)
 	if err != nil || len(problems) > 0 {
 		return newProblemOutput(problems), err
 	}
@@ -85,7 +84,7 @@ func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in api.Creat
 	if err != nil {
 		return api.SavedOutput{}, err
 	}
-	definition := searchnote.Definition{ID: id, Title: title, Query: in.Query, Rerank: in.Rerank, Limit: in.Limit}
+	definition := searchnote.Definition{ID: id, Title: title, Query: in.Query}
 	raw, err := searchnote.Create(id, title, exact, definition)
 	if err != nil {
 		return api.SavedOutput{}, err
@@ -103,12 +102,6 @@ func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in api.Creat
 	return u.runFirst(ctx, vault, notePath)
 }
 
-func checkQuery(config preview.Config, query string, limit int) ([]api.Problem, error) {
-	plan, err := preview.New(preview.Dependencies{Search: nil, Notes: nil, Reranker: nil}, config).
-		Plan(api.PreviewInput{Query: query, Rerank: "", Limit: limit})
-	return plan.Problems, err
-}
-
 func newProblemOutput(problems []api.Problem) api.SavedOutput {
 	return api.SavedOutput{
 		Path: "", URI: "", ResultCount: 0, Order: "", ComputedAt: "", Warnings: nil, Errors: problems,
@@ -116,7 +109,7 @@ func newProblemOutput(problems []api.Problem) api.SavedOutput {
 }
 
 func (u *UseCase) runFirst(ctx context.Context, vault domain.VaultID, notePath string) (api.SavedOutput, error) {
-	record, err := u.runner.RunNow(ctx, vault, notePath, connection.PriorityInteractive)
+	record, err := u.runner.RunNow(ctx, vault, notePath)
 	if err != nil && ctx.Err() != nil {
 		return api.SavedOutput{}, ctx.Err()
 	}

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 )
 
 func TestMarkStaleKeepsTheFirstStaleTime(t *testing.T) {
@@ -40,30 +40,17 @@ func TestMarkStaleCreatesNoCache(t *testing.T) {
 	}
 }
 
-func TestIndexChangeDuringARunMarksTheSearchStaleAgain(t *testing.T) {
+func TestCoreReportOfAnIndexChangeDuringTheRunLeavesTheSearchStale(t *testing.T) {
 	w := newWorld(t, 10)
-	w.runDueSearches(t)
-	w.clock.Advance(time.Minute)
-	var markedAt time.Time
-	w.host.setHook(func() {
-		w.host.setHook(nil)
-		markedAt = w.clock.Advance(time.Second)
-		marked := make(chan error, 1)
-		go func() { marked <- w.runner.MarkStale(t.Context(), testVault) }()
-		select {
-		case err := <-marked:
-			if err != nil {
-				t.Errorf("MarkStale during the run = %v", err)
-			}
-		case <-time.After(5 * time.Second):
-			t.Error("MarkStale waited for the run to end")
-		}
-	})
+	answer := getStormsAnswer(passage("Harbor/Gale.md", galeText, 0.9))
+	answer.IsStale = true
+	w.searches.SetAnswer(stormsQuery, answer)
+	ranAt := w.clock.Advance(time.Minute)
 
 	w.runNow(t, stormsPath)
 
-	if record := w.readRecord(t, stormsID); !isAt(record.StaleSince, markedAt) {
-		t.Errorf("stale since %s, want the mark of the index change during the run, %v", formatMark(record.StaleSince), markedAt)
+	if record := w.readRecord(t, stormsID); !isAt(record.StaleSince, ranAt) || len(record.Results) != 1 {
+		t.Errorf("record = %+v, want the results of the run, stale since the run", record)
 	}
 }
 
@@ -89,7 +76,7 @@ func TestEditOfTheNoteWithinTheCooldownRunsAtTheNextIndexChange(t *testing.T) {
 	w := newWorld(t, 10)
 	w.runDueSearches(t)
 
-	w.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery, stormsRerank, 1))
+	w.vault.File(stormsPath, formatSearchNote(stormsID, galesQuery))
 	ranAt := w.clock.Advance(8 * time.Second)
 	w.changeIndex(t)
 
@@ -98,13 +85,12 @@ func TestEditOfTheNoteWithinTheCooldownRunsAtTheNextIndexChange(t *testing.T) {
 	}
 }
 
-func TestRerankerFailureKeepsTheLastGoodResultsAndRetriesAfterTheCooldown(t *testing.T) {
+func TestFailingProviderKeepsTheLastGoodResultsAndRetriesAfterTheCooldown(t *testing.T) {
 	w := newWorld(t, 10)
 	w.runDueSearches(t)
 	good := w.readRecord(t, stormsID)
 
-	w.standIn.Fail(connection.NewTryNextError(connection.ReasonUnavailable, 0))
-	w.changeMooringChunk()
+	w.searches.SetAnswer(stormsQuery, host.SearchState{Errors: []host.SearchProblem{{Message: "the reranking service did not answer"}}})
 	failedAt := w.clock.Advance(20 * time.Minute)
 	w.changeIndex(t)
 
@@ -112,24 +98,24 @@ func TestRerankerFailureKeepsTheLastGoodResultsAndRetriesAfterTheCooldown(t *tes
 	if !slices.Equal(getResultTexts(failed), getResultTexts(good)) || !failed.ComputedAt.Equal(good.ComputedAt) || failed.Order != good.Order {
 		t.Errorf("record = %+v, want the last good results, order and time", failed)
 	}
-	if !isAt(failed.FailedAt, failedAt) || !strings.Contains(failed.Failure, "reranking") || failed.StaleSince == nil {
-		t.Errorf("failed at %s with %q, stale since %s, want the failure now and the search still stale",
-			formatMark(failed.FailedAt), failed.Failure, formatMark(failed.StaleSince))
+	if !isAt(failed.FailedAt, failedAt) || len(failed.Errors) != 1 || !strings.Contains(failed.Errors[0].Message, "reranking") || failed.StaleSince == nil {
+		t.Errorf("failed at %s with %+v, stale since %s, want the problem now and the search still stale",
+			formatMark(failed.FailedAt), failed.Errors, formatMark(failed.StaleSince))
 	}
 
-	w.standIn.Fail(nil)
-	w.standIn.ClearRequests()
+	w.changeMooringChunk()
+	starts := w.getStartCount()
 	w.clock.Advance(time.Minute)
 	w.changeIndex(t)
-	if requests := w.standIn.GetRequests(); len(requests) != 0 {
-		t.Errorf("rerank requests = %v within the cooldown of the failed run, want none", getDocuments(requests))
+	if got := w.getStartCount(); got != starts {
+		t.Errorf("%d searches within the cooldown of the failed run, want none", got-starts)
 	}
 
 	retriedAt := w.clock.Advance(9 * time.Minute)
 	w.runDueSearches(t)
 
 	record := w.readRecord(t, stormsID)
-	if !record.ComputedAt.Equal(retriedAt) || record.FailedAt != nil || record.Failure != "" || record.StaleSince != nil {
+	if !record.ComputedAt.Equal(retriedAt) || record.FailedAt != nil || record.Failure != "" || record.StaleSince != nil || len(record.Errors) != 0 {
 		t.Errorf("record = %+v, want a good run that clears the failure", record)
 	}
 	if !slices.Contains(getResultTexts(record), mooringsText) {

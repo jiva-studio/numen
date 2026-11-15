@@ -1,51 +1,46 @@
 {
   "path": "Harbor/Harbor master - winter storms.md",
   "title": "Harbor master: winter storms",
-  "query": "kind in [\"note\", \"pdf\"]\n&& (path.startsWith(\"Harbor/\") || path.startsWith(\"Logbooks/\"))\n&& meaning(\"the harbor master in a winter storm\")",
-  "rerank": "Stories of the harbor master keeping the boats safe in winter storms.",
-  "limit": 30,
+  "query": "kind in [\"note\", \"pdf\"]\n&& meaning(\"the harbor master in a winter storm\")\n.rerank(\"Stories of the harbor master keeping the boats safe in winter storms.\")\n.top(30)",
   "computedAt": "2026-11-14T09:30:00Z",
   "failedAt": "",
   "failure": "",
   "isStale": false,
   "isRunning": false,
   "order": "reranked",
-  "candidateCount": 214,
   "results": [
     {
       "path": "Logbooks/1911.pdf",
       "title": "1911",
-      "place": { "page": 14, "pageCount": 212 },
+      "kind": "pdf",
+      "place": { "page": 14 },
       "text": "…the harbor master rowed out to the moored boats while the storm…",
       "start": 48210,
       "length": 2410,
       "line": 380,
       "uri": "numen:Logbooks/1911.pdf?start=48210&length=2410",
-      "score": 0.913,
-      "chunkCount": 2
+      "score": 0.913
     },
     {
       "path": "Harbor/Night of the gale.md",
       "title": "Night of the gale",
+      "kind": "note",
       "text": "The gale broke two moorings before the harbor master reached the pier.",
       "start": 0,
       "length": 712,
       "line": 4,
       "uri": "numen:Harbor/Night%20of%20the%20gale.md?start=0&length=712",
-      "score": 0.874,
-      "chunkCount": 1
+      "score": 0.874
     },
     {
-      "path": "Recordings/Pier talk.m4a",
-      "title": "Pier talk",
-      "place": { "positionSeconds": 754.5, "endSeconds": 812 },
-      "text": "…and that winter he slept at the harbor office every storm night…",
-      "start": 10233,
-      "length": 1180,
-      "line": 96,
-      "uri": "numen:Recordings/Pier%20talk.m4a?start=10233&length=1180",
-      "score": 0.801,
-      "chunkCount": 1
+      "path": "Harbor/Pier plan.png",
+      "title": "Pier plan",
+      "kind": "image",
+      "start": 0,
+      "length": 0,
+      "line": 1,
+      "uri": "numen:Harbor/Pier%20plan.png",
+      "isWholeFile": true
     }
   ],
   "warnings": [],
