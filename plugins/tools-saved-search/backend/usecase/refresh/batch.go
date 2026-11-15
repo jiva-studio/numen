@@ -212,9 +212,13 @@ func (r *Runner) StartRunDue(ctx context.Context, vault domain.VaultID) {
 	}()
 }
 
-// StartRunNow runs RunNow in the background until ctx ends, as an edit of the search in the tab does.
+// StartRunNow runs RunNow in the background until ctx ends, as an edit of the search in the tab does. It
+// cancels the check or run of the previous edit of the note, and the next edit of the note or the end of
+// its last watch cancels it.
 func (r *Runner) StartRunNow(ctx context.Context, vault domain.VaultID, notePath string) {
+	ctx, end := r.edits.start(ctx, watchKey{vault: vault, path: notePath}, true)
 	go func() {
+		defer end()
 		if _, err := r.RunNow(ctx, vault, notePath); err != nil {
 			r.log.Debug("saved search: run an edited search", "vault", vault, "path", notePath, "error", err)
 		}
@@ -230,4 +234,12 @@ func (r *Runner) CheckQuery(ctx context.Context, vault domain.VaultID, query str
 		return nil, err
 	}
 	return convertSearchProblems(result.state.Errors), nil
+}
+
+// CheckNoteQuery is CheckQuery for an edit of the note at notePath. It cancels the check or run of the
+// previous edit of the note; the next edit of the note cancels it, and it then returns context.Canceled.
+func (r *Runner) CheckNoteQuery(ctx context.Context, vault domain.VaultID, notePath string, query string) ([]resultcache.Problem, error) {
+	ctx, end := r.edits.start(ctx, watchKey{vault: vault, path: notePath}, false)
+	defer end()
+	return r.CheckQuery(ctx, vault, query)
 }

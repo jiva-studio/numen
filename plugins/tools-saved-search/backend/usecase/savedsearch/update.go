@@ -21,6 +21,9 @@ var (
 	errNoQuery = errors.New("give query")
 	// ErrChanged is what a change gets when the note changed between its read and its write.
 	ErrChanged = errors.New("the note changed while it was updated; try again")
+	// ErrSuperseded is what a change gets when a newer change of the note started before its query was
+	// checked.
+	ErrSuperseded = errors.New("a newer change of the note replaced this one")
 )
 
 // Update writes the query of the input into a saved search note, scans it, and runs it at once. A query
@@ -42,9 +45,13 @@ func (u *UseCase) Update(ctx context.Context, vault domain.VaultID, in UpdateInp
 // Write writes the query into the saved search note at notePath, scans it, and starts its run in the
 // background without waiting for it: a saved search note is not indexed, so no index change runs it. A
 // query the core reports problems of returns its problems, counted from the first line of
-// the query, and changes nothing.
+// the query, and changes nothing. A change that a newer change of the note replaced before its query was
+// checked changes nothing and returns no problem.
 func (u *UseCase) Write(ctx context.Context, vault domain.VaultID, notePath string, query string) ([]resultcache.Problem, error) {
 	problems, err := u.write(ctx, vault, notePath, query)
+	if errors.Is(err, ErrSuperseded) {
+		return []resultcache.Problem{}, nil
+	}
 	if err != nil || len(problems) > 0 {
 		return problems, err
 	}
@@ -72,7 +79,10 @@ func (u *UseCase) write(ctx context.Context, vault domain.VaultID, notePath stri
 	if !searchnote.IsSearch(stat, raw) {
 		return nil, fmt.Errorf("%s is %w", notePath, searchnote.ErrNotASearch)
 	}
-	problems, err := u.runner.CheckQuery(ctx, vault, query)
+	problems, err := u.runner.CheckNoteQuery(ctx, vault, notePath, query)
+	if errors.Is(err, context.Canceled) && ctx.Err() == nil {
+		return nil, ErrSuperseded
+	}
 	if err != nil || len(problems) > 0 {
 		return problems, err
 	}

@@ -395,3 +395,33 @@ func TestUpdateSearchOfAMissingNoteIsNotFound(t *testing.T) {
 		t.Errorf("failure = %+v, want not_found", failure)
 	}
 }
+
+func TestUpdateSearchReplacedByANewerOneBeforeItsCheckEndsWritesNothingAndAnswersNoProblem(t *testing.T) {
+	f := newFixture(t, 10)
+	f.addStormsNote()
+	release := f.searches.HoldSearch(wordsQuery)
+	defer release()
+	before := f.getStartCount()
+	first := make(chan server.APIError, 1)
+	var firstResponse api.UpdateSearchResponse
+
+	go func() {
+		first <- f.call(t, api.MethodUpdateSearch, api.UpdateSearchRequest{Path: stormsPath, Query: wordsQuery}, &firstResponse)
+	}()
+	for deadline := time.Now().Add(5 * time.Second); f.getStartCount() == before; {
+		if time.Now().After(deadline) {
+			t.Fatal("the check of the first change did not start")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if failure := f.call(t, api.MethodUpdateSearch, api.UpdateSearchRequest{Path: stormsPath, Query: brokenQuery}, &api.UpdateSearchResponse{}); failure.Code != "" {
+		t.Fatal(failure)
+	}
+
+	if failure := <-first; failure.Code != "" || firstResponse.Errors == nil || len(firstResponse.Errors) != 0 {
+		t.Errorf("the replaced change answered %+v, %+v, want no problem", failure, firstResponse)
+	}
+	if content, _ := readNote(t, f, stormsPath); strings.Contains(content, wordsQuery) {
+		t.Errorf("note = %q, want the query of the replaced change not written", content)
+	}
+}

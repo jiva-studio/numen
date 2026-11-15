@@ -56,20 +56,29 @@ type Runner struct {
 	records  *sync.Mutex
 	watchers *watchers
 	timers   *timers
+	edits    *edits
 }
 
 // New returns a runner over the dependencies, with the settings at the time of each run.
 func New(dependencies Dependencies, settings func() Settings, clock ports.Clock) *Runner {
 	return &Runner{
 		open: dependencies.Open, tasks: dependencies.Tasks, log: dependencies.Log, settings: settings, clock: clock,
-		vaults: newVaultLocks(), records: &sync.Mutex{}, watchers: newWatchers(), timers: newTimers(),
+		vaults: newVaultLocks(), records: &sync.Mutex{}, watchers: newWatchers(), timers: newTimers(), edits: newEdits(),
 	}
 }
 
 // Watch returns a channel that receives each start of a run of the note and each write of its cache, and
-// the function that ends the watch and closes the channel.
+// the function that ends the watch and closes the channel. The end of the last watch of the note cancels
+// the run its latest edit started.
 func (r *Runner) Watch(vault domain.VaultID, notePath string) (<-chan Change, func()) {
-	return r.watchers.add(watchKey{vault: vault, path: notePath})
+	key := watchKey{vault: vault, path: notePath}
+	changes, stop := r.watchers.add(key)
+	return changes, func() {
+		stop()
+		if !r.watchers.isWatched(key) {
+			r.edits.cancelRun(key)
+		}
+	}
 }
 
 // IsRunning reports whether a run of the note is on its way.
