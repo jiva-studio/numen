@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
 var errNoVault = errors.New("the call names no vault")

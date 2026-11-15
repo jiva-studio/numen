@@ -158,7 +158,7 @@ func (v *Vault) ListFileChanges(ctx context.Context, q host.FileChangeQuery) (ho
 		limit = fileChangePageSize
 	}
 	head := v.feed.getCursor()
-	if q.Since.FeedID != head.FeedID || q.Since.Seq < v.feed.trimmed {
+	if q.Since.FeedID != head.FeedID || (q.Since.Seq > 0 && q.Since.Seq < v.feed.trimmed) {
 		return host.FileChangePage{Next: head, IsReset: true}, nil
 	}
 	changes := v.feed.listChanges(q.Since.Seq, q.Events)

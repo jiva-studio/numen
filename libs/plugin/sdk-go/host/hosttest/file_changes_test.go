@@ -88,3 +88,16 @@ func TestAResetFeedOrTrimmedRemovalsResetACursor(t *testing.T) {
 		t.Errorf("a query without events answered %v", err)
 	}
 }
+
+func TestTheStartOfTheFeedListsTheFilesAfterTrimmedRemovals(t *testing.T) {
+	v := hosttest.New("garden")
+	v.File("a.md", "A\n")
+	v.File("b.md", "B\n")
+	v.Remove("a.md")
+	v.TrimRemovals()
+	head := readFeed(t, v, host.FileChangeCursor{}).Next
+	page := readFeed(t, v, host.FileChangeCursor{FeedID: head.FeedID})
+	if page.IsReset || !slices.Equal(describe(page.Changes), []string{"b.md file.added"}) {
+		t.Errorf("the start of the feed answered %+v", page)
+	}
+}

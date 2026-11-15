@@ -12,16 +12,23 @@ import (
 
 // Lookups reads the index of the vault: the data of its notes and the links between them.
 type Lookups struct {
-	Notes Notes
-	Links Links
+	Notes   Notes
+	Changes Changes
+	Links   Links
 }
 
 // Notes reads the index data of the notes of the vault.
 type Notes struct {
-	Notes       query.GetNotes
-	Types       *query.GetTypes
-	NamedPaths  *query.GetNamedPaths
-	TypedPaths  query.GetPathsOfType
+	Notes      query.GetNotes
+	Types      *query.GetTypes
+	NamedPaths *query.GetNamedPaths
+	TypedPaths query.GetPathsOfType
+
+	session sessionAccess
+}
+
+// Changes reads the frontmatter of the notes of the vault and its file change feed.
+type Changes struct {
 	Frontmatter query.ReadFrontmatter
 	FileChanges query.ListFileChanges
 
@@ -106,7 +113,7 @@ func (l Links) ResolveLinks(
 	return l.Targets.Execute(ctx, v.ID, from, targets)
 }
 
-func (n Notes) ReadFrontmatter(ctx context.Context, q frontmatter.Query) (frontmatter.Page, error) {
+func (n Changes) ReadFrontmatter(ctx context.Context, q frontmatter.Query) (frontmatter.Page, error) {
 	v, err := n.session.open()
 	if err != nil {
 		return frontmatter.Page{}, err
@@ -114,7 +121,7 @@ func (n Notes) ReadFrontmatter(ctx context.Context, q frontmatter.Query) (frontm
 	return n.Frontmatter.Execute(ctx, v, q)
 }
 
-func (n Notes) ListFileChanges(ctx context.Context, q filechange.Query) (filechange.Page, error) {
+func (n Changes) ListFileChanges(ctx context.Context, q filechange.Query) (filechange.Page, error) {
 	v, err := n.session.open()
 	if err != nil {
 		return filechange.Page{}, err

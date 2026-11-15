@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchfunction"
 
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
-	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tags"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
 )
 
 // The query functions the manifest declares.

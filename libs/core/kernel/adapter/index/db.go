@@ -118,7 +118,7 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	}
 	read.SetMaxOpenConns(max(4, runtime.NumCPU()))
 	read.SetMaxIdleConns(max(2, runtime.NumCPU()/2))
-	if err := changefeed.Trim(ctx, write, time.Now().Add(-changefeed.RemovalLifetime)); err != nil {
+	if err := changefeed.Trim(ctx, write, changefeed.RemovalLifetime); err != nil {
 		return nil, errors.Join(err, read.Close(), write.Close())
 	}
 	return &DB{write: write, read: read, frontmatter: &note.FrontmatterChanges{}}, nil
@@ -142,9 +142,9 @@ func (d *DB) FrontmatterChanges() *note.FrontmatterChanges { return d.frontmatte
 // FileChanges reads the file change feed of each vault.
 func (d *DB) FileChanges() *changefeed.Feed { return changefeed.NewFeed(d.read) }
 
-// TrimFileChanges drops the removals the feeds stored before the time.
-func (d *DB) TrimFileChanges(ctx context.Context, before time.Time) error {
-	return changefeed.Trim(ctx, d.write, before)
+// TrimFileChanges drops the removals the feeds stored longer ago than the age.
+func (d *DB) TrimFileChanges(ctx context.Context, age time.Duration) error {
+	return changefeed.Trim(ctx, d.write, age)
 }
 
 // Maintenance writes, so it takes the pool that is allowed to.
