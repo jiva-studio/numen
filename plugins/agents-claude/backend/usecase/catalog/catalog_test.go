@@ -53,6 +53,9 @@ func TestNewRefusesAMissingLister(t *testing.T) {
 	if _, err := New(nil, func(error) {}, false); err == nil {
 		t.Error("a catalog without a lister was created")
 	}
+	if _, err := New(neverCalled(t), nil, false); err == nil {
+		t.Error("a catalog without a report callback was created")
+	}
 }
 
 func TestDepthLimitedToModelLevels(t *testing.T) {

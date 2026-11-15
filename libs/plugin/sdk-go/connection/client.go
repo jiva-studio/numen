@@ -113,17 +113,6 @@ func NewClientFromEnv() (*Client, error) {
 	return newClientAt(endpoint), nil
 }
 
-// NewClientFromVars creates a client for the host named by the NUMEN_HOST_PORT entry of vars,
-// authenticating with its NUMEN_PLUGIN_TOKEN entry. They are the variables a host gives a plugin it links
-// into its own process.
-func NewClientFromVars(vars map[string]string) (*Client, error) {
-	endpoint, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return newClientAt(endpoint), nil
-}
-
 func newClientAt(endpoint hostcall.Endpoint) *Client {
 	return NewClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Token)
 }

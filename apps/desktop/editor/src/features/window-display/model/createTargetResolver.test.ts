@@ -20,7 +20,7 @@ const note: AnyTabKind = {
 
 const create = (failure = '') => {
   const windowTabs = createTestTabs()
-  windowTabs.groups.registerKinds([note])
+  windowTabs.kinds.registerKinds([note])
   const vault = { id: 'vault-1', name: 'Harbor' }
   const resolve = createTargetResolver(
     windowTabs,

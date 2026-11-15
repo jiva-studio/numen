@@ -3,6 +3,7 @@ package embedding_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -54,22 +55,32 @@ func call(typeID, model, address string) connection.Call {
 }
 
 func TestTextsAreEmbeddedWithTheLimitOfTheOperation(t *testing.T) {
-	g := &gateway{vectors: [][]float32{{1, 2}}}
+	g := &gateway{vectors: [][]float32{{1, 2}, {3, 4}}}
 
-	result, err := newEmbedding(t, g).Embed(t.Context(), call("openai", "m", "https://api.test/v1"), &llm.EmbedRequest{Texts: []string{"a"}})
+	result, err := newEmbedding(t, g).Embed(t.Context(), call("openai", "m", "https://api.test/v1"), &llm.EmbedRequest{Texts: []string{"a", "b"}})
 
-	if err != nil || len(result.GetVectors()) != 1 || g.limit != limits.DefaultOtherLimit {
-		t.Errorf("result = %v, err = %v, limit = %v", result, err, g.limit)
+	if err != nil || len(result.GetVectors()) != 2 || g.limit != limits.DefaultOtherLimit {
+		t.Fatalf("result = %v, err = %v, limit = %v", result, err, g.limit)
+	}
+	if !slices.Equal(result.GetVectors()[0].GetValues(), []float32{1, 2}) || !slices.Equal(result.GetVectors()[1].GetValues(), []float32{3, 4}) {
+		t.Errorf("vectors = %v, want [[1 2] [3 4]]", result.GetVectors())
 	}
 }
 
 func TestNoTextIsNoRequest(t *testing.T) {
-	g := &gateway{}
+	g := &gateway{err: errors.New("should not be called")}
+	subject := newEmbedding(t, g)
 
-	result, err := newEmbedding(t, g).Embed(t.Context(), call("openai", "m", "https://api.test/v1"), &llm.EmbedRequest{})
+	result, err := subject.Embed(t.Context(), call("openai", "m", "https://api.test/v1"), &llm.EmbedRequest{})
 
 	if err != nil || len(result.GetVectors()) != 0 || g.texts != nil {
 		t.Errorf("result = %v, err = %v, texts = %v", result, err, g.texts)
+	}
+
+	canceled, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := subject.Embed(canceled, call("openai", "m", "https://api.test/v1"), &llm.EmbedRequest{}); !errors.Is(err, context.Canceled) {
+		t.Errorf("Embed with canceled context and no text = %v, want context.Canceled", err)
 	}
 }
 
@@ -143,5 +154,14 @@ func TestAProfileOfAnUnknownTypeOrAnAddressThatIsNoURLIsAnInvalidRequest(t *test
 	}
 	if _, err := subject.GetProfile(t.Context(), call("openai", "m", "ftp://api.test")); err == nil {
 		t.Error("an address that is not http got a profile")
+	}
+}
+
+func TestAnEmbeddingNeedsAGatewayAndLimits(t *testing.T) {
+	if _, err := embedding.New(nil, &limits.Limits{}); err == nil {
+		t.Error("an embedding was made with no gateway")
+	}
+	if _, err := embedding.New(&gateway{}, nil); err == nil {
+		t.Error("an embedding was made with no limits")
 	}
 }

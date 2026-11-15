@@ -3,9 +3,8 @@
  */
 import type { PluginLoader } from '@numen/plugin-loader'
 import type { SettingsStore } from '@/entities/settings'
-import type { createWindowLayout, WindowTabs } from '@/entities/tab'
+import type { WindowTabs } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
-import { readDetachedTab } from '@/features/tab-move'
 import { createLayoutStart, createPluginStart, createWindowBootstrap } from '@/features/app-start'
 import type { createWindowPalette } from '@/features/command-palette'
 import { createAppKeyRunner, createKeyHandler, useAppHotkeys } from '@/features/hotkeys'
@@ -18,6 +17,7 @@ import type { createWindowPalettes } from './createWindowPalettes'
 import type { createWindowPlugins } from './createWindowPlugins'
 import { createWindowTabMenu } from './createWindowTabMenu'
 import { registerSettingsPage } from './registerSettingsPage'
+import type { WindowApi } from './createWindowApi'
 
 /** What the keys of the window reach. */
 interface WindowKeysDeps {
@@ -63,33 +63,33 @@ function createPluginStarter(deps: PluginStarterDeps) {
   })
 }
 
+type WindowBase = ReturnType<typeof createWindowBase>
+
 /** What the start of the layout of the tabs reads. */
 export interface LayoutStarterDeps {
+  readonly api: WindowApi['tabs']
   readonly vaults: Pick<ReturnType<typeof useVaults>, 'activeVault'>
-  readonly windowTabs: WindowTabs
+  readonly tabs: WindowBase['tabs']
+  readonly tabParts: WindowBase['tabParts']
   readonly pluginLoader: PluginLoader
-  readonly layout: ReturnType<typeof createWindowLayout>
-  readonly isSecondary: boolean
-  readonly windowId: string
-  readonly openMovedTab: Parameters<typeof createLayoutStart>[0]['openDetachedTab']
   readonly writeMessage: MessageWriter
 }
 
 function createLayoutStarter(deps: LayoutStarterDeps) {
+  const { tabs, tabParts } = deps
   return createLayoutStart({
     vaults: deps.vaults,
-    windowTabs: deps.windowTabs,
+    windowTabs: tabs.windowTabs,
     pluginLoader: deps.pluginLoader,
     writeMessage: deps.writeMessage,
-    layout: deps.layout,
-    isSecondary: deps.isSecondary,
-    windowId: deps.windowId,
-    readDetachedTab,
-    openDetachedTab: deps.openMovedTab,
+    layout: tabParts.layout,
+    isSecondary: tabParts.isSecondary,
+    windowId: tabs.windowId,
+    readDetachedTab: deps.api.tabMove.readDetachedTab,
+    readOpenTabs: deps.api.savedTabs.readOpenTabs,
+    openDetachedTab: tabs.openMovedTab,
   })
 }
-
-type WindowBase = ReturnType<typeof createWindowBase>
 
 /** What the start of the window reads of the base, the plugins and the palettes. */
 export interface WindowStartDeps {
@@ -105,19 +105,16 @@ export interface WindowStartDeps {
 
 export function createWindowStart(deps: WindowStartDeps) {
   const { foundation, tabs, tabParts, vault, windowSettings, getTarget, plugins, palettes } = deps
-  const { log, rest, connections, frame, writeMessage, settingsRequests } = foundation
+  const { api, log, rest, frame } = foundation
+  const writeMessage = log.getWriter('command')
   const { windowTabs } = tabs
   const { pluginHost, pluginLoader, declaredCommands } = plugins
   const { editing, window, vaults } = vault
   registerSettingsPage({
-    rest,
-    connections,
+    foundation,
     windowSettings,
-    log,
     windowTabs,
     plugins: { host: pluginHost, health: window.pluginHealth, commands: plugins.hostPort.commands },
-    frame,
-    settingsRequests,
   })
   createWindowKeys({
     windowTabs,
@@ -143,13 +140,11 @@ export function createWindowStart(deps: WindowStartDeps) {
       tabLinkSession: tabs.linkSession,
       writeMessage,
       layout: createLayoutStarter({
+        api: api.tabs,
         vaults,
-        windowTabs,
+        tabs,
+        tabParts,
         pluginLoader,
-        layout: tabParts.layout,
-        isSecondary: tabParts.isSecondary,
-        windowId: tabs.windowId,
-        openMovedTab: tabs.openMovedTab,
         writeMessage,
       }),
       plugins: createPluginStarter({ pluginLoader, rest, declaredCommands, writeMessage }),

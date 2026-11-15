@@ -29,14 +29,17 @@ function pickDefinedParts<T extends object>(parts: T): DefinedParts<T> {
   return defined as DefinedParts<T>
 }
 
-/** The hooks of the registration the window takes unchanged, each only where the registration declares one. */
-export function pickDeclaredParts<State extends object>(
-  registration: TabKindRegistration<State>,
-): {
+/** The hooks of a registration the window takes unchanged. */
+export interface DeclaredParts<State extends object> {
   readonly display: TabKindDisplay<State>
   readonly events: TabKindEvents<State>
   readonly address: TabKindAddress<State>
-} {
+}
+
+/** The hooks of the registration the window takes unchanged, each only where the registration declares one. */
+export function pickDeclaredParts<State extends object>(
+  registration: TabKindRegistration<State>,
+): DeclaredParts<State> {
   return {
     display: pickDefinedParts({
       onShow: registration.onShow,

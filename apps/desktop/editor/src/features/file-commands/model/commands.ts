@@ -10,13 +10,14 @@ import {
   type CommandInvocation,
   type Notes,
 } from '@/shared/model/command'
-import { createFolder, listFiles, moveFile } from '@/entities/file'
+import type { FileApi } from '@/entities/file'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { generateUniqueName } from '@/shared/lib/paths'
 import { FILE_WORDS } from '../words'
 
 /** What the commands over files use of the window. */
 export interface FileCommandsDeps {
+  readonly files: Pick<FileApi, 'createFolder' | 'listFiles' | 'moveFile'>
   readonly notes: Notes
   readonly writeMessage: MessageWriter
 }
@@ -28,7 +29,7 @@ const moveFileCommand = async (
   if (!invocation.name || invocation.name === invocation.target.path) return
   const tab = await flushTab(invocation.target.path, deps.notes)
   if (tab.isWaiting) return deps.writeMessage(FILE_WORDS.unanswered, 'warning')
-  const answer = await moveFile(invocation.target.path, invocation.name)
+  const answer = await deps.files.moveFile(invocation.target.path, invocation.name)
   if (answer.ok) return
   if (answer.error === 'alreadyExists') {
     return deps.writeMessage(FILE_WORDS.alreadyExists, 'error')
@@ -36,9 +37,12 @@ const moveFileCommand = async (
   deps.writeMessage(FILE_WORDS.errors[answer.error], 'error')
 }
 
-const getUntitledFolderPath = async (invocation: CommandInvocation): Promise<string> => {
+const getUntitledFolderPath = async (
+  invocation: CommandInvocation,
+  deps: FileCommandsDeps,
+): Promise<string> => {
   if (!invocation.target.isFolder) return ''
-  const existing = (await listFiles(invocation.target.path)).map((one) => one.name)
+  const existing = (await deps.files.listFiles(invocation.target.path)).map((one) => one.name)
   const name = generateUniqueName(existing, FILE_WORDS.untitledFolder)
   return invocation.target.path ? `${invocation.target.path}/${name}` : name
 }
@@ -47,11 +51,12 @@ const createFolderCommand = async (
   invocation: CommandInvocation,
   deps: FileCommandsDeps,
 ): Promise<string | void> => {
-  const path = invocation.name || (await getUntitledFolderPath(invocation))
+  const path = invocation.name || (await getUntitledFolderPath(invocation, deps))
   if (!path) return
-  const answer = await createFolder(path)
+  const answer = await deps.files.createFolder(path)
   if (!answer.ok) {
-    if (answer.error === 'alreadyExists') return deps.writeMessage(FILE_WORDS.alreadyExists, 'error')
+    if (answer.error === 'alreadyExists')
+      return deps.writeMessage(FILE_WORDS.alreadyExists, 'error')
     return deps.writeMessage(FILE_WORDS.errors[answer.error], 'error')
   }
   return path

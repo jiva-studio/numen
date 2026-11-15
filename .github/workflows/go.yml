@@ -8,6 +8,9 @@ on:
       core:
         type: boolean
         required: true
+      structure:
+        type: boolean
+        required: true
       atomicfile:
         type: boolean
         required: true
@@ -286,7 +289,7 @@ jobs:
   # one machine, and not on each platform of the core tests.
   structure:
     name: Structure Checks
-    if: inputs.core
+    if: inputs.structure
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
@@ -310,7 +313,7 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      # go/dead-exports parses the TypeScript and Vue consumers of the SDK.
+      # go/dead-exports parses the TypeScript and Vue consumers of the SDK, go/api-types the calls of the plugin frontends.
       - uses: ./.github/actions/install-node-modules
 
       - name: Run the Go checks

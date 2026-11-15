@@ -1,7 +1,11 @@
-import { windowService } from '@/shared/api/clients'
+import type { WindowClients } from '@/shared/api/clients'
 import { WINDOW } from './window'
 
-/** The id of the vault this window shows. */
-export async function getShownVault(): Promise<string> {
-  return (await windowService.getCurrentVault({ window: WINDOW })).vault
-}
+/** Asks the core which vault it opened this window on. */
+export const createShownVaultApi = (windowService: WindowClients['windowService']) => ({
+  /** The id of the vault this window shows. */
+  getShownVault: async (): Promise<string> =>
+    (await windowService.getCurrentVault({ window: WINDOW })).vault,
+})
+
+export type ShownVaultApi = ReturnType<typeof createShownVaultApi>

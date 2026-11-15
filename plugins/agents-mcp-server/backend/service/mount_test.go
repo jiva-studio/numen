@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -161,12 +162,12 @@ func TestMountReturnsErrorWhenListenerIsAlreadyOpen(t *testing.T) {
 	}
 }
 
-func TestNewHandler(t *testing.T) {
+func TestMountedHandlerRequiresTheToken(t *testing.T) {
 	t.Parallel()
 
-	handler, err := NewHandler(map[string]string{
+	handler, err := servertest.NewHandler(map[string]string{
 		"NUMEN_PLUGIN_TOKEN": "secret-plugin-token",
-	})
+	}, Mount)
 	if err != nil {
 		t.Fatalf("NewHandler failed: %v", err)
 	}

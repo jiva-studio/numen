@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
 )
 
 func TestTheTimeoutsAreTheDecidedOnes(t *testing.T) {

@@ -14,22 +14,22 @@ const thing: AnyTabKind = {
 describe('the show of the window handle', () => {
   it('activates an open tab', async () => {
     const window = createTestTabs()
-    window.groups.registerKinds([thing])
+    window.kinds.registerKinds([thing])
     const first = await window.tabs.openTabOfKind('thing', 'Heron.md')
     await window.tabs.openTabOfKind('thing', 'Reed.md')
 
-    window.groups.handle.show(first)
+    window.handle.show(first)
 
-    expect(window.groups.handle.front()?.id).toBe(first)
+    expect(window.handle.front()?.id).toBe(first)
   })
 
   it('changes nothing for an id of no open tab', async () => {
     const window = createTestTabs()
-    window.groups.registerKinds([thing])
+    window.kinds.registerKinds([thing])
     await window.tabs.openTabOfKind('thing', 'Heron.md')
     const before = window.panes.layout.value
 
-    window.groups.handle.show('tab-9')
+    window.handle.show('tab-9')
 
     expect(window.panes.layout.value).toBe(before)
     expect(getPanes(window.panes.layout.value.root).flatMap((pane) => pane.tabs)).not.toContain(

@@ -3,8 +3,6 @@ package settings_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"slices"
 	"strings"
 	"sync"
 
@@ -51,18 +49,16 @@ func (f *memoryFile) Write(entries []settingsdomain.Setting) error {
 
 func (f *memoryFile) GetDefaults() settingsdomain.Stored { return stored{values: map[string]any{}} }
 
-// refusingValidator refuses a write to a path it does not know.
-type refusingValidator struct{ declared [][]string }
-
-var errUnknown = errors.New("no such setting")
-
-func (v refusingValidator) CheckWrite(path []string, _ any) error {
-	for _, one := range v.declared {
-		if slices.Equal(one, path) {
-			return nil
+func declare(paths ...[]string) settingsdomain.Declarations {
+	return func(owner string) ([]manifest.Setting, bool) {
+		var declared []manifest.Setting
+		for _, one := range paths {
+			if one[0] == owner {
+				declared = append(declared, manifest.Setting{Key: strings.Join(one[1:], ".")})
+			}
 		}
+		return declared, true
 	}
-	return errUnknown
 }
 
 type refreshRecorder struct{ events *[]string }

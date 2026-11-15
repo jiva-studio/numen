@@ -2,6 +2,7 @@
  * Sends a tab with its saved state to another open window or a new window, and opens a tab
  * sent from another window.
  */
+import { win } from '@numen/ui'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { wait as waitMs } from '@/shared/model/wait'
 import { focusWindow } from '@/entities/window'
@@ -16,7 +17,7 @@ import {
 } from '@/entities/tab'
 import type { Notes } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import { acceptTabMove, detachTab, moveTab } from '../api/tab-move'
+import type { TabMoveApi } from '../api/tab-move'
 import {
   ACCEPT_ATTEMPTS,
   ACCEPT_RETRY_MS,
@@ -30,6 +31,7 @@ import {
 } from '../lib/move'
 
 export interface TabMoverDeps {
+  readonly api: Pick<TabMoveApi, 'detachTab' | 'moveTab'>
   readonly windowId: string
   readonly windowTabs: Pick<WindowTabs, 'tabs'>
   readonly notes: Pick<Notes, 'asking' | 'flushPending'>
@@ -81,7 +83,7 @@ export function createTabMover(deps: TabMoverDeps) {
   }
 
   const sendDetach = (id: string, place: PaneRect): Promise<void> =>
-    sendTab(id, (tab) => detachTab(tab, place), 'The tab did not open in a new window')
+    sendTab(id, (tab) => deps.api.detachTab(tab, place), 'The tab did not open in a new window')
 
   /** Opens a tab in a new window at a screen point, with the size of the pane of the tab. */
   const detachTabAt = (id: string, point: Point): Promise<void> =>
@@ -89,16 +91,13 @@ export function createTabMover(deps: TabMoverDeps) {
 
   /** Opens a tab in a new window over the pane of the tab, with its size. */
   const detachTabInPlace = (id: string): Promise<void> =>
-    sendDetach(
-      id,
-      getPlaceOver(deps.getPaneRect(id), { x: globalThis.screenX, y: globalThis.screenY }),
-    )
+    sendDetach(id, getPlaceOver(deps.getPaneRect(id), { x: win.screenX, y: win.screenY }))
 
   /** Moves a tab into another open window. */
   const moveTabTo = (id: string, targetWindowId: string): Promise<void> =>
     sendTab(
       id,
-      (tab) => moveTab(deps.windowId, targetWindowId, tab),
+      (tab) => deps.api.moveTab(deps.windowId, targetWindowId, tab),
       'The tab did not move to the window',
     )
 
@@ -115,11 +114,11 @@ export interface MovedTabOpenerDeps {
 }
 
 /**
- * Sends AcceptTabMove once `waitFirst` settles, so that a report of the tabs made before the tab
- * opened does not reach the core after the accept.
+ * Sends AcceptTabMove through `acceptTabMove` once `waitFirst` settles, so that a report of the
+ * tabs made before the tab opened does not reach the core after the accept.
  */
 export const createMoveAcceptor =
-  (windowId: string, waitFirst: () => Promise<void>) =>
+  (acceptTabMove: TabMoveApi['acceptTabMove'], windowId: string, waitFirst: () => Promise<void>) =>
   (tabId: string, moveId: string): Promise<Result<void, TabMoveError>> =>
     waitFirst().then(() => acceptTabMove(windowId, tabId, moveId))
 
