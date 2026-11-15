@@ -26,7 +26,7 @@ The flashcard review window opens neither link type: an answer there cites its s
 
 ## The tools
 
-Six plugins register the tools an agent can call, each for its own subject. The host lists them for a plugin whose permissions allow their effect, the agent providers serve them to their programs, and `agents-mcp-server` serves them to programs outside Numen. The effect column says whether a tool only reads or also writes; a tool that only reads is listed for a plugin that holds `vault:read`, and a tool that writes only for one that holds both `vault:read` and `vault:write`; the plugin that registers a tool needs the same permissions. The host asks each version of a plugin for its tools once and keeps the answer in its cache folder (`tools/<plugin id>.json`), so a listing starts only a plugin it has not listed before and a call starts only the plugin of the tool; a disabled plugin offers none.
+Seven plugins register the tools an agent can call, each for its own subject. The host lists them for a plugin whose permissions allow their effect, the agent providers serve them to their programs, and `agents-mcp-server` serves them to programs outside Numen. The effect column says whether a tool only reads or also writes; a tool that only reads is listed for a plugin that holds `vault:read`, and a tool that writes only for one that holds both `vault:read` and `vault:write`; the plugin that registers a tool needs the same permissions. The host asks each version of a plugin for its tools once and keeps the answer in its cache folder (`tools/<plugin id>.json`), so a listing starts only a plugin it has not listed before and a call starts only the plugin of the tool; a disabled plugin offers none.
 
 `agents-tools-vault`, the notes and files of the vault:
 
@@ -93,6 +93,12 @@ Six plugins register the tools an agent can call, each for its own subject. The 
 | `recognition_create` | start the recognition of a scanned PDF or image in the background and return its task id; a second call while it runs reports `running`, a call on a recognised file reports `done` and the version to read | writes  |
 | `transcript_create`  | start the transcription of a recording in the background and return its task id; a second call while it runs reports `running`, a call on a transcribed recording reports `done` and the version to read    | writes  |
 | `url_import`         | create a link note for an http or https address, fetch its text before returning, and with `downloadVideo` start a download of the video in the background                                                  | writes  |
+
+`tools-taxonomy`, the tags of the notes:
+
+| Tool       | What it does                                                                                                                                                                           | Effect |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `tag_list` | list the tags of the frontmatter key `tags` as a tree read depth first, each with its depth and the number of notes that have it or a tag nested under it; `under` lists one tag alone | reads  |
 
 A card is named by its card id and never by the place it is in, so the cards stay addressable when a deck is reordered during a run. Every write to a deck takes the fingerprint `card_read` returned, and is applied only to the deck that fingerprint identifies.
 
