@@ -81,7 +81,7 @@ func TestTheShellIsAUseOfItsRerankingConnectionAndDeletingTheConnectionRemovesIt
 func TestAWindowOutOfItsBoundsIsRefusedAndTheDefaultApplies(t *testing.T) {
 	for _, window := range []string{"0", "501"} {
 		cfg := openSearch(t, `{"rerankWindow":`+window+`,"defaultLimit":30}`)
-		limits, stages := cfg.GetSearchLimits()
+		limits, stages := cfg.Search.GetLimits()
 		if stages.RerankWindow != 60 {
 			t.Errorf("a window of %s leaves %d in force, want the default 60", window, stages.RerankWindow)
 		}

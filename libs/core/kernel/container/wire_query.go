@@ -55,7 +55,7 @@ func readSearchLimits(c pluginsWiring, errorHandler func(error)) (searchquerydom
 		reportSearchFallback(errorHandler, err)
 		return searchquerydomain.DefaultLimits(), searchquerydomain.DefaultStageLimits()
 	}
-	return file.GetSearchLimits()
+	return file.Search.GetLimits()
 }
 
 func newClearOperationResults(db *Index) *operationresult.ClearOperationResults {

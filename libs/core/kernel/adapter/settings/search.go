@@ -113,9 +113,9 @@ func (s *Search) reset(key string) {
 	}
 }
 
-// GetSearchLimits returns the limits of a query and of its stages the settings in force set.
-func (f *File) GetSearchLimits() (searchquery.Limits, searchquery.StageLimits) {
-	n := f.Search.Numbers
+// GetLimits returns the limits of a query and of its stages the settings in force set.
+func (s *Search) GetLimits() (searchquery.Limits, searchquery.StageLimits) {
+	n := s.Numbers
 	limits := searchquery.DefaultLimits()
 	limits.DefaultLimit = int(n["defaultLimit"])
 	limits.MaxLimit = int(n["maxLimit"])
@@ -130,7 +130,7 @@ func (f *File) GetSearchLimits() (searchquery.Limits, searchquery.StageLimits) {
 	return limits, stages
 }
 
-func (f *File) dropInvalidAppRows(registries settingsdomain.Registries) {
+func dropInvalidAppRows(f *File, registries settingsdomain.Registries) {
 	if len(f.Search.Reranking) == 0 {
 		return
 	}
