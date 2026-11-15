@@ -14,6 +14,7 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -23,25 +24,6 @@ const (
 	MaxScoredConditions = 16
 	MaxConditionBytes   = 8192
 )
-
-// ChunkPlaces reads the large chunk that encloses a chunk, the small chunks inside it and their vectors.
-type ChunkPlaces interface {
-	// GetEnclosingResults returns the search result that encloses each chunk of one vault, in the order
-	// of `chunks`, leaving out a chunk the vault does not hold.
-	GetEnclosingResults(ctx context.Context, vaultID domain.VaultID, chunks []domain.ChunkID) ([]domain.SearchResult, error)
-	// ListSmallChunks returns the small chunks inside the large chunk that encloses each chunk of one vault.
-	ListSmallChunks(ctx context.Context, vaultID domain.VaultID, chunks []domain.ChunkID) ([]source.SmallChunk, error)
-	// ListStoredVectors returns the vectors kept under `q.Recipe` for the chunks of `q.Chunks`, leaving
-	// out the chunks without one.
-	ListStoredVectors(ctx context.Context, q source.StoredVectorQuery) ([]source.StoredVector, error)
-}
-
-// WordMatching matches an FTS5 query against texts with the tokenizer of the index.
-type WordMatching interface {
-	// MatchWords reports for each text whether it matches the expression, in the order of the texts. An
-	// expression FTS5 cannot parse returns source.ErrInvalidWords.
-	MatchWords(ctx context.Context, expression string, texts []string) ([]bool, error)
-}
 
 // ScoreCondition is one condition a chunk is scored against: a text compared by meaning or an FTS5
 // query matched against the words. Exactly one of the two is set.
@@ -72,8 +54,8 @@ type ChunkScore struct {
 // ScoreChunksDeps is what ScoreChunks reads. A nil Source is an installation with no model, and a nil
 // Texts reads the text of notes only.
 type ScoreChunksDeps struct {
-	Places  ChunkPlaces
-	Words   WordMatching
+	Places  sourceport.ChunkPlaces
+	Words   sourceport.WordMatching
 	Readers vaultport.VaultReaders
 	Texts   textdomain.Readers
 	Source  searchsourceport.QuerySource
@@ -82,8 +64,8 @@ type ScoreChunksDeps struct {
 
 // ScoreChunks scores chunks of a vault against conditions over the whole large chunk that encloses each.
 type ScoreChunks struct {
-	places  ChunkPlaces
-	words   WordMatching
+	places  sourceport.ChunkPlaces
+	words   sourceport.WordMatching
 	readers vaultport.VaultReaders
 	texts   textdomain.Readers
 	source  searchsourceport.QuerySource

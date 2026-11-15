@@ -196,6 +196,10 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: A piece of text a search found, with the place it came from (path, page, chapter, line). In a reader it is the place a link or a highlight points to.
 - Not: a chunk is inside the index; a passage is what the person sees. A "quote" is the copied text.
 
+### query
+- Is: A text in the search language of the core: conditions (`words("…")`, `meaning("…")`, `kind`, `path`) joined with `&&`, `||`, `!`. Its results are passages, or whole files when only file conditions match. Run with `numen-cli query <vault> <query>`.
+- Not: the text typed in the command palette search, which runs the search above.
+
 ### index
 - Is: The cache Numen builds from a vault so it can search. It is rebuilt from the vaults if lost.
 - States: scan `is_ready`; `is_embedding` is false when there is no model (words only).

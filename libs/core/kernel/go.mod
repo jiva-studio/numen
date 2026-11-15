@@ -3,6 +3,7 @@ module github.com/jiva-studio/numen/libs/core/kernel
 go 1.26.11
 
 require (
+	cel.dev/cel-go v0.33.2
 	connectrpc.com/connect v1.21.1
 	github.com/ebitengine/purego v0.11.3
 	github.com/rjeczalik/notify v0.9.3
@@ -15,7 +16,6 @@ require (
 )
 
 require (
-	cel.dev/cel-go v0.33.2 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect

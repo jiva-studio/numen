@@ -28,6 +28,7 @@ numen-cli search Research "entropy"
 | `numen-cli vault open <vault>` | set the vault the next window opens |
 | `numen-cli scan <vault> [--rebuild-index]` | update the index of a vault --rebuild-index reads every file again and deletes the vectors of every model except the one in use |
 | `numen-cli search <vault> <query>` | full-text search within one vault |
+| `numen-cli query [--limit N] <vault> <query>` | run a search query within one vault |
 | `numen-cli links <vault> <note>` | what a note points at, and what points at it |
 | `numen-cli problems <vault> [<check>...]` | list notes with broken links, invalid frontmatter or ambiguous links |
 
