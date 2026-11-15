@@ -112,7 +112,7 @@ export class Server {
       fs.mkdirSync(path.join(state, 'home', 'run'))
       server.writeSettings(standIns)
       for (const program of options.programs) server.installProgram(program)
-      await server.setEnvironment(options.environment)
+      if (!options.isLive || options.environment.length > 0) await server.setEnvironment(options.environment)
       await server.launch(server.getStartFlags(true))
     } catch (error) {
       await server.stop()

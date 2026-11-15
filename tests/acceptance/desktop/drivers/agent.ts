@@ -7,7 +7,8 @@ const COMPOSER = 'Ask about the vault'
 const ANSWER_LIMIT_MS = 20_000
 /** A real model answers within this time. */
 const LIVE_ANSWER_LIMIT_MS = 120_000
-const NO_ANSWER = 'The agent returned no answer.'
+/** What the agent says in place of an answer. */
+const NON_ANSWERS = ['The agent returned no answer.', 'Choose a model.']
 
 export class AgentDriver {
   constructor(private readonly scenario: Scenario) {}
@@ -50,19 +51,30 @@ export class AgentDriver {
     await expect(this.getField()).toHaveValue(text)
   }
 
-  /** The thread has a settled answer with words, and no turn that failed or says the agent returned nothing. */
+  /** The thread has a settled answer with words; a turn that failed or says the agent has nothing to answer with ends the wait at once. */
   async expectAnswered(): Promise<void> {
-    const failed = this.scenario.page.locator('[data-voice="response"][data-state="failed"]')
-    const settled = this.scenario.page.locator('[data-voice="response"][data-state="settled"]')
+    const turns = this.scenario.page.locator('[data-voice="response"]')
+    const failed = turns.and(this.scenario.page.locator('[data-state="failed"]'))
+    const going = turns.and(this.scenario.page.locator(':not([data-state="settled"]):not([data-state="failed"])'))
+    const readOutcome = async (): Promise<{ isDone: boolean; text: string }> => {
+      if ((await failed.count()) > 0) return { isDone: true, text: `the agent failed: ${(await failed.first().innerText()).trim()}` }
+      if ((await going.count()) > 0) return { isDone: false, text: 'the agent is still answering' }
+      const texts = (await turns.allInnerTexts()).map((one) => one.trim())
+      const nothing = texts.find((one) => NON_ANSWERS.includes(one))
+      if (nothing !== undefined) return { isDone: true, text: `the agent replied "${nothing}" in place of an answer` }
+      const hasAnswer = texts.some((one) => one !== '')
+      return { isDone: hasAnswer, text: hasAnswer ? '' : 'the agent has not answered yet' }
+    }
+    let outcome = { isDone: false, text: '' }
     await expect
       .poll(
         async () => {
-          if ((await failed.count()) > 0) return `the agent failed: ${(await failed.first().innerText()).trim()}`
-          const texts = (await settled.allInnerTexts()).map((one) => one.trim())
-          return texts.some((one) => one !== '' && one !== NO_ANSWER) ? 'answered' : 'no answer yet'
+          outcome = await readOutcome()
+          return outcome.isDone
         },
         { timeout: LIVE_ANSWER_LIMIT_MS, message: 'the agent has not answered' },
       )
-      .toBe('answered')
+      .toBe(true)
+    expect(outcome.text, 'the agent has not answered').toBe('')
   }
 }

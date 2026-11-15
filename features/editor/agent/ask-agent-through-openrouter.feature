@@ -12,8 +12,10 @@ Feature: Ask agent through OpenRouter
       | key name   | environment variable                  |
       | OpenRouter | NUMEN_ACCEPTANCE_TESTS_OPENROUTER_KEY |
     And the application "editor" starts
-    And the connection "OpenRouter" of the type "OpenRouter"
-    And the person gives the connection "OpenRouter" the key "OpenRouter"
+    And the person has the following connections:
+      | name        | type        | key        |
+      | OpenRouter  | OpenRouter  | OpenRouter |
+      | Numen agent | Numen agent |            |
     And the person sets the setting "Agents" of the plugin "Agent Chat" to the following rows:
       | connection  | model                                      |
       | Numen agent | OpenRouter · Google: Gemini 2.5 Flash Lite |
