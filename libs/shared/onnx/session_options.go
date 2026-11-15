@@ -34,7 +34,7 @@ func (l *Library) bindGraphOptimization(libPath string) error {
 		return fmt.Errorf("onnx runtime not loaded")
 	}
 
-	handle, err := loadLibrary(libPath)
+	handle, err := OpenLibrary(libPath)
 	if err != nil {
 		return err
 	}

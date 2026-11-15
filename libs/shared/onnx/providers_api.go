@@ -16,7 +16,7 @@ type ortAPIProviders struct {
 }
 
 func listProviders(libPath string) ([]string, error) {
-	handle, err := loadLibrary(libPath)
+	handle, err := OpenLibrary(libPath)
 	if err != nil {
 		return nil, err
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-func TestHostWindowActivateTabReturnsTabPlaceAndActiveID(t *testing.T) {
+func TestHostWindowActivateTabReturnsTabWithPlaceAndActiveID(t *testing.T) {
 	window := &recordingWindow{}
 	client, fakeCallers := newWindowClient(t, window, "token-a")
 
@@ -40,7 +40,7 @@ func TestHostWindowActivateTabReturnsTabPlaceAndActiveID(t *testing.T) {
 		t.Fatal(err)
 	}
 	readerTab := reader.Msg.GetTab()
-	if readerTab.GetId() != "tab-2" || readerTab.GetPlace().GetPage() != 4 || readerTab.GetPlace().GetPageCount() != 80 || reader.Msg.GetActiveId() != "tab-2" {
+	if readerTab.GetId() != "tab-2" || readerTab.GetPlace() != `{"page":4,"pageCount":80}` || reader.Msg.GetActiveId() != "tab-2" {
 		t.Errorf("returned %v, want tab-2 at page 4 of 80, active", reader.Msg)
 	}
 	requireOpenTabMessage(t, (&v1.ActivateTabResponse{}).ProtoReflect().Descriptor(), "tab")

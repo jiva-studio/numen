@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -67,7 +67,7 @@ func readIntoIndex(t *testing.T, a pluginsWiring, db *Index, v domain.Vault) {
 
 func newTalkVault(t *testing.T) domain.Vault {
 	t.Helper()
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": "# Note\n\nA short note.\n"})
+	v := vaulttest.NewVault(t, map[string]string{"Note.md": "# Note\n\nA short note.\n"})
 	if err := os.MkdirAll(filepath.Join(v.Path, "talks"), 0o755); err != nil {
 		t.Fatal(err)
 	}

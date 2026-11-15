@@ -86,9 +86,9 @@ func depguardFiles(t *testing.T) []string {
 	return config.Linters.Settings.Depguard.Rules["driving-adapter"].Files
 }
 
-func getUncoveredPatterns(patterns []string) []string {
+func getUncoveredPatterns(driving map[string]bool, patterns []string) []string {
 	var found []string
-	for one := range load.GetDriving() {
+	for one := range driving {
 		if !slices.ContainsFunc(patterns, func(pattern string) bool {
 			target := strings.TrimSuffix(strings.TrimPrefix(pattern, "**/"), "/**")
 			return !strings.HasPrefix(pattern, "!") && (one == target || strings.HasPrefix(one, target+"/"))

@@ -7,7 +7,7 @@
 import type { TextLink } from '@numen/plugin-sdk'
 
 /** What the core resolves for one text. Empty fields refer to the window's own. */
-export interface LinkRequest {
+interface LinkRequest {
   readonly text: string
   readonly from?: string | undefined
   readonly vault?: string | undefined

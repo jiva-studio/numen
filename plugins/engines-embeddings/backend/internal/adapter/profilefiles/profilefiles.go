@@ -18,11 +18,6 @@ type Directory struct {
 	path string
 }
 
-// NewDirectory returns the folder at path.
-func NewDirectory(path string) Directory {
-	return Directory{path: path}
-}
-
 // GetDefaultDirectory returns the profiles folder in the data directory of the plugin; it is empty
 // when the host grants none.
 func GetDefaultDirectory() Directory {

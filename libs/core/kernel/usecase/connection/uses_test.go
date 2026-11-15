@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -71,7 +72,7 @@ func TestDeleteRemovesNoRowsWhenASecretCannotBeRemoved(t *testing.T) {
 	f.uses.use(work.ID, proofreading())
 	f.connection = connectiontest.New(connectiontest.Parts{
 		Repository: f.repository, Types: f.types, Keys: &failingDelete{memoryKeys: f.keys}, Uses: f.uses,
-		Detected: none.Detected{}, Titles: none.OperationTitles{},
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
 	}, nil)
 
 	_, err := f.connection.Delete.Execute(t.Context(), work.ID)
@@ -182,7 +183,7 @@ func TestDeleteReturnsThePluginsWhoseGrantReachedTheConnection(t *testing.T) {
 func TestDeleteRemovesTheOptionListsOfTheConnection(t *testing.T) {
 	f := newFixture(t)
 	lists := &refreshedLists{}
-	deps := connection.NewDeps(f.repository, f.types, f.keys, f.uses, none.Detected{}).AddOptionLists(lists)
+	deps := connection.NewDeps(f.repository, f.types, f.keys, f.uses, testsupport.NoDetection{}).AddOptionLists(lists)
 	work := f.createOpenRouter(t, "Work")
 
 	if _, err := connection.NewDelete(deps).Execute(t.Context(), work.ID); err != nil {

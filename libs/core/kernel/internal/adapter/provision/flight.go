@@ -35,13 +35,6 @@ type flight struct {
 	err         error
 }
 
-func (g *flightGroup) isRunning(key string) bool {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	_, ok := g.flights[key]
-	return ok
-}
-
 func (g *flightGroup) do(
 	ctx context.Context,
 	key string,
