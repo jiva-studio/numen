@@ -1,24 +1,14 @@
 {
   "id": "md.numen.tools.taxonomy",
   "name": "Taxonomy",
-  "version": "2026.11.2",
+  "version": "2026.11.4",
   "protocol": 1,
   "description": "Reads the tags of notes from their frontmatter, finds notes by tag in queries and lists the tags for agents",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
+  "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
-    "commands": [
-      {
-        "id": "tags.update",
-        "title": "Update tags",
-        "icon": "tags",
-        "when": "target.isNote"
-      }
-    ],
-    "triggers": [
-      { "event": "note.frontmatterChanged", "command": "tags.update", "when": "target.isNote" }
-    ],
     "searchFunctions": {
       "version": 1,
       "functions": [

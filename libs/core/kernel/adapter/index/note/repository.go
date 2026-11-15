@@ -35,6 +35,7 @@ const kind = "note"
 type Repository struct {
 	db      *sql.DB
 	changes *FrontmatterChanges
+	feed    *changefeed.Changes
 }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
@@ -42,7 +43,13 @@ func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 // ReportingTo returns the repository that hands the paths of the notes whose frontmatter a write
 // changed to changes.
 func (r *Repository) ReportingTo(changes *FrontmatterChanges) *Repository {
-	return &Repository{db: r.db, changes: changes}
+	return &Repository{db: r.db, changes: changes, feed: r.feed}
+}
+
+// ReportingFeedTo returns the repository that tells feed of each committed write that can change the file
+// change feed.
+func (r *Repository) ReportingFeedTo(feed *changefeed.Changes) *Repository {
+	return &Repository{db: r.db, changes: r.changes, feed: feed}
 }
 
 func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
@@ -83,6 +90,7 @@ func (r *Repository) Save(
 	if err != nil {
 		return err
 	}
+	r.feed.Publish(vaultID)
 	r.changes.publish(vaultID, changed)
 	return nil
 }
@@ -240,6 +248,7 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 	if err != nil {
 		return err
 	}
+	r.feed.Publish(vaultID)
 	r.changes.publish(vaultID, changed)
 	return nil
 }

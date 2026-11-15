@@ -413,7 +413,7 @@ func TestARecordingWithNoVersionIsASourceWithNoChunks(t *testing.T) {
 	}
 }
 
-func TestIndexSkipsAFileWithNoTextSource(t *testing.T) {
+func TestIndexRecordsAFileWithNoTextSourceWithoutChunks(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put("pictures/cover.sample", domain.KindFile, []byte("pixels"), 1)
@@ -424,11 +424,48 @@ func TestIndexSkipsAFileWithNoTextSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Seen != 0 || res.Recorded != 0 {
-		t.Errorf("the run reports %+v, want the file left out", res)
+	if res.Seen != 1 || res.Recorded != 1 || res.Extracted != 0 || res.Unreadable != 0 {
+		t.Errorf("the run reports %+v, want the file recorded and nothing cut", res)
 	}
-	if _, isIndexed := index.Sources[indexfake.GetFirst().ID]["pictures/cover.sample"]; isIndexed {
-		t.Error("the index holds a file that has no text")
+	src, isIndexed := index.Sources[indexfake.GetFirst().ID]["pictures/cover.sample"]
+	if !isIndexed {
+		t.Fatal("the index holds no source for a file that has no text")
+	}
+	if src.ContentHash != "" || src.Producer != "" {
+		t.Errorf("the source of a file with no text is %+v, want no content hash and no producer", src)
+	}
+	if index.IsCut(indexfake.GetFirst().ID, "pictures/cover.sample") {
+		t.Error("a file with no text has chunks")
+	}
+	if _, err := run.Execute(ctx, indexfake.GetFirst()); err != nil {
+		t.Fatal(err)
+	}
+	if n := index.Extractions["pictures/cover.sample"]; n != 1 {
+		t.Errorf("a file with no text was written %d times over two runs, want once", n)
+	}
+}
+
+func TestFileTextAddedLaterIsChunked(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
+	shelf.Put(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)
+
+	run, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
+	texts.leaveOut(talkPath)
+	if _, err := run.Execute(ctx, indexfake.GetFirst()); err != nil {
+		t.Fatal(err)
+	}
+	texts.takeIn(talkPath)
+	texts.put(indexfake.GetFirst(), talkPath, "test.transcriber", "transcript", timedParts())
+	res, err := run.IndexOne(ctx, indexfake.GetFirst(), talkPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Extracted != 1 || res.Chunks == 0 {
+		t.Errorf("the text supplied later was not cut: %+v", res)
+	}
+	if !index.IsCut(indexfake.GetFirst().ID, talkPath) {
+		t.Error("the file has no chunks after its text was supplied")
 	}
 }
 

@@ -7,7 +7,9 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/protocol"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 // ErrInvalidFileChangeQuery is a read of the file change feed over its limits, without events or with
@@ -22,8 +24,8 @@ type FileChangeCursor struct {
 }
 
 // FileChange is the latest event of one kind of one file: the number the index keeps the file under,
-// which stays the same when the file moves, its path now, empty for file.removed, and the number of
-// the change.
+// which stays the same when the file moves, its path now, or where it was for file.removed, and the
+// number of the change.
 type FileChange struct {
 	SourceID int64
 	Path     string
@@ -82,4 +84,13 @@ func newCursorMessage(c FileChangeCursor) *v1.FileChangeCursor {
 
 func readCursor(c *v1.FileChangeCursor) FileChangeCursor {
 	return FileChangeCursor{FeedID: c.GetFeedId(), Seq: c.GetSeq()}
+}
+
+// ReadFilesChangedEvent returns the identity of the vault that an event of the host names as having new
+// changes in its file change feed, and false for any other event. The host emits the event after a write of
+// the index stored changes and the write is committed: a handler reads the feed from its cursor, with
+// changes.Follow, and handles every change after it.
+func ReadFilesChangedEvent(event string) (domain.VaultID, bool) {
+	vaultID, found := protocol.ReadFilesChangedEvent(event)
+	return domain.VaultID(vaultID), found
 }

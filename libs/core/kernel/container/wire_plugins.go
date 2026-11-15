@@ -196,7 +196,7 @@ func lendHostEndpoint(host *PluginRoles, lender *hostendpoint.Lender) *hostendpo
 	revision := getListingRevision(getSearchCatalog(manifests))
 	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, revision, host.Clock, toolbridge.GetErrorOutput())
 	host.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
-		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown,
+		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown, Files: host.ContentTypes,
 		Lent: services,
 		Tools: func() hostendpoint.PluginTools {
 			return tools

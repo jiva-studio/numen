@@ -78,7 +78,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### tag
 - Is: A name in the frontmatter key `tags` of a note, a list or a single text. A slash nests a tag under another (`Projects/Web` is under `Projects`). Two spellings that differ only in case, in Unicode composition or by a leading `#` are one tag. Plugin "Tags".
-- Actions: `tags.update` "Update tags"; agent tool `tag_list` "List tags".
+- Actions: agent tool `tag_list` "List tags".
 - Not: a `#word` in the body of a note is not a tag. Not a note type.
 
 ### note tab
