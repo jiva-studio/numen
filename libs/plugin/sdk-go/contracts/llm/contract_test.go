@@ -274,13 +274,19 @@ func (f *failingAssistant) Chat(_ context.Context, _ connection.Call, _ *llm.Cha
 
 func TestAFailureOfTheProviderIsTheErrorOfTheCall(t *testing.T) {
 	encodeCaller := newCaller(llm.Roles{Completer: &assistant{}, Embedder: &assistant{}, Chatter: &assistant{}})
-	if _, err := llm.Complete(t.Context(), encodeCaller, &llm.CompleteRequest{Messages: []*llm.Message{{Text: "\xff"}}}, connection.PriorityBackground); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationComplete) {
+	isEncodeError := func(err error, operation string) bool {
+		return err != nil && strings.Contains(err.Error(), "llm: encode "+operation)
+	}
+	completeRequest := &llm.CompleteRequest{Messages: []*llm.Message{{Text: "\xff"}}}
+	if _, err := llm.Complete(t.Context(), encodeCaller, completeRequest, connection.PriorityBackground); !isEncodeError(err, llm.OperationComplete) {
 		t.Errorf("Complete invalid UTF-8 err = %v", err)
 	}
-	if _, err := llm.Embed(t.Context(), encodeCaller, &llm.EmbedRequest{Texts: []string{"\xff"}}, connection.PriorityBackground); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationEmbed) {
+	embedRequest := &llm.EmbedRequest{Texts: []string{"\xff"}}
+	if _, err := llm.Embed(t.Context(), encodeCaller, embedRequest, connection.PriorityBackground); !isEncodeError(err, llm.OperationEmbed) {
 		t.Errorf("Embed invalid UTF-8 err = %v", err)
 	}
-	if _, err := llm.Chat(t.Context(), encodeCaller, &llm.ChatRequest{Messages: []*llm.ChatMessage{{Text: "\xff"}}}, connection.PriorityBackground); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationChat) {
+	chatRequest := &llm.ChatRequest{Messages: []*llm.ChatMessage{{Text: "\xff"}}}
+	if _, err := llm.Chat(t.Context(), encodeCaller, chatRequest, connection.PriorityBackground); !isEncodeError(err, llm.OperationChat) {
 		t.Errorf("Chat invalid UTF-8 err = %v", err)
 	}
 	if len(encodeCaller.operations) != 0 {
