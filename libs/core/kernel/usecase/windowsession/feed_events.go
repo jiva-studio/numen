@@ -23,7 +23,8 @@ const FeedQuietPeriod = 500 * time.Millisecond
 // starts before the passes of the vault write anything, and the event is sent once for a feed that holds
 // changes when the vault opens, with the types of every file of the feed, once after each burst of writes
 // that moved the head of the feed, with the types of the files those writes changed, and once after each
-// change of the plugins, with the types of every file of the feed. A window without plugins sends none.
+// change of the plugins, with the types of every file of the feed. A read of the feed that failed is tried
+// again once, after the next quiet period. A window without plugins sends none.
 type FeedEvents struct {
 	WatchWrites    func(id domain.VaultID, report func()) func()
 	WatchPlugins   func() (<-chan struct{}, func())
@@ -62,6 +63,9 @@ type feedLoop struct {
 	wake    chan struct{}
 	plugins <-chan struct{}
 	sent    filechange.Cursor
+
+	hasRetried  bool
+	retryForced bool
 }
 
 func (l *feedLoop) run(ctx context.Context) {
@@ -70,8 +74,15 @@ func (l *feedLoop) run(ctx context.Context) {
 		if !ok {
 			return
 		}
+		isForced = isForced || l.retryForced
+		l.retryForced = false
 		head, err := l.events.ReadHead(ctx, l.vault.ID)
-		if err != nil || head.Cursor.Seq == 0 || (!isForced && head.Cursor == l.sent) {
+		if err != nil {
+			l.retry(isForced)
+			continue
+		}
+		if head.Cursor.Seq == 0 || (!isForced && head.Cursor == l.sent) {
+			l.hasRetried = false
 			continue
 		}
 		after := l.sent.Seq
@@ -80,11 +91,22 @@ func (l *feedLoop) run(ctx context.Context) {
 		}
 		types, err := l.listTypes(ctx, after, head.Cursor.Seq)
 		if err != nil {
+			l.retry(isForced)
 			continue
 		}
+		l.hasRetried = false
 		l.sent = head.Cursor
 		l.events.Emit(l.vault, types)
 	}
+}
+
+func (l *feedLoop) retry(isForced bool) {
+	l.retryForced = isForced
+	if l.hasRetried {
+		return
+	}
+	l.hasRetried = true
+	signal(l.wake)
 }
 
 func (l *feedLoop) listTypes(ctx context.Context, after, upTo int64) ([]domain.ContentType, error) {

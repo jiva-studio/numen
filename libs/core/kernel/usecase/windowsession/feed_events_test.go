@@ -2,6 +2,7 @@ package windowsession
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"slices"
 	"sync"
@@ -22,6 +23,7 @@ type feedStub struct {
 	paths   map[int64]string
 	emitted chan domain.VaultID
 	types   chan []domain.ContentType
+	failing int
 }
 
 func newFeedStub() *feedStub {
@@ -48,6 +50,10 @@ func (s *feedStub) events() FeedEvents {
 		ListPaths: func(_ context.Context, _ domain.VaultID, after, upTo int64) ([]string, error) {
 			s.mu.Lock()
 			defer s.mu.Unlock()
+			if s.failing > 0 {
+				s.failing--
+				return nil, errors.New("the index is busy")
+			}
 			var out []string
 			for seq, path := range s.paths {
 				if seq > after && seq <= upTo {
@@ -137,6 +143,7 @@ func TestAWriteThatStoredChangesSendsOneEventAfterTheQuietPeriod(t *testing.T) {
 	stub.passQuiet(t)
 	stub.requireEmitted(t, 1)
 
+	stub.write(0)
 	stub.passQuiet(t)
 	stub.requireEmitted(t, 0)
 }
@@ -158,6 +165,17 @@ func TestOpenVaultWithFeedChangesEmitsOneEvent(t *testing.T) {
 	stub := newFeedStub()
 	stub.head = filechange.Head{Cursor: filechange.Cursor{FeedID: "feed-1", Seq: 9}}
 	startFeedEvents(t, stub)
+	stub.passQuiet(t)
+	stub.requireEmitted(t, 1)
+}
+
+func TestAFailedReadOfTheFeedIsRetriedOnceAfterTheQuietPeriod(t *testing.T) {
+	stub := newFeedStub()
+	stub.head = filechange.Head{Cursor: filechange.Cursor{FeedID: "feed-1", Seq: 9}}
+	stub.failing = 1
+	startFeedEvents(t, stub)
+	stub.passQuiet(t)
+	stub.requireEmitted(t, 0)
 	stub.passQuiet(t)
 	stub.requireEmitted(t, 1)
 }
@@ -212,6 +230,7 @@ func TestAnEventCoversTheTypesOfTheFilesItsWritesChanged(t *testing.T) {
 	stub.writeFile(3, "pictures/cover.png")
 	stub.passQuiet(t)
 	stub.requireTypes(t, "test/png")
+	stub.write(0)
 	stub.passQuiet(t)
 	stub.requireEmitted(t, 0)
 
