@@ -245,10 +245,13 @@ const (
 	harrierRecipeBefore = "plugin:md.numen.engines.embeddings|onnx-community/harrier-oss-v1-270m-ONNX|640|512|output|623ccc6f"
 )
 
-func newUnopenedServer(t *testing.T, dir string) *Server {
+func newUnopenedServer(t *testing.T, profiles map[string]string) *Server {
 	t.Helper()
+	dir := useProfileFolder(t)
+	for name, content := range profiles {
+		writeFile(t, filepath.Join(dir, name), content)
+	}
 	srv := newEmbeddingServer()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
 	// The model fails the test when it is opened: the recipe is read from the profile alone.
 	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
 		t.Error("reading the recipe opened the model")
@@ -265,20 +268,19 @@ func getRecipeOf(t *testing.T, srv *Server, name string) string {
 }
 
 func TestTheRecipeOfALocalModelChangesWithTheVersionOfItsTokenizer(t *testing.T) {
-	unigram := getRecipeOf(t, newUnopenedServer(t, t.TempDir()), model.DefaultModel)
+	unigram := getRecipeOf(t, newUnopenedServer(t, nil), model.DefaultModel)
 	if unigram == e5RecipeBefore {
 		t.Errorf("a model whose profile names the Unigram tokenizer kept the recipe %s it had before", unigram)
 	}
 
-	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, "e5.json"), `{"id":"Xenova/multilingual-e5-small","tokenizer":"bpe"}`)
-	if bpe := getRecipeOf(t, newUnopenedServer(t, dir), model.DefaultModel); bpe != e5RecipeBefore {
+	e5 := map[string]string{"e5.json": `{"id":"Xenova/multilingual-e5-small","tokenizer":"bpe"}`}
+	if bpe := getRecipeOf(t, newUnopenedServer(t, e5), model.DefaultModel); bpe != e5RecipeBefore {
 		t.Errorf("the profile that reads E5 with BPE gives the recipe %s, want %s as before", bpe, e5RecipeBefore)
 	}
 }
 
 func TestALocalModelWhoseTokenizerHasNoVersionKeepsItsRecipe(t *testing.T) {
-	if got := getRecipeOf(t, newUnopenedServer(t, t.TempDir()), harrierModel); got != harrierRecipeBefore {
+	if got := getRecipeOf(t, newUnopenedServer(t, nil), harrierModel); got != harrierRecipeBefore {
 		t.Errorf("recipe = %s, want %s as before", got, harrierRecipeBefore)
 	}
 }
