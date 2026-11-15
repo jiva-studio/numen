@@ -81,9 +81,11 @@ func openCLIIndexed(r *cliRun, c Config, ctx context.Context, options cli.IndexO
 		return prepareCLIQuery(r, c, db, options.ErrorHandler, ctx, v)
 	}
 	return cli.Indexed{
-		Rename:     vault.NewRenameByName(find, vault.NewRename(ports.Vaults, ports.Saver, db.Vaults())),
-		Unregister: vault.NewUnregisterByName(find, unregister),
-		Erase:      vault.NewEraseByName(find, vault.NewErase(vaultIdentity(a.vault), vaultTrash(a.vault), unregister)),
+		Changes: cli.VaultChanges{
+			Rename:     vault.NewRenameByName(find, vault.NewRename(ports.Vaults, ports.Saver, db.Vaults())),
+			Unregister: vault.NewUnregisterByName(find, unregister),
+			Erase:      vault.NewEraseByName(find, vault.NewErase(vaultIdentity(a.vault), vaultTrash(a.vault), unregister)),
+		},
 		Scan: cli.Scan{
 			Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, prepareScan), db.NoteQueries()),
 			Now:  c.Clock().Now,

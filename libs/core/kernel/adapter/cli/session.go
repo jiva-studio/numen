@@ -65,14 +65,19 @@ type IndexOptions struct {
 
 // Indexed is what the commands that read or change the index work through, over the one index a run opened.
 type Indexed struct {
+	Changes  VaultChanges
+	Scan     Scan
+	Search   Search
+	Links    query.ShowLinksByName
+	Problems vault.GetProblemsByName
+	Query    searchqueryusecase.FindSearchResultsByName
+}
+
+// VaultChanges is the commands that rename, unregister or erase a vault named on the command line.
+type VaultChanges struct {
 	Rename     vault.RenameByName
 	Unregister vault.UnregisterByName
 	Erase      vault.EraseByName
-	Scan       Scan
-	Search     Search
-	Links      query.ShowLinksByName
-	Problems   vault.GetProblemsByName
-	Query      searchqueryusecase.FindSearchResultsByName
 }
 
 // Vaults is what the vault commands that touch the list alone operate on: the use cases over the list this
