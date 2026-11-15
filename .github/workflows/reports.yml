@@ -208,6 +208,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
+      actions: write
       pages: write
       id-token: write
     environment:
@@ -228,6 +229,15 @@ jobs:
           <title>Numen reports</title>
           <a href="acceptance/">Acceptance scenarios</a>
           HTML
+
+      - name: Delete the pages artifact of an earlier attempt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[] | select(.name=="github-pages") | .id' |
+            while read -r id; do
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$id"
+            done
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
