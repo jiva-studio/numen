@@ -274,13 +274,17 @@ func (f *failingAssistant) Chat(_ context.Context, _ connection.Call, _ *llm.Cha
 
 func TestAFailureOfTheProviderIsTheErrorOfTheCall(t *testing.T) {
 	encodeCaller := newCaller(llm.Roles{Completer: &assistant{}, Embedder: &assistant{}, Chatter: &assistant{}})
-	if _, err := llm.Complete(t.Context(), encodeCaller, &llm.CompleteRequest{Messages: []*llm.Message{{Text: "\xff"}}}, connection.PriorityBackground); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationComplete) {
+	var err error
+	_, err = llm.Complete(t.Context(), encodeCaller, &llm.CompleteRequest{Messages: []*llm.Message{{Text: "\xff"}}}, connection.PriorityBackground)
+	if err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationComplete) {
 		t.Errorf("Complete invalid UTF-8 err = %v", err)
 	}
-	if _, err := llm.Embed(t.Context(), encodeCaller, &llm.EmbedRequest{Texts: []string{"\xff"}}, connection.PriorityBackground); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationEmbed) {
+	_, err = llm.Embed(t.Context(), encodeCaller, &llm.EmbedRequest{Texts: []string{"\xff"}}, connection.PriorityBackground)
+	if err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationEmbed) {
 		t.Errorf("Embed invalid UTF-8 err = %v", err)
 	}
-	if _, err := llm.Chat(t.Context(), encodeCaller, &llm.ChatRequest{Messages: []*llm.ChatMessage{{Text: "\xff"}}}, connection.PriorityBackground); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationChat) {
+	_, err = llm.Chat(t.Context(), encodeCaller, &llm.ChatRequest{Messages: []*llm.ChatMessage{{Text: "\xff"}}}, connection.PriorityBackground)
+	if err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationChat) {
 		t.Errorf("Chat invalid UTF-8 err = %v", err)
 	}
 	if len(encodeCaller.operations) != 0 {
