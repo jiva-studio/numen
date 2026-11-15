@@ -176,52 +176,15 @@ const writeTree = () => {
   tree.replaceChildren(...(nodes.length > 0 ? nodes : [createEmptyTree()]))
 }
 
-const getScenarioLink = (id) => `${location.href.split('#')[0]}#${encodeURIComponent(id)}`
-
-const showCopied = (note, text) => {
-  note.textContent = text
-  note.classList.add('is-shown')
-  clearTimeout(note.timer)
-  note.timer = setTimeout(() => note.classList.remove('is-shown'), 1400)
-}
-
-const copyLink = async (id, note) => {
-  try {
-    await navigator.clipboard.writeText(getScenarioLink(id))
-    showCopied(note, 'Copied')
-  } catch {
-    showCopied(note, 'Could not copy')
-  }
-}
-
-const createActions = (scenario) => {
-  const note = createElement('span', { class: 'copied', role: 'status' })
-  const copy = createElement('button', { class: 'ghost-button', type: 'button' }, [
-    createIcon('link'),
-    'Copy link',
-  ])
-  copy.addEventListener('click', () => copyLink(scenario.id, note))
-  return createElement('div', { class: 'actions' }, [copy, note])
-}
-
-const createStatusBadge = (status) =>
-  createElement('span', { class: `badge ${status}` }, [
-    createElement('span', { class: `dot ${status}`, 'aria-hidden': 'true' }),
-    STATUS_LABELS[status],
-  ])
-
-const createScenarioHeader = (scenario) =>
+const createScenarioHeader = (scenario, environments) =>
   createElement('header', { class: 'scenario-header' }, [
     createElement('p', { class: 'crumb' }, [
       createElement('span', {}, [scenario.featureName]),
       createElement('span', { class: 'crumb-file' }, [`${scenario.featureUri}:${scenario.line}`]),
     ]),
-    createElement('h2', {}, [scenario.name]),
-    createElement('div', { class: 'meta' }, [
-      createStatusBadge(scenario.status),
-      createElement('span', { class: 'meta-time' }, [formatDuration(scenario.duration)]),
-      createElement('span', { class: 'meta-time' }, [formatCount(scenario.steps.length, 'step')]),
-      createActions(scenario),
+    createElement('div', { class: 'title-row' }, [
+      createElement('h2', {}, [scenario.name]),
+      environments,
     ]),
   ])
 
@@ -314,8 +277,7 @@ const writeDetail = (scenario) => {
     .getElementById('detail')
     .replaceChildren(
       ...[
-        createScenarioHeader(view),
-        createEnvironments(scenario, run),
+        createScenarioHeader(view, createEnvironments(scenario, run)),
         video,
         createScenarioError(view),
         stepList,
