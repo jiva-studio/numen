@@ -21,38 +21,34 @@ type automatic struct {
 	shown    func(ctx context.Context) (domain.VaultID, error)
 	report   func(what string, err error)
 	isOn     atomic.Bool
-	ctx      context.Context
-	cancel   context.CancelFunc
+	closing  chan struct{}
 	wg       sync.WaitGroup
 }
 
 func newAutomatic(
 	follower *feed.Follower, shown func(ctx context.Context) (domain.VaultID, error), report func(what string, err error),
 ) *automatic {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &automatic{follower: follower, shown: shown, report: report, isOn: atomic.Bool{}, ctx: ctx, cancel: cancel, wg: sync.WaitGroup{}}
+	return &automatic{follower: follower, shown: shown, report: report, isOn: atomic.Bool{}, closing: make(chan struct{}), wg: sync.WaitGroup{}}
 }
 
-// updateSettings reads the setting from values, and follows the feed of the shown vault in the
-// background when it turned on.
 func (a *automatic) updateSettings(values map[string]string) {
 	isOn := values[settingAutomatic] == "true"
 	if wasOn := a.isOn.Swap(isOn); wasOn || !isOn {
 		return
 	}
 	a.wg.Go(func() {
-		vault, err := a.shown(a.ctx)
+		ctx, cancel := a.withClosing()
+		defer cancel()
+		vault, err := a.shown(ctx)
 		if err != nil {
 			return
 		}
-		if err := a.follower.Execute(a.ctx, vault); err != nil && a.ctx.Err() == nil {
+		if err := a.follower.Execute(ctx, vault); err != nil && ctx.Err() == nil {
 			a.report("follow the file changes of "+string(vault), err)
 		}
 	})
 }
 
-// handleEvent follows the feed of the vault an onFilesChanged event names while the setting is on,
-// and ignores any other event.
 func (a *automatic) handleEvent(ctx context.Context, event string) error {
 	vault, ok := host.ReadFilesChangedEvent(event)
 	if !ok || !a.isOn.Load() {
@@ -61,7 +57,19 @@ func (a *automatic) handleEvent(ctx context.Context, event string) error {
 	return a.follower.Execute(ctx, vault)
 }
 
+func (a *automatic) withClosing() (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		select {
+		case <-a.closing:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	return ctx, cancel
+}
+
 func (a *automatic) close() {
-	a.cancel()
+	close(a.closing)
 	a.wg.Wait()
 }

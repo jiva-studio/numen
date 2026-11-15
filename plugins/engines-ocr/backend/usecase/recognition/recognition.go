@@ -127,10 +127,8 @@ func New(h Host, open func(ctx context.Context) (Recognizer, error)) (*Recogniti
 // Request is one file to recognize. Vault is the vault that contains it, and is
 // empty for the vault the host currently shows.
 type Request struct {
-	Vault domain.VaultID
-	Path  string
-	// IsUserStarted is true for a recognition a person or an agent asked for, and false for one the plugin
-	// started on its own from the file change feed, which waits behind the work people asked for.
+	Vault         domain.VaultID
+	Path          string
 	IsUserStarted bool
 }
 

@@ -195,7 +195,6 @@ func (t *Transcriber) reportProgress(ctx context.Context, vault domain.VaultID, 
 	})
 }
 
-// reportTask shows the task, as started by a person unless the plugin started its run on its own.
 func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
 	task.IsUserStarted = !t.isBackground(task.ID)
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="best-effort stderr diagnostic log does not affect transcription control flow"

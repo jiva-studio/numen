@@ -40,11 +40,9 @@ type Transcriber struct {
 	closeOnce sync.Once
 	wg        sync.WaitGroup
 
-	mu       sync.Mutex
-	isClosed bool
-	running  map[string]bool
-	// background holds the task ids of the runs the plugin started on its own, which wait behind the work
-	// people asked for.
+	mu         sync.Mutex
+	isClosed   bool
+	running    map[string]bool
 	background map[string]bool
 }
 
