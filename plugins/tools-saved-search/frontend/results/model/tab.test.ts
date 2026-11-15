@@ -331,6 +331,17 @@ describe('filtering the results', () => {
     expect(state.items.value).toHaveLength(4)
   })
 
+  it('shows the results of every hidden source again', async () => {
+    const { state } = await setupWith()
+
+    state.actions.setSourceShown('Logbooks/1911.pdf', false)
+    state.actions.setSourceShown('Harbor/Pier plan.png', false)
+    state.actions.showAllSources()
+
+    expect(state.items.value).toHaveLength(4)
+    expect(state.hiddenSources.value.size).toBe(0)
+  })
+
   it('opens the result the filter leaves by its index in the answer', async () => {
     const { openAt, state } = await setupWith()
 

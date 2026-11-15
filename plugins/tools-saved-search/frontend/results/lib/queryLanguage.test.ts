@@ -100,13 +100,31 @@ describe('getQueryDiagnostics', () => {
     expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe('"seed tray)')
   })
 
-  it('keeps a problem past the end of the query inside it', () => {
+  it('underlines the last character for a problem past the end of the query', () => {
     const doc = Text.of(['tags("garden")'])
 
     const [diagnostic] = getQueryDiagnostics(doc, [{ line: 4, column: 40, message: 'late' }])
 
-    expect(diagnostic!.from).toBe(doc.length)
-    expect(diagnostic!.to).toBe(doc.length)
+    expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe(')')
+  })
+
+  it('underlines to the end of the line from a place that is not a name or a string', () => {
+    const doc = Text.of(['words("gale") && ) tags("pier")'])
+
+    const [diagnostic] = getQueryDiagnostics(doc, [{ line: 1, column: 18, message: 'stray' }])
+
+    expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe(') tags("pier")')
+  })
+
+  it('says a message of the parser in plain words', () => {
+    const doc = Text.of(['words("gale")', 'e'])
+
+    const [diagnostic] = getQueryDiagnostics(doc, [
+      { line: 2, column: 1, message: "extraneous input 'e' expecting <EOF>" },
+    ])
+
+    expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe('e')
+    expect(diagnostic!.message).toBe('Unexpected “e”: the query should end here')
   })
 })
 

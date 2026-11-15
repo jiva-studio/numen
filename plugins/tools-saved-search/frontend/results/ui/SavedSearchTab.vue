@@ -1,17 +1,20 @@
 <script setup lang="ts">
 /**
- * The tab of a saved search note: the title, the status line, a failed last run and the button that
- * shows or hides the editor of the query below them; the problems and the warnings; the filter and the sources of the
- * results; and the results.
+ * The tab of a saved search note: the title, the dot of the state of the run and the button that shows
+ * or hides the editor of the query below them; the warnings; the filter and the sources of the results;
+ * and the results, or why there is none with the button that brings them back.
  */
 import { computed, useId } from 'vue'
 import { Button } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import { EditIcon } from '../model/icons'
+import { getFilterEmpty, type EmptyReason } from '../lib/view'
 import type { SavedSearchTabState, SearchChange } from '../model/tab'
+import EmptyResults from './EmptyResults.vue'
 import QueryEditor from './QueryEditor.vue'
 import ResultList from './ResultList.vue'
 import ResultsFilter from './ResultsFilter.vue'
+import StatusDot from './StatusDot.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -22,6 +25,11 @@ const props = defineProps<{
 const view = computed(() => props.state.view.value)
 const items = computed(() => props.state.items.value)
 const failure = computed(() => props.state.failure.value)
+const filterEmpty = computed(() =>
+  view.value && view.value.items.length > 0 && items.value.length === 0
+    ? getFilterEmpty(view.value.sources, props.state.hiddenSources.value, props.state.filter.value, words)
+    : null,
+)
 const editorId = useId()
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -41,6 +49,11 @@ function onFilter(filter: string) {
   props.state.actions.setFilter(filter)
 }
 
+function onBringBack(reason: EmptyReason) {
+  if (reason === 'sources') props.state.actions.showAllSources()
+  else props.state.actions.setFilter('')
+}
+
 function onToggleSource(path: string, isShown: boolean) {
   props.state.actions.setSourceShown(path, isShown)
 }
@@ -51,8 +64,7 @@ function onToggleSource(path: string, isShown: boolean) {
     <template v-if="view">
       <header class="saved-search__header">
         <h2 class="saved-search__title">{{ view.title }}</h2>
-        <p role="status" class="saved-search__status">{{ view.status }}</p>
-        <p v-if="view.failedRun" class="saved-search__failed">{{ view.failedRun }}</p>
+        <StatusDot :status="view.status" />
         <Button
           variant="ghost"
           size="icon-small"
@@ -73,9 +85,6 @@ function onToggleSource(path: string, isShown: boolean) {
         :functions="state.functions.value"
         @save="onSave"
       />
-      <p v-for="problem in view.problems" :key="problem" role="alert" class="saved-search__problem">
-        {{ problem }}
-      </p>
       <p
         v-for="warning in view.warnings"
         :key="warning"
@@ -93,8 +102,13 @@ function onToggleSource(path: string, isShown: boolean) {
         @toggle="onToggleSource"
       />
       <ResultList v-if="items.length > 0" :items="items" :label="words.results" @open="onOpen" />
-      <p v-else-if="view.items.length > 0" class="saved-search__empty">{{ words.noFilterMatch }}</p>
-      <p v-else-if="view.emptyText" class="saved-search__empty">{{ view.emptyText }}</p>
+      <EmptyResults
+        v-else-if="filterEmpty"
+        :text="filterEmpty.text"
+        :action-text="filterEmpty.actionText"
+        @act="onBringBack(filterEmpty.reason)"
+      />
+      <EmptyResults v-else-if="view.emptyText" :text="view.emptyText" />
     </template>
     <p v-if="failure" role="alert" class="saved-search__failure">{{ failure }}</p>
   </section>

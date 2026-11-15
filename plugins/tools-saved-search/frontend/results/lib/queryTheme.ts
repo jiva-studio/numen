@@ -1,7 +1,7 @@
 /**
  * The query editor set as the notes editor sets a fenced block of code: the face, size, line height,
- * ground and padding of its code, the caret and selection of its theme, and the completion list drawn
- * as the menus of the interface are.
+ * ground and padding of its code, the caret and selection of its theme, the problems underlined in the
+ * alarm colour, and the completion list and the problem tooltips drawn as the menus of the interface are.
  */
 import { EditorView } from '@codemirror/view'
 
@@ -49,6 +49,25 @@ export const queryTheme = EditorView.theme({
     fontSize: 'var(--numen-font-size)',
     overflow: 'hidden',
   },
+  '.cm-lintRange-error': {
+    backgroundImage: 'none',
+    textDecorationLine: 'underline',
+    textDecorationStyle: 'wavy',
+    textDecorationColor: 'var(--numen-alarm)',
+    textDecorationSkipInk: 'none',
+    textUnderlineOffset: '0.2em',
+  },
+  '.cm-tooltip.cm-tooltip-lint': {
+    padding: '0.25rem 0',
+    maxWidth: '28rem',
+  },
+  '.cm-tooltip-lint .cm-diagnostic': {
+    padding: '0.125rem 0.625rem',
+    borderLeft: 'none',
+    color: 'var(--numen-ink)',
+    whiteSpace: 'pre-wrap',
+  },
+  '.cm-tooltip-lint .cm-diagnostic-error': { borderLeft: 'none' },
   '.cm-tooltip.cm-tooltip-autocomplete > ul': {
     fontFamily: 'inherit',
     padding: '0.375rem',

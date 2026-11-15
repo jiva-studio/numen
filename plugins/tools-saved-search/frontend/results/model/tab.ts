@@ -51,6 +51,7 @@ export interface SavedSearchTabState {
     setEditing(isEditing: boolean): void
     setFilter(filter: string): void
     setSourceShown(path: string, isShown: boolean): void
+    showAllSources(): void
   }
 }
 
@@ -210,6 +211,9 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
           filter.value = next
         },
         setSourceShown,
+        showAllSources: () => {
+          hiddenSources.value = new Set()
+        },
       },
     },
     follow,

@@ -1,9 +1,10 @@
 /**
  * The tab of a saved search note over a scripted service: the query and its results, a passage and a
- * whole file opened, the problems of the query with the last good results, no result, a warning, a
- * failed last run, the filter and the sources of the results, and the query edited in the code editor
- * inside the tab, shown and hidden by the edit button: completion from the catalog, the query saved once
- * typing pauses, and the problems of a query not saved underlined.
+ * whole file opened, the dot of the state of the run and its tooltip, the problems of the query with the
+ * last good results, no result, a warning, a failed last run, the filter and the sources of the results
+ * and the button that brings back what they hide, and the query edited in the code editor inside the
+ * tab, shown and hidden by the edit button: completion from the catalog, the query saved once typing
+ * pauses, and the problems of a query not saved underlined with their message on hover.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within, type Mock } from 'storybook/test'
@@ -22,6 +23,8 @@ import {
   NEVER_COMPUTED,
   NOTE_PATH,
   NOTHING_FOUND,
+  RUNNING,
+  STALE,
   WARNING,
 } from '../fixtures/responses'
 import { createScriptedService } from '../fixtures/service'
@@ -91,7 +94,12 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-/** The status, the edit button, two passages with their places and a whole file as a file row. */
+const COMPUTED_TIME = /Computed 14 Nov 2026, \d\d:\d\d/
+
+const getDot = (canvasElement: HTMLElement, name: string): Promise<HTMLElement> =>
+  waitFor(() => within(canvasElement).getByRole('img', { name }))
+
+/** The dot of fresh results, the edit button, two passages with their places and a whole file as a file row. */
 export const ShowsTheResults: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -99,13 +107,61 @@ export const ShowsTheResults: Story = {
     await waitFor(() => expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible())
     await expect(canvas.getByRole('button', { name: 'Edit query' })).toBeVisible()
     await expect(canvas.queryByText('meaning("the harbor master in a winter storm")')).toBeNull()
-    await expect(canvas.getByText(/^Computed 14 Nov 2026, \d\d:\d\d$/)).toBeVisible()
+    await expect(await getDot(canvasElement, 'Up to date')).toBeVisible()
+    await expect(canvas.queryByText(COMPUTED_TIME)).toBeNull()
     await expect(canvas.getByRole('button', { name: /Night of the gale/ })).toBeVisible()
     await expect(canvas.getByText('Page 14')).toBeVisible()
     const file = canvas.getByRole('button', { name: /Pier plan/ })
     await expect(file).toHaveTextContent('Harbor/Pier plan.png')
     await expect(file).toHaveTextContent('image')
     await expect(canvas.queryByText('0.913')).toBeNull()
+  },
+}
+
+/** Hovering the dot shows the state and the time of the results in a tooltip; leaving it hides it. */
+export const ShowsTheTimeOfTheResultsOnHover: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Up to date')
+
+    await userEvent.hover(dot)
+
+    const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
+    await expect(tooltip).toBeVisible()
+    await expect(tooltip).toHaveTextContent('Up to date')
+    await expect(tooltip).toHaveTextContent(COMPUTED_TIME)
+    await expect(dot).toHaveAccessibleDescription(COMPUTED_TIME)
+
+    await userEvent.unhover(dot)
+    await waitFor(() => expect(canvas.queryByRole('tooltip')).toBeNull())
+  },
+}
+
+/** Focus on the dot shows its tooltip, Escape hides it. */
+export const ShowsTheTooltipOnFocus: Story = {
+  args: { response: STALE },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Will update')
+
+    await userEvent.click(canvas.getByRole('heading'))
+    await userEvent.tab()
+    await expect(dot).toHaveFocus()
+
+    const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
+    await expect(tooltip).toHaveTextContent('Will update')
+    await expect(tooltip).toHaveTextContent(COMPUTED_TIME)
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(canvas.queryByRole('tooltip')).toBeNull())
+  },
+}
+
+/** A run in progress names the dot for the update. */
+export const ShowsARunInProgress: Story = {
+  args: { response: RUNNING },
+  play: async ({ canvasElement }) => {
+    await expect(await getDot(canvasElement, 'Updating…')).toBeVisible()
   },
 }
 
@@ -134,7 +190,8 @@ export const OpensAResultAtItsPlace: Story = {
   },
 }
 
-/** Typing in the filter narrows the results to those whose text, title or file name holds it. */
+
+/** A filter no result holds says so with its text; Clear filter empties the field and brings the results back. */
 export const FiltersTheResults: Story = {
   args: { response: HARBOR_TWO_LOGBOOK_PASSAGES },
   play: async ({ canvasElement }) => {
@@ -148,7 +205,16 @@ export const FiltersTheResults: Story = {
 
     await userEvent.clear(filter)
     await userEvent.type(filter, 'nothing like this')
-    await waitFor(() => expect(canvas.getByText('No result matches the filter.')).toBeVisible())
+    await waitFor(() =>
+      expect(canvas.getByText('No result matches “nothing like this”')).toBeVisible(),
+    )
+    await expect(canvas.queryByRole('list', { name: 'Results' })).toBeNull()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Clear filter' }))
+
+    await waitFor(() => expect(canvas.getAllByRole('listitem')).toHaveLength(4))
+    await expect(filter).toHaveValue('')
+    await expect(canvas.queryByRole('button', { name: 'Clear filter' })).toBeNull()
   },
 }
 
@@ -196,40 +262,74 @@ export const HidesTheResultsOfASource: Story = {
   },
 }
 
-/** A query the core rejects: its problems as alerts, and the results of the last good run. */
+
+/** Hiding every source says all sources are hidden; Show all sources brings every result back. */
+export const ShowsAllSourcesAgain: Story = {
+  args: { response: HARBOR_TWO_LOGBOOK_PASSAGES },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const page = within(canvasElement.ownerDocument.body)
+    const toggle = await waitFor(() => canvas.getByRole('button', { name: 'Sources' }))
+
+    await userEvent.click(toggle)
+    const sources = await waitFor(() => page.getByRole('listbox', { name: 'Sources' }))
+    for (const name of [/1911/, /Night of the gale/, /Pier plan/])
+      await userEvent.click(within(sources).getByRole('option', { name }))
+    await userEvent.keyboard('{Escape}')
+
+    await waitFor(() => expect(canvas.getByText('All sources are hidden')).toBeVisible())
+    await expect(canvas.queryByRole('list', { name: 'Results' })).toBeNull()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Show all sources' }))
+
+    await waitFor(() => expect(canvas.getAllByRole('listitem')).toHaveLength(4))
+    await expect(canvas.queryByText('All sources are hidden')).toBeNull()
+  },
+}
+
+/**
+ * A query the core rejects: no list of problems in the tab, the problems in the tooltip of the red dot,
+ * and the results of the last good run.
+ */
 export const ShowsTheProblemsOfTheQueryWithTheLastGoodResults: Story = {
   args: { response: MISSPELLED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Last run failed')
 
+    await expect(canvas.queryByRole('alert')).toBeNull()
+    await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
+
+    await userEvent.hover(dot)
     await waitFor(() =>
-      expect(canvas.getByRole('alert')).toHaveTextContent(
+      expect(canvas.getByRole('tooltip')).toHaveTextContent(
         '9:4 unknown function meanin (did you mean meaning?)',
       ),
     )
-    await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
   },
 }
 
-/** A run that found nothing says so. */
+/** A run that found nothing says so, with no button to bring results back. */
 export const SaysWhenNothingMatches: Story = {
   args: { response: NOTHING_FOUND },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await waitFor(() => expect(canvas.getByText('No passage matches the query.')).toBeVisible())
+    await waitFor(() => expect(canvas.getByText('The query found nothing')).toBeVisible())
     await expect(canvas.queryByRole('list')).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Clear filter' })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Show all sources' })).toBeNull()
   },
 }
 
-/** A note never computed says its results are being computed, and does not say nothing matches. */
+/** A note never computed names its dot for the computing, and does not say nothing matches. */
 export const SaysTheResultsAreBeingComputed: Story = {
   args: { response: NEVER_COMPUTED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await waitFor(() => expect(canvas.getByText('Computing the results…')).toBeVisible())
-    await expect(canvas.queryByText('No passage matches the query.')).toBeNull()
+    await expect(await getDot(canvasElement, 'Computing the results…')).toBeVisible()
+    await expect(canvas.queryByText('The query found nothing')).toBeNull()
   },
 }
 
@@ -248,20 +348,25 @@ export const ShowsAWarning: Story = {
   },
 }
 
-/** A failed last run is named with its time and reason; the results of the good run stay. */
+
+/**
+ * A failed last run names the red dot for it; the tooltip gives its time and reason and the time of the
+ * good run, whose results stay.
+ */
 export const ShowsAFailedLastRun: Story = {
   args: { response: FAILED_LAST_RUN },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Last run failed')
 
-    await waitFor(() =>
-      expect(
-        canvas.getByText(
-          new RegExp(`^Last run failed 14 Nov 2026, \\d\\d:\\d\\d: ${FAILURE_REASON}$`),
-        ),
-      ).toBeVisible(),
+    await expect(canvas.queryByText(new RegExp(FAILURE_REASON))).toBeNull()
+    await userEvent.hover(dot)
+
+    const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
+    await expect(tooltip).toHaveTextContent(
+      new RegExp(`Last run failed 14 Nov 2026, \\d\\d:\\d\\d: ${FAILURE_REASON}`),
     )
-    await expect(canvas.getByText(/^Computed 14 Nov 2026, \d\d:\d\d$/)).toBeVisible()
+    await expect(tooltip).toHaveTextContent(COMPUTED_TIME)
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
     await expect(canvas.getByRole('button', { name: /Pier plan/ })).toBeVisible()
   },
@@ -368,12 +473,16 @@ export const CompletesTheNamesOfTheCatalog: Story = {
   },
 }
 
-/** A query the core rejects is underlined at its place and listed, the note keeps its query, and the editor stays open. */
+const PARSER_PROBLEM = "extraneous input 'meanin' expecting <EOF>"
+const PLAIN_PROBLEM = 'Unexpected “meanin”: the query should end here'
+
+/**
+ * A query the core rejects is underlined at its place with its message in plain words on hover and under
+ * the cursor, no list of problems is drawn, the note keeps its query, and the editor stays open.
+ */
 export const UnderlinesAQueryNotSaved: Story = {
   args: {
-    updateAnswer: {
-      errors: [{ line: 1, column: 18, message: 'unknown function meanin (did you mean meaning?)' }],
-    },
+    updateAnswer: { errors: [{ line: 1, column: 18, message: PARSER_PROBLEM }] },
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
@@ -383,17 +492,24 @@ export const UnderlinesAQueryNotSaved: Story = {
     await fillEditor(editor, 'words("gale") && meanin("a night at sea")')
 
     await waitFor(() => expect(args.onUpdateSearch).toHaveBeenCalledTimes(1), AFTER_PAUSE)
-    await waitFor(() =>
-      expect(canvas.getByRole('alert')).toHaveTextContent(
-        '1:18 unknown function meanin (did you mean meaning?)',
-      ),
-    )
     const underlined = await waitFor(() => {
       const marks = canvasElement.querySelectorAll('.cm-lintRange-error')
       if (marks.length !== 1) throw new Error(`${marks.length} underlined ranges, want one`)
       return marks[0]!
     })
     await expect(underlined).toHaveTextContent(/^meanin$/)
+    await expect(canvas.queryByRole('alert')).toBeNull()
+    await expect(canvas.queryByText(new RegExp(PARSER_PROBLEM))).toBeNull()
+
+    await userEvent.hover(underlined)
+    await waitFor(() => expect(canvas.getByText(PLAIN_PROBLEM)).toBeVisible())
+
+    await userEvent.click(underlined)
+    await userEvent.hover(canvas.getByRole('heading'))
+    await waitFor(() =>
+      expect(canvasElement.querySelector('.cm-problem-at-cursor')).toHaveTextContent(PLAIN_PROBLEM),
+    )
+
     await expect(canvas.getByRole('region', { name: 'Edit query' })).toBeVisible()
     await expect(args.onGetResults.mock.calls.length).toBe(readsBefore)
 

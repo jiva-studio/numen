@@ -1,7 +1,8 @@
 /**
  * The code editor of the query in an element: the search language highlighted, the names of the catalog
- * completed, the problems underlined, and the query sent once typing pauses. It is made when the
- * component mounts and destroyed when it unmounts; a query still waiting then is sent at once.
+ * completed, the problems underlined with their message on hover and under the cursor, and the query
+ * sent once typing pauses. It is made when the component mounts and destroyed when it unmounts; a query
+ * still waiting then is sent at once.
  */
 import { onBeforeUnmount, onMounted, watch, type Ref } from 'vue'
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
@@ -18,6 +19,7 @@ import {
   type QueryFunction,
   type QueryProblem,
 } from '../lib/queryLanguage'
+import { problemAtCursor } from '../lib/problemTooltip'
 import { queryTheme } from '../lib/queryTheme'
 
 /** How long typing pauses before the query is sent. */
@@ -71,6 +73,7 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ 'aria-label': words.queryField }),
         typingListener,
+        problemAtCursor,
       ],
     })
   })
@@ -81,10 +84,14 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
     view = null
   })
 
-  watch(options.getProblems, (problems) => {
+  const showProblems = (problems: readonly QueryProblem[]): void => {
     if (!view) return
     view.dispatch(setDiagnostics(view.state, getQueryDiagnostics(view.state.doc, problems)))
-  })
+  }
+
+  onMounted(() => showProblems(options.getProblems()))
+
+  watch(options.getProblems, showProblems)
 
   return {
     focus: () => view?.focus(),

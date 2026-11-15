@@ -7,6 +7,7 @@ import { HighlightStyle, StreamLanguage, type StringStream } from '@codemirror/l
 import type { Diagnostic } from '@codemirror/lint'
 import type { Text } from '@codemirror/state'
 import { tags as t } from '@lezer/highlight'
+import { getProblemText } from './problemText'
 
 /** A function, a variable or a stage of the catalog; kind is "function", "variable" or "stage". */
 export interface QueryFunction {
@@ -131,20 +132,27 @@ export function createQueryCompletion(
   }
 }
 
-const getProblemEnd = (doc: Text, from: number): number => {
+const getProblemRange = (doc: Text, from: number): { from: number; to: number } => {
   const line = doc.lineAt(from)
   const rest = line.text.slice(from - line.from)
   const word = NAME.exec(rest) ?? /^"[^"]*"?/.exec(rest)
-  if (word) return from + word[0].length
-  return Math.min(from + 1, line.to)
+  if (word) return { from, to: from + word[0].length }
+  if (from < line.to) return { from, to: line.to }
+  if (from > line.from) return { from: from - 1, to: from }
+  return { from, to: Math.min(from + 1, doc.length) }
 }
 
-/** The problems as diagnostics: each from its line and column to the end of the name or string there. */
+/**
+ * The problems as diagnostics in plain words: each from its line and column to the end of the name or
+ * string there, to the end of the line from any other place, and over the last character from the end
+ * of a line, so every problem underlines at least one character of a query that has one.
+ */
 export function getQueryDiagnostics(doc: Text, problems: readonly QueryProblem[]): Diagnostic[] {
   return problems.map((problem) => {
     const lineNumber = Math.min(Math.max(problem.line, 1), doc.lines)
     const line = doc.line(lineNumber)
-    const from = Math.min(line.from + Math.max(problem.column - 1, 0), line.to)
-    return { from, to: getProblemEnd(doc, from), severity: 'error', message: problem.message }
+    const start = Math.min(line.from + Math.max(problem.column - 1, 0), line.to)
+    const { from, to } = getProblemRange(doc, start)
+    return { from, to, severity: 'error', message: getProblemText(problem.message) }
   })
 }

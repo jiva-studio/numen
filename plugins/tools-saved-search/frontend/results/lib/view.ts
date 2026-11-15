@@ -1,10 +1,12 @@
 /**
- * What the tab draws for an answer of the service: the status line, the failed last run, the problems,
- * the warnings, the results with their places, the sources the results come from, and the words for no
- * result; and the results a filter text and the hidden sources leave.
+ * What the tab draws for an answer of the service: the state of the run with its details and the
+ * problems of the note, the warnings, the results with their places, the sources the results come from,
+ * the words for no result; and the results a filter text and the hidden sources leave, and why none is
+ * left.
  */
 import type { Words } from '../../words'
 import { formatPlace, type PlaceFields } from './place'
+import { getProblemText } from './problemText'
 import { formatTime } from './time'
 
 /** The fields of a result that the tab draws. */
@@ -56,27 +58,36 @@ export interface SourceView {
   readonly title: string
 }
 
+/** The state of the run: fresh results, a run in progress, results that will update, a failed last run. */
+export type RunState = 'fresh' | 'running' | 'stale' | 'failed'
+
+/** The state of the run, its name, and the lines that describe it: the state, the times and the failure. */
+export interface StatusView {
+  readonly state: RunState
+  readonly label: string
+  readonly details: readonly string[]
+}
+
 /** The tab of a saved search as it is drawn. */
 export interface ResultsView {
   readonly title: string
   readonly query: string
-  readonly status: string
-  readonly failedRun: string
-  readonly problems: readonly string[]
+  readonly status: StatusView
   readonly warnings: readonly string[]
   readonly items: readonly ResultItemView[]
   readonly sources: readonly SourceView[]
   readonly emptyText: string
 }
 
+type Problem = ResultsFields['errors'][number]
+
 /** As `9:4 message`: the line and the column, counted from 1, then the message. */
-export function formatProblem(problem: {
-  readonly line: number
-  readonly column: number
-  readonly message: string
-}): string {
+export function formatProblem(problem: Problem): string {
   return `${problem.line}:${problem.column} ${problem.message}`
 }
+
+const formatPlainProblem = (problem: Problem): string =>
+  formatProblem({ ...problem, message: getProblemText(problem.message) })
 
 function getFileName(path: string): string {
   return path.slice(path.lastIndexOf('/') + 1)
@@ -88,17 +99,40 @@ function getFileStem(path: string): string {
   return dot > 0 ? name.slice(0, dot) : name
 }
 
-function getStatus(response: ResultsFields, words: Words, locale: string): string {
-  if (response.computedAt === '') return words.computing
-  const time = formatTime(response.computedAt, locale)
-  if (response.isRunning) return `${words.updating}${words.separator}${words.computedLower} ${time}`
-  if (response.isStale) return `${words.willUpdate}${words.separator}${words.computedLower} ${time}`
-  return `${words.computed} ${time}`
+function isLastRunFailed(response: ResultsFields): boolean {
+  if (response.failedAt === '') return false
+  if (response.computedAt === '') return true
+  return Date.parse(response.failedAt) >= Date.parse(response.computedAt)
 }
 
-function getFailedRun(response: ResultsFields, words: Words, locale: string): string {
-  if (response.failedAt === '') return ''
-  return `${words.lastRunFailed} ${formatTime(response.failedAt, locale)}: ${response.failure}`
+function getRunState(response: ResultsFields): RunState {
+  if (response.isRunning) return 'running'
+  if (isLastRunFailed(response)) return 'failed'
+  if (response.computedAt === '') return 'running'
+  if (response.isStale) return 'stale'
+  return 'fresh'
+}
+
+function getLabel(state: RunState, response: ResultsFields, words: Words): string {
+  if (state === 'running') return response.computedAt === '' ? words.computing : words.updating
+  if (state === 'failed') return words.lastRunFailed
+  if (state === 'stale') return words.willUpdate
+  return words.upToDate
+}
+
+function getStatus(response: ResultsFields, words: Words, locale: string): StatusView {
+  const state = getRunState(response)
+  const label = getLabel(state, response, words)
+  const failedRun = isLastRunFailed(response)
+    ? `${words.lastRunFailed} ${formatTime(response.failedAt, locale)}: ${response.failure}`
+    : ''
+  const details = [state === 'failed' ? failedRun : label]
+  if (response.computedAt !== '')
+    details.push(`${words.computed} ${formatTime(response.computedAt, locale)}`)
+  if (response.isStale && state !== 'stale') details.push(words.willUpdate)
+  if (failedRun !== '' && state !== 'failed') details.push(failedRun)
+  details.push(...response.errors.map(formatPlainProblem))
+  return { state, label, details }
 }
 
 function getItem(result: ResultFields, index: number, words: Words): ResultItemView {
@@ -131,8 +165,6 @@ export function getResultsView(response: ResultsFields, words: Words, locale: st
     title: response.title,
     query: response.query,
     status: getStatus(response, words, locale),
-    failedRun: getFailedRun(response, words, locale),
-    problems: response.errors.map(formatProblem),
     warnings: [...response.warnings],
     items: response.results.map((result, index) => getItem(result, index, words)),
     sources: getSources(response.results),
@@ -159,4 +191,30 @@ export function filterItems(
   return items.filter(
     (item) => !hidden.has(item.source) && (needle === '' || isMatch(item, needle)),
   )
+}
+
+/** What empties the list of results: every source hidden, or a filter text that no result holds. */
+export type EmptyReason = 'sources' | 'filter'
+
+/** Why the filter leaves no result, in words, and the action that brings the results back. */
+export interface FilterEmptyView {
+  readonly reason: EmptyReason
+  readonly text: string
+  readonly actionText: string
+}
+
+/** Why the shown sources and the filter text leave no result of the sources. */
+export function getFilterEmpty(
+  sources: readonly SourceView[],
+  hidden: ReadonlySet<string>,
+  filter: string,
+  words: Words,
+): FilterEmptyView {
+  if (sources.every((source) => hidden.has(source.path)))
+    return { reason: 'sources', text: words.allSourcesHidden, actionText: words.showAllSources }
+  return {
+    reason: 'filter',
+    text: words.noFilterMatch(filter.trim()),
+    actionText: words.clearFilter,
+  }
 }
