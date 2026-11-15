@@ -42,6 +42,6 @@ func checkFeedTypes(t *testing.T, id string, takes, ignores []domain.ContentType
 	t.Fatalf("plugin %s not found", id)
 }
 
-func TestTaxonomyTakesOnlyNotes(t *testing.T) {
+func TestTaxonomyFeedTypes(t *testing.T) {
 	checkFeedTypes(t, "md.numen.tools.taxonomy", []domain.ContentType{noteType}, []domain.ContentType{pdfType, epubType, pngType, mp3Type, mp4Type})
 }
