@@ -229,7 +229,10 @@ func New() *World {
 	optionalKey := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key"}
 	modelField := manifest.ConnectionField{Key: ModelOption, Type: textField, Title: "Model", IsRequired: true, OptionsFrom: ModelsOperation}
 	maximum := 8.0
-	agentParallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: numberField, Title: parallelRequestsTitle, Default: float64(1), Min: &minimum, Max: &maximum, Step: &step}
+	agentParallelRequests := manifest.ConnectionField{
+		Key: manifest.ConnectionParallelRequests, Type: numberField, Title: parallelRequestsTitle,
+		Default: float64(1), Min: &minimum, Max: &maximum, Step: &step,
+	}
 	serverType := func(pluginID string) connection.Type {
 		return connection.Type{PluginID: pluginID, PluginName: pluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
 			ID: "server", Title: "Server", Operations: getBothOperations(), Fields: []manifest.ConnectionField{address, key},
