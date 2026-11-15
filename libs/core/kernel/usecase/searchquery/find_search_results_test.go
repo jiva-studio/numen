@@ -265,7 +265,7 @@ func TestWordsWhoseBestChunksAreOutOfScopeWidenTheSearch(t *testing.T) {
 func TestADocumentLoadedForANegatedCompareCountsTheChunksOfTheActiveRecipe(t *testing.T) {
 	w := newDeepWorld(t)
 	find := w.newFind(texts{"a": newVector(0)})
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("a") && path.startsWith("deep/") && !(title == "other")`})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("a") && path.startsWith("deep/") && !(title == "other")`})
 	if err != nil {
 		t.Fatal(err)
 	}
