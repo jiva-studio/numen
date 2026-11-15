@@ -8,24 +8,11 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func saveNoteWithFrontmatter(t *testing.T, db *DB, path string, frontmatter map[string]any) {
-	t.Helper()
-	n := domain.Note{
-		FileStat:    domain.FileStat{Path: path, Kind: domain.KindNote, Size: 100, ModTime: getWalkedTime()},
-		Title:       path,
-		Body:        "Text.",
-		Frontmatter: frontmatter,
-	}
-	if err := saveCut(t.Context(), db, getFirstVault().ID, []domain.Note{n}); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestListPropertyValuesReadsATopLevelKeyByItsExactName(t *testing.T) {
 	db := openDB(t)
-	saveNoteWithFrontmatter(t, db, "a.md", map[string]any{"a.b": 7, "it's": 7.5, "list": []any{"x", 2}})
-	saveNoteWithFrontmatter(t, db, "b.md", map[string]any{"a": map[string]any{"b": 7}})
-	saveNoteWithFrontmatter(t, db, "c.md", nil)
+	saveNoteWithFrontmatter(t, db, getFirstVault(), "a.md", map[string]any{"a.b": 7, "it's": 7.5, "list": []any{"x", 2}}, "Text.")
+	saveNoteWithFrontmatter(t, db, getFirstVault(), "b.md", map[string]any{"a": map[string]any{"b": 7}}, "Text.")
+	saveNoteWithFrontmatter(t, db, getFirstVault(), "c.md", nil, "Text.")
 	queries := db.NoteQueries()
 	entries, err := queries.ListPropertyValues(t.Context(), getFirstVault().ID, "a.b")
 	if err != nil {
