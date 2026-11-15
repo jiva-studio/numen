@@ -464,7 +464,7 @@ func TestCurveAndSimulationEdgeCases(t *testing.T) {
 	oneCard := map[ReviewCardID]Schedule{
 		{Card: "c1", Template: "T"}: schedules[ReviewCardID{Card: "a", Template: "T"}],
 	}
-	sim1Day := Simulation{By: fsrs, Day: d, Cost: GetDefaultCost(), Days: 1}
+	sim1Day := Simulation{By: fsrs, Day: d, Cost: review.GetDefaultCost(), Days: 1}
 	ctxMinPlace, cancelMinPlace := context.WithCancel(t.Context())
 	sim1Day.By = &cancelAfterCallsScheduler{inner: fsrs, remaining: 1, cancel: cancelMinPlace}
 	if _, err := sim1Day.Curve(ctxMinPlace, now, pMinLow, CurveInputs{Schedules: oneCard}); !errors.Is(err, context.Canceled) {
@@ -528,7 +528,7 @@ func TestCurveAndSimulationEdgeCases(t *testing.T) {
 		},
 	}
 	ran1Day, err := Simulation{
-		By: fsrs, Day: d, Cost: GetDefaultCost(), Days: 1, Retains: []int{0},
+		By: fsrs, Day: d, Cost: review.GetDefaultCost(), Days: 1, Retains: []int{0},
 	}.Run(t.Context(), now, Preset{Goal: GoalRetention, ReviewsADay: 10, MinutesADay: 30, Retention: 0.9}, zeroStab, 0)
 	if err != nil {
 		t.Fatalf("Run(zeroStab) err = %v", err)
@@ -545,7 +545,7 @@ func TestCurveAndSimulationEdgeCases(t *testing.T) {
 	simMulti := Simulation{
 		By:      multiDayNewScheduler{inner: fsrs},
 		Day:     d,
-		Cost:    GetDefaultCost(),
+		Cost:    review.GetDefaultCost(),
 		Days:    10,
 		Recalls: func(Schedule, time.Time) float64 { return 0.5 },
 	}

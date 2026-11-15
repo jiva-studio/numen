@@ -4,21 +4,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/onnx"
 )
-
-func TestTheSessionsOpenOnTheCPUUnlessTheHostNamesAProvider(t *testing.T) {
-	for _, one := range []struct {
-		name string
-		want onnx.Provider
-	}{{"", onnx.ProviderCPU}, {"auto", onnx.ProviderCPU}, {" AUTO ", onnx.ProviderCPU}, {"cuda", onnx.ProviderCUDA}} {
-		t.Setenv("NUMEN_ONNX_PROVIDER", one.name)
-		if got := getSessionProvider(); got != one.want {
-			t.Errorf("with %q, getSessionProvider() = %q, want %q", one.name, got, one.want)
-		}
-	}
-}
 
 func TestGraphConstants(t *testing.T) {
 	if encoded != 1024 || hidden != 640 || layers != 2 {

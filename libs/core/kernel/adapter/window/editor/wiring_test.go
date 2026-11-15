@@ -73,10 +73,10 @@ func (w wiring) startSession(
 			state.Runtime.RecordModel(name, recipe)
 			return embedding.CountProgress(ctx, v.ID, recipe)
 		},
-		SearchSourceReady: state.Events.EmitSearchSourceReady,
-		Events:            windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
-		Quiet:             opts.idle,
-		After:             time.After,
+		IndexChanged: state.Events.EmitIndexChanged,
+		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
+		Quiet:        opts.idle,
+		After:        time.After,
 	})
 	state.Writes.NotifyNoteWritten = worker.WakeNotes
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}

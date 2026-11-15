@@ -23,6 +23,7 @@ type windowParts struct {
 	closeEmbedder func() error
 	closeIndex    func() error
 	frontmatter   *indexnote.FrontmatterChanges
+	feed          windowsession.FeedEvents
 }
 
 // windowCases are the use cases that run a window from its start to its close.
@@ -53,7 +54,7 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
-		Passes:   parts.passes, Triggers: getTriggerSource(a, parts.frontmatter),
+		Passes:   parts.passes, Triggers: getTriggerSource(a, parts.frontmatter), Feed: parts.feed,
 	})
 	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)

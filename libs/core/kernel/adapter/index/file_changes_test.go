@@ -215,3 +215,19 @@ func TestAChangeDuringAFullReadIsAfterTheCursorTakenBeforeIt(t *testing.T) {
 		t.Errorf("the feed after the cursor holds %v, want the frontmatter of b.md", got)
 	}
 }
+
+func TestTheStartOfTheFeedReadsAfterTrimmedRemovals(t *testing.T) {
+	db := openDB(t)
+	v := getFirstVault()
+	saveNoteWithFrontmatter(t, db, v, "a.md", nil, "A")
+	if err := db.Notes().Remove(t.Context(), v.ID, []string{"a.md"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.TrimFileChanges(t.Context(), time.Now().Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	head := getFeedHead(t, db, v)
+	if start := (filechange.Cursor{FeedID: head.Cursor.FeedID, Seq: 0}); head.IsReset(start) {
+		t.Errorf("the start of the feed resets: head %+v", head)
+	}
+}

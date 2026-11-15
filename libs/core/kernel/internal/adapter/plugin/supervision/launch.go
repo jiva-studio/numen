@@ -89,7 +89,7 @@ func (p *Processes) startBuiltIn(ctx context.Context, launch Launch, sup *lifecy
 	}
 	vars := make(map[string]string)
 	launchVars := p.getEnvironmentVars(ctx, plug.Manifest.ID, launch.VaultPath, 0, token, runtimeVars)
-	for _, entry := range process.SanitizeEnvironment(os.Environ(), launchVars, plug.Manifest.GetRuntimeIDs()) {
+	for _, entry := range process.SanitizeEnvironment(os.Environ(), launchVars, plug.Manifest.GetDependencyEnvironment()) {
 		name, value, _ := strings.Cut(entry, "=")
 		vars[name] = value
 	}

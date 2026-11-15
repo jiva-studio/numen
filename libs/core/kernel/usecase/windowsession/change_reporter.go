@@ -59,9 +59,9 @@ func (r *ChangeReporter) newChangeReporter(
 			// A book added to an open vault is read without a request.
 			r.wake.WakeSources()
 		}
-		if len(paths) > 0 {
+		if reload || len(paths) > 0 {
 			// A written note is chunked again, and its chunks need new vectors. The index
-			// determines which.
+			// determines which. The rescan behind a reload may have saved or removed notes.
 			r.wake.WakeNotes()
 		}
 	}
