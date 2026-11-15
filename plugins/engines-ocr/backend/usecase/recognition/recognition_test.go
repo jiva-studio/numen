@@ -179,7 +179,10 @@ func newScene(t *testing.T) *scene {
 	}
 	documents := document.NewReader()
 	run, err := recognition.New(
-		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return s.vault.With(id) }, Store: foldersOf(s.store), Texts: s.textsOf, Queue: s.queue, Documents: documents, Report: s.keepFailure},
+		recognition.Host{
+			Vaults: func(id domain.VaultID) recognition.Files { return s.vault.With(id) }, Store: foldersOf(s.store),
+			Texts: s.textsOf, Queue: s.queue, Documents: documents, Report: s.keepFailure,
+		},
 		func(context.Context) (recognition.Recognizer, error) { return s.recognizer, nil },
 	)
 	if err != nil {

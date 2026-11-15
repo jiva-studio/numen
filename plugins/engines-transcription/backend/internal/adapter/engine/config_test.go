@@ -9,10 +9,13 @@ import (
 )
 
 func TestTheSessionsOpenOnTheCPUUnlessTheHostNamesAProvider(t *testing.T) {
-	for name, want := range map[string]onnx.Provider{"": onnx.ProviderCPU, "auto": onnx.ProviderCPU, " AUTO ": onnx.ProviderCPU, "cuda": onnx.ProviderCUDA} {
-		t.Setenv("NUMEN_ONNX_PROVIDER", name)
-		if got := getSessionProvider(); got != want {
-			t.Errorf("with %q, getSessionProvider() = %q, want %q", name, got, want)
+	for _, one := range []struct {
+		name string
+		want onnx.Provider
+	}{{"", onnx.ProviderCPU}, {"auto", onnx.ProviderCPU}, {" AUTO ", onnx.ProviderCPU}, {"cuda", onnx.ProviderCUDA}} {
+		t.Setenv("NUMEN_ONNX_PROVIDER", one.name)
+		if got := getSessionProvider(); got != one.want {
+			t.Errorf("with %q, getSessionProvider() = %q, want %q", one.name, got, one.want)
 		}
 	}
 }
