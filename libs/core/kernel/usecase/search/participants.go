@@ -21,12 +21,9 @@ func NewWords(queries sourceport.LexicalQueries) Words {
 	return Words{queries: queries}
 }
 
-// Rank returns the chunks that hold the words of the query, best first, each with its word score. A raw
-// query is passed to the index as written.
+// Rank returns the chunks that hold the words of the query, best first, each with its word score.
 func (w Words) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error) {
-	lexical := getLexicalQuery(q)
-	lexical.IsRaw = q.IsRawWords
-	found, err := w.queries.FindLexical(ctx, v.ID, lexical)
+	found, err := w.queries.FindLexical(ctx, v.ID, getLexicalQuery(q))
 	return Ranking{Results: found}, err
 }
 

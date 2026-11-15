@@ -22,18 +22,13 @@ type ResultFinder interface {
 	Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.SearchResult, error)
 }
 
-// SearchResultQuery is a text search request. Mode selects the participants, Hybrid by default,
-// IsRawWords passes Query to the words as an FTS5 query, and IsWholeText keeps the whole text of each
-// chunk in WholeText.
+// SearchResultQuery is a text search request.
 type SearchResultQuery struct {
 	Query            string
 	Limit            int
 	ResultsPerSource int
 	Kinds            []domain.SourceKind
 	PathPrefix       string
-	Mode             Mode
-	IsRawWords       bool
-	IsWholeText      bool
 }
 
 // SearchText finds the search results of a vault matching a query, by keywords and by embedding, with
@@ -51,16 +46,14 @@ func NewSearchText(finder ResultFinder) *SearchText {
 // MaxSearchedResults, and at most q.ResultsPerSource of one source, DefaultSearchedResultsPerSource
 // where it is not positive and q.Limit where it is above. An installation with no model searches by
 // keywords only, and an empty query returns nothing. The text of each search result is truncated to the
-// excerpt around the hit, and its range is the whole search result; with IsWholeText, WholeText holds the
-// text before the cut.
+// excerpt around the hit, and its range is the whole search result.
 func (u *SearchText) Execute(ctx context.Context, v domain.Vault, q SearchResultQuery) ([]domain.SearchResult, error) {
 	query := strings.TrimSpace(q.Query)
 	if query == "" {
 		return nil, nil
 	}
-	parameters := GetTypingParameters(q.Mode, min(max(q.Limit, 0), MaxSearchedResults))
+	parameters := GetTypingParameters(Hybrid, min(max(q.Limit, 0), MaxSearchedResults))
 	parameters.IsGrowing = false
-	parameters.IsRawWords = q.IsRawWords
 	parameters.Each = getResultsPerSource(q.ResultsPerSource, parameters.Limit)
 	parameters.Kinds = q.Kinds
 	parameters.PathPrefix = q.PathPrefix
@@ -69,9 +62,6 @@ func (u *SearchText) Execute(ctx context.Context, v domain.Vault, q SearchResult
 		return nil, err
 	}
 	for i := range found {
-		if q.IsWholeText {
-			found[i].WholeText = found[i].Text
-		}
 		found[i].Text = getExcerpt(found[i].Text, found[i].MatchOffset)
 	}
 	return found, nil
