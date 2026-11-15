@@ -14,8 +14,13 @@ import (
 
 func getTechnologyFreeAdapters() map[string]string {
 	return map[string]string{
+		"adapter/none":                   "the stand-ins the container hands a use case for a collaborator the build does not have: they answer empty and wrap no technology",
 		"internal/adapter/clock":         "the machine clock itself, read through the time package",
 		"internal/adapter/plugin/absent": "the stand-in of a plugin host that runs nothing: it answers unavailable and wraps no technology",
+		// bridge keeps a plugin alive for the length of a call (the lease) and transport connects to the plugin. Merging
+		// the two would only move code to satisfy this check and give transport a second responsibility, so bridge stays
+		// a shared package of the plugin adapter, as architecture.md names it, and is listed here (#1957).
+		"internal/adapter/plugin/bridge": "what every bridge to a plugin shares: the lease a call holds on its plugin and the opening of a client through transport, which calls the network",
 	}
 }
 
@@ -104,41 +109,8 @@ func isDrivenAdapter(pkg *packages.Package, rel string, ports []load.PortInterfa
 	return load.GetImplementation(pkg, ports).Name != ""
 }
 
-func getAdapterFamily(rel string) string {
-	parts := strings.Split(rel, "/")
-	if len(parts) < 4 || !load.IsWithin(rel, "internal/adapter") {
-		return ""
-	}
-	return strings.Join(parts[:3], "/")
-}
-
-func getSharedPlumbing(pkgs []*packages.Package, root string, ports []load.PortInterface) map[string]bool {
-	shared := map[string]bool{}
-	for _, pkg := range pkgs {
-		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")
-		family := getAdapterFamily(rel)
-		if family == "" {
-			continue
-		}
-		for path := range pkg.Imports {
-			imported := strings.TrimPrefix(strings.TrimPrefix(path, root), "/")
-			if imported != rel && getAdapterFamily(imported) == family {
-				shared[imported] = true
-			}
-		}
-	}
-	for _, pkg := range pkgs {
-		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")
-		if shared[rel] && load.GetImplementation(pkg, ports).Name != "" {
-			delete(shared, rel)
-		}
-	}
-	return shared
-}
-
 func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free map[string]string) (found []string, driven int) {
 	ports := load.ListPortInterfaces(pkgs, root)
-	shared := getSharedPlumbing(pkgs, root, ports)
 	for _, pkg := range pkgs {
 		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")
 		isInternalAdapter := load.IsWithin(rel, "internal/adapter")
@@ -155,7 +127,7 @@ func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free ma
 		switch {
 		case isDriving && isInternalAdapter:
 			found = append(found, rel+" calls a use case: a driving adapter lives under adapter/")
-		case isDriving, shared[rel]:
+		case isDriving:
 		default:
 			driven++
 			if _, isFree := free[rel]; !isFree && !isCallingTechnology(pkg) {

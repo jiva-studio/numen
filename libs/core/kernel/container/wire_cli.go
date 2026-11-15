@@ -20,10 +20,9 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// cliRun is what the parts of one run of the command line share: the installation, the one list of tasks
-// the plugin work of the run reports into, the lock of the models, and what Close closes.
+// cliRun is what the parts of one run of the command line share: the one list of tasks the plugin work of
+// the run reports into, the lock of the models, and what Close closes.
 type cliRun struct {
-	c       Config
 	tasks   *run.Tasks
 	models  *run.Lock
 	closers []func() error
@@ -32,13 +31,13 @@ type cliRun struct {
 // OpenCLI returns the session of one run of the command line over the installation c describes. It opens
 // nothing: each command opens what it works over, and Close closes it.
 func OpenCLI(c Config) cli.Session {
-	r := &cliRun{c: c, tasks: run.NewTasks(), models: &run.Lock{}}
+	r := &cliRun{tasks: run.NewTasks(), models: &run.Lock{}}
 	return cli.NewSession(
-		func() (cli.Vaults, error) { return openCLIVaults(r.c) },
+		func() (cli.Vaults, error) { return openCLIVaults(c) },
 		func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
-			return openCLIIndexed(r, ctx, options)
+			return openCLIIndexed(r, c, ctx, options)
 		},
-		func() cli.PluginCommands { return getCLIPluginCommands(r) },
+		func() cli.PluginCommands { return getCLIPluginCommands(r, c) },
 		func() ([]string, error) { return closeCLI(r) },
 	)
 }
@@ -57,8 +56,7 @@ func openCLIVaults(c Config) (cli.Vaults, error) {
 	}, nil
 }
 
-func openCLIIndexed(r *cliRun, ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
-	c := r.c
+func openCLIIndexed(r *cliRun, c Config, ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
 	c.ShouldRebuildIndex = options.Rebuild
 	a := plugins(c)
 	ports, err := c.registry()
@@ -134,13 +132,13 @@ func openCLIEmbedder(r *cliRun, a pluginsWiring, ctx context.Context) (searchsou
 	return embedder, why
 }
 
-func getCLIPluginCommands(r *cliRun) cli.PluginCommands {
-	find := func(nameOrPath string) (domain.Vault, error) { return findCLIVault(r.c, nameOrPath) }
+func getCLIPluginCommands(r *cliRun, c Config) cli.PluginCommands {
+	find := func(nameOrPath string) (domain.Vault, error) { return findCLIVault(c, nameOrPath) }
 	return cli.PluginCommands{
-		List:   getPluginCommands(plugins(r.c)).List,
+		List:   getPluginCommands(plugins(c)).List,
 		ByName: plugincommand.NewRunByName(find),
 		Open: func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-			return openCLIPluginCommands(r, ctx, v)
+			return openCLIPluginCommands(r, c, ctx, v)
 		},
 	}
 }
@@ -153,16 +151,18 @@ func findCLIVault(c Config, nameOrPath string) (domain.Vault, error) {
 	return registry.NewFind(ports.Lookup).Execute(nameOrPath)
 }
 
-func openCLIPluginCommands(r *cliRun, ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-	db, err := openIndex(vaultOf(r.c), ctx)
+func openCLIPluginCommands(
+	r *cliRun, c Config, ctx context.Context, v domain.Vault,
+) (plugincommand.Run, func() error, error) {
+	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return plugincommand.Run{}, nil, err
 	}
-	_, pluginWork, err := openPluginWork(r.c, db, v, r.tasks, r.models)
+	_, pluginWork, err := openPluginWork(c, db, v, r.tasks, r.models)
 	if err != nil {
 		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}
-	return getPluginCommands(plugins(r.c)).Run, closeAfterWork(ctx, pluginWork, db.Close), nil
+	return getPluginCommands(plugins(c)).Run, closeAfterWork(ctx, pluginWork, db.Close), nil
 }
 
 func closeCLI(r *cliRun) ([]string, error) {

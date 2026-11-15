@@ -23,6 +23,7 @@ const filters = Object.fromEntries(
 /** The filters ci.yml and codeql.yml read. */
 const AREAS = [
   'core',
+  'structure',
   'protocol',
   'sdk_go',
   'shared_go',
@@ -67,6 +68,7 @@ describe('the filters of the changed areas', () => {
   it('scopes workflow, action, lock file and config changes to the areas that use them', () => {
     assert.deepEqual(getAreas('.github/workflows/go.yml'), [
       'core',
+      'structure',
       'protocol',
       'sdk_go',
       'shared_go',
@@ -84,6 +86,7 @@ describe('the filters of the changed areas', () => {
     ])
     assert.deepEqual(getAreas('go.work'), [
       'core',
+      'structure',
       'protocol',
       'sdk_go',
       'shared_go',
@@ -124,6 +127,13 @@ describe('the filters of the changed areas', () => {
     assert.ok(!getAreas('plugins/engines-transcription/backend/main.go').includes('plugin_stories'))
   })
 
+  it('runs the Go structure checks and not the core for a change to a plugin backend', () => {
+    const areas = getAreas('plugins/engines-transcription/backend/main.go')
+    for (const area of ['structure', 'plugin_files', 'go']) assert.ok(areas.includes(area), area)
+    for (const area of ['core', 'plugins_all']) assert.ok(!areas.includes(area), area)
+    assert.ok(!getAreas('plugins/engines-transcription/backend/README.md').includes('structure'))
+  })
+
   it('runs the core and the manual for a changed manifest', () => {
     const areas = getAreas('plugins/views-file-tree/manifest.json')
     assert.ok(areas.includes('core'))
@@ -154,6 +164,7 @@ describe('the filters of the changed areas', () => {
   it('runs the Go modules that build on the core and no frontend for a change to the core', () => {
     assert.deepEqual(getAreas('libs/core/kernel/usecase/search/search.go'), [
       'core',
+      'structure',
       'desktop',
       'mobile',
       'code',

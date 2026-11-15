@@ -21,6 +21,8 @@ const DELETE_TEXT = 'Delete text'
 const DELETE_MEDIA = 'Delete media'
 /** The call of the host that stores an edit of a text. */
 const CREATE_TEXT_EDIT = '/numen.v1.TextService/CreateTextEdit'
+/** The first text of a world starts its plugin, and a recognition compiles PDFium where it never ran. */
+const FIRST_TEXT_LIMIT_MS = 40_000
 
 export class TextDriver {
   constructor(
@@ -119,7 +121,7 @@ export class TextDriver {
 
   private async expectMadeText(filePath: string): Promise<void> {
     const { request } = this.scenario.page
-    await expect.poll(() => hasMadeText(request, filePath)).toBe(true)
+    await expect.poll(() => hasMadeText(request, filePath), { timeout: FIRST_TEXT_LIMIT_MS }).toBe(true)
   }
 
   private async expectEnded(notePath: string): Promise<void> {

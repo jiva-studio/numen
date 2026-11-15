@@ -30,9 +30,22 @@ type cutter struct {
 }
 
 func newCutter(u Index, onProgress func(vaultreading.IndexResult), isSkipped func(path string) bool) cutter {
+	if onProgress == nil {
+		onProgress = func(vaultreading.IndexResult) {}
+	}
+	if isSkipped == nil {
+		isSkipped = func(string) bool { return false }
+	}
+	errorHandler, readNote := u.errorHandler, u.readNote
+	if errorHandler == nil {
+		errorHandler = func(error) {}
+	}
+	if readNote == nil {
+		readNote = func(context.Context, domain.Vault, string) error { return nil }
+	}
 	return cutter{
-		sources: u.sources, backlog: u.queries.backlog, lookup: u.queries.lookup, sizes: u.sizes(), legibility: u.Legibility,
-		isSkipped: isSkipped, errorHandler: u.errorHandler, readNote: u.readNote, onProgress: onProgress,
+		sources: u.sources, backlog: u.queries.backlog, lookup: u.queries.lookup, sizes: u.sizes.Resolve(), legibility: u.legibility,
+		isSkipped: isSkipped, errorHandler: errorHandler, readNote: readNote, onProgress: onProgress,
 	}
 }
 
@@ -123,7 +136,7 @@ func (u cutter) chunkNewPaths(
 			continue
 		}
 		run.tried[path] = true
-		if u.isSkipped != nil && u.isSkipped(path) {
+		if u.isSkipped(path) {
 			continue
 		}
 		freshCount++
@@ -223,7 +236,7 @@ func (u cutter) dropVersionOfNote(ctx context.Context, v domain.Vault, path stri
 	if err != nil {
 		return fmt.Errorf("read the index of %s: %w", path, err)
 	}
-	if !ok || indexed.Producer == "" || u.readNote == nil {
+	if !ok || indexed.Producer == "" {
 		return nil
 	}
 	if err := u.readNote(ctx, v, path); err != nil {
@@ -233,9 +246,7 @@ func (u cutter) dropVersionOfNote(ctx context.Context, v domain.Vault, path stri
 }
 
 func (u cutter) reportError(err error) {
-	if u.errorHandler != nil {
-		u.errorHandler(err)
-	}
+	u.errorHandler(err)
 }
 
 func chunksOf(doc domain.VersionText, sizes chunking.Sizes, reads chunking.Legibility) []domain.Chunk {
@@ -268,7 +279,5 @@ func countChunks(chunks []domain.Chunk) int {
 }
 
 func (u cutter) progress(res vaultreading.IndexResult) {
-	if u.onProgress != nil {
-		u.onProgress(res)
-	}
+	u.onProgress(res)
 }
