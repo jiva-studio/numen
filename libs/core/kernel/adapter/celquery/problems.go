@@ -32,7 +32,9 @@ func (w *nameWalk) addMemberProblem(expr ast.Expr, name string) {
 	})
 }
 
-var memberFunctions = searchquery.Catalog{Functions: []searchquery.Function{{Name: overloads.StartsWith}}}
+var memberFunctions = searchquery.Catalog{Functions: []searchquery.Function{
+	{Name: overloads.StartsWith}, {Name: overloads.EndsWith}, {Name: overloads.Contains},
+}}
 
 func (w *nameWalk) walk(expr ast.Expr) {
 	switch expr.Kind() {
