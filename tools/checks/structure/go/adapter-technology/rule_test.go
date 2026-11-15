@@ -13,6 +13,7 @@ import (
 )
 
 func getTechnologyFreeAdapters() map[string]string {
+	// numen:kept-list #1957 the driven adapters that call no technology are a named exception list with a reason per entry
 	return map[string]string{
 		"adapter/none":                   "the stand-ins the container hands a use case for a collaborator the build does not have: they answer empty and wrap no technology",
 		"internal/adapter/clock":         "the machine clock itself, read through the time package",

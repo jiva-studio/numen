@@ -43,7 +43,7 @@ type configEntryResolver struct {
 }
 
 func loadConfigEntryTable(libPath string) (*configEntryTable, error) {
-	handle, err := loadLibrary(libPath)
+	handle, err := OpenLibrary(libPath)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", libPath, err)
 	}

@@ -58,11 +58,10 @@ type CurvePoint struct {
 func GetOutsideGrid() CurvePoint { return CurvePoint{Index: -1, Value: 0, Day: ""} }
 
 func createCurve(goal Goal) Curve {
-	var out Curve
-	out.Goal = goal
-	out.Now = GetOutsideGrid()
-	out.Suggested = GetOutsideGrid()
-	return out
+	return Curve{
+		Goal: goal, Grid: nil, Days: nil, Points: nil, Now: GetOutsideGrid(), Suggested: GetOutsideGrid(),
+		Stops: "", Decks: 0, Cards: 0, Overdue: 0, Unbegun: 0,
+	}
 }
 
 // curveBuilder holds simulation state for computing a curve.
@@ -315,7 +314,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 		out.Now = CurvePoint{
 			Index: findNearestGridIndex(out.Grid, float64(named)),
 			Value: float64(named),
-			Day:   delta,
+			Day:   run.Day.GetName(open.AddDate(0, 0, named)),
 		}
 	}
 	out.Suggested = findSuggestedDate(out.Points, out.Grid, out.Days, p.MinutesADay)

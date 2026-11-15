@@ -63,4 +63,54 @@ describe('the target of a command that names none', () => {
 
     expect(resolve().isReady).toBe(false)
   })
+
+  it('resolves empty path, file, and title when the front tab is missing or has no target reader', async () => {
+    const { windowTabs, resolve } = create()
+    windowTabs.kinds.registerKinds([
+      {
+        kind: 'plain',
+        open: () => ({ title: 'Plain' }),
+        pane: {},
+        getTitle: (state: { title: string }) => state.title,
+      } as AnyTabKind,
+      {
+        kind: 'address-only',
+        open: () => ({ title: 'AddressOnly' }),
+        pane: {},
+        getTitle: (state: { title: string }) => state.title,
+        address: {},
+      } as AnyTabKind,
+    ])
+
+    const plainId = await windowTabs.tabs.openTabOfKind('plain', '')
+    expect(resolve()).toMatchObject({ tab: plainId, kind: 'plain', path: '', title: '', file: '' })
+
+    const addrId = await windowTabs.tabs.openTabOfKind('address-only', '')
+    expect(resolve()).toMatchObject({
+      tab: addrId,
+      kind: 'address-only',
+      path: '',
+      title: '',
+      file: '',
+    })
+
+    const orphanResolver = createTargetResolver(
+      {
+        handle: {
+          ...windowTabs.handle,
+          front: () => ({ id: 'ghost', kind: 'note', state: { path: 'a.md', title: 'A' } }),
+        },
+        tabs: { getTab: () => null } as never,
+      },
+      { activeVault: ref({ id: 'vault-1', name: 'Harbor' }) } as never,
+      { failure: ref('') },
+    )
+    expect(orphanResolver()).toMatchObject({
+      tab: 'ghost',
+      kind: 'note',
+      path: '',
+      title: '',
+      file: '',
+    })
+  })
 })

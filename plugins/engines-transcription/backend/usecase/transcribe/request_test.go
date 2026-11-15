@@ -418,7 +418,7 @@ func TestTranscriptCreateOfPartlyTranscribedRecordingStartsRun(t *testing.T) {
 func TestTranscriptCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 	s := newRequestFixture(t)
 	close(s.blocking.release)
-	if err := s.transcriber.Transcribe(t.Context(), "Lectures", lecture); err != nil {
+	if err := transcribeNow(t.Context(), s.transcriber, "Lectures", lecture); err != nil {
 		t.Fatal(err)
 	}
 	version, _ := s.readLiveVersionAndText(t)
@@ -898,7 +898,7 @@ func TestRequestAndStartErrorBranches(t *testing.T) {
 	if started, err := trVaultErr.Start(ctx, "", lecture); started || !errors.Is(err, errBoom) {
 		t.Fatalf("expected Start with active vault error to return (false, errBoom), got (%v, %v)", started, err)
 	}
-	if err := trVaultErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
+	if err := transcribeNow(ctx, trVaultErr, "", lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected Transcribe with active vault error to return errBoom, got %v", err)
 	}
 
@@ -915,7 +915,7 @@ func TestRequestAndStartErrorBranches(t *testing.T) {
 	if started, err := sCancel.transcriber.Start(ctx, "Lectures", lecture); started || !errors.Is(err, errClosed) {
 		t.Fatalf("expected Start after Close to return (false, errClosed), got (%v, %v)", started, err)
 	}
-	if err := sCancel.transcriber.Transcribe(ctx, "Lectures", lecture); !errors.Is(err, errClosed) {
+	if err := transcribeNow(ctx, sCancel.transcriber, "Lectures", lecture); !errors.Is(err, errClosed) {
 		t.Fatalf("expected Transcribe after Close to return errClosed, got %v", err)
 	}
 	sFresh := newRequestFixture(t)

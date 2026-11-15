@@ -151,11 +151,12 @@ func (d *simulationDay) hasPendingCards() bool {
 func (d *simulationDay) isDebtNext() bool {
 	hasDue := d.isDue()
 	hasNew := d.hasNew()
-	return !hasNew || d.admits.isNextCardDebt(d.observed, d.begun, hasDue, hasNew)
+	repeat := !hasDue && !hasNew
+	return repeat || d.admits.isNextCardDebt(d.observed, d.begun, hasDue, hasNew)
 }
 
 func (d *simulationDay) isRepeat() bool {
-	return !d.isDue()
+	return !d.isDue() && !d.hasNew()
 }
 
 func (d *simulationDay) getCardIndex(repeat bool) int {

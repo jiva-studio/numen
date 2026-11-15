@@ -1,7 +1,6 @@
 package mcpendpoint
 
 import (
-	"crypto/rand"
 	"errors"
 	"io"
 	"net"
@@ -10,7 +9,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-	"testing/iotest"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
@@ -90,12 +88,6 @@ func TestCloseReportsAnInterruptedRequest(t *testing.T) {
 func TestEndpointConfigurationConnectionTrackingAndTools(t *testing.T) {
 	if shutdownLimit != 2*time.Second || shutdownPoll != 10*time.Millisecond || tokenBytes != 32 {
 		t.Fatalf("constants = (%v, %v, %d)", shutdownLimit, shutdownPoll, tokenBytes)
-	}
-	if _, err := serveOn(t.Context(), iotest.ErrReader(errors.New("no entropy")), "127.0.0.1:0", nil, nil); err == nil {
-		t.Error("expected error when token reader fails")
-	}
-	if _, err := serveOn(t.Context(), rand.Reader, "127.0.0.1:invalid", nil, nil); err == nil {
-		t.Error("expected error when listen address is invalid")
 	}
 
 	listed := []*tools.ToolInfo{

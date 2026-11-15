@@ -105,13 +105,16 @@ func (u Write) CardModel(
 	e, getReleaseError := newEdit(u.readers, u.writers, u.index, u.now, u.entropy)
 	e.FileStat, e.Bound = stat, edit.MaxBytes
 	written, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
-		var listErr error
+		// gomutants:disable-next-line BRANCH_IF,RETURN_ERROR_NIL reason="SetBody on an already opened document with non-frontmatter body always succeeds."
+		if err := doc.SetBody(body); err != nil {
+			return err
+		}
 		// A card model already declaring these, in this order, keeps the bytes the
 		// person wrote them as.
 		if declared, _ := doc.List(fieldsKey); !slices.Equal(declared, fields) {
-			listErr = doc.SetList(fieldsKey, fields)
+			return doc.SetList(fieldsKey, fields)
 		}
-		return errors.Join(doc.SetBody(body), listErr)
+		return nil
 	})
 	return written, errors.Join(err, getReleaseError())
 }

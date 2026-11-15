@@ -127,7 +127,7 @@ func Read(raw []byte) (answers []Answer, skipped int) {
 	if lastNewline := bytes.LastIndexByte(raw, '\n'); lastNewline < 0 {
 		return nil, whole(raw)
 	} else if lastNewline+1 < len(raw) {
-		skipped, raw = 1, raw[:lastNewline]
+		skipped, raw = 1, raw[:lastNewline+1]
 	}
 
 	for one := range bytes.SplitSeq(raw, []byte("\n")) {

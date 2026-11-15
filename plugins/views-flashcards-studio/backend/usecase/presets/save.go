@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -62,7 +61,7 @@ func (u Point) getPresetAddress(ctx context.Context, v domain.Vault, preset stri
 	case pos.Outcome == edit.Missing:
 		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, fmt.Errorf("%w: %s", edit.ErrNoNote, preset)
-	case pos.Type != format.TypePreset:
+	case pos.Outcome != edit.Ok || pos.Type != format.TypePreset:
 		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 	}
@@ -235,9 +234,12 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 
 func getDayEntries(entries []string, read map[time.Weekday]int) map[time.Weekday]string {
 	out := make(map[time.Weekday]string, len(entries))
-	for _, name := range slices.Sorted(slices.Values(entries)) {
+	for _, name := range entries {
 		weekday, isDay := review.Weekday(name)
-		if _, could := read[weekday]; isDay && could {
+		if _, could := read[weekday]; !isDay || !could {
+			continue
+		}
+		if was, ok := out[weekday]; !ok || name > was {
 			out[weekday] = name
 		}
 	}
