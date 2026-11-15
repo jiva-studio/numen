@@ -68,7 +68,7 @@ func (u *EvaluateQuery) Execute(
 	req := u.newRequest(ctx, v, q, zone, limits)
 	warns := &warnings{}
 	calls := newFunctionCalls(u.functions, v, q, limits, generation)
-	docs := newDocumentReader(u.documents, u.contents, u.links, u.contentTypes, req, warns, calls)
+	docs := newDocumentReader(u, req, warns, calls)
 	return u.run(ctx, req, docs, warns, calls)
 }
 
