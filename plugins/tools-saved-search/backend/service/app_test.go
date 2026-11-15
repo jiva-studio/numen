@@ -55,12 +55,8 @@ func formatSearchNote(id, query string) string {
 	return b.String()
 }
 
-func score(value float64) *float64 {
-	return &value
-}
-
 func passage(path, title, text string, value float64) host.SearchResult {
-	return host.SearchResult{Path: path, Title: title, Kind: "note", Text: text, Start: 0, Length: 400, Score: score(value)}
+	return host.SearchResult{Path: path, Title: title, Kind: "note", Text: text, Start: 0, Length: 400, Score: new(value)}
 }
 
 func getStormsAnswer(mooring string, others ...host.SearchResult) host.SearchState {

@@ -40,7 +40,7 @@ func TestMarkStaleCreatesNoCache(t *testing.T) {
 	}
 }
 
-func TestCoreReportOfAnIndexChangeDuringTheRunLeavesTheSearchStale(t *testing.T) {
+func TestRunMarksTheRecordStaleWhenTheCoreReportsAStaleSearch(t *testing.T) {
 	w := newWorld(t, 10)
 	answer := getStormsAnswer(passage("Harbor/Gale.md", galeText, 0.9))
 	answer.IsStale = true

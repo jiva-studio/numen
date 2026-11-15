@@ -199,21 +199,7 @@ The settings of the plugin Saved Search.
 
 | | | |
 | --- | --- | --- |
-| `connections` | text | services that order the results of a saved search by relevance, tried in order until one answers. With an OpenRouter key, add an OpenRouter connection and choose the model mongodb/rerank-3: it ranks best and answers in a few seconds. Without one, choose the Local reranker, which runs on this machine and takes tens of seconds for each run. |
-| `defaultLimit` | a number | results a search returns when the agent names no limit. |
-| `maxLimit` | a number | most results one search returns. |
-| `resultsPerSearch` | a number | passages the index returns for each meaning and words condition when no reranking service is set, and its limit of passages of one file. From 1 to 500. |
-| `rerankResultsPerSearch` | a number | passages the index returns for each meaning and words condition when a reranking service is set, each with the whole text of its chunk. From 1 to 500. |
-| `maxCandidates` | a number | most passages the query is applied to. |
-| `maxPathPrefixes` | a number | most path.startsWith conditions one query joins with OR. |
-| `fusedPerResult` | a number | passages kept for each result asked for without reranking. |
-| `maxFused` | a number | most passages kept in one search without reranking. |
-| `rerankedPerResult` | a number | passages sent to the reranking service for each result asked for. |
-| `maxReranked` | a number | most passages sent to the reranking service in one search. |
-| `maxRerankedBytes` | a number | most bytes of the text of one passage sent to the reranking service, from its start. The models read about 512 tokens of it. |
-| `mergeGapBytes` | a number | largest gap in bytes between passages of one file that join. |
-| `maxQueryBytes` | a number | most bytes of the text of one query. |
-| `refreshMinutes` | a number | minutes a saved search waits after its last run before an index change runs it again; 0 runs it at once. A change of its query, rerank text or limit runs it at once. |
+| `refreshMinutes` | a number | minutes a saved search waits after its last run before an index change runs it again; 0 runs it at once. A change of its query runs it at once. |
 | `defaultFolder` | text | folder of the vault, relative to the vault folder, that saved_search_create puts a note in when the agent names no folder; empty is the vault folder. |
 
 ### `md.numen.tools.updater`

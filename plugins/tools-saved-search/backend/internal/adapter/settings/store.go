@@ -41,7 +41,7 @@ func (s *Store) Update(values map[string]string) {
 	}
 }
 
-// GetSettings returns the refresh delay.
+// GetSettings returns the settings the host passed last, the defaults before the first Configure.
 func (s *Store) GetSettings() refresh.Settings {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

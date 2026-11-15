@@ -69,8 +69,6 @@ func (r *Runner) run(ctx context.Context, one job) (resultcache.Record, error) {
 	return written, err
 }
 
-// runSearch starts the query on the core, waits for it to stop, reads every page of its results and
-// removes it, also when ctx ends.
 func runSearch(ctx context.Context, search ports.Search, start host.SearchStart) (found, error) {
 	id, err := search.StartSearch(ctx, start)
 	if err != nil {
@@ -122,8 +120,6 @@ func (r *Runner) write(ctx context.Context, vault Vault, name string, record res
 	return record, nil
 }
 
-// recordProblems keeps the results of the last good run and records the problems of the run, stale, so
-// it is tried again after the cooldown.
 func (r *Runner) recordProblems(ctx context.Context, one job, name string, want target, problems []api.Problem) (resultcache.Record, error) {
 	r.records.Lock()
 	defer r.records.Unlock()

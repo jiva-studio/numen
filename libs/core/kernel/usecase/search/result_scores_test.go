@@ -37,31 +37,6 @@ func (c corpus) addVault(t *testing.T, notes map[string]string) domain.Vault {
 	return v
 }
 
-func (c corpus) cutBySize(t *testing.T, v domain.Vault, path string, size int) {
-	t.Helper()
-	reader, err := vaultreader.Readers{}.Open(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-	raw, err := reader.Read(t.Context(), path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	text := string(raw)
-	whole := chunk.Chunk{Start: 0, Length: len(text), Text: text}
-	for start := 0; start < len(text); {
-		end := min(start+size, len(text))
-		for end < len(text) && text[end] != ' ' {
-			end++
-		}
-		whole.Small = append(whole.Small, chunk.Chunk{Start: start, Length: end - start, Text: text[start:end]})
-		start = end
-	}
-	if err := c.db.Chunks().ReplaceChunks(t.Context(), v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func (c corpus) vectorizePath(t *testing.T, v domain.Vault, path string, direction func(record chunk.Record) []float32) {
 	t.Helper()
 	unembedded, err := c.db.ChunkVectors().GetUnembeddedChunks(t.Context(), v.ID, getModel().Recipe(), chunk.Cursor{}, 1000)

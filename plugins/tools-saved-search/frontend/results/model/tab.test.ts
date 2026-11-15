@@ -351,8 +351,8 @@ describe('filtering the results', () => {
   })
 })
 
-describe('telling of a failed run', () => {
-  it('tells nothing of the failure the tab opens with', async () => {
+describe('the notice of a failed run', () => {
+  it('shows no notice for a failure present when the tab opens', async () => {
     const { service, notify, tab } = setup()
     service.results.set(FAILED_LAST_RUN)
     tab.follow()
@@ -362,7 +362,7 @@ describe('telling of a failed run', () => {
     expect(notify).not.toHaveBeenCalled()
   })
 
-  it('tells of a new failure once, with the problems of the query', async () => {
+  it('shows one notice for a new failure, with the problems of the query', async () => {
     const { service, notify, tab } = setup()
     tab.follow()
     service.watch.emit(COMPUTED)

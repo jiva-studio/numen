@@ -117,7 +117,7 @@ func TestABrokenCacheFileRunsAgain(t *testing.T) {
 	}
 }
 
-func TestRecordHoldsWhatTheCoreReported(t *testing.T) {
+func TestRecordKeepsTheFloorOrderRerankerAndIndexGenerationOfTheCore(t *testing.T) {
 	w := newWorld(t, 10)
 
 	w.runDueSearches(t)
@@ -207,7 +207,7 @@ func TestRunDueStartsBackgroundSearchesAndRunNowInteractiveOnes(t *testing.T) {
 	}
 }
 
-func TestCancelledRunRemovesItsSearch(t *testing.T) {
+func TestCanceledRunRemovesItsSearch(t *testing.T) {
 	w := newWorld(t, 0)
 	release := w.searches.HoldSearch(stormsQuery)
 	defer release()
@@ -220,7 +220,7 @@ func TestCancelledRunRemovesItsSearch(t *testing.T) {
 		t.Fatal("RunNow = nil, want the end of the context")
 	}
 	if removed := w.searches.ListRemoved(); !slices.Equal(removed, []string{"search-1"}) {
-		t.Errorf("removed = %v, want the cancelled search removed", removed)
+		t.Errorf("removed = %v, want the canceled search removed", removed)
 	}
 }
 
