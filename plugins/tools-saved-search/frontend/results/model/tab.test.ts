@@ -14,6 +14,7 @@ import {
   MISSPELLED,
   NOTE_PATH,
 } from '../fixtures/responses'
+import type { ListSearchFunctionsResponse } from '../api/types'
 import { createScriptedService } from '../fixtures/service'
 import { createSavedSearchTab } from './tab'
 
@@ -21,8 +22,11 @@ const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve,
 
 const LATER = { computedAt: '2026-11-14T10:05:00Z', isRunning: false }
 
+let catalog: ListSearchFunctionsResponse | string = { functions: [] }
+
 const setup = () => {
-  const service = createScriptedService(HARBOR)
+  catalog = { functions: [] }
+  const service = createScriptedService(HARBOR, () => catalog)
   const openAt = vi.fn()
   const notify = vi.fn()
   const tab = createSavedSearchTab(NOTE_PATH, { service, openAt, notify, locale: 'en-GB' })
@@ -387,7 +391,7 @@ describe('the notice of a failed run', () => {
 describe('editing the query of a saved search', () => {
   it('reads the catalog of the search language when the editor opens, once', async () => {
     const { service, state } = setup()
-    service.setFunctions(FUNCTIONS)
+    catalog = FUNCTIONS
 
     state.actions.setEditing(true)
     await settle()
@@ -407,11 +411,11 @@ describe('editing the query of a saved search', () => {
 
   it('reads the catalog again on the next open after it failed', async () => {
     const { service, state } = setup()
-    service.setFunctions('the catalog is not ready')
+    catalog = 'the catalog is not ready'
     state.actions.setEditing(true)
     await settle()
     state.actions.setEditing(false)
-    service.setFunctions(FUNCTIONS)
+    catalog = FUNCTIONS
 
     state.actions.setEditing(true)
     await settle()
@@ -421,7 +425,7 @@ describe('editing the query of a saved search', () => {
 
   it('shows the failure of reading the catalog', async () => {
     const { service, state } = setup()
-    service.setFunctions('the catalog is not ready')
+    catalog = 'the catalog is not ready'
 
     state.actions.setEditing(true)
     await settle()

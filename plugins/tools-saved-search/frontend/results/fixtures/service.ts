@@ -63,20 +63,23 @@ export interface ScriptedService extends SavedSearchService {
   readonly watch: ScriptedWatch
   /** What UpdateSearch answers from now; a string fails it with that message. */
   setUpdateAnswer(answer: UpdateSearchResponse | string): void
-  /** What ListSearchFunctions answers from now; a string fails it with that message. */
-  setFunctions(answer: ListSearchFunctionsResponse | string): void
 }
 
 const abortError = (): DOMException => new DOMException('The call was aborted.', 'AbortError')
 
-/** A service answering `answer` until told otherwise. */
-export function createScriptedService(first: GetResultsResponse): ScriptedService {
+/**
+ * A service answering `answer` until told otherwise. ListSearchFunctions answers what getCatalog
+ * returns at the time of the call; a string fails it with that message.
+ */
+export function createScriptedService(
+  first: GetResultsResponse,
+  getCatalog: () => ListSearchFunctionsResponse | string = () => ({ functions: [] }),
+): ScriptedService {
   let answer = first
   let readFailure = ''
   let isHolding = false
   let held: HeldRead[] = []
   let updateAnswer: UpdateSearchResponse | string = { errors: [] }
-  let functions: ListSearchFunctionsResponse | string = { functions: [] }
   let watch: Watch | null = null
   const pending: WatchEvent[] = []
   const calls: string[] = []
@@ -156,8 +159,9 @@ export function createScriptedService(first: GetResultsResponse): ScriptedServic
       calls.push('listSearchFunctions')
       await Promise.resolve()
       if (signal.aborted) throw abortError()
-      if (typeof functions === 'string') throw new ServiceFailure(functions)
-      return functions
+      const catalog = getCatalog()
+      if (typeof catalog === 'string') throw new ServiceFailure(catalog)
+      return catalog
     },
 
     results: {
@@ -191,9 +195,6 @@ export function createScriptedService(first: GetResultsResponse): ScriptedServic
     },
     setUpdateAnswer(next) {
       updateAnswer = next
-    },
-    setFunctions(next) {
-      functions = next
     },
   }
   return scripted

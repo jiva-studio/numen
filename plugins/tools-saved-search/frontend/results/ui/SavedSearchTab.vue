@@ -5,8 +5,9 @@
  * results; and the results.
  */
 import { computed } from 'vue'
-import { Button, createNamedIcon } from '@numen/ui'
+import { Button } from '@numen/ui'
 import { WORDS as words } from '../../words'
+import { EditIcon } from '../model/icons'
 import type { SavedSearchTabState, SearchChange } from '../model/tab'
 import QueryDialog from './QueryDialog.vue'
 import ResultList from './ResultList.vue'
@@ -21,7 +22,6 @@ const props = defineProps<{
 const view = computed(() => props.state.view.value)
 const items = computed(() => props.state.items.value)
 const failure = computed(() => props.state.failure.value)
-const EditIcon = createNamedIcon('pencil')
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSave(change: SearchChange) {

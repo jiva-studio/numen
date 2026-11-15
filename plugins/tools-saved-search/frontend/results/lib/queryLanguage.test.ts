@@ -74,7 +74,7 @@ describe('createQueryCompletion', () => {
     expect(result?.options.map((option) => option.label)).toStrictEqual(['top'])
   })
 
-  it('offers nothing in the middle of nothing unless asked', () => {
+  it('returns no completion after a space unless the completion is explicit', () => {
     expect(complete('words("spade") && ')).toBeNull()
     expect(complete('words("spade") && ', true)?.options).toHaveLength(3)
   })
@@ -111,7 +111,7 @@ describe('getQueryDiagnostics', () => {
 })
 
 describe('queryLanguage', () => {
-  it('tells apart strings, function names, operators, numbers and stages', () => {
+  it('styles strings, function names, operators, numbers and stages differently', () => {
     const styles = new Map(getStyles('!words("seed") || tags("garden").top(5)'))
 
     expect(styles.get('"seed"')).toBeTruthy()

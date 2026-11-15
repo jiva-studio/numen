@@ -51,9 +51,8 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { SavedSearchTab },
     setup: () => {
-      const service = createScriptedService(args.response)
+      const service = createScriptedService(args.response, () => FUNCTIONS)
       service.setUpdateAnswer(args.updateAnswer)
-      service.setFunctions(FUNCTIONS)
       const updateSearch = service.updateSearch.bind(service)
       const tab = createSavedSearchTab(NOTE_PATH, {
         service: {
@@ -269,7 +268,6 @@ const openEditor = async (canvasElement: HTMLElement): Promise<HTMLElement> => {
   return getEditor(canvasElement)
 }
 
-/** The browser types the text into the code editor: it takes text only from real keystrokes. */
 const fillEditor = async (editor: HTMLElement, text: string): Promise<void> => {
   const browser = await import('vitest/browser')
   await browser.userEvent.fill(editor, text)
@@ -329,7 +327,7 @@ export const CompletesTheNamesOfTheCatalog: Story = {
     await expect(canvas.getByText(/tags\("harbor"\)/)).toBeVisible()
 
     await browser.userEvent.keyboard('{Enter}')
-    await expect(editor).toHaveTextContent('words("gale") && tags')
+    await waitFor(() => expect(editor).toHaveTextContent('words("gale") && tags'))
 
     await browser.userEvent.keyboard('("harbor").r')
     const stages = await waitFor(() => canvas.getByRole('listbox'))
@@ -365,7 +363,7 @@ export const UnderlinesTheProblemsOfAQueryNotSaved: Story = {
     )
     const underlined = await waitFor(() => {
       const marks = canvasElement.querySelectorAll('.cm-lintRange-error')
-      expect(marks).toHaveLength(1)
+      if (marks.length !== 1) throw new Error(`${marks.length} underlined ranges, want one`)
       return marks[0]!
     })
     await expect(underlined).toHaveTextContent(/^meanin$/)
