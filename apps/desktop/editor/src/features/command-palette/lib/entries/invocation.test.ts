@@ -2,6 +2,11 @@
 import { describe, expect, it } from 'vitest'
 import type { CommandTarget } from '@/shared/model/command'
 import { createInvocation } from './invocation'
+import { getCreateNoteActions } from './entries'
+import { WORDS as windowWords } from '@/shared/ui/words'
+import { PALETTE_WORDS } from '../../words'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 const TARGET: CommandTarget = {
   tab: '',
@@ -41,5 +46,9 @@ describe('an invocation made from a target', () => {
     expect(createInvocation('x', { ...TARGET, line: 7 }).target.line).toBe(7)
     expect(createInvocation('x', { ...TARGET, line: 0 }).target.line).toBe(0)
     expect(createInvocation('x', TARGET).target.line).toBeUndefined()
+  })
+
+  it('offers no note creation actions when the typed text is blank', () => {
+    expect(getCreateNoteActions({ text: '   ', words, target: TARGET })).toStrictEqual([])
   })
 })

@@ -20,7 +20,7 @@ export const windowAnswers = {
 /** The tasks the window lists for its plugins now, read from the host of its plugins. */
 export const readWindowTasks = (host: PluginHost | undefined): readonly BackgroundTask[] => {
   let tasks: readonly BackgroundTask[] = []
-  host?.contextHost.window
+  host?.contextHost.work
     .getBackgroundTasks()
     ?.watch((list) => (tasks = list))
     .dispose()

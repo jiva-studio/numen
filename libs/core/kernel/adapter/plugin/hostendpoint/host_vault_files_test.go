@@ -17,8 +17,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -60,6 +60,12 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 	t.Helper()
 	readers := vaultreader.Readers{}
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
+	index := func(_ context.Context, _ domain.Vault, paths []string) error {
+		d.mu.Lock()
+		defer d.mu.Unlock()
+		d.scanned = append(d.scanned, slices.Clone(paths))
+		return nil
+	}
 	return hostvault.NewAccess(
 		hostvault.Session{
 			Current: func() (domain.Vault, bool) {
@@ -100,16 +106,15 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 			Stat:        file.NewStatFile(readers),
 			ReadFile:    file.NewReadFile(readers),
 			RangeReader: file.Read{Readers: readers},
-			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
-			Index: func(_ context.Context, _ domain.Vault, paths []string) error {
-				d.mu.Lock()
-				defer d.mu.Unlock()
-				d.scanned = append(d.scanned, slices.Clone(paths))
-				return nil
-			},
-			Locks: hold.NewLocks(writers, hold.LockHold),
 		},
-		hostvault.Lookups{}, hostvault.Arranger{},
+		hostvault.Writer{
+			Write:  file.NewWriteFile(writers, index),
+			Create: file.NewCreateFile(writers, index),
+			Index:  file.NewScanFiles(index),
+			Locks:  hold.NewLocks(writers, hold.LockHold),
+		},
+		hostvault.Lookups{},
+		hostvault.Arranger{},
 		hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
 	)
 }
@@ -126,9 +131,9 @@ func compareIDs(a, b domain.VaultID) int {
 
 func newDiskVaults(t *testing.T, files map[string]string) (*diskVaults, numenv1connect.HostVaultServiceClient) {
 	t.Helper()
-	physics := vaultfixture.NewVault(t, files)
+	physics := vaulttest.NewVault(t, files)
 	physics.ID, physics.Name = "v1", "Physics"
-	chemistry := vaultfixture.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n"})
+	chemistry := vaulttest.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n"})
 	chemistry.ID, chemistry.Name = "v2", "Chemistry"
 	disk := &diskVaults{
 		current: &physics,

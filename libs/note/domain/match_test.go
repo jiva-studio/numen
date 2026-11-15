@@ -17,9 +17,12 @@ func TestANameIsMatchedByTheOrderOfPriority(t *testing.T) {
 	}{
 		{"nothing answers", "a/Note.md", "Entropy", nil, "", false},
 		{"an exact path from the root", "a/Note.md", "b/Entropy", []string{"a/b/Entropy.md", "b/Entropy.md"}, "b/Entropy.md", false},
+		{"an exact path from the root at index zero", "a/Note.md", "b/Entropy", []string{"b/Entropy.md", "a/b/Entropy.md"}, "b/Entropy.md", false},
 		{"a path relative to the note", "a/Note.md", "b/Entropy", []string{"a/b/Entropy.md", "c/b/Entropy.md"}, "a/b/Entropy.md", false},
 		{"a single match by name", "a/Note.md", "Entropy", []string{"z/Entropy.md"}, "z/Entropy.md", false},
 		{"the nearest of several", "a/b/Note.md", "Entropy", []string{"c/Entropy.md", "a/Entropy.md"}, "a/Entropy.md", true},
+		{"the nearest when note directory is prefix of candidate", "a/Note.md", "Entropy", []string{"a/b/Entropy.md", "c/Entropy.md"}, "a/b/Entropy.md", true},
+		{"first candidate wins when none share prefix", "a/Note.md", "Entropy", []string{"x/Entropy.md", "y/Entropy.md"}, "x/Entropy.md", true},
 		{"a name in another case", "Note.md", "entropy", []string{"Entropy.md"}, "Entropy.md", false},
 	}
 	for _, one := range cases {

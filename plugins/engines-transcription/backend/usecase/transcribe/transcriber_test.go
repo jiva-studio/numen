@@ -3,6 +3,7 @@ package transcribe
 import (
 	"context"
 	"errors"
+	"fmt"
 	"runtime"
 	"slices"
 	"strings"
@@ -20,6 +21,23 @@ const (
 	lecture      = "assets/lecture.wav"
 	lectureSound = "RIFF the bytes of a lecture"
 )
+
+func transcribeNow(ctx context.Context, tr *Transcriber, vault domain.VaultID, path string) error {
+	claimed, err := tr.getClaimVault(ctx, vault)
+	if err != nil {
+		return err
+	}
+	key, isClaimed := tr.claim(claimed, path)
+	if !isClaimed && tr.isClosing() {
+		return fmt.Errorf("%s: %w", path, errClosed)
+	}
+	if !isClaimed {
+		return fmt.Errorf("%s: %w", path, ErrAlreadyTranscribing)
+	}
+	return tr.runTranscription(ctx, key, claimed, path, func(ctx context.Context) ([]byte, error) {
+		return tr.files.ReadFile(ctx, claimed, path)
+	})
+}
 
 // heardModel returns, for every audio segment, the words configured for the moment the segment
 // begins, and records each moment a recording was requested for segments from.
@@ -168,7 +186,7 @@ func newScene(t *testing.T) *scene {
 
 func (s *scene) transcribe(t *testing.T) {
 	t.Helper()
-	if err := s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture); err != nil {
+	if err := transcribeNow(t.Context(), s.transcriber, s.vault.Vault().ID, lecture); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -266,7 +284,7 @@ func TestTranscribeReportsUnopenableRecording(t *testing.T) {
 	s := newScene(t)
 	s.model.isBroken = true
 
-	err := s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture)
+	err := transcribeNow(t.Context(), s.transcriber, s.vault.Vault().ID, lecture)
 	if !errors.Is(err, errNoDecoder) {
 		t.Fatalf("a recording that cannot be opened returned %v, want it to wrap the decoder error", err)
 	}
@@ -303,7 +321,7 @@ func TestTranscribeWaitsForQueueTurn(t *testing.T) {
 		t.Fatal(err)
 	}
 	result := make(chan error, 1)
-	go func() { result <- s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture) }()
+	go func() { result <- transcribeNow(t.Context(), s.transcriber, s.vault.Vault().ID, lecture) }()
 	waitUntil(t, func() bool { return len(s.queue.ListTasks()) == 1 })
 	if tasks := s.queue.ListTasks(); tasks[0].Detail != lecture {
 		t.Fatalf("the tasks are %+v once the transcription was asked for, want it shown", tasks)
@@ -329,7 +347,7 @@ func TestTranscribeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	other.SetStore(PluginID, chemistry.Store())
 	other.File(lecture, []byte(lectureSound))
 
-	if err := s.transcriber.Transcribe(t.Context(), "Chemistry", lecture); err != nil {
+	if err := transcribeNow(t.Context(), s.transcriber, "Chemistry", lecture); err != nil {
 		t.Fatal(err)
 	}
 
@@ -399,10 +417,11 @@ func (f *faultyStore) Rename(ctx context.Context, from, to string) error {
 
 type faultyTexts struct {
 	host.TextVersions
-	listRes host.TextListing
-	listErr error
-	putErr  error
-	puts    int
+	listRes  host.TextListing
+	listErr  error
+	putErr   error
+	putErrFn func(req host.TextPut) error
+	puts     int
 }
 
 func (f *faultyTexts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
@@ -417,6 +436,11 @@ func (f *faultyTexts) ListVersions(ctx context.Context, path string) (host.TextL
 
 func (f *faultyTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.TextVersion, error) {
 	f.puts++
+	if f.putErrFn != nil {
+		if err := f.putErrFn(req); err != nil {
+			return domain.TextVersion{}, err
+		}
+	}
 	if f.putErr != nil {
 		return domain.TextVersion{}, f.putErr
 	}
@@ -424,23 +448,34 @@ func (f *faultyTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.
 }
 
 type faultyTurn struct {
-	waiting    chan struct{}
-	releaseErr error
+	waiting     chan struct{}
+	releaseErr  error
+	releaseOnce bool
+	releases    int
 }
 
-func (t *faultyTurn) Release() error                { return t.releaseErr }
+func (t *faultyTurn) Release() error {
+	t.releases++
+	if t.releaseOnce && t.releases > 1 {
+		return nil
+	}
+	return t.releaseErr
+}
 func (t *faultyTurn) WatchWaiting() <-chan struct{} { return t.waiting }
 
 type faultyQueue struct {
 	host.Queue
-	enqueueErr error
-	reportErr  error
-	turn       host.Turn
-	tasks      []host.Task
+	enqueueErr      error
+	enqueueErrAfter int
+	enqueues        int
+	reportErr       error
+	turn            host.Turn
+	tasks           []host.Task
 }
 
 func (q *faultyQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, error) {
-	if q.enqueueErr != nil {
+	q.enqueues++
+	if q.enqueueErr != nil && q.enqueues > q.enqueueErrAfter {
 		return nil, q.enqueueErr
 	}
 	if q.turn != nil {
@@ -480,8 +515,8 @@ func TestStoreEdgeCasesAndErrorPropagation(t *testing.T) {
 	}
 
 	// readReachedPosition when Read(reached) fails with non-ErrNotExist.
-	if _, err := (transcripts{store: fs}).readReachedPosition(ctx, "k"); !errors.Is(err, errDisk) {
-		t.Fatalf("expected errDisk on Read(reached), got %v", err)
+	if ms, err := (transcripts{store: fs}).readReachedPosition(ctx, "k"); ms != 0 || !errors.Is(err, errDisk) {
+		t.Fatalf("expected (0, errDisk) on Read(reached), got (%d, %v)", ms, err)
 	}
 
 	// readReachedPosition when reached contains invalid JSON deletes both partial and reached.
@@ -524,8 +559,8 @@ func TestStoreEdgeCasesAndErrorPropagation(t *testing.T) {
 		}
 		return nil
 	}}
-	if _, err := (transcripts{store: fsPartRead}).readReachedPosition(ctx, "parterr"); !errors.Is(err, errDisk) {
-		t.Fatalf("expected errDisk reading partial, got %v", err)
+	if ms, err := (transcripts{store: fsPartRead}).readReachedPosition(ctx, "parterr"); ms != 0 || !errors.Is(err, errDisk) {
+		t.Fatalf("expected (0, errDisk) reading partial, got (%d, %v)", ms, err)
 	}
 
 	// readReachedPosition when truncating oversized partial fails on Write.
@@ -533,8 +568,8 @@ func TestStoreEdgeCasesAndErrorPropagation(t *testing.T) {
 		t.Fatal(err)
 	}
 	fsPartWrite := &faultyStore{Folder: s.store, writeErr: func(string) error { return errDisk }}
-	if _, err := (transcripts{store: fsPartWrite}).readReachedPosition(ctx, "parterr"); !errors.Is(err, errDisk) {
-		t.Fatalf("expected errDisk truncating partial, got %v", err)
+	if ms, err := (transcripts{store: fsPartWrite}).readReachedPosition(ctx, "parterr"); ms != 0 || !errors.Is(err, errDisk) {
+		t.Fatalf("expected (0, errDisk) truncating partial, got (%d, %v)", ms, err)
 	}
 
 	// appendBatch errors on Append and Read(partial).
@@ -567,26 +602,38 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	if _, ok2 := s.transcriber.claim(s.vault.Vault().ID, lecture); ok2 {
 		t.Fatal("expected second claim while running to fail")
 	}
-	if err := s.transcriber.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, ErrAlreadyTranscribing) {
+	if err := transcribeNow(ctx, s.transcriber, s.vault.Vault().ID, lecture); !errors.Is(err, ErrAlreadyTranscribing) {
 		t.Fatalf("expected ErrAlreadyTranscribing, got %v", err)
 	}
 	s.transcriber.clearRunning(key)
 
-	// ReportTask error at start of Transcribe.
+	// ReportTask error at start of Transcribe and Start.
 	fq := &faultyQueue{Queue: s.queue, reportErr: errBoom}
 	trReportErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, storesOf(s.store), textsOf(s.texts), fq,
 		func(context.Context) (Recognizer, error) { return s.model, nil }, noReport)
-	if err := trReportErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+	if err := transcribeNow(ctx, trReportErr, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected ReportTask errBoom, got %v", err)
 	}
+	if started, err := trReportErr.Start(ctx, s.vault.Vault().ID, lecture); started || !errors.Is(err, errBoom) {
+		t.Fatalf("expected Start ReportTask (false, errBoom), got (%v, %v)", started, err)
+	}
+	if trReportErr.isRunning(s.vault.Vault().ID, lecture) {
+		t.Fatal("expected failed Start to unclaim running key")
+	}
 
-	// ReadFile error on missing recording.
-	if err := s.transcriber.Transcribe(ctx, s.vault.Vault().ID, "missing.wav"); err == nil {
-		t.Fatal("expected error for missing recording")
+	// ReadFile error on missing recording wraps ErrNotExist.
+	if err := transcribeNow(ctx, s.transcriber, s.vault.Vault().ID, "missing.wav"); !errors.Is(err, host.ErrNotExist) {
+		t.Fatalf("expected wrapped ErrNotExist for missing recording, got %v", err)
 	}
 
 	// hasWhole store error in run.
-	fsRead := &faultyStore{Folder: s.store, readErr: func(string) error { return errBoom }}
+	fileKey := getTranscriptionKey(domain.HashContent([]byte(lectureSound)))
+	fsRead := &faultyStore{Folder: s.store, readErr: func(name string) error {
+		if name == getFileName(fileKey) {
+			return errBoom
+		}
+		return nil
+	}}
 	trStoreErr := NewTranscriber(
 		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }},
 		foldersOf(fsRead),
@@ -595,7 +642,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		func(context.Context) (Recognizer, error) { return s.model, nil },
 		noReport,
 	)
-	if err := trStoreErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+	if err := transcribeNow(ctx, trStoreErr, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected store error from hasWhole, got %v", err)
 	}
 
@@ -608,8 +655,8 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	ft.listErr = nil
 	ft.listRes = host.TextListing{
 		Versions: []domain.TextVersion{
-			{Key: "other", PluginID: PluginID},
-			{Key: "k1", PluginID: "other.plugin"},
+			{Key: "other", PluginID: PluginID, File: getFileName("other")},
+			{Key: "k1", PluginID: "other.plugin", File: getFileName("k1")},
 			{Key: "k1", PluginID: PluginID, File: getFileName("k1")},
 		},
 	}
@@ -618,8 +665,8 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	}
 	ft.listRes = host.TextListing{
 		Versions: []domain.TextVersion{
-			{Key: "other", PluginID: PluginID},
-			{Key: "k1", PluginID: "other.plugin"},
+			{Key: "other", PluginID: PluginID, File: getFileName("other")},
+			{Key: "k1", PluginID: "other.plugin", File: getFileName("k1")},
 		},
 	}
 	ft.putErr = errBoom
@@ -631,7 +678,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	fqEnq := &faultyQueue{Queue: s.queue, enqueueErr: errBoom}
 	trEnqErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, storesOf(s.store), textsOf(s.texts), fqEnq,
 		func(context.Context) (Recognizer, error) { return s.model, nil }, noReport)
-	if err := trEnqErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+	if err := transcribeNow(ctx, trEnqErr, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected enqueueErr, got %v", err)
 	}
 
@@ -644,7 +691,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		func(context.Context) (Recognizer, error) { return nil, errBoom },
 		noReport,
 	)
-	if err := trEngineErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+	if err := transcribeNow(ctx, trEngineErr, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected engine open error, got %v", err)
 	}
 
@@ -652,7 +699,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	emptyModel := &heardModel{segments: nil}
 	trEmpty := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, storesOf(s.store), textsOf(s.texts), s.queue,
 		func(context.Context) (Recognizer, error) { return emptyModel, nil }, noReport)
-	if err := trEmpty.Transcribe(ctx, s.vault.Vault().ID, lecture); err != nil {
+	if err := transcribeNow(ctx, trEmpty, s.vault.Vault().ID, lecture); err != nil {
 		t.Fatalf("expected 0-segment recording to succeed, got %v", err)
 	}
 
@@ -666,19 +713,25 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		func(context.Context) (Recognizer, error) { return s.model, nil },
 		noReport,
 	)
-	if err := trRenameErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+	if err := transcribeNow(ctx, trRenameErr, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected finish renameErr, got %v", err)
 	}
 
 	// hearSegments errors: readReachedPosition error, GetSegments error, Transcribe error, appendBatch error, putVersion error, yieldTurn error.
 	s2 := newScene(t)
 	s2.model.segmentErr = errBoom
-	if err := s2.transcriber.Transcribe(ctx, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+	if _, reached, err := hearBatch(ctx, s2.model, heardRecording{model: s2.model}, lecture, 500); !errors.Is(err, errBoom) || reached != 500 {
+		t.Fatalf("expected (500, segmentErr), got (%d, %v)", reached, err)
+	}
+	if err := transcribeNow(ctx, s2.transcriber, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected segmentErr, got %v", err)
 	}
 	s2.model.segmentErr = nil
 	s2.model.transcribeErr = errBoom
-	if err := s2.transcriber.Transcribe(ctx, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+	if _, reached, err := hearBatch(ctx, s2.model, heardRecording{model: s2.model}, lecture, 500); !errors.Is(err, errBoom) || reached != 500 {
+		t.Fatalf("expected (500, transcribeErr), got (%d, %v)", reached, err)
+	}
+	if err := transcribeNow(ctx, s2.transcriber, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected transcribeErr, got %v", err)
 	}
 	s2.model.transcribeErr = nil
@@ -697,7 +750,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		func(context.Context) (Recognizer, error) { return s2.model, nil },
 		noReport,
 	)
-	if err := trReachedErr.Transcribe(ctx, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+	if err := transcribeNow(ctx, trReachedErr, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected readReachedPosition error, got %v", err)
 	}
 
@@ -710,11 +763,16 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		func(context.Context) (Recognizer, error) { return s2.model, nil },
 		noReport,
 	)
-	if err := trAppendErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
+	if err := transcribeNow(ctx, trAppendErr, "", lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected appendBatch error, got %v", err)
 	}
 
-	ftPutErr := &faultyTexts{TextVersions: s2.texts, putErr: errBoom}
+	ftPutErr := &faultyTexts{TextVersions: s2.texts, putErrFn: func(req host.TextPut) error {
+		if strings.HasSuffix(req.File, ".partial.jsonl") {
+			return errBoom
+		}
+		return nil
+	}}
 	trPutErr := NewTranscriber(
 		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }},
 		storesOf(hosttest.New("Lectures").Store()),
@@ -723,13 +781,13 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		func(context.Context) (Recognizer, error) { return s2.model, nil },
 		noReport,
 	)
-	if err := trPutErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
-		t.Fatalf("expected putVersion error, got %v", err)
+	if err := transcribeNow(ctx, trPutErr, "", lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected partial putVersion error, got %v", err)
 	}
 
 	waitingCh := make(chan struct{})
 	close(waitingCh)
-	fqYieldErr := &faultyQueue{Queue: s2.queue, turn: &faultyTurn{waiting: waitingCh, releaseErr: errBoom}}
+	fqYieldErr := &faultyQueue{Queue: s2.queue, turn: &faultyTurn{waiting: waitingCh, releaseErr: errBoom, releaseOnce: true}}
 	trYieldErr := NewTranscriber(
 		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }},
 		storesOf(hosttest.New("Lectures").Store()),
@@ -738,8 +796,62 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		func(context.Context) (Recognizer, error) { return s2.model, nil },
 		noReport,
 	)
-	if err := trYieldErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
+	if err := transcribeNow(ctx, trYieldErr, "", lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected yieldTurn releaseErr, got %v", err)
+	}
+
+	sYieldTake := newScene(t)
+	fqYieldTakeErr := &faultyQueue{
+		Queue:           sYieldTake.queue,
+		turn:            &faultyTurn{waiting: waitingCh},
+		enqueueErr:      errBoom,
+		enqueueErrAfter: 1,
+	}
+	trYieldTakeErr := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return sYieldTake.vault.With(id) }},
+		storesOf(sYieldTake.store),
+		textsOf(sYieldTake.texts),
+		fqYieldTakeErr,
+		func(context.Context) (Recognizer, error) { return sYieldTake.model, nil },
+		noReport,
+	)
+	if err := transcribeNow(ctx, trYieldTakeErr, "", lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected yieldTurn takeTurn error, got %v", err)
+	}
+
+	// Multi-batch recording (17 segments > batchSize 16) transcribes across two loop iterations.
+	sMulti := newScene(t)
+	sMulti.model.segments = make([]Audio, 17)
+	sMulti.model.words = make(map[int]string, 17)
+	for i := range 17 {
+		sMulti.model.segments[i] = Audio{From: i * 100, To: (i + 1) * 100}
+		sMulti.model.words[i*100] = "word"
+	}
+	sMulti.transcribe(t)
+	if _, text := sMulti.readLiveVersionAndText(t); strings.Count(text, "word\n") != 17 {
+		t.Fatalf("expected 17 transcribed cues across 2 batches, got %d in %q", strings.Count(text, "word\n"), text)
+	}
+
+	// Self-referential source cycle in findLiveVersionOfWholeTranscript terminates with false.
+	ftCycle := &faultyTexts{
+		TextVersions: s2.texts,
+		listRes: host.TextListing{
+			Live: "other:cycle",
+			Versions: []domain.TextVersion{
+				{PluginID: "other", Key: "cycle", Source: "other:cycle"},
+			},
+		},
+	}
+	trCycle := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }},
+		storesOf(s2.store),
+		func(domain.VaultID) host.TextVersions { return ftCycle },
+		s2.queue,
+		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		noReport,
+	)
+	if _, isDone, err := trCycle.findLiveVersionOfWholeTranscript(ctx, "Lectures", lecture); err != nil || isDone {
+		t.Fatalf("expected (false, nil) on version source cycle, got (%v, %v)", isDone, err)
 	}
 
 	// reportProgress division by 1000 boundaries.

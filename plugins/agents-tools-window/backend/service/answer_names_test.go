@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
 )
@@ -201,7 +202,7 @@ func TestWindowTabListReturnsPlaceTabIDAndIsActive(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs([]host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Gray Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":4,"pageCount":120}`},
 	}, "tab-2")
 	answer := w.getAnswer(t, "window_tab_list", `{}`)
 	requireKeys(t, "the answer of window_tab_list", answer, []string{"tabs", "activeTabId"}, []string{"summary", "activeId"})
@@ -250,11 +251,10 @@ func requireExactKeys(t *testing.T, what string, object map[string]any, want []s
 
 func TestWindowTabListReturnsThePlaceOfAPDFARecordingAtItsStartAndAnEPUB(t *testing.T) {
 	w := newWindowTools(t)
-	atStart := 0.0
 	w.window.SetOpenTabs([]host.OpenTab{
-		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
-		{ID: "tab-2", Kind: "recording", Path: talkPath, Title: "Marsh Talk", Place: &host.TabPlace{PositionSeconds: &atStart}},
-		{ID: "tab-3", Kind: "reader:reader-epub", Path: bookPath, Title: "Marsh Book", Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":4,"pageCount":120}`},
+		{ID: "tab-2", Kind: "recording", Path: talkPath, Title: "Marsh Talk", Place: `{"positionSeconds":0}`},
+		{ID: "tab-3", Kind: "reader:reader-epub", Path: bookPath, Title: "Marsh Book", Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 	}, "tab-1")
 	list := requireList(t, "answer[tabs]", w.getAnswer(t, "window_tab_list", `{}`)["tabs"])
 	if len(list) != 3 {
@@ -283,7 +283,8 @@ func TestWindowToolTextsNameNoToolOfAnotherPlugin(t *testing.T) {
 			}
 		}
 	})
-	handler, err := service.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "window-token", "NUMEN_HOST_PORT": "1"})
+	t.Setenv(hostcall.HostPortEnv, "1")
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "window-token"}, service.Mount)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -330,16 +331,16 @@ func TestNoteFocusReturnsTheNoteKey(t *testing.T) {
 
 func TestSourceFocusReturnsThePathAndTheHighlightCount(t *testing.T) {
 	w := newWindowTools(t)
-	answer := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf","passages":[{"start":1500,"length":80},{"start":400,"length":700}]}`)
+	answer := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf","spans":[{"start":1500,"length":80},{"start":400,"length":700}]}`)
 	requireKeys(t, "the answer of source_focus", answer, []string{"path", "highlightCount"}, []string{"shown", "summary", "kind"})
 	if answer["path"] != guidePath || answer["highlightCount"] != float64(2) {
 		t.Errorf("source_focus returned %v, want path %s and highlightCount 2", answer, guidePath)
 	}
 
-	noPassages := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf"}`)
-	requireKeys(t, "the answer of source_focus with no passages", noPassages, []string{"path", "highlightCount"}, []string{"shown", "summary"})
-	if noPassages["highlightCount"] != float64(0) {
-		t.Errorf("source_focus with no passages returned highlightCount %v, want 0", noPassages["highlightCount"])
+	noSpans := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf"}`)
+	requireKeys(t, "the answer of source_focus with no passages", noSpans, []string{"path", "highlightCount"}, []string{"shown", "summary"})
+	if noSpans["highlightCount"] != float64(0) {
+		t.Errorf("source_focus with no passages returned highlightCount %v, want 0", noSpans["highlightCount"])
 	}
 
 	schema := getToolSchema(t, w.registry, "source_focus", true)
@@ -349,7 +350,7 @@ func TestSourceFocusReturnsThePathAndTheHighlightCount(t *testing.T) {
 // The window opens a note whole and highlights none of the passages given for it.
 func TestSourceFocusOfANoteReturnsAHighlightCountOfZero(t *testing.T) {
 	w := newWindowTools(t)
-	answer := w.getAnswer(t, "source_focus", `{"path":"notes/Heron.md","passages":[{"start":4,"length":10},{"start":20,"length":5}]}`)
+	answer := w.getAnswer(t, "source_focus", `{"path":"notes/Heron.md","spans":[{"start":4,"length":10},{"start":20,"length":5}]}`)
 	requireKeys(t, "the answer of source_focus for a note", answer, []string{"path", "highlightCount"}, nil)
 	if answer["path"] != notePath || answer["highlightCount"] != float64(0) {
 		t.Errorf("source_focus of a note returned %v, want path %s and highlightCount 0", answer, notePath)
@@ -396,7 +397,8 @@ func TestWindowToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 
 func TestWindowToolInstructionsContainNoNarrativeMarker(t *testing.T) {
 	// The window tools are read from the handler the host starts, where the plugin mounts its registry.
-	handler, err := service.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "window-token", "NUMEN_HOST_PORT": "1"})
+	t.Setenv(hostcall.HostPortEnv, "1")
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "window-token"}, service.Mount)
 	if err != nil {
 		t.Fatal(err)
 	}

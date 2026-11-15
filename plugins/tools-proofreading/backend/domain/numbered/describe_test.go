@@ -43,15 +43,28 @@ func TestADigestReturnsWhatTheRecordingContains(t *testing.T) {
 // A word that occurs once is not a recurring word.
 func TestADigestListsOnlyWhatRecurs(t *testing.T) {
 	about := DescribeSpeech(makeLines("The teacher named Ganaka once.", "Nothing else was said of him."))
+	want := "The speech opens: The teacher named Ganaka once. Nothing else was said of him.\n"
+	if about != want {
+		t.Errorf("the digest says %q, want %q", about, want)
+	}
 	if response := getListedWords(t, about); response != "" {
 		t.Errorf("the digest lists %q", response)
+	}
+	withSkippedFirst := DescribeSpeech(makeLines("The Once and Twice and Twice."))
+	if response := getListedWords(t, withSkippedFirst); response != "Twice" {
+		t.Errorf("the digest lists %q, want Twice", response)
 	}
 }
 
 // A word capitalized only where a sentence opens is a sentence's first word and not
 // a name, however often it occurs.
 func TestAWordOpeningEverySentenceIsNotAName(t *testing.T) {
-	about := DescribeSpeech(makeLines("Ganaka spoke. Ganaka listened. Ganaka left."))
+	about := DescribeSpeech(makeLines(
+		"Ganaka spoke. Ganaka listened. Ganaka left.",
+		"It is so. Ganaka spoke so. Ganaka left.",
+		"See Bob. Ganaka and Tom. Ganaka.",
+		"The (end.) Alpha (end.) Alpha “end.” Beta “end.” Beta \"end.\" Gamma \"end.\" Gamma 'end.' Delta 'end.' Delta.",
+	))
 	if response := getListedWords(t, about); response != "" {
 		t.Errorf("the digest lists %q", response)
 	}
@@ -59,8 +72,8 @@ func TestAWordOpeningEverySentenceIsNotAName(t *testing.T) {
 
 // An abbreviation does not end a sentence, so the name following it is a name.
 func TestANamePriorAShorteningIsStillAName(t *testing.T) {
-	about := DescribeSpeech(makeLines("Mr. Ganaka arrived. Mr. Ganaka left."))
-	if response := getListedWords(t, about); response != "Ganaka" {
+	about := DescribeSpeech(makeLines("Mr. Ganaka arrived. Mr. Ganaka left. We saw e.g. Mithila and e.g. Mithila."))
+	if response := getListedWords(t, about); response != "Ganaka, Mithila" {
 		t.Errorf("the digest lists %q", response)
 	}
 }
@@ -69,9 +82,13 @@ func TestANamePriorAShorteningIsStillAName(t *testing.T) {
 func TestTheWordAPersonCallsHimselfIsNotAName(t *testing.T) {
 	about := DescribeSpeech(makeLines(
 		"So I was saying that I think Ganaka is here.",
-		"And I told him that I would go. I'm sure I've said so.",
+		"And I told him that I would go. I'm sure I've said so and I've done so, I’ll go and I’ll stay.",
 	))
 	if response := getListedWords(t, about); response != "" {
+		t.Errorf("the digest lists %q", response)
+	}
+	withNames := DescribeSpeech(makeLines("The Om and Om and D'Arc and D'Arc and D’Arc and D’Arc and Ganak\u0301 and Ganak\u0301."))
+	if response := getListedWords(t, withNames); response != "Om, D'Arc, D’Arc, Ganak\u0301" {
 		t.Errorf("the digest lists %q", response)
 	}
 }
@@ -80,16 +97,30 @@ func TestTheWordAPersonCallsHimselfIsNotAName(t *testing.T) {
 // truncated.
 func TestTheOpeningIsSplitShort(t *testing.T) {
 	var response []string
-	for item := range 200 {
+	for item := range 61 {
 		response = append(response, "word"+strconv.Itoa(item))
 	}
-	about := DescribeSpeech(makeLines(strings.Join(response, " ")))
-
-	if !strings.Contains(about, "word0 word1 ") || strings.Contains(about, "word199") {
-		t.Errorf("the digest says %q", about)
+	exact := DescribeSpeech(makeLines(strings.Join(response[:60], " ")))
+	if !strings.Contains(exact, "word59\n") || strings.Contains(exact, " …") {
+		t.Errorf("60-word digest says %q", exact)
 	}
-	if !strings.Contains(about, " …\n") {
-		t.Errorf("the digest does not say the opening was cut short: %q", about)
+
+	about := DescribeSpeech(makeLines(strings.Join(response, " ")))
+	if !strings.Contains(about, "word0 word1 ") || !strings.Contains(about, "word59 …\n") || strings.Contains(about, "word60") {
+		t.Errorf("61-word digest says %q", about)
+	}
+}
+
+func TestTheDigestCapsListedNamesAtTwentyFour(t *testing.T) {
+	words := []string{"The"}
+	for i := range 25 {
+		name := "Name" + string(rune('a'+i/26)) + string(rune('a'+i%26))
+		words = append(words, name, name)
+	}
+	about := DescribeSpeech(makeLines(strings.Join(words, " ")))
+	listed := strings.Split(getListedWords(t, about), ", ")
+	if len(listed) != 24 || listed[0] != "Nameaa" || listed[23] != "Nameax" {
+		t.Errorf("listed %d names: %v", len(listed), listed)
 	}
 }
 

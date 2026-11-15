@@ -82,16 +82,16 @@ func (s *connectionSource) IndexTexts(
 	return connect.NewResponse(&v1.IndexTextsResponse{Vectors: vectors}), nil
 }
 
-func (s *connectionSource) SearchPassages(
-	context.Context, *connect.Request[v1.SearchSourceServiceSearchPassagesRequest],
-) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error) {
+func (s *connectionSource) SearchChunks(
+	context.Context, *connect.Request[v1.SearchSourceServiceSearchChunksRequest],
+) (*connect.Response[v1.SearchSourceServiceSearchChunksResponse], error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	matches := make([]*v1.ChunkMatch, len(s.indexed))
 	for i, chunk := range s.indexed {
 		matches[i] = &v1.ChunkMatch{ChunkId: chunk, Score: 0.9}
 	}
-	return connect.NewResponse(&v1.SearchSourceServiceSearchPassagesResponse{Matches: matches}), nil
+	return connect.NewResponse(&v1.SearchSourceServiceSearchChunksResponse{Matches: matches}), nil
 }
 
 func startConnectionSource(t *testing.T, plugin *connectionSource) *container.PluginRoles {
@@ -126,7 +126,7 @@ func startConnectionSource(t *testing.T, plugin *connectionSource) *container.Pl
 
 func (f *showing) findMeaning(t *testing.T, query string) []string {
 	t.Helper()
-	found, err := f.client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
+	found, err := f.client.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: query, Mode: v1.SearchMode_SEARCH_MODE_MEANING,
 	}))
 	if err != nil {

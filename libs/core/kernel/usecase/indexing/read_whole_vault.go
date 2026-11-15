@@ -66,7 +66,12 @@ func NewReadWholeVault(notes NoteScanner, texts TextIndexer, vectors VectorEmbed
 
 // NewReadWholeVaultByName creates a ReadWholeVault that resolves the vault and prepares the pass over it.
 func NewReadWholeVaultByName(find VaultFinding, prepare VaultPreparing) ReadWholeVault {
-	return ReadWholeVault{find: find, prepare: prepare}
+	base := ReadWholeVault{find: find}
+	if prepare == nil {
+		prepare = func(context.Context, domain.Vault) (ReadWholeVault, error) { return base, nil }
+	}
+	base.prepare = prepare
+	return base
 }
 
 func (u ReadWholeVault) ExecuteByName(
@@ -76,16 +81,12 @@ func (u ReadWholeVault) ExecuteByName(
 	if err != nil {
 		return domain.Vault{}, ReadWholeVaultResult{}, err
 	}
-	runner := u
-	if u.prepare != nil {
-		prepared, prepErr := u.prepare(ctx, v)
-		if prepErr != nil {
-			return domain.Vault{}, ReadWholeVaultResult{}, prepErr
-		}
-		if prepared.Unembedded == nil {
-			prepared.Unembedded = u.Unembedded
-		}
-		runner = prepared
+	runner, err := u.prepare(ctx, v)
+	if err != nil {
+		return domain.Vault{}, ReadWholeVaultResult{}, err
+	}
+	if runner.Unembedded == nil {
+		runner.Unembedded = u.Unembedded
 	}
 	if reporting.OnVaultFound != nil {
 		reporting.OnVaultFound(v, runner.Unembedded)
@@ -144,9 +145,10 @@ func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault, reporti
 }
 
 // CutOne re-chunks one file from its current live text version.
-func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string) error {
-	if _, err := u.texts.IndexOne(ctx, v, path); err != nil {
-		return fmt.Errorf("cutting %s: %w", path, err)
+func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string) (vaultreading.IndexResult, error) {
+	res, err := u.texts.IndexOne(ctx, v, path)
+	if err != nil {
+		return res, fmt.Errorf("cutting %s: %w", path, err)
 	}
-	return nil
+	return res, nil
 }

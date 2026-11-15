@@ -71,20 +71,20 @@ func (c *concurrentVault) Read(ctx context.Context, path string) ([]byte, error)
 	return []byte(raw), nil
 }
 
-func manySources(count int) (map[string]string, []domain.Passage) {
+func manySources(count int) (map[string]string, []domain.SearchResult) {
 	content := make(map[string]string, count)
-	var found []domain.Passage
+	var found []domain.SearchResult
 	for i := range count {
 		name := fmt.Sprintf("book-%02d.md", i)
 		content[name] = proseOf(name, 10)
-		found = append(found, domain.Passage{
-			ChunkID: domain.ChunkID(fmt.Sprintf("a-%02d", i)), Source: name, Start: 0, Length: len(name),
+		found = append(found, domain.SearchResult{
+			ChunkID: domain.ChunkID(fmt.Sprintf("a-%02d", i)), Path: name, Start: 0, Length: len(name),
 		})
 	}
 	for i := count - 1; i >= 0; i-- {
 		name := fmt.Sprintf("book-%02d.md", i)
-		found = append(found, domain.Passage{
-			ChunkID: domain.ChunkID(fmt.Sprintf("b-%02d", i)), Source: name,
+		found = append(found, domain.SearchResult{
+			ChunkID: domain.ChunkID(fmt.Sprintf("b-%02d", i)), Path: name,
 			Start: 5 * (len(name) + 1), Length: len(name),
 		})
 	}
@@ -94,9 +94,9 @@ func manySources(count int) (map[string]string, []domain.Passage) {
 func TestRead_ReturnsSourcesInRankOrderAtAnyConcurrency(t *testing.T) {
 	content, found := manySources(40)
 
-	run := func(extractors int) []domain.Passage {
+	run := func(extractors int) []domain.SearchResult {
 		vault := newConcurrentVault(content)
-		u := Search{readers: concurrentReaders{vault}, Extractors: extractors}
+		u := Search{readers: concurrentReaders{vault}, texts: noTextReaders{}, Extractors: extractors}
 		out, err := u.read(t.Context(), domain.Vault{ID: "v"}, found)
 		if err != nil {
 			t.Fatal(err)
@@ -109,7 +109,7 @@ func TestRead_ReturnsSourcesInRankOrderAtAnyConcurrency(t *testing.T) {
 		t.Fatalf("%d passages came back, want %d", len(want), len(found))
 	}
 	for i, p := range want {
-		if p.ChunkID != found[i].ChunkID || p.Text != p.Source {
+		if p.ChunkID != found[i].ChunkID || p.Text != p.Path {
 			t.Fatalf("passage %d is %+v, want %s read back with its own name", i, p, found[i].ChunkID)
 		}
 	}
@@ -131,7 +131,7 @@ func TestReadNeverContainsMoreDecodedSourcesThanItHasExtractors(t *testing.T) {
 	for _, extractors := range []int{1, 3, defaultExtractors} {
 		vault := newConcurrentVault(content)
 		vault.hold = 2 * time.Millisecond
-		u := Search{readers: concurrentReaders{vault}, Extractors: extractors}
+		u := Search{readers: concurrentReaders{vault}, texts: noTextReaders{}, Extractors: extractors}
 
 		if _, err := u.read(t.Context(), domain.Vault{ID: "v"}, found); err != nil {
 			t.Fatal(err)
@@ -149,7 +149,7 @@ func TestReadUsesTheDefaultExtractorsWhereNoneAreNamed(t *testing.T) {
 	content, found := manySources(30)
 	vault := newConcurrentVault(content)
 	vault.hold = 2 * time.Millisecond
-	u := Search{readers: concurrentReaders{vault}}
+	u := Search{readers: concurrentReaders{vault}, texts: noTextReaders{}}
 
 	if _, err := u.read(t.Context(), domain.Vault{ID: "v"}, found); err != nil {
 		t.Fatal(err)
@@ -163,7 +163,7 @@ func TestReadReadsASourceNamedFarApartOnce(t *testing.T) {
 	content, found := manySources(12)
 	vault := newConcurrentVault(content)
 	vault.hold = time.Millisecond
-	u := Search{readers: concurrentReaders{vault}}
+	u := Search{readers: concurrentReaders{vault}, texts: noTextReaders{}}
 
 	if _, err := u.read(t.Context(), domain.Vault{ID: "v"}, found); err != nil {
 		t.Fatal(err)
@@ -180,7 +180,7 @@ func TestReadStopsAtTheFirstErrorAndPreservesNoGoroutineRunning(t *testing.T) {
 	vault := newConcurrentVault(content)
 	vault.failAt = "book-00.md"
 	vault.blockOthers = true
-	u := Search{readers: concurrentReaders{vault}}
+	u := Search{readers: concurrentReaders{vault}, texts: noTextReaders{}}
 
 	before := runtime.NumGoroutine()
 	out, err := u.read(t.Context(), domain.Vault{ID: "v"}, found)
@@ -200,7 +200,7 @@ func TestRead_StopsOnContextCancelWithoutLeakedGoroutines(t *testing.T) {
 	content, found := manySources(30)
 	vault := newConcurrentVault(content)
 	vault.hold = time.Minute
-	u := Search{readers: concurrentReaders{vault}}
+	u := Search{readers: concurrentReaders{vault}, texts: noTextReaders{}}
 
 	ctx, cancel := context.WithCancel(t.Context())
 	before := runtime.NumGoroutine()

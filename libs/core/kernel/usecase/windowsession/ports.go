@@ -4,8 +4,9 @@ import (
 	"context"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -20,20 +21,11 @@ type Pages interface {
 
 // Writes is the writes taken and not yet finished.
 type Writes interface {
-	// BeginWrite registers a write and reports false once the window is closing, when nothing may be written.
-	BeginWrite() bool
-	// FinishWrite ends a write that BeginWrite registered.
-	FinishWrite()
+	windowport.WriteGate
 	// Seal refuses new writes and answers with what closes once the writes taken have finished.
 	Seal() <-chan struct{}
 	// Open accepts writes again.
 	Open()
-}
-
-// Tasks is the list of what the window is doing.
-type Tasks interface {
-	AddTask(task work.Task)
-	RemoveTask(id string)
 }
 
 // Changes tells the views drawing the vault what changed.
@@ -84,8 +76,8 @@ type IndexWake interface {
 	ClearSkips(paths []string)
 }
 
-// ReadNotes reads the notes of a vault once and returns how many it read.
-type ReadNotes = func(ctx context.Context, during func()) (notes int, err error)
+// ReadNotes reads the notes of a vault once and returns what the walk did.
+type ReadNotes = func(ctx context.Context, during func()) (vaultreading.ScanResult, error)
 
 // IndexSession is the pass that reads one vault into the index and cuts again what it is asked to.
 type IndexSession struct {

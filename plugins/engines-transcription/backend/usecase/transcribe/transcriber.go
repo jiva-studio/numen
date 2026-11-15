@@ -59,9 +59,7 @@ func NewTranscriber(
 }
 
 func (t *Transcriber) reportError(what string, err error) {
-	if err != nil {
-		t.report(what, err)
-	}
+	t.report(what, err)
 }
 
 // Close stops every transcription and waits for them. A transcription requested after Close is not
@@ -103,18 +101,6 @@ var (
 // readRecording returns the bytes of the recording a run transcribes.
 type readRecording func(ctx context.Context) ([]byte, error)
 
-// Transcribe transcribes a recording and returns once its transcript is written, with the error the
-// transcription stopped on. It ends when ctx ends or the plugin stops.
-func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path string) error {
-	claimed, key, err := t.claimOrFail(ctx, vault, path)
-	if err != nil {
-		return err
-	}
-	return t.runTranscription(ctx, key, claimed, path, func(ctx context.Context) ([]byte, error) {
-		return t.files.ReadFile(ctx, claimed, path)
-	})
-}
-
 // Start claims the recording and transcribes it in the background, and returns false when a run
 // already has it. The recording is read in the background as well, and a failed read fails the
 // task. Close cancels the transcription and waits for it. The recording stops counting as running
@@ -147,22 +133,6 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 	return true, nil
 }
 
-func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, path string) (domain.VaultID, string, error) {
-	claimed, err := t.getClaimVault(ctx, vault)
-	if err != nil {
-		return "", "", err
-	}
-	key, isClaimed := t.claim(claimed, path)
-	switch {
-	case isClaimed:
-		return claimed, key, nil
-	case t.isClosing():
-		return "", "", fmt.Errorf("%s: %w", path, errClosed)
-	default:
-		return "", "", fmt.Errorf("%s: %w", path, ErrAlreadyTranscribing)
-	}
-}
-
 func (t *Transcriber) runTranscription(ctx context.Context, key string, vault domain.VaultID, path string, read readRecording) error {
 	defer t.wg.Done()
 	release := sync.OnceFunc(func() { t.unclaim(key) })
@@ -189,7 +159,7 @@ func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.isClosed || t.running[key] {
-		return key, false
+		return "", false
 	}
 	t.running[key] = true
 	t.wg.Add(1)
@@ -213,15 +183,18 @@ func (t *Transcriber) findLiveVersionOfWholeTranscript(ctx context.Context, vaul
 	for _, version := range listing.Versions {
 		byID[version.GetID()] = version
 	}
-	live, isLive := byID[listing.Live]
-	seenIDs := map[domain.TextVersionID]bool{}
-	for version, isFound := live, isLive; isFound && !seenIDs[version.GetID()]; version, isFound = byID[version.Source] {
+	live := byID[listing.Live]
+	for id := listing.Live; ; {
+		version, isFound := byID[id]
+		if !isFound {
+			return domain.TextVersion{}, false, nil
+		}
 		if version.PluginID == PluginID && isWholeFile(version) {
 			return live, true, nil
 		}
-		seenIDs[version.GetID()] = true
+		delete(byID, id)
+		id = version.Source
 	}
-	return domain.TextVersion{}, false, nil
 }
 
 func (t *Transcriber) getClaimVault(ctx context.Context, vault domain.VaultID) (domain.VaultID, error) {

@@ -6,8 +6,10 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
 )
 
 func retiredConnection() connectiondomain.Connection {
@@ -43,7 +45,10 @@ func TestDeleteRestoresTheEntryWhenASecretCannotBeRemoved(t *testing.T) {
 	f := newFixture(t)
 	created := f.createOpenRouter(t, "Work")
 	failing := &failingDelete{memoryKeys: f.keys}
-	f.connection = connectiontest.New(f.repository, f.types, failing, f.uses, func() (string, error) { return "c0000000b", nil })
+	f.connection = connectiontest.New(connectiontest.Parts{
+		Repository: f.repository, Types: f.types, Keys: failing, Uses: f.uses,
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
+	}, func() (string, error) { return "c0000000b", nil })
 
 	_, err := f.connection.Delete.Execute(t.Context(), created.ID)
 

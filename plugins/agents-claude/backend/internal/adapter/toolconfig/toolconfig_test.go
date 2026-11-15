@@ -83,3 +83,59 @@ func TestTheFileNamesThePersonsOwnServersWithTheVault(t *testing.T) {
 		t.Errorf("the file holds %s and names %v, want %s and the weather server", raw, names, want)
 	}
 }
+
+func TestHomeFallbackAndErrorPaths(t *testing.T) {
+	// Fallback to HOME when CLAUDE_CONFIG_DIR is empty.
+	home := t.TempDir()
+	t.Setenv("CLAUDE_CONFIG_DIR", "")
+	t.Setenv("HOME", home)
+	if err := os.WriteFile(filepath.Join(home, ".claude.json"), []byte(`{"mcpServers":{"home-srv":{"type":"stdio"}}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	path, names, err := (Files{}).Write("http://127.0.0.1:4100/mcp", "token")
+	if err != nil || !slices.Equal(names, []string{"home-srv"}) {
+		t.Fatalf("Write with HOME fallback = (%q, %v, %v)", path, names, err)
+	}
+	if err := (Files{}).Remove(path); err != nil {
+		t.Fatal(err)
+	}
+
+	// Empty HOME and empty CLAUDE_CONFIG_DIR does not read .claude.json from the current directory.
+	cwd := t.TempDir()
+	if err := os.WriteFile(filepath.Join(cwd, ".claude.json"), []byte(`{"mcpServers":{"cwd-srv":{"type":"stdio"}}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(cwd)
+	t.Setenv("HOME", "")
+	if got := readUserServers(); len(got) != 0 {
+		t.Errorf("readUserServers with empty HOME = %v, want empty", got)
+	}
+
+	// Broken JSON in .claude.json after a valid entry returns no servers.
+	brokenDir := t.TempDir()
+	t.Setenv("CLAUDE_CONFIG_DIR", brokenDir)
+	if err := os.WriteFile(filepath.Join(brokenDir, ".claude.json"), []byte(`{"mcpServers":{"valid":{"type":"stdio"},"broken":bad}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := readUserServers(); len(got) != 0 {
+		t.Errorf("readUserServers with broken JSON = %v, want empty", got)
+	}
+
+	// Write failure when TMPDIR does not exist.
+	t.Setenv("TMPDIR", filepath.Join(t.TempDir(), "missing-tmpdir"))
+	if _, _, err := (Files{}).Write("http://127.0.0.1:4100/mcp", "token"); err == nil {
+		t.Error("expected Write to fail when TMPDIR is missing")
+	}
+	t.Setenv("TMPDIR", t.TempDir())
+
+	if err := (Files{}).Remove(""); err != nil {
+		t.Errorf("Remove(\"\") = %v, want nil", err)
+	}
+	nonEmptyDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(nonEmptyDir, "keep"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := (Files{}).Remove(nonEmptyDir); err == nil {
+		t.Error("expected Remove on non-empty directory to fail")
+	}
+}

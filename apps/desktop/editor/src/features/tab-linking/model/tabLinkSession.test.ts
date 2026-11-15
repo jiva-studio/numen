@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
 import { createLostConnection } from '@numen/core-client/testing'
-import { answerCore } from '@/testing/coreAnswers'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import type { TabLinksEvent } from '@/entities/tab'
 import { createTabLinkSession, getWindowReport, type TabLinkSessionDeps } from './tabLinkSession'
 import { createTabReports } from './tabReports'
@@ -80,7 +80,7 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
       Promise.resolve(),
     ),
   }
-  answerCore({
+  const api = createAnsweredApi({
     workspace: {
       watchTabLinks: (request, context) => core.watchTabLinks(request.windowId, context.signal),
       cancelWatchTabLinks: async (request) => {
@@ -106,7 +106,9 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
   const wait = vi.fn((_ms: number) => Promise.resolve())
   const onError = vi.fn()
   const deps = {
+    api: api.tabs.tabLinks,
     reports: createTabReports({
+      writeTabLinks: api.tabs.tabLinks.writeTabLinks,
       windowId: 'window-a',
       getReport: () => ({ tabs: getOpenTabs(), window: WINDOW }),
       wait,
@@ -114,8 +116,7 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
     }),
     windowId: 'window-a',
     tabLinks: { applySnapshot: vi.fn() },
-    applySync: vi.fn(),
-    applyGroupPaths: vi.fn(),
+    tabSync: { applySync: vi.fn(), applyGroupPaths: vi.fn() },
     openMovedTab: vi.fn(),
     setHighlighted: vi.fn(),
     wait,
@@ -132,7 +133,8 @@ describe('createTabLinkSession', () => {
 
     const stream = session.start()
 
-    await vi.waitFor(() => expect(deps.applySync).toHaveBeenCalledWith(SYNC))
+    await vi.waitFor(() => expect(deps.tabSync.applySync).toHaveBeenCalledWith(SYNC))
+    expect(deps.setHighlighted).not.toHaveBeenCalled()
     expect(core.watchTabLinks).toHaveBeenCalledWith('window-a', expect.any(AbortSignal))
     expect(deps.tabLinks.applySnapshot).toHaveBeenCalledExactlyOnceWith(SNAPSHOT)
     expect(core.writeTabLinks).toHaveBeenCalledExactlyOnceWith(REPORT)
@@ -179,7 +181,7 @@ describe('createTabLinkSession', () => {
   it('keeps the stream open when applySync throws', async () => {
     const { deps, core, session } = setup([{ sync: SYNC }, { links: SNAPSHOT }])
     const failure = new Error('navigate failed')
-    deps.applySync.mockImplementationOnce(() => {
+    deps.tabSync.applySync.mockImplementationOnce(() => {
       throw failure
     })
 
@@ -208,7 +210,7 @@ describe('getWindowReport', () => {
         ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
-      groups: { handle: { front: () => null } },
+      handle: { front: () => null },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, true).tabs).toStrictEqual([
@@ -270,7 +272,9 @@ describe('a snapshot', () => {
 
     const stream = session.start()
 
-    await vi.waitFor(() => expect(deps.applyGroupPaths).toHaveBeenCalledWith(SNAPSHOT.groups))
+    await vi.waitFor(() =>
+      expect(deps.tabSync.applyGroupPaths).toHaveBeenCalledWith(SNAPSHOT.groups),
+    )
     session.close()
     await stream
   })
@@ -279,11 +283,18 @@ describe('a snapshot', () => {
 describe('a failed tab report', () => {
   it('is sent again after the retry delay', async () => {
     const { deps, core, session } = setup([])
-    core.writeTabLinks.mockRejectedValueOnce(FAILURE)
+    core.writeTabLinks
+      .mockRejectedValueOnce(FAILURE)
+      .mockRejectedValueOnce(FAILURE)
+      .mockImplementationOnce(async () => {
+        session.reportTabs()
+      })
+      .mockRejectedValueOnce(FAILURE)
 
     session.reportTabs()
 
-    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(5))
+    expect(deps.onError).toHaveBeenCalledTimes(2)
     expect(deps.wait).toHaveBeenCalledWith(2000)
     expect(core.writeTabLinks.mock.calls[1]).toStrictEqual([REPORT])
   })
@@ -404,19 +415,19 @@ describe('getWindowReport', () => {
         ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
-      groups: { handle: { front: () => ({ id: 'agent:1', kind: 'agent', state: null }) } },
+      handle: { front: () => ({ id: 'plex:1', kind: 'plex', state: null }) },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, false)).toStrictEqual({
       tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }],
-      window: { isMain: false, activeTitle: 'Agent', activeKind: 'agent', tabCount: 2 },
+      window: { isMain: false, activeTitle: 'Orbits', activeKind: 'plex', tabCount: 2 },
     })
   })
 
   it('returns an empty active tab when no tab is active', () => {
     const windowTabs = {
       tabs: { tabs: computed(() => []), getTab: () => null },
-      groups: { handle: { front: () => null } },
+      handle: { front: () => null },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, true).window).toStrictEqual({

@@ -63,16 +63,6 @@ export interface AppInfo {
   readonly platform: 'darwin' | 'windows' | 'linux'
 }
 
-// TabPlace is the place a reader tab shows, as its reader reports it. A field the reader does not
-// have is left out.
-export interface TabPlace {
-  readonly page?: number
-  readonly pageCount?: number
-  readonly positionSeconds?: number
-  readonly cfi?: string
-  readonly chapter?: string
-}
-
 // ReaderHandle is what a reader component lets its tab call: moving the keyboard into the reader, and
 // laying it out again once the tab is visible.
 export interface ReaderHandle {
@@ -89,8 +79,9 @@ export interface ReaderTabState {
   // Saves the place the reader shows. The window keeps it with the tab and passes it back as
   // `selector` when the tab opens after a restart.
   savePlace(place: Selector): void
-  // Reports the place the reader shows to the window, which an agent reads with the open tabs.
-  reportPlace(place: TabPlace): void
+  // Reports the place the reader shows to the window, which an agent reads with the open tabs. The
+  // place is JSON in the shape of a contract such as `readerplace`; the window passes it on unread.
+  reportPlace(place: string): void
   // Hands the window the reader, which it focuses and lays out when the tab is shown.
   attachReader?(reader: ReaderHandle | null): void
 }
@@ -153,8 +144,9 @@ export interface TabKindInput<State extends object = object> {
 // TabKindFiles is how a tab relates to the files it shows and edits.
 export interface TabKindFiles<State extends object = object> {
   getTarget?(this: void, state: State): TabTarget
-  // Returns the file the tab shows, and the place its reader last reported, left out when it reported none.
-  getOpenTab?(this: void, state: State): { readonly path: string; readonly place?: TabPlace }
+  // Returns the file the tab shows, and the JSON of the place its reader last reported, left out when it
+  // reported none.
+  getOpenTab?(this: void, state: State): { readonly path: string; readonly place?: string }
   isAsking?(this: void, state: State): boolean
   // Writes what the tab holds out to its file, and answers once nothing is on its way.
   flushPending?(this: void, state: State): Promise<void>
@@ -197,7 +189,7 @@ export interface CommandRegistration {
 
 // PluginLifecycle declares the activation and teardown hooks.
 export interface PluginLifecycle {
-  activate(context: PluginContext): void | Promise<void>
+  activate(plugin: PluginContext, host: HostServices): void | Promise<void>
   deactivate?(): void | Promise<void>
 }
 
@@ -307,17 +299,23 @@ export interface PluginWork {
   readonly processes?: ProcessHost
 }
 
-// PluginContext provides registration and host services to an activated plugin, in parts.
+// PluginContext is what an activated plugin owns: who it is, what it registers, its settings and
+// its health.
 export interface PluginContext {
-  readonly plugin: PluginIdentity
+  readonly identity: PluginIdentity
   readonly register: PluginRegistrations
   readonly settings: PluginSettings
-  readonly events: PluginEvents
-  readonly tabs: PluginTabs
+  readonly health?: HealthHost
+}
+
+// HostServices is what the host lends an activated plugin: the vault, the tabs, the window, the
+// background work and the events.
+export interface HostServices {
   readonly vault: PluginVault
+  readonly tabs: PluginTabs
   readonly ui: PluginUi
   readonly work: PluginWork
-  readonly health?: HealthHost
+  readonly events: PluginEvents
 }
 
 // JsonValue is a value that survives JSON.stringify and JSON.parse unchanged: the shape of a setting,

@@ -244,7 +244,6 @@ func writeResult(out any) *v1.ToolResult {
 
 func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
 	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return Listing{}, err
 	}

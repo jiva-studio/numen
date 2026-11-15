@@ -17,12 +17,17 @@ var (
 	ErrRecipeMismatch = errors.New("host: the recipe is not the one of the model in use")
 	// ErrInvalidFloor is what a floor gets that is not above zero and at most one.
 	ErrInvalidFloor = errors.New("host: a floor is a cosine similarity above 0 and at most 1")
-	// ErrLimitExceeded is what an embedding call gets that names more texts, or longer ones, than one call embeds.
-	ErrLimitExceeded = errors.New("host: the call exceeds the limits of one embedding call")
+	// ErrLimitExceeded is what a call gets that names more items, or longer ones, than one call takes.
+	ErrLimitExceeded = errors.New("host: the call exceeds the limits of one call")
 	// ErrEmbeddingFailed is what an embedding call gets when the model could not answer.
 	ErrEmbeddingFailed = errors.New("host: the embedding model could not answer")
 	// ErrInvalidQuery is what a sampling call gets whose query vector has another dimension count than the vectors of the index.
 	ErrInvalidQuery = errors.New("host: a query vector does not match the vectors of the index")
+	// ErrInvalidCondition is what ScoreChunks gets for a condition with no text, with both texts or with an
+	// empty text. A words query FTS5 rejects gets ErrInvalidWords.
+	ErrInvalidCondition = errors.New("host: a condition names neither or both of meaning and words")
+	// ErrInvalidWords is what a words query gets that FTS5 rejects.
+	ErrInvalidWords = errors.New("host: the words query is not valid FTS5")
 )
 
 // The permissions a plugin declares in its manifest. The search reads, the embedding included, need
@@ -42,10 +47,10 @@ const (
 const (
 	MaxEmbeddedTexts = 256
 	MaxEmbeddedBytes = 8192
-	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledPassages
+	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledChunks
 	// how many small chunks the host compares each of them with.
-	MaxSampledQueries  = 256
-	MaxSampledPassages = 500
+	MaxSampledQueries = 256
+	MaxSampledChunks  = 500
 )
 
 // EmbeddingState is the model in use and how far a vault is embedded under it.
@@ -106,7 +111,7 @@ type EmbeddedTexts struct {
 }
 
 // SimilarityQuery is a query vector of the model in use, and the path of the note it was made from.
-// The passages of that note are left out of the sample of the query; an empty path leaves out none.
+// The chunks of that note are left out of the sample of the query; an empty path leaves out none.
 type SimilarityQuery struct {
 	Path   string
 	Vector []float32
@@ -116,12 +121,12 @@ type SimilarityQuery struct {
 //
 //numen:api
 type SimilaritySample struct {
-	// PassageCount is how many small chunks the host sampled, and SourceCount how many sources they
+	// ChunkCount is how many small chunks the host sampled, and SourceCount how many sources they
 	// belong to.
-	PassageCount int
-	SourceCount  int
-	// Rows holds, for each query in the order given, its similarity with each sampled passage of another
-	// note, in the order of the passages. The row of a query with no vector is empty.
+	ChunkCount  int
+	SourceCount int
+	// Rows holds, for each query in the order given, its similarity with each sampled chunk of another
+	// note, in the order of the chunks. The row of a query with no vector is empty.
 	Rows [][]float64
 }
 
@@ -165,11 +170,11 @@ type SearchIndex interface {
 	EmbedTexts(ctx context.Context, texts []string) (EmbeddedTexts, error)
 	// SampleSimilarities is the cosine similarity of each query with the small chunks of the vault that
 	// carry a vector under the recipe and belong to a note other than the query's. The host takes at
-	// most MaxSampledPassages small chunks in a fixed order, so one index yields one sample, and at most
+	// most MaxSampledChunks small chunks in a fixed order, so one index yields one sample, and at most
 	// MaxSampledQueries queries per call. A query with another dimension count than the index returns
 	// ErrInvalidQuery.
 	SampleSimilarities(ctx context.Context, recipe string, queries []SimilarityQuery) (SimilaritySample, error)
-	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector
+	// GetBestSimilarity is the cosine similarity of the chunk of the vault nearest the query vector
 	// under the recipe, and zero where the vault has none.
 	GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error)
 }
@@ -178,9 +183,9 @@ type SearchIndex interface {
 // permission. A search source answers a query of the core with it, on the client With the vault of the
 // place; a recipe other than the one of the source in use returns ErrRecipeMismatch.
 type PlaceSearch interface {
-	// FindNearestPassages returns the small chunks nearest the vector under the recipe, nearest first,
+	// FindNearestChunks returns the small chunks nearest the vector under the recipe, nearest first,
 	// at or above the floor of the query, else the effective floor of the vault.
-	FindNearestPassages(ctx context.Context, query NearestQuery) ([]NearestMatch, error)
+	FindNearestChunks(ctx context.Context, query NearestQuery) ([]NearestMatch, error)
 }
 
 // NearestQuery is a search of the place of a search source by a vector.
@@ -209,51 +214,146 @@ type NearestMatch struct {
 }
 
 const (
-	// MaxSearchedPassagesPerSource is the maximum number of passages of one source a
-	// SearchPassages call returns.
-	MaxSearchedPassagesPerSource = 3
-	// DefaultSearchedPassages is the maximum number of passages a SearchPassages call returns when its limit
-	// is zero, and MaxSearchedPassages the maximum for any limit.
-	DefaultSearchedPassages = 20
-	MaxSearchedPassages     = 100
+	// DefaultSearchedResultsPerSource is the number of search results of one source a SearchText call
+	// returns when the query names none.
+	DefaultSearchedResultsPerSource = 3
+	// MaxExcerptBytes is the longest Text of a SearchResult: the excerpt of the chunk around the hit.
+	MaxExcerptBytes = 1200
+	// DefaultSearchedResults is the maximum number of search results a SearchText call returns when its limit
+	// is zero, and MaxSearchedResults the maximum for any limit.
+	DefaultSearchedResults = 20
+	MaxSearchedResults     = 500
+	// MaxScoredChunks is how many chunks one ScoreChunks call takes, MaxScoredConditions how many
+	// conditions, and MaxConditionBytes the longest text of a condition.
+	MaxScoredChunks     = 500
+	MaxScoredConditions = 16
+	MaxConditionBytes   = 8192
 )
 
-// PassageQuery is a passage search request.
+// SearchMode selects the participants of a SearchText call.
+type SearchMode int
+
+const (
+	// SearchModeHybrid fuses the words, the section names and the meaning. It is the zero value.
+	SearchModeHybrid SearchMode = iota
+	// SearchModeWords asks the words of the index alone.
+	SearchModeWords
+	// SearchModeMeaning asks the search source alone. A host with no model returns ErrNoModel.
+	SearchModeMeaning
+)
+
+// SearchResultQuery is a text search request.
 //
 //numen:api
-type PassageQuery struct {
+type SearchResultQuery struct {
 	Query string
-	// Limit is the maximum number of passages to return: DefaultSearchedPassages when zero, at
-	// most MaxSearchedPassages.
+	// Limit is the maximum number of search results to return: DefaultSearchedResults when zero, at
+	// most MaxSearchedResults.
 	Limit int
+	// ResultsPerSource is the maximum number of search results of one source:
+	// DefaultSearchedResultsPerSource when zero or less, at most Limit.
+	ResultsPerSource int
 	// Kinds are the kinds of source to search, KindNote or KindFile. Empty means every kind.
 	Kinds []domain.SourceKind
 	// PathPrefix limits the search to the sources whose path starts with it, relative to the vault, in
 	// either Unicode form (NFC or NFD). The index applies it before it truncates the list to Limit. Empty
 	// means the whole vault.
 	PathPrefix string
+	// Mode selects the participants; the zero value is SearchModeHybrid.
+	Mode SearchMode
+	// IsRawWords passes Query to the words of the index as an FTS5 query (phrases, NEAR, prefix *, AND,
+	// OR, NOT), unquoted. It is valid with SearchModeWords only; a query FTS5 rejects returns
+	// ErrInvalidWords.
+	IsRawWords bool
+	// IsWholeText asks for the whole text of the chunk of each result in WholeText, next to the excerpt in
+	// Text.
+	IsWholeText bool
 }
 
-// Passage is a span of source text matching a query.
+// SearchResult is a span of source text matching a query.
 //
 //numen:api
-type Passage struct {
+type SearchResult struct {
+	// ChunkID names the chunk that was hit. ScoreChunks takes it.
+	ChunkID string
 	// Path is the file the text is read from, relative to the vault.
 	Path string
-	// Text is the text around the hit, truncated to a size and so possibly ending mid-sentence.
+	// Text is the text around the hit, at most MaxExcerptBytes bytes of the chunk, and so possibly
+	// starting and ending mid-sentence.
 	Text string
-	// Location is the location label in the source's numbering (page, chapter, time), empty
+	// PlaceLabel is the location label in the source's numbering (page, chapter, time), empty
 	// when the format has none.
-	Location string
-	// Start and Length locate the whole passage in the source text, in bytes.
+	PlaceLabel string
+	// Start and Length locate the whole search result in the source text, in bytes.
 	Start  int
 	Length int
-	// Line is the line of the hit, counted from 0 at the first line of the source's prose, for every
+	// MatchLine is the line of the hit, counted from 0 at the first line of the source's prose, for every
 	// source.
-	Line int
+	MatchLine int
 	// Selector locates the hit in the text version, as JSON, with the keys of domain.Selector. Empty
 	// for a note.
 	Selector string
+	// Similarity is the cosine similarity of the query with the best small chunk of this result the
+	// search by meaning returned; nil when the search by meaning did not return this result.
+	Similarity *float64
+	// WordScore is the negated bm25 of the best hit of the words in this result: positive, higher is
+	// better, comparable only within one query; nil when the search by words did not return it.
+	WordScore *float64
+	// WholeText is the whole text of the chunk Text is cut from; set only when the query asks with
+	// IsWholeText.
+	WholeText string
+}
+
+// ScoreCondition is one condition ScoreChunks scores a chunk against.
+//
+//numen:api
+type ScoreCondition struct {
+	// Meaning is a text compared by meaning. Exactly one of Meaning and Words is set.
+	Meaning string
+	// Words is an FTS5 query in the syntax of the index (phrases, NEAR, prefix *, AND, OR, NOT).
+	Words string
+}
+
+// ScoreQuery is the chunks a ScoreChunks call scores and the conditions it scores them against.
+//
+//numen:api
+type ScoreQuery struct {
+	// ChunkIDs are the chunk ids of search results, at most MaxScoredChunks.
+	ChunkIDs []string
+	// Conditions are at most MaxScoredConditions, each text at most MaxConditionBytes.
+	Conditions []ScoreCondition
+}
+
+// ConditionScore is how one chunk scores against one condition.
+//
+//numen:api
+type ConditionScore struct {
+	// Similarity is set for a meaning condition when a small chunk inside the chunk carries a vector:
+	// the best cosine similarity among them.
+	Similarity *float64
+	// IsMatch is, for a meaning condition, whether the similarity reaches the floor, and for a words
+	// condition whether the whole text of the chunk matches the query.
+	IsMatch bool
+}
+
+// ChunkScore is the score of one chunk against each condition.
+//
+//numen:api
+type ChunkScore struct {
+	ChunkID string
+	// Conditions holds one score per condition, in the order of the conditions.
+	Conditions []ConditionScore
+}
+
+// ChunkScores is the answer of ScoreChunks.
+//
+//numen:api
+type ChunkScores struct {
+	// Floor is the floor applied to the meaning conditions, zero when there are none.
+	Floor float64
+	// Chunks holds one score per distinct given id the vault holds, in the order given. An id of a
+	// source removed or cut again since the search is left out.
+	Chunks []ChunkScore
 }
 
 // SearchPolicy reads and sets the floor that a search by meaning applies to a vault. It needs the
@@ -268,11 +368,10 @@ type SearchPolicy interface {
 	SetSearchFloor(ctx context.Context, recipe string, floor float64) error
 }
 
-// ReadSearchSourceReadyEvent returns the identity of the vault that an event of the host names as indexed by
-// the search source, and false for any other event. The host emits the event after each indexing
-// pass that leaves no chunk pending, so it repeats: a handler reads the state again and acts only on
-// what is not done.
-func ReadSearchSourceReadyEvent(event string) (domain.VaultID, bool) {
-	vaultID, found := protocol.ReadSearchSourceReadyEvent(event)
+// ReadIndexChangedEvent returns the identity of the vault whose index an event of the host names as changed,
+// and false for any other event. The host emits the event after each indexing pass that changed the index
+// and left nothing pending, so it repeats: a handler reads the state again and acts only on what is not done.
+func ReadIndexChangedEvent(event string) (domain.VaultID, bool) {
+	vaultID, found := protocol.ReadIndexChangedEvent(event)
 	return domain.VaultID(vaultID), found
 }

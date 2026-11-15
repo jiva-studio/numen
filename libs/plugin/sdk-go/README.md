@@ -23,21 +23,21 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | `connection`                     | providing the operations of a connection type, and asking the core to carry out an operation                        |
 | `contracts/llm`, `llmtest`       | the messages, typed client and provider adapter of `llm.complete`, `llm.chat`, `llm.embed`, `llm.rerank` and others |
 | `contracts/acp`, `acptest`       | the messages and provider adapter of `acp.task`                                                                     |
+| `contracts/readerplace`          | the place a reader tab shows, as JSON in the Place of an open tab                                                   |
 | `health`, `health/healthtest`    | the health items a plugin reports                                                                                   |
 | `process`, `process/processtest` | the release of the process of a plugin whose work is done                                                           |
 | `command`                        | the commands the manifest declares, served as `PluginCommandService`                                                |
 | `tools`, `toolstest`             | the tools a plugin offers an agent, served as `PluginToolService`                                                   |
 | `searchsource`                   | a search source, served as `SearchSourceService`                                                                    |
 | `cache`                          | keyed values in memory and on disk, with expiration, backoff and background refresh                                 |
-| `shared`                         | the lock and the model key of the directory the host shares between plugins                                         |
 | `performance`                    | the performance profile of the person and `SetNice`                                                                 |
-| `clock`                          | `clock.System` for the entry point and `clock.Fake` for tests                                                       |
+| `clock`, `clocktest`             | `clock.System` for the entry point and `clocktest.Fake` for tests                                                   |
 | `rpcerror`                       | the error codes of the calls a plugin serves                                                                        |
 | `plugintest`                     | message fixtures, the manifest as the host reads it, and `GrantStorage` for tests                                   |
 
 ## Server
 
-`server.Run(mount)` runs a launched plugin. The port comes from `-port` or `NUMEN_PLUGIN_PORT`, and the token from the first line of standard input. The server answers on loopback, writes `NUMEN_READY port=<port>` once it listens, and stops on `Shutdown`, on an OS signal or when standard input closes. `server.NewLinkedHandler(vars, mount)` is the handler of a plugin the host links into its own process; it takes the token from `vars` and reads no flag. `Server.OnClose(fn)` adds what runs when the server stops.
+`server.Run(mount)` runs a launched plugin. The port comes from `-port` or `NUMEN_PLUGIN_PORT`, and the token from the first line of standard input. The server answers on loopback, writes `NUMEN_READY port=<port>` once it listens, and stops on `Shutdown`, on an OS signal or when standard input closes. `servertest.NewHandler(vars, mount)` is the handler of the mounted plugin for tests; it takes the token from `vars` and reads no flag. `Server.OnClose(fn)` adds what runs when the server stops.
 
 - `SetConfigure` and `SetUpdateConfig` receive the settings of the plugin as a map of text.
 - `server.WithEventHandler(fn)` receives each event the `activationEvents` of the manifest subscribe to. An error the handler returns is the plugin's error for the event.
@@ -48,12 +48,12 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 The core knows an operation by its name only; the payload and the frames are bytes of the contract the operation belongs to. See [Writing a provider](../../../docs/plugins/providers.md) and [Rows of connections](../../../docs/plugins/connection-rows.md).
 
 - A provider is a `connection.Provider`, a map from operation name to `connection.Operation`, served with `connection.Mount(s, provider)`. `llm.Provide(provider, roles)` and `acp.Provide(provider, runner)` add the operations of a contract. An operation fails with `connection.NewTryNextError(reason, retryAfter)` when the core may try the next row, and with `connection.NewStopError(reason)` when the request itself is wrong. A `connection.Secret` shows no value when printed, logged or encoded.
-- A consumer asks with a `connection.Caller`: `connection.NewClientFromEnv()` for a launched plugin, `connection.NewClientFromVars(vars)` for a linked one. The typed clients of a contract, such as `llm.Complete` and `llm.Chat`, take the caller. A call that no row answers ends with `connection.ErrNoConnection`, `*connection.AllFailedError` or `*connection.StoppedError`. `ListRows(ctx, operation)` lists the rows of an operation with the row fields of their types, `ListRowOptions(ctx, request)` the values of a row field of one of them, and `Prefer(row)` returns a caller that asks that row first with the values of its row fields given, or that row alone where `row.IsExclusive` is set, as `listRows`, `listRowOptions` and the option `preferred` with `isExclusive` of the TypeScript SDK do.
+- A consumer asks with a `connection.Caller`: `connection.NewClientFromEnv()`. The typed clients of a contract, such as `llm.Complete` and `llm.Chat`, take the caller. A call that no row answers ends with `connection.ErrNoConnection`, `*connection.AllFailedError` or `*connection.StoppedError`. `ListRows(ctx, operation)` lists the rows of an operation with the row fields of their types, `ListRowOptions(ctx, request)` the values of a row field of one of them, and `Prefer(row)` returns a caller that asks that row first with the values of its row fields given, or that row alone where `row.IsExclusive` is set, as `listRows`, `listRowOptions` and the option `preferred` with `isExclusive` of the TypeScript SDK do.
 - In tests, `llmtest` and `acptest` ask the operations of a provider with the messages of the contract, and `llmtest.NewCaller(provider, call)` is a caller that answers from a provider with the errors of the core.
 
 ## Health
 
-`health.NewClientFromEnv()` and `health.NewClientFromVars(vars)` return the health client. `Report(ctx, item)` puts an item under its key or replaces it, and `Clear(ctx, key)` takes it out. An `Error` item shows in the window's list of tasks and on the plugin's page, a `Warning` item on the page only. `health.OpenSettings(setting)` is the action that opens the settings of the plugin at a setting. The host refuses more than 8 keys, a text over 120 characters, a detail over 500, and the keys `configure`, `start` and `search`. `healthtest.NewHost(t)` keeps the reported items for tests.
+`health.NewClientFromEnv()` returns the health client. `Report(ctx, item)` puts an item under its key or replaces it, and `Clear(ctx, key)` takes it out. An `Error` item shows in the window's list of tasks and on the plugin's page, a `Warning` item on the page only. `health.OpenSettings(setting)` is the action that opens the settings of the plugin at a setting. The host refuses more than 8 keys, a text over 120 characters, a detail over 500, and the keys `configure`, `start` and `search`. `healthtest.NewHost(t)` keeps the reported items for tests.
 
 ## Process
 

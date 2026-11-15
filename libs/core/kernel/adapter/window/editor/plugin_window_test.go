@@ -19,8 +19,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -32,14 +32,14 @@ import (
 )
 
 func newPluginWindow(
-	state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages, limit time.Duration,
+	state *State, focusNote *query.FocusNote, focusFile *file.FocusFile, limit time.Duration,
 ) hostendpoint.WindowControl {
 	return windowsession.NewPluginWindow(
 		&state.Runtime,
 		&state.Tabs,
 		focusNote,
-		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
-			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
+		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
+			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
 		}),
 		windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, limit),
 	)
@@ -72,20 +72,20 @@ func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan do
 func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
 	t.Helper()
 	state := NewState(run.NewTasks(), nil, nil)
-	state.Runtime.SetVault(vaultfixture.NewVault(t, map[string]string{
+	state.Runtime.SetVault(vaulttest.NewVault(t, map[string]string{
 		"library/Birds.pdf": "%PDF-1.7 a guide to the birds of the marsh",
 		"notes/Heron.md":    "# Gray Heron\nHerons fish at dusk.\n",
 	}))
 	line, unsubscribe := state.Notices.Places.Subscribe()
 	t.Cleanup(unsubscribe)
-	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, ViewOf(state)), limit), line
+	return state, newPluginWindow(state, nil, file.NewFocusFile(vaultreader.Readers{}, ViewOf(state)), limit), line
 }
 
-func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {
+func TestPluginWindowFocusFileSendsRangesToWindow(t *testing.T) {
 	_, window, line := newBoundWindow(t)
 	ranges := []domain.ByteRange{{Start: 1500, End: 1580}, {Start: 400, End: 1100}}
 
-	if err := window.FocusPassages(t.Context(), "library/Birds.pdf", ranges); err != nil {
+	if err := window.FocusFile(t.Context(), "library/Birds.pdf", ranges); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -99,10 +99,10 @@ func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {
 	}
 }
 
-func TestPluginWindowRejectsBadPassageOrMissingFile(t *testing.T) {
+func TestPluginWindowRejectsBadSpanOrMissingFile(t *testing.T) {
 	_, window, line := newBoundWindow(t)
 
-	invalid := window.FocusPassages(t.Context(), "library/Birds.pdf", []domain.ByteRange{{Start: -1, End: 4}})
+	invalid := window.FocusFile(t.Context(), "library/Birds.pdf", []domain.ByteRange{{Start: -1, End: 4}})
 	if !errors.Is(invalid, plugin.ErrInvalidFocus) {
 		t.Errorf("a passage before the text returned %v, want ErrInvalidFocus", invalid)
 	}
@@ -110,7 +110,7 @@ func TestPluginWindowRejectsBadPassageOrMissingFile(t *testing.T) {
 	if !errors.Is(emptyPath, plugin.ErrInvalidFocus) {
 		t.Errorf("a note with no path returned %v, want ErrInvalidFocus", emptyPath)
 	}
-	missing := window.FocusPassages(t.Context(), "library/Gone.pdf", nil)
+	missing := window.FocusFile(t.Context(), "library/Gone.pdf", nil)
 	if !errors.Is(missing, fs.ErrNotExist) {
 		t.Errorf("a missing file returned %v, want fs.ErrNotExist", missing)
 	}
@@ -124,15 +124,14 @@ func TestPluginWindowRejectsBadPassageOrMissingFile(t *testing.T) {
 func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 	state, window, _ := newBoundWindow(t)
 	api := newWorkspace(t, state)
-	atStart := 0.0
 
 	if _, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
 		ActiveId: "tab-2",
 		Tabs: []*v1.Tab{
 			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
-			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &v1.TabPlace{Page: 4, PageCount: 80}},
-			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &v1.TabPlace{PositionSeconds: &atStart}},
-			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &v1.TabPlace{Cfi: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: `{"page":4,"pageCount":80}`},
+			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: `{"positionSeconds":0}`},
+			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 		},
 	})); err != nil {
 		t.Fatal(err)
@@ -146,9 +145,9 @@ func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 		ActiveID: "tab-2",
 		Tabs: []windowdomain.Tab{
 			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
-			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &windowdomain.TabPlace{Page: 4, PageCount: 80}},
-			{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &windowdomain.TabPlace{PositionSeconds: &atStart}},
-			{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &windowdomain.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: `{"page":4,"pageCount":80}`},
+			{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: `{"positionSeconds":0}`},
+			{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 		},
 	}
 	if !reflect.DeepEqual(got, want) {

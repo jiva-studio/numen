@@ -15,7 +15,7 @@ describe('measuring the open tabs', () => {
     const measureNote = vi.fn()
     const measureReader = vi.fn()
     const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([
+    windowTabs.kinds.registerKinds([
       kind('note', measureNote),
       kind('reader', measureReader),
       kind('graph'),
@@ -28,5 +28,14 @@ describe('measuring the open tabs', () => {
 
     expect(measureNote).toHaveBeenCalledOnce()
     expect(measureReader).toHaveBeenCalledOnce()
+
+    expect(() =>
+      measureTabs({
+        tabs: {
+          tabs: { value: [{ id: 'gone', title: '' }] },
+          getTab: () => null,
+        },
+      } as never),
+    ).not.toThrow()
   })
 })

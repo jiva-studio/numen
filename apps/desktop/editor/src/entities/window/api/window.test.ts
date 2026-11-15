@@ -1,13 +1,14 @@
 /**
  * The requests and streams of the window to the core, sent for this window.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FLUSH_RESULT, TASK_KIND, TASK_UNIT } from '@numen/core-client'
-import { createLostConnection, installCoreHandlers } from '@numen/core-client/testing'
-import { cancelTask, watchTasks } from './tasks'
-import { reportFlush, watchQuit } from './quit'
-import { watchFocus } from './focus'
-import { getShownVault } from './shownVault'
+import { createLostConnection } from '@numen/core-client/testing'
+import { createHandledClients } from '@/testing/coreAnswers'
+import { createTaskApi } from './tasks'
+import { createQuitApi } from './quit'
+import { createFocusApi } from './focus'
+import { createShownVaultApi } from './shownVault'
 
 const request = {
   reportFlush: vi.fn(),
@@ -18,20 +19,21 @@ const request = {
   getCurrentVault: vi.fn(),
 }
 
-let restore: () => void
+const clients = createHandledClients(request)
+const getApi = () => ({
+  ...createTaskApi(clients.windowService),
+  ...createQuitApi(clients.windowService),
+  ...createFocusApi(clients.workspace),
+  ...createShownVaultApi(clients.windowService),
+})
 
 beforeEach(() => {
   vi.clearAllMocks()
-  restore = installCoreHandlers(request)
-})
-
-afterEach(() => {
-  restore()
 })
 
 describe('a flush reported', () => {
   it('says nothing was left where the window had nothing unsaved', async () => {
-    await reportFlush('token-1')
+    await getApi().reportFlush('token-1')
 
     expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -41,7 +43,7 @@ describe('a flush reported', () => {
   })
 
   it('says what the window wrote', async () => {
-    await reportFlush('token-1', 'written')
+    await getApi().reportFlush('token-1', 'written')
 
     expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -61,7 +63,7 @@ describe('the vault the window shows', () => {
   it('is the vault the core names for this window', async () => {
     request.getCurrentVault.mockResolvedValue({ vault: 'physics' })
 
-    expect(await getShownVault()).toBe('physics')
+    expect(await getApi().getShownVault()).toBe('physics')
     expect(request.getCurrentVault.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 })
@@ -74,7 +76,7 @@ describe('the streams a window follows', () => {
       yield { path: 'Heat.md', ranges: [{ start: 4, end: 9 }], tabId: 'note:1' }
     })
 
-    expect(await readAll(watchFocus(signal))).toStrictEqual([
+    expect(await readAll(getApi().watchFocus(signal))).toStrictEqual([
       { path: 'Heat.md', ranges: [{ start: 4, end: 9 }], tabId: 'note:1' },
     ])
   })
@@ -88,7 +90,7 @@ describe('the streams a window follows', () => {
     })
     const controller = new AbortController()
 
-    const readTask = readAll(watchFocus(controller.signal))
+    const readTask = readAll(getApi().watchFocus(controller.signal))
     await vi.waitFor(() => expect(requestSignal).toBeDefined())
     controller.abort()
 
@@ -97,11 +99,23 @@ describe('the streams a window follows', () => {
   })
 
   it('follows a quit requested of this window', async () => {
-    request.watchQuit.mockImplementation(async function* () {
+    request.watchQuit.mockImplementation(async function* (_req, context) {
       yield { token: 'token-9', flush: true }
+      if (!context.signal.aborted) {
+        yield { token: 'token-10', flush: false }
+      }
     })
+    const controller = new AbortController()
+    const seen: object[] = []
 
-    expect(await readAll(watchQuit(signal))).toStrictEqual([{ token: 'token-9', flush: true }])
+    await (async () => {
+      for await (const item of getApi().watchQuit(controller.signal)) {
+        seen.push(item)
+        controller.abort()
+      }
+    })().catch(() => undefined)
+
+    expect(seen).toStrictEqual([{ token: 'token-9', flush: true }])
     expect(request.watchQuit.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 
@@ -141,7 +155,7 @@ describe('the streams a window follows', () => {
       }
     })
 
-    expect(await readAll(watchTasks(signal))).toStrictEqual([
+    expect(await readAll(getApi().watchTasks(signal))).toStrictEqual([
       [
         {
           id: 'scan',
@@ -171,7 +185,7 @@ describe('the streams a window follows', () => {
   it('asks the core of this window to cancel a task by its id', async () => {
     request.cancelTask.mockResolvedValue({})
 
-    await cancelTask('making the vectors')
+    await getApi().cancelTask('making the vectors')
 
     expect(request.cancelTask.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -182,6 +196,6 @@ describe('the streams a window follows', () => {
   it('rejects when the core does not cancel the task', async () => {
     request.cancelTask.mockRejectedValue(createLostConnection('not found'))
 
-    await expect(cancelTask('gone')).rejects.toThrow('not found')
+    await expect(getApi().cancelTask('gone')).rejects.toThrow('not found')
   })
 })

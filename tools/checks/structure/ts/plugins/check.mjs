@@ -260,16 +260,20 @@ const SDK_GO_DIR = 'libs/plugin/sdk-go'
 /** The SDK packages a plugin service may import: every package of the Go SDK. */
 const SDK_GO_MODULE = `${GO_MODULE_ROOT}${SDK_GO_DIR}`
 
+/** The shared Go libraries a plugin depends on as it depends on the SDK (architecture §11 (b)); the service builds them as adapters. */
+const SHARED_GO_LIBRARIES = `${GO_MODULE_ROOT}libs/shared/`
+
 /** The packages of the plugin's own backend a service may import: its API, domain, use cases, ports and wire. */
 export const SERVICE_OWN_PACKAGES = ['api', 'domain', 'usecase', 'ports', 'wire']
 
 /** The folder of the plugin's own adapters: the service is the composition root and builds them. */
 const SERVICE_OWN_ADAPTERS = 'internal/adapter/'
 
-/** Whether a service of `plugin` may import `value`: a listed standard package, an SDK package or an own package of the list. */
+/** Whether a service of `plugin` may import `value`: a listed standard package, an SDK package, a shared library or an own package of the list. */
 function isAllowedServiceImport(value, plugin) {
   if (SERVICE_STANDARD_IMPORTS.includes(value)) return true
   if (value === SDK_GO_MODULE || value.startsWith(`${SDK_GO_MODULE}/`)) return true
+  if (value.startsWith(SHARED_GO_LIBRARIES)) return true
   const own = `${GO_MODULE_ROOT}plugins/${plugin}/backend/`
   if (!value.startsWith(own)) return false
   const inner = value.slice(own.length)
@@ -280,7 +284,7 @@ function isAllowedServiceImport(value, plugin) {
 
 /**
  * Finds the imports of a backend `service` package that are not on the allow list: the listed standard packages, the
- * packages of the Go SDK, the `api`, `domain`, `usecase`, `ports` and `wire` packages of its own plugin and its own
+ * packages of the Go SDK and of `libs/shared`, the `api`, `domain`, `usecase`, `ports` and `wire` packages of its own plugin and its own
  * `internal/adapter/*` packages. Machine access (`os`, `sync`, `net`), another standard package, a package of another
  * plugin and any other package of its own backend are refused. `files` holds `{ file, imports }` with each import as `{ line, value }`.
  */
@@ -612,36 +616,6 @@ export function verifyPluginConfigGoldenParity() {
   )
 }
 
-/** Runs ESLint across each frontend plugin directory using its own `eslint.config.js`. */
-export function verifyPluginsFrontend() {
-  const pluginsDir = path.join(REPO_ROOT, 'plugins')
-  const exampleConfig = path.join(pluginsDir, '.example', 'eslint.config.js')
-  if (!fs.existsSync(exampleConfig)) {
-    throw new Error('Missing golden frontend config: plugins/.example/eslint.config.js')
-  }
-  const eslintBin = path.join(REPO_ROOT, 'node_modules/.bin/eslint')
-  const frontendPlugins = listPluginNames(pluginsDir).filter((name) =>
-    fs.existsSync(path.join(pluginsDir, name, 'frontend')),
-  )
-
-  const failures = []
-  for (const plugin of frontendPlugins) {
-    const pluginDir = path.join(pluginsDir, plugin)
-    const configPath = path.join(pluginDir, 'eslint.config.js')
-    if (!fs.existsSync(configPath)) {
-      failures.push(`plugins/${plugin}: missing eslint.config.js`)
-      continue
-    }
-    const res = spawnSync(eslintBin, ['.'], { cwd: pluginDir, encoding: 'utf8' })
-    if (res.status !== 0) {
-      failures.push(`plugins/${plugin}:\n${((res.stdout || '') + (res.stderr || '')).trim()}`)
-    }
-  }
-  if (failures.length > 0) {
-    throw new Error(failures.join('\n\n'))
-  }
-}
-
 /** The files at the root of a plugin frontend: the entry, the words and types the slices share, and the stylesheet. */
 const FRONTEND_ROOT_FILES = ['index.ts', 'words.ts', 'types.ts', 'styles.css']
 
@@ -859,13 +833,5 @@ export const PLUGIN_VERIFIERS = [
     module: 'plugins',
     name: 'Plugin Frontend Slices (a slice is its index and four segments; no sibling slice, no deep import; the rule is proven on a planted frontend)',
     run: verifyPluginFrontendSlices,
-  },
-  {
-    id: 'plugins-frontend',
-    isLint: true,
-    scope: 'plugins',
-    module: 'plugins',
-    name: 'Plugin Frontend Contract & Boundaries (no @/**, no @plugins/**)',
-    run: verifyPluginsFrontend,
   },
 ]

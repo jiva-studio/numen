@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockCatalogEntry } from '@numen/core-client/testing'
 import { answerTabKinds } from '@/testing/tabCatalog'
+import { NO_TAB_KIND_PLUGINS } from '@/testing/tabs'
+import { createTabKindPluginFinder } from '../api/tabKindPlugin'
 import UnavailablePane from '../ui/UnavailablePane.vue'
 import { createUnavailableKind, type UnavailableState } from './unavailable'
 
@@ -9,7 +11,12 @@ const waitForAnswer = (state: unknown) =>
 
 describe('createUnavailableKind', () => {
   it('keeps the name of the missing kind and what the tab stood on', () => {
-    const kind = createUnavailableKind(UnavailablePane, 'reader:viewer')
+    const kind = createUnavailableKind(
+      UnavailablePane,
+      'reader:viewer',
+      undefined,
+      NO_TAB_KIND_PLUGINS,
+    )
 
     const state = kind.open('/a.bin', 'tab')
 
@@ -19,7 +26,12 @@ describe('createUnavailableKind', () => {
   })
 
   it('keeps the state the plugin saved for the tab', () => {
-    const kind = createUnavailableKind(UnavailablePane, 'reader:viewer')
+    const kind = createUnavailableKind(
+      UnavailablePane,
+      'reader:viewer',
+      undefined,
+      NO_TAB_KIND_PLUGINS,
+    )
 
     const state = kind.open('a.bin', 'tab', { page: 4 })
 
@@ -29,18 +41,25 @@ describe('createUnavailableKind', () => {
 
   it('keeps the original tab title when provided', () => {
     const icon = { name: 'FilesIcon' }
-    const kind = createUnavailableKind(UnavailablePane, 'files', { title: 'Files', icon })
+    const kind = createUnavailableKind(
+      UnavailablePane,
+      'files',
+      { title: 'Files', icon },
+      NO_TAB_KIND_PLUGINS,
+    )
 
     expect(kind.display?.icon).toBe(icon)
     expect(kind.getTitle?.(kind.open('', 'tab'))).toBe('Files')
   })
 
   it('draws the tab with the pane it is given', () => {
-    expect(createUnavailableKind(UnavailablePane, 'files').pane).toBe(UnavailablePane)
+    expect(
+      createUnavailableKind(UnavailablePane, 'files', undefined, NO_TAB_KIND_PLUGINS).pane,
+    ).toBe(UnavailablePane)
   })
 
   it('names a tab with no path and no title after the kind the catalog declares once it answers', async () => {
-    const lookups = answerTabKinds([
+    const { lookups, findTabKindPlugin } = answerTabKinds([
       createMockCatalogEntry('sample.decks', {
         tabKinds: [
           { kind: 'other', title: 'Other' },
@@ -48,7 +67,7 @@ describe('createUnavailableKind', () => {
         ],
       }),
     ])
-    const kind = createUnavailableKind(UnavailablePane, 'deck')
+    const kind = createUnavailableKind(UnavailablePane, 'deck', undefined, { findTabKindPlugin })
     const state = kind.open('', 'tab')
     expect(kind.getTitle?.(state)).toBe('deck')
 
@@ -59,8 +78,10 @@ describe('createUnavailableKind', () => {
   })
 
   it('names a tab after its kind where the catalog declares no title for it', async () => {
-    answerTabKinds([createMockCatalogEntry('sample.bare', { tabKinds: ['bare'] })])
-    const kind = createUnavailableKind(UnavailablePane, 'bare')
+    const { findTabKindPlugin } = answerTabKinds([
+      createMockCatalogEntry('sample.bare', { tabKinds: ['bare'] }),
+    ])
+    const kind = createUnavailableKind(UnavailablePane, 'bare', undefined, { findTabKindPlugin })
     const state = kind.open('', 'tab')
 
     await waitForAnswer(state)
@@ -69,14 +90,39 @@ describe('createUnavailableKind', () => {
   })
 
   it('names a tab after its kind where no plugin declares the kind', async () => {
-    answerTabKinds([
+    const { findTabKindPlugin } = answerTabKinds([
       createMockCatalogEntry('sample.other', { tabKinds: [{ kind: 'other', title: 'Other' }] }),
     ])
-    const kind = createUnavailableKind(UnavailablePane, 'missing-kind')
+    const kind = createUnavailableKind(UnavailablePane, 'missing-kind', undefined, {
+      findTabKindPlugin,
+    })
     const state = kind.open('', 'tab')
 
     await waitForAnswer(state)
 
     expect(kind.getTitle?.(state)).toBe('missing-kind')
+  })
+
+  it('maps catalog entries without contributions or without a matching tab kind', async () => {
+    const baseEntry = createMockCatalogEntry('sample.bare', {
+      tabKinds: [{ kind: 'other', title: 'Other' }],
+    })
+    const { contributes: _omitted, ...withoutContributes } = baseEntry
+    const findWithoutContributes = createTabKindPluginFinder({
+      findByTabKind: async () => ({ ok: true, value: { entry: withoutContributes } }),
+    } as never)
+    expect(await findWithoutContributes('deck')).toMatchObject({
+      id: 'sample.bare',
+      feature: baseEntry.name,
+      kindTitle: '',
+    })
+
+    const findWithoutMatch = createTabKindPluginFinder({
+      findByTabKind: async () => ({ ok: true, value: { entry: baseEntry } }),
+    } as never)
+    expect(await findWithoutMatch('deck')).toMatchObject({
+      id: 'sample.bare',
+      kindTitle: '',
+    })
   })
 })

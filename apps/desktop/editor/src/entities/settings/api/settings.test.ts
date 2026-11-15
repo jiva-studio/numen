@@ -2,21 +2,23 @@
  * How the window reads its settings out of what the vault answers, and what it
  * hands the vault to write.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PLUGIN_CONTRIBUTION_KIND } from '@numen/core-client'
-import { installCoreAnswers } from '@numen/core-client/testing'
-import * as settingsApi from './settings'
-
-const core = settingsApi
+import { createAnsweredClients } from '@/testing/coreAnswers'
+import { createSettingsApi } from './settings'
 
 const request = {
   getSettings: vi.fn(),
   writeSettings: vi.fn(),
+  choosePluginPath: vi.fn(),
   retryPlugin: vi.fn(),
   getPluginData: vi.fn(),
   deletePluginData: vi.fn(),
   watchSettings: vi.fn(),
 }
+
+const getCore = () =>
+  createSettingsApi(createAnsweredClients({ settingsService: request }).settingsService)
 
 const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
@@ -28,20 +30,15 @@ const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
 
 const writtenLast = () => request.writeSettings.mock.calls.at(-1)?.[0]
 
-let restore: () => void
-
 beforeEach(() => {
-  restore = installCoreAnswers({ settingsService: request })
   request.getSettings.mockReset()
   request.writeSettings.mockReset().mockResolvedValue({})
-})
-
-afterEach(() => {
-  restore()
+  request.choosePluginPath.mockReset()
 })
 
 describe('every setting', () => {
   it('arrives with each plugin, its settings and its contributions of a known kind', async () => {
+    const core = getCore()
     request.getSettings.mockResolvedValue(
       answer(
         { a: 1 },
@@ -80,6 +77,8 @@ describe('every setting', () => {
                   palette: true,
                   icon: 'sparkles',
                   multiple: true,
+                  operations: ['llm.complete'],
+                  discover: true,
                   activeOptions: [],
                   options: [
                     { value: 'on', title: 'On', detail: 'Always', when: "settings.mode == 'fast'" },
@@ -142,6 +141,8 @@ describe('every setting', () => {
             palette: true,
             icon: 'sparkles',
             multiple: true,
+            operations: ['llm.complete'],
+            discover: true,
             options: [
               { value: 'on', title: 'On', detail: 'Always', when: "settings.mode == 'fast'" },
             ],
@@ -182,6 +183,7 @@ describe('every setting', () => {
   })
 
   it('is written with each value as it was given', async () => {
+    const core = getCore()
     await core.updateSettings([{ at: ['app', 'performance', 'profile'], value: '"eco"' }])
 
     expect(writtenLast()).toMatchObject({
@@ -192,6 +194,7 @@ describe('every setting', () => {
 
 describe('a plugin whose last start failed', () => {
   it('is started again by its id, and the answer is why it failed again', async () => {
+    const core = getCore()
     request.retryPlugin.mockResolvedValue({
       failure: 'Timed out while starting',
     })
@@ -203,6 +206,7 @@ describe('a plugin whose last start failed', () => {
   })
 
   it('is answered with a value where it started', async () => {
+    const core = getCore()
     request.retryPlugin.mockResolvedValue({ failure: '' })
 
     expect(await core.retryPlugin('sample.plugin')).toStrictEqual({ ok: true, value: null })
@@ -211,6 +215,7 @@ describe('a plugin whose last start failed', () => {
 
 describe('the data of a plugin', () => {
   it('is counted in files of its folder', async () => {
+    const core = getCore()
     request.getPluginData.mockResolvedValue({ fileCount: 3, byteCount: 120n })
 
     expect(await core.getPluginData('sample.plugin')).toBe(3)
@@ -218,16 +223,37 @@ describe('the data of a plugin', () => {
   })
 
   it('is deleted by the id of its plugin', async () => {
+    const core = getCore()
     request.deletePluginData.mockResolvedValue({})
 
     await core.deletePluginData('sample.plugin')
 
     expect(request.deletePluginData.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
   })
+
+  it('chooses a path for a plugin setting', async () => {
+    const core = getCore()
+    request.choosePluginPath.mockResolvedValue({
+      path: '/opt/bin/tool',
+      isChosen: true,
+      problem: '',
+    })
+
+    expect(await core.choosePluginPath('sample.plugin', 'binaryPath')).toStrictEqual({
+      path: '/opt/bin/tool',
+      isChosen: true,
+      problem: '',
+    })
+    expect(request.choosePluginPath.mock.lastCall?.[0]).toMatchObject({
+      pluginId: 'sample.plugin',
+      key: 'binaryPath',
+    })
+  })
 })
 
 describe('what the core resolved and declared', () => {
   it('arrives as the options, the visibility and the value in force of each plugin setting', async () => {
+    const core = getCore()
     request.getSettings.mockResolvedValue(
       answer(
         {},
@@ -273,6 +299,7 @@ describe('what the core resolved and declared', () => {
   })
 
   it('arrives as the flag that previews a setting and the registry its options come from', async () => {
+    const core = getCore()
     request.getSettings.mockResolvedValue(
       answer(
         {},
@@ -309,6 +336,7 @@ describe('what the core resolved and declared', () => {
   })
 
   it('arrives as nothing for the shell where the core declares none', async () => {
+    const core = getCore()
     request.getSettings.mockResolvedValue(answer({}))
 
     expect((await core.getSettings()).app).toStrictEqual([])
@@ -317,6 +345,7 @@ describe('what the core resolved and declared', () => {
 
 describe('the settings that change', () => {
   it('are the settings of each response, named by their path and holding their value', async () => {
+    const core = getCore()
     request.watchSettings.mockImplementation(async function* () {
       yield { changed: [] }
       yield {
@@ -326,7 +355,7 @@ describe('the settings that change', () => {
         ],
       }
     })
-    const batches: unknown[] = []
+    const batches: object[] = []
 
     for await (const batch of core.watchSettings(new AbortController().signal)) {
       batches.push(batch)
@@ -342,13 +371,23 @@ describe('the settings that change', () => {
   })
 
   it('follow the core until the signal of the window aborts', async () => {
-    request.watchSettings.mockImplementation(async function* () {
-      yield* []
+    const core = getCore()
+    request.watchSettings.mockImplementation(async function* (_req, context) {
+      yield { changed: [] }
+      if (!context.signal.aborted) {
+        yield { changed: [{ at: ['app', 'appearance', 'mode'], value: '"dark"' }] }
+      }
     })
     const controller = new AbortController()
+    const batches: object[] = []
 
-    for await (const batch of core.watchSettings(controller.signal)) expect(batch).toBeDefined()
+    await (async () => {
+      for await (const batch of core.watchSettings(controller.signal)) {
+        batches.push(batch)
+        controller.abort()
+      }
+    })().catch(() => undefined)
 
-    expect(request.watchSettings).toHaveBeenCalledOnce()
+    expect(batches).toHaveLength(1)
   })
 })

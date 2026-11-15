@@ -2,9 +2,9 @@
  * The commands over files and folders, carried out over the real calls of the file entity and a
  * double of the window's tabs.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { NOTE_ERROR_CODE } from '@numen/core-client'
-import { installCoreHandlers } from '@numen/core-client/testing'
+import { createHandledApi } from '@/testing/coreAnswers'
 import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { FILE_WORDS as words } from '../words'
@@ -28,40 +28,34 @@ interface Answers {
   readonly isAsking?: boolean
 }
 
-const restores: (() => void)[] = []
-
-afterEach(() => {
-  for (const restore of restores.splice(0)) restore()
-})
-
 const createWindow = (answers: Answers = {}) => {
   const actions: string[] = []
   const notices: string[] = []
-  restores.push(
-    installCoreHandlers({
-      moveFile: (request: { from: string; to: string }) => {
-        actions.push(`move ${request.from} ${request.to}`)
-        return answers.move ?? { moved: { from: request.from, to: request.to, repaired: [] } }
-      },
-      listFiles: (request: { path: string }) => {
-        actions.push(`listNames ${request.path || '—'}`)
-        return {
-          entries: (answers.names ?? []).map((name) => ({
-            path: `${request.path}/${name}`,
-            name,
-            isFolder: true,
-            isNote: false,
-            type: '',
-          })),
-        }
-      },
-      createFolder: (request: { path: string }) => {
-        actions.push(`createFolder ${request.path}`)
-        return answers.folder ?? {}
-      },
-    }),
-  )
+  const severities: string[] = []
+  const api = createHandledApi({
+    moveFile: (request: { from: string; to: string }) => {
+      actions.push(`move ${request.from} ${request.to}`)
+      return answers.move ?? { moved: { from: request.from, to: request.to, repaired: [] } }
+    },
+    listFiles: (request: { path: string }) => {
+      actions.push(`listNames ${request.path || '—'}`)
+      return {
+        entries: (answers.names ?? []).map((name) => ({
+          path: `${request.path}/${name}`,
+          name,
+          isFolder: true,
+          isNote: false,
+          type: '',
+        })),
+      }
+    },
+    createFolder: (request: { path: string }) => {
+      actions.push(`createFolder ${request.path}`)
+      return answers.folder ?? {}
+    },
+  })
   const deps = {
+    files: api.vault.file,
     notes: {
       getTabAt: (path: string) => (path === 'physics/Ontology.md' ? 'active' : null),
       getPath: (id: string) => id,
@@ -72,14 +66,17 @@ const createWindow = (answers: Answers = {}) => {
       close: () => undefined,
       openFile: () => undefined,
     },
-    writeMessage: (text: string) => {
-      if (text) notices.push(text)
+    writeMessage: (text: string, severity?: string) => {
+      if (text) {
+        notices.push(text)
+        severities.push(severity ?? '')
+      }
     },
   }
   const set = createFileCommands(deps)
   const carry = async (invocation: CommandInvocation): Promise<string> =>
     (await set.handlers[invocation.id]?.(invocation)) || ''
-  return { actions, notices, carry, set }
+  return { actions, notices, severities, carry, set }
 }
 
 describe('the commands over files', () => {
@@ -122,6 +119,7 @@ describe('a file filed somewhere else', () => {
       'flushPending active',
       'move physics/Ontology.md notes/Ontology.md',
     ])
+    expect(one.notices).toStrictEqual([])
   })
 
   it('keeps its position while its tab is waiting on the person', async () => {
@@ -131,6 +129,7 @@ describe('a file filed somewhere else', () => {
 
     expect(one.actions).toStrictEqual([])
     expect(one.notices).toStrictEqual([words.unanswered])
+    expect(one.severities).toStrictEqual(['warning'])
   })
 
   it('keeps its position where something of that name is filed there', async () => {
@@ -147,6 +146,7 @@ describe('a file filed somewhere else', () => {
     await one.carry(createMoveInvocation('notes/Ontology.md'))
 
     expect(one.notices).toStrictEqual([words.errors.notFound])
+    expect(one.severities).toStrictEqual(['error'])
   })
 
   it('asks the vault for nothing where it landed where it already was', async () => {
@@ -174,6 +174,15 @@ describe('a folder made', () => {
     await one.carry(invoke('app:folder.create', front(), 'physics/heat'))
 
     expect(one.notices).toStrictEqual([words.alreadyExists])
+  })
+
+  it('reports an error when the vault rejects the folder name', async () => {
+    const one = createWindow({ folder: { error: NOTE_ERROR_CODE.INVALID_NAME } })
+
+    await one.carry(invoke('app:folder.create', front(), 'physics/..'))
+
+    expect(one.notices).toStrictEqual([words.errors.invalidName])
+    expect(one.severities).toStrictEqual(['error'])
   })
 
   it('asks the vault for nothing where no path was given', async () => {

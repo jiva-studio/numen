@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { TAB_MOVE_ERROR_CODE, type TabMoveErrorCodeValue } from '@numen/core-client'
 import type { Tab } from '@/entities/tab'
-import { answerCore } from '@/testing/coreAnswers'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { ACCEPT_ATTEMPTS, ACCEPT_RETRY_MS, ASKING_MESSAGE, STILL_OPEN_MESSAGE } from '../lib/move'
 import type { PaneRect } from '../lib/move'
 import { createMovedTabOpener, createTabMover, type TabMoverDeps } from './tabMove'
@@ -55,7 +55,7 @@ const setup = (asking: () => boolean = () => false) => {
     title,
     state,
   })
-  answerCore({
+  const api = createAnsweredApi({
     workspace: {
       detachTab: ({ tab, x, y, width, height }) =>
         core.detachTab({ tab: toTab(tab!), x, y, width, height }),
@@ -64,6 +64,7 @@ const setup = (asking: () => boolean = () => false) => {
     },
   })
   const deps = {
+    api: api.tabs.tabMove,
     windowId: 'window-a',
     windowTabs: {
       tabs: {
@@ -278,17 +279,25 @@ describe('detachTab', () => {
 
   it('sends an empty state and path for a kind without getState and getOpenTab', async () => {
     const { core, deps, mover } = setup()
-    ;(deps.windowTabs.tabs.getTab as (id: string) => unknown) = () => ({
-      kind: { kind: 'settings' },
-      state: {},
-    })
+    ;(deps.windowTabs.tabs.getTab as (id: string) => unknown) = (id: string) =>
+      id === 'settings:address'
+        ? { kind: { kind: 'settings', address: {} }, state: {} }
+        : { kind: { kind: 'settings' }, state: {} }
 
     await mover.detachTab('settings:settings', { x: 1, y: 2 })
+    await mover.detachTab('settings:address', { x: 3, y: 4 })
 
     expect(core.detachTab).toHaveBeenCalledWith({
       tab: { id: 'settings:settings', kind: 'settings', path: '', title: '', state: '' },
       x: 1,
       y: 2,
+      width: 0,
+      height: 0,
+    })
+    expect(core.detachTab).toHaveBeenCalledWith({
+      tab: { id: 'settings:address', kind: 'settings', path: '', title: '', state: '' },
+      x: 3,
+      y: 4,
       width: 0,
       height: 0,
     })

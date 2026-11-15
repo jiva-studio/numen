@@ -56,8 +56,8 @@ func TestGetModelInfoReportsTheRequestedChunkTokensWithinTheBounds(t *testing.T)
 
 func TestAModelOfALowerLimitLowersChunkTokensAndTheOldModelRestoresThem(t *testing.T) {
 	srv := newEmbeddingServer()
-	dir := t.TempDir()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
+	dir := useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	values := map[string]string{"source": "local", "model": model.DefaultModel, "chunkTokens": "400"}
 
 	srv.updateConfig(values)
@@ -100,6 +100,9 @@ func TestAChangeOfChunkTokensDoesNotChangeTheModelNorItsHandling(t *testing.T) {
 func TestTheMockModelReportsChunkTokensLimitedByItsMaxTokens(t *testing.T) {
 	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	srv := newEmbeddingServer()
+	if got := getReportedChunkTokens(t, srv); got != 256 {
+		t.Errorf("initial mock chunk tokens = %d, want 256", got)
+	}
 	srv.updateConfig(map[string]string{"chunkTokens": "300"})
 	if got := getReportedChunkTokens(t, srv); got != 300 {
 		t.Errorf("mock chunk tokens = %d, want 300", got)

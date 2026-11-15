@@ -18,7 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
@@ -202,18 +202,23 @@ func TestFileTextsAreChunkedAtTheLimitOfTheCell(t *testing.T) {
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	cfg.Resources.Chunks.Set(256)
+	smallSizes := cfg.CutNotes().Sizes
 	small, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg.Resources.Chunks.Set(512)
+	largeSizes := cfg.CutNotes().Sizes
 	large, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if small.Sizes.Limit != 512 || large.Sizes.Limit != 1024 {
-		t.Errorf("file texts are cut at %d and %d characters, want 512 and 1024", small.Sizes.Limit, large.Sizes.Limit)
+	if smallSizes.Limit != 512 || largeSizes.Limit != 1024 {
+		t.Errorf("notes are cut at %d and %d characters, want 512 and 1024", smallSizes.Limit, largeSizes.Limit)
+	}
+	if small.Recipe() != chunking.GetTextVersionRecipe(smallSizes) || large.Recipe() != chunking.GetTextVersionRecipe(largeSizes) {
+		t.Errorf("file texts are cut by %q and %q, want the sizes of the notes", small.Recipe(), large.Recipe())
 	}
 }
 
@@ -221,18 +226,19 @@ func TestEverySiteThatChunksNotesUsesTheSizeThePluginReports(t *testing.T) {
 	cfg, _, _ := openChunkingConfig(t, 300)
 	openEmbedder(t, cfg)
 	db := makeIndex(t)
-	v := vaultfixture.NewVault(t, map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
+	v := vaulttest.NewVault(t, map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
 	const limit = 600
 
-	if got := container.Scan(cfg, db).Cut.Sizes.Limit; got != limit {
-		t.Errorf("Scan cuts at %d characters, want %d", got, limit)
+	scanSizes := container.Scan(cfg, db).Cut.Sizes
+	if scanSizes.Limit != limit {
+		t.Errorf("Scan cuts at %d characters, want %d", scanSizes.Limit, limit)
 	}
 	texts, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if texts.Sizes.Limit != limit {
-		t.Errorf("IndexTexts cuts at %d characters, want %d", texts.Sizes.Limit, limit)
+	if want := chunking.GetTextVersionRecipe(scanSizes); texts.Recipe() != want {
+		t.Errorf("IndexTexts cuts by %q, want %q", texts.Recipe(), want)
 	}
 	opener := container.VaultOpener(cfg, db)
 	if got := opener.GetScan().Cut.Sizes.Limit; got != limit {
@@ -252,7 +258,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 	cfg, _, _ := openChunkingConfig(t, 300)
 	openEmbedder(t, cfg)
 	db := makeIndex(t)
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n",
 		"Gate.md":  "# Gate\n\nThe gate of the orchard sticks in wet weather.\n",
 	})
@@ -301,7 +307,7 @@ func TestAScanChecksTheRecordedChunkingOnlyWhereTheSizeIsKnown(t *testing.T) {
 func TestANewChunkSizeMakesTheNextScanReadTheNotesAgain(t *testing.T) {
 	db := makeIndex(t)
 	cfg := container.NewConfig(container.Config{})
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"Hedge.md":   "# Hedge\n\nThe hedge along the lane is thick and tangled.\n",
 		"Gate.md":    "# Gate\n\nThe gate of the orchard sticks in wet weather.\n",
 		"Compost.md": "# Compost\n\nThe compost heap sits behind the shed.\n",

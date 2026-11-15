@@ -13,13 +13,15 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
 // everyFieldManifest sets every field of the schema at least once, and every kind of option.
 const everyFieldManifest = `{
 	"id": "org.example.full", "name": "Full", "version": "1.2.3", "protocol": 1, "description": "d", "isOffByDefault": true,
-	"capabilities": ["tools"], "targets": ["desktop.editor"], "activationEvents": ["onSearchSourceReady"],
+	"capabilities": ["tools"], "targets": ["desktop.editor"], "activationEvents": ["onIndexChanged"],
 	"permissions": ["vault:read"],
 	"dependencies": [{"id": "weights", "kind": "model", "version": "1", "sourceUrl": "https://example.org/w",
 		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}}],
@@ -158,6 +160,16 @@ func TestTheSampleManifestIsReadWithEveryFieldMapped(t *testing.T) {
 		!slices.Equal(m.Contributes.NoteTypes[0].IDHeadingLevels, []int{3}) {
 		t.Errorf("noteTypes = %+v", m.Contributes.NoteTypes)
 	}
+	if m.Contributes.Slots[0].Order == nil || *m.Contributes.Slots[0].Order != 1 || m.Contributes.Slots[1].Order != nil {
+		t.Errorf("slots orders = %+v", m.Contributes.Slots)
+	}
+	if m.Contributes.TabKinds[0].Rank != domain.RankAlternate {
+		t.Errorf("tabKind rank = %q", m.Contributes.TabKinds[0].Rank)
+	}
+	defaultRankManifest, err := manifestjson.Decode([]byte(`{"contributes":{"tabKinds":[{"kind":"a"}],"noteTypes":[{"type":"link"}]}}`))
+	if err != nil || defaultRankManifest.Contributes.TabKinds[0].Rank != domain.RankDefault || defaultRankManifest.Contributes.NoteTypes[0].Headings != nil {
+		t.Errorf("defaults = %+v, %v", defaultRankManifest.Contributes, err)
+	}
 }
 
 func listModelFields(kind reflect.Type, visited map[reflect.Type]bool) []string {
@@ -244,25 +256,25 @@ func TestAnOptionOfNoValueShapeIsRefused(t *testing.T) {
 	if _, err := manifestjson.Decode(
 		[]byte(`{"settings":[{"key":"k","options":[1]}]}`),
 	); err == nil || !strings.Contains(err.Error(), `setting "k"`) ||
-		!strings.Contains(err.Error(), "options must be a list") {
+		!strings.Contains(err.Error(), "options must be a list") || errors.Unwrap(err) == nil {
 		t.Errorf("a number was accepted as an option: %v", err)
 	}
-	if _, err := manifestjson.Decode(
-		[]byte(`{"settings":[{"key":"k","options":[{"value":1}]}]}`),
-	); err == nil ||
-		!strings.Contains(err.Error(), "options must be a list") {
-		t.Errorf("an option with numeric value was accepted: %v", err)
+	_, objOptErr := manifestjson.Decode([]byte(`{"settings":[{"key":"k","options":[{"value":1}]}]}`))
+	type multiUnwrap interface{ Unwrap() []error }
+	innerMulti, hasMulti := errors.Unwrap(objOptErr).(multiUnwrap)
+	if objOptErr == nil || !strings.Contains(objOptErr.Error(), "options must be a list") || !hasMulti || len(innerMulti.Unwrap()) != 2 {
+		t.Errorf("an option with numeric value was accepted or not doubly wrapped: %v", objOptErr)
 	}
 	if _, err := manifestjson.Decode(
 		[]byte(`{"settings":[{"key":"k","optionsBy":{"setting":"p","options":{"a":[1]}}}]}`),
 	); err == nil || !strings.Contains(err.Error(), `setting "k"`) ||
-		!strings.Contains(err.Error(), `options under "a"`) {
+		!strings.Contains(err.Error(), `options under "a"`) || errors.Unwrap(errors.Unwrap(err)) == nil {
 		t.Errorf("an invalid optionsBy option was accepted: %v", err)
 	}
 	if _, err := manifestjson.Decode(
 		[]byte(`{"contributes":{"noteTypes":[{"type":"link","headings":["bad"]}]}}`),
 	); err == nil ||
-		!strings.Contains(err.Error(), `note type "link"`) {
+		!strings.Contains(err.Error(), `note type "link"`) || errors.Unwrap(err) == nil {
 		t.Errorf("a string heading was accepted: %v", err)
 	}
 	if _, err := manifestjson.Decode(
@@ -270,6 +282,23 @@ func TestAnOptionOfNoValueShapeIsRefused(t *testing.T) {
 	); err == nil ||
 		!strings.Contains(err.Error(), `note type "link"`) {
 		t.Errorf("a fractional heading was accepted: %v", err)
+	}
+	if _, err := manifestjson.Decode(
+		[]byte(`{"contributes":{"connectionTypes":[{"id":"x","fields":[{"key":"f","options":[1]}]}]}}`),
+	); err == nil || !strings.Contains(err.Error(), `connection type "x"`) || !strings.Contains(err.Error(), `field "f"`) ||
+		errors.Unwrap(errors.Unwrap(err)) == nil {
+		t.Errorf("an invalid connection field option was accepted: %v", err)
+	}
+	if _, err := manifestjson.Decode(
+		[]byte(`{"contributes":{"connectionTypes":[{"id":"x","rowFields":[{"key":"r","options":[1]}]}]}}`),
+	); err == nil || !strings.Contains(err.Error(), `connection type "x": row field "r"`) ||
+		errors.Unwrap(errors.Unwrap(err)) == nil {
+		t.Errorf("an invalid connection rowField option was accepted: %v", err)
+	}
+	if _, err := manifestjson.Decode(
+		[]byte(`{"contributes":{"slots":[{"slot":"a"},{"slot":"b","order":"1"}]}}`),
+	); !errors.Is(err, manifest.ErrInvalidSlotEntry) || errors.Unwrap(err) == nil {
+		t.Errorf("string slot order error = %v, want ErrInvalidSlotEntry", err)
 	}
 	m, err := manifestjson.Decode([]byte(`{"contributes":{"noteTypes":[{"type":"link","headings":[]}]}}`))
 	if err != nil || len(m.Contributes.NoteTypes) != 1 || m.Contributes.NoteTypes[0].Headings == nil || len(*m.Contributes.NoteTypes[0].Headings) != 0 {

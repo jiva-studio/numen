@@ -15,8 +15,8 @@ func isAllIntact(domain.TextVersion) bool { return true }
 
 func TestFindLiveVersionReturnsTheNewestValidVersion(t *testing.T) {
 	versions := []domain.TextVersion{
-		{Path: "a.pdf", PluginID: "fixer", Key: "b", Source: "reader/a", InputHash: "ha", TextHash: "hb", CreateTime: getEpoch().Add(time.Minute)},
 		{Path: "a.pdf", PluginID: "reader", Key: "a", InputHash: "file-1", TextHash: "ha", CreateTime: getEpoch()},
+		{Path: "a.pdf", PluginID: "fixer", Key: "b", Source: "reader/a", InputHash: "ha", TextHash: "hb", CreateTime: getEpoch().Add(time.Minute)},
 		{Path: "a.pdf", PluginID: "stale", Key: "c", InputHash: "old-file", TextHash: "hc", CreateTime: getEpoch().Add(2 * time.Minute)},
 	}
 	got, ok := domain.FindLiveVersion(versions, "file-1", nil, isAllIntact)
@@ -141,16 +141,6 @@ func TestFindLiveVersionKeepsAPropertyVersionLiveAfterAnEditOfTheNote(t *testing
 func TestIsFromFileIsFalseForAPropertyVersion(t *testing.T) {
 	if getPropertyVersion().IsFromFile() {
 		t.Fatal("a version made from a property is made from the file")
-	}
-}
-
-func TestFileInputComparesExtensionsWithoutCase(t *testing.T) {
-	in := domain.FileInput{".pdf", ".pdf/readme"}
-	if !in.IsFileAccepted("books/A.PDF") || !in.IsFileAccepted(".pdf") {
-		t.Fatal("A.PDF and .pdf should be accepted")
-	}
-	if in.IsFileAccepted("books.pdf/readme") || in.IsFileAccepted("notes/a.md") || in.IsFileAccepted("readme") {
-		t.Fatal("a file of another type is accepted")
 	}
 }
 

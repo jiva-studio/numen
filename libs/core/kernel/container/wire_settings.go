@@ -40,27 +40,12 @@ func applySettingsFile(c Config, s settingsadapter.File) Config {
 	return c
 }
 
-// SyncSetting returns whether note title and filename synchronization is enabled.
-func SyncSetting(c Config) naming.SyncSetting {
-	return syncSetting(settingsOf(c))
-}
-
-// GetSettingsWriter patches specific settings paths in the configuration file. The readers of the
-// setting-changed event receive the settings whose value changed.
-func GetSettingsWriter(c Config) func(entries []settingsdomain.Setting) error {
-	return getSettingsWriter(settingsOf(c))
-}
-
 // SetThemes gives the window the themes it can use: the catalog of themes, and the settings file that
 // stores the selection. The window keeps the themes the binary ships when the answer is a fault.
 func SetThemes(c Config, inst *editor.Installation, scales Scales, say func(string)) error {
 	service, err := settingsThemes(settingsOf(c), scales, say)
 	inst.SetThemes(service)
 	return err
-}
-
-func UnsubscribeHost(c Config) {
-	unsubscribeHost(settingsOf(c))
 }
 
 type settingsPlaces struct {
@@ -84,10 +69,6 @@ type settingsWiring struct {
 	settingsStores
 	PluginHost   *PluginHost
 	ErrorHandler func(error)
-}
-
-func defaultSettings() settingsadapter.File {
-	return settingsadapter.DefaultFile()
 }
 
 func settingsSettings(c settingsWiring) (settingsadapter.File, error) {
@@ -117,18 +98,11 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 	}).Execute(s.Plugins, c.ResolvedCompute.Profile)
 }
 
-func unsubscribeHost(c settingsWiring) {
-	if c.SubscribedHosts == nil {
-		return
-	}
-	c.SubscribedHosts.Unsubscribe(c.PluginHost.Configuration)
-}
-
 func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
 	return c.PluginHost.Runtime.GetPluginInfos
 }
 
-func getDeclarations(c settingsWiring) settingsadapter.Declarations {
+func getDeclarations(c settingsWiring) settingsdomain.Declarations {
 	return func(owner string) ([]manifest.Setting, bool) {
 		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
@@ -137,10 +111,10 @@ func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 	}
 }
 
-func getRegistries(c settingsWiring) settingsadapter.Registries {
+func getRegistries(c settingsWiring) settingsdomain.Registries {
 	themes := themeRegistry(c).GetNames()
 	return settingsadapter.AddDetectedRegistries(func(name string) ([]string, bool) {
-		if name == settingsadapter.RegistryConnections {
+		if name == settingsdomain.RegistryConnections {
 			return listConnectionIDs(c)
 		}
 		return themes(name)
@@ -222,7 +196,7 @@ func openRetryPlugin(_ settingsWiring, retrier func(context.Context, string) (*p
 }
 
 func settingsStore(c settingsWiring) *settingsadapter.Store {
-	var declared settingsadapter.Declarations
+	var declared settingsdomain.Declarations
 	if c.PluginHost.Views.Infos != nil {
 		declared = getDeclarations(c)
 	}
@@ -253,13 +227,13 @@ func feed(c settingsWiring) settingevents.Feed {
 
 func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
 	return settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, c.PluginHost.Views.Infos,
+		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, getPluginInfos(c.PluginHost.Views),
 	)
 }
 
 func settingsWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(getDeclarations(c), getRegistries(c)), c.PluginHost.Views.Checks,
+		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), getPluginChecks(c.PluginHost.Views),
 	)
 	return settingsusecase.NewWriteSettings(check, settingsStore(c), feed(c))
 }

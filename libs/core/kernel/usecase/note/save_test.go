@@ -23,7 +23,7 @@ import (
 )
 
 func (c changeFixture) newWrite() note.Write {
-	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), note.OpenGate{})
+	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), testsupport.OpenGate{})
 }
 
 func (c changeFixture) openNote(t *testing.T, path string) *edit.Baseline {
@@ -342,7 +342,7 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		watchedWriters{inner: vaultwriter.VaultWriters{Locks: locks}, hold: func() { close(saveAsking) }},
 		c.index,
 		testsupport.NewClock(),
-		note.OpenGate{},
+		testsupport.OpenGate{},
 	)
 
 	added := make(chan error, 1)
@@ -438,7 +438,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		watchedWriters{inner: vaultwriter.VaultWriters{Locks: locks}, hold: func() { close(saveAsking) }},
 		c.index,
 		testsupport.NewClock(),
-		note.OpenGate{},
+		testsupport.OpenGate{},
 	)
 
 	moved := make(chan error, 1)
@@ -613,8 +613,12 @@ func TestRefresh_SeparatesIgnoredFilesFromRemovedNotes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.Sources(), c.db.Sources(), testsupport.NewClock())
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
+		Queries: c.db.Sources(), Sources: c.db.Sources(), Now: testsupport.NewClock(),
+		Ledger: vaults.NewLedger(),
+	})
+
 	res, err := refresh.Execute(t.Context(), c.vault, []string{".photo.png", "Gone.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)

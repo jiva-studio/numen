@@ -6,8 +6,11 @@ import { createCommandRegistry } from '@/shared/model/command'
 import { describe, expect, it, vi } from 'vitest'
 import type { HandlerDeclaration, PluginHost } from '@numen/plugin-loader'
 import type { CommandTarget, RunSupport } from '@/shared/model/command'
-import { getFileKinds } from '@/entities/file'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
+
+/** The kinds of files, over a core that answers none. */
+const { getFileKinds } = createAnsweredApi({}).vault.file
 
 const HANDLER: HandlerDeclaration = {
   pluginId: 'md.pages',
@@ -58,6 +61,8 @@ describe('a shared command in the palette', () => {
     const target = { path: 'scan.pdf', file: 'scan.pdf', isReady: true } as CommandTarget
 
     expect(entry?.isAvailable(target, RUNS)).toBe(true)
+    expect(entry?.isAvailable({ ...target, path: '' }, RUNS)).toBe(true)
+    expect(entry?.isAvailable({ ...target, file: '' }, RUNS)).toBe(true)
     expect(entry?.isAvailable({ ...target, path: '', file: '' }, RUNS)).toBe(false)
   })
 })

@@ -11,8 +11,8 @@ option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v
 // HostSearchService is the search index and the search floor of a vault, as a
 // plugin reads and sets them. The host identifies the plugin by its token.
 // GetEmbeddingState, GetIndexStats, EmbedTexts, SampleSimilarities,
-// GetBestSimilarity, FindNearestPassages and SearchPassages need index:read; GetSearchFloor and SetSearchFloor need
-// search:policy.
+// GetBestSimilarity, FindNearestChunks, SearchText and ScoreChunks need index:read; GetSearchFloor and
+// SetSearchFloor need search:policy.
 //
 // Numen-Vault works the vault of that identity; without it a call works the
 // vault the host is showing.
@@ -46,20 +46,30 @@ service HostSearchService {
   // one sample. At most 256 queries are sampled in one call.
   rpc SampleSimilarities(SampleSimilaritiesRequest) returns (SampleSimilaritiesResponse);
 
-  // GetBestSimilarity is the cosine similarity of the passage of the vault
+  // GetBestSimilarity is the cosine similarity of the chunk of the vault
   // nearest a vector under the recipe, and zero when the vault has none.
   rpc GetBestSimilarity(GetBestSimilarityRequest) returns (GetBestSimilarityResponse);
 
-  // FindNearestPassages is the small chunks of the place nearest a vector, nearest first, at or
+  // FindNearestChunks is the small chunks of the place nearest a vector, nearest first, at or
   // above the floor: the floor the request names, else the effective floor of the vault under the
   // recipe. A search source answers a query with it. The vault is the one of the place.
-  rpc FindNearestPassages(FindNearestPassagesRequest) returns (FindNearestPassagesResponse);
+  rpc FindNearestChunks(FindNearestChunksRequest) returns (FindNearestChunksResponse);
 
-  // SearchPassages returns passages matching the query, from the index of every
+  // SearchText returns search results matching the query, from the index of every
   // source and every text version: by keywords, and by embedding when the
   // installation has an embedding model. It is the search the window runs, with
   // the window's similarity threshold.
-  rpc SearchPassages(HostSearchServiceSearchPassagesRequest) returns (HostSearchServiceSearchPassagesResponse);
+  rpc SearchText(HostSearchServiceSearchTextRequest) returns (HostSearchServiceSearchTextResponse);
+
+  // ScoreChunks scores chunks of the vault against conditions over the whole
+  // of each chunk. A chunk is the large chunk enclosing the given id, the range
+  // a SearchResult covers. A meaning condition is embedded once and compared
+  // with the stored vector of every small chunk inside the chunk; the best one
+  // is the similarity, and it matches when it reaches the effective floor of
+  // the vault under the recipe. A words condition is an FTS5 query and matches
+  // when the whole text of the chunk matches it. At most 500 chunks and 16
+  // conditions of at most 8192 bytes each; more is LIMIT_EXCEEDED.
+  rpc ScoreChunks(ScoreChunksRequest) returns (ScoreChunksResponse);
 
   // GetSearchFloor is the floor a search by meaning applies to the vault under
   // the recipe, and where it comes from.
@@ -96,6 +106,12 @@ enum HostSearchErrorCode {
 
   // A query vector has a dimension count other than the one of the vectors in the index.
   HOST_SEARCH_ERROR_CODE_INVALID_QUERY = 7;
+
+  // A condition sets neither or both of its texts, or an empty text.
+  HOST_SEARCH_ERROR_CODE_INVALID_CONDITION = 8;
+
+  // A words query is not valid FTS5.
+  HOST_SEARCH_ERROR_CODE_INVALID_WORDS = 9;
 }
 
 // SearchFloorSource is where the floor a search applies comes from.
@@ -194,7 +210,7 @@ message SimilarityQuery {
   FloatVector vector = 1;
 
   // The path of the note the query was made from, relative to the vault. The
-  // passages of that note are left out of the sample of the query. An empty
+  // chunks of that note are left out of the sample of the query. An empty
   // path leaves out none.
   string path = 2;
 }
@@ -205,16 +221,16 @@ message SampleSimilaritiesRequest {
 }
 
 message SimilarityRow {
-  // The similarity of the query with each sampled passage, in the order of the
-  // passages. A query with no vector, or whose note is the only source, has none.
+  // The similarity of the query with each sampled chunk, in the order of the
+  // chunks. A query with no vector, or whose note is the only source, has none.
   repeated double values = 1;
 }
 
 message SampleSimilaritiesResponse {
   HostSearchErrorCode error = 1;
 
-  // How many passages the host sampled, and how many sources they come from.
-  int32 passage_count = 2;
+  // How many chunks the host sampled, and how many sources they come from.
+  int32 chunk_count = 2;
   int32 source_count = 3;
 
   // One row per query, in the order the queries arrived.
@@ -231,7 +247,7 @@ message GetBestSimilarityResponse {
   double similarity = 2;
 }
 
-message FindNearestPassagesRequest {
+message FindNearestChunksRequest {
   SearchPlace place = 1;
   repeated float vector = 2;
 
@@ -248,7 +264,7 @@ message FindNearestPassagesRequest {
   double floor = 6;
 }
 
-message FindNearestPassagesResponse {
+message FindNearestChunksResponse {
   HostSearchErrorCode error = 1;
 
   // Nearest first. The score is the cosine similarity.
@@ -289,10 +305,10 @@ message SetSearchFloorResponse {
   HostSearchErrorCode error = 1;
 }
 
-message HostSearchServiceSearchPassagesRequest {
+message HostSearchServiceSearchTextRequest {
   string query = 1;
 
-  // Maximum passages to return. Zero means the number the host chooses.
+  // Maximum search results to return. Zero means the number the host chooses.
   int32 limit = 2;
 
   // The kinds of source to search, "note" or "file". Empty means every kind.
@@ -300,14 +316,84 @@ message HostSearchServiceSearchPassagesRequest {
 
   // Limits the search to the sources whose path starts with it, relative to the
   // vault, in either Unicode form (NFC or NFD). The index applies it, so the
-  // limit counts passages under the prefix.
+  // limit counts search results under the prefix.
   // Empty means the whole vault.
   string path_prefix = 4;
+
+  // Maximum search results of one source. Zero or less means three; above
+  // the limit means the limit.
+  int32 results_per_source = 5;
+
+  // Which participants answer: UNSPECIFIED and HYBRID fuse words, section
+  // names and meaning; WORDS asks the words alone; MEANING asks the search
+  // source alone and answers NO_MODEL when the installation has none. NAMES is
+  // rejected with INVALID_ARGUMENT.
+  SearchMode mode = 6;
+
+  // With mode WORDS only: the query is an FTS5 query in the syntax of the index
+  // (phrases, NEAR, prefix *, AND, OR, NOT), used as written. Without it every
+  // word is quoted. Set with another mode it is rejected with INVALID_ARGUMENT.
+  bool is_raw_words = 7;
+
+  // Each result carries the whole text of its chunk in whole_text, next to
+  // the excerpt in text.
+  bool is_whole_text = 8;
 }
 
-message HostSearchServiceSearchPassagesResponse {
+message HostSearchServiceSearchTextResponse {
   HostSearchErrorCode error = 1;
 
-  // Matching passages, best first, at most three of one source.
-  repeated Passage passages = 2;
+  // Matching search results, best first, at most results_per_source of one
+  // source.
+  repeated SearchResult results = 2;
+}
+
+message ScoreCondition {
+  oneof condition {
+    // A text compared by meaning, at most 8192 bytes.
+    string meaning = 1;
+
+    // An FTS5 query in the syntax of the index (phrases, NEAR, prefix *, AND,
+    // OR, NOT), at most 8192 bytes.
+    string words = 2;
+  }
+}
+
+message ScoreChunksRequest {
+  // Chunk ids as SearchResult.chunk_id names them, at most 500.
+  repeated string chunk_ids = 1;
+
+  // At most 16.
+  repeated ScoreCondition conditions = 2;
+}
+
+message ConditionScore {
+  // Meaning only: the best similarity of a small chunk inside the chunk.
+  // Absent for a words condition, and when no small chunk of the chunk carries
+  // a vector under the recipe.
+  optional double similarity = 1;
+
+  // Meaning: the similarity is at or above the floor. Words: the whole text of
+  // the chunk matches the query.
+  bool is_match = 2;
+}
+
+message ChunkScore {
+  string chunk_id = 1;
+
+  // One per condition, in the order of the conditions.
+  repeated ConditionScore conditions = 2;
+}
+
+message ScoreChunksResponse {
+  HostSearchErrorCode error = 1;
+
+  // One per distinct given chunk id the vault holds, in the order given. An id
+  // the vault does not hold, because its source was removed or cut again, is
+  // left out.
+  repeated ChunkScore chunks = 2;
+
+  // The floor applied to the meaning conditions; zero when the request has
+  // none.
+  double floor = 3;
 }

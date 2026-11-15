@@ -11,10 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/usecase/indexstats"
 )
@@ -102,7 +103,7 @@ func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
 }
 
 func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
 		return mount(s, indexstats.NewStats(newIndex(), newFakeClock(getStart()), 16))
 	})
 	if err != nil {
@@ -126,8 +127,8 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	}
 }
 
-func newFakeClock(start time.Time) *clock.Fake {
-	source := new(clock.Fake)
+func newFakeClock(start time.Time) *clocktest.Fake {
+	source := new(clocktest.Fake)
 	source.Set(start)
 	return source
 }

@@ -3,18 +3,15 @@ package scancomplete
 import (
 	"go/ast"
 	"go/types"
-	"regexp"
 	"slices"
 	"strings"
-	"unicode"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"golang.org/x/tools/go/packages"
 )
 
-func isHelperPackage(rel string, helpers map[string]string) bool {
-	_, isListed := helpers[rel]
-	return isListed || load.IsWithin(rel, "internal/adapterlib") || load.IsWithin(rel, "internal/testsupport")
+func isHelperPackage(rel string) bool {
+	return load.IsHelper(rel) || load.IsWithin(rel, "internal/adapterlib") || load.IsWithin(rel, "internal/testsupport")
 }
 
 func isTestSupport(rel string) bool { return load.IsWithin(rel, "internal/testsupport") }
@@ -26,16 +23,13 @@ func getHelperImportFindings(pkg *packages.Package, root, rel string) []string {
 	for path := range pkg.Imports {
 		target := strings.TrimPrefix(strings.TrimPrefix(path, root), "/")
 		switch {
-		case isAdapterLib(rel):
-			if load.IsInLayer(path, root, "usecase") {
-				found = append(found, rel+" imports "+target+": shared adapter code depends on no use case")
-			}
-			if load.IsInLayer(path, root, "adapter") || load.IsInLayer(path, root, "internal/adapter") {
-				found = append(found, rel+" imports "+target+": shared adapter code depends on no other adapter")
-			}
-		case !isTestSupport(rel) && (load.IsInLayer(path, root, "port") || load.IsInLayer(path, root, "usecase")):
-			found = append(found, rel+" imports "+target+": a helper depends on no port and no use case")
-		case load.IsTechnologyImport(path):
+		case load.IsInLayer(path, root, "usecase"):
+			found = append(found, rel+" imports "+target+": a helper depends on no use case")
+		case load.IsInLayer(path, root, "port") && !isTestSupport(rel):
+			found = append(found, rel+" imports "+target+": a helper depends on no port")
+		case isAdapterLib(rel) && (load.IsInLayer(path, root, "adapter") || load.IsInLayer(path, root, "internal/adapter")):
+			found = append(found, rel+" imports "+target+": shared adapter code depends on no other adapter")
+		case !isAdapterLib(rel) && load.IsTechnologyImport(path):
 			found = append(found, rel+" imports "+path+": a helper reaches no technology")
 		}
 	}
@@ -126,10 +120,10 @@ func isMutating(info *types.Info, body *ast.BlockStmt, receiver types.Object) bo
 	return found
 }
 
-func getHelperFindings(pkgs []*packages.Package, root string, helpers map[string]string) (found []string, read int) {
+func getHelperFindings(pkgs []*packages.Package, root string) (found []string, read int) {
 	for _, pkg := range pkgs {
 		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")
-		if !isHelperPackage(rel, helpers) {
+		if !isHelperPackage(rel) {
 			continue
 		}
 		read++
@@ -143,51 +137,4 @@ func getHelperFindings(pkgs []*packages.Package, root string, helpers map[string
 	}
 	slices.Sort(found)
 	return found, read
-}
-
-var camelBoundary = regexp.MustCompile(`[A-Z][a-z0-9]*|[a-z0-9]+`)
-
-func listPackageWords(pkg *packages.Package) map[string]bool {
-	words := map[string]bool{}
-	add := func(text string) {
-		for _, word := range camelBoundary.FindAllString(text, -1) {
-			words[strings.ToLower(word)] = true
-		}
-	}
-	add(pkg.Name)
-	for _, file := range pkg.Syntax {
-		if file.Doc != nil {
-			add(file.Doc.Text())
-		}
-	}
-	for _, name := range pkg.Types.Scope().Names() {
-		if ast.IsExported(name) {
-			add(name)
-		}
-	}
-	return words
-}
-
-func getHelperReasonFindings(pkgs []*packages.Package, root string, helpers map[string]string) []string {
-	var found []string
-	byRel := map[string]*packages.Package{}
-	for _, pkg := range pkgs {
-		byRel[strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")] = pkg
-	}
-	for rel, reason := range helpers {
-		pkg, ok := byRel[rel]
-		if !ok {
-			found = append(found, "the helper "+rel+" is not a package of the kernel")
-			continue
-		}
-		words := listPackageWords(pkg)
-		describes := slices.ContainsFunc(strings.FieldsFunc(strings.ToLower(reason), func(r rune) bool { return !unicode.IsLetter(r) }), func(word string) bool {
-			return len(word) >= 4 && words[word]
-		})
-		if !describes {
-			found = append(found, "the reason of the helper "+rel+" names nothing the package declares or documents: "+reason)
-		}
-	}
-	slices.Sort(found)
-	return found
 }

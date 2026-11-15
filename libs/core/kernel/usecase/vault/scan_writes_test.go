@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -46,17 +46,11 @@ func (c *countedMeasurements) ReportChanges(context.Context) error { c.n++; retu
 func TestNotesAreSavedInGroups(t *testing.T) {
 	t.Parallel()
 	const notes = 600
-	v := vaultfixture.GenerateVault(t, notes)
+	v := vaulttest.GenerateVault(t, notes)
 	content := &groupedWrites{}
 	db := openIndex(t)
 
-	scan := vaults.NewScan(
-		vaultreader.Readers{},
-		db.Vaults(),
-		content,
-		db.NoteQueries(),
-		&countedMeasurements{}, nil,
-	)
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), &countedMeasurements{}, testsupport.EmptySourceBacklog{})
 	res, err := scan.Execute(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)
@@ -102,13 +96,7 @@ func TestScanWrites_LongNoteClosesBatchEarly(t *testing.T) {
 
 	content := &groupedWrites{}
 	db := openIndex(t)
-	scan := vaults.NewScan(
-		vaultreader.Readers{},
-		db.Vaults(),
-		content,
-		db.NoteQueries(),
-		&countedMeasurements{}, nil,
-	)
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), &countedMeasurements{}, testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -126,17 +114,11 @@ func TestScanWrites_LongNoteClosesBatchEarly(t *testing.T) {
 // indexed, however many notes were parsed into it.
 func TestAFailedWriteCountsNothing(t *testing.T) {
 	t.Parallel()
-	v := vaultfixture.GenerateVault(t, 10)
+	v := vaulttest.GenerateVault(t, 10)
 	writeErr := errors.New("disk full")
 	db := openIndex(t)
 
-	scan := vaults.NewScan(
-		vaultreader.Readers{},
-		db.Vaults(),
-		&groupedWrites{fail: writeErr},
-		db.NoteQueries(),
-		&countedMeasurements{}, nil,
-	)
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), &groupedWrites{fail: writeErr}, db.NoteQueries(), &countedMeasurements{}, testsupport.EmptySourceBacklog{})
 	res, err := scan.Execute(t.Context(), v)
 	if !errors.Is(err, writeErr) {
 		t.Fatalf("error = %v, want the one the index gave", err)
@@ -150,17 +132,11 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 // scanned at every startup and must not pay for it.
 func TestTheIndexIsMeasuredWhenItChanges(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	v, readers := vaultAt(t, vaulttest.VaultDir(t))
 	db := openIndex(t)
 	measured := &countedMeasurements{}
 
-	scan := vaults.NewScan(
-		readers,
-		db.Vaults(),
-		db.Notes(),
-		db.NoteQueries(),
-		measured, nil,
-	)
+	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), measured, testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

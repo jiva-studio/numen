@@ -80,6 +80,10 @@ func answerSearch(ctx context.Context, err error) (v1.HostSearchErrorCode, error
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED, nil
 	case errors.Is(err, plugin.ErrInvalidQuery):
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY, nil
+	case errors.Is(err, plugin.ErrInvalidCondition):
+		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_CONDITION, nil
+	case errors.Is(err, plugin.ErrInvalidWords):
+		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_WORDS, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }
@@ -187,9 +191,9 @@ func (e *searchEndpoint) SampleSimilarities(
 		rows[i] = &v1.SimilarityRow{Values: one}
 	}
 	return connect.NewResponse(&v1.SampleSimilaritiesResponse{
-		PassageCount: int32(sample.PassageCount),
-		SourceCount:  int32(sample.SourceCount),
-		Rows:         rows,
+		ChunkCount:  int32(sample.ChunkCount),
+		SourceCount: int32(sample.SourceCount),
+		Rows:        rows,
 	}), nil
 }
 
@@ -211,32 +215,30 @@ func (e *searchEndpoint) GetBestSimilarity(
 	return connect.NewResponse(&v1.GetBestSimilarityResponse{Similarity: best}), nil
 }
 
-func (e *searchEndpoint) SearchPassages(
-	ctx context.Context, req *connect.Request[v1.HostSearchServiceSearchPassagesRequest],
-) (*connect.Response[v1.HostSearchServiceSearchPassagesResponse], error) {
+func (e *searchEndpoint) SearchText(
+	ctx context.Context, req *connect.Request[v1.HostSearchServiceSearchTextRequest],
+) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error) {
 	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
 	if err != nil {
 		return nil, err
 	}
 	if code := call.getRefusal(true); code != 0 {
-		return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Error: code}), nil
+		return connect.NewResponse(&v1.HostSearchServiceSearchTextResponse{Error: code}), nil
 	}
-	kinds, err := readKinds(req.Msg.GetKinds())
+	query, err := readSearchResultQuery(req.Msg)
 	if err != nil {
 		return nil, err
 	}
-	found, err := call.search.SearchPassages(ctx, call.vault, plugin.PassageQuery{
-		Query: req.Msg.GetQuery(), Limit: int(req.Msg.GetLimit()), Kinds: kinds, PathPrefix: req.Msg.GetPathPrefix(),
-	})
+	found, err := call.search.SearchText(ctx, call.vault, query)
 	code, err := answerSearch(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Error: code}), err
+		return connect.NewResponse(&v1.HostSearchServiceSearchTextResponse{Error: code}), err
 	}
-	passages, err := writePassages(found)
+	results, err := writeSearchResults(found)
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Passages: passages}), nil
+	return connect.NewResponse(&v1.HostSearchServiceSearchTextResponse{Results: results}), nil
 }
 
 func readKinds(names []string) ([]domain.SourceKind, error) {
@@ -252,50 +254,52 @@ func readKinds(names []string) ([]domain.SourceKind, error) {
 	return kinds, nil
 }
 
-func (e *searchEndpoint) FindNearestPassages(
-	ctx context.Context, req *connect.Request[v1.FindNearestPassagesRequest],
-) (*connect.Response[v1.FindNearestPassagesResponse], error) {
+func (e *searchEndpoint) FindNearestChunks(
+	ctx context.Context, req *connect.Request[v1.FindNearestChunksRequest],
+) (*connect.Response[v1.FindNearestChunksResponse], error) {
 	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
 	if err != nil {
 		return nil, err
 	}
 	if code := call.getRefusal(true); code != 0 {
-		return connect.NewResponse(&v1.FindNearestPassagesResponse{Error: code}), nil
+		return connect.NewResponse(&v1.FindNearestChunksResponse{Error: code}), nil
 	}
 	kinds, err := readKinds(req.Msg.GetKinds())
 	if err != nil {
 		return nil, err
 	}
-	found, err := call.search.FindNearestPassages(ctx, call.vault, sourcedomain.NearestQuery{
+	found, err := call.search.FindNearestChunks(ctx, call.vault, sourcedomain.NearestQuery{
 		Recipe: req.Msg.GetPlace().GetRecipe(), Vector: req.Msg.GetVector(), Kinds: kinds,
 		PathPrefix: req.Msg.GetPathPrefix(), Limit: int(req.Msg.GetLimit()), Floor: req.Msg.GetFloor(),
 	})
 	code, err := answerSearch(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.FindNearestPassagesResponse{Error: code}), err
+		return connect.NewResponse(&v1.FindNearestChunksResponse{Error: code}), err
 	}
 	matches := make([]*v1.ChunkMatch, len(found))
 	for i, one := range found {
 		matches[i] = &v1.ChunkMatch{ChunkId: string(one.ChunkID), Score: one.Score}
 	}
-	return connect.NewResponse(&v1.FindNearestPassagesResponse{Matches: matches}), nil
+	return connect.NewResponse(&v1.FindNearestChunksResponse{Matches: matches}), nil
 }
 
-func writePassages(found []domain.Passage) ([]*v1.Passage, error) {
-	passages := make([]*v1.Passage, len(found))
+func writeSearchResults(found []domain.SearchResult) ([]*v1.SearchResult, error) {
+	results := make([]*v1.SearchResult, len(found))
 	for i, one := range found {
 		end := one.Start + one.Length
-		if one.Start < 0 || one.Length < 0 || end > math.MaxInt32 || one.Line < 0 || one.Line > math.MaxInt32 {
-			return nil, connect.NewError(connect.CodeOutOfRange, fmt.Errorf("the passage of %s at %d+%d, line %d, exceeds the 32-bit range", one.Source, one.Start, one.Length, one.Line))
+		if one.Start < 0 || one.Length < 0 || end > math.MaxInt32 || one.MatchLine < 0 || one.MatchLine > math.MaxInt32 {
+			return nil, connect.NewError(connect.CodeOutOfRange, fmt.Errorf("the passage of %s at %d+%d, line %d, exceeds the 32-bit range", one.Path, one.Start, one.Length, one.MatchLine))
 		}
-		passages[i] = &v1.Passage{
-			Path: one.Source, Text: one.Text, Location: one.Location,
-			Range:    &v1.Range{Start: int32(one.Start), End: int32(end)},
-			Line:     int32(one.Line),
-			Selector: string(one.Selector),
+		results[i] = &v1.SearchResult{
+			Path: one.Path, Text: one.Text, PlaceLabel: one.PlaceLabel,
+			ByteRange: &v1.Range{Start: int32(one.Start), End: int32(end)},
+			MatchLine: int32(one.MatchLine),
+			Selector:  string(one.Selector),
+			ChunkId:   string(one.ChunkID), Similarity: one.Similarity, WordScore: one.WordScore,
+			WholeText: one.WholeText,
 		}
 	}
-	return passages, nil
+	return results, nil
 }
 
 func (e *searchEndpoint) GetSearchFloor(
@@ -346,4 +350,36 @@ func writeFloorSource(source plugin.FloorSource) v1.SearchFloorSource {
 		return v1.SearchFloorSource_SEARCH_FLOOR_SOURCE_DEFAULT
 	}
 	return v1.SearchFloorSource_SEARCH_FLOOR_SOURCE_UNSPECIFIED
+}
+
+func readSearchResultQuery(msg *v1.HostSearchServiceSearchTextRequest) (plugin.SearchResultQuery, error) {
+	kinds, err := readKinds(msg.GetKinds())
+	if err != nil {
+		return plugin.SearchResultQuery{}, err
+	}
+	mode, err := readSearchMode(msg.GetMode())
+	if err != nil {
+		return plugin.SearchResultQuery{}, err
+	}
+	if msg.GetIsRawWords() && mode != plugin.SearchModeWords {
+		return plugin.SearchResultQuery{}, connect.NewError(connect.CodeInvalidArgument, errors.New("raw words need the mode WORDS"))
+	}
+	return plugin.SearchResultQuery{
+		Query: msg.GetQuery(), Limit: int(msg.GetLimit()), ResultsPerSource: int(msg.GetResultsPerSource()),
+		Kinds: kinds, PathPrefix: msg.GetPathPrefix(), Mode: mode, IsRawWords: msg.GetIsRawWords(),
+		IsWholeText: msg.GetIsWholeText(),
+	}, nil
+}
+
+func readSearchMode(mode v1.SearchMode) (plugin.SearchMode, error) {
+	switch mode {
+	case v1.SearchMode_SEARCH_MODE_UNSPECIFIED, v1.SearchMode_SEARCH_MODE_HYBRID:
+		return plugin.SearchModeHybrid, nil
+	case v1.SearchMode_SEARCH_MODE_WORDS:
+		return plugin.SearchModeWords, nil
+	case v1.SearchMode_SEARCH_MODE_MEANING:
+		return plugin.SearchModeMeaning, nil
+	case v1.SearchMode_SEARCH_MODE_NAMES:
+	}
+	return 0, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid search mode %s: use HYBRID, WORDS or MEANING", mode))
 }

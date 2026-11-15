@@ -65,23 +65,10 @@ func GetPluginServices(c Config) editor.PluginServices {
 	return getPluginServices(plugins(c))
 }
 
-// InstallPluginVault lets the plugins work through the host the vaults of the installation and the index that
-// holds them: the one current names, else the one a call names by identity.
-func InstallPluginVault(c Config,
-	db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
-) error {
-	vaults, err := c.registry()
-	if err != nil {
-		return err
-	}
-	return installPluginVault(plugins(c), vaults, db, current, hooks)
-}
-
 // PluginRuntime is what runs, finds and addresses the plugins.
 type PluginRuntime struct {
 	bridge.Activator
 	pluginport.PluginRetrier
-	pluginport.PluginDiscoverer
 	pluginport.PluginLister
 	pluginport.PluginResolver
 	pluginport.PluginEventEmitter
@@ -96,9 +83,8 @@ type PluginRuntime struct {
 type PluginConfiguration struct {
 	pluginport.PluginSettingDeclarer
 	pluginport.ConfigRefresher
-	pluginport.SettingsPush
-	pluginport.SettingChecker
-	pluginport.PersistHook
+	settingsport.PluginConfig
+	settingsport.PluginSettings
 }
 
 // PluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
@@ -145,13 +131,8 @@ type PluginHost struct {
 	SourceDescriptions  *sourcebridge.Descriptions
 }
 
-// AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made with NewPluginRoles, to the container. The
-// tests of packages outside the container use it to run a window over a host they hold.
+// AdaptPluginHost lends the capabilities of host, the roles of a plugin host made with NewPluginRoles, to the container.
 func AdaptPluginHost(host *PluginRoles) *PluginHost {
-	return adaptPluginHost(host)
-}
-
-func adaptPluginHost(host *PluginRoles) *PluginHost {
 	lender := hostendpoint.NewLender()
 	lent := lendHostEndpoint(host, lender)
 	types := plugin.NewConnectionTypes(host.Registry)
@@ -161,7 +142,6 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		Runtime: PluginRuntime{
 			Activator:          host.Activation,
 			PluginRetrier:      host.Retry,
-			PluginDiscoverer:   host.Discovery,
 			PluginLister:       host.Registry,
 			PluginResolver:     host.Registry,
 			PluginEventEmitter: host.Events,
@@ -174,9 +154,8 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		Configuration: PluginConfiguration{
 			PluginSettingDeclarer: host.Registry,
 			ConfigRefresher:       host.Config,
-			SettingsPush:          host.Settings,
-			SettingChecker:        host.Settings,
-			PersistHook:           host.Settings,
+			PluginConfig:          host.Settings,
+			PluginSettings:        host.Settings,
 		},
 		Watch: PluginWatch{
 			PluginShutdown:     host.Teardown,

@@ -4,7 +4,11 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
+
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
@@ -58,6 +62,7 @@ func (f *frames) Close() error { return nil }
 // assistant is a provider of every role of the contract that answers from what it received.
 type assistant struct {
 	request *llm.ChatRequest
+	rerank  *llm.RerankRequest
 }
 
 func (a *assistant) Complete(_ context.Context, _ connection.Call, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
@@ -86,6 +91,7 @@ func (a *assistant) Embed(_ context.Context, _ connection.Call, request *llm.Emb
 
 // Rerank scores each document by the number of its bytes.
 func (a *assistant) Rerank(_ context.Context, _ connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+	a.rerank = request
 	result := &llm.RerankResult{}
 	for _, document := range request.GetDocuments() {
 		result.Scores = append(result.Scores, float32(len(document)))
@@ -149,8 +155,15 @@ func TestChatStreamsTheFramesOfTheTurnAndEndsWithTheFinish(t *testing.T) {
 	if err := stream.Err(); err != nil {
 		t.Fatal(err)
 	}
-	if text != "Let me look." || !slices.Equal(calls, []string{"list_notes"}) || stream.Finish().GetReason() != llm.FinishReason_FINISH_REASON_TOOL_CALLS {
-		t.Errorf("text = %q, calls = %v, finish = %v", text, calls, stream.Finish())
+	firstFinish := stream.Finish()
+	if text != "Let me look." || !slices.Equal(calls, []string{"list_notes"}) || firstFinish.GetReason() != llm.FinishReason_FINISH_REASON_TOOL_CALLS {
+		t.Errorf("text = %q, calls = %v, finish = %v", text, calls, firstFinish)
+	}
+	if stream.Finish() != firstFinish {
+		t.Error("Finish did not return the cached finish on second call")
+	}
+	if err := stream.Close(); err != nil {
+		t.Errorf("Close = %v", err)
 	}
 	if a.request.GetTools()[0].GetName() != "list_notes" || a.request.GetMessages()[0].GetText() != "what is in Trips?" {
 		t.Errorf("request = %v", a.request)
@@ -189,7 +202,7 @@ func TestEmbedOfNoTextCallsNoProvider(t *testing.T) {
 
 	result, err := llm.Embed(t.Context(), caller, &llm.EmbedRequest{}, connection.PriorityBackground)
 
-	if err != nil || len(result.GetVectors()) != 0 || len(caller.operations) != 0 {
+	if err != nil || result == nil || len(result.GetVectors()) != 0 || len(caller.operations) != 0 {
 		t.Errorf("Embed = %v, %v, operations = %v", result, err, caller.operations)
 	}
 }
@@ -236,22 +249,325 @@ func getOperations(provider connection.Provider) []string {
 	return names
 }
 
+type staticCaller struct {
+	frames *frames
+	err    error
+}
+
+func (c *staticCaller) Call(context.Context, string, []byte, connection.Priority) (connection.Frames, error) {
+	if c.err != nil {
+		return nil, c.err
+	}
+	return c.frames, nil
+}
+
+type failingAssistant struct {
+	err   error
+	frame *llm.ChatFrame
+}
+
+func (f *failingAssistant) Complete(context.Context, connection.Call, *llm.CompleteRequest) (*llm.CompleteResult, error) {
+	return nil, f.err
+}
+
+func (f *failingAssistant) Chat(_ context.Context, _ connection.Call, _ *llm.ChatRequest, send func(*llm.ChatFrame) error) (*llm.ChatFinish, error) {
+	return nil, send(f.frame)
+}
+
 func TestAFailureOfTheProviderIsTheErrorOfTheCall(t *testing.T) {
+	encodeCaller := newCaller(llm.Roles{Completer: &assistant{}, Embedder: &assistant{}, Chatter: &assistant{}})
+	if _, err := llm.Complete(
+		t.Context(), encodeCaller, &llm.CompleteRequest{Messages: []*llm.Message{{Text: "\xff"}}}, connection.PriorityBackground,
+	); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationComplete) {
+		t.Errorf("Complete invalid UTF-8 err = %v", err)
+	}
+	if _, err := llm.Embed(
+		t.Context(), encodeCaller, &llm.EmbedRequest{Texts: []string{"\xff"}}, connection.PriorityBackground,
+	); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationEmbed) {
+		t.Errorf("Embed invalid UTF-8 err = %v", err)
+	}
+	if _, err := llm.Chat(
+		t.Context(), encodeCaller, &llm.ChatRequest{Messages: []*llm.ChatMessage{{Text: "\xff"}}}, connection.PriorityBackground,
+	); err == nil || !strings.Contains(err.Error(), "llm: encode "+llm.OperationChat) {
+		t.Errorf("Chat invalid UTF-8 err = %v", err)
+	}
+	if len(encodeCaller.operations) != 0 {
+		t.Errorf("expected no calls when request marshal fails, got %v", encodeCaller.operations)
+	}
+
 	caller := newCaller(llm.Roles{})
 
-	_, err := llm.Complete(t.Context(), caller, &llm.CompleteRequest{}, connection.PriorityBackground)
+	if _, err := llm.Complete(t.Context(), caller, &llm.CompleteRequest{}, connection.PriorityBackground); !errors.Is(err, connection.ErrNoConnection) {
+		t.Errorf("Complete err = %v, want ErrNoConnection", err)
+	}
+	if _, err := llm.Embed(t.Context(), caller, &llm.EmbedRequest{Texts: []string{"hi"}}, connection.PriorityBackground); !errors.Is(err, connection.ErrNoConnection) {
+		t.Errorf("Embed err = %v, want ErrNoConnection", err)
+	}
+	if _, err := llm.GetProfile(t.Context(), caller); !errors.Is(err, connection.ErrNoConnection) {
+		t.Errorf("GetProfile err = %v, want ErrNoConnection", err)
+	}
 
-	if !errors.Is(err, connection.ErrNoConnection) {
-		t.Errorf("err = %v, want the error of the call", err)
+	callErr := errors.New("call failed")
+	errCaller := &staticCaller{err: callErr}
+	if _, err := llm.Complete(t.Context(), errCaller, &llm.CompleteRequest{}, connection.PriorityBackground); !errors.Is(err, callErr) {
+		t.Errorf("Complete callErr = %v, want %v", err, callErr)
+	}
+	if _, err := llm.Chat(t.Context(), errCaller, &llm.ChatRequest{}, connection.PriorityBackground); !errors.Is(err, callErr) {
+		t.Errorf("Chat callErr = %v, want %v", err, callErr)
+	}
+
+	badDoneCaller := &staticCaller{frames: &frames{done: []byte{0xff, 0xff}}}
+	if _, err := llm.Complete(t.Context(), badDoneCaller, &llm.CompleteRequest{}, connection.PriorityBackground); err == nil {
+		t.Error("expected error for invalid Complete done bytes")
+	}
+
+	validFrameBytes, err := proto.Marshal(&llm.ChatFrame{Event: &llm.ChatFrame_TextDelta{TextDelta: "ok"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	validDoneBytes, err := proto.Marshal(&llm.ChatFinish{Reason: llm.FinishReason_FINISH_REASON_STOP})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	badFrameStream, err := llm.Chat(t.Context(), &staticCaller{frames: &frames{
+		data: [][]byte{{0xff, 0xff}, validFrameBytes},
+		done: validDoneBytes,
+	}}, &llm.ChatRequest{}, connection.PriorityBackground)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstBad := badFrameStream.Next()
+	secondBad := badFrameStream.Next()
+	if firstBad || secondBad {
+		t.Error("expected Next to return false after invalid frame")
+	}
+	if badFrameStream.Err() == nil || badFrameStream.Finish() != nil {
+		t.Errorf("badFrameStream Err = %v, Finish = %v", badFrameStream.Err(), badFrameStream.Finish())
+	}
+
+	errStream, err := llm.Chat(t.Context(), &staticCaller{frames: &frames{
+		done: validDoneBytes,
+		err:  callErr,
+	}}, &llm.ChatRequest{}, connection.PriorityBackground)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if errStream.Next() || errStream.Finish() != nil || !errors.Is(errStream.Err(), callErr) {
+		t.Errorf("errStream Finish = %v, Err = %v", errStream.Finish(), errStream.Err())
+	}
+
+	badFinishStream, err := llm.Chat(t.Context(), &staticCaller{frames: &frames{
+		done: []byte{0xff, 0xff},
+	}}, &llm.ChatRequest{}, connection.PriorityBackground)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if badFinishStream.Next() || badFinishStream.Finish() != nil || badFinishStream.Err() == nil {
+		t.Errorf("badFinishStream Finish = %v, Err = %v", badFinishStream.Finish(), badFinishStream.Err())
 	}
 }
 
 func TestAPayloadThatIsNoRequestOfTheContractIsAnInvalidRequest(t *testing.T) {
-	serve := llm.Provide(nil, llm.Roles{Completer: &assistant{}})[llm.OperationComplete]
+	provider := llm.Provide(nil, llm.Roles{Completer: &assistant{}, Chatter: &assistant{}})
 
-	_, err := serve(t.Context(), connection.Call{}, []byte{0xff, 0xff}, func([]byte) error { return nil })
+	for _, op := range []string{llm.OperationComplete, llm.OperationChat} {
+		_, err := provider[op](t.Context(), connection.Call{}, []byte{0xff, 0xff}, func([]byte) error { return nil })
+		if !connection.IsStop(err) || err.Error() != connection.ReasonInvalidRequest.String() {
+			t.Errorf("%s err = %v, want a stop of an invalid request", op, err)
+		}
+	}
 
-	if !connection.IsStop(err) || err.Error() != connection.ReasonInvalidRequest.String() {
-		t.Errorf("err = %v, want a stop of an invalid request", err)
+	roleErr := errors.New("role failed")
+	failServe := llm.Provide(nil, llm.Roles{Completer: &failingAssistant{err: roleErr}})[llm.OperationComplete]
+	if _, err := failServe(t.Context(), connection.Call{}, nil, func([]byte) error { return nil }); !errors.Is(err, roleErr) {
+		t.Errorf("failServe err = %v, want %v", err, roleErr)
+	}
+
+	sendErr := errors.New("send failed")
+	if _, err := provider[llm.OperationChat](t.Context(), connection.Call{}, nil, func([]byte) error { return sendErr }); !errors.Is(err, sendErr) {
+		t.Errorf("chat sendErr = %v, want %v", err, sendErr)
+	}
+
+	sent := false
+	badFrameServe := llm.Provide(nil, llm.Roles{
+		Chatter: &failingAssistant{frame: &llm.ChatFrame{Event: &llm.ChatFrame_TextDelta{TextDelta: "\xff"}}},
+	})[llm.OperationChat]
+	if _, err := badFrameServe(t.Context(), connection.Call{}, nil, func([]byte) error {
+		sent = true
+		return nil
+	}); err == nil || sent {
+		t.Errorf("badFrameServe err = %v, sent = %v, want marshal error without calling send", err, sent)
+	}
+}
+
+type protoMessage interface {
+	proto.Message
+	Reset()
+	String() string
+	Descriptor() ([]byte, []int)
+}
+
+func assertProtoMessage(t *testing.T, msg protoMessage) {
+	t.Helper()
+	if msg.ProtoReflect() == nil || msg.ProtoReflect().Descriptor() == nil {
+		t.Fatalf("ProtoReflect nil for %T", msg)
+	}
+	if raw, idx := msg.Descriptor(); len(raw) == 0 || len(idx) == 0 {
+		t.Fatalf("Descriptor empty for %T", msg)
+	}
+	if msg.String() == "" {
+		t.Fatalf("String empty for populated %T", msg)
+	}
+	msg.Reset()
+	if msg.String() != "" {
+		t.Fatalf("String non-empty after Reset for %T: %q", msg, msg.String())
+	}
+}
+
+func TestGeneratedProtoMethods(t *testing.T) {
+	for _, v := range []llm.FinishReason{
+		llm.FinishReason_FINISH_REASON_UNSPECIFIED,
+		llm.FinishReason_FINISH_REASON_STOP,
+		llm.FinishReason_FINISH_REASON_TOOL_CALLS,
+		llm.FinishReason_FINISH_REASON_LENGTH,
+	} {
+		if got := v.Enum(); got == nil || *got != v {
+			t.Fatalf("Enum(%v) = %v", v, got)
+		}
+		if v.String() == "" || v.Descriptor() == nil || v.Type() == nil || v.Number() != protoreflect.EnumNumber(v) {
+			t.Fatalf("FinishReason methods failed for %v", v)
+		}
+		if raw, idx := v.EnumDescriptor(); len(raw) == 0 || len(idx) == 0 {
+			t.Fatalf("EnumDescriptor(%v) = len %d, %v", v, len(raw), idx)
+		}
+	}
+
+	temp := 0.5
+	for _, msg := range []protoMessage{
+		&llm.Message{Role: "user", Text: "hi"},
+		&llm.CompleteRequest{Messages: []*llm.Message{{Role: "user"}}, Temperature: &temp, MaxTokens: 10},
+		&llm.CompleteResult{Text: "ok"},
+		&llm.ToolCall{Id: "1", Name: "n", ArgumentsJson: "{}"},
+		&llm.ToolDefinition{Name: "n", Description: "d", ParametersJson: "{}"},
+		&llm.ChatMessage{Role: "user", Text: "t", ToolCalls: []*llm.ToolCall{{Id: "1"}}, ToolCallId: "1"},
+		&llm.ChatRequest{Messages: []*llm.ChatMessage{{Role: "user"}}, Tools: []*llm.ToolDefinition{{Name: "n"}}, Temperature: &temp, MaxTokens: 10},
+		&llm.ChatFrame{Event: &llm.ChatFrame_TextDelta{TextDelta: "d"}},
+		&llm.ChatFinish{Reason: llm.FinishReason_FINISH_REASON_STOP},
+		&llm.EmbedRequest{Texts: []string{"a"}},
+		&llm.Vector{Values: []float32{1}},
+		&llm.EmbedResult{Vectors: []*llm.Vector{{Values: []float32{1}}}},
+		&llm.Profile{Model: "m", Source: "s", Pooling: "p", QueryPrefix: "q", DocumentPrefix: "d", Width: 1, MaxTokens: 2},
+		&llm.RerankRequest{Query: "q", Instruction: "i", Documents: []string{"d"}},
+		&llm.RerankResult{Scores: []float32{1}},
+	} {
+		assertProtoMessage(t, msg)
+	}
+
+	profReq := &llm.ProfileRequest{}
+	if profReq.ProtoReflect() == nil || profReq.String() != "" {
+		t.Fatalf("ProfileRequest = %v", profReq)
+	}
+	if raw, idx := profReq.Descriptor(); len(raw) == 0 || len(idx) == 0 {
+		t.Fatalf("ProfileRequest.Descriptor = %d, %v", len(raw), idx)
+	}
+	profReq.Reset()
+
+	var (
+		nilMsg       *llm.Message
+		nilCompReq   *llm.CompleteRequest
+		nilCompRes   *llm.CompleteResult
+		nilToolCall  *llm.ToolCall
+		nilToolDef   *llm.ToolDefinition
+		nilChatMsg   *llm.ChatMessage
+		nilChatReq   *llm.ChatRequest
+		nilChatFrame *llm.ChatFrame
+		nilChatFin   *llm.ChatFinish
+		nilEmbedReq  *llm.EmbedRequest
+		nilVec       *llm.Vector
+		nilEmbedRes  *llm.EmbedResult
+		nilProfReq   *llm.ProfileRequest
+		nilProf      *llm.Profile
+		nilRerankReq *llm.RerankRequest
+		nilRerankRes *llm.RerankResult
+	)
+	for _, m := range []proto.Message{
+		nilMsg, nilCompReq, nilCompRes, nilToolCall, nilToolDef, nilChatMsg, nilChatReq,
+		nilChatFrame, nilChatFin, nilEmbedReq, nilVec, nilEmbedRes, nilProfReq, nilProf, nilRerankReq, nilRerankRes,
+	} {
+		if m.ProtoReflect() == nil {
+			t.Fatalf("nil ProtoReflect failed for %T", m)
+		}
+	}
+}
+
+func TestRerankReturnsScoresInDocumentOrder(t *testing.T) {
+	caller := newCaller(llm.Roles{Reranker: &assistant{}})
+
+	result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{
+		Query:     "harbor tides",
+		Documents: []string{"a long note about the harbor", "tides", "the quay at dawn"},
+	}, connection.PriorityInteractive)
+
+	if err != nil || !slices.Equal(result.GetScores(), []float32{28, 5, 16}) {
+		t.Fatalf("Rerank = %v, %v, want the scores in the order of the documents", result, err)
+	}
+	if !slices.Equal(caller.operations, []string{llm.OperationRerank}) || caller.priorities[0] != connection.PriorityInteractive {
+		t.Errorf("operations = %v, priorities = %v", caller.operations, caller.priorities)
+	}
+}
+
+func TestRerankPassesTheQueryAndTheInstructionUnchanged(t *testing.T) {
+	a := &assistant{}
+	caller := newCaller(llm.Roles{Reranker: a})
+
+	_, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{
+		Query:       " when does the ferry leave? ",
+		Instruction: "Find the notes that answer the question",
+		Documents:   []string{"Ferry times"},
+	}, connection.PriorityBackground)
+
+	if err != nil || a.rerank.GetQuery() != " when does the ferry leave? " || a.rerank.GetInstruction() != "Find the notes that answer the question" ||
+		!slices.Equal(a.rerank.GetDocuments(), []string{"Ferry times"}) {
+		t.Errorf("Rerank = %v, request = %v", err, a.rerank)
+	}
+}
+
+// oneScore scores every request with one score, whatever the number of its documents.
+type oneScore struct{}
+
+func (oneScore) Rerank(context.Context, connection.Call, *llm.RerankRequest) (*llm.RerankResult, error) {
+	return &llm.RerankResult{Scores: []float32{0.5}}, nil
+}
+
+func TestRerankOfAnotherNumberOfScoresThanDocumentsIsAnError(t *testing.T) {
+	caller := newCaller(llm.Roles{Reranker: oneScore{}})
+
+	result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{Query: "quay", Documents: []string{"quay", "jetty"}}, connection.PriorityBackground)
+
+	if err == nil || result != nil {
+		t.Errorf("Rerank = %v, %v, want an error", result, err)
+	}
+}
+
+func TestRerankOfNoDocumentCallsNoProvider(t *testing.T) {
+	caller := newCaller(llm.Roles{Reranker: &assistant{}})
+
+	result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{Query: "quay"}, connection.PriorityBackground)
+
+	if err != nil || len(result.GetScores()) != 0 || len(caller.operations) != 0 {
+		t.Errorf("Rerank = %v, %v, operations = %v", result, err, caller.operations)
+	}
+}
+
+func TestRerankRejectsAnEmptyQueryWithoutACall(t *testing.T) {
+	for _, query := range []string{"", "  \n\t"} {
+		caller := newCaller(llm.Roles{Reranker: &assistant{}})
+
+		result, err := llm.Rerank(t.Context(), caller, &llm.RerankRequest{Query: query, Documents: []string{"quay"}}, connection.PriorityBackground)
+
+		if err == nil || result != nil || len(caller.operations) != 0 {
+			t.Errorf("Rerank of query %q = %v, %v, operations = %v, want an error and no call", query, result, err, caller.operations)
+		}
 	}
 }

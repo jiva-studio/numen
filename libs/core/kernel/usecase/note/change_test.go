@@ -33,8 +33,12 @@ type changeFixture struct {
 func openChangeFixture(t *testing.T, notes map[string]string) changeFixture {
 	t.Helper()
 	db, v := newIndexedVault(t, notes)
-	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.NewClock())
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.NewClock(),
+		Ledger: vaults.NewLedger(),
+	})
+
 	return changeFixture{
 		db:    db,
 		vault: v,
@@ -50,7 +54,7 @@ func (c changeFixture) search() search.Search {
 }
 
 func (c changeFixture) create() note.Create {
-	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.index, testsupport.NewClock(), note.OpenGate{})
+	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.index, testsupport.NewClock(), testsupport.OpenGate{})
 }
 
 func (c changeFixture) moveDeps() note.MoveDeps {
@@ -65,7 +69,7 @@ func (c changeFixture) move() note.Move { return note.NewMove(c.moveDeps()) }
 func (c changeFixture) remove() note.Remove {
 	return note.NewRemove(
 		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.db.Sources(), c.index,
-		note.OpenGate{},
+		testsupport.OpenGate{},
 	)
 }
 
@@ -108,7 +112,7 @@ func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Source != created.Path {
+	if len(found) != 1 || found[0].Path != created.Path {
 		t.Errorf("the new note is not searchable yet: %v", found)
 	}
 }
@@ -503,7 +507,7 @@ func TestWrite_RejectsStaleEdit(t *testing.T) {
 	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(),
-		note.OpenGate{},
+		testsupport.OpenGate{},
 	)
 
 	reader, err := (vaultreader.Readers{}).Open(c.vault)
@@ -537,7 +541,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(),
-		note.OpenGate{},
+		testsupport.OpenGate{},
 	)
 
 	reader, err := (vaultreader.Readers{}).Open(c.vault)

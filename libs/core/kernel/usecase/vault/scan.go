@@ -146,7 +146,7 @@ func (u Scan) readWalk(ctx context.Context, v domain.Vault) (vaultWalk, error) {
 }
 
 func (u Scan) getRecutPaths(ctx context.Context, v domain.Vault) (map[string]bool, error) {
-	if !u.ShouldRecut || u.backlog == nil {
+	if !u.ShouldRecut {
 		return nil, nil
 	}
 	recipes := []string{u.Cut.Recipe(), chunking.GetTextVersionRecipe(u.Cut.Sizes)}

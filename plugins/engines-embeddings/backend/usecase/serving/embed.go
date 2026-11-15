@@ -64,22 +64,25 @@ func (s *Server) GetModelInfo(ctx context.Context) (ModelInfo, error) {
 	if localErr != nil {
 		return ModelInfo{}, PreconditionError{Err: localErr}
 	}
-	passes := info.Concurrency
-	if passes <= 0 {
-		passes = defaultPasses
-	}
 	return ModelInfo{
 		Name:           info.Name,
 		Dimensions:     info.Dimensions,
 		MaxTokens:      info.MaxTokens,
 		Pooling:        info.Pooling,
 		From:           info.From,
-		Concurrency:    limits.GetIndexShare(passes),
+		Concurrency:    getIndexConcurrency(info.Concurrency),
 		FloorHint:      info.FloorHint,
 		MinChunkLength: info.MinChunkLength,
 		ChunkTokens:    info.ChunkTokens,
 		Handling:       getHandlingHash(info),
 	}, nil
+}
+
+func getIndexConcurrency(passes int) int {
+	if passes <= 0 {
+		passes = defaultPasses
+	}
+	return limits.GetIndexShare(passes)
 }
 
 func getHandlingHash(info model.ModelInfo) string {

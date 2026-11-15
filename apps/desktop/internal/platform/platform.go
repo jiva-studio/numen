@@ -45,9 +45,7 @@ func GetConfigFor(target string) container.Config {
 	dirs := getPluginsDirs()
 	base := container.Config{KeyStore: getKeyStore(), Resources: container.NewResources()}
 	host, discoverErr := container.NewPluginHost(base, reportPluginHost, target, dirs...)
-	if discoverErr != nil {
-		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", discoverErr)
-	}
+	reportPluginFailure("discover plugins", discoverErr)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
 	host.SetStorage(cacheRoot, dataRoot)
 	base.PluginHost, base.PluginCatalog = host, getCatalogConfig(target, dirs, host)
@@ -60,7 +58,13 @@ func GetConfigFor(target string) container.Config {
 }
 
 func reportPluginHost(err error) {
-	fmt.Fprintf(os.Stderr, "numen: plugin host: %v\n", err)
+	reportPluginFailure("plugin host", err)
+}
+
+func reportPluginFailure(stage string, err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "numen: %s: %v\n", stage, err)
+	}
 }
 
 func getKeyStore() *keychain.Store {
@@ -103,7 +107,6 @@ func getPluginsDirs() []string {
 	observed := make(map[string]bool)
 	addDir := func(dir string) {
 		clean := filepath.Clean(dir)
-		// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 		if abs, err := filepath.Abs(clean); err == nil {
 			clean = abs
 		}
@@ -118,7 +121,6 @@ func getPluginsDirs() []string {
 	}
 
 	execPath, err := os.Executable()
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err == nil {
 		execDir := filepath.Dir(execPath)
 		addDir(filepath.Join(execDir, "plugins"))

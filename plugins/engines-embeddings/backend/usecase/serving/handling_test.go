@@ -32,7 +32,8 @@ func (r recording) Embed(ctx context.Context, texts []string) ([][]float32, erro
 func newRecordingServer(t *testing.T) (*Server, *[]string) {
 	t.Helper()
 	srv := newEmbeddingServer()
-	srv.profileSrc = profilefiles.NewDirectory(t.TempDir())
+	useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	var mu sync.Mutex
 	var received []string
 	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
@@ -89,8 +90,8 @@ func TestAnUnsetRoleIsADocument(t *testing.T) {
 
 func TestTheRecipeHandlingChangesWithTheProfileAndNotWithMinChunkLength(t *testing.T) {
 	srv := newEmbeddingServer()
-	dir := t.TempDir()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
+	dir := useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	handling := func(values map[string]string) string {
 		t.Helper()
 		values["source"], values["model"] = "local", model.DefaultModel
@@ -127,8 +128,8 @@ func TestTheRecipeHandlingChangesWithTheProfileAndNotWithMinChunkLength(t *testi
 
 func TestAChangeOfTheProfileDropsTheLoadedModel(t *testing.T) {
 	srv := newEmbeddingServer()
-	dir := t.TempDir()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
+	dir := useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	openCount := 0
 	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
 		openCount++
@@ -152,12 +153,22 @@ func TestAChangeOfTheProfileDropsTheLoadedModel(t *testing.T) {
 
 func TestAUserProfileAddsALocalModelWithoutRecompiling(t *testing.T) {
 	srv := newEmbeddingServer()
-	dir := t.TempDir()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
-	writeFile(t, filepath.Join(dir, "mine.json"), `{"id":"owner/mine","dims":96,"maxTokens":300,"pooling":"last","onnxFile":"onnx/model.onnx","queryPrefix":"Q: "}`)
-	writeFile(t, filepath.Join(dir, "broken.json"), `{"id":`)
+	dir := useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
+	var reportedWhat string
+	var reportedErr error
+	srv.report = func(what string, err error) {
+		reportedWhat = what
+		reportedErr = err
+	}
+	writeFile(t, filepath.Join(dir, "mine.json"), `{"id":"owner/mine","dims":96,"maxTokens":300,"pooling":"last","onnxFile":"onnx/model.onnx","tokenizer":"bpe","queryPrefix":"Q: "}`)
+	brokenPath := filepath.Join(dir, "broken.json")
+	writeFile(t, brokenPath, `{"id":`)
 	srv.updateConfig(map[string]string{"source": "local", "model": "owner/mine"})
 
+	if reportedWhat != "embeddings: skipped the model profile "+brokenPath || reportedErr == nil {
+		t.Fatalf("reported = %q, %v; want skipped %s", reportedWhat, reportedErr, brokenPath)
+	}
 	info, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -169,8 +180,8 @@ func TestAUserProfileAddsALocalModelWithoutRecompiling(t *testing.T) {
 
 func TestTheModelOfAUserProfileThatWasRemovedFailsWithAClearError(t *testing.T) {
 	srv := newEmbeddingServer()
-	dir := t.TempDir()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
+	dir := useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	srv.updateConfig(map[string]string{"source": "local", "model": "owner/gone"})
 	_, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"text"})
 	if !isPrecondition(err) || !strings.Contains(err.Error(), dir) {
@@ -224,5 +235,52 @@ func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// The recipes of the curated models as they were before the tokenizer joined the handling.
+const (
+	e5RecipeBefore      = "plugin:md.numen.engines.embeddings|Xenova/multilingual-e5-small|384|512|mean|52b6c65b"
+	harrierModel        = "onnx-community/harrier-oss-v1-270m-ONNX"
+	harrierRecipeBefore = "plugin:md.numen.engines.embeddings|onnx-community/harrier-oss-v1-270m-ONNX|640|512|output|623ccc6f"
+)
+
+func newUnopenedServer(t *testing.T, profiles map[string]string) *Server {
+	t.Helper()
+	dir := useProfileFolder(t)
+	for name, content := range profiles {
+		writeFile(t, filepath.Join(dir, name), content)
+	}
+	srv := newEmbeddingServer()
+	// The model fails the test when it is opened: the recipe is read from the profile alone.
+	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
+		t.Error("reading the recipe opened the model")
+		return mockembedder.Embedder{}, nil
+	}
+	t.Cleanup(func() { closeServer(t, srv) })
+	return srv
+}
+
+func getRecipeOf(t *testing.T, srv *Server, name string) string {
+	t.Helper()
+	srv.updateConfig(map[string]string{"source": "local", "model": name})
+	return getModelInfoOf(t, srv).GetRecipe()
+}
+
+func TestTheRecipeOfALocalModelChangesWithTheVersionOfItsTokenizer(t *testing.T) {
+	unigram := getRecipeOf(t, newUnopenedServer(t, nil), model.DefaultModel)
+	if unigram == e5RecipeBefore {
+		t.Errorf("a model whose profile names the Unigram tokenizer kept the recipe %s it had before", unigram)
+	}
+
+	e5 := map[string]string{"e5.json": `{"id":"Xenova/multilingual-e5-small","tokenizer":"bpe"}`}
+	if bpe := getRecipeOf(t, newUnopenedServer(t, e5), model.DefaultModel); bpe != e5RecipeBefore {
+		t.Errorf("the profile that reads E5 with BPE gives the recipe %s, want %s as before", bpe, e5RecipeBefore)
+	}
+}
+
+func TestALocalModelWhoseTokenizerHasNoVersionKeepsItsRecipe(t *testing.T) {
+	if got := getRecipeOf(t, newUnopenedServer(t, nil), harrierModel); got != harrierRecipeBefore {
+		t.Errorf("recipe = %s, want %s as before", got, harrierRecipeBefore)
 	}
 }

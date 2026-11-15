@@ -8,13 +8,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/testsupport"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/texts"
 )
 
 const pluginID = "md.numen.readers.epub"
 
-func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *texts.Writer) {
+func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Vault, *hosttest.Texts, *texts.Writer) {
 	t.Helper()
 	files := hosttest.New("vault")
 	files.File(name, string(raw))
@@ -27,11 +27,11 @@ func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *text
 		func(id domain.VaultID) host.StoreWriter { return files.Store().With(id) },
 		hosttest.NewQueue(), func(string, error) {})
 	t.Cleanup(writer.Close)
-	return versions, writer
+	return files, versions, writer
 }
 
 func TestTheHandlerOfCreateTextWritesTheTextOfTheBook(t *testing.T) {
-	versions, writer := newTextVault(t, "book.epub", testsupport.CreateImageEpub(t))
+	_, versions, writer := newTextVault(t, "book.epub", testsupport.CreateImageEpub(t))
 	commands, err := newCommands(writer)
 	if err != nil {
 		t.Fatal(err)
@@ -53,14 +53,21 @@ func TestTheHandlerOfCreateTextWritesTheTextOfTheBook(t *testing.T) {
 }
 
 func TestTheHandlerOfCreateTextNeedsABook(t *testing.T) {
-	_, writer := newTextVault(t, "book.epub", testsupport.CreateImageEpub(t))
+	files, _, writer := newTextVault(t, "book.epub", testsupport.CreateImageEpub(t))
 	commands, err := newCommands(writer)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "other"}); !errors.Is(err, command.ErrUnknownCommand) {
+		t.Errorf("unknown command answered %v, want ErrUnknownCommand", err)
+	}
 	_, err = commands.RunCommand(t.Context(), command.Request{Command: command.CreateText})
 	if !errors.Is(err, command.ErrBadArguments) {
 		t.Errorf("a run over no file answered %v, want ErrBadArguments", err)
+	}
+	files.Hide()
+	if _, err := commands.RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: "book.epub"}); err == nil {
+		t.Error("expected error when active vault is hidden")
 	}
 }

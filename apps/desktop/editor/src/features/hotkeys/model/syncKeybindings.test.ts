@@ -31,11 +31,13 @@ const TARGET = { path: 'Tides.md', title: 'Tides', isFolder: false, others: [], 
 const create = (list?: readonly DeclaredKeybinding[]) => {
   const window = { 'window.isFieldFocused': false }
   const host = createPluginHost({
-    target: 'desktop.editor',
-    registerKind: () => () => undefined,
-    registerExtensionReader: () => () => undefined,
-    openTab: async () => 'tab-1',
-    getSlotWhenValues: (target) => getWhenValues({ window, target, contentTypes: {} }),
+    window: { target: 'desktop.editor' },
+    kinds: {
+      registerKind: () => () => undefined,
+      registerExtensionReader: () => () => undefined,
+    },
+    tabs: { openTab: async () => 'tab-1' },
+    slots: { getSlotWhenValues: (target) => getWhenValues({ window, target, contentTypes: {} }) },
   })
   const keybindings = ref<readonly DeclaredKeybinding[] | undefined>(list)
   const plugins = ref<readonly object[]>([])
@@ -97,11 +99,44 @@ describe('the keybindings of the plugins the core lists', () => {
   })
 
   it('keep the keys as a plugin starts or stops', async () => {
-    const one = create([REVEAL_L])
+    const registerKeybindings = vi.fn()
+    const unregisterKeybindings = vi.fn()
+    const keybindings = ref<readonly DeclaredKeybinding[] | undefined>([REVEAL_L, OPEN_T])
+    const plugins = ref<readonly object[]>([])
+    syncKeybindings({ registerKeybindings, unregisterKeybindings }, keybindings, plugins)
 
-    one.plugins.value = [{ id: LEDGER, isActive: true }]
+    expect(registerKeybindings).toHaveBeenCalledTimes(2)
+    registerKeybindings.mockClear()
+
+    keybindings.value = [OPEN_T]
     await nextTick()
+    expect(unregisterKeybindings).toHaveBeenCalledExactlyOnceWith(LEDGER)
+    expect(registerKeybindings).toHaveBeenCalledExactlyOnceWith('org.example.tide', [
+      {
+        key: 'mod+t',
+        command: 'app:file.open',
+        values: { placement: 'split' },
+        pluginId: 'org.example.tide',
+      },
+    ])
 
-    expect(one.press('KeyL', { ctrlKey: true })).toBe(true)
+    registerKeybindings.mockClear()
+    plugins.value = [{ id: 'org.example.tide', isActive: true }]
+    await nextTick()
+    expect(registerKeybindings).toHaveBeenCalledExactlyOnceWith('org.example.tide', [
+      {
+        key: 'mod+t',
+        command: 'app:file.open',
+        values: { placement: 'split' },
+        pluginId: 'org.example.tide',
+      },
+    ])
+
+    const registerWithoutPlugins = vi.fn()
+    syncKeybindings(
+      { registerKeybindings: registerWithoutPlugins, unregisterKeybindings: vi.fn() },
+      ref([REVEAL_L]),
+    )
+    expect(registerWithoutPlugins).toHaveBeenCalledOnce()
   })
 })

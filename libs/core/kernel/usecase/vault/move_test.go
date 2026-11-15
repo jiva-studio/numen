@@ -12,8 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -34,13 +34,17 @@ type filing struct {
 
 func openFiling(t *testing.T, notes map[string]string) filing {
 	t.Helper()
-	v := vaultfixture.NewVault(t, notes)
+	v := vaulttest.NewVault(t, notes)
 	db := openIndex(t)
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	readers := &countingReaders{VaultReaders: vaultreader.Readers{}}
-	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.NewClock())
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.NewClock(),
+		Ledger: vaults.NewLedger(),
+	})
 	return filing{
 		db:      db,
 		vault:   v,
@@ -104,7 +108,7 @@ func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 		"ByName.md":          "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# By name\n",
 		"ByPath.md":          "---\nlinks:\n  - to: physics/Heat.md\n    role: parent\n---\n# By path\n",
 	})
-	vaultfixture.WriteBook(t, f.vault.Path, "physics/A Book.epub")
+	vaulttest.WriteBook(t, f.vault.Path, "physics/A Book.epub")
 	byName := f.read(t, "ByName.md")
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "physics", "science/physics")
@@ -233,7 +237,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Source != "science/physics/Entropy.md" {
+	if len(found) != 1 || found[0].Path != "science/physics/Entropy.md" {
 		t.Errorf("the passages of the note that moved are %+v", found)
 	}
 	if got := f.resolves(t, "science/physics/heat/Heat.md"); got != "science/physics/Entropy.md" {
@@ -272,7 +276,7 @@ func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 func TestABookMovesOnItsOwn(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	vaultfixture.WriteBook(t, f.vault.Path, "A Book.epub")
+	vaulttest.WriteBook(t, f.vault.Path, "A Book.epub")
 
 	if _, err := f.move().Execute(t.Context(), f.vault, "A Book.epub", "library/A Book.epub"); err != nil {
 		t.Fatal(err)

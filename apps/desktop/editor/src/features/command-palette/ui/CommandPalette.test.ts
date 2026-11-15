@@ -8,7 +8,7 @@ import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from '../model/palette/runSupport'
 import { createCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type SearchDeps } from '../model/search/search'
-import type { Passage } from '../model/search/lookup'
+import type { SearchResult } from '../model/search/lookup'
 import type { CommandDeps } from '@/shared/model/command'
 import { createCommandRegistry } from '@/shared/model/command'
 import type { CommandTarget } from '@/shared/model/command'
@@ -60,7 +60,7 @@ const heading: NameMatch = {
 
 const byName: NameMatch = { ...heading, heading: '', line: -1 }
 
-const notePassage: Passage = {
+const noteResult: SearchResult = {
   path: 'reef/Coral.md',
   title: 'Coral',
   isNote: true,
@@ -69,12 +69,12 @@ const notePassage: Passage = {
   text: 'polyps build the reef',
   start: 12,
   length: 4,
-  line: 3,
-  at: [],
+  matchLine: 3,
+  matchRanges: [],
 }
 
-const bookPassage: Passage = {
-  ...notePassage,
+const bookResult: SearchResult = {
+  ...noteResult,
   path: 'books/Atlas.pdf',
   title: '',
   isNote: false,
@@ -87,13 +87,13 @@ const flushPromises = async () => {
 }
 
 async function mountField(
-  found: { names?: NameMatch[]; passages?: Passage[] },
+  found: { names?: NameMatch[]; searchResults?: SearchResult[] },
   text: string,
   showSilence = false,
 ) {
   const core: SearchDeps = {
     names: async () => found.names ?? [],
-    search: async (_query, mode) => (mode === 'words' ? (found.passages ?? []) : []),
+    search: async (_query, mode) => (mode === 'words' ? (found.searchResults ?? []) : []),
   }
   const search = useSearch(core, words, {
     wait: now,
@@ -138,7 +138,7 @@ async function mountField(
 
 describe('choosing an action of a row of the search', () => {
   it('runs the choice the search answers for every action of every row, and nothing else', async () => {
-    const found = { names: [byName, heading], passages: [notePassage, bookPassage] }
+    const found = { names: [byName, heading], searchResults: [noteResult, bookResult] }
     const choices = (await mountField(found, 'coral')).rows.flatMap((row) =>
       row.actions.map((action) => [row.item, action] as const),
     )
@@ -157,7 +157,7 @@ describe('choosing an action of a row of the search', () => {
   })
 
   it('runs the command that opens a document over its file for the action of a document', async () => {
-    const one = await mountField({ passages: [bookPassage] }, 'reef')
+    const one = await mountField({ searchResults: [bookResult] }, 'reef')
     const row = one.rows.find((each) => each.item.includes('books/Atlas.pdf'))
     expect(row).toBeDefined()
 
@@ -171,7 +171,7 @@ describe('choosing an action of a row of the search', () => {
   })
 
   it('closes the search once and runs the choice once', async () => {
-    const one = await mountField({ passages: [bookPassage] }, 'reef')
+    const one = await mountField({ searchResults: [bookResult] }, 'reef')
     const row = one.rows.find((each) => each.item.includes('books/Atlas.pdf'))
     expect(row).toBeDefined()
     expect(one.search.open.value).toBe(true)
@@ -183,7 +183,7 @@ describe('choosing an action of a row of the search', () => {
   })
 
   it('runs nothing for an action the row does not carry', async () => {
-    const one = await mountField({ passages: [bookPassage] }, 'reef')
+    const one = await mountField({ searchResults: [bookResult] }, 'reef')
     const row = one.rows.find((each) => each.item.includes('books/Atlas.pdf'))
     expect(row).toBeDefined()
 
@@ -221,21 +221,45 @@ describe('choosing an action that creates a note on a row of the search', () => 
 describe('choosing a row of the commands', () => {
   it('runs the invocation of the command with the deps of the window and no choice of a result', async () => {
     const one = await mountField({}, 'x')
+    expect(one.field.findComponent(Palette).props('step')).toBe('')
+    expect(one.field.findComponent(Palette).props('opensOn')).toBe('')
     one.search.setOpen(false)
     one.commands.palette.setOpen(true)
+    await flushPromises()
+    expect(one.field.findComponent(Palette).props('isBusy')).toBe(false)
 
     await one.choose(COPY_PATH, COPY_PATH)
 
+    expect(one.commands.palette.open.value).toBe(false)
     expect(copyPath).toHaveBeenCalledTimes(1)
     expect(one.runChoice).not.toHaveBeenCalled()
+  })
+
+  it('switches to commands when > is typed into an empty search and closes search on dismiss', async () => {
+    const one = await mountField({}, '')
+    expect(one.search.open.value).toBe(true)
+    expect(one.commands.palette.open.value).toBe(false)
+
+    one.field.findComponent(Palette).vm.$emit('dismiss')
+    expect(one.search.open.value).toBe(false)
+    expect(one.commands.palette.open.value).toBe(false)
+
+    one.search.setOpen(true)
+    one.field.findComponent(Palette).vm.$emit('update:modelValue', '>')
+    expect(one.search.open.value).toBe(false)
+    expect(one.commands.palette.open.value).toBe(true)
+
+    one.field.findComponent(Palette).vm.$emit('back')
+    expect(one.commands.palette.open.value).toBe(false)
+    expect(one.search.open.value).toBe(true)
   })
 })
 
 describe('the highlight of the search menu as groups answer', () => {
   it('keeps the highlight on the selected row when another search group answers', async () => {
     const names = [createDeferred<NameMatch[]>(), createDeferred<NameMatch[]>()]
-    const wordsGroup = [createDeferred<Passage[]>(), createDeferred<Passage[]>()]
-    const meaningGroup = [createDeferred<Passage[]>(), createDeferred<Passage[]>()]
+    const wordsGroup = [createDeferred<SearchResult[]>(), createDeferred<SearchResult[]>()]
+    const meaningGroup = [createDeferred<SearchResult[]>(), createDeferred<SearchResult[]>()]
     const holds = [createDeferred<void>(), createDeferred<void>()]
     let namesTurn = 0
     let wordsTurn = 0
@@ -282,8 +306,8 @@ describe('the highlight of the search menu as groups answer', () => {
       holds[0]!.answer()
       await flushPromises()
       names[0]!.answer([byName, heading])
-      wordsGroup[0]!.answer([notePassage])
-      meaningGroup[0]!.answer([bookPassage])
+      wordsGroup[0]!.answer([noteResult])
+      meaningGroup[0]!.answer([bookResult])
       await flushPromises()
 
       await field.get('input[type="text"]').setValue('entropy')
@@ -310,12 +334,12 @@ describe('the highlight of the search menu as groups answer', () => {
 
       expect(selectedTitle()).toBe('Thermodynamics')
 
-      wordsGroup[1]!.answer([notePassage])
+      wordsGroup[1]!.answer([noteResult])
       await flushPromises()
 
       expect(selectedTitle()).toBe('Thermodynamics')
 
-      meaningGroup[1]!.answer([bookPassage])
+      meaningGroup[1]!.answer([bookResult])
       await flushPromises()
 
       expect(selectedTitle()).toBe('Thermodynamics')
@@ -334,7 +358,7 @@ describe('the empty state of the search', () => {
   })
 
   it('is absent while results exist', async () => {
-    const one = await mountField({ passages: [bookPassage] }, 'reef', true)
+    const one = await mountField({ searchResults: [bookResult] }, 'reef', true)
 
     expect(one.field.find('[data-palette="nothing-text"]').exists()).toBe(false)
     expect(one.field.find('[data-palette="nothing-icon"]').exists()).toBe(false)
@@ -343,10 +367,10 @@ describe('the empty state of the search', () => {
 
 describe('the spinner of the search field', () => {
   it('turns while the meaning of the query is out and stops once it answers', async () => {
-    const meaning = createDeferred<readonly Passage[]>()
+    const meaning = createDeferred<readonly SearchResult[]>()
     const core: SearchDeps = {
       names: async () => [],
-      search: async (_query, mode) => (mode === 'meaning' ? meaning.promise : [notePassage]),
+      search: async (_query, mode) => (mode === 'meaning' ? meaning.promise : [noteResult]),
     }
     const search = useSearch(core, words, { wait: now })
     const commands = createCommandPalette({

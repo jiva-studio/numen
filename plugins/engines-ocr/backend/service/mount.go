@@ -47,7 +47,7 @@ func Mount(s *server.Server) error {
 		Store:     func(id domain.VaultID) recognition.Folder { return store.With(id) },
 		Texts:     func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		Queue:     queue,
-		Documents: document.NewReader(),
+		Documents: document.NewCachedReader(),
 		Report:    env.ReportError,
 	}, holder)
 }
@@ -78,10 +78,7 @@ func mount(s *server.Server, h recognition.Host, holder *engines.Holder) error {
 
 func newCommands(launcher *launch.Launcher) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add(command.CreateText, newRecognizeCommand(launcher)); err != nil {
-		return nil, err
-	}
-	return commands, nil
+	return commands, commands.Add(command.CreateText, newRecognizeCommand(launcher))
 }
 
 func newRecognizeCommand(launcher *launch.Launcher) command.Run {

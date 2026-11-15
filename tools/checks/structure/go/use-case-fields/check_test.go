@@ -15,7 +15,7 @@ import (
 
 // A use case or service across the repository is made with everything it needs, or it is not made.
 func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
-	for _, one := range getUseCases(t) {
+	for _, one := range getUseCases(t, filepath.Join("..", "usecase")) {
 		t.Error(one + ": a use case is made with what it needs, and not given it afterwards")
 	}
 	roots := []string{"../adapter", "../internal", "../../../note", "../../../../plugins"}
@@ -42,6 +42,26 @@ func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 	}
 }
 
+func TestUseCaseRule_ReadsNestedUseCasePackages(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"usecase/vault/registry/find.go": `package registry
+
+type Find struct {
+	Lookup port.VaultLookup
+}
+
+func NewFind(lookup port.VaultLookup) Find {
+	return Find{Lookup: lookup}
+}
+`,
+	})
+	found := getUseCases(t, filepath.Join(dir, "usecase"))
+	want := []string{"usecase/vault/registry/find.go Find exposes Lookup"}
+	if !slices.Equal(found, want) {
+		t.Errorf("the rule finds %v, want %v", found, want)
+	}
+}
+
 // constructor also takes, and not the ones it does not.
 func TestUseCaseRule_RejectsUnusedPortFields(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "held.go", `package p
@@ -61,11 +81,11 @@ type Write struct {
 }
 
 type Search struct {
-	Passages port.PassageQueries
+	Queries port.LexicalQueries
 }
 
-func NewOver(passages port.PassageQueries) Search {
-	return Search{Passages: passages}
+func NewOver(queries port.LexicalQueries) Search {
+	return Search{Queries: queries}
 }
 
 type Level struct {
@@ -88,7 +108,7 @@ func NewLevel(name string) Level {
 	// no constructor to promise anything. Search is reached through a
 	// constructor not named after it.
 	slices.Sort(violations)
-	if !slices.Equal(violations, []string{"Read: Readers", "Search: Passages"}) {
+	if !slices.Equal(violations, []string{"Read: Readers", "Search: Queries"}) {
 		t.Errorf("the rule rejects %v, want the one collaborator left in the open", violations)
 	}
 }

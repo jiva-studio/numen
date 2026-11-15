@@ -24,7 +24,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	noteusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -546,7 +549,7 @@ func unwritten(t *testing.T, notes map[string]string) *going {
 
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
-	f.cases.Notes.Edit.Write = container.Notes(f.cfg, f.index, refuseToUpdate).Edit.Write
+	f.cases.Notes.Edit.Write = noteusecase.NewWrite(vaultreader.Readers{}, newVaultWriters(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
 	return f
 }
 
@@ -622,7 +625,8 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 
 	// The index stays behind until a later write updates it, and that write
 	// reports the state.
-	f.cases.Notes.Edit.Write = container.Notes(f.cfg, f.index, func(context.Context, domain.Vault, []string) error { return nil }).Edit.Write
+	updated := func(context.Context, domain.Vault, []string) error { return nil }
+	f.cases.Notes.Edit.Write = noteusecase.NewWrite(vaultreader.Readers{}, newVaultWriters(), updated, testsupport.NewClock(), testsupport.OpenGate{})
 	save()
 	if offset := findUpdateIndexTask(t, f); offset != nil {
 		t.Errorf("the index came level and the user is still shown %+v", offset)
@@ -657,7 +661,7 @@ func findUpdateIndexTask(t *testing.T, f *going) *v1.Task {
 func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
-	f.cases.Notes.Edit.Create = container.Notes(f.cfg, f.index, refuseToUpdate).Edit.Create
+	f.cases.Notes.Edit.Create = noteusecase.NewCreate(newVaultWriters(), f.index.NoteQueries(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -683,7 +687,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 			"# Entropy\n",
 	})
 	waitForScan(t, f)
-	f.cases.Notes.Place.Remove = container.Notes(f.cfg, f.index, refuseToUpdate).Place.Remove
+	f.cases.Notes.Place.Remove = noteusecase.NewRemove(newVaultWriters(), f.index.NoteQueries(), f.index.Sources(), f.index.Sources(), refuseToUpdate, testsupport.OpenGate{})
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",
@@ -749,8 +753,8 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Error("the note saved through the window is not found")
 	}
 	for _, p := range found {
-		if p.Source != "Kept.md" {
-			t.Errorf("the search answered with %s, and only Kept.md holds the word", p.Source)
+		if p.Path != "Kept.md" {
+			t.Errorf("the search answered with %s, and only Kept.md holds the word", p.Path)
 		}
 	}
 }
@@ -1031,14 +1035,14 @@ func TestAWindowActiveOnNothingSearchesNothing(t *testing.T) {
 		t.Errorf("a window standing on nothing knows the names %+v", found)
 	}
 
-	found, err := f.vault.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
+	found, err := f.vault.SearchText(t.Context(), connect.NewRequest(&v1.SearchTextRequest{
 		Query: "one", Mode: v1.SearchMode_SEARCH_MODE_HYBRID,
 	}))
 	if err != nil {
 		t.Fatalf("the vault cannot be searched: %v", err)
 	}
-	if passages := found.Msg.GetFound(); len(passages) != 0 {
-		t.Errorf("a window standing on nothing holds the text %+v", passages)
+	if results := found.Msg.GetFound(); len(results) != 0 {
+		t.Errorf("a window standing on nothing holds the text %+v", results)
 	}
 }
 
@@ -1110,4 +1114,8 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 	case !found || string(last.ID) != added.Msg.GetVault().GetId():
 		t.Errorf("the list says the vault opened last is %+v", last)
 	}
+}
+
+func newVaultWriters() vaultwriter.VaultWriters {
+	return vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 }

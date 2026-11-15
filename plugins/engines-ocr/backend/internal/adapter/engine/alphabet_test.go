@@ -1,9 +1,13 @@
 package engine
 
 import (
+	"bytes"
 	"encoding/binary"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
@@ -51,25 +55,40 @@ func appendBytesField(dst []byte, field int, payload []byte) []byte {
 func TestAlphabetReadsMetadataAndHandlesErrors(t *testing.T) {
 	dir := t.TempDir()
 	missingDict := filepath.Join(dir, "missing-dict.txt")
-	if gotClasses, _, err := alphabet("model.onnx", settings.RecognizerModel{Dict: missingDict}); err == nil || gotClasses != 0 {
-		t.Fatalf("missing dict returned (%d, %v), want error", gotClasses, err)
+	if gotClasses, _, err := alphabet("model.onnx", settings.RecognizerModel{Dict: missingDict}); !errors.Is(err, os.ErrNotExist) || gotClasses != 0 {
+		t.Fatalf("missing dict returned (%d, %v), want os.ErrNotExist", gotClasses, err)
 	}
+	if gotClasses, _, err := alphabet(filepath.Join(dir, "missing-model.onnx"), settings.RecognizerModel{}); !errors.Is(err, os.ErrNotExist) || gotClasses != 0 {
+		t.Fatalf("missing model returned (%d, %v), want os.ErrNotExist", gotClasses, err)
+	}
+
+	var wrong13 []byte
+	wrong13 = appendBytesField(wrong13, 1, []byte(alphabetKey))
+	wrong13 = appendBytesField(wrong13, 2, []byte("wrong13\n"))
+
+	var wrong15 []byte
+	wrong15 = appendBytesField(wrong15, 1, []byte(alphabetKey))
+	wrong15 = appendBytesField(wrong15, 2, []byte("wrong15\n"))
+
+	var noKeyEntry []byte
+	noKeyEntry = appendBytesField(noKeyEntry, 2, []byte("no-key\n"))
 
 	var entry []byte
 	entry = appendTag(entry, 0, 0)
 	entry = binary.AppendUvarint(entry, 1)
-	entry = appendBytesField(entry, keyField, []byte(alphabetKey))
-	entry = appendBytesField(entry, valueField, []byte("x\ny\n"))
+	entry = appendBytesField(entry, 1, []byte(alphabetKey))
+	entry = appendBytesField(entry, 2, []byte("x\ny\n"))
 	entry = appendBytesField(entry, 3, []byte("ignored"))
 
 	var modelBytes []byte
-	modelBytes = appendTag(modelBytes, 13, 0)
-	modelBytes = binary.AppendUvarint(modelBytes, 42)
-	modelBytes = appendTag(modelBytes, 15, 1)
-	modelBytes = append(modelBytes, make([]byte, 8)...)
+	modelBytes = appendBytesField(modelBytes, 13, wrong13)
+	modelBytes = appendBytesField(modelBytes, 15, wrong15)
+	modelBytes = appendTag(modelBytes, 1, 1)
+	modelBytes = append(modelBytes, bytes.Repeat([]byte{0xff}, 8)...)
 	modelBytes = appendTag(modelBytes, 3, 5)
-	modelBytes = append(modelBytes, make([]byte, 4)...)
-	modelBytes = appendBytesField(modelBytes, metadataField, entry)
+	modelBytes = append(modelBytes, bytes.Repeat([]byte{0xff}, 4)...)
+	modelBytes = appendBytesField(modelBytes, 14, noKeyEntry)
+	modelBytes = appendBytesField(modelBytes, 14, entry)
 
 	modelPath := filepath.Join(dir, "model.onnx")
 	if err := os.WriteFile(modelPath, modelBytes, 0o600); err != nil {
@@ -81,7 +100,12 @@ func TestAlphabetReadsMetadataAndHandlesErrors(t *testing.T) {
 		t.Fatalf("alphabet from metadata = (%d, %q, %v), want (4, ..., nil)", classes, written, err)
 	}
 
+	if _, err := readMetadata(modelPath, "absent-key"); err == nil || !strings.Contains(err.Error(), `no "absent-key" in the model's metadata`) {
+		t.Fatalf("readMetadata(absent-key) = %v, want missing key error", err)
+	}
+
 	for _, bad := range [][]byte{
+		{0x80},
 		append(appendTag(nil, 1, 1), 1, 2, 3),
 		append(appendTag(nil, 1, 5), 1, 2),
 		append(appendTag(nil, 1, 2), 10, 1, 2),
@@ -97,7 +121,72 @@ func TestAlphabetReadsMetadataAndHandlesErrors(t *testing.T) {
 	}
 
 	t.Setenv("TMPDIR", filepath.Join(dir, "no-such-tmp"))
-	if gotClasses, _, err := alphabet(modelPath, settings.RecognizerModel{}); err == nil || gotClasses != 0 {
-		t.Fatalf("alphabet with invalid TMPDIR = (%d, %v), want error", gotClasses, err)
+	var pathErr *fs.PathError
+	if gotClasses, _, err := alphabet(modelPath, settings.RecognizerModel{}); !errors.As(err, &pathErr) || gotClasses != 0 {
+		t.Fatalf("alphabet with invalid TMPDIR = (%d, %v), want *fs.PathError", gotClasses, err)
+	}
+}
+
+func TestParseTagReadPayloadAndParseEntryBoundaries(t *testing.T) {
+	overflowVarint := append(bytes.Repeat([]byte{0x80}, 10), 0x02)
+
+	for _, raw := range [][]byte{nil, {0x80}, overflowVarint} {
+		if field, wire, n, ok := parseTag(raw); ok || field != 0 || wire != 0 || n != 0 {
+			t.Fatalf("parseTag(%x) = (%d, %d, %d, %v), want (0, 0, 0, false)", raw, field, wire, n, ok)
+		}
+	}
+	if field, wire, n, ok := parseTag([]byte{(14 << 3) | 5}); !ok || field != 14 || wire != 5 || n != 1 {
+		t.Fatalf("parseTag(14, 5) = (%d, %d, %d, %v), want (14, 5, 1, true)", field, wire, n, ok)
+	}
+
+	if payload, n, ok := readPayload(nil, 0); ok || payload != nil || n != 0 {
+		t.Fatalf("readPayload(nil, 0) = (%x, %d, %v)", payload, n, ok)
+	}
+	if payload, n, ok := readPayload(overflowVarint, 0); ok || payload != nil || n != 0 {
+		t.Fatalf("readPayload(overflow, 0) = (%x, %d, %v)", payload, n, ok)
+	}
+	if payload, n, ok := readPayload([]byte{0x05}, 0); !ok || payload != nil || n != 1 {
+		t.Fatalf("readPayload(0x05, 0) = (%x, %d, %v), want (nil, 1, true)", payload, n, ok)
+	}
+
+	if payload, n, ok := readPayload(make([]byte, 7), 1); ok || payload != nil || n != 0 {
+		t.Fatalf("readPayload(7 bytes, 1) = (%x, %d, %v)", payload, n, ok)
+	}
+	if payload, n, ok := readPayload(make([]byte, 8), 1); !ok || payload != nil || n != 8 {
+		t.Fatalf("readPayload(8 bytes, 1) = (%x, %d, %v), want (nil, 8, true)", payload, n, ok)
+	}
+
+	if payload, n, ok := readPayload(nil, 2); ok || payload != nil || n != 0 {
+		t.Fatalf("readPayload(nil, 2) = (%x, %d, %v)", payload, n, ok)
+	}
+	if payload, n, ok := readPayload(overflowVarint, 2); ok || payload != nil || n != 0 {
+		t.Fatalf("readPayload(overflow, 2) = (%x, %d, %v)", payload, n, ok)
+	}
+	if payload, n, ok := readPayload([]byte{2, 'a'}, 2); ok || payload != nil || n != 0 {
+		t.Fatalf("readPayload(truncated, 2) = (%x, %d, %v)", payload, n, ok)
+	}
+	if payload, n, ok := readPayload([]byte{3, 'a', 'b', 'c'}, 2); !ok || string(payload) != "abc" || n != 4 {
+		t.Fatalf("readPayload(abc, 2) = (%q, %d, %v), want (\"abc\", 4, true)", payload, n, ok)
+	}
+
+	if payload, n, ok := readPayload(make([]byte, 3), 5); ok || payload != nil || n != 0 {
+		t.Fatalf("readPayload(3 bytes, 5) = (%x, %d, %v)", payload, n, ok)
+	}
+	if payload, n, ok := readPayload(make([]byte, 4), 5); !ok || payload != nil || n != 4 {
+		t.Fatalf("readPayload(4 bytes, 5) = (%x, %d, %v), want (nil, 4, true)", payload, n, ok)
+	}
+
+	if payload, n, ok := readPayload(make([]byte, 8), 3); ok || payload != nil || n != 0 {
+		t.Fatalf("readPayload(wire 3) = (%x, %d, %v)", payload, n, ok)
+	}
+
+	if key, val, ok := parseEntry([]byte{0x80}); ok || key != "" || val != "" {
+		t.Fatalf("parseEntry(bad tag) = (%q, %q, %v)", key, val, ok)
+	}
+	if key, val, ok := parseEntry(append(appendTag(nil, 1, 2), 5, 'a')); ok || key != "" || val != "" {
+		t.Fatalf("parseEntry(bad payload) = (%q, %q, %v)", key, val, ok)
+	}
+	if key, val, ok := parseEntry(appendBytesField(nil, 2, []byte("only-value"))); ok || key != "" || val != "only-value" {
+		t.Fatalf("parseEntry(no key) = (%q, %q, %v), want (\"\", \"only-value\", false)", key, val, ok)
 	}
 }

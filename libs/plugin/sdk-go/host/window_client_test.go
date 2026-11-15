@@ -21,11 +21,11 @@ import (
 // windowHost returns HostWindowService with fixed values and records the requests.
 type windowHost struct {
 	numenv1connect.UnimplementedHostWindowServiceHandler
-	code       v1.HostWindowErrorCode
-	status     *connect.Error
-	authHeader string
-	notes      []*v1.FocusNoteRequest
-	passages   []*v1.FocusPassagesRequest
+	code          v1.HostWindowErrorCode
+	status        *connect.Error
+	authHeader    string
+	notes         []*v1.FocusNoteRequest
+	focusRequests []*v1.FocusFileRequest
 }
 
 func (h *windowHost) FocusNote(_ context.Context, req *connect.Request[v1.FocusNoteRequest]) (*connect.Response[v1.FocusNoteResponse], error) {
@@ -40,16 +40,16 @@ func (h *windowHost) FocusNote(_ context.Context, req *connect.Request[v1.FocusN
 	return connect.NewResponse(&v1.FocusNoteResponse{Path: req.Msg.GetPath(), Title: "Gray Heron", Id: "01J8HERON0000000000000000"}), nil
 }
 
-func (h *windowHost) FocusPassages(_ context.Context, req *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error) {
+func (h *windowHost) FocusFile(_ context.Context, req *connect.Request[v1.FocusFileRequest]) (*connect.Response[v1.FocusFileResponse], error) {
 	h.authHeader = req.Header().Get("Authorization")
-	h.passages = append(h.passages, req.Msg)
+	h.focusRequests = append(h.focusRequests, req.Msg)
 	if h.status != nil {
 		return nil, h.status
 	}
 	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
-		return connect.NewResponse(&v1.FocusPassagesResponse{Error: h.code}), nil
+		return connect.NewResponse(&v1.FocusFileResponse{Error: h.code}), nil
 	}
-	return connect.NewResponse(&v1.FocusPassagesResponse{}), nil
+	return connect.NewResponse(&v1.FocusFileResponse{}), nil
 }
 
 func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error) {
@@ -64,9 +64,9 @@ func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.Hos
 		ActiveId: "tab-2",
 		Tabs: []*v1.OpenTab{
 			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
-			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &v1.TabPlace{Page: 4, PageCount: 80}},
-			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &v1.TabPlace{PositionSeconds: new(float64)}},
-			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &v1.TabPlace{Cfi: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: `{"page":4,"pageCount":80}`},
+			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: `{"positionSeconds":0}`},
+			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 		},
 	}), nil
 }
@@ -97,18 +97,18 @@ func TestClientFocusesANoteAndReadsWhatTheHostFocused(t *testing.T) {
 	}
 }
 
-func TestClientSendsThePassagesInTheirOrder(t *testing.T) {
+func TestClientSendsTheSpansInTheirOrder(t *testing.T) {
 	h := &windowHost{}
 	c := dialWindow(t, h)
 
-	if err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}); err != nil {
+	if err := c.FocusFile(t.Context(), "library/Birds.pdf", []host.ByteSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}); err != nil {
 		t.Fatal(err)
 	}
-	if len(h.passages) != 1 {
-		t.Fatalf("the host received %d times, want once", len(h.passages))
+	if len(h.focusRequests) != 1 {
+		t.Fatalf("the host received %d times, want once", len(h.focusRequests))
 	}
-	r := h.passages[0]
-	spans := r.GetPassages()
+	r := h.focusRequests[0]
+	spans := r.GetSpans()
 	if r.GetPath() != "library/Birds.pdf" || len(spans) != 2 ||
 		spans[0].GetStart() != 1500 || spans[0].GetLength() != 80 || spans[1].GetStart() != 400 || spans[1].GetLength() != 700 {
 		t.Errorf("the host received %v", r)
@@ -123,12 +123,11 @@ func TestClientReadsTheOpenTabsWithThePlaceEachReaderReported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	atStart := 0.0
 	want := []host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 4, PageCount: 80}},
-		{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &host.TabPlace{PositionSeconds: &atStart}},
-		{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: `{"page":4,"pageCount":80}`},
+		{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: `{"positionSeconds":0}`},
+		{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 	}
 	if !reflect.DeepEqual(tabs, want) || activeID != "tab-2" {
 		t.Errorf("read %s with %q active, want %s with tab-2", formatTabs(tabs), activeID, formatTabs(want))
@@ -138,14 +137,7 @@ func TestClientReadsTheOpenTabsWithThePlaceEachReaderReported(t *testing.T) {
 func formatTabs(tabs []host.OpenTab) string {
 	var b strings.Builder
 	for _, tab := range tabs {
-		fmt.Fprintf(&b, "%+v", tab)
-		if tab.Place != nil {
-			fmt.Fprintf(&b, " at %+v", *tab.Place)
-			if tab.Place.PositionSeconds != nil {
-				fmt.Fprintf(&b, " (%v s)", *tab.Place.PositionSeconds)
-			}
-		}
-		b.WriteString("; ")
+		fmt.Fprintf(&b, "%+v; ", tab)
 	}
 	return b.String()
 }
@@ -166,8 +158,8 @@ func TestClientReturnsTheErrorsOfTheWindowCalls(t *testing.T) {
 			if _, err := c.FocusNote(ctx, "notes/Heron.md"); !errors.Is(err, tc.want) {
 				t.Errorf("FocusNote got %v, want %v", err, tc.want)
 			}
-			if err := c.FocusPassages(ctx, "library/Birds.pdf", nil); !errors.Is(err, tc.want) {
-				t.Errorf("FocusPassages got %v, want %v", err, tc.want)
+			if err := c.FocusFile(ctx, "library/Birds.pdf", nil); !errors.Is(err, tc.want) {
+				t.Errorf("FocusFile got %v, want %v", err, tc.want)
 			}
 			if errors.Is(tc.want, host.ErrNotExist) {
 				return
@@ -179,11 +171,11 @@ func TestClientReturnsTheErrorsOfTheWindowCalls(t *testing.T) {
 	}
 }
 
-func TestClientReturnsAnInvalidPassageAsTheHostRejectedIt(t *testing.T) {
+func TestClientReturnsAnInvalidSpanAsTheHostRejectedIt(t *testing.T) {
 	h := &windowHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New("highlight at most 8 places of one document"))}
 	c := dialWindow(t, h)
 
-	err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: -1, Length: 4}})
+	err := c.FocusFile(t.Context(), "library/Birds.pdf", []host.ByteSpan{{Start: -1, Length: 4}})
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("got %v, want the invalid argument the host returned", err)
 	}

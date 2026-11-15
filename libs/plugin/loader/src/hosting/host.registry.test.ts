@@ -5,12 +5,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost } from './host'
+import type { PluginHost } from './host'
 import { disposePluginEntry } from './registry'
-import type { PluginHostDeps } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
-const createDeps = (more: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
+const createDeps = (more: Partial<TestHostDeps> = {}): TestHostDeps => ({
   target: 'desktop.editor',
   registerKind: vi.fn(() => vi.fn()),
   registerExtensionReader: vi.fn(() => vi.fn()),
@@ -22,6 +22,7 @@ const declaring = (pluginId: string) =>
   createMockManifest(pluginId, {
     permissions: ['vault:read'],
     commands: ['count', `${pluginId}.count`],
+    handlers: ['app:file.createText'],
     readers: ['pdf', 'reader:bin', 'unprefixed', 'raw', 'none', `${pluginId}.reader`],
     tabKinds: ['custom', 'sample', `${pluginId}.kind`],
     settingsViews: ['floor'],
@@ -32,7 +33,7 @@ const COMPONENT_B = { name: 'B' }
 
 describe('a command run by its id', () => {
   it('is found under its full id, and nothing else is', async () => {
-    const host = createPluginHost(
+    const host = createTestPluginHost(
       createDeps({
         getCommandDeclarations: () => [
           {
@@ -46,7 +47,7 @@ describe('a command run by its id', () => {
     const handler = vi.fn()
     host.lifecycle
       .createContext('sample.plugin', declaring('sample.plugin'))
-      .register.command({ id: 'count', handler })
+      .plugin.register.command({ id: 'count', handler })
     const note = {
       path: 'Notes/One.md',
       title: 'One',
@@ -67,21 +68,75 @@ describe('a command run by its id', () => {
 })
 
 describe('registrations of a plugin', () => {
-  it('leaves the registrations of other plugins when one plugin is disposed', () => {
-    const host = createPluginHost(createDeps())
+  it('leaves the registrations of other plugins when one plugin is disposed', async () => {
+    const host = createTestPluginHost(
+      createDeps({
+        getCommandDeclarations: () => [
+          { pluginId: 'first.plugin', id: 'first.plugin.count', title: 'First' },
+          { pluginId: 'second.plugin', id: 'second.plugin.count', title: 'Second' },
+        ],
+        getHandlerDeclarations: () => [
+          {
+            pluginId: 'first.plugin',
+            command: 'app:file.createText',
+            title: 'First H',
+            hasItems: false,
+          },
+          {
+            pluginId: 'second.plugin',
+            command: 'app:file.createText',
+            title: 'Second H',
+            hasItems: false,
+          },
+        ],
+      }),
+    )
     const handler = vi.fn()
+    const vaultCalls: string[] = []
+    const fileCalls: string[] = []
     for (const pluginId of ['first.plugin', 'second.plugin']) {
       host.lifecycle.registerManifest(pluginId, declaring(pluginId))
       const ctx = host.lifecycle.createContext(pluginId)
-      ctx.register.command({ id: `${pluginId}.count`, handler })
-      ctx.register.reader({ id: `${pluginId}.reader`, title: pluginId, component: STUB_COMPONENT })
-      ctx.register.tabKind({ kind: `${pluginId}.kind`, component: {} })
+      ctx.plugin.register.command({ id: `${pluginId}.count`, handler })
+      ctx.plugin.register.command({
+        id: 'app:file.createText',
+        handler: vi.fn(),
+        listItems: () => [{ id: 'item', title: pluginId }],
+      })
+      ctx.plugin.register.reader({
+        id: `${pluginId}.reader`,
+        title: pluginId,
+        component: STUB_COMPONENT,
+      })
+      ctx.plugin.register.tabKind({ kind: `${pluginId}.kind`, component: {} })
+      ctx.host.events.onVaultChange(() => {
+        vaultCalls.push(pluginId)
+      })
+      ctx.host.events.onFileSelect(() => {
+        fileCalls.push(pluginId)
+      })
     }
 
+    host.lifecycle.markPluginStarting('first.plugin')
     host.lifecycle.disposePlugin('first.plugin')
-    expect(host.lifecycle.createContext('first.plugin').plugin.hasPermission?.('vault:read')).toBe(
-      false,
-    )
+
+    expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
+      'second.plugin:second.plugin.count',
+    ])
+    expect(
+      await host.commands.listCommandItems('app:file.createText', {
+        path: 'a.md',
+        title: 'a',
+        isFolder: false,
+        others: [],
+        tab: '',
+      }),
+    ).toStrictEqual([{ id: 'second.plugin:item', title: 'second.plugin', group: 'second.plugin' }])
+    host.notifyVaultChange({ vaultPath: '/v' })
+    host.contextHost.events.emitFileSelect('second.plugin', { path: 'a.md' })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(vaultCalls).toStrictEqual(['second.plugin'])
+    expect(fileCalls).toStrictEqual(['second.plugin'])
 
     expect(host.registered.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
       'second.plugin.count',
@@ -92,10 +147,13 @@ describe('registrations of a plugin', () => {
     expect(host.registered.getRegisteredTabKinds().map((one) => one.kind)).toStrictEqual([
       'second.plugin.kind',
     ])
+    expect(
+      host.lifecycle.createContext('first.plugin').plugin.identity.hasPermission?.('vault:read'),
+    ).toBe(false)
   })
 
   it('disposes orphan entries across all registries on disposeAll', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     host.contextHost.registration.registerReader('orphan.reader', {
       id: 'r1',
       component: STUB_COMPONENT,
@@ -109,11 +167,20 @@ describe('registrations of a plugin', () => {
       id: 's1',
       component: {},
     })
+    host.contextHost.registration.registerCommand('orphan.handler', {
+      id: 'app:file.createText',
+      handler: vi.fn(),
+    })
+    host.slotViews.registerSlotView('orphan.slot', 'statusBar.right', {
+      id: 'v1',
+      component: {},
+    })
 
     expect(host.registered.getRegisteredReaders()).toHaveLength(1)
     expect(host.registered.getRegisteredTabKinds()).toHaveLength(1)
     expect(host.registered.getRegisteredCommands()).toHaveLength(1)
     expect(host.registered.getRegisteredSettingsViews('orphan.settings').size).toBe(1)
+    expect(host.slotViews.views.value).toHaveLength(1)
 
     host.lifecycle.disposeAll()
 
@@ -121,21 +188,30 @@ describe('registrations of a plugin', () => {
     expect(host.registered.getRegisteredTabKinds()).toHaveLength(0)
     expect(host.registered.getRegisteredCommands()).toHaveLength(0)
     expect(host.registered.getRegisteredSettingsViews('orphan.settings').size).toBe(0)
+    expect(host.slotViews.views.value).toHaveLength(0)
+    expect(() =>
+      host.contextHost.registration.registerCommand('orphan.handler', {
+        id: 'app:file.createText',
+        handler: vi.fn(),
+      }),
+    ).not.toThrow()
 
     expect(() =>
       disposePluginEntry('none', {
         registry: {
-          vaultListeners: new Set(),
-          fileListeners: new Set(),
-          readers: new Map(),
-          tabKinds: new Map(),
+          listeners: { vault: new Set(), file: new Set() },
+          kinds: { readers: new Map(), tabKinds: new Map() },
           commands: { value: new Map() },
           handlers: { value: new Map() },
           settingsViews: { value: new Map() },
-          contexts: new Map(),
-          manifests: new Map(),
-          activated: { value: new Set() },
-          disposed: new Set(),
+          plugins: {
+            contexts: new Map(),
+            manifests: new Map(),
+            contextManifests: { value: new Map() },
+            activated: { value: new Set() },
+            starting: { value: new Set() },
+            disposed: new Set(),
+          },
           reportedIssues: new Set(),
         },
       }),
@@ -145,13 +221,13 @@ describe('registrations of a plugin', () => {
 
 describe('the settings views of a plugin', () => {
   it('are the registrations of that plugin, by view id', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     host.lifecycle
       .createContext('first.plugin', declaring('first.plugin'))
-      .register.settingsView({ id: 'floor', component: COMPONENT_A })
+      .plugin.register.settingsView({ id: 'floor', component: COMPONENT_A })
     host.lifecycle
       .createContext('second.plugin', declaring('second.plugin'))
-      .register.settingsView({ id: 'floor', component: COMPONENT_B })
+      .plugin.register.settingsView({ id: 'floor', component: COMPONENT_B })
 
     expect([...host.registered.getRegisteredSettingsViews('first.plugin').keys()]).toStrictEqual([
       'floor',
@@ -166,22 +242,22 @@ describe('the settings views of a plugin', () => {
   })
 
   it('re-evaluate a computed when a view is registered or disposed', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     const ctx = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
     const count = computed(() => host.registered.getRegisteredSettingsViews('sample.plugin').size)
 
     expect(count.value).toBe(0)
-    const disposable = ctx.register.settingsView({ id: 'floor', component: {} })
+    const disposable = ctx.plugin.register.settingsView({ id: 'floor', component: {} })
     expect(count.value).toBe(1)
     disposable.dispose()
     expect(count.value).toBe(0)
   })
 
   it('stay when the registration they replaced is disposed', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     const ctx = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
-    const first = ctx.register.settingsView({ id: 'floor', component: COMPONENT_A })
-    ctx.register.settingsView({ id: 'floor', component: COMPONENT_B })
+    const first = ctx.plugin.register.settingsView({ id: 'floor', component: COMPONENT_A })
+    ctx.plugin.register.settingsView({ id: 'floor', component: COMPONENT_B })
 
     first.dispose()
 
@@ -191,13 +267,13 @@ describe('the settings views of a plugin', () => {
   })
 
   it('are removed with the plugin and with the host', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     host.lifecycle
       .createContext('first.plugin', declaring('first.plugin'))
-      .register.settingsView({ id: 'floor', component: {} })
+      .plugin.register.settingsView({ id: 'floor', component: {} })
     host.lifecycle
       .createContext('second.plugin', declaring('second.plugin'))
-      .register.settingsView({ id: 'floor', component: {} })
+      .plugin.register.settingsView({ id: 'floor', component: {} })
 
     host.lifecycle.disposePlugin('first.plugin')
     expect(host.registered.getRegisteredSettingsViews('first.plugin').size).toBe(0)
@@ -212,16 +288,14 @@ describe('the views the plugins place in a slot of a bar', () => {
   const manifest = (view: string) =>
     ({
       contributes: { slots: [{ slot: 'statusBar.right', placed: { case: 'view', value: view } }] },
-    }) as unknown as Parameters<
-      ReturnType<typeof createPluginHost>['lifecycle']['createContext']
-    >[1]
+    }) as unknown as Parameters<PluginHost['lifecycle']['createContext']>[1]
   const entries = [
     { pluginId: 'second.plugin', slot: 'statusBar.right', view: 'update' },
     { pluginId: 'first.plugin', slot: 'statusBar.right', view: 'update' },
   ]
 
   it('are the entries of the slot once registered, in the order of the plugins, reactively', () => {
-    const host = createPluginHost(createDeps({ getSlotEntries: () => entries }))
+    const host = createTestPluginHost(createDeps({ getSlotEntries: () => entries }))
     const viewKeys = computed(() =>
       host.slots.getEntries('statusBar.right').map((one) => (one.kind === 'view' ? one.key : '')),
     )
@@ -229,22 +303,22 @@ describe('the views the plugins place in a slot of a bar', () => {
     expect(viewKeys.value).toStrictEqual([])
     host.lifecycle
       .createContext('second.plugin', manifest('update'))
-      .register.slotView({ id: 'update', component: COMPONENT_B })
+      .plugin.register.slotView({ id: 'update', component: COMPONENT_B })
     host.lifecycle
       .createContext('first.plugin', manifest('update'))
-      .register.slotView({ id: 'update', component: COMPONENT_A })
+      .plugin.register.slotView({ id: 'update', component: COMPONENT_A })
 
     expect(viewKeys.value).toStrictEqual(['first.plugin/view/update', 'second.plugin/view/update'])
   })
 
   it('are removed with the plugin and with the host', () => {
-    const host = createPluginHost(createDeps({ getSlotEntries: () => entries }))
+    const host = createTestPluginHost(createDeps({ getSlotEntries: () => entries }))
     host.lifecycle
       .createContext('first.plugin', manifest('update'))
-      .register.slotView({ id: 'update', component: {} })
+      .plugin.register.slotView({ id: 'update', component: {} })
     host.lifecycle
       .createContext('second.plugin', manifest('update'))
-      .register.slotView({ id: 'update', component: {} })
+      .plugin.register.slotView({ id: 'update', component: {} })
 
     host.lifecycle.disposePlugin('first.plugin')
     expect(
@@ -257,9 +331,9 @@ describe('the views the plugins place in a slot of a bar', () => {
 })
 
 describe('a tab kind opened as the editor of a path', () => {
-  const registerKind = (deps: PluginHostDeps, unregReturn: (() => void) | undefined = vi.fn()) => {
+  const registerKind = (deps: TestHostDeps, unregReturn: (() => void) | undefined = vi.fn()) => {
     let open: (path: string, title?: string, options?: unknown) => void = vi.fn()
-    const host = createPluginHost({
+    const host = createTestPluginHost({
       ...deps,
       registerEditor: vi.fn((_kind, opener) => {
         open = opener
@@ -268,7 +342,7 @@ describe('a tab kind opened as the editor of a path', () => {
     })
     const sub = host.lifecycle
       .createContext('sample.plugin', declaring('sample.plugin'))
-      .register.tabKind({ kind: 'sample', component: {} })
+      .plugin.register.tabKind({ kind: 'sample', component: {} })
     return { open, sub }
   }
 
@@ -345,18 +419,20 @@ describe('a tab kind opened as the editor of a path', () => {
 
 describe('the settings of a window that keeps none', () => {
   it('answers nothing and follows nothing', () => {
-    const host = createPluginHost(createDeps())
+    const host = createTestPluginHost(createDeps())
     const ctx = host.lifecycle.createContext('sample.plugin')
 
-    expect(ctx.settings.get('fontSize')).toBeUndefined()
-    expect(() => ctx.settings.onChange('fontSize', vi.fn()).dispose()).not.toThrow()
+    expect(ctx.plugin.settings.get('fontSize')).toBeUndefined()
+    expect(() => ctx.plugin.settings.onChange('fontSize', vi.fn()).dispose()).not.toThrow()
   })
 })
 
 describe('a reader opened at a selector', () => {
   it('sets a new selector on the state of the opened tab and skips a tab without state or selector', async () => {
-    const readers = new Map<string, (path: string, selector: unknown) => void>()
-    const states: Record<string, { selector?: unknown }> = { 'tab-1': {} }
+    const readers = new Map<string, (path: string, selector: unknown, ranges?: unknown) => void>()
+    const states: Record<string, { selector?: unknown; ranges?: unknown }> = {
+      'tab-1': { ranges: null },
+    }
     const onError = vi.fn()
     const unregExt = vi.fn()
     const getTabState = vi.fn((id: string) => states[id])
@@ -369,7 +445,7 @@ describe('a reader opened at a selector', () => {
       readers.set(ext, reader as (path: string, selector: unknown) => void)
       return unregExt
     })
-    const host = createPluginHost(
+    const host = createTestPluginHost(
       createDeps({
         openTab,
         onError,
@@ -380,10 +456,10 @@ describe('a reader opened at a selector', () => {
     )
     const sub1 = host.lifecycle
       .createContext('sample.plugin', declaring('sample.plugin'))
-      .register.reader({ id: 'reader:bin', component: STUB_COMPONENT, icon })
+      .plugin.register.reader({ id: 'reader:bin', component: STUB_COMPONENT, icon })
     const sub2 = host.lifecycle
       .createContext('sample.plugin', declaring('sample.plugin'))
-      .register.reader({ id: 'unprefixed', component: STUB_COMPONENT })
+      .plugin.register.reader({ id: 'unprefixed', component: STUB_COMPONENT })
     const selector = { page: 3 }
 
     readers.get('bin')?.('Books/Unprefixed.bin', undefined)
@@ -399,7 +475,7 @@ describe('a reader opened at a selector', () => {
     sub1.dispose()
     host.lifecycle
       .createContext('sample.plugin', declaring('sample.plugin'))
-      .register.reader({ id: 'reader:bin', component: STUB_COMPONENT, icon })
+      .plugin.register.reader({ id: 'reader:bin', component: STUB_COMPONENT, icon })
     readers.get('bin')?.('Books/One.bin', selector)
     readers.get('bin')?.('Books/Gone.bin', selector)
     readers.get('bin')?.('Books/Fail.bin', selector)
@@ -409,13 +485,19 @@ describe('a reader opened at a selector', () => {
     expect(openTab.mock.calls[1]).toStrictEqual(['reader:bin', 'Books/One.bin'])
     expect(states['tab-1']?.selector).toStrictEqual(selector)
     expect(states['tab-1']?.selector).not.toBe(selector)
+    expect(states['tab-1']?.ranges).toBeNull()
+    const ranges = [{ from: 1, to: 5 }]
+    readers.get('bin')?.('Books/One.bin', selector, ranges)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(states['tab-1']?.ranges).toStrictEqual(ranges)
+    expect(states['tab-1']?.ranges).not.toBe(ranges)
     expect(registerExtensionReader.mock.calls[0]?.[2]).toBe(icon)
     expect(onError).toHaveBeenCalledWith('sample.plugin', expect.any(Error))
     sub1.dispose()
 
     // Reader without getTabState or getReaderExtensions
     let noStateReader: ((path: string, selector: unknown) => void) | undefined
-    const hostNoState = createPluginHost(
+    const hostNoState = createTestPluginHost(
       createDeps({
         openTab,
         getReaderExtensions: () => ['raw'],
@@ -427,15 +509,15 @@ describe('a reader opened at a selector', () => {
     )
     hostNoState.lifecycle
       .createContext('p', declaring('p'))
-      .register.reader({ id: 'raw', component: STUB_COMPONENT })
+      .plugin.register.reader({ id: 'raw', component: STUB_COMPONENT })
     noStateReader?.('Books/Raw.raw', { page: 1 })
     await Promise.resolve()
 
-    const hostNoExts = createPluginHost(createDeps())
+    const hostNoExts = createTestPluginHost(createDeps())
     expect(() =>
       hostNoExts.lifecycle
         .createContext('p', declaring('p'))
-        .register.reader({ id: 'none', component: STUB_COMPONENT }),
+        .plugin.register.reader({ id: 'none', component: STUB_COMPONENT }),
     ).not.toThrow()
   })
 })
@@ -443,7 +525,7 @@ describe('a reader opened at a selector', () => {
 describe('a registration that fails after its tab kind was registered', () => {
   it('leaves no tab kind of a tab kind whose editor registration throws', () => {
     const unregisterKind = vi.fn()
-    const host = createPluginHost(
+    const host = createTestPluginHost(
       createDeps({
         target: 'desktop.editor',
         registerKind: vi.fn(() => unregisterKind),
@@ -454,7 +536,7 @@ describe('a registration that fails after its tab kind was registered', () => {
     )
     const context = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
 
-    expect(() => context.register.tabKind({ kind: 'sample', component: {} })).toThrowError(
+    expect(() => context.plugin.register.tabKind({ kind: 'sample', component: {} })).toThrowError(
       'editor refused',
     )
     expect(unregisterKind).toHaveBeenCalledTimes(1)
@@ -462,23 +544,137 @@ describe('a registration that fails after its tab kind was registered', () => {
   })
 
   it('leaves no tab kind of a reader whose extension registration throws', () => {
-    const unregisterKind = vi.fn()
-    const host = createPluginHost(
+    const order: string[] = []
+    const unregisterKind = vi.fn(() => {
+      order.push('kind')
+    })
+    const unregisterFirstExt = vi.fn(() => {
+      order.push('ext1')
+    })
+    const host = createTestPluginHost(
       createDeps({
         target: 'desktop.editor',
         registerKind: vi.fn(() => unregisterKind),
-        getReaderExtensions: () => ['bin'],
-        registerExtensionReader: () => {
+        getReaderExtensions: () => ['ext1', 'bin'],
+        registerExtensionReader: (ext) => {
+          if (ext === 'ext1') return unregisterFirstExt
           throw new Error('extension refused')
         },
       }),
     )
     const context = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
 
-    expect(() => context.register.reader({ id: 'raw', component: STUB_COMPONENT })).toThrowError(
-      'extension refused',
-    )
+    expect(() =>
+      context.plugin.register.reader({ id: 'raw', component: STUB_COMPONENT }),
+    ).toThrowError('extension refused')
     expect(unregisterKind).toHaveBeenCalledTimes(1)
+    expect(unregisterFirstExt).toHaveBeenCalledTimes(1)
+    expect(order).toStrictEqual(['ext1', 'kind'])
     expect(host.registered.getRegisteredReaders()).toHaveLength(0)
+  })
+
+  it('distinguishes reader ids from tab kind ids and skips extension registration when openTab or registerExtensionReader is missing', async () => {
+    const host = createTestPluginHost(createDeps())
+    host.contextHost.registration.registerTabKind('p1', { kind: 'pdf', component: {} })
+    expect(() =>
+      host.contextHost.registration.registerReader('p2', { id: 'pdf', component: STUB_COMPONENT }),
+    ).not.toThrow()
+    host.contextHost.registration.registerReader('p1', {
+      id: 'custom',
+      component: STUB_COMPONENT,
+    })
+    expect(() =>
+      host.contextHost.registration.registerTabKind('p2', { kind: 'custom', component: {} }),
+    ).not.toThrow()
+
+    const getReaderExtensions = vi.fn(() => ['pdf'])
+    const hostNoExtReg = createTestPluginHost({
+      target: 'desktop.editor',
+      registerKind: vi.fn(() => vi.fn()),
+      openTab: vi.fn(async () => 't1'),
+      getReaderExtensions,
+    })
+    hostNoExtReg.contextHost.registration.registerReader('p1', {
+      id: 'pdf',
+      component: STUB_COMPONENT,
+    })
+    expect(getReaderExtensions).not.toHaveBeenCalled()
+
+    const hostNoOpenTab = createTestPluginHost({
+      target: 'desktop.editor',
+      registerKind: vi.fn(() => vi.fn()),
+      registerExtensionReader: vi.fn(() => vi.fn()),
+      getReaderExtensions,
+    })
+    expect(hostNoOpenTab.contextHost.tabs.openTab('pdf', 'a.pdf')).toBeUndefined()
+    hostNoOpenTab.contextHost.registration.registerReader('p1', {
+      id: 'pdf',
+      component: STUB_COMPONENT,
+    })
+    expect(getReaderExtensions).not.toHaveBeenCalled()
+
+    const startPlugin = vi.fn(async () => undefined)
+    const manifests = [
+      createMockManifest('other.p', { settingsViews: ['v'] }),
+      createMockManifest('empty.p'),
+      createMockManifest('decl.p', { settingsViews: ['floor'] }),
+    ]
+    const hostSettings = createTestPluginHost(
+      createDeps({
+        startPlugin,
+        findPluginsOf: (match) => manifests.filter(match).map((m) => m.id),
+      }),
+    )
+    expect(host.registered.getSettingsViews('decl.p').size).toBe(0)
+    expect(hostSettings.registered.getSettingsViews('empty.p').size).toBe(0)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(startPlugin).not.toHaveBeenCalled()
+
+    expect(hostSettings.registered.getSettingsViews('decl.p').size).toBe(0)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(startPlugin).toHaveBeenCalledExactlyOnceWith('decl.p')
+
+    startPlugin.mockClear()
+    hostSettings.contextHost.registration.registerSettingsView('decl.p', {
+      id: 'floor',
+      component: COMPONENT_A,
+    })
+    expect(hostSettings.registered.getSettingsViews('decl.p').size).toBe(1)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(startPlugin).not.toHaveBeenCalled()
+
+    expect(() =>
+      hostSettings.lifecycle.registerManifest('bare.m', {
+        ...createMockManifest('bare.m'),
+        contributes: undefined,
+      }),
+    ).not.toThrow()
+
+    expect(host.slots.getEntries('titleBar')).toStrictEqual([])
+    const reportSlotIssue = vi.fn()
+    const slotStartPlugin = vi.fn(async () => undefined)
+    const hostSlots = createTestPluginHost(
+      createDeps({
+        startPlugin: slotStartPlugin,
+        reportSlotIssue,
+        getSlotWhenValues: () => ({ 'window.isVaultReady': true }),
+        createSlotCommandFinder: () => (cmd) =>
+          cmd === 'p1:run' ? { title: 'Run', isEnabled: true, hasItems: false } : undefined,
+        getSlotEntries: () => [
+          { pluginId: 'p1', slot: 'titleBar', command: 'run', when: 'window.isVaultReady' },
+          { pluginId: 'p1', slot: 'titleBar', command: 'run', when: 'invalid.var' },
+          { pluginId: 'p2', slot: 'titleBar', view: 'unregistered' },
+        ],
+      }),
+    )
+    const slotEntries = hostSlots.slots.getEntries('titleBar')
+    expect(slotEntries).toHaveLength(1)
+    expect(reportSlotIssue).toHaveBeenCalledWith(
+      'p1',
+      expect.stringContaining('invalid.var'),
+      'error',
+    )
+    await new Promise((r) => setTimeout(r, 0))
+    expect(slotStartPlugin).toHaveBeenCalledWith('p2')
   })
 })

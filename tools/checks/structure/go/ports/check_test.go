@@ -31,7 +31,7 @@ func TestTheRootPassesOutNoAdapterTheCompilerContains(t *testing.T) {
 			t.Fatal(err)
 		}
 		read++
-		for _, why := range getRetainedAdapters(name, string(src)) {
+		for _, why := range getRetainedAdapters(load.GetDriving(t), name, string(src)) {
 			t.Errorf("%s: %s", name, why)
 		}
 	}
@@ -41,7 +41,7 @@ func TestTheRootPassesOutNoAdapterTheCompilerContains(t *testing.T) {
 	}
 	// The rule is about what the root answers with, so it is worth nothing where
 	// the root answers nothing. Trash is a port handed out under its own name.
-	if len(getRetainedAdapters("probe.go", `package container
+	if len(getRetainedAdapters(load.GetDriving(t), "probe.go", `package container
 
 import "`+load.Module+`port"
 
@@ -119,7 +119,7 @@ func (c Config) Options(opts filesystem.Options) error { return nil }`,
 			isRefused: false,
 		},
 	} {
-		findings := getRetainedAdapters("probe.go", one.src)
+		findings := getRetainedAdapters(load.GetDriving(t), "probe.go", one.src)
 		if one.isRefused && len(findings) == 0 {
 			t.Errorf("%s is not rejected", one.what)
 		}

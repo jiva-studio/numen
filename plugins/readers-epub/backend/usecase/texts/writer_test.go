@@ -3,15 +3,18 @@ package texts
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/testsupport"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/segments"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
 )
 
 const pluginID = "md.numen.readers.epub"
@@ -115,7 +118,14 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 		}),
 	} {
 		t.Run(name, func(t *testing.T) {
-			texts, server := newTextVault(t, name, raw)
+			files := hosttest.New("vault")
+			files.File(name, string(raw))
+			texts := hosttest.NewTexts("vault", pluginID)
+			texts.File(name, raw)
+			texts.SetStore(pluginID, files.Store())
+			queue := hosttest.NewQueue()
+			server := NewWriter(filesOf(files), textsOf(texts), storeOf(files), queue, noReport)
+			t.Cleanup(server.Close)
 
 			createText(t, server, Request{Path: name})
 
@@ -126,7 +136,19 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 			if len(listing.Versions) != 0 {
 				t.Errorf("versions %v, want none", listing.Versions)
 			}
+			if tasks := queue.ListTasks(); len(tasks) != 0 {
+				t.Errorf("tasks %+v, want none for unreadable book %s", tasks, name)
+			}
 		})
+	}
+
+	files := hosttest.New("vault")
+	files.File("corrupted.epub", "INVALID_EPUB_ZIP")
+	texts := hosttest.NewTexts("vault", pluginID)
+	srv := NewWriter(filesOf(files), textsOf(texts), storeOf(files), hosttest.NewQueue(), noReport)
+	t.Cleanup(srv.Close)
+	if _, err := srv.readBook(t.Context(), files, "corrupted.epub"); !errors.Is(err, epub.ErrNotArchive) {
+		t.Errorf("readBook(corrupted.epub) error = %v, want ErrNotArchive", err)
 	}
 }
 
@@ -211,9 +233,18 @@ type failingQueue struct {
 	*hosttest.Queue
 	enqueueErr error
 	reportErr  error
+	started    chan struct{}
+	waitDone   *atomic.Bool
 }
 
 func (f *failingQueue) EnqueueWork(ctx context.Context, w host.Work) (host.Turn, error) {
+	if f.started != nil {
+		close(f.started)
+		<-ctx.Done()
+		time.Sleep(5 * time.Millisecond)
+		f.waitDone.Store(true)
+		return nil, ctx.Err()
+	}
 	if f.enqueueErr != nil {
 		return nil, f.enqueueErr
 	}
@@ -252,35 +283,57 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File("book.epub", raw)
 	texts.SetStore(pluginID, files.Store())
-	queue := hosttest.NewQueue()
-	held, err := queue.EnqueueWork(t.Context(), host.Work{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	var waitDone atomic.Bool
+	started := make(chan struct{})
+	queue := &failingQueue{Queue: hosttest.NewQueue(), started: started, waitDone: &waitDone}
 	srv := NewWriter(filesOf(files), textsOf(texts), storeOf(files), queue, noReport)
 
 	if err := srv.CreateText(t.Context(), Request{Path: "book.epub"}); err != nil {
 		t.Fatal(err)
 	}
+	<-started
 	// Duplicate call while running is a no-op
 	if err := srv.CreateText(t.Context(), Request{Path: "book.epub"}); err != nil {
 		t.Fatal(err)
 	}
 	srv.Close()
-	if err := held.Release(); err != nil {
-		t.Error(err)
+	if !waitDone.Load() {
+		t.Error("Close returned before running task finished")
+	}
+	if tasks := queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("canceled task reported failure: %+v, want none", tasks)
 	}
 	// Call after Close is a no-op
+	queue.started = nil
 	if err := srv.CreateText(t.Context(), Request{Path: "book.epub"}); err != nil {
 		t.Fatal(err)
+	}
+	srv.Wait()
+	if listing, err := texts.ListVersions(t.Context(), "book.epub"); err != nil || len(listing.Versions) != 0 {
+		t.Errorf("CreateText after Close wrote versions %+v (%v), want none", listing.Versions, err)
+	}
+
+	// Hidden vault error on CreateText with empty Vault
+	hidden := hosttest.New("vault")
+	hidden.Hide()
+	hiddenSrv := NewWriter(filesOf(hidden), textsOf(texts), storeOf(hidden), hosttest.NewQueue(), noReport)
+	t.Cleanup(hiddenSrv.Close)
+	if err := hiddenSrv.CreateText(t.Context(), Request{Path: "book.epub"}); err == nil {
+		t.Error("expected error when shown vault is hidden")
 	}
 
 	// Failure reporting when file does not exist
 	q2 := hosttest.NewQueue()
 	srv2 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q2, noReport)
 	t.Cleanup(srv2.Close)
-	createText(t, srv2, Request{Path: "missing.epub"})
-	tasks := q2.ListTasks()
+	if err := srv2.putText(t.Context(), Request{Vault: "vault", Path: "missing.epub"}, host.Task{ID: "t"}); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("putText(missing.epub) = %v, want wrapped os.ErrNotExist", err)
+	}
+	q2Create := hosttest.NewQueue()
+	srv2Create := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q2Create, noReport)
+	t.Cleanup(srv2Create.Close)
+	createText(t, srv2Create, Request{Path: "missing.epub"})
+	tasks := q2Create.ListTasks()
 	if len(tasks) != 1 || tasks[0].FailureReason == "" {
 		t.Errorf("expected failed task for missing file, got %+v", tasks)
 	}
@@ -289,6 +342,9 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 	q3 := &failingQueue{Queue: hosttest.NewQueue(), enqueueErr: errors.New("queue down")}
 	srv3 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q3, noReport)
 	t.Cleanup(srv3.Close)
+	if err := srv3.putText(t.Context(), Request{Vault: "vault", Path: "book.epub"}, host.Task{ID: "t"}); !errors.Is(err, q3.enqueueErr) {
+		t.Errorf("putText with enqueue failure = %v, want wrapped enqueueErr", err)
+	}
 	createText(t, srv3, Request{Path: "book.epub"})
 	if tasks := q3.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "queue down") {
 		t.Errorf("expected queue down task failure, got %+v", tasks)

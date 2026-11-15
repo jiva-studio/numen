@@ -29,7 +29,7 @@ func (e *connectionEndpoint) Call(
 	ctx context.Context, request *connect.Request[v1.HostConnectionServiceCallRequest],
 	stream *connect.ServerStream[v1.HostConnectionServiceCallResponse],
 ) error {
-	pluginID, err := e.endpoint.authenticate(request.Header().Get("Authorization"))
+	pluginID, err := e.endpoint.Authenticate(request.Header().Get("Authorization"))
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (e *connectionEndpoint) Call(
 func (e *connectionEndpoint) ListRows(
 	ctx context.Context, request *connect.Request[v1.HostConnectionServiceListRowsRequest],
 ) (*connect.Response[v1.HostConnectionServiceListRowsResponse], error) {
-	pluginID, err := e.endpoint.authenticate(request.Header().Get("Authorization"))
+	pluginID, err := e.endpoint.Authenticate(request.Header().Get("Authorization"))
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (e *connectionEndpoint) ListRows(
 func (e *connectionEndpoint) ListRowOptions(
 	ctx context.Context, request *connect.Request[v1.HostConnectionServiceListRowOptionsRequest],
 ) (*connect.Response[v1.HostConnectionServiceListRowOptionsResponse], error) {
-	pluginID, err := e.endpoint.authenticate(request.Header().Get("Authorization"))
+	pluginID, err := e.endpoint.Authenticate(request.Header().Get("Authorization"))
 	if err != nil {
 		return nil, err
 	}

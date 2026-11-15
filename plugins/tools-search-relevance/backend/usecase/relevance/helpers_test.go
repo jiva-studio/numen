@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 )
 
@@ -17,7 +17,7 @@ func getMeasuredAt() time.Time {
 	return time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
 }
 
-func newClock() *clock.Fake { return newFakeClock(getMeasuredAt()) }
+func newClock() *clocktest.Fake { return newFakeClock(getMeasuredAt()) }
 
 func newHost(hint float64) (*hosttest.Search, *hosttest.Vault) {
 	search := hosttest.NewSearch("physics", "chemistry")
@@ -43,18 +43,18 @@ func setNotes(vault *hosttest.Vault, n int) {
 	}
 }
 
-func passagesOf(n, sources int) []hosttest.SearchPassage {
-	out := make([]hosttest.SearchPassage, n)
+func sampledChunksOf(n, sources int) []hosttest.SampledChunk {
+	out := make([]hosttest.SampledChunk, n)
 	for i := range out {
-		out[i] = hosttest.SearchPassage{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
+		out[i] = hosttest.SampledChunk{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
 	}
 	return out
 }
 
-func fill(search *hosttest.Search, vault *hosttest.Vault, notes int, passages []hosttest.SearchPassage) {
+func fill(search *hosttest.Search, vault *hosttest.Vault, notes int, chunks []hosttest.SampledChunk) {
 	setNotes(vault, notes)
-	search.SetPassages(modelRecipe, passages)
-	search.SetProgress(int64(len(passages)), int64(len(passages)))
+	search.SetSampledChunks(modelRecipe, chunks)
+	search.SetProgress(int64(len(chunks)), int64(len(chunks)))
 }
 
 func sum(counts []int) int {
@@ -72,8 +72,8 @@ func abs(x float64) float64 {
 	return x
 }
 
-func newFakeClock(start time.Time) *clock.Fake {
-	source := new(clock.Fake)
+func newFakeClock(start time.Time) *clocktest.Fake {
+	source := new(clocktest.Fake)
 	source.Set(start)
 	return source
 }

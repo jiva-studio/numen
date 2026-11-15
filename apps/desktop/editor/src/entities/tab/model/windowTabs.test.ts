@@ -11,7 +11,8 @@ import type { Workspace } from '@numen/workbench'
 import type { FileKind } from '@/shared/model/fileTypes'
 import type { AnyTabKind, WindowHandle } from '../lib/kinds'
 import { fileOpeners } from './openers'
-import { createTestTabs } from '@/testing/tabs'
+import { openInScope } from './tabStore'
+import { createTestTabs, NO_TAB_KIND_PLUGINS } from '@/testing/tabs'
 
 function rethrow(error: unknown): never {
   throw error
@@ -45,11 +46,14 @@ const PART_OF_HOOK: Readonly<Record<keyof Hooks, 'display' | 'events' | 'address
 }
 
 const groupHooks = (hooks: Partial<Hooks>) => {
-  const parts: Record<string, Record<string, unknown>> = { display: {}, events: {}, address: {} }
+  const parts: Record<string, Record<string, object>> = {}
   for (const [name, hook] of Object.entries(hooks)) {
-    parts[PART_OF_HOOK[name as keyof Hooks]]![name] = hook
+    if (hook === undefined) continue
+    const group = PART_OF_HOOK[name as keyof Hooks]
+    parts[group] ??= {}
+    parts[group][name] = hook as object
   }
-  return parts as unknown as Pick<AnyTabKind, 'display' | 'events' | 'address'>
+  return parts as Pick<AnyTabKind, 'display' | 'events' | 'address'>
 }
 
 const kind = ({ isKept = false, ...options }: KindOptions & { isKept?: boolean } = {}) => {
@@ -84,11 +88,51 @@ const kind = ({ isKept = false, ...options }: KindOptions & { isKept?: boolean }
 
 const notifiedCalls = (declared: readonly ((handle: WindowHandle) => AnyTabKind)[]) => {
   const window = createTestTabs()
-  window.groups.registerKinds(declared.map((one) => one(window.groups.handle)))
+  window.kinds.registerKinds(declared.map((one) => one(window.handle)))
   return window
 }
 
 const onScreen = (layout: Workspace) => getPanes(layout.root).flatMap((pane) => pane.tabs)
+
+describe('the parts of the tabs of a window', () => {
+  it('holds each operation in the part of its responsibility', () => {
+    const window = createTestTabs()
+
+    expect(Object.keys(window.tabs).sort()).toStrictEqual([
+      'createTab',
+      'getTab',
+      'navigateTab',
+      'navigateTabsAt',
+      'openTabAdjacentOfKind',
+      'openTabOfKind',
+      'tabs',
+    ])
+    expect(Object.keys(window.kinds).sort()).toStrictEqual([
+      'closeTabsOfPlugin',
+      'createFileOfKind',
+      'findKind',
+      'hasKind',
+      'registerKind',
+      'registerKinds',
+    ])
+    expect(Object.keys(window.panes).sort()).toStrictEqual([
+      'closeAll',
+      'closeTab',
+      'finishClose',
+      'layout',
+      'onKeyPress',
+      'onTabShown',
+      'reconcileTab',
+      'show',
+    ])
+    expect(Object.keys(window.restored).sort()).toStrictEqual([
+      'openPlacedTabs',
+      'openSavedTab',
+      'restoreTabs',
+    ])
+    expect(window.dragged.value).toStrictEqual([])
+  })
+})
 
 describe('a tab of a kind', () => {
   it('is opened by the kind, drawn, and called what the kind calls it', async () => {
@@ -211,10 +255,10 @@ describe('what a kind is given', () => {
 
     const openedTab = await handle!.openTab('other', 'Note.md')
     const mine = await window.tabs.openTabOfKind('thing')
-    expect(window.groups.handle.front()?.id).toBe(mine)
+    expect(window.handle.front()?.id).toBe(mine)
     handle!.show(openedTab)
 
-    expect(window.groups.handle.front()?.id).toBe(openedTab)
+    expect(window.handle.front()?.id).toBe(openedTab)
     expect(other.opened).toEqual(['Note.md'])
     expect(onScreen(window.panes.layout.value)).toContain(mine)
     expect(window.tabs.getTab(openedTab)).not.toBeNull()
@@ -230,7 +274,7 @@ describe('a tab that closes', () => {
     const window = notifiedCalls([thing.declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
 
-    expect(window.panes.releaseTab(id)).toBe(true)
+    expect(window.panes.closeTab(id)).toBe(true)
     expect(thing.closedPaths).toEqual(['Note.md'])
     expect(window.tabs.getTab(id)).toBeNull()
   })
@@ -238,15 +282,18 @@ describe('a tab that closes', () => {
   it('says it went, for an identity the window does not hold', () => {
     const window = notifiedCalls([kind().declared])
 
-    expect(window.panes.releaseTab('gone')).toBe(true)
+    expect(window.panes.closeTab('gone')).toBe(true)
   })
 
   it('keeps its position while its kind has something to finish', async () => {
     const pendingKind = kind({ isKept: true })
     const window = notifiedCalls([pendingKind.declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
+    const hold = vi.fn()
 
-    expect(window.panes.releaseTab(id)).toBe(false)
+    expect(window.panes.closeTab(id)).toBe(false)
+    expect(window.panes.closeTab(id, hold)).toBe(false)
+    expect(hold).toHaveBeenCalledOnce()
     expect(window.tabs.getTab(id)?.state).toBeTruthy()
     expect(onScreen(window.panes.layout.value)).toContain(id)
   })
@@ -255,9 +302,9 @@ describe('a tab that closes', () => {
     const pendingKind = kind({ isKept: true })
     const window = notifiedCalls([pendingKind.declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
-    window.panes.releaseTab(id)
+    window.panes.closeTab(id)
 
-    window.groups.handle.closeTab(id)
+    window.handle.closeTab(id)
 
     expect(window.tabs.getTab(id)).toBeNull()
     expect(onScreen(window.panes.layout.value)).not.toContain(id)
@@ -270,22 +317,11 @@ describe('a tab release from outside', () => {
     const window = notifiedCalls([thing.declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
 
-    window.panes.requestClose(id)
+    window.panes.closeTab(id)
 
     expect(thing.closedPaths).toEqual(['Note.md'])
     expect(window.tabs.getTab(id)).toBeNull()
     expect(onScreen(window.panes.layout.value)).not.toContain(id)
-  })
-
-  it('stays on the screen while its kind has something to finish', async () => {
-    const pendingKind = kind({ isKept: true })
-    const window = notifiedCalls([pendingKind.declared])
-    const id = await window.tabs.openTabOfKind('thing', 'Note.md')
-
-    window.panes.requestClose(id)
-
-    expect(window.tabs.getTab(id)?.state).toBeTruthy()
-    expect(onScreen(window.panes.layout.value)).toContain(id)
   })
 })
 
@@ -317,7 +353,7 @@ describe('the tab the person is looking at', () => {
     await window.tabs.openTabOfKind('thing', 'One.md')
     const two = await window.tabs.openTabOfKind('thing', 'Two.md')
 
-    expect(window.groups.handle.front()).toEqual({
+    expect(window.handle.front()).toEqual({
       id: two,
       kind: 'thing',
       state: { targetPath: 'Two.md', title: 'Two.md' },
@@ -330,31 +366,31 @@ describe('the tab the person is looking at', () => {
     const window = notifiedCalls([thing.declared, other.declared])
     const zero = await window.tabs.openTabOfKind('thing', 'Zero.md')
     const one = await window.tabs.openTabOfKind('thing', 'One.md')
-    const two = await window.groups.handle.openTabAdjacent('thing', 'Two.md')
+    const two = await window.handle.openTabAdjacent('thing', 'Two.md')
     await window.tabs.openTabOfKind('other', 'Other.md')
     window.panes.show(one)
     window.panes.onTabShown(zero)
     // Every pane reports the tab it is showing when it renders.
     window.panes.onTabShown(two)
 
-    expect(window.groups.handle.front()?.id).toBe(one)
-    expect(window.groups.handle.last('thing')?.id).toBe(two)
-    expect(window.groups.handle.each('thing').map((t) => t.id)).toStrictEqual([one, zero, two])
+    expect(window.handle.front()?.id).toBe(one)
+    expect(window.handle.last('thing')?.id).toBe(two)
+    expect(window.handle.each('thing').map((t) => t.id)).toStrictEqual([one, zero, two])
   })
 
   it('answers under no kind for a tab the window has release', async () => {
     const thing = kind()
     const window = notifiedCalls([thing.declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
-    window.panes.releaseTab(id)
+    window.panes.closeTab(id, () => undefined)
 
-    expect(window.groups.handle.front()).toEqual({ id, kind: null, state: null })
+    expect(window.handle.front()).toEqual({ id, kind: null, state: null })
   })
 
   it('is nothing while the pane in front holds no tab', () => {
     const window = notifiedCalls([kind().declared])
 
-    expect(window.groups.handle.front()).toBeNull()
+    expect(window.handle.front()).toBeNull()
   })
 })
 
@@ -382,7 +418,7 @@ describe('a key struck on the window', () => {
     const readItem = readTabs()
     const window = notifiedCalls([readItem.one.declared])
     const one = await window.tabs.openTabOfKind('thing', 'One.epub')
-    await window.groups.handle.openTabAdjacent('thing', 'Two.epub')
+    await window.handle.openTabAdjacent('thing', 'Two.epub')
     window.panes.show(one)
 
     expect(window.panes.onKeyPress(createKeyEvent('ArrowRight'))).toBe(true)
@@ -394,7 +430,7 @@ describe('a key struck on the window', () => {
     const readItem = readTabs()
     const window = notifiedCalls([readItem.one.declared])
     await window.tabs.openTabOfKind('thing', 'One.epub')
-    const two = await window.groups.handle.openTabAdjacent('thing', 'Two.epub')
+    const two = await window.handle.openTabAdjacent('thing', 'Two.epub')
     window.panes.show(two)
 
     window.panes.onKeyPress(createKeyEvent('ArrowLeft'))
@@ -412,7 +448,14 @@ describe('a key struck on the window', () => {
   })
 
   it('is left alone where the kind in front reads no key at all', async () => {
-    const window = notifiedCalls([kind().declared])
+    const one = kind().one
+    const bare: AnyTabKind = {
+      kind: one.kind,
+      open: one.open,
+      pane: one.pane,
+      ...(one.getTitle ? { getTitle: one.getTitle } : {}),
+    }
+    const window = notifiedCalls([() => bare])
     await window.tabs.openTabOfKind('thing', 'One.md')
 
     expect(window.panes.onKeyPress(createKeyEvent('ArrowRight'))).toBe(false)
@@ -432,7 +475,7 @@ describe('the window going', () => {
     await window.tabs.openTabOfKind('thing', 'One.md')
     await window.tabs.openTabOfKind('thing', 'Two.md')
 
-    window.restored.close()
+    window.panes.closeAll()
 
     expect(thing.closedPaths).toEqual(['One.md', 'Two.md'])
   })
@@ -445,7 +488,7 @@ describe('the window going', () => {
     const window = notifiedCalls([thing.declared])
     await window.tabs.openTabOfKind('thing', 'One.md')
 
-    window.restored.close()
+    window.panes.closeAll()
 
     expect(going).toEqual(['One.md'])
     expect(thing.closedPaths).toEqual([])
@@ -458,11 +501,19 @@ describe('reconciling tabs for a path', () => {
       kind: 'note',
       getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
+    const noteWithoutDisplay: AnyTabKind = {
+      kind: noteKind.one.kind,
+      open: noteKind.one.open,
+      pane: noteKind.one.pane,
+      ...(noteKind.one.getTitle ? { getTitle: noteKind.one.getTitle } : {}),
+      ...(noteKind.one.events ? { events: noteKind.one.events } : {}),
+      ...(noteKind.one.address ? { address: noteKind.one.address } : {}),
+    }
     const sampleKind = kind({
       kind: 'sample',
       getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
-    const window = notifiedCalls([noteKind.declared, sampleKind.declared])
+    const window = notifiedCalls([() => noteWithoutDisplay, sampleKind.declared])
 
     const noteTabId = await window.tabs.openTabOfKind('note', 'Shapes.md')
     expect(window.tabs.tabs.value.map((t) => t.id)).toContain(noteTabId)
@@ -570,16 +621,15 @@ describe('what a tab of a kind holds, requested by kind', () => {
   it('is nothing for an identity the window does not hold', () => {
     const window = notifiedCalls([kind().declared])
 
-    expect(window.tabs.getTabStateIn('missing', 'thing')).toBeNull()
-    expect(window.groups.handle.getTabState('thing', 'missing')).toBeNull()
+    expect(window.handle.getTabState('thing', 'missing')).toBeNull()
   })
 
   it('is nothing where the tab is of another kind', async () => {
     const window = notifiedCalls([kind().declared, kind({ kind: 'other' }).declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
 
-    expect(window.tabs.getTabStateIn(id, 'other')).toBeNull()
-    expect(window.tabs.getTabStateIn(id, 'thing')).toEqual({
+    expect(window.handle.getTabState('other', id)).toBeNull()
+    expect(window.handle.getTabState('thing', id)).toEqual({
       targetPath: 'Note.md',
       title: 'Note.md',
     })
@@ -604,7 +654,7 @@ describe('what a tab watches', () => {
     const window = notifiedCalls([watch.one.declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
 
-    window.groups.handle.closeTab(id)
+    window.handle.closeTab(id)
 
     expect(watch.stopped).toEqual(['Note.md'])
   })
@@ -614,7 +664,7 @@ describe('what a tab watches', () => {
     const window = notifiedCalls([watch.one.declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
 
-    window.panes.releaseTab(id)
+    window.panes.closeTab(id)
 
     expect(watch.stopped).toEqual(['Note.md'])
   })
@@ -624,7 +674,7 @@ describe('what a tab watches', () => {
     const window = notifiedCalls([watch.one.declared])
     await window.tabs.openTabOfKind('thing', 'Note.md')
 
-    window.restored.close()
+    window.panes.closeAll()
 
     expect(watch.stopped).toEqual(['Note.md'])
   })
@@ -643,7 +693,14 @@ describe('what a tab watches', () => {
   it('is no trouble to close for an identity the window does not hold', () => {
     const window = notifiedCalls([kind().declared])
 
-    expect(() => window.groups.handle.closeTab('missing')).not.toThrow()
+    expect(() => window.handle.closeTab('missing')).not.toThrow()
+  })
+
+  it('rejects opening a tab in an effect scope that is already stopped', () => {
+    const stopped = effectScope()
+    stopped.stop()
+
+    expect(() => openInScope(stopped, () => ({}))).toThrow('the scope of the tab is not active')
   })
 })
 
@@ -652,7 +709,7 @@ describe('a tab opened alongside', () => {
     const window = notifiedCalls([kind().declared])
     const one = await window.tabs.openTabOfKind('thing', 'One.md')
 
-    const two = await window.groups.handle.openTabAdjacent('thing', 'Two.md')
+    const two = await window.handle.openTabAdjacent('thing', 'Two.md')
 
     expect(getPanes(window.panes.layout.value.root).map((pane) => pane.tabs)).toEqual([
       [one],
@@ -665,7 +722,7 @@ describe('a tab opened alongside', () => {
     const window = notifiedCalls([kind().declared])
     await window.tabs.openTabOfKind('thing', 'One.md')
 
-    const id = await window.groups.handle.openTabAdjacent('nothing', 'Two.md')
+    const id = await window.handle.openTabAdjacent('nothing', 'Two.md')
 
     expect(id).toBe('nothing:Two.md')
     expect(onScreen(window.panes.layout.value)).toContain(id)
@@ -678,7 +735,7 @@ describe('the tab in front, with the pane in front unknown to the layout', () =>
     await window.tabs.openTabOfKind('thing', 'One.md')
     window.panes.layout.value = { ...window.panes.layout.value, focus: 'ghost' }
 
-    expect(window.groups.handle.front()).toBeNull()
+    expect(window.handle.front()).toBeNull()
   })
 })
 
@@ -703,8 +760,8 @@ describe('a key struck on the window, offered in turn', () => {
     const sampleTab = createKeyRecorderTab('none')
     const window = notifiedCalls([sampleTab.one.declared])
     const first = await window.tabs.openTabOfKind('thing', 'A')
-    await window.groups.handle.openTabAdjacent('thing', 'B')
-    await window.groups.handle.openTabAdjacent('thing', 'C')
+    await window.handle.openTabAdjacent('thing', 'B')
+    await window.handle.openTabAdjacent('thing', 'C')
     window.panes.show(first)
 
     expect(window.panes.onKeyPress(strike)).toBe(false)
@@ -716,8 +773,8 @@ describe('a key struck on the window, offered in turn', () => {
     const recorder = createKeyRecorderTab('C')
     const window = notifiedCalls([recorder.one.declared])
     const first = await window.tabs.openTabOfKind('thing', 'A')
-    await window.groups.handle.openTabAdjacent('thing', 'B')
-    await window.groups.handle.openTabAdjacent('thing', 'C')
+    await window.handle.openTabAdjacent('thing', 'B')
+    await window.handle.openTabAdjacent('thing', 'C')
     window.panes.show(first)
 
     expect(window.panes.onKeyPress(strike)).toBe(true)
@@ -761,7 +818,7 @@ describe('a tab release', () => {
     const window = notifiedCalls([simpleKind.declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
 
-    expect(window.panes.releaseTab(id)).toBe(true)
+    expect(window.panes.closeTab(id)).toBe(true)
 
     expect(window.tabs.getTab(id)).toBeNull()
   })
@@ -826,7 +883,7 @@ describe('a tab opened on nothing', () => {
     const window = notifiedCalls([thing.declared])
 
     await window.tabs.openTabOfKind('thing')
-    await window.groups.handle.openTabAdjacent('thing')
+    await window.handle.openTabAdjacent('thing')
 
     expect(thing.opened).toEqual(['', ''])
   })
@@ -839,7 +896,7 @@ describe('a window going, with kinds that say nothing about it', () => {
     const window = notifiedCalls([closingKind.declared])
     await window.tabs.openTabOfKind('thing', 'x')
 
-    expect(() => window.restored.close()).not.toThrow()
+    expect(() => window.panes.closeAll()).not.toThrow()
   })
 })
 
@@ -893,7 +950,7 @@ describe('a tab created without being shown', () => {
 describe('the registration of a kind', () => {
   it('is removed by its own disposer', async () => {
     const window = createTestTabs()
-    const dispose = window.groups.registerKind(kind().one)
+    const dispose = window.kinds.registerKind(kind().one)
 
     dispose()
 
@@ -905,9 +962,9 @@ describe('the registration of a kind', () => {
     const window = createTestTabs()
     const first = { ...kind().one, pluginId: 'md.numen.first' }
     const second = { ...kind().one, pluginId: 'md.numen.second' }
-    window.groups.registerKind(first)
+    window.kinds.registerKind(first)
 
-    expect(() => window.groups.registerKind(second)).toThrowError(
+    expect(() => window.kinds.registerKind(second)).toThrowError(
       'The tab kind "thing" is registered already by plugin "md.numen.first"',
     )
 
@@ -918,23 +975,27 @@ describe('the registration of a kind', () => {
   it('is refused in a list of kinds that names a kind twice, and registers none of them', () => {
     const window = createTestTabs()
 
-    expect(() => window.groups.registerKinds([kind().one, kind().one])).toThrowError(
-      'is registered already',
+    expect(() => window.kinds.registerKinds([kind().one, kind().one])).toThrowError(
+      /^The tab kind "thing" is registered already$/,
     )
 
-    expect(window.groups.hasKind('thing')).toBe(false)
+    expect(window.kinds.hasKind('thing')).toBe(false)
   })
 
   it('is free again after the disposer of the registration runs', () => {
     const window = createTestTabs()
-    window.groups.registerKind(kind().one)()
+    const disposeFirst = window.kinds.registerKind(kind().one)
+    disposeFirst()
 
-    expect(() => window.groups.registerKind(kind().one)).not.toThrow()
+    const second = kind().one
+    expect(() => window.kinds.registerKind(second)).not.toThrow()
+    disposeFirst()
+    expect(window.kinds.hasKind('thing')).toBe(true)
   })
 
   it('names the plugin of the kind of a tab', async () => {
     const window = createTestTabs()
-    window.groups.registerKind({ ...kind().one, kind: 'reader:x', pluginId: 'md.numen.x' })
+    window.kinds.registerKind({ ...kind().one, kind: 'reader:x', pluginId: 'md.numen.x' })
 
     const id = await window.tabs.createTab('reader:x', 'a.x')
 
@@ -956,7 +1017,7 @@ describe('a tab of a kind that is not registered', () => {
     const window = createTestTabs()
     const missing = await window.tabs.createTab('thing', 'a')
     const thing = kind()
-    window.groups.registerKind(thing.one)
+    window.kinds.registerKind(thing.one)
 
     const openedTab = await window.tabs.createTab('thing', 'b')
 
@@ -975,7 +1036,7 @@ describe('the identity a kind is given as its tab opens', () => {
       },
     })
     const window = createTestTabs()
-    window.groups.registerKinds([thing.one])
+    window.kinds.registerKinds([thing.one])
 
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
 
@@ -991,7 +1052,7 @@ describe('the identity a kind is given as its tab opens', () => {
       },
     })
     const window = createTestTabs()
-    window.groups.registerKinds([thing.one])
+    window.kinds.registerKinds([thing.one])
 
     const id = await window.tabs.openTabOfKind('thing', 'Note.md', 'thing:4f1c')
 
@@ -1004,22 +1065,22 @@ describe('the identity a kind is given as its tab opens', () => {
 describe('the kinds the window holds', () => {
   it('are the ones registered, and a kind removed is no longer listed', () => {
     const window = createTestTabs()
-    const release = window.groups.registerKind(kind().one)
+    const release = window.kinds.registerKind(kind().one)
 
-    expect(window.groups.hasKind('thing')).toBe(true)
-    expect(window.groups.hasKind('other')).toBe(false)
+    expect(window.kinds.hasKind('thing')).toBe(true)
+    expect(window.kinds.hasKind('other')).toBe(false)
     release()
-    expect(window.groups.hasKind('thing')).toBe(false)
+    expect(window.kinds.hasKind('thing')).toBe(false)
   })
   it('finds the first registered that answers, and none where none does', () => {
     const window = createTestTabs()
-    window.groups.registerKind(kind().one)
-    window.groups.registerKind(kind({ kind: 'chat', receiveText: vi.fn() }).one)
+    window.kinds.registerKind(kind().one)
+    window.kinds.registerKind(kind({ kind: 'chat', receiveText: vi.fn() }).one)
 
-    expect(window.groups.findKind((one) => one.events?.receiveText !== undefined)?.kind).toBe(
+    expect(window.kinds.findKind((one) => one.events?.receiveText !== undefined)?.kind).toBe(
       'chat',
     )
-    expect(window.groups.findKind((one) => one.display?.isTool === true)).toBeUndefined()
+    expect(window.kinds.findKind((one) => one.display?.isTool === true)).toBeUndefined()
   })
 })
 
@@ -1029,9 +1090,17 @@ describe('a window opened with nothing to restore', () => {
 
   it('opens one tab of every placed kind, in the pane and the order each declares', async () => {
     const window = createTestTabs()
-    window.groups.registerKinds([
+    const bareOne = kind({ kind: 'bare' }).one
+    const withoutDisplay: AnyTabKind = {
+      kind: bareOne.kind,
+      open: bareOne.open,
+      pane: bareOne.pane,
+      ...(bareOne.getTitle ? { getTitle: bareOne.getTitle } : {}),
+    }
+    window.kinds.registerKinds([
       placedTab('files', 'aside', 1),
       kind({ kind: 'unplaced' }).one,
+      withoutDisplay,
       placedTab('agent', 'aside', 0),
       placedTab('plex', 'main', 0),
     ])
@@ -1054,7 +1123,7 @@ describe('a window opened with nothing to restore', () => {
 
   it('keeps a tab the person opened before the placed tabs were laid out, in front', async () => {
     const window = createTestTabs()
-    window.groups.registerKinds([
+    window.kinds.registerKinds([
       {
         ...placedTab('plex', 'main', 0),
         address: { identity: () => 'main' },
@@ -1065,7 +1134,7 @@ describe('a window opened with nothing to restore', () => {
     // Opening a placed singleton before openPlacedTabs does not duplicate it
     await window.tabs.openTabOfKind('plex')
     const ghost = await window.tabs.openTabOfKind('settings')
-    window.panes.releaseTab(ghost)
+    window.panes.closeTab(ghost, () => undefined)
     const early = await window.tabs.openTabOfKind('settings')
 
     await window.restored.openPlacedTabs(() => {
@@ -1081,7 +1150,7 @@ describe('a window opened with nothing to restore', () => {
 
   it('gives the whole window to the aside kinds where no kind is placed in the main pane', async () => {
     const window = createTestTabs()
-    window.groups.registerKinds([placedTab('agent', 'aside', 0)])
+    window.kinds.registerKinds([placedTab('agent', 'aside', 0)])
 
     await window.restored.openPlacedTabs(() => {
       throw new Error('no placed tab fails here')
@@ -1099,7 +1168,7 @@ describe('a placed kind whose tab fails to open', () => {
     const failure = new Error('the plugin is gone')
     const stoppedTabs: string[] = []
     const window = createTestTabs()
-    window.groups.registerKinds([
+    window.kinds.registerKinds([
       kind({ kind: 'agent', placement: { pane: 'aside', order: 0 } }).one,
       kind({
         kind: 'plex',
@@ -1141,7 +1210,7 @@ describe('a tab of a kind moved to a path', () => {
     navigations.length = 0
     const one = walker()
     const window = createTestTabs()
-    window.groups.registerKinds([one.one, kind().one])
+    window.kinds.registerKinds([one.one, kind().one])
     const zero = await window.tabs.openTabOfKind('walker', 'Zero.md')
     const first = await window.tabs.openTabOfKind('walker', 'One.md')
     const second = await window.tabs.openTabOfKind('walker', 'Two.md')
@@ -1165,7 +1234,7 @@ describe('a tab of a kind moved to a path', () => {
 
   it('is a new one opened there where the window holds none', async () => {
     const window = createTestTabs()
-    window.groups.registerKinds([walker().one])
+    window.kinds.registerKinds([walker().one])
 
     const id = await window.tabs.navigateTab('walker', 'Wanted.md')
 
@@ -1181,7 +1250,7 @@ describe('the tabs standing on a path that went', () => {
       kind: 'fixed',
       getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
     })
-    window.groups.registerKinds([
+    window.kinds.registerKinds([
       kind({
         kind: 'walker',
         getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
@@ -1205,61 +1274,6 @@ describe('the tabs standing on a path that went', () => {
   })
 })
 
-describe('text put to the tabs of a kind', () => {
-  /** A kind whose tabs keep the text they were handed. */
-  const listener = () =>
-    kind({
-      kind: 'listener',
-      open: () => ({ received: [] as string[], title: '' }),
-      receiveText: (state: { received: string[] }, text: string) => {
-        state.received.push(text)
-      },
-    })
-
-  it('switches to the tab the person was last in, which is put in front', async () => {
-    const window = createTestTabs()
-    window.groups.registerKinds([listener().one, kind().one])
-    const zero = await window.tabs.openTabOfKind('listener')
-    const first = await window.tabs.openTabOfKind('listener')
-    const second = await window.tabs.openTabOfKind('listener')
-    await window.tabs.openTabOfKind('thing')
-    window.panes.onTabShown(zero)
-    window.panes.onTabShown(first)
-    window.panes.onTabShown(second)
-
-    const dispatched = await window.groups.sendText('listener', 'what is this?')
-
-    expect(dispatched).toBe(second)
-    expect(window.tabs.getTab(first)?.state).toMatchObject({ received: [] })
-    expect(window.tabs.getTab(second)?.state).toMatchObject({ received: ['what is this?'] })
-    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
-      second,
-    )
-  })
-
-  it('opens a tab to take it where the window holds none', async () => {
-    const window = createTestTabs()
-    window.groups.registerKinds([listener().one, kind().one])
-    const otherId = await window.tabs.openTabOfKind('thing')
-
-    const id = await window.groups.sendText('listener', 'what is this?')
-
-    expect(id).not.toBe(otherId)
-    expect(window.tabs.getTab(id)?.state).toMatchObject({ received: ['what is this?'] })
-    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
-      id,
-    )
-  })
-
-  it('is left unheard by a tab of a kind that takes no text', async () => {
-    const window = createTestTabs()
-    window.groups.registerKinds([kind().one])
-    const id = await window.tabs.openTabOfKind('thing')
-
-    await expect(window.groups.sendText('thing', 'hello')).resolves.toBe(id)
-  })
-})
-
 describe('a file made as the kind that edits it', () => {
   it('is requested of that kind, under the folder and the name given', async () => {
     const createdItem: string[][] = []
@@ -1272,7 +1286,7 @@ describe('a file made as the kind that edits it', () => {
       }).declared,
     ])
 
-    expect(await window.groups.createFileOfKind('thing', 'dir', 'Name')).toStrictEqual({
+    expect(await window.kinds.createFileOfKind('thing', 'dir', 'Name')).toStrictEqual({
       ok: true,
       value: { path: 'dir/Name.md' },
     })
@@ -1280,10 +1294,14 @@ describe('a file made as the kind that edits it', () => {
   })
 
   it('is requested of nothing where the kind makes no file or is not registered', () => {
-    const window = notifiedCalls([kind().declared])
+    const window = notifiedCalls([
+      kind().declared,
+      kind({ kind: 'addressed', identity: (p) => p }).declared,
+    ])
 
-    expect(window.groups.createFileOfKind('thing', 'dir', 'Name')).toBeUndefined()
-    expect(window.groups.createFileOfKind('nothing', 'dir', 'Name')).toBeUndefined()
+    expect(window.kinds.createFileOfKind('thing', 'dir', 'Name')).toBeUndefined()
+    expect(window.kinds.createFileOfKind('addressed', 'dir', 'Name')).toBeUndefined()
+    expect(window.kinds.createFileOfKind('nothing', 'dir', 'Name')).toBeUndefined()
   })
 })
 
@@ -1306,7 +1324,7 @@ describe('the tabs the core kept', () => {
   it('open again under their ids with the state their kind saved, the front one in front', async () => {
     const window = createTestTabs()
     const disposedIds: string[] = []
-    window.groups.registerKind({
+    window.kinds.registerKind({
       ...pagedKind(),
       open: (targetPath: string, id: string, saved?: unknown) => {
         onScopeDispose(() => disposedIds.push(id))
@@ -1316,14 +1334,14 @@ describe('the tabs the core kept', () => {
         }
       },
     })
-    window.groups.registerKind({
+    window.kinds.registerKind({
       ...pagedKind('aside.plugin'),
       kind: 'aside-kind',
       display: { placement: { pane: 'aside', order: 0 } },
     })
 
     const alreadyOpen = await window.tabs.openTabOfKind('paged', 'existing.bin')
-    ;(window.tabs.getTabStateIn(alreadyOpen, 'paged') as { page: number }).page = 99
+    ;(window.handle.getTabState('paged', alreadyOpen) as { page: number }).page = 99
 
     const parent = effectScope()
     parent.run(() => {
@@ -1340,16 +1358,16 @@ describe('the tabs the core kept', () => {
     parent.stop()
     expect(disposedIds).toStrictEqual([])
 
-    expect(window.tabs.getTabStateIn(alreadyOpen, 'paged')).toMatchObject({ page: 99 })
-    expect(window.tabs.getTabStateIn('paged:a.bin', 'paged')).toMatchObject({ page: 4 })
-    expect(window.tabs.getTabStateIn('paged:b.bin', 'paged')).toMatchObject({ page: 1 })
-    expect(window.groups.handle.front()?.id).toBe('paged:a.bin')
+    expect(window.handle.getTabState('paged', alreadyOpen)).toMatchObject({ page: 99 })
+    expect(window.handle.getTabState('paged', 'paged:a.bin')).toMatchObject({ page: 4 })
+    expect(window.handle.getTabState('paged', 'paged:b.bin')).toMatchObject({ page: 1 })
+    expect(window.handle.front()?.id).toBe('paged:a.bin')
     expect(getPanes(window.panes.layout.value.root).map((p) => [p.id, p.tabs])).toStrictEqual([
       ['main', [alreadyOpen, 'paged:a.bin', 'paged:b.bin']],
       ['aside', ['aside-kind:s.bin']],
     ])
 
-    window.panes.releaseTab('paged:a.bin')
+    window.panes.closeTab('paged:a.bin')
     expect(disposedIds).toStrictEqual(['paged:a.bin'])
   })
 
@@ -1398,7 +1416,7 @@ describe('the tabs of a plugin that stops', () => {
         : { onClose: (_s: unknown, id: string) => (closed.push(id), true) },
     })
 
-    const unregister = window.groups.registerKind(makeKind(true))
+    const unregister = window.kinds.registerKind(makeKind(true))
     window.restored.restoreTabs(
       [
         { id: 'paged:a.bin', kind: 'paged', path: 'a.bin', saved: { page: 4 } },
@@ -1409,7 +1427,7 @@ describe('the tabs of a plugin that stops', () => {
 
     const parent = effectScope()
     parent.run(() => {
-      window.groups.closeTabsOfPlugin('viewer.plugin')
+      window.kinds.closeTabsOfPlugin('viewer.plugin')
     })
     parent.stop()
 
@@ -1423,33 +1441,42 @@ describe('the tabs of a plugin that stops', () => {
     // Re-registering `paged` reopens `paged:a.bin`, leaves `other:b.bin` as placeholder, and leaves active tabs alone
     const parentReopen = effectScope()
     parentReopen.run(() => {
-      window.groups.registerKind(makeKind(false))
+      window.kinds.registerKind(makeKind(false))
     })
     parentReopen.stop()
     expect(disposed).toStrictEqual(['open:paged:a.bin'])
-    expect(window.tabs.getTabStateIn('paged:a.bin', 'paged')).toMatchObject({ page: 4 })
+    expect(window.handle.getTabState('paged', 'paged:a.bin')).toMatchObject({ page: 4 })
     expect(window.tabs.getTab('other:b.bin')?.kind.pluginId).toBeUndefined()
 
     // Registering `paged` again while it is registered is refused and leaves `paged:a.bin` alone
-    expect(() => window.groups.registerKind(makeKind(false))).toThrowError('is registered already')
+    expect(() => window.kinds.registerKind(makeKind(false))).toThrowError('is registered already')
     expect(disposed).toStrictEqual(['open:paged:a.bin'])
 
     // Closing plugin when kind defines only onClose calls onClose
-    window.groups.closeTabsOfPlugin('viewer.plugin')
+    window.kinds.closeTabsOfPlugin('viewer.plugin')
     expect(closed).toStrictEqual(['paged:a.bin'])
 
     // Releasing the placeholder stops its scope
-    window.panes.releaseTab('paged:a.bin')
+    window.panes.closeTab('paged:a.bin')
   })
 
-  it('leaves the tabs of other plugins as they are', () => {
+  it('leaves the tabs of other plugins as they are', async () => {
     const window = createTestTabs()
-    window.groups.registerKind(pagedKind('other.plugin'))
+    window.kinds.registerKind(pagedKind('other.plugin'))
+    window.kinds.registerKind({
+      kind: 'bare-plugin',
+      pluginId: 'bare.plugin',
+      open: () => ({}),
+      pane: {},
+    })
     window.restored.restoreTabs([{ id: 'paged:a.bin', kind: 'paged', path: 'a.bin' }], '')
+    const bareId = await window.tabs.openTabOfKind('bare-plugin')
 
-    window.groups.closeTabsOfPlugin('viewer.plugin')
-
+    window.kinds.closeTabsOfPlugin('viewer.plugin')
     expect(window.tabs.getTab('paged:a.bin')?.kind.pluginId).toBe('other.plugin')
+
+    window.kinds.closeTabsOfPlugin('bare.plugin')
+    expect(window.tabs.getTab(bareId)?.kind.pluginId).toBeUndefined()
   })
 })
 
@@ -1457,7 +1484,7 @@ describe('a saved tab whose kind fails to open it', () => {
   it('opens as a placeholder that keeps the saved state, and the other tabs open as usual', () => {
     const window = createTestTabs()
     const disposedOnFail: string[] = []
-    window.groups.registerKind({
+    window.kinds.registerKind({
       ...pagedKind(),
       open: (targetPath: string, id: string) => {
         onScopeDispose(() => disposedOnFail.push(id))
@@ -1495,21 +1522,21 @@ describe('a saved tab whose kind fails to open it', () => {
       ['paged:empty', 'paged'],
       ['paged:c.bin', ''],
     ])
-    expect(window.tabs.getTabStateIn('paged:c.bin', 'paged')).toMatchObject({ page: 1 })
+    expect(window.handle.getTabState('paged', 'paged:c.bin')).toMatchObject({ page: 1 })
     const failed = window.tabs.getTab('paged:bad.bin')
     expect(failed?.state).toMatchObject({ message: 'cannot read bad.bin' })
     expect(failed?.kind.address?.getState?.(failed.state)).toStrictEqual({ page: 7 })
     expect(failed?.kind.address?.getOpenTab?.(failed.state)).toStrictEqual({ path: 'dir/bad.bin' })
     expect(failed?.kind.address?.identity?.('dir/bad.bin')).toBe('dir/bad.bin')
     expect(window.tabs.getTab('paged:empty')?.state).toMatchObject({ message: 'string failure' })
-    expect(window.groups.handle.front()?.id).toBe('paged:c.bin')
+    expect(window.handle.front()?.id).toBe('paged:c.bin')
   })
 })
 
 describe('openSavedTab', () => {
   it('opens the tab with its id and saved state as the active tab', async () => {
     const window = createTestTabs()
-    window.groups.registerKind(pagedKind())
+    window.kinds.registerKind(pagedKind())
     await window.tabs.openTabOfKind('paged', 'existing.bin')
 
     window.restored.openSavedTab({
@@ -1519,33 +1546,36 @@ describe('openSavedTab', () => {
       saved: { page: 4 },
     })
 
-    expect(window.tabs.getTabStateIn('paged:a.bin', 'paged')).toMatchObject({ page: 4 })
-    expect(window.groups.handle.front()?.id).toBe('paged:a.bin')
+    expect(window.handle.getTabState('paged', 'paged:a.bin')).toMatchObject({ page: 4 })
+    expect(window.handle.front()?.id).toBe('paged:a.bin')
   })
 
   it('activates an open tab with the same id without opening it again', async () => {
     const window = createTestTabs()
-    window.groups.registerKind(pagedKind())
+    window.kinds.registerKind(pagedKind())
     const id = await window.tabs.openTabOfKind('paged', 'a.bin')
-    ;(window.tabs.getTabStateIn(id, 'paged') as { page: number }).page = 7
+    ;(window.handle.getTabState('paged', id) as { page: number }).page = 7
     await window.tabs.openTabOfKind('paged', 'b.bin')
 
     window.restored.openSavedTab({ id, kind: 'paged', path: 'a.bin', saved: { page: 4 } })
 
-    expect(window.tabs.getTabStateIn(id, 'paged')).toMatchObject({ page: 7 })
-    expect(window.groups.handle.front()?.id).toBe(id)
+    expect(window.handle.getTabState('paged', id)).toMatchObject({ page: 7 })
+    expect(window.handle.front()?.id).toBe(id)
   })
 })
 
 describe('a tab of a kind whose plugin has not started', () => {
   it('starts the plugin of the kind, and becomes a tab of the kind once the plugin registers it', async () => {
     const started: string[] = []
-    const window = createTestTabs({ startKindPlugin: (one) => started.push(one) })
+    const window = createTestTabs({
+      ...NO_TAB_KIND_PLUGINS,
+      startKindPlugin: (one) => started.push(one),
+    })
     const id = await window.tabs.openTabOfKind('thing', 'One.md')
 
     expect(started).toStrictEqual(['thing'])
     const thing = kind()
-    window.groups.registerKind(thing.one)
+    window.kinds.registerKind(thing.one)
 
     expect(window.tabs.getTab(id)?.kind).toBe(thing.one)
     expect(thing.opened).toStrictEqual(['One.md'])
@@ -1553,8 +1583,11 @@ describe('a tab of a kind whose plugin has not started', () => {
 
   it('starts nothing for a kind the window holds', async () => {
     const started: string[] = []
-    const window = createTestTabs({ startKindPlugin: (one) => started.push(one) })
-    window.groups.registerKind(kind().one)
+    const window = createTestTabs({
+      ...NO_TAB_KIND_PLUGINS,
+      startKindPlugin: (one) => started.push(one),
+    })
+    window.kinds.registerKind(kind().one)
 
     await window.tabs.openTabOfKind('thing', 'One.md')
 

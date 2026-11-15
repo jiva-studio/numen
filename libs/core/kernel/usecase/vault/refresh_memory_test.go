@@ -88,10 +88,12 @@ type memClock struct{ w *memWorld }
 func (c memClock) Now() time.Time { return c.w.clock() }
 
 func (w *memWorld) refresh() vaults.Refresh {
-	return vaults.NewRefresh(
-		memReaders{w}, memRows{w}, memNotes{w}, memQueries{w: w}, memSources{w: w},
-		memClock{w},
-	)
+	return vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: memReaders{w}, Vaults: memRows{w}, Notes: memNotes{w},
+		Queries: memQueries{w: w}, Sources: memSources{w: w}, Now: memClock{w},
+		Ledger: vaults.NewLedger(),
+	})
+
 }
 
 func (w *memWorld) savedPaths() []string {

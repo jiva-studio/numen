@@ -20,7 +20,7 @@ export default defineConfig({
   testDir,
   testMatch: undefined,
   fullyParallel: true,
-  workers: '100%',
+  workers: 2,
   webServer: undefined,
   use: {
     ...base.use,

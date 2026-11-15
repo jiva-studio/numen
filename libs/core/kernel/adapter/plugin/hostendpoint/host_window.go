@@ -71,28 +71,28 @@ func (e *windowEndpoint) FocusNote(
 	return connect.NewResponse(&v1.FocusNoteResponse{Path: ref.Path, Title: ref.Title, Id: ref.ID}), nil
 }
 
-func (e *windowEndpoint) FocusPassages(
-	ctx context.Context, req *connect.Request[v1.FocusPassagesRequest],
-) (*connect.Response[v1.FocusPassagesResponse], error) {
+func (e *windowEndpoint) FocusFile(
+	ctx context.Context, req *connect.Request[v1.FocusFileRequest],
+) (*connect.Response[v1.FocusFileResponse], error) {
 	window, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
 	if window == nil {
-		return connect.NewResponse(&v1.FocusPassagesResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
+		return connect.NewResponse(&v1.FocusFileResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
 	}
-	spans := req.Msg.GetPassages()
-	passages := make([]domain.ByteRange, 0, len(spans))
+	spans := req.Msg.GetSpans()
+	ranges := make([]domain.ByteRange, 0, len(spans))
 	for _, span := range spans {
 		start, end := int64(span.GetStart()), int64(span.GetStart())+int64(span.GetLength())
 		if end > math.MaxInt32 {
 			return nil, connect.NewError(connect.CodeInvalidArgument,
 				fmt.Errorf("the passage at %d with length %d exceeds the 32-bit offsets of the window", start, span.GetLength()))
 		}
-		passages = append(passages, domain.ByteRange{Start: int(start), End: int(end)})
+		ranges = append(ranges, domain.ByteRange{Start: int(start), End: int(end)})
 	}
-	code, err := mapWindowError(ctx, window.FocusPassages(ctx, req.Msg.GetPath(), passages))
-	return connect.NewResponse(&v1.FocusPassagesResponse{Error: code}), err
+	code, err := mapWindowError(ctx, window.FocusFile(ctx, req.Msg.GetPath(), ranges))
+	return connect.NewResponse(&v1.FocusFileResponse{Error: code}), err
 }
 
 func (e *windowEndpoint) ReadOpenTabs(
@@ -144,19 +144,5 @@ func (e *windowEndpoint) ActivateTab(
 }
 
 func convertTabToWire(tab windowdomain.Tab) *v1.OpenTab {
-	out := &v1.OpenTab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title}
-	if place := tab.Place; place != nil {
-		out.Place = &v1.TabPlace{
-			Page:            clampToInt32(place.Page),
-			PageCount:       clampToInt32(place.PageCount),
-			PositionSeconds: place.PositionSeconds,
-			Cfi:             place.CFI,
-			Chapter:         place.Chapter,
-		}
-	}
-	return out
-}
-
-func clampToInt32(n int) int32 {
-	return int32(max(min(n, math.MaxInt32), math.MinInt32))
+	return &v1.OpenTab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, Place: tab.Place}
 }

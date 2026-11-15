@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -25,21 +25,20 @@ import (
 
 func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *container.Index, domain.Vault) {
 	t.Helper()
-	v := vaultfixture.NewVault(t, notes)
+	v := vaulttest.NewVault(t, notes)
 	db := openIndex(t)
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	return vaults.NewRefresh(
-		vaultreader.Readers{},
-		db.Vaults(),
-		db.Notes(),
-		db.Sources(),
-		db.Sources(), testsupport.GetMachine(),
-	), db, v
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
+		Ledger: vaults.NewLedger(),
+	})
+	return refresh, db, v
 }
 
-func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
+func findResults(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.SearchResult {
 	t.Helper()
 	found, err := db.ChunkSearch().FindLexical(
 		t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
@@ -70,12 +69,15 @@ func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []s
 // note is findable either way.
 func TestANoteIsIndexedInAVaultNothingHasWalked(t *testing.T) {
 	t.Parallel()
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 	db := openIndex(t)
-	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine())
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
+		Ledger: vaults.NewLedger(),
+	})
 
 	if _, err := refresh.Execute(t.Context(), v, []string{"Note.md"}); err != nil {
 		t.Fatal(err)
@@ -140,7 +142,7 @@ func TestARefreshDoesNotAcceptABookForARemovedNote(t *testing.T) {
 	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
-	vaultfixture.WriteBook(t, v.Path, "library/A Book.epub")
+	vaulttest.WriteBook(t, v.Path, "library/A Book.epub")
 
 	res, err := refresh.Execute(t.Context(), v, []string{"library/A Book.epub", "Note.md"})
 	if err != nil {
@@ -171,7 +173,7 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	})
 	const book = "library/A Book.epub"
-	vaultfixture.WriteBook(t, v.Path, book)
+	vaulttest.WriteBook(t, v.Path, book)
 	if err := db.Sources().SaveExtraction(t.Context(), v.ID, domain.SourceChunks{
 		Source: domain.Source{
 			FileStat:    domain.FileStat{Path: book, Kind: domain.KindFile, Size: 1, ModTime: time.Unix(0, 1)},
@@ -182,7 +184,7 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if len(passages(t, db, v, "reversible")) == 0 {
+	if len(findResults(t, db, v, "reversible")) == 0 {
 		t.Fatal("the book was not in the index to begin with")
 	}
 
@@ -193,7 +195,7 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if found := passages(t, db, v, "reversible"); len(found) != 0 {
+	if found := findResults(t, db, v, "reversible"); len(found) != 0 {
 		t.Errorf("the index answers with %d passages of a book the vault does not hold", len(found))
 	}
 	target, err := db.Sources().GetSourcesUnder(t.Context(), v.ID, "library")
@@ -268,13 +270,12 @@ func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 		}
 	}
 
-	refresh := vaults.NewRefresh(
-		unreadableReaders{VaultReaders: vaultreader.Readers{}, unreadablePath: "Locked.md"},
-		db.Vaults(),
-		db.Notes(),
-		db.Sources(),
-		db.Sources(), testsupport.GetMachine(),
-	)
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: unreadableReaders{VaultReaders: vaultreader.Readers{}, unreadablePath: "Locked.md"}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
+		Ledger: vaults.NewLedger(),
+	})
+
 	res, err := refresh.Execute(t.Context(), v, []string{"Locked.md", "Note.md"})
 	if err != nil {
 		t.Fatalf("one unreadable file ended the refresh: %v", err)
@@ -303,12 +304,14 @@ func TestARefreshWritesInGroups(t *testing.T) {
 		paths = append(paths, path)
 	}
 
-	v := vaultfixture.NewVault(t, notes)
+	v := vaulttest.NewVault(t, notes)
 	db := openIndex(t)
 	content := &countingNotes{}
-	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, &indexRows{}, content, db.Sources(), db.Sources(), testsupport.GetMachine(),
-	)
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: &indexRows{}, Notes: content,
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
+		Ledger: vaults.NewLedger(),
+	})
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
@@ -352,13 +355,12 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 
-	refresh := vaults.NewRefresh(
-		vanishingReaders{VaultReaders: vaultreader.Readers{}, vanishedVal: "Note.md"},
-		db.Vaults(),
-		db.Notes(),
-		db.Sources(),
-		db.Sources(), testsupport.GetMachine(),
-	)
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vanishingReaders{VaultReaders: vaultreader.Readers{}, vanishedVal: "Note.md"}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.GetMachine(),
+		Ledger: vaults.NewLedger(),
+	})
+
 	res, err := refresh.Execute(t.Context(), v, []string{"Note.md"})
 	if err != nil {
 		t.Fatal(err)
@@ -386,7 +388,7 @@ const settledNote = "---\ntitle: Note\n---\n\n# Note\n\nentropy\n"
 
 func newCountingRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCounted, *container.Index, domain.Vault) {
 	t.Helper()
-	v := vaultfixture.NewVault(t, notes)
+	v := vaulttest.NewVault(t, notes)
 	for name := range notes {
 		backdate(t, v, name)
 	}
@@ -397,9 +399,12 @@ func newCountingRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, 
 	saves := &savesCounted{NoteRepository: db.Notes()}
 	// The clock stops once the files are settled, so a file a test writes afterwards stays recent
 	// however long the test takes.
-	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), saves, db.Sources(), db.Sources(), testsupport.NewClockAt(testsupport.GetMachine().Now()),
-	)
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: saves,
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.NewClockAt(testsupport.GetMachine().Now()),
+		Ledger: vaults.NewLedger(),
+	})
+
 	return refresh, saves, db, v
 }
 
@@ -493,7 +498,7 @@ func TestForceSavesANoteTheIndexContainsAsItIs(t *testing.T) {
 
 func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 	t.Parallel()
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": settledNote})
+	v := vaulttest.NewVault(t, map[string]string{"Note.md": settledNote})
 	db := openIndex(t)
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -504,7 +509,11 @@ func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
 	// The clock is set to the modification time, so the note is recent however long the scan took.
-	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.Sources(), db.Sources(), testsupport.NewClockAt(stat.ModTime()))
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: saves,
+		Queries: db.Sources(), Sources: db.Sources(), Now: testsupport.NewClockAt(stat.ModTime()),
+		Ledger: vaults.NewLedger(),
+	})
 
 	refreshOne(t, refresh, v, "Note.md")
 
@@ -588,7 +597,7 @@ func (c tickingClock) Now() time.Time { return c.start.Add(time.Duration(c.tick.
 
 func TestRefresh_LongSaveRunKeepsOnlyRecentLedgerWindow(t *testing.T) {
 	t.Parallel()
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": settledNote})
+	v := vaulttest.NewVault(t, map[string]string{"Note.md": settledNote})
 	db := openIndex(t)
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -596,8 +605,11 @@ func TestRefresh_LongSaveRunKeepsOnlyRecentLedgerWindow(t *testing.T) {
 	var tick atomic.Int64
 	start := testsupport.GetEpoch()
 	ticking := tickingClock{start: start, tick: &tick}
-	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), ticking)
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Queries: db.Sources(), Sources: db.Sources(), Now: ticking,
+		Ledger: vaults.NewLedger(),
+	})
 
 	const perWindow = 4
 	step := vaults.TimestampGranularity / perWindow
@@ -614,8 +626,12 @@ func TestRefresh_LongSaveRunKeepsOnlyRecentLedgerWindow(t *testing.T) {
 		}
 	}
 	tick.Add(int64(2 * vaults.TimestampGranularity))
-	other := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), ticking)
+	other := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Queries: db.Sources(), Sources: db.Sources(), Now: ticking,
+		Ledger: vaults.NewLedger(),
+	})
+
 	other.Ledger = refresh.Ledger
 	refreshOne(t, other, v, "Note.md")
 	if n := refresh.Ledger.Len(); n != 0 {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"errors"
 	"image/jpeg"
 	"io"
 	"net/http"
@@ -13,13 +14,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/document"
 )
 
 func newLinkedPages(t *testing.T, files *hosttest.Vault) *httptest.Server {
 	t.Helper()
-	handler, err := server.NewLinkedHandler(map[string]string{
+	handler, err := servertest.NewHandler(map[string]string{
 		"NUMEN_PLUGIN_TOKEN": "linked-token",
 		"NUMEN_HOST_PORT":    "1",
 	}, func(s *server.Server) error {
@@ -27,7 +29,7 @@ func newLinkedPages(t *testing.T, files *hosttest.Vault) *httptest.Server {
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("NewLinkedHandler: %v", err)
+		t.Fatalf("NewHandler: %v", err)
 	}
 	web := httptest.NewServer(handler)
 	t.Cleanup(web.Close)
@@ -171,14 +173,46 @@ func TestPageRouteDrawsAPageNoLargerThanTheMostPixels(t *testing.T) {
 	}
 }
 
+type rawResponseWriter struct {
+	header   http.Header
+	status   int
+	writeErr error
+}
+
+func (w *rawResponseWriter) Header() http.Header { return w.header }
+
+func (w *rawResponseWriter) WriteHeader(statusCode int) { w.status = statusCode }
+
+func (w *rawResponseWriter) Write(p []byte) (int, error) {
+	if w.writeErr != nil {
+		return 0, w.writeErr
+	}
+	return len(p), nil
+}
+
 func TestPageServerServeHTTPCanceledAndHeaders(t *testing.T) {
 	vault := newTestdataVault(t)
-	srv := NewPageServer(newReader(t, vault, hosttest.NewTexts("vault", testsupport.PluginID)), func(string, error) {})
+	reported := 0
+	srv := NewPageServer(newReader(t, vault, hosttest.NewTexts("vault", testsupport.PluginID)), func(string, error) {
+		reported++
+	})
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf&wide=100", nil)
 	req.SetPathValue("page", "0")
-	rec := httptest.NewRecorder()
+	rec := &rawResponseWriter{header: make(http.Header)}
 	srv.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != "image/jpeg" {
-		t.Fatalf("ServeHTTP = %d %q, want 200 image/jpeg", rec.Code, rec.Header().Get("Content-Type"))
+	if rec.Header().Get("Content-Type") != "image/jpeg" {
+		t.Fatalf("Content-Type = %q, want image/jpeg", rec.Header().Get("Content-Type"))
+	}
+	if rec.Header().Get("Cache-Control") != "public, max-age=31536000, immutable" {
+		t.Fatalf("Cache-Control = %q, want immutable", rec.Header().Get("Cache-Control"))
+	}
+	if reported != 0 {
+		t.Fatalf("reported = %d on successful write, want 0", reported)
+	}
+
+	failRec := &rawResponseWriter{header: make(http.Header), writeErr: errors.New("write failed")}
+	srv.ServeHTTP(failRec, req)
+	if reported != 1 {
+		t.Fatalf("reported = %d on failed write, want 1", reported)
 	}
 }

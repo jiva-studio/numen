@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
@@ -35,7 +35,7 @@ func newSession(t *testing.T) *session {
 	dir := t.TempDir()
 	return &session{
 		t:     t,
-		vault: vaultfixture.CopyVault(t),
+		vault: vaulttest.CopyVault(t),
 		bin:   &fakeTrash{into: t.TempDir()},
 		base: []string{
 			"--registry", filepath.Join(dir, "vaults.json"),
@@ -247,7 +247,7 @@ func TestACopiedVaultIsRefusedInsteadOfIndexed(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "original")
 
-	copied := vaultfixture.CopyVault(t)
+	copied := vaulttest.CopyVault(t)
 	out, err := s.run("vault", "add", copied, "--name", "copy")
 	if err == nil {
 		t.Fatalf("a copy with the same identity was accepted:\n%s", out)

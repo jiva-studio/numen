@@ -17,7 +17,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
@@ -190,13 +190,13 @@ func openingWith(
 ) *behind {
 	t.Helper()
 
-	v := vaultfixture.NewVault(t, notes)
+	v := vaulttest.NewVault(t, notes)
 	wired := newWiring(filepath.Join(t.TempDir(), "index.db"), false, nil)
 	db := wired.openIndex(t)
 
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock(),
-		note.OpenGate{},
+		testsupport.OpenGate{},
 	)
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(NewState(run.NewTasks(), nil, nil))
@@ -494,8 +494,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 		dropped = "library/Another Book.epub"
 	)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	vaultfixture.WriteBook(t, v.Path, target)
+	v := vaulttest.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	vaulttest.WriteBook(t, v.Path, target)
 
 	wired := newWiring(filepath.Join(t.TempDir(), "index.db"), true, testsupport.Texts{Readers: vaultreader.Readers{}})
 	db := wired.openIndex(t)
@@ -518,7 +518,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 
 	// A second book is added to the vault and the watch reports it, which runs
 	// another pass over an already-read library.
-	vaultfixture.WriteBook(t, v.Path, dropped)
+	vaulttest.WriteBook(t, v.Path, dropped)
 	sendChange(t, watcher, dropped)
 
 	waitFor(t, "the book dropped into the vault was never taken apart", func() bool {

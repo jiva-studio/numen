@@ -1,7 +1,9 @@
 package service_test
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"reflect"
 	"slices"
 	"strings"
@@ -174,26 +176,26 @@ func TestNoteFocusOfNoteNotInVaultIsAToolErrorAndMovesNothing(t *testing.T) {
 	}
 }
 
-func TestSourceFocusPassesPassagesAndReturnsPathAndCount(t *testing.T) {
+func TestSourceFocusPassesSpansAndReturnsPathAndCount(t *testing.T) {
 	w := newWindowTools(t)
 	var out struct {
 		Path           string `json:"path"`
 		HighlightCount *int   `json:"highlightCount"`
 	}
-	arguments := `{"path":"library/Bird Guide.pdf","passages":[{"start":1500,"length":80},{"start":400,"length":700}]}`
+	arguments := `{"path":"library/Bird Guide.pdf","spans":[{"start":1500,"length":80},{"start":400,"length":700}]}`
 	if failure := w.call(t, "source_focus", arguments, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
 	if out.Path != guidePath || out.HighlightCount == nil || *out.HighlightCount != 2 {
 		t.Errorf("returned %+v", out)
 	}
-	want := []hosttest.FocusRequest{{Path: guidePath, Passages: []host.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}}}
+	want := []hosttest.FocusRequest{{Path: guidePath, Spans: []host.ByteSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}}}
 	if got := w.window.GetFocusRequests(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window received %+v, want %+v", got, want)
 	}
 }
 
-func TestSourceFocusWithNoPassagesOpensTheFileAtItsBeginning(t *testing.T) {
+func TestSourceFocusWithNoSpansOpensTheFileAtItsBeginning(t *testing.T) {
 	w := newWindowTools(t)
 	var out struct {
 		Path           string `json:"path"`
@@ -206,7 +208,7 @@ func TestSourceFocusWithNoPassagesOpensTheFileAtItsBeginning(t *testing.T) {
 		t.Errorf("returned %+v", out)
 	}
 	got := w.window.GetFocusRequests()
-	if len(got) != 1 || got[0].Path != guidePath || len(got[0].Passages) != 0 {
+	if len(got) != 1 || got[0].Path != guidePath || len(got[0].Spans) != 0 {
 		t.Errorf("the window received %+v", got)
 	}
 }
@@ -236,7 +238,7 @@ func TestWindowTabListReturnsTheTabsOfTheWindow(t *testing.T) {
 	w := newWindowTools(t)
 	out := w.readTabs(t, []host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Gray Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: `{"page":4,"pageCount":120}`},
 	}, "tab-2")
 
 	if len(out.Tabs) != 2 || out.ActiveTabID != "tab-2" {
@@ -259,31 +261,41 @@ func TestWindowTabListReturnsThePlaceTheReaderReported(t *testing.T) {
 		want string
 	}{
 		"a page of a PDF and its page count": {
-			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: &host.TabPlace{Page: 4, PageCount: 120}}, `{"page":4,"pageCount":120}`,
+			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: `{"page":4,"pageCount":120}`}, `{"page":4,"pageCount":120}`,
 		},
 		"a page of a PDF with no page count": {
-			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: &host.TabPlace{Page: 4}}, `{"page":4}`,
+			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: `{"page":4}`}, `{"page":4}`,
 		},
 		"a recording at a time": {
-			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: new(66.5)}}, `{"positionSeconds":66.5}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: `{"positionSeconds":66.5}`}, `{"positionSeconds":66.5}`,
 		},
 		"a recording at its beginning": {
-			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: new(float64(0))}}, `{"positionSeconds":0}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: `{"positionSeconds":0}`}, `{"positionSeconds":0}`,
 		},
 		"a recording past an hour": {
-			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: new(3723.9)}}, `{"positionSeconds":3723.9}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: `{"positionSeconds":3723.9}`}, `{"positionSeconds":3723.9}`,
 		},
 		"a place of an EPUB and its chapter": {
-			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
 			`{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`,
 		},
 		"a place of an EPUB with no chapter": {
-			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: &host.TabPlace{CFI: "epubcfi(/6/6!/4/12/1:0)"}}, `{"cfi":"epubcfi(/6/6!/4/12/1:0)"}`,
+			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: `{"cfi":"epubcfi(/6/6!/4/12/1:0)"}`}, `{"cfi":"epubcfi(/6/6!/4/12/1:0)"}`,
 		},
 		"the place of a tab of any kind": {
-			host.OpenTab{Kind: "plex", Path: guidePath, Place: &host.TabPlace{Page: 7}}, `{"page":7}`,
+			host.OpenTab{Kind: "plex", Path: guidePath, Place: `{"page":7}`}, `{"page":7}`,
 		},
 		"a note tab whose kind reports no place": {host.OpenTab{Kind: "note", Path: notePath}, ""},
+		"a place that is an empty JSON object":   {host.OpenTab{Kind: "note", Path: notePath, Place: "{}"}, ""},
+		"a place with none of the fields of a reader place": {
+			host.OpenTab{Kind: "plex", Path: guidePath, Place: `{"zoom":2}`}, "",
+		},
+		"a place whose page is not a number": {
+			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: `{"page":"seven"}`}, "",
+		},
+		"a place that is not JSON": {
+			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: "page 4"}, "",
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			w := newWindowTools(t)
@@ -362,6 +374,31 @@ func TestWindowTabListPrefersWindowTabsToTheCallFocus(t *testing.T) {
 	}
 	if len(out.Tabs) != 1 || out.Tabs[0].Path != notePath || out.ActiveTabID != "tab-1" {
 		t.Errorf("returned %+v, want the tab of the window", out)
+	}
+}
+
+func TestWindowTabListMarksATabWithoutAnIDInactive(t *testing.T) {
+	w := newWindowTools(t)
+	out := w.readTabs(t, []host.OpenTab{{ID: "", Kind: "note", Path: notePath, Title: "Gray Heron"}}, "")
+	if len(out.Tabs) != 1 || out.Tabs[0].IsActive {
+		t.Errorf("returned %+v, want one inactive tab", out)
+	}
+}
+
+type failingListWindow struct {
+	*hosttest.Window
+}
+
+func (failingListWindow) ReadOpenTabs(context.Context) ([]host.OpenTab, string, error) {
+	return nil, "", errors.New("window bus failed")
+}
+
+func TestWindowTabListReportsAHostErrorAsAToolError(t *testing.T) {
+	vault := hosttest.New(testVault)
+	window := hosttest.NewWindow(vault)
+	w := windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: failingListWindow{Window: window}})}
+	if failure := w.call(t, "window_tab_list", `{}`, nil, nil); !strings.Contains(failure, "window bus failed") {
+		t.Errorf("failure = %q, want window bus failed", failure)
 	}
 }
 

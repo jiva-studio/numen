@@ -35,19 +35,19 @@ func installedThemes(name string) ([]string, bool) {
 }
 
 func check(path []string, value any) error {
-	return settings.CheckWrite(declaredSettings, installedThemes, path, value)
+	return domainsettings.CheckValue(declaredSettings, installedThemes, path, value)
 }
 
 func TestAKeyItsOwnerDoesNotDeclareIsRejected(t *testing.T) {
 	err := check([]string{pluginID, "mistyped"}, "small")
-	if !errors.Is(err, settings.ErrUndeclared) {
+	if !errors.Is(err, domainsettings.ErrUndeclared) {
 		t.Errorf("an undeclared key of a plugin gave %v", err)
 	}
 }
 
 func TestAKeyOfAnUnknownOwnerIsRejected(t *testing.T) {
 	err := check([]string{"md.numen.nobody", "model"}, "small")
-	if !errors.Is(err, settings.ErrUndeclared) {
+	if !errors.Is(err, domainsettings.ErrUndeclared) {
 		t.Errorf("a key of an unknown owner gave %v", err)
 	}
 }
@@ -79,42 +79,42 @@ func TestAValueOfTheDeclaredTypeIsAccepted(t *testing.T) {
 
 func TestAStringWhereANumberIsDeclaredIsRejected(t *testing.T) {
 	err := check([]string{pluginID, "maxTokens"}, "many")
-	if !errors.Is(err, settings.ErrWrongType) {
+	if !errors.Is(err, domainsettings.ErrWrongType) {
 		t.Errorf("a string for a number gave %v", err)
 	}
 }
 
 func TestANumberWhereABooleanIsDeclaredIsRejected(t *testing.T) {
 	err := check([]string{pluginID, "verbose"}, 1.0)
-	if !errors.Is(err, settings.ErrWrongType) {
+	if !errors.Is(err, domainsettings.ErrWrongType) {
 		t.Errorf("a number for a boolean gave %v", err)
 	}
 }
 
 func TestABooleanWhereAStringIsDeclaredIsRejected(t *testing.T) {
 	err := check([]string{pluginID, "label"}, true)
-	if !errors.Is(err, settings.ErrWrongType) {
+	if !errors.Is(err, domainsettings.ErrWrongType) {
 		t.Errorf("a boolean for a string gave %v", err)
 	}
 }
 
 func TestAValueThatIsNoOptionOfAnEnumIsRejected(t *testing.T) {
 	err := check([]string{pluginID, "model"}, "huge")
-	if !errors.Is(err, settings.ErrNotAnOption) {
+	if !errors.Is(err, domainsettings.ErrNotAnOption) {
 		t.Errorf("a value outside the options gave %v", err)
 	}
 }
 
 func TestANumberAboveTheTopOfARangeIsRejected(t *testing.T) {
 	err := check([]string{pluginID, "temperature"}, 2.1)
-	if !errors.Is(err, settings.ErrOutOfRange) {
+	if !errors.Is(err, domainsettings.ErrOutOfRange) {
 		t.Errorf("a number above the range gave %v", err)
 	}
 }
 
 func TestANumberBelowTheFootOfARangeIsRejected(t *testing.T) {
 	err := check([]string{pluginID, "temperature"}, -0.1)
-	if !errors.Is(err, settings.ErrOutOfRange) {
+	if !errors.Is(err, domainsettings.ErrOutOfRange) {
 		t.Errorf("a number below the range gave %v", err)
 	}
 }
@@ -138,7 +138,7 @@ func TestTheScalesOfTheShellTakeNothingOutsideTheirBounds(t *testing.T) {
 		if c.ok && err != nil {
 			t.Errorf("%s was rejected: %v", what, err)
 		}
-		if !c.ok && !errors.Is(err, settings.ErrOutOfRange) {
+		if !c.ok && !errors.Is(err, domainsettings.ErrOutOfRange) {
 			t.Errorf("%s gave %v", what, err)
 		}
 	}
@@ -146,14 +146,14 @@ func TestTheScalesOfTheShellTakeNothingOutsideTheirBounds(t *testing.T) {
 
 func TestTheModeOfTheShellIsOneOfTheWordsItDeclares(t *testing.T) {
 	err := check([]string{domainsettings.AppOwner, "appearance", "mode"}, "purple")
-	if !errors.Is(err, settings.ErrNotAnOption) {
+	if !errors.Is(err, domainsettings.ErrNotAnOption) {
 		t.Errorf("a mode outside the options gave %v", err)
 	}
 }
 
 func TestAThemeThatIsNotInstalledIsRejected(t *testing.T) {
 	err := check([]string{domainsettings.AppOwner, "appearance", "theme"}, "mine:absent")
-	if !errors.Is(err, settings.ErrNotAnOption) {
+	if !errors.Is(err, domainsettings.ErrNotAnOption) {
 		t.Errorf("a theme outside the registry gave %v", err)
 	}
 }
@@ -167,7 +167,7 @@ func TestAThemeOfAPluginIsAcceptedWhileItIsInstalled(t *testing.T) {
 
 func TestTheNamingOfTheShellAcceptsABooleanOnly(t *testing.T) {
 	err := check([]string{domainsettings.AppOwner, "naming", "syncTitleAndFilename"}, "yes")
-	if !errors.Is(err, settings.ErrWrongType) {
+	if !errors.Is(err, domainsettings.ErrWrongType) {
 		t.Errorf("a string for the naming gave %v", err)
 	}
 }

@@ -21,6 +21,10 @@ func TestUnsetThreadsTakeTheCoresGiven(t *testing.T) {
 		t.Errorf("unset threads gave %d, want 7", got)
 	}
 	cfg := Defaults()
+	cfg.Threads = 1
+	if got := cfg.GetThreads(7); got != 1 {
+		t.Errorf("1 thread gave %d", got)
+	}
 	cfg.Threads = 3
 	if got := cfg.GetThreads(7); got != 3 {
 		t.Errorf("3 threads gave %d", got)

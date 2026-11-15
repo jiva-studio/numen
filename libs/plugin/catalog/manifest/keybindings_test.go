@@ -42,6 +42,9 @@ func TestReadManifest_Keybindings(t *testing.T) {
 			if !errors.Is(err, one.want) {
 				t.Errorf("error = %v, want %v", err, one.want)
 			}
+			if name == "a condition that does not parse" && !hasWrappedCause(err, manifest.ErrInvalidKeybinding) {
+				t.Errorf("error = %v, expected wrapped when cause", err)
+			}
 		})
 	}
 }

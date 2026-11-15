@@ -52,6 +52,8 @@ core_lib: &core_lib
   - libs/plugin/catalog/**
 sdk_go_lib: &sdk_go_lib
   - libs/plugin/sdk-go/**
+shared_go_lib: &shared_go_lib
+  - libs/shared/**
 sdk_ts_lib: &sdk_ts_lib
   - libs/plugin/sdk-ts/**
 ui_lib: &ui_lib
@@ -86,6 +88,7 @@ plugins_all: &plugins_all
   - *atomicfile_lib
   - *notes_lib
   - *sdk_go_lib
+  - *shared_go_lib
   - *sdk_ts_lib
   - *ui_lib
   - .github/actions/build-ui/**
@@ -96,7 +99,7 @@ plugins_all: &plugins_all
 
 # ---------------------------------------------------------------- Go
 
-core:
+core: &core
   - *go_base
   - *node_lock
   - tests/vault/**
@@ -104,6 +107,10 @@ core:
   - tools/build-plugin-index/**
   - tools/checks/structure/go/**
   - '!**/*.md'
+# The Go structure checks read the core and the Go code of every plugin backend.
+structure:
+  - *core
+  - plugins/*/backend/**
 atomicfile:
   - *atomicfile_lib
   - .github/workflows/go.yml
@@ -123,6 +130,13 @@ sdk_go:
   - *atomicfile_lib
   - *notes_lib
   - *sdk_go_lib
+  - .github/workflows/go.yml
+  - '!**/*.md'
+shared_go:
+  - *ci_router
+  - *go_workspace
+  - *go_rules
+  - *shared_go_lib
   - .github/workflows/go.yml
   - '!**/*.md'
 desktop:
@@ -151,9 +165,6 @@ ui:
   - *ts_config
   - *ui_lib
   - .github/actions/build-ui/**
-  - .github/actions/setup-playwright/**
-  - .github/actions/cache-apt/**
-  - .github/scripts/apt-retry.sh
   - .github/workflows/frontend.yml
   - '!**/*.md'
 desktop_fe:
@@ -167,9 +178,6 @@ desktop_fe:
   - *client_lib
   - *host_lib
   - .github/actions/build-ui/**
-  - .github/actions/setup-playwright/**
-  - .github/actions/cache-apt/**
-  - .github/scripts/apt-retry.sh
   - .github/workflows/frontend.yml
   - apps/desktop/editor/**
   - apps/desktop/flashcards/**
@@ -208,9 +216,6 @@ plugin_stories:
   - *sdk_ts_lib
   - *ui_lib
   - .github/actions/build-ui/**
-  - .github/actions/setup-playwright/**
-  - .github/actions/cache-apt/**
-  - .github/scripts/apt-retry.sh
   - .github/workflows/plugins.yml
   - plugins/*/frontend/**
   - tools/ci-stories/**

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"slices"
 	"sync"
 	"testing"
 
@@ -63,13 +64,15 @@ func TestAggregatorSyncTools(t *testing.T) {
 				InputSchema:  []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
 				OutputSchema: []byte(`{"type":"object","properties":{"text":{"type":"string"}}}`),
 				Effect:       tools.ReadOnly,
+				Instructions: []string{"Read before editing.", "Keep links intact."},
 			},
 			{
-				Name:        "note_write",
-				Title:       "Write Note",
-				Description: "Writes note contents",
-				InputSchema: []byte(`{"type":"object"}`),
-				Effect:      tools.ReadWrite,
+				Name:         "note_write",
+				Title:        "Write Note",
+				Description:  "Writes note contents",
+				InputSchema:  []byte(`{"type":"object"}`),
+				Effect:       tools.ReadWrite,
+				Instructions: []string{"Keep links intact.", "Write UTF-8 text."},
 			},
 			{
 				Name:        "note_delete",
@@ -84,6 +87,9 @@ func TestAggregatorSyncTools(t *testing.T) {
 	if err := NewAggregator(client, nil).SyncTools(t.Context()); err != nil {
 		t.Fatalf("SyncTools with nil server failed: %v", err)
 	}
+	if err := NewAggregator(nil, sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)).SyncTools(t.Context()); err != nil {
+		t.Fatalf("SyncTools with nil client failed: %v", err)
+	}
 
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
 	agg := NewAggregator(client, mcpServer)
@@ -92,9 +98,9 @@ func TestAggregatorSyncTools(t *testing.T) {
 		t.Fatalf("SyncTools failed: %v", err)
 	}
 
-	names := agg.GetRegisteredTools()
-	if len(names) != 3 || names[0] != "note_delete" || names[1] != "note_read" || names[2] != "note_write" {
-		t.Fatalf("unexpected registered tools: %v", names)
+	wantInstructions := "Read before editing. Keep links intact. Write UTF-8 text."
+	if got := agg.GetInstructions(); got != wantInstructions {
+		t.Fatalf("GetInstructions() = %q, want %q", got, wantInstructions)
 	}
 
 	serverSide, clientSide := sdk.NewInMemoryTransports()
@@ -111,8 +117,13 @@ func TestAggregatorSyncTools(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(listed.Tools) != 3 {
-		t.Fatalf("expected 3 tools in MCP server, got %d", len(listed.Tools))
+	names := make([]string, 0, len(listed.Tools))
+	for _, tool := range listed.Tools {
+		names = append(names, tool.Name)
+	}
+	slices.Sort(names)
+	if !slices.Equal(names, []string{"note_delete", "note_read", "note_write"}) {
+		t.Fatalf("the MCP server lists %v, want note_delete, note_read and note_write", names)
 	}
 	for _, tool := range listed.Tools {
 		switch tool.Name {
@@ -177,6 +188,68 @@ func TestAggregatorSyncTools(t *testing.T) {
 	client.mu.Unlock()
 	if err := agg.SyncTools(t.Context()); !errors.Is(err, sentinelErr) {
 		t.Fatalf("expected wrapped sentinelErr, got %v", err)
+	}
+}
+
+type recordingRegistry struct {
+	added   []*sdk.Tool
+	removed []string
+}
+
+func (r *recordingRegistry) AddTool(tool *sdk.Tool, _ sdk.ToolHandler) {
+	r.added = append(r.added, tool)
+}
+
+func (r *recordingRegistry) RemoveTools(names ...string) {
+	r.removed = append(r.removed, names...)
+}
+
+func TestAggregatorSkipsUnchangedToolsOnSync(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeToolClient{
+		tools: []*tools.ToolInfo{
+			{
+				Name:        "note_read",
+				Description: "Reads a note",
+				InputSchema: []byte(`{"type":"object"}`),
+			},
+			{
+				Name:        "note_write",
+				Description: "Writes a note",
+				InputSchema: []byte(`{"type":"object"}`),
+			},
+		},
+	}
+	registry := &recordingRegistry{}
+	agg := NewAggregator(client, registry)
+
+	if err := agg.SyncTools(t.Context()); err != nil {
+		t.Fatalf("first SyncTools failed: %v", err)
+	}
+	if len(registry.added) != 2 {
+		t.Fatalf("first sync added %d tools, want 2", len(registry.added))
+	}
+
+	registry.added = nil
+	client.tools = []*tools.ToolInfo{
+		{
+			Name:        "note_read",
+			Description: "Reads a note",
+			InputSchema: []byte(`{"type":"object"}`),
+		},
+		{
+			Name:        "note_write",
+			Description: "Writes a note and updates links",
+			InputSchema: []byte(`{"type":"object"}`),
+		},
+	}
+
+	if err := agg.SyncTools(t.Context()); err != nil {
+		t.Fatalf("second SyncTools failed: %v", err)
+	}
+	if len(registry.added) != 1 || registry.added[0].Name != "note_write" {
+		t.Fatalf("second sync added %+v, want only updated note_write", registry.added)
 	}
 }
 

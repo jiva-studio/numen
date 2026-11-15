@@ -11,12 +11,14 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -92,7 +94,7 @@ func (u fixedUses) RemoveRows(string) error { return nil }
 
 func (u fixedUses) Refresh(context.Context, string) error { return nil }
 
-func (u fixedUses) ListGrants() []connection.Grant { return nil }
+func (u fixedUses) ListPlugins() []plugin.Info { return nil }
 
 func newHandler(keys *memoryKeys) *Handler { return newHandlerWithUses(keys, fixedUses{}) }
 
@@ -116,7 +118,10 @@ func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
 
 func newHandlerOver(keys *memoryKeys, uses connectionport.Uses, provider *modelList) *Handler {
 	next := 0
-	return NewHandler(useCasesOf(connectiontest.New(&memoryRepository{}, getTypes(), keys, uses, func() (string, error) {
+	return NewHandler(useCasesOf(connectiontest.New(connectiontest.Parts{
+		Repository: &memoryRepository{}, Types: getTypes(), Keys: keys, Uses: uses,
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
+	}, func() (string, error) {
 		next++
 		return "c0000000" + string(rune('0'+next)), nil
 	}), provider))
@@ -463,7 +468,7 @@ func (t fixedTitles) ListOperationTitles() []manifest.Operation { return t }
 
 func TestListProviderConnectionTypesReturnsTheTitlesOfTheOperations(t *testing.T) {
 	handler := newHandler(newKeys())
-	deps := connections.NewDeps(&memoryRepository{}, getTypes(), newKeys(), fixedUses{})
+	deps := connections.NewDeps(&memoryRepository{}, getTypes(), newKeys(), fixedUses{}, testsupport.NoDetection{})
 	handler.connections.ListTypes = connections.NewListTypes(deps, fixedTitles{
 		{Name: "llm.complete", Title: "complete text"}, {Name: "acp.task", Title: "run agent tasks"},
 	})
@@ -494,7 +499,10 @@ func TestListProviderConnectionsMarksADetectedConnection(t *testing.T) {
 	types := append(getTypes(), connection.Type{PluginID: "org.example.agents", PluginName: "Kite agent", IsAvailable: true, Declaration: manifest.ConnectionType{
 		ID: "kite", Title: "Kite", Operations: []string{"acp.task", connection.OperationDetected},
 	}})
-	handler := NewHandler(useCasesOf(connectiontest.NewWithDetection(&memoryRepository{}, types, newKeys(), fixedUses{}, kiteDetected{}, func() (string, error) {
+	handler := NewHandler(useCasesOf(connectiontest.New(connectiontest.Parts{
+		Repository: &memoryRepository{}, Types: types, Keys: newKeys(), Uses: fixedUses{},
+		Detected: kiteDetected{}, Titles: none.OperationTitles{},
+	}, func() (string, error) {
 		return "c00000001", nil
 	}), &modelList{}))
 	if _, err := handler.CreateProviderConnection(t.Context(), createRequest("Work")); err != nil {

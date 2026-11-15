@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -82,7 +83,7 @@ func (d stubSession) OpenIndexed(ctx context.Context, options cli.IndexOptions) 
 
 func (d stubSession) GetPluginCommands() cli.PluginCommands {
 	if d.PluginCommands == nil {
-		return cli.PluginCommands{List: newScenarios(noCommands{}, noCommands{}, nil, nil, nil).List}
+		return cli.PluginCommands{List: newUseCases(noCommands{}, noCommands{}, nil, nil, nil).List}
 	}
 	return d.PluginCommands()
 }
@@ -132,13 +133,14 @@ func (s *session) openIndexedSession(
 	readers := vaultreader.Readers{Options: vaultOptions}
 	find := registry.NewFind(parts.ports.Lookup).Execute
 
-	notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), nil)
-	notes.ShouldRebuildIndex = options.Rebuild
-	books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
-	books.ShouldRebuildIndex = options.Rebuild
+	notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
+	notes = notes.Rebuilding(options.Rebuild)
+	books := filetext.NewIndex(filetext.IndexDeps{
+		Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
+		Texts: testsupport.Texts{Readers: readers}, ShouldRebuildIndex: options.Rebuild,
+	})
 	// No vectors: a test uses no model, and a vault is searched by words alone.
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-	embed.Texts = testsupport.Texts{Readers: readers}
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, testsupport.Texts{Readers: readers}, none.SearchSource{})
 
 	indexed := parts.indexedOver(rows)
 	indexed.Scan = cli.Scan{

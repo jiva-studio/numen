@@ -1,22 +1,14 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { CATALOG_STATE } from '@numen/core-client'
-import {
-  createLostConnection,
-  createMockCatalogEntry,
-  installCoreAnswers,
-} from '@numen/core-client/testing'
-import { listCatalog } from './catalog'
-
-let restore: (() => void) | undefined
-
-afterEach(() => {
-  restore?.()
-  restore = undefined
-})
+import { createLostConnection, createMockCatalogEntry } from '@numen/core-client/testing'
+import { createAnsweredApi, createAnsweredClients } from '@/testing/coreAnswers'
+import { createCatalogReader } from './catalog'
+import { createHealthApi } from './health'
+import { createProcessHost } from './processes'
 
 describe('the entries of the catalog', () => {
   it('arrive with the category, the feature and the kinds of tab of each plugin', async () => {
-    restore = installCoreAnswers({
+    const { listCatalog } = createAnsweredApi({
       pluginCatalog: {
         listCatalog: () => ({
           entries: [
@@ -25,10 +17,27 @@ describe('the entries of the catalog', () => {
               feature: 'Markdown notes',
               tabKinds: ['note', { kind: 'reader:markdown', title: 'Markdown' }],
             }),
+            {
+              id: 'legacy',
+              name: 'legacy',
+              version: '1.0.0',
+              description: '',
+              category: 'Tools',
+              contributes: { category: '', feature: '', tabKinds: [] },
+              state: CATALOG_STATE.AVAILABLE,
+            },
+            {
+              id: 'bare',
+              name: 'bare',
+              version: '1.0.0',
+              description: '',
+              category: '',
+              state: CATALOG_STATE.DISABLED,
+            },
           ],
         }),
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 
@@ -46,6 +55,26 @@ describe('the entries of the catalog', () => {
             tabKinds: ['note', 'reader:markdown'],
             isAvailable: false,
           },
+          {
+            id: 'legacy',
+            name: 'legacy',
+            version: '1.0.0',
+            description: '',
+            category: 'Tools',
+            feature: '',
+            tabKinds: [],
+            isAvailable: true,
+          },
+          {
+            id: 'bare',
+            name: 'bare',
+            version: '1.0.0',
+            description: '',
+            category: '',
+            feature: '',
+            tabKinds: [],
+            isAvailable: false,
+          },
         ],
         sourceFailures: [],
       },
@@ -53,7 +82,7 @@ describe('the entries of the catalog', () => {
   })
 
   it('mark only an available entry as offered', async () => {
-    restore = installCoreAnswers({
+    const { listCatalog } = createAnsweredApi({
       pluginCatalog: {
         listCatalog: () => ({
           entries: [
@@ -62,7 +91,7 @@ describe('the entries of the catalog', () => {
           ],
         }),
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 
@@ -73,14 +102,14 @@ describe('the entries of the catalog', () => {
   })
 
   it('name the sources that could not be read', async () => {
-    restore = installCoreAnswers({
+    const { listCatalog } = createAnsweredApi({
       pluginCatalog: {
         listCatalog: () => ({
           entries: [],
           sourceErrors: [{ source: 'sample-index', message: 'timed out' }],
         }),
       },
-    })
+    }).plugins
 
     const answer = await listCatalog()
 
@@ -89,17 +118,79 @@ describe('the entries of the catalog', () => {
     ])
   })
 
-  it('answer why the catalog cannot be read', async () => {
-    restore = installCoreAnswers({
+  it('answer why the catalog cannot be read, or when it lists nothing', async () => {
+    const { listCatalog } = createAnsweredApi({
       pluginCatalog: {
         listCatalog: () => {
           throw createLostConnection('gone')
         },
       },
+    }).plugins
+
+    expect(await listCatalog()).toStrictEqual({
+      ok: false,
+      error: 'Numen is not responding; retrying',
     })
 
-    const answer = await listCatalog()
+    const readEmpty = createCatalogReader({
+      list: () =>
+        Promise.resolve({
+          ok: false,
+          error: { kind: 'not-found', sourceErrors: [] },
+        }),
+    } as never)
+    expect(await readEmpty()).toStrictEqual({ ok: false, error: 'it lists nothing' })
+  })
+})
 
-    expect(answer).toStrictEqual({ ok: false, error: 'Numen is not responding; retrying' })
+describe('createHealthApi and createProcessHost', () => {
+  it('reports and clears plugin health items', async () => {
+    const reported: object[] = []
+    const cleared: object[] = []
+    const health = createHealthApi(
+      createAnsweredClients({
+        pluginHealth: {
+          reportHealth: (req) => {
+            reported.push(req)
+            return {}
+          },
+          clearHealth: (req) => {
+            cleared.push(req)
+            return {}
+          },
+        },
+      }).pluginHealth,
+    )
+
+    await health.healthReports.reportHealth('org.example.atlas', {
+      key: 'quota',
+      severity: 'warning',
+      text: 'Half used',
+    })
+    await health.healthReports.clearHealth('org.example.atlas', 'quota')
+
+    expect(reported).toMatchObject([
+      { item: { pluginId: 'org.example.atlas', key: 'quota', text: 'Half used' } },
+    ])
+    expect(cleared).toMatchObject([{ pluginId: 'org.example.atlas', key: 'quota' }])
+  })
+
+  it('watches running plugin processes until disposed', async () => {
+    const host = createProcessHost(
+      createAnsweredClients({
+        pluginService: {
+          watchPluginProcesses: async function* () {
+            yield { processes: [], timeUnixMs: 42n }
+          },
+        },
+      }).pluginService,
+    )
+    const seen: number[] = []
+    const subscription = host.watch((_processes, time) => {
+      seen.push(time)
+      subscription.dispose()
+    })
+
+    await vi.waitFor(() => expect(seen).toStrictEqual([42]))
   })
 })

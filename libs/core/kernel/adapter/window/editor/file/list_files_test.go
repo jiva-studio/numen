@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
@@ -29,7 +29,7 @@ func newListHandler(open window, readers vaultport.VaultReaders) *filewindow.Han
 			file.NewListFolder(file.NewGetFolderEntries(readers, nil), file.NewListTabKinds(fileKinds, choose)),
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),
-		filewindow.NewChanges(open, open, nil, nil, nil, nil),
+		filewindow.NewChanges(open, open, nil, nil, nil),
 	)
 }
 
@@ -56,7 +56,7 @@ func (r unstampedReader) List(ctx context.Context, folder string) ([]domain.Entr
 }
 
 func TestAListingAnswersWhenEachEntryWasModifiedInMilliseconds(t *testing.T) {
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"links/tide.md":     "# Tide\n",
 		"links/deeper/a.md": "# A\n",
 	})
@@ -88,7 +88,7 @@ func TestAListingAnswersWhenEachEntryWasModifiedInMilliseconds(t *testing.T) {
 }
 
 func TestAListingAnswersZeroForAnEntryWithNoModificationTime(t *testing.T) {
-	v := vaultfixture.NewVault(t, map[string]string{"links/tide.md": "# Tide\n"})
+	v := vaulttest.NewVault(t, map[string]string{"links/tide.md": "# Tide\n"})
 	handler := newListHandler(window{vault: v}, unstamped{vaultreader.Readers{}})
 
 	answer, err := handler.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: "links"}))

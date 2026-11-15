@@ -44,7 +44,7 @@ func TestDiscover(t *testing.T) {
 		"description": "Sample plugin",
 		"capabilities": ["search.source"],
 		"targets": ["desktop.samples"],
-		"activationEvents": ["onSearchSourceReady"],
+		"activationEvents": ["onIndexChanged"],
 		"permissions": [],
 		"backend": {"entrypoint": "bin/sample"},
 		"settings": []
@@ -177,7 +177,7 @@ func TestABrokenManifestDoesNotHideTheOtherPlugins(t *testing.T) {
 	if f, p := manifestjson.Discover([]string{filepath.Join(tempDir, "nonexistent")}); len(f) != 0 || len(p) != 0 {
 		t.Errorf("Discover nonexistent = %v, %v", f, p)
 	}
-	if f, p := manifestjson.Discover([]string{notADir}); len(f) != 0 || len(p) != 1 {
+	if f, p := manifestjson.Discover([]string{notADir}); len(f) != 0 || len(p) != 1 || errors.Unwrap(p[0].Err) == nil {
 		t.Errorf("Discover regular file = %v, %v", f, p)
 	}
 	t.Chdir(tempDir)

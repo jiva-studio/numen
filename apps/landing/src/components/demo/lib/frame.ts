@@ -10,7 +10,7 @@ export const LEAST = 120
 const KEPT = 160
 
 /** The tallest the player is drawn in a window of this height. */
-export function getTallest(windowHeight: number): number {
+export function getMaxHeight(windowHeight: number): number {
   return Math.max(LEAST, windowHeight - KEPT)
 }
 
@@ -19,7 +19,7 @@ export function getTallest(windowHeight: number): number {
  * far the pointer has come, and the room the window has.
  */
 export function getDraggedHeight(was: number, distance: number, windowHeight: number): number {
-  return Math.min(getTallest(windowHeight), Math.max(LEAST, was + distance))
+  return Math.min(getMaxHeight(windowHeight), Math.max(LEAST, was + distance))
 }
 
 /** A value that survives JSON.stringify and JSON.parse unchanged. */
@@ -73,12 +73,12 @@ function createSeekMessage(ms: number): string {
   return JSON.stringify({ event: 'command', func: 'seekTo', args: [ms / 1000, true] })
 }
 
-/** What a frame is told through. */
+/** The window a seek message is posted to. */
 export interface MessageTarget {
   postMessage(message: string, targetOrigin: string): void
 }
 
-/** A frame told to play from a moment, and nobody else is told. */
+/** Posts a seek to the moment to the frame of the embed only. */
 export function seekFrame(
   target: MessageTarget | null | undefined,
   embed: string,

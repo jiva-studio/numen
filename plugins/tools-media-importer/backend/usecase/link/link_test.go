@@ -11,13 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/queuetest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -97,7 +98,7 @@ type world struct {
 	vault *hosttest.Vault
 	store *hosttest.Store
 	texts *hosttest.Texts
-	queue *hosttest.Queue
+	queue *queuetest.Log
 	sites *sites
 	links *link.Links
 	limit int64
@@ -108,7 +109,7 @@ func newWorld(t *testing.T) *world {
 	vault := hosttest.New("Mills")
 	w := &world{
 		vault: vault, store: vault.Store(), texts: hosttest.NewTexts(vault.Vault().ID, pluginID),
-		queue: hosttest.NewQueue(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
+		queue: queuetest.NewLog(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
 	}
 	w.links = link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(w.texts), Queue: w.queue, Clock: newFakeClock(time.Unix(1_700_000_000, 0))},
 		func() link.Fetcher { return w.sites },
@@ -602,16 +603,16 @@ func TestCopyInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 		t.Fatalf("paths %q and %q, want the same path", inMills.Path, inChemistry.Path)
 	}
 
-	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), inMills, download.MediaVideo); err != nil || !isStarted {
-		t.Fatalf("StartMediaCopy in Mills: started=%v, err=%v", isStarted, err)
+	if size, isStarted, err := w.links.StartMediaCopy(t.Context(), inMills, download.MediaVideo); err != nil || !isStarted || size != 0 {
+		t.Fatalf("StartMediaCopy in Mills: size=%d, started=%v, err=%v", size, isStarted, err)
 	}
 	<-w.sites.started
 
 	if _, _, err := w.links.StartMediaCopy(t.Context(), inMills, download.MediaVideo); !errors.Is(err, link.ErrBeingFetched) {
 		t.Fatalf("second StartMediaCopy in Mills returned %v, want %v", err, link.ErrBeingFetched)
 	}
-	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), inChemistry, download.MediaVideo); err != nil || !isStarted {
-		t.Fatalf("StartMediaCopy in Chemistry: started=%v, err=%v", isStarted, err)
+	if size, isStarted, err := w.links.StartMediaCopy(t.Context(), inChemistry, download.MediaVideo); err != nil || !isStarted || size != 0 {
+		t.Fatalf("StartMediaCopy in Chemistry: size=%d, started=%v, err=%v", size, isStarted, err)
 	}
 
 	millsID := link.GetCopyTaskID("Mills", inMills.Path)
@@ -630,14 +631,18 @@ func TestCopyInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 	}
 
 	close(w.sites.gate)
-	w.links.Wait()
+	w.queue.WaitForEnd(t, millsID)
+	w.queue.WaitForEnd(t, chemID)
 	if tasks := w.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("tasks %+v after both copies ended", tasks)
 	}
+	if size, isStarted, err := w.links.StartMediaCopy(t.Context(), inMills, download.MediaVideo); err != nil || isStarted || size != 2*chunk {
+		t.Errorf("StartMediaCopy when already kept = (%d, %v, %v), want (%d, false, nil)", size, isStarted, err, 2*chunk)
+	}
 }
 
-func newFakeClock(start time.Time) *clock.Fake {
-	source := new(clock.Fake)
+func newFakeClock(start time.Time) *clocktest.Fake {
+	source := new(clocktest.Fake)
 	source.Set(start)
 	return source
 }

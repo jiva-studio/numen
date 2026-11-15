@@ -7,6 +7,7 @@ import (
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/wordmatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
@@ -28,35 +29,6 @@ import (
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// Scan is the walk that reads a vault's notes into the index, cut at this
-// installation's sizes. Every application that reads a vault takes it from here.
-func Scan(c Config, db *Index) vault.Scan {
-	return searchScan(searchOf(c), db)
-}
-
-// ReadWholeVault is what makes a vault answer, put together the one way: the
-// notes read, the file texts cut, and the vectors of the search source made.
-func ReadWholeVault(c Config,
-	ctx context.Context, db *Index, source searchsourceport.Source, v domain.Vault,
-) (indexing.ReadWholeVault, error) {
-	return readWholeVault(searchOf(c), ctx, db, source, v, makeRefresh(c, db, db.Notes()))
-}
-
-// Embed gives a vault's chunks the vectors of the search source they need.
-func Embed(c Config, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
-	return searchEmbed(searchOf(c), db, source, v)
-}
-
-// IndexTexts cuts the text versions of a vault's files into chunks.
-func IndexTexts(c Config, db *Index, v domain.Vault) (filetext.Index, error) {
-	return indexTexts(searchOf(c), db, v, nil)
-}
-
-// NewSearch is the search a question is answered by, put together the one way.
-func NewSearch(c Config, db *Index, asking searchsourceport.Source, errorHandler func(error)) searchusecase.Search {
-	return newSearch(searchOf(c), db, asking, errorHandler, nil)
-}
 
 // coreFolder is the folder of a vault's store that holds the core's own files.
 const coreFolder = "core"
@@ -97,8 +69,7 @@ func searchScan(c searchWiring, db *Index) vault.Scan {
 	)
 	setNoteCut(c, &scan)
 	scan.Walks = &db.Walks
-	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
-	return scan
+	return scan.Rebuilding(c.ShouldRebuildIndex)
 }
 
 func readWholeVault(c searchWiring,
@@ -133,9 +104,7 @@ func createUnreadableFinder(refresh vault.Refresh) func(ctx context.Context, v d
 }
 
 func fitIndex(c searchWiring, db *Index) vectorscase.FitIndex {
-	fit := vectorscase.NewFitIndex(db, c.ErrorHandler)
-	fit.ShouldRebuildIndex = c.ShouldRebuildIndex
-	return fit
+	return vectorscase.NewFitIndex(db.VectorIndex(), c.ErrorHandler, c.ShouldRebuildIndex)
 }
 
 func searchEmbed(c searchWiring, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
@@ -143,11 +112,9 @@ func searchEmbed(c searchWiring, db *Index, source searchsourceport.Source, v do
 	if err != nil {
 		return vectorscase.Embed{}, err
 	}
-	embed := vectorscase.NewEmbed(c.VaultReaders, db.Sources(), db.Sources())
-	embed.Claim = store.NewIndexClaim(coreFolder + "/indexing")
-	embed.Texts = c.TextReaders
-	embed.Source = source
-	return embed, nil
+	return vectorscase.NewEmbed(
+		c.VaultReaders, db.Sources(), db.Sources(), store.NewIndexClaim(coreFolder+"/indexing"), c.TextReaders, getSearchSource(source),
+	), nil
 }
 
 func indexTexts(
@@ -156,12 +123,12 @@ func indexTexts(
 	if _, err := c.VaultReaders.Open(v); err != nil {
 		return filetext.Index{}, err
 	}
-	index := filetext.NewHandlingIndex(filetext.NewIndex(c.VaultReaders, db.Sources(), db.Sources(), db.Sources(), db.Sources(), c.TextReaders), c.ErrorHandler, readNote)
 	cutter := cutNotes(c)
-	index.Sizes = cutter.Sizes
-	index.Legibility = cutter.Legibility
-	index.ShouldRebuildIndex = c.ShouldRebuildIndex
-	return index, nil
+	index := filetext.NewIndex(filetext.IndexDeps{
+		Readers: c.VaultReaders, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
+		Texts: c.TextReaders, Sizes: cutter.Sizes, Legibility: cutter.Legibility, ShouldRebuildIndex: c.ShouldRebuildIndex,
+	})
+	return filetext.NewHandlingIndex(index, c.ErrorHandler, readNote), nil
 }
 
 func newSearch(c searchWiring, db *Index, asking searchsourceport.Source, errorHandler func(error), reportAnswered func()) searchusecase.Search {
@@ -175,8 +142,8 @@ func getParticipants(db *Index, source searchsourceport.Source) []searchusecase.
 	return []searchusecase.Participant{searchusecase.NewSource(source, db.ChunkSearch())}
 }
 
-func newSearchOver(c searchWiring, passages sourceport.PassageQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {
-	searching := searchusecase.New(passages, c.VaultReaders, c.TextReaders, sources, errorHandler, reportAnswered)
+func newSearchOver(c searchWiring, queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {
+	searching := searchusecase.New(queries, c.VaultReaders, c.TextReaders, sources, errorHandler, reportAnswered)
 	if workers := c.ResolvedCompute.Workers; workers > 0 {
 		searching.Extractors = workers
 	}
@@ -188,20 +155,21 @@ func newFloorPolicy(db *Index, source searchsourceport.Source, errorHandler func
 }
 
 func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, errorHandler func(error)) {
+	policy := newFloorPolicy(db, source, errorHandler)
 	access := hostsearch.Search{
-		Samples:  db.SearchSamples(),
-		Nearest:  searchusecase.NewGetBestSimilarity(db.ChunkSearch()),
-		Places:   searchusecase.NewFindNearest(db.ChunkSearch()),
-		Progress: db.ChunkVectors(),
-		Stats:    searchusecase.NewStats(db.ChunkVectors(), c.Clock),
-		Policy:   newFloorPolicy(db, source, errorHandler),
-		Passages: searchusecase.NewSearchPassages(newSearch(c, db, source, errorHandler, nil)),
+		Samples:    db.SearchSamples(),
+		Nearest:    searchusecase.NewGetBestSimilarity(db.ChunkSearch()),
+		Places:     searchusecase.NewFindNearest(db.ChunkSearch()),
+		Progress:   db.ChunkVectors(),
+		Stats:      searchusecase.NewStats(db.ChunkVectors(), c.Clock),
+		Policy:     policy,
+		TextSearch: searchusecase.NewSearchText(newSearch(c, db, source, errorHandler, nil)),
+		Source:     source,
+		Queries:    newEmbedQueries(source),
 	}
-	if source != nil {
-		access.Source = source
-		access.Queries = newEmbedQueries(source)
-	}
-	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.Search = access.Access() })
+	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
+		l.Search = hostsearch.Scoring{Search: access, Scores: newScoreChunks(c, db, source, policy)}.Access()
+	})
 }
 
 func searchSources(c searchWiring, ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
@@ -261,4 +229,18 @@ func getFloorHint(source searchsourceport.Source) searchusecase.FloorHint {
 		return advisor.GetFloorHint
 	}
 	return nil
+}
+
+func newScoreChunks(c searchWiring, db *Index, source searchsourceport.Source, policy searchusecase.FloorPolicy) *searchusecase.ScoreChunks {
+	deps := searchusecase.ScoreChunksDeps{
+		Places:  db.ChunkSearch(),
+		Words:   wordmatch.NewMatcher(),
+		Readers: c.VaultReaders,
+		Texts:   c.TextReaders,
+		Floors:  policy,
+	}
+	if querySource, ok := source.(searchsourceport.QuerySource); ok {
+		deps.Source = querySource
+	}
+	return searchusecase.NewScoreChunks(deps)
 }

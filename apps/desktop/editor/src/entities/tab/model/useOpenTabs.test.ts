@@ -33,11 +33,14 @@ const create = (
   const { writeOpenTabs } = coreCalls
   const tabs = ref(entries.map(({ id, title }) => ({ id, title })))
   const windowTabs = {
-    groups: {
-      handle: { front: () => front },
+    handle: { front: () => front },
+    kinds: {
       findKind: (isWanted: (kind: { kind: string }) => boolean) =>
         entries
-          .map((one) => ({ kind: one.kind ?? 'note', display: { icon: one.icon } }))
+          .map((one) => ({
+            kind: one.kind ?? 'note',
+            ...(one.icon ? { display: { icon: one.icon } } : {}),
+          }))
           .find(isWanted),
     },
     tabs: {
@@ -91,14 +94,14 @@ describe('the open tabs', () => {
         id: 'b',
         title: 'B',
         kind: 'reader:reader-pdf',
-        openTab: { path: 'b.pdf', place: { page: 7, pageCount: 12 } },
+        openTab: { path: 'b.pdf', place: '{"page":7,"pageCount":12}' },
         savedState: { page: 7, pageCount: 12 },
       },
       {
         id: 'c',
         title: 'C',
         kind: 'reader:recording',
-        openTab: { path: 'c.mp3', place: { positionSeconds: 0 } },
+        openTab: { path: 'c.mp3', place: '{"positionSeconds":0}' },
       },
       {
         id: 'd',
@@ -106,7 +109,7 @@ describe('the open tabs', () => {
         kind: 'reader:reader-epub',
         openTab: {
           path: 'd.epub',
-          place: { cfi: 'epubcfi(/6/4!/4/2/1:0)', chapter: 'The Reed Beds' },
+          place: '{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}',
         },
       },
     ])
@@ -119,7 +122,7 @@ describe('the open tabs', () => {
         title: 'B',
         path: 'b.pdf',
         state: '{"page":7,"pageCount":12}',
-        place: { page: 7, pageCount: 12 },
+        place: '{"page":7,"pageCount":12}',
       },
       {
         id: 'c',
@@ -127,7 +130,7 @@ describe('the open tabs', () => {
         title: 'C',
         path: 'c.mp3',
         state: '',
-        place: { positionSeconds: 0 },
+        place: '{"positionSeconds":0}',
       },
       {
         id: 'd',
@@ -135,7 +138,7 @@ describe('the open tabs', () => {
         title: 'D',
         path: 'd.epub',
         state: '',
-        place: { cfi: 'epubcfi(/6/4!/4/2/1:0)', chapter: 'The Reed Beds' },
+        place: '{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}',
       },
     ])
   })
@@ -146,7 +149,7 @@ describe('the open tabs', () => {
         id: 'b',
         title: 'B',
         kind: 'reader:reader-pdf',
-        openTab: { path: 'b.pdf', place: { page: 3, pageCount: 12 } },
+        openTab: { path: 'b.pdf', place: '{"page":3,"pageCount":12}' },
       },
     ])
 
@@ -159,7 +162,7 @@ describe('the open tabs', () => {
           title: 'B',
           path: 'b.pdf',
           state: '',
-          place: { page: 3, pageCount: 12 },
+          place: '{"page":3,"pageCount":12}',
         },
       ],
     })
@@ -210,7 +213,7 @@ describe('the open tabs', () => {
     })
     const tabs = ref([{ id: 'a', title: 'A' }])
     const windowTabs = {
-      groups: { handle: { front: () => null } },
+      handle: { front: () => null },
       tabs: {
         tabs,
         getTab: (id: string) => ({
@@ -250,18 +253,26 @@ describe('the open tabs', () => {
     expect(writeOpenTabs).toHaveBeenCalledTimes(3)
   })
 
-  it('carries on when the core cannot take the list', () => {
+  it('carries on when the core cannot take the list and reports the failure', async () => {
     coreCalls.writeOpenTabs.mockRejectedValue(new Error('down'))
+    const writeMessage = vi.fn()
+    const tabs = ref<{ id: string; title: string }[]>([])
     const rejecting = {
       windowTabs: {
-        groups: { handle: { front: () => null } },
-        tabs: { tabs: ref([]), getTab: () => undefined },
+        handle: { front: () => null },
+        tabs: { tabs, getTab: () => undefined },
       },
-      writeMessage: vi.fn(),
+      writeMessage,
       writeOpenTabs: coreCalls.writeOpenTabs,
-    } as unknown as Parameters<typeof useOpenTabs>[0]
+    } as never
 
     expect(() => useOpenTabs(rejecting)).not.toThrow()
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith(
+        expect.stringContaining('The open tabs were not saved:'),
+        'error',
+      ),
+    )
   })
 })
 
@@ -277,6 +288,15 @@ describe('the active tab', () => {
 
     expect(target.getActiveTabId()).toBe('a')
     expect(target.open.value.activeId).toBe('a')
+  })
+
+  it('is the front tab even when the window cannot resolve it', () => {
+    const target = create([{ id: 'gone', title: 'Gone', unresolved: true }], {
+      id: 'gone',
+      kind: 'note',
+    })
+
+    expect(target.getActiveTabId()).toBe('gone')
   })
 
   it('is the last tab that takes no text when one that takes text is in front', () => {
@@ -427,16 +447,20 @@ describe('the open tabs while the window leaves its vault', () => {
 })
 
 describe('getKindIcon', () => {
-  it('returns the icon the kind declares', () => {
+  it('returns the icon the matching kind declares', () => {
     const icon = { name: 'DeclaredIcon' }
-    const target = create([{ id: 'p', title: 'P', kind: 'agent', icon }])
+    const target = create([
+      { id: 'o', title: 'O', kind: 'other', icon: { name: 'OtherIcon' } },
+      { id: 'p', title: 'P', kind: 'agent', icon },
+    ])
 
     expect(target.getKindIcon('agent')).toBe(icon)
   })
 
-  it('falls back to the built-in icon of the kind', () => {
-    const target = create([])
+  it('falls back to the built-in icon when the kind has no display or is not registered', () => {
+    const target = create([{ id: 's', title: 'S', kind: 'settings' }])
 
     expect(target.getKindIcon('settings')).toBe(findTabKindIcon('settings'))
+    expect(target.getKindIcon('files')).toBe(findTabKindIcon('files'))
   })
 })

@@ -16,7 +16,7 @@ describe('the tabs the kinds place', () => {
   it('open, and a kind that fails is written as a message and left out', async () => {
     const writeMessage = vi.fn()
     const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([
+    windowTabs.kinds.registerKinds([
       withPlacement('welcome', () => ({ title: 'Welcome' })),
       withPlacement('broken', () => {
         throw createLostConnection('no pane')
@@ -34,10 +34,31 @@ describe('the tabs the kinds place', () => {
 
   it('open without waiting when started in the background', async () => {
     const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([withPlacement('welcome', () => ({ title: 'Welcome' }))])
+    windowTabs.kinds.registerKinds([withPlacement('welcome', () => ({ title: 'Welcome' }))])
 
     startPlacedTabs(windowTabs, vi.fn())
 
     await vi.waitFor(() => expect(windowTabs.tabs.tabs.value).toHaveLength(1))
+  })
+
+  it('reports a failure of the background open', async () => {
+    const writeMessage = vi.fn()
+    startPlacedTabs(
+      {
+        restored: {
+          openPlacedTabs: async () => {
+            throw createLostConnection('offline')
+          },
+        },
+      } as never,
+      writeMessage,
+    )
+
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledExactlyOnceWith(
+        'The tabs did not open: Numen is not responding; retrying',
+        'error',
+      ),
+    )
   })
 })

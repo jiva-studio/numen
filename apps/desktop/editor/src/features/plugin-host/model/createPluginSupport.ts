@@ -5,13 +5,13 @@ import {
   type PluginStatus,
 } from '@numen/plugin-loader'
 import { openExternalUrl, type WindowPlatform } from '@numen/workbench'
-import { getPluginConnections, getPluginTexts } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { Caught } from '@/shared/api/errors'
+import { loadFrameRuntime } from '@/shared/api/runtime'
 import { TARGET } from '../lib/window'
 import type { HostParts, TabActionParts, TabKindParts } from './createHostParts'
 import type { createPluginCatalog } from './createPluginCatalog'
-import { createPluginSettingsAccessor, createRowChangeSubscriber } from './pluginSettings'
+import { createPluginSettingsAccessor } from './pluginSettings'
 
 /** What the plugin host and the plugin loader are made from. */
 export interface PluginSupportDeps {
@@ -29,7 +29,19 @@ export interface PluginSupportDeps {
 }
 
 const mergeHostParts = (parts: readonly HostParts[]): HostParts =>
-  parts.reduce<HostParts>((all, one) => ({ ...all, ...one }), {})
+  parts.reduce<HostParts>(
+    (all, one) => ({
+      window: { ...all.window, ...one.window },
+      plugins: { ...all.plugins, ...one.plugins },
+      commands: { ...all.commands, ...one.commands },
+      slots: { ...all.slots, ...one.slots },
+      kinds: { ...all.kinds, ...one.kinds },
+      tabs: { ...all.tabs, ...one.tabs },
+      vault: { ...all.vault, ...one.vault },
+      work: { ...all.work, ...one.work },
+    }),
+    {},
+  )
 
 export function createPluginSupport(deps: PluginSupportDeps) {
   const { rest, catalog, status } = deps
@@ -37,30 +49,36 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     rest,
     deps.reports.reportError,
   )
-  const subscribeRowChanges = createRowChangeSubscriber(rest)
+  const parts = mergeHostParts(deps.parts)
   const pluginHost = createPluginHost({
-    target: TARGET,
-    ...mergeHostParts(deps.parts),
-    ...deps.kinds,
-    ...deps.tabs,
-    hasPluginFrontend: catalog.hasFrontend,
-    hasPluginBackend: catalog.hasBackend,
-    isPluginFailed: (pluginId) => status.getPluginFailure(pluginId) !== undefined,
-    startPlugin: status.startPlugin,
-    startPluginsOf: status.startPluginsOf,
-    findPluginsOf: status.findPluginsOf,
-    app: createAppInfo({
-      version: import.meta.env.VITE_NUMEN_VERSION,
-      build: import.meta.env.VITE_NUMEN_BUILD,
-      getPlatform: deps.getPlatform,
-    }),
-    openExternal: (url) => openExternalUrl(url),
-    onError: deps.reports.reportError,
-    getReaderExtensions: catalog.getReaderExtensions,
-    getSetting,
-    onSettingChange,
-    getTexts: (pluginId) => getPluginTexts(pluginId),
-    getConnections: (pluginId) => getPluginConnections(pluginId, subscribeRowChanges),
+    window: {
+      ...parts.window,
+      target: TARGET,
+      app: createAppInfo({
+        version: import.meta.env.VITE_NUMEN_VERSION,
+        build: import.meta.env.VITE_NUMEN_BUILD,
+        getPlatform: deps.getPlatform,
+      }),
+      openExternal: (url) => openExternalUrl(url, loadFrameRuntime),
+      onError: deps.reports.reportError,
+    },
+    plugins: {
+      ...parts.plugins,
+      hasPluginFrontend: catalog.hasFrontend,
+      hasPluginBackend: catalog.hasBackend,
+      isPluginFailed: (pluginId) => status.getPluginFailure(pluginId) !== undefined,
+      startPlugin: status.startPlugin,
+      startPluginsOf: status.startPluginsOf,
+      findPluginsOf: status.findPluginsOf,
+      getSetting,
+      onSettingChange,
+    },
+    commands: { ...parts.commands },
+    slots: { ...parts.slots },
+    kinds: { ...parts.kinds, ...deps.kinds, getReaderExtensions: catalog.getReaderExtensions },
+    tabs: { ...parts.tabs, ...deps.tabs },
+    vault: { ...parts.vault },
+    work: { ...parts.work },
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,

@@ -88,6 +88,11 @@ describe('the modes the palette offers', () => {
 
     expect(modes).toHaveLength(3)
     expect(modes.every((one) => one.isDisabled === true && one.detail === WORDS.pinned)).toBe(true)
+    expect(modes.map((one) => one.actions)).toStrictEqual([
+      [{ id: 'apply', text: WORDS.apply }],
+      [{ id: 'apply', text: WORDS.apply }],
+      [{ id: 'apply', text: WORDS.apply }],
+    ])
   })
 
   it('mark the one in force, and stay enabled when the applied theme is unknown', () => {

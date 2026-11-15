@@ -1,6 +1,8 @@
 package profilefiles
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,19 +34,22 @@ func writeProfile(t *testing.T, dir, name, content string) {
 func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 	dir := t.TempDir()
 	writeProfile(t, dir, "a-broken.json", `{"id": "owner/x", `)
-	writeProfile(t, dir, "e-good.json", `{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"}`)
+	writeProfile(t, dir, "e-good.json", `{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","tokenizer":"bpe"}`)
 	writeProfile(t, dir, "notes.txt", `not a profile`)
 	if err := os.MkdirAll(filepath.Join(dir, "sub.json"), 0o700); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.Symlink(filepath.Join(dir, "missing-target"), filepath.Join(dir, "b-unreadable.json")); err != nil {
+		t.Fatal(err)
+	}
 
-	var reported []string
-	table, err := NewDirectory(dir).Load(func(file string, _ error) { reported = append(reported, filepath.Base(file)) })
+	reported := map[string]error{}
+	table, err := Directory{path: dir}.Load(func(file string, err error) { reported[filepath.Base(file)] = err })
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(reported) != 1 || reported[0] != "a-broken.json" {
-		t.Errorf("reported %v, want only a-broken.json", reported)
+	if len(reported) != 2 || reported["a-broken.json"] == nil || !errors.Is(reported["b-unreadable.json"], fs.ErrNotExist) {
+		t.Errorf("reported %v, want a-broken.json and b-unreadable.json (ErrNotExist)", reported)
 	}
 
 	if _, err := table.GetLocal("owner/good"); err != nil {
@@ -56,7 +61,9 @@ func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 }
 
 func TestLoadKeepsShippedProfilesWhenFolderIsMissing(t *testing.T) {
-	table, err := NewDirectory(filepath.Join(t.TempDir(), "profiles")).Load(func(string, error) {})
+	table, err := Directory{path: filepath.Join(t.TempDir(), "profiles")}.Load(func(file string, err error) {
+		t.Errorf("unexpected report for missing folder: %s: %v", file, err)
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,9 +78,13 @@ func TestLoadKeepsShippedProfilesWhenPathIsNotFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	table, err := NewDirectory(file).Load(func(string, error) {})
+	var reportedPath string
+	table, err := Directory{path: file}.Load(func(path string, _ error) { reportedPath = path })
 	if err != nil {
 		t.Fatal(err)
+	}
+	if reportedPath != file {
+		t.Errorf("reportedPath = %q, want %q", reportedPath, file)
 	}
 	if _, err := table.GetLocal(model.DefaultModel); err != nil {
 		t.Error(err)

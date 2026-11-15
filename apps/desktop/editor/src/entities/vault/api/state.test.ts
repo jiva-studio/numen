@@ -2,31 +2,26 @@
  * The vault state response mapped to values of the vault entity: a field omitted from the
  * response maps to an empty or zero value.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installCoreHandlers } from '@numen/core-client/testing'
-import { getVaultState, watchVaultChanges } from './state'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createHandledClients } from '@/testing/coreAnswers'
+import { createVaultStateApi } from './state'
 
 const request = {
   getVaultState: vi.fn(),
   watchVaultChanges: vi.fn(),
 }
 
-let restore: () => void
+const getApi = () => createVaultStateApi(createHandledClients(request).vault)
 
 beforeEach(() => {
   vi.clearAllMocks()
-  restore = installCoreHandlers(request)
-})
-
-afterEach(() => {
-  restore()
 })
 
 describe('the state of the vault', () => {
   it('is a scan not begun where the answer carries none', async () => {
     request.getVaultState.mockResolvedValue({ id: 'v1', name: 'Zoo', path: '/zoo' })
 
-    expect(await getVaultState()).toStrictEqual({
+    expect(await getApi().getVaultState()).toStrictEqual({
       id: 'v1',
       name: 'Zoo',
       path: '/zoo',
@@ -42,7 +37,7 @@ describe('the state of the vault', () => {
       scan: { isReady: true, error: 'permission denied', watchError: '/zoo/deep' },
     })
 
-    const state = await getVaultState()
+    const state = await getApi().getVaultState()
 
     expect(state.scan).toStrictEqual({
       isReady: true,
@@ -71,7 +66,7 @@ describe('the changes to the vault a window follows', () => {
       }
     })
 
-    expect(await readAll(watchVaultChanges(signal))).toStrictEqual([
+    expect(await readAll(getApi().watchVaultChanges(signal))).toStrictEqual([
       {
         paths: ['Llama.md'],
         shouldReload: true,
@@ -79,5 +74,25 @@ describe('the changes to the vault a window follows', () => {
         versionPaths: ['talks/a.mp3'],
       },
     ])
+  })
+
+  it('stops following vault changes when the signal aborts', async () => {
+    request.watchVaultChanges.mockImplementation(async function* (_req, context) {
+      yield { paths: ['Llama.md'], reload: false, renamed: [], versionPaths: [] }
+      if (!context.signal.aborted) {
+        yield { paths: ['Alpaca.md'], reload: false, renamed: [], versionPaths: [] }
+      }
+    })
+    const controller = new AbortController()
+    const seen: object[] = []
+
+    await (async () => {
+      for await (const change of getApi().watchVaultChanges(controller.signal)) {
+        seen.push(change)
+        controller.abort()
+      }
+    })().catch(() => undefined)
+
+    expect(seen).toHaveLength(1)
   })
 })

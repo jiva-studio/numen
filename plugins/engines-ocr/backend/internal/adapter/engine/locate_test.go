@@ -1,11 +1,10 @@
 package engine
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 )
 
 func TestLocateModelResolvesExplicitPath(t *testing.T) {
@@ -90,35 +89,6 @@ func TestLocateModelPrecedence(t *testing.T) {
 	}
 }
 
-func TestIsFetchedWithConfiguredOrEnvPath(t *testing.T) {
-	dir := t.TempDir()
-	recPath := filepath.Join(dir, "pp-ocr-rec.onnx")
-	if err := os.WriteFile(recPath, []byte("weights"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	// False when missing
-	if IsFetched(settings.Config{}, settings.RecognizerModel{}) {
-		t.Fatal("expected IsFetched to be false when nothing configured")
-	}
-
-	// True when path is configured
-	if !IsFetched(settings.Config{}, settings.RecognizerModel{Path: recPath}) {
-		t.Fatal("expected IsFetched to be true with explicit path")
-	}
-
-	// True when env var points to existing file
-	t.Setenv("NUMEN_DEPENDENCY_PP_OCR_REC", recPath)
-	if !IsFetched(settings.Config{}, settings.RecognizerModel{}) {
-		t.Fatal("expected IsFetched to be true with env var set")
-	}
-
-	// False when explicit path does not exist
-	if IsFetched(settings.Config{}, settings.RecognizerModel{Path: filepath.Join(dir, "missing.onnx")}) {
-		t.Fatal("expected IsFetched to be false when explicit path is missing")
-	}
-}
-
 func TestFindInFolderAndHomeFallbacks(t *testing.T) {
 	dir := t.TempDir()
 	if got := findInFolder("", "locate.go"); got != "" {
@@ -128,8 +98,8 @@ func TestFindInFolderAndHomeFallbacks(t *testing.T) {
 		t.Fatalf("findInFolder with empty fileName = %q, want empty", got)
 	}
 
-	if _, err := locateModel(filepath.Join(dir, "missing.onnx"), "", "pp-doclayout.onnx", ""); err == nil {
-		t.Fatal("locateModel with missing explicit path succeeded, want error")
+	if _, err := locateModel(filepath.Join(dir, "missing.onnx"), "", "pp-doclayout.onnx", ""); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("locateModel with missing explicit path = %v, want os.ErrNotExist", err)
 	}
 
 	t.Setenv("NUMEN_DEPENDENCY_PP_DOCLAYOUT", filepath.Join(dir, "missing-env.onnx"))

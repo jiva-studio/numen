@@ -520,12 +520,6 @@ func TestANoteWithInlineFrontmatterIsReportedAndNotSaved(t *testing.T) {
 	}
 }
 
-func TestAFolderKeepsTheNameOfTheNoteFiledBelowIt(t *testing.T) {
-	if got := note.GetPathUnder("archive", "physics/Entropy.md"); got != "archive/Entropy.md" {
-		t.Errorf("got %q", got)
-	}
-}
-
 // A move to a name no file can have leaves the note where it is.
 func TestMoveRejectsInvalidFileName(t *testing.T) {
 	for _, to := range []string{"physics/note:Entropy.md", "physics/Entropy?.md", "physics/Entropy.md "} {

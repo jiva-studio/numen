@@ -2,8 +2,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from '../styles'
-import { createBufferedNoteState } from './customTabBuffer'
-import { createCustomTabKind, createPluginPaneWrapper, createReaderTabKind } from './customTabKind'
+import { createMockManifest } from '@numen/core-client/testing'
+import { createBufferedNoteState, isNoteEditorKind } from './customTabBuffer'
+import {
+  createCustomTabKind,
+  createPluginPaneWrapper,
+  createReaderTabKind,
+  pickCustomTabParts,
+} from './customTabKind'
 import { getReaderKindId } from './tabKinds'
 import {
   attachPluginRoot,
@@ -15,9 +21,31 @@ import {
   stripMarkdownExtension,
 } from './pane/pluginView'
 import { adoptHostStyles, parseStatePath, PANE_LAYOUT_STYLE } from './pane/paneHost'
-import type { ReaderHandle } from '@numen/plugin-sdk'
+import type { PluginContext, ReaderHandle, TabKindRegistration } from '@numen/plugin-sdk'
 import type { NoteBuffer } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
+import { createTestHostDeps, type TestHostDeps } from '../testing/hostDeps'
+
+/** The deps of a custom tab kind written flat, with the context of its plugin and whether it edits notes. */
+type FlatTabKindDeps = TestHostDeps & {
+  readonly getContext?: () => PluginContext | undefined
+  readonly isNoteEditor?: boolean
+}
+
+const createFlatCustomTabKind = (
+  pluginId: string,
+  registration: TabKindRegistration,
+  deps?: FlatTabKindDeps,
+) =>
+  createCustomTabKind(
+    pluginId,
+    pickCustomTabParts(registration),
+    deps && {
+      ...createTestHostDeps(deps),
+      ...(deps.getContext ? { getContext: deps.getContext } : {}),
+      ...(deps.isNoteEditor ? { isNoteEditor: true } : {}),
+    },
+  )
 
 describe('createPluginPaneWrapper', () => {
   it('unwraps es module default export and forwards normalized props', async () => {
@@ -130,7 +158,7 @@ describe('createReaderTabKind', () => {
 
 describe('createCustomTabKind', () => {
   it('computes note title and note target', () => {
-    const customKind = createCustomTabKind('md.numen.notes', {
+    const customKind = createFlatCustomTabKind('md.numen.notes', {
       kind: 'note',
       component: STUB_COMPONENT,
       title: 'Markdown Note',
@@ -173,7 +201,7 @@ describe('createCustomTabKind', () => {
 
   it('populates note body from readNote dependency', async () => {
     let savedBody = ''
-    const customKind = createCustomTabKind(
+    const customKind = createFlatCustomTabKind(
       'md.numen.notes',
       {
         kind: 'note',
@@ -220,7 +248,7 @@ describe('createCustomTabKind (loading)', () => {
     ...(readNote ? { readNote } : {}),
   })
   const open = (readNote?: (path: string) => Promise<string | undefined>) =>
-    createCustomTabKind('md.numen.notes', registration, createHost(readNote)).open(
+    createFlatCustomTabKind('md.numen.notes', registration, createHost(readNote)).open(
       'notes/test.md',
       'tab',
     ) as { isLoading: { value: boolean } }
@@ -257,7 +285,7 @@ describe('createCustomTabKind (failed writes)', () => {
     writeNote,
   })
   const open = (writeNote: (path: string, body: string) => Promise<void>) =>
-    createCustomTabKind(
+    createFlatCustomTabKind(
       'md.numen.notes',
       { kind: 'note', component: STUB_COMPONENT, title: 'Markdown Note' },
       host(writeNote),
@@ -340,15 +368,15 @@ describe('createReaderTabKind (place)', () => {
   it('reports to the open tabs the last place the reader reports', () => {
     const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
     const state = kind.open('library/Wading Birds.pdf', 'tab') as {
-      reportPlace: (place: unknown) => void
+      reportPlace: (place: string) => void
     }
 
-    state.reportPlace({ page: 7, pageCount: 12 })
-    state.reportPlace({ page: 8, pageCount: 12 })
+    state.reportPlace('{"page":7,"pageCount":12}')
+    state.reportPlace('{"page":8,"pageCount":12}')
 
     expect(kind.address?.getOpenTab?.(state)).toStrictEqual({
       path: 'library/Wading Birds.pdf',
-      place: { page: 8, pageCount: 12 },
+      place: '{"page":8,"pageCount":12}',
     })
   })
 
@@ -364,17 +392,17 @@ describe('createReaderTabKind (place)', () => {
     const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
     const state = kind.open('talks/Heron Talk.mp3', 'tab') as {
       savePlace: (place: unknown) => void
-      reportPlace: (place: unknown) => void
+      reportPlace: (place: string) => void
     }
 
     state.savePlace({ t: [66.5, 70] })
     expect(kind.address?.getOpenTab?.(state)).toStrictEqual({ path: 'talks/Heron Talk.mp3' })
 
-    state.reportPlace({ positionSeconds: 66.5 })
+    state.reportPlace('{"positionSeconds":66.5}')
     expect(kind.address?.getState?.(state)).toEqual({ t: [66.5, 70] })
     expect(kind.address?.getOpenTab?.(state)).toStrictEqual({
       path: 'talks/Heron Talk.mp3',
-      place: { positionSeconds: 66.5 },
+      place: '{"positionSeconds":66.5}',
     })
   })
 
@@ -413,7 +441,7 @@ describe('createCustomTabKind (notes)', () => {
   it('navigates note tab in place and syncs path when shown', async () => {
     const syncPath = vi.fn(() => true)
     const writeCalls: Array<{ path: string; body: string }> = []
-    const kind = createCustomTabKind(
+    const kind = createFlatCustomTabKind(
       'md.numen.notes',
       {
         kind: 'note',
@@ -508,7 +536,7 @@ describe('createCustomTabKind (notes)', () => {
     const syncPath = vi.fn()
     let resolveFirstRead: ((val: string) => void) | undefined
 
-    const kindWithDispatch = createCustomTabKind(
+    const kindWithDispatch = createFlatCustomTabKind(
       'p',
       {
         kind: 'custom',
@@ -530,9 +558,14 @@ describe('createCustomTabKind (notes)', () => {
     )
 
     const st = kindWithDispatch.open('notes/slow.md', 't1') as Record<string, unknown>
+    const customMeasure = vi.fn()
+    ;(st.measure as () => void)()
+    ;(st.attachEditor as (e: { measure: () => void }) => void)({ measure: customMeasure })
+    ;(st.measure as () => void)()
+    expect(customMeasure).toHaveBeenCalledOnce()
     // Save while loading & unedited is ignored
     const writeNote = vi.fn(async () => undefined)
-    const kindSaveGuard = createCustomTabKind(
+    const kindSaveGuard = createFlatCustomTabKind(
       'p',
       { kind: 'note', component: STUB_COMPONENT },
       {
@@ -592,11 +625,11 @@ describe('createCustomTabKind (notes)', () => {
     expect(m1).toHaveBeenCalledTimes(1)
     expect(syncPath).not.toHaveBeenCalled()
 
-    const kindNoDeps = createCustomTabKind('p', { kind: 'custom', component: STUB_COMPONENT })
+    const kindNoDeps = createFlatCustomTabKind('p', { kind: 'custom', component: STUB_COMPONENT })
     expect(() =>
       kindNoDeps.display?.onShow!({ path: 'notes/a.md', title: '', measure: vi.fn() }, 't1'),
     ).not.toThrow()
-    const kindUndefWorkspace = createCustomTabKind(
+    const kindUndefWorkspace = createFlatCustomTabKind(
       'p',
       { kind: 'custom', component: STUB_COMPONENT },
       {
@@ -654,7 +687,7 @@ describe('the pane of a custom note tab', () => {
         return h('span', 'note')
       },
     })
-    const kind = createCustomTabKind('p', { kind: 'custom', component: Probe })
+    const kind = createFlatCustomTabKind('p', { kind: 'custom', component: Probe })
     const state = kind.open('notes/a.md', 't1')
     const view = mount(kind.pane, { props: { state } })
     await view.vm.$nextTick()
@@ -694,7 +727,11 @@ describe('createBufferedNoteState', () => {
     const reveal = vi.fn(() => true)
 
     state.revealLine(9)
-    state.attachEditor({ reveal })
+    const bufMeasure = vi.fn()
+    state.measure()
+    state.attachEditor({ reveal, measure: bufMeasure })
+    state.measure()
+    expect(bufMeasure).toHaveBeenCalledOnce()
     await new Promise((r) => setTimeout(r, 0))
     expect(reveal).not.toHaveBeenCalled()
 
@@ -722,7 +759,7 @@ describe('createBufferedNoteState', () => {
       addr === 'missing' ? '' : `notes/${addr}.md`,
     )
 
-    const customKind = createCustomTabKind(
+    const customKind = createFlatCustomTabKind(
       'md.numen.notes',
       { kind: 'note', component: STUB_COMPONENT, title: 'Note' },
       {
@@ -835,7 +872,7 @@ describe('createBufferedNoteState', () => {
 
     // A kind the manifest does not declare as the note editor opens no note buffer, whatever its name
     vi.mocked(buffer.open).mockClear()
-    const nonNoteWithBuffer = createCustomTabKind(
+    const nonNoteWithBuffer = createFlatCustomTabKind(
       'p',
       { kind: 'note', component: STUB_COMPONENT },
       {
@@ -848,6 +885,34 @@ describe('createBufferedNoteState', () => {
     )
     nonNoteWithBuffer.open('notes/x.md', 'tab-x')
     expect(buffer.open).not.toHaveBeenCalled()
+
+    const noteEditorWithoutBuffer = createFlatCustomTabKind(
+      'p',
+      { kind: 'note', component: STUB_COMPONENT },
+      {
+        target: 'desktop.editor',
+        registerKind: () => vi.fn(),
+        registerExtensionReader: () => vi.fn(),
+        openTab: async () => '',
+        isNoteEditor: true,
+      },
+    )
+    expect((noteEditorWithoutBuffer.open('notes/x.md', 'tab-x') as { path: string }).path).toBe(
+      'notes/x.md',
+    )
+
+    expect(isNoteEditorKind(undefined, 'note')).toBe(false)
+    expect(isNoteEditorKind({ ...createMockManifest('p'), contributes: undefined }, 'note')).toBe(
+      false,
+    )
+    const noteEditorManifest = createMockManifest('p', { tabKinds: ['deck', 'note'] })
+    expect(isNoteEditorKind(noteEditorManifest, 'note')).toBe(false)
+    if (noteEditorManifest.contributes?.tabKinds[1]) {
+      noteEditorManifest.contributes.tabKinds[1].isNoteEditor = true
+    }
+    expect(isNoteEditorKind(noteEditorManifest, 'deck')).toBe(false)
+    expect(isNoteEditorKind(noteEditorManifest, 'note')).toBe(true)
+    expect(isNoteEditorKind(noteEditorManifest, 'missing')).toBe(false)
 
     // Fallbacks when deps/notes/workspace are missing
     const bareState = createBufferedNoteState(
@@ -863,13 +928,13 @@ describe('createBufferedNoteState', () => {
       { targetPath: 'notes/nonotes.md', id: 'nonotes', buffer },
       {
         pluginId: 'p',
-        deps: {
+        deps: createTestHostDeps({
           target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
           openTab: async () => '',
           resolveLink: vi.fn(async () => 'a.md'),
-        },
+        }),
       },
     )
     expect(await depsWithoutNotesOrWorkspace.wikilinks.search('q')).toEqual([])
@@ -881,7 +946,7 @@ describe('createBufferedNoteState', () => {
       { targetPath: '', id: 'empty', buffer },
       {
         pluginId: 'p',
-        deps: {
+        deps: createTestHostDeps({
           target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
@@ -889,7 +954,7 @@ describe('createBufferedNoteState', () => {
           getNotes: () => undefined,
           getWorkspace: () => undefined,
           resolveLink: resolveWhenNoWorkspace,
-        },
+        }),
       },
     )
     expect(await emptyMapState.wikilinks.search('q')).toEqual([])
@@ -901,7 +966,7 @@ describe('createBufferedNoteState', () => {
       { targetPath: '', id: 'undef-find', buffer },
       {
         pluginId: 'p',
-        deps: {
+        deps: createTestHostDeps({
           target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
@@ -911,7 +976,7 @@ describe('createBufferedNoteState', () => {
               findNotes: async () => undefined,
               getHeadings: async () => new Map(),
             }) as never,
-        },
+        }),
       },
     )
     expect(await undefFindNotesState.wikilinks.search('q')).toEqual([])
@@ -921,7 +986,7 @@ describe('createBufferedNoteState', () => {
       { targetPath: 'notes/unmapped.md', id: 'unmapped', buffer },
       {
         pluginId: 'p',
-        deps: {
+        deps: createTestHostDeps({
           target: 'desktop.editor',
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
@@ -933,7 +998,7 @@ describe('createBufferedNoteState', () => {
             }) as never,
           getWorkspace: () => ({ files: { open: openFile } }) as never,
           resolveLink: () => Promise.reject(new Error('resolve fail')),
-        },
+        }),
       },
     )
     expect(await unmappedHeadingsState.wikilinks.headings('')).toEqual([])
@@ -972,6 +1037,8 @@ describe('pluginView helpers and stylesheet adoption', () => {
 
     const nonLoaderAsync = { type: 'async', loader: 'invalid' }
     expect(parsePluginComponent(nonLoaderAsync)).toBe(nonLoaderAsync)
+    const wrongTypeAsync = { type: 'other', loader: () => Promise.resolve(syncComp) }
+    expect(parsePluginComponent(wrongTypeAsync)).toBe(wrongTypeAsync)
 
     expect(parseTitle('Plain')).toBe('Plain')
     expect(parseTitle({ value: 'RefVal' })).toBe('RefVal')

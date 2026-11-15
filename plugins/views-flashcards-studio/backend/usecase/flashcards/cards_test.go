@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
@@ -728,7 +728,7 @@ func TestACountIsDroppedOnceTheWindowHasMissing(t *testing.T) {
 	went()
 
 	u := flashcards.NewCountCardsDue(
-		flashcards.ListReviewCards{}, flashcards.Schedules{}, presets.Presets{},
+		flashcards.ListReviewCards{}, flashcards.Schedules{}, presets.OpenReads{},
 		review.Day{}, vaulttest.NewClock(),
 	)
 	_, err := u.Execute(removed, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
@@ -1210,7 +1210,7 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	scheds := flashcards.NewSchedules(s.logs, nil, getToday(), flashcards.ListReviewCards{}, presets.Presets{})
+	scheds := flashcards.NewSchedules(s.logs, nil, getToday(), flashcards.ListReviewCards{}, presets.OpenReads{})
 	blind := flashcards.NewCountReviews(s.logs, scheds, getToday(), vaulttest.NewClock())
 
 	got, err := blind.Execute(t.Context(), s.vault)
@@ -1356,8 +1356,8 @@ func TestAVaultWhoseDecksAreSavedNamesNone(t *testing.T) {
 	}
 }
 
-func newFakeClock(start time.Time) *clock.Fake {
-	source := new(clock.Fake)
+func newFakeClock(start time.Time) *clocktest.Fake {
+	source := new(clocktest.Fake)
 	source.Set(start)
 	return source
 }

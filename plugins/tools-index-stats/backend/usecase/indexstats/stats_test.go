@@ -1,11 +1,12 @@
 package indexstats
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
@@ -104,8 +105,19 @@ func TestAnIndexWithMoreVectorsThanChunksWaitsForNothing(t *testing.T) {
 	}
 }
 
-func newFakeClock(start time.Time) *clock.Fake {
-	source := new(clock.Fake)
+func TestAnIndexWithoutAVaultReturnsItsError(t *testing.T) {
+	index := newIndex()
+	index.HideVault()
+
+	got, err := NewStats(index, newFakeClock(getStart()), 8).Get(t.Context())
+
+	if !errors.Is(err, host.ErrNoVault) || !reflect.DeepEqual(got, api.Stats{}) {
+		t.Errorf("got %+v, %v; want empty stats and %v", got, err, host.ErrNoVault)
+	}
+}
+
+func newFakeClock(start time.Time) *clocktest.Fake {
+	source := new(clocktest.Fake)
 	source.Set(start)
 	return source
 }

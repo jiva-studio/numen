@@ -9,8 +9,10 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
 
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -147,7 +149,10 @@ func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	f := &fixture{repository: &memoryRepository{}, keys: &memoryKeys{values: map[string]string{}}, uses: &memoryUses{}, types: newTypes()}
 	next := 0
-	f.connection = connectiontest.New(f.repository, f.types, f.keys, f.uses, func() (string, error) {
+	f.connection = connectiontest.New(connectiontest.Parts{
+		Repository: f.repository, Types: f.types, Keys: f.keys, Uses: f.uses,
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
+	}, func() (string, error) {
 		next++
 		return fmt.Sprintf("c%08x", next), nil
 	})
@@ -250,8 +255,18 @@ func (u *memoryUses) use(connectionID string, uses ...connectiondomain.Use) {
 	u.uses[connectionID] = uses
 }
 
-func (u *memoryUses) ListGrants() []connectiondomain.Grant {
+// ListPlugins returns a plugin for each grant, with a permission connections:use:<operation> for each of its
+// operations.
+func (u *memoryUses) ListPlugins() []plugindomain.Info {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	return slices.Clone(u.grants)
+	plugins := make([]plugindomain.Info, 0, len(u.grants))
+	for _, one := range u.grants {
+		info := plugindomain.Info{ID: one.PluginID, Name: one.PluginName}
+		for _, operation := range one.Operations {
+			info.Permissions = append(info.Permissions, manifest.FormatConnectionsUse(operation))
+		}
+		plugins = append(plugins, info)
+	}
+	return plugins
 }

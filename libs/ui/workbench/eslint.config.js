@@ -18,9 +18,10 @@ import {
 const outsideLayers = [
   'src/**/*.stories.ts',
   'src/**/fixtures/**',
-  'src/vite.ts',
-  'src/vite.test.ts',
 ]
+
+/** The port itself, which alone measures elements on screen. */
+const portFile = 'src/features/workspace/api/rect.ts'
 
 const domainImports = createDomainImports({
   message:
@@ -29,7 +30,10 @@ const domainImports = createDomainImports({
 })
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname, { defaultProject: ['eslint.config.js'] }),
+  ...createBaseConfig(import.meta.dirname, {
+    portIgnores: [portFile],
+    defaultProject: ['eslint.config.js'],
+  }),
 
   ...createLibraryLayerConfigs({
     boundaries,
@@ -42,7 +46,7 @@ export default tseslint.config(
   // Anything with a lifetime a test must hold still is a port.
   createPortConfig({
     files: ['src/**/*.ts'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
+    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**', portFile],
   }),
 
   ...createStoryConfig(storybook),

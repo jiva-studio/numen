@@ -35,15 +35,6 @@ func NewSearchClientFromEnv() (*SearchClient, error) {
 	return NewSearchClient(addr), nil
 }
 
-// NewSearchClientFromVars is NewSearchClientFromEnv over the variables given.
-func NewSearchClientFromVars(vars map[string]string) (*SearchClient, error) {
-	addr, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return NewSearchClient(addr), nil
-}
-
 func NewSearchClient(endpoint hostcall.Endpoint) *SearchClient {
 	return NewSearchClientOver(hostcall.HTTPClient(), endpoint)
 }
@@ -93,6 +84,10 @@ func readSearchError(code v1.HostSearchErrorCode) error {
 		return ErrEmbeddingFailed
 	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY:
 		return ErrInvalidQuery
+	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_CONDITION:
+		return ErrInvalidCondition
+	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_WORDS:
+		return ErrInvalidWords
 	}
 	return fmt.Errorf("host: rejected with code %s", code)
 }
@@ -184,19 +179,24 @@ func (c *SearchClient) SampleSimilarities(ctx context.Context, recipe string, qu
 		rows[i] = one.GetValues()
 	}
 	return SimilaritySample{
-		PassageCount: int(res.Msg.GetPassageCount()),
-		SourceCount:  int(res.Msg.GetSourceCount()),
-		Rows:         rows,
+		ChunkCount:  int(res.Msg.GetChunkCount()),
+		SourceCount: int(res.Msg.GetSourceCount()),
+		Rows:        rows,
 	}, nil
 }
 
-func (c *SearchClient) SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error) {
+func (c *SearchClient) SearchText(ctx context.Context, query SearchResultQuery) ([]SearchResult, error) {
+	mode, err := writeSearchMode(query.Mode)
+	if err != nil {
+		return nil, err
+	}
 	kinds := make([]string, len(query.Kinds))
 	for i, kind := range query.Kinds {
 		kinds[i] = string(kind)
 	}
-	res, err := c.rpc.SearchPassages(ctx, newSearchRequest(c, &v1.HostSearchServiceSearchPassagesRequest{
-		Query: query.Query, Limit: int32(min(max(query.Limit, math.MinInt32), math.MaxInt32)), Kinds: kinds, PathPrefix: query.PathPrefix,
+	res, err := c.rpc.SearchText(ctx, newSearchRequest(c, &v1.HostSearchServiceSearchTextRequest{
+		Query: query.Query, Limit: clampInt32(query.Limit), ResultsPerSource: clampInt32(query.ResultsPerSource),
+		Kinds: kinds, PathPrefix: query.PathPrefix, Mode: mode, IsRawWords: query.IsRawWords, IsWholeText: query.IsWholeText,
 	}))
 	if err != nil {
 		return nil, readSearchCallError(err)
@@ -204,15 +204,72 @@ func (c *SearchClient) SearchPassages(ctx context.Context, query PassageQuery) (
 	if err := readSearchError(res.Msg.GetError()); err != nil {
 		return nil, err
 	}
-	found := make([]Passage, len(res.Msg.GetPassages()))
-	for i, one := range res.Msg.GetPassages() {
-		start, end := int(one.GetRange().GetStart()), int(one.GetRange().GetEnd())
-		found[i] = Passage{
-			Path: one.GetPath(), Text: one.GetText(), Location: one.GetLocation(),
-			Start: start, Length: end - start, Line: int(one.GetLine()), Selector: one.GetSelector(),
+	found := make([]SearchResult, len(res.Msg.GetResults()))
+	for i, one := range res.Msg.GetResults() {
+		start, end := int(one.GetByteRange().GetStart()), int(one.GetByteRange().GetEnd())
+		found[i] = SearchResult{
+			ChunkID: one.GetChunkId(), Path: one.GetPath(), Text: one.GetText(), PlaceLabel: one.GetPlaceLabel(),
+			Start: start, Length: end - start, MatchLine: int(one.GetMatchLine()), Selector: one.GetSelector(),
+			Similarity: one.Similarity, WordScore: one.WordScore, WholeText: one.GetWholeText(),
 		}
 	}
 	return found, nil
+}
+
+func clampInt32(value int) int32 {
+	return int32(min(max(value, math.MinInt32), math.MaxInt32))
+}
+
+func writeSearchMode(mode SearchMode) (v1.SearchMode, error) {
+	switch mode {
+	case SearchModeHybrid:
+		return v1.SearchMode_SEARCH_MODE_HYBRID, nil
+	case SearchModeWords:
+		return v1.SearchMode_SEARCH_MODE_WORDS, nil
+	case SearchModeMeaning:
+		return v1.SearchMode_SEARCH_MODE_MEANING, nil
+	}
+	return 0, fmt.Errorf("host: unknown search mode %d", mode)
+}
+
+// ScoreChunks scores chunks of the vault against conditions over the whole of each chunk, the range a
+// SearchResult covers. A meaning condition is embedded once and compared with every small chunk inside
+// the chunk; it matches at or above the floor of the vault. A words condition matches when the whole
+// text of the chunk matches the FTS5 query. It needs the index:read permission. More than
+// MaxScoredChunks chunks, MaxScoredConditions conditions or a text over MaxConditionBytes returns
+// ErrLimitExceeded, a condition with no text or both texts ErrInvalidCondition, a words query FTS5
+// rejects ErrInvalidWords, and a meaning condition on a host with no model ErrNoModel.
+func (c *SearchClient) ScoreChunks(ctx context.Context, query ScoreQuery) (ChunkScores, error) {
+	conditions := make([]*v1.ScoreCondition, len(query.Conditions))
+	for i, one := range query.Conditions {
+		conditions[i] = writeScoreCondition(one)
+	}
+	res, err := c.rpc.ScoreChunks(ctx, newSearchRequest(c, &v1.ScoreChunksRequest{ChunkIds: query.ChunkIDs, Conditions: conditions}))
+	if err != nil {
+		return ChunkScores{}, readSearchCallError(err)
+	}
+	if err := readSearchError(res.Msg.GetError()); err != nil {
+		return ChunkScores{}, err
+	}
+	chunks := make([]ChunkScore, len(res.Msg.GetChunks()))
+	for i, one := range res.Msg.GetChunks() {
+		scores := make([]ConditionScore, len(one.GetConditions()))
+		for j, score := range one.GetConditions() {
+			scores[j] = ConditionScore{Similarity: score.Similarity, IsMatch: score.GetIsMatch()}
+		}
+		chunks[i] = ChunkScore{ChunkID: one.GetChunkId(), Conditions: scores}
+	}
+	return ChunkScores{Floor: res.Msg.GetFloor(), Chunks: chunks}, nil
+}
+
+func writeScoreCondition(condition ScoreCondition) *v1.ScoreCondition {
+	switch {
+	case condition.Meaning != "" && condition.Words == "":
+		return &v1.ScoreCondition{Condition: &v1.ScoreCondition_Meaning{Meaning: condition.Meaning}}
+	case condition.Words != "" && condition.Meaning == "":
+		return &v1.ScoreCondition{Condition: &v1.ScoreCondition_Words{Words: condition.Words}}
+	}
+	return &v1.ScoreCondition{}
 }
 
 func (c *SearchClient) GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error) {
@@ -226,12 +283,12 @@ func (c *SearchClient) GetBestSimilarity(ctx context.Context, recipe string, que
 	return res.Msg.GetSimilarity(), nil
 }
 
-func (c *SearchClient) FindNearestPassages(ctx context.Context, query NearestQuery) ([]NearestMatch, error) {
+func (c *SearchClient) FindNearestChunks(ctx context.Context, query NearestQuery) ([]NearestMatch, error) {
 	kinds := make([]string, len(query.Kinds))
 	for i, kind := range query.Kinds {
 		kinds[i] = string(kind)
 	}
-	res, err := c.rpc.FindNearestPassages(ctx, newSearchRequest(c, &v1.FindNearestPassagesRequest{
+	res, err := c.rpc.FindNearestChunks(ctx, newSearchRequest(c, &v1.FindNearestChunksRequest{
 		Place: &v1.SearchPlace{VaultId: c.vault, Recipe: query.Recipe}, Vector: query.Vector,
 		Limit: int32(min(max(query.Limit, math.MinInt32), math.MaxInt32)), Kinds: kinds, PathPrefix: query.PathPrefix, Floor: query.Floor,
 	}))

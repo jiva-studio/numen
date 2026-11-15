@@ -2,10 +2,11 @@
  * The calls of the note service that read and write connections between notes, over the real client
  * and a router in place of the core.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { NOTE_ERROR_CODE, NOTE_MARKER, NOTE_ROLE } from '@numen/core-client'
-import { installCoreHandlers } from '@numen/core-client/testing'
-import { relations } from './relations'
+import { createHandledClients } from '@/testing/coreAnswers'
+import { createLinkApi } from './notes'
+import { createRelations } from './relations'
 
 const request = {
   getConnection: vi.fn(),
@@ -18,18 +19,12 @@ const request = {
   resolveAddresses: vi.fn(),
 }
 
-let restore: () => void
-
-beforeEach(() => {
-  restore = installCoreHandlers(request)
-})
-
-afterEach(() => {
-  restore()
-})
+const clients = createHandledClients(request)
+const getRelations = () => createRelations(clients.notes, createLinkApi(clients.notes).resolveLinks)
 
 describe('the connections between notes', () => {
   it('are read with the role the core derived, and the markers of their records', async () => {
+    const relations = getRelations()
     request.getConnection.mockResolvedValue({
       connection: {
         first: 'a.md',
@@ -78,6 +73,7 @@ describe('the connections between notes', () => {
   })
 
   it('are saved in one request, with no role on their records', async () => {
+    const relations = getRelations()
     request.saveConnection.mockResolvedValue({})
 
     const saved = await relations.saveConnection({
@@ -102,6 +98,7 @@ describe('the connections between notes', () => {
   })
 
   it('are named by why the core refused them', async () => {
+    const relations = getRelations()
     const connection = {
       first: 'a.md',
       second: 'b.md',
@@ -119,11 +116,18 @@ describe('the connections between notes', () => {
   })
 
   it('have one side, or both, removed under the type of the records', async () => {
+    const relations = getRelations()
     request.removeSide.mockResolvedValue({})
     request.removeConnection.mockResolvedValue({})
 
-    await relations.removeSide('a.md', 'b.md', 'preset')
-    await relations.removeConnection('a.md', 'b.md')
+    expect(await relations.removeSide('a.md', 'b.md', 'preset')).toEqual({
+      ok: true,
+      value: undefined,
+    })
+    expect(await relations.removeConnection('a.md', 'b.md')).toEqual({
+      ok: true,
+      value: undefined,
+    })
 
     expect(request.removeSide.mock.calls.at(-1)?.[0]).toMatchObject({
       path: 'a.md',
@@ -138,18 +142,40 @@ describe('the connections between notes', () => {
   })
 
   it('have one record written under the wire role and marker', async () => {
+    const relations = getRelations()
     request.joinNotes.mockResolvedValue({})
 
-    await relations.join('a.md', 'b.md', { role: 'jump', label: 'see', marker: 'arrow' })
+    expect(
+      await relations.join('a.md', 'b.md', { role: 'jump', label: 'see', marker: 'arrow' }),
+    ).toEqual({ ok: true, value: undefined })
 
     expect(request.joinNotes.mock.calls.at(-1)?.[0]).toMatchObject({
       from: 'a.md',
       to: 'b.md',
       side: { role: NOTE_ROLE.JUMP, type: '', note: '', label: 'see', marker: NOTE_MARKER.ARROW },
     })
+
+    await relations.join('a.md', 'b.md', {
+      role: 'child',
+      type: 'preset',
+      reason: 'because',
+      label: 'part',
+    })
+    expect(request.joinNotes.mock.calls.at(-1)?.[0]).toMatchObject({
+      from: 'a.md',
+      to: 'b.md',
+      side: {
+        role: NOTE_ROLE.CHILD,
+        type: 'preset',
+        note: 'because',
+        label: 'part',
+        marker: NOTE_MARKER.UNSPECIFIED,
+      },
+    })
   })
 
   it('have a related note made by the core, which answers with its path', async () => {
+    const relations = getRelations()
     request.createRelatedNote.mockResolvedValue({ path: 'physics/Untitled note.md' })
 
     const made = await relations.createRelated({ from: 'physics/a.md', role: 'child' })
@@ -161,6 +187,21 @@ describe('the connections between notes', () => {
       title: '',
       type: '',
       marker: NOTE_MARKER.UNSPECIFIED,
+    })
+
+    await relations.createRelated({
+      from: 'physics/a.md',
+      role: 'parent',
+      title: 'Overview',
+      type: 'sample',
+      marker: 'arrow',
+    })
+    expect(request.createRelatedNote.mock.calls.at(-1)?.[0]).toMatchObject({
+      from: 'physics/a.md',
+      role: NOTE_ROLE.PARENT,
+      title: 'Overview',
+      type: 'sample',
+      marker: NOTE_MARKER.ARROW,
     })
 
     request.createRelatedNote.mockResolvedValue({ isNameExhausted: true })
@@ -177,6 +218,7 @@ describe('the connections between notes', () => {
   })
 
   it('have the backlinks of a note listed with both roles', async () => {
+    const relations = getRelations()
     request.listBacklinks.mockResolvedValue({
       backlinks: [
         {
@@ -208,6 +250,7 @@ describe('the connections between notes', () => {
 
 describe('the wikilinks of a text', () => {
   it('are resolved in the vault named, from no note', async () => {
+    const relations = getRelations()
     request.resolveAddresses.mockResolvedValue({
       found: [{ raw: '[[Tides]]', address: 'name://Tides', text: 'Tides' }],
       resolved: [{ written: 'name://Tides', path: 'Sea/Tides.md', isCrossed: false }],

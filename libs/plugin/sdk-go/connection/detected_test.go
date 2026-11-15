@@ -78,6 +78,23 @@ func TestServeDetectedAnswersThePathWithTheHomeFolderAsTilde(t *testing.T) {
 	if !slices.Equal(paths, want) {
 		t.Errorf("paths = %q, want %q", paths, want)
 	}
+
+	t.Setenv("HOME", "")
+	t.Setenv("USERPROFILE", "")
+	noHomeOp := ServeDetected(func(context.Context, Call) ([]DetectedConnection, error) {
+		return []DetectedConnection{{Name: "Dot", Path: "."}}, nil
+	})
+	raw, err := noHomeOp(t.Context(), Call{}, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var noHomeListed v1.DetectedConnections
+	if err := proto.Unmarshal(raw, &noHomeListed); err != nil {
+		t.Fatal(err)
+	}
+	if gotPath := noHomeListed.GetConnections()[0].GetPath(); gotPath != "." {
+		t.Errorf("path without home = %q, want .", gotPath)
+	}
 }
 
 func TestWriteHomeAsTildeIgnoresAFolderThatOnlyStartsLikeTheHomeFolder(t *testing.T) {

@@ -2,10 +2,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { UnsavedBuffersError, type FileBuffers } from '@numen/plugin-loader'
 import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
+import { answerNotes } from '@/testing/noteCore'
 import { createBufferHost } from './bufferHost'
 import { createFileFlush } from './flush'
 
-const openNotes = (how?: Parameters<typeof useOpenNotes>[0]) => flattenOpenNotes(useOpenNotes(how))
+const openNotes = (how?: Parameters<typeof useOpenNotes>[1]) =>
+  flattenOpenNotes(useOpenNotes(answerNotes({}), how))
 
 const createFlush = () => {
   const remove = vi.fn(() => true)
@@ -106,6 +108,32 @@ describe('the text a plugin could not write when the window quits', () => {
     expect(quits.reportFlush).toHaveBeenCalledWith('1', 'unsaved')
     await fileFlush.conflicts.value[0]?.keep()
     expect(settled).toEqual(['keep'])
+    await fileFlush.conflicts.value[0]?.take()
+    expect(settled).toEqual(['keep', 'take'])
+  })
+
+  it('names the file without a plugin prefix when pluginId is empty and rethrows non-UnsavedBuffersError', async () => {
+    const quits = requestQuit()
+    const fileFlush = createFileFlush(quits)
+    createBufferHost({ fileFlush }).track({
+      flush: () =>
+        Promise.reject(
+          new UnsavedBuffersError(
+            [{ name: 'Plain.md', keep: async () => undefined, take: async () => undefined }],
+            '',
+          ),
+        ),
+    })
+    createBufferHost({ fileFlush }).track({
+      flush: () => Promise.reject(new Error('unexpected failure')),
+    })
+
+    fileFlush.start().catch(() => undefined)
+    await settle()
+    fileFlush.close()
+
+    expect(fileFlush.conflicts.value.map((one) => one.note)).toEqual(['Plain.md'])
+    expect(quits.reportFlush).toHaveBeenCalledWith('1', 'unsaved')
   })
 })
 

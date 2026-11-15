@@ -77,7 +77,16 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     declaredCommands: {
       slots: computed(() => slotEntries),
       commands: computed(() => COMMANDS),
-      contributions: { handlers: computed(() => []) },
+      contributions: {
+        handlers: computed(() => [
+          {
+            pluginId: HARBOR,
+            command: 'app:file.createText',
+            title: 'Extract text',
+            hasItems: false,
+          },
+        ]),
+      },
       whenContext: {
         getContentTypes: () => ({ md: 'text/markdown' }),
         getConfig: () => ({}),
@@ -87,16 +96,16 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     facts,
     writeIssue: vi.fn(),
   })
-  const findSlotCommand = slots.hostDeps.createSlotCommandFinder({
+  const findSlotCommand = slots.hostDeps.slots.createSlotCommandFinder({
     getPluginCommands: host.commands.getPaletteCommands,
     hasPluginItems: host.commands.hasCommandItems,
   })
   const registry = createSlotRegistry({
-    getEntries: () => slots.hostDeps.getSlotEntries(new Map()),
+    getEntries: () => slots.hostDeps.slots.getSlotEntries(new Map()),
     findCommand: findSlotCommand,
     findView: () => undefined,
-    getWhenValues: slots.hostDeps.getSlotWhenValues,
-    whenReader: slots.hostDeps.whenReader,
+    getWhenValues: slots.hostDeps.slots.getSlotWhenValues,
+    whenReader: slots.hostDeps.commands.whenReader,
   })
   return { registry, hostDeps: slots.hostDeps, state, findSlotCommand }
 }
@@ -167,6 +176,33 @@ describe('the buttons of the title bar while no vault is open', () => {
 
     expect(findSlotCommand('app:settings.open', undefined)).toMatchObject({
       title: expect.any(String),
+    })
+    expect(findSlotCommand('app:file.createText', undefined)).toMatchObject({
+      title: 'Create text',
+      hasItems: true,
+    })
+
+    const unloadedSlots = createWindowSlots({
+      declaredCommands: {
+        slots: computed(() => undefined),
+        commands: computed(() => undefined),
+        contributions: { handlers: computed(() => undefined) },
+        whenContext: {
+          getContentTypes: () => ({}),
+          getConfig: () => ({}),
+          whenReader: createWhenReader(),
+        },
+      },
+      facts: { getAppCommands: () => [], getValues: () => ({}) },
+      writeIssue: vi.fn(),
+    })
+    const findUnloaded = unloadedSlots.hostDeps.slots.createSlotCommandFinder({
+      getPluginCommands: () => [{ id: `${TIDE}:tide.open`, title: 'Open tide' }],
+      hasPluginItems: () => false,
+    })
+    expect(findUnloaded(`${TIDE}:tide.open`, undefined)).toMatchObject({
+      title: 'Open tide',
+      hasItems: false,
     })
   })
 })
@@ -241,7 +277,7 @@ describe('the when values of a target', () => {
       properties: { media: 'plugin://md.importer/a.mp4' },
     }
 
-    expect(hostDeps.getSlotWhenValues(target)).toMatchObject({
+    expect(hostDeps.slots.getSlotWhenValues(target)).toMatchObject({
       'target.noteType': 'link',
       'target.properties': { media: 'plugin://md.importer/a.mp4' },
     })

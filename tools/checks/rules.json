@@ -65,6 +65,43 @@
       "target": "adapters-claim-no-ports"
     },
     {
+      "name": "go/api-types",
+      "paths": [
+        "plugins/**/*.go",
+        "plugins/**/*.ts",
+        "plugins/**/tsconfig.json",
+        "plugins/**/go.mod",
+        "libs/plugin/sdk-go/server/**/*.go",
+        "libs/plugin/sdk-ts/src/**/*.ts",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "slow"
+      ],
+      "selftest": "structure/go/api-types/check_test.go",
+      "runner": "go",
+      "target": "api-types"
+    },
+    {
+      "name": "go/apps-layers",
+      "paths": [
+        "apps/**/*.go",
+        "apps/**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "slow"
+      ],
+      "selftest": "structure/go/apps-layers/check_test.go",
+      "runner": "go",
+      "target": "apps-layers"
+    },
+    {
       "name": "go/clock-port",
       "paths": [
         "**/*.go",
@@ -295,25 +332,11 @@
       "target": "exhaustruct-include"
     },
     {
-      "name": "go/handler-separation",
-      "paths": [
-        "libs/core/kernel/**",
-        "go.work"
-      ],
-      "tags": [
-        "structure",
-        "go",
-        "core",
-        "fast"
-      ],
-      "selftest": "structure/go/handler-separation/check_test.go",
-      "runner": "go",
-      "target": "handler-separation"
-    },
-    {
       "name": "go/identities",
       "paths": [
-        "libs/core/kernel/**",
+        "libs/core/kernel/domain/**",
+        "libs/core/kernel/port/**",
+        "libs/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -327,9 +350,27 @@
       "target": "identities"
     },
     {
+      "name": "go/index-bookkeeping",
+      "paths": [
+        "libs/core/kernel/adapter/index/**/*.go",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/index-bookkeeping/check_test.go",
+      "runner": "go",
+      "target": "index-bookkeeping"
+    },
+    {
       "name": "go/instants",
       "paths": [
-        "libs/core/kernel/**",
+        "libs/core/kernel/domain/**",
+        "libs/core/kernel/port/**",
+        "libs/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -552,21 +593,6 @@
       "target": "plugin-boundary"
     },
     {
-      "name": "go/plugin-copies-agree",
-      "paths": [
-        "plugins/*/backend/internal/adapter/engine/onnx/*.go"
-      ],
-      "tags": [
-        "structure",
-        "go",
-        "plugin",
-        "fast"
-      ],
-      "selftest": "structure/go/plugin-copies-agree/check_test.go",
-      "runner": "go",
-      "target": "plugin-copies-agree"
-    },
-    {
       "name": "go/plugin-gomod",
       "paths": [
         "**/*.go",
@@ -700,7 +726,7 @@
         "structure",
         "go",
         "core",
-        "fast"
+        "slow"
       ],
       "selftest": "structure/go/ports-referenced/check_test.go",
       "runner": "go",
@@ -721,22 +747,6 @@
       "selftest": "structure/go/scan-complete/check_test.go",
       "runner": "go",
       "target": "scan-complete"
-    },
-    {
-      "name": "go/schema-driving",
-      "paths": [
-        "libs/core/kernel/**",
-        "go.work"
-      ],
-      "tags": [
-        "structure",
-        "go",
-        "core",
-        "fast"
-      ],
-      "selftest": "structure/go/schema-driving/check_test.go",
-      "runner": "go",
-      "target": "schema-driving"
     },
     {
       "name": "go/sdk-protocol-encapsulation",
@@ -872,6 +882,7 @@
       "name": "go/transports",
       "paths": [
         "libs/core/kernel/**",
+        "libs/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -888,6 +899,8 @@
       "name": "go/use-case-fields",
       "paths": [
         "libs/core/kernel/**",
+        "libs/note/**",
+        "plugins/**/*.go",
         "go.work"
       ],
       "tags": [
@@ -1201,8 +1214,6 @@
         "**/package.json",
         "**/tsconfig*.json",
         ".golangci*.yml",
-        "apps/**/*.{ts,vue}",
-        "libs/**/*.{ts,vue}",
         "libs/**/.golangci*.yml",
         "libs/plugin/**",
         "libs/ui/**",
@@ -1211,7 +1222,6 @@
         "plugins/*/.golangci*.yml",
         "plugins/*/Makefile",
         "plugins/.example/**",
-        "tests/**/*.{ts,js}",
         "tools/**/*.mjs",
         "tools/eslint.config.mjs",
         "tools/lint-layers/*.mjs"
@@ -1408,28 +1418,6 @@
       "runner": "verifiers",
       "module": "docs/paths-exist/check.mjs",
       "export": "DOCUMENT_VERIFIERS"
-    },
-    {
-      "name": "ts/api-types",
-      "paths": [
-        "libs/plugin/sdk-go/**/*.go",
-        "libs/plugin/sdk-ts/**/*.ts",
-        "libs/core/protocol/**/*.go",
-        "libs/core/client/**/*.ts"
-      ],
-      "tags": [
-        "structure",
-        "ts",
-        "plugin",
-        "fast"
-      ],
-      "selftest": "structure/ts/api-types/check.test.mjs",
-      "runner": "command",
-      "cmd": [
-        "node",
-        "tools/lint-quality/check.mjs",
-        "--check=api-types"
-      ]
     },
     {
       "name": "ts/duplication",

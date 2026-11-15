@@ -109,3 +109,32 @@ func TestTheMockAnswersOnlyWhereNoConnectionIsSet(t *testing.T) {
 		t.Errorf("with a connection the answer was %q, %v", got.GetText(), err)
 	}
 }
+
+func TestCompleteMockEdgeCases(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := CompleteMock(ctx, &llm.CompleteRequest{}); !errors.Is(err, context.Canceled) {
+		t.Errorf("canceled context got %v, want Canceled", err)
+	}
+
+	empty, err := CompleteMock(t.Context(), &llm.CompleteRequest{})
+	if err != nil || empty.GetText() != "" {
+		t.Errorf("empty request got %q, %v", empty.GetText(), err)
+	}
+
+	prompt := "99" + numbered.Closes + "preamble " +
+		numbered.Opens + "abc" + numbered.Closes + "not a number " +
+		numbered.Opens + "2" + numbered.Closes + "   " +
+		numbered.Opens + "3" + numbered.Closes + "kept"
+	singleMessage, err := CompleteMock(t.Context(), &llm.CompleteRequest{
+		Messages: []*llm.Message{{Role: "user", Text: prompt}},
+	})
+	if err != nil || singleMessage.GetText() != "3|kept "+MockMark {
+		t.Errorf("singleMessage got %q, %v", singleMessage.GetText(), err)
+	}
+
+	t.Setenv(EnvMockML, "true")
+	if !IsMockSelected() || !IsMockEnabled("true") || IsMockEnabled("false") {
+		t.Error("IsMockSelected/IsMockEnabled failed")
+	}
+}

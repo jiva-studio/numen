@@ -6,8 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
@@ -191,7 +193,10 @@ func TestCreateWritesNoListEntryWhenTheKeyStoreFails(t *testing.T) {
 
 func TestCreateOfASecretFailsWhenTheMachineHasNoKeyStore(t *testing.T) {
 	f := newFixture(t)
-	noKeys := connectiontest.New(f.repository, f.types, nil, f.uses, func() (string, error) { return "c00000001", nil })
+	noKeys := connectiontest.New(connectiontest.Parts{
+		Repository: f.repository, Types: f.types, Keys: nil, Uses: f.uses,
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
+	}, func() (string, error) { return "c00000001", nil })
 
 	_, err := noKeys.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: openRouterID, Secrets: map[string]string{"apiKey": "k"},
@@ -211,7 +216,10 @@ func TestCreateOfASecretFailsWhenTheMachineHasNoKeyStore(t *testing.T) {
 func TestCreateSkipsAnIDThatIsTaken(t *testing.T) {
 	f := newFixture(t)
 	ids := []string{"c00000001", "c00000001", "c00000002"}
-	f.connection = connectiontest.New(f.repository, f.types, f.keys, f.uses, func() (string, error) {
+	f.connection = connectiontest.New(connectiontest.Parts{
+		Repository: f.repository, Types: f.types, Keys: f.keys, Uses: f.uses,
+		Detected: testsupport.NoDetection{}, Titles: none.OperationTitles{},
+	}, func() (string, error) {
 		id := ids[0]
 		ids = ids[1:]
 		return id, nil

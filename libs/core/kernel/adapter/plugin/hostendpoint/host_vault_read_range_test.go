@@ -17,9 +17,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
@@ -53,14 +52,13 @@ func openReadEndpoint(t *testing.T, access *vaultapi.Access) numenv1connect.Host
 
 func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 	t.Helper()
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"Rivers.txt":      "the Danube flows east",
 		"Nandu.txt":       "Ñandú runs along the Paraná",
 		"gauge.log":       strings.Repeat("level 7\n", 2500),
 		"sonar.bin":       "ab\xff\xfecd",
 		"notes/Danube.md": "# Danube\n",
 	})
-	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	readers := vaultreader.Readers{}
 	return openReadEndpoint(t, hostvault.NewAccess(
 		hostvault.Session{Current: func() (domain.Vault, bool) { return v, true }},
@@ -68,9 +66,8 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 			Stat:        file.NewStatFile(readers),
 			ReadFile:    file.NewReadFile(readers),
 			RangeReader: file.Read{Readers: readers},
-			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
 		},
-		hostvault.Lookups{}, hostvault.Arranger{}, hostvault.Stores{},
+		hostvault.Writer{}, hostvault.Lookups{}, hostvault.Arranger{}, hostvault.Stores{},
 	))
 }
 

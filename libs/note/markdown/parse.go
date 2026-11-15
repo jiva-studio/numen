@@ -141,14 +141,6 @@ func isFrontmatterDelimiter(line []byte) bool {
 	return len(line) == 3 && line[0] == '-' && line[1] == '-' && line[2] == '-'
 }
 
-// Body is the prose below the frontmatter, as the bytes stored in the
-// file. A note's chunks are offsets into it, so the chunker and every reader of a
-// passage must obtain it the same way.
-func Body(raw []byte) string {
-	_, body, _ := splitFrontmatter(raw)
-	return string(body)
-}
-
 func headings(body []byte) []domain.Heading {
 	var out []domain.Heading
 	var f Fence

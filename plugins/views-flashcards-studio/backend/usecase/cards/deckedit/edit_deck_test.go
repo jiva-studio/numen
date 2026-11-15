@@ -222,18 +222,23 @@ func TestADeckEditOverAnEditThatWasNeverReadIsRefused(t *testing.T) {
 func TestEditingACardReplacesAndAddsValues(t *testing.T) {
 	e := newEditorFixture(t)
 
-	edited, err := e.editCard.Execute(t.Context(), e.vs.first, e.version(t), "k7m2xq9fzp", "", []format.Value{{Field: "Height", Text: "about 120 cm"}})
+	edited, err := e.editCard.Execute(t.Context(), e.vs.first, e.version(t), "k7m2xq9fzp", "", []format.Value{
+		{Field: "Height", Text: "about 120 cm"},
+		{Field: "Life span", Text: "about 25 years"},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if edited.Cards != 2 {
 		t.Errorf("the deck holds %d cards", edited.Cards)
 	}
-	if body := read(t, e.vs.first, mammals); !strings.Contains(body, "about 120 cm") || strings.Contains(body, "about 45") {
+	body := read(t, e.vs.first, mammals)
+	if !strings.Contains(body, "about 120 cm") || !strings.Contains(body, "about 25 years") ||
+		strings.Contains(body, "about 45") || !strings.Contains(body, "[[Animal]]") {
 		t.Errorf("the value was not replaced:\n%s", body)
 	}
 
-	if _, err := e.editCard.Execute(t.Context(), e.vs.first, e.version(t), "nothing", "", []format.Value{{Field: "Height", Text: "x"}}); !errors.Is(err, format.ErrNoSuchCard) {
+	if _, err := e.editCard.Execute(t.Context(), e.vs.first, e.version(t), "nothing", "", nil); !errors.Is(err, format.ErrNoSuchCard) {
 		t.Errorf("a card that is not there was edited: %v", err)
 	}
 }
@@ -287,7 +292,7 @@ func TestSectionsAreAddedRenamedAndRemovedWithoutTouchingCards(t *testing.T) {
 	}
 }
 
-func TestDeckEditScenariosCoverEdgesAndErrors(t *testing.T) {
+func TestDeckEditUseCasesCoverEdgesAndErrors(t *testing.T) {
 	e := newEditorFixture(t)
 
 	// Query second card by CardID (pos == 1) and with empty Fields (len(fields) == 0).
@@ -301,33 +306,44 @@ func TestDeckEditScenariosCoverEdgesAndErrors(t *testing.T) {
 		t.Fatalf("got %+v, want second card with 2 values", second.Cards)
 	}
 
-	// AddCard at section 0, negative section (-1), and exact out-of-bounds section (1).
+	// Add a second section and a card in it, then add a card in section 0 so findSectionEnd scans past card 0 (section 0) to card 2 (section 1).
+	if _, err := e.addSection.Execute(t.Context(), e.vs.first, e.version(t), "Later section"); err != nil {
+		t.Fatal(err)
+	}
+	oneSec := 1
+	addedInSec1, err := e.addCard.Execute(t.Context(), e.vs.first, e.version(t), "Animal",
+		[]format.Value{{Field: "Name", Text: "Vicuna"}}, &oneSec)
+	if err != nil || addedInSec1.CardID == "" {
+		t.Fatalf("addCard section 1 = %+v, %v", addedInSec1, err)
+	}
 	zero := 0
 	addedInSec, err := e.addCard.Execute(t.Context(), e.vs.first, e.version(t), "Animal",
 		[]format.Value{{Field: "Name", Text: "Alpaca"}}, &zero)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if addedInSec.Cards != 3 || addedInSec.CardID == "" {
+	if addedInSec.Cards != 4 || addedInSec.CardID == "" || addedInSec.CardID == addedInSec1.CardID {
 		t.Fatalf("got %+v", addedInSec)
 	}
 
 	minusOne := -1
-	if _, err := e.addCard.Execute(t.Context(), e.vs.first, e.version(t), "Animal", nil, &minusOne); err == nil {
-		t.Fatal("expected error for section -1")
+	if _, err := e.addCard.Execute(t.Context(), e.vs.first, e.version(t), "Animal", nil, &minusOne); err == nil ||
+		!strings.Contains(err.Error(), "there is none standing at -1") {
+		t.Fatalf("expected 'there is none standing at -1' error, got %v", err)
 	}
-	oneSec := 1
-	if _, err := e.addCard.Execute(t.Context(), e.vs.first, e.version(t), "Animal", nil, &oneSec); err == nil {
-		t.Fatal("expected error for section == len(Sections)")
+	twoSec := 2
+	if _, err := e.addCard.Execute(t.Context(), e.vs.first, e.version(t), "Animal", nil, &twoSec); err == nil ||
+		!strings.Contains(err.Error(), "there is none standing at 2") {
+		t.Fatalf("expected 'there is none standing at 2' error, got %v", err)
 	}
 
-	// EditCard with non-empty cardModel.
+	// EditCard with non-empty cardModel replaces [[Animal]] on k7m2xq9fzp and updates its values.
 	if _, err := e.editCard.Execute(t.Context(), e.vs.first, e.version(t), "k7m2xq9fzp", "Term",
 		[]format.Value{{Field: "Word", Text: "Llama"}}); err != nil {
 		t.Fatal(err)
 	}
-	if body := read(t, e.vs.first, mammals); !strings.Contains(body, "[[Term]]") {
-		t.Fatalf("expected card model Term in body:\n%s", body)
+	if body := read(t, e.vs.first, mammals); !strings.Contains(body, "## Llama ^k7m2xq9fzp\n\n[[Term]]") || !strings.Contains(body, "### Word\n\nLlama") {
+		t.Fatalf("expected card model Term and Word value in body:\n%s", body)
 	}
 
 	// Duplicate CardID in deck triggers ErrTwoCards at pos 0 and pos > 0.
@@ -347,7 +363,7 @@ func TestDeckEditScenariosCoverEdgesAndErrors(t *testing.T) {
 	if _, err := e.page.Execute(t.Context(), unknownVault, deckedit.Query{Path: mammals}); err == nil {
 		t.Fatal("expected error for unknown vault")
 	}
-	if _, err := e.editCard.Execute(t.Context(), unknownVault, deckedit.DeckVersion{Path: mammals}, "k7m2xq9fzp", "", nil); err == nil {
+	if _, err := e.addSection.Execute(t.Context(), unknownVault, deckedit.DeckVersion{Path: mammals}, "Ignored"); err == nil {
 		t.Fatal("expected error for unknown vault")
 	}
 }

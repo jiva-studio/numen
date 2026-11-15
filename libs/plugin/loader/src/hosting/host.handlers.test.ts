@@ -5,8 +5,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { CommandTarget } from '@numen/plugin-sdk'
-import { createPluginHost } from './host'
-import type { HandlerDeclaration, PluginHostDeps } from './types'
+import type { HandlerDeclaration } from './types'
+import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
 const SCANS = 'org.example.scans'
 const TIDES = 'org.example.tides'
@@ -66,7 +66,7 @@ function createHost(handlers: readonly HandlerDeclaration[] = HANDLERS) {
   const listBackendHandlerItems = vi.fn(async (pluginId: string) =>
     pluginId === SCANS ? [{ id: 'org.example.scans/reading', title: 'reading' }] : [],
   )
-  const deps: PluginHostDeps = {
+  const deps: TestHostDeps = {
     getContentTypes: () => ({ png: 'image/png', md: 'text/markdown' }),
     getHandlerDeclarations: () => handlers,
     hasPluginFrontend: () => false,
@@ -77,7 +77,7 @@ function createHost(handlers: readonly HandlerDeclaration[] = HANDLERS) {
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),
   }
-  const host = createPluginHost(deps)
+  const host = createTestPluginHost(deps)
   return { host, runBackendHandler, listBackendHandlerItems }
 }
 
@@ -176,7 +176,7 @@ describe('a shared command', () => {
       createMockManifest(SCANS, { name: 'Scans', version: '1', handlers: [CREATE] }),
     )
     const handler = vi.fn()
-    context.register.command({
+    context.plugin.register.command({
       id: CREATE,
       handler,
       listItems: () => [{ id: 'fast', title: 'Fast' }],
@@ -199,7 +199,7 @@ describe('a shared command', () => {
       SCANS,
       createMockManifest(SCANS, { name: 'Scans', version: '1', handlers: [CREATE] }),
     )
-    context.register.command({
+    context.plugin.register.command({
       id: CREATE,
       handler: vi.fn(),
       listItems: () => [
@@ -235,5 +235,207 @@ describe('a shared command', () => {
     expect(
       await host.commands.listCommandItems(CREATE, { ...NOTE, noteType: 'link', properties: {} }),
     ).toStrictEqual([])
+  })
+
+  it('filters out other commands, disposed plugins, and empty-path item handlers, and mixes item and non-item handlers', async () => {
+    const startPlugin = vi.fn(async () => undefined)
+    const onError = vi.fn()
+    const host = createTestPluginHost({
+      target: 'desktop.editor',
+      registerKind: vi.fn(() => vi.fn()),
+      getHandlerDeclarations: () => [
+        { pluginId: 'other.cmd', command: 'other:cmd', title: 'Other', hasItems: false },
+        { pluginId: 'disposed.p', command: CREATE, title: 'Disposed', hasItems: false },
+        { pluginId: TIDES, command: CREATE, title: 'Tide Plain', hasItems: false },
+        { pluginId: SCANS, command: CREATE, title: 'Scan Items', hasItems: true },
+      ],
+      hasPluginFrontend: (id) => id === SCANS,
+      startPlugin,
+      onError,
+    })
+    host.lifecycle.disposePlugin('disposed.p')
+
+    expect(await host.commands.listCommandItems(CREATE, { ...SCAN, path: '' })).toStrictEqual([
+      { id: TIDES, title: 'Tide Plain' },
+    ])
+    expect(startPlugin).not.toHaveBeenCalled()
+
+    const receivedTypes: string[] = []
+    const ctx = host.lifecycle.createContext(
+      SCANS,
+      createMockManifest(SCANS, { handlers: [CREATE] }),
+    )
+    ctx.plugin.register.command({
+      id: CREATE,
+      handler: vi.fn(),
+      listItems: (target) => {
+        receivedTypes.push((target as { type?: string }).type ?? 'missing')
+        return [{ id: 'ocr', title: 'OCR' }]
+      },
+    })
+
+    const mixed = await host.commands.listCommandItems(CREATE, SCAN)
+    expect(startPlugin).not.toHaveBeenCalled()
+    expect(receivedTypes).toStrictEqual([''])
+    expect(mixed).toStrictEqual([
+      { id: `${SCANS}:ocr`, title: 'OCR', group: SCANS },
+      { id: TIDES, title: 'Tide Plain', group: TIDES },
+    ])
+
+    expect(
+      await host.commands.executeCommand(
+        CREATE,
+        { ...SCAN, type: '' },
+        { itemId: 'unknown.plugin' },
+      ),
+    ).toBe(false)
+    expect(
+      await host.commands.executeCommand(
+        CREATE,
+        { ...SCAN, type: '' },
+        { itemId: 'unknown.plugin:ocr' },
+      ),
+    ).toBe(false)
+  })
+
+  it('starts a frontend handler on demand and reports backend and item errors', async () => {
+    const onError = vi.fn()
+    const itemErr = new Error('items failed')
+    const runErr = new Error('backend failed')
+    const holder: { host?: ReturnType<typeof createTestPluginHost> } = {}
+    const startPlugin = vi.fn(async (id: string) => {
+      if (id === SCANS && holder.host) {
+        const ctx = holder.host.lifecycle.createContext(
+          SCANS,
+          createMockManifest(SCANS, { handlers: [CREATE] }),
+        )
+        ctx.plugin.register.command({
+          id: CREATE,
+          handler: vi.fn(),
+          listItems: () => {
+            throw itemErr
+          },
+        })
+      }
+    })
+    const host = createTestPluginHost({
+      target: 'desktop.editor',
+      registerKind: vi.fn(() => vi.fn()),
+      getHandlerDeclarations: () => [
+        { pluginId: SCANS, command: CREATE, title: 'Scan', hasItems: false },
+        { pluginId: TIDES, command: CREATE, title: 'Tide', hasItems: true },
+      ],
+      listBackendHandlerItems: async () => {
+        throw itemErr
+      },
+      runBackendHandler: async () => {
+        throw runErr
+      },
+      startPlugin,
+      onError,
+    })
+    holder.host = host
+
+    expect(await host.commands.listCommandItems(CREATE, SCAN)).toStrictEqual([])
+    expect(startPlugin).toHaveBeenCalledWith(SCANS)
+    expect(onError).toHaveBeenCalledWith(SCANS, itemErr)
+    expect(onError).toHaveBeenCalledWith(TIDES, itemErr)
+
+    onError.mockClear()
+    await expect(
+      host.commands.executeCommand(
+        CREATE,
+        { ...SCAN, type: '' },
+        { itemId: `${TIDES}:x`, isAwaited: false },
+      ),
+    ).resolves.toBe(true)
+    expect(onError).toHaveBeenCalledWith(TIDES, runErr)
+
+    await expect(
+      host.commands.executeCommand(
+        CREATE,
+        { ...SCAN, type: '' },
+        { itemId: `${TIDES}:x`, isAwaited: true },
+      ),
+    ).rejects.toThrow(runErr)
+
+    const bareHost = createTestPluginHost({
+      target: 'desktop.editor',
+      registerKind: vi.fn(() => vi.fn()),
+      getHandlerDeclarations: () => [
+        { pluginId: TIDES, command: CREATE, title: 'Tide', hasItems: true },
+      ],
+      hasPluginFrontend: () => false,
+    })
+    expect(await bareHost.commands.listCommandItems(CREATE, SCAN)).toStrictEqual([])
+    expect(
+      await bareHost.commands.executeCommand(CREATE, { ...SCAN, type: '' }, { itemId: TIDES }),
+    ).toBe(true)
+  })
+
+  it('starts declaring plugins for command items and execution only when needed and reports errors', async () => {
+    const onError = vi.fn()
+    const startErr = new Error('start boom')
+    const listErr = new Error('list boom')
+    const CMD = 'org.example.tides:run'
+    let shouldRegisterOnStart = false
+    const holder: { host?: ReturnType<typeof createTestPluginHost> } = {}
+    const startPlugin = vi.fn(async (id: string) => {
+      if (id === 'fail.start') throw startErr
+      if (shouldRegisterOnStart && holder.host) {
+        holder.host.lifecycle
+          .createContext(TIDES, createMockManifest(TIDES, { commands: ['run'] }))
+          .plugin.register.command({
+            id: 'run',
+            handler: vi.fn(),
+            listItems: () => {
+              throw listErr
+            },
+          })
+      }
+    })
+    const host = createTestPluginHost({
+      target: 'desktop.editor',
+      registerKind: vi.fn(() => vi.fn()),
+      getCommandDeclarations: () => [
+        { pluginId: TIDES, id: 'run', title: 'Run' },
+        { pluginId: 'fail.start', id: 'bad', title: 'Bad' },
+      ],
+      startPlugin,
+      onError,
+    })
+    holder.host = host
+
+    expect(host.commands.hasCommandItems('unknown:cmd')).toBe(false)
+    expect(await host.commands.listCommandItems('unknown:cmd', SCAN)).toStrictEqual([])
+    expect(startPlugin).not.toHaveBeenCalled()
+
+    expect(host.commands.hasCommandItems('fail.start:bad')).toBe(false)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(onError).toHaveBeenCalledWith('fail.start', startErr)
+
+    startPlugin.mockClear()
+    expect(await host.commands.executeCommand(CMD, { ...SCAN, type: '' })).toBe(false)
+    expect(startPlugin).toHaveBeenCalledExactlyOnceWith(TIDES)
+
+    shouldRegisterOnStart = true
+    startPlugin.mockClear()
+    onError.mockClear()
+    expect(await host.commands.listCommandItems(CMD, SCAN)).toStrictEqual([])
+    expect(startPlugin).toHaveBeenCalledExactlyOnceWith(TIDES)
+    expect(onError).toHaveBeenCalledWith(TIDES, listErr)
+
+    startPlugin.mockClear()
+    expect(await host.commands.listCommandItems(CMD, SCAN)).toStrictEqual([])
+    expect(await host.commands.executeCommand(CMD, { ...SCAN, type: '' })).toBe(true)
+    expect(startPlugin).not.toHaveBeenCalled()
+
+    const noStartHost = createTestPluginHost({
+      target: 'desktop.editor',
+      registerKind: vi.fn(() => vi.fn()),
+      getCommandDeclarations: () => [{ pluginId: TIDES, id: 'run', title: 'Run' }],
+    })
+    expect(await noStartHost.commands.listCommandItems(CMD, SCAN)).toStrictEqual([])
+    expect(await noStartHost.commands.executeCommand(CMD, { ...SCAN, type: '' })).toBe(false)
   })
 })

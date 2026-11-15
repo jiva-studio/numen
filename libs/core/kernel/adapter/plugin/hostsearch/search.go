@@ -29,12 +29,12 @@ type Source interface {
 type Samples interface {
 	// ListSmallChunkVectors returns at most `limit` small chunks of the vault that carry a
 	// vector under the recipe.
-	ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]searchpolicy.Passage, error)
+	ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]searchpolicy.SampledChunk, error)
 }
 
-// Nearest reads the similarity of the best passage of a vault to a vector.
+// Nearest reads the similarity of the best chunk of a vault to a vector.
 type Nearest interface {
-	// Execute returns the cosine similarity of the passage of the vault nearest the query vector
+	// Execute returns the cosine similarity of the chunk of the vault nearest the query vector
 	// under the recipe, and zero where there is none.
 	Execute(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32) (float64, error)
 }
@@ -48,25 +48,92 @@ type Progress interface {
 
 // Search lends the search index and the search floors of the vaults to the plugins, over the index of
 // the installation and the search source that fills it. It implements the capabilities of
-// hostendpoint.SearchAccess.
+// hostendpoint.SearchAccess together with Scoring.
 type Search struct {
-	Source   Source
-	Queries  *vectorscase.EmbedQueries
-	Samples  Samples
-	Nearest  Nearest
-	Places   search.FindNearest
-	Progress Progress
-	Stats    *search.Stats
-	Policy   search.FloorPolicy
-	Passages *search.SearchPassages
+	Source     Source
+	Queries    *vectorscase.EmbedQueries
+	Samples    Samples
+	Nearest    Nearest
+	Places     search.FindNearest
+	Progress   Progress
+	Stats      *search.Stats
+	Policy     search.FloorPolicy
+	TextSearch *search.SearchText
 }
 
-// SearchPassages returns passages matching the query by keywords and, when a search source exists, by
-// the source.
-func (s Search) SearchPassages(ctx context.Context, v domain.Vault, q plugin.PassageQuery) ([]domain.Passage, error) {
-	return s.Passages.Execute(ctx, v, search.PassageQuery{
-		Query: q.Query, Limit: q.Limit, Kinds: q.Kinds, PathPrefix: q.PathPrefix,
+// Scoring is the search of the plugins with the scoring of chunks against conditions. It implements the
+// capabilities of hostendpoint.SearchAccess.
+type Scoring struct {
+	Search
+	Scores *search.ScoreChunks
+}
+
+// SearchText returns search results matching the query, by keywords and, when a search source exists, by
+// the source, or by the one the mode names. Meaning mode with no search source returns plugin.ErrNoModel,
+// and a raw words query the index cannot parse plugin.ErrInvalidWords.
+func (s Search) SearchText(ctx context.Context, v domain.Vault, q plugin.SearchResultQuery) ([]domain.SearchResult, error) {
+	mode := convertMode(q.Mode)
+	if mode == search.Sources {
+		if _, err := s.describe(); err != nil {
+			return nil, err
+		}
+	}
+	found, err := s.TextSearch.Execute(ctx, v, search.SearchResultQuery{
+		Query: q.Query, Limit: q.Limit, ResultsPerSource: q.ResultsPerSource, Kinds: q.Kinds, PathPrefix: q.PathPrefix,
+		Mode: mode, IsRawWords: q.IsRawWords, IsWholeText: q.IsWholeText,
 	})
+	return found, convertWordsError(err)
+}
+
+// ScoreChunks scores chunks of the vault against conditions and returns the floor applied to the meaning
+// conditions, zero when there are none.
+func (s Scoring) ScoreChunks(ctx context.Context, v domain.Vault, q plugin.ScoreQuery) ([]plugin.ChunkScore, float64, error) {
+	conditions := make([]search.ScoreCondition, len(q.Conditions))
+	hasMeaning := false
+	for i, c := range q.Conditions {
+		conditions[i] = search.ScoreCondition{Meaning: c.Meaning, Words: c.Words}
+		hasMeaning = hasMeaning || c.Meaning != ""
+	}
+	scored, err := s.Scores.Execute(ctx, v, search.ChunkScoreQuery{ChunkIDs: q.ChunkIDs, Conditions: conditions})
+	if err != nil {
+		return nil, 0, convertWordsError(err)
+	}
+	var floor float64
+	if hasMeaning {
+		recipe, err := s.getRecipe()
+		if err != nil {
+			return nil, 0, err
+		}
+		floor = s.Policy.GetFloor(ctx, v, recipe)
+	}
+	out := make([]plugin.ChunkScore, len(scored))
+	for i, one := range scored {
+		scores := make([]plugin.ConditionScore, len(one.Conditions))
+		for j, c := range one.Conditions {
+			scores[j] = plugin.ConditionScore{Similarity: c.Similarity, IsMatch: c.IsMatch}
+		}
+		out[i] = plugin.ChunkScore{ChunkID: one.ChunkID, Conditions: scores}
+	}
+	return out, floor, nil
+}
+
+func convertMode(mode plugin.SearchMode) search.Mode {
+	switch mode {
+	case plugin.SearchModeWords:
+		return search.Lexical
+	case plugin.SearchModeMeaning:
+		return search.Sources
+	case plugin.SearchModeHybrid:
+		return search.Hybrid
+	}
+	return search.Hybrid
+}
+
+func convertWordsError(err error) error {
+	if errors.Is(err, sourcedomain.ErrInvalidWords) {
+		return fmt.Errorf("%w: %w", plugin.ErrInvalidWords, err)
+	}
+	return err
 }
 
 func (s Search) describe() (searchsource.Description, error) {
@@ -128,7 +195,7 @@ func (s Search) EmbedTexts(ctx context.Context, texts []string) (plugin.Embedded
 
 // SampleSimilarities compares each query with the sampled small chunks of the vault. At most
 // MaxSampledQueries queries are taken, else ErrLimitExceeded. A query whose dimension count differs
-// from a passage's returns ErrInvalidQuery.
+// from a chunk's returns ErrInvalidQuery.
 func (s Search) SampleSimilarities(ctx context.Context, v domain.Vault, recipe string, queries []plugin.SimilarityQuery) (plugin.SimilaritySample, error) {
 	if err := s.checkRecipe(recipe); err != nil {
 		return plugin.SimilaritySample{}, err
@@ -136,7 +203,7 @@ func (s Search) SampleSimilarities(ctx context.Context, v domain.Vault, recipe s
 	return search.SampleSimilarities(ctx, s.Samples, v, recipe, queries)
 }
 
-// GetBestSimilarity is the similarity of the passage of the vault nearest the query.
+// GetBestSimilarity is the similarity of the chunk of the vault nearest the query.
 func (s Search) GetBestSimilarity(ctx context.Context, v domain.Vault, recipe string, query []float32) (float64, error) {
 	if err := s.checkRecipe(recipe); err != nil {
 		return 0, err
@@ -144,9 +211,9 @@ func (s Search) GetBestSimilarity(ctx context.Context, v domain.Vault, recipe st
 	return s.Nearest.Execute(ctx, v.ID, recipe, query)
 }
 
-// FindNearestPassages returns the small chunks of the vault nearest the vector under the recipe of the place,
+// FindNearestChunks returns the small chunks of the vault nearest the vector under the recipe of the place,
 // nearest first, at or above the floor the query names, else the effective floor of the vault.
-func (s Search) FindNearestPassages(ctx context.Context, v domain.Vault, q sourcedomain.NearestQuery) ([]searchsource.Match, error) {
+func (s Search) FindNearestChunks(ctx context.Context, v domain.Vault, q sourcedomain.NearestQuery) ([]searchsource.Match, error) {
 	if err := s.checkRecipe(q.Recipe); err != nil {
 		return nil, err
 	}
@@ -196,6 +263,6 @@ func convertSource(source search.FloorSourceKind) plugin.FloorSource {
 }
 
 // Access returns the capabilities of the search the way hostendpoint serves them.
-func (s Search) Access() *hostendpoint.SearchAccess {
-	return &hostendpoint.SearchAccess{SearchIndex: s, PassageSearch: s, SearchFloors: s}
+func (s Scoring) Access() *hostendpoint.SearchAccess {
+	return &hostendpoint.SearchAccess{SearchIndex: s, TextSearch: s, SearchFloors: s}
 }

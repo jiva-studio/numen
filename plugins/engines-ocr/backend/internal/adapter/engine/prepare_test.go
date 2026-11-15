@@ -1,11 +1,15 @@
 package engine
 
 import (
+	"errors"
+	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 )
 
 func findRuntime(t *testing.T) string {
@@ -26,10 +30,21 @@ func findRuntime(t *testing.T) string {
 	return ""
 }
 
+const bindChildEnv = "NUMEN_TEST_BIND_CHILD"
+
 func TestBindRuntime_BindsARealRuntime(t *testing.T) {
 	lib := findRuntime(t)
 	if lib == "" {
 		t.Skipf("no %s found: set %s or provision the runtime in the Numen models folder", onnx.GetLibraryName(), onnx.EnvLibrary)
+	}
+	// A process binds the runtime once, so the test of a missing library would bind this one first.
+	if os.Getenv(bindChildEnv) == "" {
+		child := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestBindRuntime_BindsARealRuntime$")
+		child.Env = append(os.Environ(), bindChildEnv+"=1")
+		if out, err := child.CombinedOutput(); err != nil {
+			t.Fatalf("the child that binds %s failed: %v\n%s", lib, err, out)
+		}
+		return
 	}
 	if err := bindRuntime(lib); err != nil {
 		t.Fatalf("bindRuntime(%q) = %v, want the runtime bound", lib, err)
@@ -42,6 +57,10 @@ func TestNewProbeConfig_SetsEveryPathToAMissingFileInTheProbeDirectory(t *testin
 	if cfg.OnnxRuntimeLibPath != "/runtime/lib" {
 		t.Errorf("OnnxRuntimeLibPath = %q, want the library path", cfg.OnnxRuntimeLibPath)
 	}
+	if cfg.UseCuda || cfg.NumThreads != 0 || cfg.ThreadCount != 0 || cfg.DetMaxSideLen != 0 ||
+		cfg.DetOutsideExpandPix != 0 || cfg.RecHeight != 0 || cfg.RecModelNumClasses != 0 || cfg.HeatmapThreshold != 0 {
+		t.Errorf("probe numeric/boolean fields = %+v, want all zero/false", cfg)
+	}
 	for name, path := range map[string]string{"DetModelPath": cfg.DetModelPath, "RecModelPath": cfg.RecModelPath, "DictPath": cfg.DictPath} {
 		if path == "" || filepath.Dir(path) != probe {
 			t.Errorf("%s = %q, want a file in %q", name, path, probe)
@@ -49,5 +68,28 @@ func TestNewProbeConfig_SetsEveryPathToAMissingFileInTheProbeDirectory(t *testin
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			t.Errorf("%s = %q, want a file that does not exist, stat error %v", name, path, err)
 		}
+	}
+}
+
+func TestBindRuntimeAndCheckBindError(t *testing.T) {
+	if err := checkBindError("/lib", nil); err != nil {
+		t.Fatalf("checkBindError(nil) = %v, want nil", err)
+	}
+	if err := checkBindError("/lib", fs.ErrNotExist); err != nil {
+		t.Fatalf("checkBindError(ErrNotExist) = %v, want nil", err)
+	}
+	errBoom := errors.New("dlopen failed")
+	if err := checkBindError("/lib", errBoom); !errors.Is(err, errBoom) || !strings.Contains(err.Error(), "bind the runtime at /lib") {
+		t.Fatalf("checkBindError(errBoom) = %v, want wrapped errBoom", err)
+	}
+
+	missingLib := filepath.Join(t.TempDir(), "missing-libonnxruntime.so")
+	if err := bindRuntime(missingLib); err == nil || !strings.Contains(err.Error(), "bind the runtime at "+missingLib) {
+		t.Fatalf("bindRuntime(missingLib) = %v, want bind error", err)
+	}
+
+	t.Setenv("TMPDIR", filepath.Join(t.TempDir(), "no-such-tmp"))
+	if err := bindRuntime("/lib"); err == nil || !strings.Contains(err.Error(), "create the probe directory") {
+		t.Fatalf("bindRuntime with invalid TMPDIR = %v, want probe directory error", err)
 	}
 }

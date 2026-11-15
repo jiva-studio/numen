@@ -13,6 +13,7 @@ import type { AnyTabKind } from '@/entities/tab'
 import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createTestPluginSupport, type TestPluginSupportDeps } from '@/testing/pluginSupport'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { getNoteIcon } from '@/entities/note'
 
 const createSupport = () => {
@@ -23,7 +24,11 @@ const createSupport = () => {
       registerExtensionReader: vi.fn(() => () => undefined),
       registerEditor: vi.fn(() => () => undefined),
     } as never,
-    rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
+    rest: createSettingsStore(
+      createAnsweredApi({}).configuration.settings,
+      SETTINGS_WORDS,
+      vi.fn(),
+    ),
     getServices: () => ({
       workspace: { getNoteInFocus: () => ({ path: '', title: '' }) } as unknown as WorkspaceHost,
     }),
@@ -41,9 +46,9 @@ describe('the platform plugins read', () => {
   it('is Windows where the window gives none, as the frame reports without the runtime', () => {
     const { support } = createSupport()
 
-    expect(support.pluginHost.lifecycle.createContext('md.numen.a').plugin.app.platform).toBe(
-      'windows',
-    )
+    expect(
+      support.pluginHost.lifecycle.createContext('md.numen.a').plugin.identity.app.platform,
+    ).toBe('windows')
   })
 })
 
@@ -59,7 +64,7 @@ describe('closing the tabs of a plugin', () => {
           tabKinds: ['a-kind'],
         }),
       )
-      .register.tabKind({ kind: 'a-kind', component: blank, title: 'A' })
+      .plugin.register.tabKind({ kind: 'a-kind', component: blank, title: 'A' })
     const id = await windowTabs.tabs.createTab('a-kind', 'x')
     windowTabs.panes.show(id)
 
@@ -75,7 +80,7 @@ describe('closing the tabs of a plugin', () => {
 
   it('keeps a tab of a core kind whose state names the plugin', async () => {
     const { windowTabs, support } = createSupport()
-    windowTabs.groups.registerKind(coreKind({ pluginId: 'md.numen.a' }))
+    windowTabs.kinds.registerKind(coreKind({ pluginId: 'md.numen.a' }))
     const id = await windowTabs.tabs.createTab('core', 'x')
 
     support.pluginHost.lifecycle.disposePlugin('md.numen.a')
@@ -94,7 +99,7 @@ describe('closing the tabs of a plugin', () => {
           tabKinds: ['b-kind'],
         }),
       )
-      .register.tabKind({ kind: 'b-kind', component: blank, title: 'B' })
+      .plugin.register.tabKind({ kind: 'b-kind', component: blank, title: 'B' })
     const id = await windowTabs.tabs.createTab('b-kind', 'x')
 
     support.pluginHost.lifecycle.disposePlugin('md.numen.a')
@@ -117,14 +122,14 @@ const activate = (context: PluginContext) => {
 describe('the tab kind a plugin adds', () => {
   const activateChat = async () => {
     const { windowTabs, support } = createSupport()
-    activate(support.pluginHost.lifecycle.createContext(manifest.id, manifest))
+    activate(support.pluginHost.lifecycle.createContext(manifest.id, manifest).plugin)
     return { windowTabs, support }
   }
 
   it('is a kind of the window while the plugin is active', async () => {
     const { windowTabs } = await activateChat()
 
-    expect(windowTabs.groups.hasKind('chat')).toBe(true)
+    expect(windowTabs.kinds.hasKind('chat')).toBe(true)
     expect(windowTabs.tabs.getTab(await windowTabs.tabs.createTab('chat', ''))).not.toBeNull()
   })
 
@@ -134,7 +139,7 @@ describe('the tab kind a plugin adds', () => {
 
     support.pluginHost.lifecycle.disposePlugin(manifest.id)
 
-    expect(windowTabs.groups.hasKind('chat')).toBe(false)
+    expect(windowTabs.kinds.hasKind('chat')).toBe(false)
     expect(windowTabs.tabs.getTab(id)?.state).toMatchObject({
       kind: 'chat',
       targetPath: '',
@@ -152,7 +157,11 @@ describe('the settings and notices a plugin is given', () => {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),
       } as never,
-      rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
+      rest: createSettingsStore(
+        createAnsweredApi({}).configuration.settings,
+        SETTINGS_WORDS,
+        vi.fn(),
+      ),
       ...more,
     })
 
@@ -164,9 +173,9 @@ describe('the settings and notices a plugin is given', () => {
     const { pluginHost } = createWith({ rest: rest as never })
     const ctx = pluginHost.lifecycle.createContext('md.numen.a')
 
-    expect(ctx.settings.get('fontSize')).toBe(14)
-    expect(ctx.settings.get('enabled')).toBe(DEFAULT_PLUGIN_ENABLED)
-    expect(ctx.settings.get('missing')).toBeUndefined()
+    expect(ctx.plugin.settings.get('fontSize')).toBe(14)
+    expect(ctx.plugin.settings.get('enabled')).toBe(DEFAULT_PLUGIN_ENABLED)
+    expect(ctx.plugin.settings.get('missing')).toBeUndefined()
   })
 
   it('prefers the committed setting over an unconfirmed pending write', () => {
@@ -180,7 +189,7 @@ describe('the settings and notices a plugin is given', () => {
     const { pluginHost } = createWith({ rest: rest as never })
     const ctx = pluginHost.lifecycle.createContext('md.numen.a')
 
-    expect(ctx.settings.get('enabled')).toBe(false)
+    expect(ctx.plugin.settings.get('enabled')).toBe(false)
   })
 
   it('registers the extensions declared for a reader in the plugin settings', () => {
@@ -212,28 +221,36 @@ describe('the settings and notices a plugin is given', () => {
 
     pluginHost.lifecycle
       .createContext('md.numen.pdf', createMockManifest('md.numen.pdf', { readers: ['document'] }))
-      .register.reader({ id: 'document', title: 'Document', component: blank })
+      .plugin.register.reader({ id: 'document', title: 'Document', component: blank })
 
     expect(registerExtensionReader).toHaveBeenCalledTimes(1)
     expect(registerExtensionReader).toHaveBeenCalledWith('.pdf', expect.any(Function), undefined)
   })
 
-  it('lists the declared commands of a plugin with a frontend while it loads, and none of a plugin without one', () => {
+  it('lists the declared commands of a plugin with a frontend while it loads, and none of a plugin without one or a failed one', async () => {
     const rest = {
       state: {
         plugins: ref([
           { id: 'md.numen.tree', hasFrontend: true },
+          { id: 'md.numen.broken', hasFrontend: true },
           { id: 'md.numen.job', hasFrontend: false },
         ]),
       },
+      read: { getCommittedSetting: () => undefined },
     }
-    const { pluginHost } = createWith({
+    const { pluginHost, pluginLoader } = createWith({
       rest: rest as never,
       getCommandDeclarations: () => [
         { pluginId: 'md.numen.tree', id: 'tree.open', title: 'Open tree' },
+        { pluginId: 'md.numen.broken', id: 'broken.open', title: 'Open broken' },
         { pluginId: 'md.numen.job', id: 'job.run', title: 'Run job' },
       ],
     })
+    pluginLoader.registerPluginModule('md.numen.broken', async () => {
+      throw new Error('broken plugin')
+    })
+    await pluginLoader.start()
+    await pluginLoader.status.startPlugin('md.numen.broken')
 
     expect(pluginHost.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.numen.tree:tree.open',
@@ -374,7 +391,7 @@ describe('the settings and notices a plugin is given', () => {
     }
     const { pluginHost } = createWith({ rest: rest as never })
     const handler = vi.fn()
-    pluginHost.lifecycle.createContext('md.numen.a').settings.onChange('fontSize', handler)
+    pluginHost.lifecycle.createContext('md.numen.a').plugin.settings.onChange('fontSize', handler)
 
     settings.value = { fontSize: 14 }
     await nextTick()
@@ -388,7 +405,7 @@ describe('the settings and notices a plugin is given', () => {
     const notices = createNoticeQueue()
     const { pluginHost } = createWith({ notices })
 
-    pluginHost.lifecycle.createContext('md.numen.a').ui.notices.show('Saved.', 'warning')
+    pluginHost.lifecycle.createContext('md.numen.a').host.ui.notices.show('Saved.', 'warning')
     expect(notices.notices.value.map((one) => one.text)).toStrictEqual(['Saved.'])
 
     pluginHost.lifecycle.disposePlugin('md.numen.a')
@@ -399,7 +416,7 @@ describe('the settings and notices a plugin is given', () => {
     const { pluginHost } = createWith({})
 
     expect(() =>
-      pluginHost.lifecycle.createContext('md.numen.a').ui.notices.show('Saved.'),
+      pluginHost.lifecycle.createContext('md.numen.a').host.ui.notices.show('Saved.'),
     ).not.toThrow()
   })
 })
@@ -455,12 +472,13 @@ describe('the plugins the window loads', () => {
       'md.numen.a',
       createMockManifest('md.numen.a', {
         name: 'A',
-        permissions: ['vault:read'],
+        permissions: ['vault:read', 'shell:openExternal'],
         tabKinds: ['sample'],
       }),
     )
+    expect(pluginHost.contextHost.ui.openExternal('https://example.com')).toBeInstanceOf(Promise)
     const icon = { name: 'CustomIcon' }
-    ctx.register.tabKind({
+    ctx.plugin.register.tabKind({
       kind: 'sample' as never,
       component: blank,
       title: 'Sample',
@@ -468,28 +486,29 @@ describe('the plugins the window loads', () => {
     })
     expect(getNoteIcon('sample')).toBe(icon)
     const tabId = await windowTabs.tabs.openTabOfKind('sample', 'a.md')
-    expect(windowTabs.tabs.getTab(tabId!)).toBeDefined()
+    expect(windowTabs.tabs.getTab(tabId ?? '')).toBeDefined()
 
     // Failing onSettingChange handler reports to reportError
-    ctx.settings.onChange('fontSize', (() => Promise.reject(new Error('bad handler'))) as never)
+    ctx.plugin.settings.onChange('fontSize', (() =>
+      Promise.reject(new Error('bad handler'))) as never)
     settings.value = { fontSize: 18 }
     await nextTick()
     await new Promise((r) => setTimeout(r, 0))
     expect(reportError).toHaveBeenCalledWith('md.numen.a', expect.any(Error))
 
     // Empty pluginId in disposePlugin does not close tabs
-    const closeSpy = vi.spyOn(windowTabs.groups, 'closeTabsOfPlugin')
+    const closeSpy = vi.spyOn(windowTabs.kinds, 'closeTabsOfPlugin')
     pluginHost.lifecycle.disposePlugin('')
     expect(closeSpy).not.toHaveBeenCalled()
 
     // Services and tasks accessors
-    expect(ctx.ui.workspace).toBeDefined()
-    expect(ctx.vault.notes).toBeDefined()
-    expect(ctx.vault.relations).toBeDefined()
-    expect(ctx.vault.files).toBeDefined()
-    expect(ctx.vault.buffers).toBeDefined()
-    expect(ctx.work.tasks).toBeDefined()
-    expect(ctx.vault.texts).toBeDefined()
+    expect(ctx.host.ui.workspace).toBeDefined()
+    expect(ctx.host.vault.notes).toBeDefined()
+    expect(ctx.host.vault.relations).toBeDefined()
+    expect(ctx.host.vault.files).toBeDefined()
+    expect(ctx.host.vault.buffers).toBeDefined()
+    expect(ctx.host.work.tasks).toBeDefined()
+    expect(ctx.host.vault.texts).toBeDefined()
 
     pluginHost.lifecycle.disposePlugin('md.numen.a')
     expect(getNoteIcon('sample')).not.toBe(icon)

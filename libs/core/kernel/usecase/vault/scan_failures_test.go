@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -113,7 +114,7 @@ func (m *scanVault) ReportChanges(context.Context) error {
 }
 
 func (m *scanVault) scan() vaults.Scan {
-	return vaults.NewScan(scanReaders{m}, m, m, m, m, nil)
+	return vaults.NewScan(scanReaders{m}, m, m, m, m, testsupport.EmptySourceBacklog{})
 }
 
 type scanReaders struct{ vault *scanVault }

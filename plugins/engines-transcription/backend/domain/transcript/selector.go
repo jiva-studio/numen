@@ -20,13 +20,3 @@ func (s timeSelector) encode() (domain.Selector, error) {
 	}
 	return domain.Selector(raw), nil
 }
-
-func readTimeSelector(raw domain.Selector) (timeSelector, error) {
-	var out timeSelector
-	// gomutants:disable-next-line BRANCH_IF reason="empty selector fast-path returns zero value directly"
-	if raw == "" {
-		return out, nil
-	}
-	err := json.Unmarshal([]byte(raw), &out)
-	return out, err
-}

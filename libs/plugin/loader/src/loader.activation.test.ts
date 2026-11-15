@@ -2,8 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { watch } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginHost, type CommandDeclaration, type PluginHostDeps } from './hosting'
-import { createPluginLoader } from './loader'
+import type { CommandDeclaration, PluginHost } from './hosting'
+import { createTestPluginLoader } from './testing/pluginLoader'
+import { createTestPluginHost, type TestHostDeps } from './testing/hostDeps'
 
 const PLUGIN = 'md.numen.views.plex.graph'
 
@@ -20,7 +21,7 @@ const MANIFEST = createMockManifest(PLUGIN, { commands: ['graph.open', 'graph.sh
 function createWindow(activate: (context: PluginContext) => void | Promise<void>) {
   const reportCommandIssue = vi.fn()
   const onError = vi.fn()
-  const deps: PluginHostDeps = {
+  const deps: TestHostDeps = {
     target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
@@ -30,8 +31,8 @@ function createWindow(activate: (context: PluginContext) => void | Promise<void>
     hasPluginBackend: () => false,
     reportCommandIssue,
   }
-  const host = createPluginHost(deps)
-  const loader = createPluginLoader({ host: host.lifecycle, onError })
+  const host = createTestPluginHost(deps)
+  const loader = createTestPluginLoader({ host: host.lifecycle, onError })
   loader.registerPluginManifest(PLUGIN, MANIFEST)
   loader.registerPluginModule(PLUGIN, async () => ({ activate }))
   return { host, loader, reportCommandIssue, onError }
@@ -42,7 +43,7 @@ async function startWindow(loader: ReturnType<typeof createWindow>['loader']): P
   await loader.status.startPlugin(PLUGIN)
 }
 
-function followCommands(host: ReturnType<typeof createPluginHost>): string[][] {
+function followCommands(host: PluginHost): string[][] {
   const reports: string[][] = []
   watch(
     () => host.commands.getPaletteCommands().map((one) => one.id),

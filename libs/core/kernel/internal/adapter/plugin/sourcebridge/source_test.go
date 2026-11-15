@@ -57,7 +57,7 @@ type mockSourceServer struct {
 	mu      sync.Mutex
 	asked   []string
 	places  []*v1.SearchPlace
-	queries []*v1.SearchSourceServiceSearchPassagesRequest
+	queries []*v1.SearchSourceServiceSearchChunksRequest
 }
 
 func (s *mockSourceServer) DescribeSearchSource(
@@ -128,14 +128,14 @@ func (s *mockSourceServer) EmbedQueries(
 	return connect.NewResponse(&v1.EmbedQueriesResponse{Vectors: vectors}), nil
 }
 
-func (s *mockSourceServer) SearchPassages(
+func (s *mockSourceServer) SearchChunks(
 	_ context.Context,
-	req *connect.Request[v1.SearchSourceServiceSearchPassagesRequest],
-) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error) {
+	req *connect.Request[v1.SearchSourceServiceSearchChunksRequest],
+) (*connect.Response[v1.SearchSourceServiceSearchChunksResponse], error) {
 	s.mu.Lock()
 	s.queries = append(s.queries, req.Msg)
 	s.mu.Unlock()
-	return connect.NewResponse(&v1.SearchSourceServiceSearchPassagesResponse{Matches: []*v1.ChunkMatch{
+	return connect.NewResponse(&v1.SearchSourceServiceSearchChunksResponse{Matches: []*v1.ChunkMatch{
 		{ChunkId: "41", Score: 0.9}, {ChunkId: "7", Score: 0.6},
 	}}), nil
 }
@@ -277,9 +277,9 @@ func TestTheBridgeSendsTheTextsAndTheQueriesToTheSource(t *testing.T) {
 	if _, err := bridge.EmbedQueries(ctx, []string{"a question"}); err != nil {
 		t.Fatalf("EmbedQueries failed: %v", err)
 	}
-	matches, err := bridge.SearchPassages(ctx, place, searchsource.Query{Text: "entropy", Limit: 5, Floor: 0.4, PathPrefix: "books/"})
+	matches, err := bridge.SearchChunks(ctx, place, searchsource.Query{Text: "entropy", Limit: 5, Floor: 0.4, PathPrefix: "books/"})
 	if err != nil {
-		t.Fatalf("SearchPassages failed: %v", err)
+		t.Fatalf("SearchChunks failed: %v", err)
 	}
 	if want := []searchsource.Match{{ChunkID: "41", Score: 0.9}, {ChunkID: "7", Score: 0.6}}; !slices.Equal(matches, want) {
 		t.Errorf("matches %v, want %v", matches, want)
@@ -326,7 +326,7 @@ func TestTheDescriptionIsAQuestionAndASearchIsAUse(t *testing.T) {
 		t.Errorf("the description took %d question leases and returned %d, want one", asked, released)
 	}
 
-	if _, err := bridge.SearchPassages(t.Context(), searchsource.Place{}, searchsource.Query{Text: "tides of the inner sea"}); err != nil {
+	if _, err := bridge.SearchChunks(t.Context(), searchsource.Place{}, searchsource.Query{Text: "tides of the inner sea"}); err != nil {
 		t.Fatal(err)
 	}
 	if asked := host.QuestionsAcquired.Load(); asked != 1 || host.Acquired.Load() != 2 {

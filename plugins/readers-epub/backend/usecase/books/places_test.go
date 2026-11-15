@@ -1,6 +1,8 @@
 package books
 
 import (
+	"context"
+	"os"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -9,8 +11,17 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/testsupport"
 )
+
+type statFailingFiles struct {
+	host.FileReader
+	err error
+}
+
+func (f statFailingFiles) StatFile(context.Context, string) (domain.FileStat, error) {
+	return domain.FileStat{}, f.err
+}
 
 func newGuidedReader(t *testing.T) (*Reader, *hosttest.Vault) {
 	t.Helper()
@@ -100,6 +111,13 @@ func TestGetCfi_ErrorsOnEmptyPath(t *testing.T) {
 	}
 	if _, err := books.FindOffset(t.Context(), api.FindOffsetRequest{Path: "missing.epub", Cfi: "epubcfi(/6/2!/4/2/1:0)"}); codeOf(err) != server.CodeNotFound {
 		t.Errorf("FindOffset on missing file: %v, want not found", err)
+	}
+	deniedBooks := NewReader(func(id domain.VaultID) host.FileReader {
+		return statFailingFiles{FileReader: books.vaults(id), err: os.ErrPermission}
+	})
+	t.Cleanup(deniedBooks.Close)
+	if _, err := deniedBooks.GetCfi(t.Context(), api.GetCfiRequest{Path: "guided.epub"}); codeOf(err) != server.CodeNotFound {
+		t.Errorf("GetCfi when StatFile returns ErrPermission: %v, want CodeNotFound", err)
 	}
 }
 

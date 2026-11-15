@@ -2,6 +2,7 @@ package openaiapi
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -66,24 +67,85 @@ func TestTheStatusOfAnAnswerDecidesTheKindOfFailureAndTheWaitOfARetry(t *testing
 		status     int
 		retryAfter string
 		isTryNext  bool
+		reason     connection.Reason
 		wait       time.Duration
 	}{
-		{http.StatusUnauthorized, "", true, 0},
-		{http.StatusPaymentRequired, "", true, 0},
-		{http.StatusTooManyRequests, "30", true, 30 * time.Second},
-		{http.StatusTooManyRequests, now.Add(90 * time.Second).Format(http.TimeFormat), true, 90 * time.Second},
-		{http.StatusTooManyRequests, "soon", true, 0},
-		{http.StatusTooManyRequests, "-5", true, 0},
-		{http.StatusServiceUnavailable, "", true, 0},
-		{http.StatusBadRequest, "", false, 0},
-		{http.StatusInternalServerError, "", false, 0},
+		{http.StatusUnauthorized, "", true, connection.ReasonRejectedKey, 0},
+		{http.StatusForbidden, "", true, connection.ReasonRejectedKey, 0},
+		{http.StatusPaymentRequired, "", true, connection.ReasonPaymentRequired, 0},
+		{http.StatusTooManyRequests, "  30  ", true, connection.ReasonRateLimited, 30 * time.Second},
+		{http.StatusTooManyRequests, "2147483647", true, connection.ReasonRateLimited, 2147483647 * time.Second},
+		{http.StatusTooManyRequests, "2147483648", true, connection.ReasonRateLimited, 0},
+		{http.StatusTooManyRequests, now.Add(90 * time.Second).Format(http.TimeFormat), true, connection.ReasonRateLimited, 90 * time.Second},
+		{http.StatusTooManyRequests, now.Format(http.TimeFormat), true, connection.ReasonRateLimited, 0},
+		{http.StatusTooManyRequests, "soon", true, connection.ReasonRateLimited, 0},
+		{http.StatusTooManyRequests, "-1", true, connection.ReasonRateLimited, 0},
+		{http.StatusTooManyRequests, "-5", true, connection.ReasonRateLimited, 0},
+		{http.StatusBadGateway, "", true, connection.ReasonUnavailable, 0},
+		{http.StatusServiceUnavailable, "", true, connection.ReasonUnavailable, 0},
+		{http.StatusGatewayTimeout, "", true, connection.ReasonUnavailable, 0},
+		{399, "", false, connection.ReasonUnavailable, 0},
+		{http.StatusBadRequest, "", false, connection.ReasonInvalidRequest, 0},
+		{499, "", false, connection.ReasonInvalidRequest, 0},
+		{http.StatusInternalServerError, "", false, connection.ReasonUnavailable, 0},
 	}
 	for _, one := range cases {
 		err := mapStatusCode(one.status, one.retryAfter, now)
 
 		wait, isTryNext := connection.IsTryNext(err)
-		if isTryNext != one.isTryNext || connection.IsStop(err) == one.isTryNext || wait != one.wait {
-			t.Errorf("status %d, Retry-After %q: try-next %v after %v, stop %v", one.status, one.retryAfter, isTryNext, wait, connection.IsStop(err))
+		if isTryNext != one.isTryNext || connection.IsStop(err) == one.isTryNext || wait != one.wait || err.Error() != one.reason.String() {
+			t.Errorf("status %d, Retry-After %q: try-next %v after %v, stop %v, err %q, want reason %q",
+				one.status, one.retryAfter, isTryNext, wait, connection.IsStop(err), err.Error(), one.reason)
 		}
+	}
+
+	if got := parseRetryAfter("soon", now); got != 0 {
+		t.Errorf("parseRetryAfter(soon) = %v, want 0", got)
+	}
+	if got := parseRetryAfter("-1", now); got != 0 {
+		t.Errorf("parseRetryAfter(-1) = %v, want 0", got)
+	}
+	if got := parseRetryAfter(now.Format(http.TimeFormat), now); got != 0 {
+		t.Errorf("parseRetryAfter(now) = %v, want 0", got)
+	}
+	if got := parseRetryAfter(now.Format(http.TimeFormat), now.Add(time.Nanosecond)); got != 0 {
+		t.Errorf("parseRetryAfter(now - 1ns) = %v, want 0", got)
+	}
+}
+
+func TestClientPoolSettingsAndTransportClassification(t *testing.T) {
+	if maxResponseBytes != 64*1024*1024 {
+		t.Errorf("maxResponseBytes = %d, want %d", maxResponseBytes, 64*1024*1024)
+	}
+	pool := newClients()
+	defer pool.close()
+	if pool.get(true) == nil || pool.get(false) == nil || pool.get(true) == pool.get(false) {
+		t.Errorf("pool clients must be distinct non-nil instances: loopback=%p general=%p", pool.get(true), pool.get(false))
+	}
+	transport, ok := newClient().Transport.(*http.Transport)
+	if !ok {
+		t.Fatal("expected *http.Transport")
+	}
+	if transport.TLSHandshakeTimeout != 30*time.Second || transport.IdleConnTimeout != 90*time.Second || transport.MaxIdleConnsPerHost != 8 {
+		t.Errorf("transport timeouts = (%v, %v, %d), want (30s, 90s, 8)",
+			transport.TLSHandshakeTimeout, transport.IdleConnTimeout, transport.MaxIdleConnsPerHost)
+	}
+
+	ctxWithLoopbackFalse := context.WithValue(t.Context(), loopbackOnlyKey{}, false)
+	if err := controlDial(ctxWithLoopbackFalse, "tcp", "93.184.216.34:443", nil); err != nil {
+		t.Errorf("controlDial(loopbackOnly=false, public IP) = %v, want nil", err)
+	}
+	ctxWithLoopbackTrue := context.WithValue(t.Context(), loopbackOnlyKey{}, true)
+	if err := controlDial(ctxWithLoopbackTrue, "tcp", "93.184.216.34:443", nil); !address.IsError(err) {
+		t.Errorf("controlDial(loopbackOnly=true, public IP) = %v, want address error", err)
+	}
+
+	if _, isTryNext := connection.IsTryNext(classifyTransportError(t.Context(), errors.New("eof"))); !isTryNext {
+		t.Error("classifyTransportError with live context = not try-next, want try-next")
+	}
+	canceled, cancel := context.WithCancel(t.Context())
+	cancel()
+	if err := classifyTransportError(canceled, errors.New("eof")); !errors.Is(err, context.Canceled) {
+		t.Errorf("classifyTransportError with canceled context = %v, want context.Canceled", err)
 	}
 }

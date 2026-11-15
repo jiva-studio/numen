@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -23,7 +24,7 @@ import (
 // Plugins finds the plugin of the search source and watches its configuration.
 type Plugins interface {
 	ResolveCapability(capability string) (manifest.Discovered, error)
-	WatchPluginConfig(pluginID string, fn func()) (stop func())
+	pluginport.ConfigWatcher
 }
 
 // description is what one read of the source answers: its description, and the floor hint, which is no part
@@ -190,8 +191,8 @@ func (b *Source) IndexTexts(ctx context.Context, place searchsource.Place, texts
 	return readVectors(resp.Msg.GetVectors()), nil
 }
 
-// SearchPassages asks the plugin for the chunks of the place that answer the query.
-func (b *Source) SearchPassages(ctx context.Context, place searchsource.Place, q searchsource.Query) (matches []searchsource.Match, err error) {
+// SearchChunks asks the plugin for the chunks of the place that answer the query.
+func (b *Source) SearchChunks(ctx context.Context, place searchsource.Place, q searchsource.Query) (matches []searchsource.Match, err error) {
 	kinds := make([]string, len(q.Kinds))
 	for i, kind := range q.Kinds {
 		kinds[i] = string(kind)
@@ -202,7 +203,7 @@ func (b *Source) SearchPassages(ctx context.Context, place searchsource.Place, q
 	}
 	defer func() { err = errors.Join(err, call.Close()) }()
 
-	resp, err := client.SearchPassages(ctx, connect.NewRequest(&v1.SearchSourceServiceSearchPassagesRequest{
+	resp, err := client.SearchChunks(ctx, connect.NewRequest(&v1.SearchSourceServiceSearchChunksRequest{
 		Place: writePlace(place), Query: q.Text, Limit: int32(min(max(q.Limit, 0), 1<<20)), Kinds: kinds, PathPrefix: q.PathPrefix, Floor: q.Floor,
 	}))
 	if err != nil {

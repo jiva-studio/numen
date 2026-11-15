@@ -131,6 +131,18 @@ func TestOpenListenerBindsLoopback(t *testing.T) {
 	if !ok || !addr.IP.IsLoopback() || addr.Port == 0 {
 		t.Errorf("listener address = %v, want 127.0.0.1 with an allocated port", listener.Addr())
 	}
+	second, err := s.OpenListener("second")
+	if err != nil {
+		t.Fatalf("OpenListener(second): %v", err)
+	}
+	t.Cleanup(func() {
+		if closeErr := second.Close(); closeErr != nil && !errors.Is(closeErr, net.ErrClosed) {
+			t.Errorf("close second listener: %v", closeErr)
+		}
+	})
+	if _, err := s.OpenListener("second"); !errors.Is(err, errDuplicateListener) {
+		t.Errorf("duplicate OpenListener err = %v, want %v", err, errDuplicateListener)
+	}
 }
 
 func TestServeClosesTheListenersItOpenedWhenItReturns(t *testing.T) {

@@ -12,7 +12,9 @@ import type {
   TabKindRegistration,
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
+import { shallowRef } from 'vue'
 import type { Manifest } from '@numen/core-client'
+import type { PluginParts } from '../host'
 import type { SlotViewRegistry } from '../slot-views'
 import type { PluginListener } from './events'
 import { disposeSubscriptions } from './guards/subscriptions'
@@ -40,21 +42,56 @@ interface RegisteredSettingsView {
   reg: SettingsViewRegistration
 }
 
-export interface HostRegistry {
-  readonly vaultListeners: Set<PluginListener<VaultChangeEvent>>
-  readonly fileListeners: Set<PluginListener<FileSelectEvent>>
+/** The listeners of the plugins to a change of the vault and to the select of a file. */
+interface PluginListeners {
+  readonly vault: Set<PluginListener<VaultChangeEvent>>
+  readonly file: Set<PluginListener<FileSelectEvent>>
+}
+
+/** The entries that own the ids of the tabs a window holds: the tab kinds and the readers. */
+export interface TabKindOwners {
   readonly readers: Map<string, RegisteredReader>
   readonly tabKinds: Map<string, RegisteredTabKind>
-  readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
-  readonly handlers: { value: ReadonlyMap<string, RegisteredCommand> }
-  readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
-  readonly contexts: Map<string, PluginContext>
+}
+
+/** The plugins the host made a context for: their parts and manifests, and which are active, starting and stopped. */
+export interface PluginRecords {
+  readonly contexts: Map<string, PluginParts>
   readonly manifests: Map<string, Manifest>
   readonly contextManifests?: { value: ReadonlyMap<string, Manifest> }
   readonly activated: { value: ReadonlySet<string> }
   readonly starting?: { value: ReadonlySet<string> }
   readonly disposed: Set<string>
+}
+
+export interface HostRegistry {
+  readonly listeners: PluginListeners
+  readonly kinds: TabKindOwners
+  readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
+  readonly handlers: { value: ReadonlyMap<string, RegisteredCommand> }
+  readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
+  readonly plugins: PluginRecords
   readonly reportedIssues: Set<string>
+}
+
+/** An empty registry; the window reads a change of the holders that are refs. */
+export function createHostRegistry(): HostRegistry {
+  return {
+    listeners: { vault: new Set(), file: new Set() },
+    kinds: { readers: new Map(), tabKinds: new Map() },
+    commands: shallowRef(new Map()),
+    handlers: shallowRef(new Map()),
+    settingsViews: shallowRef(new Map()),
+    plugins: {
+      contexts: new Map(),
+      manifests: new Map(),
+      contextManifests: shallowRef(new Map()),
+      activated: shallowRef(new Set()),
+      starting: shallowRef(new Set()),
+      disposed: new Set(),
+    },
+    reportedIssues: new Set(),
+  }
 }
 
 export interface PluginItemRegistration<T> {
@@ -63,8 +100,8 @@ export interface PluginItemRegistration<T> {
   readonly getContext?: () => PluginContext | undefined
 }
 
-function clearSubscriptions(ctx?: PluginContext): void {
-  if (ctx) disposeSubscriptions(ctx.plugin.subscriptions)
+function clearSubscriptions(parts?: PluginParts): void {
+  if (parts) disposeSubscriptions(parts.plugin.identity.subscriptions)
 }
 
 function cleanupMapItems(
@@ -80,7 +117,7 @@ function cleanupMapItems(
 export interface DisposalParts {
   readonly registry: HostRegistry
   readonly slotViews?: Pick<SlotViewRegistry, 'disposePlugin' | 'views'> | undefined
-  readonly deps?: PluginHostDeps | undefined
+  readonly deps?: Pick<PluginHostDeps, 'window' | 'kinds'> | undefined
 }
 
 function removePluginListeners<E>(listeners: Set<PluginListener<E>>, pluginId: string): void {
@@ -100,8 +137,8 @@ function removePluginItems<T extends { pluginId: string }>(
 }
 
 /** Adds a plugin to the plugins whose `activate` has not returned, or removes it. */
-export function setStarting(registry: HostRegistry, pluginId: string, isStarting: boolean): void {
-  const { starting } = registry
+export function setStarting(plugins: PluginRecords, pluginId: string, isStarting: boolean): void {
+  const { starting } = plugins
   if (!starting) return
   const next = new Set(starting.value)
   if (isStarting) next.add(pluginId)
@@ -128,37 +165,40 @@ export function addEntry<T>(
 
 export function disposePluginEntry(pluginId: string, parts: DisposalParts): void {
   const { registry, slotViews, deps } = parts
+  const { plugins } = registry
   // The plugin is marked disposed before its subscriptions are cleared: each handler removed is read
   // at once by the parts that follow the commands, and an active plugin without it is reported.
-  registry.disposed.add(pluginId)
-  registry.activated.value = new Set([...registry.activated.value].filter((id) => id !== pluginId))
-  setStarting(registry, pluginId, false)
-  deps?.closeTabsForPlugin?.(pluginId)
-  deps?.clearNotices?.(pluginId)
-  clearSubscriptions(registry.contexts.get(pluginId))
-  registry.contexts.delete(pluginId)
-  registry.manifests.delete(pluginId)
-  if (registry.contextManifests?.value.has(pluginId)) {
-    const next = new Map(registry.contextManifests.value)
+  plugins.disposed.add(pluginId)
+  plugins.activated.value = new Set([...plugins.activated.value].filter((id) => id !== pluginId))
+  setStarting(plugins, pluginId, false)
+  deps?.kinds.closeTabsForPlugin?.(pluginId)
+  deps?.window.clearNotices?.(pluginId)
+  clearSubscriptions(plugins.contexts.get(pluginId))
+  plugins.contexts.delete(pluginId)
+  plugins.manifests.delete(pluginId)
+  if (plugins.contextManifests?.value.has(pluginId)) {
+    const next = new Map(plugins.contextManifests.value)
     next.delete(pluginId)
-    registry.contextManifests.value = next
+    plugins.contextManifests.value = next
   }
-  cleanupMapItems(registry.readers, pluginId)
-  cleanupMapItems(registry.tabKinds, pluginId)
+  cleanupMapItems(registry.kinds.readers, pluginId)
+  cleanupMapItems(registry.kinds.tabKinds, pluginId)
   removePluginItems(registry.commands, pluginId)
   removePluginItems(registry.handlers, pluginId)
   removePluginItems(registry.settingsViews, pluginId)
   slotViews?.disposePlugin(pluginId)
-  removePluginListeners(registry.vaultListeners, pluginId)
-  removePluginListeners(registry.fileListeners, pluginId)
+  removePluginListeners(registry.listeners.vault, pluginId)
+  removePluginListeners(registry.listeners.file, pluginId)
 }
 
-export function disposeAllEntries(parts: DisposalParts & { readonly deps: PluginHostDeps }) {
+export function disposeAllEntries(
+  parts: DisposalParts & { readonly deps: Pick<PluginHostDeps, 'window' | 'kinds'> },
+) {
   const { registry, slotViews } = parts
   const allPluginIds = new Set<string>([
-    ...registry.contexts.keys(),
-    ...[...registry.readers.values()].map((r) => r.pluginId),
-    ...[...registry.tabKinds.values()].map((t) => t.pluginId),
+    ...registry.plugins.contexts.keys(),
+    ...[...registry.kinds.readers.values()].map((r) => r.pluginId),
+    ...[...registry.kinds.tabKinds.values()].map((t) => t.pluginId),
     ...[...registry.commands.value.values()].map((c) => c.pluginId),
     ...[...registry.handlers.value.values()].map((c) => c.pluginId),
     ...[...registry.settingsViews.value.values()].map((v) => v.pluginId),

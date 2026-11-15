@@ -1,9 +1,9 @@
 /**
  * Tests the mapping of tab links requests and stream to the workspace service.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installCoreAnswers } from '@numen/core-client/testing'
-import * as tabLinksCore from './tab-links'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createAnsweredClients } from '@/testing/coreAnswers'
+import { createTabLinksApi } from './tab-links'
 
 const request = {
   watchTabLinks: vi.fn(),
@@ -11,6 +11,8 @@ const request = {
   writeTabLinks: vi.fn(),
   syncTabPath: vi.fn(),
 }
+
+const tabLinksCore = createTabLinksApi(createAnsweredClients({ workspace: request }))
 
 const ORBITS = {
   id: 'plex:1',
@@ -26,15 +28,8 @@ const MAIN_WINDOW = {
   tabCount: 2,
 }
 
-let restore: () => void
-
 beforeEach(() => {
   vi.clearAllMocks()
-  restore = installCoreAnswers({ workspace: request })
-})
-
-afterEach(() => {
-  restore()
 })
 
 async function* createResponses(responses: readonly unknown[]) {

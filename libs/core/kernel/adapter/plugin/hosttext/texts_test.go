@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textversiontest"
 	"io"
 	"io/fs"
 	"os"
@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -166,7 +166,7 @@ func (c fixedClock) Now() time.Time { return c.now }
 
 func newTexts(t *testing.T, readers vaultport.VaultReaders, repo *mapsVersions) hosttext.Texts {
 	t.Helper()
-	versions := textfake.NewTextVersions(repo, textFiles{}, noPlugins{}, readers, fixedClock{now: getMapsTime().Add(time.Hour)})
+	versions := textversiontest.NewTextVersions(repo, textFiles{}, noPlugins{}, readers, fixedClock{now: getMapsTime().Add(time.Hour)})
 	return hosttext.NewTexts(versions.Versions, versions.Texts)
 }
 
@@ -253,7 +253,7 @@ func (d dirReaders) Open(domain.Vault) (vaultport.VaultReader, error) {
 
 // A file of a folder the vault ignores has no index row; its versions still have a live one.
 func TestListVersionsOfAPDFInAnIgnoredFolderListsItsLiveVersion(t *testing.T) {
-	root := vaultfixture.CopyVault(t)
+	root := vaulttest.CopyVault(t)
 	target := filepath.Join(root, filepath.FromSlash(mapsPath))
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		t.Fatal(err)

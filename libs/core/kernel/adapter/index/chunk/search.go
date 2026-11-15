@@ -5,6 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+
+	"modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
@@ -20,40 +24,49 @@ type Search struct{ db *sql.DB }
 func NewSearch(db *sql.DB) *Search { return &Search{db: db} }
 
 // FindLexical is a word search: the chunks of one vault whose text matches the
-// query, best first.
+// query, best first, each with its word score. A raw query FTS5 cannot parse
+// returns source.ErrInvalidWords.
 //
 // The result is the large chunk enclosing each hit, which is what a result
 // displays.
-func (q *Search) FindLexical(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery) ([]domain.Passage, error) {
+func (q *Search) FindLexical(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery) ([]domain.SearchResult, error) {
 	if query.Limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
 		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", query.Limit)
 	}
-	return q.findPassages(ctx, vaultID, query, passageSearch{all: lexicalSQL, kinds: lexicalKindsSQL})
+	return q.findResults(ctx, vaultID, query, resultStatements{all: lexicalSQL, kinds: lexicalKindsSQL, hasWordScore: true})
 }
 
-// GetNamedPassages returns the sections of one vault whose names match the
+// GetNamedSections returns the sections of one vault whose names match the
 // query, best first.
 //
 // A section is represented by the chunk it opens, so a result is the chapter
 // about the query and not the paragraph that repeats the name most often.
-func (q *Search) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery) ([]domain.Passage, error) {
+func (q *Search) GetNamedSections(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery) ([]domain.SearchResult, error) {
 	if query.Limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", query.Limit)
 	}
-	return q.findPassages(ctx, vaultID, query, passageSearch{all: sectionsSQL, kinds: sectionsKindsSQL})
+	return q.findResults(ctx, vaultID, query, resultStatements{all: sectionsSQL, kinds: sectionsKindsSQL})
 }
 
-// passageSearch is a full-text statement over every source, and its variant
-// limited to sources of some kinds.
-type passageSearch struct {
-	all   string
-	kinds string
+// resultStatements is a full-text statement over every source, its variant
+// limited to sources of some kinds, and whether its last column is a word score.
+type resultStatements struct {
+	all          string
+	kinds        string
+	hasWordScore bool
 }
 
-func (q *Search) findPassages(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery, search passageSearch) (_ []domain.Passage, err error) {
-	expression := Expression(query.Text, query.IsGrowing)
+func getExpression(query source.LexicalQuery) string {
+	if query.IsRaw {
+		return strings.TrimSpace(query.Text)
+	}
+	return Expression(query.Text, query.IsGrowing)
+}
+
+func (q *Search) findResults(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery, search resultStatements) ([]domain.SearchResult, error) {
+	expression := getExpression(query)
 	if expression == "" {
 		return nil, nil
 	}
@@ -64,7 +77,14 @@ func (q *Search) findPassages(ctx context.Context, vaultID domain.VaultID, query
 	if err != nil {
 		return nil, err
 	}
+	found, err := q.readResults(ctx, vault, expression, query, search)
+	if query.IsRaw && isQueryError(err) {
+		return nil, fmt.Errorf("%w: %w", source.ErrInvalidWords, err)
+	}
+	return found, err
+}
 
+func (q *Search) readResults(ctx context.Context, vault int64, expression string, query source.LexicalQuery, search resultStatements) (_ []domain.SearchResult, err error) {
 	var rows *sql.Rows
 	composed, decomposed := norm.NFC.String(query.PathPrefix), norm.NFD.String(query.PathPrefix)
 	if len(query.Kinds) == 0 {
@@ -78,17 +98,27 @@ func (q *Search) findPassages(ctx context.Context, vaultID domain.VaultID, query
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
-	var out []domain.Passage
+	var out []domain.SearchResult
 	for rows.Next() {
-		var p domain.Passage
+		var p domain.SearchResult
 		var row int64
-		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+		var score float64
+		if err := rows.Scan(&row, &p.Path, &p.Kind, &p.VersionID, &p.FileHash, &p.Start, &p.Length, &p.PlaceLabel, &p.MatchOffset, &score); err != nil {
 			return nil, err
 		}
 		p.ChunkID = ID(row)
+		if search.hasWordScore {
+			p.WordScore = &score
+		}
 		out = append(out, p)
 	}
 	return out, rows.Err()
+}
+
+func isQueryError(err error) bool {
+	// The statement is fixed and the expression is bound, so SQLITE_ERROR comes from the expression.
+	var response *sqlite.Error
+	return errors.As(err, &response) && response.Code()&0xff == sqlite3.SQLITE_ERROR
 }
 
 // FindCoarseCandidates returns the chunks of one vault whose one-bit vectors are nearest the query
@@ -187,9 +217,9 @@ func (q *Search) findNearestByBits(ctx context.Context, vault int64, query []flo
 	return val, rows.Err()
 }
 
-// GetEnclosingPassages returns the passage that encloses each chunk of one vault, in the order of
+// GetEnclosingResults returns the search result that encloses each chunk of one vault, in the order of
 // the chunks, leaving out a chunk the vault does not hold.
-func (q *Search) GetEnclosingPassages(ctx context.Context, vaultID domain.VaultID, ids []domain.ChunkID) (_ []domain.Passage, err error) {
+func (q *Search) GetEnclosingResults(ctx context.Context, vaultID domain.VaultID, ids []domain.ChunkID) (_ []domain.SearchResult, err error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -206,15 +236,15 @@ func (q *Search) GetEnclosingPassages(ctx context.Context, vaultID domain.VaultI
 	}
 	defer func() { err = sqlwrite.JoinClose(err, enclosing.Close()) }()
 
-	out := make([]domain.Passage, 0, len(ids))
+	out := make([]domain.SearchResult, 0, len(ids))
 	for _, id := range ids {
 		chunk, err := Row(id)
 		if err != nil {
 			return nil, err
 		}
-		p := domain.Passage{ChunkID: id}
+		p := domain.SearchResult{ChunkID: id}
 		err = enclosing.QueryRowContext(ctx, chunk, vault).
-			Scan(&p.Source, &p.Kind, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.HitAt)
+			Scan(&p.Path, &p.Kind, &p.VersionID, &p.FileHash, &p.Start, &p.Length, &p.PlaceLabel, &p.MatchOffset)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}

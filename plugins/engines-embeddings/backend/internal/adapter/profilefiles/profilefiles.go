@@ -18,17 +18,12 @@ type Directory struct {
 	path string
 }
 
-// NewDirectory returns the folder at path.
-func NewDirectory(path string) Directory {
-	return Directory{path: path}
-}
-
 // GetDefaultDirectory returns the profiles folder in the data directory of the plugin; it is empty
 // when the host grants none.
 func GetDefaultDirectory() Directory {
 	dir, err := cache.GetDataDir()
 	if err != nil {
-		return Directory{path: ""}
+		return Directory{}
 	}
 	return Directory{path: filepath.Join(dir, model.ProfilesFolder)}
 }
