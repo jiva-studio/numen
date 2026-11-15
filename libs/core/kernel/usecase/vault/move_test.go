@@ -12,8 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -34,7 +34,7 @@ type filing struct {
 
 func openFiling(t *testing.T, notes map[string]string) filing {
 	t.Helper()
-	v := vaultfixture.NewVault(t, notes)
+	v := vaulttest.NewVault(t, notes)
 	db := openIndex(t)
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -108,7 +108,7 @@ func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 		"ByName.md":          "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# By name\n",
 		"ByPath.md":          "---\nlinks:\n  - to: physics/Heat.md\n    role: parent\n---\n# By path\n",
 	})
-	vaultfixture.WriteBook(t, f.vault.Path, "physics/A Book.epub")
+	vaulttest.WriteBook(t, f.vault.Path, "physics/A Book.epub")
 	byName := f.read(t, "ByName.md")
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "physics", "science/physics")
@@ -276,7 +276,7 @@ func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 func TestABookMovesOnItsOwn(t *testing.T) {
 	t.Parallel()
 	f := openFiling(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	vaultfixture.WriteBook(t, f.vault.Path, "A Book.epub")
+	vaulttest.WriteBook(t, f.vault.Path, "A Book.epub")
 
 	if _, err := f.move().Execute(t.Context(), f.vault, "A Book.epub", "library/A Book.epub"); err != nil {
 		t.Fatal(err)

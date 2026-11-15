@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -22,8 +22,8 @@ const (
 	repoVaultB domain.VaultID = "01VAULTB"
 )
 
-func newRepoTemplate() *vaultfixture.Template {
-	return vaultfixture.NewTemplate(func(ctx context.Context, path string) error {
+func newRepoTemplate() *vaulttest.Template {
+	return vaulttest.NewTemplate(func(ctx context.Context, path string) error {
 		db, err := index.Open(ctx, path)
 		if err != nil {
 			return err

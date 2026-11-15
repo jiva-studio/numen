@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -123,7 +123,7 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 			t.Fatal(err)
 		}
 		testsupport.CloseAfter(t, db)
-		v := vaultfixture.NewVault(t, map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"})
+		v := vaulttest.NewVault(t, map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"})
 
 		opening := vaultOpener(vaultOf(cfg), db)
 		broken := errors.New("index unavailable")
@@ -173,7 +173,7 @@ func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"One.md": "---\ntitle: One\n---\n\n# One\n",
 		"Two.md": "---\ntitle: Two\n---\n\n# Two\n",
 	})

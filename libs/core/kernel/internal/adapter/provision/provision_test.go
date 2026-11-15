@@ -365,3 +365,10 @@ func TestARunContinuesWhenEveryCallerStopsWaiting(t *testing.T) {
 		t.Errorf("a caller after the run got %+v, %v, want the dependency", resolved, err)
 	}
 }
+
+func (g *flightGroup) isRunning(key string) bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	_, ok := g.flights[key]
+	return ok
+}

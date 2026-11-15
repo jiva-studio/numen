@@ -14,12 +14,6 @@ import (
 // Handler handles a dispatched event string.
 type Handler func(ctx context.Context, event string) error
 
-// KeyExtractor maps an event to a debounce group key.
-type KeyExtractor func(event string) string
-
-// DebounceRule defines custom key extraction for an event.
-type DebounceRule func(event string) (key string, matches bool)
-
 // ErrorHandler receives asynchronous dispatch errors.
 type ErrorHandler func(err error)
 
@@ -34,9 +28,6 @@ type subscriber struct {
 	id      uint64
 	handler Handler
 }
-
-// Option configures an EventBus instance.
-type Option func(*Bus)
 
 // Clock gives the time the debounce and throttle windows are measured from.
 type Clock interface {
@@ -60,41 +51,18 @@ type Bus struct {
 	isClosed         bool
 	inFlight         sync.WaitGroup
 	clock            Clock
-	keyExtractor     KeyExtractor
-	debounceRules    []DebounceRule
 	errorHandler     ErrorHandler
 }
 
-// WithKeyExtractor sets the key extractor used for debounce grouping.
-func WithKeyExtractor(extractor KeyExtractor) Option {
-	return func(b *Bus) {
-		b.keyExtractor = extractor
-	}
-}
-
-// WithDebounceRule adds a debounce rule for key extraction.
-func WithDebounceRule(rule DebounceRule) Option {
-	return func(b *Bus) {
-		b.debounceRules = append(b.debounceRules, rule)
-	}
-}
-
-// WithErrorHandler sets the error handler for asynchronous event dispatch failures.
-func WithErrorHandler(handler ErrorHandler) Option {
-	return func(b *Bus) {
-		b.errorHandler = handler
-	}
-}
-
 // New creates a debouncing and throttling event bus.
-func New(host Trigger, clock Clock, debounceDelay, throttleInterval time.Duration, opts ...Option) *Bus {
+func New(host Trigger, clock Clock, debounceDelay, throttleInterval time.Duration) *Bus {
 	if debounceDelay <= 0 {
 		debounceDelay = 50 * time.Millisecond
 	}
 	if throttleInterval <= 0 {
 		throttleInterval = 250 * time.Millisecond
 	}
-	bus := &Bus{
+	return &Bus{
 		mu:               sync.Mutex{},
 		host:             host,
 		debounceDelay:    debounceDelay,
@@ -105,28 +73,8 @@ func New(host Trigger, clock Clock, debounceDelay, throttleInterval time.Duratio
 		isClosed:         false,
 		inFlight:         sync.WaitGroup{},
 		clock:            clock,
-		keyExtractor:     nil,
-		debounceRules:    nil,
 		errorHandler:     nil,
 	}
-	for _, opt := range opts {
-		opt(bus)
-	}
-	return bus
-}
-
-// SetKeyExtractor sets the key extractor used for debounce grouping.
-func (b *Bus) SetKeyExtractor(extractor KeyExtractor) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	b.keyExtractor = extractor
-}
-
-// AddDebounceRule registers an additional debounce rule.
-func (b *Bus) AddDebounceRule(rule DebounceRule) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	b.debounceRules = append(b.debounceRules, rule)
 }
 
 // SetErrorHandler sets the callback for asynchronous errors.
@@ -145,24 +93,11 @@ func (b *Bus) scheduleDelay(d time.Duration, f func()) func() bool {
 	return t.Stop
 }
 
-// DefaultKeyExtractor groups typing events and leaves other events distinct.
-func DefaultKeyExtractor(event string) string {
+func getDebounceKey(event string) string {
 	if strings.HasPrefix(event, "onTyping") {
 		return "onTyping"
 	}
 	return event
-}
-
-func (b *Bus) resolveKey(event string) string {
-	for _, rule := range b.debounceRules {
-		if key, matches := rule(event); matches {
-			return key
-		}
-	}
-	if b.keyExtractor != nil {
-		return b.keyExtractor(event)
-	}
-	return DefaultKeyExtractor(event)
 }
 
 // Publish enqueues an event for debounced and throttled delivery without blocking the caller.
@@ -174,7 +109,7 @@ func (b *Bus) Publish(event string) {
 		return
 	}
 
-	key := b.resolveKey(event)
+	key := getDebounceKey(event)
 	now := b.getNow()
 
 	state, exists := b.pending[key]
