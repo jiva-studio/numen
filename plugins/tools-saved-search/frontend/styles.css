@@ -56,64 +56,58 @@
   color: var(--numen-alarm);
 }
 
-.saved-search__editor {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
+.saved-search__edit {
+  align-self: center;
+  margin-inline-start: auto;
 }
 
-.saved-search__editor-toggle,
-.saved-search__save {
-  padding: 0.25rem 0.75rem;
-  background: var(--numen-raised);
-  border: 1px solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  color: var(--numen-ink);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-
-.saved-search__fields {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-self: stretch;
-}
-
-.saved-search__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.875rem;
-}
-
-.saved-search__field-input {
+.saved-search__dialog {
   box-sizing: border-box;
-  width: 100%;
-  padding: 0.375rem 0.5rem;
-  background: var(--numen-surface);
-  border: 1px solid var(--numen-rule);
-  border-radius: var(--numen-radius-tight);
+  width: 44rem;
+  padding: var(--numen-panel-padding);
+  background: var(--numen-panel-bg);
+  border: 1px solid var(--numen-panel-border);
+  border-radius: var(--numen-radius-panel);
+  box-shadow: var(--numen-panel-shadow);
   color: var(--numen-ink);
-  font: inherit;
+  font-family: var(--numen-font-sans);
 }
 
-.saved-search__query {
+.saved-search__dialog::backdrop {
+  background: var(--numen-scrim);
+}
+
+.saved-search__dialog-form {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.75rem;
 }
 
-.saved-search__query-text {
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  background: var(--numen-raised);
-  border-radius: var(--numen-radius);
-  font-size: 0.8125rem;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+.saved-search__query-editor .cm-editor {
+  min-height: 8rem;
+  max-height: 24rem;
+  background: var(--numen-field-bg);
+  border: 1px solid var(--numen-field-border);
+  border-radius: var(--numen-radius-field);
+  font-family: var(--numen-font-mono);
+}
+
+.saved-search__query-editor .cm-editor.cm-focused {
+  outline: var(--numen-ring-width) solid var(--numen-ring);
+}
+
+.saved-search__query-editor .cm-scroller {
+  font-family: inherit;
+}
+
+.saved-search__query-editor .cm-content {
+  caret-color: var(--numen-caret);
+}
+
+.saved-search__dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .saved-search__results {

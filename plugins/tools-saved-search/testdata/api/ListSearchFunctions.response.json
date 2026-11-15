@@ -1,0 +1,18 @@
+{
+  "functions": [
+    {
+      "name": "words",
+      "kind": "function",
+      "signatures": ["words(text)"],
+      "description": "Passages that hold every word of the text.",
+      "example": "words(\"lighthouse keeper\")"
+    },
+    {
+      "name": "top",
+      "kind": "stage",
+      "signatures": [".top(count)"],
+      "description": "Keeps the first results.",
+      "example": "words(\"gale\").top(10)"
+    }
+  ]
+}

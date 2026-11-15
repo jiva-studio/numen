@@ -5,6 +5,8 @@ import { createApi, type Api, type ApiError } from '@numen/plugin-sdk'
 import type {
   GetResultsRequest,
   GetResultsResponse,
+  ListSearchFunctionsRequest,
+  ListSearchFunctionsResponse,
   ResultsChange,
   UpdateSearchRequest,
   UpdateSearchResponse,
@@ -29,6 +31,10 @@ export interface SavedSearchService {
     signal: AbortSignal,
   ): AsyncGenerator<ResultsChange, void>
   updateSearch(request: UpdateSearchRequest, signal: AbortSignal): Promise<UpdateSearchResponse>
+  listSearchFunctions(
+    request: ListSearchFunctionsRequest,
+    signal: AbortSignal,
+  ): Promise<ListSearchFunctionsResponse>
 }
 
 const readEnd = (failure: ApiError | null, signal: AbortSignal): void => {
@@ -69,5 +75,12 @@ export function createSavedSearchService(api: Api = createApi(SERVICE)): SavedSe
 
     updateSearch: (request, signal) =>
       call<UpdateSearchRequest, UpdateSearchResponse>('UpdateSearch', request, signal),
+
+    listSearchFunctions: (request, signal) =>
+      call<ListSearchFunctionsRequest, ListSearchFunctionsResponse>(
+        'ListSearchFunctions',
+        request,
+        signal,
+      ),
   }
 }

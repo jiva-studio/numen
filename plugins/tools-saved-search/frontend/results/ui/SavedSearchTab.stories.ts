@@ -1,8 +1,8 @@
 /**
  * The tab of a saved search note over a scripted service: the query and its results, a passage and a
  * whole file opened, the problems of the query with the last good results, no result, a warning, a
- * failed last run, the filter and the sources of the results, and the query edited and saved in the
- * accordion at the top.
+ * failed last run, the filter and the sources of the results, and the query edited in the code editor
+ * the edit button opens: completion from the catalog, the problems underlined, Save and Cancel.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -13,6 +13,7 @@ import {
   COMPUTED,
   FAILED_LAST_RUN,
   FAILURE_REASON,
+  FUNCTIONS,
   FUSED,
   HARBOR,
   HARBOR_TWO_LOGBOOK_PASSAGES,
@@ -52,6 +53,7 @@ const meta: Meta<Knobs> = {
     setup: () => {
       const service = createScriptedService(args.response)
       service.setUpdateAnswer(args.updateAnswer)
+      service.setFunctions(FUNCTIONS)
       const updateSearch = service.updateSearch.bind(service)
       const tab = createSavedSearchTab(NOTE_PATH, {
         service: {
@@ -81,15 +83,14 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-/** The query, the status, two passages with their places and a whole file as a file row. */
-export const ShowsTheQueryAndTheResults: Story = {
+/** The status, the edit button, two passages with their places and a whole file as a file row. */
+export const ShowsTheResults: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
     await waitFor(() => expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible())
-    await expect(
-      canvas.getByText('meaning("the harbor master in a winter storm")', { exact: false }),
-    ).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Edit query' })).toBeVisible()
+    await expect(canvas.queryByText('meaning("the harbor master in a winter storm")')).toBeNull()
     await expect(canvas.getByText(/^Computed 14 Nov 2026, \d\d:\d\d$/)).toBeVisible()
     await expect(canvas.getByRole('button', { name: /Night of the gale/ })).toBeVisible()
     await expect(canvas.getByText('Page 14')).toBeVisible()
@@ -258,53 +259,114 @@ export const ShowsAFailedLastRun: Story = {
   },
 }
 
-/** The accordion opens the query alone; Save writes it and shows the new query. */
+const getEditor = (canvasElement: HTMLElement): HTMLElement =>
+  within(canvasElement).getByRole('textbox', { name: 'Query' })
+
+const openEditor = async (canvasElement: HTMLElement): Promise<HTMLElement> => {
+  const canvas = within(canvasElement)
+  await userEvent.click(await waitFor(() => canvas.getByRole('button', { name: 'Edit query' })))
+  await waitFor(() => expect(canvas.getByRole('dialog', { name: 'Edit query' })).toBeVisible())
+  return getEditor(canvasElement)
+}
+
+/** The browser types the text into the code editor: it takes text only from real keystrokes. */
+const fillEditor = async (editor: HTMLElement, text: string): Promise<void> => {
+  const browser = await import('vitest/browser')
+  await browser.userEvent.fill(editor, text)
+}
+
+/** The edit button opens the query in the editor; Save writes it, closes the editor and keeps the new query. */
 export const EditsAndSavesTheQuery: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const opener = await waitFor(() => canvas.getByRole('button', { name: 'Edit query' }))
-    await expect(opener).toHaveAttribute('aria-expanded', 'false')
+    const editor = await openEditor(canvasElement)
+    await expect(editor).toHaveTextContent('meaning("the harbor master in a winter storm")')
 
-    await userEvent.click(opener)
-    await expect(opener).toHaveAttribute('aria-expanded', 'true')
-    const query = canvas.getByRole('textbox', { name: 'Query' })
-    await expect(query).toHaveValue(HARBOR.query)
-    await expect(canvas.queryByRole('textbox', { name: 'Rerank' })).toBeNull()
-    await expect(canvas.queryByRole('spinbutton', { name: 'Limit' })).toBeNull()
-
-    await userEvent.clear(query)
-    await userEvent.type(query, NEW_QUERY)
+    await fillEditor(editor, NEW_QUERY)
     await userEvent.click(canvas.getByRole('button', { name: 'Save' }))
 
     await expect(args.onUpdateSearch).toHaveBeenCalledWith({ path: NOTE_PATH, query: NEW_QUERY })
-    await waitFor(() => expect(canvas.getByText(NEW_QUERY, { exact: false })).toBeVisible())
+    await waitFor(() => expect(canvas.queryByRole('dialog')).toBeNull())
+    await expect(await openEditor(canvasElement)).toHaveTextContent(NEW_QUERY)
   },
 }
 
-/** A query the core rejects shows its problems in the accordion and leaves the note as it was. */
-export const ShowsTheProblemsOfAQueryNotSaved: Story = {
+/** Cancel closes the editor and writes nothing. */
+export const CancelsTheEdit: Story = {
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await fillEditor(await openEditor(canvasElement), NEW_QUERY)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(canvas.queryByRole('dialog')).toBeNull())
+    await expect(args.onUpdateSearch).not.toHaveBeenCalled()
+    await expect(await openEditor(canvasElement)).toHaveTextContent(
+      'meaning("the harbor master in a winter storm")',
+    )
+  },
+}
+
+/** Typing a name offers the functions of the catalog with their description; after a dot, the stages. */
+export const CompletesTheNamesOfTheCatalog: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const browser = await import('vitest/browser')
+    const editor = await openEditor(canvasElement)
+
+    await fillEditor(editor, 'words("gale") && t')
+    await browser.userEvent.keyboard('a')
+
+    const list = await waitFor(() => canvas.getByRole('listbox'))
+    await waitFor(() =>
+      expect(within(list).getAllByRole('option').map((one) => one.textContent)).toStrictEqual([
+        expect.stringContaining('tags'),
+      ]),
+    )
+    await waitFor(() => expect(canvas.getByText(/Notes that carry the tag\./)).toBeVisible())
+    await expect(canvas.getByText(/tags\("harbor"\)/)).toBeVisible()
+
+    await browser.userEvent.keyboard('{Enter}')
+    await expect(editor).toHaveTextContent('words("gale") && tags')
+
+    await browser.userEvent.keyboard('("harbor").r')
+    const stages = await waitFor(() => canvas.getByRole('listbox'))
+    await waitFor(() =>
+      expect(within(stages).getAllByRole('option').map((one) => one.textContent)).toStrictEqual([
+        expect.stringContaining('rerank'),
+      ]),
+    )
+  },
+}
+
+/** A query the core rejects keeps the editor open, lists its problems and underlines each at its place. */
+export const UnderlinesTheProblemsOfAQueryNotSaved: Story = {
   args: {
     updateAnswer: {
-      errors: [{ line: 1, column: 1, message: 'unknown function meanin (did you mean meaning?)' }],
+      errors: [
+        { line: 1, column: 18, message: 'unknown function meanin (did you mean meaning?)' },
+      ],
     },
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(await waitFor(() => canvas.getByRole('button', { name: 'Edit query' })))
-    const query = canvas.getByRole('textbox', { name: 'Query' })
+    const editor = await openEditor(canvasElement)
 
-    await userEvent.clear(query)
-    await userEvent.type(query, 'meanin("gale")')
+    await fillEditor(editor, 'words("gale") && meanin("a night at sea")')
     await userEvent.click(canvas.getByRole('button', { name: 'Save' }))
 
     await expect(args.onUpdateSearch).toHaveBeenCalledTimes(1)
     await waitFor(() =>
       expect(canvas.getByRole('alert')).toHaveTextContent(
-        '1:1 unknown function meanin (did you mean meaning?)',
+        '1:18 unknown function meanin (did you mean meaning?)',
       ),
     )
-    await expect(
-      canvas.getByText('meaning("the harbor master in a winter storm")', { exact: false }),
-    ).toBeVisible()
+    const underlined = await waitFor(() => {
+      const marks = canvasElement.querySelectorAll('.cm-lintRange-error')
+      expect(marks).toHaveLength(1)
+      return marks[0]!
+    })
+    await expect(underlined).toHaveTextContent(/^meanin$/)
+    await expect(canvas.getByRole('dialog', { name: 'Edit query' })).toBeVisible()
   },
 }

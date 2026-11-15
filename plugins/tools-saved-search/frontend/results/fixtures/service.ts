@@ -7,6 +7,7 @@ import { ServiceFailure, type SavedSearchService } from '../api/service'
 import type {
   GetResultsRequest,
   GetResultsResponse,
+  ListSearchFunctionsResponse,
   ResultsChange,
   UpdateSearchRequest,
   UpdateSearchResponse,
@@ -62,6 +63,8 @@ export interface ScriptedService extends SavedSearchService {
   readonly watch: ScriptedWatch
   /** What UpdateSearch answers from now; a string fails it with that message. */
   setUpdateAnswer(answer: UpdateSearchResponse | string): void
+  /** What ListSearchFunctions answers from now; a string fails it with that message. */
+  setFunctions(answer: ListSearchFunctionsResponse | string): void
 }
 
 const abortError = (): DOMException => new DOMException('The call was aborted.', 'AbortError')
@@ -73,6 +76,7 @@ export function createScriptedService(first: GetResultsResponse): ScriptedServic
   let isHolding = false
   let held: HeldRead[] = []
   let updateAnswer: UpdateSearchResponse | string = { errors: [] }
+  let functions: ListSearchFunctionsResponse | string = { functions: [] }
   let watch: Watch | null = null
   const pending: WatchEvent[] = []
   const calls: string[] = []
@@ -148,6 +152,14 @@ export function createScriptedService(first: GetResultsResponse): ScriptedServic
       return updateAnswer
     },
 
+    async listSearchFunctions(_request, signal) {
+      calls.push('listSearchFunctions')
+      await Promise.resolve()
+      if (signal.aborted) throw abortError()
+      if (typeof functions === 'string') throw new ServiceFailure(functions)
+      return functions
+    },
+
     results: {
       set(next) {
         answer = next
@@ -179,6 +191,9 @@ export function createScriptedService(first: GetResultsResponse): ScriptedServic
     },
     setUpdateAnswer(next) {
       updateAnswer = next
+    },
+    setFunctions(next) {
+      functions = next
     },
   }
   return scripted

@@ -8,6 +8,8 @@ const (
 	MethodGetResults   = "GetResults"
 	MethodWatchResults = "WatchResults"
 	MethodUpdateSearch = "UpdateSearch"
+
+	MethodListSearchFunctions = "ListSearchFunctions"
 )
 
 // Order is how the results of a run are ordered: OrderReranked when a reranking service ordered them,
@@ -96,4 +98,22 @@ type UpdateSearchRequest struct {
 // the query; empty when the note was written.
 type UpdateSearchResponse struct {
 	Errors []Problem `json:"errors"`
+}
+
+type ListSearchFunctionsRequest struct{}
+
+// SearchFunction is a function, a variable or a stage of the search language. Kind is "function",
+// "variable" or "stage".
+type SearchFunction struct {
+	Name        string   `json:"name"`
+	Kind        string   `json:"kind"`
+	Signatures  []string `json:"signatures"`
+	Description string   `json:"description"`
+	Example     string   `json:"example"`
+}
+
+// ListSearchFunctionsResponse is the catalog of the search language the core runs, with the functions
+// plugins add to it.
+type ListSearchFunctionsResponse struct {
+	Functions []SearchFunction `json:"functions"`
 }

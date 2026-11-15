@@ -78,6 +78,9 @@ func (a *App) Mount(s *server.Server) error {
 	server.Handle(service, api.MethodUpdateSearch, func(ctx context.Context, req api.UpdateSearchRequest) (api.UpdateSearchResponse, error) {
 		return updateSearch(ctx, built, req)
 	})
+	server.Handle(service, api.MethodListSearchFunctions, func(ctx context.Context, _ api.ListSearchFunctionsRequest) (api.ListSearchFunctionsResponse, error) {
+		return listSearchFunctions(ctx, built)
+	})
 	return service.Err()
 }
 

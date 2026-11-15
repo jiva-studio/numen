@@ -3,7 +3,12 @@
  * for the tests and the stories.
  */
 import response from '../../../testdata/api/GetResults.response.json'
-import type { GetResultsResponse, ResultsChange, SearchResult } from '../api/types'
+import type {
+  GetResultsResponse,
+  ListSearchFunctionsResponse,
+  ResultsChange,
+  SearchResult,
+} from '../api/types'
 
 /** The path of the saved search note every fixture answers for. */
 export const NOTE_PATH = 'Harbor/Harbor master - winter storms.md'
@@ -96,3 +101,44 @@ export const RUNNING: GetResultsResponse = { ...HARBOR, isRunning: true }
 
 /** Results a run will replace. */
 export const STALE: GetResultsResponse = { ...HARBOR, isStale: true }
+
+/** The catalog of the search language: three functions, one of them from a plugin, and two stages. */
+export const FUNCTIONS: ListSearchFunctionsResponse = {
+  functions: [
+    {
+      name: 'words',
+      kind: 'function',
+      signatures: ['words(text)'],
+      description: 'Passages that hold every word of the text.',
+      example: 'words("lighthouse keeper")',
+    },
+    {
+      name: 'meaning',
+      kind: 'function',
+      signatures: ['meaning(text)'],
+      description: 'Passages close in meaning to the text.',
+      example: 'meaning("a night at sea")',
+    },
+    {
+      name: 'tags',
+      kind: 'function',
+      signatures: ['tags(name)'],
+      description: 'Notes that carry the tag.',
+      example: 'tags("harbor")',
+    },
+    {
+      name: 'top',
+      kind: 'stage',
+      signatures: ['.top(count)'],
+      description: 'Keeps the first results.',
+      example: 'words("gale").top(10)',
+    },
+    {
+      name: 'rerank',
+      kind: 'stage',
+      signatures: ['.rerank(text)'],
+      description: 'Orders the results by a reranking service.',
+      example: 'words("gale").rerank("storm damage")',
+    },
+  ],
+}

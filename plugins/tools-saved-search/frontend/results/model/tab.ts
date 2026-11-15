@@ -7,7 +7,7 @@ import { computed, readonly, ref, shallowRef, type Ref } from 'vue'
 import type { Caught, TextRange } from '@numen/plugin-sdk'
 import { WORDS as words } from '../../words'
 import type { SavedSearchService } from '../api/service'
-import type { GetResultsResponse } from '../api/types'
+import type { GetResultsResponse, Problem, SearchFunction } from '../api/types'
 import {
   filterItems,
   formatProblem,
@@ -32,7 +32,8 @@ export interface SearchChange {
 /**
  * What SavedSearchTab draws and the actions it calls. view is null until the first GetResults answers;
  * items are the results the filter and the hidden sources leave; failure is '' when nothing failed;
- * saveProblems are those of the last save, as line:column and message.
+ * saveProblems are those of the last save, at their line and column in the query; functions is the
+ * catalog of the search language, read when the editor first opens.
  */
 export interface SavedSearchTabState {
   readonly path: Readonly<Ref<string>>
@@ -43,7 +44,8 @@ export interface SavedSearchTabState {
   readonly failure: Readonly<Ref<string>>
   readonly isSaving: Readonly<Ref<boolean>>
   readonly isEditing: Readonly<Ref<boolean>>
-  readonly saveProblems: Readonly<Ref<readonly string[]>>
+  readonly saveProblems: Readonly<Ref<readonly Problem[]>>
+  readonly functions: Readonly<Ref<readonly SearchFunction[]>>
   readonly actions: {
     openResult(index: number): void
     saveSearch(change: SearchChange): Promise<void>
@@ -82,7 +84,9 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   const failure = ref('')
   const isSaving = ref(false)
   const isEditing = ref(false)
-  const saveProblems = shallowRef<readonly string[]>([])
+  const saveProblems = shallowRef<readonly Problem[]>([])
+  const functions = shallowRef<readonly SearchFunction[]>([])
+  let functionsRead: Promise<void> | null = null
   const life = new AbortController()
   let watching: AbortController | null = null
   let reading: AbortController | null = null
@@ -152,7 +156,7 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
     isSaving.value = true
     try {
       const answer = await service.updateSearch({ path: path.value, ...change }, life.signal)
-      saveProblems.value = answer.errors.map(formatProblem)
+      saveProblems.value = answer.errors
       if (answer.errors.length === 0) {
         isEditing.value = false
         await read()
@@ -162,6 +166,24 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
     } finally {
       isSaving.value = false
     }
+  }
+
+  const readFunctions = (): void => {
+    functionsRead ??= service.listSearchFunctions({}, life.signal).then(
+      (answer) => {
+        functions.value = answer.functions
+      },
+      (error: Caught) => {
+        functionsRead = null
+        if (!life.signal.aborted) failure.value = getMessage(error)
+      },
+    )
+  }
+
+  const setEditing = (next: boolean): void => {
+    isEditing.value = next
+    if (next) readFunctions()
+    else saveProblems.value = []
   }
 
   const setSourceShown = (source: string, isShown: boolean): void => {
@@ -188,12 +210,11 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
       isSaving: readonly(isSaving),
       isEditing: readonly(isEditing),
       saveProblems: readonly(saveProblems),
+      functions: readonly(functions),
       actions: {
         openResult,
         saveSearch,
-        setEditing: (next: boolean) => {
-          isEditing.value = next
-        },
+        setEditing,
         setFilter: (next: string) => {
           filter.value = next
         },

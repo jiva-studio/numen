@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   COMPUTED,
   FAILED_LAST_RUN,
+  FUNCTIONS,
   HARBOR,
   HARBOR_REFRESHED,
   HARBOR_TWO_LOGBOOK_PASSAGES,
@@ -252,7 +253,9 @@ describe('saving the query of the note', () => {
     await state.actions.saveSearch({ ...CHANGE, query: 'meanin("gale")' })
     await settle()
 
-    expect(state.saveProblems.value).toStrictEqual(["2:4 undeclared reference to 'meanin'"])
+    expect(state.saveProblems.value).toStrictEqual([
+      { line: 2, column: 4, message: "undeclared reference to 'meanin'" },
+    ])
     expect(service.calls).toStrictEqual(['watchResults', 'getResults', 'updateSearch'])
     expect(state.view.value?.query).toBe(HARBOR.query)
   })
@@ -378,5 +381,80 @@ describe('the notice of a failed run', () => {
     expect(notify).toHaveBeenCalledWith(
       'Harbor master: winter storms: the query has problems\n9:4 unknown function meanin (did you mean meaning?)',
     )
+  })
+})
+
+describe('editing the query of a saved search', () => {
+  it('reads the catalog of the search language when the editor opens, once', async () => {
+    const { service, state } = setup()
+    service.setFunctions(FUNCTIONS)
+
+    state.actions.setEditing(true)
+    await settle()
+    state.actions.setEditing(false)
+    state.actions.setEditing(true)
+    await settle()
+
+    expect(state.functions.value.map((fn) => fn.name)).toStrictEqual([
+      'words',
+      'meaning',
+      'tags',
+      'top',
+      'rerank',
+    ])
+    expect(service.calls.filter((call) => call === 'listSearchFunctions')).toHaveLength(1)
+  })
+
+  it('reads the catalog again on the next open after it failed', async () => {
+    const { service, state } = setup()
+    service.setFunctions('the catalog is not ready')
+    state.actions.setEditing(true)
+    await settle()
+    state.actions.setEditing(false)
+    service.setFunctions(FUNCTIONS)
+
+    state.actions.setEditing(true)
+    await settle()
+
+    expect(state.functions.value).toHaveLength(5)
+  })
+
+  it('shows the failure of reading the catalog', async () => {
+    const { service, state } = setup()
+    service.setFunctions('the catalog is not ready')
+
+    state.actions.setEditing(true)
+    await settle()
+
+    expect(state.failure.value).toBe('the catalog is not ready')
+    expect(state.functions.value).toStrictEqual([])
+  })
+
+  it('forgets the problems of the last save when the editor closes', async () => {
+    const { service, tab, state } = setup()
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    state.actions.setEditing(true)
+    service.setUpdateAnswer({ errors: [{ line: 1, column: 1, message: 'unknown function meanin' }] })
+    await state.actions.saveSearch({ query: 'meanin("gale")' })
+
+    state.actions.setEditing(false)
+
+    expect(state.saveProblems.value).toStrictEqual([])
+    expect(state.isEditing.value).toBe(false)
+  })
+
+  it('closes the editor after a good save', async () => {
+    const { service, tab, state } = setup()
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    state.actions.setEditing(true)
+
+    await state.actions.saveSearch(CHANGE)
+
+    expect(state.isEditing.value).toBe(false)
+    expect(service.updates).toStrictEqual([{ path: NOTE_PATH, query: CHANGE.query }])
   })
 })

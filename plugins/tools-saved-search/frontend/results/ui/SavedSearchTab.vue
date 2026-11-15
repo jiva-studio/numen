@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
- * The tab of a saved search note: the title, the status line and a failed last run; the accordion that
- * edits the query; the query; the problems and the warnings; the filter and the sources of the results;
- * and the results.
+ * The tab of a saved search note: the title, the status line, a failed last run and the button that
+ * opens the editor of the query; the problems and the warnings; the filter and the sources of the
+ * results; and the results.
  */
 import { computed } from 'vue'
+import { Button, createNamedIcon } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import type { SavedSearchTabState, SearchChange } from '../model/tab'
-import QueryEditor from './QueryEditor.vue'
-import QueryPanel from './QueryPanel.vue'
+import QueryDialog from './QueryDialog.vue'
 import ResultList from './ResultList.vue'
 import ResultsFilter from './ResultsFilter.vue'
 
@@ -21,14 +21,19 @@ const props = defineProps<{
 const view = computed(() => props.state.view.value)
 const items = computed(() => props.state.items.value)
 const failure = computed(() => props.state.failure.value)
+const EditIcon = createNamedIcon('pencil')
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSave(change: SearchChange) {
   props.state.actions.saveSearch(change).catch(() => undefined)
 }
 
-function onToggle() {
-  props.state.actions.setEditing(!props.state.isEditing.value)
+function onEdit() {
+  props.state.actions.setEditing(true)
+}
+
+function onCancel() {
+  props.state.actions.setEditing(false)
 }
 
 function onOpen(index: number) {
@@ -51,16 +56,26 @@ function onToggleSource(path: string, isShown: boolean) {
         <h2 class="saved-search__title">{{ view.title }}</h2>
         <p role="status" class="saved-search__status">{{ view.status }}</p>
         <p v-if="view.failedRun" class="saved-search__failed">{{ view.failedRun }}</p>
+        <Button
+          variant="ghost"
+          size="icon-small"
+          class="saved-search__edit"
+          :aria-label="words.editQuery"
+          aria-haspopup="dialog"
+          @click="onEdit"
+        >
+          <EditIcon aria-hidden="true" />
+        </Button>
       </header>
-      <QueryEditor
-        :is-open="state.isEditing.value"
+      <QueryDialog
+        v-if="state.isEditing.value"
         :query="view.query"
         :problems="state.saveProblems.value"
+        :functions="state.functions.value"
         :is-saving="state.isSaving.value"
-        @toggle="onToggle"
         @save="onSave"
+        @cancel="onCancel"
       />
-      <QueryPanel :query="view.query" />
       <p v-for="problem in view.problems" :key="problem" role="alert" class="saved-search__problem">
         {{ problem }}
       </p>

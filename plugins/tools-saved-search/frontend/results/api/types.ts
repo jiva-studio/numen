@@ -76,3 +76,19 @@ export interface UpdateSearchRequest {
 export interface UpdateSearchResponse {
   readonly errors: readonly Problem[]
 }
+
+export type ListSearchFunctionsRequest = Readonly<Record<string, never>>
+
+/** A function, a variable or a stage of the search language; kind is function, variable or stage. */
+export interface SearchFunction {
+  readonly name: string
+  readonly kind: string
+  readonly signatures: readonly string[]
+  readonly description: string
+  readonly example: string
+}
+
+/** The catalog of the search language the core runs, with the functions plugins add to it. */
+export interface ListSearchFunctionsResponse {
+  readonly functions: readonly SearchFunction[]
+}
