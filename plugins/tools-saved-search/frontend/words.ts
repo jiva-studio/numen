@@ -31,7 +31,7 @@ export const WORDS = {
       name: 'startsWith',
       summary: 'begins with this text',
       description:
-        'Keeps the files whose path begins with the text you give, such as the name of a folder.',
+        'Keeps the files with a path beginning with the given text, such as a folder name.',
       example: 'path.startsWith("books/")',
     },
   ],

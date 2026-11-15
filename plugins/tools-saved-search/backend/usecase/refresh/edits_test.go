@@ -100,7 +100,7 @@ func TestANewEditOfANoteCancelsTheCheckOfThePreviousEdit(t *testing.T) {
 	w.awaitRemovedCount(t, 1)
 }
 
-func TestAnEditOfAnotherNoteLeavesTheCheckRunning(t *testing.T) {
+func TestAnEditOfAnotherNoteKeepsTheCheckRunning(t *testing.T) {
 	w := newWorld(t, 0)
 	addGalesNote(w)
 	release := w.searches.HoldSearch(stormsQuery)

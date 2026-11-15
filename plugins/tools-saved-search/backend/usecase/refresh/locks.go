@@ -40,7 +40,7 @@ func (l *vaultLocks) list() []domain.VaultID {
 	return slices.Sorted(maps.Keys(l.locks))
 }
 
-func (l *vaultLocks) getLocked(vault domain.VaultID) *vaultLock {
+func (l *vaultLocks) getVaultLock(vault domain.VaultID) *vaultLock {
 	lock, isKnown := l.locks[vault]
 	if !isKnown {
 		lock = &vaultLock{isHeld: false, interactive: nil, background: nil, cancelBackground: nil, batch: make(chan struct{}, 1)}
@@ -51,7 +51,7 @@ func (l *vaultLocks) getLocked(vault domain.VaultID) *vaultLock {
 
 func (l *vaultLocks) lockBatch(ctx context.Context, vault domain.VaultID) (func(), error) {
 	l.mu.Lock()
-	batch := l.getLocked(vault).batch
+	batch := l.getVaultLock(vault).batch
 	l.mu.Unlock()
 	select {
 	case batch <- struct{}{}:
@@ -63,11 +63,11 @@ func (l *vaultLocks) lockBatch(ctx context.Context, vault domain.VaultID) (func(
 
 func (l *vaultLocks) lockInteractive(ctx context.Context, vault domain.VaultID) (func(), error) {
 	l.mu.Lock()
-	lock := l.getLocked(vault)
+	lock := l.getVaultLock(vault)
 	if !lock.isHeld && len(lock.interactive) == 0 {
 		lock.isHeld = true
 		l.mu.Unlock()
-		return l.newUnlock(lock), nil
+		return l.newRelease(lock), nil
 	}
 	waiter := &lockWaiter{ready: make(chan struct{}), cancel: nil}
 	lock.interactive = append(lock.interactive, waiter)
@@ -81,7 +81,7 @@ func (l *vaultLocks) lockInteractive(ctx context.Context, vault domain.VaultID) 
 func (l *vaultLocks) lockBackground(ctx context.Context, vault domain.VaultID) (context.Context, func(), error) {
 	runCtx, cancel := context.WithCancelCause(ctx)
 	l.mu.Lock()
-	lock := l.getLocked(vault)
+	lock := l.getVaultLock(vault)
 	if !lock.isHeld && len(lock.interactive) == 0 && len(lock.background) == 0 {
 		lock.isHeld, lock.cancelBackground = true, cancel
 		l.mu.Unlock()
@@ -100,7 +100,7 @@ func (l *vaultLocks) lockBackground(ctx context.Context, vault domain.VaultID) (
 func (l *vaultLocks) wait(ctx context.Context, lock *vaultLock, waiter *lockWaiter) (func(), error) {
 	select {
 	case <-waiter.ready:
-		return l.newUnlock(lock), nil
+		return l.newRelease(lock), nil
 	case <-ctx.Done():
 	}
 	l.mu.Lock()
@@ -112,13 +112,13 @@ func (l *vaultLocks) wait(ctx context.Context, lock *vaultLock, waiter *lockWait
 	return nil, ctx.Err()
 }
 
-func (l *vaultLocks) newUnlock(lock *vaultLock) func() {
+func (l *vaultLocks) newRelease(lock *vaultLock) func() {
 	var once sync.Once
 	return func() { once.Do(func() { l.unlock(lock) }) }
 }
 
 func (l *vaultLocks) newBackgroundUnlock(lock *vaultLock, cancel context.CancelCauseFunc) func() {
-	unlock := l.newUnlock(lock)
+	unlock := l.newRelease(lock)
 	return func() {
 		unlock()
 		cancel(context.Canceled)

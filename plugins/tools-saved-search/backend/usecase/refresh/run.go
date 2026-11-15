@@ -44,7 +44,6 @@ func (r *Runner) run(ctx context.Context, one job) (resultcache.Record, error) {
 	return r.runBegun(ctx, one)
 }
 
-// runBegun runs the job whose start the watchers already received, and sends them its end.
 func (r *Runner) runBegun(ctx context.Context, one job) (resultcache.Record, error) {
 	key := watchKey{vault: one.vaultID, path: one.path}
 	var written resultcache.Record

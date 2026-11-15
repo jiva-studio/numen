@@ -71,7 +71,7 @@ func (r *Runner) RunDue(ctx context.Context, vault domain.VaultID) error {
 	}
 	defer unlock()
 	v := r.open(vault)
-	due, err := r.listDue(ctx, vault, v)
+	due, err := r.listDueSearches(ctx, vault, v)
 	if err != nil || len(due) == 0 {
 		return err
 	}
@@ -107,7 +107,7 @@ func (r *Runner) runIfDue(ctx context.Context, vault domain.VaultID, notePath st
 	}
 	defer unlock()
 	one := r.newInteractiveJob(vault, notePath)
-	check := r.checkDue(ctx, vault, one.vault, search{path: notePath, name: r.findFileName(ctx, one)}, r.settings(), r.now())
+	check := r.checkDueSearch(ctx, vault, one.vault, search{path: notePath, name: r.findFileName(ctx, one)}, r.settings(), r.now())
 	if !check.isDue {
 		return nil
 	}
@@ -130,7 +130,7 @@ type dueCheck struct {
 	runAt     time.Time
 }
 
-func (r *Runner) listDue(ctx context.Context, vault domain.VaultID, v Vault) ([]dueSearch, error) {
+func (r *Runner) listDueSearches(ctx context.Context, vault domain.VaultID, v Vault) ([]dueSearch, error) {
 	_, unlock, err := r.vaults.lockBackground(ctx, vault)
 	if err != nil {
 		return nil, err
@@ -147,7 +147,7 @@ func (r *Runner) listDue(ctx context.Context, vault domain.VaultID, v Vault) ([]
 	var due, watched []dueSearch
 	var wakeAt time.Time
 	for _, one := range searches {
-		check := r.checkDue(ctx, vault, v, one, settings, now)
+		check := r.checkDueSearch(ctx, vault, v, one, settings, now)
 		switch {
 		case check.isDue && check.isWatched:
 			watched = append(watched, dueSearch{search: one, isNew: check.isNew})
@@ -161,7 +161,7 @@ func (r *Runner) listDue(ctx context.Context, vault domain.VaultID, v Vault) ([]
 	return append(watched, due...), nil
 }
 
-func (r *Runner) checkDue(ctx context.Context, vault domain.VaultID, v Vault, one search, settings Settings, now time.Time) dueCheck {
+func (r *Runner) checkDueSearch(ctx context.Context, vault domain.VaultID, v Vault, one search, settings Settings, now time.Time) dueCheck {
 	isWatched := r.watchers.isWatched(watchKey{vault: vault, path: one.path})
 	check := dueCheck{isDue: true, isNew: false, isWatched: isWatched, runAt: time.Time{}}
 	raw, stat, err := v.Notes.Read(ctx, one.path)
@@ -233,7 +233,7 @@ func (r *Runner) runBatch(ctx context.Context, vault domain.VaultID, v Vault, du
 			return ctx.Err()
 		}
 		one := due[next]
-		isYielded, runErr := r.runQueued(ctx, vault, v, one)
+		isYielded, runErr := r.runQueuedSearch(ctx, vault, v, one)
 		if isYielded {
 			continue
 		}
@@ -248,14 +248,14 @@ func (r *Runner) runBatch(ctx context.Context, vault domain.VaultID, v Vault, du
 	return errors.Join(errors.Join(failures...), reportErr)
 }
 
-func (r *Runner) runQueued(ctx context.Context, vault domain.VaultID, v Vault, one dueSearch) (bool, error) {
+func (r *Runner) runQueuedSearch(ctx context.Context, vault domain.VaultID, v Vault, one dueSearch) (bool, error) {
 	key := watchKey{vault: vault, path: one.path}
 	runCtx, unlock, err := r.vaults.lockBackground(ctx, vault)
 	if err != nil {
 		return false, err
 	}
 	defer unlock()
-	if !r.checkDue(runCtx, vault, v, one.search, r.settings(), r.now()).isDue {
+	if !r.checkDueSearch(runCtx, vault, v, one.search, r.settings(), r.now()).isDue {
 		r.watchers.unqueue(key)
 		return false, nil
 	}

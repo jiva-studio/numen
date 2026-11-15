@@ -95,7 +95,7 @@ func TestAnInteractiveRunGoesBeforeTheRestOfTheBatch(t *testing.T) {
 	}
 }
 
-func TestANeverComputedSearchIsRunningWhileTheBatchHoldsItsTurn(t *testing.T) {
+func TestANeverComputedSearchIsRunningWhileQueuedInTheBatch(t *testing.T) {
 	w := newBatchWorld(t)
 	release := w.searches.HoldSearch(tidesQuery)
 	defer release()
