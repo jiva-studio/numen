@@ -110,14 +110,26 @@ func TestTheModelLoadsOnTheFirstEmbed(t *testing.T) {
 
 		const loadTime = 200 * time.Millisecond
 		t.Setenv("NUMEN_TEST_MOCK_OPEN_HOLD_MS", "200")
-		start := time.Now()
-		code := embedQuery(t, handler, time.Minute)
+		codes := make(chan int, 1)
+		go func() { codes <- embedQuery(t, handler, time.Minute) }()
 
-		if code != http.StatusOK {
-			t.Fatalf("EmbedQueries status = %d, want 200", code)
+		time.Sleep(loadTime - time.Millisecond)
+		synctest.Wait()
+		select {
+		case code := <-codes:
+			t.Fatalf("the first embed returned %d before the %v the model takes to load", code, loadTime)
+		default:
 		}
-		if waited := time.Since(start); waited < loadTime {
-			t.Errorf("the first embed waited %v, want the %v the model takes to load", waited, loadTime)
+
+		time.Sleep(time.Millisecond)
+		synctest.Wait()
+		select {
+		case code := <-codes:
+			if code != http.StatusOK {
+				t.Fatalf("EmbedQueries status = %d, want 200", code)
+			}
+		default:
+			t.Fatal("the first embed did not return after the model loaded")
 		}
 	})
 }
