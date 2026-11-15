@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CompletionContext } from '@codemirror/autocomplete'
 import { ensureSyntaxTree } from '@codemirror/language'
 import { EditorState, Text } from '@codemirror/state'
-import { highlightTree } from '@lezer/highlight'
+import { highlightTree, tags as t } from '@lezer/highlight'
 import {
   createQueryCompletion,
   getQueryDiagnostics,
@@ -203,5 +203,17 @@ describe('queryLanguage', () => {
     expect(styles.get('top')).toBe(styles.get('words'))
     expect(styles.get('5')).toBeTruthy()
     expect(styles.get('5')).not.toBe(styles.get('"seed"'))
+  })
+
+  it.each([
+    ['// x', '// x'],
+    ['meaning("a") // x', '// x'],
+  ])('styles the comment of %s as a comment', (query, comment) => {
+    const styles = getStyles(query)
+    const commentStyle = queryHighlighting.style([t.comment])
+
+    expect(commentStyle).toBeTruthy()
+    expect(new Map(styles).get(comment)).toBe(commentStyle)
+    expect(styles.filter(([text]) => text.includes('x'))).toStrictEqual([[comment, commentStyle]])
   })
 })

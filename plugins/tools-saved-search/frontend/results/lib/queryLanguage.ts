@@ -52,7 +52,12 @@ const readName = (stream: StringStream, scan: QueryScan): string => {
   return stream.match(/^\s*\(/, false) ? 'function' : 'variableName'
 }
 
-const readToken = (stream: StringStream, scan: QueryScan): string | null => {
+const readComment = (stream: StringStream): string => {
+  stream.skipToEnd()
+  return 'comment'
+}
+
+const readCode = (stream: StringStream, scan: QueryScan): string | null => {
   if (stream.eatSpace()) return null
   const quote = stream.peek()
   if (quote === '"' || quote === "'") {
@@ -71,6 +76,9 @@ const readToken = (stream: StringStream, scan: QueryScan): string | null => {
   stream.next()
   return 'punctuation'
 }
+
+const readToken = (stream: StringStream, scan: QueryScan): string | null =>
+  stream.match('//') ? readComment(stream) : readCode(stream, scan)
 
 /** The highlighting of strings, names, numbers, the operators and the stages of the search language. */
 export const queryLanguage = StreamLanguage.define<QueryScan>({

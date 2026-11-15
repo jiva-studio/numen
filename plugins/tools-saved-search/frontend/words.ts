@@ -23,6 +23,9 @@ export const WORDS = {
   editQuery: 'Edit query',
   queryField: 'Query',
   queryProblems: 'Problems in the query',
+  moreProblems: (count: number) => `and ${count} more`,
+  formatQuery: 'Format',
+  formatQueryHint: 'Format (Shift+Alt+F)',
   textMethods: [
     {
       name: 'startsWith',

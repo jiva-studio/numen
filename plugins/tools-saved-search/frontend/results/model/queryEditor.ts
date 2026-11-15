@@ -20,13 +20,29 @@ import {
   type QueryFunction,
   type QueryProblem,
 } from '../lib/queryLanguage'
+import { formatQuery } from '../lib/formatQuery'
 import { queryTheme } from '../lib/queryTheme'
-import { createQueryOptionText } from './queryOption'
+import { createQueryOptionDetails } from './queryOption'
 
 const insertIndent: StateCommand = ({ state, dispatch }) => {
   if (state.selection.ranges.some((range) => !range.empty)) return indentMore({ state, dispatch })
   const unit = indentString(state, getIndentUnit(state))
   dispatch(state.update(state.replaceSelection(unit), { scrollIntoView: true, userEvent: 'input' }))
+  return true
+}
+
+const formatDocument: StateCommand = ({ state, dispatch }) => {
+  const query = state.doc.toString()
+  const formatted = formatQuery(query)
+  if (formatted !== query) {
+    dispatch(
+      state.update({
+        changes: { from: 0, to: state.doc.length, insert: formatted },
+        scrollIntoView: true,
+        userEvent: 'input.format',
+      }),
+    )
+  }
   return true
 }
 
@@ -42,10 +58,14 @@ export interface QueryEditorOptions {
   readonly onChange: (query: string) => void
 }
 
-/** The editor of the query: focus puts the cursor in it, moveTo puts it at a line and column counted from 1. */
+/**
+ * The editor of the query: focus puts the cursor in it, moveTo puts it at a line and column counted from
+ * 1, format lays the query out as one change that undo takes back.
+ */
 export interface QueryEditor {
   focus(): void
   moveTo(line: number, column: number): void
+  format(): void
 }
 
 /** The editor of the query, drawn into the host when the component mounts. */
@@ -68,6 +88,7 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
 
   onMounted(() => {
     const parent = options.host.value
+    const optionDetails = createQueryOptionDetails()
     if (!parent) return
     view = new EditorView({
       parent,
@@ -79,15 +100,17 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
         queryTheme,
         autocompletion({
           override: [createQueryCompletion(options.getFunctions)],
-          addToOptions: [{ render: createQueryOptionText, position: 90 }],
+          addToOptions: [{ render: optionDetails.render, position: 90 }],
           icons: false,
         }),
+        optionDetails.extension,
         tooltips({ parent: parent.ownerDocument.body }),
         keymap.of([
           ...completionKeymap,
           ...historyKeymap,
           ...defaultKeymap,
           { key: 'Tab', run: insertIndent, shift: indentLess },
+          { key: 'Shift-Alt-f', run: formatDocument },
         ]),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({ 'aria-label': words.queryField }),
@@ -123,5 +146,10 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
   return {
     focus: () => view?.focus(),
     moveTo,
+    format: () => {
+      if (!view) return
+      formatDocument(view)
+      view.focus()
+    },
   }
 }
