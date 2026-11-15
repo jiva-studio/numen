@@ -65,8 +65,8 @@ func TestManifestDownloadsCaptionsAutomaticallyOnlyWithItsSetting(t *testing.T) 
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(manifest.ActivationEvents, []string{"onFilesChanged"}) || strings.Contains(string(manifest.Contributes), "triggers") {
-		t.Errorf("activationEvents %v and contributes %s, want onFilesChanged and no trigger", manifest.ActivationEvents, manifest.Contributes)
+	if !slices.Equal(manifest.ActivationEvents, []string{"onFilesChanged:text/markdown"}) || strings.Contains(string(manifest.Contributes), "triggers") {
+		t.Errorf("activationEvents %v and contributes %s, want onFilesChanged:text/markdown and no trigger", manifest.ActivationEvents, manifest.Contributes)
 	}
 	found := slices.IndexFunc(manifest.Settings, func(one struct {
 		Key     string `json:"key"`
