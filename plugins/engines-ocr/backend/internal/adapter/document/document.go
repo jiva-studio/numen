@@ -25,11 +25,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
-// GetExtensions returns the extensions, with the dot, of the files the plugin recognizes.
-func GetExtensions() []string {
-	return []string{".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
-}
-
 // ErrUnreadable is a file that opens as no document the plugin reads.
 var ErrUnreadable = errors.New("the file opens as no document")
 

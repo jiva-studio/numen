@@ -135,19 +135,6 @@ type Result struct {
 	IsEmpty bool
 }
 
-// Recognize reads the file and stores its text version. A failure is shown as a task until
-// the file is recognized again, and so is a file from which nothing is read. A failure of a missing
-// file ends the task. For a file another run has locked, it returns ErrAlreadyRecognizing.
-func (r *Recognition) Recognize(ctx context.Context, req Request) (Result, error) {
-	req, key, err := r.claim(ctx, req)
-	if err != nil {
-		return Result{}, err
-	}
-	release := sync.OnceFunc(func() { r.release(key) })
-	defer release()
-	return r.runRecognition(ctx, req, release)
-}
-
 // Start claims the file and recognizes it in the background under ctx, and returns false when
 // another run has locked the file. An empty vault is the vault the host shows when Start is called,
 // and the run reads and writes only that vault. The channel is closed when the run ends. The file stops

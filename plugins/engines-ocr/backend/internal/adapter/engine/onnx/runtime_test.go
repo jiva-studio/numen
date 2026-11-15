@@ -3,8 +3,6 @@ package onnx
 import (
 	"context"
 	"errors"
-	"os"
-	"path/filepath"
 	"sync/atomic"
 	"testing"
 )
@@ -20,8 +18,8 @@ func TestOpenRejectsWhenTheHostGaveNoLibrary(t *testing.T) {
 	if !errors.Is(err, ErrNoLibrary) {
 		t.Fatalf("Open() = %v, want ErrNoLibrary", err)
 	}
-	if r.IsAvailable("") {
-		t.Error("a runtime that failed to open is available")
+	if engine, loadedPath := r.GetLoaded(); engine != nil || loadedPath != "" {
+		t.Errorf("GetLoaded() = %v, %q after a failed open", engine, loadedPath)
 	}
 }
 
@@ -51,9 +49,6 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 	}
 	if engine, loadedPath := r.GetLoaded(); engine != first || loadedPath != "/lib/one.so" {
 		t.Errorf("GetLoaded() = %v, %q", engine, loadedPath)
-	}
-	if !r.IsAvailable("") {
-		t.Error("an open runtime is not available")
 	}
 }
 
@@ -136,31 +131,6 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 	}
 }
 
-func TestALibraryIsAvailableWhereTheFileIs(t *testing.T) {
-	var r Runtime[*fakeEngine]
-	libPath := filepath.Join(t.TempDir(), "libonnxruntime.so")
-	if r.IsAvailable(libPath) {
-		t.Error("a missing file is available")
-	}
-	if err := os.WriteFile(libPath, nil, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if !r.IsAvailable(libPath) {
-		t.Error("a file that is there is not available")
-	}
-}
-
-func TestHasRegistrationIsTrueOnceAHookIsRegistered(t *testing.T) {
-	var r Runtime[*fakeEngine]
-	if r.HasRegistration() {
-		t.Error("a new runtime has a registration")
-	}
-	r.Register(func(string) error { return nil })
-	if !r.HasRegistration() {
-		t.Error("a registered hook is not seen")
-	}
-}
-
 func TestOpenFailsAndRecordsNothingWhenAHookFails(t *testing.T) {
 	var r Runtime[*fakeEngine]
 	hookErr := errors.New("bind failed")
@@ -171,9 +141,6 @@ func TestOpenFailsAndRecordsNothingWhenAHookFails(t *testing.T) {
 
 	if !errors.Is(err, hookErr) {
 		t.Fatalf("Open error = %v, want %v", err, hookErr)
-	}
-	if r.IsAvailable("") {
-		t.Error("the runtime is available after a failed hook")
 	}
 	if engine, path := r.GetLoaded(); engine != nil || path != "" {
 		t.Errorf("GetLoaded = %v, %q after a failed hook", engine, path)

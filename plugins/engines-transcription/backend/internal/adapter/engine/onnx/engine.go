@@ -43,14 +43,3 @@ func openEngine(libPath string) (*ort.Engine, error) {
 	}
 	return engine, nil
 }
-
-// IsAvailable reports whether the library is open, or the library at libPath is there to open. It
-// opens nothing, so it is answered while another caller is opening one.
-func (l *Library) IsAvailable(libPath string) bool {
-	return l.runtime.IsAvailable(libPath)
-}
-
-// HasRegistration reports whether any hook runs when the library opens.
-func (l *Library) HasRegistration() bool {
-	return l.runtime.HasRegistration()
-}
