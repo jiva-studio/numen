@@ -6,6 +6,7 @@
   "description": "EPUB book reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
+  "activationEvents": ["onFilesChanged"],
   "contributes": {
     "textKinds": [{ "kind": "book-text", "title": "Book text" }],
     "tabKinds": [
@@ -38,17 +39,6 @@
         "title": "Extract text",
         "when": "target.contentType == 'application/epub+zip'"
       }
-    ],
-    "commands": [
-      {
-        "id": "bookTexts.update",
-        "title": "Update book texts",
-        "icon": "book-open",
-        "when": "target.contentType == 'application/epub+zip'"
-      }
-    ],
-    "triggers": [
-      { "event": "file.added", "command": "bookTexts.update", "when": "target.contentType == 'application/epub+zip'" }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

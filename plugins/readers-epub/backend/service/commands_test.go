@@ -32,7 +32,7 @@ func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Vault, *host
 
 func TestTheHandlerOfCreateTextWritesTheTextOfTheBook(t *testing.T) {
 	_, versions, writer := newTextVault(t, "book.epub", testsupport.CreateImageEpub(t))
-	commands, err := newCommands(writer, nil, nil)
+	commands, err := newCommands(writer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestTheHandlerOfCreateTextWritesTheTextOfTheBook(t *testing.T) {
 
 func TestTheHandlerOfCreateTextNeedsABook(t *testing.T) {
 	files, _, writer := newTextVault(t, "book.epub", testsupport.CreateImageEpub(t))
-	commands, err := newCommands(writer, nil, nil)
+	commands, err := newCommands(writer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,30 +69,5 @@ func TestTheHandlerOfCreateTextNeedsABook(t *testing.T) {
 	files.Hide()
 	if _, err := commands.RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: "book.epub"}); err == nil {
 		t.Error("expected error when active vault is hidden")
-	}
-}
-
-func TestUpdateWritesTheTextsTheFeedOfTheShownVaultNames(t *testing.T) {
-	files, versions, writer := newTextVault(t, "book.epub", testsupport.CreateImageEpub(t))
-	follower := texts.NewFollower(writer, func(id domain.VaultID) texts.Feed {
-		return texts.Feed{Changes: files.With(id), Store: files.Store().With(id)}
-	}, func(what string, err error) { t.Errorf("%s: %v", what, err) })
-	t.Cleanup(follower.Close)
-	commands, err := newCommands(writer, follower, files.GetVault)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := commands.RunCommand(t.Context(), command.Request{Command: UpdateCommand, Path: "book.epub"}); err != nil {
-		t.Fatal(err)
-	}
-	follower.Wait()
-
-	listing, err := versions.ListVersions(t.Context(), "book.epub")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(listing.Versions) != 1 || listing.Versions[0].Kind != texts.Kind {
-		t.Errorf("the versions of book.epub are %+v, want one of kind %q", listing.Versions, texts.Kind)
 	}
 }

@@ -3,8 +3,6 @@ package extract_test
 import (
 	"encoding/json"
 	"errors"
-	"os"
-	"path/filepath"
 	"slices"
 	"testing"
 
@@ -117,23 +115,5 @@ func TestAFollowerStartedAgainReadsOnlyTheChangesSinceItsCursor(t *testing.T) {
 
 	if got := f.Texts.TakeChanges(); !slices.Equal(got, []string{"labels.pdf"}) {
 		t.Errorf("the follower started again made the text layers of %v, want labels.pdf alone", got)
-	}
-}
-
-func TestWakeWritesAFileMissingFromTheFeed(t *testing.T) {
-	f := testsupport.NewFollowedVault(t, map[string][]byte{"notes/a.md": []byte("# A\n")})
-	follower := f.NewFollower(t)
-	follow(t, follower)
-	raw := testsupport.ReadFixture(t, "tiny.pdf")
-	if err := os.WriteFile(filepath.Join(f.Vault.Vault().Path, "tiny.pdf"), raw, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	f.Texts.File("tiny.pdf", raw)
-
-	follower.Wake(t.Context(), "vault", "tiny.pdf")
-	follower.Wait()
-
-	if got := f.Texts.TakeChanges(); !slices.Equal(got, []string{"tiny.pdf"}) {
-		t.Errorf("the wake made the text layers of %v, want tiny.pdf", got)
 	}
 }

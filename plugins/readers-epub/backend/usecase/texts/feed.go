@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"path"
-	"slices"
 	"strings"
 	"sync"
 
@@ -44,12 +42,10 @@ type Follower struct {
 	runs     map[domain.VaultID]*run
 }
 
-// run is the following of the feed of one vault. isAgain is true when a wake came while it ran, and
-// paths holds the files the wakes named that are not written yet.
+// run is the following of the feed of one vault. isAgain is true when a wake came while it ran.
 type run struct {
 	cancel  context.CancelFunc
 	isAgain bool
-	paths   map[string]bool
 }
 
 // NewFollower returns the follower of the feeds of the vaults that writes through writer. report
@@ -62,9 +58,8 @@ func NewFollower(writer *Writer, feeds func(domain.VaultID) Feed, report func(wh
 }
 
 // Wake starts following the feed of the vault in the background, and returns. A wake while the feed
-// of the vault is followed follows it again once that ends. The file at path, which the host may not
-// have put in the feed yet, is written after the feed is read; an empty path names none.
-func (f *Follower) Wake(ctx context.Context, vault domain.VaultID, path string) {
+// of the vault is followed follows it again once that ends.
+func (f *Follower) Wake(ctx context.Context, vault domain.VaultID) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.isClosed {
@@ -72,12 +67,10 @@ func (f *Follower) Wake(ctx context.Context, vault domain.VaultID, path string) 
 	}
 	if one, isRunning := f.runs[vault]; isRunning {
 		one.isAgain = true
-		one.addPath(path)
 		return
 	}
 	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-	one := &run{cancel: cancel, isAgain: false, paths: map[string]bool{}}
-	one.addPath(path)
+	one := &run{cancel: cancel, isAgain: false}
 	f.runs[vault] = one
 	f.wg.Go(func() {
 		defer cancel()
@@ -87,29 +80,9 @@ func (f *Follower) Wake(ctx context.Context, vault domain.VaultID, path string) 
 	})
 }
 
-func (r *run) addPath(filePath string) {
-	if isEPUB(filePath) {
-		r.paths[filePath] = true
-	}
-}
-
-func (f *Follower) takePaths(vault domain.VaultID) []string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	one := f.runs[vault]
-	paths := slices.Sorted(maps.Keys(one.paths))
-	one.paths = map[string]bool{}
-	return paths
-}
-
 func (f *Follower) followOnce(ctx context.Context, vault domain.VaultID) bool {
 	if err := f.Follow(ctx, vault); err != nil && ctx.Err() == nil {
 		f.report("follow the file changes of "+string(vault), err)
-	}
-	for _, filePath := range f.takePaths(vault) {
-		if err := f.writer.WriteMissingText(ctx, Request{Vault: vault, Path: filePath}); err != nil && ctx.Err() == nil {
-			f.report("write the text of "+filePath, err)
-		}
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()

@@ -6,6 +6,7 @@
   "description": "PDF document reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
+  "activationEvents": ["onFilesChanged"],
   "contributes": {
     "textKinds": [{ "kind": "page-text", "title": "Text layer" }],
     "tabKinds": [
@@ -38,17 +39,6 @@
         "title": "Extract text layer",
         "when": "target.contentType == 'application/pdf'"
       }
-    ],
-    "commands": [
-      {
-        "id": "textLayers.update",
-        "title": "Update text layers",
-        "icon": "file-text",
-        "when": "target.contentType == 'application/pdf'"
-      }
-    ],
-    "triggers": [
-      { "event": "file.added", "command": "textLayers.update", "when": "target.contentType == 'application/pdf'" }
     ]
   },
   "permissions": ["vault:read", "vault:write"],
