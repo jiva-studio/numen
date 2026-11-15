@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 )
 
-var _ host.FrontmatterReader = (*Vault)(nil)
-
 // The limits of one read of frontmatter, as the host has them.
 const (
 	frontmatterPageSize = 1000

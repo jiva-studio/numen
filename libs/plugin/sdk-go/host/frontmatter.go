@@ -42,12 +42,6 @@ type FrontmatterPage struct {
 	Cursor        FileChangeCursor
 }
 
-// FrontmatterReader reads the frontmatter of the notes of a vault as the index holds it. It needs
-// vault:read.
-type FrontmatterReader interface {
-	ReadFrontmatter(ctx context.Context, q FrontmatterQuery) (FrontmatterPage, error)
-}
-
 func (c *Client) ReadFrontmatter(ctx context.Context, q FrontmatterQuery) (FrontmatterPage, error) {
 	res, err := c.rpc.ReadFrontmatter(ctx, request(c, &v1.ReadFrontmatterRequest{
 		Paths: q.Paths, Keys: q.Keys, PageSize: int32(min(q.PageSize, 1<<30)), PageToken: q.PageToken,
