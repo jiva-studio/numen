@@ -16,15 +16,46 @@ const channelNightly = "nightly"
 // channelCustom is the value of the channel setting that selects the endpoint setting.
 const channelCustom = "custom"
 
-// GetEndpoint returns the feed the settings select: the endpoint setting on the custom channel, the
-// nightly feed on the nightly channel and the stable feed otherwise.
-func GetEndpoint(values map[string]string) string {
-	switch strings.TrimSpace(values["channel"]) {
+// nightlyMark is what the version of a nightly build holds, as in `2026.11.5-nightly.2113`.
+const nightlyMark = "-nightly."
+
+type selection struct {
+	channel  string
+	endpoint string
+}
+
+func newSelection(values map[string]string) selection {
+	return selection{channel: strings.TrimSpace(values["channel"]), endpoint: strings.TrimSpace(values["endpoint"])}
+}
+
+// getEndpoint returns the feed the selection names: the address on the custom channel, the nightly
+// feed on the nightly channel and the stable feed on the stable one. A channel nobody has chosen is
+// the channel of the running build.
+func (s selection) getEndpoint(version string) string {
+	channel := s.channel
+	if channel == "" {
+		channel = getBuildChannel(version)
+	}
+	switch channel {
 	case channelCustom:
-		return strings.TrimSpace(values["endpoint"])
+		return s.endpoint
 	case channelNightly:
 		return NightlyEndpoint
 	default:
 		return StableEndpoint
 	}
+}
+
+// getBuildChannel returns the channel a build is made for: nightly for a version with the nightly
+// prerelease part, stable for any other.
+func getBuildChannel(version string) string {
+	if strings.Contains(version, nightlyMark) {
+		return channelNightly
+	}
+	return "stable"
+}
+
+// GetEndpoint returns the feed the settings of the build of that version select.
+func GetEndpoint(values map[string]string, version string) string {
+	return newSelection(values).getEndpoint(version)
 }

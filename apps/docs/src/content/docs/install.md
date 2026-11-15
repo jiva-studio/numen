@@ -97,7 +97,7 @@ A `.tar.gz` containing the program alone. Unpack it anywhere and run `numen`.
 
 When a newer build is published, a version badge appears in the title bar, after its title. It
 shows the release date, the way to install on your system and the release notes. It comes from the
-Update Notifier plugin, whose settings choose the channel (**Stable** or **Nightly**), the address of
+Update Notifier plugin, whose settings choose the channel (**Stable** or **Nightly**; until you choose, a nightly build follows Nightly and any other build follows Stable), the address of
 the release feed and the hours between two checks. A machine without a network shows nothing.
 
 Install the new build over the old one. Your notes are your files and an install does not touch

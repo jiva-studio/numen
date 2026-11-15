@@ -25,8 +25,7 @@
       "key": "channel",
       "type": "enum",
       "title": "Channel",
-      "description": "Which builds are announced",
-      "default": "stable",
+      "description": "Which builds are announced. Until one is chosen, the channel of this build",
       "options": [
         {
           "value": "stable",
