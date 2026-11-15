@@ -1,0 +1,118 @@
+package tokenizer
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+	"unicode"
+	"unicode/utf8"
+)
+
+// preTokenizer splits the normalized text into the pieces Viterbi runs over; no piece spans two of them.
+type preTokenizer func(pieces []string) []string
+
+func buildPreTokenizer(s step) (preTokenizer, error) {
+	switch s.Type {
+	case "Sequence":
+		var preTokenizers []step
+		if err := s.fields.read("pretokenizers", &preTokenizers); err != nil {
+			return nil, fmt.Errorf("step Sequence: %w", err)
+		}
+		chain := make([]preTokenizer, 0, len(preTokenizers))
+		for _, one := range preTokenizers {
+			inner, err := buildPreTokenizer(one)
+			if err != nil {
+				return nil, err
+			}
+			chain = append(chain, inner)
+		}
+		return func(pieces []string) []string {
+			for _, split := range chain {
+				pieces = split(pieces)
+			}
+			return pieces
+		}, nil
+	case "WhitespaceSplit":
+		return splitWhitespace, nil
+	case "Metaspace":
+		split, err := buildMetaspace(s)
+		if err != nil {
+			return nil, fmt.Errorf("step Metaspace: %w", err)
+		}
+		return split, nil
+	default:
+		return nil, fmt.Errorf("step %q is not supported", s.Type)
+	}
+}
+
+func splitWhitespace(pieces []string) []string {
+	var out []string
+	for _, piece := range pieces {
+		out = append(out, strings.FieldsFunc(piece, unicode.IsSpace)...)
+	}
+	return out
+}
+
+func buildMetaspace(s step) (preTokenizer, error) {
+	var settings struct {
+		Replacement    string
+		PrependScheme  *string
+		AddPrefixSpace *bool
+		Split          *bool
+	}
+	for _, field := range []struct {
+		key string
+		out any
+	}{
+		{"replacement", &settings.Replacement},
+		{"prepend_scheme", &settings.PrependScheme},
+		{"add_prefix_space", &settings.AddPrefixSpace},
+		{"split", &settings.Split},
+	} {
+		if err := s.fields.read(field.key, field.out); err != nil {
+			return nil, err
+		}
+	}
+	if utf8.RuneCountInString(settings.Replacement) != 1 {
+		return nil, fmt.Errorf("the replacement %q is not one character", settings.Replacement)
+	}
+	switch {
+	case settings.PrependScheme != nil:
+		if *settings.PrependScheme != "always" {
+			return nil, fmt.Errorf("prepend_scheme %q is not supported, only \"always\"", *settings.PrependScheme)
+		}
+	case settings.AddPrefixSpace == nil || !*settings.AddPrefixSpace:
+		return nil, errors.New("only add_prefix_space true or prepend_scheme \"always\" is supported")
+	}
+	if settings.Split != nil && !*settings.Split {
+		return nil, errors.New("split false is not supported")
+	}
+	replacement := settings.Replacement
+	return func(pieces []string) []string {
+		var out []string
+		for _, piece := range pieces {
+			out = splitMetaspace(out, piece, replacement)
+		}
+		return out
+	}, nil
+}
+
+func splitMetaspace(out []string, piece, replacement string) []string {
+	if piece == "" {
+		return out
+	}
+	piece = strings.ReplaceAll(piece, " ", replacement)
+	if !strings.HasPrefix(piece, replacement) {
+		piece = replacement + piece
+	}
+	for len(piece) > 0 {
+		next := strings.Index(piece[len(replacement):], replacement)
+		if next < 0 {
+			return append(out, piece)
+		}
+		cut := len(replacement) + next
+		out = append(out, piece[:cut])
+		piece = piece[cut:]
+	}
+	return out
+}

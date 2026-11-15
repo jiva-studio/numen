@@ -1145,8 +1145,8 @@ func TestAssignCardIDsInternalsAndErrors(t *testing.T) {
 		nil, nil, nil,
 	)
 	resReadErr, err := acReadErr.Execute(ctx, v)
-	if err != nil || !slices.Equal(resReadErr.Unwritten, []string{"Broken.md"}) {
-		t.Fatalf("expected Unwritten=[Broken.md] on read error, got %+v, %v", resReadErr, err)
+	if err != nil || len(resReadErr.Unwritten) != 0 {
+		t.Fatalf("expected a deck with a read error to be skipped, got %+v, %v", resReadErr, err)
 	}
 
 	env := vaulttest.New(t, map[string]string{

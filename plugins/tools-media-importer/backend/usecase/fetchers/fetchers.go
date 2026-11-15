@@ -49,13 +49,6 @@ func (h *Holder) GetSettings() link.Settings {
 	return h.values.Fetch
 }
 
-// GetPrograms returns the programs the current downloader uses.
-func (h *Holder) GetPrograms() download.Config {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return h.values.Programs
-}
-
 // UpdateConfig applies the setting values and makes the downloader again.
 func (h *Holder) UpdateConfig(values map[string]string) {
 	h.mu.Lock()

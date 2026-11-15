@@ -10,8 +10,8 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
 )
 
 // EnvDir names the folder plugins keep their models in. The host sets it, to the folder a user chose or
@@ -101,6 +101,14 @@ func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Confi
 
 func name(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+}
+
+func getCacheRoot() string {
+	root, err := cache.GetSharedDirOrPluginDir()
+	if err != nil {
+		return ""
+	}
+	return root
 }
 
 func isPresent(pos string) bool {

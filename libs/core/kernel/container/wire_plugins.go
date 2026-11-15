@@ -65,18 +65,6 @@ func GetPluginServices(c Config) editor.PluginServices {
 	return getPluginServices(plugins(c))
 }
 
-// InstallPluginVault lets the plugins work through the host the vaults of the installation and the index that
-// holds them: the one current names, else the one a call names by identity.
-func InstallPluginVault(c Config,
-	db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
-) error {
-	vaults, err := c.registry()
-	if err != nil {
-		return err
-	}
-	return installPluginVault(plugins(c), vaults, db, current, hooks)
-}
-
 // PluginRuntime is what runs, finds and addresses the plugins.
 type PluginRuntime struct {
 	bridge.Activator
@@ -143,14 +131,8 @@ type PluginHost struct {
 	SourceDescriptions  *sourcebridge.Descriptions
 }
 
-// AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made with NewPluginRoles or OpenPluginRoles,
-// to the container. An application that links plugins into its binary registers them on the roles first, and the tests of packages
-// outside the container use it to run a window over a host they hold.
+// AdaptPluginHost lends the capabilities of host, the roles of a plugin host made with NewPluginRoles or OpenPluginRoles, to the container.
 func AdaptPluginHost(host *PluginRoles) *PluginHost {
-	return adaptPluginHost(host)
-}
-
-func adaptPluginHost(host *PluginRoles) *PluginHost {
 	lender := hostendpoint.NewLender()
 	lent := lendHostEndpoint(host, lender)
 	types := plugin.NewConnectionTypes(host.Registry)

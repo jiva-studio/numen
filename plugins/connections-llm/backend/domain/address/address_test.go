@@ -22,7 +22,7 @@ func TestAnAddressThatCannotCarryAKeyIsRefused(t *testing.T) {
 		"plain http to a private address": "http://192.168.1.20/v1",
 	}
 	for name, address := range addresses {
-		err := Check(address, true)
+		_, err := Parse(address, true)
 		if err == nil || !IsError(err) {
 			t.Errorf("%s: err = %v, want a refusal", name, err)
 		}
@@ -31,7 +31,7 @@ func TestAnAddressThatCannotCarryAKeyIsRefused(t *testing.T) {
 
 func TestAnAddressWithoutAKeyMayUsePlainHTTPOnAPrivateNetwork(t *testing.T) {
 	for _, address := range []string{"http://192.168.1.20:11434/v1", "http://ollama.lan:11434/v1", "https://example.com/v1"} {
-		if err := Check(address, false); err != nil {
+		if _, err := Parse(address, false); err != nil {
 			t.Errorf("%s: err = %v", address, err)
 		}
 	}
@@ -39,7 +39,7 @@ func TestAnAddressWithoutAKeyMayUsePlainHTTPOnAPrivateNetwork(t *testing.T) {
 
 func TestAKeyMayGoOverPlainHTTPToTheLoopbackOnly(t *testing.T) {
 	for _, address := range []string{"http://localhost:11434/v1", "http://127.0.0.1:8080", "http://[::1]:8080", "http://chat.localhost/v1"} {
-		if err := Check(address, true); err != nil {
+		if _, err := Parse(address, true); err != nil {
 			t.Errorf("%s: err = %v", address, err)
 		}
 	}

@@ -149,7 +149,7 @@ export class PlexDriver {
           async () => {
             const box = await handle.boundingBox()
             const now = JSON.stringify(box && [box.x, box.y, box.width, box.height].map(Math.round))
-            const isStill = now === before
+            const isStill = box !== null && now === before
             before = now
             return isStill
           },
@@ -162,22 +162,27 @@ export class PlexDriver {
 
   /** Drags from the handle of a note in the direction of a relation, and picks or makes the note in the popover that opens there. */
   async dragLine(direction: string, title: string, target: { title: string; isNew: boolean }): Promise<void> {
-    await this.hoverNote(title)
     const [dx, dy] = getDirectionStep(direction)
-    const handle = await getMiddle(await this.waitForHandle(title))
+    await this.pressHandle(title)
     const middle = await getMiddle(await this.getPart(title, '.plex__box'))
     const length = Math.min(DRAG_LENGTH, (await this.measureRoom(middle, dx, dy)) - DRAG_MARGIN)
     const end = { x: middle.x + dx * length, y: middle.y + dy * length }
     await this.expectEmptyPlace(end)
-    await this.drag(handle, end)
+    await this.release(end)
     await this.pick(target.title, target.isNew ? `Create "${target.title}"` : target.title)
   }
 
   /** Drags from the handle of a note onto another note of the plex, which is a link of the kind its place gives it. */
   async dragOnto(title: string, toTitle: string): Promise<void> {
+    await this.pressHandle(title)
+    await this.release(await getMiddle(await this.getPart(toTitle, '.plex__box')))
+  }
+
+  private async pressHandle(title: string): Promise<void> {
     await this.hoverNote(title)
-    const handle = await getMiddle(await this.waitForHandle(title))
-    await this.drag(handle, await getMiddle(await this.getPart(toTitle, '.plex__box')))
+    await (await this.waitForHandle(title)).hover()
+    await this.scenario.page.mouse.down()
+    await expect(await this.getNode(title), `the handle of the note titled "${title}" does not start a line`).toContainClass('plex__node--source')
   }
 
   private async measureRoom(from: Point, dx: number, dy: number): Promise<number> {
@@ -197,11 +202,9 @@ export class PlexDriver {
     if (isOnNote) throw new Error(`the line would end on a note, at ${Math.round(at.x)} and ${Math.round(at.y)}: the plex has no empty place there`)
   }
 
-  private async drag(from: Point, to: Point): Promise<void> {
+  private async release(at: Point): Promise<void> {
     const { page } = this.scenario
-    await page.mouse.move(from.x, from.y)
-    await page.mouse.down()
-    await page.mouse.move(to.x, to.y, { steps: 12 })
+    await page.mouse.move(at.x, at.y, { steps: 12 })
     await page.mouse.up()
   }
 
@@ -384,7 +387,16 @@ const HOLD_STEP_MS = 100
 const getWholeText = (text: string): RegExp => new RegExp(`^${escapeRegExp(text)}$`)
 
 const getMiddle = async (element: Locator): Promise<Point> => {
-  const box = await element.boundingBox()
+  let box = null as Awaited<ReturnType<Locator['boundingBox']>>
+  await expect
+    .poll(
+      async () => {
+        box = await element.boundingBox()
+        return box !== null
+      },
+      { message: 'the plex does not draw the note' },
+    )
+    .toBe(true)
   if (box === null) throw new Error('the plex does not draw the note')
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
 }
