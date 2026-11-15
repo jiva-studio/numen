@@ -131,7 +131,7 @@ func TestAWriteThatStoredNoChangeSendsNoEvent(t *testing.T) {
 	stub.requireEmitted(t, 0)
 }
 
-func TestAFeedThatHoldsChangesWhenTheVaultOpensSendsOneEvent(t *testing.T) {
+func TestOpenVaultWithFeedChangesEmitsOneEvent(t *testing.T) {
 	stub := newFeedStub()
 	stub.head = filechange.Head{Cursor: filechange.Cursor{FeedID: "feed-1", Seq: 9}}
 	startFeedEvents(t, stub)

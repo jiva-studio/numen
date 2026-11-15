@@ -7,9 +7,9 @@ import (
 	. "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func TestIndexChangedIsTheOnlyActivationEventAPluginDeclares(t *testing.T) {
-	if got := PluginActivationEvents(); !slices.Equal(got, []string{"onIndexChanged"}) {
-		t.Errorf("activation events = %v, want [onIndexChanged]", got)
+func TestIndexChangedAndFilesChangedAreTheActivationEventsAPluginDeclares(t *testing.T) {
+	if got := PluginActivationEvents(); !slices.Equal(got, []string{"onIndexChanged", "onFilesChanged"}) {
+		t.Errorf("activation events = %v, want [onIndexChanged onFilesChanged]", got)
 	}
 }
 
@@ -24,5 +24,19 @@ func TestAPluginOnIndexChangedIsActivatedByTheIndexChangeOfAnyVault(t *testing.T
 		if m.IsActivatedBy(event) {
 			t.Errorf("%q activates the plugin", event)
 		}
+	}
+}
+func TestAPluginIsActivatedByTheVaultEventsItDeclaresOnly(t *testing.T) {
+	m := Manifest{ID: "a.b", ActivationEvents: []string{ActivationEventFilesChanged}}
+	if !m.IsActivatedBy("onFilesChanged:vault-1") || !m.IsActivatedBy("onFilesChanged") {
+		t.Error("the declared event does not activate the plugin")
+	}
+	for _, event := range []string{"onFilesChanged:", "onIndexChanged:vault-1", "onFilesChangedX:vault-1"} {
+		if m.IsActivatedBy(event) {
+			t.Errorf("%q activates the plugin", event)
+		}
+	}
+	if (Manifest{ID: "a.b", ActivationEvents: []string{"onCommand"}}).IsActivatedBy("onCommand:run") {
+		t.Error("an event no host emits activates the plugin")
 	}
 }
