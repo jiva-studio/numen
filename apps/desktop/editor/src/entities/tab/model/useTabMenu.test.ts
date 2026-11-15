@@ -37,10 +37,11 @@ const MOVE = command('app', 'tab.moveToWindow', 'Move to window', { hasItems: tr
 const SHOW = command(ATLAS, 'graph.showNote', 'Show note in plex', { icon: Pin })
 const ENTRIES: readonly SlotItem[] = [DETACH, MOVE, { kind: 'separator', key: 'separator/1' }, SHOW]
 
-const TARGETS: Record<string, RunTarget> = {
-  reef: { path: 'Reef.md', title: 'Reef', isFolder: false, others: [], tab: 'reef' },
-  plex: { path: '', title: '', isFolder: false, others: [], tab: 'plex' },
-}
+const TARGETS: Record<string, RunTarget> & { readonly reef: RunTarget; readonly plex: RunTarget } =
+  {
+    reef: { path: 'Reef.md', title: 'Reef', isFolder: false, others: [], tab: 'reef' },
+    plex: { path: '', title: '', isFolder: false, others: [], tab: 'plex' },
+  }
 
 const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
   getEntries: (slot, target) =>
@@ -254,6 +255,15 @@ describe('the note type and the properties of the file of a tab', () => {
     expect(getEntries).toHaveBeenCalledWith(SLOT.tabStripContext, TARGETS.reef)
   })
 
+  it('leaves the target unchanged when the note type is empty', async () => {
+    const { menu, getEntries } = setupTyped(async () => ({ noteType: '' }))
+
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+
+    expect(getEntries).toHaveBeenCalledWith(SLOT.tabStripContext, TARGETS.reef)
+  })
+
   it('opens nothing where another menu was requested while it was read', async () => {
     let finish: (kind: NoteKind) => void = () => undefined
     const { menu } = setupTyped(
@@ -370,15 +380,87 @@ describe('an entry of the menu of a tab that offers items', () => {
 
   it('highlights the window of a move itemId under the pointer, and clears the highlight after', async () => {
     const { menu, onHighlight } = setup()
+    menu.highlight('before-open')
     menu.open('reef', { x: 4, y: 8 })
     await settle()
 
-    menu.highlight(getItemRows(menu)![0]!.id)
+    const firstRowId = getItemRows(menu)?.[0]?.id ?? ''
+    menu.highlight(firstRowId)
+    menu.highlight(firstRowId)
     menu.highlight(SHOW.key)
+
+    menu.highlight(firstRowId)
+    menu.dismiss()
+
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+    menu.highlight(getItemRows(menu)?.[0]?.id ?? '')
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+    menu.highlight(getItemRows(menu)?.[0]?.id ?? '')
+    menu.choose('reef', DETACH.key)
 
     expect(onHighlight.mock.calls).toStrictEqual([
       ['window-a', true],
       ['window-a', false],
+      ['window-a', true],
+      ['window-a', false],
+      ['window-a', true],
+      ['window-a', false],
+      ['window-a', true],
+      ['window-a', false],
     ])
+  })
+
+  it('works when optional callbacks and slots are omitted, and forwards errors when reportError is provided', async () => {
+    const getTabTarget = (tab: string) => TARGETS[tab] ?? TARGETS.reef
+    const bareMenu = useTabMenu({
+      moveCommand: 'app:tab.moveToWindow',
+      getTabTarget,
+    })
+    bareMenu.open('reef', { x: 4, y: 8 })
+    await settle()
+    expect(bareMenu.menu.value).toBeNull()
+
+    const withoutCallbacks = useTabMenu({
+      moveCommand: 'app:tab.moveToWindow',
+      slots: createSlots([DETACH, MOVE]),
+      getTabTarget,
+    })
+    withoutCallbacks.open('reef', { x: 4, y: 8 })
+    await settle()
+    withoutCallbacks.choose('reef', DETACH.key)
+    await settle()
+
+    const withoutHighlight = useTabMenu({
+      moveCommand: 'app:tab.moveToWindow',
+      slots: createSlots([MOVE]),
+      listItems: async () => [{ id: 'window-a', title: 'Atlas' }],
+      runCommand: async () => {
+        throw new Error('rejected without reportError')
+      },
+      getTabTarget,
+    })
+    withoutHighlight.open('reef', { x: 4, y: 8 })
+    await settle()
+    const moveRowId = withoutHighlight.menu.value?.items[0]?.children?.[0]?.id ?? ''
+    withoutHighlight.highlight(moveRowId)
+    withoutHighlight.choose('reef', moveRowId)
+    await settle()
+
+    const reportError = vi.fn()
+    const listError = new Error('list failed')
+    const withError = useTabMenu({
+      moveCommand: 'app:tab.moveToWindow',
+      slots: createSlots([MOVE]),
+      listItems: async () => {
+        throw listError
+      },
+      getTabTarget,
+      reportError,
+    })
+    withError.open('reef', { x: 4, y: 8 })
+    await settle()
+    expect(reportError).toHaveBeenCalledExactlyOnceWith(listError)
   })
 })
