@@ -100,6 +100,9 @@
       "project": [
         "src/**/*.{ts,vue}!",
         ".storybook/**/*.{ts,js}"
+      ],
+      "ignoreDependencies": [
+        "^@(codemirror|lezer)/"
       ]
     },
     "apps/desktop/flashcards": {
@@ -109,6 +112,9 @@
       ],
       "project": [
         "src/**/*.{ts,vue}!"
+      ],
+      "ignoreDependencies": [
+        "^@(codemirror|lezer)/"
       ]
     },
     "apps/mobile": {
