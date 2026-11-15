@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -32,11 +32,11 @@ func TestANoteSavedBelowTheWalkIsReadAgain(t *testing.T) {
 	opening := container.VaultOpener(cfg, db)
 	open := opening.Begin(t.Context(), v, nil, nil)
 
-	// Written through UpdateIndex while the walk is running, as the window does when
+	// Written through the refresh while the walk is running, as the window does when
 	// the user saves.
 	if _, err := open.Read(t.Context(), func() {
 		write(t, v, "Leaf.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
-		if err := opening.UpdateIndex(t.Context(), v, []string{"Leaf.md"}); err != nil {
+		if _, err := opening.GetRefresh().Execute(t.Context(), v, []string{"Leaf.md"}); err != nil {
 			t.Error(err)
 		}
 	}); err != nil {
@@ -80,7 +80,7 @@ func TestASecondWalkContainsWhatIsSavedBelowIt(t *testing.T) {
 		t.Fatalf("the walk is reading %q", path)
 	}
 	write(t, v, "Leaf.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
-	if err := opening.UpdateIndex(t.Context(), v, []string{"Leaf.md"}); err != nil {
+	if _, err := opening.GetRefresh().Execute(t.Context(), v, []string{"Leaf.md"}); err != nil {
 		t.Fatal(err)
 	}
 	target.release()
@@ -322,7 +322,7 @@ func openVault(t *testing.T, notes map[string]string) (container.Config, *contai
 	}
 	testsupport.CloseAfter(t, db)
 
-	return cfg, db, vaultfixture.NewVault(t, notes)
+	return cfg, db, vaulttest.NewVault(t, notes)
 }
 
 func write(t *testing.T, v domain.Vault, path, body string) {

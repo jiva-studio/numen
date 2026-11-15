@@ -5,7 +5,9 @@
     "libs/core/protocol": [],
     "libs/plugin/catalog": ["libs/atomicfile", "libs/note", "libs/core/protocol"],
     "libs/plugin/sdk-go": ["libs/atomicfile", "libs/note", "libs/core/protocol"],
-    "libs/core/kernel": ["libs/atomicfile", "libs/note", "libs/plugin/catalog", "libs/core/protocol"]
+    "libs/core/kernel": ["libs/atomicfile", "libs/note", "libs/plugin/catalog", "libs/core/protocol"],
+    "libs/shared/onnx": [],
+    "libs/shared/tokenizer": []
   },
   "packages": {
     "libs/ui/components": { "name": "@numen/ui", "dependsOn": [] },

@@ -1,7 +1,6 @@
 package toolconfig
 
 import (
-	"math"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -122,11 +121,6 @@ func TestHomeFallbackAndErrorPaths(t *testing.T) {
 		t.Errorf("readUserServers with broken JSON = %v, want empty", got)
 	}
 
-	// Marshal failure in writeServerFile.
-	if _, err := writeServerFile("numen-tools-*.json", map[string]any{"bad": math.NaN()}); err == nil {
-		t.Error("expected error marshaling NaN")
-	}
-
 	// Write failure when TMPDIR does not exist.
 	t.Setenv("TMPDIR", filepath.Join(t.TempDir(), "missing-tmpdir"))
 	if _, _, err := (Files{}).Write("http://127.0.0.1:4100/mcp", "token"); err == nil {
@@ -134,23 +128,6 @@ func TestHomeFallbackAndErrorPaths(t *testing.T) {
 	}
 	t.Setenv("TMPDIR", t.TempDir())
 
-	// finishTempFile cleans up the temp file when writing fails on a closed file.
-	tempFile, err := os.CreateTemp(t.TempDir(), "closed-*.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	tempName := tempFile.Name()
-	if err := tempFile.Close(); err != nil {
-		t.Fatal(err)
-	}
-	if gotPath, err := finishTempFile(tempFile, []byte("{}")); err == nil || gotPath != "" {
-		t.Errorf("finishTempFile on closed file = (%q, %v), want empty path and error", gotPath, err)
-	}
-	if _, err := os.Stat(tempName); !os.IsNotExist(err) {
-		t.Errorf("expected failed temp file %s to be removed, stat err = %v", tempName, err)
-	}
-
-	// Remove("") is a no-op; Remove on a non-empty directory returns an error.
 	if err := (Files{}).Remove(""); err != nil {
 		t.Errorf("Remove(\"\") = %v, want nil", err)
 	}

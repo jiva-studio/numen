@@ -17,7 +17,11 @@ describe('focusWindow and closeWindow', () => {
 
   it('do nothing when the Wails runtime is not loaded', async () => {
     await expect(focusWindow(async () => undefined)).resolves.toBeUndefined()
+    await expect(focusWindow(async () => ({}))).resolves.toBeUndefined()
+    await expect(focusWindow(async () => ({ Window: {} }))).resolves.toBeUndefined()
+    await expect(closeWindow(async () => undefined)).resolves.toBeUndefined()
     await expect(closeWindow(async () => ({}))).resolves.toBeUndefined()
+    await expect(closeWindow(async () => ({ Window: {} }))).resolves.toBeUndefined()
   })
 })
 
@@ -44,6 +48,10 @@ describe('closeWindowWhenEmpty', () => {
     expect(close).not.toHaveBeenCalled()
 
     tabCount.value = 0
+    await nextTick()
+    expect(close).toHaveBeenCalledOnce()
+
+    tabCount.value = 1
     await nextTick()
     expect(close).toHaveBeenCalledOnce()
   })

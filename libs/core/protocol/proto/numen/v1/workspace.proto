@@ -148,28 +148,10 @@ message Tab {
   // whose kind saves none.
   string state = 5;
 
-  // Place is the place the reader of the tab reported; unset for a tab whose
-  // kind reports none.
-  TabPlace place = 6;
-}
-
-// TabPlace is the place a reader tab shows, as its reader reports it. Unset
-// fields are places the reader does not have.
-message TabPlace {
-  // Page is the page a PDF shows, from 1.
-  int32 page = 1;
-
-  // PageCount is the number of pages of a PDF.
-  int32 page_count = 2;
-
-  // PositionSeconds is the time of a recording, in seconds from its start.
-  optional double position_seconds = 3;
-
-  // Cfi is the EPUB CFI of the place shown.
-  string cfi = 4;
-
-  // Chapter is the table-of-contents title of an EPUB at the place shown.
-  string chapter = 5;
+  // Place is the JSON of the place the reader of the tab reported, in the shape
+  // the reader and the plugins reading it agree on. The core and the window pass
+  // it on unread; empty for a tab whose kind reports none.
+  string place = 6;
 }
 
 message WatchTabLinksRequest {

@@ -61,9 +61,9 @@ export function createLayerPolicies({ order, sliceLayers, indexOnly = false, ext
  * eslint-plugin-boundaries instance of the calling package, `categories` the
  * `boundaries/files` entries, and `rules` any rule added to the same files.
  */
-export function createLayerConfig({ boundaries, elements, policies, categories, ignores = [], rules = {} }) {
+export function createLayerConfig({ boundaries, elements, policies, categories, files = ['src/**/*.{ts,vue}'], ignores = [], rules = {} }) {
   return {
-    files: ['src/**/*.{ts,vue}'],
+    files,
     ignores,
     plugins: { boundaries },
     settings: {
@@ -112,7 +112,9 @@ export function createStoryImportConfig({ patterns }) {
 /**
  * The layer blocks of a component library (`libs/ui/components`, `libs/ui/workbench`):
  * the layers, the imports `domainImports` bans, and a slice of `features`
- * reaching no other slice. `outsideLayers` are the files that stand outside.
+ * reaching no other slice. The layers cover the entry `src/index.ts` and the
+ * folders of `order`; a file elsewhere in `src`, such as a build helper, is in
+ * no layer. `outsideLayers` are the files inside those folders that stand outside.
  */
 export function createLibraryLayerConfigs({ boundaries, order, sliceLayers, outsideLayers, domainImports }) {
   return [
@@ -124,6 +126,7 @@ export function createLibraryLayerConfigs({ boundaries, order, sliceLayers, outs
         { category: 'public', pattern: 'src/features/*/index.ts' },
         { category: 'entry', pattern: 'src/index.ts' },
       ],
+      files: ['src/index.ts', ...order.map((layer) => `src/${layer}/**/*.{ts,vue}`)],
       ignores: outsideLayers,
       rules: { 'no-restricted-imports': ['error', { patterns: domainImports }] },
     }),

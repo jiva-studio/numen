@@ -27,7 +27,7 @@ func Supervise(cmd *exec.Cmd) {
 // A program that exits on the end of its input is reaped by Wait before its group is signaled, so it
 // finishes the way it chose to and is not reported as killed.
 func WaitForExit(cmd *exec.Cmd, stop func()) error {
-	exited := make(chan error)
+	exited := make(chan error, 1)
 	go func() { exited <- cmd.Wait() }()
 	timer := time.NewTimer(ExitGrace)
 	defer timer.Stop()

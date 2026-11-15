@@ -202,6 +202,17 @@ describe('choosing on a step', () => {
 
     expect(createdItem.invoked[0]?.[2]).toBe('Alpaca')
   })
+
+  it('confirms a retyped name only when the trimmed text matches the title and the command item is chosen', () => {
+    const matched = choose(pending('retypedName'), 'rename', '')
+    matched.text.value = '  Llama  '
+    matched.chosen()
+    expect(matched.invoked[0]?.[2]).toBe('Llama')
+
+    const wrongItem = choose(pending('retypedName'), 'other', '')
+    wrongItem.text.value = 'Llama'
+    expect(wrongItem.chosen()).toBeNull()
+  })
 })
 
 describe('the row a list opens on', () => {
