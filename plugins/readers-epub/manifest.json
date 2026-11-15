@@ -6,7 +6,7 @@
   "description": "EPUB book reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onFilesChanged"],
+  "activationEvents": ["onFilesChanged:application/epub+zip"],
   "contributes": {
     "textKinds": [{ "kind": "book-text", "title": "Book text" }],
     "tabKinds": [

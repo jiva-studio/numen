@@ -1,12 +1,12 @@
 {
   "id": "md.numen.tools.taxonomy",
   "name": "Taxonomy",
-  "version": "2026.11.1",
+  "version": "2026.11.2",
   "protocol": 1,
   "description": "Reads the tags of notes from their frontmatter and lists them for agents",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onFilesChanged"],
+  "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools"
   },

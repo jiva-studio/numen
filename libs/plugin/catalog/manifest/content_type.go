@@ -29,25 +29,6 @@ func (m Manifest) ListContentHandlers() []domain.ContentHandler {
 	return out
 }
 
-// IsHandling reports whether a reader of the plugin takes a file of the type.
-func (m Manifest) IsHandling(contentType domain.ContentType) bool {
-	for _, reader := range m.Contributes.Readers {
-		if isAnyMatching(reader.ContentTypes, contentType) {
-			return true
-		}
-	}
-	return false
-}
-
-func isAnyMatching(masks []domain.ContentType, contentType domain.ContentType) bool {
-	for _, mask := range masks {
-		if mask.Matches(contentType) {
-			return true
-		}
-	}
-	return false
-}
-
 func (m Manifest) listReaderIssues() []error {
 	var issues []error
 	if len(m.Contributes.Readers) > 0 && !m.HasFrontend() {
