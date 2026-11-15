@@ -9,7 +9,10 @@ import (
 
 func TestAReportedItemReachesTheHostAndAClearRemovesIt(t *testing.T) {
 	host := healthtest.NewHost(t)
-	client, err := health.NewClientFromVars(host.Vars("token-of-the-plugin"))
+	for name, value := range host.Vars("token-of-the-plugin") {
+		t.Setenv(name, value)
+	}
+	client, err := health.NewClientFromEnv()
 	if err != nil {
 		t.Fatal(err)
 	}

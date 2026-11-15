@@ -53,12 +53,15 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 		t.Fatalf("expected permission_denied for GetHighlights outside vault, got %v", err)
 	}
 
-	// 6. Double-dot filename inside vault -> check passes (does not return PermissionDenied)
+	// 6. Double-dot filename inside vault -> check passes and returns FailedPrecondition on dummy PDF
 	_, err = documents.GetDocument(ctx, api.GetDocumentRequest{
 		Path: "a..b.pdf",
 	})
-	if codeOf(err) == server.CodePermissionDenied {
-		t.Fatalf("expected double-dot filename not to be permission_denied, got %v", err)
+	if err == nil || codeOf(err) != server.CodeFailedPrecondition {
+		t.Fatalf("expected failed_precondition for dummy PDF inside vault, got %v", err)
+	}
+	if codeOf(readVaultError(host.ErrNoVault)) != server.CodePermissionDenied {
+		t.Fatalf("expected permission_denied for ErrNoVault")
 	}
 
 	// 7. Broken symlink pointing outside vault -> PermissionDenied

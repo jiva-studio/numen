@@ -12,7 +12,11 @@ import { answerNotes, type NoteAnswer } from '@/testing/noteCore'
 import { createFileFlush, type Conflict, type FlushDeps } from './flush'
 import { createNoteFlushHandler } from './noteFlush'
 
-const openNotes = (how?: Parameters<typeof useOpenNotes>[0]) => flattenOpenNotes(useOpenNotes(how))
+/** The note calls of the core the test answered last. */
+let notesApi = answerNotes({})
+
+const openNotes = (how?: Parameters<typeof useOpenNotes>[1]) =>
+  flattenOpenNotes(useOpenNotes(notesApi, how))
 
 type FlushResult = NonNullable<Parameters<FlushDeps['reportFlush']>[1]>
 
@@ -62,7 +66,7 @@ function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: bo
       reportedResults.push({ token, result })
     },
   }
-  answerNotes({
+  notesApi = answerNotes({
     read: async (path): Promise<NoteAnswer> =>
       files.has(path) ? asValue({ body: files.get(path) ?? '' }) : asFailure('notFound'),
     write: async (path, body): Promise<NoteAnswer> => {
@@ -619,7 +623,7 @@ describe('a page holding text the vault would not take', () => {
   /** A vault whose writes fail as long as `refusing` is set. */
   const createRefusingVault = (refusing: { code: string | null }) => {
     const files = new Map<string, string>([['Tides.md', 'high tide at six']])
-    answerNotes({
+    notesApi = answerNotes({
       read: async (path): Promise<NoteAnswer> =>
         asValue({ body: files.get(path) ?? '', at: `1 1 at:${files.get(path) ?? ''}` }),
       write: async (path, body): Promise<NoteAnswer> => {

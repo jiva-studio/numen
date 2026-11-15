@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -17,12 +18,6 @@ type IndexVault func(ctx context.Context, v domain.Vault) error
 // VaultIndexed reports whether the index already contains a vault.
 type VaultIndexed interface {
 	Execute(ctx context.Context, v domain.Vault) bool
-}
-
-// Tasks is the list of what the window is doing.
-type Tasks interface {
-	AddTask(task work.Task)
-	RemoveTask(id string)
 }
 
 // Changes tells the views drawing the vaults that data they render from has changed.
@@ -47,13 +42,13 @@ type RunState interface {
 type EnsureIndexed struct {
 	runs    RunState
 	indexed VaultIndexed
-	tasks   Tasks
+	tasks   windowport.Tasks
 	changes Changes
 }
 
 // NewEnsureIndexed returns the use case over the state of the indexing runs, the question whether the
 // index holds a vault, the list of work and the notification of changes.
-func NewEnsureIndexed(runs RunState, indexed VaultIndexed, tasks Tasks, changes Changes) *EnsureIndexed {
+func NewEnsureIndexed(runs RunState, indexed VaultIndexed, tasks windowport.Tasks, changes Changes) *EnsureIndexed {
 	return &EnsureIndexed{runs: runs, indexed: indexed, tasks: tasks, changes: changes}
 }
 

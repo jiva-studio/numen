@@ -123,10 +123,10 @@ func TestTheVectorIndexIsFittedToTheModel(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
-	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
+	if err := db.VectorIndex().FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
+	if err := db.VectorIndex().FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatalf("fitting to the width it already holds: %v", err)
 	}
 
@@ -142,7 +142,7 @@ func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
-	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
+	if err := db.VectorIndex().FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
 	embedAtWidth(t, db, getFirstVault(), 384)
@@ -154,14 +154,14 @@ func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 		t.Fatalf("%d of %d vectors reached the coarse index", coarse, made)
 	}
 
-	if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
+	if err := db.VectorIndex().FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 		t.Fatal(err)
 	}
 	if remaining := countRows(t, db, `SELECT count(*) FROM vectors`); remaining != made {
 		t.Errorf("%d of %d vectors survived a change of width", remaining, made)
 	}
 
-	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
+	if err := db.VectorIndex().FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
 	if back := countRows(t, db, `SELECT count(*) FROM chunks_vec`); back != made {

@@ -1,7 +1,7 @@
 /**
  * Frontend entrypoint of the notes plugin.
  */
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import MarkdownNoteEditor from './ui/MarkdownNoteEditor.vue'
 import { createNoteEditorView } from './ui/noteEditorView'
 import { createWikilinkExtension, type WikilinkOption, type WikilinkOptions } from './lib/wikilinks'
@@ -20,23 +20,22 @@ export {
 }
 export type { WikilinkOption, WikilinkOptions, FrontmatterResult, MarkdownEditorPreferences }
 
-export function activate(context: PluginContext): void {
-  const preferences = bindMarkdownEditorPreferences(context)
+export function activate(plugin: PluginContext, host: HostServices): void {
+  const preferences = bindMarkdownEditorPreferences(plugin)
 
-  context.register.reader({
+  plugin.register.reader({
     id: 'markdown',
     component: MarkdownNoteEditor,
     title: 'Markdown Note Editor',
   })
 
-  context.register.tabKind({
+  plugin.register.tabKind({
     kind: 'note',
     component: MarkdownNoteEditor,
     title: 'Note',
   })
 
-  if (context.vault.notes)
-    context.register.view(createNoteEditorView(context.vault.notes, preferences))
+  if (host.vault.notes) plugin.register.view(createNoteEditorView(host.vault.notes, preferences))
 }
 
 export function deactivate(): void {

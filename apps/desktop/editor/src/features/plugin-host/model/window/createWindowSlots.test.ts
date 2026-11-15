@@ -87,16 +87,16 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     facts,
     writeIssue: vi.fn(),
   })
-  const findSlotCommand = slots.hostDeps.createSlotCommandFinder({
+  const findSlotCommand = slots.hostDeps.slots.createSlotCommandFinder({
     getPluginCommands: host.commands.getPaletteCommands,
     hasPluginItems: host.commands.hasCommandItems,
   })
   const registry = createSlotRegistry({
-    getEntries: () => slots.hostDeps.getSlotEntries(new Map()),
+    getEntries: () => slots.hostDeps.slots.getSlotEntries(new Map()),
     findCommand: findSlotCommand,
     findView: () => undefined,
-    getWhenValues: slots.hostDeps.getSlotWhenValues,
-    whenReader: slots.hostDeps.whenReader,
+    getWhenValues: slots.hostDeps.slots.getSlotWhenValues,
+    whenReader: slots.hostDeps.commands.whenReader,
   })
   return { registry, hostDeps: slots.hostDeps, state, findSlotCommand }
 }
@@ -241,7 +241,7 @@ describe('the when values of a target', () => {
       properties: { media: 'plugin://md.importer/a.mp4' },
     }
 
-    expect(hostDeps.getSlotWhenValues(target)).toMatchObject({
+    expect(hostDeps.slots.getSlotWhenValues(target)).toMatchObject({
       'target.noteType': 'link',
       'target.properties': { media: 'plugin://md.importer/a.mp4' },
     })

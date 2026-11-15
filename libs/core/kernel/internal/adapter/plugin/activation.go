@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -26,11 +27,6 @@ type activationPlugins interface {
 type hostState interface {
 	IsClosed() bool
 	IsSafeMode() bool
-}
-
-// enablementChecker reports whether the settings of a plugin leave it enabled.
-type enablementChecker interface {
-	IsPluginEnabled(pluginID string) bool
 }
 
 // startHold holds the set of plugins against a scan of the folders while a plugin starts.
@@ -49,7 +45,7 @@ type configPusher interface {
 // hold it, and says which plugin a caller is.
 type Activation struct {
 	set        activationPlugins
-	enablement enablementChecker
+	enablement pluginport.PluginEnablement
 	scan       startHold
 	mode       hostState
 	sups       *supervision.Supervisors
@@ -67,7 +63,7 @@ type Activation struct {
 // of the configuration and the clock.
 type ActivationDeps struct {
 	Set         activationPlugins
-	Enablement  enablementChecker
+	Enablement  pluginport.PluginEnablement
 	Scan        startHold
 	Mode        hostState
 	Supervisors *supervision.Supervisors

@@ -98,8 +98,17 @@ func TestTheReasoningLevelsAreThoseOfTheModel(t *testing.T) {
 }
 
 func TestModelsNeedAGatewayAndLimits(t *testing.T) {
+	if models.ListLifetime != 24*time.Hour {
+		t.Errorf("ListLifetime = %v, want 24h", models.ListLifetime)
+	}
 	if _, err := models.New(nil, &limits.Limits{}, models.Lists{Dir: "", Report: func(error) {}}); err == nil {
 		t.Error("models were made with no gateway")
+	}
+	if _, err := models.New(&gateway{}, nil, models.Lists{Dir: "", Report: func(error) {}}); err == nil {
+		t.Error("models were made with no limits")
+	}
+	if _, err := models.New(&gateway{}, &limits.Limits{}, models.Lists{Dir: "", Report: nil}); err == nil {
+		t.Error("models were made with no report callback")
 	}
 }
 

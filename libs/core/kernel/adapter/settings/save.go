@@ -79,8 +79,8 @@ func compareWrittenSettings(raw []byte, wrote []Setting, into Document) error {
 		if !found || !slices.ContainsFunc(wrote, func(one Setting) bool { return isFieldCovered(one.At, label) }) {
 			continue
 		}
-		if err := checkValue(declared, nil, value); err != nil {
-			return wrapAt(label, err)
+		if err := settingsdomain.CheckDeclared(declared, nil, value); err != nil {
+			return fmt.Errorf("%q: %w", label, err)
 		}
 	}
 	return nil

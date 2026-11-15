@@ -1,6 +1,7 @@
 package webpage
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -59,14 +60,23 @@ func TestClientConfigurationAndBodyLimit(t *testing.T) {
 		t.Errorf("timeouts = (%v, %v, %v), want (90s, 10s, 1s)", tr.IdleConnTimeout, tr.TLSHandshakeTimeout, tr.ExpectContinueTimeout)
 	}
 	body := &paddedHTMLReader{prefix: "<html></html>", total: 9 << 20}
+	var gotUA, gotAccept string
 	pages.client = &http.Client{
-		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			gotUA = req.Header.Get("User-Agent")
+			gotAccept = req.Header.Get("Accept")
 			return &http.Response{StatusCode: http.StatusOK, Status: "200 OK", Body: body}, nil
 		}),
 	}
 	page, err := pages.Fetch(t.Context(), "https://example.com/post")
 	if err != nil {
 		t.Fatal(err)
+	}
+	if gotUA != browserUserAgent {
+		t.Errorf("User-Agent = %q, want %q", gotUA, browserUserAgent)
+	}
+	if gotAccept != "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" {
+		t.Errorf("Accept = %q, want html accept header", gotAccept)
 	}
 	if _, err := io.ReadAll(page); err != nil {
 		t.Fatal(err)
@@ -76,6 +86,19 @@ func TestClientConfigurationAndBodyLimit(t *testing.T) {
 	}
 	if body.pos != 8<<20 {
 		t.Errorf("Fetch read %d bytes, want %d", body.pos, 8<<20)
+	}
+
+	if _, err := pages.Fetch(t.Context(), "://bad-url"); err == nil {
+		t.Error("Fetch with invalid URL succeeded")
+	}
+	netErr := errors.New("network down")
+	pages.client = &http.Client{
+		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+			return nil, netErr
+		}),
+	}
+	if _, err := pages.Fetch(t.Context(), "https://example.com/post"); !errors.Is(err, netErr) {
+		t.Errorf("Fetch transport error = %v, want %v", err, netErr)
 	}
 }
 

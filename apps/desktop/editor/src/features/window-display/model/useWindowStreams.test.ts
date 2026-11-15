@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import { TASK_UNIT } from '@numen/core-client'
-import { installCoreAnswers } from '@numen/core-client/testing'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createFollower } from '@numen/ui'
 import {
   createEditStream,
@@ -49,14 +49,8 @@ interface Streams {
   edits?: { change: string; path: string; range?: { start: number; end: number }; text: string }[]
 }
 
-let restore: () => void = () => undefined
-
-afterEach(() => {
-  restore()
-})
-
 const answer = (streams: Streams) => {
-  restore = installCoreAnswers({
+  const api = createAnsweredApi({
     vault: {
       watchVaultChanges: () =>
         yielding(
@@ -87,10 +81,16 @@ const answer = (streams: Streams) => {
         ),
     },
   })
+  return {
+    watchVaultChanges: api.vault.vaultState.watchVaultChanges,
+    watchFocus: api.window.focus.watchFocus,
+    watchEdits: api.vault.note.watchEdits,
+    watchTasks: api.window.tasks.watchTasks,
+  }
 }
 
 /** Everything the streams of the window are made over, as the tests set it. */
-interface WindowStreamsDeps {
+interface WindowStreamsDeps extends ReturnType<typeof answer> {
   readonly listening: AbortController
   readonly isOpen: () => boolean
   readonly setLost: (response: string) => void
@@ -115,7 +115,11 @@ interface WindowStreamsDeps {
 const createWindowStreams = (deps: WindowStreamsDeps) => {
   const follows = createFollower({ isOpen: deps.isOpen, setLost: deps.setLost, wait: deps.wait })
   return {
-    follow: createVaultStream({ ...deps, follows }),
+    follow: createVaultStream({
+      ...deps,
+      follows,
+      opening: { path: deps.opening, read: deps.readInitialNote },
+    }),
     draw: createEditStream({ ...deps, follows }),
     watch: createFocusStream({ ...deps, follows }),
     followTasks: createTaskStream({ ...deps, follows }),
@@ -123,9 +127,9 @@ const createWindowStreams = (deps: WindowStreamsDeps) => {
 }
 
 const setup = (streams: Streams = {}, overrides: Partial<WindowStreamsDeps> = {}) => {
-  answer(streams)
   let open = true
   const deps = {
+    ...answer(streams),
     listening: new AbortController(),
     isOpen: () => open,
     setLost: vi.fn(),

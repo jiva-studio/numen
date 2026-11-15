@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -82,33 +83,41 @@ func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !trimmed.ShouldRebuildIndex {
+	if !trimmed.IsRebuildingIndex() {
 		t.Error("a rebuild was asked for and the cut skips sources the index remembers")
 	}
-	if trimmed.Sizes != target.CutNotes().Sizes {
-		t.Errorf("cut at %+v, and the settings say %+v", trimmed.Sizes, target.CutNotes().Sizes)
+	if want := chunking.GetTextVersionRecipe(target.CutNotes().Sizes); trimmed.Recipe() != want {
+		t.Errorf("cut by %q, and the settings say %q", trimmed.Recipe(), want)
 	}
 }
 
 func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	db := makeIndex(t)
-	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n"})
-	model := sourcefake.Wrap(unit{"first"})
-
-	made, err := container.Embed(container.NewConfig(container.Config{
+	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
+	target := container.NewConfig(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
-	}), db, model, v)
+	})
+	model := unit{"first"}
+
+	// ReadWholeVault fits the vector table to the width of the model.
+	if _, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(model), v); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := container.Scan(target, db).Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+	if unembeddedTo(t, db, v, model) == 0 {
+		t.Fatal("the vault holds no chunk to be embedded")
+	}
+	made, err := container.Embed(target, db, sourcefake.Wrap(model), v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if made.Claim == nil {
-		t.Error("the vectors have no place to claim the index in")
+	if _, err := made.Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
 	}
-	if made.Texts != nil {
-		t.Error("a configuration with no text versions reads text through some")
-	}
-	if made.Source != model {
-		t.Errorf("the vectors are made by %v, and the source given is %v", made.Source, model)
+	if got := unembeddedTo(t, db, v, model); got != 0 {
+		t.Errorf("the model given left %d chunks without a vector", got)
 	}
 }
 

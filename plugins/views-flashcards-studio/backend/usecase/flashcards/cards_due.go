@@ -53,13 +53,13 @@ type PresetCardsDue struct {
 type CountCardsDue struct {
 	reviewCards ListReviewCards
 	schedules   Schedules
-	presets     presets.Presets
+	presets     presets.OpenReads
 	day         review.Day
 	now         ports.Clock
 }
 
 func NewCountCardsDue(
-	reviewCards ListReviewCards, schedules Schedules, presets presets.Presets,
+	reviewCards ListReviewCards, schedules Schedules, presets presets.OpenReads,
 	day review.Day, now ports.Clock,
 ) CountCardsDue {
 	return CountCardsDue{
@@ -115,7 +115,7 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 	if err != nil {
 		return dueInputs{}, err
 	}
-	reads := u.presets.OpenReads()
+	reads := u.presets.Execute()
 	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, reviewCards)
 	if err != nil {
 		return dueInputs{}, err
