@@ -20,6 +20,7 @@ const setup = () => {
     openAt,
     notify: vi.fn(),
     locale: 'en-GB',
+    getNow: () => 0,
     component: defineComponent({ render: () => null }),
   })
   return { service, openAt, kind }

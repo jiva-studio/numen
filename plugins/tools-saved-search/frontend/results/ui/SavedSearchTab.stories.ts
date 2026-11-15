@@ -45,6 +45,8 @@ interface Knobs {
   onGetResults: Mock<() => void>
 }
 
+const NOW = Date.parse('2026-11-14T09:45:00Z')
+
 const NEW_QUERY = 'words("lighthouse") && meaning("the keeper in a gale").top(20)'
 
 const meta: Meta<Knobs> = {
@@ -80,6 +82,7 @@ const meta: Meta<Knobs> = {
         openAt: (path, ranges) => args.onOpenAt(path, ranges),
         notify: (text) => args.onNotify(text),
         locale: 'en-GB',
+        getNow: () => NOW,
       })
       tab.follow()
       service.watch.emit(COMPUTED)
@@ -97,7 +100,7 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-const COMPUTED_TIME = /Computed 14 Nov 2026, \d\d:\d\d/
+const FULL_TIME = /^14 Nov 2026, \d\d:\d\d$/
 
 const getDot = (canvasElement: HTMLElement, name: string): Promise<HTMLElement> =>
   waitFor(() => within(canvasElement).getByRole('img', { name }))
@@ -111,7 +114,7 @@ export const ShowsTheResults: Story = {
     await expect(canvas.getByRole('button', { name: 'Edit query' })).toBeVisible()
     await expect(canvas.queryByText('meaning("the harbor master in a winter storm")')).toBeNull()
     await expect(await getDot(canvasElement, 'Up to date')).toBeVisible()
-    await expect(canvas.queryByText(COMPUTED_TIME)).toBeNull()
+    await expect(canvas.queryByText('Computed')).toBeNull()
     await expect(canvas.getByRole('button', { name: /Night of the gale/ })).toBeVisible()
     await expect(canvas.getByText('Page 14')).toBeVisible()
     const file = canvas.getByRole('button', { name: /Pier plan/ })
@@ -121,7 +124,10 @@ export const ShowsTheResults: Story = {
   },
 }
 
-/** Hovering the dot shows the state and the time of the results in a tooltip; leaving it hides it. */
+/**
+ * Hovering the dot shows the state as the title of a tooltip, and the time and the count of the results
+ * with the full date on the time; leaving it hides it.
+ */
 export const ShowsTheTimeOfTheResultsOnHover: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -131,9 +137,13 @@ export const ShowsTheTimeOfTheResultsOnHover: Story = {
 
     const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
     await expect(tooltip).toBeVisible()
-    await expect(tooltip).toHaveTextContent('Up to date')
-    await expect(tooltip).toHaveTextContent(COMPUTED_TIME)
-    await expect(dot).toHaveAccessibleDescription(COMPUTED_TIME)
+    await expect(tooltip).toHaveTextContent(/^Up to date/)
+    await expect(within(tooltip).getByText('Computed').nextElementSibling).toHaveTextContent(
+      '15 minutes ago',
+    )
+    await expect(within(tooltip).getByTitle(FULL_TIME)).toHaveTextContent('15 minutes ago')
+    await expect(within(tooltip).getByText('Results').nextElementSibling).toHaveTextContent('3')
+    await expect(dot).toHaveAccessibleDescription(/Computed/)
 
     await userEvent.unhover(dot)
     await waitFor(() => expect(canvas.queryByRole('tooltip')).toBeNull())
@@ -145,15 +155,15 @@ export const ShowsTheTooltipOnFocus: Story = {
   args: { response: STALE },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const dot = await getDot(canvasElement, 'Will update')
+    const dot = await getDot(canvasElement, 'Stale')
 
     await userEvent.click(canvas.getByRole('heading'))
     await userEvent.tab()
     await expect(dot).toHaveFocus()
 
     const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
-    await expect(tooltip).toHaveTextContent('Will update')
-    await expect(tooltip).toHaveTextContent(COMPUTED_TIME)
+    await expect(tooltip).toHaveTextContent(/^Stale/)
+    await expect(within(tooltip).getByTitle(FULL_TIME)).toBeVisible()
 
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(canvas.queryByRole('tooltip')).toBeNull())
@@ -164,7 +174,7 @@ export const ShowsTheTooltipOnFocus: Story = {
 export const ShowsARunInProgress: Story = {
   args: { response: RUNNING },
   play: async ({ canvasElement }) => {
-    await expect(await getDot(canvasElement, 'Updating…')).toBeVisible()
+    await expect(await getDot(canvasElement, 'Updating')).toBeVisible()
   },
 }
 
@@ -299,7 +309,7 @@ export const ShowsTheProblemsOfTheQueryWithTheLastGoodResults: Story = {
   args: { response: MISSPELLED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const dot = await getDot(canvasElement, 'Last run failed')
+    const dot = await getDot(canvasElement, 'Failed')
 
     await expect(canvas.queryByRole('alert')).toBeNull()
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
@@ -330,7 +340,7 @@ export const SaysTheResultsAreBeingComputed: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await expect(await getDot(canvasElement, 'Computing the results…')).toBeVisible()
+    await expect(await getDot(canvasElement, 'Computing')).toBeVisible()
     await expect(canvas.queryByText('The query found nothing')).toBeNull()
   },
 }
@@ -340,33 +350,38 @@ export const ShowsAWarning: Story = {
   args: { response: FUSED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const dot = await getDot(canvasElement, 'Up to date, with warnings')
+    const dot = await getDot(canvasElement, 'With warnings')
 
     await expect(canvas.queryByText(WARNING)).toBeNull()
     await userEvent.hover(dot)
-    await waitFor(() => expect(canvas.getByRole('tooltip')).toHaveTextContent(WARNING))
+    const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
+    await expect(within(tooltip).getByRole('heading', { name: 'Warning' })).toBeVisible()
+    await expect(tooltip).toHaveTextContent(WARNING)
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
   },
 }
 
 /**
- * A failed last run names the red dot for it; the tooltip gives its time and reason and the time of the
- * good run, whose results stay.
+ * A failed last run names the red dot for it; the tooltip gives the time of the good run, whose results
+ * stay, and the time of the failed run, and its reason under the Error heading.
  */
 export const ShowsAFailedLastRun: Story = {
   args: { response: FAILED_LAST_RUN },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const dot = await getDot(canvasElement, 'Last run failed')
+    const dot = await getDot(canvasElement, 'Failed')
 
     await expect(canvas.queryByText(new RegExp(FAILURE_REASON))).toBeNull()
     await userEvent.hover(dot)
 
     const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
-    await expect(tooltip).toHaveTextContent(
-      new RegExp(`Last run failed 14 Nov 2026, \\d\\d:\\d\\d: ${FAILURE_REASON}`),
-    )
-    await expect(tooltip).toHaveTextContent(COMPUTED_TIME)
+    await expect(tooltip).toHaveTextContent(/^Failed/)
+    await expect(within(tooltip).getAllByTitle(FULL_TIME)).toHaveLength(2)
+    await expect(
+      within(tooltip).getAllByText('Failed').at(-1)?.nextElementSibling,
+    ).toHaveTextContent('4 minutes ago')
+    await expect(within(tooltip).getByRole('heading', { name: 'Error' })).toBeVisible()
+    await expect(tooltip).toHaveTextContent(FAILURE_REASON)
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
     await expect(canvas.getByRole('button', { name: /Pier plan/ })).toBeVisible()
   },
@@ -398,7 +413,7 @@ export const ShowsTheErrorOfTheRunApartFromTheQuery: Story = {
   args: { response: FAILED_ON_RERANKER },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const dot = await getDot(canvasElement, 'Last run failed')
+    const dot = await getDot(canvasElement, 'Failed')
 
     await expect(canvas.queryByText(RERANKER_BUSY)).toBeNull()
     await userEvent.hover(dot)

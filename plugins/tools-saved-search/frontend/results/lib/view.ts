@@ -61,13 +61,26 @@ export interface SourceView {
 export type RunState = 'fresh' | 'running' | 'stale' | 'warned' | 'failed'
 
 /**
- * The state of the run, its name, and the lines that describe it: the state, the times, the failure and
- * the warnings.
+ * A fact of the run in the tooltip of the dot: its label and its value; at is the time the value
+ * gives, '' for a value that is not a time.
+ */
+export interface StatusFact {
+  readonly label: string
+  readonly value: string
+  readonly at: string
+}
+
+/**
+ * The state of the run and its name, the facts of the run, the error of the last run and the warnings,
+ * and the locale the times are written in.
  */
 export interface StatusView {
   readonly state: RunState
   readonly label: string
-  readonly details: readonly string[]
+  readonly facts: readonly StatusFact[]
+  readonly errors: readonly string[]
+  readonly warnings: readonly string[]
+  readonly locale: string
 }
 
 /** The tab of a saved search as it is drawn. */
@@ -117,25 +130,41 @@ function getRunState(response: ResultsFields): RunState {
 
 function getLabel(state: RunState, response: ResultsFields, words: Words): string {
   if (state === 'running') return response.computedAt === '' ? words.computing : words.updating
-  if (state === 'failed') return words.lastRunFailed
-  if (state === 'stale') return words.willUpdate
-  if (state === 'warned') return words.upToDateWithWarnings
+  if (state === 'failed') return words.failed
+  if (state === 'stale') return words.stale
+  if (state === 'warned') return words.withWarnings
   return words.upToDate
+}
+
+function getFacts(response: ResultsFields, words: Words, locale: string): StatusFact[] {
+  const facts: StatusFact[] = []
+  if (response.computedAt !== '') {
+    facts.push({
+      label: words.computed,
+      value: formatTime(response.computedAt, locale),
+      at: response.computedAt,
+    })
+    facts.push({ label: words.results, value: String(response.results.length), at: '' })
+  }
+  if (isLastRunFailed(response))
+    facts.push({
+      label: words.failedAt,
+      value: formatTime(response.failedAt, locale),
+      at: response.failedAt,
+    })
+  return facts
 }
 
 function getStatus(response: ResultsFields, words: Words, locale: string): StatusView {
   const state = getRunState(response)
-  const label = getLabel(state, response, words)
-  const failedRun = isLastRunFailed(response)
-    ? `${words.lastRunFailed} ${formatTime(response.failedAt, locale)}: ${response.failure}`
-    : ''
-  const details = [state === 'failed' ? failedRun : label]
-  if (response.computedAt !== '')
-    details.push(`${words.computed} ${formatTime(response.computedAt, locale)}`)
-  if (response.isStale && state !== 'stale') details.push(words.willUpdate)
-  if (failedRun !== '' && state !== 'failed') details.push(failedRun)
-  details.push(...response.warnings)
-  return { state, label, details }
+  return {
+    state,
+    label: getLabel(state, response, words),
+    facts: getFacts(response, words, locale),
+    errors: isLastRunFailed(response) && response.failure !== '' ? [response.failure] : [],
+    warnings: response.warnings,
+    locale,
+  }
 }
 
 function getItem(result: ResultFields, index: number, words: Words): ResultItemView {

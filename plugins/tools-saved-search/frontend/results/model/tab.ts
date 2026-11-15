@@ -22,6 +22,7 @@ export interface SavedSearchTabDeps {
   readonly openAt: (path: string, ranges: readonly TextRange[]) => void
   readonly notify: (text: string) => void
   readonly locale: string
+  readonly getNow: () => number
 }
 
 /** The query the person saves. */
@@ -34,7 +35,8 @@ export interface SearchChange {
  * items are the results the filter and the hidden sources leave; failure is '' when nothing failed;
  * queryProblems are those the editor underlines, at their line and column in the query: those of the
  * last save when it had any, else those of the saved query that have a place in it; functions is the
- * catalog of the search language, read when the editor first opens.
+ * catalog of the search language, read when the editor first opens; getNow gives the time of the
+ * wall clock in milliseconds, which the times of the run are written from.
  */
 export interface SavedSearchTabState {
   readonly path: Readonly<Ref<string>>
@@ -46,6 +48,7 @@ export interface SavedSearchTabState {
   readonly isEditing: Readonly<Ref<boolean>>
   readonly queryProblems: Readonly<Ref<readonly Problem[]>>
   readonly functions: Readonly<Ref<readonly SearchFunction[]>>
+  readonly getNow: () => number
   readonly actions: {
     openResult(index: number): void
     saveSearch(change: SearchChange): Promise<void>
@@ -208,6 +211,7 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
       isEditing: readonly(isEditing),
       queryProblems,
       functions: readonly(functions),
+      getNow: deps.getNow,
       actions: {
         openResult,
         saveSearch,

@@ -29,37 +29,46 @@ const TIME = String.raw`14 Nov 2026, \d\d:\d\d`
 
 const at = (response: GetResultsResponse): GetResultsResponse => ({ ...response, computedAt: NOON })
 
+const computedFact = (at: string) => ({
+  label: 'Computed',
+  value: expect.stringMatching(new RegExp(`^${TIME}$`)),
+  at,
+})
+const failedFact = (at: string) => ({
+  label: 'Failed',
+  value: expect.stringMatching(new RegExp(`^${TIME}$`)),
+  at,
+})
+const RESULTS_FACT = { label: 'Results', value: '3', at: '' }
+
 describe('the state of the run', () => {
-  it('says the results are being computed before the first run', () => {
+  it('says the results are being computed before the first run, with no facts', () => {
     for (const response of [NEVER_COMPUTED, { ...NEVER_COMPUTED, isRunning: true }]) {
       expect(getResultsView(response, WORDS, LOCALE).status).toStrictEqual({
         state: 'running',
-        label: 'Computing the results…',
-        details: ['Computing the results…'],
+        label: 'Computing',
+        facts: [],
+        errors: [],
+        warnings: [],
+        locale: LOCALE,
       })
     }
   })
 
-  it('says the search is updating while it runs, with the time of the results', () => {
+  it('says the search is updating while it runs, with the time and the count of the results', () => {
     const { status } = getResultsView(at(RUNNING), WORDS, LOCALE)
 
     expect(status.state).toBe('running')
-    expect(status.label).toBe('Updating…')
-    expect(status.details).toStrictEqual([
-      'Updating…',
-      expect.stringMatching(new RegExp(`^Computed ${TIME}$`)),
-    ])
+    expect(status.label).toBe('Updating')
+    expect(status.facts).toStrictEqual([computedFact(NOON), RESULTS_FACT])
   })
 
-  it('says the search will update when it is stale', () => {
+  it('says the search is stale when a run will replace its results', () => {
     const { status } = getResultsView(at(STALE), WORDS, LOCALE)
 
     expect(status.state).toBe('stale')
-    expect(status.label).toBe('Will update')
-    expect(status.details).toStrictEqual([
-      'Will update',
-      expect.stringMatching(new RegExp(`^Computed ${TIME}$`)),
-    ])
+    expect(status.label).toBe('Stale')
+    expect(status.facts).toStrictEqual([computedFact(NOON), RESULTS_FACT])
   })
 
   it('says the results are up to date and names when they were computed', () => {
@@ -67,41 +76,39 @@ describe('the state of the run', () => {
 
     expect(status.state).toBe('fresh')
     expect(status.label).toBe('Up to date')
-    expect(status.details).toStrictEqual([
-      'Up to date',
-      expect.stringMatching(new RegExp(`^Computed ${TIME}$`)),
-    ])
+    expect(status.facts).toStrictEqual([computedFact(NOON), RESULTS_FACT])
+    expect(status.errors).toStrictEqual([])
+    expect(status.warnings).toStrictEqual([])
   })
 
   it('names the time and the reason of a failed last run, and the time of the last good run', () => {
+    const good = '2026-11-14T09:30:00Z'
     const { status } = getResultsView(
-      { ...FAILED_LAST_RUN, computedAt: '2026-11-14T09:30:00Z', failedAt: NOON },
+      { ...FAILED_LAST_RUN, computedAt: good, failedAt: NOON },
       WORDS,
       LOCALE,
     )
 
     expect(status.state).toBe('failed')
-    expect(status.label).toBe('Last run failed')
-    expect(status.details).toStrictEqual([
-      expect.stringMatching(new RegExp(`^Last run failed ${TIME}: ${FAILURE_REASON}$`)),
-      expect.stringMatching(new RegExp(`^Computed ${TIME}$`)),
-    ])
+    expect(status.label).toBe('Failed')
+    expect(status.facts).toStrictEqual([computedFact(good), RESULTS_FACT, failedFact(NOON)])
+    expect(status.errors).toStrictEqual([FAILURE_REASON])
   })
 
-  it('says the search will update after a failed last run that is stale', () => {
+  it('says only that the last run failed when it is also stale', () => {
     const { status } = getResultsView({ ...FAILED_LAST_RUN, isStale: true }, WORDS, LOCALE)
 
     expect(status.state).toBe('failed')
-    expect(status.details.at(-1)).toBe('Will update')
+    expect(status.label).toBe('Failed')
   })
 
-  it('names the failed last run while the next run is in progress', () => {
+  it('names the error of the failed last run while the next run is in progress', () => {
     const { status } = getResultsView({ ...FAILED_LAST_RUN, isRunning: true }, WORDS, LOCALE)
 
     expect(status.state).toBe('running')
-    expect(status.details.at(-1)).toMatch(
-      new RegExp(`^Last run failed ${TIME}: ${FAILURE_REASON}$`),
-    )
+    expect(status.label).toBe('Updating')
+    expect(status.facts.at(-1)).toStrictEqual(failedFact(FAILED_LAST_RUN.failedAt))
+    expect(status.errors).toStrictEqual([FAILURE_REASON])
   })
 
   it('names no failed run when a good run followed it', () => {
@@ -112,7 +119,8 @@ describe('the state of the run', () => {
     )
 
     expect(status.state).toBe('fresh')
-    expect(status.details.some((line) => line.startsWith('Last run failed'))).toBe(false)
+    expect(status.facts.some((fact) => fact.label === 'Failed')).toBe(false)
+    expect(status.errors).toStrictEqual([])
   })
 
   it('keeps the results of the last good run when the last run failed', () => {
@@ -130,10 +138,10 @@ describe('the query of the note', () => {
 })
 
 describe('the problems and the warnings', () => {
-  it('leaves the problems of the query out of the details of the run', () => {
+  it('leaves the problems of the query out of the error of the run', () => {
     const view = getResultsView(MISSPELLED, WORDS, LOCALE)
 
-    expect(view.status.details.some((line) => line.includes('meanin'))).toBe(false)
+    expect(view.status.errors).toStrictEqual(['the query has problems'])
   })
 
   it('keeps the last good results while the query has problems', () => {
@@ -152,14 +160,15 @@ describe('the problems and the warnings', () => {
     )
 
     expect(view.status.state).toBe('failed')
-    expect(view.status.details.filter((line) => line.includes(busy))).toHaveLength(1)
+    expect(view.status.errors).toStrictEqual([busy])
   })
 
-  it('gives fresh results with a warning the warned state and the warning in the details', () => {
+  it('gives fresh results with a warning the warned state and the warning', () => {
     const { status } = getResultsView(FUSED, WORDS, LOCALE)
 
     expect(status.state).toBe('warned')
-    expect(status.details).toContain(WARNING)
+    expect(status.label).toBe('With warnings')
+    expect(status.warnings).toStrictEqual([WARNING])
   })
 })
 

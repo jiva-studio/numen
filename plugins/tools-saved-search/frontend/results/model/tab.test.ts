@@ -29,7 +29,13 @@ const setup = () => {
   const service = createScriptedService(HARBOR, () => catalog)
   const openAt = vi.fn()
   const notify = vi.fn()
-  const tab = createSavedSearchTab(NOTE_PATH, { service, openAt, notify, locale: 'en-GB' })
+  const tab = createSavedSearchTab(NOTE_PATH, {
+    service,
+    openAt,
+    notify,
+    locale: 'en-GB',
+    getNow: () => 0,
+  })
   return { service, openAt, notify, tab, state: tab.state }
 }
 

@@ -69,7 +69,7 @@ function onToggleSource(path: string, isShown: boolean) {
     <template v-if="view">
       <header class="saved-search__header">
         <h2 class="saved-search__title">{{ view.title }}</h2>
-        <StatusDot :status="view.status" />
+        <StatusDot :status="view.status" :get-now="state.getNow" />
         <Button
           variant="ghost"
           size="icon-small"
