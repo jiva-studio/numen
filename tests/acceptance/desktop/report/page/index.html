@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Acceptance scenarios</title>
+    <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="tokens/colors.css" />
+    <link rel="stylesheet" href="report.css" />
+    <link rel="stylesheet" href="cursor.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <header class="sidebar-header">
+        <div class="sidebar-title">
+          <h1>Acceptance scenarios</h1>
+          <p id="started-at" class="started-at"></p>
+        </div>
+        <label class="search">
+          <input id="search" type="search" placeholder="Search scenarios" aria-label="Search" />
+        </label>
+        <div id="status-filter" class="status-filter" role="group" aria-label="Status"></div>
+      </header>
+      <nav id="tree" class="tree" aria-label="Scenarios"></nav>
+    </aside>
+    <main id="detail" class="detail">
+      <p class="empty">Choose a scenario.</p>
+    </main>
+    <script src="data.js"></script>
+    <script src="controls.js"></script>
+    <script src="cursor.js"></script>
+    <script src="environments.js"></script>
+    <script src="video.js"></script>
+    <script src="video-load.js"></script>
+    <script src="report.js"></script>
+  </body>
+</html>
