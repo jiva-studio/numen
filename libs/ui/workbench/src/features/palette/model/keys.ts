@@ -9,14 +9,9 @@ import { nextTick, onBeforeUnmount, onMounted, watch, type Ref, type ShallowRef 
 import { stepTo } from '@numen/ui'
 import { canLandOn, findKeptPlace, type PaletteAction } from '../lib/item'
 import { isActionsChord } from '../lib/keys'
+import type { PaletteFieldHandle } from './fieldHandle'
 import type { ActiveItemState } from './activeItem'
 import type { PalettePlacesState } from './places'
-
-/** The field, which takes the keyboard and holds it. */
-export interface PaletteFieldHandle {
-  readonly focus: () => void
-  readonly select: () => void
-}
 
 export interface PaletteKeysOptions {
   readonly field: Readonly<ShallowRef<PaletteFieldHandle | null>>

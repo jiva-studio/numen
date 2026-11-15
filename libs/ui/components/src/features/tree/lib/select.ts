@@ -1,6 +1,7 @@
 /** What a press on a row evaluates to: the rows selected, and the row a reach is measured from. */
 
 import type { RowId, ShownRow } from './row'
+import { getRowsBetween } from './rowsBetween'
 
 /**
  * What a press means for the selection: a row joining it or leaving it, or the
@@ -19,25 +20,6 @@ export const PLAIN: Press = { isJoining: false, isExtending: false }
 export interface RowSelection {
   readonly rows: readonly RowId[]
   readonly anchor: RowId | null
-}
-
-/**
- * The rows between two rows in display order, both ends included, in either
- * direction. A range anchored at a row that is not displayed is that row
- * alone.
- */
-export function getRowsBetween(
-  visibleRows: readonly ShownRow[],
-  from: RowId,
-  to: RowId,
-): readonly RowId[] {
-  const last = visibleRows.findIndex((row) => row.id === to)
-  if (last === -1) return []
-
-  const first = visibleRows.findIndex((row) => row.id === from)
-  if (first === -1) return [to]
-
-  return visibleRows.slice(Math.min(first, last), Math.max(first, last) + 1).map((row) => row.id)
 }
 
 const inOrder = (visibleRows: readonly ShownRow[], ids: ReadonlySet<RowId>): readonly RowId[] =>

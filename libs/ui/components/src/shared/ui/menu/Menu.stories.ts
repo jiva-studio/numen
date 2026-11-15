@@ -9,7 +9,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { defineComponent, h, nextTick, onMounted, ref, type Component } from 'vue'
 import { Copy, CornerDownRight, FileText } from '@lucide/vue'
 import Menu from './Menu.vue'
-import { MENU_TRIGGERS_ALL, type MenuItem, type MenuTrigger } from './items/item'
+import type { MenuItem, MenuTrigger } from './items/item'
 import {
   ARABIC,
   DEVANAGARI,
@@ -112,7 +112,7 @@ const meta = {
     },
   },
   argTypes: {
-    trigger: { control: 'inline-radio', options: MENU_TRIGGERS_ALL },
+    trigger: { control: 'inline-radio', options: ['pointer', 'keyboard'] satisfies MenuTrigger[] },
     current: { control: 'text' },
     margin: { control: { type: 'range', min: 0, max: 48, step: 2 } },
     name: { control: 'text' },

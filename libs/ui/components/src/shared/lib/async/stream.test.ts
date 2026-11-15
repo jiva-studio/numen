@@ -5,7 +5,8 @@
  * shows what the source held a moment ago, with no error and no way back.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { createFollower, AGAIN, LOST } from './stream'
+import { createFollower } from './stream'
+import { AGAIN, LOST } from './streamRetry'
 
 const window = (streams = 3) => {
   const waits: number[] = []

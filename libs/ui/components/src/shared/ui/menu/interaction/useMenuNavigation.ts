@@ -19,7 +19,8 @@ import {
   type MenuItem,
   type MenuTrigger,
 } from '../items/item'
-import { createSubmenuAim, type MenuBox } from './aim'
+import { createSubmenuAim } from './aim'
+import type { MenuBox } from './aimGeometry'
 import { isMenuRowHandle, useMenuKeys, type MenuRowHandle } from './keys'
 import { isInside } from './outside'
 

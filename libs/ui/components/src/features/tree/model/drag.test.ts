@@ -2,7 +2,8 @@ import { effectScope, type EffectScope } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
 import { stubClock } from '@/shared/fixtures/clock'
 import { flatten, type Row } from '../lib/row'
-import { useRowDrag, type RowDragEmit, type RowDragState, type TreeMetrics } from './drag'
+import { useRowDrag, type RowDragEmit, type RowDragState } from './drag'
+import type { TreeMetrics } from './treeMetrics'
 
 const ROWS: readonly Row[] = [
   {

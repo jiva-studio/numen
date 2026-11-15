@@ -7,6 +7,7 @@
  */
 
 import { isTyping } from '@numen/ui'
+import { VAULT_LETTERS } from './vaultLetters'
 
 /** A key press as far as the screen reads it. */
 interface VaultKeyPress {
@@ -17,11 +18,6 @@ interface VaultKeyPress {
   readonly metaKey: boolean
   readonly target: object | null
 }
-/**
- * The letters the vaults are picked by, in the order they are listed. They are
- * capitals, which is how every letter on a key cap is drawn.
- */
-export const VAULT_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 /**
  * The letter that selects one vault of the list; positions past the alphabet

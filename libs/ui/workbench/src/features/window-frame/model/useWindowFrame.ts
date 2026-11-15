@@ -14,13 +14,7 @@ import {
   type WindowPlatform,
 } from '../lib/corners'
 import type { FrameRuntime, FrameRuntimeLoader } from '../lib/runtime'
-import { MAC_BUTTONS_INSET } from '../lib/sizes'
-
-/** The room the system buttons take in the top corners of the window, in pixels. */
-interface FrameEdge {
-  readonly leftInset: number
-  readonly rightInset: number
-}
+import { getWindowEdge, type FrameEdge } from './frameEdge'
 
 export interface WindowFrame {
   readonly platform: Readonly<Ref<WindowPlatform>>
@@ -36,15 +30,6 @@ export interface WindowFrame {
 function getPlatform(system: FrameRuntime['System']): WindowPlatform {
   if (system?.IsMac?.()) return 'darwin'
   return system?.IsLinux?.() ? 'linux' : 'windows'
-}
-
-/**
- * The room the system buttons take in the top corners: the macOS buttons at the left, except in full
- * screen, where macOS shows none. Windows and Linux have no buttons without a title bar.
- */
-export function getWindowEdge(platform: WindowPlatform, isFullscreen: boolean): FrameEdge {
-  const hasMacButtons = platform === 'darwin' && !isFullscreen
-  return { leftInset: hasMacButtons ? MAC_BUTTONS_INSET : 0, rightInset: 0 }
 }
 
 const ignoreFailure = (): undefined => undefined

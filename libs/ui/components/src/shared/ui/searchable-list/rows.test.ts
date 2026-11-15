@@ -3,15 +3,9 @@
  * with an action row, and where the group names go.
  */
 import { describe, expect, it } from 'vitest'
-import {
-  FIRST_KEY,
-  buildRows,
-  filterItems,
-  findExactItem,
-  getHeadings,
-  stepRow,
-  type ListItem,
-} from './rows'
+import { findExactItem } from './exactItem'
+import { FIRST_KEY } from './firstKey'
+import { buildRows, filterItems, getHeadings, stepRow, type ListItem } from './rows'
 
 const MODELS: readonly ListItem[] = [
   { id: 'a', text: 'Plum 4', group: 'Orchard' },

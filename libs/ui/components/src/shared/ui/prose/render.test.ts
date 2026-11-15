@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { h, type VNode } from 'vue'
 import { indexLinkPieces, type LinkPieces } from '@/shared/lib/text/marks'
-import { WORD, render } from './render'
+import { render } from './render'
+import { WORD } from './word'
 
 const mountProse = (text: string) => mount({ render: () => h('div', render(text)) })
 

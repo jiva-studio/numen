@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createNamedIcon } from './create'
-import { findNamedIcon, getIconKey, isIconKey } from './icons'
+import { getIconKey, isIconKey } from './iconKey'
+import { findNamedIcon } from './icons'
 import { buttonVariants } from '../button/variants'
 import NamedIcon from './NamedIcon.vue'
 

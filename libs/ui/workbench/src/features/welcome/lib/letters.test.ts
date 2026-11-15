@@ -5,7 +5,8 @@
  * is text.
  */
 import { describe, expect, it } from 'vitest'
-import { getVaultForKey, vaultLetter, VAULT_LETTERS } from './letters'
+import { getVaultForKey, vaultLetter } from './letters'
+import { VAULT_LETTERS } from './vaultLetters'
 
 const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
   ({

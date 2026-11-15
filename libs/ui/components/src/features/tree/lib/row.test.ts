@@ -8,13 +8,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { flatten, getMarkOf, type RowId, type RowMarker } from './row'
 import {
   everyRow,
-  getRowsBetween,
   resolveSelection,
   isSameSelection,
   PLAIN,
   type Press,
 } from './select'
-import { isTreeKey, stepTo, TREE_KEYS } from './step'
+import { getRowsBetween } from './rowsBetween'
+import { isTreeKey, stepTo } from './step'
+import { TREE_KEYS } from './treeKeys'
 import { getDraggedRows, dragLabel } from './drag'
 import { findHolder, isRefused, getRowDropTarget } from './drop'
 import { WORK_ROWS } from '../fixtures/rows'

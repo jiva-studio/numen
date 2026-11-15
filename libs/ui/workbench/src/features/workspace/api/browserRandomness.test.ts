@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { browserRandomness } from './randomness'
+import { browserRandomness } from './browserRandomness'
 
 describe('the randomness of the window', () => {
   afterEach(() => {
