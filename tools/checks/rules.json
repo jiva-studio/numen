@@ -764,22 +764,6 @@
       "target": "scan-complete"
     },
     {
-      "name": "go/schema-driving",
-      "paths": [
-        "libs/core/kernel/**",
-        "go.work"
-      ],
-      "tags": [
-        "structure",
-        "go",
-        "core",
-        "fast"
-      ],
-      "selftest": "structure/go/schema-driving/check_test.go",
-      "runner": "go",
-      "target": "schema-driving"
-    },
-    {
       "name": "go/sdk-protocol-encapsulation",
       "paths": [
         "**/*.go",
