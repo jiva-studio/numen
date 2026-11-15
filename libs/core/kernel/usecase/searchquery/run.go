@@ -31,14 +31,14 @@ func (u *EvaluateQuery) run(ctx context.Context, req *searchquery.Evaluation, do
 		return searchquery.SearchResults{}, err
 	}
 	places := &placeCache{
-		source: u.chunks, vaultID: req.Vault.ID, found: map[domain.ChunkID]domain.SearchResult{}, document: docs.getDocument, load: docs.loadDocuments,
+		source: u.places, vaultID: req.Vault.ID, found: map[domain.ChunkID]domain.SearchResult{}, document: docs.getDocument, load: docs.loadDocuments,
 	}
-	meaning := &meaningSearch{vectors: u.chunks, source: u.source, filter: places.filterScope, req: req, warnings: warns}
+	meaning := &meaningSearch{vectors: u.vectors, source: u.source, filter: places.filterScope, req: req, warnings: warns}
 	vectors, err := meaning.embed(ctx)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	words := &wordSearch{words: u.chunks, filter: places.filterScope, req: req, warnings: warns}
+	words := &wordSearch{words: u.documents, filter: places.filterScope, req: req, warnings: warns}
 	lists, err := findConditionCandidates(ctx, req, docs, meaning, words, vectors)
 	if err != nil {
 		return searchquery.SearchResults{}, err
@@ -58,7 +58,7 @@ func (u *EvaluateQuery) run(ctx context.Context, req *searchquery.Evaluation, do
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	scorer := scorer{places: u.chunks, matcher: u.matcher, words: u.chunks, req: req}
+	scorer := scorer{places: u.places, matcher: u.matcher, words: u.documents, req: req}
 	scores, err := scorer.score(ctx, candidates, texts, vectors)
 	if err != nil {
 		return searchquery.SearchResults{}, err

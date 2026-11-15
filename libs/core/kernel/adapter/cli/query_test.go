@@ -75,7 +75,8 @@ func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchqueryte
 	deps := searchquerytest.Deps{
 		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: testsupport.NewClock(),
 		Evaluate: searchquery.EvaluateQueryDeps{
-			Chunks: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{}, Floors: fixedQueryFloor{},
+			Documents: search, Vectors: search, Places: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
+			Floors:       fixedQueryFloor{},
 			ContentTypes: markdownTypes{}, Contents: db.NoteQueryReads(), Links: db.NoteQueryReads(),
 		},
 	}
