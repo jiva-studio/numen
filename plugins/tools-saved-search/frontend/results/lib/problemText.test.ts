@@ -5,11 +5,14 @@ import { getProblemText } from './problemText'
 describe('getProblemText', () => {
   it.each([
     ["extraneous input 'e' expecting <EOF>", 'Unexpected “e”: the query should end here'],
-    ["Syntax error: mismatched input ')' expecting <EOF>", 'Unexpected “)”: the query should end here'],
+    [
+      "Syntax error: mismatched input ')' expecting <EOF>",
+      'Unexpected “)”: the query should end here',
+    ],
     ["mismatched input '&&' expecting {'(', IDENTIFIER}", 'Unexpected “&&” here'],
     ["missing ')' at '<EOF>'", 'Missing “)” at the end of the query'],
     ["missing ')' at '&&'", 'Missing “)” before “&&”'],
-    ["no viable alternative at input 'words(\"gale\"'", 'Cannot read the query at “words("gale"”'],
+    ['no viable alternative at input \'words("gale"\'', 'Cannot read the query at “words("gale"”'],
     ["token recognition error at: '#'", '“#” is not allowed in a query'],
     ['Syntax error: unexpected end of input', 'The query ends too early'],
   ])('says %s in plain words', (message, text) => {

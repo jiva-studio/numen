@@ -19,7 +19,7 @@ import {
   type QueryFunction,
   type QueryProblem,
 } from '../lib/queryLanguage'
-import { problemAtCursor } from '../lib/problemTooltip'
+import { problemAtCursor } from './problemTooltip'
 import { queryTheme } from '../lib/queryTheme'
 
 /** How long typing pauses before the query is sent. */

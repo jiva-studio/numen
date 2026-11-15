@@ -190,7 +190,6 @@ export const OpensAResultAtItsPlace: Story = {
   },
 }
 
-
 /** A filter no result holds says so with its text; Clear filter empties the field and brings the results back. */
 export const FiltersTheResults: Story = {
   args: { response: HARBOR_TWO_LOGBOOK_PASSAGES },
@@ -261,7 +260,6 @@ export const HidesTheResultsOfASource: Story = {
     await expect(page.queryByRole('listbox', { name: 'Sources' })).toBeNull()
   },
 }
-
 
 /** Hiding every source says all sources are hidden; Show all sources brings every result back. */
 export const ShowsAllSourcesAgain: Story = {
@@ -348,7 +346,6 @@ export const ShowsAWarning: Story = {
   },
 }
 
-
 /**
  * A failed last run names the red dot for it; the tooltip gives its time and reason and the time of the
  * good run, whose results stay.
@@ -389,6 +386,9 @@ const fillEditor = async (editor: HTMLElement, text: string): Promise<void> => {
 
 const AFTER_PAUSE = { timeout: QUERY_PAUSE_MS * 3 }
 
+/** Tab indents while the query editor has focus; Escape hands Tab back to the page. */
+const EDITOR_KEEPS_TAB = { keeps: 'Escape hands Tab back to the page' }
+
 /** The edit button shows the query in the editor inside the tab, and hides it again. */
 export const ShowsAndHidesTheEditor: Story = {
   play: async ({ canvasElement }) => {
@@ -412,6 +412,7 @@ export const ShowsAndHidesTheEditor: Story = {
 
 /** A valid query is saved once typing pauses, the results are read again, and the editor stays open. */
 export const SavesTheQueryAfterTypingPauses: Story = {
+  parameters: { reach: EDITOR_KEEPS_TAB },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const editor = await openEditor(canvasElement)
@@ -439,6 +440,7 @@ export const SavesTheQueryAfterTypingPauses: Story = {
  * after a dot, the stages are offered.
  */
 export const CompletesTheNamesOfTheCatalog: Story = {
+  parameters: { reach: EDITOR_KEEPS_TAB },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const browser = await import('vitest/browser')
@@ -481,6 +483,7 @@ const PLAIN_PROBLEM = 'Unexpected “meanin”: the query should end here'
  * the cursor, no list of problems is drawn, the note keeps its query, and the editor stays open.
  */
 export const UnderlinesAQueryNotSaved: Story = {
+  parameters: { reach: EDITOR_KEEPS_TAB },
   args: {
     updateAnswer: { errors: [{ line: 1, column: 18, message: PARSER_PROBLEM }] },
   },
@@ -501,11 +504,12 @@ export const UnderlinesAQueryNotSaved: Story = {
     await expect(canvas.queryByRole('alert')).toBeNull()
     await expect(canvas.queryByText(new RegExp(PARSER_PROBLEM))).toBeNull()
 
-    await userEvent.hover(underlined)
+    const browser = await import('vitest/browser')
+    await browser.userEvent.hover(underlined)
     await waitFor(() => expect(canvas.getByText(PLAIN_PROBLEM)).toBeVisible())
 
-    await userEvent.click(underlined)
-    await userEvent.hover(canvas.getByRole('heading'))
+    await browser.userEvent.click(underlined)
+    await browser.userEvent.hover(canvas.getByRole('heading'))
     await waitFor(() =>
       expect(canvasElement.querySelector('.cm-problem-at-cursor')).toHaveTextContent(PLAIN_PROBLEM),
     )

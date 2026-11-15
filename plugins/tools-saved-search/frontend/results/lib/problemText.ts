@@ -10,16 +10,18 @@ const SYNTAX_PREFIX = /^Syntax error:\s*/
 
 const unquote = (token: string): string => token.replace(/^'(.*)'$/, '$1')
 
-const getUnexpected = (token: string, expected: string): string =>
+const formatUnexpectedToken = (token: string, expected: string): string =>
   expected === END ? words.problem.unexpectedAtEnd(token) : words.problem.unexpected(token)
 
-const getMissing = (token: string, at: string): string =>
-  at === END ? words.problem.missingAtEnd(unquote(token)) : words.problem.missing(unquote(token), at)
+const formatMissingToken = (token: string, at: string): string =>
+  at === END
+    ? words.problem.missingAtEnd(unquote(token))
+    : words.problem.missing(unquote(token), at)
 
 const RULES: readonly [RegExp, (...parts: string[]) => string][] = [
-  [/^extraneous input '(.+)' expecting (.+)$/, getUnexpected],
-  [/^mismatched input '(.+)' expecting (.+)$/, getUnexpected],
-  [/^missing (.+) at '(.+)'$/, getMissing],
+  [/^extraneous input '(.+)' expecting (.+)$/, formatUnexpectedToken],
+  [/^mismatched input '(.+)' expecting (.+)$/, formatUnexpectedToken],
+  [/^missing (.+) at '(.+)'$/, formatMissingToken],
   [/^no viable alternative at input '(.+)'$/, (token) => words.problem.unreadable(token)],
   [/^token recognition error at: '(.+)'$/, (token) => words.problem.notAllowed(token)],
   [/^unexpected end of input$/, () => words.problem.endsEarly],

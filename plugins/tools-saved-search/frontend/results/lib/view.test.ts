@@ -45,7 +45,10 @@ describe('the state of the run', () => {
 
     expect(status.state).toBe('running')
     expect(status.label).toBe('Updating…')
-    expect(status.details).toStrictEqual(['Updating…', expect.stringMatching(new RegExp(`^Computed ${TIME}$`))])
+    expect(status.details).toStrictEqual([
+      'Updating…',
+      expect.stringMatching(new RegExp(`^Computed ${TIME}$`)),
+    ])
   })
 
   it('says the search will update when it is stale', () => {
@@ -53,7 +56,10 @@ describe('the state of the run', () => {
 
     expect(status.state).toBe('stale')
     expect(status.label).toBe('Will update')
-    expect(status.details).toStrictEqual(['Will update', expect.stringMatching(new RegExp(`^Computed ${TIME}$`))])
+    expect(status.details).toStrictEqual([
+      'Will update',
+      expect.stringMatching(new RegExp(`^Computed ${TIME}$`)),
+    ])
   })
 
   it('says the results are up to date and names when they were computed', () => {
@@ -61,7 +67,10 @@ describe('the state of the run', () => {
 
     expect(status.state).toBe('fresh')
     expect(status.label).toBe('Up to date')
-    expect(status.details).toStrictEqual(['Up to date', expect.stringMatching(new RegExp(`^Computed ${TIME}$`))])
+    expect(status.details).toStrictEqual([
+      'Up to date',
+      expect.stringMatching(new RegExp(`^Computed ${TIME}$`)),
+    ])
   })
 
   it('names the time and the reason of a failed last run, and the time of the last good run', () => {
@@ -90,7 +99,9 @@ describe('the state of the run', () => {
     const { status } = getResultsView({ ...FAILED_LAST_RUN, isRunning: true }, WORDS, LOCALE)
 
     expect(status.state).toBe('running')
-    expect(status.details.at(-1)).toMatch(new RegExp(`^Last run failed ${TIME}: ${FAILURE_REASON}$`))
+    expect(status.details.at(-1)).toMatch(
+      new RegExp(`^Last run failed ${TIME}: ${FAILURE_REASON}$`),
+    )
   })
 
   it('names no failed run when a good run followed it', () => {
@@ -199,9 +210,7 @@ describe('the results', () => {
   })
 
   it('says nothing matches when the run found no result', () => {
-    expect(getResultsView(NOTHING_FOUND, WORDS, LOCALE).emptyText).toBe(
-      'The query found nothing',
-    )
+    expect(getResultsView(NOTHING_FOUND, WORDS, LOCALE).emptyText).toBe('The query found nothing')
   })
 
   it('says nothing about matches before the first run', () => {

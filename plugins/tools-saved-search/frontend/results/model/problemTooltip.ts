@@ -1,6 +1,6 @@
 /**
  * The problem under the cursor of the query editor, shown in a tooltip below it for as long as the
- * cursor sits in its range, as the hover of the pointer shows it.
+ * cursor is in its range, as the hover of the pointer shows it.
  */
 import { forEachDiagnostic, type Diagnostic } from '@codemirror/lint'
 import { StateField, type EditorState } from '@codemirror/state'
@@ -22,10 +22,10 @@ const createTooltip = (state: EditorState): Tooltip | null => {
   return {
     pos: problem.from,
     above: false,
-    create: () => {
-      const dom = document.createElement('div')
+    create: (view) => {
+      const dom = view.dom.ownerDocument.createElement('div')
       dom.className = 'cm-tooltip-lint cm-problem-at-cursor'
-      const line = document.createElement('div')
+      const line = view.dom.ownerDocument.createElement('div')
       line.className = 'cm-diagnostic cm-diagnostic-error'
       line.textContent = problem.message
       dom.append(line)
@@ -34,7 +34,7 @@ const createTooltip = (state: EditorState): Tooltip | null => {
   }
 }
 
-/** The tooltip of the problem the cursor sits in. */
+/** The tooltip of the problem the cursor is in. */
 export const problemAtCursor = StateField.define<Tooltip | null>({
   create: createTooltip,
   update: (tooltip, transaction) =>

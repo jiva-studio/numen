@@ -27,7 +27,12 @@ const items = computed(() => props.state.items.value)
 const failure = computed(() => props.state.failure.value)
 const filterEmpty = computed(() =>
   view.value && view.value.items.length > 0 && items.value.length === 0
-    ? getFilterEmpty(view.value.sources, props.state.hiddenSources.value, props.state.filter.value, words)
+    ? getFilterEmpty(
+        view.value.sources,
+        props.state.hiddenSources.value,
+        props.state.filter.value,
+        words,
+      )
     : null,
 )
 const editorId = useId()
