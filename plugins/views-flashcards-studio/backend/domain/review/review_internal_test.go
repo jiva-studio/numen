@@ -19,10 +19,10 @@ func TestAllowanceCostAndDayInternals(t *testing.T) {
 	pDate.Goal = GoalDate
 	pDate.By = time.Date(2026, 6, 11, 0, 0, 0, 0, time.UTC) // 2 days (Wed, Thu)
 	pDate.Load = map[time.Weekday]int{time.Wednesday: 50, time.Thursday: 50}
-	allowDate := pDate.GetAllowance(day, now, Spent{New: 1, Reviews: 2, Took: 3 * time.Minute}, 10, 0)
-	// reviewDays = 0.5 + 0.5 = 1.0, pace = ceil(10 / 1.0) = 10, Keeps.New = round(0.5 * 10) = 5.
-	if allowDate.Keeps.New != 5 || allowDate.New != 4 {
-		t.Fatalf("expected Keeps.New=5 and New=4 for GoalDate with 50%% share, got Keeps.New=%d New=%d",
+	allowDate := pDate.GetAllowance(day, now, Spent{New: 1, Reviews: 2, Took: 3 * time.Minute}, 20, 0)
+	// reviewDays = 0.5 + 0.5 = 1.0, pace = ceil(20 / 1.0) = 20, Keeps.New = round(0.5 * 20) = 10.
+	if allowDate.Keeps.New != 10 || allowDate.New != 9 {
+		t.Fatalf("expected Keeps.New=10 and New=9 for GoalDate with 50%% share, got Keeps.New=%d New=%d",
 			allowDate.Keeps.New, allowDate.New)
 	}
 	if allowDate.Limits != (Limits{New: ClosedDate, Reviews: ClosedNothing, Minutes: ClosedNothing, Backlog: ClosedNothing}) {
@@ -63,6 +63,11 @@ func TestAllowanceCostAndDayInternals(t *testing.T) {
 	if costs["P.md"] != GetDefaultCost() {
 		t.Fatalf("expected default cost when only 0-duration answer was recorded, got %+v", costs["P.md"])
 	}
+	var times answerTimes
+	times.addAnswer(false, 1)
+	if len(times.begun) != 1 || times.begun[0] != 1 {
+		t.Fatalf("expected 1ns answer recorded, got %v", times.begun)
+	}
 
 	if med, ok := getMedian(make([]time.Duration, 9)); ok || med != 0 {
 		t.Fatalf("expected (0, false) from getMedian with 9 items, got (%v, %v)", med, ok)
@@ -81,14 +86,18 @@ func TestAllowanceCostAndDayInternals(t *testing.T) {
 		t.Fatalf("expected 12s median for 11 items, got %v, %v", med, ok)
 	}
 
-	if got := DivideBudget(10, []int{0, 0}); got == nil || !slices.Equal(got, []int{0, 0}) {
+	if got := DivideBudget(-1, []int{0, 0}); got == nil || !slices.Equal(got, []int{0, 0}) {
 		t.Fatalf("expected non-nil [0,0] when total == 0, got %#v", got)
 	}
-	if got := DivideBudget(10, []int{-1, 0}); got == nil || !slices.Equal(got, []int{0, 0}) {
+	if got := DivideBudget(-1, []int{-1, 0}); got == nil || !slices.Equal(got, []int{0, 0}) {
 		t.Fatalf("expected non-nil [0,0] when total < 0, got %#v", got)
 	}
 	if got := DivideBudget(5, []int{2, 3}); !slices.Equal(got, []int{2, 3}) {
 		t.Fatalf("expected demands copied when budget == total, got %v", got)
+	}
+	const bigDemand = (1 << 53) + 3
+	if got := DivideBudget(bigDemand, []int{bigDemand}); !slices.Equal(got, []int{bigDemand}) {
+		t.Fatalf("expected exact demand when budget == total for large int, got %v", got)
 	}
 
 	// Test day.go: Clock with minutes, GetDate zero time components and hour/minute boundary comparisons,
@@ -127,11 +136,11 @@ func TestAllowanceCostAndDayInternals(t *testing.T) {
 	}
 
 	totals := GetSpentUnder(day, "2026-06-10", []Answer{
-		{ID: "a1", ReviewCard: cMapped, At: now, Rating: Good, Took: -time.Second},
+		{ID: "a1", ReviewCard: cMapped, At: now, Rating: Good, Took: 0},
 		{ID: "a2", ReviewCard: cMapped, At: now.Add(time.Second), Rating: Good, Took: 1},
 	}, map[CardID]string{cMapped: "P.md"}, nil)
 	if totals["P.md"].Took != 1 {
-		t.Fatalf("expected Took == 1ns (ignoring negative took and counting 1ns), got %v", totals["P.md"].Took)
+		t.Fatalf("expected Took == 1ns, got %v", totals["P.md"].Took)
 	}
 }
 
@@ -189,6 +198,9 @@ func TestFSRSLogAndScheduleInternals(t *testing.T) {
 	if ans, skipped := Read([]byte("   ")); ans != nil || skipped != 0 {
 		t.Fatalf("expected (nil, 0) for whitespace without newline, got (%v, %d)", ans, skipped)
 	}
+	if ans, skipped := Read([]byte("\n   ")); ans != nil || skipped != 1 {
+		t.Fatalf("expected (nil, 1) for blank line before trailing whitespace, got (%v, %d)", ans, skipped)
+	}
 	if ans, skipped := Read([]byte("partial-line")); ans != nil || skipped != 1 {
 		t.Fatalf("expected (nil, 1) for non-empty without newline, got (%v, %d)", ans, skipped)
 	}
@@ -205,6 +217,12 @@ func TestFSRSLogAndScheduleInternals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if ans, skipped := Read(validRaw[:len(validRaw)-1]); len(ans) != 0 || skipped != 1 {
+		t.Fatalf("expected (0, 1) when trailing newline is missing on valid JSON, got len=%d skipped=%d", len(ans), skipped)
+	}
+	if ans, skipped := Read(append([]byte("\n"), validRaw...)); len(ans) != 1 || skipped != 0 {
+		t.Fatalf("expected empty line skipped without incrementing skipped count, got len=%d skipped=%d", len(ans), skipped)
+	}
 	gotAns, gotSkip := Read(append([]byte("bad-json\n"), validRaw...))
 	if len(gotAns) != 1 || gotSkip != 1 {
 		t.Fatalf("expected 1 valid answer and 1 skipped after invalid line, got len=%d skipped=%d", len(gotAns), gotSkip)
@@ -215,7 +233,10 @@ func TestFSRSLogAndScheduleInternals(t *testing.T) {
 	if a, ok := answer([]byte("{bad")); ok || a != (Answer{}) {
 		t.Fatalf("expected (zero, false) on bad JSON in answer(), got (%+v, %v)", a, ok)
 	}
-	if a, ok := answer([]byte(`{"v":1,"id":"1","at":"2026-06-10T12:00:00.000Z","card":"","template":"T","r":3}`)); ok || a != (Answer{}) {
+	if a, ok := answer([]byte(`{"v":1,"id":"1","at":"2026-06-10T12:00:00.000Z","undo":"u1",bad}`)); ok || a != (Answer{}) {
+		t.Fatalf("expected (zero, false) on malformed JSON containing undo in answer(), got (%+v, %v)", a, ok)
+	}
+	if a, ok := answer([]byte(`{"v":1,"id":"1","at":"2026-06-10T12:00:00.000Z","card":"","template":"T","rating":3}`)); ok || a != (Answer{}) {
 		t.Fatalf("expected (zero, false) when Card is empty in answer(), got (%+v, %v)", a, ok)
 	}
 
@@ -226,7 +247,7 @@ func TestFSRSLogAndScheduleInternals(t *testing.T) {
 	if recallDecay != -0.5 {
 		t.Fatalf("expected recallDecay == -0.5, got %g", recallDecay)
 	}
-	if Recall(24*time.Hour, 0) != 0 || Recall(24*time.Hour, -1) != 0 {
+	if Recall(0, 0) != 0 || Recall(24*time.Hour, -0.5) != 0 {
 		t.Fatal("expected Recall == 0 for stability <= 0")
 	}
 	if Recall(-24*time.Hour, 1) != 1 {
@@ -244,18 +265,16 @@ func TestFSRSLogAndScheduleInternals(t *testing.T) {
 	cB := CardID{Card: "cB", Template: "T"}
 	pQuietDay := Defaults()
 	pQuietDay.IsEvenLoad = true
-	// Make the natural due day for a review card (e.g. 3 days after now, Saturday 2026-06-13) have 0 load
-	// so AssignDueDay moves it to another day in the window!
+	// Make the natural due day for a review card (3 days after now, Saturday 2026-06-13) have 0 load
+	// so AssignDueDay moves it to another day in the window.
 	pQuietDay.Load = map[time.Weekday]int{time.Saturday: 0}
-	fHighRet := NewFSRSAt(0.97)
-	// First answer puts card in learning, second answer puts it in review, third schedules ~3 days out.
 	t0 := time.Date(2026, 6, 10, 12, 0, 0, 0, time.UTC)
 	hist := History{
 		{ID: "1", ReviewCard: cA, At: t0.Add(-24 * time.Hour), Rating: Good},
 		{ID: "2", ReviewCard: cA, At: t0, Rating: Good},
 	}
 	replayed := hist.Replay(Day{Starts: 0, In: time.UTC}, func(CardID) SchedulingPolicy {
-		return SchedulingPolicy{By: fHighRet, Preset: pQuietDay}
+		return SchedulingPolicy{By: f, Preset: pQuietDay}
 	})
 	if replayed[cA].Due.Weekday() == time.Saturday {
 		t.Fatalf("expected Replay to apply AssignDueDay and avoid zero-load Saturday, got %v", replayed[cA].Due)
@@ -324,14 +343,16 @@ func TestPresetAndSchedulingInternals(t *testing.T) {
 	if got := Defaults().GetStopReason(day, now); got != StoppedNothing {
 		t.Fatalf("expected StoppedNothing from GetStopReason, got %q", got)
 	}
+	pNoMin := Defaults()
+	pNoMin.MinutesADay = 0
+	if got := pNoMin.GetStopReason(day, now); got != StoppedNoMinutes {
+		t.Fatalf("expected StoppedNoMinutes from GetStopReason, got %q", got)
+	}
 
-	// Test getPace, getCapacityToBegin, getReviewDays, getDaysOfReview, IsPast across all boundaries.
+	// Test getPace, getCapacityToBegin, IsPast across all boundaries.
 	pDate := Defaults()
 	pDate.Goal = GoalDate
 	pDate.By = time.Date(2026, 6, 9, 0, 0, 0, 0, time.UTC) // 1 day before now (span == 0)
-	if got := pDate.getReviewDays(day, now); got != 0 {
-		t.Fatalf("expected 0 review days when By is 1 day before now (span==0), got %g", got)
-	}
 	if got := pDate.getCapacityToBegin(day, now, 0); got != 0 {
 		t.Fatalf("expected 0 capacity when By is 1 day before now (span==0), got %g", got)
 	}
@@ -340,9 +361,6 @@ func TestPresetAndSchedulingInternals(t *testing.T) {
 	}
 
 	pDate.By = time.Date(2026, 6, 11, 0, 0, 0, 0, time.UTC) // 1 day after now (span == 2)
-	if got := pDate.getReviewDays(day, now); got != 2 {
-		t.Fatalf("expected 2 review days when By is 1 day after now, got %g", got)
-	}
 	if got := pDate.getCapacityToBegin(day, now, 0); got != 2 {
 		t.Fatalf("expected 2 capacity when By is 1 day after now and daysToLearn=0, got %g", got)
 	}
@@ -361,49 +379,49 @@ func TestPresetAndSchedulingInternals(t *testing.T) {
 	if got := pDate.getPace(day, now, 10, 0); got != 5 {
 		t.Fatalf("expected ceil(10/2)=5 when capacity in == 2, got %d", got)
 	}
+	pHalfCap := pDate
+	pHalfCap.Load = map[time.Weekday]int{time.Wednesday: 50, time.Thursday: 0}
+	if got := pHalfCap.getPace(day, now, 10, 0); got != 20 {
+		t.Fatalf("expected ceil(10/0.5)=20 when capacity in == 0.5, got %d", got)
+	}
 
-	if got := (Preset{Goal: GoalMinutes, By: now}).getCapacityToBegin(day, now, 1); got != 0 {
+	if got := (Preset{Goal: GoalMinutes, By: now}).getCapacityToBegin(day, now, 0); got != 0 {
 		t.Fatalf("expected 0 capacity when Goal != GoalDate, got %g", got)
 	}
-	if got := (Preset{Goal: GoalDate}).getCapacityToBegin(day, now, 1); got != 0 {
+	if got := (Preset{Goal: GoalDate}).getCapacityToBegin(day, time.Time{}, 0); got != 0 {
 		t.Fatalf("expected 0 capacity when By is zero, got %g", got)
 	}
-	if got := (Preset{Goal: GoalMinutes, By: now}).getReviewDays(day, now); got != 0 {
-		t.Fatalf("expected 0 review days when Goal != GoalDate, got %g", got)
-	}
-	if got := (Preset{Goal: GoalDate}).getReviewDays(day, now); got != 0 {
-		t.Fatalf("expected 0 review days when By is zero, got %g", got)
-	}
 
-	// Trigger time.Parse error in getCapacityToBegin and getReviewDays with year 10000.
+	// Trigger time.Parse error in getCapacityToBegin with year 10000.
 	year10000 := time.Date(10000, 1, 1, 0, 0, 0, 0, time.UTC)
-	if got := pDate.getCapacityToBegin(day, year10000, 1); got != 0 {
+	if got := pDate.getCapacityToBegin(day, year10000, 0); got != 0 {
 		t.Fatalf("expected 0 capacity when now has 5-digit year, got %g", got)
 	}
-	if got := pDate.getReviewDays(day, year10000); got != 0 {
-		t.Fatalf("expected 0 review days when now has 5-digit year, got %g", got)
-	}
 
-	// Test getDaysOfReview across 0, <0, and >7 days with varied weekday shares.
-	pVaried := Defaults()
-	pVaried.Load = map[time.Weekday]int{
-		time.Wednesday: 50,
+	// Test getCapacityToBegin across >20 days and single-weekday shares.
+	pLong := Defaults()
+	pLong.Goal = GoalDate
+	pLong.By = time.Date(2026, 7, 3, 0, 0, 0, 0, time.UTC) // 23 days after 2026-06-10 -> 24 days inclusive
+	if got := pLong.getCapacityToBegin(day, now, 0); got != 24 {
+		t.Fatalf("expected 24 capacity for 24-day span, got %g", got)
+	}
+	pThuOnly := Defaults()
+	pThuOnly.Goal = GoalDate
+	pThuOnly.By = time.Date(2026, 6, 11, 0, 0, 0, 0, time.UTC) // Wed + Thu
+	pThuOnly.Load = map[time.Weekday]int{
+		time.Wednesday: 0,
 		time.Thursday:  100,
 		time.Friday:    0,
-		time.Saturday:  50,
-		time.Sunday:    100,
+		time.Saturday:  0,
+		time.Sunday:    0,
 		time.Monday:    0,
-		time.Tuesday:   100,
-	} // WeeklyShare = 4.0
-	if got := pVaried.getDaysOfReview(now, 0); got != 0 {
-		t.Fatalf("expected 0 for days=0, got %g", got)
+		time.Tuesday:   0,
 	}
-	if got := pVaried.getDaysOfReview(now, -1); got != 0 {
-		t.Fatalf("expected 0 for days=-1, got %g", got)
+	if got := pThuOnly.getCapacityToBegin(day, now, 0); got != 1 {
+		t.Fatalf("expected 1 capacity for Wed(0)+Thu(100) with daysToLearn=0, got %g", got)
 	}
-	// 10 days starting Wednesday: 1 whole week (4.0) + Wed (0.5) + Thu (1.0) + Fri (0.0) = 5.5.
-	if got := pVaried.getDaysOfReview(now, 10); got != 5.5 {
-		t.Fatalf("expected 5.5 days of review for 10 days, got %g", got)
+	if got := pThuOnly.getCapacityToBegin(day, now, 1); got != 0 {
+		t.Fatalf("expected 0 capacity for Wed(0)+Thu(100) with daysToLearn=1 (only Wed can begin), got %g", got)
 	}
 
 	if (Preset{Goal: GoalMinutes, By: now.Add(-48 * time.Hour)}).IsPast(day, now) {
@@ -476,26 +494,7 @@ func TestPresetAndSchedulingInternals(t *testing.T) {
 	if got := Defaults().GetDueDay(NewDueByDay(day), time.Date(2026, 6, 10, 0, 0, 0, 0, time.UTC), dueAtFrom); !got.Equal(dueAtFrom) {
 		t.Fatalf("expected dueDay == from to win tie, got %v want %v", got, dueAtFrom)
 	}
-	// When pos is 2026-06-10 20:00 UTC and away is 3.5 days (84h), due is 2026-06-14 08:00 UTC (day +4 == last == to, first=2, last=5 -> wait: days=3.5, slack=1+0.15*1=1.15, first=round(2.35)=2, last=round(4.65)=5).
-	// For days=2.5 (60h) and pos=2026-06-10 20:00 UTC, due is 2026-06-13 08:00 UTC (day +3), first=2, last=4.
-	// For days=3.0 (72h) and pos=2026-06-10 20:00 UTC, due is 2026-06-13 20:00 UTC (day +3), slack=1.075, first=2, last=4.
-	// What if d has Starts: 12*time.Hour, pos is 2026-06-10 11:00 UTC (which is in review date 2026-06-09!),
-	// and away is 2.5 days (60h) -> due is 2026-06-12 23:00 UTC (which is in review date 2026-06-12, i.e., posDate + 3 days, whereas last = 4 -> posDate + 4 is 2026-06-13).
-	// If away is 6.0 days (144h), slack = 1 + 0.15*3.5 = 1.525, first = 4, last = 8.
-	// What if away is 2.6 days (62.4h): slack = 1.015, days-slack = 1.585 -> first=2, days+slack = 3.615 -> last=4.
-	// If pos is 2026-06-10 11:00 UTC with Starts=12h (date 2026-06-09) and away is 3.4 days (81.6h):
-	// slack = 1 + 0.15*0.9 = 1.135, first = round(2.265) = 2, last = round(4.535) = 5.
-	// If away is 2.9 days (69.6h): slack = 1 + 0.15*0.4 = 1.06, first = round(1.84)=2, last = round(3.96)=4.
-	// With pos = 2026-06-10 11:00 UTC (Starts=12h -> date 2026-06-09), due = pos + 69.6h = 2026-06-13 08:36 UTC (before 12:00 -> date 2026-06-12 = posDate + 3).
-	// With away = 3.0 days (72h) and pos = 2026-06-10 13:00 UTC (Starts=0h -> date 2026-06-10), due = 2026-06-13 13:00 UTC (date +3).
-	// How can dueDay == to?
-	// Take Starts = 12*time.Hour: pos = 2026-06-10 12:30 UTC (date 2026-06-10), away = 2.9 days (69h36m):
-	// Wait: counted.AddDate(0, 0, last) has the same time-of-day as pos (12:30 UTC), so s.GetDayNumber(counted.AddDate(0, 0, last)) is ALWAYS s.GetDayNumber(pos) + last!
-	// And when is s.GetDayNumber(due) == s.GetDayNumber(pos) + last?
-	// When pos is just before the day boundary (e.g. Starts=0, pos = 2026-06-10 23:00 UTC -> day 2026-06-10)
-	// and away is 3.1 days (74.4h):
-	// slack = 1 + 0.15*0.6 = 1.09, first = round(2.01) = 2, last = round(4.19) = 4.
-	// And due = 2026-06-10 23:00 + 74h24m = 2026-06-14 01:24 UTC -> date 2026-06-14 = 2026-06-10 + 4 = to!
+	// At 23:00 UTC + 3.1d (74h24m), due lands on day +4 == to while last == 4.
 	posLate := time.Date(2026, 6, 10, 23, 0, 0, 0, time.UTC)
 	dueAtTo := posLate.Add(74*time.Hour + 24*time.Minute)
 	if got := Defaults().GetDueDay(NewDueByDay(day), posLate, dueAtTo); !got.Equal(dueAtTo) {
@@ -506,11 +505,39 @@ func TestPresetAndSchedulingInternals(t *testing.T) {
 	// and another day has 0 cards (weight 1/(1+0)=1.0) vs 2 cards (weight 1/(1+2)=0.333).
 	tableWeighted := NewDueByDay(day)
 	tableWeighted.Add(due4d) // dueDay now has 1 card (weight 0.5)
+	if got := pNoEven.GetDueDay(tableWeighted, now, due4d); !got.Equal(due4d) {
+		t.Fatalf("expected due unchanged when !ShouldBalanceLoad even on weighted table, got %v", got)
+	}
 	gotShifted := Defaults().GetDueDay(tableWeighted, now, due4d)
 	if gotShifted.Equal(due4d) {
 		t.Fatal("expected card shifted away from day that already has 1 card when neighboring days have 0")
 	}
+	// Test window bounds [from, to]: when days inside [from, to] (days +3, +5) have 2 cards and dueDay (+4) has 1 card,
+	// while days outside [from, to] (+2, +6) have 0 cards, dueDay wins and is not moved outside [from, to].
+	tableBounded := NewDueByDay(day)
+	tableBounded.Add(now.Add(3 * 24 * time.Hour))
+	tableBounded.Add(now.Add(3 * 24 * time.Hour))
+	tableBounded.Add(due4d)
+	tableBounded.Add(now.Add(5 * 24 * time.Hour))
+	tableBounded.Add(now.Add(5 * 24 * time.Hour))
+	if got := Defaults().GetDueDay(tableBounded, now, due4d); !got.Equal(due4d) {
+		t.Fatalf("expected dueDay to win inside [from, to] when days outside have 0 cards, got %v want %v", got, due4d)
+	}
+	// Test exact division in getWeight: dueDay (Sunday = now+4d) has Load=50 and 0 cards -> weight 0.5/(1+0) = 0.5,
+	// while Saturday (now+3d) and Monday (now+5d) have Load=100 and 1 card -> weight 1.0/(1+1) = 0.5.
+	// With division, all weights equal 0.5 and dueDay wins the tie; with multiplication, 1.0*2 = 2.0 > 0.5*1 and dueDay loses.
+	pTieWeight := Defaults()
+	pTieWeight.Load = map[time.Weekday]int{time.Sunday: 50}
+	tableTie := NewDueByDay(day)
+	tableTie.Add(now.Add(3 * 24 * time.Hour))
+	tableTie.Add(now.Add(5 * 24 * time.Hour))
+	if got := pTieWeight.GetDueDay(tableTie, now, due4d); !got.Equal(due4d) {
+		t.Fatalf("expected dueDay with 50%% load and 0 cards (0.5/1) to tie 100%% load and 1 card (1.0/2), got %v want %v", got, due4d)
+	}
 
+	if !slices.Equal(getSlacks(), []slack{{2.5, 7, 0.15}, {7, 20, 0.1}, {20, math.Inf(1), 0.05}}) {
+		t.Fatalf("unexpected getSlacks: %+v", getSlacks())
+	}
 	// Test getSlacks and window boundaries: days < 2.5, days == 2.5, days == 7, days == 20, days == 90, days > 90.
 	if f0, l0, open0 := window(time.Duration(2.49 * 24 * float64(time.Hour))); open0 || f0 != 0 || l0 != 0 {
 		t.Fatalf("expected (0, 0, false) below EvenFrom, got (%d, %d, %v)", f0, l0, open0)

@@ -227,10 +227,6 @@ func readCardModelLink(body []byte, from, to int) (target string, leadFrom int) 
 }
 
 func paragraphEnds(body []byte, pos, to int) bool {
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,BRANCH_IF,RETURN_FALSE reason="When pos >= to, body[pos:to] is empty and trims to empty string, returning true below."
-	if pos >= to {
-		return true
-	}
 	end := to
 	// gomutants:disable-next-line INTEGER_DECREMENT reason="bytes.IndexByte returns -1 when not found and >= 0 when found."
 	if i := bytes.IndexByte(body[pos:to], '\n'); i >= 0 {

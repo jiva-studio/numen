@@ -65,6 +65,9 @@ func TestTheDaysAreReturnedOldestFirst(t *testing.T) {
 	})
 
 	want := []string{"2026-07-01", "2026-08-09", "2026-08-30", "2026-08-30", "2027-01-02"}
+	if len(response) != len(want) {
+		t.Fatalf("got %d days, want %d", len(response), len(want))
+	}
 	for item, one := range response {
 		if one.Day != want[item] {
 			t.Errorf("the day at %d is %s, want %s", item, one.Day, want[item])
