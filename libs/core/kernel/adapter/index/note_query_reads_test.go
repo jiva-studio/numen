@@ -65,3 +65,17 @@ func getHeadingPaths(entries []searchquery.HeadingEntry) []string {
 	}
 	return paths
 }
+
+func TestFindHeadingsReturnsEveryHeadingForATextTheTokenizerSplitsIntoNothing(t *testing.T) {
+	db := openDB(t)
+	adlam := "\U0001E900\U0001E901"
+	saveNoteWithHeadings(t, db, getFirstVault(), "a.md", domain.Heading{Level: 2, Text: adlam, Line: 0})
+	saveNoteWithHeadings(t, db, getFirstVault(), "b.md", domain.Heading{Level: 2, Text: "Other", Line: 0})
+	found, err := db.NoteQueryReads().FindHeadings(t.Context(), getFirstVault().ID, adlam)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := getHeadingPaths(found); !slices.Contains(got, "a.md") {
+		t.Errorf("the text found %v, want a.md among them", got)
+	}
+}
