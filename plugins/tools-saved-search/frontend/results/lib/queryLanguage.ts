@@ -7,13 +7,17 @@ import { HighlightStyle, StreamLanguage, type StringStream } from '@codemirror/l
 import type { Diagnostic } from '@codemirror/lint'
 import type { Text } from '@codemirror/state'
 import { tags as t } from '@lezer/highlight'
+import { WORDS as words } from '../../words'
 import { getProblemText } from './problemText'
 
-/** A function, a variable or a stage of the catalog; kind is "function", "variable" or "stage". */
+/**
+ * A function, a variable or a stage of the catalog, or a method of a text; kind is "function",
+ * "variable", "stage" or "method".
+ */
 export interface QueryFunction {
   readonly name: string
   readonly kind: string
-  readonly signatures: readonly string[]
+  readonly summary: string
   readonly description: string
   readonly example: string
 }
@@ -105,30 +109,51 @@ export const queryHighlighting = HighlightStyle.define([
   { tag: t.invalid, color: 'var(--numen-alarm)' },
 ])
 
-const getOption = (fn: QueryFunction): Completion => ({
-  label: fn.name,
-  type: fn.kind === 'stage' ? 'method' : fn.kind,
-  detail: fn.signatures.join('  '),
-  info: [fn.description, fn.example].filter((part) => part !== '').join('\n\n'),
+/** An entry of the completion list, with the function, variable, stage or method it names. */
+export interface QueryCompletion extends Completion {
+  readonly entry: QueryFunction
+}
+
+const TEXT_METHODS: readonly QueryFunction[] = words.textMethods.map((method) => ({
+  ...method,
+  kind: 'method',
+}))
+
+const getDotEntries = (
+  functions: readonly QueryFunction[],
+  before: string,
+): readonly QueryFunction[] => {
+  const name = /([A-Za-z_]\w*)\s*$/.exec(before)?.[1]
+  const isAfterVariable = functions.some((fn) => fn.kind === 'variable' && fn.name === name)
+  if (isAfterVariable || /["']\s*$/.test(before)) return TEXT_METHODS
+  return functions.filter((fn) => fn.kind === 'stage')
+}
+
+const getOption = (entry: QueryFunction): QueryCompletion => ({
+  label: entry.name,
+  detail: entry.summary,
+  entry,
 })
 
 /**
- * The completion of the name before the cursor: the stages after a dot, the functions and variables
- * elsewhere, with the signature, the description and the example of each.
+ * The completion of the name before the cursor: after a dot, the stages when a search comes before it
+ * and the methods of a text when a variable or a string does; elsewhere the functions and variables. Each
+ * entry says what it does in a few words and carries its description and example for its row.
  */
 export function createQueryCompletion(
   getFunctions: () => readonly QueryFunction[],
 ): (context: CompletionContext) => CompletionResult | null {
   return (context) => {
     const word = context.matchBefore(/[A-Za-z_]\w*/)
-    const isAfterDot =
-      context.state.sliceDoc((word?.from ?? context.pos) - 1, word?.from ?? context.pos) === '.'
-    if (!word && !context.explicit && !isAfterDot) return null
     const from = word?.from ?? context.pos
-    const options = getFunctions()
-      .filter((fn) => (fn.kind === 'stage') === isAfterDot)
-      .map(getOption)
-    return { from, options, validFor: /^\w*$/ }
+    const before = context.state.sliceDoc(0, from)
+    const isAfterDot = /\.\s*$/.test(before) && !/\d\.\s*$/.test(before)
+    if (!word && !context.explicit && !isAfterDot) return null
+    const functions = getFunctions()
+    const entries = isAfterDot
+      ? getDotEntries(functions, before.replace(/\.\s*$/, ''))
+      : functions.filter((fn) => fn.kind !== 'stage')
+    return { from, options: entries.map(getOption), validFor: /^\w*$/ }
   }
 }
 

@@ -11,9 +11,9 @@ import (
 
 func getGardenFunctions() host.SearchFunctions {
 	return host.SearchFunctions{Revision: "r1", Functions: []host.SearchFunction{
-		{Name: "words", Kind: "function", Level: "chunk", Signatures: []string{"words(text)"}, Description: "Passages that hold the words.", Example: `words("spade")`},
-		{Name: "tags", Kind: "function", Level: "document", Signatures: []string{"tags(name)"}, Description: "Notes with the tag.", Example: `tags("garden")`},
-		{Name: "top", Kind: "stage", Signatures: []string{".top(count)"}, Description: "Keeps the first results.", Example: `words("seed").top(5)`},
+		{Name: "words", Kind: "function", Level: "chunk", Summary: "passages with these words", Signatures: []string{"words(text)"}, Description: "Finds passages that contain the words you give.", Example: `words("spade")`},
+		{Name: "tags", Kind: "function", Level: "document", Summary: "notes with this tag", Signatures: []string{"tags(name)"}, Description: "Finds notes that carry the tag you give.", Example: `tags("garden")`},
+		{Name: "top", Kind: "stage", Summary: "keep the first N", Signatures: []string{".top(count)"}, Description: "Keeps only the first results; give how many.", Example: `words("seed").top(5)`},
 	}}
 }
 
@@ -33,9 +33,8 @@ func TestListSearchFunctionsReturnsTheCatalogOfTheCore(t *testing.T) {
 	if !slices.Equal(names, []string{"words", "tags", "top"}) {
 		t.Fatalf("names = %v, want words, tags, top", names)
 	}
-	want := api.SearchFunction{Name: "tags", Kind: "function", Signatures: []string{"tags(name)"}, Description: "Notes with the tag.", Example: `tags("garden")`}
-	if got := res.Functions[1]; got.Name != want.Name || got.Kind != want.Kind || !slices.Equal(got.Signatures, want.Signatures) ||
-		got.Description != want.Description || got.Example != want.Example {
+	want := api.SearchFunction{Name: "tags", Kind: "function", Summary: "notes with this tag", Description: "Finds notes that carry the tag you give.", Example: `tags("garden")`}
+	if got := res.Functions[1]; got != want {
 		t.Errorf("tags = %+v, want %+v", got, want)
 	}
 }

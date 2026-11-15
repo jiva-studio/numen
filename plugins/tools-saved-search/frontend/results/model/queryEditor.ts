@@ -10,7 +10,7 @@ import { defaultKeymap, history, historyKeymap, indentLess, indentMore } from '@
 import { getIndentUnit, indentString, syntaxHighlighting } from '@codemirror/language'
 import type { StateCommand } from '@codemirror/state'
 import { setDiagnostics } from '@codemirror/lint'
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorView, keymap, tooltips } from '@codemirror/view'
 import { WORDS as words } from '../../words'
 import {
   createQueryCompletion,
@@ -21,6 +21,7 @@ import {
   type QueryProblem,
 } from '../lib/queryLanguage'
 import { queryTheme } from '../lib/queryTheme'
+import { createQueryOptionText } from './queryOption'
 
 const insertIndent: StateCommand = ({ state, dispatch }) => {
   if (state.selection.ranges.some((range) => !range.empty)) return indentMore({ state, dispatch })
@@ -41,9 +42,10 @@ export interface QueryEditorOptions {
   readonly onChange: (query: string) => void
 }
 
-/** The editor of the query: focus puts the cursor in it. */
+/** The editor of the query: focus puts the cursor in it, moveTo puts it at a line and column counted from 1. */
 export interface QueryEditor {
   focus(): void
+  moveTo(line: number, column: number): void
 }
 
 /** The editor of the query, drawn into the host when the component mounts. */
@@ -75,7 +77,12 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
         queryLanguage,
         syntaxHighlighting(queryHighlighting),
         queryTheme,
-        autocompletion({ override: [createQueryCompletion(options.getFunctions)] }),
+        autocompletion({
+          override: [createQueryCompletion(options.getFunctions)],
+          addToOptions: [{ render: createQueryOptionText, position: 90 }],
+          icons: false,
+        }),
+        tooltips({ parent: parent.ownerDocument.body }),
         keymap.of([
           ...completionKeymap,
           ...historyKeymap,
@@ -104,7 +111,17 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
 
   watch(options.getProblems, showProblems)
 
+  const moveTo = (line: number, column: number): void => {
+    if (!view) return
+    const doc = view.state.doc
+    const target = doc.line(Math.min(Math.max(line, 1), doc.lines))
+    const anchor = Math.min(target.from + Math.max(column - 1, 0), target.to)
+    view.dispatch({ selection: { anchor }, scrollIntoView: true })
+    view.focus()
+  }
+
   return {
     focus: () => view?.focus(),
+    moveTo,
   }
 }

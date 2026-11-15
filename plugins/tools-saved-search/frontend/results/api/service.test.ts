@@ -237,8 +237,8 @@ describe('the saved search service', () => {
     expect(response.functions[1]).toStrictEqual({
       name: 'top',
       kind: 'stage',
-      signatures: ['.top(count)'],
-      description: 'Keeps the first results.',
+      summary: 'keep the first N',
+      description: 'Keeps only the first results; give how many.',
       example: 'words("gale").top(10)',
     })
   })

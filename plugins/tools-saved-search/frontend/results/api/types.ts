@@ -86,7 +86,7 @@ export type ListSearchFunctionsRequest = Readonly<Record<string, never>>
 export interface SearchFunction {
   readonly name: string
   readonly kind: string
-  readonly signatures: readonly string[]
+  readonly summary: string
   readonly description: string
   readonly example: string
 }
