@@ -199,7 +199,7 @@ export const FindDocumentsResponseSchema: GenMessage<FindDocumentsResponse> = /*
  * SearchFunctionService answers the query functions a plugin declares in contributes.searchFunctions.
  * The plugin answers for the documents of one vault, named by their paths in the vault. A call ends
  * with the search it serves: its deadline is the search's, and a canceled search cancels it.
- * InvalidArgument is an argument the function does not take; any other error fails the query.
+ * InvalidArgument reports arguments the function rejects; any other error fails the query.
  *
  * @generated from service numen.v1.SearchFunctionService
  */
