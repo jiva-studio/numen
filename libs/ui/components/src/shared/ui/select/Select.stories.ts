@@ -18,6 +18,7 @@ interface Knobs {
   words: string
   chosen: string
   isDisabled: boolean
+  isSearchable: boolean
   width: string
   onChange?: (value: string) => void
 }
@@ -36,12 +37,14 @@ const meta: Meta<Knobs> = {
     words: { control: 'text' },
     chosen: { control: 'text' },
     isDisabled: { control: 'boolean' },
+    isSearchable: { control: 'boolean' },
     width: { control: 'text' },
   },
   args: {
     words: 'Small\nMedium\nLarge',
     chosen: 'small',
     isDisabled: false,
+    isSearchable: false,
     width: '14rem',
   },
   render: (args) => ({
@@ -62,7 +65,7 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div :style="{ padding: '2rem', inlineSize: args.width }">
-        <Select :model-value="current" aria-label="How large it is drawn" :choices="choices" :is-disabled="args.isDisabled" @update:model-value="onChange" />
+        <Select :model-value="current" aria-label="How large it is drawn" :choices="choices" :is-disabled="args.isDisabled" :is-searchable="args.isSearchable" @update:model-value="onChange" />
       </div>
     `,
   }),
@@ -84,6 +87,25 @@ const groups = (): readonly string[] =>
   Array.from(document.body.querySelectorAll<HTMLElement>('.menu__group-name')).map(
     (one) => one.textContent?.trim() ?? '',
   )
+
+const options = (): readonly HTMLElement[] =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]'))
+
+const getNextFrame = (): Promise<number> => new Promise((done) => requestAnimationFrame(done))
+
+const pressTriggerThrice = async (
+  canvas: HTMLElement,
+  getRows: () => readonly HTMLElement[],
+): Promise<void> => {
+  await userEvent.click(control(canvas))
+  await expect(getRows()).not.toHaveLength(0)
+  await userEvent.click(control(canvas))
+  await getNextFrame()
+  await expect(getRows()).toHaveLength(0)
+  await expect(control(canvas).getAttribute('aria-expanded')).toBe('false')
+  await userEvent.click(control(canvas))
+  await expect(getRows()).not.toHaveLength(0)
+}
 
 const openSelect = async (canvas: HTMLElement) => {
   await userEvent.click(control(canvas))
@@ -222,5 +244,20 @@ export const EscapePutsItAway: Story = {
     await userEvent.keyboard('{Escape}')
     await expect(rows()).toHaveLength(0)
     await expect(control(canvasElement).textContent).toContain('Small')
+  },
+}
+
+/** A press on the trigger of the open choices closes them, and the next press opens them again. */
+export const ClosesFromTheTrigger: Story = {
+  play: async ({ canvasElement }) => {
+    await pressTriggerThrice(canvasElement, rows)
+  },
+}
+
+/** A press on the trigger of an open searchable select closes its list, and the next opens it. */
+export const ClosesFromTheTriggerWhenSearchable: Story = {
+  args: { isSearchable: true },
+  play: async ({ canvasElement }) => {
+    await pressTriggerThrice(canvasElement, options)
   },
 }

@@ -42,9 +42,29 @@ func TestOpenRouterListsTheModelsThatFitTheOperationsOfTheSetting(t *testing.T) 
 	if !slices.Equal(embed, wantEmbed) {
 		t.Errorf("embed models = %+v, want %+v", embed, wantEmbed)
 	}
-	paths := []string{fake.Requests()[0].Path, fake.Requests()[1].Path}
-	if !slices.Equal(paths, []string{"/models", "/embeddings/models"}) {
+	requests := fake.Requests()
+	paths := []string{requests[0].Path + "?" + requests[0].Query, requests[1].Path + "?" + requests[1].Query}
+	if !slices.Equal(paths, []string{"/models?", "/embeddings/models?"}) {
 		t.Errorf("paths = %v", paths)
+	}
+}
+
+func TestOpenRouterListsTheRerankModelsForASettingUsedForRerankAlone(t *testing.T) {
+	fake, address := startFakeServer(t, fakeopenai.Config{
+		APIKey: testKey, IsLabeled: true,
+		Models:          []fakeopenai.Model{{ID: "openai/gpt-4o-mini", Name: "GPT-4o mini"}},
+		EmbeddingModels: []fakeopenai.Model{{ID: "openai/text-embedding-3-small", Name: "Text Embedding 3 Small"}},
+		RerankModels:    []fakeopenai.Model{{ID: "qwen/qwen3-reranker-8b", Name: "Qwen3 Reranker 8B"}, {ID: "cohere/rerank-5-pro", Name: "Cohere Rerank 5 Pro"}},
+	})
+
+	models, err := newTestService(t).ListModels(newContext(t), newCall("openrouter", address, testKey, ""), llm.OperationRerank)
+
+	want := []connection.Option{{Value: "cohere/rerank-5-pro", Title: "Cohere Rerank 5 Pro"}, {Value: "qwen/qwen3-reranker-8b", Title: "Qwen3 Reranker 8B"}}
+	if err != nil || !slices.Equal(models, want) {
+		t.Errorf("rerank models = %+v, %v, want %+v", models, err, want)
+	}
+	if requests := fake.Requests(); len(requests) != 1 || requests[0].Path != "/models" || requests[0].Query != "output_modalities=rerank" {
+		t.Errorf("requests = %+v, want one to /models?output_modalities=rerank", requests)
 	}
 }
 

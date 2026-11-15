@@ -15,7 +15,7 @@ export interface AppearanceChoiceWords {
 }
 
 /** One choice, as a palette item. */
-export interface AppearanceChoice {
+interface AppearanceChoice {
   readonly id: string
   readonly title: string
   readonly detail?: string

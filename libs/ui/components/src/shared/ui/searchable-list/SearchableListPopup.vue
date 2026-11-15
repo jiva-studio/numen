@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * A searchable list standing over the page at a point, as a menu does: kept
- * inside the window, put away by a press outside it, a scroll, a resize and
- * Escape, and giving the keyboard back to what asked for it.
+ * inside the window, put away by a press outside it and its from element, a
+ * scroll, a resize and Escape, and giving the keyboard back to what asked for it.
  */
 import { computed, shallowRef, useTemplateRef } from 'vue'
 import { measureElementRect } from '@/shared/api/dom'
@@ -49,7 +49,7 @@ const frame = shallowRef<HTMLElement | null>(null)
 
 /** What the list itself takes: everything but where it is placed. */
 const listProps = computed(() => {
-  const { at: _at, asking: _asking, viewport: _viewport, from: _from, ...own } = props
+  const { at: _at, asking: _asking, viewport: _viewport, ...own } = props
   return own
 })
 
@@ -61,7 +61,12 @@ const { setSize, menuStyle } = useMenuPlacement({
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
-const dismissal = useMenuDismissal(frame, () => emit('close'))
+const dismissal = useMenuDismissal(
+  frame,
+  () => emit('close'),
+  undefined,
+  () => props.from,
+)
 
 useListMeasure({
   mount: () => {
