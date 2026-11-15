@@ -6,10 +6,10 @@ import { definePlugin, type HostServices, type PluginContext } from '@numen/plug
 import { createSavedSearchKind, createSavedSearchService, SavedSearchTab } from './results'
 import './styles.css'
 
-export const activate = (plugin: PluginContext, host: HostServices): void => {
-  const workspace = host.ui.workspace
+export const activate = (context: PluginContext, host: HostServices): void => {
+  const { workspace } = host.ui
   if (!workspace) return
-  plugin.register.tabKind(
+  context.register.tabKind(
     createSavedSearchKind({
       service: createSavedSearchService(),
       openAt: (path, ranges) => workspace.files.openAt(path, ranges),
