@@ -23,7 +23,7 @@ import {
   type Workspace as State,
 } from '@/features/workspace'
 import { Palette } from '@/features/palette'
-import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palette'
+import type { PaletteGroup, PaletteItem } from '@/features/palette'
 
 const NOTE = 'note'
 const BOOK = 'book'
@@ -250,7 +250,7 @@ const passage = (
   id: string,
   source: string,
   text: string,
-  actions: readonly PaletteAction[],
+  actions: NonNullable<PaletteItem['actions']>,
 ): PaletteItem => ({
   id,
   title: source,

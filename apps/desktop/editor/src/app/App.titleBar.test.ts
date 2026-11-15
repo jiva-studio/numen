@@ -29,7 +29,6 @@ const frame = vi.hoisted(() => ({
 vi.mock('@numen/workbench', async (importOriginal) => {
   const { computed } = await import('vue')
   const shell = await importOriginal<typeof ShellModule>()
-  const { MAC_BUTTONS_INSET } = shell
   return {
     ...shell,
     useWindowFrame: () => ({
@@ -37,7 +36,7 @@ vi.mock('@numen/workbench', async (importOriginal) => {
       isMaximized: computed(() => frame.isMaximized),
       isFullscreen: computed(() => frame.isFullscreen),
       windowEdge: computed(() => ({
-        leftInset: frame.platform === 'darwin' && !frame.isFullscreen ? MAC_BUTTONS_INSET : 0,
+        leftInset: frame.platform === 'darwin' && !frame.isFullscreen ? 80 : 0,
         rightInset: 0,
       })),
       closeWindow: frame.closeWindow,
