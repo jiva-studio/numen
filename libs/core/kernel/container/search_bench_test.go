@@ -1,4 +1,4 @@
-package search_test
+package container_test
 
 import (
 	"context"
