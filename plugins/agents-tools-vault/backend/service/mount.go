@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -32,7 +33,7 @@ func Mount(s *server.Server) error {
 func mount(s *server.Server, client *host.Client, texts *host.TextClient, search *host.SearchClient) error {
 	functions, err := listFunctions(search)
 	if err != nil {
-		return err
+		slog.Warn("the search language functions are read at the next listing", "error", err)
 	}
 	registry, err := New(createVaultGetter(client)).WithLibrary(createLibraryGetter(texts, search), functions).
 		WithFunctionLister(search.ListSearchFunctions).WithVaultList(client).Registry()

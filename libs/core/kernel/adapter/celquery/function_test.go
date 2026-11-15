@@ -3,6 +3,7 @@ package celquery_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
@@ -26,7 +27,7 @@ func parseOver(text string, catalog searchquery.Catalog) (searchquery.Query, err
 	if err != nil {
 		return searchquery.Query{}, err
 	}
-	return searchquery.Normalize(raw, limits)
+	return searchquery.Normalize(raw, limits, time.UTC)
 }
 
 func TestAPluginFunctionParsesToOneCallWithItsNamedArguments(t *testing.T) {
@@ -58,7 +59,7 @@ func TestAFunctionOfAPluginNotInTheCatalogIsUnknown(t *testing.T) {
 	_, err := parseOver(`shelved("east")`, searchquery.GetBuiltinCatalog())
 
 	parseError, ok := errors.AsType[*searchquery.ParseError](err)
-	if !ok || !hasProblem(parseError.Problems, "unknown function shelved") {
+	if !ok || !hasProblem(parseError.Problems, "Unknown function shelved") {
 		t.Errorf("err = %v, want an unknown function", err)
 	}
 }

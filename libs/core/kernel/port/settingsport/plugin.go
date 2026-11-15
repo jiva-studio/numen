@@ -13,7 +13,7 @@ type PluginSettings interface {
 // PluginConfig hands the plugins the settings the user keeps for them.
 type PluginConfig interface {
 	SetSettings(all map[string]map[string]any)
-	SetPerformanceProfile(ctx context.Context, profile string)
+	SetPerformance(ctx context.Context, performance plugin.Performance)
 	SetPersistHandler(handler plugin.PersistHandler)
 }
 
@@ -54,5 +54,5 @@ type PluginConfigPush interface {
 	NotifyPluginConfig(ctx context.Context, pluginID string) error
 }
 
-// ProfileResolver returns the performance profile the machine runs a profile setting as.
-type ProfileResolver func(profile string) string
+// ProfileResolver returns the limits the machine runs a profile setting with.
+type ProfileResolver func(profile string) plugin.Performance

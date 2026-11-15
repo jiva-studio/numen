@@ -11,7 +11,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { CucumberExpression, ParameterType, ParameterTypeRegistry } from '@cucumber/cucumber-expressions'
+import {
+  CucumberExpression,
+  ParameterType,
+  ParameterTypeRegistry,
+} from '@cucumber/cucumber-expressions'
 import { AstBuilder, GherkinClassicTokenMatcher, Parser } from '@cucumber/gherkin'
 import { IdGenerator } from '@cucumber/messages'
 
@@ -43,20 +47,31 @@ const parser = new Parser(new AstBuilder(IdGenerator.uuid()), new GherkinClassic
 const features = walk(featuresDir, '.feature').map((file) => {
   const doc = parser.parse(fs.readFileSync(file, 'utf8'))
   // A Rule groups scenarios and may hold a background of its own: read them with the feature's.
-  const children = (doc.feature?.children ?? []).flatMap((child) => (child.rule ? child.rule.children : [child]))
+  const children = (doc.feature?.children ?? []).flatMap((child) =>
+    child.rule ? child.rule.children : [child],
+  )
   const getSteps = (steps) => steps.map((step) => ({ text: step.text, line: step.location.line }))
   // A scenario outline is read once for each row of its examples, with the placeholders filled in.
   const getRows = (scenario) =>
     scenario.examples.flatMap((table) =>
-      (table.tableBody ?? []).map((row) => Object.fromEntries(table.tableHeader.cells.map((cell, index) => [cell.value, row.cells[index].value]))),
+      (table.tableBody ?? []).map((row) =>
+        Object.fromEntries(
+          table.tableHeader.cells.map((cell, index) => [cell.value, row.cells[index].value]),
+        ),
+      ),
     )
   const fill = (text, row) => text.replace(/<([^>]+)>/g, (hit, name) => row[name] ?? hit)
   const getScenarioSteps = (scenario) => {
     const steps = getSteps(scenario.steps)
     const rows = getRows(scenario)
     if (rows.length === 0) return steps
-    const filled = rows.flatMap((row) => steps.map((step) => ({ ...step, text: fill(step.text, row) })))
-    return filled.filter((step, index) => filled.findIndex((one) => one.line === step.line && one.text === step.text) === index)
+    const filled = rows.flatMap((row) =>
+      steps.map((step) => ({ ...step, text: fill(step.text, row) })),
+    )
+    return filled.filter(
+      (step, index) =>
+        filled.findIndex((one) => one.line === step.line && one.text === step.text) === index,
+    )
   }
   const scenarios = children
     .flatMap((child) => (child.scenario ? [child.scenario] : []))
@@ -65,7 +80,9 @@ const features = walk(featuresDir, '.feature').map((file) => {
       line: scenario.location.line,
       steps: getScenarioSteps(scenario),
     }))
-  const background = children.flatMap((child) => (child.background ? getSteps(child.background.steps) : []))
+  const background = children.flatMap((child) =>
+    child.background ? getSteps(child.background.steps) : [],
+  )
   return { file, name: doc.feature?.name ?? '', scenarios, background }
 })
 
@@ -76,7 +93,10 @@ const getBody = (source, start) => {
   if (open < 0 || close < 0) return ''
   const names = [...source.slice(start, open).matchAll(/,\s*(\w+)\s*:/g)].map((hit) => hit[1])
   return names
-    .reduce((body, name, index) => body.replace(new RegExp(`\\b${name}\\b`, 'g'), `ARG${index}`), source.slice(open + 5, close))
+    .reduce(
+      (body, name, index) => body.replace(new RegExp(`\\b${name}\\b`, 'g'), `ARG${index}`),
+      source.slice(open + 5, close),
+    )
     .trim()
 }
 
@@ -86,7 +106,9 @@ const registry = new ParameterTypeRegistry()
 for (const file of walk(path.join(root, 'support'), '.ts')) {
   const source = fs.readFileSync(file, 'utf8')
   for (const hit of source.matchAll(/name:\s*'(\w+)',\s*regexp:\s*\/(.+)\//g)) {
-    registry.defineParameterType(new ParameterType(hit[1], new RegExp(hit[2]), String, (text) => text, true, false))
+    registry.defineParameterType(
+      new ParameterType(hit[1], new RegExp(hit[2]), String, (text) => text, true, false),
+    )
   }
 }
 const definitions = walk(stepsDir, '.ts').flatMap((file) => {
@@ -96,7 +118,15 @@ const definitions = walk(stepsDir, '.ts').flatMap((file) => {
     const pattern = hit[3]
     const line = source.slice(0, hit.index).split('\n').length
     const body = getBody(source, hit.index)
-    return { file, line, keyword, pattern, body, expression: new CucumberExpression(pattern, registry), uses: [] }
+    return {
+      file,
+      line,
+      keyword,
+      pattern,
+      body,
+      expression: new CucumberExpression(pattern, registry),
+      uses: [],
+    }
   })
 })
 
@@ -110,7 +140,11 @@ const matchStep = (feature, scenario, step) => {
   const matching = definitions.filter((definition) => definition.expression.match(step.text))
   if (matching.length === 0) report('undefined', where, `no definition for "${step.text}"`)
   if (matching.length > 1) {
-    report('ambiguous', where, `"${step.text}" matches ${matching.map((m) => `'${m.pattern}'`).join(' and ')}`)
+    report(
+      'ambiguous',
+      where,
+      `"${step.text}" matches ${matching.map((m) => `'${m.pattern}'`).join(' and ')}`,
+    )
   }
   for (const definition of matching) definition.uses.push({ feature: feature.file, scenario })
 }
@@ -122,9 +156,15 @@ for (const feature of features) {
 }
 for (const definition of definitions) {
   if (definition.uses.length === 0 && PENDING.has(definition.pattern)) {
-    warnings.push(`${rel(definition.file)}:${definition.line}  pending: '${definition.pattern}' is used by no scenario yet`)
+    warnings.push(
+      `${rel(definition.file)}:${definition.line}  pending: '${definition.pattern}' is used by no scenario yet`,
+    )
   } else if (definition.uses.length === 0) {
-    report('unused', `${rel(definition.file)}:${definition.line}`, `'${definition.pattern}' is used by no scenario`)
+    report(
+      'unused',
+      `${rel(definition.file)}:${definition.line}`,
+      `'${definition.pattern}' is used by no scenario`,
+    )
   }
 }
 
@@ -134,7 +174,11 @@ for (const definition of definitions) {
   if (definition.body === '') continue
   const first = bodies.get(definition.body)
   if (first) {
-    report('same-body', `${rel(definition.file)}:${definition.line}`, `'${definition.pattern}' does what '${first.pattern}' does; keep one step`)
+    report(
+      'same-body',
+      `${rel(definition.file)}:${definition.line}`,
+      `'${definition.pattern}' does what '${first.pattern}' does; keep one step`,
+    )
   } else {
     bodies.set(definition.body, definition)
   }
@@ -142,7 +186,23 @@ for (const definition of definitions) {
 
 // Near-duplicates: the same words, ignoring the parameters, articles, tenses and plurals. A setup
 // (Given), an action (When) and an outcome (Then) may share their words; two of one kind may not.
-const STOP = new Set(['the', 'a', 'an', 'of', 'to', 'that', 'its', 'it', 'is', 'are', 'has', 'have', 'person', 'in', 'from'])
+const STOP = new Set([
+  'the',
+  'a',
+  'an',
+  'of',
+  'to',
+  'that',
+  'its',
+  'it',
+  'is',
+  'are',
+  'has',
+  'have',
+  'person',
+  'in',
+  'from',
+])
 const stem = (word) => word.replace(/(ing|ed|es|s|d)$/, '')
 const getWords = (pattern) =>
   new Set(
@@ -164,7 +224,9 @@ for (let i = 0; i < definitions.length; i++) {
     if (definitions[i].keyword !== definitions[j].keyword) continue
     const score = overlap(getWords(definitions[i].pattern), getWords(definitions[j].pattern))
     if (score >= SIMILAR && score < NEAR_DUPLICATE) {
-      warnings.push(`${rel(definitions[j].file)}:${definitions[j].line}  similar (${score.toFixed(2)}): '${definitions[j].pattern}' and '${definitions[i].pattern}' (${rel(definitions[i].file)}:${definitions[i].line})`)
+      warnings.push(
+        `${rel(definitions[j].file)}:${definitions[j].line}  similar (${score.toFixed(2)}): '${definitions[j].pattern}' and '${definitions[i].pattern}' (${rel(definitions[i].file)}:${definitions[i].line})`,
+      )
     }
     if (score >= NEAR_DUPLICATE) {
       report(
@@ -179,14 +241,20 @@ for (let i = 0; i < definitions.length; i++) {
 // A step says one thing.
 for (const definition of definitions) {
   if (/\sand\s/.test(definition.pattern.replace(/"[^"]*"/g, '').replace(/\{[^}]*\}/g, ''))) {
-    report('conjunction', `${rel(definition.file)}:${definition.line}`, `'${definition.pattern}' joins two things with "and"`)
+    report(
+      'conjunction',
+      `${rel(definition.file)}:${definition.line}`,
+      `'${definition.pattern}' joins two things with "and"`,
+    )
   }
 }
 
 // The numbers.
 const scenarios = features.flatMap((feature) => feature.scenarios)
 const stepUses = scenarios.reduce((sum, scenario) => sum + scenario.steps.length, 0)
-const distinctTexts = new Set(scenarios.flatMap((scenario) => scenario.steps.map((step) => step.text))).size
+const distinctTexts = new Set(
+  scenarios.flatMap((scenario) => scenario.steps.map((step) => step.text)),
+).size
 const featuresOf = (definition) => new Set(definition.uses.map((use) => use.feature)).size
 const metrics = {
   features: features.length,
@@ -195,8 +263,10 @@ const metrics = {
   definitions: definitions.length,
   usesPerDefinition: Number((stepUses / Math.max(1, definitions.length)).toFixed(2)),
   distinctStepTexts: distinctTexts,
-  definitionsUsedByOneFeatureOnly: definitions.filter((definition) => featuresOf(definition) <= 1).length,
-  definitionsUsedByManyFeatures: definitions.filter((definition) => featuresOf(definition) > 1).length,
+  definitionsUsedByOneFeatureOnly: definitions.filter((definition) => featuresOf(definition) <= 1)
+    .length,
+  definitionsUsedByManyFeatures: definitions.filter((definition) => featuresOf(definition) > 1)
+    .length,
   maxStepsPerScenario: Math.max(0, ...scenarios.map((scenario) => scenario.steps.length)),
   problems: problems.length,
   similarPairs: warnings.length,
@@ -206,5 +276,6 @@ for (const { kind, where, message } of problems) console.error(`${where}  ${kind
 for (const warning of warnings) console.error(`${warning}`)
 console.log(JSON.stringify(metrics, null, 2))
 const out = process.argv.indexOf('--json')
-if (out > 0) fs.writeFileSync(process.argv[out + 1], JSON.stringify({ metrics, problems }, null, 2) + '\n')
+if (out > 0)
+  fs.writeFileSync(process.argv[out + 1], JSON.stringify({ metrics, problems }, null, 2) + '\n')
 process.exit(problems.length ? 1 : 0)

@@ -12,8 +12,12 @@ func (p *plan) listScopeDocuments(ctx context.Context, s searchquery.Scope) ([]s
 	if s.IsEveryDocument() {
 		return nil, false, nil
 	}
-	listed, err := p.u.documents.ListDocuments(ctx, p.v.ID, searchquery.DocumentQuery{
-		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: s.Paths, IsWithinPaths: s.IsWithinPaths,
+	paths, isWithinPaths := p.getScopePaths(s)
+	if isWithinPaths && len(paths) == 0 {
+		return nil, true, nil
+	}
+	listed, err := p.u.index.documents.ListDocuments(ctx, p.v.ID, searchquery.DocumentQuery{
+		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, IsWithinPaths: isWithinPaths,
 		Recipe: p.recipe, Limit: p.u.Limits.MaxDocuments,
 	})
 	if err != nil {
@@ -39,8 +43,12 @@ func (p *plan) listCandidateDocuments(ctx context.Context) ([]searchquery.Docume
 		return nil, nil
 	}
 	s := searchquery.GetDocumentScope(p.query, p.calls.found)
-	listed, err := p.u.documents.ListDocuments(ctx, p.v.ID, searchquery.DocumentQuery{
-		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: s.Paths, IsWithinPaths: s.IsWithinPaths, Recipe: p.recipe,
+	paths, isWithinPaths := p.getScopePaths(s)
+	if isWithinPaths && len(paths) == 0 {
+		return nil, nil
+	}
+	listed, err := p.u.index.documents.ListDocuments(ctx, p.v.ID, searchquery.DocumentQuery{
+		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, IsWithinPaths: isWithinPaths, Recipe: p.recipe,
 	})
 	if err != nil {
 		return nil, err
@@ -65,6 +73,8 @@ func (p *plan) listCandidateDocuments(ctx context.Context) ([]searchquery.Docume
 func (p *plan) fillKind(d searchquery.Document) searchquery.Document {
 	d.Kind = searchquery.GetKind(d.SourceKind, p.u.contentTypes.GetContentType(d.Path))
 	d.Title = searchquery.GetTitle(d.Path, d.Title)
+	d.IsInSet = p.getMembership(d.Path)
+	p.documents[d.Path] = d
 	return p.withCalls(d)
 }
 

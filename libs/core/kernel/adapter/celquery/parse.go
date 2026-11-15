@@ -3,11 +3,13 @@
 package celquery
 
 import (
+	"cmp"
 	"fmt"
-	"unicode/utf8"
+	"slices"
 
 	"cel.dev/cel-go/common"
 	"cel.dev/cel-go/common/ast"
+	"cel.dev/cel-go/parser"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 )
@@ -31,21 +33,22 @@ func (p Parser) ParseQuery(text string, catalog searchquery.Catalog) (searchquer
 	if err != nil {
 		return searchquery.RawNode{}, fmt.Errorf("declare the query language: %w", err)
 	}
+	source := newQueryText(text)
 	parsed, issues := environment.Parse(text)
 	if issues.Err() != nil {
-		return searchquery.RawNode{}, newParseError(issues.Errors())
+		return searchquery.RawNode{}, p.newSyntaxError(source, catalog)
 	}
 	native := parsed.NativeRep()
-	names := nameWalk{catalog: catalog, source: native.SourceInfo()}
+	names := nameWalk{catalog: catalog, source: native.SourceInfo(), text: source}
 	names.walk(native.Expr())
 	if len(names.problems) > 0 {
 		return searchquery.RawNode{}, &searchquery.ParseError{Problems: names.problems}
 	}
 	checked, issues := environment.Check(parsed)
 	if issues.Err() != nil {
-		return searchquery.RawNode{}, newParseError(issues.Errors())
+		return searchquery.RawNode{}, &searchquery.ParseError{Problems: newCheckProblems(source, issues.Errors(), catalog)}
 	}
-	c := converter{source: checked.NativeRep().SourceInfo(), catalog: catalog}
+	c := converter{source: checked.NativeRep().SourceInfo(), catalog: catalog, text: source}
 	root := c.convertQuery(checked.NativeRep().Expr())
 	if len(c.problems) > 0 {
 		return searchquery.RawNode{}, &searchquery.ParseError{Problems: c.problems}
@@ -53,28 +56,39 @@ func (p Parser) ParseQuery(text string, catalog searchquery.Catalog) (searchquer
 	return root, nil
 }
 
-func newParseError(errs []*common.Error) *searchquery.ParseError {
-	problems := make([]searchquery.Problem, len(errs))
-	for i, err := range errs {
-		problems[i] = searchquery.Problem{Position: getPosition(err.Location), Message: err.Message}
+func (p Parser) newSyntaxError(source queryText, catalog searchquery.Catalog) *searchquery.ParseError {
+	recovering, err := parser.NewParser(
+		parser.Macros(), parser.MaxRecursionDepth(p.maxDepth), parser.ExpressionSizeCodePointLimit(p.maxCodePoints),
+	)
+	if err != nil {
+		return &searchquery.ParseError{Problems: []searchquery.Problem{{Position: searchquery.StartPosition(), Message: messageUnreadable}}}
 	}
+	partial, errs := recovering.Parse(common.NewTextSource(string(source.runes)))
+	problems, quoted := newSyntaxProblems(source, errs.GetErrors())
+	if partial != nil {
+		names := nameWalk{catalog: catalog, source: partial.SourceInfo(), text: source}
+		names.walk(partial.Expr())
+		for _, problem := range names.problems {
+			if !isInsideAny(source, quoted, problem.Position) {
+				problems = append(problems, problem)
+			}
+		}
+	}
+	slices.SortStableFunc(problems, func(a, b searchquery.Problem) int {
+		return cmp.Or(cmp.Compare(a.Position.Line, b.Position.Line), cmp.Compare(a.Position.Column, b.Position.Column))
+	})
 	return &searchquery.ParseError{Problems: problems}
 }
 
-func getPosition(location common.Location) searchquery.Position {
-	return searchquery.Position{Line: max(location.Line(), 1), Column: max(location.Column()+1, 1)}
+func isInsideAny(source queryText, spans []span, position searchquery.Position) bool {
+	offset := source.lineStarts[position.Line-1] + position.Column - 1
+	return slices.ContainsFunc(spans, func(s span) bool { return s.contains(offset) })
 }
 
-func getExprPosition(source *ast.SourceInfo, expr ast.Expr) searchquery.Position {
-	// CEL places a call at its opening parenthesis.
-	position := getPosition(source.GetStartLocation(expr.ID()))
-	if expr.Kind() != ast.CallKind {
-		return position
+func getExprPosition(source queryText, info *ast.SourceInfo, expr ast.Expr) searchquery.Position {
+	offset := source.getOffset(info.GetStartLocation(expr.ID()))
+	if expr.Kind() == ast.CallKind && !isOperator(expr.AsCall().FunctionName()) {
+		offset = source.findNameStart(offset)
 	}
-	name := expr.AsCall().FunctionName()
-	if isOperator(name) {
-		return position
-	}
-	position.Column = max(position.Column-utf8.RuneCountInString(name), 1)
-	return position
+	return source.getPosition(offset)
 }

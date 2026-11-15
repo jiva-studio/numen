@@ -132,11 +132,11 @@ func TestListSearchFunctionsListsTheLanguage(t *testing.T) {
 	var names []string
 	for _, f := range got.Msg.GetFunctions() {
 		names = append(names, f.GetName())
-		if f.GetDescription() == "" || f.GetExample() == "" || len(f.GetSignatures()) == 0 {
-			t.Errorf("function %v lacks a description, an example or a signature", f)
+		if f.GetSummary() == "" || f.GetDescription() == "" || f.GetExample() == "" || len(f.GetSignatures()) == 0 {
+			t.Errorf("function %v lacks a summary, a description, an example or a signature", f)
 		}
 	}
-	if !slices.Equal(names, []string{"words", "meaning", "kind", "path", "rerank", "top", "sortBy"}) {
+	if !slices.Equal(names, searchquery.ListFunctionNames(searchquery.GetBuiltinCatalog())) {
 		t.Errorf("names %v", names)
 	}
 }

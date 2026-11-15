@@ -1,13 +1,13 @@
--- The sources of one vault under any of the path prefixes and of the kinds,
--- with the title of a note, the size, the time of change in nanoseconds and the
--- count of the small chunks that hold a vector under the recipe, in order of
--- path.
+-- The sources of one vault under any of the path prefixes, of the kinds and
+-- at the paths, with the title and the type of a note, the time of the last
+-- change, the size and the count of the small chunks that hold a vector under
+-- the recipe, in order of path.
 --
 -- The prefixes arrive as two JSON arrays, composed (NFC) ?2 and decomposed
 -- (NFD) ?3; an empty array limits none, and so does an empty kind array ?4.
 -- A negative limit ?6 returns every source. When ?7 is 1, only the sources at
 -- the paths of the JSON array ?8 are returned.
-SELECT s.path, s.kind, COALESCE(n.title, ''), s.size, s.modified_at,
+SELECT s.path, s.kind, COALESCE(n.title, ''), COALESCE(n.type, ''), s.modified_at, s.size,
        (SELECT count(*)
         FROM chunks c
         JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?5
