@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url'
 
 export type SampleKind = 'PDF' | 'EPUB' | 'recording' | 'image'
 
-type Source = { readonly folder: string } | { readonly make: () => Buffer }
+type Source =
+  { readonly folder: string; readonly hasTextLayer?: boolean } | { readonly make: () => Buffer }
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const E2E_FIXTURES = path.resolve(here, '../../../e2e/desktop/fixtures')
@@ -64,7 +65,7 @@ export const createPagedPdf = (pageCount: number): Buffer => {
 
 const SAMPLES: Record<SampleKind, ReadonlyMap<string, Source>> = {
   PDF: new Map<string, Source>([
-    ['flywheel.pdf', { folder: E2E_FIXTURES }],
+    ['flywheel.pdf', { folder: E2E_FIXTURES, hasTextLayer: true }],
     ['paper.pdf', { folder: VAULT_ASSETS }],
     ['pumped-storage.pdf', { folder: E2E_FIXTURES }],
     ['regenerative-braking.pdf', { folder: E2E_FIXTURES }],
@@ -102,4 +103,10 @@ export const readSample = (kind: SampleKind, fileName: string): Buffer => {
   if (!fs.existsSync(sample))
     throw new Error(`the sample ${kind} "${fileName}" is missing at ${sample}`)
   return fs.readFileSync(sample)
+}
+
+/** Whether the sample PDF of the file name carries a text layer, which the PDF reader makes a text version of. */
+export const hasTextLayer = (fileName: string): boolean => {
+  const source = SAMPLES.PDF.get(fileName)
+  return source !== undefined && 'folder' in source && source.hasTextLayer === true
 }

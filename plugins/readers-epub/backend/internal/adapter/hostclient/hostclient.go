@@ -3,6 +3,7 @@
 package hostclient
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -67,4 +68,13 @@ func (*Host) ReportError(what string, err error) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "readers-epub: %s: %v\n", what, err)
 	}
+}
+
+// OpenFeed returns the file change feed of a vault and the plugin's store folder of it.
+func (h *Host) OpenFeed(id domain.VaultID) texts.Feed {
+	return texts.Feed{Changes: h.files.With(id), Store: h.store.With(id)}
+}
+
+func (h *Host) GetShownVault(ctx context.Context) (domain.Vault, error) {
+	return h.files.GetVault(ctx)
 }
