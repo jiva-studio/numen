@@ -194,14 +194,14 @@ func TestDeepNestingIsRejected(t *testing.T) {
 }
 
 func TestASyntaxProblemReadsInPlainWordsAtItsPlace(t *testing.T) {
-	owner := "(meaninng\n(\"Мадхавендра Пури) && meaning(\"Кришна\"\n)).rerank(\"как Мадхавендрапури и Кришна связаны?\")."
+	owner := "(meanling\n(\"Мадхавендра Пури) && meaning(\"Кришна\"\n)).rerank(\"как Мадхавендрапури и Кришна связаны?\")."
 	tests := []struct {
 		name string
 		text string
 		want []string
 	}{
 		{"the query of the owner", owner, []string{
-			"1:2: Unknown function meaninng: did you mean meaning?",
+			"1:2: Unknown function meanling: did you mean meaning?",
 			"2:33: A quote is missing before Кришна",
 			"3:4: Unknown function rerank",
 			"3:51: The query ends with a dot: remove it or write a stage after it",
@@ -211,9 +211,9 @@ func TestASyntaxProblemReadsInPlainWordsAtItsPlace(t *testing.T) {
 		{"a word with no opening quote", `meaning(Кришна")`, []string{"1:9: A quote is missing before Кришна"}},
 		{"an unclosed parenthesis", `(meaning("a") && words("b")`, []string{"1:1: This parenthesis is not closed"}},
 		{"a parenthesis with no opening one", `meaning("a"))`, []string{"1:13: This parenthesis has no opening one"}},
-		{"an unknown function", `meaninng("a")`, []string{"1:1: Unknown function meaninng: did you mean meaning?"}},
-		{"an unknown function next to a syntax error", "meaninng(\"a\") &&", []string{
-			"1:1: Unknown function meaninng: did you mean meaning?", "1:15: A condition must follow &&",
+		{"an unknown function", `meanling("a")`, []string{"1:1: Unknown function meanling: did you mean meaning?"}},
+		{"an unknown function next to a syntax error", "meanling(\"a\") &&", []string{
+			"1:1: Unknown function meanling: did you mean meaning?", "1:15: A condition must follow &&",
 		}},
 		{"a trailing dot", `meaning("a").`, []string{"1:13: The query ends with a dot: remove it or write a stage after it"}},
 		{"a trailing operator", `meaning("a") || !`, []string{"1:17: A condition must follow !"}},
