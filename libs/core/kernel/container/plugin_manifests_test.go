@@ -555,7 +555,7 @@ func TestPluginNamingRule_ReportsNamingIssues(t *testing.T) {
 	}
 }
 
-func TestShippedPluginsOnTheFeedTakeOnlyTheFilesOfTheirKind(t *testing.T) {
+func TestShippedFeedPluginsTakeOnlyTheirOwnTypes(t *testing.T) {
 	note, pdf, epub := domain.ContentType("text/markdown"), domain.ContentType("application/pdf"), domain.ContentType("application/epub+zip")
 	png, mp3, mp4 := domain.ContentType("image/png"), domain.ContentType("audio/mpeg"), domain.ContentType("video/mp4")
 	want := map[string]struct{ takes, ignores []domain.ContentType }{
