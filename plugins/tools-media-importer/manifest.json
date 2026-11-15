@@ -6,6 +6,7 @@
   "description": "Saves web articles and downloads online videos for offline playback",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
+  "activationEvents": ["onFilesChanged"],
   "contributes": {
     "textKinds": [
       { "kind": "article", "title": "Article" },
@@ -65,12 +66,6 @@
         "title": "Delete media",
         "icon": "trash-2",
         "when": "target.noteType == 'link' && has(target.properties.media) && target.properties.media != ''"
-      },
-      {
-        "id": "link.downloadMissingCaptions",
-        "title": "Download missing captions",
-        "icon": "download",
-        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true"
       }
     ],
     "handlers": [
@@ -79,9 +74,6 @@
         "title": "Download captions",
         "when": "target.noteType == 'link'"
       }
-    ],
-    "triggers": [
-      { "event": "note.frontmatterChanged", "command": "link.downloadMissingCaptions", "when": "target.noteType == 'link'" }
     ]
   },
   "permissions": ["vault:read", "vault:write", "link:open"],

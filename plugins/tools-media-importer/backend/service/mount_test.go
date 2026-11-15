@@ -25,7 +25,7 @@ func newEnvHandler(t *testing.T, vars map[string]string) (http.Handler, error) {
 	for name, value := range vars {
 		t.Setenv(name, value)
 	}
-	return servertest.NewHandler(vars, MountFromEnv)
+	return servertest.NewHandler(vars, NewApp().MountFromEnv)
 }
 
 // The handler a host that links the plugin in answers the importer API with the token it was
@@ -89,7 +89,7 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	var mountedSrv *server.Server
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "test-token"}, func(srv *server.Server) error {
 		mountedSrv = srv
-		return Mount(srv, hosted, true)
+		return NewApp().Mount(srv, hosted, true)
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -149,7 +149,7 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 
 	// Verify SetUpdateConfig updates the live downloader configuration when Configure RPC is called.
 	realHandler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "test-token"}, func(srv *server.Server) error {
-		return Mount(srv, hosted, false)
+		return NewApp().Mount(srv, hosted, false)
 	})
 	if err != nil {
 		t.Fatal(err)

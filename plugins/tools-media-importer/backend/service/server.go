@@ -46,12 +46,30 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 	}
 }
 
+// App is the backend of the plugin: Mount registers its services, and HandleEvent downloads the missing
+// captions the file change feed names on each onFilesChanged event.
+type App struct {
+	links *link.Links
+}
+
+func NewApp() *App { return &App{links: nil} }
+
+// HandleEvent downloads, in the background, the missing captions of the link notes the file change feed
+// names on an onFilesChanged event, and ignores any other event.
+func (a *App) HandleEvent(ctx context.Context, event string) error {
+	if _, ok := host.ReadFilesChangedEvent(event); ok && a.links != nil {
+		a.links.StartMissingTextFetch(ctx, false)
+	}
+	return nil
+}
+
 // Mount registers the importer API, the commands and the agent tool url_import on s over the host
 // given. A video site is fetched through the mock downloader when isMock is set. The fetches end
 // with s.
-func Mount(s *server.Server, hosted link.Host, isMock bool) error {
+func (a *App) Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	f := fetchers.New(isMock, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
 	links := link.New(hosted, f.GetFetcher, f.GetSettings)
+	a.links = links
 	commands, err := newCommands(links)
 	// gomutants:disable-next-line BRANCH_IF reason="newCommands with static command IDs never returns an error"
 	if err != nil {
@@ -82,10 +100,10 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 }
 
 // MountFromEnv mounts the plugin over the host the process was started for.
-func MountFromEnv(s *server.Server) error {
+func (a *App) MountFromEnv(s *server.Server) error {
 	endpoint, err := hostcall.FromEnv()
 	if err != nil {
 		return err
 	}
-	return Mount(s, openHostAt(endpoint), environment.IsMockModel())
+	return a.Mount(s, openHostAt(endpoint), environment.IsMockModel())
 }
