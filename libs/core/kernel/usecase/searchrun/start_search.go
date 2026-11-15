@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchslot"
 	"github.com/jiva-studio/numen/libs/note/ulid"
 )
 
@@ -28,7 +27,7 @@ type StartSearch struct {
 	generations IndexGenerations
 	run         RunQuery
 	names       PluginNames
-	slots       *searchslot.Slots
+	slots       SearchSlots
 	maxResults  int
 	mu          sync.Mutex
 }

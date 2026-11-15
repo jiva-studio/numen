@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"maps"
@@ -433,8 +434,10 @@ func TestUpdateSearchReplacedByANewerOneBeforeItsCheckEndsWritesNothingAndAnswer
 	go func() {
 		first <- f.call(t, api.MethodUpdateSearch, api.UpdateSearchRequest{Path: stormsPath, Query: wordsQuery}, &firstResponse)
 	}()
-	for deadline := time.Now().Add(5 * time.Second); f.getStartCount() == before; {
-		if time.Now().After(deadline) {
+	waiting, stopWaiting := context.WithTimeout(t.Context(), 5*time.Second)
+	defer stopWaiting()
+	for f.getStartCount() == before {
+		if waiting.Err() != nil {
 			t.Fatal("the check of the first change did not start")
 		}
 		time.Sleep(10 * time.Millisecond)

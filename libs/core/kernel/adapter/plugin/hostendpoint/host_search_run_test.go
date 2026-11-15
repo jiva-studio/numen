@@ -14,12 +14,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/indexgeneration"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchstore"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -59,10 +59,8 @@ func newRunCallers(t *testing.T) (*callers, queriedVaults) {
 func newCallersRunning(run searchrunusecase.RunQuery) *callers {
 	clock := testsupport.NewClock()
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
-		Kept: &searchkept.Searches{
-			Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: noTasks{}, Timer: clock,
-			Policy: searchrun.DefaultPolicy(),
-		},
+		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: noTasks{}, Timer: clock,
+		Policy: searchrun.DefaultPolicy(), Slots: searchslot.New(searchrun.DefaultPolicy().MaxRunning),
 		Generations: indexgeneration.New("epoch"), Run: run, Names: func(id string) string { return id },
 		Catalog: searchquery.GetBuiltinCatalog, MaxResults: 100,
 	})

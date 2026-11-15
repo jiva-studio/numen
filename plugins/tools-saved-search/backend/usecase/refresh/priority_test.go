@@ -1,6 +1,7 @@
 package refresh_test
 
 import (
+	"context"
 	"slices"
 	"testing"
 	"time"
@@ -47,9 +48,10 @@ func startBatch(t *testing.T, w *world) <-chan error {
 
 func waitForStart(t *testing.T, w *world, query string) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
+	waiting, stopWaiting := context.WithTimeout(t.Context(), 5*time.Second)
+	defer stopWaiting()
 	for !slices.ContainsFunc(w.searches.ListStarted(), func(start host.SearchStart) bool { return start.Query == query }) {
-		if time.Now().After(deadline) {
+		if waiting.Err() != nil {
 			t.Fatalf("no search of %s started within 5 seconds", query)
 		}
 		time.Sleep(time.Millisecond)

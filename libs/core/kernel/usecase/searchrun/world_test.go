@@ -11,12 +11,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/indexgeneration"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchstore"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -126,10 +126,8 @@ func newWorld(t *testing.T, policy searchrundomain.Policy) world {
 	shown := &tasks{shown: map[string]work.Task{}}
 	generations := indexgeneration.New("epoch")
 	runs := searchrun.NewSearchRuns(searchrun.Deps{
-		Kept: &searchkept.Searches{
-			Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: shown, Timer: clock, Policy: policy,
-		},
-		Generations: generations, Run: x.run, Names: func(id string) string { return "Plugin " + id },
+		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: shown, Timer: clock, Policy: policy,
+		Slots: searchslot.New(policy.MaxRunning), Generations: generations, Run: x.run, Names: func(id string) string { return "Plugin " + id },
 		Catalog: searchquery.GetBuiltinCatalog, MaxResults: 100,
 	})
 	return world{runs: runs, clock: clock, index: x, tasks: shown, generations: generations}

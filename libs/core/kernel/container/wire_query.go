@@ -21,35 +21,43 @@ const operationResultRows = 200_000
 func newFindSearchResults(
 	c pluginsWiring, db *Index, source searchsourceport.Source, errorHandler func(error),
 ) *searchqueryusecase.FindSearchResults {
-	search := db.ChunkSearch()
 	limits, stageLimits := readSearchLimits(c, errorHandler)
+	search := db.ChunkSearch()
 	rerank := openRerankDeps(c)
-	querySource, _ := source.(searchsourceport.QuerySource)
-	deps := searchqueryusecase.FindSearchResultsDeps{
-		Parser:       celquery.NewParser(limits),
-		Catalog:      getSearchCatalog(getRuntimeManifests(c.search.PluginHost.Runtime)),
-		Functions:    searchfunctionbridge.Open(c.search.PluginHost.Runtime.Activator),
+	evaluate := searchqueryusecase.NewEvaluateQuery(searchqueryusecase.EvaluateQueryDeps{
 		Documents:    search,
-		Contents:     db.NoteQueries(),
 		Vectors:      search,
 		Places:       search,
+		Contents:     db.NoteQueryReads(),
+		Links:        db.NoteQueryReads(),
+		Functions:    searchfunctionbridge.Open(c.search.PluginHost.Runtime.Activator),
 		Matcher:      wordmatch.NewMatcher(),
 		Readers:      c.search.VaultReaders,
 		Texts:        c.search.TextReaders,
+		Source:       getQuerySource(source),
 		Floors:       newFloorPolicy(db, source, errorHandler),
 		ContentTypes: c.search.PluginHost.Watch,
-		Codec:        rerankproto.Codec{},
-		Resolve:      rerank.resolve,
-		Calls:        rerank.calls,
-		Rows:         rerank.rows,
-		Results:      db.OperationResults(operationResultRows),
-		Clock:        c.vault.Clock,
-		Links:        db.NoteQueries(),
-		Limits:       limits,
-		StageLimits:  stageLimits,
-		Source:       querySource,
-	}
-	return searchqueryusecase.NewFindSearchResults(deps)
+	})
+	stages := searchqueryusecase.NewApplyStages(searchqueryusecase.ApplyStagesDeps{
+		Calls:   rerank.calls,
+		Codec:   rerankproto.Codec{},
+		Rows:    rerank.rows,
+		Resolve: rerank.resolve,
+		Results: db.OperationResults(operationResultRows),
+		Clock:   c.vault.Clock,
+		Readers: c.search.VaultReaders,
+		Texts:   c.search.TextReaders,
+		Limits:  stageLimits,
+	})
+	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
+		Parser:        celquery.NewParser(limits),
+		Catalog:       getSearchCatalog(getRuntimeManifests(c.search.PluginHost.Runtime)),
+		Clock:         c.vault.Clock,
+		Limits:        limits,
+		Evaluate:      evaluate.Execute,
+		FillDocuments: evaluate.FillDocuments,
+		Stages:        stages.Execute,
+	})
 }
 
 func readSearchLimits(c pluginsWiring, errorHandler func(error)) (searchquerydomain.Limits, searchquerydomain.StageLimits) {
@@ -58,7 +66,7 @@ func readSearchLimits(c pluginsWiring, errorHandler func(error)) (searchquerydom
 		reportSearchFallback(errorHandler, err)
 		return searchquerydomain.DefaultLimits(), searchquerydomain.DefaultStageLimits()
 	}
-	return file.GetSearchLimits()
+	return file.Search.GetLimits()
 }
 
 func newClearOperationResults(db *Index) *operationresult.ClearOperationResults {
@@ -82,4 +90,11 @@ func openRerankDeps(c pluginsWiring) rerankDeps {
 		rows:    modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(c)).Execute, nil),
 		calls:   openModelCalls(c),
 	}
+}
+
+func getQuerySource(source searchsourceport.Source) searchsourceport.QuerySource {
+	if query, ok := source.(searchsourceport.QuerySource); ok {
+		return query
+	}
+	return nil
 }
