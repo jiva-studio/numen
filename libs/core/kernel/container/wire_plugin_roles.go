@@ -65,7 +65,9 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *Plu
 		Set: set, Enablement: registry, Scan: scan, Mode: mode, Supervisors: sups, Processes: processes, Failures: failures,
 		Config: config, Clock: clock,
 	})
-	events := plugin.NewEvents(plugin.EventsDeps{Set: set, Mode: mode, Supervisors: sups, Activation: activation, Clock: clock})
+	events := plugin.NewEvents(plugin.EventsDeps{
+		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Clock: clock, Report: errs.Report,
+	})
 	listeners := plugin.NewListeners(plugin.ListenersDeps{
 		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Failures: failures, Clock: clock, Report: errs.Report,
 	})
