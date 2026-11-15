@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/domain/resultcache"
 )
 
 func newRecord() resultcache.Record {

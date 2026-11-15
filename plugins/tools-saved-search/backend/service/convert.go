@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/domain/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/savedsearch"
 )
 

@@ -21,8 +21,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/domain/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/settings"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/service"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/refresh"
 )

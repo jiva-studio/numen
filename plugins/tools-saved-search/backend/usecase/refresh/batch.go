@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/domain/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/searchnote"
 )
 
