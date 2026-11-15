@@ -143,32 +143,47 @@ export const FiltersTheResults: Story = {
   },
 }
 
-/** The sources list has one checkbox per file; unchecking one hides its passages, checking shows them. */
+/**
+ * The sources list has a search line and a row per file, each checked at first; choosing a checked
+ * file hides its passages, choosing it again shows them, and Escape puts the list away.
+ */
 export const HidesTheResultsOfASource: Story = {
   args: { response: HARBOR_TWO_LOGBOOK_PASSAGES },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const page = within(canvasElement.ownerDocument.body)
     const toggle = await waitFor(() => canvas.getByRole('button', { name: 'Sources' }))
 
     await userEvent.click(toggle)
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    const sources = canvas.getByRole('list', { name: 'Sources' })
-    const boxes = within(sources).getAllByRole('checkbox')
-    await expect(boxes).toHaveLength(3)
-    const logbook = within(sources).getByRole('checkbox', { name: /Logbooks\/1911\.pdf/ })
-    await expect(logbook).toBeChecked()
+    const sources = await waitFor(() => page.getByRole('listbox', { name: 'Sources' }))
+    const rows = within(sources).getAllByRole('option')
+    await expect(rows).toHaveLength(3)
+    for (const row of rows) await expect(row).toHaveAttribute('aria-current', 'true')
+
+    await userEvent.type(page.getByRole('combobox', { name: 'Search sources' }), '1911')
+    await waitFor(() => expect(within(sources).getAllByRole('option')).toHaveLength(1))
+    const logbook = within(sources).getByRole('option', { name: /Logbooks\/1911\.pdf/ })
 
     await userEvent.click(logbook)
 
     const results = canvas.getByRole('list', { name: 'Results' })
     await waitFor(() => expect(within(results).getAllByRole('listitem')).toHaveLength(2))
     await expect(within(results).queryByRole('button', { name: /1911/ })).toBeNull()
+    await expect(within(sources).getByRole('option', { name: /1911/ })).not.toHaveAttribute(
+      'aria-current',
+    )
 
-    await userEvent.click(logbook)
+    await userEvent.click(within(sources).getByRole('option', { name: /1911/ }))
     await waitFor(() => expect(within(results).getAllByRole('listitem')).toHaveLength(4))
+    await expect(within(sources).getByRole('option', { name: /1911/ })).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
 
     await userEvent.keyboard('{Escape}')
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'false'))
+    await expect(page.queryByRole('listbox', { name: 'Sources' })).toBeNull()
   },
 }
 

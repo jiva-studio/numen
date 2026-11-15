@@ -11,6 +11,8 @@ export const WORDS = {
   noFilterMatch: 'No result matches the filter.',
   filterResults: 'Filter results',
   sources: 'Sources',
+  searchSources: 'Search sources',
+  noSourceMatch: 'No source matches',
   editQuery: 'Edit query',
   queryField: 'Query',
   save: 'Save',

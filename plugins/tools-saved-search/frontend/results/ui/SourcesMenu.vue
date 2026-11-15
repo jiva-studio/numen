@@ -1,14 +1,15 @@
 <script setup lang="ts">
 /**
- * The button that opens the list of the files the results come from, each with a checkbox that shows
- * or hides the results of that file.
+ * The button that opens the searchable list of the files the results come from, each checked while
+ * its results are shown; choosing a file shows or hides its results.
  */
-import { ref, useId } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
+import { Button, SearchableListPopup, measureRect, type ListItem } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import type { SourceView } from '../lib/view'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{
+const props = defineProps<{
   sources: readonly SourceView[]
   hidden: ReadonlySet<string>
 }>()
@@ -19,51 +20,53 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const isOpen = ref(false)
-const listId = useId()
+const trigger = useTemplateRef<InstanceType<typeof Button>>('trigger')
+const anchor = ref<{ x: number; y: number; width: number } | null>(null)
+
+const items = computed<readonly ListItem[]>(() =>
+  props.sources.map((source) => ({ id: source.path, text: source.title, detail: source.path })),
+)
+const shown = computed(() =>
+  props.sources.map((source) => source.path).filter((path) => !props.hidden.has(path)),
+)
+const triggerElement = computed(() => (trigger.value?.$el as HTMLElement | undefined) ?? null)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onToggleOpen() {
-  isOpen.value = !isOpen.value
+function onOpen() {
+  const box = measureRect(triggerElement.value)
+  anchor.value = { x: box?.left ?? 0, y: box?.bottom ?? 0, width: box?.width ?? 0 }
 }
 
-function onChange(path: string, event: Event) {
-  emit('toggle', path, (event.target as HTMLInputElement).checked)
+function onClose() {
+  anchor.value = null
 }
 
-function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') isOpen.value = false
+function onSelect(path: string) {
+  emit('toggle', path, props.hidden.has(path))
 }
 </script>
 
 <template>
-  <div class="saved-search__sources" @keydown="onKeydown">
-    <button
-      type="button"
-      class="saved-search__sources-toggle"
-      :aria-expanded="isOpen"
-      :aria-controls="listId"
-      @click="onToggleOpen"
-    >
-      {{ words.sources }}
-    </button>
-    <ul
-      v-if="isOpen"
-      :id="listId"
-      class="saved-search__sources-list"
-      :aria-label="words.sources"
-    >
-      <li v-for="source in sources" :key="source.path" class="saved-search__sources-item">
-        <label class="saved-search__source">
-          <input
-            type="checkbox"
-            :checked="!hidden.has(source.path)"
-            @change="onChange(source.path, $event)"
-          />
-          <span class="saved-search__source-title">{{ source.title }}</span>
-          <span class="saved-search__source-path">{{ source.path }}</span>
-        </label>
-      </li>
-    </ul>
-  </div>
+  <Button
+    ref="trigger"
+    variant="outline"
+    aria-haspopup="listbox"
+    :aria-expanded="anchor !== null"
+    @click="onOpen"
+  >
+    {{ words.sources }}
+  </Button>
+  <SearchableListPopup
+    v-if="anchor"
+    :items="items"
+    :chosen="shown"
+    :label="words.sources"
+    :placeholder="words.searchSources"
+    :empty-text="words.noSourceMatch"
+    :at="{ x: anchor.x, y: anchor.y }"
+    :asking="anchor.width"
+    :from="triggerElement"
+    @select="onSelect"
+    @close="onClose"
+  />
 </template>
