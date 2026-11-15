@@ -1,4 +1,4 @@
-package projection
+package review
 
 import (
 	"cmp"
@@ -109,7 +109,7 @@ func (p Projection) Session() (int, bool) {
 //
 // A card falling due later in the day holding at is not overdue: its day is
 // has had no day.
-func CountOverdue(d Day, schedules map[ReviewCardID]Schedule, now time.Time) int {
+func CountOverdue(d Day, schedules map[CardID]Schedule, now time.Time) int {
 	startTime := d.GetStart(now)
 	out := 0
 	for _, s := range schedules {

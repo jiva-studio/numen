@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
@@ -41,7 +40,7 @@ func (u Point) Execute(
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	return u.linkWriter.PointAt(ctx, v, deck, presetnote.LinkType, to, domain.RoleRef, stat)
+	return u.linkWriter.PointAt(ctx, v, deck, review.PresetLinkType, to, domain.RoleRef, stat)
 }
 
 func (u Point) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {
@@ -170,11 +169,11 @@ func writeSettings(doc *markdown.Document, p, was review.Preset) error {
 		{goalKey, string(p.Goal), string(was.Goal)},
 		{countsKey, string(p.Counts), string(was.Counts)},
 		{learnedKey, string(p.Rule), string(was.Rule)},
-		{presetnote.MinutesADayKey, p.MinutesADay, was.MinutesADay},
+		{review.MinutesADayKey, p.MinutesADay, was.MinutesADay},
 		{newADayKey, p.NewADay, was.NewADay},
 		{reviewsADayKey, p.ReviewsADay, was.ReviewsADay},
 		{backlogKey, p.Backlog, was.Backlog},
-		{presetnote.RetentionKey, p.Retention, was.Retention},
+		{review.RetentionKey, p.Retention, was.Retention},
 		{intervalKey, p.Interval, was.Interval},
 		{evenLoadKey, p.IsEvenLoad, was.IsEvenLoad},
 	} {
@@ -255,34 +254,34 @@ func getWeek() []time.Weekday {
 func checkBounds(p review.Preset) error {
 	if !review.IsKnownGoal(p.Goal) {
 		return fmt.Errorf("%w: goal %s is not %s, %s or %s",
-			presetnote.ErrOutOfBounds, p.Goal, review.GoalMinutes, review.GoalRetention, review.GoalDate)
+			review.ErrOutOfBounds, p.Goal, review.GoalMinutes, review.GoalRetention, review.GoalDate)
 	}
 	if p.Goal == review.GoalDate && p.By.IsZero() {
-		return fmt.Errorf("%w: a preset targeting a day requires the day", presetnote.ErrOutOfBounds)
+		return fmt.Errorf("%w: a preset targeting a day requires the day", review.ErrOutOfBounds)
 	}
 	if !review.IsKnownRule(p.Rule) {
 		return fmt.Errorf("%w: learned %s is not %s or %s",
-			presetnote.ErrOutOfBounds, p.Rule, review.RuleInterval, review.RuleRetention)
+			review.ErrOutOfBounds, p.Rule, review.RuleInterval, review.RuleRetention)
 	}
 	if !review.IsKnownBudgetUnit(p.Counts) {
 		return fmt.Errorf("%w: counts %s is not %s or %s",
-			presetnote.ErrOutOfBounds, p.Counts, review.BudgetUnitCards, review.BudgetUnitShows)
+			review.ErrOutOfBounds, p.Counts, review.BudgetUnitCards, review.BudgetUnitShows)
 	}
 	for _, one := range []struct {
 		key    string
 		value  float64
 		bounds review.Bounds
 	}{
-		{presetnote.MinutesADayKey, float64(p.MinutesADay), review.GetMinutesADayBounds()},
+		{review.MinutesADayKey, float64(p.MinutesADay), review.GetMinutesADayBounds()},
 		{newADayKey, float64(p.NewADay), review.GetNewADayBounds()},
 		{reviewsADayKey, float64(p.ReviewsADay), review.GetReviewsADayBounds()},
-		{presetnote.RetentionKey, p.Retention, review.GetRetentionBounds()},
+		{review.RetentionKey, p.Retention, review.GetRetentionBounds()},
 		{intervalKey, float64(p.Interval), review.GetIntervalBounds()},
 		{backlogKey, float64(p.Backlog), review.GetBacklogBounds()},
 	} {
 		if !one.bounds.Contains(one.value) {
 			return fmt.Errorf("%w: %s %g is outside %g to %g",
-				presetnote.ErrOutOfBounds, one.key, one.value, one.bounds.Min, one.bounds.Max)
+				review.ErrOutOfBounds, one.key, one.value, one.bounds.Min, one.bounds.Max)
 		}
 	}
 	return checkLoad(p.Load)
@@ -293,13 +292,13 @@ func checkLoad(load map[time.Weekday]int) error {
 		share, named := load[weekday]
 		if named && !review.GetLoadBounds().Contains(float64(share)) {
 			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
-				presetnote.ErrOutOfBounds, review.DayName(weekday), share,
+				review.ErrOutOfBounds, review.DayName(weekday), share,
 				review.GetLoadBounds().Min, review.GetLoadBounds().Max)
 		}
 	}
 	for weekday := range load {
 		if weekday < time.Sunday || weekday > time.Saturday {
-			return fmt.Errorf("%w: a load is kept on a day of the week", presetnote.ErrOutOfBounds)
+			return fmt.Errorf("%w: a load is kept on a day of the week", review.ErrOutOfBounds)
 		}
 	}
 	return nil

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
@@ -38,7 +37,7 @@ func getBounds(b review.Bounds) *api.Bounds {
 }
 
 // ConvertPresetToWire is one preset as the schema carries it.
-func ConvertPresetToWire(p presetnote.Contents, title string) *api.Preset {
+func ConvertPresetToWire(p review.PresetNote, title string) *api.Preset {
 	return &api.Preset{
 		Path:     p.Path,
 		Title:    title,

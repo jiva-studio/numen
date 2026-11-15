@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
@@ -1530,7 +1529,7 @@ func TestUseCasesSchedulesAndSessionInternals(t *testing.T) {
 		Readers: stubVaultReaders{reader: readerCount},
 		Links: stubLinkQueries{
 			links: map[string][]domain.ResolvedLink{
-				"decks/A.md": {{Link: domain.Link{Type: presetnote.LinkType, Target: domain.Address{Scheme: domain.SchemeNote, Value: "P.md"}}, To: "P.md"}},
+				"decks/A.md": {{Link: domain.Link{Type: review.PresetLinkType, Target: domain.Address{Scheme: domain.SchemeNote, Value: "P.md"}}, To: "P.md"}},
 			},
 		},
 		Now: newFakeClock(now),

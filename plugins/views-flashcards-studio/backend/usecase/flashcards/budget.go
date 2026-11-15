@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
@@ -81,7 +80,7 @@ func getBudgets(ctx context.Context, v domain.Vault, in budgetInputs) (*budgets,
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Non-date goals ignore the learning-days parameter."
 		learn := 0
 		if p.Goal == review.GoalDate {
-			learn = projection.GetDaysToLearn(pos(p.Retention), day, p, now)
+			learn = review.GetDaysToLearn(pos(p.Retention), day, p, now)
 		}
 		out.allowances[path] = &allowance{
 			admits:     p.GetAllowance(day, now, elapsed[path], survey.unstarted[path], learn),

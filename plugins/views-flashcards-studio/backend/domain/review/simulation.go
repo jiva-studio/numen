@@ -1,22 +1,14 @@
-package projection
+package review
 
 import (
 	"context"
 	"math"
 	"slices"
 	"time"
-
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
 // Ahead is how many days a projection runs when no count is set.
 const Ahead = 90
-
-// LeastStability is the lower bound on the stability of a projected review card,
-// in days, equal to one minute. The scheduler divides by stability, so a review
-// card whose stability has decayed to zero after a long run of lapses produces
-// unusable numbers, and every figure computed from it would be unusable too.
-const LeastStability = 1.0 / (24 * 60)
 
 // MostShowings is the maximum number of times one day of review shows a review
 // card. An answer that does not return the card for several minutes schedules it
@@ -214,7 +206,7 @@ func (s Simulation) getAnswersMap(days int) map[int]bool {
 	return answers
 }
 
-func getSortedCards(schedules map[ReviewCardID]Schedule) []Schedule {
+func getSortedCards(schedules map[CardID]Schedule) []Schedule {
 	cards := make([]Schedule, 0, len(schedules))
 	for _, one := range schedules {
 		cards = append(cards, one)
@@ -224,7 +216,7 @@ func getSortedCards(schedules map[ReviewCardID]Schedule) []Schedule {
 }
 
 func (s Simulation) createProjection(
-	days int, schedules map[ReviewCardID]Schedule, unreviewed int, now time.Time, p Preset,
+	days int, schedules map[CardID]Schedule, unreviewed int, now time.Time, p Preset,
 ) Projection {
 	rule, _, _ := p.GetLearnedRule()
 	learns := NeverLearns
@@ -268,11 +260,11 @@ func (s Simulation) getDaysToLearnGoal(p Preset, now time.Time) int {
 
 func createEmptyAllowance() Allowance {
 	return Allowance{
-		Keeps:   review.Budget{New: 0, Reviews: 0, Minutes: 0},
+		Keeps:   Budget{New: 0, Reviews: 0, Minutes: 0},
 		New:     0,
 		Reviews: 0,
 		Minutes: 0,
-		Limits:  review.Limits{New: ClosedNothing, Reviews: ClosedNothing, Minutes: ClosedNothing, Backlog: ClosedNothing},
+		Limits:  Limits{New: ClosedNothing, Reviews: ClosedNothing, Minutes: ClosedNothing, Backlog: ClosedNothing},
 		Backlog: 0,
 		Stops:   "",
 	}
@@ -315,7 +307,7 @@ func (s Simulation) simulateDaySession(
 }
 
 func (s Simulation) Run(
-	ctx context.Context, now time.Time, p Preset, schedules map[ReviewCardID]Schedule, unreviewed int,
+	ctx context.Context, now time.Time, p Preset, schedules map[CardID]Schedule, unreviewed int,
 ) (Projection, error) {
 	days := s.GetDurationDays()
 	answers := s.getAnswersMap(days)

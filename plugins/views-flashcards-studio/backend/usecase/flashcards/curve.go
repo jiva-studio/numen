@@ -6,30 +6,28 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // Curve is the simulated progression of a preset across its target range.
-type Curve = projection.Curve
+type Curve = review.Curve
 
-type CurvePoint = projection.CurvePoint
+type CurvePoint = review.CurvePoint
 
 // Point is one place of a simulated curve.
-type Point = projection.Point
+type Point = review.Point
 
 // Points is how many places a curve is worked out at.
-const Points = projection.Points
+const Points = review.Points
 
 // Ahead is how many days a projection runs when no length is given.
-const Ahead = projection.Ahead
+const Ahead = review.Ahead
 
 // MostAhead is how far ahead a goal of a date is projected.
-const MostAhead = projection.MostAhead
+const MostAhead = review.MostAhead
 
-func GetOutsideGrid() CurvePoint { return projection.GetOutsideGrid() }
+func GetOutsideGrid() CurvePoint { return review.GetOutsideGrid() }
 
 // ProjectCurve is the simulator behind the one control of a preset.
 //
@@ -65,9 +63,9 @@ func checkGoal(p review.Preset) error {
 	var key string
 	switch p.Goal {
 	case review.GoalMinutes:
-		value, bounds, key = float64(p.MinutesADay), review.GetMinutesADayBounds(), presetnote.MinutesADayKey
+		value, bounds, key = float64(p.MinutesADay), review.GetMinutesADayBounds(), review.MinutesADayKey
 	case review.GoalRetention:
-		value, bounds, key = p.Retention, review.GetRetentionBounds(), presetnote.RetentionKey
+		value, bounds, key = p.Retention, review.GetRetentionBounds(), review.RetentionKey
 	case review.GoalDate:
 		// gomutants:disable-next-line BRANCH_CASE reason="Zero value and zero bounds satisfy Contains when GoalDate exits the switch."
 		return nil
@@ -78,7 +76,7 @@ func checkGoal(p review.Preset) error {
 		return nil
 	}
 	return fmt.Errorf("%w: %s %g is outside %g to %g",
-		presetnote.ErrOutOfBounds, key, value, bounds.Min, bounds.Max)
+		review.ErrOutOfBounds, key, value, bounds.Min, bounds.Max)
 }
 
 // Execute is the curve of the goal this preset steers.
@@ -134,7 +132,7 @@ func (u ProjectCurve) Execute(
 	// The projection runs with the scheduler this preset requests, which is the one
 	// that schedules its cards, and it starts on the current day with the answers
 	// already given.
-	run := projection.Simulation{
+	run := review.Simulation{
 		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="Non-positive simulation Days defaults to HorizonDays."
 		Days:    0,
@@ -143,7 +141,7 @@ func (u ProjectCurve) Execute(
 		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
-	out, err := run.Curve(ctx, now, p, projection.CurveInputs{
+	out, err := run.Curve(ctx, now, p, review.CurveInputs{
 		Schedules: pos, UnbegunCount: unbegunCount, Scheduler: u.getScheduler, Places: u.computePlaces,
 	})
 	if err != nil {
@@ -152,7 +150,7 @@ func (u ProjectCurve) Execute(
 	out.Stops = p.GetOverallStopReason(u.day, now)
 	out.Decks = pointing
 	out.Cards = len(presets)
-	out.Overdue = projection.CountOverdue(u.day, pos, now)
+	out.Overdue = review.CountOverdue(u.day, pos, now)
 	out.Unbegun = unbegunCount
 	return out, nil
 }
@@ -212,7 +210,7 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 	}
 	naming := make(map[string]bool, len(pos))
 	for _, link := range pos {
-		if link.Type == presetnote.LinkType {
+		if link.Type == review.PresetLinkType {
 			naming[link.From] = true
 		}
 	}
@@ -235,7 +233,7 @@ func (u ProjectCurve) countPointingDecks(
 	for _, deck := range decks {
 		points, target := requested[deck]
 		if !target {
-			var p presetnote.Contents
+			var p review.PresetNote
 			p, readErr = reads.GetForDeck(ctx, v, deck)
 			if readErr != nil {
 				break

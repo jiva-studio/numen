@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
@@ -16,7 +16,7 @@ import (
 // NewDeckPresetResponse answers the read of the preset a deck is scheduled by. The title is looked
 // up only for a preset that was read.
 func NewDeckPresetResponse(
-	found presetnote.Contents, err error, title func(path string) string,
+	found review.PresetNote, err error, title func(path string) string,
 ) (*api.GetDeckPresetResponse, error) {
 	if err != nil {
 		return nil, apierror.NewFailure(err)
@@ -38,7 +38,7 @@ func NewDeckPresetResponse(
 // NewReadPresetResponse answers the read of a preset. The title is looked up only for a preset that
 // was read.
 func NewReadPresetResponse(
-	found presetnote.Contents, err error, title func(path string) string,
+	found review.PresetNote, err error, title func(path string) string,
 ) (*api.ReadPresetResponse, error) {
 	if err != nil {
 		return nil, apierror.NewFailure(err)
@@ -57,7 +57,7 @@ func NewReadPresetResponse(
 
 // NewVaultDeckPresetResponse answers the read of the preset a deck of a named vault is scheduled by.
 func NewVaultDeckPresetResponse(
-	found presetnote.Contents, err error, title func(path string) string,
+	found review.PresetNote, err error, title func(path string) string,
 ) (*api.GetVaultDeckPresetResponse, error) {
 	if err != nil {
 		return nil, apierror.NewFailure(err)
@@ -95,7 +95,7 @@ func NewScheduleDeckResponse(pos domain.FileStat, err error) (*api.ScheduleDeckR
 // NewWritePresetResponse answers the end of the write of settings into a preset. A value outside
 // what a preset may hold is the client's to correct.
 func NewWritePresetResponse(pos domain.FileStat, err error) (*api.WritePresetResponse, error) {
-	if errors.Is(err, presetnote.ErrOutOfBounds) {
+	if errors.Is(err, review.ErrOutOfBounds) {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
 	out, err := filewire.ConvertWrite(pos, err, filewire.Reason{Err: presets.ErrNotAPreset, Code: api.ErrorCodeNotAPreset})

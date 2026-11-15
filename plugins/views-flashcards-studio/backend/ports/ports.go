@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
@@ -172,9 +171,9 @@ type PresetReads interface {
 	// GetBacklinks returns the links that point at the note at path.
 	GetBacklinks(ctx context.Context, vault domain.VaultID, path string) ([]domain.ResolvedLink, error)
 	// GetForDeck returns the preset the deck at path is scheduled by.
-	GetForDeck(ctx context.Context, v domain.Vault, deck string) (presetnote.Contents, error)
+	GetForDeck(ctx context.Context, v domain.Vault, deck string) (review.PresetNote, error)
 	// GetPreset returns the preset at path.
-	GetPreset(ctx context.Context, v domain.Vault, path string) (presetnote.Contents, error)
+	GetPreset(ctx context.Context, v domain.Vault, path string) (review.PresetNote, error)
 }
 
 // Ticker fires on its channel after each interval until it is stopped.

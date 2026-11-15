@@ -13,8 +13,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -1145,7 +1143,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 		}},
 	} {
 		_, err := s.curves(getNoon()).Execute(t.Context(), s.vault, "Sanskrit.md", one.preset)
-		if !errors.Is(err, presetnote.ErrOutOfBounds) {
+		if !errors.Is(err, review.ErrOutOfBounds) {
 			t.Errorf("%s draws a curve, and answered %v", one.named, err)
 		}
 	}
@@ -1221,7 +1219,7 @@ func atOnceGoals() []struct {
 	}
 }
 
-func describeCurve(c projection.Curve) string {
+func describeCurve(c review.Curve) string {
 	return fmt.Sprintf("%v", c)
 }
 
@@ -1486,7 +1484,7 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					for _, one := range []projection.Curve{got, want} {
+					for _, one := range []review.Curve{got, want} {
 						if one.Decks != len(decks) || one.Cards != reviewCards {
 							t.Errorf("the curve carries %d decks and %d review cards, and %d decks "+
 								"point at %s with %d review cards in them",
@@ -1503,7 +1501,7 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 	}
 }
 
-func curveOf(c projection.Curve) string {
+func curveOf(c review.Curve) string {
 	return fmt.Sprintf("%d decks, %d review cards, %d overdue, %d unbegun\ngrid %v\nnow %+v"+
 		"\nsuggested %+v\nat %+v", c.Decks, c.Cards, c.Overdue, c.Unbegun, c.Grid,
 		c.Now, c.Suggested, c.Points)
