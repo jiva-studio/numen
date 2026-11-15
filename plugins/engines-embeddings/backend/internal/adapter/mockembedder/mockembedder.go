@@ -66,6 +66,9 @@ func (m Embedder) Embed(ctx context.Context, texts []string) ([][]float32, error
 }
 
 func waitForHoldFile(ctx context.Context, path string) error {
+	if path == "" {
+		return nil
+	}
 	for {
 		if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 			return nil
@@ -94,9 +97,18 @@ func (m Embedder) record(texts []string) {
 	}
 }
 
-func appendLine(path string, texts []string) error {
+func appendLine(path string, texts []string) (err error) {
+	line, err := json.Marshal(map[string][]string{"texts": texts})
+	if err != nil {
+		return err
+	}
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
-	return errors.Join(err, json.NewEncoder(f).Encode(map[string][]string{"texts": texts}), f.Close())
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, f.Close()) }()
+	_, err = f.Write(append(line, '\n'))
+	return err
 }
 
 func isHeld(text string) bool {
