@@ -24,4 +24,4 @@ export const EDITOR_MODULES = {
   '@lezer/highlight': () => import('@lezer/highlight'),
   '@lezer/lr': () => import('@lezer/lr'),
   '@lezer/markdown': () => import('@lezer/markdown'),
-} satisfies Record<EditorModuleName, () => Promise<unknown>>
+} satisfies Record<EditorModuleName, () => Promise<object>>

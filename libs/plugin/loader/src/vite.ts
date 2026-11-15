@@ -5,7 +5,7 @@
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 import { HOST_MODULES } from '@numen/plugin-sdk/host-modules'
-import { EDITOR_MODULES } from './editorModules.ts'
+import { EDITOR_MODULES } from '@numen/plugin-loader/editor-modules'
 
 /** The id of the entry that serves one host module to plugin bundles. */
 const HOST_MODULE_ENTRY = 'host-module:'
