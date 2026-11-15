@@ -242,7 +242,7 @@ export class Server {
     fs.writeFileSync(path.join(folder, 'numen.json'), JSON.stringify(settings, null, 2))
   }
 
-  private getLiveSettings(): Record<string, unknown> {
+  private getLiveSettings() {
     return {
       v: 1,
       ...(this.options.application === 'editor'
