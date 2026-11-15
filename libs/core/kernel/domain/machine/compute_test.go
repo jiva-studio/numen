@@ -35,7 +35,7 @@ func getMachines() []example {
 }
 
 func getProfiles() []string {
-	return []string{machine.ProfileEco, machine.ProfileBalanced, machine.ProfileMaximum}
+	return []string{machine.ProfileEco, machine.ProfileLow, machine.ProfileBalanced, machine.ProfileHigh, machine.ProfileMaximum}
 }
 
 func TestResolveCompute_NeverExceedsTheCoreBudgetOnAnyMachine(t *testing.T) {
@@ -138,9 +138,9 @@ func TestResolveCompute_DerivesMemoryLimitFromRAMAndProfile(t *testing.T) {
 	}{
 		{"eco on a Ryzen with 32 GB", machine.ProfileEco, machine.Specs{LogicalCPUs: 16, TotalRAMMB: 32768}, 8192},
 		{"balanced on a Ryzen with 32 GB", machine.ProfileBalanced, machine.Specs{LogicalCPUs: 16, TotalRAMMB: 32768}, 16384},
-		{"maximum on a Ryzen with 32 GB", machine.ProfileMaximum, machine.Specs{LogicalCPUs: 16, TotalRAMMB: 32768}, 24576},
+		{"maximum on a Ryzen with 32 GB", machine.ProfileMaximum, machine.Specs{LogicalCPUs: 16, TotalRAMMB: 32768}, 29491},
 		{"balanced on an M4 with 24 GB", machine.ProfileBalanced, machine.Specs{LogicalCPUs: 10, TotalRAMMB: 24576}, 12288},
-		{"maximum on an M4 with 24 GB", machine.ProfileMaximum, machine.Specs{LogicalCPUs: 10, TotalRAMMB: 24576}, 18432},
+		{"maximum on an M4 with 24 GB", machine.ProfileMaximum, machine.Specs{LogicalCPUs: 10, TotalRAMMB: 24576}, 22118},
 		{"eco on a laptop with 2 GB", machine.ProfileEco, machine.Specs{LogicalCPUs: 2, TotalRAMMB: 2048}, 512},
 		{"balanced on a laptop with 2 GB", machine.ProfileBalanced, machine.Specs{LogicalCPUs: 2, TotalRAMMB: 2048}, 1024},
 		{"unknown memory sets no limit at eco", machine.ProfileEco, machine.Specs{LogicalCPUs: 8}, 0},
@@ -157,12 +157,36 @@ func TestResolveCompute_DerivesMemoryLimitFromRAMAndProfile(t *testing.T) {
 	}
 }
 
-func TestResolveCompute_RaisesTheMemoryLimitWithTheProfile(t *testing.T) {
+func TestResolveCompute_ResolvesEveryLevel(t *testing.T) {
+	hw := machine.Specs{LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8, TotalRAMMB: 32768}
+	cases := []struct {
+		profile string
+		want    machine.ResolvedCompute
+	}{
+		{machine.ProfileEco, machine.ResolvedCompute{Profile: "eco", CoreBudget: 1, Workers: 1, MemoryLimitMB: 8192, Nice: 19}},
+		{machine.ProfileLow, machine.ResolvedCompute{Profile: "low", CoreBudget: 4, Workers: 2, MemoryLimitMB: 8192, Nice: 15}},
+		{machine.ProfileBalanced, machine.ResolvedCompute{Profile: "balanced", CoreBudget: 8, Workers: 4, MemoryLimitMB: 16384, Nice: 10}},
+		{machine.ProfileHigh, machine.ResolvedCompute{Profile: "high", CoreBudget: 12, Workers: 12, MemoryLimitMB: 24576, Nice: 5}},
+		{machine.ProfileMaximum, machine.ResolvedCompute{Profile: "maximum", CoreBudget: 16, Workers: 16, MemoryLimitMB: 29491, Nice: 0}},
+	}
+	for _, c := range cases {
+		if got := machine.ResolveCompute(c.profile, hw); got != c.want {
+			t.Errorf("%s resolved to %+v, want %+v", c.profile, got, c.want)
+		}
+	}
+}
+
+func TestResolveCompute_RaisesTheLimitsWithTheProfile(t *testing.T) {
 	hw := machine.Specs{LogicalCPUs: 8, TotalRAMMB: 16384}
-	eco := machine.ResolveCompute(machine.ProfileEco, hw).MemoryLimitMB
-	balanced := machine.ResolveCompute(machine.ProfileBalanced, hw).MemoryLimitMB
-	maximum := machine.ResolveCompute(machine.ProfileMaximum, hw).MemoryLimitMB
-	if !(eco < balanced && balanced < maximum && maximum < hw.TotalRAMMB) {
-		t.Fatalf("limits eco=%d balanced=%d maximum=%d are not ordered below %d", eco, balanced, maximum, hw.TotalRAMMB)
+	var previous machine.ResolvedCompute
+	for i, profile := range []string{machine.ProfileLow, machine.ProfileBalanced, machine.ProfileHigh, machine.ProfileMaximum} {
+		got := machine.ResolveCompute(profile, hw)
+		if got.MemoryLimitMB > hw.TotalRAMMB {
+			t.Errorf("%s limits memory to %d, over the %d installed", profile, got.MemoryLimitMB, hw.TotalRAMMB)
+		}
+		if i > 0 && (got.CoreBudget <= previous.CoreBudget || got.MemoryLimitMB <= previous.MemoryLimitMB || got.Nice >= previous.Nice) {
+			t.Errorf("%s resolved to %+v, not above %+v", profile, got, previous)
+		}
+		previous = got
 	}
 }

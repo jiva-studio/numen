@@ -57,7 +57,15 @@ func getCheckMessage(message string, catalog searchquery.Catalog) string {
 	for i, arg := range f.Args {
 		args[i] = getTypeText(arg)
 	}
-	return fmt.Sprintf(messageArguments, f.Name, strings.Join(args, " and "))
+	text := strings.Join(args, " and ")
+	if len(f.OptionalArgs) > 0 {
+		optional := make([]string, len(f.OptionalArgs))
+		for i, arg := range f.OptionalArgs {
+			optional[i] = getTypeText(arg)
+		}
+		text += ", and optionally " + strings.Join(optional, " and ")
+	}
+	return fmt.Sprintf(messageArguments, f.Name, text)
 }
 
 func getOperatorText(name string) string {

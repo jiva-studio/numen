@@ -53,7 +53,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *Plu
 	sups := supervision.NewSupervisors(errs.Report, services.ClearPlugin)
 	health := pluginhealth.NewItems()
 	failures := supervision.NewFailures(sups, clock, errs, health)
-	set := plugin.NewPluginSet(plugin.PluginSetDeps{Supervisors: sups, Values: values, Mode: mode})
+	set := plugin.NewPluginSet(plugin.PluginSetDeps{Supervisors: sups, Values: values, Mode: mode, Core: getCoreClaims()})
 	registry := plugin.NewRegistry(plugin.RegistryDeps{Set: set, Mode: mode, Supervisors: sups, Readers: readers})
 	files := storage.New(errs.Report, set.GetVersion)
 	processes := supervision.NewProcesses(sups, clock, errs.Report, services, files)

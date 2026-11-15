@@ -3,6 +3,7 @@ package trigger_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"maps"
 	"slices"
@@ -131,8 +132,8 @@ func (types) GetContentType(path string) domain.ContentType {
 
 func (types) ListExtensions(domain.ContentType) []string { return nil }
 
-// plugins declares the triggers it is given and records each run. A path in failing fails, and a
-// plugin in unavailable cannot be reached.
+// plugins declares the triggers it is given and records each run with its paths joined by commas. A
+// path in failing fails, and a plugin in unavailable cannot be reached.
 type plugins struct {
 	mu          sync.Mutex
 	triggers    []plugin.TriggerEntry
@@ -150,13 +151,25 @@ func (p *plugins) ListTriggers() []plugin.TriggerEntry {
 	return slices.Clone(p.triggers)
 }
 
-// ListHandlers lists a handler of each command a trigger runs, under the condition handlerWhen gives
-// its command, or none.
+// ListHandlers lists a handler of each shared command a trigger runs, under the condition handlerWhen
+// gives its command, or none.
 func (p *plugins) ListHandlers() []plugin.CommandEntry {
+	return p.listCommands(true)
+}
+
+// ListCommands lists each command of a plugin's own a trigger runs, as ListHandlers does.
+func (p *plugins) ListCommands() []plugin.CommandEntry {
+	return p.listCommands(false)
+}
+
+func (p *plugins) listCommands(isShared bool) []plugin.CommandEntry {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	var out []plugin.CommandEntry
 	for _, one := range p.triggers {
+		if manifest.IsSharedCommand(one.Trigger.Command) != isShared {
+			continue
+		}
 		out = append(out, plugin.CommandEntry{PluginID: one.PluginID, Command: manifest.Command{
 			ID: one.Trigger.Command, When: p.handlerWhen[one.Trigger.Command],
 		}})
@@ -171,7 +184,11 @@ func (p *plugins) Execute(_ context.Context, _ domain.Vault, call plugin.Command
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.ran = append(p.ran, call.PluginID+" "+call.Command+" "+call.Path)
+	target := call.Path
+	if len(call.Paths) > 0 {
+		target = strings.Join(call.Paths, ",")
+	}
+	p.ran = append(p.ran, call.PluginID+" "+call.Command+" "+target)
 	if p.unavailable[call.PluginID] {
 		return plugin.CommandResult{}, &plugin.UnavailableError{PluginID: call.PluginID, Reason: plugin.Failed}
 	}
@@ -395,5 +412,119 @@ func TestOnePassRunsAtATime(t *testing.T) {
 	}
 	if got := s.plugins.take(); len(got) != 2 {
 		t.Errorf("ran %v, want the file once in each pass", got)
+	}
+}
+
+const tagger = "org.example.tags"
+
+func getReadTagsOnFrontmatter() plugin.TriggerEntry {
+	return plugin.TriggerEntry{PluginID: tagger, Trigger: manifest.Trigger{
+		Event: manifest.EventNoteFrontmatterChanged, Command: "tags.read", When: "target.isNote",
+	}}
+}
+
+func TestAFrontmatterPassRunsTheFrontmatterTriggersOverTheNotesNamedAndOverRemovedOnes(t *testing.T) {
+	s := newScene(t, map[string]string{"notes/a.md": "---\ntags: [river]\n---\n", "notes/b.md": "# B\n", "scans/a.pdf": "%PDF a"},
+		getExtractText(), getReadTagsOnFrontmatter())
+
+	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"notes/a.md", "notes/gone.md", "scans/a.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{tagger + " tags.read notes/a.md,notes/gone.md"}
+	if got := s.plugins.take(); !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+}
+
+func TestAPassOverChangedFilesRunsNoFrontmatterTrigger(t *testing.T) {
+	s := newScene(t, map[string]string{"notes/a.md": "# A\n", "scans/a.pdf": "%PDF a"}, getExtractText(), getReadTagsOnFrontmatter())
+
+	if err := s.triggers.Execute(t.Context(), domain.Vault{ID: "v1"}, []string{"notes/a.md", "scans/a.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := s.plugins.take(), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+}
+
+func TestAPassOverTheVaultRunsNoFrontmatterTrigger(t *testing.T) {
+	s := newScene(t, map[string]string{"notes/a.md": "---\ntags: [river]\n---\n", "notes/b.md": "# B\n", "scans/a.pdf": "%PDF a"},
+		getExtractText(), getReadTagsOnFrontmatter())
+
+	want := []string{scanner + " app:file.createText scans/a.pdf"}
+	if got := s.runAll(t); !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+}
+
+func TestATriggerOfAPluginsOwnCommandRunsOnlyWhereTheConditionOfTheCommandIsTrue(t *testing.T) {
+	s := newScene(t, map[string]string{"notes/a.md": "# A\n", "drafts/b.md": "# B\n"}, getReadTagsOnFrontmatter())
+	s.plugins.handlerWhen = map[string]string{"tags.read": "!target.contentType.startsWith('text/') || target.isNote"}
+
+	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"drafts/b.md"}); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := s.plugins.take(), []string{tagger + " tags.read drafts/b.md"}; !slices.Equal(got, want) {
+		t.Errorf("ran %v, want %v", got, want)
+	}
+
+	s.plugins.handlerWhen = map[string]string{"tags.read": "target.isFolder"}
+	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, []string{"drafts/b.md"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.plugins.take(); len(got) != 0 {
+		t.Errorf("ran %v where the condition of the command does not hold", got)
+	}
+}
+
+func TestAFrontmatterPassRunsATriggerOncePerBatchOverExactlyTheNotesNamed(t *testing.T) {
+	files := map[string]string{"notes/untouched.md": "# U\n", "scans/a.pdf": "%PDF a"}
+	var named []string
+	for i := range 2*trigger.FrontmatterBatchSize + 1 {
+		path := fmt.Sprintf("notes/%04d.md", i)
+		files[path] = "---\ntags: [river]\n---\n"
+		named = append(named, path)
+	}
+	s := newScene(t, files, getReadTagsOnFrontmatter())
+
+	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, append(named, "scans/a.pdf")); err != nil {
+		t.Fatal(err)
+	}
+
+	ran := s.plugins.take()
+	if len(ran) != 3 {
+		t.Fatalf("ran %d times, want 3", len(ran))
+	}
+	var covered []string
+	for _, one := range ran {
+		paths := strings.Split(strings.TrimPrefix(one, tagger+" tags.read "), ",")
+		if len(paths) > trigger.FrontmatterBatchSize {
+			t.Errorf("one run was given %d notes, more than %d", len(paths), trigger.FrontmatterBatchSize)
+		}
+		covered = append(covered, paths...)
+	}
+	if !slices.Equal(covered, named) {
+		t.Errorf("the runs covered %d notes, want the %d named", len(covered), len(named))
+	}
+}
+
+func TestAPluginThatCannotBeReachedGetsNoFurtherBatchesInTheFrontmatterPass(t *testing.T) {
+	files := map[string]string{}
+	var named []string
+	for i := range trigger.FrontmatterBatchSize + 1 {
+		path := fmt.Sprintf("notes/%04d.md", i)
+		files[path] = "# N\n"
+		named = append(named, path)
+	}
+	s := newScene(t, files, getReadTagsOnFrontmatter())
+	s.plugins.unavailable[tagger] = true
+
+	if err := s.triggers.ExecuteFrontmatter(t.Context(), domain.Vault{ID: "v1"}, named); err == nil {
+		t.Error("a plugin that cannot be reached was not reported")
+	}
+	if got := len(s.plugins.take()); got != 1 {
+		t.Errorf("ran %d times, want 1", got)
 	}
 }

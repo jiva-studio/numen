@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/operationresult"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
@@ -63,12 +65,28 @@ func (rr reranker) score(ctx context.Context, in rerankInput) ([]float64, search
 		if err == nil {
 			return scores, report, nil
 		}
-		failures = append(failures, searchquery.RerankFailure{ConnectionName: row.ConnectionName, Reason: err.Error()})
+		failures = append(failures, searchquery.RerankFailure{ConnectionName: row.ConnectionName, Reason: getFailureReason(err)})
 	}
 	return nil, searchquery.RerankReport{}, &searchquery.RerankError{Failures: failures}
 }
 
+const rerankBatchSize = 32
+
 var errUnavailable = errors.New("not available")
+
+func getFailureReason(err error) string {
+	if failed, ok := errors.AsType[*connection.AllFailedError](err); ok {
+		reasons := make([]string, len(failed.Failures))
+		for i, one := range failed.Failures {
+			reasons[i] = one.Reason
+		}
+		return strings.Join(reasons, "; ")
+	}
+	if stopped, ok := errors.AsType[*connection.StoppedError](err); ok {
+		return stopped.Reason
+	}
+	return err.Error()
+}
 
 func (rr reranker) scoreWith(ctx context.Context, row modelcall.Row, in rerankInput) ([]float64, searchquery.RerankReport, error) {
 	resolved, err := rr.resolve(row.ConnectionID)
@@ -124,6 +142,15 @@ func getStoredScores(hashes []string, stored map[string][]byte) ([]float64, []in
 }
 
 func (rr reranker) callRow(ctx context.Context, row modelcall.Row, in rerankInput, missing []int, scores []float64) error {
+	for start := 0; start < len(missing); start += rerankBatchSize {
+		if err := rr.callBatch(ctx, row, in, missing[start:min(start+rerankBatchSize, len(missing))], scores); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (rr reranker) callBatch(ctx context.Context, row modelcall.Row, in rerankInput, missing []int, scores []float64) error {
 	documents := make([]string, len(missing))
 	for j, i := range missing {
 		documents[j] = in.texts[i]

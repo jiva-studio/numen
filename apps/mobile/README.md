@@ -5,6 +5,7 @@ A phone showing one vault. The core is the one the window uses: `gomobile` binds
 ## What is here
 
 - `bind/` — the Go side: `Start(dir)` opens the vault under `dir` and returns the port it serves on. `Stop()` closes it.
+- `cmd/numen-linked/` — the core with Go plugins linked into its binary and served in its process, as the phone will run them. It runs on a computer; its test calls a linked plugin on the route the window uses.
 - `android/app/src/main/java/md/numen/spike/NumenCorePlugin.java` — the Capacitor plugin. It passes the core the folder the platform gave the application and passes the port to the page.
 - `src/core.ts` — the page's side: it reads the port, then creates a generated client.
 - `src/App.vue` — the vault the core opened, and the note it shows first.

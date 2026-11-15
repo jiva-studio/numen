@@ -2,10 +2,12 @@ package celquery_test
 
 import (
 	"errors"
+	"reflect"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
@@ -20,7 +22,7 @@ func parse(text string) (searchquery.Query, error) {
 	if err != nil {
 		return searchquery.Query{}, err
 	}
-	return searchquery.Normalize(raw, limits)
+	return searchquery.Normalize(raw, limits, time.UTC)
 }
 
 func getProblems(t *testing.T, text string) []searchquery.Problem {
@@ -185,6 +187,50 @@ func TestDeepNestingIsRejected(t *testing.T) {
 	}
 }
 
+func TestLinkFunctionsParseToSetConditionsWithTargetAndType(t *testing.T) {
+	q, err := parse(`hasLinkTo("Entropy", "requires") && !isChildOf("Physics")`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if countLeaves(q.Root, searchquery.LeafSet) != 2 || len(q.Sets) != 2 || q.IsSearchResults {
+		t.Fatalf("the query is %+v, want two set leaves", q)
+	}
+	if !reflect.DeepEqual(q.Sets[0], searchquery.SetCondition{Function: "hasLinkTo", Target: "Entropy", LinkType: "requires", IsPositive: true, Position: searchquery.StartPosition()}) {
+		t.Errorf("the first set is %+v", q.Sets[0])
+	}
+	if q.Sets[1].Function != "isChildOf" || q.Sets[1].IsPositive || !q.Root.Children[1].IsNegated {
+		t.Errorf("the second set is %+v, want a negated isChildOf", q.Sets[1])
+	}
+}
+
+func TestALinkFunctionReportsABadArgumentOrUse(t *testing.T) {
+	for text, message := range map[string]string{
+		`hasLinkTo(path)`:             "takes a text in quotes",
+		`hasLinkTo("  ")`:             "The target of hasLinkTo is empty",
+		`isChildOf("a", "b", "c")`:    "isChildOf takes one text in quotes, and optionally one text in quotes",
+		`hasLinkTo("a", "b") == true`: "condition over",
+	} {
+		if problems := getProblems(t, text); !hasProblem(problems, message) {
+			t.Errorf("%s gave %+v, want %q", text, problems, message)
+		}
+	}
+}
+
+func TestAMisspelledLinkFunctionSuggestsTheName(t *testing.T) {
+	problems := getProblems(t, `isDescendentOf("x")`)
+	if len(problems) != 1 || problems[0].Suggestion != "isDescendantOf" {
+		t.Errorf("got %+v, want a suggestion of isDescendantOf", problems)
+	}
+}
+
+func TestEveryCatalogExampleParses(t *testing.T) {
+	for _, f := range searchquery.GetBuiltinCatalog().Functions {
+		if _, err := parse(f.Example); err != nil {
+			t.Errorf("the example of %s, %s, does not parse: %v", f.Name, f.Example, err)
+		}
+	}
+}
+
 func TestASyntaxProblemReadsInPlainWordsAtItsPlace(t *testing.T) {
 	owner := "(meaninng\n(\"Мадхавендра Пури) && meaning(\"Кришна\"\n)).rerank(\"как Мадхавендрапури и Кришна связаны?\")."
 	tests := []struct {
@@ -214,6 +260,9 @@ func TestASyntaxProblemReadsInPlainWordsAtItsPlace(t *testing.T) {
 		{"two conditions with no operator", `meaning("a") words("b")`, []string{"1:14: Join the conditions with && or || before words"}},
 		{"a number for a text", `meaning(1)`, []string{"1:1: meaning takes one text in quotes"}},
 		{"an operator outside the language", `meaning("a") + 1`, []string{"1:14: The operator + is not allowed in a query"}},
+		{"a misspelled member function", `path.startsWth("books/")`, []string{"1:6: Unknown function startsWth: did you mean startsWith?"}},
+		{"a misspelled text method", `title.contans("Lecture")`, []string{"1:7: Unknown function contans: did you mean contains?"}},
+		{"a function named with an underscore", `_words("river")`, []string{"1:1: Unknown function _words: did you mean words?"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

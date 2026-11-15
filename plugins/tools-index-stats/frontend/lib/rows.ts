@@ -23,7 +23,9 @@ const KIND_LABELS: Readonly<Record<Kind, string>> = {
 
 const PROFILE_LABELS: Readonly<Record<string, string>> = {
   eco: words.eco,
+  low: words.low,
   balanced: words.balanced,
+  high: words.high,
   maximum: words.maximum,
 }
 

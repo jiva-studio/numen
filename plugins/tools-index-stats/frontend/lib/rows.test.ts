@@ -101,6 +101,14 @@ describe('getRows', () => {
     expect(valueOf({ ...BASE, profile: 'turbo' }, 'profile')).toBe('turbo · 4 threads')
   })
 
+  it('names each of the five profiles', () => {
+    expect(valueOf({ ...BASE, profile: 'low' }, 'profile')).toBe('Low · 4 threads')
+    expect(valueOf({ ...BASE, profile: 'high', threads: 12 }, 'profile')).toBe('High · 12 threads')
+    expect(valueOf({ ...BASE, profile: 'maximum', threads: 16 }, 'profile')).toBe(
+      'Maximum · 16 threads',
+    )
+  })
+
   it('gives a hint to the rows whose meaning is not obvious only', () => {
     const rows = getRows(BASE, 'en-US')
 

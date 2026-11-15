@@ -68,7 +68,9 @@ const everyFieldManifest = `{
 			{"key": "mode", "type": "enum", "title": "Mode", "options": ["a", "b"], "default": "a"},
 			{"key": "apiKey", "type": "secret", "title": "Key", "required": true},
 			{"key": "parallelRequests", "type": "number", "title": "Parallel", "default": 4, "min": 1, "max": 32, "step": 1}]}],
-		"operations": [{"name": "llm.complete", "title": "complete text"}, {"name": "llm.models", "title": "list models"}]}
+		"operations": [{"name": "llm.complete", "title": "complete text"}, {"name": "llm.models", "title": "list models"}],
+		"searchFunctions": {"version": 1, "functions": [{"name": "rhymes", "args": [{"name": "word", "type": "string"}], "level": "document",
+			"description": "notes that rhyme with a word", "example": "rhymes(\"moon\")"}]}}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

@@ -163,7 +163,7 @@ func TestListSearchFunctionsListsTheLanguage(t *testing.T) {
 			t.Errorf("function %v lacks a summary, a description, an example or a signature", f)
 		}
 	}
-	if !slices.Equal(names, []string{"words", "meaning", "kind", "path", "rerank", "top", "sortBy"}) {
+	if !slices.Equal(names, searchquery.ListFunctionNames(searchquery.GetBuiltinCatalog())) {
 		t.Errorf("names %v", names)
 	}
 }

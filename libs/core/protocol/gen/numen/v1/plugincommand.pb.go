@@ -94,7 +94,11 @@ type RunCommandRequest struct {
 	Arguments map[string]string `protobuf:"bytes,3,rep,name=arguments,proto3" json:"arguments,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// The id of the item a person picked, for a command that offers its own
 	// items; empty for a run without a pick.
-	ItemId        string `protobuf:"bytes,4,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	ItemId string `protobuf:"bytes,4,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	// The notes a trigger on note.frontmatterChanged runs the command over in
+	// one call, as paths relative to the vault folder; path is empty then. Empty
+	// for any other run.
+	Paths         []string `protobuf:"bytes,5,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -155,6 +159,13 @@ func (x *RunCommandRequest) GetItemId() string {
 		return x.ItemId
 	}
 	return ""
+}
+
+func (x *RunCommandRequest) GetPaths() []string {
+	if x != nil {
+		return x.Paths
+	}
+	return nil
 }
 
 type RunCommandResponse struct {
@@ -1123,12 +1134,13 @@ var File_numen_v1_plugincommand_proto protoreflect.FileDescriptor
 
 const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\n" +
-	"\x1cnumen/v1/plugincommand.proto\x12\bnumen.v1\x1a\x17numen/v1/manifest.proto\"\xe2\x01\n" +
+	"\x1cnumen/v1/plugincommand.proto\x12\bnumen.v1\x1a\x17numen/v1/manifest.proto\"\xf8\x01\n" +
 	"\x11RunCommandRequest\x12\x18\n" +
 	"\acommand\x18\x01 \x01(\tR\acommand\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12H\n" +
 	"\targuments\x18\x03 \x03(\v2*.numen.v1.RunCommandRequest.ArgumentsEntryR\targuments\x12\x17\n" +
-	"\aitem_id\x18\x04 \x01(\tR\x06itemId\x1a<\n" +
+	"\aitem_id\x18\x04 \x01(\tR\x06itemId\x12\x14\n" +
+	"\x05paths\x18\x05 \x03(\tR\x05paths\x1a<\n" +
 	"\x0eArgumentsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x81\x01\n" +

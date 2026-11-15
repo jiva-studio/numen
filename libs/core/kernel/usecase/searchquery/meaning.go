@@ -69,7 +69,7 @@ func (p *plan) scanVectors(ctx context.Context, documents []searchquery.Document
 	var found []similarChunk
 	after := domain.ChunkID("")
 	for {
-		page, err := p.u.vectors.ListDocumentVectors(ctx, p.v.ID, searchquery.DocumentVectorQuery{
+		page, err := p.u.index.vectors.ListDocumentVectors(ctx, p.v.ID, searchquery.DocumentVectorQuery{
 			Paths: getPaths(documents), Recipe: p.recipe, After: after, Limit: vectorPage,
 		})
 		if err != nil {
@@ -95,7 +95,7 @@ func (p *plan) searchCoarse(ctx context.Context, s searchquery.Scope, query []fl
 		prefix = s.PathPrefixes[0]
 	}
 	for {
-		ids, err := p.u.vectors.FindCoarseCandidates(ctx, p.v.ID, source.CoarseQuery{Recipe: p.recipe, Vector: query, PathPrefix: prefix, Limit: limit})
+		ids, err := p.u.index.vectors.FindCoarseCandidates(ctx, p.v.ID, source.CoarseQuery{Recipe: p.recipe, Vector: query, PathPrefix: prefix, Limit: limit})
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +116,7 @@ func (p *plan) searchCoarse(ctx context.Context, s searchquery.Scope, query []fl
 }
 
 func (p *plan) rankCoarse(ctx context.Context, s searchquery.Scope, query []float32, ids []domain.ChunkID) ([]similarChunk, bool, error) {
-	stored, err := p.u.vectors.ListStoredVectors(ctx, source.StoredVectorQuery{Recipe: p.recipe, Kinds: s.SourceKinds, Chunks: ids})
+	stored, err := p.u.index.vectors.ListStoredVectors(ctx, source.StoredVectorQuery{Recipe: p.recipe, Kinds: s.SourceKinds, Chunks: ids})
 	if err != nil {
 		return nil, false, err
 	}

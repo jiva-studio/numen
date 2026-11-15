@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/searchrunstest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
@@ -26,9 +27,9 @@ func getTideFunctions() host.SearchFunctions {
 	}}
 }
 
-func newQueryRegistry(t *testing.T) (*hosttest.Searches, *tools.Registry) {
+func newQueryRegistry(t *testing.T) (*searchrunstest.Searches, *tools.Registry) {
 	t.Helper()
-	searches := hosttest.NewSearches()
+	searches := searchrunstest.NewSearches()
 	searches.SetFunctions(getTideFunctions(), nil)
 	score := 0.8
 	searches.SetResults(tideQuery, []host.SearchResult{
@@ -149,5 +150,33 @@ func TestTheDescriptionOfLibraryQueryNamesEveryFunction(t *testing.T) {
 	}
 	if strings.Index(description, "top(int)") < strings.Index(description, "kind: string") {
 		t.Error("the stages are not listed last")
+	}
+}
+
+func TestTheDescriptionOfLibraryQueryNamesTheFunctionsOfEachListing(t *testing.T) {
+	searches := searchrunstest.NewSearches()
+	searches.SetFunctions(getTideFunctions(), nil)
+	registry, err := service.New(vaultsOf(hosttest.New(testVault))).WithLibrary(func(domain.VaultID) service.Library {
+		return service.Library{Versions: nil, Texts: nil, Search: nil, Queries: searches}
+	}, getTideFunctions()).WithFunctionLister(searches.ListSearchFunctions).Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	shelved := getTideFunctions()
+	shelved.Revision = "r2"
+	shelved.Functions = append(shelved.Functions, host.SearchFunction{
+		Name: "shelved", Kind: "function", Level: "document", Signatures: []string{"shelved(string) -> bool"},
+		Description: "notes on a shelf", Example: `shelved("east")`,
+	})
+	searches.SetFunctions(shelved, nil)
+
+	listing, err := registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	index := slices.IndexFunc(listing.Tools, func(tool *tools.ToolInfo) bool { return tool.Name == "library_query" })
+	if index < 0 || !strings.Contains(listing.Tools[index].Description, `shelved(string) -> bool: notes on a shelf. Example: shelved("east")`) {
+		t.Errorf("the listing does not name shelved: %+v", listing.Tools)
 	}
 }

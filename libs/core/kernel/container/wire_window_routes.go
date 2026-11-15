@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
@@ -284,7 +285,7 @@ func getTextVersions(a pluginsWiring) windowsession.TextVersions {
 	return nil
 }
 
-func getTriggerSource(a pluginsWiring) windowsession.TriggerSource {
+func getTriggerSource(a pluginsWiring, frontmatter *indexnote.FrontmatterChanges) windowsession.TriggerSource {
 	return windowsession.TriggerSource{
 		Open: func() windowsession.TriggerRunner {
 			if triggers := openTriggers(a); triggers != nil {
@@ -292,7 +293,8 @@ func getTriggerSource(a pluginsWiring) windowsession.TriggerSource {
 			}
 			return nil
 		},
-		Watch: func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
+		Watch:            func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
+		WatchFrontmatter: frontmatter.Watch,
 	}
 }
 

@@ -101,3 +101,29 @@ func TestGetWordScoresOmitsTheChunksThatDoNotMatch(t *testing.T) {
 		t.Errorf("scores %v, %v, want one chunk", scores, err)
 	}
 }
+
+func TestListDocumentsWithinPathsReturnsOnlyTheSourcesAtThem(t *testing.T) {
+	db := openIndex(t)
+	source{path: "a.md", kind: "note", large: "a", smalls: []string{"a one"}}.save(t, db)
+	source{path: "a.md.md", kind: "note", large: "b", smalls: []string{"b one"}}.save(t, db)
+	source{path: "c.md", kind: "note", large: "c", smalls: []string{"c one"}}.save(t, db)
+	search := db.ChunkSearch()
+
+	got, err := search.ListDocuments(t.Context(), vaultA, searchquery.DocumentQuery{
+		Paths: []string{"a.md", "c.md", "gone.md"}, IsWithinPaths: true, Recipe: recipe,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var paths []string
+	for _, d := range got {
+		paths = append(paths, d.Path)
+	}
+	if !slices.Equal(paths, []string{"a.md", "c.md"}) {
+		t.Errorf("listed %v, want a.md and c.md", paths)
+	}
+	none, err := search.ListDocuments(t.Context(), vaultA, searchquery.DocumentQuery{IsWithinPaths: true, Recipe: recipe})
+	if err != nil || len(none) != 0 {
+		t.Errorf("no paths listed %d documents, %v, want none", len(none), err)
+	}
+}

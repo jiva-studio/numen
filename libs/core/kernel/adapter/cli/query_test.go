@@ -57,6 +57,7 @@ func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchquery.F
 		"notes/Field.md":  "A field of wheat under a dry wind.",
 		"notes/Forest.md": "Old oaks and the smell of rain in the forest.",
 		"notes/Hill.md":   "Sheep graze on the hill above the village.",
+		"notes/Sea.md":    "Salt water and gulls. See [[Harbor]].",
 	}
 	v := vaulttest.NewVault(t, notes)
 	v.Name = "shelf"
@@ -72,9 +73,9 @@ func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchquery.F
 	}
 	search := db.ChunkSearch()
 	deps := searchquery.FindSearchResultsDeps{
-		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search, Words: search,
+		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search,
 		Places: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
-		Floors: fixedQueryFloor{}, ContentTypes: markdownTypes{},
+		Floors: fixedQueryFloor{}, ContentTypes: markdownTypes{}, Contents: db.NoteQueries(), Links: db.NoteQueries(), Clock: testsupport.NewClock(),
 	}
 	change(db, &deps)
 	find := searchquery.NewFindSearchResults(deps)
@@ -140,5 +141,22 @@ func TestHelpListsTheQueryCommand(t *testing.T) {
 	}
 	if !strings.Contains(out, "numen-cli query [--limit N] <vault> <query>  run a search query within one vault") {
 		t.Errorf("help is %q", out)
+	}
+}
+
+func TestQueryFindsTheNotesThatLinkToANote(t *testing.T) {
+	out, stderr, err := runWithStderr(t, newQueryDeps(t), "query", "shelf", `hasLinkTo("Harbor")`)
+	if err != nil {
+		t.Fatalf("%v: %s", err, stderr)
+	}
+	if !strings.Contains(out, "notes/Sea.md  note") || strings.Contains(out, "notes/Moon.md") {
+		t.Errorf("printed %q, want notes/Sea.md alone", out)
+	}
+}
+
+func TestQueryReportsAnUnknownLinkTarget(t *testing.T) {
+	_, stderr, err := runWithStderr(t, newQueryDeps(t), "query", "shelf", `hasLinkTo("Lighthouse")`)
+	if err == nil || !strings.Contains(stderr, "query:1:1: no note or indexed file answers to the target: Lighthouse") {
+		t.Errorf("returned %v, stderr %q", err, stderr)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http/httptest"
+	"slices"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -147,6 +148,23 @@ func TestCommand_PassesTheItemPickedToTheRun(t *testing.T) {
 	run(t, registry, &v1.RunCommandRequest{Command: "download", Path: "talk.md", ItemId: "audio"})
 
 	if got.ItemID != "audio" || got.Path != "talk.md" {
+		t.Errorf("the run received %+v", got)
+	}
+}
+
+func TestCommand_PassesThePathsOfATriggerToTheRun(t *testing.T) {
+	registry := New()
+	var got Request
+	if err := registry.Add("tags.update", func(_ context.Context, request Request) (Result, error) {
+		got = request
+		return Result{}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	run(t, registry, &v1.RunCommandRequest{Command: "tags.update", Paths: []string{"a.md", "b.md"}})
+
+	if !slices.Equal(got.Paths, []string{"a.md", "b.md"}) || got.Path != "" {
 		t.Errorf("the run received %+v", got)
 	}
 }
