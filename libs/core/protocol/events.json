@@ -8,7 +8,7 @@
     { "name": "file.changed", "about": "the content of a file of the vault changes" },
     {
       "name": "note.frontmatterChanged",
-      "about": "the frontmatter of a note changes, a note with frontmatter is added, or a note with frontmatter is removed"
+      "about": "the index stores a note whose frontmatter differs from what it held: the frontmatter changes, or a note with frontmatter is added or removed"
     }
   ]
 }

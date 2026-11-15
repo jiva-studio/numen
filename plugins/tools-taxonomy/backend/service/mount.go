@@ -1,5 +1,5 @@
 // Package service is the backend of the tags plugin: it builds the host clients and the cache of the
-// tags, and registers the command that updates the tags of a note and the tool tag_list.
+// tags, and registers the command that updates the tags of notes and the tool tag_list.
 package service
 
 import (
@@ -15,7 +15,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/tagcache"
 )
 
-// UpdateCommand is the command the trigger on note.frontmatterChanged runs over a note.
+// UpdateCommand is the command that reads the tags of notes again: of the notes a trigger on
+// note.frontmatterChanged names, or of the one note of a run from the palette.
 const UpdateCommand = "tags.update"
 
 // ShownVault names the vault the host shows, which a command runs over.
@@ -76,7 +77,11 @@ func newUpdateCommand(shown ShownVault, cache *tagcache.Caches) command.Run {
 		if err != nil {
 			return command.Result{}, err
 		}
-		if err := cache.UpdateNote(ctx, v.ID, req.Path); err != nil {
+		paths := req.Paths
+		if len(paths) == 0 {
+			paths = []string{req.Path}
+		}
+		if err := cache.UpdateNotes(ctx, v.ID, paths); err != nil {
 			return command.Result{}, err
 		}
 		return command.Result{}, nil

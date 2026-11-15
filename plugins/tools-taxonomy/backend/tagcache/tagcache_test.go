@@ -135,7 +135,7 @@ func TestAnUpdateOfANoteReadsThatNoteAlone(t *testing.T) {
 	s.reads.take()
 
 	s.vault.File("a.md", "---\ntags: [lake]\n---\n")
-	if err := s.cache.UpdateNote(t.Context(), "garden", "a.md"); err != nil {
+	if err := s.cache.UpdateNotes(t.Context(), "garden", []string{"a.md"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -155,7 +155,7 @@ func TestARemovedNoteIsDroppedFromTheTags(t *testing.T) {
 	s.getCounts(t)
 
 	s.vault.Remove("a.md")
-	if err := s.cache.UpdateNote(t.Context(), "garden", "a.md"); err != nil {
+	if err := s.cache.UpdateNotes(t.Context(), "garden", []string{"a.md"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -170,7 +170,7 @@ func TestARemovedNoteIsDroppedFromTheTags(t *testing.T) {
 func TestAnUpdateBeforeTheFirstUseReadsEveryNote(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: lake\n---\n"})
 
-	if err := s.cache.UpdateNote(t.Context(), "garden", "a.md"); err != nil {
+	if err := s.cache.UpdateNotes(t.Context(), "garden", []string{"a.md"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -216,7 +216,7 @@ func TestAFailedUpdateReadsEveryNoteAtTheNextUse(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getCounts(t)
 	s.reads.failing = true
-	if err := s.cache.UpdateNote(t.Context(), "garden", "a.md"); err == nil {
+	if err := s.cache.UpdateNotes(t.Context(), "garden", []string{"a.md"}); err == nil {
 		t.Fatal("a failed read was not reported")
 	}
 	s.reads.failing = false
@@ -230,5 +230,46 @@ func TestAFailedUpdateReadsEveryNoteAtTheNextUse(t *testing.T) {
 	}
 	if counts["lake"] != 1 || counts["river"] != 1 {
 		t.Errorf("counts = %v", counts)
+	}
+}
+
+func TestAnUpdateOfSeveralNotesReadsThemInOneRead(t *testing.T) {
+	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: river\n---\n", "c.md": "---\ntags: river\n---\n"})
+	s.getCounts(t)
+	s.reads.take()
+
+	s.vault.File("a.md", "---\ntags: lake\n---\n")
+	s.vault.Remove("b.md")
+	if err := s.cache.UpdateNotes(t.Context(), "garden", []string{"a.md", "b.md"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if asked := s.reads.take(); len(asked) != 1 || !slices.Equal(asked[0].Paths, []string{"a.md", "b.md"}) {
+		t.Errorf("asked %+v, want one read of both notes", asked)
+	}
+	if counts := s.getCounts(t); counts["river"] != 1 || counts["lake"] != 1 || len(counts) != 2 {
+		t.Errorf("counts = %v", counts)
+	}
+	if got := s.readFile(t); len(got) != 2 || !slices.Equal(got["a.md"], []string{"lake"}) {
+		t.Errorf("tags.json holds %v", got)
+	}
+}
+
+func TestANewCacheReadsTheTagsChangedWhileThePluginWasNotRunning(t *testing.T) {
+	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: river\n---\n"})
+	s.getCounts(t)
+
+	s.vault.File("a.md", "---\ntags: lake\n---\n")
+	s.vault.File("c.md", "---\ntags: delta\n---\n")
+	s.vault.Remove("b.md")
+	s.cache = tagcache.New(func(domain.VaultID) tagcache.Vault {
+		return tagcache.Vault{Frontmatter: s.reads, Store: s.vault.Store()}
+	})
+
+	if counts := s.getCounts(t); len(counts) != 2 || counts["lake"] != 1 || counts["delta"] != 1 {
+		t.Errorf("counts = %v", counts)
+	}
+	if got := s.readFile(t); len(got) != 2 || !slices.Equal(got["c.md"], []string{"delta"}) {
+		t.Errorf("tags.json holds %v", got)
 	}
 }

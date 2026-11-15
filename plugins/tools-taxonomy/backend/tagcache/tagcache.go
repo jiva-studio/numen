@@ -1,6 +1,6 @@
 // Package tagcache keeps the tags of the notes of each vault: read from the frontmatter the host
-// holds at the first use of a vault, changed one note at a time, and written to the plugin's folder of
-// the vault's store.
+// holds at the first use of a vault, read again for the notes an update names, and written to the
+// plugin's folder of the vault's store.
 package tagcache
 
 import (
@@ -80,10 +80,10 @@ func (c *Caches) GetTree(ctx context.Context, id domain.VaultID, under string) (
 	return tags.GetTree(one.notes, under), nil
 }
 
-// UpdateNote reads the tags of the note at path again, and drops the note when the vault has none
-// there. A vault not read yet is read whole instead. A failed update leaves the vault to be read whole
-// at its next use.
-func (c *Caches) UpdateNote(ctx context.Context, id domain.VaultID, path string) error {
+// UpdateNotes reads the tags of the notes at the paths again in one read, and drops each note the vault
+// has none at. A vault not read yet is read whole instead. A failed update leaves the vault to be read
+// whole at its next use.
+func (c *Caches) UpdateNotes(ctx context.Context, id domain.VaultID, paths []string) error {
 	one := c.getVault(id)
 	one.mu.Lock()
 	defer one.mu.Unlock()
@@ -91,20 +91,12 @@ func (c *Caches) UpdateNote(ctx context.Context, id domain.VaultID, path string)
 		return c.readAll(ctx, id, one)
 	}
 	vault := c.open(id)
-	page, err := vault.Frontmatter.ReadFrontmatter(ctx, host.FrontmatterQuery{Paths: []string{path}, Keys: []string{tags.FrontmatterKey}})
+	found, err := readTags(ctx, vault.Frontmatter, paths)
 	if err != nil {
 		one.isRead = false
-		return fmt.Errorf("read the tags of %s: %w", path, err)
+		return fmt.Errorf("read the tags of %d notes: %w", len(paths), err)
 	}
-	before, had := one.notes[path]
-	delete(one.notes, path)
-	for _, note := range page.Notes {
-		if found := tags.Parse(note.Values[tags.FrontmatterKey]); note.Path == path && len(found) > 0 {
-			one.notes[path] = found
-		}
-	}
-	after, has := one.notes[path]
-	if had == has && slices.Equal(before, after) {
+	if !one.replace(paths, found) {
 		return nil
 	}
 	if err := write(ctx, vault.Store, one.notes); err != nil {
@@ -114,17 +106,47 @@ func (c *Caches) UpdateNote(ctx context.Context, id domain.VaultID, path string)
 	return nil
 }
 
+func (v *vaultTags) replace(paths []string, found map[string][]string) bool {
+	isChanged := false
+	for _, path := range paths {
+		before, had := v.notes[path]
+		after, has := found[path]
+		if had == has && slices.Equal(before, after) {
+			continue
+		}
+		isChanged = true
+		if has {
+			v.notes[path] = after
+		} else {
+			delete(v.notes, path)
+		}
+	}
+	return isChanged
+}
+
 func (c *Caches) readAll(ctx context.Context, id domain.VaultID, one *vaultTags) error {
 	if one.isRead {
 		return nil
 	}
 	vault := c.open(id)
+	notes, err := readTags(ctx, vault.Frontmatter, nil)
+	if err != nil {
+		return fmt.Errorf("read the tags of the notes: %w", err)
+	}
+	if err := write(ctx, vault.Store, notes); err != nil {
+		return err
+	}
+	one.notes, one.isRead = notes, true
+	return nil
+}
+
+func readTags(ctx context.Context, frontmatter Frontmatter, paths []string) (map[string][]string, error) {
 	notes := map[string][]string{}
-	query := host.FrontmatterQuery{Keys: []string{tags.FrontmatterKey}}
+	query := host.FrontmatterQuery{Paths: paths, Keys: []string{tags.FrontmatterKey}}
 	for {
-		page, err := vault.Frontmatter.ReadFrontmatter(ctx, query)
+		page, err := frontmatter.ReadFrontmatter(ctx, query)
 		if err != nil {
-			return fmt.Errorf("read the tags of the notes: %w", err)
+			return nil, err
 		}
 		for _, note := range page.Notes {
 			if found := tags.Parse(note.Values[tags.FrontmatterKey]); len(found) > 0 {
@@ -132,15 +154,10 @@ func (c *Caches) readAll(ctx context.Context, id domain.VaultID, one *vaultTags)
 			}
 		}
 		if page.NextPageToken == "" {
-			break
+			return notes, nil
 		}
 		query.PageToken = page.NextPageToken
 	}
-	if err := write(ctx, vault.Store, notes); err != nil {
-		return err
-	}
-	one.notes, one.isRead = notes, true
-	return nil
 }
 
 // file is the content of tags.json: the tags of each note that has any, by path.

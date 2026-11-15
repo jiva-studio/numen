@@ -84,8 +84,6 @@ func runTriggers(
 		if err != nil && ctx.Err() == nil {
 			report(err)
 		}
-		// A note removed has no file for a pass over the vault to find, so the notes whose
-		// frontmatter changed get their pass after it too.
 		if frontmatter := passes.takeFrontmatter(); len(frontmatter) > 0 {
 			if err := triggers.ExecuteFrontmatter(ctx, v, frontmatter); err != nil && ctx.Err() == nil {
 				report(err)

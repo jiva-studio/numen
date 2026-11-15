@@ -104,3 +104,18 @@ func TestTheUpdateCommandReadsTheChangedTagsOfTheNote(t *testing.T) {
 		t.Errorf("tags = %+v", got.Tags)
 	}
 }
+
+func TestTheUpdateCommandReadsTheChangedTagsOfEveryNoteOfATrigger(t *testing.T) {
+	p := newPlugin(t, map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: river\n---\n"})
+	p.listTags(t, `{}`)
+
+	p.vault.File("a.md", "---\ntags: lake\n---\n")
+	p.vault.File("b.md", "---\ntags: lake\n---\n")
+	if _, err := p.commands.RunCommand(t.Context(), command.Request{Command: service.UpdateCommand, Paths: []string{"a.md", "b.md"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := p.listTags(t, `{}`); len(got.Tags) != 1 || got.Tags[0].Tag != "lake" || got.Tags[0].Count != 2 {
+		t.Errorf("tags = %+v", got.Tags)
+	}
+}
