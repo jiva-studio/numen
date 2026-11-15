@@ -34,7 +34,7 @@ function onToggle(path: string, isShown: boolean) {
   <div class="saved-search__filter">
     <input
       type="search"
-      class="saved-search__filter-input saved-search__field-input"
+      class="saved-search__filter-input"
       :value="filter"
       :aria-label="words.filterResults"
       :placeholder="words.filterResults"
