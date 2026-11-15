@@ -20,33 +20,38 @@ const operationResultRows = 200_000
 func newFindSearchResults(
 	c pluginsWiring, db *Index, source searchsourceport.Source, errorHandler func(error),
 ) *searchqueryusecase.FindSearchResults {
-	search := db.ChunkSearch()
 	limits, stageLimits := readSearchLimits(c, errorHandler)
 	rerank := openRerankDeps(c)
-	querySource := getQuerySource(source)
-	deps := searchqueryusecase.FindSearchResultsDeps{
-		Parser:       celquery.NewParser(limits),
-		Documents:    search,
-		Contents:     db.NoteQueries(),
-		Vectors:      search,
-		Places:       search,
+	evaluate := searchqueryusecase.NewEvaluateQuery(searchqueryusecase.EvaluateQueryDeps{
+		Chunks:       db.ChunkSearch(),
+		Contents:     db.NoteQueryReads(),
+		Links:        db.NoteQueryReads(),
 		Matcher:      wordmatch.NewMatcher(),
 		Readers:      c.search.VaultReaders,
 		Texts:        c.search.TextReaders,
+		Source:       getQuerySource(source),
 		Floors:       newFloorPolicy(db, source, errorHandler),
 		ContentTypes: c.search.PluginHost.Watch,
-		Codec:        rerankproto.Codec{},
-		Resolve:      rerank.resolve,
-		Calls:        rerank.calls,
-		Rows:         rerank.rows,
-		Results:      db.OperationResults(operationResultRows),
-		Clock:        c.vault.Clock,
-		Links:        db.NoteQueries(),
-		Limits:       limits,
-		StageLimits:  stageLimits,
-		Source:       querySource,
-	}
-	return searchqueryusecase.NewFindSearchResults(deps)
+	})
+	stages := searchqueryusecase.NewApplyStages(searchqueryusecase.ApplyStagesDeps{
+		Calls:   rerank.calls,
+		Codec:   rerankproto.Codec{},
+		Rows:    rerank.rows,
+		Resolve: rerank.resolve,
+		Results: db.OperationResults(operationResultRows),
+		Clock:   c.vault.Clock,
+		Readers: c.search.VaultReaders,
+		Texts:   c.search.TextReaders,
+		Limits:  stageLimits,
+	})
+	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
+		Parser:        celquery.NewParser(limits),
+		Clock:         c.vault.Clock,
+		Limits:        limits,
+		Evaluate:      evaluate.Execute,
+		FillDocuments: evaluate.FillDocuments,
+		Stages:        stages.Execute,
+	})
 }
 
 func readSearchLimits(c pluginsWiring, errorHandler func(error)) (searchquerydomain.Limits, searchquerydomain.StageLimits) {

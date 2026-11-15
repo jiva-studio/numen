@@ -25,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -195,37 +196,38 @@ func (extensionTypes) GetContentType(name string) domain.ContentType {
 func (extensionTypes) ListExtensions(domain.ContentType) []string { return nil }
 
 func (w world) newFind(model texts) *searchquery.FindSearchResults {
-	return searchquery.NewFindSearchResults(w.newDeps(model))
+	return searchquerytest.New(w.newDeps(model))
 }
 
 // countedVectors counts the approximate searches it passes to the index.
 type countedVectors struct {
-	searchquery.VectorQueries
+	searchquery.ChunkIndex
 	coarseSearches int
 }
 
 func (c *countedVectors) FindCoarseCandidates(ctx context.Context, vaultID domain.VaultID, q source.CoarseQuery) ([]domain.ChunkID, error) {
 	c.coarseSearches++
-	return c.VectorQueries.FindCoarseCandidates(ctx, vaultID, q)
+	return c.ChunkIndex.FindCoarseCandidates(ctx, vaultID, q)
 }
 
 func (w world) newCountedFind(model texts) (*searchquery.FindSearchResults, *countedVectors) {
 	deps := w.newDeps(model)
-	counted := &countedVectors{VectorQueries: deps.Vectors}
-	deps.Vectors = counted
-	return searchquery.NewFindSearchResults(deps), counted
+	counted := &countedVectors{ChunkIndex: deps.Evaluate.Chunks}
+	deps.Evaluate.Chunks = counted
+	return searchquerytest.New(deps), counted
 }
 
-func (w world) newDeps(model texts) searchquery.FindSearchResultsDeps {
+func (w world) newDeps(model texts) searchquerytest.Deps {
 	search := w.db.ChunkSearch()
-	deps := searchquery.FindSearchResultsDeps{
-		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Documents: search, Vectors: search,
-		Contents: w.db.NoteQueries(), Links: w.db.NoteQueries(), Clock: newClock(),
-		Places: search, Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{},
-		Floors: fixedFloor(testFloor), ContentTypes: extensionTypes{},
+	deps := searchquerytest.Deps{
+		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: newClock(),
+		Evaluate: searchquery.EvaluateQueryDeps{
+			Chunks: search, Contents: w.db.NoteQueryReads(), Links: w.db.NoteQueryReads(), Matcher: wordmatch.NewMatcher(),
+			Readers: vaultreader.Readers{}, Floors: fixedFloor(testFloor), ContentTypes: extensionTypes{},
+		},
 	}
 	if model != nil {
-		deps.Source = sourcefake.Wrap(model)
+		deps.Evaluate.Source = sourcefake.Wrap(model)
 	}
 	return deps
 }

@@ -13,7 +13,7 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 )
 
 const rerankAddress = "https://rerank.test/v1"
@@ -38,14 +38,14 @@ func newRerankingQuery(t *testing.T) stubSession {
 	reranker := w.AddReranker(t, "Harbor reranker", rerankAddress)
 	w.Rows.Set(settingsdomain.AppOwner, modelcalltest.RerankOperation, connection.Row{ConnectionID: reranker.ID, Options: map[string]string{"model": "rerank-small"}})
 	w.Provider.Answer(rerankAddress, answerEachPassage)
-	return newQuerySession(t, func(db *index.DB, deps *searchquery.FindSearchResultsDeps) {
-		deps.Codec = rerankproto.Codec{}
-		deps.Calls = modelcall.NewCalls(
+	return newQuerySession(t, func(db *index.DB, deps *searchquerytest.Deps) {
+		deps.Stages.Codec = rerankproto.Codec{}
+		deps.Stages.Calls = modelcall.NewCalls(
 			modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows},
 			w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside,
 		)
-		deps.Rows = modelcall.NewRows(w.Resolve, w.Rows.ListRows, nil)
-		deps.Resolve, deps.Results, deps.Clock = w.Resolve, db.OperationResults(100), w.Clock
+		deps.Stages.Rows = modelcall.NewRows(w.Resolve, w.Rows.ListRows, nil)
+		deps.Stages.Resolve, deps.Stages.Results, deps.Clock = w.Resolve, db.OperationResults(100), w.Clock
 	})
 }
 
