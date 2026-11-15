@@ -1,8 +1,8 @@
 import { ref } from 'vue'
-import type { VaultStateApi } from '@/entities/vault'
+import type { VaultStateApi } from '../api/state'
 
-/** What the vault last answered about itself: its identity and its read errors. */
-export function useDisplayVault() {
+/** What the vault the window shows last answered about itself: its identity and its read errors. */
+export function useShownVault() {
   return {
     name: ref(''),
     at: ref(''),
@@ -11,12 +11,12 @@ export function useDisplayVault() {
   }
 }
 
-export type DisplayVault = ReturnType<typeof useDisplayVault>
+export type ShownVault = ReturnType<typeof useShownVault>
 
 /** Reads the vault again into the refs, and returns the vault's state. */
-export async function askVaultState(
+export async function readShownVault(
   getVaultState: VaultStateApi['getVaultState'],
-  vault: DisplayVault,
+  vault: ShownVault,
 ) {
   const state = await getVaultState()
   vault.name.value = state.name
@@ -29,12 +29,12 @@ export async function askVaultState(
 /** Whether another vault is now under the window than the one it last read. */
 export async function isVaultSwapped(
   getVaultState: VaultStateApi['getVaultState'],
-  vault: DisplayVault,
+  vault: ShownVault,
 ): Promise<boolean> {
   const was = vault.at.value
   /* Stryker disable BlockStatement: callers only test truthiness of isVaultSwapped */
   try {
-    const state = await askVaultState(getVaultState, vault)
+    const state = await readShownVault(getVaultState, vault)
     return was !== '' && state.path !== was
   } catch {
     return false

@@ -7,5 +7,3 @@ export const createShownVaultApi = (windowService: WindowClients['windowService'
   getShownVault: async (): Promise<string> =>
     (await windowService.getCurrentVault({ window: WINDOW })).vault,
 })
-
-export type ShownVaultApi = ReturnType<typeof createShownVaultApi>

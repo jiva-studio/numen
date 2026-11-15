@@ -8,7 +8,7 @@ import {
   createFocusStream,
   createTaskStream,
   createVaultStream,
-} from './useWindowStreams'
+} from './streams'
 import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/entities/window'
 import type { TextRange } from '@/shared/lib/textRange'

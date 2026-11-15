@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { createAnsweredApi } from '@/testing/coreAnswers'
-import { createVaultListReader } from './getVaultList'
+import { createVaultListReader } from './vaultList'
 
 const createAnsweredReader = (answers: CoreAnswers) => {
   const api = createAnsweredApi(answers)
