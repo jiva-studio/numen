@@ -7,7 +7,7 @@ Reranks search results with a cross-encoder model on this machine, so that a plu
 ## What You Can Do
 
 - **Rerank without setup**: The plugin adds a connection of the type **Local reranker** to the Connections page as soon as it is enabled. A plugin that reranks texts through its connections can use it at once.
-- **Choose a model for each row**: The row of a connection names a model. Two are listed: GTE multilingual reranker (the default, 341 MB) and BGE reranker v2 M3 (larger, 571 MB). A row with no model runs the default. Any other model needs a profile of your own, described below.
+- **Choose a model for each row**: The row of a connection names a model. Two are listed: BGE reranker v2 M3 (the default, 571 MB) and GTE multilingual reranker (smaller and faster, 341 MB, ranks less well). A row with no model runs the default. Any other model needs a profile of your own, described below.
 - **Run several calls at once**: The field **Parallel requests** of the connection, from 1 to 4 with the default 1, is how many reranking calls the connection runs at once; the others wait in the queue of the connection, a person's search before background work.
 
 ## How it works
