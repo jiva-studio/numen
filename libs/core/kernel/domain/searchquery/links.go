@@ -90,7 +90,8 @@ func listLinkFunctions() []LinkFunction {
 	}
 }
 
-// FindLinkFunction returns the link function of a name; false for a function that reads no links.
+// FindLinkFunction finds only the functions that read the link graph; words, meaning and the file conditions
+// are not among them.
 func FindLinkFunction(name string) (LinkFunction, bool) {
 	functions := listLinkFunctions()
 	index := slices.IndexFunc(functions, func(f LinkFunction) bool { return f.Name == name })

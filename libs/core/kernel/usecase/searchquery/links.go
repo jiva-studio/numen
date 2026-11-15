@@ -220,23 +220,12 @@ func (p *plan) findRelatives(ctx context.Context, start string, f searchquery.Li
 		if err != nil {
 			return nil, err
 		}
-		var fresh []string
-		for _, r := range relatives {
-			if !visited[r] {
-				visited[r] = true
-				fresh = append(fresh, r)
-			}
-		}
-		if len(fresh) > 0 && step > p.u.Limits.MaxLinkDepth {
-			return nil, fmt.Errorf("%w: the hierarchy of %s is deeper than %d steps (MaxLinkDepth)",
-				searchquery.ErrLimitExceeded, start, p.u.Limits.MaxLinkDepth)
+		fresh := markVisited(visited, relatives)
+		if err := p.checkHierarchy(start, step, len(fresh), len(visited)); err != nil {
+			return nil, err
 		}
 		for _, r := range fresh {
 			set[r] = true
-		}
-		if len(visited) > p.u.Limits.MaxDocuments {
-			return nil, fmt.Errorf("%w: the hierarchy of %s holds more than %d notes (MaxDocuments)",
-				searchquery.ErrLimitExceeded, start, p.u.Limits.MaxDocuments)
 		}
 		if !f.IsTransitive {
 			break
@@ -244,6 +233,29 @@ func (p *plan) findRelatives(ctx context.Context, start string, f searchquery.Li
 		frontier = fresh
 	}
 	return set, nil
+}
+
+func markVisited(visited map[string]bool, relatives []string) []string {
+	var fresh []string
+	for _, r := range relatives {
+		if !visited[r] {
+			visited[r] = true
+			fresh = append(fresh, r)
+		}
+	}
+	return fresh
+}
+
+func (p *plan) checkHierarchy(start string, step, freshCount, visitedCount int) error {
+	if freshCount > 0 && step > p.u.Limits.MaxLinkDepth {
+		return fmt.Errorf("%w: the hierarchy of %s is deeper than %d steps (MaxLinkDepth)",
+			searchquery.ErrLimitExceeded, start, p.u.Limits.MaxLinkDepth)
+	}
+	if visitedCount > p.u.Limits.MaxDocuments {
+		return fmt.Errorf("%w: the hierarchy of %s holds more than %d notes (MaxDocuments)",
+			searchquery.ErrLimitExceeded, start, p.u.Limits.MaxDocuments)
+	}
+	return nil
 }
 
 func (p *plan) getRelatives(ctx context.Context, notes []string, direction searchquery.LinkDirection, linkType string) ([]string, error) {
