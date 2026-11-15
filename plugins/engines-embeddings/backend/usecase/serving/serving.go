@@ -55,7 +55,7 @@ type Server struct {
 	source     string
 	connection *connectionSource
 
-	profile      performance.Profile
+	limits       performance.Limits
 	isProfileSet bool
 }
 
@@ -83,7 +83,7 @@ func New(ports Ports) *Server {
 		loader:      nil,
 		source:      SourceLocal,
 		connection:  newConnectionSource(ports.OpenModels),
-		profile:     performance.Balanced, isProfileSet: false,
+		limits:      performance.Read(nil), isProfileSet: false,
 	}
 	s.loader = s.newLoader()
 	s.loadProfilesLocked()
@@ -150,15 +150,15 @@ func (s *Server) getStartLocked() loading.Start[modelSpec] {
 }
 
 func (s *Server) getLimitsLocked() limits.Run {
-	return limits.GetRun(s.profile, s.machine.CountCPUs(), model.GetDefaultBatchTexts())
+	return limits.GetRun(s.limits, model.GetDefaultBatchTexts())
 }
 
-func (s *Server) applyProfileLocked(profile performance.Profile) {
-	if s.isProfileSet && profile == s.profile {
+func (s *Server) applyProfileLocked(next performance.Limits) {
+	if s.isProfileSet && next == s.limits {
 		return
 	}
 	before := s.getLimitsLocked()
-	s.profile, s.isProfileSet = profile, true
+	s.limits, s.isProfileSet = next, true
 	run := s.getLimitsLocked()
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr log on priority error has no side effect"
 	if err := s.machine.LowerNice(run.Nice); err != nil {

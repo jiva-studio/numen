@@ -81,26 +81,34 @@ func (v *vocabulary) appendIDs(out []int, piece string) []int {
 	for start := 0; start < len(piece); {
 		_, firstLen := utf8.DecodeRuneInString(piece[start:])
 		if best[start].isSet {
-			hasSingle := false
-			for end := start + firstLen; end <= len(piece) && end-start <= v.maxPieceLen; {
-				if id, ok := v.ids[piece[start:end]]; ok {
-					hasSingle = hasSingle || end-start == firstLen
-					relaxNode(best, start, end, id, v.scores[id])
-				}
-				if end == len(piece) {
-					break
-				}
-				_, size := utf8.DecodeRuneInString(piece[end:])
-				end += size
-			}
-			if !hasSingle {
-				relaxNode(best, start, start+firstLen, v.unkID, v.unknownScore)
-			}
+			v.relaxFrom(best, piece, start, firstLen)
 		}
 		start += firstLen
 	}
+	return v.appendPath(out, best)
+}
+
+func (v *vocabulary) relaxFrom(best []latticeNode, piece string, start, firstLen int) {
+	hasSingle := false
+	for end := start + firstLen; end <= len(piece) && end-start <= v.maxPieceLen; {
+		if id, ok := v.ids[piece[start:end]]; ok {
+			hasSingle = hasSingle || end-start == firstLen
+			relaxNode(best, start, end, id, v.scores[id])
+		}
+		if end == len(piece) {
+			break
+		}
+		_, size := utf8.DecodeRuneInString(piece[end:])
+		end += size
+	}
+	if !hasSingle {
+		relaxNode(best, start, start+firstLen, v.unkID, v.unknownScore)
+	}
+}
+
+func (v *vocabulary) appendPath(out []int, best []latticeNode) []int {
 	var reversed []int
-	for end := len(piece); end > 0; end = best[end].start {
+	for end := len(best) - 1; end > 0; end = best[end].start {
 		id := best[end].id
 		if id == v.unkID && len(reversed) > 0 && reversed[len(reversed)-1] == v.unkID {
 			continue

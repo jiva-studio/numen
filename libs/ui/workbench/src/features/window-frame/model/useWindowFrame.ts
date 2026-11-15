@@ -17,7 +17,7 @@ import type { FrameRuntime, FrameRuntimeLoader } from '../lib/runtime'
 import { MAC_BUTTONS_INSET } from '../lib/sizes'
 
 /** The room the system buttons take in the top corners of the window, in pixels. */
-export interface FrameEdge {
+interface FrameEdge {
   readonly leftInset: number
   readonly rightInset: number
 }

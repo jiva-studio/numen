@@ -29,7 +29,7 @@ export interface WorkTask {
 }
 
 /** How a task stands: running, being cancelled, ended in failure, or a notice. */
-export type BackgroundTaskState = 'running' | 'cancelling' | 'failed' | 'notice'
+type BackgroundTaskState = 'running' | 'cancelling' | 'failed' | 'notice'
 
 /** The fix a failed task offers; the label is empty where it offers none. */
 interface BackgroundTaskAction {
@@ -53,7 +53,7 @@ export interface BackgroundTask {
 }
 
 /** A message reported in a window, as a failure it can be. */
-export interface ReportedMessage {
+interface ReportedMessage {
   readonly id: string
   readonly text: string
   readonly about?: string | undefined

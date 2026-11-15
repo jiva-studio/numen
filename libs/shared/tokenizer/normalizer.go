@@ -126,18 +126,11 @@ func findUnicodeClass(pattern string) string {
 	for i := 0; i < len(pattern); i++ {
 		switch {
 		case pattern[i] == '\\' && i+1 < len(pattern):
-			i++
-			if pattern[i] == 'Q' {
-				end := strings.Index(pattern[i:], `\E`)
-				if end < 0 {
-					return ""
-				}
-				i += end + 1
-				continue
+			class, next, isClosed := readEscape(pattern, i+1)
+			if !isClosed || class != "" {
+				return class
 			}
-			if strings.IndexByte("sSwWdDbB", pattern[i]) >= 0 {
-				return pattern[i-1 : i+1]
-			}
+			i = next
 		case isInClass:
 			if class := posixClass.FindString(pattern[i:]); class != "" {
 				return class
@@ -149,6 +142,20 @@ func findUnicodeClass(pattern string) string {
 		}
 	}
 	return ""
+}
+
+func readEscape(pattern string, i int) (string, int, bool) {
+	if pattern[i] == 'Q' {
+		end := strings.Index(pattern[i:], `\E`)
+		if end < 0 {
+			return "", 0, false
+		}
+		return "", i + end + 1, true
+	}
+	if strings.IndexByte("sSwWdDbB", pattern[i]) >= 0 {
+		return pattern[i-1 : i+1], i, true
+	}
+	return "", i, true
 }
 
 func skipClassStart(pattern string, i int) int {
