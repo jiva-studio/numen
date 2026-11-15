@@ -102,7 +102,8 @@ export function createQueryCompletion(
 ): (context: CompletionContext) => CompletionResult | null {
   return (context) => {
     const word = context.matchBefore(/[A-Za-z_]\w*/)
-    const isAfterDot = context.state.sliceDoc((word?.from ?? context.pos) - 1, word?.from ?? context.pos) === '.'
+    const isAfterDot =
+      context.state.sliceDoc((word?.from ?? context.pos) - 1, word?.from ?? context.pos) === '.'
     if (!word && !context.explicit && !isAfterDot) return null
     const from = word?.from ?? context.pos
     const options = getFunctions()

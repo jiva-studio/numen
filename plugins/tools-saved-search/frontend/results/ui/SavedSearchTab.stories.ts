@@ -232,9 +232,9 @@ export const ShowsAWarning: Story = {
     const canvas = within(canvasElement)
 
     await waitFor(() =>
-      expect(
-        canvas.getAllByRole('status').some((one) => one.textContent?.trim() === WARNING),
-      ).toBe(true),
+      expect(canvas.getAllByRole('status').some((one) => one.textContent?.trim() === WARNING)).toBe(
+        true,
+      ),
     )
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
   },
@@ -319,9 +319,11 @@ export const CompletesTheNamesOfTheCatalog: Story = {
 
     const list = await waitFor(() => canvas.getByRole('listbox'))
     await waitFor(() =>
-      expect(within(list).getAllByRole('option').map((one) => one.textContent)).toStrictEqual([
-        expect.stringContaining('tags'),
-      ]),
+      expect(
+        within(list)
+          .getAllByRole('option')
+          .map((one) => one.textContent),
+      ).toStrictEqual([expect.stringContaining('tags')]),
     )
     await waitFor(() => expect(canvas.getByText(/Notes that carry the tag\./)).toBeVisible())
     await expect(canvas.getByText(/tags\("harbor"\)/)).toBeVisible()
@@ -332,9 +334,11 @@ export const CompletesTheNamesOfTheCatalog: Story = {
     await browser.userEvent.keyboard('("harbor").r')
     const stages = await waitFor(() => canvas.getByRole('listbox'))
     await waitFor(() =>
-      expect(within(stages).getAllByRole('option').map((one) => one.textContent)).toStrictEqual([
-        expect.stringContaining('rerank'),
-      ]),
+      expect(
+        within(stages)
+          .getAllByRole('option')
+          .map((one) => one.textContent),
+      ).toStrictEqual([expect.stringContaining('rerank')]),
     )
   },
 }
@@ -343,9 +347,7 @@ export const CompletesTheNamesOfTheCatalog: Story = {
 export const UnderlinesTheProblemsOfAQueryNotSaved: Story = {
   args: {
     updateAnswer: {
-      errors: [
-        { line: 1, column: 18, message: 'unknown function meanin (did you mean meaning?)' },
-      ],
+      errors: [{ line: 1, column: 18, message: 'unknown function meanin (did you mean meaning?)' }],
     },
   },
   play: async ({ args, canvasElement }) => {

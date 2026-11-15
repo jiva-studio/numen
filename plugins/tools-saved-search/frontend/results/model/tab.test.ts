@@ -436,7 +436,9 @@ describe('editing the query of a saved search', () => {
     service.watch.emit(COMPUTED)
     await settle()
     state.actions.setEditing(true)
-    service.setUpdateAnswer({ errors: [{ line: 1, column: 1, message: 'unknown function meanin' }] })
+    service.setUpdateAnswer({
+      errors: [{ line: 1, column: 1, message: 'unknown function meanin' }],
+    })
     await state.actions.saveSearch({ query: 'meanin("gale")' })
 
     state.actions.setEditing(false)
