@@ -75,26 +75,79 @@ describe('the fields of a plugin', () => {
         expect(getShownOptions('darwin', 'mac')).toBe('mac')
         expect(getShownOptions('linux', 'none')).toBe('none')
       })
+
+      it('falls back to the value in force when no option is offered on the platform', () => {
+        const noneAvailable = {
+          key: 'k',
+          type: 'enum' as const,
+          title: 'K',
+          description: '',
+          default: 'windows',
+          options: [
+            { value: 'windows', title: 'Right', detail: '', when: "app.platform != 'darwin'" },
+          ],
+        }
+        const fields = createEnumFields(
+          () => plugin,
+          () => undefined,
+          () => false,
+          () => 'darwin',
+        )
+        expect(fields.getEnumValue(noneAvailable)).toBe('windows')
+      })
+
+      it('formats undefined and null as empty text and non-string values as JSON', () => {
+        const setting = {
+          key: 'k',
+          type: 'enum' as const,
+          title: 'K',
+          description: '',
+          default: undefined,
+          options: [],
+        }
+        const emptyFields = createEnumFields(
+          () => plugin,
+          () => undefined,
+          () => false,
+          () => 'linux',
+        )
+        const nullFields = createEnumFields(
+          () => plugin,
+          () => null,
+          () => false,
+          () => 'linux',
+        )
+        const numberFields = createEnumFields(
+          () => plugin,
+          () => 42,
+          () => false,
+          () => 'linux',
+        )
+        expect(emptyFields.getEnumValue(setting)).toBe('')
+        expect(nullFields.getEnumValue(setting)).toBe('')
+        expect(numberFields.getEnumValue(setting)).toBe('42')
+      })
     })
 
     it('offers an option whose condition cannot be read', () => {
+      const brokenSetting = {
+        key: 'k',
+        type: 'enum' as const,
+        title: 'K',
+        description: '',
+        default: 'a',
+        options: [{ value: 'a', title: 'A', detail: '', when: 'app.os ==' }],
+      }
       const broken = createPluginInfo('p', 'P', {
-        settings: [
-          {
-            key: 'k',
-            type: 'enum',
-            title: 'K',
-            description: '',
-            default: 'a',
-            options: [{ value: 'a', title: 'A', detail: '', when: 'app.os ==' }],
-          },
-        ],
+        settings: [brokenSetting],
       })
       const fields = createEnumFields(
         () => broken,
         () => undefined,
+        () => false,
+        () => '',
       )
-      expect(fields.getEnumChoices(broken.settings[0]!)[0]?.isDisabled).toBeUndefined()
+      expect(fields.getEnumChoices(brokenSetting)[0]?.isDisabled).toBeUndefined()
     })
   })
 })

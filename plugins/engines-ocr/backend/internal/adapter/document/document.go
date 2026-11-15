@@ -25,11 +25,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
-// GetExtensions returns the extensions, with the dot, of the files the plugin recognizes.
-func GetExtensions() []string {
-	return []string{".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
-}
-
 // ErrUnreadable is a file that opens as no document the plugin reads.
 var ErrUnreadable = errors.New("the file opens as no document")
 
@@ -76,21 +71,41 @@ func (p picture) RenderPage(index, _ int) (image.Image, error) {
 // waitForWorker bounds the wait for the worker, so a worker wedged inside the library is a failure.
 const waitForWorker = 2 * time.Minute
 
+// Prepare starts the PDFium worker in the background, which compiles PDFium, so a PDF opened later waits less or not at all.
+// report receives the failure, and Open starts the worker again.
+func (r *Reader) Prepare(report func(err error)) {
+	go func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		if err := r.startWorkers(); err != nil {
+			report(err)
+		}
+	}()
+}
+
+func (r *Reader) startWorkers() error {
+	if r.workers != nil {
+		return nil
+	}
+	started, err := webassembly.Init(webassembly.Config{
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Worker pool idle and total capacity limits are internal to webassembly.Init."
+		Context: nil, MinIdle: 0, MaxIdle: 0, MaxTotal: 1, WASM: nil, FSConfig: nil,
+		RuntimeConfig: r.getRuntimeConfig(), Stdout: nil, Stderr: nil, RandomSource: nil, ReuseWorkers: false,
+	})
+	// gomutants:disable-next-line BRANCH_IF reason="webassembly.Init uses the embedded PDFium binary and fixed configuration."
+	if err != nil {
+		// gomutants:disable-next-line RETURN_ERROR_NIL reason="webassembly.Init uses the embedded PDFium binary and fixed configuration."
+		return err
+	}
+	r.workers = started
+	return nil
+}
+
 func (r *Reader) getWorker() (pdfium.Pdfium, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.workers == nil {
-		started, err := webassembly.Init(webassembly.Config{
-			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Worker pool idle and total capacity limits are internal to webassembly.Init."
-			Context: nil, MinIdle: 0, MaxIdle: 0, MaxTotal: 1, WASM: nil, FSConfig: nil,
-			RuntimeConfig: r.getRuntimeConfig(), Stdout: nil, Stderr: nil, RandomSource: nil, ReuseWorkers: false,
-		})
-		// gomutants:disable-next-line BRANCH_IF reason="webassembly.Init uses the embedded PDFium binary and fixed configuration."
-		if err != nil {
-			// gomutants:disable-next-line RETURN_ERROR_NIL reason="webassembly.Init uses the embedded PDFium binary and fixed configuration."
-			return nil, err
-		}
-		r.workers = started
+	if err := r.startWorkers(); err != nil {
+		return nil, err
 	}
 	return r.workers.GetInstance(waitForWorker)
 }

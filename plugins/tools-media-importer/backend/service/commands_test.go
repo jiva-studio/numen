@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/queuetest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -20,25 +21,26 @@ import (
 // videoAddress is an address the mock downloader takes for a video site.
 const videoAddress = "https://www.youtube.com/watch?v=tidalmill01"
 
-func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
+func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host, *queuetest.Log) {
 	t.Helper()
 	vault := hosttest.New("Mills")
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
+	tasks := queuetest.NewLog()
 	hosted := link.Host{
 		PluginID: PluginID,
 		Vaults:   vaultsOf(vault),
 		Store:    foldersOf(vault),
 		Texts:    textsOf(texts),
-		Queue:    hosttest.NewQueue(),
+		Queue:    tasks,
 		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
 		func() link.Fetcher { return download.NewMock(webpage.New()) },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
-	return links, store, hosted
+	return links, store, hosted, tasks
 }
 
 func newMockCommands(t *testing.T) (*command.Registry, *hosttest.Store) {
@@ -47,14 +49,14 @@ func newMockCommands(t *testing.T) (*command.Registry, *hosttest.Store) {
 	return commands, store
 }
 
-func newMockCommandsWithLinks(t *testing.T) (*command.Registry, *hosttest.Store, *link.Links) {
+func newMockCommandsWithLinks(t *testing.T) (*command.Registry, *hosttest.Store, *queuetest.Log) {
 	t.Helper()
-	links, store, _ := newMockLinks(t)
+	links, store, _, tasks := newMockLinks(t)
 	commands, err := newCommands(links)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return commands, store, links
+	return commands, store, tasks
 }
 
 func TestImportMakesTheLinkNoteAndNothingElse(t *testing.T) {
@@ -75,7 +77,7 @@ func TestImportMakesTheLinkNoteAndNothingElse(t *testing.T) {
 }
 
 func TestTheHandlersDownloadAndDeleteTheMediaAndTheText(t *testing.T) {
-	commands, store, links := newMockCommandsWithLinks(t)
+	commands, store, tasks := newMockCommandsWithLinks(t)
 	made, err := commands.RunCommand(t.Context(), command.Request{
 		Command: commandImport, Arguments: command.Arguments{argumentAddress: videoAddress},
 	})
@@ -85,12 +87,19 @@ func TestTheHandlersDownloadAndDeleteTheMediaAndTheText(t *testing.T) {
 
 	for _, step := range []struct {
 		id      string
+		task    string
 		hasCopy bool
-	}{{commandDownloadMedia, true}, {commandDeleteMedia, false}, {commandCreateText, false}} {
+	}{
+		{commandDownloadMedia, link.GetCopyTaskID("Mills", made.OpenedPath), true},
+		{commandDeleteMedia, "", false},
+		{commandCreateText, "text:Mills:" + made.OpenedPath, false},
+	} {
 		answer, err := commands.RunCommand(t.Context(), command.Request{Command: step.id, Path: made.OpenedPath})
-		links.Wait()
 		if err != nil || answer.Message == "" {
 			t.Fatalf("%s answered %+v (%v)", step.id, answer, err)
+		}
+		if step.task != "" {
+			tasks.WaitForEnd(t, step.task)
 		}
 		if hasCopy(t, store) != step.hasCopy {
 			t.Errorf("after %s the copy is kept: %v, want %v", step.id, !step.hasCopy, step.hasCopy)
@@ -194,12 +203,13 @@ func TestCommandErrorPaths(t *testing.T) {
 	es := &errListStore{Store: vault.Store()}
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, vault.Store())
+	tasks := queuetest.NewLog()
 	hosted := link.Host{
 		PluginID: PluginID,
 		Vaults:   vaultsOf(vault),
 		Store:    func(domain.VaultID) link.Folder { return link.Folder{Files: es, Writer: es} },
 		Texts:    textsOf(texts),
-		Queue:    hosttest.NewQueue(),
+		Queue:    tasks,
 		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	cf := &configurableFetcher{}
@@ -250,7 +260,7 @@ func TestCommandErrorPaths(t *testing.T) {
 	<-cf.startedCh
 	ans, callErr := commands.RunCommand(t.Context(), command.Request{Command: commandDownloadMedia, Path: res.OpenedPath})
 	close(cf.blockCh)
-	links.Wait()
+	tasks.WaitForEnd(t, link.GetCopyTaskID(foundLink.Vault, foundLink.Path))
 	cf.startedCh = nil
 	cf.blockCh = nil
 	if callErr != nil || !strings.HasPrefix(ans.Message, "Already downloading the media of ") {
@@ -268,12 +278,12 @@ func TestCommandErrorPaths(t *testing.T) {
 // handlerDeadline is how long a handler whose work runs as a task may take to answer.
 const handlerDeadline = 5 * time.Second
 
-func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Registry, *link.Links, *hosttest.Queue, string) {
+func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Registry, *queuetest.Log, string) {
 	t.Helper()
 	vault := hosttest.New("Mills")
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, vault.Store())
-	queue := hosttest.NewQueue()
+	queue := queuetest.NewLog()
 	hosted := link.Host{
 		PluginID: PluginID,
 		Vaults:   vaultsOf(vault),
@@ -296,7 +306,7 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 	if err != nil {
 		t.Fatal(err)
 	}
-	return commands, links, queue, made.OpenedPath
+	return commands, queue, made.OpenedPath
 }
 
 func runWithin(t *testing.T, commands *command.Registry, req command.Request) (command.Result, error) {
@@ -319,7 +329,7 @@ func runWithin(t *testing.T, commands *command.Registry, req command.Request) (c
 	}
 }
 
-func findTask(queue *hosttest.Queue, id string) (host.Task, bool) {
+func findTask(queue *queuetest.Log, id string) (host.Task, bool) {
 	for _, one := range queue.ListTasks() {
 		if one.ID == id {
 			return one, true
@@ -330,7 +340,7 @@ func findTask(queue *hosttest.Queue, id string) (host.Task, bool) {
 
 func TestDownloadCaptionsAnswersOnceItsTaskIsShown(t *testing.T) {
 	cf := &configurableFetcher{textStartedCh: make(chan struct{}), textBlockCh: make(chan struct{})}
-	commands, links, queue, path := newConfiguredCommands(t, cf)
+	commands, queue, path := newConfiguredCommands(t, cf)
 
 	res, err := runWithin(t, commands, command.Request{Command: commandCreateText, Path: path})
 
@@ -345,7 +355,7 @@ func TestDownloadCaptionsAnswersOnceItsTaskIsShown(t *testing.T) {
 		t.Errorf("second app:file.createText while running answered %v, want ErrBeingFetched", err)
 	}
 	close(cf.textBlockCh)
-	links.Wait()
+	queue.WaitForEnd(t, "text:Mills:"+path)
 	if tasks := queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("the tasks %+v are still shown after the fetch ended", tasks)
 	}
@@ -353,10 +363,12 @@ func TestDownloadCaptionsAnswersOnceItsTaskIsShown(t *testing.T) {
 
 func TestAFailedFetchOfTheCaptionsFailsTheTaskAndNotTheHandler(t *testing.T) {
 	cf := &configurableFetcher{textErr: errors.New("tide-tables answered 404 Not Found")}
-	commands, links, queue, path := newConfiguredCommands(t, cf)
+	commands, queue, path := newConfiguredCommands(t, cf)
 
 	_, err := runWithin(t, commands, command.Request{Command: commandCreateText, Path: path})
-	links.Wait()
+	if err == nil {
+		queue.WaitForEnd(t, "text:Mills:"+path)
+	}
 
 	if err != nil {
 		t.Errorf("app:file.createText answered %v, want the failure on its task alone", err)
@@ -369,7 +381,7 @@ func TestAFailedFetchOfTheCaptionsFailsTheTaskAndNotTheHandler(t *testing.T) {
 
 func TestDownloadMediaAnswersOnceItsTaskIsShown(t *testing.T) {
 	cf := &configurableFetcher{canCopy: true, startedCh: make(chan struct{}), blockCh: make(chan struct{})}
-	commands, links, queue, path := newConfiguredCommands(t, cf)
+	commands, queue, path := newConfiguredCommands(t, cf)
 
 	res, err := runWithin(t, commands, command.Request{Command: commandDownloadMedia, Path: path})
 
@@ -381,7 +393,7 @@ func TestDownloadMediaAnswersOnceItsTaskIsShown(t *testing.T) {
 	}
 	<-cf.startedCh
 	close(cf.blockCh)
-	links.Wait()
+	queue.WaitForEnd(t, link.GetCopyTaskID("Mills", path))
 	if tasks := queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("the tasks %+v are still shown after the copy ended", tasks)
 	}
@@ -389,10 +401,12 @@ func TestDownloadMediaAnswersOnceItsTaskIsShown(t *testing.T) {
 
 func TestAFailedCopyFailsTheTaskAndNotTheHandler(t *testing.T) {
 	cf := &configurableFetcher{canCopy: true, copyErr: errors.New("the site answered 403 Forbidden")}
-	commands, links, queue, path := newConfiguredCommands(t, cf)
+	commands, queue, path := newConfiguredCommands(t, cf)
 
 	_, err := runWithin(t, commands, command.Request{Command: commandDownloadMedia, Path: path})
-	links.Wait()
+	if err == nil {
+		queue.WaitForEnd(t, link.GetCopyTaskID("Mills", path))
+	}
 
 	if err != nil {
 		t.Errorf("link.downloadMedia answered %v, want the failure on its task alone", err)
@@ -404,7 +418,7 @@ func TestAFailedCopyFailsTheTaskAndNotTheHandler(t *testing.T) {
 }
 
 func TestDownloadMediaOfAnAddressNothingCopiesFailsBeforeAnyTask(t *testing.T) {
-	commands, _, queue, path := newConfiguredCommands(t, &configurableFetcher{canCopy: false})
+	commands, queue, path := newConfiguredCommands(t, &configurableFetcher{canCopy: false})
 
 	_, err := runWithin(t, commands, command.Request{Command: commandDownloadMedia, Path: path})
 

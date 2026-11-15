@@ -22,7 +22,6 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -297,10 +296,10 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 }
 
 func newFixedCatalog(library, provider string, err error) *fakeCatalog {
-	catalog := newONNXCatalog()
-	catalog.resolved[plugindomain.RuntimeONNX] = plugindomain.ResolvedDependency{
-		ID:      plugindomain.RuntimeONNX,
-		EnvVars: map[string]string{process.EnvONNXRuntimeLib: library, process.EnvONNXProvider: provider},
+	catalog := newRuntimeCatalog()
+	catalog.resolved[sampleRuntime] = plugindomain.ResolvedDependency{
+		ID:      sampleRuntime,
+		EnvVars: map[string]string{envSampleLib: library, envSampleDevice: provider},
 	}
 	catalog.err = err
 	return catalog
@@ -309,41 +308,41 @@ func newFixedCatalog(library, provider string, err error) *fakeCatalog {
 // A built-in plugin that declares the runtime finds the same variables a launched process is
 // given, in the process that is its own and among the variables it is made with.
 func TestABuiltInPluginIsGivenTheRuntime(t *testing.T) {
-	t.Setenv(process.EnvONNXRuntimeLib, "")
-	t.Setenv(process.EnvONNXProvider, "")
+	t.Setenv(envSampleLib, "")
+	t.Setenv(envSampleDevice, "")
 	host := newBuiltInHost(t)
-	host.Dependencies.Replace(newFixedCatalog("/models/libonnxruntime.so", "coreml", nil))
+	host.Dependencies.Replace(newFixedCatalog("/models/libsample.so", "coreml", nil))
 	backend := newBuiltInBackend()
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), backend.serve("first tools"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, sampleRuntime), backend.serve("first tools"))
 
 	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
-	if got := os.Getenv(process.EnvONNXRuntimeLib); got != "/models/libonnxruntime.so" {
-		t.Errorf("%s = %q", process.EnvONNXRuntimeLib, got)
+	if got := os.Getenv(envSampleLib); got != "/models/libsample.so" {
+		t.Errorf("%s = %q", envSampleLib, got)
 	}
-	if got := os.Getenv(process.EnvONNXProvider); got != "coreml" {
-		t.Errorf("%s = %q", process.EnvONNXProvider, got)
+	if got := os.Getenv(envSampleDevice); got != "coreml" {
+		t.Errorf("%s = %q", envSampleDevice, got)
 	}
-	if got := backend.lastVars(t)[process.EnvONNXProvider]; got != "coreml" {
-		t.Errorf("vars hold %s = %q", process.EnvONNXProvider, got)
+	if got := backend.lastVars(t)[envSampleDevice]; got != "coreml" {
+		t.Errorf("vars hold %s = %q", envSampleDevice, got)
 	}
 }
 
 // A built-in plugin whose runtime cannot be provisioned is not activated.
 func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
-	t.Setenv(process.EnvONNXRuntimeLib, "")
+	t.Setenv(envSampleLib, "")
 	failure := errors.New("the archive is not the pinned one")
 	host := newBuiltInHost(t)
 	host.Dependencies.Replace(newFixedCatalog("", "", failure))
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), newBuiltInBackend().serve("first tools"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, sampleRuntime), newBuiltInBackend().serve("first tools"))
 
 	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, getTestHolder())
 	if !errors.Is(err, failure) || !strings.Contains(err.Error(), firstBuiltInID) {
 		t.Fatalf("EnsureActive() = %v, want the failure with the plugin named", err)
 	}
-	if got := os.Getenv(process.EnvONNXRuntimeLib); got != "" {
-		t.Errorf("%s = %q after a failed provisioning", process.EnvONNXRuntimeLib, got)
+	if got := os.Getenv(envSampleLib); got != "" {
+		t.Errorf("%s = %q after a failed provisioning", envSampleLib, got)
 	}
 }
 

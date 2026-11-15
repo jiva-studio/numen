@@ -8,8 +8,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
 import { getSettingAt } from '../lib/settingAt'
+import type { SettingEdit } from '../lib/configuration'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { createAnsweredApi } from '@/testing/coreAnswers'
+import { createChangeFollower } from './changeFollower'
 import { createSettingsStore } from './store'
 
 const createAnsweredSettings = (answers: CoreAnswers) =>
@@ -171,6 +173,7 @@ describe('what remains at a setting', () => {
 
     expect(store.read.getSetting(['md.numen.views.statusBar', 'enabled'])).toBe(false)
     expect(store.read.getCommittedSetting(['md.numen.views.statusBar', 'enabled'])).toBe(false)
+    expect(store.read.getSetting(['md.numen.views.statusBar', 'other'])).toBeUndefined()
   })
 
   it('runs a plugin off by default once the file enables it', async () => {
@@ -290,9 +293,11 @@ describe('a setting written twice in quick succession', () => {
   it('remains at the last value through the answer of the first write and a read between', async () => {
     const vault = createBlockedVault()
     const retainedState = createSettingsStore(settings, words, vi.fn())
+    expect(retainedState.read.isRequested(settingPath)).toBe(false)
 
     const first = retainedState.write.writeSetting(settingPath, false)
     const second = retainedState.write.writeSetting(settingPath, true)
+    expect(retainedState.read.isRequested(settingPath)).toBe(true)
     expect(retainedState.read.getSetting(settingPath)).toBe(true)
     expect(retainedState.read.getCommittedSetting(settingPath)).toBeUndefined()
 
@@ -309,6 +314,7 @@ describe('a setting written twice in quick succession', () => {
     await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
     vault.reads[1]?.resolve(vault.getFile())
     await second
+    expect(retainedState.read.isRequested(settingPath)).toBe(false)
     expect(retainedState.read.getSetting(settingPath)).toBe(true)
     expect(retainedState.read.getCommittedSetting(settingPath)).toBe(true)
   })
@@ -396,5 +402,38 @@ describe('the settings of the shell', () => {
     await store.start()
 
     expect(store.read.getSetting(['app', 'appearance', 'unknown'])).toBeUndefined()
+  })
+})
+
+describe('createChangeFollower', () => {
+  it('skips the opening empty batch, refreshes once resumed after a break, and aborts on close', async () => {
+    const batches: (readonly SettingEdit[])[] = []
+    let observedSignal: AbortSignal | undefined
+    let attempts = 0
+    const follower = createChangeFollower({
+      watchSettings: async function* (signal) {
+        observedSignal = signal
+        attempts += 1
+        if (attempts === 1) {
+          yield []
+          yield [{ at: ['a'], value: '1' }]
+          return
+        }
+        yield []
+        yield []
+        yield [{ at: ['b'], value: '2' }]
+      },
+      refresh: async (batch) => {
+        batches.push(batch)
+        if (batch[0]?.at[0] === 'b') follower.close()
+      },
+      wait: () => Promise.resolve(),
+    })
+
+    await follower.start()
+
+    expect(attempts).toBe(2)
+    expect(batches).toStrictEqual([[{ at: ['a'], value: '1' }], [], [{ at: ['b'], value: '2' }]])
+    expect(observedSignal?.aborted).toBe(true)
   })
 })

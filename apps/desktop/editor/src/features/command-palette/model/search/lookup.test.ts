@@ -193,4 +193,16 @@ describe('what choosing an action of an item runs', () => {
       title: 'Ontology',
     })
   })
+
+  it('defaults the input of a creation action to empty when typed text is omitted', () => {
+    const hit = {
+      ...createHit({ actionIds: ['app:note.create'] }),
+      creationIds: ['app:note.create'],
+    }
+    expect(resolveChoice(hit, 'app:note.create')).toStrictEqual({
+      command: 'app:note.create',
+      over: null,
+      input: '',
+    })
+  })
 })

@@ -71,7 +71,7 @@ describe('readRows', () => {
     expect(
       readRows([
         { connection: 'c1', model: 'a', reasoning: 'low' },
-        { connection: 'c2', model: 'b' },
+        { connection: 'c2', model: 'b', reasoning: '' },
         { connection: 'c3' },
       ]),
     ).toStrictEqual([
@@ -86,7 +86,10 @@ describe('readRows', () => {
     [null],
     ['text'],
     [{ connection: 'c1' }],
+    [[null]],
     [[1]],
+    [[{}]],
+    [[{ connection: 1 }]],
     [[{ connection: 'c1', model: 2 }]],
   ])('reads no row from %j', (value) => {
     expect(readRows(value)).toStrictEqual([])
@@ -104,6 +107,9 @@ describe('writeRows', () => {
 describe('getRowKey', () => {
   it('is the same for the same values in another order of keys', () => {
     expect(getRowKey({ connection: 'c1', options: { model: 'a', reasoning: 'low' } })).toBe(
+      'c1\0model=a\0reasoning=low',
+    )
+    expect(getRowKey({ connection: 'c1', options: { model: 'a', reasoning: 'low' } })).toBe(
       getRowKey({ connection: 'c1', options: { reasoning: 'low', model: 'a' } }),
     )
     expect(getRowKey({ connection: 'c1', options: { model: 'a' } })).not.toBe(
@@ -116,7 +122,7 @@ describe('getCompleteRows', () => {
   it('keeps the rows that name a connection and a value for each required field, in their order', () => {
     const rows = getCompleteRows(
       [
-        draft('a'),
+        draft('a', 'c00000001', { model: 'm', reasoning: '' }),
         draft('b', '', { model: 'm' }),
         draft('c', 'c00000002', { model: '' }),
         draft('d', 'c00000003', { model: 'n', reasoning: 'low' }),
@@ -144,9 +150,12 @@ describe('moveRow', () => {
   })
 
   it('keeps the rows as they were for a place outside the list or the same place', () => {
-    expect(moveRow(['a', 'b'], 1, 1)).toStrictEqual(['a', 'b'])
-    expect(moveRow(['a', 'b'], 0, 5)).toStrictEqual(['a', 'b'])
-    expect(moveRow(['a', 'b'], -1, 0)).toStrictEqual(['a', 'b'])
+    const list = ['a', 'b']
+    expect(moveRow(list, 1, 1)).toBe(list)
+    expect(moveRow(list, 0, 2)).toBe(list)
+    expect(moveRow(list, 2, 0)).toBe(list)
+    expect(moveRow(list, 0, 5)).toBe(list)
+    expect(moveRow(list, -1, 0)).toBe(list)
   })
 })
 

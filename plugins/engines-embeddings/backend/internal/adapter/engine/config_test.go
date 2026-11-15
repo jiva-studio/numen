@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/engine/onnx"
 )
 
 func TestLocalModelGetPasses(t *testing.T) {
@@ -71,6 +71,22 @@ func TestLocalModelGetProvider(t *testing.T) {
 	}
 	if p := getProvider(model.LocalModel{Provider: "cpu"}); p != onnx.ProviderCPU {
 		t.Errorf("expected ProviderCPU, got %v", p)
+	}
+}
+
+func TestAModelProviderIsReadInEverySpelling(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		want onnx.Provider
+	}{
+		{" Auto ", onnx.ProviderAuto}, {"cpu", onnx.ProviderCPU},
+		{"coreml", onnx.ProviderCoreML}, {"core-ml", onnx.ProviderCoreML}, {"CUDA", onnx.ProviderCUDA},
+		{"directml", onnx.ProviderDirectML}, {"direct-ml", onnx.ProviderDirectML}, {"dml", onnx.ProviderDirectML},
+		{"rocm", onnx.ProviderROCm},
+	} {
+		if got := getProvider(model.LocalModel{Provider: tc.name}); got != tc.want {
+			t.Errorf("getProvider(%q) = %q, want %q", tc.name, got, tc.want)
+		}
 	}
 }
 

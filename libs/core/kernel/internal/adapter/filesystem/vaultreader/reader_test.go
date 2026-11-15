@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 
 	"time"
 
@@ -45,7 +45,7 @@ func walkPaths(t *testing.T, root string) []string {
 // of the vault, whatever its type, and no others: the note in the hidden folder
 // and the service folder are the vault's and not the application's to index.
 func TestWalkReportsEverySourceAndNothingElse(t *testing.T) {
-	got := walkPaths(t, vaultfixture.VaultDir(t))
+	got := walkPaths(t, vaulttest.VaultDir(t))
 	want := []string{
 		"Thermodynamics.md",
 		"assets/llama.png",
@@ -88,8 +88,8 @@ func walkKinds(t *testing.T, root string, opts vaultconfig.Options) map[string]d
 // TestWalkReturnsWhichKindEachSourceIs checks that a walk reports each source's
 // kind, so a file that is not a note is never passed to the markdown parser.
 func TestWalkReturnsWhichKindEachSourceIs(t *testing.T) {
-	root := vaultfixture.CopyVault(t)
-	vaultfixture.WriteBook(t, root, "library/A Book.epub")
+	root := vaulttest.CopyVault(t)
+	vaulttest.WriteBook(t, root, "library/A Book.epub")
 
 	kinds := walkKinds(t, root, vaultconfig.Options{})
 
@@ -113,7 +113,7 @@ func TestWalkReturnsWhichKindEachSourceIs(t *testing.T) {
 // TestAFileOfAnyFormatIsAFile. The core reads no file format, so every regular
 // file that is not a note is walked and stated as a file.
 func TestAFileOfAnyFormatIsAFile(t *testing.T) {
-	root := vaultfixture.CopyVault(t)
+	root := vaulttest.CopyVault(t)
 	scanned := "assets/scan.sample"
 	if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(scanned)), []byte("pixels"), 0o644); err != nil {
 		t.Fatal(err)
@@ -135,8 +135,8 @@ func TestAFileOfAnyFormatIsAFile(t *testing.T) {
 // TestStatDoesNotSayABookIsGone. A refresh reads fs.ErrNotExist as "the file was
 // removed", so a book the vault holds has to stat like the note beside it.
 func TestStatDoesNotSayABookIsMissing(t *testing.T) {
-	root := vaultfixture.CopyVault(t)
-	vaultfixture.WriteBook(t, root, "library/A Book.epub")
+	root := vaulttest.CopyVault(t)
+	vaulttest.WriteBook(t, root, "library/A Book.epub")
 
 	src, err := vaultreader.Open(root, vaultconfig.Options{})
 	if err != nil {
@@ -160,8 +160,8 @@ func TestStatDoesNotSayABookIsMissing(t *testing.T) {
 // TestABookInAHiddenFolderIsNotASourceEither checks that one set of rules applies to every
 // kind: what the vault excludes is excluded whatever it contains.
 func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
-	root := vaultfixture.CopyVault(t)
-	vaultfixture.WriteBook(t, root, ".obsidian/A Book.epub")
+	root := vaulttest.CopyVault(t)
+	vaulttest.WriteBook(t, root, ".obsidian/A Book.epub")
 
 	kinds := walkKinds(t, root, vaultconfig.Options{})
 	if kind, found := kinds[".obsidian/A Book.epub"]; found {
@@ -178,7 +178,7 @@ func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
 }
 
 func TestWalkSkipsTheServiceFolderAndOtherToolsFolders(t *testing.T) {
-	for _, p := range walkPaths(t, vaultfixture.VaultDir(t)) {
+	for _, p := range walkPaths(t, vaulttest.VaultDir(t)) {
 		if p[0] == '.' {
 			t.Errorf("walk reported %q from a hidden folder", p)
 		}
@@ -188,7 +188,7 @@ func TestWalkSkipsTheServiceFolderAndOtherToolsFolders(t *testing.T) {
 func TestWalkPathsAreRelativeAndSlashed(t *testing.T) {
 	// The index describes the same note on every platform, so a walk may not
 	// leak an absolute path or a backslash into it.
-	for _, p := range walkPaths(t, vaultfixture.VaultDir(t)) {
+	for _, p := range walkPaths(t, vaulttest.VaultDir(t)) {
 		if filepath.IsAbs(p) {
 			t.Errorf("%q is absolute", p)
 		}
@@ -201,7 +201,7 @@ func TestWalkPathsAreRelativeAndSlashed(t *testing.T) {
 }
 
 func TestWalkReportsSizeAndTime(t *testing.T) {
-	src, err := vaultreader.Open(vaultfixture.VaultDir(t), vaultconfig.Options{})
+	src, err := vaultreader.Open(vaulttest.VaultDir(t), vaultconfig.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,14 +235,14 @@ func listNames(t *testing.T, src *vaultreader.VaultReader, folder string) []stri
 // the vault excludes is omitted. Folders come first, and names are compared
 // case-insensitively.
 func TestAListingIsOrderedAndPreservesTheHiddenOut(t *testing.T) {
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"alpha/Entropy.md":       "# Entropy\n",
 		"Zulu/Heat.md":           "# Heat\n",
 		"Banana.md":              "# Banana\n",
 		".secret.md":             "# Secret\n",
 		".obsidian/workspace.md": "{}\n",
 	})
-	vaultfixture.PlaceFile(t, v.Path, "apple.txt")
+	vaulttest.PlaceFile(t, v.Path, "apple.txt")
 
 	src, err := vaultreader.Open(v.Path, vaultconfig.Options{})
 	if err != nil {
@@ -257,12 +257,12 @@ func TestAListingIsOrderedAndPreservesTheHiddenOut(t *testing.T) {
 // A listing reports each file's kind: a note or a file. A folder has no kind
 // and is listed by a listing of its own.
 func TestAListingReturnsWhatEachEntryIs(t *testing.T) {
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"library/Notes.md":      "# Notes\n",
 		"library/deeper/Old.md": "# Old\n",
 	})
-	vaultfixture.PlaceFile(t, v.Path, "library/A Book.epub")
-	vaultfixture.PlaceFile(t, v.Path, "library/scan.png")
+	vaulttest.PlaceFile(t, v.Path, "library/A Book.epub")
+	vaulttest.PlaceFile(t, v.Path, "library/scan.png")
 
 	src, err := vaultreader.Open(v.Path, vaultconfig.Options{})
 	if err != nil {
@@ -290,8 +290,8 @@ func TestAListingReturnsWhatEachEntryIs(t *testing.T) {
 // The service folder's name is a setting, and a listing leaves it out whether
 // the name begins with a dot or not.
 func TestAListingPreservesTheServiceFolderOut(t *testing.T) {
-	v := vaultfixture.NewVault(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	vaultfixture.PlaceFile(t, v.Path, "store/state.json")
+	v := vaulttest.NewVault(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	vaulttest.PlaceFile(t, v.Path, "store/state.json")
 
 	src, err := vaultreader.Open(v.Path, vaultconfig.Options{ServiceDir: "store"})
 	if err != nil {
@@ -306,7 +306,7 @@ func TestAListingPreservesTheServiceFolderOut(t *testing.T) {
 // A path that leaves the vault fails, and a folder that is not there is
 // answered as what it is.
 func TestAListingOfWhatTheVaultHasNotIsRefused(t *testing.T) {
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"Entropy.md":   "# Entropy\n",
 		"Notes.txt":    "a list\n",
 		"physics/x.md": "# X\n",
@@ -336,7 +336,7 @@ func TestAListingOfWhatTheVaultHasNotIsRefused(t *testing.T) {
 }
 
 func TestOpenRejectsWhatIsNotAFolder(t *testing.T) {
-	if _, err := vaultreader.Open(filepath.Join(vaultfixture.VaultDir(t), "Thermodynamics.md"), vaultconfig.Options{}); err == nil {
+	if _, err := vaultreader.Open(filepath.Join(vaulttest.VaultDir(t), "Thermodynamics.md"), vaultconfig.Options{}); err == nil {
 		t.Error("a file was accepted as a vault")
 	}
 	if _, err := vaultreader.Open(filepath.Join(t.TempDir(), "nope"), vaultconfig.Options{}); err == nil {
@@ -345,7 +345,7 @@ func TestOpenRejectsWhatIsNotAFolder(t *testing.T) {
 }
 
 func TestReadReturnsTheFile(t *testing.T) {
-	src, err := vaultreader.Open(vaultfixture.VaultDir(t), vaultconfig.Options{})
+	src, err := vaultreader.Open(vaulttest.VaultDir(t), vaultconfig.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -650,11 +650,11 @@ func TestAWriteDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 }
 
 func TestAListingReturnsWhenEachFileWasModified(t *testing.T) {
-	v := vaultfixture.NewVault(t, map[string]string{
+	v := vaulttest.NewVault(t, map[string]string{
 		"library/Old.md": "# Old\n",
 		"library/New.md": "# New\n",
 	})
-	vaultfixture.PlaceFile(t, v.Path, "library/scan.png")
+	vaulttest.PlaceFile(t, v.Path, "library/scan.png")
 	older := time.Date(2024, 3, 9, 8, 7, 6, 0, time.UTC)
 	newer := time.Date(2025, 11, 2, 10, 30, 0, 0, time.UTC)
 	for name, at := range map[string]time.Time{"Old.md": older, "New.md": newer, "scan.png": older} {
@@ -683,7 +683,7 @@ func TestAListingReturnsWhenEachFileWasModified(t *testing.T) {
 }
 
 func TestAListingReturnsTheOwnModificationTimeOfAFolder(t *testing.T) {
-	v := vaultfixture.NewVault(t, map[string]string{"library/deeper/Old.md": "# Old\n"})
+	v := vaulttest.NewVault(t, map[string]string{"library/deeper/Old.md": "# Old\n"})
 	at := time.Date(2023, 6, 1, 12, 0, 0, 0, time.UTC)
 	if err := os.Chtimes(filepath.Join(v.Path, "library", "deeper"), at, at); err != nil {
 		t.Fatal(err)

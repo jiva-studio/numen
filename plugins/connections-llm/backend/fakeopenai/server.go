@@ -165,21 +165,14 @@ func writeError(w http.ResponseWriter, status int, message string) {
 }
 
 func (s *Server) route(w http.ResponseWriter, r *http.Request, path string, body []byte) {
-	switch r.Method {
-	case http.MethodPost:
+	if r.Method == http.MethodPost {
 		s.routePost(w, r, path, body)
-	case http.MethodGet:
-		s.routeGet(w, r, path)
-	default:
-		http.NotFound(w, r)
+		return
 	}
-}
-
-func (s *Server) routeGet(w http.ResponseWriter, r *http.Request, path string) {
 	switch {
-	case path == "/models":
+	case r.Method == http.MethodGet && path == "/models":
 		s.serveModels(w, s.config.Models, s.config.IsLabeled, false)
-	case path == "/embeddings/models" && s.config.IsLabeled:
+	case r.Method == http.MethodGet && path == "/embeddings/models" && s.config.IsLabeled:
 		s.serveModels(w, s.config.EmbeddingModels, true, true)
 	default:
 		http.NotFound(w, r)
@@ -217,7 +210,7 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(body); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -341,7 +334,7 @@ func (s *Server) Vector(text string) []float32 {
 	var sum float64
 	for i := range vector {
 		digest := sha256.Sum256([]byte(text + "\x00" + string(rune('a'+i%26)) + string(rune('0'+i/26))))
-		value := float64(binary.BigEndian.Uint32(digest[:]))/float64(math.MaxUint32) - 0.5
+		value := float64(binary.BigEndian.Uint32(digest[:4]))/float64(math.MaxUint32) - 0.5
 		vector[i] = float32(value)
 		sum += value * value
 	}
@@ -414,5 +407,5 @@ func (s *Server) serveRerank(w http.ResponseWriter, body []byte) {
 // Jina list them.
 func (s *Server) Score(query, document string) float32 {
 	digest := sha256.Sum256([]byte(query + "\x00" + document))
-	return float32(float64(binary.BigEndian.Uint32(digest[:])) / float64(math.MaxUint32))
+	return float32(float64(binary.BigEndian.Uint32(digest[:4])) / float64(math.MaxUint32))
 }

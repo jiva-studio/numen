@@ -84,8 +84,6 @@ const (
 	LearnsUnasked = review.LearnsUnasked
 )
 
-func GetDefaultCost() AnswerCost { return review.GetDefaultCost() }
-
 func GetMinutesADayBounds() Bounds { return review.GetMinutesADayBounds() }
 
 func GetRetentionBounds() Bounds { return review.GetRetentionBounds() }
@@ -93,13 +91,6 @@ func GetRetentionBounds() Bounds { return review.GetRetentionBounds() }
 func NewDueByDay(d Day) *DueByDay { return review.NewDueByDay(d) }
 
 func NewFSRSAt(retention float64) review.FSRS { return review.NewFSRSAt(retention) }
-
-func GetSpentUnder(
-	d Day, day string, answers []Answer,
-	presetMap map[ReviewCardID]string, counts map[string]BudgetUnit,
-) map[string]Spent {
-	return review.GetSpentUnder(d, day, answers, presetMap, counts)
-}
 
 func GetFullRecall(c Schedule, now time.Time) float64 { return review.GetFullRecall(c, now) }
 

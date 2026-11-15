@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -14,19 +15,30 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
-func getStatements(folder string) map[string]string {
-	return sqlfile.Load(os.DirFS(folder), "sql").All()
+func getStatements(t *testing.T, folder string) map[string]string {
+	t.Helper()
+	statements := map[string]string{}
+	paths, err := filepath.Glob(filepath.Join(folder, "sql", "*.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range paths {
+		name := strings.TrimSuffix(filepath.Base(path), ".sql")
+		statements[name] = sqlfile.Read(os.DirFS(folder), "sql", name)
+	}
+	return statements
 }
 
 func getCoarseBytes() []byte { return make([]byte, 128) }
 
-func getExpectedPlans() []struct {
+func getExpectedPlans(t *testing.T) []struct {
 	statements map[string]string
 	name       string
 	args       []any
 	endPos     []string
 } {
-	chunks, notes, versions := getStatements("chunk"), getStatements("note"), getStatements("version")
+	t.Helper()
+	chunks, notes, versions := getStatements(t, "chunk"), getStatements(t, "note"), getStatements(t, "version")
 	return []struct {
 		statements map[string]string
 		name       string
@@ -126,7 +138,7 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, q := range getExpectedPlans() {
+	for _, q := range getExpectedPlans(t) {
 		statement, ok := q.statements[q.name]
 		if !ok {
 			t.Errorf("there is no statement %s", q.name)
