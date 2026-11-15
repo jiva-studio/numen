@@ -20,8 +20,8 @@ type sourceQueries struct {
 	lookup  sourceport.RemovalLookup
 }
 
-// discoverer is the first pass: it records the files that have text, and moves or removes the sources of
-// the files that went.
+// discoverer is the first pass: it records every file of the vault by its path, size and modification time,
+// and moves or removes the sources of the files that went.
 type discoverer struct {
 	sources       sourceport.SourceRepository
 	records       sourceport.SourceRecords
@@ -97,7 +97,7 @@ func (u discoverer) walkAndRecord(
 		switch ref.Kind {
 		case domain.KindFile:
 			found[ref.Path] = true
-			return u.recordFile(ctx, v, on, stats, ref, res)
+			return u.recordFile(ctx, v, stats, ref, res)
 		case domain.KindNote:
 			hasCut, err := u.checkNote(ctx, on, noteStats, ref, res)
 			if err != nil {
@@ -117,21 +117,11 @@ func (u discoverer) walkAndRecord(
 func (u discoverer) recordFile(
 	ctx context.Context,
 	v domain.Vault,
-	on openVault,
 	stats map[string]domain.FileStat,
 	ref domain.FileStat,
 	res *vaultreading.IndexResult,
 ) error {
 	previous, isKnown := stats[ref.Path]
-	if !isKnown {
-		hasText, err := on.texts.IsTextSource(ctx, ref.Path)
-		if err != nil {
-			return fmt.Errorf("find the text of %s: %w", ref.Path, err)
-		}
-		if !hasText {
-			return nil
-		}
-	}
 	res.Seen++
 	if isKnown && !u.shouldRebuild && previous.IsUnchanged(ref) {
 		res.Unchanged++
