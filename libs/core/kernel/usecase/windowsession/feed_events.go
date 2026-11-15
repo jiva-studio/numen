@@ -42,7 +42,7 @@ func (f FeedEvents) Start(ctx context.Context, v domain.Vault) func() {
 	if f.WatchWrites == nil || f.ReadHead == nil || f.ListPaths == nil || f.GetContentType == nil || f.Emit == nil {
 		return nil
 	}
-	loop := &feedLoop{events: f, vault: v, wake: make(chan struct{}, 1), plugins: nil, sent: filechange.Cursor{}, retry: notRetried}
+	loop := &feedLoop{events: f, vault: v, wake: make(chan struct{}, 1), plugins: nil, sent: filechange.Cursor{}}
 	stopWrites := f.WatchWrites(v.ID, func() { signal(loop.wake) })
 	signal(loop.wake)
 	return func() {
@@ -63,26 +63,26 @@ type feedLoop struct {
 	wake    chan struct{}
 	plugins <-chan struct{}
 	sent    filechange.Cursor
-	retry   retryState
 }
 
 func (l *feedLoop) run(ctx context.Context) {
+	retry := notRetried
 	for {
 		isForced, ok := l.waitForChange(ctx)
 		if !ok {
 			return
 		}
-		if l.retry == retriedForced {
+		if retry == retriedForced {
 			isForced = true
-			l.retry = retriedPlain
+			retry = retriedPlain
 		}
 		head, err := l.events.ReadHead(ctx, l.vault.ID)
 		if err != nil {
-			l.fail(isForced)
+			retry = l.fail(retry, isForced)
 			continue
 		}
 		if head.Cursor.Seq == 0 || (!isForced && head.Cursor == l.sent) {
-			l.retry = notRetried
+			retry = notRetried
 			continue
 		}
 		after := l.sent.Seq
@@ -91,10 +91,10 @@ func (l *feedLoop) run(ctx context.Context) {
 		}
 		types, err := l.listTypes(ctx, after, head.Cursor.Seq)
 		if err != nil {
-			l.fail(isForced)
+			retry = l.fail(retry, isForced)
 			continue
 		}
-		l.retry = notRetried
+		retry = notRetried
 		l.sent = head.Cursor
 		l.events.Emit(l.vault, types)
 	}
@@ -108,15 +108,14 @@ const (
 	retriedForced
 )
 
-func (l *feedLoop) fail(isForced bool) {
-	isFirst := l.retry == notRetried
-	l.retry = retriedPlain
-	if isForced {
-		l.retry = retriedForced
-	}
-	if isFirst {
+func (l *feedLoop) fail(retry retryState, isForced bool) retryState {
+	if retry == notRetried {
 		signal(l.wake)
 	}
+	if isForced {
+		return retriedForced
+	}
+	return retriedPlain
 }
 
 func (l *feedLoop) listTypes(ctx context.Context, after, upTo int64) ([]domain.ContentType, error) {
