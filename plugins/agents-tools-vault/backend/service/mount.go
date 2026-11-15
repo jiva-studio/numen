@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -14,7 +13,8 @@ import (
 const listFunctionsTime = 3 * time.Second
 
 // Mount registers the vault tools on s, working the vault through the host the environment names.
-func Mount(s *server.Server) error {
+// warn receives the error of a query tool that starts without the functions of the search language.
+func Mount(s *server.Server, warn func(error)) error {
 	client, err := host.NewClientFromEnv()
 	if err != nil {
 		return err
@@ -27,13 +27,13 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, client, texts, search)
+	return mount(s, client, texts, search, warn)
 }
 
-func mount(s *server.Server, client *host.Client, texts *host.TextClient, search *host.SearchClient) error {
+func mount(s *server.Server, client *host.Client, texts *host.TextClient, search *host.SearchClient, warn func(error)) error {
 	functions, err := listFunctions(search)
 	if err != nil {
-		slog.Warn("the query tool starts without the functions of the search language", "error", err)
+		warn(err)
 	}
 	registry, err := New(createVaultGetter(client)).WithLibrary(createLibraryGetter(texts, search), functions).WithVaultList(client).Registry()
 	if err != nil {

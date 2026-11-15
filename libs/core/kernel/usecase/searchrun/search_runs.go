@@ -2,21 +2,17 @@ package searchrun
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchslot"
 )
 
 // Deps is what the searches read. MaxResults is the most results one search holds.
 type Deps struct {
-	Store       SearchStore
+	Kept        *searchkept.Searches
 	Generations IndexGenerations
 	Run         RunQuery
-	Cancels     SearchCancels
-	Tasks       Tasks
 	Names       PluginNames
-	Timer       machineport.Timer
 	Catalog     func() searchquery.Catalog
-	Policy      searchrun.Policy
 	MaxResults  int
 }
 
@@ -30,14 +26,13 @@ type SearchRuns struct {
 
 // NewSearchRuns creates the use cases of the searches over deps.
 func NewSearchRuns(deps Deps) SearchRuns {
-	kept := &searches{store: deps.Store, cancels: deps.Cancels, tasks: deps.Tasks, timer: deps.Timer, policy: deps.Policy}
 	return SearchRuns{
 		Start: &StartSearch{
-			searches: kept, generations: deps.Generations, run: deps.Run, names: deps.Names,
-			slots: newSlots(deps.Policy.MaxRunning), maxResults: deps.MaxResults,
+			kept: deps.Kept, generations: deps.Generations, run: deps.Run, names: deps.Names,
+			slots: searchslot.New(deps.Kept.Policy.MaxRunning), maxResults: deps.MaxResults,
 		},
-		Get:       &GetSearch{searches: kept, generations: deps.Generations},
-		Remove:    &RemoveSearch{searches: kept},
+		Get:       &GetSearch{kept: deps.Kept, generations: deps.Generations},
+		Remove:    &RemoveSearch{kept: deps.Kept},
 		Functions: &ListSearchFunctions{catalog: deps.Catalog},
 	}
 }

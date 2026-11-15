@@ -1,4 +1,5 @@
-package searchrun
+// Package searchslot limits how many searches run at once and queues the others by priority.
+package searchslot
 
 import (
 	"context"
@@ -8,20 +9,20 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 )
 
-// slots counts the running searches. A search waiting for a slot is queued by its priority, interactive
+// Slots counts the running searches. A search waiting for a slot is queued by its priority, interactive
 // before background, each in the order of arrival.
-type slots struct {
+type Slots struct {
 	mu          sync.Mutex
 	free        int
 	interactive []chan struct{}
 	background  []chan struct{}
 }
 
-func newSlots(count int) *slots {
-	return &slots{free: count}
+func New(count int) *Slots {
+	return &Slots{free: count}
 }
 
-func (s *slots) acquire(ctx context.Context, priority modelcall.Priority) error {
+func (s *Slots) Acquire(ctx context.Context, priority modelcall.Priority) error {
 	s.mu.Lock()
 	if s.free > 0 && len(s.interactive)+len(s.background) == 0 {
 		s.free--
@@ -44,7 +45,7 @@ func (s *slots) acquire(ctx context.Context, priority modelcall.Priority) error 
 	}
 }
 
-func (s *slots) leave(granted chan struct{}) {
+func (s *Slots) leave(granted chan struct{}) {
 	s.mu.Lock()
 	before := len(s.interactive) + len(s.background)
 	s.interactive = slices.DeleteFunc(s.interactive, func(c chan struct{}) bool { return c == granted })
@@ -52,11 +53,11 @@ func (s *slots) leave(granted chan struct{}) {
 	isQueued := len(s.interactive)+len(s.background) < before
 	s.mu.Unlock()
 	if !isQueued {
-		s.release()
+		s.Release()
 	}
 }
 
-func (s *slots) release() {
+func (s *Slots) Release() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	switch {
