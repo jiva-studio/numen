@@ -54,7 +54,7 @@ func newWaitingHandler(t *testing.T, source waitingSource) *Handler {
 	return NewHandler(
 		shownVault{v: domain.Vault{ID: "v1", Name: "Garden"}},
 		search.NewFindNames(names{}, tabKinds{}),
-		search.NewFindPassages(finds, titles{}, types{}, tabKinds{}),
+		search.NewFindText(finds, titles{}, types{}, tabKinds{}),
 		searchcancel.NewSearches(testsupport.NewClock()),
 	)
 }
@@ -62,7 +62,7 @@ func newWaitingHandler(t *testing.T, source waitingSource) *Handler {
 func searchMeaning(handler *Handler, ctx context.Context, id string) <-chan error {
 	answered := make(chan error, 1)
 	go func() {
-		_, err := handler.SearchPassages(ctx, connect.NewRequest(&v1.SearchPassagesRequest{
+		_, err := handler.SearchText(ctx, connect.NewRequest(&v1.SearchTextRequest{
 			Query: "seeds in winter", Mode: v1.SearchMode_SEARCH_MODE_MEANING, SearchId: id,
 		}))
 		answered <- err
@@ -119,7 +119,7 @@ func TestCancelSearchEndsTheNameSearchWithItsID(t *testing.T) {
 	handler := NewHandler(
 		shownVault{v: domain.Vault{ID: "v1", Name: "Garden"}},
 		search.NewFindNames(index, tabKinds{}),
-		search.NewFindPassages(search.Search{}, titles{}, types{}, tabKinds{}),
+		search.NewFindText(search.Search{}, titles{}, types{}, tabKinds{}),
 		searchcancel.NewSearches(testsupport.NewClock()),
 	)
 

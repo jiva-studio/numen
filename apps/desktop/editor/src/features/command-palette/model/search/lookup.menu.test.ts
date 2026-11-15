@@ -4,10 +4,10 @@ import { COMMAND, ROW } from '@/shared/model/command'
 import type { SlotCommand } from '@numen/plugin-loader'
 import {
   createNameItem,
-  createPassageItem,
+  createResultItem,
   resolveChoice,
   type NameMatch,
-  type Passage,
+  type SearchResult,
   type SearchHit,
 } from './lookup'
 import type { Words } from './search'
@@ -63,7 +63,7 @@ const createName = (overrides: Partial<NameMatch> = {}): NameMatch => ({
   ...overrides,
 })
 
-const createPassage = (overrides: Partial<Passage> = {}): Passage => ({
+const createSearchResult = (overrides: Partial<SearchResult> = {}): SearchResult => ({
   path: 'reef/Coral.md',
   title: 'Coral',
   isNote: true,
@@ -72,8 +72,8 @@ const createPassage = (overrides: Partial<Passage> = {}): Passage => ({
   text: 'polyps build the reef',
   start: 12,
   length: 4,
-  line: 3,
-  at: [],
+  matchLine: 3,
+  matchRanges: [],
   ...overrides,
 })
 
@@ -143,7 +143,7 @@ describe('a heading found by its name', () => {
 
 describe('a passage found in a note', () => {
   it('offers opening the note and then the entries', () => {
-    const row = createPassageItem('text', createPassage(), WORDS, ENTRIES)
+    const row = createResultItem('text', createSearchResult(), WORDS, ENTRIES)
 
     expect(row.item.actions).toStrictEqual([
       { id: openId, text: 'Open note' },
@@ -156,9 +156,9 @@ describe('a passage found in a note', () => {
 
 describe('a passage found in a file that is no note', () => {
   it('offers opening the document alone', () => {
-    const row = createPassageItem(
+    const row = createResultItem(
       'meaning',
-      createPassage({ isNote: false, selector: { page: 3 }, title: '', type: 'sample' }),
+      createSearchResult({ isNote: false, selector: { page: 3 }, title: '', type: 'sample' }),
       WORDS,
       ENTRIES,
     )
@@ -277,7 +277,7 @@ describe('an entry that holds values', () => {
   })
 
   it('gives the values to the choice on a passage of a note', () => {
-    const row = createPassageItem('text', createPassage(), WORDS, [WITH_VALUES])
+    const row = createResultItem('text', createSearchResult(), WORDS, [WITH_VALUES])
 
     expect(resolveChoice(row.hit, getActionId(row, 'Show'))?.values).toStrictEqual({
       where: 'plex',

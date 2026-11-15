@@ -16,7 +16,7 @@ import (
 func newFloors(t *testing.T, hint float64) (*relevance.Floors, *hosttest.Search, *hosttest.Vault) {
 	t.Helper()
 	search, vault := newHost(hint)
-	fill(search, vault, 25, passagesOf(60, 3))
+	fill(search, vault, 25, sampledChunksOf(60, 3))
 	return relevance.New(relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, newClock()), search, vault
 }
 
@@ -78,7 +78,7 @@ func TestCalibrateKeepsTheMeasurementAndTheHostAppliesItsFloor(t *testing.T) {
 
 func TestCalibrateOfAVaultWithTooFewNotesChangesNothing(t *testing.T) {
 	floors, search, vault := newFloors(t, 0.4)
-	fill(search, vault, 5, passagesOf(10, 2))
+	fill(search, vault, 5, sampledChunksOf(10, 2))
 
 	outcome, state, err := floors.Calibrate(t.Context(), "")
 	if err != nil || outcome != relevance.TooFew {
@@ -260,7 +260,7 @@ func TestAnUnreadableRecordIsAnErrorAndNotAnEmptyOne(t *testing.T) {
 	}
 }
 
-func TestProbeComparesTheBestPassageWithTheFloorInForce(t *testing.T) {
+func TestProbeComparesTheBestChunkWithTheFloorInForce(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		stored   []float32
@@ -273,7 +273,7 @@ func TestProbeComparesTheBestPassageWithTheFloorInForce(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			floors, search, _ := newFloors(t, 0.5)
-			search.SetPassages(modelRecipe, []hosttest.SearchPassage{{Path: notePath(1), Vector: tc.stored}})
+			search.SetSampledChunks(modelRecipe, []hosttest.SampledChunk{{Path: notePath(1), Vector: tc.stored}})
 
 			got, err := floors.Probe(t.Context(), "", "entropy")
 			if err != nil {
@@ -288,7 +288,7 @@ func TestProbeComparesTheBestPassageWithTheFloorInForce(t *testing.T) {
 
 func TestProbeUsesTheFloorInForce(t *testing.T) {
 	floors, search, _ := newFloors(t, 0.4)
-	search.SetPassages(modelRecipe, []hosttest.SearchPassage{{Path: notePath(1), Vector: []float32{127, 20, 0, 0}}})
+	search.SetSampledChunks(modelRecipe, []hosttest.SampledChunk{{Path: notePath(1), Vector: []float32{127, 20, 0, 0}}})
 	if _, err := floors.Set(t.Context(), "", true, 0.99); err != nil {
 		t.Fatal(err)
 	}
@@ -371,14 +371,14 @@ func TestEnsureTreatsAStartAfterTheVectorsAsTheEventItMissed(t *testing.T) {
 
 func TestEnsureOfAVaultWithTooFewNotesTriesAgainAtTheNextCall(t *testing.T) {
 	floors, search, vault := newFloors(t, 0.4)
-	fill(search, vault, 5, passagesOf(10, 2))
+	fill(search, vault, 5, sampledChunksOf(10, 2))
 	if err := floors.Ensure(t.Context(), ""); err != nil {
 		t.Fatal(err)
 	}
 	if search.FloorWrites() != 0 {
 		t.Error("a floor was written for a vault too small to measure")
 	}
-	fill(search, vault, 25, passagesOf(60, 3))
+	fill(search, vault, 25, sampledChunksOf(60, 3))
 	if err := floors.Ensure(t.Context(), ""); err != nil {
 		t.Fatal(err)
 	}
@@ -603,7 +603,7 @@ func (s *faultStore) Write(ctx context.Context, name string, content []byte) err
 func TestFloorsPropagatesEveryHostAndStoreFailure(t *testing.T) {
 	newFaulty := func(configure func(s *faultSearch, st *faultStore, rawSearch *hosttest.Search)) *relevance.Floors {
 		rawSearch, vault := newHost(0.4)
-		fill(rawSearch, vault, 25, passagesOf(60, 3))
+		fill(rawSearch, vault, 25, sampledChunksOf(60, 3))
 		s := &faultSearch{Search: rawSearch}
 		st := &faultStore{Store: vault.Store()}
 		configure(s, st, rawSearch)

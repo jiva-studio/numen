@@ -127,7 +127,7 @@ func (s *Store) GetSourcesWithOtherRecipe(_ context.Context, vaultID domain.Vaul
 	})
 }
 
-func (s *Store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, recipe string, after vector.ChunkCursor, limit int) ([]domain.Passage, vector.ChunkCursor, error) {
+func (s *Store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, recipe string, after vector.ChunkCursor, limit int) ([]domain.SearchResult, vector.ChunkCursor, error) {
 	if limit <= 0 {
 		return nil, "", fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -137,7 +137,7 @@ func (s *Store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, r
 	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	var out []domain.Passage
+	var out []domain.SearchResult
 	var lastChunk Chunk
 	for _, c := range s.getOrderedChunks() {
 		if c.Vault != vaultID || c.Parent == 0 || s.hasVector(c.ID, recipe) {
@@ -151,9 +151,9 @@ func (s *Store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, r
 		// The source determines which text its chunks refer to, as the query does:
 		// a chunk of a source with a recognition is read from that recognition and
 		// not from the file.
-		out = append(out, domain.Passage{
-			ChunkID: GetChunkID(c.ID), Source: c.Path, Start: c.Start, Length: c.Length, Location: c.Location,
-			Producer: src.Producer, ContentHash: src.ContentHash, ChunkHash: GetHash(c.Text),
+		out = append(out, domain.SearchResult{
+			ChunkID: GetChunkID(c.ID), Path: c.Path, Start: c.Start, Length: c.Length, PlaceLabel: c.Location,
+			VersionID: src.Producer, FileHash: src.ContentHash, ChunkHash: GetHash(c.Text),
 		})
 		lastChunk = c
 		if len(out) == limit {
