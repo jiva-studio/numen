@@ -21,8 +21,11 @@ func getModelKey(path string) (string, error) {
 	if sum, ok := readProvisionedSum(path); ok {
 		return sum, nil
 	}
-	sum := sha256.Sum256(fmt.Appendf(nil, "%s\n%d\n%d", filepath.Base(path), info.Size(), info.ModTime().UnixNano()))
-	return "stat-" + hex.EncodeToString(sum[:]), nil
+	hash := sha256.New()
+	if _, err := fmt.Fprintf(hash, "%s\n%d\n%d", filepath.Base(path), info.Size(), info.ModTime().UnixNano()); err != nil {
+		return "", err
+	}
+	return "stat-" + hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func readProvisionedSum(path string) (string, bool) {

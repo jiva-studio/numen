@@ -1,4 +1,4 @@
-package vaultfixture
+package vaulttest
 
 import (
 	"fmt"

@@ -42,13 +42,15 @@ describe('the keybinding registry', () => {
   })
 
   it('matches nothing for another key, and for no keybindings', () => {
-    const { registry } = create()
+    const { registry, report } = create()
 
     expect(registry.match(CTRL_P, {})).toBeUndefined()
+    expect(report).not.toHaveBeenCalled()
 
     registry.register('app', [bind('mod+k', 'app:vault.search')])
 
     expect(registry.match(CTRL_P, {})).toBeUndefined()
+    expect(report).not.toHaveBeenCalled()
   })
 
   it('reads mod as Meta on macOS and as Ctrl elsewhere', () => {
@@ -130,12 +132,21 @@ describe('the keybinding registry', () => {
       )
     })
 
-    it('leave out a keybinding whose key cannot be read, and report it', () => {
+    it('leave out a keybinding whose key cannot be read, and report it per owner', () => {
       const { registry, report } = create()
       registry.register('org.example.ledger', [bind('hyper+p', 'ledger.open')])
+      registry.register('org.example.other', [bind('hyper+p', 'ledger.open')])
 
       expect(registry.match(CTRL_P, {})).toBeUndefined()
+      expect(report).toHaveBeenCalledTimes(2)
       expect(report).toHaveBeenCalledWith('org.example.ledger', expect.stringContaining('hyper+p'))
+      expect(report).toHaveBeenCalledWith('org.example.other', expect.stringContaining('hyper+p'))
+
+      const silent = createKeybindingRegistry({
+        isMac: () => false,
+        whenReader: createWhenReader(),
+      })
+      expect(() => silent.register('org.example.ledger', [bind('hyper+p', 'ledger.open')])).not.toThrow()
     })
 
     it('leave out a keybinding that canRun refuses, so a weaker one can win', () => {
@@ -152,12 +163,12 @@ describe('the keybinding registry', () => {
   })
 
   describe('a conflict of two keybindings of one key', () => {
-    it('is won by the one whose condition reads more variables, with no report', () => {
+    it('is won by the one whose condition reads more variables, regardless of registration order', () => {
       const { registry, report } = create()
-      registry.register('app', [bind('mod+p', 'app:commands.open')])
       registry.register('org.example.ledger', [
         bind('mod+p', 'ledger.open', { when: 'window.isFieldFocused' }),
       ])
+      registry.register('app', [bind('mod+p', 'app:commands.open')])
 
       expect(registry.match(CTRL_P, { 'window.isFieldFocused': true })?.command).toBe(
         'org.example.ledger:ledger.open',
@@ -192,15 +203,27 @@ describe('the keybinding registry', () => {
       expect(report).toHaveBeenCalledWith('app', expect.stringContaining('mod+p'))
     })
 
-    it('is won by the one registered first between two plugins, and reported once however often it is matched', () => {
+    it('is won by the one registered first between two plugins or two app bindings, and lists all rivals in the report', () => {
       const { registry, report } = create()
       registry.register('org.example.a', [bind('mod+p', 'a.open')])
       registry.register('org.example.b', [bind('mod+p', 'b.open')])
+      registry.register('org.example.c', [bind('mod+p', 'c.open')])
 
       expect(registry.match(CTRL_P, {})?.command).toBe('org.example.a:a.open')
       registry.match(CTRL_P, {})
 
       expect(report).toHaveBeenCalledOnce()
+      expect(report).toHaveBeenCalledWith(
+        'org.example.a',
+        'keybindings: the key "mod+p" is bound to org.example.a:a.open and to org.example.b:b.open (org.example.b), org.example.c:c.open (org.example.c) under conditions of the same width; org.example.a:a.open wins',
+      )
+
+      const appBoth = create()
+      appBoth.registry.register('app', [
+        bind('mod+p', 'app:commands.open'),
+        bind('mod+p', 'app:vault.search'),
+      ])
+      expect(appBoth.registry.match(CTRL_P, {})?.command).toBe('app:commands.open')
     })
 
     it('is no conflict when the other condition does not hold', () => {
@@ -215,7 +238,7 @@ describe('the keybinding registry', () => {
       expect(report).not.toHaveBeenCalled()
     })
 
-    it('is no conflict between two keybindings that run the same command with the same values', () => {
+    it('is no conflict between two keybindings that run the same command with the same values, and is a conflict when values differ', () => {
       const { registry, report } = create()
       registry.register('app', [bind('mod+p', 'app:commands.open')])
       registry.register('org.example.a', [bind('mod+p', 'app:commands.open')])
@@ -223,6 +246,12 @@ describe('the keybinding registry', () => {
       registry.match(CTRL_P, {})
 
       expect(report).not.toHaveBeenCalled()
+
+      registry.register('org.example.a', [
+        bind('mod+p', 'app:commands.open', { values: { mode: 'other' } }),
+      ])
+      registry.match(CTRL_P, {})
+      expect(report).toHaveBeenCalledOnce()
     })
   })
 

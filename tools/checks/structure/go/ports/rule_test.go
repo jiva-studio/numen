@@ -20,7 +20,7 @@ import (
 // back as; those are named in driving and are not this rule's business.
 const compilerHolds = load.Module + "internal/adapter/"
 
-func getRetainedAdapters(name, src string) []string {
+func getRetainedAdapters(driving map[string]bool, name, src string) []string {
 	f, err := parser.ParseFile(token.NewFileSet(), name, src, 0)
 	if err != nil {
 		return []string{name + " does not parse: " + err.Error()}
@@ -56,7 +56,7 @@ func getRetainedAdapters(name, src string) []string {
 					return true
 				}
 				path := underMap[offset.Name]
-				if !strings.HasPrefix(path, compilerHolds) || load.GetDriving()[strings.TrimPrefix(path, load.Module)] {
+				if !strings.HasPrefix(path, compilerHolds) || driving[strings.TrimPrefix(path, load.Module)] {
 					return true
 				}
 				findings = append(findings, fn.Name.Name+" answers with "+offset.Name+"."+sel.Sel.Name+

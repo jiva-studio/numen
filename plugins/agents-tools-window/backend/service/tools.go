@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/readerplace"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
@@ -19,7 +21,8 @@ type Host struct {
 	Window host.Window
 }
 
-// RegisterTools registers all window interaction and edit preview tools on the given registry.
+// RegisterTools registers all window interaction and edit preview tools on the given registry. The tab
+// list gives a tab no place when its reader reported none or reported a place in another shape.
 func RegisterTools(registry *tools.Registry, on Host) error {
 	control := window.NewControl(on.Window)
 	creator := editpreview.NewCreator(newPreviewFiles(on.Files))
@@ -102,8 +105,9 @@ func newTabInfo(tab host.OpenTab, activeID string) api.TabInfo {
 	}
 }
 
-func newPlace(place *host.TabPlace) *api.Place {
-	if place == nil || *place == (host.TabPlace{}) {
+func newPlace(reported string) *api.Place {
+	var place readerplace.Place
+	if reported == "" || json.Unmarshal([]byte(reported), &place) != nil || place == (readerplace.Place{}) {
 		return nil
 	}
 	return &api.Place{

@@ -1,7 +1,7 @@
 import { EN } from './i18n-en'
 import { RU } from './i18n-ru'
 import { SR } from './i18n-sr'
-import { readStored, writeStored } from './storage'
+import { readStorageValue, writeStorageValue } from './storage'
 
 const I18N: Readonly<Record<string, Readonly<Record<string, string>>>> = { en: EN, ru: RU, sr: SR }
 
@@ -16,7 +16,7 @@ function toggleTheme(): void {
   const current = document.documentElement.getAttribute('data-theme') || 'light'
   const next = current === 'light' ? 'dark' : 'light'
   document.documentElement.setAttribute('data-theme', next)
-  writeStored('numen-theme', next)
+  writeStorageValue('numen-theme', next)
 }
 
 function closeLanguageMenu(): void {
@@ -52,7 +52,7 @@ function setLanguage(lang: string): void {
   translate('text', 'data-i18n', dict)
   translate('html', 'data-i18n-html', dict)
   translate('aria', 'data-i18n-aria', dict)
-  writeStored('numen-lang', lang)
+  writeStorageValue('numen-lang', lang)
 }
 
 function selectApplication(app: string): void {
@@ -119,6 +119,6 @@ export function initSiteControls(): void {
   document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme)
   bindLanguageMenu()
   bindApplicationSwitch()
-  const saved = readStored('numen-lang')
+  const saved = readStorageValue('numen-lang')
   if (saved && I18N[saved]) setLanguage(saved)
 }

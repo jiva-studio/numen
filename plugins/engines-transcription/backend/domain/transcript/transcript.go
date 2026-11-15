@@ -41,23 +41,7 @@ func GetSegments(cues []Cue) ([]domain.TextSegment, error) {
 	return out, nil
 }
 
-// GetCues is the segments of a text version as cues. A segment whose selector
-// names no span is a cue at zero.
-func GetCues(segments []domain.TextSegment) []Cue {
-	out := make([]Cue, 0, len(segments))
-	for _, segment := range segments {
-		cue := Cue{Text: strings.TrimRight(segment.Text, "\n"), From: 0, To: 0}
-		if selector, err := readTimeSelector(segment.Selector); err == nil && len(selector.T) == 2 {
-			cue.From, cue.To = toMS(selector.T[0]), toMS(selector.T[1])
-		}
-		out = append(out, cue)
-	}
-	return out
-}
-
 func toSeconds(ms int) float64 { return float64(ms) / 1000 }
-
-func toMS(seconds float64) int { return int(seconds*1000 + 0.5) }
 
 // FormatTimestamp is a millisecond as hours, minutes, seconds and thousandths.
 func FormatTimestamp(ms int) string {

@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -11,7 +10,6 @@ import (
 	"github.com/getcharzp/go-ocr/paddle"
 
 	"github.com/jiva-studio/numen/libs/shared/onnx"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 )
 
 // NewLibrary returns the ONNX Runtime library a page is read through, which binds the go-ocr runtime
@@ -45,16 +43,4 @@ func newProbeConfig(libPath, probeDir string) paddle.Config {
 		UseCuda:            false, NumThreads: 0, ThreadCount: 0, DetMaxSideLen: 0, DetOutsideExpandPix: 0,
 		RecHeight: 0, RecModelNumClasses: 0, HeatmapThreshold: 0,
 	}
-}
-
-// IsPrepared reports whether the library is open.
-func IsPrepared(library *onnx.Library) bool { return library.IsAvailable("") }
-
-// Prepare makes the runtime a page is read through.
-func Prepare(ctx context.Context, library *onnx.Library, cfg settings.Config) error {
-	cfg.ShouldDownload = false
-	if _, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)); err != nil {
-		return err
-	}
-	return nil
 }

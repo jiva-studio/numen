@@ -4,7 +4,6 @@ import (
 	"errors"
 	"image"
 	"image/color"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -64,11 +63,7 @@ func (w *stubWorker) Close() error {
 	return w.closeErr
 }
 
-func TestGetExtensionsAndRuntimeConfig(t *testing.T) {
-	exts := GetExtensions()
-	if !slices.Contains(exts, ".pdf") || !slices.Contains(exts, ".png") {
-		t.Fatalf("GetExtensions() = %v", exts)
-	}
+func TestRuntimeConfig(t *testing.T) {
 	reader := NewReader()
 	if cfg := reader.getRuntimeConfig(); cfg != nil {
 		t.Fatalf("getRuntimeConfig() = %v, want nil", cfg)

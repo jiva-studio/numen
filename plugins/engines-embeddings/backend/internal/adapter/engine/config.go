@@ -2,6 +2,7 @@ package engine
 
 import (
 	"runtime"
+	"strings"
 
 	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
@@ -13,11 +14,19 @@ func getProvider(m model.LocalModel) onnx.Provider {
 	if name == "" {
 		name = string(onnx.GetProvider())
 	}
-	p, err := onnx.ParseProvider(name)
-	if err != nil {
-		return onnx.ProviderAuto
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "cpu":
+		return onnx.ProviderCPU
+	case "coreml", "core-ml":
+		return onnx.ProviderCoreML
+	case "cuda":
+		return onnx.ProviderCUDA
+	case "directml", "direct-ml", "dml":
+		return onnx.ProviderDirectML
+	case "rocm":
+		return onnx.ProviderROCm
 	}
-	return p
+	return onnx.ProviderAuto
 }
 
 func getThreads(m model.LocalModel) int {

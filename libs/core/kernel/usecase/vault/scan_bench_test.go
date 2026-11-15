@@ -10,11 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
@@ -39,7 +38,7 @@ func openIndexFor(b *testing.B) *container.Index {
 }
 
 func scanFor(db *container.Index) vaults.Scan {
-	return vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
+	return vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 }
 
 // BenchmarkColdScan is the full rebuild: an empty index and every note read,
@@ -47,7 +46,7 @@ func scanFor(db *container.Index) vaults.Scan {
 func BenchmarkColdScan(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {
-			v := vaultfixture.GenerateVault(b, notes)
+			v := vaulttest.GenerateVault(b, notes)
 			b.ResetTimer()
 			for range b.N {
 				b.StopTimer()
@@ -71,7 +70,7 @@ func BenchmarkColdScan(b *testing.B) {
 func BenchmarkWarmScan(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {
-			v := vaultfixture.GenerateVault(b, notes)
+			v := vaulttest.GenerateVault(b, notes)
 			db := openIndexFor(b)
 			scan := scanFor(db)
 			if _, err := scan.Execute(b.Context(), v); err != nil {
@@ -100,7 +99,7 @@ func BenchmarkWarmScan(b *testing.B) {
 func BenchmarkIncrementalScan(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {
-			v := vaultfixture.GenerateVault(b, notes)
+			v := vaulttest.GenerateVault(b, notes)
 			db := openIndexFor(b)
 			scan := scanFor(db)
 			if _, err := scan.Execute(b.Context(), v); err != nil {
@@ -129,7 +128,7 @@ func BenchmarkIncrementalScan(b *testing.B) {
 func BenchmarkSearch(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {
-			v := vaultfixture.GenerateVault(b, notes)
+			v := vaulttest.GenerateVault(b, notes)
 			db := openIndexFor(b)
 			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
 				b.Fatal(err)
@@ -168,7 +167,7 @@ func touch(b *testing.B, path string, seed int) {
 // wait for the writer, and the write pool is one connection so writers queue.
 func BenchmarkSearchDuringScan(b *testing.B) {
 	const notes = 10_000
-	v := vaultfixture.GenerateVault(b, notes)
+	v := vaulttest.GenerateVault(b, notes)
 	db := openIndexFor(b)
 
 	ctx, cancel := context.WithCancel(b.Context())
@@ -231,7 +230,7 @@ func touchAll(root string) (err error) {
 func BenchmarkLinks(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {
-			v := vaultfixture.GenerateVault(b, notes)
+			v := vaulttest.GenerateVault(b, notes)
 			db := openIndexFor(b)
 			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
 				b.Fatal(err)
@@ -258,7 +257,7 @@ func BenchmarkLinks(b *testing.B) {
 func BenchmarkBacklinks(b *testing.B) {
 	for _, notes := range []int{1_000, 10_000} {
 		b.Run(fmt.Sprint(notes), func(b *testing.B) {
-			v := vaultfixture.GenerateVault(b, notes)
+			v := vaulttest.GenerateVault(b, notes)
 			db := openIndexFor(b)
 			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
 				b.Fatal(err)

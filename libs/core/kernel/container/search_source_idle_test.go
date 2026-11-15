@@ -21,7 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
@@ -175,7 +175,7 @@ func TestTheSearchSourceRunsOnlyWhileThereIsWork(t *testing.T) {
 	pluginDir, port := serveMeaningPlugin(t, plugin)
 	cacheRoot := t.TempDir()
 	db := makeIndex(t)
-	v := vaultfixture.NewVault(t, map[string]string{"orchard.md": "# Orchard\n\napple trees bloom in the spring orchard\n"})
+	v := vaulttest.NewVault(t, map[string]string{"orchard.md": "# Orchard\n\napple trees bloom in the spring orchard\n"})
 
 	first := openMeaningCore(t, pluginDir, cacheRoot, port)
 	first.readVault(t, db, first.openSource(t), v)

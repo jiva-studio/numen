@@ -9,10 +9,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
 )
 
-// NewPluginReader returns a reader that keeps the compiled PDFium in the cache folder the host granted
-// the plugin, so a plugin process that starts again loads PDFium instead of compiling it. Without a
-// granted folder PDFium stays compiled in memory for the life of the process.
-func NewPluginReader() *Reader {
+// NewCachedReader returns a reader that keeps PDFium compiled in the cache directory the host granted the plugin, and in
+// memory where the host granted none.
+func NewCachedReader() *Reader {
 	reader := NewReader()
 	dir, err := cache.GetPluginDir()
 	if err != nil {

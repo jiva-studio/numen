@@ -3,8 +3,8 @@ package connection_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
@@ -13,7 +13,7 @@ const agentPlugin = "org.example.agent"
 
 func (f *fixture) getGrantRevision(t *testing.T, pluginID string) (string, bool) {
 	t.Helper()
-	revision, isGranted, err := connection.NewGetGrantRevision(connection.NewDeps(f.repository, f.types, f.keys, f.uses, none.Detected{})).Execute(pluginID)
+	revision, isGranted, err := connection.NewGetGrantRevision(connection.NewDeps(f.repository, f.types, f.keys, f.uses, testsupport.NoDetection{})).Execute(pluginID)
 	if err != nil {
 		t.Fatal(err)
 	}
