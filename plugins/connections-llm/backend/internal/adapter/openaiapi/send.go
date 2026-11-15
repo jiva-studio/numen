@@ -19,7 +19,7 @@ import (
 // maxResponseBytes bounds the answer of a service that is read into memory.
 const maxResponseBytes = 64 << 20
 
-// endpoint is the method and the path of a request.
+// endpoint is the method and the path of a request; the path may end with a query.
 type endpoint struct{ method, path string }
 
 func readTarget(ctx context.Context, call connection.Call) (*url.URL, string, bool, error) {
@@ -71,8 +71,9 @@ func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Dur
 
 func newRequest(ctx context.Context, target endpoint, base *url.URL, key string, in any) (*http.Request, error) {
 	destination := *base
-	destination.RawQuery, destination.Fragment = "", ""
-	destination.Path = strings.TrimSuffix(destination.Path, "/") + target.path
+	path, query, _ := strings.Cut(target.path, "?")
+	destination.RawQuery, destination.Fragment = query, ""
+	destination.Path = strings.TrimSuffix(destination.Path, "/") + path
 	destination.RawPath = ""
 
 	var body io.Reader

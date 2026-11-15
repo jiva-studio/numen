@@ -9,7 +9,7 @@
 import { isTyping } from '@numen/ui'
 
 /** A key press as far as the screen reads it. */
-export interface VaultKeyPress {
+interface VaultKeyPress {
   readonly key: string
   readonly repeat: boolean
   readonly altKey: boolean
