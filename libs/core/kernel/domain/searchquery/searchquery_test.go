@@ -278,7 +278,7 @@ func TestNormalizeCountsTheSpacesAroundAConditionTextInItsSize(t *testing.T) {
 	limits := searchquery.DefaultLimits()
 	padded := strings.Repeat(" ", limits.MaxConditionBytes) + "x"
 	_, err := searchquery.Normalize(newWords(padded), limits, time.UTC)
-	if _, ok := errors.AsType[*searchquery.ParseError](err); !ok {
+	if parseError, ok := errors.AsType[*searchquery.ParseError](err); !ok || len(parseError.Problems) == 0 {
 		t.Errorf("a text of %d bytes: %v", len(padded), err)
 	}
 }

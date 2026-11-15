@@ -103,11 +103,15 @@ func (c *converter) convertCall(expr ast.Expr) searchquery.RawNode {
 	case overloads.StartsWith, overloads.EndsWith, overloads.Contains:
 		return c.convertMethod(expr)
 	default:
-		if comparison, isComparison := getComparison(name); isComparison {
-			return c.convertComparison(expr, comparison)
-		}
+		return c.convertComparisonOrLink(expr, name)
 	}
-	if _, isLink := searchquery.FindLinkFunction(call.FunctionName()); isLink {
+}
+
+func (c *converter) convertComparisonOrLink(expr ast.Expr, name string) searchquery.RawNode {
+	if comparison, isComparison := getComparison(name); isComparison {
+		return c.convertComparison(expr, comparison)
+	}
+	if _, isLink := searchquery.FindLinkFunction(name); isLink {
 		return c.convertLink(expr)
 	}
 	return c.convertOther(expr)
