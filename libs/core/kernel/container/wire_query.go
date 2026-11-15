@@ -23,7 +23,7 @@ func newFindSearchResults(
 	search := db.ChunkSearch()
 	limits, stageLimits := readSearchLimits(c, errorHandler)
 	rerank := openRerankDeps(c)
-	querySource, _ := source.(searchsourceport.QuerySource)
+	querySource := getQuerySource(source)
 	deps := searchqueryusecase.FindSearchResultsDeps{
 		Parser:       celquery.NewParser(limits),
 		Documents:    search,
@@ -79,4 +79,11 @@ func openRerankDeps(c pluginsWiring) rerankDeps {
 		rows:    modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(c)).Execute, nil),
 		calls:   openModelCalls(c),
 	}
+}
+
+func getQuerySource(source searchsourceport.Source) searchsourceport.QuerySource {
+	if query, ok := source.(searchsourceport.QuerySource); ok {
+		return query
+	}
+	return nil
 }
