@@ -149,7 +149,7 @@ jobs:
         working-directory: apps/mobile
         run: |
           set -euo pipefail
-          unformatted=$(gofmt -l ./bind tools.go)
+          unformatted=$(gofmt -l ./bind ./cmd tools.go)
           if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
           go vet ./...
           golangci-lint run --timeout 15m ./...
@@ -386,6 +386,18 @@ jobs:
         env:
           TMPDIR: /dev/shm
         run: go test -race ./...
+
+      # The core serves a plugin linked into its own binary inside its process, the way the phone will
+      # run them. Its test ran with the mobile app, so this run reads the result from the cache.
+      - name: Build and test the core with linked plugins
+        if: ${{ !cancelled() && inputs.mobile }}
+        working-directory: apps/mobile
+        env:
+          TMPDIR: /dev/shm
+        run: |
+          set -euo pipefail
+          go build -o /dev/null ./cmd/numen-linked
+          go test -race ./cmd/numen-linked
 
       - name: Test the plugin SDK
         if: ${{ !cancelled() && inputs.sdk_go }}
