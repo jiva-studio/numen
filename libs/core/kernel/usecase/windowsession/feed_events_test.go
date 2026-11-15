@@ -2,6 +2,8 @@ package windowsession
 
 import (
 	"context"
+	"path/filepath"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -17,11 +19,16 @@ type feedStub struct {
 	report  func()
 	plugins chan struct{}
 	quiet   chan time.Time
+	paths   map[int64]string
 	emitted chan domain.VaultID
+	types   chan []domain.ContentType
 }
 
 func newFeedStub() *feedStub {
-	return &feedStub{plugins: make(chan struct{}), quiet: make(chan time.Time), emitted: make(chan domain.VaultID, 8)}
+	return &feedStub{
+		plugins: make(chan struct{}), quiet: make(chan time.Time), paths: map[int64]string{},
+		emitted: make(chan domain.VaultID, 8), types: make(chan []domain.ContentType, 8),
+	}
 }
 
 func (s *feedStub) events() FeedEvents {
@@ -38,7 +45,22 @@ func (s *feedStub) events() FeedEvents {
 			defer s.mu.Unlock()
 			return s.head, nil
 		},
-		Emit:  func(v domain.Vault) { s.emitted <- v.ID },
+		ListPaths: func(_ context.Context, _ domain.VaultID, after, upTo int64) ([]string, error) {
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			var out []string
+			for seq, path := range s.paths {
+				if seq > after && seq <= upTo {
+					out = append(out, path)
+				}
+			}
+			return out, nil
+		},
+		GetContentType: func(path string) domain.ContentType { return domain.ContentType("test/" + filepath.Ext(path)[1:]) },
+		Emit: func(v domain.Vault, types []domain.ContentType) {
+			s.emitted <- v.ID
+			s.types <- types
+		},
 		After: func(time.Duration) <-chan time.Time { return s.quiet },
 	}
 }
@@ -67,6 +89,7 @@ func (s *feedStub) requireEmitted(t *testing.T, want int) {
 	for range want {
 		select {
 		case id := <-s.emitted:
+			<-s.types
 			if id != garden().ID {
 				t.Fatalf("emitted for %s", id)
 			}
@@ -155,4 +178,44 @@ func TestAWindowWithoutPluginsWatchesNoFeed(t *testing.T) {
 	if run := (FeedEvents{}).start(t.Context(), garden()); run != nil {
 		t.Error("a window without plugins runs a feed loop")
 	}
+}
+
+func (s *feedStub) writeFile(seq int64, path string) {
+	s.mu.Lock()
+	s.paths[seq] = path
+	s.mu.Unlock()
+	s.write(seq)
+}
+
+func (s *feedStub) requireTypes(t *testing.T, want ...domain.ContentType) {
+	t.Helper()
+	select {
+	case <-s.emitted:
+	case <-time.After(5 * time.Second):
+		t.Fatal("no event was emitted")
+	}
+	if got := <-s.types; !slices.Equal(got, want) {
+		t.Errorf("the event covers the types %v, want %v", got, want)
+	}
+}
+
+func TestAnEventCoversTheTypesOfTheFilesItsWritesChanged(t *testing.T) {
+	stub := newFeedStub()
+	startFeedEvents(t, stub)
+	stub.passQuiet(t)
+
+	stub.writeFile(1, "books/river.pdf")
+	stub.writeFile(2, "books/lake.epub")
+	stub.passQuiet(t)
+	stub.requireTypes(t, "test/epub", "test/pdf")
+
+	stub.writeFile(3, "pictures/cover.png")
+	stub.passQuiet(t)
+	stub.requireTypes(t, "test/png")
+	stub.passQuiet(t)
+	stub.requireEmitted(t, 0)
+
+	stub.plugins <- struct{}{}
+	stub.passQuiet(t)
+	stub.requireTypes(t, "test/epub", "test/pdf", "test/png")
 }

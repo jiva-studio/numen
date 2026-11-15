@@ -5,10 +5,12 @@
  */
 import { test as bdd } from 'playwright-bdd'
 import { Person } from '../drivers/person.js'
+import { createVideoRecorder, isVideoOn } from './video.js'
 
 export const test = bdd.extend<{ person: Person }>({
   person: async ({ page, viewport }, use, testInfo) => {
-    const person = new Person(page, viewport)
+    const recorder = isVideoOn() ? createVideoRecorder(testInfo, viewport) : undefined
+    const person = new Person(page, viewport, recorder?.recording)
     try {
       await use(person)
       const log = person.readServerLog()
@@ -16,7 +18,11 @@ export const test = bdd.extend<{ person: Person }>({
         await testInfo.attach('server.log', { body: log, contentType: 'text/plain' })
       }
     } finally {
-      await person.removeNotes()
+      try {
+        await person.removeNotes()
+      } finally {
+        await recorder?.attachVideos()
+      }
     }
   },
 })

@@ -39,10 +39,11 @@ func Parse(value any) []string {
 	seen := map[string]bool{}
 	for _, one := range raw {
 		tag := Clean(one)
-		if tag == "" || seen[GetKey(tag)] {
+		key := cases.Fold().String(tag)
+		if tag == "" || seen[key] {
 			continue
 		}
-		seen[GetKey(tag)] = true
+		seen[key] = true
 		out = append(out, tag)
 	}
 	return out

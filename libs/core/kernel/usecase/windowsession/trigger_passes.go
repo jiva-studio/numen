@@ -11,7 +11,8 @@ import (
 
 // triggerPasses is the passes of the triggers asked for and not run yet: one over the whole vault, or
 // one over the paths that changed, and one over the notes whose frontmatter changed. A new one holds
-// a pass over the whole vault.
+// a pass over the whole vault. A note a frontmatter pass left undone is kept for the next pass, which
+// it does not start.
 type triggerPasses struct {
 	mu          sync.Mutex
 	isAll       bool
@@ -37,6 +38,14 @@ func (q *triggerPasses) requestPaths(paths []string) {
 
 func (q *triggerPasses) requestFrontmatter(paths []string) {
 	q.request(func() map[string]bool { return q.frontmatter }, paths)
+}
+
+func (q *triggerPasses) keepFrontmatter(paths []string) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	for _, path := range paths {
+		q.frontmatter[path] = true
+	}
 }
 
 func (q *triggerPasses) request(getSet func() map[string]bool, paths []string) {
@@ -85,9 +94,11 @@ func runTriggers(
 			report(err)
 		}
 		if frontmatter := passes.takeFrontmatter(); len(frontmatter) > 0 {
-			if err := triggers.ExecuteFrontmatter(ctx, v, frontmatter); err != nil && ctx.Err() == nil {
+			retry, err := triggers.ExecuteFrontmatter(ctx, v, frontmatter)
+			if err != nil && ctx.Err() == nil {
 				report(err)
 			}
+			passes.keepFrontmatter(retry)
 		}
 		select {
 		case <-ctx.Done():

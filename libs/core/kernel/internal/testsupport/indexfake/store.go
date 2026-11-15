@@ -117,7 +117,7 @@ func (s *Store) GetFileStats(_ context.Context, vaultID domain.VaultID, kind dom
 
 func (s *Store) GetUnchunkedSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
 	return s.getPaths(vaultID, kind, limit, func(src domain.Source) bool {
-		return !s.IsCut(vaultID, src.FileStat.Path)
+		return !s.IsCut(vaultID, src.FileStat.Path) && (src.Recipe == "" || src.ContentHash != "")
 	})
 }
 
