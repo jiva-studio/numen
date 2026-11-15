@@ -98,8 +98,6 @@ func getCooldownEnd(record resultcache.Record, settings Settings) time.Time {
 	return getLastRun(record).Add(time.Duration(settings.RefreshMinutes) * time.Minute)
 }
 
-// getRunTime returns when a stale search is due: at the end of its cooldown or, while a tab of it is open,
-// a short debounce after it went stale or last ran, whichever comes first.
 func getRunTime(record resultcache.Record, settings Settings, isWatched bool) time.Time {
 	cooldownEnd := getCooldownEnd(record, settings)
 	if !isWatched {
