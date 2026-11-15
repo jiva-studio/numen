@@ -13,7 +13,6 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
@@ -51,7 +50,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 }
 
 func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
-	t.Setenv(onnxruntime.EnvMockML, "true")
+	t.Setenv(provision.EnvMockML, "true")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
 	registry := newDependencyRegistry(Config{}.Clock(), "")
@@ -73,18 +72,18 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 		t.Errorf("the placeholder is %v, %v; want an empty file", info, err)
 	}
 
-	runtime := manifest.DependencyRequirement{ID: plugindomain.RuntimeONNX, Kind: manifest.DependencyKindRuntime}
+	runtime := manifest.DependencyRequirement{ID: "sample-runtime", Kind: manifest.DependencyKindRuntime, Metadata: map[string]string{"envVar": "SAMPLE_RUNTIME_LIB"}}
 	resolved, err = registry.Provision(t.Context(), runtime, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resolved.EnvVars["NUMEN_ONNX_RUNTIME_LIB"] != resolved.PrimaryPath || resolved.EnvVars["NUMEN_ONNX_PROVIDER"] != "cpu" {
+	if len(resolved.EnvVars) != 1 || resolved.EnvVars["SAMPLE_RUNTIME_LIB"] != resolved.PrimaryPath {
 		t.Errorf("the runtime is named %v", resolved.EnvVars)
 	}
 }
 
 func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
-	t.Setenv(onnxruntime.EnvMockML, "")
+	t.Setenv(provision.EnvMockML, "")
 	t.Setenv("NUMEN_MODELS_DIR", "")
 	body := []byte("model weights")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

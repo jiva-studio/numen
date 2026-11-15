@@ -26,15 +26,35 @@ const target = (patch: Partial<CommandTarget>): CommandTarget =>
 
 describe('the rows of the slot palette.note', () => {
   it('lists the command of an entry with its values under the title the plugin gives', () => {
-    const [row] = createSlotPaletteCommands([entry({})], createEmptyWhenContext())
+    const [row, plainRow] = createSlotPaletteCommands(
+      [
+        entry({ values: { zone: 'deep', kind: 'atlas' } }),
+        {
+          pluginId: 'org.example.atlas',
+          slot: 'palette.note',
+          command: 'app:file.reveal',
+          title: 'Show plain',
+        },
+      ],
+      createEmptyWhenContext(),
+    )
 
     expect(row).toMatchObject({
-      id: 'app:file.reveal#kind=atlas',
+      id: 'app:file.reveal#kind=atlas#zone=deep',
       command: 'app:file.reveal',
-      values: { kind: 'atlas' },
+      values: { zone: 'deep', kind: 'atlas' },
       text: 'Show in atlas',
       group: 'note',
+      when: 'target.isNote',
     })
+    expect(plainRow).toMatchObject({
+      id: 'app:file.reveal',
+      command: 'app:file.reveal',
+      text: 'Show plain',
+      group: 'window',
+    })
+    expect(plainRow?.when).toBeUndefined()
+    expect(plainRow?.values).toBeUndefined()
   })
 
   it('lists nothing for the entries of other slots or without a title, and nothing while no plugin is listed', () => {

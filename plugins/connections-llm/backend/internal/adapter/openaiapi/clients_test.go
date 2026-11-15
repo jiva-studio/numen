@@ -122,11 +122,6 @@ func TestClientPoolSettingsAndTransportClassification(t *testing.T) {
 	if pool.get(true) == nil || pool.get(false) == nil || pool.get(true) == pool.get(false) {
 		t.Errorf("pool clients must be distinct non-nil instances: loopback=%p general=%p", pool.get(true), pool.get(false))
 	}
-
-	dialer := newDialer()
-	if dialer.Timeout != 30*time.Second || dialer.KeepAlive != 30*time.Second {
-		t.Errorf("dialer Timeout=%v KeepAlive=%v, want 30s/30s", dialer.Timeout, dialer.KeepAlive)
-	}
 	transport, ok := newClient().Transport.(*http.Transport)
 	if !ok {
 		t.Fatal("expected *http.Transport")

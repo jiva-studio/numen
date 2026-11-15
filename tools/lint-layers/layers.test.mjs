@@ -13,7 +13,7 @@ const configs = createLibraryLayerConfigs({
   boundaries,
   order: ["shared", "features", "screens"],
   sliceLayers: ["features"],
-  outsideLayers: ["src/**/*.stories.ts", "src/**/fixtures/**", "src/vite.ts"],
+  outsideLayers: ["src/**/*.stories.ts", "src/**/fixtures/**"],
   domainImports,
 });
 
@@ -48,6 +48,12 @@ describe("the import block of the stories and fixtures of a component library", 
   it("passes the imports a story may make", () => {
     const source = ["import { expect } from 'storybook/test'", "import Local from './Local.vue'", "import { DARK } from '@/shared/fixtures/theme'"].join("\n");
     assert.deepEqual(findRejectedImports("src/shared/ui/button/Button.stories.ts", source), []);
+  });
+});
+
+describe("the files the layers of a component library cover", () => {
+  it("are the entry and the folders of the order, so a build helper beside the entry is in no layer", () => {
+    assert.deepEqual(configs[0].files, ["src/index.ts", "src/shared/**/*.{ts,vue}", "src/features/**/*.{ts,vue}", "src/screens/**/*.{ts,vue}"]);
   });
 });
 

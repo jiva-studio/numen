@@ -19,8 +19,8 @@ import (
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
@@ -52,7 +52,7 @@ func newWorldAt(t *testing.T, files map[string]string, modified map[string]time.
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	v := vaultfixture.NewVault(t, files)
+	v := vaulttest.NewVault(t, files)
 	for name, instant := range modified {
 		if err := os.Chtimes(filepath.Join(v.Path, filepath.FromSlash(name)), instant, instant); err != nil {
 			t.Fatal(err)

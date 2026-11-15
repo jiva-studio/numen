@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -178,7 +178,7 @@ type world struct {
 	rows     *rerankertest.Rows
 	standIn  *rerankertest.StandIn
 	tasks    *recordingTasks
-	clock    *clock.Fake
+	clock    *clocktest.Fake
 	mu       sync.Mutex
 	settings refresh.Settings
 	runner   *refresh.Runner
@@ -189,7 +189,7 @@ func newWorld(t *testing.T, refreshMinutes int) *world {
 	search := hosttest.NewSearch(testVault)
 	search.SetModel(hosttest.SearchModel{Name: "harbor-model", Recipe: "harbor-recipe", FloorHint: 0.4})
 	search.SetEmbedder(embedByTopic)
-	fake := new(clock.Fake)
+	fake := new(clocktest.Fake)
 	fake.Set(getStartTime())
 	w := &world{
 		vault:    hosttest.New(string(testVault)),

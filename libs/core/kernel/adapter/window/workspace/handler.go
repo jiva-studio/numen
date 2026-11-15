@@ -94,7 +94,7 @@ func (h *Handler) WriteOpenTabs(
 			Path:  one.GetPath(),
 			Title: one.GetTitle(),
 			State: one.GetState(),
-			Place: convertTabPlaceFromWire(one.GetPlace()),
+			Place: one.GetPlace(),
 		})
 	}
 	h.window.ReportOpenTabs(open)
@@ -211,23 +211,6 @@ func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {
 			continue
 		}
 		out = append(out, &v1.Range{Start: int32(span.Start), End: int32(span.End)})
-	}
-	return out
-}
-
-func convertTabPlaceFromWire(place *v1.TabPlace) *window.TabPlace {
-	if place == nil {
-		return nil
-	}
-	out := &window.TabPlace{
-		Page:      int(place.GetPage()),
-		PageCount: int(place.GetPageCount()),
-		CFI:       place.GetCfi(),
-		Chapter:   place.GetChapter(),
-	}
-	if place.PositionSeconds != nil {
-		seconds := place.GetPositionSeconds()
-		out.PositionSeconds = &seconds
 	}
 	return out
 }

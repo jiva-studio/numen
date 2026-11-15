@@ -305,7 +305,7 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 	if err != nil {
 		return nil, nil, err
 	}
-	cmd.Env = process.SanitizeEnvironment(os.Environ(), pluginVars, plug.Manifest.GetRuntimeIDs())
+	cmd.Env = process.SanitizeEnvironment(os.Environ(), pluginVars, plug.Manifest.GetDependencyEnvironment())
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {

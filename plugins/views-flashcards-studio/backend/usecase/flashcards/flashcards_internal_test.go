@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
@@ -1145,8 +1145,8 @@ func TestAssignCardIDsInternalsAndErrors(t *testing.T) {
 		nil, nil, nil,
 	)
 	resReadErr, err := acReadErr.Execute(ctx, v)
-	if err != nil || !slices.Equal(resReadErr.Unwritten, []string{"Broken.md"}) {
-		t.Fatalf("expected Unwritten=[Broken.md] on read error, got %+v, %v", resReadErr, err)
+	if err != nil || len(resReadErr.Unwritten) != 0 {
+		t.Fatalf("expected a deck with a read error to be skipped, got %+v, %v", resReadErr, err)
 	}
 
 	env := vaulttest.New(t, map[string]string{
@@ -1688,8 +1688,8 @@ func readVaultFile(t *testing.T, env vaulttest.Env, path string) string {
 
 func newSchedulerAt(retention float64) review.Scheduler { return review.NewFSRSAt(retention) }
 
-func newFakeClock(start time.Time) *clock.Fake {
-	source := new(clock.Fake)
+func newFakeClock(start time.Time) *clocktest.Fake {
+	source := new(clocktest.Fake)
 	source.Set(start)
 	return source
 }

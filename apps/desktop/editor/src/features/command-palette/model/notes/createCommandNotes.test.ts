@@ -8,8 +8,28 @@ describe('the open files a command can access', () => {
     const flushTab = vi.fn(() => Promise.resolve())
     const onCloseCalled = vi.fn()
     const closeTab = vi.fn()
+    const openFile = vi.fn()
+    const tabMap: Record<string, object | null> = {
+      'tab:missing': null,
+      'tab:bare': { state: {}, kind: {} },
+      'tab:target': {
+        state: {},
+        kind: {
+          address: { getTarget: () => ({ file: 'Target.pdf', path: '' }) },
+          events: {},
+        },
+      },
+      'tab:1': {
+        state: {},
+        kind: {
+          address: { getOpenTab: () => ({ path: 'Tab.md' }) },
+          events: { isAsking: () => true, flushPending: flushTab },
+        },
+      },
+    }
     const notes = createCommandNotes(
       {
+        openFile,
         getTabAt: (p: string) => (p === 'Reached.md' ? 'reached:1' : null),
         getPath: (id: string) => (id === 'reached:1' ? 'Reached.md' : id),
         asking: (id: string) => id === 'asking:1',
@@ -18,28 +38,39 @@ describe('the open files a command can access', () => {
       } as never,
       {
         tabs: {
-          tabs: { value: [{ id: 'tab:1', title: 'One' }] },
-          getTab: (id: string) =>
-            id === 'tab:1'
-              ? {
-                  state: {},
-                  kind: {
-                    address: { getOpenTab: () => ({ path: 'Tab.md' }) },
-                    events: { isAsking: () => true, flushPending: flushTab },
-                  },
-                }
-              : null,
+          tabs: {
+            value: [
+              { id: 'tab:missing', title: 'Missing' },
+              { id: 'tab:bare', title: 'Bare' },
+              { id: 'tab:target', title: 'Target' },
+              { id: 'tab:1', title: 'One' },
+            ],
+          },
+          getTab: (id: string) => tabMap[id] ?? null,
         },
         panes: { closeTab },
       } as never,
     )
 
+    notes.openFile('Tab.md', 'Tab', 'split', { line: 3 })
+    expect(openFile).toHaveBeenCalledWith('Tab.md', 'Tab', 'split', { line: 3 })
+    expect(notes.getTabAt('')).toBeNull()
     expect(notes.getTabAt('Reached.md')).toBe('reached:1')
+    expect(notes.getTabAt('Target.pdf')).toBe('tab:target')
     expect(notes.getTabAt('Tab.md')).toBe('tab:1')
     expect(notes.getPath('reached:1')).toBe('Reached.md')
     expect(notes.getPath('tab:1')).toBe('Tab.md')
+    expect(notes.getPath('tab:missing')).toBe('tab:missing')
+    expect(notes.getPath('tab:bare')).toBe('tab:bare')
+    expect(notes.getPath('tab:target')).toBe('tab:target')
     expect(notes.asking('asking:1')).toBe(true)
     expect(notes.asking('tab:1')).toBe(true)
+    expect(notes.asking('tab:missing')).toBe(false)
+    expect(notes.asking('tab:bare')).toBe(false)
+    expect(notes.asking('tab:target')).toBe(false)
+    await notes.flushPending('tab:missing')
+    await notes.flushPending('tab:bare')
+    await notes.flushPending('tab:target')
     await notes.flushPending('tab:1')
     expect(flushTab).toHaveBeenCalledOnce()
     notes.close('tab:1')

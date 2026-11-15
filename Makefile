@@ -17,6 +17,8 @@ PLUGIN_SDK := libs/plugin/sdk-ts
 PLUGIN_SDK_GO := libs/plugin/sdk-go
 # The base module of the Go plugin SDK and each feature module under it.
 PLUGIN_SDK_GO_MODULES := $(patsubst %/go.mod,%,$(wildcard $(PLUGIN_SDK_GO)/go.mod $(PLUGIN_SDK_GO)/*/go.mod))
+# Each module under libs/shared: the Go libraries that plugins import.
+SHARED_GO_MODULES := $(patsubst %/go.mod,%,$(wildcard libs/shared/*/go.mod))
 
 DESKTOP  := apps/desktop
 MOBILE   := apps/mobile
@@ -83,7 +85,7 @@ install: ## fetch all workspace dependencies
 	$(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_atomicfile_compile lib_note_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_components_compile lib_plugin_sdk_compile lib_core_client_compile lib_workbench_compile lib_plugin_loader_compile lib_plugin_manager_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_atomicfile_compile lib_note_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_components_compile lib_plugin_sdk_compile lib_core_client_compile lib_workbench_compile lib_plugin_loader_compile lib_plugin_manager_compile lib_plugin_sdk_go_compile lib_shared_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -414,6 +416,22 @@ lib_plugin_sdk_go_test: ## run plugin/sdk-go tests
 .PHONY: lib_plugin_sdk_go_lint
 lib_plugin_sdk_go_lint: ## run linters for plugin/sdk-go
 	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go vet ./... && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/$(PLUGIN_SDK_GO)/.golangci-structure.yml ./...) || exit 1; done
+
+# ------------------------------ Lib: Shared Go -------------------------------
+.PHONY: lib_shared_go_build
+lib_shared_go_build: ## build the Go libraries under libs/shared that plugins import
+	for m in $(SHARED_GO_MODULES); do (cd $$m && go build ./...) || exit 1; done
+
+.PHONY: lib_shared_go_compile
+lib_shared_go_compile: lib_shared_go_build
+
+.PHONY: lib_shared_go_test
+lib_shared_go_test: ## run the tests of libs/shared (NUMEN_TEST_MODELS adds the tokenizer parity test)
+	for m in $(SHARED_GO_MODULES); do (cd $$m && go test ./... $(GO_TEST_FLAGS)) || exit 1; done
+
+.PHONY: lib_shared_go_lint
+lib_shared_go_lint: ## run linters for libs/shared
+	for m in $(SHARED_GO_MODULES); do (cd $$m && go vet ./... && golangci-lint run ./...) || exit 1; done
 
 # ------------------------------ Plugins Tooling -------------------------------
 .PHONY: create_plugin

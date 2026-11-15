@@ -9,8 +9,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
@@ -55,7 +55,7 @@ func (m fixedMatcher) MatchWords(_ context.Context, _ string, texts []string) ([
 
 func newScoreSearch(t *testing.T, words fixedMatcher, withModel bool) (Scoring, domain.Vault) {
 	t.Helper()
-	v := vaultfixture.NewVault(t, map[string]string{"notes/Heron.md": "the gray heron\n"})
+	v := vaulttest.NewVault(t, map[string]string{"notes/Heron.md": "the gray heron\n"})
 	f := newFixture()
 	deps := search.ScoreChunksDeps{Places: onePlace{}, Words: words, Readers: vaultreader.Readers{}, Floors: f.search.Policy}
 	if withModel {

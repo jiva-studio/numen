@@ -389,11 +389,11 @@ func TestRecognitionCreateOfRecognizedScanReturnsItsVersion(t *testing.T) {
 func TestRecognitionCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 	s := newToolFixture(t)
 	close(s.recognizer.release)
-	if _, err := s.recognitions.Recognize(t.Context(), recognition.Request{
-		Vault: "Physics", Path: scanPath,
-	}); err != nil {
-		t.Fatal(err)
+	runEnd, isStarted, err := s.recognitions.Start(t.Context(), recognition.Request{Vault: "Physics", Path: scanPath})
+	if err != nil || !isStarted {
+		t.Fatalf("Start = (%v, %v), want the run started", isStarted, err)
 	}
+	<-runEnd
 	listing, err := s.texts.ListVersions(t.Context(), scanPath)
 	if err != nil {
 		t.Fatal(err)

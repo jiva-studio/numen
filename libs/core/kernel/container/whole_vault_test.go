@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -73,7 +73,7 @@ func TestAScanConsumesItsTurnsFromTheIndexAndHonorsARebuild(t *testing.T) {
 
 func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	db := makeIndex(t)
-	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n"})
+	v := vaulttest.NewVault(t, map[string]string{"a.md": "# A\n"})
 	target := container.NewConfig(container.Config{
 		ShouldRebuildIndex: true,
 		Paths:              container.Paths{ServiceDir: ".numen"},
@@ -93,7 +93,7 @@ func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 
 func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	db := makeIndex(t)
-	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
+	v := vaulttest.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
 	target := container.NewConfig(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
 	})
@@ -151,7 +151,7 @@ func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model sourc
 func unembeddedAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	t.Helper()
 	db := makeIndex(t)
-	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
+	v := vaulttest.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
 	target := container.NewConfig(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
 	})
@@ -197,7 +197,7 @@ func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
 func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
 	t.Helper()
 	db := makeIndex(t)
-	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
+	v := vaulttest.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
 	whole, err := container.ReadWholeVault(container.NewConfig(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
 	}), t.Context(), db, sourcefake.Wrap(unit{"first"}), v)

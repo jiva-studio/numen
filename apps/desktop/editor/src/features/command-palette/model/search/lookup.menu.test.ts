@@ -256,8 +256,13 @@ describe('an entry that holds values', () => {
     row.item.actions?.find((one) => one.text === text)?.id ?? ''
 
   it('gives the values to the choice of its action, and none to the choice of another', () => {
-    const row = createNameItem(createName(), WORDS, [WITH_VALUES, OTHER])
+    const multiValues = entry(`${ATLAS}:graph.show`, 'Two', {
+      values: { z: 'last', a: 'first' },
+    })
+    const row = createNameItem(createName(), WORDS, [WITH_VALUES, multiValues, OTHER])
 
+    expect(getActionId(row, 'Show')).toBe(`${ATLAS}:graph.show?where=plex`)
+    expect(getActionId(row, 'Two')).toBe(`${ATLAS}:graph.show?a=first&z=last`)
     const choice = resolveChoice(row.hit, getActionId(row, 'Show'))
 
     expect(choice?.command).toBe(WITH_VALUES.command)
@@ -285,8 +290,11 @@ describe('an entry that holds values', () => {
   })
 
   it('leaves the hit without values where no entry holds any', () => {
-    const row = createNameItem(createName(), WORDS, ENTRIES)
+    const emptyValues = entry(`${ATLAS}:empty.run`, 'Empty', { values: {} })
+    const row = createNameItem(createName(), WORDS, [...ENTRIES, emptyValues])
 
+    expect(getActionId(row, 'Empty')).toBe(`${ATLAS}:empty.run`)
     expect(row.hit).not.toHaveProperty('actionValues')
+    expect(row.hit).not.toHaveProperty('actionCommands')
   })
 })

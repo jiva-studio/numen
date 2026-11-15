@@ -85,7 +85,7 @@ func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 
 func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	t.Setenv("PATH", "")
-	_, _, hosted := newMockLinks(t)
+	_, _, hosted, _ := newMockLinks(t)
 	var mountedSrv *server.Server
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "test-token"}, func(srv *server.Server) error {
 		mountedSrv = srv

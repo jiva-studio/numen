@@ -285,6 +285,32 @@ message ManifestDependency {
   string source_url = 4;
   string checksum_sha256 = 5;
   map<string, string> metadata = 6;
+  // sources holds the file fetched on each platform, at most one per platform. A dependency
+  // declares sources or source_url, not both.
+  repeated ManifestDependencySource sources = 7;
+  // environment names the variables of the host passed to the plugin process while the plugin
+  // declares the dependency: a name, or a prefix followed by *. A variable whose name holds KEY,
+  // TOKEN, SECRET, PASSWORD, CREDENTIAL or AUTH is never passed.
+  repeated string environment = 8;
+  // search holds glob patterns of files on this machine that are the dependency, tried in order
+  // before any download, and used without a checksum. $NAME in a pattern is the value of the host
+  // variable NAME; a pattern that names an unset variable, or is no absolute path once expanded, is
+  // skipped.
+  repeated string search = 9;
+}
+
+// ManifestDependencySource is the file a dependency is fetched from on one platform.
+message ManifestDependencySource {
+  // platform is the os/arch the file is fetched on, as in linux/amd64.
+  string platform = 1;
+  string source_url = 2;
+  string checksum_sha256 = 3;
+  // archive_member names the file unpacked from the archive (.tar.gz, .tgz or .zip) at source_url:
+  // a path pattern of the archive, matched against the base name of each entry when it holds no
+  // slash. Empty uses the downloaded file as it is.
+  string archive_member = 4;
+  // member_sha256 is the sha256 the unpacked file holds; it is required with archive_member.
+  string member_sha256 = 5;
 }
 
 // ManifestBackend declares that the plugin has a backend process.

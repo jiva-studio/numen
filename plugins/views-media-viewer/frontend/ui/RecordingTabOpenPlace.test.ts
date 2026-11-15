@@ -42,7 +42,7 @@ describe('the place a recording tab reports when it opens', () => {
     const { tab, savePlace, reportPlace } = mountTab({ t: [125.5, 130] })
     await flush()
 
-    expect(reportPlace).toHaveBeenCalledWith({ positionSeconds: 125.5 })
+    expect(reportPlace).toHaveBeenCalledWith(JSON.stringify({ positionSeconds: 125.5 }))
     expect(savePlace).not.toHaveBeenCalled()
     tab.unmount()
   })
