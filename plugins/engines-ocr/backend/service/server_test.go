@@ -16,7 +16,7 @@ import (
 
 func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (command.Result, error) {
 	t.Helper()
-	commands, err := newCommands(s.launcher, s.newFollower())
+	commands, err := newCommands(s.launcher)
 	if err != nil {
 		t.Fatal(err)
 	}

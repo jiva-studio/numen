@@ -1,6 +1,6 @@
 // Package service is the backend of the OCR plugin: the text provider that recognizes the text of a
-// file on host request, the recognize command, the command that recognizes the scans the file change
-// feed names, and the agent tool recognition_create.
+// file on host request, the recognize command, the recognition of the scans the file change feed names
+// on each onFilesChanged event, and the agent tool recognition_create.
 package service
 
 import (
@@ -22,14 +22,25 @@ import (
 // PluginID is the identity the manifest gives the plugin.
 const PluginID = "md.numen.engines.ocr"
 
-// UpdateCommand is the command that recognizes the scans of the shown vault that its file change feed
-// names as added or changed. A trigger on file.added and file.changed runs it while Recognize
-// automatically is on; the scans are read from the feed, not from the trigger.
-const UpdateCommand = "recognitions.update"
+// App is the backend of the plugin: Mount registers its services, and HandleEvent recognizes the scans
+// the file change feed names on each onFilesChanged event while Recognize automatically is on.
+type App struct {
+	auto *automatic
+}
+
+func NewApp() *App { return &App{auto: nil} }
+
+// HandleEvent recognizes the scans the feed of the vault an onFilesChanged event names.
+func (a *App) HandleEvent(ctx context.Context, event string) error {
+	if a.auto == nil {
+		return nil
+	}
+	return a.auto.handleEvent(ctx, event)
+}
 
 // Mount registers the services of the plugin on s, working the vault, the plugin's folder, the text
 // versions and the queue through the host the environment names. The recognizer closes with s.
-func Mount(s *server.Server) error {
+func (a *App) Mount(s *server.Server) error {
 	vault, err := host.NewClientFromEnv()
 	if err != nil {
 		return err
@@ -49,7 +60,7 @@ func Mount(s *server.Server) error {
 	env := process.Process{}
 	holder := engines.NewHolder(env.GetConfig(), newOpener(engine.NewLibrary(), env.IsMockML), env)
 	feeds := func(id domain.VaultID) feed.Vault { return feed.Vault{Feed: vault.With(id), Store: store.With(id)} }
-	return mount(s, recognition.Host{
+	auto, err := mount(s, recognition.Host{
 		Vaults:    func(id domain.VaultID) recognition.Files { return vault.With(id) },
 		Store:     func(id domain.VaultID) recognition.Folder { return store.With(id) },
 		Texts:     func(id domain.VaultID) host.TextVersions { return texts.With(id) },
@@ -57,45 +68,53 @@ func Mount(s *server.Server) error {
 		Documents: document.NewCachedReader(),
 		Report:    env.ReportError,
 	}, feeds, holder)
+	a.auto = auto
+	return err
 }
 
-func mount(s *server.Server, h recognition.Host, feeds func(domain.VaultID) feed.Vault, holder *engines.Holder) error {
+func mount(s *server.Server, h recognition.Host, feeds func(domain.VaultID) feed.Vault, holder *engines.Holder) (*automatic, error) {
 	recognitions, err := recognition.New(h, holder.GetEngine)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	launcher := launch.New(recognitions, PluginID)
-	commands, err := newCommands(launcher, newFollower(launcher, feeds, h.Report))
+	commands, err := newCommands(launcher)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	registry, err := newToolRegistry(launcher)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	s.SetUpdateConfig(func(values map[string]string) { holder.UpdateSettings(values) })
+	auto := newAutomatic(newFollower(launcher, feeds, h.Report), launcher.GetShownVaultID, getReport(h.Report))
+	s.SetUpdateConfig(func(values map[string]string) {
+		holder.UpdateSettings(values)
+		auto.updateSettings(values)
+	})
 	command.Mount(s, commands)
 	registry.Mount(s)
 	s.OnClose(func() error {
+		auto.close()
 		launcher.Close()
 		return holder.Close()
 	})
-	return nil
+	return auto, nil
 }
 
 func newFollower(launcher *launch.Launcher, feeds func(domain.VaultID) feed.Vault, report func(string, error)) *feed.Follower {
-	if report == nil {
-		report = func(string, error) {}
-	}
-	return feed.New(feeds, launchRuns{launcher: launcher}, report)
+	return feed.New(feeds, launchRuns{launcher: launcher}, getReport(report))
 }
 
-func newCommands(launcher *launch.Launcher, follower *feed.Follower) (*command.Registry, error) {
-	commands := command.New()
-	if err := commands.Add(command.CreateText, newRecognizeCommand(launcher)); err != nil {
-		return nil, err
+func getReport(report func(string, error)) func(string, error) {
+	if report == nil {
+		return func(string, error) {}
 	}
-	return commands, commands.Add(UpdateCommand, newUpdateCommand(launcher, follower))
+	return report
+}
+
+func newCommands(launcher *launch.Launcher) (*command.Registry, error) {
+	commands := command.New()
+	return commands, commands.Add(command.CreateText, newRecognizeCommand(launcher))
 }
 
 func newRecognizeCommand(launcher *launch.Launcher) command.Run {
@@ -107,26 +126,13 @@ func newRecognizeCommand(launcher *launch.Launcher) command.Run {
 	}
 }
 
-func newUpdateCommand(launcher *launch.Launcher, follower *feed.Follower) command.Run {
-	return func(ctx context.Context, _ command.Request) (command.Result, error) {
-		vault, err := launcher.GetShownVaultID(ctx)
-		if err != nil {
-			return command.Result{}, err
-		}
-		if err := follower.Execute(ctx, vault); err != nil {
-			return command.Result{}, err
-		}
-		return command.Result{}, nil
-	}
-}
-
 // launchRuns starts the recognitions the follower asks for through the launcher.
 type launchRuns struct {
 	launcher *launch.Launcher
 }
 
 func (r launchRuns) Start(ctx context.Context, vault domain.VaultID, path string) (feed.State, error) {
-	out, err := r.launcher.Create(ctx, vault, path)
+	out, err := r.launcher.CreateInBackground(ctx, vault, path)
 	if err != nil {
 		return 0, err
 	}

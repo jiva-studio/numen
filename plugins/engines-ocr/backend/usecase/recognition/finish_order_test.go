@@ -38,7 +38,7 @@ func TestIsRunningIsFalseWhenTheTaskEnds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runEnd, isStarted, err := run.Start(t.Context(), recognition.Request{Vault: "Physics", Path: "books/scan.pdf"})
+	runEnd, isStarted, err := run.Start(t.Context(), recognition.Request{Vault: "Physics", Path: "books/scan.pdf", IsUserStarted: true})
 	if err != nil || !isStarted {
 		t.Fatalf("Start = %v, %v", isStarted, err)
 	}

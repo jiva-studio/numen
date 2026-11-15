@@ -6,16 +6,10 @@
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
+  "activationEvents": ["onFilesChanged"],
   "contributes": {
     "textKinds": [{ "kind": "transcript", "title": "Transcript" }],
     "category": "engines",
-    "commands": [
-      {
-        "id": "transcripts.update",
-        "title": "Transcribe recordings without text",
-        "icon": "audio-lines"
-      }
-    ],
     "slots": [
       {
         "slot": "fileTree.context",
@@ -29,18 +23,6 @@
         "command": "app:file.createText",
         "title": "Transcribe",
         "when": "target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')"
-      }
-    ],
-    "triggers": [
-      {
-        "event": "file.added",
-        "command": "transcripts.update",
-        "when": "(target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')) && config.md.numen.engines.transcription.transcribeAutomatically == true"
-      },
-      {
-        "event": "file.changed",
-        "command": "transcripts.update",
-        "when": "(target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')) && config.md.numen.engines.transcription.transcribeAutomatically == true"
       }
     ]
   },

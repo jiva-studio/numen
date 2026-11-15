@@ -71,6 +71,7 @@ type wire struct {
 	transcriber *transcribe.Transcriber
 	registry    *tools.Registry
 	commands    *command.Registry
+	auto        *automatic
 }
 
 func newWire(t *testing.T) *wire {
@@ -98,10 +99,12 @@ func newWire(t *testing.T) *wire {
 		t.Fatal(err)
 	}
 	feeds := func(id domain.VaultID) feed.Vault { return feed.Vault{Feed: vault.With(id), Store: store.With(id)} }
-	commands, err := newCommands(w.transcriber, requests, newFollower(requests, feeds, func(string, error) {}))
+	commands, err := newCommands(w.transcriber)
 	if err != nil {
 		t.Fatal(err)
 	}
+	w.auto = newAutomatic(newFollower(requests, feeds, func(string, error) {}), requests.GetShownVaultID, func(what string, err error) { t.Errorf("%s: %v", what, err) })
+	t.Cleanup(w.auto.close)
 	w.registry, w.commands = registry, commands
 	return w
 }

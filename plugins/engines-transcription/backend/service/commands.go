@@ -10,17 +10,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
 )
 
-// UpdateCommand is the command that transcribes the recordings of the shown vault that its file
-// change feed names as added or changed. A trigger on file.added and file.changed runs it while
-// Transcribe automatically is on; the recordings are read from the feed, not from the trigger.
-const UpdateCommand = "transcripts.update"
-
-func newCommands(transcriber *transcribe.Transcriber, requests *transcribe.Requests, follower *feed.Follower) (*command.Registry, error) {
+func newCommands(transcriber *transcribe.Transcriber) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add(command.CreateText, newTranscribeCommand(transcriber)); err != nil {
-		return nil, err
-	}
-	return commands, commands.Add(UpdateCommand, newUpdateCommand(requests, follower))
+	return commands, commands.Add(command.CreateText, newTranscribeCommand(transcriber))
 }
 
 func newTranscribeCommand(transcriber *transcribe.Transcriber) command.Run {
@@ -36,19 +28,6 @@ func newTranscribeCommand(transcriber *transcribe.Transcriber) command.Run {
 	}
 }
 
-func newUpdateCommand(requests *transcribe.Requests, follower *feed.Follower) command.Run {
-	return func(ctx context.Context, _ command.Request) (command.Result, error) {
-		vault, err := requests.GetShownVaultID(ctx)
-		if err != nil {
-			return command.Result{}, err
-		}
-		if err := follower.Execute(ctx, vault); err != nil {
-			return command.Result{}, err
-		}
-		return command.Result{}, nil
-	}
-}
-
 func newFollower(requests *transcribe.Requests, feeds func(domain.VaultID) feed.Vault, report func(string, error)) *feed.Follower {
 	return feed.New(feeds, requestRuns{requests: requests}, report)
 }
@@ -59,7 +38,7 @@ type requestRuns struct {
 }
 
 func (r requestRuns) Start(ctx context.Context, vault domain.VaultID, path string) (feed.State, error) {
-	out, err := r.requests.Create(ctx, vault, path)
+	out, err := r.requests.CreateInBackground(ctx, vault, path)
 	if err != nil {
 		return 0, err
 	}

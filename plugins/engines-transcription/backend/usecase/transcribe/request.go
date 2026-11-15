@@ -58,6 +58,18 @@ func (r *Requests) GetShownVaultID(ctx context.Context) (domain.VaultID, error) 
 // being transcribed starts nothing and reports the state running; a recording whose whole
 // transcript is the live version, or the source of it, starts nothing and reports the state done.
 func (r *Requests) Create(ctx context.Context, vault domain.VaultID, path string) (Outcome, error) {
+	return r.create(ctx, vault, path, r.transcriber.Start)
+}
+
+// CreateInBackground starts the transcription as Create does, as work the plugin started on its own,
+// which waits behind the work people asked for.
+func (r *Requests) CreateInBackground(ctx context.Context, vault domain.VaultID, path string) (Outcome, error) {
+	return r.create(ctx, vault, path, r.transcriber.StartInBackground)
+}
+
+func (r *Requests) create(
+	ctx context.Context, vault domain.VaultID, path string, start func(context.Context, domain.VaultID, string) (bool, error),
+) (Outcome, error) {
 	if vault == "" {
 		return Outcome{}, errNoVault
 	}
@@ -85,7 +97,7 @@ func (r *Requests) Create(ctx context.Context, vault domain.VaultID, path string
 		out.State, out.Version = StateDone, string(version.GetID())
 		return out, nil
 	}
-	isStarted, err := r.transcriber.Start(ctx, vault, path)
+	isStarted, err := start(ctx, vault, path)
 	if err != nil {
 		return Outcome{}, err
 	}

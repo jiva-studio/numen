@@ -69,8 +69,19 @@ func (l *Launcher) Close() {
 	l.wg.Wait()
 }
 
-// Create starts the recognition of a file of the vault unless one runs or the file is recognized.
+// Create starts the recognition of a file of the vault that a person or an agent asked for, unless one
+// runs or the file is recognized.
 func (l *Launcher) Create(ctx context.Context, vault domain.VaultID, path string) (Outcome, error) {
+	return l.create(ctx, vault, path, true)
+}
+
+// CreateInBackground starts the recognition of a file of the vault as Create does, as work the plugin
+// started on its own, which waits behind the work people asked for.
+func (l *Launcher) CreateInBackground(ctx context.Context, vault domain.VaultID, path string) (Outcome, error) {
+	return l.create(ctx, vault, path, false)
+}
+
+func (l *Launcher) create(ctx context.Context, vault domain.VaultID, path string, isUserStarted bool) (Outcome, error) {
 	if vault == "" {
 		return Outcome{}, errNoVault
 	}
@@ -99,7 +110,7 @@ func (l *Launcher) Create(ctx context.Context, vault domain.VaultID, path string
 		out.State, out.Version = StateDone, string(version.GetID())
 		return out, nil
 	}
-	out.State, err = l.start(ctx, vault, path)
+	out.State, err = l.start(ctx, vault, path, isUserStarted)
 	if err != nil {
 		return Outcome{}, err
 	}
@@ -125,7 +136,7 @@ func (l *Launcher) StartFile(ctx context.Context, path string) error {
 	if _, err := l.recognitions.StatFile(ctx, vault, path); err != nil {
 		return err
 	}
-	state, err := l.start(ctx, vault, path)
+	state, err := l.start(ctx, vault, path, true)
 	if err != nil {
 		return err
 	}
@@ -135,7 +146,7 @@ func (l *Launcher) StartFile(ctx context.Context, path string) error {
 	return nil
 }
 
-func (l *Launcher) start(ctx context.Context, vault domain.VaultID, path string) (string, error) {
+func (l *Launcher) start(ctx context.Context, vault domain.VaultID, path string, isUserStarted bool) (string, error) {
 	key := string(vault) + "\x00" + path
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -143,7 +154,7 @@ func (l *Launcher) start(ctx context.Context, vault domain.VaultID, path string)
 		return "", errors.New("the plugin is stopping")
 	}
 	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-	runEnd, isStarted, err := l.recognitions.Start(runCtx, recognition.Request{Vault: vault, Path: path})
+	runEnd, isStarted, err := l.recognitions.Start(runCtx, recognition.Request{Vault: vault, Path: path, IsUserStarted: isUserStarted})
 	if err != nil || !isStarted {
 		cancel()
 		if err != nil {

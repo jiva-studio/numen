@@ -6,16 +6,10 @@
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
+  "activationEvents": ["onFilesChanged"],
   "contributes": {
     "textKinds": [{ "kind": "recognition", "title": "Recognized text" }],
     "category": "engines",
-    "commands": [
-      {
-        "id": "recognitions.update",
-        "title": "Recognize scans without text",
-        "icon": "scan-text"
-      }
-    ],
     "slots": [
       {
         "slot": "fileTree.context",
@@ -29,18 +23,6 @@
         "command": "app:file.createText",
         "title": "Recognize text",
         "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
-      }
-    ],
-    "triggers": [
-      {
-        "event": "file.added",
-        "command": "recognitions.update",
-        "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeAutomatically == true"
-      },
-      {
-        "event": "file.changed",
-        "command": "recognitions.update",
-        "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeAutomatically == true"
       }
     ]
   },

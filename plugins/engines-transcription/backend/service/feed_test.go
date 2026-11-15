@@ -2,26 +2,30 @@ package service
 
 import (
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 )
 
-func (w *wire) runUpdate(t *testing.T) {
+func (w *wire) deliver(t *testing.T, event string) {
 	t.Helper()
-	if _, err := w.commands.RunCommand(t.Context(), command.Request{Command: UpdateCommand, Path: lecture}); err != nil {
+	if err := w.auto.handleEvent(t.Context(), event); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestTheUpdateCommandTranscribesTheRecordingOfTheFeedOnce(t *testing.T) {
+func TestAFilesChangedEventTranscribesTheRecordingOfTheFeedOnceInTheBackground(t *testing.T) {
 	w := newWire(t)
+	w.auto.isOn.Store(true)
 
-	w.runUpdate(t)
+	w.deliver(t, "onFilesChanged:Lectures")
 	w.waitUntilStarted(t)
-	w.runUpdate(t)
+	for _, task := range w.queue.ListTasks() {
+		if task.IsUserStarted {
+			t.Errorf("the task %s is shown as started by a person", task.ID)
+		}
+	}
+	w.deliver(t, "onFilesChanged:Lectures")
 	close(w.recognizer.release)
 	w.waitUntilNoTask(t)
-	w.runUpdate(t)
+	w.deliver(t, "onFilesChanged:Lectures")
 
 	listing, err := w.texts.ListVersions(t.Context(), lecture)
 	if err != nil || listing.Live == "" {
@@ -32,15 +36,42 @@ func TestTheUpdateCommandTranscribesTheRecordingOfTheFeedOnce(t *testing.T) {
 	}
 }
 
+func TestAFilesChangedEventTranscribesNothingWhileTheSettingIsOff(t *testing.T) {
+	w := newWire(t)
+
+	w.deliver(t, "onFilesChanged:Lectures")
+	w.deliver(t, "onIndexChanged:Lectures")
+	w.transcriber.Close()
+
+	if opened := w.recognizer.opened.Load(); opened != 0 {
+		t.Errorf("the recording was opened %d times, want never", opened)
+	}
+}
+
+func TestTurningTheSettingOnTranscribesTheRecordingsOfTheShownVault(t *testing.T) {
+	w := newWire(t)
+
+	w.auto.updateSettings(map[string]string{settingAutomatic: "true"})
+	w.waitUntilStarted(t)
+	close(w.recognizer.release)
+	w.waitUntilNoTask(t)
+
+	listing, err := w.texts.ListVersions(t.Context(), lecture)
+	if err != nil || listing.Live == "" {
+		t.Errorf("the recording lists %+v (%v), want its transcript live", listing, err)
+	}
+}
+
 func TestAResetOfTheFeedSkipsARecordingWithItsTranscript(t *testing.T) {
 	w := newWire(t)
-	w.runUpdate(t)
+	w.auto.isOn.Store(true)
+	w.deliver(t, "onFilesChanged:Lectures")
 	w.waitUntilStarted(t)
 	close(w.recognizer.release)
 	w.waitUntilNoTask(t)
 
 	w.vault.ResetFeed()
-	w.runUpdate(t)
+	w.deliver(t, "onFilesChanged:Lectures")
 	w.transcriber.Close()
 
 	if opened := w.recognizer.opened.Load(); opened != 1 {

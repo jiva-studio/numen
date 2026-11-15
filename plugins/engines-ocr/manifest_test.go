@@ -3,6 +3,7 @@ package ocr
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -44,28 +45,20 @@ func TestTheManifestKeepsTheProcessForTenIdleMinutes(t *testing.T) {
 	}
 }
 
-// Recognize automatically wakes the plugin on a new or changed scan; the scans to recognize are read
-// from the file change feed, so no trigger recognizes the file it runs on.
-func TestTheTriggersWakeTheCommandThatReadsTheFeed(t *testing.T) {
+// The onFilesChanged event wakes the plugin, which reads the files to work from the file change feed;
+// the plugin has no trigger.
+func TestTheFilesChangedEventWakesThePlugin(t *testing.T) {
 	var manifest struct {
-		Contributes struct {
-			Triggers []struct {
-				Event   string `json:"event"`
-				Command string `json:"command"`
-			} `json:"triggers"`
-		} `json:"contributes"`
+		ActivationEvents []string        `json:"activationEvents"`
+		Contributes      json.RawMessage `json:"contributes"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	var events []string
-	for _, one := range manifest.Contributes.Triggers {
-		if one.Command != "recognitions.update" {
-			t.Errorf("a trigger on %s runs %s", one.Event, one.Command)
-		}
-		events = append(events, one.Event)
+	if !slices.Equal(manifest.ActivationEvents, []string{"onFilesChanged"}) {
+		t.Errorf("activationEvents = %v, want [onFilesChanged]", manifest.ActivationEvents)
 	}
-	if !slices.Equal(events, []string{"file.added", "file.changed"}) {
-		t.Errorf("the triggers run on %v, want file.added and file.changed", events)
+	if strings.Contains(string(manifest.Contributes), "triggers") {
+		t.Errorf("contributes = %s, want no trigger", manifest.Contributes)
 	}
 }
