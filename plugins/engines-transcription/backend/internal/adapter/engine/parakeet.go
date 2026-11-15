@@ -145,7 +145,7 @@ func Open(ctx context.Context, runtime Runtime, cfg settings.Config) (*Transcrib
 func openSession(library *onnx.Library, engine *ort.Engine, path string, threads int) (*ort.Session, error) {
 	cacheRoot := getCacheRoot()
 	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider:     onnx.GetSessionProvider(),
+		Provider:     getSessionProvider(),
 		Threads:      threads,
 		ComputeUnits: onnx.ComputeUnitsDefault,
 		CacheRoot:    cacheRoot,

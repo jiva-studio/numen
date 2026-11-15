@@ -1,6 +1,6 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import { measureWindow } from '@numen/ui'
-import { getDraggedHeight, getTallest, LEAST } from '../lib/frame'
+import { getDraggedHeight, getMaxHeight, LEAST } from '../lib/frame'
 import { createHeightStore, type HeightStore } from '../model/heightStore'
 
 interface HeldBar {
@@ -49,7 +49,7 @@ export function useFrameHeight(
       if (!element) return
       const sizes = new ResizeObserver(() => {
         renderedHeight.value = Math.round(element.clientHeight)
-        tallest.value = getTallest(getPaneHeight())
+        tallest.value = getMaxHeight(getPaneHeight())
         if (tall.value !== null) tall.value = Math.min(tallest.value, tall.value)
       })
       sizes.observe(element)
@@ -62,11 +62,11 @@ export function useFrameHeight(
 
   onMounted(() => {
     if (tall.value !== null) {
-      tall.value = Math.min(getTallest(getPaneHeight()), Math.max(LEAST, tall.value))
+      tall.value = Math.min(getMaxHeight(getPaneHeight()), Math.max(LEAST, tall.value))
     }
   })
 
-  // A drag the page is taken out from under lets go of the bar it was holding.
+  // Releases the bar when the component unmounts during a drag.
   onBeforeUnmount(() => onPointerUp())
 
   function onPointerDown(at: PointerEvent): void {

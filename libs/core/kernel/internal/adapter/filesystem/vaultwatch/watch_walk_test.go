@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
@@ -19,7 +19,7 @@ import (
 // arrived runs on the one goroutine that empties the backlog, so a folder past
 // what the watch follows through is answered as the whole vault.
 func TestAFolderTooLargeToWalkIsTheWholeVault(t *testing.T) {
-	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
+	root := vaulttest.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	// The folder is filled where the watch cannot see it, and arrives whole.
 	aside := filepath.Join(t.TempDir(), "library")
 	if err := os.MkdirAll(aside, 0o755); err != nil {

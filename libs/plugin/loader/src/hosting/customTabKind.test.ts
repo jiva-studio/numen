@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from '../styles'
-import { createBufferedNoteState } from './customTabBuffer'
+import { createMockManifest } from '@numen/core-client/testing'
+import { createBufferedNoteState, isNoteEditorKind } from './customTabBuffer'
 import {
   createCustomTabKind,
   createPluginPaneWrapper,
@@ -367,15 +368,15 @@ describe('createReaderTabKind (place)', () => {
   it('reports to the open tabs the last place the reader reports', () => {
     const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
     const state = kind.open('library/Wading Birds.pdf', 'tab') as {
-      reportPlace: (place: unknown) => void
+      reportPlace: (place: string) => void
     }
 
-    state.reportPlace({ page: 7, pageCount: 12 })
-    state.reportPlace({ page: 8, pageCount: 12 })
+    state.reportPlace('{"page":7,"pageCount":12}')
+    state.reportPlace('{"page":8,"pageCount":12}')
 
     expect(kind.address?.getOpenTab?.(state)).toStrictEqual({
       path: 'library/Wading Birds.pdf',
-      place: { page: 8, pageCount: 12 },
+      place: '{"page":8,"pageCount":12}',
     })
   })
 
@@ -391,17 +392,17 @@ describe('createReaderTabKind (place)', () => {
     const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
     const state = kind.open('talks/Heron Talk.mp3', 'tab') as {
       savePlace: (place: unknown) => void
-      reportPlace: (place: unknown) => void
+      reportPlace: (place: string) => void
     }
 
     state.savePlace({ t: [66.5, 70] })
     expect(kind.address?.getOpenTab?.(state)).toStrictEqual({ path: 'talks/Heron Talk.mp3' })
 
-    state.reportPlace({ positionSeconds: 66.5 })
+    state.reportPlace('{"positionSeconds":66.5}')
     expect(kind.address?.getState?.(state)).toEqual({ t: [66.5, 70] })
     expect(kind.address?.getOpenTab?.(state)).toStrictEqual({
       path: 'talks/Heron Talk.mp3',
-      place: { positionSeconds: 66.5 },
+      place: '{"positionSeconds":66.5}',
     })
   })
 
@@ -557,6 +558,11 @@ describe('createCustomTabKind (notes)', () => {
     )
 
     const st = kindWithDispatch.open('notes/slow.md', 't1') as Record<string, unknown>
+    const customMeasure = vi.fn()
+    ;(st.measure as () => void)()
+    ;(st.attachEditor as (e: { measure: () => void }) => void)({ measure: customMeasure })
+    ;(st.measure as () => void)()
+    expect(customMeasure).toHaveBeenCalledOnce()
     // Save while loading & unedited is ignored
     const writeNote = vi.fn(async () => undefined)
     const kindSaveGuard = createFlatCustomTabKind(
@@ -721,7 +727,11 @@ describe('createBufferedNoteState', () => {
     const reveal = vi.fn(() => true)
 
     state.revealLine(9)
-    state.attachEditor({ reveal })
+    const bufMeasure = vi.fn()
+    state.measure()
+    state.attachEditor({ reveal, measure: bufMeasure })
+    state.measure()
+    expect(bufMeasure).toHaveBeenCalledOnce()
     await new Promise((r) => setTimeout(r, 0))
     expect(reveal).not.toHaveBeenCalled()
 
@@ -876,6 +886,34 @@ describe('createBufferedNoteState', () => {
     nonNoteWithBuffer.open('notes/x.md', 'tab-x')
     expect(buffer.open).not.toHaveBeenCalled()
 
+    const noteEditorWithoutBuffer = createFlatCustomTabKind(
+      'p',
+      { kind: 'note', component: STUB_COMPONENT },
+      {
+        target: 'desktop.editor',
+        registerKind: () => vi.fn(),
+        registerExtensionReader: () => vi.fn(),
+        openTab: async () => '',
+        isNoteEditor: true,
+      },
+    )
+    expect((noteEditorWithoutBuffer.open('notes/x.md', 'tab-x') as { path: string }).path).toBe(
+      'notes/x.md',
+    )
+
+    expect(isNoteEditorKind(undefined, 'note')).toBe(false)
+    expect(isNoteEditorKind({ ...createMockManifest('p'), contributes: undefined }, 'note')).toBe(
+      false,
+    )
+    const noteEditorManifest = createMockManifest('p', { tabKinds: ['deck', 'note'] })
+    expect(isNoteEditorKind(noteEditorManifest, 'note')).toBe(false)
+    if (noteEditorManifest.contributes?.tabKinds[1]) {
+      noteEditorManifest.contributes.tabKinds[1].isNoteEditor = true
+    }
+    expect(isNoteEditorKind(noteEditorManifest, 'deck')).toBe(false)
+    expect(isNoteEditorKind(noteEditorManifest, 'note')).toBe(true)
+    expect(isNoteEditorKind(noteEditorManifest, 'missing')).toBe(false)
+
     // Fallbacks when deps/notes/workspace are missing
     const bareState = createBufferedNoteState(
       { targetPath: 'notes/bare.md', id: 'bare', buffer },
@@ -999,6 +1037,8 @@ describe('pluginView helpers and stylesheet adoption', () => {
 
     const nonLoaderAsync = { type: 'async', loader: 'invalid' }
     expect(parsePluginComponent(nonLoaderAsync)).toBe(nonLoaderAsync)
+    const wrongTypeAsync = { type: 'other', loader: () => Promise.resolve(syncComp) }
+    expect(parsePluginComponent(wrongTypeAsync)).toBe(wrongTypeAsync)
 
     expect(parseTitle('Plain')).toBe('Plain')
     expect(parseTitle({ value: 'RefVal' })).toBe('RefVal')

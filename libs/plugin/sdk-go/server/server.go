@@ -342,8 +342,7 @@ func waitForStop(
 }
 
 func serveHTTP(httpSrv *http.Server, listener net.Listener, errs chan<- error) {
-	// Serve always returns a non-nil error.
-	if err := httpSrv.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
+	if err := httpSrv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		errs <- err
 	}
 	close(errs)

@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/testsupport"
 )
 
 func TestLongTextIsSplitIntoPartsOnWholeCharacters(t *testing.T) {

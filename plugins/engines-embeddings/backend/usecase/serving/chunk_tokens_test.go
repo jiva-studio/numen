@@ -56,8 +56,8 @@ func TestGetModelInfoReportsTheRequestedChunkTokensWithinTheBounds(t *testing.T)
 
 func TestAModelOfALowerLimitLowersChunkTokensAndTheOldModelRestoresThem(t *testing.T) {
 	srv := newEmbeddingServer()
-	dir := t.TempDir()
-	srv.profileSrc = profilefiles.NewDirectory(dir)
+	dir := useProfileFolder(t)
+	srv.profileSrc = profilefiles.GetDefaultDirectory()
 	values := map[string]string{"source": "local", "model": model.DefaultModel, "chunkTokens": "400"}
 
 	srv.updateConfig(values)

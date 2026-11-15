@@ -14,7 +14,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
@@ -164,7 +164,7 @@ func openEditor(t *testing.T, notes map[string]string) *Services {
 	api := newBareServices()
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.Runtime.SetVault(vaultfixture.NewVault(t, notes))
+	api.state.Runtime.SetVault(vaulttest.NewVault(t, notes))
 	return api
 }
 
@@ -271,7 +271,7 @@ func TestEditLoad(t *testing.T) {
 		notes = n
 	}
 
-	v := vaultfixture.GenerateVault(t, notes)
+	v := vaulttest.GenerateVault(t, notes)
 	wired := newWiring(filepath.Join(t.TempDir(), "index.db"), false, nil)
 	db := wired.openIndex(t)
 

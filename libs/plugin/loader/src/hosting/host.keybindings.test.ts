@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { parseManifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { PluginHost } from './host'
-import { getTargetValues } from '../when'
+import { createShortcutHandler } from './shortcuts'
+import { createWhenReader, getTargetValues } from '../when'
 import type { CommandDeclaration } from './types'
 import { createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
 
@@ -302,5 +303,87 @@ describe('the keys of the plugins', () => {
 
     expect(host.keybindings.getKeyFor('org.example.ledger:ledger.open')).toBe('mod+l')
     expect(host.commands.getPaletteCommands()[0]).not.toHaveProperty('shortcut')
+  })
+
+  it('skips undeclared or invalid-when commands, tolerates missing reportSlotIssue, and reports getNote errors', async () => {
+    const onError = vi.fn()
+    const host = createTestPluginHost({
+      target: 'desktop.editor',
+      registerKind: vi.fn(() => vi.fn()),
+      getCommandDeclarations: () => [
+        LEDGER,
+        {
+          pluginId: 'org.example.ledger',
+          id: 'ledger.badWhen',
+          title: 'Bad when',
+          when: 'invalid.var',
+        },
+      ],
+      onError,
+    })
+    host.keybindings.registerKeybindings('org.example.ledger', [
+      { key: 'mod+u', command: 'ledger.undeclared' },
+      { key: 'mod+b', command: 'ledger.badWhen' },
+      { key: 'mod+p', command: 'ledger.open' },
+      { key: 'mod+l', command: 'ledger.open' },
+    ])
+
+    expect(
+      host.commands.handleShortcut(press({ code: 'KeyU', ctrlKey: true }), async () => NOTE, {
+        target: TARGET,
+      }),
+    ).toBe(false)
+    expect(
+      host.commands.handleShortcut(press({ code: 'KeyB', ctrlKey: true }), async () => NOTE, {
+        target: TARGET,
+      }),
+    ).toBe(false)
+    expect(() =>
+      host.commands.handleShortcut(press({ code: 'KeyP', ctrlKey: true }), async () => NOTE),
+    ).not.toThrow()
+
+    const noteErr = new Error('note read failed')
+    host.keybindings.registerKeybindings('other.plugin', [
+      { key: 'mod+j', command: 'org.example.ledger:ledger.open' },
+    ])
+    expect(
+      host.commands.handleShortcut(press({ code: 'KeyJ', ctrlKey: true }), async () => {
+        throw noteErr
+      }),
+    ).toBe(true)
+    await settle()
+    expect(onError).toHaveBeenCalledWith('org.example.ledger', noteErr)
+
+    const fallbackErr = new Error('fallback owner error')
+    const handleFallback = createShortcutHandler({
+      deps: {
+        window: { target: 'desktop.editor', onError },
+        kinds: { registerKind: vi.fn(() => vi.fn()) },
+        commands: { whenReader: createWhenReader() },
+      },
+      keybindings: {
+        register: vi.fn(),
+        unregister: vi.fn(),
+        getKeyFor: () => undefined,
+        match: () => ({
+          owner: 'binding.owner.plugin',
+          key: 'mod+l',
+          parsed: { mod: true, ctrl: false, meta: false, alt: false, shift: false, code: 'KeyL' },
+          command: 'org.example.ledger:ledger.open',
+          values: {},
+          when: '',
+          condition: { names: [], evaluate: () => true, evaluatePartial: () => 'true' },
+        }),
+      },
+      getAvailableCommands: () => [],
+      executeCommand: vi.fn(async () => true),
+    })
+    expect(
+      handleFallback(CTRL_L, async () => {
+        throw fallbackErr
+      }),
+    ).toBe(true)
+    await settle()
+    expect(onError).toHaveBeenCalledWith('binding.owner.plugin', fallbackErr)
   })
 })
