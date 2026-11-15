@@ -29,7 +29,7 @@ func newSelection(values map[string]string) selection {
 }
 
 // getEndpoint returns the feed the selection names: the address on the custom channel, the nightly
-// feed on the nightly channel and the stable feed on the stable one. A channel nobody has chosen is
+// feed on the nightly channel and the stable feed on the stable one. An unset channel is
 // the channel of the running build.
 func (s selection) getEndpoint(version string) string {
 	channel := s.channel
