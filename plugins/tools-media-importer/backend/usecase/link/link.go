@@ -140,9 +140,6 @@ func (l *Links) withClosing(ctx context.Context) (context.Context, context.Cance
 	return runCtx, cancel
 }
 
-// Wait waits for every fetch started in the background.
-func (l *Links) Wait() { l.wg.Wait() }
-
 // Link is one link note. Key names the text stored for its address, and URL is the url property as
 // the note writes it, the root of its text version. Vault is the identity of the vault the note is
 // in, read from the host when the note is read or made, so the work on a link of the current vault is

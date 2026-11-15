@@ -3,7 +3,8 @@
 --
 -- The row that comes back is the large chunk enclosing the hit, which is what
 -- a result shows, and where the hit itself is inside it. A chunk with
--- nothing enclosing it is its own, and is at its own beginning.
+-- nothing enclosing it is its own, and is at its own beginning. The last column
+-- is the negated bm25 of the hit: positive, higher is better.
 --
 -- A path prefix limits the sources before the list is truncated to the limit, so the
 -- limit counts the passages under it. The prefix is compared as text in its composed
@@ -24,7 +25,8 @@ SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.content_hash, 
        COALESCE(p.start, c.start),
        COALESCE(p.length, c.length),
        COALESCE(p.location, c.location, ''),
-       c.start - COALESCE(p.start, c.start)
+       c.start - COALESCE(p.start, c.start),
+       -h.rank
 FROM hits h
 JOIN chunks c ON c.id = h.rowid
 JOIN sources s ON s.id = c.source_id

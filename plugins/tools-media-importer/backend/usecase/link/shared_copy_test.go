@@ -134,7 +134,7 @@ func TestDeleteCopyWaitsForTheRunningDownload(t *testing.T) {
 	if err := <-deleted; err != nil {
 		t.Fatal(err)
 	}
-	w.links.Wait()
+	w.queue.WaitForEnd(t, link.GetCopyTaskID(made.Vault, made.Path))
 	if got := w.readProperty(t, made.Path, "media"); got != "" {
 		t.Errorf("the note holds media %q after the delete", got)
 	}

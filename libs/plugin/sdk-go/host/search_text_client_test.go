@@ -25,6 +25,7 @@ type textSearchHost struct {
 	status  *connect.Error
 	vault   string
 	request *v1.HostSearchServiceSearchTextRequest
+	whole   string
 }
 
 func (h *textSearchHost) SearchText(_ context.Context, req *connect.Request[v1.HostSearchServiceSearchTextRequest]) (*connect.Response[v1.HostSearchServiceSearchTextResponse], error) {
@@ -36,7 +37,7 @@ func (h *textSearchHost) SearchText(_ context.Context, req *connect.Request[v1.H
 		Error: h.code,
 		Results: []*v1.SearchResult{{
 			Path: "library/Birds.pdf", Text: "the heron stands in the reeds", PlaceLabel: "page 12",
-			ByteRange: &v1.Range{Start: 400, End: 1100}, MatchLine: 0, Selector: `{"page":12}`,
+			ByteRange: &v1.Range{Start: 400, End: 1100}, MatchLine: 0, Selector: `{"page":12}`, WholeText: h.whole,
 		}, {
 			Path: "notes/Heron.md", Text: "herons fish at dusk", ByteRange: &v1.Range{Start: 20, End: 60}, MatchLine: 4,
 		}},
@@ -102,5 +103,18 @@ func TestASearchClientSendsALimitBeyondInt32AsTheNearestInt32(t *testing.T) {
 		if got := h.request.GetLimit(); got != want {
 			t.Errorf("a limit of %d was sent as %d, want %d", limit, got, want)
 		}
+	}
+}
+
+func TestASearchClientAsksForTheWholeTextAndReadsIt(t *testing.T) {
+	h := &textSearchHost{whole: "by the bank the heron stands in the reeds"}
+	c := dialTextSearch(t, h)
+
+	got, err := c.SearchText(t.Context(), host.SearchResultQuery{Query: "heron", IsWholeText: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !h.request.GetIsWholeText() || len(got) != 2 || got[0].WholeText != "by the bank the heron stands in the reeds" {
+		t.Errorf("the host received %v and the passages are %+v, want the ask sent and the whole text read", h.request, got)
 	}
 }

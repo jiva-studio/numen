@@ -613,8 +613,12 @@ func TestRefresh_SeparatesIgnoredFilesFromRemovedNotes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.Sources(), c.db.Sources(), testsupport.NewClock())
+	refresh := vaults.NewRefreshFrom(vaults.RefreshDeps{
+		Readers: vaultreader.Readers{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
+		Queries: c.db.Sources(), Sources: c.db.Sources(), Now: testsupport.NewClock(),
+		Ledger: vaults.NewLedger(),
+	})
+
 	res, err := refresh.Execute(t.Context(), c.vault, []string{".photo.png", "Gone.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)

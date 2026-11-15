@@ -2,7 +2,7 @@ package eventbus
 
 import (
 	"context"
-	"strings"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -14,7 +14,7 @@ import (
 func getRealClock() Clock { return testsupport.GetMachine() }
 
 func TestEventBusDebounceTyping(t *testing.T) {
-	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond)
+	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -41,7 +41,7 @@ func TestEventBusDebounceTyping(t *testing.T) {
 }
 
 func TestEventBusThrottle(t *testing.T) {
-	bus := New(nil, getRealClock(), 40*time.Millisecond, 100*time.Millisecond)
+	bus := New(nil, getRealClock(), 40*time.Millisecond, 100*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -70,7 +70,7 @@ func TestEventBusThrottle(t *testing.T) {
 }
 
 func TestEventBusNonBlocking(t *testing.T) {
-	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond)
+	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -89,7 +89,7 @@ func TestEventBusNonBlocking(t *testing.T) {
 }
 
 func TestEventBusFlush(t *testing.T) {
-	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond)
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -100,27 +100,27 @@ func TestEventBusFlush(t *testing.T) {
 	wg.Add(1)
 
 	var received string
-	unsub := bus.Subscribe("onSearchSourceReady", func(_ context.Context, event string) error {
+	unsub := bus.Subscribe("onIndexChanged", func(_ context.Context, event string) error {
 		received = event
 		wg.Done()
 		return nil
 	})
 	defer unsub()
 
-	bus.Publish("onSearchSourceReady:v-1")
+	bus.Publish("onIndexChanged:v-1")
 	if err := bus.Flush(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
 	wg.Wait()
 
-	if received != "onSearchSourceReady:v-1" {
-		t.Fatalf("got %q, want onSearchSourceReady:v-1", received)
+	if received != "onIndexChanged:v-1" {
+		t.Fatalf("got %q, want onIndexChanged:v-1", received)
 	}
 }
 
 func TestEventBusUnsubscribe(t *testing.T) {
-	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond)
+	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -154,7 +154,7 @@ func TestEventBusUnsubscribe(t *testing.T) {
 
 // Typing events all fall under one key, so only the last of them is delivered.
 func TestEventBusDebouncesTypingEvents(t *testing.T) {
-	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond)
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond, nil)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -186,31 +186,36 @@ func TestEventBusDebouncesTypingEvents(t *testing.T) {
 	}
 }
 
-func TestEventBusErrorHandling(t *testing.T) {
-	expectedErr := context.DeadlineExceeded
-	var asyncErr atomic.Pointer[error]
-
-	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond)
-	bus.SetErrorHandler(func(err error) {
-		asyncErr.Store(&err)
+// A delivery that fails after Publish returned is reported, and Flush returns the failure of the delivery it runs.
+func TestEventBusReportsTheFailureOfADelivery(t *testing.T) {
+	failure := errors.New("the plugin refused the event")
+	reported := make(chan error, 1)
+	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond, func(err error) {
+		select {
+		case reported <- err:
+		default:
+		}
 	})
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
 		}
 	}()
-
-	unsub := bus.Subscribe("failing", func(_ context.Context, _ string) error {
-		return expectedErr
-	})
+	unsub := bus.Subscribe("failing", func(context.Context, string) error { return failure })
 	defer unsub()
 
-	bus.Publish("failing:event")
-	err := bus.Flush(t.Context())
-	if err == nil {
-		t.Fatal("expected Flush to return error, got nil")
+	bus.Publish("failing:first")
+	select {
+	case err := <-reported:
+		if !errors.Is(err, failure) {
+			t.Errorf("reported %v, want %v", err, failure)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the failed delivery was not reported")
 	}
-	if !strings.Contains(err.Error(), expectedErr.Error()) {
-		t.Fatalf("expected error containing %v, got %v", expectedErr, err)
+
+	bus.Publish("failing:second")
+	if err := bus.Flush(t.Context()); !errors.Is(err, failure) {
+		t.Errorf("Flush returned %v, want %v", err, failure)
 	}
 }

@@ -1,0 +1,63 @@
+{
+  "version": "1.0",
+  "truncation": null,
+  "padding": null,
+  "added_tokens": [
+    { "id": 0, "content": "<pad>", "single_word": false, "lstrip": false, "rstrip": false, "normalized": false, "special": true },
+    { "id": 1, "content": "<unk>", "single_word": false, "lstrip": false, "rstrip": false, "normalized": false, "special": true },
+    { "id": 2, "content": "<s>", "single_word": false, "lstrip": false, "rstrip": false, "normalized": false, "special": true },
+    { "id": 3, "content": "</s>", "single_word": false, "lstrip": false, "rstrip": false, "normalized": false, "special": true }
+  ],
+  "normalizer": null,
+  "pre_tokenizer": { "type": "Whitespace" },
+  "post_processor": {
+    "type": "TemplateProcessing",
+    "single": [
+      { "SpecialToken": { "id": "<s>", "type_id": 0 } },
+      { "Sequence": { "id": "A", "type_id": 0 } },
+      { "SpecialToken": { "id": "</s>", "type_id": 0 } }
+    ],
+    "pair": [
+      { "SpecialToken": { "id": "<s>", "type_id": 0 } },
+      { "Sequence": { "id": "A", "type_id": 0 } },
+      { "SpecialToken": { "id": "</s>", "type_id": 0 } },
+      { "Sequence": { "id": "B", "type_id": 1 } },
+      { "SpecialToken": { "id": "</s>", "type_id": 1 } }
+    ],
+    "special_tokens": {
+      "<s>": { "id": "<s>", "ids": [2], "tokens": ["<s>"] },
+      "</s>": { "id": "</s>", "ids": [3], "tokens": ["</s>"] }
+    }
+  },
+  "decoder": null,
+  "model": {
+    "type": "BPE",
+    "dropout": null,
+    "unk_token": "<unk>",
+    "continuing_subword_prefix": null,
+    "end_of_word_suffix": null,
+    "fuse_unk": false,
+    "byte_fallback": false,
+    "vocab": {
+      "<pad>": 0,
+      "<unk>": 1,
+      "<s>": 2,
+      "</s>": 3,
+      "l": 4,
+      "o": 5,
+      "w": 6,
+      "e": 7,
+      "r": 8,
+      "n": 9,
+      "s": 10,
+      "t": 11,
+      "lo": 12,
+      "low": 13,
+      "er": 14,
+      "lower": 15,
+      "es": 16,
+      "est": 17
+    },
+    "merges": ["l o", "lo w", "e r", "low er", "e s", "es t"]
+  }
+}

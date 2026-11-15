@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/queuetest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
@@ -67,9 +68,10 @@ func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
 	sites := &revisedSites{fakeSites: fakeSites{video: download.NewMock(webpage.New()), release: release}, fetchErr: fetchErr}
+	tasks := queuetest.NewLog()
 	hosted := link.Host{
 		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
-		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
+		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: tasks,
 		Clock:   newFakeClock(time.Unix(1_700_000_000, 0)),
 		Entropy: random.Entropy{},
 	}
@@ -81,7 +83,7 @@ func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &importFixture{vault: vault, store: store, texts: texts, links: links, registry: registry}
+	return &importFixture{vault: vault, store: store, texts: texts, tasks: tasks, registry: registry}
 }
 
 func readLiveText(t *testing.T, texts *hosttest.Texts, filePath string) string {

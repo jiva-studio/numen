@@ -331,6 +331,17 @@ test('a service source with listed standard packages, SDK packages and its own a
   )
 })
 
+test('a service source may import a shared library but not a library named like one', () => {
+  assert.deepEqual(
+    serviceImports('a', [
+      'github.com/jiva-studio/numen/libs/shared/onnx',
+      'github.com/jiva-studio/numen/libs/shared/tokenizer',
+      'github.com/jiva-studio/numen/libs/sharedx',
+    ]),
+    ['service imports github.com/jiva-studio/numen/libs/sharedx'],
+  )
+})
+
 test('a backend file over the file limit and a package over the package limit are reported, tests are not counted by the caller', () => {
   const lines = (file, count) => ({ file, lines: count })
   assert.deepEqual(

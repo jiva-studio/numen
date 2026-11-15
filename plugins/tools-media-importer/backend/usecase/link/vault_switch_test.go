@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/queuetest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -84,6 +85,7 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 	current.Store(mills)
 	texts := hosttest.NewTexts(mills.Vault().ID, pluginID)
 	fetched := &sites{clip: bytes.Repeat([]byte("frame "), 100), started: make(chan struct{}), gate: make(chan struct{})}
+	tasks := queuetest.NewLog()
 	links := link.New(link.Host{
 		PluginID: pluginID, Vaults: func(id domain.VaultID) link.Vault {
 			if id == "" {
@@ -100,7 +102,7 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 			other := mills.Store().With(id)
 			return link.Folder{Files: other, Writer: other}
 		},
-		Texts: textsOf(texts), Queue: hosttest.NewQueue(), Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{},
+		Texts: textsOf(texts), Queue: tasks, Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{},
 	}, func() ports.Fetcher { return fetched }, func() fetch.Settings { return fetch.Settings{} })
 	t.Cleanup(links.Close)
 	made, err := links.Create(t.Context(), "", "", videoAddress)
@@ -119,7 +121,7 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 	current.Store(harbor)
 	harbor.File(made.Path, "---\ntype: link\nurl: "+videoAddress+"\n---\n")
 	close(fetched.gate)
-	links.Wait()
+	tasks.WaitForEnd(t, link.GetCopyTaskID(found.Vault, found.Path))
 
 	if files, err := harbor.Store().List(t.Context()); err != nil || len(files) != 0 {
 		t.Errorf("the vault current after the switch holds %+v in the store (%v)", files, err)

@@ -382,6 +382,10 @@ func (s *Search) GetSearchFloor(_ context.Context, recipe string) (host.SearchFl
 	if err := s.checkRecipeLocked(recipe); err != nil {
 		return host.SearchFloor{}, err
 	}
+	return s.getFloorLocked(one, recipe), nil
+}
+
+func (s *Search) getFloorLocked(one *searchVault, recipe string) host.SearchFloor {
 	out := host.SearchFloor{Default: defaultSearchFloor, Stored: one.floors[recipe]}
 	if hint := s.all.model.FloorHint; hint > 0 && hint <= 1 {
 		out.Hint = hint
@@ -394,7 +398,7 @@ func (s *Search) GetSearchFloor(_ context.Context, recipe string) (host.SearchFl
 	default:
 		out.Floor, out.Source = defaultSearchFloor, host.FloorFromDefault
 	}
-	return out, nil
+	return out
 }
 
 func (s *Search) SetSearchFloor(_ context.Context, recipe string, floor float64) error {
