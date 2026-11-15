@@ -278,7 +278,7 @@
   cursor: pointer;
 }
 
-.saved-search__result:hover .saved-search__result-title {
+.saved-search__result-title:hover {
   color: var(--numen-accent);
   text-decoration: underline;
 }
