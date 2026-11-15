@@ -90,9 +90,13 @@ func (m Manifest) ListConnectionsUse() []string {
 // ActivationEventIndexChanged is the event the host emits when indexing changed the index of a vault.
 const ActivationEventIndexChanged = "onIndexChanged"
 
+// ActivationEventFilesChanged is the event the host emits when the index wrote changes into the file change
+// feed of a vault.
+const ActivationEventFilesChanged = "onFilesChanged"
+
 // PluginActivationEvents is every activation event pattern a manifest may declare.
 func PluginActivationEvents() []string {
-	return []string{ActivationEventIndexChanged}
+	return []string{ActivationEventIndexChanged, ActivationEventFilesChanged}
 }
 
 // PluginCapabilities is every capability a manifest may declare: the capabilities the host resolves
@@ -472,9 +476,9 @@ func (m Manifest) IsActivatedBy(event string) bool {
 }
 
 func isMatchingActivationEvent(declared, event string) bool {
-	if declared != ActivationEventIndexChanged {
+	if !isValidActivationEvent(declared) {
 		return false
 	}
-	vaultID, isScoped := strings.CutPrefix(event, ActivationEventIndexChanged+":")
-	return event == ActivationEventIndexChanged || (isScoped && vaultID != "")
+	vaultID, isScoped := strings.CutPrefix(event, declared+":")
+	return event == declared || (isScoped && vaultID != "")
 }

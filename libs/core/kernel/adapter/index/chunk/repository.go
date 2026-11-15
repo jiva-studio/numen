@@ -94,13 +94,29 @@ func FromDomain(in []domain.Chunk) []Chunk {
 }
 
 // Repository is the collection of chunks and the vectors made from them.
-type Repository struct{ db *sql.DB }
+type Repository struct {
+	db   *sql.DB
+	feed *changefeed.Changes
+}
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
+// ReportingTo returns the repository that tells feed of each committed write that can change the file change feed.
+func (r *Repository) ReportingTo(feed *changefeed.Changes) *Repository {
+	return &Repository{db: r.db, feed: feed}
+}
+
+func (r *Repository) writeFeed(ctx context.Context, vaultID domain.VaultID, run func(tx *sqlwrite.Transaction) error) error {
+	if err := sqlwrite.InTransaction(ctx, r.db, run); err != nil {
+		return err
+	}
+	r.feed.Publish(vaultID)
+	return nil
+}
+
 // SaveSource records one file of one kind and what reading it produced.
 func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s Source) error {
-	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	return r.writeFeed(ctx, vaultID, func(tx *sqlwrite.Transaction) error {
 		vault, err := vaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
@@ -129,7 +145,7 @@ func saveSourceRow(ctx context.Context, tx *sqlwrite.Transaction, vault int64, s
 // One write, because a recipe names the sizes a source's chunks were cut into:
 // the recipe and the chunks it describes are recorded together.
 func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID, s Source, chunks []Chunk) error {
-	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	return r.writeFeed(ctx, vaultID, func(tx *sqlwrite.Transaction) error {
 		vault, err := vaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
@@ -174,7 +190,7 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, 
 	if len(paths) == 0 {
 		return nil
 	}
-	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	return r.writeFeed(ctx, vaultID, func(tx *sqlwrite.Transaction) error {
 		vault, err := vaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
@@ -211,7 +227,7 @@ func removeSource(ctx context.Context, tx *sqlwrite.Transaction, vault int64, ki
 // Only the file at the path itself can get a new name; everything under a
 // folder keeps its name.
 func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error {
-	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	return r.writeFeed(ctx, vaultID, func(tx *sqlwrite.Transaction) error {
 		vault, err := vaultRow(ctx, tx, vaultID)
 		if errors.Is(err, errNoVault) {
 			return nil
