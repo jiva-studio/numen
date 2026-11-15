@@ -231,7 +231,9 @@ describe('editor preferences in setup', () => {
     const view = open({ lineNumbers: true }, '# First\n\n## Second\n\n```ts\nconst x = 1\n```')
     const getElements = () =>
       Array.from(
-        view.dom.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement:not(:first-child)'),
+        view.dom.querySelectorAll<HTMLElement>(
+          '.cm-lineNumbers .cm-gutterElement:not(:first-child)',
+        ),
       )
     await vi.waitFor(() =>
       expect(getElements()[4]?.classList.contains('cm-gutter-code-first')).toBe(true),
