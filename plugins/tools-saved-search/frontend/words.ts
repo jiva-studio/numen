@@ -22,6 +22,16 @@ export const WORDS = {
   noSourceMatch: 'No source matches',
   editQuery: 'Edit query',
   queryField: 'Query',
+  queryProblems: 'Problems in the query',
+  textMethods: [
+    {
+      name: 'startsWith',
+      summary: 'begins with this text',
+      description:
+        'Keeps the files whose path begins with the text you give, such as the name of a folder.',
+      example: 'path.startsWith("books/")',
+    },
+  ],
   page: 'Page',
   results: 'Results',
   problem: {

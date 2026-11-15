@@ -71,15 +71,24 @@ export const queryTheme = EditorView.theme({
   '.cm-tooltip.cm-tooltip-autocomplete > ul': {
     fontFamily: 'inherit',
     padding: '0.375rem',
+    maxWidth: '24rem',
+    minWidth: '14rem',
   },
   '.cm-tooltip.cm-tooltip-autocomplete > ul > li': {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    columnGap: '0.5rem',
     color: 'var(--numen-ink)',
-    padding: '0.125rem 0.5rem',
+    padding: '0.25rem 0.5rem',
     borderRadius: 'var(--numen-radius)',
   },
   '.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]': {
     backgroundColor: 'var(--numen-bubble-bg)',
     color: 'var(--numen-ink)',
+  },
+  '.cm-tooltip-autocomplete .cm-completionLabel': {
+    fontFamily: 'var(--numen-font-mono)',
   },
   '.cm-tooltip-autocomplete .cm-completionMatchedText': {
     textDecoration: 'none',
@@ -87,12 +96,25 @@ export const queryTheme = EditorView.theme({
     backgroundColor: 'var(--numen-highlight)',
     borderRadius: '2px',
   },
-  '.cm-tooltip-autocomplete .cm-completionDetail, .cm-tooltip-autocomplete .cm-completionIcon': {
+  '.cm-tooltip-autocomplete .cm-completionDetail': {
+    marginLeft: '0',
     color: 'var(--numen-hushed)',
     fontStyle: 'normal',
   },
-  '.cm-tooltip.cm-completionInfo': {
-    color: 'var(--numen-ink)',
-    backgroundColor: 'var(--numen-raised)',
+  '.cm-tooltip-autocomplete .cm-completionIcon': { display: 'none' },
+  '.cm-tooltip-autocomplete .numen-query-option': {
+    flexBasis: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.125rem',
+    color: 'var(--numen-hushed)',
+    fontSize: '0.9em',
+    lineHeight: '1.35',
+    whiteSpace: 'normal',
   },
+  '.cm-tooltip-autocomplete .numen-query-option code': {
+    fontFamily: 'var(--numen-font-mono)',
+    overflowWrap: 'anywhere',
+  },
+  '.cm-tooltip.cm-completionInfo': { display: 'none' },
 })

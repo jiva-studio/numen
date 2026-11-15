@@ -18,7 +18,7 @@ func listSearchFunctions(ctx context.Context, built *parts) (api.ListSearchFunct
 	functions := make([]api.SearchFunction, len(catalog.Functions))
 	for i, f := range catalog.Functions {
 		functions[i] = api.SearchFunction{
-			Name: f.Name, Kind: f.Kind, Signatures: append([]string{}, f.Signatures...), Description: f.Description, Example: f.Example,
+			Name: f.Name, Kind: f.Kind, Summary: f.Summary, Description: f.Description, Example: f.Example,
 		}
 	}
 	return api.ListSearchFunctionsResponse{Functions: functions}, nil

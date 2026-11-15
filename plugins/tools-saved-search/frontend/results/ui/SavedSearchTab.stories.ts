@@ -471,35 +471,38 @@ export const SavesTheQueryAfterTypingPauses: Story = {
 }
 
 /**
- * Typing a name offers the functions of the catalog with their description; a click on one writes it;
- * after a dot, the stages are offered.
+ * Typing a name offers the functions of the catalog, each with what it does in plain words and its
+ * description in its row, in a list drawn outside the tab so the tab does not cut it; a click on one
+ * writes it; after a dot, the stages are offered.
  */
 export const CompletesTheNamesOfTheCatalog: Story = {
   parameters: { reach: EDITOR_KEEPS_TAB },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    const page = within(document.body)
     const browser = await import('vitest/browser')
     const editor = await openEditor(canvasElement)
 
     await fillEditor(editor, 'words("gale") && t')
     await browser.userEvent.keyboard('a')
 
-    const list = await waitFor(() => canvas.getByRole('listbox'))
+    const list = await waitFor(() => page.getByRole('listbox'))
     await waitFor(() =>
       expect(
         within(list)
           .getAllByRole('option')
           .map((one) => one.textContent),
-      ).toStrictEqual([expect.stringContaining('tags')]),
+      ).toStrictEqual([expect.stringContaining('notes with this tag')]),
     )
-    await waitFor(() => expect(canvas.getByText(/Notes that carry the tag\./)).toBeVisible())
-    await expect(canvas.getByText(/tags\("harbor"\)/)).toBeVisible()
+    await expect(canvasElement.querySelector('.saved-search')?.contains(list)).toBe(false)
+    await expect(within(list).getByText(/Finds notes that carry the tag you give\./)).toBeVisible()
+    await expect(within(list).getByText(/tags\("harbor"\)/)).toBeVisible()
+    await expect(document.querySelector('.cm-completionInfo')).toBeNull()
 
     await browser.userEvent.click(within(list).getByRole('option'))
     await waitFor(() => expect(editor).toHaveTextContent('words("gale") && tags'))
 
     await browser.userEvent.keyboard('("harbor").r')
-    const stages = await waitFor(() => canvas.getByRole('listbox'))
+    const stages = await waitFor(() => page.getByRole('listbox'))
     await waitFor(() =>
       expect(
         within(stages)
@@ -531,7 +534,9 @@ const PLAIN_PROBLEM = 'Unexpected “meanin”: the query should end here'
 
 /**
  * A query the core rejects is underlined at its place with its message in plain words in one tooltip on
- * hover, no list of problems is drawn, the note keeps its query, and the editor stays open.
+ * hover, drawn outside the tab, and listed as line:column and message below the query, where a click
+ * puts the cursor at it; the parser's own words are not shown, the note keeps its query, and the editor
+ * stays open.
  */
 export const UnderlinesAQueryNotSaved: Story = {
   parameters: { reach: EDITOR_KEEPS_TAB },
@@ -557,9 +562,19 @@ export const UnderlinesAQueryNotSaved: Story = {
 
     const browser = await import('vitest/browser')
     await browser.userEvent.hover(underlined)
-    await waitFor(() => expect(canvas.getByText(PLAIN_PROBLEM)).toBeVisible())
-    await browser.userEvent.click(underlined)
-    await expect(canvas.getAllByText(PLAIN_PROBLEM)).toHaveLength(1)
+    const lint = await waitFor(() => {
+      const shown = document.querySelectorAll('.cm-tooltip-lint')
+      if (shown.length !== 1) throw new Error(`${shown.length} problem tooltips, want one`)
+      return shown[0]!
+    })
+    await expect(lint).toHaveTextContent(PLAIN_PROBLEM)
+    await expect(canvasElement.querySelector('.saved-search')?.contains(lint)).toBe(false)
+
+    const problems = canvas.getByRole('list', { name: 'Problems in the query' })
+    await expect(problems).toHaveTextContent(new RegExp(`^\\s*1:18\\s*${PLAIN_PROBLEM}\\s*$`))
+    await browser.userEvent.click(within(problems).getByRole('button'))
+    await browser.userEvent.keyboard('X')
+    await expect(editor).toHaveTextContent('words("gale") && Xmeanin("a night at sea")')
 
     await expect(canvas.getByRole('region', { name: 'Edit query' })).toBeVisible()
     await expect(args.onGetResults.mock.calls.length).toBe(readsBefore)

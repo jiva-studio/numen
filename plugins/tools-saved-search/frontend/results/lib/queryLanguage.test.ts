@@ -15,24 +15,44 @@ const CATALOG: readonly QueryFunction[] = [
   {
     name: 'words',
     kind: 'function',
-    signatures: ['words(text)'],
-    description: 'Passages that hold every word.',
+    summary: 'passages with these words',
+    description: 'Finds passages that contain the words you give.',
     example: 'words("seed tray")',
   },
   {
     name: 'tags',
     kind: 'function',
-    signatures: ['tags(name)'],
-    description: 'Notes with the tag.',
+    summary: 'notes with this tag',
+    description: 'Finds notes that carry the tag you give.',
     example: 'tags("garden")',
   },
-  { name: 'now', kind: 'variable', signatures: ['now'], description: 'The time now.', example: '' },
+  {
+    name: 'path',
+    kind: 'variable',
+    summary: 'where the file lies',
+    description: 'Where the file lies in the vault.',
+    example: '',
+  },
+  {
+    name: 'rerank',
+    kind: 'stage',
+    summary: 'reorder the best results with a reranking model',
+    description: 'Reorders the best results with a reranking model.',
+    example: 'words("spade").rerank()',
+  },
   {
     name: 'top',
     kind: 'stage',
-    signatures: ['.top(count)'],
-    description: 'Keeps the first results.',
+    summary: 'keep the first N',
+    description: 'Keeps only the first results; give how many.',
     example: 'words("spade").top(5)',
+  },
+  {
+    name: 'sortBy',
+    kind: 'stage',
+    summary: 'put the results in another order',
+    description: 'Puts the results in order.',
+    example: 'words("spade").sortBy("title")',
   },
 ]
 
@@ -54,24 +74,66 @@ const getStyles = (doc: string): Array<[string, string]> => {
 }
 
 describe('createQueryCompletion', () => {
-  it('lists the functions and variables of the catalog with their signature, description and example', () => {
+  it('lists the functions and variables of the catalog, each with what it does in a few words', () => {
     const result = complete('wo')
 
     expect(result?.from).toBe(0)
-    expect(result?.options.map((option) => option.label)).toStrictEqual(['words', 'tags', 'now'])
+    expect(result?.options.map((option) => option.label)).toStrictEqual(['words', 'tags', 'path'])
     expect(result?.options[0]).toMatchObject({
       label: 'words',
-      type: 'function',
-      detail: 'words(text)',
-      info: 'Passages that hold every word.\n\nwords("seed tray")',
+      detail: 'passages with these words',
     })
+  })
+
+  it('carries the description and the example of each entry, and opens no info panel', () => {
+    const option = complete('wo')?.options[0]
+
+    expect(option).toMatchObject({
+      entry: {
+        description: 'Finds passages that contain the words you give.',
+        example: 'words("seed tray")',
+      },
+    })
+    expect(option?.info).toBeUndefined()
+    expect(option?.type).toBeUndefined()
+  })
+
+  it('lists exactly the stages, in plain words, after a dot that follows a search', () => {
+    const result = complete('meaning("x").')
+
+    expect(result?.from).toBe(13)
+    expect(result?.options.map((option) => [option.label, option.detail])).toStrictEqual([
+      ['rerank', 'reorder the best results with a reranking model'],
+      ['top', 'keep the first N'],
+      ['sortBy', 'put the results in another order'],
+    ])
+  })
+
+  it('lists the stages after a dot on the next line', () => {
+    expect(complete('meaning("x")\n  .')?.options.map((option) => option.label)).toStrictEqual([
+      'rerank',
+      'top',
+      'sortBy',
+    ])
+  })
+
+  it('lists the methods of a text after a dot that follows a variable', () => {
+    const result = complete('path.')
+
+    expect(result?.options.map((option) => [option.label, option.detail])).toStrictEqual([
+      ['startsWith', 'begins with this text'],
+    ])
+  })
+
+  it('opens no list after the dot of a number', () => {
+    expect(complete('top(1.')).toBeNull()
   })
 
   it('lists only the stages after a dot', () => {
     const result = complete('words("spade").t')
 
     expect(result?.from).toBe(15)
-    expect(result?.options.map((option) => option.label)).toStrictEqual(['top'])
+    expect(result?.options.map((option) => option.label)).toStrictEqual(['rerank', 'top', 'sortBy'])
   })
 
   it('returns no completion after a space unless the completion is explicit', () => {

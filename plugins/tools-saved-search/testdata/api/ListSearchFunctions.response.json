@@ -3,15 +3,15 @@
     {
       "name": "words",
       "kind": "function",
-      "signatures": ["words(text)"],
-      "description": "Passages that hold every word of the text.",
+      "summary": "passages with these words",
+      "description": "Finds passages that contain every word of the text.",
       "example": "words(\"lighthouse keeper\")"
     },
     {
       "name": "top",
       "kind": "stage",
-      "signatures": [".top(count)"],
-      "description": "Keeps the first results.",
+      "summary": "keep the first N",
+      "description": "Keeps only the first results; give how many.",
       "example": "words(\"gale\").top(10)"
     }
   ]

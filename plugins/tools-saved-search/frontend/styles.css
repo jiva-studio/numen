@@ -205,7 +205,51 @@
 .saved-search__query {
   display: flex;
   flex-direction: column;
-  gap: inherit;
+  overflow: hidden;
+  background: var(--numen-code-bg);
+  border: var(--numen-stroke) solid var(--numen-field-border);
+  border-radius: var(--numen-radius);
+}
+
+.saved-search__query:focus-within {
+  border-color: var(--numen-ring);
+}
+
+.saved-search__query-label {
+  padding: 0.25rem 0.5rem;
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-2);
+  border-block-end: var(--numen-stroke) solid var(--numen-field-border);
+}
+
+.saved-search__query-problems {
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  border-block-start: var(--numen-stroke) solid var(--numen-field-border);
+}
+
+.saved-search__query-problem {
+  display: flex;
+  gap: 0.5rem;
+  inline-size: 100%;
+  padding: 0.125rem 0.5rem;
+  color: var(--numen-alarm);
+  font: inherit;
+  font-size: var(--numen-text-2);
+  text-align: start;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.saved-search__query-problem:hover {
+  background: var(--numen-bubble-bg);
+}
+
+.saved-search__query-place {
+  flex: none;
+  font-family: var(--numen-font-mono);
 }
 
 .saved-search__filter {
