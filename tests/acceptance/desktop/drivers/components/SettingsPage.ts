@@ -5,8 +5,8 @@ import { escapeRegExp, getPluginNamePattern, getPluginRowPattern, getPluginSwitc
 /** The pages of the window: Appearance holds how it looks, System the rest. */
 export type WindowPage = 'System' | 'Appearance'
 const BACK = /^Back$/
-/** The buttons outside the path of the toolbar: a segment of the path carries the name of a page or a category. */
 const ALARM = 'button.plugins-list__alarm'
+/** The buttons outside the path of the toolbar: a segment of the path carries the name of a page or a category. */
 const OUTSIDE_PATH = 'button:not(nav *)'
 
 export class SettingsPage {
