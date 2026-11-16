@@ -10,11 +10,19 @@ import type { ReachStrategy } from '../model/interaction/reachStrategy'
 import type { ShowStrategy } from '../model/interaction/destination'
 import type { Clock } from '../model/transition'
 import type { PlexType, Probe } from '../model/sizing/measure'
-import type { PlexHeading, PlexGraph, PlexNames, PlexRelation, PlexDestination } from '../../types'
+import type {
+  PlexHeading,
+  PlexGraph,
+  PlexNames,
+  PlexRelation,
+  PlexDestination,
+  PlexWidget,
+} from '../../types'
 
 /**
  * With `showPills` off each title is drawn without its pill. `lineWidth` and `outlineWidth` are in pixels. `names` gives the names to set over
- * and under a node, drawn while `showNames` is on.
+ * and under a node, drawn while `showNames` is on. `widgetsAbove` and `widgetsBelow` are the views drawn over and
+ * under every node, each given the path `getPath` answers for the node.
  */
 export interface PlexProps {
   graph: PlexGraph
@@ -43,6 +51,9 @@ export interface PlexProps {
   dragged?: readonly string[]
   dropName?: (relation: PlexRelation) => string
   readType?: (probe: Probe) => PlexType
+  widgetsAbove?: readonly PlexWidget[]
+  widgetsBelow?: readonly PlexWidget[]
+  getPath?: (id: string) => string
 }
 
 export interface PlexEvents {

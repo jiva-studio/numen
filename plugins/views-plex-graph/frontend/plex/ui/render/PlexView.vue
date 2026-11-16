@@ -3,6 +3,7 @@ import { computed, provide, useId, useTemplateRef } from 'vue'
 import PlexEdgeLayer from './PlexEdgeLayer.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexNodeNames from './PlexNodeNames.vue'
+import PlexNodeWidgets from './PlexNodeWidgets.vue'
 import PlexThreads from './PlexThreads.vue'
 import { LIFT_LAYER, NODE_SIZES } from './layer'
 import { useEdgeLines } from './lines'
@@ -16,6 +17,8 @@ import { useNodeHandlers } from '../../model/useNodeHandlers'
 import { useNodeViews } from '../../model/useNodeViews'
 import { useNodeSizes } from '../../model/useNodeSizes'
 
+const WIDGET_SIDES = ['above', 'below'] as const
+
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
@@ -23,6 +26,10 @@ const props = withDefaults(defineProps<PlexViewProps>(), {
   highlightLinks: false,
   canReach: true,
   relationName: getRelationName,
+  widgetsAbove: () => [],
+  widgetsBelow: () => [],
+  getPath: () => '',
+  holdWidgets: undefined,
   behavior: () => DEFAULT_BEHAVIOR,
   gesture: undefined,
   dragging: undefined,
@@ -193,6 +200,15 @@ const getRole = (node: PlacedNode): GestureRole => {
       >
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
       </PlexNodeView>
+      <PlexNodeWidgets
+        v-for="side in WIDGET_SIDES"
+        :key="side"
+        :node="node"
+        :side="side"
+        :entries="side === 'above' ? widgetsAbove : widgetsBelow"
+        :path="getPath(node.id)"
+        @hold="holdWidgets?.(node.id, side, $event)"
+      />
     </g>
 
     <!-- Over every note, so a note that is open covers its neighbors without moving in the document. -->

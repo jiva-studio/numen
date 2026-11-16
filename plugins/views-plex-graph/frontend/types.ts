@@ -7,6 +7,7 @@ import type {
   CommandItem,
   CommandTarget,
   SlotItem,
+  Disposable,
   Connection,
   ConnectionRole,
   RelatedNote,
@@ -126,6 +127,15 @@ export interface PlexWindowDeps {
   readOpeningPath(): Promise<string>
 }
 
+/** A view a plugin places over or under the nodes, drawn with each node and given the path of its note. */
+export interface PlexWidget {
+  readonly key: string
+  readonly component: Component
+}
+
+/** The side of a node a slot of widgets is drawn on. */
+export type PlexWidgetSide = 'above' | 'below'
+
 /** What a plex tab requests for its menu. */
 export interface PlexMenuDeps {
   /** The entries of the slot `plexGraph.context` over the note of a node, or over the canvas. */
@@ -183,6 +193,11 @@ export interface PlexTabDeps {
   readonly isNavigatingOnCreate?: Readonly<Ref<boolean>>
   readonly window: PlexWindowDeps
   readonly menu: PlexMenuDeps
+  /** Calls the handler with the views placed on a side of the nodes, at once and again on every change. */
+  readonly watchWidgets?: (
+    side: PlexWidgetSide,
+    handler: (entries: readonly SlotItem[]) => void,
+  ) => Disposable
   readonly notes: PlexNotesDeps
   readonly names: PlexNamesSettings
   readonly look: PlexLook
@@ -195,6 +210,7 @@ export interface PlexViewState {
   readonly dragged: ComputedRef<readonly string[]>
   readonly creatable: readonly PlexRelation[]
   readonly names: PlexNamesState
+  readonly widgets: PlexWidgetsState
 }
 
 export interface PlexMenuState {
@@ -216,6 +232,13 @@ export interface PlexNamesState {
   readonly showNames: Readonly<Ref<boolean>>
   getNames(node: string): PlexNames
   choose(name: string): void
+}
+
+/** The widgets drawn over and under each node, and the path of the note of a node. */
+export interface PlexWidgetsState {
+  readonly above: Readonly<Ref<readonly PlexWidget[]>>
+  readonly below: Readonly<Ref<readonly PlexWidget[]>>
+  getPath(node: string): string
 }
 
 export interface PlexHeadingsState {

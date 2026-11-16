@@ -20,7 +20,9 @@ import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
 import { getFrameStyle } from './frameStyle'
 import { useNamesRooms } from '../model/useNamesRooms'
-import type { PlexRelation } from '../../types'
+import { useWidgetRooms } from '../model/useWidgetRooms'
+import { NO_ROOM, type NodeRoom } from '../lib/arrange'
+import type { PlexNode, PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexProps>(), {
@@ -44,6 +46,9 @@ const props = withDefaults(defineProps<PlexProps>(), {
   showNames: false,
   namesOpacity: DEFAULT_NAMES_OPACITY,
   focusedNamesOpacity: DEFAULT_FOCUSED_NAMES_OPACITY,
+  widgetsAbove: () => [],
+  widgetsBelow: () => [],
+  getPath: () => '',
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -75,7 +80,25 @@ const { room, options, measures, widen, placedHeadings } = useFreeSpace(
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const { getRoomOf, getNodeRoom } = useNamesRooms(props, measures, options)
+const { getRoomOf, getNodeRoom: getNamesNodeRoom } = useNamesRooms(props, measures, options)
+const { setWidgets, getNodeRoom: getWidgetsNodeRoom } = useWidgetRooms(options)
+
+/** The room a node keeps for its names and for its widgets together. */
+const getNodeRoom = computed(() => {
+  const ofNames = getNamesNodeRoom.value
+  const ofWidgets = getWidgetsNodeRoom.value
+  if (!ofNames || !ofWidgets) return ofNames ?? ofWidgets
+  return (node: PlexNode): NodeRoom => {
+    const names = ofNames(node)
+    const widgets = ofWidgets(node)
+    if (widgets === NO_ROOM) return names
+    return {
+      top: names.top + widgets.top,
+      bottom: names.bottom + widgets.bottom,
+      width: Math.max(names.width, widgets.width),
+    }
+  }
+})
 
 const { frame, isMoving } = usePlexTransition(
   () => props.graph,
@@ -182,6 +205,10 @@ watch(
       :widen="widen"
       :placed-headings="placedHeadings"
       :room-of="getRoomOf"
+      :widgets-above="widgetsAbove"
+      :widgets-below="widgetsBelow"
+      :get-path="getPath"
+      :hold-widgets="setWidgets"
       :behavior="behavior"
       :gesture="gesture"
       :dragging="dragging"
