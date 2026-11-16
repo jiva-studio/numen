@@ -41,9 +41,7 @@ export function createMockPickerHost(): MockPickerHost {
     getOpened: () => opened,
     getItems: () => items,
     getCreateTitle: (text) => read().getCreateTitle(text),
-    getCreateColor: () => {
-      throw new Error('not implemented')
-    },
+    getCreateColor: (text) => read().getCreateColor?.(text),
     toggle: async (id) => {
       const item = await read().onToggle(id)
       items = items.map((one) => (one.id === item.id ? item : one))
