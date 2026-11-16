@@ -27,7 +27,7 @@ jobs:
       IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
 
     steps:
-      - name: Put the item in the milestone of this month
+      - name: Put the item in the milestone of this month unless it has a later one
         run: |
           title=$(date -u +%Y.%m)
           due=$(date -u -d "$(date -u +%Y-%m-01) +1 month -1 day" +%Y-%m-%dT23:59:59Z)
@@ -38,7 +38,7 @@ jobs:
 
           assign() {
             current=$(gh api "repos/$REPO/issues/$1" --jq '.milestone.title // empty')
-            if [ -z "$current" ]; then
+            if [ -z "$current" ] || { [[ "$current" =~ ^[0-9]{4}\.[0-9]{2}$ ]] && [[ "$current" < "$title" ]]; }; then
               gh api -X PATCH "repos/$REPO/issues/$1" -F milestone="$milestone" > /dev/null
             fi
           }

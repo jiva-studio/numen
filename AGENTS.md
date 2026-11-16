@@ -39,7 +39,7 @@ Every pull request follows the draft-first pipeline in [`.agents/rules/process.m
 - A flaky test is never rerun and a timeout never raised; the cause is fixed: [`process.md` §3](.agents/rules/process.md).
 - A check is never weakened and has no exclusion list: rule 11 of section 15 below.
 - Heavy runs go to the build host, not the laptop: [`process.md` §3](.agents/rules/process.md).
-- Every issue has a Type (Bug, Feature, Task, Tech debt, never a label), Priority (the owner's), Area and Status, and a Milestone (the month of its planned release, kept as set even when the pull request merges later), set by the owner or, when missing, by the agent that opens the pull request; several pull requests mean sub-issues, each closed by its own `Closes #N`: [`process.md` §7](.agents/rules/process.md).
+- Every issue has a Type (Bug, Feature, Task, Tech debt, never a label), Priority (the owner's), Area and Status, and a Milestone (the month of its planned release, set by the owner or, when missing, by the agent that opens the pull request; the workflow moves it to the merge month when the merge is in a later month); several pull requests mean sub-issues, each closed by its own `Closes #N`: [`process.md` §7](.agents/rules/process.md).
 - Status is In Progress when taken and In review when the pull request is ready; Done is set by the project workflows: [`process.md` §7](.agents/rules/process.md).
 - A title is Conventional Commits; a body is Problem, Cause, Change and `Closes #N`: [`writing-changes.md`](.agents/rules/writing-changes.md).
 - Permissions, migrations, the wire contract and dependencies are the owner's decision: [`process.md` §6](.agents/rules/process.md).
