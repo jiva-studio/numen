@@ -8,6 +8,7 @@ import type {
   DroppedData,
   PathRename,
   SlotItem,
+  SlotView,
   CommandTarget,
   VaultEntry,
   Caught,
@@ -174,7 +175,7 @@ export interface FilesTabMenu {
 
 /** The views the plugins place at the end of a row. */
 export interface FilesTabRowEnd {
-  readonly entries: Readonly<Ref<readonly SlotItem[]>>
+  readonly entries: Readonly<Ref<readonly SlotView[]>>
   /** Stops following the slot. */
   stop(): void
 }

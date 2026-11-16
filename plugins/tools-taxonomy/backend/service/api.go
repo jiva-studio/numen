@@ -13,7 +13,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
-func mountAPI(s *server.Server, cache *tagcache.Caches) error {
+// mountAPI mounts the methods under the constant names of package api, which the server accepts.
+func mountAPI(s *server.Server, cache *tagcache.Caches) {
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetTagMap, func(ctx context.Context, _ api.GetTagMapRequest) (api.TagMap, error) {
 		return getTagMap(ctx, cache)
@@ -21,7 +22,6 @@ func mountAPI(s *server.Server, cache *tagcache.Caches) error {
 	server.Stream(a, api.MethodWatchTagMap, func(ctx context.Context, _ api.WatchTagMapRequest, send func(api.TagMapMessage) error) error {
 		return watchTagMap(ctx, cache, send)
 	})
-	return a.Err()
 }
 
 func getRequestVault(ctx context.Context) (domain.VaultID, error) {
@@ -65,7 +65,7 @@ func watchTagMap(ctx context.Context, cache *tagcache.Caches, send func(api.TagM
 	if err != nil {
 		return convertError(fmt.Errorf("get the tag map: %w", err))
 	}
-	if err := send(api.TagMapMessage{Tags: found}); err != nil {
+	if err := send(api.TagMapMessage{Tags: found, Changed: nil}); err != nil {
 		return err
 	}
 	for {
@@ -76,7 +76,7 @@ func watchTagMap(ctx context.Context, cache *tagcache.Caches, send func(api.TagM
 			if !isOpen {
 				return nil
 			}
-			if err := send(api.TagMapMessage{Changed: change.Changed}); err != nil {
+			if err := send(api.TagMapMessage{Tags: nil, Changed: change.Changed}); err != nil {
 				return err
 			}
 		}
