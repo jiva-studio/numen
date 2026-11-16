@@ -37,7 +37,7 @@ func (u *WriteSettings) Execute(entries []settingsdomain.Setting) error {
 
 // Write writes the settings like Execute and answers the settings as they stand after the write.
 // The version is greater than that of any state read before the write.
-// A write that was persisted and cannot be read back answers an error, and the plugins are told of the change.
+// A write that was persisted and cannot be read back answers an error, and the plugins are notified.
 func (u *WriteSettings) Write(entries []settingsdomain.Setting) (Applied, error) {
 	if err := u.check.Execute(entries); err != nil {
 		return Applied{}, err

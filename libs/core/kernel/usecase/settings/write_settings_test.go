@@ -74,8 +74,8 @@ func TestCheckSettingsAsksThePluginThatOwnsTheSetting(t *testing.T) {
 }
 
 // A write that was persisted and cannot be read back answers an error that says the settings are
-// written, and the plugins are told of the change all the same.
-func TestWriteSettingsSaysThePersistedWriteCannotBeReadBack(t *testing.T) {
+// written, and the plugins are notified all the same.
+func TestWriteSettingsFailsWhenThePersistedFileCannotBeRead(t *testing.T) {
 	var events []string
 	reason := errors.New("the file is not valid")
 	file := &memoryFile{events: &events, readFailure: reason}
