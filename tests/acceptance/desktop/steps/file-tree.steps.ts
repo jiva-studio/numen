@@ -5,9 +5,12 @@ When('the person opens the folder at {string}', async ({ person }, folder: strin
   await person.fileTree.open('folder', folder)
 })
 
-When('the person moves the file at {string} to the folder at {string}', async ({ person }, file: string, folder: string) => {
-  await person.fileTree.move(file, folder)
-})
+When(
+  'the person moves the file at {string} to the folder at {string}',
+  async ({ person }, file: string, folder: string) => {
+    await person.fileTree.move(file, folder)
+  },
+)
 
 When(
   'the person runs the command {string} on the {entry} at {string}',
