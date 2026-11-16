@@ -185,6 +185,21 @@
         "**/*.{ts,mjs,js}"
       ]
     },
+    "plugins/views-plex-graph": {
+      "entry": [
+        "frontend/index.ts!",
+        "frontend/**/*.stories.ts",
+        "frontend/**/*.test.ts"
+      ],
+      "project": [
+        "frontend/**/*.{ts,vue}!"
+      ],
+      "ignore": [
+        "frontend/plex/model/interaction/destination.ts",
+        "frontend/plex/model/interaction/reachStrategy.ts",
+        "frontend/plex/model/interaction/longPress.ts"
+      ]
+    },
     "plugins/*": {
       "entry": [
         "frontend/index.ts!",

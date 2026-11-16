@@ -1,7 +1,14 @@
 /**
  * Opening a node: how the request is made and where the node is shown. A mouse
- * opens with a double click, which the browser reports as one event.
+ * opens with a double click, which the browser reports as one event; two touch
+ * taps are counted here.
+ *
+ * Which of the two a plex offers is the caller's, so neither is written into
+ * the node.
  */
+import { win } from '@numen/ui'
+import { onScopeDispose, ref } from 'vue'
+
 import type { PlexDestination } from '../../../types'
 
 /**
@@ -31,8 +38,14 @@ const BY_MODIFIER = Object.fromEntries(
 export const getDestination = (hasModifier: boolean): PlexDestination =>
   BY_MODIFIER[`${hasModifier}`]
 
+/** How long the second tap has to arrive in, in milliseconds. */
+export const TAP = 300
+
+/** How far it may land from the first, in pixels. */
+export const APART = 24
+
 /** The node a strategy is watching, in the only two terms it needs. */
-interface ShowSite {
+export interface ShowSite {
   readonly ready: () => boolean
   readonly show: (hasModifier: boolean) => void
 }
@@ -47,6 +60,40 @@ export const byDoubleClick: ShowStrategy = {
   isDoubleClick: true,
   listeners: () => ({}),
 }
+
+/** Two taps, counted here. Milliseconds, if the wait is to be another. */
+export const byDoubleTap = (within: number = TAP): ShowStrategy => ({
+  isDoubleClick: false,
+  listeners: (site) => {
+    const first = ref<{ timer: number; x: number; y: number } | null>(null)
+
+    const forget = () => {
+      if (!first.value) return
+      win.clearTimeout(first.value.timer)
+      first.value = null
+    }
+
+    onScopeDispose(forget)
+
+    return {
+      pointerup: (event: PointerEvent) => {
+        if (event.pointerType === 'mouse' || !site.ready()) return
+        const tap = first.value
+        if (tap && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) <= APART) {
+          forget()
+          site.show(false)
+          return
+        }
+        forget()
+        first.value = {
+          x: event.clientX,
+          y: event.clientY,
+          timer: win.setTimeout(forget, within),
+        }
+      },
+    }
+  },
+})
 
 /**
  * Two sets of listeners on one element. A key both name is called for both, in
