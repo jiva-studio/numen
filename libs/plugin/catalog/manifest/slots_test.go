@@ -38,3 +38,12 @@ func TestTheSlotsAreTheOnesSlotsJSONLists(t *testing.T) {
 		t.Error("a name outside the list, or an inner slot, is taken for a slot of the window")
 	}
 }
+
+func TestTheFileTreeRowEndIsAnInnerSlot(t *testing.T) {
+	if !manifest.IsSlot("fileTree.rowEnd") {
+		t.Error("fileTree.rowEnd is not a slot")
+	}
+	if manifest.IsWindowSlot("fileTree.rowEnd") {
+		t.Error("fileTree.rowEnd is a slot of the window")
+	}
+}

@@ -244,3 +244,21 @@ func (c *Caches) ListTaggedPaths(ctx context.Context, id domain.VaultID, parent 
 	slices.Sort(paths)
 	return paths, isStale, nil
 }
+
+// Change is the tags of the notes whose tags an update changed, by path: a note left with no tags,
+// removed or moved away has an empty list.
+type Change struct {
+	Changed map[string][]string
+}
+
+// GetMap returns the tags of the notes of the vault that have any, by path, after bringing the tags up
+// to date.
+func (c *Caches) GetMap(ctx context.Context, id domain.VaultID) (map[string][]string, error) {
+	return nil, nil
+}
+
+// Subscribe returns the changes of the tags of the vault, one for each update that changed any, and the
+// function that ends the subscription and closes the channel.
+func (c *Caches) Subscribe(id domain.VaultID) (<-chan Change, func()) {
+	return nil, func() {}
+}

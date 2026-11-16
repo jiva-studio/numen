@@ -28,6 +28,7 @@ import {
   readCardModelFields,
 } from './cards.js'
 import { addLinks, getLinkTitle, readLinks, type NoteLink } from './note-links.js'
+import { addTags, groupTags } from './note-tags.js'
 import { assertEntry, DEFAULT_VAULT, getStem, parseColumn, readLinkAddress } from './rules.js'
 import { assertPathsAreFree, parseVaultChecks, parseVaultFiles, type VaultWrite } from './vault-files.js'
 import type { Scenario } from './scenario.js'
@@ -123,6 +124,18 @@ export class VaultDriver {
         .filter((link) => link.from === from)
         .map((link) => ({ to: `[[${this.scenario.getNotePath(link.to).replace(/\.md$/, '')}]]`, role: link.role, label: link.description }))
       world.writeText(vault, notePath, addLinks(text, noteLinks))
+    }
+  }
+
+  /** The tags of the notes written before the application starts: each note of the column note gets the tags of its rows. */
+  addTags(rows: readonly (readonly string[])[]): void {
+    const world = this.scenario.getWorld()
+    const vault = this.scenario.getVault(DEFAULT_VAULT)
+    for (const [title, tags] of groupTags(rows)) {
+      const notePath = this.scenario.getNotePath(title)
+      const text = world.readText(vault, notePath)
+      if (text === undefined) throw new Error(`no note is titled "${title}" in the vault: write it before its tags`)
+      world.writeText(vault, notePath, addTags(text, tags))
     }
   }
 

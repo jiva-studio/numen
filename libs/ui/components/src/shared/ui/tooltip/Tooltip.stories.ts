@@ -1,0 +1,54 @@
+/**
+ * The label of a hovered item, beside the item. Also the test corpus: each story is run in a browser
+ * by `@storybook/addon-vitest`.
+ */
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, within } from 'storybook/test'
+import type { Component } from 'vue'
+import * as ui from '@/index'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
+
+const Tooltip = (ui as unknown as Record<string, Component | undefined>)['Tooltip']
+
+interface Knobs {
+  text: string
+}
+
+const meta: Meta<Knobs> = {
+  title: 'Controls/Tooltip',
+  parameters: { layout: 'fullscreen' },
+  argTypes: { text: { control: 'text' } },
+  args: { text: 'Port, Sea, Quay' },
+  render: (args) => ({
+    components: { Tooltip: Tooltip as Component },
+    setup: () => ({ args }),
+    template: `<Tooltip :at="{ x: 120, y: 96, width: 16, height: 16 }">{{ args.text }}</Tooltip>`,
+  }),
+}
+
+export default meta
+type Story = StoryObj<Knobs>
+
+/** The label of one item. */
+export const Label: Story = {
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('tooltip')).toHaveTextContent('Port, Sea, Quay')
+  },
+}
+
+/** The label in the dark theme. */
+export const LabelInTheDarkTheme: Story = {
+  globals: DARK,
+  play: async ({ canvasElement }) => {
+    await expectDark(canvasElement)
+    await expect(within(canvasElement).getByRole('tooltip')).toHaveTextContent('Port, Sea, Quay')
+  },
+}
+
+/** A label of far too many words stays whole. */
+export const FarTooManyWords: Story = {
+  args: { text: Array.from({ length: 60 }, (_, index) => `Tag ${index + 1}`).join(', ') },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('tooltip')).toBeVisible()
+  },
+}
