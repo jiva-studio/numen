@@ -106,7 +106,7 @@ guest env \
 guest rm -rf /tmp/numen-image
 
 log "shutting down $building"
-guest sh -c 'sync; sudo shutdown -h now' || true
+guest sh -c 'sync; sudo /sbin/shutdown -h now' || true
 wait_for_stop
 wait "$tart_pid" || true
 tart_pid=""
