@@ -1,7 +1,8 @@
 /**
- * The tab of a saved search note over a scripted service: the query and its results, a result
- * opened at its place, the problems of the query, no result, a warning, a failed last run, and the
- * query edited and saved in the accordion at the top.
+ * The tab of a saved search note over a scripted service: the query and its results, a passage and a
+ * whole file opened, the problems of the query with the last good results, no result, a warning, a
+ * failed last run, the filter and the sources of the results, and the query edited and saved in the
+ * accordion at the top.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -13,12 +14,13 @@ import {
   FAILED_LAST_RUN,
   FAILURE_REASON,
   FUSED,
-  FUSED_WARNING,
   HARBOR,
+  HARBOR_TWO_LOGBOOK_PASSAGES,
   MISSPELLED,
   NEVER_COMPUTED,
   NOTE_PATH,
   NOTHING_FOUND,
+  WARNING,
 } from '../fixtures/responses'
 import { createScriptedService } from '../fixtures/service'
 import { createSavedSearchTab } from '../model/tab'
@@ -29,11 +31,11 @@ interface Knobs {
   response: GetResultsResponse
   updateAnswer: UpdateSearchResponse
   onOpenAt: (path: string, ranges: readonly TextRange[]) => void
+  onNotify: (text: string) => void
   onUpdateSearch: (request: UpdateSearchRequest) => void
 }
 
-const NEW_QUERY = 'words("lighthouse") && meaning("the keeper in a gale")'
-const NEW_RERANK = 'The keeper of the lighthouse on a night of gale.'
+const NEW_QUERY = 'words("lighthouse") && meaning("the keeper in a gale").top(20)'
 
 const meta: Meta<Knobs> = {
   title: 'Saved search/Tab',
@@ -42,6 +44,7 @@ const meta: Meta<Knobs> = {
     response: HARBOR,
     updateAnswer: { errors: [] },
     onOpenAt: fn(),
+    onNotify: fn(),
     onUpdateSearch: fn(),
   },
   render: (args) => ({
@@ -59,6 +62,7 @@ const meta: Meta<Knobs> = {
           },
         },
         openAt: (path, ranges) => args.onOpenAt(path, ranges),
+        notify: (text) => args.onNotify(text),
         locale: 'en-GB',
       })
       tab.follow()
@@ -77,7 +81,7 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-/** The query, the rerank text, the status and three results with their places. */
+/** The query, the status, two passages with their places and a whole file as a file row. */
 export const ShowsTheQueryAndTheResults: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -86,18 +90,17 @@ export const ShowsTheQueryAndTheResults: Story = {
     await expect(
       canvas.getByText('meaning("the harbor master in a winter storm")', { exact: false }),
     ).toBeVisible()
-    await expect(canvas.getByText('Rerank:', { exact: false })).toBeVisible()
-    await expect(canvas.getByText(HARBOR.rerank, { exact: false })).toBeVisible()
     await expect(canvas.getByText(/^Computed 14 Nov 2026, \d\d:\d\d$/)).toBeVisible()
     await expect(canvas.getByRole('button', { name: /Night of the gale/ })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: /Pier talk/ })).toBeVisible()
-    await expect(canvas.getByText('Page 14 of 212')).toBeVisible()
-    await expect(canvas.getByText('12:34–13:32')).toBeVisible()
+    await expect(canvas.getByText('Page 14')).toBeVisible()
+    const file = canvas.getByRole('button', { name: /Pier plan/ })
+    await expect(file).toHaveTextContent('Harbor/Pier plan.png')
+    await expect(file).toHaveTextContent('image')
     await expect(canvas.queryByText('0.913')).toBeNull()
   },
 }
 
-/** A click opens the first result at its range; Enter and Space open the others. */
+/** A click opens a passage at its range; Enter opens another; Space opens a whole file at its start. */
 export const OpensAResultAtItsPlace: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
@@ -114,24 +117,88 @@ export const OpensAResultAtItsPlace: Story = {
       { start: 0, end: 712 },
     ])
 
-    canvas.getByRole('button', { name: /Pier talk/ }).focus()
+    canvas.getByRole('button', { name: /Pier plan/ }).focus()
     await userEvent.keyboard(' ')
-    await expect(args.onOpenAt).toHaveBeenLastCalledWith('Recordings/Pier talk.m4a', [
-      { start: 10233, end: 11413 },
+    await expect(args.onOpenAt).toHaveBeenLastCalledWith('Harbor/Pier plan.png', [
+      { start: 0, end: 0 },
     ])
   },
 }
 
-/** A query that does not compile: its problems as alerts, and no result list. */
-export const ShowsTheProblemsOfTheQuery: Story = {
+/** Typing in the filter narrows the results to those whose text, title or file name holds it. */
+export const FiltersTheResults: Story = {
+  args: { response: HARBOR_TWO_LOGBOOK_PASSAGES },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const filter = await waitFor(() => canvas.getByRole('searchbox', { name: 'Filter results' }))
+
+    await userEvent.type(filter, 'quay')
+
+    await waitFor(() => expect(canvas.getAllByRole('listitem')).toHaveLength(1))
+    await expect(canvas.getByText('Ice on the quay; no boat went out for a week.')).toBeVisible()
+
+    await userEvent.clear(filter)
+    await userEvent.type(filter, 'nothing like this')
+    await waitFor(() => expect(canvas.getByText('No result matches the filter.')).toBeVisible())
+  },
+}
+
+/**
+ * The sources list has a search line and a row per file, each checked at first; choosing a checked
+ * file hides its passages, choosing it again shows them, and Escape puts the list away.
+ */
+export const HidesTheResultsOfASource: Story = {
+  args: { response: HARBOR_TWO_LOGBOOK_PASSAGES },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const page = within(canvasElement.ownerDocument.body)
+    const toggle = await waitFor(() => canvas.getByRole('button', { name: 'Sources' }))
+
+    await userEvent.click(toggle)
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    const sources = await waitFor(() => page.getByRole('listbox', { name: 'Sources' }))
+    const rows = within(sources).getAllByRole('option')
+    await expect(rows).toHaveLength(3)
+    for (const row of rows) await expect(row).toHaveAttribute('aria-current', 'true')
+
+    await userEvent.type(page.getByRole('combobox', { name: 'Search sources' }), '1911')
+    await waitFor(() => expect(within(sources).getAllByRole('option')).toHaveLength(1))
+    const logbook = within(sources).getByRole('option', { name: /Logbooks\/1911\.pdf/ })
+
+    await userEvent.click(logbook)
+
+    const results = canvas.getByRole('list', { name: 'Results' })
+    await waitFor(() => expect(within(results).getAllByRole('listitem')).toHaveLength(2))
+    await expect(within(results).queryByRole('button', { name: /1911/ })).toBeNull()
+    await expect(within(sources).getByRole('option', { name: /1911/ })).not.toHaveAttribute(
+      'aria-current',
+    )
+
+    await userEvent.click(within(sources).getByRole('option', { name: /1911/ }))
+    await waitFor(() => expect(within(results).getAllByRole('listitem')).toHaveLength(4))
+    await expect(within(sources).getByRole('option', { name: /1911/ })).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'false'))
+    await expect(page.queryByRole('listbox', { name: 'Sources' })).toBeNull()
+  },
+}
+
+/** A query the core rejects: its problems as alerts, and the results of the last good run. */
+export const ShowsTheProblemsOfTheQueryWithTheLastGoodResults: Story = {
   args: { response: MISSPELLED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
     await waitFor(() =>
-      expect(canvas.getByRole('alert')).toHaveTextContent("9:4 undeclared reference to 'meanin'"),
+      expect(canvas.getByRole('alert')).toHaveTextContent(
+        '9:4 unknown function meanin (did you mean meaning?)',
+      ),
     )
-    await expect(canvas.queryByRole('list')).toBeNull()
+    await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
   },
 }
 
@@ -157,16 +224,16 @@ export const SaysTheResultsAreBeingComputed: Story = {
   },
 }
 
-/** A run kept in fused order shows its warning beside the results. */
+/** A warning of the core shows beside the results. */
 export const ShowsAWarning: Story = {
   args: { response: FUSED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
     await waitFor(() =>
-      expect(
-        canvas.getAllByRole('status').some((one) => one.textContent?.trim() === FUSED_WARNING),
-      ).toBe(true),
+      expect(canvas.getAllByRole('status').some((one) => one.textContent?.trim() === WARNING)).toBe(
+        true,
+      ),
     )
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
   },
@@ -187,11 +254,11 @@ export const ShowsAFailedLastRun: Story = {
     )
     await expect(canvas.getByText(/^Computed 14 Nov 2026, \d\d:\d\d$/)).toBeVisible()
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: /Pier talk/ })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: /Pier plan/ })).toBeVisible()
   },
 }
 
-/** The accordion opens the query, the rerank text and the limit; Save writes them and shows the new query. */
+/** The accordion opens the query alone; Save writes it and shows the new query. */
 export const EditsAndSavesTheQuery: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
@@ -201,35 +268,24 @@ export const EditsAndSavesTheQuery: Story = {
     await userEvent.click(opener)
     await expect(opener).toHaveAttribute('aria-expanded', 'true')
     const query = canvas.getByRole('textbox', { name: 'Query' })
-    const rerank = canvas.getByRole('textbox', { name: 'Rerank' })
-    const limit = canvas.getByRole('spinbutton', { name: 'Limit' })
     await expect(query).toHaveValue(HARBOR.query)
-    await expect(rerank).toHaveValue(HARBOR.rerank)
-    await expect(limit).toHaveValue(30)
+    await expect(canvas.queryByRole('textbox', { name: 'Rerank' })).toBeNull()
+    await expect(canvas.queryByRole('spinbutton', { name: 'Limit' })).toBeNull()
 
     await userEvent.clear(query)
     await userEvent.type(query, NEW_QUERY)
-    await userEvent.clear(rerank)
-    await userEvent.type(rerank, NEW_RERANK)
-    await userEvent.clear(limit)
-    await userEvent.type(limit, '20')
     await userEvent.click(canvas.getByRole('button', { name: 'Save' }))
 
-    await expect(args.onUpdateSearch).toHaveBeenCalledWith({
-      path: NOTE_PATH,
-      query: NEW_QUERY,
-      rerank: NEW_RERANK,
-      limit: 20,
-    })
+    await expect(args.onUpdateSearch).toHaveBeenCalledWith({ path: NOTE_PATH, query: NEW_QUERY })
     await waitFor(() => expect(canvas.getByText(NEW_QUERY, { exact: false })).toBeVisible())
   },
 }
 
-/** A query the backend rejects shows its problems in the accordion and leaves the note as it was. */
+/** A query the core rejects shows its problems in the accordion and leaves the note as it was. */
 export const ShowsTheProblemsOfAQueryNotSaved: Story = {
   args: {
     updateAnswer: {
-      errors: [{ line: 1, column: 1, message: "undeclared reference to 'meanin'" }],
+      errors: [{ line: 1, column: 1, message: 'unknown function meanin (did you mean meaning?)' }],
     },
   },
   play: async ({ args, canvasElement }) => {
@@ -243,7 +299,9 @@ export const ShowsTheProblemsOfAQueryNotSaved: Story = {
 
     await expect(args.onUpdateSearch).toHaveBeenCalledTimes(1)
     await waitFor(() =>
-      expect(canvas.getByRole('alert')).toHaveTextContent("1:1 undeclared reference to 'meanin'"),
+      expect(canvas.getByRole('alert')).toHaveTextContent(
+        '1:1 unknown function meanin (did you mean meaning?)',
+      ),
     )
     await expect(
       canvas.getByText('meaning("the harbor master in a winter storm")', { exact: false }),

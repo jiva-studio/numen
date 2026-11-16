@@ -17,24 +17,24 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/reranker/rerankertest"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/domain/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/settings"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/ports"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/service"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/refresh"
 )
 
 const (
-	testVault    = "harbor-vault"
-	token        = "plugin-token"
-	stormsID     = "01JCX6Q4ZB3W8N2V7T5R9K1M0P"
-	stormsPath   = "Searches/Winter storms.md"
-	stormsQuery  = `meaning("storm")`
-	stormsRerank = "Stories of storms at the harbor"
+	testVault   = "harbor-vault"
+	token       = "plugin-token"
+	stormsID    = "01JCX6Q4ZB3W8N2V7T5R9K1M0P"
+	stormsPath  = "Searches/Winter storms.md"
+	stormsQuery = `meaning("storm").rerank("Stories of storms at the harbor")`
+	wordsQuery  = `words("storm")`
+	brokenQuery = `meaning("storm") &&`
 
 	galeText     = "A storm at the harbor mouth."
 	mooringText  = "The storm broke two moorings."
@@ -46,83 +46,65 @@ func getStartTime() time.Time {
 	return time.Date(2026, 11, 14, 9, 30, 0, 0, time.UTC)
 }
 
-func embedByTopic(text string) []float32 {
-	// The fake model gives a text one dimension for each topic, the count of the topic's word in it.
-	topics := []string{"tide", "lighthouse", "storm", "harbor"}
-	lower := strings.ToLower(text)
-	vector := make([]float32, len(topics))
-	hasTopic := false
-	for i, topic := range topics {
-		vector[i] = float32(strings.Count(lower, topic))
-		hasTopic = hasTopic || vector[i] > 0
-	}
-	if !hasTopic {
-		return nil
-	}
-	return vector
-}
-
-func formatSearchNote(id, query, rerank string, limit int) string {
+func formatSearchNote(id, query string) string {
 	var b strings.Builder
 	b.WriteString("---\n")
 	if id != "" {
 		b.WriteString("id: " + id + "\n")
 	}
-	b.WriteString("type: search\n")
-	if rerank != "" {
-		b.WriteString("rerank: " + rerank + "\n")
-	}
-	if limit > 0 {
-		fmt.Fprintf(&b, "limit: %d\n", limit)
-	}
-	b.WriteString("---\n```numen-query\n" + query + "\n```\n")
+	b.WriteString("type: search\n---\n```numen-query\n" + query + "\n```\n")
 	return b.String()
 }
 
-func getIndex(mooring string, others ...host.SearchResult) []host.SearchResult {
-	return append([]host.SearchResult{
-		{ChunkID: "c1", Path: "Notes/Tides.md", Text: "The tide at the quay.", Start: 0, Length: 21, MatchLine: 2},
-		{ChunkID: "c2", Path: "Notes/Keeper.md", Text: "The lighthouse keeper.", Start: 0, Length: 22},
-		{ChunkID: "c3", Path: "Harbor/Gale.md", Text: galeText, Start: 0, Length: 400},
-		{ChunkID: "c4", Path: "Logbooks/1911.md", Text: mooring, Start: 0, Length: 400},
-	}, others...)
+func passage(path, title, text string, value float64) host.SearchResult {
+	return host.SearchResult{Path: path, Title: title, Kind: "note", Text: text, Start: 0, Length: 400, Score: new(value)}
 }
 
-// countingSearch is the host search of the vault, counting the searches of the plugin.
-type countingSearch struct {
-	ports.Search
-	mu    sync.Mutex
-	calls int
+func getStormsAnswer(mooring string, others ...host.SearchResult) host.SearchState {
+	return host.SearchState{
+		Results: append([]host.SearchResult{
+			passage("Harbor/Gale.md", "Gale", galeText, 0.9),
+			passage("Logbooks/1911.md", "1911", mooring, 0.6),
+		}, others...),
+		ScoreKind: "rerank", Floor: 0.4, IndexGeneration: "gen-1",
+		Reranks: []host.SearchRerank{{ConnectionName: "Harbor reranker", SentCount: 2, ReusedCount: 0}},
+	}
 }
 
-func (c *countingSearch) SearchText(ctx context.Context, query host.SearchResultQuery) ([]host.SearchResult, error) {
-	c.mu.Lock()
-	c.calls++
-	c.mu.Unlock()
-	return c.Search.SearchText(ctx, query)
+func getBrokenAnswer() host.SearchState {
+	return host.SearchState{Errors: []host.SearchProblem{{Line: 1, Column: 20, Message: "Syntax error: unexpected end of input"}}}
 }
 
-func (c *countingSearch) ScoreChunks(ctx context.Context, query host.ScoreQuery) (host.ChunkScores, error) {
-	c.mu.Lock()
-	c.calls++
-	c.mu.Unlock()
-	return c.Search.ScoreChunks(ctx, query)
+// failingSearch is the search of the core, failing every read while failure is set.
+type failingSearch struct {
+	*searchtest.Searches
+	mu      sync.Mutex
+	failure error
 }
 
-func (c *countingSearch) getCallCount() int {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.calls
+func (f *failingSearch) GetSearch(ctx context.Context, id string, read host.SearchRead) (host.SearchState, error) {
+	f.mu.Lock()
+	failure := f.failure
+	f.mu.Unlock()
+	if failure != nil {
+		return host.SearchState{}, failure
+	}
+	return f.Searches.GetSearch(ctx, id, read)
 }
 
-// fixture is the plugin over a host that shows a vault of tides and storms, with no reranking row.
+func (f *failingSearch) setFailure(failure error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.failure = failure
+}
+
+// fixture is the plugin over a host that shows a vault of tides and storms and a core that answers the
+// queries of the storms.
 type fixture struct {
 	app      *service.App
 	vault    *hosttest.Vault
-	search   *hosttest.Search
-	host     *countingSearch
-	rows     *rerankertest.Rows
-	standIn  *rerankertest.StandIn
+	searches *searchtest.Searches
+	search   *failingSearch
 	queue    *hosttest.Queue
 	clock    *clocktest.Fake
 	settings *settings.Store
@@ -132,10 +114,10 @@ type fixture struct {
 
 func newFixture(t *testing.T, refreshMinutes int) *fixture {
 	t.Helper()
-	search := hosttest.NewSearch(testVault)
-	search.SetModel(hosttest.SearchModel{Name: "harbor-model", Recipe: "harbor-recipe", FloorHint: 0.4})
-	search.SetEmbedder(embedByTopic)
-	search.With(testVault).SetIndexedResults(getIndex(mooringText))
+	searches := searchtest.NewSearches()
+	searches.SetAnswer(stormsQuery, getStormsAnswer(mooringText))
+	searches.SetAnswer(wordsQuery, host.SearchState{Results: []host.SearchResult{passage("Harbor/Gale.md", "Gale", galeText, 1)}, ScoreKind: "words"})
+	searches.SetAnswer(brokenQuery, getBrokenAnswer())
 	vault := hosttest.New(testVault)
 	vault.File("Notes/Tides.md", "---\ntitle: Tide Tables\n---\nThe tide at the quay.")
 	fake := new(clocktest.Fake)
@@ -143,16 +125,14 @@ func newFixture(t *testing.T, refreshMinutes int) *fixture {
 	current := settings.NewStore()
 	current.Update(map[string]string{"refreshMinutes": fmt.Sprint(refreshMinutes)})
 	f := &fixture{
-		vault: vault, search: search, host: &countingSearch{Search: search.With(testVault)},
-		rows:    rerankertest.NewRows(),
-		standIn: rerankertest.NewStandIn(map[string]float32{galeText: 0.9, mooringText: 0.6, mooringsText: 0.7, winterText: 0.8}),
-		queue:   hosttest.NewQueue(), clock: fake, settings: current,
+		vault: vault, searches: searches, search: &failingSearch{Searches: searches},
+		queue: hosttest.NewQueue(), clock: fake, settings: current,
 	}
 	f.app = service.NewAppOver(service.Hosts{
 		Open: func(id domain.VaultID) refresh.Vault {
-			return refresh.Vault{Notes: vault.With(id), Lookup: vault.With(id), Search: f.host, Store: vault.Store().With(id)}
+			return refresh.Vault{Notes: vault.With(id), Lookup: vault.With(id), Search: f.search, Store: vault.Store().With(id)}
 		},
-		Window: vault, Rows: f.rows, Tasks: f.queue,
+		Window: vault, Tasks: f.queue,
 	}, current, fake)
 	registry, err := f.app.NewRegistry()
 	if err != nil {
@@ -168,12 +148,12 @@ func newFixture(t *testing.T, refreshMinutes int) *fixture {
 	return f
 }
 
-func (f *fixture) addReranker() {
-	f.rows.Add("conn-harbor", "Harbor reranker", map[string]string{"model": "harbor-rerank-a"}, f.standIn)
+func (f *fixture) addStormsNote() {
+	f.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery))
 }
 
-func (f *fixture) addStormsNote() {
-	f.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery, stormsRerank, 0))
+func (f *fixture) getStartCount() int {
+	return len(f.searches.ListStarted())
 }
 
 func (f *fixture) handleIndexChange(t *testing.T) {

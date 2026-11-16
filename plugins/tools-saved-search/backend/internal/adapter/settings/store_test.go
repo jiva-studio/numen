@@ -4,28 +4,21 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/settings"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/preview"
 )
 
 func TestStoreRefreshesAfterTenMinutesByDefault(t *testing.T) {
-	current := settings.NewStore()
-
-	if got := current.GetSettings(); got.RefreshMinutes != 10 || got.Preview != preview.DefaultConfig() {
-		t.Errorf("settings = %+v, want 10 minutes and the default numbers", got)
+	if got := settings.NewStore().GetSettings(); got.RefreshMinutes != 10 {
+		t.Errorf("settings = %+v, want 10 minutes", got)
 	}
 }
 
 func TestStoreReadsRefreshMinutesOfZero(t *testing.T) {
 	current := settings.NewStore()
 
-	current.Update(map[string]string{"refreshMinutes": "0", "mergeGapBytes": "50"})
+	current.Update(map[string]string{"refreshMinutes": "0"})
 
-	got := current.GetSettings()
-	if got.RefreshMinutes != 0 || got.Preview.MergeGapBytes != 50 {
-		t.Errorf("settings = %+v, want 0 minutes and a merge gap of 50", got)
-	}
-	if current.GetConfig() != got.Preview {
-		t.Errorf("GetConfig = %+v, want the numbers of GetSettings", current.GetConfig())
+	if got := current.GetSettings(); got.RefreshMinutes != 0 {
+		t.Errorf("settings = %+v, want 0 minutes", got)
 	}
 }
 

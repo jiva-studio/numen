@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/preview"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/refresh"
 )
 
@@ -24,11 +23,7 @@ type Store struct {
 
 // NewStore returns a store that holds the defaults.
 func NewStore() *Store {
-	return &Store{
-		mu:       sync.RWMutex{},
-		settings: refresh.Settings{Preview: preview.DefaultConfig(), RefreshMinutes: defaultRefreshMinutes},
-		folder:   "",
-	}
+	return &Store{mu: sync.RWMutex{}, settings: refresh.Settings{RefreshMinutes: defaultRefreshMinutes}, folder: ""}
 }
 
 // Update takes the values the host passes. A refresh delay that is not a whole number of zero or more
@@ -36,7 +31,6 @@ func NewStore() *Store {
 func (s *Store) Update(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.settings.Preview = preview.ParseConfig(values, s.settings.Preview)
 	if value, isSet := values[refreshMinutesKey]; isSet {
 		if minutes, err := strconv.Atoi(value); err == nil && minutes >= 0 {
 			s.settings.RefreshMinutes = minutes
@@ -47,13 +41,7 @@ func (s *Store) Update(values map[string]string) {
 	}
 }
 
-func (s *Store) GetConfig() preview.Config {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.settings.Preview
-}
-
-// GetSettings returns the numbers of a preview and the refresh delay.
+// GetSettings returns the settings the host passed last, the defaults before the first Configure.
 func (s *Store) GetSettings() refresh.Settings {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

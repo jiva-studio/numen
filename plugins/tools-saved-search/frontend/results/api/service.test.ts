@@ -89,10 +89,10 @@ describe('the fixtures of the saved search service', () => {
     expect(response.results.map((one) => one.path)).toStrictEqual([
       'Logbooks/1911.pdf',
       'Harbor/Night of the gale.md',
-      'Recordings/Pier talk.m4a',
+      'Harbor/Pier plan.png',
     ])
-    expect(response.results[0]?.place).toStrictEqual({ page: 14, pageCount: 212 })
-    expect(response.results[2]?.place).toStrictEqual({ positionSeconds: 754.5, endSeconds: 812 })
+    expect(response.results[0]?.place).toStrictEqual({ page: 14 })
+    expect(response.results[2]?.isWholeFile).toBe(true)
     expect(response.errors).toStrictEqual([])
   })
 
@@ -107,9 +107,7 @@ describe('the fixtures of the saved search service', () => {
   it('reads the UpdateSearch fixture as UpdateSearchRequest and UpdateSearchResponse', () => {
     const request: UpdateSearchRequest = {
       path: PATH,
-      query: 'kind in ["note", "pdf"]\n&& meaning("the harbor master in a winter storm")',
-      rerank: 'Stories of the harbor master keeping the boats safe in winter storms.',
-      limit: 20,
+      query: 'kind in ["note", "pdf"]\n&& meaning("the harbor master in a winter storm")\n.top(20)',
     }
     const response: UpdateSearchResponse = {
       errors: [{ line: 2, column: 4, message: "undeclared reference to 'meanin'" }],
@@ -190,7 +188,7 @@ describe('the saved search service', () => {
     expect(last.done).toBe(true)
   })
 
-  it('sends the query, the rerank text and the limit to UpdateSearch', async () => {
+  it('sends the query to UpdateSearch', async () => {
     const request = read('UpdateSearch.request') as UpdateSearchRequest
     const { service, sent } = createService(() => Response.json({ errors: [] }))
 

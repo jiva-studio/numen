@@ -13,6 +13,7 @@ export const activate = (context: PluginContext, host: HostServices): void => {
     createSavedSearchKind({
       service: createSavedSearchService(),
       openAt: (path, ranges) => workspace.files.openAt(path, ranges),
+      notify: (text) => host.ui.notices.show(text, 'error'),
       locale: navigator.language,
       component: SavedSearchTab,
     }),

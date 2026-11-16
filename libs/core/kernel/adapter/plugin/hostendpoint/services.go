@@ -128,9 +128,6 @@ type TextSearch interface {
 	// source and every text version: by keywords, and by embedding when the installation has a model.
 	// An installation with no model searches by keywords only.
 	SearchText(ctx context.Context, v domain.Vault, q plugin.SearchResultQuery) ([]domain.SearchResult, error)
-	// ScoreChunks scores chunks of the vault against conditions over the whole large chunk that encloses
-	// each, and returns the floor applied to the meaning conditions, zero when there are none.
-	ScoreChunks(ctx context.Context, v domain.Vault, q plugin.ScoreQuery) ([]plugin.ChunkScore, float64, error)
 	// FindNearestChunks returns the small chunks of the vault nearest the vector under the recipe of the
 	// query, nearest first, at or above its floor, else the effective floor of the vault. The recipe
 	// rules of SearchIndex apply.

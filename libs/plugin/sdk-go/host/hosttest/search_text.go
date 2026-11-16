@@ -2,10 +2,8 @@ package hosttest
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -15,11 +13,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
-// SearchText answers from the results SetIndexedResults set, in their order. Words and hybrid mode keep
-// the results whose text contains every word of the query; a raw words query counts its bare words, with
-// the FTS5 operators left out, which is a limit of the fake. Meaning mode keeps the results the embedder
-// gives a vector. The Text of each result is cut to MaxExcerptBytes around the first word of the query,
-// as the host cuts it, and with IsWholeText the indexed text is kept in WholeText. Raw words outside words mode return an error, as the host rejects them.
+// SearchText answers from the results SetIndexedResults set, in their order: those whose text contains every
+// word of the query. The Text of each result is cut to MaxExcerptBytes around the first word of the query,
+// as the host cuts it.
 func (s *Search) SearchText(_ context.Context, query host.SearchResultQuery) ([]host.SearchResult, error) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
@@ -27,10 +23,10 @@ func (s *Search) SearchText(_ context.Context, query host.SearchResultQuery) ([]
 	if err != nil {
 		return nil, err
 	}
-	if err := checkSearchQuery(query, s.all.model != nil); err != nil {
+	if err := checkKinds(query.Kinds); err != nil {
 		return nil, err
 	}
-	words := getQueryWords(query.Query, query.IsRawWords)
+	words := getWords(query.Query)
 	if len(words) == 0 {
 		return nil, nil
 	}
@@ -39,14 +35,10 @@ func (s *Search) SearchText(_ context.Context, query host.SearchResultQuery) ([]
 	perSource := map[string]int{}
 	for _, result := range one.indexed {
 		if !notesdomain.HasPathPrefix(result.Path, query.PathPrefix) || !hasKind(result.Path, query.Kinds) ||
-			!s.isFoundLocked(result, words, query.Mode) || perSource[result.Path] >= perSourceLimit {
+			!hasEveryWord(result.Text, words) || perSource[result.Path] >= perSourceLimit {
 			continue
 		}
 		perSource[result.Path]++
-		result.WholeText = ""
-		if query.IsWholeText {
-			result.WholeText = result.Text
-		}
 		result.Text = getExcerpt(result.Text, findHit(result.Text, words))
 		found = append(found, result)
 		if len(found) == limit {
@@ -54,19 +46,6 @@ func (s *Search) SearchText(_ context.Context, query host.SearchResultQuery) ([]
 		}
 	}
 	return found, nil
-}
-
-func checkSearchQuery(query host.SearchResultQuery, hasModel bool) error {
-	if err := checkKinds(query.Kinds); err != nil {
-		return err
-	}
-	if query.IsRawWords && query.Mode != host.SearchModeWords {
-		return errors.New("host: raw words need SearchModeWords")
-	}
-	if query.Mode == host.SearchModeMeaning && !hasModel {
-		return host.ErrNoModel
-	}
-	return nil
 }
 
 func getSearchLimits(query host.SearchResultQuery) (limit, perSourceLimit int) {
@@ -79,24 +58,6 @@ func getSearchLimits(query host.SearchResultQuery) (limit, perSourceLimit int) {
 		perSourceLimit = query.ResultsPerSource
 	}
 	return limit, perSourceLimit
-}
-
-func (s *Search) isFoundLocked(result host.SearchResult, words []string, mode host.SearchMode) bool {
-	if mode == host.SearchModeMeaning {
-		return s.all.embed != nil && s.all.embed(result.Text) != nil
-	}
-	return hasEveryWord(result.Text, words)
-}
-
-func getQueryWords(query string, isRaw bool) []string {
-	words := getWords(query)
-	if !isRaw {
-		return words
-	}
-	return slices.DeleteFunc(words, func(word string) bool {
-		_, err := strconv.Atoi(word)
-		return err == nil || word == "and" || word == "or" || word == "not" || word == "near"
-	})
 }
 
 func hasKind(path string, kinds []domain.SourceKind) bool {

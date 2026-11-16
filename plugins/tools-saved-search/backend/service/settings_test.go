@@ -35,18 +35,3 @@ func TestConfigureWithoutCooldownRunsTheStaleSearch(t *testing.T) {
 		t.Errorf("results = %v, want the new note included", got)
 	}
 }
-
-func TestConfigureWithANewRerankerRunsTheSearchAgain(t *testing.T) {
-	f := newFixture(t, 10)
-	f.addStormsNote()
-	events := f.watchFirstRun(t)
-	f.addReranker()
-	f.clock.Advance(time.Minute)
-
-	f.configure(t, map[string]string{"refreshMinutes": "10"})
-
-	receiveRun(t, events, "2026-11-14T09:31:00Z")
-	if record := f.readRecord(t, stormsID); record.Reranker == nil || record.Reranker.ConnectionID != "conn-harbor" {
-		t.Errorf("record = %+v, want the results reranked by the new row", record)
-	}
-}

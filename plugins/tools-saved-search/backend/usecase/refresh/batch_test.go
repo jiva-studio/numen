@@ -6,14 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/refresh"
 )
 
 const taskID = "saved-search-refresh"
 
 func addGalesNote(w *world) {
-	w.vault.File(galesPath, formatSearchNote(galesID, `words("storm")`, "", 0))
+	w.vault.File(galesPath, formatSearchNote(galesID, galesQuery))
 }
 
 func TestRunDueDeletesTheCacheOfARemovedSearch(t *testing.T) {
@@ -124,7 +123,7 @@ func TestRunsOfOneVaultDoNotOverlap(t *testing.T) {
 	var group sync.WaitGroup
 	for _, notePath := range []string{stormsPath, galesPath} {
 		group.Go(func() {
-			if _, err := w.runner.RunNow(t.Context(), testVault, notePath, connection.PriorityInteractive); err != nil {
+			if _, err := w.runner.RunNow(t.Context(), testVault, notePath); err != nil {
 				t.Errorf("RunNow(%s) = %v", notePath, err)
 			}
 		})
@@ -148,7 +147,7 @@ func TestWatchReportsTheStartAndTheWriteOfARun(t *testing.T) {
 
 	done := make(chan error, 1)
 	go func() {
-		_, err := w.runner.RunNow(t.Context(), testVault, stormsPath, connection.PriorityInteractive)
+		_, err := w.runner.RunNow(t.Context(), testVault, stormsPath)
 		done <- err
 	}()
 

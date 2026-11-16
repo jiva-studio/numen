@@ -28,8 +28,7 @@ type recordingSearch struct {
 	queries []plugin.SimilarityQuery
 	floors  []float64
 
-	textQueries  []plugin.SearchResultQuery
-	scoreQueries []plugin.ScoreQuery
+	textQueries []plugin.SearchResultQuery
 }
 
 func (s *recordingSearch) GetEmbeddingState(_ context.Context, v domain.Vault) (plugin.EmbeddingState, error) {

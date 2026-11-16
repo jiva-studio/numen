@@ -7,7 +7,6 @@ import type { Words } from '../../words'
 /** The fields of a place that are written. */
 export interface PlaceFields {
   readonly page?: number
-  readonly pageCount?: number
   readonly positionSeconds?: number
   readonly endSeconds?: number
   readonly cfi?: string
@@ -29,14 +28,10 @@ export function formatSeconds(total: number): string {
   return `${minutes}:${padTwo(rest)}`
 }
 
-/** Writes the place: the page and the page count, the time or the span of a recording, or the chapter. */
+/** Writes the place: the page, the time or the span of a recording, or the chapter. */
 export function formatPlace(place: PlaceFields | undefined, words: Words): string {
   if (!place) return ''
-  if (place.page !== undefined && place.page > 0) {
-    const count =
-      place.pageCount !== undefined && place.pageCount > 0 ? ` ${words.of} ${place.pageCount}` : ''
-    return `${words.page} ${place.page}${count}`
-  }
+  if (place.page !== undefined && place.page > 0) return `${words.page} ${place.page}`
   if (place.positionSeconds !== undefined) {
     const start = formatSeconds(place.positionSeconds)
     return place.endSeconds === undefined ? start : `${start}–${formatSeconds(place.endSeconds)}`

@@ -82,10 +82,6 @@ func answerSearch(ctx context.Context, err error) (v1.HostSearchErrorCode, error
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED, nil
 	case errors.Is(err, plugin.ErrInvalidQuery):
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY, nil
-	case errors.Is(err, plugin.ErrInvalidCondition):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_CONDITION, nil
-	case errors.Is(err, plugin.ErrInvalidWords):
-		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_WORDS, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }
@@ -297,8 +293,6 @@ func writeSearchResults(found []domain.SearchResult) ([]*v1.SearchResult, error)
 			ByteRange: &v1.Range{Start: int32(one.Start), End: int32(end)},
 			MatchLine: int32(one.MatchLine),
 			Selector:  string(one.Selector),
-			ChunkId:   string(one.ChunkID), Similarity: one.Similarity, WordScore: one.WordScore,
-			WholeText: one.WholeText,
 		}
 	}
 	return results, nil
@@ -359,29 +353,8 @@ func readSearchResultQuery(msg *v1.HostSearchServiceSearchTextRequest) (plugin.S
 	if err != nil {
 		return plugin.SearchResultQuery{}, err
 	}
-	mode, err := readSearchMode(msg.GetMode())
-	if err != nil {
-		return plugin.SearchResultQuery{}, err
-	}
-	if msg.GetIsRawWords() && mode != plugin.SearchModeWords {
-		return plugin.SearchResultQuery{}, connect.NewError(connect.CodeInvalidArgument, errors.New("raw words need the mode WORDS"))
-	}
 	return plugin.SearchResultQuery{
 		Query: msg.GetQuery(), Limit: int(msg.GetLimit()), ResultsPerSource: int(msg.GetResultsPerSource()),
-		Kinds: kinds, PathPrefix: msg.GetPathPrefix(), Mode: mode, IsRawWords: msg.GetIsRawWords(),
-		IsWholeText: msg.GetIsWholeText(),
+		Kinds: kinds, PathPrefix: msg.GetPathPrefix(),
 	}, nil
-}
-
-func readSearchMode(mode v1.SearchMode) (plugin.SearchMode, error) {
-	switch mode {
-	case v1.SearchMode_SEARCH_MODE_UNSPECIFIED, v1.SearchMode_SEARCH_MODE_HYBRID:
-		return plugin.SearchModeHybrid, nil
-	case v1.SearchMode_SEARCH_MODE_WORDS:
-		return plugin.SearchModeWords, nil
-	case v1.SearchMode_SEARCH_MODE_MEANING:
-		return plugin.SearchModeMeaning, nil
-	case v1.SearchMode_SEARCH_MODE_NAMES:
-	}
-	return 0, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid search mode %s: use HYBRID, WORDS or MEANING", mode))
 }

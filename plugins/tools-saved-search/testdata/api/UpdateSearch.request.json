@@ -1,6 +1,4 @@
 {
   "path": "Harbor/Harbor master - winter storms.md",
-  "query": "kind in [\"note\", \"pdf\"]\n&& meaning(\"the harbor master in a winter storm\")",
-  "rerank": "Stories of the harbor master keeping the boats safe in winter storms.",
-  "limit": 20
+  "query": "kind in [\"note\", \"pdf\"]\n&& meaning(\"the harbor master in a winter storm\")\n.top(20)"
 }

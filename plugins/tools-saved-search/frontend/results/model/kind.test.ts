@@ -18,6 +18,7 @@ const setup = () => {
   const kind = createSavedSearchKind({
     service,
     openAt,
+    notify: vi.fn(),
     locale: 'en-GB',
     component: defineComponent({ render: () => null }),
   })

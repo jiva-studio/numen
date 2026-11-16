@@ -64,8 +64,8 @@ func findSetting(t *testing.T, m manifestDoc, key string) manifestSetting {
 func TestManifest(t *testing.T) {
 	m := readManifest(t)
 
-	if m.ID != "md.numen.tools.saved.search" || m.Name != "Saved Search" || m.Version != "2026.11.1" || m.Contributes.Category != "tools" {
-		t.Errorf("manifest = %+v, want md.numen.tools.saved.search, Saved Search, 2026.11.1 in tools", m)
+	if m.ID != "md.numen.tools.saved.search" || m.Name != "Saved Search" || m.Version != "2026.11.2" || m.Contributes.Category != "tools" {
+		t.Errorf("manifest = %+v, want md.numen.tools.saved.search, Saved Search, 2026.11.2 in tools", m)
 	}
 	if !slices.Equal(m.Capabilities, []string{"tools"}) {
 		t.Errorf("capabilities = %v, want [tools]", m.Capabilities)
@@ -98,62 +98,22 @@ func TestManifestActivatesOnIndexChangesAndDeclaresTheService(t *testing.T) {
 	}
 }
 
-func TestManifestDeclaresTheRerankingConnections(t *testing.T) {
-	connections := findSetting(t, readManifest(t), "connections")
-
-	if connections.Type != "connections" || connections.Title != "Reranking" || !slices.Equal(connections.Operations, []string{"llm.rerank"}) {
-		t.Errorf("connections = %+v, want type connections, title Reranking and operation llm.rerank", connections)
-	}
-}
-
-func TestManifestRecommendsMongoDBRerankThroughOpenRouterAndTheLocalRerankerOtherwise(t *testing.T) {
-	details := findSetting(t, readManifest(t), "connections").Details
-
-	for _, part := range []string{"OpenRouter", "mongodb/rerank-3", "Local reranker"} {
-		if !strings.Contains(details, part) {
-			t.Errorf("connections details = %q, want %q named", details, part)
-		}
-	}
-}
-
-func TestManifestCapsThePassagesPerConditionWithAConnectionAtTheMaximumOfTheIndex(t *testing.T) {
-	setting := findSetting(t, readManifest(t), "rerankResultsPerSearch")
-
-	if setting.Max == nil || *setting.Max != 500 {
-		t.Errorf("rerankResultsPerSearch = %+v, want a maximum of 500", setting)
-	}
-}
-
-func TestManifestDeclaresTheNumbersAsSettingsWithTheirDefaults(t *testing.T) {
-	want := map[string]float64{
-		"defaultLimit": 20, "maxLimit": 100, "resultsPerSearch": 100, "maxCandidates": 1000, "maxPathPrefixes": 8,
-		"rerankResultsPerSearch": 300, "fusedPerResult": 3, "maxFused": 100, "rerankedPerResult": 10, "maxReranked": 300,
-		"maxRerankedBytes": 4096, "mergeGapBytes": 200, "maxQueryBytes": 16384, "refreshMinutes": 10,
-	}
+func TestManifestDeclaresTheRefreshDelayAndTheDefaultFolderOnly(t *testing.T) {
 	m := readManifest(t)
 
-	got := map[string]float64{}
-	for _, setting := range m.Settings {
-		if setting.Type != "number" {
-			continue
-		}
-		number, isNumber := setting.Default.(float64)
-		if !isNumber || setting.Min == nil {
-			t.Errorf("setting %+v, want a number with a default and a least value", setting)
-			continue
-		}
-		got[setting.Key] = number
+	keys := make([]string, len(m.Settings))
+	for i, setting := range m.Settings {
+		keys[i] = setting.Key
 	}
-	if len(got) != len(want) {
-		t.Errorf("number settings = %v, want %v", got, want)
+	if !slices.Equal(keys, []string{"refreshMinutes", "defaultFolder"}) {
+		t.Errorf("settings = %v, want refreshMinutes and defaultFolder", keys)
 	}
-	for key, value := range want {
-		if got[key] != value {
-			t.Errorf("default of %s = %v, want %v", key, got[key], value)
-		}
+	refresh := findSetting(t, m, "refreshMinutes")
+	if refresh.Type != "number" || refresh.Default != float64(10) || refresh.Min == nil || *refresh.Min != 0 {
+		t.Errorf("refreshMinutes = %+v, want a number of 10 by default and at least 0", refresh)
 	}
-	if refresh := findSetting(t, m, "refreshMinutes"); refresh.Min == nil || *refresh.Min != 0 {
-		t.Errorf("refreshMinutes = %+v, want a least value of 0", refresh)
+	if strings.Contains(refresh.Details, "rerank") || strings.Contains(refresh.Details, "limit") {
+		t.Errorf("refreshMinutes details = %q, want no rerank text or limit", refresh.Details)
 	}
 }
 
@@ -162,13 +122,5 @@ func TestManifestDeclaresTheDefaultFolderAsTheVaultFolder(t *testing.T) {
 
 	if folder.Type != "string" || folder.Default != "" || folder.Title == "" {
 		t.Errorf("defaultFolder = %+v, want a titled string setting whose default is the vault folder", folder)
-	}
-}
-
-func TestManifestDeclaresOnlyKnownSettings(t *testing.T) {
-	m := readManifest(t)
-
-	if len(m.Settings) != 16 {
-		t.Errorf("%d settings, want connections, fourteen numbers and defaultFolder", len(m.Settings))
 	}
 }

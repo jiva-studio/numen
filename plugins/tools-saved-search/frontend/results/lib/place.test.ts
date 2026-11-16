@@ -7,11 +7,7 @@ import { WORDS } from '../../words'
 import { formatPlace } from './place'
 
 describe('formatPlace', () => {
-  it('writes a page with the page count', () => {
-    expect(formatPlace({ page: 14, pageCount: 212 }, WORDS)).toBe('Page 14 of 212')
-  })
-
-  it('writes a page without a page count', () => {
+  it('writes a page', () => {
     expect(formatPlace({ page: 14 }, WORDS)).toBe('Page 14')
   })
 

@@ -2,11 +2,12 @@ package service_test
 
 import (
 	"encoding/json"
-	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
@@ -48,29 +49,38 @@ func TestRegistryListsCreateAndUpdateAsReadWriteWithIndexRead(t *testing.T) {
 		if !slices.Equal(tool.Requires, []string{"index:read"}) || tool.Description == "" || tool.Title == "" {
 			t.Errorf("tool = %+v, want a title, a description and index:read", tool)
 		}
-		if tool.Name != "saved_search_preview" && !slices.Contains(tool.Instructions, linkSentence) {
+		if !slices.Contains(tool.Instructions, linkSentence) {
 			t.Errorf("instructions of %s = %q, want the sentence about linking the note", tool.Name, tool.Instructions)
 		}
 	}
-	want := map[string]tools.Effect{
-		"saved_search_preview": tools.ReadOnly, "saved_search_create": tools.ReadWrite, "saved_search_update": tools.ReadWrite,
-	}
-	if len(effects) != len(want) {
+	want := map[string]tools.Effect{"saved_search_create": tools.ReadWrite, "saved_search_update": tools.ReadWrite}
+	if !maps.Equal(effects, want) {
 		t.Errorf("tools = %v, want %v", effects, want)
 	}
-	for name, effect := range want {
-		if got, isListed := effects[name]; !isListed || got != effect {
-			t.Errorf("effect of %s = %v (listed %v), want %v", name, got, isListed, effect)
+}
+
+func TestCreateDescriptionPointsToLibraryQueryAndTheStages(t *testing.T) {
+	listing, err := newFixture(t, 10).registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	i := slices.IndexFunc(listing.Tools, func(tool *tools.ToolInfo) bool { return tool.Name == "saved_search_create" })
+	if i < 0 {
+		t.Fatalf("tools = %+v, want saved_search_create", listing.Tools)
+	}
+	for _, part := range []string{"library_query", ".rerank(", ".top(N)", "numen-query"} {
+		if !strings.Contains(listing.Tools[i].Description, part) {
+			t.Errorf("description = %q, want %q", listing.Tools[i].Description, part)
 		}
 	}
 }
 
 func TestCreateWritesASearchNoteThatUpdateChanges(t *testing.T) {
 	f := newFixture(t, 10)
-	f.addReranker()
 
 	created, failure := f.callTool(t, testVault, "saved_search_create", mustJSON(t, map[string]any{
-		"title": "Harbor master: winter storms", "query": stormsQuery, "rerank": stormsRerank, "limit": 30,
+		"title": "Harbor master: winter storms", "query": stormsQuery,
 	}))
 	if failure != "" {
 		t.Fatal(failure)
@@ -82,26 +92,52 @@ func TestCreateWritesASearchNoteThatUpdateChanges(t *testing.T) {
 		t.Errorf("output = %v, want the path, its address and the first run of two results", created)
 	}
 	content, frontmatter := readNote(t, f, notePath)
-	if frontmatter["title"] != "Harbor master: winter storms" || frontmatter["rerank"] != stormsRerank || fmt.Sprint(frontmatter["limit"]) != "30" || frontmatter["id"] == nil {
-		t.Errorf("frontmatter = %v, want the id, the title, the rerank text and the limit", frontmatter)
+	if frontmatter["title"] != "Harbor master: winter storms" || frontmatter["id"] == nil {
+		t.Errorf("frontmatter = %v, want the id and the title", frontmatter)
+	}
+	for _, key := range []string{"rerank", "limit"} {
+		if _, isThere := frontmatter[key]; isThere {
+			t.Errorf("frontmatter = %v, want no %s", frontmatter, key)
+		}
 	}
 	if !strings.Contains(content, "```numen-query\n"+stormsQuery+"\n```\n") {
 		t.Errorf("note = %q, want the query in a numen-query block", content)
 	}
 
-	updated, failure := f.callTool(t, testVault, "saved_search_update", mustJSON(t, map[string]any{
-		"path": notePath, "query": `words("storm")`, "limit": 1,
-	}))
+	updated, failure := f.callTool(t, testVault, "saved_search_update", mustJSON(t, map[string]any{"path": notePath, "query": wordsQuery}))
 	if failure != "" {
 		t.Fatal(failure)
 	}
 
-	if updated["path"] != notePath || updated["resultCount"] != float64(1) {
+	if updated["path"] != notePath || updated["resultCount"] != float64(1) || updated["order"] != "fused" {
 		t.Errorf("output = %v, want the run of the changed search, one result", updated)
 	}
-	content, frontmatter = readNote(t, f, notePath)
-	if fmt.Sprint(frontmatter["limit"]) != "1" || frontmatter["rerank"] != stormsRerank || !strings.Contains(content, "```numen-query\nwords(\"storm\")\n```\n") {
-		t.Errorf("note = %q, want the new query and limit and the rerank kept", content)
+	if content, _ = readNote(t, f, notePath); !strings.Contains(content, "```numen-query\nwords(\"storm\")\n```\n") {
+		t.Errorf("note = %q, want the new query", content)
+	}
+}
+
+func TestCreateAndUpdateRunInteractiveSearchesTheCoreShows(t *testing.T) {
+	f := newFixture(t, 10)
+
+	if _, failure := f.callTool(t, testVault, "saved_search_create", mustJSON(t, map[string]any{"title": "Winter storms", "query": stormsQuery})); failure != "" {
+		t.Fatal(failure)
+	}
+	if _, failure := f.callTool(t, testVault, "saved_search_update", mustJSON(t, map[string]any{"path": "Winter storms.md", "query": wordsQuery})); failure != "" {
+		t.Fatal(failure)
+	}
+
+	started := f.searches.ListStarted()
+	if len(started) == 0 {
+		t.Fatal("no search started")
+	}
+	for _, start := range started {
+		if start.IsBackground || start.Priority != host.SearchPriorityInteractive {
+			t.Errorf("start = %+v, want interactive and shown as a task of the core", start)
+		}
+	}
+	if removed := f.searches.ListRemoved(); len(removed) != len(started) {
+		t.Errorf("removed %v of %d searches, want every search removed", removed, len(started))
 	}
 }
 
@@ -147,13 +183,13 @@ func TestCreateScansTheNote(t *testing.T) {
 func TestCreateReturnsTheResultsOfTheFirstRun(t *testing.T) {
 	f := newFixture(t, 10)
 
-	out, failure := f.callTool(t, testVault, "saved_search_create", mustJSON(t, map[string]any{"title": "Winter storms", "query": stormsQuery}))
+	out, failure := f.callTool(t, testVault, "saved_search_create", mustJSON(t, map[string]any{"title": "Winter storms", "query": wordsQuery}))
 	if failure != "" {
 		t.Fatal(failure)
 	}
 
-	if out["resultCount"] != float64(2) || out["order"] != "fused" {
-		t.Errorf("output = %v, want two results in fused order", out)
+	if out["resultCount"] != float64(1) || out["order"] != "fused" {
+		t.Errorf("output = %v, want one result in fused order", out)
 	}
 	files, err := f.vault.Store().List(t.Context())
 	if err != nil || len(files) != 1 {
@@ -161,10 +197,10 @@ func TestCreateReturnsTheResultsOfTheFirstRun(t *testing.T) {
 	}
 }
 
-func TestCreateRejectsAQueryThatDoesNotCompileAndWritesNothing(t *testing.T) {
+func TestCreateRejectsAQueryTheCoreReportsAndWritesNothing(t *testing.T) {
 	f := newFixture(t, 10)
 
-	out, failure := f.callTool(t, testVault, "saved_search_create", mustJSON(t, map[string]any{"title": "Winter storms", "query": `meaning("storm") &&`}))
+	out, failure := f.callTool(t, testVault, "saved_search_create", mustJSON(t, map[string]any{"title": "Winter storms", "query": brokenQuery}))
 
 	if failure != "" {
 		t.Fatalf("the tool failed with %q, want the problems in its output", failure)
@@ -213,23 +249,23 @@ func TestUpdateRejectsANoteThatIsNotASearch(t *testing.T) {
 	}
 }
 
-func TestUpdateWithoutAFieldIsAnError(t *testing.T) {
+func TestUpdateWithoutAQueryIsAnError(t *testing.T) {
 	f := newFixture(t, 10)
 	f.addStormsNote()
 
 	_, failure := f.callTool(t, testVault, "saved_search_update", mustJSON(t, map[string]any{"path": stormsPath}))
 
-	if !strings.Contains(failure, "give query, rerank or limit") {
-		t.Errorf("failure = %q, want the missing fields named", failure)
+	if !strings.Contains(failure, "give query") {
+		t.Errorf("failure = %q, want the missing query named", failure)
 	}
 }
 
-func TestUpdateRejectsAQueryThatDoesNotCompileAndChangesNothing(t *testing.T) {
+func TestUpdateRejectsAQueryTheCoreReportsAndChangesNothing(t *testing.T) {
 	f := newFixture(t, 10)
 	f.addStormsNote()
 	before, _ := f.vault.Content(stormsPath)
 
-	out, failure := f.callTool(t, testVault, "saved_search_update", mustJSON(t, map[string]any{"path": stormsPath, "query": `meaning("storm") &&`, "limit": 3}))
+	out, failure := f.callTool(t, testVault, "saved_search_update", mustJSON(t, map[string]any{"path": stormsPath, "query": brokenQuery}))
 
 	if failure != "" {
 		t.Fatalf("the tool failed with %q, want the problems in its output", failure)
@@ -242,102 +278,16 @@ func TestUpdateRejectsAQueryThatDoesNotCompileAndChangesNothing(t *testing.T) {
 	}
 }
 
-func TestUpdateRemovesTheRerankTextGivenEmpty(t *testing.T) {
-	f := newFixture(t, 10)
-	f.addStormsNote()
-
-	if _, failure := f.callTool(t, testVault, "saved_search_update", mustJSON(t, map[string]any{"path": stormsPath, "rerank": ""})); failure != "" {
-		t.Fatal(failure)
-	}
-
-	if _, frontmatter := readNote(t, f, stormsPath); frontmatter["rerank"] != nil || frontmatter["id"] != stormsID {
-		t.Errorf("frontmatter = %v, want the rerank text removed and the id kept", frontmatter)
-	}
-}
-
 func TestSavedSearchToolsFailForACallWithoutAVault(t *testing.T) {
 	f := newFixture(t, 10)
 	f.addStormsNote()
 
 	for name, arguments := range map[string]string{
-		"saved_search_create":  mustJSON(t, map[string]any{"title": "Winter storms", "query": stormsQuery}),
-		"saved_search_update":  mustJSON(t, map[string]any{"path": stormsPath, "limit": 3}),
-		"saved_search_preview": `{"query":"meaning(\"tides\")"}`,
+		"saved_search_create": mustJSON(t, map[string]any{"title": "Winter storms", "query": stormsQuery}),
+		"saved_search_update": mustJSON(t, map[string]any{"path": stormsPath, "query": wordsQuery}),
 	} {
 		if _, failure := f.callTool(t, "", name, arguments); !strings.Contains(failure, "the call names no vault") {
 			t.Errorf("failure of %s = %q, want the call to name no vault", name, failure)
 		}
-	}
-}
-
-func TestPreviewToolReturnsTheCompileErrorWithItsPosition(t *testing.T) {
-	out, failure := newFixture(t, 10).callTool(t, testVault, "saved_search_preview", `{"query":"meaning(\"tides\") &&"}`)
-	if failure != "" {
-		t.Fatalf("the tool failed with %q, want the problems in its output", failure)
-	}
-
-	problems, isList := out["errors"].([]any)
-	if !isList || len(problems) == 0 {
-		t.Fatalf("output = %v, want a list under errors", out)
-	}
-	problem, isObject := problems[0].(map[string]any)
-	if !isObject || problem["line"] != float64(1) || problem["column"] != float64(20) || problem["message"] == "" {
-		t.Errorf("problem = %v, want line 1, column 20 and a message", problems[0])
-	}
-}
-
-func TestPreviewToolReturnsResultsWithTheirKeys(t *testing.T) {
-	out, failure := newFixture(t, 10).callTool(t, testVault, "saved_search_preview", `{"query":"meaning(\"tides\")","limit":5}`)
-	if failure != "" {
-		t.Fatal(failure)
-	}
-
-	results, isList := out["results"].([]any)
-	if !isList || len(results) != 1 || out["order"] != "fused" || out["query"] != `meaning("tides")` || out["floor"] != 0.4 {
-		t.Fatalf("output = %v, want one result in fused order with the floor", out)
-	}
-	if _, hasCount := out["candidateCount"]; !hasCount {
-		t.Errorf("output = %v, want candidateCount", out)
-	}
-	result, isObject := results[0].(map[string]any)
-	if !isObject {
-		t.Fatalf("results[0] = %v, want an object", results[0])
-	}
-	for key, want := range map[string]any{
-		"path": "Notes/Tides.md", "title": "Tide Tables", "text": "The tide at the quay.", "start": float64(0), "length": float64(21),
-		"line": float64(3), "uri": "numen:Notes%2FTides.md?start=0&length=21", "score": float64(1), "chunkCount": float64(1),
-	} {
-		if result[key] != want {
-			t.Errorf("result[%q] = %v, want %v", key, result[key], want)
-		}
-	}
-}
-
-func TestPreviewToolRejectsANegativeLimit(t *testing.T) {
-	_, failure := newFixture(t, 10).callTool(t, testVault, "saved_search_preview", `{"query":"meaning(\"tides\")","limit":-1}`)
-
-	if failure == "" {
-		t.Error("the tool accepted the limit -1")
-	}
-}
-
-func TestPreviewDescriptionTellsToAddWordsWhenTheUserNamesAnExactThing(t *testing.T) {
-	listing, err := newFixture(t, 10).registry.ListTools(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	i := slices.IndexFunc(listing.Tools, func(tool *tools.ToolInfo) bool { return tool.Name == "saved_search_preview" })
-	if i < 0 {
-		t.Fatalf("tools = %+v, want saved_search_preview", listing.Tools)
-	}
-	description := listing.Tools[i].Description
-	for _, part := range []string{"but words it differently", `words("\"the phrase\"")`, "||"} {
-		if !strings.Contains(description, part) {
-			t.Errorf("description = %q, want %q", description, part)
-		}
-	}
-	if strings.Index(description, `words("\"the phrase\"")`) < strings.Index(description, "words(\"query\")") {
-		t.Errorf("description = %q, want the hint after the sentence about words()", description)
 	}
 }

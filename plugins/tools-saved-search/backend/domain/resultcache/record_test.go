@@ -9,40 +9,33 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/domain/resultcache"
 )
 
 func newRecord() resultcache.Record {
 	computedAt := time.Date(2026, 11, 14, 9, 30, 0, 0, time.UTC)
 	staleSince := time.Date(2026, 11, 14, 9, 41, 12, 0, time.UTC)
 	failedAt := time.Date(2026, 11, 14, 9, 52, 0, 0, time.UTC)
-	page := api.Place{Page: 14, PageCount: 212}
+	page := resultcache.Place{Page: 14}
+	score := 0.913
 	return resultcache.Record{
-		Path:           "Harbor/Harbor master- winter storms.md",
-		QueryHash:      resultcache.HashText(`meaning("the harbor master in a winter storm")`),
-		RerankHash:     resultcache.HashText("Stories of the harbor master keeping the boats safe in winter storms."),
-		Limit:          30,
-		SettingsHash:   resultcache.HashText("20,100,100,1000,8,3,100,200,16384"),
-		Reranker:       &resultcache.Reranker{ConnectionID: "conn-01JCX7", Options: map[string]string{"model": "gte-multilingual-reranker-base"}},
-		Floor:          0.3,
-		ComputedAt:     computedAt,
-		StaleSince:     &staleSince,
-		FailedAt:       &failedAt,
-		Failure:        "the reranking service did not answer (unavailable)",
-		Order:          api.OrderReranked,
-		CandidateCount: 214,
+		Path:            "Harbor/Harbor master- winter storms.md",
+		QueryHash:       resultcache.HashText(`meaning("the harbor master in a winter storm").top(30)`),
+		Floor:           0.3,
+		ComputedAt:      computedAt,
+		StaleSince:      &staleSince,
+		FailedAt:        &failedAt,
+		Failure:         "the reranking service did not answer",
+		Order:           resultcache.OrderReranked,
+		Reranker:        "Harbor reranker",
+		IndexGeneration: "gen-42",
 		Results: []resultcache.Result{{
-			PreviewResult: api.PreviewResult{
-				Path: "Logbooks/1911.pdf", Title: "1911", Place: &page,
-				Text:  "…the harbor master rowed out to the moored boats while the storm…",
-				Start: 48210, Length: 2410, Line: 380, URI: "numen:Logbooks%2F1911.pdf?start=48210&length=2410", ChunkCount: 2,
-			},
-			ChunkIDs: []string{"ch-01JCX8A", "ch-01JCX8B"},
+			Path: "Logbooks/1911.pdf", Title: "1911", Kind: "pdf", Place: &page,
+			Text:  "…the harbor master rowed out to the moored boats while the storm…",
+			Start: 48210, Length: 2410, Line: 380, URI: "numen:Logbooks%2F1911.pdf?start=48210&length=2410", Score: &score,
 		}},
-		RerankScores: map[string]float64{resultcache.HashText("…the harbor master rowed out to the moored boats while the storm…"): 0.9134},
-		Warnings:     []string{},
-		Errors:       []api.Problem{},
+		Warnings: []string{},
+		Errors:   []resultcache.Problem{},
 	}
 }
 
@@ -74,8 +67,8 @@ func TestEncodeWritesTheKeysOfTheRecord(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, key := range []string{
-		"path", "queryHash", "rerankHash", "limit", "settingsHash", "reranker", "floor", "computedAt", "staleSince",
-		"failedAt", "failure", "order", "candidateCount", "results", "rerankScores", "warnings", "errors",
+		"path", "queryHash", "floor", "computedAt", "staleSince", "failedAt", "failure", "order", "reranker",
+		"indexGeneration", "results", "warnings", "errors",
 	} {
 		if _, isThere := keys[key]; !isThere {
 			t.Errorf("record %s has no key %q", raw, key)
@@ -84,18 +77,11 @@ func TestEncodeWritesTheKeysOfTheRecord(t *testing.T) {
 	if string(keys["computedAt"]) != `"2026-11-14T09:30:00Z"` || string(keys["failedAt"]) != `"2026-11-14T09:52:00Z"` {
 		t.Errorf("computedAt = %s, failedAt = %s, want UTC RFC 3339 with seconds", keys["computedAt"], keys["failedAt"])
 	}
-	var results []map[string]json.RawMessage
-	if err := json.Unmarshal(keys["results"], &results); err != nil || len(results) != 1 {
-		t.Fatalf("results = %s, want one", keys["results"])
-	}
-	if string(results[0]["chunkIds"]) != `["ch-01JCX8A","ch-01JCX8B"]` || string(results[0]["path"]) != `"Logbooks/1911.pdf"` {
-		t.Errorf("result = %s, want its chunk ids beside the fields of a preview result", keys["results"])
-	}
 }
 
 func TestEncodeOmitsUnsetMarks(t *testing.T) {
 	record := newRecord()
-	record.StaleSince, record.FailedAt, record.Failure, record.Reranker = nil, nil, "", nil
+	record.StaleSince, record.FailedAt, record.Failure, record.Reranker = nil, nil, "", ""
 
 	raw, err := resultcache.Encode(record)
 	if err != nil {
@@ -115,6 +101,8 @@ func TestDecodeOfBrokenBytesIsNoRecord(t *testing.T) {
 		"a field of a wrong kind": `{"path": 12, "results": []}`,
 		"not an object":           `["Harbor/Gale.md"]`,
 		"empty":                   ``,
+		"a record of the old shape": `{"path": "Harbor/Gale.md", "rerankHash": "ab", "limit": 20, "results": [], ` +
+			`"rerankScores": {}}`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			if record, ok := resultcache.Decode([]byte(raw)); ok {

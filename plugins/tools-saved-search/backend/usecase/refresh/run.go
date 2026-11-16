@@ -3,25 +3,39 @@ package refresh
 import (
 	"context"
 	"errors"
-	"fmt"
+	"slices"
+	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/domain/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/ports"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/resultcache"
-	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/preview"
+	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/textplace"
 )
 
-// job is one run of a saved search: the vault, the note, the priority of its calls and the settings.
+const (
+	searchWait      = 30 * time.Second
+	staleDebounce   = 2 * time.Second
+	searchPageSize  = 100
+	scoreKindRerank = "rerank"
+	failureProblems = "the query has problems"
+)
+
+// job is one run of a saved search: the vault, the note, and the priority of its search and whether the
+// core shows no task for it.
 type job struct {
-	vaultID  domain.VaultID
-	vault    Vault
-	path     string
-	priority connection.Priority
-	settings Settings
+	vaultID      domain.VaultID
+	vault        Vault
+	path         string
+	priority     host.SearchPriority
+	isBackground bool
+}
+
+// found is a search that ended: its last state and every page of its results.
+type found struct {
+	state   host.SearchState
+	results []host.SearchResult
 }
 
 func (r *Runner) run(ctx context.Context, one job) (resultcache.Record, error) {
@@ -35,39 +49,58 @@ func (r *Runner) run(ctx context.Context, one job) (resultcache.Record, error) {
 		written = r.recordFailure(ctx, one, r.findFileName(ctx, one), err)
 		return written, err
 	}
-	want := readTarget(stat, raw, one.settings)
-	file := fileKey{vault: one.vaultID, name: resultcache.GetFileName(want.definition.ID, one.path)}
-	started := r.marks.get(file)
+	want := readTarget(stat, raw)
+	name := resultcache.GetFileName(want.definition.ID, one.path)
 	if len(want.problems) > 0 {
-		written, err = r.finish(ctx, one.vault, file, started, newProblemRecord(one.path, want, r.now()))
+		written, err = r.recordProblems(ctx, one, name, want, want.problems)
 		return written, err
 	}
-	old, hasOld, err := readRecord(ctx, one.vault.Store, file.name)
-	if err != nil {
-		return written, err
-	}
-	var reusable *resultcache.Record
-	if hasOld {
-		reusable = &old
-	}
-	cached := newCachedReranker(r.reranker, one.priority, reusable, want.queryHash)
-	deps := preview.Dependencies{Search: one.vault.Search, Notes: one.vault.Lookup, Reranker: cached}
-	input := api.PreviewInput{Query: want.definition.Query, Rerank: want.definition.Rerank, Limit: want.definition.Limit}
-	result, err := preview.New(deps, one.settings.Preview).Run(ctx, input)
+	start := host.SearchStart{Query: want.definition.Query, Priority: one.priority, IsBackground: one.isBackground}
+	result, err := r.runSearch(ctx, one.vault.Search, start)
 	switch {
 	case err != nil:
-		written = r.recordFailure(ctx, one, file.name, err)
+		written = r.recordFailure(ctx, one, name, err)
 		return written, err
-	case len(result.Output.Errors) > 0:
-		want.problems = moveProblems(result.Output.Errors, raw)
-		written, err = r.finish(ctx, one.vault, file, started, newProblemRecord(one.path, want, r.now()))
+	case len(result.state.Errors) > 0:
+		written, err = r.recordProblems(ctx, one, name, want, convertSearchProblems(result.state.Errors))
 		return written, err
-	case cached.failure != nil:
-		written = r.recordFailure(ctx, one, file.name, fmt.Errorf("the reranking service did not answer (%w)", cached.failure))
-		return written, nil
 	}
-	written, err = r.finish(ctx, one.vault, file, started, newRecord(one.path, want, result, cached.scores, r.now()))
+	written, err = r.write(ctx, one.vault, name, newRecord(one.path, want, result, r.now()))
 	return written, err
+}
+
+func (r *Runner) runSearch(ctx context.Context, search ports.Search, start host.SearchStart) (found, error) {
+	id, err := search.StartSearch(ctx, start)
+	if err != nil {
+		return found{}, err
+	}
+	defer func() {
+		if err := search.RemoveSearch(context.WithoutCancel(ctx), id); err != nil {
+			r.log.Debug("saved search: remove a search", "id", id, "error", err)
+		}
+	}()
+	read := host.SearchRead{Wait: searchWait, PageSize: searchPageSize, PageToken: ""}
+	state, err := search.GetSearch(ctx, id, read)
+	for err == nil && state.IsRunning {
+		state, err = search.GetSearch(ctx, id, read)
+	}
+	if err != nil {
+		return found{}, err
+	}
+	if len(state.Errors) > 0 {
+		return found{state: state, results: nil}, nil
+	}
+	results := slices.Clone(state.Results)
+	for token := state.NextPageToken; token != ""; {
+		page, err := search.GetSearch(ctx, id, host.SearchRead{Wait: 0, PageSize: searchPageSize, PageToken: token})
+		if err != nil {
+			return found{}, err
+		}
+		results = append(results, page.Results...)
+		state.IsStale = state.IsStale || page.IsStale
+		token = page.NextPageToken
+	}
+	return found{state: state, results: results}, nil
 }
 
 func (r *Runner) findFileName(ctx context.Context, one job) string {
@@ -78,16 +111,46 @@ func (r *Runner) findFileName(ctx context.Context, one job) string {
 	return resultcache.GetFileName(refs[one.path].ID, one.path)
 }
 
-func (r *Runner) finish(ctx context.Context, vault Vault, file fileKey, started mark, record resultcache.Record) (resultcache.Record, error) {
+func (r *Runner) write(ctx context.Context, vault Vault, name string, record resultcache.Record) (resultcache.Record, error) {
 	r.records.Lock()
 	defer r.records.Unlock()
-	if latest := r.marks.get(file); latest.count != started.count {
-		record.StaleSince = &latest.at
-	}
-	if err := writeRecord(ctx, vault.Store, file.name, record); err != nil {
+	if err := writeRecord(ctx, vault.Store, name, record); err != nil {
 		return resultcache.Record{}, err
 	}
 	return record, nil
+}
+
+func (r *Runner) recordProblems(ctx context.Context, one job, name string, want target, problems []resultcache.Problem) (resultcache.Record, error) {
+	r.records.Lock()
+	defer r.records.Unlock()
+	record, hasRecord, err := readRecord(ctx, one.vault.Store, name)
+	if err != nil {
+		return resultcache.Record{}, err
+	}
+	if !hasRecord {
+		record = newEmptyRecord(one.path)
+	}
+	now := r.now()
+	record.QueryHash, record.Errors = want.queryHash, problems
+	record.FailedAt, record.Failure = &now, getFailure(problems)
+	if record.StaleSince == nil {
+		record.StaleSince = &now
+	}
+	if err := writeRecord(ctx, one.vault.Store, name, record); err != nil {
+		return resultcache.Record{}, err
+	}
+	return record, nil
+}
+
+func getFailure(problems []resultcache.Problem) string {
+	messages := make([]string, 0, len(problems))
+	for _, problem := range problems {
+		if problem.Line > 0 {
+			return failureProblems
+		}
+		messages = append(messages, problem.Message)
+	}
+	return strings.Join(messages, "; ")
 }
 
 func (r *Runner) recordFailure(ctx context.Context, one job, name string, failure error) resultcache.Record {
@@ -124,35 +187,70 @@ func writeRecord(ctx context.Context, store ports.Store, name string, record res
 
 func newEmptyRecord(notePath string) resultcache.Record {
 	return resultcache.Record{
-		Path: notePath, QueryHash: "", RerankHash: "", Limit: 0, SettingsHash: "", Reranker: nil, Floor: 0,
-		ComputedAt: time.Time{}, StaleSince: nil, FailedAt: nil, Failure: "", Order: "", CandidateCount: 0,
-		Results: []resultcache.Result{}, RerankScores: map[string]float64{}, Warnings: []string{}, Errors: []api.Problem{},
+		Path: notePath, QueryHash: "", Floor: 0, ComputedAt: time.Time{}, StaleSince: nil, FailedAt: nil, Failure: "",
+		Order: "", Reranker: "", IndexGeneration: "", Results: []resultcache.Result{}, Warnings: []string{}, Errors: []resultcache.Problem{},
 	}
 }
 
-func newProblemRecord(notePath string, want target, now time.Time) resultcache.Record {
+func newRecord(notePath string, want target, result found, now time.Time) resultcache.Record {
 	record := newEmptyRecord(notePath)
-	record.QueryHash, record.RerankHash = want.queryHash, want.rerankHash
-	record.Limit, record.SettingsHash = want.limit, want.settingsHash
-	record.ComputedAt, record.Errors = now, want.problems
+	record.QueryHash, record.ComputedAt = want.queryHash, now
+	record.Floor, record.IndexGeneration = result.state.Floor, result.state.IndexGeneration
+	record.Order = resultcache.OrderFused
+	if result.state.ScoreKind == scoreKindRerank {
+		record.Order = resultcache.OrderReranked
+	}
+	if len(result.state.Reranks) > 0 {
+		record.Reranker = result.state.Reranks[0].ConnectionName
+	}
+	if result.state.IsStale {
+		record.StaleSince = &now
+	}
+	for _, one := range result.results {
+		record.Results = append(record.Results, newResult(one))
+	}
+	record.Warnings = append(record.Warnings, result.state.Warnings...)
 	return record
 }
 
-func newRecord(notePath string, want target, result preview.Run, scores map[string]float64, now time.Time) resultcache.Record {
-	record := newEmptyRecord(notePath)
-	record.QueryHash, record.RerankHash = want.queryHash, resultcache.HashText(result.Rerank)
-	record.Limit, record.SettingsHash = want.limit, want.settingsHash
-	record.Floor, record.ComputedAt, record.Order = result.Output.Floor, now, result.Output.Order
-	record.CandidateCount = result.Output.CandidateCount
-	if result.Reranker != nil {
-		record.Reranker = &resultcache.Reranker{ConnectionID: result.Reranker.ConnectionID, Options: result.Reranker.Options}
-		record.RerankScores = scores
+func newResult(one host.SearchResult) resultcache.Result {
+	result := resultcache.Result{
+		Path: one.Path, Title: one.Title, Kind: one.Kind, Place: nil, Text: one.Text, Start: one.Start, Length: one.Length,
+		Line: one.MatchLine + 1, URI: textplace.FormatNoteAddress(one.Path), Score: one.Score, IsWholeFile: one.IsWholeFile,
 	}
-	for i, one := range result.Output.Results {
-		record.Results = append(record.Results, resultcache.Result{PreviewResult: one, ChunkIDs: result.ChunkIDs[i]})
+	if !one.IsWholeFile {
+		result.URI = textplace.FormatAddress(one.Path, one.Start, one.Length)
+		result.Place = newPlace(one)
 	}
-	if result.Output.Warnings != nil {
-		record.Warnings = result.Output.Warnings
+	return result
+}
+
+func newPlace(one host.SearchResult) *resultcache.Place {
+	s := textplace.GetSelector(one.Selector)
+	if s.IsEmpty() {
+		return nil
 	}
-	return record
+	place := &resultcache.Place{Page: s.Page, PositionSeconds: nil, EndSeconds: nil, CFI: s.CFI, Chapter: ""}
+	if s.CFI != "" {
+		place.Chapter = one.PlaceLabel
+	}
+	if len(s.T) > 0 {
+		place.PositionSeconds = &s.T[0]
+	}
+	if len(s.T) > 1 {
+		place.EndSeconds = &s.T[1]
+	}
+	return place
+}
+
+func convertSearchProblems(problems []host.SearchProblem) []resultcache.Problem {
+	converted := make([]resultcache.Problem, len(problems))
+	for i, problem := range problems {
+		message := problem.Message
+		if problem.Suggestion != "" {
+			message += " (did you mean " + problem.Suggestion + "?)"
+		}
+		converted[i] = resultcache.Problem{Line: problem.Line, Column: problem.Column, Message: message}
+	}
+	return converted
 }

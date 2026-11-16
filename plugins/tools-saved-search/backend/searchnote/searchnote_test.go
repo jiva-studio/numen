@@ -55,18 +55,25 @@ func findProblem(t *testing.T, problems []searchnote.Problem, message string) se
 	return searchnote.Problem{}
 }
 
-func TestReadReadsTheQueryTheRerankAndTheLimit(t *testing.T) {
+func TestReadReadsTheQueryAndPassesOverRerankAndLimit(t *testing.T) {
 	definition, problems := read(harborNote)
 
 	if len(problems) != 0 {
 		t.Fatalf("problems = %+v, want none", problems)
 	}
-	want := searchnote.Definition{
-		ID: noteID, Title: "Harbor master: winter storms", Query: harborQuery,
-		Rerank: "Stories of the harbor master keeping the boats safe in winter storms.", Limit: 30,
-	}
+	want := searchnote.Definition{ID: noteID, Title: "Harbor master: winter storms", Query: harborQuery}
 	if definition != want {
 		t.Errorf("definition = %+v, want %+v", definition, want)
+	}
+}
+
+func TestReadPassesOverRerankAndLimitOfAnyKind(t *testing.T) {
+	raw := "---\ntype: search\nlimit: many\nrerank: [storms, gales]\n---\n```numen-query\nwords(\"gale\")\n```\n"
+
+	definition, problems := read(raw)
+
+	if len(problems) != 0 || definition.Query != `words("gale")` {
+		t.Errorf("definition = %+v, problems = %+v, want the query and no problem", definition, problems)
 	}
 }
 
@@ -75,7 +82,7 @@ func TestReadUsesTheFileNameAsTheTitleWithoutATitle(t *testing.T) {
 
 	definition, problems := read(raw)
 
-	if len(problems) != 0 || definition.Title != "Harbor master- winter storms" || definition.ID != "" || definition.Rerank != "" || definition.Limit != 0 {
+	if len(problems) != 0 || definition.Title != "Harbor master- winter storms" || definition.ID != "" {
 		t.Errorf("definition = %+v, problems = %+v, want the file name as the title and nothing else set", definition, problems)
 	}
 }
@@ -116,8 +123,8 @@ func TestReadReportsANoteWithoutABlock(t *testing.T) {
 	_, problems := read(raw)
 
 	problem := findProblem(t, problems, "the note has no numen-query block")
-	if problem.Line != 5 || problem.Column != 1 {
-		t.Errorf("problem = %+v, want line 5 (the first line of the body), column 1", problem)
+	if problem.Line != 1 || problem.Column != 1 {
+		t.Errorf("problem = %+v, want line 1, column 1 of the query", problem)
 	}
 }
 
@@ -127,8 +134,8 @@ func TestReadReportsASecondBlock(t *testing.T) {
 	_, problems := read(raw)
 
 	problem := findProblem(t, problems, "the note has more than one numen-query block")
-	if problem.Line != 8 || problem.Column != 1 {
-		t.Errorf("problem = %+v, want line 8 (the second block), column 1", problem)
+	if problem.Line != 1 || problem.Column != 1 {
+		t.Errorf("problem = %+v, want line 1, column 1 of the query", problem)
 	}
 }
 
@@ -144,29 +151,6 @@ func TestReadReportsAnEmptyBlock(t *testing.T) {
 		})
 	}
 }
-
-func TestReadReportsALimitThatIsNotAWholeNumber(t *testing.T) {
-	for _, limit := range []string{"0", "-3", "2.5", "many", "[10]"} {
-		t.Run(limit, func(t *testing.T) {
-			raw := "---\ntype: search\nlimit: " + limit + "\n---\n```numen-query\nwords(\"gale\")\n```\n"
-			if _, problems := read(raw); !hasProblem(problems, "limit is a whole number of 1 or more") {
-				t.Errorf("problems = %+v, want the limit %s reported", problems, limit)
-			}
-		})
-	}
-}
-
-func TestReadReportsARerankThatIsNotText(t *testing.T) {
-	for _, rerank := range []string{"[storms, gales]", "{about: storms}"} {
-		t.Run(rerank, func(t *testing.T) {
-			raw := "---\ntype: search\nrerank: " + rerank + "\n---\n```numen-query\nwords(\"gale\")\n```\n"
-			if _, problems := read(raw); !hasProblem(problems, "rerank is a text") {
-				t.Errorf("problems = %+v, want the rerank %s reported", problems, rerank)
-			}
-		})
-	}
-}
-
 func TestReadRejectsANoteOfAnotherType(t *testing.T) {
 	raw := "---\ntype: deck\n---\n```numen-query\nwords(\"gale\")\n```\n"
 
@@ -187,9 +171,7 @@ func TestReadIgnoresProseOutsideTheBlock(t *testing.T) {
 }
 
 func TestCreateWritesANoteThatReadReadsBack(t *testing.T) {
-	definition := searchnote.Definition{
-		ID: noteID, Title: "Harbor master: winter storms", Query: harborQuery, Rerank: "Stories of the harbor master in storms.", Limit: 30,
-	}
+	definition := searchnote.Definition{ID: noteID, Title: "Harbor master: winter storms", Query: harborQuery}
 
 	raw, err := searchnote.Create(noteID, "Harbor master: winter storms", false, definition)
 	if err != nil {
@@ -204,6 +186,11 @@ func TestCreateWritesANoteThatReadReadsBack(t *testing.T) {
 	if note.Type != "search" || note.ID != noteID || note.Frontmatter["title"] != "Harbor master: winter storms" {
 		t.Errorf("note = %+v, want type search, the id and the title in the frontmatter", note)
 	}
+	for _, key := range []string{"rerank", "limit"} {
+		if _, isThere := note.Frontmatter[key]; isThere {
+			t.Errorf("frontmatter = %v, want no %s", note.Frontmatter, key)
+		}
+	}
 }
 
 func TestCreateWritesNoTitleForAnExactFileName(t *testing.T) {
@@ -215,10 +202,8 @@ func TestCreateWritesNoTitleForAnExactFileName(t *testing.T) {
 	}
 
 	note := markdown.Parse(domain.FileStat{Path: "Winter storms.md"}, raw)
-	for _, key := range []string{"title", "rerank", "limit"} {
-		if _, isThere := note.Frontmatter[key]; isThere {
-			t.Errorf("frontmatter = %v, want no %s", note.Frontmatter, key)
-		}
+	if _, isThere := note.Frontmatter["title"]; isThere {
+		t.Errorf("frontmatter = %v, want no title", note.Frontmatter)
 	}
 	if !strings.Contains(string(raw), "\n```numen-query\nwords(\"gale\")\n```\n") {
 		t.Errorf("note = %q, want the query in a numen-query block", raw)
@@ -242,54 +227,34 @@ func TestCreateLengthensTheFenceForAQueryWithBackticks(t *testing.T) {
 	}
 }
 
-func TestApplyChangesTheQueryAndKeepsTheProse(t *testing.T) {
+func TestApplyChangesTheQueryAndKeepsTheRestOfTheNote(t *testing.T) {
 	query := "words(\"gale\") && words(\"quay\")"
-	limit := 12
 
-	raw, err := searchnote.Apply([]byte(harborNote), searchnote.Change{Query: &query, Limit: &limit})
+	raw, err := searchnote.Apply([]byte(harborNote), query)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	definition, problems := read(string(raw))
-	if len(problems) != 0 || definition.Query != query || definition.Limit != 12 ||
-		definition.Rerank != "Stories of the harbor master keeping the boats safe in winter storms." {
-		t.Errorf("definition = %+v, problems = %+v, want the new query and limit and the rerank kept", definition, problems)
+	if len(problems) != 0 || definition.Query != query {
+		t.Errorf("definition = %+v, problems = %+v, want the new query", definition, problems)
 	}
-	if !strings.Contains(string(raw), "\nStories for the winter evening reading.\n") || !strings.Contains(string(raw), "id: "+noteID) {
-		t.Errorf("note = %q, want the prose and the id kept", raw)
+	for _, kept := range []string{"\nStories for the winter evening reading.\n", "id: " + noteID, "limit: 30\n"} {
+		if !strings.Contains(string(raw), kept) {
+			t.Errorf("note = %q, want %q kept", raw, kept)
+		}
 	}
 }
 
 func TestApplyLengthensTheFenceForAQueryWithBackticks(t *testing.T) {
 	query := "words(\"gale\")\n```"
 
-	raw, err := searchnote.Apply([]byte(harborNote), searchnote.Change{Query: &query})
+	raw, err := searchnote.Apply([]byte(harborNote), query)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if definition, problems := read(string(raw)); len(problems) != 0 || definition.Query != query {
 		t.Errorf("definition = %+v, problems = %+v, want the query back whole", definition, problems)
-	}
-}
-
-func TestApplyRemovesRerankAndLimitGivenEmpty(t *testing.T) {
-	empty, zero := "", 0
-
-	raw, err := searchnote.Apply([]byte(harborNote), searchnote.Change{Rerank: &empty, Limit: &zero})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	note := markdown.Parse(domain.FileStat{Path: notePath}, raw)
-	if _, isThere := note.Frontmatter["rerank"]; isThere {
-		t.Errorf("frontmatter = %v, want no rerank", note.Frontmatter)
-	}
-	if _, isThere := note.Frontmatter["limit"]; isThere {
-		t.Errorf("frontmatter = %v, want no limit", note.Frontmatter)
-	}
-	if definition, problems := read(string(raw)); len(problems) != 0 || definition.Query != harborQuery {
-		t.Errorf("definition = %+v, problems = %+v, want the query kept", definition, problems)
 	}
 }

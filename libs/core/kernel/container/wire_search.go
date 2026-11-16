@@ -9,7 +9,6 @@ import (
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/wordmatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
@@ -172,7 +171,7 @@ func setPluginSearch(
 		Queries:    newEmbedQueries(source),
 	}
 	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
-		l.Search = hostsearch.Scoring{Search: access, Scores: newScoreChunks(c, db, source, policy)}.Access(runs)
+		l.Search = access.Access(runs)
 	})
 }
 
@@ -233,18 +232,4 @@ func getFloorHint(source searchsourceport.Source) searchusecase.FloorHint {
 		return advisor.GetFloorHint
 	}
 	return nil
-}
-
-func newScoreChunks(c searchWiring, db *Index, source searchsourceport.Source, policy searchusecase.FloorPolicy) *searchusecase.ScoreChunks {
-	deps := searchusecase.ScoreChunksDeps{
-		Places:  db.ChunkSearch(),
-		Words:   wordmatch.NewMatcher(),
-		Readers: c.VaultReaders,
-		Texts:   c.TextReaders,
-		Floors:  policy,
-	}
-	if querySource, ok := source.(searchsourceport.QuerySource); ok {
-		deps.Source = querySource
-	}
-	return searchusecase.NewScoreChunks(deps)
 }
