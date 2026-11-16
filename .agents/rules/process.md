@@ -102,7 +102,7 @@ Work is tracked in the project [Numen](https://github.com/orgs/jiva-studio/proje
 | Status    | the project | Backlog, Todo, In Progress, In review, Done | below                                                                    |
 | Milestone | the issue   | `YYYY.MM`, the release of that month        | the owner for the plan; the milestone workflow for a merged pull request |
 
-A milestone is named after the month of its release and has the last day of the month as its due date. An open issue in a milestone is planned for that release; a closed one shipped in it. A milestone is closed when its release is published.
+A milestone is named after the month of its release and has the last day of the month as its due date. The milestone of an issue is the month of its planned release. It stays as set: a pull request that merges in a later month leaves it unchanged, and the month of the merge is the date of the merge, not the milestone. A milestone is closed when its release is published.
 
 An agent keeps the status of its issue true:
 
