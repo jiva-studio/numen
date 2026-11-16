@@ -45,6 +45,7 @@ func TestTheManifestReadsAndWritesTheVaultAndServesTools(t *testing.T) {
 type contributedCommand struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
+	Icon  string `json:"icon"`
 	When  string `json:"when"`
 }
 
@@ -80,7 +81,7 @@ func findSetTagsEntry(slots []contributedSlot, slot string) (contributedSlot, bo
 func TestTheManifestDeclaresTheCommandSetTagsOverNotes(t *testing.T) {
 	commands, _ := readContributions(t)
 
-	want := contributedCommand{ID: "tags.set", Title: "Set tags", When: "target.isNote"}
+	want := contributedCommand{ID: "tags.set", Title: "Set tags", Icon: "tag", When: "target.isNote"}
 	if !slices.ContainsFunc(commands, func(one contributedCommand) bool { return one == want }) {
 		t.Errorf("commands = %+v, want %+v", commands, want)
 	}

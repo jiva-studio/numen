@@ -5,6 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createApi, type CommandNote } from '@numen/plugin-sdk'
 import { createMockPickerHost, type MockPickerHost } from '@numen/plugin-sdk/testing'
+import { getTagColor } from '../../lib/color'
 import { createSetTags } from './createSetTags'
 
 const SERVICE = 'md.numen.tools.taxonomy'
@@ -94,6 +95,8 @@ const close = async (opened: Opened): Promise<void> => {
   await opened.closed
 }
 
+const getColor = (tag: string): string => `var(--numen-tag-${getTagColor(tag)})`
+
 const getWrites = (opened: Opened): Sent[] => opened.sent.filter((one) => one.method === 'SetTags')
 
 describe('the command Set tags', () => {
@@ -125,6 +128,18 @@ describe('the command Set tags', () => {
         .sort(),
     ).toStrictEqual(['Port', 'Quay', 'Sea'])
     expect(opened.sent.filter((one) => one.method === 'GetTags')).toHaveLength(1)
+    await close(opened)
+  })
+
+  it('gives every tag the colour its dot has in the file tree', async () => {
+    const opened = await start({ note: createNote(PIER) })
+
+    expect(opened.picker.getItems().map((one) => [one.title, one.color])).toStrictEqual(
+      opened.picker.getItems().map((one) => [one.title, getColor(one.title)]),
+    )
+    expect(
+      opened.picker.getItems().every((one) => /^var\(--numen-tag-[1-8]\)$/.test(one.color ?? '')),
+    ).toBe(true)
     await close(opened)
   })
 
@@ -189,6 +204,14 @@ describe('the command Set tags', () => {
     await close(opened)
   })
 
+  it('colours the row that makes a tag with the colour the typed text will have', async () => {
+    const opened = await start({ note: createNote(PIER) })
+
+    expect(opened.picker.getOpened()?.getCreateColor?.('Harbour')).toBe(getColor('Harbour'))
+    expect(opened.picker.getOpened()?.getCreateColor?.(' #harbour ')).toBe(getColor('Harbour'))
+    await close(opened)
+  })
+
   it('stays open until the person closes the list', async () => {
     let isDone = false
     const opened = await start({ note: createNote(PIER) })
@@ -217,6 +240,18 @@ describe('a tag toggled in the list', () => {
       { paths: [PIER], toggles: ['Port'] },
     ])
     expect(opened.getState('Port')).toBe('set')
+    await close(opened)
+  })
+
+  it('keeps the colour of the tag in the answer', async () => {
+    const opened = await start({
+      note: createNote(PIER),
+      writes: [[{ path: PIER, tags: ['Port'] }]],
+    })
+
+    await opened.picker.toggle('Port')
+
+    expect(opened.picker.getItems().find((one) => one.id === 'Port')?.color).toBe(getColor('Port'))
     await close(opened)
   })
 
@@ -325,6 +360,7 @@ describe('a tag made from the typed text', () => {
       id: 'Harbour',
       title: 'Harbour',
       state: 'set',
+      color: getColor('Harbour'),
     })
     await close(opened)
   })
