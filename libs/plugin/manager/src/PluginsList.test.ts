@@ -17,7 +17,12 @@ const plugins = [
     },
   ),
   createManagedPlugin('sample.tree', 'File Tree', {}, { category: 'views', feature: 'file tree' }),
-  createManagedPlugin('sample.agent', 'Agent Chat', {}, { category: 'views', feature: 'agent chat' }),
+  createManagedPlugin(
+    'sample.agent',
+    'Agent Chat',
+    {},
+    { category: 'views', feature: 'agent chat' },
+  ),
   createAvailablePlugin('sample.offer', 'Offered Reader'),
 ]
 
@@ -113,11 +118,13 @@ describe('PluginsList', () => {
   it('draws the tiles System, Appearance, Editor, Search and Connections in that order, each with its detail', () => {
     const wrapper = mountList()
 
-    const tiles = wrapper.findAll('button[aria-label]').filter((one) =>
-      ['System', 'Appearance', 'Editor', 'Search', 'Connections'].includes(
-        one.attributes('aria-label') ?? '',
-      ),
-    )
+    const tiles = wrapper
+      .findAll('button[aria-label]')
+      .filter((one) =>
+        ['System', 'Appearance', 'Editor', 'Search', 'Connections'].includes(
+          one.attributes('aria-label') ?? '',
+        ),
+      )
     expect(tiles.map((one) => one.attributes('aria-label'))).toStrictEqual([
       'System',
       'Appearance',

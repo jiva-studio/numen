@@ -485,9 +485,15 @@ describe('the Search page of the shell settings', () => {
   it('shows the value the core resolved for each search setting', () => {
     const { wrapper } = createPage('search')
 
-    expect(findRow(wrapper, 'Rerank window').findComponent(NumberField).props('modelValue')).toBe(80)
-    expect(findRow(wrapper, 'Default results').findComponent(NumberField).props('modelValue')).toBe(30)
-    expect(findRow(wrapper, 'Longest query').findComponent(NumberField).props('modelValue')).toBe(8192)
+    expect(findRow(wrapper, 'Rerank window').findComponent(NumberField).props('modelValue')).toBe(
+      80,
+    )
+    expect(findRow(wrapper, 'Default results').findComponent(NumberField).props('modelValue')).toBe(
+      30,
+    )
+    expect(findRow(wrapper, 'Longest query').findComponent(NumberField).props('modelValue')).toBe(
+      8192,
+    )
   })
 
   it('bounds each search setting by the bounds of its declaration', () => {
