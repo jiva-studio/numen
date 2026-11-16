@@ -25,6 +25,7 @@ type Vault struct {
 	vault      domain.Vault
 	isShown    bool
 	files      vaultFiles
+	writes     uint64
 	indexed    map[string]domain.Note
 	feed       feed
 	rejected   map[string]error
@@ -171,12 +172,14 @@ func (v *Vault) Hide() {
 }
 
 // File creates or replaces a file, as another window would, and notifies the index
-// as the watcher would.
+// as the watcher would. The write counts in the version of the vault, as a write of a window does.
 func (v *Vault) File(filePath string, content string) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if _, err := v.files.write(filePath, []byte(content)); err != nil {
 		v.report(fmt.Errorf("write %s: %w", filePath, err))
+	} else {
+		v.writes++
 	}
 	v.rescan(filePath)
 }
@@ -225,7 +228,10 @@ func (v *Vault) StatFile(ctx context.Context, filePath string) (domain.FileStat,
 	if err == nil && isIgnored(filePath) {
 		return domain.FileStat{}, host.ErrNotANote
 	}
-	return at, err
+	if err != nil {
+		return domain.FileStat{}, err
+	}
+	return v.hashed(at)
 }
 
 func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileStat, error) {
@@ -234,6 +240,7 @@ func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileS
 	if err := v.check(ctx, filePath); err != nil {
 		return nil, domain.FileStat{}, err
 	}
+	version := v.writes
 	fp, err := v.files.stat(filePath)
 	if err != nil {
 		return nil, domain.FileStat{}, err
@@ -242,6 +249,7 @@ func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileS
 	if err != nil {
 		return nil, domain.FileStat{}, err
 	}
+	fp.Hash, fp.Version = domain.HashContent(content), version
 	return content, fp, nil
 }
 
@@ -258,10 +266,20 @@ func (v *Vault) Write(ctx context.Context, filePath string, content []byte, base
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	if !baseline.IsZero() && !now.IsUnchanged(baseline) {
+	stale, err := v.isStale(now, baseline)
+	if err != nil {
+		return domain.FileStat{}, err
+	}
+	if stale {
 		return domain.FileStat{}, host.ErrStale
 	}
-	return v.files.write(filePath, content)
+	written, err := v.files.write(filePath, content)
+	if err != nil {
+		return domain.FileStat{}, err
+	}
+	v.writes++
+	written.Hash, written.Version = domain.HashContent(content), v.writes
+	return written, nil
 }
 
 func (v *Vault) Create(ctx context.Context, filePath string, content []byte) error {
@@ -351,4 +369,29 @@ func (v *Vault) report(err error) {
 	if _, writeErr := fmt.Fprintln(os.Stderr, "hosttest:", err); writeErr != nil {
 		return
 	}
+}
+
+// hashed returns the stat with the hash of what the file holds and the version of the vault, as the host
+// answers a stat.
+func (v *Vault) hashed(at domain.FileStat) (domain.FileStat, error) {
+	version := v.writes
+	content, err := v.files.read(at.Path)
+	if err != nil {
+		return domain.FileStat{}, err
+	}
+	at.Hash, at.Version = domain.HashContent(content), version
+	return at, nil
+}
+
+// isStale is the comparison the host makes at a write: a baseline with a hash is compared with the hash of
+// the file now, one without by size and time, and the zero stat expects nothing.
+func (v *Vault) isStale(now, baseline domain.FileStat) (bool, error) {
+	if baseline.Hash == "" {
+		return !baseline.IsZero() && !now.IsUnchanged(baseline), nil
+	}
+	content, err := v.files.read(now.Path)
+	if err != nil {
+		return false, err
+	}
+	return domain.HashContent(content) != baseline.Hash, nil
 }

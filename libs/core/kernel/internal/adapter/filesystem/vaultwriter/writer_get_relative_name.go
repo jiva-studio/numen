@@ -211,8 +211,11 @@ func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.Fi
 		if info.IsDir() {
 			return 0, fmt.Errorf("write %s: it is a directory", path)
 		}
-		if !stat.IsZero() &&
-			(info.Size() != stat.Size || !info.ModTime().Equal(stat.ModTime)) {
+		stale, err := isStale(root, name, info, stat)
+		if err != nil {
+			return 0, err
+		}
+		if stale {
 			return 0, fmt.Errorf("write %s: %w", path, edit.ErrStale)
 		}
 		return info.Mode().Perm(), nil
@@ -254,4 +257,32 @@ func createParents(root *os.Root, dir, path string) error {
 		return fmt.Errorf("make %s: %w", path, vault.ErrAlreadyExists)
 	}
 	return err
+}
+
+// isStale reports whether the file is not what the baseline says. A baseline with a hash is compared
+// with the hash of the content now: size and time miss a change that keeps both. One without is compared
+// by size and time, and the zero stat expects nothing.
+func isStale(root *os.Root, name string, info fs.FileInfo, baseline domain.FileStat) (_ bool, err error) {
+	if baseline.Hash == "" {
+		return !baseline.IsZero() && (info.Size() != baseline.Size || !info.ModTime().Equal(baseline.ModTime)), nil
+	}
+	file, err := root.Open(name)
+	if err != nil {
+		return false, err
+	}
+	defer closeAndJoin(&err, file)
+	hash, err := domain.HashReader(file)
+	if err != nil {
+		return false, err
+	}
+	return hash != baseline.Hash, nil
+}
+
+// GetVersion returns the number of writes the vault has taken since the core started. Writers made
+// without locks to share count apart, so it is zero for them.
+func (w VaultWriters) GetVersion(v domain.Vault) uint64 {
+	if w.Locks == nil {
+		return 0
+	}
+	return w.Locks.getLock(v.Path).version.Load()
 }

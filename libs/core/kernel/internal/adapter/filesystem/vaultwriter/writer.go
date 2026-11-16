@@ -61,7 +61,8 @@ func OpenForWriting(root string, opts vaultconfig.Options) (*VaultWriter, error)
 const newFileMode fs.FileMode = 0o644
 
 // Write replaces a note. A baseline that is not the zero stat must be what the note is now, or the write
-// changes nothing and returns edit.ErrStale.
+// changes nothing and returns edit.ErrStale. A baseline with a hash is compared by the hash of the note on
+// disk, read at the write; one without is compared by size and modification time.
 func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (_ vault.WriteResult, err error) {
 	if ctx.Err() != nil {
 		return vault.WriteResult{}, ctx.Err()
@@ -92,9 +93,9 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	if err != nil {
 		return vault.WriteResult{}, err
 	}
-	w.lock.version++
-	replaced := domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime}
-	return vault.WriteResult{Stat: replaced, Version: w.lock.version}, nil
+	version := w.lock.version.Add(1)
+	replaced := domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime, Hash: written.Hash}
+	return vault.WriteResult{Stat: replaced, Version: version}, nil
 }
 
 func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {

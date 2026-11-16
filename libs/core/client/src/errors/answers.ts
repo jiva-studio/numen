@@ -9,11 +9,21 @@
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import type { ErrorCode } from './errorCode'
 
-/** The two numbers first: a path holds spaces, and everything after them is it. */
+/**
+ * The two numbers first: a path holds spaces, and everything after them is it. The size is followed by
+ * `:<version>:<hash>` where the answer had a hash or a version.
+ */
 export const parseFingerprint = (stat: string) => {
   // Stryker disable next-line StringLiteral: BigInt evaluates empty string and '0' both to 0n.
-  const [size = '0', mtime = '0', ...rest] = stat.split(' ')
-  return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
+  const [head = '0', mtime = '0', ...rest] = stat.split(' ')
+  const [size = '0', version = '0', hash = ''] = head.split(':')
+  return {
+    path: rest.join(' '),
+    size: BigInt(size),
+    mtime: BigInt(mtime),
+    hash,
+    version: BigInt(version),
+  }
 }
 
 /**

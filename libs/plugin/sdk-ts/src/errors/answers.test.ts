@@ -7,7 +7,13 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { getAssetUrl, getBytesQuery, retryWhileBusy, formatFingerprint } from './answers'
+import {
+  getAssetUrl,
+  getBytesQuery,
+  retryWhileBusy,
+  formatFingerprint,
+  parseFingerprint,
+} from './answers'
 
 describe('the file an answer came out of', () => {
   it('arrives back out as the size and modification time it went in with', () => {
@@ -19,6 +25,26 @@ describe('the file an answer came out of', () => {
   // the two numbers and not one field among several.
   it('arrives back out whole where the path holds spaces', () => {
     const stat = { path: 'heat/Maxwell’s demon and the rest.md', size: 7n, mtime: 9n }
+    expect(getBytesQuery(formatFingerprint(stat) as string)).toBe('size=7&mtime=9')
+  })
+
+  it('is the two numbers and the path where the answer read no content', () => {
+    const stat = { path: 'physics/Entropy.md', size: 1234n, mtime: 1_700_000_000n }
+    expect(formatFingerprint(stat)).toBe('1234 1700000000 physics/Entropy.md')
+    expect(formatFingerprint({ ...stat, hash: '', version: 0n })).toBe(
+      '1234 1700000000 physics/Entropy.md',
+    )
+  })
+
+  it('arrives back out with the hash and the version of the vault it carried', () => {
+    const stat = {
+      path: 'heat/Maxwell’s demon.md',
+      size: 7n,
+      mtime: 9n,
+      hash: 'b'.repeat(64),
+      version: 12n,
+    }
+    expect(parseFingerprint(formatFingerprint(stat) as string)).toEqual(stat)
     expect(getBytesQuery(formatFingerprint(stat) as string)).toBe('size=7&mtime=9')
   })
 

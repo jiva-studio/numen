@@ -8,17 +8,43 @@
  */
 import { Code, type ConnectError } from '@connectrpc/connect'
 
-/** The file an answer came out of, as the one string the window carries. */
-export const formatFingerprint = (at?: {
+/**
+ * The file an answer came out of: where it is, how large it was, when it changed and, where the answer
+ * read the content, its hash and the version of the vault.
+ */
+type FileStat = {
   path: string
   size: bigint
   mtime: bigint
-}): string | undefined => at && `${at.size} ${at.mtime} ${at.path}`
+  /** The SHA-256 of the content in lowercase hex; empty where the answer did not read it. */
+  hash?: string
+  /** The number of writes the vault had taken when the answer was made; zero where it does not say. */
+  version?: bigint
+}
 
-const parseFingerprint = (stat: string) => {
+/**
+ * The file an answer came out of, as the one string the window carries. The size is followed by
+ * `:<version>:<hash>` where the answer has a hash or a version, so a string of an answer that has neither
+ * is the two numbers and the path.
+ */
+export const formatFingerprint = (at?: FileStat): string | undefined => {
+  if (!at) return undefined
+  const read = at.hash || at.version ? `:${at.version ?? 0n}:${at.hash ?? ''}` : ''
+  return `${at.size}${read} ${at.mtime} ${at.path}`
+}
+
+/** The two numbers first: a path holds spaces, and everything after them is it. */
+export const parseFingerprint = (stat: string) => {
   // Stryker disable next-line StringLiteral: BigInt evaluates empty string and '0' both to 0n.
-  const [size = '0', mtime = '0', ...rest] = stat.split(' ')
-  return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
+  const [head = '0', mtime = '0', ...rest] = stat.split(' ')
+  const [size = '0', version = '0', hash = ''] = head.split(':')
+  return {
+    path: rest.join(' '),
+    size: BigInt(size),
+    mtime: BigInt(mtime),
+    hash,
+    version: BigInt(version),
+  }
 }
 
 /**

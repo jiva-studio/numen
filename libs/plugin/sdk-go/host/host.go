@@ -96,6 +96,7 @@ type FileRange struct {
 
 // FileReader reads the files of a vault.
 type FileReader interface {
+	// StatFile reads the file to hash it: the stat carries the hash and the version of the vault.
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	// Read returns the file with the file stat it had when it was read.
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
@@ -107,7 +108,11 @@ type FileReader interface {
 
 // FileWriter writes the files of a vault.
 type FileWriter interface {
-	// Write replaces the file if it matches the baseline, and returns ErrStale if it does not.
+	// Write replaces the file if it matches the baseline, and returns ErrStale if it does not. A baseline
+	// with a hash matches a file whose content has that hash; one without matches a file of its size
+	// and modification time. The stat returned carries the hash of the new content and the version of
+	// the vault, which a read or a stat answers too: the version is the number of writes the vault has
+	// taken, so a larger one is the newer.
 	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	// Create makes a file that is not there, else it returns ErrAlreadyExists.
 	Create(ctx context.Context, path string, content []byte) error

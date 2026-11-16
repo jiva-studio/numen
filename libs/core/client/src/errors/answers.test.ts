@@ -12,21 +12,34 @@ import { findErrorCode, isStaleAnswer, parseFingerprint } from './answers'
 const formatFingerprint = (stat: { path: string; size: bigint; mtime: bigint }): string =>
   `${stat.size} ${stat.mtime} ${stat.path}`
 
+const NO_CONTENT = { hash: '', version: 0n }
+
 describe('the file an answer came out of', () => {
   it('arrives back out as it went in', () => {
     const stat = { path: 'physics/Entropy.md', size: 1234n, mtime: 1_700_000_000n }
-    expect(parseFingerprint(formatFingerprint(stat))).toEqual(stat)
+    expect(parseFingerprint(formatFingerprint(stat))).toEqual({ ...stat, ...NO_CONTENT })
+  })
+
+  it('arrives back out with the hash and the version of the vault it carried', () => {
+    const hash = 'a'.repeat(64)
+    expect(parseFingerprint(`1234:7:${hash} 1700000000 physics/Entropy Notes.md`)).toEqual({
+      path: 'physics/Entropy Notes.md',
+      size: 1234n,
+      mtime: 1_700_000_000n,
+      hash,
+      version: 7n,
+    })
   })
 
   // A path is the one part that may hold a space, so it is what is left after
   // the two numbers and not one field among several.
   it('arrives back out whole where the path holds spaces', () => {
     const stat = { path: 'heat/Maxwell’s demon and the rest.md', size: 7n, mtime: 9n }
-    expect(parseFingerprint(formatFingerprint(stat))).toEqual(stat)
+    expect(parseFingerprint(formatFingerprint(stat))).toEqual({ ...stat, ...NO_CONTENT })
   })
 
   it('is nothing at all where there is nothing to read', () => {
-    expect(parseFingerprint('')).toEqual({ path: '', size: 0n, mtime: 0n })
+    expect(parseFingerprint('')).toEqual({ path: '', size: 0n, mtime: 0n, ...NO_CONTENT })
   })
 })
 

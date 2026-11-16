@@ -22,6 +22,13 @@ type FileStat struct {
 	Size    int64
 	ModTime time.Time
 	FileID  FileID
+	// Hash is the SHA-256 of the content in lowercase hex, as HashContent returns it. A walk leaves it
+	// empty. As a baseline, a hash is compared with the content of the file at the write, and without
+	// one the size and the time are.
+	Hash string
+	// Version is the number of writes the vault had taken when a plugin file call made this stat. A
+	// walk and the calls of the editor leave it zero.
+	Version uint64
 }
 
 // FileID is the number a file system assigns to a file, which a rename keeps and a
@@ -39,5 +46,5 @@ func (f FileStat) IsUnchanged(other FileStat) bool {
 // IsZero reports whether this is the zero file stat, which a caller passes when
 // it has no expectation about the file it is about to overwrite.
 func (f FileStat) IsZero() bool {
-	return f.Path == "" && f.Kind == "" && f.Size == 0 && f.ModTime.IsZero()
+	return f.Path == "" && f.Kind == "" && f.Size == 0 && f.ModTime.IsZero() && f.Hash == ""
 }
