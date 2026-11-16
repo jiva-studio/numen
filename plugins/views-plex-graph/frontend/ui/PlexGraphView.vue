@@ -4,7 +4,7 @@
  */
 import { computed } from 'vue'
 import { Menu, LoadingIndicator } from '@numen/ui'
-import { Plex, useTypeSize } from '../plex'
+import { Plex, getInputStrategies, hasTouchPointer, useTypeSize } from '../plex'
 import type { MenuTrigger } from '@numen/ui'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
@@ -27,6 +27,7 @@ const { maxHeadings } = props.state.headings
 const { look } = props.state
 
 const type = useTypeSize()
+const input = getInputStrategies(hasTouchPointer())
 const options = computed(() => getPlexOptions(look, type.value, maxHeadings.value))
 
 const { rootElement, picture, lastPointer, onPointerUp, onContextMenu, onEdgeMenu, closeMenu } =
@@ -122,6 +123,8 @@ function onDismissLinkInspector() {
       :options="options"
       :show-pills="look.showPills.value"
       :highlight-links="look.highlightLinks.value"
+      :reaching="input.reaching"
+      :showing="input.showing"
       :duration="look.animationLength.value"
       :line-width="look.lineThickness.value"
       :outline-width="look.outlineThickness.value"

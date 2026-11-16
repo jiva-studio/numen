@@ -4,9 +4,9 @@
  * on its own, and the clock a box opens on.
  */
 import { EXPANSION_DELAY } from './sizing/expansion'
-import { byHandle, type ReachStrategy } from './interaction/reachStrategy'
-import { byDoubleClick, type ShowStrategy } from './interaction/destination'
-import { browserClock, type Clock } from '@numen/ui'
+import { byHandle, byLongPress, type ReachStrategy } from './interaction/reachStrategy'
+import { byDoubleClick, byDoubleTap, type ShowStrategy } from './interaction/destination'
+import { browserClock, win, type Clock } from '@numen/ui'
 
 export interface PlexBehavior {
   readonly expansionDelay: number
@@ -29,3 +29,11 @@ export const getBehavior = (given: PlexBehavior): PlexBehavior => ({
   showing: given.showing,
   clock: given.clock,
 })
+
+export const hasTouchPointer = (): boolean =>
+  typeof win.matchMedia === 'function' && win.matchMedia('(pointer: coarse)').matches
+
+export const getInputStrategies = (isTouch: boolean): Pick<PlexBehavior, 'reaching' | 'showing'> =>
+  isTouch
+    ? { reaching: byLongPress(), showing: byDoubleTap() }
+    : { reaching: byHandle, showing: byDoubleClick }
