@@ -129,11 +129,11 @@ export const CompletesTheNamesOfTheCatalog: Story = {
     )
     await expect(canvasElement.querySelector('.saved-search')?.contains(list)).toBe(false)
     await expect(within(list).getByText(/Finds notes that carry the tag you give\./)).toBeVisible()
-    await expect(within(list).getByText(/tags\("harbor"\)/)).toBeVisible()
+    await expect(within(list).getByText(/hasTag\("harbor"\)/)).toBeVisible()
     await expect(document.querySelector('.cm-completionInfo')).toBeNull()
 
     await browser.userEvent.click(within(list).getByRole('option'))
-    await waitFor(() => expect(editor).toHaveTextContent('words("gale") && tags'))
+    await waitFor(() => expect(editor).toHaveTextContent('words("gale") && hasTag'))
 
     await browser.userEvent.keyboard('("harbor").r')
     const stages = await waitFor(() => page.getByRole('listbox'))

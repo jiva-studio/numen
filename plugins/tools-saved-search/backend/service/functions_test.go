@@ -38,14 +38,14 @@ func TestListSearchFunctionsReturnsTheCatalogOfTheCore(t *testing.T) {
 		names[i] = function.Name
 	}
 	if !slices.Equal(names, []string{"words", "hasTag", "top"}) {
-		t.Fatalf("names = %v, want words, tags, top", names)
+		t.Fatalf("names = %v, want words, hasTag, top", names)
 	}
 	want := api.SearchFunction{
 		Name: "hasTag", Kind: "function", Summary: "notes with this tag", Description: "Finds notes that carry the tag you give.",
 		Example: `hasTag("garden")`, Signatures: []string{"hasTag(name)"},
 	}
 	if got := res.Functions[1]; !reflect.DeepEqual(got, want) {
-		t.Errorf("tags = %+v, want %+v", got, want)
+		t.Errorf("hasTag = %+v, want %+v", got, want)
 	}
 }
 

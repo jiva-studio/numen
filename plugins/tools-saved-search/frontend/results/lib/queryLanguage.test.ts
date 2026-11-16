@@ -20,7 +20,7 @@ const CATALOG: readonly QueryFunction[] = [
     example: 'words("seed tray")',
   },
   {
-    name: 'tags',
+    name: 'hasTag',
     kind: 'function',
     summary: 'notes with this tag',
     description: 'Finds notes that carry the tag you give.',
@@ -78,7 +78,7 @@ describe('createQueryCompletion', () => {
     const result = complete('wo')
 
     expect(result?.from).toBe(0)
-    expect(result?.options.map((option) => option.label)).toStrictEqual(['words', 'tags', 'path'])
+    expect(result?.options.map((option) => option.label)).toStrictEqual(['words', 'hasTag', 'path'])
     expect(result?.options[0]).toMatchObject({
       label: 'words',
       detail: 'passages with these words',
