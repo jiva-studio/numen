@@ -37,7 +37,6 @@ const getEditor = (): EditorView => {
 const isWrapped = (view: EditorView) => view.contentDOM.classList.contains('cm-lineWrapping')
 const hasNumbers = (view: EditorView) => view.dom.querySelector('.cm-lineNumbers') !== null
 
-/** Opens the editor of a note tab, the component the plugin registers as a reader and a tab kind. */
 const openTab = async () => {
   wrapper = mount(MarkdownNoteEditor, {
     props: { modelValue: 'hello', filePath: 'test.md' },

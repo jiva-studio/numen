@@ -18,7 +18,7 @@ const MANIFEST = (permissions: readonly string[]) => ({
 const WRAPPED: EditorSettings = { lineNumbers: false, softWrap: true }
 
 describe('the editor settings of a plugin context', () => {
-  it('are the editor settings of the host, with no permission asked', () => {
+  it('return the editor settings of the host to a plugin that has no permission', () => {
     const host = createTestContextHost({ settings: { getEditorSettings: () => WRAPPED } })
 
     const context = createPluginParts('md.numen.sample', host, MANIFEST([]))

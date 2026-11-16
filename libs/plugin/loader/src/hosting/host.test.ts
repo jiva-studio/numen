@@ -379,8 +379,10 @@ describe('createPluginHost', () => {
     const held: { value: { lineNumbers: boolean; softWrap: boolean } | undefined } = {
       value: undefined,
     }
-    const handlers: ((settings: { lineNumbers: boolean; softWrap: boolean }) => void | Promise<void>)[] =
-      []
+    const handlers: ((settings: {
+      lineNumbers: boolean
+      softWrap: boolean
+    }) => void | Promise<void>)[] = []
     const unsubscribe = vi.fn()
     const deps: TestHostDeps = {
       ...baseDeps,

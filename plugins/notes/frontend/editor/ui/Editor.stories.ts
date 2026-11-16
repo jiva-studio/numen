@@ -859,7 +859,6 @@ export const CompletionOpen: Story = {
 
 const SHORT_LINES = 'A bell over the door.\nSeeds and spades.\nA lamp on the shelf.\n'
 
-/** The centre of the text a node draws, as far down the page as the box of its glyphs. */
 const getTextCentre = (element: Element): number => {
   const range = document.createRange()
   range.selectNodeContents(element)
