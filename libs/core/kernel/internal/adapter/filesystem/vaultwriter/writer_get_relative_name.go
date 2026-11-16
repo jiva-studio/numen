@@ -85,7 +85,14 @@ type VaultWriters struct {
 }
 
 func (w VaultWriters) Open(v domain.Vault) (*VaultWriter, error) {
-	return OpenForWriting(v.Path, w.Options)
+	opened, err := OpenForWriting(v.Path, w.Options)
+	if err != nil {
+		return nil, err
+	}
+	if w.Locks != nil {
+		opened.lock = w.Locks.getLock(opened.root)
+	}
+	return opened, nil
 }
 
 func (w VaultWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {

@@ -27,6 +27,7 @@ type VaultWriter struct {
 	root    string
 	opts    vaultconfig.Options
 	ignored *vaultconfig.Ignoring
+	lock    *vaultLock
 }
 
 // OpenForWriting prepares a vault to be changed. The folder must already be
@@ -52,13 +53,16 @@ func OpenForWriting(root string, opts vaultconfig.Options) (*VaultWriter, error)
 	if cfg, err := vaultconfig.ReadConfig(abs, opts.ServiceDir); err == nil && len(cfg.Ignore) > 0 {
 		opts.Ignore = cfg.Ignore
 	}
-	return &VaultWriter{root: abs, opts: opts, ignored: opts.CompileIgnoring()}, nil
+	return &VaultWriter{root: abs, opts: opts, ignored: opts.CompileIgnoring(), lock: newVaultLock()}, nil
 }
 
 // newFileMode is the mode of a created note. An existing note keeps its mode,
 // which may be read-only.
 const newFileMode fs.FileMode = 0o644
 
+// Write replaces a note and returns its file stat. A baseline that is not the zero stat must be what the
+// note is now, or the write changes nothing and returns edit.ErrStale. Version of the result is the number
+// of writes the vault has taken, this one included.
 func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (_ domain.FileStat, err error) {
 	if ctx.Err() != nil {
 		return domain.FileStat{}, ctx.Err()
@@ -73,6 +77,10 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	}
 	defer closeAndJoin(&err, root)
 
+	// The baseline is compared and the file replaced under one lock: with two locks, two writers with one
+	// baseline both pass the comparison.
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	mode, err := getWriteMode(root, name, path, stat)
 	if err != nil {
 		return domain.FileStat{}, err
@@ -85,7 +93,8 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	return domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime}, nil
+	w.lock.version++
+	return domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime, Version: w.lock.version}, nil
 }
 
 func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
