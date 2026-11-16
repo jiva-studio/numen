@@ -19,12 +19,12 @@ func readFileWith(t *testing.T, body string) settings.File {
 }
 
 // Every setting the shell declares is read from the file into force, not only the ones whose
-// section the document has a field for.
+// section the document has a field for. The editor settings have no field: the core holds no value
+// of them, so their defaults are in force.
 func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 	file := readFileWith(t, `{"app":{
 		"appearance":{"theme":"mine:sea","mode":"dark","interfaceScale":1.25,"textScale":1.5},
 		"naming":{"syncTitleAndFilename":false},
-		"editor":{"fontSize":20,"fontFamily":"serif","lineHeight":1.8,"lineNumbers":true,"softWrap":false},
 		"performance":{"profile":"eco"},
 		"search":{"rerankWindow":70,"maxReranked":200,"maxRerankedBytes":2048,"defaultLimit":30,"maxLimit":90,
 			"candidatesPerCondition":250,"maxCandidates":900,"maxPathPrefixes":4,"mergeGapBytes":100,"maxQueryBytes":8192}}}`)
@@ -34,11 +34,11 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"appearance.interfaceScale":     1.25,
 		"appearance.textScale":          1.5,
 		"naming.syncTitleAndFilename":   false,
-		"editor.fontSize":               20.0,
-		"editor.fontFamily":             "serif",
-		"editor.lineHeight":             1.8,
-		"editor.lineNumbers":            true,
-		"editor.softWrap":               false,
+		"editor.fontSize":               14.0,
+		"editor.fontFamily":             "",
+		"editor.lineHeight":             1.6,
+		"editor.lineNumbers":            false,
+		"editor.softWrap":               true,
 		"performance.profile":           "eco",
 		"search.rerankWindow":           70.0,
 		"search.maxReranked":            200.0,
