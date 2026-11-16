@@ -1,18 +1,22 @@
 <script setup lang="ts">
-/** The tags of a note under its node in the plex, each as a chip with its name. */
+/** The tags of a note under its node in the plex: the first four as chips with their names and the count of the rest. */
 import { computed } from 'vue'
 import { getTagColor } from '../../lib/color'
+import { getRestText } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ tags: readonly string[] }>()
 
 /* --------------------------------- State ---------------------------------- */
+const CHIP_LIMIT = 4
+
 const chips = computed(() =>
-  props.tags.map((tag) => ({
+  props.tags.slice(0, CHIP_LIMIT).map((tag) => ({
     tag,
     style: { '--tag': `var(--numen-tag-${getTagColor(tag)})` },
   })),
 )
+const rest = computed(() => props.tags.length - CHIP_LIMIT)
 </script>
 
 <template>
@@ -26,6 +30,9 @@ const chips = computed(() =>
     >
       {{ chip.tag }}
     </span>
+    <span v-if="rest > 0" class="plex-tags__chip plex-tags__chip--more" data-plex-tag-more>{{
+      getRestText(rest)
+    }}</span>
   </span>
 </template>
 
@@ -33,7 +40,10 @@ const chips = computed(() =>
 .plex-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: var(--numen-node-gap);
+  max-inline-size: 100%;
+  margin-block-start: var(--numen-node-gap);
   font-size: var(--numen-text-1);
   line-height: 1.2;
 }
@@ -42,17 +52,28 @@ const chips = computed(() =>
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+  max-inline-size: 100%;
   padding: 0.0625rem 0.375rem;
   border-radius: var(--numen-radius-pill);
   background: color-mix(in srgb, var(--tag) 18%, transparent);
   color: var(--numen-ink);
+  overflow-wrap: anywhere;
 }
 
 .plex-tags__chip::before {
   content: '';
+  flex: none;
   inline-size: 0.5rem;
   block-size: 0.5rem;
   border-radius: 50%;
   background: var(--tag);
+}
+
+.plex-tags__chip--more {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.plex-tags__chip--more::before {
+  content: none;
 }
 </style>
