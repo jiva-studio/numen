@@ -275,14 +275,13 @@ export interface PluginVault {
   readonly vaults?: VaultsHost
 }
 
-// PluginUi is the window a plugin draws in.
+// PluginUi is the window a plugin draws in. The picker is left out where the window offers no list to pick from.
 export interface PluginUi {
   readonly workspace?: WorkspaceHost
   readonly window?: WindowHost
   readonly commands?: CommandsHost
   readonly slots: SlotHost
   readonly notices: NoticeHost
-  // Left out where the window offers no list to pick from.
   readonly picker?: PickerHost
   readonly drops?: DropHost
   // Draws the view a plugin declares for `capability` into `element`, passed `context`. While no

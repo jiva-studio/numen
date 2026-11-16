@@ -1,6 +1,6 @@
 import type { ListItemState } from '@numen/ui'
 
-export interface PaletteMultiItem {
+interface PaletteMultiItem {
   readonly id: string
   readonly title: string
   readonly state: ListItemState
