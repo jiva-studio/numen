@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/jiva-studio/numen/libs/atomicfile"
@@ -30,6 +31,13 @@ type Setting struct {
 // written with only the named fields. A file that does not parse, or a result
 // that cannot be read back into `into`, is not written.
 func (f *Files) Save(path string, into Document, settings ...Setting) error {
+	_, err := f.SaveVersioned(path, into, settings...)
+	return err
+}
+
+// SaveVersioned saves like Save and answers the version this save made, taken
+// under the same hold of the lock. into holds the file as it was written.
+func (f *Files) SaveVersioned(path string, into Document, settings ...Setting) (uint64, error) {
 	return f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if errors.Is(err, fs.ErrNotExist) {
@@ -307,7 +315,8 @@ func resolvePath(path string) string {
 // file keeps the writers of other processes apart too. Every writer of one file shares
 // one Files.
 type Files struct {
-	mu sync.Mutex
+	mu      sync.Mutex
+	version atomic.Uint64
 }
 
 // ErrNoFiles is returned by a settings read or write that was given no Files.
@@ -316,17 +325,25 @@ var ErrNoFiles = errors.New("settings: no Files value was given")
 // NewFiles returns the access to settings files that one composition root holds.
 func NewFiles() *Files { return &Files{} }
 
-func (f *Files) run(path string, work func(path string) error) error {
+func (f *Files) run(path string, work func(path string) error) (uint64, error) {
 	if f == nil {
-		return ErrNoFiles
+		return 0, ErrNoFiles
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	resolved := resolvePath(path)
 	if err := os.MkdirAll(filepath.Dir(resolved), 0o755); err != nil {
-		return err
+		return 0, err
 	}
-	return withLock(resolved, func() error { return work(resolved) })
+	var version uint64
+	err := withLock(resolved, func() error {
+		if err := work(resolved); err != nil {
+			return err
+		}
+		version = f.version.Add(1)
+		return nil
+	})
+	return version, err
 }
 
 func splice(raw []byte, from, to int, with []byte) []byte {
@@ -342,4 +359,13 @@ func writeFileAtomically(path string, content []byte) error {
 
 func isUnwritable(err error) bool {
 	return errors.Is(err, fs.ErrPermission) || errors.Is(err, syscall.EROFS)
+}
+
+// GetVersion returns how many writes this Files has finished. A read that takes the version before it
+// reads the file holds a state at least as new as the version says.
+func (f *Files) GetVersion() uint64 {
+	if f == nil {
+		return 0
+	}
+	return f.version.Load()
 }

@@ -79,7 +79,10 @@ type GetSettingsResponse struct {
 	Plugins []*PluginInfo `protobuf:"bytes,7,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	// The settings of the owner app, declared by the core in the format of a manifest setting. The
 	// window reads their defaults, bounds and options from here.
-	App           []*PluginSetting `protobuf:"bytes,8,rep,name=app,proto3" json:"app,omitempty"`
+	App []*PluginSetting `protobuf:"bytes,8,rep,name=app,proto3" json:"app,omitempty"`
+	// The version of the state `written` is read from. It grows with every write the core takes, so
+	// an answer with a smaller version than one already taken is older than it and is dropped.
+	Version       uint64 `protobuf:"varint,10,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -140,6 +143,13 @@ func (x *GetSettingsResponse) GetApp() []*PluginSetting {
 		return x.App
 	}
 	return nil
+}
+
+func (x *GetSettingsResponse) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
 }
 
 // Setting is one setting of the file and what to put there.
@@ -326,7 +336,12 @@ func (x *WriteSettingsRequest) GetSettings() []*Setting {
 }
 
 type WriteSettingsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Every setting after the write, in the shape of GetSettingsResponse.written.
+	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
+	// The version of the state `written` stands for, as in GetSettingsResponse.version. It is greater
+	// than the version of any answer the core gave before the write.
+	Version       uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -359,6 +374,20 @@ func (x *WriteSettingsResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use WriteSettingsResponse.ProtoReflect.Descriptor instead.
 func (*WriteSettingsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *WriteSettingsResponse) GetWritten() string {
+	if x != nil {
+		return x.Written
+	}
+	return ""
+}
+
+func (x *WriteSettingsResponse) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
 }
 
 type RetryPluginRequest struct {
@@ -921,12 +950,14 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\xa4\x01\n" +
+	"\x12GetSettingsRequest\"\xbe\x01\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12.\n" +
 	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\x12)\n" +
-	"\x03app\x18\b \x03(\v2\x17.numen.v1.PluginSettingR\x03appJ\x04\b\t\x10\n" +
+	"\x03app\x18\b \x03(\v2\x17.numen.v1.PluginSettingR\x03app\x12\x18\n" +
+	"\aversion\x18\n" +
+	" \x01(\x04R\aversionJ\x04\b\t\x10\n" +
 	"\"/\n" +
 	"\aSetting\x12\x0e\n" +
 	"\x02at\x18\x01 \x03(\tR\x02at\x12\x14\n" +
@@ -935,8 +966,10 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x15WatchSettingsResponse\x12+\n" +
 	"\achanged\x18\x01 \x03(\v2\x11.numen.v1.SettingR\achanged\"E\n" +
 	"\x14WriteSettingsRequest\x12-\n" +
-	"\bsettings\x18\x01 \x03(\v2\x11.numen.v1.SettingR\bsettings\"\x17\n" +
-	"\x15WriteSettingsResponse\"1\n" +
+	"\bsettings\x18\x01 \x03(\v2\x11.numen.v1.SettingR\bsettings\"K\n" +
+	"\x15WriteSettingsResponse\x12\x18\n" +
+	"\awritten\x18\x01 \x01(\tR\awritten\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\x04R\aversion\"1\n" +
 	"\x12RetryPluginRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\"/\n" +
 	"\x13RetryPluginResponse\x12\x18\n" +
