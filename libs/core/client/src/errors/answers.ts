@@ -10,8 +10,8 @@ import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import type { ErrorCode } from './errorCode'
 
 /**
- * The two numbers first: a path holds spaces, and everything after them is it. The size is followed by
- * `:<version>:<hash>` where the answer had a hash or a version.
+ * The two first parts are the file as `<size>:<version>:<hash> <mtime>`: a path holds spaces, and everything
+ * after them is it.
  */
 export const parseFingerprint = (stat: string) => {
   // Stryker disable next-line StringLiteral: BigInt evaluates empty string and '0' both to 0n.

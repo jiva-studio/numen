@@ -28,12 +28,9 @@ describe('the file an answer came out of', () => {
     expect(getBytesQuery(formatFingerprint(stat) as string)).toBe('size=7&mtime=9')
   })
 
-  it('is the two numbers and the path where the answer read no content', () => {
+  it('has an empty hash and version 0 where the answer read no content', () => {
     const stat = { path: 'physics/Entropy.md', size: 1234n, mtime: 1_700_000_000n }
-    expect(formatFingerprint(stat)).toBe('1234 1700000000 physics/Entropy.md')
-    expect(formatFingerprint({ ...stat, hash: '', version: 0n })).toBe(
-      '1234 1700000000 physics/Entropy.md',
-    )
+    expect(formatFingerprint(stat)).toBe('1234:0: 1700000000 physics/Entropy.md')
   })
 
   it('arrives back out with the hash and the version of the vault it carried', () => {

@@ -23,14 +23,13 @@ type FileStat = {
 }
 
 /**
- * The file an answer came out of, as the one string the window carries. The size is followed by
- * `:<version>:<hash>` where the answer has a hash or a version, so a string of an answer that has neither
- * is the two numbers and the path.
+ * The file an answer came out of, as the one string the window carries: `<size>:<version>:<hash>
+ * <mtime> <path>`. The hash is empty where the answer read no content and the version is 0 where it
+ * does not say.
  */
 export const formatFingerprint = (at?: FileStat): string | undefined => {
   if (!at) return undefined
-  const read = at.hash || at.version ? `:${at.version ?? 0n}:${at.hash ?? ''}` : ''
-  return `${at.size}${read} ${at.mtime} ${at.path}`
+  return `${at.size}:${at.version ?? 0n}:${at.hash ?? ''} ${at.mtime} ${at.path}`
 }
 
 /** The two numbers first: a path holds spaces, and everything after them is it. */

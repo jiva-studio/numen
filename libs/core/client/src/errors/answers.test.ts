@@ -10,7 +10,7 @@ import { NOTE_ERROR_CODE } from '../clients'
 import { findErrorCode, isStaleAnswer, parseFingerprint } from './answers'
 
 const formatFingerprint = (stat: { path: string; size: bigint; mtime: bigint }): string =>
-  `${stat.size} ${stat.mtime} ${stat.path}`
+  `${stat.size}:0: ${stat.mtime} ${stat.path}`
 
 const NO_CONTENT = { hash: '', version: 0n }
 
