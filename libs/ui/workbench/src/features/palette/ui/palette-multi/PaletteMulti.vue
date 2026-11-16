@@ -31,24 +31,24 @@ const items = computed<readonly ListItem[]>(() =>
 <template>
   <PaletteFrame :name="name" :to="to">
     <div ref="holder" class="palette__multi">
-    <p class="palette__multi-title caps-numen text-small text-hushed" data-palette="title">
-      {{ multi.title }}
-    </p>
-    <SearchableList
-      multiple
-      has-action
-      :items="items"
-      :recent="multi.recent"
-      :label="multi.title"
-      :placeholder="multi.placeholder"
-      :input-attrs="{ 'data-palette': 'field' }"
-      :from="holder"
-      @toggle="$emit('toggle', $event)"
-      @act="$emit('create', $event)"
-      @close="$emit('dismiss')"
-    >
-      <template #action="{ query }">{{ multi.getCreateTitle(query) }}</template>
-    </SearchableList>
+      <p class="palette__multi-title caps-numen text-small text-hushed" data-palette="title">
+        {{ multi.title }}
+      </p>
+      <SearchableList
+        multiple
+        has-action
+        :items="items"
+        :recent="multi.recent"
+        :label="multi.title"
+        :placeholder="multi.placeholder"
+        :input-attrs="{ 'data-palette': 'field' }"
+        :from="holder"
+        @toggle="$emit('toggle', $event)"
+        @act="$emit('create', $event)"
+        @close="$emit('dismiss')"
+      >
+        <template #action="{ query }">{{ multi.getCreateTitle(query) }}</template>
+      </SearchableList>
     </div>
   </PaletteFrame>
 </template>

@@ -8,6 +8,7 @@ import {
   createPluginTasks,
   type HostKinds,
   type HostTabs,
+  type PickerHost,
   type PluginHostDeps,
   type ProcessHost,
 } from '@numen/plugin-loader'
@@ -122,6 +123,11 @@ export function createTaskServiceParts(deps: {
       getConnections: (pluginId) => deps.api.getPluginConnections(pluginId, subscribeRowChanges),
     },
   }
+}
+
+/** The list of items with check marks a plugin opens, drawn by the window. */
+export function createPickerParts(deps: { readonly picker: PickerHost }): HostParts {
+  return { window: { getPicker: () => deps.picker } }
 }
 
 /** The notices a plugin raises, held per plugin by the queue of the window. */

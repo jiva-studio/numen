@@ -80,8 +80,7 @@ const createServices = () => {
       getWorkspace: () => workspace,
       getCommands: () => commands,
       commandAccess: {
-        isListed: (command) =>
-          LISTED_COMMANDS.includes(command) || command in COMMAND_PERMISSIONS,
+        isListed: (command) => LISTED_COMMANDS.includes(command) || command in COMMAND_PERMISSIONS,
         getPermission: (command) => COMMAND_PERMISSIONS[command],
       },
     },

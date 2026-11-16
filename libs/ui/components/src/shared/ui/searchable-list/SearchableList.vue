@@ -134,7 +134,6 @@ function onChoose(key: string): void {
     }
   }
 }
-
 </script>
 
 <template>
