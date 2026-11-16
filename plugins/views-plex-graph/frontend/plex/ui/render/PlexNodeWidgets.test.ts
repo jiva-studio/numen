@@ -87,7 +87,7 @@ describe('the widgets of a side of a node', () => {
     expect(widgets.find('foreignObject').exists()).toBe(false)
     expect(widgets.find('[data-widget]').exists()).toBe(false)
   })
-  it('are held by one element that is given to be measured', () => {
+  it('share one element for measuring', () => {
     const widgets = mountWidgets({ entries: entries('parents', 'tags') })
 
     const [group] = widgets.emitted('widgets')?.at(-1) ?? []
