@@ -385,14 +385,14 @@ func listTestSupportImports(tests []testFile, names map[string]string, imports m
 		}
 	}
 	var imported []string
-	seen := map[string]bool{}
+	visited := map[string]bool{}
 	for len(queue) > 0 {
 		pkgPath := queue[0]
 		queue = queue[1:]
-		if _, ok := names[pkgPath]; !ok || seen[pkgPath] || !isTestSupport(pkgPath) {
+		if _, ok := names[pkgPath]; !ok || visited[pkgPath] || !isTestSupport(pkgPath) {
 			continue
 		}
-		seen[pkgPath] = true
+		visited[pkgPath] = true
 		imported = append(imported, pkgPath)
 		queue = append(queue, imports[pkgPath]...)
 	}
