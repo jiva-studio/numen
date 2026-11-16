@@ -32,15 +32,11 @@ func (e *arrangeCalls) WriteFrontmatter(
 	if vault == nil {
 		return connect.NewResponse(&v1.WriteFrontmatterResponse{Error: noVault}), nil
 	}
-	writes := make([]plugin.FrontmatterWrite, len(req.Msg.GetNotes()))
-	for i, one := range req.Msg.GetNotes() {
-		values, err := readValues(one.GetValues())
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("values of %s: %w", one.GetPath(), err))
-		}
-		writes[i] = plugin.FrontmatterWrite{Path: one.GetPath(), Baseline: readFileStat(one.GetBaseline()), Values: values}
+	writes, err := readFrontmatterWrites(req.Msg.GetNotes())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	written, err := vault.Arranger.WriteFrontmatter(ctx, writes)
+	written, err := vault.LinkEditor.WriteFrontmatter(ctx, writes)
 	if err != nil {
 		_, code, callErr := splitNoteError(ctx, err)
 		if callErr == nil && code == 0 {
@@ -48,21 +44,41 @@ func (e *arrangeCalls) WriteFrontmatter(
 		}
 		return connect.NewResponse(&v1.WriteFrontmatterResponse{Error: code}), callErr
 	}
-	out := &v1.WriteFrontmatterResponse{Results: make([]*v1.NoteFrontmatterWritten, len(written))}
+	results, code, err := writeFrontmatterResults(ctx, written)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.WriteFrontmatterResponse{Error: code}), err
+	}
+	return connect.NewResponse(&v1.WriteFrontmatterResponse{Results: results}), nil
+}
+
+func readFrontmatterWrites(notes []*v1.NoteFrontmatterWrite) ([]plugin.FrontmatterWrite, error) {
+	writes := make([]plugin.FrontmatterWrite, len(notes))
+	for i, one := range notes {
+		values, err := readValues(one.GetValues())
+		if err != nil {
+			return nil, fmt.Errorf("values of %s: %w", one.GetPath(), err)
+		}
+		writes[i] = plugin.FrontmatterWrite{Path: one.GetPath(), Baseline: readFileStat(one.GetBaseline()), Values: values}
+	}
+	return writes, nil
+}
+
+func writeFrontmatterResults(ctx context.Context, written []plugin.FrontmatterWritten) ([]*v1.NoteFrontmatterWritten, v1.HostVaultErrorCode, error) {
+	results := make([]*v1.NoteFrontmatterWritten, len(written))
 	// The results already hold the cancellation of ctx: the notes not written are ErrNotAttempted.
 	resultCtx := context.WithoutCancel(ctx)
 	for i, one := range written {
 		if errors.Is(one.Err, plugin.ErrNotAttempted) {
-			out.Results[i] = &v1.NoteFrontmatterWritten{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED, Detail: one.Err.Error()}
+			results[i] = &v1.NoteFrontmatterWritten{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED, Detail: one.Err.Error()}
 			continue
 		}
-		entry, code, callErr := writeLinkEdit(resultCtx, one.Stat, one.Err)
-		if callErr != nil || code != 0 {
-			return connect.NewResponse(&v1.WriteFrontmatterResponse{Error: code}), callErr
+		entry, code, err := writeLinkEdit(resultCtx, one.Stat, one.Err)
+		if err != nil || code != 0 {
+			return nil, code, err
 		}
-		out.Results[i] = &v1.NoteFrontmatterWritten{Stat: entry.stat, Error: entry.code, Detail: entry.detail}
+		results[i] = &v1.NoteFrontmatterWritten{Stat: entry.stat, Error: entry.code, Detail: entry.detail}
 	}
-	return connect.NewResponse(out), nil
+	return results, 0, nil
 }
 
 func readValues(raw []byte) (map[string]any, error) {
