@@ -1,1 +1,1 @@
-export { createFileTags } from './model/createFileTags'
+export { createFileTags } from './ui/createFileTags'
