@@ -105,3 +105,33 @@ func TestTheManifestOffersSetTagsInThePlexGroupOfThePlexNodeMenu(t *testing.T) {
 		t.Errorf("plexGraph.context entry = %+v (found %v), want group 3-plex, order 50, with no condition", got, ok)
 	}
 }
+
+func TestTheManifestPlacesTheTagDotsInTheRowsOfTheFileTree(t *testing.T) {
+	var shape struct {
+		Frontend *json.RawMessage `json:"frontend"`
+		Services []string         `json:"services"`
+		Contrib  struct {
+			Slots []struct {
+				Slot string `json:"slot"`
+				View string `json:"view"`
+			} `json:"slots"`
+		} `json:"contributes"`
+	}
+	if err := json.Unmarshal(Manifest, &shape); err != nil {
+		t.Fatal(err)
+	}
+
+	if shape.Frontend == nil {
+		t.Error("the manifest declares no frontend")
+	}
+	if !slices.Equal(shape.Services, []string{"md.numen.tools.taxonomy"}) {
+		t.Errorf("services = %v, want [md.numen.tools.taxonomy]", shape.Services)
+	}
+	var placed []string
+	for _, one := range shape.Contrib.Slots {
+		placed = append(placed, one.Slot+" "+one.View)
+	}
+	if !slices.Contains(placed, "fileTree.rowEnd fileTags") {
+		t.Errorf("slots = %v, want the view fileTags in fileTree.rowEnd", placed)
+	}
+}

@@ -1,4 +1,5 @@
-import { When } from '../support/bdd.js'
+import type { DataTable } from 'playwright-bdd'
+import { Then, When } from '../support/bdd.js'
 
 When('the person opens the folder at {string}', async ({ person }, folder: string) => {
   await person.fileTree.open('folder', folder)
@@ -14,3 +15,7 @@ When(
     await person.fileTree.runCommandOn(label, entry, entryPath)
   },
 )
+
+Then('the file tree shows the following files:', async ({ person }, files: DataTable) => {
+  await person.fileTree.expectShowsFiles(files.raw())
+})

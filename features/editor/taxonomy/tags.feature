@@ -68,3 +68,15 @@ Feature: Tags
         | note | tag  |
         | Pier | Port |
         | Pier | Sea  |
+
+  Rule: The file tree and the plex show the tags of a note
+
+    Scenario: The file tree shows the tags of its files
+      Then the file tree shows the following files:
+        | file          | tag  |
+        | notes/Quay.md | Port |
+        | notes/Quay.md | Sea  |
+        | notes/Dock.md | Port |
+        | notes/Dock.md | Sea  |
+        | notes/Dock.md | Quay |
+        | notes/Pier.md |      |
