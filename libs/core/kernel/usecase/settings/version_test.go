@@ -25,7 +25,7 @@ func openFileSettings(t *testing.T) fileSettings {
 	check := settings.NewCheckSettings(jsonCodec{}, declare([]string{"app", "appearance", "mode"}), nil, none.PluginSettings{})
 	return fileSettings{
 		get:   settings.NewGet(store.ReadJSON, nil, nil),
-		write: settings.NewWriteSettings(check, store, refreshRecorder{new([]string)}),
+		write: settings.NewWriteSettings(check, store, noRefresh{}),
 	}
 }
 
@@ -180,3 +180,8 @@ func TestRacingWritesAnswerTheirOwnState(t *testing.T) {
 		}
 	}
 }
+
+// noRefresh is a refresher that keeps nothing, so writes on several goroutines share no state through it.
+type noRefresh struct{}
+
+func (noRefresh) Refresh() {}
