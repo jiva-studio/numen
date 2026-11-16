@@ -1,6 +1,16 @@
-import { defineComponent } from 'vue'
-import type { TagMap } from '../../model/createTagMap'
+import { defineComponent, h } from 'vue'
+import FileTags from '../ui/FileTags.vue'
 
-export function createFileTags(_tagMap: Pick<TagMap, 'getTags'>) {
-  return defineComponent({ name: 'FileTagsView', props: { path: { type: String, required: true } }, setup: () => () => null })
+/** Where the tags of a path come from. */
+export interface TagSource {
+  getTags(path: string): readonly string[]
+}
+
+/** The view of the slot fileTree.rowEnd: the tag dots of the path of its row. */
+export function createFileTags(tagMap: TagSource) {
+  return defineComponent({
+    name: 'FileTagsView',
+    props: { path: { type: String, required: true } },
+    setup: (props) => () => h(FileTags, { tags: tagMap.getTags(props.path) }),
+  })
 }
