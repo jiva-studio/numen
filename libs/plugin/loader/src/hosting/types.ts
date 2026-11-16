@@ -354,8 +354,10 @@ export interface ContextUiHost {
   readonly openExternal: (url: string) => Promise<void>
   readonly getWorkspace: () => WorkspaceHost | undefined
   readonly getCommands: () => CommandsHost | undefined
-  readonly isCommandListed: (command: string) => boolean
-  readonly getCommandPermission?: (command: string) => string | undefined
+  readonly commandAccess: {
+    readonly isListed: (command: string) => boolean
+    readonly getPermission?: (command: string) => string | undefined
+  }
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
   readonly getPicker: () => PickerHost | undefined

@@ -18,6 +18,7 @@ import { useOutsidePress } from '../menu'
 import SearchableListRows from './SearchableListRows.vue'
 import type { SearchableListProps, SearchableListSlots } from './SearchableList.types'
 import { LIST_CONTEXT } from './context'
+import { readListKey, type ListKey } from './listKeys'
 import { useListFocus } from './useListFocus'
 import { useListRows } from './useListRows'
 
@@ -102,23 +103,22 @@ watch(model, (next) => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onKey(event: KeyboardEvent): void {
-  if (event.key === 'Escape') {
-    event.stopPropagation()
-    event.preventDefault()
-    emit('close')
-  } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-    event.preventDefault()
-    moveBy(event.key === 'ArrowDown' ? 1 : -1)
-  } else if (event.key === 'Home' || event.key === 'End') {
-    // The caret goes to the ends of what is written; with nothing written the rows do.
-    if (query.value !== '') return
-    event.preventDefault()
-    moveToEnd(event.key === 'Home')
-  } else if (event.key === 'Enter' || (props.multiple && isActionKey(event))) {
-    event.preventDefault()
-    const row = rows.value[activeIndex.value]
-    if (row) onChoose(row.key)
+  const key = readListKey(event, { isMultiple: props.multiple, isQueryEmpty: query.value === '' })
+  if (!key) return
+  if (key === 'close') event.stopPropagation()
+  event.preventDefault()
+  const actions: Record<ListKey, () => void> = {
+    close: () => emit('close'),
+    next: () => moveBy(1),
+    previous: () => moveBy(-1),
+    first: () => moveToEnd(true),
+    last: () => moveToEnd(false),
+    choose: () => {
+      const row = rows.value[activeIndex.value]
+      if (row) onChoose(row.key)
+    },
   }
+  actions[key]()
 }
 
 function onChoose(key: string): void {
@@ -135,9 +135,6 @@ function onChoose(key: string): void {
   }
 }
 
-function isActionKey(event: KeyboardEvent): boolean {
-  return (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k'
-}
 </script>
 
 <template>

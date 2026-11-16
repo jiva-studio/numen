@@ -134,8 +134,8 @@ function createUi(
       commands &&
       limitCommands(commands, {
         pluginId,
-        isListed: (one) => ui.isCommandListed(one),
-        getPermission: (one) => ui.getCommandPermission?.(one),
+        isListed: (one) => ui.commandAccess.isListed(one),
+        getPermission: (one) => ui.commandAccess.getPermission?.(one),
         checkPermission: check,
       }),
     drops: views.drops,

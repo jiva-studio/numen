@@ -79,9 +79,11 @@ const createServices = () => {
     ui: {
       getWorkspace: () => workspace,
       getCommands: () => commands,
-      isCommandListed: (command) =>
-        LISTED_COMMANDS.includes(command) || command in COMMAND_PERMISSIONS,
-      getCommandPermission: (command) => COMMAND_PERMISSIONS[command],
+      commandAccess: {
+        isListed: (command) =>
+          LISTED_COMMANDS.includes(command) || command in COMMAND_PERMISSIONS,
+        getPermission: (command) => COMMAND_PERMISSIONS[command],
+      },
     },
   })
   return { host, workspace, notes, relations, files, buffers, commands }

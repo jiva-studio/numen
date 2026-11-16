@@ -4,11 +4,11 @@
  * under its name. Rows that are checked are one line each, under no group name, and only
  * those in sight are drawn.
  */
-import { computed, onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { measureElementRect } from '@/shared/api/dom'
-import { useVirtualTree } from '@/shared/model/virtual'
 import SearchableListOption from './SearchableListOption.vue'
 import { getHeadings, type ListRow } from './rows'
+import { useRowWindow } from './useRowWindow'
 
 const props = defineProps<{
   rows: readonly ListRow[]
@@ -30,63 +30,18 @@ defineExpose({ scrollToActive })
 
 const list = useTemplateRef<HTMLElement>('list')
 
-/** The rows drawn until the height of one is measured. */
-const UNMEASURED_ROWS = 20
-
-const rowHeight = shallowRef(0)
-const virtual = useVirtualTree(
+const { first, shown, windowStyle, onScroll, scrollToRow } = useRowWindow({
   list,
-  () => props.rows.length,
-  () => rowHeight.value,
-)
-
-/** The rows drawn, and the place of the first of them among all. */
-const first = computed(() =>
-  props.isMultiple && rowHeight.value > 0 ? virtual.window.value.startIndex : 0,
-)
-const shown = computed(() => {
-  if (!props.isMultiple) return props.rows
-  if (rowHeight.value === 0) return props.rows.slice(0, UNMEASURED_ROWS)
-  return props.rows.slice(virtual.window.value.startIndex, virtual.window.value.endIndex)
+  rows: () => props.rows,
+  isMultiple: () => props.isMultiple === true,
 })
-
-const windowStyle = computed(() =>
-  props.isMultiple && rowHeight.value > 0
-    ? {
-        blockSize: `${virtual.window.value.totalHeight}px`,
-        paddingBlockStart: `${virtual.window.value.offsetY}px`,
-        boxSizing: 'border-box' as const,
-      }
-    : undefined,
-)
-
-let observer: ResizeObserver | null = null
-
-onMounted(() => {
-  if (!props.isMultiple) return
-  measure()
-  if (typeof ResizeObserver !== 'undefined' && list.value) {
-    observer = new ResizeObserver(measure)
-    observer.observe(list.value)
-  }
-})
-
-onBeforeUnmount(() => {
-  observer?.disconnect()
-})
-
-function measure(): void {
-  const row = list.value?.querySelector('[role="option"]')
-  if (row) rowHeight.value = measureElementRect(row).height
-  virtual.measureViewport()
-}
 
 /** The group name drawn over each row, where there is one. */
 const headings = computed(() => getHeadings(props.rows))
 
 function scrollToActive(): void {
   if (props.isMultiple) {
-    virtual.scrollToRow(props.activeIndex)
+    scrollToRow(props.activeIndex)
     return
   }
   const view = list.value
@@ -108,7 +63,7 @@ function scrollToActive(): void {
     :aria-label="label"
     :aria-multiselectable="isMultiple || undefined"
     :data-multiple="isMultiple"
-    @scroll.passive="virtual.onScroll"
+    @scroll.passive="onScroll"
   >
     <div :style="windowStyle">
       <SearchableListOption

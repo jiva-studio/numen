@@ -7,7 +7,7 @@ import type { PaletteMultiProps } from '@numen/workbench'
 import type { PickerHost, PickerItem, PickerOptions } from '@numen/plugin-loader'
 
 export interface PickerSession {
-  readonly host: PickerHost
+  readonly open: PickerHost['open']
   readonly multi: ComputedRef<PaletteMultiProps | undefined>
   readonly toggle: (id: string) => Promise<void>
   readonly create: (text: string) => Promise<void>
@@ -63,5 +63,5 @@ export function createPickerSession(): PickerSession {
     if (current) replace(await current.onCreate(text))
   }
 
-  return { host: { open }, multi, toggle, create, dismiss }
+  return { open, multi, toggle, create, dismiss }
 }

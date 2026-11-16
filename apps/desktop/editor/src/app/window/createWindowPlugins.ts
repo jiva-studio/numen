@@ -91,7 +91,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       services,
       notices,
       pluginNotes,
-      hostParts: [...declarations.hostParts, { window: { getPicker: () => picker.host } }],
+      hostParts: [...declarations.hostParts, { window: { getPicker: () => ({ open: picker.open }) } }],
     }),
   })
   vault.vaultChanges.subscribe((event) => pluginHost.notifyVaultChange(event))

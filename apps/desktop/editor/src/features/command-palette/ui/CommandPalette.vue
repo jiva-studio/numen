@@ -9,26 +9,14 @@
 import { Search } from '@lucide/vue'
 import { reportFailure, runInBackground } from '@numen/ui'
 import { Palette, type ActionWords } from '@numen/workbench'
-import type { CommandDeps } from '@/shared/model/command'
-import type { CommandTarget } from '@/shared/model/command'
-import type { PickerSession } from '../model/picker/createPickerSession'
-import type { Commands } from '../model/palette/palette'
-import type { ResultChoice, SearchState } from '../model/search/search'
-import { findRowIcon, type FileIcons } from '../model/rowIcons'
+import { findRowIcon } from '../model/rowIcons'
 import { usePaletteInput } from '../model/usePaletteInput'
 import { WORDS as windowWords } from '@/shared/ui/words'
 import { PALETTE_WORDS } from '../words'
+import type { CommandPaletteProps } from './CommandPalette.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
-  commands: Commands
-  search: SearchState
-  doing: CommandDeps
-  getTarget: () => CommandTarget
-  places: FileIcons
-  runChoice: (choice: ResultChoice) => void
-  picker: PickerSession
-}>()
+const props = defineProps<CommandPaletteProps>()
 
 const words = { ...windowWords, ...PALETTE_WORDS }
 

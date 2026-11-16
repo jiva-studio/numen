@@ -5,11 +5,12 @@
  *
  * `data-palette` names the parts: `title`, and `field`, the line the text is typed in.
  */
-import { computed, ref } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { SearchableList, type ListItem } from '@numen/ui'
+import { PaletteFrame } from '../palette-frame'
 import type { PaletteMultiProps } from './PaletteMulti.types'
 
-const props = defineProps<{ multi: PaletteMultiProps }>()
+const props = defineProps<{ multi: PaletteMultiProps; name: string; to: string | HTMLElement }>()
 
 defineEmits<{
   /** An item was asked to be checked or unchecked. */
@@ -20,7 +21,7 @@ defineEmits<{
   (event: 'dismiss'): void
 }>()
 
-const holder = ref<HTMLElement | null>(null)
+const holder = useTemplateRef<HTMLElement>('holder')
 
 const items = computed<readonly ListItem[]>(() =>
   props.multi.items.map((item) => ({ id: item.id, text: item.title, state: item.state })),
@@ -28,7 +29,8 @@ const items = computed<readonly ListItem[]>(() =>
 </script>
 
 <template>
-  <div ref="holder" class="palette__multi">
+  <PaletteFrame :name="name" :to="to">
+    <div ref="holder" class="palette__multi">
     <p class="palette__multi-title caps-numen text-small text-hushed" data-palette="title">
       {{ multi.title }}
     </p>
@@ -47,7 +49,8 @@ const items = computed<readonly ListItem[]>(() =>
     >
       <template #action="{ query }">{{ multi.getCreateTitle(query) }}</template>
     </SearchableList>
-  </div>
+    </div>
+  </PaletteFrame>
 </template>
 
 <style scoped>

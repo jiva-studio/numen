@@ -23,9 +23,9 @@ describe('a picker session', () => {
     expect(createPickerSession().multi.value).toBeUndefined()
   })
 
-  it('draws the title, the placeholder, the items and the recent ids of the list a plugin opened', () => {
+  it('draws the title, the placeholder, the items and the recent ids of the list a plugin opened', async () => {
     const session = createPickerSession()
-    void session.host.open(createOptions())
+    const opening = session.open(createOptions())
 
     expect(session.multi.value).toMatchObject({
       title: 'Trees',
@@ -34,15 +34,21 @@ describe('a picker session', () => {
       recent: ['birch'],
     })
     expect(session.multi.value?.getCreateTitle('Harbour')).toBe('Create Harbour')
+
+    session.dismiss()
+    await opening
   })
 
   it('shows the item a toggle answers with in place of the one toggled', async () => {
     const session = createPickerSession()
-    void session.host.open(createOptions())
+    const opening = session.open(createOptions())
 
     await session.toggle('birch')
 
     expect(session.multi.value?.items.map((one) => one.state)).toStrictEqual(['set', 'set'])
+
+    session.dismiss()
+    await opening
   })
 
   it('adds the item a create answers with, and asks the plugin once for the text', async () => {
@@ -52,7 +58,7 @@ describe('a picker session', () => {
       state: 'set' as const,
     }))
     const session = createPickerSession()
-    void session.host.open(createOptions({ onCreate }))
+    const opening = session.open(createOptions({ onCreate }))
 
     await session.create('Harbour')
 
@@ -62,12 +68,15 @@ describe('a picker session', () => {
       'Cedar',
       'Harbour',
     ])
+
+    session.dismiss()
+    await opening
   })
 
   it('settles the open call and draws nothing once it is dismissed', async () => {
     const session = createPickerSession()
     const closed = vi.fn()
-    const opening = session.host.open(createOptions()).then(closed)
+    const opening = session.open(createOptions()).then(closed)
 
     await Promise.resolve()
     expect(closed).not.toHaveBeenCalled()
@@ -81,12 +90,14 @@ describe('a picker session', () => {
   it('settles the list before it when another is opened', async () => {
     const session = createPickerSession()
     const closed = vi.fn()
-    const first = session.host.open(createOptions()).then(closed)
-
-    void session.host.open(createOptions({ title: 'Shrubs' }))
+    const first = session.open(createOptions()).then(closed)
+    const second = session.open(createOptions({ title: 'Shrubs' }))
 
     await first
     expect(closed).toHaveBeenCalledTimes(1)
     expect(session.multi.value?.title).toBe('Shrubs')
+
+    session.dismiss()
+    await second
   })
 })

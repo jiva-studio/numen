@@ -7,17 +7,9 @@
 import { inject } from 'vue'
 import { Check, Minus } from '@lucide/vue'
 import { LIST_CONTEXT } from './context'
-import type { ListRow } from './rows'
+import type { SearchableListOptionProps } from './SearchableListOption.types'
 
-defineProps<{
-  row: ListRow
-  id: string
-  heading?: string | undefined
-  hasSeparator?: boolean
-  isActive: boolean
-  isCurrent: boolean
-  isMultiple?: boolean
-}>()
+defineProps<SearchableListOptionProps>()
 
 defineEmits<{
   /** The row was pressed. */
