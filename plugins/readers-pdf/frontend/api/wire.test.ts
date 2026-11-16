@@ -95,11 +95,11 @@ describe('getPageUrl', () => {
     )
   })
 
-  it('names zero bytes where the caller has no fingerprint', () => {
+  it('names no bytes where the caller has no fingerprint', () => {
     const { api } = createApiOf({})
 
     expect(createDocuments(api).getPageUrl('Book.pdf', 1, 800)).toBe(
-      '/plugin/md.numen.readers.pdf/pages/1?path=Book.pdf&wide=800&size=0&mtime=0',
+      '/plugin/md.numen.readers.pdf/pages/1?path=Book.pdf&wide=800',
     )
   })
 })

@@ -452,6 +452,7 @@ func TestEditSpliceAndHelperBranches(t *testing.T) {
 	if err != nil {
 		t.Fatalf("StatFile: %v", err)
 	}
+	statNoStat.Hash = domain.HashContent([]byte("# A\n"))
 	fNoStat.statCalls = 0
 	fNoStat.statErr = errors.New("StatFile must not be called")
 	eNoStat := editing(fNoStat)
