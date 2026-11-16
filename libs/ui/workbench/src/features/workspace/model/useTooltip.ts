@@ -11,8 +11,8 @@ export function useTooltip() {
   const describedBy = computed(() => (at.value ? id : undefined))
 
   function open(event: Event): void {
-    const rect = measureRect(event.currentTarget as HTMLElement)
-    at.value = rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null
+    const { x, y, width, height } = measureRect(event.currentTarget as HTMLElement)
+    at.value = { x, y, width, height }
   }
 
   function close(): void {
