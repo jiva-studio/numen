@@ -8,7 +8,7 @@ import type { SearchResult } from './searchResult'
  * outside its query at line 1, column 1, a problem of a provider at 0, 0. endLine and endColumn are the
  * last character of a problem over more than one.
  */
-interface Problem {
+export interface Problem {
   readonly line: number
   readonly column: number
   readonly endLine?: number
