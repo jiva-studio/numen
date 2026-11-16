@@ -65,7 +65,7 @@ Read `AGENTS.md` at the root and in the touched module, and the rules summarized
 
 ### Placement
 
-Load the placement skill of each area the diff touches ([`nm-place-core`](../../nm-place-core/SKILL.md), [`nm-place-window`](../../nm-place-window/SKILL.md), [`nm-place-plugin`](../../nm-place-plugin/SKILL.md), [`nm-place-library`](../../nm-place-library/SKILL.md)) and check where the diff put its code against it: layer, slice, segment, package and library. Quote the skill when a file is in the wrong place. When the task has a `spec.md` or a plan with a placement table ([`nm-specify`](../../nm-specify/SKILL.md), section 1), compare the diff with its rows and report each type, function, port, error, adapter or test that is missing from the table or sits elsewhere than the table says.
+Load the placement skill of each area the diff touches ([`nm-place-core`](../../nm-place-core/SKILL.md), [`nm-place-window`](../../nm-place-window/SKILL.md), [`nm-place-plugin`](../../nm-place-plugin/SKILL.md), [`nm-place-library`](../../nm-place-library/SKILL.md)) and check where the diff put its code against it: layer, slice, segment, package and library. Quote the skill when a file is in the wrong place.
 
 ### The core knows no plugin domain
 

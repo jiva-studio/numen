@@ -53,7 +53,7 @@ Before proposing new files, types, or methods, search the codebase:
 - Type signatures, interface definitions, or component prop/event contracts.
 - Explicit placement: which layer each file belongs to (`shared`, `entities`, `features`, `pages`, `app`).
 - Name the placement skill of each area the work touches in the blast radius ([`nm-place-core`](../nm-place-core/SKILL.md), [`nm-place-window`](../nm-place-window/SKILL.md), [`nm-place-plugin`](../nm-place-plugin/SKILL.md) or [`nm-place-library`](../nm-place-library/SKILL.md)), and take the placement of every file from it.
-- Write the placement as a table with the columns what, where, why: one row for each new type, function, port, error, adapter and test. "Where" is a package or slice and "why" quotes the rule of the placement skill or of the module `AGENTS.md` (for plugins and the UI libraries, also [`architecture.md`](../../rules/architecture.md)). The gatekeeper stage of nm-review and the self-check of nm-implement compare the diff with this table.
+- Write the placement as a table with the columns what, where, why: one row for each new type, function, port, error, adapter and test. "Where" is a package or slice and "why" quotes the rule of the placement skill or of the module `AGENTS.md` (for plugins and the UI libraries, also [`architecture.md`](../../rules/architecture.md)). The implementing agent works from this table and checks its own diff against it (nm-implement, steps 2a and 3b).
 
 ## 2. Blast Radius Matrix
 

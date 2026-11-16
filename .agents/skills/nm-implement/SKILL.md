@@ -84,7 +84,7 @@ Read `git diff origin/main` once more before opening the pull request and before
 
 - A rule you changed is worded once, in its own file, and the other files link to it. Search the repository (`AGENTS.md`, `.agents/`, module `AGENTS.md`) for the old wording.
 - Every claim in the pull request body is in the diff, and every line of the diff is explained by the body.
-- The diff matches the placement table; a type belongs to the layer that owns it (an error type is domain, not a port). Each doc comment says what the code under it does.
+- Your diff matches your own placement table; a type belongs to the layer that owns it (an error type is domain, not a port). Each doc comment says what the code under it does.
 - A test passes on Linux, macOS and Windows and does not depend on timing: no sleep, no file name made from arbitrary characters, a request is sent whole or waited for.
 - After a fix, re-read the whole function, not the changed lines.
 
