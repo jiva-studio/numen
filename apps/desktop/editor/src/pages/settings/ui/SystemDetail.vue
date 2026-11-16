@@ -30,7 +30,6 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const SECTION_PREFIXES = { appearance: 'appearance.', editor: 'editor.' } as const
 
-/** The page a setting of the shell belongs to, by the prefix of its key. */
 const getSectionOf = (key: string): 'system' | 'appearance' | 'editor' =>
   key.startsWith(SECTION_PREFIXES.appearance)
     ? 'appearance'
