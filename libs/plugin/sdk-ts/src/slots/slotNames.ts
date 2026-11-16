@@ -20,6 +20,10 @@ export const SLOT = {
   tabStripContext: 'tabStrip.context',
   // The menu of a node of the plex graph, over its note, drawn by the plugin of the plex graph.
   plexGraphContext: 'plexGraph.context',
+  // The views over a node of the plex graph, each given the path of its note, drawn by the plugin of the plex graph.
+  plexGraphNodeAbove: 'plexGraph.nodeAbove',
+  // The views under a node of the plex graph, each given the path of its note, drawn by the plugin of the plex graph.
+  plexGraphNodeBelow: 'plexGraph.nodeBelow',
   // The actions of a search result that is a note, over that note, drawn by the palette.
   paletteSearchResult: 'palette.searchResult',
   // The commands of the palette over the note in front, drawn by the palette.
