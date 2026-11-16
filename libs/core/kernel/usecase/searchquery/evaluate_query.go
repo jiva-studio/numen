@@ -7,6 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchpolicyport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -21,11 +23,12 @@ type EvaluateQueryDeps struct {
 	Places       sourceport.ChunkPlaces
 	Contents     NoteContents
 	Links        LinkReaders
+	Functions    pluginport.SearchFunctions
 	Matcher      sourceport.WordMatching
 	Readers      vaultport.VaultReaders
 	Texts        textdomain.Readers
 	Source       searchsourceport.QuerySource
-	Floors       FloorReader
+	Floors       searchpolicyport.FloorReader
 	ContentTypes contenttypeport.ContentTypeTable
 }
 
@@ -36,11 +39,12 @@ type EvaluateQuery struct {
 	places       sourceport.ChunkPlaces
 	contents     NoteContents
 	links        LinkReaders
+	functions    pluginport.SearchFunctions
 	matcher      sourceport.WordMatching
 	readers      vaultport.VaultReaders
 	texts        textdomain.Readers
 	source       searchsourceport.QuerySource
-	floors       FloorReader
+	floors       searchpolicyport.FloorReader
 	contentTypes contenttypeport.ContentTypeTable
 }
 
@@ -48,7 +52,7 @@ type EvaluateQuery struct {
 func NewEvaluateQuery(deps EvaluateQueryDeps) *EvaluateQuery {
 	return &EvaluateQuery{
 		documents: deps.Documents, vectors: deps.Vectors, places: deps.Places, contents: deps.Contents,
-		links: deps.Links, matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts, source: deps.Source, floors: deps.Floors,
+		links: deps.Links, functions: deps.Functions, matcher: deps.Matcher, readers: deps.Readers, texts: deps.Texts, source: deps.Source, floors: deps.Floors,
 		contentTypes: deps.ContentTypes,
 	}
 }
@@ -56,15 +60,16 @@ func NewEvaluateQuery(deps EvaluateQueryDeps) *EvaluateQuery {
 // Execute returns the results of the query, bounded by the limits, with the dates of its conditions read in the
 // zone. A limit exceeded returns searchquery.ErrLimitExceeded; meaning with no model searchquery.ErrNoModel.
 func (u *EvaluateQuery) Execute(
-	ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits,
+	ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits, generation string,
 ) (searchquery.SearchResults, error) {
 	if hasMeaning(q.Conditions) && !u.hasModel() {
 		return searchquery.SearchResults{}, searchquery.ErrNoModel
 	}
 	req := u.newRequest(ctx, v, q, zone, limits)
 	warns := &warnings{}
-	docs := newDocumentReader(u.documents, u.contents, u.links, u.contentTypes, req, warns)
-	return u.run(ctx, req, docs, warns)
+	calls := newFunctionCalls(u.functions, v, q, limits, generation)
+	docs := newDocumentReader(u, req, warns, calls)
+	return u.run(ctx, req, docs, warns, calls)
 }
 
 func (u *EvaluateQuery) hasModel() bool {

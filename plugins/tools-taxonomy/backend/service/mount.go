@@ -1,5 +1,6 @@
 // Package service is the backend of the tags plugin: it builds the host clients and the cache of the
-// tags, registers the tool tag_list, and brings the tags up to date on each onFilesChanged event.
+// tags, registers the tool tag_list and the query functions tags and isTagged, and brings the tags up to
+// date on each onFilesChanged event.
 package service
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchfunction"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 
@@ -26,10 +28,11 @@ func openHostAt(endpoint hostcall.Endpoint) Open {
 	}
 }
 
-// App is the tool of the plugin and its handler of the events of the host, over one cache of tags.
+// App is the tool and the query functions of the plugin and its handler of the events of the host, over one cache of tags.
 type App struct {
-	cache *tagcache.Caches
-	tools *tools.Registry
+	cache     *tagcache.Caches
+	tools     *tools.Registry
+	functions *searchfunction.Registry
 }
 
 // NewApp returns the plugin over the vaults open returns.
@@ -39,7 +42,11 @@ func NewApp(open Open) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &App{cache: cache, tools: registry}, nil
+	functions, err := newFunctions(cache)
+	if err != nil {
+		return nil, err
+	}
+	return &App{cache: cache, tools: registry, functions: functions}, nil
 }
 
 // Run serves the plugin over the host the environment names.
@@ -59,8 +66,11 @@ func Run() {
 	}, server.WithEventHandler(func(ctx context.Context, event string) error { return app.HandleEvent(ctx, event) }))
 }
 
-// Mount registers the tool on s.
-func (a *App) Mount(s *server.Server) { a.tools.Mount(s) }
+// Mount registers the tool and the query functions on s.
+func (a *App) Mount(s *server.Server) {
+	a.tools.Mount(s)
+	a.functions.Mount(s)
+}
 
 // Tools is the registry of the tool tag_list.
 func (a *App) Tools() *tools.Registry { return a.tools }
@@ -74,3 +84,6 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 	}
 	return a.cache.UpdateVault(ctx, id)
 }
+
+// Functions is the registry of the query functions tags and isTagged.
+func (a *App) Functions() *searchfunction.Registry { return a.functions }

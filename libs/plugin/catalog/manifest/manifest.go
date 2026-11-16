@@ -370,6 +370,7 @@ func (m Manifest) listBackendlessIssues() []error {
 		{"runtime dependencies", slices.ContainsFunc(m.Dependencies, func(d DependencyRequirement) bool { return d.Kind == DependencyKindRuntime })},
 		{"contributes.triggers", len(m.Contributes.Triggers) > 0},
 		{"contributes.connectionTypes", len(m.Contributes.ConnectionTypes) > 0},
+		{"contributes.searchFunctions", len(m.Contributes.SearchFunctions.Functions) > 0},
 	}
 	var issues []error
 	for _, field := range fields {

@@ -9,17 +9,18 @@ import (
 
 // Document is one source of a vault as the planner and a result see it. ChunkCount is the count of its small
 // chunks that carry a vector under the recipe in use. NoteType is empty for a document that is not a note;
-// IsInSet holds, for each SetCondition of the query, whether the document is in its set.
+// IsInSet is indexed by Leaf.SetIndex: whether the document is in the set of Query.Sets at that index.
 type Document struct {
-	Path       string
-	Title      string
-	SourceKind domain.SourceKind
-	Kind       string
-	ChunkCount int
-	NoteType   string
-	ModifiedAt time.Time
-	Size       int64
-	IsInSet    []bool
+	Path         string
+	Title        string
+	SourceKind   domain.SourceKind
+	Kind         string
+	ChunkCount   int
+	NoteType     string
+	ModifiedAt   time.Time
+	Size         int64
+	IsInSet      []bool
+	MatchedCalls []bool
 }
 
 // IsDocumentMatch evaluates the tree for the document with no chunk: a chunk leaf holds when it is negated.
@@ -47,6 +48,8 @@ func IsDocumentMatch(root Node, d Document) bool {
 
 func isDocumentLeafMatch(leaf Leaf, d Document) bool {
 	switch leaf.Kind {
+	case LeafFunction:
+		return leaf.CallIndex < len(d.MatchedCalls) && d.MatchedCalls[leaf.CallIndex]
 	case LeafKindIn:
 		return slices.Contains(leaf.Kinds, d.Kind)
 	case LeafPathPrefix:

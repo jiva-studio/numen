@@ -152,3 +152,31 @@ func TestTheDescriptionOfLibraryQueryNamesEveryFunction(t *testing.T) {
 		t.Error("the stages are not listed last")
 	}
 }
+
+func TestTheDescriptionOfLibraryQueryNamesTheFunctionsOfEachListing(t *testing.T) {
+	searches := searchtest.NewSearches()
+	searches.SetFunctions(getTideFunctions(), nil)
+	registry, err := service.New(vaultsOf(hosttest.New(testVault))).WithLibrary(func(domain.VaultID) service.Library {
+		return service.Library{Versions: nil, Texts: nil, Search: nil, Queries: searches}
+	}, getTideFunctions()).WithFunctionLister(searches.ListSearchFunctions).Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	shelved := getTideFunctions()
+	shelved.Revision = "r2"
+	shelved.Functions = append(shelved.Functions, host.SearchFunction{
+		Name: "shelved", Kind: "function", Level: "document", Signatures: []string{"shelved(string) -> bool"},
+		Description: "notes on a shelf.", Example: `shelved("east")`,
+	})
+	searches.SetFunctions(shelved, nil)
+
+	listing, err := registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	index := slices.IndexFunc(listing.Tools, func(tool *tools.ToolInfo) bool { return tool.Name == "library_query" })
+	if index < 0 || !strings.Contains(listing.Tools[index].Description, `shelved(string) -> bool: notes on a shelf. Example: shelved("east")`) {
+		t.Errorf("the listing does not name shelved: %+v", listing.Tools)
+	}
+}

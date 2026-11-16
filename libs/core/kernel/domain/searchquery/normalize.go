@@ -32,7 +32,7 @@ func Normalize(raw RawNode, limits Limits, zone *time.Location) (Query, error) {
 	n := normalizer{limits: limits, zone: zone}
 	root := n.convert(raw, false)
 	n.checkHasPositiveLeaf(root)
-	q := Query{Root: root, Conditions: n.conditions, Sets: n.sets, IsSearchResults: hasChunkLeaf(root)}
+	q := Query{Root: root, Conditions: n.conditions, Sets: n.sets, Calls: n.calls, IsSearchResults: hasChunkLeaf(root)}
 	q.Stages = n.convertStages(raw.Stages, GetDefaultRerankQuery(q))
 	if len(n.problems) > 0 {
 		return Query{}, &ParseError{Problems: n.problems}
@@ -45,6 +45,7 @@ type normalizer struct {
 	zone       *time.Location
 	sets       []SetCondition
 	conditions []Condition
+	calls      []Call
 	prefixes   []string
 	problems   []Problem
 }
@@ -108,6 +109,8 @@ func (n *normalizer) convertLeaf(raw RawLeaf, isNegated bool) Node {
 		leaf.Operands = n.parseOperands(raw.Operands)
 	case LeafSet:
 		leaf.SetIndex = n.addSet(raw, !isNegated)
+	case LeafFunction:
+		leaf.CallIndex = n.addCall(raw.Call, !isNegated)
 	}
 	return Node{Operator: OperatorLeaf, Leaf: leaf, IsNegated: isNegated}
 }
@@ -194,4 +197,16 @@ func isDocumentOnly(node Node) bool {
 		}
 	}
 	return true
+}
+
+func (n *normalizer) addCall(call Call, isPositive bool) int {
+	for i, c := range n.calls {
+		if c.isSame(call) {
+			n.calls[i].IsPositive = c.IsPositive || isPositive
+			return i
+		}
+	}
+	call.IsPositive = isPositive
+	n.calls = append(n.calls, call)
+	return len(n.calls) - 1
 }

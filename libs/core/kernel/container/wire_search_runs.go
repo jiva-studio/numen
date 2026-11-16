@@ -9,11 +9,13 @@ import (
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func newIndexGenerations(clock machineport.Clock) *indexgeneration.Generations {
@@ -39,12 +41,22 @@ func newSearchRuns(w *windowWiring) *searchrunusecase.SearchRuns {
 		Generations: w.generations,
 		Run:         find.Execute,
 		Names:       func(pluginID string) string { return pluginsGetPluginName(w.a, pluginID) },
-		Catalog:     searchquerydomain.GetBuiltinCatalog,
+		Catalog:     getSearchCatalog(getRuntimeManifests(w.a.search.PluginHost.Runtime)),
 		MaxResults:  find.Limits.MaxLimit,
 	})
 	return &runs
 }
 
-func getListingRevision() string {
-	return searchquerydomain.GetCatalogRevision(searchquerydomain.GetBuiltinCatalog())
+func getSearchCatalog(manifests pluginmanifest.Manifests) func() searchquerydomain.Catalog {
+	return func() searchquerydomain.Catalog {
+		return searchquerydomain.MergeCatalog(searchquerydomain.GetBuiltinCatalog(), manifests.ListSearchFunctions())
+	}
+}
+
+func getListingRevision(catalog func() searchquerydomain.Catalog) func() string {
+	return func() string { return searchquerydomain.GetCatalogRevision(catalog()) }
+}
+
+func getCoreClaims() manifest.CoreClaims {
+	return manifest.CoreClaims{SearchFunctions: searchquerydomain.ListFunctionNames(searchquerydomain.GetBuiltinCatalog())}
 }

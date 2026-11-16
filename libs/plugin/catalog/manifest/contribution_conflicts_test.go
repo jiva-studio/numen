@@ -80,7 +80,7 @@ func TestListContributionConflicts(t *testing.T) {
 	}
 	for name, one := range cases {
 		t.Run(name, func(t *testing.T) {
-			conflicts := manifest.ListContributionConflicts(one.plugins)
+			conflicts := manifest.ListContributionConflicts(one.plugins, manifest.CoreClaims{})
 
 			if len(conflicts) != len(one.want) {
 				t.Fatalf("conflicts = %v, want %d", conflicts, len(one.want))

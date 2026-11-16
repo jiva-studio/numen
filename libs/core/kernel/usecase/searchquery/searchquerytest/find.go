@@ -10,6 +10,7 @@ import (
 // Deps is what New reads. A nil Clock, Readers or Texts of Stages takes the Clock of Deps and the Readers or Texts of Evaluate.
 type Deps struct {
 	Parser   searchqueryusecase.QueryParser
+	Catalog  func() searchquery.Catalog
 	Clock    machineport.Clock
 	Limits   searchquery.Limits
 	Evaluate searchqueryusecase.EvaluateQueryDeps
@@ -30,7 +31,7 @@ func New(deps Deps) *searchqueryusecase.FindSearchResults {
 	evaluate := searchqueryusecase.NewEvaluateQuery(deps.Evaluate)
 	stages := searchqueryusecase.NewApplyStages(deps.Stages)
 	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
-		Parser: deps.Parser, Clock: deps.Clock, Limits: deps.Limits,
+		Parser: deps.Parser, Catalog: deps.Catalog, Clock: deps.Clock, Limits: deps.Limits,
 		Evaluate: evaluate.Execute, FillDocuments: evaluate.FillDocuments, Stages: stages.Execute,
 	})
 }

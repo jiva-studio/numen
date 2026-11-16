@@ -28,6 +28,8 @@ const (
 	LeafCompare
 	// LeafSet holds for a document in the set of the SetCondition at SetIndex.
 	LeafSet
+	// LeafFunction is a call of a function a plugin contributes.
+	LeafFunction
 )
 
 // Position is a place in the text of a query, counted from 1; Column counts Unicode code points.
@@ -36,10 +38,11 @@ type Position struct {
 }
 
 // Leaf is one test of a normalized tree. ConditionIndex is set for LeafMeaning and LeafWords, SetIndex for
-// LeafSet.
+// LeafSet, CallIndex for LeafFunction.
 type Leaf struct {
 	Kind           LeafKind
 	ConditionIndex int
+	CallIndex      int
 	Kinds          []string
 	Prefix         string
 	Attribute      Attribute
@@ -76,6 +79,7 @@ type Query struct {
 	Root            Node
 	Conditions      []Condition
 	Sets            []SetCondition
+	Calls           []Call
 	Stages          []Stage
 	IsSearchResults bool
 }
@@ -94,6 +98,7 @@ type RawLeaf struct {
 	Key        string
 	Target     string
 	LinkType   string
+	Call       Call
 	Position   Position
 }
 

@@ -224,7 +224,7 @@ func TestGetTitleReturnsTheNoteTitleElseTheFileNameWithoutItsLastExtension(t *te
 
 func TestGetScopesReturnsTheDocumentConditionsOfTheAndAncestorsOfEachCondition(t *testing.T) {
 	q := normalize(t, newOr(newAnd(newMeaning("a"), newPrefix("x/")), newWords("b")))
-	scopes := searchquery.GetScopes(q)
+	scopes := searchquery.GetScopes(q, nil)
 	if len(scopes) != 2 {
 		t.Fatalf("got %d scopes", len(scopes))
 	}

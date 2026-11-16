@@ -39,7 +39,12 @@ func (q *Search) ListDocuments(ctx context.Context, vaultID domain.VaultID, quer
 	if query.Limit > 0 {
 		limit = query.Limit + 1
 	}
-	rows, err := q.db.QueryContext(ctx, documentsSQL, vault, composed, decomposed, formatKinds(query.SourceKinds), query.Recipe, limit, string(paths))
+	isWithinPaths := 0
+	if query.IsWithinPaths {
+		isWithinPaths = 1
+	}
+	rows, err := q.db.QueryContext(ctx, documentsSQL, vault, composed, decomposed, formatKinds(query.SourceKinds), query.Recipe, limit,
+		isWithinPaths, string(paths))
 	if err != nil {
 		return nil, err
 	}

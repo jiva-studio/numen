@@ -15,13 +15,15 @@ import (
 var ErrNegativeLimit = errors.New("the limit of results is negative")
 
 // FindSearchResultsDeps is what FindSearchResults reads. A zero Limits takes the defaults, and the zone of
-// Clock reads a date written without an offset. Evaluate returns the results of a parsed query, FillDocuments
+// Clock reads a date written without an offset. Catalog returns the catalog a query is parsed against, the built-in
+// one when nil. Evaluate returns the results of a parsed query, FillDocuments
 // sets the title, the time of change and the size of the document of each result, and Stages applies the
 // stages of a query to its results.
 type FindSearchResultsDeps struct {
 	Parser        QueryParser
+	Catalog       func() searchquery.Catalog
 	Clock         machineport.Clock
-	Evaluate      func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits) (searchquery.SearchResults, error)
+	Evaluate      func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits, generation string) (searchquery.SearchResults, error)
 	FillDocuments func(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error
 	Stages        func(ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, req searchquery.Request) (searchquery.SearchResults, error)
 	Limits        searchquery.Limits
@@ -30,8 +32,9 @@ type FindSearchResultsDeps struct {
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
 type FindSearchResults struct {
 	parser        QueryParser
+	catalog       func() searchquery.Catalog
 	clock         machineport.Clock
-	evaluate      func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits) (searchquery.SearchResults, error)
+	evaluate      func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits, generation string) (searchquery.SearchResults, error)
 	fillDocuments func(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error
 	stages        func(ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, req searchquery.Request) (searchquery.SearchResults, error)
 	Limits        searchquery.Limits
@@ -43,8 +46,12 @@ func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
 	if limits == (searchquery.Limits{}) {
 		limits = searchquery.DefaultLimits()
 	}
+	catalog := deps.Catalog
+	if catalog == nil {
+		catalog = searchquery.GetBuiltinCatalog
+	}
 	return &FindSearchResults{
-		parser: deps.Parser, clock: deps.Clock, evaluate: deps.Evaluate, fillDocuments: deps.FillDocuments, stages: deps.Stages,
+		parser: deps.Parser, catalog: catalog, clock: deps.Clock, evaluate: deps.Evaluate, fillDocuments: deps.FillDocuments, stages: deps.Stages,
 		Limits: limits,
 	}
 }
@@ -65,7 +72,7 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r searc
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	results, err := u.evaluate(ctx, v, q, zone, u.Limits)
+	results, err := u.evaluate(ctx, v, q, zone, u.Limits, r.IndexGeneration)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
@@ -107,7 +114,7 @@ func (u *FindSearchResults) parse(text string, zone *time.Location) (searchquery
 	if err := searchquery.CheckQueryText(text, u.Limits); err != nil {
 		return searchquery.Query{}, err
 	}
-	raw, err := u.parser.ParseQuery(text, searchquery.GetBuiltinCatalog())
+	raw, err := u.parser.ParseQuery(text, u.catalog())
 	if err != nil {
 		return searchquery.Query{}, err
 	}

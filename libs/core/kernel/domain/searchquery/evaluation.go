@@ -12,6 +12,7 @@ type Evaluation struct {
 	Vault  domain.Vault
 	Query  Query
 	Scopes []Scope
+	Found  FoundPaths
 	Recipe string
 	Floor  float64
 	Limits Limits

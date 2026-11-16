@@ -25,25 +25,40 @@ const (
 	messageProperty  = `property takes a key in quotes and is compared with a value: property("status") == "done", property("rating") >= 4 or "x" in property("tags")`
 	messageDate      = `date takes a date in quotes: date("2026-01-01")`
 	messageTarget    = "The target of %s is empty"
+	messageArgument  = "Write the arguments of %s as texts in quotes or numbers"
 )
 
-// converter turns a checked CEL tree into a raw tree, collecting the shapes it does not accept.
-type converter struct {
+// sink collects the problems of a conversion and builds its nodes.
+type sink struct {
 	source   *ast.SourceInfo
 	text     queryText
 	problems []searchquery.Problem
 }
 
-func (c *converter) getPosition(expr ast.Expr) searchquery.Position {
+// comparer converts the comparisons and membership tests of a query.
+type comparer struct{ *sink }
+
+// linkConverter converts the link functions of a query.
+type linkConverter struct{ *sink }
+
+// converter turns a checked CEL tree into a raw tree, collecting the shapes it does not accept.
+type converter struct {
+	*sink
+	catalog  searchquery.Catalog
+	comparer comparer
+	links    linkConverter
+}
+
+func (c *sink) getPosition(expr ast.Expr) searchquery.Position {
 	return getExprPosition(c.text, c.source, expr)
 }
 
-func (c *converter) reject(expr ast.Expr, message string) searchquery.RawNode {
+func (c *sink) reject(expr ast.Expr, message string) searchquery.RawNode {
 	c.problems = append(c.problems, searchquery.Problem{Position: c.getPosition(expr), Message: message})
 	return searchquery.RawNode{Operator: searchquery.OperatorAnd}
 }
 
-func (c *converter) newLeaf(expr ast.Expr, leaf searchquery.RawLeaf) searchquery.RawNode {
+func (c *sink) newLeaf(expr ast.Expr, leaf searchquery.RawLeaf) searchquery.RawNode {
 	leaf.Position = c.getPosition(expr)
 	return searchquery.RawNode{Operator: searchquery.OperatorLeaf, Leaf: leaf}
 }
@@ -93,13 +108,13 @@ func (c *converter) convertCall(expr ast.Expr) searchquery.RawNode {
 	case searchquery.FunctionWords:
 		return c.convertText(expr, searchquery.LeafWords)
 	case searchquery.FunctionHasProperty, searchquery.FunctionHasHeading:
-		return c.convertPresence(expr)
+		return c.comparer.convertPresence(expr)
 	case operators.NotEquals:
-		return newNot(c.convertComparison(expr, searchquery.ComparisonEqual))
+		return newNot(c.comparer.convertComparison(expr, searchquery.ComparisonEqual))
 	case operators.In:
-		return c.convertIn(expr)
+		return c.comparer.convertIn(expr)
 	case overloads.StartsWith, overloads.EndsWith, overloads.Contains:
-		return c.convertMethod(expr)
+		return c.comparer.convertMethod(expr)
 	default:
 		return c.convertComparisonOrLink(expr, name)
 	}
@@ -107,15 +122,12 @@ func (c *converter) convertCall(expr ast.Expr) searchquery.RawNode {
 
 func (c *converter) convertComparisonOrLink(expr ast.Expr, name string) searchquery.RawNode {
 	if comparison, isComparison := getComparison(name); isComparison {
-		return c.convertComparison(expr, comparison)
+		return c.comparer.convertComparison(expr, comparison)
 	}
 	if _, isLink := searchquery.FindLinkFunction(name); isLink {
-		return c.convertLink(expr)
+		return c.links.convertLink(expr)
 	}
-	if isStageCall(expr) {
-		return c.reject(expr, messageStageLast)
-	}
-	return c.reject(expr, messageCondition)
+	return c.convertOther(expr)
 }
 
 func getComparison(name string) (searchquery.Comparison, bool) {
@@ -155,7 +167,7 @@ func (c *converter) convertText(expr ast.Expr, kind searchquery.LeafKind) search
 	return c.newLeaf(expr, searchquery.RawLeaf{Kind: kind, Text: text})
 }
 
-func (c *converter) convertLink(expr ast.Expr) searchquery.RawNode {
+func (c *linkConverter) convertLink(expr ast.Expr) searchquery.RawNode {
 	call := expr.AsCall()
 	name := call.FunctionName()
 	var texts []string

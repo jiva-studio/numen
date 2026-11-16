@@ -45,9 +45,16 @@ type WordQueries interface {
 	GetWordScores(ctx context.Context, vaultID domain.VaultID, expression string, chunks []domain.ChunkID) (map[domain.ChunkID]float64, error)
 }
 
-// FloorReader returns the similarity floor of a vault under a recipe.
-type FloorReader interface {
-	GetFloor(ctx context.Context, v domain.Vault, recipe string) float64
+// NoteContents reads what the frontmatter and the headings of the notes of a vault hold.
+type NoteContents interface {
+	// ListPropertyValues returns the path and the value of every note of the vault whose stored frontmatter
+	// has the top-level key. A note without frontmatter or with unreadable frontmatter is absent.
+	ListPropertyValues(ctx context.Context, vaultID domain.VaultID, key string) ([]searchquery.PropertyEntry, error)
+	// FindHeadings returns the headings, with the path of their note, whose words hold every word of the text,
+	// and every heading of the vault when the text has no word.
+	FindHeadings(ctx context.Context, vaultID domain.VaultID, text string) ([]searchquery.HeadingEntry, error)
+	// CountUnreadableFrontmatter counts the notes of the vault whose frontmatter could not be read.
+	CountUnreadableFrontmatter(ctx context.Context, vaultID domain.VaultID) (int, error)
 }
 
 // LinkReaders reads the links of a vault for the link functions.
@@ -62,16 +69,4 @@ type LinkReaders interface {
 	// ListLinksByName returns the links written in the notes of the vault whose target's last segment folds
 	// to the name, with the path of the note each is written in and without resolution.
 	ListLinksByName(ctx context.Context, vaultID domain.VaultID, foldedName string) ([]domain.ResolvedLink, error)
-}
-
-// NoteContents reads what the frontmatter and the headings of the notes of a vault hold.
-type NoteContents interface {
-	// ListPropertyValues returns the path and the value of every note of the vault whose stored frontmatter
-	// has the top-level key. A note without frontmatter or with unreadable frontmatter is absent.
-	ListPropertyValues(ctx context.Context, vaultID domain.VaultID, key string) ([]searchquery.PropertyEntry, error)
-	// FindHeadings returns the headings, with the path of their note, whose words hold every word of the text,
-	// and every heading of the vault when the text has no word.
-	FindHeadings(ctx context.Context, vaultID domain.VaultID, text string) ([]searchquery.HeadingEntry, error)
-	// CountUnreadableFrontmatter counts the notes of the vault whose frontmatter could not be read.
-	CountUnreadableFrontmatter(ctx context.Context, vaultID domain.VaultID) (int, error)
 }

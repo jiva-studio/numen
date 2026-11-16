@@ -18,7 +18,7 @@ import (
 
 // ListFrontmatter returns the stored frontmatter of the notes the query names, in path order. A note
 // without frontmatter has no values; a path with no note is left out.
-func (q *Queries) ListFrontmatter(ctx context.Context, vaultID domain.VaultID, query frontmatter.Query) ([]frontmatter.Note, error) {
+func (q *QueryReads) ListFrontmatter(ctx context.Context, vaultID domain.VaultID, query frontmatter.Query) ([]frontmatter.Note, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -32,7 +32,7 @@ func (q *Queries) ListFrontmatter(ctx context.Context, vaultID domain.VaultID, q
 	return q.listFrontmatterAt(ctx, vault, query)
 }
 
-func (q *Queries) listFrontmatterAfter(ctx context.Context, vault int64, query frontmatter.Query) (_ []frontmatter.Note, err error) {
+func (q *QueryReads) listFrontmatterAfter(ctx context.Context, vault int64, query frontmatter.Query) (_ []frontmatter.Note, err error) {
 	rows, err := q.db.QueryContext(ctx, frontmatterAfterSQL, vault, query.After, query.Limit)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (q *Queries) listFrontmatterAfter(ctx context.Context, vault int64, query f
 	return out, rows.Err()
 }
 
-func (q *Queries) listFrontmatterAt(ctx context.Context, vault int64, query frontmatter.Query) (_ []frontmatter.Note, err error) {
+func (q *QueryReads) listFrontmatterAt(ctx context.Context, vault int64, query frontmatter.Query) (_ []frontmatter.Note, err error) {
 	statement, err := prepareStatement(ctx, q.db, frontmatterAtSQL)
 	if err != nil {
 		return nil, err

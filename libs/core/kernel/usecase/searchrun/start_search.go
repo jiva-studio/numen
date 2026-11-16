@@ -97,7 +97,7 @@ func (u *StartSearch) runSearch(ctx context.Context, end func(), r searchrun.Rec
 	defer u.slots.Release()
 	u.kept.Store.ChangeSearch(r.ID, func(one *searchrun.Record) { one.Step = searchrun.StepCandidates })
 	results, err := u.run(ctx, r.Start.Vault, searchquery.Request{
-		Text: r.Start.Query, Limit: u.maxResults, Priority: r.Start.Priority,
+		Text: r.Start.Query, Limit: u.maxResults, Priority: r.Start.Priority, IndexGeneration: r.IndexGeneration,
 		ReportPartial: func(partial searchquery.SearchResults) { u.keepPartial(r.ID, partial) },
 	})
 	u.finish(r.ID, results, err)

@@ -3,6 +3,7 @@ package searchquery
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
@@ -12,7 +13,7 @@ import (
 func (u *EvaluateQuery) newRequest(
 	ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits,
 ) *searchquery.Evaluation {
-	req := &searchquery.Evaluation{Vault: v, Query: q, Scopes: searchquery.GetScopes(q), Limits: limits, Zone: zone}
+	req := &searchquery.Evaluation{Vault: v, Query: q, Limits: limits, Zone: zone}
 	if u.hasModel() {
 		req.Recipe = u.source.Describe().Recipe()
 		if hasMeaning(q.Conditions) {
@@ -22,10 +23,17 @@ func (u *EvaluateQuery) newRequest(
 	return req
 }
 
-func (u *EvaluateQuery) run(ctx context.Context, req *searchquery.Evaluation, docs *documentReader, warns *warnings) (searchquery.SearchResults, error) {
+func (u *EvaluateQuery) run(
+	ctx context.Context, req *searchquery.Evaluation, docs *documentReader, warns *warnings, calls *functionCalls,
+) (searchquery.SearchResults, error) {
 	if err := docs.findSets(ctx); err != nil {
 		return searchquery.SearchResults{}, err
 	}
+	if err := calls.find(ctx); err != nil {
+		return searchquery.SearchResults{}, err
+	}
+	req.Found = calls.found
+	req.Scopes = searchquery.GetScopes(req.Query, calls.found)
 	documents, err := docs.listCandidateDocuments(ctx)
 	if err != nil {
 		return searchquery.SearchResults{}, err
@@ -63,11 +71,14 @@ func (u *EvaluateQuery) run(ctx context.Context, req *searchquery.Evaluation, do
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
+	if err := calls.match(ctx, getCandidatePaths(candidates)); err != nil {
+		return searchquery.SearchResults{}, err
+	}
 	results := searchquery.SearchResults{
 		ScoreKind: searchquery.GetScoreKind(req.Query.Conditions), Floor: req.Floor, Candidates: len(candidates),
 	}
 	results.Results = evaluator{req: req, document: docs.getDocument}.evaluate(candidates, scores, texts, documents, results.ScoreKind)
-	results.Warnings = warns.list
+	results.Warnings = slices.Concat(warns.list, calls.warning)
 	searchquery.Sort(&results)
 	return results, nil
 }

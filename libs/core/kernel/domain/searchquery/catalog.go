@@ -43,7 +43,9 @@ const (
 // Function is one entry of the catalog: a global function, a variable when IsVariable is set and Args
 // is nil, or a stage, a method of the results, when IsStage is set. A stage with several argument lists has
 // them in Overloads. A function with OptionalArgs also takes them after Args. Summary says what it does in a
-// few plain words; Description says it in one or two plain sentences that name the arguments.
+// few plain words; Description says it in one or two plain sentences that name the arguments. PluginID names
+// the plugin that answers a function it contributes, empty for a built-in; ArgNames are the names of its
+// arguments, in the order of Args.
 type Function struct {
 	Name         string
 	Args         []ValueType
@@ -56,6 +58,8 @@ type Function struct {
 	Summary      string
 	Description  string
 	Example      string
+	PluginID     string
+	ArgNames     []string
 }
 
 // Catalog lists the functions and variables a query may name.

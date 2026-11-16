@@ -207,7 +207,7 @@ func TestAChangeDuringAFullReadIsAfterTheCursorTakenBeforeIt(t *testing.T) {
 	cursor := getFeedHead(t, db, v).Cursor
 
 	saveNoteWithFrontmatter(t, db, v, "b.md", map[string]any{"tags": "two"}, "B")
-	if _, err := db.NoteQueries().ListFrontmatter(t.Context(), v.ID, frontmatter.Query{Limit: 1}); err != nil {
+	if _, err := db.NoteQueryReads().ListFrontmatter(t.Context(), v.ID, frontmatter.Query{Limit: 1}); err != nil {
 		t.Fatal(err)
 	}
 

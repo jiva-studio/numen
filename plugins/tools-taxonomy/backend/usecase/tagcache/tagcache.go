@@ -222,3 +222,25 @@ func write(ctx context.Context, store Store, notes map[int64]tagfile.Note) error
 	}
 	return nil
 }
+
+// ListTaggedPaths returns, in path order, the notes of the vault with a tag that is under or is the
+// parent; an empty parent lists every note with a tag. When the tags cannot be brought up to date, it
+// answers from the tags it holds and isStale is true.
+func (c *Caches) ListTaggedPaths(ctx context.Context, id domain.VaultID, parent string) (paths []string, isStale bool, err error) {
+	one := c.getVault(id)
+	one.mu.Lock()
+	defer one.mu.Unlock()
+	if err := c.update(ctx, id, one); err != nil {
+		if ctx.Err() != nil || len(one.notes) == 0 {
+			return nil, false, err
+		}
+		isStale = true
+	}
+	for _, note := range one.notes {
+		if slices.ContainsFunc(note.Tags, func(tag string) bool { return tags.IsUnder(tag, parent) }) {
+			paths = append(paths, note.Path)
+		}
+	}
+	slices.Sort(paths)
+	return paths, isStale, nil
+}

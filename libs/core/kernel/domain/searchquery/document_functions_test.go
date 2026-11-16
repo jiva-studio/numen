@@ -227,11 +227,11 @@ func TestTitleReadsTheNoteTitleElseTheFileName(t *testing.T) {
 
 func TestAPositiveSetLeafNarrowsTheScopeOfAMeaning(t *testing.T) {
 	q := normalize(t, newAnd(newMeaning("a"), newHasProperty("src")))
-	scopes := searchquery.GetScopes(q)
+	scopes := searchquery.GetScopes(q, nil)
 	if len(scopes) != 1 || !slices.Equal(scopes[0].SetIndexes, []int{0}) {
 		t.Errorf("scopes %+v, want the set of hasProperty", scopes)
 	}
-	if scope := searchquery.GetScopes(normalize(t, newAnd(newMeaning("a"), newNot(newHasProperty("src")))))[0]; len(scope.SetIndexes) != 0 {
+	if scope := searchquery.GetScopes(normalize(t, newAnd(newMeaning("a"), newNot(newHasProperty("src")))), nil)[0]; len(scope.SetIndexes) != 0 {
 		t.Errorf("a negated set narrows the scope: %+v", scope)
 	}
 }

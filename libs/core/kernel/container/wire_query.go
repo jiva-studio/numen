@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -29,6 +30,7 @@ func newFindSearchResults(
 		Places:       search,
 		Contents:     db.NoteQueryReads(),
 		Links:        db.NoteQueryReads(),
+		Functions:    searchfunctionbridge.Open(c.search.PluginHost.Runtime.Activator),
 		Matcher:      wordmatch.NewMatcher(),
 		Readers:      c.search.VaultReaders,
 		Texts:        c.search.TextReaders,
@@ -49,6 +51,7 @@ func newFindSearchResults(
 	})
 	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
 		Parser:        celquery.NewParser(limits),
+		Catalog:       getSearchCatalog(getRuntimeManifests(c.search.PluginHost.Runtime)),
 		Clock:         c.vault.Clock,
 		Limits:        limits,
 		Evaluate:      evaluate.Execute,

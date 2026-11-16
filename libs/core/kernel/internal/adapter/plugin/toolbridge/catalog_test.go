@@ -2,6 +2,7 @@ package toolbridge_test
 
 import (
 	"context"
+	"io"
 	"maps"
 	"net"
 	"net/http"
@@ -17,7 +18,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
 const (
@@ -351,5 +354,23 @@ func TestAListingOfAnotherCatalogRevisionIsAskedAgain(t *testing.T) {
 	}
 	if starts := host.takeStarts(); len(starts) != 2 {
 		t.Errorf("the catalog of another revision started %v, want both plugins", starts)
+	}
+}
+
+func TestTheListingsAreAskedAgainWhenTheRevisionOfTheRunningCatalogChanges(t *testing.T) {
+	host := newTwoPlugins(t)
+	revision := "r1"
+	catalog := toolbridge.NewCatalog(host, host, filesIn(t, t.TempDir()), func() string { return revision }, testsupport.NewClock(), io.Discard)
+	catalog.ListTools(t.Context(), callerPlugin)
+	host.takeStarts()
+
+	catalog.ListTools(t.Context(), callerPlugin)
+	if starts := host.takeStarts(); len(starts) != 0 {
+		t.Errorf("an unchanged revision started %v", starts)
+	}
+	revision = "r2"
+	catalog.ListTools(t.Context(), callerPlugin)
+	if starts := host.takeStarts(); len(starts) != 2 {
+		t.Errorf("a changed revision started %v, want both plugins", starts)
 	}
 }

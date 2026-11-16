@@ -19,17 +19,22 @@ type documentReader struct {
 	sets         []map[string]bool
 	documents    map[string]searchquery.Document
 	links        *linkFinder
+	calls        documentCalls
 }
 
-func newDocumentReader(
-	lister DocumentQueries, contents NoteContents, links LinkReaders, contentTypes contenttypeport.ContentTypeTable, req *searchquery.Evaluation,
-	warns *warnings,
-) *documentReader {
+// documentCalls marks the calls of the plugin functions a document matches.
+type documentCalls interface {
+	withCalls(d searchquery.Document) searchquery.Document
+	match(ctx context.Context, paths []string) error
+}
+
+func newDocumentReader(u *EvaluateQuery, req *searchquery.Evaluation, warns *warnings, calls documentCalls) *documentReader {
 	reader := &documentReader{
-		lister: lister, contents: contents, contentTypes: contentTypes, req: req, warnings: warns, documents: map[string]searchquery.Document{},
+		lister: u.documents, contents: u.contents, contentTypes: u.contentTypes, req: req, warnings: warns, calls: calls,
+		documents: map[string]searchquery.Document{},
 	}
-	if links != nil {
-		reader.links = &linkFinder{links: links, req: req}
+	if u.links != nil {
+		reader.links = &linkFinder{links: u.links, req: req}
 	}
 	return reader
 }
@@ -51,6 +56,9 @@ func (r *documentReader) listScopeDocuments(ctx context.Context, s searchquery.S
 	if len(listed) > r.req.Limits.MaxDocuments {
 		return nil, false, nil
 	}
+	if err := r.calls.match(ctx, getPaths(listed)); err != nil {
+		return nil, false, err
+	}
 	var documents []searchquery.Document
 	for _, d := range listed {
 		if d = r.fillKind(d); s.IsDocumentMatch(d) {
@@ -64,7 +72,7 @@ func (r *documentReader) listCandidateDocuments(ctx context.Context) ([]searchqu
 	if !hasPositiveDocumentLeaf(r.req.Query.Root) {
 		return nil, nil
 	}
-	s := searchquery.GetDocumentScope(r.req.Query)
+	s := searchquery.GetDocumentScope(r.req.Query, r.req.Found)
 	paths, isNarrowed := r.getSetPaths(s.SetIndexes)
 	if isNarrowed && len(paths) == 0 {
 		return nil, nil
@@ -73,6 +81,9 @@ func (r *documentReader) listCandidateDocuments(ctx context.Context) ([]searchqu
 		PathPrefixes: s.PathPrefixes, SourceKinds: s.SourceKinds, Paths: paths, Recipe: r.req.Recipe,
 	})
 	if err != nil {
+		return nil, err
+	}
+	if err := r.calls.match(ctx, getPaths(listed)); err != nil {
 		return nil, err
 	}
 	var documents []searchquery.Document
@@ -94,19 +105,19 @@ func (r *documentReader) fillKind(d searchquery.Document) searchquery.Document {
 	d.Title = searchquery.GetTitle(d.Path, d.Title)
 	d.IsInSet = r.getMembership(d.Path)
 	r.documents[d.Path] = d
-	return d
+	return r.calls.withCalls(d)
 }
 
 func (r *documentReader) getDocument(path string, sourceKind domain.SourceKind) searchquery.Document {
 	if d, found := r.documents[path]; found {
-		return d
+		return r.calls.withCalls(d)
 	}
 	d := searchquery.Document{
 		Path: path, Title: searchquery.GetTitle(path, ""), SourceKind: sourceKind,
 		Kind: searchquery.GetKind(sourceKind, r.contentTypes.GetContentType(path)),
 	}
 	d.IsInSet = r.getMembership(path)
-	return d
+	return r.calls.withCalls(d)
 }
 
 // FillDocuments sets the title, the time of change and the size of the document of each result.
