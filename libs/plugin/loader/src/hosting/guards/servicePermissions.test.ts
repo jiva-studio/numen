@@ -377,7 +377,9 @@ describe('running a command of the application', () => {
     const { host: services } = createPluginParts('md.numen.sample', host, MANIFEST(permissions))
     const run = (command: string) =>
       Promise.resolve()
-        .then(() => services.ui.commands.run(command, target as never, undefined, { kind: 'plex' }))
+        .then(() =>
+          services.ui.commands!.run(command, target as never, undefined, { kind: 'plex' }),
+        )
         .then(() => undefined)
         .catch((error: unknown) => String(error))
     const getReachedCommands = () =>
