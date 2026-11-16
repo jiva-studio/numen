@@ -75,7 +75,7 @@ export function useNames(
     clearPending()
     pending = setTimeout(() => {
       pending = undefined
-      if (source.settings.showNames.value) void read(path())
+      if (source.settings.showNames.value) read(path()).catch(source.reportFailure)
     }, REFRESH_DELAY_MS)
   })
   onScopeDispose(() => {
