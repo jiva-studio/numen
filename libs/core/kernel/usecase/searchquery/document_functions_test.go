@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
+	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 )
 
 func (w world) addFile(t *testing.T, filePath string, size int64) {
@@ -20,7 +20,7 @@ func (w world) addFile(t *testing.T, filePath string, size int64) {
 
 func (w world) findPaths(t *testing.T, text string) []string {
 	t.Helper()
-	got, err := w.newFind(nil).Execute(t.Context(), w.v, searchquery.Request{Text: text, Limit: 100})
+	got, err := w.newFind(nil).Execute(t.Context(), w.v, searchquerydomain.Request{Text: text, Limit: 100})
 	if err != nil {
 		t.Fatalf("%s: %v", text, err)
 	}
@@ -98,7 +98,7 @@ func TestATitlePrefixAmongManyDocumentsPassesTheDocumentLimit(t *testing.T) {
 	}
 	find := w.newFind(nil)
 	find.Limits.MaxDocuments = 5
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `title.startsWith("Lecture") && kind == "pdf"`})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `title.startsWith("Lecture") && kind == "pdf"`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestAMeaningWithHasPropertyFindsItsChunkThoughNearerChunksLackTheKey(t *tes
 	w.vectorize(t, "many.md", func(chunk.Record) []float32 { return newVector(0) })
 	find := w.newFind(texts{"heat": newVector(0)})
 	find.Limits.CandidatesPerCondition = 5
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("heat") && hasProperty("source")`})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("heat") && hasProperty("source")`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,14 +146,14 @@ func TestUnreadableFrontmatterWarnsAPropertyQueryOnly(t *testing.T) {
 		"done.md":   "---\nstatus: done\n---\nDone.",
 		"broken.md": "---\nstatus: [done\n---\nBroken.",
 	})
-	got, err := w.newFind(nil).Execute(t.Context(), w.v, searchquery.Request{Text: `property("status") == "done"`})
+	got, err := w.newFind(nil).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `property("status") == "done"`})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if strings.Join(getPaths(got), ",") != "done.md" || len(got.Warnings) != 1 || !strings.Contains(got.Warnings[0], "1 notes have frontmatter that cannot be read") {
 		t.Errorf("found %v with warnings %v, want done.md and one warning", getPaths(got), got.Warnings)
 	}
-	got, err = w.newFind(nil).Execute(t.Context(), w.v, searchquery.Request{Text: `title == "x"`})
+	got, err = w.newFind(nil).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `title == "x"`})
 	if err != nil {
 		t.Fatal(err)
 	}

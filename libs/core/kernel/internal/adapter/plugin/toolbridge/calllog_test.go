@@ -17,7 +17,11 @@ import (
 )
 
 func newCatalog(host *pluginHost, files *storage.Storage) *toolbridge.Catalog {
-	return toolbridge.NewCatalog(host, host, files, testsupport.NewClock(), io.Discard)
+	return newCatalogOf(host, files, "r1")
+}
+
+func newCatalogOf(host *pluginHost, files *storage.Storage, revision string) *toolbridge.Catalog {
+	return toolbridge.NewCatalog(host, host, files, revision, testsupport.NewClock(), io.Discard)
 }
 
 // steppingClock moves a second forward on every reading.
@@ -29,7 +33,7 @@ func callLogged(t *testing.T, call *v1.CallToolRequest) map[string]any {
 	t.Helper()
 	var out bytes.Buffer
 	host := newTwoPlugins(t)
-	catalog := toolbridge.NewCatalog(host, host, filesIn(t, ""), steppingClock{testsupport.NewClock()}, &out)
+	catalog := toolbridge.NewCatalog(host, host, filesIn(t, ""), "r1", steppingClock{testsupport.NewClock()}, &out)
 
 	if _, err := catalog.CallTool(t.Context(), callerPlugin, call); err != nil {
 		t.Fatal(err)

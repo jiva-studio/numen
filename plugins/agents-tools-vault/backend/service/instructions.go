@@ -13,6 +13,7 @@ const (
 	bookKindSentence    = "For a question about a book, pass kinds [\"file\"] to library_search, because a vault has far more notes than books."
 	libraryReadSentence = "library_read reads the text of one source a page or a range at a time."
 	fileReadSentence    = "file_read reads text files and returns an error for a binary file."
+	queryScopeSentence  = "library_search is enough for words or a topic; use library_query to combine conditions, keep one kind of file or one folder, or rerank and cut the results, and library_query_results to wait for a running query or read its next page."
 
 	noteListSentence         = "Use note_list to list the notes of the vault or of one folder by path and title, and page through them with limit and offset."
 	noteTitleListSentence    = "Use note_title_list to get the titles and identifiers of notes whose paths you already have."

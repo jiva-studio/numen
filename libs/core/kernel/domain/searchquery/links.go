@@ -31,6 +31,7 @@ type LinkFunction struct {
 	Role         domain.LinkRole
 	Direction    LinkDirection
 	IsTransitive bool
+	Summary      string
 	Description  string
 	Example      string
 }
@@ -41,50 +42,62 @@ func listLinkFunctions() []LinkFunction {
 	return []LinkFunction{
 		{
 			Name: "hasLinkTo", Direction: DirectionTo,
+			Summary:     "documents that link to the target",
 			Description: "documents with a link of any role to the target, a note or a file", Example: `hasLinkTo("Entropy")`,
 		},
 		{
 			Name: "hasLinkFrom", Direction: DirectionFrom,
+			Summary:     "documents the target links to",
 			Description: "documents the target note links to, by any role", Example: `hasLinkFrom("Reading list")`,
 		},
 		{
 			Name: "hasReferenceTo", Role: domain.RoleRef, Direction: DirectionTo,
+			Summary:     "notes with a ref link to the target",
 			Description: "notes with a ref link (a wikilink in the text) to the target", Example: `hasReferenceTo("Entropy")`,
 		},
 		{
 			Name: "hasReferenceFrom", Role: domain.RoleRef, Direction: DirectionFrom,
+			Summary:     "documents the target refers to",
 			Description: "documents the target note links to by a ref link", Example: `hasReferenceFrom("Entropy")`,
 		},
 		{
 			Name: "hasJumpTo", Role: domain.RoleJump, Direction: DirectionTo,
+			Summary:     "notes with a jump link to the target",
 			Description: "notes with a jump link to the target", Example: `hasJumpTo("Entropy")`,
 		},
 		{
 			Name: "hasJumpFrom", Role: domain.RoleJump, Direction: DirectionFrom,
+			Summary:     "notes the target links to by a jump link",
 			Description: "notes the target note links to by a jump link", Example: `hasJumpFrom("Entropy")`,
 		},
 		{
 			Name: "isParentOf", Direction: DirectionAbove,
+			Summary:     "notes directly above the target",
 			Description: "notes directly above the target, written at either end", Example: `isParentOf("Entropy")`,
 		},
 		{
 			Name: "isChildOf", Direction: DirectionBelow,
+			Summary:     "notes directly under the target",
 			Description: "notes directly under the target, written at either end", Example: `isChildOf("Physics")`,
 		},
 		{
 			Name: "isAncestorOf", Direction: DirectionAbove, IsTransitive: true,
+			Summary:     "notes above the target at any depth",
 			Description: "notes above the target at any depth up to the limit", Example: `isAncestorOf("Entropy")`,
 		},
 		{
 			Name: "isDescendantOf", Direction: DirectionBelow, IsTransitive: true,
+			Summary:     "notes under the target at any depth",
 			Description: "notes under the target at any depth up to the limit", Example: `isDescendantOf("Physics") && meaning("heat")`,
 		},
 		{
 			Name: "hasAttachment", Role: domain.RoleAttachment, Direction: DirectionTo,
+			Summary:     "notes that attach the file",
 			Description: "notes with an attachment link to the file path or address", Example: `hasAttachment("scans/1897-letter.pdf")`,
 		},
 		{
 			Name: "isAttachedTo", Role: domain.RoleAttachment, Direction: DirectionFrom,
+			Summary:     "files the target note attaches",
 			Description: "indexed files the target note attaches", Example: `isAttachedTo("Letters")`,
 		},
 	}
@@ -107,7 +120,7 @@ func getLinkCatalog() []Function {
 	for i, f := range functions {
 		out[i] = Function{
 			Name: f.Name, Args: []ValueType{TypeString}, OptionalArgs: []ValueType{TypeString}, Result: TypeBool,
-			Level: LevelDocument, Description: f.Description + "." + targetHelp, Example: f.Example,
+			Level: LevelDocument, Summary: f.Summary, Description: f.Description + "." + targetHelp, Example: f.Example,
 		}
 	}
 	return out

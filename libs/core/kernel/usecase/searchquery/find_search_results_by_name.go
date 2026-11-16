@@ -26,7 +26,7 @@ func NewFindSearchResultsByName(find VaultFinding, prepare SearchPreparing) Find
 }
 
 // ExecuteByName resolves the vault, prepares the search over it and returns the results of the query.
-func (u FindSearchResultsByName) ExecuteByName(ctx context.Context, nameOrPath string, r Request) (searchquery.SearchResults, error) {
+func (u FindSearchResultsByName) ExecuteByName(ctx context.Context, nameOrPath string, r searchquery.Request) (searchquery.SearchResults, error) {
 	v, err := u.find(nameOrPath)
 	if err != nil {
 		return searchquery.SearchResults{}, err

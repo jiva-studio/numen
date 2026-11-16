@@ -105,7 +105,7 @@ func mountSearch(w *windowWiring) {
 		search.NewFindText(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 		searchcancel.NewSearches(w.cfg.Clock()),
 	)
-	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError)
+	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError, newSearchRuns(w))
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
@@ -252,12 +252,14 @@ func getReadVault(a pluginsWiring, db *Index) indexing.OpenReading {
 	}
 }
 
-func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
+func newIndexWorker(
+	a pluginsWiring, db *Index, state *editor.State, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault), out io.Writer,
+) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
 		Reading:      getReadVault(a, db),
 		Source:       embedding.GetSource(),
 		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
-		IndexChanged: state.Events.EmitIndexChanged,
+		IndexChanged: indexChanged,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
 		Quiet:        indexing.QuietPeriod,
 		After:        a.vault.Clock.After,

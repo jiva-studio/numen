@@ -69,7 +69,7 @@ func (w world) newLinkFind() *searchquery.FindSearchResults {
 
 func findPaths(t *testing.T, find *searchquery.FindSearchResults, w world, text string) []string {
 	t.Helper()
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: text, Limit: 100})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: text, Limit: 100})
 	if err != nil {
 		t.Fatalf("%s: %v", text, err)
 	}
@@ -126,7 +126,7 @@ func TestAHierarchyDeeperThanTheLimitIsRefused(t *testing.T) {
 		t.Errorf("a chain of exactly 2 found %v, want 2 notes", paths)
 	}
 	find.Limits.MaxLinkDepth = 1
-	_, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `isDescendantOf("Physics")`})
+	_, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `isDescendantOf("Physics")`})
 	if !errors.Is(err, searchquerydomain.ErrLimitExceeded) || !strings.Contains(err.Error(), "MaxLinkDepth") {
 		t.Errorf("a hierarchy deeper than the limit returned %v, want ErrLimitExceeded naming MaxLinkDepth", err)
 	}
@@ -161,7 +161,7 @@ func TestABareFileNameResolvesAsTheWikilinkDoes(t *testing.T) {
 	checkPaths(t, w, `hasAttachment("archive/scans/1897-letter.pdf")`, "Letters.md")
 	checkPaths(t, w, `isAttachedTo("Letters")`, "archive/scans/1897-letter.pdf")
 	checkPaths(t, w, `hasLinkFrom("journal/today")`, "archive/scans/1897-letter.pdf")
-	_, err := w.newLinkFind().Execute(t.Context(), w.v, searchquery.Request{Text: `hasLinkTo("photo.png")`})
+	_, err := w.newLinkFind().Execute(t.Context(), w.v, searchquerydomain.Request{Text: `hasLinkTo("photo.png")`})
 	if err == nil || !strings.Contains(err.Error(), "a/photo.png, b/photo.png") {
 		t.Errorf("a file name two files answer to returned %v, want a problem listing both", err)
 	}
@@ -179,7 +179,7 @@ func TestAnAmbiguousOrUnknownTargetIsAProblem(t *testing.T) {
 		"b/Entropy.md": "Two.\n",
 		"c.md":         "See [[a/Entropy]].\n",
 	})
-	_, err := w.newLinkFind().Execute(t.Context(), w.v, searchquery.Request{Text: `hasLinkTo("Entropy")`})
+	_, err := w.newLinkFind().Execute(t.Context(), w.v, searchquerydomain.Request{Text: `hasLinkTo("Entropy")`})
 	parseError, ok := errors.AsType[*searchquerydomain.ParseError](err)
 	if !ok || len(parseError.Problems) != 1 || !strings.Contains(err.Error(), "a/Entropy.md, b/Entropy.md") {
 		t.Fatalf("an ambiguous target returned %v, want a problem listing both notes", err)
@@ -190,7 +190,7 @@ func TestAnAmbiguousOrUnknownTargetIsAProblem(t *testing.T) {
 	if paths := findPaths(t, w.newLinkFind(), w, `hasLinkTo("a/Entropy")`); !slices.Equal(paths, []string{"c.md"}) {
 		t.Errorf("a path target found %v, want c.md", paths)
 	}
-	_, err = w.newLinkFind().Execute(t.Context(), w.v, searchquery.Request{Text: `hasLinkTo("Missing")`})
+	_, err = w.newLinkFind().Execute(t.Context(), w.v, searchquerydomain.Request{Text: `hasLinkTo("Missing")`})
 	if parseError, ok := errors.AsType[*searchquerydomain.ParseError](err); !ok || len(parseError.Problems) != 1 || !strings.Contains(err.Error(), "Missing") {
 		t.Errorf("an unknown target returned %v, want a problem naming it", err)
 	}
@@ -208,7 +208,7 @@ func TestAMeaningAmongDescendantsFindsAFragmentThoughNearerOnesAreOutside(t *tes
 	w.vectorize(t, "outside/many.md", func(chunk.Record) []float32 { return newVector(0) })
 	find := w.newFind(texts{"heat": newVector(0)})
 	find.Limits.CandidatesPerCondition = 5
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("heat") && isDescendantOf("Physics")`})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("heat") && isDescendantOf("Physics")`})
 	if err != nil {
 		t.Fatal(err)
 	}

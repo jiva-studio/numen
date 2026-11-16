@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 )
 
 // Identity tells who made a call and what that plugin may do.
@@ -146,11 +147,13 @@ type SearchFloors interface {
 	SetSearchFloor(ctx context.Context, v domain.Vault, recipe string, floor float64) error
 }
 
-// SearchAccess is the search index, the text search and the search floors of the vaults.
+// SearchAccess is the search index, the text search and the search floors of the vaults, and the searches
+// of the query language, which are nil where the host runs none.
 type SearchAccess struct {
 	SearchIndex
 	TextSearch
 	SearchFloors
+	Runs *searchrunusecase.SearchRuns
 }
 
 // WindowControl is the main window of the vault, exposed to the plugins that call the host. A path

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/links"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/notepath"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/notes"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/query"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/vaults"
 )
 
@@ -27,7 +28,7 @@ func (t *Tools) open(ctx context.Context) (*call, error) {
 	if id == "" {
 		return nil, errNoVault
 	}
-	c := &call{tools: t, current: domain.VaultID(id), vault: t.vaults(domain.VaultID(id)), texts: Library{Versions: nil, Texts: nil, Search: nil}}
+	c := &call{tools: t, current: domain.VaultID(id), vault: t.vaults(domain.VaultID(id)), texts: Library{Versions: nil, Texts: nil, Search: nil, Queries: nil}}
 	if t.library != nil {
 		c.texts = t.library(c.current)
 	}
@@ -60,4 +61,8 @@ func (c *call) createVaults() *vaults.UseCase {
 		return vaults.Vault{Selector: vault.Selector, Notes: vault.Notes}
 	}
 	return vaults.New(c.current, c.tools.list, open)
+}
+
+func (c *call) createQuery() *query.UseCase {
+	return query.New(c.texts.Queries)
 }

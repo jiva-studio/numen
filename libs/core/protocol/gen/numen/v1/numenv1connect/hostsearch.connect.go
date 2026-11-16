@@ -63,6 +63,18 @@ const (
 	// HostSearchServiceSetSearchFloorProcedure is the fully-qualified name of the HostSearchService's
 	// SetSearchFloor RPC.
 	HostSearchServiceSetSearchFloorProcedure = "/numen.v1.HostSearchService/SetSearchFloor"
+	// HostSearchServiceStartSearchProcedure is the fully-qualified name of the HostSearchService's
+	// StartSearch RPC.
+	HostSearchServiceStartSearchProcedure = "/numen.v1.HostSearchService/StartSearch"
+	// HostSearchServiceGetSearchProcedure is the fully-qualified name of the HostSearchService's
+	// GetSearch RPC.
+	HostSearchServiceGetSearchProcedure = "/numen.v1.HostSearchService/GetSearch"
+	// HostSearchServiceRemoveSearchProcedure is the fully-qualified name of the HostSearchService's
+	// RemoveSearch RPC.
+	HostSearchServiceRemoveSearchProcedure = "/numen.v1.HostSearchService/RemoveSearch"
+	// HostSearchServiceListSearchFunctionsProcedure is the fully-qualified name of the
+	// HostSearchService's ListSearchFunctions RPC.
+	HostSearchServiceListSearchFunctionsProcedure = "/numen.v1.HostSearchService/ListSearchFunctions"
 )
 
 // HostSearchServiceClient is a client for the numen.v1.HostSearchService service.
@@ -114,6 +126,18 @@ type HostSearchServiceClient interface {
 	// floor of zero removes the stored floor. Setting the floor that is stored
 	// changes nothing.
 	SetSearchFloor(context.Context, *connect.Request[v1.SetSearchFloorRequest]) (*connect.Response[v1.SetSearchFloorResponse], error)
+	// StartSearch starts a query of the search language over the vault and returns its id at once. An equal
+	// query of the same plugin that is still running returns the id of that search. A query that is not valid
+	// starts all the same and ends at once with its errors.
+	StartSearch(context.Context, *connect.Request[v1.StartSearchRequest]) (*connect.Response[v1.StartSearchResponse], error)
+	// GetSearch is the state of a search the plugin started and one page of its results. It waits up to
+	// wait_ms for the search to stop; zero answers at once. A search is kept for 10 minutes after its last
+	// read, and at most 20 are kept. Only the plugin that started a search reads it.
+	GetSearch(context.Context, *connect.Request[v1.GetSearchRequest]) (*connect.Response[v1.GetSearchResponse], error)
+	// RemoveSearch cancels a running search and forgets it.
+	RemoveSearch(context.Context, *connect.Request[v1.RemoveSearchRequest]) (*connect.Response[v1.RemoveSearchResponse], error)
+	// ListSearchFunctions is the functions, variables and stages of the search language.
+	ListSearchFunctions(context.Context, *connect.Request[v1.ListSearchFunctionsRequest]) (*connect.Response[v1.ListSearchFunctionsResponse], error)
 }
 
 // NewHostSearchServiceClient constructs a client for the numen.v1.HostSearchService service. By
@@ -187,21 +211,49 @@ func NewHostSearchServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(hostSearchServiceMethods.ByName("SetSearchFloor")),
 			connect.WithClientOptions(opts...),
 		),
+		startSearch: connect.NewClient[v1.StartSearchRequest, v1.StartSearchResponse](
+			httpClient,
+			baseURL+HostSearchServiceStartSearchProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("StartSearch")),
+			connect.WithClientOptions(opts...),
+		),
+		getSearch: connect.NewClient[v1.GetSearchRequest, v1.GetSearchResponse](
+			httpClient,
+			baseURL+HostSearchServiceGetSearchProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("GetSearch")),
+			connect.WithClientOptions(opts...),
+		),
+		removeSearch: connect.NewClient[v1.RemoveSearchRequest, v1.RemoveSearchResponse](
+			httpClient,
+			baseURL+HostSearchServiceRemoveSearchProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("RemoveSearch")),
+			connect.WithClientOptions(opts...),
+		),
+		listSearchFunctions: connect.NewClient[v1.ListSearchFunctionsRequest, v1.ListSearchFunctionsResponse](
+			httpClient,
+			baseURL+HostSearchServiceListSearchFunctionsProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("ListSearchFunctions")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // hostSearchServiceClient implements HostSearchServiceClient.
 type hostSearchServiceClient struct {
-	getEmbeddingState  *connect.Client[v1.GetEmbeddingStateRequest, v1.GetEmbeddingStateResponse]
-	getIndexStats      *connect.Client[v1.GetIndexStatsRequest, v1.GetIndexStatsResponse]
-	embedTexts         *connect.Client[v1.EmbedTextsRequest, v1.EmbedTextsResponse]
-	sampleSimilarities *connect.Client[v1.SampleSimilaritiesRequest, v1.SampleSimilaritiesResponse]
-	getBestSimilarity  *connect.Client[v1.GetBestSimilarityRequest, v1.GetBestSimilarityResponse]
-	findNearestChunks  *connect.Client[v1.FindNearestChunksRequest, v1.FindNearestChunksResponse]
-	searchText         *connect.Client[v1.HostSearchServiceSearchTextRequest, v1.HostSearchServiceSearchTextResponse]
-	scoreChunks        *connect.Client[v1.ScoreChunksRequest, v1.ScoreChunksResponse]
-	getSearchFloor     *connect.Client[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse]
-	setSearchFloor     *connect.Client[v1.SetSearchFloorRequest, v1.SetSearchFloorResponse]
+	getEmbeddingState   *connect.Client[v1.GetEmbeddingStateRequest, v1.GetEmbeddingStateResponse]
+	getIndexStats       *connect.Client[v1.GetIndexStatsRequest, v1.GetIndexStatsResponse]
+	embedTexts          *connect.Client[v1.EmbedTextsRequest, v1.EmbedTextsResponse]
+	sampleSimilarities  *connect.Client[v1.SampleSimilaritiesRequest, v1.SampleSimilaritiesResponse]
+	getBestSimilarity   *connect.Client[v1.GetBestSimilarityRequest, v1.GetBestSimilarityResponse]
+	findNearestChunks   *connect.Client[v1.FindNearestChunksRequest, v1.FindNearestChunksResponse]
+	searchText          *connect.Client[v1.HostSearchServiceSearchTextRequest, v1.HostSearchServiceSearchTextResponse]
+	scoreChunks         *connect.Client[v1.ScoreChunksRequest, v1.ScoreChunksResponse]
+	getSearchFloor      *connect.Client[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse]
+	setSearchFloor      *connect.Client[v1.SetSearchFloorRequest, v1.SetSearchFloorResponse]
+	startSearch         *connect.Client[v1.StartSearchRequest, v1.StartSearchResponse]
+	getSearch           *connect.Client[v1.GetSearchRequest, v1.GetSearchResponse]
+	removeSearch        *connect.Client[v1.RemoveSearchRequest, v1.RemoveSearchResponse]
+	listSearchFunctions *connect.Client[v1.ListSearchFunctionsRequest, v1.ListSearchFunctionsResponse]
 }
 
 // GetEmbeddingState calls numen.v1.HostSearchService.GetEmbeddingState.
@@ -254,6 +306,26 @@ func (c *hostSearchServiceClient) SetSearchFloor(ctx context.Context, req *conne
 	return c.setSearchFloor.CallUnary(ctx, req)
 }
 
+// StartSearch calls numen.v1.HostSearchService.StartSearch.
+func (c *hostSearchServiceClient) StartSearch(ctx context.Context, req *connect.Request[v1.StartSearchRequest]) (*connect.Response[v1.StartSearchResponse], error) {
+	return c.startSearch.CallUnary(ctx, req)
+}
+
+// GetSearch calls numen.v1.HostSearchService.GetSearch.
+func (c *hostSearchServiceClient) GetSearch(ctx context.Context, req *connect.Request[v1.GetSearchRequest]) (*connect.Response[v1.GetSearchResponse], error) {
+	return c.getSearch.CallUnary(ctx, req)
+}
+
+// RemoveSearch calls numen.v1.HostSearchService.RemoveSearch.
+func (c *hostSearchServiceClient) RemoveSearch(ctx context.Context, req *connect.Request[v1.RemoveSearchRequest]) (*connect.Response[v1.RemoveSearchResponse], error) {
+	return c.removeSearch.CallUnary(ctx, req)
+}
+
+// ListSearchFunctions calls numen.v1.HostSearchService.ListSearchFunctions.
+func (c *hostSearchServiceClient) ListSearchFunctions(ctx context.Context, req *connect.Request[v1.ListSearchFunctionsRequest]) (*connect.Response[v1.ListSearchFunctionsResponse], error) {
+	return c.listSearchFunctions.CallUnary(ctx, req)
+}
+
 // HostSearchServiceHandler is an implementation of the numen.v1.HostSearchService service.
 type HostSearchServiceHandler interface {
 	// GetEmbeddingState is the model in use and how far the vault is embedded
@@ -303,6 +375,18 @@ type HostSearchServiceHandler interface {
 	// floor of zero removes the stored floor. Setting the floor that is stored
 	// changes nothing.
 	SetSearchFloor(context.Context, *connect.Request[v1.SetSearchFloorRequest]) (*connect.Response[v1.SetSearchFloorResponse], error)
+	// StartSearch starts a query of the search language over the vault and returns its id at once. An equal
+	// query of the same plugin that is still running returns the id of that search. A query that is not valid
+	// starts all the same and ends at once with its errors.
+	StartSearch(context.Context, *connect.Request[v1.StartSearchRequest]) (*connect.Response[v1.StartSearchResponse], error)
+	// GetSearch is the state of a search the plugin started and one page of its results. It waits up to
+	// wait_ms for the search to stop; zero answers at once. A search is kept for 10 minutes after its last
+	// read, and at most 20 are kept. Only the plugin that started a search reads it.
+	GetSearch(context.Context, *connect.Request[v1.GetSearchRequest]) (*connect.Response[v1.GetSearchResponse], error)
+	// RemoveSearch cancels a running search and forgets it.
+	RemoveSearch(context.Context, *connect.Request[v1.RemoveSearchRequest]) (*connect.Response[v1.RemoveSearchResponse], error)
+	// ListSearchFunctions is the functions, variables and stages of the search language.
+	ListSearchFunctions(context.Context, *connect.Request[v1.ListSearchFunctionsRequest]) (*connect.Response[v1.ListSearchFunctionsResponse], error)
 }
 
 // NewHostSearchServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -372,6 +456,30 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 		connect.WithSchema(hostSearchServiceMethods.ByName("SetSearchFloor")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostSearchServiceStartSearchHandler := connect.NewUnaryHandler(
+		HostSearchServiceStartSearchProcedure,
+		svc.StartSearch,
+		connect.WithSchema(hostSearchServiceMethods.ByName("StartSearch")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostSearchServiceGetSearchHandler := connect.NewUnaryHandler(
+		HostSearchServiceGetSearchProcedure,
+		svc.GetSearch,
+		connect.WithSchema(hostSearchServiceMethods.ByName("GetSearch")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostSearchServiceRemoveSearchHandler := connect.NewUnaryHandler(
+		HostSearchServiceRemoveSearchProcedure,
+		svc.RemoveSearch,
+		connect.WithSchema(hostSearchServiceMethods.ByName("RemoveSearch")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostSearchServiceListSearchFunctionsHandler := connect.NewUnaryHandler(
+		HostSearchServiceListSearchFunctionsProcedure,
+		svc.ListSearchFunctions,
+		connect.WithSchema(hostSearchServiceMethods.ByName("ListSearchFunctions")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostSearchService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostSearchServiceGetEmbeddingStateProcedure:
@@ -394,6 +502,14 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 			hostSearchServiceGetSearchFloorHandler.ServeHTTP(w, r)
 		case HostSearchServiceSetSearchFloorProcedure:
 			hostSearchServiceSetSearchFloorHandler.ServeHTTP(w, r)
+		case HostSearchServiceStartSearchProcedure:
+			hostSearchServiceStartSearchHandler.ServeHTTP(w, r)
+		case HostSearchServiceGetSearchProcedure:
+			hostSearchServiceGetSearchHandler.ServeHTTP(w, r)
+		case HostSearchServiceRemoveSearchProcedure:
+			hostSearchServiceRemoveSearchHandler.ServeHTTP(w, r)
+		case HostSearchServiceListSearchFunctionsProcedure:
+			hostSearchServiceListSearchFunctionsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -441,4 +557,20 @@ func (UnimplementedHostSearchServiceHandler) GetSearchFloor(context.Context, *co
 
 func (UnimplementedHostSearchServiceHandler) SetSearchFloor(context.Context, *connect.Request[v1.SetSearchFloorRequest]) (*connect.Response[v1.SetSearchFloorResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.SetSearchFloor is not implemented"))
+}
+
+func (UnimplementedHostSearchServiceHandler) StartSearch(context.Context, *connect.Request[v1.StartSearchRequest]) (*connect.Response[v1.StartSearchResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.StartSearch is not implemented"))
+}
+
+func (UnimplementedHostSearchServiceHandler) GetSearch(context.Context, *connect.Request[v1.GetSearchRequest]) (*connect.Response[v1.GetSearchResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.GetSearch is not implemented"))
+}
+
+func (UnimplementedHostSearchServiceHandler) RemoveSearch(context.Context, *connect.Request[v1.RemoveSearchRequest]) (*connect.Response[v1.RemoveSearchResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.RemoveSearch is not implemented"))
+}
+
+func (UnimplementedHostSearchServiceHandler) ListSearchFunctions(context.Context, *connect.Request[v1.ListSearchFunctionsRequest]) (*connect.Response[v1.ListSearchFunctionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.ListSearchFunctions is not implemented"))
 }

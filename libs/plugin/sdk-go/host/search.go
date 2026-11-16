@@ -28,6 +28,12 @@ var (
 	ErrInvalidCondition = errors.New("host: a condition names neither or both of meaning and words")
 	// ErrInvalidWords is what a words query gets that FTS5 rejects.
 	ErrInvalidWords = errors.New("host: the words query is not valid FTS5")
+	// ErrSearchNotFound is a search the plugin did not start, or one removed or not read for 10 minutes.
+	ErrSearchNotFound = errors.New("host: no such search")
+	// ErrTooManySearches is a start while the most searches kept are all running.
+	ErrTooManySearches = errors.New("host: too many searches are kept")
+	// ErrInvalidPageToken is a page token of another search.
+	ErrInvalidPageToken = errors.New("host: the page token is not valid for this search")
 )
 
 // The permissions a plugin declares in its manifest. The search reads, the embedding included, need
@@ -302,6 +308,15 @@ type SearchResult struct {
 	// WholeText is the whole text of the chunk Text is cut from; set only when the query asks with
 	// IsWholeText.
 	WholeText string
+	// Kind is the kind of the file: note, pdf, epub, audio, video, image or file. Set by GetSearch.
+	Kind string
+	// Title is the note title, else the file name without its extension. Set by GetSearch.
+	Title string
+	// Score is the score of the result, nil for a file matched by document conditions only. Set by GetSearch.
+	Score *float64
+	// IsWholeFile is a result with no place in its file: Start and Length are zero and Text is the start of
+	// the file. Set by GetSearch.
+	IsWholeFile bool
 }
 
 // ScoreCondition is one condition ScoreChunks scores a chunk against.

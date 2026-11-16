@@ -9,12 +9,14 @@ import (
 
 func TestTheVaultToolsRequireOnlyThePermissionsOfWhatTheyCall(t *testing.T) {
 	want := map[string][]string{
-		"vault_add":      {"vault:manage"},
-		"vault_rename":   {"vault:manage"},
-		"vault_remove":   {"vault:manage"},
-		"vault_open":     {"vault:manage"},
-		"library_search": {"index:read"},
-		"library_read":   {"index:read"},
+		"vault_add":             {"vault:manage"},
+		"vault_rename":          {"vault:manage"},
+		"vault_remove":          {"vault:manage"},
+		"vault_open":            {"vault:manage"},
+		"library_search":        {"index:read"},
+		"library_read":          {"index:read"},
+		"library_query":         {"index:read"},
+		"library_query_results": {"index:read"},
 	}
 	listing := listVaultTools(t)
 	for name := range want {

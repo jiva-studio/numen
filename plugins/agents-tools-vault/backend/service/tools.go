@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/ports"
@@ -13,9 +14,10 @@ var errNoVault = errors.New("the call names no vault")
 
 // Tools builds the registry of the vault tools.
 type Tools struct {
-	vaults  func(domain.VaultID) Vault
-	library func(domain.VaultID) Library
-	list    ports.VaultList
+	vaults    func(domain.VaultID) Vault
+	library   func(domain.VaultID) Library
+	functions host.SearchFunctions
+	list      ports.VaultList
 }
 
 // Vault is the calls the tools make on one vault, each through the narrow interface it needs.
@@ -36,12 +38,13 @@ type Library struct {
 	Versions ports.VersionLister
 	Texts    ports.TextReader
 	Search   ports.TextSearch
+	Queries  ports.QueryRunner
 }
 
 // New creates a Tools instance. vaults gives the calls on the vault with an identity, and on the vault
 // the host shows for the empty identity.
 func New(vaults func(domain.VaultID) Vault) *Tools {
-	return &Tools{vaults: vaults, library: nil, list: nil}
+	return &Tools{vaults: vaults, library: nil, functions: host.SearchFunctions{Functions: nil, Revision: ""}, list: nil}
 }
 
 // WithVaultList sets the installation's list of vaults, which vault_list reads and the
@@ -52,9 +55,9 @@ func (t *Tools) WithVaultList(list ports.VaultList) *Tools {
 }
 
 // WithLibrary sets the calls on the text versions and the search index of the vault with an identity,
-// which the library tools use.
-func (t *Tools) WithLibrary(library func(domain.VaultID) Library) *Tools {
-	t.library = library
+// which the library tools use, and the functions of the search language library_query describes.
+func (t *Tools) WithLibrary(library func(domain.VaultID) Library, functions host.SearchFunctions) *Tools {
+	t.library, t.functions = library, functions
 	return t
 }
 
@@ -62,7 +65,7 @@ func (t *Tools) WithLibrary(library func(domain.VaultID) Library) *Tools {
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
 	registrations := joinRegistrations(
-		createNoteTools(), createLibraryTools(), createInspectTools(),
+		createNoteTools(), createLibraryTools(), createQueryTools(t.functions), createInspectTools(),
 		createFileTools(), createArrangeTools(), createLinkEditTools(),
 	)
 	if t.list != nil {

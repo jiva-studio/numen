@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 )
 
@@ -31,7 +30,7 @@ func TestAMeaningInAScopeFindsItsChunkThoughNearerChunksAreOutsideIt(t *testing.
 	w := newDeepWorld(t)
 	find := w.newFind(texts{"a": newVector(0)})
 	find.Limits.CandidatesPerCondition = 5
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("a") && path.startsWith("deep/")`})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("a") && path.startsWith("deep/")`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +51,7 @@ func TestAMeaningInAScopeOverTheExactScanFindsItsChunkByTheApproximateSearch(t *
 		find.Limits.ExactScanChunks = 0
 		find.Limits.CandidatesPerCondition = 1
 		find.Limits.CoarseOversample = 1
-		got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: text})
+		got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: text})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -76,7 +75,7 @@ func TestAMeaningWithFewChunksAboveTheFloorSearchesOnceWithoutAWarning(t *testin
 	find.Limits.CandidatesPerCondition = 10
 	find.Limits.CoarseOversample = 1
 	find.Limits.MaxCoarseCandidates = 80
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("a")`})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("a")`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +93,7 @@ func TestAMeaningWhoseNearestChunksAreOutOfScopeWidensTheSearch(t *testing.T) {
 	find.Limits.ExactScanChunks = 0
 	find.Limits.CandidatesPerCondition = 1
 	find.Limits.CoarseOversample = 1
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("a") && !path.startsWith("out/")`})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("a") && !path.startsWith("out/")`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +117,7 @@ func TestWordsOrMeaningFusesAndTheChunkMatchedByBothRanksFirst(t *testing.T) {
 	w.vectorize(t, "a.md", func(chunk.Record) []float32 { return newVector(dimensions / 8) })
 	w.vectorize(t, "b.md", func(chunk.Record) []float32 { return newVector(dimensions) })
 	w.vectorize(t, "c.md", func(chunk.Record) []float32 { return newVector(0) })
-	got, err := w.newFind(texts{"sea": newVector(0)}).Execute(t.Context(), w.v, searchquery.Request{Text: `words("tide") || meaning("sea")`})
+	got, err := w.newFind(texts{"sea": newVector(0)}).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide") || meaning("sea")`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +136,7 @@ func TestAKindAloneReturnsOneWholeFilePerDocumentByPath(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	got, err := w.newFind(nil).Execute(t.Context(), w.v, searchquery.Request{Text: `kind == "pdf"`})
+	got, err := w.newFind(nil).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `kind == "pdf"`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +152,7 @@ func TestAKindAloneReturnsOneWholeFilePerDocumentByPath(t *testing.T) {
 
 func TestAMeaningWithoutAModelReturnsErrNoModelAndReadsNothing(t *testing.T) {
 	find := searchquerytest.New(searchquerytest.Deps{Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: newClock()})
-	_, err := find.Execute(t.Context(), newWorld(t, nil).v, searchquery.Request{Text: `meaning("a")`})
+	_, err := find.Execute(t.Context(), newWorld(t, nil).v, searchquerydomain.Request{Text: `meaning("a")`})
 	if !errors.Is(err, searchquerydomain.ErrNoModel) {
 		t.Errorf("returned %v, want ErrNoModel", err)
 	}
@@ -162,7 +161,7 @@ func TestAMeaningWithoutAModelReturnsErrNoModelAndReadsNothing(t *testing.T) {
 func TestAWordsExpressionTheIndexRejectsIsAProblemAtItsPosition(t *testing.T) {
 	w := newWorld(t, map[string]string{"a.md": "Some words here."})
 	w.cutBySize(t, "a.md", 400)
-	_, err := w.newFind(nil).Execute(t.Context(), w.v, searchquery.Request{Text: `words("here") || words("\"unterminated")`})
+	_, err := w.newFind(nil).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("here") || words("\"unterminated")`})
 	parseError, ok := errors.AsType[*searchquerydomain.ParseError](err)
 	if !ok || len(parseError.Problems) != 1 {
 		t.Fatalf("returned %v, want one problem", err)
@@ -176,7 +175,7 @@ func TestTwoMatchingChunksCloseInOneFileAreOneResult(t *testing.T) {
 	text := "Tide one. " + strings.Repeat("a", 190) + strings.Repeat("b", 100) + "Tide two. " + strings.Repeat("c", 190)
 	w := newWorld(t, map[string]string{"a.md": text})
 	w.cutRanges(t, "a.md", [2]int{0, 200}, [2]int{300, 500})
-	got, err := w.newFind(nil).Execute(t.Context(), w.v, searchquery.Request{Text: `words("tide")`})
+	got, err := w.newFind(nil).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide")`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,7 +194,7 @@ func TestFiveChunksFarApartAreFiveResultsAmongTheOthersByScore(t *testing.T) {
 	w.cutBySize(t, "small.md", 400)
 	w.vectorize(t, "big.md", func(r chunk.Record) []float32 { return newVector(r.Start / 500 * 64) })
 	w.vectorize(t, "small.md", func(chunk.Record) []float32 { return newVector(32) })
-	got, err := w.newFind(texts{"a": newVector(0)}).Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("a")`})
+	got, err := w.newFind(texts{"a": newVector(0)}).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("a")`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +202,7 @@ func TestFiveChunksFarApartAreFiveResultsAmongTheOthersByScore(t *testing.T) {
 	if strings.Join(getPaths(got), ",") != want {
 		t.Errorf("found %v, want %s", getPaths(got), want)
 	}
-	again, err := w.newFind(texts{"a": newVector(0)}).Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("a")`})
+	again, err := w.newFind(texts{"a": newVector(0)}).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("a")`})
 	if err != nil || !reflect.DeepEqual(got, again) {
 		t.Errorf("a second run returned other results: %v", err)
 	}
@@ -215,7 +214,7 @@ func TestMoreCandidatesThanTheLimitAreTruncatedWithAWarning(t *testing.T) {
 	w.cutRanges(t, "a.md", [2]int{0, 300}, [2]int{300, 600}, [2]int{600, 900})
 	find := w.newFind(nil)
 	find.Limits.MaxCandidates = 2
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `words("tide")`})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide")`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +227,7 @@ func TestDocumentConditionsOverTheDocumentLimitAreRefused(t *testing.T) {
 	w := newWorld(t, map[string]string{"a.md": "A.", "b.md": "B."})
 	find := w.newFind(nil)
 	find.Limits.MaxDocuments = 1
-	_, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `kind == "note"`})
+	_, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `kind == "note"`})
 	if !errors.Is(err, searchquerydomain.ErrLimitExceeded) || !strings.Contains(err.Error(), "MaxDocuments") {
 		t.Errorf("returned %v, want ErrLimitExceeded naming MaxDocuments", err)
 	}
@@ -238,7 +237,7 @@ func TestACanceledQueryReturnsTheCancellation(t *testing.T) {
 	w := newWorld(t, map[string]string{"a.md": "Tide."})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	_, err := w.newFind(nil).Execute(ctx, w.v, searchquery.Request{Text: `words("tide")`})
+	_, err := w.newFind(nil).Execute(ctx, w.v, searchquerydomain.Request{Text: `words("tide")`})
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("returned %v, want context.Canceled", err)
 	}
@@ -254,7 +253,7 @@ func TestWordsWhoseBestChunksAreOutOfScopeWidenTheSearch(t *testing.T) {
 	find := w.newFind(texts{})
 	find.Limits.MaxDocuments = 0
 	find.Limits.CandidatesPerCondition = 1
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `words("harbor") && !path.startsWith("out/")`})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("harbor") && !path.startsWith("out/")`})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +265,7 @@ func TestWordsWhoseBestChunksAreOutOfScopeWidenTheSearch(t *testing.T) {
 func TestADocumentLoadedForANegatedCompareCountsTheChunksOfTheActiveRecipe(t *testing.T) {
 	w := newDeepWorld(t)
 	find := w.newFind(texts{"a": newVector(0)})
-	got, err := find.Execute(t.Context(), w.v, searchquery.Request{Text: `meaning("a") && path.startsWith("deep/") && !(title == "other")`})
+	got, err := find.Execute(t.Context(), w.v, searchquerydomain.Request{Text: `meaning("a") && path.startsWith("deep/") && !(title == "other")`})
 	if err != nil {
 		t.Fatal(err)
 	}

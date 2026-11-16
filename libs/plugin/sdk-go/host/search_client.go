@@ -88,8 +88,22 @@ func readSearchError(code v1.HostSearchErrorCode) error {
 		return ErrInvalidCondition
 	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_WORDS:
 		return ErrInvalidWords
+	default:
+		return readSearchRunError(code)
 	}
-	return fmt.Errorf("host: rejected with code %s", code)
+}
+
+func readSearchRunError(code v1.HostSearchErrorCode) error {
+	switch code {
+	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND:
+		return ErrSearchNotFound
+	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES:
+		return ErrTooManySearches
+	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN:
+		return ErrInvalidPageToken
+	default:
+		return fmt.Errorf("host: rejected with code %s", code)
+	}
 }
 
 func readFloorSource(source v1.SearchFloorSource) FloorSource {
@@ -204,16 +218,21 @@ func (c *SearchClient) SearchText(ctx context.Context, query SearchResultQuery) 
 	if err := readSearchError(res.Msg.GetError()); err != nil {
 		return nil, err
 	}
-	found := make([]SearchResult, len(res.Msg.GetResults()))
-	for i, one := range res.Msg.GetResults() {
+	return readSearchResults(res.Msg.GetResults()), nil
+}
+
+func readSearchResults(results []*v1.SearchResult) []SearchResult {
+	found := make([]SearchResult, len(results))
+	for i, one := range results {
 		start, end := int(one.GetByteRange().GetStart()), int(one.GetByteRange().GetEnd())
 		found[i] = SearchResult{
 			ChunkID: one.GetChunkId(), Path: one.GetPath(), Text: one.GetText(), PlaceLabel: one.GetPlaceLabel(),
 			Start: start, Length: end - start, MatchLine: int(one.GetMatchLine()), Selector: one.GetSelector(),
 			Similarity: one.Similarity, WordScore: one.WordScore, WholeText: one.GetWholeText(),
+			Kind: one.GetKind(), Title: one.GetTitle(), Score: one.Score, IsWholeFile: one.GetIsWholeFile(),
 		}
 	}
-	return found, nil
+	return found
 }
 
 func clampInt32(value int) int32 {
