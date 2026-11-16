@@ -2,7 +2,7 @@
  * The two views of the plugin as the plex draws them: the parents of a note above its node, and
  * its children and other related notes under it, read from a vault that answers like the core.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
 import type { JsonValue, NoteGraph, NoteRelation, RelatedNote, VaultNotes } from '@numen/plugin-sdk'
@@ -20,7 +20,8 @@ interface Neighbor {
 
 const getTitle = (path: string) => path.replace(/^.*\//, '').replace(/\.md$/, '')
 
-const createVault = (neighbors: Readonly<Record<string, readonly Neighbor[]>>) => {
+const createVault = (initial: Readonly<Record<string, readonly Neighbor[]>>) => {
+  let neighbors = initial
   const requests: [string, number | undefined][] = []
   const toRelated = (one: Neighbor, relatedTo?: string): RelatedNote => ({
     path: one.path,
@@ -49,7 +50,10 @@ const createVault = (neighbors: Readonly<Record<string, readonly Neighbor[]>>) =
       }
     },
   } as unknown as VaultNotes
-  return { notes, requests }
+  const change = (path: string, next: readonly Neighbor[]) => {
+    neighbors = { ...neighbors, [path]: next }
+  }
+  return { notes, requests, change }
 }
 
 const PEAR = 'notes/Pear rows.md'
@@ -97,6 +101,7 @@ const getNames = (wrapper: VueWrapper) =>
   wrapper.findAll('[role="button"], button').map((one) => one.text())
 
 afterEach(() => {
+  vi.useRealTimers()
   while (wrappers.length > 0) wrappers.pop()?.unmount()
   document.body.replaceChildren()
 })
@@ -323,5 +328,157 @@ describe('the setting Names per note', () => {
     const { show } = setup(many, { namesPerNote: 500 })
 
     expect(getNames(await show('related', PEAR))).toHaveLength(12)
+  })
+})
+
+describe('the names while the vault changes', () => {
+  const SETTLE_MS = 5000
+  const WITH_COMPOST: readonly Neighbor[] = [
+    ...ORCHARD[PEAR]!,
+    { path: 'notes/Compost.md', relation: 'child' },
+  ]
+
+  const settle = async () => {
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    await flushPromises()
+  }
+
+  const setupDrawn = async (id = 'related') => {
+    const rig = setup()
+    const wrapper = await rig.show(id, PEAR)
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    return { ...rig, wrapper }
+  }
+
+  it('adds the name of a note linked to the note while its node is drawn', async () => {
+    const { host, vault, wrapper } = await setupDrawn()
+
+    vault.change(PEAR, WITH_COMPOST)
+    host.events.emitVaultChange({ paths: [PEAR] })
+    await settle()
+
+    expect(getNames(wrapper)).toStrictEqual([
+      'Rootstock list',
+      'Compost',
+      'Grafting',
+      'Pollination',
+    ])
+  })
+
+  it('adds the name when a related note of the node is the one that changed', async () => {
+    const { host, vault, wrapper } = await setupDrawn()
+
+    vault.change(PEAR, WITH_COMPOST)
+    host.events.emitVaultChange({ paths: ['notes/Rootstock list.md'] })
+    await settle()
+
+    expect(getNames(wrapper)).toContain('Compost')
+  })
+
+  it('takes the name away of a link that was removed while the node is drawn', async () => {
+    const { host, vault, wrapper } = await setupDrawn()
+
+    vault.change(
+      PEAR,
+      ORCHARD[PEAR]!.filter((one) => one.path !== 'notes/Grafting.md'),
+    )
+    host.events.emitVaultChange({ paths: [PEAR] })
+    await settle()
+
+    expect(getNames(wrapper)).toStrictEqual(['Rootstock list', 'Pollination'])
+  })
+
+  it('updates the names above a node as well', async () => {
+    const { host, vault, wrapper } = await setupDrawn('parents')
+
+    vault.change(PEAR, [...ORCHARD[PEAR]!, { path: 'notes/Orchard map.md', relation: 'parent' }])
+    host.events.emitVaultChange({ paths: [PEAR] })
+    await settle()
+
+    expect(getNames(wrapper)).toStrictEqual(['Orchard plan', 'Garden plan', 'Orchard map'])
+  })
+
+  it('reads the notes once for a burst of changes', async () => {
+    const { host, vault, wrapper } = await setupDrawn()
+    const before = vault.requests.length
+
+    vault.change(PEAR, WITH_COMPOST)
+    for (let index = 0; index < 5; index += 1) host.events.emitVaultChange({ paths: [PEAR] })
+    await settle()
+
+    expect(vault.requests.length - before).toBe(1)
+    expect(getNames(wrapper)).toContain('Compost')
+  })
+
+  it('reads nothing again for a change of a note unrelated to the node', async () => {
+    const { host, vault } = await setupDrawn()
+    const before = vault.requests.length
+
+    host.events.emitVaultChange({ paths: ['notes/Beehives.md'] })
+    await settle()
+
+    expect(vault.requests.length).toBe(before)
+  })
+
+  it('reads again for a change that does not say which notes changed', async () => {
+    const { host, vault } = await setupDrawn()
+    const before = vault.requests.length
+
+    host.events.emitVaultChange({})
+    await settle()
+
+    expect(vault.requests.length - before).toBe(1)
+  })
+
+  it('leaves the names of another node as they are when only the first node changed', async () => {
+    const { host, vault, show } = setup({
+      ...ORCHARD,
+      'notes/Quince.md': [{ path: 'notes/Jam.md', relation: 'child' }],
+    })
+    const pear = await show('related', PEAR)
+    const quince = await show('related', 'notes/Quince.md')
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+
+    vault.change(PEAR, WITH_COMPOST)
+    host.events.emitVaultChange({ paths: [PEAR] })
+    await settle()
+
+    expect(getNames(pear)).toContain('Compost')
+    expect(getNames(quince)).toStrictEqual(['Jam'])
+    expect(vault.requests.filter(([path]) => path === 'notes/Quince.md')).toHaveLength(1)
+  })
+
+  it('stops reading when the view of the node is unmounted', async () => {
+    const { host, vault, wrapper } = await setupDrawn()
+    const before = vault.requests.length
+
+    wrapper.unmount()
+    host.events.emitVaultChange({ paths: [PEAR] })
+    await settle()
+
+    expect(vault.requests.length).toBe(before)
+  })
+
+  it('drops a change that is waiting when the view of the node is unmounted', async () => {
+    const { host, vault, wrapper } = await setupDrawn()
+    const before = vault.requests.length
+
+    host.events.emitVaultChange({ paths: [PEAR] })
+    wrapper.unmount()
+    await settle()
+
+    expect(vault.requests.length).toBe(before)
+  })
+
+  it('reads nothing on a change while the setting hides the names', async () => {
+    const { context, host, vault } = await setupDrawn()
+    context.setSetting('showNames', false)
+    await flushPromises()
+    const before = vault.requests.length
+
+    host.events.emitVaultChange({ paths: [PEAR] })
+    await settle()
+
+    expect(vault.requests.length).toBe(before)
   })
 })
