@@ -24,7 +24,7 @@ func openHostAt(endpoint hostcall.Endpoint) Open {
 	store := host.NewStoreClient(endpoint)
 	return func(id domain.VaultID) tagcache.Vault {
 		vault := client.With(id)
-		return tagcache.Vault{Frontmatter: vault, Feed: vault, Store: store.With(id)}
+		return tagcache.Vault{Frontmatter: vault, Feed: vault, Store: store.With(id), Properties: vault}
 	}
 }
 
