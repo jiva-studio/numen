@@ -18,8 +18,14 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   plugin.identity.subscriptions.push({ dispose: () => tagMap.stop() })
   const { picker } = host.ui
   if (picker) {
-    const { handler } = createSetTags({ api, picker, getTags: tagMap.getTags })
-    plugin.register.command({ id: 'tags.set', handler })
+    const setTags = createSetTags({ api, picker, getTags: tagMap.getTags })
+    plugin.register.command({
+      id: 'tags.set',
+      handler: async (note) => {
+        await tagMap.whenLoaded()
+        await setTags.handler(note)
+      },
+    })
   }
 }
 
