@@ -90,10 +90,11 @@ func openCLIIndexed(r *cliRun, c Config, ctx context.Context, options cli.IndexO
 			Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, prepareScan), db.NoteQueries()),
 			Now:  c.Clock().Now,
 		},
-		Search:   cli.Search{Search: searchusecase.NewByName(find, prepareSearch)},
-		Links:    query.NewShowLinksByName(find, Queries(db).Refer.Links),
-		Problems: vault.NewGetProblemsByName(find, getProblems(a.vault, db.NoteProblems())),
-		Query:    searchqueryusecase.NewFindSearchResultsByName(find, prepareQuery),
+		Search:           cli.Search{Search: searchusecase.NewByName(find, prepareSearch)},
+		Links:            query.NewShowLinksByName(find, Queries(db).Refer.Links),
+		Problems:         vault.NewGetProblemsByName(find, getProblems(a.vault, db.NoteProblems())),
+		Query:            searchqueryusecase.NewFindSearchResultsByName(find, prepareQuery),
+		OperationResults: newClearOperationResults(db),
 	}, nil
 }
 
@@ -134,7 +135,8 @@ func prepareCLIQuery(
 	}
 	embedder, why := openCLIEmbedder(r, asking, ctx)
 	reportSearchFallback(errorHandler, why)
-	return newFindSearchResults(asking.search, db, embedder, errorHandler), nil
+	setModelCalls(asking, run.NewConnectionNoticeTasks(r.tasks).Execute)
+	return newFindSearchResults(asking, db, embedder, errorHandler), nil
 }
 
 func reportSearchFallback(errorHandler window.ErrorHandler, err error) {

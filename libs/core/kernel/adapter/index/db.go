@@ -25,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/opentabs"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/operationresult"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
@@ -187,9 +188,6 @@ func (d *DB) SearchFloors() *searchpolicy.Repository {
 	return searchpolicy.NewRepository(d.read, d.write)
 }
 
-// SearchSamples reads the titles and vectors a plugin measures the floor with.
-func (d *DB) SearchSamples() *searchpolicy.Samples { return searchpolicy.NewSamples(d.read) }
-
 func dsn(path string, pos settings) string {
 	return dsnOf(path, append(slices.Clone(getPragmas()), pos.synchronous))
 }
@@ -206,4 +204,10 @@ func dsnOf(path string, pragmas []string) string {
 		separator = "&"
 	}
 	return path + separator + q.Encode()
+}
+
+// OperationResults is the stored results of connection operations, at most maxRows of them. A rebuild of the
+// index empties it.
+func (d *DB) OperationResults(maxRows int) *operationresult.Repository {
+	return operationresult.NewRepository(d.write, maxRows)
 }

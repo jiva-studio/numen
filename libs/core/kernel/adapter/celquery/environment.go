@@ -28,6 +28,10 @@ func newEnvironment(catalog searchquery.Catalog, maxDepth, maxCodePoints int) (*
 		cel.ParserExpressionSizeLimit(maxCodePoints),
 	}
 	for _, f := range catalog.Functions {
+		if f.IsStage {
+			options = append(options, declareStage(f))
+			continue
+		}
 		options = append(options, declare(f))
 	}
 	return cel.NewCustomEnv(options...)

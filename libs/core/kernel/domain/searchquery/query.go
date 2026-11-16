@@ -70,13 +70,6 @@ type Condition struct {
 	IsPositive bool
 }
 
-// Stage is one method call on the results of a query.
-type Stage struct {
-	Name     string
-	Args     []string
-	Position Position
-}
-
 // Query is a parsed and normalized query. IsSearchResults is set when the query names a chunk-level
 // function; a query without one is a document predicate.
 type Query struct {
@@ -119,9 +112,11 @@ type SetCondition struct {
 	Position   Position
 }
 
-// RawNode is the tree a parser emits, with negations where they are written.
+// RawNode is the tree a parser emits, with negations where they are written. Stages is set on the root
+// only: the stages written after the whole query, in order.
 type RawNode struct {
 	Operator Operator
 	Children []RawNode
 	Leaf     RawLeaf
+	Stages   []RawStage
 }

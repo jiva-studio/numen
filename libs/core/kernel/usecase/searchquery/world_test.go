@@ -196,7 +196,7 @@ func (extensionTypes) GetContentType(name string) domain.ContentType {
 func (extensionTypes) ListExtensions(domain.ContentType) []string { return nil }
 
 func (w world) newFind(model texts) *searchquery.FindSearchResults {
-	return searchquerytest.New(w.getDeps(model))
+	return searchquerytest.New(w.newDeps(model))
 }
 
 // countedVectors counts the approximate searches it passes to the index.
@@ -211,19 +211,20 @@ func (c *countedVectors) FindCoarseCandidates(ctx context.Context, vaultID domai
 }
 
 func (w world) newCountedFind(model texts) (*searchquery.FindSearchResults, *countedVectors) {
-	deps := w.getDeps(model)
+	deps := w.newDeps(model)
 	counted := &countedVectors{VectorQueries: deps.Evaluate.Vectors}
 	deps.Evaluate.Vectors = counted
 	return searchquerytest.New(deps), counted
 }
 
-func (w world) getDeps(model texts) searchquerytest.Deps {
+func (w world) newDeps(model texts) searchquerytest.Deps {
 	search := w.db.ChunkSearch()
 	deps := searchquerytest.Deps{
 		Parser: celquery.NewParser(searchquerydomain.DefaultLimits()), Clock: newClock(),
 		Evaluate: searchquery.EvaluateQueryDeps{
 			Documents: search, Vectors: search, Places: search, Contents: w.db.NoteQueryReads(), Links: w.db.NoteQueryReads(),
-			Matcher: wordmatch.NewMatcher(), Readers: vaultreader.Readers{}, Floors: fixedFloor(testFloor), ContentTypes: extensionTypes{},
+			Matcher: wordmatch.NewMatcher(),
+			Readers: vaultreader.Readers{}, Floors: fixedFloor(testFloor), ContentTypes: extensionTypes{},
 		},
 	}
 	if model != nil {

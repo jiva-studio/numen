@@ -1,8 +1,6 @@
 package celquery
 
 import (
-	"slices"
-
 	"cel.dev/cel-go/common/ast"
 	"cel.dev/cel-go/common/operators"
 	"cel.dev/cel-go/common/overloads"
@@ -61,20 +59,12 @@ func (w *nameWalk) walkCall(expr ast.Expr) {
 	name := call.FunctionName()
 	switch {
 	case isOperator(name):
-	case call.IsMemberFunction() && isStringMethod(name):
-		w.walk(call.Target())
-	case call.IsMemberFunction() && w.hasChunkCall(call.Target()):
-		w.walk(call.Target())
-		w.problems = append(w.problems, searchquery.Problem{
-			Position: getExprPosition(w.text, w.source, expr), Message: "Unknown stage " + name,
-		})
-		return
 	case call.IsMemberFunction():
-		w.walk(call.Target())
-		w.addMemberProblem(expr, name)
-		return
+		if !w.walkMember(expr) {
+			return
+		}
 	default:
-		if f, ok := w.catalog.FindFunction(name); !ok || f.IsVariable {
+		if f, ok := w.catalog.FindFunction(name); !ok || f.IsVariable || f.IsStage {
 			w.addProblem(expr, "Unknown function", name)
 			return
 		}
@@ -89,18 +79,29 @@ func isOperator(name string) bool {
 	return found || name == operators.NotStrictlyFalse
 }
 
-func (w *nameWalk) hasChunkCall(expr ast.Expr) bool {
-	if expr.Kind() != ast.CallKind {
+func (w *nameWalk) isStage(name string) bool {
+	f, ok := w.catalog.FindFunction(name)
+	return ok && f.IsStage
+}
+
+func (w *nameWalk) walkMember(expr ast.Expr) bool {
+	call := expr.AsCall()
+	name := call.FunctionName()
+	switch {
+	case isStringMethod(name), w.isStage(name):
+		w.walk(call.Target())
+		return true
+	case call.Target().Kind() == ast.CallKind:
+		w.walk(call.Target())
+		suggestion, _ := searchquery.SuggestStage(name, w.catalog)
+		w.problems = append(w.problems, searchquery.Problem{
+			Position: getExprPosition(w.text, w.source, expr), Message: "Unknown stage " + name, Suggestion: suggestion,
+		})
 		return false
 	}
-	call := expr.AsCall()
-	if f, ok := w.catalog.FindFunction(call.FunctionName()); ok && f.Level == searchquery.LevelChunk && !call.IsMemberFunction() {
-		return true
-	}
-	if call.IsMemberFunction() && w.hasChunkCall(call.Target()) {
-		return true
-	}
-	return slices.ContainsFunc(call.Args(), w.hasChunkCall)
+	w.walk(call.Target())
+	w.addMemberProblem(expr, name)
+	return false
 }
 
 func isStringMethod(name string) bool {

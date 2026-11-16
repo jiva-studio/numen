@@ -56,6 +56,11 @@
   },
   {
     "kind": "index",
+    "name": "operation_results_used_at",
+    "body": "CREATE INDEX operation_results_used_at ON operation_results (used_at)"
+  },
+  {
+    "kind": "index",
     "name": "problems_by_note",
     "body": "CREATE INDEX problems_by_note ON problems (note_id)"
   },
@@ -213,6 +218,11 @@
     "kind": "table",
     "name": "open_tabs",
     "body": "CREATE TABLE open_tabs (\n    vault    TEXT NOT NULL,\n    position INTEGER NOT NULL,\n    id       TEXT NOT NULL,\n    kind     TEXT NOT NULL,\n    path     TEXT NOT NULL,\n    title    TEXT NOT NULL,\n    state    TEXT NOT NULL,\n    is_front INTEGER NOT NULL,\n    PRIMARY KEY (vault, position)\n)"
+  },
+  {
+    "kind": "table",
+    "name": "operation_results",
+    "body": "CREATE TABLE operation_results (\n    operation   TEXT    NOT NULL,\n    recipe_hash TEXT    NOT NULL,\n    input_hash  TEXT    NOT NULL,\n    output      BLOB    NOT NULL,\n    used_at     INTEGER NOT NULL,\n    PRIMARY KEY (operation, recipe_hash, input_hash)\n) WITHOUT ROWID"
   },
   {
     "kind": "table",

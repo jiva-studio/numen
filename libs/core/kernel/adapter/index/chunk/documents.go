@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"golang.org/x/text/unicode/norm"
 
@@ -17,8 +16,9 @@ import (
 )
 
 // ListDocuments returns the sources of one vault under any of the prefixes, of the source kinds and at the paths
-// of the query, with their note title and type, the time of their last change, their size and the count of their small chunks with a vector under the recipe, in order
-// of path, at most q.Limit+1 of them; all of them when q.Limit is zero or below.
+// of the query, with their note title and type, the time of their last change, their size and the count of their
+// small chunks with a vector under the recipe, in order of path, at most q.Limit+1 of them; all of them when
+// q.Limit is zero or below.
 func (q *Search) ListDocuments(ctx context.Context, vaultID domain.VaultID, query searchquery.DocumentQuery) (_ []searchquery.Document, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -51,7 +51,7 @@ func (q *Search) ListDocuments(ctx context.Context, vaultID domain.VaultID, quer
 		if err := rows.Scan(&d.Path, &d.SourceKind, &d.Title, &d.NoteType, &modified, &d.Size, &d.ChunkCount); err != nil {
 			return nil, err
 		}
-		d.Modified = time.Unix(0, modified)
+		d.ModifiedAt = ConvertNanosToTime(modified)
 		out = append(out, d)
 	}
 	return out, rows.Err()

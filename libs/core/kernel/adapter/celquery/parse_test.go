@@ -123,13 +123,6 @@ func TestShapesOutsideTheLanguageAreRejectedAtTheirPosition(t *testing.T) {
 	}
 }
 
-func TestAStageIsUnknown(t *testing.T) {
-	problems := getProblems(t, `meaning("a").top(5)`)
-	if !hasProblem(problems, "Unknown stage top") {
-		t.Errorf("problems %+v, want Unknown stage top", problems)
-	}
-}
-
 func TestNormalizeOfANegatedGroupNegatesEachLeaf(t *testing.T) {
 	q, err := parse(`meaning("c") && !(meaning("a") || words("b"))`)
 	if err != nil {
@@ -248,7 +241,6 @@ func TestASyntaxProblemReadsInPlainWordsAtItsPlace(t *testing.T) {
 		{"the query of the owner", owner, []string{
 			"1:2: Unknown function meanling: did you mean meaning?",
 			"2:33: A quote is missing before Кришна",
-			"3:4: Unknown function rerank",
 			"3:51: The query ends with a dot: remove it or write a stage after it",
 		}},
 		{"an unclosed string", `meaning("river`, []string{"1:9: This quote is not closed"}},

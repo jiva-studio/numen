@@ -112,6 +112,9 @@ func (c *converter) convertComparisonOrLink(expr ast.Expr, name string) searchqu
 	if _, isLink := searchquery.FindLinkFunction(name); isLink {
 		return c.convertLink(expr)
 	}
+	if isStageCall(expr) {
+		return c.reject(expr, messageStageLast)
+	}
 	return c.reject(expr, messageCondition)
 }
 

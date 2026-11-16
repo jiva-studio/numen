@@ -189,11 +189,11 @@ func TestADateOperandIsReadInTheZoneOfTheQuery(t *testing.T) {
 		t.Errorf("the operand is %+v, want midnight in Moscow", got)
 	}
 	d := getNote("a.md")
-	d.Modified = time.Date(2025, 12, 31, 23, 59, 0, 0, zone)
+	d.ModifiedAt = time.Date(2025, 12, 31, 23, 59, 0, 0, zone)
 	if searchquery.IsDocumentMatch(q.Root, d) {
 		t.Error("a note changed at 23:59 local on 2025-12-31 matches")
 	}
-	d.Modified = time.Date(2026, 1, 1, 0, 0, 0, 0, zone)
+	d.ModifiedAt = time.Date(2026, 1, 1, 0, 0, 0, 0, zone)
 	if !searchquery.IsDocumentMatch(q.Root, d) {
 		t.Error("a note changed at local midnight does not match")
 	}

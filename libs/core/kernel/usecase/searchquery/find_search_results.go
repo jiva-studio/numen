@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -14,50 +15,60 @@ import (
 // ErrNegativeLimit is a request for a negative count of results.
 var ErrNegativeLimit = errors.New("the limit of results is negative")
 
-// Request is one query. Limit is the count of results: zero takes Limits.DefaultLimit, a count above
-// Limits.MaxLimit is cut to it.
+// Request is one query. Limit is the count of results: zero takes Limits.DefaultLimit, or no cut when the
+// query has a top stage; a count above Limits.MaxLimit is cut to it. Priority is whose action the calls of
+// a rerank stage serve.
 type Request struct {
-	Text  string
-	Limit int
+	Text     string
+	Limit    int
+	Priority modelcall.Priority
 }
 
-// FindSearchResultsDeps is what FindSearchResults reads. The zone of Clock reads a date written without an
-// offset. Evaluate returns the results of a parsed query, and FillTitles sets the title of the document of each
-// note result.
+// FindSearchResultsDeps is what FindSearchResults reads. A zero Limits takes the defaults, and the zone of
+// Clock reads a date written without an offset. Evaluate returns the results of a parsed query, FillDocuments
+// sets the title, the time of change and the size of the document of each result, and Stages applies the
+// stages of a query to its results.
 type FindSearchResultsDeps struct {
-	Parser     QueryParser
-	Clock      machineport.Clock
-	Evaluate   func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits) (searchquery.SearchResults, error)
-	FillTitles func(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error
+	Parser        QueryParser
+	Clock         machineport.Clock
+	Evaluate      func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits) (searchquery.SearchResults, error)
+	FillDocuments func(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error
+	Stages        func(ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, priority modelcall.Priority) (searchquery.SearchResults, error)
+	Limits        searchquery.Limits
 }
 
 // FindSearchResults parses a query and evaluates it over the index of one vault. Limits bounds every query.
 type FindSearchResults struct {
-	parser     QueryParser
-	clock      machineport.Clock
-	evaluate   func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits) (searchquery.SearchResults, error)
-	fillTitles func(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error
-	Limits     searchquery.Limits
+	parser        QueryParser
+	clock         machineport.Clock
+	evaluate      func(ctx context.Context, v domain.Vault, q searchquery.Query, zone *time.Location, limits searchquery.Limits) (searchquery.SearchResults, error)
+	fillDocuments func(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error
+	stages        func(ctx context.Context, v domain.Vault, q searchquery.Query, r searchquery.SearchResults, priority modelcall.Priority) (searchquery.SearchResults, error)
+	Limits        searchquery.Limits
 }
 
-// NewFindSearchResults creates the use case with the default limits.
+// NewFindSearchResults creates the use case.
 func NewFindSearchResults(deps FindSearchResultsDeps) *FindSearchResults {
+	limits := deps.Limits
+	if limits == (searchquery.Limits{}) {
+		limits = searchquery.DefaultLimits()
+	}
 	return &FindSearchResults{
-		parser: deps.Parser, clock: deps.Clock, evaluate: deps.Evaluate, fillTitles: deps.FillTitles,
-		Limits: searchquery.DefaultLimits(),
+		parser: deps.Parser, clock: deps.Clock, evaluate: deps.Evaluate, fillDocuments: deps.FillDocuments, stages: deps.Stages,
+		Limits: limits,
 	}
 }
 
 // Execute returns the results of the query. A query that is not valid returns *searchquery.ParseError, an
 // FTS5 expression the index rejects included; a limit exceeded searchquery.ErrLimitExceeded; meaning with no
-// model searchquery.ErrNoModel; cancellation ctx.Err().
+// model searchquery.ErrNoModel; a rerank stage with no row searchquery.ErrNoReranker and with every row
+// failing *searchquery.RerankError; cancellation ctx.Err().
 func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r Request) (searchquery.SearchResults, error) {
 	if err := ctx.Err(); err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	limit, err := u.getLimit(r.Limit)
-	if err != nil {
-		return searchquery.SearchResults{}, err
+	if r.Limit < 0 {
+		return searchquery.SearchResults{}, fmt.Errorf("%w: %d", ErrNegativeLimit, r.Limit)
 	}
 	zone := u.clock.Now().Location()
 	q, err := u.parse(r.Text, zone)
@@ -68,23 +79,38 @@ func (u *FindSearchResults) Execute(ctx context.Context, v domain.Vault, r Reque
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}
-	if len(results.Results) > limit {
-		results.Results = results.Results[:limit]
-	}
-	if err := u.fillTitles(ctx, v, results.Results); err != nil {
+	if results, err = u.runStages(ctx, v, q, results, r.Priority); err != nil {
 		return searchquery.SearchResults{}, err
+	}
+	results = searchquery.ApplyTop(results, u.getLimit(r.Limit, q.HasStage(searchquery.StageTop)))
+	if len(q.Stages) == 0 {
+		if err := u.fillDocuments(ctx, v, results.Results); err != nil {
+			return searchquery.SearchResults{}, err
+		}
 	}
 	return results, ctx.Err()
 }
 
-func (u *FindSearchResults) getLimit(limit int) (int, error) {
-	switch {
-	case limit < 0:
-		return 0, fmt.Errorf("%w: %d", ErrNegativeLimit, limit)
-	case limit == 0:
-		return u.Limits.DefaultLimit, nil
+func (u *FindSearchResults) runStages(
+	ctx context.Context, v domain.Vault, q searchquery.Query, results searchquery.SearchResults, priority modelcall.Priority,
+) (searchquery.SearchResults, error) {
+	if len(q.Stages) == 0 {
+		return results, nil
 	}
-	return min(limit, u.Limits.MaxLimit), nil
+	if err := u.fillDocuments(ctx, v, results.Results); err != nil {
+		return searchquery.SearchResults{}, err
+	}
+	return u.stages(ctx, v, q, results, priority)
+}
+
+func (u *FindSearchResults) getLimit(limit int, hasTop bool) int {
+	switch {
+	case limit == 0 && hasTop:
+		return u.Limits.MaxLimit
+	case limit == 0:
+		return u.Limits.DefaultLimit
+	}
+	return min(limit, u.Limits.MaxLimit)
 }
 
 func (u *FindSearchResults) parse(text string, zone *time.Location) (searchquery.Query, error) {

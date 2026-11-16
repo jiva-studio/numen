@@ -109,27 +109,27 @@ func (r *documentReader) getDocument(path string, sourceKind domain.SourceKind) 
 	return d
 }
 
-// FillTitles sets the title of the document of each note result.
-func (u *EvaluateQuery) FillTitles(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error {
+// FillDocuments sets the title, the time of change and the size of the document of each result.
+func (u *EvaluateQuery) FillDocuments(ctx context.Context, v domain.Vault, results []searchquery.SearchResult) error {
+	if len(results) == 0 {
+		return nil
+	}
 	var paths []string
 	for _, one := range results {
-		if one.Document.SourceKind == domain.KindNote {
-			paths = append(paths, one.Document.Path)
-		}
-	}
-	if len(paths) == 0 {
-		return nil
+		paths = append(paths, one.Document.Path)
 	}
 	listed, err := u.documents.ListDocuments(ctx, v.ID, searchquery.DocumentQuery{PathPrefixes: paths})
 	if err != nil {
 		return err
 	}
-	titles := make(map[string]string, len(listed))
+	byPath := make(map[string]searchquery.Document, len(listed))
 	for _, d := range listed {
-		titles[d.Path] = d.Title
+		byPath[d.Path] = d
 	}
 	for i, one := range results {
-		results[i].Document.Title = searchquery.GetTitle(one.Document.Path, titles[one.Document.Path])
+		d := byPath[one.Document.Path]
+		results[i].Document.Title = searchquery.GetTitle(one.Document.Path, d.Title)
+		results[i].Document.ModifiedAt, results[i].Document.Size = d.ModifiedAt, d.Size
 	}
 	return nil
 }

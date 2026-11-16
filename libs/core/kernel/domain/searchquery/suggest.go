@@ -1,15 +1,36 @@
 package searchquery
 
-// SuggestName returns the catalog name closest to name by Damerau-Levenshtein distance (optimal string
-// alignment), when the distance is at most 2 and below half the length of name. Ties go to the name first
-// in the catalog.
+// SuggestName returns the name of a function or variable of the catalog closest to name by
+// Damerau-Levenshtein distance (optimal string alignment), when the distance is at most 2 and below half the
+// length of name. Ties go to the name first in the catalog.
 func SuggestName(name string, catalog Catalog) (string, bool) {
+	var names []string
+	for _, f := range catalog.Functions {
+		if !f.IsStage {
+			names = append(names, f.Name)
+		}
+	}
+	return suggestFrom(name, names)
+}
+
+// SuggestStage returns the name of a stage of the catalog closest to name, by the rule of SuggestName.
+func SuggestStage(name string, catalog Catalog) (string, bool) {
+	var names []string
+	for _, f := range catalog.Functions {
+		if f.IsStage {
+			names = append(names, f.Name)
+		}
+	}
+	return suggestFrom(name, names)
+}
+
+func suggestFrom(name string, names []string) (string, bool) {
 	runes := []rune(name)
 	best, bestDistance := "", maxSuggestionDistance+1
-	for _, f := range catalog.Functions {
-		d := getDistance(runes, []rune(f.Name))
+	for _, one := range names {
+		d := getDistance(runes, []rune(one))
 		if d < bestDistance {
-			best, bestDistance = f.Name, d
+			best, bestDistance = one, d
 		}
 	}
 	if bestDistance > maxSuggestionDistance || bestDistance*2 >= len(runes) {

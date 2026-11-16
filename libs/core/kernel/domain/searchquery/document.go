@@ -17,7 +17,7 @@ type Document struct {
 	Kind       string
 	ChunkCount int
 	NoteType   string
-	Modified   time.Time
+	ModifiedAt time.Time
 	Size       int64
 	IsInSet    []bool
 }

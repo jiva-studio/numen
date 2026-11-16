@@ -26,6 +26,7 @@ type Provider struct {
 	always   map[string]error
 	blocked  map[string]chan struct{}
 	scripts  map[string]script
+	answers  map[string]func(payload []byte) ([]byte, error)
 	listings map[string]modelcall.ListedOptions
 	recorded []Recorded
 	entered  chan string
@@ -35,6 +36,7 @@ type Provider struct {
 func NewProvider() *Provider {
 	return &Provider{
 		queued: map[string][]error{}, always: map[string]error{}, blocked: map[string]chan struct{}{}, scripts: map[string]script{},
+		answers:  map[string]func(payload []byte) ([]byte, error){},
 		listings: map[string]modelcall.ListedOptions{},
 		entered:  make(chan string, 256),
 	}
@@ -137,7 +139,20 @@ func (p *Provider) Call(
 	if scripted.err != nil {
 		return nil, scripted.err
 	}
+	p.mu.Lock()
+	answer := p.answers[address]
+	p.mu.Unlock()
+	if answer != nil {
+		return answer(payload)
+	}
 	return []byte("answer from " + address), nil
+}
+
+// Answer makes the calls to the address return what answer returns for their payload.
+func (p *Provider) Answer(address string, answer func(payload []byte) ([]byte, error)) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.answers[address] = answer
 }
 
 // ScriptOptions makes the listings of options of the address answer listed.

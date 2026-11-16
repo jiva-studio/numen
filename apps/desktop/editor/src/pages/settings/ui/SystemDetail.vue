@@ -2,25 +2,29 @@
 /**
  * The System or the Appearance page: the toolbar and the settings the core declares for the
  * owner `app` that belong to the page, drawn by the renderer of the plugins. Appearance holds the
- * `appearance.*` settings; System holds the rest and the path of the numen.json configuration file.
+ * `appearance.*` settings; System holds the rest, the settings of connection rows below them as
+ * the plugin pages draw them, and the path of the numen.json configuration file.
  */
 import { computed } from 'vue'
 import { PluginSettingsCard, SettingsPage } from '@numen/plugin-manager'
 import PluginFields from './plugins/PluginFields.vue'
+import PluginConnectionSections from './plugins/PluginConnectionSections.vue'
 import type { PluginInfo } from '@/entities/settings'
-import type { InstallationPlugin, InstallationSettings } from '../types'
+import type { InstallationConnections, InstallationPlugin, InstallationSettings } from '../types'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   settings: InstallationSettings
   manager: InstallationPlugin
+  connections: InstallationConnections
   section: 'system' | 'appearance'
 }>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (e: 'back'): void
+  (e: 'open-connections'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -60,6 +64,15 @@ function onBack(): void {
       <PluginSettingsCard>
         <PluginFields :settings="props.settings" :host="props.manager" :plugin="owner" />
       </PluginSettingsCard>
+
+      <PluginConnectionSections
+        v-if="props.section === 'system'"
+        :settings="props.settings"
+        :host="props.manager"
+        :connections="props.connections"
+        :plugin="owner"
+        @open-connections="emit('open-connections')"
+      />
 
       <p v-if="props.section === 'system'" class="system-detail__file">
         {{ props.settings.file.value || words.file }}

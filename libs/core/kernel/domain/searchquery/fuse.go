@@ -27,6 +27,7 @@ func Fuse(results []SearchResult, kind ScoreKind) {
 		for i := range results {
 			results[i].Score = nil
 		}
+	case ScoreRerank:
 	}
 }
 

@@ -75,7 +75,7 @@ func isCompareMatch(leaf Leaf, d Document) bool {
 	case AttributeNoteType:
 		return isTextMatch(d.NoteType, leaf.Comparison, leaf.Operands)
 	case AttributeModified:
-		return isOrderMatch(d.Modified.Compare(operand.Time), leaf.Comparison)
+		return isOrderMatch(d.ModifiedAt.Compare(operand.Time), leaf.Comparison)
 	case AttributeSize:
 		return isOrderMatch(cmp.Compare(d.Size, operand.Int), leaf.Comparison)
 	}
