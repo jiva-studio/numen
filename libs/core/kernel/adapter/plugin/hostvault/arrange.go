@@ -17,11 +17,16 @@ import (
 // NoteChanges has the use cases that rename, move and remove the notes of a vault, repairing the
 // links that stop resolving.
 type NoteChanges struct {
-	Rename      note.Rename
-	Move        note.Move
-	Remove      note.RemoveNote
-	Links       note.EditLinks
-	AddLinks    note.AddLinks
+	Rename     note.Rename
+	Move       note.Move
+	Remove     note.RemoveNote
+	Links      note.EditLinks
+	AddLinks   note.AddLinks
+	Properties PropertyChanges
+}
+
+// PropertyChanges has the use case that writes the frontmatter keys of a note.
+type PropertyChanges struct {
 	Frontmatter note.WriteFrontmatter
 }
 
@@ -151,7 +156,11 @@ func (a Arranger) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, 
 	return a.Problems.Execute(ctx, v)
 }
 
-func (a Arranger) WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error) {
+// LinkEditor is the Arranger that also writes the frontmatter keys of the notes.
+type LinkEditor struct{ Arranger }
+
+// WriteFrontmatter writes the keys of the notes through the use case of the vault the call works on.
+func (a LinkEditor) WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error) {
 	v, err := a.session.open()
 	if err != nil {
 		return nil, err
@@ -160,7 +169,7 @@ func (a Arranger) WriteFrontmatter(ctx context.Context, writes []plugin.Frontmat
 	for i, one := range writes {
 		in[i] = note.FrontmatterWrite{Path: one.Path, FileStat: one.Baseline, Values: one.Values}
 	}
-	written, err := a.getChanges(v).Frontmatter.Execute(ctx, v, in)
+	written, err := a.getChanges(v).Properties.Frontmatter.Execute(ctx, v, in)
 	if err != nil {
 		return nil, err
 	}
