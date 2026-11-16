@@ -61,7 +61,7 @@ Every pull request follows this sequence:
 
 1. **Open as a draft**: Push the branch and create a draft pull request (`gh pr create --draft`).
 2. **Bring CI to green**: Wait for all CI checks on the draft pull request to pass (`gh pr checks --watch`). Fix any failure and push to the draft branch until CI is green. A draft skips the end-to-end tests, the flashcards tests and the acceptance scenarios.
-3. **Mark ready; the review starts after green CI**: Once CI is green, mark the pull request ready for review (`gh pr ready`). CI runs again, now with the tests and the scenarios tagged `@smoke` in Chromium (see [`gherkin.md`](./gherkin.md), Tags). When that run is green, `.github/workflows/claude-review.yml` runs the nm-review skill on the pull request and submits its verdict as an approval or a change request from github-actions[bot]. Only the first green run starts a review: a pull request that already has a review from github-actions[bot] waits for `/nm-review`. Wait for CI (`gh pr checks --watch`), then for the review run (`gh run watch` on the latest `claude-review.yml` run), and read the verdict (`gh pr view <N> --json reviews`). Do not run the nm-review skill locally for this step: the approval from the workflow is the one the branch rules count.
+3. **Mark ready; the review starts after green CI**: Once CI is green, mark the pull request ready for review (`gh pr ready`). CI runs again, now with the tests and the scenarios tagged `@smoke` in Chromium (see [`gherkin.md`](./gherkin.md), Tags). When that run is green, `.github/workflows/claude-review.yml` runs the nm-review skill on the pull request and submits its verdict as an approval or a change request from github-actions[bot]. Only the first green run starts a review: a pull request that already has a review from github-actions[bot] waits for `/nm-review`. Set the Status of the issue to In review (section 7). Wait for CI (`gh pr checks --watch`), then for the review run (`gh run watch` on the latest `claude-review.yml` run), and read the verdict (`gh pr view <N> --json reviews`). Do not run the nm-review skill locally for this step: the approval from the workflow is the one the branch rules count.
 4. **Fix and review again**: Fix every finding, push, wait for CI (each push to a ready pull request runs the `@smoke` tests in Chromium), and comment `/nm-review` on the pull request (`gh pr comment <N> --body "/nm-review"`; `/nm-review full` also writes and runs the tests that prove its hypotheses) until the verdict is an approval. A push to main runs all the selected end-to-end tests and acceptance scenarios in Chromium and WebKit.
 5. **Request CodeRabbit and merge**: Once CI is green and the review workflow has approved, trigger CodeRabbit (`gh pr comment <N> --body "@coderabbitai review"`). The pull request is squash-merged without waiting for CodeRabbit; findings it posts before the merge are fixed.
 
@@ -83,3 +83,38 @@ An agent does not decide these alone. It prepares the change, explains the trade
 - **Database migrations** — altering existing tables, indexes, or schema constraints.
 - **The wire contract** — changes to protocol buffers or shared API payloads between client and server.
 - **Dependencies** — adding, removing, or upgrading external third-party libraries.
+
+---
+
+## 7. Tracking: the project, the status and the milestone
+
+Work is tracked in the project [Numen](https://github.com/orgs/jiva-studio/projects/15) of the organization. Every issue is in it; a pull request is not, it is seen on its issue.
+
+| Field     | Values                                      | Who sets it                                                              |
+| --------- | ------------------------------------------- | ------------------------------------------------------------------------ |
+| Kind      | Feature, Bug, Architecture debt, Chore      | whoever files the issue                                                  |
+| Priority  | P0 to P5                                    | the owner                                                                |
+| Area      | core, plugins, ui, ci, mobile, docs         | whoever files the issue                                                  |
+| Effort    | S, M, L                                     | the owner                                                                |
+| Status    | Backlog, Todo, In Progress, In review, Done | below                                                                    |
+| Milestone | `YYYY.MM`, the release of that month        | the owner for the plan; the milestone workflow for a merged pull request |
+
+A milestone is named after the month of its release and has the last day of the month as its due date. An open issue in a milestone is planned for that release; a closed one shipped in it. A milestone is closed when its release is published.
+
+An agent keeps the status of its issue true:
+
+1. **Takes an issue**: sets Status to In Progress before the first commit. An agent works only on an issue whose Status is Todo or In Progress; an issue in Backlog is the owner's to move.
+2. **Marks the pull request ready** (step 3 of the pipeline): sets Status to In review.
+3. **Merge or close**: Done, set by the built-in project workflows (a closed issue and a merged pull request set it). An agent does not set Done by hand.
+4. **Files a new issue**: gives it one type label (`bug`, `feature`, `task` or `epic`) and one area label (`core`, `ui`, `ci`, `plugins`, `docs` or `mobile`), adds it to the project with Kind, Area and Priority, and leaves Status at Backlog.
+
+The commands:
+
+```
+gh project item-add 15 --owner jiva-studio --url <issue url>
+gh project item-edit --id <item id> --project-id PVT_kwDOBtvOi84Brz7D --field-id <Status field id> --single-select-option-id <option id>
+```
+
+The ids come from `gh project field-list 15 --owner jiva-studio --format json` and `gh project item-list 15 --owner jiva-studio --format json`.
+
+A pull request is written with `Closes #N`, so the issue and the pull request move together. The workflow `milestone.yml` puts a merged pull request, the issues it closes and an issue closed as completed in the milestone of the month when they have none.
