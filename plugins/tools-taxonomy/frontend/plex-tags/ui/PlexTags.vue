@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** The tags of a note under its node in the plex: the first four as chips with their names and the count of the rest. */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { measureRect, Tooltip, type Box } from '@numen/ui'
 import { getTagColor } from '../../lib/color'
 import { getRestText } from '../../words'
 
@@ -10,43 +11,52 @@ const props = defineProps<{ tags: readonly string[] }>()
 /* --------------------------------- State ---------------------------------- */
 const CHIP_LIMIT = 4
 
+const hovered = ref<{ tag: string; at: Box } | null>(null)
+
 const chips = computed(() =>
-  props.tags.slice(0, CHIP_LIMIT).map((tag, index) => ({
+  props.tags.slice(0, CHIP_LIMIT).map((tag) => ({
     tag,
-    style: { '--tag': `var(--numen-tag-${getTagColor(tag)})`, '--i': index },
+    style: { '--tag': `var(--numen-tag-${getTagColor(tag)})` },
   })),
 )
 const rest = computed(() => props.tags.length - CHIP_LIMIT)
+
+/* -------------------------------- Handlers -------------------------------- */
+function onEnter(tag: string, event: Event) {
+  const rect = measureRect(event.currentTarget as HTMLElement)
+  hovered.value = rect
+    ? { tag, at: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } }
+    : null
+}
+
+function onLeave() {
+  hovered.value = null
+}
 </script>
 
 <template>
-  <TransitionGroup
-    v-if="tags.length > 0"
-    tag="span"
-    name="plex-tags"
-    appear
-    class="plex-tags"
-    data-plex-tags
-  >
+  <span v-if="tags.length > 0" class="plex-tags" data-plex-tags>
     <span
       v-for="chip in chips"
       :key="chip.tag"
       class="plex-tags__chip"
       data-plex-tag
+      tabindex="0"
       :style="chip.style"
+      @mouseenter="onEnter(chip.tag, $event)"
+      @mouseleave="onLeave"
+      @focus="onEnter(chip.tag, $event)"
+      @blur="onLeave"
     >
-      {{ chip.tag }}
+      <span class="plex-tags__name">{{ chip.tag }}</span>
     </span>
-    <span
-      v-if="rest > 0"
-      key="more"
-      class="plex-tags__chip plex-tags__chip--more"
-      data-plex-tag-more
-      :style="{ '--i': CHIP_LIMIT }"
-    >
+    <span v-if="rest > 0" class="plex-tags__chip plex-tags__chip--more" data-plex-tag-more>
       {{ getRestText(rest) }}
     </span>
-  </TransitionGroup>
+    <Teleport to="body">
+      <Tooltip v-if="hovered" :at="hovered.at">{{ hovered.tag }}</Tooltip>
+    </Teleport>
+  </span>
 </template>
 
 <style scoped>
@@ -56,9 +66,20 @@ const rest = computed(() => props.tags.length - CHIP_LIMIT)
   justify-content: center;
   gap: var(--numen-node-gap);
   max-inline-size: 100%;
-  margin-block-start: var(--numen-node-gap);
   font-size: var(--numen-text-1);
   line-height: 1.2;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .plex-tags {
+    animation: plex-tags-fade-in var(--numen-motion) var(--numen-easing);
+  }
+}
+
+@keyframes plex-tags-fade-in {
+  from {
+    opacity: 0.2;
+  }
 }
 
 .plex-tags__chip {
@@ -70,7 +91,13 @@ const rest = computed(() => props.tags.length - CHIP_LIMIT)
   border-radius: var(--numen-radius-pill);
   background: color-mix(in srgb, var(--tag) 18%, transparent);
   color: var(--numen-ink);
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+}
+
+.plex-tags__name {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .plex-tags__chip::before {
@@ -88,38 +115,5 @@ const rest = computed(() => props.tags.length - CHIP_LIMIT)
 
 .plex-tags__chip--more::before {
   content: none;
-}
-
-.plex-tags-enter-active {
-  transition:
-    opacity var(--numen-motion) var(--numen-easing),
-    transform var(--numen-motion) var(--numen-easing);
-  transition-delay: calc(var(--i) * 30ms);
-}
-
-.plex-tags-leave-active {
-  position: absolute;
-  transition: opacity var(--numen-motion) var(--numen-easing);
-}
-
-.plex-tags-move {
-  transition: transform var(--numen-motion) var(--numen-easing);
-}
-
-.plex-tags-enter-from {
-  opacity: 0.2;
-  transform: translateY(-0.25rem) scale(0.9);
-}
-
-.plex-tags-leave-to {
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .plex-tags-enter-active,
-  .plex-tags-leave-active,
-  .plex-tags-move {
-    transition: none;
-  }
 }
 </style>

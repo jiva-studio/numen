@@ -11,7 +11,7 @@
     "category": "tools",
     "slots": [
       { "slot": "fileTree.rowEnd", "view": "file-tags" },
-      { "slot": "plexGraph.nodeBelow", "view": "plex-tags" }
+      { "slot": "plexGraph.nodeBelow", "view": "plex-tags", "order": 20 }
     ],
     "searchFunctions": {
       "version": 1,
