@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -228,57 +227,9 @@ func TestFinishOpeningSupersededClosesRetiredModelAndRetries(t *testing.T) {
 	}
 }
 
-func TestStartLoadingOpensTheModelOnceAndABatchDuringTheLoadWaitsForIt(t *testing.T) {
-	srv, started, release := slowModel(t)
-	var opens atomic.Int32
-	slow := srv.open
-	srv.open = func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (ports.Embedder, error) {
-		opens.Add(1)
-		return slow(ctx, info, local)
-	}
-
-	srv.StartLoading()
-	<-started
-	ended := make(chan error, 1)
-	go func() { _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"text"}); ended <- err }()
-	srv.StartLoading()
-	close(release)
-
-	if err := <-ended; err != nil {
-		t.Fatalf("the batch during the load: %v", err)
-	}
-	if opens.Load() != 1 {
-		t.Errorf("opened the model %d times, want once", opens.Load())
-	}
-}
-
-func TestStartLoadingDoesNotOpenTheModelWhileAConnectionServes(t *testing.T) {
+func TestAMockModelOpeningEndsWithItsContextAndAServerReportsTheCloseOfItsModel(t *testing.T) {
 	srv := newEmbeddingServer()
-	srv.updateConfig(map[string]string{"source": SourceConnection})
-	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
-		t.Error("the local model was opened for a connection")
-		return mockembedder.Embedder{}, nil
-	}
 	t.Cleanup(func() { closeServer(t, srv) })
-
-	srv.StartLoading()
-
-	srv.mu.Lock()
-	if srv.loader.IsOpening() || srv.loader.IsLoaded() {
-		srv.mu.Unlock()
-		t.Fatal("the loader started for a connection")
-	}
-	srv.mu.Unlock()
-
-	srv.updateConfig(map[string]string{"source": SourceLocal, "model": "owner/no-such-model"})
-	srv.StartLoading()
-	srv.mu.Lock()
-	if srv.loader.IsOpening() || srv.loader.IsLoaded() {
-		srv.mu.Unlock()
-		t.Fatal("the loader started when localErr != nil")
-	}
-	srv.mu.Unlock()
-
 	t.Setenv("NUMEN_TEST_MOCK_OPEN_HOLD_MS", "60000")
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -303,7 +254,8 @@ func TestSwitchingToAConnectionEndsTheLoadOfTheLocalModel(t *testing.T) {
 	srv, started, release := slowModel(t)
 	defer close(release)
 
-	srv.StartLoading()
+	opened := make(chan error, 1)
+	go func() { _, err := srv.getEmbedder(t.Context()); opened <- err }()
 	<-started
 	srv.updateConfig(map[string]string{"source": SourceConnection})
 

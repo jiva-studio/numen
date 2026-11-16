@@ -55,7 +55,7 @@ func (r *Retry) RetryPlugin(ctx context.Context, pluginID string) (*plugindomain
 	defer r.listeners.RefreshListeners(ctx, pluginID)
 
 	holder := plugindomain.GetHolder(ctx, "start again after a failure")
-	endpoint, err := r.activator.EnsureActive(ctx, pluginID, holder)
+	endpoint, err := r.activator.EnsureActive(withoutProvisioning(ctx), pluginID, holder)
 	if err == nil {
 		r.activator.Release(pluginID, endpoint.Token, holder)
 		return nil, nil
