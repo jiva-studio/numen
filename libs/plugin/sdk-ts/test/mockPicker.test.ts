@@ -29,12 +29,14 @@ const createPicker = (): MockPickerHost => {
 }
 
 describe('the mock picker host', () => {
-  it('keeps the options of the list a plugin opened', () => {
+  it('keeps the options of the list a plugin opened', async () => {
     const picker = createPicker()
     const options = createOptions()
-    void picker.open(options)
+    const opening = picker.open(options)
 
     expect(picker.getOpened()).toBe(options)
+    picker.close()
+    await opening
   })
 
   it('holds the open call until the person closes the list', async () => {
@@ -50,33 +52,39 @@ describe('the mock picker host', () => {
     expect(closed).toHaveBeenCalledTimes(1)
   })
 
-  it('lists the items as the plugin gave them before anything is toggled', () => {
+  it('lists the items as the plugin gave them before anything is toggled', async () => {
     const picker = createPicker()
-    void picker.open(createOptions())
+    const opening = picker.open(createOptions())
 
     expect(picker.getItems()).toStrictEqual(TREES)
+    picker.close()
+    await opening
   })
 
   it('asks the plugin to toggle an item and shows the state the plugin answers with', async () => {
     const picker = createPicker()
     const onToggle = vi.fn(async (id: string) => ({ id, title: 'Birch', state: 'mixed' as const }))
-    void picker.open(createOptions({ onToggle }))
+    const opening = picker.open(createOptions({ onToggle }))
 
     await picker.toggle('birch')
 
     expect(onToggle).toHaveBeenCalledExactlyOnceWith('birch')
     expect(picker.getItems().find((one) => one.id === 'birch')?.state).toBe('mixed')
+    picker.close()
+    await opening
   })
 
   it('keeps the list open after a toggle', async () => {
     const picker = createPicker()
     const closed = vi.fn()
-    void picker.open(createOptions()).then(closed)
+    const opening = picker.open(createOptions()).then(closed)
 
     await picker.toggle('cedar')
     await Promise.resolve()
 
     expect(closed).not.toHaveBeenCalled()
+    picker.close()
+    await opening
   })
 
   it('asks the plugin to create an item from typed text and adds the item it answers with', async () => {
@@ -86,19 +94,23 @@ describe('the mock picker host', () => {
       title: text,
       state: 'set' as const,
     }))
-    void picker.open(createOptions({ onCreate }))
+    const opening = picker.open(createOptions({ onCreate }))
 
     await picker.create('Harbour')
 
     expect(onCreate).toHaveBeenCalledExactlyOnceWith('Harbour')
     expect(picker.getItems().map((one) => one.title)).toStrictEqual(['Birch', 'Cedar', 'Harbour'])
+    picker.close()
+    await opening
   })
 
-  it('names the create row with the words the plugin gave', () => {
+  it('names the create row with the words the plugin gave', async () => {
     const picker = createPicker()
-    void picker.open(createOptions({ getCreateTitle: (text) => `Make ${text}` }))
+    const opening = picker.open(createOptions({ getCreateTitle: (text) => `Make ${text}` }))
 
     expect(picker.getCreateTitle('Harbour')).toBe('Make Harbour')
+    picker.close()
+    await opening
   })
 })
 
