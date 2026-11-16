@@ -54,9 +54,7 @@ const owner = computed<PluginInfo>(() => ({
   capabilities: [],
   hasFrontend: false,
   hasBackend: false,
-  settings: props.manager.app.value.filter(
-    (one) => getSectionOf(one.key) === props.section,
-  ),
+  settings: props.manager.app.value.filter((one) => getSectionOf(one.key) === props.section),
 }))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -66,11 +64,7 @@ function onBack(): void {
 </script>
 
 <template>
-  <SettingsPage
-    :path="[words.settings, TITLES[props.section]]"
-    @back="onBack"
-    @open="onBack"
-  >
+  <SettingsPage :path="[words.settings, TITLES[props.section]]" @back="onBack" @open="onBack">
     <div class="system-detail">
       <PluginSettingsCard>
         <PluginFields :settings="props.settings" :host="props.manager" :plugin="owner" />

@@ -25,7 +25,7 @@ Two things are not settings and are not in here: which files count as notes, and
 | `theme` | text | the stylesheet the window is drawn with. The name of an installed theme. |
 | `mode` | text | which half of a color pair the theme is read as. A theme that declares light and dark itself leaves this nothing to choose. One of `system`, `light`, `dark`. |
 | `interfaceScale` | a number | scale of controls and interface text. 1 is the default. From 0.8 to 2. |
-| `textScale` | a number | scale of note and book text. 1 is the default. From 0.8 to 1.75. |
+| `textScale` | a number | scale of book and document text. 1 is the default. From 0.8 to 1.75. |
 
 ### `app.naming`
 
@@ -38,6 +38,16 @@ Two things are not settings and are not in here: which files count as notes, and
 | | | |
 | --- | --- | --- |
 | `profile` | text | how much of the hardware indexing and models may use. One of `eco`, `low`, `balanced`, `high`, `maximum`. |
+
+### `app.editor`
+
+| | | |
+| --- | --- | --- |
+| `fontSize` | a number | size of editor text in px, whatever the interface size. From 10 to 32. |
+| `fontFamily` | text | the typeface of editor text. One of ``, `sans`, `serif`, `mono`. |
+| `lineHeight` | a number | height of a line of editor text as a multiple of the font size. From 1.2 to 2.4. |
+| `lineNumbers` | yes or no | number the lines in editors. |
+| `softWrap` | yes or no | wrap long lines in editors instead of scrolling sideways. |
 
 ### `app.search`
 

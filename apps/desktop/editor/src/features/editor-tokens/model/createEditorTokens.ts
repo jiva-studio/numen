@@ -43,9 +43,13 @@ export function createEditorTokens(
   return {
     start: () => {
       const style = getStyle()
-      return watch(readCss, (css) => {
+      return watch(
+        readCss,
+        (css) => {
           style.textContent = css
-        }, { immediate: true })
+        },
+        { immediate: true },
+      )
     },
   }
 }

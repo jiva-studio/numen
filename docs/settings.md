@@ -34,7 +34,7 @@ How the window is rendered: its size, which variant of a colour pair, and which 
 |                  |                                                                                                                                                                                                                                            |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `interfaceScale` | how large the interface is — its chrome, its controls, the spacing between them and the type in them. 1 is the designed size, and the range is 0.8 to 2.                                                                                   |
-| `textScale`      | how large the text a person reads is: a book, a document, an answer. 1 is the designed size, and the range is 0.8 to 1.75.                                                                                                         |
+| `textScale`      | how large the text a person reads is: a book, a document, an answer. 1 is the designed size, and the range is 0.8 to 1.75.                                                                                                                 |
 | `mode`           | which variant of a colour pair is used: `system`, `light` or `dark`. Any other value is ignored, with a notice, and `system` stands.                                                                                                       |
 | `theme`          | the stylesheet the window applies, named by its origin and its identifier: `preset:numen` ships inside the application, `mine:dracula` is the person's file, and `plugin:md.numen.themes.presets/dracula` is a theme of an enabled plugin. |
 
@@ -74,13 +74,13 @@ How the text of every editor is drawn.
 }
 ```
 
-|             |                                                                                                                                           |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `fontSize`    | the size of editor text in pixels, from 10 to 32. It does not follow `interfaceScale` or `textScale`.                                       |
-| `fontFamily`  | the typeface: empty for the face of the theme, or `sans`, `serif` or `mono`. Any other value is ignored, with a notice.                |
-| `lineHeight`  | the height of a line as a multiple of the font size, from 1.2 to 2.4.                                                                     |
-| `lineNumbers` | whether editors number their lines.                                                                                                       |
-| `softWrap`    | whether editors wrap long lines instead of scrolling sideways.                                                                            |
+|               |                                                                                                                         |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `fontSize`    | the size of editor text in pixels, from 10 to 32. It does not follow `interfaceScale` or `textScale`.                   |
+| `fontFamily`  | the typeface: empty for the face of the theme, or `sans`, `serif` or `mono`. Any other value is ignored, with a notice. |
+| `lineHeight`  | the height of a line as a multiple of the font size, from 1.2 to 2.4.                                                   |
+| `lineNumbers` | whether editors number their lines.                                                                                     |
+| `softWrap`    | whether editors wrap long lines instead of scrolling sideways.                                                          |
 
 The window writes the size, the line height and the family as `--numen-editor-font-size`, `--numen-editor-line-height` and `--numen-editor-font-family`, and changing a setting changes them at once. An empty family writes no `--numen-editor-font-family`.
 
