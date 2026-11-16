@@ -895,7 +895,7 @@ const playNumbersOnTheirLines = async (
   for (const line of lines) {
     await expect(Math.abs(line.getBoundingClientRect().height - size * height)).toBeLessThan(1)
   }
-  // Each number sits on the line of its text.
+  // Each number is on the line of its text.
   for (const [index, line] of lines.entries()) {
     const number = numbers[index] as Element
     await expect(Math.abs(getTextCentre(number) - getTextCentre(line))).toBeLessThan(1.5)

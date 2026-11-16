@@ -18,7 +18,7 @@ const MANIFEST = (permissions: readonly string[]) => ({
 const WRAPPED: EditorSettings = { lineNumbers: false, softWrap: true }
 
 describe('the editor settings of a plugin context', () => {
-  it('are what the host holds, to a plugin that asked for no permission', () => {
+  it('are the editor settings of the host, with no permission asked', () => {
     const host = createTestContextHost({ settings: { getEditorSettings: () => WRAPPED } })
 
     const context = createPluginParts('md.numen.sample', host, MANIFEST([]))
@@ -48,7 +48,7 @@ describe('the editor settings of a plugin context', () => {
     })
   })
 
-  it('reach the handler of a plugin, named as the plugin, when the host reports a change', () => {
+  it('reach the handler of a plugin, named as the plugin, when the host reports a change', async () => {
     const subscribed: {
       id: string
       handler: (settings: EditorSettings) => void | Promise<void>
@@ -65,7 +65,7 @@ describe('the editor settings of a plugin context', () => {
     const handler = vi.fn()
 
     context.plugin.settings.onEditorChange(handler)
-    subscribed[0]?.handler({ lineNumbers: true, softWrap: true })
+    await subscribed[0]?.handler({ lineNumbers: true, softWrap: true })
 
     expect(subscribed.map((one) => one.id)).toStrictEqual(['md.numen.sample'])
     expect(handler).toHaveBeenCalledExactlyOnceWith({ lineNumbers: true, softWrap: true })

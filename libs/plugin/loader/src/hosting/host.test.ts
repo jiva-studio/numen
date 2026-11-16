@@ -374,7 +374,7 @@ describe('createPluginHost', () => {
     expect(sub).toHaveProperty('dispose')
   })
 
-  it('gives a plugin the editor settings of the window and follows them for it', () => {
+  it('gives a plugin the editor settings of the window and follows them for it', async () => {
     const { deps: baseDeps } = createMockDeps()
     const held: { value: { lineNumbers: boolean; softWrap: boolean } | undefined } = {
       value: undefined,
@@ -397,7 +397,7 @@ describe('createPluginHost', () => {
     expect(settings.getEditor()).toBeUndefined()
     const subscription = settings.onEditorChange(handler)
     held.value = { lineNumbers: true, softWrap: true }
-    void handlers[0]?.(held.value)
+    await handlers[0]?.(held.value)
 
     expect(deps.onEditorSettingsChange).toHaveBeenCalledWith('test.plugin', expect.any(Function))
     expect(settings.getEditor()).toStrictEqual({ lineNumbers: true, softWrap: true })

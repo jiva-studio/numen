@@ -42,7 +42,7 @@ describe('mock plugin context', () => {
     expect(ctx.settings.getEditor()).toStrictEqual({ lineNumbers: true, softWrap: false })
   })
 
-  it('returns the editor settings a test sets and tells the handlers when they arrive', () => {
+  it('returns the editor settings a test sets and calls the handlers when they arrive', () => {
     const ctx = createMockPluginContext()
     const handler = vi.fn()
     ctx.settings.onEditorChange(handler)
@@ -53,7 +53,7 @@ describe('mock plugin context', () => {
     expect(handler).toHaveBeenCalledExactlyOnceWith({ lineNumbers: false, softWrap: true })
   })
 
-  it('tells the handlers each change of the editor settings', () => {
+  it('calls the handlers on each change of the editor settings', () => {
     const ctx = createMockPluginContext({
       initialEditorSettings: { lineNumbers: false, softWrap: true },
     })
@@ -69,7 +69,7 @@ describe('mock plugin context', () => {
     ])
   })
 
-  it('does not call a handler on the subscription itself, where the settings are already held', () => {
+  it('does not call a handler on the subscription itself when the settings already exist', () => {
     const ctx = createMockPluginContext({
       initialEditorSettings: { lineNumbers: false, softWrap: true },
     })
