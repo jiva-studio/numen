@@ -22,9 +22,14 @@ const Entries = 4096
 type Folders struct {
 	reader *VaultReader
 
+	beforeRead func(dir string) error
+
 	mu      sync.Mutex
 	Indexed map[string]bool
 }
+
+// SetBeforeRead sets what runs on each folder of a walk before its entries are read.
+func (f *Folders) SetBeforeRead(run func(dir string) error) { f.beforeRead = run }
 
 func (f *Folders) IsKnownFolder(path string) bool {
 	f.mu.Lock()

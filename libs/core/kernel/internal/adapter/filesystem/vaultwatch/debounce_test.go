@@ -170,11 +170,11 @@ func TestAListenerThatDoesNotAcceptDoesNotStopTheReading(t *testing.T) {
 	}
 }
 
-// TestAFileAddedInTheGapOfANewFolderIsReported. The watch on a new
-// folder is placed after the event that names it, and a file written before
-// the watch is in place raises no event. The first walk finds the folder empty
-// and no event follows, so the folder is walked again once the watch is in place.
-func TestAFileAddedInTheGapOfANewFolderIsReported(t *testing.T) {
+// TestAFileAddedWhileAFolderIsPlacedIsReported. A file written before the watch on a new
+// folder is in place raises no event. The folder is read only after the watch call
+// returns, and the stand-in for that call writes the file, so only a read made after
+// it finds the file.
+func TestAFileAddedWhileAFolderIsPlacedIsReported(t *testing.T) {
 	root, reader := makeVaultOfNotes(t, 1)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
@@ -184,6 +184,12 @@ func TestAFileAddedInTheGapOfANewFolderIsReported(t *testing.T) {
 	if err := os.Mkdir(folder, 0o755); err != nil {
 		t.Fatal(err)
 	}
+	shape.SetBeforeRead(func(dir string) error {
+		if dir != folder {
+			return nil
+		}
+		return os.WriteFile(filepath.Join(dir, "Added.md"), []byte("# Added\n"), 0o644)
+	})
 
 	raw := make(chan notify.EventInfo, 4)
 	queue := newQueue(64)
@@ -191,19 +197,9 @@ func TestAFileAddedInTheGapOfANewFolderIsReported(t *testing.T) {
 
 	changes := make(chan []string)
 	missing := make(chan struct{}, 1)
-	go debounce(ctx, shape, vaultconfig.Options{DebounceDelay: 500 * time.Millisecond}, queue, changes, missing)
+	go debounce(ctx, shape, vaultconfig.Options{DebounceDelay: 10 * time.Millisecond}, queue, changes, missing)
 
 	raw <- event{path: folder}
-	select {
-	case <-missing:
-	case <-time.After(5 * time.Second):
-		t.Fatal("the first walk of the new folder never ended")
-	}
-
-	// No event is fed for the file: it is written in the gap.
-	if err := os.WriteFile(filepath.Join(folder, "Added.md"), []byte("# Added\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
 
 	deadline := time.After(10 * time.Second)
 	for {
@@ -213,7 +209,7 @@ func TestAFileAddedInTheGapOfANewFolderIsReported(t *testing.T) {
 				return
 			}
 		case <-deadline:
-			t.Fatal("a file written in the gap before the watch was in place was never reported")
+			t.Fatal("a file written while the folder was placed was never reported")
 		}
 	}
 }

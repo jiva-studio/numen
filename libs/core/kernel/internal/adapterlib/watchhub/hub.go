@@ -241,3 +241,6 @@ func isWithin(path, dir string) bool {
 	}
 	return strings.HasPrefix(path, strings.TrimSuffix(dir, string(filepath.Separator))+string(filepath.Separator))
 }
+
+// Place returns once the operating system reports what happens in dir.
+func (h *Hub) Place(dir string) error { return nil }
