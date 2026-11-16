@@ -254,26 +254,35 @@ func TestASettingChangedAtTheMomentOfTheFirstReportStillDescribesTheSource(t *te
 	reported := make(chan error, 8)
 	proceed := make(chan struct{})
 	var first sync.Once
+	var release sync.Once
+	t.Cleanup(func() { release.Do(func() { close(proceed) }) })
 	opened := make(chan *sourcebridge.Source, 1)
+	startFailed := make(chan error, 1)
 	go func() {
 		bridge, err := sourcebridge.OpenWatching(t.Context(), roles, roles, nil, func(err error) {
 			reported <- err
 			first.Do(func() { <-proceed })
 		})
 		if err != nil {
-			t.Error(err)
+			startFailed <- err
+			return
 		}
 		opened <- bridge
 	}()
 
-	if err := <-reported; err == nil {
-		t.Fatal("the failed start is reported without an error")
+	select {
+	case err := <-reported:
+		if err == nil {
+			t.Fatal("the failed start is reported without an error")
+		}
+	case err := <-startFailed:
+		t.Fatal(err)
 	}
 	mock.failPrecondition.Store(false)
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "connection", "garden-row"); err != nil {
 		t.Fatal(err)
 	}
-	close(proceed)
+	release.Do(func() { close(proceed) })
 	bridge := <-opened
 	t.Cleanup(func() { testsupport.Close(t, bridge) })
 
