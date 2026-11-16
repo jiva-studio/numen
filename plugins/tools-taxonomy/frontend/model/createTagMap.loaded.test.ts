@@ -23,13 +23,13 @@ describe('the tag map that is loaded', () => {
       },
     })
     let isLoaded = false
-    void map.whenLoaded().then(() => {
+    const loading = map.whenLoaded().then(() => {
       isLoaded = true
     })
     await flush()
     const before = isLoaded
     release()
-    await flush()
+    await loading
 
     expect([before, isLoaded, map.getTags('notes/Quay.md')]).toStrictEqual([false, true, ['Port']])
   })
@@ -37,7 +37,6 @@ describe('the tag map that is loaded', () => {
   it('is loaded when the stream ends without a message', async () => {
     const map = createTagMap({
       api: {
-        // eslint-disable-next-line require-yield -- a stream that ends at once
         watchTagMap: async function* (): AsyncGenerator<TagMapMessage, ApiError | null> {
           return { code: 'unavailable', message: 'down' }
         },

@@ -23,7 +23,6 @@ func readRecent(ctx context.Context, store Store) ([]string, error) {
 	return recentfile.Parse(content), nil
 }
 
-// remember keeps at most recentLimit tags, the last set first.
 func remember(ctx context.Context, store Store, set []toggle) error {
 	if len(set) == 0 {
 		return nil
