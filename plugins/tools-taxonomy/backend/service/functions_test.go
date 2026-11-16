@@ -158,7 +158,7 @@ func TestTagsThatCannotBeUpdatedAnswerWithAWarningOfTheGeneration(t *testing.T) 
 	}
 }
 
-func TestHasTagMatchesATagNestedUnderItInAnyCase(t *testing.T) {
+func TestHasTagMatchesANestedTagInAnyCase(t *testing.T) {
 	s := newFunctionScene(t, getPortVault())
 
 	matched, _, err := s.client.MatchDocuments(t.Context(), callFunction("hasTag", "port"), getPortPaths())
@@ -182,7 +182,7 @@ func TestHasTagExactlyMatchesTheNotesWithThatTagAloneInAnyCaseWithOrWithoutTheHa
 	}
 }
 
-func TestHasTagExactlyDoesNotMatchTheNotesWithOnlyATagNestedUnderItOrALongerName(t *testing.T) {
+func TestHasTagExactlyDoesNotMatchTheNotesWithOnlyANestedTagOrALongerName(t *testing.T) {
 	s := newFunctionScene(t, getPortVault())
 
 	matched, _, err := s.client.MatchDocuments(t.Context(), callFunction("hasTagExactly", "Port"), []string{"d.md", "e.md"})
