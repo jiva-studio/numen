@@ -14,37 +14,45 @@ import (
 
 // The query functions the manifest declares.
 const (
-	FunctionTags     = "tags"
 	FunctionIsTagged = "isTagged"
+	functionHasTag   = "hasTag"
+	functionExactly  = "hasTagExactly"
 	argumentTag      = "tag"
 )
 
+type listPaths func(ctx context.Context, id domain.VaultID, tag string) (paths []string, isStale bool, err error)
+
 func newFunctions(cache *tagcache.Caches) (*searchfunction.Registry, error) {
 	registry := searchfunction.New()
-	if err := registry.Add(FunctionTags, newFunction(cache, readTagArgument)); err != nil {
+	if err := registry.Add(functionHasTag, newFunction(readTagArgument(functionHasTag), cache.ListTaggedPaths)); err != nil {
 		return nil, err
 	}
-	if err := registry.Add(FunctionIsTagged, newFunction(cache, func(searchfunction.Call) (string, error) { return "", nil })); err != nil {
+	if err := registry.Add(functionExactly, newFunction(readTagArgument(functionExactly), cache.ListExactlyTaggedPaths)); err != nil {
+		return nil, err
+	}
+	if err := registry.Add(FunctionIsTagged, newFunction(func(searchfunction.Call) (string, error) { return "", nil }, cache.ListTaggedPaths)); err != nil {
 		return nil, err
 	}
 	return registry, nil
 }
 
-func readTagArgument(call searchfunction.Call) (string, error) {
-	tag, _ := call.Arguments.GetString(argumentTag)
-	if tag = tags.Clean(tag); tag == "" {
-		return "", fmt.Errorf("%w: tags needs a tag", searchfunction.ErrInvalidArguments)
+func readTagArgument(function string) func(searchfunction.Call) (string, error) {
+	return func(call searchfunction.Call) (string, error) {
+		tag, _ := call.Arguments.GetString(argumentTag)
+		if tag = tags.Clean(tag); tag == "" {
+			return "", fmt.Errorf("%w: %s needs a tag", searchfunction.ErrInvalidArguments, function)
+		}
+		return tag, nil
 	}
-	return tag, nil
 }
 
-func newFunction(cache *tagcache.Caches, readParent func(searchfunction.Call) (string, error)) searchfunction.Function {
+func newFunction(readTag func(searchfunction.Call) (string, error), listTagged listPaths) searchfunction.Function {
 	list := func(ctx context.Context, call searchfunction.Call) ([]string, string, error) {
-		parent, err := readParent(call)
+		parent, err := readTag(call)
 		if err != nil {
 			return nil, "", err
 		}
-		paths, isStale, err := cache.ListTaggedPaths(ctx, domain.VaultID(call.VaultID), parent)
+		paths, isStale, err := listTagged(ctx, domain.VaultID(call.VaultID), parent)
 		if err != nil {
 			return nil, "", err
 		}
