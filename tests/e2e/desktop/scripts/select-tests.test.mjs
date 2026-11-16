@@ -96,6 +96,10 @@ await test('a change to a scenario or its steps selects the acceptance scenarios
   assert.deepEqual(getScopePaths('notes acceptance'), ['tests/plugins/notes/', 'tests/shell/'])
   assert.ok(getPlan('all').includes('acceptance=true'))
   assert.ok(getPlan('notes').includes('acceptance=false'))
+  assert.equal(getScopePaths('specs'), undefined)
+  assert.ok(getPlan('specs').includes('acceptance=false'))
+  assert.ok(getPlan('specs').includes('flashcards=true'))
+  assert.ok(getPlan('acceptance').includes('acceptance=true'))
 })
 
 await test('a change to the flashcards plugin or its tests starts the flashcards job', () => {

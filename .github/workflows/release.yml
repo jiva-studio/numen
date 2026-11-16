@@ -167,7 +167,7 @@ jobs:
   # measured from there too, so it says everything the stable release it
   # precedes will say.
   notes:
-    name: Release Notes
+    name: Release notes
     needs: [naming]
     runs-on: ubuntu-24.04
     permissions:
@@ -972,7 +972,7 @@ jobs:
   # links to, which carries no version and holds the newest build, and under a
   # name carrying its version, in a folder that is written once and kept.
   publish:
-    name: CDN Upload
+    name: CDN upload
     environment: production
     if: >-
       ${{ needs.naming.outputs.publish == 'true'

@@ -362,7 +362,7 @@ jobs:
           retention-days: 7
 
   acceptance:
-    name: Acceptance
+    name: Linux
     needs: [build]
     if: needs.build.outputs.acceptance == 'true'
     runs-on: ubuntu-latest
