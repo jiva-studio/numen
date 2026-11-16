@@ -26,18 +26,25 @@
       "version": 1,
       "functions": [
         {
-          "name": "tags",
+          "name": "hasTag",
           "args": [{ "name": "tag", "type": "string" }],
           "level": "document",
           "description": "notes with the tag or a tag nested under it in the frontmatter key tags, compared without case; a leading # is dropped",
-          "example": "tags(\"Projects\") && meaning(\"deadline\")"
+          "example": "hasTag(\"Projects\") && meaning(\"deadline\")"
         },
         {
-          "name": "isTagged",
+          "name": "hasTagExactly",
+          "args": [{ "name": "tag", "type": "string" }],
+          "level": "document",
+          "description": "notes with exactly this tag in the frontmatter key tags and no other tag under it, compared without case; a leading # is dropped",
+          "example": "hasTagExactly(\"Projects\") && kind == \"note\""
+        },
+        {
+          "name": "hasAnyTag",
           "args": [],
           "level": "document",
           "description": "notes with at least one tag in the frontmatter key tags",
-          "example": "!isTagged() && kind == \"note\""
+          "example": "!hasAnyTag() && kind == \"note\""
         }
       ]
     }

@@ -1,6 +1,6 @@
 // Package service is the backend of the tags plugin: it builds the host clients and the cache of the
-// tags, registers the tool tag_list, the query functions tags and isTagged and the service of its
-// frontend, and brings the tags up to date on each onFilesChanged event.
+// tags, registers the tool tag_list, the query functions hasTag, hasTagExactly and hasAnyTag and the service of
+// its frontend, and brings the tags up to date on each onFilesChanged event.
 package service
 
 import (
@@ -92,5 +92,5 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 	return a.cache.UpdateVault(ctx, id)
 }
 
-// Functions is the registry of the query functions tags and isTagged.
+// Functions is the registry of the query functions hasTag, hasTagExactly and hasAnyTag.
 func (a *App) Functions() *searchfunction.Registry { return a.functions }
