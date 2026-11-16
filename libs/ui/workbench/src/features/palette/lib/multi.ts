@@ -1,7 +1,7 @@
 /** The rows of a step that asks for several items, as the palette draws them. */
 import type { PaletteGroup, PaletteItem, PaletteItemState } from './item'
 
-interface PaletteMultiItem {
+export interface PaletteMultiItem {
   readonly id: string
   readonly title: string
   readonly state: PaletteItemState
@@ -32,7 +32,7 @@ const isOn = (item: PaletteMultiItem): boolean => item.state === 'set' || item.s
 const byTitle = (one: PaletteMultiItem, other: PaletteMultiItem): number =>
   one.title.localeCompare(other.title)
 
-const orderMultiItems = (
+export const orderMultiItems = (
   items: readonly PaletteMultiItem[],
   recent: readonly string[],
 ): readonly PaletteMultiItem[] => {
@@ -60,11 +60,16 @@ const toRow = (item: PaletteMultiItem): PaletteItem => ({
 })
 
 /**
- * The one group the step shows for the text typed: the items in order, and ahead of them the row that
- * creates an item once the text is not empty and no item has it as its title.
+ * The one group the step shows for the text typed: `items`, the items of the step in the order to show,
+ * narrowed to the text, and ahead of them the row that creates an item once the text is not empty and no
+ * item has it as its title.
  */
-export const getMultiGroup = (multi: PaletteMultiProps, query: string): PaletteGroup => {
-  const items = filterMultiItems(orderMultiItems(multi.items, multi.recent), query)
+export const getMultiGroup = (
+  multi: PaletteMultiProps,
+  items: readonly PaletteMultiItem[],
+  query: string,
+): PaletteGroup => {
+  const shown = filterMultiItems(items, query)
   const text = query.trim()
   const isNamed = multi.items.some((item) => item.title.trim().toLowerCase() === text.toLowerCase())
   const color = text === '' ? undefined : multi.getCreateColor?.(text)
@@ -77,6 +82,6 @@ export const getMultiGroup = (multi: PaletteMultiProps, query: string): PaletteG
   return {
     id: 'multi',
     title: multi.title,
-    items: text === '' || isNamed ? items.map(toRow) : [create, ...items.map(toRow)],
+    items: text === '' || isNamed ? shown.map(toRow) : [create, ...shown.map(toRow)],
   }
 }
