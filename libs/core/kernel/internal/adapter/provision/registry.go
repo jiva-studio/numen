@@ -110,12 +110,28 @@ func (r *Registry) run(
 		}
 		note(status)
 	})
+	if err != nil && ctx.Err() != nil {
+		note(plugin.DependencyStatus{State: plugin.DependencyStateMissing, Message: "canceled"})
+		return plugin.ResolvedDependency{}, ctx.Err()
+	}
 	if err != nil {
 		note(plugin.DependencyStatus{State: plugin.DependencyStateFailed, Error: err.Error()})
 		return plugin.ResolvedDependency{}, err
 	}
 	note(plugin.DependencyStatus{State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved})
 	return resolved, nil
+}
+
+// Cancel stops the run of the requirement and reports whether one was in progress. Every caller waiting on
+// the run receives context.Canceled, the observer receives the state missing, and what the run had downloaded
+// stays for the next run to continue from.
+func (r *Registry) Cancel(req manifest.DependencyRequirement) bool {
+	return r.flights.cancel(getFlightKey(req))
+}
+
+// CancelAll stops every run in progress as Cancel does.
+func (r *Registry) CancelAll() {
+	r.flights.cancelAll()
 }
 
 // Resolve asks the provisioner that handles the requirement where the dependency is or will be. It does not

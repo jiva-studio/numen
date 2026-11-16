@@ -2,6 +2,8 @@ package supervision
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -53,6 +55,9 @@ type Services struct {
 	closing      Closing
 	endpoint     func() HostEndpoint
 	dependencies func() pluginport.DependencyRegistry
+
+	mu          sync.Mutex
+	downloading map[string]manifest.DependencyRequirement
 }
 
 // NewServices returns services that read the endpoint and the provisioner of the dependencies from the
@@ -60,7 +65,7 @@ type Services struct {
 func NewServices(
 	closing Closing, endpoint func() HostEndpoint, dependencies func() pluginport.DependencyRegistry,
 ) *Services {
-	return &Services{closing: closing, endpoint: endpoint, dependencies: dependencies}
+	return &Services{closing: closing, endpoint: endpoint, dependencies: dependencies, downloading: map[string]manifest.DependencyRequirement{}}
 }
 
 // GetDependencies returns what provisions the dependencies, or nil when nothing does.
@@ -72,7 +77,37 @@ func (s *Services) GetDependencies() pluginport.DependencyRegistry {
 // host that provisions none observes none.
 func (s *Services) ObserveDependencies(observer func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
 	if catalog := s.GetDependencies(); catalog != nil {
-		catalog.SetObserver(observer)
+		catalog.SetObserver(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
+			s.track(req, status)
+			observer(req, status)
+		})
+	}
+}
+
+func (s *Services) track(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if status.State == plugindomain.DependencyStateProvisioning {
+		s.downloading[req.ID] = req
+		return
+	}
+	delete(s.downloading, req.ID)
+}
+
+// CancelDependency stops the download of the dependency, if one runs.
+func (s *Services) CancelDependency(req manifest.DependencyRequirement) {
+	if catalog := s.GetDependencies(); catalog != nil {
+		catalog.Cancel(req)
+	}
+}
+
+// CancelDependencies stops every download that the observer saw start and has not seen end.
+func (s *Services) CancelDependencies() {
+	s.mu.Lock()
+	running := slices.Collect(maps.Values(s.downloading))
+	s.mu.Unlock()
+	for _, req := range running {
+		s.CancelDependency(req)
 	}
 }
 

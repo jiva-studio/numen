@@ -123,6 +123,9 @@ func (Settings) TeardownAll(context.Context, time.Duration) error { return nil }
 func (Settings) ObserveDependencies(func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
 }
 
+// CancelDependency has no download to stop.
+func (Settings) CancelDependency(manifest.DependencyRequirement) {}
+
 // Processes is the processes of a plugin host that runs nothing.
 type Processes struct{}
 
