@@ -181,7 +181,8 @@ func (HostIndexState) EnumDescriptor() ([]byte, []int) {
 }
 
 // HostFileStat is what a file was at a moment: at its current position, how large it
-// was and when it last changed.
+// was, when it last changed and what it held. As a baseline, a hash is compared with the content
+// of the file at the write; without one, the size and the time are.
 type HostFileStat struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -189,7 +190,12 @@ type HostFileStat struct {
 	// Nanoseconds since the epoch.
 	ModTime int64 `protobuf:"varint,3,opt,name=mod_time,json=modTime,proto3" json:"mod_time,omitempty"`
 	// Whether the file is a note.
-	IsNote        bool `protobuf:"varint,5,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
+	IsNote bool `protobuf:"varint,5,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
+	// The SHA-256 of the content, in lowercase hex. Empty where the answer did not read the content.
+	Hash string `protobuf:"bytes,6,opt,name=hash,proto3" json:"hash,omitempty"`
+	// The number of writes the vault had taken when the answer was made. Zero where the answer
+	// does not say.
+	Version       uint64 `protobuf:"varint,7,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -250,6 +256,20 @@ func (x *HostFileStat) GetIsNote() bool {
 		return x.IsNote
 	}
 	return false
+}
+
+func (x *HostFileStat) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *HostFileStat) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
 }
 
 type ListHostVaultsRequest struct {
@@ -4771,12 +4791,14 @@ var File_numen_v1_hostvault_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\n" +
-	"\x18numen/v1/hostvault.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/vaults.proto\"j\n" +
+	"\x18numen/v1/hostvault.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/vaults.proto\"\x98\x01\n" +
 	"\fHostFileStat\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x19\n" +
 	"\bmod_time\x18\x03 \x01(\x03R\amodTime\x12\x17\n" +
-	"\ais_note\x18\x05 \x01(\bR\x06isNote\"\x17\n" +
+	"\ais_note\x18\x05 \x01(\bR\x06isNote\x12\x12\n" +
+	"\x04hash\x18\x06 \x01(\tR\x04hash\x12\x18\n" +
+	"\aversion\x18\a \x01(\x04R\aversion\"\x17\n" +
 	"\x15ListHostVaultsRequest\"f\n" +
 	"\rHostVaultInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
