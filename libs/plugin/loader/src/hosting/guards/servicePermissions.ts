@@ -47,6 +47,7 @@ class Rule<M extends Mode = Mode> {
     readonly permissions: readonly string[],
     readonly mode: M,
     readonly reason: string,
+    readonly isReadOnly: (args: readonly Value[]) => boolean = () => false,
   ) {}
 
   get isAsync(): boolean {
@@ -67,7 +68,15 @@ function requireNothing(reason: string): Rule<'none'> {
 }
 
 function explain<M extends Mode>(rule: Rule<M>, reason: string): Rule<M> {
-  return new Rule(rule.permissions, rule.mode, reason)
+  return new Rule(rule.permissions, rule.mode, reason, rule.isReadOnly)
+}
+
+/** The commands that move a view and change nothing, so `vault:read` is enough to run them. */
+const READ_ONLY_COMMANDS: ReadonlySet<Value> = new Set(['app:file.reveal', 'app:settings.open'])
+
+/** A rule that asks `vault:read` instead of its permissions for the calls `isReadOnly` accepts. */
+function readOnlyFor<M extends Mode>(rule: Rule<M>, isReadOnly: (args: readonly Value[]) => boolean): Rule<M> {
+  return new Rule(rule.permissions, rule.mode, rule.reason, isReadOnly)
 }
 
 type Leaf =
@@ -232,8 +241,12 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       getIds: requireNothing('the ids of the commands, which hold no vault data'),
       watch: requireNothing('the ids of the commands, which hold no vault data'),
       listItems: requirePermissionsAsync(READ),
-      run: requireNothing(
-        'a command runs only if its owner is the plugin, or a slot lists it, which shows the user a row for it, or it is in the short list of application commands plugins run; limitCommands checks that and the permission: vault:read for app:file.reveal and app:settings.open, which move a view, and vault:write for every other command',
+      run: readOnlyFor(
+        explain(
+          requirePermissionsAsync(WRITE),
+          'a command runs only if its owner is the plugin, or a slot lists it, which shows the user a row for it, or it is in the short list of application commands plugins run: limitCommands checks it; vault:read is enough for app:file.reveal and app:settings.open, which move a view',
+        ),
+        ([command]) => READ_ONLY_COMMANDS.has(command),
       ),
     },
     slots: {
@@ -285,7 +298,20 @@ export interface Guard {
   readonly path?: string
 }
 
-function requireAll(rule: Rule, operation: string, check: RequirePermission): void {
+function requireAll(
+  rule: Rule,
+  call: { readonly operation: string; readonly args: readonly Value[] },
+  check: RequirePermission,
+): void {
+  const { operation, args } = call
+  if (rule.isReadOnly(args)) {
+    try {
+      check(READ, operation)
+    } catch {
+      check(WRITE, operation)
+    }
+    return
+  }
   for (const permission of rule.permissions) check(permission, operation)
 }
 
@@ -301,7 +327,7 @@ function guardMember(
       enumerable: true,
       value: (...args: never[]) => {
         try {
-          requireAll(rule, operation, check)
+          requireAll(rule, { operation, args }, check)
         } catch (error) {
           if (rule.isAsync) return Promise.reject(error)
           throw error
@@ -313,7 +339,7 @@ function guardMember(
   return {
     enumerable: true,
     get: () => {
-      requireAll(rule, operation, check)
+      requireAll(rule, { operation, args: [] }, check)
       return service[key]
     },
   }
