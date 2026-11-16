@@ -1,1 +1,1 @@
-export { createSetTags, type SetTagsDeps } from './model/createSetTags'
+export { createSetTags } from './model/createSetTags'

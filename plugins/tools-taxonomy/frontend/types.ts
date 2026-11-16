@@ -14,7 +14,7 @@ export interface TagMapMessage {
 }
 
 /** A tag of the vault with the number of notes that have it, as the Go message TagCount encodes it. */
-export interface TagCount {
+interface TagCount {
   readonly tag: string
   readonly count: number
 }
@@ -32,7 +32,7 @@ export interface SetTagsRequest {
 }
 
 /** The tags a note has after SetTags, or the error that left it as it was. */
-export interface NoteTags {
+interface NoteTags {
   readonly path: string
   readonly tags: readonly string[]
   readonly error?: string

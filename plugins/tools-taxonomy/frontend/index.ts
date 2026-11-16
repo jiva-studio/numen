@@ -17,7 +17,10 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   plugin.register.slotView({ id: FILE_TAGS_VIEW, component: createFileTags(tagMap) })
   plugin.identity.subscriptions.push({ dispose: () => tagMap.stop() })
   const { picker } = host.ui
-  if (picker) plugin.register.command(createSetTags({ api, picker, getTags: tagMap.getTags }))
+  if (picker) {
+    const { handler } = createSetTags({ api, picker, getTags: tagMap.getTags })
+    plugin.register.command({ id: 'tags.set', handler })
+  }
 }
 
 export default definePlugin({

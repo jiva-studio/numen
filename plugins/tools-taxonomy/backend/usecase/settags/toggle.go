@@ -14,8 +14,6 @@ type toggle struct {
 	isClear bool
 }
 
-// decideToggles cleans the tags, drops those that clean to nothing and repeats, and decides for each whether it is
-// cleared or set.
 func decideToggles(paths []string, current map[string][]string, requested []string) []toggle {
 	var decided []toggle
 	for _, raw := range requested {
@@ -30,7 +28,6 @@ func decideToggles(paths []string, current map[string][]string, requested []stri
 	return decided
 }
 
-// pickToggles returns the toggles that change a note with the tags: a cleared tag it has, and a set tag it lacks.
 func pickToggles(decided []toggle, noteTags []string) []toggle {
 	var picked []toggle
 	for _, one := range decided {

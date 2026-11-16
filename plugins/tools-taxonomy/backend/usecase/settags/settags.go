@@ -129,7 +129,6 @@ func writeChanges(ctx context.Context, writer PropertyWriter, changes []change) 
 	return outcomes, nil
 }
 
-// getValue is the value of the key tags: the list, or nil, which removes the key, when no tag is left.
 func getValue(list []string) any {
 	if len(list) == 0 {
 		return nil

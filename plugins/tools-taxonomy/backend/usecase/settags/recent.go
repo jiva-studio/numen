@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
 )
 
-// readRecent returns the tags of the file recentFile, the latest first.
 func readRecent(ctx context.Context, store Store) ([]string, error) {
 	content, err := store.Read(ctx, recentFile)
 	if errors.Is(err, host.ErrNotExist) {
@@ -24,7 +23,7 @@ func readRecent(ctx context.Context, store Store) ([]string, error) {
 	return recentfile.Parse(content), nil
 }
 
-// remember puts the tags in front of the recent tags, the last of them first, and keeps the first recentLimit.
+// remember keeps at most recentLimit tags, the last set first.
 func remember(ctx context.Context, store Store, set []toggle) error {
 	if len(set) == 0 {
 		return nil
