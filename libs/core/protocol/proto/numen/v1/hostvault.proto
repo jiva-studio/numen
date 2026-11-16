@@ -76,6 +76,11 @@ service HostVaultService {
   // pages ordered by path. It needs vault:read.
   rpc ReadFrontmatter(ReadFrontmatterRequest) returns (ReadFrontmatterResponse);
 
+  // WriteFrontmatter sets, replaces or removes top-level frontmatter keys of
+  // notes, keeps the other keys and the body. It needs vault:write. At most
+  // 1000 notes per call.
+  rpc WriteFrontmatter(WriteFrontmatterRequest) returns (WriteFrontmatterResponse);
+
   // ListFileChanges returns the file change feed of the vault after a cursor:
   // the latest event of each kind of each file, in the order the index stored
   // them. It needs vault:read.
@@ -403,6 +408,32 @@ message ReadFrontmatterResponse {
   // read. A reader keeps the cursor of its first page and reads the feed from
   // it, so a change made during the read is not lost.
   FileChangeCursor cursor = 4;
+}
+
+message WriteFrontmatterRequest {
+  repeated NoteFrontmatterWrite notes = 1;
+}
+
+message NoteFrontmatterWrite {
+  string path = 1;
+  // values is a JSON object; a key with the value null is removed.
+  bytes values = 2;
+  // baseline is the file state the caller read; a note changed since is left
+  // unchanged (stale).
+  HostFileStat baseline = 3;
+}
+
+message WriteFrontmatterResponse {
+  HostVaultErrorCode error = 1;
+  // One result per note, in the order of the request.
+  repeated NoteFrontmatterWritten results = 2;
+}
+
+message NoteFrontmatterWritten {
+  // The note after the write; unset when nothing was written.
+  HostFileStat stat = 1;
+  HostVaultErrorCode error = 2;
+  string detail = 3;
 }
 
 // NoteFrontmatter is the frontmatter of one note.

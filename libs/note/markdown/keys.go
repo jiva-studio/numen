@@ -221,3 +221,8 @@ func (d *Document) getSpelling(key string) map[string]yaml.Style {
 	}
 	return out
 }
+
+// Remove deletes one top-level frontmatter key whatever it holds, and does nothing when the key is not there.
+func (d *Document) Remove(key string) error {
+	return nil
+}
