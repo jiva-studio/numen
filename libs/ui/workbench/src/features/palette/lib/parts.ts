@@ -1,5 +1,4 @@
 /** A line of a row split into the runs the words stand in, as plain values. */
-import { isLeading, isTrailing } from '@numen/ui'
 import type { TextRange } from '@numen/ui'
 
 /** One run of a line, and whether it is why the item is here. */
@@ -64,3 +63,7 @@ const whole = (text: string, pos: number, delta: 1 | -1): number => {
 
 const isInsideCharacter = (text: string, pos: number): boolean =>
   isTrailing(text.charCodeAt(pos)) && isLeading(text.charCodeAt(pos - 1))
+
+const isLeading = (unit: number): boolean => unit >= 0xd800 && unit <= 0xdbff
+
+const isTrailing = (unit: number): boolean => unit >= 0xdc00 && unit <= 0xdfff
