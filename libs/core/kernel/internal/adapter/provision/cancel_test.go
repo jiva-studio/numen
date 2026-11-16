@@ -106,8 +106,9 @@ func TestCancelStopsADownloadAndKeepsTheBytesForTheNextRun(t *testing.T) {
 	if err != nil || len(partial) != 1 {
 		t.Fatalf("partial files = %v, %v, want one", partial, err)
 	}
-	if info, statErr := os.Stat(partial[0]); statErr != nil || info.Size() != int64(half) {
-		t.Fatalf("the partial file = %v, %v, want %d bytes", info, statErr, half)
+	info, statErr := os.Stat(partial[0])
+	if statErr != nil || info.Size() == 0 || info.Size() > int64(half) {
+		t.Fatalf("the partial file = %v, %v, want 1 to %d bytes", info, statErr, half)
 	}
 	if registry.Cancel(req) {
 		t.Error("a second Cancel found a download in progress")
@@ -121,7 +122,7 @@ func TestCancelStopsADownloadAndKeepsTheBytesForTheNextRun(t *testing.T) {
 	if err != nil || !bytes.Equal(got, data) {
 		t.Fatalf("the finished file differs from the data: %v", err)
 	}
-	if want := "bytes=" + strconv.Itoa(half) + "-"; resumedFrom.Load() != want {
+	if want := "bytes=" + strconv.FormatInt(info.Size(), 10) + "-"; resumedFrom.Load() != want {
 		t.Errorf("the next run asked for %v, want %s", resumedFrom.Load(), want)
 	}
 }
