@@ -252,7 +252,7 @@ export default definePlugin({
 
 ### Views in Slots
 
-`plugin.register.slotView({ id, component })` registers the Vue component of a view the manifest places with an entry `{ "slot", "view" }` of `contributes.slots` under the same id; it is drawn in every slot the manifest places it in, and an id the manifest places nowhere throws, so the activation fails. The window passes a slot view no props; it reads what it draws from the host services of its plugin. `createMockPluginContext` records registrations for `getRegisteredSlotViews()`.
+`plugin.register.slotView({ id, component })` registers the Vue component of a view the manifest places with an entry `{ "slot", "view" }` of `contributes.slots` under the same id; it is drawn in every slot the manifest places it in, and an id the manifest places nowhere throws, so the activation fails. The window passes a slot view no props; it reads what it draws from the host services of its plugin. The owner of a slot may pass its views props: the plugin of the file tree passes each view of `fileTree.rowEnd` the prop `path`, the vault-relative path of its row. `createMockPluginContext` records registrations for `getRegisteredSlotViews()`.
 
 ### The Title Bar
 
@@ -524,6 +524,7 @@ A window has a fixed list of slots, declared once in `libs/core/protocol/slots.j
 | `statusBar.left`       | The start of the status bar.                                   | The plugin of the status bar |
 | `statusBar.right`      | The end of the status bar.                                     | The plugin of the status bar |
 | `fileTree.context`     | The menu of a row of the file tree, over its file or folder.   | The plugin of the file tree  |
+| `fileTree.rowEnd`      | The views at the right end of a row of the file tree.          | The plugin of the file tree  |
 | `tabStrip.context`     | The menu of a tab, over the file of the tab.                   | The tab strip of the window  |
 | `plexGraph.context`    | The menu of a node of the plex graph, over its note.           | The plugin of the plex graph |
 | `palette.searchResult` | The actions of a search result that is a note, over that note. | The palette                  |

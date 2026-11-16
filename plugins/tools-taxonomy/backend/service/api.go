@@ -1,0 +1,84 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
+)
+
+func mountAPI(s *server.Server, cache *tagcache.Caches) error {
+	a := s.NewAPI(api.Service)
+	server.Handle(a, api.MethodGetTagMap, func(ctx context.Context, _ api.GetTagMapRequest) (api.TagMap, error) {
+		return getTagMap(ctx, cache)
+	})
+	server.Stream(a, api.MethodWatchTagMap, func(ctx context.Context, _ api.WatchTagMapRequest, send func(api.TagMapMessage) error) error {
+		return watchTagMap(ctx, cache, send)
+	})
+	return a.Err()
+}
+
+func getRequestVault(ctx context.Context) (domain.VaultID, error) {
+	id := host.GetRequestVault(server.GetHeader(ctx))
+	if id == "" {
+		return "", server.NewAPIError(server.CodeFailedPrecondition, "the request names no vault")
+	}
+	return id, nil
+}
+
+func convertError(err error) error {
+	switch {
+	case errors.Is(err, host.ErrNoVault):
+		return server.NewAPIError(server.CodeFailedPrecondition, err.Error())
+	case errors.Is(err, host.ErrPermissionDenied):
+		return server.NewAPIError(server.CodePermissionDenied, err.Error())
+	}
+	return err
+}
+
+func getTagMap(ctx context.Context, cache *tagcache.Caches) (api.TagMap, error) {
+	id, err := getRequestVault(ctx)
+	if err != nil {
+		return api.TagMap{}, err
+	}
+	found, err := cache.GetMap(ctx, id)
+	if err != nil {
+		return api.TagMap{}, convertError(fmt.Errorf("get the tag map: %w", err))
+	}
+	return api.TagMap{Tags: found}, nil
+}
+
+func watchTagMap(ctx context.Context, cache *tagcache.Caches, send func(api.TagMapMessage) error) error {
+	id, err := getRequestVault(ctx)
+	if err != nil {
+		return err
+	}
+	changes, cancel := cache.Subscribe(id)
+	defer cancel()
+	found, err := cache.GetMap(ctx, id)
+	if err != nil {
+		return convertError(fmt.Errorf("get the tag map: %w", err))
+	}
+	if err := send(api.TagMapMessage{Tags: found}); err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case change, isOpen := <-changes:
+			if !isOpen {
+				return nil
+			}
+			if err := send(api.TagMapMessage{Changed: change.Changed}); err != nil {
+				return err
+			}
+		}
+	}
+}

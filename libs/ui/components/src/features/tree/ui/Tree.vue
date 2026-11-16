@@ -94,6 +94,9 @@ const { onRename, onAbandon, onFieldBlur } = renaming
         @blur="onFieldBlur"
       >
         <slot name="icon" :id="row.id" :has-children="row.hasChildren" :is-open="row.isOpen" />
+        <template #end="{ id }">
+          <slot name="end" :id="id" />
+        </template>
       </TreeRow>
     </div>
 

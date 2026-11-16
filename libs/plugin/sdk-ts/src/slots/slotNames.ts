@@ -16,6 +16,8 @@ export const SLOT = {
   statusBarRight: 'statusBar.right',
   // The menu of a row of the file tree, over its file or folder, drawn by the plugin of the file tree.
   fileTreeContext: 'fileTree.context',
+  // The views at the right end of a row of the file tree, each given the path of the row, drawn by the plugin of the file tree.
+  fileTreeRowEnd: 'fileTree.rowEnd',
   // The menu of a tab, over the file of the tab, drawn by the tab strip of the window.
   tabStripContext: 'tabStrip.context',
   // The menu of a node of the plex graph, over its note, drawn by the plugin of the plex graph.

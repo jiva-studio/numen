@@ -9,6 +9,7 @@
   "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
+    "slots": [{ "slot": "fileTree.rowEnd", "view": "fileTags" }],
     "searchFunctions": {
       "version": 1,
       "functions": [
@@ -30,5 +31,7 @@
     }
   },
   "permissions": ["vault:read"],
-  "backend": { "entrypoint": "bin/tools-taxonomy" }
+  "services": ["md.numen.tools.taxonomy"],
+  "backend": { "entrypoint": "bin/tools-taxonomy" },
+  "frontend": {}
 }

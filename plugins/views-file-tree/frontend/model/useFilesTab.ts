@@ -1,7 +1,7 @@
 /**
  * Tab state, tree interactions, and window tab registration for the files tab.
  */
-import { computed, ref, type Component } from 'vue'
+import { computed, ref, shallowRef, type Component } from 'vue'
 import {
   createSlotMenu,
   formatErrorMessage,
@@ -10,6 +10,7 @@ import {
   useSlotMenu,
   type CommandTarget,
   type Caught,
+  type SlotItem,
 } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import { CREATE_FOLDER, CREATE_NOTE, TRASH_FILE } from '../lib/menu'
@@ -21,6 +22,7 @@ import type {
   FilesTabDeps,
   FilesTabEntries,
   FilesTabMenu,
+  FilesTabRowEnd,
   FilesTabState,
   FileTree,
   MenuRequest,
@@ -224,6 +226,14 @@ async function selectDroppedFiles(list: FileTree, paths: readonly string[]) {
   list.selectPaths(paths)
 }
 
+function createRowEnd(deps: FilesTabDeps): FilesTabRowEnd {
+  const entries = shallowRef<readonly SlotItem[]>([])
+  const watch = deps.window.watchRowEntries?.((next) => {
+    entries.value = next
+  })
+  return { entries, stop: () => watch?.dispose() }
+}
+
 export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   const renamingPath = ref<string | null>(null)
   const setRenamingPath = (path: string | null) => {
@@ -258,5 +268,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
       },
     },
     menu: fileMenu,
+    rowEnd: createRowEnd(deps),
   }
 }
