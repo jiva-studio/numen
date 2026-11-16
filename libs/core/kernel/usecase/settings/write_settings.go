@@ -38,13 +38,13 @@ func (u *WriteSettings) Execute(entries []settingsdomain.Setting) error {
 // Write writes the settings like Execute and answers the settings as they stand after the write.
 // The answer is the state this write left and its version, whatever other writes follow it.
 // A write that was persisted and whose answer cannot be made returns an error that wraps
-// settingsport.ErrWrittenNotAnswered, and the plugins are notified.
+// settingsdomain.ErrWrittenNotAnswered, and the plugins are notified.
 func (u *WriteSettings) Write(entries []settingsdomain.Setting) (Applied, error) {
 	if err := u.check.Execute(entries); err != nil {
 		return Applied{}, err
 	}
 	content, version, err := u.file.WriteJSON(entries)
-	if err != nil && !errors.Is(err, settingsport.ErrWrittenNotAnswered) {
+	if err != nil && !errors.Is(err, settingsdomain.ErrWrittenNotAnswered) {
 		return Applied{}, err
 	}
 	u.refresh.Refresh()

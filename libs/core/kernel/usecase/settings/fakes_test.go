@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -51,7 +50,7 @@ func (f *memoryFile) WriteJSON(entries []settingsdomain.Setting) (string, uint64
 		return "", 0, f.failure
 	}
 	if f.readFailure != nil {
-		return "", 0, fmt.Errorf("%w: %w", settingsport.ErrWrittenNotAnswered, f.readFailure)
+		return "", 0, fmt.Errorf("%w: %w", settingsdomain.ErrWrittenNotAnswered, f.readFailure)
 	}
 	return "{}", 0, nil
 }

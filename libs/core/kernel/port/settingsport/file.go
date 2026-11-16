@@ -1,13 +1,6 @@
 package settingsport
 
-import (
-	"errors"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-)
-
-// ErrWrittenNotAnswered is the error of a write that is persisted and whose answer cannot be made.
-var ErrWrittenNotAnswered = errors.New("the settings are written and cannot be answered")
+import "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 
 // SettingsFile is the file in which this installation is configured.
 type SettingsFile interface {
@@ -20,7 +13,7 @@ type SettingsFile interface {
 	// WriteJSON puts each setting at its path in the file, leaves the rest of the file as it was, and
 	// returns the settings in force as JSON with the version, both of this write and of no other. A
 	// write that is persisted and whose answer cannot be made returns an error that wraps
-	// ErrWrittenNotAnswered.
+	// settings.ErrWrittenNotAnswered.
 	WriteJSON(entries []settings.Setting) (content string, version uint64, err error)
 }
 

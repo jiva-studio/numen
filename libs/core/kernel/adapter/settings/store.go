@@ -8,7 +8,6 @@ import (
 	"os"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -132,7 +131,7 @@ func (s *Store) WriteJSON(entries []settingsdomain.Setting) (content string, ver
 	}
 	content, err = into.WriteJSON()
 	if err != nil {
-		return "", 0, fmt.Errorf("%w: %w", settingsport.ErrWrittenNotAnswered, err)
+		return "", 0, fmt.Errorf("%w: %w", settingsdomain.ErrWrittenNotAnswered, err)
 	}
 	return content, version, nil
 }

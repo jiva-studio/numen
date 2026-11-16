@@ -335,11 +335,15 @@ func (f *Files) run(path string, work func(path string) error) (uint64, error) {
 	if err := os.MkdirAll(filepath.Dir(resolved), 0o755); err != nil {
 		return 0, err
 	}
-	err := withLock(resolved, func() error { return work(resolved) })
-	if err != nil {
-		return 0, err
-	}
-	return f.version.Add(1), nil
+	var version uint64
+	err := withLock(resolved, func() error {
+		if err := work(resolved); err != nil {
+			return err
+		}
+		version = f.version.Add(1)
+		return nil
+	})
+	return version, err
 }
 
 func splice(raw []byte, from, to int, with []byte) []byte {
