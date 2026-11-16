@@ -68,8 +68,8 @@ func Run() {
 
 // Mount registers the tool and the query functions on s.
 func (a *App) Mount(s *server.Server) {
-	a.tools.Mount(s)
-	a.functions.Mount(s)
+	a.Tools().Mount(s)
+	a.Functions().Mount(s)
 }
 
 // Tools is the registry of the tool tag_list.
