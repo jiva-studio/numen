@@ -32,7 +32,6 @@ const isOn = (item: PaletteMultiItem): boolean => item.state === 'set' || item.s
 const byTitle = (one: PaletteMultiItem, other: PaletteMultiItem): number =>
   one.title.localeCompare(other.title)
 
-/** The items the set and the mixed first by title, then the recent ones in the order given, then the rest by title. */
 const orderMultiItems = (
   items: readonly PaletteMultiItem[],
   recent: readonly string[],
@@ -44,7 +43,6 @@ const orderMultiItems = (
   return [...on, ...recents, ...rest]
 }
 
-/** The items whose title holds every word of the query, in any case. */
 const filterMultiItems = (
   items: readonly PaletteMultiItem[],
   query: string,
