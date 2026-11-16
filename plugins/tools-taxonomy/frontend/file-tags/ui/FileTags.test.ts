@@ -39,26 +39,39 @@ describe('the tag dots of a file', () => {
     }
   })
 
-  it('draw four dots and no count for a file that has four tags', () => {
+  it('draw four dots and no more circle for a file that has four tags', () => {
     const wrapper = mountTags(4)
 
+    expect(getDots(wrapper)).toHaveLength(4)
+    expect(wrapper.find('[data-tag-more]').exists()).toBe(false)
     expect(wrapper.get('[data-tag-dots]').text()).toBe('')
   })
 
-  it('draw four dots and the count of the rest for a file that has more', () => {
+  it('draw three dots and a more circle holding the rest for a file that has more', () => {
     for (const [count, rest] of [
-      [5, '+1'],
-      [6, '+2'],
-      [12, '+8'],
+      [5, '+2'],
+      [6, '+3'],
+      [12, '+9'],
     ] as const) {
       const wrapper = mountTags(count)
 
-      expect(getDots(wrapper)).toHaveLength(4)
+      expect(getDots(wrapper)).toHaveLength(3)
+      expect(wrapper.findAll('[data-tag-more]')).toHaveLength(1)
+      expect(wrapper.get('[data-tag-more]').text()).toBe(rest)
       expect(wrapper.get('[data-tag-dots]').text()).toBe(rest)
     }
   })
 
-  it('name every tag of the file, not only the four drawn', () => {
+  it('draw the more circle inside the stack of dots, after the last dot, in no tag color', () => {
+    const wrapper = mountTags(6)
+
+    expect(wrapper.get('[data-tag-dots]').element.lastElementChild).toBe(
+      wrapper.get('[data-tag-more]').element,
+    )
+    expect(wrapper.get('[data-tag-more]').attributes('style') ?? '').not.toContain('--numen-tag-')
+  })
+
+  it('name every tag of the file, not only the three drawn before the more circle', () => {
     const wrapper = mountTags(6)
 
     expect(wrapper.get('[data-tag-dots]').attributes('aria-label')).toBe(
@@ -72,11 +85,11 @@ describe('the tag dots of a file', () => {
     expect(wrapper.get('[data-tag-dots]').attributes('aria-label')).toBe('Sea, Port')
   })
 
-  it('draw the first four tags, each in the color of its text', () => {
+  it('draw the first three tags of a long list, each in the color of its text', () => {
     const wrapper = mountTags(6)
 
     const drawn = getDots(wrapper).map((dot) => dot.attributes('style') ?? '')
-    TAGS.slice(0, 4).forEach((tag, index) => {
+    TAGS.slice(0, 3).forEach((tag, index) => {
       expect(drawn[index]).toContain(`--numen-tag-${getTagColor(tag)}`)
     })
   })
