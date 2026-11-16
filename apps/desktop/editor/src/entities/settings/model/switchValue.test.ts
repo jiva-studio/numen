@@ -70,11 +70,9 @@ interface HeldCall {
   readonly reject: (error: unknown) => void
 }
 
-/**
- * A vault whose reads and writes are held until a test lets them through. A read answers with the
- * state and the version it had when it began; a write changes both when it is let through.
- */
 const createHeldVault = (isEnabled: boolean) => {
+  // A read answers with the state and the version it had when it began; a write changes both when
+  // it is let through.
   const file = { p: { enabled: isEnabled } }
   let version = 1n
   const reads: HeldCall[] = []

@@ -7,6 +7,7 @@ const setting = (key: string, value?: number): PluginSettingInfo => ({
   type: 'range',
   title: key,
   description: '',
+  default: 0,
   value,
 })
 

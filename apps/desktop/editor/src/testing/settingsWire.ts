@@ -13,7 +13,7 @@ import type {
   PluginSettingOption,
   SettingEdit,
 } from '@/entities/settings'
-import type { JsonObject } from '@/shared/api/json'
+import type { JsonValue } from '@/shared/api/json'
 import type { Result } from '@/shared/lib/result'
 
 /** Every setting in effect, as a test core answers them. */
@@ -136,26 +136,23 @@ export interface SettingsCore {
 
 type Answers = Record<string, (request: never, context: never) => object | AsyncIterable<object>>
 
-/** The file text with the edits applied, as the core writes them. */
 const applyEdits = (text: string, edits: readonly SettingEdit[]): string => {
-  const file: JsonObject = JSON.parse(text || '{}')
+  const file: Record<string, JsonValue> = JSON.parse(text || '{}')
   for (const edit of edits) {
     let at = file
     for (const step of edit.at.slice(0, -1)) {
       const next = at[step]
       at[step] = typeof next === 'object' && next !== null ? next : {}
-      at = at[step] as JsonObject
+      at = at[step] as Record<string, JsonValue>
     }
     at[edit.at[edit.at.length - 1] ?? ''] = JSON.parse(edit.value)
   }
   return JSON.stringify(file)
 }
 
-/**
- * The settings calls of a core that versions its state: a read answers with the version it began
- * at, and a write answers with the file after it and the version it made.
- */
 const answerSettings = (core: Partial<SettingsCore>): Answers => {
+  // The core versions its state: a read answers with the version it began at, and a write answers
+  // with the file after it and the version it made.
   const { getSettings, updateSettings, watchSettings } = core
   let version = 1n
   let written = '{}'
