@@ -136,7 +136,7 @@ jobs:
           cache-key: ${{ steps.go.outputs.cache-key }}
 
   acceptance-macos:
-    name: Acceptance / live / macOS
+    name: Acceptance / Live / macOS
     needs: [build-macos]
     if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
     runs-on: numen-macos-26
