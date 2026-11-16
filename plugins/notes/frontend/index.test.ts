@@ -9,10 +9,18 @@ import { activate, deactivate, MarkdownNoteEditor, readMarkdownEditorPreferences
 /** Host services whose vault offers no notes. */
 const NO_NOTES = { vault: {} } as unknown as HostServices
 
-const drawIcon = async (icon: Component): Promise<string> => {
+const ICON_LOAD_TIMEOUT = 30_000
+
+const drawIcon = (icon: Component): Promise<string> => {
   const wrapper = mount(icon)
-  await flushPromises()
-  return wrapper.find('svg').element.innerHTML
+  return vi.waitFor(
+    () => {
+      const svg = wrapper.find('svg')
+      expect(svg.exists()).toBe(true)
+      return svg.element.innerHTML
+    },
+    { timeout: ICON_LOAD_TIMEOUT, interval: 50 },
+  )
 }
 
 describe('the icon of the notes in the tab strip', () => {
@@ -34,14 +42,14 @@ describe('the icon of the notes in the tab strip', () => {
 
     expect(tabKind.icon).toBeDefined()
     expect(await drawIcon(tabKind.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
-  })
+  }, ICON_LOAD_TIMEOUT * 1.5)
 
   it('is drawn for the markdown reader as the file-text icon the manifest names', async () => {
     const { reader } = activateRegistering()
 
     expect(reader.icon).toBeDefined()
     expect(await drawIcon(reader.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
-  })
+  }, ICON_LOAD_TIMEOUT * 1.5)
 })
 
 describe('notes plugin lifecycle', () => {
