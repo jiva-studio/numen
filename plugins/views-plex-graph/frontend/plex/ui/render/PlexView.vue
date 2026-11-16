@@ -17,8 +17,6 @@ import { useNodeHandlers } from '../../model/useNodeHandlers'
 import { useNodeViews } from '../../model/useNodeViews'
 import { useNodeSizes } from '../../model/useNodeSizes'
 
-const WIDGET_SIDES = ['above', 'below'] as const
-
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
@@ -26,10 +24,6 @@ const props = withDefaults(defineProps<PlexViewProps>(), {
   highlightLinks: false,
   canReach: true,
   relationName: getRelationName,
-  widgetsAbove: () => [],
-  widgetsBelow: () => [],
-  getPath: () => '',
-  holdWidgets: undefined,
   behavior: () => DEFAULT_BEHAVIOR,
   gesture: undefined,
   dragging: undefined,
@@ -201,12 +195,12 @@ const getRole = (node: PlacedNode): GestureRole => {
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
       </PlexNodeView>
       <PlexNodeWidgets
-        v-for="side in WIDGET_SIDES"
+        v-for="side in ['above', 'below'] as const"
         :key="side"
         :node="node"
         :side="side"
-        :entries="side === 'above' ? widgetsAbove : widgetsBelow"
-        :path="getPath(node.id)"
+        :entries="(side === 'above' ? widgetsAbove : widgetsBelow) ?? []"
+        :path="getPath?.(node.id) ?? ''"
         @hold="holdWidgets?.(node.id, side, $event)"
       />
     </g>
