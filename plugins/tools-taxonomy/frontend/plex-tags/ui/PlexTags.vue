@@ -11,29 +11,41 @@ const props = defineProps<{ tags: readonly string[] }>()
 const CHIP_LIMIT = 4
 
 const chips = computed(() =>
-  props.tags.slice(0, CHIP_LIMIT).map((tag) => ({
+  props.tags.slice(0, CHIP_LIMIT).map((tag, index) => ({
     tag,
-    style: { '--tag': `var(--numen-tag-${getTagColor(tag)})` },
+    style: { '--tag': `var(--numen-tag-${getTagColor(tag)})`, '--i': index },
   })),
 )
 const rest = computed(() => props.tags.length - CHIP_LIMIT)
 </script>
 
 <template>
-  <span v-if="tags.length > 0" class="plex-tags" data-plex-tags>
+  <TransitionGroup
+    v-if="tags.length > 0"
+    tag="span"
+    name="plex-tags"
+    appear
+    class="plex-tags"
+    data-plex-tags
+  >
     <span
-      v-for="(chip, index) in chips"
-      :key="index"
+      v-for="chip in chips"
+      :key="chip.tag"
       class="plex-tags__chip"
       data-plex-tag
       :style="chip.style"
     >
       {{ chip.tag }}
     </span>
-    <span v-if="rest > 0" class="plex-tags__chip plex-tags__chip--more" data-plex-tag-more>{{
-      getRestText(rest)
-    }}</span>
-  </span>
+    <span
+      v-if="rest > 0"
+      key="more"
+      class="plex-tags__chip plex-tags__chip--more"
+      data-plex-tag-more
+      :style="{ '--i': CHIP_LIMIT }"
+      >{{ getRestText(rest) }}</span
+    >
+  </TransitionGroup>
 </template>
 
 <style scoped>
@@ -75,5 +87,38 @@ const rest = computed(() => props.tags.length - CHIP_LIMIT)
 
 .plex-tags__chip--more::before {
   content: none;
+}
+
+.plex-tags-enter-active {
+  transition:
+    opacity var(--numen-motion) var(--numen-easing),
+    transform var(--numen-motion) var(--numen-easing);
+  transition-delay: calc(var(--i) * 30ms);
+}
+
+.plex-tags-leave-active {
+  position: absolute;
+  transition: opacity var(--numen-motion) var(--numen-easing);
+}
+
+.plex-tags-move {
+  transition: transform var(--numen-motion) var(--numen-easing);
+}
+
+.plex-tags-enter-from {
+  opacity: 0;
+  transform: translateY(-0.25rem) scale(0.9);
+}
+
+.plex-tags-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plex-tags-enter-active,
+  .plex-tags-leave-active,
+  .plex-tags-move {
+    transition: none;
+  }
 }
 </style>
