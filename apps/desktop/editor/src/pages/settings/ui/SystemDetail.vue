@@ -28,20 +28,22 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const SECTION_PREFIXES = { appearance: 'appearance.', editor: 'editor.' } as const
+const SECTION_PREFIXES = { appearance: 'appearance.', editor: 'editor.', search: 'search.' } as const
 
-const getSectionOf = (key: string): 'system' | 'appearance' | 'editor' =>
+const getSectionOf = (key: string): 'system' | 'appearance' | 'editor' | 'search' =>
   key.startsWith(SECTION_PREFIXES.appearance)
     ? 'appearance'
     : key.startsWith(SECTION_PREFIXES.editor)
       ? 'editor'
+      : key.startsWith(SECTION_PREFIXES.search)
+        ? 'search'
       : 'system'
 
 const TITLES = {
   system: words.systemSettings,
   appearance: words.appearanceSettings,
   editor: words.editorSettings,
-  search: 'Search',
+  search: words.searchSettings,
 } as const
 
 /** The owner the core declares the settings of the shell under. */
