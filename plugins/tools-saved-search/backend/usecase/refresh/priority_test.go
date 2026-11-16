@@ -120,7 +120,7 @@ func TestANeverComputedSearchIsRunningWhileQueuedInTheBatch(t *testing.T) {
 	}
 }
 
-func TestABatchThatEndsWhileWaitingForTheVaultLeavesNoSearchQueued(t *testing.T) {
+func TestABatchThatEndsWhileWaitingForTheVaultUnqueuesItsSearches(t *testing.T) {
 	w := newBatchWorld(t)
 	w.vault.File(wrecksPath, formatSearchNote("", wrecksQuery))
 	releaseTides := w.searches.HoldSearch(tidesQuery)

@@ -173,7 +173,7 @@ func TestAnEditIsRunningFromItsCheckToTheEndOfItsRun(t *testing.T) {
 	}
 }
 
-func TestARunStartedWhileANewerEditIsCheckedLeavesTheCheckRunning(t *testing.T) {
+func TestARunOfAnOlderEditKeepsTheCheckOfANewerEdit(t *testing.T) {
 	w := newWorld(t, 0)
 	release := w.searches.HoldSearch(stormsQuery)
 	defer release()
@@ -194,7 +194,7 @@ func TestARunStartedWhileANewerEditIsCheckedLeavesTheCheckRunning(t *testing.T) 
 	}
 }
 
-func TestAStopOfAWatchThatEndedEarlierLeavesALaterRunRunning(t *testing.T) {
+func TestASecondStopOfAnEndedWatchKeepsALaterRun(t *testing.T) {
 	w := newWorld(t, 0)
 	release := w.searches.HoldSearch(stormsQuery)
 	defer release()
