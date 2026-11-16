@@ -154,11 +154,17 @@ func TestSuperviseAndWaitForExitKillProcessGroup(t *testing.T) {
 	}
 	// A killed child stays a zombie until its new parent reaps it, and a zombie still answers signal 0.
 	waitUntil(t, func() bool { return errors.Is(cmd.Cancel(), os.ErrProcessDone) })
-	waitUntil(t, func() bool { return !isRunning(childPID) })
+	waitUntil(t, func() bool { return !isRunning(t, childPID) })
 }
 
-func isRunning(pid int) bool {
-	out, _ := exec.Command("ps", "-o", "stat=", "-p", strconv.Itoa(pid)).Output()
+func isRunning(t *testing.T, pid int) bool {
+	t.Helper()
+	out, err := exec.CommandContext(t.Context(), "ps", "-o", "stat=", "-p", strconv.Itoa(pid)).Output()
+	if exitErr := (*exec.ExitError)(nil); errors.As(err, &exitErr) {
+		return false
+	} else if err != nil {
+		t.Fatal(err)
+	}
 	state := strings.TrimSpace(string(out))
 	return state != "" && !strings.HasPrefix(state, "Z")
 }
