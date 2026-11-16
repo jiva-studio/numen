@@ -65,37 +65,38 @@ export const OneTag: Story = {
   },
 }
 
-/** A file with four tags draws four dots and no count. */
+/** A file with four tags draws four dots and no more circle. */
 export const FourTags: Story = {
   args: { count: 4 },
   play: async ({ canvasElement }) => {
     const dots = within(canvasElement).getByLabelText('Port, Sea, Quay, Dock')
     await expect(dots.querySelectorAll('[data-tag-dot]')).toHaveLength(4)
+    await expect(dots.querySelector('[data-tag-more]')).toBeNull()
     await expect(dots).toHaveTextContent('')
   },
 }
 
-/** A file with five tags draws four dots and the count of the rest. */
+/** A file with five tags draws three dots and a more circle with the count of the rest. */
 export const FiveTags: Story = {
   args: { count: 5 },
   play: async ({ canvasElement }) => {
     const dots = within(canvasElement).getByLabelText('Port, Sea, Quay, Dock, Pier')
-    await expect(dots.querySelectorAll('[data-tag-dot]')).toHaveLength(4)
-    await expect(dots).toHaveTextContent('+1')
+    await expect(dots.querySelectorAll('[data-tag-dot]')).toHaveLength(3)
+    await expect(dots.querySelector('[data-tag-more]')).toHaveTextContent('+2')
   },
 }
 
-/** A file with far too many tags draws four dots and the count of the rest. */
+/** A file with far too many tags draws three dots and a more circle with the count of the rest. */
 export const FarTooManyTags: Story = {
   args: { count: 12 },
   play: async ({ canvasElement }) => {
     const dots = canvasElement.querySelector('[data-tag-dots]')
-    await expect(dots?.querySelectorAll('[data-tag-dot]')).toHaveLength(4)
-    await expect(dots).toHaveTextContent('+8')
+    await expect(dots?.querySelectorAll('[data-tag-dot]')).toHaveLength(3)
+    await expect(dots?.querySelector('[data-tag-more]')).toHaveTextContent('+9')
   },
 }
 
-/** The pointer over the dots shows every tag of the file, also those past the fourth. */
+/** The pointer over the dots shows every tag of the file, also those past the third dot. */
 export const ShowsEveryTagWhenHovered: Story = {
   args: { count: 6, state: 'hover' },
   play: async ({ canvasElement }) => {
@@ -113,6 +114,7 @@ export const OnASelectedRowInTheDarkTheme: Story = {
   globals: { theme: 'dark' },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.ownerDocument.documentElement.dataset['theme']).toBe('dark')
-    await expect(canvasElement.querySelectorAll('[data-tag-dot]')).toHaveLength(4)
+    await expect(canvasElement.querySelectorAll('[data-tag-dot]')).toHaveLength(3)
+    await expect(canvasElement.querySelectorAll('[data-tag-more]')).toHaveLength(1)
   },
 }

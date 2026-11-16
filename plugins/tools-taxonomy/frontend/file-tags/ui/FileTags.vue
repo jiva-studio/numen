@@ -6,24 +6,26 @@
 import { computed, ref, useTemplateRef } from 'vue'
 import { measureRect, Tooltip, type Box } from '@numen/ui'
 import { getTagColor } from '../../lib/color'
-import { getRestText } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ tags: readonly string[] }>()
 
 /* --------------------------------- State ---------------------------------- */
 const DOT_LIMIT = 4
+const DOTS_BEFORE_MORE = 3
 
 const root = useTemplateRef<HTMLElement>('root')
 const at = ref<Box | null>(null)
 
+const hasMore = computed(() => props.tags.length > DOT_LIMIT)
+const dotCount = computed(() => (hasMore.value ? DOTS_BEFORE_MORE : props.tags.length))
 const dots = computed(() =>
-  props.tags.slice(0, DOT_LIMIT).map((tag) => ({
+  props.tags.slice(0, dotCount.value).map((tag) => ({
     tag,
     style: { '--tag': `var(--numen-tag-${getTagColor(tag)})` },
   })),
 )
-const rest = computed(() => props.tags.length - DOT_LIMIT)
+const more = computed(() => props.tags.length - DOTS_BEFORE_MORE)
 const label = computed(() => props.tags.join(', '))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -55,7 +57,7 @@ function onLeave() {
         data-tag-dot
         :style="dot.style"
       />
-      <span v-if="rest > 0" class="file-tags__rest">{{ getRestText(rest) }}</span>
+      <span v-if="hasMore" class="file-tags__dot file-tags__more" data-tag-more>+{{ more }}</span>
     </span>
     <Teleport to="body">
       <Tooltip v-if="at" :at="at">{{ label }}</Tooltip>
@@ -70,6 +72,8 @@ function onLeave() {
 
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
+  margin-inline-start: auto;
   font-size: var(--numen-text-1);
   line-height: 1;
 }
@@ -87,7 +91,17 @@ function onLeave() {
   margin-inline-start: calc(var(--dot) / -2);
 }
 
-.file-tags__rest {
-  margin-inline-start: calc(var(--ring) * 2);
+.file-tags__more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: auto;
+  block-size: auto;
+  min-inline-size: var(--dot);
+  min-block-size: var(--dot);
+  padding-inline: 0.125rem;
+  background: var(--numen-rule);
+  color: var(--numen-ink);
+  font-size: var(--numen-text-1);
 }
 </style>
