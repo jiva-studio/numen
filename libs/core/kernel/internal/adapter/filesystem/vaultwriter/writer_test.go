@@ -490,7 +490,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 	}
 }
 
-func errorOf(_ domain.FileStat, err error) error { return err }
+func errorOf(_ vault.WriteResult, err error) error { return err }
 
 // A vault may be reached through a link: a home folder on another disk, a
 // synced folder, a temporary folder on a machine that keeps them elsewhere.
