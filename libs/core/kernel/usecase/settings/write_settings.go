@@ -1,6 +1,8 @@
 package settings
 
 import (
+	"fmt"
+
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
@@ -35,6 +37,7 @@ func (u *WriteSettings) Execute(entries []settingsdomain.Setting) error {
 
 // Write writes the settings like Execute and answers the settings as they stand after the write.
 // The version is greater than that of any state read before the write.
+// A write that was persisted and cannot be read back answers an error, and the plugins are told of the change.
 func (u *WriteSettings) Write(entries []settingsdomain.Setting) (Applied, error) {
 	if err := u.check.Execute(entries); err != nil {
 		return Applied{}, err
@@ -45,7 +48,7 @@ func (u *WriteSettings) Write(entries []settingsdomain.Setting) (Applied, error)
 	u.refresh.Refresh()
 	content, _, version, err := u.file.ReadJSON()
 	if err != nil {
-		return Applied{}, err
+		return Applied{}, fmt.Errorf("the settings are written and cannot be read back: %w", err)
 	}
 	return Applied{Written: content, Version: version}, nil
 }

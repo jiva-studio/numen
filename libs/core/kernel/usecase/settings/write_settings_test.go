@@ -3,6 +3,7 @@ package settings_test
 import (
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -69,5 +70,22 @@ func TestCheckSettingsAsksThePluginThatOwnsTheSetting(t *testing.T) {
 
 	if err != nil || !slices.Equal(host.checks, []string{"org.example.scans.isAutomatic"}) {
 		t.Fatalf("err = %v, checks = %v", err, host.checks)
+	}
+}
+
+// A write that was persisted and cannot be read back answers an error that says the settings are
+// written, and the plugins are told of the change all the same.
+func TestWriteSettingsSaysThePersistedWriteCannotBeReadBack(t *testing.T) {
+	var events []string
+	reason := errors.New("the file is not valid")
+	file := &memoryFile{events: &events, readFailure: reason}
+
+	_, err := newWriter(file, none.PluginSettings{}, &events).Write([]settingsdomain.Setting{{Path: []string{"app", "appearance", "theme"}, JSON: `"preset:night"`}})
+
+	if !errors.Is(err, reason) || !strings.Contains(err.Error(), "are written") {
+		t.Errorf("err = %v, want one that says the settings are written and wraps %v", err, reason)
+	}
+	if !slices.Equal(events, []string{"write file", "refresh events"}) {
+		t.Errorf("events = %v, want the write and the refresh", events)
 	}
 }

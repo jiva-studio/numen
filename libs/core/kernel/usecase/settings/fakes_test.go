@@ -3,6 +3,7 @@ package settings_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"sync"
 
@@ -26,11 +27,12 @@ func (s stored) GetConnectionsJSON() (string, error) { return s.connections, nil
 
 // memoryFile is the settings file as the use cases see it, and records what happens to it.
 type memoryFile struct {
-	mu      sync.Mutex
-	current stored
-	writes  []settingsdomain.Setting
-	events  *[]string
-	failure error
+	mu          sync.Mutex
+	current     stored
+	writes      []settingsdomain.Setting
+	events      *[]string
+	failure     error
+	readFailure error
 }
 
 func (f *memoryFile) ReadChecked() (settingsdomain.Stored, error) { return f.current, f.failure }
@@ -119,4 +121,6 @@ func (jsonCodec) Encode(value any) (string, error) {
 	return string(encoded), err
 }
 
-func (f *memoryFile) ReadJSON() (string, string, uint64, error) { return "{}", "", 0, f.failure }
+func (f *memoryFile) ReadJSON() (string, string, uint64, error) {
+	return "{}", "", 0, errors.Join(f.failure, f.readFailure)
+}
