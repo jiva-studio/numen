@@ -40,7 +40,7 @@ export interface PlexViewProps {
   widgetsAbove?: readonly PlexWidget[] | undefined
   widgetsBelow?: readonly PlexWidget[] | undefined
   getPath?: ((id: string) => string) | undefined
-  holdWidgets?: ((id: string, side: WidgetSide, element: Element | null) => void) | undefined
+  setWidgets?: ((id: string, side: WidgetSide, element: Element | null) => void) | undefined
   behavior?: PlexBehavior
   gesture?: Gesture | undefined
   dragging?: PlexDragState | undefined

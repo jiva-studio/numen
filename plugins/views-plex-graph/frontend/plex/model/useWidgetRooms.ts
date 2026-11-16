@@ -6,7 +6,7 @@ import type { PlexNode } from '../../types'
 
 export type WidgetSide = 'above' | 'below'
 
-interface Held {
+interface Measured {
   readonly element: Element
   readonly observer: ResizeObserver
 }
@@ -23,7 +23,7 @@ export function useWidgetRooms(options: Readonly<Ref<PlexOptions>>): {
   getNodeRoom: ComputedRef<((node: PlexNode) => NodeRoom) | undefined>
 } {
   const heights = shallowRef<ReadonlyMap<string, number>>(new Map())
-  const held = new Map<string, Held>()
+  const measured = new Map<string, Measured>()
 
   const setHeight = (key: string, height: number | undefined) => {
     if (heights.value.get(key) === height) return
@@ -34,25 +34,25 @@ export function useWidgetRooms(options: Readonly<Ref<PlexOptions>>): {
   }
 
   const release = (key: string) => {
-    held.get(key)?.observer.disconnect()
-    held.delete(key)
+    measured.get(key)?.observer.disconnect()
+    measured.delete(key)
     setHeight(key, undefined)
   }
 
   const setWidgets = (id: string, side: WidgetSide, element: Element | null) => {
     const key = getKey(id, side)
-    if (held.get(key)?.element === element) return
+    if (measured.get(key)?.element === element) return
     release(key)
     if (!element) return
     const observer = new ResizeObserver(() => setHeight(key, measureRect(element).height))
-    held.set(key, { element, observer })
+    measured.set(key, { element, observer })
     observer.observe(element)
     setHeight(key, measureRect(element).height)
   }
 
   onScopeDispose(() => {
-    for (const { observer } of held.values()) observer.disconnect()
-    held.clear()
+    for (const { observer } of measured.values()) observer.disconnect()
+    measured.clear()
   })
 
   const getNodeRoom = computed(() => {

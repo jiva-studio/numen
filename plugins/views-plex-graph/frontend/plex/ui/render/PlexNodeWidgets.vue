@@ -1,8 +1,7 @@
 <script setup lang="ts">
 /**
  * The views of one side of a node, drawn at the node in the order of the manifest, each given the path of
- * the note. They stand as one group, centered, in a box as wide as the node; the group is handed to `hold`
- * while it is drawn, so its height can be measured.
+ * the note. The views are rendered as one centered group; its element is emitted so its height can be measured.
  */
 import type { ComponentPublicInstance } from 'vue'
 import type { PlacedNode } from '../../lib/node'
@@ -16,14 +15,14 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'hold', element: Element | null): void
+  (event: 'widgets', element: Element | null): void
 }>()
 
 /** How far from the node the box reaches; the group sits against the node inside it. */
 const EXTENT = 480
 
-const hold = (element: Element | ComponentPublicInstance | null) =>
-  emit('hold', element instanceof Element ? element : null)
+const onWidgetsChange = (element: Element | ComponentPublicInstance | null) =>
+  emit('widgets', element instanceof Element ? element : null)
 
 const getTop = () =>
   props.side === 'above'
@@ -43,7 +42,7 @@ const getTop = () =>
     :height="EXTENT"
   >
     <div class="plex__widgets-box">
-      <div :ref="hold" class="plex__widgets-group">
+      <div :ref="onWidgetsChange" class="plex__widgets-group">
         <component :is="entry.component" v-for="entry in entries" :key="entry.key" :path="path" />
       </div>
     </div>

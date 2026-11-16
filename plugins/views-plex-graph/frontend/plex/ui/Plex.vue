@@ -185,7 +185,7 @@ watch(
       :widgets-above="widgetsAbove"
       :widgets-below="widgetsBelow"
       :get-path="getPath"
-      :hold-widgets="setWidgets"
+      :set-widgets="setWidgets"
       :behavior="behavior"
       :gesture="gesture"
       :dragging="dragging"
