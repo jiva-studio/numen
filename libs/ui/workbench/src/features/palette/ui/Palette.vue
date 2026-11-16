@@ -25,9 +25,9 @@ import { PaletteResults } from './palette-results'
 import { ACTION_WORDS } from '../lib/actions'
 import { type PaletteItemId } from '../lib/item'
 import { commandKeyChord, getShortcuts, isActionsChord } from '../lib/keys'
-import { CREATE_ID, getMultiGroup } from '../lib/multi'
 import { useActiveItem } from '../model/activeItem'
 import { usePaletteKeys } from '../model/keys'
+import { useMultiPick } from '../model/multiPick'
 import { useActionPanelToggle } from '../model/useActionPanelToggle'
 import { usePalettePlaces } from '../model/places'
 import type { PaletteProps } from './Palette.types'
@@ -94,18 +94,16 @@ const field = useTemplateRef<InstanceType<typeof PaletteField>>('field')
 /** The list, for asking it to bring what is lit into sight. */
 const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 
-const shownGroups = computed(() =>
-  props.multi ? [getMultiGroup(props.multi, searchQuery.value)] : props.groups,
-)
+const multiPick = useMultiPick(props, searchQuery, emit)
 
-const places = usePalettePlaces({ groups: () => shownGroups.value })
+const places = usePalettePlaces({ groups: () => multiPick.groups.value })
 const { placed, announcement } = places
 
 const active = useActiveItem({
   places: places.places,
   typed: searchQuery,
   onItemActive: (item) => emit('light', item),
-  tellChoice,
+  tellChoice: multiPick.tellChoice,
 })
 const { here, activeItem, actions, selectedId, chooseAt } = active
 
@@ -155,12 +153,6 @@ const onOver = (pos: number, event: PointerEvent) => {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-function tellChoice(item: string, action: string): void {
-  if (!props.multi) emit('choose', item, action)
-  else if (item === CREATE_ID) emit('create', searchQuery.value.trim())
-  else emit('toggle', item)
-}
-
 function reveal(): void {
   const pending = results.value?.reveal(selectedId.value)
   if (pending) runInBackground(pending, reportFailure)
