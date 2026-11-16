@@ -15,7 +15,6 @@ export interface WindowBootstrapDeps {
   readonly settings: {
     start(): Promise<void>
     close(): void
-    /** Writes the editor tokens; starts once the settings are loaded and before the tabs restore. */
     readonly editorTokens: { start(): () => void }
   }
   readonly window: { start(): Promise<void>; close(): void }
