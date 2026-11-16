@@ -36,3 +36,6 @@ export const hasMadeText = async (request: APIRequestContext, filePath: string):
 
 export const hasVersions = async (request: APIRequestContext, filePath: string): Promise<boolean> =>
   (await listVersions(request, filePath)).length > 0
+
+export const hasTextLayerVersion = async (request: APIRequestContext, filePath: string): Promise<boolean> =>
+  (await listVersions(request, filePath)).some((one) => one.title.startsWith(TEXT_LAYER))

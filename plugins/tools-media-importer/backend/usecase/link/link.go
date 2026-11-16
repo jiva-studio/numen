@@ -79,6 +79,7 @@ type Files interface {
 type Vault struct {
 	Files  Files
 	Writer host.FileWriter
+	Feed   host.FileChangeLister
 }
 
 // Folder is the plugin's folder in the store of a vault, through the narrow interface of each of its calls.
@@ -110,6 +111,8 @@ type Settings struct {
 	Captions    []string
 	IsAutomatic bool
 	CopyMaxSize int64
+
+	IsTextDownloadAutomatic bool
 }
 
 // Links fetches for the links of the vault the host shows.
@@ -125,6 +128,7 @@ type Links struct {
 
 	mu      sync.Mutex
 	running map[string]chan struct{}
+	feed    feedRun
 }
 
 // New returns the links service for the host. fetcher and settings are
@@ -133,7 +137,7 @@ func New(h Host, fetcher func() Fetcher, settings func() Settings) *Links {
 	return &Links{
 		host: h, fetcher: fetcher, settings: settings, clock: h.Clock,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
-		mu: sync.Mutex{}, running: map[string]chan struct{}{},
+		mu: sync.Mutex{}, running: map[string]chan struct{}{}, feed: feedRun{isRunning: false, isAgain: false, isReview: false, isConfigured: false},
 	}
 }
 

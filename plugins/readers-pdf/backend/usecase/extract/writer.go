@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"slices"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -102,7 +103,7 @@ func (s *Writer) readLayer(ctx context.Context, files host.FileReader, path stri
 	}
 	book, err := s.workers.Read(raw)
 	if err != nil {
-		return layer{}, err
+		return layer{}, fmt.Errorf("%w: %w", errUnreadable, err)
 	}
 	read := layer{hash: hash, raw: raw, book: book}
 	s.mu.Lock()
@@ -145,13 +146,20 @@ func (s *Writer) finish(key string) {
 	delete(s.running, key)
 }
 
-func (s *Writer) writeLayer(ctx context.Context, req Request) {
-	task := host.Task{
+func newTask(req Request) host.Task {
+	return host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="task counters start at zero"
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: false,
 	}
-	err := s.putLayer(ctx, req, task)
+}
+
+func (s *Writer) writeLayer(ctx context.Context, req Request) {
+	task := newTask(req)
+	s.finishTask(ctx, task, s.putLayer(ctx, req, task))
+}
+
+func (s *Writer) finishTask(ctx context.Context, task host.Task, err error) {
 	if err != nil && ctx.Err() == nil {
 		task.FailureReason = err.Error()
 		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
@@ -186,7 +194,7 @@ func (s *Writer) putLayer(ctx context.Context, req Request, task host.Task) (err
 	}
 	segments, err := read.getSegments(s.workers)
 	if err != nil {
-		return fmt.Errorf("read the words of %s: %w", req.Path, err)
+		return fmt.Errorf("%w: read the words of %s: %w", errUnreadable, req.Path, err)
 	}
 	file := read.hash + ".jsonl"
 	if err := host.WriteText(ctx, store, file, segments); err != nil {
@@ -196,4 +204,45 @@ func (s *Writer) putLayer(ctx context.Context, req Request, task host.Task) (err
 		Path: req.Path, Key: textKey, Source: "", Kind: TextKind, InputHash: read.hash, File: file,
 	})
 	return err
+}
+
+// errUnreadable is a file whose text layer cannot be read from its content.
+var errUnreadable = errors.New("the PDF cannot be read")
+
+// WriteMissingText writes the text layer of a file as CreateText does, unless the file has one made
+// from its content as it is, and returns once it is written. A file that is not there, or whose
+// content cannot be read as a PDF, is not an error; the latter is shown as a failed task.
+func (s *Writer) WriteMissingText(ctx context.Context, req Request) error {
+	isMade, err := s.isLayerMade(ctx, req)
+	if errors.Is(err, host.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("read the text versions of %s: %w", req.Path, err)
+	}
+	if isMade {
+		return nil
+	}
+	task := newTask(req)
+	err = s.putLayer(ctx, req, task)
+	s.finishTask(ctx, task, err)
+	if errors.Is(err, errUnreadable) || errors.Is(err, host.ErrNotExist) {
+		return nil
+	}
+	return err
+}
+
+func (s *Writer) isLayerMade(ctx context.Context, req Request) (bool, error) {
+	raw, _, err := s.vaults(req.Vault).Read(ctx, req.Path)
+	if err != nil {
+		return false, err
+	}
+	listing, err := s.texts(req.Vault).ListVersions(ctx, req.Path)
+	if err != nil {
+		return false, err
+	}
+	hash := domain.HashContent(raw)
+	return slices.ContainsFunc(listing.Versions, func(v domain.TextVersion) bool {
+		return v.Kind == TextKind && v.IsFromFile() && v.InputHash == hash
+	}), nil
 }

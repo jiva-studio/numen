@@ -12,9 +12,9 @@ import (
 
 // The states a request reports.
 const (
-	stateStarted = "started"
-	stateRunning = "running"
-	stateDone    = "done"
+	StateStarted = "started"
+	StateRunning = "running"
+	StateDone    = "done"
 )
 
 var (
@@ -44,10 +44,32 @@ func NewRequests(transcriber *Transcriber, vaults func(domain.VaultID) Vault) *R
 	return &Requests{transcriber: transcriber, vaults: vaults}
 }
 
+// IsRunning reports whether a transcription of the recording of the vault runs.
+func (r *Requests) IsRunning(vault domain.VaultID, path string) bool {
+	return r.transcriber.isRunning(vault, path)
+}
+
+// GetShownVaultID asks the host which vault its window has open.
+func (r *Requests) GetShownVaultID(ctx context.Context) (domain.VaultID, error) {
+	return r.transcriber.getClaimVault(ctx, "")
+}
+
 // Create starts the transcription of the recording without waiting for it. A recording that is
 // being transcribed starts nothing and reports the state running; a recording whose whole
 // transcript is the live version, or the source of it, starts nothing and reports the state done.
 func (r *Requests) Create(ctx context.Context, vault domain.VaultID, path string) (Outcome, error) {
+	return r.create(ctx, vault, path, r.transcriber.Start)
+}
+
+// CreateInBackground starts the transcription as Create does, as work the plugin started on its own,
+// which waits behind the work people asked for.
+func (r *Requests) CreateInBackground(ctx context.Context, vault domain.VaultID, path string) (Outcome, error) {
+	return r.create(ctx, vault, path, r.transcriber.StartInBackground)
+}
+
+func (r *Requests) create(
+	ctx context.Context, vault domain.VaultID, path string, start func(context.Context, domain.VaultID, string) (bool, error),
+) (Outcome, error) {
 	if vault == "" {
 		return Outcome{}, errNoVault
 	}
@@ -63,7 +85,7 @@ func (r *Requests) Create(ctx context.Context, vault domain.VaultID, path string
 	if !recording.IsRecording(path) {
 		return Outcome{}, fmt.Errorf("%s: %w", path, errNoRecording)
 	}
-	out := Outcome{TaskID: getTaskID(vault, path), Path: path, State: stateRunning, Version: ""}
+	out := Outcome{TaskID: getTaskID(vault, path), Path: path, State: StateRunning, Version: ""}
 	if r.transcriber.isRunning(vault, path) {
 		return out, nil
 	}
@@ -72,15 +94,15 @@ func (r *Requests) Create(ctx context.Context, vault domain.VaultID, path string
 		return Outcome{}, err
 	}
 	if isDone {
-		out.State, out.Version = stateDone, string(version.GetID())
+		out.State, out.Version = StateDone, string(version.GetID())
 		return out, nil
 	}
-	isStarted, err := r.transcriber.Start(ctx, vault, path)
+	isStarted, err := start(ctx, vault, path)
 	if err != nil {
 		return Outcome{}, err
 	}
 	if isStarted {
-		out.State = stateStarted
+		out.State = StateStarted
 	}
 	return out, nil
 }

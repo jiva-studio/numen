@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/searchrunstest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/domain/resultcache"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/usecase/refresh"
 )
@@ -64,7 +64,7 @@ func getStormsAnswer(results ...host.SearchResult) host.SearchState {
 // countingSearch is the search of the core, counting the searches on their way between their start and
 // their removal. onStart, when set, runs at each start; failure, when set, is the answer of every read.
 type countingSearch struct {
-	*searchrunstest.Searches
+	*searchtest.Searches
 	mu        sync.Mutex
 	active    int
 	maxActive int
@@ -160,7 +160,7 @@ func (r *recordingTasks) getFinishedIDs() []string {
 
 type world struct {
 	vault    *hosttest.Vault
-	searches *searchrunstest.Searches
+	searches *searchtest.Searches
 	host     *countingSearch
 	tasks    *recordingTasks
 	clock    *clocktest.Fake
@@ -171,7 +171,7 @@ type world struct {
 
 func newWorld(t *testing.T, refreshMinutes int) *world {
 	t.Helper()
-	searches := searchrunstest.NewSearches()
+	searches := searchtest.NewSearches()
 	fake := new(clocktest.Fake)
 	fake.Set(getStartTime())
 	w := &world{

@@ -55,3 +55,16 @@ func TestGetSessionProviderIsTheCPUUnlessTheHostNamesAProvider(t *testing.T) {
 		}
 	}
 }
+
+func TestResolveLibraryReadsTheHostVariableAtEachCall(t *testing.T) {
+	t.Setenv(EnvLibrary, "")
+	if got := ResolveLibrary("", ""); got != "" {
+		t.Fatalf("ResolveLibrary() = %q before the host named a library", got)
+	}
+
+	t.Setenv(EnvLibrary, "/host/libonnxruntime.so")
+
+	if got := ResolveLibrary("", ""); got != "/host/libonnxruntime.so" {
+		t.Errorf("ResolveLibrary() = %q after the host named a library, want it", got)
+	}
+}

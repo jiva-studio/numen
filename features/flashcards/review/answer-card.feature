@@ -46,6 +46,7 @@ Feature: Answer card
       When the person starts the review of the deck "Animals"
       Then the review session has "2 left"
 
+    @smoke
     Scenario: A card of the deck is answered
       When the person starts the review of the deck "Animals"
       And the person shows the answer of the card

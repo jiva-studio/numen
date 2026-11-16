@@ -1,0 +1,168 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'run even when main is the commit of the latest nightly'
+        type: boolean
+        default: false
+      block-on-live:
+        description: 'hold the release back when the live run in the macOS virtual machine fails'
+        type: boolean
+        default: false
+      dry-run-prune:
+        description: 'print the builds the prune would delete on GitHub and the CDN, and delete none'
+        type: boolean
+        default: false
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  changes:
+    name: Changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.compare.outputs.changed }}
+    steps:
+      - id: compare
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 100 \
+            --json tagName,isPrerelease,createdAt \
+            --jq '[.[] | select(.isPrerelease and (.tagName | contains("-nightly.")))] | sort_by(.createdAt) | last | .tagName // empty')
+          built=
+          if [ -n "$tag" ]; then
+            built=$(gh api "repos/$GITHUB_REPOSITORY/commits/$tag" --jq .sha)
+          fi
+          echo "latest nightly: ${tag:-none} ${built:-}"
+          echo "this commit: $GITHUB_SHA"
+          if [ "$FORCE" != true ] && [ "$built" = "$GITHUB_SHA" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  tests:
+    name: Tests
+    needs: [changes]
+    if: ${{ needs.changes.outputs.changed == 'true' }}
+    uses: ./.github/workflows/reports.yml
+    with:
+      environments: linux macos
+      engines: chromium webkit
+      features: ''
+      publish: true
+    secrets: inherit
+    permissions:
+      contents: read
+      actions: write
+      pages: write
+      id-token: write
+
+  release:
+    name: Release
+    needs: [changes, tests]
+    if: >-
+      ${{ !cancelled()
+      && needs.changes.outputs.changed == 'true'
+      && github.ref_name == github.event.repository.default_branch
+      && needs.tests.outputs.linux == 'success'
+      && (!inputs.block-on-live || needs.tests.outputs.macos == 'success') }}
+    uses: ./.github/workflows/release.yml
+    with:
+      channel: nightly
+      sha: ${{ github.sha }}
+      linux: true
+      windows: true
+      macos: true
+      notarize: true
+      publish: true
+    secrets: inherit
+    permissions:
+      contents: write
+      id-token: write
+
+  prune:
+    name: Prune
+    needs: [release]
+    if: ${{ needs.release.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Keep the 30 newest nightly releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry-run-prune }}
+        run: |
+          set -euo pipefail
+          gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1000 \
+            --json tagName,isPrerelease,createdAt \
+            --jq '[.[] | select(.isPrerelease and (.tagName | contains("-nightly.")))] | sort_by(.createdAt) | reverse | .[30:] | .[].tagName' |
+            while read -r tag; do
+              if [ "$DRY_RUN" = true ]; then
+                echo "would delete $tag"
+              else
+                echo "delete $tag"
+                gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+              fi
+            done
+
+  prune-cdn:
+    name: Prune CDN
+    needs: [release]
+    if: ${{ needs.release.result == 'success' }}
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - name: Keep the 30 newest nightly builds on the CDN
+        env:
+          BUNNY_STORAGE_ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          BUNNY_STORAGE_KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
+          DRY_RUN: ${{ inputs.dry-run-prune }}
+          KEEP: 30
+        run: .github/scripts/prune-nightlies.sh
+
+  notify:
+    name: Notify
+    needs: [changes, tests, release, prune, prune-cdn]
+    if: ${{ always() && github.event_name == 'schedule' && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'Nightly failed in:title' \
+            --json number,title --jq '[.[] | select(.title == "Nightly failed")][0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "The nightly failed again: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title 'Nightly failed' --body "The nightly failed: $RUN_URL"
+          fi

@@ -157,7 +157,7 @@ func TestAChangeOfTheEndpointDiscardsTheLastResult(t *testing.T) {
 		t.Fatalf("status after a setting that is not the endpoint = %+v", same)
 	}
 
-	c.Configure(map[string]string{"channel": "beta"})
+	c.Configure(map[string]string{"channel": "nightly"})
 	if changed := c.GetStatus(); changed.State != StateUnchecked {
 		t.Errorf("status after a new endpoint = %+v", changed)
 	}
@@ -175,5 +175,28 @@ func TestTheCustomChannelWithoutAnAddressAsksNoFeedAndIsUnreachable(t *testing.T
 	}
 	if len(fetcher.requested) != 0 {
 		t.Errorf("endpoints requested = %v, want none", fetcher.requested)
+	}
+}
+
+func TestACheckWithNoChannelAsksTheFeedOfTheRunningBuild(t *testing.T) {
+	cases := []struct {
+		name    string
+		version string
+		want    string
+	}{
+		{"a nightly build", "2026.11.5-nightly.2113", NightlyEndpoint},
+		{"a stable build", "2026.11.5", StableEndpoint},
+	}
+	for _, c := range cases {
+		fetcher := &fakeFetcher{manifest: newManifest()}
+		checker := NewChecker(fetcher)
+		checker.Configure(map[string]string{})
+
+		if _, err := checker.Check(t.Context(), App{Version: c.version, Build: 900, Platform: "windows"}); err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		if len(fetcher.requested) != 1 || fetcher.requested[0] != c.want {
+			t.Errorf("%s: requested %v, want %s", c.name, fetcher.requested, c.want)
+		}
 	}
 }

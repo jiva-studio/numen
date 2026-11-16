@@ -49,6 +49,7 @@ export class Scenario {
     firstPage: Page,
     private readonly viewport: ViewportSize | null,
     private readonly recording?: Recording,
+    private readonly isLive = false,
   ) {
     this.currentPage = firstPage
   }
@@ -129,6 +130,7 @@ export class Scenario {
         readPageText: (address) => world.readPageText(address),
         environment: this.environment,
         programs: this.programs,
+        isLive: this.isLive,
       })
       this.application = application
     } else {

@@ -69,3 +69,37 @@ func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 		t.Fatalf("expected Close on unopened holder to return nil, got %v", err)
 	}
 }
+
+func TestTheModelIsNotOpenedBeforeTheFirstRecognizerRequest(t *testing.T) {
+	var opens int
+	models := NewHolder(settings.Defaults(), func(context.Context, settings.Config) (Model, error) {
+		opens++
+		return quietModel{closed: new(int)}, nil
+	})
+
+	models.UpdateSettings(map[string]string{"model": "parakeet-tdt-0.6b-v2-int8"})
+
+	if opens != 0 {
+		t.Errorf("the model was opened %d times before a request", opens)
+	}
+}
+
+func TestAnOpenThatFailedForMissingFilesIsTriedAgainAtTheNextRequest(t *testing.T) {
+	filesArrived := false
+	models := NewHolder(settings.Defaults(), func(context.Context, settings.Config) (Model, error) {
+		if !filesArrived {
+			return nil, errors.New("model encoder.onnx not found")
+		}
+		return quietModel{closed: new(int)}, nil
+	})
+	if _, err := models.GetRecognizer(t.Context()); err == nil {
+		t.Fatal("the open succeeded without the files")
+	}
+
+	filesArrived = true
+	recognizer, err := models.GetRecognizer(t.Context())
+
+	if err != nil || recognizer == nil {
+		t.Errorf("GetRecognizer() after the files arrived = %v, %v", recognizer, err)
+	}
+}

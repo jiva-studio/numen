@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func (c searchCall) getRunRefusal(needsVault bool) v1.HostSearchErrorCode {
+func (c searchCall) getRunErrorCode(needsVault bool) v1.HostSearchErrorCode {
 	if c.search == nil || c.search.Runs == nil {
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL
 	}
@@ -47,7 +47,7 @@ func (e *searchEndpoint) StartSearch(
 	if err != nil {
 		return nil, err
 	}
-	if code := call.getRunRefusal(true); code != 0 {
+	if code := call.getRunErrorCode(true); code != 0 {
 		return connect.NewResponse(&v1.StartSearchResponse{Error: code}), nil
 	}
 	id, err := call.search.Runs.Start.Execute(ctx, searchrun.Start{
@@ -68,7 +68,7 @@ func (e *searchEndpoint) GetSearch(
 	if err != nil {
 		return nil, err
 	}
-	if code := call.getRunRefusal(false); code != 0 {
+	if code := call.getRunErrorCode(false); code != 0 {
 		return connect.NewResponse(&v1.GetSearchResponse{Error: code}), nil
 	}
 	page, err := call.search.Runs.Get.Execute(ctx, searchrunusecase.Read{
@@ -93,7 +93,7 @@ func (e *searchEndpoint) RemoveSearch(
 	if err != nil {
 		return nil, err
 	}
-	if code := call.getRunRefusal(false); code != 0 {
+	if code := call.getRunErrorCode(false); code != 0 {
 		return connect.NewResponse(&v1.RemoveSearchResponse{Error: code}), nil
 	}
 	code, err := answerRun(ctx, call.search.Runs.Remove.Execute(ctx, call.pluginID, searchrun.ID(req.Msg.GetId())))
@@ -107,7 +107,7 @@ func (e *searchEndpoint) ListSearchFunctions(
 	if err != nil {
 		return nil, err
 	}
-	if code := call.getRunRefusal(false); code != 0 {
+	if code := call.getRunErrorCode(false); code != 0 {
 		return connect.NewResponse(&v1.ListSearchFunctionsResponse{Error: code}), nil
 	}
 	catalog, revision := call.search.Runs.Functions.Execute()

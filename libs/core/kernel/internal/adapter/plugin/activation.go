@@ -252,9 +252,40 @@ func (a *Activation) settlePluginInState(
 }
 
 // EnsureActive starts the plugin where its process does not run, takes a use lease of the holder on it and
-// returns its endpoint. Release returns the lease.
+// returns its endpoint. It then downloads what the plugin declares and is not on this machine, unless the context comes from
+// withoutProvisioning; a failed download releases the lease, is returned and is no failure of the plugin. Release returns the lease.
 func (a *Activation) EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
-	return a.ensureActiveDuringDiscovery(ctx, pluginID, useLease(holder))
+	endpoint, err := a.ensureActiveDuringDiscovery(ctx, pluginID, useLease(holder))
+	if err != nil || !isProvisioning(ctx) {
+		return endpoint, err
+	}
+	if err := ensureProvisioned(ctx, a.set, a.processes, pluginID); err != nil {
+		a.Release(pluginID, endpoint.Token, holder)
+		return supervision.NoEndpoint(), err
+	}
+	return endpoint, nil
+}
+
+type withoutProvisioningKey struct{}
+
+func withoutProvisioning(ctx context.Context) context.Context {
+	return context.WithValue(ctx, withoutProvisioningKey{}, struct{}{})
+}
+
+func isProvisioning(ctx context.Context) bool {
+	return ctx.Value(withoutProvisioningKey{}) == nil
+}
+
+func ensureProvisioned(ctx context.Context, set activationPlugins, processes *supervision.Processes, pluginID string) error {
+	p, ok := set.getKnownPlugin(pluginID)
+	if !ok {
+		return nil
+	}
+	requirements := set.getLaunch(p).Requirements
+	if len(requirements) == 0 {
+		return nil
+	}
+	return processes.EnsureProvisioned(ctx, requirements)
 }
 
 // EnsureActiveForQuestion starts the plugin where its process does not run, takes a question lease of the

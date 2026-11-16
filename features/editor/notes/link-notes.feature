@@ -21,6 +21,7 @@ Feature: Link notes
     Then the note titled "Heat engine" on disk has "See [[Entropy]]"
     And the note titled "Heat engine" links to the note at "Entropy.md"
 
+  @smoke
   Scenario: A link opens its note
     Given the person opens the note titled "Carnot cycle"
     When the person opens the link "[[Entropy]]" in the note titled "Carnot cycle"
