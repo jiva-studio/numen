@@ -47,6 +47,6 @@ Title: `<Area>: <what>`, for example `Search: show the date of a result`. Body:
 - `## Acceptance` — a list of observable results that mean the issue is done.
 - `## Notes` — optional: related issues, order, open questions.
 
-A bug also says how to reproduce it and what was expected, under Problem. One issue is one piece of work; work that needs "and" in its title is two issues, and work that needs several pull requests is split into sub-issues, one per pull request. The Type is the issue Type field (Bug, Feature, Task, Tech debt), not a label; Priority, Effort, Area, Status and Milestone are set as [`process.md`](./process.md) section 7 says.
+A bug also says how to reproduce it and what was expected, under Problem. One issue is one piece of work; work that needs "and" in its title is two issues, and work that needs several pull requests is split into sub-issues, one per pull request. The Type is the issue Type field (Bug, Feature, Task, Tech debt), not a label; Priority and Effort are the owner's; Area, Status and Milestone are set as [`process.md`](./process.md) section 7 says.
 
 The issue forms in [`.github/ISSUE_TEMPLATE`](../../.github/ISSUE_TEMPLATE) and the pull request template in [`.github/PULL_REQUEST_TEMPLATE.md`](../../.github/PULL_REQUEST_TEMPLATE.md) use these sections. `gh issue create` and `gh pr create` skip the forms, so a body written from the command line follows this file.

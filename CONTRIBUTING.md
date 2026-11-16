@@ -26,7 +26,7 @@ Numen's desktop core shell is minimal and domain-agnostic. New UI features, pane
 
 ## Issue labels
 
-An issue has exactly one Type, set in the issue's Type field (Bug, Feature, Task or Tech debt) and not as a label, and at least one area. The bug and task issue forms set it.
+An issue has exactly one Type, set in the issue's Type field (Bug, Feature, Task or Tech debt) and not as a label, and at least one area label, which is finer than the Area field of the project ([`process.md`](.agents/rules/process.md) section 7) and is set beside it. The bug and task issue forms set the Type.
 
 - **Kind**: `perf` (it works, but is too slow or too heavy), `epic` (tracks a set of issues).
 - **Area**: `desktop`, `mobile`, `core`, `domain`, `protocol`, `ui`, `wire`, `vault`, `docs`, `ci`, `repo`.

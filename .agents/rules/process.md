@@ -106,10 +106,10 @@ A milestone is named after the month of its release and has the last day of the 
 
 An agent keeps the status of its issue true:
 
-1. **Takes an issue**: sets Status to In Progress before the first commit. An agent works only on an issue whose Status is Todo or In Progress; an issue in Backlog is the owner's to move.
+1. **Takes an issue**: sets Status to In Progress before the first commit. When the issue has no milestone and has an open pull request, the agent sets the current milestone on it (a merged pull request gets it from the workflow). An agent works only on an issue whose Status is Todo or In Progress; an issue in Backlog is the owner's to move.
 2. **Marks the pull request ready** (step 3 of the pipeline): sets Status to In review.
 3. **Merge or close**: Done, set by the built-in project workflows (a closed issue and a merged pull request set it). An agent does not set Done by hand.
-4. **Files a new issue**: sets its Type and Priority, adds it to the project with its Area, and leaves Status at Backlog. The labels of an issue only name what the three fields do not.
+4. **Files a new issue**: sets its Type, adds it to the project with its Area, and leaves Status at Backlog; Priority and Effort stay with the owner. The labels of an issue only name what those fields do not: `perf`, `epic`, `needs-decision` and the area labels of [`CONTRIBUTING.md`](../../CONTRIBUTING.md), which are finer than the project field Area and are set beside it. Type is never a label.
 
 The commands:
 
@@ -120,4 +120,4 @@ gh project item-edit --id <item id> --project-id PVT_kwDOBtvOi84Brz7D --field-id
 
 The ids come from `gh project field-list 15 --owner jiva-studio --format json` and `gh project item-list 15 --owner jiva-studio --format json`.
 
-A pull request is written with `Closes #N`, so the issue and the pull request move together. The workflow `milestone.yml` puts a merged pull request, the issues it closes and an issue closed as completed in the milestone of the month when they have none.
+An issue that needs several pull requests is split into sub-issues, one per pull request; each pull request closes its own sub-issue with `Closes #N`, and the parent closes when its last sub-issue does. A pull request is written with `Closes #N`, so the issue and the pull request move together. The workflow `milestone.yml` puts a merged pull request, the issues it closes and an issue closed as completed in the milestone of the month when they have none.
