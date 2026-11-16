@@ -2,6 +2,7 @@ package hostendpoint
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -35,7 +36,7 @@ func (w *writingVault) WriteFrontmatter(_ context.Context, writes []plugin.Front
 	w.writes = append(w.writes, writes)
 	out := make([]plugin.FrontmatterWritten, len(writes))
 	for i, one := range writes {
-		if err := w.checkNote(one.Path, one.Baseline); err != nil {
+		if err := w.checkBaseline(one); err != nil {
 			out[i] = plugin.FrontmatterWritten{Err: err}
 			continue
 		}
@@ -43,6 +44,18 @@ func (w *writingVault) WriteFrontmatter(_ context.Context, writes []plugin.Front
 		out[i] = plugin.FrontmatterWritten{Stat: stat, Err: err}
 	}
 	return out, nil
+}
+
+// checkBaseline is the stale check of the host: a note with no baseline is written over any state.
+func (w *writingVault) checkBaseline(one plugin.FrontmatterWrite) error {
+	if one.Baseline.IsZero() {
+		_, err := w.stat(one.Path)
+		if err != nil {
+			return fmt.Errorf("read %s: %w", one.Path, err)
+		}
+		return nil
+	}
+	return w.checkNote(one.Path, one.Baseline)
 }
 
 func newWritingClient(t *testing.T, vault *writingVault, granted ...string) numenv1connect.HostVaultServiceClient {

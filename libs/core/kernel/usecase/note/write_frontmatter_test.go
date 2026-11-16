@@ -67,8 +67,8 @@ func TestWriteFrontmatterSetsAListAndKeepsTheOtherKeysAndTheBodyAsTheyWere(t *te
 		t.Fatalf("Execute returned %+v (%v), want one written note", written, err)
 	}
 	want := strings.Replace(riverNote, "  - lake\n", "  - lake\n  - river\n", 1)
-	if body := c.read(t, "River.md"); body != want {
-		t.Errorf("the note is\n%q\nwant\n%q", body, want)
+	if body := withoutStampedID(c.read(t, "River.md")); body != want {
+		t.Errorf("the note without its stamped id is\n%q\nwant\n%q", body, want)
 	}
 	if now := c.statOf(t, "River.md"); written[0].FileStat.Size != now.Size || !written[0].FileStat.ModTime.Equal(now.ModTime) {
 		t.Errorf("the result has the stat %+v, want the stat of the note now, %+v", written[0].FileStat, now)
@@ -106,8 +106,8 @@ func TestWriteFrontmatterRemovesAKeyWhoseValueIsNilWhateverItHolds(t *testing.T)
 		t.Fatalf("Execute returned %+v (%v), want one written note", written, err)
 	}
 	want := "---\n# kept as written\ntitle: River\n---\n\nThe river runs.\n"
-	if body := c.read(t, "River.md"); body != want {
-		t.Errorf("the note is\n%q\nwant\n%q", body, want)
+	if body := withoutStampedID(c.read(t, "River.md")); body != want {
+		t.Errorf("the note without its stamped id is\n%q\nwant\n%q", body, want)
 	}
 }
 
@@ -189,9 +189,9 @@ func TestAFailedWriteFrontmatterCostsTheOtherNotesNothing(t *testing.T) {
 	c := openChangeFixture(t, map[string]string{"River.md": riverNote, "Lake.md": "# Lake\n"})
 
 	written, err := c.writeFrontmatter().Execute(t.Context(), c.vault, []note.FrontmatterWrite{
-		{Path: "River.md", Values: map[string]any{"tags": "river"}},
+		{Path: "River.md", Values: map[string]any{"tags": []string{"river"}}},
 		{Path: "Gone.md", Values: map[string]any{"tags": "gone"}},
-		{Path: "Lake.md", Values: map[string]any{"tags": "lake"}},
+		{Path: "Lake.md", Values: map[string]any{"tags": []string{"lake"}}},
 	})
 
 	if err != nil || len(written) != 3 {
@@ -263,4 +263,10 @@ func TestAWriteFrontmatterCanceledAfterTheFirstNoteKeepsItsResultAndIsNotAttempt
 	if body := c.read(t, "Sea.md"); body != "# Sea\n" {
 		t.Errorf("a note not attempted was written:\n%s", body)
 	}
+}
+
+// withoutStampedID drops the id line the edit stamps into a note that had none.
+func withoutStampedID(body string) string {
+	lines := strings.SplitAfter(body, "\n")
+	return strings.Join(slices.DeleteFunc(lines, func(line string) bool { return strings.HasPrefix(line, "id: ") }), "")
 }
