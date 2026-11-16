@@ -124,6 +124,8 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 		return err
 	}
 	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	leaves, err := w.getRelativeName(source)
 	if err != nil {
 		return err
@@ -180,6 +182,8 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) (err error) {
 		return err
 	}
 	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	switch info, err := root.Stat(name); {
 	case err == nil && !info.IsDir():
 		return fmt.Errorf("make %s: %w", path, vault.ErrAlreadyExists)
@@ -202,6 +206,8 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) (err error) {
 		return err
 	}
 	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	if err := root.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}

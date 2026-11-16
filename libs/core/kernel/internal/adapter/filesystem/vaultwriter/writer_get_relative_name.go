@@ -144,6 +144,8 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) (
 		return err
 	}
 	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
