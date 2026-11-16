@@ -1,6 +1,12 @@
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
 import WorkspaceTab from './WorkspaceTab.vue'
+
+enableAutoUnmount(afterEach)
+
+const LONG = 'A note with a name longer than the strip has room for'
+
+const getTooltips = () => [...document.body.querySelectorAll<HTMLElement>('[role="tooltip"]')]
 
 const mountTab = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) =>
   mount(WorkspaceTab, {
@@ -16,13 +22,81 @@ const pressOn = (tab: ReturnType<typeof mountTab>, button: number) => {
 }
 
 describe('tab title', () => {
-  it('renders the title text and sets the title attribute', () => {
-    const tab = mountTab({ title: 'A note with a name longer than the strip has room for' })
+  it('renders the title text without a native title attribute', () => {
+    const tab = mountTab({ title: LONG })
 
     expect(tab.text()).toContain('A note with a name longer')
-    expect(tab.find('span[title]').attributes('title')).toBe(
-      'A note with a name longer than the strip has room for',
-    )
+    expect(tab.element.querySelectorAll('[title]')).toHaveLength(0)
+    expect(tab.attributes('title')).toBeUndefined()
+  })
+
+  it('shows no tooltip until the tab is hovered or focused', () => {
+    mountTab({ title: LONG })
+
+    expect(getTooltips()).toHaveLength(0)
+  })
+
+  it('shows the full title in a tooltip while the pointer is over the tab', async () => {
+    const tab = mountTab({ title: LONG })
+
+    await tab.trigger('mouseenter')
+
+    const tooltips = getTooltips()
+    expect(tooltips).toHaveLength(1)
+    expect(tooltips[0]?.textContent?.trim()).toBe(LONG)
+  })
+
+  it('links the hovered tab to its tooltip while it is open', async () => {
+    const tab = mountTab({ title: LONG })
+    await tab.trigger('mouseenter')
+
+    const tooltip = getTooltips()[0]
+    expect(tooltip?.id).toBeTruthy()
+    expect(tab.attributes('aria-describedby')).toBe(tooltip?.id)
+  })
+
+  it('hides the tooltip and the link when the pointer leaves the tab', async () => {
+    const tab = mountTab({ title: LONG })
+    await tab.trigger('mouseenter')
+
+    await tab.trigger('mouseleave')
+
+    expect(getTooltips()).toHaveLength(0)
+    expect(tab.attributes('aria-describedby')).toBeUndefined()
+  })
+
+  it('shows the full title in a tooltip while the tab has keyboard focus', async () => {
+    const tab = mountTab({ title: LONG, isShowing: true })
+
+    tab.element.focus()
+    await tab.vm.$nextTick()
+
+    const tooltips = getTooltips()
+    expect(tooltips).toHaveLength(1)
+    expect(tooltips[0]?.textContent?.trim()).toBe(LONG)
+    expect(tab.attributes('aria-describedby')).toBe(tooltips[0]?.id)
+  })
+
+  it('hides the tooltip when the tab loses focus', async () => {
+    const tab = mountTab({ title: LONG, isShowing: true })
+    tab.element.focus()
+    await tab.vm.$nextTick()
+
+    tab.element.blur()
+    await tab.vm.$nextTick()
+
+    expect(getTooltips()).toHaveLength(0)
+    expect(tab.attributes('aria-describedby')).toBeUndefined()
+  })
+
+  it('hides the tooltip on Escape', async () => {
+    const tab = mountTab({ title: LONG })
+    await tab.trigger('mouseenter')
+
+    await tab.trigger('keydown', { key: 'Escape' })
+
+    expect(getTooltips()).toHaveLength(0)
+    expect(tab.attributes('aria-describedby')).toBeUndefined()
   })
 
   it('sets the close button aria-label from the title', () => {
@@ -35,12 +109,34 @@ describe('tab mark', () => {
     expect(mountTab().find('.tab__mark').exists()).toBe(false)
   })
 
-  it('renders the default mark dot with aria-label and title', () => {
+  it('renders the default mark dot with aria-label and no native title attribute', () => {
     const mark = mountTab({ mark: 'unsaved' }).find('.tab__mark')
 
     expect(mark.exists()).toBe(true)
     expect(mark.attributes('aria-label')).toBe('unsaved')
-    expect(mark.attributes('title')).toBe('unsaved')
+    expect(mark.attributes('title')).toBeUndefined()
+  })
+
+  it('shows the mark in a tooltip while the pointer is over the mark', async () => {
+    const tab = mountTab({ title: LONG, mark: 'unsaved' })
+    const mark = tab.get('.tab__mark')
+
+    await mark.trigger('mouseenter')
+
+    const tooltip = getTooltips().find((one) => one.textContent?.trim() === 'unsaved')
+    expect(tooltip).toBeDefined()
+    expect(mark.attributes('aria-describedby')).toBe(tooltip?.id)
+  })
+
+  it('hides the mark tooltip when the pointer leaves the mark', async () => {
+    const tab = mountTab({ mark: 'unsaved' })
+    const mark = tab.get('.tab__mark')
+    await mark.trigger('mouseenter')
+
+    await mark.trigger('mouseleave')
+
+    expect(getTooltips()).toHaveLength(0)
+    expect(mark.attributes('aria-describedby')).toBeUndefined()
   })
 
   it('renders the custom mark slot when provided', () => {

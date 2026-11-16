@@ -87,3 +87,33 @@ export const ShownAgain: Story = {
     await expect(note.value).toContain('Kept.')
   },
 }
+
+/** The pointer over a tab, and the keyboard on it: the shared tooltip names the tab, the browser draws none of its own. */
+export const TabNamedByTooltip: Story = {
+  args: { pane: pane('main', [NOTE_TAB, BESIDE], NOTE_TAB) },
+  render: (args) => ({
+    components: { WorkspacePane },
+    setup: () => ({ args, titles: { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' } }),
+    template: `
+      <div class="numen h-screen bg-surface">
+        <WorkspacePane :pane="args.pane" :titles="titles" />
+      </div>`,
+  }),
+  play: async ({ canvasElement }) => {
+    const tab = canvasElement.querySelector(`[data-workspace-tab="${BESIDE}"]`) as HTMLElement
+    const getTooltip = () => document.body.querySelector('[role="tooltip"]')
+
+    await expect(tab.querySelector('[title]')).toBeNull()
+    await expect(getTooltip()).toBeNull()
+
+    await userEvent.hover(tab)
+    await expect(getTooltip()).toHaveTextContent('Beside')
+    await expect(tab).toHaveAttribute('aria-describedby', getTooltip()?.id ?? '')
+
+    await userEvent.unhover(tab)
+    await expect(getTooltip()).toBeNull()
+
+    await userEvent.keyboard('{Tab}')
+    await expect(getTooltip()).toHaveTextContent('Note')
+  },
+}
