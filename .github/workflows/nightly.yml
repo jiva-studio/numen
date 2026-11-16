@@ -22,9 +22,9 @@ on:
         type: number
         default: 30
       environments:
-        description: 'linux (GitHub runners), macos (virtual machine), or both separated by a space'
+        description: 'linux (GitHub runners), live (virtual machines), or both separated by a space'
         type: string
-        default: linux macos
+        default: linux live
       engines:
         description: 'chromium, webkit, or both separated by a space'
         type: string
@@ -81,7 +81,7 @@ jobs:
     if: ${{ needs.changes.outputs.changed == 'true' }}
     uses: ./.github/workflows/reports.yml
     with:
-      environments: ${{ inputs.environments || 'linux macos' }}
+      environments: ${{ inputs.environments || 'linux live' }}
       engines: ${{ inputs.engines || 'chromium webkit' }}
       specs: ${{ inputs.specs || github.event_name == 'schedule' }}
       features: ${{ inputs.features }}
@@ -101,7 +101,7 @@ jobs:
       && needs.changes.outputs.changed == 'true'
       && github.ref_name == github.event.repository.default_branch
       && needs.tests.outputs.linux == 'success'
-      && (!inputs.block-on-live || needs.tests.outputs.macos == 'success') }}
+      && (!inputs.block-on-live || needs.tests.outputs.live == 'success') }}
     uses: ./.github/workflows/release.yml
     with:
       channel: nightly

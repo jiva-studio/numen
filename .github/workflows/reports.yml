@@ -18,13 +18,13 @@ on:
         type: string
         default: chromium webkit
       environments:
-        description: 'linux (GitHub runners), macos (virtual machine), or both separated by a space'
+        description: 'linux (GitHub runners), live (virtual machines), or both separated by a space'
         type: string
-        default: linux macos
-      macos-runner:
-        description: 'the label of the runners of the macOS virtual machines'
+        default: linux live
+      live-guests:
+        description: 'JSON list of the guests the live scenarios run in: the name of the system, the label of its runners and the artifact of its build'
         type: string
-        default: numen-macos-26
+        default: '[{"os":"macOS","runner":"numen-macos-26","build":"e2e-build-darwin-arm64"}]'
       publish:
         description: 'publish the report to Pages'
         type: boolean
@@ -42,10 +42,10 @@ on:
         default: chromium webkit
       environments:
         type: string
-        default: linux macos
-      macos-runner:
+        default: linux live
+      live-guests:
         type: string
-        default: numen-macos-26
+        default: '[{"os":"macOS","runner":"numen-macos-26","build":"e2e-build-darwin-arm64"}]'
       publish:
         type: boolean
         default: false
@@ -53,9 +53,9 @@ on:
       linux:
         description: result of the acceptance run on the GitHub runners
         value: ${{ jobs.summary.outputs.linux }}
-      macos:
-        description: result of the live run in the macOS virtual machine
-        value: ${{ jobs.summary.outputs.macos }}
+      live:
+        description: result of the live runs in the virtual machines
+        value: ${{ jobs.summary.outputs.live }}
 
 env:
   ENGINES: ${{ inputs.engines || 'chromium webkit' }}
@@ -85,7 +85,7 @@ jobs:
 
   build-macos:
     name: Build / macOS
-    if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
+    if: ${{ github.event_name != 'push' && contains(inputs.environments, 'live') }}
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -150,11 +150,15 @@ jobs:
         with:
           cache-key: ${{ steps.go.outputs.cache-key }}
 
-  acceptance-macos:
-    name: Acceptance / Live / macOS
+  acceptance-live:
+    name: Acceptance / Live / ${{ matrix.os }}
     needs: [build-macos]
-    if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
-    runs-on: ${{ inputs.macos-runner || 'numen-macos-26' }}
+    if: ${{ github.event_name != 'push' && contains(inputs.environments, 'live') }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.live-guests || '[{"os":"macOS","runner":"numen-macos-26","build":"e2e-build-darwin-arm64"}]') }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -169,7 +173,7 @@ jobs:
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: e2e-build-darwin-arm64
+          name: ${{ matrix.build }}
           path: ${{ runner.temp }}
 
       - name: Unpack the build
@@ -191,14 +195,14 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
-          name: acceptance-blobs-macos
+          name: acceptance-blobs-live-${{ matrix.os }}
           path: tests/acceptance/desktop/acceptance-blobs/
           retention-days: 7
 
   report:
     name: Report
-    needs: [acceptance, acceptance-macos]
-    if: ${{ !cancelled() && (needs.acceptance.result != 'skipped' || needs.acceptance-macos.result != 'skipped') }}
+    needs: [acceptance, acceptance-live]
+    if: ${{ !cancelled() && (needs.acceptance.result != 'skipped' || needs.acceptance-live.result != 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -286,22 +290,22 @@ jobs:
 
   summary:
     name: Result
-    needs: [acceptance, e2e, acceptance-macos]
+    needs: [acceptance, e2e, acceptance-live]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
     outputs:
       linux: ${{ steps.results.outputs.linux }}
-      macos: ${{ steps.results.outputs.macos }}
+      live: ${{ steps.results.outputs.live }}
     steps:
       - id: results
         env:
           ACCEPTANCE: ${{ needs.acceptance.result }}
           SPECS: ${{ needs.e2e.result }}
-          MACOS: ${{ needs.acceptance-macos.result }}
+          LIVE: ${{ needs.acceptance-live.result }}
         run: |
           linux=$ACCEPTANCE
           if [ "$SPECS" != skipped ] && [ "$SPECS" != success ]; then linux=$SPECS; fi
           echo "linux=$linux" >> "$GITHUB_OUTPUT"
-          echo "macos=$MACOS" >> "$GITHUB_OUTPUT"
+          echo "live=$LIVE" >> "$GITHUB_OUTPUT"
