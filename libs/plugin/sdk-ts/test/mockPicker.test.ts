@@ -114,6 +114,48 @@ describe('the mock picker host', () => {
   })
 })
 
+describe('the colour of the rows of the mock picker host', () => {
+  it('keeps the colour of an item through the list, a toggle and a create', async () => {
+    const picker = createPicker()
+    const colored: readonly PickerItem[] = [
+      { id: 'birch', title: 'Birch', state: 'unset', color: 'var(--numen-tag-1)' },
+    ]
+    const opening = picker.open(
+      createOptions({
+        items: colored,
+        onToggle: async () => ({ ...colored[0]!, state: 'set', color: 'var(--numen-tag-2)' }),
+        onCreate: async (text) => ({
+          id: 'harbour',
+          title: text,
+          state: 'set',
+          color: 'var(--numen-tag-7)',
+        }),
+      }),
+    )
+
+    expect(picker.getItems().map((one) => one.color)).toStrictEqual(['var(--numen-tag-1)'])
+    await picker.toggle('birch')
+    await picker.create('Harbour')
+    expect(picker.getItems().map((one) => one.color)).toStrictEqual([
+      'var(--numen-tag-2)',
+      'var(--numen-tag-7)',
+    ])
+    picker.close()
+    await opening
+  })
+
+  it('names the colour of the create row with the words the plugin gave', async () => {
+    const picker = createPicker()
+    const opening = picker.open(
+      createOptions({ getCreateColor: (text) => `var(--numen-tag-${text.length})` }),
+    )
+
+    expect(picker.getCreateColor('Harbour')).toBe('var(--numen-tag-7)')
+    picker.close()
+    await opening
+  })
+})
+
 describe('the mock host services', () => {
   it('offer the picker a test gave', () => {
     const picker = createPicker()
