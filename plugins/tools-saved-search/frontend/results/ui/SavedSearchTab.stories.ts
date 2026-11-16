@@ -18,9 +18,14 @@ import {
   STALE,
   WARNING,
 } from '../fixtures/responses'
-import { createTabMeta, getDot, type Knobs } from '../fixtures/tabStory'
+import { getDot, renderTab, TAB_ARGS, type Knobs } from '../fixtures/tabStory'
 
-const meta: Meta<Knobs> = createTabMeta('Saved search/Tab')
+const meta: Meta<Knobs> = {
+  title: 'Saved search/Tab',
+  parameters: { layout: 'fullscreen' },
+  args: TAB_ARGS,
+  render: renderTab,
+}
 
 export default meta
 type Story = StoryObj<Knobs>

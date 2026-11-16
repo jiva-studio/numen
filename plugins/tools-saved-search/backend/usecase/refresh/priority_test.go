@@ -123,8 +123,15 @@ func TestANeverComputedSearchIsRunningWhileQueuedInTheBatch(t *testing.T) {
 func TestABatchThatEndsWhileWaitingForTheVaultLeavesNoSearchQueued(t *testing.T) {
 	w := newBatchWorld(t)
 	w.vault.File(wrecksPath, formatSearchNote("", wrecksQuery))
-	release := w.searches.HoldSearch(wrecksQuery)
-	defer release()
+	releaseTides := w.searches.HoldSearch(tidesQuery)
+	defer releaseTides()
+	releaseWrecks := w.searches.HoldSearch(wrecksQuery)
+	defer releaseWrecks()
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- w.runner.RunDue(ctx, testVault) }()
+	waitForStart(t, w, tidesQuery)
 	interactive := make(chan struct{})
 	go func() {
 		defer close(interactive)
@@ -133,10 +140,6 @@ func TestABatchThatEndsWhileWaitingForTheVaultLeavesNoSearchQueued(t *testing.T)
 		}
 	}()
 	waitForStart(t, w, wrecksQuery)
-	ctx, cancel := context.WithCancel(t.Context())
-	done := make(chan error, 1)
-	go func() { done <- w.runner.RunDue(ctx, testVault) }()
-	waitForRunning(t, w, tidesPath)
 
 	cancel()
 	<-done
@@ -146,18 +149,6 @@ func TestABatchThatEndsWhileWaitingForTheVaultLeavesNoSearchQueued(t *testing.T)
 			t.Errorf("%s is running after the batch ended, want none queued", notePath)
 		}
 	}
-	release()
+	releaseWrecks()
 	<-interactive
-}
-
-func waitForRunning(t *testing.T, w *world, notePath string) {
-	t.Helper()
-	deadline := time.After(5 * time.Second)
-	for !w.runner.IsRunning(testVault, notePath) {
-		select {
-		case <-deadline:
-			t.Fatalf("%s did not start running within 5 seconds", notePath)
-		case <-time.After(time.Millisecond):
-		}
-	}
 }
