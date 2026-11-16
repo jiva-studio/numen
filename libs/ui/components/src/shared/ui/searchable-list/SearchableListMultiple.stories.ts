@@ -79,7 +79,7 @@ export default meta
 type Story = StoryObj<Knobs>
 
 const getRowNames = (canvas: ReturnType<typeof within>) =>
-  canvas.queryAllByRole('option').map((one) => one.textContent?.trim())
+  canvas.queryAllByRole('option').map((one: HTMLElement) => one.textContent?.trim())
 
 /** A set, a mixed and an unset item: a tick, a dash and an empty mark, the set ones first and the recent next. */
 export const CheckMarks: Story = {
@@ -111,7 +111,7 @@ export const CheckMarks: Story = {
 /** The same list in the dark token set. */
 export const CheckMarksInTheDark: Story = {
   globals: DARK,
-  play: CheckMarks.play,
+  play: CheckMarks.play!,
 }
 
 /** Enter and Control+K toggle the highlighted row, and the list stays open. */
