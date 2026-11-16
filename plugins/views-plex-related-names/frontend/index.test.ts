@@ -73,7 +73,7 @@ const setup = (
 ) => {
   const vault = createVault(neighbors)
   const context = createMockPluginContext({
-    pluginId: 'md.numen.views.related.notes',
+    pluginId: 'md.numen.views.plex.related.names',
     initialSettings,
   })
   const host = createMockHostServices({ notes: vault.notes })

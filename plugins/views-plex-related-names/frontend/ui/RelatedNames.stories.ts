@@ -14,7 +14,7 @@ const toName = (title: string): RelatedName => ({
 })
 
 const meta = {
-  title: 'Related notes/Names',
+  title: 'Plex/Related names',
   component: RelatedNames,
   args: {
     names: ['Rootstock list', 'Grafting', 'Pollination'].map(toName),

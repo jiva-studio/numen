@@ -257,9 +257,9 @@ The settings of the plugin Plex Graph.
 | `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
 | `noteRoom` | a number | empty space around every note. From 0 to 40. |
 
-### `md.numen.views.related.notes`
+### `md.numen.views.plex.related.names`
 
-The settings of the plugin Related Notes.
+The settings of the plugin Plex Related Names.
 
 | | | |
 | --- | --- | --- |

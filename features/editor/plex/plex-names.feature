@@ -35,5 +35,5 @@ Feature: Plex names
     Given the plex shows the following names:
       | note      | name           |
       | Pear rows | Rootstock list |
-    When the person sets the setting "Show notes related to related notes" of the plugin "Related Notes" to "Off"
+    When the person sets the setting "Show notes related to related notes" of the plugin "Plex Related Names" to "Off"
     Then the plex shows no names under the note titled "Pear rows"

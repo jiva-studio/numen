@@ -191,7 +191,7 @@ describe('the look settings of the plex', () => {
   })
 })
 
-describe('the settings the plex left to the plugin Related Notes', () => {
+describe('the settings the plex left to the plugin Plex Related Names', () => {
   const { settings } = JSON.parse(
     readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
   ) as { settings: readonly { key: string }[] }

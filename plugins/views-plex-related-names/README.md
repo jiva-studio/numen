@@ -1,4 +1,4 @@
-# Related Notes
+# Plex Related Names
 
 Under and over each note of the plex, small grey names show the notes it is related to: its parents over it, its children and other related notes under it. Click a name to move the focus there.
 

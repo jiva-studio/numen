@@ -64,7 +64,7 @@ export const PLUGIN_TESTS = {
   'views-flashcards-studio': [FLASHCARDS, ACCEPTANCE],
   'views-media-viewer': [ACCEPTANCE],
   'views-plex-graph': [ACCEPTANCE],
-  'views-related-notes': [ACCEPTANCE],
+  'views-plex-related-names': [ACCEPTANCE],
   'views-status-bar': [ACCEPTANCE],
 }
 

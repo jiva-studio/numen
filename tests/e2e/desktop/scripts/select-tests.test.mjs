@@ -168,8 +168,8 @@ await test('the inputs of the e2e tests leave out documentation, unit tests and 
   }
 })
 
-await test('a change to the related notes plugin selects the acceptance scenarios that guard the names of the plex', () => {
+await test('a change to the plex related names plugin selects the acceptance scenarios that guard the names of the plex', () => {
   assert.ok(
-    getScope(['plugins/views-related-notes/frontend/index.ts']).split(' ').includes('acceptance'),
+    getScope(['plugins/views-plex-related-names/frontend/index.ts']).split(' ').includes('acceptance'),
   )
 })
