@@ -6,7 +6,6 @@ import {
   getProfile,
   type ChatFrame,
   type ChatRequest,
-  type RerankRequest,
 } from '../llm'
 import { createLlmHost } from './index'
 
