@@ -100,7 +100,6 @@ export { cn } from './shared/lib/dom/classes'
 
 /** A row of a list the arrow keys walk, and a pair of UTF-16 units read as one character. */
 export { stepTo } from './shared/lib/dom/roving'
-export { isLeading, isTrailing } from './shared/lib/text/surrogate'
 
 /** A thing carried under the pointer, and a menu put away by a press outside it or Escape. */
 export { DragPreview, usePressDrag } from './shared/ui/drag-preview'
