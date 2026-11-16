@@ -3,6 +3,7 @@ package settings_test
 import (
 	"encoding/json"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -137,5 +138,45 @@ func TestWriteAnswersTheNewValueAndVersion(t *testing.T) {
 	}
 	if applied.Version != read.Version || applied.Written != read.Written {
 		t.Errorf("the write answered %d %s, the read after it %d %s", applied.Version, applied.Written, read.Version, read.Written)
+	}
+}
+
+// Writes that race each answer the value and the version of their own write, never of the other.
+func TestRacingWritesAnswerTheirOwnState(t *testing.T) {
+	t.Parallel()
+	use := openFileSettings(t)
+	const rounds = 40
+	type answer struct {
+		mode    string
+		version uint64
+	}
+	modes := []string{"dark", "light"}
+	answers := make([][]answer, len(modes))
+	var wg sync.WaitGroup
+	for i, mode := range modes {
+		wg.Go(func() {
+			for range rounds {
+				applied, err := use.write.Write(setMode(mode))
+				if err != nil {
+					t.Error(err)
+					return
+				}
+				answers[i] = append(answers[i], answer{readMode(t, applied.Written), applied.Version})
+			}
+		})
+	}
+	wg.Wait()
+
+	seen := map[uint64]bool{}
+	for i, mode := range modes {
+		for _, one := range answers[i] {
+			if one.mode != mode {
+				t.Fatalf("the write of %q answered the state of %q", mode, one.mode)
+			}
+			if seen[one.version] {
+				t.Fatalf("version %d was answered to two writes", one.version)
+			}
+			seen[one.version] = true
+		}
 	}
 }

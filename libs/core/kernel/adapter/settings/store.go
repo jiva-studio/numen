@@ -3,10 +3,12 @@ package settings
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -111,18 +113,46 @@ func (s *Store) ReadJSON() (content, path string, version uint64, err error) {
 	return content, path, version, err
 }
 
-// Write puts each setting at its path in the file. The value of a setting is JSON.
-func (s *Store) Write(entries []settingsdomain.Setting) error {
+// WriteJSON puts each setting at its path in the file and returns the checked settings as JSON that
+// this write left, with the version it left them at, both taken under the hold of the lock that saved.
+func (s *Store) WriteJSON(entries []settingsdomain.Setting) (content string, version uint64, err error) {
+	path, err := s.getPath()
+	if err != nil {
+		return "", 0, err
+	}
+	into := DefaultFile()
+	version, err = s.files.SaveVersioned(path, &into, toWrites(entries)...)
+	if err != nil {
+		return "", 0, err
+	}
+	raiseVersion(&into)
+	into.DropInvalidConnections()
+	if s.declared != nil {
+		into.DropInvalid(s.declared, s.registries)
+	}
+	content, err = into.WriteJSON()
+	if err != nil {
+		return "", 0, fmt.Errorf("%w: %w", settingsport.ErrWrittenNotAnswered, err)
+	}
+	return content, version, nil
+}
+
+func toWrites(entries []settingsdomain.Setting) []Setting {
 	writes := make([]Setting, 0, len(entries))
 	for _, one := range entries {
 		writes = append(writes, Setting{At: one.Path, Written: json.RawMessage(one.JSON)})
 	}
+	return writes
+}
+
+// Write puts each setting at its path in the file. The value of a setting is JSON.
+func (s *Store) Write(entries []settingsdomain.Setting) error {
 	path, err := s.getPath()
 	if err != nil {
 		return err
 	}
 	into := DefaultFile()
-	return s.files.Save(path, &into, writes...)
+	return s.files.Save(path, &into, toWrites(entries)...)
 }
 
 // Defaults are the settings of an unconfigured installation.

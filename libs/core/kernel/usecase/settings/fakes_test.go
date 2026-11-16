@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -39,14 +41,20 @@ func (f *memoryFile) ReadChecked() (settingsdomain.Stored, error) { return f.cur
 
 func (f *memoryFile) ReadUnchecked() (settingsdomain.Stored, error) { return f.current, f.failure }
 
-func (f *memoryFile) Write(entries []settingsdomain.Setting) error {
+func (f *memoryFile) WriteJSON(entries []settingsdomain.Setting) (string, uint64, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.events != nil {
 		*f.events = append(*f.events, "write file")
 	}
 	f.writes = append(f.writes, entries...)
-	return f.failure
+	if f.failure != nil {
+		return "", 0, f.failure
+	}
+	if f.readFailure != nil {
+		return "", 0, fmt.Errorf("%w: %w", settingsport.ErrWrittenNotAnswered, f.readFailure)
+	}
+	return "{}", 0, nil
 }
 
 func (f *memoryFile) GetDefaults() settingsdomain.Stored { return stored{values: map[string]any{}} }

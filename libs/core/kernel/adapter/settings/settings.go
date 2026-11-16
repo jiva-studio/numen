@@ -106,12 +106,16 @@ func (f *Files) OpenAt(path string, into Document) error {
 	if err := checkObject(raw); err != nil {
 		return err
 	}
-	// A file naming no version, and one naming a number that is no version at
-	// all, are both the shape the sections have always had.
+	raiseVersion(into)
+	return nil
+}
+
+// raiseVersion puts the version of a file that names none, or none that is a version, at the shape the
+// sections have always had.
+func raiseVersion(into Document) {
 	if version := into.GetVersion(); *version < DefaultVersion {
 		*version = DefaultVersion
 	}
-	return nil
 }
 
 func warn(into Document, response string, about ...any) {
@@ -123,9 +127,10 @@ func (f *Files) write(path string, target Document) error {
 	if err != nil {
 		return err
 	}
-	return f.run(path, func(path string) error {
+	_, err = f.run(path, func(path string) error {
 		return writeFileAtomically(path, append(raw, '\n'))
 	})
+	return err
 }
 
 // Adjacent returns the path of name in the folder of the registry file, and false while no registry path is

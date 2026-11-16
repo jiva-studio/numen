@@ -1,6 +1,13 @@
 package settingsport
 
-import "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+import (
+	"errors"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+)
+
+// ErrWrittenNotAnswered is the error of a write that is persisted and whose answer cannot be made.
+var ErrWrittenNotAnswered = errors.New("the settings are written and cannot be answered")
 
 // SettingsFile is the file in which this installation is configured.
 type SettingsFile interface {
@@ -10,10 +17,14 @@ type SettingsFile interface {
 	// ReadUnchecked returns the settings as the file holds them. A file that is not there is
 	// created with the defaults.
 	ReadUnchecked() (settings.Stored, error)
-	// Write puts each setting at its path in the file and leaves the rest of the file as it was.
-	Write(entries []settings.Setting) error
+	// WriteJSON puts each setting at its path in the file, leaves the rest of the file as it was, and
+	// returns the settings in force as JSON with the version, both of this write and of no other. A
+	// write that is persisted and whose answer cannot be made returns an error that wraps
+	// ErrWrittenNotAnswered.
+	WriteJSON(entries []settings.Setting) (content string, version uint64, err error)
 	// ReadJSON returns the settings in force as JSON, the path of the file and the version of the state
-	// read. A write raises the version, and the content is never newer than the version says.
+	// read. A write raises the version. The version is taken before the file is read, so a write in
+	// between leaves the content newer than the version, never older.
 	ReadJSON() (content, path string, version uint64, err error)
 }
 

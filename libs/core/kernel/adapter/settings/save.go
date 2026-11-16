@@ -31,6 +31,13 @@ type Setting struct {
 // written with only the named fields. A file that does not parse, or a result
 // that cannot be read back into `into`, is not written.
 func (f *Files) Save(path string, into Document, settings ...Setting) error {
+	_, err := f.SaveVersioned(path, into, settings...)
+	return err
+}
+
+// SaveVersioned saves like Save and answers the version the file stands at after this save, taken
+// under the same hold of the lock. into holds the file as it was written.
+func (f *Files) SaveVersioned(path string, into Document, settings ...Setting) (uint64, error) {
 	return f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if errors.Is(err, fs.ErrNotExist) {
@@ -318,21 +325,21 @@ var ErrNoFiles = errors.New("settings: no Files value was given")
 // NewFiles returns the access to settings files that one composition root holds.
 func NewFiles() *Files { return &Files{} }
 
-func (f *Files) run(path string, work func(path string) error) error {
+func (f *Files) run(path string, work func(path string) error) (uint64, error) {
 	if f == nil {
-		return ErrNoFiles
+		return 0, ErrNoFiles
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	resolved := resolvePath(path)
 	if err := os.MkdirAll(filepath.Dir(resolved), 0o755); err != nil {
-		return err
+		return 0, err
 	}
 	err := withLock(resolved, func() error { return work(resolved) })
-	if err == nil {
-		f.version.Add(1)
+	if err != nil {
+		return 0, err
 	}
-	return err
+	return f.version.Add(1), nil
 }
 
 func splice(raw []byte, from, to int, with []byte) []byte {
