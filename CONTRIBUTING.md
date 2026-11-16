@@ -30,7 +30,7 @@ An issue has exactly one Type, set in the issue's Type field (Bug, Feature, Task
 
 - **Kind**: `perf` (it works, but is too slow or too heavy), `epic` (tracks a set of issues).
 - **Area**: `desktop`, `mobile`, `core`, `domain`, `protocol`, `ui`, `wire`, `vault`, `docs`, `ci`, `repo`.
-- **Status**: `needs-decision` (blocked on a decision, not on work).
+- **Decision**: `needs-decision` (blocked on a decision, not on work).
 
 Dependabot sets `dependencies`, `go`, `javascript` and `github_actions` on its own pull requests.
 
