@@ -52,6 +52,9 @@ Before handing work over, an agent must demonstrate concrete evidence:
 1. **The gate is green**: The relevant test suites and linters pass (`go test ./...`, `npm run typecheck`, `npm run test:unit`, `npm run format:check`).
 2. **Acceptance tests are verified**: The scenarios' tests were proven red before implementation and are green after.
 3. **No regressions in existing suites**: Existing tests continue to pass.
+4. **A failure is fixed, not repeated**: a flaky test is never rerun until it passes and a timeout is never raised; the cause is found and fixed. A check is never weakened and gets no exclusion list.
+
+Heavy runs (the Go and vitest suites, builds, `make checks`, mutation runs) go to the build host, not to the laptop; the laptop runs formatters, git and gh.
 
 ---
 
