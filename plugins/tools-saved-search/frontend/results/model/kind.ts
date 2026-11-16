@@ -3,6 +3,7 @@
  * results from the moment it opens and aborting the watch when it closes.
  */
 import type { Component } from 'vue'
+import { createNamedIcon } from '@numen/ui'
 import { getFileStem, type TabKindRegistration } from '@numen/plugin-sdk'
 import {
   createSavedSearchTab,
@@ -32,6 +33,7 @@ export function createSavedSearchKind(
   const kind: TabKindRegistration<SavedSearchTabState> = {
     kind: SAVED_SEARCH,
     component: deps.component,
+    icon: createNamedIcon('search'),
     identity: (path) => path,
     open: (path) => {
       const tab = createSavedSearchTab(path, deps)
