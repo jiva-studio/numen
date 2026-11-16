@@ -63,7 +63,7 @@ jobs:
     with:
       environments: linux macos
       engines: chromium webkit
-      scope: all
+      specs: true
       features: ''
       publish: true
     secrets: inherit

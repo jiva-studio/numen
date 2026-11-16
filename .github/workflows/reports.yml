@@ -9,10 +9,10 @@ on:
         description: 'feature files under features/, separated by spaces; empty is all'
         type: string
         default: ''
-      scope:
-        description: 'acceptance (the scenarios of features/), all (every end-to-end test too), or folders as in desktop-e2e.yml'
-        type: string
-        default: acceptance
+      specs:
+        description: 'also run the end-to-end specs'
+        type: boolean
+        default: false
       engines:
         description: 'chromium, webkit, or both separated by a space'
         type: string
@@ -30,9 +30,9 @@ on:
       features:
         type: string
         default: ''
-      scope:
-        type: string
-        default: acceptance
+      specs:
+        type: boolean
+        default: false
       engines:
         type: string
         default: chromium webkit
@@ -59,14 +59,22 @@ permissions:
 
 jobs:
   acceptance:
-    name: End-to-End
+    name: Acceptance
     if: ${{ github.event_name == 'push' || contains(inputs.environments, 'linux') }}
     uses: ./.github/workflows/desktop-e2e.yml
     with:
-      scope: ${{ inputs.scope || 'acceptance' }}
+      scope: acceptance
       engines: ${{ inputs.engines || 'chromium webkit' }}
       features: ${{ inputs.features }}
       video: true
+
+  e2e:
+    name: End-to-End
+    if: ${{ inputs.specs && contains(inputs.environments, 'linux') }}
+    uses: ./.github/workflows/desktop-e2e.yml
+    with:
+      scope: specs
+      engines: ${{ inputs.engines || 'chromium webkit' }}
 
   build-macos:
     name: Build / macOS
@@ -182,7 +190,7 @@ jobs:
 
   report:
     name: Report
-    needs: [acceptance, acceptance-macos]
+    needs: [acceptance, e2e, acceptance-macos]
     if: ${{ !cancelled() && (needs.acceptance.result != 'skipped' || needs.acceptance-macos.result != 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -282,8 +290,11 @@ jobs:
     steps:
       - id: results
         env:
-          LINUX: ${{ needs.acceptance.result }}
+          ACCEPTANCE: ${{ needs.acceptance.result }}
+          SPECS: ${{ needs.e2e.result }}
           MACOS: ${{ needs.acceptance-macos.result }}
         run: |
-          echo "linux=$LINUX" >> "$GITHUB_OUTPUT"
+          linux=$ACCEPTANCE
+          if [ "$SPECS" != skipped ] && [ "$SPECS" != success ]; then linux=$SPECS; fi
+          echo "linux=$linux" >> "$GITHUB_OUTPUT"
           echo "macos=$MACOS" >> "$GITHUB_OUTPUT"
