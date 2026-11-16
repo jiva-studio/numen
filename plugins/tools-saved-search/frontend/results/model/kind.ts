@@ -30,7 +30,7 @@ export function createSavedSearchKind(
     tabs.delete(state)
   }
 
-  const kind: TabKindRegistration<SavedSearchTabState> = {
+  const base: TabKindRegistration<SavedSearchTabState> = {
     kind: SAVED_SEARCH,
     component: deps.component,
     icon: createNamedIcon('search'),
@@ -43,6 +43,11 @@ export function createSavedSearchKind(
     },
     getTitle,
     getOpenTab: (state) => ({ path: state.path.value }),
+  }
+  const lifecycle: Pick<
+    TabKindRegistration<SavedSearchTabState>,
+    'onShow' | 'onClose' | 'onDestroy'
+  > = {
     onShow: (state) => tabs.get(state)?.follow(),
     onClose: (state) => {
       dispose(state)
@@ -50,5 +55,5 @@ export function createSavedSearchKind(
     },
     onDestroy: (state) => dispose(state),
   }
-  return kind
+  return Object.assign(base, lifecycle)
 }
