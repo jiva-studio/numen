@@ -72,6 +72,10 @@ type Arranger interface {
 	// returns the names of the checks the result covers and the problems they found.
 	GetProblems(ctx context.Context, checks []domain.Check) (checkNames []domain.Check, problems []domain.VaultProblem, err error)
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
+	// WriteFrontmatter sets, replaces and removes top-level frontmatter keys of notes, one result per
+	// write in order. A note that fails costs the others nothing; the notes of a canceled call get
+	// plugin.ErrNotAttempted.
+	WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error)
 }
 
 // LinkEditor edits the frontmatter links of the notes of the vault.
