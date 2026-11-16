@@ -1,7 +1,9 @@
 <script setup lang="ts">
 /**
- * The views of one side of a node, drawn at the node in the order of the manifest, each given the path of
- * the note. The views are rendered as one centered group; its element is emitted so its height can be measured.
+ * The views of one side of a node, drawn at the node in the order the loader sorts them (the slot `order`,
+ * then the plugin id), each in its own centered row and given the path of the note. The rows are one column,
+ * the group; its element is emitted so its height can be measured.
+ * The group holds the `--numen-node-gap` against the node as padding, so the measured height includes it.
  */
 import type { ComponentPublicInstance } from 'vue'
 import type { PlacedNode } from '../../lib/node'
@@ -43,7 +45,14 @@ const getTop = () =>
   >
     <div class="plex__widgets-box">
       <div :ref="onWidgetsChange" class="plex__widgets-group">
-        <component :is="entry.component" v-for="entry in entries" :key="entry.key" :path="path" />
+        <div
+          v-for="entry in entries"
+          :key="entry.key"
+          class="plex__widget"
+          :data-plex-widget="entry.key"
+        >
+          <component :is="entry.component" :path="path" />
+        </div>
       </div>
     </div>
   </foreignObject>
@@ -68,10 +77,23 @@ const getTop = () =>
 
 .plex__widgets-group {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
   gap: var(--widgets-gap);
   pointer-events: auto;
+}
+
+.plex__widget {
+  display: flex;
+  justify-content: center;
+  max-inline-size: 100%;
+}
+
+.plex__widgets--above .plex__widgets-group {
+  padding-block-end: var(--numen-node-gap);
+}
+
+.plex__widgets--below .plex__widgets-group {
+  padding-block-start: var(--numen-node-gap);
 }
 </style>
