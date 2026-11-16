@@ -152,8 +152,8 @@ function reveal(): void {
     v-if="isOpen"
     :name="name"
     :to="to"
-    @keydown="multi ? undefined : onKey"
-    @ground="multi ? undefined : onBackdrop"
+    @keydown="multi || onKey($event)"
+    @ground="multi || onBackdrop()"
     @press="onPress"
   >
     <PaletteMulti
