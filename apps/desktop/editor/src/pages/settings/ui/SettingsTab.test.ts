@@ -8,7 +8,7 @@
  * Every value here is invented.
  */
 import type { JsonObject } from '@/shared/api/json'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { Select, Switch } from '@numen/ui'
@@ -102,10 +102,22 @@ const createTab = (
   }
 }
 
+beforeEach(() => {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
+    },
+  )
+})
+
 /** Every tab this file drew, put away between one test and the next. */
 const mountedWrappers: { unmount: () => void }[] = []
 
 afterEach(() => {
+  vi.unstubAllGlobals()
   while (mountedWrappers.length) mountedWrappers.pop()?.unmount()
 })
 
