@@ -438,13 +438,13 @@ describe('the Editor page of the shell settings', () => {
   })
 
   it('keeps the editor settings off the System and the Appearance pages', () => {
-    const names = (section: 'system' | 'appearance') =>
+    const getRowNames = (section: 'system' | 'appearance') =>
       createPage(section)
         .wrapper.findAllComponents(SettingRow)
         .map((one) => one.props('name'))
 
-    expect(names('system')).not.toContain('Font size')
-    expect(names('system')).not.toContain('Soft wrap')
-    expect(names('appearance')).not.toContain('Line height')
+    expect(getRowNames('system')).not.toContain('Font size')
+    expect(getRowNames('system')).not.toContain('Soft wrap')
+    expect(getRowNames('appearance')).not.toContain('Line height')
   })
 })

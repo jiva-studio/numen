@@ -195,7 +195,7 @@ func TestAnEditorValueOutsideItsBoundsIsReadAndIgnoredWithANoticeThatNamesTheBou
 	}
 }
 
-func TestAnEditorValueIgnoredLeavesTheDefaultInForce(t *testing.T) {
+func TestTheDefaultOfAnEditorSettingStaysInForceWhenItsValueIsIgnored(t *testing.T) {
 	cfg, err := openAt(write(t, `{"app":{"editor":{"fontSize":99,"lineHeight":"tall","softWrap":"yes","lineNumbers":1,"fontFamily":"cursive"}}}`))
 	if err != nil {
 		t.Fatalf("the file was refused: %v", err)
