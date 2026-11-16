@@ -35,9 +35,6 @@ export { isTyping } from './shared/lib/dom/typing'
 export { KeyCap, keyChord } from './shared/ui/key-cap'
 export type { Keystroke } from './shared/ui/key-cap'
 
-/** A moment of a recording as a player writes one. */
-export { clock } from './shared/lib/time/duration'
-
 /** A stream taken up again for as long as a window is open. */
 export { createFollower } from './shared/lib/async/stream'
 export {
@@ -95,12 +92,10 @@ export {
   nav,
   win,
 } from './shared/api/dom'
-export { createRefRegistry } from './shared/model/refs'
 export { cn } from './shared/lib/dom/classes'
 
 /** A row of a list the arrow keys walk, and a pair of UTF-16 units read as one character. */
 export { stepTo } from './shared/lib/dom/roving'
-export { isLeading, isTrailing } from './shared/lib/text/surrogate'
 
 /** A thing carried under the pointer, and a menu put away by a press outside it or Escape. */
 export { DragPreview, usePressDrag } from './shared/ui/drag-preview'

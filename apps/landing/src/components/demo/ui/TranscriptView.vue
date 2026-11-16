@@ -4,7 +4,7 @@
  * goes to its moment.
  */
 import { useTemplateRef } from 'vue'
-import { clock } from '@numen/ui'
+import { clock } from '../lib/duration'
 import type { Cue } from '../lib/cues'
 import { useFollowedLine } from '../model/useFollowedLine'
 

@@ -106,7 +106,7 @@ func (f *Follower) Close() {
 		one.cancel()
 	}
 	f.mu.Unlock()
-	f.wg.Wait()
+	f.Wait()
 }
 
 // Follow writes the text layers of the changes of the feed of the vault after its cursor, and returns

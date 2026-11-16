@@ -27,10 +27,6 @@ type App struct {
 
 func NewApp() *App { return &App{follower: nil} }
 
-// Mount registers the plugin's services on s, reporting text versions to the host the environment
-// names.
-func Mount(s *server.Server) error { return NewApp().Mount(s) }
-
 // Mount registers the plugin's services on s and follows the feed of the shown vault.
 func (a *App) Mount(s *server.Server) error {
 	texts, err := host.NewTextClientFromEnv()

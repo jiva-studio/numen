@@ -9,7 +9,10 @@
       packages = nixpkgs.lib.genAttrs [ "aarch64-darwin" ] (
         system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+          };
         in
         {
           default = pkgs.buildEnv {
@@ -17,6 +20,11 @@
             paths = [
               pkgs.nodejs_22
               pkgs.git
+              pkgs.claude-code
+              pkgs.codex
+              pkgs.gemini-cli
+              pkgs.yt-dlp
+              pkgs.ffmpeg
             ];
           };
         }

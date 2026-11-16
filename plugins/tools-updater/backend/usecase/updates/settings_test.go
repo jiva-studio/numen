@@ -21,7 +21,7 @@ func TestTheEndpointIsTheFeedOfTheChannelOrTheSettingOfTheCustomChannel(t *testi
 		{"an endpoint on a stable build with no channel", map[string]string{"endpoint": "http://127.0.0.1:1/latest.json"}, "2026.11.5", StableEndpoint},
 	}
 	for _, c := range cases {
-		if got := GetEndpoint(c.values, c.version); got != c.want {
+		if got := newSelection(c.values).getEndpoint(c.version); got != c.want {
 			t.Errorf("%s: endpoint = %q, want %q", c.name, got, c.want)
 		}
 	}
