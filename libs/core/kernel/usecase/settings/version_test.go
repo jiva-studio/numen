@@ -11,18 +11,18 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
-// versioned is the settings use cases over a real file in a temporary folder.
-type versioned struct {
+// fileSettings is the settings use cases over a real file in a temporary folder.
+type fileSettings struct {
 	get   *settings.Get
 	write *settings.WriteSettings
 }
 
-func newVersioned(t *testing.T) versioned {
+func openFileSettings(t *testing.T) fileSettings {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
 	store := settingsadapter.NewStore(settingsadapter.NewFiles(), func() (string, error) { return path, nil }, nil, nil)
 	check := settings.NewCheckSettings(jsonCodec{}, declare([]string{"app", "appearance", "mode"}), nil, none.PluginSettings{})
-	return versioned{
+	return fileSettings{
 		get:   settings.NewGet(store.ReadJSON, nil, nil),
 		write: settings.NewWriteSettings(check, store, refreshRecorder{new([]string)}),
 	}
@@ -50,7 +50,7 @@ func readMode(t *testing.T, written string) string {
 // A write raises the version, and reads with no write between them answer the same one.
 func TestWriteRaisesTheVersionTheReadsAnswer(t *testing.T) {
 	t.Parallel()
-	use := newVersioned(t)
+	use := openFileSettings(t)
 	// The first read of a folder with no file writes the defaults, which is a write too.
 	if _, err := use.get.Execute(); err != nil {
 		t.Fatal(err)
@@ -83,7 +83,7 @@ func TestWriteRaisesTheVersionTheReadsAnswer(t *testing.T) {
 // A read answers the version of the state it read: the value written and the version that goes with it.
 func TestGetAnswersTheVersionOfTheStateItRead(t *testing.T) {
 	t.Parallel()
-	use := newVersioned(t)
+	use := openFileSettings(t)
 	first, second := writeThenRead(t, use, "dark"), writeThenRead(t, use, "light")
 
 	if first.mode != "dark" || second.mode != "light" {
@@ -99,7 +99,7 @@ type observed struct {
 	version uint64
 }
 
-func writeThenRead(t *testing.T, use versioned, mode string) observed {
+func writeThenRead(t *testing.T, use fileSettings, mode string) observed {
 	t.Helper()
 	if err := use.write.Execute(setMode(mode)); err != nil {
 		t.Fatal(err)
@@ -114,7 +114,7 @@ func writeThenRead(t *testing.T, use versioned, mode string) observed {
 // A write answers the new value and the version, the same that a read after it answers.
 func TestWriteAnswersTheNewValueAndVersion(t *testing.T) {
 	t.Parallel()
-	use := newVersioned(t)
+	use := openFileSettings(t)
 	before, err := use.get.Execute()
 	if err != nil {
 		t.Fatal(err)
