@@ -53,7 +53,7 @@ function listUnusedFiles(repoRoot, production) {
 const SUPPORT = ['testing', 'fixtures', 'testdata']
 
 /**
- * Tells whether a file is test support: under a directory named as test support, or a file named so.
+ * Checks that a file is test support: under a directory named as test support, or a file named so.
  *
  * @param {string} file
  * @returns {boolean}
