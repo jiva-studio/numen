@@ -2,6 +2,8 @@ package vaultwriter_test
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -133,5 +135,76 @@ func TestWriteSucceedsWithTheVaultLockTaken(t *testing.T) {
 	}()
 	if err := <-finished; err != nil {
 		t.Fatal(err)
+	}
+}
+
+// A write and a change of the path it writes are two steps of one note: whichever
+// takes the vault first, the other sees the result. A move or a removal that lands
+// between the check of the baseline and the replace leaves the stale write
+// succeeding and the note back at the old path.
+func TestAMoveAndAWriteWithOneBaselineAreOneAfterTheOther(t *testing.T) {
+	racingChange(t, "move", func(w *vaultwriter.VaultWriter) error {
+		return w.Move(t.Context(), "a.md", "b.md")
+	})
+}
+
+func TestARemovalAndAWriteWithOneBaselineAreOneAfterTheOther(t *testing.T) {
+	racingChange(t, "removal", func(w *vaultwriter.VaultWriter) error {
+		return w.Remove(t.Context(), "a.md")
+	})
+}
+
+// racingChange runs a write of a.md from its stored baseline against change. The
+// outcomes of the two orders are: the write first, so the note is not at a.md any
+// more; or the change first, so the write is stale. A write that succeeds and a
+// note that is at a.md after the change did succeed is neither.
+func racingChange(
+	t *testing.T, name string, change func(*vaultwriter.VaultWriter) error,
+) {
+	t.Helper()
+	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
+	for round := range 40 {
+		vault := vaulttest.NewVault(t, nil)
+		writing, err := writers.Open(vault)
+		if err != nil {
+			t.Fatal(err)
+		}
+		changing, err := writers.Open(vault)
+		if err != nil {
+			t.Fatal(err)
+		}
+		baseline, err := writing.Write(t.Context(), "a.md", []byte("start"), domain.FileStat{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var writeErr, changeErr error
+		var ready, done sync.WaitGroup
+		ready.Add(2)
+		begin := make(chan struct{})
+		done.Go(func() {
+			ready.Done()
+			<-begin
+			_, writeErr = writing.Write(t.Context(), "a.md", []byte("edited by a stale writer"), baseline.Stat)
+		})
+		done.Go(func() {
+			ready.Done()
+			<-begin
+			changeErr = change(changing)
+		})
+		ready.Wait()
+		close(begin)
+		done.Wait()
+
+		if changeErr != nil {
+			t.Fatalf("round %d: the %s: %v", round, name, changeErr)
+		}
+		_, statErr := os.Stat(filepath.Join(vault.Path, "a.md"))
+		switch {
+		case writeErr == nil && statErr == nil:
+			t.Fatalf("round %d: the write succeeded and the note is at a.md after the %s", round, name)
+		case writeErr != nil && !errors.Is(writeErr, edit.ErrStale):
+			t.Fatalf("round %d: %v", round, writeErr)
+		}
 	}
 }
