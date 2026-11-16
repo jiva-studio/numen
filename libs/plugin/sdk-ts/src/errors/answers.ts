@@ -16,9 +16,7 @@ type FileStat = {
   path: string
   size: bigint
   mtime: bigint
-  /** The SHA-256 of the content in lowercase hex; empty where the answer did not read it. */
   hash?: string
-  /** The number of writes the vault had taken when the answer was made; zero where it does not say. */
   version?: bigint
 }
 
@@ -33,7 +31,7 @@ export const formatFingerprint = (at?: FileStat): string | undefined => {
 }
 
 /** The two numbers first: a path holds spaces, and everything after them is it. */
-export const parseFingerprint = (stat: string) => {
+const parseFingerprint = (stat: string) => {
   const [head = '', mtime, ...rest] = stat.split(' ')
   const [size, version, hash, ...extra] = head.split(':')
   if (

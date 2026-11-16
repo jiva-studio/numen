@@ -61,8 +61,9 @@ func TestAWriteOverAStaleHashChangesNothingAndCountsNoWrite(t *testing.T) {
 	if !errors.Is(err, edit.ErrStale) {
 		t.Errorf("a write over a stale hash returned %v", err)
 	}
-	if got, _ := os.ReadFile(filepath.Join(vault.Path, "n.md")); string(got) != "other" {
-		t.Errorf("the note holds %q", got)
+	got, err := os.ReadFile(filepath.Join(vault.Path, "n.md"))
+	if err != nil || string(got) != "other" {
+		t.Errorf("the note holds %q (%v)", got, err)
 	}
 	if writers.GetVersion(vault) != before {
 		t.Errorf("a refused write took a version")
@@ -100,7 +101,7 @@ func TestAChangeOfContentThatKeepsSizeAndTimeIsRefusedAndSoIsABaselineWithoutAHa
 	}
 }
 
-func TestAHashOfANoteThatIsGoneIsStale(t *testing.T) {
+func TestAHashBaselineOverAMissingNoteIsStale(t *testing.T) {
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	writer, err := writers.Open(vaulttest.NewVault(t, nil))
 	if err != nil {

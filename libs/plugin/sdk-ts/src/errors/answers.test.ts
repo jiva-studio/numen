@@ -7,13 +7,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import {
-  getAssetUrl,
-  getBytesQuery,
-  retryWhileBusy,
-  formatFingerprint,
-  parseFingerprint,
-} from './answers'
+import { getAssetUrl, getBytesQuery, retryWhileBusy, formatFingerprint } from './answers'
 
 describe('the file an answer came out of', () => {
   it('arrives back out as the size and modification time it went in with', () => {
@@ -33,7 +27,7 @@ describe('the file an answer came out of', () => {
     expect(formatFingerprint(stat)).toBe('1234:0: 1700000000 physics/Entropy.md')
   })
 
-  it('arrives back out with the hash and the version of the vault it carried', () => {
+  it('names the hash and the version of the vault where the answer carried them', () => {
     const stat = {
       path: 'heat/Maxwell’s demon.md',
       size: 7n,
@@ -41,7 +35,7 @@ describe('the file an answer came out of', () => {
       hash: 'b'.repeat(64),
       version: 12n,
     }
-    expect(parseFingerprint(formatFingerprint(stat) as string)).toEqual(stat)
+    expect(formatFingerprint(stat)).toBe(`7:12:${'b'.repeat(64)} 9 heat/Maxwell’s demon.md`)
     expect(getBytesQuery(formatFingerprint(stat) as string)).toBe('size=7&mtime=9')
   })
 

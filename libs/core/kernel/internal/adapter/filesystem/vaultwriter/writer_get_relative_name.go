@@ -259,8 +259,6 @@ func createParents(root *os.Root, dir, path string) error {
 	return err
 }
 
-// isStale reports whether the content of the file is not the one the baseline has the hash of. The zero
-// stat expects nothing, and a baseline without a hash is never the content of a file.
 func isStale(root *os.Root, name string, baseline domain.FileStat) (_ bool, err error) {
 	if baseline.IsZero() {
 		return false, nil

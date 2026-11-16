@@ -24,7 +24,6 @@ const MAX_BUSY_RETRIES = 3
 /** How long the window waits before asking an unavailable method again. */
 const BUSY_RETRY_DELAY_MS = 1000
 
-/** The size is the first part of `<size>:<version>:<hash>`; a book is identified by its size and time only. */
 const parseStat = (stat: string): FileStat => {
   const [head = '0', mtime = '0', ...rest] = stat.split(' ')
   return { path: rest.join(' '), size: Number(head.split(':')[0]), mtime }
