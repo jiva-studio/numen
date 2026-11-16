@@ -11,9 +11,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
 )
 
-// VaultReader is what the plugin reads of a vault: its files and its name.
+// VaultReader is what the plugin reads of a vault: its files, its file change feed and its name.
 type VaultReader interface {
 	host.FileReader
+	host.FileChangeLister
 	GetVault(ctx context.Context) (domain.Vault, error)
 }
 

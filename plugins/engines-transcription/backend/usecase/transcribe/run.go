@@ -113,7 +113,7 @@ func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error
 }
 
 func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
-	turn, err := t.queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: func() {
+	turn, err := t.queue.EnqueueWork(ctx, host.Work{IsUserStarted: !t.isBackground(getTaskID(j.vault, j.path)), OnWaiting: func() {
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="best-effort waiting task status notification"
 		t.reportTask(ctx, host.Task{
 			ID: getTaskID(j.vault, j.path), Title: taskWaiting, Detail: j.path, IsUserStarted: true,
@@ -196,6 +196,7 @@ func (t *Transcriber) reportProgress(ctx context.Context, vault domain.VaultID, 
 }
 
 func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
+	task.IsUserStarted = !t.isBackground(task.ID)
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="best-effort stderr diagnostic log does not affect transcription control flow"
 	if err := t.queue.ReportTask(context.WithoutCancel(ctx), task); err != nil {
 		t.reportError("show the task "+task.ID, err)

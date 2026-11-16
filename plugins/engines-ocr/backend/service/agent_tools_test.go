@@ -71,9 +71,16 @@ func (q recordingQueue) FinishTask(ctx context.Context, id string) error {
 
 // queueCalls counts the requests the runs made to the queue.
 type queueCalls struct {
-	mu       sync.Mutex
-	reported int
-	turns    int
+	mu            sync.Mutex
+	reported      int
+	turns         int
+	isUserStarted []bool
+}
+
+func (c *queueCalls) listUserStarted() []bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return slices.Clone(c.isUserStarted)
 }
 
 func (c *queueCalls) getCounts() (reported, turns int) {
@@ -85,6 +92,7 @@ func (c *queueCalls) getCounts() (reported, turns int) {
 func (q recordingQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, error) {
 	q.calls.mu.Lock()
 	q.calls.turns++
+	q.calls.isUserStarted = append(q.calls.isUserStarted, work.IsUserStarted)
 	q.calls.mu.Unlock()
 	return q.Queue.EnqueueWork(ctx, work)
 }
@@ -92,6 +100,7 @@ func (q recordingQueue) EnqueueWork(ctx context.Context, work host.Work) (host.T
 func (q recordingQueue) ReportTask(ctx context.Context, task host.Task) error {
 	q.calls.mu.Lock()
 	q.calls.reported++
+	q.calls.isUserStarted = append(q.calls.isUserStarted, task.IsUserStarted)
 	q.calls.mu.Unlock()
 	return q.Queue.ReportTask(ctx, task)
 }
@@ -389,7 +398,7 @@ func TestRecognitionCreateOfRecognizedScanReturnsItsVersion(t *testing.T) {
 func TestRecognitionCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 	s := newToolFixture(t)
 	close(s.recognizer.release)
-	runEnd, isStarted, err := s.recognitions.Start(t.Context(), recognition.Request{Vault: "Physics", Path: scanPath})
+	runEnd, isStarted, err := s.recognitions.Start(t.Context(), recognition.Request{Vault: "Physics", Path: scanPath, IsUserStarted: true})
 	if err != nil || !isStarted {
 		t.Fatalf("Start = (%v, %v), want the run started", isStarted, err)
 	}
