@@ -43,12 +43,17 @@ type Mode = 'sync' | 'async' | 'none'
 
 /** What a member needs: every permission listed, and whether a refusal throws or rejects. */
 class Rule<M extends Mode = Mode> {
+  readonly reason: string
+  readonly isReadOnly: (args: readonly Value[]) => boolean
+
   constructor(
     readonly permissions: readonly string[],
     readonly mode: M,
-    readonly reason: string,
-    readonly isReadOnly: (args: readonly Value[]) => boolean = () => false,
-  ) {}
+    details: { readonly reason: string; readonly isReadOnly?: (args: readonly Value[]) => boolean },
+  ) {
+    this.reason = details.reason
+    this.isReadOnly = details.isReadOnly ?? (() => false)
+  }
 
   get isAsync(): boolean {
     return this.mode === 'async'
@@ -56,27 +61,29 @@ class Rule<M extends Mode = Mode> {
 }
 
 function requirePermissions(...permissions: string[]): Rule<'sync'> {
-  return new Rule(permissions, 'sync', '')
+  return new Rule(permissions, 'sync', { reason: '' })
 }
 
 function requirePermissionsAsync(...permissions: string[]): Rule<'async'> {
-  return new Rule(permissions, 'async', '')
+  return new Rule(permissions, 'async', { reason: '' })
 }
 
 function requireNothing(reason: string): Rule<'none'> {
-  return new Rule([], 'none', reason)
+  return new Rule([], 'none', { reason })
 }
 
 function explain<M extends Mode>(rule: Rule<M>, reason: string): Rule<M> {
-  return new Rule(rule.permissions, rule.mode, reason, rule.isReadOnly)
+  return new Rule(rule.permissions, rule.mode, { reason, isReadOnly: rule.isReadOnly })
 }
 
 /** The commands that move a view and change nothing, so `vault:read` is enough to run them. */
 const READ_ONLY_COMMANDS: ReadonlySet<Value> = new Set(['app:file.reveal', 'app:settings.open'])
 
-/** A rule that asks `vault:read` instead of its permissions for the calls `isReadOnly` accepts. */
-function readOnlyFor<M extends Mode>(rule: Rule<M>, isReadOnly: (args: readonly Value[]) => boolean): Rule<M> {
-  return new Rule(rule.permissions, rule.mode, rule.reason, isReadOnly)
+function readOnlyFor<M extends Mode>(
+  rule: Rule<M>,
+  isReadOnly: (args: readonly Value[]) => boolean,
+): Rule<M> {
+  return new Rule(rule.permissions, rule.mode, { reason: rule.reason, isReadOnly })
 }
 
 type Leaf =
