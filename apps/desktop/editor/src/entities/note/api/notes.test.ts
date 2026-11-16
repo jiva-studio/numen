@@ -70,7 +70,7 @@ describe('the file a save presents', () => {
   it('is a change under the window where the file moved past the save', async () => {
     request.writeNote.mockResolvedValue({ error: NOTE_ERROR_CODE.CONFLICT })
 
-    expect(await api.writeNote('Heat.md', 'mine', { prose: 'old', stat: '1 1 Heat.md' })).toEqual({
+    expect(await api.writeNote('Heat.md', 'mine', { prose: 'old', stat: '1:0: 1 Heat.md' })).toEqual({
       ok: false,
       error: 'changed',
     })

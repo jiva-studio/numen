@@ -45,7 +45,7 @@ describe('getDocumentLayout', () => {
         { width: 612, height: 792 },
         { width: 595.5, height: 842 },
       ],
-      stat: '12 1700000000 Books/Book.pdf',
+      stat: '12:0: 1700000000 Books/Book.pdf',
     })
     expect(call).toHaveBeenCalledWith('GetDocument', getDocumentRequest)
   })
