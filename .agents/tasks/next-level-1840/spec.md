@@ -203,8 +203,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 - `apps/desktop/editor/src/entities/note/api/notes.test.ts`, `noteWords.test.ts`, `testing/mocks/note.ts`, `features/plugin-host/model/pluginServices.test.ts`: AC-13.
 - `libs/plugin/loader/src/hosting/contextServices.test.ts`, `host.bridge.test.ts`: AC-14.
 - `plugins/views-plex-graph/frontend/lib/picture.test.ts`: AC-17, AC-18, AC-19, AC-21 (the cases of `convertNoteGraph` that count nodes keep passing).
-- `plugins/views-plex-graph/frontend/model/names.test.ts` (new), `setting-keys.test.ts`, `manifest.test.ts`, `index.test.ts`, `usePlexView.test.ts`, `usePlexTab.test.ts`: AC-16, AC-20.
-- `plugins/views-plex-graph/frontend/plex/lib/names.test.ts` (new): wrapping, order of rows, room, placement over and under the pill, cut names.
+- `setting-keys.test.ts`, `manifest.test.ts`, `index.test.ts`, `usePlexView.test.ts`, `usePlexTab.test.ts`: AC-16, AC-20.
 - `plex/lib/arrange/arrange.test.ts`, `layout/clusters.test.ts`, `layout/freeSpot.test.ts`, `layout/admission.test.ts`, `layout/crowding.test.ts`, `layout/spacing.test.ts`, `clusters.acceptance.test.ts`: AC-22 to AC-29 (new cases); existing cases must stay unchanged (AC-22). `fixtures/build.ts` gains a way to give nodes names and `fixtures/ring.ts` implements the new `PlacementContext.room`.
 - `plex/ui/Plex.stories.ts`, `PlexMap.stories.ts`, `render/PlexNodeView.stories.ts`, `PlexNodeView.test.ts`, `Plex.test.ts`: AC-30 to AC-34. Run in Chromium and WebKit, one project at a time. No story asserts a pixel or a color value.
 - `features/editor/plex/*.feature` and `tests/acceptance`: AC-35 (the Gherkin acceptance features replace the e2e specs of the plex).

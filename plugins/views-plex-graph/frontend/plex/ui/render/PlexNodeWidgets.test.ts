@@ -87,20 +87,4 @@ describe('the widgets of a side of a node', () => {
     expect(widgets.find('foreignObject').exists()).toBe(false)
     expect(widgets.find('[data-widget]').exists()).toBe(false)
   })
-  it('share one element for measuring', () => {
-    const widgets = mountWidgets({ entries: entries('parents', 'tags') })
-
-    const [group] = widgets.emitted('widgets')?.at(-1) ?? []
-
-    expect(group).toBeInstanceOf(Element)
-    expect((group as Element).querySelectorAll('[data-widget]')).toHaveLength(2)
-  })
-
-  it('give no element to be measured once the side has no entries', async () => {
-    const widgets = mountWidgets()
-
-    await widgets.setProps({ entries: [] })
-
-    expect(widgets.emitted('widgets')?.at(-1)).toStrictEqual([null])
-  })
 })

@@ -1,5 +1,5 @@
 /**
- * The widgets plugins place over and under the nodes of a plex: which side of a node each slot draws on, their order, and the plex with none.
+ * The widgets plugins place over and under the nodes of a plex: their place against the node, how a pair shares a line, and the plex with none.
  * Every graph and every widget here is made up.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -78,59 +78,69 @@ const meta = {
 export default meta
 type Story = StoryObj<Knobs>
 
-const getStack = (canvasElement: HTMLElement, title: string): Element => {
-  const stack = canvasElement.querySelector(`[aria-label^="${title}"]`)?.closest('.plex__stack')
-  if (!stack) throw new Error(`no node titled ${title}`)
-  return stack
+const getBox = (canvasElement: HTMLElement, title: string): DOMRect => {
+  const node = canvasElement.querySelector(`[aria-label^="${title}"]`)
+  const box = node?.querySelector('.plex__box') ?? node
+  if (!box) throw new Error(`no node titled ${title}`)
+  return box.getBoundingClientRect()
 }
 
-const getSide = (stack: Element, side: 'above' | 'below'): Element => {
-  const found = stack.querySelector(`.plex__widgets--${side}`)
-  if (!found) throw new Error(`no widgets ${side} the node`)
-  return found
+const getWidgets = (canvasElement: HTMLElement, name: string, path: string): DOMRect => {
+  const found = [...canvasElement.querySelectorAll(`[data-widget="${name}"]`)].find(
+    (one) => one.getAttribute('data-path') === path,
+  )
+  if (!found) throw new Error(`no widget ${name} for ${path}`)
+  return found.getBoundingClientRect()
 }
 
-const listWidgets = (side: Element): string[] =>
-  [...side.querySelectorAll('[data-widget]')].map((one) => one.getAttribute('data-widget') ?? '')
-
-/** The widgets of the slot above a node are drawn over it and those of the slot below under it, each of them visible. */
+/** Widgets of the manifest sit over a note and under it, each centered with its group on the node. */
 export const WidgetsAboveAndBelow: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelectorAll('[data-widget]')).toHaveLength(9))
-    const stack = getStack(canvasElement, 'Raised beds')
+    const node = getBox(canvasElement, 'Raised beds')
+    const parents = getWidgets(canvasElement, 'parents', 'beds.md')
+    const tags = getWidgets(canvasElement, 'tags', 'beds.md')
+    const children = getWidgets(canvasElement, 'children', 'beds.md')
 
-    await expect(listWidgets(getSide(stack, 'above'))).toStrictEqual(['parents', 'tags'])
-    await expect(listWidgets(getSide(stack, 'below'))).toStrictEqual(['children'])
-    for (const widget of stack.querySelectorAll('[data-widget]')) await expect(widget).toBeVisible()
+    await expect(parents.bottom).toBeLessThanOrEqual(node.top + 1)
+    await expect(tags.bottom).toBeLessThanOrEqual(node.top + 1)
+    await expect(children.top).toBeGreaterThanOrEqual(node.bottom - 1)
+
+    const groupCenter =
+      (Math.min(parents.left, tags.left) + Math.max(parents.right, tags.right)) / 2
+    await expect(Math.abs(groupCenter - (node.left + node.right) / 2)).toBeLessThan(2)
+    await expect(
+      Math.abs((children.left + children.right) / 2 - (node.left + node.right) / 2),
+    ).toBeLessThan(2)
   },
 }
 
-/** The widgets of one slot appear in the order of the manifest. */
-export const WidgetsOfASlotFollowTheManifest: Story = {
+/** Two widgets that fit on one line sit side by side, in the order of the manifest. */
+export const AnArrangedPairSharesALine: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelectorAll('[data-widget]')).toHaveLength(9))
+    const parents = getWidgets(canvasElement, 'parents', 'beds.md')
+    const tags = getWidgets(canvasElement, 'tags', 'beds.md')
 
-    for (const title of ['Kitchen garden', 'Raised beds', 'Garden']) {
-      await expect(listWidgets(getSide(getStack(canvasElement, title), 'above'))).toStrictEqual([
-        'parents',
-        'tags',
-      ])
-    }
+    await expect(Math.abs(parents.top - tags.top)).toBeLessThan(2)
+    await expect(parents.right).toBeLessThanOrEqual(tags.left + 1)
   },
 }
 
-/** Every node is given the path of its own note by each widget. */
-export const EachWidgetIsGivenThePathOfItsNote: Story = {
+/** The room of the widgets keeps the other nodes out: no widget of a node covers another node. */
+export const WidgetsKeepClearOfOtherNodes: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelectorAll('[data-widget]')).toHaveLength(9))
+    const widgets = getWidgets(canvasElement, 'children', 'garden.md')
 
-    for (const [title, path] of [
-      ['Kitchen garden', 'focus.md'],
-      ['Raised beds', 'beds.md'],
-      ['Garden', 'garden.md'],
-    ] as const) {
-      for (const widget of getStack(canvasElement, title).querySelectorAll('[data-widget]'))
-        await expect(widget.getAttribute('data-path')).toBe(path)
+    for (const title of ['Kitchen garden', 'Raised beds']) {
+      const other = getBox(canvasElement, title)
+      const isOverlapping =
+        widgets.left < other.right &&
+        other.left < widgets.right &&
+        widgets.top < other.bottom &&
+        other.top < widgets.bottom
+      await expect(isOverlapping).toBe(false)
     }
   },
 }

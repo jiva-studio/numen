@@ -80,7 +80,7 @@ function createEdge(connection: Connection, token: (path: string) => string): Pl
   return arrows.length > 0 ? { ...withLabels, arrows } : withLabels
 }
 
-export function isReferenceAdmitted(reference: RelatedNote, mode: ReferenceMode): boolean {
+function isReferenceAdmitted(reference: RelatedNote, mode: ReferenceMode): boolean {
   if (mode === 'off') return false
   if (mode === 'both') return true
   return reference.direction === mode || reference.direction === 'both'
