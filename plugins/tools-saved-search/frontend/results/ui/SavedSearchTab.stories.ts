@@ -231,9 +231,9 @@ export const ShowsAWarning: Story = {
     const canvas = within(canvasElement)
 
     await waitFor(() =>
-      expect(
-        canvas.getAllByRole('status').some((one) => one.textContent?.trim() === WARNING),
-      ).toBe(true),
+      expect(canvas.getAllByRole('status').some((one) => one.textContent?.trim() === WARNING)).toBe(
+        true,
+      ),
     )
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
   },

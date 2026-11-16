@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  chat,
-  complete,
-  embed,
-  getProfile,
-  type ChatFrame,
-  type ChatRequest,
-} from '../llm'
+import { chat, complete, embed, getProfile, type ChatFrame, type ChatRequest } from '../llm'
 import { createLlmHost } from './index'
 
 const collect = async (frames: AsyncGenerator<ChatFrame, unknown>) => {
@@ -72,7 +65,9 @@ describe('createLlmHost', () => {
     const error = {
       error: 'stopped' as const,
       message: 'Harbor: key rejected',
-      failures: [{ connectionName: 'Harbor', reason: 'key rejected', code: 'rejected_key' as const }],
+      failures: [
+        { connectionName: 'Harbor', reason: 'key rejected', code: 'rejected_key' as const },
+      ],
     }
     const host = createLlmHost({ complete: async () => ({ ok: false, error }) })
 
