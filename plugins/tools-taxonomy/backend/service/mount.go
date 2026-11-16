@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/settags"
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
@@ -31,6 +32,7 @@ func openHostAt(endpoint hostcall.Endpoint) Open {
 // App is the tool and the query functions of the plugin and its handler of the events of the host, over one cache of tags.
 type App struct {
 	cache     *tagcache.Caches
+	setter    *settags.UseCase
 	tools     *tools.Registry
 	functions *searchfunction.Registry
 }
@@ -46,7 +48,11 @@ func NewApp(open Open) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &App{cache: cache, tools: registry, functions: functions}, nil
+	setter := settags.New(cache, func(id domain.VaultID) settags.Vault {
+		vault := open(id)
+		return settags.Vault{Properties: vault.Properties, Store: vault.Store}
+	})
+	return &App{cache: cache, setter: setter, tools: registry, functions: functions}, nil
 }
 
 // Run serves the plugin over the host the environment names.
@@ -70,7 +76,7 @@ func Run() {
 func (a *App) Mount(s *server.Server) {
 	a.Tools().Mount(s)
 	a.Functions().Mount(s)
-	mountAPI(s, a.cache)
+	mountAPI(s, a.cache, a.setter)
 }
 
 // Tools is the registry of the tool tag_list.
