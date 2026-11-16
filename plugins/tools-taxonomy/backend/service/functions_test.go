@@ -77,11 +77,28 @@ func getTagsVault() map[string]string {
 	}
 }
 
-func callTags(tag string) searchfunctiontest.Call {
-	return searchfunctiontest.Call{Function: service.FunctionTags, VaultID: "garden", IndexGeneration: "g4", Arguments: map[string]any{"tag": tag}}
+func callFunction(function, tag string) searchfunctiontest.Call {
+	return searchfunctiontest.Call{Function: function, VaultID: "garden", IndexGeneration: "g4", Arguments: map[string]any{"tag": tag}}
 }
 
-func TestTagsMatchesTheNotesWithTheTagOrANestedTagInAnyCase(t *testing.T) {
+func callTags(tag string) searchfunctiontest.Call {
+	return callFunction("hasTag", tag)
+}
+
+func getPortVault() map[string]string {
+	return map[string]string{
+		"a.md": "---\ntags: Port\n---\n",
+		"b.md": "---\ntags: port\n---\n",
+		"c.md": "---\ntags: '#Port'\n---\n",
+		"d.md": "---\ntags: [Port/Cargo]\n---\n",
+		"e.md": "---\ntags: Portable\n---\n",
+		"f.md": "# no tags\n",
+	}
+}
+
+var portPaths = []string{"a.md", "b.md", "c.md", "d.md", "e.md", "f.md"}
+
+func TestHasTagMatchesTheNotesWithTheTagOrANestedTagInAnyCase(t *testing.T) {
 	s := newFunctionScene(t, getTagsVault())
 
 	matched, warning, err := s.client.MatchDocuments(t.Context(), callTags("A"), []string{"a.md", "b.md", "c.md", "d.md", "e.md"})
@@ -90,11 +107,11 @@ func TestTagsMatchesTheNotesWithTheTagOrANestedTagInAnyCase(t *testing.T) {
 	}
 
 	if !slices.Equal(matched, []string{"a.md", "b.md", "c.md"}) || warning != "" {
-		t.Errorf("tags(\"A\") matched %v (%q), want a.md, b.md and c.md", matched, warning)
+		t.Errorf("hasTag(\"A\") matched %v (%q), want a.md, b.md and c.md", matched, warning)
 	}
 	nested, _, err := s.client.MatchDocuments(t.Context(), callTags("враджа"), []string{"a.md", "f.md"})
 	if err != nil || !slices.Equal(nested, []string{"f.md"}) {
-		t.Errorf("tags(\"враджа\") matched %v, %v, want f.md", nested, err)
+		t.Errorf("hasTag(\"враджа\") matched %v, %v, want f.md", nested, err)
 	}
 }
 
@@ -111,12 +128,12 @@ func TestIsTaggedFindsEveryNoteWithATagSortedWithTheExactCount(t *testing.T) {
 	}
 }
 
-func TestTagsWithoutATagIsInvalidArgument(t *testing.T) {
+func TestHasTagWithoutATagIsInvalidArgument(t *testing.T) {
 	s := newFunctionScene(t, getTagsVault())
 
 	_, _, _, err := s.client.FindDocuments(t.Context(), callTags(" # "), 10)
 
-	if err == nil || !strings.Contains(err.Error(), "invalid_argument") || !strings.Contains(err.Error(), "tags needs a tag") {
+	if err == nil || !strings.Contains(err.Error(), "invalid_argument") || !strings.Contains(err.Error(), "hasTag needs a tag") {
 		t.Errorf("err = %v, want InvalidArgument", err)
 	}
 }
@@ -136,5 +153,94 @@ func TestTagsThatCannotBeUpdatedAnswerWithAWarningOfTheGeneration(t *testing.T) 
 
 	if !slices.Equal(paths, []string{"a.md", "b.md", "c.md"}) || warning != "the tags may be out of date (index generation g4)" {
 		t.Errorf("found %v with %q, want the kept tags and a warning", paths, warning)
+	}
+}
+
+func TestHasTagMatchesATagNestedUnderItInAnyCase(t *testing.T) {
+	s := newFunctionScene(t, getPortVault())
+
+	matched, _, err := s.client.MatchDocuments(t.Context(), callFunction("hasTag", "port"), portPaths)
+
+	if err != nil || !slices.Equal(matched, []string{"a.md", "b.md", "c.md", "d.md"}) {
+		t.Errorf("hasTag(\"port\") matched %v, %v, want a.md, b.md, c.md and d.md", matched, err)
+	}
+}
+
+func TestHasTagExactlyMatchesTheNotesWithThatTagAloneInAnyCaseWithOrWithoutTheHash(t *testing.T) {
+	s := newFunctionScene(t, getPortVault())
+
+	matched, warning, err := s.client.MatchDocuments(t.Context(), callFunction("hasTagExactly", "Port"), portPaths)
+
+	if err != nil || warning != "" || !slices.Equal(matched, []string{"a.md", "b.md", "c.md"}) {
+		t.Errorf("hasTagExactly(\"Port\") matched %v (%q), %v, want a.md, b.md and c.md", matched, warning, err)
+	}
+	hashed, _, err := s.client.MatchDocuments(t.Context(), callFunction("hasTagExactly", " #PORT "), portPaths)
+	if err != nil || !slices.Equal(hashed, []string{"a.md", "b.md", "c.md"}) {
+		t.Errorf("hasTagExactly(\" #PORT \") matched %v, %v, want a.md, b.md and c.md", hashed, err)
+	}
+}
+
+func TestHasTagExactlyDoesNotMatchTheNotesWithOnlyATagNestedUnderItOrALongerName(t *testing.T) {
+	s := newFunctionScene(t, getPortVault())
+
+	matched, _, err := s.client.MatchDocuments(t.Context(), callFunction("hasTagExactly", "Port"), []string{"d.md", "e.md"})
+
+	if err != nil || len(matched) != 0 {
+		t.Errorf("hasTagExactly(\"Port\") matched %v, %v, want no note", matched, err)
+	}
+	nested, _, err := s.client.MatchDocuments(t.Context(), callFunction("hasTagExactly", "port/cargo"), portPaths)
+	if err != nil || !slices.Equal(nested, []string{"d.md"}) {
+		t.Errorf("hasTagExactly(\"port/cargo\") matched %v, %v, want d.md", nested, err)
+	}
+}
+
+func TestHasTagExactlyFindsTheNotesWithThatTagSortedWithTheExactCount(t *testing.T) {
+	s := newFunctionScene(t, getPortVault())
+
+	paths, count, _, err := s.client.FindDocuments(t.Context(), callFunction("hasTagExactly", "Port"), 2)
+
+	if err != nil || !slices.Equal(paths, []string{"a.md", "b.md"}) || count != 3 {
+		t.Errorf("hasTagExactly(\"Port\") found %v of %d, %v, want the first two of three", paths, count, err)
+	}
+}
+
+func TestHasTagAndHasTagExactlyMatchNoNoteWithoutTags(t *testing.T) {
+	s := newFunctionScene(t, getPortVault())
+
+	for _, function := range []string{"hasTag", "hasTagExactly"} {
+		matched, _, err := s.client.MatchDocuments(t.Context(), callFunction(function, "Port"), []string{"f.md"})
+		if err != nil || len(matched) != 0 {
+			t.Errorf("%s(\"Port\") matched %v, %v, want no note", function, matched, err)
+		}
+	}
+}
+
+func TestHasTagExactlyWithoutATagIsInvalidArgument(t *testing.T) {
+	s := newFunctionScene(t, getPortVault())
+
+	_, _, _, err := s.client.FindDocuments(t.Context(), callFunction("hasTagExactly", " # "), 10)
+
+	if err == nil || !strings.Contains(err.Error(), "invalid_argument") || !strings.Contains(err.Error(), "hasTagExactly needs a tag") {
+		t.Errorf("err = %v, want InvalidArgument", err)
+	}
+}
+
+func TestIsTaggedMatchesTheNotesWithAnyTagAndNotThoseWithout(t *testing.T) {
+	s := newFunctionScene(t, getPortVault())
+
+	matched, _, err := s.client.MatchDocuments(t.Context(), searchfunctiontest.Call{Function: service.FunctionIsTagged, VaultID: "garden"}, portPaths)
+
+	if err != nil || !slices.Equal(matched, []string{"a.md", "b.md", "c.md", "d.md", "e.md"}) {
+		t.Errorf("isTagged() matched %v, %v, want every note but f.md", matched, err)
+	}
+}
+
+func TestTheOldNameTagsIsAnUnknownFunction(t *testing.T) {
+	s := newFunctionScene(t, getPortVault())
+
+	_, _, _, err := s.client.FindDocuments(t.Context(), callFunction("tags", "Port"), 10)
+
+	if err == nil || !strings.Contains(err.Error(), "not_found") {
+		t.Errorf("err = %v, want NotFound", err)
 	}
 }
