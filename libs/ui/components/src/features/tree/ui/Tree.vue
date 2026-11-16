@@ -84,6 +84,7 @@ const { onRename, onAbandon, onFieldBlur } = renaming
         :is-tab-stop="row.id === tabbed"
         :is-renaming="renamingPath === row.id"
         :mark="getMarkOf(marking, row.id)"
+        :end="$slots.end"
         @focus="onRowFocus(row.id)"
         @pointerdown="onRowPointerDown(row.id, $event)"
         @click="onRowClick(row)"
@@ -94,9 +95,6 @@ const { onRename, onAbandon, onFieldBlur } = renaming
         @blur="onFieldBlur"
       >
         <slot name="icon" :id="row.id" :has-children="row.hasChildren" :is-open="row.isOpen" />
-        <template #end="{ id }">
-          <slot name="end" :id="id" />
-        </template>
       </TreeRow>
     </div>
 

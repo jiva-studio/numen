@@ -10,7 +10,7 @@ import {
   useSlotMenu,
   type CommandTarget,
   type Caught,
-  type SlotItem,
+  type SlotView,
 } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import { CREATE_FOLDER, CREATE_NOTE, TRASH_FILE } from '../lib/menu'
@@ -227,9 +227,9 @@ async function selectDroppedFiles(list: FileTree, paths: readonly string[]) {
 }
 
 function createRowEnd(deps: FilesTabDeps): FilesTabRowEnd {
-  const entries = shallowRef<readonly SlotItem[]>([])
+  const entries = shallowRef<readonly SlotView[]>([])
   const watch = deps.window.watchRowEntries?.((next) => {
-    entries.value = next
+    entries.value = next.filter((one): one is SlotView => one.kind === 'view')
   })
   return { entries, stop: () => watch?.dispose() }
 }

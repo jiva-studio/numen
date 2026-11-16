@@ -70,9 +70,7 @@ func Run() {
 func (a *App) Mount(s *server.Server) {
 	a.Tools().Mount(s)
 	a.Functions().Mount(s)
-	if err := mountAPI(s, a.cache); err != nil {
-		panic(err)
-	}
+	mountAPI(s, a.cache)
 }
 
 // Tools is the registry of the tool tag_list.

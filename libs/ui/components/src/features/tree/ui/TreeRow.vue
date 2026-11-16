@@ -64,7 +64,9 @@ useRenameFocus(() => props.isRenaming, field)
     <span v-else class="tree__name min-w-0 truncate" :title="row.name">{{ row.name }}</span>
 
     <span class="tree__end flex shrink-0 items-center">
-      <slot name="end" :id="row.id" />
+      <slot name="end" :id="row.id">
+        <component :is="end" v-if="end" :id="row.id" />
+      </slot>
     </span>
   </div>
 </template>

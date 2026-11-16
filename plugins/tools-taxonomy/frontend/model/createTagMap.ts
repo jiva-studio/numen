@@ -47,7 +47,7 @@ export function createTagMap({ api }: { api: TagMapApi }): TagMap {
       if (next.value.changed) change(next.value.changed)
     }
   }
-  void read()
+  read().catch(() => undefined)
 
   return {
     getTags: (path) => tags.get(path) ?? NO_TAGS,
