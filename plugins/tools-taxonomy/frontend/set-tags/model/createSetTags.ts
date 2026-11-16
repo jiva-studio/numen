@@ -2,6 +2,7 @@ import type { Api, CommandRegistration, PickerHost, PickerItem } from '@numen/pl
 import type { SetTagsRequest, SetTagsResult, TagList } from '../../types'
 import { getCreateTagTitle, TAG_PLACEHOLDER, TAGS_TITLE } from '../../words'
 import { getPickerState, getTagKey } from '../lib/pickerState'
+import { getTagColor } from '../../lib/color'
 
 /** What the command Set tags reads and writes through. */
 export interface SetTagsDeps {
@@ -20,6 +21,7 @@ export function createSetTags(deps: SetTagsDeps): CommandRegistration {
     id: 'tags.set',
     handler: async (note) => {
       const paths = [note.path, ...note.others]
+      const getColor = (tag: string): string => `var(--numen-tag-${getTagColor(tag)})`
       const listed = await deps.api.call<Record<string, never>, TagList>('GetTags', {})
       if (!listed.ok) throw new Error(listed.error.message)
 
@@ -40,14 +42,21 @@ export function createSetTags(deps: SetTagsDeps): CommandRegistration {
           id: tag,
           title: tag,
           state: getPickerState(tag, paths.map(deps.getTags)),
+          color: getColor(tag),
         })),
         recent: listed.value.recent,
         getCreateTitle: getCreateTagTitle,
-        onToggle: async (id) => ({ id, title: id, state: getPickerState(id, await toggle(id)) }),
+        getCreateColor: getColor,
+        onToggle: async (id) => ({
+          id,
+          title: id,
+          state: getPickerState(id, await toggle(id)),
+          color: getColor(id),
+        }),
         onCreate: async (text) => {
           const after = await toggle(text)
           const tag = after.flat().find((one) => getTagKey(one) === getTagKey(text)) ?? text.trim()
-          return { id: tag, title: tag, state: getPickerState(tag, after) }
+          return { id: tag, title: tag, state: getPickerState(tag, after), color: getColor(tag) }
         },
       })
     },
