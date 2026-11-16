@@ -18,6 +18,8 @@ export interface WindowBootstrapDeps {
   readonly tabLinkSession: { start(): Promise<void>; close(): void }
   readonly layout: ReturnType<typeof createLayoutStart>
   readonly plugins: ReturnType<typeof createPluginStart>
+  /** Writes the editor tokens; starts once the settings are loaded and before the tabs restore. */
+  readonly editorTokens: { start(): () => void }
   readonly writeMessage: MessageWriter
 }
 

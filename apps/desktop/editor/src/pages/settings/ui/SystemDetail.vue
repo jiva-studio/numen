@@ -18,7 +18,7 @@ const props = defineProps<{
   settings: InstallationSettings
   manager: InstallationPlugin
   connections: InstallationConnections
-  section: 'system' | 'appearance'
+  section: 'system' | 'appearance' | 'editor'
 }>()
 
 /* --------------------------------- Events --------------------------------- */
