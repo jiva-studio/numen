@@ -9,7 +9,7 @@ import { CREATE_ID, getMultiGroup, type PaletteMultiProps } from '../lib/multi'
 
 interface MultiPickProps {
   readonly groups: readonly PaletteGroup[]
-  readonly multi?: PaletteMultiProps
+  readonly multi?: PaletteMultiProps | undefined
 }
 
 interface MultiPickEmit {
@@ -19,9 +19,7 @@ interface MultiPickEmit {
 }
 
 export interface MultiPick {
-  /** The groups to place: the one group of the multiple step, or the caller's. */
   readonly groups: ComputedRef<readonly PaletteGroup[]>
-  /** Emits the choice: a toggle of the row, a create for the row that makes an item, or the choice itself. */
   readonly tellChoice: (item: string, action: string) => void
 }
 
