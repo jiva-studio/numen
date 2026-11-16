@@ -7,7 +7,8 @@ import {
   type QueryFunction,
 } from '../lib/queryLanguage'
 import { queryTheme } from '../lib/queryTheme'
-import { createQueryOptionDetails, createQueryOptionText } from './queryOption'
+import { createQueryOptionDetails } from './queryOption'
+import { createQueryOptionText } from './queryOptionText'
 
 const view = new EditorView({ doc: '' })
 

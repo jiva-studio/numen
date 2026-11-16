@@ -60,7 +60,7 @@ export interface SourceView {
 }
 
 /** The state of the run: fresh results, a run in progress, results that will update, a failed last run. */
-export type RunState = 'fresh' | 'running' | 'stale' | 'warned' | 'failed'
+type RunState = 'fresh' | 'running' | 'stale' | 'warned' | 'failed'
 
 /**
  * A fact of the run in the tooltip of the dot: its label and its value; at is the time the value
