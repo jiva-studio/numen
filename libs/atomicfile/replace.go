@@ -3,6 +3,7 @@ package atomicfile
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -24,12 +25,14 @@ const (
 	tempFileAttempts = 10_000
 )
 
-// Stat is the size, the modification time and the SHA-256 of the file that Replace wrote. The hash
-// is of the bytes copied from the reader, taken while they are written.
+// Stat is the size, the modification time and the content hash of the file that Replace wrote.
+// Hash is the SHA-256 of the bytes copied from the reader, in lowercase hex, taken while they are
+// written. It is the same value as HashContent of libs/note/domain for the same bytes, so the two
+// can be compared.
 type Stat struct {
 	Size    int64
 	ModTime time.Time
-	SHA256  [sha256.Size]byte
+	Hash    string
 }
 
 // WriteFile writes the content of from to the file at path, whole or not at all: a reader of the
@@ -101,7 +104,7 @@ func replace(
 	if err := rename(pos, target); err != nil {
 		return Stat{}, err
 	}
-	stat = Stat{Size: info.Size(), ModTime: info.ModTime(), SHA256: [sha256.Size]byte(hash.Sum(nil))}
+	stat = Stat{Size: info.Size(), ModTime: info.ModTime(), Hash: hex.EncodeToString(hash.Sum(nil))}
 	return stat, syncDirectory(root, dir, runtime.GOOS, sync)
 }
 

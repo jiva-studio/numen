@@ -2,6 +2,7 @@ package atomicfile_test
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io"
 	"os"
@@ -124,17 +125,17 @@ func TestReplaceReportsTheHashOfTheNewContent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := sha256.Sum256([]byte(content)); stat.SHA256 != want {
-		t.Fatalf("hash %x, want %x", stat.SHA256, want)
+	if want := hashOf([]byte(content)); stat.Hash != want {
+		t.Fatalf("hash %s, want %s", stat.Hash, want)
 	}
 	onDisk, err := os.ReadFile(dir + "/notes.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stat.SHA256 != sha256.Sum256(onDisk) {
-		t.Fatalf("hash %x is not the hash of the file on disk", stat.SHA256)
+	if stat.Hash != hashOf(onDisk) {
+		t.Fatalf("hash %s is not the hash of the file on disk", stat.Hash)
 	}
-	if old := sha256.Sum256([]byte("the old content")); stat.SHA256 == old {
+	if stat.Hash == hashOf([]byte("the old content")) {
 		t.Fatal("hash is of the old content")
 	}
 }
@@ -144,8 +145,8 @@ func TestReplaceReportsTheHashOfAnEmptyContent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stat.SHA256 != sha256.Sum256(nil) {
-		t.Fatalf("hash %x, want the hash of no bytes", stat.SHA256)
+	if stat.Hash != hashOf(nil) {
+		t.Fatalf("hash %s, want the hash of no bytes", stat.Hash)
 	}
 }
 
@@ -159,5 +160,21 @@ func TestReplaceReturnsNoStatWhenTheSourceFails(t *testing.T) {
 	}
 	if stat != (atomicfile.Stat{}) {
 		t.Fatalf("stat %+v after a failed write, want none", stat)
+	}
+}
+
+func hashOf(content []byte) string {
+	sum := sha256.Sum256(content)
+	return hex.EncodeToString(sum[:])
+}
+
+func TestReplaceReportsTheHashInTheFormOfHashContent(t *testing.T) {
+	stat, err := atomicfile.Replace(t.Context(), openRoot(t, t.TempDir()), "abc.txt", strings.NewReader("abc"), 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const want = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+	if stat.Hash != want {
+		t.Fatalf("hash %s, want %s", stat.Hash, want)
 	}
 }
