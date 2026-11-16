@@ -164,9 +164,9 @@ describe('the parts of the window wired together', () => {
     ).toStrictEqual([])
 
     const base = createWindowBase(api)
-    await base.rest.write.writeSetting(['app', 'mode'], 'dark').catch(() => undefined)
-    await base.connections.load()
-    expect(base.log.messages.value).toEqual(
+    await base.foundation.rest.write.writeSetting(['app', 'mode'], 'dark').catch(() => undefined)
+    await base.foundation.connections.load()
+    expect(base.foundation.log.messages.value).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'configured', severity: 'error' }),
         expect.objectContaining({ name: 'connections', severity: 'error' }),
@@ -174,7 +174,7 @@ describe('the parts of the window wired together', () => {
     )
 
     const onSettingsRequest = vi.fn()
-    base.settingsRequests.subscribe(onSettingsRequest)
+    base.foundation.settingsRequests.subscribe(onSettingsRequest)
     base.tabs.windowTabs.restored.openSavedTab({
       id: 'unavail-1',
       kind: 'unregistered.kind',
@@ -216,16 +216,16 @@ describe('the parts of the window wired together', () => {
     })
     base.tabs.tabSync.syncPathFromTab('t1', 'notes/b.md', 'B')
     await settle()
-    expect(base.log.messages.value).toEqual(
+    expect(base.foundation.log.messages.value).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'command', severity: 'error', text: 'sync-failed' }),
       ]),
     )
 
-    const getWriterSpy = vi.spyOn(base.log, 'getWriter')
+    const getWriterSpy = vi.spyOn(base.foundation.log, 'getWriter')
     const vaultCheck = createVaultServices({
       api,
-      log: base.log,
+      log: base.foundation.log,
       windowTabs: base.tabs.windowTabs,
       tabOpeners: base.tabs.tabOpeners,
       navigation: base.tabs.navigation,
@@ -235,7 +235,7 @@ describe('the parts of the window wired together', () => {
     expect(vaultCheck.editing.reached.getPath('note-tab-1')).toBe('notes/Entropy.md')
     expect(await vaultCheck.itemLists.fileKinds(['notes/Entropy.md'])).toBeInstanceOf(Map)
 
-    base.rest.state.app.value = [
+    base.foundation.rest.state.app.value = [
       {
         key: 'appearance.mode',
         type: 'enum',
@@ -245,7 +245,7 @@ describe('the parts of the window wired together', () => {
         value: 'dark',
       },
     ]
-    base.rest.state.plugins.value = [
+    base.foundation.rest.state.plugins.value = [
       {
         id: 'p1',
         name: 'Plugin One',
@@ -268,8 +268,8 @@ describe('the parts of the window wired together', () => {
           value: { message: 'handler-ok', openedPath: 'notes/opened.md' },
         }),
       },
-      rest: base.rest,
-      log: base.log,
+      rest: base.foundation.rest,
+      log: base.foundation.log,
       isPaletteOpen: () => false,
       getTarget: base.getTarget,
       appCommands: base.appCommands,
@@ -284,7 +284,7 @@ describe('the parts of the window wired together', () => {
     })
     decl.declared.whenContext.getNote?.({ ...base.getTarget(), path: 'notes/a.md' })
     await settle()
-    expect(base.log.messages.value).toEqual(
+    expect(base.foundation.log.messages.value).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'command', severity: 'error', text: 'note-kind-failed' }),
       ]),
@@ -302,19 +302,14 @@ describe('the parts of the window wired together', () => {
       target: { path: 'notes/a.md', title: 'A', isFolder: false, others: [], tab: '' },
     })
     expect(openFileSpy).toHaveBeenCalledWith('notes/opened.md', '', 'current')
-    expect(base.log.messages.value).toEqual(
+    expect(base.foundation.log.messages.value).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'command', severity: 'info', text: 'handler-ok' }),
       ]),
     )
 
     const plugins = createWindowPlugins({
-      api,
-      log: base.log,
-      rest: base.rest,
-      registry: base.registry,
-      frame: base.frame,
-      status: base.status,
+      foundation: base.foundation,
       tabs: base.tabs,
       vault: base.vault,
       windowSettings: base.windowSettings,
@@ -331,7 +326,7 @@ describe('the parts of the window wired together', () => {
     const notices = createNoticeQueue()
     const clearSpy = vi.spyOn(notices, 'clear')
     const workspace = createPluginWorkspace({
-      log: base.log,
+      log: base.foundation.log,
       tabs: base.tabs,
       window: base.vault.window,
       hostPort: plugins.hostPort,
@@ -340,7 +335,7 @@ describe('the parts of the window wired together', () => {
     getWriterSpy.mockClear()
     const bgTasks = createPluginBackgroundTasks({
       cancelTask,
-      log: base.log,
+      log: base.foundation.log,
       notices,
       window: {
         ...base.vault.window,
@@ -365,7 +360,7 @@ describe('the parts of the window wired together', () => {
     expect(getWriterSpy).toHaveBeenCalledWith('command')
     await expect(bgTasks.cancel('task-1')).rejects.toThrow('cancel-failed')
     await settle()
-    expect(base.log.messages.value).toEqual(
+    expect(base.foundation.log.messages.value).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           name: 'command',
@@ -383,15 +378,15 @@ describe('the parts of the window wired together', () => {
       hostPort: plugins.hostPort,
       backgroundTasks: bgTasks,
       frame: {
-        ...base.frame,
+        ...base.foundation.frame,
         minimizeWindow: vi.fn().mockRejectedValueOnce(new ReportedError('minimize-failed')),
       },
-      log: base.log,
+      log: base.foundation.log,
     })
     expect(getWriterSpy).toHaveBeenCalledWith('command')
     owned.window.minimize()
     await settle()
-    expect(base.log.messages.value).toEqual(
+    expect(base.foundation.log.messages.value).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'command', severity: 'error', text: 'minimize-failed' }),
       ]),
@@ -403,7 +398,7 @@ describe('the parts of the window wired together', () => {
     })
     const serviceParts = createServiceParts({
       api,
-      rest: base.rest,
+      rest: base.foundation.rest,
       services: {
         workspace,
         ...createPluginAccess({
@@ -428,11 +423,7 @@ describe('the parts of the window wired together', () => {
 
     getWriterSpy.mockClear()
     const palettes = createWindowPalettes({
-      api,
-      log: base.log,
-      rest: base.rest,
-      registry: base.registry,
-      settingsRequests: base.settingsRequests,
+      foundation: base.foundation,
       tabs: base.tabs,
       vault: base.vault,
       windowSettings: base.windowSettings,
@@ -442,14 +433,14 @@ describe('the parts of the window wired together', () => {
     })
     expect(getWriterSpy).toHaveBeenCalledWith('command')
 
-    await base.registry.get(COMMAND.deleteText)?.(
+    await base.foundation.registry.get(COMMAND.deleteText)?.(
       {
         ...createInvocation(COMMAND.deleteText, { ...base.getTarget(), path: 'notes/a.md' }),
         name: 'v1',
       },
       palettes.commandDeps,
     )
-    expect(base.log.messages.value).toEqual(
+    expect(base.foundation.log.messages.value).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           name: 'command',
@@ -486,12 +477,7 @@ describe('the parts of the window wired together', () => {
 
     getWriterSpy.mockClear()
     const started = createWindowStart({
-      api,
-      log: base.log,
-      rest: base.rest,
-      frame: base.frame,
-      connections: base.connections,
-      settingsRequests: base.settingsRequests,
+      foundation: base.foundation,
       tabs: base.tabs,
       tabParts: base.tabParts,
       vault: base.vault,
@@ -540,11 +526,11 @@ describe('the parts of the window wired together', () => {
     const customTabs = createWindowBase(api).tabs.windowTabs
     registerSettingsPage({
       api,
-      rest: base.rest,
-      connections: base.connections,
-      log: base.log,
-      frame: { ...base.frame, platform: ref('darwin' as const) },
-      settingsRequests: base.settingsRequests,
+      rest: base.foundation.rest,
+      connections: base.foundation.connections,
+      log: base.foundation.log,
+      frame: { ...base.foundation.frame, platform: ref('darwin' as const) },
+      settingsRequests: base.foundation.settingsRequests,
       windowSettings: base.windowSettings,
       windowTabs: customTabs,
       plugins: {

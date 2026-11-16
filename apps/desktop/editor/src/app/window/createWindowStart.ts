@@ -91,14 +91,12 @@ function createLayoutStarter(deps: LayoutStarterDeps) {
   })
 }
 
+/** What the start of the window reads of the foundation. */
+export type StartFoundation = Pick<WindowBase['foundation'], 'api' | 'log' | 'rest' | 'frame' | 'connections' | 'settingsRequests'>
+
 /** What the start of the window reads of the base, the plugins and the palettes. */
 export interface WindowStartDeps {
-  readonly api: WindowApi
-  readonly log: WindowBase['log']
-  readonly rest: WindowBase['rest']
-  readonly frame: WindowBase['frame']
-  readonly connections: WindowBase['connections']
-  readonly settingsRequests: WindowBase['settingsRequests']
+  readonly foundation: StartFoundation
   readonly tabs: WindowBase['tabs']
   readonly tabParts: WindowBase['tabParts']
   readonly vault: WindowBase['vault']
@@ -109,8 +107,8 @@ export interface WindowStartDeps {
 }
 
 export function createWindowStart(deps: WindowStartDeps) {
-  const { api, log, rest, frame, tabs, tabParts, vault, windowSettings, getTarget } = deps
-  const { plugins, palettes } = deps
+  const { foundation, tabs, tabParts, vault, windowSettings, getTarget, plugins, palettes } = deps
+  const { api, log, rest, frame } = foundation
   const writeMessage = log.getWriter('command')
   const { windowTabs } = tabs
   const { pluginHost, pluginLoader, declaredCommands } = plugins
@@ -118,10 +116,10 @@ export function createWindowStart(deps: WindowStartDeps) {
   registerSettingsPage({
     api,
     rest,
-    connections: deps.connections,
+    connections: foundation.connections,
     log,
     frame,
-    settingsRequests: deps.settingsRequests,
+    settingsRequests: foundation.settingsRequests,
     windowSettings,
     windowTabs,
     plugins: { host: pluginHost, health: window.pluginHealth, commands: plugins.hostPort.commands },

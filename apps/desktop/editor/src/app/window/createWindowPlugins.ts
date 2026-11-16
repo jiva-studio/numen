@@ -9,7 +9,6 @@ import { useDeclaredCommands } from '@/features/plugin-commands'
 import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
 import { syncKeybindings } from '@/features/hotkeys'
 import type { createWindowBase } from './createWindowBase'
-import type { WindowApi } from './createWindowApi'
 import { createPluginDeclarations } from './createPluginDeclarations'
 import { createPluginHostSupport, createServiceParts } from './createPluginHost'
 import {
@@ -20,15 +19,14 @@ import {
 } from './createPluginServices'
 
 type WindowBase = ReturnType<typeof createWindowBase>
+type WindowFoundation = WindowBase['foundation']
+
+/** What the plugins of the window read of the foundation. */
+export type PluginsFoundation = Pick<WindowFoundation, 'api' | 'log' | 'rest' | 'frame' | 'status' | 'registry'>
 
 /** What the plugins of the window read of the base. */
 export interface WindowPluginsDeps {
-  readonly api: WindowApi
-  readonly log: WindowBase['log']
-  readonly rest: WindowBase['rest']
-  readonly frame: WindowBase['frame']
-  readonly status: WindowBase['status']
-  readonly registry: WindowBase['registry']
+  readonly foundation: PluginsFoundation
   readonly tabs: WindowBase['tabs']
   readonly vault: WindowBase['vault']
   readonly windowSettings: WindowBase['windowSettings']
@@ -37,8 +35,8 @@ export interface WindowPluginsDeps {
 }
 
 export function createWindowPlugins(deps: WindowPluginsDeps) {
-  const { api, log, rest, frame, status, registry, tabs, vault, windowSettings, getTarget, appCommands } =
-    deps
+  const { foundation, tabs, vault, windowSettings, getTarget, appCommands } = deps
+  const { api, log, rest, frame, status, registry } = foundation
   const { note } = api.vault
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()

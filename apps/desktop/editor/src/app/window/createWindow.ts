@@ -12,17 +12,11 @@ import { createWindowStart } from './createWindowStart'
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const createWindow = (transports: WindowTransports) => {
-  const api = createWindowApi(transports)
-  const base = createWindowBase(api)
-  const { log, rest, frame, status, registry, connections, settingsRequests } = base
-  const { tabs, tabParts, vault, windowSettings, getTarget, appCommands } = base
+  const base = createWindowBase(createWindowApi(transports))
+  const { foundation, tabs, tabParts, vault, windowSettings, getTarget, appCommands } = base
+  const { api, log, rest, frame, status, registry, connections, settingsRequests } = foundation
   const plugins = createWindowPlugins({
-    api,
-    log,
-    rest,
-    frame,
-    status,
-    registry,
+    foundation: { api, log, rest, frame, status, registry },
     tabs,
     vault,
     windowSettings,
@@ -30,11 +24,7 @@ export const createWindow = (transports: WindowTransports) => {
     appCommands,
   })
   const palettes = createWindowPalettes({
-    api,
-    log,
-    rest,
-    registry,
-    settingsRequests,
+    foundation: { api, log, rest, registry, settingsRequests },
     tabs,
     vault,
     windowSettings,
@@ -43,12 +33,7 @@ export const createWindow = (transports: WindowTransports) => {
     plugins,
   })
   const { views, tabMenu, bootstrap } = createWindowStart({
-    api,
-    log,
-    rest,
-    frame,
-    connections,
-    settingsRequests,
+    foundation: { api, log, rest, frame, connections, settingsRequests },
     tabs,
     tabParts,
     vault,

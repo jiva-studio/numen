@@ -71,7 +71,7 @@ export function createWindowBase(api: WindowApi) {
   )
   registry.registerAll(features.handlers)
   return {
-    ...foundation,
+    foundation,
     tabs,
     vault,
     tabParts,
