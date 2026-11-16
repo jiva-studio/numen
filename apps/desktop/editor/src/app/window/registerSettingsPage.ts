@@ -9,9 +9,15 @@ import type { createWindowSettings } from '@/features/settings-commands'
 import type { PluginHealthItem } from '@/entities/plugin'
 import type { createWindowFoundation } from './createWindowFoundation'
 
+/** What the settings page reads of the foundation. */
+type SettingsPageFoundation = Pick<
+  ReturnType<typeof createWindowFoundation>,
+  'api' | 'rest' | 'connections' | 'log' | 'frame' | 'settingsRequests'
+>
+
 /** What the settings page of the window is made from. */
 export interface SettingsPageDeps {
-  readonly foundation: ReturnType<typeof createWindowFoundation>
+  readonly foundation: SettingsPageFoundation
   readonly windowSettings: Pick<ReturnType<typeof createWindowSettings>, 'appearance'>
   readonly windowTabs: WindowTabs
   readonly plugins: SettingsPagePlugins
