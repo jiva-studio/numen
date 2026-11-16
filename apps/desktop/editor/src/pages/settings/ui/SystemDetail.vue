@@ -28,7 +28,11 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const SECTION_PREFIXES = { appearance: 'appearance.', editor: 'editor.', search: 'search.' } as const
+const SECTION_PREFIXES = {
+  appearance: 'appearance.',
+  editor: 'editor.',
+  search: 'search.',
+} as const
 
 const getSectionOf = (key: string): 'system' | 'appearance' | 'editor' | 'search' =>
   key.startsWith(SECTION_PREFIXES.appearance)
@@ -37,7 +41,7 @@ const getSectionOf = (key: string): 'system' | 'appearance' | 'editor' | 'search
       ? 'editor'
       : key.startsWith(SECTION_PREFIXES.search)
         ? 'search'
-      : 'system'
+        : 'system'
 
 const TITLES = {
   system: words.systemSettings,
@@ -68,6 +72,15 @@ function onBack(): void {
 <template>
   <SettingsPage :path="[words.settings, TITLES[props.section]]" @back="onBack" @open="onBack">
     <div class="system-detail">
+      <PluginConnectionSections
+        v-if="props.section === 'search'"
+        :settings="props.settings"
+        :host="props.manager"
+        :connections="props.connections"
+        :plugin="owner"
+        @open-connections="emit('open-connections')"
+      />
+
       <PluginSettingsCard>
         <PluginFields :settings="props.settings" :host="props.manager" :plugin="owner" />
       </PluginSettingsCard>
