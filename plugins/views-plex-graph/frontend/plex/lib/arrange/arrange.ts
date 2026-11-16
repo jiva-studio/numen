@@ -217,9 +217,7 @@ function createRoomLookup(
 ): ReadonlyMap<string, NodeRoom> {
   const rooms = new Map<string, NodeRoom>()
   if (!room) return rooms
-  for (const node of nodes) {
-    if (node.relation !== 'focus') rooms.set(node.id, room(node))
-  }
+  for (const node of nodes) rooms.set(node.id, room(node))
   return rooms
 }
 
