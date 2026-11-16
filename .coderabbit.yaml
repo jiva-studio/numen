@@ -8,13 +8,11 @@ reviews:
   high_level_summary: true
   # The summary goes into the walkthrough comment; in the description it would become part of the squash commit.
   high_level_summary_in_walkthrough: true
-  # Drafts are reviewed only after "@coderabbitai review"; no "Draft PR not reviewed" notice on open.
   review_status: false
   poem: false
+  # A review starts only on "@coderabbitai review", posted after the nm-review approval (.agents/rules/process.md §4, step 5).
   auto_review:
-    enabled: true
-    drafts: false
-    auto_incremental_review: false
+    enabled: false
   tools:
     ast-grep:
       enabled: true
