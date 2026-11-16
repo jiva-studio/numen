@@ -47,10 +47,6 @@ env:
   ENGINES: ${{ inputs.engines || 'chromium webkit' }}
   FEATURES: ${{ inputs.features }}
 
-concurrency:
-  group: reports
-  cancel-in-progress: false
-
 permissions:
   contents: read
 
@@ -221,6 +217,9 @@ jobs:
   pages:
     name: Pages
     needs: [report]
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     if: ${{ !cancelled() && needs.report.result == 'success' && inputs.publish }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
