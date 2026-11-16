@@ -25,6 +25,10 @@ const mountTags = (tags: readonly string[]) => mount(PlexTags, { props: { tags }
 
 const getChips = (wrapper: ReturnType<typeof mountTags>) => wrapper.findAll('[data-plex-tag]')
 
+const getMore = (wrapper: ReturnType<typeof mountTags>) => wrapper.find('[data-plex-tag-more]')
+
+const SHOWN = TAGS.slice(0, 4)
+
 const getColor = (style: string | undefined) =>
   /--tag:\s*var\((--numen-tag-\d)\)/.exec(style ?? '')?.[1]
 
@@ -48,11 +52,42 @@ describe('the tags of a note in the plex', () => {
     expect(getChips(wrapper).map((chip) => chip.text())).toEqual(['Sea', 'Port'])
   })
 
-  it('draw a chip for every tag of a note that has many, with no count of the rest', () => {
+  it('draw the first four tags and a +N chip for the rest of a note that has many', () => {
     const wrapper = mountTags(TAGS)
 
-    expect(getChips(wrapper)).toHaveLength(TAGS.length)
+    expect(getChips(wrapper).map((chip) => chip.text())).toEqual(SHOWN)
+    expect(wrapper.findAll('[data-plex-tag-more]')).toHaveLength(1)
+    expect(getMore(wrapper).text()).toBe('+8')
+  })
+
+  it('draw four tags and no +N chip for a note with four tags', () => {
+    const wrapper = mountTags(SHOWN)
+
+    expect(getChips(wrapper)).toHaveLength(4)
+    expect(getMore(wrapper).exists()).toBe(false)
     expect(wrapper.get('[data-plex-tags]').text()).not.toMatch(/\+\d/)
+  })
+
+  it('draw four tags and +1 for a note with five tags', () => {
+    const wrapper = mountTags(TAGS.slice(0, 5))
+
+    expect(getChips(wrapper)).toHaveLength(4)
+    expect(getMore(wrapper).text()).toBe('+1')
+  })
+
+  it('draw four tags and +2 for a note with six tags', () => {
+    const wrapper = mountTags(TAGS.slice(0, 6))
+
+    expect(getChips(wrapper)).toHaveLength(4)
+    expect(getMore(wrapper).text()).toBe('+2')
+  })
+
+  it('draw the +N chip in no tag color and keep it out of the tag chips', () => {
+    const more = getMore(mountTags(TAGS))
+
+    expect(more.exists()).toBe(true)
+    expect(more.attributes('data-plex-tag')).toBeUndefined()
+    expect(more.attributes('style') ?? '').not.toMatch(/--numen-tag-/)
   })
 
   it('keep the spelling of a tag in its chip', () => {
@@ -64,7 +99,7 @@ describe('the tags of a note in the plex', () => {
   it('draw each chip in the color of the text of its tag', () => {
     const wrapper = mountTags(TAGS)
 
-    TAGS.forEach((tag, index) => {
+    SHOWN.forEach((tag, index) => {
       expect(getColor(getChips(wrapper)[index]?.attributes('style'))).toBe(
         `--numen-tag-${getTagColor(tag)}`,
       )
@@ -82,7 +117,7 @@ describe('the tags of a note in the plex', () => {
   it('draw a tag in the same color as the dot of the file tree for the same text', () => {
     const chips = getChips(mountTags(TAGS))
 
-    TAGS.forEach((tag, index) => {
+    SHOWN.forEach((tag, index) => {
       const dot = mount(FileTags, { props: { tags: [tag] } }).get('[data-tag-dot]')
 
       expect(getColor(chips[index]?.attributes('style'))).toBeDefined()
