@@ -71,3 +71,28 @@ func TestTheManifestPlacesTheTagDotsInTheRowsOfTheFileTree(t *testing.T) {
 		t.Errorf("slots = %v, want the view file-tags in fileTree.rowEnd", placed)
 	}
 }
+
+func TestTheManifestPlacesTheTagChipsUnderTheNodesOfThePlex(t *testing.T) {
+	var shape struct {
+		Contrib struct {
+			Slots []struct {
+				Slot string `json:"slot"`
+				View string `json:"view"`
+			} `json:"slots"`
+		} `json:"contributes"`
+	}
+	if err := json.Unmarshal(Manifest, &shape); err != nil {
+		t.Fatal(err)
+	}
+
+	var placed []string
+	for _, one := range shape.Contrib.Slots {
+		placed = append(placed, one.Slot+" "+one.View)
+	}
+	if !slices.Contains(placed, "plexGraph.nodeBelow plex-tags") {
+		t.Errorf("slots = %v, want the view plex-tags in plexGraph.nodeBelow", placed)
+	}
+	if slices.Contains(placed, "plexGraph.nodeAbove plex-tags") {
+		t.Errorf("slots = %v, want the tags under the node and not over it", placed)
+	}
+}

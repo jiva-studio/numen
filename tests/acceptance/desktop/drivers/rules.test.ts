@@ -466,6 +466,24 @@ describe('getTableBody', () => {
   it('throws for another header', () => {
     expect(() => getTableBody([['a']], ['title'])).toThrow('the table must start with the header "| title |"')
   })
+
+  it('takes a table that has an optional column', () => {
+    expect(() => getTableBody([['relation', 'title', 'tag'], ['focus', 'Dock', 'Port']], ['relation', 'title'], ['tag'])).not.toThrow()
+  })
+
+  it('returns the cells of the optional column with the other cells', () => {
+    const rows = [['relation', 'title', 'tag'], ['focus', 'Dock', 'Port'], ['focus', 'Dock', 'Sea']]
+
+    expect(getTableBody(rows, ['relation', 'title'], ['tag'])).toEqual([['focus', 'Dock', 'Port'], ['focus', 'Dock', 'Sea']])
+  })
+
+  it('still takes a table without the optional column', () => {
+    expect(getTableBody([['relation', 'title'], ['focus', 'Dock']], ['relation', 'title'], ['tag'])).toEqual([['focus', 'Dock']])
+  })
+
+  it('throws for a column that is neither asked for nor optional', () => {
+    expect(() => getTableBody([['relation', 'title', 'colour']], ['relation', 'title'], ['tag'])).toThrow('the table must start with the header')
+  })
 })
 
 describe('isArrow', () => {
