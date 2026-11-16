@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { clock } from '@numen/ui'
+import { clock } from '../lib/duration'
 import { getWaveformBars } from './useMediaRecording'
 
 /* --------------------------------- Props ---------------------------------- */

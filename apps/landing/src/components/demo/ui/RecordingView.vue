@@ -4,7 +4,8 @@
  */
 import { computed, ref } from 'vue'
 import { LocateFixed, Pause, Play } from '@lucide/vue'
-import { Slider, clock } from '@numen/ui'
+import { Slider } from '@numen/ui'
+import { clock } from '../lib/duration'
 import { LECTURE_CUES, LECTURE_MEDIA_URL, getActiveCueIndex } from '../lib/cues'
 import type { Player } from '../model/player'
 import { usePlayerLoad } from '../model/usePlayerLoad'
