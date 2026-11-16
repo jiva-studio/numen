@@ -7,18 +7,12 @@
  * which Enter chooses. Rows may be set under group names, and an action row may
  * stand first. A press outside it and its from element, and Escape, ask for it
  * to be closed.
- *
- * In its multiple mode every row is checked or not by its state: Enter, the action key
- * (Control or Meta with K) and a click on a row ask for it to be toggled, and the list stays
- * open. The set and mixed rows stand first, the recent ones next, and the rest by text. Only
- * the rows in sight are drawn.
  */
 import { computed, provide, useId, useTemplateRef, watch } from 'vue'
 import { useOutsidePress } from '../menu'
 import SearchableListRows from './SearchableListRows.vue'
 import type { SearchableListProps, SearchableListSlots } from './SearchableList.types'
 import { LIST_CONTEXT } from './context'
-import { readListKey, type ListKey } from './listKeys'
 import { useListFocus } from './useListFocus'
 import { useListRows } from './useListRows'
 
@@ -31,9 +25,6 @@ const props = withDefaults(defineProps<SearchableListProps>(), {
   isFiltered: true,
   isPending: false,
   hasAction: false,
-  multiple: false,
-  recent: () => [],
-  inputAttrs: () => ({}),
   needsQuery: false,
   from: null,
 })
@@ -47,8 +38,6 @@ const model = defineModel<string | null>({ default: null })
 const emit = defineEmits<{
   /** An item was chosen. */
   (event: 'select', id: string): void
-  /** An item was asked to be checked or unchecked, in the multiple mode. */
-  (event: 'toggle', id: string): void
   /** The action row was chosen, with the query as written. */
   (event: 'act', query: string): void
   /** The list asks to be put away: Escape, or a press outside it. */
@@ -72,8 +61,6 @@ const { rows, queryText, isListOpen, activeKey, activeIndex, moveBy, moveToEnd, 
     isFiltered: () => props.isFiltered,
     hasAction: () => props.hasAction,
     needsQuery: () => props.needsQuery,
-    isMultiple: () => props.multiple,
-    recent: () => props.recent,
   })
 
 /** The items in force: the chosen ones where the caller gave them, else the model. */
@@ -103,22 +90,23 @@ watch(model, (next) => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onKey(event: KeyboardEvent): void {
-  const key = readListKey(event, { isMultiple: props.multiple, isQueryEmpty: query.value === '' })
-  if (!key) return
-  if (key === 'close') event.stopPropagation()
-  event.preventDefault()
-  const actions: Record<ListKey, () => void> = {
-    close: () => emit('close'),
-    next: () => moveBy(1),
-    previous: () => moveBy(-1),
-    first: () => moveToEnd(true),
-    last: () => moveToEnd(false),
-    choose: () => {
-      const row = rows.value[activeIndex.value]
-      if (row) onChoose(row.key)
-    },
+  if (event.key === 'Escape') {
+    event.stopPropagation()
+    event.preventDefault()
+    emit('close')
+  } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault()
+    moveBy(event.key === 'ArrowDown' ? 1 : -1)
+  } else if (event.key === 'Home' || event.key === 'End') {
+    // The caret goes to the ends of what is written; with nothing written the rows do.
+    if (query.value !== '') return
+    event.preventDefault()
+    moveToEnd(event.key === 'Home')
+  } else if (event.key === 'Enter') {
+    event.preventDefault()
+    const row = rows.value[activeIndex.value]
+    if (row) onChoose(row.key)
   }
-  actions[key]()
 }
 
 function onChoose(key: string): void {
@@ -126,12 +114,8 @@ function onChoose(key: string): void {
   if (row?.kind === 'action') {
     emit('act', queryText.value)
   } else if (row && row.item.isDisabled !== true) {
-    if (props.multiple) {
-      emit('toggle', row.item.id)
-    } else {
-      model.value = row.item.id
-      emit('select', row.item.id)
-    }
+    model.value = row.item.id
+    emit('select', row.item.id)
   }
 }
 </script>
@@ -160,7 +144,6 @@ function onChoose(key: string): void {
       :aria-controls="listId"
       :aria-activedescendant="rows.length > 0 ? `${listId}-${activeIndex}` : undefined"
       :placeholder="placeholder"
-      v-bind="inputAttrs"
       @keydown="onKey"
     />
 
@@ -174,7 +157,6 @@ function onChoose(key: string): void {
           :current="currentIds"
           :list-id="listId"
           :label="label"
-          :is-multiple="multiple"
           @choose="onChoose"
           @hover="activeKey = $event"
         />

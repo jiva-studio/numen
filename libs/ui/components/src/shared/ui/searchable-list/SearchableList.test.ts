@@ -344,8 +344,6 @@ describe('what it announces', () => {
       isFiltered: () => false,
       hasAction: () => false,
       needsQuery: () => false,
-      isMultiple: () => false,
-      recent: () => [],
     })
     emptyRows.moveToEnd(true)
     expect(emptyRows.activeKey.value).toBeNull()

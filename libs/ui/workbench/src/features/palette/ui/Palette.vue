@@ -6,8 +6,9 @@
  * Keyboard focus stays in the field, the highlighted item is announced to
  * screen readers, and the content behind the palette is inert while it is open.
  *
- * With `multi` it asks for several items from a list instead: each toggle and each created item
- * is emitted at once and the list stays open.
+ * With `multi` it asks for several items from one list instead: Enter, a click and the action key emit
+ * a toggle for the highlighted row, or a create for the row that makes an item from the typed text, and
+ * the palette stays open.
  *
  * `data-palette` marks each part of the panel by name: the backdrop, `panel`, `crumb`,
  * `field`, `announcement`, `nothing`, `key` and `more`. The list below the field marks
@@ -20,11 +21,11 @@ import PaletteKeyHints from './PaletteKeyHints.vue'
 import { PaletteActions } from './palette-actions'
 import { PaletteField } from './palette-field'
 import { PaletteFrame } from './palette-frame'
-import { PaletteMulti } from './palette-multi'
 import { PaletteResults } from './palette-results'
 import { ACTION_WORDS } from '../lib/actions'
 import { type PaletteItemId } from '../lib/item'
-import { commandKeyChord, getShortcuts } from '../lib/keys'
+import { commandKeyChord, getShortcuts, isActionsChord } from '../lib/keys'
+import { CREATE_ID, getMultiGroup } from '../lib/multi'
 import { useActiveItem } from '../model/activeItem'
 import { usePaletteKeys } from '../model/keys'
 import { useActionPanelToggle } from '../model/useActionPanelToggle'
@@ -66,7 +67,7 @@ const emit = defineEmits<{
    * decides what going back means.
    */
   (event: 'back'): void
-  /** In the multiple step, an item was asked to be checked or unchecked. */
+  /** In the multiple step, a row was asked to be checked or unchecked. */
   (event: 'toggle', id: string): void
   /** In the multiple step, the row that creates an item was chosen, with the text as typed. */
   (event: 'create', text: string): void
@@ -93,14 +94,18 @@ const field = useTemplateRef<InstanceType<typeof PaletteField>>('field')
 /** The list, for asking it to bring what is lit into sight. */
 const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 
-const places = usePalettePlaces({ groups: () => props.groups })
+const shownGroups = computed(() =>
+  props.multi ? [getMultiGroup(props.multi, searchQuery.value)] : props.groups,
+)
+
+const places = usePalettePlaces({ groups: () => shownGroups.value })
 const { placed, announcement } = places
 
 const active = useActiveItem({
   places: places.places,
   typed: searchQuery,
   onItemActive: (item) => emit('light', item),
-  tellChoice: (item, action) => emit('choose', item, action),
+  tellChoice,
 })
 const { here, activeItem, actions, selectedId, chooseAt } = active
 
@@ -136,11 +141,26 @@ const { onKey } = usePaletteKeys({
 })
 
 /* -------------------------------- Handlers -------------------------------- */
+const onActionKey = (event: KeyboardEvent): void => {
+  if (props.multi && isActionsChord(event)) {
+    event.preventDefault()
+    active.chooseAt(here.value, false)
+    return
+  }
+  onKey(event)
+}
+
 const onOver = (pos: number, event: PointerEvent) => {
   if (!isPanelOpen.value) active.lightAt(pos, event)
 }
 
 /* --------------------------------- Helpers -------------------------------- */
+function tellChoice(item: string, action: string): void {
+  if (!props.multi) emit('choose', item, action)
+  else if (item === CREATE_ID) emit('create', searchQuery.value.trim())
+  else emit('toggle', item)
+}
+
 function reveal(): void {
   const pending = results.value?.reveal(selectedId.value)
   if (pending) runInBackground(pending, reportFailure)
@@ -148,20 +168,11 @@ function reveal(): void {
 </script>
 
 <template>
-  <PaletteMulti
-    v-if="multi && isOpen"
-    :multi="multi"
-    :name="name"
-    :to="to"
-    @toggle="emit('toggle', $event)"
-    @create="emit('create', $event)"
-    @dismiss="emit('dismiss')"
-  />
   <PaletteFrame
-    v-else-if="isOpen"
+    v-if="isOpen"
     :name="name"
     :to="to"
-    @keydown="onKey"
+    @keydown="onActionKey"
     @ground="onBackdrop"
     @press="onPress"
   >
@@ -172,7 +183,7 @@ function reveal(): void {
       :here="isPanelOpen ? -1 : here"
       :is-expanded="placed.length !== 0"
       :is-busy="isBusy"
-      :placeholder="placeholder"
+      :placeholder="multi?.placeholder ?? placeholder"
       :name="name"
       :crumb="crumb"
     />
@@ -189,10 +200,11 @@ function reveal(): void {
       :here="here"
       :uid="uid"
       :name="name"
+      :is-multiple="multi !== undefined"
       @point-at="onOver"
       @choose="chooseAt"
     >
-      <template v-if="$slots.icon" #icon="{ id }">
+      <template v-if="$slots.icon && !multi" #icon="{ id }">
         <slot name="icon" :id="id" />
       </template>
     </PaletteResults>

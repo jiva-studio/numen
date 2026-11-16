@@ -6,12 +6,9 @@ import { stepTo } from '@/shared/lib/dom/roving'
 import { findExactItem } from './exactItem'
 import { FIRST_KEY } from './firstKey'
 
-/** Whether an item of a list that checks several is on, on for some of what it stands for, or off. */
-export type ListItemState = 'set' | 'mixed' | 'unset'
-
 /**
  * One entry of a searchable list. The identifier is the caller's, returned as given. A disabled item is
- * shown and cannot be chosen; the keyboard skips it. The state is read by a list that checks several items.
+ * shown and cannot be chosen; the keyboard skips it.
  */
 export interface ListItem {
   readonly id: string
@@ -20,7 +17,6 @@ export interface ListItem {
   readonly group?: string
   readonly hasSeparator?: boolean
   readonly isDisabled?: boolean
-  readonly state?: ListItemState
 }
 
 /** One row as drawn: the action row, or an item. */
@@ -60,37 +56,6 @@ export const buildRows = (
   const exact = findExactItem(items, query)
   const first: ListRow = exact ? asItem(exact, FIRST_KEY) : { key: FIRST_KEY, kind: 'action' }
   return [first, ...items.filter((item) => item !== exact).map((item) => asItem(item))]
-}
-
-/**
- * The items of a list that checks several, in the order it shows them: the set and the mixed ones by
- * text, then the recent ones in the order given, then the rest by text.
- */
-export const orderItems = (
-  items: readonly ListItem[],
-  recent: readonly string[],
-): readonly ListItem[] => {
-  const byText = (one: ListItem, other: ListItem) => one.text.localeCompare(other.text)
-  const isOn = (item: ListItem) => item.state === 'set' || item.state === 'mixed'
-  const on = items.filter(isOn).sort(byText)
-  const off = items.filter((item) => !isOn(item))
-  const recents = recent.flatMap((id) => off.find((item) => item.id === id) ?? [])
-  const rest = off.filter((item) => !recents.includes(item)).sort(byText)
-  return [...on, ...recents, ...rest]
-}
-
-/**
- * The rows of a list that checks several: every item, and the action row first once something is
- * typed that no item is named.
- */
-export const buildMultipleRows = (
-  items: readonly ListItem[],
-  query: string,
-  hasAction: boolean,
-): readonly ListRow[] => {
-  const rows = items.map((item): ListRow => ({ key: item.id, kind: 'item', item }))
-  if (!hasAction || !query.trim() || findExactItem(items, query)) return rows
-  return [{ key: FIRST_KEY, kind: 'action' }, ...rows]
 }
 
 /** The group name drawn over each row: where an item's group differs from the row before it. */

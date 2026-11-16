@@ -44,6 +44,7 @@ export function createPickerSession(): PickerSession {
       items: items.value,
       recent: current.recent,
       getCreateTitle: current.getCreateTitle,
+      ...(current.getCreateColor ? { getCreateColor: current.getCreateColor } : {}),
     }
   })
 

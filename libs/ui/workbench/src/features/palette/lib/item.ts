@@ -8,6 +8,9 @@ import type { PaletteAction } from '../types'
 
 export type { PaletteAction }
 
+/** Whether an item that is checked is on, on for some of what it stands for, or off. */
+export type PaletteItemState = 'set' | 'mixed' | 'unset'
+
 /**
  * One selectable entry. The identifier is opaque: the palette cannot resolve
  * what it addresses, and returns it unchanged.
@@ -21,6 +24,8 @@ export interface PaletteItem {
   readonly actions?: readonly PaletteAction[]
   readonly keys?: Keystroke
   readonly isDisabled?: boolean
+  readonly state?: PaletteItemState
+  readonly color?: string
 }
 
 /** One group of the list. What the groups are is the caller's. */
