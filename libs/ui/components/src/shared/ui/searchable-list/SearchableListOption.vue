@@ -42,7 +42,9 @@ const CHECKED = { set: 'true', mixed: 'mixed', unset: 'false' } as const
     role="option"
     :aria-selected="isActive"
     :aria-current="isCurrent ? 'true' : undefined"
-    :aria-checked="isMultiple && row.kind === 'item' ? CHECKED[row.item.state ?? 'unset'] : undefined"
+    :aria-checked="
+      isMultiple && row.kind === 'item' ? CHECKED[row.item.state ?? 'unset'] : undefined
+    "
     :aria-disabled="row.kind === 'item' && row.item.isDisabled ? 'true' : undefined"
     @mousedown.prevent
     @click="$emit('choose')"

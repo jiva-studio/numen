@@ -11,7 +11,8 @@ import {
   buildRows,
   filterItems,
   orderItems,
-  stepRow,   type ListItem,
+  stepRow,
+  type ListItem,
   type ListRow,
 } from './rows'
 

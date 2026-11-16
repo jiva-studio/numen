@@ -165,64 +165,64 @@ function reveal(): void {
     />
 
     <template v-else>
-    <PaletteField
-      ref="field"
-      v-model="searchQuery"
-      :uid="uid"
-      :here="isPanelOpen ? -1 : here"
-      :is-expanded="placed.length !== 0"
-      :is-busy="isBusy"
-      :placeholder="placeholder"
-      :name="name"
-      :crumb="crumb"
-    />
+      <PaletteField
+        ref="field"
+        v-model="searchQuery"
+        :uid="uid"
+        :here="isPanelOpen ? -1 : here"
+        :is-expanded="placed.length !== 0"
+        :is-busy="isBusy"
+        :placeholder="placeholder"
+        :name="name"
+        :crumb="crumb"
+      />
 
-    <!-- What a search returned, where it returned nothing. It
+      <!-- What a search returned, where it returned nothing. It
          stands here for as long as the palette does, so what lands in it is
          read out. -->
-    <span class="sr-only" aria-live="polite" data-palette="announcement">{{ announcement }}</span>
+      <span class="sr-only" aria-live="polite" data-palette="announcement">{{ announcement }}</span>
 
-    <PaletteResults
-      v-if="placed.length"
-      ref="results"
-      :groups="placed"
-      :here="here"
-      :uid="uid"
-      :name="name"
-      @point-at="onOver"
-      @choose="chooseAt"
-    >
-      <template v-if="$slots.icon" #icon="{ id }">
-        <slot name="icon" :id="id" />
-      </template>
-    </PaletteResults>
+      <PaletteResults
+        v-if="placed.length"
+        ref="results"
+        :groups="placed"
+        :here="here"
+        :uid="uid"
+        :name="name"
+        @point-at="onOver"
+        @choose="chooseAt"
+      >
+        <template v-if="$slots.icon" #icon="{ id }">
+          <slot name="icon" :id="id" />
+        </template>
+      </PaletteResults>
 
-    <p
-      v-else-if="$slots.silence"
-      class="palette__nothing text-hushed px-2 py-1.5"
-      data-palette="nothing"
-    >
-      <slot name="silence" />
-    </p>
+      <p
+        v-else-if="$slots.silence"
+        class="palette__nothing text-hushed px-2 py-1.5"
+        data-palette="nothing"
+      >
+        <slot name="silence" />
+      </p>
 
-    <!-- Everything the lit item offers, by name. It is over the foot of
+      <!-- Everything the lit item offers, by name. It is over the foot of
          the palette, and the list underneath stays where it was. -->
-    <PaletteActions
-      v-if="isPanelOpen"
-      v-model:open="isPanelOpen"
-      :actions="actions"
-      :words="actionWords"
-      @choose="chooseAction"
-    />
+      <PaletteActions
+        v-if="isPanelOpen"
+        v-model:open="isPanelOpen"
+        :actions="actions"
+        :words="actionWords"
+        @choose="chooseAction"
+      />
 
-    <!-- The actions of the highlighted item. An item with one action shows
+      <!-- The actions of the highlighted item. An item with one action shows
          one key, and the last word opens the rest. -->
-    <PaletteKeyHints
-      v-if="actions.length"
-      :hinted="hinted"
-      :action-key="actionKey"
-      :name="actionWords.name"
-    />
+      <PaletteKeyHints
+        v-if="actions.length"
+        :hinted="hinted"
+        :action-key="actionKey"
+        :name="actionWords.name"
+      />
     </template>
   </PaletteFrame>
 </template>
