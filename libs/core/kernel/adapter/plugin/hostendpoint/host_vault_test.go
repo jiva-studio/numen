@@ -420,3 +420,7 @@ func TestThePluginsCacheNeedsNoVaultPermission(t *testing.T) {
 		t.Errorf("a cache call with no token is %v", got)
 	}
 }
+
+func (m *memoryVault) WriteFrontmatter(context.Context, []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error) {
+	return nil, errors.New("not implemented")
+}
