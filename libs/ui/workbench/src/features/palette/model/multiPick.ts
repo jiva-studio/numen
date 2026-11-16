@@ -3,7 +3,7 @@
  *
  * Without `multi` the groups are the caller's and a choice is emitted as it was made.
  */
-import { computed, type ComputedRef, type Ref } from 'vue'
+import { computed, type ComputedRef, type Ref, shallowRef, watch } from 'vue'
 import type { PaletteGroup } from '../lib/item'
 import {
   CREATE_ID,
@@ -25,6 +25,11 @@ interface MultiPickEmit {
   (event: 'create', text: string): void
 }
 
+interface Opening {
+  readonly ids: string[]
+  createdTitle: string | undefined
+}
+
 export interface MultiPick {
   readonly groups: ComputedRef<readonly PaletteGroup[]>
   readonly tellChoice: (item: string, action: string) => void
@@ -35,24 +40,30 @@ export function useMultiPick(
   typed: Ref<string>,
   emit: MultiPickEmit,
 ): MultiPick {
-  /** The ids of the items in the order the palette showed them first; not reactive on purpose. */
-  const ids: string[] = []
-  let createdTitle: string | undefined
-  let openedWith = props.isOpen
+  /**
+   * The order of the items as the palette showed them first, and the title of the item the person asked
+   * to create. Each opening of the palette starts a new one; what is inside is not reactive on purpose.
+   */
+  const opening = shallowRef<Opening>({ ids: [], createdTitle: undefined })
+
+  watch(
+    () => props.isOpen,
+    () => {
+      opening.value = { ids: [], createdTitle: undefined }
+    },
+    { flush: 'sync' },
+  )
 
   const arrange = (multi: PaletteMultiProps): readonly PaletteMultiItem[] => {
-    if (props.isOpen !== openedWith) {
-      openedWith = props.isOpen
-      ids.length = 0
-      createdTitle = undefined
-    }
+    const current = opening.value
+    const { ids } = current
     const isFirst = ids.length === 0
     if (isFirst) ids.push(...orderMultiItems(multi.items, multi.recent).map((item) => item.id))
     for (const item of multi.items) {
       const isKnown = ids.includes(item.id)
       if (isKnown && !isFirst) continue
-      if (item.title === createdTitle) {
-        createdTitle = undefined
+      if (item.title === current.createdTitle) {
+        current.createdTitle = undefined
         if (isKnown) ids.splice(ids.indexOf(item.id), 1)
         ids.unshift(item.id)
       } else if (!isKnown) ids.push(item.id)
@@ -67,8 +78,8 @@ export function useMultiPick(
   const tellChoice = (item: string, action: string): void => {
     if (!props.multi) emit('choose', item, action)
     else if (item === CREATE_ID) {
-      createdTitle = typed.value.trim()
-      emit('create', createdTitle)
+      opening.value.createdTitle = typed.value.trim()
+      emit('create', typed.value.trim())
     } else emit('toggle', item)
   }
 
