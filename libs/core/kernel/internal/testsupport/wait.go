@@ -11,7 +11,7 @@ import (
 // It is sized for the slowest machine the suite must pass on, a shared Windows
 // runner reading a fixture vault while `go test ./...` runs other packages. The
 // stream tests of both windows already wait ten seconds, so this is the same number.
-const Patience = 30 * time.Second
+const Patience = 10 * time.Second
 
 // WaitFor holds until something is so, and fails the test if it never is.
 func WaitFor(t *testing.T, condition func() bool) {

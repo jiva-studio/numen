@@ -238,7 +238,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 
 	select {
 	case <-signalCh:
-	case <-time.After(testsupport.Patience):
+	case <-time.After(5 * time.Second):
 		t.Error("no page received that what it holds is from another vault")
 	}
 
@@ -299,7 +299,7 @@ func TestTheVaultThatWentIsNoLongerFollowed(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 	write(t, f.second, enthalpy, noteNamed("Enthalpy, written again"))
 
-	until := time.After(testsupport.Patience)
+	until := time.After(5 * time.Second)
 	for {
 		select {
 		case paths := <-reported:
@@ -460,7 +460,7 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 
 	select {
 	case <-request:
-	case <-time.After(testsupport.Patience):
+	case <-time.After(5 * time.Second):
 		t.Fatal("the page was never asked for what it holds")
 	}
 	if name := f.state(t).GetName(); name != "one" {
@@ -510,7 +510,7 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 
 	select {
 	case <-signalCh:
-	case <-time.After(testsupport.Patience):
+	case <-time.After(5 * time.Second):
 		t.Fatal("the close never asked the page for what it holds")
 	}
 
@@ -529,7 +529,7 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 	}
 	select {
 	case <-wrote:
-	case <-time.After(testsupport.Patience):
+	case <-time.After(5 * time.Second):
 		t.Fatal("the page never wrote what it holds")
 	}
 	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {

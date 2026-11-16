@@ -105,7 +105,7 @@ func TestLoopback_ReportsListenerFailure(t *testing.T) {
 		if !errors.Is(res, why) {
 			t.Errorf("the socket stopping was said as %v", res)
 		}
-	case <-time.After(testsupport.Patience):
+	case <-time.After(5 * time.Second):
 		t.Fatal("the socket stopped answering and nobody received")
 	}
 	if pos := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)); pos != "" {
