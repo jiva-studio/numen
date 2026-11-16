@@ -18,7 +18,8 @@ export const getStem = (file: string): string => path.basename(file).replace(/\.
 
 export const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-export const getTitlePattern = (title: string): RegExp => new RegExp(`^(Linked tab )?${escapeRegExp(title)}( Close |$)`)
+export const getTitlePattern = (title: string): RegExp =>
+  new RegExp(`^(Linked tab )?${escapeRegExp(title)}( Close |$)`)
 
 /** The title the product gives the tab of a web address: the characters a file name cannot have become "-". */
 export const getAddressTitle = (address: string): string => address.replace(/[/\\:*?"<>|#]/g, '-')
@@ -27,14 +28,18 @@ export const getLinkNotePath = (address: string): string => `${getAddressTitle(a
 
 export const parseReference = (reference: string, name: string): Reference => {
   if (reference !== 'at' && reference !== 'titled' && reference !== 'for the web address') {
-    throw new Error(`"${reference}" does not name a tab or a note: use "at", "titled" or "for the web address"`)
+    throw new Error(
+      `"${reference}" does not name a tab or a note: use "at", "titled" or "for the web address"`,
+    )
   }
   return { reference, name }
 }
 
 export const assertPosition = (kind: TabKind, position: string, file: string): void => {
   if (POSITIONS[kind] !== position) {
-    throw new Error(`the tab "${file}" is a ${kind} tab: its position is a ${POSITIONS[kind]}, not a ${position}`)
+    throw new Error(
+      `the tab "${file}" is a ${kind} tab: its position is a ${POSITIONS[kind]}, not a ${position}`,
+    )
   }
 }
 
@@ -45,7 +50,8 @@ export const parseTime = (time: string): number => {
 }
 
 export const assertEntry = (entry: string, path: string, isFolder: boolean): void => {
-  if (entry !== 'file' && entry !== 'folder') throw new Error(`"${entry}" is not a file or a folder`)
+  if (entry !== 'file' && entry !== 'folder')
+    throw new Error(`"${entry}" is not a file or a folder`)
   if ((entry === 'folder') !== isFolder) {
     throw new Error(`"${path}" is a ${isFolder ? 'folder' : 'file'}, not a ${entry}`)
   }
@@ -58,10 +64,16 @@ export const getAncestors = (entryPath: string): string[] => {
 
 export type PaletteField = 'name' | 'item' | 'note' | 'vault' | 'text'
 
-const PALETTE_FIELDS: Record<string, PaletteField> = { Name: 'name', Search: 'item', 'Search notes': 'note', 'Search vaults': 'vault' }
+const PALETTE_FIELDS: Record<string, PaletteField> = {
+  Name: 'name',
+  Search: 'item',
+  'Search notes': 'note',
+  'Search vaults': 'vault',
+}
 
 /** What the field of the open palette asks for, read from its placeholder: a name, one item of a list, a note found by words, or a text. */
-export const getPaletteField = (placeholder: string): PaletteField => PALETTE_FIELDS[placeholder] ?? 'text'
+export const getPaletteField = (placeholder: string): PaletteField =>
+  PALETTE_FIELDS[placeholder] ?? 'text'
 
 export type PaletteAction = 'name' | 'pick' | 'type'
 
@@ -88,7 +100,9 @@ const FIELD_ASKS: Record<PaletteField, string> = {
 /** Fails when the palette asks for another kind of input than the step gives, so a step cannot do the work of another. */
 export const assertPaletteField = (action: PaletteAction, kind: PaletteField): void => {
   if (!ACTION_FIELDS[action].includes(kind)) {
-    throw new Error(`the person ${ACTION_WORDS[action]} here, but the palette asks for ${FIELD_ASKS[kind]}: use the step that matches`)
+    throw new Error(
+      `the person ${ACTION_WORDS[action]} here, but the palette asks for ${FIELD_ASKS[kind]}: use the step that matches`,
+    )
   }
 }
 
@@ -106,15 +120,24 @@ const TEXT_KIND_TITLES: Record<TextKind, string> = {
 export const getVersionTitle = (kind: TextKind): string => TEXT_KIND_TITLES[kind]
 
 /** The title the product gives the live version of a kind of text in the list it offers. */
-export const getCurrentVersionLabel = (kind: TextKind): string => `${TEXT_KIND_TITLES[kind]} (current)`
+export const getCurrentVersionLabel = (kind: TextKind): string =>
+  `${TEXT_KIND_TITLES[kind]} (current)`
 
 /** The application a world runs: the server of a world runs one, and the flashcards window opens one vault. */
-export const assertWorldApplication = (application: string, vaults: readonly string[], running: string | undefined): void => {
+export const assertWorldApplication = (
+  application: string,
+  vaults: readonly string[],
+  running: string | undefined,
+): void => {
   if (running !== undefined && running !== application) {
-    throw new Error(`the world runs the application "${running}" already: a world has one application, not "${application}" too`)
+    throw new Error(
+      `the world runs the application "${running}" already: a world has one application, not "${application}" too`,
+    )
   }
   if (application === 'flashcards' && vaults.length > 1) {
-    throw new Error(`the application "flashcards" opens one vault, and the world has ${vaults.join(' and ')}: a world for the flashcards window has one vault`)
+    throw new Error(
+      `the application "flashcards" opens one vault, and the world has ${vaults.join(' and ')}: a world for the flashcards window has one vault`,
+    )
   }
 }
 
@@ -137,12 +160,14 @@ const RATINGS = new Map([
 /** The number the review log writes for an answer. */
 export const getRatingNumber = (answer: string): number => {
   const rating = RATINGS.get(answer)
-  if (rating === undefined) throw new Error(`"${answer}" is not an answer: use Again, Hard, Good or Easy`)
+  if (rating === undefined)
+    throw new Error(`"${answer}" is not an answer: use Again, Hard, Good or Easy`)
   return rating
 }
 
 export const parseReviewScope = (scope: string): 'vault' | 'deck' => {
-  if (scope !== 'vault' && scope !== 'deck') throw new Error(`"${scope}" is not reviewed: use "vault" or "deck"`)
+  if (scope !== 'vault' && scope !== 'deck')
+    throw new Error(`"${scope}" is not reviewed: use "vault" or "deck"`)
   return scope
 }
 
@@ -155,7 +180,8 @@ export const readNoteType = (content: string): string => {
 export const pickByTitle = (title: string, paths: readonly string[]): string => {
   const found = paths.filter((one) => getStem(one) === title)
   if (found.length === 0) throw new Error(`no tab is titled "${title}": use "at" with its path`)
-  if (found.length > 1) throw new Error(`more than one tab is titled "${title}": use "at" with its path`)
+  if (found.length > 1)
+    throw new Error(`more than one tab is titled "${title}": use "at" with its path`)
   return found[0]
 }
 
@@ -169,7 +195,8 @@ export const DEFAULT_VAULT = 'default'
 /** The vault a step names: the words `the vault`, or `the vault "Archive"`. */
 export const parseVaultName = (text: string): string => {
   const match = /^the vault(?: "([^"]+)")?$/.exec(text)
-  if (!match) throw new Error(`"${text}" does not name a vault: write the vault or the vault "Name"`)
+  if (!match)
+    throw new Error(`"${text}" does not name a vault: write the vault or the vault "Name"`)
   const name = match[1] as string | undefined
   return name ?? DEFAULT_VAULT
 }
@@ -181,14 +208,17 @@ export const pickVault = (vaults: readonly string[], name: string): string => {
     throw new Error(`the world has no vault "${name}": it has ${vaults.join(', ') || 'none'}`)
   }
   if (vaults.length === 1) return vaults[0]
-  if (vaults.length === 0) throw new Error('the world has no vault: begin with the empty vault "Name"')
+  if (vaults.length === 0)
+    throw new Error('the world has no vault: begin with the empty vault "Name"')
   throw new Error(`name the vault: the world has ${vaults.join(' and ')}`)
 }
 
 /** The name of a vault folder in the world: a plain name, not the word that stands for the only vault. */
 export const assertVaultName = (name: string): void => {
   if (name === '' || name === DEFAULT_VAULT || name.startsWith('.') || /[/\\:*?"<>|]/.test(name)) {
-    throw new Error(`"${name}" cannot name a vault: use a plain name other than "${DEFAULT_VAULT}", with no path in it`)
+    throw new Error(
+      `"${name}" cannot name a vault: use a plain name other than "${DEFAULT_VAULT}", with no path in it`,
+    )
   }
 }
 
@@ -204,7 +234,9 @@ export const getNoteFile = (title: string): string => {
 export const assertVaultPath = (entryPath: string): void => {
   const parts = entryPath.split('/')
   if (entryPath.startsWith('/') || parts.some((one) => one === '' || one === '.' || one === '..')) {
-    throw new Error(`"${entryPath}" is not a path inside the vault: write it relative to the vault, like "assets/a.pdf"`)
+    throw new Error(
+      `"${entryPath}" is not a path inside the vault: write it relative to the vault, like "assets/a.pdf"`,
+    )
   }
 }
 
@@ -245,7 +277,9 @@ export const parseTabKind = (text: string): TabKindChoice => {
   const word = match[1] as string | undefined
   if (word === undefined) return ANY_TAB
   if (!isTabKindWord(word)) {
-    throw new Error(`the tab kind "${word}" is not a tab kind: use ${Object.keys(TAB_KINDS).join(', ')}`)
+    throw new Error(
+      `the tab kind "${word}" is not a tab kind: use ${Object.keys(TAB_KINDS).join(', ')}`,
+    )
   }
   return word
 }
@@ -261,10 +295,17 @@ export const pickKindTab = <T extends KindedTab>(
   name: string,
 ): T | undefined => {
   const found = candidates.filter((one) => one.kind === TAB_KINDS[kind].id)
-  if (found.length > 1) throw new Error(`${found.length} ${TAB_KINDS[kind].title} tabs match "${name}": use "at" with the path`)
+  if (found.length > 1)
+    throw new Error(
+      `${found.length} ${TAB_KINDS[kind].title} tabs match "${name}": use "at" with the path`,
+    )
   if (found.length === 1 || candidates.length === 0) return found[0]
-  const kinds = [...new Set(candidates.map((one) => `${getKindTitle(one.kind)} tab`))].join(' and a ')
-  throw new Error(`the tab ${reference} "${name}" is a ${kinds}, not a ${TAB_KINDS[kind].title} tab`)
+  const kinds = [...new Set(candidates.map((one) => `${getKindTitle(one.kind)} tab`))].join(
+    ' and a ',
+  )
+  throw new Error(
+    `the tab ${reference} "${name}" is a ${kinds}, not a ${TAB_KINDS[kind].title} tab`,
+  )
 }
 
 export interface Place {
@@ -283,7 +324,12 @@ export const parsePlace = (text: string): Place => {
 export type CommandTarget =
   | { readonly kind: 'none' }
   | { readonly kind: 'entry'; readonly entry: string; readonly path: string }
-  | { readonly kind: 'tab'; readonly tab: TabKindChoice; readonly reference: string; readonly name: string }
+  | {
+      readonly kind: 'tab'
+      readonly tab: TabKindChoice
+      readonly reference: string
+      readonly name: string
+    }
 
 /** The words a step puts after the command: ` on the file at "a.md"`, ` on the Plex tab titled "A"`, or nothing. */
 export const parseTarget = (text: string): CommandTarget => {
@@ -291,14 +337,20 @@ export const parseTarget = (text: string): CommandTarget => {
   const entry = /^ on the (file|folder) at "([^"]+)"$/.exec(text)
   if (entry) return { kind: 'entry', entry: entry[1], path: entry[2] }
   const tab = /^ on the ((?:[A-Za-z]+ ){0,2}tab) (at|titled) "([^"]+)"$/.exec(text)
-  if (!tab) throw new Error(`"${text}" does not name what the command runs on: use the file at, the folder at or a tab`)
+  if (!tab)
+    throw new Error(
+      `"${text}" does not name what the command runs on: use the file at, the folder at or a tab`,
+    )
   return { kind: 'tab', tab: parseTabKind(tab[1]), reference: tab[2], name: tab[3] }
 }
 
 /** The pairs of a table of arguments that has a name and a value in each row and no header. */
 export const parseArguments = (rows: readonly (readonly string[])[]): [string, string][] =>
   rows.map((row) => {
-    if (row.length !== 2) throw new Error(`the row "${row.join(' | ')}" must have a name and a value: "| Name | Brine log |"`)
+    if (row.length !== 2)
+      throw new Error(
+        `the row "${row.join(' | ')}" must have a name and a value: "| Name | Brine log |"`,
+      )
     return [row[0], row[1]]
   })
 
@@ -317,7 +369,9 @@ export const parseKeys = (text: string): string => {
   const key = parts.pop() ?? ''
   const modifiers = parts.map((one) => names.get(one))
   if (key === '' || modifiers.some((one) => one === undefined)) {
-    throw new Error(`"${text}" is not a key combination: write Ctrl, Shift or Alt, a plus and a key, like "Ctrl+Shift+E"`)
+    throw new Error(
+      `"${text}" is not a key combination: write Ctrl, Shift or Alt, a plus and a key, like "Ctrl+Shift+E"`,
+    )
   }
   return [...modifiers, key].join('+')
 }
@@ -342,17 +396,24 @@ export const parsePaletteRows = (rows: readonly (readonly string[])[]): PaletteR
     throw new Error('the table must start with the header "| list | row | disabled |"')
   }
   return rows.slice(1).map(([list, row, disabled]) => {
-    if (disabled !== 'True' && disabled !== 'False') throw new Error(`disabled is True or False, not "${disabled}"`)
+    if (disabled !== 'True' && disabled !== 'False')
+      throw new Error(`disabled is True or False, not "${disabled}"`)
     return { list, row, isDisabled: disabled === 'True' }
   })
 }
 
 /** The tabs a table with the header `kind | path` lists. */
-export const parseTabRows = (rows: readonly (readonly string[])[]): { kind: TabKindWord; path: string }[] => {
-  if (rows.length === 0 || rows[0]?.join('|') !== 'kind|path') throw new Error('the table must start with the header "| kind | path |"')
+export const parseTabRows = (
+  rows: readonly (readonly string[])[],
+): { kind: TabKindWord; path: string }[] => {
+  if (rows.length === 0 || rows[0]?.join('|') !== 'kind|path')
+    throw new Error('the table must start with the header "| kind | path |"')
   return rows.slice(1).map((row) => {
     const kind = row[0] ?? ''
-    if (!isTabKindWord(kind)) throw new Error(`the tab kind "${kind}" is not a tab kind: use ${Object.keys(TAB_KINDS).join(', ')}`)
+    if (!isTabKindWord(kind))
+      throw new Error(
+        `the tab kind "${kind}" is not a tab kind: use ${Object.keys(TAB_KINDS).join(', ')}`,
+      )
     return { kind, path: row[1] ?? '' }
   })
 }
@@ -375,7 +436,10 @@ export interface TabRef {
 /** The tab in the words `the PDF tab at "a.pdf"`. */
 export const parseTabRef = (text: string): TabRef => {
   const match = /^((?:[A-Za-z]+ ){0,2}tab) (at|titled|for the web address) "([^"]+)"$/.exec(text)
-  if (!match) throw new Error(`"${text}" does not name a tab: write the tab at "path" or the tab titled "Title"`)
+  if (!match)
+    throw new Error(
+      `"${text}" does not name a tab: write the tab at "path" or the tab titled "Title"`,
+    )
   return { kind: parseTabKind(match[1]), reference: match[2], name: match[3] }
 }
 
@@ -388,18 +452,30 @@ export interface Extent {
 
 export const parseExtent = (extent: string): Extent => {
   const match = /^(from|between) "([^"]+)" (?:to|and) "([^"]+)"$/.exec(extent)
-  if (!match) throw new Error(`"${extent}" does not name a link: write from "A" to "B" or between "A" and "B"`)
-  return { kind: match[1] === 'from' ? 'direction' : 'connection', first: match[2], second: match[3] }
+  if (!match)
+    throw new Error(
+      `"${extent}" does not name a link: write from "A" to "B" or between "A" and "B"`,
+    )
+  return {
+    kind: match[1] === 'from' ? 'direction' : 'connection',
+    first: match[2],
+    second: match[3],
+  }
 }
 
 /** The way a line is dragged from a note: the plex writes a parent for a line up, a child for a line down and a jump for a line left. */
 export type Direction = 'up' | 'down' | 'left'
 
-const DIRECTION_STEPS: Readonly<Record<Direction, readonly [number, number]>> = { up: [0, -1], down: [0, 1], left: [-1, 0] }
+const DIRECTION_STEPS: Readonly<Record<Direction, readonly [number, number]>> = {
+  up: [0, -1],
+  down: [0, 1],
+  left: [-1, 0],
+}
 
 /** The step in x and in y of a direction on the screen, where y grows downward. */
 export const getDirectionStep = (direction: string): readonly [number, number] => {
-  if (!Object.hasOwn(DIRECTION_STEPS, direction)) throw new Error(`a line cannot be dragged ${direction}: use up, down or left`)
+  if (!Object.hasOwn(DIRECTION_STEPS, direction))
+    throw new Error(`a line cannot be dragged ${direction}: use up, down or left`)
   return DIRECTION_STEPS[direction as Direction]
 }
 
@@ -410,12 +486,17 @@ const SIDES: readonly Side[] = ['above', 'below', 'left', 'right']
 /** The sides a word of a table names: `above`, `left`, `below left`. */
 export const parseSides = (text: string): Side[] =>
   text.split(' ').map((word) => {
-    if (!SIDES.includes(word as Side)) throw new Error(`"${word}" is not a side: use ${SIDES.join(', ')}, like "below left"`)
+    if (!SIDES.includes(word as Side))
+      throw new Error(`"${word}" is not a side: use ${SIDES.join(', ')}, like "below left"`)
     return word as Side
   })
 
 /** Whether the middle of a note is on every named side of the middle of the focus note, where y grows downward. */
-export const isOnSides = (sides: readonly Side[], note: { x: number; y: number }, focus: { x: number; y: number }): boolean =>
+export const isOnSides = (
+  sides: readonly Side[],
+  note: { x: number; y: number },
+  focus: { x: number; y: number },
+): boolean =>
   sides.every((side) => {
     if (side === 'above') return note.y < focus.y
     if (side === 'below') return note.y > focus.y
@@ -423,14 +504,22 @@ export const isOnSides = (sides: readonly Side[], note: { x: number; y: number }
     return note.x > focus.x
   })
 
-/** The rows under the header of a table, which must name these columns. */
-export const getTableBody = (rows: readonly (readonly string[])[], columns: readonly string[], _optional: readonly string[] = []): readonly (readonly string[])[] => {
-  if (rows[0]?.join('|') !== columns.join('|')) throw new Error(`the table must start with the header "| ${columns.join(' | ')} |"`)
+/** The rows under the header of a table, which must name these columns and may end with some of the optional ones. */
+export const getTableBody = (
+  rows: readonly (readonly string[])[],
+  columns: readonly string[],
+  optional: readonly string[] = [],
+): readonly (readonly string[])[] => {
+  const header = rows[0] ?? []
+  const named = columns.every((column, index) => header[index] === column)
+  if (!named || !header.slice(columns.length).every((column) => optional.includes(column)))
+    throw new Error(`the table must start with the header "| ${columns.join(' | ')} |"`)
   return rows.slice(1)
 }
 
 /** What the arrow button of a link row says it is now: it is the start of the name the button has. */
-export const isArrow = (buttonName: string, arrow: string): boolean => buttonName.startsWith(`${arrow}. Click for: `)
+export const isArrow = (buttonName: string, arrow: string): boolean =>
+  buttonName.startsWith(`${arrow}. Click for: `)
 
 /** The most clicks the arrow button of a row needs to show any arrow: none, one way, the other way. */
 export const MAX_ARROW_CLICKS = 3
@@ -446,6 +535,9 @@ export const parseArrow = (text: string): string | undefined => {
   if (text === '') return undefined
   if (text === ' without an arrow') return NO_ARROW
   const match = /^ with an arrow to "([^"]+)"$/.exec(text)
-  if (!match) throw new Error(`"${text}" does not name an arrow: write with an arrow to "Title" or without an arrow`)
+  if (!match)
+    throw new Error(
+      `"${text}" does not name an arrow: write with an arrow to "Title" or without an arrow`,
+    )
   return match[1]
 }

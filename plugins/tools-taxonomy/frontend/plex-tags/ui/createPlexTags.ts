@@ -7,10 +7,10 @@ export interface TagSource {
 }
 
 /** The view of the slot plexGraph.nodeBelow: the tag chips of the path of its node. */
-export function createPlexTags(_tagMap: TagSource) {
+export function createPlexTags(tagMap: TagSource) {
   return defineComponent({
     name: 'PlexTagsView',
     props: { path: { type: String, required: true } },
-    setup: () => () => h(PlexTags, { tags: [] }),
+    setup: (props) => () => h(PlexTags, { tags: tagMap.getTags(props.path) }),
   })
 }

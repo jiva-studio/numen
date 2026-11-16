@@ -9,7 +9,10 @@
   "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
-    "slots": [{ "slot": "fileTree.rowEnd", "view": "file-tags" }],
+    "slots": [
+      { "slot": "fileTree.rowEnd", "view": "file-tags" },
+      { "slot": "plexGraph.nodeBelow", "view": "plex-tags" }
+    ],
     "searchFunctions": {
       "version": 1,
       "functions": [
