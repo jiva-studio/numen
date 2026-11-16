@@ -836,7 +836,7 @@ func sumHex(data []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func TestShuttingTheHostDownCancelsTheDownloadInProgress(t *testing.T) {
+func TestCancelingTheDependenciesStopsTheDownloadInProgress(t *testing.T) {
 	source := newModelSource(t)
 	source.holdDownloads(t)
 	p := newLazyPlugin(t, source)
@@ -845,9 +845,7 @@ func TestShuttingTheHostDownCancelsTheDownloadInProgress(t *testing.T) {
 	go func() { answer <- p.use(t) }()
 	source.waitForDownload(t)
 
-	if err := p.host.Teardown.TeardownAll(t.Context(), releaseGrace); err != nil {
-		t.Fatal(err)
-	}
+	p.host.Services.CancelDependencies()
 	if err := <-answer; !errors.Is(err, context.Canceled) {
 		t.Errorf("the use received %v, want the cancellation", err)
 	}

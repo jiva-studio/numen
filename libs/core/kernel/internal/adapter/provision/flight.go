@@ -73,7 +73,6 @@ func (g *flightGroup) do(
 	}
 }
 
-// cancel stops the call under the key and reports whether one ran.
 func (g *flightGroup) cancel(key string) bool {
 	g.mu.Lock()
 	current, ok := g.flights[key]
@@ -84,7 +83,6 @@ func (g *flightGroup) cancel(key string) bool {
 	return ok
 }
 
-// cancelAll stops every call that runs.
 func (g *flightGroup) cancelAll() {
 	g.mu.Lock()
 	running := make([]*flight, 0, len(g.flights))

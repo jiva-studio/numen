@@ -52,8 +52,12 @@ func TestCancelStopsADownloadAndKeepsTheBytesForTheNextRun(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if requests.Add(1) == 1 {
 			w.Header().Set("Content-Length", strconv.Itoa(len(data)))
-			_, _ = w.Write(data[:half])
-			w.(http.Flusher).Flush()
+			if _, err := w.Write(data[:half]); err != nil {
+				return
+			}
+			if err := http.NewResponseController(w).Flush(); err != nil {
+				return
+			}
 			<-r.Context().Done()
 			return
 		}

@@ -95,6 +95,7 @@ func setPluginVaultPath(c pluginsWiring, path string) {
 }
 
 func stopPlugins(c pluginsWiring, ctx context.Context) error {
+	c.PluginHost.Watch.CancelDependencies()
 	return c.PluginHost.Watch.TeardownAll(ctx, pluginGracePeriod)
 }
 

@@ -126,6 +126,9 @@ func (Settings) ObserveDependencies(func(manifest.DependencyRequirement, plugind
 // CancelDependency has no download to stop.
 func (Settings) CancelDependency(manifest.DependencyRequirement) {}
 
+// CancelDependencies has no download to stop.
+func (Settings) CancelDependencies() {}
+
 // Processes is the processes of a plugin host that runs nothing.
 type Processes struct{}
 
