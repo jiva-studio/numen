@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -148,21 +147,33 @@ func TestEndpointConfigurationConnectionTrackingAndTools(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitFor(t, func() bool { return served.getActiveCount() > 0 })
-	var isFinished atomic.Bool
-	isClosing := make(chan struct{})
-	go func() {
-		<-isClosing
-		isFinished.Store(true)
-		if _, err := conn.Write([]byte("}")); err != nil {
+	closed := make(chan error, 1)
+	go func() { closed <- served.Close(t.Context()) }()
+	// Shutdown closes the listener first, so a refused connection means Close has started.
+	address, err := url.Parse(served.GetURL())
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, func() bool {
+		probe, err := (&net.Dialer{}).DialContext(t.Context(), "tcp", address.Host)
+		if err != nil {
+			return true
+		}
+		if err := probe.Close(); err != nil {
 			t.Log(err)
 		}
-	}()
-	close(isClosing)
-	if err := served.Close(t.Context()); err != nil {
-		t.Errorf("Close with finishing request = %v, want nil", err)
+		return false
+	})
+	select {
+	case <-closed:
+		t.Fatal("Close returned while the request was incomplete")
+	default:
 	}
-	if !isFinished.Load() {
-		t.Error("Close returned before the active request finished")
+	if _, err := conn.Write([]byte("}")); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-closed; err != nil {
+		t.Errorf("Close with finishing request = %v, want nil", err)
 	}
 }
 
