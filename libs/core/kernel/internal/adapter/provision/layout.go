@@ -20,6 +20,8 @@ const readyName = ".ready"
 
 var unsafeNameChars = regexp.MustCompile(`[^A-Za-z0-9._-]`)
 
+var nonEnvNameChars = regexp.MustCompile(`[^A-Za-z0-9]`)
+
 func getDependencyDir(root, kind, id, version string) string {
 	if version == "" {
 		version = "latest"

@@ -20,6 +20,17 @@ type fakeCatalog struct {
 	resolved map[string]plugindomain.ResolvedDependency
 	err      error
 	calls    []manifest.DependencyRequirement
+	resolves []manifest.DependencyRequirement
+	state    plugindomain.DependencyState
+}
+
+func (f *fakeCatalog) Resolve(req manifest.DependencyRequirement) (plugindomain.ResolvedDependency, plugindomain.DependencyState, error) {
+	f.resolves = append(f.resolves, req)
+	state := f.state
+	if state == "" {
+		state = plugindomain.DependencyStateReady
+	}
+	return f.resolved[req.ID], state, nil
 }
 
 func (f *fakeCatalog) CanProvision(req manifest.DependencyRequirement) bool {
@@ -84,8 +95,11 @@ func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.calls) != 1 || catalog.calls[0].PluginDir != "/plugins/a" || catalog.calls[0].Kind != manifest.DependencyKindRuntime {
-		t.Errorf("the runtime was provisioned as %+v", catalog.calls)
+	if len(catalog.resolves) != 1 || catalog.resolves[0].PluginDir != "/plugins/a" || catalog.resolves[0].Kind != manifest.DependencyKindRuntime {
+		t.Errorf("the runtime was resolved as %+v", catalog.resolves)
+	}
+	if len(catalog.calls) != 0 {
+		t.Errorf("the launch provisioned %+v, want nothing downloaded at launch", catalog.calls)
 	}
 	for _, want := range []string{"SAMPLE_RUNTIME_LIB=/models/libsample.so", "SAMPLE_RUNTIME_DEVICE=coreml"} {
 		if !slices.Contains(vars, want) {
@@ -129,8 +143,8 @@ func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.calls) != 0 {
-		t.Errorf("the runtime was provisioned %d times for a plugin that declares none", len(catalog.calls))
+	if len(catalog.calls) != 0 || len(catalog.resolves) != 0 {
+		t.Errorf("the runtime was provisioned %d times and resolved %d times for a plugin that declares none", len(catalog.calls), len(catalog.resolves))
 	}
 	for _, entry := range vars {
 		if strings.HasPrefix(entry, "SAMPLE_RUNTIME_") {
@@ -139,24 +153,54 @@ func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
 	}
 }
 
-func TestAPluginIsNotLaunchedWhenItsRuntimeFailsToProvision(t *testing.T) {
+func TestAPluginIsLaunchedWhenItsRuntimeCannotBeDownloaded(t *testing.T) {
 	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
-	failure := errors.New("the archive is not the pinned one")
 	catalog := newRuntimeCatalog()
-	catalog.err = failure
+	catalog.err = errors.New("the archive is not the pinned one")
 	host.Dependencies.Replace(catalog)
 
 	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t")
-	if !errors.Is(err, failure) || !strings.Contains(err.Error(), "md.numen.a") {
-		t.Fatalf("getLaunchVars() = %v, %v, want the failure with the plugin named", vars, err)
+
+	if err != nil {
+		t.Fatalf("getLaunchVars() = %v, want the download failure left to the first use", err)
 	}
-	if vars != nil {
-		t.Errorf("a failed provisioning left the environment %v", vars)
+	if !slices.Contains(vars, envSampleLib+"=/models/libsample.so") {
+		t.Errorf("environment %v lacks the path of the runtime", vars)
+	}
+	if len(catalog.calls) != 0 {
+		t.Errorf("the launch provisioned %+v", catalog.calls)
+	}
+}
+
+func TestALaunchedPluginIsGivenThePlannedPathOfAMissingDependency(t *testing.T) {
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	t.Cleanup(func() {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+			t.Error(err)
+		}
+	})
+	catalog := &fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
+		"whisper": {ID: "whisper", PrimaryPath: "/models/whisper/w.bin", EnvVars: map[string]string{"NUMEN_DEPENDENCY_WHISPER": "/models/whisper/w.bin"}},
+	}}
+	catalog.state = plugindomain.DependencyStateMissing
+	host.Dependencies.Replace(catalog)
+	declared := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindModel}}}
+
+	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", declared.GetDependencyRequirements("/plugins/a", nil), host.Mode.GetVaultPath(), 5, "t")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(vars, "NUMEN_DEPENDENCY_WHISPER=/models/whisper/w.bin") {
+		t.Errorf("environment %v lacks the planned path of the missing model", vars)
+	}
+	if len(catalog.calls) != 0 {
+		t.Errorf("the launch downloaded %+v", catalog.calls)
 	}
 }
 
