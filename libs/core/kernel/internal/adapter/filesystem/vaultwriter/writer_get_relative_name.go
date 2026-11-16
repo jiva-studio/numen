@@ -211,7 +211,7 @@ func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.Fi
 		if info.IsDir() {
 			return 0, fmt.Errorf("write %s: it is a directory", path)
 		}
-		stale, err := isStale(root, name, info, stat)
+		stale, err := isStale(root, name, stat)
 		if err != nil {
 			return 0, err
 		}
@@ -259,12 +259,11 @@ func createParents(root *os.Root, dir, path string) error {
 	return err
 }
 
-// isStale reports whether the file is not what the baseline says. A baseline with a hash is compared
-// with the hash of the content now: size and time miss a change that keeps both. One without is compared
-// by size and time, and the zero stat expects nothing.
-func isStale(root *os.Root, name string, info fs.FileInfo, baseline domain.FileStat) (_ bool, err error) {
-	if baseline.Hash == "" {
-		return !baseline.IsZero() && (info.Size() != baseline.Size || !info.ModTime().Equal(baseline.ModTime)), nil
+// isStale reports whether the content of the file is not the one the baseline has the hash of. The zero
+// stat expects nothing, and a baseline without a hash is never the content of a file.
+func isStale(root *os.Root, name string, baseline domain.FileStat) (_ bool, err error) {
+	if baseline.IsZero() {
+		return false, nil
 	}
 	file, err := root.Open(name)
 	if err != nil {

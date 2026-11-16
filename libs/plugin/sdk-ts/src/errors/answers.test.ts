@@ -49,8 +49,9 @@ describe('the file an answer came out of', () => {
     expect(formatFingerprint(undefined)).toBeUndefined()
   })
 
-  it('is nothing at all where there is nothing to read', () => {
-    expect(getBytesQuery('')).toBe('size=0&mtime=0')
+  it('is an error where the string is not a fingerprint', () => {
+    expect(() => getBytesQuery('')).toThrow()
+    expect(() => getBytesQuery('1234 1700000000 physics/Entropy.md')).toThrow()
   })
 })
 
@@ -64,7 +65,7 @@ describe('the address a file is requested about at', () => {
 
 describe('how an address names the bytes of a file', () => {
   it('encodes the size and modification time', () => {
-    expect(getBytesQuery('1024 1700000000000000000 notes/Doc.pdf')).toBe(
+    expect(getBytesQuery('1024:0: 1700000000000000000 notes/Doc.pdf')).toBe(
       'size=1024&mtime=1700000000000000000',
     )
   })

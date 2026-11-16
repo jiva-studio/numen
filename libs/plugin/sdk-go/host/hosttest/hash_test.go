@@ -56,7 +56,7 @@ func TestAWriteOverAStaleHashIsStale(t *testing.T) {
 	}
 }
 
-func TestAChangeThatKeepsSizeAndTimeOnDiskIsStaleByHashOnly(t *testing.T) {
+func TestAChangeThatKeepsSizeAndTimeOnDiskIsStaleAndSoIsABaselineWithoutAHash(t *testing.T) {
 	ctx := t.Context()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"a.md": "body"})
 	_, read, err := v.Read(ctx, "a.md")
@@ -70,13 +70,13 @@ func TestAChangeThatKeepsSizeAndTimeOnDiskIsStaleByHashOnly(t *testing.T) {
 	if err := os.Chtimes(target, read.ModTime, read.ModTime); err != nil {
 		t.Fatal(err)
 	}
-	bySizeAndTime := read
-	bySizeAndTime.Hash = ""
+	withoutHash := read
+	withoutHash.Hash = ""
 
 	_, byHash := v.Write(ctx, "a.md", []byte("mine"), read)
-	_, bySize := v.Write(ctx, "a.md", []byte("mine"), bySizeAndTime)
+	_, bySize := v.Write(ctx, "a.md", []byte("mine"), withoutHash)
 
-	if !errors.Is(byHash, host.ErrStale) || bySize != nil {
-		t.Errorf("the write over the hash returned %v and the one over size and time %v", byHash, bySize)
+	if !errors.Is(byHash, host.ErrStale) || !errors.Is(bySize, host.ErrStale) {
+		t.Errorf("the write over the hash returned %v and the one without a hash %v", byHash, bySize)
 	}
 }

@@ -30,8 +30,8 @@ type IndexUpdater func(ctx context.Context, v domain.Vault, paths []string) erro
 // Baseline is what a caller last saw of the note it is saving.
 // Prose is compared first: equal text is unchanged whatever the file size and
 // time, which a synchronizer, a checkout or a touch change alone.
-// FileStat answers for text that did move: a note at the file stat of the last
-// write is the note this caller put there.
+// FileStat answers for text that did move: a note with the hash of the last write is the note this
+// caller put there.
 type Baseline struct {
 	Prose    string
 	FileStat domain.FileStat
@@ -41,7 +41,7 @@ func (s *Baseline) isStale(on domain.FileStat, prose string) bool {
 	if s == nil {
 		return false
 	}
-	return prose != s.Prose && !on.IsUnchanged(s.FileStat)
+	return prose != s.Prose && on.Hash != s.FileStat.Hash
 }
 
 // Clock gets the current time.
@@ -100,6 +100,9 @@ func (e Edit) splice(
 	raw, err := e.readNote(ctx, files, path)
 	if err != nil {
 		return domain.FileStat{}, err
+	}
+	if looked == nil {
+		on.Hash = domain.HashContent(raw)
 	}
 	against, err := e.getExpectedStat(path, on, looked)
 	if err != nil {

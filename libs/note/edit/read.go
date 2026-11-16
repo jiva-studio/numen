@@ -73,6 +73,8 @@ func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 		return out, nil
 	}
 
+	out.FileStat.Hash = domain.HashContent(raw)
+
 	// gomutants:disable-next-line BRANCH_IF reason="readBody handles every error returned by markdown.Open via Outcomes"
 	if err := readBody(raw, &out); err != nil {
 		// gomutants:disable-next-line RETURN_ERROR_NIL reason="readBody never returns a non-nil error"

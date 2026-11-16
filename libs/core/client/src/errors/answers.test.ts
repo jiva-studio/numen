@@ -38,8 +38,9 @@ describe('the file an answer came out of', () => {
     expect(parseFingerprint(formatFingerprint(stat))).toEqual({ ...stat, ...NO_CONTENT })
   })
 
-  it('is nothing at all where there is nothing to read', () => {
-    expect(parseFingerprint('')).toEqual({ path: '', size: 0n, mtime: 0n, ...NO_CONTENT })
+  it('is an error where the string is not a fingerprint', () => {
+    expect(() => parseFingerprint('')).toThrow()
+    expect(() => parseFingerprint('1234 1700000000 physics/Entropy.md')).toThrow()
   })
 })
 

@@ -59,12 +59,12 @@ const createWire = (cards: ReturnType<typeof vault>) => {
 describe('reading a card model', () => {
   it('arrives back as the body the tab is dirty against', async () => {
     const cards = vault()
-    cards.readCardModel.mockResolvedValue(asValue({ cardModel: cardModel(), at: '12 34 Word.md' }))
+    cards.readCardModel.mockResolvedValue(asValue({ cardModel: cardModel(), at: '12:7:ab 34 Word.md' }))
     const { wire, state } = createWire(cards)
 
     const answer = await wire.read('Word.md')
 
-    expect(answer.ok && answer.value.at).toBe('12 34 Word.md')
+    expect(answer.ok && answer.value.at).toBe('12:7:ab 34 Word.md')
     expect(JSON.parse(answer.ok ? answer.value.body : '{}').fields).toEqual(['Front', 'Back'])
     expect(state.getTitle('Word.md')).toBe('Word')
   })
@@ -119,13 +119,13 @@ describe('reading a card model', () => {
 describe('writing a card model', () => {
   it('sends the fields and the templates the body holds, under the file the tab read', async () => {
     const cards = vault()
-    cards.readCardModel.mockResolvedValue(asValue({ cardModel: cardModel(), at: '12 34 Word.md' }))
+    cards.readCardModel.mockResolvedValue(asValue({ cardModel: cardModel(), at: '12:7:ab 34 Word.md' }))
     cards.writeCardModel.mockResolvedValue(asValue({ at: '56 78 Word.md' }))
     const { wire } = createWire(cards)
 
     const readItem = await wire.read('Word.md')
     const body = readItem.ok ? readItem.value.body : ''
-    const answer = await wire.write('Word.md', body, { prose: body, stat: '12 34 Word.md' })
+    const answer = await wire.write('Word.md', body, { prose: body, stat: '12:7:ab 34 Word.md' })
 
     expect(cards.writeCardModel).toHaveBeenCalledWith(
       'Word.md',
@@ -135,7 +135,7 @@ describe('writing a card model', () => {
         templates: [{ name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' }],
         tail: '',
       },
-      '12 34 Word.md',
+      '12:7:ab 34 Word.md',
     )
     expect(answer).toEqual(asValue({ body: '', at: '56 78 Word.md' }))
   })
@@ -156,7 +156,7 @@ describe('writing a card model', () => {
 
   it('keeps the file it last knew where the write failed', async () => {
     const cards = vault()
-    cards.readCardModel.mockResolvedValue(asValue({ cardModel: cardModel(), at: '12 34 Word.md' }))
+    cards.readCardModel.mockResolvedValue(asValue({ cardModel: cardModel(), at: '12:7:ab 34 Word.md' }))
     cards.writeCardModel.mockResolvedValue(asFailure('unreadable'))
     const { wire, state } = createWire(cards)
 

@@ -71,7 +71,7 @@ func TestAWriteOverAStaleHashIsRefusedAsAConflict(t *testing.T) {
 	}
 }
 
-func TestAnExternalChangeThatKeepsTheSizeAndTheTimeIsRefusedByHash(t *testing.T) {
+func TestAnExternalChangeThatKeepsTheSizeAndTheTimeIsRefused(t *testing.T) {
 	disk, client := newDiskVaults(t, map[string]string{"samples/A.md": "body"})
 	target := filepath.Join(disk.current.Path, "samples", "A.md")
 	read, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "samples/A.md"}))
@@ -97,7 +97,7 @@ func TestAnExternalChangeThatKeepsTheSizeAndTheTimeIsRefusedByHash(t *testing.T)
 	bySize, err := client.WriteFile(t.Context(), connect.NewRequest(&v1.WriteFileRequest{
 		Path: "samples/A.md", Content: []byte("mine"), Baseline: withoutHash,
 	}))
-	if err != nil || bySize.Msg.GetError() != 0 {
-		t.Errorf("a baseline without a hash is compared by size and time, which the change keeps: answered %v (%v)", bySize.Msg, err)
+	if err != nil || bySize.Msg.GetError() != conflict {
+		t.Errorf("a baseline without a hash is never the content of a file: answered %v (%v)", bySize.Msg, err)
 	}
 }

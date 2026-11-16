@@ -172,14 +172,12 @@ func (v *Vault) Hide() {
 }
 
 // File creates or replaces a file, as another window would, and notifies the index
-// as the watcher would. The write counts in the version of the vault, as a write of a window does.
+// as the watcher would..
 func (v *Vault) File(filePath string, content string) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if _, err := v.files.write(filePath, []byte(content)); err != nil {
+	if _, err := v.put(filePath, []byte(content)); err != nil {
 		v.report(fmt.Errorf("write %s: %w", filePath, err))
-	} else {
-		v.writes++
 	}
 	v.rescan(filePath)
 }
@@ -273,13 +271,7 @@ func (v *Vault) Write(ctx context.Context, filePath string, content []byte, base
 	if stale {
 		return domain.FileStat{}, host.ErrStale
 	}
-	written, err := v.files.write(filePath, content)
-	if err != nil {
-		return domain.FileStat{}, err
-	}
-	v.writes++
-	written.Hash, written.Version = domain.HashContent(content), v.writes
-	return written, nil
+	return v.put(filePath, content)
 }
 
 func (v *Vault) Create(ctx context.Context, filePath string, content []byte) error {
@@ -383,15 +375,26 @@ func (v *Vault) hashed(at domain.FileStat) (domain.FileStat, error) {
 	return at, nil
 }
 
-// isStale is the comparison the host makes at a write: a baseline with a hash is compared with the hash of
-// the file now, one without by size and time, and the zero stat expects nothing.
+// isStale is the comparison the host makes at a write: the baseline must have the hash of the file now,
+// and the zero stat expects nothing.
 func (v *Vault) isStale(now, baseline domain.FileStat) (bool, error) {
-	if baseline.Hash == "" {
-		return !baseline.IsZero() && !now.IsUnchanged(baseline), nil
+	if baseline.IsZero() {
+		return false, nil
 	}
 	content, err := v.files.read(now.Path)
 	if err != nil {
 		return false, err
 	}
 	return domain.HashContent(content) != baseline.Hash, nil
+}
+
+// put replaces a file and counts the write in the version of the vault, as the host does.
+func (v *Vault) put(filePath string, content []byte) (domain.FileStat, error) {
+	written, err := v.files.write(filePath, content)
+	if err != nil {
+		return domain.FileStat{}, err
+	}
+	v.writes++
+	written.Hash, written.Version = domain.HashContent(content), v.writes
+	return written, nil
 }

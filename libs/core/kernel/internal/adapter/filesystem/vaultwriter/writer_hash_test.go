@@ -69,7 +69,7 @@ func TestAWriteOverAStaleHashChangesNothingAndCountsNoWrite(t *testing.T) {
 	}
 }
 
-func TestAChangeOfContentThatKeepsSizeAndTimeIsFoundByTheHashOnly(t *testing.T) {
+func TestAChangeOfContentThatKeepsSizeAndTimeIsRefusedAndSoIsABaselineWithoutAHash(t *testing.T) {
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	vault := vaulttest.NewVault(t, nil)
 	writer, err := writers.Open(vault)
@@ -95,8 +95,8 @@ func TestAChangeOfContentThatKeepsSizeAndTimeIsFoundByTheHashOnly(t *testing.T) 
 	if !errors.Is(byHash, edit.ErrStale) {
 		t.Errorf("a write over the hash of the old content returned %v", byHash)
 	}
-	if bySize != nil {
-		t.Errorf("a baseline without a hash is compared by size and time, which the change keeps, and returned %v", bySize)
+	if !errors.Is(bySize, edit.ErrStale) {
+		t.Errorf("a baseline without a hash is never the content of a file, and the write returned %v", bySize)
 	}
 }
 
