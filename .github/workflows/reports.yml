@@ -21,6 +21,10 @@ on:
         description: 'linux (GitHub runners), macos (virtual machine), or both separated by a space'
         type: string
         default: linux macos
+      macos-runner:
+        description: 'the label of the runners of the macOS virtual machines'
+        type: string
+        default: numen-macos-26
       publish:
         description: 'publish the report to Pages'
         type: boolean
@@ -39,6 +43,9 @@ on:
       environments:
         type: string
         default: linux macos
+      macos-runner:
+        type: string
+        default: numen-macos-26
       publish:
         type: boolean
         default: false
@@ -147,7 +154,7 @@ jobs:
     name: Acceptance / Live / macOS
     needs: [build-macos]
     if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
-    runs-on: numen-macos-26
+    runs-on: ${{ inputs.macos-runner || 'numen-macos-26' }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -190,7 +197,7 @@ jobs:
 
   report:
     name: Report
-    needs: [acceptance, e2e, acceptance-macos]
+    needs: [acceptance, acceptance-macos]
     if: ${{ !cancelled() && (needs.acceptance.result != 'skipped' || needs.acceptance-macos.result != 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -279,7 +286,7 @@ jobs:
 
   summary:
     name: Result
-    needs: [acceptance, acceptance-macos]
+    needs: [acceptance, e2e, acceptance-macos]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

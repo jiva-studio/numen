@@ -17,6 +17,26 @@ on:
         description: 'print the builds the prune would delete on GitHub and the CDN, and delete none'
         type: boolean
         default: false
+      keep:
+        description: 'how many of the newest nightly builds to keep on GitHub and the CDN'
+        type: number
+        default: 30
+      environments:
+        description: 'linux (GitHub runners), macos (virtual machine), or both separated by a space'
+        type: string
+        default: linux macos
+      engines:
+        description: 'chromium, webkit, or both separated by a space'
+        type: string
+        default: chromium webkit
+      specs:
+        description: 'also run the end-to-end specs'
+        type: boolean
+        default: true
+      features:
+        description: 'feature files under features/, separated by spaces; empty is all'
+        type: string
+        default: ''
 
 concurrency:
   group: nightly
@@ -61,10 +81,10 @@ jobs:
     if: ${{ needs.changes.outputs.changed == 'true' }}
     uses: ./.github/workflows/reports.yml
     with:
-      environments: linux macos
-      engines: chromium webkit
-      specs: true
-      features: ''
+      environments: ${{ inputs.environments || 'linux macos' }}
+      engines: ${{ inputs.engines || 'chromium webkit' }}
+      specs: ${{ inputs.specs || github.event_name == 'schedule' }}
+      features: ${{ inputs.features }}
       publish: true
     secrets: inherit
     permissions:
@@ -105,15 +125,17 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Keep the 30 newest nightly releases
+      - name: Keep the newest nightly releases
         env:
           GH_TOKEN: ${{ github.token }}
           DRY_RUN: ${{ inputs.dry-run-prune }}
+          KEEP: ${{ inputs.keep || 30 }}
         run: |
           set -euo pipefail
           gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1000 \
             --json tagName,isPrerelease,createdAt \
-            --jq '[.[] | select(.isPrerelease and (.tagName | contains("-nightly.")))] | sort_by(.createdAt) | reverse | .[30:] | .[].tagName' |
+            --jq '[.[] | select(.isPrerelease and (.tagName | contains("-nightly.")))] | sort_by(.createdAt) | reverse | .[].tagName' |
+            tail -n +"$((KEEP + 1))" |
             while read -r tag; do
               if [ "$DRY_RUN" = true ]; then
                 echo "would delete $tag"
@@ -137,13 +159,13 @@ jobs:
         with:
           sparse-checkout: .github/scripts
           persist-credentials: false
-      - name: Keep the 30 newest nightly builds on the CDN
+      - name: Keep the newest nightly builds on the CDN
         env:
           BUNNY_STORAGE_ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
           BUNNY_STORAGE_KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
           DRY_RUN: ${{ inputs.dry-run-prune }}
-          KEEP: 30
+          KEEP: ${{ inputs.keep || 30 }}
         run: .github/scripts/prune-nightlies.sh
 
   notify:
