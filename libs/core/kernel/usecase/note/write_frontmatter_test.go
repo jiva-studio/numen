@@ -94,7 +94,7 @@ func TestWriteFrontmatterWritesATextANumberAndABooleanAsTheirOwnTypes(t *testing
 	}
 }
 
-func TestWriteFrontmatterRemovesAKeyWhoseValueIsNilWhateverItHolds(t *testing.T) {
+func TestWriteFrontmatterRemovesKeysWithNilValues(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"River.md": riverNote})
 
@@ -111,7 +111,7 @@ func TestWriteFrontmatterRemovesAKeyWhoseValueIsNilWhateverItHolds(t *testing.T)
 	}
 }
 
-func TestWriteFrontmatterGivesANoteWithoutFrontmatterABlockAndKeepsItsBody(t *testing.T) {
+func TestWriteFrontmatterAddsABlockToANoteWithoutFrontmatter(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Plain.md": "# Plain\n\nJust prose.\n"})
 
@@ -128,7 +128,7 @@ func TestWriteFrontmatterGivesANoteWithoutFrontmatterABlockAndKeepsItsBody(t *te
 	}
 }
 
-func TestWriteFrontmatterTellsTheIndexWhichNotesWereWritten(t *testing.T) {
+func TestWriteFrontmatterIndexesTheNotesItWrote(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"River.md": riverNote, "Lake.md": "# Lake\n"})
 	var mu sync.Mutex
@@ -148,11 +148,11 @@ func TestWriteFrontmatterTellsTheIndexWhichNotesWereWritten(t *testing.T) {
 	}
 
 	if !slices.Equal(indexed, []string{"River.md"}) {
-		t.Errorf("the index was told of %v, want River.md alone", indexed)
+		t.Errorf("the index received %v, want River.md alone", indexed)
 	}
 }
 
-func TestAWriteFrontmatterTheNoteChangedBelowIsRefusedAndLeavesTheNoteAsItIs(t *testing.T) {
+func TestWriteFrontmatterRefusesAStaleNoteAndLeavesItUnchanged(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"River.md": riverNote})
 
@@ -265,7 +265,6 @@ func TestAWriteFrontmatterCanceledAfterTheFirstNoteKeepsItsResultAndIsNotAttempt
 	}
 }
 
-// withoutStampedID drops the id line the edit stamps into a note that had none.
 func withoutStampedID(body string) string {
 	lines := strings.SplitAfter(body, "\n")
 	return strings.Join(slices.DeleteFunc(lines, func(line string) bool { return strings.HasPrefix(line, "id: ") }), "")
