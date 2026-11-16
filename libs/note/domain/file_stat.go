@@ -22,7 +22,7 @@ type FileStat struct {
 	Size    int64
 	ModTime time.Time
 	FileID  FileID
-	Hash string
+	Hash    string
 	Version uint64
 }
 
