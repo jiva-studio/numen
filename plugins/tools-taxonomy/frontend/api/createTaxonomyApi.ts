@@ -8,6 +8,7 @@ export const SERVICE = 'md.numen.tools.taxonomy'
 /** The calls of the frontend to the backend, over the JSON service of the plugin. */
 export function createTaxonomyApi(api: Api = createApi(SERVICE)): TagMapApi {
   return {
-    watchTagMap: (options) => api.stream<Record<string, never>, TagMapMessage>('WatchTagMap', {}, options),
+    watchTagMap: (options) =>
+      api.stream<Record<string, never>, TagMapMessage>('WatchTagMap', {}, options),
   }
 }
