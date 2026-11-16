@@ -140,19 +140,24 @@ func TestEndpointConfigurationConnectionTrackingAndTools(t *testing.T) {
 	}
 
 	// Verify Close waits for an active request that finishes within shutdownLimit.
+	// The response of the last request reaches the client before the server marks its connection idle, so
+	// the active connection counted below must be this one, not that one.
+	waitFor(t, func() bool { return served.getActiveCount() == 0 })
 	conn := dialEndpoint(t, served)
 	if _, err := conn.Write([]byte("POST /mcp HTTP/1.1\r\nHost: stand-in\r\nContent-Length: 2\r\n\r\n{")); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, func() bool { return served.getActiveCount() > 0 })
 	var isFinished atomic.Bool
+	isClosing := make(chan struct{})
 	go func() {
-		time.Sleep(25 * time.Millisecond)
+		<-isClosing
 		isFinished.Store(true)
 		if _, err := conn.Write([]byte("}")); err != nil {
 			t.Log(err)
 		}
 	}()
+	close(isClosing)
 	if err := served.Close(t.Context()); err != nil {
 		t.Errorf("Close with finishing request = %v, want nil", err)
 	}
