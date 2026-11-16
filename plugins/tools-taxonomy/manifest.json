@@ -19,7 +19,8 @@
         "order": 15,
         "when": "target.isNote"
       },
-      { "slot": "plexGraph.context", "command": "tags.set", "group": "3-plex", "order": 50 }
+      { "slot": "plexGraph.context", "command": "tags.set", "group": "3-plex", "order": 50 },
+      { "slot": "plexGraph.nodeBelow", "view": "plex-tags" }
     ],
     "searchFunctions": {
       "version": 1,

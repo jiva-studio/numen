@@ -19,7 +19,7 @@ import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
 import { getFrameStyle } from './frameStyle'
-import { useNamesRooms } from '../model/useNamesRooms'
+import { useRooms } from '../model/useRooms'
 import type { PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -75,7 +75,7 @@ const { room, options, measures, widen, placedHeadings } = useFreeSpace(
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const { getRoomOf, getNodeRoom } = useNamesRooms(props, measures, options)
+const { getRoomOf, setWidgets, getNodeRoom } = useRooms(props, measures, options)
 
 const { frame, isMoving } = usePlexTransition(
   () => props.graph,
@@ -182,6 +182,10 @@ watch(
       :widen="widen"
       :placed-headings="placedHeadings"
       :room-of="getRoomOf"
+      :widgets-above="widgetsAbove"
+      :widgets-below="widgetsBelow"
+      :get-path="getPath"
+      :set-widgets="setWidgets"
       :behavior="behavior"
       :gesture="gesture"
       :dragging="dragging"

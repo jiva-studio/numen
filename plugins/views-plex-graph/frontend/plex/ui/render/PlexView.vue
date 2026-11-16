@@ -3,6 +3,7 @@ import { computed, provide, useId, useTemplateRef } from 'vue'
 import PlexEdgeLayer from './PlexEdgeLayer.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexNodeNames from './PlexNodeNames.vue'
+import PlexNodeWidgets from './PlexNodeWidgets.vue'
 import PlexThreads from './PlexThreads.vue'
 import { LIFT_LAYER, NODE_SIZES } from './layer'
 import { useEdgeLines } from './lines'
@@ -193,6 +194,15 @@ const getRole = (node: PlacedNode): GestureRole => {
       >
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
       </PlexNodeView>
+      <PlexNodeWidgets
+        v-for="side in ['above', 'below'] as const"
+        :key="side"
+        :node="node"
+        :side="side"
+        :entries="(side === 'above' ? widgetsAbove : widgetsBelow) ?? []"
+        :path="getPath?.(node.id) ?? ''"
+        @widgets="setWidgets?.(node.id, side, $event)"
+      />
     </g>
 
     <!-- Over every note, so a note that is open covers its neighbors without moving in the document. -->

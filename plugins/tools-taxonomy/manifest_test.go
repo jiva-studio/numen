@@ -135,3 +135,58 @@ func TestTheManifestPlacesTheTagDotsInTheRowsOfTheFileTree(t *testing.T) {
 		t.Errorf("slots = %v, want the view file-tags in fileTree.rowEnd", placed)
 	}
 }
+
+func TestTheManifestPlacesTheTagDotsInTheRowsOfTheFileTree(t *testing.T) {
+	var shape struct {
+		Frontend *json.RawMessage `json:"frontend"`
+		Services []string         `json:"services"`
+		Contrib  struct {
+			Slots []struct {
+				Slot string `json:"slot"`
+				View string `json:"view"`
+			} `json:"slots"`
+		} `json:"contributes"`
+	}
+	if err := json.Unmarshal(Manifest, &shape); err != nil {
+		t.Fatal(err)
+	}
+
+	if shape.Frontend == nil {
+		t.Error("the manifest declares no frontend")
+	}
+	if !slices.Equal(shape.Services, []string{"md.numen.tools.taxonomy"}) {
+		t.Errorf("services = %v, want [md.numen.tools.taxonomy]", shape.Services)
+	}
+	var placed []string
+	for _, one := range shape.Contrib.Slots {
+		placed = append(placed, one.Slot+" "+one.View)
+	}
+	if !slices.Contains(placed, "fileTree.rowEnd file-tags") {
+		t.Errorf("slots = %v, want the view file-tags in fileTree.rowEnd", placed)
+	}
+}
+
+func TestTheManifestHasThePlexTagsViewInTheNodeBelowSlot(t *testing.T) {
+	var shape struct {
+		Contrib struct {
+			Slots []struct {
+				Slot string `json:"slot"`
+				View string `json:"view"`
+			} `json:"slots"`
+		} `json:"contributes"`
+	}
+	if err := json.Unmarshal(Manifest, &shape); err != nil {
+		t.Fatal(err)
+	}
+
+	var placed []string
+	for _, one := range shape.Contrib.Slots {
+		placed = append(placed, one.Slot+" "+one.View)
+	}
+	if !slices.Contains(placed, "plexGraph.nodeBelow plex-tags") {
+		t.Errorf("slots = %v, want the view plex-tags in plexGraph.nodeBelow", placed)
+	}
+	if slices.Contains(placed, "plexGraph.nodeAbove plex-tags") {
+		t.Errorf("slots = %v, want the tags under the node and not over it", placed)
+	}
+}

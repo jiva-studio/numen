@@ -423,9 +423,11 @@ export const isOnSides = (sides: readonly Side[], note: { x: number; y: number }
     return note.x > focus.x
   })
 
-/** The rows under the header of a table, which must name these columns. */
-export const getTableBody = (rows: readonly (readonly string[])[], columns: readonly string[]): readonly (readonly string[])[] => {
-  if (rows[0]?.join('|') !== columns.join('|')) throw new Error(`the table must start with the header "| ${columns.join(' | ')} |"`)
+/** The rows under the header of a table, which must name these columns and may end with some of the optional ones. */
+export const getTableBody = (rows: readonly (readonly string[])[], columns: readonly string[], optional: readonly string[] = []): readonly (readonly string[])[] => {
+  const header = rows[0] ?? []
+  const named = columns.every((column, index) => header[index] === column)
+  if (!named || !header.slice(columns.length).every((column) => optional.includes(column))) throw new Error(`the table must start with the header "| ${columns.join(' | ')} |"`)
   return rows.slice(1)
 }
 

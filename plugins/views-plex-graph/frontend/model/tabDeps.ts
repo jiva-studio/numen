@@ -73,6 +73,11 @@ export function createPlexTabDeps(
       runCommand: (command, target, itemId, values) =>
         commands?.run(command, target, itemId, values) ?? Promise.resolve(''),
     },
+    watchWidgets: (side, handler) =>
+      slots?.watchEntries(
+        side === 'above' ? SLOT.plexGraphNodeAbove : SLOT.plexGraphNodeBelow,
+        handler,
+      ) ?? { dispose: () => undefined },
     notes: {
       isNesting: nesting.isNesting,
       headings: nesting.headings,
