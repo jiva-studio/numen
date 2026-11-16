@@ -74,7 +74,7 @@ describe('the tag map', () => {
     map.stop()
   })
 
-  it('reads the tags once, however many paths are asked and however often', async () => {
+  it('opens one watch for any number of paths', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
     await feed.send(WHOLE)
@@ -123,7 +123,7 @@ describe('the tag map', () => {
     map.stop()
   })
 
-  it('tells a watcher of one path when the tags of that path change', async () => {
+  it('notifies a watcher of a path when the tags of that path change', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
     await feed.send(WHOLE)
@@ -138,7 +138,7 @@ describe('the tag map', () => {
     map.stop()
   })
 
-  it('does not tell a watcher of one path about a change of another path', async () => {
+  it('does not notify a watcher of a path about a change of another path', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
     await feed.send(WHOLE)

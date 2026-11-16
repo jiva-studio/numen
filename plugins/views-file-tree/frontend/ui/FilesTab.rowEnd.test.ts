@@ -78,14 +78,14 @@ const mountFiles = async (entries: readonly SlotItem[]) => {
   return { window, rowEnd }
 }
 
-const readDrawn = (window: Awaited<ReturnType<typeof mountFiles>>['window'], name: string) =>
+const listEndsOf = (window: Awaited<ReturnType<typeof mountFiles>>['window'], name: string) =>
   window.findAll(`[data-tree-row] [data-${name}]`).map((one) => one.attributes(`data-${name}`))
 
 describe('the end of a row of a files tab', () => {
   it('draws the view a plugin placed in the slot, given the path of each row', async () => {
     const { window } = await mountFiles([createView('tags')])
 
-    expect(readDrawn(window, 'tags')).toStrictEqual([
+    expect(listEndsOf(window, 'tags')).toStrictEqual([
       'physics',
       'physics/Kelvin.md',
       'Entropy.md',
@@ -113,7 +113,7 @@ describe('the end of a row of a files tab', () => {
   it('draws nothing at the end of a row where the slot holds no entry', async () => {
     const { window } = await mountFiles([])
 
-    expect(readDrawn(window, 'tags')).toStrictEqual([])
+    expect(listEndsOf(window, 'tags')).toStrictEqual([])
   })
 
   it('draws the entries again when the slot changes', async () => {
@@ -122,7 +122,7 @@ describe('the end of a row of a files tab', () => {
     rowEnd.set([createView('size')])
     await settle()
 
-    expect(readDrawn(window, 'tags')).toStrictEqual([])
-    expect(readDrawn(window, 'size')).toHaveLength(4)
+    expect(listEndsOf(window, 'tags')).toStrictEqual([])
+    expect(listEndsOf(window, 'size')).toHaveLength(4)
   })
 })

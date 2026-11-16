@@ -31,7 +31,7 @@ func receive(t *testing.T, changes <-chan tagcache.Change) (tagcache.Change, boo
 	}
 }
 
-func TestTheMapHoldsTheNotesThatHaveTagsAlone(t *testing.T) {
+func TestGetMapReturnsTheNotesWithTags(t *testing.T) {
 	s := newScene(map[string]string{
 		"a.md": "---\ntags: [river, delta]\n---\n", "b.md": "---\ntags: river\n---\n", "c.md": "# no tags\n",
 	})
@@ -104,7 +104,7 @@ func TestANoteThatLostItsTagsIsSentWithAnEmptyList(t *testing.T) {
 	}
 }
 
-func TestARemovedNoteIsSentWithAnEmptyListAndLeavesTheMap(t *testing.T) {
+func TestARemovedNoteIsSentWithAnEmptyListAndDroppedFromTheMap(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: lake\n---\n"})
 	s.getMap(t)
 	changes, cancel := s.cache.Subscribe("garden")
@@ -123,7 +123,7 @@ func TestARemovedNoteIsSentWithAnEmptyListAndLeavesTheMap(t *testing.T) {
 	}
 }
 
-func TestAMovedNoteIsSentUnderItsNewPathAndEmptyUnderTheOld(t *testing.T) {
+func TestAMovedNoteIsSentAtItsNewPathAndEmptyAtTheOldPath(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getMap(t)
 	changes, cancel := s.cache.Subscribe("garden")

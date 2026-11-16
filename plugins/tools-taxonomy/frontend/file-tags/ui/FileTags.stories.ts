@@ -2,7 +2,20 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import FileTags from './FileTags.vue'
 
-const TAGS = ['Port', 'Sea', 'Quay', 'Dock', 'Pier', 'Harbour', 'Jetty', 'Wharf', 'Berth', 'Mole', 'Slip', 'Cove']
+const TAGS = [
+  'Port',
+  'Sea',
+  'Quay',
+  'Dock',
+  'Pier',
+  'Harbour',
+  'Jetty',
+  'Wharf',
+  'Berth',
+  'Mole',
+  'Slip',
+  'Cove',
+]
 
 interface Knobs {
   count: number
@@ -88,12 +101,13 @@ export const ShowsEveryTagWhenHovered: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.hover(canvasElement.querySelector('[data-tag-dots]') as HTMLElement)
     await waitFor(() =>
-      expect(within(document.body).getByRole('tooltip')).toHaveTextContent('Port, Sea, Quay, Dock, Pier, Harbour'),
+      expect(within(document.body).getByRole('tooltip')).toHaveTextContent(
+        'Port, Sea, Quay, Dock, Pier, Harbour',
+      ),
     )
   },
 }
 
-/** The dots on a selected row in the dark theme. */
 export const OnASelectedRowInTheDarkTheme: Story = {
   args: { count: 5, state: 'selected' },
   globals: { theme: 'dark' },
