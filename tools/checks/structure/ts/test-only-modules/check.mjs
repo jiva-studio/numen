@@ -33,6 +33,21 @@ function listUnusedFiles(repoRoot, production) {
   });
 }
 
+/** The names of the directories (and of a file) that hold test support, as in `ts/frontend-layout`. */
+const SUPPORT = ["testing", "fixtures", "testdata"];
+
+/**
+ * Tells whether a file is test support: under a directory named as test support, or a file named so.
+ *
+ * @param {string} file
+ * @returns {boolean}
+ */
+export function isTestSupport(file) {
+  const parts = file.split("/");
+  const name = parts[parts.length - 1].replace(/\.[^.]+$/, "");
+  return parts.slice(0, -1).some((part) => SUPPORT.includes(part)) || SUPPORT.includes(name);
+}
+
 /**
  * Lists the glob of every entry of knip.json that is not marked with `!`: these are the entries that
  * only the full run reads (tests, stories, tool configuration), relative to the repository root.
@@ -55,8 +70,8 @@ export function listNonProductionEntries(repoRoot) {
 
 /**
  * Fails on every file that no production entry reaches although the full run (tests and stories as
- * entries) does: a module only tests import. The files the full run reads as entries, the tests,
- * stories and their configuration, are not reported, and a file that nothing imports is the finding
+ * entries) does: a module only tests import. The files the full run reads as entries (tests,
+ * stories and their configuration) and the test support (`testing`, `fixtures` and `testdata`) are not reported, and a file that nothing imports is the finding
  * of the knip check.
  *
  * @param {{ repoRoot: string, warnOnly?: boolean }} options
@@ -73,6 +88,7 @@ export async function runTestOnlyModulesCheck({ repoRoot, warnOnly = false }) {
   const unusedAnywhere = new Set(everything.files);
   const found = shipped.files
     .filter((file) => !unusedAnywhere.has(file))
+    .filter((file) => !isTestSupport(file))
     .filter((file) => !entries.some((glob) => path.matchesGlob(file, glob)))
     .sort();
   const issues = error ? [`[TS test-only-modules] ${error}`] : found.map((file) => `[TS test-only-modules] ${file}: only tests import this module`);

@@ -53,6 +53,16 @@ describe("the test-only modules check", () => {
     assert.doesNotMatch(result.details, /stories/);
   });
 
+  it("does not report test support that only tests import", async () => {
+    const repo = createRepo({
+      "src/fixtures/sample.ts": "export const sample = 1\n",
+      "src/testing/mount.ts": "export const mount = 1\n",
+      "src/words.test.ts": "import { formatWords } from './words'\nimport { sample } from './fixtures/sample'\nimport { mount } from './testing/mount'\n\nexport const text = [formatWords(1), sample, mount]\n",
+    });
+    const result = await runTestOnlyModulesCheck({ repoRoot: repo });
+    assert.equal(result.pass, true, result.details);
+  });
+
   it("passes when every module has a shipped importer", async () => {
     const result = await runTestOnlyModulesCheck({ repoRoot: createRepo({}) });
     assert.equal(result.pass, true, result.details);
