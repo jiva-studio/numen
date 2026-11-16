@@ -206,16 +206,6 @@ jobs:
           merge-multiple: true
           path: tests/acceptance/desktop/acceptance-blobs
 
-      - name: Take the live blobs of the last nightly run
-        if: ${{ github.event_name == 'push' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          nightly=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=acceptance-blobs-macos&per_page=30" \
-            --jq '[.artifacts[] | select(.expired == false and .workflow_run.head_branch == "main")][0].workflow_run.id // empty')
-          if [ -z "$nightly" ]; then exit 0; fi
-          gh run download "$nightly" --name acceptance-blobs-macos --dir tests/acceptance/desktop/acceptance-blobs || true
-
       - name: Merge the runs into the report
         working-directory: tests/acceptance/desktop
         run: |
@@ -231,7 +221,7 @@ jobs:
   pages:
     name: Pages
     needs: [report]
-    if: ${{ !cancelled() && needs.report.result == 'success' && (github.event_name == 'push' || inputs.publish) }}
+    if: ${{ !cancelled() && needs.report.result == 'success' && inputs.publish }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
