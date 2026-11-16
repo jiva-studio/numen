@@ -3,6 +3,7 @@ export interface PickerItem {
   readonly id: string
   readonly title: string
   readonly state: 'set' | 'mixed' | 'unset'
+  readonly color?: string
 }
 
 // PickerOptions is the list a plugin asks the person to pick from. Rows with a state of set or mixed come
@@ -16,6 +17,7 @@ export interface PickerOptions {
   readonly items: readonly PickerItem[]
   readonly recent: readonly string[]
   readonly getCreateTitle: (text: string) => string
+  readonly getCreateColor?: (text: string) => string
   readonly onToggle: (id: string) => Promise<PickerItem>
   readonly onCreate: (text: string) => Promise<PickerItem>
 }

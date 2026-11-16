@@ -4,6 +4,7 @@ interface PaletteMultiItem {
   readonly id: string
   readonly title: string
   readonly state: ListItemState
+  readonly color?: string
 }
 
 /**
@@ -16,4 +17,5 @@ export interface PaletteMultiProps {
   readonly items: readonly PaletteMultiItem[]
   readonly recent: readonly string[]
   readonly getCreateTitle: (text: string) => string
+  readonly getCreateColor?: (text: string) => string
 }
