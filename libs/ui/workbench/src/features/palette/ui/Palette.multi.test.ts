@@ -245,11 +245,12 @@ describe('the order of the rows', () => {
     ])
   })
 
-  it('moves an item up among the set ones when the caller sets it', async () => {
+  it('keeps an item in its place when the caller sets it', async () => {
     const palette = mountPalette({
       multi: { ...MULTI, recent: [], items: withStates({ fir: 'unset', cedar: 'unset' }) },
     })
     await settle()
+    const opened = getNames()
     await palette.setProps({
       multi: {
         ...MULTI,
@@ -257,25 +258,80 @@ describe('the order of the rows', () => {
         items: withStates({ fir: 'unset', cedar: 'unset', maple: 'set' }),
       },
     })
-    expect(getNames()[0]).toBe('Maple')
+    expect(getNames()).toStrictEqual(opened)
+    expect(getRow('Maple')?.getAttribute('aria-checked')).toBe('true')
   })
 
-  it('keeps the keyboard on the row it toggled when that row moves', async () => {
+  it('keeps the rows and the highlighted row where they are when a row is toggled twice', async () => {
     const palette = mountPalette({
       multi: { ...MULTI, recent: [], items: withStates({ cedar: 'unset', fir: 'unset' }) },
     })
     await settle()
     await press('ArrowDown')
     await press('ArrowDown')
+    const opened = getNames()
     expect(getActiveName()).toBe('Cedar')
 
     await press('Enter')
     await palette.setProps({
       multi: { ...MULTI, recent: [], items: withStates({ cedar: 'set', fir: 'unset' }) },
     })
-    expect(getNames()[0]).toBe('Cedar')
+    expect(getNames()).toStrictEqual(opened)
+    expect(getActiveName()).toBe('Cedar')
+
+    await press('Enter')
+    await palette.setProps({
+      multi: { ...MULTI, recent: [], items: withStates({ cedar: 'unset', fir: 'unset' }) },
+    })
+    expect(getNames()).toStrictEqual(opened)
+    expect(getActiveName()).toBe('Cedar')
     await press('ArrowDown')
-    expect(getActiveName()).toBe('Alder')
+    expect(getActiveName()).toBe('Fir')
+  })
+
+  it('keeps the order of the rows a typed word keeps when one of them is toggled', async () => {
+    const palette = mountPalette()
+    await settle()
+    await typeIn('a')
+    await palette.setProps({
+      multi: { ...MULTI, items: withStates({ alder: 'set', cedar: 'unset' }) },
+    })
+    expect(getNames().filter((name) => !name.startsWith('Create'))).toStrictEqual([
+      'Cedar',
+      'Maple',
+      'Alder',
+    ])
+  })
+
+  it('puts an item the caller adds at the end', async () => {
+    const palette = mountPalette()
+    await settle()
+    const opened = getNames()
+    await palette.setProps({
+      multi: { ...MULTI, items: [{ id: 'acacia', title: 'Acacia', state: 'unset' }, ...TREES] },
+    })
+    expect(getNames()).toStrictEqual([...opened, 'Acacia'])
+  })
+
+  it('puts the item it created first and keeps it there', async () => {
+    const palette = mountPalette()
+    await settle()
+    const opened = getNames()
+    await typeIn('Harbour')
+    await press('Enter')
+    await typeIn('')
+    const harbour = {
+      id: 'harbour',
+      title: 'Harbour',
+      state: 'set' as const,
+      color: 'var(--numen-tag-7)',
+    }
+    await palette.setProps({ multi: { ...MULTI, items: [...TREES, harbour] } })
+    expect(getNames()).toStrictEqual(['Harbour', ...opened])
+    await palette.setProps({
+      multi: { ...MULTI, items: [...withStates({ maple: 'set' }), harbour] },
+    })
+    expect(getNames()).toStrictEqual(['Harbour', ...opened])
   })
 })
 
