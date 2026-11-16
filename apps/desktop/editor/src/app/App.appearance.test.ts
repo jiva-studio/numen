@@ -109,9 +109,15 @@ describe('the commands of the settings over how the window is drawn and works', 
     return one
   }
 
-  /** The elements of the head, in order. */
+  /** The elements of the mode, the theme and the sizes, in order; the editor tokens are not among them. */
   const getHeadStyles = () =>
-    [...document.head.querySelectorAll('style')].map((one) => one.textContent)
+    [IS_MODE, IS_THEME, IS_SIZES].map(
+      (is) => document.head.querySelector(`style[${MARKER}="${is}"]`)?.textContent,
+    )
+
+  /** The markers of the elements of the head, in order. */
+  const getHeadMarkers = () =>
+    [...document.head.querySelectorAll('style')].map((one) => one.getAttribute(MARKER))
 
   const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 
@@ -206,6 +212,14 @@ describe('the commands of the settings over how the window is drawn and works', 
       await type(word)
 
       expect(getRemainingRows()).toStrictEqual([title])
+    })
+  })
+
+  describe('the editor tokens', () => {
+    it('are written after the mode, the theme and the sizes once the window has started', async () => {
+      await mountWindowWithPalette()
+
+      expect(getHeadMarkers()).toStrictEqual([IS_MODE, IS_THEME, IS_SIZES, 'editor'])
     })
   })
 
