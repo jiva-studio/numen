@@ -247,6 +247,30 @@ describe('a setting written', () => {
     expect(store.read.getCommittedSetting(['other', 'nested'])).toBe('ok')
   })
 
+  it('is the value each declared setting holds, as the vault answered the write', async () => {
+    const scale = {
+      key: 'appearance.interfaceScale',
+      type: 'range',
+      title: 'Size',
+      description: '',
+    }
+    settings = createAnsweredSettings({
+      settingsService: {
+        getSettings: () => answerWith('{}', { app: [scale] }),
+        writeSettings: () => ({
+          written: '{"app":{"appearance":{"interfaceScale":1.2}}}',
+          version: 2n,
+        }),
+      },
+    })
+    const store = createSettingsStore(settings, words, vi.fn())
+    await store.start()
+
+    await store.write.writeSetting(['app', 'appearance', 'interfaceScale'], 1.2)
+
+    expect(store.state.app.value.map((one) => one.value)).toEqual([1.2])
+  })
+
   it('says the settings could not be read where the vault answers text that is not JSON', async () => {
     settings = createAnsweredSettings({
       settingsService: {

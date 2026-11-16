@@ -19,6 +19,7 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import { write } from '../lib/write'
 import type { SettingsApi, SettingsWritten } from '../api/settings'
 import { getSettingAt } from '../lib/settingAt'
+import { getValuesOfFile } from '../lib/valuesOfFile'
 
 /** Every label shown in the window. */
 export interface Words {
@@ -102,8 +103,14 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
     (values) => api.updateSettings([...values.values()]),
     (answer) => {
       const file = parseSettingsText(answer.written)
-      if (file === undefined) say(words.unreadSettings, 'error')
-      else target.value = file
+      if (file === undefined) {
+        say(words.unreadSettings, 'error')
+        return
+      }
+      target.value = file
+      const values = getValuesOfFile(file, app.value, plugins.value)
+      app.value = values.app
+      plugins.value = values.plugins
     },
   )
 
