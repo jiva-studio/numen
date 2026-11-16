@@ -74,6 +74,16 @@ npm run format:check   # a change that is not Prettier-clean is rejected
 
 *(Note: If touching `@numen/ui`, run `npm run build` in `libs/ui/components` before running desktop window suites).*
 
+### Step 3b: Read your own diff before the pull request
+
+Read `git diff origin/main` once more before opening the pull request and before each fix of a review round:
+
+- A rule you changed is worded once, in its own file, and the other files link to it. Search the repository (`AGENTS.md`, `.agents/`, module `AGENTS.md`) for the old wording.
+- Every claim in the pull request body is in the diff, and every line of the diff is explained by the body.
+- A type belongs to the layer that owns it (an error type is domain, not a port). Each doc comment says what the code under it does.
+- A test passes on Linux, macOS and Windows and does not depend on timing: no sleep, no file name made from arbitrary characters, a request is sent whole or waited for.
+- After a fix, re-read the whole function, not the changed lines.
+
 ---
 
 ## Step 4: Next Step Handover & Pull Request Pipeline

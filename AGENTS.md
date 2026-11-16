@@ -38,6 +38,7 @@ Every pull request follows the draft-first pipeline in [`.agents/rules/process.m
 - CodeRabbit runs only on request, about five reviews an hour, so one request per round: [`process.md` §4](.agents/rules/process.md).
 - A flaky test is never rerun and a timeout never raised; the cause is fixed: [`process.md` §3](.agents/rules/process.md).
 - A check is never weakened and has no exclusion list: rule 11 of section 15 below.
+- An agent reads its own diff against a short checklist before the pull request: [`nm-implement` Step 3b](.agents/skills/nm-implement/SKILL.md).
 - Heavy runs go to the build host, not the laptop: [`process.md` §3](.agents/rules/process.md).
 - Every issue has a Type (Bug, Feature, Task, Tech debt, never a label), Priority (the owner's), Area and Status, and a Milestone (the month of its planned release, set by the owner or, when missing, by the agent that opens the pull request; the workflow moves it to the merge month when the merge is in a later month); several pull requests mean sub-issues, each closed by its own `Closes #N`: [`process.md` §7](.agents/rules/process.md).
 - Status is In Progress when taken and In review when the pull request is ready; Done is set by the project workflows: [`process.md` §7](.agents/rules/process.md).
