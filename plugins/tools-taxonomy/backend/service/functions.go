@@ -14,10 +14,10 @@ import (
 
 // The query functions the manifest declares.
 const (
-	FunctionIsTagged = "isTagged"
-	functionHasTag   = "hasTag"
-	functionExactly  = "hasTagExactly"
-	argumentTag      = "tag"
+	functionHasAnyTag = "hasAnyTag"
+	functionHasTag    = "hasTag"
+	functionExactly   = "hasTagExactly"
+	argumentTag       = "tag"
 )
 
 type listPaths func(ctx context.Context, id domain.VaultID, tag string) (paths []string, isStale bool, err error)
@@ -30,7 +30,7 @@ func newFunctions(cache *tagcache.Caches) (*searchfunction.Registry, error) {
 	if err := registry.Add(functionExactly, newFunction(readTagArgument(functionExactly), cache.ListExactlyTaggedPaths)); err != nil {
 		return nil, err
 	}
-	if err := registry.Add(FunctionIsTagged, newFunction(func(searchfunction.Call) (string, error) { return "", nil }, cache.ListTaggedPaths)); err != nil {
+	if err := registry.Add(functionHasAnyTag, newFunction(func(searchfunction.Call) (string, error) { return "", nil }, cache.ListTaggedPaths)); err != nil {
 		return nil, err
 	}
 	return registry, nil

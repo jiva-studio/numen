@@ -27,11 +27,11 @@
           "example": "hasTagExactly(\"Projects\") && kind == \"note\""
         },
         {
-          "name": "isTagged",
+          "name": "hasAnyTag",
           "args": [],
           "level": "document",
           "description": "notes with at least one tag in the frontmatter key tags",
-          "example": "!isTagged() && kind == \"note\""
+          "example": "!hasAnyTag() && kind == \"note\""
         }
       ]
     }

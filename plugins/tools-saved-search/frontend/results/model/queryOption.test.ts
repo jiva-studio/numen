@@ -33,7 +33,7 @@ const CATALOG: readonly QueryFunction[] = [
     kind: 'function',
     summary: 'notes with this tag',
     description: 'Finds notes that carry the tag you give.',
-    example: 'tags("garden")',
+    example: 'hasTag("garden")',
   },
 ]
 

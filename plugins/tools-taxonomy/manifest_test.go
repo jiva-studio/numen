@@ -86,7 +86,22 @@ func TestTheManifestDeclaresHasTagAndHasTagExactlyWithOneStringArgumentAndNoTags
 	if _, ok := functions["tags"]; ok {
 		t.Error("the manifest declares tags, want it renamed to hasTag")
 	}
-	if _, ok := functions["isTagged"]; !ok {
-		t.Error("the manifest does not declare isTagged, want it kept")
+}
+
+func TestTheManifestDeclaresHasAnyTagWithoutArgumentsAndNoIsTagged(t *testing.T) {
+	functions := readSearchFunctions(t)
+
+	function, ok := functions["hasAnyTag"]
+	if !ok {
+		t.Fatalf("the manifest declares %v, want hasAnyTag", slices.Sorted(maps.Keys(functions)))
+	}
+	if function.Level != "document" || len(function.Args) != 0 || function.Description == "" || function.Example != `!hasAnyTag() && kind == "note"` {
+		t.Errorf("hasAnyTag = %+v, want level document, no argument, a description and the example", function)
+	}
+	if _, ok := functions["isTagged"]; ok {
+		t.Error("the manifest declares isTagged, want it renamed to hasAnyTag")
+	}
+	if !slices.Equal(slices.Sorted(maps.Keys(functions)), []string{"hasAnyTag", "hasTag", "hasTagExactly"}) {
+		t.Errorf("the manifest declares %v, want hasAnyTag, hasTag and hasTagExactly", slices.Sorted(maps.Keys(functions)))
 	}
 }

@@ -224,11 +224,11 @@ export const InsertsIndentationAtTheCursor: Story = {
     const browser = await import('vitest/browser')
     const editor = await openEditor(canvasElement)
 
-    await fillEditor(editor, 'words("gale") && tags("sea")')
-    await browser.userEvent.keyboard('{ArrowLeft}'.repeat('tags("sea")'.length))
+    await fillEditor(editor, 'words("gale") && hasTag("sea")')
+    await browser.userEvent.keyboard('{ArrowLeft}'.repeat('hasTag("sea")'.length))
     await browser.userEvent.keyboard('{Tab}')
 
-    await waitFor(() => expect(editor.textContent).toBe('words("gale") &&   tags("sea")'))
+    await waitFor(() => expect(editor.textContent).toBe('words("gale") &&   hasTag("sea")'))
     await expect(editor).toHaveFocus()
   },
 }

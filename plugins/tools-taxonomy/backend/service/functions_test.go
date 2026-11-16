@@ -117,16 +117,16 @@ func TestHasTagMatchesTheNotesWithTheTagOrANestedTagInAnyCase(t *testing.T) {
 	}
 }
 
-func TestIsTaggedFindsEveryNoteWithATagSortedWithTheExactCount(t *testing.T) {
+func TestHasAnyTagFindsEveryNoteWithATagSortedWithTheExactCount(t *testing.T) {
 	s := newFunctionScene(t, getTagsVault())
 
-	paths, count, _, err := s.client.FindDocuments(t.Context(), searchfunctiontest.Call{Function: service.FunctionIsTagged, VaultID: "garden"}, 3)
+	paths, count, _, err := s.client.FindDocuments(t.Context(), searchfunctiontest.Call{Function: "hasAnyTag", VaultID: "garden"}, 3)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if !slices.Equal(paths, []string{"a.md", "b.md", "c.md"}) || count != 5 {
-		t.Errorf("isTagged() found %v of %d, want the first three of five", paths, count)
+		t.Errorf("hasAnyTag() found %v of %d, want the first three of five", paths, count)
 	}
 }
 
@@ -227,13 +227,13 @@ func TestHasTagExactlyWithoutATagIsInvalidArgument(t *testing.T) {
 	}
 }
 
-func TestIsTaggedMatchesTheNotesWithAnyTagAndNotThoseWithout(t *testing.T) {
+func TestHasAnyTagMatchesTheNotesWithAnyTagAndNotThoseWithout(t *testing.T) {
 	s := newFunctionScene(t, getPortVault())
 
-	matched, _, err := s.client.MatchDocuments(t.Context(), searchfunctiontest.Call{Function: service.FunctionIsTagged, VaultID: "garden"}, getPortPaths())
+	matched, _, err := s.client.MatchDocuments(t.Context(), searchfunctiontest.Call{Function: "hasAnyTag", VaultID: "garden"}, getPortPaths())
 
 	if err != nil || !slices.Equal(matched, []string{"a.md", "b.md", "c.md", "d.md", "e.md"}) {
-		t.Errorf("isTagged() matched %v, %v, want every note but f.md", matched, err)
+		t.Errorf("hasAnyTag() matched %v, %v, want every note but f.md", matched, err)
 	}
 }
 
@@ -241,6 +241,16 @@ func TestTheOldNameTagsIsAnUnknownFunction(t *testing.T) {
 	s := newFunctionScene(t, getPortVault())
 
 	_, _, _, err := s.client.FindDocuments(t.Context(), callFunction("tags", "Port"), 10)
+
+	if err == nil || !strings.Contains(err.Error(), "not_found") {
+		t.Errorf("err = %v, want NotFound", err)
+	}
+}
+
+func TestTheOldNameIsTaggedIsAnUnknownFunction(t *testing.T) {
+	s := newFunctionScene(t, getPortVault())
+
+	_, _, _, err := s.client.FindDocuments(t.Context(), searchfunctiontest.Call{Function: "isTagged", VaultID: "garden"}, 10)
 
 	if err == nil || !strings.Contains(err.Error(), "not_found") {
 		t.Errorf("err = %v, want NotFound", err)

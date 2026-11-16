@@ -17,8 +17,8 @@ func getGardenFunctions() host.SearchFunctions {
 			Description: "Finds passages that contain the words you give.", Example: `words("spade")`,
 		},
 		{
-			Name: "tags", Kind: "function", Level: "document", Summary: "notes with this tag", Signatures: []string{"tags(name)"},
-			Description: "Finds notes that carry the tag you give.", Example: `tags("garden")`,
+			Name: "hasTag", Kind: "function", Level: "document", Summary: "notes with this tag", Signatures: []string{"hasTag(name)"},
+			Description: "Finds notes that carry the tag you give.", Example: `hasTag("garden")`,
 		},
 		{Name: "top", Kind: "stage", Summary: "keep the first N", Signatures: []string{".top(count)"}, Description: "Keeps only the first results; give how many.", Example: `words("seed").top(5)`},
 	}}
@@ -37,12 +37,12 @@ func TestListSearchFunctionsReturnsTheCatalogOfTheCore(t *testing.T) {
 	for i, function := range res.Functions {
 		names[i] = function.Name
 	}
-	if !slices.Equal(names, []string{"words", "tags", "top"}) {
+	if !slices.Equal(names, []string{"words", "hasTag", "top"}) {
 		t.Fatalf("names = %v, want words, tags, top", names)
 	}
 	want := api.SearchFunction{
-		Name: "tags", Kind: "function", Summary: "notes with this tag", Description: "Finds notes that carry the tag you give.",
-		Example: `tags("garden")`, Signatures: []string{"tags(name)"},
+		Name: "hasTag", Kind: "function", Summary: "notes with this tag", Description: "Finds notes that carry the tag you give.",
+		Example: `hasTag("garden")`, Signatures: []string{"hasTag(name)"},
 	}
 	if got := res.Functions[1]; !reflect.DeepEqual(got, want) {
 		t.Errorf("tags = %+v, want %+v", got, want)

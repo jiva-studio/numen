@@ -24,7 +24,7 @@ const CATALOG: readonly QueryFunction[] = [
     kind: 'function',
     summary: 'notes with this tag',
     description: 'Finds notes that carry the tag you give.',
-    example: 'tags("garden")',
+    example: 'hasTag("garden")',
   },
   {
     name: 'path',
@@ -136,7 +136,7 @@ describe('createQueryCompletion', () => {
     expect(result?.options.map((option) => option.label)).toStrictEqual(['rerank', 'top', 'sortBy'])
   })
 
-  it.each([['words("ta'], ["words('ta"], ['// ta'], ['tags("a") // wo']])(
+  it.each([['words("ta'], ["words('ta"], ['// ta'], ['hasTag("a") // wo']])(
     'offers no name inside a string or a comment: %s',
     (doc) => {
       expect(complete(doc)).toBeNull()
@@ -176,7 +176,7 @@ describe('getQueryDiagnostics', () => {
   })
 
   it('underlines the last character for a problem past the end of the query', () => {
-    const doc = Text.of(['tags("garden")'])
+    const doc = Text.of(['hasTag("garden")'])
 
     const [diagnostic] = getQueryDiagnostics(doc, [{ line: 4, column: 40, message: 'late' }])
 
@@ -184,11 +184,11 @@ describe('getQueryDiagnostics', () => {
   })
 
   it('underlines to the end of the line from a place that is not a name or a string', () => {
-    const doc = Text.of(['words("gale") && ) tags("pier")'])
+    const doc = Text.of(['words("gale") && ) hasTag("pier")'])
 
     const [diagnostic] = getQueryDiagnostics(doc, [{ line: 1, column: 18, message: 'stray' }])
 
-    expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe(') tags("pier")')
+    expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe(') hasTag("pier")')
   })
 
   it('underlines a problem with an end from its start through its last character', () => {
@@ -228,7 +228,7 @@ describe('getQueryDiagnostics', () => {
   })
 
   it('underlines a problem with an end over the lines it spans', () => {
-    const doc = Text.of(['words("a") && Мадхавендра', 'Пури || tags("b")'])
+    const doc = Text.of(['words("a") && Мадхавендра', 'Пури || hasTag("b")'])
 
     const [diagnostic] = getQueryDiagnostics(doc, [
       { line: 1, column: 15, endLine: 2, endColumn: 4, message: 'Put this text in quotes' },
@@ -251,7 +251,7 @@ describe('getQueryDiagnostics', () => {
 
 describe('queryLanguage', () => {
   it('styles strings, names, operators and numbers apart, and stages as names', () => {
-    const styles = new Map(getStyles('!words("seed") || tags("garden").top(5)'))
+    const styles = new Map(getStyles('!words("seed") || hasTag("garden").top(5)'))
 
     expect(styles.get('"seed"')).toBeTruthy()
     expect(styles.get('words')).toBeTruthy()
