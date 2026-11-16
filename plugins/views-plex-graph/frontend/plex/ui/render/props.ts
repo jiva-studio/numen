@@ -13,7 +13,8 @@ import type { Attention } from '../../model/useAttention'
 import type { PlexDragState } from '../../model/interaction/drag'
 import type { Gesture } from '../../model/interaction/gesture'
 import type { PlexBehavior } from '../../model/behavior'
-import type { PlexRelation, PlexDestination } from '../../../types'
+import type { PlexRelation, PlexDestination, PlexWidget } from '../../../types'
+import type { WidgetSide } from '../../model/useWidgetRooms'
 
 export interface PlexPending {
   from: string
@@ -36,6 +37,10 @@ export interface PlexViewProps {
   widen?: ((node: PlacedNode) => ExpandedBox | null) | undefined
   placedHeadings?: ((node: PlacedNode) => NodeHeadings | null) | undefined
   roomOf?: ((id: string) => NamesRoom | undefined) | undefined
+  widgetsAbove?: readonly PlexWidget[]
+  widgetsBelow?: readonly PlexWidget[]
+  getPath?: (id: string) => string
+  holdWidgets?: (id: string, side: WidgetSide, element: Element | null) => void
   behavior?: PlexBehavior
   gesture?: Gesture | undefined
   dragging?: PlexDragState | undefined
