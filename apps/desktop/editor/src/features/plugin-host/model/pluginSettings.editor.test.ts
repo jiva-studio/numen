@@ -192,10 +192,7 @@ describe('the handler of the editor settings', () => {
     const { store, accessor, reportError } = createWindow({})
     await store.start()
     const failure = new Error('the handler broke')
-    const handler = vi
-      .fn()
-      .mockRejectedValueOnce(failure)
-      .mockResolvedValue(undefined)
+    const handler = vi.fn().mockRejectedValueOnce(failure).mockResolvedValue(undefined)
     accessor.onEditorSettingsChange(PLUGIN, handler)
 
     await store.write.writeSetting(['app', 'editor', 'softWrap'], false)

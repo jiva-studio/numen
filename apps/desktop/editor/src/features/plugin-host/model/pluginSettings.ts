@@ -67,10 +67,13 @@ export function createPluginSettingsAccessor(
 
   const getEditorSettings = (): EditorSettings | undefined => undefined
 
-  const onEditorSettingsChange = (
-    _pluginId: string,
-    _handler: (settings: EditorSettings) => void | Promise<void>,
-  ): (() => void) => () => undefined
+  const onEditorSettingsChange =
+    (
+      _pluginId: string,
+      _handler: (settings: EditorSettings) => void | Promise<void>,
+    ): (() => void) =>
+    () =>
+      undefined
 
   return { getSetting, onSettingChange, getEditorSettings, onEditorSettingsChange }
 }

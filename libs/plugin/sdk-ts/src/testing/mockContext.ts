@@ -261,7 +261,7 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
       }
     },
 
-    setEditorSettings(): void {},
+    setEditorSettings: () => undefined,
 
     getRegisteredReaders(): ReaderRegistration[] {
       return [...readers]

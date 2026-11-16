@@ -375,25 +375,29 @@ describe('createPluginHost', () => {
   })
 
   it('gives a plugin the editor settings of the window and follows them for it', () => {
-    const { deps } = createMockDeps()
+    const { deps: baseDeps } = createMockDeps()
     const held: { value: { lineNumbers: boolean; softWrap: boolean } | undefined } = {
       value: undefined,
     }
-    const handlers: ((settings: { lineNumbers: boolean; softWrap: boolean }) => void)[] = []
+    const handlers: ((settings: { lineNumbers: boolean; softWrap: boolean }) => void | Promise<void>)[] =
+      []
     const unsubscribe = vi.fn()
-    deps.getEditorSettings = vi.fn(() => held.value)
-    deps.onEditorSettingsChange = vi.fn((_pluginId, handler) => {
-      handlers.push(handler)
-      return unsubscribe
-    })
-    const settings = createTestPluginHost(deps).lifecycle.createContext('test.plugin').plugin
-      .settings
+    const deps: TestHostDeps = {
+      ...baseDeps,
+      getEditorSettings: vi.fn(() => held.value),
+      onEditorSettingsChange: vi.fn((_pluginId, handler) => {
+        handlers.push(handler)
+        return unsubscribe
+      }),
+    }
+    const settings =
+      createTestPluginHost(deps).lifecycle.createContext('test.plugin').plugin.settings
     const handler = vi.fn()
 
     expect(settings.getEditor()).toBeUndefined()
     const subscription = settings.onEditorChange(handler)
     held.value = { lineNumbers: true, softWrap: true }
-    handlers[0]?.(held.value)
+    void handlers[0]?.(held.value)
 
     expect(deps.onEditorSettingsChange).toHaveBeenCalledWith('test.plugin', expect.any(Function))
     expect(settings.getEditor()).toStrictEqual({ lineNumbers: true, softWrap: true })
@@ -404,8 +408,8 @@ describe('createPluginHost', () => {
 
   it('gives a plugin no editor settings where the window offers none', () => {
     const { deps } = createMockDeps()
-    const settings = createTestPluginHost(deps).lifecycle.createContext('test.plugin').plugin
-      .settings
+    const settings =
+      createTestPluginHost(deps).lifecycle.createContext('test.plugin').plugin.settings
 
     expect(settings.getEditor()).toBeUndefined()
     expect(() => settings.onEditorChange(vi.fn()).dispose()).not.toThrow()

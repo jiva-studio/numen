@@ -42,11 +42,17 @@ describe('the editor settings of a plugin context', () => {
 
     held.value = { lineNumbers: true, softWrap: false }
 
-    expect(context.plugin.settings.getEditor()).toStrictEqual({ lineNumbers: true, softWrap: false })
+    expect(context.plugin.settings.getEditor()).toStrictEqual({
+      lineNumbers: true,
+      softWrap: false,
+    })
   })
 
   it('reach the handler of a plugin, named as the plugin, when the host reports a change', () => {
-    const subscribed: { id: string; handler: (settings: EditorSettings) => void }[] = []
+    const subscribed: {
+      id: string
+      handler: (settings: EditorSettings) => void | Promise<void>
+    }[] = []
     const host = createTestContextHost({
       settings: {
         onEditorSettingsChange: (id, handler) => {

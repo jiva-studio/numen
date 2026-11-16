@@ -8,10 +8,9 @@ import { createEditorSettingsContext } from '../testing/editorSettings'
 
 /** The window has loaded its settings: wrap on, no numbers. */
 const loadEditorSettings = () =>
-  activate(
-    createEditorSettingsContext({ lineNumbers: false, softWrap: true }).context,
-    { vault: {} } as unknown as HostServices,
-  )
+  activate(createEditorSettingsContext({ lineNumbers: false, softWrap: true }).context, {
+    vault: {},
+  } as unknown as HostServices)
 
 beforeEach(loadEditorSettings)
 
