@@ -170,11 +170,11 @@ func TestAListenerThatDoesNotAcceptDoesNotStopTheReading(t *testing.T) {
 	}
 }
 
-// TestAFileWrittenAfterTheFirstWalkOfANewFolderIsReported. The watch on a new
+// TestAFileAddedInTheGapOfANewFolderIsReported. The watch on a new
 // folder is placed after the event that names it, and a file written before
 // the watch is in place raises no event. The first walk finds the folder empty
 // and no event follows, so the folder is walked again once the watch is in place.
-func TestAFileWrittenAfterTheFirstWalkOfANewFolderIsReported(t *testing.T) {
+func TestAFileAddedInTheGapOfANewFolderIsReported(t *testing.T) {
 	root, reader := makeVaultOfNotes(t, 1)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()

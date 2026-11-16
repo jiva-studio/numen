@@ -94,7 +94,6 @@ func (s *debounceState) handleWalkResult(one walkResult, delay time.Duration, dr
 	s.startHold(delay)
 }
 
-// queueRecheck asks for the folders walked once to be walked again.
 func (s *debounceState) queueRecheck() {
 	s.recheck = nil
 	for _, folder := range s.again {
