@@ -74,6 +74,7 @@ describe('the tags of a note in the plex', () => {
     const first = mountTags(['Sea', 'Port'])
     const second = mountTags(['Quay', 'Port'])
 
+    expect(getColor(getChips(first)[1]?.attributes('style'))).toBeDefined()
     expect(getChips(first)[1]?.attributes('style')).toBe(getChips(second)[1]?.attributes('style'))
   })
 
@@ -91,6 +92,7 @@ describe('the tags of a note in the plex', () => {
   it('draw two spellings of one tag in the same color', () => {
     const [upper, lower] = getChips(mountTags(['Harbour', '#harbour']))
 
+    expect(getColor(upper?.attributes('style'))).toBeDefined()
     expect(getColor(upper?.attributes('style'))).toBe(getColor(lower?.attributes('style')))
   })
 })
