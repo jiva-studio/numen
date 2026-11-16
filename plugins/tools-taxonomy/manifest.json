@@ -3,13 +3,24 @@
   "name": "Taxonomy",
   "version": "2026.11.6",
   "protocol": 1,
-  "description": "Reads the tags of notes from their frontmatter, finds notes by tag in queries and lists the tags for agents",
+  "description": "Reads and sets the tags of notes in their frontmatter, finds notes by tag in queries and lists the tags for agents",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
-    "slots": [{ "slot": "fileTree.rowEnd", "view": "file-tags" }],
+    "commands": [{ "id": "tags.set", "title": "Set tags", "when": "target.isNote" }],
+    "slots": [
+      { "slot": "fileTree.rowEnd", "view": "file-tags" },
+      {
+        "slot": "fileTree.context",
+        "command": "tags.set",
+        "group": "2-edit",
+        "order": 15,
+        "when": "target.isNote"
+      },
+      { "slot": "plexGraph.context", "command": "tags.set", "group": "3-plex", "order": 50 }
+    ],
     "searchFunctions": {
       "version": 1,
       "functions": [
@@ -30,7 +41,7 @@
       ]
     }
   },
-  "permissions": ["vault:read"],
+  "permissions": ["vault:read", "vault:write"],
   "services": ["md.numen.tools.taxonomy"],
   "backend": { "entrypoint": "bin/tools-taxonomy" },
   "frontend": {}
