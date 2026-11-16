@@ -37,10 +37,10 @@ export interface PlexViewProps {
   widen?: ((node: PlacedNode) => ExpandedBox | null) | undefined
   placedHeadings?: ((node: PlacedNode) => NodeHeadings | null) | undefined
   roomOf?: ((id: string) => NamesRoom | undefined) | undefined
-  widgetsAbove?: readonly PlexWidget[]
-  widgetsBelow?: readonly PlexWidget[]
-  getPath?: (id: string) => string
-  holdWidgets?: (id: string, side: WidgetSide, element: Element | null) => void
+  widgetsAbove?: readonly PlexWidget[] | undefined
+  widgetsBelow?: readonly PlexWidget[] | undefined
+  getPath?: ((id: string) => string) | undefined
+  holdWidgets?: ((id: string, side: WidgetSide, element: Element | null) => void) | undefined
   behavior?: PlexBehavior
   gesture?: Gesture | undefined
   dragging?: PlexDragState | undefined

@@ -44,9 +44,6 @@ const props = withDefaults(defineProps<PlexProps>(), {
   showNames: false,
   namesOpacity: DEFAULT_NAMES_OPACITY,
   focusedNamesOpacity: DEFAULT_FOCUSED_NAMES_OPACITY,
-  widgetsAbove: () => [],
-  widgetsBelow: () => [],
-  getPath: () => '',
 })
 
 /* --------------------------------- Events --------------------------------- */
