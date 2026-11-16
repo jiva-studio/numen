@@ -135,7 +135,11 @@ export function createWindowStart(deps: WindowStartDeps) {
     }),
     bootstrap: createWindowBootstrap({
       vaults,
-      settings: windowSettings,
+      settings: {
+        start: () => windowSettings.start(),
+        close: () => windowSettings.close(),
+        editorTokens: createEditorTokens(rest),
+      },
       window,
       editing,
       tabLinkSession: tabs.linkSession,
@@ -149,7 +153,6 @@ export function createWindowStart(deps: WindowStartDeps) {
         writeMessage,
       }),
       plugins: createPluginStarter({ pluginLoader, rest, declaredCommands, writeMessage }),
-      editorTokens: createEditorTokens(rest),
     }),
   }
 }

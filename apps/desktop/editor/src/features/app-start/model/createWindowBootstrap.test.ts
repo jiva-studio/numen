@@ -88,12 +88,11 @@ const setup = ({
   }
   const deps: WindowBootstrapDeps = {
     vaults,
-    settings: { start: () => Promise.resolve(), close: () => undefined },
+    settings: { start: () => Promise.resolve(), close: () => undefined, editorTokens: { start: () => () => undefined } },
     window: { start: () => Promise.resolve(), close: () => undefined },
     editing: { fileFlush: { start: () => Promise.resolve() }, close: () => undefined },
     tabLinkSession: { start: () => Promise.resolve(), close: () => undefined },
     writeMessage,
-    editorTokens: { start: () => () => undefined },
     plugins: createPluginStart({
       pluginLoader,
       getPlugins: () => [
@@ -307,6 +306,7 @@ describe('a window starting', () => {
         close: () => {
           closeOrder.push('settings')
         },
+        editorTokens: { start: () => () => undefined },
       },
       window: {
         start: async () => undefined,
@@ -337,7 +337,6 @@ describe('a window starting', () => {
           closeOrder.push('layout')
         },
       },
-      editorTokens: { start: () => () => undefined },
       writeMessage,
     }
     const view = mount(
@@ -376,6 +375,12 @@ describe('the editor tokens of a window starting', () => {
         order.push('settings')
       },
       close: () => undefined,
+      editorTokens: {
+        start: () => {
+          order.push('editor tokens')
+          return () => undefined
+        },
+      },
     },
     window: { start: async () => undefined, close: () => undefined },
     editing: { fileFlush: { start: async () => undefined }, close: () => undefined },
@@ -392,12 +397,6 @@ describe('the editor tokens of a window starting', () => {
         order.push('layout')
       },
       close: () => undefined,
-    },
-    editorTokens: {
-      start: () => {
-        order.push('editor tokens')
-        return () => undefined
-      },
     },
     writeMessage: vi.fn(),
   })

@@ -12,14 +12,17 @@ import type { createPluginStart } from './createPluginStart'
 
 export interface WindowBootstrapDeps {
   readonly vaults: Pick<ReturnType<typeof useVaults>, 'loadVaults'>
-  readonly settings: { start(): Promise<void>; close(): void }
+  readonly settings: {
+    start(): Promise<void>
+    close(): void
+    /** Writes the editor tokens; starts once the settings are loaded and before the tabs restore. */
+    readonly editorTokens: { start(): () => void }
+  }
   readonly window: { start(): Promise<void>; close(): void }
   readonly editing: { readonly fileFlush: { start(): Promise<void> }; close(): void }
   readonly tabLinkSession: { start(): Promise<void>; close(): void }
   readonly layout: ReturnType<typeof createLayoutStart>
   readonly plugins: ReturnType<typeof createPluginStart>
-  /** Writes the editor tokens; starts once the settings are loaded and before the tabs restore. */
-  readonly editorTokens: { start(): () => void }
   readonly writeMessage: MessageWriter
 }
 
