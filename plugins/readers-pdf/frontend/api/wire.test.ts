@@ -90,7 +90,7 @@ describe('getPageUrl', () => {
   it('names the width and the bytes of the file', () => {
     const { api } = createApiOf({})
 
-    expect(createDocuments(api).getPageUrl('Books/Book.pdf', 3, 1200, '12 34 Books/Book.pdf')).toBe(
+    expect(createDocuments(api).getPageUrl('Books/Book.pdf', 3, 1200, '12:0: 34 Books/Book.pdf')).toBe(
       '/plugin/md.numen.readers.pdf/pages/3?path=Books%2FBook.pdf&wide=1200&size=12&mtime=34',
     )
   })
