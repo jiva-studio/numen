@@ -424,7 +424,7 @@ export const isOnSides = (sides: readonly Side[], note: { x: number; y: number }
   })
 
 /** The rows under the header of a table, which must name these columns. */
-export const getTableBody = (rows: readonly (readonly string[])[], columns: readonly string[]): readonly (readonly string[])[] => {
+export const getTableBody = (rows: readonly (readonly string[])[], columns: readonly string[], _optional: readonly string[] = []): readonly (readonly string[])[] => {
   if (rows[0]?.join('|') !== columns.join('|')) throw new Error(`the table must start with the header "| ${columns.join(' | ')} |"`)
   return rows.slice(1)
 }
