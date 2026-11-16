@@ -49,7 +49,7 @@ const settle = async () => {
 const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 const title = () => document.body.querySelector<HTMLElement>('[data-palette="title"]')
 const options = () => Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]'))
-const names = () => options().map((one) => (one.textContent ?? '').replace(/\s+/g, ' ').trim())
+const getNames = () => options().map((one) => (one.textContent ?? '').replace(/\s+/g, ' ').trim())
 
 const press = async (key: string, more: KeyboardEventInit = {}) => {
   const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...more })
@@ -82,7 +82,7 @@ describe('a step that asks for several items', () => {
   it('lists the set and the mixed items first, the recent next, and the rest by title', async () => {
     mountPalette()
     await settle()
-    expect(names()).toStrictEqual(['Cedar', 'Fir', 'Willow', 'Birch'])
+    expect(getNames()).toStrictEqual(['Cedar', 'Fir', 'Willow', 'Birch'])
   })
 
   it('marks each row checked, mixed or not checked', async () => {
@@ -133,7 +133,7 @@ describe('a step that asks for several items', () => {
     const palette = mountPalette()
     await settle()
     await typeIn('Harbour')
-    expect(names()).toStrictEqual(['Create Harbour'])
+    expect(getNames()).toStrictEqual(['Create Harbour'])
 
     await press('Enter')
     expect(palette.emitted('create')).toStrictEqual([['Harbour']])
@@ -144,7 +144,7 @@ describe('a step that asks for several items', () => {
     mountPalette()
     await settle()
     await typeIn('FIR ')
-    expect(names()).toStrictEqual(['Fir'])
+    expect(getNames()).toStrictEqual(['Fir'])
   })
 
   it('asks to be dismissed on Escape', async () => {

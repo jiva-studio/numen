@@ -208,7 +208,7 @@ describe('the keys', () => {
 })
 
 describe('the create row', () => {
-  it('stands first once something is typed that no item is named', async () => {
+  it('puts the create row first when the typed text names no item', async () => {
     const list = mountList({ hasAction: true })
     await getInput(list).setValue('Harbour')
     expect(getTexts(list)[0]).toBe('Create Harbour')
@@ -223,7 +223,7 @@ describe('the create row', () => {
     expect(list.emitted('close')).toBeUndefined()
   })
 
-  it('is asked for by the action key too', async () => {
+  it('creates from the typed text on the action key', async () => {
     const list = mountList({ hasAction: true })
     await getInput(list).setValue('Harbour')
     await press(list, 'k', { ctrlKey: true })
@@ -255,7 +255,7 @@ describe('the create row', () => {
     expect(getTexts(list)).toStrictEqual(['Create ced', 'Cedar'])
   })
 
-  it('is there beside the items found, ahead of them', async () => {
+  it('puts the create row ahead of the items found', async () => {
     const list = mountList({ hasAction: true, recent: ['maple'] })
     await getInput(list).setValue('a')
     expect(getTexts(list)).toStrictEqual(['Create a', 'Cedar', 'Maple', 'Alder'])

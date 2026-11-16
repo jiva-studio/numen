@@ -8,7 +8,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import SearchableList from './SearchableList.vue'
 import type { ListItem } from './rows'
-import { DARK } from '@/shared/fixtures/theme'
+import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 interface Knobs {
   items: readonly ListItem[]
@@ -111,7 +111,22 @@ export const CheckMarks: Story = {
 /** The same list in the dark token set. */
 export const CheckMarksInTheDark: Story = {
   globals: DARK,
-  play: CheckMarks.play!,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expectDark(canvasElement)
+    await expect(canvas.getByRole('option', { name: 'Fir' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    await expect(canvas.getByRole('option', { name: 'Cedar' })).toHaveAttribute(
+      'aria-checked',
+      'mixed',
+    )
+    await expect(canvas.getByRole('option', { name: 'Birch' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    )
+  },
 }
 
 /** Enter and Control+K toggle the highlighted row, and the list stays open. */
