@@ -290,7 +290,7 @@ jobs:
 
   summary:
     name: Result
-    needs: [acceptance, e2e, acceptance-live]
+    needs: [acceptance, e2e, build-macos, acceptance-live]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -304,8 +304,11 @@ jobs:
           ACCEPTANCE: ${{ needs.acceptance.result }}
           SPECS: ${{ needs.e2e.result }}
           LIVE: ${{ needs.acceptance-live.result }}
+          BUILD: ${{ needs.build-macos.result }}
         run: |
           linux=$ACCEPTANCE
           if [ "$SPECS" != skipped ] && [ "$SPECS" != success ]; then linux=$SPECS; fi
           echo "linux=$linux" >> "$GITHUB_OUTPUT"
-          echo "live=$LIVE" >> "$GITHUB_OUTPUT"
+          live=$LIVE
+          if [ "$LIVE" = skipped ] && { [ "$BUILD" = failure ] || [ "$BUILD" = cancelled ]; }; then live=failure; fi
+          echo "live=$live" >> "$GITHUB_OUTPUT"
