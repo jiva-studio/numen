@@ -179,7 +179,9 @@ The type, the measures and the timings: the font stack, the two text sizes and t
 
 Nothing restricts a theme to the palette. A theme may declare `--numen-font-size`, and a length written in `rem` still follows the interface.
 
-A theme does not change the two multipliers. `--numen-interface-scale` and `--numen-text-scale` are declared in the last element of the head, after the mode's and the theme's, so a theme that sets either has the earlier of two declarations of equal weight and the window is drawn at the size a person chose.
+A theme does not change the editor tokens. `--numen-editor-font-size`, `--numen-editor-line-height` and `--numen-editor-font-family` are declared in the last element of the head, after the theme's, from the Editor settings. With no family chosen `--numen-editor-font-family` is not declared, and an editor draws with the face of the theme.
+
+A theme does not change the two multipliers either. `--numen-interface-scale` and `--numen-text-scale` are declared in the last element of the head, after the mode's and the theme's, so a theme that sets either has the earlier of two declarations of equal weight and the window is drawn at the size a person chose.
 
 ## What ships
 

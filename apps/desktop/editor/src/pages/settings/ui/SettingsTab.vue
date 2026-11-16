@@ -45,7 +45,11 @@ function onOpenCategory(category: string): void {
     <div class="settings__page">
       <div class="settings__main">
         <SystemDetail
-          v-if="selectedPluginId === 'system' || selectedPluginId === 'appearance'"
+          v-if="
+            selectedPluginId === 'system' ||
+            selectedPluginId === 'appearance' ||
+            selectedPluginId === 'editor'
+          "
           :key="selectedPluginId"
           :section="selectedPluginId"
           :settings="installation.settings"

@@ -8,7 +8,7 @@
  * Every value here is invented.
  */
 import type { JsonObject } from '@/shared/api/json'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { Select, Switch } from '@numen/ui'
@@ -17,6 +17,7 @@ import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/sett
 import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
 import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
 import SettingsTab from './SettingsTab.vue'
+import SettingRow from './setting-row/SettingRow.vue'
 import type { Installation } from '../types'
 import { WORDS as words } from '../words'
 
@@ -49,6 +50,30 @@ const SHELL: readonly PluginSettingInfo[] = [
   },
 ]
 
+const EDITOR: readonly PluginSettingInfo[] = [
+  {
+    key: 'editor.fontSize',
+    type: 'range',
+    title: 'Font size',
+    description: '',
+    default: 14,
+    min: 10,
+    max: 32,
+    step: 1,
+    isShown: true,
+    value: 14,
+  },
+  {
+    key: 'editor.lineNumbers',
+    type: 'boolean',
+    title: 'Line numbers',
+    description: '',
+    default: false,
+    isShown: true,
+    value: false,
+  },
+]
+
 const createTab = (
   file: JsonObject = {},
   plugins: readonly PluginInfo[] = [],
@@ -77,10 +102,22 @@ const createTab = (
   }
 }
 
+beforeEach(() => {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
+    },
+  )
+})
+
 /** Every tab this file drew, put away between one test and the next. */
 const mountedWrappers: { unmount: () => void }[] = []
 
 afterEach(() => {
+  vi.unstubAllGlobals()
   while (mountedWrappers.length) mountedWrappers.pop()?.unmount()
 })
 
@@ -118,8 +155,16 @@ const openAppearanceSettings = async (tab: Tab) => {
   await nextTick()
 }
 
+const openEditorSettings = async (tab: Tab) => {
+  await tab.get('button[aria-label="Editor"]').trigger('click')
+  await nextTick()
+}
+
 const getTileNames = (tab: Tab) =>
-  tab.get('.plugins-page').findAll('button').map((one) => one.attributes('aria-label'))
+  tab
+    .get('.plugins-page')
+    .findAll('button')
+    .map((one) => one.attributes('aria-label'))
 
 const openPlugin = async (tab: Tab, name: string) => {
   await tab.get(`button[aria-label="${name}"]`).trigger('click')
@@ -143,7 +188,7 @@ describe('the settings tab', () => {
     expect(system.text()).toContain(words.systemSettingsDetail)
   })
 
-  it('draws the Appearance and Connections tiles after System and the plugin rows below them', () => {
+  it('draws the Appearance, Editor and Connections tiles after System and the plugin rows below them', () => {
     const samplePlugin: PluginInfo = {
       id: 'test.transcription',
       name: 'Transcription Plugin',
@@ -159,6 +204,7 @@ describe('the settings tab', () => {
     expect(getTileNames(tab)).toStrictEqual([
       'System',
       'Appearance',
+      'Editor',
       'Connections',
       'Transcription Plugin',
     ])
@@ -196,6 +242,37 @@ describe('the settings tab', () => {
     expect(writes).toStrictEqual([
       { at: ['app', 'naming', 'syncTitleAndFilename'], value: 'false' },
     ])
+  })
+
+  it('opens the Editor page from its tile with the editor settings and nothing else', async () => {
+    const { tab } = createTab({}, [], [...SHELL, ...EDITOR])
+
+    await openEditorSettings(tab)
+
+    expect(tab.get('[aria-current="page"]').text()).toBe('Editor')
+    expect(tab.findAllComponents(SettingRow).map((one) => one.props('name'))).toStrictEqual([
+      'Font size',
+      'Line numbers',
+    ])
+  })
+
+  it('keeps the editor settings off the System page', async () => {
+    const { tab } = createTab({}, [], [...SHELL, ...EDITOR])
+
+    await openSystemSettings(tab)
+
+    expect(tab.findAllComponents(SettingRow).map((one) => one.props('name'))).toStrictEqual([
+      'Sync title and filename',
+    ])
+  })
+
+  it('turns line numbers by writing them under the owner app', async () => {
+    const { tab, writes } = createTab({}, [], [...SHELL, ...EDITOR])
+    await openEditorSettings(tab)
+
+    tab.getComponent(Switch).vm.$emit('update:modelValue', true)
+
+    expect(writes).toStrictEqual([{ at: ['app', 'editor', 'lineNumbers'], value: 'true' }])
   })
 
   it('names the file the settings stand in, and offers no tab to edit it', async () => {
@@ -346,7 +423,7 @@ describe('the settings tab', () => {
       expect(getToolbar(tab).find('.settings-toolbar__actions').exists()).toBe(false)
     })
 
-    it('shows the path of the System and the Appearance page and no action', async () => {
+    it('shows the path of the System, the Appearance and the Editor page and no action', async () => {
       const { tab } = createTab()
 
       await openSystemSettings(tab)
@@ -357,6 +434,10 @@ describe('the settings tab', () => {
       await goBack(tab)
       await openAppearanceSettings(tab)
       expect(getCurrent(tab)).toBe(words.appearanceSettings)
+
+      await goBack(tab)
+      await openEditorSettings(tab)
+      expect(getCurrent(tab)).toBe('Editor')
     })
 
     it('shows the path of the Connections page with no action', async () => {
