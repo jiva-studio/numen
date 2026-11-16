@@ -204,11 +204,9 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 	return out, nil
 }
 
-// getNamedOffset counts the days of review from the day that opened at open to
-// the day named targetDate. The days are counted on their dates: stepping an
-// instant by a calendar day lands before the boundary of the next day when
-// the clock skips the hour the day begins at.
 func getNamedOffset(d Day, open time.Time, targetDate string) int {
+	// Counted on dates: stepping an instant by a calendar day lands before the
+	// boundary of the next day when the clock skips the hour the day begins at.
 	first := d.GetDate(open)
 	named := 0
 	for first.AddDate(0, 0, named).Format(DayLayout) < targetDate {
