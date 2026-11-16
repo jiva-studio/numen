@@ -21,14 +21,31 @@ func NewWriteSettings(
 	return &WriteSettings{check: check, file: file, refresh: refresh}
 }
 
+// Applied is every setting after a write, with the version of that state.
+type Applied struct {
+	Written string
+	Version uint64
+}
+
 // Execute writes the settings. A plugin is given its new values after Execute returns.
 func (u *WriteSettings) Execute(entries []settingsdomain.Setting) error {
+	_, err := u.Write(entries)
+	return err
+}
+
+// Write writes the settings like Execute and answers the settings as they stand after the write.
+// The version is greater than that of any state read before the write.
+func (u *WriteSettings) Write(entries []settingsdomain.Setting) (Applied, error) {
 	if err := u.check.Execute(entries); err != nil {
-		return err
+		return Applied{}, err
 	}
 	if err := u.file.Write(entries); err != nil {
-		return err
+		return Applied{}, err
 	}
 	u.refresh.Refresh()
-	return nil
+	content, _, version, err := u.file.ReadJSON()
+	if err != nil {
+		return Applied{}, err
+	}
+	return Applied{Written: content, Version: version}, nil
 }

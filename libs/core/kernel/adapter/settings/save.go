@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/jiva-studio/numen/libs/atomicfile"
@@ -307,7 +308,8 @@ func resolvePath(path string) string {
 // file keeps the writers of other processes apart too. Every writer of one file shares
 // one Files.
 type Files struct {
-	mu sync.Mutex
+	mu      sync.Mutex
+	version atomic.Uint64
 }
 
 // ErrNoFiles is returned by a settings read or write that was given no Files.
@@ -326,7 +328,11 @@ func (f *Files) run(path string, work func(path string) error) error {
 	if err := os.MkdirAll(filepath.Dir(resolved), 0o755); err != nil {
 		return err
 	}
-	return withLock(resolved, func() error { return work(resolved) })
+	err := withLock(resolved, func() error { return work(resolved) })
+	if err == nil {
+		f.version.Add(1)
+	}
+	return err
 }
 
 func splice(raw []byte, from, to int, with []byte) []byte {
@@ -342,4 +348,13 @@ func writeFileAtomically(path string, content []byte) error {
 
 func isUnwritable(err error) bool {
 	return errors.Is(err, fs.ErrPermission) || errors.Is(err, syscall.EROFS)
+}
+
+// GetVersion returns how many writes this Files has finished. A read that takes the version before it
+// reads the file holds a state at least as new as the version says.
+func (f *Files) GetVersion() uint64 {
+	if f == nil {
+		return 0
+	}
+	return f.version.Load()
 }

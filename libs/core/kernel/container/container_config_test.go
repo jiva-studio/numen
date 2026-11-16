@@ -50,7 +50,7 @@ func TestAnInstallationNamingNoClockReadsTheMachinesOwn(t *testing.T) {
 func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 	cfg, path := writeSettings(t, `{not json`)
 
-	content, response, err := readSettings(settingsOf(cfg))()
+	content, response, _, err := readSettings(settingsOf(cfg))()
 	if err == nil {
 		t.Fatalf("settings that are not JSON were read out as %q", content)
 	}
@@ -62,7 +62,7 @@ func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	if _, response, err := readSettings(settingsOf((NewConfig(Config{}))))(); err == nil || response != "" {
+	if _, response, _, err := readSettings(settingsOf((NewConfig(Config{}))))(); err == nil || response != "" {
 		t.Errorf("settings were read from %q: %v", response, err)
 	}
 	err := getSettingsWriter(settingsOf(NewConfig(Config{})))([]settings.Setting{
