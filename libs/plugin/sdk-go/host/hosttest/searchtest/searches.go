@@ -1,3 +1,4 @@
+// Package searchtest is the searches of the query language in memory, for the tests of a plugin that runs them.
 package searchtest
 
 import (
