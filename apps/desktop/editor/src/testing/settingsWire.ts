@@ -13,6 +13,7 @@ import type {
   PluginSettingOption,
   SettingEdit,
 } from '@/entities/settings'
+import type { JsonObject } from '@/shared/api/json'
 import type { Result } from '@/shared/lib/result'
 
 /** Every setting in effect, as a test core answers them. */
@@ -137,13 +138,13 @@ type Answers = Record<string, (request: never, context: never) => object | Async
 
 /** The file text with the edits applied, as the core writes them. */
 const applyEdits = (text: string, edits: readonly SettingEdit[]): string => {
-  const file: Record<string, unknown> = JSON.parse(text || '{}')
+  const file: JsonObject = JSON.parse(text || '{}')
   for (const edit of edits) {
     let at = file
     for (const step of edit.at.slice(0, -1)) {
       const next = at[step]
       at[step] = typeof next === 'object' && next !== null ? next : {}
-      at = at[step] as Record<string, unknown>
+      at = at[step] as JsonObject
     }
     at[edit.at[edit.at.length - 1] ?? ''] = JSON.parse(edit.value)
   }

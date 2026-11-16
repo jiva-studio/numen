@@ -108,7 +108,7 @@ describe('a switch bound to a remote value', () => {
     expect(one.batches.map((write) => write.values.get('on'))).toEqual([true, true])
     one.batches[1]?.answer.resolve({ version: 2n, value: true })
     await Promise.all([second, third])
-    expect(one.history).toEqual([true])
+    expect(one.history).toEqual([true, false, true])
     expect(one.values.isPending('on')).toBe(false)
   })
 
