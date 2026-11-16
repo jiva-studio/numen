@@ -232,9 +232,8 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       getIds: requireNothing('the ids of the commands, which hold no vault data'),
       watch: requireNothing('the ids of the commands, which hold no vault data'),
       listItems: requirePermissionsAsync(READ),
-      run: explain(
-        requirePermissionsAsync(WRITE),
-        'a command runs only if its owner is the plugin, or a slot lists it, which shows the user a row for it, or it is in the short list of application commands plugins run: limitCommands checks it',
+      run: requireNothing(
+        'a command runs only if its owner is the plugin, or a slot lists it, which shows the user a row for it, or it is in the short list of application commands plugins run; limitCommands checks that and the permission: vault:read for app:file.reveal and app:settings.open, which move a view, and vault:write for every other command',
       ),
     },
     slots: {

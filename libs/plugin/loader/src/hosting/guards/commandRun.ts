@@ -9,7 +9,11 @@ import type { RequirePermission } from './permission'
 const RUNNABLE_APP_COMMANDS: ReadonlySet<string> = new Set([
   'app:vault.create',
   'app:settings.open',
+  'app:file.reveal',
 ])
+
+/** The commands that move a view and change nothing, so a plugin that may read the vault runs them; every other command needs `vault:write`. */
+const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set(['app:file.reveal', 'app:settings.open'])
 
 /** What decides whether a plugin runs a command it does not own. */
 export interface CommandRunPolicy {
@@ -40,13 +44,16 @@ export function limitCommands(commands: CommandsHost, policy: CommandRunPolicy):
           ),
         )
       }
-      const permission = policy.getPermission?.(args[0])
-      if (permission) {
-        try {
-          policy.checkPermission?.(permission, 'commands.run')
-        } catch (error) {
-          return Promise.reject(error)
+      const permissions = [
+        READ_ONLY_COMMANDS.has(args[0]) ? 'vault:read' : 'vault:write',
+        policy.getPermission?.(args[0]),
+      ]
+      try {
+        for (const permission of permissions) {
+          if (permission) policy.checkPermission?.(permission, 'commands.run')
         }
+      } catch (error) {
+        return Promise.reject(error)
       }
       return commands.run(...args)
     },
