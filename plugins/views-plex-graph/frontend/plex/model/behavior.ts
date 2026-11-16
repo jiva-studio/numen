@@ -6,7 +6,7 @@
 import { EXPANSION_DELAY } from './sizing/expansion'
 import { byHandle, byLongPress, type ReachStrategy } from './interaction/reachStrategy'
 import { byDoubleClick, byDoubleTap, type ShowStrategy } from './interaction/destination'
-import { browserClock, win, type Clock } from '@numen/ui'
+import { browserClock, nav, type Clock } from '@numen/ui'
 
 export interface PlexBehavior {
   readonly expansionDelay: number
@@ -30,8 +30,7 @@ export const getBehavior = (given: PlexBehavior): PlexBehavior => ({
   clock: given.clock,
 })
 
-export const hasTouchPointer = (): boolean =>
-  typeof win.matchMedia === 'function' && win.matchMedia('(pointer: coarse)').matches
+export const hasTouchPointer = (): boolean => nav.maxTouchPoints > 0
 
 export const getInputStrategies = (isTouch: boolean): Pick<PlexBehavior, 'reaching' | 'showing'> =>
   isTouch
