@@ -525,12 +525,10 @@ describe('the parts of the window wired together', () => {
 
     const customTabs = createWindowBase(api).tabs.windowTabs
     registerSettingsPage({
-      api,
-      rest: base.foundation.rest,
-      connections: base.foundation.connections,
-      log: base.foundation.log,
-      frame: { ...base.foundation.frame, platform: ref('darwin' as const) },
-      settingsRequests: base.foundation.settingsRequests,
+      foundation: {
+        ...base.foundation,
+        frame: { ...base.foundation.frame, platform: ref('darwin' as const) },
+      },
       windowSettings: base.windowSettings,
       windowTabs: customTabs,
       plugins: {

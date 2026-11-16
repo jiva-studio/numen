@@ -92,7 +92,7 @@ function createLayoutStarter(deps: LayoutStarterDeps) {
 }
 
 /** What the start of the window reads of the foundation. */
-export type StartFoundation = Pick<
+type StartFoundation = Pick<
   WindowBase['foundation'],
   'api' | 'log' | 'rest' | 'frame' | 'connections' | 'settingsRequests'
 >
@@ -117,12 +117,7 @@ export function createWindowStart(deps: WindowStartDeps) {
   const { pluginHost, pluginLoader, declaredCommands } = plugins
   const { editing, window, vaults } = vault
   registerSettingsPage({
-    api,
-    rest,
-    connections: foundation.connections,
-    log,
-    frame,
-    settingsRequests: foundation.settingsRequests,
+    foundation,
     windowSettings,
     windowTabs,
     plugins: { host: pluginHost, health: window.pluginHealth, commands: plugins.hostPort.commands },

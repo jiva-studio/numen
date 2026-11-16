@@ -7,17 +7,17 @@ import type { WindowTabs } from '@/entities/tab'
 import { createSettingsPage } from '@/pages/settings'
 import type { createWindowSettings } from '@/features/settings-commands'
 import type { PluginHealthItem } from '@/entities/plugin'
-import type { WindowApi } from './createWindowApi'
-import type { WindowFoundation } from './createWindowFoundation'
+import type { createWindowFoundation } from './createWindowFoundation'
+
+/** What the settings page reads of the foundation. */
+type SettingsPageFoundation = Pick<
+  ReturnType<typeof createWindowFoundation>,
+  'api' | 'rest' | 'connections' | 'log' | 'frame' | 'settingsRequests'
+>
 
 /** What the settings page of the window is made from. */
 export interface SettingsPageDeps {
-  readonly api: WindowApi
-  readonly rest: WindowFoundation['rest']
-  readonly connections: WindowFoundation['connections']
-  readonly log: WindowFoundation['log']
-  readonly frame: Pick<WindowFoundation['frame'], 'platform'>
-  readonly settingsRequests: Pick<WindowFoundation['settingsRequests'], 'subscribe'>
+  readonly foundation: SettingsPageFoundation
   readonly windowSettings: Pick<ReturnType<typeof createWindowSettings>, 'appearance'>
   readonly windowTabs: WindowTabs
   readonly plugins: SettingsPagePlugins
@@ -32,7 +32,8 @@ interface SettingsPagePlugins {
 
 /** Makes the settings page, registers its kinds of tab, and opens it when it is asked for. */
 export function registerSettingsPage(deps: SettingsPageDeps): void {
-  const { api, frame, plugins, windowTabs } = deps
+  const { foundation, plugins, windowTabs } = deps
+  const { api, frame } = foundation
   const settingsPage = createSettingsPage({
     api: {
       settings: api.configuration.settings,
@@ -40,10 +41,10 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
       listCatalog: api.plugins.listCatalog,
       listRowOptions: api.configuration.connection.listRowOptions,
     },
-    rest: deps.rest,
-    connections: deps.connections,
+    rest: foundation.rest,
+    connections: foundation.connections,
     appearance: deps.windowSettings.appearance,
-    log: deps.log,
+    log: foundation.log,
     windowTabs,
     getPlatform: () => frame.platform.value,
     plugins: {
@@ -51,6 +52,6 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
       health: { items: plugins.health, commands: plugins.commands },
     },
   })
-  deps.settingsRequests.subscribe(settingsPage.configured.openSettings)
+  foundation.settingsRequests.subscribe(settingsPage.configured.openSettings)
   windowTabs.kinds.registerKinds(settingsPage.kinds)
 }

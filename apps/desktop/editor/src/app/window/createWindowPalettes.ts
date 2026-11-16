@@ -48,7 +48,7 @@ type WindowBase = ReturnType<typeof createWindowBase>
 type WindowPlugins = ReturnType<typeof createWindowPlugins>
 
 /** What the palettes of the window read of the foundation. */
-export interface PalettesFoundation extends Pick<
+interface PalettesFoundation extends Pick<
   WindowBase['foundation'],
   'log' | 'rest' | 'registry'
 > {
