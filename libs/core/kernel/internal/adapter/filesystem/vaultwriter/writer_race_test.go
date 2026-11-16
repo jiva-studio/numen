@@ -154,10 +154,6 @@ func TestARemovalAndAWriteWithOneBaselineAreOneAfterTheOther(t *testing.T) {
 	})
 }
 
-// racingChange runs a write of a.md from its stored baseline against change. The
-// outcomes of the two orders are: the write first, so the note is not at a.md any
-// more; or the change first, so the write is stale. A write that succeeds and a
-// note that is at a.md after the change did succeed is neither.
 func racingChange(
 	t *testing.T, name string, change func(*vaultwriter.VaultWriter) error,
 ) {
