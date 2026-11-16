@@ -1,17 +1,9 @@
-/**
- * The tooltip: announced as one, and showing what it was given to say. Where it
- * stands is computed by getAdjacentPlace, which has its own tests.
- */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import type { Component } from 'vue'
-import * as ui from '@/index'
-
-const Tooltip = (ui as unknown as Record<string, Component | undefined>)['Tooltip']
+import { Tooltip } from '@/index'
 
 const mountTooltip = (slot: string) => {
-  expect(Tooltip).toBeDefined()
-  return mount(Tooltip as Component, {
+  return mount(Tooltip, {
     props: { at: { x: 100, y: 200, width: 20, height: 20 } },
     slots: { default: slot },
   })

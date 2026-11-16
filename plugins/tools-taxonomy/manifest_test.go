@@ -131,7 +131,7 @@ func TestTheManifestPlacesTheTagDotsInTheRowsOfTheFileTree(t *testing.T) {
 	for _, one := range shape.Contrib.Slots {
 		placed = append(placed, one.Slot+" "+one.View)
 	}
-	if !slices.Contains(placed, "fileTree.rowEnd fileTags") {
-		t.Errorf("slots = %v, want the view fileTags in fileTree.rowEnd", placed)
+	if !slices.Contains(placed, "fileTree.rowEnd file-tags") {
+		t.Errorf("slots = %v, want the view file-tags in fileTree.rowEnd", placed)
 	}
 }

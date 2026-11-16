@@ -1,7 +1,3 @@
-/**
- * The end of each row of a files tab, drawn from the views the plugins place in the slot
- * fileTree.rowEnd.
- */
 import { afterEach, describe, expect, it } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
@@ -45,7 +41,6 @@ const createView = (name: string): SlotView => ({
   }),
 })
 
-/** The slot as its owner watches it: the handler gets the entries at once and again for each change. */
 const createRowEnd = (entries: readonly SlotItem[]) => {
   const handlers = new Set<(entries: readonly SlotItem[]) => void>()
   return {
@@ -83,14 +78,14 @@ const mountFiles = async (entries: readonly SlotItem[]) => {
   return { window, rowEnd }
 }
 
-const getDrawn = (window: Awaited<ReturnType<typeof mountFiles>>['window'], name: string) =>
+const readDrawn = (window: Awaited<ReturnType<typeof mountFiles>>['window'], name: string) =>
   window.findAll(`[data-tree-row] [data-${name}]`).map((one) => one.attributes(`data-${name}`))
 
 describe('the end of a row of a files tab', () => {
   it('draws the view a plugin placed in the slot, given the path of each row', async () => {
     const { window } = await mountFiles([createView('tags')])
 
-    expect(getDrawn(window, 'tags')).toStrictEqual([
+    expect(readDrawn(window, 'tags')).toStrictEqual([
       'physics',
       'physics/Kelvin.md',
       'Entropy.md',
@@ -118,7 +113,7 @@ describe('the end of a row of a files tab', () => {
   it('draws nothing at the end of a row where the slot holds no entry', async () => {
     const { window } = await mountFiles([])
 
-    expect(getDrawn(window, 'tags')).toStrictEqual([])
+    expect(readDrawn(window, 'tags')).toStrictEqual([])
   })
 
   it('draws the entries again when the slot changes', async () => {
@@ -127,7 +122,7 @@ describe('the end of a row of a files tab', () => {
     rowEnd.set([createView('size')])
     await settle()
 
-    expect(getDrawn(window, 'tags')).toStrictEqual([])
-    expect(getDrawn(window, 'size')).toHaveLength(4)
+    expect(readDrawn(window, 'tags')).toStrictEqual([])
+    expect(readDrawn(window, 'size')).toHaveLength(4)
   })
 })

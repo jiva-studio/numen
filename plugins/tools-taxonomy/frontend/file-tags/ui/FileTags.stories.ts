@@ -1,8 +1,3 @@
-/**
- * The tag dots at the end of a row of the file tree: none, one, four, five and twelve tags, on a row at
- * rest, hovered and selected, in the light and the dark theme. Also the test corpus: each story is run
- * in a browser by `@storybook/addon-vitest`.
- */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import FileTags from './FileTags.vue'
