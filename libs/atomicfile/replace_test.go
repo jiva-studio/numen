@@ -1,6 +1,8 @@
 package atomicfile_test
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io"
 	"os"
@@ -110,5 +112,69 @@ func TestSyncDirectoryFlushesAFolderAndAcceptsAMissingOne(t *testing.T) {
 	}
 	if err := atomicfile.SyncDirectory(root, "absent"); err != nil {
 		t.Fatalf("flush of a missing folder: %v", err)
+	}
+}
+
+func TestReplaceReportsTheHashOfTheNewContent(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(dir+"/notes.txt", []byte("the old content"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	content := strings.Repeat("a line of the new content\n", 10_000)
+	stat, err := atomicfile.Replace(t.Context(), openRoot(t, dir), "notes.txt", strings.NewReader(content), 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := hashOf([]byte(content)); stat.Hash != want {
+		t.Fatalf("hash %s, want %s", stat.Hash, want)
+	}
+	onDisk, err := os.ReadFile(dir + "/notes.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stat.Hash != hashOf(onDisk) {
+		t.Fatalf("hash %s is not the hash of the file on disk", stat.Hash)
+	}
+	if stat.Hash == hashOf([]byte("the old content")) {
+		t.Fatal("hash is of the old content")
+	}
+}
+
+func TestReplaceReportsTheHashOfAnEmptyContent(t *testing.T) {
+	stat, err := atomicfile.Replace(t.Context(), openRoot(t, t.TempDir()), "empty.txt", strings.NewReader(""), 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stat.Hash != hashOf(nil) {
+		t.Fatalf("hash %s, want the hash of no bytes", stat.Hash)
+	}
+}
+
+func TestReplaceReturnsNoStatWhenTheSourceFails(t *testing.T) {
+	dir := t.TempDir()
+	broken := errors.New("the disk went away")
+	source := io.MultiReader(strings.NewReader("half"), iotest.ErrReader(broken))
+	stat, err := atomicfile.Replace(t.Context(), openRoot(t, dir), "notes.txt", source, 0o600)
+	if !errors.Is(err, broken) {
+		t.Fatalf("error %v, want %v", err, broken)
+	}
+	if stat != (atomicfile.Stat{}) {
+		t.Fatalf("stat %+v after a failed write, want none", stat)
+	}
+}
+
+func hashOf(content []byte) string {
+	sum := sha256.Sum256(content)
+	return hex.EncodeToString(sum[:])
+}
+
+func TestReplaceReportsTheHashInTheFormOfHashContent(t *testing.T) {
+	stat, err := atomicfile.Replace(t.Context(), openRoot(t, t.TempDir()), "abc.txt", strings.NewReader("abc"), 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const want = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+	if stat.Hash != want {
+		t.Fatalf("hash %s, want %s", stat.Hash, want)
 	}
 }
