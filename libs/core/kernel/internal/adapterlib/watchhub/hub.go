@@ -5,7 +5,7 @@
 // recursively is served by that watch, and a folder requested over existing
 // watches replaces them. notify's recursive tree, which FSEvents uses, removes
 // the outer watch when a watch nested inside it stops. Place on Linux is the one nested
-// watch: it sits in the recursive watch it lies in and goes with it.
+// watch: it is placed inside the recursive watch it lies in and is stopped with it.
 package watchhub
 
 import (

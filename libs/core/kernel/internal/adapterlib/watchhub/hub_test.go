@@ -219,9 +219,9 @@ func TestFoldersApartAreWatchedApart(t *testing.T) {
 	}
 }
 
-// TestAFileWrittenAfterPlaceIsHeard. The OS reports what happens in a folder once Place returns, and the
+// TestAFileAfterPlaceIsReported. The OS reports what happens in a folder once Place returns, and the
 // watch on the tree it lies in goes on reporting.
-func TestAFileWrittenAfterPlaceIsHeard(t *testing.T) {
+func TestAFileAfterPlaceIsReported(t *testing.T) {
 	root, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
