@@ -16,7 +16,7 @@ const withRooms =
   (node) =>
     rooms[node.relation] ?? NO_ROOM
 
-const WIDGETS_OF_FOCUS: NodeRoom = { top: 46, bottom: 72, width: 0 }
+const WIDGETS_OF_FOCUS: NodeRoom = { top: 160, bottom: 72, width: 0 }
 
 const getPillTop = (node: PlacedNode): number => node.y - node.height / 2
 const getPillBottom = (node: PlacedNode): number => node.y + node.height / 2
@@ -52,7 +52,7 @@ describe('the room of the focus', () => {
     const parents = relatives(frame, 'parent')
     expect(parents).toHaveLength(3)
     for (const parent of parents) {
-      expect(getPillTop(focus) - getPillBottom(parent)).toBeGreaterThanOrEqual(46 + 20 - 1e-6)
+      expect(getPillTop(focus) - getPillBottom(parent)).toBeGreaterThanOrEqual(160 + 20 - 1e-6)
     }
   })
 
@@ -69,7 +69,7 @@ describe('the room of the focus', () => {
   it('leaves the children where they are when only the top of the focus has room', () => {
     const without = arrange(graph)
 
-    const frame = arrange(graph, withRooms({ focus: { top: 46, bottom: 0, width: 0 } }))
+    const frame = arrange(graph, withRooms({ focus: { top: 160, bottom: 0, width: 0 } }))
 
     expect(relatives(frame, 'child').map((node) => node.y)).toStrictEqual(
       relatives(without, 'child').map((node) => node.y),
