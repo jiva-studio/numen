@@ -171,7 +171,8 @@ describe('a note that is written', () => {
 describe('a window of real notes', () => {
   /** A core holding the files a test puts in it. */
   const createCore = (files: Map<string, string>): NotesCore => ({
-    read: async (path) => asValue({ body: files.get(path) ?? '', at: `1:0: 1 at:${files.get(path)}` }),
+    read: async (path) =>
+      asValue({ body: files.get(path) ?? '', at: `1:0: 1 at:${files.get(path)}` }),
     write: async (path, body, observed) => {
       if (
         observed &&
