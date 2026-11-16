@@ -87,7 +87,11 @@ func TestANewEditOfANoteCancelsTheCheckOfThePreviousEdit(t *testing.T) {
 		checked <- err
 	}()
 	awaitStart(t, started)
-	go func() { _, _ = w.runner.CheckNoteQuery(t.Context(), testVault, stormsPath, stormsQuery) }()
+	superseding := make(chan error, 1)
+	go func() {
+		_, err := w.runner.CheckNoteQuery(t.Context(), testVault, stormsPath, stormsQuery)
+		superseding <- err
+	}()
 
 	select {
 	case err := <-checked:
