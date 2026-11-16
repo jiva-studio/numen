@@ -338,4 +338,3 @@ export interface PlexHeading {
   readonly text: string
   readonly level: number
 }
-

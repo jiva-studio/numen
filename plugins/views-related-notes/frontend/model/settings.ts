@@ -1,6 +1,6 @@
 /** Whether the names are drawn and how many a note shows, as the plugin's own settings hold them. */
 import { shallowRef, type Ref } from 'vue'
-import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
+import type { JsonValue, PluginContext, Unvalidated } from '@numen/plugin-sdk'
 
 const SHOW_NAMES = true
 const NAMES_PER_NOTE = 6
@@ -24,7 +24,7 @@ const parseNamesPerNote = (value: Unvalidated): number =>
 function follow<T>(
   context: Pick<PluginContext, 'settings'>,
   key: string,
-  parse: (value: Unvalidated) => T,
+  parse: (value: JsonValue | undefined) => T,
 ): Ref<T> {
   const value = shallowRef(parse(context.settings.get(key)))
   context.settings.onChange(key, (next) => {

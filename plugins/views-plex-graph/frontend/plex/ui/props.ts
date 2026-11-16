@@ -10,13 +10,7 @@ import type { ReachStrategy } from '../model/interaction/reachStrategy'
 import type { ShowStrategy } from '../model/interaction/destination'
 import type { Clock } from '../model/transition'
 import type { PlexType, Probe } from '../model/sizing/measure'
-import type {
-  PlexHeading,
-  PlexGraph,
-  PlexRelation,
-  PlexDestination,
-  PlexWidget,
-} from '../../types'
+import type { PlexHeading, PlexGraph, PlexRelation, PlexDestination, PlexWidget } from '../../types'
 
 /**
  * With `showPills` off each title is drawn without its pill. `lineWidth` and `outlineWidth` are in pixels. `widgetsAbove` and `widgetsBelow` are the views drawn over and

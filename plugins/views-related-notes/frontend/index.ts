@@ -28,7 +28,9 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   const { notes } = host.vault
   const { commands, notices } = host.ui
   if (!notes || !commands) {
-    throw new Error('the names of related notes need the notes of the vault and the commands of the window')
+    throw new Error(
+      'the names of related notes need the notes of the vault and the commands of the window',
+    )
   }
   const source: NamesSource = {
     notes,
