@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/searchrunstest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/api"
@@ -77,7 +77,7 @@ func getBrokenAnswer() host.SearchState {
 
 // failingSearch is the search of the core, failing every read while failure is set.
 type failingSearch struct {
-	*searchrunstest.Searches
+	*searchtest.Searches
 	mu      sync.Mutex
 	failure error
 }
@@ -103,7 +103,7 @@ func (f *failingSearch) setFailure(failure error) {
 type fixture struct {
 	app      *service.App
 	vault    *hosttest.Vault
-	searches *searchrunstest.Searches
+	searches *searchtest.Searches
 	search   *failingSearch
 	queue    *hosttest.Queue
 	clock    *clocktest.Fake
@@ -114,7 +114,7 @@ type fixture struct {
 
 func newFixture(t *testing.T, refreshMinutes int) *fixture {
 	t.Helper()
-	searches := searchrunstest.NewSearches()
+	searches := searchtest.NewSearches()
 	searches.SetAnswer(stormsQuery, getStormsAnswer(mooringText))
 	searches.SetAnswer(wordsQuery, host.SearchState{Results: []host.SearchResult{passage("Harbor/Gale.md", "Gale", galeText, 1)}, ScoreKind: "words"})
 	searches.SetAnswer(brokenQuery, getBrokenAnswer())
