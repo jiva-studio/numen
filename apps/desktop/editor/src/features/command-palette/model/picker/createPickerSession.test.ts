@@ -18,6 +18,11 @@ const createOptions = (more: Partial<PickerOptions> = {}): PickerOptions => ({
   ...more,
 })
 
+const COLORED: readonly PickerItem[] = [
+  { id: 'birch', title: 'Birch', state: 'unset', color: 'var(--numen-tag-1)' },
+  { id: 'cedar', title: 'Cedar', state: 'set', color: 'var(--numen-tag-3)' },
+]
+
 describe('a picker session', () => {
   it('has nothing to draw before a plugin opens a list', () => {
     expect(createPickerSession().multi.value).toBeUndefined()
@@ -34,6 +39,63 @@ describe('a picker session', () => {
       recent: ['birch'],
     })
     expect(session.multi.value?.getCreateTitle('Harbour')).toBe('Create Harbour')
+
+    session.dismiss()
+    await opening
+  })
+
+  it('draws the colour of each item and the colour the plugin gives the create row', async () => {
+    const session = createPickerSession()
+    const opening = session.open(
+      createOptions({
+        items: COLORED,
+        getCreateColor: (text) => `var(--numen-tag-${text.length})`,
+      }),
+    )
+
+    expect(session.multi.value?.items.map((one) => one.color)).toStrictEqual([
+      'var(--numen-tag-1)',
+      'var(--numen-tag-3)',
+    ])
+    expect(session.multi.value?.getCreateColor?.('Harbour')).toBe('var(--numen-tag-7)')
+
+    session.dismiss()
+    await opening
+  })
+
+  it('draws the colour of the item a toggle or a create answers with', async () => {
+    const session = createPickerSession()
+    const opening = session.open(
+      createOptions({
+        items: COLORED,
+        onToggle: async (id) => ({ id, title: 'Birch', state: 'set', color: 'var(--numen-tag-2)' }),
+        onCreate: async (text) => ({
+          id: text.toLowerCase(),
+          title: text,
+          state: 'set',
+          color: 'var(--numen-tag-7)',
+        }),
+      }),
+    )
+
+    await session.toggle('birch')
+    await session.create('Harbour')
+
+    expect(session.multi.value?.items.map((one) => one.color)).toStrictEqual([
+      'var(--numen-tag-2)',
+      'var(--numen-tag-3)',
+      'var(--numen-tag-7)',
+    ])
+
+    session.dismiss()
+    await opening
+  })
+
+  it('draws no create colour where the plugin gives none', async () => {
+    const session = createPickerSession()
+    const opening = session.open(createOptions())
+
+    expect(session.multi.value?.getCreateColor).toBeUndefined()
 
     session.dismiss()
     await opening
