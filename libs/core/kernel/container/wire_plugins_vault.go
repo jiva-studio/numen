@@ -109,7 +109,7 @@ func newArranger(
 		Problems: vault.NewGetParseProblems(db.NoteProblems()),
 	}
 	if window != nil {
-		arranger.Window, arranger.WindowVault = *window, current
+		arranger.Window, arranger.WindowVault = window, current
 	}
 	return arranger
 }

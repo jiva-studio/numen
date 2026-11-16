@@ -33,7 +33,7 @@ type PropertyChanges struct {
 // Arranger has the use cases that change the notes of a vault and that run the checks of a vault.
 type Arranger struct {
 	Notes       NoteChanges
-	Window      NoteChanges
+	Window      *NoteChanges
 	WindowVault func() (domain.Vault, bool)
 	Checks      func(ctx context.Context, v domain.Vault, named ...domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
 	Problems    *vaults.GetParseProblems
@@ -42,13 +42,13 @@ type Arranger struct {
 }
 
 func (a Arranger) getChanges(v domain.Vault) NoteChanges {
-	if a.WindowVault == nil {
+	if a.Window == nil || a.WindowVault == nil {
 		return a.Notes
 	}
 	if current, isShowing := a.WindowVault(); !isShowing || current.ID != v.ID {
 		return a.Notes
 	}
-	return a.Window
+	return *a.Window
 }
 
 func (a Arranger) RenameNote(ctx context.Context, path, title string) (string, bool, *domain.MoveResult, error) {
