@@ -26,7 +26,9 @@ export class FileTreeDriver {
   private async getEntryRow(entry: string, entryPath: string): Promise<Locator> {
     const row = await this.getRow(entryPath)
     const parent = entryPath.split('/').slice(0, -1).join('/')
-    const found = (await listFiles(this.scenario.page.request, parent)).find((one) => one.path === entryPath)
+    const found = (await listFiles(this.scenario.page.request, parent)).find(
+      (one) => one.path === entryPath,
+    )
     if (!found) throw new Error(`the vault has no file or folder at "${entryPath}"`)
     assertEntry(entry, entryPath, found.isFolder)
     return row
@@ -53,7 +55,11 @@ export class FileTreeDriver {
     const files = [...wanted].sort((a, b) => Number(b[1].length > 0) - Number(a[1].length > 0))
     for (const [file, tags] of files) {
       const row = await this.getEntryRow('file', file)
-      await expect.poll(() => this.tree.readTags(row), { message: `the tags the file tree shows for "${file}"` }).toStrictEqual([...tags].sort())
+      await expect
+        .poll(() => this.tree.readTags(row), {
+          message: `the tags the file tree shows for "${file}"`,
+        })
+        .toStrictEqual([...tags].sort())
     }
   }
 

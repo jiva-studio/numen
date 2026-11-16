@@ -30,7 +30,12 @@ import {
 import { addLinks, getLinkTitle, readLinks, type NoteLink } from './note-links.js'
 import { addTags, groupTags } from './note-tags.js'
 import { assertEntry, DEFAULT_VAULT, getStem, parseColumn, readLinkAddress } from './rules.js'
-import { assertPathsAreFree, parseVaultChecks, parseVaultFiles, type VaultWrite } from './vault-files.js'
+import {
+  assertPathsAreFree,
+  parseVaultChecks,
+  parseVaultFiles,
+  type VaultWrite,
+} from './vault-files.js'
 import type { Scenario } from './scenario.js'
 
 export class VaultDriver {
@@ -62,7 +67,11 @@ export class VaultDriver {
 
   addCardModels(vault: string, rows: string[][]): void {
     for (const model of parseCardModels(rows)) {
-      this.writeNewCards(vault, model.title, createCardModelText(model.title, model.fields) + createTemplatesText(model.templates))
+      this.writeNewCards(
+        vault,
+        model.title,
+        createCardModelText(model.title, model.fields) + createTemplatesText(model.templates),
+      )
     }
   }
 
@@ -86,7 +95,8 @@ export class VaultDriver {
     const folder = this.scenario.getWorld().getFolder(vault)
     const { page } = this.scenario
     const vaults = await listVaults(page.request)
-    const target = vaults.find((one) => one.path === folder) ?? (await addVault(page.request, folder, vault))
+    const target =
+      vaults.find((one) => one.path === folder) ?? (await addVault(page.request, folder, vault))
     await openVault(page.request, target.id)
     await expect(page.locator('[data-title]')).toContainText(vault)
   }
@@ -95,7 +105,8 @@ export class VaultDriver {
     const name = this.scenario.getVault(vault)
     const folder = this.scenario.getWorld().getFolder(name)
     const { request } = this.scenario.page
-    if (!(await listVaults(request)).some((one) => one.path === folder)) await addVault(request, folder, name)
+    if (!(await listVaults(request)).some((one) => one.path === folder))
+      await addVault(request, folder, name)
   }
 
   /**
@@ -119,10 +130,15 @@ export class VaultDriver {
     for (const from of new Set(links.map((link) => link.from))) {
       const notePath = this.scenario.getNotePath(from)
       const text = world.readText(vault, notePath)
-      if (text === undefined) throw new Error(`no note is titled "${from}" in the vault: write it before its links`)
+      if (text === undefined)
+        throw new Error(`no note is titled "${from}" in the vault: write it before its links`)
       const noteLinks: NoteLink[] = links
         .filter((link) => link.from === from)
-        .map((link) => ({ to: `[[${this.scenario.getNotePath(link.to).replace(/\.md$/, '')}]]`, role: link.role, label: link.description }))
+        .map((link) => ({
+          to: `[[${this.scenario.getNotePath(link.to).replace(/\.md$/, '')}]]`,
+          role: link.role,
+          label: link.description,
+        }))
       world.writeText(vault, notePath, addLinks(text, noteLinks))
     }
   }
@@ -134,7 +150,8 @@ export class VaultDriver {
     for (const [title, tags] of groupTags(rows)) {
       const notePath = this.scenario.getNotePath(title)
       const text = world.readText(vault, notePath)
-      if (text === undefined) throw new Error(`no note is titled "${title}" in the vault: write it before its tags`)
+      if (text === undefined)
+        throw new Error(`no note is titled "${title}" in the vault: write it before its tags`)
       world.writeText(vault, notePath, addTags(text, tags))
     }
   }
@@ -145,7 +162,10 @@ export class VaultDriver {
     else await this.expectNoteLinks(vault, rows)
   }
 
-  private async expectNoteLinks(vault: string, rows: readonly (readonly string[])[]): Promise<void> {
+  private async expectNoteLinks(
+    vault: string,
+    rows: readonly (readonly string[])[],
+  ): Promise<void> {
     const wanted = parseLinkRows(rows, ['from', 'to', 'role'], ['description'])
     const hasDescription = rows[0]?.includes('description') === true
     const world = this.scenario.getWorld()
@@ -156,13 +176,22 @@ export class VaultDriver {
       .poll(() =>
         world
           .listNoteFiles(name)
-          .flatMap((note) => readLinks(note.text).map((link) => format(getStem(note.path), getLinkTitle(link.to), link.role, link.label)))
+          .flatMap((note) =>
+            readLinks(note.text).map((link) =>
+              format(getStem(note.path), getLinkTitle(link.to), link.role, link.label),
+            ),
+          )
           .sort(),
       )
-      .toStrictEqual(wanted.map((link) => format(link.from, link.to, link.role, link.description)).sort())
+      .toStrictEqual(
+        wanted.map((link) => format(link.from, link.to, link.role, link.description)).sort(),
+      )
   }
 
-  private async expectLinkNotes(vault: string, rows: readonly (readonly string[])[]): Promise<void> {
+  private async expectLinkNotes(
+    vault: string,
+    rows: readonly (readonly string[])[],
+  ): Promise<void> {
     const addresses = parseColumn(rows, 'address')
     const world = this.scenario.getWorld()
     const name = this.scenario.getVault(vault)
@@ -192,7 +221,9 @@ export class VaultDriver {
     this.scenario.setVault(vault)
     await expect.poll(() => this.listEntries(entryPath)).toContain(entryPath)
     const parent = entryPath.split('/').slice(0, -1).join('/')
-    const found = (await listFiles(this.scenario.page.request, parent)).find((one) => one.path === entryPath)
+    const found = (await listFiles(this.scenario.page.request, parent)).find(
+      (one) => one.path === entryPath,
+    )
     assertEntry(entry, entryPath, found?.isFolder ?? false)
   }
 
@@ -214,14 +245,19 @@ export class VaultDriver {
     }
     const world = this.scenario.getWorld()
     const name = this.scenario.getVault(vault)
-    await expect.poll(() => world.readText(name, notePath), { message: `the note "${notePath}" does not have the text "${text}"` }).toContain(text)
+    await expect
+      .poll(() => world.readText(name, notePath), {
+        message: `the note "${notePath}" does not have the text "${text}"`,
+      })
+      .toContain(text)
   }
 
   private async writeFile(vault: string, write: VaultWrite): Promise<void> {
     const world = this.scenario.getWorld()
     if (write.kind === 'folder') world.makeFolder(vault, write.path)
     else if (write.kind === 'empty') world.writeText(vault, write.path, '')
-    else if (write.kind === 'sample') world.copySample(vault, write.sampleKind, write.path, write.sample)
+    else if (write.kind === 'sample')
+      world.copySample(vault, write.sampleKind, write.path, write.sample)
     else {
       world.writeNote(vault, write.path, write.text)
       this.scenario.rememberNote(getStem(write.path), write.path)
@@ -231,13 +267,20 @@ export class VaultDriver {
 
   private async writeSharedNote(write: VaultWrite): Promise<void> {
     if (write.kind !== 'note') {
-      throw new Error(`"${write.path}" is not a note: the vault without a name takes notes only, a world takes any file`)
+      throw new Error(
+        `"${write.path}" is not a note: the vault without a name takes notes only, a world takes any file`,
+      )
     }
     const { request } = this.scenario.page
     const title = getStem(write.path)
     await this.scenario.claimTitle(title)
-    const notePath = await createNote(request, title, path.posix.dirname(write.path).replace(/^\.$/, ''))
-    if (notePath !== write.path) throw new Error(`the product made the note at "${notePath}", not at "${write.path}"`)
+    const notePath = await createNote(
+      request,
+      title,
+      path.posix.dirname(write.path).replace(/^\.$/, ''),
+    )
+    if (notePath !== write.path)
+      throw new Error(`the product made the note at "${notePath}", not at "${write.path}"`)
     this.scenario.rememberNote(title, notePath)
     await writeBody(request, notePath, `${write.text}\n`)
     await this.expectListed(notePath)
@@ -255,11 +298,17 @@ export class VaultDriver {
     const fields = readCardModelFields(this.readCards(vault, model, 'card model'))
     const text = this.readCards(vault, deck, 'deck')
     const card = createCardText(model, fields, values, createCardId(deck, countCards(text)))
-    this.scenario.getWorld().writeText(this.scenario.getVault(vault), getCardFile(deck), text + card)
+    this.scenario
+      .getWorld()
+      .writeText(this.scenario.getVault(vault), getCardFile(deck), text + card)
   }
 
   private readCards(vault: string, title: string, kind: 'card model' | 'deck'): string {
-    return assertCardFileKind(this.scenario.getWorld().readText(this.scenario.getVault(vault), getCardFile(title)), title, kind)
+    return assertCardFileKind(
+      this.scenario.getWorld().readText(this.scenario.getVault(vault), getCardFile(title)),
+      title,
+      kind,
+    )
   }
 
   private writeNewCards(vault: string, title: string, text: string): void {
@@ -287,12 +336,23 @@ interface LinkRow {
   readonly description: string
 }
 
-const parseLinkRows = (rows: readonly (readonly string[])[], required: readonly string[], optional: readonly string[]): LinkRow[] => {
+const parseLinkRows = (
+  rows: readonly (readonly string[])[],
+  required: readonly string[],
+  optional: readonly string[],
+): LinkRow[] => {
   const [header = [], ...body] = rows
   const unknown = header.filter((column) => ![...required, ...optional].includes(column))
   if (unknown.length > 0 || required.some((column) => !header.includes(column))) {
-    throw new Error(`the table must have the header "| ${required.join(' | ')} |", and may add "${optional.join(', ')}"`)
+    throw new Error(
+      `the table must have the header "| ${required.join(' | ')} |", and may add "${optional.join(', ')}"`,
+    )
   }
   const cell = (row: readonly string[], column: string): string => row[header.indexOf(column)] ?? ''
-  return body.map((row) => ({ from: cell(row, 'from'), to: cell(row, 'to'), role: cell(row, 'role'), description: cell(row, 'description') }))
+  return body.map((row) => ({
+    from: cell(row, 'from'),
+    to: cell(row, 'to'),
+    role: cell(row, 'role'),
+    description: cell(row, 'description'),
+  }))
 }
