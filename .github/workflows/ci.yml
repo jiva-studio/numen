@@ -46,7 +46,7 @@ jobs:
       pull-requests: read
       actions: read
     env:
-      ENGINES: ${{ github.event_name == 'pull_request' && 'webkit' || 'chromium webkit' }}
+      ENGINES: ${{ github.event_name == 'pull_request' && 'chromium' || 'chromium webkit' }}
     outputs:
       areas: ${{ steps.passed.outputs.areas }}
       plugin_dirs: ${{ steps.passed.outputs.plugin_dirs }}
@@ -176,6 +176,7 @@ jobs:
     with:
       scope: ${{ needs.changes.outputs.e2e }}
       engines: ${{ needs.changes.outputs.engines }}
+      smoke: ${{ github.event_name == 'pull_request' }}
 
   # Fails when a job failed or was cancelled, and when the areas were not found: every other job
   # is then skipped. Names the markers of the areas whose job passed, also when it fails.

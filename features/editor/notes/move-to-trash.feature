@@ -9,6 +9,7 @@ Feature: Move to trash
     Given the empty vault "Test"
     And the application "editor" starts
 
+  @smoke
   Scenario: The note leaves the file tree
     Given the vault has the following:
       | path                | text               |

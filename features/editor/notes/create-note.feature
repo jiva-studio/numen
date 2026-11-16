@@ -5,6 +5,7 @@ Feature: Create note
   I want to make a note with a name
   So that I can start to write
 
+  @smoke
   Scenario: A note is made with a name
     Given the empty vault "Test"
     And the application "editor" starts

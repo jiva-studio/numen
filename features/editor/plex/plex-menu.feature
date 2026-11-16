@@ -49,6 +49,7 @@ Feature: Plex menu
 
   Rule: An item of the menu acts on the note
 
+    @smoke
     Scenario: A child note is made from the menu
       When the person chooses the item "Create child note" in the menu of the note titled "Quay" in the plex
       And the person answers what the palette asks with:

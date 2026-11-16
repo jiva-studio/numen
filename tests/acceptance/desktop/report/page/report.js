@@ -125,6 +125,8 @@ const isScenarioShown = (feature, scenario) => {
   return text.includes(state.query)
 }
 
+const createLiveBadge = () => createElement('span', { class: 'live-badge' }, ['live'])
+
 const createScenarioButton = (scenario) =>
   createElement(
     'button',
@@ -137,6 +139,7 @@ const createScenarioButton = (scenario) =>
     [
       createStatusDot(scenario.status),
       createElement('span', { class: 'name' }, [scenario.name]),
+      ...(scenario.live ? [createLiveBadge()] : []),
       createElement('span', { class: 'time' }, [formatDuration(scenario.duration)]),
     ],
   )
@@ -182,7 +185,7 @@ const createScenarioHeader = (scenario, environments) =>
       createElement('span', { class: 'crumb-file' }, [`${scenario.featureUri}:${scenario.line}`]),
     ]),
     createElement('div', { class: 'title-row' }, [
-      createElement('h2', {}, [scenario.name]),
+      createElement('h2', {}, [scenario.name, ...(scenario.live ? [createLiveBadge()] : [])]),
       environments,
     ]),
   ])

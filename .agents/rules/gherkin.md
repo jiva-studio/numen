@@ -53,6 +53,17 @@ Feature: Delete a note
     Then the vault does not hold a note "Groceries"
 ```
 
-## 6. Ownership
+## 6. Tags
+
+A tag on a Feature or a Scenario selects it for a run. Only two exist; do not add others.
+
+- `@smoke`: a main journey of the product. A pull request runs the `@smoke` scenarios and the `@smoke` specs of `tests/e2e/desktop/` in Chromium alone. A push to main and the nightly run every test (only the nightly publishes the report), in both engines, so a test that must gate pull requests needs the tag.
+- `@live`: reaches the network or a real model. `npm run acceptance:test` skips it; `npm run acceptance:live` and the nightly run it. Never combine it with `@smoke`.
+
+Mark a scenario `@smoke` when it is a main journey (make a note, open a file, search, change a setting, ask the agent, review a card), runs in about two seconds, gives the same result on every run, and needs no network and no stand-in that is missing. Do not mark one that is slow, needs a restart of the application, repeats a journey a smoke scenario already covers, or checks an edge of a rule. Put the tag on a Scenario, not on a Feature, and on a Scenario Outline only when every example is fast.
+
+The smoke set stays within about two minutes on a CI runner: a new tag replaces another or earns its time. Run it with `npm run acceptance:smoke` in `tests/acceptance/desktop`. A Playwright spec is tagged in its own call: `test('title', { tag: '@smoke' }, async ({ page }) => {})`, and runs with `--grep @smoke`.
+
+## 7. Ownership
 
 The scenarios belong to the owner. An agent that finds a scenario wrong, or a feature that grew, proposes the change to the feature file in a commit of its own that says so.

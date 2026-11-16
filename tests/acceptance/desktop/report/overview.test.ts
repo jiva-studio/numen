@@ -10,6 +10,7 @@ const createScenario = (overrides: Partial<ScenarioEntry>): ScenarioEntry => ({
   featureName: 'Water plants',
   name: 'A fern is watered',
   line: 5,
+  live: false,
   status: 'passed',
   duration: 1000,
   ...overrides,

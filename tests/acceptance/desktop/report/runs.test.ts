@@ -12,6 +12,7 @@ const createRecord = (
   featureName: 'Water plants',
   name: 'A fern is watered',
   line: 5,
+  live: false,
   status: 'passed',
   duration: 1000,
   steps: [],
@@ -24,6 +25,11 @@ const createRecord = (
 })
 
 describe('groupRuns', () => {
+  it('marks the scenario live when its records are live', () => {
+    const [scenario] = groupRuns([createRecord('chromium', { live: true })])
+    expect(scenario?.live).toBe(true)
+  })
+
   it('gathers the runs of one scenario in the order of their environments', () => {
     const [scenario] = groupRuns([createRecord('webkit'), createRecord('chromium')])
     expect(scenario?.runs.map((run) => run.environment.label)).toEqual([
