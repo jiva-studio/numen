@@ -8,7 +8,6 @@ const flush = async () => {
   for (let i = 0; i < 10; i++) await Promise.resolve()
 }
 
-/** The stream WatchTagMap of a backend: the test sends the messages and ends it. */
 const createFeed = () => {
   const queue: TagMapMessage[] = []
   let wake: (() => void) | undefined

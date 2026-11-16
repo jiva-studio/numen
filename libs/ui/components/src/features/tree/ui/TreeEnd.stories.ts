@@ -1,7 +1,3 @@
-/**
- * The end of a row of the tree: what the owner of the tree draws at the right end of each row it
- * shows. Also the test corpus: each story is run in a browser by `@storybook/addon-vitest`.
- */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import Tree from './Tree.vue'
@@ -26,7 +22,7 @@ const many = (count: number): readonly Row[] =>
 const draw = (rows: readonly Row[], open: readonly string[]) => ({
   components: { Tree },
   setup: () => ({ rows, open }),
-  template: `<Tree :rows="rows" :open="open"><template #end="{ id }"><b :data-end="id">dots of {{ id }}</b></template></Tree>`,
+  template: `<div style="block-size: 100vh"><Tree :rows="rows" :open="open"><template #end="{ id }"><b :data-end="id">dots of {{ id }}</b></template></Tree></div>`,
 })
 
 /** Every row shown draws the end its slot gave, with the id of the row. */
