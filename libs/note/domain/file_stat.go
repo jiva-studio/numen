@@ -22,9 +22,6 @@ type FileStat struct {
 	Size    int64
 	ModTime time.Time
 	FileID  FileID
-	// Version is the number of writes the vault had taken when a write returned this stat, that write
-	// included. A walk and a stat leave it zero.
-	Version uint64
 }
 
 // FileID is the number a file system assigns to a file, which a rename keeps and a

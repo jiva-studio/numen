@@ -38,14 +38,12 @@ func TestWritersWithOneBaselineHaveOneWinner(t *testing.T) {
 	ready.Add(racers)
 	begin := make(chan struct{})
 	for i := range racers {
-		done.Add(1)
-		go func() {
-			defer done.Done()
+		done.Go(func() {
 			content := []byte(strings.Repeat("x", i+10))
 			ready.Done()
 			<-begin
-			_, errs[i] = opened[i].Write(t.Context(), "n.md", content, baseline)
-		}()
+			_, errs[i] = opened[i].Write(t.Context(), "n.md", content, baseline.Stat)
+		})
 	}
 	ready.Wait()
 	close(begin)
@@ -92,7 +90,7 @@ func TestVersionRisesOnEveryWriteAndNotOnARefusedOne(t *testing.T) {
 		t.Fatalf("versions of two writes = %d, %d, want 1, 2", one.Version, two.Version)
 	}
 
-	stale := domain.FileStat{Size: 99, ModTime: one.ModTime}
+	stale := domain.FileStat{Size: 99, ModTime: one.Stat.ModTime}
 	if _, err := w.Write(t.Context(), "a.md", []byte("refused"), stale); !errors.Is(err, edit.ErrStale) {
 		t.Fatalf("a write from a stale baseline: %v", err)
 	}
@@ -115,7 +113,7 @@ func TestVersionRisesOnEveryWriteAndNotOnARefusedOne(t *testing.T) {
 
 // A caller that holds the vault lock through VaultWriters.Lock writes without
 // waiting for itself.
-func TestAWriteUnderTheHeldVaultLockIsNotBlocked(t *testing.T) {
+func TestWriteSucceedsWithTheVaultLockTaken(t *testing.T) {
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	vault := vaulttest.NewVault(t, nil)
 	w, err := writers.Open(vault)

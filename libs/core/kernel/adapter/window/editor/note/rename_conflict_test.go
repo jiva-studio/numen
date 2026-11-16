@@ -16,6 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	notecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
@@ -31,8 +33,8 @@ func (o staleNoteWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, 
 
 type staleNoteWriter struct{ vaultport.NoteWriter }
 
-func (staleNoteWriter) Write(context.Context, string, []byte, domain.FileStat) (domain.FileStat, error) {
-	return domain.FileStat{}, edit.ErrStale
+func (staleNoteWriter) Write(context.Context, string, []byte, domain.FileStat) (vault.WriteResult, error) {
+	return vault.WriteResult{}, edit.ErrStale
 }
 
 type openSession struct{ vault domain.Vault }

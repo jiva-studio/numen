@@ -60,20 +60,19 @@ func OpenForWriting(root string, opts vaultconfig.Options) (*VaultWriter, error)
 // which may be read-only.
 const newFileMode fs.FileMode = 0o644
 
-// Write replaces a note and returns its file stat. A baseline that is not the zero stat must be what the
-// note is now, or the write changes nothing and returns edit.ErrStale. Version of the result is the number
-// of writes the vault has taken, this one included.
-func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (_ domain.FileStat, err error) {
+// Write replaces a note. A baseline that is not the zero stat must be what the note is now, or the write
+// changes nothing and returns edit.ErrStale.
+func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (_ vault.WriteResult, err error) {
 	if ctx.Err() != nil {
-		return domain.FileStat{}, ctx.Err()
+		return vault.WriteResult{}, ctx.Err()
 	}
 	target, err := w.resolveNoteFile(path)
 	if err != nil {
-		return domain.FileStat{}, err
+		return vault.WriteResult{}, err
 	}
 	root, name, err := w.openRoot(target)
 	if err != nil {
-		return domain.FileStat{}, err
+		return vault.WriteResult{}, err
 	}
 	defer closeAndJoin(&err, root)
 
@@ -83,18 +82,19 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	defer w.lock.write.Unlock()
 	mode, err := getWriteMode(root, name, path, stat)
 	if err != nil {
-		return domain.FileStat{}, err
+		return vault.WriteResult{}, err
 	}
 
 	if err := createParents(root, filepath.Dir(name), path); err != nil {
-		return domain.FileStat{}, err
+		return vault.WriteResult{}, err
 	}
 	written, err := atomicfile.Replace(ctx, root, name, bytes.NewReader(content), mode)
 	if err != nil {
-		return domain.FileStat{}, err
+		return vault.WriteResult{}, err
 	}
 	w.lock.version++
-	return domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime, Version: w.lock.version}, nil
+	stat := domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime}
+	return vault.WriteResult{Stat: stat, Version: w.lock.version}, nil
 }
 
 func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
