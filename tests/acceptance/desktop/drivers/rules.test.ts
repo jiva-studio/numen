@@ -481,7 +481,7 @@ describe('getTableBody', () => {
     expect(getTableBody([['relation', 'title'], ['focus', 'Dock']], ['relation', 'title'], ['tag'])).toEqual([['focus', 'Dock']])
   })
 
-  it('throws for a column that is neither asked for nor optional', () => {
+  it('throws for an unknown column', () => {
     expect(() => getTableBody([['relation', 'title', 'colour']], ['relation', 'title'], ['tag'])).toThrow('the table must start with the header')
   })
 })

@@ -72,7 +72,7 @@ func TestTheManifestPlacesTheTagDotsInTheRowsOfTheFileTree(t *testing.T) {
 	}
 }
 
-func TestTheManifestPlacesTheTagChipsUnderTheNodesOfThePlex(t *testing.T) {
+func TestTheManifestHasThePlexTagsViewInTheNodeBelowSlot(t *testing.T) {
 	var shape struct {
 		Contrib struct {
 			Slots []struct {
