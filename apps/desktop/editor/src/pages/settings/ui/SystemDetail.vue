@@ -41,6 +41,7 @@ const TITLES = {
   system: words.systemSettings,
   appearance: words.appearanceSettings,
   editor: words.editorSettings,
+  search: 'Search',
 } as const
 
 /** The owner the core declares the settings of the shell under. */
