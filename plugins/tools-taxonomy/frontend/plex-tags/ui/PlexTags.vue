@@ -43,7 +43,7 @@ const chips = computed(() =>
   align-items: center;
   gap: 0.25rem;
   padding: 0.0625rem 0.375rem;
-  border-radius: 999px;
+  border-radius: var(--numen-radius-pill);
   background: color-mix(in srgb, var(--tag) 18%, transparent);
   color: var(--numen-ink);
 }
