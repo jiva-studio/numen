@@ -44,12 +44,21 @@ export const ThreeTags: Story = {
   },
 }
 
-/** A note with many tags draws every one of them, with no count of the rest. */
+/** A note with many tags draws the first four and one +N chip for the rest. */
 export const ManyTags: Story = {
   args: { count: 8 },
   play: async ({ canvasElement }) => {
-    await expect(canvasElement.querySelectorAll('[data-plex-tag]')).toHaveLength(8)
-    await expect(canvasElement).not.toHaveTextContent(/\+\d/)
+    await expect(canvasElement.querySelectorAll('[data-plex-tag]')).toHaveLength(4)
+    await expect(canvasElement.querySelector('[data-plex-tag-more]')).toHaveTextContent('+4')
+  },
+}
+
+/** A note with four tags draws all of them and no +N chip. */
+export const FourTags: Story = {
+  args: { count: 4 },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelectorAll('[data-plex-tag]')).toHaveLength(4)
+    await expect(canvasElement.querySelector('[data-plex-tag-more]')).toBeNull()
   },
 }
 
