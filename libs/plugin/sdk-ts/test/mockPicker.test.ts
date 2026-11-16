@@ -1,0 +1,118 @@
+import { describe, expect, it, vi } from 'vitest'
+import * as testing from '../src/testing'
+import type { PickerItem, PickerOptions } from '../src/picker'
+import type { MockPickerHost } from '../src/testing/mockPicker'
+
+const TREES: readonly PickerItem[] = [
+  { id: 'birch', title: 'Birch', state: 'unset' },
+  { id: 'cedar', title: 'Cedar', state: 'set' },
+]
+
+const createOptions = (more: Partial<PickerOptions> = {}): PickerOptions => ({
+  title: 'Trees',
+  placeholder: 'Tree',
+  items: TREES,
+  recent: [],
+  getCreateTitle: (text) => `Create ${text}`,
+  onToggle: async (id) => {
+    const item = TREES.find((one) => one.id === id)!
+    return { ...item, state: item.state === 'set' ? 'unset' : 'set' }
+  },
+  onCreate: async (text) => ({ id: text.toLowerCase(), title: text, state: 'set' }),
+  ...more,
+})
+
+const createPicker = (): MockPickerHost => {
+  const create = (testing as Record<string, unknown>)['createMockPickerHost']
+  expect(create).toBeTypeOf('function')
+  return (create as () => MockPickerHost)()
+}
+
+describe('the mock picker host', () => {
+  it('keeps the options of the list a plugin opened', () => {
+    const picker = createPicker()
+    const options = createOptions()
+    void picker.open(options)
+
+    expect(picker.getOpened()).toBe(options)
+  })
+
+  it('holds the open call until the person closes the list', async () => {
+    const picker = createPicker()
+    const closed = vi.fn()
+    const opening = picker.open(createOptions()).then(closed)
+
+    await Promise.resolve()
+    expect(closed).not.toHaveBeenCalled()
+
+    picker.close()
+    await opening
+    expect(closed).toHaveBeenCalledTimes(1)
+  })
+
+  it('lists the items as the plugin gave them before anything is toggled', () => {
+    const picker = createPicker()
+    void picker.open(createOptions())
+
+    expect(picker.getItems()).toStrictEqual(TREES)
+  })
+
+  it('asks the plugin to toggle an item and shows the state the plugin answers with', async () => {
+    const picker = createPicker()
+    const onToggle = vi.fn(async (id: string) => ({ id, title: 'Birch', state: 'mixed' as const }))
+    void picker.open(createOptions({ onToggle }))
+
+    await picker.toggle('birch')
+
+    expect(onToggle).toHaveBeenCalledExactlyOnceWith('birch')
+    expect(picker.getItems().find((one) => one.id === 'birch')?.state).toBe('mixed')
+  })
+
+  it('keeps the list open after a toggle', async () => {
+    const picker = createPicker()
+    const closed = vi.fn()
+    void picker.open(createOptions()).then(closed)
+
+    await picker.toggle('cedar')
+    await Promise.resolve()
+
+    expect(closed).not.toHaveBeenCalled()
+  })
+
+  it('asks the plugin to create an item from typed text and adds the item it answers with', async () => {
+    const picker = createPicker()
+    const onCreate = vi.fn(async (text: string) => ({
+      id: 'harbour',
+      title: text,
+      state: 'set' as const,
+    }))
+    void picker.open(createOptions({ onCreate }))
+
+    await picker.create('Harbour')
+
+    expect(onCreate).toHaveBeenCalledExactlyOnceWith('Harbour')
+    expect(picker.getItems().map((one) => one.title)).toStrictEqual(['Birch', 'Cedar', 'Harbour'])
+  })
+
+  it('names the create row with the words the plugin gave', () => {
+    const picker = createPicker()
+    void picker.open(createOptions({ getCreateTitle: (text) => `Make ${text}` }))
+
+    expect(picker.getCreateTitle('Harbour')).toBe('Make Harbour')
+  })
+})
+
+describe('the mock host services', () => {
+  it('offer the picker a test gave', () => {
+    const picker = createPicker()
+    const services = testing.createMockHostServices({ picker })
+
+    expect(services.ui.picker).toBe(picker)
+  })
+
+  it('leave the picker out where a test gave none', () => {
+    const services = testing.createMockHostServices()
+
+    expect(services.ui.picker).toBeUndefined()
+  })
+})
