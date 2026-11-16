@@ -133,6 +133,8 @@ function createSettingBridge({
         ),
       }
     },
+    getEditorSettings: () => undefined,
+    onEditorSettingsChange: () => ({ dispose: () => undefined }),
   }
 }
 

@@ -12,6 +12,7 @@ import type {
   PluginVault,
   PluginWork,
   ReaderRegistration,
+  EditorSettings,
   SettingsViewRegistration,
   SlotViewRegistration,
   TabKindRegistration,
@@ -77,6 +78,7 @@ export interface MockPluginContextInit {
   readonly target?: string
   readonly app?: AppInfo
   readonly initialSettings?: Record<string, JsonValue>
+  readonly initialEditorSettings?: EditorSettings
 }
 
 // MockHostServicesInit is the services a test hands the plugin through mock host services.
@@ -111,6 +113,7 @@ export interface MockPluginContext extends PluginContext {
     values?: Readonly<Record<string, string>>,
   ): Promise<void>
   setSetting(key: string, value: JsonValue): void
+  setEditorSettings(settings: EditorSettings): void
   dispose(): void
 }
 
@@ -240,7 +243,12 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
       },
     },
     register,
-    settings: { get: getSettingValue, onChange: onSettingChange },
+    settings: {
+      get: getSettingValue,
+      onChange: onSettingChange,
+      getEditor: () => undefined,
+      onEditorChange: () => ({ dispose: () => undefined }),
+    },
     health: createMockHealthHost(),
 
     setSetting(key: string, value: JsonValue): void {
@@ -252,6 +260,8 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
         }
       }
     },
+
+    setEditorSettings(): void {},
 
     getRegisteredReaders(): ReaderRegistration[] {
       return [...readers]

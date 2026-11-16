@@ -4,6 +4,7 @@ import {
   DEFAULT_PLUGIN_ENABLED,
   createPluginStatus,
   isPluginEnabledValue,
+  type EditorSettings,
   type JsonValue,
   type PluginStatus,
 } from '@numen/plugin-loader'
@@ -64,5 +65,12 @@ export function createPluginSettingsAccessor(
       },
     )
 
-  return { getSetting, onSettingChange }
+  const getEditorSettings = (): EditorSettings | undefined => undefined
+
+  const onEditorSettingsChange = (
+    _pluginId: string,
+    _handler: (settings: EditorSettings) => void | Promise<void>,
+  ): (() => void) => () => undefined
+
+  return { getSetting, onSettingChange, getEditorSettings, onEditorSettingsChange }
 }
