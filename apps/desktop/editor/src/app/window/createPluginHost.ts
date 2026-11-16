@@ -4,8 +4,9 @@
  */
 import { computed } from 'vue'
 import { SLOT, type PickerHost, type PluginHost, type PluginStatus } from '@numen/plugin-loader'
-import type { NoticeQueue, WindowFrame } from '@numen/workbench'
+import { createNoticeQueue, type NoticeQueue, type WindowFrame } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
+import { createPickerSession } from '@/features/command-palette'
 import {
   createNoticeParts,
   createPluginSupport,
@@ -21,6 +22,11 @@ import {
 } from '@/features/plugin-host'
 import type { createTabsPart } from './createTabsPart'
 import type { WindowApi } from './createWindowApi'
+
+/** What the window draws for plugins besides their views: the notices and the list to pick items from. */
+export function createPluginSurfaces() {
+  return { notices: createNoticeQueue(), picker: createPickerSession() }
+}
 
 /** What the host parts that read the services of the window are made from. */
 export interface ServicePartsDeps {

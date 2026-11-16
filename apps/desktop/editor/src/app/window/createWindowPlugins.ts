@@ -3,15 +3,17 @@
  * services a plugin is given, made without the host: the services reach the commands through the
  * port, which the palettes connect once they are made.
  */
-import { createNoticeQueue } from '@numen/workbench'
 import { createCommandTitleReader } from '@/entities/command'
 import { useDeclaredCommands } from '@/features/plugin-commands'
-import { createPickerSession } from '@/features/command-palette'
 import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
 import { syncKeybindings } from '@/features/hotkeys'
 import type { createWindowBase } from './createWindowBase'
 import { createPluginDeclarations } from './createPluginDeclarations'
-import { createPluginHostSupport, createServiceParts } from './createPluginHost'
+import {
+  createPluginHostSupport,
+  createPluginSurfaces,
+  createServiceParts,
+} from './createPluginHost'
 import {
   createPluginAccess,
   createPluginBackgroundTasks,
@@ -37,8 +39,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
   const { note } = api.vault
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
-  const notices = createNoticeQueue()
-  const picker = createPickerSession()
+  const { notices, picker } = createPluginSurfaces()
   const pluginNotes = createPluginNotes({ read: note.readNote, write: note.writeNote })
   const declarations = createPluginDeclarations({
     api: api.plugins.declaredCommands,
