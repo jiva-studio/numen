@@ -11,7 +11,7 @@ import type { JsonObject } from '@/shared/api/json'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
-import { Select, Switch } from '@numen/ui'
+import { NumberField, Select, Switch } from '@numen/ui'
 
 import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
@@ -71,6 +71,43 @@ const EDITOR: readonly PluginSettingInfo[] = [
     default: false,
     isShown: true,
     value: false,
+  },
+]
+
+const SEARCH: readonly PluginSettingInfo[] = [
+  {
+    key: 'search.reranking',
+    type: 'connections',
+    title: 'Reranking',
+    description: 'Services that order the results of a query, tried in order',
+    default: undefined,
+    operations: ['llm.rerank'],
+    max: 5,
+    isShown: true,
+  },
+  {
+    key: 'search.defaultLimit',
+    type: 'number',
+    title: 'Default results',
+    description: '',
+    default: 20,
+    min: 1,
+    max: 100,
+    step: 1,
+    isShown: true,
+    value: 20,
+  },
+  {
+    key: 'search.maxLimit',
+    type: 'number',
+    title: 'Most results',
+    description: '',
+    default: 100,
+    min: 1,
+    max: 1000,
+    step: 1,
+    isShown: true,
+    value: 100,
   },
 ]
 
@@ -160,6 +197,11 @@ const openEditorSettings = async (tab: Tab) => {
   await nextTick()
 }
 
+const openSearchSettings = async (tab: Tab) => {
+  await tab.get('button[aria-label="Search"]').trigger('click')
+  await nextTick()
+}
+
 const getTileNames = (tab: Tab) =>
   tab
     .get('.plugins-page')
@@ -188,7 +230,7 @@ describe('the settings tab', () => {
     expect(system.text()).toContain(words.systemSettingsDetail)
   })
 
-  it('draws the Appearance, Editor and Connections tiles after System and the plugin rows below them', () => {
+  it('draws the Appearance, Editor, Search and Connections tiles after System and the plugin rows below them', () => {
     const samplePlugin: PluginInfo = {
       id: 'test.transcription',
       name: 'Transcription Plugin',
@@ -205,6 +247,7 @@ describe('the settings tab', () => {
       'System',
       'Appearance',
       'Editor',
+      'Search',
       'Connections',
       'Transcription Plugin',
     ])
@@ -254,6 +297,44 @@ describe('the settings tab', () => {
       'Font size',
       'Line numbers',
     ])
+  })
+
+  it('opens the Search page from its tile with the search settings and nothing else', async () => {
+    const { tab } = createTab({}, [], [...SHELL, ...EDITOR, ...SEARCH])
+
+    await openSearchSettings(tab)
+
+    expect(tab.get('[aria-current="page"]').text()).toBe('Search')
+    expect(tab.findAllComponents(SettingRow).map((one) => one.props('name'))).toStrictEqual([
+      'Default results',
+      'Most results',
+    ])
+    expect(tab.find('.system-detail').exists()).toBe(true)
+  })
+
+  it('keeps the search settings off the System and the Editor pages', async () => {
+    const { tab } = createTab({}, [], [...SHELL, ...EDITOR, ...SEARCH])
+
+    await openSystemSettings(tab)
+    expect(tab.findAllComponents(SettingRow).map((one) => one.props('name'))).toStrictEqual([
+      'Sync title and filename',
+    ])
+
+    await goBack(tab)
+    await openEditorSettings(tab)
+    expect(tab.findAllComponents(SettingRow).map((one) => one.props('name'))).toStrictEqual([
+      'Font size',
+      'Line numbers',
+    ])
+  })
+
+  it('writes the default results set on the Search page under the owner app', async () => {
+    const { tab, writes } = createTab({}, [], [...SHELL, ...SEARCH])
+    await openSearchSettings(tab)
+
+    tab.getComponent(NumberField).vm.$emit('commit', 50)
+
+    expect(writes).toStrictEqual([{ at: ['app', 'search', 'defaultLimit'], value: '50' }])
   })
 
   it('keeps the editor settings off the System page', async () => {
@@ -438,6 +519,10 @@ describe('the settings tab', () => {
       await goBack(tab)
       await openEditorSettings(tab)
       expect(getCurrent(tab)).toBe('Editor')
+
+      await goBack(tab)
+      await openSearchSettings(tab)
+      expect(getCurrent(tab)).toBe('Search')
     })
 
     it('shows the path of the Connections page with no action', async () => {

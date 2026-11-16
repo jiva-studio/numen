@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
-import { Select, Slider, Switch } from '@numen/ui'
+import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SystemDetail from './SystemDetail.vue'
 import SettingRow from './setting-row/SettingRow.vue'
 import ConnectionRows from './plugins/connection-rows/ConnectionRows.vue'
@@ -96,6 +96,141 @@ const EDITOR: readonly PluginSettingInfo[] = [
   },
 ]
 
+const RERANKING: PluginSettingInfo = {
+  key: 'search.reranking',
+  type: 'connections',
+  title: 'Reranking',
+  description: 'Services that order the results of a query, tried in order',
+  default: undefined,
+  operations: ['llm.rerank'],
+  max: 5,
+  isShown: true,
+}
+
+const SEARCH: readonly PluginSettingInfo[] = [
+  RERANKING,
+  {
+    key: 'search.rerankWindow',
+    type: 'number',
+    title: 'Rerank window',
+    description: '',
+    default: 60,
+    min: 1,
+    max: 500,
+    step: 1,
+    isShown: true,
+    value: 80,
+  },
+  {
+    key: 'search.maxReranked',
+    type: 'number',
+    title: 'Most reranked passages',
+    description: '',
+    default: 300,
+    min: 1,
+    max: 2000,
+    step: 1,
+    isShown: true,
+    value: 400,
+  },
+  {
+    key: 'search.maxRerankedBytes',
+    type: 'number',
+    title: 'Longest reranked text',
+    description: '',
+    default: 4096,
+    min: 256,
+    max: 32768,
+    step: 1,
+    isShown: true,
+    value: 2048,
+  },
+  {
+    key: 'search.defaultLimit',
+    type: 'number',
+    title: 'Default results',
+    description: '',
+    default: 20,
+    min: 1,
+    max: 100,
+    step: 1,
+    isShown: true,
+    value: 30,
+  },
+  {
+    key: 'search.maxLimit',
+    type: 'number',
+    title: 'Most results',
+    description: '',
+    default: 100,
+    min: 1,
+    max: 1000,
+    step: 1,
+    isShown: true,
+    value: 150,
+  },
+  {
+    key: 'search.candidatesPerCondition',
+    type: 'number',
+    title: 'Passages per condition',
+    description: '',
+    default: 300,
+    min: 1,
+    max: 5000,
+    step: 1,
+    isShown: true,
+    value: 500,
+  },
+  {
+    key: 'search.maxCandidates',
+    type: 'number',
+    title: 'Most passages scored',
+    description: '',
+    default: 1000,
+    min: 1,
+    max: 10000,
+    step: 1,
+    isShown: true,
+    value: 2000,
+  },
+  {
+    key: 'search.maxPathPrefixes',
+    type: 'number',
+    title: 'Most folders',
+    description: '',
+    default: 8,
+    min: 1,
+    max: 64,
+    step: 1,
+    isShown: true,
+    value: 12,
+  },
+  {
+    key: 'search.mergeGapBytes',
+    type: 'number',
+    title: 'Merge gap',
+    description: '',
+    default: 200,
+    min: 0,
+    max: 4096,
+    step: 1,
+    isShown: true,
+    value: 300,
+  },
+  {
+    key: 'search.maxQueryBytes',
+    type: 'number',
+    title: 'Longest query',
+    description: '',
+    default: 16384,
+    min: 256,
+    max: 65536,
+    step: 1,
+    isShown: true,
+    value: 8192,
+  },
+]
+
 const DECLARATION: readonly PluginSettingInfo[] = [
   {
     key: 'appearance.theme',
@@ -169,10 +304,11 @@ const DECLARATION: readonly PluginSettingInfo[] = [
     value: 'balanced',
   },
   ...EDITOR,
+  ...SEARCH,
 ]
 
 const createPage = (
-  section: 'system' | 'appearance' | 'editor',
+  section: 'system' | 'appearance' | 'editor' | 'search',
   app: readonly PluginSettingInfo[] = DECLARATION,
 ) => {
   const writes: SettingEdit[] = []
@@ -201,7 +337,7 @@ const findRow = (wrapper: ReturnType<typeof createPage>['wrapper'], title: strin
 
 describe('the page of the shell settings', () => {
   it('draws the appearance settings on Appearance, the editor settings on Editor and the rest on System, in the order declared', () => {
-    const getRowNames = (section: 'system' | 'appearance' | 'editor') =>
+    const getRowNames = (section: 'system' | 'appearance' | 'editor' | 'search') =>
       createPage(section)
         .wrapper.findAllComponents(SettingRow)
         .map((one) => one.props('name'))
@@ -215,6 +351,17 @@ describe('the page of the shell settings', () => {
       'Line numbers',
       'Soft wrap',
     ])
+  })
+
+  it('draws no search setting on System, Appearance or Editor', () => {
+    for (const section of ['system', 'appearance', 'editor'] as const) {
+      const { wrapper } = createPage(section)
+      const drawn = [
+        ...wrapper.findAllComponents(SettingRow).map((one) => one.props('name')),
+        ...wrapper.findAllComponents(ConnectionRows).map((one) => one.props('setting').title),
+      ]
+      for (const one of SEARCH) expect(drawn).not.toContain(one.title)
+    }
   })
 
   it('draws no row where the core declares no setting for the shell', () => {
@@ -299,30 +446,67 @@ describe('the page of the shell settings', () => {
   })
 })
 
-describe('the Reranking setting of the shell', () => {
-  const RERANKING: PluginSettingInfo = {
-    key: 'search.reranking',
-    type: 'connections',
-    title: 'Reranking',
-    description: 'Services that order the results of a query, tried in order',
-    default: undefined,
-    operations: ['llm.rerank'],
-    max: 5,
-    isShown: true,
-  }
+describe('the Search page of the shell settings', () => {
+  const SEARCH_NAMES = [
+    'Rerank window',
+    'Most reranked passages',
+    'Longest reranked text',
+    'Default results',
+    'Most results',
+    'Passages per condition',
+    'Most passages scored',
+    'Most folders',
+    'Merge gap',
+    'Longest query',
+  ]
 
-  it('draws Reranking on System with the editor of connection rows and not on Appearance', () => {
-    const declaration = [...DECLARATION, RERANKING]
+  it('draws the search settings in the order the core declares them, Reranking first', () => {
+    const { wrapper } = createPage('search')
 
-    const rows = createPage('system', declaration).wrapper.findAllComponents(ConnectionRows)
-    expect(rows.map((one) => one.props('setting').title)).toStrictEqual(['Reranking'])
-    expect(
-      createPage('appearance', declaration).wrapper.findAllComponents(ConnectionRows),
-    ).toHaveLength(0)
+    const rerankingRows = wrapper.findAllComponents(ConnectionRows)
+    expect(rerankingRows.map((one) => one.props('setting').title)).toStrictEqual(['Reranking'])
+    expect(wrapper.findAllComponents(SettingRow).map((one) => one.props('name'))).toStrictEqual(
+      SEARCH_NAMES,
+    )
+    const isBefore =
+      rerankingRows[0]!.element.compareDocumentPosition(wrapper.findComponent(SettingRow).element) &
+      Node.DOCUMENT_POSITION_FOLLOWING
+    expect(isBefore).toBeTruthy()
   })
 
-  it('writes the rows chosen under app.search.reranking', () => {
-    const { wrapper, writes } = createPage('system', [...DECLARATION, RERANKING])
+  it('draws each numeric search setting as a number field', () => {
+    const { wrapper } = createPage('search')
+
+    for (const name of SEARCH_NAMES) {
+      expect(findRow(wrapper, name).findComponent(NumberField).exists()).toBe(true)
+    }
+  })
+
+  it('shows the value the core resolved for each search setting', () => {
+    const { wrapper } = createPage('search')
+
+    expect(findRow(wrapper, 'Rerank window').findComponent(NumberField).props('modelValue')).toBe(80)
+    expect(findRow(wrapper, 'Default results').findComponent(NumberField).props('modelValue')).toBe(30)
+    expect(findRow(wrapper, 'Longest query').findComponent(NumberField).props('modelValue')).toBe(8192)
+  })
+
+  it('bounds each search setting by the bounds of its declaration', () => {
+    const { wrapper } = createPage('search')
+
+    expect(findRow(wrapper, 'Merge gap').findComponent(NumberField).props()).toMatchObject({
+      min: 0,
+      max: 4096,
+      step: 1,
+    })
+    expect(findRow(wrapper, 'Most results').findComponent(NumberField).props()).toMatchObject({
+      min: 1,
+      max: 1000,
+      step: 1,
+    })
+  })
+
+  it('writes the rows of Reranking chosen under app.search.reranking', () => {
+    const { wrapper, writes } = createPage('search')
 
     wrapper
       .findComponent(ConnectionRows)
@@ -331,6 +515,35 @@ describe('the Reranking setting of the shell', () => {
     expect(writes.map((one) => [one.at, JSON.parse(one.value)])).toStrictEqual([
       [['app', 'search', 'reranking'], [{ connection: 'c0000001', model: 'rerank-small' }]],
     ])
+  })
+
+  it('writes the default results set under app.search', () => {
+    const { wrapper, writes } = createPage('search')
+
+    findRow(wrapper, 'Default results').findComponent(NumberField).vm.$emit('commit', 40)
+
+    expect(writes).toStrictEqual([{ at: ['app', 'search', 'defaultLimit'], value: '40' }])
+  })
+
+  it('writes the merge gap and the longest query set under app.search', () => {
+    const { wrapper, writes } = createPage('search')
+
+    findRow(wrapper, 'Merge gap').findComponent(NumberField).vm.$emit('commit', 0)
+    findRow(wrapper, 'Longest query').findComponent(NumberField).vm.$emit('commit', 1024)
+
+    expect(writes).toStrictEqual([
+      { at: ['app', 'search', 'mergeGapBytes'], value: '0' },
+      { at: ['app', 'search', 'maxQueryBytes'], value: '1024' },
+    ])
+  })
+
+  it('draws only the search settings, none of System, Appearance or Editor', () => {
+    const { wrapper } = createPage('search')
+
+    const names = wrapper.findAllComponents(SettingRow).map((one) => one.props('name'))
+    for (const other of ['Theme', 'Font size', 'Sync title and filename', 'Performance profile']) {
+      expect(names).not.toContain(other)
+    }
   })
 })
 
