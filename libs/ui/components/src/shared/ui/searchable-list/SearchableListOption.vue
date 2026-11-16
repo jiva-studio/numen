@@ -16,7 +16,7 @@ defineProps<{
   hasSeparator?: boolean
   isActive: boolean
   isCurrent: boolean
-  isMultiple: boolean
+  isMultiple?: boolean
 }>()
 
 defineEmits<{

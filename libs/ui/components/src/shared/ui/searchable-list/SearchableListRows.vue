@@ -16,7 +16,7 @@ const props = defineProps<{
   current: readonly string[]
   listId: string
   label: string
-  isMultiple: boolean
+  isMultiple?: boolean
 }>()
 
 defineEmits<{
