@@ -95,7 +95,6 @@ export {
   nav,
   win,
 } from './shared/api/dom'
-export { createRefRegistry } from './shared/model/refs'
 export { cn } from './shared/lib/dom/classes'
 
 /** A row of a list the arrow keys walk, and a pair of UTF-16 units read as one character. */
