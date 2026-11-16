@@ -96,3 +96,29 @@ func TestTheManifestHasThePlexTagsViewInTheNodeBelowSlot(t *testing.T) {
 		t.Errorf("slots = %v, want the tags under the node and not over it", placed)
 	}
 }
+
+func TestTheManifestPlacesThePlexTagsAfterTheRelatedNamesInTheNodeBelowSlot(t *testing.T) {
+	var shape struct {
+		Contrib struct {
+			Slots []struct {
+				Slot  string `json:"slot"`
+				View  string `json:"view"`
+				Order *int   `json:"order"`
+			} `json:"slots"`
+		} `json:"contributes"`
+	}
+	if err := json.Unmarshal(Manifest, &shape); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, one := range shape.Contrib.Slots {
+		if one.Slot != "plexGraph.nodeBelow" || one.View != "plex-tags" {
+			continue
+		}
+		if one.Order == nil || *one.Order != 20 {
+			t.Errorf("order of plex-tags = %v, want 20 (the related names take 10)", one.Order)
+		}
+		return
+	}
+	t.Error("no entry places plex-tags in plexGraph.nodeBelow")
+}

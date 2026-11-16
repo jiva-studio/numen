@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { TransitionGroup } from 'vue'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { getTagColor } from '../../lib/color'
 import FileTags from '../../file-tags/ui/FileTags.vue'
@@ -130,5 +131,58 @@ describe('the tags of a note in the plex', () => {
 
     expect(getColor(upper?.attributes('style'))).toBeDefined()
     expect(getColor(upper?.attributes('style'))).toBe(getColor(lower?.attributes('style')))
+  })
+
+  it('draw the chips without a transition group, a move, a leave or a delay by position', () => {
+    const wrapper = mountTags(TAGS)
+
+    expect(wrapper.findComponent(TransitionGroup).exists()).toBe(false)
+    expect(wrapper.html()).not.toMatch(/-(enter|leave|move)\b/)
+    for (const chip of [...getChips(wrapper), getMore(wrapper)]) {
+      expect(chip.attributes('style') ?? '').not.toMatch(/--i\b|delay/)
+    }
+  })
+
+  it('keep the same elements when the note is drawn again with the same tags', async () => {
+    const wrapper = mountTags(['Port', 'Sea', 'Quay'])
+    const before = getChips(wrapper).map((chip) => chip.element)
+    const html = wrapper.html()
+
+    await wrapper.setProps({ tags: ['Port', 'Sea', 'Quay'] })
+
+    expect(getChips(wrapper).map((chip) => chip.element)).toEqual(before)
+    expect(wrapper.html()).toBe(html)
+  })
+
+  it('remove the chip of a tag the moment the tag goes, leaving no element behind', async () => {
+    const wrapper = mount(PlexTags, {
+      props: { tags: ['Port', 'Sea', 'Quay'] },
+      global: { stubs: { transition: false, 'transition-group': false } },
+    })
+
+    await wrapper.setProps({ tags: ['Port', 'Quay'] })
+
+    expect(getChips(wrapper).map((chip) => chip.text())).toEqual(['Port', 'Quay'])
+    expect(wrapper.text()).not.toContain('Sea')
+  })
+
+  it('show the whole name of a tag in a tooltip while the pointer is over its chip', async () => {
+    const wrapper = mountTags(['Port', 'Container terminal operations'])
+    expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
+
+    await getChips(wrapper)[1]?.trigger('mouseenter')
+
+    const tooltips = document.body.querySelectorAll('[role="tooltip"]')
+    expect(tooltips).toHaveLength(1)
+    expect(tooltips[0]?.textContent?.trim()).toBe('Container terminal operations')
+  })
+
+  it('hide the tooltip of a chip when the pointer leaves it', async () => {
+    const wrapper = mountTags(['Port', 'Sea'])
+    await getChips(wrapper)[0]?.trigger('mouseenter')
+
+    await getChips(wrapper)[0]?.trigger('mouseleave')
+
+    expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
   })
 })

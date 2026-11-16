@@ -77,3 +77,33 @@ export const InTheDarkTheme: Story = {
     await expect(canvasElement.querySelectorAll('[data-plex-tag]')).toHaveLength(3)
   },
 }
+
+const getLineCount = (element: Element): number => {
+  const range = document.createRange()
+  range.selectNodeContents(element)
+  return new Set(Array.from(range.getClientRects(), (rect) => Math.round(rect.top))).size
+}
+
+const NARROW_TAGS = ['Port', 'Container terminal operations', 'Port/Cargo/Harbour/Quay/Terminal']
+
+/** The name of a tag that is wider than its node stays on one line and the chip stays inside the node. */
+export const KeepsALongTagOnOneLine: Story = {
+  render: () => ({
+    components: { PlexTags },
+    setup: () => ({ tags: NARROW_TAGS }),
+    template: `
+      <div class="numen" style="background:var(--numen-surface);color:var(--numen-ink);padding:1rem">
+        <div data-node style="inline-size:8rem"><PlexTags :tags="tags" /></div>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const node = canvasElement.querySelector<HTMLElement>('[data-node]')
+    const chips = Array.from(canvasElement.querySelectorAll<HTMLElement>('[data-plex-tag]'))
+    await expect(chips).toHaveLength(3)
+    for (const chip of chips) {
+      await expect(getLineCount(chip)).toBe(1)
+      await expect(chip.offsetWidth).toBeLessThanOrEqual(node?.clientWidth ?? 0)
+    }
+  },
+}
