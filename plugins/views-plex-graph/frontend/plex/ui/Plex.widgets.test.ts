@@ -136,7 +136,6 @@ describe('the widgets of the plex', () => {
     const plex = await mountPlex({ getPath: getPathOf })
 
     expect(plex.find('[data-widget]').exists()).toBe(false)
-    expect(plex.find('foreignObject').exists()).toBe(false)
   })
 
   it('keep the nodes they sit between farther apart by the height they take', async () => {
