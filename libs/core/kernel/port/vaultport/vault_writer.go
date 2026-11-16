@@ -5,10 +5,12 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
 type NoteWriter interface {
-	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error)
+	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (vault.WriteResult, error)
 	Create(ctx context.Context, path string, content []byte) error
 }
 

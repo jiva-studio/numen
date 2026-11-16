@@ -85,7 +85,14 @@ type VaultWriters struct {
 }
 
 func (w VaultWriters) Open(v domain.Vault) (*VaultWriter, error) {
-	return OpenForWriting(v.Path, w.Options)
+	opened, err := OpenForWriting(v.Path, w.Options)
+	if err != nil {
+		return nil, err
+	}
+	if w.Locks != nil {
+		opened.lock = w.Locks.getLock(opened.root)
+	}
+	return opened, nil
 }
 
 func (w VaultWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
@@ -137,6 +144,8 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) (
 		return err
 	}
 	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}

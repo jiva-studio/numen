@@ -28,11 +28,11 @@ func (u WriteFile) Execute(
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	stat, err := writer.Write(ctx, path, content, baseline)
+	written, err := writer.Write(ctx, path, content, baseline)
 	if err != nil {
-		return stat, err
+		return written.Stat, err
 	}
-	return stat, edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
+	return written.Stat, edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }
 
 // CreateFile makes a file of a vault that is not there and updates the index for it.
