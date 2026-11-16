@@ -90,14 +90,14 @@ An agent does not decide these alone. It prepares the change, explains the trade
 
 Work is tracked in the project [Numen](https://github.com/orgs/jiva-studio/projects/15) of the organization. Every issue is in it; a pull request is not, it is seen on its issue.
 
-| Field     | Values                                      | Who sets it                                                              |
-| --------- | ------------------------------------------- | ------------------------------------------------------------------------ |
-| Kind      | Feature, Bug, Architecture debt, Chore      | whoever files the issue                                                  |
-| Priority  | P0 to P5                                    | the owner                                                                |
-| Area      | core, plugins, ui, ci, mobile, docs         | whoever files the issue                                                  |
-| Effort    | S, M, L                                     | the owner                                                                |
-| Status    | Backlog, Todo, In Progress, In review, Done | below                                                                    |
-| Milestone | `YYYY.MM`, the release of that month        | the owner for the plan; the milestone workflow for a merged pull request |
+| Field     | Where       | Values                                      | Who sets it                                                              |
+| --------- | ----------- | ------------------------------------------- | ------------------------------------------------------------------------ |
+| Type      | the issue   | Feature, Bug, Task, Tech debt               | whoever files the issue                                                  |
+| Priority  | the issue   | Urgent, High, Medium, Low                   | the owner                                                                |
+| Effort    | the issue   | Low, Medium, High                           | the owner                                                                |
+| Area      | the project | core, plugins, ui, ci, mobile, docs         | whoever files the issue                                                  |
+| Status    | the project | Backlog, Todo, In Progress, In review, Done | below                                                                    |
+| Milestone | the issue   | `YYYY.MM`, the release of that month        | the owner for the plan; the milestone workflow for a merged pull request |
 
 A milestone is named after the month of its release and has the last day of the month as its due date. An open issue in a milestone is planned for that release; a closed one shipped in it. A milestone is closed when its release is published.
 
@@ -106,7 +106,7 @@ An agent keeps the status of its issue true:
 1. **Takes an issue**: sets Status to In Progress before the first commit. An agent works only on an issue whose Status is Todo or In Progress; an issue in Backlog is the owner's to move.
 2. **Marks the pull request ready** (step 3 of the pipeline): sets Status to In review.
 3. **Merge or close**: Done, set by the built-in project workflows (a closed issue and a merged pull request set it). An agent does not set Done by hand.
-4. **Files a new issue**: gives it one type label (`bug`, `feature`, `task` or `epic`) and one area label (`core`, `ui`, `ci`, `plugins`, `docs` or `mobile`), adds it to the project with Kind, Area and Priority, and leaves Status at Backlog.
+4. **Files a new issue**: sets its Type and Priority, adds it to the project with its Area, and leaves Status at Backlog. The labels of an issue only name what the three fields do not.
 
 The commands:
 
