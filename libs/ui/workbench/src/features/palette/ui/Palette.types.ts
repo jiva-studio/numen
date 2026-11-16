@@ -16,5 +16,5 @@ export interface PaletteProps {
   name?: string
   actionWords?: ActionWords
   actionKey?: Keystroke
-  multi?: PaletteMultiProps
+  multi?: PaletteMultiProps | undefined
 }

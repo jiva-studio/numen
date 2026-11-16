@@ -3,7 +3,7 @@
  * the window gives a plugin, and the host read through the views it draws.
  */
 import { computed } from 'vue'
-import { SLOT, type PluginHost, type PluginStatus } from '@numen/plugin-loader'
+import { SLOT, type PickerHost, type PluginHost, type PluginStatus } from '@numen/plugin-loader'
 import type { NoticeQueue, WindowFrame } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
 import {
@@ -30,6 +30,7 @@ export interface ServicePartsDeps {
   readonly notices: NoticeQueue
   readonly pluginNotes: PluginNotes
   readonly hostParts: readonly HostParts[]
+  readonly picker?: PickerHost | undefined
 }
 
 /**
@@ -48,7 +49,7 @@ export function createServiceParts(deps: ServicePartsDeps): readonly HostParts[]
       api: plugins.pluginHost,
       rest: deps.rest,
     }),
-    createNoticeParts({ queue: deps.notices }),
+    createNoticeParts({ queue: deps.notices, picker: deps.picker }),
     {
       kinds: {
         readNote: pluginNotes.readNote,

@@ -4,7 +4,6 @@ export type { PluginNotes } from './model/pluginNotes'
 export { createPluginSupport } from './model/createPluginSupport'
 export {
   createNoticeParts,
-  createPickerParts,
   createTabActionParts,
   createTabKindParts,
   createTaskServiceParts,

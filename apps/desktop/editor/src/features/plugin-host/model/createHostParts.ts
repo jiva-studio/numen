@@ -125,16 +125,15 @@ export function createTaskServiceParts(deps: {
   }
 }
 
-/** The list of items with check marks a plugin opens, drawn by the window. */
-export function createPickerParts(deps: { readonly picker: PickerHost }): HostParts {
-  return { window: { getPicker: () => deps.picker } }
-}
-
-/** The notices a plugin raises, held per plugin by the queue of the window. */
-export function createNoticeParts(deps: { readonly queue: NoticeQueue }): HostParts {
+/** The notices a plugin raises, held per plugin by the queue of the window, and the list a plugin opens. */
+export function createNoticeParts(deps: {
+  readonly queue: NoticeQueue
+  readonly picker?: PickerHost | undefined
+}): HostParts {
   const { queue } = deps
   return {
     window: {
+      getPicker: () => deps.picker,
       getNotices: (pluginId) => createPluginNotices(queue, pluginId),
       clearNotices: (pluginId) => queue.clear(pluginId),
     },

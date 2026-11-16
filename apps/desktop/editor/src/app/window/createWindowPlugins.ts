@@ -7,12 +7,7 @@ import { createNoticeQueue } from '@numen/workbench'
 import { createCommandTitleReader } from '@/entities/command'
 import { useDeclaredCommands } from '@/features/plugin-commands'
 import { createPickerSession } from '@/features/command-palette'
-import {
-  createHostPort,
-  createPickerParts,
-  createPluginNotes,
-  isCommandListed,
-} from '@/features/plugin-host'
+import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
 import { syncKeybindings } from '@/features/hotkeys'
 import type { createWindowBase } from './createWindowBase'
 import { createPluginDeclarations } from './createPluginDeclarations'
@@ -96,7 +91,8 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       services,
       notices,
       pluginNotes,
-      hostParts: [...declarations.hostParts, createPickerParts({ picker })],
+      hostParts: declarations.hostParts,
+      picker,
     }),
   })
   vault.vaultChanges.subscribe((event) => pluginHost.notifyVaultChange(event))
