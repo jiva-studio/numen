@@ -99,6 +99,9 @@ func (c *Client) WriteFrontmatter(ctx context.Context, writes []FrontmatterWrite
 	}
 	res, err := c.rpc.WriteFrontmatter(ctx, request(c, &v1.WriteFrontmatterRequest{Notes: notes}))
 	if err != nil {
+		if connect.CodeOf(err) == connect.CodePermissionDenied {
+			return nil, fmt.Errorf("%w: %w", ErrPermissionDenied, err)
+		}
 		return nil, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
