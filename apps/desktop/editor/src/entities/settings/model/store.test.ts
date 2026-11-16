@@ -41,7 +41,7 @@ const createStore = (text: string, failure: string | null = null) => {
       writeSettings: (request) => {
         requests.push(request.settings.map((one) => ({ at: one.at, value: one.value })))
         if (failure) throw createLostConnection(failure)
-        return {}
+        return { written: '{}', version: 1n }
       },
     },
   })
@@ -222,32 +222,46 @@ describe('a setting written', () => {
     )
   })
 
-  it('updates committed target tree preserving sibling keys and replacing non-object intermediates', async () => {
-    let shouldFailRead = false
+  it('is what the vault answered, with no read after it', async () => {
+    let reads = 0
     settings = createAnsweredSettings({
       settingsService: {
         getSettings: () => {
-          if (shouldFailRead) throw createLostConnection('offline')
-          return answerWith('{"appearance":{"keep":1},"nullBranch":null,"primBranch":42}')
+          reads += 1
+          return answerWith('{"appearance":{"keep":1}}')
         },
-        writeSettings: () => ({}),
+        writeSettings: () => ({
+          written: '{"appearance":{"keep":1,"mode":"dark"},"other":{"nested":"ok"}}',
+          version: 2n,
+        }),
       },
     })
     const store = createSettingsStore(settings, words, vi.fn())
     await store.start()
 
-    shouldFailRead = true
-    await store.write.writeSettings([
-      { at: ['appearance', 'mode'], value: '"dark"' },
-      { at: ['nullBranch', 'nested'], value: '"ok"' },
-      { at: ['primBranch', 'nested'], value: '"ok2"' },
-      { at: ['appearance', 'keep'], value: 'not-json' },
-    ])
+    await store.write.writeSettings([{ at: ['appearance', 'mode'], value: '"dark"' }])
 
+    expect(reads).toBe(1)
     expect(store.read.getCommittedSetting(['appearance', 'keep'])).toBe(1)
     expect(store.read.getCommittedSetting(['appearance', 'mode'])).toBe('dark')
-    expect(store.read.getCommittedSetting(['nullBranch', 'nested'])).toBe('ok')
-    expect(store.read.getCommittedSetting(['primBranch', 'nested'])).toBe('ok2')
+    expect(store.read.getCommittedSetting(['other', 'nested'])).toBe('ok')
+  })
+
+  it('says the settings could not be read where the vault answers text that is not JSON', async () => {
+    settings = createAnsweredSettings({
+      settingsService: {
+        getSettings: () => answerWith('{}'),
+        writeSettings: () => ({ written: 'not JSON at all', version: 1n }),
+      },
+    })
+    const notify = vi.fn()
+    const store = createSettingsStore(settings, words, notify)
+    await store.start()
+
+    await store.write.writeSetting(['appearance', 'mode'], 'dark')
+
+    expect(notify).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
+    expect(store.read.getCommittedSetting(['appearance', 'mode'])).toBeUndefined()
   })
 })
 
@@ -259,23 +273,27 @@ const defer = <T>() => {
   return { promise, resolve }
 }
 
-describe('a setting written twice in quick succession', () => {
+describe('a setting written while the vault is read', () => {
   const settingPath = ['app', 'naming', 'syncTitleAndFilename']
 
   /**
    * A vault whose file a test sets, with every write and every read held until it is let through.
-   * A write rejects when `failWrites` is set.
+   * A read answers with the state and the version it had when it began; a write changes both when
+   * it is let through, and rejects when `failWrites` is set.
    */
   const createBlockedVault = (failWrites = false) => {
     let file = '{"app":{"naming":{"syncTitleAndFilename":true}}}'
+    let version = 1n
     const writes: ReturnType<typeof defer<void>>[] = []
-    const reads: ReturnType<typeof defer<string>>[] = []
+    const reads: ReturnType<typeof defer<void>>[] = []
     settings = createAnsweredSettings({
       settingsService: {
         getSettings: async () => {
-          const readItem = defer<string>()
+          const answer = answerWith(file, { version })
+          const readItem = defer<void>()
           reads.push(readItem)
-          return answerWith(await readItem.promise)
+          await readItem.promise
+          return answer
         },
         writeSettings: async (request) => {
           const isDone = defer<void>()
@@ -283,14 +301,15 @@ describe('a setting written twice in quick succession', () => {
           await isDone.promise
           if (failWrites) throw createLostConnection('failed')
           file = `{"app":{"naming":{"syncTitleAndFilename":${request.settings[0]?.value}}}}`
-          return {}
+          version += 1n
+          return { written: file, version }
         },
       },
     })
-    return { writes, reads, getFile: () => file }
+    return { writes, reads }
   }
 
-  it('remains at the last value through the answer of the first write and a read between', async () => {
+  it('remains at the last value through the answer of the first write', async () => {
     const vault = createBlockedVault()
     const retainedState = createSettingsStore(settings, words, vi.fn())
     expect(retainedState.read.isRequested(settingPath)).toBe(false)
@@ -303,20 +322,36 @@ describe('a setting written twice in quick succession', () => {
 
     await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
     vault.writes[0]?.resolve()
-    await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
-    vault.reads[0]?.resolve('{"app":{"naming":{"syncTitleAndFilename":false}}}')
     await first
     expect(retainedState.read.getSetting(settingPath)).toBe(true)
     expect(retainedState.read.getCommittedSetting(settingPath)).toBe(false)
 
     await vi.waitFor(() => expect(vault.writes).toHaveLength(2))
     vault.writes[1]?.resolve()
-    await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
-    vault.reads[1]?.resolve(vault.getFile())
     await second
     expect(retainedState.read.isRequested(settingPath)).toBe(false)
     expect(retainedState.read.getSetting(settingPath)).toBe(true)
     expect(retainedState.read.getCommittedSetting(settingPath)).toBe(true)
+    expect(vault.reads).toHaveLength(0)
+  })
+
+  it('keeps the value of the write where a read that began before it answers after it', async () => {
+    const vault = createBlockedVault()
+    const retainedState = createSettingsStore(settings, words, vi.fn())
+
+    const read = retainedState.start()
+    await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
+    const write = retainedState.write.writeSetting(settingPath, false)
+    await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
+    vault.writes[0]?.resolve()
+    await write
+    expect(retainedState.read.getCommittedSetting(settingPath)).toBe(false)
+
+    vault.reads[0]?.resolve()
+    await read
+    expect(retainedState.read.getSetting(settingPath)).toBe(false)
+    expect(retainedState.read.getCommittedSetting(settingPath)).toBe(false)
+    expect(vault.reads).toHaveLength(1)
   })
 
   it('does not accept a read that answers after a newer one', async () => {
@@ -324,27 +359,35 @@ describe('a setting written twice in quick succession', () => {
     const retainedState = createSettingsStore(settings, words, vi.fn())
 
     const older = retainedState.start()
+    await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
+    const write = retainedState.write.writeSetting(settingPath, false)
+    await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
+    vault.writes[0]?.resolve()
+    await write
     const newer = retainedState.start()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
-    vault.reads[1]?.resolve('{"a":2}')
+    vault.reads[1]?.resolve()
     await newer
-    vault.reads[0]?.resolve('{"a":1}')
+    vault.reads[0]?.resolve()
     await older
-    expect(retainedState.read.getSetting(['a'])).toBe(2)
+    expect(retainedState.read.getCommittedSetting(settingPath)).toBe(false)
   })
 
   it('goes back to the file where the write failed', async () => {
     const vault = createBlockedVault(true)
     const retainedState = createSettingsStore(settings, words, vi.fn())
-
+    const read = retainedState.start()
+    await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
+    vault.reads[0]?.resolve()
+    await read
     const content = retainedState.write.writeSetting(settingPath, false)
     expect(retainedState.read.getSetting(settingPath)).toBe(false)
     await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
     vault.writes[0]?.resolve()
-    await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
-    vault.reads[0]?.resolve(vault.getFile())
     await content
+    expect(retainedState.read.isRequested(settingPath)).toBe(false)
     expect(retainedState.read.getSetting(settingPath)).toBe(true)
+    expect(vault.reads).toHaveLength(1)
   })
 })
 

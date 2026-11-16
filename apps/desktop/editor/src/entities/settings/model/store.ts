@@ -1,12 +1,13 @@
 /**
  * Every setting as the vault holds it, with the value a control requested shown from the request
- * until the vault reads it back; and settings written at their current position, one batch at a
- * time.
+ * until the vault answers its write; and settings written at their current position, one batch at a
+ * time. An answer of the vault, a read or a write, is shown only where its version is not older than
+ * one already shown.
  */
 import { ref, shallowRef } from 'vue'
 import { formatError } from '@/shared/api/errors'
 import { createEmitter } from '@/shared/lib/emitter'
-import type { JsonObject, JsonValue } from '@/shared/api/json'
+import type { JsonValue } from '@/shared/api/json'
 import { createRemoteValues } from './remoteValues'
 import type {
   Configuration,
@@ -16,27 +17,13 @@ import type {
 } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { write } from '../lib/write'
-import type { SettingsApi } from '../api/settings'
+import type { SettingsApi, SettingsWritten } from '../api/settings'
 import { getSettingAt } from '../lib/settingAt'
 
 /** Every label shown in the window. */
 export interface Words {
   readonly unturned: string
   readonly unreadSettings: string
-}
-
-const withSettingAt = (
-  settings: JsonValue | undefined,
-  at: readonly string[],
-  value: JsonValue,
-): JsonValue => {
-  const [step, ...rest] = at
-  if (step === undefined) return value
-  const base: JsonObject =
-    typeof settings === 'object' && settings !== null && !Array.isArray(settings)
-      ? (settings as JsonObject)
-      : {}
-  return { ...base, [step]: withSettingAt(base[step], rest, value) }
 }
 
 const PATH_JOIN = '\u0000'
@@ -111,17 +98,21 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
   const plugins = shallowRef<readonly PluginInfo[]>([])
   const app = shallowRef<readonly PluginSettingInfo[]>([])
 
-  const requested = createRemoteValues<SettingEdit>((values) =>
-    api.updateSettings([...values.values()]),
+  const requested = createRemoteValues<SettingEdit, SettingsWritten>(
+    (values) => api.updateSettings([...values.values()]),
+    (answer) => {
+      const file = parseSettingsText(answer.written)
+      if (file === undefined) say(words.unreadSettings, 'error')
+      else target.value = file
+    },
   )
 
-  /** The settings values, requested once the window is up and after every write. */
+  /** The settings values, requested once the window is up and after a change by another writer. */
   const start = async (): Promise<void> => {
-    const pendingRead = requested.beginRead()
     const read = await readVault(api, words, say)
     if (read === undefined) return
     const { answer } = read
-    requested.takeRead(pendingRead, () => {
+    requested.takeAnswer(answer.version, () => {
       target.value = read.file
       path.value = answer.path
       plugins.value = answer.plugins ?? []
@@ -135,7 +126,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
     return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
   }
 
-  /** Whether a value requested at a path has not been read back yet, its write in flight or done. */
+  /** Whether a value requested at a path has not been answered by the vault yet. */
   const isRequested = (path: readonly string[]): boolean =>
     requested.getRequestedValue(getPathKey(path)) !== undefined
 
@@ -157,14 +148,9 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
 
     try {
       await requested.requestWrite(new Map(edits.map((one) => [getPathKey(one.at), one])))
-      for (const one of edits) {
-        const value = parseEditValue(one)
-        if (value !== undefined) target.value = withSettingAt(target.value, one.at, value)
-      }
     } catch (caughtError) {
       say(`${words.unturned} ${formatError(caughtError)}`, 'error')
     }
-    await start()
   }
 
   /** One setting written, by what is to stand there. */

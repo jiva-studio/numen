@@ -21,6 +21,8 @@ export interface Configuration {
   readonly jsonContent?: string | undefined
   readonly written: string
   readonly path: string
+  /** The version of the stored state `written` stands for; a greater one is newer. */
+  readonly version: bigint
   readonly plugins?: readonly PluginInfo[] | undefined
   readonly app?: readonly PluginSettingInfo[] | undefined
 }
