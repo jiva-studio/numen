@@ -2,7 +2,7 @@
 
 Checks over the whole repository that no single module's lint target covers: duplication and unused TypeScript and Vue code. Go complexity (`cyclop`, `gocognit`, `nestif`, `funlen`), interface size (`interfacebloat`) and unused parameters and results (`unparam`) are linters of `.golangci-structure.yml`, and ESLint and golangci-lint run in the lint target of each module.
 
-The rule for duplication and the rule for exports only tests use are in `tools/checks/structure/ts/duplication` and `tools/checks/structure/ts/test-only-exports` and are listed in the registry of `tools/checks`; this command runs them together with knip. The comparison of the plugin API types is the Go check `go/api-types` of `tools/checks`.
+The rules for duplication, for exports only tests use and for modules only tests import are in `tools/checks/structure/ts/duplication`, `tools/checks/structure/ts/test-only-exports` and `tools/checks/structure/ts/test-only-modules` and are listed in the registry of `tools/checks`; this command runs them together with knip. The comparison of the plugin API types is the Go check `go/api-types` of `tools/checks`.
 
 ## Invariants Checked
 
@@ -14,6 +14,7 @@ The rule for duplication and the rule for exports only tests use are in `tools/c
 2. **Unused Files and Dependencies (`knip`)**:
    - Runs `knip` once with the root `knip.json`, whose workspaces name every TS package and plugin frontend, tests included. Unused files, unused and unlisted dependencies, unlisted binaries and unresolved imports fail. A missing `knip` binary, a missing `knip.json` or a frontend package outside its workspaces fails the check.
    - `test-only-exports` runs `knip` in production mode over exports and types: an export that only tests, stories or test helpers use fails.
+   - `test-only-modules` compares the unused files of a production run with those of the full run: a file that only tests or stories import fails.
 
 ---
 

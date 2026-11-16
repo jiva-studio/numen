@@ -1488,6 +1488,33 @@
       ]
     },
     {
+      "name": "ts/test-only-modules",
+      "paths": [
+        "libs/**/*.{ts,vue}",
+        "apps/**/*.{ts,vue}",
+        "plugins/**/*.{ts,vue}",
+        "libs/**/package.json",
+        "apps/**/package.json",
+        "plugins/**/package.json",
+        "knip.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "plugin",
+        "window",
+        "slow"
+      ],
+      "selftest": "structure/ts/test-only-modules/check.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/lint-quality/check.mjs",
+        "--check=test-only-modules"
+      ]
+    },
+    {
       "name": "style/comments",
       "paths": [
         "**/*.{ts,vue,go}",
