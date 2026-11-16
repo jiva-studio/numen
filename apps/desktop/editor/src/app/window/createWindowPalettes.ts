@@ -16,6 +16,7 @@ import type { WindowTabs } from '@/entities/tab'
 import { createHostConnection } from './createHostConnection'
 import { createPluginPalette } from './createPluginPalette'
 import type { createWindowBase } from './createWindowBase'
+import type { WindowApi } from './createWindowApi'
 import type { createWindowPlugins } from './createWindowPlugins'
 
 /** What the palettes and the runs of the commands share. */
@@ -49,7 +50,11 @@ type WindowPlugins = ReturnType<typeof createWindowPlugins>
 
 /** What the palettes of the window read of the base and the plugins. */
 export interface WindowPalettesDeps {
-  readonly foundation: WindowBase['foundation']
+  readonly api: Pick<WindowApi, 'vault'>
+  readonly log: WindowBase['log']
+  readonly rest: WindowBase['rest']
+  readonly registry: WindowBase['registry']
+  readonly settingsRequests: Pick<WindowBase['settingsRequests'], 'emit'>
   readonly tabs: WindowBase['tabs']
   readonly vault: WindowBase['vault']
   readonly windowSettings: WindowBase['windowSettings']
@@ -59,8 +64,8 @@ export interface WindowPalettesDeps {
 }
 
 export function createWindowPalettes(deps: WindowPalettesDeps) {
-  const { foundation, vault, windowSettings, getTarget, appCommands, plugins } = deps
-  const { rest, log } = foundation
+  const { api, log, rest, registry, settingsRequests, vault, windowSettings, getTarget } = deps
+  const { appCommands, plugins } = deps
   const writeMessage = log.getWriter('command')
   const { pluginHost, declaredCommands, hostPort } = plugins
   const { windowTabs } = deps.tabs
@@ -68,16 +73,16 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
     windowTabs,
     reached: vault.editing.reached,
     settingPalette: windowSettings.settingPalette,
-    registry: foundation.registry,
+    registry: registry,
     writeMessage,
-    openSettings: foundation.settingsRequests.emit,
+    openSettings: settingsRequests.emit,
   })
   const pluginPalette = createPluginPalette({
     pluginHost,
     declaredCommands,
     itemLists: vault.itemLists,
     commandDeps,
-    registry: foundation.registry,
+    registry: registry,
     appCommands,
     getTarget,
     windowSettings,
@@ -89,8 +94,8 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
     plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { menu: createSearchMenu(pluginHost.slots) },
-    getVaultList: foundation.api.vault.listVaults,
-    searchCore: foundation.api.vault.search,
+    getVaultList: api.vault.listVaults,
+    searchCore: api.vault.search,
   })
   watchCommandLists(
     {

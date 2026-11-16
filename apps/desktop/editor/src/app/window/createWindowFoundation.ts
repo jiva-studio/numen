@@ -32,3 +32,5 @@ export function createWindowFoundation(api: WindowApi) {
     settingsRequests: createEmitter<SettingsRequest>(),
   }
 }
+
+export type WindowFoundation = ReturnType<typeof createWindowFoundation>

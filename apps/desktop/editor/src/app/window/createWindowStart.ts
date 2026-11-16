@@ -93,7 +93,12 @@ function createLayoutStarter(deps: LayoutStarterDeps) {
 
 /** What the start of the window reads of the base, the plugins and the palettes. */
 export interface WindowStartDeps {
-  readonly foundation: WindowBase['foundation']
+  readonly api: WindowApi
+  readonly log: WindowBase['log']
+  readonly rest: WindowBase['rest']
+  readonly frame: WindowBase['frame']
+  readonly connections: WindowBase['connections']
+  readonly settingsRequests: WindowBase['settingsRequests']
   readonly tabs: WindowBase['tabs']
   readonly tabParts: WindowBase['tabParts']
   readonly vault: WindowBase['vault']
@@ -104,14 +109,19 @@ export interface WindowStartDeps {
 }
 
 export function createWindowStart(deps: WindowStartDeps) {
-  const { foundation, tabs, tabParts, vault, windowSettings, getTarget, plugins, palettes } = deps
-  const { api, log, rest, frame } = foundation
+  const { api, log, rest, frame, tabs, tabParts, vault, windowSettings, getTarget } = deps
+  const { plugins, palettes } = deps
   const writeMessage = log.getWriter('command')
   const { windowTabs } = tabs
   const { pluginHost, pluginLoader, declaredCommands } = plugins
   const { editing, window, vaults } = vault
   registerSettingsPage({
-    foundation,
+    api,
+    rest,
+    connections: deps.connections,
+    log,
+    frame,
+    settingsRequests: deps.settingsRequests,
     windowSettings,
     windowTabs,
     plugins: { host: pluginHost, health: window.pluginHealth, commands: plugins.hostPort.commands },
