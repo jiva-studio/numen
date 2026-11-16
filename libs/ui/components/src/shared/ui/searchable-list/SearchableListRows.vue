@@ -30,6 +30,9 @@ defineExpose({ scrollToActive })
 
 const list = useTemplateRef<HTMLElement>('list')
 
+/** The rows drawn until the height of one is measured. */
+const UNMEASURED_ROWS = 20
+
 const rowHeight = shallowRef(0)
 const virtual = useVirtualTree(
   list,
@@ -38,18 +41,21 @@ const virtual = useVirtualTree(
 )
 
 /** The rows drawn, and the place of the first of them among all. */
-const first = computed(() => (props.isMultiple ? virtual.window.value.startIndex : 0))
-const shown = computed(() =>
-  props.isMultiple
-    ? props.rows.slice(virtual.window.value.startIndex, virtual.window.value.endIndex)
-    : props.rows,
+const first = computed(() =>
+  props.isMultiple && rowHeight.value > 0 ? virtual.window.value.startIndex : 0,
 )
+const shown = computed(() => {
+  if (!props.isMultiple) return props.rows
+  if (rowHeight.value === 0) return props.rows.slice(0, UNMEASURED_ROWS)
+  return props.rows.slice(virtual.window.value.startIndex, virtual.window.value.endIndex)
+})
 
 const windowStyle = computed(() =>
-  props.isMultiple
+  props.isMultiple && rowHeight.value > 0
     ? {
         blockSize: `${virtual.window.value.totalHeight}px`,
         paddingBlockStart: `${virtual.window.value.offsetY}px`,
+        boxSizing: 'border-box' as const,
       }
     : undefined,
 )
