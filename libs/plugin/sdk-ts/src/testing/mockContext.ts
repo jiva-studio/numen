@@ -203,6 +203,8 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
   const settings = new Map<string, JsonValue>(Object.entries(init.initialSettings ?? {}))
   const settingListeners = new Map<string, Set<(val: JsonValue) => void>>()
   const subscriptions: Disposable[] = []
+  let editorSettings: EditorSettings | undefined = init.initialEditorSettings
+  const editorListeners = new Set<(settings: EditorSettings) => void>()
 
   const register: PluginRegistrations = {
     reader: (registration) => registerInList(readers, registration, subscriptions),
@@ -246,8 +248,8 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
     settings: {
       get: getSettingValue,
       onChange: onSettingChange,
-      getEditor: () => undefined,
-      onEditorChange: () => ({ dispose: () => undefined }),
+      getEditor: () => editorSettings,
+      onEditorChange: (handler) => addSetListener(editorListeners, handler, subscriptions),
     },
     health: createMockHealthHost(),
 
@@ -261,7 +263,10 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
       }
     },
 
-    setEditorSettings: () => undefined,
+    setEditorSettings(next: EditorSettings): void {
+      editorSettings = next
+      for (const listener of editorListeners) listener(next)
+    },
 
     getRegisteredReaders(): ReaderRegistration[] {
       return [...readers]
@@ -314,6 +319,7 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
         d?.dispose()
       }
       settingListeners.clear()
+      editorListeners.clear()
     },
   }
 }
