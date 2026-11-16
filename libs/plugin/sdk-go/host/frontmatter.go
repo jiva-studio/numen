@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 // ErrInvalidFrontmatterQuery is a read of frontmatter over its limits: more than 1000 paths, more than
@@ -64,4 +65,22 @@ func (c *Client) ReadFrontmatter(ctx context.Context, q FrontmatterQuery) (Front
 		page.Notes = append(page.Notes, NoteFrontmatter{SourceID: one.GetSourceId(), Path: one.GetPath(), Values: values})
 	}
 	return page, nil
+}
+
+// FrontmatterWrite sets the keys of Values on the note at Path; a nil value removes the key.
+// Baseline is the file state the caller read, the zero value writes over any state.
+type FrontmatterWrite struct {
+	Path     string
+	Values   map[string]any
+	Baseline domain.FileStat
+}
+
+// FrontmatterWritten is one outcome of a write: Stat is the note after it.
+type FrontmatterWritten struct {
+	Stat domain.FileStat
+	Err  error
+}
+
+func (c *Client) WriteFrontmatter(ctx context.Context, writes []FrontmatterWrite) ([]FrontmatterWritten, error) {
+	return nil, errors.New("not implemented")
 }

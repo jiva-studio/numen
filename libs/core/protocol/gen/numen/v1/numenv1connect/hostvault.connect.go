@@ -78,6 +78,9 @@ const (
 	// HostVaultServiceReadFrontmatterProcedure is the fully-qualified name of the HostVaultService's
 	// ReadFrontmatter RPC.
 	HostVaultServiceReadFrontmatterProcedure = "/numen.v1.HostVaultService/ReadFrontmatter"
+	// HostVaultServiceWriteFrontmatterProcedure is the fully-qualified name of the HostVaultService's
+	// WriteFrontmatter RPC.
+	HostVaultServiceWriteFrontmatterProcedure = "/numen.v1.HostVaultService/WriteFrontmatter"
 	// HostVaultServiceListFileChangesProcedure is the fully-qualified name of the HostVaultService's
 	// ListFileChanges RPC.
 	HostVaultServiceListFileChangesProcedure = "/numen.v1.HostVaultService/ListFileChanges"
@@ -180,6 +183,10 @@ type HostVaultServiceClient interface {
 	// ReadFrontmatter returns the frontmatter of notes as the index holds it, in
 	// pages ordered by path. It needs vault:read.
 	ReadFrontmatter(context.Context, *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error)
+	// WriteFrontmatter sets, replaces or removes top-level frontmatter keys of
+	// notes, keeps the other keys and the body. It needs vault:write. At most
+	// 1000 notes per call.
+	WriteFrontmatter(context.Context, *connect.Request[v1.WriteFrontmatterRequest]) (*connect.Response[v1.WriteFrontmatterResponse], error)
 	// ListFileChanges returns the file change feed of the vault after a cursor:
 	// the latest event of each kind of each file, in the order the index stored
 	// them. It needs vault:read.
@@ -340,6 +347,12 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("ReadFrontmatter")),
 			connect.WithClientOptions(opts...),
 		),
+		writeFrontmatter: connect.NewClient[v1.WriteFrontmatterRequest, v1.WriteFrontmatterResponse](
+			httpClient,
+			baseURL+HostVaultServiceWriteFrontmatterProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("WriteFrontmatter")),
+			connect.WithClientOptions(opts...),
+		),
 		listFileChanges: connect.NewClient[v1.ListFileChangesRequest, v1.ListFileChangesResponse](
 			httpClient,
 			baseURL+HostVaultServiceListFileChangesProcedure,
@@ -474,6 +487,7 @@ type hostVaultServiceClient struct {
 	getNamedPaths      *connect.Client[v1.GetNamedPathsRequest, v1.GetNamedPathsResponse]
 	getPathsOfType     *connect.Client[v1.GetPathsOfTypeRequest, v1.GetPathsOfTypeResponse]
 	readFrontmatter    *connect.Client[v1.ReadFrontmatterRequest, v1.ReadFrontmatterResponse]
+	writeFrontmatter   *connect.Client[v1.WriteFrontmatterRequest, v1.WriteFrontmatterResponse]
 	listFileChanges    *connect.Client[v1.ListFileChangesRequest, v1.ListFileChangesResponse]
 	getLinks           *connect.Client[v1.GetLinksRequest, v1.GetLinksResponse]
 	getBacklinks       *connect.Client[v1.GetBacklinksRequest, v1.GetBacklinksResponse]
@@ -568,6 +582,11 @@ func (c *hostVaultServiceClient) GetPathsOfType(ctx context.Context, req *connec
 // ReadFrontmatter calls numen.v1.HostVaultService.ReadFrontmatter.
 func (c *hostVaultServiceClient) ReadFrontmatter(ctx context.Context, req *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error) {
 	return c.readFrontmatter.CallUnary(ctx, req)
+}
+
+// WriteFrontmatter calls numen.v1.HostVaultService.WriteFrontmatter.
+func (c *hostVaultServiceClient) WriteFrontmatter(ctx context.Context, req *connect.Request[v1.WriteFrontmatterRequest]) (*connect.Response[v1.WriteFrontmatterResponse], error) {
+	return c.writeFrontmatter.CallUnary(ctx, req)
 }
 
 // ListFileChanges calls numen.v1.HostVaultService.ListFileChanges.
@@ -708,6 +727,10 @@ type HostVaultServiceHandler interface {
 	// ReadFrontmatter returns the frontmatter of notes as the index holds it, in
 	// pages ordered by path. It needs vault:read.
 	ReadFrontmatter(context.Context, *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error)
+	// WriteFrontmatter sets, replaces or removes top-level frontmatter keys of
+	// notes, keeps the other keys and the body. It needs vault:write. At most
+	// 1000 notes per call.
+	WriteFrontmatter(context.Context, *connect.Request[v1.WriteFrontmatterRequest]) (*connect.Response[v1.WriteFrontmatterResponse], error)
 	// ListFileChanges returns the file change feed of the vault after a cursor:
 	// the latest event of each kind of each file, in the order the index stored
 	// them. It needs vault:read.
@@ -864,6 +887,12 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("ReadFrontmatter")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostVaultServiceWriteFrontmatterHandler := connect.NewUnaryHandler(
+		HostVaultServiceWriteFrontmatterProcedure,
+		svc.WriteFrontmatter,
+		connect.WithSchema(hostVaultServiceMethods.ByName("WriteFrontmatter")),
+		connect.WithHandlerOptions(opts...),
+	)
 	hostVaultServiceListFileChangesHandler := connect.NewUnaryHandler(
 		HostVaultServiceListFileChangesProcedure,
 		svc.ListFileChanges,
@@ -1010,6 +1039,8 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceGetPathsOfTypeHandler.ServeHTTP(w, r)
 		case HostVaultServiceReadFrontmatterProcedure:
 			hostVaultServiceReadFrontmatterHandler.ServeHTTP(w, r)
+		case HostVaultServiceWriteFrontmatterProcedure:
+			hostVaultServiceWriteFrontmatterHandler.ServeHTTP(w, r)
 		case HostVaultServiceListFileChangesProcedure:
 			hostVaultServiceListFileChangesHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetLinksProcedure:
@@ -1115,6 +1146,10 @@ func (UnimplementedHostVaultServiceHandler) GetPathsOfType(context.Context, *con
 
 func (UnimplementedHostVaultServiceHandler) ReadFrontmatter(context.Context, *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ReadFrontmatter is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) WriteFrontmatter(context.Context, *connect.Request[v1.WriteFrontmatterRequest]) (*connect.Response[v1.WriteFrontmatterResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.WriteFrontmatter is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) ListFileChanges(context.Context, *connect.Request[v1.ListFileChangesRequest]) (*connect.Response[v1.ListFileChangesResponse], error) {

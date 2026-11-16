@@ -3,6 +3,7 @@ package hosttest
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -69,4 +70,9 @@ func pickValues(frontmatter map[string]any, keys []string) (map[string]any, erro
 	}
 	out := map[string]any{}
 	return out, json.Unmarshal(raw, &out)
+}
+
+// WriteFrontmatter sets, replaces and removes top-level keys of the notes, as the host does.
+func (v *Vault) WriteFrontmatter(ctx context.Context, writes []host.FrontmatterWrite) ([]host.FrontmatterWritten, error) {
+	return nil, errors.New("not implemented")
 }
