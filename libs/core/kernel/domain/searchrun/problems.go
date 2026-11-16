@@ -15,7 +15,10 @@ func ReadProblems(err error) []Problem {
 	}
 	problems := make([]Problem, len(parseErr.Problems))
 	for i, p := range parseErr.Problems {
-		problems[i] = Problem{Line: p.Position.Line, Column: p.Position.Column, Message: p.Message, Suggestion: p.Suggestion}
+		problems[i] = Problem{
+			Line: p.Position.Line, Column: p.Position.Column, EndLine: p.End.Line, EndColumn: p.End.Column,
+			Message: p.Message, Suggestion: p.Suggestion,
+		}
 	}
 	return problems
 }

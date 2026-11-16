@@ -3,7 +3,12 @@
  * for the tests and the stories.
  */
 import response from '../../../testdata/api/GetResults.response.json'
-import type { GetResultsResponse, ResultsChange, SearchResult } from '../api/types'
+import type {
+  GetResultsResponse,
+  ListSearchFunctionsResponse,
+  ResultsChange,
+  SearchResult,
+} from '../api/types'
 
 /** The path of the saved search note every fixture answers for. */
 export const NOTE_PATH = 'Harbor/Harbor master - winter storms.md'
@@ -66,13 +71,13 @@ export const NEVER_COMPUTED: GetResultsResponse = {
 /** A run that found nothing. */
 export const NOTHING_FOUND: GetResultsResponse = { ...HARBOR, results: [] }
 
-/** A note whose query the core rejects: the problem points into the file and the last good results stay. */
+/** A note whose query the core rejects: the problem points into the query and the last good results stay. */
 export const MISSPELLED: GetResultsResponse = {
   ...HARBOR,
   query: 'kind in ["note", "pdf"]\n&& meanin("the harbor master in a winter storm")',
   failedAt: '2026-11-14T09:41:00Z',
   failure: 'the query has problems',
-  errors: [{ line: 9, column: 4, message: 'unknown function meanin (did you mean meaning?)' }],
+  errors: [{ line: 2, column: 4, message: 'Unknown function meanin: did you mean meaning?' }],
 }
 
 /** A warning of the core about the run. */
@@ -91,8 +96,66 @@ export const FAILED_LAST_RUN: GetResultsResponse = {
   failure: FAILURE_REASON,
 }
 
+/** The error of a run whose reranking service did not answer. */
+export const RERANKER_BUSY = 'no reranking service answered: Local reranker: busy'
+
+/** A last run that failed at 09:41 UTC on a busy reranking service; the results are those of 09:30. */
+export const FAILED_ON_RERANKER: GetResultsResponse = {
+  ...HARBOR,
+  failedAt: '2026-11-14T09:41:00Z',
+  failure: RERANKER_BUSY,
+  errors: [{ line: 0, column: 0, message: RERANKER_BUSY }],
+}
+
 /** A run in progress over the results of 09:30. */
 export const RUNNING: GetResultsResponse = { ...HARBOR, isRunning: true }
 
 /** Results a run will replace. */
 export const STALE: GetResultsResponse = { ...HARBOR, isStale: true }
+
+/** The catalog of the search language: three functions, one of them from a plugin, and two stages. */
+export const FUNCTIONS: ListSearchFunctionsResponse = {
+  functions: [
+    {
+      name: 'words',
+      kind: 'function',
+      summary: 'passages with these words',
+      description: 'Finds passages that contain every word of the text.',
+      example: 'words("lighthouse keeper")',
+      signatures: ['words(text)'],
+    },
+    {
+      name: 'meaning',
+      kind: 'function',
+      summary: 'passages close in meaning',
+      description: 'Finds passages that say something close to the text, even in other words.',
+      example: 'meaning("a night at sea")',
+      signatures: ['meaning(text)'],
+    },
+    {
+      name: 'tags',
+      kind: 'function',
+      summary: 'notes with this tag',
+      description: 'Finds notes that carry the tag you give.',
+      example: 'tags("harbor")',
+      signatures: ['tags(name)'],
+    },
+    {
+      name: 'top',
+      kind: 'stage',
+      summary: 'keep the first N',
+      description: 'Keeps only the first results; give how many.',
+      example: 'words("gale").top(10)',
+      signatures: ['.top(count)'],
+    },
+    {
+      name: 'rerank',
+      kind: 'stage',
+      summary: 'reorder the best results with a reranking model',
+      description:
+        'Reorders the best results with a reranking model, which judges how well each passage answers the question you give.',
+      example: 'words("gale").rerank("storm damage")',
+      signatures: ['.rerank(question)'],
+    },
+  ],
+}

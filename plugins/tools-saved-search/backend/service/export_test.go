@@ -21,3 +21,7 @@ func (a *App) NewRegistry() (*tools.Registry, error) {
 	}
 	return a.newRegistry(built)
 }
+
+func (a *App) Wait() {
+	a.parts.runner.Wait()
+}

@@ -49,11 +49,13 @@ func GetStepName(s Step) string {
 	return ""
 }
 
-// Problem is an error of a search. Line and Column are zero when it has no position.
+// Problem is an error of a search. Line and Column are zero when it has no position; EndLine and EndColumn
+// are the last character of a problem that covers more than one, else zero.
 type Problem struct {
-	Line, Column int
-	Message      string
-	Suggestion   string
+	Line, Column       int
+	EndLine, EndColumn int
+	Message            string
+	Suggestion         string
 }
 
 // Record is a search as the store keeps it. Results holds the partial results while IsPartial is set, the
@@ -69,6 +71,7 @@ type Record struct {
 	IndexGeneration string
 	StartedAt       time.Time
 	AccessedAt      time.Time
+	Holders         int
 }
 
 // IsSameSearch reports whether two starts ask for the same search: the same owner, vault, background flag

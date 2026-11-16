@@ -7,6 +7,7 @@ import { ServiceFailure, type SavedSearchService } from '../api/service'
 import type {
   GetResultsRequest,
   GetResultsResponse,
+  ListSearchFunctionsResponse,
   ResultsChange,
   UpdateSearchRequest,
   UpdateSearchResponse,
@@ -66,8 +67,14 @@ export interface ScriptedService extends SavedSearchService {
 
 const abortError = (): DOMException => new DOMException('The call was aborted.', 'AbortError')
 
-/** A service answering `answer` until told otherwise. */
-export function createScriptedService(first: GetResultsResponse): ScriptedService {
+/**
+ * A service answering `answer` until told otherwise. ListSearchFunctions answers what getCatalog
+ * returns at the time of the call; a string fails it with that message.
+ */
+export function createScriptedService(
+  first: GetResultsResponse,
+  getCatalog: () => ListSearchFunctionsResponse | string = () => ({ functions: [] }),
+): ScriptedService {
   let answer = first
   let readFailure = ''
   let isHolding = false
@@ -146,6 +153,15 @@ export function createScriptedService(first: GetResultsResponse): ScriptedServic
         answer = { ...answer, query: request.query }
       }
       return updateAnswer
+    },
+
+    async listSearchFunctions(_request, signal) {
+      calls.push('listSearchFunctions')
+      await Promise.resolve()
+      if (signal.aborted) throw abortError()
+      const catalog = getCatalog()
+      if (typeof catalog === 'string') throw new ServiceFailure(catalog)
+      return catalog
     },
 
     results: {

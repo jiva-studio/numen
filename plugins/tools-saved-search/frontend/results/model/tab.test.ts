@@ -7,12 +7,14 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   COMPUTED,
   FAILED_LAST_RUN,
+  FUNCTIONS,
   HARBOR,
   HARBOR_REFRESHED,
   HARBOR_TWO_LOGBOOK_PASSAGES,
   MISSPELLED,
   NOTE_PATH,
 } from '../fixtures/responses'
+import type { ListSearchFunctionsResponse } from '../api/types'
 import { createScriptedService } from '../fixtures/service'
 import { createSavedSearchTab } from './tab'
 
@@ -20,11 +22,20 @@ const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve,
 
 const LATER = { computedAt: '2026-11-14T10:05:00Z', isRunning: false }
 
+let catalog: ListSearchFunctionsResponse | string = { functions: [] }
+
 const setup = () => {
-  const service = createScriptedService(HARBOR)
+  catalog = { functions: [] }
+  const service = createScriptedService(HARBOR, () => catalog)
   const openAt = vi.fn()
   const notify = vi.fn()
-  const tab = createSavedSearchTab(NOTE_PATH, { service, openAt, notify, locale: 'en-GB' })
+  const tab = createSavedSearchTab(NOTE_PATH, {
+    service,
+    openAt,
+    notify,
+    locale: 'en-GB',
+    getNow: () => 0,
+  })
   return { service, openAt, notify, tab, state: tab.state }
 }
 
@@ -252,7 +263,9 @@ describe('saving the query of the note', () => {
     await state.actions.saveSearch({ ...CHANGE, query: 'meanin("gale")' })
     await settle()
 
-    expect(state.saveProblems.value).toStrictEqual(["2:4 undeclared reference to 'meanin'"])
+    expect(state.queryProblems.value).toStrictEqual([
+      { line: 2, column: 4, message: "undeclared reference to 'meanin'" },
+    ])
     expect(service.calls).toStrictEqual(['watchResults', 'getResults', 'updateSearch'])
     expect(state.view.value?.query).toBe(HARBOR.query)
   })
@@ -270,7 +283,7 @@ describe('saving the query of the note', () => {
     service.setUpdateAnswer({ errors: [] })
     await state.actions.saveSearch(CHANGE)
 
-    expect(state.saveProblems.value).toStrictEqual([])
+    expect(state.queryProblems.value).toStrictEqual([])
   })
 
   it('shows the failure of a save', async () => {
@@ -283,21 +296,6 @@ describe('saving the query of the note', () => {
     await state.actions.saveSearch(CHANGE)
 
     expect(state.failure.value).toBe('the note changed while it was updated; try again')
-    expect(state.isSaving.value).toBe(false)
-  })
-
-  it('is saving until the backend answers', async () => {
-    const { service, tab, state } = setup()
-    tab.follow()
-    service.watch.emit(COMPUTED)
-    await settle()
-
-    const saving = state.actions.saveSearch(CHANGE)
-    const during = state.isSaving.value
-    await saving
-
-    expect(during).toBe(true)
-    expect(state.isSaving.value).toBe(false)
   })
 })
 
@@ -339,6 +337,17 @@ describe('filtering the results', () => {
     expect(state.items.value).toHaveLength(4)
   })
 
+  it('shows the results of every hidden source again', async () => {
+    const { state } = await setupWith()
+
+    state.actions.setSourceShown('Logbooks/1911.pdf', false)
+    state.actions.setSourceShown('Harbor/Pier plan.png', false)
+    state.actions.showAllSources()
+
+    expect(state.items.value).toHaveLength(4)
+    expect(state.hiddenSources.value.size).toBe(0)
+  })
+
   it('opens the result the filter leaves by its index in the answer', async () => {
     const { openAt, state } = await setupWith()
 
@@ -375,8 +384,192 @@ describe('the notice of a failed run', () => {
     await settle()
 
     expect(notify).toHaveBeenCalledTimes(1)
-    expect(notify).toHaveBeenCalledWith(
-      'Harbor master: winter storms: the query has problems\n9:4 unknown function meanin (did you mean meaning?)',
-    )
+    expect(notify).toHaveBeenCalledWith('Harbor master: winter storms: the query has problems')
+  })
+})
+
+describe('editing the query of a saved search', () => {
+  it('reads the catalog of the search language when the editor opens, once', async () => {
+    const { service, state } = setup()
+    catalog = FUNCTIONS
+
+    state.actions.setEditing(true)
+    await settle()
+    state.actions.setEditing(false)
+    state.actions.setEditing(true)
+    await settle()
+
+    expect(state.functions.value.map((fn) => fn.name)).toStrictEqual([
+      'words',
+      'meaning',
+      'tags',
+      'top',
+      'rerank',
+    ])
+    expect(service.calls.filter((call) => call === 'listSearchFunctions')).toHaveLength(1)
+  })
+
+  it('reads the catalog again on the next open after it failed', async () => {
+    const { state } = setup()
+    catalog = 'the catalog is not ready'
+    state.actions.setEditing(true)
+    await settle()
+    state.actions.setEditing(false)
+    catalog = FUNCTIONS
+
+    state.actions.setEditing(true)
+    await settle()
+
+    expect(state.functions.value).toHaveLength(5)
+  })
+
+  it('shows the failure of reading the catalog', async () => {
+    const { state } = setup()
+    catalog = 'the catalog is not ready'
+
+    state.actions.setEditing(true)
+    await settle()
+
+    expect(state.failure.value).toBe('the catalog is not ready')
+    expect(state.functions.value).toStrictEqual([])
+  })
+
+  it('gives the editor the problems of the saved query', async () => {
+    const { service, tab, state } = setup()
+    service.results.set(MISSPELLED)
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+
+    state.actions.setEditing(true)
+
+    expect(state.queryProblems.value).toStrictEqual(MISSPELLED.errors)
+  })
+
+  it('gives the editor no problem of a provider, which has no place in the query', async () => {
+    const { service, tab, state } = setup()
+    service.results.set({
+      ...MISSPELLED,
+      errors: [{ line: 0, column: 0, message: 'the reranking service did not answer' }],
+    })
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+
+    expect(state.queryProblems.value).toStrictEqual([])
+  })
+
+  it('gives the editor the problems of the last save over those of the saved query', async () => {
+    const { service, tab, state } = setup()
+    service.results.set(MISSPELLED)
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    state.actions.setEditing(true)
+    service.setUpdateAnswer({
+      errors: [{ line: 1, column: 1, message: 'unknown function meanin' }],
+    })
+
+    await state.actions.saveSearch({ query: 'meanin("gale")' })
+
+    expect(state.queryProblems.value).toStrictEqual([
+      { line: 1, column: 1, message: 'unknown function meanin' },
+    ])
+  })
+
+  it('forgets the problems of the last save when the editor closes', async () => {
+    const { service, tab, state } = setup()
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    state.actions.setEditing(true)
+    service.setUpdateAnswer({
+      errors: [{ line: 1, column: 1, message: 'unknown function meanin' }],
+    })
+    await state.actions.saveSearch({ query: 'meanin("gale")' })
+
+    state.actions.setEditing(false)
+
+    expect(state.queryProblems.value).toStrictEqual([])
+    expect(state.isEditing.value).toBe(false)
+  })
+
+  it('gives the editor no problem of the old query while a good save is read again', async () => {
+    const { service, tab, state } = setup()
+    service.results.set(MISSPELLED)
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    state.actions.setEditing(true)
+    service.results.hold()
+
+    const saving = state.actions.saveSearch({ query: 'meaning("gale")' })
+    await settle()
+
+    expect(state.queryProblems.value).toStrictEqual([])
+    service.results.release()
+    await saving
+  })
+
+  it('ignores the problems of a save that answers after the editor closed', async () => {
+    const { service, tab, state } = setup()
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    state.actions.setEditing(true)
+    service.setUpdateAnswer({
+      errors: [{ line: 1, column: 1, message: 'unknown function meanin' }],
+    })
+
+    const saving = state.actions.saveSearch({ query: 'meanin("gale")' })
+    state.actions.setEditing(false)
+    await saving
+    state.actions.setEditing(true)
+
+    expect(state.queryProblems.value).toStrictEqual([])
+  })
+
+  it('clears the failure of the catalog once a later read of it succeeds', async () => {
+    const { state } = setup()
+    catalog = 'the catalog is not ready'
+    state.actions.setEditing(true)
+    await settle()
+    state.actions.setEditing(false)
+    catalog = FUNCTIONS
+
+    state.actions.setEditing(true)
+    await settle()
+
+    expect(state.failure.value).toBe('')
+  })
+
+  it('keeps the failure of the results when the catalog is read', async () => {
+    const { service, tab, state } = setup()
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    service.results.fail('the index is closed')
+    service.watch.emit(LATER)
+    await settle()
+    catalog = FUNCTIONS
+
+    state.actions.setEditing(true)
+    await settle()
+
+    expect(state.failure.value).toBe('the index is closed')
+  })
+
+  it('keeps the editor open after a good save and reads the results again', async () => {
+    const { service, tab, state } = setup()
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    state.actions.setEditing(true)
+
+    await state.actions.saveSearch(CHANGE)
+
+    expect(state.isEditing.value).toBe(true)
+    expect(service.updates).toStrictEqual([{ path: NOTE_PATH, query: CHANGE.query }])
+    expect(service.calls.filter((call) => call === 'getResults')).toHaveLength(2)
   })
 })

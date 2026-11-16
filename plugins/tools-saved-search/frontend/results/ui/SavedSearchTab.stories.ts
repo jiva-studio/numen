@@ -1,102 +1,107 @@
 /**
  * The tab of a saved search note over a scripted service: the query and its results, a passage and a
- * whole file opened, the problems of the query with the last good results, no result, a warning, a
- * failed last run, the filter and the sources of the results, and the query edited and saved in the
- * accordion at the top.
+ * whole file opened, the dot of the state of the run and its tooltip, the problems of the query with the
+ * last good results, no result, a warning, a failed last run, and the filter and the sources of the
+ * results and the button that brings back what they hide.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { onBeforeUnmount } from 'vue'
-import type { TextRange } from '@numen/plugin-sdk'
-import type { GetResultsResponse, UpdateSearchRequest, UpdateSearchResponse } from '../api/types'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import {
-  COMPUTED,
   FAILED_LAST_RUN,
   FAILURE_REASON,
   FUSED,
-  HARBOR,
   HARBOR_TWO_LOGBOOK_PASSAGES,
   MISSPELLED,
   NEVER_COMPUTED,
-  NOTE_PATH,
   NOTHING_FOUND,
+  RUNNING,
+  STALE,
   WARNING,
 } from '../fixtures/responses'
-import { createScriptedService } from '../fixtures/service'
-import { createSavedSearchTab } from '../model/tab'
-import SavedSearchTab from './SavedSearchTab.vue'
-import '../../styles.css'
-
-interface Knobs {
-  response: GetResultsResponse
-  updateAnswer: UpdateSearchResponse
-  onOpenAt: (path: string, ranges: readonly TextRange[]) => void
-  onNotify: (text: string) => void
-  onUpdateSearch: (request: UpdateSearchRequest) => void
-}
-
-const NEW_QUERY = 'words("lighthouse") && meaning("the keeper in a gale").top(20)'
+import { getDot, renderTab, TAB_ARGS, type Knobs } from '../fixtures/tabStory'
 
 const meta: Meta<Knobs> = {
   title: 'Saved search/Tab',
   parameters: { layout: 'fullscreen' },
-  args: {
-    response: HARBOR,
-    updateAnswer: { errors: [] },
-    onOpenAt: fn(),
-    onNotify: fn(),
-    onUpdateSearch: fn(),
-  },
-  render: (args) => ({
-    components: { SavedSearchTab },
-    setup: () => {
-      const service = createScriptedService(args.response)
-      service.setUpdateAnswer(args.updateAnswer)
-      const updateSearch = service.updateSearch.bind(service)
-      const tab = createSavedSearchTab(NOTE_PATH, {
-        service: {
-          ...service,
-          updateSearch: (request, signal) => {
-            args.onUpdateSearch(request)
-            return updateSearch(request, signal)
-          },
-        },
-        openAt: (path, ranges) => args.onOpenAt(path, ranges),
-        notify: (text) => args.onNotify(text),
-        locale: 'en-GB',
-      })
-      tab.follow()
-      service.watch.emit(COMPUTED)
-      onBeforeUnmount(() => tab.dispose())
-      return { state: tab.state }
-    },
-    template: `
-      <div class="numen" style="block-size:40rem;background:var(--numen-surface);color:var(--numen-ink)">
-        <SavedSearchTab :state="state" />
-      </div>
-    `,
-  }),
+  args: TAB_ARGS,
+  render: renderTab,
 }
 
 export default meta
 type Story = StoryObj<Knobs>
 
-/** The query, the status, two passages with their places and a whole file as a file row. */
-export const ShowsTheQueryAndTheResults: Story = {
+const FULL_TIME = /^14 Nov 2026, \d\d:\d\d$/
+
+/** The dot of fresh results, the edit button, two passages with their places and a whole file as a file row. */
+export const ShowsTheResults: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
     await waitFor(() => expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible())
-    await expect(
-      canvas.getByText('meaning("the harbor master in a winter storm")', { exact: false }),
-    ).toBeVisible()
-    await expect(canvas.getByText(/^Computed 14 Nov 2026, \d\d:\d\d$/)).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Edit query' })).toBeVisible()
+    await expect(canvas.queryByText('meaning("the harbor master in a winter storm")')).toBeNull()
+    await expect(await getDot(canvasElement, 'Up to date')).toBeVisible()
+    await expect(canvas.queryByText('Computed')).toBeNull()
     await expect(canvas.getByRole('button', { name: /Night of the gale/ })).toBeVisible()
     await expect(canvas.getByText('Page 14')).toBeVisible()
     const file = canvas.getByRole('button', { name: /Pier plan/ })
     await expect(file).toHaveTextContent('Harbor/Pier plan.png')
     await expect(file).toHaveTextContent('image')
     await expect(canvas.queryByText('0.913')).toBeNull()
+  },
+}
+
+/**
+ * Hovering the dot shows the state as the title of a tooltip, and the time and the count of the results
+ * with the full date on the time; leaving it hides it.
+ */
+export const ShowsTheTimeOfTheResultsOnHover: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Up to date')
+
+    await userEvent.hover(dot)
+
+    const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
+    await expect(tooltip).toBeVisible()
+    await expect(tooltip).toHaveTextContent(/^Up to date/)
+    await expect(within(tooltip).getByText('Computed').nextElementSibling).toHaveTextContent(
+      '15 minutes ago',
+    )
+    await expect(within(tooltip).getByTitle(FULL_TIME)).toHaveTextContent('15 minutes ago')
+    await expect(within(tooltip).getByText('Results').nextElementSibling).toHaveTextContent('3')
+    await expect(dot).toHaveAccessibleDescription(/Computed/)
+
+    await userEvent.unhover(dot)
+    await waitFor(() => expect(canvas.queryByRole('tooltip')).toBeNull())
+  },
+}
+
+/** Focus on the dot shows its tooltip, Escape hides it. */
+export const ShowsTheTooltipOnFocus: Story = {
+  args: { response: STALE },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Stale')
+
+    await userEvent.click(canvas.getByRole('heading'))
+    await userEvent.tab()
+    await expect(dot).toHaveFocus()
+
+    const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
+    await expect(tooltip).toHaveTextContent(/^Stale/)
+    await expect(within(tooltip).getByTitle(FULL_TIME)).toBeVisible()
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(canvas.queryByRole('tooltip')).toBeNull())
+  },
+}
+
+/** A run in progress names the dot for the update. */
+export const ShowsARunInProgress: Story = {
+  args: { response: RUNNING },
+  play: async ({ canvasElement }) => {
+    await expect(await getDot(canvasElement, 'Updating')).toBeVisible()
   },
 }
 
@@ -125,7 +130,7 @@ export const OpensAResultAtItsPlace: Story = {
   },
 }
 
-/** Typing in the filter narrows the results to those whose text, title or file name holds it. */
+/** A filter no result holds says so with its text; Clear filter empties the field and brings the results back. */
 export const FiltersTheResults: Story = {
   args: { response: HARBOR_TWO_LOGBOOK_PASSAGES },
   play: async ({ canvasElement }) => {
@@ -139,13 +144,23 @@ export const FiltersTheResults: Story = {
 
     await userEvent.clear(filter)
     await userEvent.type(filter, 'nothing like this')
-    await waitFor(() => expect(canvas.getByText('No result matches the filter.')).toBeVisible())
+    await waitFor(() =>
+      expect(canvas.getByText('No result matches “nothing like this”')).toBeVisible(),
+    )
+    await expect(canvas.queryByRole('list', { name: 'Results' })).toBeNull()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Clear filter' }))
+
+    await waitFor(() => expect(canvas.getAllByRole('listitem')).toHaveLength(4))
+    await expect(filter).toHaveValue('')
+    await expect(canvas.queryByRole('button', { name: 'Clear filter' })).toBeNull()
   },
 }
 
 /**
- * The sources list has a search line and a row per file, each checked at first; choosing a checked
- * file hides its passages, choosing it again shows them, and Escape puts the list away.
+ * The sources button is inside the filter field and opens the sources list: a search line and a row
+ * per file, each checked at first; choosing a checked file hides its passages, choosing it again shows
+ * them, and Escape puts the list away.
  */
 export const HidesTheResultsOfASource: Story = {
   args: { response: HARBOR_TWO_LOGBOOK_PASSAGES },
@@ -153,6 +168,8 @@ export const HidesTheResultsOfASource: Story = {
     const canvas = within(canvasElement)
     const page = within(canvasElement.ownerDocument.body)
     const toggle = await waitFor(() => canvas.getByRole('button', { name: 'Sources' }))
+    const field = canvas.getByRole('searchbox', { name: 'Filter results' }).parentElement
+    await expect(field).toContainElement(toggle)
 
     await userEvent.click(toggle)
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
@@ -187,124 +204,112 @@ export const HidesTheResultsOfASource: Story = {
   },
 }
 
-/** A query the core rejects: its problems as alerts, and the results of the last good run. */
+/** Hiding every source says all sources are hidden; Show all sources brings every result back. */
+export const ShowsAllSourcesAgain: Story = {
+  args: { response: HARBOR_TWO_LOGBOOK_PASSAGES },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const page = within(canvasElement.ownerDocument.body)
+    const toggle = await waitFor(() => canvas.getByRole('button', { name: 'Sources' }))
+
+    await userEvent.click(toggle)
+    const sources = await waitFor(() => page.getByRole('listbox', { name: 'Sources' }))
+    for (const name of [/1911/, /Night of the gale/, /Pier plan/])
+      await userEvent.click(within(sources).getByRole('option', { name }))
+    await userEvent.keyboard('{Escape}')
+
+    await waitFor(() => expect(canvas.getByText('All sources are hidden')).toBeVisible())
+    await expect(canvas.queryByRole('list', { name: 'Results' })).toBeNull()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Show all sources' }))
+
+    await waitFor(() => expect(canvas.getAllByRole('listitem')).toHaveLength(4))
+    await expect(canvas.queryByText('All sources are hidden')).toBeNull()
+  },
+}
+
+/**
+ * A query the core rejects: the red dot says the query has problems, the problems themselves only in the
+ * editor, and the results of the last good run.
+ */
 export const ShowsTheProblemsOfTheQueryWithTheLastGoodResults: Story = {
   args: { response: MISSPELLED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Failed')
 
-    await waitFor(() =>
-      expect(canvas.getByRole('alert')).toHaveTextContent(
-        '9:4 unknown function meanin (did you mean meaning?)',
-      ),
-    )
+    await expect(canvas.queryByRole('alert')).toBeNull()
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
+
+    await userEvent.hover(dot)
+    const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
+    await expect(tooltip).toHaveTextContent('the query has problems')
+    await expect(tooltip).not.toHaveTextContent('meanin')
   },
 }
 
-/** A run that found nothing says so. */
+/** A run that found nothing says so, with no button to bring results back. */
 export const SaysWhenNothingMatches: Story = {
   args: { response: NOTHING_FOUND },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await waitFor(() => expect(canvas.getByText('No passage matches the query.')).toBeVisible())
+    await waitFor(() => expect(canvas.getByText('The query found nothing')).toBeVisible())
     await expect(canvas.queryByRole('list')).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Clear filter' })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Show all sources' })).toBeNull()
   },
 }
 
-/** A note never computed says its results are being computed, and does not say nothing matches. */
+/** A note never computed names its dot for the computing, and does not say nothing matches. */
 export const SaysTheResultsAreBeingComputed: Story = {
   args: { response: NEVER_COMPUTED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await waitFor(() => expect(canvas.getByText('Computing the results…')).toBeVisible())
-    await expect(canvas.queryByText('No passage matches the query.')).toBeNull()
+    await expect(await getDot(canvasElement, 'Computing')).toBeVisible()
+    await expect(canvas.queryByText('The query found nothing')).toBeNull()
   },
 }
 
-/** A warning of the core shows beside the results. */
+/** A warning of the core turns the dot yellow and shows in its tooltip, nowhere else. */
 export const ShowsAWarning: Story = {
   args: { response: FUSED },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'With warnings')
 
-    await waitFor(() =>
-      expect(canvas.getAllByRole('status').some((one) => one.textContent?.trim() === WARNING)).toBe(
-        true,
-      ),
-    )
+    await expect(canvas.queryByText(WARNING)).toBeNull()
+    await userEvent.hover(dot)
+    const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
+    await expect(within(tooltip).getByRole('heading', { name: 'Warning' })).toBeVisible()
+    await expect(tooltip).toHaveTextContent(WARNING)
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
   },
 }
 
-/** A failed last run is named with its time and reason; the results of the good run stay. */
+/**
+ * A failed last run names the red dot for it; the tooltip gives the time of the good run, whose results
+ * stay, and the time of the failed run, and its reason under the Error heading.
+ */
 export const ShowsAFailedLastRun: Story = {
   args: { response: FAILED_LAST_RUN },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const dot = await getDot(canvasElement, 'Failed')
 
-    await waitFor(() =>
-      expect(
-        canvas.getByText(
-          new RegExp(`^Last run failed 14 Nov 2026, \\d\\d:\\d\\d: ${FAILURE_REASON}$`),
-        ),
-      ).toBeVisible(),
-    )
-    await expect(canvas.getByText(/^Computed 14 Nov 2026, \d\d:\d\d$/)).toBeVisible()
+    await expect(canvas.queryByText(new RegExp(FAILURE_REASON))).toBeNull()
+    await userEvent.hover(dot)
+
+    const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
+    await expect(tooltip).toHaveTextContent(/^Failed/)
+    await expect(within(tooltip).getAllByTitle(FULL_TIME)).toHaveLength(2)
+    await expect(
+      within(tooltip).getAllByText('Failed').at(-1)?.nextElementSibling,
+    ).toHaveTextContent('4 minutes ago')
+    await expect(within(tooltip).getByRole('heading', { name: 'Error' })).toBeVisible()
+    await expect(tooltip).toHaveTextContent(FAILURE_REASON)
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
     await expect(canvas.getByRole('button', { name: /Pier plan/ })).toBeVisible()
-  },
-}
-
-/** The accordion opens the query alone; Save writes it and shows the new query. */
-export const EditsAndSavesTheQuery: Story = {
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
-    const opener = await waitFor(() => canvas.getByRole('button', { name: 'Edit query' }))
-    await expect(opener).toHaveAttribute('aria-expanded', 'false')
-
-    await userEvent.click(opener)
-    await expect(opener).toHaveAttribute('aria-expanded', 'true')
-    const query = canvas.getByRole('textbox', { name: 'Query' })
-    await expect(query).toHaveValue(HARBOR.query)
-    await expect(canvas.queryByRole('textbox', { name: 'Rerank' })).toBeNull()
-    await expect(canvas.queryByRole('spinbutton', { name: 'Limit' })).toBeNull()
-
-    await userEvent.clear(query)
-    await userEvent.type(query, NEW_QUERY)
-    await userEvent.click(canvas.getByRole('button', { name: 'Save' }))
-
-    await expect(args.onUpdateSearch).toHaveBeenCalledWith({ path: NOTE_PATH, query: NEW_QUERY })
-    await waitFor(() => expect(canvas.getByText(NEW_QUERY, { exact: false })).toBeVisible())
-  },
-}
-
-/** A query the core rejects shows its problems in the accordion and leaves the note as it was. */
-export const ShowsTheProblemsOfAQueryNotSaved: Story = {
-  args: {
-    updateAnswer: {
-      errors: [{ line: 1, column: 1, message: 'unknown function meanin (did you mean meaning?)' }],
-    },
-  },
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(await waitFor(() => canvas.getByRole('button', { name: 'Edit query' })))
-    const query = canvas.getByRole('textbox', { name: 'Query' })
-
-    await userEvent.clear(query)
-    await userEvent.type(query, 'meanin("gale")')
-    await userEvent.click(canvas.getByRole('button', { name: 'Save' }))
-
-    await expect(args.onUpdateSearch).toHaveBeenCalledTimes(1)
-    await waitFor(() =>
-      expect(canvas.getByRole('alert')).toHaveTextContent(
-        '1:1 unknown function meanin (did you mean meaning?)',
-      ),
-    )
-    await expect(
-      canvas.getByText('meaning("the harbor master in a winter storm")', { exact: false }),
-    ).toBeVisible()
   },
 }

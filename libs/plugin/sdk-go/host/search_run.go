@@ -58,13 +58,15 @@ type SearchState struct {
 	IndexGeneration string
 }
 
-// SearchProblem is an error of a query. Line and Column count from 1 and are zero without a position.
+// SearchProblem is an error of a query. Line and Column count from 1 and are zero without a position; EndLine
+// and EndColumn are the last character of a problem that covers more than one, else zero.
 //
 //numen:api
 type SearchProblem struct {
-	Line, Column int
-	Message      string
-	Suggestion   string
+	Line, Column       int
+	EndLine, EndColumn int
+	Message            string
+	Suggestion         string
 }
 
 // SearchRerank is the connection that answered one rerank stage.
@@ -137,7 +139,10 @@ func (c *SearchClient) GetSearch(ctx context.Context, id string, read SearchRead
 func readSearchState(s *v1.SearchState) SearchState {
 	problems := make([]SearchProblem, len(s.GetErrors()))
 	for i, p := range s.GetErrors() {
-		problems[i] = SearchProblem{Line: int(p.GetLine()), Column: int(p.GetColumn()), Message: p.GetMessage(), Suggestion: p.GetSuggestion()}
+		problems[i] = SearchProblem{
+			Line: int(p.GetLine()), Column: int(p.GetColumn()), EndLine: int(p.GetEndLine()), EndColumn: int(p.GetEndColumn()),
+			Message: p.GetMessage(), Suggestion: p.GetSuggestion(),
+		}
 	}
 	reranks := make([]SearchRerank, len(s.GetReranks()))
 	for i, r := range s.GetReranks() {

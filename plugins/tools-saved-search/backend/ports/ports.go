@@ -14,6 +14,7 @@ type Search interface {
 	StartSearch(ctx context.Context, start host.SearchStart) (string, error)
 	GetSearch(ctx context.Context, id string, read host.SearchRead) (host.SearchState, error)
 	RemoveSearch(ctx context.Context, id string) error
+	ListSearchFunctions(ctx context.Context) (host.SearchFunctions, error)
 }
 
 // NoteLookup reads the titles and identities of the notes of one vault.

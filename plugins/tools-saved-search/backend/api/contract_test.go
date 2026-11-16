@@ -19,6 +19,10 @@ func getContracts() map[string]plugintest.MessageContract {
 		api.MethodUpdateSearch: {
 			Request: func() any { return &api.UpdateSearchRequest{} }, Response: func() any { return &api.UpdateSearchResponse{} },
 		},
+		api.MethodListSearchFunctions: {
+			Request:  func() any { return &api.ListSearchFunctionsRequest{} },
+			Response: func() any { return &api.ListSearchFunctionsResponse{} },
+		},
 	}
 }
 

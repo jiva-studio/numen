@@ -9,6 +9,7 @@ import { createSavedSearchService, SERVICE, ServiceFailure } from './service'
 import type {
   GetResultsRequest,
   GetResultsResponse,
+  ListSearchFunctionsResponse,
   ResultsChange,
   UpdateSearchRequest,
   UpdateSearchResponse,
@@ -223,5 +224,23 @@ describe('the saved search service', () => {
 
     await expect(answer).rejects.toBeInstanceOf(ServiceFailure)
     await expect(answer).rejects.toThrow('the note changed while it was updated; try again')
+  })
+
+  it('asks ListSearchFunctions for the catalog and answers its functions', async () => {
+    const answer = read('ListSearchFunctions.response') as ListSearchFunctionsResponse
+    const { service, sent } = createService(() => Response.json(answer))
+
+    const response = await service.listSearchFunctions({}, new AbortController().signal)
+
+    expect(sent).toStrictEqual([{ url: `${ORIGIN}/${SERVICE}/ListSearchFunctions`, body: {} }])
+    expect(response.functions.map((fn) => fn.name)).toStrictEqual(['words', 'top'])
+    expect(response.functions[1]).toStrictEqual({
+      name: 'top',
+      kind: 'stage',
+      summary: 'keep the first N',
+      description: 'Keeps only the first results; give how many.',
+      example: 'words("gale").top(10)',
+      signatures: ['.top(count)'],
+    })
   })
 })

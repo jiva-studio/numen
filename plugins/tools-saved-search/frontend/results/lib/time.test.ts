@@ -3,7 +3,7 @@
  * depends on the zone of the machine, so the tests read the date and the shape of the time.
  */
 import { describe, expect, it } from 'vitest'
-import { formatTime } from './time'
+import { formatRelativeTime, formatTime } from './time'
 
 describe('formatTime', () => {
   it('formats the time in the locale given', () => {
@@ -19,5 +19,26 @@ describe('formatTime', () => {
 
   it('writes nothing for no time', () => {
     expect(formatTime('', 'en-GB')).toBe('')
+  })
+})
+
+describe('formatRelativeTime', () => {
+  const NOW = Date.parse('2026-11-14T12:00:00Z')
+
+  it('writes a time within a day as it reads from now', () => {
+    expect(formatRelativeTime('2026-11-14T12:00:00Z', NOW, 'en-GB')).toBe('now')
+    expect(formatRelativeTime('2026-11-14T11:59:30Z', NOW, 'en-GB')).toBe('30 seconds ago')
+    expect(formatRelativeTime('2026-11-14T11:58:00Z', NOW, 'en-GB')).toBe('2 minutes ago')
+    expect(formatRelativeTime('2026-11-14T09:00:00Z', NOW, 'en-GB')).toBe('3 hours ago')
+  })
+
+  it('writes the date and the time of a run more than a day back', () => {
+    expect(formatRelativeTime('2026-11-12T12:00:00Z', NOW, 'en-GB')).toMatch(
+      /^12 Nov 2026, \d\d:\d\d$/,
+    )
+  })
+
+  it('writes nothing for no time', () => {
+    expect(formatRelativeTime('', NOW, 'en-GB')).toBe('')
   })
 })

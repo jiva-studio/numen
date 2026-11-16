@@ -1,7 +1,8 @@
 /**
- * What the tab draws for an answer of the service: the status line, the failed last run, the problems,
- * the warnings, the results with their places, the sources the results come from, and the words for no
- * result; and the results a filter text and the hidden sources leave.
+ * What the tab draws for an answer of the service: the state of the run with its details and the
+ * warnings of the run, the results with their places, the sources the results come from,
+ * the words for no result; and the results a filter text and the hidden sources leave, and why none is
+ * left.
  */
 import type { Words } from '../../words'
 import { formatPlace, type PlaceFields } from './place'
@@ -31,6 +32,8 @@ export interface ResultsFields {
   readonly errors: readonly {
     readonly line: number
     readonly column: number
+    readonly endLine?: number
+    readonly endColumn?: number
     readonly message: string
   }[]
 }
@@ -56,26 +59,50 @@ export interface SourceView {
   readonly title: string
 }
 
+/** The state of the run: fresh results, a run in progress, results that will update, a failed last run. */
+export type RunState = 'fresh' | 'running' | 'stale' | 'warned' | 'failed'
+
+/**
+ * A fact of the run in the tooltip of the dot: its label and its value; at is the time the value
+ * gives, '' for a value that is not a time.
+ */
+export interface StatusFact {
+  readonly label: string
+  readonly value: string
+  readonly at: string
+}
+
+/**
+ * The state of the run and its name, the facts of the run, the error of the last run and the warnings,
+ * and the locale the times are written in.
+ */
+export interface StatusView {
+  readonly state: RunState
+  readonly label: string
+  readonly facts: readonly StatusFact[]
+  readonly errors: readonly string[]
+  readonly warnings: readonly string[]
+  readonly locale: string
+}
+
 /** The tab of a saved search as it is drawn. */
 export interface ResultsView {
   readonly title: string
   readonly query: string
-  readonly status: string
-  readonly failedRun: string
-  readonly problems: readonly string[]
-  readonly warnings: readonly string[]
+  readonly status: StatusView
   readonly items: readonly ResultItemView[]
   readonly sources: readonly SourceView[]
   readonly emptyText: string
 }
 
-/** As `9:4 message`: the line and the column, counted from 1, then the message. */
-export function formatProblem(problem: {
-  readonly line: number
-  readonly column: number
-  readonly message: string
-}): string {
-  return `${problem.line}:${problem.column} ${problem.message}`
+type Problem = ResultsFields['errors'][number]
+
+/**
+ * Whether the problem has a place in the query; a run error, such as a service that did not answer,
+ * has none.
+ */
+export function isInQuery(problem: Problem): boolean {
+  return problem.line > 0
 }
 
 function getFileName(path: string): string {
@@ -88,17 +115,58 @@ function getFileStem(path: string): string {
   return dot > 0 ? name.slice(0, dot) : name
 }
 
-function getStatus(response: ResultsFields, words: Words, locale: string): string {
-  if (response.computedAt === '') return words.computing
-  const time = formatTime(response.computedAt, locale)
-  if (response.isRunning) return `${words.updating}${words.separator}${words.computedLower} ${time}`
-  if (response.isStale) return `${words.willUpdate}${words.separator}${words.computedLower} ${time}`
-  return `${words.computed} ${time}`
+function isLastRunFailed(response: ResultsFields): boolean {
+  if (response.failedAt === '') return false
+  if (response.computedAt === '') return true
+  return Date.parse(response.failedAt) >= Date.parse(response.computedAt)
 }
 
-function getFailedRun(response: ResultsFields, words: Words, locale: string): string {
-  if (response.failedAt === '') return ''
-  return `${words.lastRunFailed} ${formatTime(response.failedAt, locale)}: ${response.failure}`
+function getRunState(response: ResultsFields): RunState {
+  if (response.isRunning) return 'running'
+  if (isLastRunFailed(response)) return 'failed'
+  if (response.computedAt === '') return 'running'
+  if (response.isStale) return 'stale'
+  if (response.warnings.length > 0) return 'warned'
+  return 'fresh'
+}
+
+function getLabel(state: RunState, response: ResultsFields, words: Words): string {
+  if (state === 'running') return response.computedAt === '' ? words.computing : words.updating
+  if (state === 'failed') return words.failed
+  if (state === 'stale') return words.stale
+  if (state === 'warned') return words.withWarnings
+  return words.upToDate
+}
+
+function getFacts(response: ResultsFields, words: Words, locale: string): StatusFact[] {
+  const facts: StatusFact[] = []
+  if (response.computedAt !== '') {
+    facts.push({
+      label: words.computed,
+      value: formatTime(response.computedAt, locale),
+      at: response.computedAt,
+    })
+    facts.push({ label: words.results, value: String(response.results.length), at: '' })
+  }
+  if (isLastRunFailed(response))
+    facts.push({
+      label: words.failedAt,
+      value: formatTime(response.failedAt, locale),
+      at: response.failedAt,
+    })
+  return facts
+}
+
+function getStatus(response: ResultsFields, words: Words, locale: string): StatusView {
+  const state = getRunState(response)
+  return {
+    state,
+    label: getLabel(state, response, words),
+    facts: getFacts(response, words, locale),
+    errors: isLastRunFailed(response) && response.failure !== '' ? [response.failure] : [],
+    warnings: response.warnings,
+    locale,
+  }
 }
 
 function getItem(result: ResultFields, index: number, words: Words): ResultItemView {
@@ -131,9 +199,6 @@ export function getResultsView(response: ResultsFields, words: Words, locale: st
     title: response.title,
     query: response.query,
     status: getStatus(response, words, locale),
-    failedRun: getFailedRun(response, words, locale),
-    problems: response.errors.map(formatProblem),
-    warnings: [...response.warnings],
     items: response.results.map((result, index) => getItem(result, index, words)),
     sources: getSources(response.results),
     emptyText: isEmpty ? words.noMatch : '',
@@ -159,4 +224,30 @@ export function filterItems(
   return items.filter(
     (item) => !hidden.has(item.source) && (needle === '' || isMatch(item, needle)),
   )
+}
+
+/** What empties the list of results: every source hidden, or a filter text that no result holds. */
+export type EmptyReason = 'sources' | 'filter'
+
+/** Why the filter leaves no result, in words, and the action that brings the results back. */
+export interface FilterEmptyView {
+  readonly reason: EmptyReason
+  readonly text: string
+  readonly actionText: string
+}
+
+/** Why the shown sources and the filter text leave no result of the sources. */
+export function getFilterEmpty(
+  sources: readonly SourceView[],
+  hidden: ReadonlySet<string>,
+  filter: string,
+  words: Words,
+): FilterEmptyView {
+  if (sources.every((source) => hidden.has(source.path)))
+    return { reason: 'sources', text: words.allSourcesHidden, actionText: words.showAllSources }
+  return {
+    reason: 'filter',
+    text: words.noFilterMatch(filter.trim()),
+    actionText: words.clearFilter,
+  }
 }

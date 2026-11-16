@@ -19,7 +19,9 @@ func convertProblems(problems []resultcache.Problem) []api.Problem {
 	}
 	converted := make([]api.Problem, len(problems))
 	for i, problem := range problems {
-		converted[i] = api.Problem{Line: problem.Line, Column: problem.Column, Message: problem.Message}
+		converted[i] = api.Problem{
+			Line: problem.Line, Column: problem.Column, EndLine: problem.EndLine, EndColumn: problem.EndColumn, Message: problem.Message,
+		}
 	}
 	return converted
 }

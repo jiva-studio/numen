@@ -53,16 +53,21 @@ func (q queriedVaults) run(_ context.Context, v domain.Vault, _ searchquery.Requ
 func newRunCallers(t *testing.T) (*callers, queriedVaults) {
 	t.Helper()
 	q := queriedVaults{vaults: make(chan domain.VaultID, 8)}
+	return newCallersRunning(q.run), q
+}
+
+func newCallersRunning(run searchrunusecase.RunQuery) *callers {
 	clock := testsupport.NewClock()
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
 		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: noTasks{}, Timer: clock,
-		Policy: searchrun.DefaultPolicy(), Slots: searchslot.New(searchrun.DefaultPolicy().MaxRunning), Generations: indexgeneration.New("epoch"), Run: q.run, Names: func(id string) string { return id },
+		Policy: searchrun.DefaultPolicy(), Slots: searchslot.New(searchrun.DefaultPolicy().MaxRunning),
+		Generations: indexgeneration.New("epoch"), Run: run, Names: func(id string) string { return id },
 		Catalog: searchquery.GetBuiltinCatalog, MaxResults: 100,
 	})
 	fakeCallers := newCallers()
 	fakeCallers.vault = vaultOf(newMemoryVault(nil))
 	fakeCallers.search = &SearchAccess{Runs: &runs}
-	return fakeCallers, q
+	return fakeCallers
 }
 
 func TestTheSearchCallsNeedIndexRead(t *testing.T) {
@@ -120,6 +125,29 @@ func TestASearchRoundTripsItsStateAndAnotherPluginCannotReadIt(t *testing.T) {
 	removed, err := client.RemoveSearch(ctx, connect.NewRequest(&v1.RemoveSearchRequest{Id: started.Msg.GetId()}))
 	if err != nil || removed.Msg.GetError() != 0 {
 		t.Errorf("remove %v (%v)", removed.Msg, err)
+	}
+}
+
+func TestAProblemOverARangeArrivesWithItsEnd(t *testing.T) {
+	problem := searchquery.Problem{
+		Position: searchquery.Position{Line: 1, Column: 17}, End: searchquery.Position{Line: 1, Column: 22},
+		Message: "Put this text in quotes: Кришна",
+	}
+	fakeCallers := newCallersRunning(func(context.Context, domain.Vault, searchquery.Request) (searchquery.SearchResults, error) {
+		return searchquery.SearchResults{}, &searchquery.ParseError{Problems: []searchquery.Problem{problem}}
+	})
+	client := newSearchClient(t, fakeCallers, "token-a")
+	started, err := client.StartSearch(t.Context(), connect.NewRequest(&v1.StartSearchRequest{Query: `meaning("a") && Кришна`}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := client.GetSearch(t.Context(), connect.NewRequest(&v1.GetSearchRequest{Id: started.Msg.GetId(), WaitMs: 30000}))
+
+	errs := got.Msg.GetSearch().GetErrors()
+	if err != nil || len(errs) != 1 || errs[0].GetLine() != 1 || errs[0].GetColumn() != 17 || errs[0].GetEndLine() != 1 ||
+		errs[0].GetEndColumn() != 22 || errs[0].GetMessage() != problem.Message {
+		t.Errorf("errors %v (%v), want the problem from 1:17 to 1:22", errs, err)
 	}
 }
 

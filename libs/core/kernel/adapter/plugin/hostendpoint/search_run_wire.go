@@ -54,6 +54,7 @@ func writeSearchProblems(problems []searchrun.Problem) []*v1.SearchProblem {
 	for i, p := range problems {
 		out[i] = &v1.SearchProblem{
 			Line: int32(min(p.Line, math.MaxInt32)), Column: int32(min(p.Column, math.MaxInt32)),
+			EndLine: int32(min(p.EndLine, math.MaxInt32)), EndColumn: int32(min(p.EndColumn, math.MaxInt32)),
 			Message: p.Message, Suggestion: p.Suggestion,
 		}
 	}

@@ -15,11 +15,12 @@ import (
 )
 
 const (
-	searchWait      = 30 * time.Second
-	staleDebounce   = 2 * time.Second
-	searchPageSize  = 100
-	scoreKindRerank = "rerank"
-	failureProblems = "the query has problems"
+	searchWait       = 30 * time.Second
+	staleDebounce    = 2 * time.Second
+	searchPageSize   = 100
+	scoreKindRerank  = "rerank"
+	failureProblems  = "the query has problems"
+	suggestionPrefix = "did you mean"
 )
 
 // job is one run of a saved search: the vault, the note, and the priority of its search and whether the
@@ -39,8 +40,12 @@ type found struct {
 }
 
 func (r *Runner) run(ctx context.Context, one job) (resultcache.Record, error) {
+	r.watchers.begin(watchKey{vault: one.vaultID, path: one.path})
+	return r.runBegun(ctx, one)
+}
+
+func (r *Runner) runBegun(ctx context.Context, one job) (resultcache.Record, error) {
 	key := watchKey{vault: one.vaultID, path: one.path}
-	r.watchers.begin(key)
 	var written resultcache.Record
 	defer func() { r.watchers.end(key, written.ComputedAt) }()
 
@@ -246,11 +251,17 @@ func newPlace(one host.SearchResult) *resultcache.Place {
 func convertSearchProblems(problems []host.SearchProblem) []resultcache.Problem {
 	converted := make([]resultcache.Problem, len(problems))
 	for i, problem := range problems {
-		message := problem.Message
-		if problem.Suggestion != "" {
-			message += " (did you mean " + problem.Suggestion + "?)"
+		converted[i] = resultcache.Problem{
+			Line: problem.Line, Column: problem.Column, EndLine: problem.EndLine, EndColumn: problem.EndColumn,
+			Message: getProblemMessage(problem),
 		}
-		converted[i] = resultcache.Problem{Line: problem.Line, Column: problem.Column, Message: message}
 	}
 	return converted
+}
+
+func getProblemMessage(problem host.SearchProblem) string {
+	if problem.Suggestion == "" || strings.Contains(problem.Message, suggestionPrefix) {
+		return problem.Message
+	}
+	return problem.Message + ": " + suggestionPrefix + " " + problem.Suggestion + "?"
 }

@@ -27,6 +27,7 @@ type Runner interface {
 	RunNow(ctx context.Context, vault domain.VaultID, notePath string) (resultcache.Record, error)
 	StartRunNow(ctx context.Context, vault domain.VaultID, notePath string)
 	CheckQuery(ctx context.Context, vault domain.VaultID, query string) ([]resultcache.Problem, error)
+	CheckNoteQuery(ctx context.Context, vault domain.VaultID, notePath string, query string) ([]resultcache.Problem, error)
 }
 
 // CreateInput is the title, the folder and the query of a new saved search note.

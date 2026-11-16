@@ -320,3 +320,30 @@ func TestASearchRunsTheQueryOnTheGenerationItStartedOn(t *testing.T) {
 		t.Errorf("the query ran on generations %v, want %q", w.index.generations, page.Record.IndexGeneration)
 	}
 }
+
+func TestRemovingASharedSearchKeepsItForTheOtherStarter(t *testing.T) {
+	w := newWorld(t, searchrundomain.DefaultPolicy())
+	q := w.hold(`words("tide")`)
+	q.results = getResults("a.md")
+	first := w.start(t, owner, `words("tide")`)
+	second := w.start(t, owner, `words("tide")`)
+	if second != first {
+		t.Fatalf("the second start is %s, want %s", second, first)
+	}
+
+	if err := w.runs.Remove.Execute(t.Context(), owner, first); err != nil {
+		t.Fatal(err)
+	}
+	close(q.release)
+
+	page := w.readFinalPage(t, owner, second)
+	if !slices.Equal(getPaths(page), []string{"a.md"}) {
+		t.Errorf("the other starter reads %v, want a.md", getPaths(page))
+	}
+	if err := w.runs.Remove.Execute(t.Context(), owner, second); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.runs.Remove.Execute(t.Context(), owner, second); !errors.Is(err, searchrundomain.ErrNotFound) {
+		t.Errorf("the last remove left the search: %v, want ErrNotFound", err)
+	}
+}

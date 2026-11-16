@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"maps"
@@ -135,6 +136,28 @@ func TestGetResultsReturnsAProblemOfTheNoteAtLineOneColumnOneOfTheQuery(t *testi
 	}
 }
 
+func TestGetResultsKeepsTheRangeOfAProblemAndNamesItsSuggestionOnce(t *testing.T) {
+	f := newFixture(t, 0)
+	f.searches.SetAnswer(stormsQuery, host.SearchState{Errors: []host.SearchProblem{
+		{Line: 1, Column: 17, EndLine: 1, EndColumn: 22, Message: "Put this text in quotes: Кришна"},
+		{Line: 2, Column: 4, Message: "Unknown function meanin", Suggestion: "meaning"},
+		{Line: 2, Column: 20, Message: "Unknown stage rerenk: did you mean rerank?", Suggestion: "rerank"},
+	}})
+	f.addStormsNote()
+	f.handleIndexChange(t)
+
+	res := f.getResults(t, stormsPath)
+
+	want := []api.Problem{
+		{Line: 1, Column: 17, EndLine: 1, EndColumn: 22, Message: "Put this text in quotes: Кришна"},
+		{Line: 2, Column: 4, Message: "Unknown function meanin: did you mean meaning?"},
+		{Line: 2, Column: 20, Message: "Unknown stage rerenk: did you mean rerank?"},
+	}
+	if !slices.Equal(res.Errors, want) {
+		t.Errorf("errors = %+v, want %+v", res.Errors, want)
+	}
+}
+
 func TestGetResultsShowsAFailingProviderAsAProblemWithTheLastGoodResults(t *testing.T) {
 	f := newFixture(t, 0)
 	f.addStormsNote()
@@ -187,9 +210,7 @@ func TestGetResultsShowsTheFailureOfTheLastRunWithTheLastGoodResults(t *testing.
 
 	f.search.setFailure(errors.New("the core did not answer"))
 	f.clock.Advance(time.Minute)
-	if err := f.app.HandleEvent(t.Context(), "onIndexChanged:"+testVault); err == nil {
-		t.Fatal("HandleEvent = nil, want the failure of the core")
-	}
+	f.handleIndexChange(t)
 
 	res := f.getResults(t, stormsPath)
 	if res.ComputedAt != "2026-11-14T09:30:00Z" || res.FailedAt != "2026-11-14T09:31:00Z" || !strings.Contains(res.Failure, "the core did not answer") {
@@ -343,11 +364,16 @@ func TestUpdateSearchRunsTheSearchInteractivelyWithinTheCooldown(t *testing.T) {
 		t.Fatal(failure)
 	}
 
-	if start := receiveEvent(t, events); !strings.Contains(start.data, `"isRunning":true`) {
-		t.Errorf("event = %+v, want the start of the run", start)
+	wantEvents := []string{
+		`{"computedAt":"","isRunning":true}`,
+		`{"computedAt":"","isRunning":false}`,
+		`{"computedAt":"","isRunning":true}`,
+		`{"computedAt":"2026-11-14T09:31:00Z","isRunning":false}`,
 	}
-	if write := receiveEvent(t, events); write.data != `{"computedAt":"2026-11-14T09:31:00Z","isRunning":false}` {
-		t.Errorf("event = %+v, want the write of the run", write)
+	for _, data := range wantEvents {
+		if event := receiveEvent(t, events); event.data != data {
+			t.Errorf("event = %+v, want %s: the check of the edit, its end, the start of the run, its write", event, data)
+		}
 	}
 	if res := f.getResults(t, stormsPath); len(res.Results) != 1 || res.ComputedAt != "2026-11-14T09:31:00Z" || res.IsStale {
 		t.Errorf("response = %+v, want one result computed after the edit", res)
@@ -393,5 +419,37 @@ func TestUpdateSearchOfAMissingNoteIsNotFound(t *testing.T) {
 
 	if failure.Code != server.CodeNotFound {
 		t.Errorf("failure = %+v, want not_found", failure)
+	}
+}
+
+func TestUpdateSearchReplacedByANewerOneBeforeItsCheckEndsWritesNothingAndAnswersNoProblem(t *testing.T) {
+	f := newFixture(t, 10)
+	f.addStormsNote()
+	release := f.searches.HoldSearch(wordsQuery)
+	defer release()
+	before := f.getStartCount()
+	first := make(chan server.APIError, 1)
+	var firstResponse api.UpdateSearchResponse
+
+	go func() {
+		first <- f.call(t, api.MethodUpdateSearch, api.UpdateSearchRequest{Path: stormsPath, Query: wordsQuery}, &firstResponse)
+	}()
+	waiting, stopWaiting := context.WithTimeout(t.Context(), 5*time.Second)
+	defer stopWaiting()
+	for f.getStartCount() == before {
+		if waiting.Err() != nil {
+			t.Fatal("the check of the first change did not start")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if failure := f.call(t, api.MethodUpdateSearch, api.UpdateSearchRequest{Path: stormsPath, Query: brokenQuery}, &api.UpdateSearchResponse{}); failure.Code != "" {
+		t.Fatal(failure)
+	}
+
+	if failure := <-first; failure.Code != "" || firstResponse.Errors == nil || len(firstResponse.Errors) != 0 {
+		t.Errorf("the replaced change answered %+v, %+v, want no problem", failure, firstResponse)
+	}
+	if content, _ := readNote(t, f, stormsPath); strings.Contains(content, wordsQuery) {
+		t.Errorf("note = %q, want the query of the replaced change not written", content)
 	}
 }

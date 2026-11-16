@@ -15,6 +15,7 @@ export const activate = (context: PluginContext, host: HostServices): void => {
       openAt: (path, ranges) => workspace.files.openAt(path, ranges),
       notify: (text) => host.ui.notices.show(text, 'error'),
       locale: navigator.language,
+      getNow: () => performance.timeOrigin + performance.now(),
       component: SavedSearchTab,
     }),
   )

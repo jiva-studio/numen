@@ -41,6 +41,7 @@ func (u *StartSearch) Execute(ctx context.Context, start searchrun.Start) (searc
 	for _, r := range kept {
 		if r.IsRunning && searchrun.IsSameSearch(r.Start, start) {
 			u.kept.Touch(r.ID)
+			u.kept.Store.ChangeSearch(r.ID, func(one *searchrun.Record) { one.Holders++ })
 			return r.ID, nil
 		}
 	}
@@ -54,7 +55,7 @@ func (u *StartSearch) Execute(ctx context.Context, start searchrun.Start) (searc
 	}
 	record := searchrun.Record{
 		ID: searchrun.ID(id), Start: start, IsRunning: true, Step: searchrun.StepQueued,
-		IndexGeneration: u.generations.GetGeneration(start.Vault.ID), StartedAt: now, AccessedAt: now,
+		IndexGeneration: u.generations.GetGeneration(start.Vault.ID), StartedAt: now, AccessedAt: now, Holders: 1,
 	}
 	if strings.TrimSpace(start.Query) == "" {
 		record.IsRunning, record.Step = false, searchrun.StepDone

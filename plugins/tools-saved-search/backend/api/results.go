@@ -8,6 +8,8 @@ const (
 	MethodGetResults   = "GetResults"
 	MethodWatchResults = "WatchResults"
 	MethodUpdateSearch = "UpdateSearch"
+
+	MethodListSearchFunctions = "ListSearchFunctions"
 )
 
 // Order is how the results of a run are ordered: OrderReranked when a reranking service ordered them,
@@ -48,9 +50,11 @@ type Result struct {
 // Problem is one problem of a query. Line and Column count from 1 over the query; a problem of the note
 // outside its query is at line 1, column 1, and a problem of a provider has 0 for both.
 type Problem struct {
-	Line    int    `json:"line" jsonschema:"the line of the problem in the query, counted from 1"`
-	Column  int    `json:"column" jsonschema:"the column of the problem, in characters, counted from 1"`
-	Message string `json:"message" jsonschema:"what is wrong"`
+	Line      int    `json:"line" jsonschema:"the line of the problem in the query, counted from 1"`
+	Column    int    `json:"column" jsonschema:"the column of the problem, in characters, counted from 1"`
+	EndLine   int    `json:"endLine,omitempty" jsonschema:"the line of the last character of a problem over more than one, else 0"`
+	EndColumn int    `json:"endColumn,omitempty" jsonschema:"the column of the last character of a problem over more than one, else 0"`
+	Message   string `json:"message" jsonschema:"what is wrong"`
 }
 
 type GetResultsRequest struct {
@@ -97,4 +101,23 @@ type UpdateSearchRequest struct {
 // the query; empty when the note was written.
 type UpdateSearchResponse struct {
 	Errors []Problem `json:"errors"`
+}
+
+type ListSearchFunctionsRequest struct{}
+
+// SearchFunction is a function, a variable or a stage of the search language. Kind is "function",
+// "variable" or "stage".
+type SearchFunction struct {
+	Name        string   `json:"name"`
+	Kind        string   `json:"kind"`
+	Summary     string   `json:"summary"`
+	Description string   `json:"description"`
+	Example     string   `json:"example"`
+	Signatures  []string `json:"signatures"`
+}
+
+// ListSearchFunctionsResponse is the catalog of the search language the core runs, with the functions
+// plugins add to it.
+type ListSearchFunctionsResponse struct {
+	Functions []SearchFunction `json:"functions"`
 }

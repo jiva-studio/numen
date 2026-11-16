@@ -7,10 +7,10 @@ import { computed, readonly, ref, shallowRef, type Ref } from 'vue'
 import type { Caught, TextRange } from '@numen/plugin-sdk'
 import { WORDS as words } from '../../words'
 import type { SavedSearchService } from '../api/service'
-import type { GetResultsResponse } from '../api/types'
+import type { GetResultsResponse, Problem, SearchFunction } from '../api/types'
 import {
   filterItems,
-  formatProblem,
+  isInQuery,
   getResultsView,
   type ResultItemView,
   type ResultsView,
@@ -22,6 +22,7 @@ export interface SavedSearchTabDeps {
   readonly openAt: (path: string, ranges: readonly TextRange[]) => void
   readonly notify: (text: string) => void
   readonly locale: string
+  readonly getNow: () => number
 }
 
 /** The query the person saves. */
@@ -32,7 +33,10 @@ export interface SearchChange {
 /**
  * What SavedSearchTab draws and the actions it calls. view is null until the first GetResults answers;
  * items are the results the filter and the hidden sources leave; failure is '' when nothing failed;
- * saveProblems are those of the last save, as line:column and message.
+ * queryProblems are those the editor underlines, at their line and column in the query: those of the
+ * last save when it had any, else those of the saved query that have a place in it; functions is the
+ * catalog of the search language, read when the editor first opens; getNow gives the time of the
+ * wall clock in milliseconds, which the times of the run are written from.
  */
 export interface SavedSearchTabState {
   readonly path: Readonly<Ref<string>>
@@ -41,15 +45,17 @@ export interface SavedSearchTabState {
   readonly filter: Readonly<Ref<string>>
   readonly hiddenSources: Readonly<Ref<ReadonlySet<string>>>
   readonly failure: Readonly<Ref<string>>
-  readonly isSaving: Readonly<Ref<boolean>>
   readonly isEditing: Readonly<Ref<boolean>>
-  readonly saveProblems: Readonly<Ref<readonly string[]>>
+  readonly queryProblems: Readonly<Ref<readonly Problem[]>>
+  readonly functions: Readonly<Ref<readonly SearchFunction[]>>
+  readonly getNow: () => number
   readonly actions: {
     openResult(index: number): void
     saveSearch(change: SearchChange): Promise<void>
     setEditing(isEditing: boolean): void
     setFilter(filter: string): void
     setSourceShown(path: string, isShown: boolean): void
+    showAllSources(): void
   }
 }
 
@@ -68,8 +74,7 @@ const getMessage = (error: Caught): string =>
 const getFailureKey = (answer: GetResultsResponse): string =>
   answer.failedAt === '' ? '' : `${answer.failedAt}\n${answer.failure}`
 
-const getNotice = (answer: GetResultsResponse): string =>
-  [`${answer.title}: ${answer.failure}`, ...answer.errors.map(formatProblem)].join('\n')
+const getNotice = (answer: GetResultsResponse): string => `${answer.title}: ${answer.failure}`
 
 /** The tab reads GetResults on each change of the watch, the last change winning, and runs no search. */
 export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps): SavedSearchTab {
@@ -80,9 +85,13 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   const filter = ref('')
   const hiddenSources = shallowRef<ReadonlySet<string>>(new Set())
   const failure = ref('')
-  const isSaving = ref(false)
   const isEditing = ref(false)
-  const saveProblems = shallowRef<readonly string[]>([])
+  const saveProblems = shallowRef<readonly Problem[]>([])
+  const functions = shallowRef<readonly SearchFunction[]>([])
+  const isAnswerObsolete = ref(false)
+  let functionsRead: Promise<void> | null = null
+  let catalogFailure: string | null = null
+  let editorSession = 0
   const life = new AbortController()
   let watching: AbortController | null = null
   let reading: AbortController | null = null
@@ -91,6 +100,12 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   const items = computed(() =>
     filterItems(view.value?.items ?? [], filter.value, hiddenSources.value),
   )
+
+  const queryProblems = computed<readonly Problem[]>(() => {
+    if (saveProblems.value.length > 0) return saveProblems.value
+    if (isAnswerObsolete.value) return []
+    return (response.value?.errors ?? []).filter(isInQuery)
+  })
 
   const tellFailure = (answer: GetResultsResponse): void => {
     const key = getFailureKey(answer)
@@ -101,6 +116,7 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   const show = (answer: GetResultsResponse): void => {
     tellFailure(answer)
     response.value = answer
+    isAnswerObsolete.value = false
     view.value = getResultsView(answer, words, deps.locale)
     failure.value = ''
   }
@@ -149,19 +165,40 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   }
 
   const saveSearch = async (change: SearchChange): Promise<void> => {
-    isSaving.value = true
+    const session = editorSession
     try {
       const answer = await service.updateSearch({ path: path.value, ...change }, life.signal)
-      saveProblems.value = answer.errors.map(formatProblem)
+      if (session === editorSession) saveProblems.value = answer.errors
       if (answer.errors.length === 0) {
-        isEditing.value = false
+        isAnswerObsolete.value = true
         await read()
       }
     } catch (error) {
       if (!life.signal.aborted) failure.value = getMessage(error)
-    } finally {
-      isSaving.value = false
     }
+  }
+
+  const readFunctions = (): void => {
+    functionsRead ??= service.listSearchFunctions({}, life.signal).then(
+      (answer) => {
+        functions.value = answer.functions
+        if (catalogFailure !== null && failure.value === catalogFailure) failure.value = ''
+        catalogFailure = null
+      },
+      (error: Caught) => {
+        functionsRead = null
+        if (life.signal.aborted) return
+        catalogFailure = getMessage(error)
+        failure.value = catalogFailure
+      },
+    )
+  }
+
+  const setEditing = (next: boolean): void => {
+    isEditing.value = next
+    editorSession++
+    if (next) readFunctions()
+    else saveProblems.value = []
   }
 
   const setSourceShown = (source: string, isShown: boolean): void => {
@@ -185,19 +222,21 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
       filter: readonly(filter),
       hiddenSources: readonly(hiddenSources),
       failure: readonly(failure),
-      isSaving: readonly(isSaving),
       isEditing: readonly(isEditing),
-      saveProblems: readonly(saveProblems),
+      queryProblems,
+      functions: readonly(functions),
+      getNow: deps.getNow,
       actions: {
         openResult,
         saveSearch,
-        setEditing: (next: boolean) => {
-          isEditing.value = next
-        },
+        setEditing,
         setFilter: (next: string) => {
           filter.value = next
         },
         setSourceShown,
+        showAllSources: () => {
+          hiddenSources.value = new Set()
+        },
       },
     },
     follow,

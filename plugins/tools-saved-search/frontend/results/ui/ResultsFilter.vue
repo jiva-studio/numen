@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The row above the results: the field that filters the results by their text, titles, places and
- * file names, and to its right the list of their sources.
+ * The field above the results: it filters the results by their text, titles, places and file names,
+ * and holds at its end the button that opens the list of their sources.
  */
 import { WORDS as words } from '../../words'
 import type { SourceView } from '../lib/view'

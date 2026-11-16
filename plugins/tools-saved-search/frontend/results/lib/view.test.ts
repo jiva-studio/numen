@@ -1,5 +1,5 @@
 /**
- * What the tab draws for an answer of GetResults: the status line, the failed last run, the
+ * What the tab draws for an answer of GetResults: the state of the run and its details, the
  * problems, the warnings, the results with their places, the sources, the filter, and the words for
  * no result.
  */
@@ -19,7 +19,7 @@ import {
   WARNING,
 } from '../fixtures/responses'
 import type { GetResultsResponse } from '../api/types'
-import { filterItems, getResultsView } from './view'
+import { filterItems, getFilterEmpty, getResultsView } from './view'
 
 const LOCALE = 'en-GB'
 
@@ -29,51 +29,102 @@ const TIME = String.raw`14 Nov 2026, \d\d:\d\d`
 
 const at = (response: GetResultsResponse): GetResultsResponse => ({ ...response, computedAt: NOON })
 
-describe('the status line', () => {
-  it('says the results are being computed before the first run', () => {
-    expect(getResultsView(NEVER_COMPUTED, WORDS, LOCALE).status).toBe('Computing the results…')
-    expect(getResultsView({ ...NEVER_COMPUTED, isRunning: true }, WORDS, LOCALE).status).toBe(
-      'Computing the results…',
-    )
+const computedFact = (at: string) => ({
+  label: 'Computed',
+  value: expect.stringMatching(new RegExp(`^${TIME}$`)),
+  at,
+})
+const failedFact = (at: string) => ({
+  label: 'Failed',
+  value: expect.stringMatching(new RegExp(`^${TIME}$`)),
+  at,
+})
+const RESULTS_FACT = { label: 'Results', value: '3', at: '' }
+
+describe('the state of the run', () => {
+  it('says the results are being computed before the first run, with no facts', () => {
+    for (const response of [NEVER_COMPUTED, { ...NEVER_COMPUTED, isRunning: true }]) {
+      expect(getResultsView(response, WORDS, LOCALE).status).toStrictEqual({
+        state: 'running',
+        label: 'Computing',
+        facts: [],
+        errors: [],
+        warnings: [],
+        locale: LOCALE,
+      })
+    }
   })
 
-  it('says the search is updating while it runs', () => {
-    expect(getResultsView(at(RUNNING), WORDS, LOCALE).status).toMatch(
-      new RegExp(`^Updating… · computed ${TIME}$`),
-    )
+  it('says the search is updating while it runs, with the time and the count of the results', () => {
+    const { status } = getResultsView(at(RUNNING), WORDS, LOCALE)
+
+    expect(status.state).toBe('running')
+    expect(status.label).toBe('Updating')
+    expect(status.facts).toStrictEqual([computedFact(NOON), RESULTS_FACT])
   })
 
-  it('says the search will update when it is stale', () => {
-    expect(getResultsView(at(STALE), WORDS, LOCALE).status).toMatch(
-      new RegExp(`^Will update · computed ${TIME}$`),
-    )
+  it('says the search is stale when a run will replace its results', () => {
+    const { status } = getResultsView(at(STALE), WORDS, LOCALE)
+
+    expect(status.state).toBe('stale')
+    expect(status.label).toBe('Stale')
+    expect(status.facts).toStrictEqual([computedFact(NOON), RESULTS_FACT])
   })
 
-  it('names when the results were computed', () => {
-    expect(getResultsView(at(HARBOR), WORDS, LOCALE).status).toMatch(
-      new RegExp(`^Computed ${TIME}$`),
-    )
+  it('says the results are up to date and names when they were computed', () => {
+    const { status } = getResultsView(at(HARBOR), WORDS, LOCALE)
+
+    expect(status.state).toBe('fresh')
+    expect(status.label).toBe('Up to date')
+    expect(status.facts).toStrictEqual([computedFact(NOON), RESULTS_FACT])
+    expect(status.errors).toStrictEqual([])
+    expect(status.warnings).toStrictEqual([])
   })
 
-  it('names the time and the reason of a failed last run', () => {
-    const view = getResultsView({ ...FAILED_LAST_RUN, failedAt: NOON }, WORDS, LOCALE)
-
-    expect(view.failedRun).toMatch(new RegExp(`^Last run failed ${TIME}: ${FAILURE_REASON}$`))
-  })
-
-  it('keeps the time of the last good run when the last run failed', () => {
-    const view = getResultsView(
-      { ...FAILED_LAST_RUN, computedAt: NOON, failedAt: '2026-11-15T12:00:00Z' },
+  it('names the time and the reason of a failed last run, and the time of the last good run', () => {
+    const good = '2026-11-14T09:30:00Z'
+    const { status } = getResultsView(
+      { ...FAILED_LAST_RUN, computedAt: good, failedAt: NOON },
       WORDS,
       LOCALE,
     )
 
-    expect(view.status).toMatch(new RegExp(`^Computed ${TIME}$`))
-    expect(view.items).toHaveLength(3)
+    expect(status.state).toBe('failed')
+    expect(status.label).toBe('Failed')
+    expect(status.facts).toStrictEqual([computedFact(good), RESULTS_FACT, failedFact(NOON)])
+    expect(status.errors).toStrictEqual([FAILURE_REASON])
   })
 
-  it('names no failed run when the last run succeeded', () => {
-    expect(getResultsView(HARBOR, WORDS, LOCALE).failedRun).toBe('')
+  it('says only that the last run failed when it is also stale', () => {
+    const { status } = getResultsView({ ...FAILED_LAST_RUN, isStale: true }, WORDS, LOCALE)
+
+    expect(status.state).toBe('failed')
+    expect(status.label).toBe('Failed')
+  })
+
+  it('names the error of the failed last run while the next run is in progress', () => {
+    const { status } = getResultsView({ ...FAILED_LAST_RUN, isRunning: true }, WORDS, LOCALE)
+
+    expect(status.state).toBe('running')
+    expect(status.label).toBe('Updating')
+    expect(status.facts.at(-1)).toStrictEqual(failedFact(FAILED_LAST_RUN.failedAt))
+    expect(status.errors).toStrictEqual([FAILURE_REASON])
+  })
+
+  it('names no failed run when a good run followed it', () => {
+    const { status } = getResultsView(
+      { ...FAILED_LAST_RUN, computedAt: '2026-11-15T12:00:00Z', failedAt: NOON },
+      WORDS,
+      LOCALE,
+    )
+
+    expect(status.state).toBe('fresh')
+    expect(status.facts.some((fact) => fact.label === 'Failed')).toBe(false)
+    expect(status.errors).toStrictEqual([])
+  })
+
+  it('keeps the results of the last good run when the last run failed', () => {
+    expect(getResultsView(FAILED_LAST_RUN, WORDS, LOCALE).items).toHaveLength(3)
   })
 })
 
@@ -87,21 +138,37 @@ describe('the query of the note', () => {
 })
 
 describe('the problems and the warnings', () => {
-  it('lists the problems with line and column', () => {
+  it('leaves the problems of the query out of the error of the run', () => {
     const view = getResultsView(MISSPELLED, WORDS, LOCALE)
 
-    expect(view.problems).toStrictEqual(['9:4 unknown function meanin (did you mean meaning?)'])
+    expect(view.status.errors).toStrictEqual(['the query has problems'])
   })
 
   it('keeps the last good results while the query has problems', () => {
     const view = getResultsView(MISSPELLED, WORDS, LOCALE)
 
     expect(view.items).toHaveLength(3)
-    expect(view.failedRun).not.toBe('')
+    expect(view.status.state).toBe('failed')
   })
 
-  it('lists the warnings of the run', () => {
-    expect(getResultsView(FUSED, WORDS, LOCALE).warnings).toStrictEqual([WARNING])
+  it('names a run error once, as the failure of the run', () => {
+    const busy = 'no reranking service answered: Local reranker: busy'
+    const view = getResultsView(
+      { ...MISSPELLED, failure: busy, errors: [{ line: 0, column: 0, message: busy }] },
+      WORDS,
+      LOCALE,
+    )
+
+    expect(view.status.state).toBe('failed')
+    expect(view.status.errors).toStrictEqual([busy])
+  })
+
+  it('gives fresh results with a warning the warned state and the warning', () => {
+    const { status } = getResultsView(FUSED, WORDS, LOCALE)
+
+    expect(status.state).toBe('warned')
+    expect(status.label).toBe('With warnings')
+    expect(status.warnings).toStrictEqual([WARNING])
   })
 })
 
@@ -167,9 +234,7 @@ describe('the results', () => {
   })
 
   it('says nothing matches when the run found no result', () => {
-    expect(getResultsView(NOTHING_FOUND, WORDS, LOCALE).emptyText).toBe(
-      'No passage matches the query.',
-    )
+    expect(getResultsView(NOTHING_FOUND, WORDS, LOCALE).emptyText).toBe('The query found nothing')
   })
 
   it('says nothing about matches before the first run', () => {
@@ -211,5 +276,27 @@ describe('the filter over the results', () => {
       'Night of the gale@1',
       'Pier plan@2',
     ])
+  })
+})
+
+describe('the results the filter leaves out', () => {
+  const sources = getResultsView(HARBOR, WORDS, LOCALE).sources
+
+  it('says every source is hidden and offers to show them all', () => {
+    const hidden = new Set(sources.map((source) => source.path))
+
+    expect(getFilterEmpty(sources, hidden, 'gale', WORDS)).toStrictEqual({
+      reason: 'sources',
+      text: 'All sources are hidden',
+      actionText: 'Show all sources',
+    })
+  })
+
+  it('names the filter text no result holds and offers to clear it', () => {
+    expect(getFilterEmpty(sources, new Set(), '  lighthouse ', WORDS)).toStrictEqual({
+      reason: 'filter',
+      text: 'No result matches “lighthouse”',
+      actionText: 'Clear filter',
+    })
   })
 })
