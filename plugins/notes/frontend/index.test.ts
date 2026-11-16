@@ -9,7 +9,6 @@ import { activate, deactivate, MarkdownNoteEditor, readMarkdownEditorPreferences
 /** Host services whose vault offers no notes. */
 const NO_NOTES = { vault: {} } as unknown as HostServices
 
-/** The markup an icon draws once it is found. */
 const drawIcon = async (icon: Component): Promise<string> => {
   const wrapper = mount(icon)
   await flushPromises()
