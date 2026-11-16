@@ -41,7 +41,7 @@ jobs:
             exit 0
           fi
           reviews=$(gh pr view "$number" --repo "$GITHUB_REPOSITORY" --json reviews \
-            --jq '[.reviews[] | select(.author.login == "github-actions")] | length')
+            --jq '[.reviews[] | select(.author.login == "claude")] | length')
           if [ "$reviews" != "0" ]; then
             echo "::notice::Pull request $number has a review; comment /nm-review for another"
             exit 0
@@ -156,6 +156,7 @@ jobs:
           shell: "true"
 
       - name: Quick review
+        id: quick
         if: env.MODE == 'quick'
         timeout-minutes: 20
         uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1
@@ -169,6 +170,7 @@ jobs:
             --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(node tools/checks/style/names/check.mjs:*),Bash(node tools/lint-narrative/scan.mjs:*)"
 
       - name: Full review
+        id: full
         if: env.MODE == 'full'
         timeout-minutes: 75
         uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1
@@ -182,8 +184,14 @@ jobs:
             --allowedTools "Read,Grep,Glob,Write,Edit,Bash(cd:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(go test:*),Bash(npx vitest run:*),Bash(node tools/checks/style/names/check.mjs:*),Bash(node tools/lint-narrative/scan.mjs:*)"
 
       - name: Submit the review
+        env:
+          GH_TOKEN: ${{ steps.quick.outputs.github_token || steps.full.outputs.github_token }}
         run: |
           set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::The Claude action returned no app token"
+            exit 1
+          fi
           head=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)
           if [ "$head" != "$REVIEWED_SHA" ]; then
             echo "::notice::The pull request moved to $head during the review of $REVIEWED_SHA; comment /nm-review to review the new head"

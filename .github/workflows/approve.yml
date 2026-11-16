@@ -1,0 +1,42 @@
+name: Approve
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  approve:
+    if: >-
+      github.event.issue.pull_request
+      && startsWith(github.event.comment.body, '/approve')
+      && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    concurrency:
+      group: approve-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            .github/CODEOWNERS
+            .github/scripts
+          persist-credentials: false
+
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.JIVA_STUDIO_APP_CLIENT_ID }}
+          private-key: ${{ secrets.JIVA_STUDIO_APP_PRIVATE_KEY }}
+
+      - name: Approve
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          COMMENTER: ${{ github.event.comment.user.login }}
+        run: node .github/scripts/approve.mjs
