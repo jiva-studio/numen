@@ -20,7 +20,7 @@ const NO_TAGS: readonly string[] = []
 /**
  * The map of the tags of the vault: one read of the stream WatchTagMap, whose first message holds every
  * note that has tags and whose later messages hold the notes whose tags changed. A caller that reads the
- * tags of one path is told when the tags of that path change and of no other.
+ * tags of one path is notified when the tags of that path change and of no other.
  */
 export function createTagMap({ api }: { api: TagMapApi }): TagMap {
   const tags = shallowReactive(new Map<string, readonly string[]>())

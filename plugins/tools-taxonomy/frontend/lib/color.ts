@@ -1,7 +1,6 @@
-/** How many colors the tags are told apart by: the tokens --numen-tag-1 to --numen-tag-8 of @numen/ui. */
+/** The number of color tokens, --numen-tag-1 to --numen-tag-8 of @numen/ui, that tags are distinguished by. */
 const PALETTE_SIZE = 8
 
-/** What two spellings of one tag share: no leading "#", Unicode NFC, letter case folded, each segment trimmed. */
 function getKey(tag: string): string {
   return tag
     .normalize('NFC')
@@ -14,7 +13,6 @@ function getKey(tag: string): string {
     .join('/')
 }
 
-/** A 32-bit hash of the text: FNV-1a, mixed so that texts that differ in the last letter part ways. */
 function getHash(text: string): number {
   let hash = 0x811c9dc5
   for (const unit of text) {

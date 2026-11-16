@@ -77,8 +77,8 @@ func (f *follow) add() (<-chan Change, func()) {
 	}
 }
 
-// publish sends the subscribers what differs between the tags it was given and the tags it was given
-// last. The first tags it is given are the baseline and change nothing.
+// publish sends the subscribers what differs between current and the tags published last. The first
+// tags published are the baseline and change nothing.
 func (f *follow) publish(current map[string][]string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -129,7 +129,6 @@ func (l *listener) take() map[string][]string {
 	return taken
 }
 
-// run hands the pending changes to the subscriber until it is canceled, then closes the channel.
 func (l *listener) run() {
 	defer close(l.out)
 	for {

@@ -4,11 +4,11 @@
  */
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { createTaxonomyApi } from './api/createTaxonomyApi'
-import { createFileTags } from './file-tags/model/createFileTags'
+import { createFileTags } from './file-tags'
 import { createTagMap } from './model/createTagMap'
 
 /** The id the manifest places in the slot fileTree.rowEnd. */
-const FILE_TAGS_VIEW = 'fileTags'
+const FILE_TAGS_VIEW = 'file-tags'
 
 export const activate = (plugin: PluginContext): void => {
   const tagMap = createTagMap({ api: createTaxonomyApi() })
