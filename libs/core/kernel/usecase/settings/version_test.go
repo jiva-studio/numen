@@ -51,6 +51,10 @@ func readMode(t *testing.T, written string) string {
 func TestWriteRaisesTheVersionTheReadsAnswer(t *testing.T) {
 	t.Parallel()
 	use := newVersioned(t)
+	// The first read of a folder with no file writes the defaults, which is a write too.
+	if _, err := use.get.Execute(); err != nil {
+		t.Fatal(err)
+	}
 	before, err := use.get.Execute()
 	if err != nil {
 		t.Fatal(err)
