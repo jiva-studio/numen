@@ -18,8 +18,7 @@ const SECONDS_PER_HOUR = 3600
 
 const padTwo = (value: number): string => String(value).padStart(2, '0')
 
-/** Writes seconds as m:ss, or h:mm:ss from one hour. */
-export function formatSeconds(total: number): string {
+function formatSeconds(total: number): string {
   const seconds = Math.floor(Math.max(0, total))
   const hours = Math.floor(seconds / SECONDS_PER_HOUR)
   const minutes = Math.floor((seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE)

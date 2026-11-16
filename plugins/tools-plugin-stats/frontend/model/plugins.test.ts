@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { createMockProcessHost } from '@numen/plugin-sdk/testing'
 import type { PluginProcess } from '../types'
-import { createRunningPlugins, sortProcesses, TICK_MS, type Ticker } from './plugins'
+import { createRunningPlugins, type Ticker } from './plugins'
+import { sortProcesses } from './order'
+import { TICK_MS } from './tick'
 
 const CORE_TIME = 1_700_000_600_000
 

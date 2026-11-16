@@ -1,7 +1,8 @@
 /** When a node counts as hovered or keyboard-focused, which the plex draws the same way. */
 import { effectScope, nextTick } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { EXPANSION_DELAY, useExpansion } from '../sizing/expansion'
+import { EXPANSION_DELAY } from '../sizing/expansion'
+import { useExpansion } from '../sizing/useExpansion'
 import { stubClock } from '../../../fixtures/clock'
 import { useHoverFocus } from './hoverFocus'
 

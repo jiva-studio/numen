@@ -3,9 +3,7 @@
  * plugin handles the command over the file, and the run of it.
  */
 import { getFileStem, type CommandsHost, type CommandTarget } from '@numen/plugin-sdk'
-
-/** The shared command that creates the text of a file. */
-export const CREATE_TEXT = 'app:file.createText'
+import { CREATE_TEXT } from './createText'
 
 const getTarget = (path: string): CommandTarget => ({
   path,

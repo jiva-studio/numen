@@ -7,9 +7,8 @@
 import { ref, shallowRef, type Ref } from 'vue'
 import type { Disposable, ProcessHost } from '@numen/plugin-sdk'
 import type { PluginProcess } from '../types'
-
-/** How often the time moves on between two lists. */
-export const TICK_MS = 1_000
+import { sortProcesses } from './order'
+import { TICK_MS } from './tick'
 
 /** Where the model is: before the first list, with a list, or with no list to show. */
 export type Phase = 'loading' | 'ready' | 'unavailable'
@@ -44,15 +43,6 @@ export interface RunningPlugins {
   start(): void
   /** Ends the listening and the moving on. */
   stop(): void
-}
-
-const getName = (one: PluginProcess) => one.pluginName || one.pluginId
-
-/** The plugins by name, so a row keeps its place while its use and idle times change. */
-export function sortProcesses(processes: readonly PluginProcess[]): PluginProcess[] {
-  return [...processes].sort(
-    (a, b) => getName(a).localeCompare(getName(b)) || a.pluginId.localeCompare(b.pluginId),
-  )
 }
 
 export function createRunningPlugins(deps: RunningPluginsDeps): RunningPlugins {

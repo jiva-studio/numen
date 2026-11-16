@@ -18,12 +18,6 @@ export interface App {
   readonly platform: Platform
 }
 
-interface CheckRequest {
-  readonly app: App
-}
-
-type GetStatusRequest = Record<string, never>
-
 /** The file of a release for the running platform. */
 interface ReleaseFile {
   readonly name: string
@@ -49,10 +43,4 @@ export interface Update {
 export interface Status {
   readonly state: State
   readonly update?: Update
-}
-
-/** The request and response of each method by name. */
-export interface Methods {
-  Check: { request: CheckRequest; response: Status }
-  GetStatus: { request: GetStatusRequest; response: Status }
 }

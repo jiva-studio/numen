@@ -10,11 +10,13 @@ import { DEFAULT_SETTINGS, formatSettings } from '../../lib/wire/settings'
 import type { SettingsMessage } from '../../lib/wire/settings'
 
 import { useReviewCounter } from './vault/counts'
-import type { CardsDueClient } from './vault/counts'
+import type { CountsDeps } from './vault/counts'
 import type { VaultCardsDue } from '../lib/vault/types'
 import { getDayName } from '../../lib/day'
 import { useVaultPresets } from './decks/presets'
 import type { PresetsClient } from '../api/decks/presets'
+
+type CardsDueClient = CountsDeps['cards']
 
 const createSettings = (day: string) =>
   formatSettings({ ...DEFAULT_SETTINGS, goal: 'date', byDate: day, reviewsADay: 200 })

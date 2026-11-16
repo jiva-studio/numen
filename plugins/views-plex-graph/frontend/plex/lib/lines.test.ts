@@ -1,9 +1,9 @@
 /** What the drawing requires of an edge: the name of its line and the position of each title. */
 import { describe, expect, it } from 'vitest'
 import { getLines } from './lines'
-import { arrangePlex, createReadingPath } from '../../lib/arrange'
-import type { EdgeTitle } from '../../lib/edge'
-import { build } from '../../fixtures/build'
+import { arrangePlex, createReadingPath } from './arrange'
+import type { EdgeTitle } from './edge'
+import { build } from '../fixtures/build'
 
 const edges = arrangePlex(build('A node', { parent: 1, child: 2, jump: 1 })).edges
 

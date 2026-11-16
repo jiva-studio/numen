@@ -1,5 +1,6 @@
 import type { Position, Size } from '@numen/ui'
 import type { PlexNode } from '../../types'
+import { HANDLE_STROKE } from './handle'
 
 export type { Position }
 
@@ -67,9 +68,6 @@ export const createNameLabel = (title: string, owner: PlexNode): string =>
 
 /** The radius of the handle's disc, in the plex's own pixels. */
 export const HANDLE_RADIUS = 9
-
-/** The width of the outline of the handle's disc, in the plex's own pixels. */
-export const HANDLE_STROKE = 1
 
 /**
  * The handle position within a node: halfway down, on its trailing edge when the pill's outline

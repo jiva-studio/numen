@@ -1,26 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import {
   GAP,
-  getColumn,
-  NARROWEST,
   columnHeight,
-  columnWidth,
   countColumns,
   countFilledColumns,
-  columnsInAll,
   findSpreadAt,
   getSpreadStart,
   inFront,
   leftInDocument,
   createPages,
-  getSpread,
-  countSpreads,
   type Flow,
   type Mark,
 } from './spread'
+import { columnsInAll } from './columnCount'
+import { NARROWEST, columnWidth, countSpreads, getColumn, getSpread } from './columnGrid'
 import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
-import { EDGE, SWIPE, goToPage, dragPage, pressPage, swipePage } from './pageStep'
+import { goToPage, dragPage } from './pageStep'
+import { pressPage, swipePage } from './pageGesture'
+import { EDGE, SWIPE } from './pageGestureSizes'
 import type { TextRange } from '@numen/ui'
 import type { PageNavigationAction } from '@numen/ui'
 

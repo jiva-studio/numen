@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import { Button } from '.'
-import type { ButtonVariants } from '.'
+import type { ButtonVariants } from './variants'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 type Variant = NonNullable<ButtonVariants['variant']>

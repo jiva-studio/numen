@@ -7,7 +7,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { EditorState, StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, type DecorationSet } from '@codemirror/view'
-import { createTimeGutter, type TimeGutterState } from './timeGutter'
+import { createTimeGutter } from './timeGutter'
+import type { TimeGutterState } from './timeGutterState'
 
 const renderedViews: EditorView[] = []
 

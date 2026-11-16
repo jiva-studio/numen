@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** One edge: the curve, and the arrowheads it ends in where it carries any. */
 import { ARROWHEAD_PATH } from '../../lib/arrange'
-import type { EdgeLine } from './lines'
+import type { EdgeLine } from '../../lib/lines'
 
 withDefaults(
   defineProps<{

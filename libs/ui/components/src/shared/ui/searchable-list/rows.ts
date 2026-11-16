@@ -3,6 +3,8 @@
  * which row stands first, and where a group name is drawn.
  */
 import { stepTo } from '@/shared/lib/dom/roving'
+import { findExactItem } from './exactItem'
+import { FIRST_KEY } from './firstKey'
 
 /**
  * One entry of a searchable list. The identifier is the caller's, returned as given. A disabled item is
@@ -16,9 +18,6 @@ export interface ListItem {
   readonly hasSeparator?: boolean
   readonly isDisabled?: boolean
 }
-
-/** The key of the row that stands first, whatever it is made of. */
-export const FIRST_KEY = ''
 
 /** One row as drawn: the action row, or an item. */
 export type ListRow =
@@ -38,13 +37,6 @@ export const filterItems = (items: readonly ListItem[], query: string): readonly
     const haystack = [item.text, item.detail ?? '', item.group ?? ''].join('\n').toLowerCase()
     return words.every((word) => haystack.includes(word))
   })
-}
-
-/** The item whose text is the query, ignoring case and the space around the query. */
-export const findExactItem = (items: readonly ListItem[], query: string): ListItem | undefined => {
-  const clean = query.trim().toLowerCase()
-  if (!clean) return undefined
-  return items.find((item) => item.text.toLowerCase() === clean)
 }
 
 /**
@@ -77,9 +69,7 @@ export const getHeadings = (rows: readonly ListRow[]): readonly (string | undefi
   })
 }
 
-/** Whether a row can be chosen: the action row, or an item that is not disabled. */
-export const isChoosable = (row: ListRow): boolean =>
-  row.kind === 'action' || row.item.isDisabled !== true
+const isChoosable = (row: ListRow): boolean => row.kind === 'action' || row.item.isDisabled !== true
 
 /** The choosable row a step from `from` lands on, wrapping at both ends; -1 where there is none. */
 export const stepRow = (rows: readonly ListRow[], from: number, step: number): number =>

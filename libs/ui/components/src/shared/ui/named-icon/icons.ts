@@ -3,23 +3,16 @@
  * an icon is drawn, so a window that draws none does not carry it.
  */
 import type { Component } from 'vue'
+import { getIconKey, isIconKey } from './iconKey'
 
 type Catalog = Readonly<Record<string, Component | symbol | undefined>>
 
 let catalog: Promise<Catalog> | null = null
 
-/** The name of an icon in the catalog: `trash-2` is `Trash2`. */
-export const getIconKey = (name: string): string =>
-  name.replace(/(^|-)([a-z0-9])/g, (_match, _dash, letter: string) => letter.toUpperCase())
-
 const loadCatalog = (): Promise<Catalog> => {
   catalog ??= import('@lucide/vue').then((lucide) => lucide as Catalog)
   return catalog
 }
-
-/** What the module exports besides icons: the base component and the helpers. */
-export const isIconKey = (key: string): boolean =>
-  /^[A-Z]/.test(key) && key !== 'Icon' && !key.startsWith('Lucide')
 
 /** The icon for a Lucide name or one of its aliases, and null when there is none. */
 export async function findNamedIcon(name: string): Promise<Component | null> {

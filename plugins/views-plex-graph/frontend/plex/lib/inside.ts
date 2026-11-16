@@ -5,8 +5,9 @@
  *
  * They are anchored to the box as drawn, so nothing here computes a width.
  */
-import type { PlexOptions, Size } from './arrange'
+import type { PlexOptions } from './arrange'
 import type { PlacedNode } from './node'
+import type { HeadingsDeps } from './headingsDeps'
 import type { PlexHeading } from '../../types'
 
 /** How far in a heading is ever set, counted in levels. */
@@ -33,13 +34,6 @@ export interface NodeHeadings {
   readonly offset: number
   readonly headings: readonly HungHeading[]
   readonly height: number
-}
-
-/** What settling where and how wide the headings are drawn needs to know. */
-export interface HeadingsDeps {
-  readonly measure?: ((text: string) => number) | undefined
-  readonly viewport: Size
-  readonly margin: number
 }
 
 function getIndents(headings: readonly PlexHeading[], step: number): Map<number, number> {

@@ -3,7 +3,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { PICTURES_WAIT, findPendingImages, whenArrived } from './pictures'
+import { findPendingImages, whenArrived } from './pictures'
+import { PICTURES_WAIT } from './picturesWait'
 
 const picture = (isComplete: boolean): HTMLImageElement => {
   const one = document.createElement('img')

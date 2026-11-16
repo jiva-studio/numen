@@ -1,6 +1,6 @@
 {
   "name": "@numen/tools.saved.search",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "private": true,
   "type": "module",
   "description": "Saved search plugin frontend for Numen: the tab of a saved search note",

@@ -1,7 +1,8 @@
 /** A finger left still on a node: when it counts as a rest, and when it does not. */
 import { effectScope } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { LONG_PRESS_DELAY, LONG_PRESS_TOLERANCE, useLongPress } from './longPress'
+import { LONG_PRESS_DELAY, useLongPress } from './longPress'
+import { LONG_PRESS_TOLERANCE } from './touchTiming'
 
 const press = (overrides: Partial<PointerEvent> = {}) =>
   ({ pointerType: 'touch', clientX: 100, clientY: 100, ...overrides }) as PointerEvent

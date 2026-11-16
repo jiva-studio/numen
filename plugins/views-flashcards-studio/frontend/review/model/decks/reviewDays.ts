@@ -8,15 +8,15 @@
 import { getCurrentDate } from '@numen/ui'
 import { ref } from 'vue'
 import { getStretch as getHeatmapStretch } from '../../lib/heatmap/grid'
-import type { Tally as HeatmapTally } from '../../lib/heatmap/heatmap'
+import type { Tally as HeatmapTally } from '../../lib/heatmap/tally'
 import type { Caught } from '@numen/plugin-sdk'
 
 /** What the application answers about a vault's days. */
-export interface ReviewDaysClient {
+interface ReviewDaysClient {
   listReviewDays(request: { vault: string; from: string; to: string }): Promise<ReviewDays>
 }
 
-export interface ReviewDays {
+interface ReviewDays {
   days: readonly Day[]
   due: readonly { day: string; reviewed: number }[]
   streak: number

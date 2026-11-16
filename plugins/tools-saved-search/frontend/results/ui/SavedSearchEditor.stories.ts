@@ -7,7 +7,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { FAILED_ON_RERANKER, MISSPELLED, NOTE_PATH, RERANKER_BUSY } from '../fixtures/responses'
 import { getDot, renderTab, TAB_ARGS, type Knobs } from '../fixtures/tabStory'
-import { QUERY_PAUSE_MS } from '../model/queryEditor'
+import { QUERY_PAUSE_MS } from '../model/queryPause'
 
 const meta: Meta<Knobs> = {
   title: 'Saved search/Query editor',

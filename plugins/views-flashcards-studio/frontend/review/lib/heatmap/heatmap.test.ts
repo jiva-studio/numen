@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { measureGrid, ROWS } from './grid'
-import { getCells, getDays, getGridHeight, getWeight, NOTHING } from './heatmap'
+import { getCells, getDays, getGridHeight } from './heatmap'
+import { NOTHING, type Tally } from './tally'
+import { getWeight } from './weight'
 import { getDayName } from '../../../lib/day'
-import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {
   // A wide window shows more weeks of the year and not the same weeks drawn

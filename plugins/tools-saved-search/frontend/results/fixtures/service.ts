@@ -3,7 +3,8 @@
  * GetResults with the response it holds, yields the changes it is given on the open watch, and
  * writes an UpdateSearch into the response it answers next, as the backend writes the note.
  */
-import { ServiceFailure, type SavedSearchService } from '../api/service'
+import type { SavedSearchService } from '../api/service'
+import { ServiceFailure } from '../api/serviceFailure'
 import type {
   GetResultsRequest,
   GetResultsResponse,

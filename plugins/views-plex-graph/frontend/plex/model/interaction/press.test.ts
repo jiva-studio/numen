@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useNodePress, type NodePressProps, type NodePressReport } from './press'
 import { byDoubleClick } from './destination'
-import type { ReachSite, ReachStrategy } from './reachStrategy'
+import type { ReachStrategy } from './reachStrategy'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 
 const NODE: PlacedNode = {
@@ -27,7 +27,7 @@ function createPress(gestureRole: GestureRole = 'open', middle: Position | null 
     reach: vi.fn<NodePressReport['reach']>(),
     menu: vi.fn<NodePressReport['menu']>(),
   }
-  let site!: ReachSite
+  let site!: Parameters<ReachStrategy['listeners']>[0]
   const reaching: ReachStrategy = {
     hasHandle: false,
     listeners: (provided) => {

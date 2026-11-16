@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref, type Component } from 'vue'
 import { createPlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
 import type { CommandTarget, SlotCommand, SlotItem } from '@numen/plugin-sdk'
-import { usePlexView as viewing, type PlexView } from './usePlexView'
+import { usePlexView as viewing } from './usePlexView'
 import { WORDS as words } from '../words'
 import {
   createLine,
@@ -19,11 +19,11 @@ import {
   type Types,
   type RelatedNoteInput,
 } from '../fixtures'
-import type { NoteHeading, NoteRelation, PathRename } from '../types'
+import type { NoteHeading, NoteRelation, PathRename, PlexView } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import { getDefaultLook, readLook } from './look'
-import { getDefaultNames } from './names'
+import { getDefaultLook, getDefaultNames } from '../fixtures/settings'
+import { readLook } from './look'
 
 /** The icons the window draws a declared command and a note of a declared type with. */
 const SHARE_ICON: Component = { name: 'ShareIcon', render: () => null }

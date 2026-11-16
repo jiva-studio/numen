@@ -8,7 +8,6 @@
  */
 import {
   Facet,
-  StateEffect,
   StateField,
   type EditorState,
   type Range,
@@ -22,6 +21,7 @@ import {
   type ViewUpdate,
 } from '@codemirror/view'
 import type { Clock } from '@numen/ui'
+import { createReveal, getDuration, setReveal, type Reveal } from './reveal'
 
 /** A change being made to this text by something other than the reader. */
 export interface EditorChange {
@@ -31,54 +31,10 @@ export interface EditorChange {
   readonly text: string
 }
 
-/** How much of a change's text is shown, and which part arrived most recently. */
-export interface Reveal {
-  readonly visibleLength: number
-  readonly fading: number
-}
-
-/**
- * How long one word is shown arriving for, in milliseconds. It is what the
- * fade takes, so a word has finished arriving as the next one starts.
- */
-const PACE = 220
-
-const boundaries = (text: string): number[] => {
-  const words = /\S+\s*/g
-  const ends: number[] = []
-  for (let found = words.exec(text); found; found = words.exec(text)) {
-    ends.push(found.index + found[0].length)
-  }
-  return ends
-}
-
-/**
- * How much of `text` is shown after `part` of the reveal has completed.
- *
- * Each word is one step, and the step after the last word shows all of the text
- * with none of it still arriving.
- */
-export const createReveal = (text: string, part: number): Reveal => {
-  const ends = boundaries(text)
-  const steps = ends.length + 1
-  const stepIndex = Math.max(0, Math.min(steps, Math.floor(part * steps)))
-  if (stepIndex === 0) return { visibleLength: 0, fading: 0 }
-  if (stepIndex === steps) return { visibleLength: text.length, fading: text.length }
-  return {
-    visibleLength: ends[stepIndex - 1] ?? text.length,
-    fading: stepIndex > 1 ? (ends[stepIndex - 2] ?? 0) : 0,
-  }
-}
-
-const getDuration = (text: string) => (boundaries(text).length + 1) * PACE
-
 /** The change the editor is drawing over, and nothing when there is none. */
 export const pendingChange = Facet.define<EditorChange | null, EditorChange | null>({
   combine: (all) => all[0] ?? null,
 })
-
-/** How far the showing of the text has got. */
-export const setReveal = StateEffect.define<Reveal>()
 
 const changingDecoration = Decoration.mark({ class: 'cm-changing' })
 const incoming = Decoration.mark({ class: 'cm-arriving' })

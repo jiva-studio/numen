@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue, isUnsavedBuffersError } from '@numen/plugin-sdk'
 import { openNotes } from './notes'
-import type { NoteResult, Notes } from '../../lib/buffer/types'
+import type { NoteResult } from '../../lib/buffer/noteResult'
+import type { Notes } from '../../lib/buffer/types'
 
 describe('openNotes for flashcards studio', () => {
   it('opens note and loads body asynchronously', async () => {

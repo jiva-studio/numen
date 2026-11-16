@@ -3,7 +3,7 @@
  * encode to, and they are read here as the TypeScript messages.
  */
 import { describe, expect, it } from 'vitest'
-import type { Methods } from './updater'
+import type { App, Status } from './updater'
 
 const fixtures = import.meta.glob('../../testdata/api/*.json', {
   eager: true,
@@ -12,7 +12,10 @@ const fixtures = import.meta.glob('../../testdata/api/*.json', {
 
 const read = (name: string): unknown => fixtures[`../../testdata/api/${name}.json`]
 
-const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
+const EXPECTED: {
+  Check: { request: { app: App }; response: Status }
+  GetStatus: { request: Record<string, never>; response: Status }
+} = {
   Check: {
     request: { app: { version: '2026.9.0', build: 900, platform: 'windows' } },
     response: {

@@ -4,8 +4,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, type Settings } from '../../lib/presets'
+import { FIELDS } from './field'
 import {
-  FIELDS,
   getFieldCount,
   getFieldLimits,
   getFieldValue,

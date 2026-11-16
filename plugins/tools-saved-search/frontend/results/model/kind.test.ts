@@ -6,7 +6,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
 import { COMPUTED, HARBOR, HARBOR_REFRESHED, NOTE_PATH } from '../fixtures/responses'
 import { createScriptedService } from '../fixtures/service'
-import { createSavedSearchKind, SAVED_SEARCH } from './kind'
+import { createSavedSearchKind } from './kind'
+import { SAVED_SEARCH } from './tabKind'
 
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
 

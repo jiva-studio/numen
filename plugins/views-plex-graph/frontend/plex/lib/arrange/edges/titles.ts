@@ -12,7 +12,10 @@ import { getLength, type EdgeTitle, type PlacedEdge } from '../../edge'
 import type { PlacedNode } from '../../node'
 import { getBox, isOverlapping, getTitleBoxes, runBoxes, type Box } from '../layout/boxes'
 import { cutToFit } from '../../cutToFit'
-import { MIDDLE, createTitle, getDepth, type Routing, type TitleSetting } from './routing'
+import { createTitle, type TitleSetting } from './labels'
+import { getDepth } from './ink'
+import { MIDDLE } from './positions'
+import type { Routing } from './routing'
 
 /** A run of one line, as fractions of its length. */
 interface Span {

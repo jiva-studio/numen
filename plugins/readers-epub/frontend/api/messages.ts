@@ -52,17 +52,6 @@ export interface ReadBookMarkupResponse {
   markup: string
 }
 
-export interface ReadBookEntryRequest {
-  path: string
-  entry: string
-  baseline?: FileStat
-}
-
-/** `body` is the bytes of the entry as base64 text. */
-export interface ReadBookEntryResponse {
-  body: string
-}
-
 export interface GetCfiRequest {
   path: string
   offset: number

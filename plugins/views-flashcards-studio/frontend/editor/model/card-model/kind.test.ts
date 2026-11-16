@@ -9,14 +9,10 @@ import { ERRORS } from '../../../lib/wire/errors'
 import { CARD_MODEL, createCardModelTabs } from './kind'
 import { WORDS as words } from '../../../words'
 import CardModelTab from '../../ui/card-model/CardModelTab.vue'
-import type {
-  ErrorCode,
-  Cards,
-  VaultTemplate,
-  DeckProblem,
-  FieldRenameResult,
-} from '../../../types'
+import type { ErrorCode, Cards, VaultTemplate, DeckProblem } from '../../../types'
 import type { CardModelTabState } from './types'
+
+type FieldRenameResult = Awaited<ReturnType<Cards['renameField']>>
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 

@@ -2,6 +2,7 @@
  * Domain types for flashcard deck and card model open buffers.
  */
 import type { Result } from '@numen/plugin-sdk'
+import type { NoteContents, NoteResult } from './noteResult'
 
 export type NoteErrorCode =
   'tooLarge' | 'bodyUnwritable' | 'notANote' | 'notText' | 'unreadable' | 'unreachable'
@@ -13,18 +14,6 @@ export interface NoteBaseline {
   readonly stat: string
 }
 
-interface LinkAddress {
-  readonly url: string
-  readonly embed: string
-}
-
-interface NoteContents {
-  readonly body: string
-  readonly link?: LinkAddress
-  readonly at?: string
-}
-
-export type NoteResult = Result<NoteContents, string>
 type WriteResult = Result<NoteContents, string>
 
 export interface OpenNote {

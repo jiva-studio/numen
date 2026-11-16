@@ -8,13 +8,13 @@ import type { Entry } from '../types'
 import type { ListingRow } from '../types'
 import {
   getFolderPath,
-  getParentFolders,
   resolveDropFolder,
   ROOT,
   createFileTree,
   readSortBy,
   type SortBy,
 } from './useFileTree'
+import { getParentFolders } from './parentFolders'
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,

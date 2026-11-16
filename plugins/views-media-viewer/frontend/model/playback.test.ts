@@ -4,7 +4,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { usePlayback } from './playback'
-import type { Player } from './player'
+import type { Player } from './mediaPlayer'
 import type { RecordingSource } from '../types'
 
 const TALK = 'http://127.0.0.1:1/token/v/talk.mp3'

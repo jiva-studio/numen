@@ -4,6 +4,7 @@
  */
 import type { Stats } from '../types'
 import { WORDS as words } from '../words'
+import { isPending } from './pending'
 
 /** The mark in front of the count in the title bar. */
 export const MARK = '⬡'
@@ -14,11 +15,6 @@ const BYTES_PER_UNIT = 1024
 /** A whole number with the thousands separator of the locale; the locale of the window when none. */
 export function formatCount(value: number, locale?: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)
-}
-
-/** Whether chunks still wait for a vector, which is when the index is being filled. */
-export function isPending(stats: Pick<Stats, 'waiting'>): boolean {
-  return stats.waiting > 0
 }
 
 /** The figure of the title bar item: the vectors the index holds, and never the chunks. */

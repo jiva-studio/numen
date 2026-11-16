@@ -6,7 +6,8 @@
  */
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
-import { useLayerLines, type EdgeLine } from './lines'
+import type { EdgeLine } from '../../lib/lines'
+import { useLayerLines } from './lines'
 
 const props = defineProps<{
   lines: readonly EdgeLine[]

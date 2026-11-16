@@ -3,7 +3,7 @@
  */
 
 /** One link: the address its note holds and whether a video is published there. */
-export interface LinkFacts {
+interface LinkFacts {
   readonly url: string
   readonly isCopyable: boolean
 }

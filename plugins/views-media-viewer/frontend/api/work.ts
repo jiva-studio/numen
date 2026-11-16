@@ -2,14 +2,7 @@
  * Which files have work in progress, according to the host's list of plugin tasks: one shared
  * subscription, open while any tab is subscribed to it.
  */
-
-/** One task reported by the host: the file it is on, its progress, and any error. */
-export interface WatchedTask {
-  readonly about: string
-  readonly done?: number | undefined
-  readonly total?: number | undefined
-  readonly error?: string | undefined
-}
+import type { WatchedTask } from './watchedTask'
 
 /** Subscribes to the plugin task lists: each task by the file it is about. */
 export type TaskSource = (onTasks: (tasks: readonly WatchedTask[]) => void) => {

@@ -1,11 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  APPEAR_DELAY_MS,
-  createChipDisplay,
-  HOLD_MS,
-  IDLE_CHIP,
-  type ChipState,
-} from './chipDisplay'
+import { createChipDisplay, IDLE_CHIP, type ChipState } from './chipDisplay'
+import { APPEAR_DELAY_MS, HOLD_MS } from './chipTimings'
 
 const chip = (done: number, total: number): ChipState => ({
   isActive: true,

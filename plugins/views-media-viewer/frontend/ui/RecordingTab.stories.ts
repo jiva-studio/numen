@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import RecordingTab from './RecordingTab.vue'
-import type { Player } from '../model/player'
+import type { Player } from '../model/mediaPlayer'
 import type { Recordings, Cue } from '../types'
 import { WORDS } from '../words'
 

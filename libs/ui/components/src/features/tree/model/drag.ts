@@ -5,18 +5,7 @@ import { usePressDrag } from '@/shared/ui/drag-preview'
 import { dragLabel, type DragLabel } from '../lib/drag'
 import { findHolder, isRefused, getRowDropTarget, type RowDropTarget } from '../lib/drop'
 import type { Row, RowId, ShownRow } from '../lib/row'
-
-/** Screen measurements of the tree list and row height. */
-export interface TreeMetrics {
-  readonly hoverRect: {
-    readonly left: number
-    readonly right: number
-    readonly top: number
-    readonly bottom: number
-  }
-  readonly top: number
-  readonly height: number
-}
+import type { TreeMetrics } from './treeMetrics'
 
 /** Options for tree row drag state. */
 export interface RowDragOptions {

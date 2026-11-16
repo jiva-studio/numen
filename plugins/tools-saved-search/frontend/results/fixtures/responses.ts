@@ -3,12 +3,8 @@
  * for the tests and the stories.
  */
 import response from '../../../testdata/api/GetResults.response.json'
-import type {
-  GetResultsResponse,
-  ListSearchFunctionsResponse,
-  ResultsChange,
-  SearchResult,
-} from '../api/types'
+import type { GetResultsResponse, ListSearchFunctionsResponse, ResultsChange } from '../api/types'
+import type { SearchResult } from '../api/searchResult'
 
 /** The path of the saved search note every fixture answers for. */
 export const NOTE_PATH = 'Harbor/Harbor master - winter storms.md'

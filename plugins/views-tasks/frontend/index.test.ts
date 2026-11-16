@@ -11,7 +11,7 @@ import {
   type MockPluginContext,
 } from '@numen/plugin-sdk/testing'
 import { activate, TASKS_VIEW } from './index'
-import { APPEAR_DELAY_MS, HOLD_MS } from './model/chipDisplay'
+import { APPEAR_DELAY_MS, HOLD_MS } from './model/chipTimings'
 import { createTask } from './testing/tasks'
 
 const manifest = JSON.parse(

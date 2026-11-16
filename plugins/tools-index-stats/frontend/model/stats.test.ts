@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ApiError, BackgroundTask, Result } from '@numen/plugin-sdk'
 import { createMockBackgroundTaskHost, createMockHostServices } from '@numen/plugin-sdk/testing'
 import type { Stats } from '../api/stats'
-import { createIndexStats, REFRESH_MS, SETTLE_MS, type Activity, type Timer } from './stats'
+import { createIndexStats, type Activity, type Timer } from './stats'
+import { REFRESH_MS, SETTLE_MS } from './waits'
 
 const STATS: Stats = {
   vectors: 10,

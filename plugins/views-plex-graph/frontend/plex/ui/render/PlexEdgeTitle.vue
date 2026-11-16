@@ -6,7 +6,7 @@
  * glyph set along a path is a separate run, and a halo painted together with the
  * letters would overlap the adjacent letter.
  */
-import type { EdgeLine } from './lines'
+import type { EdgeLine } from '../../lib/lines'
 
 withDefaults(
   defineProps<{

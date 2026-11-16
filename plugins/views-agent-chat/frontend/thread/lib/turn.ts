@@ -3,23 +3,8 @@
  */
 
 import { groupDigits, type LinkPiece } from '@numen/ui'
-import type { Turn, TurnState, Voice } from '../../types'
-
-export interface VoiceDescriptor {
-  readonly isBubble: boolean
-  readonly against: 'start' | 'end'
-}
-
-/**
- * Every voice a turn can be in, declared once. The shape, the side and the
- * colours all read from here.
- */
-export const VOICES = {
-  prompt: { isBubble: true, against: 'end' },
-  response: { isBubble: false, against: 'start' },
-  doing: { isBubble: false, against: 'start' },
-  plan: { isBubble: false, against: 'start' },
-} as const satisfies Record<Voice, VoiceDescriptor>
+import type { Turn, TurnState } from '../../types'
+import { VOICES, type VoiceDescriptor } from './voices'
 
 /** A turn with everything about how to draw it worked out. */
 export interface PlacedTurn {

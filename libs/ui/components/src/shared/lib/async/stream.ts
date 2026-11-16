@@ -6,16 +6,7 @@
  * to one that is up to date, so the lost connection is reported until the
  * stream resumes.
  */
-
-/** How long the window waits before it takes a stream up again, in milliseconds. */
-export const AGAIN = 1000
-
-/**
- * The message reported when a stream ended in a fault.
- * The transport fault is not actionable; what is, is that the window is behind the source and retrying.
- * One message serves every stream, so this library needs no knowledge of what is followed.
- */
-export const LOST = 'lost touch with numen — the window keeps trying'
+import { AGAIN, LOST } from './streamRetry'
 
 /** What following a stream reads of the window it is following for. */
 export interface StreamDeps {

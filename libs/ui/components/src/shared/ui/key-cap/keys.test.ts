@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { keyChord, overlayIcon } from './keys'
+import { keyChord } from './keys'
+import { overlayIcon } from './overlayIcon'
 
 describe('a keystroke of one letter and the key alongside the space bar', () => {
   it('is retained with the key the keyboard in hand puts there', () => {

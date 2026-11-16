@@ -5,7 +5,9 @@
  * tests exercise it through a stand-in element.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createMediaPlayer, createMediaTypeProbe, type MediaFactory } from './player'
+import { createMediaTypeProbe } from './player'
+import { createMediaPlayer } from './mediaPlayer'
+import type { MediaFactory } from './mediaFactory'
 import { WORDS } from '../words'
 
 const TALK = 'http://127.0.0.1:1/files/w/v/talk.mp3'

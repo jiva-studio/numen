@@ -7,14 +7,8 @@
 import { describe, expect, it } from 'vitest'
 import { Compartment, EditorState, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import {
-  pendingChange,
-  changeMarks,
-  createPacePlugin,
-  createReveal,
-  setReveal,
-  type EditorChange,
-} from './change'
+import { pendingChange, changeMarks, createPacePlugin, type EditorChange } from './change'
+import { createReveal, setReveal } from './reveal'
 import type { Clock } from '@numen/ui'
 import { createState } from '../../fixtures/state'
 import { RUSSIAN } from '../../fixtures/prose'

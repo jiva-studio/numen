@@ -9,8 +9,8 @@ import {
   HEADING_LIMIT_MAX,
   HEADING_LIMIT_MIN,
   NEST_HEADINGS,
-  readNesting,
-} from './nesting'
+} from './nestingSettings'
+import { readNesting } from './nesting'
 
 const createContext = (initialSettings: Record<string, JsonValue> = {}) =>
   createMockPluginContext({ pluginId: 'md.numen.views.plex.graph', initialSettings })

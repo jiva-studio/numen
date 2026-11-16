@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { JsonValue, PluginContext } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import { NAMES_PER_NOTE, SHOW_NAMES, readNames } from './names'
+import { readNames } from './names'
+import { NAMES_PER_NOTE, SHOW_NAMES } from './namesDefaults'
 
 const createContext = (initialSettings: Record<string, JsonValue> = {}) =>
   createMockPluginContext({ pluginId: 'md.numen.views.plex.graph', initialSettings })

@@ -23,6 +23,7 @@ import {
 import { formatQuery } from '../lib/formatQuery'
 import { queryTheme } from '../lib/queryTheme'
 import { createQueryOptionDetails } from './queryOption'
+import { QUERY_PAUSE_MS } from './queryPause'
 
 const insertIndent: StateCommand = ({ state, dispatch }) => {
   if (state.selection.ranges.some((range) => !range.empty)) return indentMore({ state, dispatch })
@@ -45,9 +46,6 @@ const formatDocument: StateCommand = ({ state, dispatch }) => {
   }
   return true
 }
-
-/** How long typing pauses before the query is sent. */
-export const QUERY_PAUSE_MS = 1000
 
 /** Where the editor is drawn, what it starts with, what it reads while it is open, and where a query goes. */
 export interface QueryEditorOptions {

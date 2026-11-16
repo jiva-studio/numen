@@ -1,8 +1,7 @@
 /**
  * The seven days, with their display and full names.
  *
- * Pure: the rotation to a chosen first day of the week is arithmetic over a
- * list, and the names are supplied by the caller.
+ * Pure: the names are supplied by the caller.
  */
 
 /** What a day is called. */
@@ -27,16 +26,6 @@ export const WEEK: readonly DayName[] = [
   { id: 'sat', short: 'S', long: 'Saturday' },
   { id: 'sun', short: 'S', long: 'Sunday' },
 ]
-
-/** The week turned to start on a day; a day it does not hold leaves it as it is. */
-export const rotateWeek = <One extends DayName>(
-  id: string,
-  week: readonly One[],
-): readonly One[] => {
-  const index = week.findIndex((day) => day.id === id)
-  if (index <= 0) return week
-  return [...week.slice(index), ...week.slice(0, index)]
-}
 
 /**
  * The fill of a chip, which is the level clamped to the range from empty to

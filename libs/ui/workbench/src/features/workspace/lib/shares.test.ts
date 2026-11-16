@@ -1,6 +1,7 @@
 /** Shares sum to one, whatever went in, and no children take none. */
 import { describe, expect, it } from 'vitest'
-import { atLeast, even, fit, insert } from './shares'
+import { even } from './even'
+import { atLeast, fit, insert } from './shares'
 
 const sums = (sizes: readonly number[]) => sizes.reduce((total, size) => total + size, 0)
 

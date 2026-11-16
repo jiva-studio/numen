@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { DEFAULT_OPTIONS, resolveOptions } from '../options'
 import { build } from '../../../fixtures/build'
-import { getRelationTowards, resolveDrop } from './drop'
+import { getRelationTowards } from './aim'
+import { resolveDrop } from './drop'
 
 const origin = { x: 0, y: 0 }
 const left = { x: -300, y: 0 }

@@ -8,34 +8,14 @@
 import { parseDay, getDayName } from '../../../lib/day'
 
 import { AHEAD, ROWS } from './grid'
-
-/** What one day behind came to. */
-export interface Tally {
-  readonly reviewed: number
-  readonly again: number
-  readonly hard: number
-  readonly good: number
-  readonly easy: number
-  readonly tested: number
-  readonly recalled: number
-}
-
-/** A day with no answers, which is the value of an empty cell. */
-export const NOTHING: Tally = {
-  reviewed: 0,
-  again: 0,
-  hard: 0,
-  good: 0,
-  easy: 0,
-  tested: 0,
-  recalled: 0,
-}
+import { NOTHING, type Tally } from './tally'
+import { getWeight, type Weight } from './weight'
 
 /** One day of the grid. */
 export interface Day extends Tally {
   readonly day: string
   readonly did: number
-  readonly weight: 0 | 1 | 2 | 3 | 4
+  readonly weight: Weight
   readonly isToday: boolean
   readonly isAhead: boolean
 }
@@ -116,18 +96,6 @@ function monday(date: Date): Date {
 function weekday(date: Date): number {
   const day = date.getDay()
   return day === 0 ? 7 : day
-}
-
-/**
- * The shade of a day. The steps are small: five answered cards is a day of
- * activity, and the grid shows it as clearly as a day of fifty.
- */
-export function getWeight(did: number): Day['weight'] {
-  if (did <= 0) return 0
-  if (did < 5) return 1
-  if (did < 20) return 2
-  if (did < 50) return 3
-  return 4
 }
 
 /** How round the corner of a cell is drawn, in the grid's own units. */

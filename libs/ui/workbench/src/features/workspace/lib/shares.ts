@@ -6,9 +6,7 @@
  * and use the result directly.
  */
 
-/** Equal shares for a branch of this many children. */
-export const even = (count: number): readonly number[] =>
-  Array.from({ length: count }, () => 1 / count)
+import { even } from './even'
 
 /**
  * The same shares, one per child and summing to one.

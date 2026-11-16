@@ -7,7 +7,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import WeekdayChips from './WeekdayChips.vue'
-import { rotateWeek, WEEK, type Day } from './week'
+import { WEEK, type Day } from './week'
 
 /** The levels a day is offered, from nothing to the whole of it. */
 const LEVELS: readonly number[] = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]
@@ -52,7 +52,8 @@ describe('what is drawn', () => {
   })
 
   it('draws the days in the order they are given', () => {
-    const chips = mountChips({ days: week({}, rotateWeek('sun', WEEK)) }).findAll('button')
+    const startingOnSunday = [...WEEK.slice(6), ...WEEK.slice(0, 6)]
+    const chips = mountChips({ days: week({}, startingOnSunday) }).findAll('button')
     expect(chips[0]?.attributes('aria-label')).toBe('Sunday, 100%')
   })
 

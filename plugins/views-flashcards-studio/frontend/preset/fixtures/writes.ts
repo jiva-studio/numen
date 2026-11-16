@@ -1,7 +1,8 @@
 /** A fake vault and window for the tests of the preset writes: replies on demand, and records each message. */
 import { afterEach, expect } from 'vitest'
 import { formatErrorMessage, type MessageWriter, type Caught } from '@numen/plugin-sdk'
-import { DEFAULTS, type Presets, type PresetWriteResult, type Settings } from '../../lib/presets'
+import { DEFAULTS, type Presets, type Settings } from '../../lib/presets'
+import type { PresetWriteResult } from '../../lib/presetResults'
 
 const PATH = 'presets/Daily.md'
 

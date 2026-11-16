@@ -19,17 +19,7 @@ import { acp } from '@numen/plugin-sdk/contracts'
 import { createAnswer, type Answer } from './answer'
 import { createWorkLine, type WorkLine } from './work'
 import type { PlanItem, PlanStatus, Turn } from '../../types'
-
-/** The words the panel sets up itself. */
-export interface ConversationStrings {
-  readonly thinking: string
-  readonly unreachable: string
-  readonly nothing: string
-  readonly noAgentMessage: string
-  readonly maxTokens: string
-  readonly maxTurnRequests: string
-  readonly refusal: string
-}
+import type { ConversationStrings } from './conversationStrings'
 
 /** getSourcePath returns the file the line of a turn works on, null where it works on none. */
 export interface Conversation {

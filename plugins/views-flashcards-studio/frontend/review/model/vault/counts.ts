@@ -15,7 +15,7 @@ import type { StopReason } from '../../../lib/stop'
 import type { VaultCardsDue } from '../../lib/vault/types'
 import type { Caught } from '@numen/plugin-sdk'
 
-export interface CardsDueClient {
+interface CardsDueClient {
   watchCardsDue(
     req: Record<string, never>,
     how?: { signal?: AbortSignal },
@@ -23,7 +23,7 @@ export interface CardsDueClient {
 }
 
 /** One vault, as the count answers about it. */
-export interface VaultCounts {
+interface VaultCounts {
   id: string
   name: string
   path: string
@@ -62,7 +62,7 @@ export interface VaultCounts {
 }
 
 /** One message of the count. */
-export interface DueCounts {
+interface DueCounts {
   day: string
   vaults: readonly VaultCounts[]
   counted?: VaultCounts | undefined

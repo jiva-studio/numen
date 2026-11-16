@@ -1,80 +1,12 @@
 /**
  * Curve calculation, caching, and throttling for preset tabs.
  */
-import { ref, shallowRef, type Ref } from 'vue'
-import { createRequestGuard, type RequestGuard } from '@numen/ui'
-import {
-  DEFAULTS,
-  type Curve,
-  type PresetCounts,
-  type Presets,
-  type Settings,
-  type SettingsBounds,
-} from '../../lib/presets'
-import { getGoalValue, findNearestGridValue } from '../lib/curve'
+import type { Curve, Presets, Settings, SettingsBounds } from '../../lib/presets'
+import { getKnobPosition, isSameGrid } from '../lib/curveGrid'
 import { getShapeKey } from '../lib/fields'
 import { estimateCurve } from '../lib/sketch'
 import { WORDS as words } from '../lib/words'
-
-/** Reactive state for preset curve calculations. */
-export interface CurveState {
-  readonly current: {
-    readonly curve: Ref<Curve>
-    readonly material: Ref<PresetCounts | null>
-    readonly place: Ref<number>
-    readonly isWaiting: Ref<boolean>
-  }
-  readonly drawing: {
-    isDrawing: boolean
-    shouldDrawAgain: boolean
-    shape: string
-    isReal: boolean
-  }
-  readonly requests: {
-    readonly asks: RequestGuard
-    readonly answers: Map<string, Curve>
-  }
-}
-
-export function createCurveState(
-  initialSettings: Settings = DEFAULTS,
-  today: string,
-  bounds: SettingsBounds,
-): CurveState {
-  return {
-    current: {
-      curve: shallowRef<Curve>(estimateCurve(initialSettings, today, bounds)),
-      material: shallowRef<PresetCounts | null>(null),
-      place: ref(0),
-      isWaiting: ref(true),
-    },
-    drawing: { isDrawing: false, shouldDrawAgain: false, shape: '', isReal: false },
-    requests: { asks: createRequestGuard(), answers: new Map<string, Curve>() },
-  }
-}
-
-/** Whether two curves are drawn over the same range, place for place. */
-export const isSameGrid = (one: readonly number[], two: readonly number[]): boolean =>
-  one.length === two.length && one.every((value, index) => value === two[index])
-
-/** Where the knob relies on a curve: the preset's own place, or the nearest. */
-export const getKnobPosition = (curve: Curve, settings: Settings, today: string): number =>
-  curve.now.index >= 0
-    ? curve.now.index
-    : Math.max(findNearestGridValue(curve.grid, getGoalValue(settings, today)), 0)
-
-/** Applies a landed curve and updates the material counts. */
-export const applyCurveAnswer = (state: CurveState, curve: Curve): void => {
-  state.current.curve.value = curve
-  state.current.material.value = {
-    decks: curve.decks,
-    cards: curve.cards,
-    overdue: curve.overdue,
-    unbegun: curve.unbegun,
-  }
-  state.drawing.isReal = true
-  state.current.isWaiting.value = false
-}
+import { applyCurveAnswer, type CurveState } from './curveState'
 
 export interface CurveContext {
   path: string

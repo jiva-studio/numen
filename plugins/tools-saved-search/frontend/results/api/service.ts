@@ -12,16 +12,8 @@ import type {
   UpdateSearchResponse,
   WatchResultsRequest,
 } from './types'
-
-export const SERVICE = 'md.numen.tools.saved.search'
-
-/** A call the backend answered with a failure, or that did not reach it; the message is the backend's. */
-export class ServiceFailure extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'ServiceFailure'
-  }
-}
+import { SERVICE } from './serviceName'
+import { ServiceFailure } from './serviceFailure'
 
 /** The calls of the tab to the backend. */
 export interface SavedSearchService {

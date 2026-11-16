@@ -6,7 +6,7 @@
  * with its syntax coloured.
  */
 import { browserClock, doc } from '@numen/ui'
-import { history, historyKeymap, defaultKeymap, indentLess, indentMore } from '@codemirror/commands'
+import { history, historyKeymap, defaultKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { bracketMatching, indentUnit, syntaxHighlighting, syntaxTree } from '@codemirror/language'
 import {
@@ -15,7 +15,6 @@ import {
   Compartment,
   EditorState,
   RangeSet,
-  StateEffect,
   StateField,
 } from '@codemirror/state'
 import {
@@ -30,7 +29,8 @@ import {
   placeholder,
   rectangularSelection,
 } from '@codemirror/view'
-import { follow } from '../lib/extensions/address'
+import { follow } from '../lib/extensions/follow'
+import { escapeKeyBinding, restoreTabCapture, tabCapture, tabKeyBinding } from './tabCapture'
 import {
   pendingChange,
   changeMarks,
@@ -168,45 +168,6 @@ const saveKeyBinding: KeyBinding = {
   run: (view) => {
     view.state.facet(saveHandler)()
     return true
-  },
-}
-
-/**
- * Whether Tab belongs to the editor or to the page. It starts with the editor,
- * Escape releases it to the page, and keyboard input into the editor restores it, so
- * every visit starts the same way.
- */
-const setTabCapture = StateEffect.define<boolean>()
-
-const tabCapture = StateField.define<boolean>({
-  create: () => true,
-  update: (target, change) =>
-    change.effects.reduce((now, effect) => (effect.is(setTabCapture) ? effect.value : now), target),
-})
-
-const restoreTabCapture = EditorView.domEventHandlers({
-  focus: (_press, view) => {
-    if (!view.state.field(tabCapture)) view.dispatch({ effects: setTabCapture.of(true) })
-    return false
-  },
-})
-
-/** Tab indents while the editor holds it, and walks on once it does not. */
-export const tabKeyBinding: KeyBinding = {
-  key: 'Tab',
-  run: (view) => view.state.field(tabCapture) && indentMore(view),
-  shift: (view) => view.state.field(tabCapture) && indentLess(view),
-}
-
-/**
- * Escape hands Tab to the page and is passed on, so what else answers Escape
- * around the editor still answers it.
- */
-export const escapeKeyBinding: KeyBinding = {
-  key: 'Escape',
-  run: (view) => {
-    if (view.state.field(tabCapture)) view.dispatch({ effects: setTabCapture.of(false) })
-    return false
   },
 }
 
