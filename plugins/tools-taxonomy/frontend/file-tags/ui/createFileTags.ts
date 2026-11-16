@@ -1,5 +1,5 @@
 import { defineComponent, h } from 'vue'
-import FileTags from '../ui/FileTags.vue'
+import FileTags from './FileTags.vue'
 
 /** Where the tags of a path come from. */
 export interface TagSource {
