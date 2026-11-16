@@ -31,7 +31,13 @@ const entries = (...names: string[]) =>
 const mountWidgets = (props: Partial<InstanceType<typeof PlexNodeWidgets>['$props']> = {}) =>
   mount(PlexNodeWidgets, {
     attachTo: document.body,
-    props: { node, side: 'above', entries: entries('tags', 'parents'), path: 'notes/Entropy.md', ...props },
+    props: {
+      node,
+      side: 'above',
+      entries: entries('tags', 'parents'),
+      path: 'notes/Entropy.md',
+      ...props,
+    },
   })
 
 afterEach(() => {
@@ -42,11 +48,9 @@ describe('the widgets of a side of a node', () => {
   it('are drawn once each, in the order of the entries', () => {
     const widgets = mountWidgets({ entries: entries('parents', 'tags', 'related') })
 
-    expect(widgets.findAll('[data-widget]').map((one) => one.attributes('data-widget'))).toStrictEqual([
-      'parents',
-      'tags',
-      'related',
-    ])
+    expect(
+      widgets.findAll('[data-widget]').map((one) => one.attributes('data-widget')),
+    ).toStrictEqual(['parents', 'tags', 'related'])
   })
 
   it('are each given the path of the note of the node', () => {

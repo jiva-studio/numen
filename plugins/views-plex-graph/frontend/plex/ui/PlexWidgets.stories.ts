@@ -29,7 +29,8 @@ const createWidget = (name: string, text: string) =>
         {
           'data-widget': name,
           'data-path': this.path,
-          style: 'display:inline-block;padding:0.125rem 0.25rem;margin:0.0625rem;border:1px solid currentColor',
+          style:
+            'display:inline-block;padding:0.125rem 0.25rem;margin:0.0625rem;border:1px solid currentColor',
         },
         text,
       )
@@ -85,8 +86,8 @@ const getBox = (canvasElement: HTMLElement, title: string): DOMRect => {
 }
 
 const getWidgets = (canvasElement: HTMLElement, name: string, path: string): DOMRect => {
-  const found = [...canvasElement.querySelectorAll(`[data-widget="${name}"]`)].find((one) =>
-    one.getAttribute('data-path') === path,
+  const found = [...canvasElement.querySelectorAll(`[data-widget="${name}"]`)].find(
+    (one) => one.getAttribute('data-path') === path,
   )
   if (!found) throw new Error(`no widget ${name} for ${path}`)
   return found.getBoundingClientRect()
@@ -105,9 +106,12 @@ export const WidgetsAboveAndBelow: Story = {
     await expect(tags.bottom).toBeLessThanOrEqual(node.top + 1)
     await expect(children.top).toBeGreaterThanOrEqual(node.bottom - 1)
 
-    const groupCenter = (Math.min(parents.left, tags.left) + Math.max(parents.right, tags.right)) / 2
+    const groupCenter =
+      (Math.min(parents.left, tags.left) + Math.max(parents.right, tags.right)) / 2
     await expect(Math.abs(groupCenter - (node.left + node.right) / 2)).toBeLessThan(2)
-    await expect(Math.abs((children.left + children.right) / 2 - (node.left + node.right) / 2)).toBeLessThan(2)
+    await expect(
+      Math.abs((children.left + children.right) / 2 - (node.left + node.right) / 2),
+    ).toBeLessThan(2)
   },
 }
 
@@ -145,7 +149,9 @@ export const WidgetsKeepClearOfOtherNodes: Story = {
 export const WithNoWidgets: Story = {
   args: { hasWidgets: false },
   play: async ({ canvasElement }) => {
-    await waitFor(() => expect(canvasElement.querySelector('[aria-label^="Raised beds"]')).not.toBeNull())
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[aria-label^="Raised beds"]')).not.toBeNull(),
+    )
 
     await expect(canvasElement.querySelectorAll('[data-widget]')).toHaveLength(0)
   },

@@ -41,7 +41,10 @@ const createWidget = (name: string) =>
     },
   })
 
-const widget = (name: string) => ({ key: `org.example.${name}/view/${name}`, component: createWidget(name) })
+const widget = (name: string) => ({
+  key: `org.example.${name}/view/${name}`,
+  component: createWidget(name),
+})
 
 let rings: (() => void)[] = []
 
@@ -60,8 +63,18 @@ beforeEach(() => {
   )
   // A document without a layout engine: whatever holds a widget is as tall as the widget.
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-    const height = this.matches('[data-widget]') || this.querySelector('[data-widget]') ? WIDGET_HEIGHT : 0
-    return { x: 0, y: 0, top: 0, left: 0, right: 100, bottom: height, width: 100, height } as DOMRect
+    const height =
+      this.matches('[data-widget]') || this.querySelector('[data-widget]') ? WIDGET_HEIGHT : 0
+    return {
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 100,
+      bottom: height,
+      width: 100,
+      height,
+    } as DOMRect
   })
 })
 

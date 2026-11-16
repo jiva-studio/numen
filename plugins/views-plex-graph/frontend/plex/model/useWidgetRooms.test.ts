@@ -11,7 +11,16 @@ const createWidgets = (height: number) => {
   const element = document.createElement('div')
   const state = { height }
   element.getBoundingClientRect = () =>
-    ({ x: 0, y: 0, top: 0, left: 0, right: 100, bottom: state.height, width: 100, height: state.height }) as DOMRect
+    ({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 100,
+      bottom: state.height,
+      width: 100,
+      height: state.height,
+    }) as DOMRect
   return { element, state }
 }
 
