@@ -43,8 +43,9 @@ const rest = computed(() => props.tags.length - CHIP_LIMIT)
       class="plex-tags__chip plex-tags__chip--more"
       data-plex-tag-more
       :style="{ '--i': CHIP_LIMIT }"
-      >{{ getRestText(rest) }}</span
     >
+      {{ getRestText(rest) }}
+    </span>
   </TransitionGroup>
 </template>
 
@@ -106,7 +107,7 @@ const rest = computed(() => props.tags.length - CHIP_LIMIT)
 }
 
 .plex-tags-enter-from {
-  opacity: 0;
+  opacity: 0.2;
   transform: translateY(-0.25rem) scale(0.9);
 }
 
