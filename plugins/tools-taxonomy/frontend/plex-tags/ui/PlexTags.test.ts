@@ -25,7 +25,8 @@ const mountTags = (tags: readonly string[]) => mount(PlexTags, { props: { tags }
 
 const getChips = (wrapper: ReturnType<typeof mountTags>) => wrapper.findAll('[data-plex-tag]')
 
-const getColor = (style: string | undefined) => /--tag:\s*var\((--numen-tag-\d)\)/.exec(style ?? '')?.[1]
+const getColor = (style: string | undefined) =>
+  /--tag:\s*var\((--numen-tag-\d)\)/.exec(style ?? '')?.[1]
 
 describe('the tags of a note in the plex', () => {
   it('draw nothing for a note without tags', () => {

@@ -108,7 +108,6 @@ export class PlexDriver {
     }
   }
 
-  /** The chip of the tag is in the stack of the note: the widgets of a node are drawn beside its box, not inside it. */
   private async expectShowsTag(title: string, tag: string, has: boolean): Promise<void> {
     const { page } = this.scenario
     const node = page.locator('.plex__node').and(page.getByLabel(new RegExp(`^${escapeRegExp(title)}, `)))
