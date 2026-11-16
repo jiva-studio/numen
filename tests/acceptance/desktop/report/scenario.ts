@@ -83,6 +83,7 @@ export const createScenarioRecord = (
     featureName: scenario.featureName,
     name: scenario.name,
     line: scenario.line,
+    live: test.tags.includes('@live'),
     status,
     duration: result.duration,
     steps,

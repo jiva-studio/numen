@@ -36,6 +36,7 @@ Feature: Window commands
       When the person presses "Ctrl+Shift+A"
       Then the Agent tab titled "Agent" is open
 
+    @smoke
     Scenario: The plex is opened with Ctrl+Shift+X
       Given the person opens the note titled "Entropy"
       When the person presses "Ctrl+Shift+X"

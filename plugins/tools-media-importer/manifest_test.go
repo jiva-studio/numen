@@ -51,17 +51,13 @@ func TestManifestDeclaresTheCommandsOfLinks(t *testing.T) {
 }
 
 // Captions are downloaded for a link note on its own only while the setting for it is on, which is
-// off by default.
+// off by default. The onFilesChanged event wakes the plugin, which reads the file change feed; it has
+// no trigger.
 func TestManifestDownloadsCaptionsAutomaticallyOnlyWithItsSetting(t *testing.T) {
 	var manifest struct {
-		Contributes struct {
-			Triggers []struct {
-				Event   string `json:"event"`
-				Command string `json:"command"`
-				When    string `json:"when"`
-			} `json:"triggers"`
-		} `json:"contributes"`
-		Settings []struct {
+		ActivationEvents []string        `json:"activationEvents"`
+		Contributes      json.RawMessage `json:"contributes"`
+		Settings         []struct {
 			Key     string `json:"key"`
 			Default any    `json:"default"`
 		} `json:"settings"`
@@ -69,10 +65,8 @@ func TestManifestDownloadsCaptionsAutomaticallyOnlyWithItsSetting(t *testing.T) 
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	triggers := manifest.Contributes.Triggers
-	if len(triggers) != 1 || triggers[0].Event != "file.added" || !strings.Contains(triggers[0].When, "config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true") ||
-		!strings.Contains(triggers[0].When, "!target.versions.exists(v, v.pluginId == 'md.numen.tools.media.importer' && v.isValid)") {
-		t.Errorf("the triggers are %+v", triggers)
+	if !slices.Equal(manifest.ActivationEvents, []string{"onFilesChanged:text/markdown"}) || strings.Contains(string(manifest.Contributes), "triggers") {
+		t.Errorf("activationEvents %v and contributes %s, want onFilesChanged:text/markdown and no trigger", manifest.ActivationEvents, manifest.Contributes)
 	}
 	found := slices.IndexFunc(manifest.Settings, func(one struct {
 		Key     string `json:"key"`

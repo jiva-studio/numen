@@ -40,9 +40,10 @@ type Transcriber struct {
 	closeOnce sync.Once
 	wg        sync.WaitGroup
 
-	mu       sync.Mutex
-	isClosed bool
-	running  map[string]bool
+	mu         sync.Mutex
+	isClosed   bool
+	running    map[string]bool
+	background map[string]bool
 }
 
 // NewTranscriber is the transcriber over what the host gives the plugin. report receives the
@@ -54,7 +55,7 @@ func NewTranscriber(
 	return &Transcriber{
 		files: files, stores: stores, texts: texts, queue: queue, engines: engines, report: report,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
-		mu: sync.Mutex{}, isClosed: false, running: map[string]bool{},
+		mu: sync.Mutex{}, isClosed: false, running: map[string]bool{}, background: map[string]bool{},
 	}
 }
 
@@ -106,6 +107,16 @@ type readRecording func(ctx context.Context) ([]byte, error)
 // task. Close cancels the transcription and waits for it. The recording stops counting as running
 // before its task is reported as ended.
 func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path string) (bool, error) {
+	return t.start(ctx, vault, path, true)
+}
+
+// StartInBackground starts the transcription as Start does, as work the plugin started on its own,
+// which waits behind the work people asked for.
+func (t *Transcriber) StartInBackground(ctx context.Context, vault domain.VaultID, path string) (bool, error) {
+	return t.start(ctx, vault, path, false)
+}
+
+func (t *Transcriber) start(ctx context.Context, vault domain.VaultID, path string, isUserStarted bool) (bool, error) {
 	claimed, err := t.getClaimVault(ctx, vault)
 	if err != nil {
 		return false, err
@@ -117,11 +128,15 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 		}
 		return false, nil
 	}
+	taskID := getTaskID(claimed, path)
+	t.setBackground(taskID, !isUserStarted)
 	if err := t.reportStart(ctx, claimed, path); err != nil {
+		t.setBackground(taskID, false)
 		t.clearRunning(key)
 		return false, err
 	}
 	go func() {
+		defer t.setBackground(taskID, false)
 		// Run reports a failure as the task's error.
 		// gomutants:disable-next-line BRANCH_IF,CONDITIONALS_NEGATION reason="best-effort stderr diagnostic log does not affect transcription control flow"
 		if err := t.runTranscription(context.WithoutCancel(ctx), key, claimed, path, func(ctx context.Context) ([]byte, error) {
@@ -148,7 +163,7 @@ func (t *Transcriber) runTranscription(ctx context.Context, key string, vault do
 
 func (t *Transcriber) reportStart(ctx context.Context, vault domain.VaultID, path string) error {
 	return t.queue.ReportTask(ctx, host.Task{
-		ID: getTaskID(vault, path), Title: taskTranscribing, Detail: path, IsUserStarted: true,
+		ID: getTaskID(vault, path), Title: taskTranscribing, Detail: path, IsUserStarted: !t.isBackground(getTaskID(vault, path)),
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="indeterminate task progress uses zero counts"
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "",
 	})
@@ -212,6 +227,22 @@ func (t *Transcriber) getClaimVault(ctx context.Context, vault domain.VaultID) (
 func (t *Transcriber) clearRunning(key string) {
 	t.unclaim(key)
 	t.wg.Done()
+}
+
+func (t *Transcriber) setBackground(taskID string, isBackground bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if isBackground {
+		t.background[taskID] = true
+		return
+	}
+	delete(t.background, taskID)
+}
+
+func (t *Transcriber) isBackground(taskID string) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.background[taskID]
 }
 
 func (t *Transcriber) unclaim(key string) {

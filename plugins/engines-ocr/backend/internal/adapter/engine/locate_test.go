@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 )
 
 func TestLocateModelResolvesExplicitPath(t *testing.T) {
@@ -132,5 +134,22 @@ func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
 	t.Helper()
 	if err := os.WriteFile(path, content, perm); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestLocateModelFindsTheFileOfTheEnvironmentPathThatAppearsAfterTheFirstLook(t *testing.T) {
+	envPath := filepath.Join(t.TempDir(), "downloaded-det.onnx")
+	t.Setenv("NUMEN_DEPENDENCY_PP_OCR_DET", envPath)
+	t.Setenv(EnvDir, t.TempDir())
+	t.Setenv(cache.EnvSharedDataDir, t.TempDir())
+
+	if found, err := locateModel("", "NUMEN_DEPENDENCY_PP_OCR_DET", "pp-ocr-det.onnx", ""); err == nil {
+		t.Fatalf("locateModel found %q before the file was there", found)
+	}
+	writeFile(t, envPath, []byte("detector"), 0o644)
+
+	found, err := locateModel("", "NUMEN_DEPENDENCY_PP_OCR_DET", "pp-ocr-det.onnx", "")
+	if err != nil || found != envPath {
+		t.Errorf("locateModel after the download = %q, %v, want %q", found, err, envPath)
 	}
 }

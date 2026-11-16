@@ -298,7 +298,7 @@ func (l *Listeners) closeAll() {
 func (l *Listeners) createTarget(pluginID, name string) portproxy.Target {
 	return func(ctx context.Context) (string, func(), error) {
 		holder := plugindomain.Holder{Who: plugindomain.WhoListeners, Why: "forward a connection to " + name}
-		endpoint, err := l.activator.EnsureActive(ctx, pluginID, holder)
+		endpoint, err := l.activator.EnsureActive(withoutProvisioning(ctx), pluginID, holder)
 		isReported := l.failures.MarkTargetResult(pluginID, err)
 		if err != nil {
 			err = fmt.Errorf("activate plugin %s for listener %s: %w", pluginID, name, err)

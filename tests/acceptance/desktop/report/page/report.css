@@ -313,6 +313,19 @@ h1 {
   background: var(--slate-4);
 }
 
+.live-badge {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--indigo-3);
+  color: var(--indigo-11);
+  font-size: var(--text-label);
+  font-weight: 500;
+  line-height: 18px;
+  vertical-align: middle;
+}
+
 .name {
   flex: 1;
   min-width: 0;

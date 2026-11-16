@@ -12,12 +12,16 @@ type DependencyProvisioner interface {
 	CanProvision(req manifest.DependencyRequirement) bool
 	// Provision makes the dependency ready and reports each step to onProgress.
 	Provision(ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error)
+	// Resolve returns where the dependency is or will be and whether it is ready, without the network, a lock wait or a download.
+	Resolve(req manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error)
 }
 
 // DependencyRegistry provisions the dependencies the plugins declare and reports each status to its observer.
 type DependencyRegistry interface {
 	CanProvision(req manifest.DependencyRequirement) bool
 	Provision(ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error)
+	// Resolve returns where the dependency is or will be and whether it is ready, without the network, a lock wait or a download.
+	Resolve(req manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error)
 	SetObserver(observer func(manifest.DependencyRequirement, plugin.DependencyStatus))
 }
 

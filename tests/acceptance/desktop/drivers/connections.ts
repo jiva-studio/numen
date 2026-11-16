@@ -3,6 +3,7 @@ import { expect, type Locator } from 'playwright/test'
 import { ConnectionRows } from './components/ConnectionRows.js'
 import { ConnectionsPage } from './components/ConnectionsPage.js'
 import { Question } from './components/Question.js'
+import { Keys } from './keys.js'
 import { escapeRegExp } from './rules.js'
 import type { Scenario } from './scenario.js'
 import type { ServiceDriver } from './services.js'
@@ -19,7 +20,8 @@ const PLUGIN_START_LIMIT_MS = 35_000
 export interface ConnectionEntry {
   readonly name: string
   readonly type: string
-  readonly service: string
+  readonly service?: string
+  readonly key?: string
 }
 
 const readTable = (table: readonly (readonly string[])[]): Map<string, string>[] => {
@@ -33,16 +35,21 @@ const requireCell = (row: Map<string, string>, column: string): string => {
   return cell
 }
 
+const readOptionalCell = (row: Map<string, string>, column: string): string | undefined => row.get(column) || undefined
+
 const getFieldTitle = (column: string): string => column.charAt(0).toUpperCase() + column.slice(1)
 
 export const readConnectionEntries = (table: readonly (readonly string[])[]): ConnectionEntry[] =>
   readTable(table).map((row) => ({
     name: requireCell(row, 'name'),
     type: requireCell(row, 'type'),
-    service: requireCell(row, 'service'),
+    service: readOptionalCell(row, 'service'),
+    key: readOptionalCell(row, 'key'),
   }))
 
 export class ConnectionsDriver {
+  private readonly keys = new Keys()
+
   constructor(
     private readonly scenario: Scenario,
     private readonly settings: SettingsDriver,
@@ -58,24 +65,30 @@ export class ConnectionsDriver {
     return new ConnectionRows(this.scenario.page)
   }
 
-  async add(name: string, type: string, service: string): Promise<void> {
+  declareKeys(table: readonly (readonly string[])[]): void {
+    this.keys.declare(table)
+  }
+
+  /** A connection of a type with a fixed address names no service; a type that needs its key at once is given the name of a declared key. */
+  async add(entry: ConnectionEntry): Promise<void> {
     const panel = await this.settings.showConnections()
     await this.page.getAddButton(panel).click()
-    await this.page.chooseType(type)
-    await this.page.fill('Name', name)
-    await this.page.fill('Address', await this.services.getAddress(service))
+    await this.page.chooseType(entry.type)
+    await this.page.fill('Name', entry.name)
+    if (entry.service !== undefined) await this.page.fill('Address', await this.services.getAddress(entry.service))
+    if (entry.key !== undefined) await this.page.fill(KEY_LABEL, this.keys.read(entry.key))
     await this.page.save()
-    await expect(this.page.getRow(panel, name)).toHaveCount(1)
+    await expect(this.page.getRow(panel, entry.name)).toHaveCount(1)
   }
 
   async addAll(entries: readonly ConnectionEntry[]): Promise<void> {
-    for (const entry of entries) await this.add(entry.name, entry.type, entry.service)
+    for (const entry of entries) await this.add(entry)
   }
 
   async giveKey(name: string, key: string): Promise<void> {
     const panel = await this.settings.showConnections()
     await this.page.openEdit(panel, name)
-    await this.page.fill(KEY_LABEL, key)
+    await this.page.fill(KEY_LABEL, this.keys.read(key))
     await this.page.save()
   }
 
