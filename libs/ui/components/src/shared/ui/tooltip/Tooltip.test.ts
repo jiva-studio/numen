@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { Tooltip } from '@/index'
+import Tooltip from './Tooltip.vue'
 
 const mountTooltip = (slot: string) => {
   return mount(Tooltip, {

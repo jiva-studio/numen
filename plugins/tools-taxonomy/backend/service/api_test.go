@@ -47,12 +47,14 @@ func post(t *testing.T, web *httptest.Server, method string) *http.Response {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		if err := res.Body.Close(); err != nil {
-			t.Log(err)
-		}
-	})
 	return res
+}
+
+func closeBody(t *testing.T, res *http.Response) {
+	t.Helper()
+	if err := res.Body.Close(); err != nil {
+		t.Log(err)
+	}
 }
 
 func readEvents(body io.Reader) <-chan api.TagMapMessage {
@@ -96,6 +98,7 @@ func TestGetTagMapAnswersTheTagsOfTheNotesThatHaveAny(t *testing.T) {
 	web := p.serve(t)
 
 	res := post(t, web, api.MethodGetTagMap)
+	defer closeBody(t, res)
 
 	var got api.TagMap
 	if err := json.NewDecoder(res.Body).Decode(&got); err != nil && res.StatusCode == http.StatusOK {
@@ -111,6 +114,7 @@ func TestWatchTagMapSendsTheWholeMapThenTheChangedPaths(t *testing.T) {
 	p := newPlugin(t, map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: lake\n---\n"})
 	web := p.serve(t)
 	res := post(t, web, api.MethodWatchTagMap)
+	defer closeBody(t, res)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("WatchTagMap = %d, want 200", res.StatusCode)
 	}
@@ -139,6 +143,7 @@ func TestWatchTagMapOfAVaultWithoutTagsSendsAnEmptyMapFirst(t *testing.T) {
 	p := newPlugin(t, map[string]string{"a.md": "# no tags\n"})
 	web := p.serve(t)
 	res := post(t, web, api.MethodWatchTagMap)
+	defer closeBody(t, res)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("WatchTagMap = %d, want 200", res.StatusCode)
 	}
