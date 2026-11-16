@@ -192,6 +192,12 @@ func (w *underWalk) visit(ctx context.Context, p string, d fs.DirEntry, err erro
 		if p != w.absolute && reader.isSkipped(path, d.Name()) {
 			return fs.SkipDir
 		}
+		if run := w.folders.beforeRead; run != nil {
+			if err := run(p); err != nil {
+				w.short = true
+				return fs.SkipDir
+			}
+		}
 		w.folders.addFolder(path)
 		return nil
 	}
