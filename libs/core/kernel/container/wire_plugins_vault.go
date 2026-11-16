@@ -36,7 +36,7 @@ type PluginVaultHooks struct {
 func getNoteChanges(notes NoteUseCases) hostvault.NoteChanges {
 	return hostvault.NoteChanges{
 		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking,
-		AddLinks: note.NewAddLinks(notes.Edit.Linking),
+		AddLinks: note.NewAddLinks(notes.Edit.Linking), Frontmatter: notes.Edit.Frontmatter,
 	}
 }
 

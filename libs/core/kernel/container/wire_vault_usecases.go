@@ -86,11 +86,12 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 
 	return NoteUseCases{
 		Edit: NoteEditing{
-			Read:    note.NewRead(readers),
-			Write:   note.NewWrite(readers, writers, index, now, views.Writes),
-			Create:  create,
-			Replace: note.NewReplace(readers, writers, index, now),
-			Linking: linking,
+			Read:        note.NewRead(readers),
+			Write:       note.NewWrite(readers, writers, index, now, views.Writes),
+			Create:      create,
+			Replace:     note.NewReplace(readers, writers, index, now),
+			Linking:     linking,
+			Frontmatter: note.NewWriteFrontmatter(readers, writers, index, now),
 		},
 		Place: NotePlacing{
 			Move:       mover,

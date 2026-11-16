@@ -17,11 +17,12 @@ import (
 // NoteChanges has the use cases that rename, move and remove the notes of a vault, repairing the
 // links that stop resolving.
 type NoteChanges struct {
-	Rename   note.Rename
-	Move     note.Move
-	Remove   note.RemoveNote
-	Links    note.EditLinks
-	AddLinks note.AddLinks
+	Rename      note.Rename
+	Move        note.Move
+	Remove      note.RemoveNote
+	Links       note.EditLinks
+	AddLinks    note.AddLinks
+	Frontmatter note.WriteFrontmatter
 }
 
 // Arranger has the use cases that change the notes of a vault and that run the checks of a vault.
@@ -148,4 +149,29 @@ func (a Arranger) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, 
 		return nil, err
 	}
 	return a.Problems.Execute(ctx, v)
+}
+
+func (a Arranger) WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error) {
+	v, err := a.session.open()
+	if err != nil {
+		return nil, err
+	}
+	in := make([]note.FrontmatterWrite, len(writes))
+	for i, one := range writes {
+		in[i] = note.FrontmatterWrite{Path: one.Path, FileStat: one.Baseline, Values: one.Values}
+	}
+	written, err := a.getChanges(v).Frontmatter.Execute(ctx, v, in)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]plugin.FrontmatterWritten, len(written))
+	isWritten := false
+	for i, one := range written {
+		out[i] = plugin.FrontmatterWritten{Stat: one.FileStat, Err: one.Error}
+		isWritten = isWritten || one.Error == nil || errors.Is(one.Error, edit.ErrIndexOutdated)
+	}
+	if isWritten {
+		a.session.notifyFileWritten()
+	}
+	return out, nil
 }

@@ -13,11 +13,12 @@ type NoteUseCases struct {
 
 // NoteEditing reads and changes the text of a note.
 type NoteEditing struct {
-	Read    note.Read
-	Write   note.Write
-	Create  note.Create
-	Replace note.Replace
-	Linking note.EditLinks
+	Read        note.Read
+	Write       note.Write
+	Create      note.Create
+	Replace     note.Replace
+	Linking     note.EditLinks
+	Frontmatter note.WriteFrontmatter
 }
 
 // NotePlacing moves, renames and removes notes.
