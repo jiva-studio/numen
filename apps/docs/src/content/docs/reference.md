@@ -161,15 +161,6 @@ The settings of the plugin Audio/Video Transcription.
 | `model` | text | downloaded from Hugging Face. Parakeet v3 recognizes 25 European languages, Parakeet v2 English only. One of `parakeet-tdt-0.6b-v3-int8`, `parakeet-tdt-0.6b-v2-int8`. |
 | `transcribeAutomatically` | yes or no | transcribe every recording in the vault that has no transcript. |
 
-### `md.numen.notes`
-
-The settings of the plugin Notes.
-
-| | | |
-| --- | --- | --- |
-| `softWrap` | yes or no | wrap long lines to fit the editor viewport. |
-| `lineNumbers` | yes or no | show line numbers in the editor margin. |
-
 ### `md.numen.readers.pdf`
 
 The settings of the plugin PDF Reader.
