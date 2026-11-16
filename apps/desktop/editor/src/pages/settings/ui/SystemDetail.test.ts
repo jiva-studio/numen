@@ -33,6 +33,69 @@ const THEMES = [
   { value: 'file:harbor', title: 'Harbor', detail: '' },
 ]
 
+const FAMILIES = [
+  { value: '', title: 'As in the theme', detail: '' },
+  { value: 'sans', title: 'Sans', detail: '' },
+  { value: 'serif', title: 'Serif', detail: '' },
+  { value: 'mono', title: 'Mono', detail: '' },
+]
+
+const EDITOR: readonly PluginSettingInfo[] = [
+  {
+    key: 'editor.fontSize',
+    type: 'range',
+    title: 'Font size',
+    description: 'In pixels.',
+    default: 14,
+    min: 10,
+    max: 32,
+    step: 1,
+    isShown: true,
+    value: 18,
+  },
+  {
+    key: 'editor.fontFamily',
+    type: 'enum',
+    title: 'Font family',
+    description: '',
+    default: '',
+    options: FAMILIES,
+    activeOptions: FAMILIES,
+    isShown: true,
+    value: 'serif',
+  },
+  {
+    key: 'editor.lineHeight',
+    type: 'range',
+    title: 'Line height',
+    description: '',
+    default: 1.6,
+    min: 1.2,
+    max: 2.4,
+    step: 0.1,
+    isShown: true,
+    value: 1.8,
+  },
+  {
+    key: 'editor.lineNumbers',
+    type: 'boolean',
+    title: 'Line numbers',
+    description: '',
+    default: false,
+    isShown: true,
+    value: true,
+  },
+  {
+    key: 'editor.softWrap',
+    type: 'boolean',
+    title: 'Soft wrap',
+    description: '',
+    default: true,
+    isShown: true,
+    value: false,
+  },
+]
+
 const DECLARATION: readonly PluginSettingInfo[] = [
   {
     key: 'appearance.theme',
@@ -105,10 +168,11 @@ const DECLARATION: readonly PluginSettingInfo[] = [
     isShown: true,
     value: 'balanced',
   },
+  ...EDITOR,
 ]
 
 const createPage = (
-  section: 'system' | 'appearance',
+  section: 'system' | 'appearance' | 'editor',
   app: readonly PluginSettingInfo[] = DECLARATION,
 ) => {
   const writes: SettingEdit[] = []
@@ -136,14 +200,21 @@ const findRow = (wrapper: ReturnType<typeof createPage>['wrapper'], title: strin
 }
 
 describe('the page of the shell settings', () => {
-  it('draws the appearance settings on Appearance and the rest on System, in the order declared', () => {
-    const getRowNames = (section: 'system' | 'appearance') =>
+  it('draws the appearance settings on Appearance, the editor settings on Editor and the rest on System, in the order declared', () => {
+    const getRowNames = (section: 'system' | 'appearance' | 'editor') =>
       createPage(section)
         .wrapper.findAllComponents(SettingRow)
         .map((one) => one.props('name'))
 
     expect(getRowNames('appearance')).toStrictEqual(['Theme', 'Light or dark', 'Interface size'])
     expect(getRowNames('system')).toStrictEqual(['Sync title and filename', 'Performance profile'])
+    expect(getRowNames('editor')).toStrictEqual([
+      'Font size',
+      'Font family',
+      'Line height',
+      'Line numbers',
+      'Soft wrap',
+    ])
   })
 
   it('draws no row where the core declares no setting for the shell', () => {
@@ -260,5 +331,113 @@ describe('the Reranking setting of the shell', () => {
     expect(writes.map((one) => [one.at, JSON.parse(one.value)])).toStrictEqual([
       [['app', 'search', 'reranking'], [{ connection: 'c0000001', model: 'rerank-small' }]],
     ])
+  })
+})
+
+describe('the Editor page of the shell settings', () => {
+  it('draws each editor setting with its own control', () => {
+    const { wrapper } = createPage('editor')
+
+    expect(findRow(wrapper, 'Font size').findComponent(Slider).exists()).toBe(true)
+    expect(findRow(wrapper, 'Font family').findComponent(Select).exists()).toBe(true)
+    expect(findRow(wrapper, 'Line height').findComponent(Slider).exists()).toBe(true)
+    expect(findRow(wrapper, 'Line numbers').findComponent(Switch).exists()).toBe(true)
+    expect(findRow(wrapper, 'Soft wrap').findComponent(Switch).exists()).toBe(true)
+  })
+
+  it('shows the value the core resolved for each editor setting', () => {
+    const { wrapper } = createPage('editor')
+
+    expect(findRow(wrapper, 'Font size').findComponent(Slider).props('modelValue')).toBe(18)
+    expect(findRow(wrapper, 'Font family').findComponent(Select).props('modelValue')).toBe('serif')
+    expect(findRow(wrapper, 'Line height').findComponent(Slider).props('modelValue')).toBe(1.8)
+    expect(findRow(wrapper, 'Line numbers').findComponent(Switch).props('modelValue')).toBe(true)
+    expect(findRow(wrapper, 'Soft wrap').findComponent(Switch).props('modelValue')).toBe(false)
+  })
+
+  it('bounds the font size from 10 to 32 pixels by 1 and the line height from 1.2 to 2.4 by 0.1', () => {
+    const { wrapper } = createPage('editor')
+
+    expect(findRow(wrapper, 'Font size').findComponent(Slider).props()).toMatchObject({
+      min: 10,
+      max: 32,
+      step: 1,
+    })
+    expect(findRow(wrapper, 'Line height').findComponent(Slider).props()).toMatchObject({
+      min: 1.2,
+      max: 2.4,
+      step: 0.1,
+    })
+  })
+
+  it('offers the face of the theme, Sans, Serif and Mono to choose as the font family', () => {
+    const { wrapper } = createPage('editor')
+
+    const choices = findRow(wrapper, 'Font family').findComponent(Select).props('choices')
+    expect(choices.map((one) => one.id)).toStrictEqual(['', 'sans', 'serif', 'mono'])
+    expect(choices.map((one) => one.text)).toStrictEqual(['As in the theme', 'Sans', 'Serif', 'Mono'])
+  })
+
+  it('shows the face of the theme where the font family is empty', () => {
+    const empty = EDITOR.map((one) => (one.key === 'editor.fontFamily' ? { ...one, value: '' } : one))
+    const { wrapper } = createPage('editor', empty)
+
+    expect(findRow(wrapper, 'Font family').findComponent(Select).props('modelValue')).toBe('')
+    expect(findRow(wrapper, 'Font family').text()).toContain('As in the theme')
+  })
+
+  it('writes the font size set under app.editor', () => {
+    const { wrapper, writes } = createPage('editor')
+
+    findRow(wrapper, 'Font size').findComponent(Slider).vm.$emit('commit', 22)
+
+    expect(writes).toStrictEqual([{ at: ['app', 'editor', 'fontSize'], value: '22' }])
+  })
+
+  it('writes the font family chosen under app.editor', () => {
+    const { wrapper, writes } = createPage('editor')
+
+    findRow(wrapper, 'Font family').findComponent(Select).vm.$emit('update:modelValue', 'mono')
+
+    expect(writes).toStrictEqual([{ at: ['app', 'editor', 'fontFamily'], value: '"mono"' }])
+  })
+
+  it('writes the empty family when the face of the theme is chosen', () => {
+    const { wrapper, writes } = createPage('editor')
+
+    findRow(wrapper, 'Font family').findComponent(Select).vm.$emit('update:modelValue', '')
+
+    expect(writes).toStrictEqual([{ at: ['app', 'editor', 'fontFamily'], value: '""' }])
+  })
+
+  it('writes the line height set under app.editor', () => {
+    const { wrapper, writes } = createPage('editor')
+
+    findRow(wrapper, 'Line height').findComponent(Slider).vm.$emit('commit', 2.1)
+
+    expect(writes).toStrictEqual([{ at: ['app', 'editor', 'lineHeight'], value: '2.1' }])
+  })
+
+  it('writes the line numbers and the soft wrap switched under app.editor', () => {
+    const { wrapper, writes } = createPage('editor')
+
+    findRow(wrapper, 'Line numbers').findComponent(Switch).vm.$emit('update:modelValue', false)
+    findRow(wrapper, 'Soft wrap').findComponent(Switch).vm.$emit('update:modelValue', true)
+
+    expect(writes).toStrictEqual([
+      { at: ['app', 'editor', 'lineNumbers'], value: 'false' },
+      { at: ['app', 'editor', 'softWrap'], value: 'true' },
+    ])
+  })
+
+  it('keeps the editor settings off the System and the Appearance pages', () => {
+    const names = (section: 'system' | 'appearance') =>
+      createPage(section)
+        .wrapper.findAllComponents(SettingRow)
+        .map((one) => one.props('name'))
+
+    expect(names('system')).not.toContain('Font size')
+    expect(names('system')).not.toContain('Soft wrap')
+    expect(names('appearance')).not.toContain('Line height')
   })
 })

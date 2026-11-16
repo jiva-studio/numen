@@ -93,6 +93,7 @@ const setup = ({
     editing: { fileFlush: { start: () => Promise.resolve() }, close: () => undefined },
     tabLinkSession: { start: () => Promise.resolve(), close: () => undefined },
     writeMessage,
+    editorTokens: { start: () => () => undefined },
     plugins: createPluginStart({
       pluginLoader,
       getPlugins: () => [
@@ -336,6 +337,7 @@ describe('a window starting', () => {
           closeOrder.push('layout')
         },
       },
+      editorTokens: { start: () => () => undefined },
       writeMessage,
     }
     const view = mount(
@@ -358,5 +360,75 @@ describe('a window starting', () => {
 
     view.unmount()
     expect(closeOrder).toStrictEqual(['tabLinkSession', 'window', 'editing', 'layout', 'settings'])
+  })
+})
+
+describe('the editor tokens of a window starting', () => {
+  const createOrderedDeps = (order: string[]): WindowBootstrapDeps => ({
+    vaults: {
+      loadVaults: async () => {
+        order.push('vaults')
+      },
+    },
+    settings: {
+      start: async () => {
+        await Promise.resolve()
+        order.push('settings')
+      },
+      close: () => undefined,
+    },
+    window: { start: async () => undefined, close: () => undefined },
+    editing: { fileFlush: { start: async () => undefined }, close: () => undefined },
+    tabLinkSession: { start: async () => undefined, close: () => undefined },
+    plugins: {
+      start: async () => {
+        order.push('plugins')
+      },
+      waitForInterface: async () => undefined,
+      close: async () => undefined,
+    },
+    layout: {
+      start: async () => {
+        order.push('layout')
+      },
+      close: () => undefined,
+    },
+    editorTokens: {
+      start: () => {
+        order.push('editor tokens')
+        return () => undefined
+      },
+    },
+    writeMessage: vi.fn(),
+  })
+
+  const mountBootstrap = (deps: WindowBootstrapDeps) =>
+    mount(
+      defineComponent({
+        setup() {
+          createWindowBootstrap(deps)
+          return () => h('div')
+        },
+      }),
+    )
+
+  it('start once the settings are loaded and before the tabs are restored', async () => {
+    const order: string[] = []
+
+    mountBootstrap(createOrderedDeps(order))
+
+    await vi.waitFor(() => expect(order).toContain('layout'))
+    expect(order.indexOf('editor tokens')).toBeGreaterThan(order.indexOf('settings'))
+    expect(order.indexOf('editor tokens')).toBeGreaterThan(-1)
+    expect(order.indexOf('editor tokens')).toBeLessThan(order.indexOf('layout'))
+  })
+
+  it('start exactly once', async () => {
+    const order: string[] = []
+
+    mountBootstrap(createOrderedDeps(order))
+
+    await vi.waitFor(() => expect(order).toContain('layout'))
+    expect(order.filter((one) => one === 'editor tokens')).toHaveLength(1)
   })
 })
