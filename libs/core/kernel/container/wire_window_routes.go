@@ -231,7 +231,7 @@ func shareVaultList(opened *windowWiring) {
 		Edit:    windowsession.VaultEdits{Add: useCases.Change.Add, Rename: useCases.Change.Rename, Remove: useCases.Change.Remove},
 		Find:    opened.cases.Listing.Find,
 		Missing: opened.cases.Listing.FolderCheck,
-		Open:    opened.inst,
+		Open:    opened.cases.OpenPlugin,
 	}))
 }
 
