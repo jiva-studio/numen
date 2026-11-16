@@ -8,11 +8,10 @@
 import { win } from '@numen/ui'
 import { onScopeDispose, ref } from 'vue'
 
+import { LONG_PRESS_TOLERANCE } from './touchTiming'
+
 /** How long a finger rests on a node before it is reaching out, in milliseconds. */
 export const LONG_PRESS_DELAY = 400
-
-/** How far it may stray in that time and still be resting, in pixels. */
-export const LONG_PRESS_TOLERANCE = 12
 
 export interface LongPressState {
   readonly isResting: () => boolean

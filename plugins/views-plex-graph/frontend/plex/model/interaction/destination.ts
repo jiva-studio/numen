@@ -10,6 +10,7 @@ import { win } from '@numen/ui'
 import { onScopeDispose, ref } from 'vue'
 
 import type { PlexDestination } from '../../../types'
+import { APART, TAP } from './touchTiming'
 
 /**
  * Where an opened node is shown, declared once. The modifier that selects the
@@ -38,14 +39,8 @@ const BY_MODIFIER = Object.fromEntries(
 export const getDestination = (hasModifier: boolean): PlexDestination =>
   BY_MODIFIER[`${hasModifier}`]
 
-/** How long the second tap has to arrive in, in milliseconds. */
-export const TAP = 300
-
-/** How far it may land from the first, in pixels. */
-export const APART = 24
-
 /** The node a strategy is watching, in the only two terms it needs. */
-export interface ShowSite {
+interface ShowSite {
   readonly ready: () => boolean
   readonly show: (hasModifier: boolean) => void
 }
