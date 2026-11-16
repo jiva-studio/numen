@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -230,7 +231,7 @@ func TestAFileAfterPlaceIsReported(t *testing.T) {
 	c, stop := follow(t, h, root, true)
 
 	for i := range 30 {
-		dir := filepath.Join(root, "folder"+string(rune('a'+i)))
+		dir := filepath.Join(root, "folder"+strconv.Itoa(i))
 		if err := os.Mkdir(dir, 0o755); err != nil {
 			t.Fatal(err)
 		}
