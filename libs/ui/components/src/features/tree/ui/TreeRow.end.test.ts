@@ -48,7 +48,9 @@ describe('the end of a tree row', () => {
     expect(end.text()).toBe('two dots')
     expect(row.element.contains(end.element)).toBe(true)
     const name = row.get('.tree__name').element
-    expect(name.compareDocumentPosition(end.element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(
+      name.compareDocumentPosition(end.element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   it('gives the end slot the id of the row', () => {

@@ -15,7 +15,7 @@ describe('the color of a tag', () => {
     }
   })
 
-  it('is the same each time the same text is asked', () => {
+  it('is the same for the same text', () => {
     const first = WORDS.map(getTagColor)
 
     expect(WORDS.map(getTagColor)).toStrictEqual(first)
@@ -43,6 +43,8 @@ describe('the color of a tag', () => {
   })
 
   it('gives different tags more than one color', () => {
-    expect(new Set(['Port', 'Sea', 'Quay', 'Dock', 'Pier', 'Harbour'].map(getTagColor)).size).toBeGreaterThan(1)
+    expect(
+      new Set(['Port', 'Sea', 'Quay', 'Dock', 'Pier', 'Harbour'].map(getTagColor)).size,
+    ).toBeGreaterThan(1)
   })
 })

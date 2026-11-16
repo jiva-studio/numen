@@ -5,7 +5,20 @@ import FileTags from './FileTags.vue'
 
 enableAutoUnmount(afterEach)
 
-const TAGS = ['Port', 'Sea', 'Quay', 'Dock', 'Pier', 'Harbour', 'Jetty', 'Wharf', 'Berth', 'Mole', 'Slip', 'Cove']
+const TAGS = [
+  'Port',
+  'Sea',
+  'Quay',
+  'Dock',
+  'Pier',
+  'Harbour',
+  'Jetty',
+  'Wharf',
+  'Berth',
+  'Mole',
+  'Slip',
+  'Cove',
+]
 
 const mountTags = (count: number) =>
   mount(FileTags, { props: { tags: TAGS.slice(0, count) }, attachTo: document.body })
@@ -33,7 +46,11 @@ describe('the tag dots of a file', () => {
   })
 
   it('draw four dots and the count of the rest for a file that has more', () => {
-    for (const [count, rest] of [[5, '+1'], [6, '+2'], [12, '+8']] as const) {
+    for (const [count, rest] of [
+      [5, '+1'],
+      [6, '+2'],
+      [12, '+8'],
+    ] as const) {
       const wrapper = mountTags(count)
 
       expect(getDots(wrapper)).toHaveLength(4)

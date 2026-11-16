@@ -29,7 +29,6 @@ export const Label: Story = {
   },
 }
 
-/** The label in the dark theme. */
 export const LabelInTheDarkTheme: Story = {
   globals: DARK,
   play: async ({ canvasElement }) => {
