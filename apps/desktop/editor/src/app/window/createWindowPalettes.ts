@@ -48,8 +48,10 @@ type WindowBase = ReturnType<typeof createWindowBase>
 type WindowPlugins = ReturnType<typeof createWindowPlugins>
 
 /** What the palettes of the window read of the foundation. */
-export interface PalettesFoundation
-  extends Pick<WindowBase['foundation'], 'log' | 'rest' | 'registry'> {
+export interface PalettesFoundation extends Pick<
+  WindowBase['foundation'],
+  'log' | 'rest' | 'registry'
+> {
   readonly api: Pick<WindowBase['foundation']['api'], 'vault'>
   readonly settingsRequests: Pick<WindowBase['foundation']['settingsRequests'], 'emit'>
 }

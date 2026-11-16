@@ -22,7 +22,10 @@ type WindowBase = ReturnType<typeof createWindowBase>
 type WindowFoundation = WindowBase['foundation']
 
 /** What the plugins of the window read of the foundation. */
-export type PluginsFoundation = Pick<WindowFoundation, 'api' | 'log' | 'rest' | 'frame' | 'status' | 'registry'>
+export type PluginsFoundation = Pick<
+  WindowFoundation,
+  'api' | 'log' | 'rest' | 'frame' | 'status' | 'registry'
+>
 
 /** What the plugins of the window read of the base. */
 export interface WindowPluginsDeps {
