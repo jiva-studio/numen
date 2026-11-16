@@ -2,6 +2,7 @@
 /**
  * The views of one side of a node, drawn at the node in the order of the manifest, each given the path of
  * the note. The views are rendered as one centered group; its element is emitted so its height can be measured.
+ * The group holds the `--numen-node-gap` against the node as padding, so the measured height includes it.
  */
 import type { ComponentPublicInstance } from 'vue'
 import type { PlacedNode } from '../../lib/node'
@@ -73,5 +74,13 @@ const getTop = () =>
   align-items: center;
   gap: var(--widgets-gap);
   pointer-events: auto;
+}
+
+.plex__widgets--above .plex__widgets-group {
+  padding-block-end: var(--numen-node-gap);
+}
+
+.plex__widgets--below .plex__widgets-group {
+  padding-block-start: var(--numen-node-gap);
 }
 </style>
