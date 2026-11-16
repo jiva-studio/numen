@@ -196,7 +196,7 @@ func newLazyPluginFrom(t *testing.T, dependencies *provision.Registry, manifest 
 	registerBuiltIn(t, host, manifest, serveReadOnlyTools(backend))
 	files := storage.New(func(err error) { t.Errorf("the storage reported %v", err) }, func(string) string { return "1.0.0" })
 	files.SetStorageRoots(t.TempDir(), "")
-	catalog := toolbridge.NewCatalog(host.Activation, toolsInfoHost{pluginID: firstBuiltInID}, files, "r1", testsupport.NewClock(), io.Discard)
+	catalog := toolbridge.NewCatalog(host.Activation, toolsInfoHost{pluginID: firstBuiltInID}, files, func() string { return "r1" }, testsupport.NewClock(), io.Discard)
 	return lazyPlugin{host: host, backend: backend, catalog: catalog}
 }
 
