@@ -303,6 +303,10 @@ The window waits for the plugins that fill a slot of the window itself: those wh
 
 `plugin.identity.app` is `{ version, build, platform }` of the application build the plugin runs in: the version it calls itself, its build number (0 where it has none) and `darwin`, `windows` or `linux`. `plugin.identity.openExternal(url)` opens an `http` or `https` address in the system browser and returns a `Result`; any other address fails. `createMockPluginContext` takes `app` and records the addresses opened for `getOpenedAddresses()`; `createMockHostServices` builds the host services of a test apart from it.
 
+### The Picker
+
+`host.ui.picker` opens a filterable list of items with check marks in the palette, where the window offers it (the property is absent otherwise). `open(options)` resolves when the person closes the list; `options` holds `title`, `placeholder`, `items` (`{ id, title, state }` with `state` `set`, `mixed` or `unset`), `recent` (ids, most recent first), `getCreateTitle(text)`, `onToggle(id)` and `onCreate(text)`. Rows that are `set` or `mixed` stand first, then the recent rows, then the rest by title. Enter, a click and the action key (Cmd or Ctrl and K) call `onToggle` for the highlighted row at once and keep the list open; the row shows the item `onToggle` resolves with. While the typed text is not empty and no title equals it, in any case and trimmed, a first row named by `getCreateTitle` calls `onCreate`. Escape closes. Only the rows in sight are drawn. `createMockPickerHost()` from `@numen/plugin-sdk` stands in for it in tests, and `createMockHostServices({ picker })` offers it.
+
 ### Unit Testing with Mock Harness
 
 ```ts
