@@ -9,10 +9,6 @@ on:
         description: 'run even when main is the commit of the latest nightly'
         type: boolean
         default: false
-      block-on-live:
-        description: 'hold the release back when the live run in the macOS virtual machine fails'
-        type: boolean
-        default: false
       dry-run-prune:
         description: 'print the builds the prune would delete on GitHub and the CDN, and delete none'
         type: boolean
@@ -101,7 +97,7 @@ jobs:
       && needs.changes.outputs.changed == 'true'
       && github.ref_name == github.event.repository.default_branch
       && needs.tests.outputs.linux == 'success'
-      && (!inputs.block-on-live || needs.tests.outputs.live == 'success') }}
+      && (needs.tests.outputs.live == 'success' || needs.tests.outputs.live == 'skipped') }}
     uses: ./.github/workflows/release.yml
     with:
       channel: nightly
