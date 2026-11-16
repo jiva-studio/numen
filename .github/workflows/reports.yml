@@ -9,6 +9,10 @@ on:
         description: 'feature files under features/, separated by spaces; empty is all'
         type: string
         default: ''
+      scope:
+        description: 'acceptance (the scenarios of features/), all (every end-to-end test too), or folders as in desktop-e2e.yml'
+        type: string
+        default: acceptance
       engines:
         description: 'chromium, webkit, or both separated by a space'
         type: string
@@ -26,6 +30,9 @@ on:
       features:
         type: string
         default: ''
+      scope:
+        type: string
+        default: acceptance
       engines:
         type: string
         default: chromium webkit
@@ -52,17 +59,17 @@ permissions:
 
 jobs:
   acceptance:
-    name: Acceptance
+    name: Linux
     if: ${{ github.event_name == 'push' || contains(inputs.environments, 'linux') }}
     uses: ./.github/workflows/desktop-e2e.yml
     with:
-      scope: acceptance
+      scope: ${{ inputs.scope || 'acceptance' }}
       engines: ${{ inputs.engines || 'chromium webkit' }}
       features: ${{ inputs.features }}
       video: true
 
   build-macos:
-    name: Build macOS
+    name: macOS / Build
     if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
     runs-on: macos-15
     timeout-minutes: 30
@@ -129,7 +136,7 @@ jobs:
           cache-key: ${{ steps.go.outputs.cache-key }}
 
   acceptance-macos:
-    name: Acceptance macOS
+    name: macOS VM / Live scenario (OpenRouter)
     needs: [build-macos]
     if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
     runs-on: numen-macos-26
@@ -215,7 +222,7 @@ jobs:
           retention-days: 7
 
   pages:
-    name: Pages
+    name: Publish to Pages
     needs: [report]
     concurrency:
       group: pages
@@ -263,7 +270,7 @@ jobs:
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
   summary:
-    name: Summary
+    name: Result
     needs: [acceptance, acceptance-macos]
     if: ${{ always() }}
     runs-on: ubuntu-latest
