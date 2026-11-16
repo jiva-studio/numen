@@ -116,9 +116,9 @@ func TestWriteFrontmatterPassesThePathsTheDecodedValuesAndTheBaselinesInOneCall(
 		t.Fatalf("the vault received %v, want the two notes in one call", vault.writes)
 	}
 	first := vault.writes[0][0]
-	tags, _ := first.Values["tags"].([]any)
+	tags, isList := first.Values["tags"].([]any)
 	status, hasStatus := first.Values["status"]
-	if first.Path != "Danube.md" || len(tags) != 2 || tags[0] != "river" || tags[1] != "lake" || !hasStatus || status != nil || first.Values["rating"] != float64(3) {
+	if first.Path != "Danube.md" || !isList || len(tags) != 2 || tags[0] != "river" || tags[1] != "lake" || !hasStatus || status != nil || first.Values["rating"] != float64(3) {
 		t.Errorf("the first note was sent as %+v, want the tags, the rating and the status as nil", first)
 	}
 	if first.Baseline.Size != danube.GetSize() || first.Baseline.ModTime.UnixNano() != danube.GetModTime() {
