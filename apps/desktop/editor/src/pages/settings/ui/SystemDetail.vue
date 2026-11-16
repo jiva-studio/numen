@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * The System or the Appearance page: the toolbar and the settings the core declares for the
- * owner `app` that belong to the page, drawn by the renderer of the plugins. Appearance holds the
- * `appearance.*` settings; System holds the rest, the settings of connection rows below them as
+ * The System, the Appearance or the Editor page: the toolbar and the settings the core declares for
+ * the owner `app` that belong to the page, drawn by the renderer of the plugins. Appearance holds
+ * the `appearance.*` settings and Editor the `editor.*` ones; System holds the rest, the settings of connection rows below them as
  * the plugin pages draw them, and the path of the numen.json configuration file.
  */
 import { computed } from 'vue'
@@ -28,7 +28,21 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const APPEARANCE = 'appearance.'
+const SECTION_PREFIXES = { appearance: 'appearance.', editor: 'editor.' } as const
+
+/** The page a setting of the shell belongs to, by the prefix of its key. */
+const getSectionOf = (key: string): 'system' | 'appearance' | 'editor' =>
+  key.startsWith(SECTION_PREFIXES.appearance)
+    ? 'appearance'
+    : key.startsWith(SECTION_PREFIXES.editor)
+      ? 'editor'
+      : 'system'
+
+const TITLES = {
+  system: words.systemSettings,
+  appearance: words.appearanceSettings,
+  editor: words.editorSettings,
+} as const
 
 /** The owner the core declares the settings of the shell under. */
 const owner = computed<PluginInfo>(() => ({
@@ -41,7 +55,7 @@ const owner = computed<PluginInfo>(() => ({
   hasFrontend: false,
   hasBackend: false,
   settings: props.manager.app.value.filter(
-    (one) => one.key.startsWith(APPEARANCE) === (props.section === 'appearance'),
+    (one) => getSectionOf(one.key) === props.section,
   ),
 }))
 
@@ -53,10 +67,7 @@ function onBack(): void {
 
 <template>
   <SettingsPage
-    :path="[
-      words.settings,
-      props.section === 'appearance' ? words.appearanceSettings : words.systemSettings,
-    ]"
+    :path="[words.settings, TITLES[props.section]]"
     @back="onBack"
     @open="onBack"
   >

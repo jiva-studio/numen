@@ -209,6 +209,13 @@
   --numen-prose-size: calc(0.875rem * var(--numen-text-scale));
 }
 
+/* The editor settings of a window replace these on `:root`. They are absolute,
+   and neither multiplier reaches them. */
+:where(:root) {
+  --numen-editor-font-size: 14px;
+  --numen-editor-line-height: 1.6;
+}
+
 /*
  * What follows neither. A line is one line whatever it separates, and a time
  * is not a length.

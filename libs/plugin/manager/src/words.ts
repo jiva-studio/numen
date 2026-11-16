@@ -67,6 +67,8 @@ export const PLUGIN_WORDS = {
   searchPlugins: 'Search plugins…',
   searchPluginsLabel: 'Search plugins',
   clearSearch: 'Clear search',
+  editorSettings: 'Editor',
+  editorSettingsDetail: 'Font, line height, line numbers and wrapping',
   connections: 'Connections',
   connectionsDetail: 'Services and programs for plugins',
   /** The sections of a plugin page, in the order of its tabs. */
