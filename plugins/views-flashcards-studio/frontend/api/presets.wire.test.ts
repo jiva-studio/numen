@@ -131,7 +131,13 @@ describe('putting a deck on a preset', () => {
 
     const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '12:7:ab 34 Deck.md')
 
-    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: 12, mtime: '34', hash: 'ab', version: '7' })
+    expect(request[0]?.baseline).toEqual({
+      path: 'Deck.md',
+      size: 12,
+      mtime: '34',
+      hash: 'ab',
+      version: '7',
+    })
     expect(answer.ok && answer.value.at).toBe('12:7:ab 34 Deck.md')
   })
 

@@ -39,7 +39,9 @@ describe('mapWriteResult', () => {
   })
 
   it('maps any other answer as a note result', () => {
-    expect(mapWriteResult({ at: file })).toStrictEqual(asValue({ body: '', at: '12:0: 34 Note.md' }))
+    expect(mapWriteResult({ at: file })).toStrictEqual(
+      asValue({ body: '', at: '12:0: 34 Note.md' }),
+    )
   })
 })
 

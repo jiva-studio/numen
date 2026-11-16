@@ -11,7 +11,13 @@ export const formatFingerprint = (at?: FileStat): string | undefined =>
 export const parseFingerprint = (fingerprint: string): FileStat => {
   const [head = '', mtime, ...rest] = fingerprint.split(' ')
   const [size, version, hash, ...extra] = head.split(':')
-  if (size === undefined || version === undefined || hash === undefined || extra.length > 0 || mtime === undefined)
+  if (
+    size === undefined ||
+    version === undefined ||
+    hash === undefined ||
+    extra.length > 0 ||
+    mtime === undefined
+  )
     throw new Error(`not the fingerprint of a file: ${fingerprint}`)
   return { path: rest.join(' '), size: Number(size), mtime, hash, version }
 }

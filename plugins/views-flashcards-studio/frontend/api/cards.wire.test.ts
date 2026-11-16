@@ -161,7 +161,10 @@ describe('reading a deck', () => {
 
 describe('writing a deck', () => {
   it('takes the file the window read back apart into what the schema holds', async () => {
-    replyWith({ at: { path: 'Deck.md', size: 12, mtime: '34', hash: 'ab', version: '7' }, bound: 400 })
+    replyWith({
+      at: { path: 'Deck.md', size: 12, mtime: '34', hash: 'ab', version: '7' },
+      bound: 400,
+    })
 
     await cards.writeDeck(
       'Deck.md',
@@ -184,7 +187,13 @@ describe('writing a deck', () => {
       readItem,
     )
 
-    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: 12, mtime: '34', hash: 'ab', version: '7' })
+    expect(request[0]?.baseline).toEqual({
+      path: 'Deck.md',
+      size: 12,
+      mtime: '34',
+      hash: 'ab',
+      version: '7',
+    })
     expect(request[0]?.cards).toEqual([
       { cardId: 'a1', heading: 'Entropy', cardModelLink: 'Word', preamble: '', values: [] },
     ])

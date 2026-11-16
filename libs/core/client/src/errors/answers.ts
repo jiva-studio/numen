@@ -16,7 +16,13 @@ import type { ErrorCode } from './errorCode'
 export const parseFingerprint = (stat: string) => {
   const [head = '', mtime, ...rest] = stat.split(' ')
   const [size, version, hash, ...extra] = head.split(':')
-  if (size === undefined || version === undefined || hash === undefined || extra.length > 0 || mtime === undefined)
+  if (
+    size === undefined ||
+    version === undefined ||
+    hash === undefined ||
+    extra.length > 0 ||
+    mtime === undefined
+  )
     throw new Error(`not the fingerprint of a file: ${stat}`)
   return {
     path: rest.join(' '),
