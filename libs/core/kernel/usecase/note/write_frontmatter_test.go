@@ -152,7 +152,7 @@ func TestWriteFrontmatterIndexesTheNotesItWrote(t *testing.T) {
 	}
 }
 
-func TestWriteFrontmatterRefusesAStaleNoteAndLeavesItUnchanged(t *testing.T) {
+func TestWriteFrontmatterKeepsAStaleNoteUnchanged(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"River.md": riverNote})
 
