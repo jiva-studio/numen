@@ -193,7 +193,6 @@ export interface PlexTabDeps {
   readonly isNavigatingOnCreate?: Readonly<Ref<boolean>>
   readonly window: PlexWindowDeps
   readonly menu: PlexMenuDeps
-  /** Calls the handler with the views placed on a side of the nodes, at once and again on every change. */
   readonly watchWidgets?: (
     side: PlexWidgetSide,
     handler: (entries: readonly SlotItem[]) => void,
