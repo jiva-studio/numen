@@ -39,7 +39,8 @@ export const ChoosesAName: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(await canvas.findByRole('button', { name: 'Grafting, name under Pear rows' }))
-    await expect(args.onChoose).toHaveBeenCalledExactlyOnceWith('notes/Grafting.md')
+    await expect(args.onChoose).toHaveBeenCalledWith('notes/Grafting.md')
+    await expect(args.onChoose).toHaveBeenCalledTimes(1)
   },
 }
 
