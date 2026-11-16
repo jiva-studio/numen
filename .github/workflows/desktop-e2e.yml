@@ -362,7 +362,7 @@ jobs:
           retention-days: 7
 
   acceptance:
-    name: Scenarios
+    name: Acceptance
     needs: [build]
     if: needs.build.outputs.acceptance == 'true'
     runs-on: ubuntu-latest
@@ -432,7 +432,7 @@ jobs:
           retention-days: 7
 
   report:
-    name: Scenario report
+    name: Acceptance report
     needs: [desktop]
     if: ${{ !cancelled() && needs.desktop.result != 'skipped' }}
     runs-on: ubuntu-latest
