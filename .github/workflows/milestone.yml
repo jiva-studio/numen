@@ -24,13 +24,14 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
       NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+      EVENT_TIME: ${{ github.event.pull_request.merged_at || github.event.issue.closed_at }}
       IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
 
     steps:
-      - name: Put the item in the milestone of this month unless it has a later one
+      - name: Put the item in the milestone of the merge or close month unless it has a later one
         run: |
-          title=$(date -u +%Y.%m)
-          due=$(date -u -d "$(date -u +%Y-%m-01) +1 month -1 day" +%Y-%m-%dT23:59:59Z)
+          title=$(date -u -d "$EVENT_TIME" +%Y.%m)
+          due=$(date -u -d "${title/./-}-01 +1 month -1 day" +%Y-%m-%dT23:59:59Z)
           milestone=$(gh api "repos/$REPO/milestones?state=all&per_page=100" --jq ".[] | select(.title == \"$title\") | .number")
           if [ -z "$milestone" ]; then
             milestone=$(gh api -X POST "repos/$REPO/milestones" -f title="$title" -f due_on="$due" -f description="Release $title" --jq .number)
