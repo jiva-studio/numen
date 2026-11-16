@@ -16,10 +16,22 @@ const MODE_CODES = {
 
 let version = 1n
 
+const getFileText = (): string =>
+  JSON.stringify({
+    app: {
+      appearance: {
+        theme: mockVaultState.applied,
+        mode: mockVaultState.mode,
+        interfaceScale: mockVaultState.sizes.interfaceScale,
+        textScale: mockVaultState.sizes.textScale,
+      },
+    },
+  })
+
 export const settingsAnswers = {
   settingsService: {
     getSettings: () => ({
-      written: '{}',
+      written: getFileText(),
       version,
       path: '/vaults/Physics/.numen/settings.json',
       plugins: [],
@@ -32,7 +44,7 @@ export const settingsAnswers = {
         keepSetting(one.at.join('.'), JSON.parse(one.value))
       }
       version += 1n
-      return { written: '{}', version }
+      return { written: getFileText(), version }
     },
     watchSettings: pendingStream,
   },

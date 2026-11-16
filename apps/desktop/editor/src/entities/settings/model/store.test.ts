@@ -313,7 +313,18 @@ describe('a setting written while the vault is read', () => {
     settings = createAnsweredSettings({
       settingsService: {
         getSettings: async () => {
-          const answer = answerWith(file, { version })
+          const answer = answerWith(file, {
+            version,
+            app: [
+              {
+                key: 'naming.syncTitleAndFilename',
+                type: 'boolean',
+                title: 'Sync',
+                description: '',
+                defaultJson: 'true',
+              },
+            ],
+          })
           const readItem = defer<void>()
           reads.push(readItem)
           await readItem.promise
@@ -376,6 +387,26 @@ describe('a setting written while the vault is read', () => {
     expect(retainedState.read.getSetting(settingPath)).toBe(false)
     expect(retainedState.read.getCommittedSetting(settingPath)).toBe(false)
     expect(vault.reads).toHaveLength(1)
+  })
+
+  it('still learns the declarations from the first read where it answers after a write', async () => {
+    const vault = createBlockedVault()
+    const retainedState = createSettingsStore(settings, words, vi.fn())
+
+    const read = retainedState.start()
+    await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
+    const write = retainedState.write.writeSetting(settingPath, false)
+    await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
+    vault.writes[0]?.resolve()
+    await write
+    vault.reads[0]?.resolve()
+    await read
+
+    expect(retainedState.state.path.value).toBe('/numen.json')
+    expect(retainedState.state.app.value.map((one) => [one.key, one.value])).toEqual([
+      ['naming.syncTitleAndFilename', false],
+    ])
+    expect(retainedState.read.getCommittedSetting(settingPath)).toBe(false)
   })
 
   it('does not accept a read that answers after a newer one', async () => {

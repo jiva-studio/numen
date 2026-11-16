@@ -156,13 +156,17 @@ const answerSettings = (core: Partial<SettingsCore>): Answers => {
   const { getSettings, updateSettings, watchSettings } = core
   let version = 1n
   let written = '{}'
+  let writtenAt = 0n
   return {
     ...(getSettings
       ? {
           getSettings: async () => {
             const readAt = version
             const answer = await getSettings()
-            written = answer.written
+            if (readAt >= writtenAt) {
+              written = answer.written
+              writtenAt = readAt
+            }
             return { ...toWireConfiguration(answer), version: readAt }
           },
         }
@@ -174,6 +178,7 @@ const answerSettings = (core: Partial<SettingsCore>): Answers => {
             await updateSettings(edits)
             version += 1n
             written = applyEdits(written, edits)
+            writtenAt = version
             return { written, version }
           },
         }

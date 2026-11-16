@@ -99,6 +99,9 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
   const plugins = shallowRef<readonly PluginInfo[]>([])
   const app = shallowRef<readonly PluginSettingInfo[]>([])
 
+  /** Whether a read has declared the settings and the file they stand in. */
+  let hasDeclarations = false
+
   const requested = createRemoteValues<SettingEdit, SettingsWritten>(
     (values) => api.updateSettings([...values.values()]),
     (answer) => {
@@ -119,12 +122,21 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
     const read = await readVault(api, words, say)
     if (read === undefined) return
     const { answer } = read
-    requested.takeAnswer(answer.version, () => {
+    const isTaken = requested.takeAnswer(answer.version, () => {
       target.value = read.file
       path.value = answer.path
       plugins.value = answer.plugins ?? []
       app.value = answer.app ?? []
+      hasDeclarations = true
     })
+    if (isTaken || hasDeclarations) return
+    // An older read still declares the settings the window has not seen; their values come from
+    // the newer file already shown.
+    const values = getValuesOfFile(target.value, answer.app ?? [], answer.plugins ?? [])
+    path.value = answer.path
+    plugins.value = values.plugins
+    app.value = values.app
+    hasDeclarations = true
   }
 
   const getSetting = (path: readonly string[]): JsonValue | undefined => {
