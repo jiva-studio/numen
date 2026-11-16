@@ -18,6 +18,7 @@ import path from "node:path";
 import process from "node:process";
 
 import { runDuplicationCheck } from "../checks/structure/ts/duplication/check.mjs";
+import { runTestOnlyExportsCheck } from "../checks/structure/ts/test-only-exports/check.mjs";
 import { runKnipCheck } from "./checks/knip.mjs";
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
@@ -31,8 +32,13 @@ const ALL_CHECKS = [
   },
   {
     id: "knip",
-    name: "Unused Files, Dependencies and Exports (knip)",
+    name: "Unused Files and Dependencies (knip)",
     run: (opts) => runKnipCheck({ repoRoot: REPO_ROOT, ...opts }),
+  },
+  {
+    id: "test-only-exports",
+    name: "Exports Used Only by Tests (knip --production)",
+    run: (opts) => runTestOnlyExportsCheck({ repoRoot: REPO_ROOT, ...opts }),
   },
 ];
 
@@ -41,7 +47,7 @@ function printHelp() {
 Usage: node check.mjs [options]
 
 Options:
-  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,knip)
+  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,knip,test-only-exports)
   --changed-only       Run only checks relevant to modified files against git base
   --warn               Non-blocking mode: report findings with exit code 0
   --strict             Fail on any detected finding (default)
@@ -105,7 +111,7 @@ function resolveChecks(args, changedOnly) {
 
     targetIds = targetIds.filter((id) => {
       if (id === "duplication") return hasGo || hasTsOrVue;
-      if (id === "knip") return hasTsOrVue || hasPackageManifest;
+      if (id === "knip" || id === "test-only-exports") return hasTsOrVue || hasPackageManifest;
       return true;
     });
   }
@@ -206,14 +212,15 @@ async function main() {
 
     if (!r.pass && r.details) {
       failedCount++;
-      const indented = r.details
-        .split("\n")
-        .slice(0, 15)
+      const lines = r.details.split("\n");
+      const shown = selected.length === 1 ? lines.length : 15;
+      const indented = lines
+        .slice(0, shown)
         .map((l) => `     ${l}`)
         .join("\n");
       console.log(`${indented}`);
-      if (r.details.split("\n").length > 15) {
-        console.log(`     ... and ${r.details.split("\n").length - 15} more line(s)`);
+      if (lines.length > shown) {
+        console.log(`     ... and ${lines.length - shown} more line(s)`);
       }
     }
     console.log("");

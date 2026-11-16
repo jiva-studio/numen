@@ -66,7 +66,7 @@ func (l *Links) StartMissingTextFetch(ctx context.Context, isReview bool) {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
 		for isReview := l.takeReview(); ; isReview = l.takeReview() {
-			if err := l.fetchMissingTexts(runCtx, isReview); err != nil && runCtx.Err() == nil {
+			if err := l.fetchRun(runCtx, isReview); err != nil && runCtx.Err() == nil {
 				l.reportError("download the missing texts of the links", err)
 			}
 			if !l.takeAgain() {
@@ -74,6 +74,13 @@ func (l *Links) StartMissingTextFetch(ctx context.Context, isReview bool) {
 			}
 		}
 	})
+}
+
+func (l *Links) fetchRun(ctx context.Context, isReview bool) error {
+	if isReview {
+		return l.fetchMissingTexts(ctx, true)
+	}
+	return l.FetchMissingTexts(ctx)
 }
 
 func (l *Links) takeReview() bool {

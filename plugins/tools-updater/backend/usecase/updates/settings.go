@@ -49,8 +49,3 @@ func getBuildChannel(version string) string {
 	}
 	return "stable"
 }
-
-// GetEndpoint returns the feed the settings of the build of that version select.
-func GetEndpoint(values map[string]string, version string) string {
-	return newSelection(values).getEndpoint(version)
-}

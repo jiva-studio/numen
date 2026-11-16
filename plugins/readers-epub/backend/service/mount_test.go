@@ -26,7 +26,7 @@ func newMountedHandler(t *testing.T, port string) http.Handler {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, port)
 	t.Setenv(hostcall.PluginTokenEnv, "linked-token")
-	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "linked-token"}, Mount)
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "linked-token"}, NewApp().Mount)
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
 	}

@@ -21,7 +21,7 @@ func newEnvHandler(t *testing.T, vars map[string]string) (http.Handler, error) {
 	for name, value := range vars {
 		t.Setenv(name, value)
 	}
-	return servertest.NewHandler(vars, Mount)
+	return servertest.NewHandler(vars, NewApp().Mount)
 }
 
 func postDocument(t *testing.T, baseURL, token, body string) int {

@@ -244,6 +244,27 @@
       "target": "dead-exports"
     },
     {
+      "name": "go/deadcode",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work",
+        "**/Makefile"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "library",
+        "plugin",
+        "window",
+        "slow"
+      ],
+      "selftest": "structure/go/deadcode/check_test.go",
+      "runner": "go",
+      "target": "deadcode"
+    },
+    {
       "name": "go/direction",
       "paths": [
         "libs/core/kernel/**",
@@ -1437,6 +1458,33 @@
         "node",
         "tools/lint-quality/check.mjs",
         "--check=duplication"
+      ]
+    },
+    {
+      "name": "ts/test-only-exports",
+      "paths": [
+        "libs/**/*.{ts,vue}",
+        "apps/**/*.{ts,vue}",
+        "plugins/**/*.{ts,vue}",
+        "libs/**/package.json",
+        "apps/**/package.json",
+        "plugins/**/package.json",
+        "knip.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "plugin",
+        "window",
+        "slow"
+      ],
+      "selftest": "structure/ts/test-only-exports/check.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/lint-quality/check.mjs",
+        "--check=test-only-exports"
       ]
     },
     {
