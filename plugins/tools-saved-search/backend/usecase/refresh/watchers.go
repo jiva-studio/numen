@@ -33,7 +33,7 @@ func newWatchers() *watchers {
 	}
 }
 
-func (w *watchers) add(key watchKey) (<-chan Change, func()) {
+func (w *watchers) add(key watchKey, onLast func()) (<-chan Change, func()) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	id := w.next
@@ -51,6 +51,7 @@ func (w *watchers) add(key watchKey) (<-chan Change, func()) {
 			delete(w.listeners[key], id)
 			if len(w.listeners[key]) == 0 {
 				delete(w.listeners, key)
+				onLast()
 			}
 			close(changes)
 		})

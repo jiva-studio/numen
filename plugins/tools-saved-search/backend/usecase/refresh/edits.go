@@ -6,7 +6,8 @@ import (
 )
 
 // edits are the checks and runs started by the latest edit of each note. A new edit of a note cancels the
-// one before it, and the end of the last watch of a note cancels its run.
+// one before it, and the end of the last watch of a note cancels its run. A run started while a check of
+// the note is on its way belongs to an older edit, so it leaves that check alone and is not kept.
 type edits struct {
 	mu      sync.Mutex
 	next    int
@@ -27,7 +28,11 @@ func (e *edits) start(ctx context.Context, key watchKey, isRun bool) (context.Co
 	ctx, cancel := context.WithCancel(ctx)
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if previous, isFound := e.current[key]; isFound {
+	previous, isFound := e.current[key]
+	if isFound && isRun && !previous.isRun {
+		return ctx, cancel
+	}
+	if isFound {
 		previous.cancel()
 	}
 	e.next++
@@ -43,10 +48,19 @@ func (e *edits) start(ctx context.Context, key watchKey, isRun bool) (context.Co
 	}
 }
 
-func (e *edits) cancelRun(key watchKey) {
+func (e *edits) getRunID(key watchKey) int {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if one, isFound := e.current[key]; isFound && one.isRun {
+		return one.id
+	}
+	return 0
+}
+
+func (e *edits) cancelRun(key watchKey, id int) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if one, isFound := e.current[key]; isFound && one.isRun && one.id == id {
 		one.cancel()
 		delete(e.current, key)
 	}

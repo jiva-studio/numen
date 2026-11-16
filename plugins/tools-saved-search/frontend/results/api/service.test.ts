@@ -240,6 +240,7 @@ describe('the saved search service', () => {
       summary: 'keep the first N',
       description: 'Keeps only the first results; give how many.',
       example: 'words("gale").top(10)',
+      signatures: ['.top(count)'],
     })
   })
 })

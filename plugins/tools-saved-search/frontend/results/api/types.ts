@@ -92,6 +92,7 @@ export interface SearchFunction {
   readonly summary: string
   readonly description: string
   readonly example: string
+  readonly signatures: readonly string[]
 }
 
 /** The catalog of the search language the core runs, with the functions plugins add to it. */

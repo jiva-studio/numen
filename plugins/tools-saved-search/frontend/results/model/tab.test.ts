@@ -494,6 +494,71 @@ describe('editing the query of a saved search', () => {
     expect(state.isEditing.value).toBe(false)
   })
 
+  it('gives the editor no problem of the old query while a good save is read again', async () => {
+    const { service, tab, state } = setup()
+    service.results.set(MISSPELLED)
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    state.actions.setEditing(true)
+    service.results.hold()
+
+    const saving = state.actions.saveSearch({ query: 'meaning("gale")' })
+    await settle()
+
+    expect(state.queryProblems.value).toStrictEqual([])
+    service.results.release()
+    await saving
+  })
+
+  it('ignores the problems of a save that answers after the editor closed', async () => {
+    const { service, tab, state } = setup()
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    state.actions.setEditing(true)
+    service.setUpdateAnswer({
+      errors: [{ line: 1, column: 1, message: 'unknown function meanin' }],
+    })
+
+    const saving = state.actions.saveSearch({ query: 'meanin("gale")' })
+    state.actions.setEditing(false)
+    await saving
+    state.actions.setEditing(true)
+
+    expect(state.queryProblems.value).toStrictEqual([])
+  })
+
+  it('clears the failure of the catalog once a later read of it succeeds', async () => {
+    const { state } = setup()
+    catalog = 'the catalog is not ready'
+    state.actions.setEditing(true)
+    await settle()
+    state.actions.setEditing(false)
+    catalog = FUNCTIONS
+
+    state.actions.setEditing(true)
+    await settle()
+
+    expect(state.failure.value).toBe('')
+  })
+
+  it('keeps the failure of the results when the catalog is read', async () => {
+    const { service, tab, state } = setup()
+    tab.follow()
+    service.watch.emit(COMPUTED)
+    await settle()
+    service.results.fail('the index is closed')
+    service.watch.emit(LATER)
+    await settle()
+    catalog = FUNCTIONS
+
+    state.actions.setEditing(true)
+    await settle()
+
+    expect(state.failure.value).toBe('the index is closed')
+  })
+
   it('keeps the editor open after a good save and reads the results again', async () => {
     const { service, tab, state } = setup()
     tab.follow()

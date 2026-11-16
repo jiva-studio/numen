@@ -141,6 +141,24 @@ const getDotEntries = (
   return functions.filter((fn) => fn.kind === 'stage')
 }
 
+const isInsideLiteral = (lineBefore: string): boolean => {
+  let quote = ''
+  let isEscaped = false
+  for (let index = 0; index < lineBefore.length; index++) {
+    const char = lineBefore[index]!
+    if (quote) {
+      if (char === quote && !isEscaped) quote = ''
+      isEscaped = char === '\\' && !isEscaped
+    } else if (char === '"' || char === "'") {
+      quote = char
+      isEscaped = false
+    } else if (char === '/' && lineBefore[index + 1] === '/') {
+      return true
+    }
+  }
+  return quote !== ''
+}
+
 const getOption = (entry: QueryFunction): QueryCompletion => ({
   label: entry.name,
   detail: entry.summary,
@@ -156,6 +174,8 @@ export function createQueryCompletion(
   getFunctions: () => readonly QueryFunction[],
 ): (context: CompletionContext) => CompletionResult | null {
   return (context) => {
+    const line = context.state.doc.lineAt(context.pos)
+    if (isInsideLiteral(line.text.slice(0, context.pos - line.from))) return null
     const word = context.matchBefore(/[A-Za-z_]\w*/)
     const from = word?.from ?? context.pos
     const before = context.state.sliceDoc(0, from)
@@ -181,13 +201,16 @@ const getProblemRange = (doc: Text, from: number): { from: number; to: number } 
 
 const getOffset = (doc: Text, lineNumber: number, column: number): number => {
   const line = doc.line(Math.min(Math.max(lineNumber, 1), doc.lines))
-  return Math.min(line.from + Math.max(column - 1, 0), line.to)
+  const prefix = Array.from(line.text).slice(0, Math.max(column - 1, 0))
+  return line.from + prefix.join('').length
 }
 
 const getEndOffset = (doc: Text, problem: QueryProblem): number => {
   const { endLine = 0, endColumn = 0 } = problem
   if (endLine < 1 || endColumn < 1) return 0
-  return Math.min(getOffset(doc, endLine, endColumn) + 1, doc.length)
+  const line = doc.line(Math.min(endLine, doc.lines))
+  const length = Array.from(line.text)[endColumn - 1]?.length ?? 1
+  return Math.min(getOffset(doc, endLine, endColumn) + length, doc.length)
 }
 
 /**

@@ -5,14 +5,16 @@
       "kind": "function",
       "summary": "passages with these words",
       "description": "Finds passages that contain every word of the text.",
-      "example": "words(\"lighthouse keeper\")"
+      "example": "words(\"lighthouse keeper\")",
+      "signatures": ["words(text)"]
     },
     {
       "name": "top",
       "kind": "stage",
       "summary": "keep the first N",
       "description": "Keeps only the first results; give how many.",
-      "example": "words(\"gale\").top(10)"
+      "example": "words(\"gale\").top(10)",
+      "signatures": [".top(count)"]
     }
   ]
 }

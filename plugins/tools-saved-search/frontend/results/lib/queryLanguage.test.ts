@@ -136,6 +136,19 @@ describe('createQueryCompletion', () => {
     expect(result?.options.map((option) => option.label)).toStrictEqual(['rerank', 'top', 'sortBy'])
   })
 
+  it.each([['words("ta'], ["words('ta"], ['// ta'], ['tags("a") // wo']])(
+    'offers no name inside a string or a comment: %s',
+    (doc) => {
+      expect(complete(doc)).toBeNull()
+      expect(complete(doc, true)).toBeNull()
+    },
+  )
+
+  it('offers names again after a closed string and on the line after a comment', () => {
+    expect(complete('words("a") && wo')?.options).toHaveLength(3)
+    expect(complete('// note\nwo')?.options).toHaveLength(3)
+  })
+
   it('returns no completion after a space unless the completion is explicit', () => {
     expect(complete('words("spade") && ')).toBeNull()
     expect(complete('words("spade") && ', true)?.options).toHaveLength(3)
@@ -192,6 +205,26 @@ describe('getQueryDiagnostics', () => {
     ])
 
     expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe('Мадхавендра Пури')
+  })
+
+  it('counts the columns of a problem in characters, not in UTF-16 units', () => {
+    const doc = Text.of(['words("🌱🌱") && meanin("a")'])
+
+    const [diagnostic] = getQueryDiagnostics(doc, [
+      { line: 1, column: 16, endLine: 1, endColumn: 21, message: 'unknown function meanin' },
+    ])
+
+    expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe('meanin')
+  })
+
+  it('ends a problem after the whole character at its end column', () => {
+    const doc = Text.of(['words("a") && 🌱'])
+
+    const [diagnostic] = getQueryDiagnostics(doc, [
+      { line: 1, column: 15, endLine: 1, endColumn: 15, message: 'put this in quotes' },
+    ])
+
+    expect(doc.sliceString(diagnostic!.from, diagnostic!.to)).toBe('🌱')
   })
 
   it('underlines a problem with an end over the lines it spans', () => {

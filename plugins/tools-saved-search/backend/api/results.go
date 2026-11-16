@@ -108,11 +108,12 @@ type ListSearchFunctionsRequest struct{}
 // SearchFunction is a function, a variable or a stage of the search language. Kind is "function",
 // "variable" or "stage".
 type SearchFunction struct {
-	Name        string `json:"name"`
-	Kind        string `json:"kind"`
-	Summary     string `json:"summary"`
-	Description string `json:"description"`
-	Example     string `json:"example"`
+	Name        string   `json:"name"`
+	Kind        string   `json:"kind"`
+	Summary     string   `json:"summary"`
+	Description string   `json:"description"`
+	Example     string   `json:"example"`
+	Signatures  []string `json:"signatures"`
 }
 
 // ListSearchFunctionsResponse is the catalog of the search language the core runs, with the functions

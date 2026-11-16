@@ -110,6 +110,14 @@
   line-height: var(--numen-line-height);
 }
 
+.saved-search__tooltip::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 100%;
+  block-size: 0.375rem;
+}
+
 .saved-search__tooltip-title {
   margin: 0;
   font-weight: 600;

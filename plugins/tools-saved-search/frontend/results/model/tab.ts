@@ -88,7 +88,10 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   const isEditing = ref(false)
   const saveProblems = shallowRef<readonly Problem[]>([])
   const functions = shallowRef<readonly SearchFunction[]>([])
+  const isAnswerObsolete = ref(false)
   let functionsRead: Promise<void> | null = null
+  let catalogFailure: string | null = null
+  let editorSession = 0
   const life = new AbortController()
   let watching: AbortController | null = null
   let reading: AbortController | null = null
@@ -100,6 +103,7 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
 
   const queryProblems = computed<readonly Problem[]>(() => {
     if (saveProblems.value.length > 0) return saveProblems.value
+    if (isAnswerObsolete.value) return []
     return (response.value?.errors ?? []).filter(isInQuery)
   })
 
@@ -112,6 +116,7 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   const show = (answer: GetResultsResponse): void => {
     tellFailure(answer)
     response.value = answer
+    isAnswerObsolete.value = false
     view.value = getResultsView(answer, words, deps.locale)
     failure.value = ''
   }
@@ -160,10 +165,14 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
   }
 
   const saveSearch = async (change: SearchChange): Promise<void> => {
+    const session = editorSession
     try {
       const answer = await service.updateSearch({ path: path.value, ...change }, life.signal)
-      saveProblems.value = answer.errors
-      if (answer.errors.length === 0) await read()
+      if (session === editorSession) saveProblems.value = answer.errors
+      if (answer.errors.length === 0) {
+        isAnswerObsolete.value = true
+        await read()
+      }
     } catch (error) {
       if (!life.signal.aborted) failure.value = getMessage(error)
     }
@@ -173,16 +182,21 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
     functionsRead ??= service.listSearchFunctions({}, life.signal).then(
       (answer) => {
         functions.value = answer.functions
+        if (catalogFailure !== null && failure.value === catalogFailure) failure.value = ''
+        catalogFailure = null
       },
       (error: Caught) => {
         functionsRead = null
-        if (!life.signal.aborted) failure.value = getMessage(error)
+        if (life.signal.aborted) return
+        catalogFailure = getMessage(error)
+        failure.value = catalogFailure
       },
     )
   }
 
   const setEditing = (next: boolean): void => {
     isEditing.value = next
+    editorSession++
     if (next) readFunctions()
     else saveProblems.value = []
   }

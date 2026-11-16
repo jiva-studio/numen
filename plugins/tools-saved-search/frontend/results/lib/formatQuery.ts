@@ -22,7 +22,7 @@ interface Lexed {
 const WIDTH = 80
 const INDENT = 2
 const NAME = /^[A-Za-z_]\w*/
-const NUMBER = /^\d+(\.\d+)?/
+const NUMBER = /^(?:0[xX][\da-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/
 const STRING_PREFIX = /^(?:[rR][bB]?|[bB][rR]?)?(?=["'])/
 const BINARY = ['&&', '||', '==', '!=', '<=', '>=', '<', '>']
 const PAIRS: Record<string, string> = { '(': ')', '[': ']' }

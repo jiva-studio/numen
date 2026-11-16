@@ -72,12 +72,11 @@ func New(dependencies Dependencies, settings func() Settings, clock ports.Clock)
 // the run its latest edit started.
 func (r *Runner) Watch(vault domain.VaultID, notePath string) (<-chan Change, func()) {
 	key := watchKey{vault: vault, path: notePath}
-	changes, stop := r.watchers.add(key)
+	runID := 0
+	changes, stop := r.watchers.add(key, func() { runID = r.edits.getRunID(key) })
 	return changes, func() {
 		stop()
-		if !r.watchers.isWatched(key) {
-			r.edits.cancelRun(key)
-		}
+		r.edits.cancelRun(key, runID)
 	}
 }
 

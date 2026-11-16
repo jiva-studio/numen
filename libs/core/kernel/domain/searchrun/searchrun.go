@@ -71,6 +71,7 @@ type Record struct {
 	IndexGeneration string
 	StartedAt       time.Time
 	AccessedAt      time.Time
+	Holders         int
 }
 
 // IsSameSearch reports whether two starts ask for the same search: the same owner, vault, background flag

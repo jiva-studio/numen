@@ -7,7 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
 )
 
-// RemoveSearch cancels a running search and forgets it.
+// RemoveSearch releases a search the caller started. The search is canceled and forgotten when no other
+// caller that started an equal search still holds it.
 type RemoveSearch struct {
 	kept *searchkept.Searches
 }
@@ -16,6 +17,14 @@ type RemoveSearch struct {
 func (u *RemoveSearch) Execute(_ context.Context, owner string, id searchrun.ID) error {
 	if _, _, err := u.kept.Find(owner, id); err != nil {
 		return err
+	}
+	remaining := 0
+	u.kept.Store.ChangeSearch(id, func(r *searchrun.Record) {
+		r.Holders--
+		remaining = r.Holders
+	})
+	if remaining > 0 {
+		return nil
 	}
 	u.kept.Drop([]searchrun.ID{id})
 	return nil

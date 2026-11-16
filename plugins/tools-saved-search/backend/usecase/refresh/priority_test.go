@@ -119,3 +119,45 @@ func TestANeverComputedSearchIsRunningWhileQueuedInTheBatch(t *testing.T) {
 		t.Error("the buoys are running after the batch, want them done")
 	}
 }
+
+func TestABatchThatEndsWhileWaitingForTheVaultLeavesNoSearchQueued(t *testing.T) {
+	w := newBatchWorld(t)
+	w.vault.File(wrecksPath, formatSearchNote("", wrecksQuery))
+	release := w.searches.HoldSearch(wrecksQuery)
+	defer release()
+	interactive := make(chan struct{})
+	go func() {
+		defer close(interactive)
+		if _, err := w.runner.RunNow(t.Context(), testVault, wrecksPath); err != nil {
+			t.Errorf("RunNow = %v", err)
+		}
+	}()
+	waitForStart(t, w, wrecksQuery)
+	ctx, cancel := context.WithCancel(t.Context())
+	done := make(chan error, 1)
+	go func() { done <- w.runner.RunDue(ctx, testVault) }()
+	waitForRunning(t, w, tidesPath)
+
+	cancel()
+	<-done
+
+	for _, notePath := range []string{tidesPath, quaysPath, buoysPath} {
+		if w.runner.IsRunning(testVault, notePath) {
+			t.Errorf("%s is running after the batch ended, want none queued", notePath)
+		}
+	}
+	release()
+	<-interactive
+}
+
+func waitForRunning(t *testing.T, w *world, notePath string) {
+	t.Helper()
+	deadline := time.After(5 * time.Second)
+	for !w.runner.IsRunning(testVault, notePath) {
+		select {
+		case <-deadline:
+			t.Fatalf("%s did not start running within 5 seconds", notePath)
+		case <-time.After(time.Millisecond):
+		}
+	}
+}

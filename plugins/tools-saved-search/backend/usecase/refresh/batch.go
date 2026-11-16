@@ -252,6 +252,7 @@ func (r *Runner) runQueuedSearch(ctx context.Context, vault domain.VaultID, v Va
 	key := watchKey{vault: vault, path: one.path}
 	runCtx, unlock, err := r.vaults.lockBackground(ctx, vault)
 	if err != nil {
+		r.watchers.unqueue(key)
 		return false, err
 	}
 	defer unlock()

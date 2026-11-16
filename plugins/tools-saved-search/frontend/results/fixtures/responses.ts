@@ -122,6 +122,7 @@ export const FUNCTIONS: ListSearchFunctionsResponse = {
       summary: 'passages with these words',
       description: 'Finds passages that contain every word of the text.',
       example: 'words("lighthouse keeper")',
+      signatures: ['words(text)'],
     },
     {
       name: 'meaning',
@@ -129,6 +130,7 @@ export const FUNCTIONS: ListSearchFunctionsResponse = {
       summary: 'passages close in meaning',
       description: 'Finds passages that say something close to the text, even in other words.',
       example: 'meaning("a night at sea")',
+      signatures: ['meaning(text)'],
     },
     {
       name: 'tags',
@@ -136,6 +138,7 @@ export const FUNCTIONS: ListSearchFunctionsResponse = {
       summary: 'notes with this tag',
       description: 'Finds notes that carry the tag you give.',
       example: 'tags("harbor")',
+      signatures: ['tags(name)'],
     },
     {
       name: 'top',
@@ -143,6 +146,7 @@ export const FUNCTIONS: ListSearchFunctionsResponse = {
       summary: 'keep the first N',
       description: 'Keeps only the first results; give how many.',
       example: 'words("gale").top(10)',
+      signatures: ['.top(count)'],
     },
     {
       name: 'rerank',
@@ -151,6 +155,7 @@ export const FUNCTIONS: ListSearchFunctionsResponse = {
       description:
         'Reorders the best results with a reranking model, which judges how well each passage answers the question you give.',
       example: 'words("gale").rerank("storm damage")',
+      signatures: ['.rerank(question)'],
     },
   ],
 }

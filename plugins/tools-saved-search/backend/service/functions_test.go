@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"errors"
+	"reflect"
 	"slices"
 	"testing"
 
@@ -39,8 +40,8 @@ func TestListSearchFunctionsReturnsTheCatalogOfTheCore(t *testing.T) {
 	if !slices.Equal(names, []string{"words", "tags", "top"}) {
 		t.Fatalf("names = %v, want words, tags, top", names)
 	}
-	want := api.SearchFunction{Name: "tags", Kind: "function", Summary: "notes with this tag", Description: "Finds notes that carry the tag you give.", Example: `tags("garden")`}
-	if got := res.Functions[1]; got != want {
+	want := api.SearchFunction{Name: "tags", Kind: "function", Summary: "notes with this tag", Description: "Finds notes that carry the tag you give.", Example: `tags("garden")`, Signatures: []string{"tags(name)"}}
+	if got := res.Functions[1]; !reflect.DeepEqual(got, want) {
 		t.Errorf("tags = %+v, want %+v", got, want)
 	}
 }

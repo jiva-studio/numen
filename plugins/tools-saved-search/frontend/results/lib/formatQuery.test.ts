@@ -5,6 +5,10 @@ const LONG_CHAIN =
   'words("seed tray") && tags("garden") && path.startsWith("books/") || meaning("a cold frame for seedlings")'
 
 describe('formatQuery', () => {
+  it.each(['0x1F', '1e3', '1.5e-3', '2E+4'])('keeps the number %s whole', (number) => {
+    expect(formatQuery(`top( ${number} )`)).toBe(`top(${number})`)
+  })
+
   it.each([
     [
       'a short query stays on one line',

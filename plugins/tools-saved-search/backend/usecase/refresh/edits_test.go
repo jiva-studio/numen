@@ -87,7 +87,7 @@ func TestANewEditOfANoteCancelsTheCheckOfThePreviousEdit(t *testing.T) {
 		checked <- err
 	}()
 	awaitStart(t, started)
-	w.runner.StartRunNow(t.Context(), testVault, stormsPath)
+	go func() { _, _ = w.runner.CheckNoteQuery(t.Context(), testVault, stormsPath, stormsQuery) }()
 
 	select {
 	case err := <-checked:
@@ -170,5 +170,43 @@ func TestAnEditIsRunningFromItsCheckToTheEndOfItsRun(t *testing.T) {
 	w.awaitNotRunning(t)
 	if w.readRecord(t, stormsID).ComputedAt.IsZero() {
 		t.Error("the run of the edit wrote no results")
+	}
+}
+
+func TestARunStartedWhileANewerEditIsCheckedLeavesTheCheckRunning(t *testing.T) {
+	w := newWorld(t, 0)
+	release := w.searches.HoldSearch(stormsQuery)
+	defer release()
+	started := w.signalStarts()
+	checked := make(chan error, 1)
+
+	go func() {
+		_, err := w.runner.CheckNoteQuery(t.Context(), testVault, stormsPath, stormsQuery)
+		checked <- err
+	}()
+	awaitStart(t, started)
+	w.runner.StartRunNow(t.Context(), testVault, stormsPath)
+	awaitStart(t, started)
+	release()
+
+	if err := <-checked; err != nil {
+		t.Errorf("the check of the newer edit answered %v, want none", err)
+	}
+}
+
+func TestAStopOfAWatchThatEndedEarlierLeavesALaterRunRunning(t *testing.T) {
+	w := newWorld(t, 0)
+	release := w.searches.HoldSearch(stormsQuery)
+	defer release()
+	started := w.signalStarts()
+	_, stop := w.runner.Watch(testVault, stormsPath)
+	stop()
+
+	w.runner.StartRunNow(t.Context(), testVault, stormsPath)
+	awaitStart(t, started)
+	stop()
+
+	if removed := w.searches.ListRemoved(); len(removed) != 0 {
+		t.Errorf("removed %v by a second stop of a watch that ended before the run, want none", removed)
 	}
 }
