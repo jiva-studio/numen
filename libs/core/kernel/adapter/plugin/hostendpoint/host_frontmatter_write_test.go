@@ -46,7 +46,6 @@ func (w *writingVault) WriteFrontmatter(_ context.Context, writes []plugin.Front
 	return out, nil
 }
 
-// checkBaseline is the stale check of the host: a note with no baseline is written over any state.
 func (w *writingVault) checkBaseline(one plugin.FrontmatterWrite) error {
 	if one.Baseline.IsZero() {
 		_, err := w.stat(one.Path)
