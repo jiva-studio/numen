@@ -122,4 +122,27 @@ describe('the room of the widgets of a node', () => {
 
     expect(rooms.getNodeRoom.value).toBeUndefined()
   })
+  it('is as wide as a node is drawn, wherever the options set that width', () => {
+    const scope = effectScope()
+    const options = ref({ ...DEFAULT_OPTIONS, nodeSize: { width: 210, height: 40 } })
+    const rooms = scope.run(() => useWidgetRooms(options))!
+
+    rooms.setWidgets('a', 'above', createWidgets(30).element)
+    expect(rooms.getNodeRoom.value?.(node('a'))).toMatchObject({ width: 210 })
+
+    options.value = { ...DEFAULT_OPTIONS, nodeSize: { width: 120, height: 40 } }
+    expect(rooms.getNodeRoom.value?.(node('a'))).toMatchObject({ width: 120 })
+  })
+
+  it('is the height of the one group of a side, which holds all of its widgets', () => {
+    const rooms = setUp()
+    const group = createWidgets(64).element
+    const first = document.createElement('span')
+    const second = document.createElement('span')
+    group.append(first, second)
+
+    rooms.setWidgets('a', 'below', group)
+
+    expect(rooms.getNodeRoom.value?.(node('a'))).toMatchObject({ top: 0, bottom: 64 })
+  })
 })
