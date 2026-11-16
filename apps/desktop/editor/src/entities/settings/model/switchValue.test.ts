@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 import { watch } from 'vue'
-import { runInBackground } from '@numen/ui'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createSettingsStore } from './store'
@@ -11,7 +10,6 @@ const createAnsweredSettings = (answers: CoreAnswers) =>
 /** The settings calls of the core the test answered last. */
 let settings = createAnsweredSettings({})
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const AT = ['p', 'enabled'] as const
 
 const answerWith = (written: string, version = 0n) => ({
@@ -29,6 +27,11 @@ describe('settings store', () => {
   it('shows a written value without reverting while the vault applies it', async () => {
     const file: Record<string, unknown> = { p: { enabled: true } }
     let version = 1n
+    let applied = false
+    let release: () => void = () => undefined
+    const released = new Promise<void>((resolve) => {
+      release = resolve
+    })
     settings = createAnsweredSettings({
       settingsService: {
         getSettings: () => answerWith(JSON.stringify(file), version),
@@ -38,7 +41,8 @@ describe('settings store', () => {
           }
           version += 1n
           const written = { written: JSON.stringify(file), version }
-          await sleep(100) // the plugin host applies the change
+          applied = true
+          await released // the plugin host applies the change
           return written
         },
       },
@@ -51,16 +55,14 @@ describe('settings store', () => {
       (v) => values.push(v),
       { flush: 'sync' },
     )
-    const failures: unknown[] = []
-    const poll = setInterval(
-      () => runInBackground(store.start(), (error) => failures.push(error)),
-      20,
-    )
-    await store.write.writeSetting(AT, false)
-    await sleep(300)
-    clearInterval(poll)
+    const write = store.write.writeSetting(AT, false)
+    await vi.waitFor(() => expect(applied).toBe(true))
+    await store.start()
+    await store.start()
+    release()
+    await write
+    await store.start()
     expect(values).toEqual([false])
-    expect(failures).toEqual([])
   })
 })
 
