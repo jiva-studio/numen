@@ -46,6 +46,7 @@ export const groupRuns = (records: readonly ScenarioRecord[]): ScenarioRuns[] =>
       featureName: first.featureName,
       name: first.name,
       line: first.line,
+      live: first.live,
       status: getWorstStatus(runs),
       duration: Math.max(...runs.map((run) => run.duration)),
       runs,

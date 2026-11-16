@@ -19,6 +19,7 @@ Feature: Recordings
       When the person plays the recording in the tab at "assets/lecture.wav"
       Then the recording in the tab at "assets/lecture.wav" is playing
 
+    @smoke
     Scenario: A recording is transcribed
       Given the person opens the file at "assets/lecture.wav"
       When the person clicks the button "Transcribe" in the tab at "assets/lecture.wav"

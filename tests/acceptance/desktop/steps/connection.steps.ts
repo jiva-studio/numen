@@ -17,18 +17,22 @@ Given(
   },
 )
 
+Given('the person has the following keys:', ({ person }, keys: DataTable) => {
+  person.connections.declareKeys(keys.raw())
+})
+
 Given('the program {string} is installed on this computer', ({ person }, name: string) => {
   person.connections.installProgram(name)
 })
 
-Given('the following connections:', async ({ person }, connections: DataTable) => {
+Given('the person has the following connections:', async ({ person }, connections: DataTable) => {
   await person.connections.addAll(readConnectionEntries(connections.raw()))
 })
 
 When(
   'the person adds the connection {string} of the type {string} for the service {string}',
   async ({ person }, name: string, type: string, service: string) => {
-    await person.connections.add(name, type, service)
+    await person.connections.add({ name, type, service })
   },
 )
 

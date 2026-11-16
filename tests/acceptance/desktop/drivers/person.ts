@@ -51,8 +51,8 @@ export class Person {
   readonly deck: DeckDriver
   readonly scenario: Scenario
 
-  constructor(page: Page, viewport: ViewportSize | null, recording?: Recording) {
-    this.scenario = new Scenario(page, viewport, recording)
+  constructor(page: Page, viewport: ViewportSize | null, recording?: Recording, isLive = false) {
+    this.scenario = new Scenario(page, viewport, recording, isLive)
     this.application = new ApplicationDriver(this.scenario)
     this.tab = new TabDriver(this.scenario)
     this.note = new NoteDriver(this.scenario)

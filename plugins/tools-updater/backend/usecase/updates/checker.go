@@ -57,28 +57,29 @@ type Checker struct {
 
 	mu           sync.Mutex
 	isConfigured bool
-	endpoint     string
+	selection    selection
 	status       Status
 }
 
 // NewChecker returns a Checker that requests manifests with fetcher.
 func NewChecker(fetcher Fetcher) *Checker {
 	return &Checker{
-		fetcher: fetcher, mu: sync.Mutex{}, isConfigured: false, endpoint: "",
+		fetcher: fetcher, mu: sync.Mutex{}, isConfigured: false, selection: selection{channel: "", endpoint: ""},
 		status: Status{State: StateUnchecked, Update: nil},
 	}
 }
 
-// Configure selects the endpoint the settings name. A new endpoint discards the last result.
+// Configure takes the channel and the address the settings name. A change of either discards the last
+// result. The feed is chosen at each check, because an unset channel follows the running build.
 func (c *Checker) Configure(values map[string]string) {
-	endpoint := GetEndpoint(values)
+	chosen := newSelection(values)
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.isConfigured && c.endpoint == endpoint {
+	if c.isConfigured && c.selection == chosen {
 		return
 	}
 	c.isConfigured = true
-	c.endpoint = endpoint
+	c.selection = chosen
 	c.status = Status{State: StateUnchecked, Update: nil}
 }
 
@@ -92,7 +93,7 @@ func (c *Checker) GetStatus() Status {
 // Check requests the manifest of the configured endpoint and compares it with the running build. An
 // endpoint that does not answer with a manifest, or an empty one, leaves the state unreachable.
 func (c *Checker) Check(ctx context.Context, app App) (Status, error) {
-	endpoint, ok := c.getConfiguredEndpoint()
+	chosen, ok := c.getConfiguredSelection()
 	if !ok {
 		return Status{}, ErrNotConfigured
 	}
@@ -100,6 +101,7 @@ func (c *Checker) Check(ctx context.Context, app App) (Status, error) {
 	if err != nil {
 		return Status{}, err
 	}
+	endpoint := chosen.getEndpoint(app.Version)
 	status := Status{State: StateUnreachable, Update: nil}
 	if endpoint != "" {
 		manifest, fetchErr := c.fetcher.Fetch(ctx, endpoint)
@@ -107,20 +109,20 @@ func (c *Checker) Check(ctx context.Context, app App) (Status, error) {
 			status = newStatus(manifest, current)
 		}
 	}
-	c.setStatus(endpoint, status)
+	c.setStatus(chosen, status)
 	return status, nil
 }
 
-func (c *Checker) getConfiguredEndpoint() (string, bool) {
+func (c *Checker) getConfiguredSelection() (selection, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.endpoint, c.isConfigured
+	return c.selection, c.isConfigured
 }
 
-func (c *Checker) setStatus(endpoint string, status Status) {
+func (c *Checker) setStatus(chosen selection, status Status) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.endpoint == endpoint {
+	if c.selection == chosen {
 		c.status = status
 	}
 }

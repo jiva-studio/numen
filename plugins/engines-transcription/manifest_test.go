@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"regexp"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -58,5 +59,23 @@ func TestTheManifestKeepsTheProcessForTenIdleMinutes(t *testing.T) {
 
 	if manifest.Backend.IdleStopSeconds != 600 {
 		t.Errorf("idleStopSeconds = %d, want 600", manifest.Backend.IdleStopSeconds)
+	}
+}
+
+// The onFilesChanged event wakes the plugin, which reads the files to work from the file change feed;
+// the plugin has no trigger.
+func TestTheFilesChangedEventWakesThePlugin(t *testing.T) {
+	var manifest struct {
+		ActivationEvents []string        `json:"activationEvents"`
+		Contributes      json.RawMessage `json:"contributes"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(manifest.ActivationEvents, []string{"onFilesChanged:audio/*", "onFilesChanged:video/*"}) {
+		t.Errorf("activationEvents = %v, want the masks of audio and video", manifest.ActivationEvents)
+	}
+	if strings.Contains(string(manifest.Contributes), "triggers") {
+		t.Errorf("contributes = %s, want no trigger", manifest.Contributes)
 	}
 }

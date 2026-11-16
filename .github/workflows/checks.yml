@@ -91,6 +91,10 @@ jobs:
         if: ${{ !cancelled() && inputs.workflows }}
         run: node --test .github/scripts/*.test.mjs
 
+      - name: Test the nightly prune
+        if: ${{ !cancelled() && inputs.workflows }}
+        run: .github/scripts/prune-nightlies-test.sh
+
       # A plugin with a backend has a bin folder after the build, a plugin with a frontend has a
       # dist folder and a theme plugin carries its themes folder; the release stages that tree.
       - name: Stage the plugins as the release does

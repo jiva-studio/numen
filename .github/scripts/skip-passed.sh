@@ -8,8 +8,9 @@
 # A marker is a cache entry named passed-<area>-<hash>. The hash covers the blobs of the area's
 # filter in .github/filters.yml (for e2e, of the files `select-tests.mjs inputs` prints), of ci.yml,
 # the called workflow, .github/actions/ and .github/scripts/, and the values the job takes beside
-# the area: PLATFORMS for go, the folders for plugin_dirs. An e2e marker also names ENGINES and the
-# scope; a marker of every test, or of both engines, stands for fewer.
+# the area: PLATFORMS for go, the folders for plugin_dirs. An e2e marker also names the scope and
+# ENGINES, or `smoke` on a pull request, which runs the @smoke tests alone. A marker of every test, or
+# of both engines, stands for fewer; a smoke marker stands for no full run.
 #
 # A pull request reads the markers of its merge ref and of main, which are the caches it can
 # restore; a push to main reads main's; the nightly and a manual run read none.
@@ -90,8 +91,10 @@ while IFS=$'\t' read -r job workflow area; do
   key=passed-$area-$hash
   accepted=("$key")
   if [[ $area == e2e ]]; then
-    key=$key-$engines-$scope
-    accepted=("$key" "passed-e2e-$hash-$engines-all" "passed-e2e-$hash-chromium-webkit-$scope" "passed-e2e-$hash-chromium-webkit-all")
+    label=$engines
+    if [[ $EVENT == pull_request ]]; then label=smoke; fi
+    key=$key-$label-$scope
+    accepted=("$key" "passed-e2e-$hash-$label-all" "passed-e2e-$hash-chromium-webkit-$scope" "passed-e2e-$hash-chromium-webkit-all")
   fi
   marker=$(grep -Fxm1 -f <(printf '%s\n' "${accepted[@]}") <<< "$passed" || true)
   if [[ -z $marker ]]; then

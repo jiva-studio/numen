@@ -149,3 +149,20 @@ func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
 		t.Fatal(err)
 	}
 }
+
+func TestLocateModelFindsTheFileOfTheEnvironmentPathThatAppearsAfterTheFirstLook(t *testing.T) {
+	envPath := filepath.Join(t.TempDir(), "downloaded-encoder.onnx")
+	t.Setenv("NUMEN_DEPENDENCY_PARAKEET_ENCODER", envPath)
+	t.Setenv(EnvDir, t.TempDir())
+	t.Setenv(cache.EnvSharedDataDir, t.TempDir())
+
+	if found, err := locateModel("", "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, ""); err == nil {
+		t.Fatalf("locateModel found %q before the file was there", found)
+	}
+	writeFile(t, envPath, []byte("encoder"), 0o644)
+
+	found, err := locateModel("", "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, "")
+	if err != nil || found != envPath {
+		t.Errorf("locateModel after the download = %q, %v, want %q", found, err, envPath)
+	}
+}
