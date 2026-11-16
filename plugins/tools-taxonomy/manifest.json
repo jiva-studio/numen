@@ -9,7 +9,7 @@
   "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
-    "slots": [{ "slot": "fileTree.rowEnd", "view": "fileTags" }],
+    "slots": [{ "slot": "fileTree.rowEnd", "view": "file-tags" }],
     "searchFunctions": {
       "version": 1,
       "functions": [
