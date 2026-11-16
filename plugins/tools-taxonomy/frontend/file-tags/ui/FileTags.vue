@@ -93,7 +93,7 @@ function onLeave() {
 }
 
 .file-tags__dot + .file-tags__dot {
-  margin-inline-start: calc(var(--dot) / -2);
+  margin-inline-start: calc(var(--dot) * -0.2);
 }
 
 .file-tags__more {
