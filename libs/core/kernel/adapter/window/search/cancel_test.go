@@ -110,8 +110,8 @@ func TestCancelSearchKeepsTheSearchOfAnotherIDRunning(t *testing.T) {
 	}
 
 	stop()
-	_ = <-source.ended
-	_ = <-answered
+	t.Log(<-source.ended)
+	t.Log(<-answered)
 }
 
 func TestCancelSearchEndsTheNameSearchWithItsID(t *testing.T) {
