@@ -12,6 +12,9 @@ export interface SearchableListProps {
   isFiltered?: boolean
   isPending?: boolean
   hasAction?: boolean
+  multiple?: boolean
+  recent?: readonly string[]
+  inputAttrs?: Readonly<Record<string, string>>
   needsQuery?: boolean
   chosen?: readonly string[] | undefined
   from?: HTMLElement | null

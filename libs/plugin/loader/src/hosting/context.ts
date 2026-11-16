@@ -141,6 +141,7 @@ function createUi(
     drops: views.drops,
     slots: ui.getSlots(),
     notices: ui.getNotices(pluginId),
+    picker: ui.getPicker(),
   })
 }
 
@@ -159,6 +160,7 @@ function createUiService(
     drops: ui.drops,
     slots: ui.slots,
     notices: ui.notices,
+    picker: ui.picker,
     mountView: createMountView(host, guards.guard),
   })
 }

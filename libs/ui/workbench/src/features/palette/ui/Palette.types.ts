@@ -1,6 +1,7 @@
 import type { Keystroke } from '@numen/ui'
 import type { ActionWords } from '../lib/actions'
 import type { PaletteGroup } from '../lib/item'
+import type { PaletteMultiProps } from './palette-multi'
 
 export interface PaletteProps {
   groups?: readonly PaletteGroup[]
@@ -15,4 +16,5 @@ export interface PaletteProps {
   name?: string
   actionWords?: ActionWords
   actionKey?: Keystroke
+  multi?: PaletteMultiProps
 }

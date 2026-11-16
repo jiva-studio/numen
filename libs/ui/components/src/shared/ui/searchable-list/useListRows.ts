@@ -6,7 +6,14 @@
  * action gives way to an item.
  */
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { buildRows, filterItems, stepRow, type ListItem, type ListRow } from './rows'
+import {
+  buildMultipleRows,
+  buildRows,
+  filterItems,
+  orderItems,
+  stepRow,   type ListItem,
+  type ListRow,
+} from './rows'
 
 export interface ListRowsOptions {
   readonly items: () => readonly ListItem[]
@@ -15,6 +22,8 @@ export interface ListRowsOptions {
   readonly isFiltered: () => boolean
   readonly hasAction: () => boolean
   readonly needsQuery: () => boolean
+  readonly isMultiple: () => boolean
+  readonly recent: () => readonly string[]
 }
 
 export interface ListRowsState {
@@ -33,11 +42,21 @@ export function useListRows(options: ListRowsOptions): ListRowsState {
 
   const queryText = computed(() => options.query.value.trim())
 
-  const matches = computed(() =>
-    options.isFiltered() ? filterItems(options.items(), options.query.value) : options.items(),
+  const ordered = computed(() =>
+    options.isMultiple() ? orderItems(options.items(), options.recent()) : options.items(),
   )
 
-  const rows = computed(() => buildRows(matches.value, options.query.value, options.hasAction()))
+  const matches = computed(() =>
+    options.isFiltered() ? filterItems(ordered.value, options.query.value) : ordered.value,
+  )
+
+  const rows = computed(() =>
+    (options.isMultiple() ? buildMultipleRows : buildRows)(
+      matches.value,
+      options.query.value,
+      options.hasAction(),
+    ),
+  )
 
   const isListOpen = computed(() => !options.needsQuery() || queryText.value !== '')
 

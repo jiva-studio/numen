@@ -6,6 +6,7 @@
 import { createNoticeQueue } from '@numen/workbench'
 import { createCommandTitleReader } from '@/entities/command'
 import { useDeclaredCommands } from '@/features/plugin-commands'
+import { createPickerSession } from '@/features/command-palette'
 import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
 import { syncKeybindings } from '@/features/hotkeys'
 import type { createWindowBase } from './createWindowBase'
@@ -37,6 +38,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
   const notices = createNoticeQueue()
+  const picker = createPickerSession()
   const pluginNotes = createPluginNotes({ read: note.readNote, write: note.writeNote })
   const declarations = createPluginDeclarations({
     api: api.plugins.declaredCommands,
@@ -89,7 +91,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       services,
       notices,
       pluginNotes,
-      hostParts: declarations.hostParts,
+      hostParts: [...declarations.hostParts, { window: { getPicker: () => picker.host } }],
     }),
   })
   vault.vaultChanges.subscribe((event) => pluginHost.notifyVaultChange(event))
@@ -107,5 +109,5 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     declaredCommands.contributions.keybindings,
     rest.state.plugins,
   )
-  return { hostPort, pluginHost, pluginLoader, declaredCommands }
+  return { hostPort, pluginHost, pluginLoader, declaredCommands, picker }
 }

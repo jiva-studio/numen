@@ -3,7 +3,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, type ComputedRef, type Ref } from 'vue'
 import type { ShownRow } from '../lib/row'
-import { useVirtualTree, type VirtualTreeState } from './virtual'
+import { useVirtualTree, type VirtualTreeState } from '@/shared/model/virtual'
 
 export interface TreeLayoutOptions {
   readonly box: Ref<HTMLElement | null>

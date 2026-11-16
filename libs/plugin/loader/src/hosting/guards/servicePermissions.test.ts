@@ -97,6 +97,7 @@ function createHost(
       isCommandListed: () => true,
       getSlots: () => ui.slots as never,
       getNotices: () => ui.notices as never,
+      getPicker: () => ui.picker as never,
       ...overrides.ui,
     },
     work: {

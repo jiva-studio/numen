@@ -2,7 +2,7 @@
  * Reactive tracking of visible window and viewport scroll for virtualized trees.
  */
 import { computed, shallowRef, type ComputedRef, type Ref } from 'vue'
-import { computeScrollTarget, computeVirtualWindow, type VirtualWindow } from '../lib/virtual'
+import { computeScrollTarget, computeVirtualWindow, type VirtualWindow } from '../lib/math/virtual'
 
 export interface VirtualTreeState {
   readonly window: ComputedRef<VirtualWindow>
@@ -12,7 +12,7 @@ export interface VirtualTreeState {
 }
 
 export function useVirtualTree(
-  container: Ref<HTMLElement | null>,
+  container: Readonly<Ref<HTMLElement | null>>,
   getTotalCount: () => number,
   getRowHeight: () => number,
 ): VirtualTreeState {

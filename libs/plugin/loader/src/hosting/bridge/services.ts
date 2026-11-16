@@ -86,6 +86,7 @@ export function createUiServiceBridge(
     getCommandPermission: (command) => findCommandPermission(commands, manifests, command),
     getWindow: () => window.getWindow?.(),
     getNotices: (pluginId) => window.getNotices?.(pluginId) ?? DISCARDING_NOTICES,
+    getPicker: () => window.getPicker?.(),
     getSlots: () => slots,
   }
 }

@@ -104,6 +104,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
   vault.renames.subscribe((renamed) => palette.commands.navigation.applyRenames(renamed))
   return {
     palette,
+    picker: plugins.picker,
     commandDeps,
     pluginPalette,
     windowCommands: createHostConnection({

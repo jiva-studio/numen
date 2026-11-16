@@ -18,6 +18,7 @@ import type {
   JsonValue,
   MountedView,
   NoticeHost,
+  PickerHost,
   ProcessHost,
   ReaderRegistration,
   SettingsViewRegistration,
@@ -110,7 +111,7 @@ export interface EditorPlacement {
 /**
  * The window the plugins run in: its target, which the plugins it activates read as theirs, its
  * application, how it opens web links and reports the failure of a plugin, and its workspace,
- * commands, frame and notices.
+ * commands, frame, notices and picker.
  */
 export interface HostWindow {
   readonly target: string
@@ -121,6 +122,7 @@ export interface HostWindow {
   readonly getCommands?: () => CommandsHost | undefined
   readonly getWindow?: () => WindowHost | undefined
   readonly getNotices?: (pluginId: string) => NoticeHost
+  readonly getPicker?: () => PickerHost | undefined
   readonly clearNotices?: (pluginId: string) => void
 }
 
@@ -356,6 +358,7 @@ export interface ContextUiHost {
   readonly getCommandPermission?: (command: string) => string | undefined
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
+  readonly getPicker: () => PickerHost | undefined
   readonly getSlots: () => SlotHost
 }
 

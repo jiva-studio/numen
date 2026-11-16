@@ -5,7 +5,7 @@
  * the list that holds the row.
  */
 import { inject } from 'vue'
-import { Check } from '@lucide/vue'
+import { Check, Minus } from '@lucide/vue'
 import { LIST_CONTEXT } from './context'
 import type { ListRow } from './rows'
 
@@ -16,6 +16,7 @@ defineProps<{
   hasSeparator?: boolean
   isActive: boolean
   isCurrent: boolean
+  isMultiple: boolean
 }>()
 
 defineEmits<{
@@ -26,6 +27,8 @@ defineEmits<{
 }>()
 
 const context = inject(LIST_CONTEXT)
+
+const CHECKED = { set: 'true', mixed: 'mixed', unset: 'false' } as const
 </script>
 
 <template>
@@ -39,6 +42,7 @@ const context = inject(LIST_CONTEXT)
     role="option"
     :aria-selected="isActive"
     :aria-current="isCurrent ? 'true' : undefined"
+    :aria-checked="isMultiple && row.kind === 'item' ? CHECKED[row.item.state ?? 'unset'] : undefined"
     :aria-disabled="row.kind === 'item' && row.item.isDisabled ? 'true' : undefined"
     @mousedown.prevent
     @click="$emit('choose')"
@@ -50,6 +54,10 @@ const context = inject(LIST_CONTEXT)
       :query="context?.getQuery() ?? ''"
     />
     <template v-else>
+      <span v-if="isMultiple" class="searchable-list__box" aria-hidden="true">
+        <Check v-if="row.item.state === 'set'" class="searchable-list__tick" />
+        <Minus v-else-if="row.item.state === 'mixed'" class="searchable-list__tick" />
+      </span>
       <component :is="context?.slots.leading" :item="row.item" />
       <span class="searchable-list__words">
         <span class="searchable-list__text">{{ row.item.text }}</span>
@@ -132,6 +140,26 @@ const context = inject(LIST_CONTEXT)
 /* The hushed detail is too faint on the highlight; the row is read in the ink. */
 .searchable-list__option[aria-selected='true'] .searchable-list__detail {
   color: var(--numen-ink);
+}
+
+.searchable-list__box {
+  --box: 1rem;
+
+  display: grid;
+  flex: none;
+  place-items: center;
+  box-sizing: border-box;
+  inline-size: var(--box);
+  block-size: var(--box);
+  border: var(--numen-stroke) solid var(--numen-panel-border);
+  border-radius: 0.25rem;
+}
+
+.searchable-list__tick {
+  --tick: 0.75rem;
+
+  inline-size: var(--tick);
+  block-size: var(--tick);
 }
 
 .searchable-list__mark {

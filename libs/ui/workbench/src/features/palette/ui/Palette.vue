@@ -6,6 +6,9 @@
  * Keyboard focus stays in the field, the highlighted item is announced to
  * screen readers, and the content behind the palette is inert while it is open.
  *
+ * With `multi` it asks for several items from a list instead: each toggle and each created item
+ * is emitted at once and the list stays open.
+ *
  * `data-palette` marks each part of the panel by name: the backdrop, `panel`, `crumb`,
  * `field`, `announcement`, `nothing`, `key` and `more`. The list below the field marks
  * its own parts.
@@ -17,6 +20,7 @@ import PaletteKeyHints from './PaletteKeyHints.vue'
 import { PaletteActions } from './palette-actions'
 import { PaletteField } from './palette-field'
 import { PaletteFrame } from './palette-frame'
+import { PaletteMulti } from './palette-multi'
 import { PaletteResults } from './palette-results'
 import { ACTION_WORDS } from '../lib/actions'
 import { type PaletteItemId } from '../lib/item'
@@ -62,6 +66,10 @@ const emit = defineEmits<{
    * decides what going back means.
    */
   (event: 'back'): void
+  /** In the multiple step, an item was asked to be checked or unchecked. */
+  (event: 'toggle', id: string): void
+  /** In the multiple step, the row that creates an item was chosen, with the text as typed. */
+  (event: 'create', text: string): void
   /** Requests that the palette close. */
   (event: 'dismiss'): void
 }>()
@@ -144,10 +152,19 @@ function reveal(): void {
     v-if="isOpen"
     :name="name"
     :to="to"
-    @keydown="onKey"
-    @ground="onBackdrop"
+    @keydown="multi ? undefined : onKey"
+    @ground="multi ? undefined : onBackdrop"
     @press="onPress"
   >
+    <PaletteMulti
+      v-if="multi"
+      :multi="multi"
+      @toggle="emit('toggle', $event)"
+      @create="emit('create', $event)"
+      @dismiss="emit('dismiss')"
+    />
+
+    <template v-else>
     <PaletteField
       ref="field"
       v-model="searchQuery"
@@ -206,6 +223,7 @@ function reveal(): void {
       :action-key="actionKey"
       :name="actionWords.name"
     />
+    </template>
   </PaletteFrame>
 </template>
 
