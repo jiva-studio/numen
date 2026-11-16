@@ -217,5 +217,36 @@ func GetEnvName(req manifest.DependencyRequirement) string {
 	if named := req.Metadata["envVar"]; named != "" {
 		return named
 	}
-	return "NUMEN_DEPENDENCY_" + strings.ToUpper(unsafeNameChars.ReplaceAllString(req.ID, "_"))
+	return "NUMEN_DEPENDENCY_" + strings.ToUpper(nonEnvNameChars.ReplaceAllString(req.ID, "_"))
+}
+
+// Resolve returns where the dependency is or will be, and whether it is ready there. It reads the
+// machine and the folder only: it takes no lock, fetches nothing and leaves the errors of a missing
+// source, an offline machine and a failed download to Provision.
+func (p *FileProvisioner) Resolve(req manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
+	if found := findInSearch(req.Search, p.cfg.Getenv); found != "" {
+		return newResolvedDependency(req, filepath.Dir(found), found), plugin.DependencyStateReady, nil
+	}
+	if found := p.cfg.Discovery.find(req); found != "" {
+		return newResolvedDependency(req, filepath.Dir(found), found), plugin.DependencyStateReady, nil
+	}
+	dir, err := p.getDir(req)
+	if err != nil {
+		return plugin.ResolvedDependency{}, "", err
+	}
+	source, ok := req.GetSource(runtime.GOOS, runtime.GOARCH)
+	if !ok {
+		return newResolvedDependency(req, dir, filepath.Join(dir, cleanName(req.ID))), plugin.DependencyStateMissing, nil
+	}
+	if resolved, ok := readCachedDependency(req, dir, getReadySum(source)); ok {
+		return resolved, plugin.DependencyStateReady, nil
+	}
+	name, err := getFileName(req, source)
+	if err != nil {
+		return plugin.ResolvedDependency{}, "", err
+	}
+	if source.ArchiveMember != "" {
+		name = cleanName(path.Base(source.ArchiveMember))
+	}
+	return newResolvedDependency(req, dir, filepath.Join(dir, name)), plugin.DependencyStateMissing, nil
 }

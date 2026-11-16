@@ -11,6 +11,7 @@ Feature: Plugin settings
 
   Rule: The Settings tab shows the plugins
 
+    @smoke
     Scenario: The settings list the plugins
       When the person runs the command "Open settings"
       Then the Settings tab titled "Settings" has "Audio/Video Transcription"

@@ -143,3 +143,43 @@ func ReadLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionTe
 	t.Fatalf("%s has no live version among %v", path, listing.Versions)
 	return domain.VersionText{}
 }
+
+// FollowedVault is a vault on disk, its texts and the writer of its text layers, followed through the
+// file change feed of the vault.
+type FollowedVault struct {
+	Vault  *hosttest.Vault
+	Texts  *hosttest.Texts
+	Writer *extract.Writer
+}
+
+// NewFollowedVault returns a vault holding the files, with the writer of its text layers.
+func NewFollowedVault(t *testing.T, files map[string][]byte) FollowedVault {
+	t.Helper()
+	notes := make(map[string]string, len(files))
+	for name, raw := range files {
+		notes[name] = string(raw)
+	}
+	vault := hosttest.OnDisk(t, "vault", notes)
+	texts := hosttest.NewTexts("vault", PluginID)
+	for name, raw := range files {
+		texts.File(name, raw)
+	}
+	texts.SetStore(PluginID, vault.Store())
+	return FollowedVault{Vault: vault, Texts: texts, Writer: NewWriter(t, FilesOf(vault), vault, texts, hosttest.NewQueue())}
+}
+
+// Add puts a file in the vault, as another window would.
+func (f FollowedVault) Add(name string, raw []byte) {
+	f.Texts.File(name, raw)
+	f.Vault.File(name, string(raw))
+}
+
+// NewFollower returns a follower of the feed of the vault, as a plugin that has just started has.
+func (f FollowedVault) NewFollower(t *testing.T) *extract.Follower {
+	t.Helper()
+	follower := extract.NewFollower(f.Writer, func(id domain.VaultID) extract.Feed {
+		return extract.Feed{Changes: f.Vault.With(id), Store: f.Vault.Store().With(id)}
+	}, func(what string, err error) { t.Errorf("%s: %v", what, err) })
+	t.Cleanup(follower.Close)
+	return follower
+}

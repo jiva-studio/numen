@@ -11,6 +11,7 @@ Feature: Search
 
   Rule: Search finds notes
 
+    @smoke
     Scenario: A passage opens its note
       Given the vault has the following:
         | path       | text                                 |

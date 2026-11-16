@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/searchrunstest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
@@ -27,9 +27,9 @@ func getTideFunctions() host.SearchFunctions {
 	}}
 }
 
-func newQueryRegistry(t *testing.T) (*searchrunstest.Searches, *tools.Registry) {
+func newQueryRegistry(t *testing.T) (*searchtest.Searches, *tools.Registry) {
 	t.Helper()
-	searches := searchrunstest.NewSearches()
+	searches := searchtest.NewSearches()
 	searches.SetFunctions(getTideFunctions(), nil)
 	score := 0.8
 	searches.SetResults(tideQuery, []host.SearchResult{
@@ -154,7 +154,7 @@ func TestTheDescriptionOfLibraryQueryNamesEveryFunction(t *testing.T) {
 }
 
 func TestTheDescriptionOfLibraryQueryNamesTheFunctionsOfEachListing(t *testing.T) {
-	searches := searchrunstest.NewSearches()
+	searches := searchtest.NewSearches()
 	searches.SetFunctions(getTideFunctions(), nil)
 	registry, err := service.New(vaultsOf(hosttest.New(testVault))).WithLibrary(func(domain.VaultID) service.Library {
 		return service.Library{Versions: nil, Texts: nil, Search: nil, Queries: searches}

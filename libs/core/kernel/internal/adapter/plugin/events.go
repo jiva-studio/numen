@@ -121,7 +121,7 @@ func (e *Events) TriggerEvent(ctx context.Context, event string) ([]string, erro
 	var errs []error
 	for _, id := range candidates {
 		holder := plugindomain.GetHolder(ctx, "handle event "+event)
-		endpoint, err := e.activator.EnsureActive(ctx, id, holder)
+		endpoint, err := e.activator.EnsureActive(withoutProvisioning(ctx), id, holder)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("activate plugin %s on %s: %w", id, event, err))
 			continue

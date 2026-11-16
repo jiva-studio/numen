@@ -6,6 +6,7 @@ export type ScenarioEntry = {
   readonly featureName: string
   readonly name: string
   readonly line: number
+  readonly live: boolean
   readonly status: StepStatus
   readonly duration: number
 }

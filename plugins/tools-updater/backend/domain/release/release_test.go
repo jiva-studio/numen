@@ -15,7 +15,7 @@ func TestParseBuildReadsPlainNumbersAndStamps(t *testing.T) {
 		"920":                       920,
 		"9223372036854775807":       math.MaxInt64,
 		"9223372036854775808":       0,
-		"2026.10.1-beta.920":        920,
+		"2026.10.1-nightly.920":     920,
 		"0.4.0-alpha.1-364-283d1d5": 364,
 		"2026.10.2-144-ab260c4":     144,
 		"2026.10.2":                 0,
@@ -39,13 +39,13 @@ func TestParseBuildIgnoresSurroundingSpace(t *testing.T) {
 
 func TestReadAcceptsTheBuildAsNumberOrText(t *testing.T) {
 	cases := map[string]release.Build{
-		`{"version":"2026.10.1","build":950}`:                       950,
-		`{"version":"2026.10.1","build":"950"}`:                     950,
-		`{"version":"2026.10.1-beta.7","build":"2026.10.1-beta.7"}`: 7,
-		`{"version":"2026.10.1","build":null}`:                      0,
-		`{"version":"2026.10.1","build":true}`:                      0,
-		`{"version":"2026.10.1","build":9.5}`:                       0,
-		`{"version":"2026.10.1"}`:                                   0,
+		`{"version":"2026.10.1","build":950}`:                             950,
+		`{"version":"2026.10.1","build":"950"}`:                           950,
+		`{"version":"2026.10.1-nightly.7","build":"2026.10.1-nightly.7"}`: 7,
+		`{"version":"2026.10.1","build":null}`:                            0,
+		`{"version":"2026.10.1","build":true}`:                            0,
+		`{"version":"2026.10.1","build":9.5}`:                             0,
+		`{"version":"2026.10.1"}`:                                         0,
 	}
 	for body, want := range cases {
 		manifest, err := release.Read([]byte(body))
@@ -107,8 +107,8 @@ func TestIsNewerComparesVersionsWhereTheRunningBuildHasNoNumber(t *testing.T) {
 		{"an older release", "2026.9.0", "2026.10.1", true},
 		{"a newer release", "2026.11.0", "2026.10.1", false},
 		{"an equal release with prefix", "v2026.10.1", "2026.10.1", false},
-		{"the beta of the release", "2026.10.1-beta.884", "2026.10.1", true},
-		{"the release of the beta", "2026.10.1", "2026.10.1-beta.884", false},
+		{"the nightly of the release", "2026.10.1-nightly.884", "2026.10.1", true},
+		{"the release of the nightly", "2026.10.1", "2026.10.1-nightly.884", false},
 	}
 	for _, c := range cases {
 		got := release.IsNewer(release.Current{Version: c.current}, release.Manifest{Version: c.latest, Build: 900})

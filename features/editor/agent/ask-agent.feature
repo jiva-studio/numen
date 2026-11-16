@@ -21,6 +21,7 @@ Feature: Ask agent
       Then the Agent tab titled "Agent" has "No messages yet"
       And the composer of the agent cannot send
 
+    @smoke
     Scenario: A question is answered
       When the person sends the message "Summarize thermodynamics principles" to the agent
       Then the Agent tab titled "Agent" has "Summarize thermodynamics principles"
@@ -33,6 +34,7 @@ Feature: Ask agent
     Background:
       Given the person runs the command "Open agent chat"
 
+    @smoke
     Scenario: A note is written
       When the person sends the message "Write the tide table note" to the agent
       Then the Agent tab titled "Agent" has "The tide table is written."

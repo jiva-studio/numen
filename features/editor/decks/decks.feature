@@ -16,6 +16,7 @@ Feature: Decks
         | Glaciers/ |      |
       And the application "editor" starts
 
+    @smoke
     Scenario: A deck is made at the top
       When the person runs the command "Create deck" with:
         | Title | Rivers |

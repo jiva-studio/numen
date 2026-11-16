@@ -43,12 +43,13 @@ const listenForInputs = (binding: string): void => {
     target instanceof HTMLInputElement ||
     target instanceof HTMLTextAreaElement ||
     (target instanceof HTMLElement && target.isContentEditable)
+  const isSecret = (target: EventTarget | null): boolean =>
+    target instanceof HTMLInputElement && target.type === 'password'
   const getMods = (event: KeyboardEvent): string[] =>
     modifiers.filter((name) => event.getModifierState(name))
   const getInputText = (event: Event) => {
     const target = event.target
-    if (target instanceof HTMLInputElement && target.type === 'password')
-      return { text: '••••', isAppend: false }
+    if (isSecret(target)) return { text: '••••', isAppend: false }
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
       return { text: target.value.slice(-textLength), isAppend: false }
     const data = event instanceof InputEvent ? (event.data ?? '') : ''
@@ -67,7 +68,7 @@ const listenForInputs = (binding: string): void => {
     send({
       kind: 'key',
       ...getRect(target),
-      key: event.key,
+      key: isSecret(target) && event.key.length === 1 ? '•' : event.key,
       mods: getMods(event),
       isField: isField(target),
     })

@@ -1,0 +1,17 @@
+provider = "tart"
+url = "https://github.com/your-org"
+name = "numen-macos-26"
+runner-group = "your-runner-group"
+runner-image = "numen-macos-26"
+max-runners = 2
+min-runners = 0
+labels = ["numen-macos-26"]
+log-level = "info"
+github-app.client-id = "Iv1.0000000000000000"
+github-app.installation-id = 00000000
+github-app.private-key-file = "/Users/you/.config/runner/app.pem"
+
+[tart]
+cpu = 4
+memory = 8192
+pool-size = 0
