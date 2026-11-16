@@ -58,13 +58,14 @@ func Standard(queries problemport.ProblemQueries) Checks {
 // opt-in. An opt-in check has findings that are ordinary in a vault under
 // active editing and would bury the rest if reported unrequested.
 func (c Checks) Run(ctx context.Context, v domain.Vault, named ...domain.Check) ([]domain.VaultProblem, error) {
-	wanted, err := c.getWantedCheckers(named)
+	wanted, err := c.getWantedIndexes(named)
 	if err != nil {
 		return nil, err
 	}
 
 	var out []domain.VaultProblem
-	for _, check := range wanted {
+	for _, index := range wanted {
+		check := c.List[index]
 		found, err := check.FindProblems(ctx, v)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", check.Name(), err)
@@ -89,17 +90,17 @@ func (c Checks) Names() []domain.Check {
 	return out
 }
 
-func (c Checks) getWantedCheckers(named []domain.Check) ([]Checker, error) {
+func (c Checks) getWantedIndexes(named []domain.Check) ([]int, error) {
 	if len(named) == 0 {
-		return c.getDefaultCheckers(), nil
+		return c.getDefaultIndexes(), nil
 	}
 
-	var out []Checker
+	var out []int
 	for _, name := range named {
 		found := false
-		for _, check := range c.List {
+		for index, check := range c.List {
 			if check.Name() == name {
-				out, found = append(out, check), true
+				out, found = append(out, index), true
 				break
 			}
 		}
@@ -121,17 +122,17 @@ func list(names []domain.Check) string {
 // GetDefaultNames is the name of every check that runs when none is named.
 func (c Checks) GetDefaultNames() []domain.Check {
 	var out []domain.Check
-	for _, check := range c.getDefaultCheckers() {
-		out = append(out, check.Name())
+	for _, index := range c.getDefaultIndexes() {
+		out = append(out, c.List[index].Name())
 	}
 	return out
 }
 
-func (c Checks) getDefaultCheckers() []Checker {
-	var out []Checker
-	for _, check := range c.List {
+func (c Checks) getDefaultIndexes() []int {
+	var out []int
+	for index, check := range c.List {
 		if !check.IsOptIn() {
-			out = append(out, check)
+			out = append(out, index)
 		}
 	}
 	return out
