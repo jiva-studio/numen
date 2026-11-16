@@ -57,7 +57,7 @@
       "key": "editor.fontSize",
       "type": "range",
       "title": "Font size",
-      "description": "Size of editor text in px. It does not follow the interface size.",
+      "description": "Size of editor text in px, whatever the interface size.",
       "default": 14,
       "min": 10,
       "max": 32,
