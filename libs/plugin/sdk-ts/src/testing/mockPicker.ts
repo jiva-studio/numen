@@ -9,6 +9,8 @@ export interface MockPickerHost extends PickerHost {
   getItems(): readonly PickerItem[]
   // The title of the row that creates an item from the text typed.
   getCreateTitle(text: string): string
+  // The colour of the row that creates an item from the text typed.
+  getCreateColor(text: string): string | undefined
   // Toggles a row: asks the plugin, then shows the item it answers with.
   toggle(id: string): Promise<void>
   // Chooses the create row for a text: asks the plugin, then adds the item it answers with.
@@ -39,6 +41,9 @@ export function createMockPickerHost(): MockPickerHost {
     getOpened: () => opened,
     getItems: () => items,
     getCreateTitle: (text) => read().getCreateTitle(text),
+    getCreateColor: () => {
+      throw new Error('not implemented')
+    },
     toggle: async (id) => {
       const item = await read().onToggle(id)
       items = items.map((one) => (one.id === item.id ? item : one))
