@@ -4,11 +4,9 @@
  * the note. They stand as one group, centered, in a box as wide as the node; the group is handed to `hold`
  * while it is drawn, so its height can be measured.
  */
+import type { ComponentPublicInstance } from 'vue'
 import type { PlacedNode } from '../../lib/node'
 import type { PlexWidget } from '../../../types'
-
-/** How far from the node the box reaches; the group sits against the node inside it. */
-const EXTENT = 480
 
 const props = defineProps<{
   node: PlacedNode
@@ -21,7 +19,11 @@ const emit = defineEmits<{
   (event: 'hold', element: Element | null): void
 }>()
 
-const hold = (element: unknown) => emit('hold', element instanceof Element ? element : null)
+/** How far from the node the box reaches; the group sits against the node inside it. */
+const EXTENT = 480
+
+const hold = (element: Element | ComponentPublicInstance | null) =>
+  emit('hold', element instanceof Element ? element : null)
 
 const getTop = () =>
   props.side === 'above'
