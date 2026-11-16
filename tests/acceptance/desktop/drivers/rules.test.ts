@@ -499,13 +499,16 @@ describe('the wait before the headings of a note open', () => {
 describe('getPluginRowPattern', () => {
   it('matches the row of the plugin, with its state or without', () => {
     expect(getPluginRowPattern('PDF Reader').test('PDF Reader')).toBe(true)
-    expect(getPluginRowPattern('PDF Reader').test('PDF Reader, Error')).toBe(true)
+    for (const state of ['Off', 'Stopped', 'Error', 'Warning', 'Not installed']) {
+      expect(getPluginRowPattern('PDF Reader').test(`PDF Reader, ${state}`)).toBe(true)
+    }
   })
 
   it('does not match a plugin whose name starts or ends with the name', () => {
     expect(getPluginRowPattern('PDF Reader').test('PDF Reader Pro')).toBe(false)
     expect(getPluginRowPattern('PDF Reader').test('PDF Reader Pro, Error')).toBe(false)
     expect(getPluginRowPattern('Reader').test('PDF Reader')).toBe(false)
+    expect(getPluginRowPattern('PDF').test('PDF, Reader')).toBe(false)
   })
 
   it('takes the characters of the name as text, not as a pattern', () => {
