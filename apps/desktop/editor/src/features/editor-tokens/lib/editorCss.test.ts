@@ -71,7 +71,7 @@ describe('the tokens of the editor written from its settings', () => {
 
       expect(tokens.has(FAMILY)).toBe(false)
       expect(tokens.get(SIZE)).toBe('18px')
-      expect([...tokens.keys()].sort()).toStrictEqual([HEIGHT, SIZE])
+      expect([...tokens.keys()].sort()).toStrictEqual([HEIGHT, SIZE].sort())
     },
   )
 })
