@@ -465,13 +465,10 @@ describe('the Search page of the shell settings', () => {
 
     const rerankingRows = wrapper.findAllComponents(ConnectionRows)
     expect(rerankingRows.map((one) => one.props('setting').title)).toStrictEqual(['Reranking'])
-    expect(wrapper.findAllComponents(SettingRow).map((one) => one.props('name'))).toStrictEqual(
-      SEARCH_NAMES,
-    )
-    const isBefore =
-      rerankingRows[0]!.element.compareDocumentPosition(wrapper.findComponent(SettingRow).element) &
-      Node.DOCUMENT_POSITION_FOLLOWING
-    expect(isBefore).toBeTruthy()
+    expect(wrapper.findAllComponents(SettingRow).map((one) => one.props('name'))).toStrictEqual([
+      'Reranking',
+      ...SEARCH_NAMES,
+    ])
   })
 
   it('draws each numeric search setting as a number field', () => {

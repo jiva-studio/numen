@@ -306,6 +306,7 @@ describe('the settings tab', () => {
 
     expect(tab.get('[aria-current="page"]').text()).toBe('Search')
     expect(tab.findAllComponents(SettingRow).map((one) => one.props('name'))).toStrictEqual([
+      'Reranking',
       'Default results',
       'Most results',
     ])
