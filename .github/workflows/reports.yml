@@ -136,7 +136,7 @@ jobs:
           cache-key: ${{ steps.go.outputs.cache-key }}
 
   acceptance-macos:
-    name: macOS VM / Live scenario (OpenRouter)
+    name: macOS VM / Live scenarios
     needs: [build-macos]
     if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
     runs-on: numen-macos-26

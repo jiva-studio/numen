@@ -362,7 +362,7 @@ jobs:
           retention-days: 7
 
   acceptance:
-    name: Scenarios without live (features/)
+    name: Scenarios
     needs: [build]
     if: needs.build.outputs.acceptance == 'true'
     runs-on: ubuntu-latest
