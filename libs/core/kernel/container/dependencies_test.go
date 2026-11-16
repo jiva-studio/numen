@@ -119,7 +119,7 @@ func (heldProvisioner) Resolve(req manifest.DependencyRequirement) (plugindomain
 }
 
 func (p heldProvisioner) Provision(
-	ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugindomain.DependencyStatus),
+	ctx context.Context, _ manifest.DependencyRequirement, onProgress func(plugindomain.DependencyStatus),
 ) (plugindomain.ResolvedDependency, error) {
 	onProgress(plugindomain.DependencyStatus{BytesDownloaded: 1, BytesTotal: 2})
 	close(p.started)
