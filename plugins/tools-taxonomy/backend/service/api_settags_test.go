@@ -32,7 +32,7 @@ const (
 	tagsToken       = "plugin-token"
 )
 
-func newHarbourNotes() map[string]string {
+func newHarborNotes() map[string]string {
 	return map[string]string{
 		"notes/Quay.md": "---\ntags: [Port, Sea]\n---\nThe quay.\n",
 		"notes/Dock.md": "---\ntags: [Port, Sea, Quay]\n---\nThe dock.\n",
@@ -163,7 +163,7 @@ func listTagNames(list api.TagList) []string {
 }
 
 func TestGetTagsAnswersEveryTagOfTheVaultWithItsCount(t *testing.T) {
-	p := newTaggingPlugin(t, newHarbourNotes())
+	p := newTaggingPlugin(t, newHarborNotes())
 
 	status, body := p.call(t, api.MethodGetTags, readTagsFixture(t, "GetTags.request.json"))
 
@@ -173,7 +173,7 @@ func TestGetTagsAnswersEveryTagOfTheVaultWithItsCount(t *testing.T) {
 }
 
 func TestSetTagsWritesTheTagsToTheNoteAndAnswersWithTheTagsItHasNow(t *testing.T) {
-	p := newTaggingPlugin(t, newHarbourNotes())
+	p := newTaggingPlugin(t, newHarborNotes())
 
 	status, body := p.call(t, api.MethodSetTags, readTagsFixture(t, "SetTags.request.json"))
 
@@ -189,7 +189,7 @@ func TestSetTagsWritesTheTagsToTheNoteAndAnswersWithTheTagsItHasNow(t *testing.T
 }
 
 func TestSetTagsReportsAnErrorForANoteItCannotWrite(t *testing.T) {
-	p := newTaggingPlugin(t, newHarbourNotes())
+	p := newTaggingPlugin(t, newHarborNotes())
 	p.vault.RefuseWriting("notes/Pier.md", errors.New("disk full"))
 
 	result := p.setTags(t, "notes/Pier.md", "Port")
@@ -200,7 +200,7 @@ func TestSetTagsReportsAnErrorForANoteItCannotWrite(t *testing.T) {
 }
 
 func TestGetTagsListsATagOnceANoteHasItAndNotAfterItIsCleared(t *testing.T) {
-	p := newTaggingPlugin(t, newHarbourNotes())
+	p := newTaggingPlugin(t, newHarborNotes())
 
 	p.setTags(t, "notes/Pier.md", "Wharf")
 	listed := p.getTagList(t)
@@ -216,7 +216,7 @@ func TestGetTagsListsATagOnceANoteHasItAndNotAfterItIsCleared(t *testing.T) {
 }
 
 func TestGetTagsReturnsTheRecentTagsThatANoteStillHas(t *testing.T) {
-	p := newTaggingPlugin(t, newHarbourNotes())
+	p := newTaggingPlugin(t, newHarborNotes())
 	p.setTags(t, "notes/Pier.md", "Wharf")
 	p.setTags(t, "notes/Pier.md", "Sea")
 
