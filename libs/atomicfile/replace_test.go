@@ -1,6 +1,7 @@
 package atomicfile_test
 
 import (
+	"crypto/sha256"
 	"errors"
 	"io"
 	"os"
@@ -110,5 +111,53 @@ func TestSyncDirectoryFlushesAFolderAndAcceptsAMissingOne(t *testing.T) {
 	}
 	if err := atomicfile.SyncDirectory(root, "absent"); err != nil {
 		t.Fatalf("flush of a missing folder: %v", err)
+	}
+}
+
+func TestReplaceReportsTheHashOfTheNewContent(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(dir+"/notes.txt", []byte("the old content"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	content := strings.Repeat("a line of the new content\n", 10_000)
+	stat, err := atomicfile.Replace(t.Context(), openRoot(t, dir), "notes.txt", strings.NewReader(content), 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := sha256.Sum256([]byte(content)); stat.SHA256 != want {
+		t.Fatalf("hash %x, want %x", stat.SHA256, want)
+	}
+	onDisk, err := os.ReadFile(dir + "/notes.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stat.SHA256 != sha256.Sum256(onDisk) {
+		t.Fatalf("hash %x is not the hash of the file on disk", stat.SHA256)
+	}
+	if old := sha256.Sum256([]byte("the old content")); stat.SHA256 == old {
+		t.Fatal("hash is of the old content")
+	}
+}
+
+func TestReplaceReportsTheHashOfAnEmptyContent(t *testing.T) {
+	stat, err := atomicfile.Replace(t.Context(), openRoot(t, t.TempDir()), "empty.txt", strings.NewReader(""), 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stat.SHA256 != sha256.Sum256(nil) {
+		t.Fatalf("hash %x, want the hash of no bytes", stat.SHA256)
+	}
+}
+
+func TestReplaceReturnsNoStatWhenTheSourceFails(t *testing.T) {
+	dir := t.TempDir()
+	broken := errors.New("the disk went away")
+	source := io.MultiReader(strings.NewReader("half"), iotest.ErrReader(broken))
+	stat, err := atomicfile.Replace(t.Context(), openRoot(t, dir), "notes.txt", source, 0o600)
+	if !errors.Is(err, broken) {
+		t.Fatalf("error %v, want %v", err, broken)
+	}
+	if stat != (atomicfile.Stat{}) {
+		t.Fatalf("stat %+v after a failed write, want none", stat)
 	}
 }
