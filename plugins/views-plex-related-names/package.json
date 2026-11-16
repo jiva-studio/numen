@@ -1,5 +1,5 @@
 {
-  "name": "@numen/views.related.notes",
+  "name": "@numen/views.plex.relatedNames",
   "version": "2026.11.1",
   "private": true,
   "type": "module",

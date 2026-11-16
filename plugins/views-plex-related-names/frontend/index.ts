@@ -1,5 +1,5 @@
 /**
- * Frontend entrypoint for the Related Notes plugin: the names of the notes related to the notes of the plex,
+ * Frontend entrypoint for the Plex Related Names plugin: the names of the notes related to the notes of the plex,
  * drawn in the slots over and under each of its nodes.
  */
 import { defineComponent, h } from 'vue'
