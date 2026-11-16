@@ -1,4 +1,4 @@
-package searchpolicyport
+package search
 
 import (
 	"context"

@@ -13,7 +13,6 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/operationport"
 )
 
 // RerankRows lists the rows of the Reranking setting of the core in the order of use, each with the name of
@@ -36,7 +35,7 @@ type reranker struct {
 	codec   RerankCodec
 	rows    RerankRows
 	resolve connectionport.ResolveConnection
-	results operationport.OperationResults
+	results OperationResults
 	clock   machineport.Clock
 	limits  searchquery.StageLimits
 }

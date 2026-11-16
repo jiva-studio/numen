@@ -2,21 +2,20 @@ package theme
 
 import (
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/themeport"
 )
 
 // WriteAppearance stores the theme, the color scheme and the scales the user chose.
 type WriteAppearance struct {
 	catalog  catalog
-	writer   themeport.AppearanceWriter
-	warnings themeport.ThemeWarnings
+	writer   AppearanceWriter
+	warnings ThemeWarnings
 	scales   *Scales
 }
 
 func NewWriteAppearance(
 	sources Sources,
-	writer themeport.AppearanceWriter,
-	warnings themeport.ThemeWarnings,
+	writer AppearanceWriter,
+	warnings ThemeWarnings,
 	scales *Scales,
 ) *WriteAppearance {
 	return &WriteAppearance{catalog: catalog{sources: sources}, writer: writer, warnings: warnings, scales: scales}
