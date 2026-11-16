@@ -16,7 +16,7 @@ type Current struct {
 
 // Get reads every setting, the plugins and the settings the app declares.
 type Get struct {
-	read    func() (content, path string, err error)
+	read    func() (content, path string, version uint64, err error)
 	plugins func() []plugin.Info
 	app     func() []plugin.Setting
 }
