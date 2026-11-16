@@ -154,7 +154,7 @@ func TestAnEditReachesAListener(t *testing.T) {
 // holds, and a book is one of them.
 func TestABookDroppedInReachesAListener(t *testing.T) {
 	client, root := openVault(t, map[string]string{
-		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
+		"library/Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	})
 
 	changes := openChanges(t, client)

@@ -2,6 +2,7 @@ package sourcebridge_test
 
 import (
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -241,4 +242,49 @@ func TestASettingThatAllowsTheSourceAnnouncesItsDescription(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("the read that succeeded was not reported")
 	}
+}
+
+// A setting changed as soon as the first failure is reported reaches the source, so a person who reads the
+// failure and fixes the setting is not left with a source that never describes itself.
+func TestASettingChangedAtTheMomentOfTheFirstReportStillDescribesTheSource(t *testing.T) {
+	mock := &mockSourceServer{}
+	mock.failPrecondition.Store(true)
+	host := startConfigurableSource(t, mock)
+	roles := pluginhost.Join(host)
+	reported := make(chan error, 8)
+	proceed := make(chan struct{})
+	var first sync.Once
+	var release sync.Once
+	t.Cleanup(func() { release.Do(func() { close(proceed) }) })
+	opened := make(chan *sourcebridge.Source, 1)
+	startFailed := make(chan error, 1)
+	go func() {
+		bridge, err := sourcebridge.OpenWatching(t.Context(), roles, roles, nil, func(err error) {
+			reported <- err
+			first.Do(func() { <-proceed })
+		})
+		if err != nil {
+			startFailed <- err
+			return
+		}
+		opened <- bridge
+	}()
+
+	select {
+	case err := <-reported:
+		if err == nil {
+			t.Fatal("the failed start is reported without an error")
+		}
+	case err := <-startFailed:
+		t.Fatal(err)
+	}
+	mock.failPrecondition.Store(false)
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "connection", "garden-row"); err != nil {
+		t.Fatal(err)
+	}
+	release.Do(func() { close(proceed) })
+	bridge := <-opened
+	t.Cleanup(func() { testsupport.Close(t, bridge) })
+
+	testsupport.WaitFor(t, func() bool { return bridge.Describe().IsDescribed() })
 }
