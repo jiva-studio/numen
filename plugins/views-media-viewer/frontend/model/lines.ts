@@ -3,7 +3,7 @@
  * milliseconds it covers and its clock time.
  */
 import { computed, type Ref } from 'vue'
-import { clock } from '@numen/ui'
+import { clock } from '../lib/duration'
 import { spanCues } from '../lib/cues'
 import type { Cue } from '../types'
 
