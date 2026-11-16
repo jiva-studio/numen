@@ -30,7 +30,6 @@ export const formatFingerprint = (at?: FileStat): string | undefined => {
   return `${at.size}:${at.version ?? 0n}:${at.hash ?? ''} ${at.mtime} ${at.path}`
 }
 
-/** The two numbers first: a path holds spaces, and everything after them is it. */
 const parseFingerprint = (stat: string) => {
   const [head = '', mtime, ...rest] = stat.split(' ')
   const [size, version, hash, ...extra] = head.split(':')

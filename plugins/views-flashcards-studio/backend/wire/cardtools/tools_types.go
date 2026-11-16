@@ -130,7 +130,6 @@ func countBytes(vs []FieldValue) int {
 	return size
 }
 
-// fingerprintOf is the token a read gives out: the hash of the content of the file.
 func fingerprintOf(ref domain.FileStat) string {
 	return ref.Hash
 }

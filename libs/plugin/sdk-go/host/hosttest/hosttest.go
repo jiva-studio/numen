@@ -363,8 +363,6 @@ func (v *Vault) report(err error) {
 	}
 }
 
-// hashed returns the stat with the hash of what the file holds and the version of the vault, as the host
-// answers a stat.
 func (v *Vault) hashed(at domain.FileStat) (domain.FileStat, error) {
 	version := v.writes
 	content, err := v.files.read(at.Path)
@@ -375,8 +373,6 @@ func (v *Vault) hashed(at domain.FileStat) (domain.FileStat, error) {
 	return at, nil
 }
 
-// isStale is the comparison the host makes at a write: the baseline must have the hash of the file now,
-// and the zero stat expects nothing.
 func (v *Vault) isStale(now, baseline domain.FileStat) (bool, error) {
 	if baseline.IsZero() {
 		return false, nil
@@ -388,7 +384,6 @@ func (v *Vault) isStale(now, baseline domain.FileStat) (bool, error) {
 	return domain.HashContent(content) != baseline.Hash, nil
 }
 
-// put replaces a file and counts the write in the version of the vault, as the host does.
 func (v *Vault) put(filePath string, content []byte) (domain.FileStat, error) {
 	written, err := v.files.write(filePath, content)
 	if err != nil {
