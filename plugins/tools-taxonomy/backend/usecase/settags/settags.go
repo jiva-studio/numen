@@ -97,7 +97,11 @@ func (u *UseCase) Execute(ctx context.Context, id domain.VaultID, paths, toggles
 			results[one.index].Tags, results[one.index].Err = slices.Clone(current[results[one.index].Path]), outcome.Err
 			continue
 		}
-		set = append(set, one.toggles...)
+		for _, applied := range one.toggles {
+			if !applied.isClear {
+				set = append(set, applied)
+			}
+		}
 	}
 	return results, remember(ctx, vault.Store, set)
 }
