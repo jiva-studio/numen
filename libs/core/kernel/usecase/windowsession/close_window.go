@@ -13,13 +13,13 @@ const ShutdownBound = time.Second
 // and closes what the window holds open.
 type CloseWindow struct {
 	door    Door
-	closers []Closer
+	closers []CloseFunc
 	session vaultSession
 }
 
 // NewCloseWindow makes the use case over the door, the session of the window and the resources it
 // closes, in the order they depend on each other in.
-func NewCloseWindow(door Door, session *Session, closers ...Closer) CloseWindow {
+func NewCloseWindow(door Door, session *Session, closers ...CloseFunc) CloseWindow {
 	return CloseWindow{door: door, closers: closers, session: session}
 }
 
@@ -35,7 +35,7 @@ func (u CloseWindow) Execute(ctx context.Context) error {
 	defer stop()
 	var failures []error
 	for _, closer := range u.closers {
-		failures = append(failures, closer.Close(bound))
+		failures = append(failures, closer(bound))
 	}
 	return errors.Join(failures...)
 }

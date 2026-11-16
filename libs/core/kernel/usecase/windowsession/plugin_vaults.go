@@ -32,7 +32,7 @@ type FolderCheck interface {
 
 // VaultOpening shows a vault in the window on behalf of a plugin.
 type VaultOpening interface {
-	OpenPluginVault(ctx context.Context, v domain.Vault) error
+	Execute(ctx context.Context, v domain.Vault) error
 }
 
 // VaultEdits are the operations that change the list of vaults.
@@ -86,7 +86,7 @@ func (l PluginVaults) OpenVault(ctx context.Context, id domain.VaultID) error {
 	if err != nil {
 		return err
 	}
-	return l.ops.Open.OpenPluginVault(ctx, v)
+	return l.ops.Open.Execute(ctx, v)
 }
 
 // IsMissing reports whether the folder of the vault is missing.
