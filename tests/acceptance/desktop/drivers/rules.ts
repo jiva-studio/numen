@@ -20,6 +20,15 @@ export const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|
 
 export const getTitlePattern = (title: string): RegExp => new RegExp(`^(Linked tab )?${escapeRegExp(title)}( Close |$)`)
 
+/** The text of a name alone. */
+export const getPluginNamePattern = (plugin: string): RegExp => new RegExp(`^${escapeRegExp(plugin)}$`)
+
+/** The accessible name of the row of a plugin: its name, then its state after a comma where it is not running. */
+export const getPluginRowPattern = (plugin: string): RegExp => new RegExp(`^${escapeRegExp(plugin)}(, .+)?$`)
+
+/** The accessible name of the switch of a plugin. */
+export const getPluginSwitchPattern = (plugin: string): RegExp => new RegExp(`^Enabled ${escapeRegExp(plugin)}$`)
+
 /** The title the product gives the tab of a web address: the characters a file name cannot have become "-". */
 export const getAddressTitle = (address: string): string => address.replace(/[/\\:*?"<>|#]/g, '-')
 

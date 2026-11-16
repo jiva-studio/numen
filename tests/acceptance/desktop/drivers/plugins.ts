@@ -50,9 +50,11 @@ export class PluginDriver {
     const settings = settingsPage.getPanel()
     const toggle = settingsPage.getPluginSwitch(settings, name)
     const plugin = settingsPage.getPluginButton(settings, name)
+    const alarm = settingsPage.getPluginAlarm(settings, name)
     // The settings open on the page of the plugin shown last, which may be another plugin.
     await expect(settings).toBeVisible()
-    await expect(toggle.or(plugin).or(settingsPage.getBackButton()).first()).toBeVisible()
+    await expect(toggle.or(plugin).or(alarm).or(settingsPage.getBackButton()).first()).toBeVisible()
+    if (await alarm.isVisible()) throw new Error(`the plugin "${name}" is in trouble: ${await alarm.innerText()}`)
     if (!(await toggle.isVisible()) && !(await plugin.isVisible())) {
       await settingsPage.getBackButton().click()
     }

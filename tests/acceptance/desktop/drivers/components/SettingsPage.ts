@@ -1,11 +1,12 @@
 /** The Settings tab: the pages of the window and of each plugin, their rows, choices, texts and switches. */
 import { expect, type Locator, type Page } from 'playwright/test'
-import { escapeRegExp } from '../rules.js'
+import { escapeRegExp, getPluginNamePattern, getPluginRowPattern, getPluginSwitchPattern } from '../rules.js'
 
 /** The pages of the window: Appearance holds how it looks, System the rest. */
 export type WindowPage = 'System' | 'Appearance'
 const BACK = /^Back$/
 /** The buttons outside the path of the toolbar: a segment of the path carries the name of a page or a category. */
+const ALARM = 'button.plugins-list__alarm'
 const OUTSIDE_PATH = 'button:not(nav *)'
 
 export class SettingsPage {
@@ -82,10 +83,17 @@ export class SettingsPage {
   }
 
   getPluginSwitch(panel: Locator, plugin: string): Locator {
-    return panel.getByRole('switch', { name: new RegExp(`Enabled ${plugin}`) })
+    return panel.getByRole('switch', { name: getPluginSwitchPattern(plugin) })
   }
 
+  /** The row of the plugin in the list: not the alarm card of a plugin in trouble, which has the name of the plugin too. */
   getPluginButton(panel: Locator, plugin: string): Locator {
-    return this.getPageButton(panel, new RegExp(plugin))
+    return this.getPageButton(panel, getPluginRowPattern(plugin)).and(panel.locator(`:not(${ALARM})`))
+  }
+
+  /** The alarm card of a plugin in trouble: the name of the plugin and the reason. */
+  getPluginAlarm(panel: Locator, plugin: string): Locator {
+    const name = this.page.locator('.plugins-list__alarm-name', { hasText: getPluginNamePattern(plugin) })
+    return panel.locator(ALARM).filter({ has: name })
   }
 }
