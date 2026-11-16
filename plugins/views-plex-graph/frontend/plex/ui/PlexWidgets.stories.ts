@@ -58,8 +58,8 @@ const meta = {
       args,
       graph,
       getPathOf,
-      above: [entry('parents', 'Parents'), entry('tags', 'Tags')],
-      below: [entry('children', 'Children')],
+      above: [entry('parents', 'Up'), entry('tags', 'Tag')],
+      below: [entry('children', 'Down')],
     }),
     template: `
       <div style="height:100vh">
