@@ -12,6 +12,5 @@ export interface TreeRowProps {
   isTabStop: boolean
   isRenaming: boolean
   mark: Record<string, string>
-  /** What the end of the row draws when the row has no `end` slot. */
   end?: ((props: { id: RowId }) => VNode[]) | undefined
 }

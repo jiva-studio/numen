@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/usecase/tagcache"
 )
 
-// mountAPI mounts the methods under the constant names of package api, which the server accepts.
 func mountAPI(s *server.Server, cache *tagcache.Caches) {
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetTagMap, func(ctx context.Context, _ api.GetTagMapRequest) (api.TagMap, error) {
