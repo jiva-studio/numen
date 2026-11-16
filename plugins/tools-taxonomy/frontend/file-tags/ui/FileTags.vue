@@ -48,7 +48,13 @@ function onLeave() {
       @mouseenter="onEnter"
       @mouseleave="onLeave"
     >
-      <span v-for="dot in dots" :key="dot.tag" class="file-tags__dot" data-tag-dot :style="dot.style" />
+      <span
+        v-for="dot in dots"
+        :key="dot.tag"
+        class="file-tags__dot"
+        data-tag-dot
+        :style="dot.style"
+      />
       <span v-if="rest > 0" class="file-tags__rest">{{ getRestText(rest) }}</span>
     </span>
     <Teleport to="body">

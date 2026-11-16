@@ -47,7 +47,8 @@ export function createFilesTabDeps(
       setDraggedPaths: (paths) => workspace.dragged.setPaths(paths),
       showError: (text) => workspace.messages.showError(text),
       getEntryIcon: (entry, isOpen) => workspace.icons.getEntry(entry, isOpen),
-      watchRowEntries: (handler) => slots?.watchEntries(SLOT.fileTreeRowEnd, handler) ?? { dispose: () => undefined },
+      watchRowEntries: (handler) =>
+        slots?.watchEntries(SLOT.fileTreeRowEnd, handler) ?? { dispose: () => undefined },
     },
     menu: {
       getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],
