@@ -35,6 +35,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   const source: NamesSource = {
     notes,
     commands,
+    events: host.events,
     settings: readSettings(plugin),
     reportFailure: (error) =>
       notices.show(error instanceof Error ? error.message : String(error), 'error'),
