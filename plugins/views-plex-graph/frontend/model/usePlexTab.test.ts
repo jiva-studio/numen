@@ -22,7 +22,7 @@ import {
 import type { NoteHeading, NoteRelation, PathRename, PlexView } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import { getDefaultLook, getDefaultNames } from '../fixtures/settings'
+import { getDefaultLook } from '../fixtures/settings'
 import { readLook } from './look'
 
 /** The icons the window draws a declared command and a note of a declared type with. */
@@ -69,7 +69,6 @@ const createDeps = (editor: PlexTabDeps['editor'], overrides: DepsOverrides = {}
   editor,
   tabId: 'plex:1',
   look: getDefaultLook(),
-  names: getDefaultNames(),
   creatable: ['parent', 'child', 'jump'],
   window: {
     isReady: ref(true),
@@ -124,7 +123,6 @@ const tab = (
     editor: vault.editor,
     tabId: 'plex:1',
     look: getDefaultLook(),
-    names: getDefaultNames(),
     creatable: ['parent', 'child', 'jump'],
     window: {
       isReady: ref(true),

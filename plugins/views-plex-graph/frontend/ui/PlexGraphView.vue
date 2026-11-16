@@ -133,10 +133,6 @@ function onDismissLinkInspector() {
       :dragged="dragged"
       :drop-name="words.dropName"
       :headings="props.state.headings.getHeadings"
-      :names="props.state.canvas.names.getNames"
-      :show-names="props.state.canvas.names.showNames.value"
-      :names-opacity="look.namesOpacity.value"
-      :focused-names-opacity="look.focusedNamesOpacity.value"
       :widgets-above="props.state.canvas.widgets.above.value"
       :widgets-below="props.state.canvas.widgets.below.value"
       :get-path="props.state.canvas.widgets.getPath"
@@ -147,7 +143,6 @@ function onDismissLinkInspector() {
       @menu="onOpenMenu"
       @show="onShowNode"
       @enter="onEnterHeading"
-      @choose-name="props.state.canvas.names.choose"
       @edge-menu="onEdgeMenu"
       @dismiss="onDismissImage"
     >
