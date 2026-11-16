@@ -26,11 +26,20 @@ export class PaletteDriver {
     this.palette = new Palette(scenario)
   }
 
-  /** Answers what the command asks for with the rows, and fails when the palette asks for something else. */
+  /**
+   * Answers what the command asks for with the rows, and fails when the palette asks for something else.
+   * A list of several items takes the rows of one key, each of which toggles the item it names, and the
+   * person closes the list after the last of them.
+   */
   async answer(rows: readonly (readonly [string, string])[]): Promise<void> {
-    for (const [key, value] of rows) {
+    for (const [index, [key, value]] of rows.entries()) {
       const ask = await this.waitForAsk(key)
-      await this.give(ask, key, value)
+      if (await this.palette.multipleList().isVisible()) {
+        await this.toggleItem(value)
+        if (rows[index + 1]?.[0] !== key) await this.scenario.page.keyboard.press('Escape')
+      } else {
+        await this.give(ask, key, value)
+      }
     }
     await this.expectNothingAsked()
   }
@@ -39,7 +48,9 @@ export class PaletteDriver {
   async expectRows(rows: readonly (readonly string[])[]): Promise<void> {
     for (const { list, row, isDisabled } of parsePaletteRows(rows)) {
       await this.waitForAsk(list)
-      const option = this.palette.rowNamed(new RegExp('^' + escapeRegExp(row) + '$'))
+      const pattern = new RegExp('^' + escapeRegExp(row) + '$')
+      const isMultiple = await this.palette.multipleList().isVisible()
+      const option = isMultiple ? this.palette.optionNamed(pattern) : this.palette.rowNamed(pattern)
       await expect(option.first(), `the list "${list}" has no row "${row}"`).toBeVisible()
       if (isDisabled) await expect(option.first()).toHaveAttribute('aria-disabled', 'true')
       else await expect(option.first()).not.toHaveAttribute('aria-disabled', 'true')
@@ -110,6 +121,20 @@ export class PaletteDriver {
     if (key === 'Name' && this.scenario.hasWorld === false) await this.scenario.claimTitle(value)
     await field.fill(value)
     await page.keyboard.press('Enter')
+  }
+
+  private async toggleItem(value: string): Promise<void> {
+    await this.palette.field().fill(value)
+    const name = escapeRegExp(value)
+    const item = this.palette.optionNamed(new RegExp(`^(Create )?${name}$`))
+    await expect(item, `the list has no row "${value}" and no row to create it`).toHaveCount(1)
+    const before = await item.getAttribute('aria-checked')
+    await item.click()
+    if (before === null) {
+      await expect(this.palette.optionNamed(new RegExp(`^${name}$`))).toHaveAttribute('aria-checked', 'true')
+    } else {
+      await expect(item).not.toHaveAttribute('aria-checked', before)
+    }
   }
 
   private async pickRow(value: string, isExact: boolean): Promise<void> {

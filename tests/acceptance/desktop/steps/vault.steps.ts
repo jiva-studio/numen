@@ -44,3 +44,7 @@ Then('{vault} has the following links:', async ({ person }, vault: string, links
 Given('the notes have the following links:', ({ person }, links: DataTable) => {
   person.vault.addLinks(links.raw())
 })
+
+Given('the notes have the following tags:', async ({ person }, tags: DataTable) => {
+  await person.vault.ensureTags(tags.raw())
+})

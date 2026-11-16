@@ -28,6 +28,8 @@ import {
   readCardModelFields,
 } from './cards.js'
 import { addLinks, getLinkTitle, readLinks, type NoteLink } from './note-links.js'
+import { addTags, groupTags } from './note-tags.js'
+import { readTags } from './note-tags-read.js'
 import { assertEntry, DEFAULT_VAULT, getStem, parseColumn, readLinkAddress } from './rules.js'
 import { assertPathsAreFree, parseVaultChecks, parseVaultFiles, type VaultWrite } from './vault-files.js'
 import type { Scenario } from './scenario.js'
@@ -123,6 +125,37 @@ export class VaultDriver {
         .filter((link) => link.from === from)
         .map((link) => ({ to: `[[${this.scenario.getNotePath(link.to).replace(/\.md$/, '')}]]`, role: link.role, label: link.description }))
       world.writeText(vault, notePath, addLinks(text, noteLinks))
+    }
+  }
+
+  /** The tags of the notes written before the application starts: each note of the column note gets the tags of its rows. */
+  addTags(rows: readonly (readonly string[])[]): void {
+    const world = this.scenario.getWorld()
+    const vault = this.scenario.getVault(DEFAULT_VAULT)
+    for (const [title, tags] of groupTags(rows)) {
+      const notePath = this.scenario.getNotePath(title)
+      const text = world.readText(vault, notePath)
+      if (text === undefined)
+        throw new Error(`no note is titled "${title}" in the vault: write it before its tags`)
+      world.writeText(vault, notePath, addTags(text, tags))
+    }
+  }
+
+  /** The notes have the tags of the table: before the application starts they are written, after it the notes on disk are read and must hold exactly these tags. */
+  async ensureTags(rows: readonly (readonly string[])[]): Promise<void> {
+    if (!this.scenario.hasServer) {
+      this.addTags(rows)
+      return
+    }
+    const world = this.scenario.getWorld()
+    const vault = this.scenario.getVault(DEFAULT_VAULT)
+    for (const [title, tags] of groupTags(rows)) {
+      const notePath = this.scenario.getNotePath(title)
+      await expect
+        .poll(() => readTags(world.readText(vault, notePath) ?? '').sort(), {
+          message: `the note "${title}" does not have exactly the tags ${tags.join(', ')}`,
+        })
+        .toStrictEqual([...tags].sort())
     }
   }
 

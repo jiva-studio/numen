@@ -4,7 +4,6 @@ import type { Api, CommandRegistration, PickerHost } from '@numen/plugin-sdk'
 export interface SetTagsDeps {
   readonly api: Api
   readonly picker: PickerHost
-  /** The tags of the note at the path in the order the note holds them. */
   readonly getTags: (path: string) => readonly string[]
 }
 

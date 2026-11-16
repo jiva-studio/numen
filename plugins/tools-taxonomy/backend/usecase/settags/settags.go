@@ -52,11 +52,11 @@ func New(reader Reader, open func(id domain.VaultID) Vault) *UseCase {
 // Execute toggles each tag of toggles on the notes at paths and returns one Result for each path, in order. With
 // several notes a tag that every note has is removed from all, and any other is set on all. A note left with no tag
 // loses the key tags. A note that cannot be written costs the others nothing. It remembers the tags it set as recent.
-func (u *UseCase) Execute(ctx context.Context, id domain.VaultID, paths, toggles []string) ([]Result, error) {
+func (u *UseCase) Execute(_ context.Context, _ domain.VaultID, _, _ []string) ([]Result, error) {
 	return nil, nil
 }
 
 // ListRecent returns the tags Execute set, the latest first, each once.
-func (u *UseCase) ListRecent(ctx context.Context, id domain.VaultID) ([]string, error) {
+func (u *UseCase) ListRecent(_ context.Context, _ domain.VaultID) ([]string, error) {
 	return nil, nil
 }

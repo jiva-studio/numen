@@ -1,3 +1,4 @@
+// Package api declares the JSON messages of the tags service the plugin's backend serves to its own frontend.
 package api
 
 const (
