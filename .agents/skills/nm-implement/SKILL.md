@@ -82,7 +82,7 @@ When local gates pass:
 
 1. If opening a pull request, create it as a draft (`gh pr create --draft`) and wait for CI checks to pass (`gh pr checks --watch`), fixing any CI failures while the pull request remains in draft.
 2. Mark the pull request ready for review (`gh pr ready`). Leaving draft starts the Claude review workflow, which runs the review pipeline (Gatekeeper, Bug Hunter, Adversary, and the feature conformance check) and approves or requests changes as github-actions[bot]. Fix any findings, push, and comment `/nm-review` to review again until it approves, with CI green.
-3. Once CI is green and the review workflow has approved, trigger CodeRabbit (`gh pr comment --body "@coderabbitai review"`).
+3. Once CI is green and the review workflow has approved, trigger CodeRabbit (`gh pr comment --body "@coderabbitai review"`). After its findings are fixed and CI is green again, comment it once more; the merge waits for the approvals of github-actions and CodeRabbit.
 
 Prompt the user clearly when all tests are green:
 
