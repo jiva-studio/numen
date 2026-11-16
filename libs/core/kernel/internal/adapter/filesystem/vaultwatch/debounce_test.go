@@ -179,6 +179,7 @@ func TestAFileWrittenAfterTheFirstWalkOfANewFolderIsReported(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 
+	shape := shapeOf(t, reader)
 	folder := filepath.Join(root, "later")
 	if err := os.Mkdir(folder, 0o755); err != nil {
 		t.Fatal(err)
@@ -190,7 +191,7 @@ func TestAFileWrittenAfterTheFirstWalkOfANewFolderIsReported(t *testing.T) {
 
 	changes := make(chan []string)
 	missing := make(chan struct{}, 1)
-	go debounce(ctx, shapeOf(t, reader), vaultconfig.Options{DebounceDelay: 500 * time.Millisecond}, queue, changes, missing)
+	go debounce(ctx, shape, vaultconfig.Options{DebounceDelay: 500 * time.Millisecond}, queue, changes, missing)
 
 	raw <- event{path: folder}
 	select {
