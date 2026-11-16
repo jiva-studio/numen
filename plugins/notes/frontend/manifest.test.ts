@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest'
 const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
 ) as {
+  settings?: readonly { key: string }[]
   contributes: {
     commands?: readonly unknown[]
     slots?: readonly {
@@ -44,6 +45,18 @@ describe('the manifest', () => {
     )
 
     expect(entries).toStrictEqual([])
+  })
+})
+
+describe('the settings of the manifest', () => {
+  const keys = (manifest.settings ?? []).map((one) => one.key.toLowerCase())
+
+  it('declare no soft wrap, which is a setting of the application', () => {
+    expect(keys.filter((key) => key.includes('wrap'))).toStrictEqual([])
+  })
+
+  it('declare no line numbers, which are a setting of the application', () => {
+    expect(keys.filter((key) => key.includes('line'))).toStrictEqual([])
   })
 })
 

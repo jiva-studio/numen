@@ -856,3 +856,60 @@ export const CompletionOpen: Story = {
   render: renderEditor('See [[En', { extensions: completionOf }),
   play: ({ canvasElement }) => playCompletionOpened(canvasElement),
 }
+
+const SHORT_LINES = 'A bell over the door.\nSeeds and spades.\nA lamp on the shelf.\n'
+
+/** The centre of the text a node draws, as far down the page as the box of its glyphs. */
+const getTextCentre = (element: Element): number => {
+  const range = document.createRange()
+  range.selectNodeContents(element)
+  const box = range.getBoundingClientRect()
+  return (box.top + box.bottom) / 2
+}
+
+const renderWithTokens = (size: string, height: string): Render => {
+  return () => ({
+    components: { Editor },
+    setup: () => ({ text: SHORT_LINES, size, height }),
+    template:
+      `<div :style="{ '--numen-editor-font-size': size, '--numen-editor-line-height': height }">` +
+      `<Editor :model-value="text" :line-numbers="true" class="h-screen bg-surface" /></div>`,
+  })
+}
+
+const playNumbersOnTheirLines = async (
+  canvasElement: HTMLElement,
+  size: number,
+  height: number,
+) => {
+  const view = getView(canvasElement)
+  await nextFrame()
+  const lines = [...view.contentDOM.querySelectorAll('.cm-line')].slice(0, 3)
+  const numbers = [
+    ...view.dom.querySelectorAll('.cm-lineNumbers .cm-gutterElement:not(:first-child)'),
+  ].slice(0, 3)
+  await expect(lines).toHaveLength(3)
+  await expect(numbers).toHaveLength(3)
+
+  // The line is as tall as the tokens say: the font size times the line height.
+  for (const line of lines) {
+    await expect(Math.abs(line.getBoundingClientRect().height - size * height)).toBeLessThan(1)
+  }
+  // Each number sits on the line of its text.
+  for (const [index, line] of lines.entries()) {
+    const number = numbers[index] as Element
+    await expect(Math.abs(getTextCentre(number) - getTextCentre(line))).toBeLessThan(1.5)
+  }
+}
+
+/** At a size of 24 pixels and a line height of 2.0, the lines follow the tokens and each number is on its own line. */
+export const NumbersStayOnLinesAtALargeSize: Story = {
+  render: renderWithTokens('24px', '2'),
+  play: ({ canvasElement }) => playNumbersOnTheirLines(canvasElement, 24, 2),
+}
+
+/** At a size of 10 pixels and a line height of 1.2, the lines follow the tokens and each number is on its own line. */
+export const NumbersStayOnLinesAtASmallSize: Story = {
+  render: renderWithTokens('10px', '1.2'),
+  play: ({ canvasElement }) => playNumbersOnTheirLines(canvasElement, 10, 1.2),
+}

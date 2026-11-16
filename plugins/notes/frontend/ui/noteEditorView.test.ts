@@ -1,9 +1,20 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
 import { EditorView } from '@codemirror/view'
-import { NOTE_EDITOR } from '@numen/plugin-sdk'
+import { NOTE_EDITOR, type HostServices } from '@numen/plugin-sdk'
 import { createNoteEditorView } from './noteEditorView'
+import { activate } from '../index'
+import { createEditorSettingsContext } from '../testing/editorSettings'
+
+/** The window has loaded its settings: wrap on, no numbers. */
+const loadEditorSettings = () =>
+  activate(
+    createEditorSettingsContext({ lineNumbers: false, softWrap: true }).context,
+    { vault: {} } as unknown as HostServices,
+  )
+
+beforeEach(loadEditorSettings)
 
 let wrapper: VueWrapper | null = null
 
