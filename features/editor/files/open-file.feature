@@ -24,6 +24,7 @@ Feature: Open file
 
   Rule: A file opens in the tab of its type
 
+    @smoke
     Scenario: A deck opens in a Deck tab
       When the person opens the file at "cards/Animals.md"
       Then the Deck tab at "cards/Animals.md" is open
@@ -32,10 +33,12 @@ Feature: Open file
       When the person opens the file at "cards/Animal.md"
       Then the Card Model tab at "cards/Animal.md" is open
 
+    @smoke
     Scenario: A note opens in a note tab
       When the person opens the file at "notes/Entropy.md"
       Then the note tab at "notes/Entropy.md" is open
 
+    @smoke
     Scenario: A PDF opens in a PDF tab
       When the person opens the file at "assets/shore.pdf"
       Then the PDF tab at "assets/shore.pdf" is open

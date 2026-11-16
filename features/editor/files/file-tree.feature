@@ -37,6 +37,7 @@ Feature: File tree
         | Name | Saltworks |
       Then the vault contains the folder at "Saltworks"
 
+    @smoke
     Scenario: A note is renamed with its links
       Given the vault has the following:
         | path                | text                    |
@@ -61,6 +62,7 @@ Feature: File tree
       When the person opens the folder at "cards"
       Then the tab titled "Files" has "cards/Animals.md"
 
+    @smoke
     Scenario: A note is shown in the file tree
       Given the vault has the following:
         | path             | text      |

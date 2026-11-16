@@ -28,7 +28,7 @@ describe('the release feed address setting', () => {
     const channel = findSetting('channel')
     const { when } = findSetting('endpoint')
 
-    expect(channel.options?.map((one) => one.value)).toStrictEqual(['stable', 'beta', 'custom'])
+    expect(channel.options?.map((one) => one.value)).toStrictEqual(['stable', 'nightly', 'custom'])
     expect(when).toStrictEqual({ setting: 'channel', is: ['custom'] })
   })
 

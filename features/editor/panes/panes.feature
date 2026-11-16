@@ -5,6 +5,7 @@ Feature: Panes
   I want to open a note in a pane of its own
   So that I can read two notes side by side
 
+  @smoke
   Scenario: A note is opened beside
     Given the empty vault "Test"
     And the vault has the following:
