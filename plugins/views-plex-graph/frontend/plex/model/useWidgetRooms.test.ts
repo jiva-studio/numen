@@ -7,7 +7,6 @@ import type { PlexNode } from '../../types'
 
 const node = (id: string): PlexNode => ({ id, title: id, relation: 'child' })
 
-/** An element that reports the height a test sets, as a layout engine would. */
 const createWidgets = (height: number) => {
   const element = document.createElement('div')
   const state = { height }

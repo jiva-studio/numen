@@ -1,5 +1,5 @@
 /**
- * The widgets plugins place over and under the nodes of a plex: where they sit against the node, how a pair shares a line, and the plex with none.
+ * The widgets plugins place over and under the nodes of a plex: their place against the node, how a pair shares a line, and the plex with none.
  * Every graph and every widget here is made up.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -28,9 +28,10 @@ const createWidget = (name: string, text: string) =>
         'span',
         {
           'data-widget': name,
-          style: 'display:inline-block;padding:0.25rem 0.75rem;margin:0.125rem;border:1px solid currentColor',
+          'data-path': this.path,
+          style: 'display:inline-block;padding:0.125rem 0.25rem;margin:0.0625rem;border:1px solid currentColor',
         },
-        `${text} ${this.path}`,
+        text,
       )
     },
   })
@@ -85,7 +86,7 @@ const getBox = (canvasElement: HTMLElement, title: string): DOMRect => {
 
 const getWidgets = (canvasElement: HTMLElement, name: string, path: string): DOMRect => {
   const found = [...canvasElement.querySelectorAll(`[data-widget="${name}"]`)].find((one) =>
-    one.textContent?.endsWith(path),
+    one.getAttribute('data-path') === path,
   )
   if (!found) throw new Error(`no widget ${name} for ${path}`)
   return found.getBoundingClientRect()
