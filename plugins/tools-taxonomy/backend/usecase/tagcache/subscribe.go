@@ -34,7 +34,8 @@ func (c *Caches) Subscribe(id domain.VaultID) (<-chan Change, func()) {
 	return c.getVault(id).follow.add()
 }
 
-// follow is the subscribers to the changes of the tags of one vault and the tags last published to them.
+// follow is the subscribers to the changes of the tags of one vault and the tags last published to them;
+// the first tags published are the baseline and change nothing.
 type follow struct {
 	mu        sync.Mutex
 	published map[string][]string
@@ -77,8 +78,6 @@ func (f *follow) add() (<-chan Change, func()) {
 	}
 }
 
-// publish sends the subscribers what differs between current and the tags published last. The first
-// tags published are the baseline and change nothing.
 func (f *follow) publish(current map[string][]string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
