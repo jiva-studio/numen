@@ -38,7 +38,8 @@ type WriteFrontmatter struct {
 	now     machineport.Clock
 }
 
-// NewWriteFrontmatter writes frontmatter keys through the vault readers and writers, the index updater and the clock.
+// NewWriteFrontmatter returns the use case that writes frontmatter keys. It takes the vault readers
+// and writers, the index updater and the clock, as NewEditLinks does.
 func NewWriteFrontmatter(
 	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock,
 ) WriteFrontmatter {
