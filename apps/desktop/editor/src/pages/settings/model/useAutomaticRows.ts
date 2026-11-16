@@ -36,10 +36,14 @@ export function useAutomaticRows(source: AutomaticRowsSource) {
       () => source.stored.value.length,
       () => source.drafts.value.length,
       () => source.isSingle.value,
+      () => readRows(source.getValue()).length,
       isAutomatic,
     ],
     () => {
-      const isEmpty = source.stored.value.length > 0 && source.drafts.value.length === 0
+      const isEmpty =
+        source.stored.value.length > 0 &&
+        source.drafts.value.length === 0 &&
+        readRows(source.getValue()).length === 0
       if (source.isSingle.value && !isAutomatic.value && isEmpty) source.add()
     },
     { immediate: true },
