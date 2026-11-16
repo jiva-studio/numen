@@ -6,7 +6,8 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// PortInterface is an interface with methods that a package under port/ declares.
+// PortInterface is an interface with methods that a package under port/ or under usecase/ declares: a
+// port with one consumer is declared in that use case package.
 type PortInterface struct {
 	Name  string
 	Iface *types.Interface
@@ -19,7 +20,7 @@ func IsInLayer(path, root, layer string) bool {
 func ListPortInterfaces(pkgs []*packages.Package, root string) []PortInterface {
 	var found []PortInterface
 	for _, pkg := range pkgs {
-		if !IsInLayer(pkg.PkgPath, root, "port") {
+		if !IsInLayer(pkg.PkgPath, root, "port") && !IsInLayer(pkg.PkgPath, root, "usecase") {
 			continue
 		}
 		scope := pkg.Types.Scope()

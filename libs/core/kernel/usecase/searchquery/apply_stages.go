@@ -5,7 +5,6 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/operationport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -16,7 +15,7 @@ type ApplyStagesDeps struct {
 	Codec   RerankCodec
 	Rows    RerankRows
 	Resolve connectionport.ResolveConnection
-	Results operationport.OperationResults
+	Results OperationResults
 	Clock   machineport.Clock
 	Readers vaultport.VaultReaders
 	Texts   textdomain.Readers
