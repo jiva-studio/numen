@@ -375,11 +375,18 @@ describe('the Editor page of the shell settings', () => {
 
     const choices = findRow(wrapper, 'Font family').findComponent(Select).props('choices')
     expect(choices.map((one) => one.id)).toStrictEqual(['', 'sans', 'serif', 'mono'])
-    expect(choices.map((one) => one.text)).toStrictEqual(['As in the theme', 'Sans', 'Serif', 'Mono'])
+    expect(choices.map((one) => one.text)).toStrictEqual([
+      'As in the theme',
+      'Sans',
+      'Serif',
+      'Mono',
+    ])
   })
 
   it('shows the face of the theme where the font family is empty', () => {
-    const empty = EDITOR.map((one) => (one.key === 'editor.fontFamily' ? { ...one, value: '' } : one))
+    const empty = EDITOR.map((one) =>
+      one.key === 'editor.fontFamily' ? { ...one, value: '' } : one,
+    )
     const { wrapper } = createPage('editor', empty)
 
     expect(findRow(wrapper, 'Font family').findComponent(Select).props('modelValue')).toBe('')

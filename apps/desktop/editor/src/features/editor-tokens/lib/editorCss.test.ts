@@ -19,12 +19,12 @@ describe('the tokens of the editor written from its settings', () => {
   })
 
   it('writes the size at the ends of its range as it is', () => {
-    expect(readTokens(getEditorCss({ fontSize: 10, lineHeight: 1.2, fontFamily: '' })).get(SIZE)).toBe(
-      '10px',
-    )
-    expect(readTokens(getEditorCss({ fontSize: 32, lineHeight: 2.4, fontFamily: '' })).get(HEIGHT)).toBe(
-      '2.4',
-    )
+    expect(
+      readTokens(getEditorCss({ fontSize: 10, lineHeight: 1.2, fontFamily: '' })).get(SIZE),
+    ).toBe('10px')
+    expect(
+      readTokens(getEditorCss({ fontSize: 32, lineHeight: 2.4, fontFamily: '' })).get(HEIGHT),
+    ).toBe('2.4')
   })
 
   it('leaves the face to the theme where no family is chosen', () => {
@@ -57,7 +57,14 @@ describe('the tokens of the editor written from its settings', () => {
     expect(new Set(faces).size).toBe(3)
   })
 
-  it.each(['cursive', 'Sans', 'sans; color: red', 'serif } body { display: none', 'mono /* x */', '<b>'])(
+  it.each([
+    'cursive',
+    'Sans',
+    'sans; color: red',
+    'serif } body { display: none',
+    'mono /* x */',
+    '<b>',
+  ])(
     'writes no family for the value %s that is none of the choices, and keeps the size',
     (value) => {
       const tokens = readTokens(getEditorCss({ fontSize: 18, lineHeight: 1.5, fontFamily: value }))

@@ -88,7 +88,11 @@ const setup = ({
   }
   const deps: WindowBootstrapDeps = {
     vaults,
-    settings: { start: () => Promise.resolve(), close: () => undefined, editorTokens: { start: () => () => undefined } },
+    settings: {
+      start: () => Promise.resolve(),
+      close: () => undefined,
+      editorTokens: { start: () => () => undefined },
+    },
     window: { start: () => Promise.resolve(), close: () => undefined },
     editing: { fileFlush: { start: () => Promise.resolve() }, close: () => undefined },
     tabLinkSession: { start: () => Promise.resolve(), close: () => undefined },

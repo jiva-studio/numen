@@ -161,7 +161,10 @@ const openEditorSettings = async (tab: Tab) => {
 }
 
 const getTileNames = (tab: Tab) =>
-  tab.get('.plugins-page').findAll('button').map((one) => one.attributes('aria-label'))
+  tab
+    .get('.plugins-page')
+    .findAll('button')
+    .map((one) => one.attributes('aria-label'))
 
 const openPlugin = async (tab: Tab, name: string) => {
   await tab.get(`button[aria-label="${name}"]`).trigger('click')
