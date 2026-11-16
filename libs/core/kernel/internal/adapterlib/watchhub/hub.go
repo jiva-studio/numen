@@ -47,7 +47,6 @@ type placed struct {
 	mu        sync.Mutex
 	followers map[*follower]struct{}
 
-	// placed per folder on Linux: see Hub.Place
 	inner chan notify.EventInfo
 }
 
@@ -284,7 +283,6 @@ func (h *Hub) Place(dir string) error {
 	return nil
 }
 
-// drain empties a channel that no one follows, so the watcher never meets it full.
 func drain(c <-chan notify.EventInfo, quit <-chan struct{}) {
 	for {
 		select {

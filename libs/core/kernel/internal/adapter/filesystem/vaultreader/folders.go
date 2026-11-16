@@ -168,6 +168,18 @@ type underWalk struct {
 	short      bool
 }
 
+func (w *underWalk) runBeforeRead(dir string) bool {
+	run := w.folders.beforeRead
+	if run == nil {
+		return true
+	}
+	if err := run(dir); err != nil {
+		w.short = true
+		return false
+	}
+	return true
+}
+
 func (w *underWalk) visit(ctx context.Context, p string, d fs.DirEntry, err error) error {
 	if ctx.Err() != nil {
 		return fs.SkipAll
@@ -192,11 +204,8 @@ func (w *underWalk) visit(ctx context.Context, p string, d fs.DirEntry, err erro
 		if p != w.absolute && reader.isSkipped(path, d.Name()) {
 			return fs.SkipDir
 		}
-		if run := w.folders.beforeRead; run != nil {
-			if err := run(p); err != nil {
-				w.short = true
-				return fs.SkipDir
-			}
+		if !w.runBeforeRead(p) {
+			return fs.SkipDir
 		}
 		w.folders.addFolder(path)
 		return nil
