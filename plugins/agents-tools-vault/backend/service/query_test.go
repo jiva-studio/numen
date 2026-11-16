@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest/searchtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
@@ -26,9 +27,9 @@ func getTideFunctions() host.SearchFunctions {
 	}}
 }
 
-func newQueryRegistry(t *testing.T) (*hosttest.Searches, *tools.Registry) {
+func newQueryRegistry(t *testing.T) (*searchtest.Searches, *tools.Registry) {
 	t.Helper()
-	searches := hosttest.NewSearches()
+	searches := searchtest.NewSearches()
 	searches.SetFunctions(getTideFunctions(), nil)
 	score := 0.8
 	searches.SetResults(tideQuery, []host.SearchResult{
