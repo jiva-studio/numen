@@ -29,11 +29,39 @@ func getCalledInterfaceMethod(call *ast.CallExpr, info *types.Info) *types.Func 
 	return method
 }
 
+// returnsPort reports whether a function of a use case package builds a port: one of its results is a port interface.
+func returnsPort(function *ast.FuncDecl, info *types.Info, ports []load.PortInterface) bool {
+	if function.Type.Results == nil {
+		return false
+	}
+	for _, result := range function.Type.Results.List {
+		t := info.TypeOf(result.Type)
+		for t != nil {
+			switch next := types.Unalias(t).(type) {
+			case *types.Pointer:
+				t = next.Elem()
+			case *types.Slice:
+				t = next.Elem()
+			case *types.Map:
+				t = next.Elem()
+			default:
+				if named, ok := next.(*types.Named); ok && load.IsPortType(named.Obj(), ports) {
+					return true
+				}
+				t = nil
+			}
+		}
+	}
+	return false
+}
+
 func getPortInterfaceCalls(pkgs []*packages.Package, root string) ([]load.Finding, int) {
 	var found []load.Finding
 	read := 0
+	ports := load.ListPortInterfaces(pkgs, root)
 	for _, pkg := range pkgs {
-		if !load.IsInLayer(pkg.PkgPath, root, "port") {
+		isPort := load.IsInLayer(pkg.PkgPath, root, "port")
+		if !isPort && !load.IsInLayer(pkg.PkgPath, root, "usecase") {
 			continue
 		}
 		for _, file := range pkg.Syntax {
@@ -42,7 +70,7 @@ func getPortInterfaceCalls(pkgs []*packages.Package, root string) ([]load.Findin
 			}
 			for _, decl := range file.Decls {
 				function, ok := decl.(*ast.FuncDecl)
-				if !ok || function.Body == nil {
+				if !ok || function.Body == nil || !isPort && !returnsPort(function, pkg.TypesInfo, ports) {
 					continue
 				}
 				read++

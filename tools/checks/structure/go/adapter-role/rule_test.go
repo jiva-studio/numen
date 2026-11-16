@@ -21,39 +21,15 @@ func (r adapterRole) isDriving() bool { return r.drivingBy.Name != "" }
 
 func (r adapterRole) isDriven() bool { return r.drivenBy.Name != "" }
 
-func getDeclaredObject(object types.Object) types.Object {
-	name, ok := object.(*types.TypeName)
-	if !ok || !name.IsAlias() {
-		return object
-	}
-	if named, ok := types.Unalias(name.Type()).(*types.Named); ok {
-		return named.Obj()
-	}
-	return object
-}
-
-func listReferences(pkg *packages.Package, isDeclaredIn func(path string) bool, resolve func(types.Object) types.Object) []load.Finding {
-	var found []load.Finding
-	for ident, object := range pkg.TypesInfo.Uses {
-		object = resolve(object)
-		if object == nil || object.Pkg() == nil || !isDeclaredIn(object.Pkg().Path()) {
-			continue
-		}
-		if strings.HasSuffix(pkg.Fset.Position(ident.Pos()).Filename, "_test.go") {
-			continue
-		}
-		found = append(found, load.NewFinding(pkg.Fset, ident.Pos(), object.Pkg().Path()+"."+object.Name()))
-	}
-	return load.SortFindings(found)
-}
-
 func getAdapterRoles(adapters, core []*packages.Package, root string) []adapterRole {
 	ports := load.ListPortInterfaces(core, root)
-	isUseCase := func(path string) bool { return load.IsInLayer(path, root, "usecase") }
+	isUseCase := func(object types.Object) bool {
+		return load.IsInLayer(object.Pkg().Path(), root, "usecase") && !load.IsPortType(object, ports)
+	}
 	roles := make([]adapterRole, 0, len(adapters))
 	for _, pkg := range adapters {
 		role := adapterRole{pkgPath: pkg.PkgPath, drivingBy: load.Finding{Position: "", Name: ""}, drivenBy: load.GetImplementation(pkg, ports)}
-		if uses := listReferences(pkg, isUseCase, getDeclaredObject); len(uses) > 0 {
+		if uses := load.ListReferences(pkg, isUseCase, load.GetDeclaredObject); len(uses) > 0 {
 			role.drivingBy = uses[0]
 		}
 		roles = append(roles, role)
@@ -62,16 +38,19 @@ func getAdapterRoles(adapters, core []*packages.Package, root string) []adapterR
 	return roles
 }
 
-func getPortReferences(adapters []*packages.Package, roles []adapterRole, root string) []load.Finding {
+func getPortReferences(adapters, core []*packages.Package, roles []adapterRole, root string) []load.Finding {
 	driving := map[string]bool{}
 	for _, role := range roles {
 		driving[role.pkgPath] = role.isDriving()
 	}
-	isPort := func(path string) bool { return load.IsInLayer(path, root, "port") }
+	ports := load.ListPortInterfaces(core, root)
+	isPort := func(object types.Object) bool {
+		return load.IsInLayer(object.Pkg().Path(), root, "port") || load.IsPortType(object, ports)
+	}
 	var found []load.Finding
 	for _, pkg := range adapters {
 		if driving[pkg.PkgPath] {
-			found = append(found, listReferences(pkg, isPort, getDeclaredObject)...)
+			found = append(found, load.ListReferences(pkg, isPort, load.GetDeclaredObject)...)
 		}
 	}
 	return load.SortFindings(found)
@@ -124,9 +103,9 @@ func checkAdapterHasOneRole(t *testing.T, roles []adapterRole) {
 	}
 }
 
-func checkDrivingAdapterReferencesNoPort(t *testing.T, adapters []*packages.Package, roles []adapterRole) {
+func checkDrivingAdapterReferencesNoPort(t *testing.T, adapters, core []*packages.Package, roles []adapterRole) {
 	t.Helper()
-	for _, one := range getPortReferences(adapters, roles, load.CoreImportPath) {
+	for _, one := range getPortReferences(adapters, core, roles, load.CoreImportPath) {
 		t.Errorf("%s references %s: a driving adapter reaches the core through a use case", one.Position, one.Name)
 	}
 	driving := 0
@@ -157,6 +136,32 @@ type Find struct{ notes noteport.Notes }
 func New(notes noteport.Notes) *Find { return &Find{notes: notes} }
 
 func (f *Find) Execute() string { return f.notes.Read() }
+`,
+		"usecase/find/ports.go": `package find
+
+type Cache interface{ Get() string }
+
+type Executor interface{ Execute() string }
+
+func NewCached(c Cache) *Find { return &Find{} }
+`,
+		"adapter/cache/cache.go": `package cache
+
+type Cache struct{}
+
+func (Cache) Get() string { return "" }
+`,
+		"adapter/execs/execs.go": `package execs
+
+type Exec struct{}
+
+func (Exec) Execute() string { return "" }
+`,
+		"adapter/warm/warm.go": `package warm
+
+import "fixture/usecase/find"
+
+func Warm(f *find.Find, c find.Cache) {}
 `,
 		"usecase/find/findcontract/findcontract.go": `package findcontract
 

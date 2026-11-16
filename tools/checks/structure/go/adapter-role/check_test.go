@@ -23,7 +23,7 @@ func TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort(t *testing.T) {
 		checkAdapterHasOneRole(t, roles)
 	})
 	t.Run("ADrivingAdapterReferencesNoPort", func(t *testing.T) {
-		checkDrivingAdapterReferencesNoPort(t, adapters, roles)
+		checkDrivingAdapterReferencesNoPort(t, adapters, core, roles)
 	})
 }
 
@@ -45,17 +45,41 @@ func TestAdapterRoleRule_ClassifiesByStructure(t *testing.T) {
 	}
 	want := []string{
 		"fixture/adapter/aliased ",
+		"fixture/adapter/cache driven",
 		"fixture/adapter/cli driving",
+		"fixture/adapter/execs ",
 		"fixture/adapter/mixed driving+driven",
 		"fixture/adapter/store driven",
+		"fixture/adapter/warm driving",
 		"fixture/adapter/window driving",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("the roles are %v, want %v", got, want)
 	}
-	refs := load.FormatFindings(getPortReferences(adapters, roles, "fixture"))
-	if want := []string{"window.go:8 fixture/port/noteport.Note", "window.go:8 fixture/port/noteport.Title"}; !slices.Equal(refs, want) {
+	refs := load.FormatFindings(getPortReferences(adapters, pkgs, roles, "fixture"))
+	if want := []string{"warm.go:5 fixture/usecase/find.Cache", "window.go:8 fixture/port/noteport.Note", "window.go:8 fixture/port/noteport.Title"}; !slices.Equal(refs, want) {
 		t.Errorf("the port references are %v, want %v", refs, want)
+	}
+}
+
+// A port is an interface with methods under port/, or a named interface of a use case package that a use case holds as
+// a field or takes as a parameter of an exported function; the contract of a use case that no other use case holds is not
+// one, and the ports found through the use cases only add to the ones under port/.
+func TestPortInterfaces_ReadsThePortsByTheirRole(t *testing.T) {
+	pkgs := load.LoadFixture(t, load.WriteTreeFixture(t, getAdapterRoleFixture()))
+	var got []string
+	for _, port := range load.ListPortInterfaces(pkgs, "fixture") {
+		got = append(got, port.Name)
+	}
+	slices.Sort(got)
+	want := []string{"fixture/port/noteport.Notes", "fixture/usecase/find.Cache"}
+	if !slices.Equal(got, want) {
+		t.Errorf("the ports are %v, want %v", got, want)
+	}
+	for _, old := range load.ListDeclaredPortInterfaces(pkgs, "fixture") {
+		if !slices.ContainsFunc(load.ListPortInterfaces(pkgs, "fixture"), func(one load.PortInterface) bool { return one.Name == old.Name }) {
+			t.Errorf("%s is a port under port/ and is missing from the ports", old.Name)
+		}
 	}
 }
 
