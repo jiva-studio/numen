@@ -2,13 +2,13 @@ package settags
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 
+	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/recentfile"
 	"github.com/jiva-studio/numen/plugins/tools-taxonomy/backend/domain/tags"
 )
 
@@ -21,11 +21,7 @@ func readRecent(ctx context.Context, store Store) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", recentFile, err)
 	}
-	var list []string
-	if err := json.Unmarshal(content, &list); err != nil {
-		return nil, fmt.Errorf("parse %s: %w", recentFile, err)
-	}
-	return list, nil
+	return recentfile.Parse(content), nil
 }
 
 // remember puts the tags in front of the recent tags, the last of them first, and keeps the first recentLimit.
@@ -50,7 +46,7 @@ func remember(ctx context.Context, store Store, set []toggle) error {
 			merged = append(merged, tag)
 		}
 	}
-	content, err := json.Marshal(merged[:min(len(merged), recentLimit)])
+	content, err := recentfile.Encode(merged[:min(len(merged), recentLimit)])
 	if err != nil {
 		return fmt.Errorf("encode %s: %w", recentFile, err)
 	}
