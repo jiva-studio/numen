@@ -1,6 +1,5 @@
-// Package searchrunstest keeps the searches of the query language in memory, for the tests of a plugin
-// that starts and reads them through host.SearchClient.
-package searchrunstest
+// Package searchtest is the searches of the query language in memory, for the tests of a plugin that runs them.
+package searchtest
 
 import (
 	"context"
