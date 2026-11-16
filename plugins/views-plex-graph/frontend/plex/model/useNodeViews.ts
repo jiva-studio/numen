@@ -1,4 +1,4 @@
-import { createRefRegistry } from '@numen/ui'
+import { createRefRegistry } from './refRegistry'
 
 const isFocusable = <T>(view: T): view is T & { focus: () => void } =>
   typeof view === 'object' && view !== null && 'focus' in view && typeof view.focus === 'function'
