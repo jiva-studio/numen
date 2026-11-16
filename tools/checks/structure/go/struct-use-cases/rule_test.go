@@ -1,4 +1,7 @@
-package structusecases
+
+	if types.IsInterface(named) {
+		return false
+	}package structusecases
 
 import (
 	"go/ast"
@@ -12,7 +15,7 @@ import (
 )
 
 // maxUseCasesInStruct is the most use cases one struct holds, as fields of a use case type or as function
-// fields that receive a method value of a use case.
+// fields that receive a method value of a use case. An interface a use case package declares is a port its use cases require, and it is not a use case.
 const maxUseCasesInStruct = 5
 
 func isUseCaseType(t types.Type) bool {
