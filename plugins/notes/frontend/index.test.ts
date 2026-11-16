@@ -37,19 +37,27 @@ describe('the icon of the notes in the tab strip', () => {
     }
   }
 
-  it('is drawn for the note tab kind as the file-text icon the manifest names', async () => {
-    const { tabKind } = activateRegistering()
+  it(
+    'is drawn for the note tab kind as the file-text icon the manifest names',
+    async () => {
+      const { tabKind } = activateRegistering()
 
-    expect(tabKind.icon).toBeDefined()
-    expect(await drawIcon(tabKind.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
-  }, ICON_LOAD_TIMEOUT * 1.5)
+      expect(tabKind.icon).toBeDefined()
+      expect(await drawIcon(tabKind.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
+    },
+    ICON_LOAD_TIMEOUT * 1.5,
+  )
 
-  it('is drawn for the markdown reader as the file-text icon the manifest names', async () => {
-    const { reader } = activateRegistering()
+  it(
+    'is drawn for the markdown reader as the file-text icon the manifest names',
+    async () => {
+      const { reader } = activateRegistering()
 
-    expect(reader.icon).toBeDefined()
-    expect(await drawIcon(reader.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
-  }, ICON_LOAD_TIMEOUT * 1.5)
+      expect(reader.icon).toBeDefined()
+      expect(await drawIcon(reader.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
+    },
+    ICON_LOAD_TIMEOUT * 1.5,
+  )
 })
 
 describe('notes plugin lifecycle', () => {
