@@ -28,6 +28,11 @@ type healthRemover interface {
 	RemoveAll()
 }
 
+// downloadCanceller stops the downloads of the dependencies that run.
+type downloadCanceller interface {
+	CancelDependencies()
+}
+
 // evictionTimer ends the timer that stops the idle plugins.
 type evictionTimer interface {
 	Stop()
@@ -44,6 +49,7 @@ type Teardown struct {
 	events    eventCloser
 	listeners listenerControl
 	health    healthRemover
+	downloads downloadCanceller
 	report    func(error)
 }
 
@@ -56,13 +62,14 @@ type TeardownDeps struct {
 	Events      eventCloser
 	Listeners   listenerControl
 	Health      healthRemover
+	Downloads   downloadCanceller
 	Report      func(error)
 }
 
 func NewTeardown(d TeardownDeps) *Teardown {
 	return &Teardown{
 		mode: d.Mode, sups: d.Supervisors, stopper: d.Stopper, evictor: d.Evictor, events: d.Events, listeners: d.Listeners,
-		health: d.Health, report: d.Report,
+		health: d.Health, downloads: d.Downloads, report: d.Report,
 	}
 }
 
@@ -101,6 +108,7 @@ func (t *Teardown) SetSafeMode(enabled bool) {
 // TeardownAll shuts down all active plugin processes.
 func (t *Teardown) TeardownAll(ctx context.Context, gracePeriod time.Duration) error {
 	t.evictor.Stop()
+	t.downloads.CancelDependencies()
 
 	firstErr := t.events.closeBus(ctx)
 

@@ -83,7 +83,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *Plu
 		Activation: activation,
 		Retry:      plugin.NewRetry(plugin.RetryDeps{Set: set, Failures: failures, Activation: activation, Listeners: listeners}),
 		Teardown: plugin.NewTeardown(plugin.TeardownDeps{
-			Mode: mode, Supervisors: sups, Stopper: stopper, Evictor: evictor, Events: events, Listeners: listeners, Health: health, Report: errs.Report,
+			Mode: mode, Supervisors: sups, Stopper: stopper, Evictor: evictor, Events: events, Listeners: listeners, Health: health, Downloads: services, Report: errs.Report,
 		}),
 		Settings: plugin.NewSettings(plugin.SettingsDeps{
 			Values: values, Set: set, Listeners: listeners, Profile: config, Report: errs.Report,

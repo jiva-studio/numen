@@ -835,3 +835,20 @@ func sumHex(data []byte) string {
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
 }
+
+func TestShuttingTheHostDownCancelsTheDownloadInProgress(t *testing.T) {
+	source := newModelSource(t)
+	source.holdDownloads(t)
+	p := newLazyPlugin(t, source)
+	p.host.Services.ObserveDependencies(func(catalogmanifest.DependencyRequirement, plugindomain.DependencyStatus) {})
+	answer := make(chan error, 1)
+	go func() { answer <- p.use(t) }()
+	source.waitForDownload(t)
+
+	if err := p.host.Teardown.TeardownAll(t.Context(), releaseGrace); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-answer; !errors.Is(err, context.Canceled) {
+		t.Errorf("the use received %v, want the cancellation", err)
+	}
+}

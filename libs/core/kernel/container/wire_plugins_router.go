@@ -27,7 +27,7 @@ import (
 func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 	show := run.NewDependencyTasks(tasks)
 	c.PluginHost.Watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
-		show.Execute(req.ID, status)
+		show.Execute(req.ID, status, func() { c.PluginHost.Watch.CancelDependency(req) })
 	})
 }
 
