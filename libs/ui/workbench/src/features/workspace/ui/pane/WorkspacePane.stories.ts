@@ -2,9 +2,10 @@
  * One pane of the workspace holding a scrolled text among its tabs.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent } from 'storybook/test'
-import { ref } from 'vue'
-import { pane } from '../../lib/node'
+import { expect, fn, userEvent } from 'storybook/test'
+import { computed, provide, ref } from 'vue'
+import { pane, type Tab, type TabId } from '../../lib/node'
+import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import WorkspacePane from './WorkspacePane.vue'
 import { RUSSIAN } from '@/shared/fixtures/prose'
 
@@ -93,10 +94,30 @@ export const TabNamedByTooltip: Story = {
   args: { pane: pane('main', [NOTE_TAB, BESIDE], NOTE_TAB) },
   render: (args) => ({
     components: { WorkspacePane },
-    setup: () => ({ args, titles: { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' } }),
+    setup: () => {
+      const titles: Readonly<Record<string, string>> = { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' }
+      provide(
+        WORKSPACE_CONTEXT,
+        computed<WorkspaceContext>(() => ({
+          findTab: (id: TabId): Tab | undefined =>
+            titles[id] === undefined ? undefined : { id, title: titles[id] },
+          focus: 'main',
+          minimum: 220,
+          getStripEdge: () => NO_STRIP_EDGE,
+          choose: fn(),
+          close: fn(),
+          startTabPress: fn(),
+          menu: fn(),
+          claim: fn(),
+          resize: fn(),
+          show: fn(),
+        })),
+      )
+      return { args }
+    },
     template: `
       <div class="numen h-screen bg-surface">
-        <WorkspacePane :pane="args.pane" :titles="titles" />
+        <WorkspacePane :pane="args.pane" />
       </div>`,
   }),
   play: async ({ canvasElement }) => {
