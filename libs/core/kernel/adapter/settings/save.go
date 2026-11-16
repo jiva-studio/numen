@@ -35,7 +35,7 @@ func (f *Files) Save(path string, into Document, settings ...Setting) error {
 	return err
 }
 
-// SaveVersioned saves like Save and answers the version the file stands at after this save, taken
+// SaveVersioned saves like Save and answers the version this save made, taken
 // under the same hold of the lock. into holds the file as it was written.
 func (f *Files) SaveVersioned(path string, into Document, settings ...Setting) (uint64, error) {
 	return f.run(path, func(path string) error {

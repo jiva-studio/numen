@@ -110,8 +110,6 @@ func (f *Files) OpenAt(path string, into Document) error {
 	return nil
 }
 
-// raiseVersion puts the version of a file that names none, or none that is a version, at the shape the
-// sections have always had.
 func raiseVersion(into Document) {
 	if version := into.GetVersion(); *version < DefaultVersion {
 		*version = DefaultVersion

@@ -128,7 +128,3 @@ func (jsonCodec) Encode(value any) (string, error) {
 	encoded, err := json.Marshal(value)
 	return string(encoded), err
 }
-
-func (f *memoryFile) ReadJSON() (string, string, uint64, error) {
-	return "{}", "", 0, errors.Join(f.failure, f.readFailure)
-}

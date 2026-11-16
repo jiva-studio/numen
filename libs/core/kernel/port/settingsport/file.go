@@ -22,10 +22,6 @@ type SettingsFile interface {
 	// write that is persisted and whose answer cannot be made returns an error that wraps
 	// ErrWrittenNotAnswered.
 	WriteJSON(entries []settings.Setting) (content string, version uint64, err error)
-	// ReadJSON returns the settings in force as JSON, the path of the file and the version of the state
-	// read. A write raises the version. The version is taken before the file is read, so a write in
-	// between leaves the content newer than the version, never older.
-	ReadJSON() (content, path string, version uint64, err error)
 }
 
 // Defaults are the settings of an unconfigured installation.
