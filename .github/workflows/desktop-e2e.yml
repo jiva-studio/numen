@@ -229,7 +229,7 @@ jobs:
 
   # One Playwright process with one server on each runner: the specs of a shard, in one engine.
   desktop:
-    name: E2E specs ${{ matrix.engine }} ${{ matrix.shard }}/${{ matrix.shards }}
+    name: Specs ${{ matrix.engine }} ${{ matrix.shard }}/${{ matrix.shards }}
     needs: [build]
     if: needs.build.outputs.desktop == 'true'
     runs-on: ubuntu-latest
@@ -305,7 +305,7 @@ jobs:
           retention-days: 7
 
   flashcards:
-    name: E2E specs Flashcards
+    name: Specs Flashcards
     needs: [build]
     if: needs.build.outputs.flashcards == 'true'
     runs-on: ubuntu-latest
@@ -362,7 +362,7 @@ jobs:
           retention-days: 7
 
   acceptance:
-    name: Acceptance
+    name: Acceptance / Linux
     needs: [build]
     if: needs.build.outputs.acceptance == 'true'
     runs-on: ubuntu-latest
@@ -432,7 +432,7 @@ jobs:
           retention-days: 7
 
   report:
-    name: Acceptance report
+    name: Acceptance / report
     needs: [desktop]
     if: ${{ !cancelled() && needs.desktop.result != 'skipped' }}
     runs-on: ubuntu-latest

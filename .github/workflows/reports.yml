@@ -59,7 +59,7 @@ permissions:
 
 jobs:
   acceptance:
-    name: Linux
+    name: End-to-End
     if: ${{ github.event_name == 'push' || contains(inputs.environments, 'linux') }}
     uses: ./.github/workflows/desktop-e2e.yml
     with:
@@ -69,7 +69,7 @@ jobs:
       video: true
 
   build-macos:
-    name: macOS / Build
+    name: Build / macOS
     if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
     runs-on: macos-15
     timeout-minutes: 30
@@ -136,7 +136,7 @@ jobs:
           cache-key: ${{ steps.go.outputs.cache-key }}
 
   acceptance-macos:
-    name: macOS VM / Acceptance live
+    name: Acceptance / live / macOS
     needs: [build-macos]
     if: ${{ github.event_name != 'push' && contains(inputs.environments, 'macos') }}
     runs-on: numen-macos-26
