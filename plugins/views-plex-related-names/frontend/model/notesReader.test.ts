@@ -26,7 +26,6 @@ interface Pending {
   reject(error: unknown): void
 }
 
-/** A vault whose reads stay open until the test answers them, one by one. */
 const createRig = (showNames = true) => {
   const pending: Pending[] = []
   const handlers = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
