@@ -8,6 +8,9 @@ import {
   assertPosition,
   assertSingleTab,
   getAddressTitle,
+  getPluginRowPattern,
+  getTroubleMessage,
+  getPluginSwitchPattern,
   getLinkNotePath,
   getAncestors,
   getStem,
@@ -491,5 +494,41 @@ describe('the wait before the headings of a note open', () => {
   it('is the wait of the plex headings plugin', () => {
     const source = fs.readFileSync(new URL('../../../../plugins/views-plex-headings/frontend/model/useHeadings.ts', import.meta.url), 'utf8')
     expect(Number(/export const HOVER_WAIT = (\d+)/.exec(source)?.[1])).toBe(HEADINGS_OPEN_WAIT_MS)
+  })
+})
+
+describe('getPluginRowPattern', () => {
+  it('matches the row of the plugin, with its state or without', () => {
+    expect(getPluginRowPattern('PDF Reader').test('PDF Reader')).toBe(true)
+    for (const state of ['Off', 'Stopped', 'Error', 'Warning', 'Not installed']) {
+      expect(getPluginRowPattern('PDF Reader').test(`PDF Reader, ${state}`)).toBe(true)
+    }
+  })
+
+  it('does not match a plugin whose name starts or ends with the name', () => {
+    expect(getPluginRowPattern('PDF Reader').test('PDF Reader Pro')).toBe(false)
+    expect(getPluginRowPattern('PDF Reader').test('PDF Reader Pro, Error')).toBe(false)
+    expect(getPluginRowPattern('Reader').test('PDF Reader')).toBe(false)
+    expect(getPluginRowPattern('PDF').test('PDF, Reader')).toBe(false)
+  })
+
+  it('takes the characters of the name as text, not as a pattern', () => {
+    expect(getPluginRowPattern('C++ Tools').test('C++ Tools')).toBe(true)
+    expect(getPluginRowPattern('Notes.').test('Notes!')).toBe(false)
+  })
+})
+
+describe('getPluginSwitchPattern', () => {
+  it('matches the switch of the plugin only', () => {
+    expect(getPluginSwitchPattern('PDF Reader').test('Enabled PDF Reader')).toBe(true)
+    expect(getPluginSwitchPattern('PDF Reader').test('Enabled PDF Reader Pro')).toBe(false)
+  })
+})
+
+describe('getTroubleMessage', () => {
+  it('names the plugin and the text the window shows of it', () => {
+    expect(getTroubleMessage('PDF Reader', 'The engine did not start')).toBe(
+      'the plugin "PDF Reader" is in trouble: The engine did not start',
+    )
   })
 })

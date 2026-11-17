@@ -6,7 +6,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, h, reactive } from 'vue'
 import type { Selector } from '@numen/plugin-sdk'
 import RecordingTab from './RecordingTab.vue'
-import { createPlayer, createRecordings, flush } from '../model/fakes'
+import { createPlayer, createRecordings, flush } from '../testing/fakes'
 
 vi.mock('@numen/ui', async (original) => ({
   ...(await original<Record<string, unknown>>()),

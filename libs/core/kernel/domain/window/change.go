@@ -1,6 +1,6 @@
 package window
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // Change is what the window tells its clients about the vault it shows: the files that changed,
 // the files that moved, or that everything must be read again.

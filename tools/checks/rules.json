@@ -353,11 +353,29 @@
       "target": "exhaustruct-include"
     },
     {
+      "name": "go/extractable-requirements",
+      "paths": [
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "library",
+        "plugin",
+        "security",
+        "fast"
+      ],
+      "selftest": "structure/go/extractable-requirements/check_test.go",
+      "runner": "go",
+      "target": "extractable-requirements"
+    },
+    {
       "name": "go/identities",
       "paths": [
         "libs/core/kernel/domain/**",
         "libs/core/kernel/port/**",
-        "libs/note/domain/**",
+        "libs/shared/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -391,7 +409,7 @@
       "paths": [
         "libs/core/kernel/domain/**",
         "libs/core/kernel/port/**",
-        "libs/note/domain/**",
+        "libs/shared/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -547,7 +565,7 @@
     {
       "name": "go/note-library",
       "paths": [
-        "libs/note/**",
+        "libs/shared/note/**",
         "go.work"
       ],
       "tags": [
@@ -770,6 +788,24 @@
       "target": "scan-complete"
     },
     {
+      "name": "go/shared-leaf",
+      "paths": [
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "library",
+        "plugin",
+        "security",
+        "fast"
+      ],
+      "selftest": "structure/go/shared-leaf/check_test.go",
+      "runner": "go",
+      "target": "shared-leaf"
+    },
+    {
       "name": "go/sdk-protocol-encapsulation",
       "paths": [
         "**/*.go",
@@ -792,7 +828,7 @@
       "name": "go/serialization",
       "paths": [
         "libs/core/kernel/**/*.go",
-        "libs/note/**/*.go",
+        "libs/shared/note/**/*.go",
         "go.work"
       ],
       "tags": [
@@ -813,7 +849,7 @@
         "go.work",
         ".gitattributes",
         "**/buf.gen.yaml",
-        "libs/core/protocol/tools/*.mjs"
+        "libs/shared/protocol/tools/*.mjs"
       ],
       "tags": [
         "structure",
@@ -850,7 +886,7 @@
       "name": "go/struct-context",
       "paths": [
         "libs/core/kernel/**/*.go",
-        "libs/note/**/*.go",
+        "libs/shared/note/**/*.go",
         "libs/plugin/sdk-go/**/*.go",
         "plugins/**/*.go",
         "apps/desktop/**/*.go",
@@ -903,7 +939,7 @@
       "name": "go/transports",
       "paths": [
         "libs/core/kernel/**",
-        "libs/note/domain/**",
+        "libs/shared/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -920,7 +956,7 @@
       "name": "go/use-case-fields",
       "paths": [
         "libs/core/kernel/**",
-        "libs/note/**",
+        "libs/shared/note/**",
         "plugins/**/*.go",
         "go.work"
       ],
@@ -1113,6 +1149,24 @@
       "runner": "verifiers",
       "module": "structure/ts/dependency-graph/check.mjs",
       "export": "DEPENDENCY_VERIFIERS"
+    },
+    {
+      "name": "ts/extractable-set",
+      "paths": [
+        "**/package.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "plugin",
+        "security",
+        "fast"
+      ],
+      "selftest": "structure/ts/extractable-set/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/extractable-set/check.mjs",
+      "export": "EXTRACTABLE_SET_VERIFIERS"
     },
     {
       "name": "ts/discipline",
@@ -1485,6 +1539,33 @@
         "node",
         "tools/lint-quality/check.mjs",
         "--check=test-only-exports"
+      ]
+    },
+    {
+      "name": "ts/test-only-modules",
+      "paths": [
+        "libs/**/*.{ts,vue,astro}",
+        "apps/**/*.{ts,vue,astro}",
+        "plugins/**/*.{ts,vue,astro}",
+        "libs/**/package.json",
+        "apps/**/package.json",
+        "plugins/**/package.json",
+        "knip.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "plugin",
+        "window",
+        "slow"
+      ],
+      "selftest": "structure/ts/test-only-modules/check.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/lint-quality/check.mjs",
+        "--check=test-only-modules"
       ]
     },
     {

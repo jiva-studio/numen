@@ -10,7 +10,6 @@ package link
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
@@ -25,7 +24,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 )
 
 // NoteType is the `type` a link note carries in its frontmatter.
@@ -52,15 +52,6 @@ var (
 	// ErrTooLarge is a copy larger than the settings let one be.
 	ErrTooLarge = errors.New("the copy is larger than a copy may be")
 )
-
-// Fetcher retrieves the content published at an address.
-type Fetcher interface {
-	CanCopy(address string) bool
-	GetDownloadModel(address string) download.Model
-	GetMetadata(ctx context.Context, address string) (download.Metadata, error)
-	GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error)
-	Download(ctx context.Context, address string, media download.Media, into io.Writer) (download.Copy, error)
-}
 
 // Clock gets the current time.
 type Clock interface {
@@ -94,32 +85,24 @@ type Texts interface {
 	host.TextReader
 }
 
-// Host is what the plugin works through the host.
+// Host is what the plugin works through the host. Entropy fills the identifiers of the link notes it
+// creates.
 type Host struct {
 	PluginID string
 	Vaults   func(domain.VaultID) Vault
 	Store    func(domain.VaultID) Folder
 	Texts    func(domain.VaultID) Texts
 	Queue    host.Queue
+	Entropy  ports.Entropy
 	Clock    Clock
 	Report   func(what string, err error)
-}
-
-// Settings are the user's fetch settings. CopyMaxSize is in bytes; zero means
-// no limit.
-type Settings struct {
-	Captions    []string
-	IsAutomatic bool
-	CopyMaxSize int64
-
-	IsTextDownloadAutomatic bool
 }
 
 // Links fetches for the links of the vault the host shows.
 type Links struct {
 	host     Host
-	fetcher  func() Fetcher
-	settings func() Settings
+	fetcher  func() ports.Fetcher
+	settings func() fetch.Settings
 	clock    Clock
 
 	closing   chan struct{}
@@ -133,7 +116,7 @@ type Links struct {
 
 // New returns the links service for the host. fetcher and settings are
 // evaluated on every fetch, so a changed setting applies to the next one.
-func New(h Host, fetcher func() Fetcher, settings func() Settings) *Links {
+func New(h Host, fetcher func() ports.Fetcher, settings func() fetch.Settings) *Links {
 	return &Links{
 		host: h, fetcher: fetcher, settings: settings, clock: h.Clock,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
@@ -227,8 +210,8 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 	if err != nil {
 		return Link{}, err
 	}
-	identifier, err := ulid.NewGenerator(rand.Reader).NewID(l.clock.Now())
-	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader does not fail in ulid generation"
+	identifier, err := ulid.NewGenerator(newEntropyReader(l.host.Entropy)).NewID(l.clock.Now())
+	// gomutants:disable-next-line BRANCH_IF reason="The entropy of the machine does not fail in ulid generation"
 	if err != nil {
 		return Link{}, err
 	}
@@ -358,4 +341,19 @@ func newLinkIn(ctx context.Context, vault Files, path string, parsed address.URL
 	made := newLink(path, parsed, raw)
 	made.Vault = v.ID
 	return made, nil
+}
+
+func newEntropyReader(entropy ports.Entropy) io.Reader {
+	if entropy == nil {
+		// The ULID generator refuses a nil reader with ulid.ErrNoEntropy.
+		return nil
+	}
+	return entropyReader{fill: entropy.Fill}
+}
+
+type entropyReader struct{ fill func(b []byte) }
+
+func (r entropyReader) Read(b []byte) (int, error) {
+	r.fill(b)
+	return len(b), nil
 }

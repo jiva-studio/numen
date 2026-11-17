@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
 func TestSessionPool(t *testing.T) {
@@ -49,8 +49,8 @@ func TestSessionPool(t *testing.T) {
 	}
 
 	_, err = pool.acquire(ctx)
-	if !errors.Is(err, loading.ErrClosed) {
-		t.Fatalf("expected loading.ErrClosed, got %v", err)
+	if !errors.Is(err, ports.ErrClosed) {
+		t.Fatalf("expected ports.ErrClosed, got %v", err)
 	}
 }
 

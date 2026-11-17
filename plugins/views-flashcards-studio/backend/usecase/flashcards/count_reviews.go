@@ -46,7 +46,7 @@ func NewCountReviews(
 }
 
 func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts, error) {
-	log := Log{Stores: u.logs}
+	log := Log{Stores: u.logs, Entropy: nil}
 	files, err := log.GetLogFiles(ctx, v)
 	if err != nil {
 		return ReviewCounts{}, err

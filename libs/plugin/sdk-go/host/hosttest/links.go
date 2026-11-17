@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
-	notesmarkdown "github.com/jiva-studio/numen/libs/note/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	notesdomain "github.com/jiva-studio/numen/libs/shared/note/domain"
+	notesmarkdown "github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
 // AddLinks writes the links into the frontmatter of their notes, as the host does: the links of one

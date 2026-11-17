@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Files answers what the index holds about the sources of a vault: their stats, their text and where a

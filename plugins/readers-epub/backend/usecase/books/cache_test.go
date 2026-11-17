@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/testsupport"
 )
 
@@ -28,9 +26,9 @@ func newCountingReader(t *testing.T, files *hosttest.Vault) (*Reader, *atomic.In
 	return books, &opens
 }
 
-func readEntryFrom(books *Reader, name, entry string) (api.ReadBookEntryResponse, error) {
+func readEntryFrom(books *Reader, name, entry string) ([]byte, error) {
 	return books.ReadBookEntry(context.Background(),
-		api.ReadBookEntryRequest{Path: name, Entry: entry})
+		name, entry, nil)
 }
 
 func TestReadBookEntryOpensTheFileOnceForManyEntries(t *testing.T) {
@@ -64,11 +62,11 @@ func TestReadBookEntryReopensTheBookWhenTheFileChanged(t *testing.T) {
 		"EPUB/cover.png": []byte("\x89PNG\r\n\x1a\nanother picture, longer than the first one was"),
 	})
 	files.File(name, string(changed))
-	resp, err := readEntryFrom(books, name, "EPUB/cover.png")
+	body, err := readEntryFrom(books, name, "EPUB/cover.png")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bytes.Equal(resp.Body, testsupport.GetPNGBytes()) {
+	if bytes.Equal(body, testsupport.GetPNGBytes()) {
 		t.Error("the entry is the picture of the book before the file changed")
 	}
 	if got := opens.Load(); got != 2 {
@@ -118,13 +116,13 @@ func TestReadBookEntryAnswersConcurrentRequests(t *testing.T) {
 	for range 32 {
 		wg.Go(func() {
 			for range 20 {
-				resp, err := readEntryFrom(books, name, "EPUB/cover.png")
+				body, err := readEntryFrom(books, name, "EPUB/cover.png")
 				if err != nil {
 					t.Error(err)
 					return
 				}
-				if !bytes.Equal(resp.Body, testsupport.GetPNGBytes()) {
-					t.Errorf("the entry is %q, want the picture's bytes", resp.Body)
+				if !bytes.Equal(body, testsupport.GetPNGBytes()) {
+					t.Errorf("the entry is %q, want the picture's bytes", body)
 					return
 				}
 			}
@@ -148,7 +146,7 @@ func TestCloseClosesTheFilesOfTheCachedBooks(t *testing.T) {
 		t.Error("the archive of the book is still kept after Close")
 	}
 	_, err := readEntryFrom(books, name, "EPUB/cover.png")
-	if codeOf(err) != server.CodeUnavailable {
+	if codeOf(err) != KindUnavailable {
 		t.Fatalf("code = %v (%v), want unavailable", codeOf(err), err)
 	}
 }
@@ -192,7 +190,7 @@ func TestCacheLRUAndConcurrentEviction(t *testing.T) {
 	if got := len(books.books.books); got != 2 {
 		t.Fatalf("expected 2 cached books after cache hit, got %d", got)
 	}
-	if _, err := readEntryFrom(books, "missing.epub", "EPUB/cover.png"); codeOf(err) != server.CodeNotFound || opens.Load() != 2 {
+	if _, err := readEntryFrom(books, "missing.epub", "EPUB/cover.png"); codeOf(err) != KindNotFound || opens.Load() != 2 {
 		t.Fatalf("missing book err = %v, opens = %d, want CodeNotFound without calling readFile", err, opens.Load())
 	}
 
@@ -257,7 +255,7 @@ func TestCacheLRUAndConcurrentEviction(t *testing.T) {
 	books2.books.readFile = func(context.Context, host.FileReader, string) ([]byte, domain.FileStat, error) {
 		return nil, domain.FileStat{}, os.ErrNotExist
 	}
-	if _, err := readEntryFrom(books2, name, "EPUB/cover.png"); codeOf(err) != server.CodeNotFound {
-		t.Errorf("readFile error code = %v (%v), want CodeNotFound", codeOf(err), err)
+	if _, err := readEntryFrom(books2, name, "EPUB/cover.png"); codeOf(err) != KindNotFound {
+		t.Errorf("readFile error code = %v (%v), want KindNotFound", codeOf(err), err)
 	}
 }

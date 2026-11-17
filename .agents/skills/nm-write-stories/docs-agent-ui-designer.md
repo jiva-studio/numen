@@ -50,7 +50,7 @@ Core rules:
 
 Everything under `libs/ui/components/**` and `libs/ui/workbench/**`: components, their `*.types.ts`, pure modules and their tests, stories, fixtures, `tokens.css` and `theme.css`, the package `index.ts` and `src/index.ts`. A frontmatter allowlist names tools, not paths, so the path limit is the system prompt's rule; a repository hook that refuses a write outside `libs/ui/**` for this agent would enforce it, and the owner decides whether to add one.
 
-It does not write: windows, plugins, `libs/core/client`, `libs/core/protocol`, the SDKs, Go code, the `.storybook` configuration (a change there is a proposal to the owner, because it changes every story), `tools/`, `.agents/`.
+It does not write: windows, plugins, `libs/core/client`, `libs/shared/protocol`, the SDKs, Go code, the `.storybook` configuration (a change there is a proposal to the owner, because it changes every story), `tools/`, `.agents/`.
 
 ## What it returns
 

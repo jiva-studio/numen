@@ -10,7 +10,7 @@ A red check is fixed in the code, not by changing the check or moving code out o
 - `dependency-graph` (dependency-cruiser): an import outside the row of the package matrix, a plugin import of anything first-party but `@numen/plugin-sdk` and `@numen/ui` or of `@connectrpc`, an application import of `@numen/plugin-sdk` or `@numen/protocol`, a relative import out of the package's own directory, third-party code in the plugin host other than Vue and Vite, a `lib`, `api` or `model` segment that imports a higher segment of its slice, an `@x` cross-import, and a cycle of runtime imports.
 - `protocol-declared-only-by-clients`: a `package.json` other than `@numen/plugin-sdk` and `@numen/core-client` that declares `@numen/protocol`.
 - `core-client-private`: a public `@numen/core-client`, and a plugin that relies on it.
-- `sdk-ts-encapsulates-protocol`: an exported declaration of `@numen/plugin-sdk` that reaches a declaration of `libs/core/protocol`.
+- `sdk-ts-encapsulates-protocol`: an exported declaration of `@numen/plugin-sdk` that reaches a declaration of `libs/shared/protocol`.
 - `plugins-use-main-entry`: a plugin that imports a deep path of the SDK or `@numen/ui` that is not a declared entry.
 - `make plugins_lint`, `plugins-isolation-capture`, `plugins-hold-no-schema`, `plugins-leakage`: a plugin frontend that imports through `@/**` or `@plugins/**`, one plugin that names another, a `.proto` file inside a plugin, a plugin that imports `libs/core/kernel`.
 - `every-path-has-a-layer`, `workspace-lists-every-module`, `all-ts-packages-eslint`: a module in no layer, a Go module missing from `go.work`, a TypeScript package with no ESLint configuration.

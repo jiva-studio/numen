@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
 
 // ErrBothNamed is returned when a session specifies both a deck and a preset.
@@ -43,13 +42,13 @@ type Session struct {
 	cardIDs     AssignCardIDs
 	reviewCards ListReviewCards
 	schedules   Schedules
-	presets     presets.OpenReads
+	presets     OpenPresetReads
 	day         review.Day
 	now         ports.Clock
 }
 
 func NewSession(
-	cardIDs AssignCardIDs, reviewCards ListReviewCards, schedules Schedules, presets presets.OpenReads,
+	cardIDs AssignCardIDs, reviewCards ListReviewCards, schedules Schedules, presets OpenPresetReads,
 	day review.Day, now ports.Clock,
 ) Session {
 	return Session{
@@ -74,7 +73,7 @@ func (u Session) Execute(
 		return SessionResult{}, err
 	}
 
-	target, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
+	target, err := Log{Stores: u.schedules.logs, Entropy: nil}.Read(ctx, v)
 	if err != nil {
 		return SessionResult{}, err
 	}

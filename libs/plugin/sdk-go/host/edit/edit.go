@@ -4,8 +4,8 @@ package edit
 import (
 	"context"
 
-	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
-	notesedit "github.com/jiva-studio/numen/libs/note/edit"
+	notesdomain "github.com/jiva-studio/numen/libs/shared/note/domain"
+	notesedit "github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 type Files = notesedit.Files
