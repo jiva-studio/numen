@@ -13,8 +13,11 @@ import (
 	contract "github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/tempdir"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/task"
 )
+
+func newTempDirs() tempdir.Folders { return tempdir.Folders{Pattern: "numen-codex-tasks-*"} }
 
 type stubFinder struct{ path string }
 
@@ -139,7 +142,7 @@ func TestAFailureToStopServingTheToolsKeepsTheAnswerOfTheTurn(t *testing.T) {
 	launcher := &scriptedLauncher{}
 	runner, err := task.New(task.Dependencies{
 		Settings: &settings.Settings{}, Finder: stubFinder{path: "/opt/codex"}, Commands: cmds, Launcher: launcher,
-		Tools: gardenTools{}, ToolServer: stuckServer{closeErr: stuck},
+		Tools: gardenTools{}, ToolServer: stuckServer{closeErr: stuck}, TempDirs: newTempDirs(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -170,7 +173,7 @@ func TestRunTaskThreadsRetriesAndErrorPaths(t *testing.T) {
 	// 1. Missing program returns TryNextError and DetectConnections returns empty.
 	missingRunner, err := task.New(task.Dependencies{
 		Settings: &settings.Settings{}, Finder: stubFinder{path: ""}, Commands: &recordingCommands{},
-		Launcher: &scriptedLauncher{}, ToolServer: stuckServer{},
+		Launcher: &scriptedLauncher{}, ToolServer: stuckServer{}, TempDirs: newTempDirs(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -187,7 +190,7 @@ func TestRunTaskThreadsRetriesAndErrorPaths(t *testing.T) {
 	// 2. ListTools error and Serve error return StopError.
 	listFailRunner, err := task.New(task.Dependencies{
 		Settings: &settings.Settings{}, Finder: stubFinder{path: "/opt/codex"}, Commands: &recordingCommands{},
-		Launcher: &scriptedLauncher{}, Tools: gardenTools{listErr: errors.New("list failed")}, ToolServer: stuckServer{},
+		Launcher: &scriptedLauncher{}, Tools: gardenTools{listErr: errors.New("list failed")}, ToolServer: stuckServer{}, TempDirs: newTempDirs(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -198,7 +201,7 @@ func TestRunTaskThreadsRetriesAndErrorPaths(t *testing.T) {
 
 	serveFailRunner, err := task.New(task.Dependencies{
 		Settings: &settings.Settings{}, Finder: stubFinder{path: "/opt/codex"}, Commands: &recordingCommands{},
-		Launcher: &scriptedLauncher{}, Tools: gardenTools{}, ToolServer: stuckServer{serveErr: errors.New("serve failed")},
+		Launcher: &scriptedLauncher{}, Tools: gardenTools{}, ToolServer: stuckServer{serveErr: errors.New("serve failed")}, TempDirs: newTempDirs(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -213,6 +216,7 @@ func TestRunTaskThreadsRetriesAndErrorPaths(t *testing.T) {
 		Commands:   &recordingCommands{answerErr: errors.New("mkcmd failed")},
 		Launcher:   &scriptedLauncher{},
 		ToolServer: stuckServer{},
+		TempDirs:   newTempDirs(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -252,7 +256,7 @@ func TestRunTaskThreadsRetriesAndErrorPaths(t *testing.T) {
 	}
 	runner, err := task.New(task.Dependencies{
 		Settings: &settings.Settings{}, Finder: stubFinder{path: "/opt/codex"}, Commands: cmds,
-		Launcher: launcher, Tools: gardenTools{listed: []*tools.ToolInfo{}}, ToolServer: stuckServer{},
+		Launcher: launcher, Tools: gardenTools{listed: []*tools.ToolInfo{}}, ToolServer: stuckServer{}, TempDirs: newTempDirs(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -292,7 +296,7 @@ func TestAnswerAndRunProgramBranches(t *testing.T) {
 	// Missing program in Answer returns error.
 	missingRunner, err := task.New(task.Dependencies{
 		Settings: &settings.Settings{}, Finder: stubFinder{path: ""}, Commands: &recordingCommands{},
-		Launcher: &scriptedLauncher{}, ToolServer: stuckServer{},
+		Launcher: &scriptedLauncher{}, ToolServer: stuckServer{}, TempDirs: newTempDirs(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -336,7 +340,7 @@ func TestAnswerAndRunProgramBranches(t *testing.T) {
 	}
 	runner, err := task.New(task.Dependencies{
 		Settings: &settings.Settings{}, Finder: stubFinder{path: "/opt/codex"}, Commands: cmds,
-		Launcher: launcher, ToolServer: stuckServer{},
+		Launcher: launcher, ToolServer: stuckServer{}, TempDirs: newTempDirs(),
 	})
 	if err != nil {
 		t.Fatal(err)

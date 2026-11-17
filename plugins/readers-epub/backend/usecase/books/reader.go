@@ -10,13 +10,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
-
-// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="mostListed caps the maximum number of items returned in a book summary"
-const mostListed = 1000
 
 func (s *Reader) readBookFile(ctx context.Context, path string) ([]byte, error) {
 	raw, _, err := s.vaults(getVault(ctx)).Read(ctx, path)
@@ -48,105 +43,77 @@ func NewReader(vaults func(domain.VaultID) host.FileReader) *Reader {
 	}
 }
 
-// GetBook parses an EPUB file and returns metadata, documents, and parts.
-func (s *Reader) GetBook(ctx context.Context, req api.GetBookRequest) (api.GetBookResponse, error) {
-	if req.Path == "" {
-		return api.GetBookResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
+// GetBook parses an EPUB file and returns its metadata, documents and parts.
+func (s *Reader) GetBook(ctx context.Context, path string) (*epub.Book, error) {
+	if path == "" {
+		return nil, newError(KindInvalidArgument, "path required")
 	}
-	raw, err := s.readBookFile(ctx, req.Path)
+	raw, err := s.readBookFile(ctx, path)
 	if err != nil {
-		return api.GetBookResponse{}, err
+		return nil, err
 	}
-
 	book, err := epub.Read(raw)
 	if err != nil {
-		return api.GetBookResponse{}, server.NewAPIError(server.CodeInvalidArgument, fmt.Sprintf("parse epub %s: %v", req.Path, err))
+		return nil, newError(KindInvalidArgument, fmt.Sprintf("parse epub %s: %v", path, err))
 	}
-
-	res := api.GetBookResponse{
-		Title:        book.Title,
-		PageCount:    book.PageCount(),
-		TextBytes:    len(book.Text),
-		PageBytes:    book.PageBytes(),
-		Documents:    []api.SpineDocument{},
-		Parts:        []api.BookPart{},
-		PrintedPages: []api.PrintedPage{},
-		Stat:         nil,
-	}
-
-	docCount := min(len(book.Documents), mostListed)
-	for _, doc := range book.Documents[:docCount] {
-		res.Documents = append(res.Documents, api.SpineDocument{Path: doc.Path, Offset: doc.Offset, Length: doc.Length})
-	}
-
-	partCount := min(len(book.Parts), mostListed)
-	for _, part := range book.Parts[:partCount] {
-		res.Parts = append(res.Parts, api.BookPart{Title: part.Title, Offset: part.Offset, Level: part.Level})
-	}
-
-	pageCount := min(len(book.Pages), mostListed)
-	for _, page := range book.Pages[:pageCount] {
-		res.PrintedPages = append(res.PrintedPages, api.PrintedPage{Label: page.Label, Offset: page.Offset})
-	}
-
-	return res, nil
+	return book, nil
 }
 
-// ReadBookMarkup returns rendered HTML markup for an EPUB document spine.
-func (s *Reader) ReadBookMarkup(ctx context.Context, req api.ReadBookMarkupRequest) (api.ReadBookMarkupResponse, error) {
-	if req.Path == "" {
-		return api.ReadBookMarkupResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
+// ReadBookMarkup returns the rendered HTML markup of a document of an EPUB's spine.
+func (s *Reader) ReadBookMarkup(ctx context.Context, path, document string) (string, error) {
+	if path == "" {
+		return "", newError(KindInvalidArgument, "path required")
 	}
-	raw, err := s.readBookFile(ctx, req.Path)
+	raw, err := s.readBookFile(ctx, path)
 	if err != nil {
-		return api.ReadBookMarkupResponse{}, err
+		return "", err
 	}
 
 	book, err := epub.Read(raw)
 	if err != nil {
-		return api.ReadBookMarkupResponse{}, server.NewAPIError(server.CodeInvalidArgument, fmt.Sprintf("parse epub %s: %v", req.Path, err))
+		return "", newError(KindInvalidArgument, fmt.Sprintf("parse epub %s: %v", path, err))
 	}
 
-	rendered, err := book.Markup(req.Document)
+	rendered, err := book.Markup(document)
 	if err != nil {
-		return api.ReadBookMarkupResponse{}, server.NewAPIError(server.CodeNotFound, fmt.Sprintf("read document markup %s: %v", req.Document, err))
+		return "", newError(KindNotFound, fmt.Sprintf("read document markup %s: %v", document, err))
 	}
 
-	return api.ReadBookMarkupResponse{Markup: rendered.HTML()}, nil
+	return rendered.HTML(), nil
 }
 
 // ReadBookEntry returns the bytes of one entry of an EPUB's archive. A baseline that does not name
-// the bytes of the file fails with a failed-precondition error.
-func (s *Reader) ReadBookEntry(ctx context.Context, req api.ReadBookEntryRequest) (api.ReadBookEntryResponse, error) {
-	if req.Path == "" {
-		return api.ReadBookEntryResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
+// the bytes of the file fails with KindFailedPrecondition.
+func (s *Reader) ReadBookEntry(ctx context.Context, path, entry string, baseline *Baseline) ([]byte, error) {
+	if path == "" {
+		return nil, newError(KindInvalidArgument, "path required")
 	}
-	if req.Entry == "" {
-		return api.ReadBookEntryResponse{}, server.NewAPIError(server.CodeInvalidArgument, "entry required")
+	if entry == "" {
+		return nil, newError(KindInvalidArgument, "entry required")
 	}
 	files := s.vaults(getVault(ctx))
-	book, err := s.books.acquire(ctx, files, getVault(ctx), req.Path)
+	book, err := s.books.acquire(ctx, files, getVault(ctx), path)
 	if err != nil {
 		if errors.Is(err, errCacheClosed) {
-			return api.ReadBookEntryResponse{}, server.NewAPIError(server.CodeUnavailable, fmt.Sprintf("read book %s: %v", req.Path, err))
+			return nil, newError(KindUnavailable, fmt.Sprintf("read book %s: %v", path, err))
 		}
 		if errors.Is(err, errReadFile) {
-			return api.ReadBookEntryResponse{}, readVaultError(req.Path, err)
+			return nil, readVaultError(path, err)
 		}
-		return api.ReadBookEntryResponse{}, newReadError(err)
+		return nil, newReadError(err)
 	}
 	defer s.books.release(book)
-	if req.Baseline != nil && !isStatOf(*req.Baseline, book.size, book.mtime) {
-		return api.ReadBookEntryResponse{}, server.NewAPIError(server.CodeFailedPrecondition, fmt.Sprintf("read book %s: the file changed", req.Path))
+	if baseline != nil && !isStatOf(*baseline, book.size, book.mtime) {
+		return nil, newError(KindFailedPrecondition, fmt.Sprintf("read book %s: the file changed", path))
 	}
-	body, err := book.archive.Entry(req.Entry)
+	body, err := book.archive.Entry(entry)
 	if err != nil {
-		return api.ReadBookEntryResponse{}, server.NewAPIError(server.CodeNotFound, err.Error())
+		return nil, newError(KindNotFound, err.Error())
 	}
-	return api.ReadBookEntryResponse{Body: body}, nil
+	return body, nil
 }
 
-func isStatOf(named api.FileStat, size, mtime int64) bool {
+func isStatOf(named Baseline, size, mtime int64) bool {
 	if named.Size != size {
 		return false
 	}
@@ -155,9 +122,9 @@ func isStatOf(named api.FileStat, size, mtime int64) bool {
 
 func newReadError(err error) error {
 	if errors.Is(err, epub.ErrEncrypted) {
-		return server.NewAPIError(server.CodeFailedPrecondition, fmt.Sprintf("read epub: %v", err))
+		return newError(KindFailedPrecondition, fmt.Sprintf("read epub: %v", err))
 	}
-	return server.NewAPIError(server.CodeInvalidArgument, fmt.Sprintf("parse epub: %v", err))
+	return newError(KindInvalidArgument, fmt.Sprintf("parse epub: %v", err))
 }
 
 // Close closes the cached books.

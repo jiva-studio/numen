@@ -95,8 +95,8 @@ type WriteOver = { readonly error?: CardsFailure; readonly at?: string }
 const readAs = (base: ReadPreset, overrides: ReadOver): PresetReadResult =>
   overrides.error ? asFailure(overrides.error) : asValue({ ...base, ...overrides })
 
-const writeAs = (overrides: WriteOver): PresetWriteResult =>
-  overrides.error ? asFailure(overrides.error) : asValue({ at: overrides.at ?? 'two' })
+const writeAs = (overrides: WriteOver, version: bigint): PresetWriteResult =>
+  overrides.error ? asFailure(overrides.error) : asValue({ at: overrides.at ?? 'two', version })
 
 const openPresetTab = async (
   settings: Partial<Settings> = {},
@@ -110,6 +110,7 @@ const openPresetTab = async (
   const messages: [string, string | undefined][] = []
   let times = 0
   let writes = 0
+  let stored = 1n
   const core: Presets = {
     read: async (path) =>
       readAs(
@@ -123,17 +124,19 @@ const openPresetTab = async (
             stopsOn: StopReason.NOTHING,
           },
           at: 'one',
+          version: stored,
           bounds: BOUNDS,
         },
         reading(times++),
       ),
-    getDeckPreset: async () => asValue({ preset: null, at: '', bounds: NO_BOUNDS }),
+    getDeckPreset: async () => asValue({ preset: null, at: '', version: 0n, bounds: NO_BOUNDS }),
     list: async () => [],
     createPreset: async () => asValue({ path: '' }),
-    scheduleDeck: async () => asValue({ at: '' }),
+    scheduleDeck: async () => asValue({ at: '', version: 1n }),
     write: async (_path, payload) => {
       content.push(payload)
-      return writeAs(await writing(writes++))
+      stored += 1n
+      return writeAs(await writing(writes++), stored)
     },
     curve: async (_path, params) => {
       request.push(params.goal)
@@ -184,6 +187,7 @@ const opening = async (file: Partial<Settings>) => {
     resolveRead = settle
   })
   const content: Settings[] = []
+  let stored = 1n
   const core: Presets = {
     read: async (path) => {
       await target
@@ -197,16 +201,18 @@ const opening = async (file: Partial<Settings>) => {
           stopsOn: StopReason.NOTHING,
         },
         at: 'one',
+        version: stored,
         bounds: BOUNDS,
       })
     },
-    getDeckPreset: async () => asValue({ preset: null, at: '', bounds: NO_BOUNDS }),
+    getDeckPreset: async () => asValue({ preset: null, at: '', version: 0n, bounds: NO_BOUNDS }),
     list: async () => [],
     createPreset: async () => asValue({ path: '' }),
-    scheduleDeck: async () => asValue({ at: '' }),
+    scheduleDeck: async () => asValue({ at: '', version: 1n }),
     write: async (_path, payload) => {
       content.push(payload)
-      return asValue({ at: 'two' })
+      stored += 1n
+      return asValue({ at: 'two', version: stored })
     },
     curve: async () => curve,
   }
@@ -1154,7 +1160,7 @@ describe('the knob, as a field is typed', () => {
 
 describe('the preset of a note', () => {
   const deck = (preset: Preset | null, error?: ErrorCode) => async () =>
-    error ? asFailure(error) : asValue({ preset, at: '', bounds: NO_BOUNDS })
+    error ? asFailure(error) : asValue({ preset, at: '', version: 0n, bounds: NO_BOUNDS })
   const note = (path: string, type: string) => ({
     path,
     title: '',

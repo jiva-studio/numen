@@ -17,7 +17,7 @@ const file = { path: 'Note.md', size: 12n, mtime: 34n }
 describe('mapNoteResult', () => {
   it('carries the body and the file it came out of', () => {
     expect(mapNoteResult({ body: 'text', at: file })).toEqual(
-      asValue({ body: 'text', at: '12 34 Note.md' }),
+      asValue({ body: 'text', at: '12:0: 34 Note.md' }),
     )
   })
 
@@ -39,7 +39,9 @@ describe('mapWriteResult', () => {
   })
 
   it('maps any other answer as a note result', () => {
-    expect(mapWriteResult({ at: file })).toStrictEqual(asValue({ body: '', at: '12 34 Note.md' }))
+    expect(mapWriteResult({ at: file })).toStrictEqual(
+      asValue({ body: '', at: '12:0: 34 Note.md' }),
+    )
   })
 })
 

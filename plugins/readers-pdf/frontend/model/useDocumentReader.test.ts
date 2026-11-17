@@ -13,7 +13,7 @@ const LAYOUT: DocumentLayout = {
     { width: 612, height: 792 },
     { width: 612, height: 792 },
   ],
-  stat: '1024 1700000000000000000 book.pdf',
+  stat: '1024:0: 1700000000000000000 book.pdf',
 }
 
 function book(

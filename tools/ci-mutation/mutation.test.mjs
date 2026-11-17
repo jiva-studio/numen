@@ -88,10 +88,10 @@ test('test data outside the package is found from the paths its tests import', (
     {
       path: 'libs/ui/components/src/shared/lib/text/address.test.ts',
       source:
-        "import cases from '../../../../../../core/protocol/testdata/addresses.json'\nimport { read } from './address'\nimport raw from '../../../../../../core/protocol/testdata/html/spine.html?raw'",
+        "import cases from '../../../../../../shared/protocol/testdata/addresses.json'\nimport { read } from './address'\nimport raw from '../../../../../../shared/protocol/testdata/html/spine.html?raw'",
     },
   ]
-  assert.deepEqual(findTestdata('libs/ui/components', tests), ['libs/core/protocol/testdata'])
+  assert.deepEqual(findTestdata('libs/ui/components', tests), ['libs/shared/protocol/testdata'])
 })
 
 test('a folder a test helper reads outside the package is kept whole', () => {
@@ -148,18 +148,18 @@ test('source under test is told apart from tests, stories and barrels', () => {
 })
 
 test('the sandbox keeps the package and its test data and drops their siblings', () => {
-  assert.deepEqual(keepOnly(['libs/ui/components', 'libs/core/protocol/testdata']), [
+  assert.deepEqual(keepOnly(['libs/ui/components', 'libs/shared/protocol/testdata']), [
     '/*',
     '!/libs',
     '/libs/*',
     '!/libs/ui',
     '/libs/ui/*',
     '!/libs/ui/components',
-    '!/libs/core',
-    '/libs/core/*',
-    '!/libs/core/protocol',
-    '/libs/core/protocol/*',
-    '!/libs/core/protocol/testdata',
+    '!/libs/shared',
+    '/libs/shared/*',
+    '!/libs/shared/protocol',
+    '/libs/shared/protocol/*',
+    '!/libs/shared/protocol/testdata',
   ])
 })
 

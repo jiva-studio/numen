@@ -2,9 +2,9 @@ package cards
 
 import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-func createCardID() format.ID {
-	return format.CreateID(clock.ReadEntropy)
+func newCardIDs(entropy ports.Entropy) func() format.ID {
+	return func() format.ID { return format.CreateID(entropy.Fill) }
 }

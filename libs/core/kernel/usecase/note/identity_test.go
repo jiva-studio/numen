@@ -11,8 +11,8 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/markdown"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
 func getStartedNotes() []string {

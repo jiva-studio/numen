@@ -19,7 +19,7 @@ func TestASlotEntryCarriesItsCondition(t *testing.T) {
 	}
 }
 
-// The conditions themselves are tested against libs/core/protocol/when.json in package when; this is the
+// The conditions themselves are tested against libs/shared/protocol/when.json in package when; this is the
 // error the reader gives for an entry whose condition fails the check.
 func TestAConditionWithAnUnknownKeyOrAMalformedExpressionIsAnInvalidSlotEntry(t *testing.T) {
 	for _, when := range []string{"target.isRemote", "target.isFolder &&"} {

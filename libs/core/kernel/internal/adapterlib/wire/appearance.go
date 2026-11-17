@@ -2,7 +2,7 @@
 package wire
 
 import (
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 )

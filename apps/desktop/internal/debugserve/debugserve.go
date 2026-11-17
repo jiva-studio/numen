@@ -25,7 +25,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 // Clock gets the current time.

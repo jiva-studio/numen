@@ -16,7 +16,7 @@ const PLANTED = {
   "libs/plugin/loader/src/hosting/headings.ts": "import type { Heading } from '@numen/plugin-sdk/contracts/notes'\n\nexport type Row = Heading\n",
   "libs/core/client/src/headings.ts": "export async function load() {\n  return import('@numen/plugin-sdk/contracts')\n}\nexport type H = import('@numen/plugin-sdk/contracts/notes').Heading\n",
   "libs/ui/components/src/Heading.vue": "<template><p /></template>\n\n<script setup lang=\"ts\">\nimport type { Heading } from '@numen/plugin-sdk/contracts/notes'\n\ndefineProps<{ heading: Heading }>()\n</script>\n",
-  "libs/core/protocol/index.ts": "export * from '@numen/plugin-sdk/contractsx'\n",
+  "libs/shared/protocol/index.ts": "export * from '@numen/plugin-sdk/contractsx'\n",
   "plugins/notes/backend/service/headings.go": `package service\n\nimport "${GO_CONTRACTS}/notes"\n`,
   "plugins/views-outline/frontend/api/headings.ts": "import type { Heading } from '@numen/plugin-sdk/contracts/notes'\n\nexport type Row = Heading\n",
   "apps/desktop/editor/src/headings.ts": "import type { Heading } from '@numen/plugin-sdk/contracts/notes'\n\nexport type Row = Heading\n",

@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/testsupport"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/books"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/wire/bookwire"
 )
 
 type failingResponseWriter struct {
@@ -32,7 +33,7 @@ func serveEntries(t *testing.T) (*http.ServeMux, *books.Reader) {
 	reader := books.NewReader(func(id domain.VaultID) host.FileReader { return current.With(id) })
 	t.Cleanup(reader.Close)
 	mux := http.NewServeMux()
-	mux.Handle("GET /"+entriesPattern, NewEntryServer(reader, func(string, error) {}))
+	mux.Handle("GET /"+entriesPattern, NewEntryServer(bookwire.NewMethods(reader), func(string, error) {}))
 	return mux, reader
 }
 
@@ -87,7 +88,7 @@ func TestEntriesRoute_ReportsWriteError(t *testing.T) {
 	var gotWhat string
 	var gotErr error
 	mux := http.NewServeMux()
-	mux.Handle("GET /"+entriesPattern, NewEntryServer(reader, func(what string, err error) {
+	mux.Handle("GET /"+entriesPattern, NewEntryServer(bookwire.NewMethods(reader), func(what string, err error) {
 		gotWhat = what
 		gotErr = err
 	}))

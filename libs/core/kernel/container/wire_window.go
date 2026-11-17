@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // windowWiring is what the wire_window_<service>.go files share while one editor window is built.
@@ -89,6 +89,7 @@ type WindowUseCases struct {
 	Listing     *registry.Listing
 	Vaults      *VaultUseCases
 	ShowTab     windowsession.ShowTab
+	OpenPlugin  windowsession.OpenPluginVault
 }
 
 // OpenedWindow is an editor window opened: the installation that serves it, the state its services work
@@ -163,8 +164,9 @@ func buildWindow(
 		startFeed: getFeedStart(a, db),
 	})
 	cases.ShowTab = session.tools.showTab
+	cases.OpenPlugin = session.cases.openPlugin
 	inst := editor.NewInstallation(state, editor.Lifecycle{
-		Start: session.cases.start, Show: session.cases.show, OpenPlugin: session.cases.openPlugin,
+		Start: session.cases.start, Show: session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
 	}, session.tools.importFiles, getMediaType(a.vault), opening.Out)
 

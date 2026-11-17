@@ -89,7 +89,7 @@ func (f *File) DropInvalidConnections() {
 // back, all under one hold of the lock. The rest of the file is kept byte for byte. Nothing is
 // written where change fails or leaves the list as it was.
 func (f *Files) ChangeConnections(path string, change func([]connection.Connection) ([]connection.Connection, error)) error {
-	return f.run(path, func(path string) error {
+	_, err := f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if errors.Is(err, fs.ErrNotExist) {
 			raw = []byte("{}\n")
@@ -117,6 +117,7 @@ func (f *Files) ChangeConnections(path string, change func([]connection.Connecti
 		}
 		return writeFileAtomically(path, patched)
 	})
+	return err
 }
 
 // WriteConnectionsJSON is the connections section as the file lays it out.
