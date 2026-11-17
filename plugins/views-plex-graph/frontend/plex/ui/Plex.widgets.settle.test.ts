@@ -273,8 +273,9 @@ describe('the plex in a window the widgets fill up', () => {
         )
           removed.push(record.oldValue ?? '')
         for (const node of record.removedNodes)
-          if (node instanceof Element && node.classList.contains('plex__node'))
-            removed.push(getTitleOf(node) ?? '')
+          if (node instanceof Element)
+            for (const gone of node.querySelectorAll('.plex__node'))
+              removed.push(getTitleOf(gone) ?? '')
       }
     }
     const observer = new MutationObserver(collect)
