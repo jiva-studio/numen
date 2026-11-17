@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@codemirror/autocomplete": "^6.18.6",
+    "@codemirror/autocomplete": "^6.20.4",
     "@codemirror/commands": "^6.11.0",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-go": "^6.0.1",
@@ -75,6 +75,6 @@
     "@lezer/highlight": "^1.2.3",
     "@lezer/markdown": "^1.8.1",
     "typescript": "^6.0.3",
-    "vue-router": "^5.4.0"
+    "vue-router": "^5.5.0"
   }
 }
