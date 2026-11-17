@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
+	"github.com/jiva-studio/numen/libs/shared/rerank"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/internal/adapter/openaiapi"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/models"
@@ -118,7 +119,7 @@ func (s *testService) Embed(ctx context.Context, call connection.Call, texts []s
 	return vectors, nil
 }
 
-func (s *testService) Rerank(ctx context.Context, call connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+func (s *testService) Rerank(ctx context.Context, call connection.Call, request *rerank.RerankRequest) (*rerank.RerankResult, error) {
 	return llmtest.Rerank(ctx, s.built.provider.roles(), call, request)
 }
 

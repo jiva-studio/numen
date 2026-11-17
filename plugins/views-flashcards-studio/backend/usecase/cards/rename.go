@@ -2,16 +2,15 @@ package cards
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"math"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 // Rename is which field of which card model is being renamed, and to what.
@@ -48,8 +47,9 @@ type RenameField struct {
 	writers ports.VaultWriters
 	notes   TypeQueries
 	links   ports.LinkQueries
-	index   note.IndexUpdater
+	index   edit.IndexUpdater
 	now     ports.Clock
+	entropy ports.Entropy
 }
 
 // TypeQueries is the single index query a rename needs. The rename runs entirely
@@ -67,12 +67,12 @@ type TypeQueries interface {
 func NewRenameField(cfg Config, maxDecks int) RenameField {
 	return RenameField{
 		readers: cfg.Readers, writers: cfg.Writers, notes: cfg.Notes, links: cfg.Links,
-		index: cfg.Index, now: cfg.Now, maxDecks: maxDecks,
+		index: cfg.Index, now: cfg.Now, entropy: cfg.Entropy, maxDecks: maxDecks,
 	}
 }
 
 func (u RenameField) createIdentifier() (string, error) {
-	return ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
+	return ulid.NewGenerator(format.NewEntropyReader(u.entropy)).NewID(u.now.Now())
 }
 
 // Execute renames the field, in the card model first and then in the vault.
@@ -92,7 +92,7 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 		return out, err
 	}
 	content := append([]string{in.CardModel}, out.Decks...)
-	return out, note.WrapIndexOutdated(u.index(ctx, v, content), content...)
+	return out, edit.WrapIndexOutdated(u.index(ctx, v, content), content...)
 }
 
 // MaxDecksPerRename is the most decks an agent's rename reads and writes at once.
@@ -148,7 +148,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (res
 	named := domain.Basename(in.CardModel)
 	one := deckWriter{
 		reader: reader, writer: writer, links: u.links, vault: v,
-		read: NewRead(u.readers, u.links), writeIdentifier: u.writeIdentifier,
+		read: NewRead(u.readers, u.links), writeIdentifier: u.writeIdentifier, createCardID: newCardIDs(u.entropy),
 	}
 	for _, path := range paths {
 		if err := ctx.Err(); err != nil {
@@ -193,7 +193,7 @@ func (u RenameField) writeCardModelField(
 	if err := f.RenameField(in.From, in.To); err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
-	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader and freshly opened card model frontmatter do not fail when writing an identifier."
+	// gomutants:disable-next-line BRANCH_IF reason="The entropy of the machine and freshly opened card model frontmatter do not fail when writing an identifier."
 	if err := u.writeIdentifier(f.WriteIdentifier); err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
@@ -202,7 +202,7 @@ func (u RenameField) writeCardModelField(
 
 func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
 	identifier, err := u.createIdentifier()
-	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader does not fail in normal execution."
+	// gomutants:disable-next-line BRANCH_IF reason="The entropy of the machine does not fail."
 	if err != nil {
 		return err
 	}
@@ -223,6 +223,7 @@ type deckWriter struct {
 	vault           domain.Vault
 	read            Read
 	writeIdentifier func(func(string) (bool, error)) error
+	createCardID    func() format.ID
 }
 
 func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, error) {
@@ -231,9 +232,9 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
-	if on.Size > MaxBytes {
+	if on.Size > format.MaxDeckBytes {
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
-		return 0, fmt.Errorf("it is %d bytes, and %d is the most a deck is read at", on.Size, MaxBytes)
+		return 0, fmt.Errorf("it is %d bytes, and %d is the most a deck is read at", on.Size, format.MaxDeckBytes)
 	}
 
 	raw, err := d.reader.Read(ctx, path)
@@ -266,7 +267,7 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 		return 0, err
 	}
 	// gomutants:disable-next-line BRANCH_IF reason="DeckFile.Whole does not fail on a deck that already passed OpenDeck and RenameField."
-	if _, err := f.Whole(delta, createCardID); err != nil {
+	if _, err := f.Whole(delta, d.createCardID); err != nil {
 		return 0, err
 	}
 	if err := d.writeIdentifier(f.WriteIdentifier); err != nil {

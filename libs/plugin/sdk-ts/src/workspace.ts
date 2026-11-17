@@ -274,7 +274,7 @@ export function getRenamedPath(renames: readonly PathRename[], path: string): st
 }
 
 // isNotePath reports whether a vault path is a note: a file whose extension is md, in any case. A
-// file name without an extension is no note, as the when vectors of libs/core/protocol/when.json derive it.
+// file name without an extension is no note, as the when vectors of libs/shared/protocol/when.json derive it.
 export function isNotePath(path: string): boolean {
   const name = getFileName(path)
   const dot = name.lastIndexOf('.')

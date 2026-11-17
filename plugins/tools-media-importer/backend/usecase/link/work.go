@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 )
 
 func (l *Links) claim(work string, link Link, key string) bool {
@@ -65,14 +65,14 @@ func (l *Links) StartFetch(ctx context.Context, link Link) {
 		defer cancel()
 		l.reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link))
 		if l.IsCopyable(link.Address) {
-			_, err := l.Copy(runCtx, link, download.MediaVideo)
+			_, err := l.Copy(runCtx, link, fetch.MediaVideo)
 			l.reportBackgroundError(runCtx, "copy the video of", link, err)
 		}
 	})
 }
 
 // StartCopy copies the media of a link in the background. A failure is current as its task.
-func (l *Links) StartCopy(ctx context.Context, link Link, media download.Media) {
+func (l *Links) StartCopy(ctx context.Context, link Link, media fetch.Media) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()

@@ -1,5 +1,15 @@
+import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
+import { RerankRequestSchema, RerankResultSchema } from '@numen/rerank'
 import { describe, expect, it } from 'vitest'
-import { chat, complete, embed, getProfile, type ChatFrame, type ChatRequest } from '../llm'
+import {
+  OPERATION_RERANK,
+  chat,
+  complete,
+  embed,
+  getProfile,
+  type ChatFrame,
+  type ChatRequest,
+} from '../llm'
 import { createLlmHost } from './index'
 
 const collect = async (frames: AsyncGenerator<ChatFrame, unknown>) => {
@@ -81,5 +91,26 @@ describe('createLlmHost', () => {
       ok: false,
       error: { error: 'no_connection' },
     })
+  })
+
+  it('reads the request of the rerank and writes the result with the messages of the shared module', async () => {
+    const host = createLlmHost({
+      rerank: async (request) => ({
+        ok: true,
+        value: { scores: request.documents.map((document) => document.length) },
+      }),
+    })
+    const payload = toBinary(
+      RerankRequestSchema,
+      create(RerankRequestSchema, { query: 'ferry', documents: ['pier', 'ferry times'] }),
+    )
+
+    const frames = host.call(OPERATION_RERANK, payload)
+    let next = await frames.next()
+    while (next.done !== true) next = await frames.next()
+
+    expect(next.value.ok && fromBinary(RerankResultSchema, next.value.value).scores).toEqual([
+      4, 11,
+    ])
   })
 })

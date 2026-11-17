@@ -8,7 +8,6 @@ set -eu
 
 repo=$(cd "$(dirname "$0")/../../.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/numen-cli-e2e.XXXXXX")
-pages_port=${NUMEN_TEST_PORT:-3467}
 
 mkdir -p "$work/bin" "$work/vault/talks" "$work/vault/books" "$work/config" "$work/cache"
 (cd "$repo/apps/desktop" && go build -o "$work/bin/numen-cli" ./cmd/numen-cli)
@@ -24,18 +23,22 @@ cp "$repo/tests/e2e/desktop/fixtures/flywheel.pdf" "$work/vault/books/flywheel.p
 # dependency a plugin declares as an empty placeholder, so nothing is fetched.
 export HOME="$work" XDG_CONFIG_HOME="$work/config" XDG_CACHE_HOME="$work/cache"
 export NUMEN_TEST_MOCK_ML=true NUMEN_PLUGINS_PATH="$repo/plugins"
-export HTTP_PROXY="http://127.0.0.1:$pages_port" NO_PROXY=127.0.0.1
+export NO_PROXY=127.0.0.1
 
-# The address the import fetches, served by a local stand-in through the proxy.
+# The address the import fetches, served by a local stand-in through the proxy. The stand-in picks its
+# port and prints it to the pipe once it listens, so no command starts before it accepts connections.
+mkfifo "$work/pages-port"
 node -e '
 const http = require("node:http"), fs = require("node:fs")
 http.createServer((req, res) => {
   if (new URL(req.url, "http://" + req.headers.host).hostname !== "numen.dev") return res.writeHead(404).end()
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(fs.readFileSync(process.argv[1]))
-}).listen(Number(process.argv[2]), "127.0.0.1")
-' "$repo/tests/e2e/desktop/fixtures/article.html" "$pages_port" &
+}).listen(0, "127.0.0.1", function () { console.log(this.address().port) })
+' "$repo/tests/e2e/desktop/fixtures/article.html" >"$work/pages-port" &
 pages=$!
-trap 'kill $pages; rm -rf "$work"' EXIT
+trap 'kill $pages 2>/dev/null; rm -rf "$work"' EXIT
+read -r pages_port <"$work/pages-port" || { echo "FAIL: the page stand-in did not start"; exit 1; }
+export HTTP_PROXY="http://127.0.0.1:$pages_port"
 
 cli() { "$work/bin/numen-cli" --registry "$work/vaults.json" --index "$work/index.db" "$@"; }
 

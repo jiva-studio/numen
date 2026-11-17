@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ErrNoteUnreadable is the error of a note read again whose file could not be read.

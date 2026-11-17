@@ -3,7 +3,7 @@ package windowsession
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // PluginVaultPath points the plugins at the folder of the vault the window shows.

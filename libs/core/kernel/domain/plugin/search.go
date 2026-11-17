@@ -1,6 +1,6 @@
 package plugin
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // The limits of the search index calls.
 const (

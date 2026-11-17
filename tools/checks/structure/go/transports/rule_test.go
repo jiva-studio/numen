@@ -9,7 +9,7 @@ func listTransports() []string {
 		"connectrpc.com",
 		"database/sql",
 		"net/http",
-		"github.com/jiva-studio/numen/libs/core/protocol",
+		"github.com/jiva-studio/numen/libs/shared/protocol",
 	}
 }
 

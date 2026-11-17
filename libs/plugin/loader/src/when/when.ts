@@ -1,6 +1,6 @@
 /**
  * The when conditions of commands and slot entries: CEL expressions over the variables of
- * libs/core/protocol/when.json, such as `target.isFolder && !target.isMultiple`. The Go reader of the
+ * libs/shared/protocol/when.json, such as `target.isFolder && !target.isMultiple`. The Go reader of the
  * manifest checks them, types included; the window reads a condition once and evaluates it over the
  * values of each place.
  */

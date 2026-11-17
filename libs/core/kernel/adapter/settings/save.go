@@ -14,8 +14,8 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 // Setting is one field of the file and its position in it, the first element being the owner:

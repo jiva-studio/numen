@@ -1,5 +1,6 @@
-// Package exposetools exposes the tools of the host to MCP clients: it keeps the tools registered
-// on an MCP server equal to the host's listing and forwards tool calls to the host.
+// Package exposetools exposes the tools of the host to MCP clients: it builds the MCP server, keeps
+// the tools registered on it equal to the host's listing with the instructions it reports, and forwards
+// tool calls to the host.
 package exposetools
 
 import (
