@@ -447,7 +447,6 @@ describe('the plex whose widget never reports ready', () => {
   })
 })
 
-/** A window whose size is known a tick after the plex is mounted, as the size of a real element is. */
 const createLateViewport = (size: Size): Viewport => {
   const deliver = (took: (size: Size) => void) => {
     let isLive = true
@@ -490,9 +489,9 @@ const CROWD: PlexGraph = {
 const CROWD_IDS = CROWD.nodes.map((node) => node.id)
 const MEDIUM_WINDOW = { width: 600, height: 260 }
 
-const countShown = (plex: Mounted) => plex.findAll('.plex__node[aria-label]').length
+const getShownCount = (plex: Mounted) => plex.findAll('.plex__node[aria-label]').length
 
-const countPlaced = () => placed.length
+const getPlacedCount = () => placed.length
 
 describe('the plex that waits for the widgets of many nodes', () => {
   it('arranges for the widget sizes of an open no more often than for widgets that all arrive at once', async () => {
@@ -500,7 +499,7 @@ describe('the plex that waits for the widgets of many nodes', () => {
     const reference = mountPlex({ widgetsBelow: [createEntry(together)] })
     deliver(together, answerFor(ALL))
     await passFrames(FRAMES_PER_SETTLE)
-    const forOne = countPlaced()
+    const forOne = getPlacedCount()
     reference.unmount()
     placed.length = 0
     const arrivals = createArrivals()
@@ -509,21 +508,21 @@ describe('the plex that waits for the widgets of many nodes', () => {
     await deliverOneAfterAnother(arrivals, ALL)
     await passFrames(FRAMES_PER_SETTLE)
 
-    expect(countPlaced()).toBe(forOne)
+    expect(getPlacedCount()).toBe(forOne)
   })
 
   it('arranges nothing more while a widget still loads, however the sizes of the others change', async () => {
     const arrivals = createArrivals()
     mountPlex({ widgetsBelow: [createEntry(arrivals)] })
     await passFrames(1)
-    const roomless = countPlaced()
+    const roomless = getPlacedCount()
 
     for (const id of ['focus', 'parent-0', 'parent-1', 'child-0']) {
       deliver(arrivals, { [id]: true })
       await passFrames(1)
     }
 
-    expect(countPlaced()).toBe(roomless)
+    expect(getPlacedCount()).toBe(roomless)
   })
 
   it('arranges once for the widgets that change size in one frame after the plex has settled, as for one', async () => {
@@ -535,7 +534,7 @@ describe('the plex that waits for the widgets of many nodes', () => {
       await deliverOneAfterAnother(arrivals, ids)
       await passFrames(FRAMES_PER_SETTLE)
       plex.unmount()
-      return countPlaced()
+      return getPlacedCount()
     }
     const forOne = await countForChanges(['parent-0'])
 
@@ -546,7 +545,7 @@ describe('the plex that waits for the widgets of many nodes', () => {
   it('mounts the widgets of the nodes the window shows, and of no node that only the first pass offered', async () => {
     const bare = mountPlex({ graph: CROWD, viewport: createLateViewport(MEDIUM_WINDOW) })
     await passFrames(FRAMES_PER_SETTLE)
-    const shownBare = countShown(bare)
+    const shownBare = getShownCount(bare)
     bare.unmount()
     mounted.clear()
 
