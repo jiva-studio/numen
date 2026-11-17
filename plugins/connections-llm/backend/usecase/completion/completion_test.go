@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
-	"github.com/jiva-studio/numen/libs/shared/rerank"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/completion"
 )
@@ -40,7 +39,7 @@ func (g *gateway) Embed(context.Context, connection.Call, time.Duration, []strin
 	return nil, nil
 }
 
-func (g *gateway) Rerank(context.Context, connection.Call, time.Duration, *rerank.RerankRequest) ([]float32, error) {
+func (g *gateway) Rerank(context.Context, connection.Call, time.Duration, string, string, []string) ([]float32, error) {
 	return nil, nil
 }
 
