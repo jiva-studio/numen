@@ -73,7 +73,7 @@ function onLeave() {
 <style scoped>
 .file-tags {
   --ring: 0.0625rem;
-  --dot: 0.75rem;
+  --dot: 0.625rem;
 
   display: inline-flex;
   align-items: center;
@@ -93,7 +93,7 @@ function onLeave() {
 }
 
 .file-tags__dot + .file-tags__dot {
-  margin-inline-start: calc(var(--dot) * -0.25);
+  margin-inline-start: calc(var(--dot) * -0.3);
 }
 
 .file-tags__more {
