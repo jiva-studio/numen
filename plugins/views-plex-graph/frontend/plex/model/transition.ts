@@ -153,6 +153,13 @@ export function usePlexTransition(
     return false
   }
 
+  const keepLeftOut = (ids: ReadonlySet<string>, room: ArrangeInput['room']) => {
+    if (!room) return
+    for (const node of graph().nodes) {
+      if (!ids.has(node.id)) leftOut.set(node.id, room(node))
+    }
+  }
+
   const arrangeWhenReady = () => {
     cancelFrame()
     if (!isActive()) return
@@ -165,18 +172,13 @@ export function usePlexTransition(
       keep: shown,
     })
     const ids = new Set(to.nodes.map((node) => node.id))
-    if (!shown && given.room) {
-      for (const node of graph().nodes) {
-        if (!ids.has(node.id)) leftOut.set(node.id, given.room(node))
-      }
-    }
-    const isFrozen = shown !== undefined
+    const isStill = shown !== undefined && target !== undefined && !isFrameMoved(target, to)
+    if (!shown) keepLeftOut(ids, given.room)
     shown = ids
     arrangedRooms = getRooms(given.room)
     held.value = [...ids]
     waiting.value = getNotInFrame(to.nodes)
-    if (isFrozen && target && !isFrameMoved(target, to)) return
-    run(to)
+    if (!isStill) run(to)
   }
 
   const arrangeAgain = () => {
@@ -250,7 +252,7 @@ function startTransition(context: StepContext): number {
   return context.clock.schedule(step)
 }
 
-function getInputSources(input: () => PlexTransitionInput | undefined) {
+function getInputSources(input: () => ArrangeInput | undefined) {
   return [
     () => input()?.placement,
     () => input()?.options?.viewport?.width,
