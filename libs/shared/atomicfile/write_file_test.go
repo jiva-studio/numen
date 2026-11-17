@@ -9,7 +9,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 func TestWriteFileCreatesAndReplacesWithTheMode(t *testing.T) {

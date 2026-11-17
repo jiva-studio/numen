@@ -11,8 +11,8 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 // VaultRegistry is the list of vaults, kept in one file that every write

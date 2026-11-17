@@ -44,7 +44,7 @@ go_rules: &go_rules
 protocol_lib: &protocol_lib
   - libs/core/protocol/**
 atomicfile_lib: &atomicfile_lib
-  - libs/atomicfile/**
+  - libs/shared/atomicfile/**
 notes_lib: &notes_lib
   - libs/note/**
 core_lib: &core_lib
