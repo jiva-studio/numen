@@ -363,7 +363,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 			Path:     "Term.md",
 			From:     "Word",
 			To:       "Other",
-			Baseline: &api.FileStat{Path: "Term.md", Size: 999999, Mtime: 1},
+			Baseline: &api.FileStat{Path: "Term.md", Size: 999999, Mtime: 1, Hash: strings.Repeat("0", 64)},
 		})
 		if err != nil || renamedStale.Error != api.ErrorCodeConflict || renamedStale.Cards != 0 || renamedStale.IsIndexOutdated {
 			t.Fatalf("unexpected RenameCardModelField on stale: %+v, %v", renamedStale, err)

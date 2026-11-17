@@ -19,7 +19,7 @@ const BOOK: Book = {
   printedPages: [],
   pages: 3,
   pageBytes: 3_000,
-  stat: '20480 1700000000000000000 marsh.epub',
+  stat: '20480:0: 1700000000000000000 marsh.epub',
 }
 
 function createFakeBooks(readChapters: string[]): Books {

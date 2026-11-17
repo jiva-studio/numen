@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEqnwIKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEh0KGUVSUk9SX0NPREVfQUxSRUFEWV9FWElTVFMQBxIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAIEhcKE0VSUk9SX0NPREVfQ09ORkxJQ1QQDUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIlQKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAxIMCgRoYXNoGAQgASgJEg8KB3ZlcnNpb24YBSABKAQiIwoFUmFuZ2USDQoFc3RhcnQYASABKAUSCwoDZW5kGAIgASgFIiIKBkJvdW5kcxILCgNtaW4YASABKAESCwoDbWF4GAIgASgBKp8CCglFcnJvckNvZGUSGgoWRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEhgKFEVSUk9SX0NPREVfTk9UX0ZPVU5EEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIdChlFUlJPUl9DT0RFX0FMUkVBRFlfRVhJU1RTEAcSGwoXRVJST1JfQ09ERV9JTlZBTElEX05BTUUQCBIXChNFUlJPUl9DT0RFX0NPTkZMSUNUEA1CRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * FileStat is which file this is: where it is filed, how big it is, and when
@@ -46,6 +46,21 @@ export type FileStat = Message<"numen.v1.FileStat"> & {
    * @generated from field: int64 mtime = 3;
    */
   mtime: bigint;
+
+  /**
+   * The SHA-256 of the content, in lowercase hex. Empty where the answer did not read the content.
+   *
+   * @generated from field: string hash = 4;
+   */
+  hash: string;
+
+  /**
+   * The number of writes the vault had taken when the answer was made. Zero where the answer
+   * does not say.
+   *
+   * @generated from field: uint64 version = 5;
+   */
+  version: bigint;
 };
 
 /**

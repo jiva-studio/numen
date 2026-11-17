@@ -5,6 +5,7 @@ import (
 	"errors"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -21,11 +22,12 @@ type Locks struct {
 
 // vaultLock is what every writer of one vault shares. hold is the lock a caller takes through
 // VaultWriters.Lock around several steps. A write takes write itself, so a caller that holds hold can
-// still write. version is the number of writes the vault has taken, and write guards it.
+// still write. version is the number of writes the vault has taken: a write raises it under write, and
+// a read of it takes no lock.
 type vaultLock struct {
 	hold    chan struct{}
 	write   sync.Mutex
-	version uint64
+	version atomic.Uint64
 }
 
 func newVaultLock() *vaultLock { return &vaultLock{hold: make(chan struct{}, 1)} }

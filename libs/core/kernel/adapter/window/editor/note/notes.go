@@ -265,7 +265,7 @@ func convertFileStatToWire(ref domain.FileStat) *v1.FileStat {
 	if ref.IsZero() {
 		return nil
 	}
-	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
+	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime), Hash: ref.Hash, Version: ref.Version}
 }
 
 func newBaseline(baseline *v1.ReadBaseline) *edit.Baseline {
@@ -279,7 +279,10 @@ func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
 	if pos == nil {
 		return domain.FileStat{}
 	}
-	return domain.FileStat{Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime())}
+	return domain.FileStat{
+		Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime()),
+		Hash: pos.GetHash(), Version: pos.GetVersion(),
+	}
 }
 
 // ListHeadings hands the client the headings of the notes the filter names. A

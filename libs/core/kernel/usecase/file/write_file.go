@@ -19,8 +19,9 @@ func NewWriteFile(writers vaultport.NoteWriters, index edit.IndexUpdater) WriteF
 	return WriteFile{writers: writers, index: index}
 }
 
-// Execute replaces the file if it still matches the baseline and returns the new file stat. A file that
-// was written and not indexed returns that file stat and edit.ErrIndexOutdated.
+// Execute replaces the file if it still matches the baseline and returns the new file stat, with its
+// hash and the version of the vault. A file that was written and not indexed returns that file stat
+// and edit.ErrIndexOutdated.
 func (u WriteFile) Execute(
 	ctx context.Context, v domain.Vault, path string, content []byte, baseline domain.FileStat,
 ) (domain.FileStat, error) {
@@ -30,9 +31,11 @@ func (u WriteFile) Execute(
 	}
 	written, err := writer.Write(ctx, path, content, baseline)
 	if err != nil {
-		return written.Stat, err
+		return domain.FileStat{}, err
 	}
-	return written.Stat, edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
+	stat := written.Stat
+	stat.Version = written.Version
+	return stat, edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }
 
 // CreateFile makes a file of a vault that is not there and updates the index for it.

@@ -65,6 +65,13 @@ message FileStat {
 
   // When the file last changed, in nanoseconds since the epoch.
   int64 mtime = 3;
+
+  // The SHA-256 of the content, in lowercase hex. Empty where the answer did not read the content.
+  string hash = 4;
+
+  // The number of writes the vault had taken when the answer was made. Zero where the answer
+  // does not say.
+  uint64 version = 5;
 }
 
 // Range is a run of text, by where it begins and where it ends. What it counts

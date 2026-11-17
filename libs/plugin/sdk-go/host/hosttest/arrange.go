@@ -66,7 +66,7 @@ func (v *Vault) writeTitle(notePath, title string, isExact bool) (bool, error) {
 	if err := doc.SetTitle(title); err != nil {
 		return false, err
 	}
-	if _, err := v.files.write(notePath, doc.Bytes()); err != nil {
+	if _, err := v.put(notePath, doc.Bytes()); err != nil {
 		return false, err
 	}
 	v.rescan(notePath)
@@ -203,7 +203,7 @@ func (v *Vault) moveFile(from, target string) error {
 	if err := v.files.remove(from); err != nil {
 		return err
 	}
-	if _, err := v.files.write(target, content); err != nil {
+	if _, err := v.put(target, content); err != nil {
 		return err
 	}
 	v.feed.move(from, target)

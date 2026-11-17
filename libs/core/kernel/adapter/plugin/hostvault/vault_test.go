@@ -45,8 +45,8 @@ func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.A
 	return NewAccess(
 		Session{Current: func() (domain.Vault, bool) { return v, true }, Written: hooks.onWrite, Find: hooks.find},
 		Files{
-			Stat:        file.NewStatFile(vaultreader.Readers{}),
-			ReadFile:    file.NewReadFile(vaultreader.Readers{}),
+			Stat:        file.NewHashFile(vaultreader.Readers{}, writers),
+			ReadFile:    file.NewReadFile(vaultreader.Readers{}, writers),
 			RangeReader: file.Read{Readers: vaultreader.Readers{}},
 		},
 		Writer{

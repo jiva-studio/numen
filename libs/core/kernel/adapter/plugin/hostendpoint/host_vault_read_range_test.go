@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
@@ -63,8 +64,8 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 	return openReadEndpoint(t, hostvault.NewAccess(
 		hostvault.Session{Current: func() (domain.Vault, bool) { return v, true }},
 		hostvault.Files{
-			Stat:        file.NewStatFile(readers),
-			ReadFile:    file.NewReadFile(readers),
+			Stat:        file.NewHashFile(readers, vaultwriter.VaultWriters{}),
+			ReadFile:    file.NewReadFile(readers, vaultwriter.VaultWriters{}),
 			RangeReader: file.Read{Readers: readers},
 		},
 		hostvault.Writer{}, hostvault.Lookups{}, hostvault.Arranger{}, hostvault.Stores{},

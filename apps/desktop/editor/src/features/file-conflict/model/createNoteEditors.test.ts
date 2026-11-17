@@ -14,8 +14,8 @@ const settle = async () => {
 const create = (windowTabs = createTestTabs()) => {
   const api = createAnsweredApi(
     createNoteAnswers({
-      read: async () => asValue({ body: 'High tide at six.', at: '1 1 at:High tide at six.' }),
-      write: async () => asValue({ body: '', at: '1 1 at:' }),
+      read: async () => asValue({ body: 'High tide at six.', at: '1:0: 1 at:High tide at six.' }),
+      write: async () => asValue({ body: '', at: '1:0: 1 at:' }),
     }),
   )
   return createNoteEditors({
@@ -76,18 +76,18 @@ describe('the editors of a window', () => {
     const reported: string[] = []
     const api = createAnsweredApi({
       ...createNoteAnswers({
-        read: async () => asValue({ body: diskBody, at: `1 1 at:${diskBody}` }),
+        read: async () => asValue({ body: diskBody, at: `1:0: 1 at:${diskBody}` }),
         write: async (_path, body) => {
           diskBody = body
-          return asValue({ body: '', at: `1 1 at:${body}` })
+          return asValue({ body: '', at: `1:0: 1 at:${body}` })
         },
       }),
       notes: {
         ...createNoteAnswers({
-          read: async () => asValue({ body: diskBody, at: `1 1 at:${diskBody}` }),
+          read: async () => asValue({ body: diskBody, at: `1:0: 1 at:${diskBody}` }),
           write: async (_path, body) => {
             diskBody = body
-            return asValue({ body: '', at: `1 1 at:${body}` })
+            return asValue({ body: '', at: `1:0: 1 at:${body}` })
           },
         }).notes,
         createNote: async () => ({ error: NOTE_ERROR_CODE.INVALID_NAME }),

@@ -211,8 +211,11 @@ func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.Fi
 		if info.IsDir() {
 			return 0, fmt.Errorf("write %s: it is a directory", path)
 		}
-		if !stat.IsZero() &&
-			(info.Size() != stat.Size || !info.ModTime().Equal(stat.ModTime)) {
+		stale, err := isStale(root, name, stat)
+		if err != nil {
+			return 0, err
+		}
+		if stale {
 			return 0, fmt.Errorf("write %s: %w", path, edit.ErrStale)
 		}
 		return info.Mode().Perm(), nil
@@ -254,4 +257,29 @@ func createParents(root *os.Root, dir, path string) error {
 		return fmt.Errorf("make %s: %w", path, vault.ErrAlreadyExists)
 	}
 	return err
+}
+
+func isStale(root *os.Root, name string, baseline domain.FileStat) (_ bool, err error) {
+	if baseline.IsZero() {
+		return false, nil
+	}
+	file, err := root.Open(name)
+	if err != nil {
+		return false, err
+	}
+	defer closeAndJoin(&err, file)
+	hash, err := domain.HashReader(file)
+	if err != nil {
+		return false, err
+	}
+	return hash != baseline.Hash, nil
+}
+
+// GetVersion returns the number of writes the vault has taken since the core started. Writers made
+// without locks to share count apart, so it is zero for them.
+func (w VaultWriters) GetVersion(v domain.Vault) uint64 {
+	if w.Locks == nil {
+		return 0
+	}
+	return w.Locks.getLock(v.Path).version.Load()
 }

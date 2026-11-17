@@ -152,7 +152,7 @@ func TestAPresetLeftAloneIsNotAnIndexOutdatedWrite(t *testing.T) {
 	// A file stat no file answers to, which is the note having moved on since
 	// the caller read it.
 	staleFileStat := target.FileStat
-	staleFileStat.Size += 100
+	staleFileStat.Hash = domain.HashContent([]byte("moved on"))
 	settings := target.Settings
 	settings.MinutesADay = 35
 
@@ -1088,7 +1088,7 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	was := read(t, s.vault, "decks/Terms.md")
 
 	staleFileStat := pos
-	staleFileStat.Size += 3
+	staleFileStat.Hash = domain.HashContent([]byte("moved on"))
 	_, err = s.presets.Point.Execute(t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", staleFileStat)
 	if !errors.Is(err, ports.ErrStale) {
 		t.Fatalf("err = %v", err)
