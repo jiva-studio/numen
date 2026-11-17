@@ -21,6 +21,7 @@
     "@bufbuild/protobuf": "^2.17.0",
     "@connectrpc/connect": "^2.3.0",
     "@connectrpc/connect-web": "^2.3.0",
+    "@numen/rerank": "*",
     "@tailwindcss/node": "^4.3.5",
     "@tailwindcss/oxide": "^4.3.5",
     "@vue/compiler-sfc": "^3.5.45",
@@ -34,7 +35,6 @@
   "devDependencies": {
     "@babel/types": "^8.1.0",
     "@numen/protocol": "*",
-    "@numen/rerank": "*",
     "@numen/ui": "*",
     "@storybook/addon-vitest": "^10.6.6",
     "@storybook/vue3-vite": "^10.6.6",
