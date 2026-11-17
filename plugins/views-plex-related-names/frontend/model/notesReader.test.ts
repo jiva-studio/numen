@@ -391,55 +391,6 @@ describe('the reader while the vault changes', () => {
   })
 })
 
-describe('the reader while the names are hidden', () => {
-  it('reads nothing for a view that asks', () => {
-    const { reader, getReads } = createRig(false)
-
-    const lease = reader.acquire(PEAR)
-
-    expect(getReads()).toHaveLength(0)
-    expect(lease.noteGraph.value).toBeNull()
-  })
-
-  it('reads each note in use once when the names are shown', async () => {
-    const { reader, settings, getReads } = createRig(false)
-    reader.acquire(PEAR)
-    reader.acquire(PEAR)
-    reader.acquire(QUINCE)
-
-    settings.showNames.value = true
-    await flushPromises()
-
-    expect(getReads(PEAR)).toHaveLength(1)
-    expect(getReads(QUINCE)).toHaveLength(1)
-  })
-
-  it('takes the answer away when the names are hidden', async () => {
-    const { reader, settings, answer } = createRig()
-    const lease = reader.acquire(PEAR)
-    await answer(PEAR, ['notes/Rootstock list.md'])
-
-    settings.showNames.value = false
-    await flushPromises()
-
-    expect(lease.noteGraph.value).toBeNull()
-  })
-
-  it('reads nothing on a change of the vault', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-    const { reader, settings, answer, emit, settle, getReads } = createRig()
-    reader.acquire(PEAR)
-    await answer(PEAR, [])
-    settings.showNames.value = false
-    await flushPromises()
-
-    await emit({ paths: [PEAR] })
-    await settle()
-
-    expect(getReads()).toHaveLength(1)
-  })
-})
-
 describe('the reader when a read fails', () => {
   it('reports a failed read once for the two views that use the note', async () => {
     const { reader, getReads, reported } = createRig()

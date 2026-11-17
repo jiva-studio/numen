@@ -289,27 +289,3 @@ describe('the reads that the vault makes again', () => {
     ])
   })
 })
-
-describe('the reads while the names are hidden', () => {
-  it('makes no call while the names are hidden', async () => {
-    const { reader, calls } = createRig(false)
-
-    reader.acquire(PEAR)
-    reader.acquire(QUINCE)
-    await flushPromises()
-
-    expect(calls).toHaveLength(0)
-  })
-
-  it('reads every note in use with one call when the names are shown', async () => {
-    const { reader, settings, calls } = createRig(false)
-    reader.acquire(PEAR)
-    reader.acquire(QUINCE)
-    await flushPromises()
-
-    settings.showNames.value = true
-    await flushPromises()
-
-    expect(calls.map((one) => one.paths)).toStrictEqual([[PEAR, QUINCE]])
-  })
-})

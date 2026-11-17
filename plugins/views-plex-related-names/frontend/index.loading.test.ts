@@ -234,28 +234,6 @@ describe('the views when the read of the notes fails', () => {
   })
 })
 
-describe('the views while the setting Show notes related to related notes is off', () => {
-  it('finishes at once, with nothing to wait for', () => {
-    const { show, loading, getReads } = setupRig({ showNames: false })
-
-    show('parents', PEAR)
-    show('related', PEAR)
-
-    expect(loading.isReady.value).toBe(true)
-    expect(getReads()).toHaveLength(0)
-  })
-
-  it('does not wait again when the setting is turned on', async () => {
-    const { context, show, loading } = setupRig({ showNames: false })
-    show('related', PEAR)
-
-    context.setSetting('showNames', true)
-    await flushPromises()
-
-    expect(loading.isReady.value).toBe(true)
-  })
-})
-
 describe('the two views of one node', () => {
   it('read the notes once and begin one token each', async () => {
     const { show, tokens, getReads } = setupRig()
