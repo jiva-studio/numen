@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // FlushTimeout bounds how long a page may take to write its unsaved data when the vault closes. A page

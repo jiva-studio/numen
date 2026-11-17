@@ -1,6 +1,6 @@
 package vector
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // QuantizedInt8 names the quantization of a stored vector's bytes: one signed
 // byte per dimension, at Int8Scale. It is recorded because a blob does not say

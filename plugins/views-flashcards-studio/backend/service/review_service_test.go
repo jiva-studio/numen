@@ -3,9 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"os"
 	"path/filepath"
 	"slices"
@@ -13,11 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
@@ -284,7 +282,7 @@ func (unopenable) Open(domain.Vault) (ports.LogStore, error) {
 // handed no run to answer on.
 func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.flash().Reviews.Log = flashcards.Log{Stores: unopenable{}}
+	handler.flash().Reviews.Log.Stores = unopenable{}
 
 	out, err := handler.StartSession(t.Context(),
 		&api.StartSessionRequest{Vault: string(target[0].ID)})
@@ -321,14 +319,14 @@ func TestAnAnswerAndATakingBackNameTheVaultThatNoVaultContains(t *testing.T) {
 	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: "nothing", Run: "nothing", Rating: api.RatingGood,
 	})
-	if codeOf(err) != server.CodeNotFound || hasCause(err, sessions.ErrNoRun) {
+	if codeOf(err) != server.CodeNotFound || hasCause(err, flashcards.ErrNoRun) {
 		t.Errorf("answering failed with %v, want a vault nobody holds", err)
 	}
 
 	_, err = handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	})
-	if codeOf(err) != server.CodeNotFound || hasCause(err, sessions.ErrNoRun) {
+	if codeOf(err) != server.CodeNotFound || hasCause(err, flashcards.ErrNoRun) {
 		t.Errorf("taking back failed with %v, want a vault nobody holds", err)
 	}
 }
@@ -407,7 +405,7 @@ func (refusingStores) Open(domain.Vault) (ports.LogStore, error) { return append
 // taking back of one.
 func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.flash().Reviews.Log = flashcards.Log{Stores: refusingStores{}}
+	handler.flash().Reviews.Log.Stores = refusingStores{}
 	v := target[0]
 	session := startSession(t, handler, v)
 	card := session.Cards[0]

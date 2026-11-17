@@ -3,6 +3,7 @@ package settings
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 
@@ -95,32 +96,62 @@ func (s *Store) ReadCheckedAt(path string) (File, error) {
 	return target, nil
 }
 
-// ReadJSON returns the checked settings as JSON and the path of the file.
-func (s *Store) ReadJSON() (content, path string, err error) {
+// ReadJSON returns the checked settings as JSON, the path of the file and the version of the state read.
+// The version is taken before the file is read, so it is never newer than the content.
+func (s *Store) ReadJSON() (content, path string, version uint64, err error) {
+	version = s.files.GetVersion()
 	path, err = s.getPath()
 	if err != nil {
-		return "", "", err
+		return "", "", version, err
 	}
 	target, err := s.ReadCheckedAt(path)
 	if err != nil {
-		return "", path, err
+		return "", path, version, err
 	}
 	content, err = target.WriteJSON()
-	return content, path, err
+	return content, path, version, err
 }
 
-// Write puts each setting at its path in the file. The value of a setting is JSON.
-func (s *Store) Write(entries []settingsdomain.Setting) error {
+// WriteJSON puts each setting at its path in the file and returns the checked settings as JSON that
+// this write left, with the version it left them at, both taken under the hold of the lock that saved.
+func (s *Store) WriteJSON(entries []settingsdomain.Setting) (content string, version uint64, err error) {
+	path, err := s.getPath()
+	if err != nil {
+		return "", 0, err
+	}
+	into := DefaultFile()
+	version, err = s.files.SaveVersioned(path, &into, toWrites(entries)...)
+	if err != nil {
+		return "", 0, err
+	}
+	raiseVersion(&into)
+	into.DropInvalidConnections()
+	if s.declared != nil {
+		into.DropInvalid(s.declared, s.registries)
+	}
+	content, err = into.WriteJSON()
+	if err != nil {
+		return "", 0, fmt.Errorf("%w: %w", settingsdomain.ErrWrittenNotAnswered, err)
+	}
+	return content, version, nil
+}
+
+func toWrites(entries []settingsdomain.Setting) []Setting {
 	writes := make([]Setting, 0, len(entries))
 	for _, one := range entries {
 		writes = append(writes, Setting{At: one.Path, Written: json.RawMessage(one.JSON)})
 	}
+	return writes
+}
+
+// Write puts each setting at its path in the file. The value of a setting is JSON.
+func (s *Store) Write(entries []settingsdomain.Setting) error {
 	path, err := s.getPath()
 	if err != nil {
 		return err
 	}
 	into := DefaultFile()
-	return s.files.Save(path, &into, writes...)
+	return s.files.Save(path, &into, toWrites(entries)...)
 }
 
 // Defaults are the settings of an unconfigured installation.

@@ -2,7 +2,7 @@
 //
 // One call starts a server on the loopback interface and returns its listening
 // port. Every request to it must carry the token that Token returns as a bearer
-// credential. The requests follow the schema in libs/core/protocol, the same
+// credential. The requests follow the schema in libs/shared/protocol, the same
 // schema the desktop window uses.
 package bind
 
@@ -20,7 +20,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )

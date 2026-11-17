@@ -15,7 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 func unpackMember(archive, member, sum, dir string) (string, error) {

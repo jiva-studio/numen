@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 // vaultFiles is where the files of a vault are kept. The root is the folder of a vault on disk, and

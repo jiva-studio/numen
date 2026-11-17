@@ -1,55 +1,33 @@
 package fingerprint_test
 
 import (
-	"errors"
-	"math"
-	"strconv"
+	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/fingerprint"
 )
 
 func TestParseReadsWhatFormatWrote(t *testing.T) {
-	for _, stat := range []domain.FileStat{
-		{Path: "", Kind: "", Size: 482, ModTime: time.Unix(1700000000, 123)},
-		{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
-		{Path: "", Kind: "", Size: math.MaxInt64, ModTime: time.Unix(0, math.MaxInt64)},
-		{Path: "", Kind: "", Size: 1, ModTime: time.Unix(0, 1)},
-		{Path: "", Kind: "", Size: 1, ModTime: time.Unix(0, -1)},
-	} {
-		got, err := fingerprint.Parse(fingerprint.Format(stat))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got.Size != stat.Size || got.ModTime.IsZero() != stat.ModTime.IsZero() || !got.ModTime.Equal(stat.ModTime) {
-			t.Errorf("got size %d and time %v (zero=%v), want %d and %v (zero=%v)",
-				got.Size, got.ModTime, got.ModTime.IsZero(), stat.Size, stat.ModTime, stat.ModTime.IsZero())
-		}
+	stat := domain.FileStat{Size: 482, Hash: domain.HashContent([]byte("body"))}
+
+	got, err := fingerprint.Parse(fingerprint.Format(stat))
+
+	if err != nil || got.Hash != stat.Hash || got.IsZero() {
+		t.Errorf("got %+v (%v), want the hash %s", got, err, stat.Hash)
 	}
 }
 
-func TestParseRejectsATokenThatIsNotASizeAndATime(t *testing.T) {
-	for _, tc := range []struct {
-		token   string
-		wantMsg string
-		wantErr error
-	}{
-		{token: "", wantMsg: "fingerprint is required", wantErr: nil},
-		{token: "482", wantMsg: `invalid fingerprint format: "482"`, wantErr: nil},
-		{token: "big-1", wantMsg: `invalid fingerprint size: strconv.ParseInt: parsing "big": invalid syntax`, wantErr: strconv.ErrSyntax},
-		{token: "482-late", wantMsg: `invalid fingerprint timestamp: strconv.ParseInt: parsing "late": invalid syntax`, wantErr: strconv.ErrSyntax},
+func TestParseRejectsATokenThatIsNotAHash(t *testing.T) {
+	for token, wantMsg := range map[string]string{
+		"":                      "fingerprint is required",
+		"482-1700000000":        `invalid fingerprint format: "482-1700000000"`,
+		strings.Repeat("A", 64): `invalid fingerprint format: "` + strings.Repeat("A", 64) + `"`,
+		strings.Repeat("a", 63): `invalid fingerprint format: "` + strings.Repeat("a", 63) + `"`,
 	} {
-		_, err := fingerprint.Parse(tc.token)
-		if err == nil {
-			t.Fatalf("Parse(%q) returned no error", tc.token)
-		}
-		if err.Error() != tc.wantMsg {
-			t.Errorf("Parse(%q) error = %q, want %q", tc.token, err.Error(), tc.wantMsg)
-		}
-		if tc.wantErr != nil && !errors.Is(err, tc.wantErr) {
-			t.Errorf("Parse(%q) error = %v, want errors.Is %v", tc.token, err, tc.wantErr)
+		_, err := fingerprint.Parse(token)
+		if err == nil || err.Error() != wantMsg {
+			t.Errorf("Parse(%q) error = %v, want %q", token, err, wantMsg)
 		}
 	}
 }

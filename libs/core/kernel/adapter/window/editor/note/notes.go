@@ -10,13 +10,13 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 // ReadNote hands the client the prose of a note.
@@ -265,7 +265,7 @@ func convertFileStatToWire(ref domain.FileStat) *v1.FileStat {
 	if ref.IsZero() {
 		return nil
 	}
-	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
+	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime), Hash: ref.Hash, Version: ref.Version}
 }
 
 func newBaseline(baseline *v1.ReadBaseline) *edit.Baseline {
@@ -279,7 +279,10 @@ func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
 	if pos == nil {
 		return domain.FileStat{}
 	}
-	return domain.FileStat{Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime())}
+	return domain.FileStat{
+		Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime()),
+		Hash: pos.GetHash(), Version: pos.GetVersion(),
+	}
 }
 
 // ListHeadings hands the client the headings of the notes the filter names. A

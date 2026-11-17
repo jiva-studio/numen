@@ -5,7 +5,7 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // DefaultDecodedBudget is how many bytes of decoded text DecodedTexts keeps by default.

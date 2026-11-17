@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func coarseRows(t *testing.T, db *DB, vault domain.Vault, path string) (reached, small int) {

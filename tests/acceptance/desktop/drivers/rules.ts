@@ -20,6 +20,15 @@ export const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|
 
 export const getTitlePattern = (title: string): RegExp => new RegExp(`^(Linked tab )?${escapeRegExp(title)}( Close |$)`)
 
+/** The text of a name alone. */
+export const getPluginNamePattern = (plugin: string): RegExp => new RegExp(`^${escapeRegExp(plugin)}$`)
+
+/** The accessible name of the row of a plugin: its name, then its state after a comma where it is not running. */
+export const getPluginRowPattern = (plugin: string): RegExp => new RegExp(`^${escapeRegExp(plugin)}(, (Off|Stopped|Error|Warning|Not installed))?$`)
+
+/** The accessible name of the switch of a plugin. */
+export const getPluginSwitchPattern = (plugin: string): RegExp => new RegExp(`^Enabled ${escapeRegExp(plugin)}$`)
+
 /** The title the product gives the tab of a web address: the characters a file name cannot have become "-". */
 export const getAddressTitle = (address: string): string => address.replace(/[/\\:*?"<>|#]/g, '-')
 
@@ -451,3 +460,6 @@ export const parseArrow = (text: string): string | undefined => {
   if (!match) throw new Error(`"${text}" does not name an arrow: write with an arrow to "Title" or without an arrow`)
   return match[1]
 }
+
+/** What a step says of a plugin that is in trouble: the plugin and the text the window shows of it. */
+export const getTroubleMessage = (plugin: string, text: string): string => `the plugin "${plugin}" is in trouble: ${text}`

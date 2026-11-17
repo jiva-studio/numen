@@ -13,17 +13,17 @@ import ts from 'typescript'
 import {
   ManifestCommandSchema,
   ManifestTabKindSchema,
-} from '../../libs/core/protocol/src/numen/v1/manifest_pb.ts'
+} from '../../libs/shared/protocol/src/numen/v1/manifest_pb.ts'
 import { parseManifest, readPluginManifests } from './manifests.mjs'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const EDITOR_SRC = join(ROOT, 'apps/desktop/editor/src')
-const SLOTS = JSON.parse(readFileSync(join(ROOT, 'libs/core/protocol/slots.json'), 'utf8')).slots.map(
+const SLOTS = JSON.parse(readFileSync(join(ROOT, 'libs/shared/protocol/slots.json'), 'utf8')).slots.map(
   (one) => one.name,
 )
 const APP_PREFIX = 'app:'
 const SHARED_COMMANDS = new Set(
-  JSON.parse(readFileSync(join(ROOT, 'libs/core/protocol/commands.json'), 'utf8')).commands.map(
+  JSON.parse(readFileSync(join(ROOT, 'libs/shared/protocol/commands.json'), 'utf8')).commands.map(
     (one) => one.id,
   ),
 )

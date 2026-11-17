@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/filechange"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // FeedQuietPeriod is how long the feed of a vault has to have been still before the plugins are notified

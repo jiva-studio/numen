@@ -6,7 +6,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
-	_ "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	_ "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 func getWalkedMessages() map[protoreflect.FullName]string {

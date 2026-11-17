@@ -19,10 +19,17 @@ import {
 } from './createPluginServices'
 
 type WindowBase = ReturnType<typeof createWindowBase>
+type WindowFoundation = WindowBase['foundation']
+
+/** What the plugins of the window read of the foundation. */
+type PluginsFoundation = Pick<
+  WindowFoundation,
+  'api' | 'log' | 'rest' | 'frame' | 'status' | 'registry'
+>
 
 /** What the plugins of the window read of the base. */
 export interface WindowPluginsDeps {
-  readonly foundation: WindowBase['foundation']
+  readonly foundation: PluginsFoundation
   readonly tabs: WindowBase['tabs']
   readonly vault: WindowBase['vault']
   readonly windowSettings: WindowBase['windowSettings']

@@ -19,14 +19,17 @@ export const ErrorCode = {
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode]
 
 /**
- * FileStat identifies a version of a file: its path, its size in bytes and its modification time in
- * nanoseconds since the epoch. Mtime is a decimal string because a nanosecond count is larger than
- * the integers a JSON number carries without loss.
+ * FileStat identifies a version of a file: its path, its size in bytes, its modification time in
+ * nanoseconds since the epoch, the SHA-256 of its content in lowercase hex and the number of writes the
+ * vault had taken when the answer was made. Mtime and version are decimal strings because a nanosecond
+ * count and a 64-bit counter are larger than the integers a JSON number carries without loss.
  */
 export interface FileStat {
   path: string
   size: number
   mtime: string
+  hash: string
+  version: string
 }
 
 /** Bounds is the closed range a number may take. */

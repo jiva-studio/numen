@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 func readFields(wire map[string]*structpb.Value) map[string]any {

@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // FindContentHash returns the stored hash and stat for the file at the path, and

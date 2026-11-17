@@ -9,8 +9,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
@@ -74,6 +74,7 @@ func (h *Values) GetSettings(
 	}
 	reply := &v1.GetSettingsResponse{
 		Written: got.Written,
+		Version: got.Version,
 		Path:    got.Path,
 		Plugins: NewWirePluginInfos(got.Plugins),
 		App:     newWirePluginSettings(got.App),
@@ -94,13 +95,14 @@ func (h *Values) WriteSettings(
 	for _, one := range r.Msg.GetSettings() {
 		content = append(content, settingsdomain.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
-	if err := h.write.Execute(content); err != nil {
+	applied, err := h.write.Write(content)
+	if err != nil {
 		if errors.Is(err, settingsdomain.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.WriteSettingsResponse{}), nil
+	return connect.NewResponse(&v1.WriteSettingsResponse{Written: applied.Written, Version: applied.Version}), nil
 }
 
 func newWireSettings(target []settingsdomain.Setting) []*v1.Setting {

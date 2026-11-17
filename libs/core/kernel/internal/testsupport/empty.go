@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // NoDetection is the detection of a machine where no provider detects connections.

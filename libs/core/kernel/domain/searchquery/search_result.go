@@ -1,6 +1,6 @@
 package searchquery
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // ScoreKind says what the scores of one result set mean.
 type ScoreKind int

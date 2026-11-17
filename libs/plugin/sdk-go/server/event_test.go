@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 const eventToken = "event-token"
