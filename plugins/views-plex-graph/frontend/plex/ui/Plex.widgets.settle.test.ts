@@ -245,7 +245,7 @@ describe('the plex whose widgets draw after the nodes do', () => {
   })
 })
 
-const SHORT_WINDOW = { width: 1200, height: 400 }
+const SHORT_WINDOW = { width: 1200, height: 300 }
 const CAP = 150
 
 const getDrawnTitles = (plex: Mounted): string[] =>
@@ -264,12 +264,13 @@ describe('the plex in a window the widgets fill up', () => {
     const settledTitles = getDrawnTitles(reference)
     reference.unmount()
     const removed: string[] = []
-    const observer = new MutationObserver((records) => {
+    const collect = (records: MutationRecord[]) => {
       for (const record of records)
         for (const node of record.removedNodes)
           if (node instanceof Element && node.classList.contains('plex__node'))
             removed.push(getTitleOf(node) ?? '')
-    })
+    }
+    const observer = new MutationObserver(collect)
     observer.observe(document.body, { childList: true, subtree: true })
     const drawing = ref<ReadonlySet<string>>(new Set())
 
