@@ -31,24 +31,25 @@ const createVault = (initial: Readonly<Record<string, readonly Neighbor[]>>) => 
     ...(relatedTo ? { relatedTo } : {}),
   })
   const notes = {
-    listRelatedNotes: async (path: string, depth?: 1 | 2): Promise<NoteGraph> => {
-      requests.push([path, depth])
-      const own = neighbors[path] ?? []
-      const beyond =
-        depth === 2
-          ? own.flatMap((near) =>
-              (neighbors[near.path] ?? [])
-                .filter((far) => far.path !== path)
-                .map((far) => toRelated(far, near.path)),
-            )
-          : []
-      return {
-        focus: { path, title: getTitle(path) },
-        focusType: 'note',
-        related: [...own.map((one) => toRelated(one)), ...beyond],
-        connections: [],
-      }
-    },
+    listRelatedNotes: async (paths: readonly string[], depth?: 1 | 2): Promise<NoteGraph[]> =>
+      paths.map((path) => {
+        requests.push([path, depth])
+        const own = neighbors[path] ?? []
+        const beyond =
+          depth === 2
+            ? own.flatMap((near) =>
+                (neighbors[near.path] ?? [])
+                  .filter((far) => far.path !== path)
+                  .map((far) => toRelated(far, near.path)),
+              )
+            : []
+        return {
+          focus: { path, title: getTitle(path) },
+          focusType: 'note',
+          related: [...own.map((one) => toRelated(one)), ...beyond],
+          connections: [],
+        }
+      }),
   } as unknown as VaultNotes
   const change = (path: string, next: readonly Neighbor[]) => {
     neighbors = { ...neighbors, [path]: next }

@@ -88,7 +88,7 @@ type NoteServiceClient interface {
 	// GetOpeningNote is the note to show when nothing else has been chosen. It
 	// answers with nothing until a scan has stored something.
 	GetOpeningNote(context.Context, *connect.Request[v1.GetOpeningNoteRequest]) (*connect.Response[v1.GetOpeningNoteResponse], error)
-	// ListRelatedNotes lists the notes related to one note, and the note itself.
+	// ListRelatedNotes lists the notes related to each of the notes asked, and the notes themselves.
 	ListRelatedNotes(context.Context, *connect.Request[v1.ListRelatedNotesRequest]) (*connect.Response[v1.ListRelatedNotesResponse], error)
 	// ResolveAddresses answers where addresses written in one note land.
 	ResolveAddresses(context.Context, *connect.Request[v1.ResolveAddressesRequest]) (*connect.Response[v1.ResolveAddressesResponse], error)
@@ -357,7 +357,7 @@ type NoteServiceHandler interface {
 	// GetOpeningNote is the note to show when nothing else has been chosen. It
 	// answers with nothing until a scan has stored something.
 	GetOpeningNote(context.Context, *connect.Request[v1.GetOpeningNoteRequest]) (*connect.Response[v1.GetOpeningNoteResponse], error)
-	// ListRelatedNotes lists the notes related to one note, and the note itself.
+	// ListRelatedNotes lists the notes related to each of the notes asked, and the notes themselves.
 	ListRelatedNotes(context.Context, *connect.Request[v1.ListRelatedNotesRequest]) (*connect.Response[v1.ListRelatedNotesResponse], error)
 	// ResolveAddresses answers where addresses written in one note land.
 	ResolveAddresses(context.Context, *connect.Request[v1.ResolveAddressesRequest]) (*connect.Response[v1.ResolveAddressesResponse], error)

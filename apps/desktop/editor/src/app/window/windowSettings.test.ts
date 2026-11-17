@@ -316,10 +316,6 @@ describe('the settings tab', () => {
     try {
       const { settings, core } = createSettings()
       const { installation } = settings.configured.state
-      vi.mocked(core.getSettings).mockResolvedValue({
-        written: JSON.stringify({ app: { performance: { profile: 'eco' } } }),
-        path: '/vault/.numen/settings.json',
-      })
       const edits = [{ at: ['app', 'performance', 'profile'], value: '"eco"' }]
 
       await (installation.settings.write(edits) as unknown as Promise<void>)
@@ -327,7 +323,7 @@ describe('the settings tab', () => {
 
       expect(installation.settings.getSetting(['app', 'performance', 'profile'])).toBe('eco')
       expect(core.updateSettings).toHaveBeenCalledWith(edits)
-      expect(core.getSettings).toHaveBeenCalledTimes(1)
+      expect(core.getSettings).not.toHaveBeenCalled()
       settings.close()
     } finally {
       vi.useRealTimers()

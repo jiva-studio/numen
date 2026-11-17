@@ -30,7 +30,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
       nesting: readNesting(plugin),
       look: readLook(plugin),
     },
-    () => usePlexView({ listRelatedNotes: (path, depth) => notes.listRelatedNotes(path, depth) }),
+    () => usePlexView({ listRelatedNotes: (paths, depth) => notes.listRelatedNotes(paths, depth) }),
     PlexGraphView,
   )
   plugin.register.tabKind(plexes.kind)

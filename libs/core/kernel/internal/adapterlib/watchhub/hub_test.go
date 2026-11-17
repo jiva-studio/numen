@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -216,5 +217,59 @@ func TestFoldersApartAreWatchedApart(t *testing.T) {
 	stopTwo()
 	if got := system.getWatchedPaths(); !slices.Equal(got, want[:1]) {
 		t.Errorf("watched %v", got)
+	}
+}
+
+// TestAFileAfterPlaceIsReported. The OS reports what happens in a folder once Place returns, and the
+// watch on the tree it lies in goes on reporting.
+func TestAFileAfterPlaceIsReported(t *testing.T) {
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := NewHub()
+	c, stop := follow(t, h, root, true)
+
+	for i := range 30 {
+		dir := filepath.Join(root, "folder"+strconv.Itoa(i))
+		if err := os.Mkdir(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := h.Place(dir); err != nil {
+			t.Fatal(err)
+		}
+		file := filepath.Join(dir, "Note.md")
+		if err := os.WriteFile(file, []byte("# Note\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		waitForPath(t, c, file)
+	}
+
+	after := filepath.Join(root, "Root.md")
+	if err := os.WriteFile(after, []byte("# Root\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	waitForPath(t, c, after)
+
+	stop()
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if len(h.placed) != 0 {
+		t.Errorf("%d watches stay placed after the last follower went", len(h.placed))
+	}
+}
+
+func waitForPath(t *testing.T, c chan notify.EventInfo, path string) {
+	t.Helper()
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case got := <-c:
+			if got.Path() == path {
+				return
+			}
+		case <-deadline:
+			t.Fatalf("heard nothing of %s", path)
+		}
 	}
 }

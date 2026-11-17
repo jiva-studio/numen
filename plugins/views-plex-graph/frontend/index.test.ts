@@ -407,9 +407,10 @@ describe('an open plex with notes related to its related notes', () => {
     const requests: [string, number | undefined][] = []
     const notes = {
       ...host.notes,
-      listRelatedNotes: async (path: string, depth?: 1 | 2) => {
+      listRelatedNotes: async (paths: readonly string[], depth?: 1 | 2) => {
+        const path = paths[0] ?? ''
         requests.push([path, depth])
-        return answerFor(path, depth)
+        return [answerFor(path, depth)]
       },
     }
     const ctx = createMockPluginContext({ pluginId: 'md.numen.views.plex.graph', initialSettings })

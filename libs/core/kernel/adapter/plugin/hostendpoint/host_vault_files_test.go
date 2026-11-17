@@ -103,8 +103,8 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 			Moved: func(context.Context) (<-chan struct{}, error) { return d.moves, nil },
 		},
 		hostvault.Files{
-			Stat:        file.NewStatFile(readers),
-			ReadFile:    file.NewReadFile(readers),
+			Stat:        file.NewHashFile(readers, writers),
+			ReadFile:    file.NewReadFile(readers, writers),
 			RangeReader: file.Read{Readers: readers},
 		},
 		hostvault.Writer{

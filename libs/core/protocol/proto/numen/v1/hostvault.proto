@@ -207,7 +207,8 @@ enum HostVaultErrorCode {
 }
 
 // HostFileStat is what a file was at a moment: at its current position, how large it
-// was and when it last changed.
+// was, when it last changed and what it held. As a baseline, a hash is compared with the content
+// of the file at the write; a baseline without a hash matches no file, so the write is stale.
 message HostFileStat {
   string path = 1;
   int64 size = 2;
@@ -215,6 +216,11 @@ message HostFileStat {
   int64 mod_time = 3;
   // Whether the file is a note.
   bool is_note = 5;
+  // The SHA-256 of the content, in lowercase hex. Empty where the answer did not read the content.
+  string hash = 6;
+  // The number of writes the vault had taken when the answer was made. Zero where the answer
+  // does not say.
+  uint64 version = 7;
 }
 
 message ListHostVaultsRequest {}

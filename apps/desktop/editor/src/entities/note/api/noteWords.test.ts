@@ -6,7 +6,7 @@ import {
   NOTE_MARKER,
   NOTE_RELATION,
   NOTE_ROLE,
-  ListRelatedNotesResponseSchema,
+  NoteGraphSchema,
   asFailure,
   asValue,
 } from '@numen/core-client'
@@ -17,7 +17,7 @@ const file = { path: 'Note.md', size: 12n, mtime: 34n }
 describe('mapNoteResult', () => {
   it('carries the body and the file it came out of', () => {
     expect(mapNoteResult({ body: 'text', at: file })).toEqual(
-      asValue({ body: 'text', at: '12 34 Note.md' }),
+      asValue({ body: 'text', at: '12:0: 34 Note.md' }),
     )
   })
 
@@ -39,13 +39,15 @@ describe('mapWriteResult', () => {
   })
 
   it('maps any other answer as a note result', () => {
-    expect(mapWriteResult({ at: file })).toStrictEqual(asValue({ body: '', at: '12 34 Note.md' }))
+    expect(mapWriteResult({ at: file })).toStrictEqual(
+      asValue({ body: '', at: '12:0: 34 Note.md' }),
+    )
   })
 })
 
 describe('mapNoteGraph', () => {
   it('names an absent focus with empty strings', () => {
-    expect(mapNoteGraph(create(ListRelatedNotesResponseSchema, {}))).toEqual({
+    expect(mapNoteGraph(create(NoteGraphSchema, {}))).toEqual({
       focus: { path: '', title: '' },
       focusType: 'note',
       related: [],
@@ -54,7 +56,7 @@ describe('mapNoteGraph', () => {
   })
 
   it('carries the focus, and every related note that has a relation and a note, with their tab kinds', () => {
-    const answer = create(ListRelatedNotesResponseSchema, {
+    const answer = create(NoteGraphSchema, {
       focus: { path: 'Here.md', title: 'Here' },
       focusType: 'sample',
       focusTabKind: 'samples',
@@ -112,7 +114,7 @@ describe('mapNoteGraph', () => {
 describe('mapNoteGraph references', () => {
   const map = (direction: number | undefined) =>
     mapNoteGraph(
-      create(ListRelatedNotesResponseSchema, {
+      create(NoteGraphSchema, {
         focus: { path: 'Here.md', title: 'Here' },
         related: [
           {
@@ -144,7 +146,7 @@ describe('mapNoteGraph references', () => {
 
   it('carries no direction on a note that is not a reference', () => {
     const [note] = mapNoteGraph(
-      create(ListRelatedNotesResponseSchema, {
+      create(NoteGraphSchema, {
         focus: { path: 'Here.md', title: 'Here' },
         related: [
           {

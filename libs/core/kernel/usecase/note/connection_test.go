@@ -209,9 +209,9 @@ func (w pathFailingWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter
 
 func (w pathFailingWriter) Write(
 	ctx context.Context, path string, content []byte, stat domain.FileStat,
-) (domain.FileStat, error) {
+) (vault.WriteResult, error) {
 	if path == w.path {
-		return domain.FileStat{}, errPathDisk
+		return vault.WriteResult{}, errPathDisk
 	}
 	return w.NoteWriter.Write(ctx, path, content, stat)
 }
@@ -522,10 +522,11 @@ func TestRelatedNotesCarryTheMarkerOfEachRecord(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\nlinks:\n  - to: Heat\n    role: jump\n---\n# Entropy\n",
 	})
 
-	got, err := query.NewListRelatedNotes(db.NoteQueryReads(), db.NoteQueries()).Execute(t.Context(), v, "Heat.md", 1)
+	graphs, err := query.NewListRelatedNotes(db.NoteQueryReads(), db.NoteQueries()).Execute(t.Context(), v, []string{"Heat.md"}, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	got := onlyGraph(t, graphs)
 
 	if len(got.Related) != 1 {
 		t.Fatalf("related = %+v", got.Related)

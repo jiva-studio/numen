@@ -28,30 +28,43 @@ func NewGetRelatedNotesView(links noteport.LinkBatches, notes RefQueries, types 
 	return &GetRelatedNotesView{relatedNotes: NewListRelatedNotes(links, notes), types: types, tabKinds: tabKinds}
 }
 
-// Execute gathers the related notes of the note at the path. DepthFar adds the notes related to each of them. The types are read once for the whole graph.
-// A tab kind is chosen for the focus and the notes related to it, and not for a note that is only related to one of them.
-func (u *GetRelatedNotesView) Execute(ctx context.Context, v domain.Vault, path string, depth domain.RelationDepth) (RelatedNotesView, error) {
-	found, err := u.relatedNotes.Execute(ctx, v, path, depth)
+// Execute gathers the related notes of the notes at the paths, one view for each path in the order of the paths. DepthFar adds the notes related to each of them. The types are read once for all the graphs, and so are the tab kinds.
+// A tab kind is chosen for a focus and the notes related to it, and not for a note that is only related to one of them.
+func (u *GetRelatedNotesView) Execute(ctx context.Context, v domain.Vault, paths []string, depth domain.RelationDepth) ([]RelatedNotesView, error) {
+	graphs, err := u.relatedNotes.Execute(ctx, v, paths, depth)
 	if err != nil {
-		return RelatedNotesView{}, err
+		return nil, err
 	}
-	paths := []string{found.Focus.Path}
-	near := []string{found.Focus.Path}
-	for _, related := range found.Related {
-		paths = append(paths, related.Path)
-		if related.RelatedTo == "" {
-			near = append(near, related.Path)
+	if len(graphs) == 0 {
+		return []RelatedNotesView{}, nil
+	}
+	var all, near []string
+	for _, found := range graphs {
+		if found.Focus.Path == "" {
+			continue
+		}
+		all = append(all, found.Focus.Path)
+		near = append(near, found.Focus.Path)
+		for _, related := range found.Related {
+			all = append(all, related.Path)
+			if related.RelatedTo == "" {
+				near = append(near, related.Path)
+			}
 		}
 	}
-	types, err := u.types.GetTypes(ctx, v.ID, paths)
+	types, err := u.types.GetTypes(ctx, v.ID, uniquePaths(all))
 	if err != nil {
-		return RelatedNotesView{}, err
+		return nil, err
 	}
-	tabKinds, err := u.tabKinds.Execute(ctx, v, near)
+	tabKinds, err := u.tabKinds.Execute(ctx, v, uniquePaths(near))
 	if err != nil {
-		return RelatedNotesView{}, err
+		return nil, err
 	}
-	return RelatedNotesView{NoteGraph: found, Types: types, TabKinds: tabKinds}, nil
+	out := make([]RelatedNotesView, len(graphs))
+	for i, found := range graphs {
+		out[i] = RelatedNotesView{NoteGraph: found, Types: types, TabKinds: tabKinds}
+	}
+	return out, nil
 }
 
 // NoteHeadings is the headings of the note at a path, in the order they stand in the note.

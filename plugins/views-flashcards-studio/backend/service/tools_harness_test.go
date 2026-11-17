@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -113,8 +114,8 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 		"card_read":         {"path": "Animals.md"},
 		"card_model_list":   {},
 		"card_model_read":   {"path": "Animal.md"},
-		"card_section_add":  {"path": "Animals.md", "name": "S", "fingerprint": "1-1"},
-		"card_model_edit":   {"path": "Animal.md", "fields": []string{"Name"}, "templates": []any{}, "fingerprint": "1-1"},
+		"card_section_add":  {"path": "Animals.md", "name": "S", "fingerprint": strings.Repeat("0", 64)},
+		"card_model_edit":   {"path": "Animal.md", "fields": []string{"Name"}, "templates": []any{}, "fingerprint": strings.Repeat("0", 64)},
 		"card_deck_create":  {"title": "D"},
 		"card_model_create": {"title": "M", "fields": []string{"Name"}, "templates": []any{}},
 		"card_field_rename": {"path": "Animal.md", "from": "Name", "to": "Species"},
@@ -139,7 +140,7 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 	for toolName, args := range map[string]map[string]any{
 		"card_model_list": {},
 		"card_model_read": {"path": "Animal.md"},
-		"card_model_edit": {"path": "Animal.md", "fields": []string{"Name"}, "fingerprint": "1-1"},
+		"card_model_edit": {"path": "Animal.md", "fields": []string{"Name"}, "fingerprint": strings.Repeat("0", 64)},
 	} {
 		if got := getToolError(t, errSession, toolName, args); got == "" {
 			t.Errorf("%s expected error on io down", toolName)

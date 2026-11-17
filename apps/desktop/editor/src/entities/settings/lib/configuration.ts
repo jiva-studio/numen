@@ -21,6 +21,7 @@ export interface Configuration {
   readonly jsonContent?: string | undefined
   readonly written: string
   readonly path: string
+  readonly version: bigint
   readonly plugins?: readonly PluginInfo[] | undefined
   readonly app?: readonly PluginSettingInfo[] | undefined
 }

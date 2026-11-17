@@ -117,6 +117,8 @@ func folderWriters(c vaultWiring) vaultport.FolderWriters { return vaultWriters(
 
 func writeLocks(c vaultWiring) vaultport.VaultLocks { return vaultWriters(c) }
 
+func vaultVersions(c vaultWiring) vaultport.VaultVersions { return vaultWriters(c) }
+
 func getImportedFiles(_ vaultWiring) vaultport.ImportedFiles {
 	return filesystem.ImportedFiles{}
 }

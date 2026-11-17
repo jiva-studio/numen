@@ -89,6 +89,7 @@ type WindowUseCases struct {
 	Listing     *registry.Listing
 	Vaults      *VaultUseCases
 	ShowTab     windowsession.ShowTab
+	OpenPlugin  windowsession.OpenPluginVault
 }
 
 // OpenedWindow is an editor window opened: the installation that serves it, the state its services work
@@ -163,8 +164,9 @@ func buildWindow(
 		startFeed: getFeedStart(a, db),
 	})
 	cases.ShowTab = session.tools.showTab
+	cases.OpenPlugin = session.cases.openPlugin
 	inst := editor.NewInstallation(state, editor.Lifecycle{
-		Start: session.cases.start, Show: session.cases.show, OpenPlugin: session.cases.openPlugin,
+		Start: session.cases.start, Show: session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
 	}, session.tools.importFiles, getMediaType(a.vault), opening.Out)
 

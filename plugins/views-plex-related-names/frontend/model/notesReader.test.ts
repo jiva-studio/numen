@@ -52,10 +52,15 @@ const createRig = (showNames = true) => {
   const settings = { showNames: shallowRef(showNames) }
   const reader = createNotesReader({
     notes: {
-      listRelatedNotes: (path: string, depth?: 1 | 2) =>
-        new Promise<NoteGraph>((resolve, reject) => {
-          pending.push({ path, depth, resolve, reject })
-        }),
+      listRelatedNotes: (paths: readonly string[], depth?: 1 | 2) =>
+        Promise.all(
+          paths.map(
+            (path) =>
+              new Promise<NoteGraph>((resolve, reject) => {
+                pending.push({ path, depth, resolve, reject })
+              }),
+          ),
+        ),
     },
     events: {
       onVaultChange: (handler): Disposable => {

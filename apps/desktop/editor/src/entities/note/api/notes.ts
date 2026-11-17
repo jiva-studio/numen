@@ -63,9 +63,9 @@ export const createNoteApi = (notes: WindowClients['notes']) => {
   return {
     watchEdits,
 
-    /** The notes joined to a note, and how. Depth 2 adds the notes joined to each of those. */
-    listRelatedNotes: async (path: string, depth: 1 | 2 = 1): Promise<NoteGraph> =>
-      mapNoteGraph(await notes.listRelatedNotes({ path, depth })),
+    /** The notes joined to each note, and how, one graph for each path in the order of the paths. Depth 2 adds the notes joined to each of those. */
+    listRelatedNotes: async (paths: readonly string[], depth: 1 | 2 = 1): Promise<NoteGraph[]> =>
+      (await notes.listRelatedNotes({ paths: [...paths], depth })).graphs.map(mapNoteGraph),
 
     /** The note the vault opens first, and null where it names none. */
     getInitialOpenPath: async (): Promise<{ path: string } | null> => {

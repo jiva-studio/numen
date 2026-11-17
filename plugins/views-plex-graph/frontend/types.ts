@@ -56,7 +56,7 @@ export type { PathRename }
 
 /** The one query a plex makes of the vault: the related notes of a note. */
 export interface RelatedNoteQueries {
-  listRelatedNotes(path: string, depth?: 1 | 2): Promise<NoteGraph>
+  listRelatedNotes(paths: readonly string[], depth?: 1 | 2): Promise<readonly NoteGraph[]>
 }
 
 /** Position of the menu and the node it was requested on. */

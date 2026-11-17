@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
@@ -154,13 +155,28 @@ func (h *Outline) ListRelatedNotes(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	found, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPath(), depth)
+	paths := r.Msg.GetPaths()
+	if len(paths) > domain.MaxRelatedNotePaths {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("at most %d notes at once, not %d", domain.MaxRelatedNotePaths, len(paths)))
+	}
+	views, err := h.getRelatedNotes.Execute(ctx, showing, paths, depth)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	types, tabKinds := found.Types, found.TabKinds
+	out := &v1.ListRelatedNotesResponse{Graphs: make([]*v1.NoteGraph, 0, len(views))}
+	for _, found := range views {
+		out.Graphs = append(out.Graphs, convertRelatedNotesToWire(found))
+	}
+	return connect.NewResponse(out), nil
+}
 
-	out := &v1.ListRelatedNotesResponse{
+func convertRelatedNotesToWire(found query.RelatedNotesView) *v1.NoteGraph {
+	if found.Focus.Path == "" {
+		return &v1.NoteGraph{}
+	}
+	types, tabKinds := found.Types, found.TabKinds
+	out := &v1.NoteGraph{
 		Focus:        convertNoteToWire(found.Focus),
 		FocusType:    convertNoteTypeToWire(types[found.Focus.Path]),
 		FocusTabKind: tabKinds[found.Focus.Path],
@@ -178,7 +194,7 @@ func (h *Outline) ListRelatedNotes(
 	for _, connection := range found.Connections {
 		out.Connections = append(out.Connections, wire.ConvertConnectionToWire(connection))
 	}
-	return connect.NewResponse(out), nil
+	return out
 }
 
 // ResolveAddresses answers where addresses written in one note land, and where
@@ -265,7 +281,7 @@ func convertFileStatToWire(ref domain.FileStat) *v1.FileStat {
 	if ref.IsZero() {
 		return nil
 	}
-	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
+	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime), Hash: ref.Hash, Version: ref.Version}
 }
 
 func newBaseline(baseline *v1.ReadBaseline) *edit.Baseline {
@@ -279,7 +295,10 @@ func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
 	if pos == nil {
 		return domain.FileStat{}
 	}
-	return domain.FileStat{Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime())}
+	return domain.FileStat{
+		Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime()),
+		Hash: pos.GetHash(), Version: pos.GetVersion(),
+	}
 }
 
 // ListHeadings hands the client the headings of the notes the filter names. A

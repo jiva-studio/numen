@@ -48,11 +48,12 @@ const setup = (initialSettings: Record<string, JsonValue> = {}) => {
   const links: Record<string, Record<string, NoteRelation>> = {}
   let failure: Error | undefined
   const notes = {
-    listRelatedNotes: async (path: string, depth?: 1 | 2): Promise<NoteGraph> => {
-      requests.push([path, depth])
-      if (failure) throw failure
-      return createGraph(path, links[path] ?? {}, depth)
-    },
+    listRelatedNotes: async (paths: readonly string[], depth?: 1 | 2): Promise<NoteGraph[]> =>
+      paths.map((path) => {
+        requests.push([path, depth])
+        if (failure) throw failure
+        return createGraph(path, links[path] ?? {}, depth)
+      }),
   } as unknown as VaultNotes
   const notices = createMockNoticeHost()
   const context = createMockPluginContext({

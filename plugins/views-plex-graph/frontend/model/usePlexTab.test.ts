@@ -763,20 +763,22 @@ const inVault = async (focus: string, initialRelatedNotes: readonly RelatedNoteR
   const ran: [string, string, string][] = []
 
   const view = viewing({
-    listRelatedNotes: async (path) => {
+    listRelatedNotes: async ([path = '']) => {
       request.push(path)
       if (pendingGate) await pendingGate
-      return {
-        focus: { path, title: getNoteTitle(path) },
-        focusType: 'note' as const,
-        related: relatedItems.map((one) => ({
-          path: one.path,
-          title: getNoteTitle(one.path),
-          type: 'note' as const,
-          relation: one.relation,
-        })),
-        connections: relatedItems.map((one) => createLine(path, one)),
-      }
+      return [
+        {
+          focus: { path, title: getNoteTitle(path) },
+          focusType: 'note' as const,
+          related: relatedItems.map((one) => ({
+            path: one.path,
+            title: getNoteTitle(one.path),
+            type: 'note' as const,
+            relation: one.relation,
+          })),
+          connections: relatedItems.map((one) => createLine(path, one)),
+        },
+      ]
     },
   })
   const state = createPlexTab(

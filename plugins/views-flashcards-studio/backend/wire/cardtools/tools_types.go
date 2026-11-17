@@ -3,8 +3,7 @@ package cardtools
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
@@ -24,14 +23,6 @@ const (
 	// maxBytes is how much one call may put in a deck.
 	maxBytes = edit.MaxBytes
 )
-
-func stamp(t time.Time) int64 {
-	return t.UnixNano()
-}
-
-func instant(nanos int64) time.Time {
-	return time.Unix(0, nanos)
-}
 
 // CardModel is a card model as the list of them names it.
 type CardModel struct {
@@ -140,29 +131,20 @@ func countBytes(vs []FieldValue) int {
 }
 
 func fingerprintOf(ref domain.FileStat) string {
-	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(stamp(ref.ModTime), 10)
+	return ref.Hash
 }
 
 func parseFingerprint(s string) (domain.FileStat, error) {
 	if s == "" {
 		return domain.FileStat{}, errors.New("present the fingerprint the read gave you: card_read for a deck, card_model_read for a card model")
 	}
-	size, mtime, found := strings.Cut(s, "-")
-	if !found {
+	if !fingerprintPattern.MatchString(s) {
 		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
 	}
-	ref := domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}
-	var err error
-	if ref.Size, err = strconv.ParseInt(size, 10, 64); err != nil {
-		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
-	}
-	nanos, err := strconv.ParseInt(mtime, 10, 64)
-	if err != nil {
-		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
-	}
-	ref.ModTime = instant(nanos)
-	return ref, nil
+	return domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}, Hash: s}, nil
 }
+
+var fingerprintPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
 func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 	switch o {

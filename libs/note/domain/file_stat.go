@@ -22,6 +22,8 @@ type FileStat struct {
 	Size    int64
 	ModTime time.Time
 	FileID  FileID
+	Hash    string
+	Version uint64
 }
 
 // FileID is the number a file system assigns to a file, which a rename keeps and a
@@ -39,5 +41,5 @@ func (f FileStat) IsUnchanged(other FileStat) bool {
 // IsZero reports whether this is the zero file stat, which a caller passes when
 // it has no expectation about the file it is about to overwrite.
 func (f FileStat) IsZero() bool {
-	return f.Path == "" && f.Kind == "" && f.Size == 0 && f.ModTime.IsZero()
+	return f.Path == "" && f.Kind == "" && f.Size == 0 && f.ModTime.IsZero() && f.Hash == ""
 }

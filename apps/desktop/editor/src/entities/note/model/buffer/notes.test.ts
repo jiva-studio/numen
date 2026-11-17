@@ -13,7 +13,7 @@ function rethrow(error: unknown): never {
   throw error
 }
 
-const statFile = (body: string): string => `1 1 at:${body}`
+const statFile = (body: string): string => `1:0: 1 at:${body}`
 
 function fake(overrides: Partial<Notes> = {}) {
   const files = new Map<string, string>()
