@@ -5,7 +5,7 @@
  */
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import { defineComponent, h, type Component } from 'vue'
+import { defineComponent, h, markRaw, nextTick, type Component } from 'vue'
 import PlexView from './PlexView.vue'
 import { arrangePlex, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
 import type { PlexGraph } from '../../../types'
@@ -34,7 +34,7 @@ afterEach(() => {
 })
 
 const createView = (stopsClicks = false): Component =>
-  defineComponent({
+  markRaw(defineComponent({
     props: {
       path: { type: String, required: true },
       x: { type: Number, required: true },
@@ -50,10 +50,10 @@ const createView = (stopsClicks = false): Component =>
         onClick: stopsClicks ? (event: Event) => event.stopPropagation() : undefined,
       })
     },
-  })
+  }))
 
-const mountView = (overrides: Record<string, unknown> = {}) =>
-  mount(PlexView, {
+const mountView = async (overrides: Record<string, unknown> = {}) => {
+  const view = mount(PlexView, {
     attachTo: document.body,
     props: {
       frame: arrangePlex(graph),
@@ -64,6 +64,9 @@ const mountView = (overrides: Record<string, unknown> = {}) =>
       ...overrides,
     },
   })
+  await nextTick()
+  return view
+}
 
 const getViews = (view: VueWrapper) => view.findAll('[data-over-view]')
 
@@ -71,8 +74,8 @@ const getProps = (view: VueWrapper, path: string) =>
   view.findComponent(`[data-over-view="${path}"]`).vm.$props as Record<string, unknown>
 
 describe('the views across a node', () => {
-  it('are drawn once for each note, each given the path of its note', () => {
-    const view = mountView()
+  it('are drawn once for each note, each given the path of its note', async () => {
+    const view = await mountView()
 
     expect(getViews(view).map((one) => one.attributes('data-over-view'))).toStrictEqual(
       expect.arrayContaining(['Start.md', 'Below.md']),
@@ -80,8 +83,8 @@ describe('the views across a node', () => {
     expect(getViews(view)).toHaveLength(2)
   })
 
-  it('are drawn in a layer after the one open notes are drawn in, which comes after every note', () => {
-    const view = mountView()
+  it('are drawn in a layer after the one open notes are drawn in, which comes after every note', async () => {
+    const view = await mountView()
     const layer = view.get('.plex__over-layer').element
     const lift = view.get('.plex__lift').element
     const last = view.findAll('.plex__stack').at(-1)!.element
@@ -95,9 +98,9 @@ describe('the views across a node', () => {
     )
   })
 
-  it('are given the middle, the size and the scale of the node, and the surface, in the units of the surface', () => {
+  it('are given the middle, the size and the scale of the node, and the surface, in the units of the surface', async () => {
     const frame = arrangePlex(graph)
-    const view = mountView({ frame, nodeSize: DEFAULT_OPTIONS.nodeSize })
+    const view = await mountView({ frame, nodeSize: DEFAULT_OPTIONS.nodeSize })
     const focus = frame.nodes.find((one) => one.id === 'focus')!
     const below = frame.nodes.find((one) => one.id === 'below')!
 
@@ -119,8 +122,8 @@ describe('the views across a node', () => {
     })
   })
 
-  it('are given a scale of at least one', () => {
-    const view = mountView({ nodeSize: { width: 1000, height: 1000 } })
+  it('are given a scale of at least one', async () => {
+    const view = await mountView({ nodeSize: { width: 1000, height: 1000 } })
 
     expect(getProps(view, 'Below.md').scale).toBe(1)
   })
@@ -128,7 +131,7 @@ describe('the views across a node', () => {
   it('follow the node while it moves', async () => {
     const from = arrangePlex(graph)
     const to = arrangePlex(later)
-    const view = mountView({ frame: from })
+    const view = await mountView({ frame: from })
     const before = getProps(view, 'Below.md')
     const start = { x: before.x, y: before.y, width: before.width, height: before.height }
 
@@ -147,8 +150,8 @@ describe('the views across a node', () => {
     )
   })
 
-  it('are not drawn where no plugin places one', () => {
-    const view = mountView({ widgetsOver: [] })
+  it('are not drawn where no plugin places one', async () => {
+    const view = await mountView({ widgetsOver: [] })
 
     expect(getViews(view)).toHaveLength(0)
     expect(view.find('.plex__over-node').exists()).toBe(false)
@@ -157,7 +160,7 @@ describe('the views across a node', () => {
 
 describe('a pointer on a view across a node', () => {
   it('is a pointer on the node: the node is marked while it is over the view', async () => {
-    const view = mountView()
+    const view = await mountView()
     const node = view.get('[aria-label^="Below"]')
 
     const over = view.get('.plex__over-node[data-node="below"]')
@@ -170,7 +173,7 @@ describe('a pointer on a view across a node', () => {
   })
 
   it('is a pointer on the node: a click on the view chooses the note', async () => {
-    const view = mountView()
+    const view = await mountView()
 
     await view.get('[data-over-view="Below.md"]').trigger('click')
 
@@ -178,7 +181,7 @@ describe('a pointer on a view across a node', () => {
   })
 
   it('does not choose the note when the view does not let the click through', async () => {
-    const view = mountView({
+    const view = await mountView({
       widgetsOver: [{ key: 'org.example.over/view/over', component: createView(true) }],
     })
 

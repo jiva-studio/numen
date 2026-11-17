@@ -107,7 +107,9 @@ const face = computed(() => ({
 
 const events = getNodeEvents(press, hoverFocus)
 
-const overTarget = computed(() => (isGhost.value ? null : (overLayer?.value ?? null)))
+const overTarget = computed(() =>
+  props.overlay.length === 0 || isGhost.value ? null : (overLayer?.value ?? null),
+)
 const nodeClasses = computed(() => [
   `plex__node--${props.node.relation}`,
   `plex__node--${props.gestureRole}`,
@@ -202,7 +204,7 @@ function getMiddle(): Position | null {
     </Teleport>
 
     <!-- Across the whole of the node, over the neighbors; what a pointer does there is done to this node. -->
-    <Teleport v-if="overTarget && overlay.length > 0" :to="overTarget">
+    <Teleport v-if="overTarget" :to="overTarget">
       <g
         ref="over"
         class="plex__over-node"

@@ -531,6 +531,119 @@ describe('what the picture draws a line to', () => {
   })
 })
 
+/** A note beside another: where it is located, and the note it comes through. */
+type RelatedNoteRow = readonly [path: string, relation: NoteRelation, through?: string]
+
+const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
+
+const inVault = async (focus: string, initialRelatedNotes: readonly RelatedNoteRow[] = []) => {
+  let relatedItems = initialRelatedNotes.map(([path, relation, through]) => ({
+    path,
+    relation,
+    through: through ?? '',
+  }))
+  /** An answer the vault is holding back, and what releases it. */
+  let pendingGate: Promise<void> | null = null
+  let release: () => void = () => undefined
+  /** Every note the vault was queried about, in query order. */
+  const request: string[] = []
+  const vault = createVault()
+  const openedCalls: [string, string, string][] = []
+  const ran: [string, string, string][] = []
+
+  const view = viewing({
+    listRelatedNotes: async ([path = '']) => {
+      request.push(path)
+      if (pendingGate) await pendingGate
+      return [
+        {
+          focus: { path, title: getNoteTitle(path) },
+          focusType: 'note' as const,
+          related: relatedItems.map((one) => ({
+            path: one.path,
+            title: getNoteTitle(one.path),
+            type: 'note' as const,
+            relation: one.relation,
+          })),
+          connections: relatedItems.map((one) => createLine(path, one)),
+        },
+      ]
+    },
+  })
+  const state = createPlexTab(
+    view,
+    createDeps(vault.editor, {
+      window: {
+        openNote: (path, options) =>
+          openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current']),
+      },
+      menu: {
+        getMenuEntries: () => NODE_MENU,
+        runCommand: async (id, target) => {
+          ran.push([id, target.path, target.title])
+          return ''
+        },
+      },
+    }),
+  )
+  await view.go(focus)
+
+  /** The current graph, which a rendered window reads. */
+  const picture = () => state.canvas.picture.value
+  /** The label of the note shown by this title. */
+  const node = (title: string) => getNode(state, title)
+  const nodes = () => (picture()?.nodes ?? []).map((one) => `${one.relation} ${one.id}`)
+  /** Every edge of the graph, as the pair of nodes it connects. */
+  const edges = () => (picture()?.edges ?? []).map((one) => `${one.from} -> ${one.to}`)
+
+  /** Files moved in the vault, and the plex notified of the old and new paths. */
+  const moveFiles = (...renamed: readonly PathRename[]) => {
+    relatedItems = relatedItems.map((one) => ({
+      ...one,
+      path: getRenamedPath(renamed, one.path) || one.path,
+      through: getRenamedPath(renamed, one.through) || one.through,
+    }))
+    state.nodes.followMoves(renamed)
+  }
+  /** A move, followed by a new graph request. */
+  const moveFilesAndReload = async (...renamed: readonly PathRename[]) => {
+    moveFiles(...renamed)
+    await view.go(view.here.value)
+  }
+  /** The user navigates to another note, which is a graph of its own. */
+  const goToNote = async (path: string, ...now: readonly RelatedNoteRow[]) => {
+    relatedItems = now.map(([at, relation, through]) => ({
+      path: at,
+      relation,
+      through: through ?? '',
+    }))
+    await view.go(path)
+  }
+
+  return {
+    state,
+    view,
+    picture,
+    node,
+    nodes,
+    edges,
+    moveFiles,
+    moveFilesAndReload,
+    goToNote,
+    requested: request,
+    requestLog: request,
+    opened: openedCalls,
+    ran,
+    made: vault.made,
+    joined: vault.joined,
+    /** The vault holds every answer back until it is release. */
+    holdAnswers: () => {
+      pendingGate = new Promise<void>((resolve) => (release = resolve))
+    },
+    answers: () => release(),
+  }
+}
+
 describe('a note whose file moved', () => {
   it('keeps what the picture calls it, so nothing is drawn again', async () => {
     const one = await inVault('Entropy.md')

@@ -1,6 +1,6 @@
 /** What a move of the pointer redraws: the notes it concerns, and nothing else. */
 import { mount } from '@vue/test-utils'
-import { nextTick, ref } from 'vue'
+import { defineComponent, h, markRaw, nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexView from './PlexView.vue'
@@ -72,6 +72,19 @@ describe('the pointer moving over a note', () => {
     await nextTick()
 
     expect(widen.mock.calls.length).toBe(widened)
+  })
+
+  it('redraws only that note when every note has a view across it', async () => {
+    const view = markRaw(defineComponent({ render: () => h('span') }))
+    const widgetsOver = [{ key: 'org.example.over/view/over', component: view }]
+    const { redrawn, reset, view: mounted } = createCountedView({ widgetsOver })
+    await nextTick()
+    reset()
+
+    await note(mounted, frame.nodes[3]!.title).trigger('pointerenter')
+    await nextTick()
+
+    expect([...redrawn.keys()]).toStrictEqual([frame.nodes[3]!.id])
   })
 
   it('lifts the lines of the note without redrawing the others', async () => {
