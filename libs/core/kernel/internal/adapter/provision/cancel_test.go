@@ -160,3 +160,81 @@ func TestCancelAllStopsEveryRun(t *testing.T) {
 		}
 	}
 }
+
+func TestAJoiningCallerMayCallTheRegistryFromItsProgressReplay(t *testing.T) {
+	provisioner := &fakeProvisioner{kind: manifest.DependencyKindModel, gate: make(chan struct{})}
+	registry := NewRegistry(provisioner)
+	req := manifest.DependencyRequirement{ID: "a", Kind: manifest.DependencyKindModel}
+	progressed := make(chan struct{}, 1)
+	registry.SetObserver(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
+		if status.BytesDownloaded > 0 {
+			select {
+			case progressed <- struct{}{}:
+			default:
+			}
+		}
+	})
+	first := make(chan error, 1)
+	go func() {
+		_, err := registry.Provision(t.Context(), req, nil)
+		first <- err
+	}()
+	<-progressed
+
+	second := make(chan error, 1)
+	go func() {
+		_, err := registry.Provision(t.Context(), req, func(plugin.DependencyStatus) { registry.Cancel(req) })
+		second <- err
+	}()
+
+	for _, answer := range []chan error{first, second} {
+		if err := <-answer; !errors.Is(err, context.Canceled) {
+			t.Errorf("a caller received %v, want the cancellation", err)
+		}
+	}
+}
+
+func TestAJoiningCallerReceivesTheReplayBeforeTheLaterStatuses(t *testing.T) {
+	var group flightGroup
+	release := make(chan struct{})
+	reported := make(chan struct{})
+	run := func(_ context.Context, report func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error) {
+		report(plugin.DependencyStatus{Message: "1"})
+		close(reported)
+		<-release
+		report(plugin.DependencyStatus{Message: "2"})
+		return plugin.ResolvedDependency{}, nil
+	}
+	leader := make(chan error, 1)
+	go func() {
+		_, err := group.do(t.Context(), "k", nil, run)
+		leader <- err
+	}()
+	<-reported
+
+	var mu sync.Mutex
+	var got []string
+	replayed := make(chan struct{})
+	joined := make(chan error, 1)
+	go func() {
+		_, err := group.do(t.Context(), "k", func(status plugin.DependencyStatus) {
+			mu.Lock()
+			got = append(got, status.Message)
+			mu.Unlock()
+			if status.Message == "1" {
+				close(replayed)
+			}
+		}, run)
+		joined <- err
+	}()
+	<-replayed
+	close(release)
+	<-leader
+	<-joined
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(got) != 2 || got[0] != "1" || got[1] != "2" {
+		t.Errorf("the joining caller received %v, want 1 then 2", got)
+	}
+}

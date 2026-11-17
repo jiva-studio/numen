@@ -85,7 +85,7 @@ func (r *Registry) Provision(
 	if resolved, state, err := provisioner.Resolve(req); err == nil && state == plugin.DependencyStateReady {
 		return resolved, nil
 	}
-	return r.flights.do(ctx, getFlightKey(req), onProgress, func(runCtx context.Context, report func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error) {
+	return r.flights.do(ctx, req.GetIdentity(), onProgress, func(runCtx context.Context, report func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error) {
 		return r.run(runCtx, provisioner, req, report)
 	})
 }
@@ -126,7 +126,7 @@ func (r *Registry) run(
 // the run receives context.Canceled, the observer receives the state missing, and what the run had downloaded
 // stays for the next run to continue from.
 func (r *Registry) Cancel(req manifest.DependencyRequirement) bool {
-	return r.flights.cancel(getFlightKey(req))
+	return r.flights.cancel(req.GetIdentity())
 }
 
 // CancelAll stops every run in progress as Cancel does.

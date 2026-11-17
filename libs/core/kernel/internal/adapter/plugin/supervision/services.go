@@ -88,10 +88,10 @@ func (s *Services) track(req manifest.DependencyRequirement, status plugindomain
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if status.State == plugindomain.DependencyStateProvisioning {
-		s.downloading[req.ID] = req
+		s.downloading[req.GetIdentity()] = req
 		return
 	}
-	delete(s.downloading, req.ID)
+	delete(s.downloading, req.GetIdentity())
 }
 
 // CancelDependency stops the download of the dependency, if one runs.

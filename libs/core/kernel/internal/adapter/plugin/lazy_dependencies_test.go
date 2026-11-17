@@ -850,3 +850,33 @@ func TestCancelingTheDependenciesStopsTheDownloadInProgress(t *testing.T) {
 		t.Errorf("the use received %v, want the cancellation", err)
 	}
 }
+
+func TestCancelingTheDependenciesStopsEveryVersionOfOneDependency(t *testing.T) {
+	source := newModelSource(t)
+	source.holdDownloads(t)
+	registry := provision.NewRegistry(source)
+	p := newLazyPluginFrom(t, registry, newBuiltInManifest(firstBuiltInID, sampleRuntime))
+	p.host.Services.ObserveDependencies(func(catalogmanifest.DependencyRequirement, plugindomain.DependencyStatus) {})
+	older := catalogmanifest.DependencyRequirement{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindModel, Version: "1"}
+	newer := catalogmanifest.DependencyRequirement{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindModel, Version: "2"}
+	answers := make(chan error, 2)
+	for _, req := range []catalogmanifest.DependencyRequirement{older, newer} {
+		go func() {
+			_, err := registry.Provision(t.Context(), req, nil)
+			answers <- err
+		}()
+	}
+	source.waitForDownload(t)
+	source.waitForDownload(t)
+	if !registry.Cancel(older) {
+		t.Fatal("Cancel found no download of the older version")
+	}
+	if err := <-answers; !errors.Is(err, context.Canceled) {
+		t.Fatalf("the older version received %v, want the cancellation", err)
+	}
+
+	p.host.Services.CancelDependencies()
+	if err := <-answers; !errors.Is(err, context.Canceled) {
+		t.Errorf("the newer version received %v, want the cancellation", err)
+	}
+}
