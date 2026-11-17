@@ -71,7 +71,7 @@ export const createDocuments = (api: Api): Documents => ({
     }
   },
   getPageUrl: (...[path, pageNumber, width, stat = '']: [string, number, number, string?]) =>
-    `${PLUGIN_ROUTE}/pages/${pageNumber}?path=${encodeURIComponent(path)}&wide=${width}&${getBytesQuery(stat)}`,
+    `${PLUGIN_ROUTE}/pages/${pageNumber}?path=${encodeURIComponent(path)}&wide=${width}${stat === '' ? '' : `&${getBytesQuery(stat)}`}`,
   getHighlights: async (path, spans) => {
     const response = await callWhileBusy<GetHighlightsRequest, GetHighlightsResponse>(
       api,

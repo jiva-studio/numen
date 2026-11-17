@@ -4,7 +4,7 @@ import (
 	"context"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // OpenTabsStore keeps the tabs a window has open on a vault across restarts.

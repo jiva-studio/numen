@@ -1,7 +1,6 @@
 package flashcards
 
 import (
-	"runtime"
 	"sync/atomic"
 	"time"
 
@@ -9,43 +8,41 @@ import (
 )
 
 // UseCases is everything the plugin does for a session of review, built for one day start.
-type UseCases struct {
+type UseCases[P any] struct {
 	Reviews   ReviewUseCases
-	Schedules ScheduleUseCases
+	Schedules ScheduleUseCases[P]
 	Counts    CountUseCases
 	Day       review.Day
 }
 
-// Current holds the review scenarios in force. The host can change the day a review begins at any
-// time while calls run, and the scenarios are built again for it; calls already running finish under
-// the scenarios they began under.
-type Current struct {
-	config Config
-	active atomic.Pointer[UseCases]
+// Current holds the review use cases in force. The host can change the day a review begins at any
+// time while calls run, and the use cases are built again for it; calls already running finish under
+// the use cases they began under.
+type Current[P any] struct {
+	config     Config
+	newPresets NewPresets[P]
+	active     atomic.Pointer[UseCases[P]]
 }
 
-// NewCurrent builds the review scenarios from the config and holds them. A count of cores that is not
-// positive is the cores the process may use.
-func NewCurrent(cfg Config) *Current {
-	if cfg.Cores <= 0 {
-		// gomutants:disable-next-line INTEGER_DECREMENT reason="Any non-positive argument queries GOMAXPROCS without changing it."
-		cfg.Cores = runtime.GOMAXPROCS(0)
-	}
-	c := &Current{config: cfg, active: atomic.Pointer[UseCases]{}}
-	c.active.Store(createUseCases(cfg))
+// NewCurrent builds the review use cases from the config and the presets newPresets makes, and
+// holds them.
+func NewCurrent[P any](cfg Config, newPresets NewPresets[P]) *Current[P] {
+	c := &Current[P]{config: cfg, newPresets: newPresets, active: atomic.Pointer[UseCases[P]]{}}
+	c.active.Store(c.createUseCases(cfg))
 	return c
 }
 
-func (c *Current) Get() *UseCases { return c.active.Load() }
+// Get returns the review use cases in force.
+func (c *Current[P]) Get() *UseCases[P] { return c.active.Load() }
 
-// SetDayStart builds the review scenarios again with the time past midnight at which a day of review begins.
-func (c *Current) SetDayStart(starts time.Duration) {
+// SetDayStart builds the review use cases again with the time past midnight at which a day of review begins.
+func (c *Current[P]) SetDayStart(starts time.Duration) {
 	cfg := c.config
 	cfg.Day = review.Day{Starts: starts, In: nil}
-	c.active.Store(createUseCases(cfg))
+	c.active.Store(c.createUseCases(cfg))
 }
 
-func createUseCases(cfg Config) *UseCases {
-	reviews, schedules, counts := NewUseCases(cfg)
-	return &UseCases{Reviews: reviews, Schedules: schedules, Counts: counts, Day: cfg.Day}
+func (c *Current[P]) createUseCases(cfg Config) *UseCases[P] {
+	reviews, schedules, counts := NewUseCases(cfg, c.newPresets)
+	return &UseCases[P]{Reviews: reviews, Schedules: schedules, Counts: counts, Day: cfg.Day}
 }

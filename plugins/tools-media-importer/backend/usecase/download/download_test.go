@@ -11,15 +11,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/process"
 )
 
 // A program run carries the environment it is given.
 func TestProgramBuildCommandSetsEnvironment(t *testing.T) {
-	if env := (Tool{}).getEnvironment([]string{"BASE=1"}); env != nil {
+	if env := getEnvironment(fetch.Tool{}, []string{"BASE=1"}); env != nil {
 		t.Errorf("empty tool environment = %v, want nil", env)
 	}
-	configured := (Tool{Environment: map[string]string{"NUMEN_K": "val"}}).getEnvironment([]string{"BASE=1"})
+	configured := getEnvironment(fetch.Tool{Environment: map[string]string{"NUMEN_K": "val"}}, []string{"BASE=1"})
 	if !slices.Contains(configured, "NUMEN_K=val") || !slices.Contains(configured, "BASE=1") {
 		t.Errorf("configured environment missing NUMEN_K=val or BASE=1: %v", configured)
 	}
@@ -98,26 +99,26 @@ func TestGetLastLine_ReturnsFallbackWhenEmpty(t *testing.T) {
 }
 
 func TestResolveProgramPrecedence(t *testing.T) {
-	if got := resolveProgram(Tool{Command: []string{"/setting/tool"}}, "sh", process.Runner{}).command[0]; got != "/setting/tool" {
+	if got := resolveProgram(fetch.Tool{Command: []string{"/setting/tool"}}, "sh", process.Runner{}).command[0]; got != "/setting/tool" {
 		t.Errorf("setting path = %q, want /setting/tool", got)
 	}
-	if got := resolveProgram(Tool{}, "sh", process.Runner{}); !got.isPresent() || got.command[0] == "sh" {
+	if got := resolveProgram(fetch.Tool{}, "sh", process.Runner{}); !got.isPresent() || got.command[0] == "sh" {
 		t.Errorf("PATH lookup = %v, want the sh found on PATH", got.command)
 	}
-	if got := resolveProgram(Tool{}, "no-such-numen-tool", process.Runner{}); got.isPresent() {
+	if got := resolveProgram(fetch.Tool{}, "no-such-numen-tool", process.Runner{}); got.isPresent() {
 		t.Errorf("missing tool resolved to %v", got.command)
 	}
-	if got := resolveProgram(Tool{}, "sh", nil); got.isPresent() {
+	if got := resolveProgram(fetch.Tool{}, "sh", nil); got.isPresent() {
 		t.Errorf("nil runner resolved to %v", got.command)
 	}
-	if got := resolveProgram(Tool{Command: []string{"/bin/sh"}, Environment: map[string]string{"A": "1"}}, "sh", nil); !slices.Equal(got.env, []string{"A=1"}) {
+	if got := resolveProgram(fetch.Tool{Command: []string{"/bin/sh"}, Environment: map[string]string{"A": "1"}}, "sh", nil); !slices.Equal(got.env, []string{"A=1"}) {
 		t.Errorf("nil runner with env = %v, want [A=1]", got.env)
 	}
 	sr := &stubRunner{}
-	if got := resolveProgram(Tool{Command: []string{"/bin/sh"}}, "sh", sr); got.env != nil || sr.environCalls != 0 {
+	if got := resolveProgram(fetch.Tool{Command: []string{"/bin/sh"}}, "sh", sr); got.env != nil || sr.environCalls != 0 {
 		t.Errorf("empty env called Environ %d times, env=%v", sr.environCalls, got.env)
 	}
-	if got := resolveProgram(Tool{Command: []string{"/bin/sh"}, Environment: map[string]string{"A": "1"}}, "sh", sr); !slices.Equal(got.env, []string{"BASE=x", "A=1"}) || sr.environCalls != 1 {
+	if got := resolveProgram(fetch.Tool{Command: []string{"/bin/sh"}, Environment: map[string]string{"A": "1"}}, "sh", sr); !slices.Equal(got.env, []string{"BASE=x", "A=1"}) || sr.environCalls != 1 {
 		t.Errorf("non-empty env = %v, environCalls=%d", got.env, sr.environCalls)
 	}
 }
@@ -127,10 +128,10 @@ func TestEmptyDownloaderRejectsAllOperationsWithNoTool(t *testing.T) {
 	if _, err := empty.GetMetadata(t.Context(), "https://example.com"); !errors.Is(err, ErrNoTool) {
 		t.Errorf("GetMetadata error = %v, want ErrNoTool", err)
 	}
-	if _, err := empty.GetText(t.Context(), "https://example.com", PreferredCaptions{}); !errors.Is(err, ErrNoTool) {
+	if _, err := empty.GetText(t.Context(), "https://example.com", fetch.PreferredCaptions{}); !errors.Is(err, ErrNoTool) {
 		t.Errorf("GetText error = %v, want ErrNoTool", err)
 	}
-	if _, err := empty.Download(t.Context(), "https://example.com", MediaVideo, io.Discard); !errors.Is(err, ErrNoTool) {
+	if _, err := empty.Download(t.Context(), "https://example.com", fetch.MediaVideo, io.Discard); !errors.Is(err, ErrNoTool) {
 		t.Errorf("Download error = %v, want ErrNoTool", err)
 	}
 	if _, err := empty.playerFor("https://example.com"); !errors.Is(err, ErrNoTool) {
@@ -176,36 +177,36 @@ func TestPagesProviderGetsTheArticleText(t *testing.T) {
 	if isVideoSite("http://\x00") {
 		t.Fatal("invalid URL treated as video site")
 	}
-	y := newYtDLP(Config{Video: Tool{Command: []string{"sh", "-c", "echo 2025.01.01"}}}, process.Runner{}, nil, nil)
+	y := newYtDLP(fetch.Config{Video: fetch.Tool{Command: []string{"sh", "-c", "echo 2025.01.01"}}}, process.Runner{}, nil, nil)
 	if y.probeTimeout != 2*time.Minute {
 		t.Errorf("probeTimeout = %v, want 2m", y.probeTimeout)
 	}
 	if got := y.GetDownloadModel("https://youtu.be/abc").Version; got != "2025.01.01" {
 		t.Errorf("ytDLP version = %q, want 2025.01.01", got)
 	}
-	text, err := pages.GetText(t.Context(), "https://example.com/post", PreferredCaptions{})
+	text, err := pages.GetText(t.Context(), "https://example.com/post", fetch.PreferredCaptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if text.Title != "T" || text.Producer != "article" || text.Length != 0 || !strings.Contains(text.Prose, "Readability body text here.") {
 		t.Errorf("GetText = %+v, want title T, producer article, length 0, and the body text", text)
 	}
-	if _, err := pages.GetText(t.Context(), "://bad-url", PreferredCaptions{}); err == nil || errors.Is(err, ErrNothingDownloaded) {
+	if _, err := pages.GetText(t.Context(), "://bad-url", fetch.PreferredCaptions{}); err == nil || errors.Is(err, fetch.ErrNothingDownloaded) {
 		t.Errorf("GetText(bad url) = %v, want URL parse error", err)
 	}
 	fetchErr := errors.New("fetch failed")
-	if _, err := NewPages(fakeWeb{err: fetchErr}).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, fetchErr) {
+	if _, err := NewPages(fakeWeb{err: fetchErr}).GetText(t.Context(), "https://example.com/post", fetch.PreferredCaptions{}); !errors.Is(err, fetchErr) {
 		t.Errorf("GetText(fetchErr) = %v, want %v", err, fetchErr)
 	}
 	closeErr := errors.New("close failed")
-	if _, err := NewPages(fakeWeb{page: validHTML, closeErr: closeErr}).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, closeErr) {
+	if _, err := NewPages(fakeWeb{page: validHTML, closeErr: closeErr}).GetText(t.Context(), "https://example.com/post", fetch.PreferredCaptions{}); !errors.Is(err, closeErr) {
 		t.Errorf("GetText(closeErr) = %v, want %v", err, closeErr)
 	}
-	if _, err := NewPages(fakeWeb{readErr: errors.New("read failed")}).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, ErrNothingDownloaded) {
-		t.Errorf("GetText(readErr) = %v, want ErrNothingDownloaded", err)
+	if _, err := NewPages(fakeWeb{readErr: errors.New("read failed")}).GetText(t.Context(), "https://example.com/post", fetch.PreferredCaptions{}); !errors.Is(err, fetch.ErrNothingDownloaded) {
+		t.Errorf("GetText(readErr) = %v, want fetch.ErrNothingDownloaded", err)
 	}
 	empty := fakeWeb{page: "<html><head><title>Empty</title></head><body>   </body></html>"}
-	if _, err := NewPages(empty).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, ErrNothingDownloaded) {
-		t.Errorf("GetText(empty prose) = %v, want ErrNothingDownloaded", err)
+	if _, err := NewPages(empty).GetText(t.Context(), "https://example.com/post", fetch.PreferredCaptions{}); !errors.Is(err, fetch.ErrNothingDownloaded) {
+		t.Errorf("GetText(empty prose) = %v, want fetch.ErrNothingDownloaded", err)
 	}
 }

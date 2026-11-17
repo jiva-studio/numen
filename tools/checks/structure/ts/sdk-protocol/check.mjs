@@ -7,7 +7,7 @@ import { REPO_ROOT, failOnFindings, requireMatches } from "../../../lib/graph.mj
 const SDK_DIR = "libs/plugin/sdk-ts";
 
 /** The directory of the package that holds the generated schema. */
-const PROTOCOL_DIR = "libs/core/protocol";
+const PROTOCOL_DIR = "libs/shared/protocol";
 
 /** True when `file` is `dir` or lies below it, outside any `node_modules` directory. */
 function isInPackage(file, dir) {
@@ -240,7 +240,7 @@ export const SDK_VERIFIERS = [
     id: "sdk-ts-encapsulates-protocol",
     scope: "libs",
     module: "sdk",
-    name: "Plugin SDK Encapsulates Protocol (no exported declaration of an entry in the exports of the TypeScript SDK reaches a declaration of libs/core/protocol)",
+    name: "Plugin SDK Encapsulates Protocol (no exported declaration of an entry in the exports of the TypeScript SDK reaches a declaration of libs/shared/protocol)",
     run: verifySdkTypesEncapsulateProtocol,
   },
 ];

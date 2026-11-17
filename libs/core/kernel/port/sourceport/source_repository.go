@@ -3,7 +3,7 @@ package sourceport
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // SourceRepository holds the sources of one vault. Every method takes a vault:

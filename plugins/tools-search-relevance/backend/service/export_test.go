@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/calibration"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
@@ -11,6 +10,6 @@ import (
 func NewAppOver(hosts Hosts, clk relevance.Clock, releaser process.Releaser) *App {
 	return &App{
 		open:  func() (Hosts, error) { return hosts, nil },
-		clock: clk, releaser: releaser, calibration: calibration.New(),
+		clock: clk, releaser: releaser, calibration: relevance.NewSession(),
 	}
 }

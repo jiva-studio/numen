@@ -1,45 +1,28 @@
-// Package fingerprint writes the stat of a file as the token the tools hand to an agent, and reads it back.
+// Package fingerprint writes the content of a file as the token the tools hand to an agent, and reads it back.
 package fingerprint
 
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
-	"time"
+	"regexp"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
-// Format writes the size and the modification time of the file as "<size>-<nanoseconds>".
+var hashPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
+
+// Format writes the hash of the content of the file: the SHA-256 in lowercase hex.
 func Format(ref domain.FileStat) string {
-	var nanos int64
-	if !ref.ModTime.IsZero() {
-		nanos = ref.ModTime.UnixNano()
-	}
-	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(nanos, 10)
+	return ref.Hash
 }
 
-// Parse reads a token Format wrote; the path and kind of the stat stay empty.
+// Parse reads a token Format wrote; the stat carries the hash only, as a baseline for a write.
 func Parse(token string) (domain.FileStat, error) {
 	if token == "" {
 		return domain.FileStat{}, errors.New("fingerprint is required")
 	}
-	sizeText, timeText, found := strings.Cut(token, "-")
-	if !found {
+	if !hashPattern.MatchString(token) {
 		return domain.FileStat{}, fmt.Errorf("invalid fingerprint format: %q", token)
 	}
-	size, err := strconv.ParseInt(sizeText, 10, 64)
-	if err != nil {
-		return domain.FileStat{}, fmt.Errorf("invalid fingerprint size: %w", err)
-	}
-	nanos, err := strconv.ParseInt(timeText, 10, 64)
-	if err != nil {
-		return domain.FileStat{}, fmt.Errorf("invalid fingerprint timestamp: %w", err)
-	}
-	var modTime time.Time
-	if nanos != 0 {
-		modTime = time.Unix(0, nanos)
-	}
-	return domain.FileStat{Path: "", Kind: "", Size: size, ModTime: modTime}, nil
+	return domain.FileStat{Hash: token}, nil
 }

@@ -16,15 +16,18 @@ import {
 } from '@/shared/model/command'
 
 /** What each command of the palette evaluates to. A command with no entry here does nothing. */
-const HANDLERS: Record<string, CommandHandler> = {
-  [COMMAND.openSettings]: (invocation, on) =>
-    on.navigator.openSettings({
-      pluginId: invocation.values?.['plugin'],
-      setting: invocation.values?.['setting'],
-    }),
-  [COMMAND.closeTab]: (invocation, on) => on.navigator.closeTab(invocation.target.tab),
-  [COMMAND.searchVault]: (_, on) => on.navigator.search(),
-}
+const HANDLERS: ReadonlyMap<string, CommandHandler> = new Map<string, CommandHandler>([
+  [
+    COMMAND.openSettings,
+    (invocation, on) =>
+      on.navigator.openSettings({
+        pluginId: invocation.values?.['plugin'],
+        setting: invocation.values?.['setting'],
+      }),
+  ],
+  [COMMAND.closeTab, (invocation, on) => on.navigator.closeTab(invocation.target.tab)],
+  [COMMAND.searchVault, (_, on) => on.navigator.search()],
+])
 
 async function runSetting(invocation: CommandInvocation, on: CommandDeps): Promise<void> {
   try {
@@ -45,7 +48,7 @@ export async function runInvocation(
 ): Promise<string> {
   if (!invocation) return ''
   const isSetting = invocation.id.startsWith(SETTING_COMMAND_PREFIX)
-  const handler = on.registry.get(invocation.id) ?? HANDLERS[invocation.id]
+  const handler = on.registry.get(invocation.id) ?? HANDLERS.get(invocation.id)
   if (!isSetting && !handler) return ''
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)

@@ -44,7 +44,7 @@ const responses: [GetBookResponse, ReadBookMarkupResponse, GetCfiResponse, FindO
   findOffsetResponse,
 ]
 
-const stat = '12 1700000000000000000 Books/Anabasis.epub'
+const stat = '12:0: 1700000000000000000 Books/Anabasis.epub'
 
 const createApiStub = (reply: unknown) => {
   const call = vi.fn().mockResolvedValue(asValue(reply))

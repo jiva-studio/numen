@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	searchpolicydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ListSmallChunkVectors returns at most `limit` small chunks of the vault that carry a

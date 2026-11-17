@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 // readyName is the marker file whose presence means the folder next to it contains a complete dependency.

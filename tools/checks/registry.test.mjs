@@ -103,7 +103,7 @@ describe("the selection of changed checks", () => {
   });
 
   it("selects the checks that read the note library and the plugins for a change there", () => {
-    const noteDomain = getRunningChecks(["libs/note/domain/connection.go"]);
+    const noteDomain = getRunningChecks(["libs/shared/note/domain/connection.go"]);
     assert.ok(noteDomain.includes("go/transports"));
     assert.ok(noteDomain.includes("go/use-case-fields"));
     assert.ok(getRunningChecks(["plugins/engines-transcription/backend/main.go"]).includes("go/use-case-fields"));
