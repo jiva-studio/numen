@@ -265,13 +265,26 @@ describe('the plex in a window the widgets fill up', () => {
     reference.unmount()
     const removed: string[] = []
     const collect = (records: MutationRecord[]) => {
-      for (const record of records)
+      for (const record of records) {
+        // A node that no longer fits is kept as a ghost without a label, so it is gone to the reader.
+        if (
+          record.attributeName === 'aria-label' &&
+          !(record.target as Element).hasAttribute('aria-label')
+        )
+          removed.push(record.oldValue ?? '')
         for (const node of record.removedNodes)
           if (node instanceof Element && node.classList.contains('plex__node'))
             removed.push(getTitleOf(node) ?? '')
+      }
     }
     const observer = new MutationObserver(collect)
-    observer.observe(document.body, { childList: true, subtree: true })
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['aria-label'],
+      attributeOldValue: true,
+    })
     const drawing = ref<ReadonlySet<string>>(new Set())
 
     const plex = mountPlex({
