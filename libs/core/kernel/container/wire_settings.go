@@ -167,7 +167,7 @@ func syncSetting(c settingsWiring) naming.SyncSetting {
 	}
 }
 
-func readSettings(c settingsWiring) func() (string, string, error) {
+func readSettings(c settingsWiring) func() (string, string, uint64, error) {
 	return settingsStore(c).ReadJSON
 }
 

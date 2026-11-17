@@ -69,12 +69,13 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   }
 
   const notes: VaultNotes = {
-    listRelatedNotes: async (path) => ({
-      focus: { path, title: path.replace(/\.md$/, '') },
-      focusType: NOTE_TYPE,
-      related: [],
-      connections: [],
-    }),
+    listRelatedNotes: async (paths) =>
+      paths.map((path) => ({
+        focus: { path, title: path.replace(/\.md$/, '') },
+        focusType: NOTE_TYPE,
+        related: [],
+        connections: [],
+      })),
     getHeadings: async (paths) => {
       request.headings.push(paths)
       return new Map()

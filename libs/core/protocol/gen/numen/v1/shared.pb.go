@@ -130,7 +130,12 @@ type FileStat struct {
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Size  int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
 	// When the file last changed, in nanoseconds since the epoch.
-	Mtime         int64 `protobuf:"varint,3,opt,name=mtime,proto3" json:"mtime,omitempty"`
+	Mtime int64 `protobuf:"varint,3,opt,name=mtime,proto3" json:"mtime,omitempty"`
+	// The SHA-256 of the content, in lowercase hex. Empty where the answer did not read the content.
+	Hash string `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
+	// The number of writes the vault had taken when the answer was made. Zero where the answer
+	// does not say.
+	Version       uint64 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -182,6 +187,20 @@ func (x *FileStat) GetSize() int64 {
 func (x *FileStat) GetMtime() int64 {
 	if x != nil {
 		return x.Mtime
+	}
+	return 0
+}
+
+func (x *FileStat) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *FileStat) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
 	}
 	return 0
 }
@@ -297,11 +316,13 @@ var File_numen_v1_shared_proto protoreflect.FileDescriptor
 
 const file_numen_v1_shared_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/shared.proto\x12\bnumen.v1\"H\n" +
+	"\x15numen/v1/shared.proto\x12\bnumen.v1\"v\n" +
 	"\bFileStat\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x14\n" +
-	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\"/\n" +
+	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\x12\x12\n" +
+	"\x04hash\x18\x04 \x01(\tR\x04hash\x12\x18\n" +
+	"\aversion\x18\x05 \x01(\x04R\aversion\"/\n" +
 	"\x05Range\x12\x14\n" +
 	"\x05start\x18\x01 \x01(\x05R\x05start\x12\x10\n" +
 	"\x03end\x18\x02 \x01(\x05R\x03end\",\n" +

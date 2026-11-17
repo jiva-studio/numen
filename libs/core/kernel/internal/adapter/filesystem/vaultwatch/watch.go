@@ -61,6 +61,7 @@ func (w Watcher) WatchVault(
 	// The shape is taken before the first event, because the first event may be
 	// a folder leaving: what it was can only be known from before it went.
 	shape, why := vaultreader.ReadShape(reader)
+	shape.SetBeforeRead(w.Hub.Place)
 
 	raw := make(chan notify.EventInfo, handover)
 	stop, err := w.Hub.Watch(reader.Root(), true, raw)

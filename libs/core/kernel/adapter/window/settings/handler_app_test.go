@@ -13,7 +13,7 @@ import (
 
 func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
 	handler := NewHandler(NewValues(setting.NewGet(
-		func() (string, string, error) { return `{"v":1}`, "/home/numen.json", nil },
+		func() (string, string, uint64, error) { return `{"v":1}`, "/home/numen.json", 1, nil },
 		nil,
 		func() []plugin.Setting {
 			return []plugin.Setting{

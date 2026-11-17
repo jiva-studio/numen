@@ -76,8 +76,8 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			Written:    hooks.Written,
 		},
 		hostvault.Files{
-			Stat:        file.NewStatFile(vaultReaders(c.vault)),
-			ReadFile:    file.NewReadFile(vaultReaders(c.vault)),
+			Stat:        file.NewHashFile(vaultReaders(c.vault), vaultVersions(c.vault)),
+			ReadFile:    file.NewReadFile(vaultReaders(c.vault), vaultVersions(c.vault)),
 			RangeReader: file.Read{Readers: vaultReaders(c.vault)},
 		},
 		hostvault.Writer{

@@ -33,7 +33,7 @@ func newPluginVaultList(f *showing) vaultapi.List {
 		Edit:    windowsession.VaultEdits{Add: vaults.Change.Add, Rename: vaults.Change.Rename, Remove: vaults.Change.Remove},
 		Find:    listing.Find,
 		Missing: listing.FolderCheck,
-		Open:    f.installation,
+		Open:    f.cases.OpenPlugin,
 	})
 }
 

@@ -15,7 +15,7 @@ The need: a scenario stamps a note with the current time.
 
 The need: a search remembers the floor a plugin measured for a vault and a recipe.
 
-- The port has three methods, read, write and delete, each called from a use case: `FloorStore` at `libs/core/kernel/port/searchpolicyport/policy.go:9-17`.
+- The port has three methods, read, write and delete, each called from a use case: `FloorStore` at `libs/core/kernel/usecase/search/floor_store.go:9-17`.
 - The adapter is SQL and nothing else: `ReadFloor` runs a query and maps `sql.ErrNoRows` to "none kept" at `libs/core/kernel/adapter/index/searchpolicy/repository.go:36-48`. It does not choose which floor wins.
 - The decision is the use case's: the stored floor, then the hint of the embedding model, then the default, in `FloorPolicy.Get` at `libs/core/kernel/usecase/search/floor.go:75-82`.
 

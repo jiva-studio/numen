@@ -72,6 +72,9 @@ message GetSettingsResponse {
 
   reserved 9;
 
+  // The version of the state `written` is read from. It grows with every write the core takes, so
+  // an answer with a smaller version than one already taken is older than it and is dropped.
+  uint64 version = 10;
 }
 
 // Setting is one setting of the file and what to put there.
@@ -97,7 +100,14 @@ message WriteSettingsRequest {
   repeated Setting settings = 1;
 }
 
-message WriteSettingsResponse {}
+message WriteSettingsResponse {
+  // Every setting after the write, in the shape of GetSettingsResponse.written.
+  string written = 1;
+
+  // The version of the state `written` stands for, as in GetSettingsResponse.version. It is greater
+  // than the version of any answer the core gave before the write.
+  uint64 version = 2;
+}
 
 message RetryPluginRequest {
   // The plugin, by its id.

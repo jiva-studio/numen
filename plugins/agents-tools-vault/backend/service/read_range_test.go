@@ -142,7 +142,7 @@ func newRangeLibrary(t *testing.T) (library, rangeVault, *textCalls, *tools.Regi
 
 func TestFileReadReturnsTheRangeTheHostGaveAndTheSizeOfTheFile(t *testing.T) {
 	_, vault, _, registry := newRangeLibrary(t)
-	stat := domain.FileStat{Path: "data.txt", Size: 4096, ModTime: time.Unix(0, 1700000000000000000)}
+	stat := domain.FileStat{Path: "data.txt", Size: 4096, ModTime: time.Unix(0, 1700000000000000000), Hash: strings.Repeat("c", 64)}
 	vault.answers["data.txt"] = host.FileRange{Text: "line 2", Start: 8, Stat: stat}
 
 	var out fileReadAnswer
@@ -158,7 +158,7 @@ func TestFileReadReturnsTheRangeTheHostGaveAndTheSizeOfTheFile(t *testing.T) {
 	if out.Path != "data.txt" || out.Text != "line 2" || out.Start != 8 || out.Length != 6 || out.Size != 4096 {
 		t.Errorf("file_read returned %+v, want line 2 from 8 for 6 bytes of a file of 4096", out)
 	}
-	if want := "4096-" + strconv.FormatInt(stat.ModTime.UnixNano(), 10); out.Fingerprint != want {
+	if want := stat.Hash; out.Fingerprint != want {
 		t.Errorf("the fingerprint is %q, want %q from the file stat of the range", out.Fingerprint, want)
 	}
 }

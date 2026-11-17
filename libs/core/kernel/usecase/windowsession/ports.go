@@ -53,15 +53,8 @@ type Door interface {
 	Close()
 }
 
-// Closer ends one resource of the window. The context bounds a close that waits.
-type Closer interface {
-	Close(ctx context.Context) error
-}
-
+// CloseFunc ends one resource of the window. The context bounds a close that waits.
 type CloseFunc func(ctx context.Context) error
-
-// Close calls f.
-func (f CloseFunc) Close(ctx context.Context) error { return f(ctx) }
 
 // ModelSource is the embedder of the window: the model it reads under and its announcements.
 type ModelSource interface {

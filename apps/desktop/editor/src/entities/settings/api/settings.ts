@@ -136,6 +136,12 @@ interface ChosenPath {
   readonly problem: string
 }
 
+/** Every setting after a write, and the version of that state. */
+export interface SettingsWritten {
+  readonly written: string
+  readonly version: bigint
+}
+
 /** The settings of the vault over `settingsService`. */
 export const createSettingsApi = (settingsService: WindowClients['settingsService']) => {
   /**
@@ -159,6 +165,7 @@ export const createSettingsApi = (settingsService: WindowClients['settingsServic
       return {
         written: answer.written,
         path: answer.path,
+        version: answer.version,
         plugins: answer.plugins.map((p) => ({
           id: p.id,
           name: p.name,
@@ -178,10 +185,12 @@ export const createSettingsApi = (settingsService: WindowClients['settingsServic
       }
     },
 
-    updateSettings: async (edits: readonly SettingEdit[]): Promise<void> => {
-      await settingsService.writeSettings({
+    /** The settings written, answered with every setting after the write and its version. */
+    updateSettings: async (edits: readonly SettingEdit[]): Promise<SettingsWritten> => {
+      const answer = await settingsService.writeSettings({
         settings: edits.map((one) => ({ at: [...one.at], value: one.value })),
       })
+      return { written: answer.written, version: answer.version }
     },
 
     /**

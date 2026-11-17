@@ -35,6 +35,9 @@ export interface NotesReader {
 /** How long a burst of changes of the vault waits before the notes are read once. */
 const REFRESH_DELAY_MS = 500
 
+/** The most notes the vault reads the related notes of in one call. */
+const MAX_PATHS_PER_CALL = 64
+
 interface Entry {
   readonly path: string
   readonly noteGraph: ShallowRef<NoteGraph | null>
@@ -49,22 +52,56 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
   const changed = new Set<string>()
   let pending: ReturnType<typeof setTimeout> | undefined
 
-  const read = async (entry: Entry) => {
-    entry.latest += 1
-    const mine = entry.latest
-    entry.isReading = true
+  const queued = new Set<Entry>()
+  let isFlushScheduled = false
+
+  const readChunk = async (chunk: readonly Entry[]) => {
+    const marks = chunk.map((entry) => ++entry.latest)
+    const isCurrent = (entry: Entry, index: number) => marks[index] === entry.latest
     try {
-      const answer = await source.notes.listRelatedNotes(entry.path, 2)
-      if (mine !== entry.latest) return
-      entry.noteGraph.value = answer
-      entry.isReadEnded.value = true
+      const answers = await source.notes.listRelatedNotes(
+        chunk.map((entry) => entry.path),
+        1,
+      )
+      chunk.forEach((entry, index) => {
+        if (!isCurrent(entry, index)) return
+        const answer = answers[index]
+        entry.noteGraph.value = answer?.focus.path ? answer : null
+        entry.isReading = false
+        entry.isReadEnded.value = true
+      })
     } catch (error) {
-      if (mine !== entry.latest) return
-      entry.noteGraph.value = null
-      entry.isReadEnded.value = true
-      source.reportFailure(error)
+      let isReported = false
+      chunk.forEach((entry, index) => {
+        if (!isCurrent(entry, index)) return
+        entry.noteGraph.value = null
+        entry.isReading = false
+        entry.isReadEnded.value = true
+        if (!isReported) source.reportFailure(error)
+        isReported = true
+      })
     }
-    entry.isReading = false
+  }
+
+  const flush = () => {
+    isFlushScheduled = false
+    const toRead = [...queued].filter((entry) => entries.get(entry.path) === entry)
+    queued.clear()
+    if (!source.settings.showNames.value) {
+      for (const entry of toRead) entry.isReading = false
+      return
+    }
+    for (let start = 0; start < toRead.length; start += MAX_PATHS_PER_CALL) {
+      readChunk(toRead.slice(start, start + MAX_PATHS_PER_CALL)).catch(source.reportFailure)
+    }
+  }
+
+  const read = (entry: Entry) => {
+    entry.isReading = true
+    queued.add(entry)
+    if (isFlushScheduled) return
+    isFlushScheduled = true
+    queueMicrotask(flush)
   }
 
   const isAffected = (entry: Entry, event: VaultChangeEvent) =>
@@ -89,7 +126,7 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
       if (!source.settings.showNames.value) return
       for (const path of paths) {
         const entry = entries.get(path)
-        if (entry) read(entry).catch(source.reportFailure)
+        if (entry) read(entry)
       }
     }, REFRESH_DELAY_MS)
   })
@@ -97,7 +134,7 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
   const stopWatching = watch(source.settings.showNames, (isShown) => {
     for (const entry of entries.values()) {
       if (isShown) {
-        read(entry).catch(source.reportFailure)
+        read(entry)
         continue
       }
       entry.latest += 1
@@ -129,7 +166,7 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
       }
       entry.leases += 1
       if (source.settings.showNames.value && !entry.isReading && !entry.noteGraph.value) {
-        read(entry).catch(source.reportFailure)
+        read(entry)
       }
       const held = entry
       const isLoaded = computed(() => !source.settings.showNames.value || held.isReadEnded.value)
@@ -144,6 +181,7 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
           if (held.leases > 0) return
           entries.delete(held.path)
           changed.delete(held.path)
+          queued.delete(held)
         },
       }
     },
@@ -151,6 +189,7 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
       if (pending !== undefined) clearTimeout(pending)
       pending = undefined
       changed.clear()
+      queued.clear()
       stopWatching()
       subscription.dispose()
     },

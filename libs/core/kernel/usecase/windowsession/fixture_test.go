@@ -300,7 +300,7 @@ type IndexPorts struct {
 
 type ShutdownPorts struct {
 	Door    Door
-	Closers []Closer
+	Closers []CloseFunc
 }
 
 // UseCases holds what a test drives: vault switching under Switching, shutdown under Closing. It keeps the
