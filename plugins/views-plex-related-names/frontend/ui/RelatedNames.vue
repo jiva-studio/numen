@@ -46,6 +46,9 @@ const emit = defineEmits<{
 }
 
 .related-names__name {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.3em;
   padding: 0;
   border: 0;
   background: transparent;
@@ -61,8 +64,8 @@ const emit = defineEmits<{
 .related-names__arrow {
   width: 0.7em;
   height: 0.7em;
-  margin-right: 0.25em;
-  vertical-align: -0.05em;
+  flex: none;
+  margin-block-start: 0.3em;
   color: inherit;
 }
 </style>
