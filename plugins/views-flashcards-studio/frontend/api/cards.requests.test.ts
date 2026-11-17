@@ -16,11 +16,11 @@ vi.mock('@numen/plugin-sdk', async (original) => ({
 }))
 
 /** A file the service stamped, and the one string the window carries it as. */
-const stampedAt = { path: 'Deck.md', size: 12, mtime: '34' }
-const carried = '12 34 Deck.md'
+const stampedAt = { path: 'Deck.md', size: 12, mtime: '34', hash: 'ab', version: '7' }
+const carried = '12:7:ab 34 Deck.md'
 
 /** A file the window read once, as the service takes it back. */
-const seenAt = { path: 'Deck.md', size: 12, mtime: '34' }
+const seenAt = { path: 'Deck.md', size: 12, mtime: '34', hash: 'ab', version: '7' }
 
 const deckMessage = {
   path: 'Deck.md',

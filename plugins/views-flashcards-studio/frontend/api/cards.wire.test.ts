@@ -28,7 +28,7 @@ const replyWith = (answer: unknown) => {
 }
 
 /** A file the window read, in the one string it carries it as. */
-const readItem = '12 34 Deck.md'
+const readItem = '12:7:ab 34 Deck.md'
 
 const { cards } = await import('./cards')
 
@@ -114,7 +114,7 @@ describe('reading a deck', () => {
         tail: 'after',
         problems: [],
       },
-      at: { path: 'Deck.md', size: 12, mtime: '34' },
+      at: { path: 'Deck.md', size: 12, mtime: '34', hash: 'ab', version: '7' },
       bound: 400,
     })
 
@@ -161,7 +161,10 @@ describe('reading a deck', () => {
 
 describe('writing a deck', () => {
   it('takes the file the window read back apart into what the schema holds', async () => {
-    replyWith({ at: { path: 'Deck.md', size: 12, mtime: '34' }, bound: 400 })
+    replyWith({
+      at: { path: 'Deck.md', size: 12, mtime: '34', hash: 'ab', version: '7' },
+      bound: 400,
+    })
 
     await cards.writeDeck(
       'Deck.md',
@@ -184,7 +187,13 @@ describe('writing a deck', () => {
       readItem,
     )
 
-    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: 12, mtime: '34' })
+    expect(request[0]?.baseline).toEqual({
+      path: 'Deck.md',
+      size: 12,
+      mtime: '34',
+      hash: 'ab',
+      version: '7',
+    })
     expect(request[0]?.cards).toEqual([
       { cardId: 'a1', heading: 'Entropy', cardModelLink: 'Word', preamble: '', values: [] },
     ])
@@ -223,7 +232,7 @@ describe('a card model', () => {
         tail: '',
         problems: [],
       },
-      at: { path: 'Word.md', size: 12, mtime: '34' },
+      at: { path: 'Word.md', size: 12, mtime: '34', hash: 'ab', version: '7' },
     })
 
     const answer = await cards.readCardModel('Word.md')
@@ -239,7 +248,7 @@ describe('a card model', () => {
   })
 
   it('is written with its fields and its templates', async () => {
-    replyWith({ at: { path: 'Word.md', size: 12, mtime: '34' } })
+    replyWith({ at: { path: 'Word.md', size: 12, mtime: '34', hash: 'ab', version: '7' } })
 
     const answer = await cards.writeCardModel(
       'Word.md',
@@ -253,7 +262,7 @@ describe('a card model', () => {
     )
 
     expect(request[0]?.fields).toEqual(['Front', 'Back'])
-    expect(answer.ok && answer.value.at).toBe('12 34 Word.md')
+    expect(answer.ok && answer.value.at).toBe('12:7:ab 34 Word.md')
   })
 })
 
@@ -263,7 +272,7 @@ describe('renaming a field', () => {
       decks: ['Words.md', 'Roots.md'],
       cards: 12,
       notWritten: [{ path: 'Old.md', problem: { kind: 'field_not_renamed', text: 'Front' } }],
-      at: { path: 'Word.md', size: 12, mtime: '34' },
+      at: { path: 'Word.md', size: 12, mtime: '34', hash: 'ab', version: '7' },
     })
 
     expect(await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, readItem)).toEqual(
@@ -271,7 +280,7 @@ describe('renaming a field', () => {
         decks: ['Words.md', 'Roots.md'],
         cards: 12,
         notWritten: [{ path: 'Old.md', text: 'Front' }],
-        at: '12 34 Word.md',
+        at: '12:7:ab 34 Word.md',
       }),
     )
   })

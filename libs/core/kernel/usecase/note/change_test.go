@@ -552,6 +552,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	read.Hash = domain.HashContent([]byte("# Entropy\n"))
 
 	pos, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nOne.\n", read)
 	if err != nil {

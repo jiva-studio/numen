@@ -58,6 +58,7 @@ func (f *files) StatFile(_ context.Context, path string) (domain.FileStat, error
 	if kind, set := f.kinds[path]; set {
 		fp.Kind = kind
 	}
+	fp.Hash = ""
 	return fp, nil
 }
 
@@ -73,7 +74,7 @@ func (f *files) Read(_ context.Context, path string) ([]byte, error) {
 }
 
 func (f *files) Write(_ context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error) {
-	if !stat.IsZero() && !f.stats[path].IsUnchanged(stat) {
+	if !stat.IsZero() && domain.HashContent([]byte(f.content[path])) != stat.Hash {
 		return domain.FileStat{}, edit.ErrStale
 	}
 	return f.put(path, string(content)), nil
@@ -168,6 +169,7 @@ func TestAnEditOverANoteThatMovedIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	read.Hash = domain.HashContent([]byte("# A\n"))
 	f.put("A.md", "# A, edited by somebody\n")
 	e := editing(f)
 	e.FileStat = read
@@ -432,6 +434,7 @@ func TestEditSpliceAndHelperBranches(t *testing.T) {
 	if err != nil {
 		t.Fatalf("StatFile: %v", err)
 	}
+	statA.Hash = domain.HashContent([]byte("# A\n"))
 	eSameStat := editing(fSameStat)
 	eSameStat.Baseline = &edit.Baseline{Prose: "different prose", FileStat: statA}
 	eSameStat.FileStat = statA
@@ -449,6 +452,7 @@ func TestEditSpliceAndHelperBranches(t *testing.T) {
 	if err != nil {
 		t.Fatalf("StatFile: %v", err)
 	}
+	statNoStat.Hash = domain.HashContent([]byte("# A\n"))
 	fNoStat.statCalls = 0
 	fNoStat.statErr = errors.New("StatFile must not be called")
 	eNoStat := editing(fNoStat)

@@ -545,7 +545,7 @@ func TestCreate_AcceptsLongNoteName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := domain.FileStat{Size: info.Size(), ModTime: info.ModTime()}
+	target := domain.FileStat{Size: info.Size(), ModTime: info.ModTime(), Hash: domain.HashContent([]byte("# Note\n"))}
 	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), target); err != nil {
 		t.Fatalf("the note could not be saved: %v", err)
 	}

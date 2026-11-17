@@ -12,7 +12,7 @@ import (
 
 // Files reads the files of the vault.
 type Files struct {
-	Stat        *file.StatFile
+	Stat        *file.HashFile
 	ReadFile    *file.ReadFile
 	RangeReader file.Read
 
