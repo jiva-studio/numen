@@ -87,11 +87,7 @@ const { frame, waiting, isMoving } = usePlexTransition(
     labelType: measures.value?.labelType,
     room: rooms.getNodeRoom.value,
   }),
-  {
-    duration: () => props.duration,
-    clock: props.clock,
-    isReady: rooms.isSettled,
-  },
+  { duration: () => props.duration, clock: props.clock, isReady: rooms.isSettled },
 )
 
 /**
