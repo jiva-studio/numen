@@ -3,9 +3,9 @@ module github.com/jiva-studio/numen/apps/mobile
 go 1.26.11
 
 require (
-	github.com/jiva-studio/numen/libs/atomicfile v0.0.0 // indirect
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0
 	github.com/jiva-studio/numen/libs/core/protocol v0.0.0
+	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0 // indirect
 	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0 // indirect
 	golang.org/x/mobile v0.0.0-20260821190718-4776eadac327
 )
@@ -46,13 +46,11 @@ replace github.com/jiva-studio/numen/libs/core/kernel => ../../libs/core/kernel
 
 replace github.com/jiva-studio/numen/libs/core/protocol => ../../libs/core/protocol
 
-replace github.com/jiva-studio/numen/libs/shared/rerank => ../../libs/shared/rerank
-
 replace github.com/jiva-studio/numen/libs/note => ../../libs/note
 
 replace github.com/jiva-studio/numen/libs/plugin/catalog => ../../libs/plugin/catalog
 
-replace github.com/jiva-studio/numen/libs/atomicfile => ../../libs/atomicfile
+replace github.com/jiva-studio/numen/libs/shared/atomicfile => ../../libs/shared/atomicfile
 
 require (
 	connectrpc.com/connect v1.21.1

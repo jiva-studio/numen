@@ -4,7 +4,7 @@
 
 # ---------------------------------- Modules -----------------------------------
 CORE     := libs/core/kernel
-ATOMICFILE := libs/atomicfile
+ATOMICFILE := libs/shared/atomicfile
 NOTE    := libs/note
 PLUGIN_CATALOG := libs/plugin/catalog
 UI       := libs/ui/components
