@@ -32,9 +32,10 @@ import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
 
 /**
  * `room` is the space a note keeps over and under its pill; a note without one keeps none.
- * `keep` is the set of notes a former arrangement admitted: only they are placed, none of them is cut again,
- * so a change of the rooms moves the notes and never changes which are shown.
  * `only` limits the notes that may be admitted to a set a former arrangement chose; the window still cuts them.
+ * `keep` is the set of notes a former arrangement showed: exactly they are placed, none of them is cut again,
+ * so a change of the rooms moves the notes and never changes which are shown. The packing and the shape are
+ * chosen as for the arrangement that showed them, so the same inputs give the same positions.
  */
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
@@ -62,7 +63,7 @@ export function arrangePlex(
 ): PlexFrame {
   const request = applyRoom(resolveOptions(options))
   const focusNode = assertGraph(graph)
-  const requested = requestKept(requestNodes(graph.nodes, request), keep ?? only)
+  const requested = requestKept(requestNodes(graph.nodes, request), only)
   const rooms = createRoomLookup(graph.nodes, room)
 
   // Lays the nodes out at the given options, each keeping the room it is given: the focus, then the placement.
@@ -156,26 +157,28 @@ export function arrangePlex(
     }
   }
   // The placement keeps its usual shape, and leaves it only when another shape holds more notes.
-  const inShape = keep
-    ? { packing: crowded, admitted: requested, isFitFirst: false }
-    : admitInWindow(false)
+  const inShape = admitInWindow(false)
   const fitFirst =
-    !keep && countNodes(inShape.admitted) < countNodes(requested)
+    countNodes(inShape.admitted) < countNodes(requested)
       ? admitInWindow(true, inShape.admitted)
       : inShape
   const chosen = countNodes(fitFirst.admitted) > countNodes(inShape.admitted) ? fitFirst : inShape
   const { packing: resolved, admitted, isFitFirst } = chosen
-  const admittedOverflow = countOverflow(graph.nodes, admitted)
 
   // The gaps stay as packed: they close in a crowded window and never open to fill a roomy one.
   const fit: Fit = { margin, rooms }
-  const finalLayout = lay(resolved, admitted, rooms, { isFitFirst })
+  const finalLayout = lay(resolved, keep ? addKept(admitted, requested, keep) : admitted, rooms, {
+    isFitFirst,
+  })
   const { focus } = finalLayout
-  const placed =
-    viewport && !keep
+  const placed = keep
+    ? finalLayout.placed.filter((node) => keep.has(node.id))
+    : viewport
       ? finalLayout.placed.filter((node) => isInside(node, viewport, fit))
       : finalLayout.placed
-  const overflow = addDropped(admittedOverflow, finalLayout.placed, placed)
+  const overflow = keep
+    ? countOverflow(graph.nodes, requestKept(requested, keep))
+    : addDropped(countOverflow(graph.nodes, admitted), finalLayout.placed, placed)
   const nodes = [focus, ...placed]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
@@ -214,6 +217,20 @@ function requestKept(
       relation,
       nodes.filter((node) => keep.has(node.id)),
     ]),
+  )
+}
+
+/** The notes admitted, and the notes of `keep` that were cut, in the order they arrived. */
+function addKept(
+  admitted: NodesByRelation,
+  requested: NodesByRelation,
+  keep: ReadonlySet<string>,
+): NodesByRelation {
+  return Object.fromEntries(
+    Object.entries(requested).map(([relation, nodes]) => {
+      const admittedIds = new Set(admitted[relation as PlexRelation]?.map((node) => node.id))
+      return [relation, nodes.filter((node) => keep.has(node.id) || admittedIds.has(node.id))]
+    }),
   )
 }
 
