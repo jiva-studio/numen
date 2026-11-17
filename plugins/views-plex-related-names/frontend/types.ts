@@ -8,7 +8,6 @@ export interface RelatedName {
   readonly path: string
   readonly title: string
   readonly relation: NameRelation
-  /** Which note wrote the link of a reference; absent for the other relations. */
   readonly direction?: LinkDirection
   readonly label: string
 }

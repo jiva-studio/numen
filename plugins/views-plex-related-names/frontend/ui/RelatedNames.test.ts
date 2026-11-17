@@ -49,7 +49,6 @@ const show = (props: { names: readonly RelatedName[]; showArrows?: boolean }) =>
 
 const getButtons = (wrapper: VueWrapper) => wrapper.findAll('button')
 
-/** The icon name of the arrow drawn in a button: the lucide class that names it. */
 const getIconName = (button: Element | undefined): string | undefined =>
   Array.from(button?.querySelector('svg')?.classList ?? [])
     .find((one) => /^lucide-[a-z-]+$/.test(one) && !one.endsWith('-icon'))
