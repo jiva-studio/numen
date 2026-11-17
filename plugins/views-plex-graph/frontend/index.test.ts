@@ -252,7 +252,24 @@ describe('the look of an open plex', () => {
     return { ctx, state, tab, getPlex: () => tab.findComponent(Plex) }
   }
 
+  beforeEach(() => {
+    // A window that reports its size, which the plex waits for before it draws.
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(private readonly took: ResizeObserverCallback) {}
+        observe(target: Element) {
+          if (!target.classList.contains('plex-frame')) return
+          const contentRect = { width: 1200, height: 800 } as DOMRectReadOnly
+          this.took([{ contentRect } as ResizeObserverEntry], this as unknown as ResizeObserver)
+        }
+        disconnect() {}
+      },
+    )
+  })
+
   afterEach(() => {
+    vi.unstubAllGlobals()
     document.body.replaceChildren()
   })
 

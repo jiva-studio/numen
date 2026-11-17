@@ -7,12 +7,14 @@
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import Plex from './Plex.vue'
 import { byHandle, byLongPress } from '../model/interaction/reachStrategy'
 import { byDoubleClick, byDoubleTap } from '../model/interaction/destination'
 import { APART, TAP } from '../model/interaction/touchTiming'
 import { LONG_PRESS_DELAY } from '../model/interaction/longPress'
 import { build } from '../fixtures/build'
+import { fixedViewport } from '../fixtures/viewport'
 
 const GRAPH = build('A node', { parent: 1, child: 2, jump: 1 })
 
@@ -31,11 +33,18 @@ function stubMatrix(element: SVGSVGElement) {
   element.releasePointerCapture = vi.fn()
 }
 
-const mountPlex = (props: Record<string, unknown> = {}) => {
+const mountPlex = async (props: Record<string, unknown> = {}) => {
   const plex = mount(Plex, {
-    props: { graph: GRAPH, duration: 0, reaching: byLongPress(), ...props },
+    props: {
+      graph: GRAPH,
+      duration: 0,
+      viewport: fixedViewport,
+      reaching: byLongPress(),
+      ...props,
+    },
     attachTo: document.body,
   })
+  await nextTick()
   const svg = plex.find('svg').element as SVGSVGElement
   stubMatrix(svg)
   return { plex, svg }
@@ -50,20 +59,20 @@ afterEach(() => {
 
 describe('resting on a node', () => {
   it('offers no handle, because there is no hover to find one with', async () => {
-    const { plex } = mountPlex()
+    const { plex } = await mountPlex()
     await plex.get('[aria-label^="A node"]').trigger('pointerenter')
     expect(plex.find('.plex__handle').exists()).toBe(false)
   })
 
   it('leaves the handle where the hand is the reader', async () => {
-    const { plex } = mountPlex({ reaching: byHandle })
+    const { plex } = await mountPlex({ reaching: byHandle })
     await plex.get('[aria-label^="A node"]').trigger('pointerenter')
     expect(plex.find('.plex__handle').exists()).toBe(true)
   })
 
   it('reaches out into the relation the finger then travels to', async () => {
     vi.useFakeTimers()
-    const { plex, svg } = mountPlex()
+    const { plex, svg } = await mountPlex()
 
     plex
       .get('[aria-label^="A node"]')
@@ -80,7 +89,7 @@ describe('resting on a node', () => {
 
   it('leaves a tap alone, so a node still travels when touched', async () => {
     vi.useFakeTimers()
-    const { plex } = mountPlex()
+    const { plex } = await mountPlex()
     const node = plex.get('[aria-label^="A node"]')
 
     node.element.dispatchEvent(pointer('pointerdown', 600, 400, { pointerType: 'touch' }))
@@ -94,14 +103,14 @@ describe('resting on a node', () => {
 
 describe('asking for a node on its own', () => {
   it('answers the second click where the hand is the reader', async () => {
-    const { plex } = mountPlex({ showing: byDoubleClick })
+    const { plex } = await mountPlex({ showing: byDoubleClick })
     await plex.get('[aria-label^="A node"]').trigger('dblclick')
     expect(plex.emitted('show')).toStrictEqual([['focus', 'current']])
   })
 
   it('answers two taps where the finger is', async () => {
     vi.useFakeTimers()
-    const { plex } = mountPlex({ showing: byDoubleTap() })
+    const { plex } = await mountPlex({ showing: byDoubleTap() })
     const node = plex.get('[aria-label^="A node"]')
 
     node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
@@ -113,7 +122,7 @@ describe('asking for a node on its own', () => {
 
   it('leaves two taps too far apart in time alone', async () => {
     vi.useFakeTimers()
-    const { plex } = mountPlex({ showing: byDoubleTap() })
+    const { plex } = await mountPlex({ showing: byDoubleTap() })
     const node = plex.get('[aria-label^="A node"]')
 
     node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
@@ -126,7 +135,7 @@ describe('asking for a node on its own', () => {
 
   it('leaves two taps too far apart on the screen alone', async () => {
     vi.useFakeTimers()
-    const { plex } = mountPlex({ showing: byDoubleTap() })
+    const { plex } = await mountPlex({ showing: byDoubleTap() })
     const node = plex.get('[aria-label^="A node"]')
 
     node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
@@ -137,7 +146,7 @@ describe('asking for a node on its own', () => {
   })
 
   it('takes no second click while the finger is the reader', async () => {
-    const { plex } = mountPlex({ showing: byDoubleTap() })
+    const { plex } = await mountPlex({ showing: byDoubleTap() })
     await plex.get('[aria-label^="A node"]').trigger('dblclick')
     expect(plex.emitted('show')).toBeUndefined()
   })
