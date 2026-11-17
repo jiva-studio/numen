@@ -18,7 +18,7 @@ type values struct {
 func getDefaultValues() values {
 	return values{
 		Programs: fetch.Defaults(),
-		Fetch:    fetch.Settings{Captions: nil, IsAutomatic: true, CopyMaxSize: defaultCopyMaxSize},
+		Fetch:    fetch.Settings{Captions: nil, IsAutomatic: true, CopyMaxSize: defaultCopyMaxSize, IsTextDownloadAutomatic: false},
 	}
 }
 
