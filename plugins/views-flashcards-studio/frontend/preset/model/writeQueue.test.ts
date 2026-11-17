@@ -179,6 +179,56 @@ describe('a read that began before a write', () => {
   })
 })
 
+describe('a write answered after a newer read was taken', () => {
+  it('leaves the field unwritten and the newer revision in place', async () => {
+    const one = createOpenPreset('presets/Daily.md', '2026-11-17', {})
+    const settings = { ...DEFAULTS, minutesADay: 45 }
+    const late = createGate()
+    const core = {
+      read: async () =>
+        asValue({
+          preset: {
+            path: 'presets/Daily.md',
+            title: 'Daily',
+            settings: { ...DEFAULTS, minutesADay: 60 },
+            problems: [],
+            stops: StopReason.NOTHING,
+            stopsOn: StopReason.NOTHING,
+          },
+          at: 'v3',
+          version: 3n,
+          bounds: {},
+        }),
+      write: () => late.promise,
+      curve: async () => {
+        throw new Error('no curve')
+      },
+    } as unknown as Presets
+    one.settings.value = settings
+    one.writeQueue.unsaved.dirtyFields.add('minutesADay')
+    const context = {
+      core,
+      bounds: ref({}),
+      titles: new Map<string, string>(),
+      today: '2026-11-17',
+    }
+
+    const writing = requestWrite(one.writeQueue, {
+      path: one.path.value,
+      settings,
+      core,
+      writeMessage: () => undefined,
+    })
+    await readPreset(one, context)
+    late.open({ ok: true, value: { at: 'v2', version: 2n } })
+    await writing
+
+    expect(one.writeQueue.unsaved.revision).toBe('v3')
+    expect(one.writeQueue.unsaved.dirtyFields.has('minutesADay')).toBe(true)
+    expect(one.settings.value.minutesADay).toBe(45)
+  })
+})
+
 describe('a read of a file that no longer exists', () => {
   it('is taken at any version, and the next read of the file is taken again', async () => {
     const one = createOpenPreset('presets/Daily.md', '2026-11-17', {})

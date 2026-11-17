@@ -89,7 +89,7 @@ export const sendWrite = async (queue: WriteQueue, options: WriteOptions): Promi
     return
   }
   queue.status.errorMessage.value = ''
-  takeVersion(queue, answer.value.version, answer.value.at)
+  if (!takeVersion(queue, answer.value.version, answer.value.at)) return
   queue.unsaved.dirtyFields.clear()
   queue.unsaved.hasWarned = false
 }
