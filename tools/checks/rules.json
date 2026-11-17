@@ -353,6 +353,24 @@
       "target": "exhaustruct-include"
     },
     {
+      "name": "go/extractable-requirements",
+      "paths": [
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "library",
+        "plugin",
+        "security",
+        "fast"
+      ],
+      "selftest": "structure/go/extractable-requirements/check_test.go",
+      "runner": "go",
+      "target": "extractable-requirements"
+    },
+    {
       "name": "go/identities",
       "paths": [
         "libs/core/kernel/domain/**",
@@ -770,6 +788,24 @@
       "target": "scan-complete"
     },
     {
+      "name": "go/shared-leaf",
+      "paths": [
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "library",
+        "plugin",
+        "security",
+        "fast"
+      ],
+      "selftest": "structure/go/shared-leaf/check_test.go",
+      "runner": "go",
+      "target": "shared-leaf"
+    },
+    {
       "name": "go/sdk-protocol-encapsulation",
       "paths": [
         "**/*.go",
@@ -1113,6 +1149,24 @@
       "runner": "verifiers",
       "module": "structure/ts/dependency-graph/check.mjs",
       "export": "DEPENDENCY_VERIFIERS"
+    },
+    {
+      "name": "ts/extractable-set",
+      "paths": [
+        "**/package.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "plugin",
+        "security",
+        "fast"
+      ],
+      "selftest": "structure/ts/extractable-set/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/extractable-set/check.mjs",
+      "export": "EXTRACTABLE_SET_VERIFIERS"
     },
     {
       "name": "ts/discipline",
