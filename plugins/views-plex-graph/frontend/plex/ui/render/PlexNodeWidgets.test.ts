@@ -36,6 +36,7 @@ const mountWidgets = (props: Partial<InstanceType<typeof PlexNodeWidgets>['$prop
       side: 'above',
       entries: entries('tags', 'parents'),
       path: 'notes/Entropy.md',
+      width: node.width,
       ...props,
     },
   })

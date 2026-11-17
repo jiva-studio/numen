@@ -185,6 +185,7 @@ const getRole = (node: PlacedNode): GestureRole => {
         :side="side"
         :entries="(side === 'above' ? widgetsAbove : widgetsBelow) ?? []"
         :path="getPath?.(node.id) ?? ''"
+        :width="nodeSize.width"
         :clock="clock"
         @widgets="setWidgets?.(node.id, side, $event)"
         @ready="setReady?.(node.id, side, $event)"

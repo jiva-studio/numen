@@ -21,6 +21,8 @@ const props = withDefaults(
     side: 'above' | 'below'
     entries: readonly PlexWidget[]
     path: string
+    /** The width the views wrap at: the width the arrangement reserves for them, whatever width it gives the node. */
+    width: number
     clock?: Clock | undefined
   }>(),
   { clock: () => browserClock },
@@ -51,9 +53,9 @@ const getTop = () =>
     class="plex__widgets"
     :class="`plex__widgets--${side}`"
     :opacity="node.opacity"
-    :x="node.x - node.width / 2"
+    :x="node.x - width / 2"
     :y="getTop()"
-    :width="node.width"
+    :width="width"
     :height="EXTENT"
   >
     <div class="plex__widgets-box">
