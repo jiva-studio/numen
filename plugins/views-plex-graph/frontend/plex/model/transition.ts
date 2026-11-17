@@ -58,7 +58,7 @@ export function usePlexTransition(
   let handle: number | null = null
   let isFramePending = false
   let frameId = 0
-  let arrangedRoom: unknown
+  let arrangedRoom: ArrangeInput['room']
 
   const cancelFrame = () => {
     frameId += 1

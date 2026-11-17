@@ -75,10 +75,6 @@ const rooms = useWidgetRooms(options)
 
 const hasWidgets = () => !!(props.widgetsAbove?.length || props.widgetsBelow?.length)
 
-const isLoaded = (ids: readonly string[]) =>
-  // Without widgets there is nothing to wait for.
-  !hasWidgets() || rooms.areLoaded(ids)
-
 const { frame, waiting, isMoving } = usePlexTransition(
   () => props.graph,
   () => ({
@@ -92,7 +88,8 @@ const { frame, waiting, isMoving } = usePlexTransition(
   {
     duration: () => props.duration,
     clock: props.clock,
-    isReady: isLoaded,
+    // Without widgets there is nothing to wait for.
+    isReady: (ids) => !hasWidgets() || rooms.areLoaded(ids),
     // The size of the window decides which nodes are shown, so no widget mounts before it is reported.
     isActive: () => isMeasured.value || !hasWidgets(),
   },
