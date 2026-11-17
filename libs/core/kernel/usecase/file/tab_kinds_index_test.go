@@ -96,18 +96,20 @@ func newShippedChoice() *tabkind.Choose {
 	}, markdownTypes{}, nil)
 }
 
-var tabKindNotes = map[string]string{
-	"plain.md":        "# plain\n",
-	"deck.md":         "---\ntype: deck\n---\n# deck\n",
-	"search.md":       "---\ntype: search\nquery: tide\n---\n",
-	"link.md":         "---\ntype: link\nurl: https://tides.example/mill\nmedia: plugin://org.example.links/tide.mp4\n---\n",
-	"linkless.md":     "---\ntype: link\n---\n",
-	"rated.md":        "---\nrank: 3\n---\n",
-	"low.md":          "---\nrank: 1\n---\n",
-	"empty.md":        "---\n---\n# empty\n",
-	"broken.md":       "---\ntype: [deck\nurl: x: y\n---\n# broken\n",
-	"folder/inner.md": "---\ntype: deck\nrank: 2.5\n---\n",
-	"picture.png":     "pixels",
+func getTabKindNotes() map[string]string {
+	return map[string]string{
+		"plain.md":        "# plain\n",
+		"deck.md":         "---\ntype: deck\n---\n# deck\n",
+		"search.md":       "---\ntype: search\nquery: tide\n---\n",
+		"link.md":         "---\ntype: link\nurl: https://tides.example/mill\nmedia: plugin://org.example.links/tide.mp4\n---\n",
+		"linkless.md":     "---\ntype: link\n---\n",
+		"rated.md":        "---\nrank: 3\n---\n",
+		"low.md":          "---\nrank: 1\n---\n",
+		"empty.md":        "---\n---\n# empty\n",
+		"broken.md":       "---\ntype: [deck\nurl: x: y\n---\n# broken\n",
+		"folder/inner.md": "---\ntype: deck\nrank: 2.5\n---\n",
+		"picture.png":     "pixels",
+	}
 }
 
 type tabKindWorld struct {
@@ -183,9 +185,10 @@ func sameKinds(t *testing.T, got, want map[string]string) {
 }
 
 func TestTheTabKindsOfIndexedNotesAreTheOnesTheirFilesGive(t *testing.T) {
-	w := newTabKindWorld(t, tabKindNotes)
-	paths := make([]string, 0, len(tabKindNotes))
-	for path := range tabKindNotes {
+	notes := getTabKindNotes()
+	w := newTabKindWorld(t, notes)
+	paths := make([]string, 0, len(notes))
+	for path := range notes {
 		paths = append(paths, path)
 	}
 
@@ -200,7 +203,7 @@ func TestTheTabKindsOfIndexedNotesAreTheOnesTheirFilesGive(t *testing.T) {
 }
 
 func TestTheTabKindsOfAFolderAreChosenWithoutReadingAFile(t *testing.T) {
-	w := newTabKindWorld(t, tabKindNotes)
+	w := newTabKindWorld(t, getTabKindNotes())
 	readers := countingReaders{VaultReaders: vaultreader.Readers{}, reads: w.reads, stats: w.stats}
 	folder := file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), file.NewListTabKinds(w.heads, w.choose))
 
@@ -218,7 +221,7 @@ func TestTheTabKindsOfAFolderAreChosenWithoutReadingAFile(t *testing.T) {
 }
 
 func TestANoteTheIndexDoesNotHoldYetHasNoTabKindAndIsNotRead(t *testing.T) {
-	w := newTabKindWorld(t, tabKindNotes)
+	w := newTabKindWorld(t, getTabKindNotes())
 	if err := os.WriteFile(filepath.Join(w.vault.Path, "fresh.md"), []byte("---\ntype: deck\n---\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +268,7 @@ func TestFiftyPathsAreOneQuestionToTheIndex(t *testing.T) {
 }
 
 func TestAConditionOnThePropertiesSeesThePropertiesTheIndexHolds(t *testing.T) {
-	w := newTabKindWorld(t, tabKindNotes)
+	w := newTabKindWorld(t, getTabKindNotes())
 
 	got := w.listTabKinds(t, []string{"rated.md", "low.md", "folder/inner.md"})
 
