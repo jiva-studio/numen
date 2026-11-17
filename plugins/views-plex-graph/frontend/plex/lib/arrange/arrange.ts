@@ -55,6 +55,7 @@ export function arrangePlex(
     labelType,
     room,
     keep,
+    only,
   }: ArrangeInput = {},
 ): PlexFrame {
   const request = applyRoom(resolveOptions(options))
