@@ -28,6 +28,10 @@ reviews:
       instructions: |
         Report only a contradiction with another rule file, with AGENTS.md or with the code.
         Do not comment on wording, structure or style.
+    - path: '**/{go.mod,go.work,package.json,package-lock.json}'
+      instructions: |
+        Nothing is published until the plugin-extraction epic (docs/plugins/README.md), so the following are intentional: do not report v0.0.0 requirements, replace directives, "private": true, missing tags, versions or publishing.
+        Report only a wrong or missing requirement that breaks the build in the monorepo (go.work, npm workspaces) and a dependency that points against the direction in AGENTS.md.
   tools:
     ast-grep:
       enabled: true
