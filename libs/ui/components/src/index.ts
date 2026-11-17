@@ -44,7 +44,6 @@ export {
 } from './shared/lib/async/requestGuard'
 
 /** The order of the reads and writes of a store held by another process. */
-export { createWriteOrder, type WriteOrder } from './shared/lib/async/remoteValues'
 
 /** Runs a promise without awaiting it and passes its rejection to a callback. */
 export { runInBackground } from './shared/lib/async/background'

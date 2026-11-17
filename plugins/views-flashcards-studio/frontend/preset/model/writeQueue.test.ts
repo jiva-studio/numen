@@ -3,6 +3,7 @@
  * in flight is queued after it, and a file changed externally is not overwritten.
  */
 import { describe, expect, it } from 'vitest'
+import { ref } from 'vue'
 import {
   createBackgroundRequest,
   createCore,
@@ -11,9 +12,12 @@ import {
   createWriteOpts,
   flushPromises,
 } from '../fixtures/writes'
-import type { Presets } from '../../lib/presets'
-import type { PresetWriteResult } from '../../lib/presetResults'
+import { asValue } from '@numen/plugin-sdk'
+import { DEFAULTS, type Presets } from '../../lib/presets'
+import type { PresetReadResult, PresetWriteResult } from '../../lib/presetResults'
+import { StopReason } from '../../lib/stop'
 import { WORDS as words } from '../lib/words'
+import { createOpenPreset, readPreset } from './open'
 import { createWriteQueue, sendWrite } from './presetWrite'
 import { flushWrites, requestWrite } from './writeQueue'
 
@@ -37,7 +41,7 @@ describe('a preset nothing has been written to yet', () => {
 describe('one write', () => {
   it('clears the transcript, and is based on the version last written', async () => {
     const queue = createWriteQueue()
-    const { core, based } = createCore({ ok: true, value: { at: 'v1' } })
+    const { core, based } = createCore({ ok: true, value: { at: 'v1', version: 1n } })
     const { messages, writeMessage } = createMessages()
 
     await sendWrite(queue, createWriteOpts(core, writeMessage))
@@ -52,7 +56,7 @@ describe('one write', () => {
     queue.status.errorMessage.value = words.unwritten
     queue.unsaved.hasWarned = true
     queue.unsaved.dirtyFields.add('retention')
-    const { core } = createCore({ ok: true, value: { at: 'v1' } })
+    const { core } = createCore({ ok: true, value: { at: 'v1', version: 1n } })
 
     await sendWrite(queue, createWriteOpts(core, createMessages().writeMessage))
 
@@ -91,13 +95,16 @@ describe('a write requested for while another is out', () => {
   it('goes after it', async () => {
     const queue = createWriteQueue()
     const first = createGate()
-    const { core, based } = createCore(first.promise, { ok: true, value: { at: 'v2' } })
+    const { core, based } = createCore(first.promise, {
+      ok: true,
+      value: { at: 'v2', version: 2n },
+    })
     const { writeMessage } = createMessages()
 
     const one = requestWrite(queue, createWriteOpts(core, writeMessage))
     const two = requestWrite(queue, createWriteOpts(core, writeMessage))
     expect(queue.inflight.isWriteQueued).toBe(true)
-    first.open({ ok: true, value: { at: 'v1' } })
+    first.open({ ok: true, value: { at: 'v1', version: 1n } })
     await Promise.all([one, two])
 
     expect(based).toStrictEqual(['', 'v1'])
@@ -118,6 +125,57 @@ describe('a write requested for while another is out', () => {
 
     expect(based).toStrictEqual([''])
     expect(queue.status.hasExternalChange.value).toBe(true)
+  })
+})
+
+describe('a read that began before a write', () => {
+  const readOf = (version: bigint, minutesADay: number): PresetReadResult =>
+    asValue({
+      preset: {
+        path: 'presets/Daily.md',
+        title: 'Daily',
+        settings: { ...DEFAULTS, minutesADay },
+        problems: [],
+        stops: StopReason.NOTHING,
+        stopsOn: StopReason.NOTHING,
+      },
+      at: `v${version}`,
+      version,
+      bounds: {},
+    })
+
+  it('does not overwrite the settings the write made', async () => {
+    const one = createOpenPreset('presets/Daily.md', '2026-11-17', {})
+    const settings = { ...DEFAULTS, minutesADay: 45 }
+    let answerRead: (answer: PresetReadResult) => void = () => undefined
+    const stale = new Promise<PresetReadResult>((resolve) => {
+      answerRead = resolve
+    })
+    const core = {
+      read: () => stale,
+      write: async () => ({ ok: true, value: { at: 'v2', version: 2n } }) as PresetWriteResult,
+    } as unknown as Presets
+    one.settings.value = settings
+    one.writeQueue.unsaved.dirtyFields.add('minutesADay')
+    const context = {
+      core,
+      bounds: ref({}),
+      titles: new Map<string, string>(),
+      today: '2026-11-17',
+    }
+
+    const reading = readPreset(one, context)
+    await requestWrite(one.writeQueue, {
+      path: one.path.value,
+      settings,
+      core,
+      writeMessage: () => undefined,
+    })
+    answerRead(readOf(1n, 20))
+    await reading
+
+    expect(one.settings.value.minutesADay).toBe(45)
+    expect(one.writeQueue.unsaved.revision).toBe('v2')
   })
 })
 
@@ -166,7 +224,7 @@ describe('flushing a preset', () => {
     await flushPromises()
     expect(isFlushed).toBe(false)
 
-    first.open({ ok: true, value: { at: 'v1' } })
+    first.open({ ok: true, value: { at: 'v1', version: 1n } })
     await flushed
     expect(isFlushed).toBe(true)
   })

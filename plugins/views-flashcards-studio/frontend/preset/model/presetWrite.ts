@@ -1,5 +1,4 @@
 import { ref, type Ref } from 'vue'
-import { createWriteOrder, type WriteOrder } from '@numen/ui'
 import type { MessageWriter } from '@numen/plugin-sdk'
 import type { Presets, Settings } from '../../lib/presets'
 import { WORDS as words } from '../lib/words'
@@ -11,10 +10,10 @@ export interface WriteQueue {
     isWriteQueued: boolean
     queuedOptions: WriteOptions | null
     activeWrite: Promise<void> | null
-    readonly order: WriteOrder
   }
   readonly unsaved: {
     revision: string
+    version: bigint
     hasWarned: boolean
     readonly dirtyFields: Set<keyof Settings>
   }
@@ -31,11 +30,23 @@ export function createWriteQueue(): WriteQueue {
       isWriteQueued: false,
       queuedOptions: null,
       activeWrite: null,
-      order: createWriteOrder(),
     },
-    unsaved: { revision: '', hasWarned: false, dirtyFields: new Set<keyof Settings>() },
+    unsaved: {
+      revision: '',
+      version: 0n,
+      hasWarned: false,
+      dirtyFields: new Set<keyof Settings>(),
+    },
     status: { hasExternalChange: ref(false), errorMessage: ref('') },
   }
+}
+
+/** Takes the answer of a read or write at a version unless an answer of a newer one was taken; returns whether it was taken. */
+export const takeVersion = (queue: WriteQueue, version: bigint, revision: string): boolean => {
+  if (version < queue.unsaved.version) return false
+  queue.unsaved.version = version
+  queue.unsaved.revision = revision
+  return true
 }
 
 export interface WriteOptions {
@@ -67,7 +78,7 @@ export const sendWrite = async (queue: WriteQueue, options: WriteOptions): Promi
     return
   }
   queue.status.errorMessage.value = ''
-  queue.unsaved.revision = answer.value.at
+  takeVersion(queue, answer.value.version, answer.value.at)
   queue.unsaved.dirtyFields.clear()
   queue.unsaved.hasWarned = false
 }

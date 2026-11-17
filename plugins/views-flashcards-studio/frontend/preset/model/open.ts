@@ -17,7 +17,7 @@ import { WORDS as words } from '../lib/words'
 import { applyGoal, applyTypedSetting, findGridIndex, reconcileSettings } from '../lib/settings'
 import { updateCurves } from './curves'
 import { createCurveState, type CurveState } from './curveState'
-import { createWriteQueue, type WriteQueue } from './presetWrite'
+import { createWriteQueue, takeVersion, type WriteQueue } from './presetWrite'
 import { canCloseTab, requestWrite } from './writeQueue'
 import type { PresetTabState } from './types'
 import type { Field } from '../lib/field'
@@ -55,7 +55,6 @@ export interface ReadPresetContext {
 export const readPreset = async (one: OpenPreset, context: ReadPresetContext): Promise<void> => {
   const { core, bounds, titles, today } = context
   const queue = one.writeQueue
-  const pendingRead = queue.inflight.order.beginRead()
   let answer
   try {
     answer = await core.read(one.path.value)
@@ -65,15 +64,12 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
     one.curves.current.isWaiting.value = false
     return
   }
-  // A read that overlapped a write may predate it; the file change the write
-  // makes starts a read that does not.
-  if (!queue.inflight.order.isReadAfterWrites(pendingRead)) return
+  if (answer.ok && !takeVersion(queue, answer.value.version, answer.value.at)) return
   one.writeQueue.status.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
   one.writeQueue.status.hasExternalChange.value = false
   one.curves.requests.answers.clear()
   const readItem = answer.ok ? answer.value.preset : null
   if (answer.ok) {
-    one.writeQueue.unsaved.revision = answer.value.at
     bounds.value = answer.value.bounds
   }
   if (!readItem) {
