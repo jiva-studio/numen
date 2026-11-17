@@ -475,6 +475,8 @@ linters:
           deny:
             - pkg: "github.com/jiva-studio/numen/libs"
               desc: "a plugin depends on the plugin SDK, on the shared libraries and on no other library of this repository"
+            - pkg: "github.com/jiva-studio/numen/libs/shared/note"
+              desc: "a plugin reaches notes through the plugin SDK"
             - pkg: "github.com/jiva-studio/numen/apps"
               desc: "a plugin reaches no application"
             - pkg: "connectrpc.com/connect"

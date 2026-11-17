@@ -137,7 +137,8 @@ test("the shared libraries depend on no library of this repository", () => {
   assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/onnx"], []);
   assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/tokenizer"], []);
   assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/atomicfile"], []);
-  const alone = [library("libs/shared/onnx"), library("libs/shared/tokenizer"), library("libs/shared/atomicfile")];
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/note"], []);
+  const alone = [library("libs/shared/onnx"), library("libs/shared/tokenizer"), library("libs/shared/atomicfile"), library("libs/shared/note")];
   assert.deepEqual(findLibraryViolations(alone, LIBRARY_DEPENDENCIES), []);
 });
 
