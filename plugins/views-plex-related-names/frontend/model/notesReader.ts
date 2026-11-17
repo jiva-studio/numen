@@ -17,9 +17,8 @@ export interface NotesReaderSource {
   readonly reportFailure: (error: Caught) => void
 }
 
-/** The use of one note by one view: the answer to read, and the end of the use. */
+/** The use of one note by one view: the notes related to it, `null` until they are read, while they are hidden and after a failed read, and the end of the use. */
 export interface NoteLease {
-  /** The notes related to the note, `null` until they are read, while they are hidden and after a failed read. */
   readonly noteGraph: Readonly<Ref<NoteGraph | null>>
   /** Ends the use. A note that no lease uses is forgotten. */
   release(): void
@@ -39,7 +38,6 @@ interface Entry {
   readonly path: string
   readonly noteGraph: ShallowRef<NoteGraph | null>
   leases: number
-  /** The number of the newest read; the answer of an older read is dropped. */
   latest: number
   isReading: boolean
 }

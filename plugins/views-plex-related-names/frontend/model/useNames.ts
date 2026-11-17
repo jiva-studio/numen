@@ -3,7 +3,7 @@ import { computed, onScopeDispose, shallowRef, watch, type ComputedRef } from 'v
 import type { Caught, CommandsHost } from '@numen/plugin-sdk'
 import { listNames } from '../lib/names'
 import type { NamesSide, RelatedName } from '../types'
-import type { NotesReader } from './notesReader'
+import type { NoteLease, NotesReader } from './notesReader'
 import type { NamesSettings } from './settings'
 
 /** The command of the window that shows a note in a tab kind. */
@@ -24,7 +24,7 @@ export function useNames(
   side: NamesSide,
   path: () => string,
 ): { names: ComputedRef<readonly RelatedName[]>; choose: (path: string) => void } {
-  const lease = shallowRef(source.reader.acquire(path()))
+  const lease = shallowRef<NoteLease>(source.reader.acquire(path()))
   watch(path, (next) => {
     lease.value.release()
     lease.value = source.reader.acquire(next)
