@@ -78,21 +78,23 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+const getView = (canvasElement: HTMLElement) => canvasElement.querySelector<HTMLElement>('.headings')!
+
 const getRows = (canvasElement: HTMLElement) => [...canvasElement.querySelectorAll('.headings__row')]
 
 /** The pointer resting on the node brings its headings out under the box, and leaving puts them away. */
 export const Nesting: Story = {
   play: async ({ canvasElement }) => {
-    const node = canvasElement.querySelector<HTMLElement>('.node')!
+    const view = getView(canvasElement)
     await expect(getRows(canvasElement)).toHaveLength(0)
 
-    await userEvent.hover(node)
+    await userEvent.hover(view)
     await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(SECTIONS.length), {
       timeout: HOVER_WAIT * 6,
     })
     await expect(within(canvasElement).getByText('The arrow of time')).toBeInTheDocument()
 
-    await userEvent.unhover(node)
+    await userEvent.unhover(view)
     await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(0))
   },
 }
@@ -100,7 +102,7 @@ export const Nesting: Story = {
 /** Choosing a heading opens its note at its line. */
 export const ChoosesAHeading: Story = {
   play: async ({ args, canvasElement }) => {
-    await userEvent.hover(canvasElement.querySelector<HTMLElement>('.node')!)
+    await userEvent.hover(getView(canvasElement))
     await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(SECTIONS.length), {
       timeout: HOVER_WAIT * 6,
     })
@@ -115,7 +117,7 @@ export const ChoosesAHeading: Story = {
 export const ScrollsWithTheWheel: Story = {
   args: { headings: MANY },
   play: async ({ canvasElement }) => {
-    await userEvent.hover(canvasElement.querySelector<HTMLElement>('.node')!)
+    await userEvent.hover(getView(canvasElement))
     await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(6), {
       timeout: HOVER_WAIT * 6,
     })
@@ -143,7 +145,7 @@ export const LongHeading: Story = {
     ],
   },
   play: async ({ canvasElement }) => {
-    await userEvent.hover(canvasElement.querySelector<HTMLElement>('.node')!)
+    await userEvent.hover(getView(canvasElement))
     await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(1), {
       timeout: HOVER_WAIT * 6,
     })
