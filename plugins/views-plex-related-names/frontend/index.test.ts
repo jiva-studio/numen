@@ -195,12 +195,12 @@ describe('the view under a node', () => {
     expect(getNames(await show('related', PEAR))).not.toContain('Clones')
   })
 
-  it('reads the notes related to the note with depth 2', async () => {
+  it('reads the notes related to the note with depth 1', async () => {
     const { show, vault } = setup()
 
     await show('related', PEAR)
 
-    expect(vault.requests).toContainEqual([PEAR, 2])
+    expect(vault.requests).toContainEqual([PEAR, 1])
     expect(vault.requests.every(([path]) => path === PEAR)).toBe(true)
   })
 

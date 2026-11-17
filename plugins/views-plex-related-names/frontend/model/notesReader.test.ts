@@ -12,10 +12,29 @@ const PEAR = 'notes/Pear rows.md'
 const QUINCE = 'notes/Quince.md'
 const SETTLE_MS = 5000
 
-const createGraph = (path: string, related: readonly string[]): NoteGraph => ({
+const BEYOND = 'notes/Beyond.md'
+
+const createGraph = (
+  path: string,
+  related: readonly string[],
+  depth: number | undefined,
+): NoteGraph => ({
   focus: { path, title: path },
   focusType: 'note',
-  related: related.map((one) => ({ path: one, title: one, relation: 'child', type: 'note' })),
+  related: [
+    ...related.map((one) => ({ path: one, title: one, relation: 'child' as const, type: 'note' })),
+    ...(depth === 2 && related[0]
+      ? [
+          {
+            path: BEYOND,
+            title: BEYOND,
+            relation: 'child' as const,
+            type: 'note',
+            relatedTo: related[0],
+          },
+        ]
+      : []),
+  ],
   connections: [],
 })
 
@@ -59,7 +78,7 @@ const createRig = (showNames = true) => {
       .filter((one) => !answered.has(one))
       .forEach((one) => {
         answered.add(one)
-        one.resolve(createGraph(path, related))
+        one.resolve(createGraph(path, related, one.depth))
       })
     await flushPromises()
   }
@@ -93,12 +112,12 @@ describe('the reader of the related notes', () => {
     expect(getReads(PEAR)).toHaveLength(1)
   })
 
-  it('reads the notes related to the related notes of a note, with depth 2', () => {
+  it('reads the notes related to a note with depth 1, which names nothing beyond them', () => {
     const { reader, getReads } = createRig()
 
     reader.acquire(PEAR)
 
-    expect(getReads(PEAR)[0]?.depth).toBe(2)
+    expect(getReads(PEAR)[0]?.depth).toBe(1)
   })
 
   it('gives both views the one answer', async () => {
@@ -265,7 +284,16 @@ describe('the reader while the vault changes', () => {
     expect(getRelatedPaths(below)).toStrictEqual(['notes/Rootstock list.md', 'notes/Compost.md'])
   })
 
-  it('reads the note again when a related note of it is the one that changed', async () => {
+  it('reads nothing again for a change of a note that is related only to a related note', async () => {
+    const { emit, settle, getReads } = await setupRead()
+
+    await emit({ paths: [BEYOND] })
+    await settle()
+
+    expect(getReads(PEAR)).toHaveLength(1)
+  })
+
+  it('reads the note again when a note related directly to it is the one that changed', async () => {
     const { emit, settle, getReads } = await setupRead()
 
     await emit({ paths: ['notes/Rootstock list.md'] })
@@ -462,9 +490,9 @@ describe('the reader when a note is read again before the first read is answered
     const { getReads, lease } = await setupTwoReads()
     const [earlier, later] = getReads(PEAR)
 
-    later?.resolve(createGraph(PEAR, ['notes/Compost.md']))
+    later?.resolve(createGraph(PEAR, ['notes/Compost.md'], later?.depth))
     await flushPromises()
-    earlier?.resolve(createGraph(PEAR, ['notes/Rootstock list.md']))
+    earlier?.resolve(createGraph(PEAR, ['notes/Rootstock list.md'], earlier?.depth))
     await flushPromises()
 
     expect(getRelatedPaths(lease)).toStrictEqual(['notes/Compost.md'])
@@ -474,7 +502,7 @@ describe('the reader when a note is read again before the first read is answered
     const { getReads, lease, reported } = await setupTwoReads()
     const [earlier, later] = getReads(PEAR)
 
-    later?.resolve(createGraph(PEAR, ['notes/Compost.md']))
+    later?.resolve(createGraph(PEAR, ['notes/Compost.md'], later?.depth))
     await flushPromises()
     earlier?.reject(new Error('the vault is closed'))
     await flushPromises()

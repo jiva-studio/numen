@@ -17,17 +17,29 @@ const SETTLE_MS = 5000
 
 const getTitle = (path: string) => path.replace(/^.*\//, '').replace(/\.md$/, '')
 
-const createGraph = (path: string, links: Readonly<Record<string, NoteRelation>>): NoteGraph => ({
-  focus: { path, title: getTitle(path) },
-  focusType: 'note',
-  related: Object.entries(links).map(([one, relation]) => ({
+const createGraph = (
+  path: string,
+  links: Readonly<Record<string, NoteRelation>>,
+  depth: number | undefined,
+): NoteGraph => {
+  const own = Object.entries(links).map(([one, relation]) => ({
     path: one,
     title: getTitle(one),
     relation,
     type: 'note',
-  })),
-  connections: [],
-})
+  }))
+  const first = own[0]
+  const beyond =
+    depth === 2 && first
+      ? [{ ...first, path: 'notes/Beyond.md', title: 'Beyond', relatedTo: first.path }]
+      : []
+  return {
+    focus: { path, title: getTitle(path) },
+    focusType: 'note',
+    related: [...own, ...beyond],
+    connections: [],
+  }
+}
 
 const LEAVES = Array.from({ length: 5 }, (_, index) => `notes/Leaf ${index + 1}.md`)
 
@@ -39,7 +51,7 @@ const setup = (initialSettings: Record<string, JsonValue> = {}) => {
     listRelatedNotes: async (path: string, depth?: 1 | 2): Promise<NoteGraph> => {
       requests.push([path, depth])
       if (failure) throw failure
-      return createGraph(path, links[path] ?? {})
+      return createGraph(path, links[path] ?? {}, depth)
     },
   } as unknown as VaultNotes
   const notices = createMockNoticeHost()
@@ -100,14 +112,14 @@ describe('the views of the nodes of a plex that opens', () => {
     expect(getReads().map(([path]) => path)).toStrictEqual(LEAVES)
   })
 
-  it('reads the notes related to the related notes of each node, with depth 2', async () => {
+  it('reads the notes related to each node with depth 1', async () => {
     const { show, getReads } = setupRig()
 
     show('parents', LEAVES[0]!)
     show('related', LEAVES[0]!)
     await flushPromises()
 
-    expect(getReads()).toStrictEqual([[LEAVES[0], 2]])
+    expect(getReads()).toStrictEqual([[LEAVES[0], 1]])
   })
 
   it('starts the reads of the five nodes in the tick they mount in', () => {
