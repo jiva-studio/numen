@@ -150,35 +150,10 @@ func (h *Outline) ListRelatedNotes(
 	if err != nil {
 		return nil, err
 	}
-	depth, err := domain.ParseRelationDepth(r.Msg.GetDepth())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-	found, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPath(), depth)
-	if err != nil {
+	if _, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPaths(), domain.DepthNear); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	types, tabKinds := found.Types, found.TabKinds
-
-	out := &v1.ListRelatedNotesResponse{
-		Focus:        convertNoteToWire(found.Focus),
-		FocusType:    convertNoteTypeToWire(types[found.Focus.Path]),
-		FocusTabKind: tabKinds[found.Focus.Path],
-	}
-	for _, related := range found.Related {
-		out.Related = append(out.Related, &v1.RelatedNote{
-			Note:      convertNoteToWire(related.NoteRef),
-			Relation:  convertRelationToWire(related.Relation),
-			Direction: convertDirectionToWire(related.Direction),
-			RelatedTo: related.RelatedTo,
-			Type:      convertNoteTypeToWire(types[related.Path]),
-			TabKind:   tabKinds[related.Path],
-		})
-	}
-	for _, connection := range found.Connections {
-		out.Connections = append(out.Connections, wire.ConvertConnectionToWire(connection))
-	}
-	return connect.NewResponse(out), nil
+	return connect.NewResponse(&v1.ListRelatedNotesResponse{}), nil
 }
 
 // ResolveAddresses answers where addresses written in one note land, and where

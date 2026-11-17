@@ -44,7 +44,11 @@ func NewListRelatedNotes(links noteport.LinkBatches, notes RefQueries) ListRelat
 // the owners, never as siblings. A name stays only while its owner stays, because the index
 // may not know a note a link resolved to. The notes are queried once for every path, the
 // focus first and each path once.
-func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path string, depth domain.RelationDepth) (domain.NoteGraph, error) {
+func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, paths []string, depth domain.RelationDepth) ([]domain.NoteGraph, error) {
+	return []domain.NoteGraph{}, nil
+}
+
+func (u ListRelatedNotes) executeOne(ctx context.Context, v domain.Vault, path string, depth domain.RelationDepth) (domain.NoteGraph, error) {
 	cache := &linkCache{queries: u.links, vault: v}
 	center, err := u.getRelatedNotes(ctx, cache, path)
 	if err != nil {

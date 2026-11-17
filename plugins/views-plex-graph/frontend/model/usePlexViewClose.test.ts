@@ -18,9 +18,9 @@ const createReadingPlex = () => {
   const reads: string[] = []
   const plex = usePlexView(
     {
-      listRelatedNotes: async (path) => {
+      listRelatedNotes: async ([path = '']) => {
         reads.push(path)
-        return answer(path)
+        return [answer(path)]
       },
     },
     depth,

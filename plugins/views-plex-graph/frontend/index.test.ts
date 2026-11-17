@@ -409,9 +409,10 @@ describe('the names of the notes related to the related notes of an open plex', 
     const requests: [string, number | undefined][] = []
     const notes = {
       ...host.notes,
-      listRelatedNotes: async (path: string, depth?: 1 | 2) => {
+      listRelatedNotes: async (paths: readonly string[], depth?: 1 | 2) => {
+        const path = paths[0] ?? ''
         requests.push([path, depth])
-        return answerFor(path, depth)
+        return [answerFor(path, depth)]
       },
     }
     const ctx = createMockPluginContext({ pluginId: 'md.numen.views.plex.graph', initialSettings })

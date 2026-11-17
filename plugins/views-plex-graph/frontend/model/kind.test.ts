@@ -114,9 +114,11 @@ describe('a change to the vault', () => {
       fixture.host,
       () =>
         usePlexView({
-          listRelatedNotes: async (path) => {
+          listRelatedNotes: async ([path = '']) => {
             await new Promise<void>((resolve) => answers.push(resolve))
-            return { focus: { path, title: path }, focusType: 'note', related: [], connections: [] }
+            return [
+              { focus: { path, title: path }, focusType: 'note', related: [], connections: [] },
+            ]
           },
         }),
       PlexGraphView,

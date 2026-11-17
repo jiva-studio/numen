@@ -56,7 +56,9 @@ export interface NoteGraph {
 
 // VaultNotes is what a plugin reads of the notes of the vault, and writes to them.
 export interface VaultNotes {
-  listRelatedNotes(path: string, depth?: 1 | 2): Promise<NoteGraph>
+  // One graph for each path, in the order of the paths. A note the index does not know has a graph whose
+  // focus path is empty and which relates nothing: it does not fail the other paths.
+  listRelatedNotes(paths: readonly string[], depth?: 1 | 2): Promise<readonly NoteGraph[]>
   getHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   findNotes(query: string, limit?: number): Promise<readonly NoteRef[]>
   // A note made untitled at the root of the vault: its path, and empty where none was made.

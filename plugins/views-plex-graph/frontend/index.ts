@@ -37,7 +37,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     },
     () =>
       usePlexView(
-        { listRelatedNotes: (path, wanted) => notes.listRelatedNotes(path, wanted) },
+        { listRelatedNotes: (paths, wanted) => notes.listRelatedNotes(paths, wanted) },
         depth,
       ),
     PlexGraphView,
