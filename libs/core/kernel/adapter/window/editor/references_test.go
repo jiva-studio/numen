@@ -17,7 +17,7 @@ func TestTheRelatedNotesOfANoteTellWhichWayAReferenceIsLinked(t *testing.T) {
 	})
 	waitForScan(t, f)
 
-	related, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "Heat.md"}))
+	related, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{Paths: []string{"Heat.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +27,7 @@ func TestTheRelatedNotesOfANoteTellWhichWayAReferenceIsLinked(t *testing.T) {
 		direction v1.LinkDirection
 	}
 	got := map[string]item{}
-	for _, r := range related.Msg.GetRelated() {
+	for _, r := range graphOf(t, related.Msg).GetRelated() {
 		got[r.GetNote().GetPath()] = item{r.GetRelation(), r.GetDirection()}
 	}
 	want := map[string]item{
@@ -43,7 +43,7 @@ func TestTheRelatedNotesOfANoteTellWhichWayAReferenceIsLinked(t *testing.T) {
 			t.Errorf("%s is %v, want %v", path, got[path], w)
 		}
 	}
-	for _, c := range related.Msg.GetConnections() {
+	for _, c := range graphOf(t, related.Msg).GetConnections() {
 		if c.GetFirst() == "Entropy.md" || c.GetSecond() == "Entropy.md" || c.GetFirst() == "Work.md" || c.GetSecond() == "Work.md" {
 			t.Errorf("a reference has a connection record: %v", c)
 		}
@@ -57,12 +57,12 @@ func TestTwoNotesThatLinkEachOtherAreReferencesInBothDirections(t *testing.T) {
 	})
 	waitForScan(t, f)
 
-	related, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "Focus.md"}))
+	related, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{Paths: []string{"Focus.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got := related.Msg.GetRelated()
+	got := graphOf(t, related.Msg).GetRelated()
 	if len(got) != 1 || got[0].GetNote().GetPath() != "Alpha.md" ||
 		got[0].GetRelation() != v1.Relation_RELATION_REFERENCE ||
 		got[0].GetDirection() != v1.LinkDirection_LINK_DIRECTION_BOTH {
