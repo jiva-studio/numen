@@ -1,12 +1,13 @@
 /**
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
-import { computed, getCurrentScope, onScopeDispose, shallowRef, type Component } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, shallowRef, watch, type Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
 import {
   formatErrorMessage,
   getFileName,
   getRelationErrorWords,
+  getRenamedPath,
   NOTE_TYPE,
   useSlotMenu,
   type CommandTarget,
@@ -68,20 +69,45 @@ function usePlexPicture(
   return { view, picture, empty, dragged, creatable: deps.creatable, widgets }
 }
 
+/** What the tab last learnt of a note: its type and the tab kind the core chose for it. */
+interface KnownKind {
+  readonly type: NoteType
+  readonly tabKind: string | undefined
+}
+
 function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap>) {
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
     const noteGraph = view.noteGraph.value
     return noteGraph ? getNoteTypes(noteGraph) : new Map()
   })
 
-  const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? NOTE_TYPE
+  const known = shallowRef<ReadonlyMap<string, KnownKind>>(new Map())
 
-  const tabKinds = computed<ReadonlyMap<string, string>>(() => {
-    const noteGraph = view.noteGraph.value
-    return noteGraph ? getTabKinds(noteGraph) : new Map()
-  })
+  watch(
+    () => view.noteGraph.value,
+    (noteGraph) => {
+      if (!noteGraph) return
+      const tabKinds = getTabKinds(noteGraph)
+      const next = new Map(known.value)
+      for (const [path, type] of getNoteTypes(noteGraph)) {
+        next.set(path, { type, tabKind: tabKinds.get(path) })
+      }
+      known.value = next
+    },
+    { immediate: true, flush: 'sync' },
+  )
 
-  const getTabKind = (node: string): string | undefined => tabKinds.value.get(map.getNodePath(node))
+  const followMoves = (renames: readonly PathRename[]): void => {
+    known.value = new Map(
+      [...known.value].map(([path, kind]) => [getRenamedPath(renames, path) || path, kind]),
+    )
+  }
+
+  const getType = (node: string): NoteType =>
+    known.value.get(map.getNodePath(node))?.type ?? NOTE_TYPE
+
+  const getTabKind = (node: string): string | undefined =>
+    known.value.get(map.getNodePath(node))?.tabKind
 
   const shownPaths = computed<readonly string[]>(() => {
     const noteGraph = view.noteGraph.value
@@ -93,7 +119,7 @@ function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap
     return paths.filter(Boolean)
   })
 
-  return { types, getType, getTabKind, shownPaths }
+  return { types, getType, getTabKind, shownPaths, followMoves }
 }
 
 /** What moving the focus to a note needs. */
@@ -115,8 +141,9 @@ function createPlexNodeActions(options: {
   map: ReturnType<typeof createNodeIdMap>
   getName: (path: string) => string
   openQuickLink: (request: QuickLinkRequest) => void
+  followKindMoves: (renames: readonly PathRename[]) => void
 }) {
-  const { view, tabDeps: deps, map, getName, openQuickLink } = options
+  const { view, tabDeps: deps, map, getName, openQuickLink, followKindMoves } = options
   const activate = (node: string) => moveFocus({ view, deps, getName }, map.getNodePath(node))
 
   const addNode = async (from: string, relation: PlexRelation, pos?: { x: number; y: number }) => {
@@ -168,6 +195,7 @@ function createPlexNodeActions(options: {
   const followMoves = (renames: readonly PathRename[]) => {
     view.followMoves(renames)
     map.updateRenamedNodes(renames)
+    followKindMoves(renames)
   }
 
   const openHeading = (node: string, heading: string) => {
@@ -299,7 +327,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
   const getName = (path: string): string => getPlexNodeName(view.noteGraph.value, path)
   const canvas = usePlexPicture(view, deps, map)
-  const { types, getType, getTabKind, shownPaths } = usePlexNoteKinds(view, map)
+  const { types, getType, getTabKind, shownPaths, followMoves } = usePlexNoteKinds(view, map)
 
   const quickLink = useQuickLink(view, deps, map)
   const headings = usePlexHeadings(shownPaths, types, deps, map)
@@ -316,6 +344,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     map,
     getName,
     openQuickLink: quickLink.openQuickLink,
+    followKindMoves: followMoves,
   })
   const menu = usePlexMenu({
     map,

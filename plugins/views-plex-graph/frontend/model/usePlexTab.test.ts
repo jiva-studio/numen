@@ -1117,6 +1117,38 @@ describe('what a node remains for', () => {
   })
 })
 
+describe('a node that leaves the picture', () => {
+  it('keeps the icon of its tab kind while it travels to the new centre', async () => {
+    const one = tab('Root.md', ['Sample.md'], true, { 'Sample.md': 'sample' })
+    const sample = one.node('Sample.md')
+
+    await one.state.canvas.view.go('Other.md')
+
+    expect(one.state.canvas.picture.value?.nodes.map((node) => node.title)).not.toContain('Sample')
+    expect(one.state.menu.getNodeIcon(sample)).toBe(SAMPLE_ICON)
+  })
+
+  it('keeps the note type its menu passes on', async () => {
+    const one = tab('Root.md', ['Sample.md'], true, { 'Sample.md': 'sample' })
+    const sample = one.node('Sample.md')
+
+    await one.state.canvas.view.go('Other.md')
+    one.state.menu.openMenu({ node: sample, at: { x: 1, y: 2 }, opening: 'pointer' })
+
+    expect(one.menuTargets.at(-1)).toMatchObject({ path: 'Sample.md', noteType: 'sample' })
+  })
+
+  it('keeps the icon of a note whose file was moved while it was away', async () => {
+    const one = tab('Root.md', ['Sample.md'], true, { 'Sample.md': 'sample' })
+    const sample = one.node('Sample.md')
+    await one.state.canvas.view.go('Other.md')
+
+    one.state.nodes.followMoves([{ from: 'Sample.md', to: 'Moved.md' }])
+
+    expect(one.state.menu.getNodeIcon(sample)).toBe(SAMPLE_ICON)
+  })
+})
+
 describe('quick-link popover from a node handle', () => {
   it('opens quick link request with drop coordinates', async () => {
     const one = tab('Root.md', ['Child.md'])
