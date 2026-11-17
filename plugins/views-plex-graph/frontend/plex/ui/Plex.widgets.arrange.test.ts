@@ -585,3 +585,95 @@ describe('the plex that waits for the widgets of many nodes', () => {
     expect(staying.filter((id) => mounted.get(getPathOf(id)) !== 1)).toStrictEqual([])
   })
 })
+
+const getShownIdsOf = (graph: PlexGraph, plex: Mounted) =>
+  graph.nodes
+    .filter((node) => plex.find(`[aria-label^="${node.title}"]`).exists())
+    .map((node) => node.id)
+
+const mountCrowd = (arrivals: Arrivals, height: number, graph = CROWD) =>
+  mountPlex({
+    graph,
+    widgetsBelow: [createEntry(arrivals, 'names'), createEntry(arrivals, 'tags')],
+    viewport: createLateViewport({ width: 600, height }),
+  })
+
+const refocus = (graph: PlexGraph, id: string): PlexGraph => ({
+  nodes: graph.nodes.map((node) => ({
+    ...node,
+    relation: node.id === id ? 'focus' : node.id === 'focus' ? 'parent' : node.relation,
+  })),
+  edges: [
+    { from: 'focus', to: id },
+    ...graph.edges.filter((edge) => edge.to !== 'focus' && edge.from !== 'focus'),
+  ],
+})
+
+describe('the admission of the plex while the widgets of the shown nodes change its rooms', () => {
+  it.each([220, 260, 300, 340, 380, 420])(
+    'keeps the nodes it dropped dropped and mounts no node twice, in a window %i high',
+    async (height) => {
+      const arrivals = createArrivals(answerFor(CROWD_IDS))
+      const plex = mountCrowd(arrivals, height)
+      const shown: string[][] = []
+
+      for (let frame = 0; frame < 14; frame += 1) {
+        await passFrames(1)
+        shown.push(getShownIdsOf(CROWD, plex))
+      }
+
+      const settled = shown.slice(2).map((ids) => ids.join())
+      expect(new Set(settled).size).toBe(1)
+      expect([...mounted.values()].filter((count) => count > 1)).toStrictEqual([])
+    },
+  )
+
+  it('keeps every node it showed when the rooms of late widgets arrive after the emergency cap', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const arrivals = createArrivals()
+    const plex = mountCrowd(arrivals, 300)
+    await passFrames(5, EMERGENCY_CAP / 4)
+    const first = getShownIdsOf(CROWD, plex)
+
+    await deliverOneAfterAnother(arrivals, CROWD_IDS)
+    await passFrames(6)
+
+    expect(first.length).toBeGreaterThan(1)
+    expect(first.filter((id) => !getShownIdsOf(CROWD, plex).includes(id))).toStrictEqual([])
+  })
+
+  it('mounts the widgets of no more nodes than the plex ends up showing', async () => {
+    const arrivals = createArrivals(answerFor(CROWD_IDS))
+    const plex = mountCrowd(arrivals, 380)
+
+    await passFrames(10)
+
+    expect(getShownCount(plex)).toBeLessThan(CROWD.nodes.length)
+    expect(mounted.size).toBeLessThanOrEqual(getShownCount(plex))
+  })
+
+  it('arranges at most three times on a click and mounts each shown node once', async () => {
+    const arrivals = createArrivals(answerFor(CROWD_IDS))
+    const plex = mountCrowd(arrivals, 380)
+    await passFrames(10)
+    const forOpen = getPlacedCount()
+    placed.length = 0
+    mounted.clear()
+    assigned = []
+
+    await plex.setProps({ graph: refocus(CROWD, 'child-0') })
+    await passFrames(10)
+
+    expect(getPlacedCount()).toBeLessThanOrEqual(forOpen * 2)
+    expect([...mounted.values()].filter((count) => count > 1)).toStrictEqual([])
+    const given = new Map<Element, string[]>()
+    for (const { element, value } of assigned) {
+      if (!element.classList.contains('plex__node')) continue
+      const values = given.get(element) ?? []
+      if (values.at(-1) !== value) values.push(value)
+      given.set(element, values)
+    }
+    expect(given.size).toBeGreaterThan(0)
+    expect([...given.values()].filter((values) => values.length > 3)).toStrictEqual([])
+  })
+})
