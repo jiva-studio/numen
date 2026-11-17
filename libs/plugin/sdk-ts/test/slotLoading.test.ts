@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /** A view of a slot says when its data has arrived, and the owner of the slot waits for every view it drew. */
-import { createApp, defineComponent, h, nextTick, ref, type Component } from 'vue'
+import { createApp, defineComponent, h, nextTick, shallowRef, type Component } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   SLOT_LOADING_CAP_MS,
@@ -108,12 +108,15 @@ describe('the loading of a slot', () => {
     reportIssue = vi.fn(),
   ) => {
     const loading = createSlotLoading({ clock, reportIssue })
-    const shown = ref(entries)
+    const shown = shallowRef(entries)
+    const components = new Map(
+      entries.map((one) => [one.entry.key, createEntry(loading, one.entry, one.view)]),
+    )
     mount(
       defineComponent({
         setup: () => () =>
           shown.value.map((one) =>
-            h(createEntry(loading, one.entry, one.view), { key: one.entry.key }),
+            h(components.get(one.entry.key) as Component, { key: one.entry.key }),
           ),
       }),
     )
