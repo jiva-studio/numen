@@ -82,14 +82,14 @@ const { frame, waiting, isMoving } = usePlexTransition(
     measureLabel: measures.value?.label,
     labelType: measures.value?.labelType,
     room: rooms.getNodeRoom.value,
-    draftRoom: rooms.getDraftRoom.value,
   }),
   {
     duration: () => props.duration,
     clock: props.clock,
     isReady: rooms.areLoaded,
-    // The size of the window decides which nodes are shown, so no widget mounts before it is reported.
-    isActive: () => isMeasured.value || !rooms.hasWidgets(),
+    // The size of the window decides which nodes are shown, so nothing is arranged before it is reported.
+    isActive: () => isMeasured.value,
+    hasWidgets: () => rooms.hasWidgets(),
   },
 )
 

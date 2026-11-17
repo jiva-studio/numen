@@ -1,9 +1,11 @@
 <script setup lang="ts">
-/** The names set in one row group beside a node, in small faint text with no pill. Choosing one is the caller's. */
-import type { RelatedName } from '../types'
+/** The names set in one row group beside a node, in small faint text with no pill, with the gap to the node on the side of it. Choosing one is the caller's. */
+import type { NamesSide, RelatedName } from '../types'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ names: readonly RelatedName[] }>()
+withDefaults(defineProps<{ names: readonly RelatedName[]; side?: NamesSide }>(), {
+  side: 'below',
+})
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
@@ -13,7 +15,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div v-if="names.length > 0" class="related-names">
+  <div v-if="names.length > 0" class="related-names" :class="`related-names--${side}`">
     <button
       v-for="name in names"
       :key="name.path"
@@ -36,6 +38,14 @@ const emit = defineEmits<{
   font-family: var(--numen-font-sans);
   font-size: 0.7rem;
   line-height: 1.3;
+}
+
+.related-names--above {
+  margin-block-end: var(--numen-node-gap);
+}
+
+.related-names--below {
+  margin-block-start: var(--numen-node-gap);
 }
 
 .related-names__name {

@@ -1,18 +1,15 @@
 /** A frame moving towards each new graph. */
 import { onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue'
 import type { PlacedNode } from '../lib/node'
-import { arrangePlex, easeOut, interpolatePlex } from '../lib/arrange'
+import { arrangePlex, easeOut, interpolatePlex, type NodeRoom } from '../lib/arrange'
 import type { ArrangeInput } from '../lib/arrange'
-import type { PlexFrame } from '../lib/frame'
+import { isFrameMoved, type PlexFrame } from '../lib/frame'
 import { browserClock, type Clock } from '@numen/ui'
 import type { PlexGraph } from '../../types'
 
 export { browserClock, type Clock }
 
-/** What the arrangement is given, and `draftRoom`, the room it is given before the widgets are measured, to choose the notes whose widgets are drawn. */
-export type PlexTransitionInput = ArrangeInput & { readonly draftRoom?: ArrangeInput['room'] }
-
-/** `waiting` holds the nodes of the next arrangement that the frame does not hold yet, while the plex waits for their widgets. */
+/** `waiting` holds the nodes of the next arrangement that the frame does not hold yet, which stay mounted, hidden, until the frame holds them: the nodes whose widgets are measured, and the nodes the frame is about to show. */
 export interface PlexTransition {
   readonly frame: Ref<PlexFrame>
   readonly waiting: Ref<readonly PlacedNode[]>
@@ -21,13 +18,15 @@ export interface PlexTransition {
 
 /**
  * The plex is arranged only when `isReady` holds for the nodes it would show.
- * `isActive` holds once the plex may be arranged at all: a plex whose widgets mount for the waiting nodes is not active before its window is measured.
+ * `isActive` holds once the plex may be arranged at all: not before the window has reported its size.
+ * `hasWidgets` holds when the nodes carry widgets, which are measured before any node is shown.
  */
 export interface PlexTransitionOptions {
   readonly duration: () => number
   readonly clock?: Clock | undefined
   readonly isReady?: ((ids: readonly string[]) => boolean) | undefined
   readonly isActive?: (() => boolean) | undefined
+  readonly hasWidgets?: (() => boolean) | undefined
 }
 
 const EMPTY_FRAME: PlexFrame = {
@@ -40,24 +39,39 @@ const EMPTY_FRAME: PlexFrame = {
 /**
  * Hold a frame that moves towards each new graph. One arriving
  * mid-movement re-aims from wherever the plex has got to.
- * The plex is arranged once the widgets of every node it would show are loaded; until then the
- * frame stays as it is, and the first one is empty, so no node is placed by a layout that the widgets change.
- * While it waits, the nodes it would show are chosen once for each new graph or input, and a change in the
- * room of the widgets arranges nothing; once the widgets are loaded it arranges once, and then once for each frame
- * in which the room of the widgets changed.
+ * For each new graph or input the nodes the window holds without any widget are chosen, and their widgets are mounted,
+ * hidden, to be measured. Once they are loaded the plex is arranged once with the room each of them measured, and
+ * it moves to that arrangement; the nodes it does not show are unmounted. Until then the frame stays as it is, and the
+ * first one is empty, so no node is placed by a layout that the widgets change.
+ * A change in the room of the widgets afterwards arranges once for each frame in which it changed, with the same
+ * nodes shown, and moves the frame only when a node moved by more than a pixel.
  */
 export function usePlexTransition(
   graph: () => PlexGraph,
-  input: () => PlexTransitionInput | undefined,
+  input: () => ArrangeInput | undefined,
   options: PlexTransitionOptions,
 ): PlexTransition {
-  const { duration, clock = browserClock, isReady = () => true, isActive = () => true } = options
-  /** The notes the last arrangement of the current graph and input admitted: they stay the ones shown while the widgets change their rooms. */
-  let kept: ReadonlySet<string> | undefined
-  const target = (isDraft: boolean, only?: ReadonlySet<string>) => {
-    const { draftRoom, ...given } = input() ?? {}
-    const room = isDraft ? draftRoom : given.room
-    return arrangePlex(graph(), { ...given, room, keep: kept, only })
+  const {
+    duration,
+    clock = browserClock,
+    isReady = () => true,
+    isActive = () => true,
+    hasWidgets = () => false,
+  } = options
+  /** The nodes the window holds without any widget, whose widgets are measured, for the current graph and input. */
+  let candidates: { readonly nodes: readonly PlacedNode[]; readonly ids: ReadonlySet<string> } | undefined
+  /** The nodes the current graph and input are shown with, once they are arranged. */
+  let shown: ReadonlySet<string> | undefined
+  /** The room the nodes that are not shown had when the shown nodes were chosen: their widgets are gone, and the others are laid out as they were. */
+  const leftOut = new Map<string, NodeRoom>()
+  let target: PlexFrame | undefined
+
+  const getRoom = (room: ArrangeInput['room']): ArrangeInput['room'] =>
+    room && ((node) => leftOut.get(node.id) ?? room(node))
+
+  const getCandidates = (given: ArrangeInput) => {
+    const { nodes } = arrangePlex(graph(), { ...given, room: undefined })
+    return { nodes, ids: new Set(nodes.map((node) => node.id)) }
   }
 
   const frame = shallowRef<PlexFrame>(EMPTY_FRAME)
@@ -80,11 +94,18 @@ export function usePlexTransition(
     isMoving.value = false
   }
 
+  /** The frame holds the nodes of the next arrangement from here on, so none of them is mounted twice. */
+  const setFrame = (next: PlexFrame) => {
+    frame.value = next
+    if (waiting.value.length > 0) waiting.value = []
+  }
+
   const run = (to: PlexFrame) => {
     stop()
+    target = to
     const ms = duration()
     if (ms <= 0 || frame.value.nodes.length === 0) {
-      frame.value = to
+      setFrame(to)
       return
     }
 
@@ -95,9 +116,7 @@ export function usePlexTransition(
       ms,
       clock,
       getOptions: () => input()?.options,
-      onFrame: (f) => {
-        frame.value = f
-      },
+      onFrame: setFrame,
       onDone: () => {
         handle = null
         isMoving.value = false
@@ -108,33 +127,49 @@ export function usePlexTransition(
     })
   }
 
-  // Whether the widgets of the nodes of `to` are ready; if not, the nodes the frame does not hold wait.
-  const holdUntilReady = (to: PlexFrame) => {
-    held.value = to.nodes.map((node) => node.id)
+  const getNotInFrame = (nodes: readonly PlacedNode[]) => {
+    const inFrame = new Set(frame.value.nodes.map((node) => node.id))
+    return nodes.filter((node) => !inFrame.has(node.id))
+  }
+
+  const holdCandidates = (given: ArrangeInput) => {
+    if (hasWidgets()) candidates ??= getCandidates(given)
+    held.value = candidates?.nodes.map((node) => node.id) ?? []
     if (isReady(held.value)) return true
-    const shown = new Set(frame.value.nodes.map((node) => node.id))
-    waiting.value = to.nodes.filter((node) => !shown.has(node.id))
+    waiting.value = getNotInFrame(candidates?.nodes ?? [])
     return false
   }
 
   const arrangeWhenReady = () => {
     cancelFrame()
     if (!isActive()) return
-    arrangedRoom = input()?.room
-    const isDraft = !kept && input()?.draftRoom !== undefined
-    let to = target(isDraft)
-    if (!holdUntilReady(to)) return
-    if (isDraft) {
-      to = target(false, new Set(held.value))
-      if (!holdUntilReady(to)) return
+    const given = input() ?? {}
+    arrangedRoom = given.room
+    if (!shown && !holdCandidates(given)) return
+    const to = arrangePlex(graph(), {
+      ...given,
+      room: getRoom(given.room),
+      only: candidates?.ids,
+      keep: shown,
+    })
+    const ids = new Set(to.nodes.map((node) => node.id))
+    if (!shown && given.room) {
+      for (const node of graph().nodes) {
+        if (!ids.has(node.id)) leftOut.set(node.id, given.room(node))
+      }
     }
-    waiting.value = []
-    kept = new Set(held.value)
+    const isFrozen = shown !== undefined
+    shown = ids
+    held.value = [...ids]
+    waiting.value = getNotInFrame(to.nodes)
+    if (isFrozen && target && !isFrameMoved(target, to)) return
     run(to)
   }
 
   const arrangeAgain = () => {
-    kept = undefined
+    candidates = undefined
+    shown = undefined
+    leftOut.clear()
     arrangeWhenReady()
   }
 

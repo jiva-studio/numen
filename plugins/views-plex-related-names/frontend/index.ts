@@ -35,7 +35,7 @@ function createNamesView(source: NamesSource, side: NamesSide) {
         { immediate: true },
       )
       onScopeDispose(finish)
-      return () => h(RelatedNames, { names: names.value, onChoose: choose })
+      return () => h(RelatedNames, { names: names.value, side, onChoose: choose })
     },
   })
 }
