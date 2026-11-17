@@ -147,11 +147,6 @@ export interface PlexMenuDeps {
   ): Promise<string>
 }
 
-/** What a plex tab reads of the notes: their names. */
-export interface PlexNotesDeps {
-  searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
-}
-
 /** How the plex is drawn, as the plugin settings hold it, followed as they change. */
 export interface PlexLook {
   readonly references: Readonly<Ref<ReferenceMode>>
@@ -179,7 +174,8 @@ export interface PlexTabDeps {
     side: PlexWidgetSide,
     handler: (entries: readonly SlotItem[]) => void,
   ) => Disposable
-  readonly notes: PlexNotesDeps
+  /** Finds notes by name. */
+  readonly searchNames?: (query: string, limit?: number) => Promise<readonly { path: string; title: string }[]>
   readonly look: PlexLook
 }
 

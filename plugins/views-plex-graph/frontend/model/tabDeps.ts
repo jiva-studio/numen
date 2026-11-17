@@ -76,8 +76,6 @@ export function createPlexTabDeps(
     },
     watchWidgets: (side, handler) =>
       slots?.watchEntries(WIDGET_SLOTS[side], handler) ?? { dispose: () => undefined },
-    notes: {
-      searchNames: (query, limit) => notes.findNotes(query, limit),
-    },
+    searchNames: (query, limit) => notes.findNotes(query, limit),
   }
 }

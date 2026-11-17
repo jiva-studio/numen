@@ -86,7 +86,7 @@ const createDeps = (editor: PlexTabDeps['editor'], overrides: DepsOverrides = {}
     runCommand: async () => '',
     ...overrides.menu,
   },
-  notes: { ...overrides.notes },
+  searchNames: overrides.searchNames,
 })
 
 const tab = (
@@ -133,7 +133,6 @@ const tab = (
         return id === 'app:note.create' ? created.value : ''
       },
     },
-    notes: {},
   }
   const state = createPlexTab(plex.view, deps)
   /** The label of a note in the graph, which a gesture on it carries. */
@@ -1025,9 +1024,7 @@ describe('quick-link popover from a node handle', () => {
           openingPath: ref('Opening.md'),
           readOpeningPath: async () => 'Opening.md',
         },
-        notes: {
-          searchNames: searchMock,
-        },
+        searchNames: searchMock,
       }),
     )
 

@@ -18,6 +18,7 @@ import { useHoverFocus } from '../../model/interaction/hoverFocus'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useOpenBox } from '../../model/sizing/expansion'
 import { useLift } from '../../model/useLift'
+import { useNodeFace } from '../../model/useNodeFace'
 import { useNodeState } from '../../model/useNodeState'
 import { getNodeEvents } from '../../model/interaction/nodeEvents'
 import { useNodePress } from '../../model/interaction/press'
@@ -94,16 +95,7 @@ const { isLifted, liftTarget, onLiftKeyDown } = useLift({
   focus: hoverFocus,
 })
 
-const face = computed(() => ({
-  node: props.node,
-  box: box.value,
-  isGhost: isGhost.value,
-  isTarget: props.gestureRole === 'target',
-  showPills: props.showPills,
-  restHeight: props.restHeight,
-  isHandleVisible: isHandleVisible.value,
-  handle: handle.value,
-}))
+const face = useNodeFace(props, { box, isGhost, isHandleVisible, handle })
 
 const events = getNodeEvents(press, hoverFocus)
 

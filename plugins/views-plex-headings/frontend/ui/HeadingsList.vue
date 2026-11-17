@@ -41,7 +41,7 @@ const style = computed(() => ({
   paddingTop: `${props.layout.pad}px`,
   paddingBottom: `${props.layout.pad}px`,
   '--headings-arrow-inset': `${props.layout.pad / 2}px`,
-  visibility: width.value > 0 ? undefined : 'hidden',
+  visibility: width.value > 0 ? undefined : ('hidden' as const),
 }))
 
 /* -------------------------------- Handlers -------------------------------- */

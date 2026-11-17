@@ -125,6 +125,6 @@ describe('what else a plex tab asks of the window', () => {
     expect(deps.window.openingPath.value).toBe('Root.md')
     expect(deps.window.dragged.value).toStrictEqual([])
     expect(await deps.window.readOpeningPath()).toBe('Root.md')
-    expect(await deps.notes.searchNames?.('Ro', 5)).toStrictEqual([])
+    expect(await deps.searchNames?.('Ro', 5)).toStrictEqual([])
   })
 })
