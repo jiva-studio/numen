@@ -124,6 +124,7 @@ export const TabNamedByTooltip: Story = {
     const tab = canvasElement.querySelector(`[data-workspace-tab="${BESIDE}"]`) as HTMLElement
     const getTooltip = () => document.body.querySelector('[role="tooltip"]')
 
+    await userEvent.unhover(tab)
     await expect(tab.querySelector('[title]')).toBeNull()
     await expect(getTooltip()).toBeNull()
 
