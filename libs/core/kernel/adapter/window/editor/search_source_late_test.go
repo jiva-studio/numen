@@ -113,8 +113,8 @@ func launchSleepProcesses(t *testing.T, port int) func(context.Context, manifest
 			}
 		}
 	})
-	return func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
-		cmd := exec.Command("/bin/sh", "-c", "read -r line")
+	return func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		cmd := exec.CommandContext(context.WithoutCancel(ctx), "/bin/sh", "-c", "read -r line")
 		input, err := cmd.StdinPipe()
 		if err != nil {
 			return nil, nil, err
