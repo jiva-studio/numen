@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -106,5 +107,64 @@ func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
 
 	if rel, err := filepath.Rel(models, resolved.PrimaryPath); err != nil || strings.HasPrefix(rel, "..") {
 		t.Errorf("the model is at %s, not under %s", resolved.PrimaryPath, models)
+	}
+}
+
+type heldProvisioner struct{ started chan struct{} }
+
+func (heldProvisioner) CanProvision(manifest.DependencyRequirement) bool { return true }
+
+func (heldProvisioner) Resolve(req manifest.DependencyRequirement) (plugindomain.ResolvedDependency, plugindomain.DependencyState, error) {
+	return plugindomain.ResolvedDependency{ID: req.ID}, plugindomain.DependencyStateMissing, nil
+}
+
+func (p heldProvisioner) Provision(
+	ctx context.Context, _ manifest.DependencyRequirement, onProgress func(plugindomain.DependencyStatus),
+) (plugindomain.ResolvedDependency, error) {
+	onProgress(plugindomain.DependencyStatus{BytesDownloaded: 1, BytesTotal: 2})
+	close(p.started)
+	<-ctx.Done()
+	return plugindomain.ResolvedDependency{}, ctx.Err()
+}
+
+func startHeldDownload(t *testing.T) (*PluginRoles, *run.Tasks, <-chan error) {
+	t.Helper()
+	host := NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	provisioner := heldProvisioner{started: make(chan struct{})}
+	host.Dependencies.Replace(provision.NewRegistry(provisioner))
+	tasks := run.NewTasks()
+	reportDependencies(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), tasks)
+	answer := make(chan error, 1)
+	go func() {
+		_, err := host.Services.GetDependencies().Provision(
+			t.Context(), manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}, nil)
+		answer <- err
+	}()
+	<-provisioner.started
+	return host, tasks, answer
+}
+
+func TestTheCancelOfTheTaskOfADownloadStopsTheDownload(t *testing.T) {
+	_, tasks, answer := startHeldDownload(t)
+
+	if !tasks.Cancel("provision:whisper") {
+		t.Fatalf("the task of the download cannot be canceled: %+v", tasks.List())
+	}
+	if err := <-answer; !errors.Is(err, context.Canceled) {
+		t.Errorf("the caller received %v, want the cancellation", err)
+	}
+	if list := tasks.List(); len(list) != 0 {
+		t.Errorf("a canceled download left tasks %+v", list)
+	}
+}
+
+func TestStoppingThePluginsStopsTheDownloadsInProgress(t *testing.T) {
+	host, _, answer := startHeldDownload(t)
+
+	if err := stopPlugins(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), context.WithoutCancel(t.Context())); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-answer; !errors.Is(err, context.Canceled) {
+		t.Errorf("the caller received %v, want the cancellation", err)
 	}
 }

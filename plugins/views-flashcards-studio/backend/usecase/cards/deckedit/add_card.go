@@ -6,22 +6,25 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // AddCard writes a card at the end of a deck, or at the end of one of its sections.
 type AddCard struct {
-	read  Read
-	write Write
+	read  ports.DeckReader
+	write ports.DeckWriter
 }
 
-func NewAddCard(read Read, write Write) AddCard { return AddCard{read: read, write: write} }
+func NewAddCard(read ports.DeckReader, write ports.DeckWriter) AddCard {
+	return AddCard{read: read, write: write}
+}
 
 func (u AddCard) Execute(
 	ctx context.Context, v domain.Vault, version DeckVersion, cardModel string, values []format.Value, section *int,
 ) (AddedCard, error) {
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial position is overwritten inside changeDeck before use."
 	position := 0
-	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(contents DeckContents, file *format.DeckFile) error {
+	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(contents format.DeckContents, file *format.DeckFile) error {
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Card section field is ignored by AddCard and AddCardUnder."
 		card := format.Card{Heading: "", CardID: "", CardModelLink: cardModel, Preamble: "", Section: 0, Values: values}
 		if section == nil {

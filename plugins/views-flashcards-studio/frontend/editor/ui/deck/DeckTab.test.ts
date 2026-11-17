@@ -120,6 +120,7 @@ const mountDeck = async (
       asValue({
         preset: { path, title: '', settings: DEFAULTS, problems: [], ...SCHEDULING },
         at: '',
+        version: 1n,
         bounds: NO_BOUNDS,
       }),
     list: async () =>
@@ -138,15 +139,16 @@ const mountDeck = async (
           ...SCHEDULING,
         },
         at: '',
+        version: 1n,
         bounds: NO_BOUNDS,
       }),
     scheduleDeck: async (_deck, preset) => {
       appliedPresets.push(preset)
       if (schedule.notScheduled) return asFailure(schedule.notScheduled)
       presetPath = preset
-      return asValue({ at: 'scheduled' })
+      return asValue({ at: 'scheduled', version: 2n })
     },
-    write: async () => asValue({ at: '' }),
+    write: async () => asValue({ at: '', version: 1n }),
     curve: async () => ({
       goal: 'minutes',
       grid: [],

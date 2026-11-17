@@ -6,7 +6,7 @@ import (
 	"errors"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Problems answers what the index found wrong in the notes of a vault: parse problems, unreadable

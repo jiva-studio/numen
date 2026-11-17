@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func garden() domain.Vault {
@@ -300,7 +300,7 @@ type IndexPorts struct {
 
 type ShutdownPorts struct {
 	Door    Door
-	Closers []Closer
+	Closers []CloseFunc
 }
 
 // UseCases holds what a test drives: vault switching under Switching, shutdown under Closing. It keeps the

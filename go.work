@@ -5,16 +5,17 @@ use (
 	./apps/desktop/build/pgonorm
 	./apps/desktop/build/tools
 	./apps/mobile
-	./libs/atomicfile
+	./libs/shared/atomicfile
 	./libs/core/kernel
-	./libs/note
+	./libs/shared/note
 	./libs/plugin/catalog
 	./libs/shared/onnx
+	./libs/shared/rerank
 	./libs/shared/tokenizer
 	./libs/plugin/sdk-go
 	./libs/plugin/sdk-go/host
 	./libs/plugin/sdk-go/wasm
-	./libs/core/protocol
+	./libs/shared/protocol
 	./plugins/agents-acp
 	./plugins/agents-antigravity
 	./plugins/agents-claude
@@ -43,14 +44,15 @@ use (
 )
 
 replace (
-	github.com/jiva-studio/numen/libs/atomicfile v0.0.0 => ./libs/atomicfile
+	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0 => ./libs/shared/atomicfile
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0 => ./libs/core/kernel
-	github.com/jiva-studio/numen/libs/note v0.0.0 => ./libs/note
+	github.com/jiva-studio/numen/libs/shared/note v0.0.0 => ./libs/shared/note
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0 => ./libs/plugin/catalog
 	github.com/jiva-studio/numen/libs/shared/onnx v0.0.0 => ./libs/shared/onnx
+	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0 => ./libs/shared/rerank
 	github.com/jiva-studio/numen/libs/shared/tokenizer v0.0.0 => ./libs/shared/tokenizer
 	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0 => ./libs/plugin/sdk-go
 	github.com/jiva-studio/numen/libs/plugin/sdk-go/host v0.0.0 => ./libs/plugin/sdk-go/host
 	github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm v0.0.0 => ./libs/plugin/sdk-go/wasm
-	github.com/jiva-studio/numen/libs/core/protocol v0.0.0 => ./libs/core/protocol
+	github.com/jiva-studio/numen/libs/shared/protocol v0.0.0 => ./libs/shared/protocol
 )

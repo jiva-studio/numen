@@ -1,6 +1,6 @@
 version: v2
 
-# Generated code is committed, as for libs/core/protocol: the Go messages next to the .proto files and the
+# Generated code is committed, as for libs/shared/protocol: the Go messages next to the .proto files and the
 # TypeScript ones in libs/plugin/sdk-ts/src/contracts.
 plugins:
   - local: protoc-gen-go

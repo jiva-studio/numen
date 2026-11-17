@@ -90,6 +90,3 @@ type RecallChance func(Schedule, time.Time) float64
 func GetModeledRecall(c Schedule, now time.Time) float64 {
 	return Recall(now.Sub(c.Last), c.Stability)
 }
-
-// GetFullRecall is the recall probability under which every review card is recalled.
-func GetFullRecall(Schedule, time.Time) float64 { return 1 }

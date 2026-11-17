@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // frontmatterReports is the reports a watcher of the frontmatter of a vault received, in order.

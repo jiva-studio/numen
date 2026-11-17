@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+// What a client may ask about the file a person configures this installation
+// in.
+//
+// The settings belong to the installation and not to a vault: the same file
+//
+// They travel as the file's own text. Their sections belong to whichever
+// adapters an installation is composed of, so the core does not know the whole
+// shape and does not describe it, and a setting is written by naming the path
+// through the file. It is the only tree here that goes undescribed.
+package numen.v1;
+
+import "numen/v1/plugin.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// SettingsService answers about that file, one setting at a time.
+service SettingsService {
+  // GetSettings is every setting of the file.
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
+
+  // WriteSettings writes settings into that file. The file is patched as an
+  // object, so every key a person typed keeps its position, and a file the
+  // settings could not be read out of again is not written at all.
+  rpc WriteSettings(WriteSettingsRequest) returns (WriteSettingsResponse);
+
+  // RetryPlugin forgets the failures of a plugin the host suspends, and starts
+  // it once. A plugin that fails again is suspended again, and the call answers
+  // the reason.
+  rpc RetryPlugin(RetryPluginRequest) returns (RetryPluginResponse);
+
+  // ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
+  // of type file or folder, and writes the path they chose. A path the setting does not accept is not
+  // written, and the answer says why.
+  rpc ChoosePluginPath(ChoosePluginPathRequest) returns (ChoosePluginPathResponse);
+
+  // GetPluginData is how many files the folder of a plugin holds in the vault
+  // the window shows, `.numen/<plugin id>/`, and their bytes.
+  rpc GetPluginData(GetPluginDataRequest) returns (GetPluginDataResponse);
+
+  // DeletePluginData deletes the folder of a plugin in the vault the window
+  // shows and the records of the text versions the plugin made there. The
+  // files those versions were of are indexed again.
+  rpc DeletePluginData(DeletePluginDataRequest) returns (DeletePluginDataResponse);
+
+  // WatchSettings reports each setting whose value changed, for as long as the caller listens: a
+  // write by a window, a plugin or the palette, and an edit of the file by hand. A change arrives
+  // once, named by its declared path, whoever made it and whichever caller listens, and a path no
+  // owner declares is not reported. The stream opens with a response that holds no change, so a
+  // caller knows it is listening before it reads GetSettings.
+  rpc WatchSettings(WatchSettingsRequest) returns (stream WatchSettingsResponse);
+}
+
+message GetSettingsRequest {}
+
+message GetSettingsResponse {
+  // Every setting currently, as JSON: what the file says, and what an
+  // installation without a configuration does under everything it does not. The first level is the
+  // version `v`, the owner `app` and one object per plugin id.
+  string written = 1;
+
+  // The file itself, absolute on this machine.
+  string path = 2;
+
+  // Active plugins and their declarative settings schema.
+  repeated PluginInfo plugins = 7;
+
+  // The settings of the owner app, declared by the core in the format of a manifest setting. The
+  // window reads their defaults, bounds and options from here.
+  repeated PluginSetting app = 8;
+
+  reserved 9;
+
+  // The version of the state `written` is read from. It grows with every write the core takes, so
+  // an answer with a smaller version than one already taken is older than it and is dropped.
+  uint64 version = 10;
+}
+
+// Setting is one setting of the file and what to put there.
+message Setting {
+  // The setting, as a path through the file. The first element is the owner, `app` or the id of a
+  // plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
+  repeated string at = 1;
+
+  // What to write there, as JSON. A value the settings cannot be read out of
+  string value = 2;
+}
+
+message WatchSettingsRequest {}
+
+message WatchSettingsResponse {
+  // The settings that changed together, with the value each now holds. A write of several settings
+  // arrives as one response.
+  repeated Setting changed = 1;
+}
+
+message WriteSettingsRequest {
+  // The settings to write. They are written together, or none of them is.
+  repeated Setting settings = 1;
+}
+
+message WriteSettingsResponse {
+  // Every setting after the write, in the shape of GetSettingsResponse.written.
+  string written = 1;
+
+  // The version of the state `written` stands for, as in GetSettingsResponse.version. It is greater
+  // than the version of any answer the core gave before the write.
+  uint64 version = 2;
+}
+
+message RetryPluginRequest {
+  // The plugin, by its id.
+  string plugin_id = 1;
+}
+
+message RetryPluginResponse {
+  // Set when the plugin failed to start again, in words a person reads.
+  string failure = 1;
+}
+
+message ChoosePluginPathRequest {
+  string plugin_id = 1;
+  // The key of the setting.
+  string key = 2;
+}
+
+message ChoosePluginPathResponse {
+  // The path the person chose, empty when they chose none.
+  string path = 1;
+  // Set when the person chose a path.
+  bool is_chosen = 2;
+  // Why the setting does not accept the path, in words a person reads. Empty where it was written.
+  string problem = 3;
+}
+
+message GetPluginDataRequest {
+  string plugin_id = 1;
+}
+
+message GetPluginDataResponse {
+  int32 file_count = 1;
+  int64 byte_count = 2;
+}
+
+message DeletePluginDataRequest {
+  string plugin_id = 1;
+}
+
+message DeletePluginDataResponse {}
+
+// OptionsRequest is the payload of an operation a row field of a connection type names in options_from.
+message OptionsRequest {
+  // operations are the operations the setting of rows the field belongs to is used for.
+  repeated string operations = 1;
+  // is_fresh asks the provider to read the options anew, past any list it keeps.
+  bool is_fresh = 2;
+}
+
+// Options is the done frame of an operation a row field names in options_from: the values the field can
+// take, in the order to show them.
+message Options {
+  repeated Option options = 1;
+  // is_partial marks a list that misses values the provider could not read now; the core does not keep it.
+  bool is_partial = 2;
+}
+
+// Option is one value of a field.
+message Option {
+  string value = 1;
+  // title is shown in place of the value; empty shows the value.
+  string title = 2;
+  // group is the heading the option is shown under; empty is no heading.
+  string group = 3;
+}

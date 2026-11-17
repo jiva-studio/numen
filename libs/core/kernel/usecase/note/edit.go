@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
-	"github.com/jiva-studio/numen/libs/note/markdown"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -88,7 +88,8 @@ func (f vaultFiles) Read(ctx context.Context, path string) ([]byte, error) {
 func (f vaultFiles) Write(
 	ctx context.Context, path string, content []byte, stat domain.FileStat,
 ) (domain.FileStat, error) {
-	return f.writer.Write(ctx, path, content, stat)
+	written, err := f.writer.Write(ctx, path, content, stat)
+	return written.Stat, err
 }
 
 func (f vaultFiles) Lock(ctx context.Context) (func(), error) {

@@ -24,7 +24,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // StopPlugins stops every plugin the host runs.

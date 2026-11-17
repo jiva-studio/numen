@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Vectors answers which chunks lack a vector, how far the embedding has come, which vectors exist already and what

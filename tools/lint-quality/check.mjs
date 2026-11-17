@@ -19,6 +19,7 @@ import process from "node:process";
 
 import { runDuplicationCheck } from "../checks/structure/ts/duplication/check.mjs";
 import { runTestOnlyExportsCheck } from "../checks/structure/ts/test-only-exports/check.mjs";
+import { runTestOnlyModulesCheck } from "../checks/structure/ts/test-only-modules/check.mjs";
 import { runKnipCheck } from "./checks/knip.mjs";
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
@@ -40,6 +41,11 @@ const ALL_CHECKS = [
     name: "Exports Used Only by Tests (knip --production)",
     run: (opts) => runTestOnlyExportsCheck({ repoRoot: REPO_ROOT, ...opts }),
   },
+  {
+    id: "test-only-modules",
+    name: "Modules Imported Only by Tests (knip --production)",
+    run: (opts) => runTestOnlyModulesCheck({ repoRoot: REPO_ROOT, ...opts }),
+  },
 ];
 
 function printHelp() {
@@ -47,7 +53,7 @@ function printHelp() {
 Usage: node check.mjs [options]
 
 Options:
-  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,knip,test-only-exports)
+  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,knip,test-only-exports,test-only-modules)
   --changed-only       Run only checks relevant to modified files against git base
   --warn               Non-blocking mode: report findings with exit code 0
   --strict             Fail on any detected finding (default)
@@ -111,7 +117,7 @@ function resolveChecks(args, changedOnly) {
 
     targetIds = targetIds.filter((id) => {
       if (id === "duplication") return hasGo || hasTsOrVue;
-      if (id === "knip" || id === "test-only-exports") return hasTsOrVue || hasPackageManifest;
+      if (id === "knip" || id === "test-only-exports" || id === "test-only-modules") return hasTsOrVue || hasPackageManifest;
       return true;
     });
   }

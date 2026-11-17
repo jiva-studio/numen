@@ -16,11 +16,11 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	manifestdomain "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"connectrpc.com/connect"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func CreateTestPluginTree(t *testing.T, dir string) {
