@@ -12,9 +12,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
-	"github.com/jiva-studio/numen/libs/note/markdown"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -111,9 +113,9 @@ type failingWriter struct {
 	err error
 }
 
-func (f failingWriter) Write(ctx context.Context, path string, content []byte, fp domain.FileStat) (domain.FileStat, error) {
+func (f failingWriter) Write(ctx context.Context, path string, content []byte, fp domain.FileStat) (vault.WriteResult, error) {
 	if f.err != nil {
-		return domain.FileStat{}, f.err
+		return vault.WriteResult{}, f.err
 	}
 	return f.NoteWriter.Write(ctx, path, content, fp)
 }

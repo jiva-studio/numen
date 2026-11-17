@@ -1,6 +1,6 @@
 package plugin
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // UnavailableReason is why no plugin answers.
 type UnavailableReason int

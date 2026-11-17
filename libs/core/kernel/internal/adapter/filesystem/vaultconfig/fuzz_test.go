@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/note/ulid"
+	"github.com/jiva-studio/numen/libs/shared/note/ulid"
 )
 
 func vault(tb testing.TB) string {

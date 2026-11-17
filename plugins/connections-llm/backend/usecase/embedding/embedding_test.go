@@ -33,7 +33,7 @@ func (g *gateway) Embed(_ context.Context, _ connection.Call, limit time.Duratio
 	return g.vectors, g.err
 }
 
-func (g *gateway) Rerank(context.Context, connection.Call, time.Duration, *llm.RerankRequest) ([]float32, error) {
+func (g *gateway) Rerank(context.Context, connection.Call, time.Duration, string, string, []string) ([]float32, error) {
 	return nil, nil
 }
 

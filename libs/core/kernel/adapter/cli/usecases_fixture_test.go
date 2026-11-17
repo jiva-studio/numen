@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // useCases are the use cases over the commands the plugins declare, built the way the container builds them.

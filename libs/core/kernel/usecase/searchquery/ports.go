@@ -2,11 +2,12 @@ package searchquery
 
 import (
 	"context"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // QueryParser parses the text of a query against a catalog. A query that does not parse or type-check
@@ -69,4 +70,19 @@ type LinkReaders interface {
 	// ListLinksByName returns the links written in the notes of the vault whose target's last segment folds
 	// to the name, with the path of the note each is written in and without resolution.
 	ListLinksByName(ctx context.Context, vaultID domain.VaultID, foldedName string) ([]domain.ResolvedLink, error)
+}
+
+// FloorReader returns the similarity floor of a vault under a recipe.
+type FloorReader interface {
+	GetFloor(ctx context.Context, v domain.Vault, recipe string) float64
+}
+
+// OperationResults reads and writes the stored results of connection operations.
+type OperationResults interface {
+	// FindResults returns the stored outputs of the input hashes that have one, by input hash, and marks
+	// them used at at.
+	FindResults(ctx context.Context, operation, recipeHash string, inputHashes []string, at time.Time) (map[string][]byte, error)
+	// SaveResults stores the outputs by input hash under the operation and recipe, used at at, replacing
+	// equal keys, then removes the least recently used rows above the row limit of the store.
+	SaveResults(ctx context.Context, operation, recipeHash string, outputs map[string][]byte, at time.Time) error
 }

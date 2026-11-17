@@ -2,12 +2,13 @@ package cards_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
@@ -47,7 +48,7 @@ func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
 	vs := newVaults(t)
 	writers := &counted{VaultWriters: vs.ports.Writers}
 	u := cards.NewWrite(
-		vs.ports.Readers, writers, vs.queries, indexNothing, vaulttest.NewClock())
+		vs.ports.Readers, writers, vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 
 	body := "\n## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
 	pos, err := u.CardModel(
@@ -87,7 +88,7 @@ func TestWriteCardModel_PreservesExistingFieldDeclarations(t *testing.T) {
 
 	u := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
-		vaulttest.NewClock())
+		vaulttest.NewClock(), machineclock.Entropy{})
 	if _, err := u.CardModel(
 		t.Context(), vs.first, "Kept.md",
 		"\n## Recognize\n\n### Front\n\n{{Height}}\n",
@@ -118,7 +119,7 @@ func newWriteForDeckIndexed(t *testing.T, vs vaulted, path, body string, index n
 	}
 	return cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, index,
-		vaulttest.NewClock())
+		vaulttest.NewClock(), machineclock.Entropy{})
 }
 
 func readDeck(t *testing.T, vs vaulted, path string) format.Deck {
@@ -200,7 +201,7 @@ func TestAMarkIsSavedInTheFilesOwnLineEnding(t *testing.T) {
 
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
-		vaulttest.NewClock())
+		vaulttest.NewClock(), machineclock.Entropy{})
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.FileStat{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -320,7 +321,7 @@ func TestWritingAnUntouchedDeckChangesNothing(t *testing.T) {
 
 			w := cards.NewWrite(
 				vs.ports.Readers, vs.ports.Writers,
-				vs.queries, indexNothing, vaulttest.NewClock())
+				vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 			if _, err := w.Deck(
 				t.Context(), vs.first, "decks/Whole.md", body, domain.FileStat{},
 			); err != nil {

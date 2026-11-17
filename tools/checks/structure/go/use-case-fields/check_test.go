@@ -18,7 +18,7 @@ func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 	for _, one := range getUseCases(t, filepath.Join("..", "usecase")) {
 		t.Error(one + ": a use case is made with what it needs, and not given it afterwards")
 	}
-	roots := []string{"../adapter", "../internal", "../../../note", "../../../../plugins"}
+	roots := []string{"../adapter", "../internal", "../../../shared/note", "../../../../plugins"}
 	for _, root := range roots {
 		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {

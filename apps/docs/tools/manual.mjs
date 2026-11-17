@@ -44,7 +44,7 @@ const PAGES = new URL('../src/content/docs/', import.meta.url)
 
 /** The shared commands of the application, which plugins handle. */
 const SHARED = JSON.parse(
-  await readFile(new URL('../../../libs/core/protocol/commands.json', import.meta.url), 'utf8'),
+  await readFile(new URL('../../../libs/shared/protocol/commands.json', import.meta.url), 'utf8'),
 )
 
 /**
@@ -286,7 +286,7 @@ const checkSettingCommands = async () => {
 }
 
 /**
- * The shared commands a plugin handles, in the order libs/core/protocol/commands.json lists them: over
+ * The shared commands a plugin handles, in the order libs/shared/protocol/commands.json lists them: over
  * the note where the command declares no required argument, and over the window where it asks for
  * one, as the window's shared commands file them.
  */

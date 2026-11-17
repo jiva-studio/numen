@@ -13,7 +13,6 @@ import (
 
 	"google.golang.org/protobuf/encoding/protowire"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
@@ -76,7 +75,6 @@ func (s *services) sentTexts(address string) [][]string {
 func (w world) newRerankingFind(s *services, limits searchquerydomain.StageLimits) *searchquery.FindSearchResults {
 	deps := w.newDeps(nil)
 	world := s.world
-	deps.Stages.Codec = rerankproto.Codec{}
 	deps.Stages.Calls = modelcall.NewCalls(
 		modelcall.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows},
 		world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside,
@@ -444,5 +442,21 @@ func TestAWaitingInteractiveRerankGoesBeforeTheNextBatchOfABackgroundRerank(t *t
 	}
 	if err := <-background; err != nil {
 		t.Errorf("the background rerank answered %v", err)
+	}
+}
+
+func TestAPassageThatIsNotUTF8FailsTheRerankWithoutACall(t *testing.T) {
+	w := newWorld(t, map[string]string{"a.md": "The tide comes over the sand \xff at night."})
+	w.cutBySize(t, "a.md", 400)
+	s := newServices(t)
+
+	_, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide").rerank()`})
+
+	rerankError, ok := errors.AsType[*searchquerydomain.RerankError](err)
+	if !ok || rerankError == nil {
+		t.Fatalf("the query answered %v, want a RerankError", err)
+	}
+	if calls := len(s.world.Provider.CallsTo(firstAddress)) + len(s.world.Provider.CallsTo(secondAddress)); calls != 0 {
+		t.Errorf("%d calls were made, want none for a request that cannot be written", calls)
 	}
 }

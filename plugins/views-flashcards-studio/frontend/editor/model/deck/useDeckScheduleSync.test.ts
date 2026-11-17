@@ -28,7 +28,7 @@ const open = () => {
     writeCardModel: async () => asValue({ at: '' }),
   }
   const presets: Presets = {
-    read: async () => asValue({ preset: null, at: '', bounds: NO_BOUNDS }),
+    read: async () => asValue({ preset: null, at: '', version: 0n, bounds: NO_BOUNDS }),
     list: async () => [],
     createPreset: async () => asValue({ path: '' }),
     getDeckPreset: async () =>
@@ -42,10 +42,11 @@ const open = () => {
           stopsOn: StopReason.NOTHING,
         },
         at: '',
+        version: 1n,
         bounds: NO_BOUNDS,
       }),
-    scheduleDeck: async () => asValue({ at: '' }),
-    write: async () => asValue({ at: '' }),
+    scheduleDeck: async () => asValue({ at: '', version: 1n }),
+    write: async () => asValue({ at: '', version: 1n }),
     curve: async () => {
       throw new Error('unused')
     },

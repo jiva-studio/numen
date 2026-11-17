@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
@@ -100,9 +100,9 @@ func newDeleteCopyCommand(links *link.Links) command.Run {
 	}
 }
 
-func getMedia(item string) (download.Media, error) {
+func getMedia(item string) (fetch.Media, error) {
 	// A run with no item, as numen-cli makes, downloads the video.
-	media, isKnown := download.ParseMedia(item)
+	media, isKnown := fetch.ParseMedia(item)
 	if !isKnown {
 		return "", fmt.Errorf("%w: %s offers no item %q", command.ErrBadArguments, commandDownloadMedia, item)
 	}

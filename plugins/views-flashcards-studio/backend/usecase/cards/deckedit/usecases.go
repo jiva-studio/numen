@@ -1,19 +1,8 @@
 package deckedit
 
 import (
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
-
-// Read is the deck reading scenario of the cards package.
-type Read = cards.Read
-
-// Write is the note writing scenario of the cards package.
-type Write = cards.Write
-
-type DeckContents = cards.DeckContents
-
-// MaxBytes is the largest deck that is read.
-const MaxBytes = cards.MaxBytes
 
 // CardUseCases groups the operations that read and edit the cards of a deck.
 type CardUseCases struct {
@@ -24,7 +13,7 @@ type CardUseCases struct {
 	RemoveCard      RemoveCard
 }
 
-func NewCardUseCases(read Read, write Write) CardUseCases {
+func NewCardUseCases(read ports.DeckReader, write ports.DeckWriter) CardUseCases {
 	return CardUseCases{
 		GetCardPage:     NewGetCardPage(read),
 		AddCard:         NewAddCard(read, write),
@@ -41,7 +30,7 @@ type SectionUseCases struct {
 	RemoveSection RemoveSection
 }
 
-func NewSectionUseCases(read Read, write Write) SectionUseCases {
+func NewSectionUseCases(read ports.DeckReader, write ports.DeckWriter) SectionUseCases {
 	return SectionUseCases{
 		AddSection:    NewAddSection(read, write),
 		RenameSection: NewRenameSection(read, write),

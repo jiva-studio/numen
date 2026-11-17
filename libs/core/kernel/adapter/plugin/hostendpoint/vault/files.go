@@ -10,11 +10,11 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -91,7 +91,10 @@ func getNoteErrorCodes() map[v1.ErrorCode]v1.HostVaultErrorCode {
 const noVault = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT
 
 func writeFileStat(f domain.FileStat) *v1.HostFileStat {
-	return &v1.HostFileStat{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
+	return &v1.HostFileStat{
+		Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote,
+		Hash: f.Hash, Version: f.Version,
+	}
 }
 
 func readFileStat(f *v1.HostFileStat) domain.FileStat {
@@ -100,6 +103,7 @@ func readFileStat(f *v1.HostFileStat) domain.FileStat {
 	}
 	return domain.FileStat{
 		Path: f.GetPath(), Kind: readKind(f), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+		Hash: f.GetHash(), Version: f.GetVersion(),
 	}
 }
 

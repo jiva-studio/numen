@@ -1,9 +1,9 @@
 ---
 name: nm-place-core
-description: Says where code of the Go core goes and how it is shaped, for libs/core/kernel, libs/note and the Go side of apps/desktop. Load it before adding or moving a capability, a rule about notes, a storage, an RPC, a setting, a plugin host call, an identifier, a port, a use case or an adapter, and when deciding which layer a piece of logic belongs to.
+description: Says where code of the Go core goes and how it is shaped, for libs/core/kernel, libs/shared/note and the Go side of apps/desktop. Load it before adding or moving a capability, a rule about notes, a storage, an RPC, a setting, a plugin host call, an identifier, a port, a use case or an adapter, and when deciding which layer a piece of logic belongs to.
 paths:
   - "libs/core/kernel/**"
-  - "libs/note/**"
+  - "libs/shared/note/**"
   - "apps/desktop/**/*.go"
 ---
 
@@ -19,7 +19,7 @@ The rules this guide serves are in `AGENTS.md`, `.agents/rules/architecture.md`,
 graph TD
     Driving["driving adapters: cli, window, plugin host endpoints"] --> UseCase["usecase"]
     UseCase --> Port["port: interfaces and the types they exchange"]
-    UseCase --> Domain["libs/note: domain, markdown, edit"]
+    UseCase --> Domain["libs/shared/note: domain, markdown, edit"]
     Port --> Domain
     Driven["driven adapters: index, filesystem, settings file, clock, trash, plugin bridges"] -. "implement" .-> Port
     Driven --> Domain
@@ -29,9 +29,9 @@ graph TD
     App["apps/desktop: entry points"] --> Root
 ```
 
-Dependencies point from the outside inward: `libs/note/domain` imports nothing of this repository, `libs/core/kernel/domain/<area>` imports only the standard library, `libs/note/domain` and itself, `port` and `usecase` import the domain and never an adapter, an adapter imports the core and never another adapter, and only `container` names a driven adapter next to the port it satisfies.
+Dependencies point from the outside inward: `libs/shared/note/domain` imports nothing of this repository, `libs/core/kernel/domain/<area>` imports only the standard library, `libs/shared/note/domain` and itself, `port` and `usecase` import the domain and never an adapter, an adapter imports the core and never another adapter, and only `container` names a driven adapter next to the port it satisfies.
 
-- A domain type is a fact about notes, vaults, links or cards, with the rules that follow from the values alone, and it lives in `libs/note/domain`.
+- A domain type is a fact about notes, vaults, links or cards, with the rules that follow from the values alone, and it lives in `libs/shared/note/domain`.
 - A concept of the core that is not about notes (settings, theme, connections, the index, search sources, plugin information) is a small package `libs/core/kernel/domain/<area>`. Ports and use cases import it; a plugin and the SDK never do. The sentinel errors of an area are declared in its package. A use case may call `crypto/rand`. The machine clock stays behind a clock port, and so does a timer whose firing changes what a caller or a test observes (`machineport.Timer`).
 - A port is an interface a use case requires from the world outside the core, named after the need and declared by the code that calls it.
 - A use case is one business scenario: it takes ports and domain values, orchestrates them and returns a result, and it is the unit of work and of the transaction.
@@ -44,9 +44,9 @@ An adapter is driving or driven, never both. A package that would be both is spl
 
 ## What each layer holds
 
-- `libs/note/domain` holds entities, value objects, identifiers (`NoteID`, `VaultID`, `CardFaceID`), the errors that name a refusal, and the rules that need only those values. It does no I/O, reads no clock, and knows no storage and no wire format.
-- `libs/note/markdown`, `edit`, `textfile` and `ulid` hold the format of a note's file and the identifier scheme. They are pure and take time and entropy as arguments.
-- `libs/core/kernel/port/<name>port` holds the interfaces that several use cases share, at most five methods each and three where practical; the types they exchange and the sentinel errors a caller tests with `errors.Is` are in `domain/<area>` or `libs/note/domain`. It holds no function that calls a method of an interface value, no default behaviour and no policy.
+- `libs/shared/note/domain` holds entities, value objects, identifiers (`NoteID`, `VaultID`, `CardFaceID`), the errors that name a refusal, and the rules that need only those values. It does no I/O, reads no clock, and knows no storage and no wire format.
+- `libs/shared/note/markdown`, `edit`, `textfile` and `ulid` hold the format of a note's file and the identifier scheme. They are pure and take time and entropy as arguments.
+- `libs/core/kernel/port/<name>port` holds the interfaces that several use cases share, at most five methods each and three where practical; the types they exchange and the sentinel errors a caller tests with `errors.Is` are in `domain/<area>` or `libs/shared/note/domain`. It holds no function that calls a method of an interface value, no default behaviour and no policy.
 - `libs/core/kernel/domain/<area>` holds the core's own concepts that are not about notes, as small packages, with the errors of the area. It does no I/O and reads no clock.
 - `libs/core/kernel/usecase/<name>` holds the use cases of one bounded context, one per file, each isolated from the others, with its request and result types, the small interfaces only that use case consumes, and the policy of the scenario (order of steps, what is reported). It holds no `os`, no SQL, and no clock read.
 - `libs/core/kernel/adapter/*` and `libs/core/kernel/internal/adapter/*` hold technology: the settings file, SQL, directory watching, process management, toolkit calls. They hold no rule about what a note is.
@@ -57,11 +57,11 @@ An adapter is driving or driven, never both. A package that would be both is spl
 | I am adding | It goes in | Who calls it |
 | --- | --- | --- |
 | A capability a person triggers (rename a folder, export a note) | A use case in `usecase/<noun>`, one file, an `Execute` method | A driving adapter method, to which `container` hands the created use case |
-| A fact or rule about notes, links, cards or vaults that follows from the values (what makes a connection valid, which role is the inverse of which) | A method or function in `libs/note/domain`, or in `markdown` when it is about the file's text | The use cases that need it |
+| A fact or rule about notes, links, cards or vaults that follows from the values (what makes a connection valid, which role is the inverse of which) | A method or function in `libs/shared/note/domain`, or in `markdown` when it is about the file's text | The use cases that need it |
 | A rule that also needs stored data (a connection must not make a cycle in the stored hierarchy) | The deciding part in the domain with the data as a function parameter; the use case reads the data through a port and passes it | The use case |
 | A new storage (a table, a file, a cache) | A driven adapter implementing a port the use case declares; schema, SQL and file layout stay inside the adapter | `container` binds it; the use case calls the port |
 | What to store, when to read it again, which of two values wins | The use case; the adapter stores and reads exactly what it is told | The driving adapter, through the use case |
-| A new RPC or CLI command | A method on the driving adapter that parses the request, calls one use case and maps the result; the schema change goes through `libs/core/protocol` | The window or the CLI |
+| A new RPC or CLI command | A method on the driving adapter that parses the request, calls one use case and maps the result; the schema change goes through `libs/shared/protocol` | The window or the CLI |
 | A new setting | The value and its constraints as a domain value or a settings declaration; reading, writing and applying through the settings use cases; the file layout in `adapter/settings`; a consumer is handed the value by `container` | The consumer, which never opens the settings file |
 | A new plugin host call (something a plugin asks of the core) | A method on a `host*` driving package of the plugin adapter that maps the call and calls a use case; the permission check of the host endpoint stays where it is | The plugin, through the SDK |
 | A new call from the core to a plugin | A port the use case declares, implemented by a `*bridge` driven package | The use case |
@@ -120,11 +120,11 @@ A structure is judged by what one object does, not by the interfaces it is cut i
 
 ## Which domain does it know
 
-Ask of every new package, type, RPC or export of the core, the core protocol (`libs/core/protocol`) or the shared SDK (`libs/plugin/sdk-go`, `libs/plugin/sdk-ts` outside `contracts/`): "Which product domain does this know, and why is it not in a plugin or a contract?" The core holds notes, vaults, the index and its storage, search, text versions, windows, settings, the plugin host and the generic connection mechanism; an agent, a model, an engine or the feature of one plugin is a plugin or a contract ([`architecture.md`](../../rules/architecture.md) §11 (l)). Examples from the microkernel change:
+Ask of every new package, type, RPC or export of the core, the core protocol (`libs/shared/protocol`) or the shared SDK (`libs/plugin/sdk-go`, `libs/plugin/sdk-ts` outside `contracts/`): "Which product domain does this know, and why is it not in a plugin or a contract?" The core holds notes, vaults, the index and its storage, search, text versions, windows, settings, the plugin host and the generic connection mechanism; an agent, a model, an engine or the feature of one plugin is a plugin or a contract ([`architecture.md`](../../rules/architecture.md) §11 (l)). Examples from the microkernel change:
 
 - The list of agent programs was cached in the settings adapter of the core. An agent program is a connection type that serves `acp.task`, of the plugin that runs it (agents-claude, agents-codex, agents-antigravity, agents-acp); the core keeps the connection rows only.
 - The core held the model fields of a search source (pooling, handling, the model it came from, the token limit). A source now describes itself by an opaque recipe, a vector width and a chunk size; the model stays in engines-embeddings.
-- The shared command catalog `libs/core/protocol/commands.json` held the `app:link.*` commands of the media importer. They are commands of that plugin's manifest now.
+- The shared command catalog `libs/shared/protocol/commands.json` held the `app:link.*` commands of the media importer. They are commands of that plugin's manifest now.
 
 `go/dead-exports` fails on an RPC or an SDK export that nothing outside tests uses, and `ts/contracts-imports` fails on a library outside `contracts/` that imports a contract.
 

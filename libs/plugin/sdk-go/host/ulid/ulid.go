@@ -4,7 +4,7 @@ package ulid
 import (
 	"io"
 
-	notesulid "github.com/jiva-studio/numen/libs/note/ulid"
+	notesulid "github.com/jiva-studio/numen/libs/shared/note/ulid"
 )
 
 // Generator creates identifiers whose random bits are read from one entropy source.

@@ -12,7 +12,7 @@ import (
 
 // TestNoStructCarriesAContext verifies that no struct field across Go modules holds context.Context.
 func TestNoStructCarriesAContext(t *testing.T) {
-	wrong, read, err := findContextFields([]string{"..", "../../../note", "../../../plugin/sdk-go", "../../../../plugins", "../../../../apps/desktop"})
+	wrong, read, err := findContextFields([]string{"..", "../../../shared/note", "../../../plugin/sdk-go", "../../../../plugins", "../../../../apps/desktop"})
 	if err != nil {
 		t.Fatal(err)
 	}

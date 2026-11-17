@@ -4,13 +4,15 @@
 // Watches never nest: a folder requested inside a folder already watched
 // recursively is served by that watch, and a folder requested over existing
 // watches replaces them. notify's recursive tree, which FSEvents uses, removes
-// the outer watch when a watch nested inside it stops.
+// the outer watch when a watch nested inside it stops. Place on Linux is the one nested
+// watch: it is placed inside the recursive watch it lies in and is stopped with it.
 package watchhub
 
 import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -44,6 +46,8 @@ type placed struct {
 
 	mu        sync.Mutex
 	followers map[*follower]struct{}
+
+	inner chan notify.EventInfo
 }
 
 func (p *placed) isCovering(dir string, isRecursive bool) bool {
@@ -194,6 +198,9 @@ func (h *Hub) start(p *placed) error {
 
 func (h *Hub) unplace(p *placed) {
 	h.system.Stop(p.raw)
+	if p.inner != nil {
+		h.system.Stop(p.inner)
+	}
 	close(p.quit)
 	delete(h.placed, p)
 }
@@ -240,4 +247,48 @@ func isWithin(path, dir string) bool {
 		return true
 	}
 	return strings.HasPrefix(path, strings.TrimSuffix(dir, string(filepath.Separator))+string(filepath.Separator))
+}
+
+// Place returns once the operating system reports what happens in dir, a folder inside a tree
+// followed recursively. On Linux notify places the watch on a folder created in the tree in a
+// goroutine of its own after it has delivered the event naming the folder, so a file written
+// before that goes unreported; the watch placed here is in force when Place returns. FSEvents and
+// ReadDirectoryChangesW watch the whole tree and need nothing.
+func (h *Hub) Place(dir string) error {
+	if runtime.GOOS != "linux" {
+		return nil
+	}
+	if h == nil {
+		return ErrNoHub
+	}
+	canonical, err := getCanonicalPath(dir)
+	if err != nil {
+		return err
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for p := range h.placed {
+		if !p.isRecursive || !isWithin(canonical, p.dir) {
+			continue
+		}
+		if p.inner == nil {
+			p.inner = make(chan notify.EventInfo, handover)
+			go drain(p.inner, p.quit)
+		}
+		if err := h.system.Watch(canonical, p.inner, notify.All); err != nil {
+			return fmt.Errorf("watch %s: %w", dir, err)
+		}
+		return nil
+	}
+	return nil
+}
+
+func drain(c <-chan notify.EventInfo, quit <-chan struct{}) {
+	for {
+		select {
+		case <-quit:
+			return
+		case <-c:
+		}
+	}
 }
