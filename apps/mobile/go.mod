@@ -4,8 +4,8 @@ go 1.26.11
 
 require (
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0
-	github.com/jiva-studio/numen/libs/core/protocol v0.0.0
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/shared/protocol v0.0.0
 	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0 // indirect
 	golang.org/x/mobile v0.0.0-20260821190718-4776eadac327
 )
@@ -44,7 +44,7 @@ require (
 
 replace github.com/jiva-studio/numen/libs/core/kernel => ../../libs/core/kernel
 
-replace github.com/jiva-studio/numen/libs/core/protocol => ../../libs/core/protocol
+replace github.com/jiva-studio/numen/libs/shared/protocol => ../../libs/shared/protocol
 
 replace github.com/jiva-studio/numen/libs/shared/note => ../../libs/shared/note
 

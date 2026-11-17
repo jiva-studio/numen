@@ -37,7 +37,7 @@ describe("plugin isolation over the captured plugin", () => {
 
 describe("the schemas of plugins", () => {
   it("finds a protobuf schema under a plugin and none elsewhere", () => {
-    const files = ["plugins/alpha/proto/alpha.proto", "plugins/alpha/backend/a.go", "libs/core/protocol/proto/numen/v1/a.proto"];
+    const files = ["plugins/alpha/proto/alpha.proto", "plugins/alpha/backend/a.go", "libs/shared/protocol/proto/numen/v1/a.proto"];
     assert.deepEqual(findPluginSchemas(files).map((one) => one.file), ["plugins/alpha/proto/alpha.proto"]);
   });
 });

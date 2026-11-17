@@ -4,9 +4,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/protocol"
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/protocol"
 )
 
 func takerOf(contentType domain.ContentType) catalogmanifest.Manifest {

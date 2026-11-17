@@ -63,7 +63,7 @@ func TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK(t *testing.T) {
 	}{
 		{"the core", "..", true, load.ListShippedPlatforms()},
 		{"notes", filepath.Join("..", "..", "..", "shared", "note"), true, load.ListShippedPlatforms()},
-		{"protocol", filepath.Join("..", "..", "protocol"), true, load.ListShippedPlatforms()},
+		{"protocol", filepath.Join("..", "..", "..", "shared", "protocol"), true, load.ListShippedPlatforms()},
 		{"the desktop", filepath.Join("..", "..", "..", "..", "apps", "desktop"), false, load.ListShippedPlatforms()[:3]},
 	}
 	for _, build := range builds {

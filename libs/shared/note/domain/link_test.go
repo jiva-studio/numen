@@ -25,7 +25,7 @@ func TestARoleWithNoDecisionIsNotActedOn(t *testing.T) {
 
 // The addresses in a note travel on the wire as they were written, so the
 // window reads them too. Both read this one corpus, and neither owns it.
-const corpus = "../../../core/protocol/testdata/addresses.json"
+const corpus = "../../protocol/testdata/addresses.json"
 
 type written struct {
 	Written string `json:"written"`

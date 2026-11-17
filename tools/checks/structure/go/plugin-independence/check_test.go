@@ -47,7 +47,7 @@ func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 		{load.NumenRoot + "libs/sharedx", true},
 		{load.NumenRoot + "libs/sharedx/onnx", true},
 		{load.NumenRoot + "libs/plugin/catalog", true},
-		{load.NumenRoot + "libs/core/protocol/gen/numen/v1", true},
+		{load.NumenRoot + "libs/shared/protocol/gen/numen/v1", true},
 		{"golang.org/x/net/html", false},
 		{"github.com/jiva-studio/other", false},
 	} {
@@ -92,6 +92,7 @@ linters:
           deny:
             - pkg: "` + load.NumenRoot + `libs"
             - pkg: "` + load.NotesModule + `"
+            - pkg: "` + load.Wire + `"
             - pkg: "` + load.NumenRoot + `apps"
             - pkg: "connectrpc.com/connect"
             - pkg: "google.golang.org/protobuf"
@@ -107,6 +108,7 @@ linters:
 	missingRule := strings.Replace(complete, "$all", "**/other/**", 1)
 	missingDeny := strings.Replace(complete, "connectrpc.com/connect", "example.com/other", 1)
 	missingNotesDeny := strings.Replace(complete, "            - pkg: \""+load.NotesModule+"\"\n", "", 1)
+	missingWireDeny := strings.Replace(complete, "            - pkg: \""+load.Wire+"\"\n", "", 1)
 	extraAllow := strings.Replace(complete, `allow: ["`+load.SdkModule+`"]`, `allow: ["`+load.NotesModule+`"]`, 1)
 	extraPrefix := strings.Replace(complete, `allow: ["`+load.SdkModule+`"]`, `allow: ["`+load.SdkModule+`", "`+load.NumenRoot+`libs/sharedx"]`, 1)
 	// depguard matches an allow by prefix, so libs/shared without the slash would also allow libs/sharedx.
@@ -115,6 +117,7 @@ linters:
 		"a configuration without a rule over $all":                missingRule,
 		"a rule that leaves a boundary out":                       missingDeny,
 		"a rule that lets a plugin name the notes library":        missingNotesDeny,
+		"a rule that lets a plugin name the protocol":             missingWireDeny,
 		"a rule that allows another library":                      extraAllow,
 		"a rule that allows a library named like the shared ones": extraPrefix,
 		"a rule that allows libs/shared without the slash":        slashless,

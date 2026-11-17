@@ -9,17 +9,17 @@ import (
 
 func TestParseReadsTheStepsAndTheOffset(t *testing.T) {
 	for text, want := range map[string]CFI{
-		"epubcfi(/6/4!/4/10/3:12)":                          {Package: []int{6, 4}, Document: []int{4, 10, 3}, Offset: 12},
-		"epubcfi(/6/4[chap01ref]!/4[body01]/10[para05]/3)":  {Package: []int{6, 4}, Document: []int{4, 10, 3}, Offset: -1},
-		"epubcfi(/6/4!/4/2/1:3[xx^]y,z])":                   {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
-		"epubcfi(/6/4!/4/2,/1:3,/1:9)":                      {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
-		"epubcfi(/6/4,!/4/2/1:3,!/4/2/1:9)":                 {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
-		"epubcfi(/6/4!/4/2/1:3~2.5@10:20)":                  {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
-		"epubcfi(/6/4!/4/2/9:0[a][b],/1:3,/1:9)":            {Package: []int{6, 4}, Document: []int{4, 2, 9, 1}, Offset: 3},
-		"epubcfi(/6/4!/4/2~2.5@10:20[x^,y],/1:3,/1:9)":      {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
-		"epubcfi(/6/4!/4/2~2.5[x^,y]@10:20,/1:3,/1:9)":      {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
-		"epubcfi(/6/4!/4/2@10:20,/1:3,/1:9)":                {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
-		"epubcfi(/6/4!)":                                    {Package: []int{6, 4}, Offset: -1},
+		"epubcfi(/6/4!/4/10/3:12)":                         {Package: []int{6, 4}, Document: []int{4, 10, 3}, Offset: 12},
+		"epubcfi(/6/4[chap01ref]!/4[body01]/10[para05]/3)": {Package: []int{6, 4}, Document: []int{4, 10, 3}, Offset: -1},
+		"epubcfi(/6/4!/4/2/1:3[xx^]y,z])":                  {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
+		"epubcfi(/6/4!/4/2,/1:3,/1:9)":                     {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
+		"epubcfi(/6/4,!/4/2/1:3,!/4/2/1:9)":                {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
+		"epubcfi(/6/4!/4/2/1:3~2.5@10:20)":                 {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
+		"epubcfi(/6/4!/4/2/9:0[a][b],/1:3,/1:9)":           {Package: []int{6, 4}, Document: []int{4, 2, 9, 1}, Offset: 3},
+		"epubcfi(/6/4!/4/2~2.5@10:20[x^,y],/1:3,/1:9)":     {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
+		"epubcfi(/6/4!/4/2~2.5[x^,y]@10:20,/1:3,/1:9)":     {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
+		"epubcfi(/6/4!/4/2@10:20,/1:3,/1:9)":               {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
+		"epubcfi(/6/4!)":                                   {Package: []int{6, 4}, Offset: -1},
 	} {
 		got, err := Parse(text)
 		if err != nil {
@@ -47,10 +47,10 @@ func TestParseRejectsWhatIsNoCFIIntoADocument(t *testing.T) {
 	}
 
 	for text, wantErr := range map[string]string{
-		"epubcfi(/6/4!/4:)":        "without a number",
-		"epubcfi(/6/4!/4/)":        "without a number",
-		"epubcfi(/6/4!/4,/x,/2)":   "without a number",
-		"epubcfi(/6/4!/4,/1:,/2)":  "without a number",
+		"epubcfi(/6/4!/4:)":         "without a number",
+		"epubcfi(/6/4!/4/)":         "without a number",
+		"epubcfi(/6/4!/4,/x,/2)":    "without a number",
+		"epubcfi(/6/4!/4,/1:,/2)":   "without a number",
 		"epubcfi(/6/4!/4/2!/1)":     "a second indirection",
 		"epubcfi(/6/4!/4,!/2!/1,x)": "a second indirection",
 	} {

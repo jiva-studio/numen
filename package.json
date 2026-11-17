@@ -5,7 +5,7 @@
   "description": "The source root of the interface modules. Holds no code and declares no dependencies of its own; every package below is installed from here so that one copy of a package answers for all of them.",
   "workspaces": [
     "libs/core/client",
-    "libs/core/protocol",
+    "libs/shared/protocol",
     "libs/plugin/sdk-ts",
     "libs/shared/rerank",
     "libs/plugin/loader",

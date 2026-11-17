@@ -55,5 +55,5 @@ The need: the window creates an empty folder in a vault.
 2. The scenario is `usecase/note/export_note.go`: `ExportNote` with `Execute(ctx, v, path) (Export, error)`. It reads the note through the existing note reader port, calls the rule and writes the result through a writer port declared for this use case.
 3. The writer port is declared next to the use case (one consumer) with one method, `WriteExport`. The adapter that writes the file implements it in the filesystem adapter.
 4. `container` creates `ExportNote` with the two ports and adds it to the group of note use cases.
-5. The driving adapter gets a method that decodes the request, calls `Execute` and maps `Export`; the schema change goes through `libs/core/protocol`.
+5. The driving adapter gets a method that decodes the request, calls `Execute` and maps `Export`; the schema change goes through `libs/shared/protocol`.
 6. The application changes nothing.

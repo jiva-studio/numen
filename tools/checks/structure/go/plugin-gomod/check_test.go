@@ -23,6 +23,7 @@ func TestWhatThePluginGoModRulesReject(t *testing.T) {
 		{"the notes library as Go records it for the SDK", head + "require " + load.NotesModule + " v0.0.0 // indirect\n", 0},
 		{"the RPC library as Go records it for the SDK", head + "require connectrpc.com/connect v1.0.0 // indirect\n", 0},
 		{"a direct requirement of the notes library", head + "require " + load.NotesModule + " v0.0.0\n", 1},
+		{"the protocol as Go records it for the SDK", head + "require " + load.Wire + " v0.0.0 // indirect\n", 0},
 		{"a direct requirement of the protocol", head + "require (\n\t" + load.Wire + " v0.0.0\n)\n", 1},
 		{"a direct requirement of the RPC library", head + "require connectrpc.com/connect v1.0.0\n", 1},
 		{"a direct requirement of protobuf", head + "require google.golang.org/protobuf v1.0.0\n", 1},

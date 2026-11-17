@@ -3,7 +3,7 @@ package tools
 import (
 	"testing"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 // Every value the protocol defines for an enum maps to an SDK value, so a value

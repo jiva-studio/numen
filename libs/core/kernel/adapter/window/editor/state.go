@@ -1,6 +1,6 @@
 // Package editor serves the vault queries and commands of the editor window.
 //
-// The request and response types are defined in libs/core/protocol. The client
+// The request and response types are defined in libs/shared/protocol. The client
 // connects to the handlers over HTTP in both the desktop window and a browser
 // during development.
 package editor
