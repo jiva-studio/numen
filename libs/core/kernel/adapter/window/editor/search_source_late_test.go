@@ -95,9 +95,6 @@ func (s *connectionSource) SearchChunks(
 	return connect.NewResponse(&v1.SearchSourceServiceSearchChunksResponse{Matches: matches}), nil
 }
 
-// launchSleepProcesses starts a process of its own for each start of the plugin. The host forgets a plugin when
-// its process exits, and the host stops an idle plugin, so one process handed to two starts ends the second
-// start as soon as the stop of the first is noticed.
 func launchSleepProcesses(t *testing.T, port int) func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 	var mu sync.Mutex
 	var started []*os.Process
@@ -155,6 +152,8 @@ func startConnectionSource(t *testing.T, plugin *connectionSource) *container.Pl
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
+	// The host forgets a plugin when its process exits and stops an idle plugin, so one process handed to two
+	// starts ends the second start as soon as the stop of the first is noticed.
 	host.Processes.SetLauncher(launchSleepProcesses(t, port))
 	return host
 }
