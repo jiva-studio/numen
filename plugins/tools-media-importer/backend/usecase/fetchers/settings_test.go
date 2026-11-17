@@ -25,19 +25,19 @@ func TestTheProgramsAreNotReadFromTheSnakeCaseKey(t *testing.T) {
 }
 
 func TestTextsAreDownloadedAutomaticallyOnlyWithTheSettingOn(t *testing.T) {
-	values := settings.Defaults()
+	values := getDefaultValues()
 	if values.Fetch.IsTextDownloadAutomatic {
 		t.Error("texts are downloaded automatically by default")
 	}
-	values = settings.Parse(map[string]string{"downloadCaptionsAutomatically": "true"}, values)
+	values = parseValues(map[string]string{"downloadCaptionsAutomatically": "true"}, values)
 	if !values.Fetch.IsTextDownloadAutomatic {
 		t.Error("the setting on does not download texts automatically")
 	}
-	values = settings.Parse(map[string]string{"copyMaxSizeMb": "10"}, values)
+	values = parseValues(map[string]string{"copyMaxSizeMb": "10"}, values)
 	if !values.Fetch.IsTextDownloadAutomatic {
 		t.Error("another setting turned the automatic download off")
 	}
-	values = settings.Parse(map[string]string{"downloadCaptionsAutomatically": "false"}, values)
+	values = parseValues(map[string]string{"downloadCaptionsAutomatically": "false"}, values)
 	if values.Fetch.IsTextDownloadAutomatic {
 		t.Error("the setting off still downloads texts automatically")
 	}
