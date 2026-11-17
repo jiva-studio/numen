@@ -35,8 +35,9 @@ const emit = defineEmits<{
 const EXTENT = 480
 
 const rows = ref<HTMLElement | null>(null)
-const { isDrawing, refresh } = useDrawnWidgets(rows, (element) => emit('widgets', element))
-const loading = useWidgetsLoading(props.clock, refresh, (isReady) => emit('ready', isReady))
+const drawn = useDrawnWidgets(rows, (element) => emit('widgets', element))
+const { isDrawing } = drawn
+const loading = useWidgetsLoading(props.clock, drawn, (isReady) => emit('ready', isReady))
 
 const getTop = () =>
   props.side === 'above'

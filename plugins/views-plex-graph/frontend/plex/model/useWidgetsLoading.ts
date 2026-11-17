@@ -1,14 +1,14 @@
-/** Whether the views of one side of a node have loaded, told to whoever lays the nodes out. */
-import { onScopeDispose, watchPostEffect } from 'vue'
+/** Whether the views of one side of a node have loaded and what they drew is measured, told to whoever lays the nodes out. */
+import { onScopeDispose, watchPostEffect, type Ref } from 'vue'
 import { createSlotLoading, type SlotLoading, type SlotLoadingClock } from '@numen/plugin-sdk'
 
 /**
- * A side is ready once every view it draws has finished, and `refresh` has read what they drew, so a
- * side whose views draw something is measured before it is ready. `report` is given `null` when the side is gone.
+ * A side is ready once every view it draws has finished and `isMeasured` holds after `refresh` has read what they drew.
+ * `report` is given `null` when the side is gone.
  */
 export function useWidgetsLoading(
   clock: SlotLoadingClock,
-  refresh: () => void,
+  drawn: { isMeasured: Readonly<Ref<boolean>>; refresh: () => void },
   report: (isReady: boolean | null) => void,
 ): SlotLoading {
   const loading = createSlotLoading({
@@ -17,9 +17,9 @@ export function useWidgetsLoading(
   })
 
   watchPostEffect(() => {
-    const isReady = loading.isReady.value
-    if (isReady) refresh()
-    report(isReady)
+    const isLoaded = loading.isReady.value
+    if (isLoaded) drawn.refresh()
+    report(isLoaded && drawn.isMeasured.value)
   })
   onScopeDispose(() => report(null))
 

@@ -1,5 +1,5 @@
 /** Whether any widget in a group of widget rows draws an element or text, read from the document; a widget that renders nothing leaves a comment node. */
-import { onScopeDispose, ref, watch, type Ref } from 'vue'
+import { onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue'
 
 const isDrawn = (node: Node): boolean =>
   node.nodeType === Node.ELEMENT_NODE ||
@@ -10,23 +10,36 @@ const hasDrawing = (rows: Element): boolean =>
 
 /**
  * `change` is given `rows` once a widget draws and `null` when none does or the rows are gone; `isDrawing` follows it.
- * `refresh` reads the document at once, where the observer would after the change.
+ * `rows` is given after the document has drawn the group the widgets sit in, so what `change` measures includes it,
+ * and `isMeasured` holds from then on. `refresh` reads the document at once, where the observer would after the change.
  */
 export function useDrawnWidgets(
   rows: Readonly<Ref<HTMLElement | null>>,
   change: (element: HTMLElement | null) => void,
-): { isDrawing: Readonly<Ref<boolean>>; refresh: () => void } {
+): { isDrawing: Readonly<Ref<boolean>>; isMeasured: Readonly<Ref<boolean>>; refresh: () => void } {
   const isDrawing = ref(false)
-  let given: HTMLElement | null = null
+  const isMeasured = ref(true)
+  const drawn = shallowRef<HTMLElement | null>(null)
 
   const update = () => {
     const element = rows.value
     const next = element && hasDrawing(element) ? element : null
     isDrawing.value = next !== null
-    if (next === given) return
-    given = next
-    change(next)
+    if (next === drawn.value) return
+    drawn.value = next
+    isMeasured.value = next === null
+    if (next === null) change(null)
   }
+
+  watch(
+    drawn,
+    (element) => {
+      if (!element) return
+      change(element)
+      isMeasured.value = true
+    },
+    { flush: 'post' },
+  )
 
   const observer = new MutationObserver(update)
 
@@ -43,5 +56,5 @@ export function useDrawnWidgets(
 
   onScopeDispose(() => observer.disconnect())
 
-  return { isDrawing, refresh: update }
+  return { isDrawing, isMeasured, refresh: update }
 }

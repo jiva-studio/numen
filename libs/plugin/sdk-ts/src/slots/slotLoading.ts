@@ -53,7 +53,13 @@ export interface SlotLoadingEntry {
 // Called in `setup` of a view: the view is loading until the `finish` it gets is called.
 // A view outside the host of a slot, or one that never calls this, is never waited for.
 export function useSlotLoading(): () => void {
-  return inject(SLOT_LOADING_KEY, undefined)?.begin() ?? (() => undefined)
+  const release = inject(SLOT_LOADING_KEY, undefined)?.begin()
+  let isFinished = false
+  return () => {
+    if (isFinished) return
+    isFinished = true
+    release?.()
+  }
 }
 
 interface Token {
