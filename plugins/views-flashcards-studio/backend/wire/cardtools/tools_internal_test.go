@@ -26,17 +26,17 @@ func TestCardToolsHelpersAndBounds(t *testing.T) {
 		t.Fatal("expected maxBytes+1 to fail")
 	}
 
-	stat := domain.FileStat{Size: 123, ModTime: time.Unix(0, 456)}
+	stat := domain.FileStat{Size: 123, ModTime: time.Unix(0, 456), Hash: strings.Repeat("a", 64)}
 	out := newWriteOutcome("Deck.md", deckedit.EditResult{FileStat: stat, Cards: 7})
-	if out.Path != "Deck.md" || out.Total != 7 || out.Fingerprint != "123-456" {
+	if out.Path != "Deck.md" || out.Total != 7 || out.Fingerprint != strings.Repeat("a", 64) {
 		t.Fatalf("unexpected WriteOutcome: %+v", out)
 	}
 
-	parsed, err := parseFingerprint("9223372036854775807-9223372036854775807")
-	if err != nil || parsed.Size != 9223372036854775807 || parsed.ModTime.UnixNano() != 9223372036854775807 {
+	parsed, err := parseFingerprint(strings.Repeat("b", 64))
+	if err != nil || parsed.Hash != strings.Repeat("b", 64) {
 		t.Fatalf("unexpected parsed stat: %+v, err: %v", parsed, err)
 	}
-	for _, invalid := range []string{"", "nohyphen", "bad-456", "123-bad"} {
+	for _, invalid := range []string{"", "123-456", strings.Repeat("B", 64), strings.Repeat("b", 63)} {
 		if _, err := parseFingerprint(invalid); err == nil {
 			t.Fatalf("expected error for fingerprint %q", invalid)
 		}

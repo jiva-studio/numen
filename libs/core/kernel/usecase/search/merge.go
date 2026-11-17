@@ -4,7 +4,7 @@ import (
 	"cmp"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // rankConstant flattens the head of a ranking: first place is worth 1/61 and

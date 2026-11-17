@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func showDepth(t *testing.T, g graph, refs *pathLookup, focus string, depth domain.RelationDepth) domain.NoteGraph {

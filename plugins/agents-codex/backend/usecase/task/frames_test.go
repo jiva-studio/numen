@@ -16,6 +16,7 @@ import (
 	contract "github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/tempdir"
 )
 
 func TestConstantsAndFailureMessages(t *testing.T) {
@@ -252,14 +253,15 @@ func (noopServer) Serve(context.Context, []*tools.ToolInfo, Invoke) (ServedTools
 func TestRunnerBeginCloseAndDirLifecycle(t *testing.T) {
 	validDeps := Dependencies{
 		Settings: &settings.Settings{}, Finder: noopFinder{}, Commands: noopCommands{},
-		Launcher: noopLauncher{}, ToolServer: noopServer{},
+		Launcher: noopLauncher{}, ToolServer: noopServer{}, TempDirs: tempdir.Folders{Pattern: "numen-codex-tasks-*"},
 	}
 	for name, mutate := range map[string]func(*Dependencies){
-		"no settings":    func(d *Dependencies) { d.Settings = nil },
-		"no finder":      func(d *Dependencies) { d.Finder = nil },
-		"no commands":    func(d *Dependencies) { d.Commands = nil },
-		"no launcher":    func(d *Dependencies) { d.Launcher = nil },
-		"no tool server": func(d *Dependencies) { d.ToolServer = nil },
+		"no settings":     func(d *Dependencies) { d.Settings = nil },
+		"no finder":       func(d *Dependencies) { d.Finder = nil },
+		"no commands":     func(d *Dependencies) { d.Commands = nil },
+		"no launcher":     func(d *Dependencies) { d.Launcher = nil },
+		"no tool server":  func(d *Dependencies) { d.ToolServer = nil },
+		"no temp folders": func(d *Dependencies) { d.TempDirs = nil },
 	} {
 		deps := validDeps
 		mutate(&deps)

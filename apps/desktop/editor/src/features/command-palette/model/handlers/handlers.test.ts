@@ -218,7 +218,6 @@ describe('nothing to carry out', () => {
     const one = window()
 
     expect(await carry(null, one.on)).toBe('')
-    await carry(createInvocation('constructor', front()), one.on)
     expect(await carry(createInvocation('', front()), one.on)).toBe('')
 
     expect(one.actions).toStrictEqual([])
@@ -234,6 +233,18 @@ describe('nothing to carry out', () => {
     expect(one.actions).toStrictEqual([])
     expect(one.calls).toStrictEqual([])
   })
+
+  it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty'])(
+    'treats %s, a key of every object, as a command nothing carries out',
+    async (id) => {
+      const one = window()
+
+      expect(await carry(createInvocation(id, front()), one.on)).toBe('')
+
+      expect(one.actions).toStrictEqual([])
+      expect(one.calls).toStrictEqual([])
+    },
+  )
 
   it('says what a command could not request of the core, and asks no further', async () => {
     const one = window()

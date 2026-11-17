@@ -53,7 +53,7 @@ Never run blanket checks over untouched parts of the monorepo.
 - The story suites did not run in **both** engines → **REJECT the gate as incomplete.** The window is WebKit on this platform and Chromium on Windows; a review in one engine does not cover the product.
 - The library was not rebuilt before the windows' suites → the failure is `Cannot find module '@numen/ui'`, which means the gate was run incorrectly. Rebuild and rerun; do not report it as a finding.
 
-`usecase/flashcards` and `adapter/flashcardsui` run close to the ten-minute per-package limit under the CI `-race` job. A timeout there is the machine's load, not the code — rerun before calling it a failure.
+`usecase/flashcards` and `adapter/flashcardsui` run close to the ten-minute per-package limit under the CI `-race` job. A timeout there is a finding: the cause is found and fixed; the run is not repeated until it passes and the limit is not raised.
 
 `node_modules` symlinked from the primary checkout resolves `@numen/protocol` to whatever branch that checkout has checked out. A generated symbol missing there is that, not the branch under test. Install for real when the answer matters.
 
@@ -69,11 +69,11 @@ Load the placement skill of each area the diff touches ([`nm-place-core`](../../
 
 ### The core knows no plugin domain
 
-The core, the core protocol and the shared SDK are a microkernel ([`architecture.md`](../../../rules/architecture.md) §11 (l)). For every package, type, RPC, message, field or export the diff adds to `libs/core/kernel`, `libs/core/protocol`, `libs/core/client`, `libs/plugin/sdk-go` or `libs/plugin/sdk-ts` outside `contracts/`, ask: "Which product domain does this know, and why is it not in a plugin or a contract?" An answer other than "none" is a finding, with the plugin or the contract it belongs in. Examples from the microkernel change:
+The core, the core protocol and the shared SDK are a microkernel ([`architecture.md`](../../../rules/architecture.md) §11 (l)). For every package, type, RPC, message, field or export the diff adds to `libs/core/kernel`, `libs/shared/protocol`, `libs/core/client`, `libs/plugin/sdk-go` or `libs/plugin/sdk-ts` outside `contracts/`, ask: "Which product domain does this know, and why is it not in a plugin or a contract?" An answer other than "none" is a finding, with the plugin or the contract it belongs in. Examples from the microkernel change:
 
 - The list of agent programs cached in the settings adapter of the core belongs to the agent plugins, whose programs are connection types of `acp.task`.
 - Model pooling, handling, the source model and the token limit in the core belong to engines-embeddings; the core knows a search source by its opaque recipe, width and chunk size.
-- The `app:link.*` commands of the media importer in the shared command catalog `libs/core/protocol/commands.json` belong to the manifest of that plugin.
+- The `app:link.*` commands of the media importer in the shared command catalog `libs/shared/protocol/commands.json` belong to the manifest of that plugin.
 
 The same holds for an operation of connections: its name, rows, priority, queue, cancel, outcome and frames are the core's; its payload shape is a contract in `libs/plugin/sdk-go/contracts/<name>` and `libs/plugin/sdk-ts/src/contracts/<name>`. `go/dead-exports` and `ts/contracts-imports` catch the cases a structure shows; the question above catches a field or a name that one plugin needs inside a type the core already has.
 

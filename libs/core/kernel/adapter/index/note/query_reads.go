@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/wordmatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // QueryReads answers the reads of the search query language over the notes: what their frontmatter and headings hold.

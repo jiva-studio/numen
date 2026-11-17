@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
@@ -74,9 +74,9 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 			flush:      windowsession.NewFlushPending(guard, flush),
 			close: windowsession.NewCloseWindow(
 				state.Gate, session,
-				windowsession.CloseFunc(state.ClosePlaying),
-				windowsession.CloseFunc(func(context.Context) error { return parts.closeEmbedder() }),
-				windowsession.CloseFunc(func(context.Context) error { return parts.closeIndex() }),
+				state.ClosePlaying,
+				func(context.Context) error { return parts.closeEmbedder() },
+				func(context.Context) error { return parts.closeIndex() },
 			),
 		},
 		tools: windowTools{

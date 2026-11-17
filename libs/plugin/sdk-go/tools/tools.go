@@ -18,9 +18,9 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"google.golang.org/protobuf/proto"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // Effect is what a tool does to the vault. It decides the permission the plugin must hold.
