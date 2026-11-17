@@ -18,12 +18,16 @@ export interface NamesSource {
   readonly reportFailure: (error: Caught) => void
 }
 
-/** The names `side` of the note at `path`, and `choose`, which shows the note of a name in the plex. */
+/** The names `side` of the note at `path`, whether their first read has ended, and `choose`, which shows the note of a name in the plex. */
 export function useNames(
   source: NamesSource,
   side: NamesSide,
   path: () => string,
-): { names: ComputedRef<readonly RelatedName[]>; choose: (path: string) => void } {
+): {
+  names: ComputedRef<readonly RelatedName[]>
+  isSettled: ComputedRef<boolean>
+  choose: (path: string) => void
+} {
   const lease = shallowRef<NoteLease>(source.reader.acquire(path()))
   watch(path, (next) => {
     lease.value.release()
@@ -36,10 +40,12 @@ export function useNames(
     return noteGraph ? listNames(noteGraph, side, source.settings.namesPerNote.value) : []
   })
 
+  const isSettled = computed(() => lease.value.isSettled.value)
+
   const choose = (notePath: string) => {
     const target = { path: notePath, title: '', isFolder: false, others: [], tab: '' }
     source.commands.run(REVEAL, target, undefined, REVEAL_IN_PLEX).catch(source.reportFailure)
   }
 
-  return { names, choose }
+  return { names, isSettled, choose }
 }

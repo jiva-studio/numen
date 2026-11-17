@@ -1,5 +1,5 @@
 /** The notes related to the notes the plex shows, read once for every view that shows a note. */
-import { shallowRef, watch, type Ref, type ShallowRef } from 'vue'
+import { computed, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import type {
   Caught,
   NoteGraph,
@@ -20,6 +20,8 @@ export interface NotesReaderSource {
 /** The use of one note by one view: the notes related to it, `null` until they are read, while they are hidden and after a failed read, and the end of the use. */
 export interface NoteLease {
   readonly noteGraph: Readonly<Ref<NoteGraph | null>>
+  /** Whether the first read of the note has ended, answered or failed, or there is nothing to read: the names are hidden or the path is empty. Once `true`, it stays so. */
+  readonly isSettled: Readonly<Ref<boolean>>
   /** Ends the use. A note that no lease uses is forgotten. */
   release(): void
 }
@@ -37,6 +39,7 @@ const REFRESH_DELAY_MS = 500
 interface Entry {
   readonly path: string
   readonly noteGraph: ShallowRef<NoteGraph | null>
+  readonly isReadEnded: ShallowRef<boolean>
   leases: number
   latest: number
   isReading: boolean
@@ -55,9 +58,11 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
       const answer = await source.notes.listRelatedNotes(entry.path, 2)
       if (mine !== entry.latest) return
       entry.noteGraph.value = answer
+      entry.isReadEnded.value = true
     } catch (error) {
       if (mine !== entry.latest) return
       entry.noteGraph.value = null
+      entry.isReadEnded.value = true
       source.reportFailure(error)
     }
     entry.isReading = false
@@ -104,10 +109,23 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
 
   return {
     acquire: (path) => {
-      if (!path) return { noteGraph: shallowRef<NoteGraph | null>(null), release: () => undefined }
+      if (!path) {
+        return {
+          noteGraph: shallowRef<NoteGraph | null>(null),
+          isSettled: shallowRef(true),
+          release: () => undefined,
+        }
+      }
       let entry = entries.get(path)
       if (!entry) {
-        entry = { path, noteGraph: shallowRef(null), leases: 0, latest: 0, isReading: false }
+        entry = {
+          path,
+          noteGraph: shallowRef(null),
+          isReadEnded: shallowRef(false),
+          leases: 0,
+          latest: 0,
+          isReading: false,
+        }
         entries.set(path, entry)
       }
       entry.leases += 1
@@ -115,9 +133,11 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
         read(entry).catch(source.reportFailure)
       }
       const held = entry
+      const isSettled = computed(() => !source.settings.showNames.value || held.isReadEnded.value)
       let isHeld = true
       return {
         noteGraph: held.noteGraph,
+        isSettled,
         release: () => {
           if (!isHeld) return
           isHeld = false
