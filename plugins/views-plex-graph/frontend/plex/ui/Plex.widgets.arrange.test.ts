@@ -561,7 +561,11 @@ describe('the plex that waits for the widgets of many nodes', () => {
     expect(mounted.size).toBeLessThanOrEqual(shownBare)
   })
 
-  it('mounts the widgets of a node once, however often the plex is arranged while it stays on screen', async () => {
+  it('mounts the widgets of a node once while it stays on screen through two arrangements', async () => {
+    const getShownIds = (plex: Mounted) =>
+      CROWD.nodes
+        .filter((node) => plex.find(`[aria-label^="${node.title}"]`).exists())
+        .map((node) => node.id)
     const arrivals = createArrivals(answerFor(CROWD_IDS, false))
     const plex = mountPlex({
       graph: CROWD,
@@ -569,12 +573,15 @@ describe('the plex that waits for the widgets of many nodes', () => {
       viewport: createLateViewport(MEDIUM_WINDOW),
     })
     await passFrames(FRAMES_PER_ARRANGEMENT)
+    const before = getShownIds(plex)
 
-    deliver(arrivals, { 'parent-0': true })
+    deliver(arrivals, { focus: true })
     await passFrames(FRAMES_PER_ARRANGEMENT)
     await plex.setProps({ graph: { ...CROWD, nodes: [...CROWD.nodes].reverse() } })
     await passFrames(FRAMES_PER_ARRANGEMENT)
+    const staying = before.filter((id) => getShownIds(plex).includes(id))
 
-    expect([...mounted.values()].filter((count) => count > 1)).toStrictEqual([])
+    expect(staying).toContain('focus')
+    expect(staying.filter((id) => mounted.get(getPathOf(id)) !== 1)).toStrictEqual([])
   })
 })
