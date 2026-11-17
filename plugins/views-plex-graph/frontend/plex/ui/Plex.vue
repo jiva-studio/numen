@@ -71,13 +71,7 @@ const { room, isMeasured, options, measures, widen, placedHeadings } = useFreeSp
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const hasWidgets = (side?: 'above' | 'below') =>
-  !!(
-    (side !== 'below' && props.widgetsAbove?.length) ||
-    (side !== 'above' && props.widgetsBelow?.length)
-  )
-
-const rooms = useWidgetRooms(options, hasWidgets)
+const rooms = useWidgetRooms(options, props)
 
 const { frame, waiting, isMoving } = usePlexTransition(
   () => props.graph,
@@ -93,10 +87,9 @@ const { frame, waiting, isMoving } = usePlexTransition(
   {
     duration: () => props.duration,
     clock: props.clock,
-    // Without widgets there is nothing to wait for.
-    isReady: (ids) => !hasWidgets() || rooms.areLoaded(ids),
+    isReady: rooms.areLoaded,
     // The size of the window decides which nodes are shown, so no widget mounts before it is reported.
-    isActive: () => isMeasured.value || !hasWidgets(),
+    isActive: () => isMeasured.value || !rooms.hasWidgets(),
   },
 )
 

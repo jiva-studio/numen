@@ -15,7 +15,13 @@ interface Measured {
  * The height assumed over or under a node for the widgets of a side that are not measured yet, about two rows of them and the gap to the node,
  * so the notes chosen before any widget is drawn are close to the notes chosen once they are.
  */
-export const RESERVED_WIDGETS_HEIGHT = 88
+const RESERVED_WIDGETS_HEIGHT = 88
+
+/** The views a plugin places over and under the nodes. */
+interface PlexWidgetLists {
+  readonly widgetsAbove?: readonly unknown[] | undefined
+  readonly widgetsBelow?: readonly unknown[] | undefined
+}
 
 const getKey = (id: string, side: WidgetSide): string => `${side}:${id}`
 
@@ -27,14 +33,20 @@ const getKey = (id: string, side: WidgetSide): string => `${side}:${id}`
  */
 export function useWidgetRooms(
   options: Readonly<Ref<PlexOptions>>,
-  hasWidgets: (side: WidgetSide) => boolean = () => false,
+  widgets: PlexWidgetLists = {},
 ): {
+  hasWidgets: (side?: WidgetSide) => boolean
   setWidgets: (id: string, side: WidgetSide, element: Element | null) => void
   getNodeRoom: ComputedRef<((node: PlexNode) => NodeRoom) | undefined>
   getDraftRoom: ComputedRef<((node: PlexNode) => NodeRoom) | undefined>
   setReady: (id: string, side: WidgetSide, isReady: boolean | null) => void
   areLoaded: (ids: readonly string[]) => boolean
 } {
+  const hasWidgets = (side?: WidgetSide) =>
+    !!(
+      (side !== 'below' && widgets.widgetsAbove?.length) ||
+      (side !== 'above' && widgets.widgetsBelow?.length)
+    )
   const heights = shallowRef<ReadonlyMap<string, number>>(new Map())
   const measured = new Map<string, Measured>()
   const loaded = shallowRef<ReadonlyMap<string, boolean>>(new Map())
@@ -76,7 +88,9 @@ export function useWidgetRooms(
     loaded.value = next
   }
 
+  // Without widgets there is nothing to wait for.
   const areLoaded = (ids: readonly string[]) =>
+    !hasWidgets() ||
     ids.every(
       (id) => loaded.value.get(getKey(id, 'above')) && loaded.value.get(getKey(id, 'below')),
     )
@@ -105,5 +119,5 @@ export function useWidgetRooms(
   const getNodeRoom = computed(() => createRoom(false))
   const getDraftRoom = computed(() => createRoom(true))
 
-  return { setWidgets, getNodeRoom, getDraftRoom, setReady, areLoaded }
+  return { hasWidgets, setWidgets, getNodeRoom, getDraftRoom, setReady, areLoaded }
 }
