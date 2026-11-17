@@ -30,7 +30,8 @@ const second: PlexGraph = {
   ],
 }
 
-const frameOf = (graph: PlexGraph) => arrangePlex(graph, { measureLabel: (label) => 6 * label.length })
+const frameOf = (graph: PlexGraph) =>
+  arrangePlex(graph, { measureLabel: (label) => 6 * label.length })
 
 const mountView = () =>
   mount(PlexView, {
@@ -41,9 +42,7 @@ const readTitles = (view: VueWrapper) =>
   new Map(view.findAll('textPath').map((title) => [title.element, title.text()]))
 
 const readPathIds = (view: VueWrapper) =>
-  new Map(
-    view.findAll('textPath').map((title) => [title.text(), title.attributes('href') ?? '']),
-  )
+  new Map(view.findAll('textPath').map((title) => [title.text(), title.attributes('href') ?? '']))
 
 describe('the titles on the lines of a plex', () => {
   it('keeps the text of every element while the lines change', async () => {

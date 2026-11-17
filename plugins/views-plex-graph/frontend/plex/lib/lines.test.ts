@@ -43,7 +43,12 @@ describe('the line of an edge', () => {
     const [edge] = edges
     const lines = getLines(
       [
-        { ...edge!, from: 'one', to: 'two', titles: [title('Words'), title('More', { record: 1 })] },
+        {
+          ...edge!,
+          from: 'one',
+          to: 'two',
+          titles: [title('Words'), title('More', { record: 1 })],
+        },
         { ...edge!, from: 'one', to: 'three', titles: [title('Other', { record: 1 })] },
       ],
       'plex',
