@@ -80,8 +80,8 @@ export function arrangePlex(
 
   // Packed as closely as this window needs and no closer, so a gap closes, and without `measure` a box
   // narrows, before a note is given up. With `measure` a box keeps the width of its title: packing does not narrow it.
-  // arrange.frames.test.ts records the packing the probes choose. The names are left out of it:
-  // a pill is the same size with names as without, and the names then cost notes.
+  // arrange.frames.test.ts records the packing the probes choose. The widgets are left out of it:
+  // a pill is the same size with widgets as without, and the widgets then cost notes.
   const crowded = measureCrowding(request, (packed) =>
     isInsideWindow(
       lay(packed, requested, NO_ROOMS, {

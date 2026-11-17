@@ -19,8 +19,6 @@ const createCountedView = (props: Record<string, unknown> = {}) => {
   const view = mount(PlexView, {
     attachTo: document.body,
     props: {
-      namesOpacity: 0.3,
-      focusedNamesOpacity: 0.9,
       frame,
       viewport: VIEWPORT,
       nodeSize: DEFAULT_OPTIONS.nodeSize,

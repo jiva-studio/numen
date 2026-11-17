@@ -6,7 +6,6 @@ import type { VNode } from 'vue'
 import type { Clock, MenuTrigger } from '@numen/ui'
 import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
-import type { NamesRoom } from '../../lib/names'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { ExpandedBox } from '../../model/sizing/expansion'
 import type { Attention } from '../../model/useAttention'
@@ -30,13 +29,10 @@ export interface PlexViewProps {
   showEdgeLabels?: boolean
   showPills?: boolean
   highlightLinks?: boolean
-  namesOpacity: number
-  focusedNamesOpacity: number
   canReach?: boolean
   relationName?: (relation: PlexRelation) => string
   widen?: ((node: PlacedNode) => ExpandedBox | null) | undefined
   placedHeadings?: ((node: PlacedNode) => NodeHeadings | null) | undefined
-  roomOf?: ((id: string) => NamesRoom | undefined) | undefined
   widgetsAbove?: readonly PlexWidget[] | undefined
   widgetsBelow?: readonly PlexWidget[] | undefined
   getPath?: ((id: string) => string) | undefined
@@ -65,8 +61,6 @@ export interface PlexViewEvents {
   (event: 'menu', id: string, point: Position, trigger: MenuTrigger): void
   /** A heading of a node was chosen. Both identifiers are the caller's. */
   (event: 'enter', id: string, heading: string): void
-  /** A name set around a node was chosen. The identifier is the caller's, returned unchanged. */
-  (event: 'choose-name', id: string): void
   /** A menu or inspector was requested on an edge. */
   (event: 'edge-menu', pair: string, point: Position): void
 }
