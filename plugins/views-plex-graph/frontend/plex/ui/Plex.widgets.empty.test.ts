@@ -94,9 +94,13 @@ afterEach(() => {
 
 type Mounted = Awaited<ReturnType<typeof mountPlex>>
 
+const FRAME = 20
+
 const waitForFrames = async () => {
   await flushPromises()
   for (const ring of rings) ring()
+  await flushPromises()
+  await new Promise((resolve) => setTimeout(resolve, FRAME))
   await flushPromises()
 }
 

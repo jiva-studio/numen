@@ -144,7 +144,7 @@ describe('a graph and an input that change together', () => {
       ),
     )
     counter.placed = 0
-    return { current, room, counter }
+    return { current, room, counter, world }
   }
 
   it('are arranged once', async () => {
@@ -159,12 +159,13 @@ describe('a graph and an input that change together', () => {
   })
 
   it('are arranged once for the graph alone, and once for the input alone', async () => {
-    const { current, room, counter } = setUp()
+    const { current, room, counter, world } = setUp()
 
     current.value = graphs.leaf
     await Promise.resolve()
     room.value = () => NO_ROOM
     await Promise.resolve()
+    world.tick(0)
 
     expect(counter.placed).toBe(2 * PLACED_FOR_ONE_ARRANGEMENT)
   })
