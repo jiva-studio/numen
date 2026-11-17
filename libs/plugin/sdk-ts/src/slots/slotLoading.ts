@@ -3,7 +3,7 @@
  * and the `finish` it returns once the data has arrived; the owner of the slot draws the slot with
  * `createSlotLoading` and `provideSlotLoading`, and waits for `isReady` before it lays the slot out.
  */
-import { ref, type InjectionKey, type Ref } from 'vue'
+import { inject, ref, type InjectionKey, type Ref } from 'vue'
 import type { SlotEntryKey } from './slots'
 
 // SLOT_LOADING_CAP_MS is how long a view may stay loading before the host stops waiting for it.
@@ -41,16 +41,13 @@ export interface SlotLoadingEntry {
 }
 
 export function useSlotLoading(): () => void {
+  inject(SLOT_LOADING_KEY, undefined)
   return () => undefined
 }
 
-export function createSlotLoading(deps: SlotLoadingDeps): SlotLoading {
-  void deps
+export function createSlotLoading(_deps: SlotLoadingDeps): SlotLoading {
   return { isReady: ref(true) }
 }
 
 // Called in `setup` of the component that draws the views of one entry.
-export function provideSlotLoading(loading: SlotLoading, entry: SlotLoadingEntry): void {
-  void loading
-  void entry
-}
+export function provideSlotLoading(_loading: SlotLoading, _entry: SlotLoadingEntry): void {}

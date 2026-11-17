@@ -61,7 +61,6 @@ const deliver = (arrivals: Arrivals, answers: Record<string, boolean>) => {
 
 const ALL = FAMILY.nodes.map((node) => node.id)
 
-/** Delivers the notes one tick after another, as the data of each note arrives from its own request. */
 const deliverOneAfterAnother = async (arrivals: Arrivals, ids: readonly string[], draws = true) => {
   for (const id of ids) {
     deliver(arrivals, { [id]: draws })
@@ -69,7 +68,6 @@ const deliverOneAfterAnother = async (arrivals: Arrivals, ids: readonly string[]
   }
 }
 
-/** Loading until its note is delivered, then it draws, if its note says so, and reports ready. */
 const createWidget = (name: string, arrivals: Arrivals) =>
   defineComponent({
     props: { path: { type: String, required: true } },
@@ -87,7 +85,6 @@ const createWidget = (name: string, arrivals: Arrivals) =>
     },
   })
 
-/** Draws at once and never says anything about loading. */
 const createPlainWidget = (name: string) =>
   defineComponent({
     props: { path: { type: String, required: true } },

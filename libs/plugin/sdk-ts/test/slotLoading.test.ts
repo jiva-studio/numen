@@ -49,7 +49,6 @@ afterEach(() => {
   now = 0
 })
 
-/** A view that is loading until the test calls the finish it was given. */
 const createLoadingView = (finishes: (() => void)[]): Component =>
   defineComponent({
     setup() {
