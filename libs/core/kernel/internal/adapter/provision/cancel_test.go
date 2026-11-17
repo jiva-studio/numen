@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -236,5 +237,122 @@ func TestAJoiningCallerReceivesTheReplayBeforeTheLaterStatuses(t *testing.T) {
 	defer mu.Unlock()
 	if len(got) != 2 || got[0] != "1" || got[1] != "2" {
 		t.Errorf("the joining caller received %v, want 1 then 2", got)
+	}
+}
+
+// resolveSignal reports every Resolve, which Registry.Provision calls just before it joins or starts a run.
+type resolveSignal struct {
+	*FileProvisioner
+	resolved chan struct{}
+}
+
+func (s *resolveSignal) Resolve(req manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
+	select {
+	case s.resolved <- struct{}{}:
+	default:
+	}
+	return s.FileProvisioner.Resolve(req)
+}
+
+func TestProvisionAfterCancelStartsANewDownloadInsteadOfJoiningTheCanceledOne(t *testing.T) {
+	data := bytes.Repeat([]byte("0123456789"), 4000)
+	half := len(data) / 2
+	var requests atomic.Int32
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if requests.Add(1) == 1 {
+			w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+			if _, err := w.Write(data[:half]); err != nil {
+				return
+			}
+			if err := http.NewResponseController(w).Flush(); err != nil {
+				return
+			}
+			<-r.Context().Done()
+			return
+		}
+		http.ServeContent(w, r, "w.bin", time.Time{}, bytes.NewReader(data))
+	}))
+	defer server.Close()
+	provisioner := &resolveSignal{
+		FileProvisioner: NewFileProvisioner(Config{
+			Dir: t.TempDir(), Discovery: discovery{dirs: []string{}}, Clock: &tickingClock{}, Client: server.Client(),
+			Backoff: backoff{attempts: 3, first: time.Millisecond, sleep: func(context.Context, time.Duration) error { return nil }},
+		}),
+		resolved: make(chan struct{}, 1),
+	}
+	registry := NewRegistry(provisioner)
+	req := newModelRequirement(server.URL+"/w.bin", data)
+	started := make(chan struct{})
+	var startOnce sync.Once
+	canceling := make(chan struct{})
+	finish := make(chan struct{})
+	var cancelOnce sync.Once
+	registry.SetObserver(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
+		if status.BytesDownloaded > 0 {
+			startOnce.Do(func() { close(started) })
+		}
+		if status.State == plugin.DependencyStateMissing {
+			cancelOnce.Do(func() {
+				close(canceling)
+				<-finish
+			})
+		}
+	})
+	first := make(chan error, 1)
+	go func() {
+		_, err := registry.Provision(t.Context(), req, nil)
+		first <- err
+	}()
+	<-started
+	<-provisioner.resolved
+	registry.Cancel(req)
+	<-canceling
+
+	type outcome struct {
+		resolved plugin.ResolvedDependency
+		err      error
+	}
+	second := make(chan outcome, 1)
+	go func() {
+		resolved, err := registry.Provision(t.Context(), req, nil)
+		second <- outcome{resolved, err}
+	}()
+	<-provisioner.resolved
+	for range 1000 {
+		runtime.Gosched()
+	}
+	close(finish)
+
+	if err := <-first; !errors.Is(err, context.Canceled) {
+		t.Fatalf("the canceled caller received %v, want the cancellation", err)
+	}
+	got := <-second
+	if got.err != nil {
+		t.Fatalf("a Provision after Cancel received %v, want a new download", got.err)
+	}
+	body, err := os.ReadFile(got.resolved.PrimaryPath)
+	if err != nil || !bytes.Equal(body, data) {
+		t.Fatalf("the finished file differs from the data: %v", err)
+	}
+}
+
+func TestACancelFromTheLastProgressReportStillCancelsTheRun(t *testing.T) {
+	provisioner := &fakeProvisioner{kind: manifest.DependencyKindModel}
+	registry := NewRegistry(provisioner)
+	req := manifest.DependencyRequirement{ID: "a", Kind: manifest.DependencyKindModel}
+	seen := &statusLog{}
+	registry.SetObserver(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
+		seen.add(status)
+		if status.BytesDownloaded == status.BytesTotal && status.BytesTotal > 0 {
+			registry.Cancel(req)
+		}
+	})
+
+	if _, err := registry.Provision(t.Context(), req, nil); !errors.Is(err, context.Canceled) {
+		t.Fatalf("the caller received %v, want the cancellation", err)
+	}
+	states := seen.states()
+	if last := states[len(states)-1]; last != plugin.DependencyStateMissing {
+		t.Errorf("the last state = %q, want missing; all %v", last, states)
 	}
 }

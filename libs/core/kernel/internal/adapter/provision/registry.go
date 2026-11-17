@@ -110,7 +110,7 @@ func (r *Registry) run(
 		}
 		note(status)
 	})
-	if err != nil && ctx.Err() != nil {
+	if ctx.Err() != nil {
 		note(plugin.DependencyStatus{State: plugin.DependencyStateMissing, Message: "canceled"})
 		return plugin.ResolvedDependency{}, ctx.Err()
 	}

@@ -23,6 +23,7 @@ type subscriber struct {
 
 type flight struct {
 	cancel      context.CancelFunc
+	canceled    bool
 	completion  chan struct{}
 	subscribers map[int]*subscriber
 	next        int
@@ -42,6 +43,15 @@ func (g *flightGroup) do(
 		g.flights = make(map[string]*flight)
 	}
 	current, joined := g.flights[key]
+	if joined && current.canceled {
+		g.mu.Unlock()
+		select {
+		case <-current.completion:
+			return g.do(ctx, key, onProgress, run)
+		case <-ctx.Done():
+			return plugin.ResolvedDependency{}, ctx.Err()
+		}
+	}
 	if !joined {
 		runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 		current = &flight{cancel: cancel, completion: make(chan struct{}), subscribers: make(map[int]*subscriber)}
@@ -80,6 +90,10 @@ func (g *flightGroup) do(
 func (g *flightGroup) cancel(key string) bool {
 	g.mu.Lock()
 	current, ok := g.flights[key]
+	ok = ok && !current.canceled
+	if ok {
+		current.canceled = true
+	}
 	g.mu.Unlock()
 	if ok {
 		current.cancel()
@@ -91,6 +105,7 @@ func (g *flightGroup) cancelAll() {
 	g.mu.Lock()
 	running := make([]*flight, 0, len(g.flights))
 	for _, current := range g.flights {
+		current.canceled = true
 		running = append(running, current)
 	}
 	g.mu.Unlock()
