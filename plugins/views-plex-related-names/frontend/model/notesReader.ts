@@ -20,7 +20,7 @@ export interface NotesReaderSource {
 /** The use of one note by one view: the notes related to it, `null` until they are read, while they are hidden and after a failed read, whether the first read has ended (answered or failed, and also when the names are hidden or the path is empty; it never goes back to `false`), and the end of the use. */
 export interface NoteLease {
   readonly noteGraph: Readonly<Ref<NoteGraph | null>>
-  readonly isSettled: Readonly<Ref<boolean>>
+  readonly isLoaded: Readonly<Ref<boolean>>
   /** Ends the use. A note that no lease uses is forgotten. */
   release(): void
 }
@@ -111,7 +111,7 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
       if (!path) {
         return {
           noteGraph: shallowRef<NoteGraph | null>(null),
-          isSettled: shallowRef(true),
+          isLoaded: shallowRef(true),
           release: () => undefined,
         }
       }
@@ -132,11 +132,11 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
         read(entry).catch(source.reportFailure)
       }
       const held = entry
-      const isSettled = computed(() => !source.settings.showNames.value || held.isReadEnded.value)
+      const isLoaded = computed(() => !source.settings.showNames.value || held.isReadEnded.value)
       let isHeld = true
       return {
         noteGraph: held.noteGraph,
-        isSettled,
+        isLoaded,
         release: () => {
           if (!isHeld) return
           isHeld = false

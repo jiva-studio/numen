@@ -126,7 +126,7 @@ export function usePlexTransition(
   arrangeWhenReady()
   // One watcher for the graph and the input, so a change of them in one tick arranges once.
   watch([() => graph(), isActive, ...getInputSources(input)], arrangeWhenReady)
-  // The widgets settling is what arranges the plex that waited for them.
+  // The widgets being loaded is what arranges the plex that waited for them.
   watch(
     () => isReady(held.value),
     (isOpen) => {

@@ -26,9 +26,9 @@ function createNamesView(source: NamesSource, side: NamesSide) {
     props: { path: { type: String, required: true } },
     setup: (props) => {
       const finish = useSlotLoading()
-      const { names, isSettled, choose } = useNames(source, side, () => props.path)
+      const { names, isLoaded, choose } = useNames(source, side, () => props.path)
       watch(
-        isSettled,
+        isLoaded,
         (isDone) => {
           if (isDone) finish()
         },

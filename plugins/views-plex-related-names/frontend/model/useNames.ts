@@ -25,7 +25,7 @@ export function useNames(
   path: () => string,
 ): {
   names: ComputedRef<readonly RelatedName[]>
-  isSettled: ComputedRef<boolean>
+  isLoaded: ComputedRef<boolean>
   choose: (path: string) => void
 } {
   const lease = shallowRef<NoteLease>(source.reader.acquire(path()))
@@ -40,12 +40,12 @@ export function useNames(
     return noteGraph ? listNames(noteGraph, side, source.settings.namesPerNote.value) : []
   })
 
-  const isSettled = computed(() => lease.value.isSettled.value)
+  const isLoaded = computed(() => lease.value.isLoaded.value)
 
   const choose = (notePath: string) => {
     const target = { path: notePath, title: '', isFolder: false, others: [], tab: '' }
     source.commands.run(REVEAL, target, undefined, REVEAL_IN_PLEX).catch(source.reportFailure)
   }
 
-  return { names, isSettled, choose }
+  return { names, isLoaded, choose }
 }

@@ -22,7 +22,7 @@ import { activate } from './index'
 
 const PEAR = 'notes/Pear rows.md'
 const QUINCE = 'notes/Quince.md'
-const SETTLE_MS = 5000
+const ADVANCE_MS = 5000
 const ENTRY: SlotLoadingEntry = {
   key: 'md.numen.views.plex.related.names/view/related',
   pluginId: 'md.numen.views.plex.related.names',
@@ -176,7 +176,7 @@ describe('the views while the notes of their node are read', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
 
     host.events.emitVaultChange({ paths: [PEAR] })
-    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    await vi.advanceTimersByTimeAsync(ADVANCE_MS)
 
     expect(loading.isReady.value).toBe(true)
   })
@@ -267,7 +267,7 @@ describe('the two views of one node', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
 
     host.events.emitVaultChange({ paths: [PEAR] })
-    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    await vi.advanceTimersByTimeAsync(ADVANCE_MS)
 
     expect(tokens.released).toBe(2)
   })

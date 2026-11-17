@@ -12,13 +12,13 @@ import {
   type SlotLoadingEntry,
 } from '../src'
 
-const LEDGER: SlotLoadingEntry = {
-  key: 'org.example.ledger/view/related',
-  pluginId: 'org.example.ledger',
+const RELATED: SlotLoadingEntry = {
+  key: 'org.example.related/view/related',
+  pluginId: 'org.example.related',
 }
-const HARBOR: SlotLoadingEntry = {
-  key: 'org.example.harbor/view/tags',
-  pluginId: 'org.example.harbor',
+const LABELS: SlotLoadingEntry = {
+  key: 'org.example.labels/view/tags',
+  pluginId: 'org.example.labels',
 }
 
 const mount = (root: Component, provided?: Record<symbol, unknown>) => {
@@ -136,12 +136,12 @@ describe('the loading of a slot', () => {
   it('is ready at once when no view of it calls useSlotLoading', () => {
     const plain = defineComponent({ setup: () => () => h('span') })
 
-    expect(mountSlot([{ entry: LEDGER, view: plain }]).loading.isReady.value).toBe(true)
+    expect(mountSlot([{ entry: RELATED, view: plain }]).loading.isReady.value).toBe(true)
   })
 
   it('is not ready while a view loads, and is ready when it finishes', async () => {
     const finishes: (() => void)[] = []
-    const { loading } = mountSlot([{ entry: LEDGER, view: createLoadingView(finishes) }])
+    const { loading } = mountSlot([{ entry: RELATED, view: createLoadingView(finishes) }])
     expect(loading.isReady.value).toBe(false)
 
     finishes[0]?.()
@@ -154,8 +154,8 @@ describe('the loading of a slot', () => {
     const related: (() => void)[] = []
     const tags: (() => void)[] = []
     const { loading } = mountSlot([
-      { entry: LEDGER, view: createLoadingView(related) },
-      { entry: HARBOR, view: createLoadingView(tags) },
+      { entry: RELATED, view: createLoadingView(related) },
+      { entry: LABELS, view: createLoadingView(tags) },
     ])
 
     related[0]?.()
@@ -171,8 +171,8 @@ describe('the loading of a slot', () => {
     const related: (() => void)[] = []
     const tags: (() => void)[] = []
     const { loading } = mountSlot([
-      { entry: LEDGER, view: createLoadingView(related) },
-      { entry: HARBOR, view: createLoadingView(tags) },
+      { entry: RELATED, view: createLoadingView(related) },
+      { entry: LABELS, view: createLoadingView(tags) },
     ])
 
     related[0]?.()
@@ -186,19 +186,19 @@ describe('the loading of a slot', () => {
     const related: (() => void)[] = []
     const tags: (() => void)[] = []
     const { loading, shown } = mountSlot([
-      { entry: LEDGER, view: createLoadingView(related) },
-      { entry: HARBOR, view: createLoadingView(tags) },
+      { entry: RELATED, view: createLoadingView(related) },
+      { entry: LABELS, view: createLoadingView(tags) },
     ])
     related[0]?.()
 
-    shown.value = shown.value.filter((one) => one.entry !== HARBOR)
+    shown.value = shown.value.filter((one) => one.entry !== LABELS)
     await nextTick()
 
     expect(loading.isReady.value).toBe(true)
   })
 
   it('releases a view that has not finished once the emergency cap has passed, and reports it by name', async () => {
-    const { loading, reportIssue } = mountSlot([{ entry: LEDGER, view: createLoadingView([]) }])
+    const { loading, reportIssue } = mountSlot([{ entry: RELATED, view: createLoadingView([]) }])
 
     runFrames(SLOT_LOADING_CAP_MS - FRAME * 2)
     await nextTick()
@@ -211,14 +211,14 @@ describe('the loading of a slot', () => {
     expect(loading.isReady.value).toBe(true)
     expect(reportIssue).toHaveBeenCalledTimes(1)
     expect(reportIssue).toHaveBeenCalledWith(
-      LEDGER.pluginId,
+      RELATED.pluginId,
       expect.stringContaining('did not report ready'),
     )
-    expect(reportIssue.mock.calls[0]?.[1]).toContain(LEDGER.key)
+    expect(reportIssue.mock.calls[0]?.[1]).toContain(RELATED.key)
   })
 
   it('does not count the time the page did not run: a gap between two frames longer than the cap releases nothing', async () => {
-    const { loading, reportIssue } = mountSlot([{ entry: LEDGER, view: createLoadingView([]) }])
+    const { loading, reportIssue } = mountSlot([{ entry: RELATED, view: createLoadingView([]) }])
     runFrames(FRAME * 3)
 
     passTime(SLOT_LOADING_CAP_MS * 5)
@@ -234,7 +234,7 @@ describe('the loading of a slot', () => {
 
   it('reports nothing for a view that finishes in time', async () => {
     const finishes: (() => void)[] = []
-    const { reportIssue } = mountSlot([{ entry: LEDGER, view: createLoadingView(finishes) }])
+    const { reportIssue } = mountSlot([{ entry: RELATED, view: createLoadingView(finishes) }])
 
     finishes[0]?.()
     passTime(SLOT_LOADING_CAP_MS * 2)

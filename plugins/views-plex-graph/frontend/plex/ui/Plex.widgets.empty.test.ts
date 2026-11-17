@@ -94,7 +94,7 @@ afterEach(() => {
 
 type Mounted = Awaited<ReturnType<typeof mountPlex>>
 
-const settle = async () => {
+const waitForFrames = async () => {
   await flushPromises()
   for (const ring of rings) ring()
   await flushPromises()
@@ -111,7 +111,7 @@ const mountPlex = async (props: Partial<InstanceType<typeof Plex>['$props']> = {
     },
     attachTo: document.body,
   })
-  await settle()
+  await waitForFrames()
   return plex
 }
 
@@ -162,7 +162,7 @@ describe('the widgets of the plex that draw nothing', () => {
 
     drawing.value = true
     await nextTick()
-    await settle()
+    await waitForFrames()
 
     expect(before).toStrictEqual(bare)
     expect(getLayout(plex)).not.toStrictEqual(bare)
@@ -177,7 +177,7 @@ describe('the widgets of the plex that draw nothing', () => {
 
     drawing.value = false
     await nextTick()
-    await settle()
+    await waitForFrames()
 
     expect(getLayout(plex)).toStrictEqual(bare)
   })
@@ -193,7 +193,7 @@ describe('the widgets of the plex that draw nothing', () => {
 
     tags.value = false
     await nextTick()
-    await settle()
+    await waitForFrames()
 
     expect(getLayout(plex)).toStrictEqual(onlyRelated)
     expect(getLayout(plex)).not.toStrictEqual(both)

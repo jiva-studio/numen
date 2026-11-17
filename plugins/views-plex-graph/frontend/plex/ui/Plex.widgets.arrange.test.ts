@@ -1,4 +1,4 @@
-/** The plex arranges its nodes once the widgets they carry have settled in size, not once for each widget that draws or measures on its own. */
+/** The plex arranges its nodes once the widgets they carry have arranged in size, not once for each widget that draws or measures on its own. */
 import { flushPromises, mount } from '@vue/test-utils'
 import { computed, defineComponent, h, nextTick, ref, watch, type Ref } from 'vue'
 import { useSlotLoading } from '@numen/plugin-sdk'
@@ -28,7 +28,7 @@ const FAMILY: PlexGraph = {
 const WIDGET_HEIGHT = 40
 const NODE_GAP = 8
 const FRAME = 16
-const FRAMES_PER_SETTLE = 3
+const FRAMES_PER_ARRANGEMENT = 3
 
 const createViewport = (size: Size): Viewport => ({
   watch: (_of, took) => {
@@ -237,26 +237,26 @@ const getLayout = (plex: Mounted) =>
     return found.exists() ? (found.attributes('transform') ?? '') : ''
   })
 
-const getSettledLayout = async (
+const getArrangedLayout = async (
   drawing: readonly string[],
   entries = (arrivals: Arrivals) => [createEntry(arrivals)],
   props: Partial<InstanceType<typeof Plex>['$props']> = {},
 ): Promise<string[]> => {
   const arrivals = createArrivals({ ...answerFor(ALL, false), ...answerFor(drawing) })
   const plex = mountPlex({ widgetsBelow: entries(arrivals), ...props })
-  await passFrames(FRAMES_PER_SETTLE)
+  await passFrames(FRAMES_PER_ARRANGEMENT)
   const layout = getLayout(plex)
   plex.unmount()
   assigned = []
   return layout
 }
 
-const expectOnlyPositions = (settled: readonly string[]) => {
+const expectOnlyPositions = (arranged: readonly string[]) => {
   const positions = getPositions()
   FAMILY.nodes.forEach((node, index) => {
-    expect((positions.get(node.title) ?? []).filter((one) => one !== settled[index])).toStrictEqual(
-      [],
-    )
+    expect(
+      (positions.get(node.title) ?? []).filter((one) => one !== arranged[index]),
+    ).toStrictEqual([])
   })
 }
 
@@ -273,63 +273,63 @@ const getDrawnTitles = (plex: Mounted): string[] =>
     .map((node) => node.title)
 
 describe('the plex whose widgets load after the nodes are mounted', () => {
-  it('gives each node only the position the settled widgets leave it, when the data arrives one note after another', async () => {
-    const settled = await getSettledLayout(ALL)
+  it('gives each node only the position the arranged widgets leave it, when the data arrives one note after another', async () => {
+    const arranged = await getArrangedLayout(ALL)
     const arrivals = createArrivals()
 
     const plex = mountPlex({ widgetsBelow: [createEntry(arrivals)] })
     await deliverOneAfterAnother(arrivals, ALL)
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
-    expect(getLayout(plex)).toStrictEqual(settled)
-    expectOnlyPositions(settled)
+    expect(getLayout(plex)).toStrictEqual(arranged)
+    expectOnlyPositions(arranged)
   })
 
   it('draws no node while the widget of a visible node is still loading', async () => {
     const arrivals = createArrivals(answerFor(ALL.filter((id) => id !== 'child-1')))
 
     mountPlex({ widgetsBelow: [createEntry(arrivals)] })
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
     expect(getAssignedNodes()).toBe(0)
   })
 
-  it('places the nodes at the settled layout, not moving them from one drawn before the widgets were there', async () => {
-    const settled = await getSettledLayout(ALL)
+  it('places the nodes at the arranged layout, not moving them from one drawn before the widgets were there', async () => {
+    const arranged = await getArrangedLayout(ALL)
     const arrivals = createArrivals()
 
     const plex = mountPlex({ widgetsBelow: [createEntry(arrivals)], duration: 420 })
     await deliverOneAfterAnother(arrivals, ALL)
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
-    expect(getLayout(plex)).toStrictEqual(settled)
+    expect(getLayout(plex)).toStrictEqual(arranged)
   })
 
   it('arranges once for widgets that start drawing later in the nodes on screen, with no position between', async () => {
     const onlyFocus = ['focus']
-    const settledBefore = await getSettledLayout(onlyFocus)
-    const settledAfter = await getSettledLayout(ALL)
+    const arrangedBefore = await getArrangedLayout(onlyFocus)
+    const arrangedAfter = await getArrangedLayout(ALL)
     const arrivals = createArrivals({ ...answerFor(ALL, false), ...answerFor(onlyFocus) })
     const plex = mountPlex({ widgetsBelow: [createEntry(arrivals)] })
-    await passFrames(FRAMES_PER_SETTLE)
-    expect(getLayout(plex)).toStrictEqual(settledBefore)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
+    expect(getLayout(plex)).toStrictEqual(arrangedBefore)
     assigned = []
 
     await deliverOneAfterAnother(arrivals, ['parent-0', 'parent-1'])
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
-    expect(settledAfter).not.toStrictEqual(settledBefore)
-    expect(getLayout(plex)).toStrictEqual(settledAfter)
-    expectOnlyPositions(settledAfter)
+    expect(arrangedAfter).not.toStrictEqual(arrangedBefore)
+    expect(getLayout(plex)).toStrictEqual(arrangedAfter)
+    expectOnlyPositions(arrangedAfter)
   })
 
-  it('never takes a node off the screen that it has drawn while the widgets settle', async () => {
+  it('never takes a node off the screen that it has drawn while the widgets load', async () => {
     const reference = mountPlex({
       widgetsBelow: [createEntry(createArrivals(answerFor(ALL)))],
       viewport: createViewport(SHORT_WINDOW),
     })
-    await passFrames(FRAMES_PER_SETTLE)
-    const settledTitles = getDrawnTitles(reference)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
+    const arrangedTitles = getDrawnTitles(reference)
     reference.unmount()
     const removed: string[] = []
     const collect = (records: MutationRecord[]) => {
@@ -361,12 +361,12 @@ describe('the plex whose widgets load after the nodes are mounted', () => {
       viewport: createViewport(SHORT_WINDOW),
     })
     await deliverOneAfterAnother(arrivals, ALL)
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
     collect(observer.takeRecords())
     observer.disconnect()
 
-    expect(settledTitles.length).toBeLessThan(FAMILY.nodes.length)
-    expect(getDrawnTitles(plex)).toStrictEqual(settledTitles)
+    expect(arrangedTitles.length).toBeLessThan(FAMILY.nodes.length)
+    expect(getDrawnTitles(plex)).toStrictEqual(arrangedTitles)
     expect(removed).toStrictEqual([])
   })
 })
@@ -378,38 +378,38 @@ describe('the plex whose slot has two contributors', () => {
       createEntry(arrivals[1] as Arrivals, 'tags'),
     ]
     const reference = [createArrivals(answerFor(ALL)), createArrivals(answerFor(ALL))]
-    const settledPlex = mountPlex({ widgetsBelow: both(reference) })
-    await passFrames(FRAMES_PER_SETTLE)
-    const settled = getLayout(settledPlex)
-    settledPlex.unmount()
+    const arrangedPlex = mountPlex({ widgetsBelow: both(reference) })
+    await passFrames(FRAMES_PER_ARRANGEMENT)
+    const arranged = getLayout(arrangedPlex)
+    arrangedPlex.unmount()
     assigned = []
     const related = createArrivals(answerFor(ALL))
     const tags = createArrivals()
 
     const plex = mountPlex({ widgetsBelow: both([related, tags]) })
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
     expect(getAssignedNodes()).toBe(0)
     await deliverOneAfterAnother(tags, ALL)
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
-    expect(getLayout(plex)).toStrictEqual(settled)
-    expectOnlyPositions(settled)
+    expect(getLayout(plex)).toStrictEqual(arranged)
+    expectOnlyPositions(arranged)
   })
 })
 
 describe('the plex with a widget that does not use the loading signal', () => {
   it('lays out once, at once the widget is measured', async () => {
     const reference = mountPlex({ widgetsBelow: [createPlainEntry()] })
-    await passFrames(FRAMES_PER_SETTLE)
-    const settled = getLayout(reference)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
+    const arranged = getLayout(reference)
     reference.unmount()
     assigned = []
 
     const plex = mountPlex({ widgetsBelow: [createPlainEntry()] })
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
-    expect(getLayout(plex)).toStrictEqual(settled)
-    expectOnlyPositions(settled)
+    expect(getLayout(plex)).toStrictEqual(arranged)
+    expectOnlyPositions(arranged)
   })
 })
 
@@ -421,11 +421,11 @@ describe('the plex whose widget of a node leaves', () => {
       edges: FAMILY.edges.filter((edge) => edge.to !== 'child-1'),
     }
     const plex = mountPlex({ widgetsBelow: [createEntry(arrivals)] })
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
     expect(getAssignedNodes()).toBe(0)
 
     await plex.setProps({ graph: withoutSpring })
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
     expect(getDrawnTitles(plex)).toStrictEqual(withoutSpring.nodes.map((node) => node.title))
   })
@@ -498,7 +498,7 @@ describe('the plex that waits for the widgets of many nodes', () => {
     const together = createArrivals()
     const reference = mountPlex({ widgetsBelow: [createEntry(together)] })
     deliver(together, answerFor(ALL))
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
     const forOne = getPlacedCount()
     reference.unmount()
     placed.length = 0
@@ -506,7 +506,7 @@ describe('the plex that waits for the widgets of many nodes', () => {
     mountPlex({ widgetsBelow: [createEntry(arrivals)] })
 
     await deliverOneAfterAnother(arrivals, ALL)
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
     expect(getPlacedCount()).toBe(forOne)
   })
@@ -525,14 +525,14 @@ describe('the plex that waits for the widgets of many nodes', () => {
     expect(getPlacedCount()).toBe(roomless)
   })
 
-  it('arranges once for the widgets that change size in one frame after the plex has settled, as for one', async () => {
+  it('arranges once for the widgets that change size in one frame after the plex has arranged, as for one', async () => {
     const countForChanges = async (ids: readonly string[]) => {
       const arrivals = createArrivals(answerFor(ALL, false))
       const plex = mountPlex({ widgetsBelow: [createEntry(arrivals)] })
-      await passFrames(FRAMES_PER_SETTLE)
+      await passFrames(FRAMES_PER_ARRANGEMENT)
       placed.length = 0
       await deliverOneAfterAnother(arrivals, ids)
-      await passFrames(FRAMES_PER_SETTLE)
+      await passFrames(FRAMES_PER_ARRANGEMENT)
       plex.unmount()
       return getPlacedCount()
     }
@@ -544,7 +544,7 @@ describe('the plex that waits for the widgets of many nodes', () => {
 
   it('mounts the widgets of the nodes the window shows, and of no node that only the first pass offered', async () => {
     const bare = mountPlex({ graph: CROWD, viewport: createLateViewport(MEDIUM_WINDOW) })
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
     const shownBare = getShownCount(bare)
     bare.unmount()
     mounted.clear()
@@ -555,7 +555,7 @@ describe('the plex that waits for the widgets of many nodes', () => {
       widgetsBelow: [createEntry(arrivals)],
       viewport: createLateViewport(MEDIUM_WINDOW),
     })
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
     expect(shownBare).toBeLessThan(CROWD.nodes.length)
     expect(mounted.size).toBeLessThanOrEqual(shownBare)
@@ -568,12 +568,12 @@ describe('the plex that waits for the widgets of many nodes', () => {
       widgetsBelow: [createEntry(arrivals)],
       viewport: createLateViewport(MEDIUM_WINDOW),
     })
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
     deliver(arrivals, { 'parent-0': true })
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
     await plex.setProps({ graph: { ...CROWD, nodes: [...CROWD.nodes].reverse() } })
-    await passFrames(FRAMES_PER_SETTLE)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
 
     expect([...mounted.values()].filter((count) => count > 1)).toStrictEqual([])
   })
