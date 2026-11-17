@@ -813,7 +813,7 @@
         "go.work",
         ".gitattributes",
         "**/buf.gen.yaml",
-        "libs/core/protocol/tools/*.mjs"
+        "libs/shared/protocol/tools/*.mjs"
       ],
       "tags": [
         "structure",

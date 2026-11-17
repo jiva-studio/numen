@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// targetVectors are the targets section of libs/core/protocol/when.json, which the plugin host derives
+// targetVectors are the targets section of libs/shared/protocol/when.json, which the plugin host derives
 // the same values from.
 type targetVectors struct {
 	Targets struct {
@@ -34,7 +34,7 @@ type targetVectors struct {
 
 func readTargetVectors(t *testing.T) targetVectors {
 	t.Helper()
-	text, err := os.ReadFile("../../../protocol/when.json")
+	text, err := os.ReadFile("../../../../shared/protocol/when.json")
 	if err != nil {
 		t.Fatal(err)
 	}

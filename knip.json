@@ -36,7 +36,7 @@
         ".storybook/**/*.{ts,js}"
       ]
     },
-    "libs/core/protocol": {
+    "libs/shared/protocol": {
       "entry": [
         "index.ts!",
         "capabilities.ts!",

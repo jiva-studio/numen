@@ -28,7 +28,7 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.2.4
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/jiva-studio/numen/libs/core/protocol v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/shared/protocol v0.0.0 // indirect
 	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
@@ -45,7 +45,7 @@ require (
 	modernc.org/memory v1.12.1 // indirect
 )
 
-replace github.com/jiva-studio/numen/libs/core/protocol => ../../libs/core/protocol
+replace github.com/jiva-studio/numen/libs/shared/protocol => ../../libs/shared/protocol
 
 replace github.com/jiva-studio/numen/libs/shared/rerank => ../../libs/shared/rerank
 

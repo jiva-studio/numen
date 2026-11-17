@@ -97,8 +97,8 @@ func TestTransportRule_RejectsTransportImports(t *testing.T) {
 		"database/sql/driver",
 		"net/http",
 		"net/http/httptest",
-		"github.com/jiva-studio/numen/libs/core/protocol",
-		"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1",
+		"github.com/jiva-studio/numen/libs/shared/protocol",
+		"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1",
 		"fmt",
 		"context",
 		load.Module + "port",
@@ -113,8 +113,8 @@ func TestTransportRule_RejectsTransportImports(t *testing.T) {
 		"database/sql/driver",
 		"net/http",
 		"net/http/httptest",
-		"github.com/jiva-studio/numen/libs/core/protocol",
-		"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1",
+		"github.com/jiva-studio/numen/libs/shared/protocol",
+		"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1",
 	}
 	if !slices.Equal(rejected, want) {
 		t.Errorf("the rule rejected %v, want %v", rejected, want)

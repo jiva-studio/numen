@@ -1,6 +1,6 @@
 # Backend (Go) Coding Style & Guidelines
 
-The standards for Go code in numen: `libs/core/kernel`, `libs/core/protocol`, `apps/desktop`, `apps/mobile`. The architecture these serve is in [`architecture.md`](./architecture.md).
+The standards for Go code in numen: `libs/core/kernel`, `libs/shared/protocol`, `apps/desktop`, `apps/mobile`. The architecture these serve is in [`architecture.md`](./architecture.md).
 
 ---
 
@@ -14,7 +14,7 @@ libs/core/kernel/            # the hexagon — its own module
 ├── container/        # the composition root
 └── internal/         # not nameable from outside the module
 libs/shared/note/           # the domain: entities, value objects, identifiers, invariants
-libs/core/protocol/        # generated from the schema — never hand-edited
+libs/shared/protocol/        # generated from the schema — never hand-edited
 apps/desktop/         # the window's host: cmd/ and internal/
 ```
 
@@ -109,7 +109,7 @@ Per module, from its own directory:
 ```bash
 cd libs/core/kernel     && gofmt -l . && go vet ./... && go test ./...
 cd apps/desktop  && gofmt -l ./cmd ./internal && go vet ./... && go test ./...
-cd libs/core/protocol && buf lint && npm run generate
+cd libs/shared/protocol && buf lint && npm run generate
 ```
 
 - The schema is never hand-edited. Change the `.proto`, run `make generate`, commit what comes out; `make generate-check` fails when the two drift.

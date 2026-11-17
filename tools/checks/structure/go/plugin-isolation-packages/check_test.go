@@ -63,6 +63,8 @@ func TestPluginIsolationRule_RejectsForeignPackagesInTheClosure(t *testing.T) {
 	notesViaSDK := &packages.Package{ID: "notesvia", PkgPath: load.SdkModule + "/notesvia", Imports: map[string]*packages.Package{"x": notes}}
 	sharedLib := &packages.Package{ID: "shared", PkgPath: load.NumenRoot + "libs/shared/tokenizer", Imports: map[string]*packages.Package{"x": {ID: "uniseg", PkgPath: "github.com/rivo/uniseg"}}}
 	atomicfile := &packages.Package{ID: "atomicfile", PkgPath: load.NumenRoot + "libs/shared/atomicfile"}
+	wire := &packages.Package{ID: "wire", PkgPath: load.Wire + "/gen/numen/v1"}
+	wireViaSDK := &packages.Package{ID: "wirevia", PkgPath: load.SdkModule + "/wirevia", Imports: map[string]*packages.Package{"x": wire}}
 	sharedLookalike := &packages.Package{ID: "lookalike", PkgPath: load.NumenRoot + "libs/sharedx/onnx"}
 	for name, one := range map[string]struct {
 		imports map[string]*packages.Package
@@ -72,6 +74,8 @@ func TestPluginIsolationRule_RejectsForeignPackagesInTheClosure(t *testing.T) {
 		"another plugin":                       {map[string]*packages.Package{"a": other}, []string{other.PkgPath}},
 		"the core":                             {map[string]*packages.Package{"a": core}, []string{core.PkgPath}},
 		"the notes library":                    {map[string]*packages.Package{"a": notes}, []string{notes.PkgPath}},
+		"the protocol":                         {map[string]*packages.Package{"a": wire}, []string{wire.PkgPath}},
+		"the protocol through the sdk":         {map[string]*packages.Package{"a": wireViaSDK}, nil},
 		"the core through the sdk":             {map[string]*packages.Package{"a": viaSDK}, []string{core.PkgPath}},
 		"notes through the sdk":                {map[string]*packages.Package{"a": notesViaSDK}, nil},
 		"a shared library":                     {map[string]*packages.Package{"a": sharedLib}, nil},

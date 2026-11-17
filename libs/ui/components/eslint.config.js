@@ -31,7 +31,7 @@ const portFile = 'src/shared/api/dom.ts'
 
 const clockFunctions = { clockFunction, monotonicFunction }
 
-/** The tests that read the wire's fixtures from `libs/core/protocol/testdata` by relative path. */
+/** The tests that read the wire's fixtures from `libs/shared/protocol/testdata` by relative path. */
 const testdataReaders = []
 
 /** The files that stand outside the layers. */

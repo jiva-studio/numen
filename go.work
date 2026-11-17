@@ -15,7 +15,7 @@ use (
 	./libs/plugin/sdk-go
 	./libs/plugin/sdk-go/host
 	./libs/plugin/sdk-go/wasm
-	./libs/core/protocol
+	./libs/shared/protocol
 	./plugins/agents-acp
 	./plugins/agents-antigravity
 	./plugins/agents-claude
@@ -54,5 +54,5 @@ replace (
 	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0 => ./libs/plugin/sdk-go
 	github.com/jiva-studio/numen/libs/plugin/sdk-go/host v0.0.0 => ./libs/plugin/sdk-go/host
 	github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm v0.0.0 => ./libs/plugin/sdk-go/wasm
-	github.com/jiva-studio/numen/libs/core/protocol v0.0.0 => ./libs/core/protocol
+	github.com/jiva-studio/numen/libs/shared/protocol v0.0.0 => ./libs/shared/protocol
 )

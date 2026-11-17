@@ -12,7 +12,7 @@ import (
 // The brackets are written once and read twice: here, and in the window, where
 // the editor underlines them and the renderer turns them into links. Both read
 // this one corpus, and neither owns it.
-const wikilinkCorpus = "../../../core/protocol/testdata/wikilinks.json"
+const wikilinkCorpus = "../../protocol/testdata/wikilinks.json"
 
 type wikilinkCase struct {
 	Text  string   `json:"text"`

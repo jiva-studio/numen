@@ -38,6 +38,8 @@ func GetPluginDependencyRefusal(mod, dep string) string {
 		return ""
 	case IsWithin(dep, NotesModule):
 		return "a plugin names no package of the notes library; it reaches notes through the plugin SDK"
+	case IsWithin(dep, Wire):
+		return "a plugin names no wire type; the protocol is the wire between the core and the plugin SDK"
 	case IsSharedLibrary(dep):
 		return ""
 	case IsWithin(dep, "connectrpc.com/connect"), IsWithin(dep, "google.golang.org/protobuf"):

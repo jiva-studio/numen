@@ -13,13 +13,13 @@ const library = (dir, references = []) => ({
   references: references.map((value, index) => ({ file: `${dir}/a.go`, line: index + 1, value: ROOT + value })),
 });
 
-const MATRIX = { "libs/shared/note": [], "libs/core/protocol": [], "libs/catalog": ["libs/shared/note", "libs/core/protocol"], "libs/sdk": ["libs/core/protocol"] };
+const MATRIX = { "libs/shared/note": [], "libs/shared/protocol": [], "libs/catalog": ["libs/shared/note", "libs/shared/protocol"], "libs/sdk": ["libs/shared/protocol"] };
 
 test("a library that reaches a family its row lists is clean", () => {
   const libraries = [
     library("libs/shared/note"),
-    library("libs/core/protocol"),
-    library("libs/catalog", ["libs/shared/note/domain", "libs/core/protocol/gen/numen/v1"]),
+    library("libs/shared/protocol"),
+    library("libs/catalog", ["libs/shared/note/domain", "libs/shared/protocol/gen/numen/v1"]),
   ];
   assert.deepEqual(findLibraryViolations(libraries, MATRIX), []);
 });
@@ -51,12 +51,12 @@ test("a library that reaches an application or a plugin is reported", () => {
 });
 
 test("the plugin SDK family may reach the atomic file library, the notes library, the protocol and the rerank messages", () => {
-  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/shared/atomicfile", "libs/shared/note", "libs/core/protocol", "libs/shared/rerank"]);
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/shared/atomicfile", "libs/shared/note", "libs/shared/protocol", "libs/shared/rerank"]);
   const libraries = [
     library("libs/shared/note"),
-    library("libs/core/protocol"),
+    library("libs/shared/protocol"),
     library("libs/plugin/sdk-go"),
-    library("libs/plugin/sdk-go/host", ["libs/shared/note", "libs/shared/note/domain", "libs/core/protocol/gen/numen/v1"]),
+    library("libs/plugin/sdk-go/host", ["libs/shared/note", "libs/shared/note/domain", "libs/shared/protocol/gen/numen/v1"]),
   ];
   assert.deepEqual(findLibraryViolations(libraries, LIBRARY_DEPENDENCIES), []);
 });
@@ -138,7 +138,8 @@ test("the shared libraries depend on no library of this repository", () => {
   assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/tokenizer"], []);
   assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/atomicfile"], []);
   assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/note"], []);
-  const alone = [library("libs/shared/onnx"), library("libs/shared/tokenizer"), library("libs/shared/atomicfile"), library("libs/shared/note")];
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/protocol"], []);
+  const alone = [library("libs/shared/onnx"), library("libs/shared/tokenizer"), library("libs/shared/atomicfile"), library("libs/shared/note"), library("libs/shared/protocol")];
   assert.deepEqual(findLibraryViolations(alone, LIBRARY_DEPENDENCIES), []);
 });
 

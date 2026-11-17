@@ -1,5 +1,5 @@
 // Package when reads and evaluates the when conditions of commands and slot entries: CEL expressions
-// over the variables of libs/core/protocol/when.json, such as target.isFolder && !target.isMultiple.
+// over the variables of libs/shared/protocol/when.json, such as target.isFolder && !target.isMultiple.
 package when
 
 import (

@@ -65,7 +65,7 @@ jobs:
         if: ${{ !cancelled() && inputs.core }}
         run: |
           set -euo pipefail
-          for module in libs/core/kernel libs/shared/atomicfile libs/shared/note libs/plugin/catalog libs/core/protocol tools/checks/structure/go; do
+          for module in libs/core/kernel libs/shared/atomicfile libs/shared/note libs/plugin/catalog libs/shared/protocol tools/checks/structure/go; do
             echo "::group::$module"
             (
               cd "$module"
@@ -88,7 +88,7 @@ jobs:
       - if: ${{ !cancelled() && inputs.core }}
         uses: ./.github/actions/govulncheck
         with:
-          working-directory: libs/core/protocol
+          working-directory: libs/shared/protocol
 
       # A numbered migration a released build has run cannot change or disappear: the schema goes
       # forward by another number. The base is the first parent of the merge commit.
@@ -180,7 +180,7 @@ jobs:
       # is committed so that an ordinary build needs none of these tools.
       - name: Lint the protocol schema and verify the generated code
         if: ${{ !cancelled() && inputs.protocol }}
-        working-directory: libs/core/protocol
+        working-directory: libs/shared/protocol
         run: |
           set -euo pipefail
           go install tool
