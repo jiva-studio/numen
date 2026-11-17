@@ -96,7 +96,7 @@ func (s *recordingScorer) ScorePairs(_ context.Context, query string, documents 
 
 func (s *recordingScorer) Close() error { return nil }
 
-func TestRerankScoresTheDocumentsAndLeavesTheInstructionOut(t *testing.T) {
+func TestRerankScoresTheDocumentsAgainstTheQueryWithoutTheInstruction(t *testing.T) {
 	t.Setenv("NUMEN_PLUGIN_DATA_DIR", t.TempDir())
 	scorer := &recordingScorer{}
 	open := func(context.Context, profile.Profile) (ports.Scorer, error) { return scorer, nil }
