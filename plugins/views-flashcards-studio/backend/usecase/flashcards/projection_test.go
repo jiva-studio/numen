@@ -1124,7 +1124,7 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	}
 
 	fullRecallRun := run
-	fullRecallRun.Recalls = review.GetFullRecall
+	fullRecallRun.Recalls = getFullRecall
 	modeled := runProjection(t, run, now, p, pos, 0)
 	nothing := runProjection(t, fullRecallRun, now, p, pos, 0)
 

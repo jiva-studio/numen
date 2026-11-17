@@ -54,3 +54,6 @@ func getDaysToLearn(by review.Scheduler, d review.Day, p review.Preset, now time
 func countOverdue(d review.Day, schedules map[review.CardID]review.Schedule, now time.Time) int {
 	return projection.CountOverdue(d, flashcards.ConvertSchedulesToCards(schedules), now)
 }
+
+// getFullRecall is the recall probability under which every review card is recalled.
+func getFullRecall(review.Schedule, time.Time) float64 { return 1 }

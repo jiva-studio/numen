@@ -100,7 +100,7 @@ func projections(t *testing.T) string {
 
 			// The day the whole material is learned is computed on a second run of the
 			// same input, with full recall, in which nothing is forgotten.
-			run.Recalls = review.GetFullRecall
+			run.Recalls = getFullRecall
 			nothing, err := run.Run(t.Context(), getGoldenNow(), p.preset, m.schedules, m.unreviewed)
 			if err != nil {
 				t.Fatal(err)
