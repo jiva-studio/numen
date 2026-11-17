@@ -9,9 +9,6 @@ import type { PlexGraph } from '../../types'
 
 export { browserClock, type Clock }
 
-/** What the arrangement is given, and `draftRoom`, the room it is given before the widgets are measured, to choose the notes whose widgets are drawn. */
-export type PlexTransitionInput = ArrangeInput & { readonly draftRoom?: ArrangeInput['room'] }
-
 /** `waiting` holds the nodes of the next arrangement that the frame does not hold yet, while the plex waits for their widgets. */
 export interface PlexTransition {
   readonly frame: Ref<PlexFrame>
@@ -48,16 +45,13 @@ const EMPTY_FRAME: PlexFrame = {
  */
 export function usePlexTransition(
   graph: () => PlexGraph,
-  input: () => PlexTransitionInput | undefined,
+  input: () => ArrangeInput | undefined,
   options: PlexTransitionOptions,
 ): PlexTransition {
   const { duration, clock = browserClock, isReady = () => true, isActive = () => true } = options
   /** The notes the last arrangement of the current graph and input admitted: they stay the ones shown while the widgets change their rooms. */
   let kept: ReadonlySet<string> | undefined
-  const target = (draft?: ArrangeInput['room'], only?: ReadonlySet<string>) => {
-    const { draftRoom, ...given } = input() ?? {}
-    return arrangePlex(graph(), { ...given, ...(draft ? { room: draft } : {}), keep: kept, only })
-  }
+  const target = () => arrangePlex(graph(), { ...input(), keep: kept })
 
   const frame = shallowRef<PlexFrame>(EMPTY_FRAME)
   const waiting = shallowRef<readonly PlacedNode[]>([])
@@ -107,25 +101,16 @@ export function usePlexTransition(
     })
   }
 
-  // Whether the widgets of the nodes of `to` are ready; if not, the nodes the frame does not hold wait.
-  const holdUntilReady = (to: PlexFrame) => {
-    held.value = to.nodes.map((node) => node.id)
-    if (isReady(held.value)) return true
-    const shown = new Set(frame.value.nodes.map((node) => node.id))
-    waiting.value = to.nodes.filter((node) => !shown.has(node.id))
-    return false
-  }
-
   const arrangeWhenReady = () => {
     cancelFrame()
     if (!isActive()) return
     arrangedRoom = input()?.room
-    const draft = kept ? undefined : input()?.draftRoom
-    let to = target(draft)
-    if (!holdUntilReady(to)) return
-    if (draft) {
-      to = target(undefined, new Set(held.value))
-      if (!holdUntilReady(to)) return
+    const to = target()
+    held.value = to.nodes.map((node) => node.id)
+    if (!isReady(held.value)) {
+      const shown = new Set(frame.value.nodes.map((node) => node.id))
+      waiting.value = to.nodes.filter((node) => !shown.has(node.id))
+      return
     }
     waiting.value = []
     kept = new Set(held.value)
@@ -200,7 +185,7 @@ function startTransition(context: StepContext): number {
   return context.clock.schedule(step)
 }
 
-function getInputSources(input: () => PlexTransitionInput | undefined) {
+function getInputSources(input: () => ArrangeInput | undefined) {
   return [
     () => input()?.placement,
     () => input()?.options?.viewport?.width,

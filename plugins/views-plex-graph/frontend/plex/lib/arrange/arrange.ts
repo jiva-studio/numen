@@ -34,7 +34,6 @@ import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
  * `room` is the space a note keeps over and under its pill; a note without one keeps none.
  * `keep` is the set of notes a former arrangement admitted: only they are placed, none of them is cut again,
  * so a change of the rooms moves the notes and never changes which are shown.
- * `only` limits the notes that may be admitted to a set a former arrangement chose; the window still cuts them.
  */
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
@@ -44,7 +43,6 @@ export interface ArrangeInput {
   readonly labelType?: LabelType | undefined
   readonly room?: Rooms | undefined
   readonly keep?: ReadonlySet<string> | undefined
-  readonly only?: ReadonlySet<string> | undefined
 }
 
 export function arrangePlex(
@@ -57,12 +55,11 @@ export function arrangePlex(
     labelType,
     room,
     keep,
-    only,
   }: ArrangeInput = {},
 ): PlexFrame {
   const request = applyRoom(resolveOptions(options))
   const focusNode = assertGraph(graph)
-  const requested = requestKept(requestNodes(graph.nodes, request), keep ?? only)
+  const requested = requestKept(requestNodes(graph.nodes, request), keep)
   const rooms = createRoomLookup(graph.nodes, room)
 
   // Lays the nodes out at the given options, each keeping the room it is given: the focus, then the placement.
