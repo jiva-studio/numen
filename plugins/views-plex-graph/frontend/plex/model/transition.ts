@@ -54,9 +54,9 @@ export function usePlexTransition(
   const { duration, clock = browserClock, isReady = () => true, isActive = () => true } = options
   /** The notes the last arrangement of the current graph and input admitted: they stay the ones shown while the widgets change their rooms. */
   let kept: ReadonlySet<string> | undefined
-  const target = (draft?: ArrangeInput['room']) => {
+  const target = (draft?: ArrangeInput['room'], only?: ReadonlySet<string>) => {
     const { draftRoom, ...given } = input() ?? {}
-    return arrangePlex(graph(), { ...given, ...(draft ? { room: draft } : {}), keep: kept })
+    return arrangePlex(graph(), { ...given, ...(draft ? { room: draft } : {}), keep: kept, only })
   }
 
   const frame = shallowRef<PlexFrame>(EMPTY_FRAME)
@@ -124,7 +124,7 @@ export function usePlexTransition(
     let to = target(draft)
     if (!holdUntilReady(to)) return
     if (draft) {
-      to = target()
+      to = target(undefined, new Set(held.value))
       if (!holdUntilReady(to)) return
     }
     waiting.value = []
