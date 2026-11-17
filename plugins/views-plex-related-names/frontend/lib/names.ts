@@ -15,10 +15,11 @@ const RELATIONS: Readonly<Record<NamesSide, readonly NameRelation[]>> = {
  */
 export function listNames(noteGraph: NoteGraph, side: NamesSide, limit: number): RelatedName[] {
   const owner = noteGraph.focus.title || WORDS.untitled
+  const own = noteGraph.related.filter((item) => !item.relatedTo)
   const named = new Set<string>()
   return RELATIONS[side]
     .flatMap((relation) =>
-      noteGraph.related.filter((item) => item.relation === relation).map((item) => ({ item, relation })),
+      own.filter((item) => item.relation === relation).map((item) => ({ item, relation })),
     )
     .filter(({ item }) => {
       if (named.has(item.path)) return false
