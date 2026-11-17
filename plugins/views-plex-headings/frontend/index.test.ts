@@ -78,7 +78,6 @@ const setup = (
   return { context, host, notices, show, requested, answers, opened }
 }
 
-/** Lets what is waiting on a timer or an answer go on, and the drawing follow. */
 const settle = async (wait = 0) => {
   await vi.advanceTimersByTimeAsync(wait)
   await nextTick()

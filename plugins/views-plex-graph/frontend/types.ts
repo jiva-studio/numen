@@ -174,7 +174,6 @@ export interface PlexTabDeps {
     side: PlexWidgetSide,
     handler: (entries: readonly SlotItem[]) => void,
   ) => Disposable
-  /** Finds notes by name. */
   readonly searchNames?: (
     query: string,
     limit?: number,
