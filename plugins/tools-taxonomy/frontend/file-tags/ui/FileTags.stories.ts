@@ -36,7 +36,7 @@ const meta: Meta<Knobs> = {
     template: `
       <div class="numen" style="background:var(--numen-surface);color:var(--numen-ink);padding:1rem">
         <div role="treeitem" aria-selected="false" :data-selected="args.state === 'selected' ? '' : undefined"
-          style="display:flex;align-items:center;gap:0.5rem;inline-size:16rem;padding:0.25rem;background:var(--tree-row-bg)">
+          style="display:flex;align-items:center;gap:0.5rem;inline-size:16rem;padding:0.25rem;--tree-row-bg:var(--numen-surface);--tree-row-ring:var(--tree-row-bg);background:var(--tree-row-bg)">
           <span style="flex:1">Quay</span>
           <FileTags :tags="tags" />
         </div>
