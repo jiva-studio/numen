@@ -21,7 +21,7 @@ export interface PlexPending {
   at: Position
 }
 
-/** `gesture` and `dragging` are passed as the refs they are, so the pointer moving through them redraws the lines it draws and not the notes. */
+/** `waiting` holds the nodes whose widgets are drawn, unseen, until the layout is settled. `gesture` and `dragging` are passed as the refs they are, so the pointer moving through them redraws the lines it draws and not the notes. */
 export interface PlexViewProps {
   frame: PlexFrame
   viewport: { width: number; height: number }
@@ -42,7 +42,6 @@ export interface PlexViewProps {
   getPath?: ((id: string) => string) | undefined
   setWidgets?: ((id: string, side: WidgetSide, element: Element | null) => void) | undefined
   setReady?: ((id: string, side: WidgetSide, isReady: boolean | null) => void) | undefined
-  /** The nodes whose widgets are drawn, unseen, until the layout of their notes is settled. */
   waiting?: readonly PlacedNode[] | undefined
   clock?: Clock | undefined
   behavior?: PlexBehavior

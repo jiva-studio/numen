@@ -1,10 +1,10 @@
-/** Whether the views of one side of a node have loaded and what they drew is measured, told to whoever lays the nodes out. */
+/** Whether the views of one side of a node have loaded and what they drew is measured, reported to the layout of the nodes. */
 import { onScopeDispose, watchPostEffect, type Ref } from 'vue'
 import { createSlotLoading, type SlotLoading, type SlotLoadingClock } from '@numen/plugin-sdk'
 
 /**
  * A side is ready once every view it draws has finished and `isMeasured` holds after `refresh` has read what they drew.
- * `report` is given `null` when the side is gone.
+ * `report` receives `null` when the side is removed.
  */
 export function useWidgetsLoading(
   clock: SlotLoadingClock,

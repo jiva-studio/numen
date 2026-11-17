@@ -9,17 +9,17 @@ import type { PlexGraph } from '../../types'
 
 export { browserClock, type Clock }
 
+/** `waiting` holds the nodes of the next arrangement that the frame does not hold yet, while the plex waits for their widgets. */
 export interface PlexTransition {
   readonly frame: Ref<PlexFrame>
-  /** The nodes of the next arrangement that the frame does not hold yet, while it waits for their widgets. */
   readonly waiting: Ref<readonly PlacedNode[]>
   readonly isMoving: Ref<boolean>
 }
 
+/** The plex is arranged only when `isReady` holds for the nodes it would show. */
 export interface PlexTransitionOptions {
   readonly duration: () => number
   readonly clock?: Clock | undefined
-  /** Whether the widgets of these nodes have settled in size; the plex is arranged only when they have. */
   readonly isReady?: ((ids: readonly string[]) => boolean) | undefined
 }
 

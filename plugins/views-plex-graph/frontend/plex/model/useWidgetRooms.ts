@@ -16,8 +16,8 @@ const getKey = (id: string, side: WidgetSide): string => `${side}:${id}`
 /**
  * The widgets of each side of a node are measured whenever `setWidgets` is given their element, and again when it resizes;
  * `null` takes them away. `getNodeRoom` is what the arrangement is given: a new function whenever a measured height
- * changes, and absent while nothing is measured. `setReady` is told whether the views of a side have loaded and
- * `null` when the side is gone; `isSettled` holds when every side of every given node has said so.
+ * changes, and absent while nothing is measured. `setReady` takes whether the views of a side have loaded and
+ * `null` when the side is removed; `isSettled` holds when every side of every given node has reported.
  */
 export function useWidgetRooms(options: Readonly<Ref<PlexOptions>>): {
   setWidgets: (id: string, side: WidgetSide, element: Element | null) => void
