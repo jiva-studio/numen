@@ -72,7 +72,7 @@ function onLeave() {
 
 <style scoped>
 .file-tags {
-  --ring: 0.125rem;
+  --ring: 0.0625rem;
   --dot: 0.75rem;
 
   display: inline-flex;

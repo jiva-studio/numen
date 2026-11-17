@@ -97,7 +97,7 @@ useRenameFocus(() => props.isRenaming, field)
 .tree__row[data-selected],
 .tree__row[data-selected]:hover {
   --tree-row-bg: var(--numen-accent);
-  --tree-row-ring: var(--numen-accent-ink);
+  --tree-row-ring: color-mix(in srgb, var(--numen-accent-ink) 55%, var(--numen-accent));
   color: var(--numen-accent-ink);
 }
 
