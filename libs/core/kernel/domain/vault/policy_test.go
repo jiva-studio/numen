@@ -3,7 +3,7 @@ package vault
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func TestGetSourceKindClassifiesFilesByExtension(t *testing.T) {

@@ -106,7 +106,7 @@ func putPreferredFirst(rows []connection.Row, preferred *modelcall.PreferredRow)
 // callServices is what a row call takes from Calls: a slot of its connection, the provider and the secrets.
 type callServices interface {
 	acquire(ctx context.Context, connectionID string, capacity int, priority modelcall.Priority) (func(), error)
-	openProvider(ctx context.Context, pluginID string) (connectionport.Provider, func(), error)
+	providers() connectionport.ProviderSource
 	readConnectionSecrets(ctx context.Context, resolved connection.Resolved) (map[string]string, error)
 }
 
@@ -114,8 +114,8 @@ func (c *Calls) acquire(ctx context.Context, connectionID string, capacity int, 
 	return c.queues.acquire(ctx, connectionID, capacity, priority)
 }
 
-func (c *Calls) openProvider(ctx context.Context, pluginID string) (connectionport.Provider, func(), error) {
-	return c.source.OpenProvider(ctx, pluginID)
+func (c *Calls) providers() connectionport.ProviderSource {
+	return c.source
 }
 
 func (c *Calls) readConnectionSecrets(ctx context.Context, resolved connection.Resolved) (map[string]string, error) {
@@ -251,7 +251,7 @@ func (r *rowCall) callOnce(ctx context.Context) ([]byte, error) {
 		return none, err
 	}
 	defer freeSlot()
-	provider, release, err := r.calls.openProvider(ctx, r.resolved.PluginID)
+	provider, release, err := r.calls.providers().OpenProvider(ctx, r.resolved.PluginID)
 	if err != nil {
 		return none, &openError{err: err}
 	}

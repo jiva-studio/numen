@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, reactive } from 'vue'
 import RecordingTab from './RecordingTab.vue'
-import { CUES, TALK_URL, createPlayer, createRecordings, flush } from '../model/fakes'
+import { CUES, TALK_URL, createPlayer, createRecordings, flush } from '../testing/fakes'
 import type { Recordings } from '../types'
 import { WORDS } from '../words'
 

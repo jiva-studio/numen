@@ -20,7 +20,7 @@
 #   desktop   apps/desktop              core    libs/core/kernel
 #   mobile    apps/mobile               domain  libs/core/kernel/domain
 #   landing   apps/landing              ui      libs/ui/components
-#   protocol  libs/core/protocol        sdk     libs/plugin/sdk-ts
+#   protocol  libs/shared/protocol        sdk     libs/plugin/sdk-ts
 #   docs      everything else in docs/  vault   vault format / parser
 #   ci  deps  repo
 #

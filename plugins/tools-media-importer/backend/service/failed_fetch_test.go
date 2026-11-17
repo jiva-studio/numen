@@ -9,8 +9,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/queuetest"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -19,9 +22,9 @@ import (
 // the video itself can be copied.
 type captionlessSites struct{ fakeSites }
 
-func (s captionlessSites) GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error) {
+func (s captionlessSites) GetText(ctx context.Context, address string, want fetch.PreferredCaptions) (fetch.Text, error) {
 	if s.isVideo(address) {
-		return download.Text{}, errors.New("the captions endpoint returned 429 Too Many Requests")
+		return fetch.Text{}, errors.New("the captions endpoint returned 429 Too Many Requests")
 	}
 	return s.fakeSites.GetText(ctx, address, want)
 }
@@ -32,14 +35,14 @@ type emptiedSites struct {
 	calls *atomic.Int32
 }
 
-func (s emptiedSites) GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error) {
+func (s emptiedSites) GetText(ctx context.Context, address string, want fetch.PreferredCaptions) (fetch.Text, error) {
 	if s.calls.Add(1) > 1 {
-		return download.Text{}, download.ErrNothingDownloaded
+		return fetch.Text{}, fetch.ErrNothingDownloaded
 	}
 	return s.fakeSites.GetText(ctx, address, want)
 }
 
-func newFixtureWithSites(t *testing.T, fetcher link.Fetcher) *importFixture {
+func newFixtureWithSites(t *testing.T, fetcher ports.Fetcher) *importFixture {
 	t.Helper()
 	vault := hosttest.New("Mills")
 	store := vault.Store()
@@ -49,11 +52,12 @@ func newFixtureWithSites(t *testing.T, fetcher link.Fetcher) *importFixture {
 	hosted := link.Host{
 		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
 		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: tasks,
-		Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
+		Clock:   newFakeClock(time.Unix(1_700_000_000, 0)),
+		Entropy: random.Entropy{},
 	}
 	links := link.New(hosted,
-		func() link.Fetcher { return fetcher },
-		func() link.Settings { return link.Settings{IsAutomatic: true} })
+		func() ports.Fetcher { return fetcher },
+		func() fetch.Settings { return fetch.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
 	registry, err := NewTools(links).Registry()
 	if err != nil {

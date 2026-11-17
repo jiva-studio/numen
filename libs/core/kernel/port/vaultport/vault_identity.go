@@ -3,7 +3,7 @@ package vaultport
 import (
 	"time"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // VaultIdentity is what turns a folder into a vault: a folder can be looked at

@@ -40,7 +40,7 @@ func newRepositoryLayout(t *testing.T) layout {
 		connectPath: load.Wire + "/gen/numen/v1/numenv1connect",
 		sdkGoPath:   load.SdkModule,
 		sdkGoDir:    "libs/plugin/sdk-go",
-		protocolDir: "libs/core/protocol",
+		protocolDir: "libs/shared/protocol",
 		sdkTSDir:    "libs/plugin/sdk-ts",
 		libraryDirs: []string{"libs/plugin/sdk-go", "libs/plugin/sdk-ts", "libs/core/client"},
 	}

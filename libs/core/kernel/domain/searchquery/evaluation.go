@@ -3,7 +3,7 @@ package searchquery
 import (
 	"time"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Evaluation is one query over one vault: the query, the scopes of its conditions, and the recipe, floor, limits

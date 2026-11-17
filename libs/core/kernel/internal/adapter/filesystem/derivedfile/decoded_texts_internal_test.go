@@ -3,7 +3,7 @@ package derivedfile
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func getSegmentsOf(word string) []domain.TextSegment {

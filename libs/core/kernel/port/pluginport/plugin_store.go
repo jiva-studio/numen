@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // PluginStoreReader reads one plugin's own folder in a vault's store, `.numen/<plugin id>/`. A name is a file

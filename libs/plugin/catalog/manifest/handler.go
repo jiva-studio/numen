@@ -16,7 +16,7 @@ var (
 	ErrInvalidTrigger = errors.New("invalid trigger")
 )
 
-// Handler is the plugin's handler of a shared command of libs/core/protocol/commands.json. The code of the
+// Handler is the plugin's handler of a shared command of libs/shared/protocol/commands.json. The code of the
 // plugin registers it under the full id of the command.
 type Handler struct {
 	Command string

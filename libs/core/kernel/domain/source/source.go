@@ -1,6 +1,6 @@
 package source
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // NearestQuery is a search by meaning: the vector the model answered with, the
 // recipe it was made under, the kinds of source to look in (all where empty),
