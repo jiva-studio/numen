@@ -277,6 +277,8 @@ graph LR
 
 **(m) The mobile app links its plugins into one binary.** A phone runs one process, so the mobile app links the plugins it ships into its binary and registers each with `RegisterBuiltIn`; they run in process and answer on the same routes as a plugin process. The desktop and every library never require a plugin. A `go.mod` requires a plugin only when the non-test code of its own module passes that plugin's `Manifest` to `RegisterBuiltIn` (`go/plugin-boundary`). The owner decided this on 2026-11-15.
 
+**(n) `libs/shared` marks the extractable set.** The extractable set is the code that can be moved to a repository of its own and published, so everything an external plugin can reach lies inside it: `libs/plugin/sdk-go` with its sub-modules, `libs/plugin/sdk-ts`, `libs/ui/*` (`@numen/ui`, `@numen/workbench`) and `libs/shared/*`. A library in `libs/shared` is a leaf: it requires only third-party modules and other `libs/shared` modules (`go/shared-leaf`; `ts/extractable-set` for a TypeScript package). A module or package of the set and every plugin require, direct or indirect (a `replace` target counts), only third-party code, members of the set and `libs/shared` (`go/extractable-requirements`, `ts/extractable-set`).
+
 ### Comparison with established architectures
 
 - **Clean Architecture dependency rule.** Source code dependencies point inward. Here the plugins are the outermost ring. The SDK is the interface between the core and the plugins. The core loads plugins by manifest and never imports them. Composition roots (`libs/core/kernel/container`, the application entry points) wire the concrete parts together.
