@@ -1,13 +1,6 @@
 /** The names one side of a node draws: the notes related to its note, read while the names are shown. */
 import { computed, onScopeDispose, shallowRef, watch, type ComputedRef } from 'vue'
-import type {
-  Caught,
-  CommandsHost,
-  NoteGraph,
-  PluginEvents,
-  VaultChangeEvent,
-  VaultNotes,
-} from '@numen/plugin-sdk'
+import type { Caught, CommandsHost, NoteGraph, PluginEvents, VaultNotes } from '@numen/plugin-sdk'
 import { listNames } from '../lib/names'
 import type { NamesSide, RelatedName } from '../types'
 import type { NamesSettings } from './settings'
@@ -59,19 +52,13 @@ export function useNames(
 
   watch(() => (source.settings.showNames.value ? path() : ''), read, { immediate: true })
 
-  const isAffected = (event: VaultChangeEvent) => {
-    if (!event.paths || event.paths.length === 0) return true
-    const known = new Set([path(), ...(noteGraph.value?.related.map((item) => item.path) ?? [])])
-    return event.paths.some((changed) => known.has(changed))
-  }
-
   let pending: ReturnType<typeof setTimeout> | undefined
   const clearPending = () => {
     if (pending !== undefined) clearTimeout(pending)
     pending = undefined
   }
-  const subscription = source.events.onVaultChange((event) => {
-    if (!source.settings.showNames.value || !isAffected(event)) return
+  const subscription = source.events.onVaultChange(() => {
+    if (!source.settings.showNames.value) return
     clearPending()
     pending = setTimeout(() => {
       pending = undefined
