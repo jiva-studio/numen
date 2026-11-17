@@ -66,13 +66,23 @@ beforeEach(() => {
   // A document without a layout engine: a widget is as tall as WIDGET_HEIGHT, and the group of widgets
   // is as tall as its widgets and the node gap it carries as padding.
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-    const drawn = this.querySelectorAll('[data-widget]').length + (this.matches('[data-widget]') ? 1 : 0)
+    const drawn =
+      this.querySelectorAll('[data-widget]').length + (this.matches('[data-widget]') ? 1 : 0)
     const height = this.matches('.plex__widgets-group')
       ? NODE_GAP + drawn * WIDGET_HEIGHT
       : drawn > 0
         ? WIDGET_HEIGHT
         : 0
-    return { x: 0, y: 0, top: 0, left: 0, right: 100, bottom: height, width: 100, height } as DOMRect
+    return {
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 100,
+      bottom: height,
+      width: 100,
+      height,
+    } as DOMRect
   })
 })
 
@@ -106,7 +116,9 @@ const mountPlex = async (props: Partial<InstanceType<typeof Plex>['$props']> = {
 }
 
 const getLayout = (plex: Mounted): string[] =>
-  FAMILY.nodes.map((node) => plex.get(`[aria-label^="${node.title}"]`).attributes('transform') ?? '')
+  FAMILY.nodes.map(
+    (node) => plex.get(`[aria-label^="${node.title}"]`).attributes('transform') ?? '',
+  )
 
 const getLayoutOf = async (props: Partial<InstanceType<typeof Plex>['$props']>) => {
   const plex = await mountPlex(props)
