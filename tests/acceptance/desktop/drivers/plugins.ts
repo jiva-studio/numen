@@ -54,10 +54,11 @@ export class PluginDriver {
     // The settings open on the page of the plugin shown last, which may be another plugin.
     await expect(settings).toBeVisible()
     await expect(toggle.or(plugin).or(alarm).or(settingsPage.getBackButton()).first()).toBeVisible()
-    if (await alarm.isVisible()) throw new Error(`the plugin "${name}" is in trouble: ${await alarm.innerText()}`)
-    if (!(await toggle.isVisible()) && !(await plugin.isVisible())) {
+    if (!(await toggle.isVisible()) && !(await plugin.isVisible()) && !(await alarm.isVisible())) {
       await settingsPage.getBackButton().click()
+      await expect(toggle.or(plugin).or(alarm).first()).toBeVisible()
     }
+    if (await alarm.isVisible()) throw new Error(`the plugin "${name}" is in trouble: ${await alarm.innerText()}`)
     if (!(await toggle.isVisible())) await plugin.click()
     await expect(toggle).toBeVisible()
     return toggle
