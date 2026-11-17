@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * The view of a node of the plex that lists the headings of its note. Its box is the node but for the strips
- * the handle of the node stands in, which is where the pointer is read; the list is drawn above everything
+ * the handle of the node is in, which is where the pointer is read; the list is drawn above everything
  * else, hung from the foot of the box. Clicks and drags it does not use reach the node.
  */
 import type { ListLayout } from '../lib/layout'

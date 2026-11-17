@@ -58,7 +58,10 @@ export function useHeadings(source: HeadingsSource, getPath: () => string) {
     const path = getPath()
     isReading = true
     try {
-      const [found] = await Promise.all([source.notes.getHeadings([path]), source.wait(source.hoverWait)])
+      const [found] = await Promise.all([
+        source.notes.getHeadings([path]),
+        source.wait(source.hoverWait),
+      ])
       if (mine.isCurrent) headings.value = found.get(path) ?? []
     } catch (error) {
       if (mine.isCurrent) source.reportFailure(error)
