@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"

@@ -14,7 +14,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"

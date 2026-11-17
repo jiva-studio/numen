@@ -215,7 +215,7 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 	// A vault is read when the window opens it, and that is done before the
 	// clock starts: what is measured here is what counting one costs.
 	for _, v := range all {
-		for handler.countVault(ctx, v).IsIndexing {
+		for handler.countVault(ctx, v).Counted.IsIndexing {
 			time.Sleep(time.Millisecond)
 		}
 	}
@@ -252,7 +252,7 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 	b.Run("OneAfterAnother", func(b *testing.B) {
 		for b.Loop() {
 			for _, v := range all {
-				if one := handler.countVault(ctx, v); one.Unread != "" {
+				if one := handler.countVault(ctx, v).Counted; one.Unread != "" {
 					b.Fatal(one.Unread)
 				}
 			}

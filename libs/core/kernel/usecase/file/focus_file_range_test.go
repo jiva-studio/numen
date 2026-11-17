@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // The 32-bit range is a limit of the wire to the window, which its converters enforce; the use case

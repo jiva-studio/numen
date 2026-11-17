@@ -21,13 +21,16 @@ const (
 	ErrorCodeConflict       ErrorCode = "conflict"
 )
 
-// FileStat identifies a version of a file: its path, its size in bytes and its modification time in
-// nanoseconds since the epoch. Mtime is encoded as a decimal string because a nanosecond count is
-// larger than the integers a JSON number carries without loss.
+// FileStat identifies a version of a file: its path, its size in bytes, its modification time in
+// nanoseconds since the epoch, the SHA-256 of its content in lowercase hex and the number of writes the
+// vault had taken when the answer was made. Mtime and Version are encoded as decimal strings because a
+// nanosecond count and a 64-bit counter are larger than the integers a JSON number carries without loss.
 type FileStat struct {
-	Path  string `json:"path"`
-	Size  int64  `json:"size"`
-	Mtime int64  `json:"mtime,string"`
+	Path    string `json:"path"`
+	Size    int64  `json:"size"`
+	Mtime   int64  `json:"mtime,string"`
+	Hash    string `json:"hash"`
+	Version uint64 `json:"version,string"`
 }
 
 // Bounds is the closed range a number may take.

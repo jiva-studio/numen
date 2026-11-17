@@ -3,7 +3,7 @@ package note_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 	"strings"
 	"testing"
 
@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 const (
@@ -209,9 +209,9 @@ func (w pathFailingWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter
 
 func (w pathFailingWriter) Write(
 	ctx context.Context, path string, content []byte, stat domain.FileStat,
-) (domain.FileStat, error) {
+) (vault.WriteResult, error) {
 	if path == w.path {
-		return domain.FileStat{}, errPathDisk
+		return vault.WriteResult{}, errPathDisk
 	}
 	return w.NoteWriter.Write(ctx, path, content, stat)
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ListDocuments returns the sources of one vault under any of the prefixes, of the source kinds and at the paths

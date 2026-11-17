@@ -45,6 +45,8 @@ func getDepguardGaps(config []byte) ([]string, error) {
 	var gaps []string
 	for _, pkg := range []string{
 		load.NumenRoot + "libs",
+		load.NotesModule,
+		load.Wire,
 		load.NumenRoot + "apps",
 		"connectrpc.com/connect",
 		"google.golang.org/protobuf",
@@ -55,7 +57,7 @@ func getDepguardGaps(config []byte) ([]string, error) {
 	}
 	for _, pkg := range allowed {
 		// depguard matches an allow by prefix, so only libs/shared/ with the slash keeps libs/sharedx out.
-		if strings.HasPrefix(pkg, load.NumenRoot) && !load.IsSDK(pkg) && !strings.HasPrefix(pkg, load.SharedLibraries+"/") {
+		if strings.HasPrefix(pkg, load.NumenRoot) && !load.IsSDK(pkg) && (load.IsWithin(pkg, load.NotesModule) || load.IsWithin(pkg, load.Wire) || !strings.HasPrefix(pkg, load.SharedLibraries+"/")) {
 			gaps = append(gaps, "allows "+pkg)
 		}
 	}

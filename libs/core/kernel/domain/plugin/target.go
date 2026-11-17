@@ -5,7 +5,7 @@ import (
 	pathpkg "path"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // TargetVersion is one text version of a target as target.versions holds it. A valid version still
@@ -26,7 +26,7 @@ type TargetValues struct {
 }
 
 // NewTargetValues derives the target variables from the path, whether it is a folder, and its content
-// type, as libs/core/protocol/when.json lists them under targets. An empty path that is no folder is no
+// type, as libs/shared/protocol/when.json lists them under targets. An empty path that is no folder is no
 // target, and every variable is false or empty. The note type and properties of a note are left out
 // until WithNote gives them; for any other path they are empty.
 func NewTargetValues(path string, isFolder bool, contentType domain.ContentType) TargetValues {

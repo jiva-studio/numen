@@ -36,8 +36,8 @@ import (
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // derivedCoreFolder is the folder of a vault's store that holds the core's own files.

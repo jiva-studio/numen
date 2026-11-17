@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // bin is the place this machine keeps deleted files.

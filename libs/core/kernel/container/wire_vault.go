@@ -22,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func (c Config) registry() (vaultregistry.Ports, error) {
@@ -116,6 +116,8 @@ func noteWriters(c vaultWiring) vaultport.NoteWriters { return vaultWriters(c) }
 func folderWriters(c vaultWiring) vaultport.FolderWriters { return vaultWriters(c) }
 
 func writeLocks(c vaultWiring) vaultport.VaultLocks { return vaultWriters(c) }
+
+func vaultVersions(c vaultWiring) vaultport.VaultVersions { return vaultWriters(c) }
 
 func getImportedFiles(_ vaultWiring) vaultport.ImportedFiles {
 	return filesystem.ImportedFiles{}

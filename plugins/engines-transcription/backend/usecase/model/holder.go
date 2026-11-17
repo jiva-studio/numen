@@ -7,12 +7,12 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/ports"
 )
 
 // Model is an open transcription model.
 type Model interface {
-	transcribe.Recognizer
+	ports.Recognizer
 	Close() error
 }
 
@@ -32,7 +32,7 @@ func NewHolder(cfg settings.Config, open Opener) *Holder {
 }
 
 // GetRecognizer returns the open model for the transcription use case and opens it first when there is none.
-func (h *Holder) GetRecognizer(ctx context.Context) (transcribe.Recognizer, error) {
+func (h *Holder) GetRecognizer(ctx context.Context) (ports.Recognizer, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.current != nil {

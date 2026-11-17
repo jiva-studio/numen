@@ -5,7 +5,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -13,7 +13,7 @@ import (
 
 func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
 	handler := NewHandler(NewValues(setting.NewGet(
-		func() (string, string, error) { return `{"v":1}`, "/home/numen.json", nil },
+		func() (string, string, uint64, error) { return `{"v":1}`, "/home/numen.json", 1, nil },
 		nil,
 		func() []plugin.Setting {
 			return []plugin.Setting{

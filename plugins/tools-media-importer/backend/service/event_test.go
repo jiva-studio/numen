@@ -5,8 +5,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/queuetest"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -18,10 +21,10 @@ func TestAFilesChangedEventDownloadsTheMissingCaptionsOfALinkNote(t *testing.T) 
 	tasks := queuetest.NewLog()
 	links := link.New(link.Host{
 		PluginID: PluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(texts),
-		Queue: tasks, Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
+		Queue: tasks, Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{},
 	},
-		func() link.Fetcher { return download.NewMock(webpage.New()) },
-		func() link.Settings { return link.Settings{IsTextDownloadAutomatic: true} })
+		func() ports.Fetcher { return download.NewMock(webpage.New()) },
+		func() fetch.Settings { return fetch.Settings{IsTextDownloadAutomatic: true} })
 	t.Cleanup(links.Close)
 	note := "---\ntype: link\nurl: " + videoAddress + "\n---\n"
 	vault.File("links/mill.md", note)
