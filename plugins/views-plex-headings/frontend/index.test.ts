@@ -401,8 +401,12 @@ describe('a heading chosen', () => {
 })
 
 describe('the wheel on the list', () => {
-  const wheel = (wrapper: VueWrapper, deltaY: number) =>
-    getList()!.dispatchEvent(new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }))
+  const wheel = async (_wrapper: VueWrapper, deltaY: number) => {
+    getList()!.dispatchEvent(
+      new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),
+    )
+    await nextTick()
+  }
 
   const setupMany = async () => {
     vi.useFakeTimers()
