@@ -56,7 +56,7 @@ func readOldResult(t *testing.T, payload []byte) []float32 {
 func TestTheRequestIsTheBytesOfTheOldLayout(t *testing.T) {
 	documents := []string{"Ferry times", "Tide tables", ""}
 	for _, instruction := range []string{"", "Find the notes that answer the question"} {
-		got, err := EncodeRequest("when does the ferry leave", instruction, documents)
+		got, err := rerank.EncodeRequest("when does the ferry leave", instruction, documents)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -83,7 +83,7 @@ func TestARequestOfTheOldLayoutDecodesWithTheMessage(t *testing.T) {
 func TestAResultOfTheOldLayoutIsRead(t *testing.T) {
 	scores := []float32{0.25, -1.5, 3}
 
-	got, err := DecodeResult(writeOldPackedResult(scores))
+	got, err := rerank.DecodeResult(writeOldPackedResult(scores))
 
 	if err != nil {
 		t.Fatal(err)
@@ -111,7 +111,7 @@ func TestAResultWithOneFieldForEachScoreIsRead(t *testing.T) {
 		payload = protowire.AppendFixed32(payload, math.Float32bits(score))
 	}
 
-	got, err := DecodeResult(payload)
+	got, err := rerank.DecodeResult(payload)
 
 	if err != nil {
 		t.Fatal(err)
@@ -127,14 +127,14 @@ func TestAResultThatIsNotAMessageIsAnError(t *testing.T) {
 		"a score cut short":       {0x0a, 0x03, 0x00, 0x00, 0x00},
 		"a number that is no tag": {0x00},
 	} {
-		if _, err := DecodeResult(payload); err == nil {
+		if _, err := rerank.DecodeResult(payload); err == nil {
 			t.Errorf("%s: no error", name)
 		}
 	}
 }
 
 func TestATextThatIsNotUTF8CannotBeSent(t *testing.T) {
-	if _, err := EncodeRequest("tide", "", []string{"a\xffb"}); err == nil {
+	if _, err := rerank.EncodeRequest("tide", "", []string{"a\xffb"}); err == nil {
 		t.Error("no error for a document that is not UTF-8")
 	}
 }
