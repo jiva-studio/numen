@@ -1,0 +1,16 @@
+version: v2
+# One workspace for the schema of the core and the contracts of the plugins, so that a contract imports a message
+# the core defines. The core and the core protocol never import a contract. The schema also has its own
+# buf.yaml in libs/core/protocol, which its generator and its check in CI read.
+modules:
+  - path: core/protocol/proto
+    lint:
+      use:
+        - STANDARD
+  - path: plugin/sdk-go/contracts
+    lint:
+      use:
+        - STANDARD
+      except:
+        - PACKAGE_DIRECTORY_MATCH
+        - PACKAGE_VERSION_SUFFIX

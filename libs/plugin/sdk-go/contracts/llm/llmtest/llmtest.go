@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 )
@@ -54,8 +55,8 @@ func Embed(ctx context.Context, provider connection.Provider, call connection.Ca
 }
 
 // Rerank asks the llm.rerank operation of provider for the scores of the documents of request.
-func Rerank(ctx context.Context, provider connection.Provider, call connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
-	result := &llm.RerankResult{}
+func Rerank(ctx context.Context, provider connection.Provider, call connection.Call, request *numenv1.RerankRequest) (*numenv1.RerankResult, error) {
+	result := &numenv1.RerankResult{}
 	if err := serveInto(ctx, provider, llm.OperationRerank, call, request, result); err != nil {
 		return nil, err
 	}

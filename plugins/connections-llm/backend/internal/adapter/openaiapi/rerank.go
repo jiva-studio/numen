@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/servicetype"
@@ -31,7 +32,7 @@ type rerankAnswer struct {
 // and a line break go before the query. OpenAI has no rerank endpoint. An answer with another number of
 // results than documents, an index that is missing, out of range or repeated, or a missing score is an
 // unavailable service.
-func (g *Gateway) Rerank(ctx context.Context, call connection.Call, limit time.Duration, request *llm.RerankRequest) ([]float32, error) {
+func (g *Gateway) Rerank(ctx context.Context, call connection.Call, limit time.Duration, request *numenv1.RerankRequest) ([]float32, error) {
 	if call.Type == servicetype.OpenAI {
 		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
 	}

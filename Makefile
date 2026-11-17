@@ -249,8 +249,9 @@ lib_plugin_catalog_lint: ## run linters for the plugin catalog
 
 # ------------------------------- Lib: Protocol --------------------------------
 .PHONY: lib_protocol_generate protocol_gen
-lib_protocol_generate: ## generate protocol code and the lists of slots, when variables, shared commands and events
+lib_protocol_generate: ## generate protocol and contract code and the lists of slots, when variables, shared commands and events
 	cd $(PROTOCOL) && buf generate
+	cd libs/plugin/sdk-go/contracts && buf generate ../../.. --template buf.gen.yaml $$(for d in */; do ls $$d*.proto >/dev/null 2>&1 && echo --path $$d; done)
 	node $(PROTOCOL)/tools/slots.mjs
 	node $(PROTOCOL)/tools/when.mjs
 	node $(PROTOCOL)/tools/commands.mjs

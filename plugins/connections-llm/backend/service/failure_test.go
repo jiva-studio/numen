@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
 
@@ -45,7 +45,7 @@ func TestTheStatusOfAnAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 		checkFailure(t, err, one.want)
 		_, err = newTestService(t).Embed(newContext(t), newCall("openrouter", address, testKey, "m"), []string{"a"})
 		checkFailure(t, err, one.want)
-		_, err = newTestService(t).Rerank(newContext(t), newCall("openrouter", address, testKey, "m"), &llm.RerankRequest{Query: "q", Documents: []string{"a"}})
+		_, err = newTestService(t).Rerank(newContext(t), newCall("openrouter", address, testKey, "m"), &numenv1.RerankRequest{Query: "q", Documents: []string{"a"}})
 		checkFailure(t, err, one.want)
 	}
 }

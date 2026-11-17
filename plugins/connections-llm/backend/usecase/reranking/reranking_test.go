@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/limits"
@@ -17,7 +18,7 @@ type gateway struct {
 	limit   time.Duration
 	err     error
 	scores  []float32
-	request *llm.RerankRequest
+	request *numenv1.RerankRequest
 }
 
 func (g *gateway) Complete(context.Context, connection.Call, time.Duration, *llm.CompleteRequest) (*llm.CompleteResult, error) {
@@ -32,7 +33,7 @@ func (g *gateway) Embed(context.Context, connection.Call, time.Duration, []strin
 	return nil, nil
 }
 
-func (g *gateway) Rerank(_ context.Context, _ connection.Call, limit time.Duration, request *llm.RerankRequest) ([]float32, error) {
+func (g *gateway) Rerank(_ context.Context, _ connection.Call, limit time.Duration, request *numenv1.RerankRequest) ([]float32, error) {
 	g.limit, g.request = limit, request
 	return g.scores, g.err
 }
@@ -56,7 +57,7 @@ func call(typeID, model, address string) connection.Call {
 
 func TestDocumentsAreRerankedWithTheLimitOfTheOperation(t *testing.T) {
 	g := &gateway{scores: []float32{0.2, 0.9}}
-	request := &llm.RerankRequest{Query: "ferry", Documents: []string{"Tide tables", "Ferry times"}}
+	request := &numenv1.RerankRequest{Query: "ferry", Documents: []string{"Tide tables", "Ferry times"}}
 
 	result, err := newSubject(t, g).Rerank(t.Context(), call("openrouter", "cohere/rerank-v3.5", "https://openrouter.ai/api/v1"), request)
 
@@ -72,7 +73,7 @@ func TestNoDocumentIsNoRequest(t *testing.T) {
 	g := &gateway{err: errors.New("should not be called")}
 	subject := newSubject(t, g)
 
-	result, err := subject.Rerank(t.Context(), call("openrouter", "m", "https://openrouter.ai/api/v1"), &llm.RerankRequest{Query: "ferry"})
+	result, err := subject.Rerank(t.Context(), call("openrouter", "m", "https://openrouter.ai/api/v1"), &numenv1.RerankRequest{Query: "ferry"})
 
 	if err != nil || len(result.GetScores()) != 0 || g.request != nil {
 		t.Errorf("result = %v, err = %v, request = %v", result, err, g.request)
@@ -80,7 +81,7 @@ func TestNoDocumentIsNoRequest(t *testing.T) {
 
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := subject.Rerank(canceled, call("openrouter", "m", "https://openrouter.ai/api/v1"), &llm.RerankRequest{Query: "ferry"}); !errors.Is(err, context.Canceled) {
+	if _, err := subject.Rerank(canceled, call("openrouter", "m", "https://openrouter.ai/api/v1"), &numenv1.RerankRequest{Query: "ferry"}); !errors.Is(err, context.Canceled) {
 		t.Errorf("Rerank with canceled context and no document = %v, want context.Canceled", err)
 	}
 }
@@ -98,7 +99,7 @@ func TestTheFirstRerankOfACompatibleModelHasALongLimitThatEndsOnceItAnswered(t *
 	g := &gateway{scores: []float32{1}}
 	subject := newSubject(t, g)
 	local := call("openai-compatible", "bge-reranker-v2-m3", "http://127.0.0.1:8080/v1")
-	request := &llm.RerankRequest{Query: "ferry", Documents: []string{"Ferry times"}}
+	request := &numenv1.RerankRequest{Query: "ferry", Documents: []string{"Ferry times"}}
 
 	if _, err := subject.Rerank(t.Context(), local, request); err != nil || g.limit != limits.FirstRequestLimit {
 		t.Fatalf("first limit = %v, err = %v", g.limit, err)
@@ -114,7 +115,7 @@ func TestAFailedRerankDoesNotEndTheLongFirstLimit(t *testing.T) {
 	local := call("openai-compatible", "bge-reranker-v2-m3", "http://127.0.0.1:8080/v1")
 
 	for range 2 {
-		if _, err := subject.Rerank(t.Context(), local, &llm.RerankRequest{Query: "ferry", Documents: []string{"a"}}); err == nil {
+		if _, err := subject.Rerank(t.Context(), local, &numenv1.RerankRequest{Query: "ferry", Documents: []string{"a"}}); err == nil {
 			t.Fatal("a failed request returned no error")
 		}
 	}

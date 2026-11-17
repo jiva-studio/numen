@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/limits"
@@ -33,7 +34,7 @@ func (g *gateway) Embed(_ context.Context, _ connection.Call, limit time.Duratio
 	return g.vectors, g.err
 }
 
-func (g *gateway) Rerank(context.Context, connection.Call, time.Duration, *llm.RerankRequest) ([]float32, error) {
+func (g *gateway) Rerank(context.Context, connection.Call, time.Duration, *numenv1.RerankRequest) ([]float32, error) {
 	return nil, nil
 }
 

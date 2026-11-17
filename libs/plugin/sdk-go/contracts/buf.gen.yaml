@@ -1,7 +1,11 @@
 version: v2
 
 # Generated code is committed, as for libs/core/protocol: the Go messages next to the .proto files and the
-# TypeScript ones in libs/plugin/sdk-ts/src/contracts.
+# TypeScript ones in libs/plugin/sdk-ts/src/contracts. A contract imports the messages of libs/core/protocol,
+# so buf reads both through the workspace libs/buf.yaml: from this directory run
+#   buf generate ../../.. --template buf.gen.yaml --path acp --path llm
+# with a --path for each directory of a contract, because buf takes no --path for the module itself. The
+# TypeScript of such an import names the package @numen/protocol.
 plugins:
   - local: protoc-gen-go
     out: .
@@ -12,3 +16,4 @@ plugins:
     opt:
       - target=ts
       - import_extension=js
+      - rewrite_imports=./numen/v1/*_pb.js:@numen/protocol

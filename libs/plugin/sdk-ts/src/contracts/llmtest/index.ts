@@ -3,6 +3,7 @@
  * contract in place of their encoding: the TypeScript side of the Caller of the Go package llmtest.
  */
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
+import { RerankRequestSchema, RerankResultSchema, type RerankRequest } from '@numen/protocol'
 import type { ConnectionCallOptions, ConnectionError, ConnectionHost } from '../../connections'
 import type { Result } from '../../result'
 import {
@@ -19,12 +20,9 @@ import {
   OPERATION_PROFILE,
   OPERATION_RERANK,
   ProfileSchema,
-  RerankRequestSchema,
-  RerankResultSchema,
   type ChatRequest,
   type CompleteRequest,
   type EmbedRequest,
-  type RerankRequest,
 } from '../llm'
 
 /** A frame of a turn as a test writes it: the fields it sets, the rest left at their defaults. */

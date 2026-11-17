@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/domain/profile"
@@ -178,7 +179,7 @@ func TestRerankScoresTheDocumentsInTheirOrder(t *testing.T) {
 	open := newOpener()
 	r := newRerankingUseCase(t, open, &reports{})
 
-	result, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "how often to water tomatoes", Documents: gardenDocuments()})
+	result, err := r.Rerank(t.Context(), callFor(""), &numenv1.RerankRequest{Query: "how often to water tomatoes", Documents: gardenDocuments()})
 
 	if err != nil {
 		t.Fatal(err)
@@ -196,7 +197,7 @@ func TestRerankWithNoModelRunsTheDefaultProfile(t *testing.T) {
 	open := newOpener()
 	r := newRerankingUseCase(t, open, &reports{})
 
-	if _, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}); err != nil {
+	if _, err := r.Rerank(t.Context(), callFor(""), &numenv1.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -209,7 +210,7 @@ func TestRerankOfAModelNamedByAliasRunsItsProfile(t *testing.T) {
 	open := newOpener()
 	r := newRerankingUseCase(t, open, &reports{})
 
-	if _, err := r.Rerank(t.Context(), callFor("BGE-Reranker-v2-M3"), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}); err != nil {
+	if _, err := r.Rerank(t.Context(), callFor("BGE-Reranker-v2-M3"), &numenv1.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -222,7 +223,7 @@ func TestRerankWithNoDocumentsLoadsNoModel(t *testing.T) {
 	open := newOpener()
 	r := newRerankingUseCase(t, open, &reports{})
 
-	result, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "tomatoes"})
+	result, err := r.Rerank(t.Context(), callFor(""), &numenv1.RerankRequest{Query: "tomatoes"})
 
 	if err != nil || len(result.GetScores()) != 0 {
 		t.Errorf("Rerank = %v, %v, want no scores", result.GetScores(), err)
@@ -237,7 +238,7 @@ func TestRerankOfAnEndedCallWithNoDocumentsReturnsTheContextError(t *testing.T) 
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	_, err := r.Rerank(ctx, callFor(""), &llm.RerankRequest{Query: "tomatoes"})
+	_, err := r.Rerank(ctx, callFor(""), &numenv1.RerankRequest{Query: "tomatoes"})
 
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("error = %v, want context.Canceled", err)
@@ -249,7 +250,7 @@ func TestRerankOfAnUnknownModelIsAStop(t *testing.T) {
 	report := &reports{}
 	r := newRerankingUseCase(t, open, report)
 
-	_, err := r.Rerank(t.Context(), callFor("owner/unknown-reranker"), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()})
+	_, err := r.Rerank(t.Context(), callFor("owner/unknown-reranker"), &numenv1.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()})
 
 	checkFailure(t, err, false, connection.ReasonInvalidRequest)
 	if strings.Contains(err.Error(), "owner/unknown-reranker") {
@@ -269,7 +270,7 @@ func TestRerankOfAModelThatDoesNotOpenIsTryNext(t *testing.T) {
 	report := &reports{}
 	r := newRerankingUseCase(t, open, report)
 
-	_, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()})
+	_, err := r.Rerank(t.Context(), callFor(""), &numenv1.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()})
 
 	checkFailure(t, err, true, connection.ReasonUnavailable)
 	if texts := report.getTexts(); len(texts) != 1 || !strings.Contains(texts[0], "not loadable") || !strings.Contains(texts[0], bgeID) {
@@ -281,7 +282,7 @@ func TestRerankPassesTheQueryWithoutTheInstruction(t *testing.T) {
 	open := newOpener()
 	r := newRerankingUseCase(t, open, &reports{})
 
-	_, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{
+	_, err := r.Rerank(t.Context(), callFor(""), &numenv1.RerankRequest{
 		Query: "how often to water tomatoes", Instruction: "Find the notes that answer the question", Documents: gardenDocuments(),
 	})
 
@@ -300,7 +301,7 @@ func TestRerankPassesTheQueryWithoutTheInstruction(t *testing.T) {
 func TestRerankOfTheSameProfileKeepsTheLoadedModel(t *testing.T) {
 	open := newOpener()
 	r := newRerankingUseCase(t, open, &reports{})
-	request := &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}
+	request := &numenv1.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}
 
 	for _, model := range []string{"", bgeID, "bge-reranker-v2-m3"} {
 		if _, err := r.Rerank(t.Context(), callFor(model), request); err != nil {
@@ -316,7 +317,7 @@ func TestRerankOfTheSameProfileKeepsTheLoadedModel(t *testing.T) {
 func TestRerankOfAnotherProfileClosesTheLoadedModel(t *testing.T) {
 	open := newOpener()
 	r := newRerankingUseCase(t, open, &reports{})
-	request := &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}
+	request := &numenv1.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}
 
 	if _, err := r.Rerank(t.Context(), callFor(gteID), request); err != nil {
 		t.Fatal(err)
@@ -340,7 +341,7 @@ func TestCloseClosesTheLoadedModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}); err != nil {
+	if _, err := r.Rerank(t.Context(), callFor(""), &numenv1.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -359,7 +360,7 @@ func TestRerankWithTheWrongNumberOfScoresIsTryNext(t *testing.T) {
 	report := &reports{}
 	r := newRerankingUseCase(t, open, report)
 
-	_, err := r.Rerank(t.Context(), callFor(""), &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()})
+	_, err := r.Rerank(t.Context(), callFor(""), &numenv1.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()})
 
 	checkFailure(t, err, true, connection.ReasonUnavailable)
 	if texts := report.getTexts(); len(texts) != 1 {
@@ -372,7 +373,7 @@ func TestCanceledCallDoesNotCancelTheLoad(t *testing.T) {
 	open.release = make(chan struct{})
 	open.started = make(chan context.Context, 2)
 	r := newRerankingUseCase(t, open, &reports{})
-	request := &llm.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}
+	request := &numenv1.RerankRequest{Query: "tomatoes", Documents: gardenDocuments()}
 	ctx, cancel := context.WithCancel(t.Context())
 	first := make(chan error, 1)
 

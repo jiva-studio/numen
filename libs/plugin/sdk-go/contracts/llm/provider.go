@@ -5,6 +5,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 )
 
@@ -26,7 +27,7 @@ type Embedder interface {
 
 // Reranker carries out llm.rerank. It returns one score for each document, in the order of the documents.
 type Reranker interface {
-	Rerank(ctx context.Context, call connection.Call, request *RerankRequest) (*RerankResult, error)
+	Rerank(ctx context.Context, call connection.Call, request *numenv1.RerankRequest) (*numenv1.RerankResult, error)
 }
 
 // Profiler carries out llm.profile for the model of the row of the call.
@@ -74,7 +75,7 @@ func Provide(provider connection.Provider, roles Roles) connection.Provider {
 		})
 	}
 	if roles.Reranker != nil {
-		provider[OperationRerank] = serveOnce(func(ctx context.Context, call connection.Call, request *RerankRequest) (proto.Message, error) {
+		provider[OperationRerank] = serveOnce(func(ctx context.Context, call connection.Call, request *numenv1.RerankRequest) (proto.Message, error) {
 			return roles.Reranker.Rerank(ctx, call, request)
 		})
 	}

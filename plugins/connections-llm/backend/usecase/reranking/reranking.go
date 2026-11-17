@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/limits"
@@ -28,12 +29,12 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Reranking, error
 }
 
 // Rerank asks the service for one score for each document. No document is no request.
-func (r *Reranking) Rerank(ctx context.Context, call connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+func (r *Reranking) Rerank(ctx context.Context, call connection.Call, request *numenv1.RerankRequest) (*numenv1.RerankResult, error) {
 	if len(request.GetDocuments()) == 0 {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		return &llm.RerankResult{}, nil
+		return &numenv1.RerankResult{}, nil
 	}
 	model := call.Options[llm.OptionModel]
 	address := call.Fields[servicetype.FieldBaseURL]
@@ -42,5 +43,5 @@ func (r *Reranking) Rerank(ctx context.Context, call connection.Call, request *l
 		return nil, err
 	}
 	r.limits.MarkServed(address, model)
-	return &llm.RerankResult{Scores: scores}, nil
+	return &numenv1.RerankResult{Scores: scores}, nil
 }

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+// The messages of the operation llm.rerank. The core builds the request of a rerank stage and reads its result,
+// and a reranking plugin reads the request and writes the result, so the messages are here and the contract
+// numen.llm imports them.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// RerankRequest is the payload of llm.rerank.
+message RerankRequest {
+  string query = 1;
+  // instruction tells the model what makes a document relevant, such as "Find the notes that answer the
+  // question". Empty for none.
+  string instruction = 2;
+  repeated string documents = 3;
+}
+
+// RerankResult is the done frame of llm.rerank: one score for each document, in the order of the documents.
+// A higher score is a more relevant document. The call has no data frame.
+message RerankResult {
+  repeated float scores = 1;
+}

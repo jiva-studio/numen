@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
@@ -118,7 +119,7 @@ func (s *testService) Embed(ctx context.Context, call connection.Call, texts []s
 	return vectors, nil
 }
 
-func (s *testService) Rerank(ctx context.Context, call connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+func (s *testService) Rerank(ctx context.Context, call connection.Call, request *numenv1.RerankRequest) (*numenv1.RerankResult, error) {
 	return llmtest.Rerank(ctx, s.built.provider.roles(), call, request)
 }
 

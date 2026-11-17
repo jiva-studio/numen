@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 )
@@ -89,8 +90,8 @@ func (a *assistant) Embed(_ context.Context, _ connection.Call, request *llm.Emb
 }
 
 // Rerank scores each document by the number of its bytes.
-func (a *assistant) Rerank(_ context.Context, _ connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
-	result := &llm.RerankResult{}
+func (a *assistant) Rerank(_ context.Context, _ connection.Call, request *numenv1.RerankRequest) (*numenv1.RerankResult, error) {
+	result := &numenv1.RerankResult{}
 	for _, document := range request.GetDocuments() {
 		result.Scores = append(result.Scores, float32(len(document)))
 	}
@@ -456,8 +457,8 @@ func TestGeneratedProtoMethods(t *testing.T) {
 		&llm.Vector{Values: []float32{1}},
 		&llm.EmbedResult{Vectors: []*llm.Vector{{Values: []float32{1}}}},
 		&llm.Profile{Model: "m", Source: "s", Pooling: "p", QueryPrefix: "q", DocumentPrefix: "d", Width: 1, MaxTokens: 2},
-		&llm.RerankRequest{Query: "q", Instruction: "i", Documents: []string{"d"}},
-		&llm.RerankResult{Scores: []float32{1}},
+		&numenv1.RerankRequest{Query: "q", Instruction: "i", Documents: []string{"d"}},
+		&numenv1.RerankResult{Scores: []float32{1}},
 	} {
 		assertProtoMessage(t, msg)
 	}
@@ -486,8 +487,8 @@ func TestGeneratedProtoMethods(t *testing.T) {
 		nilEmbedRes  *llm.EmbedResult
 		nilProfReq   *llm.ProfileRequest
 		nilProf      *llm.Profile
-		nilRerankReq *llm.RerankRequest
-		nilRerankRes *llm.RerankResult
+		nilRerankReq *numenv1.RerankRequest
+		nilRerankRes *numenv1.RerankResult
 	)
 	for _, m := range []proto.Message{
 		nilMsg, nilCompReq, nilCompRes, nilToolCall, nilToolDef, nilChatMsg, nilChatReq,
