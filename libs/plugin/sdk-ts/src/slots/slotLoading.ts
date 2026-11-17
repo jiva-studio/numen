@@ -50,4 +50,6 @@ export function createSlotLoading(_deps: SlotLoadingDeps): SlotLoading {
 }
 
 // Called in `setup` of the component that draws the views of one entry.
-export function provideSlotLoading(_loading: SlotLoading, _entry: SlotLoadingEntry): void {}
+export function provideSlotLoading(_loading: SlotLoading, _entry: SlotLoadingEntry): void {
+  // Inert until the readiness is implemented.
+}
