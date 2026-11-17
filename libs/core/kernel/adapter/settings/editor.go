@@ -1,37 +1,31 @@
 package settings
 
-// Editor is the settings section of how editor text is drawn. The declaration of the shell gives
-// each its type, its bounds and its default.
-type Editor struct {
-	FontSize    float64 `json:"fontSize"`
-	FontFamily  string  `json:"fontFamily"`
-	LineHeight  float64 `json:"lineHeight"`
-	LineNumbers bool    `json:"lineNumbers"`
-	SoftWrap    bool    `json:"softWrap"`
-}
+import "strings"
+
+// Editor is the settings section of how editor text is drawn: the value of each editor.* key the
+// declaration of the shell holds, by the name below the section. The declaration gives each its
+// type, its bounds and its default.
+type Editor map[string]any
+
+const editorKeyPrefix = "editor."
 
 // DefaultEditor returns the editor settings the declaration of the shell gives.
 func DefaultEditor() Editor {
-	return Editor{
-		FontSize:    getAppNumber(keyEditorFontSize),
-		FontFamily:  getAppString(keyEditorFontFamily),
-		LineHeight:  getAppNumber(keyEditorLineHeight),
-		LineNumbers: getAppBool(keyEditorLineNumbers),
-		SoftWrap:    getAppBool(keyEditorSoftWrap),
+	e := Editor{}
+	for _, declared := range readAppDeclaration() {
+		if strings.HasPrefix(declared.Key, editorKeyPrefix) {
+			e[strings.TrimPrefix(declared.Key, editorKeyPrefix)] = declared.Default
+		}
 	}
+	return e
 }
 
 func (e *Editor) reset(key string) {
-	switch key {
-	case keyEditorFontSize:
-		e.FontSize = getAppNumber(key)
-	case keyEditorFontFamily:
-		e.FontFamily = getAppString(key)
-	case keyEditorLineHeight:
-		e.LineHeight = getAppNumber(key)
-	case keyEditorLineNumbers:
-		e.LineNumbers = getAppBool(key)
-	case keyEditorSoftWrap:
-		e.SoftWrap = getAppBool(key)
+	if !strings.HasPrefix(key, editorKeyPrefix) {
+		return
 	}
+	if *e == nil {
+		*e = Editor{}
+	}
+	(*e)[strings.TrimPrefix(key, editorKeyPrefix)] = getAppDefault(key)
 }
