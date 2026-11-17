@@ -52,7 +52,7 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
     const mine = entry.latest
     entry.isReading = true
     try {
-      const answer = await source.notes.listRelatedNotes(entry.path, 2)
+      const answer = await source.notes.listRelatedNotes(entry.path, 1)
       if (mine !== entry.latest) return
       entry.noteGraph.value = answer
     } catch (error) {
