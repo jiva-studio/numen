@@ -13,19 +13,20 @@ const editorKeyPrefix = "editor."
 func DefaultEditor() Editor {
 	e := Editor{}
 	for _, declared := range readAppDeclaration() {
-		if strings.HasPrefix(declared.Key, editorKeyPrefix) {
-			e[strings.TrimPrefix(declared.Key, editorKeyPrefix)] = declared.Default
+		if name, isEditor := strings.CutPrefix(declared.Key, editorKeyPrefix); isEditor {
+			e[name] = declared.Default
 		}
 	}
 	return e
 }
 
 func (e *Editor) reset(key string) {
-	if !strings.HasPrefix(key, editorKeyPrefix) {
+	name, isEditor := strings.CutPrefix(key, editorKeyPrefix)
+	if !isEditor {
 		return
 	}
 	if *e == nil {
 		*e = Editor{}
 	}
-	(*e)[strings.TrimPrefix(key, editorKeyPrefix)] = getAppDefault(key)
+	(*e)[name] = getAppDefault(key)
 }
