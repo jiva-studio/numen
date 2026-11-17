@@ -192,6 +192,21 @@ jobs:
             exit 1
           }
 
+      # The messages of llm.rerank, which the core and the contract both import.
+      - name: Lint the rerank messages and verify the generated code
+        if: ${{ !cancelled() && inputs.protocol }}
+        working-directory: libs/shared/rerank
+        run: |
+          set -euo pipefail
+          go install tool
+          buf lint
+          buf generate
+          git add -AN -- rerank.pb.go src
+          git diff --exit-code -- rerank.pb.go src || {
+            echo "::error::the schema changed and the generated code was not regenerated — run: make generate"
+            exit 1
+          }
+
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache
         with:

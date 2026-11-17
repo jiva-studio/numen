@@ -22,6 +22,7 @@ updates:
       - /libs/plugin/sdk-go/wasm
       - /libs/plugin/sdk-go/models
       - /libs/shared/onnx
+      - /libs/shared/rerank
       - /libs/shared/tokenizer
       - /apps/desktop
       - /apps/mobile

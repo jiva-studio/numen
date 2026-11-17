@@ -34,6 +34,7 @@
   "devDependencies": {
     "@babel/types": "^8.1.0",
     "@numen/protocol": "*",
+    "@numen/rerank": "*",
     "@numen/ui": "*",
     "@storybook/addon-vitest": "^10.6.6",
     "@storybook/vue3-vite": "^10.6.6",

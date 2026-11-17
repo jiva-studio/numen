@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+	"github.com/jiva-studio/numen/libs/shared/rerank"
 )
 
 // Gateway sends the requests of a call to the service its connection names and maps what the service
@@ -23,7 +24,7 @@ type Gateway interface {
 	// Embed asks for one vector for each text.
 	Embed(ctx context.Context, call connection.Call, limit time.Duration, texts []string) ([][]float32, error)
 	// Rerank asks for one score for each document, in the order of the documents.
-	Rerank(ctx context.Context, call connection.Call, limit time.Duration, request *llm.RerankRequest) ([]float32, error)
+	Rerank(ctx context.Context, call connection.Call, limit time.Duration, request *rerank.RerankRequest) ([]float32, error)
 	// ListModels lists the models of the service that fit the operations of a setting of rows.
 	ListModels(ctx context.Context, call connection.Call, limit time.Duration, operations []string) ([]connection.Option, error)
 }

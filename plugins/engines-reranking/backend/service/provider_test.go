@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
+	"github.com/jiva-studio/numen/libs/shared/rerank"
 )
 
 func newTestProvider(t *testing.T) connection.Provider {
@@ -48,7 +49,7 @@ func TestRerankOfflineWithoutTheModelIsTryNext(t *testing.T) {
 	provider := newTestProvider(t)
 
 	_, err := llmtest.Rerank(t.Context(), provider, connection.Call{ConnectionID: "local-reranker:Local reranker", Type: "local-reranker"},
-		&llm.RerankRequest{Query: "when does the ferry leave", Documents: []string{"The ferry leaves the pier at seven.", "Basil likes warm soil."}})
+		&rerank.RerankRequest{Query: "when does the ferry leave", Documents: []string{"The ferry leaves the pier at seven.", "Basil likes warm soil."}})
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("error = %v, want a try-next failure", err)

@@ -152,9 +152,10 @@ test("a shared library that reaches the plugin SDK is reported", () => {
   assert.match(found[1].symbol, /family libs\/shared\/tokenizer reaches libs\/plugin\/sdk-go/);
 });
 
-test("no library row lists a shared library", () => {
+test("a library row lists no shared library but the messages of llm.rerank", () => {
   for (const [family, allowed] of Object.entries(LIBRARY_DEPENDENCIES)) {
-    assert.ok(!allowed.some((one) => one.startsWith("libs/shared/")), `${family} may reach a shared library`);
+    const shared = allowed.filter((one) => one.startsWith("libs/shared/"));
+    assert.ok(shared.every((one) => one === "libs/shared/rerank"), `${family} may reach a shared library: ${shared}`);
   }
 });
 
@@ -162,6 +163,7 @@ test("the shared libraries of this repository are read", () => {
   const dirs = readLibraries().map((one) => one.dir);
   assert.ok(dirs.includes("libs/shared/onnx"));
   assert.ok(dirs.includes("libs/shared/tokenizer"));
+  assert.ok(dirs.includes("libs/shared/rerank"));
 });
 
 test("a nested library with no outer library is its own family, and a library with no row is reported", () => {

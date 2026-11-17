@@ -1,0 +1,26 @@
+{
+  "name": "@numen/rerank",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The messages of llm.rerank, which the core and the reranking plugins both read and write. Generated from rerank.proto.",
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "generate": "buf generate",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ ."
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.17.0"
+  },
+  "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^2.17.0",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1"
+  }
+}
