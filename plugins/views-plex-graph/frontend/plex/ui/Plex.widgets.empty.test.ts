@@ -34,8 +34,8 @@ const createViewport = (size: Size): Viewport => ({
   watchWhole: () => () => undefined,
 })
 
-/** A widget that draws a span while `drawing` is on and nothing at all while it is off, like the tags of a note without tags. */
 const createWidget = (name: string, drawing: Ref<boolean>) =>
+  // Draws a span while `drawing` is on and nothing while it is off, like the tags of a note without tags.
   defineComponent({
     props: { path: { type: String, required: true } },
     render() {
