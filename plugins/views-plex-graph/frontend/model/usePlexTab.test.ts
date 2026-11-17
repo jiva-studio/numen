@@ -441,6 +441,21 @@ describe('the picture', () => {
   })
 })
 
+describe('a node of an earlier picture that is still on the screen', () => {
+  it('answers the note it was drawn for after the plex has moved on twice', async () => {
+    const plex = tab('Root.md', ['Heat.md'])
+    const heat = plex.node('Heat.md')
+
+    await plex.state.canvas.view.go('Other.md')
+    await settle()
+    await plex.state.canvas.view.go('Another.md')
+    await settle()
+
+    expect(heat).not.toBe('')
+    expect(plex.state.canvas.widgets.getPath(heat)).toBe('Heat.md')
+  })
+})
+
 describe('notes dragged in and dropped over the picture', () => {
   it('writes the link into the note the plex relies on, naming the dragged one second', async () => {
     const one = tab('Root.md', ['Child.md'])
