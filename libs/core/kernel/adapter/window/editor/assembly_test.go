@@ -73,7 +73,7 @@ func (w readingParts) OpenIndex(ctx context.Context) (*testIndex, error) {
 	target := &testIndex{closer: db, vectors: db.VectorIndex(), ledger: vault.NewLedger()}
 	target.Stores.Vaults, target.Stores.Notes, target.Stores.Maintenance = db.Vaults(), db.Notes(), db.Maintenance()
 	target.NoteQueries.FileStats, target.NoteQueries.Headings, target.NoteQueries.Links = queries, queries, queries
-	target.NoteQueries.LinkBatches = queries
+	target.NoteQueries.LinkBatches = db.NoteQueryReads()
 	target.NoteQueries.NamedPaths, target.NoteQueries.NoteRefs, target.NoteQueries.NoteTypes = queries, queries, queries
 	target.NoteQueries.OpeningNote = queries
 	target.Chunks.Lexical, target.Chunks.Nearest, target.Chunks.Progress = db.ChunkSearch(), db.ChunkSearch(), db.ChunkVectors()

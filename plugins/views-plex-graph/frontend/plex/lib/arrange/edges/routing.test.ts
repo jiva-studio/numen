@@ -2,17 +2,11 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { DEFAULT_OPTIONS, resolveOptions } from '../options'
-import {
-  getLabelPositions,
-  getLabelPlaces,
-  getRise,
-  getShift,
-  LABEL_GAP,
-  MIDDLE,
-  routeEdge,
-  routeEdges,
-  createRouting,
-} from './routing'
+import { getLabelPlaces, getRise, getShift } from './labels'
+import { LABEL_GAP } from './ink'
+import { MIDDLE, getLabelPositions } from './positions'
+import { routeEdge, createRouting } from './routing'
+import { routeEdges } from './routeEdges'
 import { graphs } from '../../../fixtures/graphs'
 import { ARROW_LENGTH, getArrow, getHeading, getLength, createPointOnCurve } from '../../edge'
 import type { PlacedNode } from '../../node'

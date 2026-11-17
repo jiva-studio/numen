@@ -44,6 +44,9 @@ func NewConnectionRows(source ConnectionRowsSource) *ConnectionRows {
 // shown, has no row and does not discover. A row that names a connection that does not exist is left out; a
 // row that names a connection detected for a type whose provider has not answered yet is kept.
 func (r *ConnectionRows) ReadRowSetting(pluginID, operation string) (connection.RowSetting, error) {
+	if pluginID == settingsdomain.AppOwner {
+		return r.readAppRowSetting(operation)
+	}
 	for _, plugin := range r.source.Plugins() {
 		if plugin.ID != pluginID {
 			continue
@@ -114,7 +117,10 @@ func readRowsJSON(valueJSON string) []connection.Row {
 // ListUses returns the settings of rows in force that name the connection, once for each plugin and
 // setting, in the order of the plugin ids.
 func (r *ConnectionRows) ListUses(connectionID string) ([]connection.Use, error) {
-	var uses []connection.Use
+	uses, err := r.listAppUses(connectionID)
+	if err != nil {
+		return nil, err
+	}
 	for _, plugin := range r.source.Plugins() {
 		for _, one := range plugin.Settings {
 			if one.Type != manifest.SettingTypeConnections || !one.IsShown || !namesConnection(readRowsJSON(one.ValueJSON), connectionID) {
@@ -182,7 +188,7 @@ func (r *ConnectionRows) Refresh(ctx context.Context, connectionID string) error
 	}
 	var pluginIDs []string
 	for _, one := range uses {
-		if !slices.Contains(pluginIDs, one.PluginID) {
+		if one.PluginID != settingsdomain.AppOwner && !slices.Contains(pluginIDs, one.PluginID) {
 			pluginIDs = append(pluginIDs, one.PluginID)
 		}
 	}
@@ -199,7 +205,10 @@ func (r *ConnectionRows) Refresh(ctx context.Context, connectionID string) error
 }
 
 func (r *ConnectionRows) listEntriesWithout(stored File, connectionID string) ([]settingsdomain.Setting, error) {
-	var entries []settingsdomain.Setting
+	entries, err := listAppEntriesWithout(stored, connectionID)
+	if err != nil {
+		return nil, err
+	}
 	for _, owner := range slices.Sorted(maps.Keys(stored.Plugins)) {
 		declared, isFound := r.source.Declared(owner)
 		if !isFound {

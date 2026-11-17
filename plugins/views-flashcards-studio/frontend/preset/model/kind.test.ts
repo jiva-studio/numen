@@ -12,7 +12,8 @@ import { usePresetTab } from './kind'
 import { StopReason } from '../../lib/stop'
 import { getGoalValue, findNearestGridValue } from '../lib/curve'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import { getGoalFields, getGoalField, type Field } from '../lib/fields'
+import type { Field } from '../lib/field'
+import { getGoalFields, getGoalField } from '../lib/fields'
 import {
   DEFAULTS,
   NO_BOUNDS,
@@ -21,11 +22,9 @@ import {
   type Point,
   type Presets,
   type Preset,
-  type PresetReadResult,
-  type PresetWriteResult,
-  type ReadPreset,
   type Settings,
 } from '../../lib/presets'
+import type { PresetReadResult, PresetWriteResult } from '../../lib/presetResults'
 import { BOUNDS } from '../fixtures'
 import { ERRORS } from '../../lib/wire/errors'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
@@ -84,6 +83,8 @@ const dated: Curve = {
 /** A vault answering with one preset and that curve, and what was written into it. */
 /** The preset every test opens; its values match the marks on the curve. */
 const STEADY: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retention: 0.88 }
+
+type ReadPreset = Extract<PresetReadResult, { ok: true }>['value']
 
 /** The stubbed read result: parts of the preset, or an error in place of them. */
 type ReadOver = Partial<ReadPreset> & { readonly error?: ErrorCode }

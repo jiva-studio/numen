@@ -51,6 +51,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		DropHandlers:     newDropHandlers(wire.GetDropHandlers()),
 		ConnectionTypes:  connectionTypes,
 		Operations:       newOperations(wire.GetOperations()),
+		SearchFunctions:  newSearchFunctions(wire.GetSearchFunctions()),
 	}, nil
 }
 
@@ -210,6 +211,21 @@ func newDropHandlers(wire []*v1.ManifestDropHandler) []manifest.DropHandler {
 	var out []manifest.DropHandler
 	for _, one := range wire {
 		out = append(out, manifest.DropHandler{Types: one.GetTypes()})
+	}
+	return out
+}
+
+func newSearchFunctions(wire *v1.ManifestSearchFunctions) manifest.SearchFunctions {
+	out := manifest.SearchFunctions{Version: int(wire.GetVersion())}
+	for _, one := range wire.GetFunctions() {
+		var args []manifest.SearchFunctionArg
+		for _, arg := range one.GetArgs() {
+			args = append(args, manifest.SearchFunctionArg{Name: arg.GetName(), Type: manifest.SearchFunctionArgType(arg.GetType())})
+		}
+		out.Functions = append(out.Functions, manifest.SearchFunction{
+			Name: one.GetName(), Args: args, Level: manifest.SearchFunctionLevel(one.GetLevel()),
+			Description: one.GetDescription(), Example: one.GetExample(),
+		})
 	}
 	return out
 }

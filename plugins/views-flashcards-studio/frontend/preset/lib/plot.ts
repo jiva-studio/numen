@@ -25,8 +25,6 @@ export interface Plot {
   readonly foot: number
 }
 
-const CURVE_PLOT: Plot = { high: PLOT_HEIGHT, top: PLOT_TOP, foot: PLOT_BOTTOM }
-
 /** The backlog plot below the curve plot: shorter, and the same width. */
 export const BACKLOG_PLOT_HEIGHT = 76
 export const BACKLOG_PLOT: Plot = {
@@ -72,52 +70,6 @@ export const getBacklogExtent = (backlog: readonly number[]): Extent => ({
   min: 0,
   max: backlog.length === 0 ? 0 : Math.max(...backlog),
 })
-
-/**
- * Positions of a backlog. An empty backlog is the foot for every run, so a run
- * with no overdue cards is drawn along the foot and a run with overdue cards is
- * measured upward from it.
- */
-export const getBacklogPositions = (
-  values: readonly number[],
-  extent: Extent,
-): readonly Position[] => createSeries(values, extent, BACKLOG_PLOT)
-
-/**
- * Positions of every place of the curve, in the extent the plot is scaled to.
- * The extent is set by the goal and not by this curve, so a curve that is flat
- * within it is drawn flat, and an extent of zero width is drawn along the foot.
- */
-export const createPositions = (curve: Curve, extent: Extent): readonly Position[] =>
-  createSeries(
-    curve.at.map((point) => getPointCost(curve.goal, point)),
-    extent,
-  )
-
-/**
- * Where any reading of the curve is drawn: one figure a place, over the same
- * width and against the extent it is scaled to. The line is one such reading
- * and a second series — a backlog under it, say — is another, so a picture that
- * carries two carries them by the same arithmetic.
- */
-export const createSeries = (
-  values: readonly number[],
-  extent: Extent,
-  plot: Plot = CURVE_PLOT,
-): readonly Position[] => {
-  const span = extent.max - extent.min
-  // An extent of no width has no height to read: every value in it is the foot
-  // of the plot, and the foot is where it is drawn.
-  return values.map((value, place) => ({
-    x: getXAtPlace(place, values.length),
-    y:
-      span > 0
-        ? clamp(plot.foot - (plot.foot - plot.top) * ((value - extent.min) / span), plot)
-        : plot.foot,
-  }))
-}
-
-const clamp = (y: number, plot: Plot): number => Math.min(Math.max(y, plot.top), plot.foot)
 
 /** The line through those places. */
 export const createLinePath = (places: readonly Position[]): string =>

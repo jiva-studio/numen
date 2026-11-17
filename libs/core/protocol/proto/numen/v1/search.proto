@@ -164,21 +164,20 @@ message SearchResult {
   // where none holds, and for a source that is not a note.
   string tab_kind = 11;
 
-  // The chunk that was hit, as the host names it. A plugin passes it to
-  // HostSearchService.ScoreChunks. Empty in the answer to the window.
-  string chunk_id = 12;
+  reserved 12, 13, 14, 15;
+  reserved "chunk_id", "similarity", "word_score", "whole_text";
 
-  // The cosine similarity of the query with the best small chunk of this
-  // result that the search by meaning returned. Absent when the search by
-  // meaning did not return this result.
-  optional double similarity = 13;
+  // note, pdf, epub, audio, video, image or file. Set by HostSearchService.GetSearch.
+  string kind = 16;
 
-  // The negated bm25 score of the best hit of the words of the query in this
-  // result: positive, higher is better, comparable only within one query.
-  // Absent when the search by words did not return this result.
-  optional double word_score = 14;
+  // The note title, else the file name without its extension. Set by HostSearchService.GetSearch.
+  string title = 17;
 
-  // The whole text of the chunk the text is cut from. Set only in the answer
-  // to a HostSearchService.SearchText that sets is_whole_text.
-  string whole_text = 15;
+  // The score of the result; absent for a file matched by document conditions only. Set by
+  // HostSearchService.GetSearch.
+  optional double score = 18;
+
+  // The result is a whole file: byte_range is absent and text is the start of the file. Set by
+  // HostSearchService.GetSearch.
+  bool is_whole_file = 19;
 }

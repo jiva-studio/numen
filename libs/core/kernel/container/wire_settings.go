@@ -95,7 +95,7 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Configuration, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
 		Subscribe: c.PluginHost.Views.Follow(subscribe), Hosts: hosts,
-	}).Execute(s.Plugins, c.ResolvedCompute.Profile)
+	}).Execute(s.Plugins, getPluginPerformance(c.ResolvedCompute))
 }
 
 func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
@@ -167,7 +167,7 @@ func syncSetting(c settingsWiring) naming.SyncSetting {
 	}
 }
 
-func readSettings(c settingsWiring) func() (string, string, error) {
+func readSettings(c settingsWiring) func() (string, string, uint64, error) {
 	return settingsStore(c).ReadJSON
 }
 
@@ -247,8 +247,8 @@ func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 	})
 }
 
-func resolveProfile(profile string) string {
-	return settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(profile).Profile
+func resolveProfile(profile string) plugindomain.Performance {
+	return getPluginPerformance(settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(profile))
 }
 
 func settingsThemes(c settingsWiring, scales Scales, say func(string)) (*theme.Service, error) {
@@ -297,4 +297,8 @@ func getHostDetection(c settingsWiring) connectionport.Detected {
 		return nil
 	}
 	return c.PluginHost.Detection
+}
+
+func getPluginPerformance(compute machinedomain.ResolvedCompute) plugindomain.Performance {
+	return plugindomain.Performance{Profile: compute.Profile, Threads: compute.CoreBudget, Nice: compute.Nice}
 }

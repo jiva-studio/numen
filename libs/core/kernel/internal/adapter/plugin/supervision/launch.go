@@ -20,26 +20,42 @@ import (
 // ErrRuntimeUnavailable indicates that a plugin declares a dependency the host cannot provision.
 var ErrRuntimeUnavailable = errors.New("runtime unavailable")
 
-// GetRuntimeVars provisions the dependencies the plugin declares and returns the variables they set.
-func (p *Processes) GetRuntimeVars(ctx context.Context, requirements []manifest.DependencyRequirement) ([]string, error) {
+// GetRuntimeVars returns the variables the dependencies the plugin declares set, with the path each one has or will
+// have. It downloads nothing and waits for no download: EnsureProvisioned fetches what is missing at the first use.
+func (p *Processes) GetRuntimeVars(_ context.Context, requirements []manifest.DependencyRequirement) ([]string, error) {
 	var vars []string
 	for _, req := range requirements {
 		catalog := p.services.GetDependencies()
 		if catalog == nil || !catalog.CanProvision(req) {
 			return nil, fmt.Errorf("%w: nothing provisions %s %s", ErrRuntimeUnavailable, req.Kind, req.ID)
 		}
-		resolved, err := catalog.Provision(ctx, req, nil)
+		resolved, _, err := catalog.Resolve(req)
 		if err != nil {
-			return nil, fmt.Errorf("provision %s: %w", req.ID, err)
+			return nil, fmt.Errorf("resolve %s: %w", req.ID, err)
 		}
 		for _, name := range slices.Sorted(maps.Keys(resolved.EnvVars)) {
 			if !isDependencyEnvName(name) {
-				return nil, fmt.Errorf("provision %s: %w: the variable name %q", req.ID, ErrRuntimeUnavailable, name)
+				return nil, fmt.Errorf("resolve %s: %w: the variable name %q", req.ID, ErrRuntimeUnavailable, name)
 			}
 			vars = append(vars, name+"="+resolved.EnvVars[name])
 		}
 	}
 	return vars, nil
+}
+
+// EnsureProvisioned downloads the dependencies that are not on this machine and returns when each is ready. It runs when a
+// plugin is used, never while it starts, and shares one download between callers that ask for the same dependency.
+func (p *Processes) EnsureProvisioned(ctx context.Context, requirements []manifest.DependencyRequirement) error {
+	for _, req := range requirements {
+		catalog := p.services.GetDependencies()
+		if catalog == nil || !catalog.CanProvision(req) {
+			return fmt.Errorf("%w: nothing provisions %s %s", ErrRuntimeUnavailable, req.Kind, req.ID)
+		}
+		if _, err := catalog.Provision(ctx, req, nil); err != nil {
+			return fmt.Errorf("provision %s: %w", req.ID, err)
+		}
+	}
+	return nil
 }
 
 var dependencyEnvName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
@@ -89,7 +105,7 @@ func (p *Processes) startBuiltIn(ctx context.Context, launch Launch, sup *lifecy
 	}
 	vars := make(map[string]string)
 	launchVars := p.getEnvironmentVars(ctx, plug.Manifest.ID, launch.VaultPath, 0, token, runtimeVars)
-	for _, entry := range process.SanitizeEnvironment(os.Environ(), launchVars, plug.Manifest.GetRuntimeIDs()) {
+	for _, entry := range process.SanitizeEnvironment(os.Environ(), launchVars, plug.Manifest.GetDependencyEnvironment()) {
 		name, value, _ := strings.Cut(entry, "=")
 		vars[name] = value
 	}

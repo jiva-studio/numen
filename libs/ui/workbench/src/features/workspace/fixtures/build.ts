@@ -8,7 +8,7 @@ import {
   type WorkspaceNode,
 } from '../lib/node'
 import { getPanes } from '../lib/tree'
-import { even } from '../lib/shares'
+import { even } from '../lib/even'
 import type { NodeIdFactory } from '../lib/edit'
 
 export const stack = (id: NodeId, ...tabs: string[]): WorkspaceNode => pane(id, tabs)

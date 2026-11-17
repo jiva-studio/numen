@@ -14,10 +14,8 @@ import {
   PLOT_LEFT,
   createLinePath,
   getPlaceAtX,
-  createPositions,
   PLOT_RIGHT,
   getBacklogRun,
-  createSeries,
   getShortPath,
   PLOT_TOP,
   getKeyPlace,
@@ -25,6 +23,8 @@ import {
   getXAtPlace,
   yOfGridline,
 } from './plot'
+import { createPositions } from './positions'
+import { createSeries } from './series'
 
 const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,

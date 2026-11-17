@@ -7,9 +7,12 @@ import base from '../../e2e/desktop/playwright.config.js'
 const testDir = defineBddConfig({
   featuresRoot: '../../..',
   features: '../../../features/**/*.feature',
-  steps: '{steps,support}/**/*.ts',
+  steps: '{steps,support}/**/!(*.test).ts',
   outputDir: '.features-gen',
 })
+
+const isVideoOn = Boolean(process.env.PLAYWRIGHT_VIDEO)
+const isLive = process.env.NUMEN_ACCEPTANCE_LIVE === '1'
 
 // Every scenario starts a world of its own (drivers/world.ts), with a server and a vault of its own,
 // so the scenarios run side by side and need none of the e2e suite's shared servers.
@@ -19,6 +22,26 @@ export default defineConfig({
   testMatch: undefined,
   fullyParallel: true,
   workers: 2,
+  ...(isLive && { timeout: 240_000 }),
   webServer: undefined,
-  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
+  use: {
+    ...base.use,
+    ...(isVideoOn && { video: 'on', trace: 'retain-on-failure' }),
+    ...(isLive && { trace: 'off' }),
+  },
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    ...(isVideoOn
+      ? [
+          [
+            'blob',
+            {
+              outputDir: 'acceptance-blobs',
+              fileName: `run-${process.platform}-${process.pid}.zip`,
+            },
+          ] as const,
+        ]
+      : []),
+  ],
 })

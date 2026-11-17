@@ -4,6 +4,9 @@ import (
 	"context"
 	"io"
 
+	"github.com/jiva-studio/numen/libs/note/domain"
+
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -21,6 +24,8 @@ type windowParts struct {
 	embedderError error
 	closeEmbedder func() error
 	closeIndex    func() error
+	frontmatter   *indexnote.FrontmatterChanges
+	startFeed     func(ctx context.Context, v domain.Vault) func()
 }
 
 // windowCases are the use cases that run a window from its start to its close.
@@ -51,7 +56,7 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
-		Passes:   parts.passes, Triggers: getTriggerSource(a),
+		Passes:   parts.passes, Triggers: getTriggerSource(a, parts.frontmatter), StartFeed: parts.startFeed,
 	})
 	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)
@@ -69,9 +74,9 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 			flush:      windowsession.NewFlushPending(guard, flush),
 			close: windowsession.NewCloseWindow(
 				state.Gate, session,
-				windowsession.CloseFunc(state.ClosePlaying),
-				windowsession.CloseFunc(func(context.Context) error { return parts.closeEmbedder() }),
-				windowsession.CloseFunc(func(context.Context) error { return parts.closeIndex() }),
+				state.ClosePlaying,
+				func(context.Context) error { return parts.closeEmbedder() },
+				func(context.Context) error { return parts.closeIndex() },
 			),
 		},
 		tools: windowTools{

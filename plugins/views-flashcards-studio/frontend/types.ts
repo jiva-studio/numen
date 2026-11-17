@@ -128,7 +128,7 @@ interface UnwrittenDeck {
 }
 
 /** A field renamed, and what it reached. */
-export interface RenamedField {
+interface RenamedField {
   readonly decks: readonly string[]
   readonly cards: number
   readonly notWritten: readonly UnwrittenDeck[]
@@ -136,7 +136,7 @@ export interface RenamedField {
 }
 
 /** What renaming a field returned. */
-export type FieldRenameResult = Result<RenamedField, CardsFailure>
+type FieldRenameResult = Result<RenamedField, CardsFailure>
 
 /**
  * Deck persistence and lifecycle operations.

@@ -6,7 +6,9 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { FloatVector } from "./embedding_pb.js";
 import { file_numen_v1_embedding } from "./embedding_pb.js";
-import type { SearchMode, SearchResult } from "./search_pb.js";
+import type { Priority } from "./hostconnection_pb.js";
+import { file_numen_v1_hostconnection } from "./hostconnection_pb.js";
+import type { SearchResult } from "./search_pb.js";
 import { file_numen_v1_search } from "./search_pb.js";
 import type { ChunkMatch, SearchPlace } from "./search_source_pb.js";
 import { file_numen_v1_search_source } from "./search_source_pb.js";
@@ -16,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostsearch.proto.
  */
 export const file_numen_v1_hostsearch: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9ob3N0c2VhcmNoLnByb3RvEghudW1lbi52MSIaChhHZXRFbWJlZGRpbmdTdGF0ZVJlcXVlc3QiuwEKGUdldEVtYmVkZGluZ1N0YXRlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg4KBnJlY2lwZRgCIAEoCRINCgVtb2RlbBgDIAEoCRISCgpmbG9vcl9oaW50GAQgASgBEhMKC2NodW5rX2NvdW50GAUgASgDEhYKDmVtYmVkZGVkX2NvdW50GAYgASgDEhAKCGlzX3JlYWR5GAcgASgIIhYKFEdldEluZGV4U3RhdHNSZXF1ZXN0Ik4KDkV4dGVuc2lvblN0YXRzEhEKCWV4dGVuc2lvbhgBIAEoCRIUCgxzb3VyY2VfY291bnQYAiABKAMSEwoLY2h1bmtfY291bnQYAyABKAMilQIKFUdldEluZGV4U3RhdHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEg0KBW1vZGVsGAMgASgJEhIKCmRpbWVuc2lvbnMYBCABKAMSEwoLY2h1bmtfY291bnQYBSABKAMSFAoMdmVjdG9yX2NvdW50GAYgASgDEhQKDHNvdXJjZV9jb3VudBgHIAEoAxIsCgpleHRlbnNpb25zGAggAygLMhgubnVtZW4udjEuRXh0ZW5zaW9uU3RhdHMSFgoOZGF0YWJhc2VfYnl0ZXMYCSABKAMSFAoMdmVjdG9yX2J5dGVzGAogASgDIiIKEUVtYmVkVGV4dHNSZXF1ZXN0Eg0KBXRleHRzGAEgAygJInoKEkVtYmVkVGV4dHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEiYKB3ZlY3RvcnMYAyADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciJGCg9TaW1pbGFyaXR5UXVlcnkSJQoGdmVjdG9yGAEgASgLMhUubnVtZW4udjEuRmxvYXRWZWN0b3ISDAoEcGF0aBgCIAEoCSJXChlTYW1wbGVTaW1pbGFyaXRpZXNSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRIqCgdxdWVyaWVzGAIgAygLMhkubnVtZW4udjEuU2ltaWxhcml0eVF1ZXJ5Ih8KDVNpbWlsYXJpdHlSb3cSDgoGdmFsdWVzGAEgAygBIpwBChpTYW1wbGVTaW1pbGFyaXRpZXNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSEwoLY2h1bmtfY291bnQYAiABKAUSFAoMc291cmNlX2NvdW50GAMgASgFEiUKBHJvd3MYBCADKAsyFy5udW1lbi52MS5TaW1pbGFyaXR5Um93IjkKGEdldEJlc3RTaW1pbGFyaXR5UmVxdWVzdBIOCgZyZWNpcGUYASABKAkSDQoFcXVlcnkYAiADKAIiXQoZR2V0QmVzdFNpbWlsYXJpdHlSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSEgoKc2ltaWxhcml0eRgCIAEoASKSAQoYRmluZE5lYXJlc3RDaHVua3NSZXF1ZXN0EiQKBXBsYWNlGAEgASgLMhUubnVtZW4udjEuU2VhcmNoUGxhY2USDgoGdmVjdG9yGAIgAygCEg0KBWxpbWl0GAMgASgFEg0KBWtpbmRzGAQgAygJEhMKC3BhdGhfcHJlZml4GAUgASgJEg0KBWZsb29yGAYgASgBInAKGUZpbmROZWFyZXN0Q2h1bmtzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEiUKB21hdGNoZXMYAiADKAsyFC5udW1lbi52MS5DaHVua01hdGNoIicKFUdldFNlYXJjaEZsb29yUmVxdWVzdBIOCgZyZWNpcGUYASABKAkiwwEKFkdldFNlYXJjaEZsb29yUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg0KBWZsb29yGAIgASgBEisKBnNvdXJjZRgDIAEoDjIbLm51bWVuLnYxLlNlYXJjaEZsb29yU291cmNlEhQKDHN0b3JlZF9mbG9vchgEIAEoARISCgpoaW50X2Zsb29yGAUgASgBEhUKDWRlZmF1bHRfZmxvb3IYBiABKAEiNgoVU2V0U2VhcmNoRmxvb3JSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRINCgVmbG9vchgCIAEoASJGChZTZXRTZWFyY2hGbG9vclJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZSLTAQoiSG9zdFNlYXJjaFNlcnZpY2VTZWFyY2hUZXh0UmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRINCgVraW5kcxgDIAMoCRITCgtwYXRoX3ByZWZpeBgEIAEoCRIaChJyZXN1bHRzX3Blcl9zb3VyY2UYBSABKAUSIgoEbW9kZRgGIAEoDjIULm51bWVuLnYxLlNlYXJjaE1vZGUSFAoMaXNfcmF3X3dvcmRzGAcgASgIEhUKDWlzX3dob2xlX3RleHQYCCABKAgifAojSG9zdFNlYXJjaFNlcnZpY2VTZWFyY2hUZXh0UmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEicKB3Jlc3VsdHMYAiADKAsyFi5udW1lbi52MS5TZWFyY2hSZXN1bHQiQQoOU2NvcmVDb25kaXRpb24SEQoHbWVhbmluZxgBIAEoCUgAEg8KBXdvcmRzGAIgASgJSABCCwoJY29uZGl0aW9uIlUKElNjb3JlQ2h1bmtzUmVxdWVzdBIRCgljaHVua19pZHMYASADKAkSLAoKY29uZGl0aW9ucxgCIAMoCzIYLm51bWVuLnYxLlNjb3JlQ29uZGl0aW9uIkoKDkNvbmRpdGlvblNjb3JlEhcKCnNpbWlsYXJpdHkYASABKAFIAIgBARIQCghpc19tYXRjaBgCIAEoCEINCgtfc2ltaWxhcml0eSJMCgpDaHVua1Njb3JlEhAKCGNodW5rX2lkGAEgASgJEiwKCmNvbmRpdGlvbnMYAiADKAsyGC5udW1lbi52MS5Db25kaXRpb25TY29yZSJ4ChNTY29yZUNodW5rc1Jlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZRIkCgZjaHVua3MYAiADKAsyFC5udW1lbi52MS5DaHVua1Njb3JlEg0KBWZsb29yGAMgASgBKrcDChNIb3N0U2VhcmNoRXJyb3JDb2RlEiYKIkhPU1RfU0VBUkNIX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIjCh9IT1NUX1NFQVJDSF9FUlJPUl9DT0RFX05PX1ZBVUxUEAESIwofSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9OT19NT0RFTBACEioKJkhPU1RfU0VBUkNIX0VSUk9SX0NPREVfUkVDSVBFX01JU01BVENIEAMSKAokSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9JTlZBTElEX0ZMT09SEAQSKQolSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9MSU1JVF9FWENFRURFRBAFEisKJ0hPU1RfU0VBUkNIX0VSUk9SX0NPREVfRU1CRURESU5HX0ZBSUxFRBAGEigKJEhPU1RfU0VBUkNIX0VSUk9SX0NPREVfSU5WQUxJRF9RVUVSWRAHEiwKKEhPU1RfU0VBUkNIX0VSUk9SX0NPREVfSU5WQUxJRF9DT05ESVRJT04QCBIoCiRIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0lOVkFMSURfV09SRFMQCSqdAQoRU2VhcmNoRmxvb3JTb3VyY2USIwofU0VBUkNIX0ZMT09SX1NPVVJDRV9VTlNQRUNJRklFRBAAEh4KGlNFQVJDSF9GTE9PUl9TT1VSQ0VfU1RPUkVEEAESIgoeU0VBUkNIX0ZMT09SX1NPVVJDRV9NT0RFTF9ISU5UEAISHwobU0VBUkNIX0ZMT09SX1NPVVJDRV9ERUZBVUxUEAMyigcKEUhvc3RTZWFyY2hTZXJ2aWNlElwKEUdldEVtYmVkZGluZ1N0YXRlEiIubnVtZW4udjEuR2V0RW1iZWRkaW5nU3RhdGVSZXF1ZXN0GiMubnVtZW4udjEuR2V0RW1iZWRkaW5nU3RhdGVSZXNwb25zZRJQCg1HZXRJbmRleFN0YXRzEh4ubnVtZW4udjEuR2V0SW5kZXhTdGF0c1JlcXVlc3QaHy5udW1lbi52MS5HZXRJbmRleFN0YXRzUmVzcG9uc2USRwoKRW1iZWRUZXh0cxIbLm51bWVuLnYxLkVtYmVkVGV4dHNSZXF1ZXN0GhwubnVtZW4udjEuRW1iZWRUZXh0c1Jlc3BvbnNlEl8KElNhbXBsZVNpbWlsYXJpdGllcxIjLm51bWVuLnYxLlNhbXBsZVNpbWlsYXJpdGllc1JlcXVlc3QaJC5udW1lbi52MS5TYW1wbGVTaW1pbGFyaXRpZXNSZXNwb25zZRJcChFHZXRCZXN0U2ltaWxhcml0eRIiLm51bWVuLnYxLkdldEJlc3RTaW1pbGFyaXR5UmVxdWVzdBojLm51bWVuLnYxLkdldEJlc3RTaW1pbGFyaXR5UmVzcG9uc2USXAoRRmluZE5lYXJlc3RDaHVua3MSIi5udW1lbi52MS5GaW5kTmVhcmVzdENodW5rc1JlcXVlc3QaIy5udW1lbi52MS5GaW5kTmVhcmVzdENodW5rc1Jlc3BvbnNlEmkKClNlYXJjaFRleHQSLC5udW1lbi52MS5Ib3N0U2VhcmNoU2VydmljZVNlYXJjaFRleHRSZXF1ZXN0Gi0ubnVtZW4udjEuSG9zdFNlYXJjaFNlcnZpY2VTZWFyY2hUZXh0UmVzcG9uc2USSgoLU2NvcmVDaHVua3MSHC5udW1lbi52MS5TY29yZUNodW5rc1JlcXVlc3QaHS5udW1lbi52MS5TY29yZUNodW5rc1Jlc3BvbnNlElMKDkdldFNlYXJjaEZsb29yEh8ubnVtZW4udjEuR2V0U2VhcmNoRmxvb3JSZXF1ZXN0GiAubnVtZW4udjEuR2V0U2VhcmNoRmxvb3JSZXNwb25zZRJTCg5TZXRTZWFyY2hGbG9vchIfLm51bWVuLnYxLlNldFNlYXJjaEZsb29yUmVxdWVzdBogLm51bWVuLnYxLlNldFNlYXJjaEZsb29yUmVzcG9uc2VCRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_embedding, file_numen_v1_search, file_numen_v1_search_source]);
+  fileDesc("ChludW1lbi92MS9ob3N0c2VhcmNoLnByb3RvEghudW1lbi52MSIaChhHZXRFbWJlZGRpbmdTdGF0ZVJlcXVlc3QiuwEKGUdldEVtYmVkZGluZ1N0YXRlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg4KBnJlY2lwZRgCIAEoCRINCgVtb2RlbBgDIAEoCRISCgpmbG9vcl9oaW50GAQgASgBEhMKC2NodW5rX2NvdW50GAUgASgDEhYKDmVtYmVkZGVkX2NvdW50GAYgASgDEhAKCGlzX3JlYWR5GAcgASgIIhYKFEdldEluZGV4U3RhdHNSZXF1ZXN0Ik4KDkV4dGVuc2lvblN0YXRzEhEKCWV4dGVuc2lvbhgBIAEoCRIUCgxzb3VyY2VfY291bnQYAiABKAMSEwoLY2h1bmtfY291bnQYAyABKAMilQIKFUdldEluZGV4U3RhdHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEg0KBW1vZGVsGAMgASgJEhIKCmRpbWVuc2lvbnMYBCABKAMSEwoLY2h1bmtfY291bnQYBSABKAMSFAoMdmVjdG9yX2NvdW50GAYgASgDEhQKDHNvdXJjZV9jb3VudBgHIAEoAxIsCgpleHRlbnNpb25zGAggAygLMhgubnVtZW4udjEuRXh0ZW5zaW9uU3RhdHMSFgoOZGF0YWJhc2VfYnl0ZXMYCSABKAMSFAoMdmVjdG9yX2J5dGVzGAogASgDIiIKEUVtYmVkVGV4dHNSZXF1ZXN0Eg0KBXRleHRzGAEgAygJInoKEkVtYmVkVGV4dHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEiYKB3ZlY3RvcnMYAyADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciJGCg9TaW1pbGFyaXR5UXVlcnkSJQoGdmVjdG9yGAEgASgLMhUubnVtZW4udjEuRmxvYXRWZWN0b3ISDAoEcGF0aBgCIAEoCSJXChlTYW1wbGVTaW1pbGFyaXRpZXNSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRIqCgdxdWVyaWVzGAIgAygLMhkubnVtZW4udjEuU2ltaWxhcml0eVF1ZXJ5Ih8KDVNpbWlsYXJpdHlSb3cSDgoGdmFsdWVzGAEgAygBIpwBChpTYW1wbGVTaW1pbGFyaXRpZXNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSEwoLY2h1bmtfY291bnQYAiABKAUSFAoMc291cmNlX2NvdW50GAMgASgFEiUKBHJvd3MYBCADKAsyFy5udW1lbi52MS5TaW1pbGFyaXR5Um93IjkKGEdldEJlc3RTaW1pbGFyaXR5UmVxdWVzdBIOCgZyZWNpcGUYASABKAkSDQoFcXVlcnkYAiADKAIiXQoZR2V0QmVzdFNpbWlsYXJpdHlSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSEgoKc2ltaWxhcml0eRgCIAEoASKSAQoYRmluZE5lYXJlc3RDaHVua3NSZXF1ZXN0EiQKBXBsYWNlGAEgASgLMhUubnVtZW4udjEuU2VhcmNoUGxhY2USDgoGdmVjdG9yGAIgAygCEg0KBWxpbWl0GAMgASgFEg0KBWtpbmRzGAQgAygJEhMKC3BhdGhfcHJlZml4GAUgASgJEg0KBWZsb29yGAYgASgBInAKGUZpbmROZWFyZXN0Q2h1bmtzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEiUKB21hdGNoZXMYAiADKAsyFC5udW1lbi52MS5DaHVua01hdGNoIicKFUdldFNlYXJjaEZsb29yUmVxdWVzdBIOCgZyZWNpcGUYASABKAkiwwEKFkdldFNlYXJjaEZsb29yUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg0KBWZsb29yGAIgASgBEisKBnNvdXJjZRgDIAEoDjIbLm51bWVuLnYxLlNlYXJjaEZsb29yU291cmNlEhQKDHN0b3JlZF9mbG9vchgEIAEoARISCgpoaW50X2Zsb29yGAUgASgBEhUKDWRlZmF1bHRfZmxvb3IYBiABKAEiNgoVU2V0U2VhcmNoRmxvb3JSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRINCgVmbG9vchgCIAEoASJGChZTZXRTZWFyY2hGbG9vclJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZSK3AQoiSG9zdFNlYXJjaFNlcnZpY2VTZWFyY2hUZXh0UmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRINCgVraW5kcxgDIAMoCRITCgtwYXRoX3ByZWZpeBgEIAEoCRIaChJyZXN1bHRzX3Blcl9zb3VyY2UYBSABKAVKBAgGEAdKBAgHEAhKBAgIEAlSBG1vZGVSDGlzX3Jhd193b3Jkc1INaXNfd2hvbGVfdGV4dCJ8CiNIb3N0U2VhcmNoU2VydmljZVNlYXJjaFRleHRSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSJwoHcmVzdWx0cxgCIAMoCzIWLm51bWVuLnYxLlNlYXJjaFJlc3VsdCJgChJTdGFydFNlYXJjaFJlcXVlc3QSDQoFcXVlcnkYASABKAkSJAoIcHJpb3JpdHkYAiABKA4yEi5udW1lbi52MS5Qcmlvcml0eRIVCg1pc19iYWNrZ3JvdW5kGAMgASgIIk8KE1N0YXJ0U2VhcmNoUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEgoKAmlkGAIgASgJIlYKEEdldFNlYXJjaFJlcXVlc3QSCgoCaWQYASABKAkSDwoHd2FpdF9tcxgCIAEoAxIRCglwYWdlX3NpemUYAyABKAUSEgoKcGFnZV90b2tlbhgEIAEoCSJoChFHZXRTZWFyY2hSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSJQoGc2VhcmNoGAIgASgLMhUubnVtZW4udjEuU2VhcmNoU3RhdGUi+QIKC1NlYXJjaFN0YXRlEgoKAmlkGAEgASgJEhIKCmlzX3J1bm5pbmcYAiABKAgSEgoKaXNfcGFydGlhbBgDIAEoCBIQCghpc19zdGFsZRgEIAEoCBIqCghwcm9ncmVzcxgFIAEoCzIYLm51bWVuLnYxLlNlYXJjaFByb2dyZXNzEicKB3Jlc3VsdHMYBiADKAsyFi5udW1lbi52MS5TZWFyY2hSZXN1bHQSJwoGZXJyb3JzGAcgAygLMhcubnVtZW4udjEuU2VhcmNoUHJvYmxlbRIQCgh3YXJuaW5ncxgIIAMoCRIXCg9uZXh0X3BhZ2VfdG9rZW4YCSABKAkSFQoNdG90YWxfcmVzdWx0cxgKIAEoBRInCgdyZXJhbmtzGAsgAygLMhYubnVtZW4udjEuU2VhcmNoUmVyYW5rEhIKCnNjb3JlX2tpbmQYDCABKAkSDQoFZmxvb3IYDSABKAESGAoQaW5kZXhfZ2VuZXJhdGlvbhgOIAEoCSIeCg5TZWFyY2hQcm9ncmVzcxIMCgRzdGVwGAEgASgJIngKDVNlYXJjaFByb2JsZW0SDAoEbGluZRgBIAEoBRIOCgZjb2x1bW4YAiABKAUSDwoHbWVzc2FnZRgDIAEoCRISCgpzdWdnZXN0aW9uGAQgASgJEhAKCGVuZF9saW5lGAUgASgFEhIKCmVuZF9jb2x1bW4YBiABKAUiUQoMU2VhcmNoUmVyYW5rEhcKD2Nvbm5lY3Rpb25fbmFtZRgBIAEoCRISCgpzZW50X2NvdW50GAIgASgFEhQKDHJldXNlZF9jb3VudBgDIAEoBSIhChNSZW1vdmVTZWFyY2hSZXF1ZXN0EgoKAmlkGAEgASgJIkQKFFJlbW92ZVNlYXJjaFJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZSIcChpMaXN0U2VhcmNoRnVuY3Rpb25zUmVxdWVzdCKKAQobTGlzdFNlYXJjaEZ1bmN0aW9uc1Jlc3BvbnNlEiwKBWVycm9yGAMgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZRIrCglmdW5jdGlvbnMYASADKAsyGC5udW1lbi52MS5TZWFyY2hGdW5jdGlvbhIQCghyZXZpc2lvbhgCIAEoCSKGAQoOU2VhcmNoRnVuY3Rpb24SDAoEbmFtZRgBIAEoCRIMCgRraW5kGAIgASgJEg0KBWxldmVsGAMgASgJEhIKCnNpZ25hdHVyZXMYBCADKAkSEwoLZGVzY3JpcHRpb24YBSABKAkSDwoHZXhhbXBsZRgGIAEoCRIPCgdzdW1tYXJ5GAcgASgJKsUEChNIb3N0U2VhcmNoRXJyb3JDb2RlEiYKIkhPU1RfU0VBUkNIX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIjCh9IT1NUX1NFQVJDSF9FUlJPUl9DT0RFX05PX1ZBVUxUEAESIwofSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9OT19NT0RFTBACEioKJkhPU1RfU0VBUkNIX0VSUk9SX0NPREVfUkVDSVBFX01JU01BVENIEAMSKAokSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9JTlZBTElEX0ZMT09SEAQSKQolSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9MSU1JVF9FWENFRURFRBAFEisKJ0hPU1RfU0VBUkNIX0VSUk9SX0NPREVfRU1CRURESU5HX0ZBSUxFRBAGEigKJEhPU1RfU0VBUkNIX0VSUk9SX0NPREVfSU5WQUxJRF9RVUVSWRAHEisKJ0hPU1RfU0VBUkNIX0VSUk9SX0NPREVfU0VBUkNIX05PVF9GT1VORBAKEiwKKEhPU1RfU0VBUkNIX0VSUk9SX0NPREVfVE9PX01BTllfU0VBUkNIRVMQCxItCilIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0lOVkFMSURfUEFHRV9UT0tFThAMIgQICBAIIgQICRAJKihIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0lOVkFMSURfQ09ORElUSU9OKiRIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0lOVkFMSURfV09SRFMqnQEKEVNlYXJjaEZsb29yU291cmNlEiMKH1NFQVJDSF9GTE9PUl9TT1VSQ0VfVU5TUEVDSUZJRUQQABIeChpTRUFSQ0hfRkxPT1JfU09VUkNFX1NUT1JFRBABEiIKHlNFQVJDSF9GTE9PUl9TT1VSQ0VfTU9ERUxfSElOVBACEh8KG1NFQVJDSF9GTE9PUl9TT1VSQ0VfREVGQVVMVBADMoMJChFIb3N0U2VhcmNoU2VydmljZRJcChFHZXRFbWJlZGRpbmdTdGF0ZRIiLm51bWVuLnYxLkdldEVtYmVkZGluZ1N0YXRlUmVxdWVzdBojLm51bWVuLnYxLkdldEVtYmVkZGluZ1N0YXRlUmVzcG9uc2USUAoNR2V0SW5kZXhTdGF0cxIeLm51bWVuLnYxLkdldEluZGV4U3RhdHNSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0SW5kZXhTdGF0c1Jlc3BvbnNlEkcKCkVtYmVkVGV4dHMSGy5udW1lbi52MS5FbWJlZFRleHRzUmVxdWVzdBocLm51bWVuLnYxLkVtYmVkVGV4dHNSZXNwb25zZRJfChJTYW1wbGVTaW1pbGFyaXRpZXMSIy5udW1lbi52MS5TYW1wbGVTaW1pbGFyaXRpZXNSZXF1ZXN0GiQubnVtZW4udjEuU2FtcGxlU2ltaWxhcml0aWVzUmVzcG9uc2USXAoRR2V0QmVzdFNpbWlsYXJpdHkSIi5udW1lbi52MS5HZXRCZXN0U2ltaWxhcml0eVJlcXVlc3QaIy5udW1lbi52MS5HZXRCZXN0U2ltaWxhcml0eVJlc3BvbnNlElwKEUZpbmROZWFyZXN0Q2h1bmtzEiIubnVtZW4udjEuRmluZE5lYXJlc3RDaHVua3NSZXF1ZXN0GiMubnVtZW4udjEuRmluZE5lYXJlc3RDaHVua3NSZXNwb25zZRJpCgpTZWFyY2hUZXh0EiwubnVtZW4udjEuSG9zdFNlYXJjaFNlcnZpY2VTZWFyY2hUZXh0UmVxdWVzdBotLm51bWVuLnYxLkhvc3RTZWFyY2hTZXJ2aWNlU2VhcmNoVGV4dFJlc3BvbnNlElMKDkdldFNlYXJjaEZsb29yEh8ubnVtZW4udjEuR2V0U2VhcmNoRmxvb3JSZXF1ZXN0GiAubnVtZW4udjEuR2V0U2VhcmNoRmxvb3JSZXNwb25zZRJTCg5TZXRTZWFyY2hGbG9vchIfLm51bWVuLnYxLlNldFNlYXJjaEZsb29yUmVxdWVzdBogLm51bWVuLnYxLlNldFNlYXJjaEZsb29yUmVzcG9uc2USSgoLU3RhcnRTZWFyY2gSHC5udW1lbi52MS5TdGFydFNlYXJjaFJlcXVlc3QaHS5udW1lbi52MS5TdGFydFNlYXJjaFJlc3BvbnNlEkQKCUdldFNlYXJjaBIaLm51bWVuLnYxLkdldFNlYXJjaFJlcXVlc3QaGy5udW1lbi52MS5HZXRTZWFyY2hSZXNwb25zZRJNCgxSZW1vdmVTZWFyY2gSHS5udW1lbi52MS5SZW1vdmVTZWFyY2hSZXF1ZXN0Gh4ubnVtZW4udjEuUmVtb3ZlU2VhcmNoUmVzcG9uc2USYgoTTGlzdFNlYXJjaEZ1bmN0aW9ucxIkLm51bWVuLnYxLkxpc3RTZWFyY2hGdW5jdGlvbnNSZXF1ZXN0GiUubnVtZW4udjEuTGlzdFNlYXJjaEZ1bmN0aW9uc1Jlc3BvbnNlQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_embedding, file_numen_v1_hostconnection, file_numen_v1_search, file_numen_v1_search_source]);
 
 /**
  * @generated from message numen.v1.GetEmbeddingStateRequest
@@ -633,33 +635,6 @@ export type HostSearchServiceSearchTextRequest = Message<"numen.v1.HostSearchSer
    * @generated from field: int32 results_per_source = 5;
    */
   resultsPerSource: number;
-
-  /**
-   * Which participants answer: UNSPECIFIED and HYBRID fuse words, section
-   * names and meaning; WORDS asks the words alone; MEANING asks the search
-   * source alone and answers NO_MODEL when the installation has none. NAMES is
-   * rejected with INVALID_ARGUMENT.
-   *
-   * @generated from field: numen.v1.SearchMode mode = 6;
-   */
-  mode: SearchMode;
-
-  /**
-   * With mode WORDS only: the query is an FTS5 query in the syntax of the index
-   * (phrases, NEAR, prefix *, AND, OR, NOT), used as written. Without it every
-   * word is quoted. Set with another mode it is rejected with INVALID_ARGUMENT.
-   *
-   * @generated from field: bool is_raw_words = 7;
-   */
-  isRawWords: boolean;
-
-  /**
-   * Each result carries the whole text of its chunk in whole_text, next to
-   * the excerpt in text.
-   *
-   * @generated from field: bool is_whole_text = 8;
-   */
-  isWholeText: boolean;
 };
 
 /**
@@ -695,151 +670,440 @@ export const HostSearchServiceSearchTextResponseSchema: GenMessage<HostSearchSer
   messageDesc(file_numen_v1_hostsearch, 20);
 
 /**
- * @generated from message numen.v1.ScoreCondition
+ * @generated from message numen.v1.StartSearchRequest
  */
-export type ScoreCondition = Message<"numen.v1.ScoreCondition"> & {
+export type StartSearchRequest = Message<"numen.v1.StartSearchRequest"> & {
   /**
-   * @generated from oneof numen.v1.ScoreCondition.condition
+   * A query of the search language.
+   *
+   * @generated from field: string query = 1;
    */
-  condition: {
-    /**
-     * A text compared by meaning, at most 8192 bytes.
-     *
-     * @generated from field: string meaning = 1;
-     */
-    value: string;
-    case: "meaning";
-  } | {
-    /**
-     * An FTS5 query in the syntax of the index (phrases, NEAR, prefix *, AND,
-     * OR, NOT), at most 8192 bytes.
-     *
-     * @generated from field: string words = 2;
-     */
-    value: string;
-    case: "words";
-  } | { case: undefined; value?: undefined };
+  query: string;
+
+  /**
+   * Interactive searches run before background ones.
+   *
+   * @generated from field: numen.v1.Priority priority = 2;
+   */
+  priority: Priority;
+
+  /**
+   * A background search shows no task of the core.
+   *
+   * @generated from field: bool is_background = 3;
+   */
+  isBackground: boolean;
 };
 
 /**
- * Describes the message numen.v1.ScoreCondition.
- * Use `create(ScoreConditionSchema)` to create a new message.
+ * Describes the message numen.v1.StartSearchRequest.
+ * Use `create(StartSearchRequestSchema)` to create a new message.
  */
-export const ScoreConditionSchema: GenMessage<ScoreCondition> = /*@__PURE__*/
+export const StartSearchRequestSchema: GenMessage<StartSearchRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostsearch, 21);
 
 /**
- * @generated from message numen.v1.ScoreChunksRequest
+ * @generated from message numen.v1.StartSearchResponse
  */
-export type ScoreChunksRequest = Message<"numen.v1.ScoreChunksRequest"> & {
-  /**
-   * Chunk ids as SearchResult.chunk_id names them, at most 500.
-   *
-   * @generated from field: repeated string chunk_ids = 1;
-   */
-  chunkIds: string[];
-
-  /**
-   * At most 16.
-   *
-   * @generated from field: repeated numen.v1.ScoreCondition conditions = 2;
-   */
-  conditions: ScoreCondition[];
-};
-
-/**
- * Describes the message numen.v1.ScoreChunksRequest.
- * Use `create(ScoreChunksRequestSchema)` to create a new message.
- */
-export const ScoreChunksRequestSchema: GenMessage<ScoreChunksRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 22);
-
-/**
- * @generated from message numen.v1.ConditionScore
- */
-export type ConditionScore = Message<"numen.v1.ConditionScore"> & {
-  /**
-   * Meaning only: the best similarity of a small chunk inside the chunk.
-   * Absent for a words condition, and when no small chunk of the chunk carries
-   * a vector under the recipe.
-   *
-   * @generated from field: optional double similarity = 1;
-   */
-  similarity?: number | undefined;
-
-  /**
-   * Meaning: the similarity is at or above the floor. Words: the whole text of
-   * the chunk matches the query.
-   *
-   * @generated from field: bool is_match = 2;
-   */
-  isMatch: boolean;
-};
-
-/**
- * Describes the message numen.v1.ConditionScore.
- * Use `create(ConditionScoreSchema)` to create a new message.
- */
-export const ConditionScoreSchema: GenMessage<ConditionScore> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 23);
-
-/**
- * @generated from message numen.v1.ChunkScore
- */
-export type ChunkScore = Message<"numen.v1.ChunkScore"> & {
-  /**
-   * @generated from field: string chunk_id = 1;
-   */
-  chunkId: string;
-
-  /**
-   * One per condition, in the order of the conditions.
-   *
-   * @generated from field: repeated numen.v1.ConditionScore conditions = 2;
-   */
-  conditions: ConditionScore[];
-};
-
-/**
- * Describes the message numen.v1.ChunkScore.
- * Use `create(ChunkScoreSchema)` to create a new message.
- */
-export const ChunkScoreSchema: GenMessage<ChunkScore> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 24);
-
-/**
- * @generated from message numen.v1.ScoreChunksResponse
- */
-export type ScoreChunksResponse = Message<"numen.v1.ScoreChunksResponse"> & {
+export type StartSearchResponse = Message<"numen.v1.StartSearchResponse"> & {
   /**
    * @generated from field: numen.v1.HostSearchErrorCode error = 1;
    */
   error: HostSearchErrorCode;
 
   /**
-   * One per distinct given chunk id the vault holds, in the order given. An id
-   * the vault does not hold, because its source was removed or cut again, is
-   * left out.
-   *
-   * @generated from field: repeated numen.v1.ChunkScore chunks = 2;
+   * @generated from field: string id = 2;
    */
-  chunks: ChunkScore[];
-
-  /**
-   * The floor applied to the meaning conditions; zero when the request has
-   * none.
-   *
-   * @generated from field: double floor = 3;
-   */
-  floor: number;
+  id: string;
 };
 
 /**
- * Describes the message numen.v1.ScoreChunksResponse.
- * Use `create(ScoreChunksResponseSchema)` to create a new message.
+ * Describes the message numen.v1.StartSearchResponse.
+ * Use `create(StartSearchResponseSchema)` to create a new message.
  */
-export const ScoreChunksResponseSchema: GenMessage<ScoreChunksResponse> = /*@__PURE__*/
+export const StartSearchResponseSchema: GenMessage<StartSearchResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 22);
+
+/**
+ * @generated from message numen.v1.GetSearchRequest
+ */
+export type GetSearchRequest = Message<"numen.v1.GetSearchRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * How long to wait for the search to stop, at most 30000.
+   *
+   * @generated from field: int64 wait_ms = 2;
+   */
+  waitMs: bigint;
+
+  /**
+   * Results of one page; zero is 20, at most 100.
+   *
+   * @generated from field: int32 page_size = 3;
+   */
+  pageSize: number;
+
+  /**
+   * @generated from field: string page_token = 4;
+   */
+  pageToken: string;
+};
+
+/**
+ * Describes the message numen.v1.GetSearchRequest.
+ * Use `create(GetSearchRequestSchema)` to create a new message.
+ */
+export const GetSearchRequestSchema: GenMessage<GetSearchRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 23);
+
+/**
+ * @generated from message numen.v1.GetSearchResponse
+ */
+export type GetSearchResponse = Message<"numen.v1.GetSearchResponse"> & {
+  /**
+   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   */
+  error: HostSearchErrorCode;
+
+  /**
+   * @generated from field: numen.v1.SearchState search = 2;
+   */
+  search?: SearchState | undefined;
+};
+
+/**
+ * Describes the message numen.v1.GetSearchResponse.
+ * Use `create(GetSearchResponseSchema)` to create a new message.
+ */
+export const GetSearchResponseSchema: GenMessage<GetSearchResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 24);
+
+/**
+ * @generated from message numen.v1.SearchState
+ */
+export type SearchState = Message<"numen.v1.SearchState"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: bool is_running = 2;
+   */
+  isRunning: boolean;
+
+  /**
+   * The results are those before the rerank stage, and the search is still running.
+   *
+   * @generated from field: bool is_partial = 3;
+   */
+  isPartial: boolean;
+
+  /**
+   * The index of the vault changed after the search started.
+   *
+   * @generated from field: bool is_stale = 4;
+   */
+  isStale: boolean;
+
+  /**
+   * @generated from field: numen.v1.SearchProgress progress = 5;
+   */
+  progress?: SearchProgress | undefined;
+
+  /**
+   * A flat list of passages and whole files, best first.
+   *
+   * @generated from field: repeated numen.v1.SearchResult results = 6;
+   */
+  results: SearchResult[];
+
+  /**
+   * @generated from field: repeated numen.v1.SearchProblem errors = 7;
+   */
+  errors: SearchProblem[];
+
+  /**
+   * @generated from field: repeated string warnings = 8;
+   */
+  warnings: string[];
+
+  /**
+   * Empty on the last page and for partial results.
+   *
+   * @generated from field: string next_page_token = 9;
+   */
+  nextPageToken: string;
+
+  /**
+   * @generated from field: int32 total_results = 10;
+   */
+  totalResults: number;
+
+  /**
+   * One for each rerank stage that ran.
+   *
+   * @generated from field: repeated numen.v1.SearchRerank reranks = 11;
+   */
+  reranks: SearchRerank[];
+
+  /**
+   * How the scores were made: none, meaning, words, fused or rerank.
+   *
+   * @generated from field: string score_kind = 12;
+   */
+  scoreKind: string;
+
+  /**
+   * The similarity floor the search used.
+   *
+   * @generated from field: double floor = 13;
+   */
+  floor: number;
+
+  /**
+   * The generation of the index of the vault when the search started; opaque.
+   *
+   * @generated from field: string index_generation = 14;
+   */
+  indexGeneration: string;
+};
+
+/**
+ * Describes the message numen.v1.SearchState.
+ * Use `create(SearchStateSchema)` to create a new message.
+ */
+export const SearchStateSchema: GenMessage<SearchState> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostsearch, 25);
+
+/**
+ * @generated from message numen.v1.SearchProgress
+ */
+export type SearchProgress = Message<"numen.v1.SearchProgress"> & {
+  /**
+   * queued, candidates, reranking or done.
+   *
+   * @generated from field: string step = 1;
+   */
+  step: string;
+};
+
+/**
+ * Describes the message numen.v1.SearchProgress.
+ * Use `create(SearchProgressSchema)` to create a new message.
+ */
+export const SearchProgressSchema: GenMessage<SearchProgress> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 26);
+
+/**
+ * @generated from message numen.v1.SearchProblem
+ */
+export type SearchProblem = Message<"numen.v1.SearchProblem"> & {
+  /**
+   * From 1; zero when the problem has no position.
+   *
+   * @generated from field: int32 line = 1;
+   */
+  line: number;
+
+  /**
+   * @generated from field: int32 column = 2;
+   */
+  column: number;
+
+  /**
+   * @generated from field: string message = 3;
+   */
+  message: string;
+
+  /**
+   * A name of the language close to the one written, empty for none.
+   *
+   * @generated from field: string suggestion = 4;
+   */
+  suggestion: string;
+
+  /**
+   * The last character of a problem that covers more than one, zero otherwise.
+   *
+   * @generated from field: int32 end_line = 5;
+   */
+  endLine: number;
+
+  /**
+   * @generated from field: int32 end_column = 6;
+   */
+  endColumn: number;
+};
+
+/**
+ * Describes the message numen.v1.SearchProblem.
+ * Use `create(SearchProblemSchema)` to create a new message.
+ */
+export const SearchProblemSchema: GenMessage<SearchProblem> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 27);
+
+/**
+ * @generated from message numen.v1.SearchRerank
+ */
+export type SearchRerank = Message<"numen.v1.SearchRerank"> & {
+  /**
+   * @generated from field: string connection_name = 1;
+   */
+  connectionName: string;
+
+  /**
+   * @generated from field: int32 sent_count = 2;
+   */
+  sentCount: number;
+
+  /**
+   * @generated from field: int32 reused_count = 3;
+   */
+  reusedCount: number;
+};
+
+/**
+ * Describes the message numen.v1.SearchRerank.
+ * Use `create(SearchRerankSchema)` to create a new message.
+ */
+export const SearchRerankSchema: GenMessage<SearchRerank> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 28);
+
+/**
+ * @generated from message numen.v1.RemoveSearchRequest
+ */
+export type RemoveSearchRequest = Message<"numen.v1.RemoveSearchRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message numen.v1.RemoveSearchRequest.
+ * Use `create(RemoveSearchRequestSchema)` to create a new message.
+ */
+export const RemoveSearchRequestSchema: GenMessage<RemoveSearchRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 29);
+
+/**
+ * @generated from message numen.v1.RemoveSearchResponse
+ */
+export type RemoveSearchResponse = Message<"numen.v1.RemoveSearchResponse"> & {
+  /**
+   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   */
+  error: HostSearchErrorCode;
+};
+
+/**
+ * Describes the message numen.v1.RemoveSearchResponse.
+ * Use `create(RemoveSearchResponseSchema)` to create a new message.
+ */
+export const RemoveSearchResponseSchema: GenMessage<RemoveSearchResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 30);
+
+/**
+ * @generated from message numen.v1.ListSearchFunctionsRequest
+ */
+export type ListSearchFunctionsRequest = Message<"numen.v1.ListSearchFunctionsRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.ListSearchFunctionsRequest.
+ * Use `create(ListSearchFunctionsRequestSchema)` to create a new message.
+ */
+export const ListSearchFunctionsRequestSchema: GenMessage<ListSearchFunctionsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 31);
+
+/**
+ * @generated from message numen.v1.ListSearchFunctionsResponse
+ */
+export type ListSearchFunctionsResponse = Message<"numen.v1.ListSearchFunctionsResponse"> & {
+  /**
+   * @generated from field: numen.v1.HostSearchErrorCode error = 3;
+   */
+  error: HostSearchErrorCode;
+
+  /**
+   * @generated from field: repeated numen.v1.SearchFunction functions = 1;
+   */
+  functions: SearchFunction[];
+
+  /**
+   * Changes whenever the list changes.
+   *
+   * @generated from field: string revision = 2;
+   */
+  revision: string;
+};
+
+/**
+ * Describes the message numen.v1.ListSearchFunctionsResponse.
+ * Use `create(ListSearchFunctionsResponseSchema)` to create a new message.
+ */
+export const ListSearchFunctionsResponseSchema: GenMessage<ListSearchFunctionsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 32);
+
+/**
+ * @generated from message numen.v1.SearchFunction
+ */
+export type SearchFunction = Message<"numen.v1.SearchFunction"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * function, variable or stage.
+   *
+   * @generated from field: string kind = 2;
+   */
+  kind: string;
+
+  /**
+   * chunk or document; empty for a stage.
+   *
+   * @generated from field: string level = 3;
+   */
+  level: string;
+
+  /**
+   * Each argument list, such as "meaning(string) -> SearchResults".
+   *
+   * @generated from field: repeated string signatures = 4;
+   */
+  signatures: string[];
+
+  /**
+   * @generated from field: string description = 5;
+   */
+  description: string;
+
+  /**
+   * @generated from field: string example = 6;
+   */
+  example: string;
+
+  /**
+   * What it does in a few plain words, shown beside its name.
+   *
+   * @generated from field: string summary = 7;
+   */
+  summary: string;
+};
+
+/**
+ * Describes the message numen.v1.SearchFunction.
+ * Use `create(SearchFunctionSchema)` to create a new message.
+ */
+export const SearchFunctionSchema: GenMessage<SearchFunction> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 33);
 
 /**
  * HostSearchErrorCode is why a call on the search index was refused. The zero
@@ -903,18 +1167,25 @@ export enum HostSearchErrorCode {
   INVALID_QUERY = 7,
 
   /**
-   * A condition sets neither or both of its texts, or an empty text.
+   * The plugin started no search with the id, or it was removed or expired.
    *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_INVALID_CONDITION = 8;
+   * @generated from enum value: HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND = 10;
    */
-  INVALID_CONDITION = 8,
+  SEARCH_NOT_FOUND = 10,
 
   /**
-   * A words query is not valid FTS5.
+   * The most searches kept are all running.
    *
-   * @generated from enum value: HOST_SEARCH_ERROR_CODE_INVALID_WORDS = 9;
+   * @generated from enum value: HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES = 11;
    */
-  INVALID_WORDS = 9,
+  TOO_MANY_SEARCHES = 11,
+
+  /**
+   * The page token is not one of this search.
+   *
+   * @generated from enum value: HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN = 12;
+   */
+  INVALID_PAGE_TOKEN = 12,
 }
 
 /**
@@ -966,7 +1237,8 @@ export const SearchFloorSourceSchema: GenEnum<SearchFloorSource> = /*@__PURE__*/
  * HostSearchService is the search index and the search floor of a vault, as a
  * plugin reads and sets them. The host identifies the plugin by its token.
  * GetEmbeddingState, GetIndexStats, EmbedTexts, SampleSimilarities,
- * GetBestSimilarity, FindNearestChunks, SearchText and ScoreChunks need index:read; GetSearchFloor and
+ * GetBestSimilarity, FindNearestChunks, SearchText, StartSearch, GetSearch, RemoveSearch and
+ * ListSearchFunctions need index:read; GetSearchFloor and
  * SetSearchFloor need search:policy.
  *
  * Numen-Vault works the vault of that identity; without it a call works the
@@ -1069,23 +1341,6 @@ export const HostSearchService: GenService<{
     output: typeof HostSearchServiceSearchTextResponseSchema;
   },
   /**
-   * ScoreChunks scores chunks of the vault against conditions over the whole
-   * of each chunk. A chunk is the large chunk enclosing the given id, the range
-   * a SearchResult covers. A meaning condition is embedded once and compared
-   * with the stored vector of every small chunk inside the chunk; the best one
-   * is the similarity, and it matches when it reaches the effective floor of
-   * the vault under the recipe. A words condition is an FTS5 query and matches
-   * when the whole text of the chunk matches it. At most 500 chunks and 16
-   * conditions of at most 8192 bytes each; more is LIMIT_EXCEEDED.
-   *
-   * @generated from rpc numen.v1.HostSearchService.ScoreChunks
-   */
-  scoreChunks: {
-    methodKind: "unary";
-    input: typeof ScoreChunksRequestSchema;
-    output: typeof ScoreChunksResponseSchema;
-  },
-  /**
    * GetSearchFloor is the floor a search by meaning applies to the vault under
    * the recipe, and where it comes from.
    *
@@ -1107,6 +1362,50 @@ export const HostSearchService: GenService<{
     methodKind: "unary";
     input: typeof SetSearchFloorRequestSchema;
     output: typeof SetSearchFloorResponseSchema;
+  },
+  /**
+   * StartSearch starts a query of the search language over the vault and returns its id at once. An equal
+   * query of the same plugin that is still running returns the id of that search. A query that is not valid
+   * starts all the same and ends at once with its errors.
+   *
+   * @generated from rpc numen.v1.HostSearchService.StartSearch
+   */
+  startSearch: {
+    methodKind: "unary";
+    input: typeof StartSearchRequestSchema;
+    output: typeof StartSearchResponseSchema;
+  },
+  /**
+   * GetSearch is the state of a search the plugin started and one page of its results. It waits up to
+   * wait_ms for the search to stop; zero answers at once. A search is kept for 10 minutes after its last
+   * read, and at most 20 are kept. Only the plugin that started a search reads it.
+   *
+   * @generated from rpc numen.v1.HostSearchService.GetSearch
+   */
+  getSearch: {
+    methodKind: "unary";
+    input: typeof GetSearchRequestSchema;
+    output: typeof GetSearchResponseSchema;
+  },
+  /**
+   * RemoveSearch cancels a running search and forgets it.
+   *
+   * @generated from rpc numen.v1.HostSearchService.RemoveSearch
+   */
+  removeSearch: {
+    methodKind: "unary";
+    input: typeof RemoveSearchRequestSchema;
+    output: typeof RemoveSearchResponseSchema;
+  },
+  /**
+   * ListSearchFunctions is the functions, variables and stages of the search language.
+   *
+   * @generated from rpc numen.v1.HostSearchService.ListSearchFunctions
+   */
+  listSearchFunctions: {
+    methodKind: "unary";
+    input: typeof ListSearchFunctionsRequestSchema;
+    output: typeof ListSearchFunctionsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostsearch, 0);

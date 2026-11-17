@@ -9,14 +9,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { WORDS as words } from '../../../words'
 import { ERRORS } from '../../../lib/wire/errors'
-import { createCardModelState, createCardModelWire, NOTHING } from './wire'
-import type {
-  Cards,
-  DeckProblem,
-  FieldRenameResult,
-  RenamedField,
-  VaultCardModel,
-} from '../../../types'
+import { NOTHING } from './answer'
+import { createCardModelState, createCardModelWire } from './wire'
+import type { Cards, DeckProblem, VaultCardModel } from '../../../types'
+
+type FieldRenameResult = Awaited<ReturnType<Cards['renameField']>>
+type RenamedField = Extract<FieldRenameResult, { ok: true }>['value']
 
 const cardModel = (overrides: Partial<VaultCardModel> = {}): VaultCardModel => ({
   path: 'Word.md',

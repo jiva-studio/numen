@@ -222,14 +222,17 @@ type World struct {
 // New creates a world with two plugins that provide the type server (llm.complete, llm.embed, llm.chat
 // and the list llm.models of its row field model) and, for the first plugin, completer (llm.complete only).
 func New() *World {
-	address := manifest.ConnectionField{Key: addressField, Type: textField, Title: "Address", IsAddress: true, IsRequired: true}
+	address := manifest.ConnectionField{Key: addressField, Type: textField, Title: addressTitle, IsAddress: true, IsRequired: true}
 	key := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key", IsRequired: true}
 	minimum, step := 1.0, 1.0
-	parallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(2), Min: &minimum, Step: &step}
+	parallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: numberField, Title: parallelRequestsTitle, Default: float64(2), Min: &minimum, Step: &step}
 	optionalKey := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key"}
 	modelField := manifest.ConnectionField{Key: ModelOption, Type: textField, Title: "Model", IsRequired: true, OptionsFrom: ModelsOperation}
 	maximum := 8.0
-	agentParallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(1), Min: &minimum, Max: &maximum, Step: &step}
+	agentParallelRequests := manifest.ConnectionField{
+		Key: manifest.ConnectionParallelRequests, Type: numberField, Title: parallelRequestsTitle,
+		Default: float64(1), Min: &minimum, Max: &maximum, Step: &step,
+	}
 	serverType := func(pluginID string) connection.Type {
 		return connection.Type{PluginID: pluginID, PluginName: pluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
 			ID: "server", Title: "Server", Operations: getBothOperations(), Fields: []manifest.ConnectionField{address, key},
@@ -348,6 +351,7 @@ func (w *World) SetAvailable(pluginID string, isAvailable bool) {
 }
 
 const apiKeyField = "apiKey"
+const parallelRequestsTitle = "Parallel requests"
 
 // NoUses is the settings of rows of an installation where no plugin has one.
 type NoUses struct{}
@@ -379,9 +383,15 @@ func (w *World) AddLimited(t *testing.T, name, address string, parallelRequests 
 	return newEntry(entry)
 }
 
-const addressField = "baseUrl"
+const (
+	addressField = "baseUrl"
+	addressTitle = "Address"
+)
 
-const textField = "string"
+const (
+	textField   = "string"
+	numberField = "number"
+)
 
 // The operations of the fake provider, the list of models of its row field and the key of that field.
 const (
@@ -428,7 +438,7 @@ func newEntry(created connectionuse.Entry) Entry {
 func (w *World) AddDetected(name, address string) Entry {
 	declared := manifest.ConnectionType{
 		ID: "detecting", Title: "Detecting", Operations: append(getCompleteOnly(), connection.OperationDetected),
-		Fields: []manifest.ConnectionField{{Key: addressField, Type: textField, Title: "Address", FixedValue: &address}},
+		Fields: []manifest.ConnectionField{{Key: addressField, Type: textField, Title: addressTitle, FixedValue: &address}},
 	}
 	w.Types.list = append(w.Types.list, connection.Type{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: declared})
 	typeID := manifest.GetConnectionTypeID(ProviderPluginID, declared.ID)
@@ -488,3 +498,21 @@ func (w *World) SetPluginVersion(pluginID, version string) {
 type noTitles struct{}
 
 func (noTitles) ListOperationTitles() []manifest.Operation { return nil }
+
+const RerankOperation = "llm.rerank"
+
+// AddReranker creates a connection of the type reranker of the first plugin, which serves llm.rerank only,
+// runs one call at a time and whose calls go to the address.
+func (w *World) AddReranker(t *testing.T, name, address string) Entry {
+	t.Helper()
+	const typeName = "reranker"
+	typeID := manifest.GetConnectionTypeID(ProviderPluginID, typeName)
+	if _, found := w.Types.GetType(typeID); !found {
+		address := manifest.ConnectionField{Key: addressField, Type: textField, Title: addressTitle, IsAddress: true, IsRequired: true}
+		parallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: numberField, Title: parallelRequestsTitle, Default: float64(1)}
+		w.Types.list = append(w.Types.list, connection.Type{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
+			ID: typeName, Title: "Reranker", Operations: []string{RerankOperation}, Fields: []manifest.ConnectionField{address, parallelRequests},
+		}})
+	}
+	return w.Add(t, typeID, name, address, "")
+}

@@ -4,7 +4,7 @@
  * player, and given back to the player when it does not.
  */
 import { useTemplateRef } from 'vue'
-import type { Player } from '../model/player'
+import type { Player } from '../model/mediaPlayer'
 import { useVideoSurface } from '../model/useVideoSurface'
 
 /* --------------------------------- Props ---------------------------------- */

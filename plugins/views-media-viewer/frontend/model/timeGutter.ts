@@ -7,13 +7,7 @@
 import { doc } from '@numen/ui'
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, GutterMarker, ViewPlugin, gutter } from '@codemirror/view'
-
-/** What the editor shows against its lines. */
-export interface TimeGutterState {
-  readonly times: readonly string[]
-  readonly current: number
-  readonly isFollowing: boolean
-}
+import type { TimeGutterState } from './timeGutterState'
 
 const NOTHING: TimeGutterState = { times: [], current: -1, isFollowing: false }
 

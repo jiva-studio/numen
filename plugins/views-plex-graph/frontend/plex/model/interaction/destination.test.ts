@@ -1,13 +1,14 @@
 /** Two taps counted here: when they make a second tap, and what they leave behind. */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { effectScope, type EffectScope } from 'vue'
-import { APART, byDoubleTap, TAP, type ShowSite } from './destination'
+import { byDoubleTap, type ShowStrategy } from './destination'
+import { APART, TAP } from './touchTiming'
 
 const tap = (x: number, y: number, pointerType = 'touch') =>
   new PointerEvent('pointerup', { clientX: x, clientY: y, pointerType })
 
 function createTapper(ready: () => boolean = () => true, within?: number) {
-  const show = vi.fn<ShowSite['show']>()
+  const show = vi.fn<Parameters<ShowStrategy['listeners']>[0]['show']>()
   const scope: EffectScope = effectScope()
   const listeners = scope.run(() => byDoubleTap(within).listeners({ ready, show }))!
   return { show, scope, tap: (event: PointerEvent) => listeners['pointerup']!(event) }

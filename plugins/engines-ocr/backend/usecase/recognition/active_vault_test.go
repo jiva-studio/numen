@@ -77,7 +77,7 @@ func TestStartKeepsTheVaultActiveOnEntry(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	runEnd, isStarted, err := run.Start(t.Context(), recognition.Request{Vault: "", Path: "books/scan.pdf"})
+	runEnd, isStarted, err := run.Start(t.Context(), recognition.Request{Vault: "", Path: "books/scan.pdf", IsUserStarted: true})
 	if err != nil || !isStarted {
 		t.Fatalf("Start = %v, %v", isStarted, err)
 	}

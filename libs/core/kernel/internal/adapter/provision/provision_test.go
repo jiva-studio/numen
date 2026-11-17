@@ -39,10 +39,16 @@ func newModelRequirement(address string, data []byte) manifest.DependencyRequire
 }
 
 type fakeProvisioner struct {
-	id    string
-	kind  manifest.DependencyKind
-	calls atomic.Int32
-	gate  chan struct{}
+	id       string
+	kind     manifest.DependencyKind
+	calls    atomic.Int32
+	resolves atomic.Int32
+	gate     chan struct{}
+}
+
+func (f *fakeProvisioner) Resolve(req manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
+	f.resolves.Add(1)
+	return plugin.ResolvedDependency{ID: req.ID, PrimaryPath: "/planned/" + req.ID}, plugin.DependencyStateMissing, nil
 }
 
 func (f *fakeProvisioner) CanProvision(req manifest.DependencyRequirement) bool {

@@ -128,7 +128,7 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := flashcards.GetOutsideGrid()
+	want := projection.GetOutsideGrid()
 	for i, one := range got.Points {
 		if len(one.Closed) == 0 {
 			want = flashcards.CurvePoint{Index: i, Value: got.Grid[i]}
@@ -176,7 +176,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	}
 	inRange(t, got, "now")
 
-	if got.Suggested != flashcards.GetOutsideGrid() {
+	if got.Suggested != projection.GetOutsideGrid() {
 		t.Errorf("a target of %v is suggested, and this goal points at none",
 			got.Suggested.Value)
 	}
@@ -317,7 +317,7 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 		t.Errorf("currentPoint: got Share=%v, IsEnough=%v, Short=%d; want Share>=1, IsEnough=true, Short=0",
 			currentPoint.Share, currentPoint.IsEnough, currentPoint.Short)
 	}
-	if got.Suggested == flashcards.GetOutsideGrid() {
+	if got.Suggested == projection.GetOutsideGrid() {
 		t.Error("no day is suggested, and the day it aims at is through the material")
 	}
 }
@@ -336,7 +336,7 @@ func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != 0 || got.Now != flashcards.GetOutsideGrid() || got.Suggested != flashcards.GetOutsideGrid() {
+	if len(got.Grid) != 0 || got.Now != projection.GetOutsideGrid() || got.Suggested != projection.GetOutsideGrid() {
 		t.Errorf("curve = %+v, want nothing", got)
 	}
 }
@@ -457,12 +457,12 @@ func inRange(t *testing.T, c flashcards.Curve, names ...string) {
 	t.Helper()
 	marks := map[string]flashcards.CurvePoint{"now": c.Now, "suggested": c.Suggested}
 	for _, name := range names {
-		if marks[name] == flashcards.GetOutsideGrid() {
+		if marks[name] == projection.GetOutsideGrid() {
 			t.Errorf("point %s: got OutsideGrid, want valid index in grid of len %d", name, len(c.Grid))
 		}
 	}
 	for name, mark := range marks {
-		if mark == flashcards.GetOutsideGrid() {
+		if mark == projection.GetOutsideGrid() {
 			continue
 		}
 		if mark.Index < 0 || mark.Index >= len(c.Grid) {
@@ -908,7 +908,7 @@ func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Suggested == flashcards.GetOutsideGrid() {
+	if got.Suggested == projection.GetOutsideGrid() {
 		t.Fatal("got.Suggested is outside the grid, want valid suggested point")
 	}
 	suggestedPoint := got.Points[got.Suggested.Index]
@@ -966,8 +966,8 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 	if len(got.Grid) == 0 {
 		t.Fatal("a day twenty years off draws no range at all, as a day already past does")
 	}
-	if got.Now != flashcards.GetOutsideGrid() {
-		t.Errorf("got.Now = %+v, want %+v", got.Now, flashcards.GetOutsideGrid())
+	if got.Now != projection.GetOutsideGrid() {
+		t.Errorf("got.Now = %+v, want %+v", got.Now, projection.GetOutsideGrid())
 	}
 }
 

@@ -3,10 +3,8 @@ export { arrangePlex, type ArrangeInput } from './arrange'
 
 export { getDropRelation, resolveDrop, getRelationWithoutDirection, type Drop } from './edges/drop'
 export { interpolatePlex } from './interpolate'
-export { clusters } from './layout/clusters'
-export { NO_ROOM, type NodeRoom, type Placement, type Rooms } from './layout/placement'
+export { NO_ROOM, type NodeRoom, type Placement } from './layout/placement'
 
-export { createTitle, getLabelPlaces, getRise, getShift, LABEL_GAP } from './edges/routing'
 export {
   createArrowTransform,
   createPath,

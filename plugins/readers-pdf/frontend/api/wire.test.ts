@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { Api, ApiError } from '@numen/plugin-sdk'
-import { createDocuments } from './wire'
+import { createDocuments } from './documents'
 import type { GetDocumentResponse, GetHighlightsResponse } from './types'
 import getDocumentRequest from '../../testdata/api/GetDocument.request.json'
 import getDocumentResponse from '../../testdata/api/GetDocument.response.json'

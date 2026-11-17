@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { getLinkAddressAt, follow } from './address'
+import { getLinkAddressAt } from './address'
+import { follow } from './follow'
 import { addressOpener } from '../outside'
 import { createState } from '../../fixtures/state'
 

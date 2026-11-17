@@ -46,6 +46,8 @@ func getBuiltinCommands(session Session) []command {
 		newVaultCommand(session),
 		scanCommand{session: session},
 		searchCommand{session: session},
+		queryCommand{session: session},
+		operationResultsCommand{session: session},
 		linksCommand{session: session},
 		problemsCommand{session: session},
 		helpCommand{session: session},

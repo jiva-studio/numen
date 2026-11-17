@@ -5,13 +5,38 @@ run-name: Release on the ${{ inputs.channel }} channel
 # what they are. A run is asked for by hand and answers for one channel: what
 # the page hands to everybody, or what it hands to somebody who asked.
 on:
+  workflow_call:
+    inputs:
+      channel:
+        description: Channel, stable or nightly
+        type: string
+        default: nightly
+      linux:
+        type: boolean
+        default: true
+      windows:
+        type: boolean
+        default: true
+      macos:
+        type: boolean
+        default: true
+      notarize:
+        type: boolean
+        default: true
+      publish:
+        type: boolean
+        default: true
+      sha:
+        description: Commit to build; empty is the commit of the run
+        type: string
+        default: ''
   workflow_dispatch:
     inputs:
       channel:
         description: Channel
         type: choice
-        default: beta
-        options: [stable, beta]
+        default: nightly
+        options: [stable, nightly]
       linux:
         description: Linux
         type: boolean
@@ -35,6 +60,10 @@ on:
         description: Put the builds up and make the release
         type: boolean
         default: true
+      sha:
+        description: Commit to build; empty is the commit of the run
+        type: string
+        default: ''
 
 # Two runs at once would count the same version, push the same tag and write
 # over each other on the shelf. The second waits; neither is stopped, because a
@@ -49,7 +78,7 @@ permissions: {}
 
 jobs:
   # What this run is called and where it goes. A stable release is named for
-  # the month it is made in and goes where the page looks; a beta is named for
+  # the month it is made in and goes where the page looks; a nightly is named for
   # the stable release it precedes and goes on a shelf of its own.
   naming:
     name: Version
@@ -75,6 +104,7 @@ jobs:
       # history has to be here for it to be counted.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -94,8 +124,8 @@ jobs:
 
           # A release is named for the month it is made in and for how many
           # stable releases that month already holds, so nobody has a number to
-          # invent. A beta is named for the stable release it precedes, and the
-          # build number is what tells two betas of it apart.
+          # invent. A nightly is named for the stable release it precedes, and the
+          # build number is what tells two nightlies of it apart.
           year=$(date -u +%Y)
           month=$(date -u +%-m)
           made=$(git tag -l "v$year.$month.*" | grep -vc -- '-' || true)
@@ -104,8 +134,8 @@ jobs:
             version="$year.$month.$made"
             shelf=latest
           else
-            version="$year.$month.$made-beta.$build"
-            shelf=beta
+            version="$year.$month.$made-nightly.$build"
+            shelf=nightly
           fi
 
           # What every file this run puts up carries in its name, and what the
@@ -133,11 +163,11 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
-  # What has landed since the last release everybody was handed. A beta is
+  # What has landed since the last release everybody was handed. A nightly is
   # measured from there too, so it says everything the stable release it
   # precedes will say.
   notes:
-    name: Release Notes
+    name: Release notes
     needs: [naming]
     runs-on: ubuntu-24.04
     permissions:
@@ -146,6 +176,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -193,6 +224,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -451,6 +483,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -533,6 +566,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -598,6 +632,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -722,6 +757,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -936,7 +972,7 @@ jobs:
   # links to, which carries no version and holds the newest build, and under a
   # name carrying its version, in a folder that is written once and kept.
   publish:
-    name: CDN Upload
+    name: CDN upload
     environment: production
     if: >-
       ${{ needs.naming.outputs.publish == 'true'
@@ -1222,6 +1258,7 @@ jobs:
       # The one clone that keeps the token: the tag is pushed through it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha || github.sha }}
           fetch-depth: 0
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2

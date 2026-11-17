@@ -131,3 +131,31 @@ func TestACurveReturnsTheErrorOfAPlace(t *testing.T) {
 		}
 	}
 }
+
+func TestACurveOfADateNamesTheDaysAcrossAClockChange(t *testing.T) {
+	t.Parallel()
+	zone, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatalf("LoadLocation: %v", err)
+	}
+	// 02:30 does not exist on 2026-03-08 in this zone: the clock jumps from 02:00 to 03:00.
+	sim := newTestSimulation(2)
+	sim.Day = zonedDays{starts: 2*time.Hour + 30*time.Minute, in: zone}
+	now := time.Date(2026, 3, 6, 12, 0, 0, 0, zone)
+	by := time.Date(2026, 3, 9, 12, 0, 0, 0, zone)
+	got, err := sim.Curve(t.Context(), now, Settings{
+		Goal: GoalDate, By: by, MinutesADay: 30, Retention: 0.9, Rule: RuleInterval, Interval: 7,
+	}, CurveInputs{UnbegunCount: 2, RetentionBounds: getRetentionBounds()})
+	if err != nil {
+		t.Fatalf("Curve err = %v", err)
+	}
+	if got.Now.Value != 3 || got.Now.Day != "2026-03-09" {
+		t.Fatalf("Now = %+v, want Value 3 and Day 2026-03-09", got.Now)
+	}
+	for i, grid := range got.Grid {
+		want := time.Date(2026, 3, 6+int(grid), 0, 0, 0, 0, time.UTC).Format(time.DateOnly)
+		if got.Days[i] != want {
+			t.Fatalf("Days[%d] = %s for day %v, want %s", i, got.Days[i], grid, want)
+		}
+	}
+}

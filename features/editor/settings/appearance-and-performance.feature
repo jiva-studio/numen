@@ -31,6 +31,7 @@ Feature: Appearance and performance settings
 
   Rule: A theme belongs to its plugin
 
+    @smoke
     Scenario: A theme is chosen in the settings
       When the person sets the setting "Theme" to "Dracula"
       Then the setting "Theme" is "Dracula"

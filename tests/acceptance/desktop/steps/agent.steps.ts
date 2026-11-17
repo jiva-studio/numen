@@ -19,3 +19,7 @@ Then('the composer of the agent cannot send', async ({ person }) => {
 Then('the composer of the agent has {string}', async ({ person }, text: string) => {
   await person.agent.expectText(text)
 })
+
+Then('the agent has answered', async ({ person }) => {
+  await person.agent.expectAnswered()
+})

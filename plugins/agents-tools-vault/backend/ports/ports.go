@@ -91,3 +91,10 @@ type TextSearch interface {
 type NotePathResolver interface {
 	Resolve(ctx context.Context, name string) string
 }
+
+// QueryRunner runs queries of the search language on the host.
+type QueryRunner interface {
+	StartSearch(ctx context.Context, start host.SearchStart) (string, error)
+	GetSearch(ctx context.Context, id string, read host.SearchRead) (host.SearchState, error)
+	RemoveSearch(ctx context.Context, id string) error
+}

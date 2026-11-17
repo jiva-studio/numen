@@ -144,21 +144,7 @@
       "project": [
         "src/**/*.{ts,astro,vue}!",
         "tools/**/*.mjs!"
-      ],
-      "paths": {
-        "@editor-features/*": [
-          "../desktop/editor/src/features/*"
-        ],
-        "@plugins/*": [
-          "../../plugins/*"
-        ],
-        "@numen/workbench": [
-          "../../libs/ui/workbench/src/index.ts"
-        ],
-        "@numen/workbench/styles.css": [
-          "../../libs/ui/workbench/src/styles.css"
-        ]
-      }
+      ]
     },
     "tests/e2e/desktop": {
       "entry": [
@@ -182,10 +168,12 @@
     },
     "tests/acceptance/desktop": {
       "ignoreDependencies": [
-        "gplint"
+        "gplint",
+        "@fontsource-variable/inter"
       ],
       "entry": [
         "playwright.config.ts",
+        "report/page/*.js",
         "eslint.config.js",
         "scripts/*.mjs",
         "steps/**/*.ts",

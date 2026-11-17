@@ -8,7 +8,6 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref, watch } from 'vue'
 import CardTemplate from './CardTemplate.vue'
-import type { FieldValue } from '../../../../../lib/cards'
 import { getDeclaredFields, type Half } from '../../../../../lib/cards'
 import { templateRows, type TemplateRow, type CardModelTemplate } from '../../../../../lib/cards'
 import { sampleValues } from '../../../../../lib/cards'
@@ -16,7 +15,7 @@ import { sampleValues } from '../../../../../lib/cards'
 interface Corpus {
   readonly template: CardModelTemplate
   readonly fields: readonly string[]
-  readonly sample?: readonly FieldValue[]
+  readonly sample?: ReturnType<typeof sampleValues>
   readonly taken?: readonly string[]
   readonly wrong?: readonly string[]
 }

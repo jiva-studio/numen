@@ -1,0 +1,34 @@
+{
+  "id": "md.numen.tools.taxonomy",
+  "name": "Taxonomy",
+  "version": "2026.11.5",
+  "protocol": 1,
+  "description": "Reads the tags of notes from their frontmatter, finds notes by tag in queries and lists the tags for agents",
+  "capabilities": ["tools"],
+  "targets": ["desktop.editor"],
+  "activationEvents": ["onFilesChanged:text/markdown"],
+  "contributes": {
+    "category": "tools",
+    "searchFunctions": {
+      "version": 1,
+      "functions": [
+        {
+          "name": "tags",
+          "args": [{ "name": "tag", "type": "string" }],
+          "level": "document",
+          "description": "notes with the tag or a tag nested under it in the frontmatter key tags, compared without case; a leading # is dropped",
+          "example": "tags(\"Projects\") && meaning(\"deadline\")"
+        },
+        {
+          "name": "isTagged",
+          "args": [],
+          "level": "document",
+          "description": "notes with at least one tag in the frontmatter key tags",
+          "example": "!isTagged() && kind == \"note\""
+        }
+      ]
+    }
+  },
+  "permissions": ["vault:read"],
+  "backend": { "entrypoint": "bin/tools-taxonomy" }
+}

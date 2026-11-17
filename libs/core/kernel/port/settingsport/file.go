@@ -10,8 +10,11 @@ type SettingsFile interface {
 	// ReadUnchecked returns the settings as the file holds them. A file that is not there is
 	// created with the defaults.
 	ReadUnchecked() (settings.Stored, error)
-	// Write puts each setting at its path in the file and leaves the rest of the file as it was.
-	Write(entries []settings.Setting) error
+	// WriteJSON puts each setting at its path in the file, leaves the rest of the file as it was, and
+	// returns the settings in force as JSON with the version, both of this write and of no other. A
+	// write that is persisted and whose answer cannot be made returns an error that wraps
+	// settings.ErrWrittenNotAnswered.
+	WriteJSON(entries []settings.Setting) (content string, version uint64, err error)
 }
 
 // Defaults are the settings of an unconfigured installation.

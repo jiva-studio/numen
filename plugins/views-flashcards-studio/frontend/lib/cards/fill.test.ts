@@ -3,15 +3,8 @@
  * out is the same text on any machine on any day.
  */
 import { describe, expect, it } from 'vitest'
-import {
-  braceField,
-  insert,
-  renderPreview,
-  renameField,
-  sampleValues,
-  getSlots,
-  getUndeclaredSlots,
-} from './fill'
+import { braceField, getSlots } from './braces'
+import { insert, renderPreview, sampleValues, getUndeclaredSlots } from './fill'
 
 /**
  * A review card is shown on two surfaces and each lays it out for itself: this
@@ -203,20 +196,6 @@ describe('insert', () => {
 
   it('takes a caret before the start to the start, the caret with it', () => {
     expect(insert('ab', -3, 'X')).toEqual({ text: '{{X}}ab', caret: 5 })
-  })
-})
-
-describe('renameField', () => {
-  it('rewrites every slot naming the field', () => {
-    expect(renameField('{{A}} {{B}} {{A}}', 'A', 'C')).toBe('{{C}} {{B}} {{C}}')
-  })
-
-  it('leaves the field’s name in the prose alone', () => {
-    expect(renameField('A is {{A}}', 'A', 'C')).toBe('A is {{C}}')
-  })
-
-  it('rewrites no slot whose name is written with space around it', () => {
-    expect(renameField('{{ A }}', 'A', 'C')).toBe('{{ A }}')
   })
 })
 

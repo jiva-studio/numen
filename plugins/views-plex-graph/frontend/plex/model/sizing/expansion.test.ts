@@ -1,7 +1,9 @@
 /** A box widened while the pointer stays on it: how wide, where, and when. */
 import { effectScope, nextTick, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { EXPANSION_DURATION, useExpansion, getExpandedBox } from './expansion'
+import { getExpandedBox } from './expansion'
+import { EXPANSION_DURATION } from './expansionDuration'
+import { useExpansion } from './useExpansion'
 import { stubClock } from '../../../fixtures/clock'
 import type { PlacedNode } from '../../lib/node'
 

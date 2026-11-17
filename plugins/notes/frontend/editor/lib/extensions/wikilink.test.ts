@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { findWikilink, getAddress, getWikilinks } from './wikilink'
+import { findWikilink, getWikilinks } from './wikilink'
+import { getAddress } from './wikilinkAddress'
 
 describe('getAddress', () => {
   it('reads a name as the name scheme', () => {

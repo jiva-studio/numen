@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
@@ -43,11 +44,11 @@ func (r *recordingHost) applySetting(ctx context.Context, pluginID, key string, 
 	return r.apply(ctx, pluginID, key, value)
 }
 
-func (r *recordingHost) SetPerformanceProfile(ctx context.Context, profile string) {
+func (r *recordingHost) SetPerformance(ctx context.Context, performance plugindomain.Performance) {
 	r.mu.Lock()
-	r.profiles = append(r.profiles, profile)
+	r.profiles = append(r.profiles, performance.Profile)
 	r.mu.Unlock()
-	r.PluginConfig.SetPerformanceProfile(ctx, profile)
+	r.PluginConfig.SetPerformance(ctx, performance)
 }
 
 func (r *recordingHost) listUpdates() []string {

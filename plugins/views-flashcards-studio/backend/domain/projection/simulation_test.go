@@ -134,8 +134,10 @@ func TestTheShareRecalledIsReportedOnTheDaysAsked(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(got.Retained.Days(), []int{0, 2}) {
-		t.Errorf("the share is reported on days %v, want [0 2]", got.Retained.Days())
+	for day, want := range []bool{true, false, true, false} {
+		if _, isReported := got.Retained.GetShare(day); isReported != want {
+			t.Errorf("day %d reports a share: %v, want %v", day, isReported, want)
+		}
 	}
 	if share, isReported := got.Retained.GetShare(0); !isReported || share <= 0 || share > 1 {
 		t.Errorf("the share on the first day is %v, reported %v", share, isReported)

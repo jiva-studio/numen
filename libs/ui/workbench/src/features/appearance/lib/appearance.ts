@@ -8,7 +8,7 @@ import type { Caught } from '@numen/ui'
 export type Mode = 'system' | 'light' | 'dark'
 
 /** Where a theme comes from: shipped with the application, the person's own, or any other source. */
-export type ThemeOrigin = 'preset' | 'mine' | 'other'
+type ThemeOrigin = 'preset' | 'mine' | 'other'
 
 /** One theme as the application lists it. */
 export interface Theme {
@@ -25,7 +25,7 @@ export interface Scales<T> {
   readonly textScale: T
 }
 
-export interface Bounds {
+interface Bounds {
   readonly min: number
   readonly max: number
 }

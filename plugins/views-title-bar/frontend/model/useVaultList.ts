@@ -1,5 +1,5 @@
 /** The list of vaults the title opens: its rows, its position and the effect of choosing a row. */
-import { computed, onBeforeUnmount, ref, watch, type ComputedRef, type Ref } from 'vue'
+import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import { measureRect, type ListItem } from '@numen/ui'
 import type { VaultsState } from '@numen/plugin-sdk'
 import { TITLE_BAR_WORDS } from '../lib/words'
@@ -50,25 +50,6 @@ export function useVaultList(sources: VaultListSources): VaultList {
     at: anchor.value,
     asking: triggerWidth.value,
   }))
-
-  function onPressTitle(event: Event): void {
-    if (event.target instanceof Node && trigger.value?.contains(event.target)) {
-      event.stopImmediatePropagation()
-    }
-  }
-
-  // Registered before the list is drawn, so it runs before the list's own press outside: a press of
-  // the title is the title's to answer, which closes the list through the click that follows.
-  watch(
-    isListOpen,
-    (open) => {
-      if (open) globalThis.addEventListener('pointerdown', onPressTitle, true)
-      else globalThis.removeEventListener('pointerdown', onPressTitle, true)
-    },
-    { flush: 'sync' },
-  )
-
-  onBeforeUnmount(() => globalThis.removeEventListener('pointerdown', onPressTitle, true))
 
   function toggle(): void {
     if (isOpen.value) {

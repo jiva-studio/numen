@@ -1,0 +1,52 @@
+name: Milestone
+
+on:
+  pull_request:
+    types: [closed]
+  issues:
+    types: [closed]
+
+concurrency:
+  group: milestone-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  assign:
+    name: Release milestone
+    if: github.event.pull_request.merged == true || (github.event_name == 'issues' && github.event.issue.state_reason == 'completed')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+      EVENT_TIME: ${{ github.event.pull_request.merged_at || github.event.issue.closed_at }}
+      IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
+
+    steps:
+      - name: Put the item in the milestone of the merge or close month unless it has a later one
+        run: |
+          title=$(date -u -d "$EVENT_TIME" +%Y.%m)
+          due=$(date -u -d "${title/./-}-01 +1 month -1 day" +%Y-%m-%dT23:59:59Z)
+          milestone=$(gh api "repos/$REPO/milestones?state=all&per_page=100" --jq ".[] | select(.title == \"$title\") | .number")
+          if [ -z "$milestone" ]; then
+            milestone=$(gh api -X POST "repos/$REPO/milestones" -f title="$title" -f due_on="$due" -f description="Release $title" --jq .number)
+          fi
+
+          assign() {
+            current=$(gh api "repos/$REPO/issues/$1" --jq '.milestone.title // empty')
+            if [ -z "$current" ] || { [[ "$current" =~ ^[0-9]{4}\.[0-9]{2}$ ]] && [[ "$current" < "$title" ]]; }; then
+              gh api -X PATCH "repos/$REPO/issues/$1" -F milestone="$milestone" > /dev/null
+            fi
+          }
+
+          assign "$NUMBER"
+          if [ "$IS_PULL_REQUEST" = true ]; then
+            gh pr view "$NUMBER" --repo "$REPO" --json closingIssuesReferences --jq '.closingIssuesReferences[].number' | while read -r linked; do
+              assign "$linked"
+            done
+          fi

@@ -13,6 +13,7 @@ Feature: Save note
     And the application "editor" starts
     And the person opens the note titled "Shopping list"
 
+  @smoke
   Scenario: The person writes
     When the person writes "bread" in the note titled "Shopping list"
     Then the note titled "Shopping list" on disk has "bread"

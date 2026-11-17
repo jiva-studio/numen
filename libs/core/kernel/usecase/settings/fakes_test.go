@@ -3,6 +3,7 @@ package settings_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -26,25 +27,32 @@ func (s stored) GetConnectionsJSON() (string, error) { return s.connections, nil
 
 // memoryFile is the settings file as the use cases see it, and records what happens to it.
 type memoryFile struct {
-	mu      sync.Mutex
-	current stored
-	writes  []settingsdomain.Setting
-	events  *[]string
-	failure error
+	mu          sync.Mutex
+	current     stored
+	writes      []settingsdomain.Setting
+	events      *[]string
+	failure     error
+	readFailure error
 }
 
 func (f *memoryFile) ReadChecked() (settingsdomain.Stored, error) { return f.current, f.failure }
 
 func (f *memoryFile) ReadUnchecked() (settingsdomain.Stored, error) { return f.current, f.failure }
 
-func (f *memoryFile) Write(entries []settingsdomain.Setting) error {
+func (f *memoryFile) WriteJSON(entries []settingsdomain.Setting) (string, uint64, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.events != nil {
 		*f.events = append(*f.events, "write file")
 	}
 	f.writes = append(f.writes, entries...)
-	return f.failure
+	if f.failure != nil {
+		return "", 0, f.failure
+	}
+	if f.readFailure != nil {
+		return "", 0, fmt.Errorf("%w: %w", settingsdomain.ErrWrittenNotAnswered, f.readFailure)
+	}
+	return "{}", 0, nil
 }
 
 func (f *memoryFile) GetDefaults() settingsdomain.Stored { return stored{values: map[string]any{}} }
@@ -90,10 +98,10 @@ func (h *pluginHost) CheckPluginSetting(pluginID, key string, _ any) error {
 
 func (h *pluginHost) SetSettings(all map[string]map[string]any) { h.settings = all }
 
-func (h *pluginHost) SetPerformanceProfile(_ context.Context, profile string) {
+func (h *pluginHost) SetPerformance(_ context.Context, performance plugin.Performance) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.profiles = append(h.profiles, profile)
+	h.profiles = append(h.profiles, performance.Profile)
 }
 
 func (h *pluginHost) SetPersistHandler(handler plugin.PersistHandler) { h.persist = handler }

@@ -1,15 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { MenuItem } from '../items/item'
+import { createSubmenuAim } from './aim'
 import {
   advancePointerTrack,
-  createSubmenuAim,
   isPointInBox,
   isPointInSafeTriangle,
   readEventPoint,
-  SUBMENU_CLOSE_GRACE_MS,
-  SUBMENU_OPEN_DELAY_MS,
   type MenuBox,
-} from './aim'
+} from './aimGeometry'
+import { SUBMENU_CLOSE_GRACE_MS, SUBMENU_OPEN_DELAY_MS } from './aimTiming'
 
 const PARENT_A: MenuItem = {
   id: 'move',

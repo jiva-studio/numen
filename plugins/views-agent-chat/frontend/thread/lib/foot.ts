@@ -3,6 +3,7 @@
  *
  * No DOM and no clock, only the three numbers an area is read by.
  */
+import { SLACK } from './slack'
 
 /** What the foot is worked out from, in pixels. */
 export interface ScrollMetrics {
@@ -10,9 +11,6 @@ export interface ScrollMetrics {
   readonly scrollHeight: number
   readonly clientHeight: number
 }
-
-/** How near the foot still counts as being at it, in pixels. */
-export const SLACK = 16
 
 /** The scroll offset of an area with its foot in view. */
 export const getFoot = ({ scrollHeight, clientHeight }: ScrollMetrics): number =>

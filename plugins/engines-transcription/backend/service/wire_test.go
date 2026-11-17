@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/speech"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/hostclient"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/ports"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/feed"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
 )
 
@@ -30,9 +32,11 @@ type listeningRecognizer struct {
 	startCh   chan struct{}
 	startOnce sync.Once
 	release   chan struct{}
+	opened    atomic.Int32
 }
 
 func (r *listeningRecognizer) Open(ctx context.Context, _ []byte) (ports.Recording, error) {
+	r.opened.Add(1)
 	r.startOnce.Do(func() { close(r.startCh) })
 	select {
 	case <-r.release:
@@ -69,6 +73,7 @@ type wire struct {
 	transcriber *transcribe.Transcriber
 	registry    *tools.Registry
 	commands    *command.Registry
+	auto        *feed.Automatic
 }
 
 func newWire(t *testing.T) *wire {
@@ -81,7 +86,7 @@ func newWire(t *testing.T) *wire {
 	texts.SetStore(transcribe.PluginID, store)
 	w := &wire{
 		vault: vault, queue: hosttest.NewQueue(), texts: texts,
-		recognizer: &listeningRecognizer{startCh: make(chan struct{}), startOnce: sync.Once{}, release: make(chan struct{})},
+		recognizer: &listeningRecognizer{startCh: make(chan struct{}), startOnce: sync.Once{}, release: make(chan struct{}), opened: atomic.Int32{}},
 	}
 	vaults := func(id domain.VaultID) hostclient.VaultReader { return vault.With(id) }
 	w.transcriber = transcribe.NewTranscriber(hostclient.NewFiles(vaults),
@@ -95,10 +100,13 @@ func newWire(t *testing.T) *wire {
 	if err != nil {
 		t.Fatal(err)
 	}
+	feeds := func(id domain.VaultID) feed.Vault { return feed.Vault{Feed: vault.With(id), Store: store.With(id)} }
 	commands, err := newCommands(w.transcriber)
 	if err != nil {
 		t.Fatal(err)
 	}
+	w.auto = feed.NewAutomatic(newFollower(requests, feeds, func(string, error) {}), requests.GetShownVaultID, func(what string, err error) { t.Errorf("%s: %v", what, err) })
+	t.Cleanup(w.auto.Close)
 	w.registry, w.commands = registry, commands
 	return w
 }

@@ -3,25 +3,13 @@
  */
 import { createApi, type ApiError, type Result, UNAVAILABLE } from '@numen/plugin-sdk'
 import type { DroppedLinks, Links, Outcome } from '../types'
-import { WORDS as words } from '../words'
-import { ErrorCode, SERVICE, type Methods } from './importer'
+import { SERVICE, type Methods } from './importer'
+import { describeError } from './failure'
 
 const BUSY_ATTEMPTS = 5
 const BUSY_DELAY_MS = 1000
 
 const api = createApi(SERVICE)
-
-/** The message displayed to the user for a method failure. */
-export const describeError = (error: ApiError): string => {
-  switch (error.code) {
-    case ErrorCode.notFound:
-      return words.notALink
-    case ErrorCode.failedPrecondition:
-      return words.noVault
-    default:
-      return words.failed
-  }
-}
 
 const call = <M extends keyof Methods>(
   method: M,

@@ -16,12 +16,11 @@ import {
   LARGEST,
   SMALLEST,
   columnHeight,
-  columnWidth,
   countColumns,
   countFilledColumns,
-  countSpreads,
   type Flow,
 } from '../lib/spread'
+import { columnWidth, countSpreads } from '../lib/columnGrid'
 import type { SettledBookProps } from '../lib/props'
 
 const getLine = (text: HTMLElement): number => {

@@ -1,7 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import CardTemplate from './CardTemplate.vue'
-import type { FieldValue } from '../../../../../lib/cards'
 import { getDeclaredFields } from '../../../../../lib/cards'
 import { templateRows, type TemplateRow, type CardModelTemplate } from '../../../../../lib/cards'
 import { sampleValues } from '../../../../../lib/cards'
@@ -18,7 +17,7 @@ const TEMPLATE: CardModelTemplate = {
 const createTemplate = (
   template: CardModelTemplate,
   fields: readonly string[] = FIELDS,
-  sample?: readonly FieldValue[],
+  sample?: ReturnType<typeof sampleValues>,
 ): TemplateRow => {
   const arrangedRow = templateRows(
     [template],

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { atFoot, getFoot, SLACK } from './foot'
+import { atFoot, getFoot } from './foot'
+import { SLACK } from './slack'
 
 const area = (scrollTop: number, scrollHeight = 500, clientHeight = 100) => ({
   scrollTop,

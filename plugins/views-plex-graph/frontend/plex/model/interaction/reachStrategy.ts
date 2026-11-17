@@ -9,7 +9,7 @@
 import { useLongPress, LONG_PRESS_DELAY } from './longPress'
 
 /** The node a strategy is watching, in the only two terms it needs. */
-export interface ReachSite {
+interface ReachSite {
   readonly ready: () => boolean
   readonly reach: (event: PointerEvent) => void
 }

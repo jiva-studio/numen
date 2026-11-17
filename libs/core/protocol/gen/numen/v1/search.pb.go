@@ -517,20 +517,16 @@ type SearchResult struct {
 	// The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
 	// where none holds, and for a source that is not a note.
 	TabKind string `protobuf:"bytes,11,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
-	// The chunk that was hit, as the host names it. A plugin passes it to
-	// HostSearchService.ScoreChunks. Empty in the answer to the window.
-	ChunkId string `protobuf:"bytes,12,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
-	// The cosine similarity of the query with the best small chunk of this
-	// result that the search by meaning returned. Absent when the search by
-	// meaning did not return this result.
-	Similarity *float64 `protobuf:"fixed64,13,opt,name=similarity,proto3,oneof" json:"similarity,omitempty"`
-	// The negated bm25 score of the best hit of the words of the query in this
-	// result: positive, higher is better, comparable only within one query.
-	// Absent when the search by words did not return this result.
-	WordScore *float64 `protobuf:"fixed64,14,opt,name=word_score,json=wordScore,proto3,oneof" json:"word_score,omitempty"`
-	// The whole text of the chunk the text is cut from. Set only in the answer
-	// to a HostSearchService.SearchText that sets is_whole_text.
-	WholeText     string `protobuf:"bytes,15,opt,name=whole_text,json=wholeText,proto3" json:"whole_text,omitempty"`
+	// note, pdf, epub, audio, video, image or file. Set by HostSearchService.GetSearch.
+	Kind string `protobuf:"bytes,16,opt,name=kind,proto3" json:"kind,omitempty"`
+	// The note title, else the file name without its extension. Set by HostSearchService.GetSearch.
+	Title string `protobuf:"bytes,17,opt,name=title,proto3" json:"title,omitempty"`
+	// The score of the result; absent for a file matched by document conditions only. Set by
+	// HostSearchService.GetSearch.
+	Score *float64 `protobuf:"fixed64,18,opt,name=score,proto3,oneof" json:"score,omitempty"`
+	// The result is a whole file: byte_range is absent and text is the start of the file. Set by
+	// HostSearchService.GetSearch.
+	IsWholeFile   bool `protobuf:"varint,19,opt,name=is_whole_file,json=isWholeFile,proto3" json:"is_whole_file,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -635,32 +631,32 @@ func (x *SearchResult) GetTabKind() string {
 	return ""
 }
 
-func (x *SearchResult) GetChunkId() string {
+func (x *SearchResult) GetKind() string {
 	if x != nil {
-		return x.ChunkId
+		return x.Kind
 	}
 	return ""
 }
 
-func (x *SearchResult) GetSimilarity() float64 {
-	if x != nil && x.Similarity != nil {
-		return *x.Similarity
-	}
-	return 0
-}
-
-func (x *SearchResult) GetWordScore() float64 {
-	if x != nil && x.WordScore != nil {
-		return *x.WordScore
-	}
-	return 0
-}
-
-func (x *SearchResult) GetWholeText() string {
+func (x *SearchResult) GetTitle() string {
 	if x != nil {
-		return x.WholeText
+		return x.Title
 	}
 	return ""
+}
+
+func (x *SearchResult) GetScore() float64 {
+	if x != nil && x.Score != nil {
+		return *x.Score
+	}
+	return 0
+}
+
+func (x *SearchResult) GetIsWholeFile() bool {
+	if x != nil {
+		return x.IsWholeFile
+	}
+	return false
 }
 
 var File_numen_v1_search_proto protoreflect.FileDescriptor
@@ -691,7 +687,7 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\tsearch_id\x18\x01 \x01(\tR\bsearchId\"\x16\n" +
 	"\x14CancelSearchResponse\"B\n" +
 	"\x12SearchTextResponse\x12,\n" +
-	"\x05found\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\x05found\"\xf8\x03\n" +
+	"\x05found\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\x05found\"\x90\x04\n" +
 	"\fSearchResult\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
@@ -706,18 +702,16 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x04type\x18\b \x01(\tR\x04type\x12\x1a\n" +
 	"\bselector\x18\n" +
 	" \x01(\tR\bselector\x12\x19\n" +
-	"\btab_kind\x18\v \x01(\tR\atabKind\x12\x19\n" +
-	"\bchunk_id\x18\f \x01(\tR\achunkId\x12#\n" +
-	"\n" +
-	"similarity\x18\r \x01(\x01H\x01R\n" +
-	"similarity\x88\x01\x01\x12\"\n" +
-	"\n" +
-	"word_score\x18\x0e \x01(\x01H\x02R\twordScore\x88\x01\x01\x12\x1d\n" +
-	"\n" +
-	"whole_text\x18\x0f \x01(\tR\twholeTextB\a\n" +
-	"\x05_noteB\r\n" +
-	"\v_similarityB\r\n" +
-	"\v_word_score*\x88\x01\n" +
+	"\btab_kind\x18\v \x01(\tR\atabKind\x12\x12\n" +
+	"\x04kind\x18\x10 \x01(\tR\x04kind\x12\x14\n" +
+	"\x05title\x18\x11 \x01(\tR\x05title\x12\x19\n" +
+	"\x05score\x18\x12 \x01(\x01H\x01R\x05score\x88\x01\x01\x12\"\n" +
+	"\ris_whole_file\x18\x13 \x01(\bR\visWholeFileB\a\n" +
+	"\x05_noteB\b\n" +
+	"\x06_scoreJ\x04\b\f\x10\rJ\x04\b\r\x10\x0eJ\x04\b\x0e\x10\x0fJ\x04\b\x0f\x10\x10R\bchunk_idR\n" +
+	"similarityR\n" +
+	"word_scoreR\n" +
+	"whole_text*\x88\x01\n" +
 	"\n" +
 	"SearchMode\x12\x1b\n" +
 	"\x17SEARCH_MODE_UNSPECIFIED\x10\x00\x12\x15\n" +

@@ -57,6 +57,8 @@ type Calendar interface {
 	GetStart(at time.Time) time.Time
 	GetEnd(at time.Time) time.Time
 	GetName(at time.Time) string
+	// GetDate is the date of the day that contains at, as a plain date.
+	GetDate(at time.Time) time.Time
 	// GetEndOfDate returns the instant the review day of this calendar date ends.
 	GetEndOfDate(date time.Time) time.Time
 }

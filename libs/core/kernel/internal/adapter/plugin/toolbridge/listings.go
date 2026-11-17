@@ -27,18 +27,25 @@ type listing struct {
 	tools   *v1.ListToolsResponse
 }
 
-// listings keeps the ListTools answer of every plugin by plugin id and version, in memory and in files.
+// listings keeps the ListTools answer of every plugin by plugin id, version and revision of the catalog of
+// search functions the tool descriptions name, in memory and in files.
 type listings struct {
 	files    ListingFiles
+	revision func() string
 	mu       sync.Mutex
 	byPlugin map[string]listing
 }
 
-func newListings(files ListingFiles) *listings {
-	return &listings{files: files, byPlugin: map[string]listing{}}
+func newListings(files ListingFiles, revision func() string) *listings {
+	return &listings{files: files, revision: revision, byPlugin: map[string]listing{}}
+}
+
+func (l *listings) getKey(version string) string {
+	return version + "+" + l.revision()
 }
 
 func (l *listings) get(pluginID, version string) (*v1.ListToolsResponse, bool) {
+	version = l.getKey(version)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if kept, isKept := l.byPlugin[pluginID]; isKept && kept.version == version {
@@ -53,6 +60,7 @@ func (l *listings) get(pluginID, version string) (*v1.ListToolsResponse, bool) {
 }
 
 func (l *listings) put(pluginID, version string, tools *v1.ListToolsResponse) {
+	version = l.getKey(version)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.byPlugin[pluginID] = listing{version: version, tools: tools}

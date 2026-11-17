@@ -22,7 +22,7 @@ func relationsOf(n domain.NoteGraph) []string {
 func relatedNotesOf(t *testing.T, files map[string]string, path string) domain.NoteGraph {
 	t.Helper()
 	db, v := newIndexedVault(t, files)
-	n, err := query.NewListRelatedNotes(db.NoteQueries(), db.NoteQueries()).
+	n, err := query.NewListRelatedNotes(db.NoteQueryReads(), db.NoteQueries()).
 		Execute(t.Context(), v, path, 1)
 	if err != nil {
 		t.Fatal(err)
@@ -304,7 +304,7 @@ func TestRelatedNotesStayInsideTheirVault(t *testing.T) {
 		shared: "---\ntitle: Entropy elsewhere\nid: 01M02ACGM0FYMSXNDP29C90JN2\n---\n\n# Entropy elsewhere\n",
 	}))
 
-	n, err := query.NewListRelatedNotes(db.NoteQueries(), db.NoteQueries()).
+	n, err := query.NewListRelatedNotes(db.NoteQueryReads(), db.NoteQueries()).
 		Execute(t.Context(), here, "Area.md", 1)
 	if err != nil {
 		t.Fatal(err)

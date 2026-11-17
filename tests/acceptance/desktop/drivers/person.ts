@@ -18,7 +18,7 @@ import { PlexDriver } from './plex.js'
 import { ReviewDriver } from './review.js'
 import { PluginDriver } from './plugins.js'
 import { ReaderDriver } from './reader.js'
-import { Scenario } from './scenario.js'
+import { type Recording, Scenario } from './scenario.js'
 import { ServiceDriver } from './services.js'
 import { SearchDriver } from './search.js'
 import { SettingsDriver } from './settings.js'
@@ -51,8 +51,8 @@ export class Person {
   readonly deck: DeckDriver
   readonly scenario: Scenario
 
-  constructor(page: Page, viewport: ViewportSize | null) {
-    this.scenario = new Scenario(page, viewport)
+  constructor(page: Page, viewport: ViewportSize | null, recording?: Recording, isLive = false) {
+    this.scenario = new Scenario(page, viewport, recording, isLive)
     this.application = new ApplicationDriver(this.scenario)
     this.tab = new TabDriver(this.scenario)
     this.note = new NoteDriver(this.scenario)

@@ -77,4 +77,6 @@ type Settings struct {
 	Captions    []string
 	IsAutomatic bool
 	CopyMaxSize int64
+
+	IsTextDownloadAutomatic bool
 }

@@ -21,7 +21,7 @@ func newEnvHandler(t *testing.T, vars map[string]string) (http.Handler, error) {
 	for name, value := range vars {
 		t.Setenv(name, value)
 	}
-	return servertest.NewHandler(vars, Mount)
+	return servertest.NewHandler(vars, NewApp().Mount)
 }
 
 func postDocument(t *testing.T, baseURL, token, body string) int {
@@ -89,7 +89,7 @@ func TestServerCloseClosesTheTextWriter(t *testing.T) {
 	texts, writer, _ := testsupport.NewVault(t, "books/tiny.pdf", "tiny.pdf")
 	reader := newReader(t, newTestdataVault(t), texts)
 	srv := server.New()
-	if err := mount(srv, reader, writer, func(string, error) {}); err != nil {
+	if err := mount(srv, reader, writer, extract.NewFollower(writer, nil, nil), func(string, error) {}); err != nil {
 		t.Fatalf("mount: %v", err)
 	}
 	if err := srv.Close(); err != nil {

@@ -31,8 +31,6 @@ const Ahead = projection.Ahead
 // MostAhead is how far ahead a goal of a date is projected.
 const MostAhead = projection.MostAhead
 
-func GetOutsideGrid() CurvePoint { return projection.GetOutsideGrid() }
-
 // ProjectCurve is the simulator behind the one control of a preset.
 //
 // It reads the vault's answers once and projects them forward at every place of

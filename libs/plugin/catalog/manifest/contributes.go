@@ -51,6 +51,7 @@ type Contributes struct {
 	DropHandlers     []DropHandler
 	ConnectionTypes  []ConnectionType
 	Operations       []Operation
+	SearchFunctions  SearchFunctions
 }
 
 // DropHandler lists the data types of a drag from outside the window that the plugin's frontend takes.
@@ -122,6 +123,7 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, m.listDropHandlerIssues()...)
 	issues = append(issues, m.listConnectionTypeIssues()...)
 	issues = append(issues, m.listOperationIssues()...)
+	issues = append(issues, m.listSearchFunctionIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
 

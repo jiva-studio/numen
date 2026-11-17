@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createMockVaultTexts } from '@numen/plugin-sdk/testing'
-import { createTranscripts, findSegmentTime, getCues, getSegments } from './transcripts'
+import { createTranscripts } from './transcripts'
+import { findSegmentTime, getCues, getSegments } from './segments'
 
 const transcript = {
   id: 'md.test.transcription/k',

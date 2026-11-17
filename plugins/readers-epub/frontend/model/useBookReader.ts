@@ -9,10 +9,9 @@ import { getContents, getDocumentAtOffset, getPageNumber } from '../lib/paginati
 import { books as servedBooks } from '../api/wire'
 import { useBookDocument } from './useBookDocument'
 import { useBookHighlights } from './useBookHighlights'
-import type { Book, Books, BookWords, SpineDocument } from '../types'
+import type { Books, BookWords, SpineDocument } from '../types'
 
-export type { Book, Books, BookWords, SpineDocument }
-export { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
+export type { Books, BookWords, SpineDocument }
 export { useBookDocument } from './useBookDocument'
 
 export type BookReaderState = ReturnType<typeof useBookReader>

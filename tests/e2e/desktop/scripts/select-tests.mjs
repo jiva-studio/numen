@@ -8,7 +8,8 @@
 // under tests/ (`shell/lifecycle/chaos.spec.ts`). The token `flashcards` runs the flashcards window's
 // tests in tests/e2e/desktop/flashcards/ and no spec file of tests/. A scope of tokens runs them and tests/shell/.
 // A change to features/ or tests/acceptance/ adds the token `acceptance`, which runs the acceptance
-// scenarios and no spec file; `all` runs them too.
+// scenarios and no spec file; `all` runs them too. The token `specs` runs every spec and the flashcards
+// tests and no acceptance scenario.
 //
 // `scope` reads changed paths, relative to the repository root, and prints `scope=<scope>`. A
 // change to plugins/<dir>/ selects the tests of that plugin: tests/plugins/<id without md.numen.>/,
@@ -41,6 +42,7 @@ const MAX_SHARDS = 4
 const ID_PREFIX = 'md.numen.'
 const FLASHCARDS = 'flashcards'
 const ACCEPTANCE = 'acceptance'
+const SPECS = 'specs'
 
 /** Tests of a plugin beyond its own folder and the spec files that name its id, as scope tokens. */
 export const PLUGIN_TESTS = {
@@ -56,12 +58,12 @@ export const PLUGIN_TESTS = {
   'readers-pdf': [ACCEPTANCE],
   'tools-media-importer': [ACCEPTANCE],
   'tools-proofreading': [ACCEPTANCE],
+  'tools-saved-search': [ACCEPTANCE],
   'tools-updater': [ACCEPTANCE],
   'views-agent-chat': ['agents.chat', ACCEPTANCE],
   'views-flashcards-studio': [FLASHCARDS, ACCEPTANCE],
   'views-media-viewer': [ACCEPTANCE],
   'views-plex-graph': [ACCEPTANCE],
-  'views-saved-search': [ACCEPTANCE],
   'views-status-bar': [ACCEPTANCE],
 }
 
@@ -70,7 +72,7 @@ const isAcceptanceInput = (file) => /^(features|tests\/acceptance)\//.test(file)
 
 /** Paths the desktop window and its tests are built from; a change elsewhere runs no test. */
 const DESKTOP =
-  /^(apps\/desktop\/|libs\/|plugins\/|tests\/e2e\/desktop\/|tests\/vault\/|tools\/(build-plugin-index|shared)\/|\.github\/(workflows\/desktop-e2e\.yml$|actions\/(setup-playwright|setup-webkit|build-ui)\/)|(Makefile|package\.json|package-lock\.json|go\.work(\.sum)?|\.node-version)$)/
+  /^(apps\/desktop\/|libs\/|plugins\/|tests\/e2e\/desktop\/|tests\/vault\/|tools\/(build-plugin-index|shared)\/|\.github\/(workflows\/desktop-e2e\.yml$|actions\/(setup-playwright|setup-webkit|build-ui|fetch-e2e-build)\/|scripts\/(hash|run)-e2e-build\.sh$)|(Makefile|package\.json|package-lock\.json|go\.work(\.sum)?|\.node-version)$)/
 
 /** Unit tests, stories and linter or unit-test configs outside the e2e suite. */
 const NON_E2E_TEST_OR_CONFIG =
@@ -185,7 +187,7 @@ export const getScope = (files) => {
  */
 export const getScopePaths = (scope) => {
   const tokens = scope.split(' ').filter(Boolean)
-  if (tokens.includes('all')) return undefined
+  if (tokens.includes('all') || tokens.includes(SPECS)) return undefined
   const named = tokens.filter((one) => one !== 'none' && one !== ACCEPTANCE)
   if (named.length === 0) return []
   return [...new Set(['tests/shell/', ...named.filter((one) => one !== FLASHCARDS).map(getTokenPath)])].sort((a, b) =>
@@ -212,7 +214,7 @@ export const getPlan = (scope) => {
     `desktop=${jobs.length > 0}`,
     `paths=${(paths ?? []).join(' ')}`,
     `flashcards=${flashcards}`,
-    `acceptance=${!paths || scope.split(' ').includes(ACCEPTANCE)}`,
+    `acceptance=${scope.split(' ').some((one) => one === 'all' || one === ACCEPTANCE)}`,
     `matrix=${JSON.stringify({ include: jobs })}`,
   ]
 }

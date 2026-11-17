@@ -2,8 +2,6 @@ package projection
 
 import (
 	"cmp"
-	"maps"
-	"slices"
 	"time"
 )
 
@@ -46,9 +44,6 @@ func (r RetentionByDay) GetShare(day int) (float64, bool) {
 	share, answers := r.on[day]
 	return share, answers
 }
-
-// Days is every day this answers for, in order.
-func (r RetentionByDay) Days() []int { return slices.Sorted(maps.Keys(r.on)) }
 
 func addRetention(r *RetentionByDay, day int, share float64) {
 	if r.on == nil {

@@ -862,7 +862,7 @@ func TestRequestAndStartErrorBranches(t *testing.T) {
 		t.Fatalf("expected path required error, got %v", err)
 	}
 
-	// Create while running returns stateRunning even when a whole transcript version exists.
+	// Create while running returns StateRunning even when a whole transcript version exists.
 	s.putTranscript(t, true)
 	key, claimed := s.transcriber.claim("Lectures", lecture)
 	if !claimed {
@@ -870,8 +870,8 @@ func TestRequestAndStartErrorBranches(t *testing.T) {
 	}
 	runningOut, err := s.requests.Create(ctx, "Lectures", lecture)
 	s.transcriber.clearRunning(key)
-	if err != nil || runningOut.State != stateRunning {
-		t.Fatalf("expected stateRunning while claimed, got %+v, %v", runningOut, err)
+	if err != nil || runningOut.State != StateRunning {
+		t.Fatalf("expected StateRunning while claimed, got %+v, %v", runningOut, err)
 	}
 
 	// Create when ListVersions fails returns the error.

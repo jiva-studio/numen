@@ -8,11 +8,9 @@
 import MarkdownIt, { type Token } from 'markdown-it'
 import { h, type VNode } from 'vue'
 import { linkPieces, type LinkPieces, type LinkPiecesEnv } from '@/shared/lib/text/marks'
+import { WORD } from './word'
 
 const marks = new MarkdownIt({ html: false, linkify: true }).use(linkPieces)
-
-/** The class every word is drawn in. */
-export const WORD = 'prose__word'
 
 /** The attribute marking a link with no target. */
 const REACHES = 'data-reaches'

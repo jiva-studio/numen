@@ -7,6 +7,7 @@
  */
 import type { NodeId, Side } from './node'
 import { getPlaceInBox, type Position, type Rect } from './rect'
+import { DEFAULT_DROP, type DropOptions } from './dropOptions'
 
 /**
  * The place a tab is dropped at if released now, and the part of the screen that
@@ -17,13 +18,6 @@ export type TabDropTarget = { readonly box: Rect } & (
   | { readonly kind: 'pane'; readonly pane: NodeId; readonly side: Side }
   | { readonly kind: 'strip'; readonly pane: NodeId; readonly slot: number }
 )
-
-export interface DropOptions {
-  readonly share: number
-  readonly limit: number
-}
-
-export const DEFAULT_DROP: DropOptions = { share: 0.2, limit: 96 }
 
 /**
  * The side that a place requests.

@@ -6,13 +6,17 @@ import (
 )
 
 func getPluginLookups(db *Index) hostvault.Lookups {
-	queries := db.NoteQueries()
+	queries, frontmatter, feed := db.NoteQueries(), db.NoteQueryReads(), db.FileChanges()
 	return hostvault.Lookups{
 		Notes: hostvault.Notes{
 			Notes:      query.NewGetNotes(queries),
 			Types:      query.NewGetTypes(queries),
 			NamedPaths: query.NewGetNamedPaths(queries),
 			TypedPaths: query.NewGetPathsOfType(queries),
+		},
+		Changes: hostvault.Changes{
+			Frontmatter: query.NewReadFrontmatter(frontmatter, feed, query.GetFrontmatterLimits()),
+			FileChanges: query.NewListFileChanges(feed),
 		},
 		Links: hostvault.Links{
 			Links:     query.NewGetLinks(queries),

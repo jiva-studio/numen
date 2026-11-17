@@ -18,7 +18,7 @@ func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Le
 		Lent: services,
 		Tools: func() hostendpoint.PluginTools {
 			toolHost := plugin.NewToolHost(host.Activation, host.Registry)
-			return toolbridge.NewCatalog(toolHost, toolHost, host.Storage, testsupport.NewClock(), io.Discard)
+			return toolbridge.NewCatalog(toolHost, toolHost, host.Storage, func() string { return "r1" }, testsupport.NewClock(), io.Discard)
 		},
 	}
 	host.Endpoint.Replace(hostendpoint.NewServer(address, callers))

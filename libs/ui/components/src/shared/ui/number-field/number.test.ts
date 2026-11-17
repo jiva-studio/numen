@@ -6,17 +6,17 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
+import { useNumberEntry } from './number'
 import {
-  isAllowed,
-  parseNumber,
-  isPartialNumber,
-  snapToBounds,
-  isTextForValue,
-  stepBy,
-  stepForKey,
   formatNumber,
-  useNumberEntry,
-} from './number'
+  isAllowed,
+  isPartialNumber,
+  isTextForValue,
+  parseNumber,
+  stepForKey,
+} from './numberText'
+import { snapToBounds } from './snapToBounds'
+import { stepBy } from './stepBy'
 import type { Bounds } from '@/shared/lib/math/bounds'
 
 const BOUNDS: Bounds = { min: 0, max: 240, step: 5 }

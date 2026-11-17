@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
-import { emptyRow, readCell, readTable, getRows, getWidth, withColumn, writeCell } from './table'
+import { emptyRow, readCell, readTable, getRows, withColumn, writeCell } from './table'
+import { getWidth } from './width'
 import { createState } from '../../fixtures/state'
 
 const getTable = (state: EditorState) => {

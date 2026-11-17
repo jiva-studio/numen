@@ -80,8 +80,8 @@ func OpenWatching(
 		return nil, err
 	}
 	b.onReadError = onReadError
-	b.reportReadError(readErr)
 	b.stopWatch = plugins.WatchPluginConfig(b.service.PluginID, b.announceDescriptionChange)
+	b.reportReadError(readErr)
 	return b, nil
 }
 

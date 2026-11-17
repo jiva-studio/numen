@@ -6,7 +6,9 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
-import { RESIZING, isSameShares, useBranchResize } from './resize'
+import { isSameShares } from '../lib/sameShares'
+import { useBranchResize } from './resize'
+import { RESIZING } from './resizing'
 
 const create = (shares: readonly number[] = [0.5, 0.5], hasFrame = true) => {
   const resize = vi.fn<(branch: string, shares: readonly number[]) => void>()

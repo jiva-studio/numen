@@ -2,6 +2,7 @@ package toolbridge_test
 
 import (
 	"context"
+	"io"
 	"maps"
 	"net"
 	"net/http"
@@ -17,7 +18,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
 const (
@@ -336,5 +339,38 @@ func TestAPluginWithOnlyVaultWriteOffersNoTools(t *testing.T) {
 
 	if names := getNames(newCatalog(host, filesIn(t, "")).ListTools(t.Context(), callerPlugin)); len(names) != 0 {
 		t.Errorf("a plugin with only vault:write offers %v", names)
+	}
+}
+
+func TestAListingOfAnotherCatalogRevisionIsAskedAgain(t *testing.T) {
+	dir := t.TempDir()
+	newCatalog(newTwoPlugins(t), filesIn(t, dir)).ListTools(t.Context(), callerPlugin)
+
+	host := newTwoPlugins(t)
+	names := getNames(newCatalogOf(host, filesIn(t, dir), "r2").ListTools(t.Context(), callerPlugin))
+
+	if !slices.Equal(names, []string{"bed_list", "tree_count"}) {
+		t.Errorf("the catalog lists %v", names)
+	}
+	if starts := host.takeStarts(); len(starts) != 2 {
+		t.Errorf("the catalog of another revision started %v, want both plugins", starts)
+	}
+}
+
+func TestTheListingsAreAskedAgainWhenTheRevisionOfTheRunningCatalogChanges(t *testing.T) {
+	host := newTwoPlugins(t)
+	revision := "r1"
+	catalog := toolbridge.NewCatalog(host, host, filesIn(t, t.TempDir()), func() string { return revision }, testsupport.NewClock(), io.Discard)
+	catalog.ListTools(t.Context(), callerPlugin)
+	host.takeStarts()
+
+	catalog.ListTools(t.Context(), callerPlugin)
+	if starts := host.takeStarts(); len(starts) != 0 {
+		t.Errorf("an unchanged revision started %v", starts)
+	}
+	revision = "r2"
+	catalog.ListTools(t.Context(), callerPlugin)
+	if starts := host.takeStarts(); len(starts) != 2 {
+		t.Errorf("a changed revision started %v, want both plugins", starts)
 	}
 }

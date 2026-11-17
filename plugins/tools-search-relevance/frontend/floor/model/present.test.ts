@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { FLOOR_SOURCE } from './codes'
 import { CALIBRATION, createState } from './fixtures'
+import { formatCalibrationSummary } from './calibrationSummary'
 import {
   describeProbe,
-  formatCalibrationSummary,
   formatNoise,
   getCalibrationNote,
   getErrorMessage,

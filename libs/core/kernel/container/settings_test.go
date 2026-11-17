@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 
@@ -35,7 +36,7 @@ func writeSettings(t *testing.T, output string) (Config, string) {
 func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 	cfg, path := writeSettings(t, `{"app": {"appearance": {"theme": "mine:sea"}}}`)
 
-	content, response, err := readSettings(settingsOf(cfg))()
+	content, response, _, err := readSettings(settingsOf(cfg))()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,8 +184,8 @@ type profileHost struct {
 	profiles []string
 }
 
-func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
-	p.profiles = append(p.profiles, profile)
+func (p *profileHost) SetPerformance(_ context.Context, performance plugindomain.Performance) {
+	p.profiles = append(p.profiles, performance.Profile)
 }
 
 func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
@@ -214,5 +215,20 @@ func TestApplySettingsKeepsTheOriginalConfiguration(t *testing.T) {
 	}
 	if got := before.GetMachine().ResolvedCompute; got.Workers != 0 || got.Profile != "" {
 		t.Errorf("the configuration the call was made on changed to %+v", got)
+	}
+}
+
+func TestThePluginsReceiveTheBudgetAndTheNicenessTheHostResolved(t *testing.T) {
+	hw := machinedomain.Specs{LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8}
+	got := getPluginPerformance(machinedomain.ResolveCompute(machinedomain.ProfileHigh, hw))
+
+	if want := (plugindomain.Performance{Profile: "high", Threads: 12, Nice: 5}); got != want {
+		t.Errorf("the plugins receive %+v, want %+v", got, want)
+	}
+}
+
+func TestEcoReachesThePluginsAsOneThreadAtTheLowestPriority(t *testing.T) {
+	if got := resolveProfile(machinedomain.ProfileEco); got != (plugindomain.Performance{Profile: "eco", Threads: 1, Nice: 19}) {
+		t.Errorf("eco resolves to %+v", got)
 	}
 }

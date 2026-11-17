@@ -3,9 +3,7 @@
  * and the columns are set again when it arrives and takes its own, so the columns are read only
  * once the pictures in them have arrived.
  */
-
-/** The longest the columns wait for the pictures of a document, in milliseconds. */
-export const PICTURES_WAIT = 2_000
+import { PICTURES_WAIT } from './picturesWait'
 
 /** The pictures in the text that have neither arrived nor failed. */
 export function findPendingImages(text: HTMLElement): HTMLImageElement[] {

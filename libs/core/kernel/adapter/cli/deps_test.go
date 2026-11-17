@@ -179,11 +179,11 @@ func (p vaultParts) build() cli.Vaults {
 func (p vaultParts) indexedOver(rows vaultport.VaultRepository) cli.Indexed {
 	find := registry.NewFind(p.ports.Lookup).Execute
 	unregister := vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
-	return cli.Indexed{
+	return cli.Indexed{Changes: cli.VaultChanges{
 		Rename:     vaults.NewRenameByName(find, vaults.NewRename(p.ports.Vaults, p.ports.Saver, rows)),
 		Unregister: vaults.NewUnregisterByName(find, unregister),
 		Erase:      vaults.NewEraseByName(find, vaults.NewErase(p.identity, p.trash, unregister)),
-	}
+	}}
 }
 
 func portsOfFile(list *appstate.VaultRegistry) registry.Ports {

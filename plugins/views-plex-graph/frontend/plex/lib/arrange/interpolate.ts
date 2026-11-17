@@ -10,7 +10,8 @@ import type { PlexFrame } from '../frame'
 import type { PlacedNode, Position } from '../node'
 import { clamp01, lerp, lerpExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
-import { routeEdges, createRouting, type Routing } from './edges/routing'
+import { createRouting, type Routing } from './edges/routing'
+import { routeEdges } from './edges/routeEdges'
 import type { PlexEdge } from '../../../types'
 
 /** What a settled arrangement specifies for the title an edge carries. */

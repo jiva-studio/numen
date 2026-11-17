@@ -44,10 +44,11 @@ updates:
       - /plugins/tools-index-stats
       - /plugins/tools-media-importer
       - /plugins/tools-proofreading
+      - /plugins/tools-saved-search
       - /plugins/tools-search-relevance
+      - /plugins/tools-taxonomy
       - /plugins/tools-updater
       - /plugins/views-flashcards-studio
-      - /plugins/views-saved-search
     schedule:
       interval: monthly
     cooldown:

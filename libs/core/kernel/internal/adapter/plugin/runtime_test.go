@@ -20,6 +20,17 @@ type fakeCatalog struct {
 	resolved map[string]plugindomain.ResolvedDependency
 	err      error
 	calls    []manifest.DependencyRequirement
+	resolves []manifest.DependencyRequirement
+	state    plugindomain.DependencyState
+}
+
+func (f *fakeCatalog) Resolve(req manifest.DependencyRequirement) (plugindomain.ResolvedDependency, plugindomain.DependencyState, error) {
+	f.resolves = append(f.resolves, req)
+	state := f.state
+	if state == "" {
+		state = plugindomain.DependencyStateReady
+	}
+	return f.resolved[req.ID], state, nil
 }
 
 func (f *fakeCatalog) CanProvision(req manifest.DependencyRequirement) bool {
@@ -35,20 +46,27 @@ func (f *fakeCatalog) Provision(_ context.Context, req manifest.DependencyRequir
 	return f.resolved[req.ID], f.err
 }
 
-func newONNXCatalog() *fakeCatalog {
+// The runtime the fakes provision and the variables they hand it on by.
+const (
+	sampleRuntime   = "sample-runtime"
+	envSampleLib    = "SAMPLE_RUNTIME_LIB"
+	envSampleDevice = "SAMPLE_RUNTIME_DEVICE"
+)
+
+func newRuntimeCatalog() *fakeCatalog {
 	return &fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
-		plugindomain.RuntimeONNX: {ID: plugindomain.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: "/models/libonnxruntime.so", process.EnvONNXProvider: "coreml"}},
+		sampleRuntime: {ID: sampleRuntime, EnvVars: map[string]string{envSampleLib: "/models/libsample.so", envSampleDevice: "coreml"}},
 	}}
 }
 
 func newRuntimeRequirements(dir string) []manifest.DependencyRequirement {
 	return manifest.Manifest{Dependencies: []manifest.DependencyRequirement{
-		{ID: plugindomain.RuntimeONNX, Kind: manifest.DependencyKindRuntime},
+		{ID: sampleRuntime, Kind: manifest.DependencyKindRuntime},
 	}}.GetDependencyRequirements(dir, nil)
 }
 
 func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {
-	runtimeVars := []string{process.EnvONNXRuntimeLib + "=/models/libonnxruntime.so", process.EnvONNXProvider + "=coreml"}
+	runtimeVars := []string{envSampleLib + "=/models/libsample.so", envSampleDevice + "=coreml"}
 	with := process.GetPluginVars("md.numen.a", process.LaunchEnvironment{Port: 5, Token: "t", RuntimeVars: runtimeVars})
 	for _, want := range runtimeVars {
 		if !slices.Contains(with, want) {
@@ -57,7 +75,7 @@ func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {
 	}
 	defaultVars := process.GetPluginVars("md.numen.a", process.LaunchEnvironment{Port: 5, Token: "t"})
 	for _, entry := range defaultVars {
-		if strings.HasPrefix(entry, "NUMEN_ONNX_") {
+		if strings.HasPrefix(entry, "SAMPLE_RUNTIME_") {
 			t.Errorf("environment %v names a runtime the plugin did not declare", defaultVars)
 		}
 	}
@@ -70,17 +88,20 @@ func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	catalog := newONNXCatalog()
+	catalog := newRuntimeCatalog()
 	host.Dependencies.Replace(catalog)
 
 	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.calls) != 1 || catalog.calls[0].PluginDir != "/plugins/a" || catalog.calls[0].Kind != manifest.DependencyKindRuntime {
-		t.Errorf("the runtime was provisioned as %+v", catalog.calls)
+	if len(catalog.resolves) != 1 || catalog.resolves[0].PluginDir != "/plugins/a" || catalog.resolves[0].Kind != manifest.DependencyKindRuntime {
+		t.Errorf("the runtime was resolved as %+v", catalog.resolves)
 	}
-	for _, want := range []string{"NUMEN_ONNX_RUNTIME_LIB=/models/libonnxruntime.so", "NUMEN_ONNX_PROVIDER=coreml"} {
+	if len(catalog.calls) != 0 {
+		t.Errorf("the launch provisioned %+v, want nothing downloaded at launch", catalog.calls)
+	}
+	for _, want := range []string{"SAMPLE_RUNTIME_LIB=/models/libsample.so", "SAMPLE_RUNTIME_DEVICE=coreml"} {
 		if !slices.Contains(vars, want) {
 			t.Errorf("environment %v lacks %s", vars, want)
 		}
@@ -115,41 +136,71 @@ func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	catalog := newONNXCatalog()
+	catalog := newRuntimeCatalog()
 	host.Dependencies.Replace(catalog)
 
 	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.calls) != 0 {
-		t.Errorf("the runtime was provisioned %d times for a plugin that declares none", len(catalog.calls))
+	if len(catalog.calls) != 0 || len(catalog.resolves) != 0 {
+		t.Errorf("the runtime was provisioned %d times and resolved %d times for a plugin that declares none", len(catalog.calls), len(catalog.resolves))
 	}
 	for _, entry := range vars {
-		if strings.HasPrefix(entry, "NUMEN_ONNX_") {
+		if strings.HasPrefix(entry, "SAMPLE_RUNTIME_") {
 			t.Errorf("environment %v names a runtime the plugin did not declare", vars)
 		}
 	}
 }
 
-func TestAPluginIsNotLaunchedWhenItsRuntimeFailsToProvision(t *testing.T) {
+func TestAPluginIsLaunchedWhenItsRuntimeCannotBeDownloaded(t *testing.T) {
 	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
-	failure := errors.New("the archive is not the pinned one")
-	catalog := newONNXCatalog()
-	catalog.err = failure
+	catalog := newRuntimeCatalog()
+	catalog.err = errors.New("the archive is not the pinned one")
 	host.Dependencies.Replace(catalog)
 
 	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t")
-	if !errors.Is(err, failure) || !strings.Contains(err.Error(), "md.numen.a") {
-		t.Fatalf("getLaunchVars() = %v, %v, want the failure with the plugin named", vars, err)
+
+	if err != nil {
+		t.Fatalf("getLaunchVars() = %v, want the download failure left to the first use", err)
 	}
-	if vars != nil {
-		t.Errorf("a failed provisioning left the environment %v", vars)
+	if !slices.Contains(vars, envSampleLib+"=/models/libsample.so") {
+		t.Errorf("environment %v lacks the path of the runtime", vars)
+	}
+	if len(catalog.calls) != 0 {
+		t.Errorf("the launch provisioned %+v", catalog.calls)
+	}
+}
+
+func TestALaunchedPluginIsGivenThePlannedPathOfAMissingDependency(t *testing.T) {
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	t.Cleanup(func() {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+			t.Error(err)
+		}
+	})
+	catalog := &fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
+		"whisper": {ID: "whisper", PrimaryPath: "/models/whisper/w.bin", EnvVars: map[string]string{"NUMEN_DEPENDENCY_WHISPER": "/models/whisper/w.bin"}},
+	}}
+	catalog.state = plugindomain.DependencyStateMissing
+	host.Dependencies.Replace(catalog)
+	declared := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindModel}}}
+
+	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", declared.GetDependencyRequirements("/plugins/a", nil), host.Mode.GetVaultPath(), 5, "t")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(vars, "NUMEN_DEPENDENCY_WHISPER=/models/whisper/w.bin") {
+		t.Errorf("environment %v lacks the planned path of the missing model", vars)
+	}
+	if len(catalog.calls) != 0 {
+		t.Errorf("the launch downloaded %+v", catalog.calls)
 	}
 }
 
@@ -173,7 +224,7 @@ func TestAPluginIsNotLaunchedWithARuntimeTheHostDoesNotKnow(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.Dependencies.Replace(newONNXCatalog())
+	host.Dependencies.Replace(newRuntimeCatalog())
 	unknown := []manifest.DependencyRequirement{{ID: "tensorrt", Kind: manifest.DependencyKindRuntime}}
 
 	if _, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", unknown, host.Mode.GetVaultPath(), 5, "t"); !errors.Is(err, supervision.ErrRuntimeUnavailable) {

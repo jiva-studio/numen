@@ -18,7 +18,6 @@ type Embedder interface {
 
 // Machine is the process the server runs in.
 type Machine interface {
-	CountCPUs() int
 	SetMaxProcs(count int)
 	LowerNice(nice int) error
 }

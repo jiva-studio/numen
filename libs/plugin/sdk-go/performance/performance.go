@@ -1,11 +1,20 @@
-// Package performance gives a plugin the performance profile of the person: how much of the
-// machine background work may use. The host passes the profile in every Configure call under
-// ConfigKey, and again when the person changes it; the plugin sizes its threads and batches from
-// it and lowers its own priority with SetNice.
+// Package performance gives a plugin the limits of the performance profile of the person: how much
+// of the machine background work may use. The host resolves the profile on the machine and passes
+// the limits in every Configure call, and again when the person changes it; the plugin sizes its
+// threads from them and lowers its own priority with SetNice.
 package performance
 
-// ConfigKey is the entry of the Configure values that holds the profile.
-const ConfigKey = "host.performanceProfile"
+import "strconv"
+
+// The entries of the Configure values that hold the limits.
+const (
+	// ProfileKey holds the name of the profile.
+	ProfileKey = "host.performanceProfile"
+	// ThreadsKey holds the most CPU-bound threads the plugin may run at once.
+	ThreadsKey = "host.performanceThreads"
+	// NiceKey holds the niceness the plugin runs at.
+	NiceKey = "host.performanceNice"
+)
 
 // Profile is a workload preset of the settings page.
 type Profile string
@@ -13,29 +22,22 @@ type Profile string
 const (
 	// Eco keeps background work unobtrusive: one thread, the lowest priority.
 	Eco Profile = "eco"
-	// Balanced is the default: a quarter of the cores, at most four, at a lowered priority.
+	// Low gives background work a quarter of the performance threads.
+	Low Profile = "low"
+	// Balanced is the default: half of the performance threads.
 	Balanced Profile = "balanced"
-	// Maximum gives background work half the cores, at most eight, at the priority of the plugin.
+	// High gives background work three quarters of the performance threads.
+	High Profile = "high"
+	// Maximum gives background work every performance thread at the priority of the plugin.
 	Maximum Profile = "maximum"
 )
 
-// Read returns the profile of a Configure call. A call that carries none, or a name this package
-// does not know, gives Balanced.
-func Read(values map[string]string) Profile {
-	switch Profile(values[ConfigKey]) {
-	case Eco:
-		return Eco
-	case Maximum:
-		return Maximum
-	default:
-		return Balanced
-	}
-}
-
-// Limits is what a profile lets one plugin occupy on a machine.
+// Limits is what the profile lets one plugin occupy on the machine.
 //
 //numen:api
 type Limits struct {
+	// Profile is the preset the limits come from.
+	Profile Profile
 	// Threads is the most CPU-bound threads at once; at least 1.
 	Threads int
 	// Nice is the niceness of the process: 0 is the default priority, 19 the lowest.
@@ -43,29 +45,37 @@ type Limits struct {
 }
 
 const (
-	balancedCoreDivisor = 4
-	balancedMaxThreads  = 4
-	maximumCoreDivisor  = 2
-	maximumMaxThreads   = 8
-
-	ecoNice      = 19
-	balancedNice = 10
-	maximumNice  = 0
+	fallbackThreads = 1
+	fallbackNice    = 10
 )
 
-// Resolve returns the limits of a profile on a machine with cpus logical CPUs. Threads never
-// exceed the cap of the profile and are at least 1.
-func Resolve(profile Profile, cpus int) Limits {
-	switch profile {
-	case Eco:
-		return Limits{Threads: 1, Nice: ecoNice}
-	case Maximum:
-		return Limits{Threads: clamp(cpus/maximumCoreDivisor, maximumMaxThreads), Nice: maximumNice}
+// Read returns the limits of a Configure call. A profile that is missing or unknown is Balanced, a
+// thread count that is missing or below 1 is 1, and a missing niceness is the niceness of Balanced.
+func Read(values map[string]string) Limits {
+	return Limits{Profile: readProfile(values[ProfileKey]), Threads: readThreads(values[ThreadsKey]), Nice: readNice(values[NiceKey])}
+}
+
+func readProfile(value string) Profile {
+	switch profile := Profile(value); profile {
+	case Eco, Low, High, Maximum:
+		return profile
 	default:
-		return Limits{Threads: clamp(cpus/balancedCoreDivisor, balancedMaxThreads), Nice: balancedNice}
+		return Balanced
 	}
 }
 
-func clamp(threads, most int) int {
-	return max(1, min(threads, most))
+func readThreads(value string) int {
+	threads, err := strconv.Atoi(value)
+	if err != nil || threads < 1 {
+		return fallbackThreads
+	}
+	return threads
+}
+
+func readNice(value string) int {
+	nice, err := strconv.Atoi(value)
+	if err != nil {
+		return fallbackNice
+	}
+	return nice
 }

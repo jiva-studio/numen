@@ -95,8 +95,9 @@ func New(h Host, open func(ctx context.Context) (ports.Recognizer, error)) (*Rec
 // Request is one file to recognize. Vault is the vault that contains it, and is
 // empty for the vault the host currently shows.
 type Request struct {
-	Vault domain.VaultID
-	Path  string
+	Vault         domain.VaultID
+	Path          string
+	IsUserStarted bool
 }
 
 // Result is the outcome of one recognition. IsEmpty is set for a file from which the recognizer
@@ -220,7 +221,7 @@ func (r *Recognition) release(key string) {
 func newTask(req Request) host.Task {
 	return host.Task{
 		ID: GetTaskID(req.Vault, req.Path), Title: "Recognizing " + path.Base(req.Path), Detail: req.Path,
-		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: req.IsUserStarted,
 	}
 }
 
@@ -278,7 +279,7 @@ func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task
 		return Result{}, err
 	}
 	r.host.Documents.Prepare(func(err error) { r.reportError("prepare the documents", err) })
-	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: func() {
+	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted, OnWaiting: func() {
 		queuedTask := *task
 		if rec != nil {
 			queuedTask.CompletedCount, queuedTask.TotalCount = int64(len(rec.Pages)), int64(rec.PageCount)

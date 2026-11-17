@@ -14,10 +14,25 @@ const MODE_CODES = {
   dark: THEME_MODE.DARK,
 } as const
 
+let version = 1n
+
+const getFileText = (): string =>
+  JSON.stringify({
+    app: {
+      appearance: {
+        theme: mockVaultState.applied,
+        mode: mockVaultState.mode,
+        interfaceScale: mockVaultState.sizes.interfaceScale,
+        textScale: mockVaultState.sizes.textScale,
+      },
+    },
+  })
+
 export const settingsAnswers = {
   settingsService: {
     getSettings: () => ({
-      written: '{}',
+      written: getFileText(),
+      version,
       path: '/vaults/Physics/.numen/settings.json',
       plugins: [],
       app: mockVaultState.app.map(getSettingInForce).map(toWireSetting),
@@ -28,7 +43,8 @@ export const settingsAnswers = {
         requests.settingsWritten.push(`${one.at.join('.')} ${one.value}`)
         keepSetting(one.at.join('.'), JSON.parse(one.value))
       }
-      return {}
+      version += 1n
+      return { written: getFileText(), version }
     },
     watchSettings: pendingStream,
   },

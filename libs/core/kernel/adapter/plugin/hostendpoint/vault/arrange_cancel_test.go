@@ -28,6 +28,8 @@ func (anyCaller) Authenticate(string) (string, error) { return "md.numen.a", nil
 
 func (anyCaller) Authorize(string, string) (string, error) { return "md.numen.a", nil }
 
+func (anyCaller) IsTakingFile(string, string) bool { return true }
+
 type shownAccess struct{ access *Access }
 
 func (s shownAccess) GetPluginVault() *Access { return s.access }

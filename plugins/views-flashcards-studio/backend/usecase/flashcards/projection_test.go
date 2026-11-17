@@ -34,9 +34,6 @@ func TestProjection_ReturningShareForRequestedDays(t *testing.T) {
 		run.Retains = []int{2, 7}
 
 		some, all := runProjection(t, run, now, p, pos, 5), runProjection(t, whole, now, p, pos, 5)
-		if days := some.Retained.Days(); len(days) != 2 || days[0] != 2 || days[1] != 7 {
-			t.Errorf("under %s a run asked for days 2 and 7 answers for %v", name, days)
-		}
 		for day := range 10 {
 			share, answers := some.Retained.GetShare(day)
 			if answers != (day == 2 || day == 7) {
@@ -1063,8 +1060,11 @@ func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 	}
 	got := runProjection(t, run, now, p, pos, 40)
 
-	for _, day := range got.Retained.Days() {
-		one, _ := got.Retained.GetShare(day)
+	for day := range len(got.Through) {
+		one, answers := got.Retained.GetShare(day)
+		if !answers {
+			t.Fatalf("day %d answers no retention", day)
+		}
 		if math.IsNaN(one) || one < 0 || one > 1 {
 			t.Fatalf("day %d leaves %v of the material in the head", day, one)
 		}

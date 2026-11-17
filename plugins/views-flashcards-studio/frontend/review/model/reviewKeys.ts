@@ -16,7 +16,7 @@ import type { Preset } from '../lib/decks/types'
 export type ReviewScreen = 'decks' | 'session'
 
 /** What the review is showing. */
-export interface ReviewKeysView {
+interface ReviewKeysView {
   readonly getScreen: () => ReviewScreen
   readonly getChosenVault: () => VaultCardsDue | null
   readonly getPresetsByDeck: () => ReadonlyMap<string, Preset>
@@ -25,7 +25,7 @@ export interface ReviewKeysView {
 }
 
 /** What a key does to the session and to the screens. */
-export interface ReviewKeysActions {
+interface ReviewKeysActions {
   readonly start: (deck: string) => void
   readonly show: () => void
   readonly answer: (how: Grade) => void
@@ -36,7 +36,7 @@ export interface ReviewKeysActions {
 }
 
 /** What a key does to the agent panel and the notes panel. */
-export interface ReviewKeysPanels {
+interface ReviewKeysPanels {
   readonly toggleAgent: () => void
   readonly toggleNotes: () => void
   readonly closeAgent: () => void

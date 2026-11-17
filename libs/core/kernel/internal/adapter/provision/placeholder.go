@@ -15,16 +15,13 @@ import (
 // models, which open no model and load no runtime. A program the machine holds
 // is still the machine's own.
 type PlaceholderProvisioner struct {
-	dir         string
-	discovery   discovery
-	runtimeVars map[string]func(primary string) map[string]string
+	dir       string
+	discovery discovery
 }
 
-// NewPlaceholderProvisioner keeps its placeholders in dir. runtimeVars names, by
-// runtime id, the variables a runtime is handed to a plugin by; a runtime it
-// does not name is handed by the variable GetEnvName names.
-func NewPlaceholderProvisioner(dir string, runtimeVars map[string]func(primary string) map[string]string) *PlaceholderProvisioner {
-	return &PlaceholderProvisioner{dir: dir, discovery: newDiscovery(), runtimeVars: runtimeVars}
+// NewPlaceholderProvisioner writes a placeholder for each dependency under dir instead of fetching it.
+func NewPlaceholderProvisioner(dir string) *PlaceholderProvisioner {
+	return &PlaceholderProvisioner{dir: dir, discovery: newDiscovery()}
 }
 
 // CanProvision reports true: every dependency has a placeholder.
@@ -51,11 +48,7 @@ func (p *PlaceholderProvisioner) Provision(
 	if err := os.WriteFile(primary, nil, 0o600); err != nil {
 		return plugin.ResolvedDependency{}, fmt.Errorf("placeholder for %s: %w", req.ID, err)
 	}
-	resolved := newResolvedDependency(req, root, primary)
-	if vars, ok := p.runtimeVars[req.ID]; ok && req.Kind == manifest.DependencyKindRuntime {
-		resolved.EnvVars = vars(primary)
-	}
-	return resolved, nil
+	return newResolvedDependency(req, root, primary), nil
 }
 
 // GetPlaceholderDir returns where placeholders are kept: the numen folder of the user's cache, or a
@@ -70,4 +63,14 @@ func GetPlaceholderDir() string {
 		return "numen-placeholder-dependencies"
 	}
 	return dir
+}
+
+// Resolve writes the placeholder, which takes no network and no wait, and returns it as ready: a mock
+// run opens no model, so there is nothing to download later.
+func (p *PlaceholderProvisioner) Resolve(req manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
+	resolved, err := p.Provision(context.Background(), req, nil)
+	if err != nil {
+		return plugin.ResolvedDependency{}, "", err
+	}
+	return resolved, plugin.DependencyStateReady, nil
 }

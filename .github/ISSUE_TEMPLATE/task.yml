@@ -1,6 +1,6 @@
 name: Task
 description: A feature, a change or a cleanup
-labels: ["task"]
+type: Task
 body:
   - type: textarea
     id: problem

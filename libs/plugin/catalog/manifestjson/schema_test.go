@@ -24,7 +24,10 @@ const everyFieldManifest = `{
 	"capabilities": ["tools"], "targets": ["desktop.editor"], "activationEvents": ["onIndexChanged"],
 	"permissions": ["vault:read"],
 	"dependencies": [{"id": "weights", "kind": "model", "version": "1", "sourceUrl": "https://example.org/w",
-		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}}],
+		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}},
+		{"id": "lib", "kind": "runtime", "sources": [{"platform": "linux/amd64", "sourceUrl": "https://example.org/l.tgz",
+			"checksumSha256": "1111111111111111111111111111111111111111111111111111111111111111", "archiveMember": "l.so", "memberSha256": "2222222222222222222222222222222222222222222222222222222222222222"}],
+			"environment": ["GPU_*", "LIB_PATH"], "search": ["/opt/l/l.so*"]}],
 	"backend": {"entrypoint": "bin/full", "idleStopSeconds": 600},
 	"frontend": {},
 	"settings": [
@@ -65,7 +68,9 @@ const everyFieldManifest = `{
 			{"key": "mode", "type": "enum", "title": "Mode", "options": ["a", "b"], "default": "a"},
 			{"key": "apiKey", "type": "secret", "title": "Key", "required": true},
 			{"key": "parallelRequests", "type": "number", "title": "Parallel", "default": 4, "min": 1, "max": 32, "step": 1}]}],
-		"operations": [{"name": "llm.complete", "title": "complete text"}, {"name": "llm.models", "title": "list models"}]}
+		"operations": [{"name": "llm.complete", "title": "complete text"}, {"name": "llm.models", "title": "list models"}],
+		"searchFunctions": {"version": 1, "functions": [{"name": "rhymes", "args": [{"name": "word", "type": "string"}], "level": "document",
+			"description": "notes that rhyme with a word", "example": "rhymes(\"moon\")"}]}}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

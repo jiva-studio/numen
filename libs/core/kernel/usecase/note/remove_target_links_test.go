@@ -11,6 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -48,7 +50,7 @@ type countingWriter struct {
 	writes *int
 }
 
-func (w countingWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error) {
+func (w countingWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (vault.WriteResult, error) {
 	*w.writes++
 	return w.NoteWriter.Write(ctx, path, content, stat)
 }

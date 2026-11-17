@@ -19,8 +19,8 @@
     "@numen/core-client": "*",
     "@numen/plugin-loader": "*",
     "@numen/plugin-manager": "*",
-    "@numen/workbench": "*",
     "@numen/ui": "*",
+    "@numen/workbench": "*",
     "vue": "^3.5.45"
   },
   "devDependencies": {

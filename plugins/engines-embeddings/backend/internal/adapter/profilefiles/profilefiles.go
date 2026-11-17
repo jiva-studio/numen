@@ -23,7 +23,7 @@ type Directory struct {
 func GetDefaultDirectory() Directory {
 	dir, err := cache.GetDataDir()
 	if err != nil {
-		return Directory{}
+		return Directory{path: ""}
 	}
 	return Directory{path: filepath.Join(dir, model.ProfilesFolder)}
 }

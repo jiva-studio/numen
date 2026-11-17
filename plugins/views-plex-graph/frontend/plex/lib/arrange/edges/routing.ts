@@ -1,10 +1,7 @@
 import {
   getArrow,
-  getHeading,
   getLength,
   type EdgeCurve,
-  type EdgeHeading,
-  type EdgeSide,
   type EdgeTitle,
   type LabelType,
   type PlacedEdge,
@@ -12,7 +9,8 @@ import {
 import type { PlacedNode, Position } from '../../node'
 import { cutToFit } from '../../cutToFit'
 import { DEFAULT_OPTIONS, isVertical, type PlexOptions, type RoutingOptions } from '../options'
-import type { EdgeLabel, PlexEdge, PlexNodeRelation } from '../../../../types'
+import type { PlexEdge, PlexNodeRelation } from '../../../../types'
+import { createTitle, getLabelPlaces, getRise, getShift } from './labels'
 
 /** `auto` means take the axis from the geometry. */
 type Axis = 'vertical' | 'horizontal' | 'auto'
@@ -26,9 +24,6 @@ export interface Routing {
 
 /** The ink of a font nothing measured. */
 const NO_TYPE: LabelType = { ascent: 0, descent: 0, xHeight: 0 }
-
-/** The depth of one line of a title across its line: from the top of a capital to the bottom of a descender. */
-export const getDepth = (type: LabelType): number => type.ascent + type.descent
 
 /**
  * The axis is read off the relation, not off the distance between the boxes: the
@@ -49,105 +44,6 @@ export function createRouting(
       return isVertical(options.direction[node.relation]) ? 'vertical' : 'horizontal'
     },
   }
-}
-
-/** The middle of a line, where a title with no end is set until something is in the way. */
-export const MIDDLE = 0.5
-
-/** How far from its end a title placed near an end is set, as a fraction of the line. */
-const NEAR_END = 0.2
-
-/**
- * Where each of `count` labels of one line is set, as a fraction of the line's
- * length from its `from` end, in the order the labels are written: the first
- * is the record of the `from` note. One label is centered. Several are spread
- * from near the start to near the end, so each reads as belonging to its own end.
- */
-export const getLabelPositions = (count: number): number[] => {
-  if (count <= 1) return [MIDDLE]
-  return Array.from(
-    { length: count },
-    (_, index) => NEAR_END + ((1 - 2 * NEAR_END) * index) / (count - 1),
-  )
-}
-
-/**
- * The gap, in plex units, between the line and the near edge of the letters of
- * a label of a pair: as close as the letters go without touching the line.
- * It is the same for every kind of line and for both labels of a pair.
- */
-export const LABEL_GAP = 2
-
-/**
- * How far from the line the center of a title is: nothing for a title on the line, whose
- * lowercase letters are centered on it; else half of the depth of the ink and the gap, so the
- * near edge of the letters is `LABEL_GAP` from the line.
- */
-export const getShift = (side: EdgeSide, type: LabelType): number =>
-  side * (getDepth(type) / 2 + LABEL_GAP)
-
-/**
- * How far below the center of a title its baseline is, across the line. The center of a title
- * on the line is the middle of the x-height band, of a title beside it the middle of the ink
- * from capital to descender. The baseline is set by this alone, so no engine's own
- * idea of a middle decides where the letters stand.
- */
-export const getRise = (side: EdgeSide, type: LabelType): number =>
-  side === 0 ? type.xHeight / 2 : (type.ascent - type.descent) / 2
-
-/**
- * Where and how each label of one line is set, in the order the labels are written.
- * One label is centered along the line and on it, its vertical middle on the line, read the readable way along it.
- * Two labels are set near the two ends, on opposite sides. When both records have a head, each label is near the end its head is at and reads toward it;
- * otherwise each is near the note that wrote it and reads away from it, the first on the left of the line taken from `from`, the second on the right.
- */
-export function getLabelPlaces(labels: readonly EdgeLabel[]): LabelPlace[] {
-  if (labels.length <= 1) return labels.map(() => ({ position: MIDDLE, side: 0 }))
-  const positions = getLabelPositions(labels.length)
-  const isHeaded = labels.every((label) => label.end !== undefined)
-  return labels.map((label, index) => {
-    const isToward = isHeaded ? label.end === 'to' : index === 0
-    const position = isHeaded ? (isToward ? positions.at(-1)! : positions[0]!) : positions[index]!
-    const side: EdgeSide = isToward ? -1 : 1
-    return { position, side, heading: isToward ? 'along' : 'against' }
-  })
-}
-
-/** Where a label is set: its place along the line, its side, and the way it is read where its record fixes that. */
-export interface LabelPlace {
-  readonly position: number
-  readonly side: EdgeSide
-  readonly heading?: EdgeHeading
-}
-
-/**
- * The title set at a fraction of the curve from its `from` end, measured along
- * the curve the way its words are read.
- */
-export function createTitle(
-  curve: EdgeCurve,
-  ...[position, words, title]: [position: number, words: string, title: TitleSetting]
-): EdgeTitle {
-  const { anchor = position, side, shift, rise } = title
-  const heading = title.heading ?? getHeading(curve, position)
-  return {
-    anchor,
-    heading,
-    side,
-    shift,
-    rise,
-    words,
-    wordsAt: heading === 'against' ? 1 - position : position,
-  }
-}
-
-/** What a title keeps wherever it is moved to along its line. */
-export interface TitleSetting {
-  readonly anchor?: number
-  readonly heading?: EdgeHeading
-  readonly side: EdgeSide
-  readonly shift: number
-  readonly rise: number
 }
 
 function getEdgeAnchor(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'right'): Position {
@@ -291,7 +187,7 @@ function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeT
   })
 }
 
-export interface RouteEdgeOptions {
+interface RouteEdgeOptions {
   readonly routing: Routing
   readonly opacity?: number
 }
@@ -321,23 +217,4 @@ export function routeEdge(
     titles: createTitles(edge, curve, routingOptions),
     arrowheads: edge.arrows?.map((end) => getArrow(curve, end)),
   }
-}
-
-export interface RouteEdgesOptions {
-  readonly routing: Routing
-  readonly opacity?: (edge: PlexEdge) => number
-}
-
-export function routeEdges(
-  edges: readonly PlexEdge[],
-  byId: ReadonlyMap<string, PlacedNode>,
-  routingOrOptions: Routing | RouteEdgesOptions,
-): PlacedEdge[] {
-  const routingOptions = 'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
-  const getOpacity =
-    'tuning' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
-
-  return edges
-    .map((edge) => routeEdge(edge, byId, { routing: routingOptions, opacity: getOpacity(edge) }))
-    .filter((edge): edge is PlacedEdge => edge !== null)
 }

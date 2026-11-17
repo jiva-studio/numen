@@ -38,11 +38,10 @@ type modelLoader[S any] struct {
 // opening is one load of the model, which runs on its own goroutine so that a download holds no lock
 // a call of the host takes.
 type opening struct {
-	ready        chan struct{}
-	cancel       context.CancelFunc
-	emb          ports.Embedder
-	err          error
-	isBackground bool
+	ready  chan struct{}
+	cancel context.CancelFunc
+	emb    ports.Embedder
+	err    error
 }
 
 // errSuperseded ends an opening whose model the settings changed while it ran.
@@ -64,15 +63,6 @@ func (l *modelLoader[S]) Get(ctx context.Context, start func() loadStart[S]) (po
 	}
 }
 
-// StartLocked starts the load with start when no model is loaded and no load runs, and returns at once.
-// A later Get waits for that load. The caller holds the lock.
-func (l *modelLoader[S]) StartLocked(start func() loadStart[S]) {
-	if l.embedder != nil || l.opening != nil {
-		return
-	}
-	l.begin(context.Background(), start(), true)
-}
-
 func (l *modelLoader[S]) wait(ctx context.Context, start func() loadStart[S]) (ports.Embedder, error) {
 	l.lock.Lock()
 	if l.embedder != nil {
@@ -82,7 +72,7 @@ func (l *modelLoader[S]) wait(ctx context.Context, start func() loadStart[S]) (p
 	}
 	op := l.opening
 	if op == nil {
-		op = l.begin(ctx, start(), false)
+		op = l.begin(ctx, start())
 	}
 	l.lock.Unlock()
 
@@ -94,10 +84,10 @@ func (l *modelLoader[S]) wait(ctx context.Context, start func() loadStart[S]) (p
 	}
 }
 
-func (l *modelLoader[S]) begin(caller context.Context, start loadStart[S], isBackground bool) *opening {
+func (l *modelLoader[S]) begin(caller context.Context, start loadStart[S]) *opening {
 	// The load outlives the call that started it, and ends with the settings or the plugin.
 	ctx, cancel := context.WithCancel(context.WithoutCancel(caller))
-	op := &opening{ready: make(chan struct{}), cancel: cancel, emb: nil, err: nil, isBackground: isBackground}
+	op := &opening{ready: make(chan struct{}), cancel: cancel, emb: nil, err: nil}
 	l.opening = op
 	go func() {
 		defer cancel()
@@ -122,9 +112,6 @@ func (l *modelLoader[S]) finish(op *opening, emb ports.Embedder, err error, nice
 	l.opening = nil
 	if err != nil {
 		op.err = fmt.Errorf("opening onnx embedding engine: %w", err)
-		if op.isBackground {
-			l.ports.Report("load the embedding model", op.err)
-		}
 		return
 	}
 	// The runtime starts its threads while it opens the model, and a thread starts at the niceness of

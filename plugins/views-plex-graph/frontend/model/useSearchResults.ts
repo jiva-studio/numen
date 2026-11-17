@@ -4,8 +4,7 @@
  */
 import { getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue'
 import { createRequestGuard, type RequestGuard, type InFlightRequest } from '@numen/ui'
-
-export const SEARCH_DEBOUNCE_MS = 120
+import { SEARCH_DEBOUNCE_MS } from './searchDebounce'
 
 type Wait = (ms: number) => Promise<void>
 

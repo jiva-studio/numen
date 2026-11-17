@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -23,18 +24,20 @@ import (
 // The state, the useCases of notes and vaults and the installation are the window's own, and each
 // service is handed the ones it uses.
 type windowWiring struct {
-	cfg       Config
-	a         pluginsWiring
-	ports     registry.Ports
-	db        *Index
-	embedder  searchsourceport.Source
-	asking    searchsourceport.Source
-	inst      *editor.Installation
-	state     *editor.State
-	kinds     tabKinds
-	server    *editor.FileServer
-	switching windowsession.UserSwitch
-	cases     WindowUseCases
+	cfg         Config
+	a           pluginsWiring
+	ports       registry.Ports
+	db          *Index
+	embedder    searchsourceport.Source
+	asking      searchsourceport.Source
+	inst        *editor.Installation
+	state       *editor.State
+	kinds       tabKinds
+	server      *editor.FileServer
+	switching   windowsession.UserSwitch
+	cases       WindowUseCases
+	tasks       *run.Tasks
+	generations *indexgeneration.Generations
 }
 
 // tabKinds are the use cases that name the kind of a file for the tabs of a window.
@@ -86,6 +89,7 @@ type WindowUseCases struct {
 	Listing     *registry.Listing
 	Vaults      *VaultUseCases
 	ShowTab     windowsession.ShowTab
+	OpenPlugin  windowsession.OpenPluginVault
 }
 
 // OpenedWindow is an editor window opened: the installation that serves it, the state its services work
@@ -144,7 +148,8 @@ func buildWindow(
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })
 	state.SetIndexing(embedding)
-	indexer := newIndexWorker(a, db, state, embedding, opening.Out)
+	generations := newIndexGenerations(c.Clock())
+	indexer := newIndexWorker(a, db, state, embedding, emitIndexChanged(generations, state.Events), opening.Out)
 	state.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
@@ -155,11 +160,13 @@ func buildWindow(
 	session := newWindowSession(c, a, state, ctx, windowParts{
 		indexer: indexer, embedding: embedding, passes: startVault(a, db, current),
 		recordOpen: cases.Vaults.RecordOpen, importFiles: cases.Vaults.Tree.Import, out: opening.Out,
-		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
+		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close, frontmatter: db.FrontmatterChanges(),
+		startFeed: getFeedStart(a, db),
 	})
 	cases.ShowTab = session.tools.showTab
+	cases.OpenPlugin = session.cases.openPlugin
 	inst := editor.NewInstallation(state, editor.Lifecycle{
-		Start: session.cases.start, Show: session.cases.show, OpenPlugin: session.cases.openPlugin,
+		Start: session.cases.start, Show: session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
 	}, session.tools.importFiles, getMediaType(a.vault), opening.Out)
 
@@ -168,6 +175,7 @@ func buildWindow(
 		wiring: &windowWiring{
 			cfg: c, a: a, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
 			kinds: kinds, server: newFileServer(a, state, cases), switching: session.userSwitch, cases: cases,
+			tasks: tasks, generations: generations,
 		},
 		closeEmbedder: closeEmbedder,
 	}

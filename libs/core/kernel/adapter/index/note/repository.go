@@ -12,10 +12,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/changefeed"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 //go:embed sql/*.sql
@@ -31,10 +33,24 @@ const kind = "note"
 // Repository is the collection of notes. It puts one in and takes one out, and
 // answers no questions about them.
 type Repository struct {
-	db *sql.DB
+	db      *sql.DB
+	changes *FrontmatterChanges
+	feed    *changefeed.Changes
 }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
+
+// ReportingTo returns the repository that hands the paths of the notes whose frontmatter a write
+// changed to changes.
+func (r *Repository) ReportingTo(changes *FrontmatterChanges) *Repository {
+	return &Repository{db: r.db, changes: changes, feed: r.feed}
+}
+
+// ReportingFeedTo returns the repository that tells feed of each committed write that can change the file
+// change feed.
+func (r *Repository) ReportingFeedTo(feed *changefeed.Changes) *Repository {
+	return &Repository{db: r.db, changes: r.changes, feed: feed}
+}
 
 func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, getStatement(name), args...); err != nil {
@@ -53,28 +69,62 @@ func (r *Repository) Save(
 	if len(notes) == 0 {
 		return nil
 	}
-	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	var changed []string
+	err := sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		changed = nil
 		vault, err := vaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
 		}
 		for _, one := range notes {
-			if err := saveNote(ctx, tx, vault, one); err != nil {
+			isChanged, err := saveNote(ctx, tx, vault, one)
+			if err != nil {
 				return fmt.Errorf("%s: %w", one.Note.FileStat.Path, err)
+			}
+			if isChanged {
+				changed = append(changed, one.Note.FileStat.Path)
 			}
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	r.feed.Publish(vaultID)
+	r.changes.publish(vaultID, changed)
+	return nil
 }
 
 func saveNote(
 	ctx context.Context, tx *sqlwrite.Transaction, vault int64, indexed domain.NoteChunks,
-) error {
+) (isFrontmatterChanged bool, err error) {
 	n := indexed.Note
-	row, err := saveSourceAndNote(ctx, tx, vault, indexed)
+	previous, err := readStoredFrontmatter(ctx, tx, vault, n.FileStat.Path)
 	if err != nil {
-		return err
+		return false, err
 	}
+	before, err := changefeed.ReadState(ctx, tx, vault, n.FileStat.Path)
+	if err != nil {
+		return false, err
+	}
+	row, stored, err := saveSourceAndNote(ctx, tx, vault, indexed)
+	if err != nil {
+		return false, err
+	}
+	if err := changefeed.RecordSaved(ctx, tx, vault, n.FileStat.Path, before); err != nil {
+		return false, err
+	}
+	isFrontmatterChanged = previous != stored
+	if isFrontmatterChanged {
+		if err := changefeed.Record(ctx, tx, vault, row, manifest.EventNoteFrontmatterChanged); err != nil {
+			return false, err
+		}
+	}
+	return isFrontmatterChanged, saveNoteParts(ctx, tx, vault, row, indexed)
+}
+
+func saveNoteParts(ctx context.Context, tx *sqlwrite.Transaction, vault, row int64, indexed domain.NoteChunks) error {
+	n := indexed.Note
 	// A chunk whose text is what it was keeps its row, and the vector made from it.
 	if err := chunk.Replace(ctx, tx, row, vault, chunk.FromDomain(indexed.Chunks)); err != nil {
 		return err
@@ -108,7 +158,7 @@ func saveNote(
 
 func saveSourceAndNote(
 	ctx context.Context, tx *sqlwrite.Transaction, vault int64, indexed domain.NoteChunks,
-) (int64, error) {
+) (row int64, stored sql.NullString, err error) {
 	n := indexed.Note
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
@@ -118,29 +168,43 @@ func saveSourceAndNote(
 		problem = strings.TrimSpace(problem + "\n" + storeErr)
 	}
 
-	var row int64
+	if text, ok := frontmatter.(string); ok {
+		stored = sql.NullString{String: text, Valid: true}
+	}
 	var updated bool
 	if err := tx.QueryRowContext(ctx, getStatement("save_source"),
 		vault, n.FileStat.Path, kind, n.FileStat.Size, chunk.ConvertTimeToNanos(n.FileStat.ModTime),
 		nil, newNullableValue(indexed.Recipe), nil,
 	).Scan(&row, &updated); err != nil {
-		return 0, fmt.Errorf("record the source this note is: %w", err)
+		return 0, stored, fmt.Errorf("record the source this note is: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.FileStat.Path)),
 		n.Title, string(noteType(n)), newNullableValue(n.ID), frontmatter, newNullableValue(problem)); err != nil {
-		return 0, err
+		return 0, stored, err
 	}
 	if !updated {
-		return row, nil
+		return row, stored, nil
 	}
 	for _, name := range []string{
 		"clear_heading_names", "clear_headings", "clear_links", "clear_problems",
 	} {
 		if err := exec(ctx, tx, name, row); err != nil {
-			return 0, err
+			return 0, stored, err
 		}
 	}
-	return row, nil
+	return row, stored, nil
+}
+
+func readStoredFrontmatter(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) (sql.NullString, error) {
+	var stored sql.NullString
+	err := tx.QueryRowContext(ctx, getStatement("frontmatter_at"), vault, path).Scan(new(int64), &path, &stored)
+	if errors.Is(err, sql.ErrNoRows) {
+		return sql.NullString{}, nil
+	}
+	if err != nil {
+		return sql.NullString{}, fmt.Errorf("read the stored frontmatter of %s: %w", path, err)
+	}
+	return stored, nil
 }
 
 func insertLinks(ctx context.Context, tx *sqlwrite.Transaction, row int64, links []domain.Link) error {
@@ -160,18 +224,33 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 	if len(paths) == 0 {
 		return nil
 	}
-	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	var changed []string
+	err := sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		changed = nil
 		vault, err := vaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
 		}
 		for _, path := range paths {
+			previous, err := readStoredFrontmatter(ctx, tx, vault, path)
+			if err != nil {
+				return err
+			}
 			if err := removeNote(ctx, tx, vault, path); err != nil {
 				return err
+			}
+			if previous.Valid {
+				changed = append(changed, path)
 			}
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	r.feed.Publish(vaultID)
+	r.changes.publish(vaultID, changed)
+	return nil
 }
 
 func removeNote(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) error {
@@ -190,6 +269,9 @@ func removeNote(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path
 		if err := exec(ctx, tx, name, row); err != nil {
 			return err
 		}
+	}
+	if err := changefeed.RecordRemoved(ctx, tx, vault, row); err != nil {
+		return err
 	}
 	return exec(ctx, tx, "delete_source", row)
 }

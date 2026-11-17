@@ -14,9 +14,6 @@ type ChunkID string
 // that the search by meaning returned, and `WordScore` the negated bm25 of the best hit of the
 // words in this place, positive and comparable only within one query. Each is nil when its
 // search did not reach the place; a similarity of zero or below is a value.
-//
-// `WholeText` is the whole content of the chunk where `Text` is cut to an excerpt of it, and
-// empty unless the search was asked for it.
 type SearchResult struct {
 	ChunkID ChunkID
 
@@ -42,8 +39,6 @@ type SearchResult struct {
 	ChunkHash string
 
 	Text string
-
-	WholeText string
 
 	Similarity *float64
 

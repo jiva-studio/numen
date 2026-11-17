@@ -53,15 +53,8 @@ type Door interface {
 	Close()
 }
 
-// Closer ends one resource of the window. The context bounds a close that waits.
-type Closer interface {
-	Close(ctx context.Context) error
-}
-
+// CloseFunc ends one resource of the window. The context bounds a close that waits.
 type CloseFunc func(ctx context.Context) error
-
-// Close calls f.
-func (f CloseFunc) Close(ctx context.Context) error { return f(ctx) }
 
 // ModelSource is the embedder of the window: the model it reads under and its announcements.
 type ModelSource interface {
@@ -125,14 +118,18 @@ func (f VaultPassesFunc) Start(ctx context.Context, v domain.Vault, rebuild bool
 type TriggerRunner interface {
 	ExecuteAll(ctx context.Context, v domain.Vault) error
 	Execute(ctx context.Context, v domain.Vault, paths []string) error
+	ExecuteFrontmatter(ctx context.Context, v domain.Vault, paths []string) ([]string, error)
 }
 
 // TriggerSource is where the passes of the triggers come from. Open returns nil where the window runs
 // no plugins. Watch reports each time the plugin host applied settings or forgot the failure of a
-// plugin, and the function it returns stops the reports.
+// plugin, and the function it returns stops the reports. WatchFrontmatter, which may be nil, hands report
+// the paths of the notes of the vault whose frontmatter the index stored changed, until the function it
+// returns is called.
 type TriggerSource struct {
-	Open  func() TriggerRunner
-	Watch func() (<-chan struct{}, func())
+	Open             func() TriggerRunner
+	Watch            func() (<-chan struct{}, func())
+	WatchFrontmatter func(id domain.VaultID, report func(paths []string)) func()
 }
 
 type currentVault interface {

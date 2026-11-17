@@ -53,10 +53,11 @@ SELFTEST ?=
 CHECKS_ARGS = $(if $(TAGS),--tags '$(TAGS)') $(if $(EXCLUDE),--exclude '$(EXCLUDE)') $(if $(ONLY),--only '$(ONLY)') $(if $(CHANGED),--changed) $(if $(LIST),--list) $(if $(SELFTEST),--selftest)
 GO_TEST_FLAGS := $(if $(GO_RACE),-race,)
 
-# How many jobs the parallel targets (the gate, the plugin lint) run at once.
+# How many jobs the parallel targets (the gate, the plugin build and lint) run at once.
 JOBS     ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 # Each golangci-lint and vue-tsc of a plugin uses every core, so the plugin lint runs half as many at once.
 PLUGIN_LINT_JOBS ?= $(shell expr \( $(JOBS) + 1 \) / 2)
+PLUGIN_BUILD_JOBS ?= $(JOBS)
 # GNU make 4 keeps the output of a job together; make 3.81 on macOS has no such option.
 OUTPUT_SYNC := $(if $(filter output-sync,$(.FEATURES)),--output-sync=target,)
 
@@ -126,8 +127,13 @@ plugins_index_test: ## test the plugin index build
 	node --test $(PLUGIN_INDEX)/build.test.mjs $(PLUGIN_BUNDLE)/select.test.mjs
 
 .PHONY: plugins_build
-plugins_build: lib_ui_components_build plugins_index ## build every plugin
-	$(call run_in_plugins,build)
+plugins_build: lib_ui_components_build plugins_index ## build every plugin, $(PLUGIN_BUILD_JOBS) at a time
+	$(MAKE) -j $(PLUGIN_BUILD_JOBS) $(OUTPUT_SYNC) $(PLUGIN_BUILD_TARGETS)
+
+PLUGIN_BUILD_TARGETS := $(addprefix plugins_build/,$(PLUGIN_DIRS))
+.PHONY: $(PLUGIN_BUILD_TARGETS)
+$(PLUGIN_BUILD_TARGETS): plugins_build/%:
+	$(MAKE) -C $* build
 
 .PHONY: plugins_lint
 plugins_lint: lib_ui_components_build ## lint every plugin, $(PLUGIN_LINT_JOBS) at a time
@@ -254,8 +260,8 @@ protocol_gen: lib_protocol_generate ## alias for lib_protocol_generate
 
 .PHONY: lib_protocol_generate_check
 lib_protocol_generate_check: lib_protocol_generate ## verify protocol schema is up to date
-	git add -AN -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go
-	git diff --exit-code -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go
+	git add -AN -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go libs/plugin/sdk-go/host/events.go
+	git diff --exit-code -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go libs/plugin/sdk-go/host/events.go
 
 .PHONY: lib_protocol_compile
 lib_protocol_compile: ## compile protocol Go packages

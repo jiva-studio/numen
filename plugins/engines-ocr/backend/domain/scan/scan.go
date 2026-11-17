@@ -1,5 +1,5 @@
-// Package scan holds what the recognizer reads off a page drawn as an image: its regions, the boxes
-// of each region and the models it read them with.
+// Package scan holds what the recognizer reads off a page drawn as an image (its regions, the boxes
+// of each region and the models it read them with) and which files the plugin recognizes. It reads no file.
 package scan
 
 import "image"

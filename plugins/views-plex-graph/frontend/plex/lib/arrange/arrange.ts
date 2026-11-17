@@ -25,7 +25,8 @@ import {
   type Rooms,
   type Widths,
 } from './layout/placement'
-import { routeEdges, createRouting } from './edges/routing'
+import { createRouting } from './edges/routing'
+import { routeEdges } from './edges/routeEdges'
 import { separateTitles } from './edges/titles'
 import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
 

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { useReviewDays } from './reviewDays'
-import type { ReviewDays, ReviewDaysClient } from './reviewDays'
+import type { ReviewDaysDeps } from './reviewDays'
+
+type ReviewDaysClient = ReviewDaysDeps['cards']
+type ReviewDays = Awaited<ReturnType<ReviewDaysClient['listReviewDays']>>
 
 const createReviewDays = (
   days: [string, number][],

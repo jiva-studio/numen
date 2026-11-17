@@ -16,6 +16,7 @@ export default defineConfig({
       include: ['src'],
       exclude: ['src/vite.ts', 'src/**/*.test.ts', 'src/**/*.stories.ts'],
       entryRoot: 'src',
+      tsconfigPath: './tsconfig.lib.json',
     }),
   ],
   resolve: { alias: { '@': src } },

@@ -31,6 +31,3 @@ type DependencyStatus struct {
 	Error           string
 	Resolved        *ResolvedDependency
 }
-
-// RuntimeONNX is the id of the ONNX runtime a plugin requires as a runtime dependency.
-const RuntimeONNX = "onnxruntime"

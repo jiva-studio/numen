@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
@@ -104,7 +105,7 @@ func mountSearch(w *windowWiring) {
 		search.NewFindText(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 		searchcancel.NewSearches(w.cfg.Clock()),
 	)
-	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError)
+	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError, newSearchRuns(w))
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
@@ -157,7 +158,7 @@ func mountNote(w *windowWiring) {
 	outlining := notewindow.NewOutline(
 		state,
 		query.NewGetOpeningNote(w.db.NoteQueries()),
-		query.NewGetRelatedNotesView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
+		query.NewGetRelatedNotesView(w.db.NoteQueryReads(), w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 		query.NewListHeadings(w.db.NoteQueries()),
 	)
 	links := notewindow.NewLinks(
@@ -230,7 +231,7 @@ func shareVaultList(opened *windowWiring) {
 		Edit:    windowsession.VaultEdits{Add: useCases.Change.Add, Rename: useCases.Change.Rename, Remove: useCases.Change.Remove},
 		Find:    opened.cases.Listing.Find,
 		Missing: opened.cases.Listing.FolderCheck,
-		Open:    opened.inst,
+		Open:    opened.cases.OpenPlugin,
 	}))
 }
 
@@ -251,12 +252,14 @@ func getReadVault(a pluginsWiring, db *Index) indexing.OpenReading {
 	}
 }
 
-func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
+func newIndexWorker(
+	a pluginsWiring, db *Index, state *editor.State, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault), out io.Writer,
+) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
 		Reading:      getReadVault(a, db),
 		Source:       embedding.GetSource(),
 		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
-		IndexChanged: state.Events.EmitIndexChanged,
+		IndexChanged: indexChanged,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
 		Quiet:        indexing.QuietPeriod,
 		After:        a.vault.Clock.After,
@@ -282,7 +285,7 @@ func getTextVersions(a pluginsWiring) windowsession.TextVersions {
 	return nil
 }
 
-func getTriggerSource(a pluginsWiring) windowsession.TriggerSource {
+func getTriggerSource(a pluginsWiring, frontmatter *indexnote.FrontmatterChanges) windowsession.TriggerSource {
 	return windowsession.TriggerSource{
 		Open: func() windowsession.TriggerRunner {
 			if triggers := openTriggers(a); triggers != nil {
@@ -290,7 +293,8 @@ func getTriggerSource(a pluginsWiring) windowsession.TriggerSource {
 			}
 			return nil
 		},
-		Watch: func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
+		Watch:            func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
+		WatchFrontmatter: frontmatter.Watch,
 	}
 }
 
@@ -335,4 +339,20 @@ func getConnectionResolve(c pluginsWiring) connectionport.ResolveConnection {
 		return nil
 	}
 	return connection.NewResolve(deps).Execute
+}
+
+func getFeedStart(a pluginsWiring, db *Index) func(ctx context.Context, v domain.Vault) func() {
+	events := windowsession.FeedEvents{
+		WatchWrites:    db.FeedChanges().Watch,
+		WatchPlugins:   func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
+		ReadHead:       db.FileChanges().GetHead,
+		ListPaths:      db.FileChanges().ListChangedPaths,
+		GetContentType: a.PluginHost.Watch.GetContentType,
+		Emit: func(v domain.Vault, types []domain.ContentType) {
+			a.PluginHost.Runtime.EmitFilesChanged(string(v.ID), types)
+		},
+		Quiet: windowsession.FeedQuietPeriod,
+		After: a.vault.Clock.After,
+	}
+	return events.Start
 }

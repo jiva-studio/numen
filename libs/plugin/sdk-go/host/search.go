@@ -23,11 +23,12 @@ var (
 	ErrEmbeddingFailed = errors.New("host: the embedding model could not answer")
 	// ErrInvalidQuery is what a sampling call gets whose query vector has another dimension count than the vectors of the index.
 	ErrInvalidQuery = errors.New("host: a query vector does not match the vectors of the index")
-	// ErrInvalidCondition is what ScoreChunks gets for a condition with no text, with both texts or with an
-	// empty text. A words query FTS5 rejects gets ErrInvalidWords.
-	ErrInvalidCondition = errors.New("host: a condition names neither or both of meaning and words")
-	// ErrInvalidWords is what a words query gets that FTS5 rejects.
-	ErrInvalidWords = errors.New("host: the words query is not valid FTS5")
+	// ErrSearchNotFound is a search the plugin did not start, or one removed or not read for 10 minutes.
+	ErrSearchNotFound = errors.New("host: no such search")
+	// ErrTooManySearches is a start while the most searches kept are all running.
+	ErrTooManySearches = errors.New("host: too many searches are kept")
+	// ErrInvalidPageToken is a page token of another search.
+	ErrInvalidPageToken = errors.New("host: the page token is not valid for this search")
 )
 
 // The permissions a plugin declares in its manifest. The search reads, the embedding included, need
@@ -223,23 +224,6 @@ const (
 	// is zero, and MaxSearchedResults the maximum for any limit.
 	DefaultSearchedResults = 20
 	MaxSearchedResults     = 500
-	// MaxScoredChunks is how many chunks one ScoreChunks call takes, MaxScoredConditions how many
-	// conditions, and MaxConditionBytes the longest text of a condition.
-	MaxScoredChunks     = 500
-	MaxScoredConditions = 16
-	MaxConditionBytes   = 8192
-)
-
-// SearchMode selects the participants of a SearchText call.
-type SearchMode int
-
-const (
-	// SearchModeHybrid fuses the words, the section names and the meaning. It is the zero value.
-	SearchModeHybrid SearchMode = iota
-	// SearchModeWords asks the words of the index alone.
-	SearchModeWords
-	// SearchModeMeaning asks the search source alone. A host with no model returns ErrNoModel.
-	SearchModeMeaning
 )
 
 // SearchResultQuery is a text search request.
@@ -259,23 +243,12 @@ type SearchResultQuery struct {
 	// either Unicode form (NFC or NFD). The index applies it before it truncates the list to Limit. Empty
 	// means the whole vault.
 	PathPrefix string
-	// Mode selects the participants; the zero value is SearchModeHybrid.
-	Mode SearchMode
-	// IsRawWords passes Query to the words of the index as an FTS5 query (phrases, NEAR, prefix *, AND,
-	// OR, NOT), unquoted. It is valid with SearchModeWords only; a query FTS5 rejects returns
-	// ErrInvalidWords.
-	IsRawWords bool
-	// IsWholeText asks for the whole text of the chunk of each result in WholeText, next to the excerpt in
-	// Text.
-	IsWholeText bool
 }
 
 // SearchResult is a span of source text matching a query.
 //
 //numen:api
 type SearchResult struct {
-	// ChunkID names the chunk that was hit. ScoreChunks takes it.
-	ChunkID string
 	// Path is the file the text is read from, relative to the vault.
 	Path string
 	// Text is the text around the hit, at most MaxExcerptBytes bytes of the chunk, and so possibly
@@ -293,67 +266,15 @@ type SearchResult struct {
 	// Selector locates the hit in the text version, as JSON, with the keys of domain.Selector. Empty
 	// for a note.
 	Selector string
-	// Similarity is the cosine similarity of the query with the best small chunk of this result the
-	// search by meaning returned; nil when the search by meaning did not return this result.
-	Similarity *float64
-	// WordScore is the negated bm25 of the best hit of the words in this result: positive, higher is
-	// better, comparable only within one query; nil when the search by words did not return it.
-	WordScore *float64
-	// WholeText is the whole text of the chunk Text is cut from; set only when the query asks with
-	// IsWholeText.
-	WholeText string
-}
-
-// ScoreCondition is one condition ScoreChunks scores a chunk against.
-//
-//numen:api
-type ScoreCondition struct {
-	// Meaning is a text compared by meaning. Exactly one of Meaning and Words is set.
-	Meaning string
-	// Words is an FTS5 query in the syntax of the index (phrases, NEAR, prefix *, AND, OR, NOT).
-	Words string
-}
-
-// ScoreQuery is the chunks a ScoreChunks call scores and the conditions it scores them against.
-//
-//numen:api
-type ScoreQuery struct {
-	// ChunkIDs are the chunk ids of search results, at most MaxScoredChunks.
-	ChunkIDs []string
-	// Conditions are at most MaxScoredConditions, each text at most MaxConditionBytes.
-	Conditions []ScoreCondition
-}
-
-// ConditionScore is how one chunk scores against one condition.
-//
-//numen:api
-type ConditionScore struct {
-	// Similarity is set for a meaning condition when a small chunk inside the chunk carries a vector:
-	// the best cosine similarity among them.
-	Similarity *float64
-	// IsMatch is, for a meaning condition, whether the similarity reaches the floor, and for a words
-	// condition whether the whole text of the chunk matches the query.
-	IsMatch bool
-}
-
-// ChunkScore is the score of one chunk against each condition.
-//
-//numen:api
-type ChunkScore struct {
-	ChunkID string
-	// Conditions holds one score per condition, in the order of the conditions.
-	Conditions []ConditionScore
-}
-
-// ChunkScores is the answer of ScoreChunks.
-//
-//numen:api
-type ChunkScores struct {
-	// Floor is the floor applied to the meaning conditions, zero when there are none.
-	Floor float64
-	// Chunks holds one score per distinct given id the vault holds, in the order given. An id of a
-	// source removed or cut again since the search is left out.
-	Chunks []ChunkScore
+	// Kind is the kind of the file: note, pdf, epub, audio, video, image or file. Set by GetSearch.
+	Kind string
+	// Title is the note title, else the file name without its extension. Set by GetSearch.
+	Title string
+	// Score is the score of the result, nil for a file matched by document conditions only. Set by GetSearch.
+	Score *float64
+	// IsWholeFile is a result with no place in its file: Start and Length are zero and Text is the start of
+	// the file. Set by GetSearch.
+	IsWholeFile bool
 }
 
 // SearchPolicy reads and sets the floor that a search by meaning applies to a vault. It needs the

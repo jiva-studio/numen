@@ -1,5 +1,13 @@
 import { defineParameterType } from 'playwright-bdd'
-import { parseArrow, parseExtent, parsePlace, parseTabKind, parseTabRef, parseTarget, parseVaultName } from '../drivers/rules.js'
+import {
+  parseArrow,
+  parseExtent,
+  parsePlace,
+  parseTabKind,
+  parseTabRef,
+  parseTarget,
+  parseVaultName,
+} from '../drivers/rules.js'
 
 defineParameterType({
   name: 'actor',
@@ -57,7 +65,8 @@ defineParameterType({
 
 defineParameterType({
   name: 'target',
-  regexp: / on the (?:file|folder) at "[^"]+"| on the (?:[A-Za-z]+ ){0,2}tab (?:at|titled) "[^"]+"|/,
+  regexp:
+    / on the (?:file|folder) at "[^"]+"| on the (?:[A-Za-z]+ ){0,2}tab (?:at|titled) "[^"]+"|/,
   transformer: (target: string) => parseTarget(target),
 })
 
@@ -76,7 +85,8 @@ defineParameterType({
 defineParameterType({
   name: 'containment',
   regexp: /has only|contains|does not contain/,
-  transformer: (containment: string) => (containment === 'has only' ? 'only' : containment === 'contains' ? 'include' : 'exclude'),
+  transformer: (containment: string) =>
+    containment === 'has only' ? 'only' : containment === 'contains' ? 'include' : 'exclude',
 })
 
 defineParameterType({

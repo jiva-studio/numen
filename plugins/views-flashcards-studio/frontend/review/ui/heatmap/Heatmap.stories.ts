@@ -11,7 +11,7 @@ import { h } from 'vue'
 import Heatmap from './Heatmap.vue'
 import { ROWS } from '../../lib/heatmap/grid'
 import { getDayName } from '../../../lib/day'
-import type { Tally } from '../../lib/heatmap/heatmap'
+import type { Tally } from '../../lib/heatmap/tally'
 import type { Words } from '../../lib/heatmap/words'
 
 const meta = {

@@ -65,7 +65,7 @@ func newRecordedSearch(t *testing.T, vault *hosttest.Vault, results []host.Searc
 		WithLibrary(func(id domain.VaultID) service.Library {
 			on := texts.With(id)
 			return service.Library{Versions: on, Texts: on, Search: recordingSearch{search: search.With(id), calls: calls}}
-		}).
+		}, host.SearchFunctions{}).
 		Registry()
 	if err != nil {
 		t.Fatal(err)

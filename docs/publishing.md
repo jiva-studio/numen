@@ -24,10 +24,10 @@ The manual is a folder of folders, each holding an `index.html`, and a pull zone
 | --------------------- | --------------------------------------------------- |
 | `latest/`             | The newest release, under names without a version   |
 | `releases/<version>/` | That release under names containing the stamp, kept |
-| `beta/`               | The newest beta, under names without a version      |
-| `builds/<stamp>/`     | That beta under names containing the stamp, kept    |
+| `nightly/`            | The newest nightly, under names without a version   |
+| `builds/<stamp>/`     | That nightly under names containing the stamp, kept |
 
-Eight builds and the files that go with them, one name each in `latest/` and `beta/`:
+Eight builds and the files that go with them, one name each in `latest/` and `nightly/`:
 
 | File                        | What it is                                                                        |
 | --------------------------- | --------------------------------------------------------------------------------- |
@@ -49,7 +49,7 @@ The repository is closed, which is why the flake is distributed as a file at all
 
 What an Arch user installs is the AUR package `numen-bin`. Pushing the `PKGBUILD` to the AUR is done manually by a person; the AUR repository contains this file and nothing else from this project.
 
-A name in `latest/` or `beta/` never contains a version, so a link written on the page keeps working after every release, and each run overwrites the same names. Every file is uploaded a second time under a name containing the stamp — `numen-2026.9.1-beta.884-884-283d1d5-macos.dmg` — and what is written under that name is written once and kept.
+A name in `latest/` or `nightly/` never contains a version, so a link written on the page keeps working after every release, and each run overwrites the same names. Every file is uploaded a second time under a name containing the stamp — `numen-2026.9.1-nightly.884-884-283d1d5-macos.dmg` — and what is written under that name is written once and kept.
 
 Beside the eight, `latest.json` records the version, the build number, the commit, the stamp, the channel, when it was released, and for each file its platform, architecture, kind, size, SHA-256, and the address of the stamped copy. A machine checking for the newest version fetches that address, and the page points its links to it, so a file taken from the page shows in its own name which build it is.
 
@@ -108,15 +108,19 @@ Each workflow checks every one of these before it does anything, so a missing on
 
 **The manual.** `docs.yml` does the same for `apps/docs`, and checks one thing more before it builds: that the five generated pages still match what the application does. It runs on a pull request touching the manual and on the twelve files those pages are generated from.
 
-**The builds.** `release.yml` is started manually and builds one channel. A stable release is named from the month it is made in and the number of stable releases already made that month — `2026.9.0`, then `2026.9.1` — and goes into `latest/` and `releases/`, which is where the page reads from. A beta is named from the stable release it precedes and the number of commits before it — `2026.9.1-beta.884` — and goes into `beta/` and `builds/`, which the page does not link to. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that each downloaded file is identical to the uploaded one.
+**The builds.** `release.yml` builds one channel. A person starts it by hand for a stable release, and `nightly.yml` calls it for a nightly. A stable release is named from the month it is made in and the number of stable releases already made that month — `2026.9.0`, then `2026.9.1` — and goes into `latest/` and `releases/`, which is where the page reads from. A nightly is named from the stable release it precedes and the number of commits before it — `2026.9.1-nightly.884` — and goes into `nightly/` and `builds/`, which the page does not link to. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that each downloaded file is identical to the uploaded one.
+
+**The nightly.** `nightly.yml` runs at 02:00 UTC and on demand. It does nothing when the commit it would build is the commit of the latest nightly release on GitHub; a manual run can set `force`. Otherwise it calls `reports.yml` on Linux and in the macOS virtual machine with both browser engines, and publishes the report. When every test passes, it calls `release.yml` for the nightly channel on that same commit, for all three systems, notarized: the Linux acceptance and end-to-end runs, and the live run in the macOS virtual machine, which uses a real model. A failed live run, or one that did not start because its build failed, holds the release back; a live run that the manual run did not ask for does not. After a release it keeps the 30 newest nightlies and deletes the older ones: the prereleases and their tags on GitHub, and the `builds/<stamp>/` folders on the CDN (`.github/scripts/prune-nightlies.sh`, which orders them by the build number in the stamp and refuses to delete anything when it cannot read a stamp). Stable releases, `releases/`, `latest/` and `nightly/` are never pruned. A manual run can set `dry-run-prune` to print what would be deleted on both and delete nothing. A failed scheduled run opens the issue `Nightly failed`, or adds a comment to it while it is open.
+
+**Going back.** The 30 newest nightlies stay on GitHub and under `builds/<stamp>/` on the CDN, so any of them can be downloaded by its stamp. The `nightly/` shelf and `nightly/latest.json` hold the newest build only, and are not repointed by hand. To make an older nightly the current one, run `release.yml` by hand with the channel `nightly` and `sha` set to that commit; it builds and publishes that commit as a new nightly, and the next scheduled run builds `main` again.
 
 The flatpak and the snap are made from what the Linux job built, each in a job of its own, and the Linux checkbox selects all three. The flatpak is installed from its own bundle before the run continues, and its version is queried, which shows that the GNOME runtime contains the browser the window is linked against.
 
 The changes made since the last stable release are computed before anything is uploaded, and are uploaded next to the builds as `notes.md`, which is the address `latest.json` contains. The repository is closed, so that copy is the one a reader of the page can open.
 
-Then it tags the commit it built and makes a release on GitHub with the notes, the canonical and stamped builds, `checksums.txt`, and `latest.json`. A beta's release is marked as a prerelease. The tag is made once the builds are up, so no tag points to a failed build.
+Then it tags the commit it built and makes a release on GitHub with the notes, the canonical and stamped builds, `checksums.txt`, and `latest.json`. A nightly's release is marked as a prerelease. The tag is made once the builds are up, so no tag points to a failed build.
 
-`latest/latest.json` is the one file requested repeatedly by installed copies — among them the editor, whose Update Notifier plugin (`md.numen.tools.updater`) requests it every few hours from its own backend, or requests `beta/latest.json` on the beta channel, or the address set in its settings instead — and the pull zone has to be set to cache it for no longer than a minute — today it is set to thirty days. Everything under `releases/` and `builds/` is written once, and the zone can cache it for any length of time.
+`latest/latest.json` is the one file requested repeatedly by installed copies — among them the editor, whose Update Notifier plugin (`md.numen.tools.updater`) requests it every few hours from its own backend, or requests `nightly/latest.json` on the nightly channel, which a build chooses for itself when no channel has been set, from the `-nightly` part of its version (a nightly build starts on the nightly channel and any other build on the stable one; a channel the person chose wins), or the address set in its settings instead — and the pull zone has to be set to cache it for no longer than a minute — today it is set to thirty days. Everything under `releases/` and `builds/` is written once, and the zone can cache it for any length of time.
 
 The page is on one host and the builds on another, so the builds' zone has to send `Access-Control-Allow-Origin` for the page to read the manifest at all. Until it does, the page keeps the links it was written with, which point to the newest build under names without a version.
 

@@ -7,10 +7,10 @@ import {
   getAnchor,
   getAnchorScroll,
   getCurrentPage,
-  getScrollTarget,
   type Anchor,
   type Row,
 } from '../lib/strip'
+import { getScrollTarget } from '../lib/scrollTarget'
 import type { PanScroll } from './scroll'
 
 export interface RowRestoreSources {

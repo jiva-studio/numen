@@ -94,14 +94,14 @@ func TestTranscriptCreateWhenTheTaskEndsReturnsTheVersion(t *testing.T) {
 	t.Cleanup(transcriber.Close)
 	requests := NewRequests(transcriber, func(id domain.VaultID) Vault { return s.vault.With(id) })
 	first, err := requests.Create(t.Context(), "Lectures", lecture)
-	if err != nil || first.State != stateStarted {
+	if err != nil || first.State != StateStarted {
 		t.Fatalf("the first request returned %+v, %v, want started", first, err)
 	}
 	<-queue.ending
 
 	second, err := requests.Create(t.Context(), "Lectures", lecture)
 
-	if err != nil || second.State != stateDone || second.Version == "" {
+	if err != nil || second.State != StateDone || second.Version == "" {
 		t.Errorf("a request while the task ends returned %+v, %v, want done with the version", second, err)
 	}
 	letGo()

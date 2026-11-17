@@ -1,79 +1,16 @@
-/**
- * What a line of typing evaluates to as a number, where the bounds leave it, and
- * where a key leaves it.
- *
- * Pure: the same text gives the same answer wherever it is read, so what the
- * field hands on can be named without drawing it.
- */
 import { computed, nextTick, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { clamp, getDecimalPlaces, roundToPlaces, type Bounds } from '@/shared/lib/math/bounds'
+import { clamp, type Bounds } from '@/shared/lib/math/bounds'
+import {
+  formatNumber,
+  isAllowed,
+  isPartialNumber,
+  isTextForValue,
+  parseNumber,
+  stepForKey,
+} from './numberText'
+import { snapToBounds } from './snapToBounds'
 
 export const DEFAULT_BOUNDS: Bounds = { min: 0, max: 999, step: 1 }
-
-/** Text a number could still be typed out of: a lone sign, a trailing point. */
-const ON_ITS_WAY = /^[+-]?(\d+([.,]\d*)?|[.,]\d*)?$/
-
-/** A comma between a whole number and a group of three, which is no point. */
-const GROUPED = /^[+-]?[1-9]\d{0,2},\d{3}$/
-
-/** Whether more typing could still make a number of the text. */
-export const isPartialNumber = (text: string): boolean => {
-  const cleanText = text.trim()
-  return ON_ITS_WAY.test(cleanText) && !GROUPED.test(cleanText)
-}
-
-/**
- * The number the text represents; null when it does not represent one. The
- * accepted shape is what a user types: no exponent, no hexadecimal, no word for infinity.
- */
-export const parseNumber = (text: string): number | null => {
-  const cleanText = text.trim()
-  if (cleanText === '' || !isPartialNumber(cleanText)) return null
-  const value = Number(cleanText.replace(',', '.'))
-  return Number.isFinite(value) ? value : null
-}
-
-const onStep = (value: number, bounds: Bounds): number => {
-  if (bounds.step <= 0) return value
-  const steps = Math.round((value - bounds.min) / bounds.step)
-  return roundToPlaces(bounds.min + steps * bounds.step, getDecimalPlaces(bounds.step))
-}
-
-/** Where the bounds leave a number: on a place the step lays, inside the ends. */
-export const snapToBounds = (value: number, bounds: Bounds): number =>
-  clamp(onStep(value, bounds), bounds)
-
-/** Whether the text is a number the bounds allow. An empty field is neither. */
-export const isAllowed = (text: string, bounds: Bounds): boolean => {
-  const value = parseNumber(text)
-  // Stryker disable next-line ConditionalExpression: value !== null narrows number | null for TypeScript
-  return value !== null && value === snapToBounds(value, bounds)
-}
-
-/** Where an arrow key leaves the number: one step from at its current position. */
-export const stepBy = (value: number | null, delta: number, bounds: Bounds): number =>
-  snapToBounds((value ?? bounds.min) + delta * bounds.step, bounds)
-
-/** How many steps a page key covers at once. */
-const PACES = 10
-
-/** Where a key leaves the number, and nothing for a key the field does not answer. */
-export const stepForKey = (key: string, value: number | null, bounds: Bounds): number | null => {
-  if (key === 'Home') return snapToBounds(bounds.min, bounds)
-  if (key === 'End') return snapToBounds(bounds.max, bounds)
-  if (key === 'ArrowUp') return stepBy(value, 1, bounds)
-  if (key === 'ArrowDown') return stepBy(value, -1, bounds)
-  if (key === 'PageUp') return stepBy(value, PACES, bounds)
-  if (key === 'PageDown') return stepBy(value, -PACES, bounds)
-  return null
-}
-
-/** How a number is written into the field. */
-export const formatNumber = (value: number | null): string => (value === null ? '' : String(value))
-
-/** Whether the text represents the current value. An empty field represents null. */
-export const isTextForValue = (text: string, value: number | null): boolean =>
-  value === null ? text.trim() === '' : parseNumber(text) === value
 
 /** The field's state while the user types, and what each action does with it. */
 export interface NumberEntry {

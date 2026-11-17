@@ -103,6 +103,8 @@ type world struct {
 	sites *sites
 	links *link.Links
 	limit int64
+
+	isTextAutomatic atomic.Bool
 }
 
 func newWorld(t *testing.T) *world {
@@ -115,7 +117,9 @@ func newWorld(t *testing.T) *world {
 	w.links = link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(w.texts), Queue: w.queue,
 		Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{}},
 		func() ports.Fetcher { return w.sites },
-		func() fetch.Settings { return fetch.Settings{CopyMaxSize: w.limit} })
+		func() fetch.Settings {
+			return fetch.Settings{CopyMaxSize: w.limit, IsTextDownloadAutomatic: w.isTextAutomatic.Load()}
+		})
 	w.texts.SetStore(pluginID, w.store)
 	t.Cleanup(w.links.Close)
 	return w

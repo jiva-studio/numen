@@ -2,7 +2,6 @@ package hostsearch
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -39,19 +38,5 @@ func TestSearchTextPassesPluginQueryToTheTextSearch(t *testing.T) {
 	p := finder.params
 	if finder.query != "heron" || p.Limit != 7 || p.PathPrefix != "library/" || len(p.Kinds) != 1 || p.Kinds[0] != domain.KindFile {
 		t.Errorf("the search received %q with %+v, want heron, limit 7, the prefix and the kind", finder.query, p)
-	}
-}
-
-func TestSearchTextReturnsTheWholeTextOfTheChunkWhenThePluginAsks(t *testing.T) {
-	body := strings.Repeat("reeds and water ", 200) + "the gray heron"
-	finder := &askedFinder{found: []domain.SearchResult{{Path: "library/Birds.pdf", Text: body, MatchOffset: len(body) - 5}}}
-	s := Search{TextSearch: search.NewSearchText(finder)}
-
-	got, err := s.SearchText(t.Context(), getVault(), plugin.SearchResultQuery{Query: "heron", Limit: 7, IsWholeText: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(got) != 1 || got[0].WholeText != body || got[0].Text == body {
-		t.Errorf("returned %+v, want the excerpt in the text and the whole chunk in the whole text", got)
 	}
 }

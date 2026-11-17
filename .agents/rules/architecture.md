@@ -166,6 +166,8 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `sdk-isolation`: the Go SDK imports no core and no application.
 - `sdk-ts-encapsulates-protocol`: no exported declaration of an entry in the `exports` of `@numen/plugin-sdk` reaches a declaration of `libs/core/protocol`.
 - `go/dead-exports`: every RPC of a service of `libs/core/protocol` and every export of `libs/plugin/sdk-go` and `libs/plugin/sdk-ts` has a consumer outside tests, a test counting only through test support (an exported declaration of a `libs/plugin/sdk-go` package whose directory name ends in `test`, which must itself be used by a test); the files generated from a contract (`*.pb.go`, `*_pb.ts` under `contracts`) hold no item; the check keeps no list of allowed items (§11 (l)).
+- `go/deadcode`: every function of `libs`, `plugins` and `apps` is reached from a main package, a package that `gomobile bind` builds, or test support (a package whose directory name ends in `test` or that lies under `internal/testsupport`) that a test uses, on some platform; a function only tests reach is deleted or called where it is meant to be used.
+- `ts/test-only-exports`: knip in production mode; an export or type that only tests, stories or test helpers use fails.
 - `go/api-types`: for each plugin whose backend serves JSON methods through `Handle` and `Stream` of the Go SDK server, every call its frontend makes through the `Api` of `@numen/plugin-sdk`, in a TypeScript file or the script of a Vue file, names a served method, and the request and response types of the call have the fields, optionality, enumerations and enumeration values the Go types send, read with the type checkers of both languages; a plugin that serves methods and whose frontend calls none fails.
 - `ts/contracts-imports`: no file under `libs/` outside `libs/plugin/sdk-go/contracts` and `libs/plugin/sdk-ts/src/contracts` imports a contract; only plugins and applications do (§11 (l)).
 - `ts/duplication`: no block of code repeats across files. It reads code only: declarations (`*.yml`, `*.yaml`, `go.mod`, `go.sum`, `Makefile` and plugin `manifest.json`) repeat by nature, since every plugin declares its own types, fields and settings, and are out of its scope (AGENTS.md §15 rule 16).
@@ -188,7 +190,7 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `plugin-config-golden-parity`: plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`; `eslint.config.js` and `numen-rules.mjs` are byte-identical copies of the golden files.
 - `make plugins_lint` with the golden `eslint.config.js`: a file of a `lib` segment imports no `ui`, `model` or `api` segment at any depth and no `.vue` file (`no-restricted-imports`), and every component passes `numen/max-inline-props`, `numen/vue-script-sections` and `numen/max-script-lines` from `numen-rules.mjs`. `tools/checks/structure/ts/plugins/golden-config.test.mjs` lints planted files in a copy of the template.
 - `plugin-backend-layers`: the layers inside a plugin backend point inward.
-- `go/plugin-boundary` and `go/plugin-isolation-packages` (`make checks TAGS=plugin,go`): apply the dependency rule of §11 to the type-checked import graph on 14 platform targets.
+- `go/plugin-boundary` and `go/plugin-isolation-packages` (`make checks TAGS=plugin,go`): apply the dependency rule of §11 to the type-checked import graph on 14 platform targets. A `go.mod` requires a plugin only when the non-test code of its own module passes a package of that plugin to `RegisterBuiltIn`, which links the plugin into the binary.
 - `plugins-leakage`: manifest schema and static non-leakage.
 - `plugins-use-main-entry`: the SDK and the UI library are imported through their declared entries.
 - `make plugins_lint`: no `@/**` and no `@plugins/**` in a plugin frontend.
@@ -271,6 +273,8 @@ graph LR
 - An agent is a provider of `acp.task`: agents-claude, agents-codex and agents-antigravity for the CLIs of Claude Code, Codex and Antigravity, agents-acp for ACP programs, agents-numen for its own loop over `llm.chat`. A plugin that runs an agent calls `acp.task` on the connection rows of its settings. The core starts no agent program and keeps no agent setting.
 - A protocol RPC or an export of the shared SDK serves plugins of more than one family, except the parts §11 (c) keeps for one consumer. What one plugin or one family uses lives in that plugin or in a contract. What nothing outside tests uses is deleted (`go/dead-exports`).
 - Every new package, type, RPC or export of the core, the core protocol or the shared SDK answers one question: which product domain does it know, and why is it not in a plugin or a contract? The answer "none" is the only one that keeps it there.
+
+**(m) The mobile app links its plugins into one binary.** A phone runs one process, so the mobile app links the plugins it ships into its binary and registers each with `RegisterBuiltIn`; they run in process and answer on the same routes as a plugin process. The desktop and every library never require a plugin. A `go.mod` requires a plugin only when the non-test code of its own module passes that plugin's `Manifest` to `RegisterBuiltIn` (`go/plugin-boundary`). The owner decided this on 2026-11-15.
 
 ### Comparison with established architectures
 

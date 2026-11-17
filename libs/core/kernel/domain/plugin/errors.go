@@ -62,10 +62,6 @@ var (
 	ErrEmbeddingFailed = errors.New("the embedding model could not answer")
 	// ErrInvalidQuery is a query vector whose dimension count is not the one of the vectors in the index.
 	ErrInvalidQuery = errors.New("a query vector does not match the vectors of the index")
-	// ErrInvalidCondition is a score condition that sets neither or both of its texts, or an empty text.
-	ErrInvalidCondition = errors.New("a condition sets neither or both of meaning and words")
-	// ErrInvalidWords is a words query that FTS5 cannot parse.
-	ErrInvalidWords = errors.New("the words query is not valid FTS5")
 )
 
 // invalidFocusError says what the error of a use case says and is ErrInvalidFocus as well.

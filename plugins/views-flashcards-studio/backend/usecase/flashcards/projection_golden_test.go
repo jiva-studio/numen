@@ -130,15 +130,15 @@ func writeProjection(out *strings.Builder, p projection.Projection) {
 	fmt.Fprintf(out, "admitted %s\n", formatAdmittedFlags(p.Admitted))
 	fmt.Fprintf(out, "closed %s\n", formatClosedBudgets(p.Closed))
 	fmt.Fprintf(out, "through %s\n", formatShares(p.Through))
-	fmt.Fprintf(out, "retained %s\n", formatShares(getRetainedShares(p.Retained)))
+	fmt.Fprintf(out, "retained %s\n", formatShares(getRetainedShares(p.Retained, len(p.Through))))
 }
 
-func getRetainedShares(one projection.RetentionByDay) []float64 {
-	days := one.Days()
-	out := make([]float64, 0, len(days))
-	for _, day := range days {
-		share, _ := one.GetShare(day)
-		out = append(out, share)
+func getRetainedShares(one projection.RetentionByDay, days int) []float64 {
+	var out []float64
+	for day := range days {
+		if share, answers := one.GetShare(day); answers {
+			out = append(out, share)
+		}
 	}
 	return out
 }

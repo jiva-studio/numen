@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMenuMount, settle } from './fixtures/mount'
 import Menu from './Menu.vue'
-import { SUBMENU_CLOSE_GRACE_MS, SUBMENU_OPEN_DELAY_MS } from './interaction/aim'
+import { SUBMENU_CLOSE_GRACE_MS, SUBMENU_OPEN_DELAY_MS } from './interaction/aimTiming'
 import type { MenuItem } from './items/item'
 
 const ITEMS: MenuItem[] = [

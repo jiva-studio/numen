@@ -26,6 +26,7 @@ import (
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
@@ -154,7 +155,7 @@ func TestAnEditReachesAListener(t *testing.T) {
 // holds, and a book is one of them.
 func TestABookDroppedInReachesAListener(t *testing.T) {
 	client, root := openVault(t, map[string]string{
-		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
+		"library/Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	})
 
 	changes := openChanges(t, client)
@@ -409,7 +410,7 @@ type records struct {
 
 func (w records) Write(
 	ctx context.Context, path string, content []byte, ref domain.FileStat,
-) (domain.FileStat, error) {
+) (vault.WriteResult, error) {
 	if w.hold != nil {
 		select {
 		case w.hold.begun <- struct{}{}:
@@ -418,7 +419,7 @@ func (w records) Write(
 		select {
 		case <-w.hold.until:
 		case <-ctx.Done():
-			return domain.FileStat{}, ctx.Err()
+			return vault.WriteResult{}, ctx.Err()
 		}
 	}
 	contentVal, err := w.NoteWriter.Write(ctx, path, content, ref)

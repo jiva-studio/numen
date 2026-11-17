@@ -1,7 +1,7 @@
 /** A recording and its transcript, held in memory for the tests of a recording tab. */
 import { ref } from 'vue'
 import type { Recordings, Cue } from '../types'
-import type { Player } from './player'
+import type { Player } from './mediaPlayer'
 
 export const TALK_URL = 'http://127.0.0.1:1/token/v/talks/Ants.mp3'
 

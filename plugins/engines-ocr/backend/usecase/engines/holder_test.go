@@ -152,3 +152,34 @@ func TestCustomModelFilesAreNotReadFromTheSnakeCaseKeys(t *testing.T) {
 		t.Errorf("model path %q and dictionary %q, want none", got.Path, got.Dict)
 	}
 }
+
+func TestTheRecognizerIsNotOpenedBeforeTheFirstPageIsRead(t *testing.T) {
+	o := &opened{}
+	models := newHolder(o.open)
+
+	models.UpdateSettings(map[string]string{"model": "pp-ocrv5-latin"})
+
+	if o.opened != 0 {
+		t.Errorf("the recognizer was opened %d times before a page was read", o.opened)
+	}
+}
+
+func TestAnOpenThatFailedForMissingFilesIsTriedAgainAtTheNextPage(t *testing.T) {
+	filesArrived := false
+	models := newHolder(func(context.Context, settings.Config) (Recognizer, error) {
+		if !filesArrived {
+			return nil, errors.New("model pp-ocr-det.onnx not found")
+		}
+		return fakeRecognizer{}, nil
+	})
+	if _, err := models.GetEngine(t.Context()); err == nil {
+		t.Fatal("the open succeeded without the files")
+	}
+
+	filesArrived = true
+	engine, err := models.GetEngine(t.Context())
+
+	if err != nil || engine == nil {
+		t.Errorf("GetEngine() after the files arrived = %v, %v", engine, err)
+	}
+}

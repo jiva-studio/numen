@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { describeError } from './wire'
+import { describeError } from './failure'
 import { ErrorCode } from './importer'
 import { WORDS as words } from '../words'
 

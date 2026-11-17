@@ -75,6 +75,12 @@ const (
 	// HostVaultServiceGetPathsOfTypeProcedure is the fully-qualified name of the HostVaultService's
 	// GetPathsOfType RPC.
 	HostVaultServiceGetPathsOfTypeProcedure = "/numen.v1.HostVaultService/GetPathsOfType"
+	// HostVaultServiceReadFrontmatterProcedure is the fully-qualified name of the HostVaultService's
+	// ReadFrontmatter RPC.
+	HostVaultServiceReadFrontmatterProcedure = "/numen.v1.HostVaultService/ReadFrontmatter"
+	// HostVaultServiceListFileChangesProcedure is the fully-qualified name of the HostVaultService's
+	// ListFileChanges RPC.
+	HostVaultServiceListFileChangesProcedure = "/numen.v1.HostVaultService/ListFileChanges"
 	// HostVaultServiceGetLinksProcedure is the fully-qualified name of the HostVaultService's GetLinks
 	// RPC.
 	HostVaultServiceGetLinksProcedure = "/numen.v1.HostVaultService/GetLinks"
@@ -171,6 +177,13 @@ type HostVaultServiceClient interface {
 	GetNamedPaths(context.Context, *connect.Request[v1.GetNamedPathsRequest]) (*connect.Response[v1.GetNamedPathsResponse], error)
 	// GetPathsOfType lists the notes of a type.
 	GetPathsOfType(context.Context, *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error)
+	// ReadFrontmatter returns the frontmatter of notes as the index holds it, in
+	// pages ordered by path. It needs vault:read.
+	ReadFrontmatter(context.Context, *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error)
+	// ListFileChanges returns the file change feed of the vault after a cursor:
+	// the latest event of each kind of each file, in the order the index stored
+	// them. It needs vault:read.
+	ListFileChanges(context.Context, *connect.Request[v1.ListFileChangesRequest]) (*connect.Response[v1.ListFileChangesResponse], error)
 	// GetLinks lists the links written in a note, with what each reaches now.
 	GetLinks(context.Context, *connect.Request[v1.GetLinksRequest]) (*connect.Response[v1.GetLinksResponse], error)
 	// GetBacklinks lists the links that reach a note.
@@ -321,6 +334,18 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("GetPathsOfType")),
 			connect.WithClientOptions(opts...),
 		),
+		readFrontmatter: connect.NewClient[v1.ReadFrontmatterRequest, v1.ReadFrontmatterResponse](
+			httpClient,
+			baseURL+HostVaultServiceReadFrontmatterProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("ReadFrontmatter")),
+			connect.WithClientOptions(opts...),
+		),
+		listFileChanges: connect.NewClient[v1.ListFileChangesRequest, v1.ListFileChangesResponse](
+			httpClient,
+			baseURL+HostVaultServiceListFileChangesProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("ListFileChanges")),
+			connect.WithClientOptions(opts...),
+		),
 		getLinks: connect.NewClient[v1.GetLinksRequest, v1.GetLinksResponse](
 			httpClient,
 			baseURL+HostVaultServiceGetLinksProcedure,
@@ -448,6 +473,8 @@ type hostVaultServiceClient struct {
 	getNoteTypes       *connect.Client[v1.GetNoteTypesRequest, v1.GetNoteTypesResponse]
 	getNamedPaths      *connect.Client[v1.GetNamedPathsRequest, v1.GetNamedPathsResponse]
 	getPathsOfType     *connect.Client[v1.GetPathsOfTypeRequest, v1.GetPathsOfTypeResponse]
+	readFrontmatter    *connect.Client[v1.ReadFrontmatterRequest, v1.ReadFrontmatterResponse]
+	listFileChanges    *connect.Client[v1.ListFileChangesRequest, v1.ListFileChangesResponse]
 	getLinks           *connect.Client[v1.GetLinksRequest, v1.GetLinksResponse]
 	getBacklinks       *connect.Client[v1.GetBacklinksRequest, v1.GetBacklinksResponse]
 	resolveLinks       *connect.Client[v1.ResolveLinksRequest, v1.ResolveLinksResponse]
@@ -536,6 +563,16 @@ func (c *hostVaultServiceClient) GetNamedPaths(ctx context.Context, req *connect
 // GetPathsOfType calls numen.v1.HostVaultService.GetPathsOfType.
 func (c *hostVaultServiceClient) GetPathsOfType(ctx context.Context, req *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error) {
 	return c.getPathsOfType.CallUnary(ctx, req)
+}
+
+// ReadFrontmatter calls numen.v1.HostVaultService.ReadFrontmatter.
+func (c *hostVaultServiceClient) ReadFrontmatter(ctx context.Context, req *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error) {
+	return c.readFrontmatter.CallUnary(ctx, req)
+}
+
+// ListFileChanges calls numen.v1.HostVaultService.ListFileChanges.
+func (c *hostVaultServiceClient) ListFileChanges(ctx context.Context, req *connect.Request[v1.ListFileChangesRequest]) (*connect.Response[v1.ListFileChangesResponse], error) {
+	return c.listFileChanges.CallUnary(ctx, req)
 }
 
 // GetLinks calls numen.v1.HostVaultService.GetLinks.
@@ -668,6 +705,13 @@ type HostVaultServiceHandler interface {
 	GetNamedPaths(context.Context, *connect.Request[v1.GetNamedPathsRequest]) (*connect.Response[v1.GetNamedPathsResponse], error)
 	// GetPathsOfType lists the notes of a type.
 	GetPathsOfType(context.Context, *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error)
+	// ReadFrontmatter returns the frontmatter of notes as the index holds it, in
+	// pages ordered by path. It needs vault:read.
+	ReadFrontmatter(context.Context, *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error)
+	// ListFileChanges returns the file change feed of the vault after a cursor:
+	// the latest event of each kind of each file, in the order the index stored
+	// them. It needs vault:read.
+	ListFileChanges(context.Context, *connect.Request[v1.ListFileChangesRequest]) (*connect.Response[v1.ListFileChangesResponse], error)
 	// GetLinks lists the links written in a note, with what each reaches now.
 	GetLinks(context.Context, *connect.Request[v1.GetLinksRequest]) (*connect.Response[v1.GetLinksResponse], error)
 	// GetBacklinks lists the links that reach a note.
@@ -814,6 +858,18 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("GetPathsOfType")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostVaultServiceReadFrontmatterHandler := connect.NewUnaryHandler(
+		HostVaultServiceReadFrontmatterProcedure,
+		svc.ReadFrontmatter,
+		connect.WithSchema(hostVaultServiceMethods.ByName("ReadFrontmatter")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceListFileChangesHandler := connect.NewUnaryHandler(
+		HostVaultServiceListFileChangesProcedure,
+		svc.ListFileChanges,
+		connect.WithSchema(hostVaultServiceMethods.ByName("ListFileChanges")),
+		connect.WithHandlerOptions(opts...),
+	)
 	hostVaultServiceGetLinksHandler := connect.NewUnaryHandler(
 		HostVaultServiceGetLinksProcedure,
 		svc.GetLinks,
@@ -952,6 +1008,10 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceGetNamedPathsHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetPathsOfTypeProcedure:
 			hostVaultServiceGetPathsOfTypeHandler.ServeHTTP(w, r)
+		case HostVaultServiceReadFrontmatterProcedure:
+			hostVaultServiceReadFrontmatterHandler.ServeHTTP(w, r)
+		case HostVaultServiceListFileChangesProcedure:
+			hostVaultServiceListFileChangesHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetLinksProcedure:
 			hostVaultServiceGetLinksHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetBacklinksProcedure:
@@ -1051,6 +1111,14 @@ func (UnimplementedHostVaultServiceHandler) GetNamedPaths(context.Context, *conn
 
 func (UnimplementedHostVaultServiceHandler) GetPathsOfType(context.Context, *connect.Request[v1.GetPathsOfTypeRequest]) (*connect.Response[v1.GetPathsOfTypeResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetPathsOfType is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) ReadFrontmatter(context.Context, *connect.Request[v1.ReadFrontmatterRequest]) (*connect.Response[v1.ReadFrontmatterResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ReadFrontmatter is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) ListFileChanges(context.Context, *connect.Request[v1.ListFileChangesRequest]) (*connect.Response[v1.ListFileChangesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ListFileChanges is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) GetLinks(context.Context, *connect.Request[v1.GetLinksRequest]) (*connect.Response[v1.GetLinksResponse], error) {

@@ -223,7 +223,7 @@ func (s *scene) readLiveText(t *testing.T, path string) domain.VersionText {
 func TestRecognizePDFWritesPositionedText(t *testing.T) {
 	s := newScene(t)
 
-	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf"}); err != nil || s.recognizer.getPageCount() != 2 {
+	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf", IsUserStarted: true}); err != nil || s.recognizer.getPageCount() != 2 {
 		t.Fatalf("recognized %d pages (%v), want two", s.recognizer.getPageCount(), err)
 	}
 	text := s.readLiveText(t, "books/scan.pdf")
@@ -253,7 +253,7 @@ func TestRecognizePDFWritesPositionedText(t *testing.T) {
 func TestRecognizeReadsAPDFWithATextLayer(t *testing.T) {
 	s := newScene(t)
 
-	if err := s.recognize(t, recognition.Request{Path: "books/layer.pdf"}); err != nil || s.recognizer.getPageCount() == 0 {
+	if err := s.recognize(t, recognition.Request{Path: "books/layer.pdf", IsUserStarted: true}); err != nil || s.recognizer.getPageCount() == 0 {
 		t.Fatalf("a PDF with a layer: %v, %d pages read", err, s.recognizer.getPageCount())
 	}
 	s.readLiveText(t, "books/layer.pdf")
@@ -262,7 +262,7 @@ func TestRecognizeReadsAPDFWithATextLayer(t *testing.T) {
 func TestRecognizeReadsARecognizedFileAgain(t *testing.T) {
 	s := newScene(t)
 	for range 2 {
-		if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf"}); err != nil {
+		if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf", IsUserStarted: true}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -287,7 +287,7 @@ func (s *scene) getStoreNames(t *testing.T) []string {
 func TestRecognizeKeepsOnlyTheVersionFile(t *testing.T) {
 	s := newScene(t)
 
-	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf"}); err != nil {
+	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf", IsUserStarted: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -299,14 +299,14 @@ func TestRecognizeKeepsOnlyTheVersionFile(t *testing.T) {
 
 func TestRecognizeReadsAgainOnceTheVersionIsRemoved(t *testing.T) {
 	s := newScene(t)
-	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf"}); err != nil {
+	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf", IsUserStarted: true}); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.texts.RemoveVersion(t.Context(), "books/scan.pdf", recognition.VersionKey); err != nil {
 		t.Fatal(err)
 	}
 
-	err := s.recognize(t, recognition.Request{Path: "books/scan.pdf"})
+	err := s.recognize(t, recognition.Request{Path: "books/scan.pdf", IsUserStarted: true})
 
 	if err != nil || s.recognizer.getPageCount() != 4 {
 		t.Fatalf("recognized (%v) after %d pages, want the file read again", err, s.recognizer.getPageCount())
@@ -323,7 +323,7 @@ func TestRecognizeResumesFromTheProgressRecord(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := s.recognize(t, recognition.Request{Path: "books/scan.pdf"})
+	err := s.recognize(t, recognition.Request{Path: "books/scan.pdf", IsUserStarted: true})
 
 	if err != nil || s.recognizer.getPageCount() != 1 {
 		t.Fatalf("recognized (%v) after %d pages, want only the second page read", err, s.recognizer.getPageCount())
@@ -340,7 +340,7 @@ func TestRecognizeEmptyScanKeepsNothing(t *testing.T) {
 	s := newScene(t)
 	s.recognizer.says = ""
 
-	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf"}); err != nil {
+	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf", IsUserStarted: true}); err != nil {
 		t.Fatal(err)
 	}
 	listing, err := s.texts.ListVersions(t.Context(), "books/scan.pdf")
@@ -367,7 +367,7 @@ func TestRecognizeFailureReportsTaskError(t *testing.T) {
 	s := newScene(t)
 	s.recognizer.err = errors.New("the model ran out of memory")
 
-	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf"}); err == nil {
+	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf", IsUserStarted: true}); err == nil {
 		t.Fatal("a recognizer that failed recognized the file")
 	}
 	tasks := s.queue.ListTasks()
@@ -376,7 +376,7 @@ func TestRecognizeFailureReportsTaskError(t *testing.T) {
 	}
 
 	s.recognizer.err = nil
-	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf"}); err != nil {
+	if err := s.recognize(t, recognition.Request{Path: "books/scan.pdf", IsUserStarted: true}); err != nil {
 		t.Fatal(err)
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
@@ -386,7 +386,7 @@ func TestRecognizeFailureReportsTaskError(t *testing.T) {
 
 func TestRecognizeMissingFileFails(t *testing.T) {
 	s := newScene(t)
-	if err := s.recognize(t, recognition.Request{Path: "books/gone.pdf"}); !errors.Is(err, host.ErrNotExist) {
+	if err := s.recognize(t, recognition.Request{Path: "books/gone.pdf", IsUserStarted: true}); !errors.Is(err, host.ErrNotExist) {
 		t.Fatalf("a file that is not there answered %v", err)
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
@@ -398,7 +398,7 @@ func TestRecognizeFileDeletedDuringRecognitionReportsNoTask(t *testing.T) {
 	s := newScene(t)
 	s.recognizer.onRecognize = func() { s.vault.Remove("books/scan.pdf") }
 
-	err := s.recognize(t, recognition.Request{Path: "books/scan.pdf"})
+	err := s.recognize(t, recognition.Request{Path: "books/scan.pdf", IsUserStarted: true})
 
 	if !errors.Is(err, host.ErrNotExist) {
 		t.Fatalf("a file deleted during its recognition answered %v", err)
@@ -441,7 +441,7 @@ func TestRecognizeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	other.SetStore(pluginID, chemistry.Store())
 	other.File("books/scan.pdf", []byte(raw))
 
-	if err := s.recognize(t, recognition.Request{Vault: "Chemistry", Path: "books/scan.pdf"}); err != nil {
+	if err := s.recognize(t, recognition.Request{Vault: "Chemistry", Path: "books/scan.pdf", IsUserStarted: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -494,17 +494,17 @@ func TestRecognizeInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 
 	physicsErr := make(chan error, 1)
 	go func() {
-		physicsErr <- s.recognize(t, recognition.Request{Vault: "Physics", Path: "books/scan.pdf"})
+		physicsErr <- s.recognize(t, recognition.Request{Vault: "Physics", Path: "books/scan.pdf", IsUserStarted: true})
 	}()
 	<-firstPage
 
-	if err := s.recognize(t, recognition.Request{Vault: "Physics", Path: "books/scan.pdf"}); !errors.Is(err, recognition.ErrAlreadyRecognizing) {
+	if err := s.recognize(t, recognition.Request{Vault: "Physics", Path: "books/scan.pdf", IsUserStarted: true}); !errors.Is(err, recognition.ErrAlreadyRecognizing) {
 		t.Fatalf("second run in Physics returned %v, want %v", err, recognition.ErrAlreadyRecognizing)
 	}
 
 	chemErr := make(chan error, 1)
 	go func() {
-		chemErr <- s.recognize(t, recognition.Request{Vault: "Chemistry", Path: "books/scan.pdf"})
+		chemErr <- s.recognize(t, recognition.Request{Vault: "Chemistry", Path: "books/scan.pdf", IsUserStarted: true})
 	}()
 
 	physicsID := recognition.GetTaskID("Physics", "books/scan.pdf")
@@ -547,7 +547,7 @@ func TestStartReportsTaskBeforeReturning(t *testing.T) {
 		once.Do(func() { <-release })
 	}
 
-	done, started, err := s.run.Start(t.Context(), recognition.Request{Path: "books/scan.pdf"})
+	done, started, err := s.run.Start(t.Context(), recognition.Request{Path: "books/scan.pdf", IsUserStarted: true})
 	if err != nil || !started {
 		t.Fatalf("Start returned (%v, %v)", started, err)
 	}

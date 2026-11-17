@@ -6,33 +6,8 @@
  * here is the same text on any machine on any day.
  */
 
+import { braceField, getSlots, SLOT } from './braces'
 import type { FieldValue } from './card'
-
-/** The braces, and the field name allowed between them. */
-const SLOT = /\{\{([^{}]*)\}\}/g
-
-/** One slot at its current position in a template. */
-export interface Slot {
-  readonly field: string
-  readonly from: number
-  readonly to: number
-}
-
-/** Every slot a template names, in template order. */
-export function getSlots(template: string): readonly Slot[] {
-  const found: Slot[] = []
-  for (const match of template.matchAll(SLOT)) {
-    found.push({
-      field: match[0].slice(2, -2),
-      from: match.index,
-      to: match.index + match[0].length,
-    })
-  }
-  return found
-}
-
-/** The braces a field is written as. */
-export const braceField = (field: string): string => `{{${field}}}`
 
 const escapeHtml = (text: string): string =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -82,13 +57,6 @@ export function insert(template: string, pos: number, field: string): InsertResu
     text: template.slice(0, where) + content + template.slice(where),
     caret: where + content.length,
   }
-}
-
-/** A template whose every slot naming one field names another. */
-export function renameField(template: string, from: string, to: string): string {
-  return template.replace(SLOT, (whole, inside: string) =>
-    inside === from ? braceField(to) : whole,
-  )
 }
 
 export const sampleValues = (fields: readonly string[]): readonly FieldValue[] =>

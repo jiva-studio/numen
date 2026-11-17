@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 )
 
 // Identity tells who made a call and what that plugin may do.
@@ -43,7 +44,8 @@ type WorkQueue interface {
 
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
 // plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
-// window shows a vault; the tools are read at each call.
+// window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
+// every file.
 type Callers struct {
 	Identity  Identity
 	Leases    Leases
@@ -51,6 +53,12 @@ type Callers struct {
 	Tools     func() PluginTools
 	Health    HealthCalls
 	Processes ProcessRelease
+	Files     FileTypes
+}
+
+// FileTypes tells which files a plugin takes, by the types its manifest declares.
+type FileTypes interface {
+	IsTakingFile(pluginID, path string) bool
 }
 
 // ProcessRelease stops the process of a plugin that has finished its work: at once where it holds no
@@ -120,9 +128,6 @@ type TextSearch interface {
 	// source and every text version: by keywords, and by embedding when the installation has a model.
 	// An installation with no model searches by keywords only.
 	SearchText(ctx context.Context, v domain.Vault, q plugin.SearchResultQuery) ([]domain.SearchResult, error)
-	// ScoreChunks scores chunks of the vault against conditions over the whole large chunk that encloses
-	// each, and returns the floor applied to the meaning conditions, zero when there are none.
-	ScoreChunks(ctx context.Context, v domain.Vault, q plugin.ScoreQuery) ([]plugin.ChunkScore, float64, error)
 	// FindNearestChunks returns the small chunks of the vault nearest the vector under the recipe of the
 	// query, nearest first, at or above its floor, else the effective floor of the vault. The recipe
 	// rules of SearchIndex apply.
@@ -139,11 +144,13 @@ type SearchFloors interface {
 	SetSearchFloor(ctx context.Context, v domain.Vault, recipe string, floor float64) error
 }
 
-// SearchAccess is the search index, the text search and the search floors of the vaults.
+// SearchAccess is the search index, the text search and the search floors of the vaults, and the searches
+// of the query language, which are nil where the host runs none.
 type SearchAccess struct {
 	SearchIndex
 	TextSearch
 	SearchFloors
+	Runs *searchrunusecase.SearchRuns
 }
 
 // WindowControl is the main window of the vault, exposed to the plugins that call the host. A path

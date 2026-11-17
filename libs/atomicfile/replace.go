@@ -2,6 +2,8 @@ package atomicfile
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -23,10 +25,14 @@ const (
 	tempFileAttempts = 10_000
 )
 
-// Stat is the size and modification time of the file that Replace wrote.
+// Stat is the size, the modification time and the content hash of the file that Replace wrote.
+// Hash is the SHA-256 of the bytes copied from the reader, in lowercase hex, taken while they are
+// written. It is the same value as HashContent of libs/note/domain for the same bytes, so the two
+// can be compared.
 type Stat struct {
 	Size    int64
 	ModTime time.Time
+	Hash    string
 }
 
 // WriteFile writes the content of from to the file at path, whole or not at all: a reader of the
@@ -82,7 +88,8 @@ func replace(
 		}
 	}()
 
-	if _, err := io.Copy(tmp, from); err != nil {
+	hash := sha256.New()
+	if _, err := io.Copy(io.MultiWriter(tmp, hash), from); err != nil {
 		return Stat{}, errors.Join(err, tmp.Close())
 	}
 	if err := sync(tmp); err != nil {
@@ -97,7 +104,8 @@ func replace(
 	if err := rename(pos, target); err != nil {
 		return Stat{}, err
 	}
-	return Stat{Size: info.Size(), ModTime: info.ModTime()}, syncDirectory(root, dir, runtime.GOOS, sync)
+	stat = Stat{Size: info.Size(), ModTime: info.ModTime(), Hash: hex.EncodeToString(hash.Sum(nil))}
+	return stat, syncDirectory(root, dir, runtime.GOOS, sync)
 }
 
 func getTempPattern(name string) string {

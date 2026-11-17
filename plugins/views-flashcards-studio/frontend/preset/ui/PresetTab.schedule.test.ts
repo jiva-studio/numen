@@ -9,12 +9,14 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import { NO_CURVE_POINT, STOP_REASONS, type Curve } from '../../lib/presets'
+import { NO_CURVE_POINT, type Curve } from '../../lib/presets'
 import { mountPresetTab, point, rows, createTab } from '../fixtures'
 import { WORDS as words } from '../lib/words'
 
 describe('a preset that schedules nothing', () => {
-  const STOPPING = STOP_REASONS.filter((one) => one !== StopReason.NOTHING)
+  const STOPPING = Object.values(StopReason).filter(
+    (one) => one !== StopReason.NOTHING && one !== StopReason.UNSPECIFIED,
+  )
 
   /** The tab drawn for a preset stopped for that reason. */
   const mountStoppedTab = (why: StopReason) => {

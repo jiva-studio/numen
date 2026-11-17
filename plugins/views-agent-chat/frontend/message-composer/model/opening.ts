@@ -17,8 +17,8 @@ export const browserTimer: Timer = {
   },
 }
 
-export const SPINNER_DELAY_MS = 150
-export const OPEN_LIMIT_MS = 1000
+const SPINNER_DELAY_MS = 150
+const OPEN_LIMIT_MS = 1000
 
 export function useDelayedOpen(isReady: Readonly<Ref<boolean>>, timer: Timer, onOpen: () => void) {
   const isOpen = shallowRef(false)

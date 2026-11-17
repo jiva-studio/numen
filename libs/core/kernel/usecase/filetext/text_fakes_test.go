@@ -161,3 +161,9 @@ func (t libraryVaultTexts) GetContentHash(ctx context.Context, path string) (_ s
 	defer func() { err = errors.Join(err, file.Close()) }()
 	return domain.HashReader(file)
 }
+
+func (s *libraryTexts) takeIn(path string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.outside, path)
+}

@@ -8,28 +8,15 @@ import {
   type Settings,
 } from './wire/settings'
 import { type Goal } from './wire/goal'
-import { StopReason, type BudgetName } from './stop'
-import type { CardsFailure, ErrorCode } from '../types'
+import type { StopReason, BudgetName } from './stop'
+import type { ErrorCode } from '../types'
+import type { PresetReadResult, PresetWriteResult } from './presetResults'
 
 export type { Goal, BudgetUnit, Rule, Load, Settings }
 
 export { DEFAULT_SETTINGS as DEFAULTS }
 
 export type { StopReason }
-
-/**
- * Every reason there is, `none` last. A verdict the schema gains and this does
- * not is caught where the two are mapped onto each other.
- */
-export const STOP_REASONS: readonly StopReason[] = [
-  StopReason.NO_MINUTES,
-  StopReason.NO_CARDS,
-  StopReason.NO_DAY,
-  StopReason.PAST_DAY,
-  StopReason.NO_LOAD,
-  StopReason.NO_WEEK,
-  StopReason.NOTHING,
-]
 
 /** The three, in the order they are offered. */
 export const GOALS: readonly Goal[] = ['minutes', 'retention', 'date']
@@ -86,19 +73,6 @@ export interface Preset {
   readonly stops: StopReason
   readonly stopsOn: StopReason
 }
-
-/** A preset as a read found it, and how far each of its settings goes. */
-export interface ReadPreset {
-  readonly preset: Preset | null
-  readonly at: string
-  readonly bounds: SettingsBounds
-}
-
-/** What reading a preset returned. */
-export type PresetReadResult = Result<ReadPreset, ErrorCode>
-
-/** What writing a preset returned. */
-export type PresetWriteResult = Result<{ readonly at: string }, CardsFailure>
 
 /** Where a preset was filed, or why none was made. */
 type MakeResult = Result<{ readonly path: string }, ErrorCode>

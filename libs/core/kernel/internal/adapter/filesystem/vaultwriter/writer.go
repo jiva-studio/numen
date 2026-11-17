@@ -27,6 +27,7 @@ type VaultWriter struct {
 	root    string
 	opts    vaultconfig.Options
 	ignored *vaultconfig.Ignoring
+	lock    *vaultLock
 }
 
 // OpenForWriting prepares a vault to be changed. The folder must already be
@@ -52,40 +53,48 @@ func OpenForWriting(root string, opts vaultconfig.Options) (*VaultWriter, error)
 	if cfg, err := vaultconfig.ReadConfig(abs, opts.ServiceDir); err == nil && len(cfg.Ignore) > 0 {
 		opts.Ignore = cfg.Ignore
 	}
-	return &VaultWriter{root: abs, opts: opts, ignored: opts.CompileIgnoring()}, nil
+	return &VaultWriter{root: abs, opts: opts, ignored: opts.CompileIgnoring(), lock: newVaultLock()}, nil
 }
 
 // newFileMode is the mode of a created note. An existing note keeps its mode,
 // which may be read-only.
 const newFileMode fs.FileMode = 0o644
 
-func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (_ domain.FileStat, err error) {
+// Write replaces a note. A baseline that is not the zero stat must be what the note is now, or the write
+// changes nothing and returns edit.ErrStale.
+func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (_ vault.WriteResult, err error) {
 	if ctx.Err() != nil {
-		return domain.FileStat{}, ctx.Err()
+		return vault.WriteResult{}, ctx.Err()
 	}
 	target, err := w.resolveNoteFile(path)
 	if err != nil {
-		return domain.FileStat{}, err
+		return vault.WriteResult{}, err
 	}
 	root, name, err := w.openRoot(target)
 	if err != nil {
-		return domain.FileStat{}, err
+		return vault.WriteResult{}, err
 	}
 	defer closeAndJoin(&err, root)
 
+	// The baseline is compared and the file replaced under one lock: with two locks, two writers with one
+	// baseline both pass the comparison.
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	mode, err := getWriteMode(root, name, path, stat)
 	if err != nil {
-		return domain.FileStat{}, err
+		return vault.WriteResult{}, err
 	}
 
 	if err := createParents(root, filepath.Dir(name), path); err != nil {
-		return domain.FileStat{}, err
+		return vault.WriteResult{}, err
 	}
 	written, err := atomicfile.Replace(ctx, root, name, bytes.NewReader(content), mode)
 	if err != nil {
-		return domain.FileStat{}, err
+		return vault.WriteResult{}, err
 	}
-	return domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime}, nil
+	w.lock.version++
+	replaced := domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime}
+	return vault.WriteResult{Stat: replaced, Version: w.lock.version}, nil
 }
 
 func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
@@ -115,6 +124,8 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 		return err
 	}
 	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	leaves, err := w.getRelativeName(source)
 	if err != nil {
 		return err
@@ -171,6 +182,8 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) (err error) {
 		return err
 	}
 	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	switch info, err := root.Stat(name); {
 	case err == nil && !info.IsDir():
 		return fmt.Errorf("make %s: %w", path, vault.ErrAlreadyExists)
@@ -193,6 +206,8 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) (err error) {
 		return err
 	}
 	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	if err := root.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}

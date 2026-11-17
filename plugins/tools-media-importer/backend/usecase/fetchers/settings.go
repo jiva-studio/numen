@@ -36,6 +36,9 @@ func parseValues(settings map[string]string, current values) values {
 	if v, ok := settings["automaticCaptions"]; ok {
 		current.Fetch.IsAutomatic = v != "false"
 	}
+	if v, ok := settings["downloadCaptionsAutomatically"]; ok {
+		current.Fetch.IsTextDownloadAutomatic = v == "true"
+	}
 	if mb, err := strconv.ParseInt(settings["copyMaxSizeMb"], 10, 64); err == nil && mb >= 0 {
 		current.Fetch.CopyMaxSize = mb << 20
 	}

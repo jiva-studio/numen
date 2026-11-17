@@ -159,3 +159,39 @@ func getRetentionSettings(newADay, reviewsADay int) Settings {
 		Rule: RuleInterval, Interval: 4, Backlog: wholeBacklog,
 	}
 }
+
+func (utcDays) GetDate(at time.Time) time.Time {
+	y, m, d := at.UTC().Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+}
+
+// zonedDays is a calendar whose review days begin at a time of the day in a zone, and may meet a
+// clock change at that time.
+type zonedDays struct {
+	starts time.Duration
+	in     *time.Location
+}
+
+func (c zonedDays) GetDate(at time.Time) time.Time {
+	local := at.In(c.in)
+	y, m, d := local.Date()
+	date := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+	if time.Duration(local.Hour())*time.Hour+time.Duration(local.Minute())*time.Minute < c.starts {
+		return date.AddDate(0, 0, -1)
+	}
+	return date
+}
+
+func (c zonedDays) GetName(at time.Time) string { return c.GetDate(at).Format(time.DateOnly) }
+
+func (c zonedDays) GetStart(at time.Time) time.Time {
+	y, m, d := c.GetDate(at).Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, c.in).Add(c.starts)
+}
+
+func (c zonedDays) GetEnd(at time.Time) time.Time { return c.GetEndOfDate(c.GetDate(at)) }
+
+func (c zonedDays) GetEndOfDate(date time.Time) time.Time {
+	y, m, d := date.Date()
+	return time.Date(y, m, d+1, 0, 0, 0, 0, c.in).Add(c.starts)
+}

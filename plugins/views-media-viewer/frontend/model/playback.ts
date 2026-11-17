@@ -2,7 +2,8 @@
  * Playback state of one recording in the shared audio player.
  */
 import { computed, ref, watch } from 'vue'
-import type { MediaTypeProbe, Player } from './player'
+import type { MediaTypeProbe } from './player'
+import type { Player } from './mediaPlayer'
 import type { RecordingSource } from '../types'
 
 /**

@@ -35,7 +35,7 @@ export interface SessionClient {
 }
 
 /** What opening a session returns. */
-export interface SessionStart {
+interface SessionStart {
   run: string
   cards: readonly {
     deck: string

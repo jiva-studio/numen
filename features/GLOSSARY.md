@@ -76,6 +76,11 @@ This file lists the things that exist in Numen, the word a person reads for each
 - States: unreadable frontmatter: `unreadable`, text "frontmatter unreadable"; "text cannot start with frontmatter" (`bodyUnwritable`).
 - Not: not a content type and not a tab kind.
 
+### tag
+- Is: A name in the frontmatter key `tags` of a note, a list or a single text. A slash nests a tag under another (`Projects/Web` is under `Projects`). Two spellings that differ only in case, in Unicode composition or by a leading `#` are one tag. Plugin "Tags".
+- Actions: agent tool `tag_list` "List tags".
+- Not: a `#word` in the body of a note is not a tag. Not a note type.
+
 ### note tab
 - Is: A tab of kind `note` (tab title "Note"; editor "Markdown Note Editor") that shows and edits one note. It saves by itself after a quiet time.
 - States: `loading`, `clean`, `unsaved` (also while `saving`), `stale` (file changed on disk; saving paused), `gone` (file removed from the vault; saving paused, text kept), `stuck` (an error blocks read or write).
@@ -191,6 +196,10 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: A piece of text a search found, with the place it came from (path, page, chapter, line). In a reader it is the place a link or a highlight points to.
 - Not: a chunk is inside the index; a passage is what the person sees. A "quote" is the copied text.
 
+### query
+- Is: A text in the search language of the core: conditions (`words("…")`, `meaning("…")`, `kind`, `path`, link functions such as `hasLinkTo("…")` and `isDescendantOf("…")`) joined with `&&`, `||`, `!`. Its results are passages, or whole files when only file conditions match. Run with `numen-cli query <vault> <query>`.
+- Not: the text typed in the command palette search, which runs the search above.
+
 ### index
 - Is: The cache Numen builds from a vault so it can search. It is rebuilt from the vaults if lost.
 - States: scan `is_ready`; `is_embedding` is false when there is no model (words only).
@@ -262,6 +271,14 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Actions: "Create child note", "Create parent note", "Create jump note". No "Create sibling note".
 - Texts: drop labels "as child", "as parent", "as jump".
 - Not: a role is what a link is for; a relation is where a note stands.
+
+### ancestor
+- Is: A note above another at any depth, through parent and child links written at either end. A query finds them with `isAncestorOf("…")`, up to 16 steps.
+- Not: not only the parent; the parent is the ancestor one step above.
+
+### descendant
+- Is: A note below another at any depth, through parent and child links written at either end. A query finds them with `isDescendantOf("…")`, up to 16 steps.
+- Not: not only the child; the child is the descendant one step below.
 
 ### node menu
 - Is: The menu on a node of the plex.
@@ -471,6 +488,6 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Not: the mode (light or dark) is not the theme.
 
 ### update and release channel
-- Is: An update is a newer build of Numen. Plugin "Update Notifier" only tells; it does not install. The channel is which builds are announced: "Stable", "Beta", "Custom".
+- Is: An update is a newer build of Numen. Plugin "Update Notifier" only tells; it does not install. The channel is which builds are announced: "Stable", "Nightly", "Custom".
 - Actions: "Download", "Release notes", "Dismiss".
 - Texts: "Update available", "Released on" (plugins/tools-updater/frontend/words.ts); the chip in the title bar shows the version and its tooltip begins "Update available: v" (plugins/tools-updater/frontend/model/tooltip.ts).

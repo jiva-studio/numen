@@ -76,7 +76,7 @@ export const placeMenu = ({ at: point, size, viewport, margin }: MenuPlacement):
  * How a menu came to be open, declared once. Where the keyboard is as it
  * appears is derived from this table.
  */
-export interface MenuTriggerDescriptor {
+interface MenuTriggerDescriptor {
   readonly hasInitialFocus: boolean
 }
 
@@ -87,8 +87,6 @@ const MENU_TRIGGERS = {
 
 /** What opened a menu: a pointer, or the keyboard. */
 export type MenuTrigger = keyof typeof MENU_TRIGGERS
-
-export const MENU_TRIGGERS_ALL = Object.keys(MENU_TRIGGERS) as readonly MenuTrigger[]
 
 /**
  * Initial keyboard focus when a menu opens. Opened by pointer, no item is

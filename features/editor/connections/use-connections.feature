@@ -50,7 +50,7 @@ Feature: Use connections
     Background:
       Given the transcribed recording "assets/lecture.wav"
       And the service "Busy service" is busy
-      And the following connections:
+      And the person has the following connections:
         | name | type                     | service      |
         | Busy | OpenAI-compatible server | Busy service |
         | Main | OpenAI-compatible server | Main service |

@@ -1,6 +1,7 @@
 /** The side a point selects, and the slot in a strip of tabs. */
 import { describe, expect, it } from 'vitest'
-import { getCaretRect, findEdgeSide, getOverlay, getSide, getSlot, DEFAULT_DROP } from './drop'
+import { getCaretRect, findEdgeSide, getOverlay, getSide, getSlot } from './drop'
+import { DEFAULT_DROP } from './dropOptions'
 
 const BOX = { x: 0, y: 0, width: 800, height: 400 }
 

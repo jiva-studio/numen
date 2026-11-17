@@ -21,9 +21,11 @@ import (
 	_ "modernc.org/sqlite"
 	_ "modernc.org/sqlite/vec"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/changefeed"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/opentabs"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/operationresult"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
@@ -35,9 +37,11 @@ import (
 // sized to the cores: in WAL mode a reader never waits for the writer.
 // Several processes may open the one file; see sqlwrite for the retry.
 type DB struct {
-	write   *sql.DB
-	read    *sql.DB
-	minimum chunk.Minimum
+	write       *sql.DB
+	read        *sql.DB
+	minimum     chunk.Minimum
+	frontmatter *note.FrontmatterChanges
+	feed        *changefeed.Changes
 }
 
 func getPragmas() []string {
@@ -114,7 +118,10 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	}
 	read.SetMaxOpenConns(max(4, runtime.NumCPU()))
 	read.SetMaxIdleConns(max(2, runtime.NumCPU()/2))
-	return &DB{write: write, read: read}, nil
+	if err := changefeed.Trim(ctx, write, changefeed.RemovalLifetime); err != nil {
+		return nil, errors.Join(err, read.Close(), write.Close())
+	}
+	return &DB{write: write, read: read, frontmatter: &note.FrontmatterChanges{}, feed: &changefeed.Changes{}}, nil
 }
 
 func (d *DB) Close() error {
@@ -126,14 +133,28 @@ func (d *DB) Close() error {
 }
 
 func (d *DB) Vaults() *vault.Repository { return vault.NewRepository(d.write) }
-func (d *DB) Notes() *note.Repository   { return note.NewRepository(d.write) }
-func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write) }
+func (d *DB) Notes() *note.Repository {
+	return note.NewRepository(d.write).ReportingTo(d.frontmatter).ReportingFeedTo(d.feed)
+}
+func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write).ReportingTo(d.feed) }
+
+// FrontmatterChanges reports the notes whose frontmatter a write through Notes changed.
+func (d *DB) FrontmatterChanges() *note.FrontmatterChanges { return d.frontmatter }
+
+// FeedChanges reports each committed write through Notes or Chunks that can change the file change feed.
+func (d *DB) FeedChanges() *changefeed.Changes { return d.feed }
+
+// FileChanges reads the file change feed of each vault.
+func (d *DB) FileChanges() *changefeed.Feed { return changefeed.NewFeed(d.read) }
 
 // Maintenance writes, so it takes the pool that is allowed to.
 func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.write} }
 
 // NoteQueries reads, so it takes the pool that does not wait for the writer.
 func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
+
+// NoteQueryReads reads, so it takes the pool that does not wait for the writer.
+func (d *DB) NoteQueryReads() *note.QueryReads { return note.NewQueryReads(d.read) }
 
 // NoteProblems reads what the index found wrong in the notes.
 func (d *DB) NoteProblems() *note.Problems { return note.NewProblems(d.read) }
@@ -167,9 +188,6 @@ func (d *DB) SearchFloors() *searchpolicy.Repository {
 	return searchpolicy.NewRepository(d.read, d.write)
 }
 
-// SearchSamples reads the titles and vectors a plugin measures the floor with.
-func (d *DB) SearchSamples() *searchpolicy.Samples { return searchpolicy.NewSamples(d.read) }
-
 func dsn(path string, pos settings) string {
 	return dsnOf(path, append(slices.Clone(getPragmas()), pos.synchronous))
 }
@@ -186,4 +204,10 @@ func dsnOf(path string, pragmas []string) string {
 		separator = "&"
 	}
 	return path + separator + q.Encode()
+}
+
+// OperationResults is the stored results of connection operations, at most maxRows of them. A rebuild of the
+// index empties it.
+func (d *DB) OperationResults(maxRows int) *operationresult.Repository {
+	return operationresult.NewRepository(d.write, maxRows)
 }

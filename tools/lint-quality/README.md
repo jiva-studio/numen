@@ -2,7 +2,7 @@
 
 Checks over the whole repository that no single module's lint target covers: duplication and unused TypeScript and Vue code. Go complexity (`cyclop`, `gocognit`, `nestif`, `funlen`), interface size (`interfacebloat`) and unused parameters and results (`unparam`) are linters of `.golangci-structure.yml`, and ESLint and golangci-lint run in the lint target of each module.
 
-The rule for duplication is in `tools/checks/structure/ts/duplication` and is listed in the registry of `tools/checks`; this command runs it together with knip. The comparison of the plugin API types is the Go check `go/api-types` of `tools/checks`.
+The rule for duplication and the rule for exports only tests use are in `tools/checks/structure/ts/duplication` and `tools/checks/structure/ts/test-only-exports` and are listed in the registry of `tools/checks`; this command runs them together with knip. The comparison of the plugin API types is the Go check `go/api-types` of `tools/checks`.
 
 ## Invariants Checked
 
@@ -11,8 +11,9 @@ The rule for duplication is in `tools/checks/structure/ts/duplication` and is li
    - Ignores tests, fixtures, generated code, stories, and build artifacts.
    - Enforces a maximum duplication rate threshold per scope (default: <= 3.5%).
 
-2. **Unused Files, Dependencies and Exports (`knip`)**:
-   - Runs `knip` once with the root `knip.json`, whose workspaces name every TS package and plugin frontend. Unused files, unused and unlisted dependencies fail; unused exports and types are reported. A missing `knip` binary, a missing `knip.json` or a frontend package outside its workspaces fails the check.
+2. **Unused Files and Dependencies (`knip`)**:
+   - Runs `knip` once with the root `knip.json`, whose workspaces name every TS package and plugin frontend, tests included. Unused files, unused and unlisted dependencies, unlisted binaries and unresolved imports fail. A missing `knip` binary, a missing `knip.json` or a frontend package outside its workspaces fails the check.
+   - `test-only-exports` runs `knip` in production mode over exports and types: an export that only tests, stories or test helpers use fails.
 
 ---
 

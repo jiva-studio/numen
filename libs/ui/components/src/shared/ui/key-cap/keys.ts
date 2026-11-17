@@ -1,5 +1,7 @@
 /** What a cap draws, as plain values. */
 
+import { overlayIcon } from './overlayIcon'
+
 /** A key that is held down. A cap draws each of these as an icon. */
 export type KeyIcon = 'control' | 'shift' | 'command' | 'option' | 'return'
 
@@ -11,13 +13,6 @@ export interface Keystroke {
   readonly icons: readonly KeyIcon[]
   readonly letter: string
 }
-
-/**
- * The key next to the space bar on the keyboard a browser reports it is running
- * on: Command on Apple keyboards, Control everywhere else.
- */
-export const overlayIcon = (agent: string): KeyIcon =>
-  /mac|iphone|ipad|ipod/i.test(agent) ? 'command' : 'control'
 
 /**
  * A keystroke of one letter and the key beside the space bar, as it is drawn.

@@ -210,8 +210,11 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 }
 
 func getNamedOffset(d Calendar, open time.Time, targetDate string) int {
+	// Counted on dates: stepping an instant by a calendar day lands before the
+	// boundary of the next day when the clock skips the hour the day begins at.
+	first := d.GetDate(open)
 	named := 0
-	for day := open; d.GetName(day) < targetDate; day = day.AddDate(0, 0, 1) {
+	for first.AddDate(0, 0, named).Format(time.DateOnly) < targetDate {
 		named++
 		if named > MostAhead {
 			return GetOutsideGrid().Index
@@ -268,6 +271,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 		return out, nil
 	}
 	named := getNamedOffset(run.Day, open, delta)
+	openDate := run.Day.GetDate(open)
 
 	first := 1
 	last := min(MostAhead, max(2*named, unreviewedCount, first))
@@ -289,7 +293,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	if err := d.places(len(steps), func(i int) error {
 		day := first + steps[i]
 		aiming, asks := p, run
-		aiming.By = open.AddDate(0, 0, day)
+		aiming.By = openDate.AddDate(0, 0, day)
 		asks.Days = max(day+1, Ahead)
 		// A place of this range is read on the day it names, and that is the day
 		// the run works the returning share out on.
@@ -301,7 +305,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 		// A day at none of the load is no session at all, so what a day of
 		// review holds is read off the first day this run admits.
 		out.Grid[i] = float64(day)
-		out.Days[i] = run.Day.GetName(aiming.By)
+		out.Days[i] = aiming.By.Format(time.DateOnly)
 		out.Points[i] = createDatePoint(ran, day)
 		return nil
 	}); err != nil {
@@ -314,7 +318,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 		out.Now = CurvePoint{
 			Index: findNearestGridIndex(out.Grid, float64(named)),
 			Value: float64(named),
-			Day:   run.Day.GetName(open.AddDate(0, 0, named)),
+			Day:   openDate.AddDate(0, 0, named).Format(time.DateOnly),
 		}
 	}
 	out.Suggested = findSuggestedDate(out.Points, out.Grid, out.Days, p.MinutesADay)

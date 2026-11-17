@@ -5,13 +5,12 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { createReviewKeys } from './reviewKeys'
-import type {
-  ReviewKeysActions,
-  ReviewKeysPanels,
-  ReviewKeysView,
-  ReviewScreen,
-} from './reviewKeys'
+import type { ReviewKeysDeps, ReviewScreen } from './reviewKeys'
 import type { VaultCardsDue } from '../lib/vault/types'
+
+type ReviewKeysView = ReviewKeysDeps['view']
+type ReviewKeysActions = ReviewKeysDeps['actions']
+type ReviewKeysPanels = ReviewKeysDeps['panels']
 
 const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
   ({

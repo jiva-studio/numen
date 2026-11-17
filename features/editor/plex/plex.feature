@@ -25,6 +25,7 @@ Feature: Plex
 
   Rule: A linked tab follows the notes of the plex
 
+    @smoke
     Scenario: A linked tab follows a click
       Given the vault has the following:
         | path                    | text                                                                                                          |

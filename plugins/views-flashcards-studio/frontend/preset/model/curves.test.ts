@@ -16,14 +16,9 @@ import {
 import { estimateCurve } from '../lib/sketch'
 import { getShapeKey } from '../lib/fields'
 import { WORDS as words } from '../lib/words'
-import {
-  applyCurveAnswer,
-  createCurveState,
-  getKnobPosition,
-  isSameGrid,
-  updateCurves as updateCurvesImpl,
-  type CurveState,
-} from './curves'
+import { getKnobPosition, isSameGrid } from '../lib/curveGrid'
+import { updateCurves as updateCurvesImpl } from './curves'
+import { applyCurveAnswer, createCurveState, type CurveState } from './curveState'
 
 const updateCurves = (
   state: CurveState,

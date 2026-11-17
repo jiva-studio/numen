@@ -10,7 +10,8 @@ import { computed, shallowRef } from 'vue'
 
 import type { Flow, Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
-import { getEasedProgress, getTurnTarget, useBookTurns } from './turns'
+import { getTurnTarget, useBookTurns } from './turns'
+import { getEasedProgress } from './easing'
 import type { LeavingSpread } from './leaving'
 
 const FLOW: Flow = { contentWidth: 4000, width: 1000, gap: 0, columns: 1 }

@@ -15,8 +15,7 @@ import {
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { PlexHost } from '../model/tabDeps'
-import { getDefaultLook } from '../model/look'
-import { getDefaultNames } from '../model/names'
+import { getDefaultLook, getDefaultNames } from './settings'
 
 export interface HostOptions {
   readonly opening?: string

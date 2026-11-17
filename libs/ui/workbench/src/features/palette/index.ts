@@ -2,4 +2,4 @@
 export { default as Palette } from './ui/Palette.vue'
 export { commandKeyChord } from './lib/keys'
 export type { ActionWords } from './lib/actions'
-export type { PaletteAction, PaletteGroup, PaletteItem } from './lib/item'
+export type { PaletteGroup, PaletteItem } from './lib/item'

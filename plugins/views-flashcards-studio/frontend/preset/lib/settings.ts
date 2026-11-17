@@ -2,37 +2,16 @@
  * Settings calculation, bound clamping, and reconciliation for preset tabs.
  */
 import { dayAfter, daysBetween, isDay } from '../../lib/day'
-import type {
-  Bounds,
-  BudgetUnit,
-  Goal,
-  Load,
-  Rule,
-  Settings,
-  SettingsBounds,
-} from '../../lib/presets'
+import type { BudgetUnit, Goal, Load, Rule, Settings, SettingsBounds } from '../../lib/presets'
 import { clamp, findNearestGridValue } from './curve'
-import type { Field } from './fields'
+import type { Field } from './field'
+import { clampShares, isLoad } from './load'
 
 /** What a setting of a preset holds. */
 export type SettingValue = number | string | boolean | Load
 
 /** How far off the day a goal of a date opens on, where the file names none. */
 const DATE_GOAL_OFFSET_DAYS = 30
-
-/** Whether the value is a valid load record with daily numeric shares. */
-export const isLoad = (value: SettingValue): value is Load =>
-  value !== null &&
-  typeof value === 'object' &&
-  Object.values(value).every((share) => typeof share === 'number')
-
-/** Clamps every day of the week held inside load to within bounds. */
-export const clampShares = (load: Load, within: Bounds | undefined): Load => {
-  if (within === undefined) return load
-  const out: Record<string, number> = {}
-  for (const [day, share] of Object.entries(load)) out[day] = clamp(Math.round(share), within)
-  return out
-}
 
 type MutableSettings = { -readonly [field in keyof Settings]: Settings[field] }
 

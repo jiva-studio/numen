@@ -13,12 +13,12 @@ const NAME_SPACING = 0.9
 const PILL_GAP = 0.15
 
 /** A name measured: its title, cut to the width of the node, and the width it takes. */
-export interface RowName extends PlexName {
+interface RowName extends PlexName {
   readonly width: number
 }
 
 /** The names that stand on one line, and the width of that line. */
-export interface Row {
+interface Row {
   readonly names: readonly RowName[]
   readonly width: number
 }
