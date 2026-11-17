@@ -28,7 +28,7 @@ import (
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // coreFolder is the folder of a vault's store that holds the core's own files.

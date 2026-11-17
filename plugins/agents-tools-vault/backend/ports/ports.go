@@ -1,5 +1,5 @@
-// Package ports declares what the use cases of the vault tools require of the host. The host clients of
-// the SDK satisfy each interface.
+// Package ports declares what the use cases of the vault tools require. The host clients of the SDK
+// satisfy each interface but NotePathResolver.
 package ports
 
 import (
@@ -85,6 +85,11 @@ type TextReader interface {
 // TextSearch searches the passages of the vault index.
 type TextSearch interface {
 	SearchText(ctx context.Context, query host.SearchResultQuery) ([]host.SearchResult, error)
+}
+
+// NotePathResolver turns what an agent names a note into the path of its file.
+type NotePathResolver interface {
+	Resolve(ctx context.Context, name string) string
 }
 
 // QueryRunner runs queries of the search language on the host.

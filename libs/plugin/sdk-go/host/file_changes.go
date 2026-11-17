@@ -7,9 +7,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/protocol"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/shared/protocol"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 // ErrInvalidFileChangeQuery is a read of the file change feed over its limits, without events or with

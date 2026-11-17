@@ -19,9 +19,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
 // countingReaders counts the files its readers read or stat.

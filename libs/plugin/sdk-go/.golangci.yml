@@ -148,7 +148,7 @@ linters:
     importas:
       no-unaliased: true
       alias:
-        - pkg: github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1
+        - pkg: github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1
           alias: v1
 
     usetesting:

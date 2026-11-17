@@ -3,7 +3,7 @@ package problemport
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ProblemQueries answers the questions that a check cannot answer from a single file.

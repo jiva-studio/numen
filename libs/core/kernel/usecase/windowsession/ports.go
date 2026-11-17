@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Pages are the clients of the window that hold unsaved work.

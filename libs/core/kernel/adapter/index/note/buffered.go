@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Buffered is the note repository of the index, keeping the paths of the notes written through it while

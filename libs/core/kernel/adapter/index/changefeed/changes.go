@@ -3,7 +3,7 @@ package changefeed
 import (
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Changes tells the watchers of a vault that a write of the index that can store changes in the vault's feed

@@ -1,6 +1,9 @@
 package format
 
-import "strings"
+import (
+	"io"
+	"strings"
+)
 
 // Crockford base32 in lower case, without i, l, o or u, which prevents an identifier
 // read aloud or retyped from a file from becoming a different identifier.
@@ -44,3 +47,19 @@ func IsValidID(s ID) bool {
 // the same identifier, which is never recomputed. A card's heading writes it after a caret,
 // where it is called the card id.
 type ID string
+
+// NewEntropyReader returns what fills entropy as a reader, for a ULID generator. No entropy is a
+// nil reader, which the generator refuses with ulid.ErrNoEntropy.
+func NewEntropyReader(entropy interface{ Fill(b []byte) }) io.Reader {
+	if entropy == nil {
+		return nil
+	}
+	return entropyReader{fill: entropy.Fill}
+}
+
+type entropyReader struct{ fill func(b []byte) }
+
+func (r entropyReader) Read(b []byte) (int, error) {
+	r.fill(b)
+	return len(b), nil
+}

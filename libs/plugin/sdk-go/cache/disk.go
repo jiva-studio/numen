@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 func (c *Cache[V]) cachePath() (string, error) {

@@ -18,7 +18,7 @@ import (
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // cliRun is what the parts of one run of the command line share: the one list of tasks the plugin work of

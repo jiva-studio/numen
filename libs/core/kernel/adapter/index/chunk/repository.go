@@ -17,8 +17,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/changefeed"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 //go:embed sql/*.sql

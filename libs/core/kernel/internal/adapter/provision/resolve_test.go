@@ -312,7 +312,7 @@ func TestRegistryResolveDoesNotWaitForARunningDownload(t *testing.T) {
 		_, err := registry.Provision(context.WithoutCancel(t.Context()), req, nil)
 		downloading <- err
 	}()
-	for !registry.flights.isRunning(getFlightKey(req)) {
+	for !registry.flights.isRunning(req.GetIdentity()) {
 		time.Sleep(time.Millisecond)
 	}
 	resolved := make(chan error, 1)

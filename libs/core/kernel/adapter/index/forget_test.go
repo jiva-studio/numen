@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // sharedText is held word for word by a source of each vault, so one row of

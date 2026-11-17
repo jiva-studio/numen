@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // A plugin open whose call ends while the page is still writing leaves no request of its own running,

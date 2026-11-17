@@ -16,6 +16,7 @@ const named = (path: string, title: string, problems: string[] = []): PresetRead
   asValue({
     preset: { path, title, settings: DEFAULTS, problems, ...SCHEDULING },
     at: '',
+    version: 1n,
     bounds: NO_BOUNDS,
   })
 
@@ -26,7 +27,7 @@ const fakePresets = () => {
     list: [{ path: 'Slow.md', title: 'Slow' }] as readonly PresetChoice[],
     read: named('Slow.md', 'Slow') as PresetReadResult,
     isReadDown: false,
-    write: asValue({ at: '' }) as PresetWriteResult,
+    write: asValue({ at: '', version: 1n }) as PresetWriteResult,
     isWriteDown: false,
   }
   const scheduleDeck = vi.fn<Presets['scheduleDeck']>(async () => {
@@ -46,7 +47,7 @@ const fakePresets = () => {
       return state.read
     },
     scheduleDeck,
-    write: async () => asValue({ at: '' }),
+    write: async () => asValue({ at: '', version: 1n }),
     curve: async () => {
       throw new Error('unused')
     },
@@ -129,7 +130,7 @@ describe('the preset a deck is scheduled by', () => {
 
   it('is the defaults where the read reached nothing', async () => {
     const { schedule, state } = open()
-    state.read = asValue({ preset: null, at: '', bounds: NO_BOUNDS })
+    state.read = asValue({ preset: null, at: '', version: 0n, bounds: NO_BOUNDS })
 
     await schedule.refreshDeckPreset('Animals.md')
 
@@ -231,7 +232,7 @@ describe('a deck put on a preset', () => {
     state.write = asFailure('notFound')
     await schedule.scheduleDeck('a', 'Slow.md')
     expect(schedule.getDeckPreset('a').errorMessage).toBe(WORDS.notScheduled)
-    state.write = asValue({ at: '' })
+    state.write = asValue({ at: '', version: 1n })
 
     await schedule.scheduleDeck('a', 'Slow.md')
 

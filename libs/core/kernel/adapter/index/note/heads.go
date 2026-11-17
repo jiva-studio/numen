@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // GetHeads returns the type and the stored frontmatter of the notes at the paths, in one question.

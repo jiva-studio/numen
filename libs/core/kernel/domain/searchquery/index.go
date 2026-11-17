@@ -1,6 +1,6 @@
 package searchquery
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // DocumentQuery asks for the documents of a vault under any of the path prefixes (all when empty) and of
 // the source kinds (all when empty), at one of Paths when IsWithinPaths is set, counting their small

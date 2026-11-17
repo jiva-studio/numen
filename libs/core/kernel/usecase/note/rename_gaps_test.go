@@ -7,7 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 // A rename that cannot be applied reports nothing for a name the note never

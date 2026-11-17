@@ -12,7 +12,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/speech"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/transcript"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/ports"
 )
 
 const (
@@ -35,7 +37,7 @@ type blockingModel struct {
 	onTranscribe func()
 }
 
-func (m *blockingModel) Open(ctx context.Context, raw []byte) (Recording, error) {
+func (m *blockingModel) Open(ctx context.Context, raw []byte) (ports.Recording, error) {
 	m.startOnce.Do(func() { close(m.startCh) })
 	select {
 	case <-m.release:
@@ -45,7 +47,7 @@ func (m *blockingModel) Open(ctx context.Context, raw []byte) (Recording, error)
 	return m.heardModel.Open(ctx, raw)
 }
 
-func (m *blockingModel) Transcribe(ctx context.Context, audio Audio) (string, error) {
+func (m *blockingModel) Transcribe(ctx context.Context, audio speech.Audio) (string, error) {
 	if m.onTranscribe != nil {
 		m.onTranscribe()
 	}
@@ -176,7 +178,7 @@ func newRequestFixtureWithFiles(t *testing.T, wrap func(Files) Files) *requestFi
 	}
 	s.blocking = &blockingModel{heardModel: s.model, startCh: make(chan struct{}), release: make(chan struct{})}
 	s.transcriber = NewTranscriber(wrap(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}), storesOf(s.store), textsOf(s.texts), s.finishing,
-		func(context.Context) (Recognizer, error) { return s.blocking, nil }, func(what string, _ error) {
+		func(context.Context) (ports.Recognizer, error) { return s.blocking, nil }, func(what string, _ error) {
 			s.reportedMu.Lock()
 			s.reported = append(s.reported, what)
 			s.reportedMu.Unlock()
@@ -665,8 +667,12 @@ func TestTranscriptCreateReportsAFailedReadInTheTask(t *testing.T) {
 				t.Errorf("the tasks %+v do not list %s with its failure", tasks, want.TaskID)
 			}
 			s.transcriber.Close()
-			if got := s.getReportedTasks(); !slices.Equal(got, []string{"transcribe " + lecture}) {
-				t.Errorf("failed Start reported %v, want [transcribe %s]", got, lecture)
+			for got := s.getReportedTasks(); !slices.Equal(got, []string{"transcribe " + lecture}); got = s.getReportedTasks() {
+				select {
+				case <-deadline:
+					t.Fatalf("failed Start reported %v, want [transcribe %s]", got, lecture)
+				case <-time.After(time.Millisecond):
+				}
 			}
 			return
 		case <-deadline:
@@ -757,7 +763,7 @@ func (s *requestFixture) countReads(t *testing.T) *readCounts {
 	counts := &readCounts{}
 	s.transcriber = NewTranscriber(countingFiles{files: vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, counts: counts},
 		func(id domain.VaultID) Folder { return countingStore{Folder: s.store.With(id), counts: counts} }, textsOf(s.texts), s.finishing,
-		func(context.Context) (Recognizer, error) { return s.blocking, nil }, noReport)
+		func(context.Context) (ports.Recognizer, error) { return s.blocking, nil }, noReport)
 	t.Cleanup(s.transcriber.Close)
 	counted := countingVault{Vault: s.vault, counts: counts}
 	s.requests = NewRequests(s.transcriber, func(id domain.VaultID) Vault { return counted.With(id) })
@@ -876,7 +882,7 @@ func TestRequestAndStartErrorBranches(t *testing.T) {
 		storesOf(s.store),
 		func(domain.VaultID) host.TextVersions { return ft },
 		s.queue,
-		func(context.Context) (Recognizer, error) { return s.model, nil },
+		func(context.Context) (ports.Recognizer, error) { return s.model, nil },
 		noReport,
 	)
 	reqListErr := NewRequests(trListErr, func(id domain.VaultID) Vault { return s.vault.With(id) })
@@ -890,7 +896,7 @@ func TestRequestAndStartErrorBranches(t *testing.T) {
 		storesOf(s.store),
 		textsOf(s.texts),
 		s.queue,
-		func(context.Context) (Recognizer, error) { return s.model, nil },
+		func(context.Context) (ports.Recognizer, error) { return s.model, nil },
 		noReport,
 	)
 	if started, err := trVaultErr.Start(ctx, "", lecture); started || !errors.Is(err, errBoom) {

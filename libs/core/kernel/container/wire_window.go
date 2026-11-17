@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // windowWiring is what the wire_window_<service>.go files share while one editor window is built.

@@ -183,7 +183,7 @@ func GetFamily(pkg string) string {
 
 func GetPackageDir(pos string) string {
 	if pos == "domain" {
-		return filepath.Join("..", "..", "..", "note", "domain")
+		return filepath.Join("..", "..", "..", "shared", "note", "domain")
 	}
 	return filepath.Join("..", pos)
 }
@@ -196,7 +196,7 @@ func ListTypeRoots() []Root {
 	return []Root{
 		{Name: "kernel/domain", Dir: filepath.Join("..", "domain")},
 		{Name: "kernel/port", Dir: filepath.Join("..", "port")},
-		{Name: "note/domain", Dir: filepath.Join("..", "..", "..", "note", "domain")},
+		{Name: "note/domain", Dir: filepath.Join("..", "..", "..", "shared", "note", "domain")},
 	}
 }
 
