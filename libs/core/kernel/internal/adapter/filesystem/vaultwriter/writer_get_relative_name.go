@@ -11,13 +11,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 func (w *VaultWriter) getRelativeName(target string) (string, error) {
@@ -85,7 +85,14 @@ type VaultWriters struct {
 }
 
 func (w VaultWriters) Open(v domain.Vault) (*VaultWriter, error) {
-	return OpenForWriting(v.Path, w.Options)
+	opened, err := OpenForWriting(v.Path, w.Options)
+	if err != nil {
+		return nil, err
+	}
+	if w.Locks != nil {
+		opened.lock = w.Locks.getLock(opened.root)
+	}
+	return opened, nil
 }
 
 func (w VaultWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
@@ -137,6 +144,8 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) (
 		return err
 	}
 	defer closeAndJoin(&err, root)
+	w.lock.write.Lock()
+	defer w.lock.write.Unlock()
 	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
@@ -202,8 +211,11 @@ func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.Fi
 		if info.IsDir() {
 			return 0, fmt.Errorf("write %s: it is a directory", path)
 		}
-		if !stat.IsZero() &&
-			(info.Size() != stat.Size || !info.ModTime().Equal(stat.ModTime)) {
+		stale, err := isStale(root, name, stat)
+		if err != nil {
+			return 0, err
+		}
+		if stale {
 			return 0, fmt.Errorf("write %s: %w", path, edit.ErrStale)
 		}
 		return info.Mode().Perm(), nil
@@ -245,4 +257,29 @@ func createParents(root *os.Root, dir, path string) error {
 		return fmt.Errorf("make %s: %w", path, vault.ErrAlreadyExists)
 	}
 	return err
+}
+
+func isStale(root *os.Root, name string, baseline domain.FileStat) (_ bool, err error) {
+	if baseline.IsZero() {
+		return false, nil
+	}
+	file, err := root.Open(name)
+	if err != nil {
+		return false, err
+	}
+	defer closeAndJoin(&err, file)
+	hash, err := domain.HashReader(file)
+	if err != nil {
+		return false, err
+	}
+	return hash != baseline.Hash, nil
+}
+
+// GetVersion returns the number of writes the vault has taken since the core started. Writers made
+// without locks to share count apart, so it is zero for them.
+func (w VaultWriters) GetVersion(v domain.Vault) uint64 {
+	if w.Locks == nil {
+		return 0
+	}
+	return w.Locks.getLock(v.Path).version.Load()
 }

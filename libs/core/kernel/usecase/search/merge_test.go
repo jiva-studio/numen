@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func newRanking(chunks ...domain.ChunkID) []domain.SearchResult {

@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
-	notesmarkdown "github.com/jiva-studio/numen/libs/note/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	notesdomain "github.com/jiva-studio/numen/libs/shared/note/domain"
+	notesmarkdown "github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
 // trashDir is the folder of the vault that removed notes are moved to.
@@ -66,7 +66,7 @@ func (v *Vault) writeTitle(notePath, title string, isExact bool) (bool, error) {
 	if err := doc.SetTitle(title); err != nil {
 		return false, err
 	}
-	if _, err := v.files.write(notePath, doc.Bytes()); err != nil {
+	if _, err := v.put(notePath, doc.Bytes()); err != nil {
 		return false, err
 	}
 	v.rescan(notePath)
@@ -203,7 +203,7 @@ func (v *Vault) moveFile(from, target string) error {
 	if err := v.files.remove(from); err != nil {
 		return err
 	}
-	if _, err := v.files.write(target, content); err != nil {
+	if _, err := v.put(target, content); err != nil {
 		return err
 	}
 	v.feed.move(from, target)

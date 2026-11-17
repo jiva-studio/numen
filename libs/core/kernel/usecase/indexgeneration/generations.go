@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Generations is the count of index changes of each vault. It is safe to use from several goroutines.

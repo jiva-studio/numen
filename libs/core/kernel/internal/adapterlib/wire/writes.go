@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 // updatingIndex is the task ID for a file written to the vault that the index did not follow.

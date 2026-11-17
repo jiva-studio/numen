@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // PropertyKind is the type of a frontmatter value as stored.

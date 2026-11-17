@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Description is what a search source tells the core about the data it keeps. SourceRecipe is opaque to the

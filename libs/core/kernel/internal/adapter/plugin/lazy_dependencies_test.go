@@ -22,8 +22,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -834,4 +834,49 @@ func TestAListenerConnectionDownloadsNothing(t *testing.T) {
 func sumHex(data []byte) string {
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
+}
+
+func TestCancelingTheDependenciesStopsTheDownloadInProgress(t *testing.T) {
+	source := newModelSource(t)
+	source.holdDownloads(t)
+	p := newLazyPlugin(t, source)
+	p.host.Services.ObserveDependencies(func(catalogmanifest.DependencyRequirement, plugindomain.DependencyStatus) {})
+	answer := make(chan error, 1)
+	go func() { answer <- p.use(t) }()
+	source.waitForDownload(t)
+
+	p.host.Services.CancelDependencies()
+	if err := <-answer; !errors.Is(err, context.Canceled) {
+		t.Errorf("the use received %v, want the cancellation", err)
+	}
+}
+
+func TestCancelingTheDependenciesStopsEveryVersionOfOneDependency(t *testing.T) {
+	source := newModelSource(t)
+	source.holdDownloads(t)
+	registry := provision.NewRegistry(source)
+	p := newLazyPluginFrom(t, registry, newBuiltInManifest(firstBuiltInID, sampleRuntime))
+	p.host.Services.ObserveDependencies(func(catalogmanifest.DependencyRequirement, plugindomain.DependencyStatus) {})
+	older := catalogmanifest.DependencyRequirement{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindModel, Version: "1"}
+	newer := catalogmanifest.DependencyRequirement{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindModel, Version: "2"}
+	answers := make(chan error, 2)
+	for _, req := range []catalogmanifest.DependencyRequirement{older, newer} {
+		go func() {
+			_, err := registry.Provision(t.Context(), req, nil)
+			answers <- err
+		}()
+	}
+	source.waitForDownload(t)
+	source.waitForDownload(t)
+	if !registry.Cancel(older) {
+		t.Fatal("Cancel found no download of the older version")
+	}
+	if err := <-answers; !errors.Is(err, context.Canceled) {
+		t.Fatalf("the older version received %v, want the cancellation", err)
+	}
+
+	p.host.Services.CancelDependencies()
+	if err := <-answers; !errors.Is(err, context.Canceled) {
+		t.Errorf("the newer version received %v, want the cancellation", err)
+	}
 }

@@ -6,8 +6,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/contenttypes"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )

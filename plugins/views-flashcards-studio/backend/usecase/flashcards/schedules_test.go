@@ -9,14 +9,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 // A build without a cache computes the schedules from the answers at every
@@ -326,7 +327,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	// The same answers, worked out by the one scheduler and nothing else.
 	direct := flashcards.NewSchedules(
 		s.logs, review.NewFSRS(), getToday(),
-		flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil),
+		flashcards.NewListReviewCards(s.env.Ports.Readers, nil, cards.NewRead(s.env.Ports.Readers, nil)),
 		presets.NewOpenReads(presets.Config{Now: vaulttest.NewClock(), Day: getToday()}),
 	)
 	want, err := direct.Execute(t.Context(), s.vault)
@@ -376,8 +377,12 @@ func TestSchedules_ReviewedAndProjectedCardShareDueDay(t *testing.T) {
 
 	// The projection takes the card on from where the first answer left it, and
 	// its one day of review is the day that answer is given in.
-	run := projection.Simulation{By: delta, Day: getToday(), Cost: review.GetDefaultCost(), Days: 21}
-	projected, err := run.Run(t.Context(), when, read.Settings, first, 0)
+	by := flashcards.NewProjectionScheduler(delta, getToday())
+	run := projection.Simulation{
+		By: by, Rules: by, Day: getToday(),
+		Cost: flashcards.ConvertCostToProjection(review.GetDefaultCost()), Days: 21,
+	}
+	projected, err := run.Run(t.Context(), when, flashcards.ConvertPresetToSettings(read.Settings), flashcards.ConvertSchedulesToCards(first), 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -490,7 +495,10 @@ func (m *mockAlgorithm) CreateScheduler(retention float64) review.Scheduler {
 func TestScheduleAlgorithmPluggable(t *testing.T) {
 	algo := &mockAlgorithm{}
 	flashcards.NewUseCases(flashcards.Config{
-		Scheduler: algo,
+		Scheduler:     algo,
+		NewDeckWriter: func(flashcards.IndexUpdate) ports.DeckWriter { return nil },
+	}, func(flashcards.IndexUpdate, review.Day) (presets.UseCases, flashcards.OpenPresetReads) {
+		return presets.UseCases{}, presets.OpenReads{}
 	})
 
 	if len(algo.calledWith) == 0 {
@@ -778,7 +786,7 @@ func loadAnswers(tb testing.TB, s vaulted, now time.Time, cards, days, perDay in
 	if err != nil {
 		tb.Fatal(err)
 	}
-	log := flashcards.Log{Stores: s.logs}
+	log := flashcards.Log{Stores: s.logs, Entropy: machineclock.Entropy{}}
 	y, m, d := getToday().GetDate(now).Date()
 	card := 0
 	for day := range days {
@@ -928,10 +936,8 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	})
 
 	reads := map[string]int{}
-	standings := flashcards.NewListReviewCards(
-		counting{VaultReaders: s.env.Ports.Readers, reads: reads},
-		s.notes, s.links,
-	)
+	counted := counting{VaultReaders: s.env.Ports.Readers, reads: reads}
+	standings := flashcards.NewListReviewCards(counted, s.notes, cards.NewRead(counted, s.links))
 
 	looks := map[string]int{}
 	deckPresets := presets.NewOpenReads(presets.Config{

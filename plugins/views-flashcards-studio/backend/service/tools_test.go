@@ -1040,8 +1040,8 @@ func TestCardToolsLimitsAndEdgeCases(t *testing.T) {
 	// card_model_edit error branches.
 	for _, tc := range []struct{ path, fingerprint, want, label string }{
 		{"Animal.md", "", "fingerprint", "fingerprint"},
-		{"Missing.md", "1-1", "no note", "missing"},
-		{"Entropy.md", "1-1", "not a card model", "not a card model"},
+		{"Missing.md", strings.Repeat("0", 64), "no note", "missing"},
+		{"Entropy.md", strings.Repeat("0", 64), "not a card model", "not a card model"},
 	} {
 		msg := getToolError(t, session, "card_model_edit", map[string]any{
 			"path": tc.path, "fields": []string{"Name"}, "templates": []any{}, "fingerprint": tc.fingerprint,
@@ -1060,7 +1060,7 @@ func TestCardToolsLimitsAndEdgeCases(t *testing.T) {
 		args := map[string]any{
 			"path":        "Animals.md",
 			"values":      []map[string]string{{"field": "Name", "text": huge}},
-			"fingerprint": "1-1",
+			"fingerprint": strings.Repeat("0", 64),
 		}
 		maps.Copy(args, target)
 		if msg := getToolError(t, session, tool, args); !strings.Contains(msg, "more than this writes at once") {

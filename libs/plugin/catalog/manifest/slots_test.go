@@ -10,7 +10,7 @@ import (
 )
 
 func TestTheSlotsAreTheOnesSlotsJSONLists(t *testing.T) {
-	text, err := os.ReadFile("../../../core/protocol/slots.json")
+	text, err := os.ReadFile("../../../shared/protocol/slots.json")
 	if err != nil {
 		t.Fatal(err)
 	}

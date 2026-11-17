@@ -8,11 +8,10 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchpolicyport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // EvaluateQueryDeps is what EvaluateQuery reads. A nil Source is an installation with no model, and a nil
@@ -28,7 +27,7 @@ type EvaluateQueryDeps struct {
 	Readers      vaultport.VaultReaders
 	Texts        textdomain.Readers
 	Source       searchsourceport.QuerySource
-	Floors       searchpolicyport.FloorReader
+	Floors       FloorReader
 	ContentTypes contenttypeport.ContentTypeTable
 }
 
@@ -44,7 +43,7 @@ type EvaluateQuery struct {
 	readers      vaultport.VaultReaders
 	texts        textdomain.Readers
 	source       searchsourceport.QuerySource
-	floors       searchpolicyport.FloorReader
+	floors       FloorReader
 	contentTypes contenttypeport.ContentTypeTable
 }
 
