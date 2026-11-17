@@ -200,7 +200,9 @@ const getSettledLayout = async (ids: readonly string[]): Promise<string[]> => {
 const expectOnlyPositions = (settled: readonly string[]) => {
   const positions = getPositions()
   FAMILY.nodes.forEach((node, index) => {
-    expect(positions.get(node.title)?.filter((one) => one !== settled[index])).toStrictEqual([])
+    expect((positions.get(node.title) ?? []).filter((one) => one !== settled[index])).toStrictEqual(
+      [],
+    )
   })
 }
 
