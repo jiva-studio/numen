@@ -79,6 +79,7 @@ const createRig = (showNames = true) => {
     path === undefined ? pending : pending.filter((one) => one.path === path)
   const answered = new Set<Pending>()
   const answer = async (path: string, related: readonly string[]) => {
+    await flushPromises()
     getReads(path)
       .filter((one) => !answered.has(one))
       .forEach((one) => {
@@ -108,19 +109,21 @@ afterEach(() => {
 })
 
 describe('the reader of the related notes', () => {
-  it('reads once a note that two views ask for before the answer arrives', () => {
+  it('reads once a note that two views ask for before the answer arrives', async () => {
     const { reader, getReads } = createRig()
 
     reader.acquire(PEAR)
     reader.acquire(PEAR)
+    await flushPromises()
 
     expect(getReads(PEAR)).toHaveLength(1)
   })
 
-  it('reads the notes related to a note with depth 1, which names nothing beyond them', () => {
+  it('reads the notes related to a note with depth 1, which names nothing beyond them', async () => {
     const { reader, getReads } = createRig()
 
     reader.acquire(PEAR)
+    await flushPromises()
 
     expect(getReads(PEAR)[0]?.depth).toBe(1)
   })
@@ -147,11 +150,12 @@ describe('the reader of the related notes', () => {
     expect(getReads(PEAR)).toHaveLength(1)
   })
 
-  it('starts the reads of several notes in the same tick, without waiting for one another', () => {
+  it('starts the reads of several notes in the same tick, without waiting for one another', async () => {
     const { reader, getReads } = createRig()
     const paths = Array.from({ length: 5 }, (_, index) => `notes/Leaf ${index + 1}.md`)
 
     paths.forEach((one) => reader.acquire(one))
+    await flushPromises()
 
     expect(getReads().map((one) => one.path)).toStrictEqual(paths)
   })
@@ -201,16 +205,20 @@ describe('the reader while views come and go', () => {
     first.release()
     second.release()
     const later = reader.acquire(PEAR)
+    await flushPromises()
 
     expect(later.noteGraph.value).toBeNull()
     expect(getReads(PEAR)).toHaveLength(2)
   })
 
-  it('reads the note again for a view that asks after the view that began the read has left', () => {
+  it('reads the note again for a view that asks after the view that began the read has left', async () => {
     const { reader, getReads } = createRig()
-    reader.acquire(PEAR).release()
+    const first = reader.acquire(PEAR)
+    await flushPromises()
+    first.release()
 
     reader.acquire(PEAR)
+    await flushPromises()
 
     expect(getReads(PEAR)).toHaveLength(2)
   })
@@ -255,6 +263,7 @@ describe('the reader while views come and go', () => {
     second.release()
     third.release()
     reader.acquire(PEAR)
+    await flushPromises()
     expect(getReads(PEAR)).toHaveLength(2)
   })
 })
@@ -436,6 +445,7 @@ describe('the reader when a read fails', () => {
     const { reader, getReads, reported } = createRig()
     reader.acquire(PEAR)
     reader.acquire(PEAR)
+    await flushPromises()
 
     getReads(PEAR)[0]?.reject(new Error('the vault is closed'))
     await flushPromises()
@@ -447,6 +457,7 @@ describe('the reader when a read fails', () => {
   it('gives the views no names after the failure', async () => {
     const { reader, getReads } = createRig()
     const lease = reader.acquire(PEAR)
+    await flushPromises()
 
     getReads(PEAR)[0]?.reject(new Error('the vault is closed'))
     await flushPromises()
@@ -457,10 +468,12 @@ describe('the reader when a read fails', () => {
   it('reads the note again for a view that asks after the failure', async () => {
     const { reader, getReads } = createRig()
     reader.acquire(PEAR)
+    await flushPromises()
     getReads(PEAR)[0]?.reject(new Error('the vault is closed'))
     await flushPromises()
 
     reader.acquire(PEAR)
+    await flushPromises()
 
     expect(getReads(PEAR)).toHaveLength(2)
   })

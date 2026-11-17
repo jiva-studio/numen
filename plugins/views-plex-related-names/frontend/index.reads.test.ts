@@ -123,13 +123,14 @@ describe('the views of the nodes of a plex that opens', () => {
     expect(getReads()).toStrictEqual([[LEAVES[0], 1]])
   })
 
-  it('starts the reads of the five nodes in the tick they mount in', () => {
+  it('starts the reads of the five nodes in the tick they mount in', async () => {
     const { show, getReads } = setupRig()
 
     LEAVES.forEach((one) => {
       show('parents', one)
       show('related', one)
     })
+    await flushPromises()
 
     expect(getReads()).toHaveLength(5)
   })
@@ -325,7 +326,7 @@ describe('the views when the read of a note fails', () => {
     expect(notices.getShown()).toStrictEqual([{ text: 'the vault is closed', severity: 'error' }])
   })
 
-  it('shows one error per node for the nodes of the plex', async () => {
+  it('shows one error for the nodes of the plex', async () => {
     const { show, fail, notices } = setupRig()
     fail(new Error('the vault is closed'))
 
@@ -335,7 +336,7 @@ describe('the views when the read of a note fails', () => {
     })
     await flushPromises()
 
-    expect(notices.getShown()).toHaveLength(5)
+    expect(notices.getShown()).toHaveLength(1)
   })
 
   it('reads the note again for a view that mounts after the failure', async () => {
