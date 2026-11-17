@@ -1,6 +1,7 @@
 /** The plex arranges its nodes once the widgets they carry have settled in size, not once for each widget that draws or measures on its own. */
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick, ref, type Ref } from 'vue'
+import { computed, defineComponent, h, nextTick, ref, watch, type Ref } from 'vue'
+import { useSlotLoading } from '@numen/plugin-sdk'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
 import type { Size } from '../lib/arrange'
@@ -42,31 +43,66 @@ const createViewport = (size: Size): Viewport => ({
 
 const getPathOf = (id: string) => `notes/${id}.md`
 
-const createWidget = (name: string, drawing: Readonly<Ref<ReadonlySet<string>>>) =>
-  defineComponent({
-    props: { path: { type: String, required: true } },
-    setup: (props) => () =>
-      drawing.value.has(props.path) ? h('span', { 'data-widget': name }, props.path) : null,
-  })
+/** What the store has delivered for each note: whether its widget draws, for the notes it has answered. */
+type Arrivals = Ref<ReadonlyMap<string, boolean>>
 
-const createEntry = (drawing: Readonly<Ref<ReadonlySet<string>>>) => ({
-  key: 'org.example.tags/view/tags',
-  component: createWidget('tags', drawing),
-})
+const createArrivals = (answers: Record<string, boolean> = {}): Arrivals =>
+  ref(new Map(Object.entries(answers).map(([id, draws]) => [getPathOf(id), draws])))
 
-const getPaths = (ids: readonly string[]): ReadonlySet<string> => new Set(ids.map(getPathOf))
+const answerFor = (ids: readonly string[], draws = true): Record<string, boolean> =>
+  Object.fromEntries(ids.map((id) => [id, draws]))
+
+const deliver = (arrivals: Arrivals, answers: Record<string, boolean>) => {
+  arrivals.value = new Map([
+    ...arrivals.value,
+    ...Object.entries(answers).map(([id, draws]): [string, boolean] => [getPathOf(id), draws]),
+  ])
+}
 
 const ALL = FAMILY.nodes.map((node) => node.id)
 
-const drawOneAfterAnother = async (
-  drawing: Ref<ReadonlySet<string>>,
-  ids: readonly string[],
-): Promise<void> => {
+/** Delivers the notes one tick after another, as the data of each note arrives from its own request. */
+const deliverOneAfterAnother = async (arrivals: Arrivals, ids: readonly string[], draws = true) => {
   for (const id of ids) {
-    drawing.value = new Set([...drawing.value, getPathOf(id)])
+    deliver(arrivals, { [id]: draws })
     await nextTick()
   }
 }
+
+/** Loading until its note is delivered, then it draws, if its note says so, and reports ready. */
+const createWidget = (name: string, arrivals: Arrivals) =>
+  defineComponent({
+    props: { path: { type: String, required: true } },
+    setup(props) {
+      const finish = useSlotLoading()
+      const draws = computed(() => arrivals.value.get(props.path))
+      watch(
+        draws,
+        (answered) => {
+          if (answered !== undefined) void nextTick(finish)
+        },
+        { immediate: true },
+      )
+      return () => (draws.value ? h('span', { 'data-widget': name }, props.path) : null)
+    },
+  })
+
+/** Draws at once and never says anything about loading. */
+const createPlainWidget = (name: string) =>
+  defineComponent({
+    props: { path: { type: String, required: true } },
+    setup: (props) => () => h('span', { 'data-widget': name }, props.path),
+  })
+
+const createEntry = (arrivals: Arrivals, name = 'tags') => ({
+  key: `org.example.${name}/view/${name}`,
+  component: createWidget(name, arrivals),
+})
+
+const createPlainEntry = (name = 'tags') => ({
+  key: `org.example.${name}/view/${name}`,
+  component: createPlainWidget(name),
+})
 
 let rings: (() => void)[] = []
 let assigned: { element: Element; value: string }[] = []
@@ -134,12 +170,12 @@ afterEach(() => {
   document.body.replaceChildren()
 })
 
-const passFrames = async (count: number) => {
+const passFrames = async (count: number, step = FRAME) => {
   for (let frame = 0; frame < count; frame += 1) {
     await flushPromises()
     for (const ring of rings) ring()
     await flushPromises()
-    now += FRAME
+    now += step
     const waiting = scheduled
     scheduled = []
     for (const run of waiting) run(now)
@@ -184,8 +220,13 @@ const getLayout = (plex: Mounted) =>
     return found.exists() ? (found.attributes('transform') ?? '') : ''
   })
 
-const getSettledLayout = async (ids: readonly string[]): Promise<string[]> => {
-  const plex = mountPlex({ widgetsBelow: [createEntry(ref(getPaths(ids)))] })
+const getSettledLayout = async (
+  drawing: readonly string[],
+  entries = (arrivals: Arrivals) => [createEntry(arrivals)],
+  props: Partial<InstanceType<typeof Plex>['$props']> = {},
+): Promise<string[]> => {
+  const arrivals = createArrivals({ ...answerFor(ALL, false), ...answerFor(drawing) })
+  const plex = mountPlex({ widgetsBelow: entries(arrivals), ...props })
   await passFrames(FRAMES_PER_SETTLE)
   const layout = getLayout(plex)
   plex.unmount()
@@ -202,25 +243,46 @@ const expectOnlyPositions = (settled: readonly string[]) => {
   })
 }
 
-describe('the plex whose widgets draw after the nodes do', () => {
-  it('gives each node only the position the settled widgets leave it, when the widgets draw one after another', async () => {
-    const settled = await getSettledLayout(ALL)
-    const drawing = ref<ReadonlySet<string>>(new Set())
+const getAssignedNodes = () =>
+  assigned.filter(({ element }) => element.classList.contains('plex__node')).length
 
-    const plex = mountPlex({ widgetsBelow: [createEntry(drawing)] })
-    await drawOneAfterAnother(drawing, ALL)
+const SHORT_WINDOW = { width: 1200, height: 300 }
+/** The emergency cap of the loading of a view, which only a view that hangs reaches. */
+const EMERGENCY_CAP = 1000
+
+const getDrawnTitles = (plex: Mounted): string[] =>
+  FAMILY.nodes
+    .filter((node) => plex.find(`[aria-label^="${node.title}"]`).exists())
+    .map((node) => node.title)
+
+describe('the plex whose widgets load after the nodes are mounted', () => {
+  it('gives each node only the position the settled widgets leave it, when the data arrives one note after another', async () => {
+    const settled = await getSettledLayout(ALL)
+    const arrivals = createArrivals()
+
+    const plex = mountPlex({ widgetsBelow: [createEntry(arrivals)] })
+    await deliverOneAfterAnother(arrivals, ALL)
     await passFrames(FRAMES_PER_SETTLE)
 
     expect(getLayout(plex)).toStrictEqual(settled)
     expectOnlyPositions(settled)
   })
 
+  it('draws no node while the widget of a visible node is still loading', async () => {
+    const arrivals = createArrivals(answerFor(ALL.filter((id) => id !== 'child-1')))
+
+    mountPlex({ widgetsBelow: [createEntry(arrivals)] })
+    await passFrames(FRAMES_PER_SETTLE)
+
+    expect(getAssignedNodes()).toBe(0)
+  })
+
   it('places the nodes at the settled layout, not moving them from one drawn before the widgets were there', async () => {
     const settled = await getSettledLayout(ALL)
-    const drawing = ref<ReadonlySet<string>>(new Set())
+    const arrivals = createArrivals()
 
-    const plex = mountPlex({ widgetsBelow: [createEntry(drawing)], duration: 420 })
-    await drawOneAfterAnother(drawing, ALL)
+    const plex = mountPlex({ widgetsBelow: [createEntry(arrivals)], duration: 420 })
+    await deliverOneAfterAnother(arrivals, ALL)
     await passFrames(FRAMES_PER_SETTLE)
 
     expect(getLayout(plex)).toStrictEqual(settled)
@@ -230,34 +292,23 @@ describe('the plex whose widgets draw after the nodes do', () => {
     const onlyFocus = ['focus']
     const settledBefore = await getSettledLayout(onlyFocus)
     const settledAfter = await getSettledLayout(ALL)
-    const drawing = ref(getPaths(onlyFocus))
-    const plex = mountPlex({ widgetsBelow: [createEntry(drawing)] })
+    const arrivals = createArrivals({ ...answerFor(ALL, false), ...answerFor(onlyFocus) })
+    const plex = mountPlex({ widgetsBelow: [createEntry(arrivals)] })
     await passFrames(FRAMES_PER_SETTLE)
     expect(getLayout(plex)).toStrictEqual(settledBefore)
     assigned = []
 
-    await drawOneAfterAnother(drawing, ['parent-0', 'parent-1'])
+    await deliverOneAfterAnother(arrivals, ['parent-0', 'parent-1'])
     await passFrames(FRAMES_PER_SETTLE)
 
     expect(settledAfter).not.toStrictEqual(settledBefore)
     expect(getLayout(plex)).toStrictEqual(settledAfter)
     expectOnlyPositions(settledAfter)
   })
-})
 
-const SHORT_WINDOW = { width: 1200, height: 300 }
-const CAP = 150
-
-const getDrawnTitles = (plex: Mounted): string[] =>
-  FAMILY.nodes
-    .filter((node) => plex.find(`[aria-label^="${node.title}"]`).exists())
-    .map((node) => node.title)
-
-describe('the plex in a window the widgets fill up', () => {
   it('never takes a node off the screen that it has drawn while the widgets settle', async () => {
-    const all = getPaths(ALL)
     const reference = mountPlex({
-      widgetsBelow: [createEntry(ref(all))],
+      widgetsBelow: [createEntry(createArrivals(answerFor(ALL)))],
       viewport: createViewport(SHORT_WINDOW),
     })
     await passFrames(FRAMES_PER_SETTLE)
@@ -286,17 +337,15 @@ describe('the plex in a window the widgets fill up', () => {
       attributeFilter: ['aria-label'],
       attributeOldValue: true,
     })
-    const drawing = ref<ReadonlySet<string>>(new Set())
+    const arrivals = createArrivals()
 
     const plex = mountPlex({
-      widgetsBelow: [createEntry(drawing)],
+      widgetsBelow: [createEntry(arrivals)],
       viewport: createViewport(SHORT_WINDOW),
     })
-    await drawOneAfterAnother(drawing, ALL)
+    await deliverOneAfterAnother(arrivals, ALL)
     await passFrames(FRAMES_PER_SETTLE)
-    removed.push(
-      ...observer.takeRecords().flatMap((record) => [...record.removedNodes].map(() => '')),
-    )
+    collect(observer.takeRecords())
     observer.disconnect()
 
     expect(settledTitles.length).toBeLessThan(FAMILY.nodes.length)
@@ -305,64 +354,78 @@ describe('the plex in a window the widgets fill up', () => {
   })
 })
 
-describe('the plex that waits for its widgets to settle', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  const passTime = async (frames: number, onFrame?: (frame: number) => void) => {
-    for (let frame = 1; frame <= frames; frame += 1) {
-      onFrame?.(frame)
-      await vi.advanceTimersByTimeAsync(FRAME)
-      for (const ring of rings) ring()
-      await vi.advanceTimersByTimeAsync(0)
-      now += FRAME
-      const waiting = scheduled
-      scheduled = []
-      for (const run of waiting) run(now)
-      await vi.advanceTimersByTimeAsync(0)
-    }
-  }
-
-  const getAssignedNodes = () =>
-    assigned.filter(({ element }) => element.classList.contains('plex__node')).length
-
-  it('draws no node until the room of the widgets has been quiet for a frame, then draws the settled layout', async () => {
-    const settledPlex = mountPlex({ widgetsBelow: [createEntry(ref(getPaths(ALL)))] })
-    await passTime(CAP / FRAME + 4)
+describe('the plex whose slot has two contributors', () => {
+  it('lays nothing out until both have delivered, then once', async () => {
+    const both = (arrivals: Arrivals[]) => [
+      createEntry(arrivals[0] as Arrivals, 'related'),
+      createEntry(arrivals[1] as Arrivals, 'tags'),
+    ]
+    const reference = [createArrivals(answerFor(ALL)), createArrivals(answerFor(ALL))]
+    const settledPlex = mountPlex({ widgetsBelow: both(reference) })
+    await passFrames(FRAMES_PER_SETTLE)
     const settled = getLayout(settledPlex)
     settledPlex.unmount()
     assigned = []
-    const drawing = ref<ReadonlySet<string>>(new Set())
+    const related = createArrivals(answerFor(ALL))
+    const tags = createArrivals()
 
-    const plex = mountPlex({ widgetsBelow: [createEntry(drawing)] })
-    await passTime(5, (frame) => {
-      if (frame <= ALL.length) drawing.value = getPaths(ALL.slice(0, frame))
-    })
+    const plex = mountPlex({ widgetsBelow: both([related, tags]) })
+    await passFrames(FRAMES_PER_SETTLE)
     expect(getAssignedNodes()).toBe(0)
-    await passTime(CAP / FRAME)
+    await deliverOneAfterAnother(tags, ALL)
+    await passFrames(FRAMES_PER_SETTLE)
 
     expect(getLayout(plex)).toStrictEqual(settled)
     expectOnlyPositions(settled)
   })
+})
 
-  it('arranges with the room it has once the cap passes while the widgets keep changing it', async () => {
-    const rows = ref<ReadonlySet<string>>(new Set())
-    const plex = mountPlex({ widgetsBelow: [createEntry(rows)] })
-    const growth = Math.ceil((CAP * 3) / FRAME)
+describe('the plex with a widget that does not use the loading signal', () => {
+  it('lays out once, at once the widget is measured', async () => {
+    const reference = mountPlex({ widgetsBelow: [createPlainEntry()] })
+    await passFrames(FRAMES_PER_SETTLE)
+    const settled = getLayout(reference)
+    reference.unmount()
+    assigned = []
 
-    await passTime(Math.floor((CAP * 2) / 3 / FRAME), (frame) => {
-      rows.value = getPaths(ALL.slice(0, 1 + (frame % ALL.length)))
-    })
+    const plex = mountPlex({ widgetsBelow: [createPlainEntry()] })
+    await passFrames(FRAMES_PER_SETTLE)
+
+    expect(getLayout(plex)).toStrictEqual(settled)
+    expectOnlyPositions(settled)
+  })
+})
+
+describe('the plex whose widget of a node leaves', () => {
+  it('does not wait for a node that is no longer shown', async () => {
+    const arrivals = createArrivals(answerFor(ALL.filter((id) => id !== 'child-1')))
+    const withoutSpring: PlexGraph = {
+      nodes: FAMILY.nodes.filter((node) => node.id !== 'child-1'),
+      edges: FAMILY.edges.filter((edge) => edge.to !== 'child-1'),
+    }
+    const plex = mountPlex({ widgetsBelow: [createEntry(arrivals)] })
+    await passFrames(FRAMES_PER_SETTLE)
     expect(getAssignedNodes()).toBe(0)
-    await passTime(growth, (frame) => {
-      rows.value = getPaths(ALL.slice(0, 1 + (frame % ALL.length)))
-    })
+
+    await plex.setProps({ graph: withoutSpring })
+    await passFrames(FRAMES_PER_SETTLE)
+
+    expect(getDrawnTitles(plex)).toStrictEqual(withoutSpring.nodes.map((node) => node.title))
+  })
+})
+
+describe('the plex whose widget never reports ready', () => {
+  it('lays out with what it has once the emergency cap has passed, and warns by the name of the widget', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const arrivals = createArrivals(answerFor(ALL.filter((id) => id !== 'child-1')))
+    const plex = mountPlex({ widgetsBelow: [createEntry(arrivals, 'hung')] })
+
+    await passFrames(3, EMERGENCY_CAP / 4)
+    expect(getAssignedNodes()).toBe(0)
+    await passFrames(3, EMERGENCY_CAP / 4)
 
     expect(getDrawnTitles(plex)).toStrictEqual(FAMILY.nodes.map((node) => node.title))
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('did not report ready'))
+    expect(warn.mock.calls.flat().join(' ')).toContain('org.example.hung/view/hung')
   })
 })
