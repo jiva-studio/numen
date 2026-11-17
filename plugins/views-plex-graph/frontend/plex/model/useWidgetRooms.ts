@@ -11,24 +11,15 @@ interface Measured {
   readonly observer: ResizeObserver
 }
 
-/**
- * The height assumed over or under a node for the widgets of a side that are not measured yet, about two rows of them and the gap to the node,
- * so the notes chosen before any widget is drawn are close to the notes chosen once they are.
- */
-export const RESERVED_WIDGETS_HEIGHT = 88
-
 const getKey = (id: string, side: WidgetSide): string => `${side}:${id}`
 
 /**
  * The widgets of each side of a node are measured whenever `setWidgets` is given their element, and again when it resizes;
  * `null` takes them away. `getNodeRoom` is what the arrangement is given: a new function whenever a measured height
- * changes, and absent while no side has widgets; a side with widgets that is not measured keeps `RESERVED_WIDGETS_HEIGHT`. `setReady` takes whether the views of a side have loaded and
+ * changes, and absent while nothing is measured. `setReady` takes whether the views of a side have loaded and
  * `null` when the side is removed; `areLoaded` holds when every side of every given node has reported.
  */
-export function useWidgetRooms(
-  options: Readonly<Ref<PlexOptions>>,
-  hasWidgets: (side: WidgetSide) => boolean = () => false,
-): {
+export function useWidgetRooms(options: Readonly<Ref<PlexOptions>>): {
   setWidgets: (id: string, side: WidgetSide, element: Element | null) => void
   getNodeRoom: ComputedRef<((node: PlexNode) => NodeRoom) | undefined>
   setReady: (id: string, side: WidgetSide, isReady: boolean | null) => void
@@ -87,15 +78,11 @@ export function useWidgetRooms(
 
   const getNodeRoom = computed(() => {
     const found = heights.value
-    const hasAbove = hasWidgets('above')
-    const hasBelow = hasWidgets('below')
-    if (!hasAbove && !hasBelow) return undefined
+    if (found.size === 0) return undefined
     const { width } = options.value.nodeSize
     return (node: PlexNode): NodeRoom => {
-      const top =
-        found.get(getKey(node.id, 'above')) ?? (hasAbove ? RESERVED_WIDGETS_HEIGHT : undefined)
-      const bottom =
-        found.get(getKey(node.id, 'below')) ?? (hasBelow ? RESERVED_WIDGETS_HEIGHT : undefined)
+      const top = found.get(getKey(node.id, 'above'))
+      const bottom = found.get(getKey(node.id, 'below'))
       return top === undefined && bottom === undefined
         ? NO_ROOM
         : { top: top ?? 0, bottom: bottom ?? 0, width }
